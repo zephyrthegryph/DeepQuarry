@@ -21,10 +21,10 @@
 	insert_icon("test", I)
 
 /datum/asset/spritesheet_batched/test/unregister()
-	SSassets.transport.unregister_asset("spritesheet_[name].css")
+	SSassets.unregister_asset("spritesheet_[name].css")
 	if(length(sizes))
 		for(var/size_id in sizes)
-			SSassets.transport.unregister_asset("[name]_[size_id].png")
+			SSassets.unregister_asset("[name]_[size_id].png")
 
 /datum/unit_test/test_asset_smart_cache/Run()
 	fdel("[ASSET_CROSS_ROUND_SMART_CACHE_DIRECTORY]/spritesheet_cache.test.json")

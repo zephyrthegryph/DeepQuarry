@@ -722,7 +722,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 		//Precache the client with all other assets slowly, so as to not block other browse() calls
 		if (CONFIG_GET(flag/asset_simple_preload))
-			after(5 SECONDS, TYPE_PROC_REF(/datum/asset_transport, send_assets_slow), SSassets.transport, clock = CLOCK_WORLD, with = list(src, SSassets.transport.preload))
+			SSassets.preload_client(src, 5 SECONDS)
 
 /mob/proc/MayRespawn()
 	return FALSE

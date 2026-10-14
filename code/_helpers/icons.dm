@@ -727,13 +727,13 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	if (!isicon(icon2collapse))
 		if (isfile(thing)) //special snowflake
 			var/name = SANITIZE_FILENAME("[generate_asset_name(thing)].png")
-			if (!assets_cache()[name])
-				SSassets.transport.register_asset(name, thing)
+			if (!SSassets.cached_asset(name))
+				SSassets.register_asset(name, thing)
 			for (var/thing2 in targets)
-				SSassets.transport.send_assets(thing2, name)
+				SSassets.send_assets(thing2, name)
 			if(sourceonly)
-				return SSassets.transport.get_asset_url(name)
-			return "<img class='[extra_classes] icon icon-misc' src='[SSassets.transport.get_asset_url(name)]'>"
+				return SSassets.get_asset_url(name)
+			return "<img class='[extra_classes] icon icon-misc' src='[SSassets.get_asset_url(name)]'>"
 
 		//its either an atom, image, or mutable_appearance, we want its icon var
 		icon2collapse = thing.icon
@@ -769,13 +769,13 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	var/file_hash = name_and_ref[2]
 	key = "[name_and_ref[3]].png"
 
-	if(!assets_cache()[key])
-		SSassets.transport.register_asset(key, rsc_ref, file_hash, icon_path)
+	if(!SSassets.cached_asset(key))
+		SSassets.register_asset(key, rsc_ref, file_hash, icon_path)
 	for (var/client_target in targets)
-		SSassets.transport.send_assets(client_target, key)
+		SSassets.send_assets(client_target, key)
 	if(sourceonly)
-		return SSassets.transport.get_asset_url(key)
-	return "<img class='[extra_classes] icon icon-[icon_state]' src='[SSassets.transport.get_asset_url(key)]'>"
+		return SSassets.get_asset_url(key)
+	return "<img class='[extra_classes] icon icon-[icon_state]' src='[SSassets.get_asset_url(key)]'>"
 
 /proc/icon2base64html(target, custom_classes = "")
 	if (!target)

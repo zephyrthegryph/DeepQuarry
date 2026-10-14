@@ -123,7 +123,7 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 
 /// Returns a cached tgui message of URL mappings
 /datum/asset/proc/get_serialized_url_mappings()
-	return CACHED_KEY(asset_url_mappings, "[type]|[SSassets.transport.type]", src)
+	return CACHED_KEY(asset_url_mappings, "[type]|[SSassets.transport_type()]", src)
 
 /datum/asset/proc/register()
 	return
@@ -169,7 +169,7 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 
 /datum/asset/simple/register()
 	for(var/asset_name in assets)
-		var/datum/asset_cache_item/ACI = SSassets.transport.register_asset(asset_name, assets[asset_name])
+		var/datum/asset_cache_item/ACI = SSassets.register_asset(asset_name, assets[asset_name])
 		if(!istype(ACI))
 			log_asset("ERROR: Invalid asset: [type]:[asset_name]:[ACI]")
 			continue
@@ -180,16 +180,16 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 		assets[asset_name] = ACI
 
 /datum/asset/simple/send(client)
-	. = SSassets.transport.send_assets(client, assets || list())
+	. = SSassets.send_assets(client, assets || list())
 
 /datum/asset/simple/get_url_mappings()
 	. = list()
 	for (var/asset_name in assets)
-		.[asset_name] = SSassets.transport.get_asset_url(asset_name, assets[asset_name])
+		.[asset_name] = SSassets.get_asset_url(asset_name, assets[asset_name])
 
 /datum/asset/simple/unregister()
 	for (var/asset_name in assets)
-		SSassets.transport.unregister_asset(asset_name)
+		SSassets.unregister_asset(asset_name)
 
 // For registering or sending multiple others at once
 /datum/asset/group
@@ -269,13 +269,13 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 	return cache_refresh_needed
 
 /datum/asset/spritesheet/unregister()
-	SSassets.transport.unregister_asset("spritesheet_[name].css")
+	SSassets.unregister_asset("spritesheet_[name].css")
 	if(length(sizes))
 		for(var/size_id in sizes)
-			SSassets.transport.unregister_asset("[name]_[size_id].png")
+			SSassets.unregister_asset("[name]_[size_id].png")
 	else
 		for(var/sheet in spritesheets_needed)
-			SSassets.transport.unregister_asset(sheet)
+			SSassets.unregister_asset(sheet)
 
 /datum/asset/spritesheet/regenerate()
 	unregister()
@@ -330,14 +330,14 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 		var/size = LAZYACCESS(sizes, size_id)
 		var/file_path = size[SPRSZ_STRIPPED]
 		var/file_hash = rustg_hash_file("md5", file_path)
-		SSassets.transport.register_asset("[name]_[size_id].png", file_path, file_hash=file_hash)
+		SSassets.register_asset("[name]_[size_id].png", file_path, file_hash=file_hash)
 	var/res_name = "spritesheet_[name].css"
 	var/fname = "[SPRITESHEET_DIR][res_name]"
 	fdel(fname)
 	var/css = generate_css()
 	rustg_file_write(css, fname)
 	var/css_hash = rustg_hash_string("md5", css)
-	SSassets.transport.register_asset(res_name, fcopy_rsc(fname), file_hash=css_hash)
+	SSassets.register_asset(res_name, fcopy_rsc(fname), file_hash=css_hash)
 	if(CONFIG_GET(flag/save_spritesheets))
 		save_to_logs(file_name = res_name, file_location = fname)
 	fdel(fname)
@@ -366,7 +366,7 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 	var/all = list("spritesheet_[name].css")
 	for(var/size_id in sizes)
 		all += "[name]_[size_id].png"
-	. = SSassets.transport.send_assets(client, all)
+	. = SSassets.send_assets(client, all)
 
 /datum/asset/spritesheet/get_url_mappings()
 	if (!name)
@@ -375,9 +375,9 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 	if (!should_refresh())
 		return get_cached_url_mappings()
 
-	. = list("spritesheet_[name].css" = SSassets.transport.get_asset_url("spritesheet_[name].css"))
+	. = list("spritesheet_[name].css" = SSassets.get_asset_url("spritesheet_[name].css"))
 	for(var/size_id in sizes)
-		.["[name]_[size_id].png"] = SSassets.transport.get_asset_url("[name]_[size_id].png")
+		.["[name]_[size_id].png"] = SSassets.get_asset_url("[name]_[size_id].png")
 
 /datum/asset/spritesheet/proc/ensure_stripped(sizes_to_strip = sizes)
 	for(var/size_id in sizes_to_strip)
@@ -453,15 +453,15 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 		var/file_path = "[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/spritesheet.[asset_id]"
 		// Hashing it here is a *lot* faster.
 		var/hash = rustg_hash_file("md5", file_path)
-		var/asset_cache_item = SSassets.transport.register_asset(asset_id, file_path, file_hash=hash)
-		var/asset_url = SSassets.transport.get_asset_url(asset_cache_item = asset_cache_item)
+		var/asset_cache_item = SSassets.register_asset(asset_id, file_path, file_hash=hash)
+		var/asset_url = SSassets.get_asset_url(asset_cache_item = asset_cache_item)
 		replaced_css = replacetext(replaced_css, find_background_urls.match, "background:url('[asset_url]')")
 		LAZYADD(spritesheets_needed, asset_id)
 
 	var/replaced_css_filename = "[SPRITESHEET_DIR]spritesheet_[name].css"
 	var/css_hash = rustg_hash_string("md5", replaced_css)
 	rustg_file_write(replaced_css, replaced_css_filename)
-	SSassets.transport.register_asset("spritesheet_[name].css", replaced_css_filename, file_hash=css_hash)
+	SSassets.register_asset("spritesheet_[name].css", replaced_css_filename, file_hash=css_hash)
 
 	if(CONFIG_GET(flag/save_spritesheets))
 		save_to_logs(file_name = "spritesheet_[name].css", file_location = replaced_css_filename)
@@ -475,18 +475,18 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 		stack_trace("spritesheets_needed was null when sending assets from [type] from cache")
 		spritesheets_needed = list()
 
-	return SSassets.transport.send_assets(client, spritesheets_needed + "spritesheet_[name].css")
+	return SSassets.send_assets(client, spritesheets_needed + "spritesheet_[name].css")
 
 /// Returns the URL to put in the background:url of the CSS asset
 /datum/asset/spritesheet/proc/get_background_url(asset)
 	if (generating_cache)
 		return "%[asset]%"
 	else
-		return SSassets.transport.get_asset_url(asset)
+		return SSassets.get_asset_url(asset)
 
 /datum/asset/spritesheet/proc/write_to_cache()
 	for (var/size_id in sizes)
-		var/datum/asset_cache_item/temp = assets_cache()["[name]_[size_id].png"]
+		var/datum/asset_cache_item/temp = SSassets.cached_asset("[name]_[size_id].png")
 		fcopy(temp.resource, "[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/spritesheet.[name]_[size_id].png")
 
 	generating_cache = TRUE
@@ -497,10 +497,10 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 
 /datum/asset/spritesheet/proc/get_cached_url_mappings()
 	var/list/mappings = list()
-	mappings["spritesheet_[name].css"] = SSassets.transport.get_asset_url("spritesheet_[name].css")
+	mappings["spritesheet_[name].css"] = SSassets.get_asset_url("spritesheet_[name].css")
 
 	for (var/asset_name in spritesheets_needed)
-		mappings[asset_name] = SSassets.transport.get_asset_url(asset_name)
+		mappings[asset_name] = SSassets.get_asset_url(asset_name)
 
 	return mappings
 
@@ -563,7 +563,7 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 	return {"<link rel="stylesheet" href="[css_filename()]" />"}
 
 /datum/asset/spritesheet/proc/css_filename()
-	return SSassets.transport.get_asset_url("spritesheet_[name].css")
+	return SSassets.get_asset_url("spritesheet_[name].css")
 
 /datum/asset/spritesheet/proc/icon_tag(sprite_name)
 	var/sprite = LAZYACCESS(sprites, sprite_name)
@@ -612,22 +612,22 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 
 /datum/asset/changelog_item/New(date)
 	item_filename = sanitize_filename("[date].yml")
-	SSassets.transport.register_asset(item_filename, file("html/changelogs/archive/" + item_filename))
+	SSassets.register_asset(item_filename, file("html/changelogs/archive/" + item_filename))
 
 /datum/asset/changelog_item/send(client)
 	if (!item_filename)
 		return
-	. = SSassets.transport.send_assets(client, item_filename)
+	. = SSassets.send_assets(client, item_filename)
 
 /datum/asset/changelog_item/get_url_mappings()
 	if (!item_filename)
 		return
-	. = list("[item_filename]" = SSassets.transport.get_asset_url(item_filename))
+	. = list("[item_filename]" = SSassets.get_asset_url(item_filename))
 
 /datum/asset/changelog_item/unregister()
 	if (!item_filename)
 		return
-	SSassets.transport.unregister_asset(item_filename)
+	SSassets.unregister_asset(item_filename)
 
 //Generates assets based on iconstates of a single icon
 /datum/asset/simple/icon_states
@@ -652,7 +652,7 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 			if (generic_icon_names)
 				asset_name = "[generate_asset_name(asset)].png"
 
-			SSassets.transport.register_asset(asset_name, asset)
+			SSassets.register_asset(asset_name, asset)
 
 /datum/asset/simple/icon_states/multiple_icons
 	_abstract = /datum/asset/simple/icon_states/multiple_icons
@@ -714,7 +714,7 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 /// Get a html string that will load a html asset.
 /// Needed because byond doesn't allow you to browse() to a url.
 /datum/asset/simple/namespaced/proc/get_htmlloader(filename)
-	return url2htmlloader(SSassets.transport.get_asset_url(filename, assets[filename]))
+	return url2htmlloader(SSassets.get_asset_url(filename, assets[filename]))
 
 /// A subtype to generate a JSON file from a list
 /datum/asset/json
@@ -723,11 +723,11 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 	var/name
 
 /datum/asset/json/send(client)
-	return SSassets.transport.send_assets(client, "[name].json")
+	return SSassets.send_assets(client, "[name].json")
 
 /datum/asset/json/get_url_mappings()
 	return list(
-		"[name].json" = SSassets.transport.get_asset_url("[name].json"),
+		"[name].json" = SSassets.get_asset_url("[name].json"),
 	)
 
 /datum/asset/json/register()
@@ -737,14 +737,14 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 		var/cached = "[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/json.[name].json"
 		if(!fexists(cached))
 			rustg_file_write(json_encode(generate()), cached)
-		SSassets.transport.register_asset("[name].json", fcopy_rsc(cached))
+		SSassets.register_asset("[name].json", fcopy_rsc(cached))
 		return
 	// Scratch file under SPRITESHEET_DIR, not data/: worlds sharing a worktree (a
 	// sharded dm-test run) each write, load and delete their own copy.
 	var/filename = "[SPRITESHEET_DIR][name].json"
 	fdel(filename)
 	rustg_file_write(json_encode(generate()), filename)
-	SSassets.transport.register_asset("[name].json", fcopy_rsc(filename))
+	SSassets.register_asset("[name].json", fcopy_rsc(filename))
 	fdel(filename)
 
 /// Returns the data that will be JSON encoded
@@ -753,5 +753,5 @@ DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mapping
 	CRASH("generate() not implemented for [type]!")
 
 /datum/asset/json/unregister()
-	SSassets.transport.unregister_asset("[name].json")
+	SSassets.unregister_asset("[name].json")
 

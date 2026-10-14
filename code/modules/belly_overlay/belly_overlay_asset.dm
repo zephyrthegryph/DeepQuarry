@@ -9,7 +9,7 @@
 // where safe-name is the source path with all non-alnum/[-._] chars
 // replaced by "_", and ".dmi" stripped.
 //
-// Registration is lazy: we only call SSassets.transport.register_asset()
+// Registration is lazy: we only call SSassets.register_asset()
 // the first time a belly state is needed, so DD's .rsc memory doesn't
 // hold all 112 files (~24 MB) forever. Per-client asset sends ship only
 // the URLs for layers actually in the current preview, instead of the
@@ -42,7 +42,7 @@ GLOBAL_LIST_EMPTY(dq_belly_overlay_aci_by_name)
 	var/path = "[DQ_BELLY_OVERLAY_DIR][asset_name]"
 	if(!fexists(path))
 		return null
-	var/datum/asset_cache_item/ACI = SSassets.transport.register_asset(asset_name, file(path))
+	var/datum/asset_cache_item/ACI = SSassets.register_asset(asset_name, file(path))
 	if(!istype(ACI))
 		log_asset("dq_register_belly_asset: failed to register [asset_name]")
 		return null
@@ -65,7 +65,7 @@ GLOBAL_LIST_EMPTY(dq_belly_overlay_aci_by_name)
 		var/asset_name = dq_belly_overlay_safe_filename(dmi_path, state, ext)
 		if(!dq_register_belly_asset(asset_name))
 			continue
-		url = SSassets.transport.get_asset_url(asset_name, GLOB.dq_belly_overlay_aci_by_name[asset_name])
+		url = SSassets.get_asset_url(asset_name, GLOB.dq_belly_overlay_aci_by_name[asset_name])
 		GLOB.dq_belly_overlay_name_by_url[url] = asset_name
 		break
 	GLOB.dq_belly_overlay_url_by_key[cache_key] = url
@@ -85,4 +85,4 @@ GLOBAL_LIST_EMPTY(dq_belly_overlay_aci_by_name)
 			names += asset_name
 	if(!length(names))
 		return FALSE
-	return SSassets.transport.send_assets(C, names)
+	return SSassets.send_assets(C, names)

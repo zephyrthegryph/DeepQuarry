@@ -225,7 +225,7 @@
 	// producing an intermittent ChunkLoadError. The asset transport deduplicates
 	// files already sent to this client, so always use the reliable publication path.
 	if(interface_chunks)
-		flush_queue |= SSassets.transport.send_assets(user.client, asset_generation.get_chunk_assets(interface_chunks))
+		flush_queue |= SSassets.send_assets(user.client, asset_generation.get_chunk_assets(interface_chunks))
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	if(startup_profile)
 		startup_profile["asset_delivery_ms"] = rustg_time_milliseconds(startup_timer) - assets_started_ms

@@ -4,7 +4,6 @@ B1:code/ATMOSPHERICS/SSair.dm:SSmapping 4
 B1:code/__defines/machinery.dm:SSair 3
 B1:code/__defines/radiation.dm:SSradiation 1
 B1:code/__defines/subsystems.dm:SSatoms 3
-B1:code/_helpers/icons.dm:SSassets 6
 B1:code/_helpers/roundend.dm:SSemergency_shuttle 1
 B1:code/_helpers/roundstats.dm:SSnerdle 1
 B1:code/controllers/configuration/entries/dbconfig.dm:SSdbcore 1
@@ -62,12 +61,7 @@ B1:code/modules/admin/verbs/randomverbs.dm:SSemergency_shuttle 2
 B1:code/modules/admin/verbs/randomverbs.dm:SSjob 1
 B1:code/modules/admin/verbs/secrets.dm:SSnightshift 3
 B1:code/modules/admin/view_variables/reference_tracking.dm:SSgarbage 6
-B1:code/modules/asset_cache/asset_list.dm:SSassets 31
-B1:code/modules/asset_cache/assets/tgui.dm:SSassets 2
-B1:code/modules/asset_cache/iconforge/batched_spritesheet.dm:SSassets 9
-B1:code/modules/asset_cache/transports/asset_transport.dm:SSassets 3
 B1:code/modules/autowiki/autowiki.dm:SSticker 1
-B1:code/modules/belly_overlay/belly_overlay_asset.dm:SSassets 3
 B1:code/modules/benchmarks/_benchmark.dm:SSair 1
 B1:code/modules/benchmarks/_benchmark.dm:SSmachines 2
 B1:code/modules/benchmarks/_benchmark.dm:SSticker 3
@@ -76,7 +70,6 @@ B1:code/modules/benchmarks/boot_profile.dm:SSgarbage 4
 B1:code/modules/benchmarks/boot_profile.dm:SSlighting 5
 B1:code/modules/benchmarks/scenarios.dm:SSair 10
 B1:code/modules/benchmarks/scenarios.dm:SSexplosions 1
-B1:code/modules/client/client%20procs.dm:SSassets 2
 B1:code/modules/events/shipping_error.dm:SSsupply 1
 B1:code/modules/expedition/expedition_controller.dm:SSflight 1
 B1:code/modules/flufftext/look_up.dm:SSplanets 2
@@ -126,7 +119,6 @@ B1:code/modules/shuttles/shuttle.dm:SSsupply 4
 B1:code/modules/shuttles/shuttles_multi.dm:SSshuttles 1
 B1:code/modules/shuttles/shuttles_web.dm:SSshuttles 2
 B1:code/modules/tgui/modules/communications.dm:SSemergency_shuttle 1
-B1:code/modules/tgui/tgui.dm:SSassets 1
 B1:maps/submaps/engine_submaps/engine.dm:SSmapping 1
 B1:maps/~map_system/maps.dm:SSplanets 2
 B3:code/ATMOSPHERICS/SSair.dm:native 3

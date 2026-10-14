@@ -218,7 +218,7 @@
 		var/png_name = "[name]_[size_id].png"
 		var/file_directory = "[SPRITESHEET_DIR][png_name]"
 		var/file_hash = rustg_hash_file(RUSTG_HASH_MD5, file_directory)
-		SSassets.transport.register_asset(png_name, fcopy_rsc(file_directory), file_hash)
+		SSassets.register_asset(png_name, fcopy_rsc(file_directory), file_hash)
 		if(CONFIG_GET(flag/save_spritesheets))
 			save_to_logs(file_name = png_name, file_location = file_directory)
 	var/css_name = "spritesheet_[name].css"
@@ -228,7 +228,7 @@
 	var/css = generate_css()
 	rustg_file_write(css, file_directory)
 	var/css_hash = rustg_hash_string(RUSTG_HASH_MD5, css)
-	SSassets.transport.register_asset(css_name, fcopy_rsc(file_directory), file_hash=css_hash)
+	SSassets.register_asset(css_name, fcopy_rsc(file_directory), file_hash=css_hash)
 
 	if(CONFIG_GET(flag/save_spritesheets))
 		save_to_logs(file_name = css_name, file_location = file_directory)
@@ -271,15 +271,15 @@
 	var/all = list("spritesheet_[name].css")
 	for(var/size_id in sizes)
 		all += "[name]_[size_id].png"
-	. = SSassets.transport.send_assets(client, all)
+	. = SSassets.send_assets(client, all)
 
 /datum/asset/spritesheet_batched/get_url_mappings()
 	if (!name)
 		return
 
-	. = list("spritesheet_[name].css" = SSassets.transport.get_asset_url("spritesheet_[name].css"))
+	. = list("spritesheet_[name].css" = SSassets.get_asset_url("spritesheet_[name].css"))
 	for(var/size_id in sizes)
-		.["[name]_[size_id].png"] = SSassets.transport.get_asset_url("[name]_[size_id].png")
+		.["[name]_[size_id].png"] = SSassets.get_asset_url("[name]_[size_id].png")
 
 /datum/asset/spritesheet_batched/proc/generate_css()
 	var/list/out = list()
@@ -318,11 +318,11 @@
 			return FALSE
 
 	var/css_hash = rustg_hash_file(RUSTG_HASH_MD5, css_file_directory)
-	SSassets.transport.register_asset(css_name, fcopy_rsc(css_file_directory), file_hash=css_hash)
+	SSassets.register_asset(css_name, fcopy_rsc(css_file_directory), file_hash=css_hash)
 	for(var/size_id in sizes)
 		var/fname = "[SPRITESHEET_DIR][name]_[size_id].png"
 		var/hash = rustg_hash_file(RUSTG_HASH_MD5, fname)
-		SSassets.transport.register_asset("[name]_[size_id].png", fcopy_rsc(fname), file_hash=hash)
+		SSassets.register_asset("[name]_[size_id].png", fcopy_rsc(fname), file_hash=hash)
 
 	if(CONFIG_GET(flag/save_spritesheets))
 		save_to_logs(file_name = css_name, file_location = css_file_directory)
@@ -331,7 +331,7 @@
 
 /// Returns the URL to put in the background:url of the CSS asset
 /datum/asset/spritesheet_batched/proc/get_background_url(asset)
-	return SSassets.transport.get_asset_url(asset)
+	return SSassets.get_asset_url(asset)
 
 /datum/asset/spritesheet_batched/proc/write_cache_meta(input_hash, dmi_hashes)
 	var/list/cache_data = list(
@@ -353,7 +353,7 @@
 	return {"<link rel="stylesheet" href="[css_filename()]" />"}
 
 /datum/asset/spritesheet_batched/proc/css_filename()
-	return SSassets.transport.get_asset_url("spritesheet_[name].css")
+	return SSassets.get_asset_url("spritesheet_[name].css")
 
 /datum/asset/spritesheet_batched/proc/icon_tag(sprite_name)
 	var/sprite = LAZYACCESS(sprites, sprite_name)

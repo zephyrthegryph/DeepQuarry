@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Routed browser asset operations through the owning system API while preserving transport and preload behavior."
