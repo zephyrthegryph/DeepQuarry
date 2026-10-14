@@ -368,7 +368,7 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name 
 		return
 	for(var/color in W.assemblies?.Copy())
 		W.detach(color)
-	rel_set(W, nameof(owner), null)
+	rel_set(W, nameof(W.owner), null)
 
 /// The holder's wire record, or null when it has no wires capability. Made when the holder initializes (wiring_make()).
 /proc/wiring_of(datum/holder)
@@ -399,7 +399,7 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name 
 	var/datum/activation/act = cap_activation(holder, CAP_WIRES, null, TRUE)
 	var/record_type = def.record
 	W = new record_type
-	rel_set(W, nameof(owner), holder)
+	rel_set(W, nameof(W.owner), holder)
 	W.def = def
 	W.bringers = bringers
 	W.colors = wires_layout_for(def.name, wires_with_duds(real, count), randomize)

@@ -81,7 +81,7 @@
 
 /// PATH refuses qdel() unless forced (singletons, registries, pooled objects):
 /// the object is left untouched. See /datum/proc/lifecycle_keep().
-#if defined(UNIT_TESTS)
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 // A test build treats an unforced qdel() of a kept type as a bug: a kept type is "never deleted", so something that deletes one means the mark is
 // wrong (and its holders keep an object they believe is gone). A test that checks the refusal itself sets GLOB.lifecycle_keep_expected first.
 GLOBAL_VAR_INIT(lifecycle_keep_expected, FALSE)

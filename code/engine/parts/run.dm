@@ -1175,7 +1175,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /// The target is claimed for the length of the wait: a claim is in the registry under the target's ref, and the target is told it changed.
 /datum/pending_op/proc/claim_target(datum/claimed)
 	claim_ref = "[REF(claimed)]"
-	rel_set(rx_of(claimed), nameof(claimed_by), src)
+	rel_set(rx_of(claimed), nameof(/datum/rx_state::claimed_by), src)
 	op_changed(claimed)
 
 /// The claim ends with the wait.
@@ -1184,7 +1184,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		return
 	var/datum/claimed = locate(claim_ref)
 	if(claimed?.rx?.claimed_by == src)
-		rel_set(claimed.rx, nameof(claimed_by), null)
+		rel_set(claimed.rx, nameof(/datum/rx_state::claimed_by), null)
 	claim_ref = null
 	if(claimed)
 		op_changed(claimed)
