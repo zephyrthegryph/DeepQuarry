@@ -19,8 +19,7 @@
 	skip_init = FALSE
 	init_from_table = FALSE
 
-/turf/unsimulated/wall/planetary/Initialize(mapload)
-	. = ..()
+/turf/unsimulated/wall/planetary/proc/register_planetary_turf()
 	SSplanets.addTurf(src)
 
 /// Phase 2: leaves its planet's turf set.
@@ -50,3 +49,6 @@
 /turf/unsimulated/wall/planetary/sif/alt
 	initial_temperature	= 225.15
 
+
+CAPABILITIES(/turf/unsimulated/wall/planetary)
+	setup(PROC_REF(register_planetary_turf))

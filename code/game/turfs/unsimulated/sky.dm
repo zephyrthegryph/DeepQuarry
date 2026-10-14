@@ -12,8 +12,7 @@
 	var/does_skyfall = TRUE
 	var/list/skyfall_levels
 
-/turf/unsimulated/floor/sky/Initialize(mapload)
-	. = ..()
+/turf/unsimulated/floor/sky/proc/prepare_skyfall_glow()
 	if(does_skyfall && !LAZYLEN(skyfall_levels))
 		log_mapping("## ERROR [x],[y],[z], [get_area(src)] doesn't have skyfall_levels defined! Can't skyfall!")
 	if(locate_in_list(orange(src,1), /turf/simulated))
@@ -73,3 +72,6 @@
 		var/mob/living/L = source
 		message_admins("\The [source] fell out of the sky.")
 		L.fall_impact(T, 42, 90, FALSE, TRUE)	//You will not be defibbed from this.
+
+CAPABILITIES(/turf/unsimulated/floor/sky)
+	setup(PROC_REF(prepare_skyfall_glow))

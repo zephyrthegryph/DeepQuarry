@@ -30,8 +30,7 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 	var/obj/machinery/power/smes/linkedsmes //when the nanites digest something, it becomes power in an SMES (a relation view)
 	var/id = null
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/Initialize(mapload)
-	. = ..()
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/find_local_smes()
 	for(var/obj/machinery/power/smes/tolink in REGISTRY_MEMBERS(REGISTRY_SMES))
 		if(!tolink)
 			continue
@@ -41,6 +40,7 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 			rel_set(src, nameof(linkedsmes), tolink)
 
 CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
+	setup(PROC_REF(find_local_smes))
 	ref_one(nameof(moblink), /mob/living)
 	ref_one(nameof(linkedsmes), /obj/machinery/power/smes)
 	op("nanites_hand", hand(), ungated(), label("Interface"), when(req(PROC_REF(hand_interface_ok))), asks(/datum/prompt/choice/nanite_state, fields = list("ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE), step = "state"), asks(/datum/prompt/choice/nanite_targets, fields = list("ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE), step = "targets", when = PROC_REF(state_is_on)), then(PROC_REF(nanites_hand_chosen)))

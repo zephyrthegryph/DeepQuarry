@@ -23,6 +23,7 @@
 	light_overlay = "helmet_light"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space)
+	setup(PROC_REF(prepare_refitted_helmet_sprites))
 	configure(light_glow(range = 4))
 	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD, hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_protection(permeability = 0, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 2 * ONE_ATMOSPHERE, siemens = 0.9))
@@ -31,8 +32,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space)
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA))))
 
-/obj/item/clothing/head/helmet/space/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/head/helmet/space/proc/prepare_refitted_helmet_sprites()
 	if(type == /obj/item/clothing/head/helmet/space) // use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
 		LAZYSET(sprite_sheets, SPECIES_TESHARI, 'icons/inventory/head/mob_teshari.dmi')
 

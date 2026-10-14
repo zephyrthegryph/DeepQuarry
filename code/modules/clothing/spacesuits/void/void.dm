@@ -309,8 +309,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	item_state = "hostile_env"
 	armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"
 
-/obj/item/clothing/head/helmet/space/void/heck/Initialize(mapload)
-	. = ..()
 
 /obj/item/clothing/head/helmet/space/void/heck/apply_accessories(image/standing)
 	. = ..()

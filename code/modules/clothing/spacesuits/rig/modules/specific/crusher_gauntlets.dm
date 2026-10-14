@@ -17,8 +17,7 @@
 	passive_power_cost = 0
 	var/obj/item/kinetic_crusher/machete/gauntlets/rig/stored_gauntlets
 
-/obj/item/rig_module/gauntlets/Initialize(mapload)
-	. = ..()
+/obj/item/rig_module/gauntlets/proc/link_stored_gauntlets()
 	rel_set(stored_gauntlets, nameof(stored_gauntlets.storing_module), src)
 
 /obj/item/rig_module/gauntlets/activate(skip_engage = 0, mob/user)
@@ -55,3 +54,6 @@
 /obj/item/rig_module/gauntlets/ownership()
 	. = ..()
 	. += owns(nameof(stored_gauntlets), policy = OWN_CONTAINED, starts = /obj/item/kinetic_crusher/machete/gauntlets/rig)
+
+CAPABILITIES(/obj/item/rig_module/gauntlets)
+	setup(PROC_REF(link_stored_gauntlets))

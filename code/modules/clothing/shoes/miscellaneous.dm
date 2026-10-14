@@ -124,6 +124,7 @@ CAPABILITIES(/obj/item/clothing/shoes/sandal/marisa)
 	//removed built in squeak sounds
 
 CAPABILITIES(/obj/item/clothing/shoes/clown_shoes)
+	setup(PROC_REF(prepare_clown_squeak))
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 
 	configure(item_combat(force = 0))
@@ -250,9 +251,7 @@ CAPABILITIES(/obj/item/clothing/shoes/footwraps)
 	icon = 'icons/obj/clothing/ranger.dmi'
 	icon_state = "ranger_boots"
 
-// ALLOW(init/INSTANCE_STATE): its name and sprite follow the boot colour it was given
-/obj/item/clothing/shoes/boots/ranger/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/shoes/boots/ranger/proc/apply_ranger_boot_name()
 	if(icon_state == "ranger_boots")
 		name = "[bootcolor] ranger boots"
 
@@ -415,6 +414,7 @@ CAPABILITIES(/obj/item/clothing/shoes/bhop)
 	can_hold_knife = 1
 
 CAPABILITIES(/obj/item/clothing/shoes/mech_shoes)
+	setup(PROC_REF(prepare_mech_squeak))
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.7))
@@ -424,8 +424,7 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/shoes/mech_shoes, mech_shoes_squeak_sounds
 
 
 
-/obj/item/clothing/shoes/mech_shoes/Initialize(mapload)
-	.=..()
+/obj/item/clothing/shoes/mech_shoes/proc/prepare_mech_squeak()
 	make_squeaky(TYPE_TABLE_GET(src, mech_shoes_squeak_sounds), 15*step_volume_mod)
 
 /obj/item/clothing/shoes/mech_shoes/light
@@ -459,8 +458,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sound
 /obj/item/clothing/shoes/clown_shoes
 	var/static/list/squeak_sound = list(SFX_CLOWNSTEP=1)
 
-/obj/item/clothing/shoes/clown_shoes/Initialize(mapload)
-	.=..()
+/obj/item/clothing/shoes/clown_shoes/proc/prepare_clown_squeak()
 	make_squeaky(squeak_sound, 20*step_volume_mod)
 
 /obj/item/clothing/shoes/dry_galoshes
@@ -493,3 +491,6 @@ CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
 	..()
 	if(look.state_so_far(src) == "ranger_boots")
 		look.state("[bootcolor]_ranger_boots")
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/ranger)
+	setup(PROC_REF(apply_ranger_boot_name))

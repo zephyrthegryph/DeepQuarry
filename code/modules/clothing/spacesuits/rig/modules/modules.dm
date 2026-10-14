@@ -261,6 +261,7 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 	. = ..()
 	if(!istype(module))
 		return INITIALIZE_HINT_QDEL
+/atom/movable/stat_rig_module/activate/proc/prepare_button_label()
 	name = module.activate_string
 	if(module.active_power_cost)
 		name += " ([module.active_power_cost*10]A)"
@@ -273,6 +274,7 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 	. = ..()
 	if(!istype(module))
 		return INITIALIZE_HINT_QDEL
+/atom/movable/stat_rig_module/deactivate/proc/prepare_button_label()
 	name = module.deactivate_string
 	// Show cost despite being 0, if it means changing from an active cost.
 	if(module.active_power_cost || module.passive_power_cost)
@@ -287,6 +289,7 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 	. = ..()
 	if(!istype(module))
 		return INITIALIZE_HINT_QDEL
+/atom/movable/stat_rig_module/engage/proc/prepare_button_label()
 	name = module.engage_string
 	if(module.use_power_cost)
 		name += " ([module.use_power_cost*10]E)"
@@ -340,3 +343,12 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 /atom/movable/stat_rig_module/engage
 	module_mode = "engage"
 
+
+CAPABILITIES(/atom/movable/stat_rig_module/activate)
+	setup(PROC_REF(prepare_button_label))
+
+CAPABILITIES(/atom/movable/stat_rig_module/deactivate)
+	setup(PROC_REF(prepare_button_label))
+
+CAPABILITIES(/atom/movable/stat_rig_module/engage)
+	setup(PROC_REF(prepare_button_label))

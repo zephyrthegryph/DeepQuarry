@@ -718,8 +718,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/bell)
 	var/tmp/datum/radio_frequency/radio_connection
 	special_collar = TRUE
 
-/obj/item/clothing/accessory/collar/shock/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/accessory/collar/shock/proc/connect_collar_radio()
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
 
 /obj/item/clothing/accessory/collar/shock/proc/set_frequency(new_frequency)
@@ -728,6 +727,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/bell)
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 
 CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
+	setup(PROC_REF(connect_collar_radio))
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	op("controls", in_hand(), label("Open shock collar controls"), then(PROC_REF(shock_collar_controls_opened)))
 	interface("ShockCollar")

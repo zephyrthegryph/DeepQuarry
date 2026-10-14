@@ -101,6 +101,7 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/rig)
+	setup(PROC_REF(configure_rig_systems))
 	configure(item_worn(slots = SLOT_BACK, flags = PHORONGUARD))
 	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.2, permeability = 0))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
@@ -182,11 +183,10 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 /obj/item/rig/proc/pred_has_boots_holds(datum/act/op/A)
 	return boots ? null : "it has no boots"
 
-/obj/item/rig/Initialize(mapload)
-	. = ..()
+/obj/item/rig/proc/configure_rig_systems()
 
 	suit_state = icon_state
-	item_state = icon_state
+	set_item_state(icon_state)
 
 	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
 		locked = 0

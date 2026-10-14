@@ -629,6 +629,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
+	setup(PROC_REF(prepare_inside_emotes))
 	configure(item_worn(covers = FEET, slots = SLOT_FEET))
 	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.9, heat_parts = FEET, cold_parts = FEET, permeability = 0.50))
@@ -653,15 +654,13 @@ CAPABILITIES(/obj/item/clothing/shoes)
 
 TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
-/obj/item/clothing/shoes/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/shoes/proc/prepare_inside_emotes()
 	inside_emotes = list(
 		span_red("You feel weightless for a moment as \the [name] moves upwards."),
 		span_red("\The [name] are a ride you've got no choice but to participate in as the wearer moves."),
 		span_red("The wearer of \the [name] moves, pressing down on you."),
 		span_red("More motion while \the [name] move, feet pressing down against you.")
 	)
-
 
 /// Old verb "Draw Boot Knife" (offered while a knife is held).
 /obj/item/clothing/shoes/proc/shoes_draw_knife_verb(datum/act/op/A)

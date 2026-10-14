@@ -9,9 +9,7 @@
 	var/image/turf_image
 	var/list/decals
 
-// ALLOW(init/INSTANCE_STATE): remembers the turf it was placed on and waits in nullspace
-/obj/landed_holder/Initialize(mapload)
-	. = ..()
+/obj/landed_holder/proc/remember_landed_turf()
 	if(loc)
 		rel_set(src, nameof(my_turf), get_turf(src))
 		moveToNullspace()
@@ -94,10 +92,10 @@
 	rad_shield_thickness_mm = RAD_SHUTTLE_HULL_THICKNESS_MM
 
 CAPABILITIES(/turf/simulated/shuttle)
+	setup(PROC_REF(prepare_shuttle_lighting))
 	owns_one(nameof(landed_holder_ref), /obj/landed_holder)
 
-/turf/simulated/shuttle/Initialize(mapload)
-	. = ..()
+/turf/simulated/shuttle/proc/prepare_shuttle_lighting()
 	apply_rad_shield_material()
 	if(!antilight_cache)
 		antilight_cache = list()
@@ -225,17 +223,13 @@ CAPABILITIES(/turf/simulated/shuttle)
 	block_tele = TRUE
 
 CAPABILITIES(/turf/simulated/shuttle/floor/alien)
+	setup(PROC_REF(update_light))
 	configure(light_glow(range = 3, power = 0.6, color = "#66ffff"))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /turf/simulated/shuttle/floor/alien/proc/roll_look(datum/roller/R)
 	return "alienpod[R.number(1, 9)]"
-
-// ALLOW(init/INSTANCE_STATE): rolls its alien pod tile and lights it
-/turf/simulated/shuttle/floor/alien/Initialize(mapload)
-	. = ..()
-	update_light()
 
 /turf/simulated/shuttle/floor/alienplating
 	icon_state = "alienplating"
@@ -471,3 +465,6 @@ CAPABILITIES(/turf/simulated/shuttle/plating/airless/carry)
 /// The landed holder this floor owns (landed_holder_ref), or null.
 /turf/simulated/shuttle/proc/landed_holder() as /obj/landed_holder
 	return QDELETED(landed_holder_ref) ? null : landed_holder_ref
+
+CAPABILITIES(/obj/landed_holder)
+	setup(PROC_REF(remember_landed_turf))

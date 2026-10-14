@@ -13,14 +13,13 @@
 	phoron = 0
 
 CAPABILITIES(/turf/simulated/sky)
+	setup(PROC_REF(apply_initial_sky_glow))
 	param(nameof(sky_color), pos = 1)
 
 /// The sky's glow (its constructor param).
 /turf/simulated/sky/var/sky_color = "#FFFFFF"
 
-// ALLOW(init/INSTANCE_STATE): the sky glows its colour
-/turf/simulated/sky/Initialize(mapload)
-	. = ..()
+/turf/simulated/sky/proc/apply_initial_sky_glow()
 	// SSplanets.addTurf(src) Handled by parent
 	set_glow(src, GLOW(2, 2, sky_color))
 

@@ -7,7 +7,6 @@ init_visuals	code/game/objects/structures/lattice.dm	icon_state = "latticeblank"
 init_visuals	code/game/objects/structures/mirror.dm	icon_state = "mirror_frame"
 init_visuals	code/game/objects/structures/props/machines.dm	icon_state = "nt_pod"
 init_visuals	code/game/objects/structures/reflectors.dm	add_overlay(deflector_overlay)
-init_visuals	code/game/turfs/simulated/wall_types.dm	icon_state = base_state
 init_visuals	code/modules/clothing/clothing.dm	icon_state = O.icon_state
 init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
 init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"

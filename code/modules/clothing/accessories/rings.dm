@@ -163,6 +163,7 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/ring/material, ring_forced_mater
 	material = get_material_by_name(default_material || MAT_STEEL)
 	if(!istype(material))
 		return INITIALIZE_HINT_QDEL
+/obj/item/clothing/accessory/ring/material/proc/show_material_identity()
 	name = "[material.display_name] ring"
 	desc = "A ring made from [material.display_name]."
 	color = material.icon_colour
@@ -224,3 +225,6 @@ CAPABILITIES(/obj/item/clothing/accessory/ring/ringworld1)
 
 CAPABILITIES(/obj/item/clothing/accessory/ring/ringworld2)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING))
+
+CAPABILITIES(/obj/item/clothing/accessory/ring/material)
+	setup(PROC_REF(show_material_identity))

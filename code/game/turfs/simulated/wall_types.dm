@@ -129,16 +129,14 @@ CAPABILITIES(/turf/simulated/shuttle/wall/alien)
 	update_light()
 
 
-/turf/simulated/shuttle/wall/Initialize(mapload)
-	. = ..()
-
+/turf/simulated/shuttle/wall/proc/prepare_shuttle_wall()
 	//To allow mappers to rename shuttle walls to like "redfloor interior" or whatever for ease of use.
 	name = true_name
 
 	if(join_group)
 		auto_join()
 	else
-		icon_state = base_state
+		set_icon_state(base_state)
 
 	if(takes_underlays)
 		underlay_update()
@@ -630,3 +628,6 @@ TYPE_TABLE(/turf/simulated/wall/stonelogs, wall_forced_materials, list(MAT_CONCR
 	opacity = 0
 
 TYPE_TABLE(/turf/simulated/wall/glass, wall_forced_materials, list(MAT_GLASS))
+
+CAPABILITIES(/turf/simulated/shuttle/wall)
+	setup(PROC_REF(prepare_shuttle_wall))

@@ -1272,9 +1272,7 @@ CAPABILITIES(/obj/item/clothing/under/medigown)
 	rolled_down = 0
 	rolled_sleeves = 0
 
-// ALLOW(init/INSTANCE_STATE): its name and sprite follow the uniform colour it was given
-/obj/item/clothing/under/color/ranger/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/under/color/ranger/proc/apply_ranger_uniform_name()
 	if(icon_state == "ranger_uniform") //allows for custom items
 		name = "[unicolor] ranger uniform"
 
@@ -2612,3 +2610,6 @@ CAPABILITIES(/obj/item/clothing/under/gestalt/sleeveless)
 	..()
 	if(look.state_so_far(src) == "ranger_uniform")
 		look.state("[unicolor]_ranger_uniform")
+
+CAPABILITIES(/obj/item/clothing/under/color/ranger)
+	setup(PROC_REF(apply_ranger_uniform_name))

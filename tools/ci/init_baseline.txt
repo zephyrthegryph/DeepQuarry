@@ -1265,30 +1265,9 @@ init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize
 init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::if
 init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::dirt
 init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::update_dirt
-init_lines	code/game/turfs/simulated/floor_types.dm	@/obj/landed_holder::Initialize::if
-init_lines	code/game/turfs/simulated/floor_types.dm	@/obj/landed_holder::Initialize::rel_set
-init_lines	code/game/turfs/simulated/floor_types.dm	@/obj/landed_holder::Initialize::moveToNullspace
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::apply_rad_shield_material
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::if
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::antilight_cache
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::for
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::I
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::I.plane
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::expr
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::if
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::underlay_update
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle/floor/alien::Initialize::update_light
 init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::if
 init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::name
 init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::update_light
-init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::soundloop.start
-init_lines	code/game/turfs/simulated/nanogoop.dm	@/turf/simulated/floor/water/digestive_enzymes/nanites::Initialize::for
-init_lines	code/game/turfs/simulated/nanogoop.dm	@/turf/simulated/floor/water/digestive_enzymes/nanites::Initialize::if
-init_lines	code/game/turfs/simulated/nanogoop.dm	@/turf/simulated/floor/water/digestive_enzymes/nanites::Initialize::expr
-init_lines	code/game/turfs/simulated/nanogoop.dm	@/turf/simulated/floor/water/digestive_enzymes/nanites::Initialize::if
-init_lines	code/game/turfs/simulated/nanogoop.dm	@/turf/simulated/floor/water/digestive_enzymes/nanites::Initialize::expr
-init_lines	code/game/turfs/simulated/nanogoop.dm	@/turf/simulated/floor/water/digestive_enzymes/nanites::Initialize::if
-init_lines	code/game/turfs/simulated/nanogoop.dm	@/turf/simulated/floor/water/digestive_enzymes/nanites::Initialize::rel_set
 init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass/sif::Initialize::if
 init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass/sif::Initialize::expr
 init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::if
@@ -1301,23 +1280,9 @@ init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/ou
 init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::expr
 init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/rocks/sif::Initialize::if
 init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/rocks/sif::Initialize::expr
-init_lines	code/game/turfs/simulated/outdoors/sky.dm	@/turf/simulated/sky::Initialize::glow
-init_lines	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall::Initialize::name
-init_lines	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall::Initialize::if
-init_lines	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall::Initialize::auto_join
-init_lines	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall::Initialize::else
-init_lines	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall::Initialize::icon_state
-init_lines	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall::Initialize::if
-init_lines	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall::Initialize::underlay_update
 init_lines	code/game/turfs/simulated/water.dm	@/turf/simulated/floor/water::Initialize::handle_fish
 init_lines	code/game/turfs/space/space.dm	@/turf/space::Initialize::space_appearance
-init_lines	code/game/turfs/space/transit.dm	@/turf/space/transit::Initialize::toggle_transit
 init_lines	code/game/turfs/turf.dm	@/turf::Initialize::turf_instance_setup
-init_lines	code/game/turfs/unsimulated/planetary.dm	@/turf/unsimulated/wall/planetary::Initialize::SSplanets.addTurf
-init_lines	code/game/turfs/unsimulated/sky.dm	@/turf/unsimulated/floor/sky::Initialize::if
-init_lines	code/game/turfs/unsimulated/sky.dm	@/turf/unsimulated/floor/sky::Initialize::log_mapping
-init_lines	code/game/turfs/unsimulated/sky.dm	@/turf/unsimulated/floor/sky::Initialize::if
-init_lines	code/game/turfs/unsimulated/sky.dm	@/turf/unsimulated/floor/sky::Initialize::glow
 init_lines	code/game/turfs/weird_turfs.dm	@/turf/simulated/floor/weird_things/dark::Initialize::if
 init_lines	code/game/turfs/weird_turfs.dm	@/turf/simulated/floor/weird_things/dark::Initialize::add_glow
 init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::if
@@ -1440,26 +1405,18 @@ init_lines	code/modules/client/preferences_save_service.dm	@/datum/system/charac
 init_lines	code/modules/client/preferences_save_service.dm	@/datum/system/character_setup::Initialize::new_player
 init_lines	code/modules/client/preferences_save_service.dm	@/datum/system/character_setup::Initialize::expr
 init_lines	code/modules/client/preferences_save_service.dm	@/datum/system/character_setup::Initialize::new_player.deferred_login
-init_lines	code/modules/clothing/accessories/accessory.dm	@/obj/item/clothing/accessory/collar/shock::Initialize::rel_set
-init_lines	code/modules/clothing/accessories/badges.dm	@/obj/item/clothing/accessory/dosimeter::Initialize::update_state
 init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::forced_material
 init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::if
 init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::default_material
 init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::material
 init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::if
 init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::return
-init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::name
-init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::desc
-init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::color
 init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::forced_material
 init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::if
 init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::default_material
 init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::material
 init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::if
 init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::return
-init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::name
-init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::desc
-init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::color
 init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage::Initialize::hold.max_storage_space
 init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage::Initialize::if
 init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage::Initialize::expr
@@ -1468,11 +1425,6 @@ init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/acce
 init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage/knifeharness::Initialize::hold.restrict_hold
 init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage/knifeharness::Initialize::expr
 init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage/knifeharness::Initialize::expr
-init_lines	code/modules/clothing/accessories/torch.dm	@/obj/item/clothing/accessory/badge/solgov/tags::Initialize::H
-init_lines	code/modules/clothing/accessories/torch.dm	@/obj/item/clothing/accessory/badge/solgov/tags::Initialize::H
-init_lines	code/modules/clothing/accessories/torch.dm	@/obj/item/clothing/accessory/badge/solgov/tags::Initialize::if
-init_lines	code/modules/clothing/accessories/torch.dm	@/obj/item/clothing/accessory/badge/solgov/tags::Initialize::name
-init_lines	code/modules/clothing/accessories/torch.dm	@/obj/item/clothing/accessory/badge/solgov/tags::Initialize::desc
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::if
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::for
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::tie
@@ -1485,12 +1437,6 @@ init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::In
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::icon
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::icon_state
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::dir
-init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/shoes::Initialize::inside_emotes
-init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/shoes::Initialize::span_red
-init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/shoes::Initialize::span_red
-init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/shoes::Initialize::span_red
-init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/shoes::Initialize::span_red
-init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/shoes::Initialize::expr
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/suit::Initialize::MakeHood
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/suit::Initialize::toggleicon
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::if
@@ -1512,16 +1458,10 @@ init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initiali
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::else
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::sensor_mode
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::log_runtime
-init_lines	code/modules/clothing/gloves/miscellaneous.dm	@/obj/item/clothing/gloves/ranger::Initialize::if
-init_lines	code/modules/clothing/gloves/miscellaneous.dm	@/obj/item/clothing/gloves/ranger::Initialize::name
 init_lines	code/modules/clothing/head/fishing.dm	@/obj/item/clothing/head/fishing::Initialize::roll_slogan
 init_lines	code/modules/clothing/head/fishing.dm	@/obj/item/clothing/head/fishing::Initialize::apply_look
 init_lines	code/modules/clothing/masks/gasmask.dm	@/obj/item/clothing/mask/gas::Initialize::if
 init_lines	code/modules/clothing/masks/gasmask.dm	@/obj/item/clothing/mask/gas::Initialize::flags_inv
-init_lines	code/modules/clothing/shoes/miscellaneous.dm	@/obj/item/clothing/shoes/boots/ranger::Initialize::if
-init_lines	code/modules/clothing/shoes/miscellaneous.dm	@/obj/item/clothing/shoes/boots/ranger::Initialize::name
-init_lines	code/modules/clothing/shoes/miscellaneous.dm	@/obj/item/clothing/shoes/mech_shoes::Initialize::make_squeaky
-init_lines	code/modules/clothing/shoes/miscellaneous.dm	@/obj/item/clothing/shoes/clown_shoes::Initialize::make_squeaky
 init_lines	code/modules/clothing/spacesuits/breaches.dm	@/obj/item/clothing/suit/space::Initialize::base_name
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::if
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::suit_overlay
@@ -1541,22 +1481,10 @@ init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movabl
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module::Initialize::return
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/activate::Initialize::if
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/activate::Initialize::return
-init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/activate::Initialize::name
-init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/activate::Initialize::if
-init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/activate::Initialize::name
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/deactivate::Initialize::if
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/deactivate::Initialize::return
-init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/deactivate::Initialize::name
-init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/deactivate::Initialize::if
-init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/deactivate::Initialize::name
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/engage::Initialize::if
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/engage::Initialize::return
-init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/engage::Initialize::name
-init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/engage::Initialize::if
-init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/engage::Initialize::name
-init_lines	code/modules/clothing/spacesuits/rig/modules/specific/crusher_gauntlets.dm	@/obj/item/rig_module/gauntlets::Initialize::rel_set
-init_lines	code/modules/clothing/spacesuits/rig/modules/specific/datajack.dm	@/obj/item/rig_module/datajack::Initialize::stored_research
-init_lines	code/modules/clothing/spacesuits/rig/modules/specific/self_destruct.dm	@/obj/item/rig_module/self_destruct::Initialize::smoke.attach
 init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::if
 init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::vision_index
 init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::mode_types
@@ -1565,24 +1493,8 @@ init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj
 init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::vision_datum
 init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::if
 init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::rel_set
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	@/obj/item/rig::Initialize::suit_state
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	@/obj/item/rig::Initialize::item_state
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	@/obj/item/rig::Initialize::if
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	@/obj/item/rig::Initialize::locked
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	@/obj/item/rig::Initialize::power_system.cooling_on
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	@/obj/item/rig::Initialize::power_system.max_cooling
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	@/obj/item/rig::Initialize::power_system.charge_consumption
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	@/obj/item/rig::Initialize::power_system.thermostat
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	@/obj/item/rig::Initialize::power_system.offline
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	@/obj/item/rig::Initialize::power_system.offline_slowdown
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	@/obj/item/rig::Initialize::power_system.offline_vision_restriction
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	@/obj/item/rig::Initialize::component_registry.initialize_pieces
-init_lines	code/modules/clothing/spacesuits/spacesuits.dm	@/obj/item/clothing/head/helmet/space::Initialize::if
-init_lines	code/modules/clothing/spacesuits/spacesuits.dm	@/obj/item/clothing/head/helmet/space::Initialize::LAZYSET
 init_lines	code/modules/clothing/spacesuits/spacesuits.dm	@/obj/item/clothing/suit/space::Initialize::if
 init_lines	code/modules/clothing/spacesuits/spacesuits.dm	@/obj/item/clothing/suit/space::Initialize::LAZYSET
-init_lines	code/modules/clothing/under/miscellaneous.dm	@/obj/item/clothing/under/color/ranger::Initialize::if
-init_lines	code/modules/clothing/under/miscellaneous.dm	@/obj/item/clothing/under/color/ranger::Initialize::name
 init_lines	code/modules/clothing/under/xenos/vox.dm	@/obj/item/clothing/accessory/storage/vox::Initialize::hold.max_storage_space
 init_lines	code/modules/clothing/under/xenos/vox.dm	@/obj/item/clothing/accessory/storage/vox::Initialize::hold.restrict_hold
 init_lines	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::Initialize::if
@@ -4050,11 +3962,8 @@ world_reads	code/game/turfs/flooring/seasonal.dm	switch(GLOB.world_time_season)
 world_reads	code/game/turfs/flooring/seasonal.dm	var/tree_type = pickweight(GLOB.grass_trees[trees])
 world_reads	code/game/turfs/flooring/seasonal.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])
 world_reads	code/game/turfs/simulated/fancy_shuttles.dm	GLOB.fancy_shuttles[fancy_shuttle_tag] = list(split_icon, x, y)
-world_reads	code/game/turfs/simulated/floor_types.dm	for(var/diag in GLOB.cornerdirs)
 world_reads	code/game/turfs/simulated/outdoors/grass.dm	var/grass_type = pickweight(GLOB.grass_grass[grass])
 world_reads	code/game/turfs/simulated/outdoors/grass.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])
-world_reads	code/game/turfs/space/transit.dm	toggle_transit(GLOB.reverse_dir[pushdirection])
-world_reads	code/game/turfs/unsimulated/sky.dm	if(locate_in_list(orange(src,1), /turf/simulated))
 world_reads	code/modules/admin/callproc/callproc.dm	if(GLOB.AdminProcCallHandler && GLOB.AdminProcCallHandler != src)
 world_reads	code/modules/admin/callproc/callproc.dm	GLOB.AdminProcCallHandler = src
 world_reads	code/modules/asset_cache/transports/asset_transport.dm	for(var/client/C in GLOB.clients)
