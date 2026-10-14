@@ -44,3 +44,9 @@ code/modules/unit_tests/dq_a4_initialization_tests.dm
 Selectors dq_a4_initialization/* (five tests): real painter instance matrices, actual department announcement/directories and qdel removal, actual bomb code and intact/distinct wire states, actual RCD turret reduced integrity, actual starts-on floodlight with declared cell.
 
 Root owns manifest. Include this file behind the unit-test guard, plus dq_look_pin and appropriate existing machine/door/atmos focused tests. No compile, world, analyzer, generator, baseline update or cargo run by this agent. git diff --check is clean.
+
+## Exact retained site identities
+
+[Committed residual inventory](codex_A4_residual_sites.txt) lists every retained source identity from this lane’s post-edit audit, including repeated normalized rows. The per-file reasons above classify those identities; this is a source audit snapshot, not a fresh analyzer verdict after rebasing. Master’s subsequently removed declarations and rewritten setters must remain authoritative, and the root verification will establish the final baseline counts.
+
+This documentation-only supplement does not change the source proved by stamped commit `b7a1fd8dd9`. No compile, test or generation was rerun for the supplement; documentation-only stamp carry is governed by `agent_workflow.md`.
