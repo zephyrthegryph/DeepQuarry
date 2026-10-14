@@ -10,9 +10,6 @@
 /// after_in_state(delay, parts...): an entry of a state capability. A timer the activation owns; it ends with the state.
 #define ENTRY_AFTER_IN_STATE "after_in_state"
 
-/// Set to TRUE (VV, or a test) to log mode changes, coalesce windows and standing cache invalidations with log_world().
-GLOBAL_VAR_INIT(forms_trace, FALSE)
-
 // ---- standings (code/engine/stats/standings.dm) ----
 
 /// A standing toward every mob a player controls.

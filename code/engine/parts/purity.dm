@@ -28,6 +28,11 @@ GLOBAL_VAR_INIT(op_pure_expected, FALSE)
 /proc/op_pure_end()
 	GLOB.op_pure_depth = max(0, GLOB.op_pure_depth - 1)
 
+/// OP_PURE_GUARD() as a proc, for a content file that must not read the engine's depth counters itself.
+/proc/op_pure_guard(what)
+	if(OP_PURE_ACTIVE)
+		op_pure_violation(what)
+
 /// Reports that `what` was done inside a condition, a requirement or an output.
 /proc/op_pure_violation(what)
 	var/where = GLOB.op_pure_depth > 0 ? "a condition or requirement" : "an output"
