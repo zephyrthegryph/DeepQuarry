@@ -36,6 +36,7 @@ die() { echo "dq_push_master: REFUSED: $*" >&2; exit 1; }
 
 # In the shared merge worktree only the batch that holds the merge lock (tools/dq_merge_worktree.sh) may push; a landed push (or a HEAD
 # already in origin/master) ends the batch and frees the lock.
+. "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
 merge_lock_require || exit 1
 release_batch() { if [ "$(_slots_norm "$(git rev-parse --show-toplevel)")" = "$(_slots_norm "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}")" ]; then merge_lock_release; fi; }

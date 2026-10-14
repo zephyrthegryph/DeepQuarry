@@ -76,6 +76,13 @@ check "the lock check passes for the holder" bash -c "cd '$T/mb' && . '$SL' && D
 check "the lock check ignores other worktrees" bash -c "cd '$T/main' && . '$SL' && DQ_MERGE_SESSION=B merge_lock_require"
 check "a second --lanes from the holder is refused (use --join)" bash -c "DQ_MERGE_SESSION=A bash '$MW' --lanes again 2>&1 | grep -q 'already hold'"
 
+check "merge_master refuses in the merge worktree without the lock" bash -c "cd '$T/mb' && DQ_MERGE_SESSION=B bash '$ROOT/tools/dq_merge_master.sh' 2>&1 | grep -q 'do not hold its lock'"
+echo staged >"$T/mb/staged.txt" && git -C "$T/mb" add staged.txt
+check "merge_master refuses to start on staged files, even for the holder" bash -c "cd '$T/mb' && DQ_MERGE_SESSION=A bash '$ROOT/tools/dq_merge_master.sh' 2>&1 | grep -q 'staged or modified tracked files'"
+check "the staged file was left alone" test "$(git -C "$T/mb" diff --cached --name-only)" = "staged.txt"
+git -C "$T/mb" rm -q --cached -f staged.txt && rm -f "$T/mb/staged.txt"
+check "no automatic stashing is configured for the tools" bash -c ". '$ROOT/tools/dq_git_safe.sh' && [ \"\$(git config --get merge.autoStash)\" = false ] && [ \"\$(git config --get rebase.autoStash)\" = false ]"
+
 # ---- 3. only the holder joins and releases ----
 check "a non-holder cannot --join" bash -c "! DQ_MERGE_SESSION=B bash '$MW' --join laneX >/dev/null 2>&1"
 check "the holder can --join" bash -c "DQ_MERGE_SESSION=A bash '$MW' --join laneA2 >/dev/null 2>&1"

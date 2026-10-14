@@ -171,6 +171,10 @@ It is held from that check until the push lands or the batch is abandoned, acros
   does not hold the lock. Other worktrees are unaffected.
 - **Status.** `bash tools/dq_machine_slots.sh status` lists `merge_base` with its holder, lanes, pid and heartbeat; `bash tools/dq_machine_slots.sh
   merge-lock status` prints just that line.
+- **No automatic stashing, no merge on a dirty tree.** The merge tools source `tools/dq_git_safe.sh`, which turns `merge.autoStash`, `rebase.autoStash` and
+  `pull.autoStash` off for every git command they run, whatever any config says (none is set in the repo, the merge worktree or the global config; the
+  first sighting came from a merge started while another batch had staged files), and `dq_merge_master.sh` passes `--no-autostash`, refuses to start in the
+  merge worktree without the lock, and refuses when the tree has staged or modified tracked files.
 - **Test.** `bash tools/ci/test_merge_lock.sh` runs two contenders against a scratch repo and worktree under `data/` (never merge-base) with its
   own slot directory: the second waits and names the holder, unlocked gates/push are refused, join/release are holder-only, a failed clear check
   frees the lock, a killed holder is reclaimed.
@@ -277,6 +281,10 @@ bun test tools/build/lib/machine_slots.test.ts     # the same protocol from the 
 ## 11. Lane-ready stamps: a lane proves itself once, a merge tests the combination
 
 When a lane finishes, from its worktree:
+
+**Split worlds record their own exit status.** `dq_focused_test.sh` once counted a fully green world as exit 127 (`wait` found no such child). Each world's subshell now writes its exit status to `data/focused-runs/split.<pid>.N.log.rc`; that record is the verdict, `wait` only reaps, a disagreement is printed, and a world with no record and no child counts as failed (125). An unclean run keeps its `split.<pid>.N.log` files and records (pruned after two days). The root cause of the lost child was not reproduced in isolation. `bash tools/ci/test_focused_world_status.sh` covers the new logic.
+
+**Stamps and docs.** `tools/dq_lane_check.sh` ignores master changes under `html/changelogs/`, `doc/`, `data/` and root `*.md` unless the file is listed in `tools/ci/lane_ready_doc_reads.txt` (docs a tool reads); the verdict names the files that decided it.
 
 **Test names are checked first.** `dq_lane_ready.sh --tests` and `dq_focused_test.sh` check every name and glob against the `/datum/unit_test` types the build compiles before anything is merged, generated or compiled, report all the misses at once, and print close matches (a missing `dq_eg2/` prefix, a one-letter typo, a glob that matches nothing). `bash tools/dq_focused_test.sh --list '*word*'` searches the declared types without compiling.
 

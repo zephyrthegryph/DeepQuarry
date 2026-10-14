@@ -65,6 +65,7 @@ for arg in "$@"; do
 done
 
 [ -z "$mode_next" ] || die "--lanes / --join need a value (the lane branch names, one quoted string)"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
 # shellcheck source=dq_machine_slots.sh
 . "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
 case "$mode" in
