@@ -21,3 +21,27 @@
 /// Preserve the existing public collection API: callers receive numeric IDs.
 /proc/machines_power_grids()
 	return SSmachines.power_grid_registry().ids()
+
+/datum/system/machines/proc/material_power_overlay(id)
+	return power_material_overlays[id]
+
+/datum/system/machines/proc/register_material_cable(obj/structure/cable/cable)
+	rel_add(src, nameof(power_material_cables), cable)
+
+/datum/system/machines/proc/unregister_material_cable(obj/structure/cable/cable)
+	rel_remove(src, nameof(power_material_cables), cable)
+
+/datum/system/machines/proc/queue_area_power_load(area/A)
+	power_dirty_areas[A] = TRUE
+
+/datum/system/machines/proc/next_detached_grid_id()
+	return --power_test_grid_serial
+
+/datum/system/machines/proc/note_dead_gas_watch()
+	gas_dead_last++
+
+/datum/system/machines/proc/kernel_cost()
+	return kernel().work_cost_of(type)
+
+/datum/system/machines/proc/scheduling_snapshot()
+	return list("fire_cost" = fire_cost, "times_fired" = times_fired)

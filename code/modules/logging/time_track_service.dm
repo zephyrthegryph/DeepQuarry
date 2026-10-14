@@ -154,6 +154,8 @@ SYSTEM_DEF(time_track)
 		send_maps_values += packet["value"]
 		send_maps_values += packet["calls"]
 
+	var/list/air_stats = SSair.performance_snapshot()
+	var/list/machine_stats = SSmachines.scheduling_snapshot()
 	log_perf(
 		list(
 			world.time,
@@ -164,30 +166,30 @@ SYSTEM_DEF(time_track)
 			time_dilation_avg_slow,
 			MAPTICK_LAST_INTERNAL_TICK_USAGE,
 			0, // SStimer timers: gone (after() timers live on their owners)
-			SSair.cost_turfs,
-			SSair.cost_gas_events,
-			SSair.cost_highpressure,
-			SSair.cost_superconductivity,
-			SSair.cost_pipenets,
-			SSair.cost_rebuilds,
-			SSair.gas_frames,
-			SSair.gas_events_last,
-			SSair.gas_reactions_last,
-			SSair.gas_visuals_last,
-			SSair.gas_pressure_last,
+			air_stats["cost_turfs"],
+			air_stats["cost_gas_events"],
+			air_stats["cost_highpressure"],
+			air_stats["cost_superconductivity"],
+			air_stats["cost_pipenets"],
+			air_stats["cost_rebuilds"],
+			air_stats["gas_frames"],
+			air_stats["gas_events_last"],
+			air_stats["gas_reactions_last"],
+			air_stats["gas_visuals_last"],
+			air_stats["gas_pressure_last"],
 			REGISTRY_COUNT(REGISTRY_HOTSPOTS),
-			length(SSair.networks),
-			length(SSair.high_pressure_delta),
-			SSair.fire_cost,
-			SSair.ticks,
-			SSair.tick_overrun,
+			air_stats["networks"],
+			air_stats["high_pressure_delta"],
+			air_stats["fire_cost"],
+			air_stats["ticks"],
+			air_stats["tick_overrun"],
 			machines_cost_machinery(),
 			machines_cost_powernets(),
 			0, // power objects: gone (powersinks drain on their own periodic step)
 			0, // parked machines: none (a machine's work is a stat-gated every())
 			length(machines_power_grids()),
-			SSmachines.fire_cost,
-			SSmachines.times_fired,
+			machine_stats["fire_cost"],
+			machine_stats["times_fired"],
 			0, // tick overrun: the machine service runs inside SSbehaviours' budget
 			machines_gas_dirty_last(),
 			machines_gas_woken_last(),

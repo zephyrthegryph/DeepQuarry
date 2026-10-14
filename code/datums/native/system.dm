@@ -131,7 +131,7 @@
 		var/datum/native_watch/gas/G = target
 		if(G.handle != a || QDELETED(G))
 			// ALLOW(system_boundary): the native system counts dead gas handles on the machine service that owns the gas world
-			SSmachines.gas_dead_last++
+			SSmachines.note_dead_gas_watch()
 			return
 		if(!gas_changes)
 			gas_changes = list()

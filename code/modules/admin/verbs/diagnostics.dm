@@ -4,7 +4,7 @@
 // turfs converging on equilibrium), hotspot count from REGISTRY_HOTSPOTS, and
 // the high-pressure delta queue (spacewind).
 ADMIN_VERB(air_report, R_DEBUG, "Show Air Report", "Displays the current atmos stats.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	if(!SSair.initialized)
+	if(!SSair.is_initialized())
 		open_request(user.mob, /datum/prompt/choice/air_report_notification, null, answerer = user.mob, question = "SSair not ready.", title = "Air Report", choices = list("Ok"))
 		return
 
@@ -15,19 +15,20 @@ ADMIN_VERB(air_report, R_DEBUG, "Show Air Report", "Displays the current atmos s
 		if(!QDELETED(H))
 			hotspots++
 
+	var/list/air_stats = SSair.performance_snapshot()
 	var/output = {"<B>AIR SYSTEMS REPORT</B><HR>
 <B>General Processing Data</B><BR>
-	Cycle: [SSair.times_fired]<BR>
-	Turfs processed (last tick): [SSair.num_group_turfs_processed]<BR>
-	Equalized (last tick): [SSair.num_equalize_processed]<BR>
-	Low/High pressure turfs: [SSair.low_pressure_turfs]/[SSair.high_pressure_turfs]<BR>
+	Cycle: [SSair.completed_steps()]<BR>
+	Turfs processed (last tick): [air_stats["num_group_turfs_processed"]]<BR>
+	Equalized (last tick): [air_stats["num_equalize_processed"]]<BR>
+	Low/High pressure turfs: [air_stats["low_pressure_turfs"]]/[air_stats["high_pressure_turfs"]]<BR>
 <BR>
 <B>Special Processing Data</B><BR>
 	Hotspots (active fires): [hotspots]<BR>
-	High-pressure delta queue: [length(SSair.high_pressure_delta)]<BR>
+	High-pressure delta queue: [air_stats["high_pressure_delta"]]<BR>
 <BR>
 <B>Pipenets</B><BR>
-	Networks: [length(SSair.networks)]<BR>
+	Networks: [air_stats["networks"]]<BR>
 "}
 
 	// structured TGUI AdminReport.

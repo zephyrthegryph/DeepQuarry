@@ -54,11 +54,10 @@
 	..();\
 	if(!(flags & ATOM_INITIALIZED)) {\
 		static_entries_setup_early();\
-		var/previous_initialized_value = SSatoms.initialized;\
-		SSatoms.initialized = INITIALIZATION_INNEW_MAPLOAD;\
+		var/previous_initialized_value = SSatoms.begin_immediate_initialization();\
 		args[1] = TRUE;\
 		SSatoms.InitAtom(src, FALSE, args);\
-		SSatoms.initialized = previous_initialized_value;\
+		SSatoms.end_immediate_initialization(previous_initialized_value);\
 	}\
 }
 

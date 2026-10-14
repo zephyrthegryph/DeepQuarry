@@ -475,8 +475,8 @@ ADMIN_VERB(object_talk, R_FUN, "oSay", "Display a message to everyone who can he
 	feedback_add_details("admin_verb","OT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(kill_air, R_SERVER, "Kill Air", "Toggle Air Processing.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
-	SSair.can_fire = !SSair.can_fire
-	to_chat(user, span_filter_system(span_bold("[SSair.can_fire ? "En" : "Dis"]abled air processing.")))
+	SSair.toggle_processing()
+	to_chat(user, span_filter_system(span_bold("[SSair.processing_enabled() ? "En" : "Dis"]abled air processing.")))
 	feedback_add_details("admin_verb","KA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	log_and_message_admins("used 'kill air'.", user)
 

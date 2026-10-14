@@ -20,7 +20,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 
 /// TRUE while a map load (or the boot map's initialization) is running.
 /proc/map_loading()
-	return SSatoms.initialize_depth || SSatoms.atom_initialized != INITIALIZATION_INNEW_REGULAR
+	return SSatoms.map_load_is_active()
 
 /// Where a spawner's product goes: into what holds the spawner (a supply crate), else into the
 /// closet on its tile, else onto the tile.
@@ -86,20 +86,18 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 /// controller elsewhere in the area): runs `proc(loc, path, varedits)` after the load's atoms have
 /// initialized, or now when no load is running.
 /proc/map_resolve_later(proc_path, atom/loc, path, list/varedits)
-	if(SSatoms.atom_initialized == INITIALIZATION_INNEW_REGULAR && !SSatoms.initialize_depth)
-		call(proc_path)(loc, path, varedits)
-		return
-	LAZYADD(SSatoms.deferred_resolvers, list(list(proc_path, entity_handle(loc), path, varedits)))
+	SSatoms.defer_map_resolver(proc_path, loc, path, varedits)
+
 
 /// Runs the deferred resolvers and clears the load's scratch (the outermost InitializeAtoms(), once
 /// its atoms are created).
 /proc/map_resolve_flush_deferred()
-	while(length(SSatoms.deferred_resolvers))
-		var/list/rows = SSatoms.deferred_resolvers
-		SSatoms.deferred_resolvers = null
+	var/list/rows = SSatoms.take_resolver_batch()
+	while(length(rows))
 		for(var/list/row as anything in rows)
-			var/atom/where = resolve_handle(row[2]) // a turf: null only when its z-level was recycled since
+			var/atom/where = resolve_handle(row[2]) // a turf: null only if its z-level was recycled
 			if(!where)
 				continue
 			call(row[1])(where, row[3], row[4])
+		rows = SSatoms.take_resolver_batch()
 	GLOB.map_resolve_scratch.Cut()

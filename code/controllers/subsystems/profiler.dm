@@ -82,6 +82,7 @@ SYSTEM_DEF(profiler)
 		if(graph)
 			material_graphs += list(list("cables" = length(overlay.cables), "vertices" = length(graph.vertices), "core" = length(graph.core_vertices), "edges" = length(graph.edges), "iterations" = graph.iterations, "solve_ms" = graph.solve_ms, "deposit_ms" = graph.deposit_ms, "resistance_ms" = graph.resistance_ms))
 	subsystems["machines"] += list("material_graphs" = material_graphs)
+	var/list/air_stats = SSair.performance_snapshot()
 	subsystems["atmos"] += list(
 		"dm_stage_average_ms" = list(
 			"high_pressure" = air_profile_cost_highpressure(),
@@ -102,12 +103,12 @@ SYSTEM_DEF(profiler)
 		),
 		"queues" = list(
 			"hotspots" = REGISTRY_COUNT(REGISTRY_HOTSPOTS),
-			"pressure_deltas" = length(SSair.high_pressure_delta),
-			"pipenets" = length(SSair.networks),
+			"pressure_deltas" = air_stats["high_pressure_delta"],
+			"pipenets" = air_stats["networks"],
 			"pipe_devices" = air_profile_rust_pipe_device_count(),
 			"pipe_devices_reported" = native_system().pipe_devices_last,
-			"rebuild" = length(SSair.rebuild_queue),
-			"expansion" = length(SSair.expansion_queue),
+			"rebuild" = air_stats["rebuild_queue"],
+			"expansion" = air_stats["expansion_queue"],
 		),
 	)
 	subsystems["machines"] += list(

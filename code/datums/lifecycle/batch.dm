@@ -162,11 +162,11 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 	if(batch.pipe_commit_pending || length(batch.remove_pipe_ports))
 		batch.pipe_commit_pending = FALSE
 		if(SSair)
-			SSair.rust_pipe_topology_dirty = TRUE
+			SSair.set_pipe_topology_dirty(TRUE)
 			// An explosion's bulk resolve commits once itself when it ends.
 			if(!SSexplosions.is_bulk_resolving())
 				// Directly: rust_commit_pending_pipenets() would defer to this batch again.
-				SSair.rust_pipe_topology_dirty = FALSE
+				SSair.set_pipe_topology_dirty(FALSE)
 				SSair.rust_apply_pipe_commit()
 	if(length(batch.unbind_power_nodes))
 		vg_power_unbind_node_list(batch.unbind_power_nodes)

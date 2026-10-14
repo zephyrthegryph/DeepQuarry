@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Encapsulate core system queues and move owner methods behind their APIs."

@@ -13,11 +13,11 @@
 #endif
 	src.references_to_clear = references_to_clear
 	//this keeps the garbage collector from failing to collect objects being searched for in here
-	SSgarbage.can_fire = FALSE
+	SSgarbage.set_collection_enabled(FALSE)
 
 	_search_references(src)
 	//restart the garbage collector
-	SSgarbage.can_fire = TRUE
+	SSgarbage.set_collection_enabled(TRUE)
 #ifdef UNIT_TESTS
 	GLOB.dq_refsearch_spent_ds += REALTIMEOFDAY - search_started
 #endif
@@ -156,7 +156,7 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 					/*is_special_list = */ is_atom && (varname == "contents" || varname == "vis_contents" || varname == "locs"))
 			else if(variable == src)
 				#ifdef REFERENCE_TRACKING_DEBUG
-				if(SSgarbage.should_save_refs)
+				if(SSgarbage.reference_capture_enabled())
 					if(!found_refs)
 						found_refs = list()
 					found_refs[varname] = TRUE
@@ -182,7 +182,7 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 			//Check normal entrys
 			else if(element_in_list == src)
 				#ifdef REFERENCE_TRACKING_DEBUG
-				if(SSgarbage.should_save_refs)
+				if(SSgarbage.reference_capture_enabled())
 					if(!found_refs)
 						found_refs = list()
 					found_refs[potential_cache] = TRUE
@@ -196,12 +196,7 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 				// This is dumb as hell I'm sorry
 				// I don't want the garbage subsystem to count as a ref for the purposes of this number
 				// If we find all other refs before it I want to early exit, and if we don't I want to keep searching past it
-				var/ignore_ref = FALSE
-				var/list/queues = SSgarbage.queues
-				for(var/list/queue in queues)
-					if(potential_cache in queue)
-						ignore_ref = TRUE
-						break
+				var/ignore_ref = SSgarbage.queue_contains_reference(potential_cache)
 				if(ignore_ref)
 					log_reftracker("[container_name] does not count as a ref for our count")
 				else
@@ -222,7 +217,7 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 					//Check assoc entry
 					else if(assoc_val == src)
 						#ifdef REFERENCE_TRACKING_DEBUG
-						if(SSgarbage.should_save_refs)
+						if(SSgarbage.reference_capture_enabled())
 							if(!found_refs)
 								found_refs = list()
 							found_refs[potential_cache] = TRUE
