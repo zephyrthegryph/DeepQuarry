@@ -315,6 +315,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dmb-equiv"
+version = "0.1.0"
+dependencies = [
+ "byond-dmb",
+ "serde_json",
+ "xxhash-rust",
+]
+
+[[package]]
 name = "dmb-opendream"
 version = "0.1.0"
 dependencies = [
@@ -345,7 +354,7 @@ dependencies = [
  "dm-syntax",
  "dm-tree",
  "dm-wire",
- "dmb-opendream",
+ "dmb-equiv",
  "fs2",
  "mimalloc",
  "rayon",

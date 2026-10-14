@@ -104,6 +104,18 @@ fn published(
     (pair, dmb, rsc)
 }
 
+/// Retained output must be semantically equivalent to a fresh compile
+/// (dmb-equiv); byte identity is the fast path, not the requirement.
+fn assert_equivalent_outputs(
+    retained: &(crate::publish::OutputPair, Vec<u8>, Vec<u8>),
+    fresh: &(crate::publish::OutputPair, Vec<u8>, Vec<u8>),
+    context: &str,
+) {
+    if retained.0 != fresh.0 {
+        dmb_equiv::assert_equivalent_bytes(&retained.1, Some(&retained.2), &fresh.1, Some(&fresh.2), context);
+    }
+}
+
 fn compare_revision(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::OutputPair> {
     let mut pairs = Vec::with_capacity(6);
     // Exactly two requests can be active, including their independent fresh
@@ -158,20 +170,7 @@ fn compare_revision(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::
                             crate::request_runner::run_build(fresh).unwrap(),
                             &fresh_destination,
                         );
-                        // Stable incremental numbering may differ from a fresh build
-                        // only when the programs are semantically equivalent
-                        // (doc/structural_change_set.md, addendum).
-                        if a.0 != b.0 {
-                            assert_eq!(a.2, b.2, "root {index} retained resources differ from fresh");
-                            let expected = byond_dmb::dmb::Dmb::from_bytes(&b.1).unwrap();
-                            let actual = byond_dmb::dmb::Dmb::from_bytes(&a.1).unwrap();
-                            let differences =
-                                dmb_opendream::semantic_equal::semantic_differences(&expected, &actual, 20);
-                            assert!(
-                                differences.is_empty(),
-                                "root {index} retained output is not equivalent to fresh: {differences:#?}"
-                            );
-                        }
+                        assert_equivalent_outputs(&a, &b, &format!("root {index} retained vs fresh"));
                         a.0
                     })
                 })
