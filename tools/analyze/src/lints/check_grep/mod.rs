@@ -345,12 +345,12 @@ impl Lint for CheckGrep {
                         c.scan(cx, f, &mut s);
                     }
                     crate::dm::sys::replay_recorded(s.allow_used);
-                    s.sites.into_iter().map(|x| (x.rule, x.line, x.msg, x.key)).collect::<Vec<(String, u32, String, String)>>()
+                    s.sites.into_iter().map(|x| (x.rule, x.line, x.msg, x.key, x.ident)).collect::<Vec<(String, u32, String, String, String)>>()
                 })
             });
             for (f, sites) in files.iter().zip(found) {
-                for (rule, line, msg, key) in sites {
-                    out.sites.push(Site { rule, rel: f.rel.clone(), line, msg, key });
+                for (rule, line, msg, key, ident) in sites {
+                    out.sites.push(Site { rule, rel: f.rel.clone(), line, msg, key, ident });
                 }
             }
         }
@@ -467,7 +467,7 @@ impl Lint for CheckGrep {
         // the old `a || b || c`
         let sites: Vec<Site> = findings
             .into_iter()
-            .map(|f| Site { rule: f.rule, rel: f.rel, line: f.line, msg: String::new(), key: String::new() })
+            .map(|f| Site { rule: f.rule, rel: f.rel, line: f.line, msg: String::new(), key: String::new(), ident: String::new() })
             .collect();
         let sites = first_hit_only(&self.groups, &sites);
         let mut out: Vec<Finding> = Vec::new();
@@ -701,7 +701,7 @@ TRACKED(/obj/item/flagged, slot_flags)
         let mut groups = BTreeMap::new();
         groups.insert("apc", "g");
         groups.insert("apc__2", "g");
-        let site = |rule: &str| Site { rule: rule.into(), rel: "maps/a.dmm".into(), line: 1, msg: String::new(), key: String::new() };
+        let site = |rule: &str| Site { rule: rule.into(), rel: "maps/a.dmm".into(), line: 1, msg: String::new(), key: String::new(), ident: String::new() };
         let sites = vec![site("apc__2"), site("other")];
         assert_eq!(first_hit_only(&groups, &sites).len(), 2);
         let sites = vec![site("apc__2"), site("apc"), site("other")];
@@ -799,6 +799,7 @@ TRACKED(/obj/item/flagged, slot_flags)
             line,
             msg: "x".into(),
             key: String::new(),
+            ident: String::new(),
         };
         let mut text = String::new();
         assert!(!l.finish(&cx, &Run { sites: vec![site(1)], notes: vec![] }, &mut text), "{}", text);
