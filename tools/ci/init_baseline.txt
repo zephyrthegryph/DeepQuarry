@@ -1283,8 +1283,6 @@ init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/ou
 init_lines	code/game/turfs/simulated/water.dm	@/turf/simulated/floor/water::Initialize::handle_fish
 init_lines	code/game/turfs/space/space.dm	@/turf/space::Initialize::space_appearance
 init_lines	code/game/turfs/turf.dm	@/turf::Initialize::turf_instance_setup
-init_lines	code/game/turfs/weird_turfs.dm	@/turf/simulated/floor/weird_things/dark::Initialize::if
-init_lines	code/game/turfs/weird_turfs.dm	@/turf/simulated/floor/weird_things/dark::Initialize::add_glow
 init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::if
 init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::return
 init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::GLOB.AdminProcCallHandler
@@ -1458,8 +1456,6 @@ init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initiali
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::else
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::sensor_mode
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::log_runtime
-init_lines	code/modules/clothing/head/fishing.dm	@/obj/item/clothing/head/fishing::Initialize::roll_slogan
-init_lines	code/modules/clothing/head/fishing.dm	@/obj/item/clothing/head/fishing::Initialize::apply_look
 init_lines	code/modules/clothing/masks/gasmask.dm	@/obj/item/clothing/mask/gas::Initialize::if
 init_lines	code/modules/clothing/masks/gasmask.dm	@/obj/item/clothing/mask/gas::Initialize::flags_inv
 init_lines	code/modules/clothing/spacesuits/breaches.dm	@/obj/item/clothing/suit/space::Initialize::base_name
