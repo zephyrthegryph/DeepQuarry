@@ -186,8 +186,8 @@ CAPABILITIES(/datum/plane_holder)
  * This is then used to alpha mask the lighting plane.
  */
 
-/atom/movable/screen/plane_master/lighting/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare lighting filters, after the complete parent chain.
+/atom/movable/screen/plane_master/lighting/proc/prepare_lighting_filters()
 	add_filter("emissives", 1, alpha_mask_filter(render_source = EMISSIVE_RENDER_TARGET, flags = MASK_INVERSE))
 	add_filter("object_lighting", 2, alpha_mask_filter(render_source = O_LIGHTING_VISUAL_RENDER_TARGET, flags = MASK_INVERSE))
 
@@ -203,8 +203,8 @@ CAPABILITIES(/datum/plane_holder)
 	render_target = EMISSIVE_RENDER_TARGET
 	alpha = 255
 
-/atom/movable/screen/plane_master/emissive/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare emissive filter, after the complete parent chain.
+/atom/movable/screen/plane_master/emissive/proc/prepare_emissive_filter()
 	add_filter("em_block_masking", 1, color_matrix_filter(GLOB.em_mask_matrix))
 
 /////////////////
@@ -214,8 +214,8 @@ CAPABILITIES(/datum/plane_holder)
 	blend_mode = BLEND_MULTIPLY
 	alpha = 255
 
-/atom/movable/screen/plane_master/openspace/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare openspace filters, after the complete parent chain.
+/atom/movable/screen/plane_master/openspace/proc/prepare_openspace_filters()
 	//add_filter("multiz_lighting_mask", 1, alpha_mask_filter(render_source = O_LIGHTING_VISUAL_RENDER_TARGET, flags = MASK_INVERSE)) // Makes fake planet lights not work right
 	add_filter("first_stage_openspace", 2, drop_shadow_filter(color = "#04080FAA", size = -10))
 	add_filter("second_stage_openspace", 3, drop_shadow_filter(color = "#04080FAA", size = -15))
@@ -275,3 +275,12 @@ CAPABILITIES(/atom/movable/screen/plane_master/augmented)
 			my_mob.client.images -= GLOB.entopic_images
 // /mob/Destroy() cleanup of REGISTRY_MEMBERS(REGISTRY_ENTOPIC_USERS) folded into the canonical /mob/Destroy() in mob.dm
 
+
+CAPABILITIES(/atom/movable/screen/plane_master/lighting)
+	setup(PROC_REF(prepare_lighting_filters))
+
+CAPABILITIES(/atom/movable/screen/plane_master/emissive)
+	setup(PROC_REF(prepare_emissive_filter))
+
+CAPABILITIES(/atom/movable/screen/plane_master/openspace)
+	setup(PROC_REF(prepare_openspace_filters))

@@ -8,6 +8,9 @@
 	acceleration = 0
 	owner_follows_eye = 1
 
-/mob/observer/eye/maskEye/Initialize(mapload)
-	. = ..()
+/// Declared setup: join cult visualnet, after the complete parent chain.
+/mob/observer/eye/maskEye/proc/join_cult_visualnet()
 	rel_set(src, nameof(visualnet), GLOB.cultnet)
+
+CAPABILITIES(/mob/observer/eye/maskEye)
+	setup(PROC_REF(join_cult_visualnet))

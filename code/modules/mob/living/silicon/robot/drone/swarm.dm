@@ -50,13 +50,14 @@
 
 // It speaks the swarm's language.
 CAPABILITIES(/mob/living/silicon/robot/drone/swarm)
+	setup(PROC_REF(prepare_swarm_spells))
 	configure(mob_movement(softfall = TRUE))
 	configure(mob_kind(can_be_antagged = TRUE))
 	configure(mob_movement(pull_size = ITEMSIZE_NO_CONTAINER, pull_mobs = MOB_PULL_SMALLER, always_swap = 1))
 	knows(LANGUAGE_SWARMBOT)
 
-/mob/living/silicon/robot/drone/swarm/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare swarm spells, after the complete parent chain.
+/mob/living/silicon/robot/drone/swarm/proc/prepare_swarm_spells()
 	for(var/spell in spell_setup)
 		src.add_spell(new spell, "nano_spell_ready", /atom/movable/screen/movable/spell_master/swarm)
 

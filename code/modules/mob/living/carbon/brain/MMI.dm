@@ -217,12 +217,13 @@ CAPABILITIES(/obj/item/mmi)
 	var/is_digital_robot = FALSE
 
 CAPABILITIES(/obj/item/mmi/digital)
+	setup(PROC_REF(boot_synthetic_view))
 	owns_one(nameof(Q), /datum/ghost_query)
 	op("pass", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction pass"), passes())
 	op("digital_mmi_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Boot"), then(PROC_REF(digital_mmi_self)))
 
-/obj/item/mmi/digital/Initialize(mapload)
-	. = ..()
+/// Declared setup: boot synthetic view, after the complete parent chain.
+/obj/item/mmi/digital/proc/boot_synthetic_view()
 	// A synthetic mind host: an empty view waits for a mind, with no tissue.
 	var/datum/mind_host/host = get_mind_host(src)
 	var/mob/living/carbon/brain/view = host.receive_mind(null, "[src] booted")
@@ -328,9 +329,8 @@ CAPABILITIES(/obj/item/mmi/digital)
 	ghost_query_type = /datum/ghost_query/drone_brain
 	is_digital_robot = TRUE
 
-// ALLOW(init/INSTANCE_STATE): rolls the designation of the mind it boots
-/obj/item/mmi/digital/robot/Initialize(mapload)
-	. = ..()
+/// Declared setup: name robot view, after the complete parent chain.
+/obj/item/mmi/digital/robot/proc/name_robot_view()
 	var/mob/living/carbon/brain/view = get_occupant()
 	view.set_real_name("[pick(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD",))]-[rand(1000, 9999)]")
 	view.name = view.real_name
@@ -373,9 +373,8 @@ CAPABILITIES(/obj/item/mmi/digital)
 	..()
 	set_icon_state("posibrain")
 
-// ALLOW(init/INSTANCE_STATE): rolls the designation of the mind it boots
-/obj/item/mmi/digital/posibrain/Initialize(mapload)
-	. = ..()
+/// Declared setup: name posibrain view, after the complete parent chain.
+/obj/item/mmi/digital/posibrain/proc/name_posibrain_view()
 	var/mob/living/carbon/brain/view = get_occupant()
 	view.set_real_name("[pick(list("PBU","HIU","SINA","ARMA","OSI"))]-[rand(100, 999)]")
 	view.name = view.real_name
@@ -400,3 +399,9 @@ CAPABILITIES(/obj/item/mmi/digital)
 /obj/item/mmi/ownership()
 	. = ..()
 	. += owns(nameof(brainobj), policy = OWN_CONTAINED)
+
+CAPABILITIES(/obj/item/mmi/digital/robot)
+	setup(PROC_REF(name_robot_view))
+
+CAPABILITIES(/obj/item/mmi/digital/posibrain)
+	setup(PROC_REF(name_posibrain_view))

@@ -7,11 +7,12 @@
 	var/mob/observer/eye/aiEye/pic_in_pic/aiEye
 
 CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
+	setup(PROC_REF(link_camera_screen))
 	ref_one(nameof(ai), /mob/living/silicon/ai)
 	owns_one(nameof(aiEye), /mob/observer/eye/aiEye/pic_in_pic, starts = /mob/observer/eye/aiEye/pic_in_pic, starts_args = NO_LOC)
 
-/atom/movable/screen/movable/pic_in_pic/ai/Initialize(mapload)
-	. = ..()
+/// Declared setup: link camera screen, after the complete parent chain.
+/atom/movable/screen/movable/pic_in_pic/ai/proc/link_camera_screen()
 	rel_set(aiEye, nameof(aiEye.screen), src)
 
 // No ownership cycle: a pic_in_pic window is never one of its own eye's hud elements.
@@ -124,8 +125,8 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 	name = "ai camera room"
 	icon_state = "x"
 
-/obj/effect/landmark/ai_multicam_room/Initialize(mapload)
-	. = ..()
+/// Declared setup: replace camera room, after the complete parent chain.
+/obj/effect/landmark/ai_multicam_room/proc/replace_camera_room()
 	spent(GLOB.ai_camera_room_landmark)
 	GLOB.ai_camera_room_landmark = src
 
@@ -276,3 +277,6 @@ CAPABILITIES(/mob/observer/eye/aiEye/pic_in_pic)
 		eyeobj.setLoc(get_turf(P.center()))
 		P.set_view_center(eyeobj)
 		rel_set(src, nameof(master_multicam), P)
+
+CAPABILITIES(/obj/effect/landmark/ai_multicam_room)
+	setup(PROC_REF(replace_camera_room))

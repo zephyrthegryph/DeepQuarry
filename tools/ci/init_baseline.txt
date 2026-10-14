@@ -2102,34 +2102,7 @@ init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initi
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::animate
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::animate
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::rel_set
-init_lines	code/modules/mob/freelook/ai/eye.dm	@/mob/observer/eye/aiEye::Initialize::rel_set
-init_lines	code/modules/mob/freelook/mask/eye.dm	@/mob/observer/eye/maskEye::Initialize::rel_set
 init_lines	code/modules/mob/freelook/update_triggers.dm	@/turf/simulated::Initialize::updateVisibility
-init_lines	code/modules/mob/holder.dm	@/obj/item/holder/bird::Initialize::expr
-init_lines	code/modules/mob/living/bot/mulebot.dm	@/mob/living/bot/mulebot::Initialize::T
-init_lines	code/modules/mob/living/bot/mulebot.dm	@/mob/living/bot/mulebot::Initialize::N
-init_lines	code/modules/mob/living/bot/mulebot.dm	@/mob/living/bot/mulebot::Initialize::if
-init_lines	code/modules/mob/living/bot/mulebot.dm	@/mob/living/bot/mulebot::Initialize::rel_set
-init_lines	code/modules/mob/living/bot/mulebot.dm	@/mob/living/bot/mulebot::Initialize::homeName
-init_lines	code/modules/mob/living/bot/mulebot.dm	@/mob/living/bot/mulebot::Initialize::else
-init_lines	code/modules/mob/living/bot/mulebot.dm	@/mob/living/bot/mulebot::Initialize::homeName
-init_lines	code/modules/mob/living/bot/mulebot.dm	@/mob/living/bot/mulebot::Initialize::suffix
-init_lines	code/modules/mob/living/bot/mulebot.dm	@/mob/living/bot/mulebot::Initialize::name
-init_lines	code/modules/mob/living/carbon/alien/diona/diona.dm	@/mob/living/carbon/alien/diona::Initialize::proto_set
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital::Initialize::host
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital::Initialize::view
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital::Initialize::view.add_language
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital::Initialize::view.add_language
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital::Initialize::view.status_set
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital/robot::Initialize::view
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital/robot::Initialize::view.set_real_name
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital/robot::Initialize::view.name
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital/robot::Initialize::view.identity
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital/robot::Initialize::name
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital/posibrain::Initialize::view
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital/posibrain::Initialize::view.set_real_name
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital/posibrain::Initialize::view.name
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	@/obj/item/mmi/digital/posibrain::Initialize::view.identity
 init_lines	code/modules/mob/living/carbon/carbon.dm	@/mob/living/carbon::Initialize::rel_set
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	@/mob/living/carbon/human/ai_controlled::Initialize::if
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	@/mob/living/carbon/human/ai_controlled::Initialize::gender
@@ -2152,12 +2125,8 @@ init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/hum
 init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::add_alt_appearance
 init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::if
 init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::species.produceCopy
-init_lines	code/modules/mob/living/carbon/human/human_species.dm	@/mob/living/carbon/human/dummy/mannequin::Initialize::delete_inventory
 init_lines	code/modules/mob/living/carbon/human/human_species.dm	@/mob/living/carbon/human/dummy/mannequin/autoequip::Initialize::icon
 init_lines	code/modules/mob/living/carbon/human/human_species.dm	@/mob/living/carbon/human/dummy/mannequin/autoequip::Initialize::icon_state
-init_lines	code/modules/mob/living/carbon/human/human_species.dm	@/mob/living/carbon/human/dummy/mannequin/autoequip::Initialize::dress_up
-init_lines	code/modules/mob/living/carbon/human/human_species.dm	@/mob/living/carbon/human/dummy/mannequin/autoequip::Initialize::if
-init_lines	code/modules/mob/living/carbon/human/human_species.dm	@/mob/living/carbon/human/dummy/mannequin/autoequip::Initialize::turntable
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	@/obj/effect/abstract/dark_maw::Initialize::user
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	@/obj/effect/abstract/dark_maw::Initialize::if
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	@/obj/effect/abstract/dark_maw::Initialize::return
@@ -2202,9 +2171,6 @@ init_lines	code/modules/mob/living/silicon/ai/ai.dm	@/mob/living/silicon/ai::Ini
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	@/mob/living/silicon/ai::Initialize::host
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	@/mob/living/silicon/ai::Initialize::expr
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	@/mob/living/silicon/ai::Initialize::on_mob_init
-init_lines	code/modules/mob/living/silicon/ai/multicam.dm	@/atom/movable/screen/movable/pic_in_pic/ai::Initialize::rel_set
-init_lines	code/modules/mob/living/silicon/ai/multicam.dm	@/obj/effect/landmark/ai_multicam_room::Initialize::spent
-init_lines	code/modules/mob/living/silicon/ai/multicam.dm	@/obj/effect/landmark/ai_multicam_room::Initialize::GLOB.ai_camera_room_landmark
 init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::if
 init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::rel_set
 init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::else
@@ -2230,12 +2196,6 @@ init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/it
 init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/item/dogborg/sleeper::Initialize::experiment_events
 init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/item/dogborg/sleeper::Initialize::expr
 init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	@/mob/living/silicon/robot/drone::Initialize::.
-init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	@/mob/living/silicon/robot/drone::Initialize::remove_language
-init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	@/mob/living/silicon/robot/drone::Initialize::add_language
-init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	@/mob/living/silicon/robot/drone::Initialize::add_language
-init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	@/mob/living/silicon/robot/drone::Initialize::updatename
-init_lines	code/modules/mob/living/silicon/robot/drone/swarm.dm	@/mob/living/silicon/robot/drone/swarm::Initialize::for
-init_lines	code/modules/mob/living/silicon/robot/drone/swarm.dm	@/mob/living/silicon/robot/drone/swarm::Initialize::add_spell
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::ident
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::updatename
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::setup_radio
@@ -2255,7 +2215,6 @@ init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/r
 init_lines	code/modules/mob/living/silicon/robot/robot_items.dm	@/obj/item/card/id/syndicate/dummy_cyborg::Initialize::access
 init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	@/obj/effect/landmark/free_ai_shell::Initialize::if
 init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	@/obj/effect/landmark/free_ai_shell::Initialize::expr
-init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/robotic_multibelt::Initialize::generate_tools
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/gripper::Initialize::if
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/gripper::Initialize::for
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/gripper::Initialize::new_pocket
@@ -2274,23 +2233,6 @@ init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/ite
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/reagent_containers/glass/bucket/cyborg::Initialize::observe
 init_lines	code/modules/mob/living/silicon/robot/subtypes/thinktank/_thinktank.dm	@/obj/effect/landmark/robot_platform::Initialize::if
 init_lines	code/modules/mob/living/silicon/robot/subtypes/thinktank/_thinktank.dm	@/obj/effect/landmark/robot_platform::Initialize::expr
-init_lines	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_subtypes.dm	@/mob/living/silicon/robot/platform/explorer::Initialize::rel_set
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::if
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::tree
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::if
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::tree.color
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::else
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::tree.color
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	@/mob/living/simple_mob/animal/space/carp::Initialize::carp_randomify
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	@/mob/living/simple_mob/animal/space/space_worm/head::Initialize::current
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	@/mob/living/simple_mob/animal/space/space_worm/head::Initialize::if
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	@/mob/living/simple_mob/animal/space/space_worm/head::Initialize::for
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	@/mob/living/simple_mob/animal/space/space_worm/head::Initialize::newSegment
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	@/mob/living/simple_mob/animal/space/space_worm/head::Initialize::current.Attach
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	@/mob/living/simple_mob/animal/space/space_worm/head::Initialize::current
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	@/mob/living/simple_mob/animal/space/space_worm/head::Initialize::current.faction
-init_lines	code/modules/mob/living/simple_mob/subtypes/occult/constructs/_construct.dm	@/mob/living/simple_mob/construct::Initialize::for
-init_lines	code/modules/mob/living/simple_mob/subtypes/occult/constructs/_construct.dm	@/mob/living/simple_mob/construct::Initialize::add_spell
 init_lines	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	@/mob/living/simple_mob/slime::Initialize::update_mood
 init_lines	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	@/mob/living/simple_mob/slime::Initialize::glow_color
 init_lines	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	@/mob/living/simple_mob/slime::Initialize::refresh_glow
@@ -2306,22 +2248,12 @@ init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::expr
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::flags
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	@/mob/living/simple_mob/shadekin::Initialize::return
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	@/mob/living/simple_mob/vore/woof/hostile/aweful::Initialize::thismany
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	@/mob/living/simple_mob/vore/woof/hostile/aweful::Initialize::resize
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	@/mob/living/simple_mob/vore/woof/hostile/aweful::Initialize::if
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	@/mob/living/simple_mob/vore/woof/hostile/aweful::Initialize::GLOB.woof_maximum
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	@/mob/living/simple_mob/vore/woof/hostile/aweful::Initialize::expr
 init_lines	code/modules/mob/mob.dm	@/mob::Initialize::PUBLISH_LEGACY
 init_lines	code/modules/mob/mob.dm	@/mob::Initialize::lastarea
 init_lines	code/modules/mob/mob.dm	@/mob::Initialize::focus
 init_lines	code/modules/mob/mob.dm	@/mob::Initialize::update_transform
 init_lines	code/modules/mob/mob.dm	@/mob::Initialize::publish_mob_chunk
 init_lines	code/modules/mob/mob.dm	@/mob::Initialize::log_mob_tag
-init_lines	code/modules/mob/mob_planes.dm	@/atom/movable/screen/plane_master/lighting::Initialize::add_filter
-init_lines	code/modules/mob/mob_planes.dm	@/atom/movable/screen/plane_master/lighting::Initialize::add_filter
-init_lines	code/modules/mob/mob_planes.dm	@/atom/movable/screen/plane_master/emissive::Initialize::add_filter
-init_lines	code/modules/mob/mob_planes.dm	@/atom/movable/screen/plane_master/openspace::Initialize::add_filter
-init_lines	code/modules/mob/mob_planes.dm	@/atom/movable/screen/plane_master/openspace::Initialize::add_filter
 init_lines	code/modules/modular_computers/NTNet/NTNet_relay.dm	@/obj/machinery/ntnet_relay::Initialize::assign_uid
 init_lines	code/modules/modular_computers/NTNet/NTNet_relay.dm	@/obj/machinery/ntnet_relay::Initialize::default_apply_parts
 init_lines	code/modules/modular_computers/NTNet/NTNet_relay.dm	@/obj/machinery/ntnet_relay::Initialize::if
@@ -4085,16 +4017,7 @@ world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GL
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
 world_reads	code/modules/mob/dead/observer/observer.dm	rel_set(src, nameof(visualnet), GLOB.ghostnet)
-world_reads	code/modules/mob/freelook/ai/eye.dm	rel_set(src, nameof(visualnet), GLOB.cameranet)
-world_reads	code/modules/mob/freelook/mask/eye.dm	rel_set(src, nameof(visualnet), GLOB.cultnet)
-world_reads	code/modules/mob/living/carbon/alien/diona/diona.dm	proto_set(src, nameof(species), GLOB.all_species[SPECIES_DIONA])
 world_reads	code/modules/mob/living/living.dm	add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
-world_reads	code/modules/mob/living/silicon/ai/multicam.dm	spent(GLOB.ai_camera_room_landmark)
-world_reads	code/modules/mob/living/silicon/ai/multicam.dm	GLOB.ai_camera_room_landmark = src
-world_reads	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	if(!GLOB.woof_current) //all our previous brothers have gone to valhallah
-world_reads	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	GLOB.woof_maximum = 0 //Let's start duplicating again
-world_reads	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	GLOB.woof_current++
-world_reads	code/modules/mob/mob_planes.dm	add_filter("em_block_masking", 1, color_matrix_filter(GLOB.em_mask_matrix))
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	if(GLOB.ntnet_global)
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::relays), src)
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	NTNet_static = GLOB.ntnet_global // a registered singleton: shared

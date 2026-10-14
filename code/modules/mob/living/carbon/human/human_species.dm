@@ -21,9 +21,6 @@
 	return 0
 
 
-/mob/living/carbon/human/dummy/mannequin/Initialize(mapload)
-	. = ..()
-	delete_inventory()
 
 /mob/living/carbon/human/dummy/mannequin/autoequip
 	icon = 'icons/mob/human_races/r_human.dmi'
@@ -35,6 +32,9 @@
 	icon_state = "" // ALLOW(decl): clears the inherited icon before parent init
 	. = ..()
 
+
+/// Dress only after the inherited empty-mannequin setup has cleared its inventory.
+/mob/living/carbon/human/dummy/mannequin/autoequip/proc/prepare_display_outfit()
 	dress_up()
 	if(autorotate)
 		turntable()
@@ -218,3 +218,9 @@ CAPABILITIES(/mob/living/carbon/human/sergal)
 CAPABILITIES(/mob/living/carbon/human/dummy)
 	after_init(0, then(PROC_REF(dummy_godmode_ready)))
 	immune_to_incapacitation()
+
+CAPABILITIES(/mob/living/carbon/human/dummy/mannequin)
+	setup(PROC_REF(delete_inventory))
+
+CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip)
+	setup(PROC_REF(prepare_display_outfit))

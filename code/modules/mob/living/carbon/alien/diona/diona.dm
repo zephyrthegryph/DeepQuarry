@@ -47,8 +47,8 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 	return GLOB.nymph_default_emotes.Copy()
 
 // A nymph shares the diona species prototype.
-/mob/living/carbon/alien/diona/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare diona species, after the complete parent chain.
+/mob/living/carbon/alien/diona/proc/prepare_diona_species()
 	proto_set(src, nameof(species), GLOB.all_species[SPECIES_DIONA])
 
 /mob/living/carbon/alien/diona/put_in_hands(obj/item/W) // No hands.
@@ -71,6 +71,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 		D.emote(pick("scratch","jump","chirp","roll"))
 
 CAPABILITIES(/mob/living/carbon/alien/diona)
+	setup(PROC_REF(prepare_diona_species))
 	configure(mob_kind(death_message = "expires with a pitiful chirrup..."))
 	configure(mob_movement(pull_size = ITEMSIZE_SMALL, pull_mobs = MOB_PULL_SMALLER))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)

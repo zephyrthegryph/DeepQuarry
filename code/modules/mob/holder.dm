@@ -308,9 +308,8 @@ CAPABILITIES(/obj/item/holder/diona)
 	item_icons = null
 	w_class = ITEMSIZE_SMALL
 
-// ALLOW(init/INSTANCE_STATE): lays down the bird it holds
-/obj/item/holder/bird/Initialize(mapload)
-	. = ..()
+/// Declared setup: settle held bird, after the complete parent chain.
+/obj/item/holder/bird/proc/settle_held_bird()
 	held_mob?.lay_down()
 
 /obj/item/holder/fish
@@ -431,3 +430,6 @@ CAPABILITIES(/obj/item/holder/fish)
 CAPABILITIES(/obj/item/holder/protoblob)
 	configure(item_worn(slots = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER | SLOT_ICLOTHING | SLOT_ID | SLOT_EARS))
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/holder/bird)
+	setup(PROC_REF(settle_held_bird))
