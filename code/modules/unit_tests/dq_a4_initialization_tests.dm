@@ -54,6 +54,9 @@
 /datum/unit_test/dq_a4_initialization/rcd_turret_integrity/Run()
 	scope_setup()
 	var/obj/machinery/porta_turret/rcd/T = allocate(/obj/machinery/porta_turret/rcd, test_floor())
+	// The real reduced-integrity setup emits sparks; the fixture owns those effects.
+	for(var/obj/effect/effect/sparks/S in test_floor())
+		own(S)
 	TEST_ASSERT_EQUAL(T.max_integrity, 20, "The RCD turret retains its compiled maximum integrity")
 	TEST_ASSERT_EQUAL(T.get_integrity(), 5, "The RCD turret starts at the reduced integrity")
 
