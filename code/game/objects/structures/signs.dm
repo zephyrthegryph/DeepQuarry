@@ -1679,7 +1679,7 @@ CAPABILITIES(/obj/structure/sign/flag)
 	var/icon/I = new('icons/obj/flags.dmi', icon_state)
 	var/icon/mask = new('icons/obj/flags.dmi', "ripped")
 	I.AddAlphaMask(mask)
-	icon = I
+	set_icon(I)
 	name = "ripped flag"
 	desc = "You can't make out anything from the flag's original print. It's ruined."
 	ripped = TRUE

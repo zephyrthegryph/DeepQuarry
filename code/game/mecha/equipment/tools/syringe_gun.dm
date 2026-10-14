@@ -92,7 +92,7 @@ TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, synthesizing)
 	S.forceMove(get_turf(chassis))
 	reagents.trans_to_obj(S, min(S.volume, reagents.total_volume))
 	own_take_member(src, nameof(syringes), S)
-	S.icon = 'icons/obj/chemical.dmi'
+	S.set_icon('icons/obj/chemical.dmi')
 	S.set_icon_state("syringeproj")
 	play_sfx(src, SFX_ITEMS_SYRINGEPROJ)
 	src.mecha_log_message("Launched [S] from [src], targeting [target].")
@@ -548,7 +548,7 @@ TYPE_TABLE(/obj/item/mecha_parts/mecha_equipment/crisis_drone/rad, drone_treatme
 		return
 	if(!step_towards(src, trg))
 		set_icon_state(initial(icon_state))
-		icon = initial(icon)
+		set_icon(initial(icon))
 		return
 	var/list/mobs = list()
 	for(var/mob/living/carbon/M in contents_of(loc))
@@ -556,14 +556,14 @@ TYPE_TABLE(/obj/item/mecha_parts/mecha_equipment/crisis_drone/rad, drone_treatme
 	var/mob/living/carbon/M = safepick(mobs)
 	if(M)
 		set_icon_state(initial(icon_state))
-		icon = initial(icon)
+		set_icon(initial(icon))
 		reagents.trans_to_mob(M, reagents.total_volume, CHEM_BLOOD)
 		M.injure(INJURY_PIERCE, 2, null, src)
 		visible_message(span_attack("[M] was hit by the syringe!"))
 		return
 	if(loc == trg)
 		set_icon_state(initial(icon_state))
-		icon = initial(icon)
+		set_icon(initial(icon))
 		return
 	after(src, 0.1 SECONDS, PROC_REF(mech_syringe_flight), with = list(trg, steps_left - 1))
 

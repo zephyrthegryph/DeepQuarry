@@ -561,7 +561,7 @@ TRACKED(/obj/item/organ, max_damage)
 	user.drop_from_inventory(src)
 	var/obj/item/reagent_containers/food/snacks/organ/O = new(get_turf(src))
 	O.name = name
-	O.icon = icon
+	O.set_icon(icon)
 	O.set_icon_state(icon_state)
 
 	// Pass over the blood.

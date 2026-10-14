@@ -315,6 +315,10 @@ SETTER(/atom, dir)
 /atom/look_set_icon_state(new_state)
 	set_icon_state(new_state)
 
+/// The engine's look applies a base icon file through this: set_icon() publishes it.
+/atom/look_set_icon(new_icon)
+	set_icon(new_icon)
+
 /// The engine's look applies an invisibility level through this: set_invisibility() publishes it.
 /atom/look_set_invisibility(new_invisibility)
 	set_invisibility(new_invisibility)
@@ -736,6 +740,14 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 	if(GLOB.stat_input_keys?[nameof(icon_state)] || GLOB.derived_read_vars?[nameof(icon_state)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(icon_state))) || draw_hop_reads_var(nameof(icon_state)))
 		tracked_changed(src, nameof(icon_state))
 SETTER(/atom, icon_state)
+
+/atom/proc/set_icon(new_icon)
+	if(icon == new_icon)
+		return
+	icon = new_icon
+	if(GLOB.stat_input_keys?[nameof(icon)] || GLOB.derived_read_vars?[nameof(icon)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(icon))) || draw_hop_reads_var(nameof(icon)))
+		tracked_changed(src, nameof(icon))
+SETTER(/atom, icon)
 
 /// Its base colour, under any colour layers (a debug or effect tint that reverts later).
 /atom/proc/set_base_color(new_color)

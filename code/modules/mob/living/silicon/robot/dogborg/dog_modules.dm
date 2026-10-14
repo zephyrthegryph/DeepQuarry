@@ -147,12 +147,12 @@ CAPABILITIES(/obj/item/robot_tongue)
 		if(emagged)
 			name = "hacked tongue of doom"
 			desc = "Your tongue has been upgraded successfully. Congratulations."
-			icon = 'icons/mob/dogborg_vr.dmi'
+			set_icon('icons/mob/dogborg_vr.dmi')
 			set_icon_state("syndietongue")
 		else
 			name = "synthetic tongue"
 			desc = "Useful for slurping mess off the floor before affectionately licking the crew members in the face."
-			icon = 'icons/mob/dogborg_vr.dmi'
+			set_icon('icons/mob/dogborg_vr.dmi')
 			set_icon_state("synthtongue")
 	return TRUE
 

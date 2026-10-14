@@ -92,6 +92,10 @@
 /atom/proc/look_set_icon_state(new_state)
 	return
 
+/// How the look applies a base icon file; the atom layer answers with set_icon(), which publishes it (code/game/atom/_atom.dm).
+/atom/proc/look_set_icon(new_icon)
+	return
+
 /// How the look applies an invisibility level; the atom layer answers with set_invisibility(), which publishes it (code/game/atom/_atom.dm).
 /atom/proc/look_set_invisibility(new_invisibility)
 	return

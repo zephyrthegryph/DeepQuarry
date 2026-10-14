@@ -140,13 +140,13 @@ CAPABILITIES(/obj/singularity/narsie/large)
 	if(!(istype(T, /turf/simulated/wall/cult)||istype(T, /turf/space)))
 		if(T.icon_state != "cult-narsie")
 			T.desc = "something that goes beyond your understanding went this way."
-			T.icon = 'icons/turf/flooring/cult.dmi'
+			T.set_icon('icons/turf/flooring/cult.dmi')
 			T.set_icon_state("cult-narsie")
 			set_glow(T, GLOW(1, null, null))
 
 /obj/singularity/narsie/proc/narsiewall(turf/T)
 	T.desc = "An opening has been made on that wall, but who can say if what you seek truly lies on the other side?"
-	T.icon = 'icons/turf/walls.dmi'
+	T.set_icon('icons/turf/walls.dmi')
 	T.set_icon_state("cult-narsie")
 	T.set_opacity(0)
 	T.set_density(FALSE)
@@ -350,7 +350,7 @@ CAPABILITIES(/obj/singularity/narsie/large)
 		consume(T)
 
 /obj/singularity/narsie/proc/narsie_spawn_animation()
-	icon = 'icons/obj/narsie_spawn_anim.dmi'
+	set_icon('icons/obj/narsie_spawn_anim.dmi')
 	set_dir(SOUTH)
 	move_self = 0
 	flick("narsie_spawn_anim",src)
@@ -358,7 +358,7 @@ CAPABILITIES(/obj/singularity/narsie/large)
 
 /obj/singularity/narsie/proc/after_animation()
 	move_self = 1
-	icon = initial(icon)
+	set_icon(initial(icon))
 
 /// Nar-Sie has come: the evacuation shuttle is called and cannot be recalled.
 /proc/narsie_call_evac()

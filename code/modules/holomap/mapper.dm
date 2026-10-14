@@ -97,7 +97,7 @@ CAPABILITIES(/obj/item/mapping_unit)
 
 
 	var/atom/movable/screen/mapper/marker/mark = new()
-	mark.icon = 'icons/effects/64x64.dmi'
+	mark.set_icon('icons/effects/64x64.dmi')
 	mark.set_icon_state("mapper_none")
 	mark.layer = 10
 	rel_add(src, nameof(icon_image_cache), mark, "bad")
@@ -106,7 +106,7 @@ CAPABILITIES(/obj/item/mapping_unit)
 	var/icon/canvas = icon(HOLOMAP_ICON, "blank")
 	canvas.Crop(1,1,world.maxx,world.maxy)
 	canvas.DrawBox("#A7BE97",1,1,world.maxx,world.maxy)
-	tmp.icon = canvas
+	tmp.set_icon(canvas)
 	rel_add(src, nameof(map_image_cache), tmp, "bad")
 
 

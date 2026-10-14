@@ -142,7 +142,7 @@ CAPABILITIES(/obj/structure/constructshell)
 
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( T.loc )
 	animation.set_icon_state("blank")
-	animation.icon = 'icons/mob/mob.dmi'
+	animation.set_icon('icons/mob/mob.dmi')
 	rel_set(animation, nameof(animation.master), T)
 	flick("dust-h", animation)
 	lapsed(animation)
@@ -153,7 +153,7 @@ CAPABILITIES(/obj/structure/constructshell)
 	S.canmove = 0//Can't move out of the soul stone
 	S.name = "Shade of [T.real_name]"
 	S.set_real_name("Shade of [T.real_name]")
-	S.icon = T.icon
+	S.set_icon(T.icon)
 	S.set_icon_state(T.icon_state)
 	S.overlays = T.overlays
 	S.color = rgb(254,0,0)

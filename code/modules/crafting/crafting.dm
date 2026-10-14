@@ -14,7 +14,7 @@
 /datum/personal_crafting/proc/create_mob_button(mob/user, client/CL)
 	var/datum/hud/H = user.hud_used
 	var/atom/movable/screen/craft/C = new()
-	C.icon = H.ui_style
+	C.set_icon(H.ui_style)
 	C.color = H.ui_color
 	C.alpha = H.ui_alpha
 	rel_add(H, nameof(H.other_important), C)

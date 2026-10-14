@@ -121,7 +121,6 @@ draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	omni_icons[state] = image('icon
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	if(!underlays)
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	underlays[cache_name + "[D]"] = I
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	underlays[state + "[D]" + "[GLOB.pipe_colors[pipe_color]]"] = I
-draw_untracked	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	look.overlay(look_overlay_image(icon, "algae-pipe-overlay", dir = dir, color = PIPE_COLOR_BLUE))
 draw_untracked	code/_helpers/time.dm	if (world.timeofday < GLOB.rollovercheck_last_timeofday)
 draw_untracked	code/_helpers/time.dm	if(GLOB.rollover_safety_date < world.realtime - (12 HOURS))
 draw_untracked	code/_helpers/time.dm	GLOB.midnight_rollovers++
@@ -148,59 +147,28 @@ draw_untracked	code/engine/refs/containment/spatial.dm	return A ? length(A.conte
 draw_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
 draw_untracked	code/game/machinery/adv_med.dm	look.overlay(look_overlay_image(layer = layer + 0.1, plane = plane, dir = SOUTH, transform = turn(matrix(), dir == EAST ? 90 : -90), of = occupant, filters = list(
 draw_untracked	code/game/machinery/adv_med.dm	look.overlay(look_overlay_image(layer = layer + 0.1, plane = plane, dir = SOUTH, transform = turn(matrix(), dir == EAST ? 90 : -90), of = occupant, filters = list(
-draw_untracked	code/game/machinery/adv_med.dm	filter("type" = "alpha", "icon" = icon(icon, "alpha_mask", dir = dir == EAST ? EAST : WEST)),
-draw_untracked	code/game/machinery/atm_ret_field.dm	var/image/I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
-draw_untracked	code/game/machinery/cell_charger.dm	look.overlay(cell.icon_state, icon = cell.icon)
 draw_untracked	code/game/machinery/doors/brigdoors.dm	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, maptext_width, maptext_height))
 draw_untracked	code/game/machinery/doors/brigdoors.dm	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, maptext_width, maptext_height))
 draw_untracked	code/game/machinery/doors/firedoor.dm	for(var/i = 1 to ALERT_STATES.len)
-draw_untracked	code/game/machinery/doors/firedoor.dm	look.overlay(image(icon = icon, icon_state = "alert_[ALERT_STATES[i]]", dir = cdir))
-draw_untracked	code/game/machinery/feeder.dm	look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
 draw_untracked	code/game/machinery/floor_light.dm	look.overlay(CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, layer+0.001))
-draw_untracked	code/game/machinery/iv_drip.dm	look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
 draw_untracked	code/game/machinery/portable_turret.dm	look.overlay(turret_opening_image(icon, turret_type, layer))
-draw_untracked	code/game/machinery/portable_turret.dm	look.overlay(turret_opening_image(icon, turret_type, layer))
-draw_untracked	code/game/mecha/equipment/tools/shield.dm	look.overlay("shield_droid", icon = icon)
-draw_untracked	code/game/mecha/mecha_appearance.dm	if(icon_exists(icon, "[mecha_base_state()]_cutter"))
 draw_untracked	code/game/mecha/space/shuttle.dm	look.overlay(look_appearance(icon, "[base]-mask+base", color = base_paint, layer = layer + 1))
-draw_untracked	code/game/objects/effects/decals/Cleanable/tracks.dm	look.overlay(look_overlay_image(icon, state, dir = num2dir(truedir), color = track.basecolor))
 draw_untracked	code/game/objects/items.dm	standing.alpha = alpha
 draw_untracked	code/game/objects/items.dm	standing.color = color
-draw_untracked	code/game/objects/items/bodybag.dm	look.overlay(look_overlay_image(icon, "indicator[opened]", color = COLOR_LIME, appearance_flags = RESET_COLOR))
 draw_untracked	code/game/objects/items/devices/flash.dm	if(module.holder && module.holder.wearer())
 draw_untracked	code/game/objects/items/devices/flash.dm	var/mob/living/carbon/human/H = module.holder.wearer()
-draw_untracked	code/game/objects/items/devices/radio/intercom.dm	look.overlay(mutable_appearance(icon, "[stem]_ov"))
-draw_untracked	code/game/objects/items/devices/transfer_valve.dm	look.underlay(look_overlay_image(icon, "[tank_two.icon_state]", pixel_x = -13))
-draw_untracked	code/game/objects/items/glassjar.dm	look.underlay(look_overlay_image(icon, "[initial(icon_state)]_water"))
-draw_untracked	code/game/objects/items/toys/toy_customizable.dm	look.overlay(look_appearance(icon, look.state_so_far(src), color = fabric_color))
-draw_untracked	code/game/objects/items/toys/toys.dm	look.overlay(look_appearance(icon, "[base]_blade", color = lcolor), active)
-draw_untracked	code/game/objects/items/toys/toys.dm	look.overlay(emissive_appearance(icon, "[drawn_state]-lights"))
-draw_untracked	code/game/objects/items/weapons/material/kitchen.dm	look.overlay(look_appearance(icon, "loadedfood", color = loaded_color))
-draw_untracked	code/game/objects/items/weapons/melee/energy.dm	look.overlay(look_appearance(icon, "[base]_blade_rainbow", color = "FFFFFF"), active)
-draw_untracked	code/game/objects/items/weapons/policetape.dm	look.overlay(look_appearance(icon, get_start() ? "stop" : "start", appearance_flags = RESET_COLOR))
 draw_untracked	code/game/objects/items/weapons/policetape.dm	return start
-draw_untracked	code/game/objects/items/weapons/shields.dm	look.overlay(look_appearance(icon, "[base]_blade", color = lcolor))
-draw_untracked	code/game/objects/items/weapons/storage/firstaid.dm	look.overlay(look_appearance(icon, "pillbottle_wrap", color = wrapper_color))
 draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	if(module.holder && module.holder.wearer())
 draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	var/mob/living/carbon/human/H = module.holder.wearer()
-draw_untracked	code/game/objects/mail.dm	look.overlay(look_overlay_image(icon, icon_state, color = colored_envelope))
 draw_untracked	code/game/objects/structures/barricades.dm	if(!material)
-draw_untracked	code/game/objects/structures/bonfire.dm	look.overlay(look_appearance(icon, state, appearance_flags = RESET_COLOR))
-draw_untracked	code/game/objects/structures/bonfire.dm	look.overlay(mutable_appearance(icon, state))
-draw_untracked	code/game/objects/structures/catwalk.dm	look.overlay(look_overlay_image(icon, "catwalk[connect]", dir = 1<<(i-1)))
-draw_untracked	code/game/objects/structures/cliff.dm	if(icon_exists(icon, subtraction_icon_state))
 draw_untracked	code/game/objects/structures/cliff.dm	look.overlay(CACHED_KEY(cliff_overlays, cache_string, icon, subtraction_icon_state, ground[1], ground[2], ground[3], layer - 0.2))
 draw_untracked	code/game/objects/structures/crates_lockers/__closets.dm	if(ispath(closet_appearance))
 draw_untracked	code/game/objects/structures/crates_lockers/__closets.dm	return GLOB.closet_appearances[closet_appearance]
 draw_untracked	code/game/objects/structures/crates_lockers/vehiclecage.dm	look.show_copy_of(V, layer = layer - 0.1)
-draw_untracked	code/game/objects/structures/flora/trees.dm	look.overlay(mutable_appearance(icon, "[base_state][bulbs]_glow"))
 draw_untracked	code/game/objects/structures/low_wall.dm	return material?.icon_colour
 draw_untracked	code/game/objects/structures/low_wall.dm	return material?.icon_colour
-draw_untracked	code/game/objects/structures/low_wall.dm	look.overlay(look_overlay_image(icon, "frame_other[other_connections[i]]", dir = 1<<(i-1), color = main_color))
 draw_untracked	code/game/objects/structures/low_wall.dm	if(stripe_color)
-draw_untracked	code/game/objects/structures/low_wall.dm	I = image(icon, "grille_other_onframe[connections[i]]", dir = 1<<(i-1))
 draw_untracked	code/game/objects/structures/low_wall.dm	look.overlay(look_overlay_image(icon, "[basestate]_other_onframe[other_connections[i]]", dir = img_dir, color = color))
-draw_untracked	code/game/objects/structures/railing.dm	look.overlay(look_overlay_image(icon, "[icon_modifier]corneroverlay"))
 draw_untracked	code/game/objects/structures/simple_doors.dm	return material.door_icon_base
 draw_untracked	code/game/objects/structures/simple_doors.dm	return material.door_icon_base
 draw_untracked	code/game/objects/structures/simple_doors.dm	return material.door_icon_base
@@ -223,7 +191,6 @@ draw_untracked	code/game/objects/structures/stool_bed_chair_nest/bed.dm	return p
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/bed.dm	if(padding_material)
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/bed.dm	if(padding_material)
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	if(padding_material)
-draw_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	look.overlay(look_overlay_image(icon, "[base_icon]_over", layer = ABOVE_MOB_LAYER, plane = MOB_PLANE))
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	if(padding_material)
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	if(padding_material)
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	if(padding_material)
@@ -246,9 +213,7 @@ draw_untracked	code/game/objects/structures/stool_bed_chair_nest/stools.dm	retur
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/stools.dm	return padding_material?.use_name
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/stools.dm	if(padding_material)
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/stools.dm	if(padding_material)
-draw_untracked	code/game/objects/structures/window.dm	look.overlay(look_overlay_image(icon, "[basestate]", color = "#ffffff", alpha = silicate * 255 / 100), silicate > 0)
 draw_untracked	code/game/objects/structures/window.dm	return CACHED_KEY(window_overlay_sets, "[icon]|[basestate]|[connections.Join(",")]|[step]|[layer]", icon, basestate, connections, step, layer)
-draw_untracked	code/game/turfs/flooring/seasonal.dm	look.overlay(CACHED_KEY(seasonal_grass_overlays, season_overlay, icon, season_overlay))
 draw_untracked	code/game/turfs/simulated/fancy_shuttles.dm	var/list/helper = GLOB.fancy_shuttles[fancy_shuttle_tag]
 draw_untracked	code/game/turfs/simulated/fancy_shuttles.dm	look.state("walls [x - helper[2]],[y - helper[3]]")
 draw_untracked	code/game/turfs/simulated/fancy_shuttles.dm	look.state("walls [x - helper[2]],[y - helper[3]]")
@@ -261,16 +226,11 @@ draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_ove
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
 draw_untracked	code/game/turfs/simulated/wall_types.dm	if(stripe_color)
-draw_untracked	code/game/turfs/simulated/wall_types.dm	look.overlay(look_overlay_image(src.icon, "o_[drawn_state]", color = stripe_color))
 draw_untracked	code/game/turfs/simulated/wall_types.dm	if(stripe_color)
-draw_untracked	code/game/turfs/snow/snow.dm	look.overlay(look_overlay_image(icon, "footprint[i]", dir = text2num(d)))
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")
 draw_untracked	code/modules/anomalies/anomaly_harvester.dm	var/obj/effect/anomaly/anom = harvested
-draw_untracked	code/modules/artifice/telecube.dm	look.overlay(look_overlay_image(icon, "[icon_state]-[ready ? "ready" : "charging"]", plane = on_floor ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = glow_color, appearance_flags = KEEP_APART))
-draw_untracked	code/modules/clothing/accessories/accessory.dm	var/mob/living/carbon/human/H = wearer
-draw_untracked	code/modules/clothing/clothing.dm	look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(LAZYACCESS(acc.on_rolled, "down") && C.rolled_down > 0)
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	else if(LAZYACCESS(acc.on_rolled, "rolled") && C.rolled_sleeves > 0)
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(acc.color)
@@ -283,15 +243,10 @@ draw_untracked	code/modules/clothing/clothing_icons.dm	standing.add_overlay(GLOB
 draw_untracked	code/modules/detectivework/microscope/microscope.dm	look.state("microscope[sample ? "slide" : ""]")
 draw_untracked	code/modules/fireworks/firework_launcher.dm	look.state("launcher[loaded_star ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]")
 draw_untracked	code/modules/food/drinkingglass/drinkingglass.dm	if(reagents.reagent_list.len > 0)
-draw_untracked	code/modules/food/drinkingglass/drinkingglass.dm	if(icon_exists(icon, "[base_icon]_[S]"))
 draw_untracked	code/modules/food/food/snacks.dm	look.identity(desc = "A box suited for pizzas. It appears to have a [pizza.name] inside.")
-draw_untracked	code/modules/food/food/snacks.dm	look.overlay(look_overlay_image(pizza.icon, pizza.icon_state, pixel_y = -3))
-draw_untracked	code/modules/food/kitchen/cooking_machines/_cooker.dm	look.overlay(look_overlay_image(icon, light, pixel_x = light_x, pixel_y = light_y))
-draw_untracked	code/modules/games/cards.dm	look.overlay(look_overlay_image(icon, P.face_state(concealed), pixel_x = jitter_x, pixel_y = jitter_y))
 draw_untracked	code/modules/holodeck/HolodeckObjects.dm	return sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 draw_untracked	code/modules/holodeck/HolodeckObjects.dm	return sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 draw_untracked	code/modules/holodeck/HolodeckObjects.dm	return sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
-draw_untracked	code/modules/holodeck/HolodeckObjects.dm	look.overlay(look_overlay_image(icon, "[initial(icon_state)]_blade", color = lcolor), active)
 draw_untracked	code/modules/holomap/station_holomap.dm	look.overlay(look_overlay_image('icons/obj/machines/stationmap.dmi', "decal_station_map", pixel_x = -pixel_x, pixel_y = -pixel_y, dir = dir))
 draw_untracked	code/modules/holomap/station_holomap.dm	look.overlay(look_overlay_image('icons/obj/machines/stationmap.dmi', "decal_station_map", pixel_x = -pixel_x, pixel_y = -pixel_y, dir = dir))
 draw_untracked	code/modules/hydroponics/grown.dm	if(!seed() || !SSplants?.plant_icon_cache)
@@ -300,7 +255,6 @@ draw_untracked	code/modules/hydroponics/grown.dm	plant_icon = SSplants.plant_ico
 draw_untracked	code/modules/hydroponics/grown.dm	SSplants.plant_icon_cache[icon_key] = plant_icon
 draw_untracked	code/modules/hydroponics/spreading/spreading.dm	return parent
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	var/stages = seed.growth_stages || SSplants.plant_sprites[seed.get_trait(TRAIT_PLANT_ICON)]
-draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	return look_overlay_image(icon, state, plane = PLANE_LIGHTING_ABOVE)
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	var/image/plant_overlay = SSplants.plant_icon_cache["[key]-[colour]"]
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	plant_overlay = SSplants.plant_icon_cache[key]
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	SSplants.plant_icon_cache[key] = plant_overlay
@@ -308,10 +262,7 @@ draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	SSplants.plan
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	var/image/harvest_overlay = SSplants.plant_icon_cache["product-[product_icon]-[plant_colour]"]
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	SSplants.plant_icon_cache["product-[product_icon]-[plant_colour]"] = harvest_overlay
 draw_untracked	code/modules/maint_recycler/code/maint_recycler.dm	look.underlay(look_overlay_image(icon, "underlay", layer = layer - 0.2)) //we need the underlay as a kind of inbetween, we sandwich the item between it and us
-draw_untracked	code/modules/maint_recycler/code/maint_recycler.dm	look.underlay(look_overlay_image(icon, "underlay", layer = layer - 0.2)) //we need the underlay as a kind of inbetween, we sandwich the item between it and us
 draw_untracked	code/modules/maint_recycler/code/maint_recycler.dm	look.overlay(look_overlay_image(icon, "hepme", layer = layer - 0.1, plane = plane, pixel_x = item_offset_x, pixel_y = item_offset_y, transform = scaled, appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE)) //the creature deserves its horrible end
-draw_untracked	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	var/icon/displacement_map = icon(src.icon, is_tail_taur ? "taurdisplacement" : "displacement", SOUTH)
-draw_untracked	code/modules/makeup/nailpolish.dm	look.underlay(look_overlay_image(icon = icon, icon_state = "color[suffix]", color = colour))
 draw_untracked	code/modules/materials/engineering/material_composites.dm	if(M.name && GLOB.name_to_material[M.name] == M)
 draw_untracked	code/modules/materials/engineering/material_composites.dm	if(M.name && GLOB.name_to_material[M.name] == M)
 draw_untracked	code/modules/materials/registry.dm	return GLOB.name_to_material[name]
@@ -325,7 +276,6 @@ draw_untracked	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	l
 draw_untracked	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	look.overlay(look_overlay_image(of = wrapped, plane = plane, layer = layer + 0.01, transform = matrix(0.75, 0, 0, 0, 0.75, -8)))
 draw_untracked	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	if(client && key && stat == CONSCIOUS && tank_module.pupil_color)
 draw_untracked	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	if(client && key && stat == CONSCIOUS && tank_module.pupil_color)
-draw_untracked	code/modules/mob/living/simple_mob/appearance.dm	var/draw_icon = icon
 draw_untracked	code/modules/mob/living/simple_mob/appearance.dm	look.eyes(src, eye_state, custom_eye_color, !isnull(eye_state))
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	look.set_color(next.color)
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	look.overlay(look_overlay_image('icons/inventory/head/mob.dmi', hat_state, pixel_y = -7, color = hat.color, appearance_flags = (RESET_COLOR|KEEP_APART))) // Slimes are small.
@@ -341,51 +291,21 @@ draw_untracked	code/modules/paperwork/paper_bundle.dm	look.overlay(Ph.tiny)
 draw_untracked	code/modules/power/cable.dm	if(!(flags & ATOM_INITIALIZED))
 draw_untracked	code/modules/power/cell.dm	if(isnull(material_discharge_credit))
 draw_untracked	code/modules/power/cell.dm	if(isnull(material_discharge_credit))
-draw_untracked	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	look.overlay(look_overlay_image(icon, "fuel_assembly", color = fuel_colour))
-draw_untracked	code/modules/power/fusion_coil.dm	look.overlay(mutable_appearance(icon, "fc_unstable"))
-draw_untracked	code/modules/power/lighting.dm	overlay_layer = image(icon, "[provided_state]-overlay")
-draw_untracked	code/modules/power/port_gen.dm	look.overlay(mutable_appearance(icon, "eggrad", alpha = 90)) //v.faint glow for reasons. the reasons being it's producing radiation as per code
 draw_untracked	code/modules/power/power_grid.dm	var/list/info = id > 0 ? vg_power_region_read(id) : null
 draw_untracked	code/modules/power/singularity/emitter.dm	return powered && power_region && avail(power_of(src).active) && active
-draw_untracked	code/modules/power/singularity/emitter.dm	var/image/emitterbeam = image(icon, "emitter-beam")
-draw_untracked	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	look.overlay(look_overlay_image(icon, "[base]-material", color = target_material_color()))
 draw_untracked	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	return material_stack.material?.icon_colour || "#aaaaaa"
 draw_untracked	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	return material_stack.material?.icon_colour || "#aaaaaa"
-draw_untracked	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	look.overlay(look_overlay_image(icon, "[initial(icon_state)]_type", color = batt_color))
-draw_untracked	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	look.overlay(look_overlay_image(icon, "[capname]_cap", pixel_x = current * x_offset, color = batt.type_color)) //Caps don't need a pixel_y offset
-draw_untracked	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	look.overlay(look_appearance(icon, "[initial(icon_state)]_ends", color = type_color))
-draw_untracked	code/modules/projectiles/guns/energy/cell_loaded/multi_cannon.dm	look.overlay(look_overlay_image(icon, istate, color = indicator_colour))
-draw_untracked	code/modules/projectiles/guns/energy/cyborg.dm	look.overlay(look_appearance(icon, "[initial(icon_state)]_blade", color = lcolor), active)
-draw_untracked	code/modules/projectiles/guns/energy/protector.dm	look.overlay(look_overlay_image(icon, charge_state, pixel_x = ammo_x_offset * (i - 1)))
 draw_untracked	code/modules/projectiles/guns/launcher/pneumatic.dm	return tank
 draw_untracked	code/modules/reagents/holder/holder.dm	return current.volume >= amount ? 1 : 0
 draw_untracked	code/modules/reagents/holder/holder.dm	return current.volume
 draw_untracked	code/modules/reagents/machinery/bunsen_burner.dm	look.overlay(image(icon, icon_state = "bunsen1", layer = layer + 0.1))
-draw_untracked	code/modules/reagents/machinery/bunsen_burner.dm	look.overlay(image(icon, icon_state = "bunsen1", layer = layer + 0.1))
-draw_untracked	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	look.underlay(look_overlay_image(icon, "synth_catalyst", layer = -1, color = catalyst.reagents.tint))
 draw_untracked	code/modules/reagents/machinery/pump.dm	look.watch(cell)
 draw_untracked	code/modules/reagents/machinery/pump.dm	look.overlay("[base]-lowpower", !(cell?.check_charge(power_of(src).active)))
-draw_untracked	code/modules/reagents/machinery/pump.dm	look.overlay(look_overlay_image(icon, "[base]-volume", color = reagents.get_color()))
 draw_untracked	code/modules/reagents/machinery/pump.dm	look.overlay("[base]-cell", istype(cell))
-draw_untracked	code/modules/reagents/reagent_containers/syringes.dm	look.overlay(look_overlay_image(icon, "filler[rounded_vol]", color = reagents.tint))
-draw_untracked	code/modules/refinery/core/industrial_reagent_filter.dm	look.overlay(look_overlay_image(icon, "[drawn_state]_r", color = R.tint, dir = dir))
-draw_untracked	code/modules/refinery/core/industrial_reagent_furnace.dm	look.overlay(look_overlay_image(icon, "[drawn_state]_r", color = reagents.get_color(), dir = dir))
-draw_untracked	code/modules/refinery/core/industrial_reagent_grinder.dm	var/image/pipe = image(icon, icon_state = "grinder_cons", dir = dir)
-draw_untracked	code/modules/refinery/core/industrial_reagent_hub.dm	look.overlay(look_overlay_image(icon, intake ? "hub_intakes" : "hub_cons", dir = dir))
-draw_untracked	code/modules/refinery/core/industrial_reagent_machines.dm	var/image/intake = image(icon, icon_state = overlay_state, dir = direction)
-draw_untracked	code/modules/refinery/core/industrial_reagent_mixer.dm	look.overlay(look_overlay_image(icon, "mixer_r_[percent]", color = R.tint, dir = dir), when = !isnull(percent))
-draw_untracked	code/modules/refinery/core/industrial_reagent_pump.dm	look.overlay(look_overlay_image(icon, "pump_r", color = R.tint, dir = dir))
-draw_untracked	code/modules/refinery/core/industrial_reagent_reactor.dm	var/image/pipe = image(icon, icon_state = "reactor_cons", dir = dir)
-draw_untracked	code/modules/refinery/core/industrial_reagent_vat.dm	look.overlay(look_overlay_image(icon, "vat_r_[percent]", color = R.tint, dir = dir), when = !isnull(percent))
-draw_untracked	code/modules/refinery/equipment/chemcontainer.dm	look.overlay(look_overlay_image(icon, "[initial(icon_state)]_c[percent]", color = R.tint, dir = NORTH))
-draw_untracked	code/modules/refinery/equipment/pumprelay.dm	look.overlay(look_overlay_image(icon, "pumprelay_r_[percent]", color = R.tint, dir = dir), when = !isnull(percent))
 draw_untracked	code/modules/research/tg/machinery/mech_fabricator.dm	look.overlay("fab-active", when = !!being_built)
 draw_untracked	code/modules/research/tg/machinery/mech_prosfab.dm	look.state(being_built ? "prosfab-active" : "prosfab")
-draw_untracked	code/modules/shieldgen/energy_field.dm	look.overlay(look_overlay_image(icon, "shield_edge", dir = direction))
 draw_untracked	code/modules/skybox_service.dm	if(initialized)
-draw_untracked	code/modules/tables/tables.dm	layers += get_table_image(icon, connections?[i] || 0, 1<<(i-1))
 draw_untracked	code/modules/vehicles/Securitrain.dm	look.overlay(look_overlay_image('icons/obj/vehicles.dmi', "cargo_engine_overlay", layer = layer + 0.2)) // over mobs
 draw_untracked	code/modules/vehicles/bike.dm	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_a", layer = layer, color = paint_color))
-draw_untracked	code/modules/vehicles/cargo_train.dm	look.overlay(look_overlay_image(icon, "[drawn_state]_r_[percent]", color = reagents.get_color(), dir = NORTH))
 draw_untracked	code/modules/vehicles/quad.dm	look.overlay(look_overlay_image(paint_icon, "[frame_state]_a", layer = layer, color = paint_color))
 draw_untracked	code/modules/vehicles/quad.dm	look.overlay(look_overlay_image('icons/obj/vehicles_64x64.dmi', "[initial(icon_state)]_a", layer = layer, color = paint_color))

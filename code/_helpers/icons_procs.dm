@@ -529,7 +529,7 @@ ColorTone(rgb, tone)
 	var/icon/I = new(target.icon)
 	var/icon/J = DrawPixel(I, colour, drawX, drawY)
 	if(J) //Only set the icon if it succeeded, the icon without the pixel is 1000x better than a black square.
-		target.icon = J
+		target.set_icon(J)
 		return J
 	return 0
 

@@ -40,7 +40,7 @@ CAPABILITIES(/datum/system/vis_overlays)
 
 /datum/system/vis_overlays/proc/_create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
 	var/obj/effect/overlay/vis/overlay = new
-	overlay.icon = icon
+	overlay.set_icon(icon)
 	overlay.set_icon_state(iconstate)
 	overlay.layer = layer
 	overlay.plane = plane
@@ -54,7 +54,7 @@ CAPABILITIES(/datum/system/vis_overlays)
 	// The extremely minimal version where you just pass a string and nothing else
 	if(istext(icon))
 		iconstate = icon
-		icon = src.icon
+		set_icon(src.icon)
 
 	return SSvis_overlays.add_vis_overlay(src, icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags, unique)
 

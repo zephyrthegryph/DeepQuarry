@@ -629,10 +629,10 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	var/old_icon = A.icon
 	var/old_state = A.icon_state
 	if(!isnull(icon))
-		A.icon = icon
+		A.look_set_icon(icon)
 		now |= LOOK_SET_ICON
 	else if(was & LOOK_SET_ICON)
-		A.icon = initial(A.icon)
+		A.look_set_icon(initial(A.icon))
 	// The base state, then variants ("<base>-lit") the icon has: only what the look asked is touched.
 	var/base = icon_state
 	if(isnull(base))

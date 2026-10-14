@@ -665,15 +665,15 @@ TRACKED(/mob/living/silicon/pai, eye_color)
 	if(. && SSpai.chassis_data(chassis_name).holo_projector)
 		switch(dir)
 			if(SOUTH)
-				icon = holo_icon_south
+				set_icon(holo_icon_south)
 			if(NORTH)
-				icon = holo_icon_north
+				set_icon(holo_icon_north)
 			if(EAST)
-				icon = holo_icon_east
+				set_icon(holo_icon_east)
 			if(WEST)
-				icon = holo_icon_west
+				set_icon(holo_icon_west)
 			else
-				icon = holo_icon_north
+				set_icon(holo_icon_north)
 
 /mob/living/silicon/pai/proc/close_up_unless_dead()
 	if(stat != DEAD)

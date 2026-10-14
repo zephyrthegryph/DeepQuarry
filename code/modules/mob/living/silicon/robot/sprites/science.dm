@@ -116,7 +116,7 @@
 	if(J)
 		J.name = "jumper paws"
 		J.desc = "Zappy paws. For rebooting a full body prostetic."
-		J.icon = 'icons/mob/dogborg_vr.dmi'
+		J.set_icon('icons/mob/dogborg_vr.dmi')
 		J.set_icon_state("defibpaddles0")
 		J.set_attack_verb(list("batted", "pawed", "bopped", "whapped"))
 
@@ -170,7 +170,7 @@
 	if(J)
 		J.name = "jumper paws"
 		J.desc = "Zappy paws. For rebooting a full body prostetic."
-		J.icon = 'icons/mob/dogborg_vr.dmi'
+		J.set_icon('icons/mob/dogborg_vr.dmi')
 		J.set_icon_state("defibpaddles0")
 		J.set_attack_verb(list("batted", "pawed", "bopped", "whapped"))
 

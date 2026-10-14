@@ -101,6 +101,8 @@ struct BaseVars;
 #[derive(Serialize, Deserialize, PartialEq)]
 struct RVar {
     owner: String,
+    /// The var's name: with `owner` it is the declaration identity the baseline row stores (`owner::name`).
+    name: String,
     line: u32,
     base: bool,
     cand: bool,
@@ -181,7 +183,7 @@ fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String],
             let exempt = exempt_prefixes.iter().any(|p| v.path.starts_with(p.as_str())) || exempt_files.iter().any(|e| *e == v.path);
             let cand = list_init.is_match(text) && !exempt && !is_singleton(&owner, &empty);
             if base || cand {
-                out.vars.push(RVar { owner: owner.clone(), line: v.line as u32, base, cand });
+                out.vars.push(RVar { owner: owner.clone(), name: v.name.clone(), line: v.line as u32, base, cand });
             }
         }
     }
@@ -298,7 +300,7 @@ impl Lint for BaseVars {
         let exempt_files = cx.list("list_init_exempt_files");
         let macros = cx.list("base_var_home_macros");
         let ctx = incr::ctx_key(&(exempt_prefixes, exempt_files, macros));
-        let facts = recorded_into(out, || incr::keyed("base_vars-facts2", ctx, &all, |f| facts_of(f, exempt_prefixes, exempt_files, macros)));
+        let facts = recorded_into(out, || incr::keyed("base_vars-facts3", ctx, &all, |f| facts_of(f, exempt_prefixes, exempt_files, macros)));
         let homes: HashSet<(String, String)> = facts.iter().flat_map(|fa| fa.homes.iter().cloned()).collect();
 
         // `singleton_types()`: the union, minus bare `/datum`.
@@ -315,9 +317,23 @@ impl Lint for BaseVars {
             }
             return;
         }
+        text_sites(&all, &facts, &globals, &global_set, out);
+    }
 
-        let cand_files: Vec<&SourceFile> = all.iter().copied().zip(&facts).filter(|(_, fa)| fa.vars.iter().any(|v| v.cand)).map(|(f, _)| f).collect();
-        let by_rel: HashMap<&str, &Facts> = all.iter().zip(&facts).map(|(f, fa)| (f.rel.as_str(), fa)).collect();
+    fn parity(&self) -> Option<Parity> {
+        let mut p = Parity::ratchet(&["tools/ci/base_vars_lint.py"], &[BASELINE]);
+        p.update = Some(&["tools/ci/base_vars_lint.py", "--update"]);
+        p.seed = Some(&["tools/ci/base_vars_lint.py", "--seed"]);
+        Some(p)
+    }
+}
+
+/// The sites without a semantic model, from the text parse. A declaration site carries `owner::var` like the typed path, so it matches
+/// its baseline row.
+fn text_sites(all: &[&SourceFile], facts: &[Facts], globals: &BTreeSet<String>, global_set: &HashSet<String>, out: &mut Sink) {
+    {
+        let cand_files: Vec<&SourceFile> = all.iter().copied().zip(facts.iter()).filter(|(_, fa)| fa.vars.iter().any(|v| v.cand)).map(|(f, _)| f).collect();
+        let by_rel: HashMap<&str, &Facts> = all.iter().zip(facts.iter()).map(|(f, fa)| (f.rel.as_str(), fa)).collect();
         let key = incr::ctx_key(&globals);
         let judged = recorded_into(out, || {
             incr::keyed("base_vars-judge", key, &cand_files, |f| {
@@ -336,12 +352,12 @@ impl Lint for BaseVars {
         // `decls.items()` order: an owner is inserted when its first var is parsed (files in path
         // order, lines in order), so owners sort by (file, line) of their first var.
         let mut wanted: HashSet<&str> = HashSet::new();
-        for fa in &facts {
+        for fa in facts.iter() {
             wanted.extend(fa.vars.iter().map(|v| v.owner.as_str()));
         }
         let mut first: HashMap<&str, (&str, u32)> = HashMap::new();
         let mut vars_of: HashMap<&str, Vec<(usize, usize)>> = HashMap::new();
-        for (fi, (f, fa)) in all.iter().zip(&facts).enumerate() {
+        for (fi, (f, fa)) in all.iter().zip(facts.iter()).enumerate() {
             for (owner, line) in &fa.owners {
                 if wanted.contains(owner.as_str()) {
                     let cur = (f.rel.as_str(), *line);
@@ -361,23 +377,41 @@ impl Lint for BaseVars {
             for &(fi, vi) in &vars_of[owner] {
                 let (f, v) = (all[fi], &facts[fi].vars[vi]);
                 if v.base {
-                    out.site_in("base_var", &f.rel, v.line as usize);
+                    out.site_decl("base_var", &f.rel, v.line as usize, String::new(), format!("{}::{}", v.owner, v.name));
                 }
                 if v.cand && judged.get(f.rel.as_str()).map(|h| h.contains(&(vi as u32))).unwrap_or(false) {
-                    out.site_in("list_init", &f.rel, v.line as usize);
+                    out.site_decl("list_init", &f.rel, v.line as usize, String::new(), format!("{}::{}", v.owner, v.name));
                 }
             }
         }
-    }
-
-    fn parity(&self) -> Option<Parity> {
-        let mut p = Parity::ratchet(&["tools/ci/base_vars_lint.py"], &[BASELINE]);
-        p.update = Some(&["tools/ci/base_vars_lint.py", "--update"]);
-        p.seed = Some(&["tools/ci/base_vars_lint.py", "--seed"]);
-        Some(p)
     }
 }
 
 pub fn register(reg: &mut Registry) {
     reg.add(BaseVars);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tree::SourceFile;
+
+    /// Without a semantic model the lint judges from the text, and it must fingerprint a site by `owner::var` like the typed
+    /// path does, or every baselined row (stored as `@owner::var`) would read as new debt.
+    #[test]
+    fn fallback_path_emits_owner_var_identities() {
+        let f = SourceFile::from_text("code/a.dm", "/atom
+	var/tmp/flags_9 = 0
+/obj/thing
+	var/list/stuff = list()
+");
+        let none: Vec<String> = Vec::new();
+        let facts = vec![facts_of(&f, &none, &none, &none)];
+        let mut out = Sink::new();
+        text_sites(&[&f], &facts, &BTreeSet::new(), &HashSet::new(), &mut out);
+        let base: Vec<&str> = out.sites.iter().filter(|s| s.rule == "base_var").map(|s| s.ident.as_str()).collect();
+        assert_eq!(base, vec!["/atom::flags_9"], "{:?}", out.sites);
+        assert!(out.sites.iter().filter(|s| s.rule == "list_init").all(|s| s.ident == "/obj/thing::stuff"));
+        assert!(out.sites.iter().all(|s| !s.ident.is_empty()), "{:?}", out.sites);
+    }
 }
