@@ -4886,3 +4886,17 @@ Affected requirement-pin classes:
 Master 5b0a2f09d0 typed the internal-storage owner and cloning scanner links. Their old invalid-owner and missing-scanner paths must still delete storage or return null, respectively. The cell-redraw lane carries the already-approved native keeps_if/setup and null-return repairs, plus their real owner/rebinding tests, from the stamped acceptance lane. No constructor pin is re-blessed.
 
 Master f13b84652d retired the unused AI equipment window. The only pin refresh carried here is removal of ai_use_equipment from the keys rows of /obj/mecha and /obj/mecha/working/ripley. Menu/click rows and every other key remain unchanged.
+
+## Loot pins re-blessed after rand() to rolls() conversions (rewrite/loot-drift)
+
+* **`dq_loot_roll_pin`, `/obj/random/fishing_junk`** (7 of its 20 seed rows): the only table that nests `/obj/structure/closet/crate/secure/loot`.
+  Cause: 81e61e24e9 rolls the crate's lock code with `rolls(nameof(code), ...)` from the instance's own stream; `Initialize()` drew its four digits
+  from the world RNG the pin had seeded, so everything the pin rolled after a crate read four draws later (and the crate's own loot loop with it).
+  Tables and weights are unchanged. 299 of 306 declarations stayed identical.
+* **`dq_loot_search_pin`** (58 of 253 rows): the pin seeds the world RNG per run, so a search that follows an item made by a converted
+  `Initialize()` reads later draws. Cause: the init waves after the 9a149c59de bless that moved item randomness into `rolls()`/`pick_one()`
+  (2034398b25 cable coils, the wirecutters handle colour, and the pizza box and tool family), same mechanism as 68e9f5ae83 above. No table or
+  weight changed; only which seed finds what moved.
+* **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
+  One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
+  its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
