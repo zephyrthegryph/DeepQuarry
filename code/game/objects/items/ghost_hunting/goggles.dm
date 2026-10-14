@@ -17,8 +17,8 @@
 	///If we can see without static or not.
 	var/static_vision = TRUE
 
-/obj/item/clothing/glasses/ghost/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare static overlay, after its parents initialize.
+/obj/item/clothing/glasses/ghost/proc/prepare_static_overlay()
 	if(static_vision)
 		rel_set(src, nameof(overlay), GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
 
@@ -26,3 +26,6 @@
 	name = "improved spectral field analysis goggles"
 	desc = "A pair of goggles claiming to let you see into the beyond! This one allows for extra clarity."
 	static_vision = FALSE
+
+CAPABILITIES(/obj/item/clothing/glasses/ghost)
+	setup(PROC_REF(prepare_static_overlay))

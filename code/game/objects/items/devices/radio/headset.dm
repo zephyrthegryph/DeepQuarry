@@ -20,6 +20,7 @@
 
 
 CAPABILITIES(/obj/item/radio/headset)
+	setup(PROC_REF(prepare_key_channels))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 	owns_one(nameof(keyslot2), /obj/item/encryptionkey, starts = nameof(ks2type))
@@ -32,8 +33,8 @@ CAPABILITIES(/obj/item/radio/headset)
 /obj/item/radio/headset/starting_channels()
 	return list()
 
-/obj/item/radio/headset/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare key channels, after its parents initialize.
+/obj/item/radio/headset/proc/prepare_key_channels()
 	// Compute channels but don't register with SSradio yet (C5): on_materialize()
 	// (inherited from /obj/item/radio) does that, from the channels computed here.
 	recalculateChannels(TRUE, register = FALSE)

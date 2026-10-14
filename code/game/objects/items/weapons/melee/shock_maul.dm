@@ -56,10 +56,6 @@
 		name = "[initial(name)]"
 	..()
 
-/obj/item/melee/shock_maul/Initialize(mapload)
-	. = ..()
-	update_held_icon()
-
 /obj/item/melee/shock_maul/get_cell()
 	return bcell
 
@@ -175,6 +171,7 @@ MSG_DEF_SELF(shock_maul/out_of_charge, span_warning("%T% is out of charge."))
 
 
 CAPABILITIES(/obj/item/melee/shock_maul)
+	setup(PROC_REF(update_held_icon))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 25))
 	configure(item_combat(force = 35, armor_penetration = 20, can_cleave = TRUE, attack_speed = 12, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten","slammed","smashed","mauled","hammered","bludgeoned")))

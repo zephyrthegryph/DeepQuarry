@@ -468,8 +468,8 @@ CAPABILITIES(/obj/item/commcard/head/captain)
 	icon_state = "cart"
 	internal_data = list("shuttle_door_code" = "smindicate") // Copied from PDA code
 
-/obj/item/commcard/mercenary/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare shuttle doors, after its parents initialize.
+/obj/item/commcard/mercenary/proc/prepare_shuttle_doors()
 	internal_data["shuttle_doors"] = find_blast_doors()
 
 /obj/item/commcard/mercenary/get_data()
@@ -509,3 +509,6 @@ CAPABILITIES(/obj/item/commcard/explorer)
 			list("field" = "gps_signal", "value" = gps_lists[2]),
 			list("field" = "gps_status", "value" = gps_lists[3])
 		)
+
+CAPABILITIES(/obj/item/commcard/mercenary)
+	setup(PROC_REF(prepare_shuttle_doors))

@@ -42,6 +42,7 @@
 	var/no_masters_time = 0
 
 CAPABILITIES(/obj/item/uav)
+	setup(PROC_REF(prepare_ion_trail))
 	configure(light_glow(range = 4, power = 4))
 	ref_many(nameof(masters), /mob)
 	every(2 SECONDS, then(PROC_REF(uav_step)), when = PROC_REF(is_flying))
@@ -66,8 +67,8 @@ CAPABILITIES(/obj/item/uav)
 /obj/item/uav/loaded
 	cell_type = /obj/item/cell/high
 
-/obj/item/uav/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare ion trail, after its parents initialize.
+/obj/item/uav/proc/prepare_ion_trail()
 
 
 	ion_trail.set_up(src)

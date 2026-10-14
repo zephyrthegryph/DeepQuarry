@@ -266,16 +266,15 @@ CAPABILITIES(/obj/item/inducer)
 	lifecycle_lifetime = 20 SECONDS
 
 CAPABILITIES(/obj/item/cell/standin)
+	keeps_if(PROC_REF(has_human_source))
 	configure(item_worn(flags = ABSTRACT))
 	param(nameof(hume), pos = 1)
 	setup(PROC_REF(charge_from_hume))
 	ref_one(nameof(hume), /mob/living/carbon/human)
 
-// ALLOW(init/INSTANCE_STATE): a stand-in cell charges from its human's nutrition, over its parents' charge, and lasts twenty seconds
-/obj/item/cell/standin/Initialize(mapload)
-	. = ..()
-	if(!istype(hume))
-		return INITIALIZE_HINT_QDEL
+/// The stand-in can only exist for its actual human constructor source.
+/obj/item/cell/standin/proc/has_human_source()
+	return istype(hume, /mob/living/carbon/human)
 
 
 /// Setup: the stand-in holds what its human has eaten, up to what a new body starts with.

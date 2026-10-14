@@ -707,6 +707,7 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 /obj/item/flame/lighter/var/detonator_mode = 0
 
 CAPABILITIES(/obj/item/flame/lighter)
+	setup(PROC_REF(prepare_lighter_overlay))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 4))
 	configure(item_combat(attack_verbs = list("burnt", "singed")))
@@ -716,11 +717,11 @@ CAPABILITIES(/obj/item/flame/lighter)
 /obj/item/flame/lighter/random
 
 // Randomizes Cheap Lighters on Spawn
-/obj/item/flame/lighter/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare lighter overlay, after its parents initialize.
+/obj/item/flame/lighter/proc/prepare_lighter_overlay()
 	var/image/I = image(icon, "lighter-[pick("trans","tall","matte")]")
 	I.color = pick(available_colors)
-	add_overlay(I) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+	add_overlay(I)
 
 /// Using the lighter in the hand lights it or puts it out. Each kind of lighter overrides this; one that does not handle the use declines it, and the click goes on to the item's own use.
 /obj/item/flame/lighter/proc/toggled(datum/act/op/A)
@@ -778,10 +779,6 @@ CAPABILITIES(/obj/item/flame/lighter)
 	activation_sound = SFX_ITEMS_ZIPPO_ON
 	deactivation_sound = SFX_ITEMS_ZIPPO_OFF
 	special_variant = TRUE
-
-/obj/item/flame/lighter/zippo/Initialize(mapload)
-	. = ..()
-	cut_overlays() // ALLOW(decl): removes the parent's random overlay. Prevents the Cheap Lighter overlay from appearing on this
 
 /// A zippo flips open and shut with its own states.
 /obj/item/flame/lighter/zippo/toggled(datum/act/op/A)
@@ -1203,3 +1200,6 @@ CAPABILITIES(/obj/item/flame/lighter)
 	if(istype(location))
 		location.hotspot_expose(700, 5)
 	burn_out()
+
+CAPABILITIES(/obj/item/flame/lighter/zippo)
+	setup(PROC_REF(cut_overlays))

@@ -8,11 +8,12 @@
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 8
 
-/obj/item/grenade/confetti/Initialize(mapload)
-	. = ..()
+/// Declared setup: attach confetti spread, after its parents initialize.
+/obj/item/grenade/confetti/proc/attach_confetti_spread()
 	confetti_spread.attach(src)
 
 CAPABILITIES(/obj/item/grenade/confetti)
+	setup(PROC_REF(attach_confetti_spread))
 	configure(item_worn(slots = SLOT_BELT))
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system/confetti_spread, starts = /datum/effect/effect/system/confetti_spread)
 

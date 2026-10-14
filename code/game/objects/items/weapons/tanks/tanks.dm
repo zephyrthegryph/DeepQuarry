@@ -627,25 +627,25 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	add_overlay("bomb_assembly")
 
 CAPABILITIES(/obj/item/tank/phoron/onetankbomb)
+	setup(PROC_REF(assemble_initial_bomb))
 	param(nameof(bomb_fill), pos = 1)
 
 /// How full the bomb's tank is filled (its constructor param; a full or small bomb's own default).
 /obj/item/tank/phoron/onetankbomb/var/bomb_fill = 1
 
-// ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
-/obj/item/tank/phoron/onetankbomb/Initialize(mapload)
-	. = ..()
+/// Declared setup: assemble initial bomb, after its parents initialize.
+/obj/item/tank/phoron/onetankbomb/proc/assemble_initial_bomb()
 	onetankbomb(bomb_fill)
 
 CAPABILITIES(/obj/item/tank/oxygen/onetankbomb)
+	setup(PROC_REF(assemble_initial_bomb))
 	param(nameof(bomb_fill), pos = 1)
 
 /// How full the bomb's tank is filled (its constructor param; a full or small bomb's own default).
 /obj/item/tank/oxygen/onetankbomb/var/bomb_fill = 1
 
-// ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
-/obj/item/tank/oxygen/onetankbomb/Initialize(mapload)
-	. = ..()
+/// Declared setup: assemble initial bomb, after its parents initialize.
+/obj/item/tank/oxygen/onetankbomb/proc/assemble_initial_bomb()
 	onetankbomb(bomb_fill)
 
 /obj/item/tank/phoron/onetankbomb/full

@@ -133,15 +133,15 @@ CAPABILITIES(/obj/item/flame/candle)
 /obj/item/flame/candle/everburn
 	wax = 99999
 
-/obj/item/flame/candle/everburn/Initialize(mapload)
-	. = ..()
+/// Declared setup: light everburn, after its parents initialize.
+/obj/item/flame/candle/everburn/proc/light_everburn()
 	light(span_notice("\The [src] mysteriously lights itself!."))
 
 /obj/item/flame/candle/candelabra/everburn
 	wax = 99999
 
-/obj/item/flame/candle/candelabra/everburn/Initialize(mapload)
-	. = ..()
+/// Declared setup: light everburn, after its parents initialize.
+/obj/item/flame/candle/candelabra/everburn/proc/light_everburn()
 	light(span_notice("\The [src] mysteriously lights itself!."))
 
 /obj/item/flame/candle/everburn/flame_step(datum/act/timer/A)
@@ -151,3 +151,9 @@ CAPABILITIES(/obj/item/flame/candle)
 
 /obj/item/flame/candle/candelabra/everburn/flame_step(datum/act/timer/A)
 	return
+
+CAPABILITIES(/obj/item/flame/candle/everburn)
+	setup(PROC_REF(light_everburn))
+
+CAPABILITIES(/obj/item/flame/candle/candelabra/everburn)
+	setup(PROC_REF(light_everburn))

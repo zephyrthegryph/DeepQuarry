@@ -28,6 +28,7 @@
 	bag_material = MAT_SYNCLOTH
 
 CAPABILITIES(/obj/item/stack/sandbags)
+	setup(PROC_REF(prepare_sandbag_recipes))
 	configure(item_thrown(force = 20.0))
 	configure(item_combat(force = 10.0, attack_verbs = list("hit", "bludgeoned", "pillowed")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
@@ -44,9 +45,8 @@ CAPABILITIES(/obj/item/stack/sandbags)
 	var/datum/material/M = get_material_by_name("[bag_material]")
 	return M ? M.icon_colour : color
 
-// ALLOW(init/INSTANCE_STATE): sandbags take their recipes and slowdown
-/obj/item/stack/sandbags/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare sandbag recipes, after its parents initialize.
+/obj/item/stack/sandbags/proc/prepare_sandbag_recipes()
 	recipes = GLOB.sandbag_recipes
 	update_slowdown()
 

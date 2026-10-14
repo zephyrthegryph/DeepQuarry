@@ -856,24 +856,15 @@ init_lines	code/game/objects/items.dm	@/obj/item::Initialize::if
 init_lines	code/game/objects/items.dm	@/obj/item::Initialize::embed_chance
 init_lines	code/game/objects/items.dm	@/obj/item::Initialize::else
 init_lines	code/game/objects/items.dm	@/obj/item::Initialize::embed_chance
-init_lines	code/game/objects/items/contraband.dm	@/obj/item/reagent_containers/powder::Initialize::get_appearance
 init_lines	code/game/objects/items/devices/communicator/cartridge.dm	@/obj/item/commcard/head::Initialize::SSradio.add_object
-init_lines	code/game/objects/items/devices/communicator/cartridge.dm	@/obj/item/commcard/mercenary::Initialize::expr
-init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/obj/item/communicator::Initialize::rel_set
-init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/obj/item/communicator::Initialize::camera.name
-init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/obj/item/communicator::Initialize::camera.c_tag
-init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/obj/item/communicator::Initialize::setup_tgui_camera
 init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/mob/observer/dead::Initialize::if
 init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/mob/observer/dead::Initialize::exonet.make_address
 init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/mob/observer/dead::Initialize::else
 init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/mob/observer/dead::Initialize::exonet.make_address
-init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/obj/machinery/camera/communicator::Initialize::LAZYOR
-init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/obj/machinery/camera/communicator::Initialize::LAZYOR
 init_lines	code/game/objects/items/devices/defib.dm	@/obj/item/defib_kit::Initialize::make_tethered
 init_lines	code/game/objects/items/devices/flipper.dm	@/obj/item/paicard/flipper::Initialize::emag_target
 init_lines	code/game/objects/items/devices/flipper.dm	@/obj/item/paicard/flipper::Initialize::rel_set
 init_lines	code/game/objects/items/devices/flipper.dm	@/obj/item/paicard/flipper::Initialize::setEmotion
-init_lines	code/game/objects/items/devices/gps.dm	@/obj/item/gps::Initialize::update_holder
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	@/obj/item/personal_shield_generator::Initialize::if
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	@/obj/item/personal_shield_generator::Initialize::if
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	@/obj/item/personal_shield_generator::Initialize::rel_set
@@ -883,7 +874,6 @@ init_lines	code/game/objects/items/devices/personal_shield_generator.dm	@/obj/it
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	@/obj/item/personal_shield_generator::Initialize::rel_set
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	@/obj/item/gun/energy/gun/generator::Initialize::rel_set
 init_lines	code/game/objects/items/devices/pipe_painter.dm	@/obj/item/pipe_painter::Initialize::mode
-init_lines	code/game/objects/items/devices/radio/headset.dm	@/obj/item/radio/headset::Initialize::recalculateChannels
 init_lines	code/game/objects/items/devices/radio/intercom.dm	@/obj/item/radio/intercom::Initialize::A
 init_lines	code/game/objects/items/devices/radio/intercom.dm	@/obj/item/radio/intercom::Initialize::if
 init_lines	code/game/objects/items/devices/radio/intercom.dm	@/obj/item/radio/intercom::Initialize::observe
@@ -896,23 +886,8 @@ init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	@/obj/item
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	@/obj/item/motiontracker::Initialize::if
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	@/obj/item/motiontracker::Initialize::M
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	@/obj/item/motiontracker::Initialize::M.motiontracker_subscribe
-init_lines	code/game/objects/items/devices/spy_bug.dm	@/obj/item/bug_monitor::Initialize::radio
-init_lines	code/game/objects/items/devices/translocator.dm	@/obj/item/perfect_tele::Initialize::rebuild_radial_images
-init_lines	code/game/objects/items/ghost_hunting/goggles.dm	@/obj/item/clothing/glasses/ghost::Initialize::if
-init_lines	code/game/objects/items/ghost_hunting/goggles.dm	@/obj/item/clothing/glasses/ghost::Initialize::rel_set
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::ghost_events
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::expr
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::expr
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::expr
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::expr
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::allowed_experiments
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::config_mode
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::config_flags
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::experiment_events
 init_lines	code/game/objects/items/ghost_hunting/weapons.dm	@/obj/item/proton_pack::Initialize::make_tethered
 init_lines	code/game/objects/items/paintkit.dm	@/obj/item/kit/suit/rig/debug::Initialize::info
-init_lines	code/game/objects/items/stacks/sandbags.dm	@/obj/item/stack/sandbags::Initialize::recipes
-init_lines	code/game/objects/items/stacks/sandbags.dm	@/obj/item/stack/sandbags::Initialize::update_slowdown
 init_lines	code/game/objects/items/stacks/stack.dm	@/obj/item/stack::Initialize::if
 init_lines	code/game/objects/items/stacks/stack.dm	@/obj/item/stack::Initialize::stacktype
 init_lines	code/game/objects/items/stacks/stack.dm	@/obj/item/stack::Initialize::if
@@ -928,52 +903,14 @@ init_lines	code/game/objects/items/stacks/stack.dm	@/obj/item/stack::Initialize:
 init_lines	code/game/objects/items/stacks/stack.dm	@/obj/item/stack::Initialize::make_sellable
 init_lines	code/game/objects/items/trash.dm	@/obj/item/trash::Initialize::if
 init_lines	code/game/objects/items/trash.dm	@/obj/item/trash::Initialize::SSpersistence.track_value
-init_lines	code/game/objects/items/trash_material.dm	@/obj/item/trash/material::Initialize::for
-init_lines	code/game/objects/items/trash_material.dm	@/obj/item/trash/material::Initialize::if
-init_lines	code/game/objects/items/trash_material.dm	@/obj/item/trash/material::Initialize::added
-init_lines	code/game/objects/items/trash_material.dm	@/obj/item/trash/material::Initialize::added[L[1]]
-init_lines	code/game/objects/items/trash_material.dm	@/obj/item/trash/material::Initialize::add_materials
-init_lines	code/game/objects/items/uav.dm	@/obj/item/uav::Initialize::ion_trail.set_up
-init_lines	code/game/objects/items/uav.dm	@/obj/item/uav::Initialize::ion_trail.stop
-init_lines	code/game/objects/items/weapons/AI_modules.dm	@/obj/item/aiModule/reset::Initialize::rel_set
-init_lines	code/game/objects/items/weapons/candle.dm	@/obj/item/flame/candle/everburn::Initialize::light
-init_lines	code/game/objects/items/weapons/candle.dm	@/obj/item/flame/candle/candelabra/everburn::Initialize::light
-init_lines	code/game/objects/items/weapons/chewables.dm	@/obj/item/storage/chewables::Initialize::make_exact_fit
-init_lines	code/game/objects/items/weapons/cigs_lighters.dm	@/obj/item/flame/lighter::Initialize::I
-init_lines	code/game/objects/items/weapons/cigs_lighters.dm	@/obj/item/flame/lighter::Initialize::I.color
-init_lines	code/game/objects/items/weapons/cigs_lighters.dm	@/obj/item/flame/lighter::Initialize::add_overlay
-init_lines	code/game/objects/items/weapons/cigs_lighters.dm	@/obj/item/flame/lighter/zippo::Initialize::cut_overlays
-init_lines	code/game/objects/items/weapons/ecigs.dm	@/obj/item/clothing/mask/smokable/ecig::Initialize::sync_item_state
 init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguisher::Initialize::if
 init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguisher::Initialize::choice
 init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguisher::Initialize::add_overlay
-init_lines	code/game/objects/items/weapons/flamethrower.dm	@/obj/item/flamethrower/full::Initialize::status
-init_lines	code/game/objects/items/weapons/grenades/confetti.dm	@/obj/item/grenade/confetti::Initialize::confetti_spread.attach
-init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	@/obj/item/grenade/flashbang/clusterbang/segment::Initialize::stepdist
-init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	@/obj/item/grenade/flashbang/clusterbang/segment::Initialize::temploc
-init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	@/obj/item/grenade/flashbang/clusterbang/segment::Initialize::walk_away
-init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	@/obj/item/grenade/flashbang/cluster::Initialize::stepdist
-init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	@/obj/item/grenade/flashbang/cluster::Initialize::temploc
-init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	@/obj/item/grenade/flashbang/cluster::Initialize::walk_away
-init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	@/obj/item/grenade/flashbang/clusterbang/primed::Initialize::activate
-init_lines	code/game/objects/items/weapons/grenades/smokebomb.dm	@/obj/item/grenade/smokebomb::Initialize::smoke.attach
-init_lines	code/game/objects/items/weapons/grenades/smokebomb.dm	@/obj/item/grenade/smokebomb/primed::Initialize::activate
 init_lines	code/game/objects/items/weapons/id cards/cards.dm	@/obj/item/card::Initialize::reset_icon
 init_lines	code/game/objects/items/weapons/id cards/cards.dm	@/obj/item/card/id/synthetic/borg::Initialize::if
 init_lines	code/game/objects/items/weapons/id cards/cards.dm	@/obj/item/card/id/synthetic/borg::Initialize::rel_set
 init_lines	code/game/objects/items/weapons/id cards/cards.dm	@/obj/item/card/id/synthetic/borg::Initialize::registered_name
 init_lines	code/game/objects/items/weapons/id cards/cards.dm	@/obj/item/card/id/synthetic/borg::Initialize::observe
-init_lines	code/game/objects/items/weapons/implants/implantchair.dm	@/obj/machinery/implantchair::Initialize::add_implants
-init_lines	code/game/objects/items/weapons/implants/implantcircuits.dm	@/obj/item/implant/integrated_circuit::Initialize::rel_set
-init_lines	code/game/objects/items/weapons/inducer.dm	@/obj/item/cell/standin::Initialize::if
-init_lines	code/game/objects/items/weapons/inducer.dm	@/obj/item/cell/standin::Initialize::return
-init_lines	code/game/objects/items/weapons/material/ashtray.dm	@/obj/item/material/ashtray::Initialize::if
-init_lines	code/game/objects/items/weapons/material/ashtray.dm	@/obj/item/material/ashtray::Initialize::return
-init_lines	code/game/objects/items/weapons/material/ashtray.dm	@/obj/item/material/ashtray::Initialize::icon_state
-init_lines	code/game/objects/items/weapons/material/ashtray.dm	@/obj/item/material/ashtray::Initialize::max_butts
-init_lines	code/game/objects/items/weapons/material/ashtray.dm	@/obj/item/material/ashtray::Initialize::color
-init_lines	code/game/objects/items/weapons/material/ashtray.dm	@/obj/item/material/ashtray::Initialize::base_overlay
-init_lines	code/game/objects/items/weapons/material/ashtray.dm	@/obj/item/material/ashtray::Initialize::sync_butts
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::if
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::material
 init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::material
@@ -989,7 +926,6 @@ init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/it
 init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::material_mix
 init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::if
 init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::flags
-init_lines	code/game/objects/items/weapons/material/whetstone.dm	@/obj/item/material/sharpeningkit::Initialize::setrepair
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::make_tethered
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::rel_set
@@ -998,46 +934,18 @@ init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/ite
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun.set_icon_state
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun.base_icon_state
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun.wielded_item_state
-init_lines	code/game/objects/items/weapons/melee/energy.dm	@/obj/item/melee/energy/blade::Initialize::glow
-init_lines	code/game/objects/items/weapons/melee/shock_maul.dm	@/obj/item/melee/shock_maul::Initialize::update_held_icon
-init_lines	code/game/objects/items/weapons/picnic_blankets.dm	@/obj/structure/picnic_blanket_deployed/for_mapping_use::Initialize::unfold
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::if
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::T
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::if
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::door
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::if
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::afterattack
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::return
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	@/obj/item/storage/fancy/cigarettes::Initialize::if
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	@/obj/item/storage/fancy/cigarettes::Initialize::for
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	@/obj/item/storage/fancy/cigarettes::Initialize::C.brand
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	@/obj/item/storage/fancy/cigarettes::Initialize::C.desc
 init_lines	code/game/objects/items/weapons/storage/internal.dm	@/obj/item/storage/internal::Initialize::rel_set
 init_lines	code/game/objects/items/weapons/storage/internal.dm	@/obj/item/storage/internal::Initialize::if
 init_lines	code/game/objects/items/weapons/storage/internal.dm	@/obj/item/storage/internal::Initialize::return
 init_lines	code/game/objects/items/weapons/storage/internal.dm	@/obj/item/storage/internal::Initialize::name
-init_lines	code/game/objects/items/weapons/storage/mre.dm	@/obj/item/storage/box/tgmc_mre::Initialize::pickflavor
-init_lines	code/game/objects/items/weapons/storage/mre.dm	@/obj/item/reagent_containers/food/snacks/tgmc_mre_component::Initialize::if
-init_lines	code/game/objects/items/weapons/storage/mre.dm	@/obj/item/reagent_containers/food/snacks/tgmc_mre_component::Initialize::reagents.add_reagent
 init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::if
 init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::dq_latent_declare
 init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::else
 init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::starts_with
 init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::calibrate_size
-init_lines	code/game/objects/items/weapons/syndie.dm	@/obj/item/syndie/c4explosive::Initialize::K
-init_lines	code/game/objects/items/weapons/syndie.dm	@/obj/item/syndie/c4explosive::Initialize::K
-init_lines	code/game/objects/items/weapons/syndie.dm	@/obj/item/syndie/c4explosive::Initialize::K
-init_lines	code/game/objects/items/weapons/syndie.dm	@/obj/item/syndie/c4explosive::Initialize::desc
-init_lines	code/game/objects/items/weapons/syndie.dm	@/obj/item/syndie/c4explosive::Initialize::detonator
-init_lines	code/game/objects/items/weapons/syndie.dm	@/obj/item/syndie/c4explosive::Initialize::detonator.desc
-init_lines	code/game/objects/items/weapons/syndie.dm	@/obj/item/syndie/c4explosive::Initialize::rel_set
-init_lines	code/game/objects/items/weapons/tanks/jetpack.dm	@/obj/item/tank/jetpack::Initialize::ion_trail.set_up
-init_lines	code/game/objects/items/weapons/tanks/tank_types.dm	@/obj/item/tank/phoron/pressurized::Initialize::adjust_scale
 init_lines	code/game/objects/items/weapons/tanks/tanks.dm	@/obj/item/tank::Initialize::apply_blueprint_effects
 init_lines	code/game/objects/items/weapons/tanks/tanks.dm	@/obj/item/tank::Initialize::init_proxy
 init_lines	code/game/objects/items/weapons/tanks/tanks.dm	@/obj/item/tank::Initialize::update_gauge
-init_lines	code/game/objects/items/weapons/tanks/tanks.dm	@/obj/item/tank/phoron/onetankbomb::Initialize::onetankbomb
-init_lines	code/game/objects/items/weapons/tanks/tanks.dm	@/obj/item/tank/oxygen/onetankbomb::Initialize::onetankbomb
 init_lines	code/game/objects/items/weapons/tools/transforming.dm	@/obj/item/tool/transforming::Initialize::if
 init_lines	code/game/objects/items/weapons/tools/transforming.dm	@/obj/item/tool/transforming::Initialize::rel_set
 init_lines	code/game/objects/items/weapons/tools/transforming.dm	@/obj/item/tool/transforming::Initialize::on_tool_switch
@@ -4040,10 +3948,6 @@ world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdome1 += loc
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdome2 += loc
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdomeadmin += loc
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdomeobserve += loc
-world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.whitense)
-world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.darkMask)
-world_reads	code/game/objects/items/ghost_hunting/goggles.dm	rel_set(src, nameof(overlay), GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
-world_reads	code/game/objects/items/stacks/sandbags.dm	recipes = GLOB.sandbag_recipes
 world_reads	code/game/objects/structures/lattice.dm	for (var/dir in GLOB.cardinal)
 world_reads	code/game/objects/structures/props/puzzledoor.dm	for(var/obj/structure/prop/lock/L in orange(src, check_range))
 world_reads	code/game/turfs/flooring/seasonal.dm	switch(GLOB.world_time_season)

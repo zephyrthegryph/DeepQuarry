@@ -82,8 +82,8 @@ MATERIAL_MIX(/obj/item/communicator, list(MAT_STEEL = 30,MAT_GLASS = 10))
 //				assign the device to the holder's name automatically in a spectacularly shitty way.
 REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 
-/obj/item/communicator/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare camera connection, after its parents initialize.
+/obj/item/communicator/proc/prepare_camera_connection()
 	rel_set(src, nameof(node), get_exonet_node())
 	camera.name = "[src] #[rand(100,999)]"
 	camera.c_tag = camera.name
@@ -399,8 +399,8 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 /obj/machinery/camera/communicator
 	network = list(NETWORK_COMMUNICATORS)
 
-/obj/machinery/camera/communicator/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare communicator huds, after its parents initialize.
+/obj/machinery/camera/communicator/proc/prepare_communicator_huds()
 	LAZYOR(client_huds, GLOB.global_hud.whitense)
 	LAZYOR(client_huds, GLOB.global_hud.darkMask)
 
@@ -425,3 +425,9 @@ CAPABILITIES(/obj/item/communicator/watch)
 #undef WTHRTAB
 #undef MANITAB
 #undef SETTTAB
+
+CAPABILITIES(/obj/item/communicator)
+	setup(PROC_REF(prepare_camera_connection))
+
+CAPABILITIES(/obj/machinery/camera/communicator)
+	setup(PROC_REF(prepare_communicator_huds))

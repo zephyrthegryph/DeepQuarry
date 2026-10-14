@@ -430,12 +430,13 @@ CAPABILITIES(/obj/item/melee/energy/sword/ionic_rapier/lance)
 	lcolor = "#00FF00"
 	special_handling = TRUE
 
-/obj/item/melee/energy/blade/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare blade glow, after its parents initialize.
+/obj/item/melee/energy/blade/proc/prepare_blade_glow()
 
 	set_glow(src, GLOW(lrange, lpower, lcolor))
 
 CAPABILITIES(/obj/item/melee/energy/blade)
+	setup(PROC_REF(prepare_blade_glow))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	configure(item_thrown(force = 1))
 	configure(item_combat(force = 40, armor_penetration = 100, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))

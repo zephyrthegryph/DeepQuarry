@@ -17,6 +17,7 @@
 
 
 CAPABILITIES(/obj/item/ghost_trap)
+	setup(PROC_REF(prepare_capture_experiment))
 	configure(item_thrown(force = 0))
 	// The captured entity working its way out (container_resist() starts it): two minutes.
 	op("break_out", ai(), wait(2 MINUTES), then(PROC_REF(container_resist_timed_done)))
@@ -34,8 +35,8 @@ CAPABILITIES(/obj/item/ghost_trap)
 ///The entity we currently have captured (a relation view).
 /obj/item/ghost_trap/var/mob/captured_entity
 
-/obj/item/ghost_trap/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare capture experiment, after its parents initialize.
+/obj/item/ghost_trap/proc/prepare_capture_experiment()
 
 	var/static/list/ghost_events = list(
 		/datum/notice/world_ghost_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),

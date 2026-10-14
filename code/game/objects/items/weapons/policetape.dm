@@ -13,8 +13,8 @@
 
 	var/apply_tape = FALSE
 
-/obj/item/taperoll/Initialize(mapload)
-	. = ..()
+/// Declared setup: apply mapped tape, after its parents initialize.
+/obj/item/taperoll/proc/apply_mapped_tape()
 	if(apply_tape)
 		var/turf/T = get_turf(src)
 		if(!T)
@@ -22,7 +22,8 @@
 		var/obj/machinery/door/door = locate_on(T, /obj/machinery/door)
 		if(istype(door, /obj/machinery/door/airlock) || istype(door, /obj/machinery/door/firedoor))
 			afterattack(door, null, TRUE)
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 
 
 GLOBAL_LIST_INIT_TYPED(hazard_overlays, /image, list(
@@ -116,6 +117,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 		look.overlay(look_appearance(icon, get_start() ? "stop" : "start", appearance_flags = RESET_COLOR))
 
 CAPABILITIES(/obj/item/taperoll)
+	setup(PROC_REF(apply_mapped_tape))
 	configure(item_tooling(speed = 3))
 	op("lay_tape", in_hand(), label("Lay tape"), then(PROC_REF(tape_laying_requested)))
 

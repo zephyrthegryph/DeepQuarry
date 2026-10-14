@@ -20,6 +20,7 @@
 	var/injecting = 0
 
 CAPABILITIES(/obj/machinery/implantchair)
+	setup(PROC_REF(add_implants))
 	owns_many(nameof(implant_list), /obj/item/implant/loyalty)
 	interface("ImplantChair", title = "Implanter Status", state = nameof(GLOB.tgui_default_state))
 	op("implant", ui_act("implant"), then(PROC_REF(ui_act_implant)))
@@ -30,10 +31,6 @@ CAPABILITIES(/obj/machinery/implantchair)
 	op("get_out", menu(), label("Eject occupant"), needs(req_conscious()), then(PROC_REF(interaction_get_out)))
 	op("move_inside", menu(), label("Move Inside"), needs(req_conscious()), then(PROC_REF(interaction_move_inside)))
 	op("open_ui_impl", hand(), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
-
-/obj/machinery/implantchair/Initialize(mapload)
-	. = ..()
-	add_implants()
 
 /// Sealed occupant slot (C8a, containment.md §10).
 /datum/relation_definition/slot/occupant/implant_chair

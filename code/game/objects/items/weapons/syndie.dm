@@ -37,8 +37,8 @@
 	light_impact = 7
 	flash_range = 7
 
-/obj/item/syndie/c4explosive/Initialize(mapload)
-	. = ..()
+/// Declared setup: pair initial detonator, after its parents initialize.
+/obj/item/syndie/c4explosive/proc/pair_initial_detonator()
 	var/K = rand(1,2000)
 	K = md5(num2text(K)+name)
 	K = copytext(K,1,7)
@@ -68,6 +68,7 @@
 	spent(src)
 
 CAPABILITIES(/obj/item/syndie/c4explosive)
+	setup(PROC_REF(pair_initial_detonator))
 	op("link_detonator", item(/obj/item/flame/lighter/zippo/c4detonator), passes(), then(PROC_REF(detonator_linked)))
 
 /// A detonator used on the charge is linked to it (and the click goes on).

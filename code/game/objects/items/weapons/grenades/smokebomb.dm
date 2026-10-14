@@ -10,11 +10,12 @@
 	var/smoke_color
 	var/smoke_strength = 8
 
-/obj/item/grenade/smokebomb/Initialize(mapload)
-	. = ..()
+/// Declared setup: attach smoke, after its parents initialize.
+/obj/item/grenade/smokebomb/proc/attach_smoke()
 	smoke.attach(src)
 
 CAPABILITIES(/obj/item/grenade/smokebomb)
+	setup(PROC_REF(attach_smoke))
 	configure(item_worn(slots = SLOT_BELT))
 	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad, starts = /datum/effect/effect/system/smoke_spread/bad)
 	op("smoke_color", tool(TOOL_MULTITOOL), wait(0), label("Set smoke colour"),
@@ -34,6 +35,6 @@ CAPABILITIES(/obj/item/grenade/smokebomb)
 /obj/item/grenade/smokebomb/primed
 	desc = "A smoke bomb. This one appears to be already activated!"
 
-/obj/item/grenade/smokebomb/primed/Initialize(mapload)
-	. = ..()
-	activate()
+
+CAPABILITIES(/obj/item/grenade/smokebomb/primed)
+	setup(PROC_REF(activate))
