@@ -635,15 +635,18 @@ TRACKED(/mob/living/silicon/pai, eye_color)
 	return TRUE
 
 /mob/living/silicon/pai/proc/character_icon_from_dummy(mob/living/carbon/human/dummy/dummy)
-	dummy.regenerate_icons()
+	draw_now(dummy)
 
 	var/icon/new_holo = getCompoundIcon(dummy)
 
 	dummy.set_dir(NORTH)
+	draw_now(dummy)
 	var/icon/new_holo_north = getCompoundIcon(dummy)
 	dummy.set_dir(EAST)
+	draw_now(dummy)
 	var/icon/new_holo_east = getCompoundIcon(dummy)
 	dummy.set_dir(WEST)
+	draw_now(dummy)
 	var/icon/new_holo_west = getCompoundIcon(dummy)
 
 	spent(holo_icon_south)

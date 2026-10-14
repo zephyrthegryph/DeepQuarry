@@ -108,6 +108,7 @@ GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cac
 			var/mob/living/carbon/human/dummy/mannequin/M = new(null)
 			rel_set(M, nameof(M.dna), new /datum/dna(null))
 			M.set_species(S.name)
+			draw_now(M)
 			result_icon = getFlatIcon(M, defdir = SOUTH, no_anim = TRUE)
 			spent(M)
 		catch(var/exception/e)
