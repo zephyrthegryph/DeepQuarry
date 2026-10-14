@@ -15,6 +15,11 @@
 /mob/living/carbon/human/dummy
 	life_set = LIFE_SET_DELIST
 
+/// A dummy is a mannequin for previews and look pins, never a crowd: its name is rolled at make, so seeding the tail loop from it would
+/// draw a different idle frame state on every run. Every dummy plays loop 0.
+/mob/living/carbon/human/dummy/tail_idle_variant()
+	return 0
+
 
 /mob/living/carbon/human/dummy/mannequin/Initialize(mapload)
 	. = ..()
