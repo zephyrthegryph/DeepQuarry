@@ -44,3 +44,5 @@ Only changed editor default is ashtray initial icon_state ashtray -> blank; init
 ## Post-rebase mechanical follow-up
 
 The pipe painter now declares choose_initial_mode setup with the original set_mode(pick(modes)) call unchanged. Its derives(all_colours) runs synchronously inside lifeform_init during the atom parent initialization, before either the former leaf initializer or setup. No pipe-painter descendant initializer exists. There are no pipe-painter transient params, child constructors or additional RNG calls between those boundaries; the unconditional mapper overwrite is retained instead of adopting rolls override suppression. The real pipe_painter_mode constructor test asserts an actual catalog member is selected. This removes the previously retained pipe_painter init fingerprint; baseline update/verification remain root-owned.
+
+Final scoped follow-up certification on master a75de08d85: init baseline 4106 ->4009 globally (97 removed), including the pipe painter's final row. The init lint passes. Full gate remains pending because master has missing generated setter methods and base_vars findings outside this task.

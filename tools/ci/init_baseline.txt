@@ -873,7 +873,6 @@ init_lines	code/game/objects/items/devices/personal_shield_generator.dm	@/obj/it
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	@/obj/item/personal_shield_generator::Initialize::rel_set
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	@/obj/item/personal_shield_generator::Initialize::rel_set
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	@/obj/item/gun/energy/gun/generator::Initialize::rel_set
-init_lines	code/game/objects/items/devices/pipe_painter.dm	@/obj/item/pipe_painter::Initialize::mode
 init_lines	code/game/objects/items/devices/radio/intercom.dm	@/obj/item/radio/intercom::Initialize::A
 init_lines	code/game/objects/items/devices/radio/intercom.dm	@/obj/item/radio/intercom::Initialize::if
 init_lines	code/game/objects/items/devices/radio/intercom.dm	@/obj/item/radio/intercom::Initialize::observe
