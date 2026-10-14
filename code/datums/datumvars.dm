@@ -48,15 +48,15 @@
 	refresh_dispatched(src) // an admin's edit of a var nothing declares publishes to nobody: the outputs re-derive anyway
 	return TRUE
 
-/datum/proc/vv_get_var(var_name)
+/datum/proc/vv_get_var(var_name, mob/viewer)
 	switch(var_name)
 		if (NAMEOF(src, vars))
-			return debug_variable(var_name, list(), 0, src)
+			return debug_variable(var_name, list(), 0, src, viewer = viewer)
 	if(!(var_name in vars))
 		var/list/trait_field = type_trait_field_named(src, var_name)
 		if(trait_field)
-			return debug_variable(var_name, type_trait_of(src, trait_field[1]).vars[trait_field[2]], 0, src)
-	return debug_variable(var_name, vars[var_name], 0, src)
+			return debug_variable(var_name, type_trait_of(src, trait_field[1]).vars[trait_field[2]], 0, src, viewer = viewer)
+	return debug_variable(var_name, vars[var_name], 0, src, viewer = viewer)
 
 /**
  * Gets all the dropdown options in the vv menu.

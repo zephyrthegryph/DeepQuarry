@@ -139,7 +139,7 @@ CAPABILITIES(/datum/view_variables_panel)
 			var/value
 			if(IS_NORMAL_LIST(list_value) && IS_VALID_ASSOC_KEY(key))
 				value = list_value[key]
-			var/value_html = debug_variable(i, value, 0, list_value)
+			var/value_html = debug_variable(i, value, 0, list_value, viewer = user)
 			variables += list(list(
 				"index" = i,
 				"name" = "[key]",
@@ -154,14 +154,14 @@ CAPABILITIES(/datum/view_variables_panel)
 			if(thing_datum.can_vv_get(varname))
 				variables += list(list(
 					"name" = varname,
-					"value_html" = "[thing_datum.vv_get_var(varname)]",
+					"value_html" = "[thing_datum.vv_get_var(varname, user)]",
 				))
 		// Its trait blocks (doc/rewrite/proposals/base_vars.md): each field as `@kind.field`, edited through set_trait().
 		var/list/trait_fields = type_trait_fields_of(thing_datum)
 		for(var/field_name in trait_fields)
 			variables += list(list(
 				"name" = field_name,
-				"value_html" = "[debug_variable(field_name, trait_fields[field_name], 0, thing_datum)]",
+				"value_html" = "[debug_variable(field_name, trait_fields[field_name], 0, thing_datum, viewer = user)]",
 			))
 	data["variables"] = variables
 

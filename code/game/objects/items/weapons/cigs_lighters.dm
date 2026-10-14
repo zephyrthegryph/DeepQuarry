@@ -214,7 +214,9 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 			else
 				. += "[src] is nearly burnt out!"
 
-/obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
+/obj/item/clothing/mask/smokable/proc/light(flavor_text, mob/user)
+	if(isnull(flavor_text))
+		flavor_text = "[user] lights the [name]."
 	if(!src.lit)
 		set_lit(1)
 		play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_LIGHT)
@@ -295,7 +297,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 		return ITEM_INTERACT_SUCCESS
 	if(istype(M) && stat_value(M, STAT_ON_FIRE))
 		user.do_attack_animation(M)
-		light(span_notice("[user] coldly lights the [name] with the burning body of [M]."))
+		light(span_notice("[user] coldly lights the [name] with the burning body of [M]."), user)
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
@@ -318,7 +320,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 		text = replacetext(text, "USER", "[user]")
 		text = replacetext(text, "NAME", "[name]")
 		text = replacetext(text, "FLAME", "[W.name]")
-		light(text)
+		light(text, user)
 	return OP_OK
 
 /obj/item/clothing/mask/smokable/water_act(amount)
@@ -367,7 +369,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
 	if(istype(W, /obj/item/melee/energy/sword))
 		var/obj/item/melee/energy/sword/S = W
 		if(S.active)
-			light(span_warning("[user] swings their [W], barely missing their nose. They light their [name] in the process."))
+			light(span_warning("[user] swings their [W], barely missing their nose. They light their [name] in the process."), user)
 
 	return OP_OK
 
@@ -547,15 +549,15 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/pipe)
 	else if(istype(W, /obj/item/flame/lighter))
 		var/obj/item/flame/lighter/L = W
 		if(L.lit)
-			light(span_notice("[user] manages to light their [name] with [W]."))
+			light(span_notice("[user] manages to light their [name] with [W]."), user)
 
 	else if(istype(W, /obj/item/flame/match))
 		var/obj/item/flame/match/M = W
 		if(M.lit)
-			light(span_notice("[user] lights their [name] with their [W]."))
+			light(span_notice("[user] lights their [name] with their [W]."), user)
 
 	else if(istype(W, /obj/item/assembly/igniter))
-		light(span_notice("[user] fiddles with [W], and manages to light their [name] with the power of science."))
+		light(span_notice("[user] fiddles with [W], and manages to light their [name] with the power of science."), user)
 
 	changed(src)
 	return OP_OK
@@ -759,9 +761,9 @@ CAPABILITIES(/obj/item/flame/lighter)
 
 		else
 			if(istype(src, /obj/item/flame/lighter/zippo))
-				cig.light(span_notice(span_rose("[user] whips the [name] out and holds it for [M].")))
+				cig.light(span_notice(span_rose("[user] whips the [name] out and holds it for [M].")), user)
 			else
-				cig.light(span_notice("[user] holds the [name] out for [M], and lights the [cig.name]."))
+				cig.light(span_notice("[user] holds the [name] out for [M], and lights the [cig.name]."), user)
 			return ITEM_INTERACT_SUCCESS
 	else
 		..()
@@ -964,9 +966,9 @@ CAPABILITIES(/obj/item/flame/lighter)
 			cig.attackby(src, user)
 		else
 			if(istype(src, /obj/item/flame/lighter/supermatter))
-				cig.light(span_notice(span_rose("[user] whips the [name] out and holds it for [M].")))
+				cig.light(span_notice(span_rose("[user] whips the [name] out and holds it for [M].")), user)
 			else
-				cig.light(span_notice("[user] holds the [name] out for [M], and lights the [cig.name]."))
+				cig.light(span_notice("[user] holds the [name] out for [M], and lights the [cig.name]."), user)
 		return ITEM_INTERACT_SUCCESS
 	else
 		..()
@@ -1029,9 +1031,9 @@ CAPABILITIES(/obj/item/flame/lighter)
 			return ITEM_INTERACT_SUCCESS
 		else
 			if(istype(src, /obj/item/flame/lighter/supermatter/syndismzippo))
-				cig.light(span_notice(span_rose("[user] whips the [name] out and holds it for [M].")))
+				cig.light(span_notice(span_rose("[user] whips the [name] out and holds it for [M].")), user)
 			else
-				cig.light(span_notice("[user] holds the [name] out for [M], and lights the [cig.name]."))
+				cig.light(span_notice("[user] holds the [name] out for [M], and lights the [cig.name]."), user)
 			return ITEM_INTERACT_SUCCESS
 	else
 		..()
@@ -1191,9 +1193,9 @@ CAPABILITIES(/obj/item/flame/lighter)
 			cig.attackby(src, user)
 		else
 			if (istype(src, /obj/item/flame/lighter/supermatter/expsmzippo))
-				cig.light(span_notice(span_rose("[user] whips the [name] out and holds it for [M].")))
+				cig.light(span_notice(span_rose("[user] whips the [name] out and holds it for [M].")), user)
 			else
-				cig.light(span_notice("[user] holds the [name] out for [M], and lights the [cig.name]."))
+				cig.light(span_notice("[user] holds the [name] out for [M], and lights the [cig.name]."), user)
 	else
 		..()
 

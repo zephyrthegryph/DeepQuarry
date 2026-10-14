@@ -144,13 +144,13 @@ CAPABILITIES(/obj/structure/flora/tree)
 	if(Proj.get_structure_damage())
 		adjust_health(-Proj.get_structure_damage(), TRUE)
 
-/obj/structure/flora/tree/get_description_interaction()
+/obj/structure/flora/tree/get_description_interaction(mob/viewer)
 	var/list/results = list()
 
 	if(!is_stump)
-		results += "[desc_panel_image("hatchet")]to cut down this tree into logs.  Any sharp and strong weapon will do."
+		results += "[desc_panel_image("hatchet", viewer)]to cut down this tree into logs.  Any sharp and strong weapon will do."
 
-	results += ..()
+	results += ..(viewer)
 
 	return results
 

@@ -248,13 +248,13 @@
 		step_away(baby, src)
 	return baby
 
-/mob/living/simple_mob/slime/xenobio/get_description_interaction()
+/mob/living/simple_mob/slime/xenobio/get_description_interaction(mob/viewer)
 	var/list/results = list()
 
 	if(!stat)
-		results += "[desc_panel_image("slimebaton")]to stun the slime, if it's being bad."
+		results += "[desc_panel_image("slimebaton", viewer)]to stun the slime, if it's being bad."
 
-	results += ..()
+	results += ..(viewer)
 
 	return results
 

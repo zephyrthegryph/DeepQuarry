@@ -1,32 +1,32 @@
-/turf/simulated/wall/get_description_interaction()
+/turf/simulated/wall/get_description_interaction(mob/viewer)
 	var/list/results = list()
 	if(get_integrity_damage())
-		results += "[desc_panel_image("welder")]to repair."
+		results += "[desc_panel_image("welder", viewer)]to repair."
 
 	if(isnull(construction_stage) || !reinf_material)
-		results += "[desc_panel_image("welder")]to deconstruct if undamaged."
+		results += "[desc_panel_image("welder", viewer)]to deconstruct if undamaged."
 	else
 		switch(construction_stage)
 			if(6)
-				results += "[desc_panel_image("wirecutters")]to begin deconstruction."
+				results += "[desc_panel_image("wirecutters", viewer)]to begin deconstruction."
 			if(5)
 				results += list(
-					"[desc_panel_image("screwdriver")]to continue deconstruction.",
-					"[desc_panel_image("wirecutters")]to reverse deconstruction."
+					"[desc_panel_image("screwdriver", viewer)]to continue deconstruction.",
+					"[desc_panel_image("wirecutters", viewer)]to reverse deconstruction."
 					)
 			if(4)
 				results += list(
-					"[desc_panel_image("welder")]to continue deconstruction.",
-					"[desc_panel_image("screwdriver")]to reverse deconstruction."
+					"[desc_panel_image("welder", viewer)]to continue deconstruction.",
+					"[desc_panel_image("screwdriver", viewer)]to reverse deconstruction."
 					)
 			if(3)
-				results += "[desc_panel_image("crowbar")]to continue deconstruction."
+				results += "[desc_panel_image("crowbar", viewer)]to continue deconstruction."
 			if(2)
-				results += "[desc_panel_image("wrench")]to continue deconstruction."
+				results += "[desc_panel_image("wrench", viewer)]to continue deconstruction."
 			if(1)
-				results += "[desc_panel_image("welder")]to continue deconstruction."
+				results += "[desc_panel_image("welder", viewer)]to continue deconstruction."
 			if(0)
-				results += "[desc_panel_image("crowbar")]to finish deconstruction."
+				results += "[desc_panel_image("crowbar", viewer)]to finish deconstruction."
 	return results
 
 /turf/simulated/floor/get_mechanics_info(list/additional_information)
@@ -34,8 +34,8 @@
 	if(broken || burnt)
 		. += "It is broken."
 
-/turf/simulated/floor/get_description_interaction()
-	. = ..()
+/turf/simulated/floor/get_description_interaction(mob/viewer)
+	. = ..(viewer)
 	if(broken || burnt)
 		if(is_plating())
 			. += "Use a welder on it to repair the damage."
@@ -58,11 +58,11 @@
 			. += "Use a shovel on it to remove it."
 			. += "If using a floor tile on the floor with a shovel in your offhand, you will automatically replace the floor with that tile."
 
-/turf/simulated/floor/outdoors/snow/get_description_interaction()
-	. = ..()
+/turf/simulated/floor/outdoors/snow/get_description_interaction(mob/viewer)
+	. = ..(viewer)
 	. += "Use a shovel on it to get rid of the snow and reveal the ground beneath."
 	. += "Use an empty hand on it to scoop up some snow, which you can use to make snowballs or snowmen."
 
-/turf/simulated/floor/outdoors/grass/get_description_interaction()
-	. = list("Use floor tiles on it to make a plating.")  // using . = ..() would incorrectly say you can remove the grass with a shovel
+/turf/simulated/floor/outdoors/grass/get_description_interaction(mob/viewer)
+	. = list("Use floor tiles on it to make a plating.")  // using . = ..(viewer) would incorrectly say you can remove the grass with a shovel
 	. += "Use a shovel on it to dig for worms."

@@ -17,9 +17,9 @@
 /// Borrower -> list of the entity handles of their open borrows (handles: a borrow that goes away stops resolving).
 GLOBAL_LIST_EMPTY(FrozenAccounts)
 
-/proc/list_frozen()
+/proc/list_frozen(mob/user)
 	for (var/A in GLOB.FrozenAccounts)
-		to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
+		to_chat(user, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
 
 /datum/article
 	var/headline = "Something big is happening"

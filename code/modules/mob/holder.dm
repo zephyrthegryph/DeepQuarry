@@ -355,13 +355,13 @@ CAPABILITIES(/obj/item/holder/fish)
 //Mob procs and vars for scooping up
 /mob/living/var/holder_type
 
-/mob/living/MouseDrop(atom/over_object)
-	var/mob/living/carbon/human/H = over_object
+/mob/living/proc/scoop_drop(datum/act/input/A)
+	var/mob/living/carbon/human/H = A.over
 	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && (!combat_mode && !H.combat_mode))
 		if(!issmall(H) || !ishuman(src))
-			get_scooped(H, (usr == src))
+			get_scooped(H, A.actor == src)
 		return
-	return ..()
+	return INPUT_FALLTHROUGH
 
 /mob/living/proc/get_scooped(mob/living/carbon/grabber, self_grab)
 

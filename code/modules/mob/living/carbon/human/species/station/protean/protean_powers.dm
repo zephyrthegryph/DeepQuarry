@@ -103,6 +103,7 @@ CAPABILITIES(/datum/protean_power)
 	var/datum/protean_power/power
 
 CAPABILITIES(/obj/effect/protean_power_button)
+	click_on(PROC_REF(power_clicked))
 	ref_one(nameof(power), /datum/protean_power)
 	param(nameof(power), pos = 1, apply = PROC_REF(show_power))
 
@@ -115,11 +116,11 @@ CAPABILITIES(/obj/effect/protean_power_button)
 	set_icon(power.icon)
 	set_icon_state(power.icon_state)
 
-/obj/effect/protean_power_button/Click(location, control, params)
-	var/mob/living/carbon/human/H = usr
+/obj/effect/protean_power_button/proc/power_clicked(datum/act/input/A)
+	var/mob/living/carbon/human/H = A.actor
 	if(!istype(H) || !power)
 		return
-	if(GLOB.input_router.click_is(params, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
+	if(GLOB.input_router.click_is(A.params, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
 		to_chat(H, span_notice(span_bold("[power.name]") + " - [power.desc]"))
 		return
 	power.try_activate(H)

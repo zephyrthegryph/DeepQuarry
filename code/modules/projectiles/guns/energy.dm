@@ -245,16 +245,16 @@ CAPABILITIES(/obj/item/gun/energy)
 		rel_set(src, nameof(power_supply), new /obj/item/cell/device/weapon(src))
 	set_self_recharge(1)
 
-/obj/item/gun/energy/get_description_interaction()
+/obj/item/gun/energy/get_description_interaction(mob/viewer)
 	var/list/results = list()
 
 	if(!battery_lock && !self_recharge)
 		if(power_supply)
-			results += "[desc_panel_image("offhand")]to remove the weapon cell."
+			results += "[desc_panel_image("offhand", viewer)]to remove the weapon cell."
 		else
-			results += "[desc_panel_image("weapon cell")]to add a new weapon cell."
+			results += "[desc_panel_image("weapon cell", viewer)]to add a new weapon cell."
 
-	results += ..()
+	results += ..(viewer)
 
 	return results
 

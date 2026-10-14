@@ -1238,6 +1238,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/hover_input(datum/act/input/A)
 	if(A.entered)
 		show_mob_hover_tip(A.actor, A.params)
+	else
+		closeToolTip(A.actor, src)
 	return INPUT_FALLTHROUGH
 
 /mob/proc/show_mob_hover_tip(mob/user, params)
@@ -1246,10 +1248,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			openToolTip(user, src, params, title = get_nametag_name(user), content = get_nametag_desc(user))
 
 /mob/MouseDown()
-	closeToolTip(usr, src) //No reason not to, really
-	. = ..()
-
-/mob/MouseExited()
 	closeToolTip(usr, src) //No reason not to, really
 	. = ..()
 
@@ -1558,11 +1556,11 @@ MSG_DEF_SELF(vv/no_languages, "This mob knows no languages.")
 /**
  * extra var handling for the logging var
  */
-/mob/vv_get_var(var_name)
+/mob/vv_get_var(var_name, mob/viewer)
 	//switch(var_name)
 	//	if(NAMEOF(src, logging))
 	//		return debug_variable(var_name, logging, 0, src, FALSE)
-	. = ..()
+	. = ..(var_name, viewer)
 
 /obj/item
 	var/tmp/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")

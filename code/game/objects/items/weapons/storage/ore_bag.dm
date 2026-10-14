@@ -96,12 +96,12 @@ MSG_DEF_SELF(ore_bag/full, "It's too full to possibly fit anything else inside o
 			gather_all(target.loc, user)
 			return
 
-/obj/item/ore_bag/proc/remove_from_storage(obj/item/W, atom/new_location)
+/obj/item/ore_bag/proc/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	if(!istype(W)) return 0
 
 	if(new_location)
 		if(ismob(loc))
-			W.dropped(usr)
+			W.dropped(user)
 		if(ismob(new_location))
 			W.hud_layerise()
 		else

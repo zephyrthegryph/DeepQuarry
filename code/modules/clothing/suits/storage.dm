@@ -15,9 +15,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage)
 		return OP_DECLINE
 	return OP_OK
 
-/obj/item/clothing/suit/storage/MouseDrop(obj/over_object as obj)
-	if (pockets.handle_mousedrop(usr, over_object))
-		..(over_object)
+/obj/item/clothing/suit/storage/proc/mousedrop_input(datum/act/input/A)
+	if(pockets.handle_mousedrop(A.actor, A.over))
+		return ..(A)
 
 /// Old attackby: the clothing's own item use (the old ..()), then the pockets.
 /obj/item/clothing/suit/storage/proc/suit_pockets_item(datum/act/op/A)

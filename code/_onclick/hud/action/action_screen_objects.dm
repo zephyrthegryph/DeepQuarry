@@ -416,13 +416,14 @@ CAPABILITIES(/atom/movable/screen/button_palette)
 		viewer.client.screen |= src
 
 
-/atom/movable/screen/palette_scroll/Click(location, control, params)
-	if(!can_use(usr))
+/atom/movable/screen/palette_scroll/proc/palette_clicked(datum/act/input/A)
+	if(!can_use(A.actor))
 		return
 	our_hud().palette_actions.scroll(scroll_direction)
 
 CAPABILITIES(/atom/movable/screen/palette_scroll)
 	ref_one(nameof(our_hud))
+	click_on(PROC_REF(palette_clicked))
 	tooltip(PROC_REF(input_tooltip))
 
 /// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm).

@@ -34,12 +34,12 @@
 	return
 
 // This one is slightly different, in that it must return a list.
-/atom/proc/get_description_interaction()
+/atom/proc/get_description_interaction(mob/viewer)
 	return list()
 
 // Quickly adds the boilerplate code to add an image and padding for the image.
-/proc/desc_panel_image(icon_state)
-	return "[icon2html(GLOB.description_icons[icon_state], usr)]&emsp;"
+/proc/desc_panel_image(icon_state, mob/viewer)
+	return "[icon2html(GLOB.description_icons[icon_state], viewer)]&emsp;"
 
 /mob/living/get_description_fluff()
 	if(bio.flavor_text) //Get flavor text for the green text.
@@ -63,7 +63,7 @@
 	description_holders["info"] = jointext(info, "<br>")
 	description_holders["fluff"] = A.get_description_fluff()
 	description_holders["antag"] = (update_antag_info)? A.get_description_antag() : ""
-	description_holders["interactions"] = A.get_description_interaction()
+	description_holders["interactions"] = A.get_description_interaction(mob)
 
 	description_holders["name"] = "[A.name]"
 	description_holders["icon"] = entity_handle(A) // a handle: a deleted atom stops resolving instead of being kept by the client
@@ -129,7 +129,7 @@
 	var/antag_info_temp = A.get_description_antag()
 	if(is_antagish && antag_info_temp)
 		. += span_details("🏴‍☠️ | Antag Information", antag_info_temp)
-	var/list/interaction_info = A.get_description_interaction()
+	var/list/interaction_info = A.get_description_interaction(source)
 	if(LAZYLEN(interaction_info))
 		var/temp = ""
 		for(var/a in interaction_info)

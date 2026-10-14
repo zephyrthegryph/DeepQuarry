@@ -78,8 +78,8 @@ CAPABILITIES(/atom/movable/screen/radial/slice)
 	. = ..()
 	set_icon_state("radial_center")
 
-/atom/movable/screen/radial/center/Click(location, control, params)
-	if(usr.client == parent().current_user())
+/atom/movable/screen/radial/center/proc/center_clicked(datum/act/input/A)
+	if(A.actor.client == parent().current_user())
 		parent().close_menu()
 
 /datum/radial_menu
@@ -383,3 +383,6 @@ CAPABILITIES(/datum/radial_menu)
 /// The atom the menu is anchored to (a relation view: null once that is deleted).
 /datum/radial_menu/proc/anchor() as /atom
 	return anchor
+
+CAPABILITIES(/atom/movable/screen/radial/center)
+	click_on(PROC_REF(center_clicked))

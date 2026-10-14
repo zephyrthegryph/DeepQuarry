@@ -1,6 +1,6 @@
 #define VV_HTML_ENCODE(thing) ( sanitize ? html_encode(thing) : thing )
 /// Get displayed variable in VV variable list
-/proc/debug_variable(name, value, level, datum/owner, sanitize = TRUE, display_flags = NONE) //if D is a list, name will be index, and value will be assoc value.
+/proc/debug_variable(name, value, level, datum/owner, sanitize = TRUE, display_flags = NONE, mob/viewer) //if D is a list, name will be index, and value will be assoc value.
 	if(owner)
 		if(islist(owner))
 			var/list/list_owner = owner
@@ -25,12 +25,12 @@
 
 	. = "[.][name_part] = "
 
-	var/item = _debug_variable_value(name, value, level, owner, sanitize, display_flags)
+	var/item = _debug_variable_value(name, value, level, owner, sanitize, display_flags, viewer)
 
 	return "[.][item]</li>"
 
 // This is split into a separate proc mostly to make errors that happen not break things too much
-/proc/_debug_variable_value(name, value, level, datum/owner, sanitize, display_flags)
+/proc/_debug_variable_value(name, value, level, datum/owner, sanitize, display_flags, mob/viewer)
 	if(isappearance(value))
 		value = get_vv_appearance(value)
 
@@ -47,7 +47,7 @@
 		var/icon/icon_value = icon(value)
 		var/rnd = rand(1,10000)
 		var/rname = "tmp[REF(icon_value)][rnd].png"
-		usr << browse_rsc(icon_value, rname)
+		viewer << browse_rsc(icon_value, rname)
 		return "(" + span_value("[value]") + ") <img class=icon src=\"[rname]\">"
 		#else
 		return "/icon (" + span_value("[value]") + ")"
@@ -65,7 +65,7 @@
 		var/datum/record/record_value = value
 		var/list/fields = list()
 		for(var/field in record_fields(record_value))
-			fields += debug_variable(field, record_value.vars[field], level + 1, record_value, sanitize)
+			fields += debug_variable(field, record_value.vars[field], level + 1, record_value, sanitize, viewer = viewer)
 		return "<a href='byond://?_src_=vars;[HrefToken()];Vars=[REF(record_value)]'>[record_value.type] [REF(record_value)]</a><ul>[fields.Join()]</ul>"
 
 	if(isdatum(value))
@@ -77,7 +77,7 @@
 		var/list/items = list()
 
 		for(var/key, val in alist_value)
-			items += debug_variable(key, val, level + 1, sanitize = sanitize)
+			items += debug_variable(key, val, level + 1, sanitize = sanitize, viewer = viewer)
 
 		return "<a href='byond://?_src_=vars;[HrefToken()];Vars=[REF(alist_value)]'>/alist ([alist_value.len])</a><ul>[items.Join()]</ul>"
 
@@ -100,7 +100,7 @@
 					val = key
 					key = i
 
-				items += debug_variable(key, val, level + 1, sanitize = sanitize)
+				items += debug_variable(key, val, level + 1, sanitize = sanitize, viewer = viewer)
 
 			return "<a href='byond://?_src_=vars;[HrefToken()];[link_vars]'>/list ([list_value.len])</a><ul>[items.Join()]</ul>"
 		return "<a href='byond://?_src_=vars;[HrefToken()];[link_vars]'>/list ([list_value.len])</a>"

@@ -55,6 +55,7 @@
 	var/mob_announce_cooldown = 0 //Define this to make it so when visited, the ATC will announce their arrival. Only used if you have a Crossed/Uncrossed that calls announce_atc w/ announce_atc being redefined.
 
 CAPABILITIES(/obj/effect/overmap/visitable)
+	hover(PROC_REF(sector_hovered))
 	rolls(nameof(docking_codes), PROC_REF(roll_docking_codes))
 
 REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
@@ -228,17 +229,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 /obj/effect/overmap/visitable/proc/cleanup()
 	return FALSE
 
-/obj/effect/overmap/visitable/MouseEntered(location, control, params)
-	openToolTip(user = usr, tip_src = src, params = params, title = name)
-
-	..()
+/obj/effect/overmap/visitable/proc/sector_hovered(datum/act/input/A)
+	if(A.entered)
+		openToolTip(user = A.actor, tip_src = src, params = A.params, title = name)
+		A.actor?.client?.note_hover(src)
+	else
+		closeToolTip(A.actor, src)
 
 /obj/effect/overmap/visitable/MouseDown()
-	closeToolTip(usr, src) //No reason not to, really
-
-	..()
-
-/obj/effect/overmap/visitable/MouseExited()
 	closeToolTip(usr, src) //No reason not to, really
 
 	..()

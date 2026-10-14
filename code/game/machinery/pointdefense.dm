@@ -30,10 +30,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 				id_tag = null
 	default_apply_parts()
 
-/obj/machinery/pointdefense_control/get_description_interaction()
-	. = ..()
+/obj/machinery/pointdefense_control/get_description_interaction(mob/viewer)
+	. = ..(viewer)
 	if(!id_tag)
-		. += "[desc_panel_image("multitool")]to set ident tag"
+		. += "[desc_panel_image("multitool", viewer)]to set ident tag"
 
 CAPABILITIES(/obj/machinery/pointdefense_control)
 	configure(uses_power(channel = EQUIP, active = 5 KILOWATTS))
@@ -130,10 +130,10 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 
 /// Steps (watches for and shoots meteors) while switched on and working.
 
-/obj/machinery/pointdefense/get_description_interaction()
-	. = ..()
+/obj/machinery/pointdefense/get_description_interaction(mob/viewer)
+	. = ..(viewer)
 	if(!id_tag)
-		. += "[desc_panel_image("multitool")]to set ident tag and connect to a mainframe."
+		. += "[desc_panel_image("multitool", viewer)]to set ident tag and connect to a mainframe."
 
 /obj/machinery/pointdefense/proc/appearance_live()
 	return (active && id_tag && operable()) ? 1 : 0

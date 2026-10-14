@@ -321,13 +321,12 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 
 // Proc: MouseDrop()
 //Same thing PDAs do
-/obj/item/communicator/MouseDrop(obj/over_object as obj)
-	var/mob/M = usr
-	if (!(src.loc == M) || (src.loc && src.loc.loc == M))
+/obj/item/communicator/proc/communicator_dropped(datum/act/input/A)
+	var/mob/M = A.actor
+	if(!(src.loc == M) || (src.loc && src.loc.loc == M))
 		return
-	if(!istype(over_object, /atom/movable/screen))
+	if(!istype(A.over, /atom/movable/screen))
 		return attack_self(M)
-	return
 
 /// Old attack_ghost: recreates the known_devices list, so that the ghost looking at the device
 /// can see themselves, then falls through to the ghost's default so that the UI appears.

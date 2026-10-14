@@ -146,9 +146,8 @@
 	var/list/unwrapped = rerun_unwrap_list(rerun_args)
 	if(isnull(unwrapped))
 		return
-	usr = actor() // Verbs and panel procs read usr, as they did when first run.
 	try
-		run_again(unwrapped)
+		with_actor(actor(), src, PROC_REF(run_again), unwrapped)
 	catch(var/exception/e)
 		stack_trace("[type] re-run: [e]")
 	finished()
@@ -415,13 +414,12 @@ GLOBAL_VAR(prompt_flow)
 
 /// Runs a flow's entry again with its stored answers (shared by the query callback).
 /proc/prompt_flow_rerun(asker, proc_name, list/proc_args, list/answers, mob/user)
-	usr = user // Flow entries are verbs, panels and topics, and read usr as they did first.
 	if(istype(asker, /client))
 		var/client/C = asker
 		C.rerun_answers = answers
 		C.rerun_answers_proc = proc_name
 		try
-			call(C, proc_name)(arglist(proc_args))
+			with_actor(arglist(list(user, C, proc_name) + proc_args))
 		catch(var/exception/e)
 			stack_trace("flow re-run [proc_name]: [e]")
 		C.rerun_answers = null
@@ -430,7 +428,7 @@ GLOBAL_VAR(prompt_flow)
 	var/id = "[REF(asker)]:[proc_name]"
 	GLOB.rerun_answers[id] = answers
 	try
-		call(asker, proc_name)(arglist(proc_args))
+		with_actor(arglist(list(user, asker, proc_name) + proc_args))
 	catch(var/exception/e)
 		stack_trace("flow re-run [proc_name] on [asker]: [e]")
 	GLOB.rerun_answers -= id

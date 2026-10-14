@@ -896,18 +896,17 @@ DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_ic
 	standing.add_overlay(blocker_overlay)
 	return standing
 
-/obj/item/MouseEntered(location,control,params)
-	. = ..()
-	if(QDELETED(src))
-		return
-	if(usr?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in usr) || isstorage(loc))) // If in inventory or in storage we're looking at
-		var/user = usr
-		after(src, 0.5 SECONDS, PROC_REF(openTip), key = "tip_timer", with = list(location, control, params, user))
-
-/obj/item/MouseExited()
-	. = ..()
-	cancel_after(src, "tip_timer")
-	closeToolTip(usr, src)
+/obj/item/proc/item_hovered(datum/act/input/A)
+	var/mob/user = A.actor
+	if(A.entered)
+		user?.client?.note_hover(src)
+		if(QDELETED(src))
+			return
+		if(user?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in user) || isstorage(loc)))
+			after(src, 0.5 SECONDS, PROC_REF(openTip), key = "tip_timer", with = list(A.native?["location"], A.native?["control"], A.params, user))
+	else
+		cancel_after(src, "tip_timer")
+		closeToolTip(user, src)
 
 /obj/item/proc/openTip(location, control, params, user)
 	openToolTip(user, src, params, title = name, content = desc)

@@ -110,11 +110,11 @@ CAPABILITIES(/obj/item/storage/secure)
 		user.show_message(span_warning("Unable to reset internal memory."), 1)
 	return OP_OK
 
-/obj/item/storage/secure/MouseDrop(over_object, src_location, over_location)
-	if (locked)
-		src.add_fingerprint(usr)
+/obj/item/storage/secure/proc/mousedrop_input(datum/act/input/A)
+	if(locked)
+		add_fingerprint(A.actor)
 		return
-	..()
+	return ..(A)
 
 /// The keypad: the digits typed so far, the code that sets the lock, E to enter and R to lock.
 /obj/item/storage/secure/ui_data(datum/act/eval/A)

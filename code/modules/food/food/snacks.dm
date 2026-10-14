@@ -5303,6 +5303,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/honeybun)
 
 // An empty hand takes a chip from the basket.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chipplate)
+	drag_onto(PROC_REF(plate_dropped))
 	op("take_chip", hand(), priority(OP_PRIORITY_PART), label("Take a chip"), then(PROC_REF(chip_taken)))
 
 /obj/item/reagent_containers/food/snacks/chipplate/proc/chip_taken(datum/act/op/A)
@@ -5321,12 +5322,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chipplate)
 		consume(src, user)
 	return OP_OK
 
-/obj/item/reagent_containers/food/snacks/chipplate/MouseDrop(mob/user) //Dropping the chip onto the user
-	if(istype(user) && user == usr)
+/obj/item/reagent_containers/food/snacks/chipplate/proc/plate_dropped(datum/act/input/A)
+	var/mob/user = A.over
+	if(istype(user) && user == A.actor)
 		user.put_in_active_hand(src)
-		src.pickup(user)
+		pickup(user)
 		return
-	. = ..()
+	return INPUT_FALLTHROUGH
 
 /obj/item/reagent_containers/food/snacks/chipplate/nachos
 	name = "basket of nachos"

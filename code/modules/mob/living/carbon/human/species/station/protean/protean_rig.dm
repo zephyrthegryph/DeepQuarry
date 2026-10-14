@@ -636,7 +636,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	H = src.wearer()
 	..()
 
-/obj/item/rig/protean/get_description_interaction()
+/obj/item/rig/protean/get_description_interaction(mob/viewer)
 	var/list/results = list()
 	var/datum/affliction/core_dormancy/dormancy = get_dormancy()
 	if(dormancy)

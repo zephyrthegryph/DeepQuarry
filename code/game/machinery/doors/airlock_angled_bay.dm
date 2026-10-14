@@ -269,8 +269,8 @@
 	angled_airlock_icon_cache[cache_key] = final
 	set_icon(final)
 
-/obj/machinery/door/airlock/angled_bay/proc/gimme_icon()
-	usr << ftp(icon, "[name].dmi")
+/obj/machinery/door/airlock/angled_bay/proc/gimme_icon(mob/user)
+	user << ftp(icon, "[name].dmi")
 
 /**
  * The actual door types you can map in.

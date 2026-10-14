@@ -131,19 +131,19 @@ CAPABILITIES(/datum/artifact_master)
 
 	return effects
 
-/datum/artifact_master/proc/add_effect()
-	var/effect_type = rerun_ask(usr, "k123", PROC_REF(add_effect), args, /datum/prompt/choice, question = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect))
+/datum/artifact_master/proc/add_effect(mob/user)
+	var/effect_type = rerun_ask(user, "k123", PROC_REF(add_effect), args, /datum/prompt/choice, question = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect))
 	if(isnull(effect_type))
 		return
 	if(effect_type)
 		var/datum/artifact_effect/my_effect = new effect_type(src)
 		rel_add(src, nameof(my_effects), my_effect)
 		if(!istype(holder(), my_effect.req_type))
-			to_chat(usr, span_filter_notice("This effect can not be applied to this atom type."))
+			to_chat(user, span_filter_notice("This effect can not be applied to this atom type."))
 			rel_remove(src, nameof(my_effects), my_effect)
 
-/datum/artifact_master/proc/remove_effect()
-	var/to_remove_effect = rerun_ask(usr, "k134", PROC_REF(remove_effect), args, /datum/prompt/choice, question = "What effect do you want to remove?", title = "Remove Effect", choices = my_effects)
+/datum/artifact_master/proc/remove_effect(mob/user)
+	var/to_remove_effect = rerun_ask(user, "k134", PROC_REF(remove_effect), args, /datum/prompt/choice, question = "What effect do you want to remove?", title = "Remove Effect", choices = my_effects)
 	if(isnull(to_remove_effect))
 		return
 

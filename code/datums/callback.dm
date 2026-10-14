@@ -116,10 +116,7 @@
 // Makes a call in the context of a different usr
 // Use sparingly
 /world/proc/PushUsr(mob/M, datum/callback/CB)
-	var/temp = usr
-	usr = M
-	. = CB.Invoke()
-	usr = temp
+	return with_actor(M, CB)
 
 /// GLOBAL_PROC, the datum this callback calls, or null once that datum is deleted.
 /datum/callback/proc/target_object()

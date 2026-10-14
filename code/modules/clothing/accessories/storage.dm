@@ -36,12 +36,11 @@ CAPABILITIES(/obj/item/clothing/accessory/storage)
 		return OP_DECLINE
 	return OP_OK
 
-/obj/item/clothing/accessory/storage/MouseDrop(obj/over_object)
-	if (has_suit())
+/obj/item/clothing/accessory/storage/proc/mousedrop_input(datum/act/input/A)
+	if(has_suit())
 		return
-
-	if (hold.handle_mousedrop(usr, over_object))
-		..(over_object)
+	if(hold.handle_mousedrop(A.actor, A.over))
+		return ..(A)
 
 /// Old attackby: the item goes to the internal storage.
 /obj/item/clothing/accessory/storage/proc/storage_accessory_item(datum/act/op/A)

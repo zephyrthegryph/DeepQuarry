@@ -59,10 +59,10 @@
 		return FALSE
 	return ..()
 
-/mutable_appearance/appearance_mirror/vv_get_var(var_name)
+/mutable_appearance/appearance_mirror/vv_get_var(var_name, mob/viewer)
 	// No editing for you
 	var/value = vars[var_name]
-	return "<li style='backgroundColor:white'>(READ ONLY) [var_name] = [_debug_variable_value(var_name, value, 0, src, sanitize = TRUE, display_flags = NONE)]</li>"
+	return "<li style='backgroundColor:white'>(READ ONLY) [var_name] = [_debug_variable_value(var_name, value, 0, src, sanitize = TRUE, display_flags = NONE, viewer = viewer)]</li>"
 
 /mutable_appearance/appearance_mirror/vv_get_dropdown()
 	SHOULD_CALL_PARENT(FALSE)

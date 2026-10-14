@@ -169,9 +169,9 @@ Variables you may want to make use of are:
 				))
 	return
 
-/datum/species/event1/proc/choose_limbset()
+/datum/species/event1/proc/choose_limbset(mob/user)
 	var/static/list/limb_sets = list("Normal" = 1, "Unbreakable" = 2, "Unseverable" = 3, "Indestructible" = 4)
-	open_request(src, /datum/prompt/choice, PROC_REF(limbset_chosen), answerer = usr, question = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets, timeout = 0)
+	open_request(src, /datum/prompt/choice, PROC_REF(limbset_chosen), answerer = user, question = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets, timeout = 0)
 
 /datum/species/event1/proc/limbset_chosen(datum/act/request/A)
 	var/datum/prompt/choice/asked = A.answer
