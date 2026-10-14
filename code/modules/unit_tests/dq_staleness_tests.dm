@@ -53,6 +53,7 @@ TRACKED(/obj/stale_lamp, noise)
 
 /// A cached stat read after a raw write of its input is reported, and the report names the var that moved.
 /datum/unit_test/dq_staleness_stat_read_catches_raw_write
+	boot_needs = list()
 
 /datum/unit_test/dq_staleness_stat_read_catches_raw_write/Run()
 	GLOB.staleness_expected = TRUE
@@ -70,6 +71,7 @@ TRACKED(/obj/stale_lamp, noise)
 
 /// The same write through the setter publishes first: the read is right and nothing is reported.
 /datum/unit_test/dq_staleness_setter_write_is_clean
+	boot_needs = list()
 
 /datum/unit_test/dq_staleness_setter_write_is_clean/Run()
 	var/obj/stale_probe/P = allocate(/obj/stale_probe)
@@ -88,6 +90,7 @@ TRACKED(/obj/stale_lamp, noise)
 
 /// A stat var read directly (no proc to hook) is found by the sweep.
 /datum/unit_test/dq_staleness_sweep_catches_stat_var
+	boot_needs = list()
 
 /datum/unit_test/dq_staleness_sweep_catches_stat_var/Run()
 	GLOB.staleness_expected = TRUE
@@ -109,6 +112,7 @@ TRACKED(/obj/stale_lamp, noise)
 
 /// An applied draw checked after a raw write of a var it reads is reported with that var.
 /datum/unit_test/dq_staleness_draw_catches_raw_write
+	boot_needs = list()
 
 /datum/unit_test/dq_staleness_draw_catches_raw_write/Run()
 	GLOB.staleness_expected = TRUE
@@ -126,6 +130,7 @@ TRACKED(/obj/stale_lamp, noise)
 
 /// A tracked write the graph says no draw reads serves the cached look; the next sweep draws it dry, finds the difference and names the skipped var.
 /datum/unit_test/dq_staleness_draw_served_from_cache
+	boot_needs = list()
 
 /datum/unit_test/dq_staleness_draw_served_from_cache/Run()
 	GLOB.staleness_expected = TRUE
@@ -140,6 +145,7 @@ TRACKED(/obj/stale_lamp, noise)
 
 /// A keyed shared image whose key does not name what varies it is found on a hit.
 /datum/unit_test/dq_staleness_image_key
+	boot_needs = list()
 
 /datum/unit_test/dq_staleness_image_key/Run()
 	GLOB.staleness_expected = TRUE
@@ -157,6 +163,7 @@ TRACKED(/obj/stale_lamp, noise)
 
 /// The sampled live mode only logs: a stale read is reported and the test is not failed.
 /datum/unit_test/dq_staleness_sampled_mode_logs_only
+	boot_needs = list()
 
 /datum/unit_test/dq_staleness_sampled_mode_logs_only/Run()
 	GLOB.staleness_expected = TRUE // the end-of-test sweep runs strict and finds the same stale probe
@@ -178,6 +185,7 @@ TRACKED(/obj/stale_lamp, noise)
 
 /// The sampled mode is off by default: the config entry is 0.
 /datum/unit_test/dq_staleness_sample_default_off
+	boot_needs = list()
 
 /datum/unit_test/dq_staleness_sample_default_off/Run()
 	TEST_ASSERT_EQUAL(/datum/config_entry/number/staleness_sample::default, 0, "STALENESS_SAMPLE defaults to 0")

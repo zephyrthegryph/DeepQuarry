@@ -34,6 +34,9 @@ CAPABILITIES(/datum/dq_state_batch_fixture)
 /datum/dq_state_batch_fixture/proc/pure_write()
 	set_left(5)
 
+/datum/unit_test/dq_state_publication_batch_nested
+	boot_needs = list()
+
 /datum/unit_test/dq_state_publication_batch_nested/Run()
 	var/datum/dq_state_batch_fixture/F = allocate(/datum/dq_state_batch_fixture)
 	TEST_ASSERT_EQUAL(stat_value(F, STAT_STATE_BATCH_SUM), 0, "the actual derived stat is not initialized to its real inputs")
@@ -45,6 +48,9 @@ CAPABILITIES(/datum/dq_state_batch_fixture)
 	TEST_ASSERT_EQUAL(GLOB.stat_evals - before, 2, "the repeated nested left writes published more than one actual input key")
 	TEST_ASSERT_EQUAL(GLOB.state_batch_depth, 0, "nested completion left the publication batch open")
 	TEST_ASSERT(!GLOB.state_batch_flushing && !length(GLOB.state_batch_pending), "nested completion left a delivery or pending queue behind")
+
+/datum/unit_test/dq_state_publication_batch_exception
+	boot_needs = list()
 
 /datum/unit_test/dq_state_publication_batch_exception/Run()
 	var/datum/dq_state_batch_fixture/F = allocate(/datum/dq_state_batch_fixture)
@@ -62,12 +68,18 @@ CAPABILITIES(/datum/dq_state_batch_fixture)
 	F.set_right(2)
 	TEST_ASSERT_EQUAL(stat_value(F, STAT_STATE_BATCH_SUM), 6, "a later real setter did not publish after exception cleanup")
 
+/datum/unit_test/dq_state_publication_batch_dead_receiver
+	boot_needs = list()
+
 /datum/unit_test/dq_state_publication_batch_dead_receiver/Run()
 	var/datum/dq_state_batch_fixture/F = allocate(/datum/dq_state_batch_fixture)
 	state_batch(F, TYPE_PROC_REF(/datum/dq_state_batch_fixture, deleted_write))
 	TEST_ASSERT(QDELETED(F), "the real queued receiver was not deleted inside the writer")
 	TEST_ASSERT_EQUAL(GLOB.state_batch_depth, 0, "deleted receiver left its batch open")
 	TEST_ASSERT(!GLOB.state_batch_flushing && !length(GLOB.state_batch_pending), "deleted receiver retained weak publication records")
+
+/datum/unit_test/dq_state_publication_batch_purity
+	boot_needs = list()
 
 /datum/unit_test/dq_state_publication_batch_purity/Run()
 	var/datum/dq_state_batch_fixture/F = allocate(/datum/dq_state_batch_fixture)
@@ -106,6 +118,9 @@ CAPABILITIES(/datum/dq_state_batch_hook_fixture)
 	first.set_left(1)
 	second.set_left(2)
 
+/datum/unit_test/dq_state_publication_batch_delivery_fault
+	boot_needs = list()
+
 /datum/unit_test/dq_state_publication_batch_delivery_fault/Run()
 	set_global("status_policies", GLOB.status_policies)
 	var/datum/dq_state_batch_hook_fixture/fault/first = allocate(/datum/dq_state_batch_hook_fixture/fault)
@@ -143,6 +158,9 @@ CAPABILITIES(/datum/dq_state_batch_hook_fixture)
 
 /datum/dq_state_batch_hook_fixture/reentrant/proc/write_right()
 	set_right(2)
+
+/datum/unit_test/dq_state_publication_batch_reentrant_delivery
+	boot_needs = list()
 
 /datum/unit_test/dq_state_publication_batch_reentrant_delivery/Run()
 	set_global("status_policies", GLOB.status_policies)

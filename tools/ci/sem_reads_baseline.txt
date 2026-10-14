@@ -73,7 +73,6 @@ unknown_read	code/modules/vore/resizing/resize.dm	if((z in using_map.station_lev
 unknown_read	code/modules/vore/resizing/resize.dm	special_x = S.icon_scale_x
 unknown_read	code/modules/vore/resizing/resize.dm	special_y = S.icon_scale_y
 unknown_read	code/modules/vore/resizing/resize.dm	if(fuzzy || offset_override)
-unknown_read	code/modules/vore/resizing/resize.dm	center_offset = S.center_offset
 unknown_read	code/modules/vore/resizing/resize.dm	resize.Scale(new_size * icon_scale_x * special_x, new_size * icon_scale_y * special_y) //Change the size of the matrix
 unknown_read	code/modules/vore/resizing/resize.dm	resize.Scale(new_size * icon_scale_x * special_x, new_size * icon_scale_y * special_y) //Change the size of the matrix
 unknown_read	code/modules/vore/resizing/resize.dm	resize.Translate(center_offset * size_multiplier * icon_scale_x * special_x, (vis_height/2) * (new_size - 1)) //Move the player up in the tile so their feet align with the bottom
