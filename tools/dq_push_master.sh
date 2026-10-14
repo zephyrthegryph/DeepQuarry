@@ -120,6 +120,19 @@ for round in 1 2 3; do
 	sha="$(git rev-parse HEAD)"
 	log="data/push-check/${sha:0:12}"
 
+	# Re-proof: the lane's (or batch's) stamp went stale only because master moved while it was being gated, and its own commits are
+	# unchanged (a stamp on exactly its tip). Instead of refusing and sending it round another 30 minute lap that master can outrun
+	# again, the gates run its full stamped test list on this merged tree; that run is the fresh stamp, and it records reproof_of.
+	if ! pre_stamp="$(bash tools/dq_push_stamp.sh "$sha" 2>&1)" && [ "${DQ_PUSH_NO_REPROOF:-0}" != "1" ] && bash tools/dq_reproof_source.sh "$sha" >/dev/null 2>&1; then
+		echo "== re-proof: ${pre_stamp:0:300}"
+		echo "== re-proof: running the stamped test list on the merged tree ${sha:0:12} (tools/dq_merge_gates.sh --reproof)"
+		reproof_lanes="${expected_tips[*]-}"
+		bash tools/dq_merge_gates.sh --reproof ${reproof_lanes:+--lanes "$reproof_lanes"} || die "the re-proof gates failed on ${sha:0:12}; fix the failure (or rerun tools/dq_lane_ready.sh on the lane)"
+		sha="$(git rev-parse HEAD)"
+		log="data/push-check/${sha:0:12}"
+		echo "== re-proof passed: HEAD is now ${sha:0:12} and carries the fresh stamp"
+	fi
+
 	# tools/dq_merge_gates.sh runs the production build (DreamMaker + DreamChecker) next to the test world and stamps the exact
 	# HEAD when both reported clean. Clean tree and an unmoved HEAD are checked here and below.
 	stamped() { # <kind>: did the gates pass this check on exactly this HEAD?

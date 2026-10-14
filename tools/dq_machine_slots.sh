@@ -456,7 +456,12 @@ merge_lock_busy() { # begin|end: a gate or push run in the merge worktree marks 
 	d="$(_ml_slot)"
 	[ -d "$d" ] || return 0
 	case "$1" in
-		begin) merge_lock_holder_check 2>/dev/null && echo "$$" >"$d/busy" 2>/dev/null ;;
+		begin)
+			# A live marker stays (a push that runs the gates is still running when they end); the outermost run owns it.
+			local cur
+			cur="$(cat "$d/busy" 2>/dev/null)"
+			if [ -n "$cur" ] && kill -0 "$cur" 2>/dev/null; then return 0; fi
+			merge_lock_holder_check 2>/dev/null && echo "$$" >"$d/busy" 2>/dev/null ;;
 		end) [ "$(cat "$d/busy" 2>/dev/null)" = "$$" ] && rm -f "$d/busy" ;;
 	esac
 	return 0

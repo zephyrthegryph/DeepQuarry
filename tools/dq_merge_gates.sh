@@ -47,6 +47,7 @@ run_tests=1
 snapshot_output=0
 tgui=0
 serial=0
+reproof=0
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--tests) shift; read -r -a more <<<"${1:-}"; tests_arg+=("${more[@]}") ;;
@@ -57,6 +58,7 @@ while [ $# -gt 0 ]; do
 		--no-tests|--no-boot) run_tests=0 ;;
 		--tgui) tgui=1 ;;
 		--serial) serial=1 ;;
+		--reproof) reproof=1 ;;
 		-h|--help) sed -n '2,32p' "$0"; exit 0 ;;
 		*) echo "unknown argument: $1" >&2; exit 2 ;;
 	esac
@@ -182,6 +184,20 @@ if [ -n "$lanes" ]; then
 		echo "dq_merge_gates: REFUSED: no lane-ready stamp on: ${unstamped[*]}. Run tools/dq_lane_ready.sh in the lane, or name its tests: --tests \"a b c\"" >&2
 		exit 2
 	fi
+fi
+# Re-proof (tools/dq_reproof_source.sh, agent_workflow.md "Re-proof"): HEAD merges master into a lane or batch whose stamp is on exactly its tip but
+# went stale because master moved. Its full stamped test list runs on this merged tree, and this run is the fresh stamp (recorded in the note and the log).
+reproof_of=""
+reproof_reason=""
+if [ "$reproof" -eq 1 ]; then
+	[ "$run_tests" -eq 1 ] || { echo "dq_merge_gates: REFUSED: --reproof needs the test world (not --no-tests)" >&2; exit 2; }
+	rp="$(bash tools/dq_reproof_source.sh HEAD)" || { echo "dq_merge_gates: REFUSED: nothing to re-prove on HEAD: $(bash tools/dq_reproof_source.sh HEAD 2>&1 >/dev/null | head -n 1)" >&2; exit 1; }
+	reproof_of="$(sed -n 1p <<<"$rp")"
+	read -r -a rp_tests <<<"$(sed -n 2p <<<"$rp")"
+	reproof_reason="$(bash tools/dq_lane_check.sh "$reproof_of" 2>&1 | sed 's/ tests=.*//' | head -n 1 | tr -d '"\\' | head -c 300)"
+	echo "== re-proof: the stamp on ${reproof_of:0:12} is stale because master moved; running its full stamped list (${#rp_tests[@]} test(s)) on the merged tree ${sha:0:12}"
+	echo "   why: ${reproof_reason:-master moved}"
+	add_test "${rp_tests[@]}"
 fi
 if [ "$run_tests" -eq 1 ] && [ ${#tests[@]} -eq 0 ]; then tests=(dq_boot_gate); fi
 
@@ -325,12 +341,16 @@ fi
 	echo "lanes=$lanes"
 	echo "lane_tips=$lane_tips"
 	echo "base_master=$base_master"
+	echo "reproof_of=$reproof_of"
+	echo "reproof_reason=$reproof_reason"
 } >"data/merge-gates/$short.ok"
 # The test stamp the push gate reads (tools/dq_push_stamp.sh): a note on this exact commit, only when a test world ran and nothing failed
 # that tools/ci/known_failures.txt does not list. A lane-ready run gets its own note from dq_lane_ready.sh; a merge batch pushes on this one.
 if [ "$run_tests" -eq 1 ] && [ "${new_failed:-0}" = "0" ] && [ "${passed:-0}" -gt 0 ]; then
-	gate_note="$(printf '{"version":1,"kind":"merge-gates","commit":"%s","ok":true,"passed":%s,"failed":%s,"new_failed":0,"lanes":"%s","tests_json":"%s","created":"%s"}' \
-		"$sha" "$passed" "${nfailed:-0}" "$lanes" "$tests_json" "$(date -u +%Y-%m-%dT%H:%M:%SZ)")"
+	tests_arr="$(printf '"%s",' "${tests[@]}" | sed 's/,$//')"
+	gate_note="$(printf '{"version":1,"kind":"merge-gates","commit":"%s","ok":true,"passed":%s,"failed":%s,"new_failed":0,"lanes":"%s","tests":[%s],"reproof_of":"%s","reproof_reason":"%s","tests_json":"%s","created":"%s"}' \
+		"$sha" "$passed" "${nfailed:-0}" "$lanes" "$tests_arr" "$reproof_of" "$reproof_reason" "$tests_json" "$(date -u +%Y-%m-%dT%H:%M:%SZ)")"
+	[ -z "$reproof_of" ] || echo "dq_merge_gates: re-proof of ${reproof_of:0:12} recorded in the stamp on ${short} (reproof_of, reproof_reason)"
 	if git notes --ref=merge-gates add -f -m "$gate_note" "$sha"; then
 		echo "dq_merge_gates: stamped ${short} (git notes --ref=merge-gates show $short)"
 		if [ "${DQ_LANE_NOTES_PUSH:-1}" != "0" ]; then
