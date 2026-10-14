@@ -10,7 +10,7 @@
 
 /datum/event2/event/shipping_error/start()
 	var/datum/supply_order/O = new /datum/supply_order()
-	O.ordernum = supply_ordernum()
-	O.supply_pack_static = supply_supply_pack()[pick(supply_supply_pack())]
+	O.ordernum = SSsupply.current_order_index()
+	O.supply_pack_static = SSsupply.pick_catalog_pack()
 	O.ordered_by = random_name(pick(MALE,FEMALE), species = "Human")
-	rel_add(SSsupply, nameof(SSsupply.shoppinglist), O)
+	SSsupply.queue_shipping_order(O)

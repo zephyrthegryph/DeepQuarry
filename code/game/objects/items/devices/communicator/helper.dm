@@ -390,7 +390,7 @@
 // code\game\machinery\computer\supply.dm, starting at line 55
 /obj/item/commcard/proc/get_supply_shuttle_status()
 	var/list/shuttle_status = list()
-	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.cargo_shuttle()
 
 	if(shuttle)
 		if(shuttle.has_arrive_time())

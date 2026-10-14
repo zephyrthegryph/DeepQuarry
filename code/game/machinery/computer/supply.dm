@@ -75,7 +75,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	var/list/data = ..()
 	var/list/shuttle_status = list()
 
-	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.cargo_shuttle()
 	if(shuttle)
 		if(shuttle.has_arrive_time())
 			shuttle_status["location"] = "In transit"
@@ -133,10 +133,10 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	// Organized in field-entry list for iterative display
 	// List is nested so both the list of orders, and the list of elements in each order, can be iterated over
 	var/list/orders = list()
-	for(var/datum/supply_order/S in SSsupply.order_history)
+	for(var/datum/supply_order/S in SSsupply.order_history_snapshot())
 		var/can_fund = S.personal_order ? (authorization & SUP_ACCEPT_ORDERS) : can_manage_budget(user, S.funding_department)
 		var/funding_label = S.market_contract_funded ? "Principal contract allowance" : (S.personal_order ? "Personal: [S.ordered_by]" : S.funding_department)
-		var/datum/cargo_market_counterparty/market_seller = SSsupply.market_counterparties?[S.market_counterparty_id]
+		var/datum/cargo_market_counterparty/market_seller = SSsupply.market_counterparty(S.market_counterparty_id)
 		orders.Add(list(list(
 			"ref" = "\ref[S]",
 			"status" = S.status,
@@ -159,8 +159,8 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 
 	// Compile exported crates
 	var/list/receipts = list()
-	for(var/datum/exported_crate/E in SSsupply.exported_crates)
-		var/datum/cargo_market_counterparty/market_buyer = SSsupply.market_counterparties?[E.market_counterparty_id]
+	for(var/datum/exported_crate/E in SSsupply.export_history_snapshot())
+		var/datum/cargo_market_counterparty/market_buyer = SSsupply.market_counterparty(E.market_counterparty_id)
 		receipts.Add(list(list(
 			"ref" = "\ref[E]",
 			"contents" = E.contents,
@@ -199,8 +199,8 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	var/list/data = ..()
 
 	var/list/pack_list = list()
-	for(var/pack_name in SSsupply.supply_pack)
-		var/datum/supply_pack/P = SSsupply.supply_pack[pack_name]
+	for(var/pack_name in SSsupply.catalog_names())
+		var/datum/supply_pack/P = SSsupply.catalog_pack(pack_name)
 		var/list/pack = list(
 				"name" = P.name,
 				"desc" = P.desc,
@@ -221,7 +221,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	if(!SSsupply)
 		log_runtime(EXCEPTION("## ERROR: The SSsupply datum is missing."))
 		return FALSE
-	if(!SSsupply.shuttle)
+	if(!SSsupply.cargo_shuttle())
 		log_runtime(EXCEPTION("## ERROR: The supply shuttle datum is missing."))
 		return FALSE
 	return TRUE
@@ -264,7 +264,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 /obj/machinery/computer/supplycomp/proc/act_market_route(mob/user, bid, crate)
 	bid = ui_text(bid, 128)
 	var/datum/cargo_market_bid/market_bid = SSsupply.market_bid(bid)
-	var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparties?[market_bid?.counterparty_id]
+	var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparty(market_bid?.counterparty_id)
 	if(!can_trade_market(user) && !has_faction_market_access(user, counterparty?.faction_id))
 		return refuse(user, "You can't route crates to that buyer.")
 	var/obj/structure/closet/crate/routed = ui_ref(crate, null, /obj/structure/closet/crate)
@@ -351,7 +351,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	var/obj/item/paper/reqform = new /obj/item/paper(loc)
 	reqform.name = "Requisition Form - [S.name]"
 	reqform.set_info(reqform.info + ("<h3>[station_name()] Supply Requisition Form</h3><hr>"))
-	reqform.set_info(reqform.info + ("INDEX: #[SSsupply.ordernum]<br>"))
+	reqform.set_info(reqform.info + ("INDEX: #[SSsupply.current_order_index()]<br>"))
 	reqform.set_info(reqform.info + ("REQUESTED BY: [idname]<br>"))
 	reqform.set_info(reqform.info + ("RANK: [idrank]<br>"))
 	reqform.set_info(reqform.info + ("REASON: [reason]<br>"))
@@ -372,7 +372,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return FALSE
 
 /obj/machinery/computer/supplycomp/proc/act_edit_order_value(mob/user, default, edit, ref)
-	var/datum/supply_order/O = ui_ref(ref, SSsupply.order_history, /datum/supply_order)
+	var/datum/supply_order/O = SSsupply.order_from_ref(ref)
 	var/field = ui_choice(edit, list("Supply Pack", "Cost", "Index", "Reason", "Ordered by", "Ordered at", "Approved by", "Approved at"))
 	if(!O || !field || !accepts_orders(user))
 		return UI_REFUSED
@@ -399,7 +399,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_approve_order(mob/user, ref)
-	var/datum/supply_order/O = ui_ref(ref, SSsupply.order_history, /datum/supply_order)
+	var/datum/supply_order/O = SSsupply.order_from_ref(ref)
 	if(!O)
 		return refuse(user, null)
 	if(O.personal_order ? !(authorization & SUP_ACCEPT_ORDERS) : !can_manage_budget(user, O.funding_department))
@@ -408,14 +408,14 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_deny_order(mob/user, ref)
-	var/datum/supply_order/O = ui_ref(ref, SSsupply.order_history, /datum/supply_order)
+	var/datum/supply_order/O = SSsupply.order_from_ref(ref)
 	if(!O || !accepts_orders(user))
 		return UI_REFUSED
 	SSsupply.deny_order(O, user)
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_delete_order(mob/user, ref)
-	var/datum/supply_order/O = ui_ref(ref, SSsupply.order_history, /datum/supply_order)
+	var/datum/supply_order/O = SSsupply.order_from_ref(ref)
 	if(!O || !accepts_orders(user))
 		return UI_REFUSED
 	SSsupply.delete_order(O, user)
@@ -429,7 +429,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 
 /// The exported crate `ref` names, if this console may edit exports.
 /obj/machinery/computer/supplycomp/proc/editable_export(mob/user, ref)
-	var/datum/exported_crate/E = ui_ref(ref, SSsupply.exported_crates, /datum/exported_crate)
+	var/datum/exported_crate/E = SSsupply.export_from_ref(ref)
 	if(!E)
 		refuse(user, null)
 		return null
@@ -499,7 +499,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 /obj/machinery/computer/supplycomp/proc/act_send_shuttle(mob/user, mode)
 	if(!(authorization & SUP_SEND_SHUTTLE))
 		return refuse(user, "This console can't control the shuttle.")
-	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.cargo_shuttle()
 	switch(ui_choice(mode, list("send_away", "send_to_station", "cancel_shuttle", "force_shuttle")))
 		if("send_away")
 			if(shuttle.forbidden_atoms_check())
@@ -508,7 +508,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 			to_chat(user, span_notice("Initiating launch sequence."))
 		if("send_to_station")
 			shuttle.launch(src)
-			to_chat(user, span_notice("The supply shuttle has been called and will arrive in approximately [round(SSsupply.movetime / (1 MINUTES), 1)] minutes."))
+			to_chat(user, span_notice("The supply shuttle has been called and will arrive in approximately [round(SSsupply.shuttle_travel_duration() / (1 MINUTES), 1)] minutes."))
 		if("cancel_shuttle")
 			shuttle.cancel_launch(src)
 		if("force_shuttle")

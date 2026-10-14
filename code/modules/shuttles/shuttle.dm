@@ -100,17 +100,14 @@ CAPABILITIES(/datum/shuttle)
 	if(shuttle_flags & SHUTTLE_FLAGS_PROCESS)
 		rel_add(SSshuttles, nameof(SSshuttles.process_shuttles), src)
 	if(shuttle_flags & SHUTTLE_FLAGS_SUPPLY)
-		if(SSsupply.shuttle)
-			CRASH("A supply shuttle is already defined.")
-		SSsupply.shuttle = src
+		SSsupply.register_cargo_shuttle(src)
 
 // leaves SSshuttles and the supply shuttle slot.
 /datum/shuttle/lifecycle_dematerialize()
 	SSshuttles.shuttles -= src.name
 	rel_remove(SSshuttles, nameof(SSshuttles.process_shuttles), src)
 	SSshuttles.shuttle_logs -= src
-	if(SSsupply.shuttle == src)
-		SSsupply.shuttle = null
+	SSsupply.unregister_cargo_shuttle(src)
 	return ..()
 
 /// The process_state setter: a change publishes the tracked key; the step's gate follows.

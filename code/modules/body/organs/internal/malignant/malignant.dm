@@ -467,7 +467,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 
 	if(prob(6))
 		thalers += stage
-		supply_conversion_value = initial(supply_conversion_value) + ((thalers * SSsupply.points_per_money))
+		supply_conversion_value = initial(supply_conversion_value) + (SSsupply.money_to_export_points(thalers))
 
 	if(prob(2))
 		var/obj/item/organ/external/O = owner.organs_by_name[parent_organ]

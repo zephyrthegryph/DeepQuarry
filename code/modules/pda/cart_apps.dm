@@ -251,7 +251,7 @@ CAPABILITIES(/datum/data/pda/app/crew_records)
 
 /datum/data/pda/app/supply/update_ui(mob/user, list/data)
 	var/supplyData[0]
-	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.cargo_shuttle()
 	if (shuttle)
 		supplyData["shuttle_moving"] = shuttle.has_arrive_time()
 		supplyData["shuttle_eta"] = shuttle.eta_minutes()

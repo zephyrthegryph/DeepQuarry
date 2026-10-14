@@ -7,7 +7,7 @@
 		message1 = "CARGO"
 		message2 = ""
 
-		var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
+		var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.cargo_shuttle()
 		if(!shuttle)
 			message2 = "Error"
 		else if(shuttle.has_arrive_time())
