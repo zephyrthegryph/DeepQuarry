@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "Landed the native Rust compiler (DQ_COMPILER=native, opt-in; DreamMaker stays the default), with preprocessor support for directives inside macro-call arguments."
