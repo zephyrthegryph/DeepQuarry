@@ -564,6 +564,7 @@ impl Lint for SystemBoundary {
                 let n = baseline::update_ceilings(&path, HEADER, &run.sites)?;
                 Ok(format!("system_boundary: baseline lowered to {} entries", n))
             }
+            Mode::Migrate => Ok("system_boundary: count ceilings have no rows to migrate".to_string()),
             Mode::Seed => {
                 let counts = baseline::key_counts(&run.sites);
                 baseline::write_ceilings(&path, HEADER, &counts)?;

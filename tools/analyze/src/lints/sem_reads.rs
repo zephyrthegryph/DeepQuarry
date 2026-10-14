@@ -38,7 +38,7 @@ static META: Meta = Meta {
     policy: Policy::Sites {
         baseline: "tools/ci/sem_reads_baseline.txt",
         header: &[
-            "sem/reads: what the closed read walk cannot cover in a handler, an output, a condition or a contribution. rule<TAB>file<TAB>normalized line.",
+            "sem/reads: what the closed read walk cannot cover in a handler, an output, a condition or a contribution. rule<TAB>file<TAB>identity (@reader reads owner::var).",
             "Shrink-only: `analyze baseline --update --lint sem/reads` drops fixed sites and never adds one.",
         ],
         banned: &[],
@@ -83,14 +83,16 @@ impl Lint for SemReads {
         };
         // A site is one finding however many handlers reach it: the key leaves the handler out of the message.
         let mut seen: std::collections::HashSet<(String, String, u32, String)> = std::collections::HashSet::new();
-        let mut put = |out: &mut Sink, rule: &'static str, rel: &str, line: u32, key: String, msg: String| {
+        let sem = crate::sem::sem_for(cx.tree);
+        let reader = |rel: &str, line: u32| -> String { sem.as_ref().map(|s| s.reader_ident(rel, line)).unwrap_or_else(|| "?".to_string()) };
+        let mut put = |out: &mut Sink, rule: &'static str, rel: &str, line: u32, key: String, ident: String, msg: String| {
             if rel.is_empty() || !seen.insert((rule.to_string(), rel.to_string(), line, key)) {
                 return;
             }
             if allowed(out, rel, line) {
                 return;
             }
-            out.site_in_msg(rule, rel, line as usize, msg);
+            out.site_decl(rule, rel, line as usize, msg, ident);
         };
         for a in &an.handlers {
             if !a.h.role.reads_covered() {
@@ -99,7 +101,7 @@ impl Lint for SemReads {
             let Some(set) = &a.closed else { continue };
             let who = format!("{}::{} ({}())", a.on, a.h.proc, a.h.form);
             for (key, var, owner, rel, line) in &a.unknown {
-                put(out, "unknown_read", rel, *line, format!("{key}|{var}|{owner}"), format!("{} reads `{}`: {} on {} is not tracked, a relation, a stat, derived or constant", who, key, var, owner));
+                put(out, "unknown_read", rel, *line, format!("{key}|{var}|{owner}"), format!("{} reads {}::{}", reader(rel, *line), owner, key), format!("{} reads `{}`: {} on {} is not tracked, a relation, a stat, derived or constant", who, key, var, owner));
             }
             for d in &set.diags {
                 match d.rule {
@@ -110,7 +112,7 @@ impl Lint for SemReads {
                             "hop_not_relation" => "hop_not_relation",
                             _ => "unknown_field",
                         };
-                        put(out, rule, &d.rel, d.line, d.msg.clone(), format!("{}: {}", who, d.msg));
+                        put(out, rule, &d.rel, d.line, d.msg.clone(), format!("{} reads {}", reader(&d.rel, d.line), d.msg), format!("{}: {}", who, d.msg));
                     }
                     _ => {}
                 }
@@ -119,7 +121,7 @@ impl Lint for SemReads {
         for c in &an.cycles {
             let first = an.graph.as_ref().and_then(|g| g.nodes.get(&c[0]));
             let (rel, line) = first.map(|n| (n.rel.clone(), n.line)).unwrap_or_default();
-            put(out, "condition_cycle", &rel, line, c.join(">"), format!("cycle in the condition and stat graph: {} -> {}", c.join(" -> "), c[0]));
+            put(out, "condition_cycle", &rel, line, c.join(">"), format!("cycle {}", c.join(">")), format!("cycle in the condition and stat graph: {} -> {}", c.join(" -> "), c[0]));
         }
         for g in &an.accessor_gaps {
             put(
@@ -128,6 +130,7 @@ impl Lint for SemReads {
                 &g.rel,
                 g.line,
                 format!("{}|{}", g.proc, g.key),
+                format!("{}::{} publishes {}", g.ty, g.proc, g.key),
                 format!("READS_AS({}, {}) on {} reads {} which are not tracked and nothing publishes {}", g.proc, g.key, g.ty, g.vars.join(", "), g.key),
             );
         }

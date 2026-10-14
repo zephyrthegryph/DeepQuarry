@@ -38,7 +38,7 @@ static META: Meta = Meta {
     policy: Policy::Sites {
         baseline: "tools/ci/untracked_inputs_baseline.txt",
         header: &[
-            "untracked_inputs: reads of untracked state by stat inputs, requirements, outputs and draws (analyze gen deps). rule<TAB>file<TAB>normalized line.",
+            "untracked_inputs: reads of untracked state by stat inputs, requirements, outputs and draws (analyze gen deps). rule<TAB>file<TAB>identity (@reader reads owner::var).",
             "Shrink-only: `analyze baseline --update --lint untracked_inputs` drops fixed sites and never adds one.",
         ],
         banned: &[],
@@ -63,7 +63,8 @@ impl Lint for UntrackedInputs {
         let an = deps::analyzed(cx.tree);
         let Some(an) = an.as_ref().as_ref() else { return };
         let mut seen = std::collections::HashSet::new();
-        let mut put = |out: &mut Sink, rule: &'static str, rel: &str, line: u32, msg: String| {
+        let sem = crate::sem::sem_for(cx.tree);
+        let mut put = |out: &mut Sink, rule: &'static str, rel: &str, line: u32, ident: String, msg: String| {
             if rel.is_empty() || line == 0 || cx.exempt(rel) || !seen.insert((rule, rel.to_string(), line, msg.clone())) {
                 return;
             }
@@ -72,23 +73,27 @@ impl Lint for UntrackedInputs {
                     return;
                 }
             }
-            out.site_in_msg(rule, rel, line as usize, msg);
+            out.site_decl(rule, rel, line as usize, msg, ident);
         };
         // A site is one finding however many consumers reach it (a helper line read by six hundred draws is one line to fix): the baseline
         // counts sites, not (consumer, site) pairs. The message names the first consumer and how many more reach the site.
-        let mut sites: std::collections::BTreeMap<(&'static str, String, u32, String), Vec<&String>> = std::collections::BTreeMap::new();
+        let mut sites: std::collections::BTreeMap<(&'static str, String, u32, String, String), Vec<&String>> = std::collections::BTreeMap::new();
         for (id, reads) in &an.consumers {
             let rule = if an.draws.contains(id) { "draw_untracked" } else { "stat_input_untracked" };
             for u in reads {
-                sites.entry((rule, u.rel.clone(), u.line, u.what.clone())).or_default().push(id);
+                sites.entry((rule, u.rel.clone(), u.line, u.what.clone(), u.owner.clone())).or_default().push(id);
             }
         }
-        for ((rule, rel, line, what), ids) in &sites {
+        for ((rule, rel, line, what, owner), ids) in &sites {
             let more = if ids.len() > 1 { format!(" (and {} more)", ids.len() - 1) } else { String::new() };
-            put(out, rule, rel, *line, format!("{}{} reads `{}`, which nothing publishes", ids[0], more, what));
+            // The identity: the proc the read sits in (the model's owner and name) and what it reads (the declaring type and the var, with
+            // its hops), not the line's text, so an edit of the line, a move within the proc or a reorder keeps its baseline row.
+            let reader = sem.as_ref().map(|s| s.reader_ident(rel, *line)).unwrap_or_else(|| "?".to_string());
+            let read = if owner.is_empty() { what.clone() } else { format!("{owner}::{what}") };
+            put(out, rule, rel, *line, format!("{reader} reads {read}"), format!("{}{} reads `{}`, which nothing publishes", ids[0], more, what));
         }
         for l in &an.leaves {
-            put(out, "leaf_untracked", &l.rel, l.line, format!("{} names `{}` as a stat input, and nothing publishes it", l.owner, l.var));
+            put(out, "leaf_untracked", &l.rel, l.line, format!("{}::{}", l.owner, l.var), format!("{} names `{}` as a stat input, and nothing publishes it", l.owner, l.var));
         }
     }
 }

@@ -454,6 +454,15 @@ pub fn sem_for(tree: &Tree) -> Option<SemHandle> {
 }
 
 impl Sem {
+    /// `owner::proc` of the definition the code at `line` of `file` sits in (`?` when the model has none there): the reader a read
+    /// ratchet's identity names. The model's own proc name and owner, so an edit of the line's text or a move within the proc keeps it.
+    pub fn reader_ident(&self, file: &str, line: u32) -> String {
+        match self.def_at(file, line) {
+            Some((owner, name)) => format!("{owner}::{name}"),
+            None => "?".to_string(),
+        }
+    }
+
     /// The nearest definition at or before `line` in `file`: `(owner, name)` of the proc or var it
     /// declares. A marker inside a proc body belongs to that proc.
     pub fn def_at(&self, file: &str, line: u32) -> Option<(String, String)> {
@@ -557,5 +566,25 @@ mod tests {
         assert!(out.iter().enumerate().all(|(i, v)| *v == (i as u32) * 2));
         // Small inputs take the serial path.
         assert_eq!(super::par_map(&[1u32, 2, 3], |x| x + 1), vec![2, 3, 4]);
+    }
+
+    #[test]
+    fn reader_ident_names_the_proc_a_line_sits_in() {
+        let text = "/obj/a/proc/one()
+	var/x = 1
+	return x
+/obj/a
+	var/y = 2
+/obj/a/proc/two()
+	return 2
+";
+        let root = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(root.path().join("code")).unwrap();
+        std::fs::write(root.path().join("code/probe.dm"), text).unwrap();
+        let tree = crate::tree::Tree::from_files(vec![crate::tree::SourceFile::from_text("code/probe.dm", text)]);
+        let sem = super::Sem::build(root.path(), &tree).unwrap();
+        assert_eq!(sem.reader_ident("code/probe.dm", 3), "/obj/a::one");
+        assert_eq!(sem.reader_ident("code/probe.dm", 7), "/obj/a::two");
+        assert_eq!(sem.reader_ident("code/other.dm", 3), "?");
     }
 }

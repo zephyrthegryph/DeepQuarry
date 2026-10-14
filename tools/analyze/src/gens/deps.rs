@@ -58,6 +58,8 @@ fn is_generated_setter(eng: &ReadsEngine, callee: &str) -> bool {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Untracked {
     pub what: String,
+    /// The type that declares the var read (empty when the finding is not a var read).
+    pub owner: String,
     pub rel: String,
     pub line: u32,
 }
@@ -86,27 +88,27 @@ pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, outp
         }
         if output && r.hops.iter().any(|h| DRAW_PSEUDO_HOPS.contains(&h.as_str())) && !draw_hop_heard(r) {
             let (rel, line) = set.sites.get(r).cloned().unwrap_or_default();
-            out.push(Untracked { what: r.key(), rel, line });
+            out.push(Untracked { what: r.key(), owner: r.owner.clone(), rel, line });
             continue;
         }
         if !r.hop_ok || (!eng.turf_coordinate(r) && eng.classify(&r.owner, &r.var, written) == VarClass::Unknown) {
             let (rel, line) = set.sites.get(r).cloned().unwrap_or_default();
-            out.push(Untracked { what: r.key(), rel, line });
+            out.push(Untracked { what: r.key(), owner: r.owner.clone(), rel, line });
         }
     }
     for d in &set.diags {
         if d.rule == "untracked_global" {
             // Global state that changes after boot and that nothing publishes: `GLOB.x`, `SSx.y`, a real global.
-            out.push(Untracked { what: d.msg.clone(), rel: d.rel.clone(), line: d.line });
+            out.push(Untracked { what: d.msg.clone(), owner: String::new(), rel: d.rel.clone(), line: d.line });
         } else if UNRESOLVED_RULES.contains(&d.rule) {
-            out.push(Untracked { what: format!("?{}", d.rule), rel: d.rel.clone(), line: d.line });
+            out.push(Untracked { what: format!("?{}", d.rule), owner: String::new(), rel: d.rel.clone(), line: d.line });
         }
     }
     for (callee, (rel, line)) in &set.opaque {
         if OPAQUE_SEEN.contains(&callee.as_str()) || is_generated_setter(eng, callee) {
             continue;
         }
-        out.push(Untracked { what: format!("?opaque:{}", callee), rel: rel.clone(), line: *line });
+        out.push(Untracked { what: format!("?opaque:{}", callee), owner: String::new(), rel: rel.clone(), line: *line });
     }
     out.sort();
     out.dedup();
