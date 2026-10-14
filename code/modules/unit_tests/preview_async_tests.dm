@@ -125,3 +125,20 @@
 	TEST_ASSERT(length(mannequin.overlays), "draw_now left the mannequin undrawn")
 	var/icon/flat = getFlatIcon(mannequin, defdir = SOUTH, no_anim = TRUE)
 	TEST_ASSERT_NOTNULL(flat, "the drawn mannequin did not flatten")
+
+/// State-name caches are keyed by file text, so two dynamic rsc icons (which stringify alike) must never share an entry:
+/// each reports its own states, and a runtime icon is never cached at all.
+/datum/unit_test/dq_icon_states_cache_runtime_icons
+
+/datum/unit_test/dq_icon_states_cache_runtime_icons/Run()
+	var/icon/first = icon('icons/effects/effects.dmi')
+	var/icon/second = icon('icons/obj/items.dmi')
+	var/list/first_expected = icon_states(first)
+	var/list/second_expected = icon_states(second)
+	TEST_ASSERT(length(first_expected) != length(second_expected), "fixture icons have the same state count")
+	var/first_file = fcopy_rsc(first)
+	var/second_file = fcopy_rsc(second)
+	TEST_ASSERT_EQUAL(length(icon_states_fast(first_file)), length(first_expected), "first runtime icon got the wrong state list")
+	TEST_ASSERT_EQUAL(length(icon_states_fast(second_file)), length(second_expected), "second runtime icon got another icon's state list")
+	TEST_ASSERT(icon_has_stable_key('icons/effects/effects.dmi'), "a DMI path has no stable key")
+	TEST_ASSERT(!icon_has_stable_key(first), "a runtime /icon was given a cache key")

@@ -890,14 +890,20 @@ DECLARE_SHARED_CACHE(icon_size_pure, GLOBAL_PROC_REF(build_icon_size_pure), SC_N
 	RETURN_TYPE(/list)
 	if(isnull(file))
 		return null
-	if(!istext(file) && !isfile(file))
-		// A runtime /icon has no stable identity to key a cache by.
+	if(!icon_has_stable_key(file))
+		// A runtime /icon or dynamic rsc file has no stable identity to key a cache by.
 		return icon_states(file)
 	return CACHED_KEY(icon_state_names, "[file]", file)
 
+/// Whether an icon argument names a file on disk, so its text form identifies it. A runtime /icon and a dynamic rsc
+/// file (a generated body icon) stringify to nothing or to something shared, so keying a cache by that text would hand
+/// one icon the state list of another.
+/proc/icon_has_stable_key(file)
+	return istext(file) || (isfile(file) && length("[file]") > 0)
+
 /// The states of an icon file as a lookup (state name -> TRUE). Shared: never written.
 /proc/icon_state_set_of(file)
-	if(!istext(file) && !isfile(file))
+	if(!icon_has_stable_key(file))
 		return build_icon_state_set(file)
 	return CACHED_KEY(icon_state_set, "[file]", file)
 
