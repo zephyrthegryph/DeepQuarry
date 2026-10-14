@@ -24,6 +24,7 @@ SYSTEM_DEF(mapping)
 	var/datum/map/current_map
 
 CAPABILITIES(/datum/system/mapping)
+	ref_one(nameof(current_map))
 	owns_many(nameof(map_load_queue), /datum/map_load)
 
 
@@ -39,7 +40,7 @@ CAPABILITIES(/datum/system/mapping)
 	// TODO - Other stuff related to maps and areas could be moved here too.  Look at /tg
 	// Lateload Code related to Expedition areas.
 	if(using_map) // Re-enable this.
-		current_map = using_map
+		rel_set(src, nameof(current_map), using_map)
 		loadLateMaps()
 
 	if(CONFIG_GET(flag/generate_map)) // Re-order this.

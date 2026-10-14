@@ -22,6 +22,7 @@
 	var/atom/movable/screen/action_landing/landing
 
 CAPABILITIES(/datum/action_group)
+	ref_one(nameof(owner))
 	ref_many(nameof(actions), /atom/movable/screen/movable/action_button)
 	owns_one(nameof(landing), /atom/movable/screen/action_landing)
 

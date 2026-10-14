@@ -1,6 +1,7 @@
 // Actual generic construction; downstream worlds may suppress live registration during it.
 GLOBAL_DATUM(state_construction, /datum/state_construction)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_construction)
 /datum/state_construction
 
 /datum/state_construction/proc/create(list/arguments)

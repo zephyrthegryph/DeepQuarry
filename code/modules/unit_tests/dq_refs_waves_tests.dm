@@ -45,7 +45,9 @@
 
 /datum/unit_test/dq_refs_preferences_refuse_unforced_delete/Run()
 	var/datum/preferences/dq_preview_test_stub/prefs = new()
+	GLOB.lifecycle_keep_expected = TRUE // this test checks the refusal itself
 	qdel(prefs)
+	GLOB.lifecycle_keep_expected = FALSE
 	TEST_ASSERT(!QDELETED(prefs), "an unforced delete leaves the preferences whole")
 	qdel(prefs, TRUE)
 	TEST_ASSERT(QDELETED(prefs), "a forced delete removes them")
@@ -558,3 +560,92 @@ CAPABILITIES(/obj/refs_param_probe)
 	var/obj/item/organ/external/stump/stump = allocate(/obj/item/organ/external/stump, run_loc_floor_bottom_left, null, limb)
 	TEST_ASSERT_NULL(stump.stump_of, "the limb param is dropped when init returns")
 	TEST_ASSERT(!rel_names(stump, nameof(stump.stump_of), limb), "and the limb's reverse index no longer names the stump")
+
+
+/// w7g1a: a chunked job names its owner through a relation, so a deleted owner clears the field instead of being held by the job.
+/datum/unit_test/dq_refs_w7g1a_job_owner_cleared_on_delete
+
+/datum/unit_test/dq_refs_w7g1a_job_owner_cleared_on_delete/Run()
+	var/datum/e6_probe_owner/doomed = new
+	var/datum/kernel_job/J = job(doomed, TYPE_PROC_REF(/datum/e6_probe_owner, chunk), budget = 100)
+	TEST_ASSERT_NOTNULL(J, "the job started")
+	TEST_ASSERT_EQUAL(J.owner, doomed, "the job names its owner")
+	qdel(doomed, TRUE)
+	TEST_ASSERT_NULL(J.owner, "deleting the owner clears the job's field")
+	SSkernel_jobs.jobs -= J
+
+/// w7g1a: a request's answerer is a relation: the answerer's death clears the field.
+/datum/unit_test/dq_refs_w7g1a_request_answerer_cleared_on_delete
+
+/datum/unit_test/dq_refs_w7g1a_request_answerer_cleared_on_delete/Run()
+	test_driver_begin()
+	var/datum/e6_probe_owner/owner = allocate(/datum/e6_probe_owner)
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
+	var/datum/request/R = open_request(owner, /datum/prompt/e6_probe, TYPE_PROC_REF(/datum/e6_probe_owner, done), answerer = actor, timeout = 30 SECONDS)
+	TEST_ASSERT_NOTNULL(R, "the request opened")
+	TEST_ASSERT_EQUAL(R.owner, owner, "it names its owner")
+	TEST_ASSERT_EQUAL(R.answerer, actor, "and its answerer")
+	qdel(actor, TRUE)
+	TEST_ASSERT_NULL(R.answerer, "deleting the answerer clears the field")
+	test_driver_end()
+
+/// w7g1a: a pathfinding search names its actor through a relation.
+/datum/unit_test/dq_refs_w7g1a_pathfinding_actor_cleared_on_delete
+
+/datum/unit_test/dq_refs_w7g1a_pathfinding_actor_cleared_on_delete/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/item/paper/walker = allocate(/obj/item/paper, T)
+	var/datum/pathfinding/astar/search = new(walker, T, T, 0, 8)
+	TEST_ASSERT_EQUAL(search.search_actor(), walker, "the search names its actor")
+	qdel(walker, TRUE)
+	TEST_ASSERT_NULL(search.search_actor(), "deleting the actor clears the search's field")
+
+/// w7g1a: the wires record names its holder through a relation.
+/datum/unit_test/dq_refs_w7g1a_wires_record_owner_relation
+
+/datum/unit_test/dq_refs_w7g1a_wires_record_owner_relation/Run()
+	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, run_loc_floor_bottom_left)
+	var/datum/cap_data/wires/W = wiring_of(door)
+	TEST_ASSERT_NOTNULL(W, "the airlock has a wires record")
+	TEST_ASSERT_EQUAL(W.owner, door, "the record names its holder")
+	TEST_ASSERT(rel_names(W, nameof(W.owner), door), "and the holder's reverse index names the record")
+
+/// w7g1b: a stats set owns its input record, and the record owns its histograms: deleting the set takes the whole chain with it.
+/datum/unit_test/dq_refs_w7g1b_stats_set_owns_its_histograms
+
+/datum/unit_test/dq_refs_w7g1b_stats_set_owns_its_histograms/Run()
+	var/datum/km_stats_set/stats = new
+	var/datum/input_stats/record = stats.input
+	TEST_ASSERT_NOTNULL(record, "a new set builds its input record")
+	var/datum/km_hist/wait = record.wait
+	var/datum/km_depth_hist/depth = record.depth
+	TEST_ASSERT_NOTNULL(wait, "the input record builds its histograms")
+	TEST_ASSERT_NOTNULL(depth, "and its depth histogram")
+	qdel(stats)
+	TEST_ASSERT(QDELETED(record), "the set's input record went with it")
+	TEST_ASSERT(QDELETED(wait), "and the record's wait histogram")
+	TEST_ASSERT(QDELETED(depth), "and its depth histogram")
+
+/// w7g1b: a mind's current body is a relation view: the body's deletion clears it instead of leaving a deleted mob behind.
+/datum/unit_test/dq_refs_w7g1b_mind_current_clears_with_body
+
+/datum/unit_test/dq_refs_w7g1b_mind_current_clears_with_body/Run()
+	var/mob/living/carbon/human/body = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/datum/mind/mind = new("w7g1b")
+	rel_set(mind, nameof(mind.current), body)
+	TEST_ASSERT_EQUAL(mind.current, body, "the mind points at its body")
+	qdel(body)
+	TEST_ASSERT_NULL(mind.current, "a deleted body is no longer the mind's current")
+	qdel(mind, TRUE)
+
+/// w7g1b: a beam's ends are relations: deleting an end clears it on the beam.
+/datum/unit_test/dq_refs_w7g1b_beam_end_clears_when_deleted
+
+/datum/unit_test/dq_refs_w7g1b_beam_end_clears_when_deleted/Run()
+	var/obj/item/pen/origin = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	var/obj/item/pen/target = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	var/datum/beam/beam = new(origin, target)
+	TEST_ASSERT_EQUAL(beam.origin, origin, "the beam starts at its origin")
+	qdel(target)
+	TEST_ASSERT_NULL(beam.target, "a deleted end is cleared on the beam")
+	qdel(beam)

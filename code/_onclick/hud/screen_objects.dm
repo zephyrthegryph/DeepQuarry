@@ -66,6 +66,7 @@
 	var/obj/item/owner
 
 CAPABILITIES(/atom/movable/screen/item_action)
+	ref_one(nameof(owner))
 	click_on(PROC_REF(click_input))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
@@ -251,6 +252,7 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 	look.overlay(look_overlay_image('icons/mob/zone_sel.dmi', "[selecting]"))
 
 CAPABILITIES(/atom/movable/screen)
+	ref_one(nameof(hud))
 	ref_one(nameof(master_ref), /datum)
 	click_on(PROC_REF(screen_click_input))
 
@@ -758,6 +760,7 @@ CAPABILITIES(/atom/movable/screen/inventory)
 	var/atom/movable/screen/parent
 
 CAPABILITIES(/atom/movable/screen/component_button)
+	ref_one(nameof(parent))
 	param(nameof(parent), pos = 1)
 	click_on(PROC_REF(click_input))
 
@@ -827,6 +830,8 @@ CAPABILITIES(/atom/movable/screen/component_button)
 	var/atom/movable/screen/mapper/extras_holder/extras_holder
 
 CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
+	ref_one(nameof(owner))
+	ref_one(nameof(extras_holder))
 	owns_one(nameof(mask_full), starts = /atom/movable/screen/mapper/mask_full)
 	owns_one(nameof(mask_ping), starts = /atom/movable/screen/mapper/mask_ping)
 	owns_one(nameof(bg), starts = /atom/movable/screen/mapper/bg)
@@ -902,6 +907,9 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	plane = PLANE_HOLOMAP
 	mouse_opacity = 0
 	var/atom/movable/screen/movable/mapper_holder/parent
+
+CAPABILITIES(/atom/movable/screen/mapper)
+	ref_one(nameof(parent))
 
 // ALLOW(init/INSTANCE_STATE): its parent is the atom it is created inside
 /atom/movable/screen/mapper/Initialize(mapload)
@@ -1017,6 +1025,9 @@ CAPABILITIES(/atom/movable/screen/mapper/mapbutton)
 	var/static/list/ammo_screen_loc_list = list(ui_ammo_hud1, ui_ammo_hud2, ui_ammo_hud3 ,ui_ammo_hud4)
 	/// The gun this hud reports (a relation view)
 	var/obj/item/gun/our_gun
+
+CAPABILITIES(/atom/movable/screen/ammo)
+	ref_one(nameof(our_gun))
 
 /atom/movable/screen/ammo/Click()
 	var/mob/user = usr

@@ -9,6 +9,7 @@
 
 GLOBAL_DATUM_INIT(churn_census, /datum/churn_census, new)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/churn_census)
 /// A singleton (GLOB.churn_census). Count with CHURN_COUNT() (__defines/metrics.dm).
 /datum/churn_census
 	/// key -> count since the churn source last took them (take()). Never null, so a count is one increment.

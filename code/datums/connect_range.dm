@@ -30,6 +30,10 @@
 	var/list/buckets
 
 
+CAPABILITIES(/datum/connect_range)
+	ref_one(nameof(listener))
+	ref_one(nameof(tracked))
+
 /datum/connect_range/New(datum/listener, atom/tracked, list/connections, range, works_in_containers = TRUE)
 	..()
 	if(!isatom(tracked) || isarea(tracked) || range < 0)

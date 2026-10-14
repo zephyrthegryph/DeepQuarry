@@ -142,6 +142,7 @@ MSG_DEF_SELF(outlet_injector/toggled, "You toggle the injector.")
 MSG_DEF_SELF(outlet_injector/rate_reset, "You set the injector back to its default rate.")
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/outlet_injector)
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
 	// The unary base's ctrl-click power_toggle is never offered on an injector (ctrl_power_offered()); its ctrl-click is

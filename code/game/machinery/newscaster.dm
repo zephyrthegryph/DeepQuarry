@@ -61,6 +61,7 @@ CAPABILITIES(/datum/feed_channel)
 	src.announcement = ""
 	update()
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/feed_network)
 /datum/feed_network
 	var/list/datum/feed_channel/network_channels
 	var/datum/feed_message/wanted_issue_owned

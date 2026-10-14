@@ -13,6 +13,9 @@
 	var/list/parents
 	var/noparents = FALSE
 
+CAPABILITIES(/datum/recursive_move)
+	ref_one(nameof(holder))
+
 /atom/movable
 	/// The recursive move relay (dq_add_recursive_move()), or null.
 	var/tmp/datum/recursive_move/recursive_move

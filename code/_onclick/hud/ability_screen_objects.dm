@@ -13,6 +13,7 @@
 	var/mob/my_mob	// The mob that possesses this hud object.
 
 CAPABILITIES(/atom/movable/screen/movable/ability_master)
+	ref_one(nameof(my_mob))
 	owns_many(nameof(ability_objects), /atom/movable/screen/ability)
 
 // ALLOW(init/INSTANCE_STATE): binds to the mob it is created inside and draws that mob's abilities
@@ -161,6 +162,7 @@ TRACKED(/atom/movable/screen/ability, background_base_state)
 
 
 CAPABILITIES(/atom/movable/screen/ability)
+	ref_one(nameof(ability_master))
 	click_on(PROC_REF(click_input))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
@@ -269,6 +271,9 @@ CAPABILITIES(/atom/movable/screen/ability)
 
 /atom/movable/screen/ability/obj_based
 	var/obj/object
+
+CAPABILITIES(/atom/movable/screen/ability/obj_based)
+	ref_one(nameof(object))
 
 /atom/movable/screen/ability/obj_based/activate()
 	if(object())

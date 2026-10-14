@@ -1,4 +1,5 @@
 // The world loader supplies batching and initialization delivery through this interface.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/materialization_host)
 /datum/materialization_host
 
 GLOBAL_DATUM(materialization_host, /datum/materialization_host)

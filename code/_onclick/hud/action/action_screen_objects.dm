@@ -90,6 +90,9 @@
 	over_object?.MouseEntered(over_location, over_control, params)
 
 CAPABILITIES(/atom/movable/screen/movable/action_button)
+	ref_one(nameof(linked_action))
+	ref_one(nameof(our_hud))
+	ref_one(nameof(last_hovored))
 	tooltip(PROC_REF(input_tooltip), theme = nameof(actiontooltipstyle))
 	click_on(PROC_REF(click_input))
 	drag_onto(PROC_REF(action_drop_input))
@@ -331,6 +334,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	return TRUE
 
 CAPABILITIES(/atom/movable/screen/button_palette)
+	ref_one(nameof(our_hud))
 	click_on(PROC_REF(click_input))
 	tooltip(PROC_REF(palette_tooltip))
 
@@ -417,6 +421,7 @@ CAPABILITIES(/atom/movable/screen/button_palette)
 	our_hud().palette_actions.scroll(scroll_direction)
 
 CAPABILITIES(/atom/movable/screen/palette_scroll)
+	ref_one(nameof(our_hud))
 	tooltip(PROC_REF(input_tooltip))
 
 /// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm).
@@ -448,6 +453,9 @@ CAPABILITIES(/atom/movable/screen/palette_scroll)
 	// We want our whole 32x32 space to be clickable, so dropping's forgiving
 	mouse_opacity = MOUSE_OPACITY_OPAQUE
 	var/datum/action_group/owner
+
+CAPABILITIES(/atom/movable/screen/action_landing)
+	ref_one(nameof(owner))
 
 // its palette re-lays its actions without the landing spot.
 // the group owns us as its landing; one deleted on its own clears it and re-lays the group.

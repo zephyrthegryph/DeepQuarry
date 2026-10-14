@@ -368,7 +368,7 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name 
 		return
 	for(var/color in W.assemblies?.Copy())
 		W.detach(color)
-	W.owner = null // ALLOW(ownership): the record's back view of its holder, cleared as the holder goes; the activation drops the record
+	rel_set(W, nameof(owner), null)
 
 /// The holder's wire record, or null when it has no wires capability. Made when the holder initializes (wiring_make()).
 /proc/wiring_of(datum/holder)
@@ -399,7 +399,7 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name 
 	var/datum/activation/act = cap_activation(holder, CAP_WIRES, null, TRUE)
 	var/record_type = def.record
 	W = new record_type
-	W.owner = holder // ALLOW(ownership): the record's back view of its holder, which owns the record through its wires activation
+	rel_set(W, nameof(owner), holder)
 	W.def = def
 	W.bringers = bringers
 	W.colors = wires_layout_for(def.name, wires_with_duds(real, count), randomize)
@@ -432,6 +432,7 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name 
 	var/datum/capability/lib/wires/def
 
 CAPABILITIES(/datum/cap_data/wires)
+	ref_one(nameof(owner)) // the record's back view of its holder, which owns the record through its wires activation
 	owns_many(nameof(assemblies))
 	interface("Wires", state = nameof(GLOB.tgui_physical_state))
 	op("cut", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),

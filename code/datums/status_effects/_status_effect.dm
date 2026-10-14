@@ -36,8 +36,6 @@
 	/// Do we self-terminate when a fullheal is called?
 	var/remove_on_fullheal = FALSE
 	/// If remove_on_fullheal is TRUE, what flag do we need to be removed?
-	/// A particle effect, for things like embers - Should be set on update_particles()
-	VAR_FINAL/obj/effect/abstract/particle_holder/particle_effect
 
 CAPABILITIES(/datum/status_effect)
 	ref_one(nameof(linked_alert))

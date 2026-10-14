@@ -14,6 +14,10 @@
 	var/atom/movable/tracked
 
 
+CAPABILITIES(/datum/connect_containers)
+	ref_one(nameof(listener))
+	ref_one(nameof(tracked))
+
 /datum/connect_containers/New(datum/listener, atom/movable/tracked, list/connections)
 	..()
 	if(!ismovable(tracked))

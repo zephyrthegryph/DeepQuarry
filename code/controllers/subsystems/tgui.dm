@@ -100,6 +100,7 @@ SYSTEM_DEF(tgui)
 	var/asset_generation_sequence = 0
 
 CAPABILITIES(/datum/system/tgui)
+	ref_one(nameof(current_asset_generation))
 	owns_many(nameof(modals), /datum/tgui_modal)
 	ref_many(nameof(autoupdating), /datum/tgui)
 	ref_many(nameof(all_uis), /datum/tgui)
@@ -166,7 +167,7 @@ CAPABILITIES(/datum/system/tgui)
 	generation.chunk_files = chunk_files
 	generation.window_geometry_manifest = window_geometry_manifest
 	asset_generations += generation
-	current_asset_generation = generation
+	rel_set(src, nameof(current_asset_generation), generation)
 	return generation
 
 /// Validates and atomically publishes a complete live TGUI generation. Nothing
@@ -211,7 +212,7 @@ CAPABILITIES(/datum/system/tgui)
 	asset_generations += generation
 	// The single assignment is the publication point. A window sees the complete
 	// old generation or the complete new one, never partially-updated state.
-	current_asset_generation = generation
+	rel_set(src, nameof(current_asset_generation), generation)
 	for(var/client/client in GLOB.clients)
 		client.tgui_chunk_warm_started = FALSE
 	log_tgui(null, "Published immutable TGUI asset generation [generation_id] with [length(new_chunk_files)] chunks.", context = "SStgui/reload_development_chunks")

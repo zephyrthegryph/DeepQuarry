@@ -31,6 +31,7 @@
 
 //This is a global instance to allow much of this code to be reused. The interfaces are kept separately
 GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sort_instance)
 /datum/sort_instance
 	//The array being sorted.
 	var/list/L

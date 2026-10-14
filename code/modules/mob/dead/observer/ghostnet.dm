@@ -2,6 +2,7 @@
 //
 // The datum containing all the hidden chunks.
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/visualnet/ghost)
 /datum/visualnet/ghost
 	chunk_type = /datum/chunk/ghost
 

@@ -1,3 +1,4 @@
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/alarm_handler/power)
 /datum/alarm_handler/power
 	category = "Power Alarms"
 

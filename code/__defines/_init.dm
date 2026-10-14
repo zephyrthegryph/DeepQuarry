@@ -1,5 +1,6 @@
 // NEVER leave this on in your PR or the server will probably explode
 // #define ENABLE_BYOND_TRACY
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/super_early_init)
 /datum/super_early_init
 
 /datum/super_early_init/New()

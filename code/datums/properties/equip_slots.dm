@@ -264,6 +264,7 @@
 
 // Native slot declaration catalog: plans compile once, contexts carry the real wearer.
 GLOBAL_DATUM_INIT(native_equipment_acceptance, /datum/native_equipment_acceptance, new)
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/native_equipment_acceptance)
 /datum/native_equipment_acceptance
 
 CAPABILITIES(/datum/native_equipment_acceptance)

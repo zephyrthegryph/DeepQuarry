@@ -25,13 +25,16 @@
 	var/total_ms = 0
 	var/last_step = 0
 
+CAPABILITIES(/datum/kernel_job)
+	ref_one(nameof(owner)) // a deleted owner clears it, and the job is dropped at its next run
+
 /// Starts a chunked job. Returns the job, or null when the owner is already gone. The first step runs on the next kernel pass.
 /proc/job(datum/owner, step, budget = 10, then = null)
 	RETURN_TYPE(/datum/kernel_job)
 	if(!owner || QDELETED(owner))
 		return null
 	var/datum/kernel_job/J = new
-	J.owner = owner // ALLOW(ownership): a transient reference: the job is dropped when its owner is deleted, and the act is pooled and reset on release
+	rel_set(J, nameof(owner), owner)
 	J.step = step
 	J.then = then
 	J.budget = clamp(budget, 1, 100)
@@ -59,7 +62,7 @@
 			job_cursor_done(owner, on_done, done_with)
 		return null
 	var/datum/kernel_job/cursor/J = new
-	J.owner = owner // ALLOW(ownership): a transient reference: the job is dropped when its owner is deleted, and the act is pooled and reset on release
+	rel_set(J, nameof(owner), owner)
 	J.slice = slice
 	J.cursor = cursor
 	J.on_done = on_done

@@ -16,6 +16,7 @@
 	var/mutable_appearance/standard_background
 
 CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
+	ref_one(nameof(center))
 	owns_one(nameof(button_expand), /atom/movable/screen/component_button)
 	owns_one(nameof(button_pop), /atom/movable/screen/component_button)
 	owns_one(nameof(button_shrink), /atom/movable/screen/component_button)

@@ -85,6 +85,8 @@ TRACKED(/obj/machinery/atmospherics/valve, open)
 MSG_DEF_SELF(valve/unpowered, "It has no power.")
 
 CAPABILITIES(/obj/machinery/atmospherics/valve)
+	ref_one(nameof(network_node1))
+	ref_one(nameof(network_node2))
 	without("silicon_hand") // a manual valve: silicons can't turn it (digital and shutoff valves declare their own)
 	op("toggle", hand(), label("Toggle"), wait(0), then(PROC_REF(wheel_turned)))
 	pipe_device_unwrench()
@@ -182,6 +184,7 @@ CAPABILITIES(/obj/machinery/atmospherics/valve)
 
 /// A digital valve turns for someone its access lets in, while it has power; so does its wrench.
 CAPABILITIES(/obj/machinery/atmospherics/valve/digital)
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	silicon_hand()
 	extend("toggle", needs(req(PROC_REF(actor_allowed)), req(PROC_REF(has_power))))

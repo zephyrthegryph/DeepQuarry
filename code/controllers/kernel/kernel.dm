@@ -145,7 +145,7 @@
 	ticks++
 	tick_init_stage = init_stage
 	if(!sched)
-		sched = GLOB.om_live_sched
+		rel_set(src, nameof(sched), GLOB.om_live_sched)
 
 	phase_begin()
 	// The phase lists, rebuilt here when the graph changed, so the phases read them without a call each.

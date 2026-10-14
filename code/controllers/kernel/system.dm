@@ -280,6 +280,7 @@
 /// Steps a system's members on its member_cadence: every member that member_should_run() accepts gets
 /// member_step(), in join order, and a pass that runs out of budget yields and resumes where it stopped. A
 /// member leaving mid-pass (swap-remove) can be skipped once; membership never blocks the pass.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/system_member_driver)
 /datum/system_member_driver
 	var/datum/system/system
 	var/cursor = 1

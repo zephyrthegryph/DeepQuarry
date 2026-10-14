@@ -6,6 +6,7 @@
  */
 GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate, new)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/atom/movable/pathfinding_predicate)
 /atom/movable/pathfinding_predicate
 	invisibility = INVISIBILITY_ABSTRACT
 
@@ -61,6 +62,10 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 	//* ss13-specific things
 	/// access list ; used to get through doors and other objects if set
 	var/list/ss13_with_access
+
+CAPABILITIES(/datum/pathfinding)
+	ref_one(nameof(actor), /atom/movable)
+	ref_one(nameof(context), /datum)
 
 /datum/pathfinding/New(atom/movable/actor, turf/start, turf/goal, target_distance, max_path_length)
 	rel_set(src, nameof(actor), actor)

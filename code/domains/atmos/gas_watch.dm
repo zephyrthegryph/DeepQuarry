@@ -25,6 +25,7 @@ CAPABILITY_TYPE(gas_watch, CAP_GAS_WATCH, /datum/capability/lib/gas_watch, key =
 	var/tmp/datum/watcher
 
 CAPABILITIES(/datum/cap_data/gas_watch)
+	ref_one(nameof(watcher)) // the holder: the watch's callback reaches it through its record
 	owns_one(nameof(watch), /datum/native_watch/gas)
 
 /datum/capability/lib/gas_watch/on_holder_init(datum/act/eval/A)
@@ -36,7 +37,7 @@ CAPABILITIES(/datum/cap_data/gas_watch)
 		return
 	own_clear(data, nameof(data.watch), OWN_DELETE)
 	data.armed_id = null
-	data.watcher = null // ALLOW(ownership): the record's back view of its holder, cleared as the holder goes; the activation drops the record
+	rel_set(data, nameof(data.watcher), null)
 
 /// The watch record of `holder`, or null.
 /proc/gas_watch_data(datum/holder)
@@ -62,7 +63,7 @@ CAPABILITIES(/datum/cap_data/gas_watch)
 	var/datum/cap_data/gas_watch/data = gas_watch_data(holder)
 	if(!def || !data)
 		return
-	data.watcher = holder // ALLOW(ownership): the record's back view of its holder (the watch's callback reaches it through its record)
+	rel_set(data, nameof(data.watcher), holder)
 	var/datum/gas_mixture/mixture = def.mixture_of(holder)
 	var/id = mixture?.arena_id()
 	if(id == data.armed_id && (data.watch || isnull(id)))

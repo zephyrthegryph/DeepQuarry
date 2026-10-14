@@ -204,6 +204,7 @@ MSG_DEF_SELF(volume_pump/overclocked, "The pump makes a grinding noise and air s
 MSG_DEF_SELF(volume_pump/limited, "The pump quiets down as you turn its limiters back on.")
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
 	pipe_device_window("GasPump")

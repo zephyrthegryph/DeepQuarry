@@ -10,6 +10,9 @@
 	var/only_one_driver = FALSE			// If true, only the person in 'front' (first on list of riding mobs) can drive.
 	var/rider_size = 1 // to figure out offsets for rider.
 
+CAPABILITIES(/datum/riding)
+	ref_one(nameof(ridden))
+
 /datum/riding/New(atom/movable/_ridden)
 	rel_set(src, nameof(ridden), _ridden)
 

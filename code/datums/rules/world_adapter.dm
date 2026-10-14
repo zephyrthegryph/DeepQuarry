@@ -85,6 +85,7 @@
 	var/list/watches
 
 CAPABILITIES(/datum/dq_rx_node)
+	ref_one(nameof(node_atom))
 	owns_many(nameof(watches))
 
 /datum/dq_rx_node/New(atom/A)

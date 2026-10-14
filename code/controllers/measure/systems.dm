@@ -33,6 +33,10 @@
 	/// km_system_prefixes(), built on first use.
 	var/list/prefixes
 
+CAPABILITIES(/datum/km_holder)
+	ref_one(nameof(systems))
+	ref_one(nameof(meter))
+
 /proc/km_holder()
 	RETURN_TYPE(/datum/km_holder)
 	var/static/datum/km_holder/holder
@@ -45,7 +49,7 @@
 	RETURN_TYPE(/datum/km_systems)
 	var/datum/km_holder/holder = km_holder()
 	if(!holder.systems)
-		holder.systems = new
+		rel_set(holder, nameof(holder.systems), new /datum/km_systems)
 	return holder.systems
 
 /// The live tick meter.
@@ -53,7 +57,7 @@
 	RETURN_TYPE(/datum/tick_meter)
 	var/datum/km_holder/holder = km_holder()
 	if(!holder.meter)
-		holder.meter = new
+		rel_set(holder, nameof(holder.meter), new /datum/tick_meter)
 	return holder.meter
 
 /datum/km_systems

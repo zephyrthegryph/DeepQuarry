@@ -34,6 +34,9 @@ It's suggested to start with an if or switch statement for the message, to deter
 	var/address = "" //Resembles IPv6, but with only five 'groups', e.g. XXXX:XXXX:XXXX:XXXX:XXXX
 	var/atom/movable/holder
 
+CAPABILITIES(/datum/exonet_protocol)
+	ref_one(nameof(holder))
+
 /datum/exonet_protocol/New(atom/holder)
 	rel_set(src, nameof(holder), holder)
 	..()

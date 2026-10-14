@@ -120,6 +120,7 @@ MSG_DEF_SELF(air_device/welded, "You cannot unwrench it, it is welded down firml
 	return (!weld_shut_welded(src, null)) ? null : MSG(air_device/welded)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary)
+	ref_one(nameof(network))
 	gas_port(nameof(air_contents), volume = nameof(air_volume))
 	ref_one(nameof(node))
 	owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY)

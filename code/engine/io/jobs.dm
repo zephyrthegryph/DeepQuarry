@@ -168,6 +168,7 @@
 
 // ---------------------------------------------------------------- the lane
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/io_lane)
 /// The I/O lane: its pending jobs, its poll cursor and its counters. Its own after() polls it.
 /datum/io_lane
 	var/list/jobs

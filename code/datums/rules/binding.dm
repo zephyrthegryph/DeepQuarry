@@ -149,6 +149,9 @@ CAPABILITIES(/datum)
 	/// plain list, and qdel() refuses lists.
 	var/list/world_watches
 
+CAPABILITIES(/datum/rule_binding)
+	ref_one(nameof(owner))
+
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
 	rel_set(src, nameof(owner), owner)

@@ -217,6 +217,7 @@ GLOBAL_LIST_INIT(state_legacy_component_vars, list(
 /proc/log_state(text)
 	log_game("STATE: [text]")
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_metadata_registry)
 /// Immutable subtype policy rows, built once without constructing any content prototype.
 /datum/type_metadata_registry
 	var/list/rows

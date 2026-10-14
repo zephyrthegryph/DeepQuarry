@@ -9,6 +9,7 @@
 // moduletypes datum
 // this is per-object type, and shows the modules needed for a type of object
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/moduletypes)
 /datum/moduletypes
 	// ALLOW(instance_list): d: singleton bitmask table
 	var/list/modcount = list()	// assoc list of the count of modules for a type

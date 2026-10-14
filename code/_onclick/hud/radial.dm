@@ -10,6 +10,9 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	var/click_on_hover = FALSE
 	var/datum/radial_menu/parent
 
+CAPABILITIES(/atom/movable/screen/radial)
+	ref_one(nameof(parent))
+
 /atom/movable/screen/radial/proc/set_parent(new_value)
 	rel_set(src, nameof(parent), new_value)
 
@@ -119,6 +122,7 @@ CAPABILITIES(/atom/movable/screen/radial/slice)
 	var/radial_slice_icon
 
 CAPABILITIES(/datum/radial_menu)
+	ref_one(nameof(anchor))
 	owns_one(nameof(close_button), /atom/movable/screen/radial/center)
 	owns_many(nameof(elements), /atom/movable/screen)
 

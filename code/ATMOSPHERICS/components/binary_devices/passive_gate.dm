@@ -151,6 +151,7 @@
 // ---- the controls ----
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	pipe_device_window("PressureRegulator")
 	pipe_device_unwrench()

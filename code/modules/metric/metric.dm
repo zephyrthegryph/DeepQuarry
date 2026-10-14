@@ -1,6 +1,7 @@
 // This is a global datum used to retrieve certain information about the round, such as activity of a department or a specific
 // player.
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/metric)
 /datum/metric
 	var/list/departments = list( // ALLOW(instance_list): d: edited in place per instance (12 writers)
 		DEPARTMENT_COMMAND,

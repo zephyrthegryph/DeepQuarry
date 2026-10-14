@@ -25,6 +25,10 @@
 	EXPIRY_DECLARE(fill_started)
 	var/fill_duration = 0
 
+CAPABILITIES(/datum/progressbar)
+	ref_one(nameof(bar_loc))
+	ref_one(nameof(user))
+
 /datum/progressbar/New(mob/User, goal_number, atom/target, starting_amount)
 	. = ..()
 	if (!istype(target))
