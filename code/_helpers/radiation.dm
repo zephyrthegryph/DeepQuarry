@@ -35,7 +35,7 @@
 		return
 
 	var/datum/radiation_pulse_information/pulse_information = new
-	rel_set(pulse_information, nameof(/datum/contract_damage_report::source_ref), source)
+	rel_set(pulse_information, nameof(/datum/radiation_pulse_information::source_ref), source)
 	pulse_information.max_range = max_range
 	pulse_information.threshold = threshold
 	pulse_information.chance = chance

@@ -40,6 +40,7 @@
 	return -0.55
 
 CAPABILITIES(/mob/living/silicon)
+	ref_one(nameof(common_radio), /obj/item/radio)
 	immune_to(STAT_DIZZY)
 	immune_to(STAT_JITTERY)
 	owns_one(nameof(aiCamera), /obj/item/camera/siliconcam)

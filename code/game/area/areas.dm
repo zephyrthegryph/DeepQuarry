@@ -534,6 +534,8 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 	else
 		cut_overlay(GLOB.spoiler_obfuscation_image)
 
+TRACKED(/area, flags)
+
 /area/proc/flag_check(flag, match_all = FALSE)
 	if(match_all)
 		return (flags & flag) == flag

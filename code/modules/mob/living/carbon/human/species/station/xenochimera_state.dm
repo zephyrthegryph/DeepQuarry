@@ -12,7 +12,10 @@
 	VAR_PRIVATE/datum/transhuman/body_record/revival_record
 
 CAPABILITIES(/datum/xenochimera)
+	ref_one(nameof(owner), /mob/living/carbon/human)
 	owns_one(nameof(revival_record), /datum/transhuman/body_record)
+
+TRACKED(/datum/xenochimera, feral)
 
 /datum/xenochimera/New(mob/living/carbon/human/new_owner)
 	..()
@@ -104,7 +107,7 @@ CAPABILITIES(/datum/xenochimera)
 		// if stress is below 15, no chance of snapping. Also if they weren't feral before, they won't suddenly become feral unless they get MORE stressed
 		if((currentstress > laststress) && prob(clamp(currentstress-15, 0, 100)) )
 			go_feral(currentstress, cause)
-			feral = currentstress //update the local var
+			set_feral(currentstress) //update the local var
 
 		//they didn't go feral, give 'em a chance of hunger messages
 		else if(nutrition_of(owner) <= 200 && prob(0.5))
@@ -127,15 +130,15 @@ CAPABILITIES(/datum/xenochimera)
 		//If they're still stressed, they stay feral
 		if(currentstress >= 15)
 			danger = TRUE
-			feral = max(feral, currentstress)
+			set_feral(max(feral, currentstress))
 
 		else
-			feral = max(0,--feral)
+			set_feral(max(0, feral - 1))
 
 			// Being in a belly or in the darkness decreases stress further. Helps mechanically reward players for staying in darkness + RP'ing appropriately. :9
 			var/turf/T = get_turf(owner)
 			if(feral && (isbelly(owner.loc) || T.get_lumcount() <= 0.1))
-				feral = max(0,--feral)
+				set_feral(max(0, feral - 1))
 
 		//Did we just finish being feral?
 		if(!feral)
@@ -264,7 +267,7 @@ CAPABILITIES(/datum/xenochimera)
 		to_chat(owner,span_warning(span_large("The stress of your situation is too much for you, and your survival instincts kick in!")))
 		log_and_message_admins("has gone feral for unknown reasons.", owner)
 	//finally, set their feral var
-	feral = stress
+	set_feral(stress)
 	if(!owner.stat)
 		owner.emote("twitch")
 

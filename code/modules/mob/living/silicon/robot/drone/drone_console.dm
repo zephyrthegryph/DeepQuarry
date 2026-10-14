@@ -18,6 +18,7 @@
 	return ..()
 
 CAPABILITIES(/obj/machinery/computer/drone_control)
+	ref_one(nameof(dronefab), /obj/machinery/drone_fabricator)
 	interface("DroneConsole")
 	// An empty hand (or a silicon's interface) opens the console for a credential that fits its req_access, so a refused click says why.
 	extend("ui_open", needs(req_access()), then(PROC_REF(console_fingerprinted)))

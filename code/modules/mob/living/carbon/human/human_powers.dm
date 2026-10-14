@@ -441,7 +441,7 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 	var/datum/robolimb/robohead = GLOB.all_robolimbs[E.model]
 	if(robohead?.monitor_icon)
 		E.eye_icon_location = robohead.monitor_icon
-		E.eye_icon = states[choice]
+		E.set_eye_icon(states[choice])
 		E.eye_icon_override = TRUE
 		to_chat(src,span_warning("You set your monitor to display [choice]!"))
 

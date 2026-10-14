@@ -19,6 +19,7 @@ MSG_DEF_SELF(tcomms_console/no_entry, "There is no such log entry on the server 
 // The server log browser: probes the servers of its network (tcomms_probe_console(), telemonitor.dm), shows one with its logs, and deletes a
 // log entry for someone with its access (or anyone, once emagged).
 CAPABILITIES(/obj/machinery/computer/telecomms/server)
+	ref_one(nameof(SelectedServer), /obj/machinery/telecomms/server)
 	interface("TelecommsLogBrowser")
 	tcomms_probe_console()
 	op("delete", ui_act("delete", arg("id", num())), needs(req(PROC_REF(may_delete)), req(PROC_REF(entry_exists))), then(PROC_REF(ui_act_delete)))

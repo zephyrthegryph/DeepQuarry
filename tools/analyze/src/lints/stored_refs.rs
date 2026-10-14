@@ -429,7 +429,7 @@ impl Lint for StoredRefs {
         let root = &cx.tree.root;
         let line_of = |rel: &str, l: u32| engine_line(root, rel, l) as usize;
         let mut emitted: HashSet<(String, String, u32)> = HashSet::new();
-        let mut put = |out: &mut Sink, rule: &str, rel: &str, line: usize, msg: String| {
+        let mut put = |out: &mut Sink, rule: &str, rel: &str, line: usize, msg: String, ident: String| {
             if !rel.starts_with("code/") || cx.exempt(rel) || !emitted.insert((rule.to_string(), rel.to_string(), line as u32)) {
                 return;
             }
@@ -438,7 +438,7 @@ impl Lint for StoredRefs {
                     return;
                 }
             }
-            out.site_in_msg(rule, rel, line, msg);
+            out.site_decl(rule, rel, line, msg, ident);
         };
 
         // ---- var: declarations ----
@@ -472,7 +472,7 @@ impl Lint for StoredRefs {
             if declared_by_relation(sem, &rels, &owner, &name) {
                 continue;
             }
-            put(out, "var", &rel, line_of(&rel, line), format!("{}/var/{} holds a {} outside a declared relation", if owner == "/" { "" } else { owner.as_str() }, name, declared));
+            put(out, "var", &rel, line_of(&rel, line), format!("{}/var/{} holds a {} outside a declared relation", if owner == "/" { "" } else { owner.as_str() }, name, declared), format!("{}::{}", owner, name));
         }
 
         // ---- list: writes in proc bodies ----
@@ -504,7 +504,7 @@ impl Lint for StoredRefs {
         for (owner, name, rel, line) in typed_lists {
             found.entry(Place::Member(owner, name)).or_insert((rel, line));
         }
-        let mut lists: Vec<(String, u32, String)> = Vec::new();
+        let mut lists: Vec<(String, u32, String, String)> = Vec::new();
         for (place, (wrel, wline)) in found {
             match place {
                 Place::Member(o, v) => {
@@ -516,17 +516,17 @@ impl Lint for StoredRefs {
                         continue;
                     }
                     let at = format!("{}:{}", wrel, line_of(&wrel, wline));
-                    lists.push((sig.file.clone(), sig.line, format!("{}/var/{} stores atoms/datums (e.g. {})", if o == "/" { "" } else { o.as_str() }, v, at)));
+                    lists.push((sig.file.clone(), sig.line, format!("{}/var/{} stores atoms/datums (e.g. {})", if o == "/" { "" } else { o.as_str() }, v, at), format!("{}::{}", o, v)));
                 }
                 Place::ProcStatic(rel, line) => {
                     let at = format!("{}:{}", wrel, line_of(&wrel, wline));
-                    lists.push((rel, line, format!("a proc's static list stores atoms/datums (e.g. {})", at)));
+                    lists.push((rel, line, format!("a proc's static list stores atoms/datums (e.g. {})", at), String::new()));
                 }
             }
         }
         lists.sort();
-        for (rel, line, msg) in lists {
-            put(out, "list", &rel, line_of(&rel, line), msg);
+        for (rel, line, msg, ident) in lists {
+            put(out, "list", &rel, line_of(&rel, line), msg, ident);
         }
     }
 }

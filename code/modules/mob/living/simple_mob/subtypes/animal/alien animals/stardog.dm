@@ -845,6 +845,7 @@ MSG_DEF(control_pod/reaching, span_notice("You reach out to touch %T%..."), span
 MSG_DEF(control_pod/pulls_back, span_warning("You pull back from %T%."), span_warning("%U% pulls back from %T%."))
 
 CAPABILITIES(/obj/structure/control_pod)
+	ref_one(nameof(controller), /mob/living)
 	after_init(0, then(PROC_REF(control_pod_setup)))
 	op("hand", hand(), label("Use"), needs(req(PROC_REF(pod_free))), starts(PROC_REF(control_started)), begins(MSG(control_pod/reaching)), wait(10 SECONDS), on_interrupt(PROC_REF(control_failed)), then(PROC_REF(control_done)))
 
@@ -1082,6 +1083,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/dog_teleporter, REGISTRY_DOG_TELEPORTERS)
 	lets_go(AM)
 
 CAPABILITIES(/obj/effect/dog_teleporter)
+	ref_one(nameof(target), /obj/effect/dog_teleporter)
 	op("dog_teleport", hand(), then(PROC_REF(interaction_dog_teleport)))
 
 /// Old attack_hand: touching it sends you through.

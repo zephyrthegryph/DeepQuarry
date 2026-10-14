@@ -31,6 +31,7 @@
 	var/mob/living/simple_mob/vore/overmap/parent
 
 CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
+	ref_one(nameof(parent), /mob/living/simple_mob/vore/overmap)
 	param(nameof(parent), pos = 1, apply = PROC_REF(link_parent))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The marker of a mob made with no mob makes its own.
@@ -166,6 +167,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 	var/mob/living/simple_mob/vore/overmap/parent
 
 CAPABILITIES(/obj/effect/overmap/visitable/ship/simplemob)
+	ref_one(nameof(parent), /mob/living/simple_mob/vore/overmap)
 	param(nameof(parent), pos = 1, apply = PROC_REF(link_parent))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The marker of a mob made with no mob makes its own.

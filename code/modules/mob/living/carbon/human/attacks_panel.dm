@@ -16,6 +16,7 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 		GLOB.dq_attacks_panels -= "[REF(host)]"
 
 CAPABILITIES(/datum/attacks_panel)
+	ref_one(nameof(host), /mob/living/carbon/human)
 	interface("AttacksPanel", title = "Known Attacks", state = nameof(GLOB.tgui_always_state))
 	op("set_default", ui_act("set_default", arg("ref", schema_ref(/datum/unarmed_attack))), then(PROC_REF(ui_act_set_default)))
 	op("reset_default", ui_act("reset_default"), then(PROC_REF(ui_act_reset_default)))

@@ -824,7 +824,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		if(!targetHead)
 			return // don't bother if target mob has no head for whatever reason
 
-		targetHead.eye_icon = baseHead.eye_icon
+		targetHead.set_eye_icon(baseHead.eye_icon)
 		targetHead.eye_icon_location = baseHead.eye_icon_location
 
 		if(!QDELETED(baseHead) && baseHead)

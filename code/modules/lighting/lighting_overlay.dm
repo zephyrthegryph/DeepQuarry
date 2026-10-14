@@ -10,6 +10,10 @@
 	///the turf that our light is applied to
 	var/turf/affected_turf
 
+	/// The lum bands reactive code reads off this turf (watched(T, WATCH_LUM, levels), code/modules/heat/watched.dm): "levels" -> list(levels,
+	/// the band last published). Null on every turf nothing watches, so an update pays one var read.
+	var/list/lum_watch
+
 /datum/lighting_object/New(turf/source)
 	if(!SSlighting.initialized)
 		stack_trace("lighting_object created before SSlighting up!")
@@ -51,7 +55,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
 	..()
 
 /datum/lighting_object/proc/update()
-
+	// A watched turf's lum may have left its band: checked once per turf per tick by the watched system.
+	if(lum_watch)
+		SSwatched.lum_changed(src.affected_turf)
 	if(sunlight_only) return
 	// To the future coder who sees this and thinks
 	// "Why didn't he just use a loop?"

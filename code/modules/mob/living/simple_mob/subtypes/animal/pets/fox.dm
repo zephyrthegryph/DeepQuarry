@@ -30,7 +30,6 @@
 	holder_type = /obj/item/holder/fox
 
 	var/turns_since_scan = 0
-	var/mob/flee_target
 
 /datum/say_list/fox
 	speak = list("Ack-Ack","Ack-Ack-Ack-Ackawoooo","Awoo","Tchoff")
@@ -189,6 +188,7 @@
 	var/mob/living/friend = null // Our best pal, who we'll follow. awoo.
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fox/renault)
+	ref_one(nameof(friend), /mob/living)
 	configure(mob_movement(makes_dirt = FALSE))
 
 /mob/living/simple_mob/animal/passive/fox/renault/load_default_bellies()

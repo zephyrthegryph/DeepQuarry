@@ -826,7 +826,7 @@
 	TEST_ASSERT(istype(user.species, /datum/species/lleill), "the actor is a lleill")
 	var/obj/structure/glamour_ring/ring = allocate(/obj/structure/glamour_ring, T)
 	ring.connected_mob = user
-	var/datum/species/lleill/own_species = rel_private(user, nameof(/datum/dna::species)) // a private copy: the shared lleill species must not keep this test's energy
+	var/datum/species/lleill/own_species = rel_private(user, nameof(/mob/living/carbon/human::species)) // a private copy: the shared lleill species must not keep this test's energy
 	own_species.lleill_energy = 0
 	var/datum/T2 = s_ring_ask(user, ring, "Restore Energy")
 	TEST_ASSERT(!isnull(T2), "answering Restore Energy starts a timed action")
@@ -849,7 +849,7 @@
 	user.set_species(SPECIES_LLEILL)
 	var/obj/structure/glamour_ring/ring = allocate(/obj/structure/glamour_ring, T)
 	ring.connected_mob = user
-	var/datum/species/lleill/own_species = rel_private(user, nameof(/datum/dna::species)) // a private copy: the shared lleill species must not keep this test's energy
+	var/datum/species/lleill/own_species = rel_private(user, nameof(/mob/living/carbon/human::species)) // a private copy: the shared lleill species must not keep this test's energy
 	own_species.lleill_energy = 0
 	var/datum/T2 = s_ring_ask(user, ring, "Restore Energy")
 	TEST_ASSERT(!isnull(T2), "answering Restore Energy starts a timed action")

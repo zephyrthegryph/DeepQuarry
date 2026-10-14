@@ -31,11 +31,11 @@ MSG_DEF_SELF(shadekin_ability/respite_forced, "you cannot manually end a Dark Re
 		return OP_FAILED
 	if(has_body_effect(/datum/body_effect/dark_respite))
 		to_chat(src, span_notice("You stop focusing the Dark on healing yourself."))
-		SK.manual_respite = FALSE
+		SK.set_manual_respite(FALSE)
 		remove_body_effect_stack(/datum/body_effect/dark_respite)
 		return OP_OK
 	to_chat(src, span_notice("You start focusing the Dark on healing yourself. (Leave the dark or trigger the ability again to end this.)"))
-	SK.manual_respite = TRUE
+	SK.set_manual_respite(TRUE)
 	apply_body_effect(/datum/body_effect/dark_respite)
 	return OP_OK
 
@@ -83,7 +83,7 @@ MSG_DEF_SELF(shadekin_ability/respite_forced, "you cannot manually end a Dark Re
 	else
 		if(SK.manual_respite)
 			to_chat(L, span_notice("As you leave the Dark, you stop focusing the Dark on healing yourself."))
-			SK.manual_respite = FALSE
+			SK.set_manual_respite(FALSE)
 			L.end_body_effect(type)
 
 /// The Dark numbs pain and fights infection; a fed body rebuilds blood.

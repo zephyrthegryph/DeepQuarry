@@ -216,6 +216,7 @@ TRACKED(/obj/machinery/abstract_grub_machine, draining)
 /// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/abstract_grub_machine)
+	ref_one(nameof(grub), /mob/living/simple_mob/animal/solargrub_larva)
 	keeps_if(PROC_REF(inside_a_grub))
 	rolls(nameof(total_active_power_usage), PROC_REF(roll_power))
 	rolls(nameof(total_idle_power_usage), PROC_REF(roll_power))

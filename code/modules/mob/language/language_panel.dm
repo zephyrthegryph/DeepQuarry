@@ -26,6 +26,7 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 		GLOB.dq_languages_panels -= "[REF(host)]"
 
 CAPABILITIES(/datum/languages_panel)
+	ref_one(nameof(host), /mob)
 	interface("LanguagesPanel", title = "Known Languages", state = nameof(GLOB.tgui_always_state))
 	op("set_default", ui_act("set_default", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_set_default)))
 	op("reset_default", ui_act("reset_default"), then(PROC_REF(ui_act_reset_default)))

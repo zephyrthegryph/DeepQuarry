@@ -142,6 +142,7 @@ TRACKED(/mob/living/simple_mob/vore/boss_jellyfish, chain_number)
 /mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
 
 CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
+	ref_one(nameof(chain_target), /atom)
 	configure(light_glow(color = "#14ff20"))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
 	every(4 SECONDS, then(PROC_REF(chain_attack)), when = nameof(chain_number))

@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "Declaration ratchets (base_vars, stored_refs) fingerprint a var by owner and name, so retyping a baselined var no longer reads as new debt"

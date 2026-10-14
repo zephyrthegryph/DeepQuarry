@@ -30,7 +30,7 @@
 				act_message(L, null, MSG_SELF("Your body gives off a faint, sparking, haze..."), MSG_OTHERS("%U%'s body gives off a faint, sparking, haze..."), runemessage = "gives off a faint, sparking haze")
 		var/datum/shadekin/comp = L.get_shadekin_state()
 		if(comp)
-			comp.dark_energy += 10
+			comp.set_dark_energy(comp.dark_energy + 10)
 			if(prob(10))
 				to_chat(L, span_notice("You can feel the energy flowing into you!"))
 		else if(prob(0.25))

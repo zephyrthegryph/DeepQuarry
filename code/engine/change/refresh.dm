@@ -96,6 +96,9 @@
 	// Demand-gated: a var nobody reads (no reaction, generated read, derived() entry or observer) publishes nothing.
 	if(var_name && READERS(E, var_name))
 		publish_change(E, var_name)
+	// A draw one container, turf or area hop away reads it (an item drawing its holder's state): it redraws (refs/hops.dm).
+	if(var_name && draw_hop_reads_var(var_name))
+		draw_hop_published(E, var_name)
 	refresh_trace_note(E, channel)
 	// Sources watching E through a relation view (rel_one/rel_many(watch = ...)) re-derive too. Only on
 	// E's first mark this frame, and after E is marked itself (the mark is what makes the second mark a "not first"),

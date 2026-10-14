@@ -112,4 +112,5 @@
 
 /// watched() (code/modules/heat/watched.dm): the Rust-owned sources reactive code reads as a band, and the key a band change publishes on the atom.
 #define WATCH_HEAT "heat"
+#define WATCH_LUM "lum"
 #define WATCHED_KEY "watched"

@@ -223,6 +223,7 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 	return ..()
 
 CAPABILITIES(/datum/inventory_panel)
+	ref_one(nameof(host), /mob/living)
 	interface(null, state = nameof(GLOB.tgui_physical_state), window_var = nameof(tgui_id))
 	ui_shape(slots = list_of(), internals = any, internalsValid = bool())
 
