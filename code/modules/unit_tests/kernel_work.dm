@@ -64,6 +64,7 @@
 	return !!W
 
 /datum/unit_test/kernel_work_cadence
+	boot_needs = list()
 
 /datum/unit_test/kernel_work_cadence/Run()
 	var/datum/controller/kernel/K = new
@@ -141,6 +142,7 @@
 	TEST_ASSERT_EQUAL(metrics["work_items"], 5, "and counts the items")
 
 /datum/unit_test/kernel_work_order
+	boot_needs = list()
 
 /datum/unit_test/kernel_work_order/Run()
 	var/datum/controller/kernel/K = new
@@ -226,6 +228,7 @@
 /datum/test_work_member/other_key
 
 /datum/unit_test/kernel_work_urgent
+	boot_needs = list()
 
 /datum/unit_test/kernel_work_urgent/Run()
 	var/datum/controller/kernel/K = new
@@ -293,6 +296,7 @@
 	qdel(M)
 
 /datum/unit_test/kernel_work_membership
+	boot_needs = list()
 
 /datum/unit_test/kernel_work_membership/Run()
 	var/key = /datum/test_work_member/keyed
@@ -348,6 +352,7 @@
 	return STEP_DONE
 
 /datum/unit_test/kernel_work_stage_adapter
+	boot_needs = list()
 
 /datum/unit_test/kernel_work_stage_adapter/Run()
 	var/datum/definition_registry/reg = definition_registry()
@@ -399,6 +404,7 @@
 	phase_log += "[world.time]:G"
 
 /datum/unit_test/kernel_tick_phases
+	boot_needs = list()
 
 /datum/unit_test/kernel_tick_phases/Run()
 	var/datum/controller/kernel/K = kernel()

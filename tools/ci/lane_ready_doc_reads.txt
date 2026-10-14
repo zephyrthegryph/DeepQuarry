@@ -1,0 +1,4 @@
+# Files under doc/, html/changelogs/, data/ or the repo root *.md that a lint, generator, build step or test READS (tools/dq_lane_check.js).
+# Master changing any other doc or changelog never invalidates a lane-ready stamp; changing one of these does. One path prefix per line.
+# Add a path here in the commit that makes a tool read it (a path only quoted in a lint's hint text does not count).
+doc/rewrite/reads_closure_newly_visible.md
