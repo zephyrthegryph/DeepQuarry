@@ -158,6 +158,8 @@ GLOBAL_LIST_EMPTY(dq_look_results)
  * beside the other asks for both, so each type is made once). A later call for a result the first one skipped probes only that.
  */
 /datum/unit_test/proc/dq_look_sweep(datum/unit_test/owner, want_tree, want_state)
+	// An idle service makes any epoch started below attributable to these prototypes.
+	TEST_ASSERT(!SSexplosions.has_work(), "look sweep started with an unrelated explosion epoch still running")
 	var/list/universe = dq_look_universe(want_tree, want_state)
 	var/list/plan = dq_look_read_plan()
 	var/list/only = dq_look_param_lines("look-types")
@@ -197,6 +199,13 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			dq_look_unit(type, T, ispath(type, /obj) ? base_vars_obj : base_vars_mob, plan, res, need_tree, need_state, fresh)
 		if(trace)
 			dq_look_globals_report(type, before)
+	// Explosion work is a live system, outside the injected test clock. Let its
+	// real epoch finish before deleting visuals that can drift off the probe turf.
+	for(var/attempt in 1 to 200)
+		if(!SSexplosions.has_work())
+			break
+		wait_ticks(1)
+	TEST_ASSERT(!SSexplosions.has_work(), "look prototype explosion work did not finish within 200 real ticks")
 	dq_look_reset(T) // the block is released clean: nothing of the last type is left on it
 
 /// Every type either wanted pin makes, in the one order every shard agrees on (the sorted path text).
