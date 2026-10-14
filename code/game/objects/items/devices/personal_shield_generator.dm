@@ -608,6 +608,7 @@ CAPABILITIES(/obj/item/personal_shield_generator/belt/mining)
 CAPABILITIES(/obj/item/gun/energy/gun/generator)
 	ref_one(nameof(power_supply))
 	param(nameof(linked_generator), pos = 1)
+	ref_one(nameof(linked_generator), /obj/item/personal_shield_generator)
 
 /// Old object verbs.
 

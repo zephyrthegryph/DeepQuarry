@@ -27,6 +27,8 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(showing), wakes_on = list(nameof(showing)))
 	owns_one(nameof(bradio), starts = /obj/item/radio)
 	click_on(PROC_REF(click_input))
+	ref_one(nameof(bpinboard), /obj/effect/overlay/vis)
+	ref_one(nameof(the_camera), /obj/item/clothing/accessory/bodycam)
 
 /obj/machinery/computer/security/telescreen/bodycamera/Initialize(mapload)
 

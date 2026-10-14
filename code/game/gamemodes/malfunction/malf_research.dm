@@ -9,6 +9,8 @@
 	var/datum/malf_research_ability/focus_static	// Currently researched item (a relation view into available_abilities)
 
 CAPABILITIES(/datum/malf_research)
+	ref_one(nameof(owner))
+	ref_one(nameof(focus_static))
 	owns_many(nameof(available_abilities))
 	owns_many(nameof(unlocked_abilities))
 

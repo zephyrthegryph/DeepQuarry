@@ -610,39 +610,42 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	else
 		return 0
 
+/// The type the raiders are to steal (a path, so not the objective's mind target).
+/datum/objective/heist/loot/var/loot_path
+
 /datum/objective/heist/loot/choose_target()
 	var/loot = "an object"
 	switch(rand(1,8))
 		if(1)
-			rel_set(src, nameof(target), /obj/structure/particle_accelerator)
+			loot_path = /obj/structure/particle_accelerator
 			target_amount = 6
 			loot = "a complete particle accelerator"
 		if(2)
-			rel_set(src, nameof(target), /obj/machinery/the_singularitygen)
+			loot_path = /obj/machinery/the_singularitygen
 			target_amount = 1
 			loot = "a gravitational generator"
 		if(3)
-			rel_set(src, nameof(target), /obj/machinery/power/emitter)
+			loot_path = /obj/machinery/power/emitter
 			target_amount = 4
 			loot = "four emitters"
 		if(4)
-			rel_set(src, nameof(target), /obj/machinery/nuclearbomb)
+			loot_path = /obj/machinery/nuclearbomb
 			target_amount = 1
 			loot = "a nuclear bomb"
 		if(5)
-			rel_set(src, nameof(target), /obj/item/gun)
+			loot_path = /obj/item/gun
 			target_amount = 6
 			loot = "six guns"
 		if(6)
-			rel_set(src, nameof(target), /obj/item/gun/energy)
+			loot_path = /obj/item/gun/energy
 			target_amount = 4
 			loot = "four energy guns"
 		if(7)
-			rel_set(src, nameof(target), /obj/item/gun/energy/laser)
+			loot_path = /obj/item/gun/energy/laser
 			target_amount = 2
 			loot = "two laser guns"
 		if(8)
-			rel_set(src, nameof(target), /obj/item/gun/energy/ionrifle)
+			loot_path = /obj/item/gun/energy/ionrifle
 			target_amount = 1
 			loot = "an ion gun"
 
@@ -652,47 +655,50 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	var/total_amount = 0
 
 	for(var/obj/O in locate(/area/shuttle/skipjack)) // Shuttle area pathname
-		if(istype(O,target)) total_amount++
+		if(istype(O, loot_path)) total_amount++
 		for(var/obj/I in contents_of(O))
-			if(istype(I,target)) total_amount++
+			if(istype(I, loot_path)) total_amount++
 		if(total_amount >= target_amount) return 1
 
 	for(var/datum/mind/raider in GLOB.raiders.current_antagonists)
 		if(raider.current)
 			for(var/obj/O in raider.current.get_contents())
-				if(istype(O,target)) total_amount++
+				if(istype(O, loot_path)) total_amount++
 				if(total_amount >= target_amount) return 1
 
 	return 0
 
+/// The material the raiders are to ransack (its name, so not the objective's mind target).
+/datum/objective/heist/salvage/var/material_name
+
 /datum/objective/heist/salvage/choose_target()
 	switch(rand(1,8))
 		if(1)
-			rel_set(src, nameof(target), MAT_STEEL)
+			material_name = MAT_STEEL
 			target_amount = 300
 		if(2)
-			rel_set(src, nameof(target), MAT_GLASS)
+			material_name = MAT_GLASS
 			target_amount = 200
 		if(3)
-			rel_set(src, nameof(target), MAT_PLASTEEL)
+			material_name = MAT_PLASTEEL
 			target_amount = 100
 		if(4)
-			rel_set(src, nameof(target), MAT_PHORON)
+			material_name = MAT_PHORON
 			target_amount = 100
 		if(5)
-			rel_set(src, nameof(target), MAT_SILVER)
+			material_name = MAT_SILVER
 			target_amount = 50
 		if(6)
-			rel_set(src, nameof(target), MAT_GOLD)
+			material_name = MAT_GOLD
 			target_amount = 20
 		if(7)
-			rel_set(src, nameof(target), MAT_URANIUM)
+			material_name = MAT_URANIUM
 			target_amount = 20
 		if(8)
-			rel_set(src, nameof(target), MAT_DIAMOND)
+			material_name = MAT_DIAMOND
 			target_amount = 20
 
-	explanation_text = "Ransack the station and escape with [target_amount] [target]."
+	explanation_text = "Ransack the station and escape with [target_amount] [material_name]."
 
 /datum/objective/heist/salvage/check_completion()
 
@@ -702,12 +708,12 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 		var/obj/item/stack/material/S
 		if(istype(O,/obj/item/stack/material))
-			if(O.name == target)
+			if(O.name == material_name)
 				S = O
 				total_amount += S.get_amount()
 		for(var/obj/I in contents_of(O))
 			if(istype(I,/obj/item/stack/material))
-				if(I.name == target)
+				if(I.name == material_name)
 					S = I
 					total_amount += S.get_amount()
 
@@ -715,7 +721,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		if(raider.current)
 			for(var/obj/item/O in raider.current.get_contents())
 				if(istype(O,/obj/item/stack/material))
-					if(O.name == target)
+					if(O.name == material_name)
 						var/obj/item/stack/material/S = O
 						total_amount += S.get_amount()
 
@@ -840,4 +846,4 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 // The mind owns its objectives (mind.objectives, OWN); owner is the one-sided back view.
 CAPABILITIES(/datum/objective)
 	ref_one(nameof(owner))
-// Minds live for the round; the objective only reads its target.
+	ref_one(nameof(target))

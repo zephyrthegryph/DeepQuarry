@@ -1095,7 +1095,9 @@ CAPABILITIES(/datum/prompt/yes_no/ai_door_request)
 	set category = VERB_CAT_AI_CAMERA_CONTROL
 	drop_new_multicam()
 
-//Special subtype kept around for global announcements
+//Special subtype kept around for global announcements. GLOB.autospeaker is made once at boot (SSradio) and nothing deletes it.
+LIFECYCLE_KEEP_UNLESS_FORCED(/mob/living/silicon/ai/announcer)
+
 /mob/living/silicon/ai/announcer
 	is_dummy = 1
 

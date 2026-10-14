@@ -47,6 +47,7 @@ CAPABILITIES(/obj/machinery/washing_machine)
 	extend("machine_anchor", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
 	extend("machine_unanchor", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
 	default_parts()
+	ref_one(nameof(crayon), /obj)
 
 
 

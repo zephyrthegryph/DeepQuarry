@@ -1,3 +1,6 @@
+/// An area's initializer is made once in its definition and kept for the round: nothing deletes one.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/turf_initializer)
+
 /datum/turf_initializer/proc/InitializeTurf(turf/T)
 	return
 

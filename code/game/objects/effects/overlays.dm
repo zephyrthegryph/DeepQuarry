@@ -9,8 +9,6 @@
 	icon='icons/effects/beam.dmi'
 	icon_state="b_beam"
 	plane = ABOVE_OBJ_PLANE
-	/// Relation view: the atom the beam comes from.
-	var/tmp/atom/BeamSource
 
 /obj/effect/overlay/palmtree_r
 	name = "Palm tree"
@@ -185,7 +183,3 @@ CAPABILITIES(/obj/effect/overlay/snow)
 	layer = FLOAT_LAYER
 	vis_flags = VIS_INHERIT_ID
 	appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PIXEL_SCALE
-
-/// Relation view: BeamSource (reads null once it is gone).
-/obj/effect/overlay/beam/proc/BeamSource() as /atom
-	return BeamSource

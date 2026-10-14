@@ -153,6 +153,9 @@ MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 	var/category
 	var/datum/gear_tweak/tweak
 
+CAPABILITIES(/datum/ask_sequence/gear_tweak/underwear)
+	ref_one(nameof(tweak))
+
 /datum/ask_sequence/gear_tweak/underwear/New(category, datum/gear_tweak/tweak)
 	..()
 	src.category = category

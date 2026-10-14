@@ -113,6 +113,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	op("secure_data_eject_id", menu(), label("Eject ID Card"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_secure_data_eject_id)))
 	op("secure_data_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT), label("Insert ID"), when(req_empty(nameof(scan))), then(PROC_REF(interaction_secure_data_insert_id)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(secure_data_emp)))
+	ref_one(nameof(active1), /datum/data/record)
 
 /obj/machinery/computer/secure_data/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

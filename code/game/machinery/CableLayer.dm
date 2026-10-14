@@ -24,6 +24,7 @@ CAPABILITIES(/obj/machinery/cablelayer)
 		asks(/datum/prompt/number/cablelayer_cut, fields = list("default" = computed(PROC_REF(cut_default)))),
 		then(PROC_REF(cable_length_entered)))
 	op("cablelayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(toggle_ready))), then(PROC_REF(interaction_toggle)))
+	ref_one(nameof(last_piece), /obj/structure/cable)
 
 /obj/machinery/cablelayer/proc/interaction_load(datum/act/op/A)
 	var/mob/user = A.actor

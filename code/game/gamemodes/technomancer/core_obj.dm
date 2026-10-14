@@ -150,6 +150,7 @@ CAPABILITIES(/obj/item/technomancer_core)
 		spent(src)
 
 CAPABILITIES(/obj/spellbutton)
+	ref_one(nameof(core))
 	// a spell button is an interface object, not a body
 	without("melee_hit")
 	click_on(PROC_REF(click_input))

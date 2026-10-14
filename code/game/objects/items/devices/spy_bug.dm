@@ -28,6 +28,7 @@ CAPABILITIES(/obj/item/camerabug)
 	op("hit", item(/obj/item), then(PROC_REF(interaction_item)))
 	// the old object verb
 	op("reset", menu(), label("Reset camera bug"), needs(carried()), then(PROC_REF(camerabug_reset)))
+	ref_one(nameof(linkedmonitor), /obj/item/bug_monitor)
 
 MSG_DEF_SELF(camerabug/not_on_floor, "It must be on the floor.")
 
@@ -190,6 +191,7 @@ CAPABILITIES(/obj/item/bug_monitor)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("item", item(/obj/item/camerabug), then(PROC_REF(interaction_item)))
 	op("view", in_hand(), label("View paired cameras"), then(PROC_REF(bug_monitor_controls_opened)))
+	ref_one(nameof(selected_camera), /obj/machinery/camera/bug)
 
 /obj/item/bug_monitor/proc/bug_monitor_controls_opened(datum/act/op/A)
 	view_cameras(A.actor)

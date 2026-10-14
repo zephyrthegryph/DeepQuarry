@@ -13,6 +13,7 @@
 REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 
 CAPABILITIES(/obj/effect/simple_portal/linked)
+	ref_one(nameof(linked_portal))
 	after_init(0, then(PROC_REF(link_on_init)))
 
 /// Links its partner portal, once both exist.
@@ -21,6 +22,7 @@ CAPABILITIES(/obj/effect/simple_portal/linked)
 		link_portal()
 
 CAPABILITIES(/obj/effect/simple_portal)
+	ref_one(nameof(destination))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("enter", observer(), label("Enter"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(simple_portal_observer_use)))
 
