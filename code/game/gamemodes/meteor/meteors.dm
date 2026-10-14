@@ -132,8 +132,7 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 
 REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 
-/obj/effect/meteor/Initialize(mapload)
-	. = ..()
+/obj/effect/meteor/proc/start_initial_spin()
 	z_original = z
 	SpinAnimation()
 
@@ -206,6 +205,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 	spent(src)
 
 CAPABILITIES(/obj/effect/meteor)
+	setup(PROC_REF(start_initial_spin))
 	op("mine_meteor", item(/obj/item/pickaxe), label("Break up"), then(PROC_REF(interaction_mine_meteor)))
 
 /// Old attackby: a pickaxe breaks the meteor up.

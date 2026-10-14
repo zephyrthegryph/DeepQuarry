@@ -1,5 +1,6 @@
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
+	setup(PROC_REF(default_apply_parts))
 	configure(uses_power(idle = 5))
 	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
 	silicon_ui()
@@ -49,10 +50,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	var/set_temperature = T20C		// Thermostat
 	var/cooling = 0
 	var/reagent_cooling = 0
-
-/obj/machinery/atmospherics/unary/freezer/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 /obj/machinery/atmospherics/unary/freezer/atmos_init()
 	if(node)

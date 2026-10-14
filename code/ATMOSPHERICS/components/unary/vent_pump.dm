@@ -42,6 +42,7 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
+	setup(PROC_REF(prepare_vent_renderer))
 	configure(uses_power(idle = 150))
 	area_air_device(AREA_AIR_VENT, status = PROC_REF(status_fields), commands = list(
 		"purge" = PROC_REF(cmd_purge),
@@ -129,10 +130,9 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/high_volume)
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 	configure(uses_power(channel = ENVIRON))
 
-/obj/machinery/atmospherics/unary/vent_pump/Initialize(mapload)
-	. = ..()
+/obj/machinery/atmospherics/unary/vent_pump/proc/prepare_vent_renderer()
 	air_contents.set_volume(vent_volume)
-	icon = null
+	set_icon(null)
 
 /obj/machinery/atmospherics/unary/vent_pump/receive_signal(datum/signal/signal, receive_method, receive_param)
 	area_air_receive(src, signal)

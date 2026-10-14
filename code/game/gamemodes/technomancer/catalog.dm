@@ -38,6 +38,7 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	var/universal = FALSE // Allows non-technomancers to use this catalog
 
 CAPABILITIES(/obj/item/technomancer_catalog)
+	setup(PROC_REF(set_up))
 	ref_one(nameof(owner))
 	configure(item_worn(slots = SLOT_BELT))
 	owns_many(nameof(assistance_instances))
@@ -83,10 +84,6 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 // Proc: New()
 // Parameters: 0
 // Description: Sets up the catalog, as shown below.
-/obj/item/technomancer_catalog/Initialize(mapload)
-	. = ..()
-	set_up()
-
 // Proc: set_up()
 // Parameters: 0
 // Description: Instantiates all the catalog datums for everything that can be bought.

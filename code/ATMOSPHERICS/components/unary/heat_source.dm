@@ -1,5 +1,6 @@
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
+	setup(PROC_REF(default_apply_parts))
 	configure(uses_power(idle = 5))
 	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
 	silicon_ui()
@@ -45,10 +46,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	/// TRUE while it heats: its heater exists exactly while this is set.
 	var/pumping = FALSE
 	var/reagent_cooling = 0
-
-/obj/machinery/atmospherics/unary/heater/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 /obj/machinery/atmospherics/unary/heater/atmos_init()
 	if(node)

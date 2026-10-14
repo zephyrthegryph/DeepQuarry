@@ -71,13 +71,13 @@
 	projectile_parry_chance = 15	// The base chance for a projectile to be deflected.
 
 CAPABILITIES(/obj/item/melee/changeling)
+	setup(PROC_REF(form_initial_weapon))
 	ref_one(nameof(creator))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 5))
 
-/obj/item/melee/changeling/Initialize(mapload)
-	. = ..()
+/obj/item/melee/changeling/proc/form_initial_weapon()
 	if(ismob(loc))
 		visible_message(span_warning("A grotesque weapon forms around [loc.name]\'s arm!"),
 		span_warning("Our arm twists and mutates, transforming it into a deadly weapon."),

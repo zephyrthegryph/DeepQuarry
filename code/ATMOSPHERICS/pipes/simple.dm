@@ -24,12 +24,11 @@
 
 	level = 1
 
-/obj/machinery/atmospherics/pipe/simple/Initialize(mapload)
-	. = ..()
+/obj/machinery/atmospherics/pipe/simple/proc/prepare_pipe_renderer()
 
 	// Pipe colors and icon states are handled by an image cache - so color and icon should
 	//  be null. For mapping purposes color is defined in the object definitions.
-	icon = null
+	set_icon(null)
 	alpha = 255
 
 /obj/machinery/atmospherics/pipe/simple/set_leaking(new_leaking)
@@ -316,3 +315,6 @@
 	alert_pressure = 900*ONE_ATMOSPHERE
 
 	level = 2
+
+CAPABILITIES(/obj/machinery/atmospherics/pipe/simple)
+	setup(PROC_REF(prepare_pipe_renderer))

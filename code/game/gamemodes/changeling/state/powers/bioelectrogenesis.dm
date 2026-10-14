@@ -98,6 +98,7 @@
 	var/electrocute_amount = 10
 
 CAPABILITIES(/obj/item/electric_hand)
+	setup(PROC_REF(charge_initial_hand))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 
 /obj/item/electric_hand/efficent
@@ -105,8 +106,7 @@ CAPABILITIES(/obj/item/electric_hand)
 	agony_amount = 80
 	electrocute_amount = 20
 
-/obj/item/electric_hand/Initialize(mapload)
-	. = ..()
+/obj/item/electric_hand/proc/charge_initial_hand()
 	if(ismob(loc))
 		visible_message(span_warning("Electrical arcs form around [loc.name]\'s hand!"),
 		span_warning("We store a charge of electricity in our hand."),

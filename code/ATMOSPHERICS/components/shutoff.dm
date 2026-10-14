@@ -32,6 +32,7 @@ MSG_DEF_SELF(shutoff/closed, "You manually close the valve.")
 
 
 CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
+	setup(PROC_REF(open_initial_valve))
 	silicon_hand()
 	membership(joins = REGISTRY_SHUTOFF_VALVES)
 	without("toggle")
@@ -39,8 +40,7 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
 	op("manual", hand(), gesture(GESTURE_ALT), label("Manually toggle valve"), wait(0), when(PROC_REF(actor_living)),
 		needs(req(PROC_REF(circuit_off))), says(PROC_REF(manual_message)), then(PROC_REF(manual_toggled)))
 
-/obj/machinery/atmospherics/valve/shutoff/Initialize(mapload)
-	. = ..()
+/obj/machinery/atmospherics/valve/shutoff/proc/open_initial_valve()
 	open()
 	hide(1)
 	leaks_changed()

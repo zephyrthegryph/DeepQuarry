@@ -29,6 +29,7 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
+	setup(PROC_REF(prepare_scrubber_renderer))
 	configure(uses_power(idle = 150))
 	area_air_device(AREA_AIR_SCRUBBER, status = PROC_REF(status_fields), commands = list(
 		"power" = PROC_REF(cmd_power),
@@ -53,12 +54,11 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
 	use_power = USE_POWER_IDLE
 	icon_state = "map_scrubber_on"
 
-/obj/machinery/atmospherics/unary/vent_scrubber/Initialize(mapload)
-	. = ..()
+/obj/machinery/atmospherics/unary/vent_scrubber/proc/prepare_scrubber_renderer()
 	var/static/list/default_scrubbing_gas = list(GAS_CO2, GAS_PHORON, GAS_CH4)
 	if(isnull(scrubbing_gas))
 		set_scrubbing_gas(default_scrubbing_gas)
-	icon = null
+	set_icon(null)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/receive_signal(datum/signal/signal, receive_method, receive_param)
 	area_air_receive(src, signal)

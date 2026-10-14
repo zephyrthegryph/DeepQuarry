@@ -4894,3 +4894,8 @@ Affected requirement-pin classes:
 * **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
+
+## A11 native initialization rolls
+
+- /obj/machinery/message_server: preserves word + word + digit distributions, using the native per-instance seeded stream. Explicit key overrides survive; legacy initialization overwrote them.
+- /obj/item/disk/tech_disk: preserves configured +/- randpixel jitter with the native seeded stream. Explicit map offsets remain overrides; research-store and debug-store constructor ordering is unchanged.

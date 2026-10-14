@@ -34,10 +34,10 @@
 	w_class = ITEMSIZE_NO_CONTAINER
 
 CAPABILITIES(/obj/item/finger_lockpick)
+	setup(PROC_REF(shape_initial_lockpick))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 
-/obj/item/finger_lockpick/Initialize(mapload)
-	. = ..()
+/obj/item/finger_lockpick/proc/shape_initial_lockpick()
 	if(ismob(loc))
 		to_chat(loc, span_notice("We shape our finger to fit inside electronics, and are ready to force them open."))
 

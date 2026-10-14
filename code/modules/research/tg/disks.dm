@@ -14,7 +14,6 @@ MATERIAL_MIX(/obj/item/disk/tech_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	. = ..()
 	if(!stored_research())
 		proto_set(src, nameof(stored_research_static), new /datum/techweb/disk)
-	randpixel_xy()
 
 /obj/item/disk/tech_disk/debug
 	name = "\improper CentCom technology disk"
@@ -53,4 +52,5 @@ CAPABILITIES(/obj/item/disk/design_disk)
 	return stored_research_static
 
 CAPABILITIES(/obj/item/disk/tech_disk)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 	owns_one(nameof(stored_research_static), on_destroy = ON_DESTROY_PRIVATE_COPY)

@@ -380,10 +380,9 @@ GLOBAL_LIST_INIT(gas_path_by_idx, build_gas_path_table())
 	var/plane_offset = 0
 
 CAPABILITIES(/obj/effect/overlay/gas)
+	setup(PROC_REF(position_overlay_plane))
 	param(nameof(plane_offset), pos = 1)
 
-// ALLOW(init/INSTANCE_STATE): a gas overlay sits on its plane, offset for its z-level
-/obj/effect/overlay/gas/Initialize(mapload)
-	. = ..()
+/obj/effect/overlay/gas/proc/position_overlay_plane()
 	SET_PLANE_W_SCALAR(src, initial(plane), plane_offset)
 

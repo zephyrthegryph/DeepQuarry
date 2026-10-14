@@ -73,6 +73,8 @@
 	var/noisy = FALSE
 
 CAPABILITIES(/obj/machinery/message_server)
+	rolls(nameof(decryptkey), PROC_REF(roll_decryptkey))
+	setup(PROC_REF(send_startup_message))
 	configure(uses_power(idle = 10, active = 100))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active), STAT_OPERABLE), unpowered = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
@@ -83,9 +85,7 @@ CAPABILITIES(/obj/machinery/message_server)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
-/obj/machinery/message_server/Initialize(mapload)
-	. = ..()
-	decryptkey = GenerateKey()
+/obj/machinery/message_server/proc/send_startup_message()
 	send_pda_message("System Administrator", "system", "This is an automated message. The messaging system is functioning correctly.")
 
 
@@ -457,3 +457,10 @@ CAPABILITIES(/obj/machinery/blackbox_recorder)
 
 #undef MESSAGE_SERVER_SPAM_REJECT
 #undef MESSAGE_SERVER_DEFAULT_SPAM_LIMIT
+
+/obj/machinery/message_server/proc/roll_decryptkey(datum/roller/R)
+	var/newKey
+	newKey += R.choose(list("the", "if", "of", "as", "in", "a", "you", "from", "to", "an", "too", "little", "snow", "dead", "drunk", "rosebud", "duck", "al", "le"))
+	newKey += R.choose(list("diamond", "beer", "mushroom", "assistant", "clown", "captain", "twinkie", "security", "nuke", "small", "big", "escape", "yellow", "gloves", "monkey", "engine", "nuclear", "ai"))
+	newKey += R.choose(list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"))
+	return newKey

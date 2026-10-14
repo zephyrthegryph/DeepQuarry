@@ -38,14 +38,14 @@ Nothing else in the console has ID requirements.
 	/// Cooldown that prevents hanging the MC when tech disks are copied
 	STATIC_COOLDOWN_DECLARE(cooldowncopy)
 
-/obj/machinery/computer/rdconsole_tg/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/rdconsole_tg/proc/connect_initial_console()
 	if(!stored_research)
 		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
 	if(stored_research)
 		rel_add(stored_research, nameof(stored_research.consoles_accessing), src)
 
 CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
+	setup(PROC_REF(connect_initial_console))
 	owns_one(nameof(t_disk), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(d_disk), on_destroy = ON_DESTROY_SPILL)
 	interface("Techweb")

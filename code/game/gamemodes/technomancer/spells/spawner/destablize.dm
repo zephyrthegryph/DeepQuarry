@@ -36,11 +36,8 @@ CAPABILITIES(/obj/item/spell/spawner/destablize)
 	var/instability_range = 6
 
 CAPABILITIES(/obj/effect/temporary_effect/destablize)
+	setup(PROC_REF(radiate_loop))
 	configure(light_glow(range = 6, power = 20, color = "#C26DDE"))
-
-/obj/effect/temporary_effect/destablize/Initialize(mapload)
-	. = ..()
-	radiate_loop()
 
 /// A pulse every half second until pulses_remaining runs out.
 /obj/effect/temporary_effect/destablize/proc/radiate_loop()

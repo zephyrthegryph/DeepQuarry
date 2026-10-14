@@ -42,12 +42,12 @@
 	canremove = FALSE
 
 CAPABILITIES(/obj/item/clothing/suit/space/changeling)
+	setup(PROC_REF(form_initial_suit))
 	configure(item_worn(flags = THICKMATERIAL | DROPDEL | NOSTRIP))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS))))
 
-/obj/item/clothing/suit/space/changeling/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/suit/space/changeling/proc/form_initial_suit()
 	if(ismob(loc))
 		loc.visible_message(span_warning("[loc.name]\'s flesh rapidly inflates, forming a bloated mass around their body!"),
 		span_warning("We inflate our flesh, creating a spaceproof suit!"),
@@ -107,11 +107,11 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/changeling)
 	slowdown = 1.5
 
 CAPABILITIES(/obj/item/clothing/suit/space/changeling/armored)
+	setup(PROC_REF(form_initial_armor))
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
 	configure(item_protection(siemens = 0.3, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
-/obj/item/clothing/suit/space/changeling/armored/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/suit/space/changeling/armored/proc/form_initial_armor()
 	if(ismob(loc))
 		loc.visible_message(span_warning("[loc.name]\'s flesh turns black, quickly transforming into a hard, chitinous mass!"),
 		span_warning("We harden our flesh, creating a suit of armor!"),

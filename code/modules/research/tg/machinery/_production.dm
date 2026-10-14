@@ -34,6 +34,7 @@
 
 
 CAPABILITIES(/obj/machinery/rnd/production)
+	setup(PROC_REF(configure_initial_parts))
 	configure(uses_power(active = 5000))
 	owns_one(nameof(materials), /datum/remote_materials)
 	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print, starts = PROC_REF(make_print_sound))
@@ -50,6 +51,8 @@ CAPABILITIES(/obj/machinery/rnd/production)
 	rel_set(src, nameof(materials), new /datum/remote_materials(src, mapload, mat_container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/rnd/production, local_material_insert))))
 	available_designs = list()
 	. = ..()
+
+/obj/machinery/rnd/production/proc/configure_initial_parts()
 	default_apply_parts()
 	RefreshParts()
 

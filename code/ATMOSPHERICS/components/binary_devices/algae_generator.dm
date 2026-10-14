@@ -35,6 +35,7 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
+	setup(PROC_REF(configure_outlet))
 	configure(uses_power(channel = EQUIP, idle = 100, active = 5000))
 	owns_one(nameof(internal), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
 	interface("AlgaeFarm")
@@ -62,8 +63,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 /obj/machinery/atmospherics/binary/algae_farm/filled
 	stored_material = list(MAT_ALGAE = 10000, MAT_GRAPHITE = 0)
 
-/obj/machinery/atmospherics/binary/algae_farm/Initialize(mapload)
-	. = ..()
+/obj/machinery/atmospherics/binary/algae_farm/proc/configure_outlet()
 	desc = initial(desc) + " Its outlet port is to the [dir2text(dir)]."
 	default_apply_parts()
 
