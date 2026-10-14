@@ -186,7 +186,6 @@ draw_untracked	code/game/objects/effects/decals/Cleanable/tracks.dm	look.overlay
 draw_untracked	code/game/objects/items.dm	standing.alpha = alpha
 draw_untracked	code/game/objects/items.dm	standing.color = color
 draw_untracked	code/game/objects/items/bodybag.dm	look.overlay(look_overlay_image(icon, "indicator[opened]", color = COLOR_LIME, appearance_flags = RESET_COLOR))
-draw_untracked	code/game/objects/items/devices/flash.dm	if(broken || !battery || battery.charge < charge_cost)
 draw_untracked	code/game/objects/items/devices/flash.dm	if(module.holder && module.holder.wearer())
 draw_untracked	code/game/objects/items/devices/flash.dm	var/mob/living/carbon/human/H = module.holder.wearer()
 draw_untracked	code/game/objects/items/devices/radio/intercom.dm	look.overlay(mutable_appearance(icon, "[stem]_ov"))
@@ -201,11 +200,8 @@ draw_untracked	code/game/objects/items/weapons/policetape.dm	look.overlay(look_a
 draw_untracked	code/game/objects/items/weapons/policetape.dm	return start
 draw_untracked	code/game/objects/items/weapons/shields.dm	look.overlay(look_appearance(icon, "[base]_blade", color = lcolor))
 draw_untracked	code/game/objects/items/weapons/storage/firstaid.dm	look.overlay(look_appearance(icon, "pillbottle_wrap", color = wrapper_color))
-draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	return external.maxcharge
-draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	return R.cell
 draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	if(module.holder && module.holder.wearer())
 draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	var/mob/living/carbon/human/H = module.holder.wearer()
-draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	if(mounting.chassis && mounting.chassis.cell)
 draw_untracked	code/game/objects/mail.dm	look.overlay(look_overlay_image(icon, icon_state, color = colored_envelope))
 draw_untracked	code/game/objects/structures/barricades.dm	if(!material)
 draw_untracked	code/game/objects/structures/bonfire.dm	look.overlay(look_appearance(icon, state, appearance_flags = RESET_COLOR))
@@ -279,7 +275,6 @@ draw_untracked	code/game/turfs/simulated/fancy_shuttles.dm	var/list/helper = GLO
 draw_untracked	code/game/turfs/simulated/fancy_shuttles.dm	WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
 draw_untracked	code/game/turfs/simulated/fancy_shuttles.dm	WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
 draw_untracked	code/game/turfs/simulated/fancy_shuttles.dm	WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
-draw_untracked	code/game/turfs/simulated/floor.dm	return (!flooring || flooring.is_plating)
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)

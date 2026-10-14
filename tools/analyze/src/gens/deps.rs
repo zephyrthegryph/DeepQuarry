@@ -10,8 +10,8 @@
 //! GLOB.generated_untracked_leaves  "<type>" = list(<var>, ...)   vars a declaration of the type names as a condition or a contribution's value
 //!                                  (nameof(v) inside contributes(), contributes_to() or a when() around one) that nothing publishes
 //! GLOB.generated_draw_reads        "<type>" = list(<var>, ...)   the holder vars the type's own draw() (and the parents it calls) reads
-//! GLOB.generated_draw_hop_reads    "<type>" = list("loc.<var>", "turf.<var>", "area.<var>", ...)   what that draw reads one container, turf
-//!                                  or area hop away: a publish of the var there redraws the thing (draw_hop_published(), refs/hops.dm)
+//! GLOB.generated_draw_hop_reads    "<type>" = list("loc.<var>", "turf.<rel>.<var>", ...)   what that draw reads up to three hops away (a container,
+//!                                  turf or area hop, then relations): a publish of the var there, or of a link, redraws the thing (draw_hop_published(), refs/hops.dm)
 //! ```
 //!
 //! An untracked read is a var that is not tracked, a relation, a stat, a derived value or constant (`ReadsEngine::classify`, the same test as
@@ -69,9 +69,13 @@ pub struct Untracked {
 const DRAW_PSEUDO_HOPS: &[&str] = &["loc", "turf", "area"];
 
 /// A draw hears this read through `generated_draw_hop_reads`: one container, turf or area hop off the holder.
-fn draw_hop_heard(r: &crate::sem::reads::Read) -> bool {
-    r.root == "holder" && r.hops.len() == 1 && DRAW_PSEUDO_HOPS.contains(&r.hops[0].as_str())
+pub fn draw_hop_heard(r: &crate::sem::reads::Read) -> bool {
+    r.root == "holder" && r.hop_ok && !r.hops.is_empty() && r.hops.len() <= DRAW_HOP_DEPTH && DRAW_PSEUDO_HOPS.contains(&r.hops[0].as_str())
 }
+
+/// The longest hop chain a draw hears: a container, turf or area hop and then declared relations (or further container hops), each republished by
+/// its own publisher. `loc.cell.charge` has two hops; `loc.loc.cell.maxcharge` has three.
+const DRAW_HOP_DEPTH: usize = 3;
 
 /// What a consumer's reads leave the graph unable to see change. `output`: the consumer is a draw() or another derived output.
 pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, output: bool) -> Vec<Untracked> {
@@ -308,7 +312,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         let hopped = draw_hops.entry(d.owner.clone()).or_default();
         for r in &set.reads {
             if r.kind == ReadKind::Var && draw_hop_heard(r) {
-                hopped.insert(format!("{}.{}", r.hops[0], r.var));
+                hopped.insert(format!("{}.{}", r.hops.join("."), r.var));
             }
             if r.root == "holder" && r.hops.is_empty() && r.kind == ReadKind::Var {
                 keys.insert(r.var.clone());

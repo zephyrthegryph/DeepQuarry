@@ -115,13 +115,16 @@ GLOBAL_VAR_INIT(hop_segments_built, FALSE)
 		return TRUE
 	return isatom(E) && (segment == HOP_TURF || segment == HOP_AREA)
 
-// ---- draws that read one hop away ----
+// ---- draws that read a hop chain away ----
 
-/// var name -> the hop segments ("loc", "turf", "area") some type's draw reads it through, built from generated_draw_hop_reads on first use.
+/// var name -> the hop chains some type's draw reads it through, built from generated_draw_hop_reads on first use. A read path is "<hop>.<link>...<var>"
+/// (`loc.cell.charge`): the chain is every segment before the var, in order from the reader. Each link is also a var some draw reads one hop shorter
+/// (`loc.cell`), so a change of a link republishes through its own publisher and lands here as a var of its own.
+/// Each entry is list(chain, read) where chain is the list of segments from the reader to the entity that holds the var.
 GLOBAL_LIST_EMPTY(draw_hop_vars)
 GLOBAL_VAR_INIT(draw_hop_vars_built, FALSE)
 
-/// The segments some draw reads `var_name` through, or null: asked by every publish of a var, so after the first call it is one list lookup.
+/// The chains some draw reads `var_name` through, or null: asked by every publish of a var, so after the first call it is one list lookup.
 /proc/draw_hop_reads_var(var_name)
 	if(!GLOB.draw_hop_vars_built)
 		if(!length(GLOB.generated_draw_hop_reads))
@@ -129,17 +132,19 @@ GLOBAL_VAR_INIT(draw_hop_vars_built, FALSE)
 		GLOB.draw_hop_vars_built = TRUE
 		for(var/type in GLOB.generated_draw_hop_reads)
 			for(var/read in GLOB.generated_draw_hop_reads[type])
-				var/dot = findtext(read, ".")
-				var/segment = copytext(read, 1, dot)
-				var/name = copytext(read, dot + 1)
-				var/list/segments = GLOB.draw_hop_vars[name]
-				if(!segments)
-					segments = list()
-					GLOB.draw_hop_vars[name] = segments
-				segments |= segment
+				var/list/segments = splittext(read, ".")
+				if(length(segments) < 2)
+					continue
+				var/name = segments[length(segments)]
+				segments.len--
+				var/list/entries = GLOB.draw_hop_vars[name]
+				if(!entries)
+					entries = list()
+					GLOB.draw_hop_vars[name] = entries
+				entries += list(list(segments, read))
 	return GLOB.draw_hop_vars[var_name]
 
-/// What the draw of D's type (the nearest type with a draw) reads one hop away, as "<hop>.<var>", or null.
+/// What the draw of D's type (the nearest type with a draw) reads through a hop chain, as "<hop>.<link>...<var>", or null.
 /proc/draw_hop_reads_of(datum/D)
 	var/list/table = GLOB.generated_draw_hop_reads
 	var/path = D.type
@@ -151,15 +156,25 @@ GLOBAL_VAR_INIT(draw_hop_vars_built, FALSE)
 		path = initial(typed.parent_type)
 	return null
 
-/// `var_name` of E changed: what draws it one container, turf or area hop away (an item drawing its holder's state, a light drawing its area's
-/// switch) is marked for a redraw. E itself is not: its own draw hears its own vars.
+/// `var_name` of E changed: every draw that reads it through a hop chain (an item drawing its holder's state, a light drawing its area's switch, a
+/// flash drawing the charge of the cell in the robot that carries it) is marked for a redraw. The chain is walked back from E one segment at a
+/// time with hop_sources(); E itself is not marked: its own draw hears its own vars.
 /proc/draw_hop_published(datum/E, var_name)
-	var/list/segments = draw_hop_reads_var(var_name)
-	if(!segments)
+	var/list/entries = draw_hop_reads_var(var_name)
+	if(!entries)
 		return
-	for(var/segment in segments)
-		var/read = "[segment].[var_name]"
-		for(var/datum/reader as anything in hop_sources(E, segment))
+	for(var/list/entry as anything in entries)
+		var/list/chain = entry[1]
+		var/read = entry[2]
+		var/list/frontier = list(E)
+		for(var/i = length(chain), i >= 1, i--)
+			var/list/next = list()
+			for(var/datum/at as anything in frontier)
+				next |= hop_sources(at, chain[i])
+			frontier = next
+			if(!length(frontier))
+				break
+		for(var/datum/reader as anything in frontier)
 			if(reader == E || QDELING(reader))
 				continue
 			var/list/reads = draw_hop_reads_of(reader)

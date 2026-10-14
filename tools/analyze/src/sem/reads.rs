@@ -629,7 +629,7 @@ impl<'a> ReadsEngine<'a> {
     /// A BYOND built-in var the engine publishes from its own choke point, so a read of it is reactive without being a TRACKED var:
     /// `loc` from `doMove()` / `Moved()` (the container hop's publisher).
     pub fn is_published_builtin(&self, owner: &str, var: &str) -> bool {
-        matches!(var, "loc" | HOP_TURF | HOP_AREA) && self.sem.is_subtype(owner, "/atom")
+        (matches!(var, "loc" | HOP_TURF | HOP_AREA) && self.sem.is_subtype(owner, "/atom")) || (var == "ckey" && self.sem.is_subtype(owner, "/mob"))
     }
 
     /// A relation declared with a macro or in a `relations()` body, on the type or an ancestor.
@@ -2375,6 +2375,8 @@ TRACKED(/obj/lamp, charge)
         let content = "#define get_turf(A) get_step(A,0)
 /turf
 	var/z = 0
+/mob
+	var/ckey
 /obj/lamp/proc/level()
 	var/turf/T = get_turf(src)
 	return T.z
@@ -2385,11 +2387,51 @@ TRACKED(/obj/lamp, charge)
         let decls = Decls::get(&tree);
         let ann = Annotations::get(&sem, &decls);
         let eng = ReadsEngine::new(&sem, &decls, &ann).closed();
+        assert_eq!(eng.classify("/mob", "ckey", &WriteIndex::build(&sem)), VarClass::Reactive, "ckey is published from Login() and Logout()");
         let level = eng.analyze("/obj/lamp", "level");
         let z = level.reads.iter().find(|r| r.var == "z").expect("z read");
         assert!(eng.turf_coordinate(z), "z through the turf hop is a constant of the hop target: {:?}", level.keys());
         let count = eng.analyze("/obj/lamp", "count");
         assert!(count.reads.iter().all(|r| r.var != "contents" || count.internal.contains(r)), "a framework file counting contents is bookkeeping: {:?}", count.reads);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_draw_hears_a_hop_chain_up_to_three_links() {
+        let content = "#define get_turf(A) get_step(A,0)
+/obj/cell
+	var/level = 0
+TRACKED(/obj/cell, level)
+/obj/crate
+	var/obj/cell/gauge
+REL(/obj/crate, gauge)
+/obj/reader
+	var/obj/crate/box
+/obj/reader/proc/two()
+	var/obj/crate/C = loc
+	return C.gauge.level
+/turf
+	var/obj/cell/under
+REL(/turf, under)
+/obj/reader/proc/floor()
+	var/turf/T = get_turf(src)
+	return T.under.level
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &ann).closed();
+        for (proc, path) in [("two", vec!["loc", "gauge"]), ("floor", vec!["turf", "under"])] {
+            let set = eng.analyze("/obj/reader", proc);
+            let far = set.reads.iter().find(|r| r.var == "level").unwrap_or_else(|| panic!("{proc}: {:?}", set.keys()));
+            assert_eq!(far.hops, path, "{proc}");
+            assert!(crate::gens::deps::draw_hop_heard(far), "{proc}: a chain of a container or turf hop and a relation is heard by the draw");
+        }
+        let mut deep = eng.analyze("/obj/reader", "two").reads.iter().find(|r| r.var == "level").cloned().unwrap();
+        deep.hops = vec!["loc".into(), "gauge".into(), "gauge".into(), "gauge".into()];
+        assert!(!crate::gens::deps::draw_hop_heard(&deep), "four links are past the depth a draw hears");
+        deep.hops = vec!["gauge".into()];
+        assert!(!crate::gens::deps::draw_hop_heard(&deep), "a chain that does not start with a container, turf or area hop is not a draw hop");
         std::fs::remove_dir_all(root).unwrap();
     }
 }

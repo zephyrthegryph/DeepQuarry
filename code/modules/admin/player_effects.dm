@@ -366,7 +366,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 
 /datum/eventkit/player_effects/proc/item_tf_ready(datum/act/op/A)
 	var/mob/living/M = target()
-	return (istype(M) && mob_state_played(M)) ? null : /datum/msg/req_silent
+	return (istype(M) && M.ckey) ? null : /datum/msg/req_silent
 
 /// The types whose path contains the text of the first question.
 /datum/eventkit/player_effects/proc/typepath_matches(datum/act/op/A)
