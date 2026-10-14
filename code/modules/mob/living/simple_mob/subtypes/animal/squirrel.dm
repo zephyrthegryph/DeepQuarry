@@ -190,7 +190,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
 /mob/living/simple_mob/vore/squirrel/proc/winterize()
 	desc = desc + " It looks all plumped up for winter! Adorable!"
 
-	icon = 'icons/mob/alienanimals_96x64.dmi'
+	set_icon('icons/mob/alienanimals_96x64.dmi')
 
 	endurance = 200
 	movement_cooldown = 1

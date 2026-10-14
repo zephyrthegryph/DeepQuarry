@@ -128,7 +128,7 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 /obj/item/robotic_multibelt/proc/assume_selected_item(obj/item/chosen_item)
 	if(!chosen_item)
 		return
-	icon = chosen_item.icon
+	set_icon(chosen_item.icon)
 	set_icon_state(chosen_item.icon_state)
 	color = chosen_item.color
 	rel_set(src, nameof(selected_item), chosen_item)
@@ -140,7 +140,7 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 
 /obj/item/robotic_multibelt/proc/original_state(mob/user)
 	rel_clear(src, nameof(selected_item))
-	icon = initial(icon)
+	set_icon(initial(icon))
 	set_icon_state(initial(icon_state))
 
 /obj/item/tool/screwdriver/cyborg

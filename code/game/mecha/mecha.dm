@@ -610,7 +610,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /obj/mecha/proc/add_radio()
 	rel_set(src, nameof(radio), new /obj/item/radio(src))
 	radio.name = "[src] radio"
-	radio.icon = icon
+	radio.set_icon(icon)
 	radio.set_icon_state(icon_state)
 	radio.subspace_transmission = 1
 

@@ -310,7 +310,7 @@ TRACKED(/turf/simulated/wall, radioactive)
 	var/obj/effect/overlay/O = new/obj/effect/overlay( src )
 	O.name = "Thermite"
 	O.desc = "Looks hot."
-	O.icon = 'icons/effects/fire.dmi'
+	O.set_icon('icons/effects/fire.dmi')
 	O.set_icon_state("2")
 	O.set_anchored(TRUE)
 	O.set_density(TRUE)
