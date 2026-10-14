@@ -1,7 +1,10 @@
 /// UI lookups preserve registered object identity without sharing a mutable registry.
 /datum/unit_test/dq_contract_boundary/Run()
 	set_global("coalesce_runs", GLOB.coalesce_runs)
+	var/datum/system/contracts/original_owner = SScontracts
+	defer_cleanup(src, PROC_REF(restore_owner), original_owner)
 	var/datum/system/contracts/contracts = allocate(/datum/system/contracts)
+	restore_owner(original_owner)
 	var/datum/contract/contract = allocate(/datum/contract)
 	var/list/registry = list("boundary-contract" = contract)
 	set_var(contracts, "contracts_by_id", registry)
@@ -17,7 +20,10 @@
 /// Cargo UI refs are checked against live membership; detached histories retain real datums.
 /datum/unit_test/dq_supply_boundary/Run()
 	set_global("coalesce_runs", GLOB.coalesce_runs)
+	var/datum/system/supply/original_owner = SSsupply
+	defer_cleanup(src, PROC_REF(restore_owner), original_owner)
 	var/datum/system/supply/supply = allocate(/datum/system/supply)
+	restore_owner(original_owner)
 	var/datum/supply_order/order = allocate(/datum/supply_order)
 	var/datum/supply_order/outsider = allocate(/datum/supply_order)
 	var/datum/exported_crate/receipt = allocate(/datum/exported_crate)
@@ -51,3 +57,9 @@
 	TEST_ASSERT_EQUAL(supply.current_order_index(), 7, "Reading the counter again must not consume an order number")
 	set_var(supply, "next_payroll", world.time - 1 SECONDS)
 	TEST_ASSERT_EQUAL(supply.time_until_payroll(), 0, "An overdue payroll cycle must remain clamped to zero")
+
+/datum/unit_test/dq_contract_boundary/proc/restore_owner(datum/system/contracts/original_owner)
+	SScontracts = original_owner
+
+/datum/unit_test/dq_supply_boundary/proc/restore_owner(datum/system/supply/original_owner)
+	SSsupply = original_owner
