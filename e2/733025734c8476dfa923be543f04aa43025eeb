@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"e2733025734c8476dfa923be543f04aa43025eeb","ok":true,"passed":105,"failed":0,"new_failed":0,"lanes":"boot-speed/load boot-speed/sys2 boot-speed/instance rewrite/watched","tests_json":"data/test-runs/20261014T014446_e273302573_focused.json","created":"2026-10-14T01:46:21Z"}
