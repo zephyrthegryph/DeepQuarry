@@ -331,6 +331,7 @@ CAPABILITIES(/datum/material_service)
 		SScontracts.release_evidence(engineering_evidence_id)
 		engineering_evidence_id = null
 	engineering_reading = reading.Copy()
+	tracked_changed(src, nameof(engineering_reading))
 
 // releases its engineering evidence id.
 /obj/item/multitool/on_destroy(force)

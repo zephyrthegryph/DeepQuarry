@@ -24,6 +24,7 @@
 	if(item_overlay == enabled)
 		return
 	item_overlay = enabled
+	tracked_changed(src, nameof(item_overlay))
 	build_all_button_icons(UPDATE_BUTTON_OVERLAY)
 
 /datum/action/item_action/apply_button_overlay(atom/movable/screen/movable/action_button/current_button, force = FALSE)

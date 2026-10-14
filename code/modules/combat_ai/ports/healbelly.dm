@@ -196,7 +196,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/leopardmander, get_ai_behaviors, list( \
 /mob/living/simple_mob/vore/bigdragon/friendly
 	ai_attack_on_sight = FALSE
 
-// Specials still usable once enraged (set_hostile flips it back).
+// Specials still usable once enraged (set_attack_on_sight flips it back).
 TYPE_TABLE(/mob/living/simple_mob/vore/bigdragon/friendly, get_ai_behaviors, list( \
 	/datum/ai_behavior/healbelly_heal_ally, \
 	/datum/ai_behavior/dragon_friendly_warn, \

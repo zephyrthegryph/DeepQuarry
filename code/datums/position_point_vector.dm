@@ -161,6 +161,7 @@
 	if(isnull(new_angle))
 		return
 	angle = new_angle
+	tracked_changed(src, nameof(angle))
 	update_offsets()
 
 /datum/point/vector/proc/update_offsets()
@@ -171,6 +172,7 @@
 	if(isnull(new_speed) || speed == new_speed)
 		return
 	speed = new_speed
+	tracked_changed(src, nameof(speed))
 	update_offsets()
 
 /datum/point/vector/proc/increment(multiplier = 1)

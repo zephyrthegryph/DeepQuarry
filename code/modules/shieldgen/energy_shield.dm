@@ -234,6 +234,7 @@ CAPABILITIES(/obj/effect/shield)
 	if(new_value == can_atmos_pass)
 		return
 	can_atmos_pass = new_value
+	tracked_changed(src, nameof(can_atmos_pass))
 	update_nearby_tiles() //Force ZAS update
 
 // EMP. It may seem weak but keep in mind that multiple shield segments are likely to be affected.

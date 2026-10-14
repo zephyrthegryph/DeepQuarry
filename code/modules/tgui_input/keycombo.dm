@@ -81,6 +81,7 @@ CAPABILITIES(/datum/tgui_input_keycombo)
 
 /datum/tgui_input_keycombo/proc/set_entry(entry)
 	src.entry = entry
+	tracked_changed(src, nameof(entry))
 
 /// A shared (registered) definition/flyweight: never cleared.
 /datum/tgui_input_keycombo/proc/state() as /datum/tgui_state

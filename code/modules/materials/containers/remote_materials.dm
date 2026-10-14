@@ -125,6 +125,7 @@ CAPABILITIES(/datum/remote_materials)
  */
 /datum/remote_materials/proc/set_local_size(size)
 	local_size = size
+	tracked_changed(src, nameof(local_size))
 	if (!silo() && mat_container())
 		mat_container().max_amount = size
 

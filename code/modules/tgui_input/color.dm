@@ -157,6 +157,7 @@ CAPABILITIES(/datum/tgui_color_picker)
 
 /datum/tgui_color_picker/proc/set_choice(choice)
 	src.choice = choice
+	tracked_changed(src, nameof(choice))
 
 /// A shared (registered) definition/flyweight: never cleared.
 /datum/tgui_color_picker/proc/state() as /datum/tgui_state

@@ -93,6 +93,7 @@ CAPABILITIES(/datum/tgui_checkbox_input)
 
 /datum/tgui_checkbox_input/proc/set_choices(list/selections)
 	src.choices = selections.Copy()
+	tracked_changed(src, nameof(choices))
 
 /// A shared (registered) definition/flyweight: never cleared.
 /datum/tgui_checkbox_input/proc/state() as /datum/tgui_state

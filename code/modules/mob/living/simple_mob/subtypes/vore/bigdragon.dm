@@ -833,12 +833,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 
 	handle_tame_item(O, user)
 
-	// Legacy ai_brain swap removed. Modern brain uses set_hostile() /
+	// Legacy ai_brain swap removed. Modern brain uses set_attack_on_sight() /
 	// personal disposition for state changes.
 	faction = FACTION_NEUTRAL
 	norange = 1		//Don't start fires while friendly
 	set_vore_selected(src, gut2) //Just incase it eats someone right after being tamed
-	ai_brain?.set_hostile(FALSE)
+	ai_brain?.set_attack_on_sight(FALSE)
 	ai_brain?.lose_target()
 
 	//Cancel any charges or firebreaths winding up
@@ -852,7 +852,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 	faction = FACTION_DRAGON
 	say("HAVE IT YOUR WAY THEN")
 	// Legacy ai_brain swap removed; brain stays put.
-	ai_brain?.set_hostile(TRUE)
+	ai_brain?.set_attack_on_sight(TRUE)
 	set_vore_selected(src, gut1)
 	if(attacker)
 		ai_brain?.give_target(attacker, TRUE)

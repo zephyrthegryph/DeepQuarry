@@ -94,7 +94,7 @@ CAPABILITIES(/datum/slime_state)
 /datum/slime_state/proc/pacify()
 	if(holder().ai_brain)
 		holder().ai_brain.lose_target()
-		holder().ai_brain.set_hostile(FALSE)
+		holder().ai_brain.set_attack_on_sight(FALSE)
 	rabid = FALSE
 	holder().set_use_stance(I_HELP)
 

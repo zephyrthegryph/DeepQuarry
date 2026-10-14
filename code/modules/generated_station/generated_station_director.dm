@@ -108,6 +108,7 @@ CAPABILITIES(/datum/generated_station_director)
 	if(department_connected[department_id] == connected)
 		return TRUE
 	department_connected[department_id] = connected
+	tracked_changed(src, nameof(department_connected))
 	mark_dirty(department_id)
 	process_dirty()
 	return TRUE

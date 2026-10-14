@@ -258,7 +258,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 				for(var/i in 1 to rand(1,4))
 					var/chosen = pick(hostiles)
 					var/mob/living/simple_mob/vore/H = new chosen
-					H.ai_brain?.set_hostile(TRUE)
+					H.ai_brain?.set_attack_on_sight(TRUE)
 					H.forceMove(L)
 			return
 		if(99)

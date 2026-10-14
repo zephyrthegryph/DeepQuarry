@@ -93,7 +93,8 @@ fn declared_reactive(eng: &ReadsEngine, owner: &str, var: &str) -> bool {
 /// The var names some proc writes, not counting a setter's write of its own var (`set_v` writing `v`: the TRACKED() macro's body, and the one line of
 /// every hand-written setter): a var written only there is written by nobody who could be asked to publish.
 pub fn writes_outside_setters(sem: &crate::sem::Sem) -> HashSet<String> {
-    let procs: Vec<dreammaker::objtree::ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin()).collect();
+    // The generated setters and list mutators write the vars they are generated for: counting them would keep a var tracked because it was tracked.
+    let procs: Vec<dreammaker::objtree::ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin() && !matches!(sem.file_of(p.get().location), Some(AUTO_REL) | Some(TRACKED_LISTS_REL))).collect();
     let sets: Vec<HashSet<String>> = crate::sem::par_map(&procs, |p| {
         let mut w = crate::sem::reads::proc_writes(*p);
         if let Some(v) = p.name().strip_prefix("set_") {

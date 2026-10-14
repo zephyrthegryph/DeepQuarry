@@ -214,6 +214,7 @@ CAPABILITIES(/datum/robot_component)
 	if(powered == new_state)
 		return FALSE
 	powered = new_state
+	tracked_changed(src, nameof(powered))
 	return TRUE
 
 // --- Parts ------------------------------------------------------------------------

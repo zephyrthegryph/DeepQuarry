@@ -272,11 +272,13 @@ CAPABILITIES(/obj/machinery/telecomms/bus)
 /obj/machinery/telecomms/bus/proc/set_change_frequency(newfreq)
 	if(!newfreq)
 		change_frequency = ZERO_FREQ
+		tracked_changed(src, nameof(change_frequency))
 		report("-% Frequency changing deactivated %-")
 		return
 	newfreq = tcomms_tenths(newfreq)
 	if(newfreq < TCOMMS_FREQ_LIMIT)
 		change_frequency = newfreq
+		tracked_changed(src, nameof(change_frequency))
 		report("-% New frequency to change to assigned: \"[newfreq] GHz\" %-")
 
 // ---- ranged machines: the receiver and the broadcaster ----
