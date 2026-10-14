@@ -29,8 +29,6 @@ stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	if(!isnull(G
 stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
 stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 stat_input_untracked	code/game/objects/items/devices/radio/radio.dm	if(!on)
-stat_input_untracked	code/game/objects/items/weapons/RCD.dm	if(module.holder) // Is it attached to a RIG?
-stat_input_untracked	code/game/objects/items/weapons/RCD.dm	return module.holder.cell
 stat_input_untracked	code/game/objects/items/weapons/scrolls.dm	return !user.mind || GLOB.wizards.is_antagonist(user.mind)
 stat_input_untracked	code/game/objects/structures/crates_lockers/__closets.dm	for(var/mob/living/L in contents) // ALLOW(latent,reads): mobs are never latent; who is shut in is read when the entry is offered and when it is picked
 stat_input_untracked	code/game/objects/structures/crates_lockers/__closets.dm	if(L == user || !L.vore_prefs.devourable) //no eating yourself. 1984.
@@ -52,13 +50,10 @@ stat_input_untracked	code/modules/body/organs/organ_external.dm	return LAZYLEN(c
 stat_input_untracked	code/modules/body/plans/humanoid.dm	var/mob/living/carbon/human/H = owner
 stat_input_untracked	code/modules/detectivework/tools/sample_kits.dm	var/why = A.held.loc?.release_refusal(A.held, A.actor) // ALLOW(reads): current donor custody is queried without caching immediately before its checked release
 stat_input_untracked	code/modules/economy/ATM.dm	var/datum/money_account/account = QDELETED(authenticated_account) ? null : authenticated_account // ALLOW(reads): the account is read when the button is pressed, never cached
-stat_input_untracked	code/modules/economy/ATM.dm	var/datum/money_account/account = QDELETED(authenticated_account) ? null : authenticated_account // ALLOW(reads): the account is read when the button is pressed, never cached
-stat_input_untracked	code/modules/economy/ATM.dm	var/obj/item/card/card = QDELETED(held_card) ? null : held_card // ALLOW(reads): the card is read when the button is pressed, never cached
 stat_input_untracked	code/modules/economy/ATM.dm	var/obj/item/card/card = QDELETED(held_card) ? null : held_card // ALLOW(reads): the card is read when the button is pressed, never cached
 stat_input_untracked	code/modules/economy/Accounts.dm	if(department?.name in GLOB.department_accounts)
 stat_input_untracked	code/modules/economy/vending.dm	if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
 stat_input_untracked	code/modules/economy/vending.dm	if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
-stat_input_untracked	code/modules/fireworks/firework_launcher.dm	return loaded_star // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 stat_input_untracked	code/modules/food/food/sandwich.dm	return (length(contents) <= sandwich_limit()) ? null : MSG(snack/collapses) // ALLOW(spatial,reads): what is in it is counted when a food is added; the click asks again
 stat_input_untracked	code/modules/food/food/z_custom_food.dm	return (length(contents) < ingMax && length(contents) < INGREDIENT_LIMIT) ? null : /datum/msg/custom/stuffed // ALLOW(spatial,reads): what is in it is counted when a food is added; the click asks again
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	return (length(contents) > 0) ? null : MSG(cooking_container/nothing_in_it) // ALLOW(spatial,reads): a count of what is inside, read when it is emptied; the click asks again
@@ -155,11 +150,7 @@ draw_untracked	code/game/machinery/portable_turret.dm	look.overlay(turret_openin
 draw_untracked	code/game/mecha/space/shuttle.dm	look.overlay(look_appearance(icon, "[base]-mask+base", color = base_paint, layer = layer + 1))
 draw_untracked	code/game/objects/items.dm	standing.alpha = alpha
 draw_untracked	code/game/objects/items.dm	standing.color = color
-draw_untracked	code/game/objects/items/devices/flash.dm	if(module.holder && module.holder.wearer())
-draw_untracked	code/game/objects/items/devices/flash.dm	var/mob/living/carbon/human/H = module.holder.wearer()
 draw_untracked	code/game/objects/items/weapons/policetape.dm	return start
-draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	if(module.holder && module.holder.wearer())
-draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	var/mob/living/carbon/human/H = module.holder.wearer()
 draw_untracked	code/game/objects/structures/barricades.dm	if(!material)
 draw_untracked	code/game/objects/structures/cliff.dm	look.overlay(CACHED_KEY(cliff_overlays, cache_string, icon, subtraction_icon_state, ground[1], ground[2], ground[3], layer - 0.2))
 draw_untracked	code/game/objects/structures/crates_lockers/__closets.dm	if(ispath(closet_appearance))
@@ -230,7 +221,6 @@ draw_untracked	code/game/turfs/simulated/wall_types.dm	if(stripe_color)
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")
-draw_untracked	code/modules/anomalies/anomaly_harvester.dm	var/obj/effect/anomaly/anom = harvested
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(LAZYACCESS(acc.on_rolled, "down") && C.rolled_down > 0)
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	else if(LAZYACCESS(acc.on_rolled, "rolled") && C.rolled_sleeves > 0)
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(acc.color)
@@ -240,8 +230,6 @@ draw_untracked	code/modules/clothing/clothing_icons.dm	if(standing && !GLOB.ligh
 draw_untracked	code/modules/clothing/clothing_icons.dm	GLOB.light_overlay_cache[cache_key] = look_cached_image("[light_overlay]-worn-[lamp_icon]", lamp_icon, light_overlay)
 draw_untracked	code/modules/clothing/clothing_icons.dm	if(standing && GLOB.light_overlay_cache[cache_key])
 draw_untracked	code/modules/clothing/clothing_icons.dm	standing.add_overlay(GLOB.light_overlay_cache[cache_key])
-draw_untracked	code/modules/detectivework/microscope/microscope.dm	look.state("microscope[sample ? "slide" : ""]")
-draw_untracked	code/modules/fireworks/firework_launcher.dm	look.state("launcher[loaded_star ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]")
 draw_untracked	code/modules/food/drinkingglass/drinkingglass.dm	if(reagents.reagent_list.len > 0)
 draw_untracked	code/modules/food/food/snacks.dm	look.identity(desc = "A box suited for pizzas. It appears to have a [pizza.name] inside.")
 draw_untracked	code/modules/holodeck/HolodeckObjects.dm	return sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
@@ -253,7 +241,6 @@ draw_untracked	code/modules/hydroponics/grown.dm	if(!seed() || !SSplants?.plant_
 draw_untracked	code/modules/hydroponics/grown.dm	if(SSplants.plant_icon_cache[icon_key])
 draw_untracked	code/modules/hydroponics/grown.dm	plant_icon = SSplants.plant_icon_cache[icon_key]
 draw_untracked	code/modules/hydroponics/grown.dm	SSplants.plant_icon_cache[icon_key] = plant_icon
-draw_untracked	code/modules/hydroponics/spreading/spreading.dm	return parent
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	var/stages = seed.growth_stages || SSplants.plant_sprites[seed.get_trait(TRAIT_PLANT_ICON)]
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	var/image/plant_overlay = SSplants.plant_icon_cache["[key]-[colour]"]
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	plant_overlay = SSplants.plant_icon_cache[key]
