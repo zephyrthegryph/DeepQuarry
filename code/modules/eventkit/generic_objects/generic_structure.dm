@@ -38,9 +38,9 @@ CAPABILITIES(/obj/structure/generic_structure)
 			on = 1
 			set_icon_state(icon_state_on)
 			if(icon_on)
-				icon = icon_on
+				set_icon(icon_on)
 			else
-				icon = 'icons/obj/props/decor.dmi'
+				set_icon('icons/obj/props/decor.dmi')
 			set_icon_state(icon_state_on)
 			src.visible_message(span_notice("[text_activated]"))
 			if(effect == 1)
@@ -95,9 +95,9 @@ CAPABILITIES(/obj/structure/generic_structure)
 			on = 0
 			set_icon_state(icon_state_off)
 			if(icon_off)
-				icon = icon_off
+				set_icon(icon_off)
 			else
-				icon = 'icons/obj/props/decor.dmi'
+				set_icon('icons/obj/props/decor.dmi')
 			src.visible_message(span_notice("[text_deactivated]"))
 	return OP_DECLINE
 
@@ -410,7 +410,7 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 	P.icon_off = s_icon
 	P.icon_on = s_icon2
 	if(s_icon)
-		P.icon = s_icon
+		P.set_icon(s_icon)
 
 /datum/admin_verb/generic_structure/proc/generic_setup_answered(datum/act/request/context)
 	if(!context.answer)

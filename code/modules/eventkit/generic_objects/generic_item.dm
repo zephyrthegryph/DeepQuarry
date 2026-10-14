@@ -33,9 +33,9 @@ CAPABILITIES(/obj/item/generic_item)
 		if(!on)
 			on = 1
 			if(icon_on)
-				icon = icon_on
+				set_icon(icon_on)
 			else
-				icon = 'icons/obj/props/items.dmi'
+				set_icon('icons/obj/props/items.dmi')
 			set_icon_state(icon_state_on)
 			if(user)
 				user.visible_message(span_notice("[text_activated]"))
@@ -83,9 +83,9 @@ CAPABILITIES(/obj/item/generic_item)
 			on = 0
 			set_icon_state(icon_state_off)
 			if(icon_off)
-				icon = icon_off
+				set_icon(icon_off)
 			else
-				icon = 'icons/obj/props/items.dmi'
+				set_icon('icons/obj/props/items.dmi')
 			if(user)
 				user.visible_message(span_notice("[text_deactivated]"))
 	return TRUE
@@ -313,7 +313,7 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 	P.icon_off = s_icon
 	P.icon_on = s_icon2
 	if(s_icon)
-		P.icon = s_icon
+		P.set_icon(s_icon)
 
 /datum/admin_verb/generic_item/proc/generic_setup_answered(datum/act/request/context)
 	if(!context.answer)

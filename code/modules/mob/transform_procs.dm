@@ -9,13 +9,13 @@
 	set_transforming(1)
 	canmove = 0
 	status_set(STAT_STUNNED, 1)
-	icon = null
+	set_icon(null)
 	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)
 		ended_with(t, src)
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( loc )
 	animation.set_icon_state("blank")
-	animation.icon = 'icons/mob/mob.dmi'
+	animation.set_icon('icons/mob/mob.dmi')
 	rel_set(animation, nameof(animation.master), src)
 	flick("h2monkey", animation)
 	after(src, 4.8 SECONDS, PROC_REF(monkeyize_1), with = list(animation))
@@ -67,7 +67,7 @@
 		drop_from_inventory(W)
 	set_transforming(1)
 	canmove = 0
-	icon = null
+	set_icon(null)
 	set_invisibility(INVISIBILITY_ABSTRACT)
 	return ..()
 
@@ -153,7 +153,7 @@
 	regenerate_icons()
 	set_transforming(1)
 	canmove = 0
-	icon = null
+	set_icon(null)
 	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)
 		ended_with(t, src)
@@ -203,7 +203,7 @@
 	regenerate_icons()
 	set_transforming(1)
 	canmove = 0
-	icon = null
+	set_icon(null)
 	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)
 		ended_with(t, src)
@@ -227,7 +227,7 @@
 	regenerate_icons()
 	set_transforming(1)
 	canmove = 0
-	icon = null
+	set_icon(null)
 	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)	//this really should not be necessary
 		ended_with(t, src)
@@ -262,7 +262,7 @@
 	regenerate_icons()
 	set_transforming(1)
 	canmove = 0
-	icon = null
+	set_icon(null)
 	set_invisibility(INVISIBILITY_ABSTRACT)
 
 	for(var/t in organs)

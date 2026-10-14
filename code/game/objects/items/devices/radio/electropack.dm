@@ -35,7 +35,7 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 			to_chat(user, span_notice("[src] is not ready to be attached!"))
 			return OP_OK
 		var/obj/item/assembly/shock_kit/K = new /obj/item/assembly/shock_kit( user )
-		K.icon = 'icons/obj/assemblies.dmi'
+		K.set_icon('icons/obj/assemblies.dmi')
 
 		set_item_master(W, K)
 		if(!move_into(K, nameof(K.part1), W, user))

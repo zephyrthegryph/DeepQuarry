@@ -13,7 +13,7 @@
 // Description: Copies the mob's icons, overlays, TOD, gender, currently loaded character slot, and languages, to src.
 /mob/living/voice/proc/transfer_identity(mob/speaker)
 	if(ismob(speaker))
-		icon = speaker.icon
+		set_icon(speaker.icon)
 		set_icon_state(speaker.icon_state)
 		overlays = speaker.overlays
 		timeofdeath = speaker.timeofdeath

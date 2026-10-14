@@ -89,7 +89,7 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 
 	name = stored_mmi.name
 	desc = stored_mmi.desc
-	icon = stored_mmi.icon
+	set_icon(stored_mmi.icon)
 
 	stored_mmi.icon_state = "mmi_full"
 	set_icon_state(stored_mmi.icon_state)

@@ -38,8 +38,6 @@
  */
 
 
-TRACKED(/obj/machinery/door/airlock/angled_bay, icon)
-
 /obj/machinery/door/airlock/angled_bay
 	icon_state = "preview"
 	dir = 2

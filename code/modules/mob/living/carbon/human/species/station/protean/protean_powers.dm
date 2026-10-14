@@ -112,7 +112,7 @@ CAPABILITIES(/obj/effect/protean_power_button)
 		return
 	name = power.name
 	desc = power.desc
-	icon = power.icon
+	set_icon(power.icon)
 	set_icon_state(power.icon_state)
 
 /obj/effect/protean_power_button/Click(location, control, params)

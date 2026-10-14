@@ -129,7 +129,7 @@ CAPABILITIES(/obj/item/tk_grab)
 	O.set_density(FALSE)
 	O.layer = FLY_LAYER
 	O.set_dir(pick(GLOB.cardinal))
-	O.icon = 'icons/effects/effects.dmi'
+	O.set_icon('icons/effects/effects.dmi')
 	O.set_icon_state("nothing")
 	flick("empdisable",O)
 	O.expire(5)

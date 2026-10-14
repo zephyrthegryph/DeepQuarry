@@ -20,7 +20,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_emagged)
 	var/obj/item/clothing/tmp = new helmet_becomes()
 	helmet.name = "refitted [tmp.name]"
 	helmet.desc = tmp.desc
-	helmet.icon = tmp.icon
+	helmet.set_icon(tmp.icon)
 	helmet.set_icon_state(tmp.icon_state)
 	helmet.set_item_state(tmp.item_state)
 	helmet.set_item_state_slots(tmp.item_state_slots?.Copy())
@@ -35,7 +35,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_emagged)
 	var/obj/item/clothing/tmp = new suit_becomes()
 	suit.name = "refitted [tmp.name]"
 	suit.desc = tmp.desc
-	suit.icon = tmp.icon
+	suit.set_icon(tmp.icon)
 	suit.set_icon_state(tmp.icon_state)
 	suit.set_item_state(tmp.item_state)
 	suit.set_item_state_slots(tmp.item_state_slots?.Copy())

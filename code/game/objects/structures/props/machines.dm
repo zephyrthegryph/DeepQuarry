@@ -597,7 +597,7 @@
 
 	// Alpha mask to make sure things don't sneak out
 	var/obj/effect/overlay/vis/mask = new
-	mask.icon = icon
+	mask.set_icon(icon)
 	mask.set_icon_state("nt_pod_mask")
 	mask.render_target = "*nt_podmask[REF(src)]"
 	mask.vis_flags = VIS_INHERIT_ID

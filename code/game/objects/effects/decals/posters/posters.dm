@@ -119,7 +119,7 @@ TRACKED(/obj/structure/sign/poster, ruined)
 	name = "[initial(name)] - [poster_decl.name]"
 	desc = "[initial(desc)] [poster_decl.desc]"
 	if(poster_decl.icon_override)
-		icon = poster_decl.icon_override
+		set_icon(poster_decl.icon_override)
 	set_icon_state(poster_decl.icon_state)
 
 	switch (dir)
