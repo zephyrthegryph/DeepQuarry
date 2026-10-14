@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Preview and test dummies always play idle tail loop 0, so the look pin no longer varies with the dummy's random name"
