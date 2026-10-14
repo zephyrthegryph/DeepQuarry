@@ -21,6 +21,7 @@ trap cleanup EXIT
 
 export DQ_SLOTS_DIR="$T/slots" DQ_MERGE_WT="$T/mb" DQ_SLOTS_POLL_SEC=1 DQ_SLOTS_HEARTBEAT_SEC=1 GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
 unset DQ_MERGE_SESSION
+export CLAUDE_CODE_SESSION_ID=shared-by-every-lane # must never decide who holds the lock
 MW="$ROOT/tools/dq_merge_worktree.sh"
 SL="$ROOT/tools/dq_machine_slots.sh"
 
@@ -50,6 +51,11 @@ run_as() { # session args...: dq_merge_worktree.sh as that session
 	DQ_MERGE_SESSION="$s" bash "$MW" "$@"
 }
 
+# ---- 0. no explicit session, no lock (and the shared agent session id is no substitute) ----
+bash "$MW" --lanes laneX >"$T/n.out" 2>"$T/n.err" && rc=0 || rc=$?
+check "a merge call without DQ_MERGE_SESSION is refused" bash -c "[ $rc -ne 0 ] && grep -q 'DQ_MERGE_SESSION is not set' '$T/n.err'"
+check "and took no lock" bash -c "bash '$SL' merge-lock status | grep -q nobody"
+
 # ---- 1. A takes the lock; B, started while A holds it, waits ----
 out="$(run_as A --lanes "laneA" 2>"$T/a.err")"
 check "A took the lock and got the worktree path" test "$out" = "$T/mb"
@@ -73,6 +79,7 @@ check "B still waits while A has unpushed work in the worktree" bash -c "kill -0
 check "gates refuse in the merge worktree without the lock (cwd outside is the scratch worktree)" bash -c "cd '$T/mb' && DQ_MERGE_SESSION=B bash '$ROOT/tools/dq_merge_gates.sh' --no-tests 2>&1 | grep -q 'do not hold its lock'"
 check "push refuses in the merge worktree without the lock" bash -c "cd '$T/mb' && DQ_MERGE_SESSION=B bash '$ROOT/tools/dq_push_master.sh' 2>&1 | grep -q 'do not hold its lock'"
 check "the lock check passes for the holder" bash -c "cd '$T/mb' && . '$SL' && DQ_MERGE_SESSION=A merge_lock_require"
+check "the lock check refuses the shared agent session id without DQ_MERGE_SESSION" bash -c "cd '$T/mb' && . '$SL' && ! merge_lock_require 2>/dev/null"
 check "the lock check ignores other worktrees" bash -c "cd '$T/main' && . '$SL' && DQ_MERGE_SESSION=B merge_lock_require"
 check "a second --lanes from the holder is refused (use --join)" bash -c "DQ_MERGE_SESSION=A bash '$MW' --lanes again 2>&1 | grep -q 'already hold'"
 

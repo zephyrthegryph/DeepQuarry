@@ -26,7 +26,7 @@
 # clear check, so two agents cannot both pass the check and merge into the same index. It is held by a detached holder process with a
 # heartbeat, across dq_merge_gates.sh, until dq_push_master.sh lands the batch (or the tree is level with origin/master), or --release.
 # dq_merge_gates.sh and dq_push_master.sh refuse to run in the merge worktree without it. A crashed holder is reclaimed like a dead
-# machine slot. The caller's identity is DQ_MERGE_SESSION, else its nearest non-shell ancestor (the agent's process).
+# machine slot. The caller's identity is DQ_MERGE_SESSION, which must be set (the lane branch name); it is never inferred, and the merge tools refuse without it.
 # Only one merge batch uses the worktree at a time. Run the batch inside the printed path:
 #   cd "$(bash tools/dq_merge_worktree.sh)" && git merge --no-ff <branch> ... && bash tools/dq_merge_gates.sh
 # Nothing here runs checkout, reset, restore, stash or cherry-pick, or deletes any lock file.
