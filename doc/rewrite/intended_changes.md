@@ -4880,3 +4880,9 @@ Affected requirement-pin classes:
 - `/obj/machinery/vr_sleeper/alien`
 - `/obj/machinery/vr_sleeper`
 - `/obj/structure/frame`
+
+## Cell-redraw lane: master typed links and retired mecha window
+
+Master 5b0a2f09d0 typed the internal-storage owner and cloning scanner links. Their old invalid-owner and missing-scanner paths must still delete storage or return null, respectively. The cell-redraw lane carries the already-approved native keeps_if/setup and null-return repairs, plus their real owner/rebinding tests, from the stamped acceptance lane. No constructor pin is re-blessed.
+
+Master f13b84652d retired the unused AI equipment window. The only pin refresh carried here is removal of ai_use_equipment from the keys rows of /obj/mecha and /obj/mecha/working/ripley. Menu/click rows and every other key remain unchanged.
