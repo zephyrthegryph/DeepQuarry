@@ -71,3 +71,22 @@ No build, test, cargo, generation, baseline/manifest edits, commits, merges or p
 Run `/datum/unit_test/dq_a13_initialization` (eight leaves: capacitor_rating, compass_markers, mapper_cache, instrument_ids, vehicle_shutdown, shield_damage, recycler_display, meteorite_rotation), plus task-required `dq_look_pin`.
 
 Root analyzer certification: init baseline4115 ->3933 (182 fingerprints removed), decl47unchanged; generated trackedcheck clean after original_zLevel and compass label additions use existing setters. The occurrence-based source estimate is not the analyzer fingerprint count. Runtime verification pending.
+
+## Exact retained site identities
+
+[Committed residual inventory](codex_A13_residual_sites.txt) lists every retained source identity from this lane’s post-edit audit, including repeated normalized rows. The per-file reasons above classify those identities; this is a source audit snapshot, not a fresh analyzer verdict after rebasing. Master’s subsequently removed declarations and rewritten setters must remain authoritative, and the root verification will establish the final baseline counts.
+
+### Commented preference-save initializer
+
+`code/modules/client/preferences_save_service.dm` retains an old initializer inside an existing `/* ... */` comment block. These eight input-baseline fingerprints are not live constructor work and are absent from the post-edit live-source inventory; no lifecycle conversion or callback blocker is claimed for them:
+
+```text
+init_lines	code/modules/client/preferences_save_service.dm	@/datum/system/character_setup::Initialize::while
+init_lines	code/modules/client/preferences_save_service.dm	@/datum/system/character_setup::Initialize::prefs
+init_lines	code/modules/client/preferences_save_service.dm	@/datum/system/character_setup::Initialize::expr
+init_lines	code/modules/client/preferences_save_service.dm	@/datum/system/character_setup::Initialize::prefs.setup
+init_lines	code/modules/client/preferences_save_service.dm	@/datum/system/character_setup::Initialize::while
+init_lines	code/modules/client/preferences_save_service.dm	@/datum/system/character_setup::Initialize::new_player
+init_lines	code/modules/client/preferences_save_service.dm	@/datum/system/character_setup::Initialize::expr
+init_lines	code/modules/client/preferences_save_service.dm	@/datum/system/character_setup::Initialize::new_player.deferred_login
+```
