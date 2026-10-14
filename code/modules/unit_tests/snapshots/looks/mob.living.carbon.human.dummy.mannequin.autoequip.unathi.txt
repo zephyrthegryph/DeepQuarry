@@ -2,5 +2,5 @@ icon:
 state: 
 dir: 2
 overlay: ::-32767 x3
-overlay: :sogtail_idle8:-32767
+overlay: :sogtail_idle0:-32767
 

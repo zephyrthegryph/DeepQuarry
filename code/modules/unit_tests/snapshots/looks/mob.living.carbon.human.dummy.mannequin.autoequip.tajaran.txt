@@ -2,5 +2,5 @@ icon:
 state: 
 dir: 2
 overlay: ::-32767 x3
-overlay: :tajtail_idle8:-32767
+overlay: :tajtail_idle0:-32767
 

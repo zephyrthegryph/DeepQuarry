@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { pruneStaleRunCopies, runCopyBase } from './lib/run_copies';
 import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
 import { computeCompileHash } from './lib/compile_hash';
@@ -1282,7 +1283,12 @@ async function runIsolatedTestWorld(
 ): Promise<IsolatedRun> {
   const slot = acquireRunSlot();
   const base = dmbFile.replace(/\.dmb$/, '');
-  const runBase = `${base}.${slot.tag}`;
+  // The copy is named for this process as well as the slot. Slot names are reused, and a previous occupant's file can still be
+  // held (its DreamDaemon closing its handles, a scanner holding it) when removeDerivedArtifacts() gives up after 5 s and leaves
+  // it behind: copying onto that name failed with EBUSY (copyfile deepquarry.test.dmb -> deepquarry.test.run2.dmb). A name no
+  // earlier run used cannot be held by one; leftovers of dead processes are pruned (and any that stay locked are logged).
+  pruneStaleRunCopies(base, pidAlive, (m) => Juke.logger.warn(m));
+  const runBase = runCopyBase(base, slot.tag, process.pid);
   const logDir = `data/logs/${slot.tag}`;
   const resultsFile = `${slot.dir}/unit_tests.json`;
   try {
