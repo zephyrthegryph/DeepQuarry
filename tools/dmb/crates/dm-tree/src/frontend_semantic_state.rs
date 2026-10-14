@@ -380,6 +380,15 @@ impl RetainedSemanticTree {
                 on_error(&error, &adapted.skeletons.to_vec(), &[]);
                 error
             })?;
+            if !unchanged_declarations {
+                carry_demands(
+                    &prior_index.tree,
+                    &prior_index.index,
+                    &tree,
+                    index.as_ref().expect("updated tree has its index"),
+                    "update",
+                );
+            }
             tree.publish_selection_owner();
             let tree = Arc::new(tree);
             let entry = self
@@ -426,6 +435,15 @@ impl RetainedSemanticTree {
                     })
                 }),
         )?;
+        match (self.entry.as_ref(), index.as_ref()) {
+            (Some(entry), Some(current)) if same_engine(entry.engine.as_ref(), engine) => {
+                carry_demands(&entry.tree, &entry.index, &snapshot.tree, current, "rebuild")
+            }
+            (Some(_), _) => crate::change_set::record_outcome(
+                "demand tokens full (engine or declaration index changed)".into(),
+            ),
+            (None, _) => {}
+        }
         self.discard_foreign_callable_roster(&snapshot.tree);
         let next_entry = index.map(|index| {
             let previous = self.entry.as_ref().and_then(|entry| {
@@ -454,6 +472,33 @@ impl RetainedSemanticTree {
         self.rebuilds += 1;
         Ok(snapshot)
     }
+}
+/// Carry clean demand certificates from the retained tree into the new one.
+fn carry_demands(
+    previous_tree: &crate::SemanticTree,
+    previous: &crate::declaration_contributions::KeyedDeclarations,
+    current_tree: &crate::SemanticTree,
+    current: &crate::declaration_contributions::KeyedDeclarations,
+    path: &str,
+) {
+    let timer = std::time::Instant::now();
+    let change = crate::change_set::StructuralChangeSet::between(
+        previous_tree,
+        previous,
+        current_tree,
+        current,
+    );
+    let outcome = match current_tree.inherit_demand_tokens(previous_tree, &change) {
+        Ok((carried, dropped)) => {
+            format!("demand tokens carried={carried} dropped={dropped} ({path})")
+        }
+        Err(reason) => format!("demand tokens full ({reason}) ({path})"),
+    };
+    crate::change_set::record_outcome(format!(
+        "{outcome}; {} in {:.3}s",
+        change.summary(),
+        timer.elapsed().as_secs_f64()
+    ));
 }
 fn same_engine(previous: Option<&EngineSeed>, current: Option<&EngineSeed>) -> bool {
     match (previous, current) {

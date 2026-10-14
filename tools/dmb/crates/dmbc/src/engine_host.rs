@@ -10,6 +10,8 @@ pub(crate) use variable_coverage::VariableCoverage;
 #[path = "intrinsic_methods.rs"]
 mod intrinsic_methods;
 mod pinned_facts;
+mod domain_memo;
+pub use domain_memo::take_request_counts as take_domain_memo_counts;
 pub(crate) trait CallableFallbackReceipts: Send + Sync + std::fmt::Debug {
     fn version(&self, name: SymbolId) -> Option<u64>;
 }
@@ -195,6 +197,8 @@ struct VariableAbsence {
 #[derive(Clone, Debug)]
 pub struct EngineResolverHost<R> {
     answer_domain: std::sync::OnceLock<Option<u128>>,
+    /// Issued versions for this immutable configuration; reset with answer_domain.
+    domain_memo: domain_memo::DomainMemo,
     source_versions: Vec<u128>,
     callable_issuer: Option<u64>,
     callable_fallback: Option<Arc<dyn CallableFallbackReceipts>>,
@@ -212,6 +216,7 @@ impl<R: Resolver> EngineResolverHost<R> {
     pub fn new(tree: Arc<R>, constants: ConstantCatalog, runtime: RuntimeAliasCatalog) -> Self {
         Self {
             answer_domain: std::sync::OnceLock::new(),
+            domain_memo: Default::default(),
             source_versions: Vec::new(),
             callable_issuer: None,
             callable_fallback: None,
@@ -229,6 +234,7 @@ impl<R: Resolver> EngineResolverHost<R> {
         receipt: Arc<dyn CallableFallbackReceipts>,
     ) -> Self {
         self.callable_fallback = Some(receipt);
+        self.domain_memo = Default::default();
         self
     }
     pub(crate) fn fallback_provider_issued(&self, providers: &PinnedEngineProviders) -> bool {
@@ -275,6 +281,7 @@ impl<R: Resolver> EngineResolverHost<R> {
             .merge_from(&providers.spellings)
             .map_err(|error| format!("native symbol {error:?}"))?;
         self.answer_domain = std::sync::OnceLock::new();
+        self.domain_memo = Default::default();
         self.callable_fallback = None;
         self.source_versions.push(frontend.snapshot.tree.identity());
         self.retained_methods = Some(Arc::new(
@@ -335,6 +342,7 @@ impl<R: Resolver> EngineResolverHost<R> {
             .cloned()
             .unwrap_or_else(|| VariableCoverage::capture(frontend, providers, &self.constants));
         self.answer_domain = std::sync::OnceLock::new();
+        self.domain_memo = Default::default();
         self.source_versions.push(frontend.snapshot.tree.identity());
         self.variable_absence = Some(Arc::new(VariableAbsence {
             issuer: providers.issuer,
@@ -387,7 +395,9 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
     }
 
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
-        let version = self.issued_domain_version(domain);
+        let version = self
+            .domain_memo
+            .get_or_issue(domain, || self.issued_domain_version(domain));
         if version.is_none() {
             self.trace_unversioned(domain);
         }

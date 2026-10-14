@@ -191,6 +191,7 @@ impl<R: PinnedSource> EngineResolverHost<R> {
             );
         }
         self.answer_domain = std::sync::OnceLock::new();
+        self.domain_memo = Default::default();
         self.source_versions = facts.source_versions.clone();
         self.callable_fallback = None;
         self.callable_issuer = facts.callable_issuer;

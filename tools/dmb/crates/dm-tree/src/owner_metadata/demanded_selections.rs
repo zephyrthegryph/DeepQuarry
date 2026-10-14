@@ -9,6 +9,25 @@ pub struct CallableDemands {
     tokens: Mutex<BTreeMap<(SymbolId, SymbolId, u8), u128>>,
 }
 impl CallableDemands {
+    /// Issued tokens, for carrying clean selections into the next tree.
+    pub(crate) fn snapshot(&self) -> Vec<((SymbolId, SymbolId, u8), u128)> {
+        self.tokens
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .iter()
+            .map(|(selection, token)| (*selection, *token))
+            .collect()
+    }
+    /// Install carried tokens before this owner answers any demand.
+    pub(crate) fn seed(&self, tokens: Vec<((SymbolId, SymbolId, u8), u128)>) {
+        let mut current = self
+            .tokens
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        for (selection, token) in tokens {
+            current.entry(selection).or_insert(token);
+        }
+    }
     pub fn visit_storage(&self, visitor: impl FnOnce(usize, usize)) {
         let tokens = self
             .tokens

@@ -11,6 +11,8 @@ mod declaration_error_recovery;
 mod retirement_pipe;
 #[path = "six_session_contract_tests/query_failure_state_tests.rs"]
 mod query_failure_state;
+#[path = "six_session_contract_tests/structural_change_tests.rs"]
+mod structural_change;
 
 const SOURCE: &str = "/datum/base\n    var/value = 7\n    proc/result()\n        return value\n/proc/probe()\n    var/datum/base/item = new\n    return item.result()\n";
 

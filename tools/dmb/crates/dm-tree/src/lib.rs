@@ -9,6 +9,7 @@ mod relative_origins;
 mod skeleton_roster;
 pub(crate) use adapter::SharedAdaptedDeclarations;
 mod callable_namespace;
+pub mod change_set;
 pub mod constant_resolution;
 pub mod constants;
 pub mod declaration_contributions;
@@ -868,6 +869,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
 mod tree_identity;
 use tree_identity::metadata_fingerprint;
 mod resolver_impl;
+pub use resolver_impl::{TREE_DOMAIN_VERSION_CALLS, TREE_DOMAIN_VERSION_NANOS};
 mod resolver_member_names;
 
 #[cfg(test)]

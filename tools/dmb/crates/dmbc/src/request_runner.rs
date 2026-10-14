@@ -1027,6 +1027,10 @@ fn run_build_attempt(
                 memo.counts.local_attempts.load(Relaxed), memo.counts.local_hits.load(Relaxed),
                 memo.counts.local_ns.load(Relaxed) as f64 / 1e9, memo.counts.keyed_ns.load(Relaxed) as f64 / 1e9,
                 dmbc::lowering::local_decline_stats());
+            dmbc::daemon_eprintln!("native domain memo: {}", dmbc::engine_host::take_domain_memo_counts());
+            for outcome in dm_tree::change_set::take_outcomes() {
+                dmbc::daemon_eprintln!("native change set: {outcome}");
+            }
             let errors = memo.staging_errors();
             if !errors.is_empty() {
                 dmbc::daemon_eprintln!("cache population skipped: {}", errors.join("; "));
