@@ -241,7 +241,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 	/// code/game/atom/armor.dm). Read it through get_armor().
 	var/armor_spec
 	/// This instance's armour when it differs from its type's (set_armor()).
-	var/tmp/datum/armor_override
+	var/tmp/datum/armor/armor_override
 
 /// This atom's armour. The one accessor: never read armour any other way.
 /atom/proc/get_armor()
