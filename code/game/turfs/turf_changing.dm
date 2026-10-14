@@ -149,7 +149,7 @@
 	rel_set(src, nameof(lighting_corner_SW), old_lighting_corner_SW)
 	rel_set(src, nameof(lighting_corner_NW), old_lighting_corner_NW)
 
-	set_dynamic_lumcount(old_dynamic_lumcount)
+	dynamic_lumcount = old_dynamic_lumcount
 
 	if(SSlighting.initialized)
 		rel_set(src, nameof(lighting_object), old_lighting_object)

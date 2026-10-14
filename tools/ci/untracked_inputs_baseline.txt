@@ -65,23 +65,6 @@ stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	ret
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	for (var/obj/item/J in contents) // ALLOW(reads): the sizes of what is inside are read when a thing is put in; the click asks again
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	total += J.w_class
 stat_input_untracked	code/modules/library/lib_items.dm	return length(contents) > 0 // ALLOW(reads, spatial): the shelf's books are read when it is reached into, never cached; a plain count of its own contents
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	if (!lighting_object)
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	L = lighting_corner_NE
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	L = lighting_corner_SE
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	L = lighting_corner_SW
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	L = lighting_corner_NW
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
-stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
 stat_input_untracked	code/modules/mob/living/carbon/human/inventory.dm	for(var/datum/category_group/underwear/UWC in GLOB.global_underwear.categories)
 stat_input_untracked	code/modules/mob/living/carbon/human/species/shadekin/state/powers/phase_shift.dm	if(check_rights_for(client, R_HOLDER))
 stat_input_untracked	code/modules/mob/living/silicon/pai/api.dm	return (check_ckey in GLOB.paikeys)

@@ -51,7 +51,7 @@ TRACKED(/datum/sun_holder, rainbow_ends_at)
 	// Update dynamic lumcount so darksight and stuff works
 	var/difference = . - our_brightness
 	for(var/turf/T as anything in turfs)
-		T.set_dynamic_lumcount(T.dynamic_lumcount - difference)
+		T.dynamic_lumcount -= difference
 
 /datum/sun_holder/proc/apply_to_turf(turf/T)
 	if(sun in T.vis_contents)
@@ -129,7 +129,7 @@ TRACKED(/datum/sun_holder, rainbow_ends_at)
 
 /atom/movable/sun_visuals/proc/apply_to_turf(turf/T)
 	T.vis_contents += src
-	T.set_dynamic_lumcount(T.dynamic_lumcount + 0.5)
+	T.dynamic_lumcount += 0.5
 	T.set_luminosity(1, TRUE)
 
 	var/list/localspreads
@@ -178,7 +178,7 @@ TRACKED(/datum/sun_holder, rainbow_ends_at)
 
 /atom/movable/sun_visuals/proc/remove_from_turf(turf/T)
 	T.vis_contents -= src
-	T.set_dynamic_lumcount(T.dynamic_lumcount - 0.5)
+	T.dynamic_lumcount -= 0.5
 	T.set_luminosity(0, TRUE)
 	var/list/applied = LAZYACCESS(turfs_providing_spreads, T)
 	if(LAZYLEN(applied))

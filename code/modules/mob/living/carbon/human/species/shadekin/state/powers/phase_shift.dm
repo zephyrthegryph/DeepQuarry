@@ -93,7 +93,9 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 	var/turf/T = get_turf(src)
 	if(!T)
 		return 0
-	var/darkness = 1 - T.get_lumcount() // Brightness in 0.0 to 1.0, inverted
+	// Brightness in 0.0 to 1.0 as a band of twentieths (watched(): the cost follows the light without polling it), inverted at the band's middle.
+	var/static/list/lum_twentieths = list(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1)
+	var/darkness = 1 - min(1, watched(T, WATCH_LUM, lum_twentieths) * 0.05 + 0.025)
 
 	var/watchers = 0
 	// oviewers() is computed once; every mob it returns is also within orange(7).
