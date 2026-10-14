@@ -1123,7 +1123,7 @@ CAPABILITIES(/datum/prompt/choice/fax_stamp)
 	var/obj/item/rcvdcopy
 	rcvdcopy = destination.copy(P)
 	rcvdcopy.moveToNullspace() //hopefully this shouldn't cause trouble
-	GLOB.adminfaxes += rcvdcopy
+	admin_fax_keep(rcvdcopy)
 
 
 

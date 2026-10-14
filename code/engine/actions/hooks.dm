@@ -15,6 +15,7 @@
 //
 // Parts inside a hook are the Do parts of section 9. E4 owns when(), chance() and then(); every other part kind is E2's and reaches act_run_part().
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/hook)
 /// One compiled hook.
 /datum/hook
 	/// HOOK_NEEDS, HOOK_INSTEAD, HOOK_ADJUSTS or HOOK_NOTICE.

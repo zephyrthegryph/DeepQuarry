@@ -1,3 +1,4 @@
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/ai_emotion)
 /datum/ai_emotion
 	var/overlay
 	var/ckey

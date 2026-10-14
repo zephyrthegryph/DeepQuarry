@@ -163,8 +163,7 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 
 /// The own dose's hold row of `id`, or null.
 /datum/proc/status_dose(id)
-	var/datum/stat_record/rec = rx?.stats
-	return rec ? stat_hold_find(rec, id, SRC_STATUS, null) : null
+	return stat_hold_row_of(src, id, SRC_STATUS)
 
 /// Deciseconds of biological time until the own dose of `id` ends (0 when there is none). A hold from another source has no duration and
 /// doesn't count: read has_status() for "in effect at all".

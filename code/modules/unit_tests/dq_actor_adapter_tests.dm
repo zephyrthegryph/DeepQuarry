@@ -90,9 +90,9 @@ CAPABILITIES(/obj/dq_actor_probe)
 	if(ops_first)
 		input_submit(new /datum/input_event/click(user, target, null, null, params))
 	else
-		GLOB.op_click_resolved[user] = TRUE
+		GLOB.op_click_resolved[entity_handle(user)] = TRUE
 		GLOB.input_router.route_click(user, target, params)
-		GLOB.op_click_resolved -= user
+		GLOB.op_click_resolved -= entity_handle(user)
 	if(ops_first)
 		test_time(1 SECONDS) // an op's effect (a silicon_hand() forward) runs in the op pipeline, not inside the click
 	return jointext(GLOB.dq_actor_calls, ",")
@@ -230,7 +230,7 @@ CAPABILITIES(/obj/dq_actor_probe)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/datum/input_adapter/telekinesis/telekinesis = INPUT_ADAPTER(telekinesis)
 	GLOB.dq_actor_calls.Cut()
-	GLOB.op_click_resolved[H] = TRUE // the adapter's own handling, after the ops
+	GLOB.op_click_resolved[entity_handle(H)] = TRUE // the adapter's own handling, after the ops
 	telekinesis.use(H, allocate(/obj/machinery/button/dq_actor_probe, T))
-	GLOB.op_click_resolved -= H
+	GLOB.op_click_resolved -= entity_handle(H)
 	TEST_ASSERT_EQUAL(jointext(GLOB.dq_actor_calls, ","), "attack_hand", "button: telekinesis presses it with an unarmed attack")

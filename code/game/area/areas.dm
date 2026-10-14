@@ -42,7 +42,6 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	var/lights_emergency_off = FALSE
 	var/no_air = null
 	var/list/all_doors = null		//Added by Strumpetplaya - Alarm Change - Contains a list of doors adjacent to this area
-	var/list/all_arfgs = null		//Similar, but a list of all arfgs adjacent to this area
 	var/firedoors_closed = 0
 	var/arfgs_active = 0
 	var/list/ambience

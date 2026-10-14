@@ -5,6 +5,7 @@
 */
 GLOBAL_DATUM_INIT(global_hud, /datum/global_hud, new)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/global_hud)
 /datum/global_hud
 	var/atom/movable/screen/druggy
 	var/atom/movable/screen/blurry

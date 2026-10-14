@@ -762,6 +762,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		for(var/atom/movable/thing as anything in vis)
 			T.vis_contents |= thing
 			LAZYADD(cache.look_vis, thing)
+	vis = null // the atoms this draw showed are on the target's cache now: the look keeps none of them
 	if(flick_state)
 		flick(flick_state, A)
 

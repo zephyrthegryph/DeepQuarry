@@ -80,13 +80,13 @@ CAPABILITIES(/datum/material/processed_alloy)
 		return existing
 	var/key = "processed_alloy_[copytext(fingerprint, 1, 13)]"
 	var/datum/material/processed_alloy/material = new
-	material.name = key
+	material.set_name(key)
 	material.display_name = batch.display_name()
 	material.use_name = material.display_name
 	rel_set(material, nameof(material.batch_template), batch.copy_batch())
 	// A template is a definition, not a piece of stock: it records the temperature stock is made at and holds no heat of its own.
 	material.batch_template.settle_heat(null)
-	material.hardness = batch.hardness
+	material.set_hardness(batch.hardness)
 	material.integrity = clamp(round(batch.toughness * 2), 5, 250)
 	material.elasticity = clamp(batch.toughness - batch.brittleness * 0.25, 1, 100)
 	material.brittleness = batch.brittleness
@@ -106,7 +106,7 @@ CAPABILITIES(/datum/material/processed_alloy)
 	var/corrosion_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_CORROSION) || 0
 	var/bluespace_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_BLUESPACE) || 0
 	if(metal_skin)
-		material.hardness = clamp(material.hardness + metal_skin * 0.2, 1, 100)
+		material.set_hardness(clamp(material.hardness + metal_skin * 0.2, 1, 100))
 		material.integrity = clamp(material.integrity + round(metal_skin * 0.8), 5, 250)
 	if(corrosion_skin)
 		material.corrosion_resistance = clamp(material.corrosion_resistance + corrosion_skin * 0.6, 0, 100)
@@ -245,7 +245,7 @@ CAPABILITIES(/datum/material/processed_alloy)
 			dominant = get_material_by_name(component)
 			dominant_amount = LAZYACCESS(batch.composition, component)
 	if(dominant)
-		material.icon_colour = dominant.icon_colour
+		material.set_icon_colour(dominant.icon_colour)
 	material.material_facts_changed()
 	GLOB.name_to_material[key] = material
 	GLOB.processed_material_dedup[fingerprint] = key

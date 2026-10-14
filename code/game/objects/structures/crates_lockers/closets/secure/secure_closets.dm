@@ -149,7 +149,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 	look.overlay(owner_picture, when = !isnull(owner_picture))
 
 /obj/structure/closet/secure_closet/mind/allowed(mob/user)
-	if(user.mind == owner_ref()) // ALLOW(reads): whose mind it is is read at the click; the locker is made for one mind and never changes it
+	if(user.mind == owner_ref())
 		return TRUE
 	else
 		return FALSE

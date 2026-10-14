@@ -228,7 +228,10 @@ TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 /// The temperature it cools to while off: 20, plus the room's offset from 20 C scaled by its pressure.
 /obj/machinery/power/port_gen/pacman/proc/cooling_temperature()
 	var/cooling_temperature = 20
-	var/datum/gas_mixture/environment = loc?.return_air()
+	var/datum/gas_mixture/environment
+	if(isturf(loc))
+		var/turf/T = loc
+		environment = T.return_air()
 	if(environment)
 		var/ratio = min(environment.return_pressure()/ONE_ATMOSPHERE, 1)
 		var/ambient = environment.return_temperature() - T20C

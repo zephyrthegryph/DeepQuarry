@@ -16,6 +16,7 @@ GLOBAL_LIST(ghost_traps)
 		var/datum/ghosttrap/G = new traptype
 		GLOB.ghost_traps[G.object] = G
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/ghosttrap)
 /datum/ghosttrap
 	var/object = "positronic brain"
 	var/pref_check = BE_AI

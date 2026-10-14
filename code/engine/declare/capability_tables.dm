@@ -4,6 +4,7 @@
 /// A holder's final lifecycle cleanup removes the entry after capability teardown.
 GLOBAL_LIST(capability_runtime_records)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/capability_runtime)
 /datum/capability_runtime
 	var/bits = 0
 	var/alist/data

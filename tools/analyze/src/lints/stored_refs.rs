@@ -415,7 +415,16 @@ impl Lint for StoredRefs {
         let sem: &Sem = &sem;
         let files = cx.all_files();
         let idx = Index::get(cx.tree, &files);
-        let kinds = Kinds { sem, exempt_types: cx.list("exempt_types").to_vec(), registry: idx.registry.clone(), cache: Default::default() };
+        // A type that declares LIFECYCLE_KEEP_UNLESS_FORCED / LIFECYCLE_KEEP_ALWAYS refuses every unforced qdel(): nothing deletes an
+        // instance in a round, so a reference to one cannot pin a deleted object (doc/rewrite/final_api.html, "Storing references").
+        let mut never_deleted = idx.registry.clone();
+        let keep_decl = crate::pat!(r"(?m)^LIFECYCLE_KEEP_(?:UNLESS_FORCED|ALWAYS)\((/[\w/]+)\)");
+        for f in &files {
+            for c in keep_decl.captures_iter(&f.code().text).iter() {
+                never_deleted.push(c.s(1).to_string());
+            }
+        }
+        let kinds = Kinds { sem, exempt_types: cx.list("exempt_types").to_vec(), registry: never_deleted, cache: Default::default() };
         let rels = relation_index(cx);
         let root = &cx.tree.root;
         let line_of = |rel: &str, l: u32| engine_line(root, rel, l) as usize;

@@ -40,6 +40,7 @@
 /proc/heat_engine(hot, cold, efficiency, conductance, list/reads = null, key = null)
 	return entry_make("heat_edge", key, list("edge" = HEAT_EDGE_ENGINE, "a" = hot, "b" = cold, "p1" = efficiency, "p2" = conductance, "reads" = reads))
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/heat_edge_record)
 /// One live edge an entry made.
 /datum/heat_edge_record
 	/// The Rust edge id.

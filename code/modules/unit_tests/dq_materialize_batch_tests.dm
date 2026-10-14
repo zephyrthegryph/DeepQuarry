@@ -1,6 +1,9 @@
 // Chunked materialize and init_from_table (doc/rewrite/init_and_turfs.md sec 3.1, 3.3a).
 // The ordering rules are listed at the top of code/controllers/subsystems/atoms_batch.dm.
 
+/// Every frame that opened, in order, when a test is recording (else null): the recording hook of SSatoms.batch_open().
+/datum/system/atoms/var/list/batch_trace
+
 /// ("init" or "late", probe) entries, in the order they happened.
 GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 

@@ -42,7 +42,6 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	var/can_paint
 	var/can_engrave = FALSE
 	var/is_plating = FALSE
-	var/list/flooring_cache = null // Cached overlays for our edges and corners and junk
 
 	//Plating types, can be overridden
 	var/plating_type = null
@@ -115,11 +114,15 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	return plating_type
 
 /datum/decl/flooring/proc/get_flooring_overlay(cache_key, icon_base, icon_dir = 0, layer = BUILTIN_DECAL_LAYER)
-	if(!LAZYACCESS(flooring_cache, cache_key))
-		var/image/I = image(icon = icon, icon_state = icon_base, dir = icon_dir)
-		I.layer = layer
-		LAZYSET(flooring_cache, cache_key, I)
-	return LAZYACCESS(flooring_cache, cache_key)
+	return CACHED_KEY(flooring_overlays, "[type]|[cache_key]", src, icon_base, icon_dir, layer)
+
+DECLARE_SHARED_CACHE(flooring_overlays, GLOBAL_PROC_REF(build_flooring_overlay), SC_NEVER)
+
+/// Builder for flooring_overlays: `F` is the (singleton) flooring decl.
+/proc/build_flooring_overlay(datum/decl/flooring/F, icon_base, icon_dir, layer)
+	var/image/I = image(icon = F.icon, icon_state = icon_base, dir = icon_dir)
+	I.layer = layer
+	return I
 
 /// The edge and inner-corner overlays for a floor of this flooring with borders on `has_border`
 /// (cardinal bits) and inner corners on `inner_corners` (bit i-1 for GLOB.cornerdirs[i]), in the order

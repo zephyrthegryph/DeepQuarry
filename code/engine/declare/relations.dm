@@ -387,6 +387,7 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 /datum/list_state_decl/proc/spec()
 	return null
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/list_state)
 /// One declared list's policies.
 /datum/list_state
 	var/owner_type
