@@ -45,6 +45,7 @@
 	vore_default_mode = DM_DIGEST
 
 CAPABILITIES(/mob/living/simple_mob/vore/slug)
+	ref_one(nameof(last_prey), /mob/living)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 /mob/living/simple_mob/vore/slug/load_default_bellies()
@@ -206,6 +207,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/slug)
 		my_slug.ai_brain.lose_target() // Instant loss of target — sim mob giving up if prey escapes.
 
 CAPABILITIES(/obj/effect/slug_glue)
+	ref_one(nameof(owner_slug), /mob/living/simple_mob/vore/slug)
 	keeps_if(PROC_REF(not_in_water))
 	// Struggling out of the glue (user_unbuckle_mob()): whoever tugs stays next to it for as long as the size of the stuck one says, stunned or not.
 	op("struggle_free", ai(), takes("buckled", "time"), wait(PROC_REF(struggle_time), keeps = HELD | ADJACENT | TARGET_PRESENT | STAY), then(PROC_REF(user_unbuckle_mob_slug_glue_done)))

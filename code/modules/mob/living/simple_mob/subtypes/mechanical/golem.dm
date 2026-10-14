@@ -55,6 +55,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
+	ref_one(nameof(master), /mob/living)
 	owns_one(nameof(core), starts = /obj/item/technomancer_core/golem)
 
 

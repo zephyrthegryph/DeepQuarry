@@ -72,6 +72,7 @@
 	var/check_timer = 0
 
 CAPABILITIES(/mob/living/simple_mob/shadekin)
+	ref_one(nameof(henlo_human), /mob/living/carbon/human)
 	configure(mob_kind(mob_class = MOB_CLASS_HUMANOID, death_message = "phases to somewhere far away!"))
 	configure(mob_movement(bump = HUMAN))
 	verb_entry(/mob/proc/adjust_hive_range)

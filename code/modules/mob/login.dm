@@ -53,6 +53,7 @@
 	..()
 	verb_store_login(src) // DECLARE_LOGIN_VERB (code/datums/om/grant_verbs.dm)
 	PUBLISH_LEGACY(src, /datum/notice/mob_login)
+	ckey_changed()
 
 	client.perspective = MOB_PERSPECTIVE
 	client.eye = src

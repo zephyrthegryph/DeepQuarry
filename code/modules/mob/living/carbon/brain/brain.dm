@@ -130,6 +130,7 @@
 		to_chat(src, span_notice("New notification has been sent."))
 
 CAPABILITIES(/mob/living/carbon/brain)
+	ref_one(nameof(host), /datum/mind_host)
 	configure(mob_kind(use_me = 0))
 	knows(LANGUAGE_GALCOM, default = TRUE)
 	ref_one(nameof(container)) // back reference to what holds us (an MMI, a soulcatcher); never owned by the brainmob

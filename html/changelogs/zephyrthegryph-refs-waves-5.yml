@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "About 160 mob, bot, AI, xenomorph and robot references are declared relations; heat bind and pump-transfer queues hold handles"
+  - bugfix: "A sleevemate that stores a mind and several relation writes with a wrong holder or a raw assignment now go through the relation"

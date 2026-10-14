@@ -66,7 +66,7 @@ CAPABILITIES(/datum/experiment_handler)
 		spent(src)
 		return
 	// The owner adopts us; its previous handler is deleted by rel_set().
-	rel_set(src, nameof(/datum/action_group::owner), new_owner)
+	rel_set(src, nameof(/datum/experiment_handler::owner), new_owner)
 	rel_set(new_owner, nameof(/atom/movable::experiment_handler), src)
 
 	src.allowed_experiments = allowed_experiments

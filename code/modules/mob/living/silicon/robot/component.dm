@@ -34,6 +34,7 @@
 	var/obj/item/wrapped = null
 
 CAPABILITIES(/datum/robot_component)
+	ref_one(nameof(owner), /mob/living/silicon/robot)
 	owns_one(nameof(wrapped), /obj/item)
 
 /datum/robot_component/New(mob/living/silicon/robot/R, new_slot)
@@ -364,6 +365,7 @@ TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
 	var/list/afflictions
 
 CAPABILITIES(/datum/carried_afflictions)
+	ref_one(nameof(holder), /obj/item)
 	owns_many(nameof(afflictions))
 
 /datum/carried_afflictions/New(obj/item/part)

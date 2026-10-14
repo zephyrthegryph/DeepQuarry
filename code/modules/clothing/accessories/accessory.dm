@@ -80,6 +80,7 @@ TRACKED(/obj/item/clothing/accessory, slot)
 		forceMove(get_turf(src))
 
 CAPABILITIES(/obj/item/clothing/accessory)
+	ref_one(nameof(has_suit), /obj/item/clothing)
 	configure(item_worn(slots = SLOT_TIE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("accessory_attached_hand", hand(), then(PROC_REF(accessory_attached_hand)))

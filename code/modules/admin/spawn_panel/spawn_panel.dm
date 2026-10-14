@@ -223,10 +223,10 @@ CAPABILITIES(/datum/spawnpanel)
 		return
 
 	if(admin_client.admin_datum())
-		rel_clear(admin_client.admin_datum(), nameof(/mob::click_intercept))
+		rel_clear(admin_client.admin_datum(), nameof(/datum/admins::click_intercept))
 
 	if (precise_mode != PRECISE_MODE_OFF && admin_client.admin_datum())
-		rel_set(admin_client.admin_datum(), nameof(/mob::click_intercept), src)
+		rel_set(admin_client.admin_datum(), nameof(/datum/admins::click_intercept), src)
 		winset(admin_client, SKIN_MAP, "right-click=true")
 	else
 		winset(admin_client, SKIN_MAP, "right-click=false")

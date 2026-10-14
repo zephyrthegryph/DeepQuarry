@@ -213,7 +213,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 			var/list/spec = dq_resolve_spawn_value(current_list[1][entry])
 			var/datum/stored_item/vending_product/product = new/datum/stored_item/vending_product(src, entry)
 
-			product.price = (entry in prices) ? prices[entry] : 0
+			product.set_price((entry in prices) ? prices[entry] : 0)
 			product.set_amount(spec["count"] || 1)
 			product.variant = spec["variant"]
 			product.set_category(category)

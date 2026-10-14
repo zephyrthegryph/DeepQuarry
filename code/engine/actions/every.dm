@@ -513,7 +513,7 @@ GLOBAL_LIST_EMPTY(every_hop_watches)
 			wanted[++wanted.len] = list(at, segments[i])
 			if(i == length(segments))
 				break
-			at = (segments[i] in at.vars) ? at.vars[segments[i]] : null
+			at = hop_step(at, segments[i])
 	rows = wanted
 	for(var/list/pair as anything in rows)
 		var/datum/watched = pair[1]

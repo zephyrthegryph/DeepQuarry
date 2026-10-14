@@ -1084,6 +1084,10 @@ READS_AS(/proc/nutrition_of, MOB_KEY_NUTRITION)
 	var/mob/living/owner
 	var/atom/movable/screen/character_setup/screen_icon
 
+CAPABILITIES(/datum/character_setup_button)
+	ref_one(nameof(owner), /mob/living)
+	ref_one(nameof(screen_icon), /atom/movable/screen/character_setup)
+
 /mob/living/var/datum/character_setup_button/character_setup_button
 
 /datum/character_setup_button/New(mob/living/M)

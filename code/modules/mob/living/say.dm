@@ -501,6 +501,9 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 /obj/effect/speech_bubble
 	var/mob/parent
 
+CAPABILITIES(/obj/effect/speech_bubble)
+	ref_one(nameof(parent), /mob)
+
 /mob/proc/GetVoice()
 	return name
 

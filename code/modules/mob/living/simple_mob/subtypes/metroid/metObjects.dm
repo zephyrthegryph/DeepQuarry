@@ -23,6 +23,7 @@ CAPABILITIES(/obj/item/projectile/energy/metroidacid)
 	var/metroid_type = /mob/living/simple_mob/metroid/juvenile/baby
 
 CAPABILITIES(/obj/effect/metroid/egg)
+	ref_one(nameof(laid_by), /atom)
 	param(nameof(laid_by), pos = 1, apply = PROC_REF(take_parent_look), keep = FALSE)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(3))
 	after_init(PROC_REF(hatch_delay), then(PROC_REF(hatch_due)))

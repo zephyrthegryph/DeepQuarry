@@ -12,6 +12,9 @@
 	var/material = "stone"
 	var/tint = "#FFFFFF"
 
+CAPABILITIES(/datum/trait_state/gargoyle)
+	ref_one(nameof(statue), /obj/structure/gargoyle)
+
 /datum/trait_state/gargoyle/setup()
 	if (!ishuman(owner))
 		return FALSE

@@ -201,7 +201,7 @@
 
 	if(old_shandler) old_shandler.holder_change()
 	if(preserve_outdoors)
-		outdoors = old_outdoors
+		set_outdoors(old_outdoors)
 
 /turf/proc/finalize_explosion_deferred_change(update_appearance = TRUE)
 	levelupdate()

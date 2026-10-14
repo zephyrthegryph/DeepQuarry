@@ -13,7 +13,7 @@
 	dq_heat_bind_begin()
 	TEST_ASSERT(plain.create_heat_body(TRUE), "a body is created inside a bind scope")
 	TEST_ASSERT(!isnull(plain.heat_body), "with a handle at once")
-	TEST_ASSERT(GLOB.dq_heat_bind_pending[plain], "its configuration is queued")
+	TEST_ASSERT(GLOB.dq_heat_bind_pending[entity_handle(plain)], "its configuration is queued")
 	TEST_ASSERT(vg_heat_body_keep(plain.heat_body, TRUE), "the reserved handle takes writes at once")
 	TEST_ASSERT(written.create_heat_body(TRUE), "a second reserved body")
 	TEST_ASSERT_NOTEQUAL(written.heat_body, plain.heat_body, "reserved handles are distinct")
@@ -21,12 +21,12 @@
 	vg_heat_body_set_temperature(written.heat_body, 350)
 	TEST_ASSERT(released.create_heat_body(TRUE), "a third reserved body")
 	released.release_heat_body()
-	TEST_ASSERT(!GLOB.dq_heat_bind_pending[released], "a body released while pending leaves the queue")
+	TEST_ASSERT(!GLOB.dq_heat_bind_pending[entity_handle(released)], "a body released while pending leaves the queue")
 	// A read configures just that body first.
 	var/read = plain.get_temperature()
 	TEST_ASSERT(abs(read - ambient) < 1, "a read of a pending body sees its configured temperature ([read] vs [ambient]), not the placeholder")
-	TEST_ASSERT(!GLOB.dq_heat_bind_pending[plain], "and it is no longer pending")
-	TEST_ASSERT(GLOB.dq_heat_bind_pending[written], "the others still are")
+	TEST_ASSERT(!GLOB.dq_heat_bind_pending[entity_handle(plain)], "and it is no longer pending")
+	TEST_ASSERT(GLOB.dq_heat_bind_pending[entity_handle(written)], "the others still are")
 	dq_heat_bind_end()
 	TEST_ASSERT(!length(GLOB.dq_heat_bind_pending), "the scope's end configures everything queued")
 	TEST_ASSERT(!length(GLOB.dq_heat_body_pool), "and returns the unused handles")
@@ -40,7 +40,7 @@
 	TEST_ASSERT_EQUAL(GLOB.dq_heat_bind_depth, 0, "no scope is left open between tests")
 	var/obj/item/stack/rods/R = allocate(/obj/item/stack/rods, test_floor())
 	TEST_ASSERT(R.create_heat_body(TRUE), "a body")
-	TEST_ASSERT(!GLOB.dq_heat_bind_pending[R], "is not queued outside a scope")
+	TEST_ASSERT(!GLOB.dq_heat_bind_pending[entity_handle(R)], "is not queued outside a scope")
 	TEST_ASSERT(!isnull(vg_heat_body_temperature(R.heat_body)), "and is live at once")
 
 /// Power machines queued by a map-load batch bind in one call and end as a direct bind would.

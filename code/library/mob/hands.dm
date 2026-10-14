@@ -5,6 +5,8 @@
 // refuses a target out of arm's reach.
 
 CAPABILITIES(/mob/living/carbon/human)
+	ref_one(nameof(default_attack), /datum/unarmed_attack)
+	links(/mob/living/carbon/human::vr_holder, /mob/living/carbon/human::vr_link)
 	// The character's chosen look (code/modules/mob/living/carbon/human/profile_records.dm).
 	profile(nameof(looks), /datum/record/appearance)
 	// The chosen sprite accessories and the prosthetic model: shared definitions the look reads through (written with rel_set(), so a change
@@ -112,6 +114,11 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("joint_dislocate", ai(), begins(PROC_REF(joint_dislocate_text)), wait(10 SECONDS), then(PROC_REF(grab_joint_human_done)))
 
 CAPABILITIES(/mob/living/silicon/robot)
+	ref_one(nameof(inv1), /atom/movable/screen)
+	ref_one(nameof(inv2), /atom/movable/screen)
+	ref_one(nameof(inv3), /atom/movable/screen)
+	ref_one(nameof(water_res), /datum/matter_synth)
+	ref_one(nameof(mainframe), /mob/living/silicon/ai)
 	configure(mob_kind(death_message = "shudders violently for a moment, then becomes motionless, its eyes slowly darkening.", can_be_antagged = TRUE))
 	configure(mob_movement(bump = ROBOT, swap = ~HEAVY, push = ~HEAVY))
 	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
