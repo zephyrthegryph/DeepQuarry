@@ -12,6 +12,7 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	var/frequency = RSD_FREQ
 	var/delay = 0
 	var/airlock_wire = null
+	var/tmp/datum/cap_data/wires/connected
 	var/tmp/datum/radio_frequency/radio_connection
 
 /// Someone is threatening to press the button: it may slip while it's not held.
@@ -28,7 +29,6 @@ TRACKED(/obj/item/assembly/signaler, deadman)
 	return TRUE
 
 CAPABILITIES(/obj/item/assembly/signaler)
-	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	after_init(0, then(PROC_REF(join_frequency)))
 	every(2 SECONDS, then(PROC_REF(signaler_step)), when = nameof(deadman))
 	interface("Signaler", state = nameof(GLOB.tgui_deep_inventory_state))
@@ -110,7 +110,9 @@ CAPABILITIES(/obj/item/assembly/signaler)
 /obj/item/assembly/signaler/pulse(radio = 0)
 	if(is_jammed(src))
 		return FALSE
-	if(holder())
+	if(connected())
+		connected().signaled(src)
+	else if(holder())
 		holder().process_activation(src, 1, 0)
 	else
 		..(radio)
@@ -168,6 +170,10 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	act_message(user, src, others = "<font color='red'>%U% moves their finger over %T%'s signal button...</font>")
 // end
 
+
+/// the connected this refers to (a relation view: null once it is deleted).
+/obj/item/assembly/signaler/proc/connected() as /datum/cap_data/wires
+	return connected
 
 /// the radio_connection this refers to (a relation view: null once it is deleted).
 /obj/item/assembly/signaler/proc/radio_connection() as /datum/radio_frequency

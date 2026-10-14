@@ -580,6 +580,4 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 	to_chat(H, span_warning("Your fingers slip — you drop \the [picked]."))
 
 CAPABILITIES(/datum/affliction)
-	ref_one(nameof(owner), /mob/living)
-	ref_one(nameof(location), /datum)
 	ref_one(nameof(body))

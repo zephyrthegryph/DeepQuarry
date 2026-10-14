@@ -139,4 +139,4 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 
 /// the loaded_star this refers to (a relation view: null once it is deleted).
 /obj/machinery/firework_launcher/proc/loaded_star() as /obj/item/firework_star
-	return loaded_star // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	return loaded_star

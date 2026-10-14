@@ -28,11 +28,12 @@
 	..()
 
 /datum/event/meteor_wave/announce()
-	switch(severity)
-		if(EVENT_LEVEL_MAJOR)
-			GLOB.command_announcement.Announce("Meteors have been detected on collision course with \the [location_name()].", "Meteor Alert", new_sound = ANNOUNCER_MSG_METEORS)
-		else
-			GLOB.command_announcement.Announce("\The [location_name()] is now in a meteor shower.", "Meteor Alert")
+	if(!victim())
+		switch(severity)
+			if(EVENT_LEVEL_MAJOR)
+				GLOB.command_announcement.Announce("Meteors have been detected on collision course with \the [location_name()].", "Meteor Alert", new_sound = ANNOUNCER_MSG_METEORS)
+			else
+				GLOB.command_announcement.Announce("\The [location_name()] is now in a meteor shower.", "Meteor Alert")
 
 /datum/event/meteor_wave/tick()
 	// Begin sending the alarm signals to shield diffusers so the field is already regenerated (if it exists) by the time actual meteors start flying around.
@@ -65,11 +66,12 @@
 	// fills gaps
 	for(var/obj/machinery/shield_gen/gen in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		gen.fill_diffused()
-	switch(severity)
-		if(EVENT_LEVEL_MAJOR)
-			GLOB.command_announcement.Announce("\The [location_name()] has cleared the meteor storm.", "Meteor Alert")
-		else
-			GLOB.command_announcement.Announce("\The [location_name()] has cleared the meteor shower", "Meteor Alert")
+	if(!victim())
+		switch(severity)
+			if(EVENT_LEVEL_MAJOR)
+				GLOB.command_announcement.Announce("\The [location_name()] has cleared the meteor storm.", "Meteor Alert")
+			else
+				GLOB.command_announcement.Announce("\The [location_name()] has cleared the meteor shower", "Meteor Alert")
 
 /datum/event/meteor_wave/proc/get_meteors()
 	switch(severity)
@@ -121,5 +123,25 @@ GLOBAL_LIST_INIT(meteors_major, list(
 	alarmWhen = 0
 
 /datum/event/meteor_wave/overmap/tick()
-	start_side = pick(GLOB.cardinal)
+	if(victim() && !victim().is_still() && prob(90)) // Meteors mostly fly in your face
+		start_side = victim().fore_dir
+	else //Unless you're standing still
+		start_side = pick(GLOB.cardinal)
 	..()
+
+/datum/event/meteor_wave/overmap/get_wave_size()
+	. = ..()
+	if(!victim())
+		return
+	var/speed = victim().get_speed()
+	. = round(. * 0.5)
+	if(victim().is_still()) //Standing still means less shit flies your way
+		. = round(. * 0.1)
+	if(speed < SHIP_SPEED_SLOW) //Slow and steady
+		. = round(. * 0.5)
+	if(speed > SHIP_SPEED_FAST) //Sanic stahp
+		. *= 2
+
+	//Smol ship evasion
+	if(victim().vessel_size < SHIP_SIZE_LARGE && speed < SHIP_SPEED_FAST)
+		. = round(. * 0.5)

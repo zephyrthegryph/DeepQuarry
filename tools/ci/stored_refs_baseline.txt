@@ -355,85 +355,20 @@ var	code/library/machine/wires.dm	var/datum/owner
 var	code/library/prompts/kinds.dm	var/atom/anchor
 var	code/library/reagents/reagent_flow.dm	var/atom/sink
 var	code/library/reagents/reagent_flow.dm	var/datum/reservation/reagents/peer
-var	code/modules/admin/DB ban/ban_panle_ui.dm	var/tmp/datum/admins/admin_datum
 var	code/modules/admin/access_viewer.dm	var/obj/machinery/focused_obj
-var	code/modules/admin/admin_report_panel.dm	var/tmp/datum/forward_host
 var	code/modules/admin/callproc/callproc.dm	GLOBAL_DATUM_INIT(AdminProcCallHandler, /mob/proccall_handler, new())
-var	code/modules/admin/edit_memory_panel.dm	var/datum/mind/target_mind
-var	code/modules/admin/edit_memory_panel.dm	var/tmp/mob/admin_user
-var	code/modules/admin/game_mode_panel.dm	var/datum/game_mode/target_mode
-var	code/modules/admin/game_panel_panel.dm	var/datum/admins/owner_admin
-var	code/modules/admin/holder2.dm	var/tmp/datum/click_intercept
-var	code/modules/admin/holder2.dm	var/tmp/datum/marked_datum
-var	code/modules/admin/holder2.dm	var/tmp/datum/feed_channel/admincaster_feed_channel
-var	code/modules/admin/holder2.dm	var/datum/whitelist_editor/whitelist_editor
-var	code/modules/admin/misc_admin_panels.dm	var/tmp/datum/mind/source
-var	code/modules/admin/misc_admin_panels.dm	var/tmp/mob/recipient
-var	code/modules/admin/misc_admin_panels.dm	var/tmp/datum/admins/holder
-var	code/modules/admin/misc_admin_panels.dm	var/tmp/datum/admins/holder
-var	code/modules/admin/misc_admin_panels.dm	var/tmp/datum/admins/holder
-var	code/modules/admin/misc_admin_panels.dm	var/tmp/mob/target
-var	code/modules/admin/misc_admin_panels.dm	var/tmp/obj/machinery/librarycomp/our_comp
-var	code/modules/admin/modify_robot.dm	var/tmp/mob/living/silicon/robot/target
-var	code/modules/admin/modify_robot.dm	var/tmp/obj/item/robotic_multibelt/multibelt_holder //Currently selected multibelt.
-var	code/modules/admin/permissions_panel.dm	var/tmp/datum/admins/holder
-var	code/modules/admin/player_panel_tgui.dm	var/datum/admins/owner_admin
-var	code/modules/admin/round_status_panel.dm	var/datum/admins/owner_admin
-var	code/modules/admin/verbs/SDQL2/SDQL_2.dm	GLOBAL_DATUM(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all)
-var	code/modules/admin/verbs/SDQL2/SDQL_2.dm	var/mob/requester
-var	code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm	var/mob/requester
-var	code/modules/admin/verbs/adminpm.dm	var/datum/ticket/ticket
-var	code/modules/admin/verbs/buildmode.dm	var/tmp/obj/effect/bmode/buildholder/master
-var	code/modules/admin/verbs/buildmode.dm	var/tmp/atom/movable/throw_atom
-var	code/modules/admin/verbs/entity_narrate.dm	var/atom/tgui_selected_refs //the selected object (a relation view)
-var	code/modules/admin/verbs/entity_narrate.dm	var/atom/target
-var	code/modules/admin/view_variables/filterrific.dm	var/tmp/atom/target
-var	code/modules/admin/view_variables/nobody_wants_to_learn_matrix_math.dm	var/tmp/atom/target
-var	code/modules/admin/view_variables/particle_editor.dm	var/tmp/atom/movable/target
 var	code/modules/admin/view_variables_panel.dm	var/datum/view_variables_panel/dq_vv_panel
-var	code/modules/alarm/alarm.dm	var/tmp/atom/origin //Used to identify the alarm area.
-var	code/modules/anomalies/anomaly.dm	var/obj/effect/anomaly/buffered_anomaly
-var	code/modules/anomalies/anomaly_harvester.dm	var/obj/effect/anomaly/harvested
-var	code/modules/artifice/deadringer.dm	var/tmp/mob/living/carbon/human/corpse
-var	code/modules/artifice/deadringer.dm	var/tmp/mob/living/carbon/human/watchowner
-var	code/modules/artifice/telecube.dm	var/tmp/obj/item/telecube/mate
-var	code/modules/assembly/assembly.dm	var/tmp/obj/item/assembly_holder/holder
-var	code/modules/assembly/holder.dm	var/tmp/obj/special_assembly
-var	code/modules/assembly/infrared.dm	var/tmp/obj/item/assembly/infra/master
 var	code/modules/assembly/signaler.dm	var/tmp/datum/cap_data/wires/connected
 var	code/modules/assembly/signaler.dm	var/tmp/datum/radio_frequency/radio_connection
-var	code/modules/belly_overlay/belly_overlay_tgui.dm	var/tmp/mob/owner
 var	code/modules/blob2/core_chunk.dm	/obj/item/blobcore_chunk/var/tmp/datum/blob_type/parent_blob_type
-var	code/modules/blob2/overmind/overmind.dm	var/tmp/obj/structure/blob/core/blob_core // The blob overmind's core
 var	code/modules/body/affliction.dm	var/mob/living/owner
 var	code/modules/body/affliction.dm	var/obj/item/organ/location
 var	code/modules/body/body.dm	var/mob/living/owner
-var	code/modules/body/body_effects.dm	var/atom/origin
-var	code/modules/body/organs/internal/horror.dm	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
-var	code/modules/body/organs/organ.dm	var/mob/living/carbon/human/owner // Current mob owning the organ.
 var	code/modules/body/organs/organ_external.dm	var/mob/living/applied_pressure
 var	code/modules/body/organs/organ_external.dm	var/obj/item/organ/external/parent // Master-limb.
 var	code/modules/body/organs/organ_external.dm	var/atom/movable/splinted
-var	code/modules/body/organs/organ_stump.dm	/obj/item/organ/external/stump/var/tmp/obj/item/organ/external/stump_of
-var	code/modules/body/organs/subtypes/machine.dm	/obj/item/organ/internal/mmi_holder/var/tmp/obj/item/mmi/installed_mmi
-var	code/modules/body/parts/attach.dm	GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 var	code/modules/body/physiology.dm	var/datum/source
 var	code/modules/body/physiology.dm	var/datum/body/body
-var	code/modules/body/plans/nanoform.dm	var/mob/living/held_mob
-var	code/modules/casino/board_games/board_table.dm	var/tmp/atom/parent
-var	code/modules/casino/board_games/checkers.dm	var/mob/player_one
-var	code/modules/casino/board_games/checkers.dm	var/mob/player_two
-var	code/modules/casino/board_games/chess.dm	var/mob/player_one
-var	code/modules/casino/board_games/chess.dm	var/mob/player_two
-var	code/modules/casino/board_games/four_in_a_row.dm	var/mob/player_one
-var	code/modules/casino/board_games/four_in_a_row.dm	var/mob/player_two
-var	code/modules/casino/board_games/nine_mens.dm	var/mob/player_one
-var	code/modules/casino/board_games/nine_mens.dm	var/mob/player_two
-var	code/modules/casino/board_games/space_battle.dm	var/mob/player_one
-var	code/modules/casino/board_games/space_battle.dm	var/mob/player_two
-var	code/modules/casino/board_games/vore_sweeper.dm	var/mob/dealer
-var	code/modules/casino/casino_prize_vendor.dm	var/tmp/datum/data/casino_prize/currently_vending // What we're requesting payment for right now
-var	code/modules/catalogue/cataloguer.dm	var/atom/partial_scanned = null // The thing that was last scanned if inturrupted (a relation view). Used to allow for partial scans to be resumed.
 var	code/modules/client/client defines.dm	var/datum/admins/holder = null
 var	code/modules/client/client defines.dm	var/datum/eventkit/fake_pdaconvos/fakeConversations //Holds fake PDA conversations for event set-up
 var	code/modules/client/client defines.dm	var/datum/tooltip/tooltips = null
@@ -442,210 +377,22 @@ var	code/modules/client/client defines.dm	var/datum/persistent_client/persistent
 var	code/modules/client/client defines.dm	var/global/atom/movable/screen/click_catcher/void
 var	code/modules/client/client defines.dm	var/datum/lootpanel/loot_panel
 var	code/modules/client/client_session.dm	/client/var/tmp/datum/client_session/session
-var	code/modules/client/prefs_helpers/body_styles.dm	var/tmp/datum/markings_subwindow
 var	code/modules/client/shock.dm	/client/var/datum/tgui_shock/tgui_shocker
 var	code/modules/client/statpanel_service.dm	/client/var/datum/tgui_window/stat_panel
-var	code/modules/client/verbs/character_directory.dm	GLOBAL_DATUM(character_directory, /datum/character_directory)
-var	code/modules/clothing/accessories/accessory.dm	var/obj/item/clothing/mask/breath/breathmask
-var	code/modules/clothing/accessories/accessory.dm	var/tmp/datum/radio_frequency/radio_connection
-var	code/modules/clothing/accessories/lockets.dm	var/tmp/obj/item/held //Item inside locket.
-var	code/modules/clothing/accessory_slot_registry.dm	var/tmp/obj/item/clothing/target
 var	code/modules/clothing/accessory_slot_registry.dm	GLOBAL_DATUM_INIT(accessory_slot_registry, /datum/accessory_slot_registry, new)
 var	code/modules/clothing/clothing.dm	var/mob/wearer //Who the person currently wearing us is.
-var	code/modules/clothing/clothing_appearance_handler.dm	GLOBAL_DATUM_INIT(clothing_appearance_handler, /datum/clothing_appearance_handler, new)
-var	code/modules/clothing/glasses/glasses.dm	var/tmp/atom/movable/screen/overlay
-var	code/modules/clothing/glasses/hud.dm	var/obj/item/clothing/glasses/hud/omni/hud = null
-var	code/modules/clothing/glasses/hud.dm	var/datum/tgui_module/offline_tgarscreen
-var	code/modules/clothing/head/pilot_helmet.dm	var/tmp/obj/machinery/computer/shuttle_control/web/shuttle_comp
-var	code/modules/clothing/masks/hailer.dm	var/obj/item/hailer/hailer
-var	code/modules/clothing/shoes/colour.dm	var/obj/item/handcuffs/chained
-var	code/modules/clothing/spacesuits/breaches.dm	var/tmp/obj/item/clothing/suit/space/holder // Suit containing the list of breaches holding this instance.
-var	code/modules/clothing/spacesuits/rig/modules/modules.dm	var/obj/item/rig/holder
-var	code/modules/clothing/spacesuits/rig/modules/modules.dm	var/obj/item/rig_module/module
-var	code/modules/clothing/spacesuits/rig/modules/specific/ai_container.dm	var/tmp/mob/integrated_ai // Direct reference to the actual mob held in the suit.
-var	code/modules/clothing/spacesuits/rig/modules/specific/powersink.dm	var/tmp/atom/interfaced_with // Currently draining power from this device.
-var	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	var/datum/rig_vision/vision
-var	code/modules/clothing/spacesuits/rig/rig.dm	var/obj/item/rig_module/selected_module = null // Primary system (used with middle-click)
-var	code/modules/clothing/spacesuits/rig/rig.dm	var/obj/item/rig_module/vision/visor // Kinda shitty to have a var for a module, but saves time.
-var	code/modules/clothing/spacesuits/rig/rig.dm	var/obj/item/rig_module/voice/speech // As above.
-var	code/modules/clothing/spacesuits/rig/rig.dm	var/tmp/mob/living/carbon/human/wearer // The person currently wearing the rig.
-var	code/modules/clothing/spacesuits/rig/rig_component_registry.dm	var/tmp/obj/item/rig/holder
-var	code/modules/clothing/spacesuits/rig/rig_pieces.dm	var/obj/item/material/knife/tacknife
-var	code/modules/clothing/spacesuits/rig/rig_power_system.dm	var/tmp/obj/item/rig/holder
-var	code/modules/combat_ai/brain/brain.dm	var/mob/living/holder = null // the mob this brain drives; its OM behaviours run the loops.
-var	code/modules/combat_ai/brain/brain.dm	var/mob/living/primary_threat = null // single "current enemy" slot
-var	code/modules/combat_ai/brain/brain.dm	var/tmp/atom/active_target
-var	code/modules/combat_ai/brain/brain.dm	var/tmp/atom/active_source // null for innate, else the item/modifier granting it
-var	code/modules/combat_ai/brain/brain.dm	var/mob/leader = null // for follow_leader / cooperative AI (a relation view)
-var	code/modules/combat_ai/factions/_faction_data.dm	GLOBAL_DATUM_INIT(dq_faction_data_default, /datum/faction_data, new())
-var	code/modules/combat_ai/ports/gryphon.dm	var/mob/living/dq_maybe_eating = null
-var	code/modules/combat_ai/ports/slime_state.dm	var/tmp/mob/living/simple_mob/slime/xenobio/holder
-var	code/modules/combat_ai/world_model/world_model.dm	var/mob/living/owner = null
-var	code/modules/combat_ai/world_model/world_model.dm	var/atom/last_attacker = null
-var	code/modules/combat_ai/world_model/world_model.dm	var/tmp/atom/last_known_threat_turf
-var	code/modules/communicator/exonet_log_panel.dm	var/tmp/mob/observer/dead/host
-var	code/modules/contracts/contract.dm	var/datum/money_account/funding_account
-var	code/modules/contracts/contract_evidence.dm	var/datum/mind/subject_mind
-var	code/modules/contracts/contract_evidence.dm	var/mob/living/body
-var	code/modules/contracts/contract_requirement.dm	var/datum/contract/contract
-var	code/modules/contracts/department_outcomes.dm	var/datum/contract_requirement/staged_sustained_event/performance_requirement
-var	code/modules/contracts/department_programs.dm	var/datum/contract_requirement/staged_sustained_event/output_requirement
-var	code/modules/contracts/department_programs.dm	var/tmp/datum/contract_requirement/sustained_event/thermal_requirement
-var	code/modules/contracts/department_programs.dm	var/tmp/datum/contract_requirement/event_count/cycle_requirement
-var	code/modules/contracts/medical_case_report.dm	var/tmp/obj/item/paper/consent_record
-var	code/modules/contracts/medical_case_report.dm	var/datum/contract_requirement/event_count/evidence_requirement
-var	code/modules/contracts/medical_trial.dm	var/datum/contract_requirement/event_count/observation_requirement
-var	code/modules/contracts/medical_trial.dm	var/datum/contract_requirement/event_count/analysis_requirement
-var	code/modules/contracts/medical_trial.dm	var/obj/item/paper/consent_record
-var	code/modules/contracts/medical_trial_side_contracts.dm	var/obj/item/paper/holder
-var	code/modules/contracts/medical_trial_side_contracts.dm	var/datum/contract_requirement/event_count/action_requirement
-var	code/modules/contracts/opportunity_broker.dm	var/datum/contract_event/batch_event
-var	code/modules/crafting/crafting.dm	var/mob/owner
 var	code/modules/debugging/debugger.dm	GLOBAL_REAL(Debugger, /datum/debugger)
 var	code/modules/debugging/tracy.dm	GLOBAL_REAL(Tracy, /datum/tracy)
-var	code/modules/detectivework/microscope/microscope.dm	var/tmp/obj/item/sample
-var	code/modules/detectivework/tools/evidencebag.dm	var/tmp/obj/item/stored_item
-var	code/modules/detectivework/tools/sample_kits.dm	/obj/item/sample/var/tmp/atom/taken_from
-var	code/modules/economy/ATM.dm	var/tmp/datum/money_account/authenticated_account
-var	code/modules/economy/ATM.dm	var/tmp/obj/item/card/held_card
-var	code/modules/economy/Accounts_DB.dm	var/tmp/datum/money_account/detailed_account_view
-var	code/modules/economy/EFTPOS.dm	var/tmp/datum/money_account/linked_account
-var	code/modules/economy/cash_register.dm	var/obj/item/confirm_item
-var	code/modules/economy/cash_register.dm	var/datum/money_account/linked_account
-var	code/modules/economy/credits_resource.dm	var/datum/money_account/payee
-var	code/modules/economy/credits_resource.dm	var/atom/till
 var	code/modules/economy/economy_misc.dm	GLOBAL_DATUM(vendor_account, /datum/money_account)
 var	code/modules/economy/economy_misc.dm	GLOBAL_DATUM(station_account, /datum/money_account)
-var	code/modules/economy/retail_scanner.dm	var/obj/item/confirm_item
-var	code/modules/economy/retail_scanner.dm	var/datum/money_account/linked_account
-var	code/modules/economy/service_invoices.dm	var/obj/item/parent
-var	code/modules/economy/supply_service.dm	var/datum/record
-var	code/modules/economy/supply_service.dm	var/datum/exported_crate/receipt
-var	code/modules/economy/supply_service.dm	var/datum/exported_crate/receipt
-var	code/modules/entopics/alternate_appearance.dm	var/tmp/atom/owner
 var	code/modules/error_handler/error_viewer.dm	GLOBAL_DATUM_INIT(error_cache, /datum/error_viewer/error_cache, new)
-var	code/modules/error_handler/error_viewer.dm	var/tmp/datum/error_viewer/error_source/error_source
-var	code/modules/error_handler/error_viewer_panel.dm	var/tmp/datum/error_viewer/dq_back_to
-var	code/modules/event/anomalies.dm	var/datum/anomaly_placer/placer = new()
-var	code/modules/event/bluespacelocker.dm	var/tmp/obj/structure/closet/entry_point
-var	code/modules/event/bluespacelocker.dm	var/tmp/obj/structure/closet/exit_point
-var	code/modules/event/hostile_runtime.dm	var/tmp/obj/machinery/power/apc/apc
-var	code/modules/events/blob.dm	var/tmp/obj/structure/blob/core/Blob
-var	code/modules/events/brand_intelligence.dm	var/tmp/obj/machinery/vending/originMachine
-var	code/modules/events/electrified_door.dm	var/tmp/obj/machinery/door/airlock/chosen_door
 var	code/modules/events/event.dm	var/tmp/datum/event_meta/event_meta
 var	code/modules/events/event.dm	var/tmp/obj/effect/overmap/visitable/ship/victim // Ship this event is acting upon (If this is event is due to overmap travel).nt etc.
-var	code/modules/events/event_container.dm	var/tmp/datum/event_meta/next_event
-var	code/modules/events/event_manager.dm	var/tmp/datum/event_container/selected_event_container
-var	code/modules/events/money_hacker.dm	var/tmp/datum/money_account/affected_account
-var	code/modules/events/money_spam.dm	var/tmp/obj/machinery/message_server/useMS
-var	code/modules/events/money_spam.dm	var/tmp/obj/machinery/exonet_node/node
-var	code/modules/expedition/expedition_building.dm	var/tmp/datum/expedition_biome/loot_biome
-var	code/modules/expedition/expedition_mission.dm	var/tmp/datum/expedition_site/site
-var	code/modules/expedition/expedition_objective.dm	var/tmp/datum/expedition_site/site
-var	code/modules/expedition/expedition_site.dm	var/datum/expedition_biome/biome
-var	code/modules/expedition/expedition_site.dm	var/tmp/datum/shuttle/autodock/overmap/assigned_shuttle
-var	code/modules/expedition/expedition_site.dm	var/tmp/datum/flight_vessel/assigned_flight_vessel
 var	code/modules/factions/reputation.dm	GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, new())
-var	code/modules/factions/reputation.dm	var/datum/mind/agent_mind
-var	code/modules/factions/reputation.dm	var/datum/faction_reputation_ledger/faction_reputation
-var	code/modules/fireworks/firework_launcher.dm	var/tmp/obj/item/firework_star/loaded_star
-var	code/modules/flight_operations/flight_console.dm	var/tmp/datum/host
-var	code/modules/flight_operations/flight_console.dm	var/tmp/datum/flight_vessel/forced_vessel
-var	code/modules/flight_operations/flight_types.dm	var/tmp/atom/target
-var	code/modules/flight_operations/flight_types.dm	var/tmp/datum/expedition_site/expedition
-var	code/modules/flight_operations/flight_types.dm	var/tmp/obj/effect/overmap/visitable/ship/ship
-var	code/modules/flight_operations/flight_types.dm	var/tmp/datum/shuttle/autodock/overmap/shuttle
-var	code/modules/flight_operations/flight_types.dm	var/tmp/datum/expedition_site/active_expedition
-var	code/modules/flight_operations/flight_types.dm	var/tmp/obj/effect/shuttle_landmark/landmark
-var	code/modules/flight_operations/flight_types.dm	var/tmp/datum/flight_vessel/occupied_by
-var	code/modules/flight_operations/flight_types.dm	var/tmp/datum/flight_plan/reserved_by
-var	code/modules/flight_operations/flight_types.dm	var/datum/flight_vessel/vessel
-var	code/modules/flight_operations/flight_types.dm	var/tmp/datum/flight_destination/origin
-var	code/modules/flight_operations/flight_types.dm	var/tmp/datum/flight_destination/destination
-var	code/modules/flight_operations/flight_types.dm	var/tmp/datum/flight_port/arrival_port
-var	code/modules/flufftext/Hallucination.dm	VAR_PRIVATE/mob/living/carbon/human/our_human = null
-var	code/modules/flufftext/fake_attacker.dm	VAR_PROTECTED/mob/living/target = null
-var	code/modules/flufftext/fake_attacker.dm	/obj/effect/fake_attacker/human/var/tmp/mob/haunting
-var	code/modules/flufftext/fake_attacker.dm	/obj/effect/fake_attacker/human/var/tmp/atom/clone_appearance_from
-var	code/modules/food/kitchen/cooking_machines/_appliance.dm	var/tmp/obj/item/reagent_containers/cooking_container/container
 var	code/modules/food/kitchen/smartfridge/smartfridge.dm	var/tmp/datum/stored_item/currently_vending //What we're putting out of the machine.
 var	code/modules/food/kitchen/smartfridge/smartfridge.dm	var/tmp/obj/machinery/smartfridge/chemistry/chemvator/attached
-var	code/modules/gamemaster/event2/events/engineering/grid_check.dm	var/tmp/obj/machinery/power/generator/engine // The turbine that will send a power spike.
-var	code/modules/generated_station/generated_station_defenders.dm	var/tmp/mob/living/simple_mob/defender
-var	code/modules/generated_station/generated_station_defenders.dm	var/tmp/datum/generated_station_defense_runtime/runtime
-var	code/modules/generated_station/generated_station_defenders.dm	var/atom/last_contact
-var	code/modules/generated_station/generated_station_defenders.dm	var/tmp/datum/expedition_site/site
-var	code/modules/generated_station/generated_station_director.dm	var/atom/target
-var	code/modules/generated_station/generated_station_director.dm	var/tmp/datum/generated_station_simulation/simulation
-var	code/modules/generated_station/generated_station_infrastructure.dm	var/datum/generated_station_defense_runtime/defense_runtime
-var	code/modules/generated_station/generated_station_infrastructure.dm	var/obj/machinery/camera/camera
-var	code/modules/generated_station/generated_station_jobs.dm	var/tmp/datum/generated_station_materializer/materializer
-var	code/modules/generated_station/generated_station_jobs.dm	var/tmp/datum/flight_plan/flight_plan
-var	code/modules/generated_station/generated_station_jobs.dm	var/tmp/datum/generated_station_materialization/materialization
-var	code/modules/generated_station/generated_station_materializer.dm	var/datum/generated_room_fragment/fragment
-var	code/modules/generated_station/generated_station_materializer.dm	var/tmp/datum/generated_station_spec/spec
-var	code/modules/generated_station/generated_station_materializer.dm	var/datum/generated_station_validation_result/last_architecture_validation
-var	code/modules/generated_station/generated_station_simulation.dm	var/tmp/datum/generated_station_department_instance/department
-var	code/modules/generated_station/generated_station_simulation.dm	var/tmp/datum/generated_station_spec/spec
 var	code/modules/generated_station/generated_station_tile_plan.dm	var/tmp/datum/generated_station_materializer/generation_owner
-var	code/modules/generated_station/generated_station_types.dm	var/tmp/datum/generated_station_department_definition/definition_static
-var	code/modules/generated_station/generated_station_utility_topology.dm	var/tmp/datum/generated_station_spec/spec
-var	code/modules/generated_station/generated_station_utility_topology.dm	var/tmp/datum/generated_station_materialization/materialization
-var	code/modules/genetics/side_effects.dm	var/mob/living/carbon/human/host
-var	code/modules/heat/heat_objects.dm	var/tmp/datum/heat_fire_turf
-var	code/modules/holodeck/HolodeckControl.dm	var/tmp/mob/last_to_emag
-var	code/modules/holomap/mapper.dm	var/atom/movable/screen/movable/mapper_holder/hud_item
-var	code/modules/hydroponics/spreading/spreading.dm	var/tmp/obj/effect/plant/parent
-var	code/modules/identification/identification.dm	var/tmp/obj/holder // The thing the datum is 'attached' to.
-var	code/modules/instruments/songs/_song.dm	var/tmp/atom/parent
-var	code/modules/instruments/songs/_song.dm	var/tmp/atom/music_player
-var	code/modules/integrated_electronics/core/assemblies.dm	var/tmp/obj/item/card/id/locked_by // The ID that locked this assembly
-var	code/modules/integrated_electronics/core/assemblies.dm	var/tmp/obj/item/electronic_assembly/host_assembly
-var	code/modules/integrated_electronics/core/assemblies/clothing.dm	var/obj/item/integrated_circuit/built_in/action_button/action_circuit = null
-var	code/modules/integrated_electronics/core/assemblies/device.dm	var/tmp/obj/item/assembly/electronic_assembly/holder
-var	code/modules/integrated_electronics/core/pins.dm	var/tmp/obj/item/integrated_circuit/holder
-var	code/modules/integrated_electronics/core/printer.dm	var/tmp/obj/item/electronic_assembly/queued_assembly // The assembly being cloned.
-var	code/modules/integrated_electronics/core/tools.dm	var/datum/integrated_io/selected_io = null
-var	code/modules/integrated_electronics/subtypes/camera.dm	var/tmp/obj/item/integrated_circuit/input/video_camera_input/owner_circuit
-var	code/modules/integrated_electronics/subtypes/illegal.dm	var/obj/machinery/exonet_node/node = null
-var	code/modules/integrated_electronics/subtypes/input.dm	var/datum/radio_frequency/radio_connection
-var	code/modules/integrated_electronics/subtypes/input.dm	var/obj/machinery/exonet_node/node = null
-var	code/modules/keybindings/hover.dm	/mob/var/tmp/atom/hovered_atom_view
 var	code/modules/keybindings/keybind_editor.dm	/client/var/tmp/datum/keybind_editor/keybind_editor
-var	code/modules/keybindings/router.dm	GLOBAL_DATUM_INIT(input_router, /datum/input_router, new)
-var	code/modules/library/lib_items.dm	var/tmp/obj/item/store //What's in the book?
-var	code/modules/library/lib_items.dm	var/tmp/obj/machinery/librarycomp/computer // Associated computer - Modes 1 to 3 use this
-var	code/modules/library/lib_items.dm	var/tmp/obj/item/book/book // Currently scanned book
-var	code/modules/library/lib_machines.dm	var/tmp/obj/machinery/libraryscanner/scanner // Book scanner that will be used when uploading books to the Archive
-var	code/modules/library/lib_machines.dm	var/tmp/obj/item/book/cache // Last scanned book
-var	code/modules/library/wikicomp.dm	VAR_PRIVATE/datum/internal_wiki/page/P
-var	code/modules/lighting/lighting_source.dm	var/atom/top_atom
-var	code/modules/lighting/lighting_source.dm	var/atom/source_atom
-var	code/modules/lighting/overlay_lighting.dm	var/atom/movable/owner
-var	code/modules/lighting/overlay_lighting.dm	var/atom/movable/current_holder
-var	code/modules/lighting/overlay_lighting.dm	var/atom/movable/parent_attached_to
-var	code/modules/lighting/planet_sunlight.dm	var/datum/simple_sun/sun
-var	code/modules/lighting/planet_sunlight.dm	var/tmp/datum/sun_holder/sun
-var	code/modules/lighting/sunlight_handler.dm	var/tmp/datum/simple_sun/sun
-var	code/modules/lighting/sunlight_handler.dm	var/datum/planet_sunlight_handler/pshandler
-var	code/modules/logging/log_holder.dm	GLOBAL_REAL(logger, /datum/log_holder)
-var	code/modules/looking_glass/lg_area.dm	var/tmp/obj/effect/landmark/looking_glass/our_landmark
-var	code/modules/lootpanel/search_object.dm	var/tmp/atom/item
-var	code/modules/lore_codex/codex.dm	var/datum/codex_tree/tree = null
-var	code/modules/lore_codex/codex_tree.dm	var/tmp/atom/movable/holder
-var	code/modules/lore_codex/codex_tree.dm	var/datum/lore/codex/page
-var	code/modules/lore_codex/pages.dm	var/tmp/datum/lore/codex/parent // Category above us
-var	code/modules/lore_codex/pages.dm	var/tmp/datum/codex_tree/holder
-var	code/modules/materials/containers/machine_shim.dm	var/obj/machinery/linked_machine
-var	code/modules/materials/containers/machine_shim.dm	var/mob/owner
-var	code/modules/materials/containers/material_container.dm	var/atom/owner
-var	code/modules/materials/containers/remote_materials.dm	var/obj/machinery/ore_silo/silo
-var	code/modules/materials/containers/remote_materials.dm	var/datum/material_container/mat_container
-var	code/modules/materials/containers/remote_materials.dm	var/atom/owner
-var	code/modules/materials/engineering/material_machines.dm	var/tmp/obj/item/stack/material/processed_alloy/stock
-var	code/modules/materials/engineering/material_responses.dm	var/obj/item/parent
-var	code/modules/materials/engineering/material_service.dm	var/tmp/obj/owner
 var	code/modules/media/mediamanager.dm	var/datum/media_manager/media = null
 var	code/modules/media/mediamanager.dm	var/tmp/obj/machinery/media/media_source
 var	code/modules/media/walkpod.dm	var/tmp/datum/track/current_track // Current track playing
@@ -854,7 +601,6 @@ var	code/modules/shieldgen/sheldwallgen.dm	var/obj/structure/cable/attached // t
 var	code/modules/shieldgen/sheldwallgen.dm	var/mob/U
 var	code/modules/shieldgen/sheldwallgen.dm	var/obj/machinery/shieldwallgen/gen_primary
 var	code/modules/shieldgen/sheldwallgen.dm	var/obj/machinery/shieldwallgen/gen_secondary
-var	code/modules/shuttles/emergency_shuttle_service.dm	var/datum/shuttle/autodock/ferry/emergency/shuttle
 var	code/modules/shuttles/escape_pods.dm	var/tmp/datum/embedded_program/docking/simple/escape_pod_berth/arming_controller
 var	code/modules/shuttles/escape_pods.dm	var/tmp/datum/shuttle/autodock/ferry/escape_pod/pod
 var	code/modules/shuttles/landmarks.dm	var/tmp/datum/embedded_program/docking/docking_controller
@@ -1002,17 +748,6 @@ list	code/controllers/subsystems/contracts.dm	var/list/definitions
 list	code/controllers/subsystems/contracts.dm	var/list/subject_identities
 list	code/controllers/subsystems/contracts.dm	var/list/opportunity_rules
 list	code/controllers/subsystems/contracts.dm	var/list/opportunity_windows
-list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/pages = list()
-list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/ores = list()
-list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/materials = list()
-list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/smashers = list()
-list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/drinkreact = list()
-list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/chemreact = list()
-list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/botseeds = list()
-list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/viruses = list()
-list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/genes = list()
-list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/foodrecipe = list()
-list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/catalogs = list()
 list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/spoiler_entries = list()
 list	code/controllers/subsystems/job.dm	var/list/department_datums = list()
 list	code/controllers/subsystems/lighting.dm	var/static/list/sources_queue = list() // List of lighting sources queued for update.

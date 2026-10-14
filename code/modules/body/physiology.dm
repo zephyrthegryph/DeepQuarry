@@ -46,8 +46,6 @@
 	/// Optional validity check (performer adjacent, machine powered...): a PROC_REF on the source, called as source.still_valid() (holder_call()).
 	var/still_valid
 
-CAPABILITIES(/datum/body_support)
-	ref_one(nameof(source), /datum)
 
 /datum/body_support/proc/is_valid()
 	if(COOLDOWN_STARTED(src, expires_at) && COOLDOWN_FINISHED(src, expires_at))
@@ -75,7 +73,6 @@ CAPABILITIES(/datum/body_support)
 	var/datum/physiology/physiology
 
 CAPABILITIES(/datum/body)
-	ref_one(nameof(owner), /mob/living)
 	owns_one(nameof(physiology), /datum/physiology)
 	owns_many(nameof(afflictions))
 	owns_many(nameof(supports))
@@ -310,8 +307,6 @@ CAPABILITIES(/datum/body)
 	/// When the post-revival grace ends (a cooldown; 0 = none).
 	COOLDOWN_DECLARE(revival_grace_until)
 
-CAPABILITIES(/datum/physiology)
-	ref_one(nameof(body), /datum/body)
 
 /datum/physiology/New(datum/body/new_body)
 	..()
