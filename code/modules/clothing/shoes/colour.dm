@@ -114,6 +114,7 @@ CAPABILITIES(/obj/item/clothing/shoes/white)
 	rel_clear(src, nameof(chained))
 
 CAPABILITIES(/obj/item/clothing/shoes/orange)
+	ref_one(nameof(chained), /obj/item/handcuffs)
 	op("orange_shoes_uncuff_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove cuffs"), then(PROC_REF(orange_shoes_uncuff_self)))
 	op("orange_shoes_cuff_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Orange shoes cuff item"), then(PROC_REF(orange_shoes_cuff_item)))
 

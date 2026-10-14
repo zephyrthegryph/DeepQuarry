@@ -21,9 +21,9 @@ MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375)
 	if(!loaded)
 		return
 	look.watch(loaded)
-	look.overlay(look_overlay_image(initial(loaded.icon), loaded.icon_state))
+	look.overlay(look_overlay_image(loaded.icon, loaded.icon_state))
 	if(loaded.reagents.total_volume && loaded.mode != NEEDLE_BROKEN && loaded.mode != NEEDLE_CAPPED)
-		look.overlay(look_overlay_image(initial(loaded.icon), "filler[round(loaded.reagents.total_volume, round(loaded.reagents.maximum_volume / 3))]", color = loaded.reagents.get_color()))
+		look.overlay(look_overlay_image(loaded.icon, "filler[round(loaded.reagents.total_volume, round(loaded.reagents.maximum_volume / 3))]", color = loaded.reagents.get_color()))
 
 /// Old attackby.
 /obj/item/syringe_cartridge/proc/interaction_item(datum/act/op/A)

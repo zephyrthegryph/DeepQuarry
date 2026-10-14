@@ -240,7 +240,7 @@ CAPABILITIES(/datum/action)
 	if(!button_icon || !button_icon_state || (current_button.icon_state == button_icon_state && !force))
 		return
 
-	current_button.icon = button_icon
+	current_button.set_icon(button_icon)
 	current_button.set_icon_state(button_icon_state)
 
 /**

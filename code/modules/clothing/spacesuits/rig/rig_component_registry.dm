@@ -18,6 +18,9 @@
 	/// The rig this datum belongs to.  Nulled on Destroy().
 	var/tmp/obj/item/rig/holder
 
+CAPABILITIES(/datum/rig_component_registry)
+	ref_one(nameof(holder), /obj/item/rig)
+
 /datum/rig_component_registry/New(obj/item/rig/new_holder)
 	rel_set(src, nameof(holder), new_holder)
 

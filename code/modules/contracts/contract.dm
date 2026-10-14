@@ -240,6 +240,7 @@ CAPABILITIES(/datum/contract_negotiation_clause)
 	var/list/secondary_faction_reputation_rewards
 
 CAPABILITIES(/datum/contract)
+	ref_one(nameof(funding_account), /datum/money_account)
 	// Parent and child references clear when either end disappears.
 	links(/datum/contract::parent, /datum/contract::children, b_many = TRUE)
 	owns_many(nameof(audit_log))

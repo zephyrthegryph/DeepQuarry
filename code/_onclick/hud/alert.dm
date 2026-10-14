@@ -475,7 +475,7 @@ CAPABILITIES(/atom/movable/screen/alert/open_ticket)
 		var/atom/movable/screen/alert/alert = alerts[alerts[i]]
 
 		if(icon_exists(ui_style, alert.icon_state))
-			alert.icon = ui_style
+			alert.set_icon(ui_style)
 
 		else if(!alert.no_underlay)
 			var/image/I = image(icon = ui_style, icon_state = "template")

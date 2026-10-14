@@ -1,10 +1,6 @@
 // equip_preview_mob, animations_toggle, bgstate, ear_style, ear_secondary_style,
 // ear_secondary_colors, tail_style, wing_style migrated to /datum/preference subtypes.
 // bgstate_options moved onto /datum/preference/text/human/bgstate as bgstate_choices.
-// markings_subwindow stays as runtime UI state.
-/datum/preferences
-	var/tmp/datum/markings_subwindow
-
 // Sanitize ear/wing/tail styles
 /datum/preferences/proc/sanitize_body_styles()
 	// migrated ear/tail/wing styles to /datum/preference
@@ -72,7 +68,3 @@
 // /datum/category_item/player_setup_item/general/body and all its tgui_data/
 // tgui_act/tgui_constant_data/has_flag/reset_limbs helpers were the Bay-prefs Body tab.
 // Deleted; the new auto-renderer + accessories/markings apply_hooks own the equivalent.
-
-/// The markings_subwindow this refers to (a relation view: null once that is deleted).
-/datum/preferences/proc/markings_subwindow()
-	return markings_subwindow

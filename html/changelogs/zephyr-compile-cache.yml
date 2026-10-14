@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "Test-build compile cache key now covers resource files and non-.dm includes, and a stale test .rsc is removed before recompiling"

@@ -2,6 +2,7 @@ GLOBAL_REAL(logger, /datum/log_holder)
 /**
  * Main datum to manage logging actions
  */
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/log_holder)
 /datum/log_holder
 	/// Round ID, if set, that logging is initialized for
 	var/round_id

@@ -187,7 +187,7 @@ CAPABILITIES(/obj/vehicle)
 	emp_was_on = on
 	stat_add(EMPED)
 	var/obj/effect/overlay/pulse2 = new /obj/effect/overlay(src.loc)
-	pulse2.icon = 'icons/effects/effects.dmi'
+	pulse2.set_icon('icons/effects/effects.dmi')
 	pulse2.set_icon_state("empdisable")
 	pulse2.name = "emp sparks"
 	pulse2.set_anchored(TRUE)

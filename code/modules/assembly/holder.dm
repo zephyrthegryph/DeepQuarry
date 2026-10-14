@@ -10,7 +10,6 @@
 	var/secured = 0
 	var/obj/item/assembly/a_left = null
 	var/obj/item/assembly/a_right = null
-	var/tmp/obj/special_assembly
 
 // Its assemblies stop naming it (ones inside go with it; ones taken out stay).
 
@@ -272,6 +271,3 @@ CAPABILITIES(/obj/item/assembly_holder)
 	. += owns(nameof(a_left), policy = OWN_CONTAINED)
 	. += owns(nameof(a_right), policy = OWN_CONTAINED)
 
-/// the special_assembly this refers to (a relation view: null once it is deleted).
-/obj/item/assembly_holder/proc/special_assembly() as /obj
-	return special_assembly

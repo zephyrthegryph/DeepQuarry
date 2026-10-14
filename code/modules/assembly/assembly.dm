@@ -74,6 +74,7 @@
 		return TRUE
 
 CAPABILITIES(/obj/item/assembly)
+	ref_one(nameof(holder), /obj/item/assembly_holder)
 	configure(item_thrown(force = 2))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 	op("attach", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

@@ -170,6 +170,7 @@
 	return owner()
 
 CAPABILITIES(/datum/material_service)
+	ref_one(nameof(owner), /obj)
 	owns_many(nameof(gas_watches), /datum/native_watch/gas)
 	interface("EngineeringAssembly")
 	// Fitting a new component from a stack of sheets (fit_stock() asks which one): the user stays for two seconds.

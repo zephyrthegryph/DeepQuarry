@@ -88,11 +88,11 @@ CAPABILITIES(/obj/machinery/microwave)
 	if(smrating >= 3 || always_advanced)
 		advanced_microwave = TRUE
 		name = "deluxe microwave"
-		icon = 'icons/obj/deluxemicrowave.dmi'
+		set_icon('icons/obj/deluxemicrowave.dmi')
 	else
 		advanced_microwave = FALSE
 		name = "microwave"
-		icon = 'icons/obj/kitchen.dmi'
+		set_icon('icons/obj/kitchen.dmi')
 
 	// Upgrade the microwave based on the ratings of its components
 	item_capacity = (advanced_microwave ? 40 : 10) * mbrating

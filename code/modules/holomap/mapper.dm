@@ -47,6 +47,7 @@ CAPABILITIES(/obj/item/mapping_unit)
 	owns_one(nameof(cell), /obj/item/cell, starts = PROC_REF(make_cell))
 	owns_one(nameof(extras_holder), /atom/movable/screen/mapper/extras_holder, starts = /atom/movable/screen/mapper/extras_holder, starts_args = NO_LOC)
 	owns_one(nameof(hud_datum), /datum/mini_hud/mapper)
+	ref_one(nameof(hud_item), /atom/movable/screen/movable/mapper_holder)
 	owns_many(nameof(icon_image_cache))
 	owns_many(nameof(map_image_cache))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -97,7 +98,7 @@ CAPABILITIES(/obj/item/mapping_unit)
 
 
 	var/atom/movable/screen/mapper/marker/mark = new()
-	mark.icon = 'icons/effects/64x64.dmi'
+	mark.set_icon('icons/effects/64x64.dmi')
 	mark.set_icon_state("mapper_none")
 	mark.layer = 10
 	rel_add(src, nameof(icon_image_cache), mark, "bad")
@@ -106,7 +107,7 @@ CAPABILITIES(/obj/item/mapping_unit)
 	var/icon/canvas = icon(HOLOMAP_ICON, "blank")
 	canvas.Crop(1,1,world.maxx,world.maxy)
 	canvas.DrawBox("#A7BE97",1,1,world.maxx,world.maxy)
-	tmp.icon = canvas
+	tmp.set_icon(canvas)
 	rel_add(src, nameof(map_image_cache), tmp, "bad")
 
 

@@ -20,6 +20,7 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/pilot)
+	ref_one(nameof(shuttle_comp), /obj/machinery/computer/shuttle_control/web)
 	configure(item_worn(hides = HIDEEARS))
 	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 	owns_one(nameof(pilot_hud), starts = /atom/movable/screen/pilot_hud)

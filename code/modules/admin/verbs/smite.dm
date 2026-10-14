@@ -357,7 +357,7 @@ GLOBAL_VAR(redspace_abduction_z)
 	var/atom/movable/screen/loader = new(target)
 	loader.name = "Autosaving..."
 	loader.desc = "A disc icon that represents your game autosaving. Please wait."
-	loader.icon = 'icons/obj/discs_vr.dmi'
+	loader.set_icon('icons/obj/discs_vr.dmi')
 	loader.set_icon_state("quicksave")
 	loader.screen_loc = "NORTH-1, EAST-1"
 	target.client.screen += loader

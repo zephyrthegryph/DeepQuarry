@@ -28,6 +28,7 @@
 	var/tmp/datum/language/default_language_static
 
 CAPABILITIES(/mob/observer/blob)
+	ref_one(nameof(blob_core), /obj/structure/blob/core)
 	owns_one(nameof(blob_type), /datum/blob_type, starts = PROC_REF(make_blob_type))
 	param(nameof(placed), pos = 1)
 	param(nameof(blob_points), pos = 2, default = 60)

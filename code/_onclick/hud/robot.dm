@@ -19,7 +19,7 @@
 	using = new /atom/movable/screen()
 	using.name = "radio"
 	using.set_dir(SOUTHWEST)
-	using.icon = HUD.ui_style
+	using.set_icon(HUD.ui_style)
 	using.color = HUD.ui_color
 	using.alpha = HUD.ui_alpha
 	using.set_icon_state("radio")
@@ -32,7 +32,7 @@
 	using = new /atom/movable/screen()
 	using.name = "module1"
 	using.set_dir(SOUTHWEST)
-	using.icon = HUD.ui_style
+	using.set_icon(HUD.ui_style)
 	using.color = HUD.ui_color
 	using.alpha = HUD.ui_alpha
 	using.set_icon_state("inv1")
@@ -44,7 +44,7 @@
 	using = new /atom/movable/screen()
 	using.name = "module2"
 	using.set_dir(SOUTHWEST)
-	using.icon = HUD.ui_style
+	using.set_icon(HUD.ui_style)
 	using.color = HUD.ui_color
 	using.alpha = HUD.ui_alpha
 	using.set_icon_state("inv2")
@@ -56,7 +56,7 @@
 	using = new /atom/movable/screen()
 	using.name = "module3"
 	using.set_dir(SOUTHWEST)
-	using.icon = HUD.ui_style
+	using.set_icon(HUD.ui_style)
 	using.color = HUD.ui_color
 	using.alpha = HUD.ui_alpha
 	using.set_icon_state("inv3")
@@ -70,14 +70,14 @@
 //Combat mode (it replaced the intent selector)
 	using = HUD.make_combat_mode_button(src, "help", "harm")
 	using.set_dir(SOUTHWEST)
-	using.icon = HUD.ui_style
+	using.set_icon(HUD.ui_style)
 	using.alpha = HUD.ui_alpha
 	using.layer = HUD_LAYER
 
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()
 	using.name = "mov_intent"
-	using.icon = HUD.ui_style
+	using.set_icon(HUD.ui_style)
 	using.set_icon_state((m_intent == I_RUN ? "running" : "walking"))
 	using.screen_loc = ui_movi
 	using.color = HUD.ui_color
@@ -100,35 +100,35 @@
 	hud_used?.autowhisper_display?.screen_loc = ui_borg_under_health
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("aw-select")
 	aw.name = "autowhisper mode"
 	aw.screen_loc = ui_borg_under_health
 	rel_add(HUD, nameof(HUD.other), aw)
 
 	aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("lang")
 	aw.name = "check known languages"
 	aw.screen_loc = ui_borg_under_health
 	rel_add(HUD, nameof(HUD.other), aw)
 
 	aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("pose")
 	aw.name = "set pose"
 	aw.screen_loc = ui_borg_under_health
 	rel_add(HUD, nameof(HUD.other), aw)
 
 	aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("up")
 	aw.name = "move upwards"
 	aw.screen_loc = ui_borg_under_health
 	rel_add(HUD, nameof(HUD.other), aw)
 
 	aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("down")
 	aw.name = "move downwards"
 	aw.screen_loc = ui_borg_under_health
@@ -145,7 +145,7 @@
 //Module Panel
 	using = new /atom/movable/screen()
 	using.name = "panel"
-	using.icon = HUD.ui_style
+	using.set_icon(HUD.ui_style)
 	using.set_icon_state("panel")
 	using.alpha = HUD.ui_alpha
 	using.screen_loc = ui_borg_panel
@@ -164,7 +164,7 @@
 //Inventory
 	robot_inventory = new /atom/movable/screen()
 	robot_inventory.name = "inventory"
-	robot_inventory.icon = HUD.ui_style
+	robot_inventory.set_icon(HUD.ui_style)
 	robot_inventory.set_icon_state("inventory")
 	robot_inventory.alpha = HUD.ui_alpha
 	robot_inventory.color = HUD.ui_color
@@ -210,7 +210,7 @@
 		if(vtec_active)
 			using = new /atom/movable/screen()
 			using.name = "control_vtec"
-			using.icon = HUD.ui_style
+			using.set_icon(HUD.ui_style)
 			using.screen_loc = ui_vtec_control
 			using.color = HUD.ui_color
 			using.alpha = HUD.ui_alpha
@@ -233,7 +233,7 @@
 	if(!control_vtec)
 		var/atom/movable/screen/using = new /atom/movable/screen()
 		using.name = "control_vtec"
-		using.icon = ui_style
+		using.set_icon(ui_style)
 		using.screen_loc = ui_vtec_control
 		using.color = ui_color
 		using.alpha = ui_alpha

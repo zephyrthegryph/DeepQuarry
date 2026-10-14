@@ -301,6 +301,9 @@ TYPE_TABLE_DECLARE(/datum/station_faction_relations, get_reputation_departments,
 	/// discovery use evidence already collected in the world.
 	var/list/investigation_facts
 
+CAPABILITIES(/datum/faction_agent_record)
+	ref_one(nameof(agent_mind), /datum/mind)
+
 /datum/faction_agent_record/New()
 	. = ..()
 	investigation_facts = list()

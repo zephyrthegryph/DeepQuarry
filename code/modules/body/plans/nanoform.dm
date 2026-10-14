@@ -331,6 +331,7 @@
 
 // The revival steps are ops of the dormancy (it is their holder): whoever works on the cluster, or on the body, is the actor and stays beside the site.
 CAPABILITIES(/datum/affliction/core_dormancy)
+	ref_one(nameof(held_mob), /mob/living)
 	op("paddles_charge", ai(), needs(req_capable()), takes("tool", "step", "site"), wait(5 SECONDS), then(PROC_REF(paddles_charge)))
 	op("repair_step", ai(), needs(req_capable()), takes("tool", "step", "site", "time"), wait(PROC_REF(repair_step_time)), then(PROC_REF(repair_step_done)))
 

@@ -40,7 +40,7 @@ CAPABILITIES(/datum/global_hud)
 	var/atom/movable/screen/screen = new /atom/movable/screen()
 	screen.alpha = 30 // Adjut this if you want goggle overlays to be thinner or thicker. //
 	screen.screen_loc = "SOUTHWEST to NORTHEAST" // Will tile up to the whole screen, scaling beyond 15x15 if needed.
-	screen.icon = 'icons/obj/hud_tiled_vr.dmi'
+	screen.set_icon('icons/obj/hud_tiled_vr.dmi')
 	screen.set_icon_state(icon_state)
 	screen.layer = SCREEN_LAYER
 	screen.plane = PLANE_FULLSCREEN
@@ -436,7 +436,7 @@ CAPABILITIES(/datum/hud)
 
 	for(var/atom/movable/screen/I in icons)
 		if(!(I.name in list("check known languages", "autowhisper", "autowhisper mode", "move downwards", "move upwards", "set pose")))
-			I.icon = ic
+			I.set_icon(ic)
 		I.color = UI_style_color_new
 		I.alpha = UI_style_alpha_new
 

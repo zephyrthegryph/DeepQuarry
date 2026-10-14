@@ -7,6 +7,7 @@ CAPABILITY_TYPE(stump_identity, CAP_STUMP_IDENTITY, /datum/capability/stump_iden
 
 CAPABILITIES(/obj/item/organ/external/stump)
 	stump_identity()
+	ref_one(nameof(stump_of), /obj/item/organ/external)
 	param(nameof(stump_of), pos = 2, keep = FALSE)
 	// A stump is the place a limb was on a body: once it has joined one, it lives while it is attached (removed, it ends).
 	lives_while(cond_any(cond_not(nameof(stump_joined)), nameof(owner)), watches = list(nameof(owner), nameof(stump_joined)))

@@ -874,6 +874,9 @@ CAPABILITIES(/datum/system/supply)
 	timeout = 0
 	var/datum/record
 
+CAPABILITIES(/datum/prompt/yes_no/supply_delete_record)
+	ref_one(nameof(record), /datum)
+
 /datum/system/supply/proc/delete_order_sure(datum/act/request/A)
 	var/datum/prompt/yes_no/supply_delete_record/asked = A.answer
 	if(!asked?.value)
@@ -997,11 +1000,17 @@ CAPABILITIES(/datum/system/supply)
 	timeout = 0
 	var/datum/exported_crate/receipt
 
+CAPABILITIES(/datum/prompt/text/export_item)
+	ref_one(nameof(receipt), /datum/exported_crate)
+
 /datum/prompt/number/export_item
 	timeout = 0
 	var/datum/exported_crate/receipt
 	var/item_name
 	var/quantity
+
+CAPABILITIES(/datum/prompt/number/export_item)
+	ref_one(nameof(receipt), /datum/exported_crate)
 
 /datum/system/supply/proc/export_name_entered(datum/act/request/A)
 	var/datum/prompt/text/export_item/asked = A.answer

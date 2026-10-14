@@ -17,6 +17,7 @@
 CAPABILITIES(/datum/event_container)
 	every(2 SECONDS, then(PROC_REF(event_clock_step)), when = nameof(clock_running))
 	owns_many(nameof(event_pool))
+	ref_one(nameof(next_event), /datum/event_meta)
 
 /// The random-event clock: every 2 s it advances (or, paused, pushes back) the next event.
 /datum/event_container/proc/event_clock_step(datum/act/timer/A)

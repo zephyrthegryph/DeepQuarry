@@ -22,9 +22,9 @@
 		var/datum/reagent/R = reagents.get_master_reagent()
 
 		if(R.glass_icon_file)
-			icon = R.glass_icon_file
+			set_icon(R.glass_icon_file)
 		else
-			icon = initial(icon)
+			set_icon(initial(icon))
 
 		if(R.glass_icon_state)
 			set_icon_state(R.glass_icon_state)

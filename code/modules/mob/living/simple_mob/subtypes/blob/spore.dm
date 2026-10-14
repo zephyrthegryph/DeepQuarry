@@ -87,7 +87,7 @@ CAPABILITIES(/mob/living/simple_mob/blob/spore)
 		set_glow_toggle(FALSE)
 
 	if(is_infesting)
-		icon = infested.icon
+		set_icon(infested.icon)
 		copy_overlays(infested)
 		var/mutable_appearance/blob_head_overlay = mutable_appearance('icons/mob/blob.dmi', "blob_head")
 		if(overmind)

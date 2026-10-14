@@ -24,6 +24,7 @@ DECLARE_SHARED_CACHE(codex_trees, GLOBAL_PROC_REF(build_codex_tree), SC_NEVER)
 	return new /datum/codex_tree(first_holder, root_type)
 
 CAPABILITIES(/obj/item/book/codex)
+	ref_one(nameof(tree), /datum/codex_tree)
 	op("read_codex", in_hand(), label("Read"), then(PROC_REF(interaction_read_codex)))
 
 /// Old attack_self.

@@ -191,9 +191,9 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 
 	//Set icon
 	if (sprite_sheets_obj && (target_species in sprite_sheets_obj))
-		icon = sprite_sheets_obj[target_species]
+		set_icon(sprite_sheets_obj[target_species])
 	else
-		icon = initial(icon)
+		set_icon(initial(icon))
 
 // start
 /obj/item/clothing/proc/change_color()

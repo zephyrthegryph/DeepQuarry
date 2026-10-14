@@ -712,7 +712,7 @@ CAPABILITIES(/obj/item/cane/fluff)
 	var/new_icon = 'icons/vore/custom_items_vr.dmi'
 	var/new_desc = "Its a thin screen showing ID information, but it seems to be flickering."
 	if(istype(O,/obj/item/card/id) && O.icon_state != new_icon)
-		O.icon = new_icon
+		O.set_icon(new_icon)
 		O.set_icon_state(new_icon_state) // Changes the icon without changing the access.
 		O.desc = new_desc
 		play_sfx(src, SFX_ITEMS_POLAROID2, 2)
@@ -1214,11 +1214,11 @@ TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOL
 
 /obj/item/borg/upgrade/modkit/chassis_mod/kai/install(obj/item/gun/energy/kinetic_accelerator/KA, mob/user)
 	KA.desc = chassis_desc
-	KA.icon = chassis_icon_file
+	KA.set_icon(chassis_icon_file)
 	..()
 /obj/item/borg/upgrade/modkit/chassis_mod/kai/uninstall(obj/item/gun/energy/kinetic_accelerator/KA)
 	KA.desc = initial(KA.desc)
-	KA.icon = initial(KA.icon)
+	KA.set_icon(initial(KA.icon))
 	..()
 
 //ArgobargSoup:Lynn Shady

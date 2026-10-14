@@ -181,7 +181,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 	alternate_selection = lowertext(alternate_selection)
 
 	//Change the all the icon info.
-	icon = 'icons/mob/demon_vr.dmi' //Mass majority of the sprites use this icon
+	set_icon('icons/mob/demon_vr.dmi') //Mass majority of the sprites use this icon
 	set_icon_state("[alternate_selection]")
 	set_icon_living("[alternate_selection]")
 	set_icon_dead("dead")
@@ -207,7 +207,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 			set_vore_icons(SA_ICON_LIVING | SA_ICON_REST)
 			vore_capacity = 2
 			set_icon_dead("[alternate_selection]_dead")
-			icon = 'icons/mob/demon_alt.dmi'
+			set_icon('icons/mob/demon_alt.dmi')
 
 		if("ignia")
 			pixel_x = -8
@@ -215,6 +215,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 			set_vore_icons(SA_ICON_LIVING)
 			vore_capacity = 2
 			set_icon_dead("[alternate_selection]_dead")
-			icon = 'icons/mob/demon_alt.dmi'
+			set_icon('icons/mob/demon_alt.dmi')
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.

@@ -78,6 +78,9 @@
 
 CAPABILITIES(/datum/flight_vessel)
 	owns_one(nameof(active_plan), /datum/flight_plan)
+	ref_one(nameof(ship), /obj/effect/overmap/visitable/ship)
+	ref_one(nameof(shuttle), /datum/shuttle/autodock/overmap)
+	ref_one(nameof(active_expedition), /datum/expedition_site)
 
 
 /datum/flight_vessel/proc/has_capabilities(required)
@@ -103,6 +106,11 @@ CAPABILITIES(/datum/flight_vessel)
 	var/tmp/datum/flight_plan/reserved_by
 	/// Ports in the same physical bay exclude one another even when their alignment landmarks differ.
 	var/berth_group
+
+CAPABILITIES(/datum/flight_port)
+	ref_one(nameof(landmark), /obj/effect/shuttle_landmark)
+	ref_one(nameof(occupied_by), /datum/flight_vessel)
+	ref_one(nameof(reserved_by), /datum/flight_plan)
 
 /datum/flight_port/proc/serves(destination_id)
 	return host_destination_id == destination_id || (destination_id in serves_destination_ids)
@@ -141,6 +149,12 @@ CAPABILITIES(/datum/flight_vessel)
 	var/generation_progress = 0
 	var/generation_stage = "Not required"
 	var/cancel_requested = FALSE
+
+CAPABILITIES(/datum/flight_plan)
+	ref_one(nameof(vessel), /datum/flight_vessel)
+	ref_one(nameof(origin), /datum/flight_destination)
+	ref_one(nameof(destination), /datum/flight_destination)
+	ref_one(nameof(arrival_port), /datum/flight_port)
 
 /datum/flight_plan/New(datum/flight_vessel/new_vessel, datum/flight_destination/new_origin, datum/flight_destination/new_destination)
 	..()
@@ -271,3 +285,5 @@ CAPABILITIES(/datum/flight_vessel)
 
 CAPABILITIES(/datum/flight_destination)
 	ref_many(nameof(active_plans))
+	ref_one(nameof(target), /atom)
+	ref_one(nameof(expedition), /datum/expedition_site)

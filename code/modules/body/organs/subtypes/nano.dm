@@ -244,7 +244,7 @@
 
 /obj/item/organ/internal/mmi_holder/posibrain/nano/update_from_mmi()
 	. = ..()
-	icon = initial(icon)
+	set_icon(initial(icon))
 	set_icon_state("posi1")
 	stored_mmi.icon_state = "posi1"
 // The 'out on the ground' object, not the organ holder

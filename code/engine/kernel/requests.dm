@@ -205,7 +205,10 @@ CAPABILITIES(/datum/system/requests)
 			CRASH("open_request(): [request_type] has no field [name]")
 		if(name == "outcome")
 			CRASH("open_request(): outcome is the engine's to set")
-		R.vars[name] = value // ALLOW(api): open_request() named arguments: typed request fields by name
+		if(own_table_of(R).entries?[name])
+			rel_set(R, name, value) // a declared relation field goes through the relation, or the target keeps no back-edge to the prompt
+		else
+			R.vars[name] = value // ALLOW(api): open_request() named arguments: typed request fields by name
 	// A question an op asks is about the op's holder unless its fields name another subject (the rechecks of ASK_ADJACENT and ASK_NEAR_SUBJECT read it).
 	if(isnull(R.subject) && istype(owner, /datum/pending_op) && istype(context, /datum/act/op))
 		var/datum/act/op/asking = context

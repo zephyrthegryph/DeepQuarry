@@ -46,6 +46,7 @@
 	return 1
 
 CAPABILITIES(/obj/item/sample)
+	ref_one(nameof(taken_from), /atom)
 	op("merge_sample", item(/obj/item/sample), label("Combine evidence"), when(req(PROC_REF(matching_sample))),
 		needs(req(PROC_REF(sample_releasable))), then(PROC_REF(sample_merged)))
 	param(nameof(taken_from), pos = 1, apply = PROC_REF(copy_from), keep = FALSE)

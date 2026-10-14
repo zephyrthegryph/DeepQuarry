@@ -22,6 +22,8 @@
 	rel_set(src, nameof(recipient), recipient_mob)
 
 CAPABILITIES(/datum/mind_memory_panel)
+	ref_one(nameof(source))
+	ref_one(nameof(recipient))
 	interface("MindMemory", title = "Memory", state = nameof(GLOB.tgui_always_state))
 	ui_shape(name = any, memory = bool(), ambitions = bool(), objectives = list_of())
 
@@ -63,6 +65,7 @@ CAPABILITIES(/datum/mind_memory_panel)
 	rel_set(src, nameof(holder), owner_holder)
 
 CAPABILITIES(/datum/tag_menu_panel)
+	ref_one(nameof(holder))
 	interface("TagMenu", title = "Tag Menu", rights = R_ADMIN)
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("untag", ui_act("untag", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_untag)))
@@ -212,6 +215,7 @@ CAPABILITIES(/datum/dq_investigate_panel)
 	rel_set(src, nameof(holder), owner_holder)
 
 CAPABILITIES(/datum/unban_panel)
+	ref_one(nameof(holder))
 	interface("UnbanPanel", title = "Unban", rights = R_ADMIN)
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("unban", ui_act("unban", arg("key_id", schema_text(4096))), then(PROC_REF(ui_act_unban)))
@@ -331,6 +335,8 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 		GLOB.dq_jobban_panels -= "[REF(holder())]-[REF(target())]"
 
 CAPABILITIES(/datum/jobban_panel)
+	ref_one(nameof(holder))
+	ref_one(nameof(target))
 	interface("JobBanPanel", rights = R_ADMIN|R_MOD)
 	op("toggle_job", ui_act("toggle_job", arg("title", schema_text(4096))), then(PROC_REF(ui_act_toggle_job)))
 	op("toggle_dept", ui_act("toggle_dept", arg("bantype", schema_text(4096))), then(PROC_REF(ui_act_toggle_dept)))
@@ -551,6 +557,7 @@ CAPABILITIES(/datum/dq_vending_log_panel)
 	set_error_msg(error || "")
 
 CAPABILITIES(/datum/dq_delete_book_panel)
+	ref_one(nameof(our_comp))
 	interface("DeleteBookPanel", title = "Delete Book", rights = R_ADMIN)
 	op("sort", ui_act("sort", arg("by", schema_text(4096))), then(PROC_REF(ui_act_sort)))
 	op("order_by_id", ui_act("order_by_id"), then(PROC_REF(ui_act_order_by_id)))

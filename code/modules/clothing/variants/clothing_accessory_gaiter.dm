@@ -12,6 +12,7 @@ GLOBAL_LIST_INIT(dq_variants_accessory_gaiter, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/accessory/gaiter)
+	owns_one(nameof(breathmask), /obj/item/clothing/mask/breath)
 	configure(item_worn(slots = SLOT_MASK | SLOT_TIE, covers = FACE, flags = FLEXIBLEMATERIAL))
 	variants(nameof(variant), PROC_REF(variant_table))
 	op("gaiter_tuck_mask_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Gaiter tuck mask item"), then(PROC_REF(gaiter_tuck_mask_item)))

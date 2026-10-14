@@ -234,6 +234,7 @@ CAPABILITIES(/obj/structure/bookcase/manuals/research_and_development)
 	tgui_interact(user)
 
 CAPABILITIES(/obj/item/book)
+	ref_one(nameof(store), /obj/item)
 	configure(item_combat(attack_verbs = list("bashed", "whacked", "educated")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOK, pickup = SFX_ITEMS_PICKUP_BOOK))
 	interface("Book")
@@ -506,6 +507,8 @@ CAPABILITIES(/obj/item/book/bundle)
 	var/mode = 0 					// 0 - Scan only, 1 - Scan and Set Buffer, 2 - Scan and Attempt to Check In, 3 - Scan and Attempt to Add to Inventory
 
 CAPABILITIES(/obj/item/barcodescanner)
+	ref_one(nameof(computer), /obj/machinery/librarycomp)
+	ref_one(nameof(book), /obj/item/book)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

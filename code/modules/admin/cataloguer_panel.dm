@@ -50,6 +50,7 @@
 	return data
 
 CAPABILITIES(/obj/item/cataloguer)
+	ref_one(nameof(partial_scanned), /atom)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 0))
 	// A scan of something within scan_range: the user may walk about, the cataloguer stays in hand, and the scan is judged against the range where it ends.

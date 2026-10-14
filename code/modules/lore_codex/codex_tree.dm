@@ -9,6 +9,7 @@
 	var/list/readers
 
 CAPABILITIES(/datum/codex_tree)
+	ref_one(nameof(holder), /atom/movable)
 	owns_one(nameof(home), /datum/lore/codex)
 	owns_many(nameof(readers))
 	op("target", topic("target", arg("target", schema_ref(/datum/lore/codex), optional = TRUE)), then(PROC_REF(topic_target)))
@@ -31,6 +32,9 @@ CAPABILITIES(/datum/codex_tree)
 	var/datum/lore/codex/page
 	/// Visited pages, oldest first (a relation list; a revisited page moves to the end).
 	var/list/history
+
+CAPABILITIES(/datum/codex_reader)
+	ref_one(nameof(page), /datum/lore/codex)
 
 /datum/codex_reader/proc/visit(datum/lore/codex/new_page, record_history)
 	rel_set(src, nameof(page), new_page)

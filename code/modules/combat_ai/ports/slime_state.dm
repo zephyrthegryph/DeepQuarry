@@ -21,6 +21,9 @@
 	var/discipline_decay_time = 5 SECONDS
 	var/list/grudges = null   // lazylist of /mob/living/carbon/human
 
+CAPABILITIES(/datum/slime_state)
+	ref_one(nameof(holder), /mob/living/simple_mob/slime/xenobio)
+
 /datum/slime_state/New(mob/living/simple_mob/slime/xenobio/owner)
 	if(!owner)
 		stack_trace("slime_state instantiated with no owner")

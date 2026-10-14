@@ -36,6 +36,10 @@
 	/// whether we are to be added to SSlighting's sources_queue list for an update
 	var/needs_update = LIGHTING_NO_UPDATE
 
+CAPABILITIES(/datum/light_source)
+	ref_one(nameof(top_atom), /atom)
+	ref_one(nameof(source_atom), /atom)
+
 /datum/light_source/New(atom/owner, atom/top)
 	rel_set(src, nameof(source_atom), owner) // Set our new owner (it owns us in its `light` var).
 	rel_add(source_atom, nameof(source_atom.light_sources), src)

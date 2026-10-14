@@ -55,7 +55,7 @@ CAPABILITIES(/obj/item/chameleon)
 		rel_clear(src, nameof(active_dummy))
 		to_chat(user, span_notice("You deactivate the [src]."))
 		var/obj/effect/overlay/T = new /obj/effect/overlay(get_turf(src))
-		T.icon = 'icons/effects/effects.dmi'
+		T.set_icon('icons/effects/effects.dmi')
 		flick("emppulse",T)
 		T.expire(0.8 SECONDS)
 	else
@@ -69,7 +69,7 @@ CAPABILITIES(/obj/item/chameleon)
 		spent(O, user)
 		to_chat(user, span_notice("You activate the [src]."))
 		var/obj/effect/overlay/T = new/obj/effect/overlay(get_turf(src))
-		T.icon = 'icons/effects/effects.dmi'
+		T.set_icon('icons/effects/effects.dmi')
 		flick("emppulse",T)
 		T.expire(0.8 SECONDS)
 
@@ -103,7 +103,7 @@ CAPABILITIES(/obj/item/chameleon)
 /obj/effect/dummy/chameleon/proc/activate(obj/O, mob/M, new_icon, new_iconstate, new_overlays, obj/item/chameleon/C)
 	name = O.name
 	desc = O.desc
-	icon = new_icon
+	set_icon(new_icon)
 	set_icon_state(new_iconstate)
 	overlays = new_overlays
 	set_dir(O.dir)

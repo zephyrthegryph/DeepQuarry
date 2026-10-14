@@ -22,3 +22,4 @@
 // dying drops it from the other's list (the client image comes off in hide()).
 CAPABILITIES(/datum/alternate_appearance)
 	links(/datum/alternate_appearance::viewers, /atom::alt_appearances_viewing, a_many = TRUE, b_many = TRUE)
+	ref_one(nameof(owner), /atom)

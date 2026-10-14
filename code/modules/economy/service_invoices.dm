@@ -323,6 +323,8 @@
 	var/value
 	var/adopted = FALSE
 
+CAPABILITIES(/datum/economic_adoption)
+	ref_one(nameof(parent), /obj/item)
 
 /datum/economic_adoption/New(obj/item/new_parent, _invoice_id, _customer_account, _customer_department, _provider_department, _value)
 	. = ..()

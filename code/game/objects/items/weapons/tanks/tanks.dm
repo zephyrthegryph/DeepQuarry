@@ -161,7 +161,7 @@ DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	if (istype(src.loc, /obj/item/assembly))
-		icon = src.loc
+		set_icon(src.loc)
 
 	else if (istype(W,/obj/item/latexballon))
 		var/obj/item/latexballon/LB = W

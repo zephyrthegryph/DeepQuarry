@@ -524,17 +524,6 @@ CAPABILITIES(/datum/system/expedition)
 		return EXP_Z_PENDING
 	return template.load_new_z()
 
-// Roll a biome for a new site. Missions may pin one via their biome_type var.
-/datum/system/expedition/proc/pick_biome(datum/expedition_mission/mission)
-	var/static/list/biome_pool = list(
-		/datum/expedition_biome/cave = 10,
-		/datum/expedition_biome/plains = 8,
-		/datum/expedition_biome/asteroid = 6,
-		/datum/expedition_biome/orbital = 6,
-	)
-	var/biome_type = mission?.biome_type || pickweight(biome_pool)
-	return new biome_type()
-
 /datum/system/expedition/proc/scan_floors(z)
 	var/list/out = list()
 	for(var/turf/T in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))

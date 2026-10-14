@@ -14,6 +14,9 @@
 	/// Typepath of the original object for ui grouping
 	var/path
 
+CAPABILITIES(/datum/search_object)
+	ref_one(nameof(item), /atom)
+
 /datum/search_object/New(client/owner, atom/item)
 	. = ..()
 

@@ -689,7 +689,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 
 	suit_state = R.suit_state
 	name = R.name
-	icon = R.icon
+	set_icon(R.icon)
 	set_icon_state(R.icon_state)
 	user.drop_item(R)
 	R.forceMove(src)
@@ -707,7 +707,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			piece.set_max_pressure_protection(rigsuit_max_pressure)
 			piece.set_max_heat_protection_temperature(protection_of(src).max_heat)
 			piece.set_icon_state(src.icon_state)
-			piece.icon = initial(piece.icon)
+			piece.set_icon(initial(piece.icon))
 			piece.set_default_worn_icon(worn_of_type(piece.type).worn_icon)
 
 		//Byond at this time does not support initial() on lists
@@ -724,7 +724,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		chest.sprite_sheets_obj = tempRig.chest.sprite_sheets.Copy()
 		set_slowdown(initial(slowdown))
 		name = tempRig.name
-		icon = tempRig.icon // Reset the icon back to its original
+		set_icon(tempRig.icon) // Reset the icon back to its original
 		set_icon_state(tempRig.icon_state)
 		suit_state = icon_state
 		offline_slowdown = initial(offline_slowdown)

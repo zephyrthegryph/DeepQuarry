@@ -211,7 +211,7 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 			if(emagged)
 				name = "claymore"
 				desc = "Now this is a knife!"
-				icon = 'icons/obj/tools_robot.dmi'
+				set_icon('icons/obj/tools_robot.dmi')
 				set_icon_state("claymore_cyborg")
 				set_hitsound(SFX_WEAPONS_SLICE)
 				set_attack_verb(list("sliced", "slashed", "jabbed", "stabbed"))
@@ -220,7 +220,7 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 				defend_chance = 15
 			else
 				name = "self defense knife"
-				icon = 'icons/obj/tools_robot.dmi'
+				set_icon('icons/obj/tools_robot.dmi')
 				set_icon_state("knife_cyborg")
 				set_hitsound(SFX_WEAPONS_SLASH)
 				desc = "A sharp knife used for defending crew against hostile threats. Not effective for non-defense use."

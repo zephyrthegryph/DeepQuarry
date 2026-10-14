@@ -22,6 +22,8 @@
 // The mind owns this panel (tgui_edit_memory_panel); target_mind is a plain relation back.
 
 CAPABILITIES(/datum/edit_memory_panel)
+	ref_one(nameof(target_mind))
+	ref_one(nameof(admin_user))
 	interface("EditMemoryPanel", rights = R_ADMIN|R_FUN|R_EVENT)
 	op("edit_role", ui_act("edit_role"), asks(/datum/prompt/choice, fields = list("question" = "Select new role", "title" = "Assigned role", "choices" = computed(PROC_REF(ui_act_edit_role_a1_choices)), "default" = computed(PROC_REF(ui_act_edit_role_a1_default)), "timeout" = 0), step = "a1"), then(PROC_REF(ui_act_edit_role)))
 	op("edit_memory", ui_act("edit_memory"), asks(/datum/prompt/text, fields = list("question" = "Write new memory", "title" = "Memory", "default" = computed(PROC_REF(ui_act_edit_memory_a2_default)), "multiline" = TRUE, "timeout" = 0), step = "a2"), then(PROC_REF(ui_act_edit_memory)))

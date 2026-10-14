@@ -189,7 +189,7 @@ CAPABILITIES(/obj/item/flash)
 		var/atom/movable/overlay/animation = new(user.loc)
 		animation.layer = user.layer + 1
 		animation.set_icon_state("blank")
-		animation.icon = 'icons/mob/mob.dmi'
+		animation.set_icon('icons/mob/mob.dmi')
 		rel_set(animation, nameof(animation.master), user)
 		flick("blspell", animation)
 		animation.expire(5)
@@ -279,7 +279,7 @@ CAPABILITIES(/obj/item/flash)
 		var/atom/movable/overlay/animation = new(user.loc)
 		animation.layer = user.layer + 1
 		animation.set_icon_state("blank")
-		animation.icon = 'icons/mob/mob.dmi'
+		animation.set_icon('icons/mob/mob.dmi')
 		rel_set(animation, nameof(animation.master), user)
 		flick("blspell", animation)
 		animation.expire(5)

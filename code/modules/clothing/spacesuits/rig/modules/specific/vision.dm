@@ -86,6 +86,7 @@ CAPABILITIES(/datum/rig_vision)
 	var/vision_index
 
 CAPABILITIES(/obj/item/rig_module/vision)
+	ref_one(nameof(vision), /datum/rig_vision)
 	owns_many(nameof(vision_modes))
 
 /obj/item/rig_module/vision/multi

@@ -162,6 +162,7 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 	var/list/external_rows
 
 CAPABILITIES(/obj/machinery/librarycomp)
+	ref_one(nameof(scanner), /obj/machinery/libraryscanner)
 	per_type(nameof(all_books), PROC_REF(build_all_books))
 	owns_many(nameof(checkouts))
 	op("print_bible", ui_act(), then(PROC_REF(ui_act_print_bible)))
@@ -574,6 +575,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	return TRUE
 
 CAPABILITIES(/obj/machinery/libraryscanner)
+	ref_one(nameof(cache), /obj/item/book)
 	interface("LibraryScanner", title = "Scanner")
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))

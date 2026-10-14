@@ -778,7 +778,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 						X = B.ChangeTurf(T.type)
 						X.set_dir(old_dir1)
 						X.set_icon_state(old_icon_state1)
-						X.icon = old_icon1
+						X.set_icon(old_icon1)
 						X.copy_overlays(T, TRUE)
 						X.underlays = old_underlays
 						X.set_decals(old_decals)
@@ -892,7 +892,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					X.ChangeTurf(T.type)
 					X.set_dir(old_dir1)
 					X.set_icon_state(old_icon_state1)
-					X.icon = old_icon1 //Shuttle floors are in shuttle.dmi while the defaults are floors.dmi
+					X.set_icon(old_icon1) //Shuttle floors are in shuttle.dmi while the defaults are floors.dmi
 					X.overlays = old_overlays
 					X.underlays = old_underlays
 

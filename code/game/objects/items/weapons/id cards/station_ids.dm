@@ -585,7 +585,7 @@ CAPABILITIES(/obj/item/card/id/event)
 /obj/item/card/id/event/polymorphic/digest_act(atom/movable/item_storage = null)
 	var/gimmeicon = icon
 	. = ..()
-	icon = gimmeicon
+	set_icon(gimmeicon)
 	set_icon_state(base_icon_state + "_digested")
 
 /obj/item/card/id/event/polymorphic/altcard

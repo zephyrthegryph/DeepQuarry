@@ -24,6 +24,7 @@
 
 CAPABILITIES(/obj/item/electronic_assembly)
 	ref_one(nameof(access_card), /obj/item/card/id)
+	ref_one(nameof(locked_by), /obj/item/card/id)
 	owns_one(nameof(export_view), /datum/ic_export_view)
 	every(2 SECONDS, then(PROC_REF(assembly_power_step)), when = nameof(power_relevant))
 	op("assembly_self", in_hand(), label("Use"),
@@ -184,6 +185,7 @@ CAPABILITIES(/obj/item/electronic_assembly)
 	return host_assembly
 
 CAPABILITIES(/datum/ic_export_view)
+	ref_one(nameof(host_assembly), /obj/item/electronic_assembly)
 	interface("ICExport", title = "Circuit Export")
 	ui_shape(export_data = schema_text(), assembly_name = schema_text())
 

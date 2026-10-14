@@ -63,6 +63,9 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 	var/whom_ckey
 	var/datum/ticket/ticket
 
+CAPABILITIES(/datum/prompt/text/admin_pm)
+	ref_one(nameof(ticket), /datum/ticket)
+
 /// A popup admin PM's reply, on the recipient; the sender is looked up by ckey when it arrives.
 /datum/prompt/text/admin_pm_popup
 	multiline = TRUE

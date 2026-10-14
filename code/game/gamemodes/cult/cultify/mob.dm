@@ -8,7 +8,7 @@
 
 /mob/observer/dead/cultify()
 	if(icon_state != "ghost-narsie")
-		icon = 'icons/mob/mob.dmi'
+		set_icon('icons/mob/mob.dmi')
 		set_icon_state("ghost-narsie")
 		overlays = 0
 		set_invisibility(INVISIBILITY_NONE)
@@ -22,7 +22,7 @@
 		dust()
 	else if(client)
 		var/mob/observer/dead/G = (ghostize())
-		G.icon = 'icons/mob/mob.dmi'
+		G.set_icon('icons/mob/mob.dmi')
 		G.set_icon_state("ghost-narsie")
 		G.overlays = 0
 		G.set_invisibility(INVISIBILITY_NONE)

@@ -192,7 +192,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 			else if(istype(target,/turf))
 				location = target
 			var/obj/effect/overlay/spell = new /obj/effect/overlay(location)
-			spell.icon = overlay_icon
+			spell.set_icon(overlay_icon)
 			spell.set_icon_state(overlay_icon_state)
 			spell.set_anchored(TRUE)
 			spell.set_density(FALSE)

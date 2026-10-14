@@ -226,6 +226,9 @@ CAPABILITIES(/obj/item/integrated_circuit/input/video_camera_input)
 
 	var/tmp/obj/item/integrated_circuit/input/video_camera_input/owner_circuit
 
+CAPABILITIES(/datum/tgui_module/camera/intcircuit)
+	ref_one(nameof(owner_circuit), /obj/item/integrated_circuit/input/video_camera_input)
+
 /datum/tgui_module/camera/intcircuit/New(host)
 	rel_set(src, nameof(owner_circuit), host)
 	// Pass an empty network list - we override get_available_cameras

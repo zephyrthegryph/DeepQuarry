@@ -26,7 +26,7 @@
 		animation.name = "water"
 		animation.set_density(FALSE)
 		animation.set_anchored(TRUE)
-		animation.icon = 'icons/mob/mob.dmi'
+		animation.set_icon('icons/mob/mob.dmi')
 		animation.plane = MOB_PLANE
 		animation.layer = ABOVE_MOB_LAYER
 		rel_set(animation, nameof(animation.master), holder)

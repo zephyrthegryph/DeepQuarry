@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "base_vars' no-model fallback fingerprints declarations by owner and var like the typed path"

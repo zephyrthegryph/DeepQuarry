@@ -12,6 +12,10 @@
 	/// The mob using the machine.
 	var/mob/owner
 
+CAPABILITIES(/datum/using_machine_shim)
+	ref_one(nameof(linked_machine), /obj/machinery)
+	ref_one(nameof(owner), /mob)
+
 /mob/var/datum/using_machine_shim/machine_shim
 
 /datum/using_machine_shim/New(mob/new_owner, obj/machinery/machine)
