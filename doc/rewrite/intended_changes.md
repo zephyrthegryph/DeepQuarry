@@ -4894,3 +4894,9 @@ Affected requirement-pin classes:
 * **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
+
+## Hygiene lane: carry approved master typed-link repairs
+
+Master 5b0a2f09d0 typed the internal-storage owner and cloning scanner links without preserving their invalid-owner/null paths. This lane carries the already-approved keeps_if/setup and null-return repairs and real owner/rebinding tests from the stamped acceptance lane. The constructor pins remain unchanged.
+
+Master f13b84652d removed the unused AI equipment window. The only pin refresh carried here removes ai_use_equipment from the keys rows of /obj/mecha and /obj/mecha/working/ripley, without changing any other key or menu/click row.
