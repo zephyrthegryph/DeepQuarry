@@ -43,7 +43,7 @@ CAPABILITY_DEF(shadekin_dark, CAP_SHADEKIN_DARK, key = NONE)
 
 /mob/living/proc/ability_dark_enough_for_maw(datum/act/op/A)
 	var/turf/T = get_turf(src)
-	return (!!T && T.get_lumcount() < 0.5) ? null : /datum/msg/req_failed
+	return (!!T && watched(T, WATCH_LUM, list(0.5)) == 0) ? null : /datum/msg/req_failed
 
 /mob/living/proc/ability_can_afford_20(datum/act/op/A)
 	var/datum/shadekin/SK = get_shadekin_state()

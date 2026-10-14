@@ -56,6 +56,7 @@ MSG_DEF_SELF(aifixer/screws_stuck_beep, "The screws on the screen won't budge an
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/aifixer)
+	ref_one(nameof(occupier), /mob/living/silicon/ai)
 	configure(light_glow(color = LIGHT_COLOR_PINK))
 	configure(uses_power(active = 1000))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(restoring), wakes_on = list(nameof(restoring)))

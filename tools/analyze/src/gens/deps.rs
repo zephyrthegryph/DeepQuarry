@@ -10,6 +10,8 @@
 //! GLOB.generated_untracked_leaves  "<type>" = list(<var>, ...)   vars a declaration of the type names as a condition or a contribution's value
 //!                                  (nameof(v) inside contributes(), contributes_to() or a when() around one) that nothing publishes
 //! GLOB.generated_draw_reads        "<type>" = list(<var>, ...)   the holder vars the type's own draw() (and the parents it calls) reads
+//! GLOB.generated_draw_hop_reads    "<type>" = list("loc.<var>", "turf.<rel>.<var>", ...)   what that draw reads up to three hops away (a container,
+//!                                  turf or area hop, then relations): a publish of the var there, or of a link, redraws the thing (draw_hop_published(), refs/hops.dm)
 //! ```
 //!
 //! An untracked read is a var that is not tracked, a relation, a stat, a derived value or constant (`ReadsEngine::classify`, the same test as
@@ -60,10 +62,20 @@ pub struct Untracked {
     pub line: u32,
 }
 
-/// The hops an output's subscriptions do not follow yet: a draw (or another derived output) redraws from its own vars and from the entities it
-/// declares it watches (`look.watch()`, a derived() hop over a relation); the engine does not subscribe it from a generated read through the
-/// container hop, so such a read is an input an output cannot hear change. Stat inputs, conditions and requirements do hear it.
-const DRAW_UNHEARD_HOPS: &[&str] = &["loc"];
+/// The hops an output's subscriptions follow only one step from the holder: a draw (or another derived output) redraws from its own vars, from
+/// the entities it declares it watches (`look.watch()`, a derived() hop over a relation), and from a var one container, turf or area hop away
+/// (`generated_draw_hop_reads`, heard by `draw_hop_published()`). A read deeper through one of them (`hat.loc.species`, `loc.loc.x`) is an input
+/// an output cannot hear change. Stat inputs, conditions and requirements hear every depth.
+const DRAW_PSEUDO_HOPS: &[&str] = &["loc", "turf", "area"];
+
+/// A draw hears this read through `generated_draw_hop_reads`: one container, turf or area hop off the holder.
+pub fn draw_hop_heard(r: &crate::sem::reads::Read) -> bool {
+    r.root == "holder" && r.hop_ok && !r.hops.is_empty() && r.hops.len() <= DRAW_HOP_DEPTH && DRAW_PSEUDO_HOPS.contains(&r.hops[0].as_str())
+}
+
+/// The longest hop chain a draw hears: a container, turf or area hop and then declared relations (or further container hops), each republished by
+/// its own publisher. `loc.cell.charge` has two hops; `loc.loc.cell.maxcharge` has three.
+const DRAW_HOP_DEPTH: usize = 3;
 
 /// What a consumer's reads leave the graph unable to see change. `output`: the consumer is a draw() or another derived output.
 pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, output: bool) -> Vec<Untracked> {
@@ -72,12 +84,12 @@ pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, outp
         if r.kind != ReadKind::Var || r.root != "holder" || set.internal.contains(r) {
             continue;
         }
-        if output && r.hops.iter().any(|h| DRAW_UNHEARD_HOPS.contains(&h.as_str())) {
+        if output && r.hops.iter().any(|h| DRAW_PSEUDO_HOPS.contains(&h.as_str())) && !draw_hop_heard(r) {
             let (rel, line) = set.sites.get(r).cloned().unwrap_or_default();
             out.push(Untracked { what: r.key(), rel, line });
             continue;
         }
-        if !r.hop_ok || eng.classify(&r.owner, &r.var, written) == VarClass::Unknown {
+        if !r.hop_ok || (!eng.turf_coordinate(r) && eng.classify(&r.owner, &r.var, written) == VarClass::Unknown) {
             let (rel, line) = set.sites.get(r).cloned().unwrap_or_default();
             out.push(Untracked { what: r.key(), rel, line });
         }
@@ -198,6 +210,8 @@ pub struct DepsAnalysis {
     /// "<type>" -> the published keys its own draw() reads through a READS_AS accessor (`nutrition_of(src)` stands for MOB_KEY_NUTRITION), as the
     /// DM text of the key (a define is written `[MOB_KEY_NUTRITION]` so the compile resolves it): a PUBLISH_CHANGE of one redraws the thing.
     pub draw_keys: BTreeMap<String, BTreeSet<String>>,
+    /// "<type>" -> what its own draw() reads one container, turf or area hop away, as "<hop>.<var>".
+    pub draw_hops: BTreeMap<String, BTreeSet<String>>,
     /// Every `(declaring type, var)` a consumer reads off the holder (or through a declared relation hop), whatever its class: the read
     /// set `gens::auto_tracked` turns into tracked vars.
     pub reads: BTreeSet<(String, String)>,
@@ -280,6 +294,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let mut draws = BTreeSet::new();
     let mut draw_reads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut draw_keys: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut draw_hops: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let capability_keys: BTreeSet<String> = ann.capkey_accessors.values().cloned().collect();
     let defines: BTreeSet<String> = decls.defines.iter().cloned().collect();
     for d in crate::sem::procs::proc_defs(&sem, &["draw"]) {
@@ -294,7 +309,11 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         note_reads(&set, &mut reads);
         let keys = draw_reads.entry(d.owner.clone()).or_default();
         let published = draw_keys.entry(d.owner.clone()).or_default();
+        let hopped = draw_hops.entry(d.owner.clone()).or_default();
         for r in &set.reads {
+            if r.kind == ReadKind::Var && draw_hop_heard(r) {
+                hopped.insert(format!("{}.{}", r.hops.join("."), r.var));
+            }
             if r.root == "holder" && r.hops.is_empty() && r.kind == ReadKind::Var {
                 keys.insert(r.var.clone());
             }
@@ -321,7 +340,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         eprintln!("analyze: gen/deps ({}) {} consumers in {:.1?}", if closed { "closed" } else { "legacy" }, consumers.len(), started.elapsed());
     }
     let candidates = reads.iter().filter(|(owner, var)| super::auto_tracked::candidate(&eng, &outside_setters, &set_calls, owner, var)).cloned().collect();
-    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, reads, candidates })
+    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, draw_hops, reads, candidates })
 }
 
 struct Deps;
@@ -432,6 +451,16 @@ impl Generator for Deps {
             .map(|(t, ks)| format!("	{} = list({})", quote(t), ks.iter().map(|k| quote_key(k)).collect::<Vec<_>>().join(", ")))
             .collect();
         emit_table(out, "generated_draw_keys", &rows);
+        out.blank();
+        out.doc("\"<type>\" -> what its own draw() (and the parent draws it calls) reads one container, turf or area hop away, as \"<hop>.<var>\": a");
+        out.doc("change of the var on what the thing is in, stands on or is in redraws it (draw_hop_published(), code/engine/refs/hops.dm).");
+        let rows: Vec<String> = an
+            .draw_hops
+            .iter()
+            .filter(|(_, ks)| !ks.is_empty())
+            .map(|(t, ks)| format!("\t{} = list({})", quote(t), ks.iter().map(|k| quote(k)).collect::<Vec<_>>().join(", ")))
+            .collect();
+        emit_table(out, "generated_draw_hop_reads", &rows);
     }
 }
 

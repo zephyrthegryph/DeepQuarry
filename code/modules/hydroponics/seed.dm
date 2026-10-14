@@ -19,7 +19,7 @@
 	var/can_self_harvest = 0       // Mostly used for living mobs.
 	var/growth_stages = 0          // Number of stages the plant passes through before it is mature.
 	// ALLOW(instance_list): d: every seed has traits
-	var/list/traits = list()       // Initialized in New()
+	var/list/trait_values = list() // Initialized in New()
 	var/list/mutants               // Possible predefined mutant varieties, if any.
 	var/list/chems                 // Chemicals that plant produces in products/injects into victim.
 	var/list/consume_gasses        // The plant will absorb these gasses during its life.
@@ -86,7 +86,7 @@
 	after(src, 0.5 SECONDS, PROC_REF(update_growth_stages))
 
 /datum/seed/proc/get_trait(trait)
-	return traits["[trait]"]
+	return trait_values["[trait]"]
 
 /datum/seed/proc/get_trash_type()
 	return trash_type
@@ -95,7 +95,7 @@
 	if(!isnull(degrade)) nval *= degrade
 	if(!isnull(ubound))  nval = min(nval,ubound)
 	if(!isnull(lbound))  nval = max(nval,lbound)
-	traits["[trait]"] =  nval
+	set_trait_values_at("[trait]", nval)
 
 /datum/seed/proc/create_spores(turf/T)
 	if(!T)
@@ -888,7 +888,7 @@
 	new_seed.set_seed_name("[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][seed_name]")
 	new_seed.display_name =         "[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][display_name]"
 	new_seed.seed_noun =            seed_noun
-	new_seed.traits = traits.Copy()
+	new_seed.set_trait_values(trait_values.Copy())
 	new_seed.update_growth_stages()
 	return new_seed
 
@@ -911,7 +911,7 @@
 	new_seed.set_seed_name(seed_name)
 	new_seed.display_name = display_name
 	new_seed.seed_noun =    seed_noun
-	new_seed.traits = traits.Copy()
+	new_seed.set_trait_values(trait_values.Copy())
 	new_seed.update_growth_stages()
 	return new_seed
 

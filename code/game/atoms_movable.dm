@@ -332,7 +332,7 @@
 	// A window watching this thing as its host re-checks its status (code/modules/tgui/ui_status.dm); nobody else reads this key.
 	if(rx?.observed)
 		PUBLISH_CHANGE(src, ATOM_KEY_LOC)
-	loc_changed()
+	loc_changed(old_loc)
 	// Covers Destroy() too, which moves to nullspace.
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(old_loc)
@@ -524,7 +524,7 @@
 			move_hooks_dispatch(TRUE)
 		loc = null // ALLOW(containment): doMove()'s nullspace commit point; note_exit follows
 		oldloc.containment_ledger()?.note_exit(src)
-		loc_changed()
+		loc_changed(oldloc)
 
 		// Uncross everything where we left (no multitile safety like above because we are definitely not still there)
 		for(var/atom/movable/AM as anything in oldloc)
@@ -547,9 +547,11 @@
 /// (Moved(), and doMove() into nullspace). What reads `loc`, or a var of what the thing is in (`loc.lit`), hears it through the path a relation
 /// write takes: the stat layer re-attaches the thing to its new container's readers (stat_hop_attach), derived() entries and on_change() hooks that
 /// read it re-evaluate, a pending operation re-resolves its watched pairs. Nothing runs while nothing reads `loc`.
-/atom/movable/proc/loc_changed()
+/atom/movable/proc/loc_changed(atom/old_loc)
 	if(GLOB.stat_input_keys?[nameof(loc)] || GLOB.derived_read_vars?[nameof(loc)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(loc))))
 		own_field_changed(src, nameof(loc))
+	// The turf and area hops: what reads get_turf(src).x or get_area(src).x, here or on anything inside this (refs/hops.dm).
+	hop_moved(src, old_loc)
 
 /atom/movable/proc/onTransitZ(old_z,new_z)
 	PUBLISH_LEGACY(src, /datum/notice/movable_z_changed, old_z, new_z)

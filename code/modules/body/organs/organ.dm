@@ -18,7 +18,7 @@ TRACKED(/obj/item/organ, parent_organ)
 	var/list/transplant_data			// Transplant match data.
 	var/list/autopsy_data		// Trauma data for forensics.
 	var/list/trace_chemicals	// Traces of chemicals in the organ.
-	var/datum/organ_data/data = /datum/organ_data	// Stores data for appearance and investigation (built at init)
+	var/datum/organ_data/data	// Stores data for appearance and investigation
 
 	// Damage vars.
 	var/min_bruised_damage = 10			// Damage before considered bruised
@@ -578,7 +578,7 @@ MSG_DEF(organ/butcher_begin, span_danger("You are preparing to butcher %T%!"), s
 // one) or revived with peridaxon.
 CAPABILITIES(/obj/item/organ)
 	ref_one(nameof(owner), /mob/living)
-	owns_one(nameof(data), /datum/organ_data, starts = nameof(data))
+	owns_one(nameof(data), /datum/organ_data, starts = /datum/organ_data)
 	derives(nameof(w_class), PROC_REF(birth_size))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))
 	reagents(5)
