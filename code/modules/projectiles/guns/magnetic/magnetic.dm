@@ -30,6 +30,7 @@
 /obj/item/gun/magnetic/var/obj/item/stock_parts/capacitor/capacitor
 
 CAPABILITIES(/obj/item/gun/magnetic)
+	setup(PROC_REF(charge_initial_capacitor))
 	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
 	every(2 SECONDS, then(PROC_REF(magnetic_step)), when = PROC_REF(steps_now))
 	owns_one(nameof(capacitor), /obj/item/stock_parts/capacitor, starts = nameof(capacitor))
@@ -48,8 +49,7 @@ CAPABILITIES(/obj/item/gun/magnetic)
 /obj/item/gun/magnetic/proc/steps_now(datum/act/A)
 	return capacitor || cell
 
-/obj/item/gun/magnetic/Initialize(mapload)
-	. = ..()
+/obj/item/gun/magnetic/proc/charge_initial_capacitor()
 	// So you can have some spawn with components
 	if(capacitor) // made from the declared starting type: it starts charged
 		capacitor.set_charge(capacitor.max_charge)

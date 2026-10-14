@@ -18,10 +18,6 @@
 	var/obj/item/stock_parts/scanning_module/scanmod
 	var/dropnoms_active = TRUE
 
-/obj/item/bluespace_harpoon/Initialize(mapload)
-	. = ..()
-	update_fail_chance()
-
 /obj/item/bluespace_harpoon/examine(mob/user)
 	. = ..()
 	. += "It is currently in [mode ? "transmitting" : "receiving"] mode."
@@ -53,6 +49,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/bluespace_harpoon)
+	setup(PROC_REF(update_fail_chance))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("fire_mode", in_hand(), label("Change fire mode"), then(PROC_REF(interaction_fire_mode)))
 	op("harpoon_verb_fire_mode", menu(), label("Change Fire Mode"), needs(carried()), then(PROC_REF(harpoon_verb_fire_mode_op)))

@@ -27,6 +27,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/gun/launcher/pneumatic)
+	setup(PROC_REF(configure_hopper))
 	configure(item_worn(slots = SLOT_BELT))
 	owns_one(nameof(item_storage), starts = /obj/item/storage)
 	op("pneumatic_hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -34,8 +35,7 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 		asks(/datum/prompt/choice, fields = list("question" = "Percentage of tank used per shot:", "title" = computed(PROC_REF(pressure_title)), "choices" = nameof(possible_pressure_amounts), "timeout" = 0), step = "pressure"),
 		then(PROC_REF(pneumatic_verb_set_pressure)))
 
-/obj/item/gun/launcher/pneumatic/Initialize(mapload)
-	. = ..()
+/obj/item/gun/launcher/pneumatic/proc/configure_hopper()
 	item_storage.name = "hopper"
 	item_storage.restrict_hold(null, hopper_size)
 	item_storage.max_storage_space = max_storage_space

@@ -9,6 +9,7 @@
 	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.
 
 CAPABILITIES(/obj/item/projectile/energy/blob)
+	setup(PROC_REF(prepare_blob_chemicals))
 	configure(item_combat(armor_penetration = 40))
 
 TYPE_TABLE_DECLARE(/obj/item/projectile/energy/blob, blob_projectile_chems, list(REAGENT_ID_MOLD))
@@ -19,8 +20,7 @@ TYPE_TABLE_DECLARE(/obj/item/projectile/energy/blob, blob_projectile_chems, list
 CAPABILITIES(/obj/item/projectile/energy/blob/splattering)
 	reagents(nameof(splatter_volume)) // the cloud it bursts into
 
-/obj/item/projectile/energy/blob/Initialize(mapload)
-	. = ..()
+/obj/item/projectile/energy/blob/proc/prepare_blob_chemicals()
 	if(splatter)
 		ready_chemicals()
 

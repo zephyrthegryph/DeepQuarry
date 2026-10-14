@@ -14,7 +14,6 @@ init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/
 init_visuals	code/modules/overmap/sectors.dm	icon_state = unknown_state
 init_visuals	code/modules/pda/pda.dm	add_overlay("pda-pen")
 init_visuals	code/modules/power/privacy_switch.dm	icon_state = "privacy1"
-init_visuals	code/modules/vore/resizing/holder_micro.dm	icon_state = "teshariplushie_white"
 init_visuals	code/modules/xenoarcheaology/artifacts/artifact.dm	icon_state = "ano[icon_num]0"
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "unknown[rand(1,4)]"
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "statuette[rand(1,3)]"

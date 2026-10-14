@@ -571,8 +571,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/pink_tiara)
 	var/state = 0 //0 - New, 1 - Paired, 2 - Breaking, 3 - Broken (same as iconstates)
 	special_collar = TRUE
 
-/obj/item/clothing/accessory/collar/khcrystal/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/accessory/collar/khcrystal/proc/show_initial_state()
 	update_state(0)
 
 // an active crystal finishes its step.
@@ -582,6 +581,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/pink_tiara)
 	..()
 
 CAPABILITIES(/obj/item/clothing/accessory/collar/khcrystal)
+	setup(PROC_REF(show_initial_state))
 	configure(item_worn(slots = SLOT_TIE))
 	every(2 SECONDS, then(PROC_REF(crystal_step)), when = nameof(watching))
 	op("khcrystal_pair_self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Pair"), then(PROC_REF(khcrystal_pair_self)))

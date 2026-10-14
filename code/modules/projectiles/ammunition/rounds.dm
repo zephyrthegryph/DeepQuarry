@@ -410,10 +410,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a145/highvel, list(MAT_STEEL = 4000, MAT_PLAS
 	desc = "A 14.5mm sabot shell."
 	projectile_type = /obj/item/projectile/bullet/rifle/a145/highvel
 
-/obj/item/ammo_casing/a145/spent/Initialize(mapload)
-	. = ..()
-	expend()
-
 /*
  * 5.45mm
  */
@@ -625,3 +621,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a12g/silver, list(DEFAULT_WALL_MATERIAL = 360
 
 /obj/item/projectile/bullet/rifle/a762/lmg
 	icon_state = "bullet_alt"
+
+CAPABILITIES(/obj/item/ammo_casing/a145/spent)
+	setup(PROC_REF(expend))

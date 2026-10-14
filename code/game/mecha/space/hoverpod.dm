@@ -26,11 +26,11 @@
 	max_special_equip = 1
 
 CAPABILITIES(/obj/mecha/working/hoverpod)
+	setup(PROC_REF(prepare_ion_trail))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 	op("toggle_stabilization", topic("toggle_stabilization"), then(PROC_REF(topic_toggle_stabilization)))
 
-/obj/mecha/working/hoverpod/Initialize(mapload)
-	. = ..()
+/obj/mecha/working/hoverpod/proc/prepare_ion_trail()
 	ion_trail.set_up(src)
 
 

@@ -180,6 +180,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/wt550)
 	var/obj/item/gun/launcher/grenade/underslung/launcher
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
+	setup(PROC_REF(update_transform))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 	owns_one(nameof(launcher), /obj/item/gun/launcher/grenade/underslung, starts = /obj/item/gun/launcher/grenade/underslung)

@@ -101,6 +101,7 @@
 		M.uninstall(src, FALSE)
 
 CAPABILITIES(/obj/item/gun/energy/kinetic_accelerator)
+	setup(PROC_REF(empty_initial_charge))
 	configure(item_worn(flags = NONE))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
@@ -169,8 +170,7 @@ CAPABILITIES(/obj/item/gun/energy/kinetic_accelerator)
 	holds_charge = TRUE
 	unique_frequency = TRUE
 
-/obj/item/gun/energy/kinetic_accelerator/Initialize(mapload)
-	. = ..()
+/obj/item/gun/energy/kinetic_accelerator/proc/empty_initial_charge()
 	if(!holds_charge)
 		empty()
 

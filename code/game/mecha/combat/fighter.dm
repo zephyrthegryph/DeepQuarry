@@ -52,12 +52,12 @@ TYPE_TABLE(/obj/mecha/combat/fighter, mecha_starting_components, list( \
 
 
 CAPABILITIES(/obj/mecha/combat/fighter)
+	setup(PROC_REF(prepare_ion_trail))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 	op("toggle_landing_gear", topic("toggle_landing_gear"), then(PROC_REF(topic_toggle_landing_gear)))
 
 
-/obj/mecha/combat/fighter/Initialize(mapload)
-	. = ..()
+/obj/mecha/combat/fighter/proc/prepare_ion_trail()
 	ion_trail.set_up(src)
 	ion_trail.stop()
 

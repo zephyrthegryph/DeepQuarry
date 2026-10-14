@@ -20,15 +20,14 @@
 /obj/item/gun/launcher/spikethrower/var/spikes = 5
 /// Regrows spikes every 2 s while short of them; full, the gate keeps it idle.
 CAPABILITIES(/obj/item/gun/launcher/spikethrower)
+	setup(PROC_REF(start_regeneration_cooldown))
 	every(2 SECONDS, then(PROC_REF(spikethrower_step)), when = PROC_REF(spikes_short))
 
 /// Short of spikes.
 /obj/item/gun/launcher/spikethrower/proc/spikes_short(datum/act/A)
 	return spikes < max_spikes
 
-// ALLOW(init/INSTANCE_STATE): starts its spike regeneration timer from when it is made
-/obj/item/gun/launcher/spikethrower/Initialize(mapload)
-	. = ..()
+/obj/item/gun/launcher/spikethrower/proc/start_regeneration_cooldown()
 	COOLDOWN_START(src, regen_cooldown, spike_gen_time)
 
 /obj/item/gun/launcher/spikethrower/proc/spikethrower_step(datum/act/timer/A)

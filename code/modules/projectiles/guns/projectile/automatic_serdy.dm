@@ -13,10 +13,6 @@
 	var/is_picked_up = FALSE
 	var/is_long = TRUE
 
-/obj/item/gun/projectile/automatic/serdy/Initialize(mapload)
-	. = ..()
-	update_transform()
-
 /obj/item/gun/projectile/automatic/serdy/update_transform()
 	. = ..()
 	if(is_picked_up && is_long)
@@ -1226,10 +1222,6 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/wt550, projectile_initial_transfor
 	else
 		look.state("carbine-e")
 
-/obj/item/gun/projectile/automatic/z8/Initialize(mapload)
-	. = ..()
-	update_transform()
-
 /obj/item/gun/projectile/automatic/z8/update_transform()
 	. = ..()
 	transform = transform.Translate(-16,0)
@@ -1249,10 +1241,6 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/wt550, projectile_initial_transfor
 /obj/item/gun/projectile/automatic/mini_uzi/draw(datum/look/look)
 	..()
 	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
-
-/obj/item/gun/projectile/automatic/mini_uzi/Initialize(mapload)
-	. = ..()
-	update_transform()
 
 /obj/item/gun/projectile/automatic/mini_uzi/update_transform()
 	. = ..()
@@ -1499,6 +1487,7 @@ MSG_DEF_SELF(doublebarrel/saw_begins, span_notice("You begin to shorten the barr
 MSG_DEF(doublebarrel/saw_misfire, span_danger("The shotgun goes off in your face!"), span_danger("The shotgun goes off!"))
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
+	setup(PROC_REF(update_transform))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 	// A saw, an energy blade or a plasma cutter shortens the barrel: a loaded gun goes off instead, an empty one takes three seconds (stealthy).
@@ -1554,10 +1543,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/sawn)
 	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 	configure(item_combat(force = 5))
-
-/obj/item/gun/projectile/shotgun/doublebarrel/Initialize(mapload)
-	. = ..()
-	update_transform()
 
 /obj/item/gun/projectile/shotgun/doublebarrel/update_transform()
 	. = ..()
@@ -1630,3 +1615,10 @@ CAPABILITIES(/obj/item/gun/projectile/revolvershotgun)
 	sound_ejectchamber = SFX_WEAPONS_BALLISTICS_RIFLE_EJECTCHAMBER
 	sound_eject = SFX_WEAPONS_BALLISTICS_RIFLE_EJECT
 	sound_chamber = SFX_WEAPONS_BALLISTICS_RIFLE_CHAMBER
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy)
+	setup(PROC_REF(update_transform))
+
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/mini_uzi)
+	setup(PROC_REF(update_transform))

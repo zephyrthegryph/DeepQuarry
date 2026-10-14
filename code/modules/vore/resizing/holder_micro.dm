@@ -9,20 +9,19 @@
 	item_icons = null // No in-hand sprites (for now, anyway, we could totally add some)
 	pixel_y = 0		  // Override value from parent.
 
-/obj/item/holder/micro/Initialize(mapload)
-	. = ..()
+/obj/item/holder/micro/proc/prepare_micro_carrier_sprite()
 	var/mob/living/carbon/human/H = held_mob
 	if(istype(H) && H.species.is_micro_carry(H))
-		item_icons = list(
+		set_item_icons(list(
 					slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
 					slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
 					slot_back_str = 'icons/mob/toy_worn.dmi',
-					slot_head_str = 'icons/mob/toy_worn.dmi')
+					slot_head_str = 'icons/mob/toy_worn.dmi'))
 
 		// Leaving the following two set makes the sprite not visible
-		icon_override = null
-		icon_state = "teshariplushie_white"
-		item_state = "teshariplushie_white"
+		set_icon_override(null)
+		set_icon_state("teshariplushie_white")
+		set_item_state("teshariplushie_white")
 
 /obj/item/holder/micro/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null)
 	var/mob/living/carbon/human/H = held_mob
@@ -68,6 +67,7 @@ CAPABILITIES(/obj/item/holder)
 		O.show_inventory_panel(user, state = GLOB.tgui_deep_inventory_state)
 
 CAPABILITIES(/obj/item/holder/micro)
+	setup(PROC_REF(prepare_micro_carrier_sprite))
 	setup(PROC_REF(configure_micro_sheets))
 	configure(item_worn(slots = SLOT_FEET | SLOT_HEAD | SLOT_ID | SLOT_HOLSTER | SLOT_BACK))
 	op("micro_holder_pet_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Pet"), then(PROC_REF(micro_holder_pet_self)))
