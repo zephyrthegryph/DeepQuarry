@@ -240,8 +240,10 @@ CAPABILITIES(/obj/refs_param_probe)
 	var/obj/item/pen/target = allocate(/obj/item/pen, run_loc_floor_bottom_left)
 	var/obj/refs_param_probe/probe = allocate(/obj/refs_param_probe, run_loc_floor_bottom_left, target)
 	TEST_ASSERT_NULL(probe.probe_link, "a keep = FALSE param is dropped when Initialize() returns")
-	var/index_dump = "[target.om_refs_in ? target.om_refs_in.type : "null"] len=[length(target.om_refs_in)]"
+	// The one entry the target may keep is the harness's own: the unit test names everything it allocate()d through its `allocated` relation.
+	var/stray_edges = 0
 	for(var/index_key in target.om_refs_in)
-		index_dump += " | [index_key] = [islist(target.om_refs_in[index_key]) ? "list" : target.om_refs_in[index_key]]"
-	TEST_ASSERT(!length(target.om_refs_in), "and the target keeps no back-edge naming the holder (index: [index_dump])")
+		if(target.om_refs_in[index_key] != "allocated")
+			stray_edges++
+	TEST_ASSERT_EQUAL(stray_edges, 0, "and the target keeps no back-edge naming the holder")
 	TEST_ASSERT(!rel_names(probe, nameof(probe.probe_link), target), "and the target's reverse index no longer names the holder")
