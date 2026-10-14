@@ -43,6 +43,9 @@ CAPABILITIES(/obj/item/multitool)
 	op("uplink", in_hand(), when(nameof(uplink)), then(PROC_REF(open_uplink)))
 	op("recalibrate", at_target(/mob/living/carbon/human), stance(I_HELP), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Recalibrate"),
 		needs(req_adjacent(), req(PROC_REF(calibratable), silent = TRUE)), begins(PROC_REF(recalibrate_text)), wait(4 SECONDS), then(PROC_REF(attack_timed_done)))
+	ref_one(nameof(buffer), /obj/machinery/telecomms)
+	ref_one(nameof(connecting), /obj/machinery/clonepod)
+	ref_one(nameof(connectable), /obj/machinery)
 
 /obj/item/multitool/proc/open_uplink(datum/act/op/A)
 	item_hidden_uplink(src)?.trigger(A.actor)

@@ -270,6 +270,7 @@ CAPABILITIES(/obj/item/cell/standin)
 	configure(item_worn(flags = ABSTRACT))
 	param(nameof(hume), pos = 1)
 	setup(PROC_REF(charge_from_hume))
+	ref_one(nameof(hume), /mob/living/carbon/human)
 
 // ALLOW(init/INSTANCE_STATE): a stand-in cell charges from its human's nutrition, over its parents' charge, and lasts twenty seconds
 /obj/item/cell/standin/Initialize(mapload)

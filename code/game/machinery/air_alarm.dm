@@ -154,6 +154,7 @@ CAPABILITIES(/obj/machinery/alarm)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(power_changed)))
 	on_change(nameof(regulating_temperature), ANY, then(PROC_REF(thermostat_changed)))
 	on_change(nameof(is_main), ENTER, then(PROC_REF(became_main)))
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 
 	/// The alarm's window and the buttons in it. The lock gates every button but the remote setting and the thermostat; a shorted alarm, or one
 	/// whose AI control is cut (to a silicon), or a remote console that does not let the actor in, answers none.

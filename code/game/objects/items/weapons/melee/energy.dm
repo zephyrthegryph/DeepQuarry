@@ -445,6 +445,7 @@ CAPABILITIES(/obj/item/melee/energy/blade)
 	without("power") // special_handling: a summoned blade is never toggled, only dismissed
 	after_init(1, then(PROC_REF(check_held))) // after the hand that made it has taken it
 	op("dismiss", in_hand(), label("Dismiss energy blade"), then(PROC_REF(blade_dismiss_requested)))
+	ref_one(nameof(creator), /mob/living)
 
 /obj/item/melee/energy/blade/proc/blade_dismiss_requested(datum/act/op/A)
 	A.actor.drop_from_inventory(src)

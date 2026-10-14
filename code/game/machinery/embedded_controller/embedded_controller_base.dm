@@ -90,6 +90,7 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 
 CAPABILITIES(/obj/machinery/embedded_controller/radio)
 	configure(uses_power(channel = ENVIRON))
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 
 /obj/machinery/embedded_controller/radio/Initialize(mapload)
 	set_frequency(frequency) // Set it before parent instantiates program

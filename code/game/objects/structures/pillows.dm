@@ -87,6 +87,7 @@ CAPABILITIES(/obj/structure/bed/pillowpile)
 	return
 
 CAPABILITIES(/obj/structure/bed/pillowpilefront)
+	ref_one(nameof(pile))
 	bed_hands_off()
 	without("drag_buckle")   // its own Use replaced every inherited interaction
 	op("disassemble", hand(), label("Disassemble"), begins(MSG(pillowpilefront/disassembling)), wait(3 SECONDS), then(PROC_REF(disassembled)))

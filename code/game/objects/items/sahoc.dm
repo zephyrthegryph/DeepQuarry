@@ -19,6 +19,7 @@ CAPABILITIES(/obj/item/buttonofnormal)
 	configure(item_combat(force = 0))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	ref_one(nameof(capsuleowner), /mob/living)
 
 /// Old attack_self.
 /obj/item/buttonofnormal/proc/interaction_self(datum/act/op/A)

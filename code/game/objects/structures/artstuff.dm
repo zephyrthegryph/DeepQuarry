@@ -12,6 +12,7 @@
 	var/obj/item/canvas/painting = null
 
 CAPABILITIES(/obj/structure/easel)
+	ref_one(nameof(painting))
 	climb()
 	op("item", item(/obj/item/canvas), label("Use"), then(PROC_REF(interaction_item)))
 
@@ -328,9 +329,6 @@ CAPABILITIES(/obj/item/paint_palette)
 /obj/item/paint_palette/proc/brush_colour(datum/act/op/A)
 	var/obj/item/paint_brush/P = A.held
 	return P?.selected_color
-
-/datum/prompt/color/paint_palette
-	var/obj/item/paint_brush/brush
 
 /// Old attackby with a brush: the brush takes the picked colour.
 /obj/item/paint_palette/proc/brush_color_picked(datum/act/op/A)

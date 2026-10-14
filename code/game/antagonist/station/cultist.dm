@@ -40,6 +40,7 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 
 CAPABILITIES(/datum/antagonist/cultist)
 	ref_many(nameof(harvested), /datum/mind)
+	ref_one(nameof(sacrifice_target))
 
 /datum/antagonist/cultist/New()
 	..()

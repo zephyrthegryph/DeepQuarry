@@ -167,6 +167,9 @@
 	var/obj/effect/landmark/the_landmark
 	var/landmark_id = null
 
+CAPABILITIES(/obj/effect/step_trigger/teleporter/landmark)
+	ref_one(nameof(the_landmark))
+
 /obj/effect/step_trigger/teleporter/landmark/Initialize(mapload)
 	. = ..()
 	for(var/obj/effect/landmark/teleport_mark/mark in REGISTRY_MEMBERS(REGISTRY_TELE_LANDMARKS))

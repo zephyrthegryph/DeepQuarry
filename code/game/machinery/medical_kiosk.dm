@@ -60,6 +60,7 @@ CAPABILITIES(/obj/machinery/medical_kiosk)
 		asks(/datum/prompt/choice/medical_kiosk_service, fields = list("title" = computed(PROC_REF(kiosk_title)), "question" = "What service would you like?", "choices" = list("Health Scan", "Backup Scan", "Cancel"), "buttons" = TRUE, "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 10 SECONDS), step = "service", ends_on_no = TRUE),
 		starts(PROC_REF(kiosk_scan_started)), wait(5 SECONDS), then(PROC_REF(kiosk_scan_finished)), on_interrupt(PROC_REF(kiosk_scan_interrupted)))
 	op("medical_kiosk_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(medical_kiosk_interaction_item)))
+	ref_one(nameof(active_user), /mob/living)
 
 /// Cancel remains a visible third button, and is the native asks() no-answer.
 /datum/prompt/choice/medical_kiosk_service/normalize(given)

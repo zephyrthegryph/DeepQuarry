@@ -15,6 +15,7 @@
 	var/atom/parent
 
 CAPABILITIES(/obj/effect/abstract/particle_holder)
+	ref_one(nameof(parent))
 	param(nameof(particle_path), pos = 1)
 	param(nameof(particle_flags), pos = 2)
 

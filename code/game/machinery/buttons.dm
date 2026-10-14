@@ -56,6 +56,7 @@ CAPABILITIES(/obj/machinery/button/mob_spawner_button)
 	op("spawn_mob", hand(), ungated(), priority(OP_PRIORITY_DEFAULT), label("Spawn mob"),
 		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(spawn_options)), "title" = "Mob spawn", "question" = "Which Mob do you want to spawn?", "timeout" = 0), step = "mob"),
 		asks(/datum/prompt/choice, fields = list("title" = "Faction", "question" = "Do you want the mob's faction to remain the same or be passive?", "choices" = list("Normal", "Neutral"), "buttons" = TRUE), step = "faction"), then(PROC_REF(spawn_choices_made)))
+	ref_one(nameof(mobspawned), /mob/living/simple_mob)
 
 /obj/machinery/button/mob_spawner_button/proc/spawn_options(datum/act/op/A)
 	return GLOB.vr_mob_spawner_options
