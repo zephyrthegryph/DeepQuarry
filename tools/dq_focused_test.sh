@@ -333,6 +333,7 @@ list_only=0
 all_types=""
 split_mode=auto
 look_shards="${DQ_LOOK_SHARDS:-4}"
+sweep_shards="${DQ_SWEEP_SHARDS:-4}"
 look_full=0
 look_order=""
 look_dump=""
@@ -345,6 +346,10 @@ for arg in "$@"; do
 			;;
 		--list) list_only=1 ;;
 		--split-slow) split_mode=on ;;
+		--sweep-shards=*)
+			sweep_shards="${arg#--sweep-shards=}"
+			[[ "$sweep_shards" =~ ^[1-9][0-9]*$ ]] || { echo "--sweep-shards needs a positive integer, got '$sweep_shards'" >&2; exit 2; }
+			;;
 		--look-shards=*)
 			look_shards="${arg#--look-shards=}"
 			[[ "$look_shards" =~ ^[1-9][0-9]*$ ]] || { echo "--look-shards needs a positive integer, got '$look_shards'" >&2; exit 2; }
@@ -449,11 +454,20 @@ focus="$FOCUS_ARG"
 # key differs from code/modules/unit_tests/snapshots/look_keys.txt are probed. A passing run that covered both pins rewrites that file.
 # --full probes every type (the merge worktree and the nightly use it).
 look_pins=" dq_look_state_pin dq_look_tree_pin "
+# Whole-type sweep pins too long for one world (dq_loot_roll_pin: 306 declarations x 1000 spawns and qdels, about 45 minutes in one world, past
+# the 15 minute focused timeout): they run as DQ_SWEEP_SHARDS (default 4; --sweep-shards=N) worlds, each rolling its slice of the declarations
+# (DQ_FOCUS_SHARD=i/N; the test slices through sweep_types()) and comparing the rows it made. Not used with --bless or --repeat (a record is
+# whole), nor with --no-split-slow or DQ_FOCUS_SPLIT=0 (one world, as before).
+sweep_pins=" dq_loot_roll_pin "
+sweep_on=0
+if [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ] && [ "$split_mode" != "off" ] && [ "${DQ_FOCUS_SPLIT:-}" != "0" ] && [ "$sweep_shards" -gt 1 ]; then sweep_on=1; fi
 main_group=()
 slow_group=()
 look_group=()
+sweep_group=()
 for t in "${tests[@]}"; do
 	if [[ "$look_pins" == *" $t "* ]]; then look_group+=("$t")
+	elif [ "$sweep_on" -eq 1 ] && [[ "$sweep_pins" == *" $t "* ]]; then sweep_group+=("$t")
 	elif [[ "$slow_tests" == *" $t "* ]]; then slow_group+=("$t")
 	else main_group+=("$t"); fi
 done
@@ -462,6 +476,7 @@ case "$split_mode" in
 	on) do_split=1 ;;
 	auto) if [ ${#main_group[@]} -gt 0 ] && [ $(( ${#slow_group[@]} + ${#look_group[@]} )) -gt 0 ]; then do_split=1; fi ;;
 esac
+if [ ${#sweep_group[@]} -gt 0 ]; then do_split=1; fi
 if [ "${DQ_FOCUS_SPLIT:-}" = "0" ] && [ "$split_mode" = "auto" ]; then do_split=0; fi
 if [ "$bless" -eq 1 ] || [ "$repeat" -gt 1 ]; then
 	if [ "$split_mode" = "on" ]; then echo "--split-slow ignored: it is not used with --bless or --repeat" >&2; fi
@@ -480,6 +495,7 @@ if [ ${#look_group[@]} -gt 0 ] && [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ]; the
 		do_split=1
 	fi
 fi
+if [ ${#sweep_group[@]} -gt 0 ]; then do_split=1; fi
 LOOK_PARAMS=""
 LOOK_PLAN_FILE=""
 LOOK_STALE_COUNT=-1
@@ -657,6 +673,9 @@ run_worlds() {
 	W_LABEL=(); W_FOCUS=(); W_SHARD=(); W_PARAMS=()
 	if [ ${#main_group[@]} -gt 0 ]; then add_world main "" "" "${main_group[@]}"; fi
 	if [ ${#slow_group[@]} -gt 0 ]; then add_world slow "" "" "${slow_group[@]}"; fi
+	if [ ${#sweep_group[@]} -gt 0 ]; then
+		for ((i = 0; i < sweep_shards; i++)); do add_world "sweep$i" "$i/$sweep_shards" "" "${sweep_group[@]}"; done
+	fi
 	if [ "$look_world" -eq 1 ] && [ "$LOOK_STALE_COUNT" -ne 0 ]; then
 		n="$look_shards"
 		if [ "$LOOK_STALE_COUNT" -ge 0 ] && [ "$n" -gt 1 ]; then
@@ -676,7 +695,7 @@ run_worlds() {
 	fi
 	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do echo "== worlds: ${W_LABEL[$i]}${W_SHARD[$i]:+ (slice ${W_SHARD[$i]})}"; done
 	export DQ_KEEP_DERIVED_DME=1
-	if [ ${#look_group[@]} -gt 0 ] || [ ${#slow_group[@]} -gt 0 ]; then
+	if [ ${#look_group[@]} -gt 0 ] || [ ${#slow_group[@]} -gt 0 ] || [ ${#sweep_group[@]} -gt 0 ]; then
 		if [ -z "${DQ_FOCUS_TIMEOUT_MINUTES:-}" ]; then export DQ_FOCUS_TIMEOUT_MINUTES=45; fi
 	fi
 	start_world 0
