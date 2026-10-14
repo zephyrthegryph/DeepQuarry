@@ -39,7 +39,11 @@ die() { echo "dq_push_master: REFUSED: $*" >&2; exit 1; }
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
 merge_lock_require || exit 1
-release_batch() { if [ "$(_slots_norm "$(git rev-parse --show-toplevel)")" = "$(_slots_norm "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}")" ]; then merge_lock_release; fi; }
+merge_lock_busy begin
+trap 'merge_lock_busy end' EXIT
+# The batch ends with the push wherever it ran from: a lane that restamps and pushes from its own worktree after a refused push still frees
+# the lock it holds (the old check only released from inside the merge worktree, which leaked the lock on that path).
+release_batch() { merge_lock_busy end; if merge_lock_holder_check 2>/dev/null; then merge_lock_release; fi; }
 
 dirty() {
 	git update-index -q --refresh >/dev/null 2>&1
@@ -115,6 +119,19 @@ for round in 1 2 3; do
 	bash tools/ci/check_look_keys_format.sh --commit || die "look_keys.txt normalization failed"
 	sha="$(git rev-parse HEAD)"
 	log="data/push-check/${sha:0:12}"
+
+	# Re-proof: the lane's (or batch's) stamp went stale only because master moved while it was being gated, and its own commits are
+	# unchanged (a stamp on exactly its tip). Instead of refusing and sending it round another 30 minute lap that master can outrun
+	# again, the gates run its full stamped test list on this merged tree; that run is the fresh stamp, and it records reproof_of.
+	if ! pre_stamp="$(bash tools/dq_push_stamp.sh "$sha" 2>&1)" && [ "${DQ_PUSH_NO_REPROOF:-0}" != "1" ] && bash tools/dq_reproof_source.sh "$sha" >/dev/null 2>&1; then
+		echo "== re-proof: ${pre_stamp:0:300}"
+		echo "== re-proof: running the stamped test list on the merged tree ${sha:0:12} (tools/dq_merge_gates.sh --reproof)"
+		reproof_lanes="${expected_tips[*]-}"
+		bash tools/dq_merge_gates.sh --reproof ${reproof_lanes:+--lanes "$reproof_lanes"} || die "the re-proof gates failed on ${sha:0:12}; fix the failure (or rerun tools/dq_lane_ready.sh on the lane)"
+		sha="$(git rev-parse HEAD)"
+		log="data/push-check/${sha:0:12}"
+		echo "== re-proof passed: HEAD is now ${sha:0:12} and carries the fresh stamp"
+	fi
 
 	# tools/dq_merge_gates.sh runs the production build (DreamMaker + DreamChecker) next to the test world and stamps the exact
 	# HEAD when both reported clean. Clean tree and an unmoved HEAD are checked here and below.
