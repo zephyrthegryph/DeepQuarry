@@ -415,6 +415,8 @@
 #include "dq_draw_reagents.dm"
 #include "dq_look_glow_tests.dm"
 #include "dq_look_pins.dm"
+#include "dq_cleanup_icon_defaults.dm"
+#include "dq_cleanup_destroy_consequences.dm"
 #include "dq_look_sweep.dm"
 #include "dq_hit_pins.dm"
 #include "dq_loot_pins.dm"

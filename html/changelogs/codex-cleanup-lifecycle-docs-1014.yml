@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Removed obsolete edit markers and documentation examples, moved two fixed initialization icons to type defaults, and added destruction regression coverage."
