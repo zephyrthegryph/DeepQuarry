@@ -13,3 +13,5 @@ STATE LEAK will become a hard failure only after remaining fixture and producer 
 The acceptance run at 17829fb399 subsequently proved dq_gc_sweep leaks only latency_last_ineligible and latency_last_pin_reason diagnostic strings. Both are now scoped at fixture entry; live holder, pin and watch indexes and their assertions are unchanged. Include dq_gc_sweep in the focused gate.
 
 Both appearance producers scope Nar-Sie's one-time round flag, the queen birth/death counter, and their private contagion archive. Standalone tree runs are covered. Captures and goldens are untouched; newly archived templates end through their real lifecycle, so watch registrations disappear normally. Conversion pins also scope the two lazy NIFsoft catalog identities. Global explosion queues remain untouched.
+
+The test runner now performs its existing staleness-start hook before capturing fixture leak baselines. This prevents the deliberate boot-backlog parked flag from being reported as a fixture mutation, while retaining all fixture mutations in the snapshots. No exemption, index reset or fixture flag restoration was added. Verification remains pending.

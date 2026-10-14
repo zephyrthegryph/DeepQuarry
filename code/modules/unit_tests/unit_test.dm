@@ -920,6 +920,8 @@ GLOBAL_VAR(dq_test_select_names)
 	var/datum/unit_test/test = new test_path
 
 	GLOB.current_test = test
+	// Framework boot-backlog parking belongs before the fixture leak baselines.
+	staleness_test_begin()
 	var/duration = 0
 	var/tick_start_index = 0
 	var/runtimes_before = GLOB.total_runtimes
@@ -941,7 +943,6 @@ GLOBAL_VAR(dq_test_select_names)
 	var/test_output_desc = "[test_path]"
 	var/message = ""
 
-	staleness_test_begin()
 	log_world("::group::([current_index]/[total_tests]) [test_path]")
 	log_test("Running [current_index]/[total_tests]: [test_path]")
 
