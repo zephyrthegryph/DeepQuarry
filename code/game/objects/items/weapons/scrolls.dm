@@ -13,7 +13,6 @@
 	throw_speed = 4
 	throw_range = 20
 
-TRACKED(/obj/item/teleportation_scroll, uses)
 
 CAPABILITIES(/obj/item/teleportation_scroll)
 	// the old attack_self: how many uses are left, then where to (a person, free, with a use left)

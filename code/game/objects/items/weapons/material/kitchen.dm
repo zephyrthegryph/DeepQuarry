@@ -29,7 +29,6 @@ CAPABILITIES(/obj/item/material/kitchen/utensil)
 /obj/item/material/kitchen/utensil/proc/roll_pixel_y(datum/roller/R)
 	return R.chance(60) ? R.number(0, 4) : pixel_y
 
-TRACKED(/obj/item/material/kitchen/utensil, loaded)
 
 /obj/item/material/kitchen/utensil/draw(datum/look/look)
 	..()
@@ -47,7 +46,7 @@ TRACKED(/obj/item/material/kitchen/utensil, loaded)
 	set_loaded("\the [loading]")
 	act_message(user, src, MSG_SELF(span_notice("You scoop up some of [loaded] with %T%!")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " scoops up some of [loaded] with %T%!")))
-	loading.bitecount++
+	loading.set_bitecount(loading.bitecount + 1)
 	loading.reagents.trans_to_obj(src, min(loading.reagents.total_volume, scoop_volume))
 	set_loaded_color(loading.filling_color)
 

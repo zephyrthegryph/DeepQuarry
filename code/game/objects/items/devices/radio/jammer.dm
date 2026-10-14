@@ -38,7 +38,6 @@ CAPABILITIES(/obj/item/radio_jammer)
 	op("item", item(/obj/item/cell/device/weapon), label("Insert cell"), then(PROC_REF(interaction_item)))
 
 /obj/item/radio_jammer/var/on = FALSE
-TRACKED(/obj/item/radio_jammer, on)
 
 // a running jammer stops jamming.
 /obj/item/radio_jammer/on_destroy(force)

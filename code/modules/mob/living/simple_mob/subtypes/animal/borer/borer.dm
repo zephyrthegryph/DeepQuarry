@@ -422,4 +422,3 @@
 TYPE_TABLE(/datum/decl/mob_organ_names/borer, mob_organ_hit_zones, list("head", "central segment", "tail segment"))
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
-TRACKED(/mob/living/simple_mob/animal/borer, chemicals)

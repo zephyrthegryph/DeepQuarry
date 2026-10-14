@@ -2,10 +2,6 @@
 // rest_style, vore_fullness_ex, vore_light_states, the active module types, the hat). Types with their own sprite sheet (drone, thinktank
 // platform) override look_parts() instead of draw(): they replace the sprite datum's parts, they do not add to them.
 
-TRACKED(/mob/living/silicon/robot, opened)
-TRACKED(/mob/living/silicon/robot, wiresexposed)
-TRACKED(/mob/living/silicon/robot, sprite_type)
-TRACKED(/mob/living/silicon/robot, deployed)
 
 /mob/living/silicon/robot/draw(datum/look/look)
 	..()
@@ -50,9 +46,9 @@ TRACKED(/mob/living/silicon/robot, deployed)
 /mob/living/silicon/robot/proc/sprite_changed(datum/act/A)
 	if(!sprite_datum)
 		return
-	vis_height = sprite_datum.vis_height
+	set_vis_height(sprite_datum.vis_height)
 	if(default_pixel_x != sprite_datum.pixel_x)
-		default_pixel_x	= sprite_datum.pixel_x
+		set_default_pixel_x(sprite_datum.pixel_x)
 		pixel_x = sprite_datum.pixel_x
 		old_x = sprite_datum.pixel_x
 	if(!(rest_style in sprite_datum.rest_sprite_options))

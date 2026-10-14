@@ -62,8 +62,8 @@
 			var/obj/item/I = H.get_inactive_hand()
 			if(istype(A,/obj/item/material) || istype(A,/obj/item/melee) || istype(I,/obj/item/material) || istype(I,/obj/item/melee))
 				seen_melee = 1
-				melee_damage_lower = 20
-				melee_damage_upper = 30
+				set_melee_damage_lower(20)
+				set_melee_damage_upper(30)
 			if(istype(A,/obj/item/gun/projectile) || istype(I,/obj/item/gun/projectile))
 				seen_gun = 1
 				projectiletype = /obj/item/projectile/bullet/pistol/medium

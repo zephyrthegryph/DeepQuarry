@@ -49,4 +49,3 @@
 	for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
 		ME.equip_look(look)
 
-TRACKED(/obj/mecha, face_state)

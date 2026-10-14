@@ -28,7 +28,6 @@ MSG_DEF_SELF(dq_topic_probe/closed, "The probe is closed.")
 /datum/dq_topic_op_probe/op_topic_token_ok(mob/actor, supplied)
 	return !isnull(supplied) && supplied == token
 
-TRACKED(/datum/dq_topic_op_probe, usable)
 
 CAPABILITIES(/datum/dq_topic_op_probe)
 	extend(TAG_TOPIC, needs(req_topic_ok()))

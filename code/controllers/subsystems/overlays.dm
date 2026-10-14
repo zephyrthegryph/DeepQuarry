@@ -74,7 +74,7 @@ SYSTEM_DEF(overlays)
 /atom/proc/cut_overlays(priority)
 	STAT_START_STOPWATCH
 	if(priority)
-		priority_overlays = null
+		set_priority_overlays(null)
 	overlays = null
 	if(!priority && priority_overlays) // a wipe keeps the generic blocker: it is drawn once, here, and adds no longer bring it back
 		var/list/kept = islist(priority_overlays) ? priority_overlays : list(priority_overlays)
@@ -88,9 +88,9 @@ SYSTEM_DEF(overlays)
 	STAT_START_STOPWATCH
 	if(priority)
 		if(islist(priority_overlays))
-			priority_overlays -= remove_overlays
+			set_priority_overlays(priority_overlays - remove_overlays)
 		else if(priority_overlays && (islist(remove_overlays) ? (priority_overlays in remove_overlays) : priority_overlays == remove_overlays))
-			priority_overlays = null
+			set_priority_overlays(null)
 	if(islist(remove_overlays))
 		remove_overlays = remove_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	overlays -= build_appearance_list(remove_overlays, FALSE) // cutting a layer never takes the generic blocker with it
@@ -107,11 +107,11 @@ SYSTEM_DEF(overlays)
 			// rather than in a one-entry list; build_appearance_list() accepts either.
 			if(!priority_overlays)
 				// Copied: callers pass shared lists (cached overlay sets), and this one is appended to later.
-				priority_overlays = length(add_overlays) == 1 ? add_overlays[1] : add_overlays.Copy()
+				set_priority_overlays(length(add_overlays) == 1 ? add_overlays[1] : add_overlays.Copy())
 			else if(islist(priority_overlays))
-				priority_overlays += add_overlays
+				set_priority_overlays(priority_overlays + add_overlays)
 			else
-				priority_overlays = list(priority_overlays) + add_overlays
+				set_priority_overlays(list(priority_overlays) + add_overlays)
 		add_overlays = add_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	overlays += build_appearance_list(add_overlays, !length(overlays)) //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	VALIDATE_OVERLAY_LIMIT(src)

@@ -34,7 +34,6 @@ CAPABILITIES(/obj/item/spell/spawner/pulsar)
 
 /// Pulses on the declared every(). A subtype that runs its own loop (the snake) sets it FALSE.
 /obj/effect/temporary_effect/pulse/var/pulsing = TRUE
-TRACKED(/obj/effect/temporary_effect/pulse, pulsing)
 
 CAPABILITIES(/obj/effect/temporary_effect/pulse)
 	after_init(0, then(PROC_REF(first_pulse)))

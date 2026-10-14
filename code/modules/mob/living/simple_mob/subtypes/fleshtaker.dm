@@ -53,9 +53,9 @@ CAPABILITIES(/mob/living/simple_mob/fleshtaker)
 	set_icon_dead(target.icon_dead)
 	pixel_x = target.pixel_x
 	pixel_y = target.pixel_y
-	melee_damage_lower = target.melee_damage_lower
-	melee_damage_upper = target.melee_damage_upper
-	endurance = target.endurance
+	set_melee_damage_lower(target.melee_damage_lower)
+	set_melee_damage_upper(target.melee_damage_upper)
+	set_endurance(target.endurance)
 	fully_heal()
 	set_armor(target.get_armor())
 	//steal base stats
@@ -71,9 +71,9 @@ CAPABILITIES(/mob/living/simple_mob/fleshtaker)
 	set_icon_dead(base_values["icon_dead"])
 	pixel_x = base_values["pixel_x"]
 	pixel_y = base_values["pixel_y"]
-	melee_damage_lower = base_values["melee_damage_lower"]
-	melee_damage_upper = base_values["melee_damage_upper"]
-	endurance = base_values["endurance"]
+	set_melee_damage_lower(base_values["melee_damage_lower"])
+	set_melee_damage_upper(base_values["melee_damage_upper"])
+	set_endurance(base_values["endurance"])
 	fully_heal()
 	set_armor(base_values["armor"])
 

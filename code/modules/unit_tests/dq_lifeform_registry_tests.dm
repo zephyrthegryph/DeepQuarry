@@ -8,8 +8,6 @@ REGISTRY_DECLARE(dq_lifeform_probes, REGISTRY_DQ_LIFEFORM_PROBES)
 	var/probe_tag = "alpha"
 	var/frequency = 1441
 
-TRACKED(/obj/item/dq_registry_probe, probe_tag)
-TRACKED(/obj/item/dq_registry_probe, frequency)
 
 CAPABILITIES(/obj/item/dq_registry_probe)
 	registry(REGISTRY_DQ_LIFEFORM_PROBES, key = nameof(probe_tag), by = REG_Z)

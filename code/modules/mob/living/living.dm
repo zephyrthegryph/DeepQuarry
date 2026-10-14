@@ -610,45 +610,45 @@ sparse(/mob/living, vomiting, type = bool)
 /mob/living/update_canmove()
 	if(!resting && cannot_stand() && can_stand_overridden())
 		set_lying(FALSE)
-		canmove = TRUE
+		set_canmove(TRUE)
 	else
 		var/obj/buckled = src?.buckled_to()
 		if(istype(buckled, /obj/vehicle))
 			var/obj/vehicle/V = buckled
 			if(is_physically_disabled())
 				set_lying(FALSE)
-				canmove = TRUE
+				set_canmove(TRUE)
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
 					pixel_y = V.mob_offset_y - 5
 			else
 				if(buckled.buckle_lying != -1)
 					set_lying(buckled.buckle_lying)
-				canmove = TRUE
+				set_canmove(TRUE)
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
 					pixel_y = V.mob_offset_y
 		else if(buckled)
 			set_anchored(TRUE)
-			canmove = TRUE //The line above already makes the chair not swooce away if the sitter presses a button. No need to incapacitate them as a criminally large amount of mechanics read this var as a type of stun.
+			set_canmove(TRUE) //The line above already makes the chair not swooce away if the sitter presses a button. No need to incapacitate them as a criminally large amount of mechanics read this var as a type of stun.
 			if(istype(buckled))
 				if(buckled.buckle_lying != -1)
 					set_lying(buckled.buckle_lying)
-					canmove = buckled.buckle_movable
+					set_canmove(buckled.buckle_movable)
 				if(buckled.buckle_movable)
 					set_anchored(FALSE)
-					canmove = TRUE
+					set_canmove(TRUE)
 		else
 			set_lying(incapacitated(INCAPACITATION_KNOCKDOWN))
 			// Prone is not immobile. Voluntary rest and conscious knockdown use
 			// movement_delay()'s crawl penalties; knockout, stun, paralysis, and
 			// aggressive grabs are rejected below.
-			canmove = TRUE
+			set_canmove(TRUE)
 
 	if(incapacitated(INCAPACITATION_KNOCKOUT) || incapacitated(INCAPACITATION_STUNNED)) // Making sure we're in good condition to crawl
-		canmove = FALSE
+		set_canmove(FALSE)
 
 	if(is_paralyzed())
 		set_lying(TRUE)
-		canmove = FALSE
+		set_canmove(FALSE)
 
 	if(lying)
 		set_density(FALSE)
@@ -671,7 +671,7 @@ sparse(/mob/living, vomiting, type = bool)
 
 	for(var/obj/item/grab/G in src?.grabbed_by_list())
 		if(G.state >= GRAB_AGGRESSIVE)
-			canmove = 0
+			set_canmove(0)
 			break
 
 	if(lying != lying_prev)
@@ -972,7 +972,7 @@ READS_AS(/proc/nutrition_of, MOB_KEY_NUTRITION)
 	var/bit = 1 << index
 	if(hud_updateflag & bit)
 		return
-	hud_updateflag |= bit
+	set_hud_updateflag(hud_updateflag | bit)
 	PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
 
 /mob/living/proc/nutrition_percent()

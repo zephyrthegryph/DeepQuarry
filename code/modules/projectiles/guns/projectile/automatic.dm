@@ -256,7 +256,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/l6_saw)
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 
-TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 
 /obj/item/gun/projectile/automatic/l6_saw/special_check(mob/user)
 	if(cover_open)
@@ -805,7 +804,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/mg42)
 	configure(item_worn(slots = 0))
 	configure(item_combat(force = 10))
 
-TRACKED(/obj/item/gun/projectile/automatic/mg42, cover_open)
 
 /obj/item/gun/projectile/automatic/mg42/special_check(mob/user)
 	if(cover_open)

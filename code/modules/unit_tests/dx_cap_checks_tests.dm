@@ -46,7 +46,7 @@
 	H.set_stat(DEAD)
 	TEST_ASSERT_EQUAL(chk_alive(H, B, null), "you are dead", "alive refuses when dead")
 	var/mob/living/carbon/human/chk_bindable/Bd = allocate(/mob/living/carbon/human/chk_bindable, T)
-	Bd.bound = TRUE
+	Bd.set_bound(TRUE)
 	TEST_ASSERT_EQUAL(chk_capable(Bd, B, null), "you can't do that right now", "capable refuses when restrained")
 	TEST_ASSERT_EQUAL(chk_unrestrained(Bd, B, null), "you are restrained", "unrestrained refuses when restrained")
 

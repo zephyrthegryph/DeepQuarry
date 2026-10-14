@@ -29,7 +29,6 @@
 	var/obj/item/tank/phoron/ptank = null
 	var/volume_per_max_burn = 20 // gets divided by the intended burn ratio
 
-TRACKED(/obj/item/flamethrower, status)
 
 CAPABILITIES(/obj/item/flamethrower)
 	configure(item_thrown(force = 10.0))
@@ -57,7 +56,6 @@ CAPABILITIES(/obj/item/flamethrower/full)
 
 /// On or off: while lit it heats its turf every 2 s.
 /obj/item/flamethrower/var/lit = FALSE
-TRACKED(/obj/item/flamethrower, lit)
 
 /obj/item/flamethrower/proc/flamethrower_step(datum/act/timer/A)
 	var/turf/location = loc

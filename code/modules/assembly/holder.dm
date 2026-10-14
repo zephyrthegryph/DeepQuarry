@@ -93,7 +93,6 @@
 	if(a_right)
 		a_right.on_found(finder)
 
-TRACKED(/obj/item/assembly_holder, secured)
 CAPABILITIES(/obj/item/assembly_holder)
 	configure(item_thrown(force = 5))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))

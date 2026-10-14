@@ -99,7 +99,6 @@ MSG_DEF_SELF(poster/placing, span_notice("You start placing the poster on the wa
 	VAR_PROTECTED/datum/decl/poster/poster_decl = null // Assigned by Initialize() to a random poster decl. If this is mapset to a path, it will be used to locate the decl specified by that path.
 	VAR_PROTECTED/roll_type = /obj/item/poster
 	VAR_PRIVATE/ruined = FALSE
-TRACKED(/obj/structure/sign/poster, ruined)
 
 /// The rolled poster a hung one is made from (its constructor param).
 /obj/structure/sign/poster/var/tmp/obj/item/poster/hung_from

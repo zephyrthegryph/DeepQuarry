@@ -76,7 +76,6 @@
 	icon_state = "wrench"
 	var/hidden = FALSE
 
-TRACKED(/obj/dq_draw_pocket_hider, hidden)
 
 /obj/dq_draw_pocket_hider/draw(datum/look/look)
 	..()

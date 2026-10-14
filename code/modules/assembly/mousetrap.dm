@@ -12,7 +12,6 @@
 	if(armed)
 		. += "It looks like it's armed."
 
-TRACKED(/obj/item/assembly/mousetrap, armed)
 
 /obj/item/assembly/mousetrap/holder_state()
 	return armed ? "mousetraparmed" : "mousetrap"

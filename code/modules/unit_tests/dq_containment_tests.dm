@@ -676,5 +676,3 @@ CAPABILITIES(/obj/item/dq_containment_test/hooked)
 	tier = TEST_TIER_NORMAL
 	steps = 120
 
-TRACKED(/datum/dq_containment_listener, block_insert)
-TRACKED(/datum/dq_containment_listener, block_remove)

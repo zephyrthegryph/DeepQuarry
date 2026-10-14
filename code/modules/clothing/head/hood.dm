@@ -348,7 +348,6 @@ CAPABILITIES(/obj/item/clothing/head/hood_vr/turnip_hood)
 	desc = "This hood is so special that you weren't even supposed to lay eyes on it! Tell a developer!"
 	var/open = FALSE
 
-TRACKED(/obj/item/clothing/head/hood/toggleable, open)
 
 /obj/item/clothing/head/hood/toggleable/colorable
 	name = "hoodie hood"

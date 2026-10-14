@@ -377,7 +377,6 @@
 	initial_flooring = /datum/decl/flooring/snow
 	var/list/crossed_dirs
 
-TRACKED(/turf/simulated/floor/snow, crossed_dirs)
 
 // TODO: Move foortprints to a datum-component signal so they can actually be applied to other turf types, like sand, or mud
 /turf/simulated/floor/snow/Entered(atom/A)

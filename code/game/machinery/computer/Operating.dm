@@ -24,13 +24,6 @@
 	. = ..()
 	. += rel_one(nameof(table), back = nameof(/obj/machinery/optable::computer))
 
-TRACKED(/obj/machinery/computer/operating, verbose)
-TRACKED(/obj/machinery/computer/operating, spo2Alarm)
-TRACKED(/obj/machinery/computer/operating, choice)
-TRACKED(/obj/machinery/computer/operating, healthAnnounce)
-TRACKED(/obj/machinery/computer/operating, crit)
-TRACKED(/obj/machinery/computer/operating, healthAlarm)
-TRACKED(/obj/machinery/computer/operating, spo2)
 
 CAPABILITIES(/obj/machinery/computer/operating)
 	finds(nameof(table), /obj/machinery/optable) // the paired rel_one writes the table's computer

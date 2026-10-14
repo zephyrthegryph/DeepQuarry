@@ -5,7 +5,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/computer/atmoscontrol/console = allocate(/obj/machinery/computer/atmoscontrol, T)
 	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, T)
-	card.uses = 3
+	card.set_uses(3)
 	TEST_ASSERT(user.put_in_active_hand(card), "the actual actor holds its real charged emag")
 	TEST_ASSERT_NULL(console.atmos_control, "the actual unopened console has not created its lazy controller")
 	TEST_ASSERT(!is_emagged(console), "the actual unopened console starts unsubverted")

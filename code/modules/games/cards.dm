@@ -3,7 +3,6 @@
 	var/card_icon = "card_back"
 	var/back_icon = "card_back"
 
-TRACKED(/obj/item/hand, cards)
 
 /obj/item/deck
 	w_class = ITEMSIZE_SMALL
@@ -640,9 +639,6 @@ CAPABILITIES(/obj/item/hand)
 	var/jitter_x = 0
 	var/jitter_y = 0
 
-TRACKED(/obj/item/hand, direction)
-TRACKED(/obj/item/hand, jitter_x)
-TRACKED(/obj/item/hand, jitter_y)
 
 /// The cards, concealed or not: one card sits jittered, more are fanned out along the direction of whoever laid them on a table.
 /obj/item/hand/draw(datum/look/look)

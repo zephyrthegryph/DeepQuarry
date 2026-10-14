@@ -46,9 +46,6 @@
 	/// Whether it was running when the EMP took it down (it restarts when the outage lapses).
 	var/emp_was_on = FALSE
 
-TRACKED(/obj/vehicle, on)
-TRACKED(/obj/vehicle, open)
-TRACKED(/obj/vehicle, paint_color)
 
 /// A vehicle runs unless a pulse knocked its engine out (emp_disable() holds it down).
 STAT(/obj/vehicle, operable, ALL, virtual = TRUE)

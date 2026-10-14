@@ -71,7 +71,6 @@ CAPABILITIES(/obj/item/clothing/suit/darkvrwizard)
 /// Worn in the gloves slot (equipped()/dropped()). With the wearer view (a field, so its automatic
 /// clear when the wearer is destroyed counts too) it declares the feeding work.
 /obj/item/clothing/gloves/stamina/var/worn_on_hands = FALSE
-TRACKED(/obj/item/clothing/gloves/stamina, worn_on_hands)
 
 CAPABILITIES(/obj/item/clothing/gloves/stamina)
 	configure(item_protection(siemens = 0))
@@ -119,7 +118,6 @@ CAPABILITIES(/obj/item/clothing/gloves/stamina)
 
 /// TRUE while worn in the suit slot by a sentient mob.
 /obj/item/clothing/suit/armor/buffvest/var/worn_by_sentient = FALSE
-TRACKED(/obj/item/clothing/suit/armor/buffvest, worn_by_sentient)
 CAPABILITIES(/obj/item/clothing/suit/armor/buffvest)
 	every(2 SECONDS, then(PROC_REF(buffvest_step)), when = nameof(worn_by_sentient))
 

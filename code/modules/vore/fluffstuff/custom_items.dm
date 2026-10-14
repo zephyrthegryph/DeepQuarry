@@ -588,7 +588,6 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/khcrystal)
 
 /// TRUE once the crystal is paired and until it breaks or loses its owner.
 /obj/item/clothing/accessory/collar/khcrystal/var/tmp/watching = FALSE
-TRACKED(/obj/item/clothing/accessory/collar/khcrystal, watching)
 
 /// Watches its owner every 2 s once paired; a broken crystal or a lost owner stops it.
 /obj/item/clothing/accessory/collar/khcrystal/proc/crystal_step(datum/act/A)
@@ -750,10 +749,9 @@ CAPABILITIES(/obj/item/cane/fluff)
 	actions_types = list(/datum/action/item_action/toggle_mlembulance)
 	var/datum/looping_sound/ambulance/soundloop
 	var/ambulance_state = FALSE
+	var/ambulance = FALSE
 	EXPIRY_DECLARE(ambulance_last_switch)
 
-/obj/item/storage/backpack/saddlebag/tempest/var/ambulance = FALSE
-TRACKED(/obj/item/storage/backpack/saddlebag/tempest, ambulance)
 CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
 	every(2 SECONDS, then(PROC_REF(tempest_step)), when = nameof(ambulance))
 
@@ -1009,7 +1007,6 @@ TYPE_TABLE(/obj/item/material/twohanded/fluff, weapon_forced_material, " ") //Se
 	var/base_name = "stunstaff"
 	special_handling = TRUE
 
-TRACKED(/obj/item/melee/baton/fluff/stunstaff, wielded)
 
 CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 	configure(item_thrown(force = 7))

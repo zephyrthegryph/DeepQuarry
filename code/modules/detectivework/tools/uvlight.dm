@@ -18,7 +18,6 @@
 	var/step_alpha = 50
 
 /obj/item/uv_light/var/on = FALSE
-TRACKED(/obj/item/uv_light, on)
 
 CAPABILITIES(/obj/item/uv_light)
 	configure(item_worn(slots = SLOT_BELT))

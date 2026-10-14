@@ -158,11 +158,6 @@
 	if(power_w > 0)
 		use_power(power_w)
 
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pump_direction)
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, external_pressure_bound)
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, input_pressure_min)
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, output_pressure_max)
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/dp_vent_pump/derived()

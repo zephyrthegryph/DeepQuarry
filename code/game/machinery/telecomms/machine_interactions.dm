@@ -19,7 +19,6 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	var/list/temp = null // the status line: list("color", "text")
 
-TRACKED(/obj/machinery/telecomms, temp)
 
 /// req_tcomms_multitool(): the actor has a multitool for the machine (in hand; an AI's own; a cyborg's at the machine).
 /proc/req_tcomms_multitool()
@@ -121,7 +120,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 	var/datum/prompt/P = A.answer
 	var/newid = copytext(reject_bad_text(P?.value), 1, MAX_MESSAGE_LEN)
 	if(newid)
-		id = newid
+		set_id(newid)
 		report("-% New ID assigned: \"[id]\" %-")
 	return OP_OK
 
@@ -132,7 +131,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 	if(!newnet)
 		return OP_OK
 	rel_clear(src, nameof(links))
-	network = newnet
+	set_network(newnet)
 	report("-% New network tag assigned: \"[network]\" %-")
 	return OP_OK
 

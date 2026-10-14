@@ -66,7 +66,7 @@
 
 	user.put_in_hands(G)
 
-	G.state = GRAB_PASSIVE
+	G.set_state(GRAB_PASSIVE)
 	G.set_icon_state("grabbed1")
 	G.synch()
 	consume(src, user)

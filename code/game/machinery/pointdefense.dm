@@ -102,7 +102,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 				to_chat(user, span_warning("The [new_ident] network already has a controller."))
 				return OP_OK
 		to_chat(user, span_notice("You register [src] with the [new_ident] network."))
-		id_tag = new_ident
+		set_id_tag(new_ident)
 	return OP_OK
 
 //

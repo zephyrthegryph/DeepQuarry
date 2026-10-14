@@ -23,7 +23,6 @@
 	var/unwieldsound = null
 	var/base_icon
 
-TRACKED(/obj/item/oldtwohanded, wielded)
 
 /obj/item/oldtwohanded/proc/unwield()
 	set_wielded(0)

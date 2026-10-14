@@ -212,14 +212,14 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 	var/datum/prompt/R = A.answer
 	var/nam = sanitizeName(R?.value)
 	if(nam)
-		giv_name = nam
+		set_giv_name(nam)
 	return TRUE
 
 /obj/machinery/computer/guestpass/proc/ui_act_reason(datum/act/op/A)
 	add_fingerprint(A.actor)
 	var/datum/prompt/R = A.answer
 	if(R?.value)
-		reason = R.value
+		set_reason(R.value)
 	return TRUE
 
 /obj/machinery/computer/guestpass/proc/ui_act_duration(datum/act/op/A)

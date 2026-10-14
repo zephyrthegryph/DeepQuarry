@@ -35,7 +35,7 @@
 	if(src.identifying_gender == identifying_gender)
 		return
 
-	src.identifying_gender = identifying_gender
+	set_identifying_gender(identifying_gender)
 	return 1
 
 /mob/living/carbon/human/proc/change_hair(hair_style)

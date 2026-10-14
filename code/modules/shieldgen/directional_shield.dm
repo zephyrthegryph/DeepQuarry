@@ -111,7 +111,6 @@ CAPABILITIES(/obj/item/shield_projector)
 
 /// TRUE while the projector regenerates (damage starts it); whole, it parks.
 /obj/item/shield_projector/var/tmp/regenerating = FALSE
-TRACKED(/obj/item/shield_projector, regenerating)
 
 // its shields come down.
 /obj/item/shield_projector/on_destroy(force)

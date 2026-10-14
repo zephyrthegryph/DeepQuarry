@@ -13,7 +13,6 @@
 /// Proximity alarm countdown in steps (meteor_alarm()); while it runs the diffuser is silenced.
 /obj/machinery/shield_diffuser/var/alarm = 0
 /obj/machinery/shield_diffuser/var/enabled = TRUE
-TRACKED(/obj/machinery/shield_diffuser, enabled)
 /// It has a step to take: an alarm to count down, or a diffuse pass while enabled.
 /obj/machinery/shield_diffuser/proc/diffuser_has_work()
 	return enabled || alarm

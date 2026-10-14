@@ -104,9 +104,6 @@
 
 	floor_decal_paint(F, painting_decal, painting_dir, painting_colour)
 
-TRACKED(/obj/item/floor_painter, decal)
-TRACKED(/obj/item/floor_painter, paint_dir)
-TRACKED(/obj/item/floor_painter, paint_colour)
 
 CAPABILITIES(/obj/item/floor_painter)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

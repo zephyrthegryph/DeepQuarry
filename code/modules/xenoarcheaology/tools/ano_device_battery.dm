@@ -68,7 +68,6 @@ CAPABILITIES(/obj/item/anobattery)
 	..()
 
 /obj/item/anodevice/var/activated = FALSE
-TRACKED(/obj/item/anodevice, activated)
 CAPABILITIES(/obj/item/anodevice)
 	/// Runs its battery effect while activated.
 	every(2 SECONDS, then(PROC_REF(anodevice_step)), when = nameof(activated))

@@ -194,7 +194,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 	var/id = 1
 	var/locked = 0
 
-TRACKED(/obj/structure/morgue/crematorium, cremating)
 
 // the crematorium's own Use replaces the morgue's (its tray is a crematorium tray, and it is locked while it burns)
 CAPABILITIES(/obj/structure/morgue/crematorium)

@@ -1414,7 +1414,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 			remove_language(L)
 		// Clear out their species abilities.
 		species.remove_inherent_verbs(src)
-		holder_type = null
+		set_holder_type(null)
 		set_hunger_rate(src, DEFAULT_HUNGER_FACTOR)
 
 	var/datum/species/replaced = proto_replace(src, nameof(species), GLOB.all_species[new_species])
@@ -1440,7 +1440,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		looks.set_skin_color(rgb(0, 0, 0))
 
 	if(species.holder_type)
-		holder_type = species.holder_type
+		set_holder_type(species.holder_type)
 
 	if(!(gender in species.genders))
 		gender = species.genders[1]
@@ -1470,14 +1470,14 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 	species.apply_components(src)
 
-	endurance = species.total_health
+	set_endurance(species.total_health)
 	set_hunger_rate(src, species.hunger_factor)
 
-	default_pixel_x = initial(pixel_x) + species.pixel_offset_x //For giving datum/species ways to change 64x64 sprite offsets
-	default_pixel_y = initial(pixel_y) + species.pixel_offset_y
+	set_default_pixel_x(initial(pixel_x) + species.pixel_offset_x) //For giving datum/species ways to change 64x64 sprite offsets
+	set_default_pixel_y(initial(pixel_y) + species.pixel_offset_y)
 	pixel_x = default_pixel_x
 	pixel_y = default_pixel_y
-	center_offset = species.center_offset
+	set_center_offset(species.center_offset)
 
 	if(vessel && !keep_organs)
 		initialize_vessel()
@@ -2110,8 +2110,8 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		return
 
 	if(isnull(rest_dir))
-		rest_dir = FALSE
-	rest_dir = !rest_dir
+		set_rest_dir(FALSE)
+	set_rest_dir(!rest_dir)
 	update_transform(TRUE)
 
 /mob/living/carbon/human/get_digestion_nutrition_modifier()
@@ -2241,5 +2241,4 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 // Each side effect is created for this human and kept only here and by its finish() timer.
 
 /// The status step reads it (embedded objects roll damage on movement).
-TRACKED(/mob/living/carbon/human, embedded_flag)
 

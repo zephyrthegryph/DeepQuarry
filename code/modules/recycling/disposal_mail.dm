@@ -15,9 +15,6 @@
 /proc/parcel_offset(atom/parcel, purpose, low, high)
 	return low + (hex2num(copytext(md5("[ref(parcel)][purpose]"), 1, 5)) % (high - low + 1))
 
-TRACKED(/obj/structure/bigDelivery, sortTag)
-TRACKED(/obj/structure/bigDelivery, examtext)
-TRACKED(/obj/structure/bigDelivery, nameset)
 
 CAPABILITIES(/obj/structure/bigDelivery)
 	op("hand", hand(), label("Use"), ungated(), then(PROC_REF(interaction_hand)))
@@ -162,9 +159,6 @@ DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop
 	var/examtext = null
 	var/nameset = 0
 
-TRACKED(/obj/item/smallDelivery, sortTag)
-TRACKED(/obj/item/smallDelivery, examtext)
-TRACKED(/obj/item/smallDelivery, nameset)
 
 CAPABILITIES(/obj/item/smallDelivery)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))

@@ -132,7 +132,7 @@ CAPABILITIES(/obj/item/radio/headset)
 	return OP_OK
 
 /obj/item/radio/headset/recalculateChannels(setDescription = FALSE, register = TRUE)
-	src.channels = list()
+	set_channels(list())
 	src.translate_binary = FALSE
 	src.translate_hive = FALSE
 	src.syndie = FALSE
@@ -141,8 +141,8 @@ CAPABILITIES(/obj/item/radio/headset)
 		for(var/ch_name in keyslot1.channels)
 			if(ch_name in src.channels)
 				continue
-			src.channels += ch_name
-			src.channels[ch_name] = keyslot1.channels[ch_name]
+			add_channels(ch_name)
+			set_channels_at(ch_name, keyslot1.channels[ch_name])
 
 		if(keyslot1.translate_binary)
 			src.translate_binary = TRUE
@@ -157,8 +157,8 @@ CAPABILITIES(/obj/item/radio/headset)
 		for(var/ch_name in keyslot2.channels)
 			if(ch_name in src.channels)
 				continue
-			src.channels += ch_name
-			src.channels[ch_name] = keyslot2.channels[ch_name]
+			add_channels(ch_name)
+			set_channels_at(ch_name, keyslot2.channels[ch_name])
 
 		if(keyslot2.translate_binary)
 			src.translate_binary = TRUE

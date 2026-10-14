@@ -15,7 +15,6 @@
 	open_sound = SFX_EFFECTS_CRATE_OPEN
 	close_sound = SFX_EFFECTS_CRATE_CLOSE
 
-TRACKED(/obj/structure/closet/crate, rigged)
 
 MSG_DEF_SELF(crate/already_rigged, "It is already rigged!")
 MSG_DEF_SELF(crate/no_grabs, "You can't stuff anyone into that.")
@@ -130,7 +129,6 @@ CAPABILITIES(/obj/structure/closet/crate)
 	/// Whether it starts locked (a map says `locked = 0` for one that does not). The lock itself is the lock() capability's key: read it with lock_locked().
 	var/locked = 1
 
-TRACKED(/obj/structure/closet/crate/secure, broken)
 
 MSG_DEF_SELF(crate/close_first, "Close the crate first.")
 MSG_DEF_SELF(crate/broken, "The crate appears to be broken.")

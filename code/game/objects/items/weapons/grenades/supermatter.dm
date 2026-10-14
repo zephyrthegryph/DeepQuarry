@@ -6,7 +6,6 @@
 	EXPIRY_DECLARE(implode_at)
 	/// TRUE from detonation: the slow step pulls everything in until the grenade implodes.
 	var/tmp/imploding = FALSE
-TRACKED(/obj/item/grenade/supermatter, imploding)
 
 CAPABILITIES(/obj/item/grenade/supermatter)
 	every(2 SECONDS, then(PROC_REF(pull_step)), when = nameof(imploding))

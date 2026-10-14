@@ -219,7 +219,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	set_icon_dead("mouse_[new_mouse_colour]_dead")
 	set_icon_rest("mouse_[new_mouse_colour]_sleep")
 	desc = "A small [new_mouse_colour] rodent, often seen hiding in maintenance areas and making a nuisance of itself."
-	holder_type = text2path("/obj/item/holder/mouse/[new_mouse_colour]")
+	set_holder_type(text2path("/obj/item/holder/mouse/[new_mouse_colour]"))
 	to_chat(src, span_notice("You are now a [new_mouse_colour] mouse!"))
 	grant(src, granted_verb(/mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour, hidden = TRUE), src) // one colour change only
 

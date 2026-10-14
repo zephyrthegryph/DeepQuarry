@@ -19,7 +19,6 @@
 /// cleared lazily.
 /atom/var/heat_body
 /// Written only through set_heat_body(): reactive code reads the temperature as a band (watched()), not the handle, so nothing generates it.
-TRACKED(/atom, heat_body)
 
 
 // ---------------------------------------------------------------- the API

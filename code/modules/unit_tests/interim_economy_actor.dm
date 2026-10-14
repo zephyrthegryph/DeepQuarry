@@ -5,7 +5,7 @@
 	var/obj/item/eftpos/terminal = allocate(/obj/item/eftpos, T)
 	own_turf_contents(T)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, T)
-	terminal.access_code = 1234
+	terminal.set_access_code(1234)
 	card.set_access(list(ACCESS_RESEARCH))
 	TEST_ASSERT(operator.put_in_active_hand(card), "the operator holds the ID being checked")
 	TEST_ASSERT(test_op_committed(op_ui_act(operator, terminal, "reset")), "reset action is handled")

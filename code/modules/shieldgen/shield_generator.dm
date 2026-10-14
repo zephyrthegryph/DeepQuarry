@@ -365,7 +365,7 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 		return
 
 	if(target_radius != field_radius && running != SHIELD_RUNNING) // Do not recalculate the field while it's running; that's extremely laggy.
-		field_radius += (target_radius > field_radius) ? 1 : -1
+		set_field_radius(field_radius + ((target_radius > field_radius) ? 1 : -1))
 
 	// We are shutting down, therefore our stored energy disperses faster than usual.
 	else if(running == SHIELD_DISCHARGING)

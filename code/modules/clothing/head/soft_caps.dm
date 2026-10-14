@@ -13,7 +13,6 @@
 	set_flipped(FALSE)
 	..()
 
-TRACKED(/obj/item/clothing/head/soft, flipped)
 
 CAPABILITIES(/obj/item/clothing/head/soft)
 	configure(item_worn(covers = 0))

@@ -110,7 +110,7 @@
 	var/obj/item/toy/mecha/toy = allocate(/obj/item/toy/mecha, T)
 	var/obj/item/toy/mecha/foe = allocate(/obj/item/toy/mecha, T)
 	toy.in_combat = TRUE
-	toy.combat_health = 1
+	toy.set_combat_health(1)
 	after(toy, 1 SECONDS, TYPE_PROC_REF(/obj/item/toy/mecha, brawl_round), with = list(foe, null, null, 0), keeps_dead = TRUE)
 	qdel(foe)
 	scheduler_advance(2)
@@ -124,7 +124,7 @@
 	var/obj/item/toy/mecha/toy = allocate(/obj/item/toy/mecha, T)
 	var/obj/item/toy/mecha/foe = allocate(/obj/item/toy/mecha, T)
 	toy.in_combat = TRUE
-	toy.combat_health = 1
+	toy.set_combat_health(1)
 	after(toy, 1 SECONDS, TYPE_PROC_REF(/obj/item/toy/mecha, brawl_exchange), with = list(foe, null, null, 0), keeps_dead = TRUE)
 	qdel(foe)
 	scheduler_advance(2)

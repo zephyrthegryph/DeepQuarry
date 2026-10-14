@@ -17,7 +17,6 @@
 	var/affected_area = 3
 	special_handling = TRUE
 
-TRACKED(/obj/item/grenade/chem_grenade, stage)
 
 CAPABILITIES(/obj/item/grenade/chem_grenade)
 	configure(item_combat(force = 2.0))

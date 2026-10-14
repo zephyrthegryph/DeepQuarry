@@ -123,7 +123,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 				hood.item_state = "zaddat_soft"
 
 	to_chat(M, "You finish customizing your Shroud. Looking good!")
-	has_been_customized = TRUE
+	set_has_been_customized(TRUE)
 	changed(src) // the sprites are plain vars: the wearer, who watches the suit and helmet, draws the new style
 	if(hood)
 		changed(hood)
@@ -229,7 +229,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 				hood.item_state = "zaddat_rugged"
 
 	to_chat(M, "You finish customizing your Shroud. Looking good!")
-	has_been_customized = TRUE
+	set_has_been_customized(TRUE)
 	changed(src) // the sprites are plain vars: the wearer, who watches the suit and helmet, draws the new style
 	if(hood)
 		changed(hood)
@@ -321,7 +321,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 				hood.item_state = "zaddat_soft"
 
 	to_chat(M, "You finish customizing your Shroud. Looking good!")
-	has_been_customized = TRUE
+	set_has_been_customized(TRUE)
 	changed(src) // the sprites are plain vars: the wearer, who watches the suit and helmet, draws the new style
 	if(hood)
 		changed(hood)

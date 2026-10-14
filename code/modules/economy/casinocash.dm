@@ -86,8 +86,6 @@ CAPABILITIES(/obj/machinery/chipmachine)
 		consume(src, user)
 	return OP_PASS
 
-TRACKED(/obj/item/spacecasinocash, worth)
-TRACKED(/obj/item/spacecasinocash, note_seed)
 
 /obj/item/spacecasinocash/draw(datum/look/look)
 	..()
@@ -274,8 +272,6 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 		consume(src, user)
 	return OP_PASS
 
-TRACKED(/obj/item/spacecasinocash_fake, worth)
-TRACKED(/obj/item/spacecasinocash_fake, note_seed)
 
 /obj/item/spacecasinocash_fake/draw(datum/look/look)
 	..()

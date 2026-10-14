@@ -40,7 +40,6 @@ ACTION(ai_pack_stir, FIXED, notice = /datum/notice/ai_pack_stirred)
 	var/los_checks = 0
 	var/view_builds = 0
 
-TRACKED(/datum/ai_pack, needs_upkeep)
 
 CAPABILITIES(/datum/ai_pack)
 	links(/datum/ai_pack::members, /datum/ai_brain::pack, a_many = TRUE)

@@ -40,7 +40,6 @@ CAPABILITIES(/obj/machinery/rnd/server)
 	if(stored_research)
 		rel_add(stored_research, nameof(stored_research.techweb_servers), src)
 
-TRACKED(/obj/machinery/rnd/server, working)
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/rnd/server/draw(datum/look/look)

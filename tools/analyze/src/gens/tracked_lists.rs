@@ -215,7 +215,8 @@ impl Generator for TrackedLists {
         let Some(sem) = cx.sem() else { return };
         let lists = list_vars(&sem, &decls);
         let taken = taken(&sem, cx.tree);
-        let (tests, content): (Vec<_>, Vec<_>) = lists.into_values().partition(|d| crate::sem::gen::test_only(&d.rel));
+        let test_types = crate::sem::gen::test_only_types(cx.tree);
+        let (tests, content): (Vec<_>, Vec<_>) = lists.into_values().partition(|d| crate::sem::gen::test_only(&d.rel) || test_types.contains(&d.ty));
         for d in &content {
             if sem.var_decl(&d.ty, &format!("{}_version", d.var)).is_some_and(|v| v.file != "code/engine/_generated/tracked_lists.dm") {
                 out.diag(&d.rel, d.line, format!("tracked list `{}` needs a var `{}_version`, which {} already declares", d.var, d.var, d.ty));

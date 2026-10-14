@@ -129,7 +129,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 	if(cell && operable())
 		look.overlay("ccharger-o[chargelevel]")
 		look.overlay(cell.icon_state, icon = cell.icon)
-		look.overlay("ccharger-[cell.connector_type]-on") // ALLOW(sys_dx_untracked_read): a cell's connector type is fixed for its life
+		look.overlay("ccharger-[cell.connector_type]-on")
 	else if(anchored)
 		look.overlay("ccharger1")
 

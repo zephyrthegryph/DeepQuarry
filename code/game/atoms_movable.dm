@@ -711,9 +711,9 @@ CAPABILITIES(/atom/movable/overlay)
 	if(isnull(new_scale_y))
 		new_scale_y = new_scale_x
 	if(new_scale_x != 0)
-		icon_scale_x = new_scale_x
+		set_icon_scale_x(new_scale_x)
 	if(new_scale_y != 0)
-		icon_scale_y = new_scale_y
+		set_icon_scale_y(new_scale_y)
 	update_transform()
 
 /atom/movable/proc/adjust_rotation(new_rotation)

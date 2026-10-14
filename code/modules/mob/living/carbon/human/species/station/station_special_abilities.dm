@@ -854,8 +854,8 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	C.set_w_class(src.size_multiplier * 4) //Egg size and weight scaled to match occupant.
 	var/obj/item/holder/H = new mob_holder_type(C, src)
 	C.max_storage_space = H.w_class
-	C.icon_scale_x = 0.25 * C.w_class
-	C.icon_scale_y = 0.25 * C.w_class
+	C.set_icon_scale_x(0.25 * C.w_class)
+	C.set_icon_scale_y(0.25 * C.w_class)
 	C.update_transform()
 	var/datum/tgui_module/appearance_changer/cocoon/V = new(src, src)
 	V.tgui_interact(src)

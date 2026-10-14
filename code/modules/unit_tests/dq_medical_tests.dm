@@ -816,7 +816,7 @@
 	// Push radiation past the moderate threshold (100). The collapsed
 	// condition should appear at the highest matching tier — Moderate
 	// at rad 150, since rad 300+ would be Severe.
-	H.radiation = 150
+	H.set_radiation(150)
 	H.dq_check_metric_conditions()
 	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(heart, "no heart")
@@ -829,7 +829,7 @@
 	TEST_ASSERT_EQUAL(ar.stage, "Moderate", "radiation 150 should select the Moderate stage (got [ar.stage])")
 
 	// Drop back to safe, re-dispatch — should auto-cure.
-	H.radiation = 0
+	H.set_radiation(0)
 	H.dq_check_metric_conditions()
 	var/still = FALSE
 	for(var/datum/affliction/c in heart.afflictions_here())

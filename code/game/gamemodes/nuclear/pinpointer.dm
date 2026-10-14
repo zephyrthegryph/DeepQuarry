@@ -16,7 +16,6 @@
 
 
 /obj/item/pinpointer/var/active = FALSE
-TRACKED(/obj/item/pinpointer, active)
 CAPABILITIES(/obj/item/pinpointer)
 	ref_one(nameof(the_disk))
 	configure(item_worn(slots = SLOT_BELT))

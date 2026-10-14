@@ -4,11 +4,11 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/lego/trap = allocate(/obj/item/lego, T)
 	TEST_ASSERT(!user.has_affliction(/datum/affliction/acute_pain), "the actor starts without acute pain")
-	user.m_intent = I_WALK
+	user.set_m_intent(I_WALK)
 	trap.Crossed(user)
 	TEST_ASSERT(!QDELETED(trap), "walking over the trap preserves it")
 	TEST_ASSERT(!user.has_affliction(/datum/affliction/acute_pain), "walking over the trap inflicts no pain")
-	user.m_intent = I_RUN
+	user.set_m_intent(I_RUN)
 	trap.Crossed(user)
 	TEST_ASSERT(QDELETED(trap), "running over the trap consumes it")
 	TEST_ASSERT(user.has_affliction(/datum/affliction/acute_pain), "running over the trap inflicts real acute pain")
@@ -30,12 +30,12 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/gootrap/interim_actor_probe/trap = allocate(/obj/structure/gootrap/interim_actor_probe, T)
-	victim.m_intent = I_WALK
+	victim.set_m_intent(I_WALK)
 	trap.Crossed(victim)
 	TEST_ASSERT(trap.deployed, "walking leaves the goo trap deployed")
 	TEST_ASSERT_NULL(victim.buckled_to(), "walking does not restrain the actor")
 	TEST_ASSERT_EQUAL(trap.report_count, 0, "walking produces no crossing report")
-	victim.m_intent = I_RUN
+	victim.set_m_intent(I_RUN)
 	trap.Crossed(victim)
 	TEST_ASSERT(!trap.deployed, "running triggers the trap")
 	TEST_ASSERT_EQUAL(victim.buckled_to(), trap, "the actual crossing victim is restrained by the real trap")

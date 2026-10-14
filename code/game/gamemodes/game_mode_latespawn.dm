@@ -4,7 +4,6 @@
 /datum/game_mode/var/process_count = 0
 /// The round is playing: the mode's every() (mode_step) runs while this holds. SSticker sets it at round start and clears it when the round ends.
 /datum/game_mode/var/mode_running = FALSE
-TRACKED(/datum/game_mode, mode_running)
 
 /datum/game_mode/proc/get_usable_templates(list/supplied_templates)
 	var/list/usable_templates = list()

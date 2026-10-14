@@ -14,7 +14,6 @@ MSG_DEF_SELF(prompt/unpowered, "It has no power.")
 	var/second = 0
 	var/runs = 0
 
-TRACKED(/obj/e0_fixture/prompt_base, powered)
 
 /obj/e0_fixture/prompt_base/box
 CAPABILITIES(/obj/e0_fixture/prompt_base/box)

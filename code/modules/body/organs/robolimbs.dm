@@ -502,7 +502,6 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC
 	parts = list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
 
-TRACKED(/obj/item/disk/limb, company)
 
 CAPABILITIES(/obj/item/disk/limb)
 	after_init(0, then(PROC_REF(limb_disk_named)))
@@ -560,7 +559,6 @@ CAPABILITIES(/obj/item/disk/limb)
 	icon_state = "datadisk2"
 	var/species = SPECIES_HUMAN
 
-TRACKED(/obj/item/disk/species, species)
 
 CAPABILITIES(/obj/item/disk/species)
 	after_init(0, then(PROC_REF(species_disk_named)))

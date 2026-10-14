@@ -18,7 +18,6 @@
 	var/start_pressure = ONE_ATMOSPHERE
 	var/maximum_pressure = 90 * ONE_ATMOSPHERE
 
-TRACKED(/obj/machinery/portable_atmospherics, destroyed)
 
 MSG_DEF_SELF(portable/no_port, "Nothing happens.")
 MSG_DEF_SELF(portable/wrecked, "It is wrecked.")

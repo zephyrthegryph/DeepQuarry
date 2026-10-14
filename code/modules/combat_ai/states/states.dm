@@ -133,7 +133,6 @@ CAPABILITY_TYPE(ai_state_regroup, CAP_AI_STATE_REGROUP, /datum/capability/ai_sta
 /datum/ai_behavior/hit_and_run
 	flees = TRUE
 
-TRACKED(/datum/ai_brain, ai_state)
 
 /datum/ai_brain
 	/// The state capability the brain is in (modes(nameof(ai_state)) grants it): a faction or species may start in another.

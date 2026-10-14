@@ -42,7 +42,7 @@
 	if(ismob(AM))
 		var/mob/M = AM
 		if(immobilize)
-			M.canmove = 0
+			M.set_canmove(0)
 
 	rel_add(src, nameof(affecting), AM)
 	throw_next(AM, 0)
@@ -84,7 +84,7 @@
 	if(ismob(AM))
 		var/mob/M = AM
 		if(immobilize)
-			M.canmove = 1
+			M.set_canmove(1)
 
 /* Stops things thrown by a thrower, doesn't do anything */
 

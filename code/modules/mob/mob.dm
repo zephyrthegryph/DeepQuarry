@@ -322,9 +322,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		msg = sanitize(msg)
 
 	if (length(memory) == 0)
-		memory += msg
+		set_memory(memory + msg)
 	else
-		memory += "<BR>[msg]"
+		set_memory(memory + ("<BR>[msg]"))
 
 	if (popup)
 		memory()

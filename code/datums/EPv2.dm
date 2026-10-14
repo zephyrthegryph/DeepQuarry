@@ -55,7 +55,7 @@ CAPABILITIES(/datum/exonet_protocol)
 
 			new_address = "[addr_0]:[addr_1]"
 			string = "[string]0" //If we did get a collision, this should make the next attempt not have one.
-		address = new_address
+		set_address(new_address)
 		registry_join(REGISTRY_EXONET_CONNECTIONS, src)
 
 REGISTRY_MEMBERSHIP(/datum/exonet_protocol, REGISTRY_EXONET_CONNECTIONS)
@@ -67,7 +67,7 @@ REGISTRY_MEMBERSHIP(/datum/exonet_protocol, REGISTRY_EXONET_CONNECTIONS)
 	if(new_address)
 		if(new_address == find_address(new_address) )	//Collision test.
 			return 0
-		address = new_address
+		set_address(new_address)
 		registry_join(REGISTRY_EXONET_CONNECTIONS, src)
 		return 1
 
@@ -88,7 +88,7 @@ REGISTRY_MEMBERSHIP(/datum/exonet_protocol, REGISTRY_EXONET_CONNECTIONS)
 // Parameters: None
 // Description: Deallocates the address, freeing it for use.
 /datum/exonet_protocol/proc/remove_address()
-	address = ""
+	set_address("")
 	registry_leave(REGISTRY_EXONET_CONNECTIONS, src)
 
 // Proc: find_address()

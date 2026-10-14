@@ -20,7 +20,6 @@
 	var/list/log = list()
 	var/list/busy = list()
 
-TRACKED(/datum/seq_test_entity, heat)
 
 /datum/seq_test_entity/seq_plan_key()
 	return plan_key
@@ -262,7 +261,7 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT(READERS(E, "heat"), "a step's read is a reader on the type")
 	TEST_ASSERT(READERS(E, "on"), "and so is a condition's read")
 	TEST_ASSERT(!READERS(E, "lit"), "a condition without reads reads nothing")
-	E.heat = 5
+	E.set_heat(5)
 	publish_change(E, "heat")
 	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "heat"), "publishing a key wakes the step that reads it")
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "sc"), "and only that one")
@@ -279,7 +278,7 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "and not the others")
 	E.set_heat(2)
 	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "heat"), "a TRACKED setter publishes the read (READERS)")
-	E.heat = 0
+	E.set_heat(0)
 	E.log.Cut()
 	seq_run_frame_now(E, SEQ_TEST)
 	publish_change(E, "seq_test_wake_all")
@@ -300,7 +299,7 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT_EQUAL(length(E.log), 0, "its should_run() is FALSE: it did not run")
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "and went back to sleep")
 	TEST_ASSERT_NULL(S.woken, "no woken bits are left")
-	E.heat = 3
+	E.set_heat(3)
 	publish_change(E, "heat")
 	seq_run_frame_now(E, SEQ_TEST)
 	TEST_ASSERT_EQUAL(jointext(E.log, ","), "heat", "a woken step with work runs")
@@ -405,7 +404,7 @@ SEQ_TEST_STEP(cy)
 	for(var/now in list(130, 140, 150, 160))
 		K.run_item(W, WORK_TEST_LIMIT, now)
 	TEST_ASSERT_EQUAL(S.frames, before, "a parked member runs no frames")
-	E.heat = 1
+	E.set_heat(1)
 	publish_change(E, "heat")
 	TEST_ASSERT(!S.parked, "a wake unparks it")
 	TEST_ASSERT(member_is(SEQ_TEST, E), "back in the sweep")
@@ -628,7 +627,7 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT_NULL(def.missed_wake(E), "a step its conditions block is not a miss")
 	E.busy.Cut()
 	E.on = TRUE
-	E.heat = 7 // a raw write: nothing publishes "heat"
+	E.set_heat(7) // a raw write: nothing publishes "heat"
 	var/datum/seq_step/missed = def.missed_wake(E)
 	TEST_ASSERT_EQUAL(missed?.key, "heat", "the step whose read changed without a publish is the miss")
 	var/list/found = seq_audit(expected = TRUE)
@@ -678,7 +677,6 @@ SEQ_TEST_STEP(cy)
 	var/mode = 0
 	var/list/heard = list()
 
-TRACKED(/datum/seq_rx_fixture, level)
 
 /datum/seq_rx_fixture/reactions()
 	. = ..()

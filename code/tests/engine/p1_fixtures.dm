@@ -38,9 +38,6 @@ CAPABILITY_TYPE(p1_ticker, CAP_P1_TICKER, /datum/capability/p1_ticker, key = NON
 	var/steady = TRUE
 	var/runs = 0
 
-TRACKED(/obj/e0_fixture/p1_impure, touched)
-TRACKED(/obj/e0_fixture/p1_impure, locked)
-TRACKED(/obj/e0_fixture/p1_impure, steady)
 
 CAPABILITIES(/obj/e0_fixture/p1_impure)
 	op("writes", hand(), when(PROC_REF(writes_in_condition)), then(PROC_REF(ran)))
@@ -70,7 +67,6 @@ CAPABILITIES(/obj/e0_fixture/p1_impure)
 	var/ready = TRUE
 	var/finished = 0
 
-TRACKED(/obj/e0_fixture/p1_waiter, ready)
 
 CAPABILITIES(/obj/e0_fixture/p1_waiter)
 	op("press", hand(), needs(req_is(nameof(ready), because = MSG(p1/not_ready))), wait(5 SECONDS), then(PROC_REF(done)))

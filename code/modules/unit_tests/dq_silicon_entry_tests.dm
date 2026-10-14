@@ -219,7 +219,7 @@
 /datum/unit_test/dq_p2_door/silicon/ai_gestures_work_the_turret_control/run_gate()
 	var/obj/machinery/turretid/T = allocate(/obj/machinery/turretid, tile(2, 4))
 	var/mob/living/silicon/ai/AI = placed_ai()
-	T.lethal_is_configurable = TRUE
+	T.set_lethal_is_configurable(TRUE)
 	var/was_on = T.enabled
 	var/was_lethal = T.lethal
 	gesture(AI, T, "left=1;ctrl=1")

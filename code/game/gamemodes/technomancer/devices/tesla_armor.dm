@@ -59,8 +59,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/tesla)
 	changed(src)
 	user.update_mob_action_buttons()
 
-TRACKED(/obj/item/clothing/suit/armor/tesla, active)
-TRACKED(/obj/item/clothing/suit/armor/tesla, ready)
 
 /// Lit while it is active and ready to block; the worn suit and the wearer's action buttons follow (effects of the look).
 /obj/item/clothing/suit/armor/tesla/draw(datum/look/look)

@@ -7,10 +7,8 @@
 
 /// Percent of visibility, 0 is visible, 1 is fully invisible.
 /obj/item/borg/cloak/var/cloak_strength = 0.5
-TRACKED(/obj/item/borg/cloak, cloak_strength)
 /// If the cloak is on.
 /obj/item/borg/cloak/var/active = FALSE
-TRACKED(/obj/item/borg/cloak, active)
 CAPABILITIES(/obj/item/borg/cloak)
 	op("set_level", in_hand(), then(PROC_REF(cloak_ask_level)))
 	op("strength", menu(), label("Toggle Cloak Strength"), needs(carried()), then(PROC_REF(cloak_ask_level)))

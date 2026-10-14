@@ -361,9 +361,9 @@ CAPABILITIES(/obj/item/radio)
 		return FALSE
 	var/chan_name = channel
 	if(channels[chan_name] & FREQ_LISTENING)
-		channels[chan_name] &= ~FREQ_LISTENING
+		set_channels_at(chan_name, channels[chan_name] & ~FREQ_LISTENING)
 	else
-		channels[chan_name] |= FREQ_LISTENING
+		set_channels_at(chan_name, channels[chan_name] | FREQ_LISTENING)
 	. = TRUE
 	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
@@ -386,7 +386,7 @@ CAPABILITIES(/obj/item/radio)
 	if(subspace_switchable)
 		subspace_transmission = !subspace_transmission
 		if(!subspace_transmission)
-			channels = list()
+			set_channels(list())
 			to_chat(user, span_notice("Subspace Transmission is disabled"))
 		else
 			recalculateChannels()
@@ -715,7 +715,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	var/mob/user = A.actor
 	if(istype(src, /obj/item/radio/beacon))
 		return OP_OK
-	b_stat = !b_stat
+	set_b_stat(!b_stat)
 	if(!istype(src, /obj/item/radio/beacon))
 		if (b_stat)
 			user.show_message(span_notice("\The [src] can now be attached and modified!"))
@@ -731,7 +731,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	broadcasting = FALSE
 	listening = FALSE
 	for (var/ch_name in channels)
-		channels[ch_name] = 0
+		set_channels_at(ch_name, 0)
 
 /obj/item/radio/start_off
 	listening = FALSE
@@ -793,7 +793,7 @@ CAPABILITIES(/obj/item/radio/borg)
 	return OP_OK
 
 /obj/item/radio/borg/recalculateChannels()
-	src.channels = list()
+	set_channels(list())
 	src.syndie = 0
 
 	var/mob/living/silicon/robot/D = src.loc
@@ -801,14 +801,14 @@ CAPABILITIES(/obj/item/radio/borg)
 		for(var/ch_name in D.module.channels)
 			if(ch_name in src.channels)
 				continue
-			src.channels += ch_name
-			src.channels[ch_name] += D.module.channels[ch_name]
+			add_channels(ch_name)
+			set_channels_at(ch_name, src.channels[ch_name] + D.module.channels[ch_name])
 	if(keyslot)
 		for(var/ch_name in keyslot.channels)
 			if(ch_name in src.channels)
 				continue
-			src.channels += ch_name
-			src.channels[ch_name] += keyslot.channels[ch_name]
+			add_channels(ch_name)
+			set_channels_at(ch_name, src.channels[ch_name] + keyslot.channels[ch_name])
 
 		if(keyslot.syndie)
 			src.syndie = 1
@@ -833,7 +833,7 @@ CAPABILITIES(/obj/item/radio/borg)
 		for (var/ch_name in channels)
 			SSradio.remove_object(src, GLOB.radiochannels[ch_name])
 	secure_radio_connections = null // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
-	channels = op
+	set_channels(op)
 	if(SSradio)
 		for (var/ch_name in op)
 			LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)

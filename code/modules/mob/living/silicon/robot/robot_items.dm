@@ -465,10 +465,8 @@ CAPABILITIES(/obj/item/form_printer)
 
 /// If the shield is on (off while it recovers from an overload).
 /obj/item/borg/combat/shield/var/active = TRUE
-TRACKED(/obj/item/borg/combat/shield, active)
 /// Counter for how many times the shield has been flashed.
 /obj/item/borg/combat/shield/var/flash_count = 0
-TRACKED(/obj/item/borg/combat/shield, flash_count)
 /obj/item/borg/combat/shield/proc/recovering()
 	return !active || flash_count
 

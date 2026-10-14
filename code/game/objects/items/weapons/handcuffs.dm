@@ -294,7 +294,7 @@ CAPABILITIES(/obj/item/handcuffs/legcuffs)
 		user.drop_from_inventory(lcuffs)
 	target.equip_to_slot(lcuffs, SLOT_ID_LEGCUFFED)
 	if(target.m_intent != I_WALK)
-		target.m_intent = I_WALK
+		target.set_m_intent(I_WALK)
 		if(target.hud_used && target.hud_used.move_intent)
 			target.hud_used.move_intent.icon_state = "walking"
 	return OP_OK
@@ -303,7 +303,7 @@ CAPABILITIES(/obj/item/handcuffs/legcuffs)
 	. = ..()
 	if(slot == SLOT_ID_LEGCUFFED)
 		if(user.m_intent != I_WALK)
-			user.m_intent = I_WALK
+			user.set_m_intent(I_WALK)
 			if(user.hud_used && user.hud_used.move_intent)
 				user.hud_used.move_intent.icon_state = "walking"
 
@@ -348,7 +348,7 @@ CAPABILITIES(/obj/item/handcuffs/legcuffs/bola)
 	var/obj/item/handcuffs/legcuffs/lcuffs = src
 	target.equip_to_slot(lcuffs, SLOT_ID_LEGCUFFED)
 	if(target.m_intent != I_WALK)
-		target.m_intent = I_WALK
+		target.set_m_intent(I_WALK)
 		if(target.hud_used && target.hud_used.move_intent)
 			target.hud_used.move_intent.icon_state = "walking"
 	return 1

@@ -551,7 +551,13 @@ PROC_SUMMARY(/proc/hook_gate) // vars[] / call() dispatcher: the walk cannot ent
 	if(!length(holder.rx.hooks))
 		holder.rx.hooks = null
 
-TRACKED(/datum/rx_state, hooks_generation)
+/datum/rx_state/proc/set_hooks_generation(value)
+	if(TRACKED_UNCHANGED(hooks_generation, value))
+		return FALSE
+	hooks_generation = value
+	tracked_changed(src, nameof(hooks_generation))
+	return TRUE
+SETTER(/datum/rx_state, hooks_generation)
 
 /datum/rx_state
 	var/hooks_generation = 0

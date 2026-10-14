@@ -38,8 +38,6 @@ CAPABILITIES(/obj/item/suit_cooling_unit)
 
 /// Is it turned on?
 /obj/item/suit_cooling_unit/var/on = 0
-TRACKED(/obj/item/suit_cooling_unit, on)
-TRACKED(/obj/item/suit_cooling_unit, cover_open)
 
 /obj/item/suit_cooling_unit/proc/suit_cooling_unit_step(datum/act/timer/A)
 	if (!cell)

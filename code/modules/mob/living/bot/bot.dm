@@ -115,7 +115,7 @@
 	var/obj/item/O = A.held
 	if(O.GetID())
 		if(access_scanner.allowed(user) && !open)
-			locked = !locked
+			set_locked(!locked)
 			to_chat(user, span_notice("Controls are now [locked ? "locked." : "unlocked."]"))
 			attack_hand(user)
 			if(emagged)
@@ -620,7 +620,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 
 /mob/living/bot/update_canmove()
 	..()
-	canmove = on
+	set_canmove(on)
 	return canmove
 
 /mob/living/bot/proc/insertpai(mob/user, obj/item/paicard/card)
@@ -722,5 +722,3 @@ CAPABILITIES(/mob/living/bot)
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
-TRACKED(/mob/living/bot, on)
-TRACKED(/mob/living/bot, open)

@@ -4,7 +4,6 @@
 /datum/tracked_list_fixture
 	var/list/items
 
-TRACKED(/datum/tracked_list_fixture, items)
 
 /datum/unit_test/dq_tracked_list_mutators
 

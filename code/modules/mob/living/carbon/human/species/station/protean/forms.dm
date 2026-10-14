@@ -87,7 +87,7 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	H.invalidate_factors()
 	clear_form_appearance(H)
 	remove_trait(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
-	H.holder_type = prior_holder_type
+	H.set_holder_type(prior_holder_type)
 
 // its form mobs are deleted after it detaches.
 /datum/forms/on_destroy(force)
@@ -179,7 +179,7 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 		H.drop_l_hand()
 		H.drop_r_hand()
 	if(holder_type)
-		H.holder_type = holder_type
+		H.set_holder_type(holder_type)
 	var/list/form_verbs = TYPE_TABLE_GET(src, get_form_verbs)
 	if(length(form_verbs))
 		for(var/granted_path in form_verbs)
@@ -187,7 +187,7 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 
 /datum/form/proc/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	if(holder_type)
-		H.holder_type = F.prior_holder_type
+		H.set_holder_type(F.prior_holder_type)
 	var/list/form_verbs = TYPE_TABLE_GET(src, get_form_verbs)
 	if(length(form_verbs))
 		for(var/granted_path in form_verbs)

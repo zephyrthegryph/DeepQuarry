@@ -98,7 +98,7 @@
 	dq_attack_variant_op(grabber, victim, ATTACK_VARIANT_GRAB)
 	var/obj/item/grab/G = grabber.get_active_hand()
 	if(istype(G))
-		G.state = state
+		G.set_state(state)
 	return G
 
 /// A mob wearing down a table the way a claw or a bite does: `damage` of generic attack.

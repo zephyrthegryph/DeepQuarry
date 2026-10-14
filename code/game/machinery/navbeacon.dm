@@ -74,7 +74,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 	to_chat(user, span_warning("Access denied."))
 	return FALSE
 
-TRACKED(/obj/machinery/navbeacon, open)
 
 CAPABILITIES(/obj/machinery/navbeacon)
 	silicon_ui()

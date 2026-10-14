@@ -57,7 +57,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	var/static/image/radial_image_stone = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "sheet-sandstone")
 	var/static/image/radial_image_random = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "sheet-random")
 
-TRACKED(/obj/item/rms, stored_charge)
 
 /// The look: the charge meter in quarters.
 /obj/item/rms/draw(datum/look/look)
@@ -238,8 +237,6 @@ TRACKED(/obj/item/rms, stored_charge)
 		to_chat(user, span_notice("Invalid target for the device."))
 		return
 
-TRACKED(/obj/item/rms, mode_index)
-TRACKED(/obj/item/rms, charge_cost)
 
 CAPABILITIES(/obj/item/rms)
 	configure(item_thrown(force = 10))

@@ -52,7 +52,6 @@ CAPABILITIES(/turf/simulated/floor/lava)
 
 /// TRUE while something is burning in it: the slow step re-checks the contents until nothing is left to burn.
 /turf/simulated/floor/lava/var/tmp/burning = FALSE
-TRACKED(/turf/simulated/floor/lava, burning)
 
 /turf/simulated/floor/lava/Entered(atom/movable/AM)
 	if(burn_stuff(AM))

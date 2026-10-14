@@ -10,7 +10,7 @@
 	door.set_autoclose(FALSE)
 	door.set_req_access(list(ACCESS_SECURITY))
 	var/list/access_before = door.req_access
-	card.uses = 3
+	card.set_uses(3)
 	TEST_ASSERT(user.put_in_active_hand(card), "the actual airlock actor holds the real charged emag")
 	TEST_ASSERT(!wire_is_cut(door, WIRE_OPEN_DOOR) && !wire_is_cut(door, WIRE_IDSCAN), "the actual airlock starts with control and ID wires intact")
 	p2_door_set_power(door, FALSE)

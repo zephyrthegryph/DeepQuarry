@@ -376,7 +376,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 
 	// Scaling style
 	H.set_fuzzy(scale_appearance)
-	H.offset_override = offset_override
+	H.set_offset_override(offset_override)
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Get a copy of the species datum to edit for ourselves

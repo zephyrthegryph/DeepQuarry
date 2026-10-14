@@ -74,8 +74,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/RefreshParts()
 	var/total_laser_rating = get_part_rating(/obj/item/stock_parts/micro_laser)
 
-	max_temp = initial(max_temp) + (50 * (total_laser_rating - 1))
-	min_temp = max(1, initial(min_temp) - (30 * (total_laser_rating - 1)))
+	set_max_temp(initial(max_temp) + (50 * (total_laser_rating - 1)))
+	set_min_temp(max(1, initial(min_temp) - (30 * (total_laser_rating - 1))))
 
 	return
 
@@ -301,7 +301,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 		if(isnull(heat_body))
 			return PROCESS_KILL
 
-TRACKED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, target_temp)
 
 /// The beakers, the status lamp (dumping, ready, heating, cooling or off) and the port connector. The gas temperature is not
 /// published, so the process step asks for the redraw each cycle while it runs.

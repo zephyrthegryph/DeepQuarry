@@ -22,8 +22,6 @@ ACTION(lanea_boom, notice = /datum/notice/lanea_boomed)
 	var/fired = 0
 	var/heard = 0
 
-TRACKED(/obj/lanea_fixture, armed)
-TRACKED(/obj/lanea_fixture, gate_throws)
 
 CAPABILITIES(/obj/lanea_fixture)
 	extend(/datum/act/lanea_boom, instead(then(PROC_REF(boom))))

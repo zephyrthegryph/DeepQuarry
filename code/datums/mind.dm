@@ -396,7 +396,7 @@ CAPABILITIES(/datum/mind)
 
 /datum/mind/proc/reset()
 	assigned_role =   null
-	special_role =    null
+	set_special_role(null)
 	role_alt_title =  null
 	//changeling =    null //TODO: Figure out where this is all used and move it from mind to mob.
 	rel_clear(src, nameof(initial_account))

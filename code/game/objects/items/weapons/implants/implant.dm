@@ -14,7 +14,6 @@
 	var/initialize_loc = BP_TORSO
 	var/known_implant = FALSE
 
-TRACKED(/obj/item/implant, malfunction)
 
 /// The implant site slot is keyed by implant type (organ_external.dm): at
 /// most one implant of a given kind per organ.
@@ -112,7 +111,6 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 
 /// Watches its host every 2 s from implantation until it melts down.
 /obj/item/implant/tracking/var/tracking_active = FALSE
-TRACKED(/obj/item/implant/tracking, tracking_active)
 CAPABILITIES(/obj/item/implant/tracking)
 	every(2 SECONDS, then(PROC_REF(tracking_step)), when = nameof(tracking_active))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(tracking_implant_emp))))
@@ -564,7 +562,6 @@ CAPABILITIES(/obj/item/implant/chem)
 
 /// Monitors its host every 2 s from implantation until it has raised its alarm (or broke).
 /obj/item/implant/death_alarm/var/alarm_armed = FALSE
-TRACKED(/obj/item/implant/death_alarm, alarm_armed)
 CAPABILITIES(/obj/item/implant/death_alarm)
 	every(2 SECONDS, then(PROC_REF(death_alarm_step)), when = nameof(alarm_armed))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(death_alarm_emp))))

@@ -55,7 +55,7 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	var/mob/user = A.request.answerer
 	var/nc = A.answer.value
 	if(nc)
-		channel = nc
+		set_channel(nc)
 		camera.c_tag = channel
 		to_chat(user, span_notice("New channel name - '[channel]' is set"))
 
@@ -168,7 +168,7 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 	var/mob/user = A.request.answerer
 	var/nc = sanitize(A.answer.value, MAX_NAME_LEN)
 	if(nc)
-		channel = nc
+		set_channel(nc)
 		bcamera.c_tag = channel
 		to_chat(user, span_notice("New channel name - '[channel]' is set"))
 

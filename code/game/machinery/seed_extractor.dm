@@ -40,7 +40,7 @@ CAPABILITIES(/obj/machinery/seed_extractor)
 		var/produce = rand(1,4)
 		for(var/i = 0;i<=produce;i++)
 			var/obj/item/seeds/seeds = new(get_turf(src))
-			seeds.seed_type = new_seed_type.name
+			seeds.set_seed_type(new_seed_type.name)
 			seeds.update_seed()
 	else
 		to_chat(user, "[produce_name] doesn't seem to have any usable seeds inside it.")

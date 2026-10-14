@@ -54,7 +54,6 @@ MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, 
 
 	var/list/stat_modules
 
-TRACKED(/obj/item/rig_module, suit_overlay)
 
 CAPABILITIES(/obj/item/rig_module)
 	ref_one(nameof(holder), /obj/item/rig)

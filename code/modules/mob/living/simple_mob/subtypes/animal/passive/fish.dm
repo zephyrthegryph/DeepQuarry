@@ -172,8 +172,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/icebass)
 /mob/living/simple_mob/animal/passive/fish/icebass/proc/roll_colour(datum/roller/R)
 	return rgb(R.number(min_red, max_red), R.number(min_green, max_green), R.number(min_blue, max_blue))
 
-TRACKED(/mob/living/simple_mob/animal/passive/fish/icebass, dorsal_color)
-TRACKED(/mob/living/simple_mob/animal/passive/fish/icebass, belly_color)
 
 /// The tinted dorsal and belly masks over the fish.
 /mob/living/simple_mob/animal/passive/fish/icebass/draw(datum/look/look)
@@ -230,7 +228,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/rockfish)
 /mob/living/simple_mob/animal/passive/fish/rockfish/proc/roll_colour(datum/roller/R)
 	return rgb(R.number(min_red, max_red), R.number(min_green, max_green), R.number(min_blue, max_blue))
 
-TRACKED(/mob/living/simple_mob/animal/passive/fish/rockfish, head_color)
 
 /// The tinted head mask over the fish.
 /mob/living/simple_mob/animal/passive/fish/rockfish/draw(datum/look/look)

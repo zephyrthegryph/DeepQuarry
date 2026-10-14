@@ -49,7 +49,7 @@
 
 /datum/trait/negative/endurance_low/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.endurance = S.total_health
+	H.set_endurance(S.total_health)
 
 /datum/trait/negative/endurance_very_low
 	name = "Low Endurance, Major"
@@ -61,7 +61,7 @@
 
 /datum/trait/negative/endurance_very_low/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.endurance = S.total_health
+	H.set_endurance(S.total_health)
 
 /datum/trait/negative/minor_brute_weak
 	name = "Brute Weakness, Minor"
@@ -353,7 +353,7 @@
 
 /datum/trait/negative/endurance_glass/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.endurance = S.total_health
+	H.set_endurance(S.total_health)
 
 /datum/trait/negative/reduced_biocompat_minor
 	name = "Reduced Biocompatibility, Minor"

@@ -146,7 +146,6 @@ CAPABILITIES(/obj/item/clothing/suit/lasertag)
 
 /// TRUE from equipped() until dropped(): it heals over time while worn.
 /obj/item/clothing/suit/lasertag/var/tag_worn = FALSE
-TRACKED(/obj/item/clothing/suit/lasertag, tag_worn)
 
 /obj/item/clothing/suit/lasertag/dropped(mob/user, equipping, slot)
 	..()

@@ -15,7 +15,6 @@
 
 /// Set once both ends are attached and the hose formed; hose_step() moves reagents while it is (every()).
 /datum/hose/var/tmp/hose_formed = FALSE
-TRACKED(/datum/hose, hose_formed)
 
 CAPABILITIES(/datum/hose)
 	owns_one(nameof(current_beam), /datum/beam)

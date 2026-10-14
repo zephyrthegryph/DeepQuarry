@@ -136,7 +136,6 @@
 /obj/machinery/atmospherics/unary/outlet_injector/hide(i)
 	update_underlays()
 
-TRACKED(/obj/machinery/atmospherics/unary/outlet_injector, id)
 
 MSG_DEF_SELF(outlet_injector/toggled, "You toggle the injector.")
 MSG_DEF_SELF(outlet_injector/rate_reset, "You set the injector back to its default rate.")

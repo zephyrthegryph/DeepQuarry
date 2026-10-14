@@ -13,7 +13,6 @@ CAPABILITIES(/datum/alarm_handler)
 
 /// TRUE while any alarm is up (a raised alarm sets it); with none left it parks.
 /datum/alarm_handler/var/tmp/expiring = FALSE
-TRACKED(/datum/alarm_handler, expiring)
 
 /// Expires alarms every 2 s while any is up (a raised alarm starts it); with none left it parks.
 /datum/alarm_handler/proc/expire_step(datum/act/tick)

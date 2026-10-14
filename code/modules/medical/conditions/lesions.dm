@@ -161,7 +161,7 @@ TYPE_TABLE_DECLARE(/datum/affliction/lesion, lesion_symptom_table, null)
 /datum/affliction/lesion/proc/add_damage(amount)
 	if(amount <= 0)
 		return
-	damage += amount
+	set_damage(damage + amount)
 	peak_damage = max(peak_damage, damage)
 	sync()
 
@@ -178,9 +178,9 @@ TYPE_TABLE_DECLARE(/datum/affliction/lesion, lesion_symptom_table, null)
 	var/healed = clamp(damage - floor, 0, amount)
 	if(healed <= 0)
 		return 0
-	damage -= healed
+	set_damage(damage - healed)
 	if(damage <= LESION_HEALED_EPSILON)
-		damage = 0
+		set_damage(0)
 		var/obj/item/organ/internal/O = location
 		if(istype(O))
 			O.remove_lesion(src)

@@ -36,7 +36,6 @@ CAPABILITIES(/obj/item/melee/chainofcommand/curator_whip/toy)
 	w_class = ITEMSIZE_NORMAL
 	var/open = FALSE
 
-TRACKED(/obj/item/melee/umbrella, open)
 
 CAPABILITIES(/obj/item/melee/umbrella)
 	configure(item_worn(slots = SLOT_BELT))

@@ -222,7 +222,6 @@ CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets)
 
 /// TRUE from equipped() until dropped(): while worn it checks its offhand still exists.
 /obj/item/kinetic_crusher/machete/gauntlets/var/gauntlets_worn = FALSE
-TRACKED(/obj/item/kinetic_crusher/machete/gauntlets, gauntlets_worn)
 
 /obj/item/kinetic_crusher/machete/gauntlets/equipped()
 	. = ..()

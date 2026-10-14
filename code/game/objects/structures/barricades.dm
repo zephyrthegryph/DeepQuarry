@@ -15,7 +15,6 @@ CAPABILITIES(/obj/structure/barricade)
 	op("repair", stack(/obj/item/stack, 1), label("Repair"), needs(req(PROC_REF(repairs_it), silent = TRUE)), priority(OP_PRIORITY_PART), starts(PROC_REF(repair_started)), begins(MSG(barricade/repairing)), wait(2 SECONDS), then(PROC_REF(repaired)))
 	op("repair_or_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-TRACKED(/obj/structure/barricade, material)
 
 /// The barricade's material (its constructor param; a subtype's default).
 /obj/structure/barricade/var/barricade_material = MAT_WOOD

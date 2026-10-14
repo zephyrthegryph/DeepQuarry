@@ -34,7 +34,6 @@
 	/// or FALSE for "none". Null on almost every item.
 	var/list/constraint_overrides
 
-TRACKED(/obj/item, constraint_overrides)
 
 // Overrides are immutable shared predicate or native plan entries, never owned.
 /obj/item/acceptance_overrides()

@@ -44,17 +44,6 @@ MSG_DEF(turretid/shorted, "You short out the turret controls' access analysis mo
 
 	req_access = list(ACCESS_AI_UPLOAD)
 
-TRACKED(/obj/machinery/turretid, enabled)
-TRACKED(/obj/machinery/turretid, lethal)
-TRACKED(/obj/machinery/turretid, check_arrest)
-TRACKED(/obj/machinery/turretid, check_records)
-TRACKED(/obj/machinery/turretid, check_weapons)
-TRACKED(/obj/machinery/turretid, check_access)
-TRACKED(/obj/machinery/turretid, check_anomalies)
-TRACKED(/obj/machinery/turretid, check_synth)
-TRACKED(/obj/machinery/turretid, check_all)
-TRACKED(/obj/machinery/turretid, check_down)
-TRACKED(/obj/machinery/turretid, ailock)
 
 /obj/machinery/turretid/stun
 	enabled = TRUE

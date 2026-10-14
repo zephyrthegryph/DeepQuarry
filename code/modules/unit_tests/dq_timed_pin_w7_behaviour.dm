@@ -325,7 +325,7 @@
 	var/obj/item/grab/G = allocate(/obj/item/grab, user, victim)
 	if(user.get_active_hand() != G)
 		user.put_in_active_hand(G)
-	G.state = GRAB_NECK
+	G.set_state(GRAB_NECK)
 	user.set_combat_mode(TRUE)
 	var/obj/item/organ/external/arm = victim.get_organ(BP_L_ARM)
 	test_chat_clear()
@@ -345,7 +345,7 @@
 	var/obj/item/grab/G = allocate(/obj/item/grab, user, victim)
 	if(user.get_active_hand() != G)
 		user.put_in_active_hand(G)
-	G.state = GRAB_NECK
+	G.set_state(GRAB_NECK)
 	user.set_combat_mode(TRUE)
 	var/obj/item/organ/external/arm = victim.get_organ(BP_L_ARM)
 	h_grab_click(user, victim, G, BP_L_ARM, I_HURT)
@@ -414,7 +414,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/mob/living/carbon/human/victim = h_mortal()
 	var/obj/item/grab/G = allocate(/obj/item/grab, user, victim)
-	G.state = GRAB_NECK
+	G.set_state(GRAB_NECK)
 	var/obj/item/material/knife/K = allocate(/obj/item/material/knife, run_loc_floor_bottom_left)
 	user.put_in_active_hand(K)
 	var/before = victim.injury_load(INJURY_CATEGORY_PHYSICAL)
@@ -431,7 +431,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/mob/living/carbon/human/victim = h_mortal()
 	var/obj/item/grab/G = allocate(/obj/item/grab, user, victim)
-	G.state = GRAB_NECK
+	G.set_state(GRAB_NECK)
 	var/obj/item/material/knife/K = allocate(/obj/item/material/knife, run_loc_floor_bottom_left)
 	user.put_in_active_hand(K)
 	var/before = victim.injury_load(INJURY_CATEGORY_PHYSICAL)
@@ -448,7 +448,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/mob/living/carbon/human/victim = h_mortal()
 	var/obj/item/grab/G = allocate(/obj/item/grab, user, victim)
-	G.state = GRAB_AGGRESSIVE
+	G.set_state(GRAB_AGGRESSIVE)
 	var/obj/item/material/knife/K = allocate(/obj/item/material/knife, run_loc_floor_bottom_left)
 	user.put_in_active_hand(K)
 	TEST_ASSERT(victim.check_neckgrab_attack(K, user, BP_TORSO, I_HURT), "an aggressive grab and a sharp weapon at the chest start a shank")

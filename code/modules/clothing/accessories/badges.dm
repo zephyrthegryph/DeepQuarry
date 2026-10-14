@@ -108,7 +108,6 @@ CAPABILITIES(/obj/item/clothing/accessory/badge/press)
 	var/valid_access = list(ACCESS_SECURITY) //Default access is security, to be overriden or expanded as desired
 	holo = TRUE
 
-TRACKED(/obj/item/clothing/accessory/badge/holo, emagged)
 
 /obj/item/clothing/accessory/badge/holo/cord
 	icon_state = "holobadge-cord"
@@ -395,7 +394,6 @@ CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
 /// How dark the film is: 0 white, 1 darker, 2 black (same as the icon states). A dosimeter holding it
 /// reads it as current_film.state.
 /obj/item/dosimeter_film/var/state = 0
-TRACKED(/obj/item/dosimeter_film, state)
 
 /obj/item/dosimeter_film/proc/update_state(tostate)
 	set_icon_state(tostate)

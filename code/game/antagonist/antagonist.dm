@@ -203,7 +203,7 @@ CAPABILITIES(/datum/antagonist)
 		player.assigned_role = role_text
 
 	//Ensure that a player cannot be drafted for multiple antag roles, taking up slots for antag roles that they will not fill.
-	player.special_role = role_text
+	player.set_special_role(role_text)
 
 	return 1
 
@@ -221,7 +221,7 @@ CAPABILITIES(/datum/antagonist)
 	for(var/datum/mind/player in pending_antagonists)
 		if(flags & ANTAG_OVERRIDE_JOB)
 			player.assigned_role = null
-		player.special_role = null
+		player.set_special_role(null)
 	rel_clear(src, nameof(pending_antagonists))
 
 /// Leader (a relation view).

@@ -79,8 +79,6 @@
 	var/shade = 0
 	var/noise = 0
 
-TRACKED(/obj/dq_small_look_subject, shade)
-TRACKED(/obj/dq_small_look_subject, noise)
 
 /obj/dq_small_look_subject/draw(datum/look/look)
 	..()

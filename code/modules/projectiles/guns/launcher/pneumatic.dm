@@ -171,7 +171,6 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 
 	var/buildstate = 0
 
-TRACKED(/obj/item/cannonframe, buildstate)
 
 /// The look (the draw sweep: from its template).
 /obj/item/cannonframe/draw(datum/look/look)

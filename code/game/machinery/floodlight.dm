@@ -13,7 +13,6 @@
 	var/open = 0
 	var/brightness_on = 8		//can't remember what the maxed out value is
 
-TRACKED(/obj/machinery/floodlight, open)
 
 CAPABILITIES(/obj/machinery/floodlight)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))

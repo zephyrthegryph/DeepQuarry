@@ -177,7 +177,6 @@ CAPABILITIES(/obj/aiming_overlay)
 	set_locked(0)
 	EXPIRY_SET(src, lock_time, 25, CLOCK_WORLD)
 
-TRACKED(/obj/aiming_overlay, locked)
 
 /obj/aiming_overlay/draw(datum/look/look)
 	..()

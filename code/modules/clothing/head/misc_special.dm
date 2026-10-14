@@ -131,7 +131,6 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 	special_handling = TRUE
 
 /obj/item/clothing/head/cakehat/var/onfire = FALSE
-TRACKED(/obj/item/clothing/head/cakehat, onfire)
 
 /obj/item/clothing/head/cakehat/proc/cakehat_step(datum/act/timer/A)
 	var/turf/location = src.loc
@@ -274,7 +273,6 @@ CAPABILITIES(/obj/item/clothing/head/santa/green)
 
 /// Put on a sentient wearer's head (and not yet dropped): it watches the wearer's tension.
 /obj/item/clothing/head/psy_crown/var/crown_worn = FALSE
-TRACKED(/obj/item/clothing/head/psy_crown, crown_worn)
 CAPABILITIES(/obj/item/clothing/head/psy_crown)
 	every(2 SECONDS, then(PROC_REF(psy_crown_step)), when = nameof(crown_worn))
 

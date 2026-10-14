@@ -31,7 +31,6 @@
 /// How many 'energy' units does this have? Acquired by a Particle Accelerator like a Singularity.
 /// It bleeds it off (work_step(null)) while it has any.
 /obj/machinery/particle_smasher/var/energy = 0
-TRACKED(/obj/machinery/particle_smasher, energy)
 /obj/machinery/particle_smasher/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))

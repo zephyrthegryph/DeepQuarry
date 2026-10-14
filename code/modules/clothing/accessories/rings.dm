@@ -102,7 +102,6 @@ CAPABILITIES(/obj/item/clothing/accessory/ring/reagent/sleepy)
 	var/nameset = FALSE
 	special_handling = TRUE
 
-TRACKED(/obj/item/clothing/accessory/ring/seal/signet, nameset)
 
 MSG_DEF_SELF(signet/claimed, "it has already been claimed")
 
@@ -128,7 +127,6 @@ CAPABILITIES(/obj/item/clothing/accessory/ring/seal/signet)
 	var/partnername = ""
 	special_handling = TRUE
 
-TRACKED(/obj/item/clothing/accessory/ring/wedding, partnername)
 
 CAPABILITIES(/obj/item/clothing/accessory/ring/wedding)
 	op("engrave", in_hand(), label("Engrave"),

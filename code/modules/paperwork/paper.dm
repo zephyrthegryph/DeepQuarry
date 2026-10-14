@@ -159,9 +159,6 @@ CAPABILITIES(/obj/item/paper/card)
 	update_space(info)
 	updateinfolinks()
 
-TRACKED(/obj/item/paper, crumpled)
-TRACKED(/obj/item/paper, info)
-TRACKED(/obj/item/paper, stamp_marks)
 
 /// The sheet: blank or written (or a scrap once crumpled), with the stamps on it. The words are the tracked `info` var every printer and form writes
 /// through set_info().

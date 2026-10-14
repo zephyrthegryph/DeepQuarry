@@ -520,7 +520,6 @@ MSG_DEF_SELF(casino/access_denied, "access denied")
 	return TRUE
 
 MSG_DEF_SELF(casino/lottery_disabled, "lottery sales are currently disabled")
-TRACKED(/obj/machinery/wheel_of_fortune, lottery_sale)
 
 /obj/machinery/wheel_of_fortune/proc/interaction_cash(datum/act/op/A)
 	var/mob/user = A.actor
@@ -628,7 +627,6 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 
 MSG_DEF_SELF(casino/spasm_disabled, "the SPASM is disabled")
 
-TRACKED(/obj/machinery/casinosentientprize_handler, casinosentientprize_sale)
 
 /obj/machinery/casinosentientprize_handler/proc/interaction_use(datum/act/op/A)
 	spasm_use(A.actor, A.held)

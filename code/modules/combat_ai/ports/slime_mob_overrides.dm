@@ -34,12 +34,12 @@
 		slime_state.relax()
 
 /mob/living/simple_mob/slime/xenobio/pacify()
-	harmless = TRUE
+	set_harmless(TRUE)
 	if(slime_state)
 		slime_state.pacify()
 	faction = FACTION_NEUTRAL
-	melee_damage_upper = 0
-	melee_damage_lower = 0
+	set_melee_damage_upper(0)
+	set_melee_damage_lower(0)
 	update_mood()
 
 /mob/living/simple_mob/slime/xenobio/inherit_information(mob/living/simple_mob/slime/xenobio/predecessor)

@@ -88,7 +88,6 @@ CAPABILITIES(/obj/item/cane/concealed)
 	w_class = ITEMSIZE_SMALL
 	var/on = 0
 
-TRACKED(/obj/item/cane/white/collapsible, on)
 
 CAPABILITIES(/obj/item/cane/white/collapsible)
 	configure(item_worn(slots = SLOT_BELT))

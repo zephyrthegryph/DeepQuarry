@@ -120,7 +120,6 @@
 		use_power(power_w)
 	last_flow_rate = moles
 
-TRACKED(/obj/machinery/atmospherics/omni/mixer, set_flow_rate)
 
 /// The Rust group is pushed (once per frame) when the rate or (through wake_for_state_change()) a port or share changes.
 /obj/machinery/atmospherics/omni/mixer/derived()

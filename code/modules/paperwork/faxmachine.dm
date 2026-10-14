@@ -423,7 +423,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	return OP_OK
 
 /obj/machinery/photocopier/faxmachine/proc/apply_department_id(input)
-	department = input
+	set_department(input)
 	if(!(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) && department != "Unknown")
 		GLOB.alldepartments |= department
 	return ITEM_INTERACT_SUCCESS

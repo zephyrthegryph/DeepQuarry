@@ -760,7 +760,7 @@
 
 	else if(istype(loc, /obj/structure/gargoyle) && loc:was_rayed)
 		var/obj/structure/gargoyle/G = loc
-		G.can_revert = TRUE
+		G.set_can_revert(TRUE)
 		spent(G)
 		log_and_message_admins("used the OOC escape button to revert back from being petrified.", src)
 
@@ -1208,7 +1208,7 @@
 	set name = "Switch center offset mode"
 	set category = VERB_CAT_PREFERENCES_GAME
 	set desc = "Switch sprite center offset to fix even/odd symmetry."
-	offset_override = !offset_override
+	set_offset_override(!offset_override)
 	update_transform()
 
 /mob/living/examine(mob/user, infix, suffix)

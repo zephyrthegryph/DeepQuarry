@@ -29,7 +29,6 @@
 	/// The watches it sleeps on: its two sides' mixtures.
 	var/list/datum/native_watch/gas/side_watches
 
-TRACKED(/obj/machinery/atmospherics/pipeturbine, spinning)
 
 MSG_DEF_SELF(turbine/secured, "You secure the bolts holding it to the floor.")
 MSG_DEF_SELF(turbine/unsecured, "You unsecure the bolts holding it to the floor.")
@@ -254,7 +253,6 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 	/// It has work each service interval: bolted, whole, on a turbine with spin to draw (reconsider(); the turbine's step asks it).
 	var/converting = FALSE
 
-TRACKED(/obj/machinery/power/turbinemotor, converting)
 
 CAPABILITIES(/obj/machinery/power/turbinemotor)
 	ref_one(nameof(turbine))

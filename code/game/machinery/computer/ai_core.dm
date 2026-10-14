@@ -1,4 +1,3 @@
-TRACKED(/obj/structure/AIcore, state)
 MSG_DEF(ai_core/unbolt_start, null, "<span class='bold'>%U%</span> starts to unbolt %T% from the plating...")
 MSG_DEF(ai_core/bolt_start, null, "<span class='bold'>%U%</span> starts to bolt %T% to the plating...")
 MSG_DEF_SELF(ai_core/board_unfastened, "the circuit board must be fastened before wiring")

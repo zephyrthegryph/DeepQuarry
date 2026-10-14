@@ -92,8 +92,6 @@
 /mob/living/var/mob/living/cameraFollow = null // ALLOW(base_vars): was an OM_FIELD_VIEW on this type; moved, not added
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
-TRACKED(/mob/living, hand)
-TRACKED(/mob/living, see_invisible_default)
 /// The HUD-list bits (who sees what above this mob's head): flag_hud_update() sets them and publishes MOB_KEY_HUD_FLAGS.
 PUBLISHED_BY(/mob/living, hud_updateflag, MOB_KEY_HUD_FLAGS)
 /// The body's derived state (injury, pain, factors) changes through body.invalidate(), which publishes MOB_KEY_HEALTH.

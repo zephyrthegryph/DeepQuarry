@@ -13,7 +13,6 @@
 	max_integrity = 16
 	integrity_failure = 0.375
 	var/destroyed = FALSE
-TRACKED(/obj/structure/grille, destroyed)
 
 /// The look (the draw sweep: from its template).
 /obj/structure/grille/draw(datum/look/look)

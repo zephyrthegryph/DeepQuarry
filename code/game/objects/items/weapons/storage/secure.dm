@@ -29,12 +29,6 @@
 	use_sound = SFX_ITEMS_STORAGE_BRIEFCASE
 	special_handling = TRUE
 
-TRACKED(/obj/item/storage/secure, locked)
-TRACKED(/obj/item/storage/secure, code)
-TRACKED(/obj/item/storage/secure, l_set)
-TRACKED(/obj/item/storage/secure, l_setshort)
-TRACKED(/obj/item/storage/secure, emagged)
-TRACKED(/obj/item/storage/secure, open)
 
 MSG_DEF_SELF(secure/locked, "It is locked and cannot be opened!")
 

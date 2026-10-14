@@ -10,4 +10,4 @@
 	if(!ishuman(target))
 		return
 	target.set_gender(preferences.read_preference(/datum/preference/choiced/gender/biological))
-	target.identifying_gender = preferences.read_preference(/datum/preference/choiced/gender/identifying)
+	target.set_identifying_gender(preferences.read_preference(/datum/preference/choiced/gender/identifying))

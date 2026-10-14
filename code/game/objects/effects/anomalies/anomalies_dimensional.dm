@@ -44,7 +44,7 @@ CAPABILITIES(/obj/effect/anomaly/dimensional)
 		if(teleports_left <= 0 && !immortal)
 			detonate()
 			return
-		teleports_left--
+		set_teleports_left(teleports_left - 1)
 		relocate()
 		return
 

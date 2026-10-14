@@ -87,14 +87,14 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 	..()
 	if(emagged)
 		if(!(11 in volume_options))
-			volume_options = list(11)
+			set_volume_options(list(11))
 			broadcast_size = 11
 		if(!("comic sans ms" in font_options))
-			font_options = list("comic sans ms")
+			set_font_options(list("comic sans ms"))
 			broadcast_font = "comic sans ms"
 			to_chat(user, span_notice("\The [src] emits a <font face='comic sans ms' color='#ff69b4'>silly</font> sound."))
 		if(!("#ff69b4" in color_options))
-			color_options = list("#ff69b4")
+			set_color_options(list("#ff69b4"))
 			broadcast_color = "#ff69b4"
 		if(insults <= 0)
 			insults = rand(1,3)

@@ -39,8 +39,6 @@
 	var/static/list/systems_list = list("pAI","MultiTool","Emag","Signaler")
 	var/selected_system = "pAI"
 
-TRACKED(/obj/item/paicard, panel_open)
-TRACKED(/obj/item/paicard, cell)
 
 CAPABILITIES(/obj/item/paicard)
 	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
@@ -946,13 +944,13 @@ CAPABILITIES(/obj/item/radio/borg/pai)
 		return
 	var/obj/item/paicard/card = loc
 	secure_radio_connections = null // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
-	channels = list()
+	set_channels(list())
 
 	for(var/internal_chan in internal_channels)
 		var/ch_name = GLOB.radio_channels_by_freq[internal_chan]
 		if(has_channel_access(card.pai, internal_chan))
-			channels += ch_name
-			channels[ch_name] = 1
+			add_channels(ch_name)
+			set_channels_at(ch_name, 1)
 			LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 /obj/item/paicard/typeb

@@ -414,7 +414,7 @@
 	TEST_ASSERT(!(warm.resistance_flags & ON_FIRE), "an exposure below the ignition point does not ignite it")
 
 	var/obj/item/paper/proofed = allocate(/obj/item/paper, T)
-	proofed.resistance_flags |= FIRE_PROOF
+	proofed.set_resistance_flags(proofed.resistance_flags | FIRE_PROOF)
 	proofed.fire_act(1000, 100)
 	dq_rx_flush()
 	TEST_ASSERT(!(proofed.resistance_flags & ON_FIRE), "fireproof paper still does not burn")

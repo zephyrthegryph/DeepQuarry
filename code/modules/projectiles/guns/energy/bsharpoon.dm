@@ -228,7 +228,6 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 	dropnoms_active = !dropnoms_active
 	to_chat(user,span_info("You switch \the [src]'s spatial rearrangement [dropnoms_active ? "on" : "off"]. (Telenoms [dropnoms_active ? "enabled" : "disabled"])"))
 
-TRACKED(/obj/item/bluespace_harpoon, mode)
 
 /// The look: the mode's sprite, and the change animation of the mode it switched to.
 /obj/item/bluespace_harpoon/draw(datum/look/look)

@@ -27,7 +27,6 @@ MRE Stuff
 	. = ..()
 	. += meal_desc
 
-TRACKED(/obj/item/storage/mre, opened)
 
 /obj/item/storage/mre/draw(datum/look/look)
 	. = ..()
@@ -231,7 +230,6 @@ CAPABILITIES(/obj/item/storage/mre)
 	special_handling = TRUE
 
 
-TRACKED(/obj/item/storage/mrebag, opened)
 
 /obj/item/storage/mrebag/draw(datum/look/look)
 	. = ..()
@@ -411,5 +409,5 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/tgmc_mre_component)
 			nutriment_amt = 2
 			seasoning = REAGENT_ID_SUGAR
 
-	package_open_state = "tgmcmre_[flavor]"
-	nutriment_desc = list("[new_taste]" = nutriment_amt)
+	set_package_open_state("tgmcmre_[flavor]")
+	set_nutriment_desc(list("[new_taste]" = nutriment_amt))

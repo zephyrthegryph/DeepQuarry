@@ -105,7 +105,7 @@ CAPABILITIES(/obj/machinery/autolathe)
 	materials.max_amount = mat_capacity
 
 	var/man_rating = get_part_rating(/obj/item/stock_parts/manipulator)
-	creation_efficiency = max(0.6, round(1.1 - (man_rating * 0.1), 0.1)) // creation_efficiency goes 1 -> 0.9 -> 0.8 -> 0.7 -> 0.6 per level of manipulator efficiency
+	set_creation_efficiency(max(0.6, round(1.1 - (man_rating * 0.1), 0.1))) // creation_efficiency goes 1 -> 0.9 -> 0.8 -> 0.7 -> 0.6 per level of manipulator efficiency
 	lathe_build_rate = 0.85 - (man_rating * 0.05) // lathe_build_rate goes 0.8 -> 0.75 -> 0.7 -> 0.65 -> 0.6 per level of manipulator efficiency
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.

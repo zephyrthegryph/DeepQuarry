@@ -5,7 +5,7 @@
 
 /datum/unit_test/dq_items_emag_ops/proc/card(turf/T)
 	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, T)
-	E.uses = 5
+	E.set_uses(5)
 	return E
 
 /// The megaphone's voice synthesizer is overloaded once; the card pays one use.

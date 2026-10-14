@@ -31,7 +31,7 @@ CAPABILITIES(/obj/effect/decal/cleanable)
 /obj/effect/decal/cleanable/proc/age_or_contagions(given)
 	if(islist(given))
 		add_contagions(given, copy = FALSE)
-		age = initial(age)
+		set_age(initial(age))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): one of the filth's looks.
 /obj/effect/decal/cleanable/proc/roll_icon_state(datum/roller/R)

@@ -132,7 +132,6 @@
 	set_recharging(0)
 	user?.hud_used?.update_ammo_hud(user, src) // Update one last time once we're finished!
 
-TRACKED(/obj/item/gun/energy/locked/frontier, recharging)
 
 /// The look: the pumping state while the handle is being cranked.
 /obj/item/gun/energy/locked/frontier/draw(datum/look/look)

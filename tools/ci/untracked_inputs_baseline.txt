@@ -152,7 +152,6 @@ draw_untracked	code/game/objects/structures/crates_lockers/__closets.dm	@/obj/st
 draw_untracked	code/game/objects/structures/crates_lockers/vehiclecage.dm	@/obj/structure/vehiclecage::draw reads /atom::layer
 draw_untracked	code/game/objects/structures/low_wall.dm	@/obj/structure/low_wall::material_colour reads /datum/material::material.icon_colour
 draw_untracked	code/game/objects/structures/low_wall.dm	@/obj/structure/low_wall::material_colour reads ?hop_not_relation
-draw_untracked	code/game/objects/structures/low_wall.dm	@/obj/structure/low_wall/bay::low_wall_look reads /obj/structure/low_wall::stripe_color
 draw_untracked	code/game/objects/structures/low_wall.dm	@/obj/structure/window/bay::look_parts reads /atom::color
 draw_untracked	code/game/objects/structures/simple_doors.dm	@/obj/structure/simple_door::appearance_base reads /datum/material::material.door_icon_base
 draw_untracked	code/game/objects/structures/simple_doors.dm	@/obj/structure/simple_door::appearance_base reads /obj/structure/simple_door::material
@@ -210,8 +209,6 @@ draw_untracked	code/game/turfs/simulated/wall_icon.dm	@/turf/simulated/wall::wal
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	@/turf/simulated/wall::wall_overlay_images reads /datum::reinf_material.shared_cache_uid
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	@/turf/simulated/wall::wall_overlay_images reads /turf/simulated/wall::damage_overlays
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	@/turf/simulated/wall::wall_overlay_images reads ?hop_not_relation
-draw_untracked	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall/voidcraft::draw reads /turf/simulated/shuttle/wall/voidcraft::stripe_color
-draw_untracked	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/wall/bay::look_parts reads /turf/simulated/wall/bay::stripe_color
 draw_untracked	code/game/turfs/unsimulated.dm	@/turf/unsimulated/fake_space::draw reads /atom::x
 draw_untracked	code/game/turfs/unsimulated.dm	@/turf/unsimulated/fake_space::draw reads /atom::y
 draw_untracked	code/game/turfs/unsimulated.dm	@/turf/unsimulated/fake_space::draw reads /atom::z

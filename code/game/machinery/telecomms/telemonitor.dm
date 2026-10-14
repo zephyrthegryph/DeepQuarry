@@ -12,7 +12,6 @@ MSG_DEF_SELF(tcomms_console/buffer_full, "The buffer is full: release it before 
 	var/network = "NULL"	// the network to probe
 	var/temp = null			// the status line: list("color", "text") (the traffic console keeps its own text)
 
-TRACKED(/obj/machinery/computer/telecomms, temp)
 
 /// The entries of a console that probes its network: the buttons, the network question, the status line and the emag.
 /proc/tcomms_probe_console()

@@ -141,8 +141,8 @@
 /datum/unit_test/dq_hc_struct/mftc/log_browser_probes_and_deletes/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/telecomms/server/S = node(/obj/machinery/telecomms/server, tile(5, 2))
-	S.network = "mftc"
-	S.id = "mftc server"
+	S.set_network("mftc")
+	S.set_id("mftc server")
 	S.add_entry("hello", "Test File")
 	S.add_entry("again", "Test File")
 	var/obj/machinery/computer/telecomms/server/C = mach(/obj/machinery/computer/telecomms/server, tile(3, 2))
@@ -163,8 +163,8 @@
 /datum/unit_test/dq_hc_struct/mftc/monitor_probes/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/telecomms/relay/R = node()
-	R.network = "mftc"
-	R.id = "mftc relay"
+	R.set_network("mftc")
+	R.set_id("mftc relay")
 	var/obj/machinery/computer/telecomms/monitor/C = mach(/obj/machinery/computer/telecomms/monitor, tile(5, 2))
 	C.network = "mftc"
 	press(H, C, "scan")

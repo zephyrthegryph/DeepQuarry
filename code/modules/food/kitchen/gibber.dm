@@ -60,8 +60,6 @@ CAPABILITIES(/obj/machinery/gibber/autogibber)
 			M.forceMove(src)
 			M.gib()
 
-TRACKED(/obj/machinery/gibber, operating)
-TRACKED(/obj/machinery/gibber, dirty)
 
 /// Appearance reader: which status light the gibber shows.
 /obj/machinery/gibber/proc/appearance_gibber_light()
@@ -105,7 +103,7 @@ CAPABILITIES(/obj/machinery/gibber)
 /// Requirement: a strong enough grip (only asked of grabs; other items fall through).
 /obj/machinery/gibber/proc/can_feed_grab(datum/act/op/A)
 	var/obj/item/grab/G = A.held
-	if(istype(G) && G.state < 2) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	if(istype(G) && G.state < 2)
 		return "you need a better grip to do that"
 	return null
 

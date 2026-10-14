@@ -29,7 +29,6 @@
 CAPABILITIES(/obj/item/storage/fancy)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 
-TRACKED(/obj/item/storage/fancy, open)
 
 /obj/item/storage/fancy/draw(datum/look/look)
 	. = ..()
@@ -160,7 +159,7 @@ CAPABILITIES(/obj/item/storage/fancy/blackcandle_box)
 	. = list()
 	for(var/v in list("red", "orange", "yellow", "green", "blue", "purple"))
 		var/obj/item/pen/crayon/C = new
-		C.variant = v
+		C.set_variant(v)
 		C.apply_variant()
 		C.name = "[C.colourName] [initial(C.name)]"
 		. += C
@@ -199,7 +198,7 @@ CAPABILITIES(/obj/item/storage/fancy/crayons)
 	. = list()
 	for(var/v in list("black", "red", "orange", "yellow", "green", "blue", "purple"))
 		var/obj/item/pen/crayon/marker/C = new
-		C.variant = v
+		C.set_variant(v)
 		C.apply_variant()
 		C.name = "[C.colourName] [initial(C.name)]"
 		. += C

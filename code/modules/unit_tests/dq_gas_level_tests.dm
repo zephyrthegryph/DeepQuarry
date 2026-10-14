@@ -140,8 +140,6 @@
 	var/hot_runs = 0
 	var/thin_runs = 0
 
-TRACKED(/obj/test_gas_level_holder, hot)
-TRACKED(/obj/test_gas_level_holder, thin)
 
 CAPABILITIES(/obj/test_gas_level_holder)
 	gas_level(into = nameof(hot), reading = CH_GAS_TEMPERATURE, above = T20C + 30, hysteresis = 5, air = nameof(watched_air))
@@ -158,7 +156,7 @@ CAPABILITIES(/obj/test_gas_level_holder)
 /// A holder over `air`, armed.
 /datum/unit_test/proc/gas_level_test_holder(datum/gas_mixture/air)
 	var/obj/test_gas_level_holder/holder = allocate(/obj/test_gas_level_holder)
-	holder.watched_air = air
+	holder.set_watched_air(air)
 	gas_level_rearm_all(holder)
 	dq_gas_level_test_deliver()
 	return holder
@@ -285,6 +283,6 @@ CAPABILITIES(/obj/test_gas_level_holder)
 	heat_set(tank, T20C + 100, HEAT_SOURCE_OTHER)
 	var/obj/test_gas_level_holder/holder = gas_level_test_holder(tank)
 	TEST_ASSERT(holder.hot, "a mixture already past the level did not turn the var at arming")
-	holder.watched_air = null
+	holder.set_watched_air(null)
 	gas_level_rearm_all(holder)
 	TEST_ASSERT(!holder.hot, "a holder with no mixture stayed hot")

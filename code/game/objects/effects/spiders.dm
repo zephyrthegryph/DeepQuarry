@@ -212,7 +212,7 @@ CAPABILITIES(/obj/effect/spider/spiderling)
 		skitter()
 
 	else if(isorgan(loc))
-		if(amount_grown < 0) amount_grown = 1
+		if(amount_grown < 0) set_amount_grown(1)
 		var/obj/item/organ/external/O = loc
 		if(!O.owner || O.owner.stat == DEAD || amount_grown > 80)
 			rel_remove(O, nameof(O.implants), src)
@@ -229,7 +229,7 @@ CAPABILITIES(/obj/effect/spider/spiderling)
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " skitters."))
 
 	if(amount_grown >= 0 && !istype(loc, /obj/item/glass_jar)) // no growing inside jars
-		amount_grown += rand(0,2)
+		set_amount_grown(amount_grown + (rand(0,2)))
 
 /obj/effect/spider/spiderling/proc/vent_crawl_async(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	after(src, rand(2 SECONDS,6 SECONDS), PROC_REF(vent_crawl_enter), with = list(entry, exit_vent))

@@ -61,9 +61,6 @@
 
 /// The replacer is declared (doc/rewrite/conversion_guide.md): glass and lights fill it, a light fixture is its target, an emag card
 /// turns it on and off. Using it in the hand asks for a colour through the legacy prompt until the prompt kinds land.
-TRACKED(/obj/item/lightreplacer, emagged)
-TRACKED(/obj/item/lightreplacer, uses)
-TRACKED(/obj/item/lightreplacer, max_uses)
 
 CAPABILITIES(/obj/item/lightreplacer)
 	configure(item_worn(slots = SLOT_BELT))
@@ -164,7 +161,7 @@ MSG_DEF_SELF(lightreplacer/full, "The light replacer is full.")
 /obj/item/lightreplacer/proc/colour_asked(datum/act/op/A)
 	var/datum/prompt/R = A.answer
 	if(R?.value)
-		selected_color = R.value
+		set_selected_color(R.value)
 		to_chat(A.actor, "The light color has been changed.")
 	return OP_OK
 
@@ -297,7 +294,7 @@ CAPABILITIES(/obj/item/lightpainter)
 		return OP_OK
 	if(!R.value)
 		return OP_OK
-	setcolor = sanitize_hexcolor(R.value)
+	set_setcolor(sanitize_hexcolor(R.value))
 	var/list/setcolorRGB = hex2rgb(setcolor)
 	var/setcolorR = num2hex(setcolorRGB[1] * dimming, 2)
 	var/setcolorG = num2hex(setcolorRGB[2] * dimming, 2)

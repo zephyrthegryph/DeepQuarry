@@ -132,8 +132,6 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	var/temperature = 0		//The current temperature
 	var/overheating = 0		//if this gets high enough the generator explodes
 
-TRACKED(/obj/machinery/power/port_gen/pacman, sheets)
-TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 
 // its unburnt fuel drops as sheets.
 /obj/machinery/power/port_gen/pacman/on_destroy(force)
@@ -944,8 +942,6 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 	else
 		sheet_left -= needed_sheets
 
-TRACKED(/obj/machinery/power/port_gen/large_altevian, sheets)
-TRACKED(/obj/machinery/power/port_gen/large_altevian, max_sheets)
 
 // The altevian reactor: its sheets, a hand (or a silicon's touch) that switches it, and its fuel gauge.
 CAPABILITIES(/obj/machinery/power/port_gen/large_altevian)

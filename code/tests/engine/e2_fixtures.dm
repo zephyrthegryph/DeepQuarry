@@ -52,8 +52,6 @@ CAPABILITIES(/obj/item/e2_cloth)
 	var/label_text
 	var/last_ping
 
-TRACKED(/obj/e2_box, opened)
-TRACKED(/obj/e2_box, sealed)
 
 CAPABILITIES(/obj/e2_box)
 	op("open", hand(), toggles(nameof(opened)), logs(LOG_GAME))
@@ -99,8 +97,6 @@ CAPABILITIES(/obj/e2_box)
 	var/locked = TRUE
 	var/opened = FALSE
 
-TRACKED(/obj/e2_vault, locked)
-TRACKED(/obj/e2_vault, opened)
 
 CAPABILITIES(/obj/e2_vault)
 	op("open", hand(), needs(req_is(nameof(locked), FALSE, because = MSG(e2/locked))), toggles(nameof(opened)))
@@ -123,9 +119,16 @@ CAPABILITIES(/obj/e2_machine)
 	name = "e2 lever"
 	var/pulled = FALSE
 
-TRACKED(/obj/e2_lever, pulled)
 
 CAPABILITIES(/obj/e2_lever)
 	op("pull_slow", hand(), wait(2 SECONDS), toggles(nameof(pulled)), logs(LOG_GAME))
 
 #endif
+
+/obj/e2_box/proc/set_sealed(value)
+	if(TRACKED_UNCHANGED(sealed, value))
+		return FALSE
+	sealed = value
+	tracked_changed(src, nameof(sealed))
+	return TRUE
+SETTER(/obj/e2_box, sealed)

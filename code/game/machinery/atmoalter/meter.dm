@@ -16,8 +16,6 @@
 	var/needle = "meterX"
 	var/sent_kpa
 
-TRACKED(/obj/machinery/meter, open)
-TRACKED(/obj/machinery/meter, id)
 
 MSG_DEF(meter/unfastened, "You have unfastened %T%.", "%U% unfastens %T%.")
 MSG_DEF_SELF(meter/panel_opened, "You open the maintenance panel.")

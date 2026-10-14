@@ -21,7 +21,6 @@
 	open = 1
 	icon_state = "map_valve1"
 
-TRACKED(/obj/machinery/atmospherics/valve, open)
 
 /obj/machinery/atmospherics/valve/draw(datum/look/look)
 	..()

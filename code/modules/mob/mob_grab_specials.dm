@@ -2,7 +2,6 @@
 	/// The limb a hands-on inspection is working on: inspect_organ() sets it before the chain of "inspect_*" ops starts.
 	var/inspect_zone = null
 
-TRACKED(/obj/item/grab, inspect_zone)
 
 /obj/item/grab/proc/inspect_organ_text(datum/act/op/A)
 	var/mob/living/carbon/human/H = src?.grab_target()

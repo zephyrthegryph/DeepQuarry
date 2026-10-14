@@ -24,7 +24,6 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 	var/in_flight = FALSE
 
 /// The shuttle this console sent is in flight: prison_process() counts it down every half second.
-TRACKED(/obj/machinery/computer/prison_shuttle, in_flight)
 
 // TGUI migration. Replaces the browse() + Topic dispatch
 // UI with PrisonShuttleConsole.tsx. Drops the `temp` "Shuttle sent"
@@ -35,7 +34,6 @@ TRACKED(/obj/machinery/computer/prison_shuttle, in_flight)
  * they used to fire even when the console itself was unpowered/broken. The machinery hand gate
  * now always runs first (see machine_hand) and those checks are can_open_console(), after it.
  */
-TRACKED(/obj/machinery/computer/prison_shuttle, hacked)
 
 /// Requirement: null, or why the console can't be used.
 /obj/machinery/computer/prison_shuttle/proc/can_open_console(datum/act/op/A)

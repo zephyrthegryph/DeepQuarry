@@ -79,8 +79,8 @@ BONUS
 
 	if(gigagerms)
 		phage = new /mob/living/simple_mob/vore/aggressive/macrophage/giant(get_turf((M.loc)))
-		phage.melee_damage_lower = rand(5, 10)
-		phage.melee_damage_upper = rand(10, 15)
+		phage.set_melee_damage_lower(rand(5, 10))
+		phage.set_melee_damage_upper(rand(10, 15))
 		M.injure(INJURY_CUT, rand(10, 20))
 		M.emote("scream")
 	else
@@ -89,7 +89,7 @@ BONUS
 
 	play_sfx(M, SFX_EFFECTS_SPLAT)
 
-	phage.endurance += A.resistance
+	phage.set_endurance(phage.endurance + A.resistance)
 	// The creature carries detached copies, never the host's own affliction.
 	var/datum/affliction/contagion/engineered/strain = A.Copy()
 	rel_add(phage, nameof(phage.infections), strain)

@@ -181,8 +181,6 @@
 /// Electrical rating of the cabin's temperature control, W: about 10 K per 2 s on a 200 L cabin, as the old normaliser.
 #define MECHA_CABIN_REGULATOR_WATTS 1000
 
-TRACKED(/obj/mecha, cabin_regulating)
-TRACKED(/obj/mecha, state)
 
 MSG_DEF_SELF(mecha_passenger/none, "There are no passengers to remove.")
 
@@ -454,7 +452,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	if(wrecked && wreckage)
 		var/obj/effect/decal/mecha_wreckage/WR = new wreckage(loc)
-		wreck = WR // ALLOW(ownership): names the successor the declared hand-over below uses; a dying holder takes no new relation and the wreckage owns itself
+		set_wreck(WR)
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			if(E.salvageable && prob(30))
 				rel_add(WR, nameof(WR.crowbar_salvage), E)
@@ -1522,7 +1520,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		// link (occupant, etc.) the same way a human pilot does.
 		if(!move_into(src, MECHA_SLOT_PILOT, brainmob))
 			return 0
-		brainmob.canmove = 1 //should allow relaymove
+		brainmob.set_canmove(1) //should allow relaymove
 		mmi_as_oc.forceMove(src)
 		rel_set(mmi_as_oc, nameof(mmi_as_oc.mecha), src)
 		src.Entered(mmi_as_oc)
@@ -1929,7 +1927,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 			if(mmi.get_occupant())
 				occupant.forceMove(mmi)
 			rel_clear(mmi, nameof(mmi.mecha))
-			occupant.canmove = 0
+			occupant.set_canmove(0)
 		occupant.clear_alert("charge")
 		occupant.clear_alert("mech damage")
 		set_dir(dir_in)

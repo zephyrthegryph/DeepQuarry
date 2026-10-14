@@ -276,7 +276,7 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 
 /obj/machinery/maint_recycler/proc/door_finished_moving(open)
 	door_moving = FALSE
-	door_open = open
+	set_door_open(open)
 	if(open)
 		hatch.icon_state = "door open"
 	else

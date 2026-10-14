@@ -6,8 +6,8 @@
 	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, T)
 	var/atom/movable/screen/button = allocate(/atom/movable/screen)
 	button.name = I_WALK
-	actor.m_intent = I_RUN
-	bystander.m_intent = I_RUN
+	actor.set_m_intent(I_RUN)
+	bystander.set_m_intent(I_RUN)
 	km_synthetic_click(actor, button)
 	TEST_ASSERT_EQUAL(actor.m_intent, I_WALK, "the actual native screen click acts on its supplied actor")
 	TEST_ASSERT_EQUAL(actor.m_int, "14,14", "the native click updates the actor's actual movement selection state")

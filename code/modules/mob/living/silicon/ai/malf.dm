@@ -95,7 +95,7 @@
 		return
 	if(!shutup)
 		to_chat(src, "Starting APU... ONLINE")
-	APU_power = 1
+	set_APU_power(1)
 
 // Stops AI's APU generator
 /mob/living/silicon/ai/proc/stop_apu(shutup = 0)
@@ -103,7 +103,7 @@
 		return
 
 	if(APU_power)
-		APU_power = 0
+		set_APU_power(0)
 		if(!shutup)
 			to_chat(src, "Shutting down APU... DONE")
 

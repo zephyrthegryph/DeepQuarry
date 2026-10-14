@@ -42,7 +42,6 @@ DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER,
 	var/carpeted = 0
 	var/carpeted_type = /obj/item/stack/tile/carpet
 
-TRACKED(/obj/structure/table, flipped)
 
 STAGE_DEF(table, frame)
 STAGE_DEF(table, plated)

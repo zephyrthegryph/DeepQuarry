@@ -25,8 +25,6 @@
 	/// Has it caught a beam it has yet to re-fire? The every() below runs while it has.
 	var/refiring = FALSE
 
-TRACKED(/obj/structure/reflector, refiring)
-TRACKED(/obj/structure/reflector, finished)
 
 /// The look (the draw sweep: from its layers).
 /obj/structure/reflector/draw(datum/look/look)
@@ -146,7 +144,7 @@ CAPABILITIES(/obj/structure/reflector)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		can_rotate = !can_rotate
+		set_can_rotate(!can_rotate)
 		to_chat(user, span_notice("You [can_rotate ? "unlock" : "lock"] [src]'s rotation."))
 		playsound(W, sounds_of(W).use, 50, 1)
 		return TRUE

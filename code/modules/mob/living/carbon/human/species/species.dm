@@ -932,7 +932,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	H.set_icon_state(new_copy.get_bodytype())
 
 	if(new_copy.holder_type)
-		H.holder_type = new_copy.holder_type
+		H.set_holder_type(new_copy.holder_type)
 
 	if(H.dna && reset_dna)
 		H.dna.ready_dna(H)

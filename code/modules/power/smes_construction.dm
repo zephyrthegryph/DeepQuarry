@@ -113,9 +113,6 @@
 	var/RCon_tag = "NO_TAG"
 	initial_charge = 0
 
-TRACKED(/obj/machinery/power/smes/buildable, grounding)
-TRACKED(/obj/machinery/power/smes/buildable, RCon)
-TRACKED(/obj/machinery/power/smes/buildable, RCon_tag)
 
 MSG_DEF_SELF(smes/rcon_cut, "Connection error: Destination Unreachable.")
 MSG_DEF_SELF(smes/overloaded, "The indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea.")

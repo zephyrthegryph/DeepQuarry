@@ -28,8 +28,6 @@
 
 /// Set once it has been injected into someone: from then on it gets dirtier over time, until it is as dirty as it gets.
 /obj/item/reagent_containers/syringe/var/used = FALSE
-TRACKED(/obj/item/reagent_containers/syringe, used)
-TRACKED(/obj/item/reagent_containers/syringe, mode)
 
 /// Every 2 seconds while used: dirtier by one per person it went into, up to 75, where it stops (as dirty as it gets).
 /obj/item/reagent_containers/syringe/proc/syringe_step(datum/act/timer/A)
