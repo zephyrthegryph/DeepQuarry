@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"ed5ba6124d1bf96a486f2cd6eaa204232ee21572","ok":true,"passed":335,"failed":0,"new_failed":0,"lanes":"rewrite/return-roots rewrite/refs-waves-4","tests_json":"data/test-runs/20261014T072538_ed5ba6124d_focused.json","created":"2026-10-14T07:25:49Z"}
