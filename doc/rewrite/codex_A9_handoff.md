@@ -50,3 +50,7 @@ No build/test/gen/baseline/manifest/commit/merge/push performed. git diff --chec
 
 Root include: `#include "code\modules\unit_tests\dq_a9_initialization_tests.dm"`.
 Focused selector: `/datum/unit_test/dq_a9_initialization` (component_damage, macrobattery, pneumatic_hopper, magic_charge, shield_configuration), plus task-required `dq_look_pin`.
+
+## Exact retained site identities
+
+[Committed residual inventory](codex_A9_residual_sites.txt) lists every retained source identity from this lane’s post-edit audit, including repeated normalized rows. The per-file reasons above classify those identities; this is a source audit snapshot, not a fresh analyzer verdict after rebasing. Master’s subsequently removed declarations and rewritten setters must remain authoritative, and the root verification will establish the final baseline counts.
