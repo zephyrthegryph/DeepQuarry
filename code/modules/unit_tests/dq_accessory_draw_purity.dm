@@ -19,16 +19,16 @@
 	TEST_ASSERT_NULL(pure_draw(M), "an accessory on an unworn uniform draws nothing")
 	TEST_ASSERT(first.equip_to_slot_if_possible(U, SLOT_ID_UNIFORM, disable_warning = TRUE), "the first wearer equips the uniform")
 	var/image/worn = pure_draw(M)
-	TEST_ASSERT(istype(worn), "the accessory draws on the first wearer")
+	TEST_ASSERT(!isnull(worn), "the accessory draws on the first wearer")
 	TEST_ASSERT_EQUAL(worn.icon_state, M.icon_state, "the drawn state is the accessory's own")
 	TEST_ASSERT(first.drop_from_inventory(U), "the uniform comes off the first wearer")
 	TEST_ASSERT_NULL(pure_draw(M), "the dropped accessory draws nothing")
 	TEST_ASSERT(second.equip_to_slot_if_possible(U, SLOT_ID_UNIFORM, disable_warning = TRUE), "the second wearer equips the uniform")
-	TEST_ASSERT(istype(pure_draw(M)), "the accessory draws on the second wearer")
+	TEST_ASSERT(!isnull(pure_draw(M)), "the accessory draws on the second wearer")
 	U.remove_accessory(null, M)
 	TEST_ASSERT_NULL(pure_draw(M), "a detached accessory draws nothing")
 	U.attach_accessory(null, M)
-	TEST_ASSERT(istype(pure_draw(M)), "the reattached accessory draws on the second wearer")
+	TEST_ASSERT(!isnull(pure_draw(M)), "the reattached accessory draws on the second wearer")
 
 /// The dosimeter finds its wearer through the uniform it is attached to, not a stored wearer.
 /datum/unit_test/dq_accessory_dosimeter_wearer
