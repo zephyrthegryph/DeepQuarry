@@ -35,10 +35,6 @@ CAPABILITIES(/obj/item/anobattery)
 	name = "godly anomaly battery"
 	capacity = 100000000
 
-/*
-/obj/item/anobattery/Initialize(mapload)
-	battery_effect = new()
-*/
 
 /obj/item/anobattery/proc/UpdateSprite()
 	var/p = (stored_charge/capacity)*100

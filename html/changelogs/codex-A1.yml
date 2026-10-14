@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Declared archaeology setup jobs while preserving excavation, replacement and containment behavior."

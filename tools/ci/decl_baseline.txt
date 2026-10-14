@@ -1,6 +1,5 @@
 # Declarative-lifecycle backlog (tools/ci/decl_lint.py, doc/rewrite/declarative_lifecycle.md).
 # rule<TAB>file<TAB>normalized line. Shrink-only: convert sites, then `python tools/ci/decl_lint.py --update`.
-init_reagents	code/modules/xenoarcheaology/finds/find_spawning.dm	S.reagents.add_reagent(new_chem, 3)
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LATEJOIN, src)
 init_scheduling	code/modules/asset_cache/transports/asset_transport.dm	after(src, 1 SECONDS, PROC_REF(send_assets_slow), with = list(C, preload))
 init_visuals	code/game/objects/structures/lattice.dm	icon_state = "latticeblank"
@@ -16,16 +15,6 @@ init_visuals	code/modules/pda/pda.dm	add_overlay("pda-pen")
 init_visuals	code/modules/power/privacy_switch.dm	icon_state = "privacy1"
 init_visuals	code/modules/vore/resizing/holder_micro.dm	icon_state = "teshariplushie_white"
 init_visuals	code/modules/xenoarcheaology/artifacts/artifact.dm	icon_state = "ano[icon_num]0"
-init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "unknown[rand(1,4)]"
-init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "statuette[rand(1,3)]"
-init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "instrument"
-init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = pick("oxygen","oxygen_fr","oxygen_f","phoron","anesthetic")
-init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "pen1"
-init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "Green lump"
-init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "Phazon"
-init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "changerock"
-init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "remains"
-init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "remainsrobot"
 init_new_child	code/ATMOSPHERICS/environmental/LINDA_fire.dm	rel_set(src, nameof(our_hot_group), new /datum/hot_group)
 init_new_child	code/game/machinery/frame.dm	rel_set(src, nameof(circuit), new frame_type.circuit(src))
 init_new_child	code/game/objects/items/devices/flipper.dm	rel_set(src, nameof(pai), new /mob/living/silicon/pai/flipper(src))
@@ -35,7 +24,6 @@ init_new_child	code/modules/body/organs/subtypes/machine.dm	rel_set(src, nameof(
 init_new_child	code/modules/identification/item_procs.dm	rel_set(src, nameof(identity), new identity_type(src))
 init_new_child	code/modules/projectiles/guns/energy.dm	rel_set(src, nameof(power_supply), new /obj/item/cell/device/weapon(src))
 init_new_child	code/modules/projectiles/guns/energy.dm	rel_set(src, nameof(power_supply), new cell_type(src))
-init_new_child	code/modules/xenoarcheaology/finds/find_spawning.dm	rel_set(src, nameof(talking_atom), new /datum/talking_atom(src))
 destroy_drop	code/game/machinery/machinery.dm	for(var/mob/living/carbon/human/H in contents)
 destroy_drop	code/game/objects/micro_structures.dm	for(var/mob/thing in contents_of(src))
 destroy_drop	code/game/objects/objs.dm	for(var/thing in contents_of(src))

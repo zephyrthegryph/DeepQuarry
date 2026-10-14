@@ -16,6 +16,7 @@
 	circuit = /obj/item/circuitboard/artifact_harvester
 
 CAPABILITIES(/obj/machinery/artifact_harvester)
+	setup(PROC_REF(find_initial_scanpad))
 	default_parts()
 	configure(uses_power(idle = 50, active = 750))
 	started_work(step = PROC_REF(work_step))
@@ -35,8 +36,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	op("open_ui_powered_fingerprint", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/obj/machinery, op_open_ui_powered_fingerprint)))
 
 /// If you want it to load smoothly, set it's dir to wherever the scanpad is!
-/obj/machinery/artifact_harvester/Initialize(mapload)
-	. = ..()
+/obj/machinery/artifact_harvester/proc/find_initial_scanpad()
 	rel_set(src, nameof(owned_scanner), locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
 	if(!owned_scanner())
 		rel_set(src, nameof(owned_scanner), locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))

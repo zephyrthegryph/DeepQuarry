@@ -23,10 +23,12 @@ CAPABILITIES(/obj/item/archaeological_find)
 	configure(item_worn(flags = ABSTRACT))
 	param(nameof(find_type), pos = 1)
 	rolls(nameof(find_type), range_of(1, MAX_ARCHAEO))
+	setup(PROC_REF(excavate_find))
 
-// ALLOW(init/INSTANCE_STATE): a find makes the item it is, decorates and describes it, and gives way to it
-/obj/item/archaeological_find/Initialize(mapload)
-	. = ..()
+/// Materialize and decorate the excavated find after the proxy is initialized.
+/// Draws remain interleaved with child construction in their original order;
+/// a replacement spends the proxy just as INITIALIZE_HINT_QDEL did in InitAtom.
+/obj/item/archaeological_find/proc/excavate_find()
 	var/item_type = "object"
 	var/secondary_item_type = "object"
 	icon_state = "unknown[rand(1,4)]"
@@ -661,11 +663,13 @@ CAPABILITIES(/obj/item/archaeological_find)
 	//Safety. This catches items that either qdel upon init or return QDEL_HINT upon init. This prevents them from getting further down and crashing the server.
 	if(new_item && (QDELETED(new_item) || QDELING(new_item)))
 		stack_trace("[new_item] / [new_item.type] was excavated and immediately deleted upon init. This is a MAJOR PROBLEM. Please write a bug report or contact a maintainer so it can be blacklisted .")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 
 	if(secondary_item && (QDELETED(secondary_item) || QDELING(secondary_item)))
 		stack_trace("[secondary_item] / [secondary_item.type] was excavated and immediately deleted upon init. This is a MAJOR PROBLEM. Please write a bug report or contact a maintainer so it can be blacklisted.")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 
 	if(istype(new_item, /obj/item/material))
 		var/possible_object_paths = list()
@@ -865,7 +869,8 @@ CAPABILITIES(/obj/item/archaeological_find)
 			if(become_anomalous)
 				secondary_item.become_anomalous()
 
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 
 	else if(talkative)
 		rel_set(src, nameof(talking_atom), new /datum/talking_atom(src))

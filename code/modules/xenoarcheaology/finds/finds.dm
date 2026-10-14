@@ -21,15 +21,16 @@ CAPABILITIES(/obj/item/strangerock)
 	param(nameof(inside_item_type), pos = 1)
 	rolls(nameof(pixel_x), range_of(-8, 8))
 	rolls(nameof(pixel_y), range_of(-8, 0))
+	setup(PROC_REF(fill_excavated_rock))
 	op("strangerock_item", item(/obj/item), label("Use"), then(PROC_REF(strangerock_item)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), needs(req_welder_lit(), req(PROC_REF(burn_refusal))), then(PROC_REF(welder_used)))
 
 /// The find the rock holds (its constructor param), or 0 for a research sample at most.
 /obj/item/strangerock/var/inside_item_type = 0
 
-// ALLOW(init/INSTANCE_STATE): a strange rock holds its find or a research sample, rolled
-/obj/item/strangerock/Initialize(mapload)
-	. = ..()
+/// Select the find or sample after the rock is initialized. Keep the one d100
+/// draw before the chosen child constructor: its own random draws come next.
+/obj/item/strangerock/proc/fill_excavated_rock()
 	var/d100 = rand(1,100)
 
 	if(inside_item_type)

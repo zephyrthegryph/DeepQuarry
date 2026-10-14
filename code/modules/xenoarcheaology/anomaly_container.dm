@@ -7,9 +7,8 @@
 
 	var/tmp/obj/machinery/artifact/contained
 
-// ALLOW(init/INSTANCE_STATE): takes in the artifact the map placed on its tile
-/obj/structure/anomaly_container/Initialize(mapload)
-	. = ..()
+/// Capture the map-placed occupant after the container itself is initialized.
+/obj/structure/anomaly_container/proc/contain_initial_anomaly()
 
 	var/obj/machinery/artifact/A = locate_within(loc, /obj/machinery/artifact)
 	if(A)
@@ -25,6 +24,7 @@
 	return O.is_anomalous()
 
 CAPABILITIES(/obj/structure/anomaly_container)
+	setup(PROC_REF(contain_initial_anomaly))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("anomaly_container_robot_release", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Release"), then(PROC_REF(anomaly_container_robot_release)))
 
