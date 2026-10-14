@@ -64,6 +64,8 @@ pub struct Ctx<'a> {
     pub proc_keys: Vec<String>,
     pub global_keys: HashMap<u32, String>,
     pub hidden: HashMap<u32, String>,
+    /// Instance initializer proc ID -> inline canonical body (short bodies).
+    pub inline_inits: HashMap<u32, String>,
 }
 
 const CYCLE: &str = "<cycle>";
@@ -76,11 +78,13 @@ impl<'a> Ctx<'a> {
             proc_keys: vec![String::new(); dmb.procs.len()],
             global_keys: HashMap::new(),
             hidden: HashMap::new(),
+            inline_inits: HashMap::new(),
         };
         ctx.named_proc_keys();
         ctx.referrer_proc_keys();
         ctx.global_keys();
         ctx.hidden_tokens();
+        ctx.inline_instance_initializers();
         let mut visiting = HashSet::new();
         for p in 0..dmb.procs.len() {
             if ctx.proc_keys[p].is_empty() && !dmb.is_reserved_proc_slot(p) {
@@ -185,9 +189,56 @@ impl<'a> Ctx<'a> {
         };
         if inst.initializer == NONE {
             format!("{}:{ty}", inst.kind)
+        } else if let Some(body) = self.inline_inits.get(&inst.initializer) {
+            format!("{}:{ty}{{{body}}}", inst.kind)
         } else {
             format!("{}:{ty}{{{}}}", inst.kind, self.proc_key(inst.initializer))
         }
+    }
+    /// Render a variable operand against the incoming Cache (`cache`) and
+    /// return the Cache afterwards. `a->b` sets the Cache to `a`; a bare
+    /// field or proc name reads from it; initial()/issaved() wrap the whole
+    /// access so `src->initial(.x)` and `initial(.x)` with Cache=src agree.
+    pub fn var_chain(&self, v: &Variable, cache: &Option<String>) -> (String, Option<String>) {
+        use Variable::*;
+        let on = |name: String| match cache {
+            Some(c) => format!("{c}->{name}"),
+            None => name,
+        };
+        match v {
+            Field(id) => (on(format!(".{}", self.t(*id))), cache.clone()),
+            DynamicProc(id) => (on(format!("dproc:{}", self.t(*id))), cache.clone()),
+            DynamicVerb(id) => (on(format!("dverb:{}", self.t(*id))), cache.clone()),
+            StaticProc(_) | StaticVerb(_) => {
+                let mut text = String::new();
+                self.variable(v, &mut text);
+                (on(text), cache.clone())
+            }
+            Initial(x) => {
+                let (t, c) = self.var_chain(x, cache);
+                (format!("initial({t})"), c)
+            }
+            IsSaved(x) => {
+                let (t, c) = self.var_chain(x, cache);
+                (format!("issaved({t})"), c)
+            }
+            SetCache(a, b) => {
+                // The head is evaluated (a bare field head reads the Cache),
+                // then becomes the Cache for the rest of the chain.
+                let (head, _) = self.var_chain(a, cache);
+                self.var_chain(b, &Some(head))
+            }
+            other => {
+                let mut text = String::new();
+                self.variable(other, &mut text);
+                (text, cache.clone())
+            }
+        }
+    }
+
+    fn display_name(&self, p: u32) -> Option<String> {
+        let pr = self.dmb.procs.get(p as usize)?;
+        self.string_bytes(pr.strings[1]).map(esc)
     }
     fn hidden_token(&self, token: u32) -> String {
         match self.hidden.get(&token) {
@@ -229,7 +280,11 @@ impl<'a> Ctx<'a> {
         let base = self.tagged(v.tag(), v.id(), v.number_bits());
         // Bits outside the tag/ID fields are kept verbatim.
         let high_tag = v.tag_word >> 16;
-        let high_data = if v.kind() == ValueKind::Number { 0 } else { v.data_word >> 16 };
+        let high_data = if v.kind() == ValueKind::Number {
+            0
+        } else {
+            v.data_word >> 16
+        };
         if high_tag != 0 || high_data != 0 {
             format!("{base}[{high_tag:#x}:{high_data:#x}]")
         } else {
@@ -259,12 +314,24 @@ impl<'a> Ctx<'a> {
             DynamicVerb(id) => {
                 let _ = write!(out, "dverb:{}", self.t(*id));
             }
-            StaticProc(id) => {
-                let _ = write!(out, "sproc:{}", self.proc_key(*id));
-            }
-            StaticVerb(id) => {
-                let _ = write!(out, "sverb:{}", self.proc_key(*id));
-            }
+            // The VM converts a static ProcID to its descriptor's display
+            // StringID and then dispatches exactly like DynamicProc/Verb.
+            StaticProc(id) => match self.display_name(*id) {
+                Some(name) => {
+                    let _ = write!(out, "dproc:{name}");
+                }
+                None => {
+                    let _ = write!(out, "sproc:{}", self.proc_key(*id));
+                }
+            },
+            StaticVerb(id) => match self.display_name(*id) {
+                Some(name) => {
+                    let _ = write!(out, "dverb:{name}");
+                }
+                None => {
+                    let _ = write!(out, "sverb:{}", self.proc_key(*id));
+                }
+            },
             SetCache(a, b) => {
                 self.variable(a, out);
                 out.push_str("->");
@@ -309,7 +376,10 @@ impl<'a> Ctx<'a> {
             }
         };
         for class in &dmb.classes {
-            let owner = self.string_bytes(class.path_string_id()).unwrap_or(b"?").to_vec();
+            let owner = self
+                .string_bytes(class.path_string_id())
+                .unwrap_or(b"?")
+                .to_vec();
             for (kind, lid) in [(1u8, class.verb_list_id()), (2u8, class.proc_list_id())] {
                 if let Some(list) = (lid != NONE).then(|| dmb.lists.get(lid as usize)).flatten() {
                     for (pos, &p) in list.iter().enumerate() {
@@ -366,7 +436,12 @@ impl<'a> Ctx<'a> {
             .classes
             .iter()
             .filter(|c| c.initializer_proc_id() != NONE)
-            .map(|c| (format!("{}/<init>", self.t(c.path_string_id())), c.initializer_proc_id()))
+            .map(|c| {
+                (
+                    format!("{}/<init>", self.t(c.path_string_id())),
+                    c.initializer_proc_id(),
+                )
+            })
             .collect();
         inits.sort();
         for (key, p) in inits {
@@ -386,10 +461,16 @@ impl<'a> Ctx<'a> {
             .collect();
         owners.sort();
         for (key, p) in owners {
-            let Some(args) = dmb.proc_arguments_iter(p) else { continue };
+            let Some(args) = dmb.proc_arguments_iter(p) else {
+                continue;
+            };
             for (i, arg) in args.enumerate() {
                 if let Some(src) = dmb.argument_source_proc_id(&arg) {
-                    if self.proc_keys.get(src as usize).is_some_and(|k| k.is_empty()) {
+                    if self
+                        .proc_keys
+                        .get(src as usize)
+                        .is_some_and(|k| k.is_empty())
+                    {
                         self.proc_keys[src as usize] = format!("{key}/<arg{i} in>");
                     }
                 }
@@ -400,8 +481,12 @@ impl<'a> Ctx<'a> {
     /// Procedure IDs a body references (calls, proc paths, instance initializers).
     fn referenced_procs(&self, p: usize) -> Vec<u32> {
         let mut out = Vec::new();
-        let Some(words) = self.dmb.proc_code_words(p) else { return out };
-        let Ok(instructions) = bytecode::decode(words) else { return out };
+        let Some(words) = self.dmb.proc_code_words(p) else {
+            return out;
+        };
+        let Ok(instructions) = bytecode::decode(words) else {
+            return out;
+        };
         let value = |v: &Value, out: &mut Vec<u32>| match v.kind() {
             ValueKind::ProcPath => out.push(v.id()),
             ValueKind::InstanceTypePath => {
@@ -440,7 +525,9 @@ impl<'a> Ctx<'a> {
                     match op {
                         Operand::Value(v) => value(&v, &mut out),
                         Operand::Variable(v) => var(&v, &mut out),
-                        Operand::Switch { cases, .. } => cases.iter().for_each(|(v, _)| value(v, &mut out)),
+                        Operand::Switch { cases, .. } => {
+                            cases.iter().for_each(|(v, _)| value(v, &mut out))
+                        }
                         Operand::RangeSwitch { ranges, exact, .. } => {
                             ranges.iter().for_each(|(a, b, _)| {
                                 value(a, &mut out);
@@ -471,7 +558,8 @@ impl<'a> Ctx<'a> {
             let _ = writeln!(text, "{}={}", f.label, f.value);
         }
         if let Some(words) = self.dmb.proc_code_words(p) {
-            render_code_text(self, words, &mut text);
+            // Debug streams are compared separately; identity is code only.
+            render_code_text(self, words, &mut text, false);
         }
         let name = self
             .dmb
@@ -481,6 +569,48 @@ impl<'a> Ctx<'a> {
             .unwrap_or_default();
         self.proc_keys[p] = format!("{name}<anon {:016x}>", xxh3_64(text.as_bytes()));
         visiting.remove(&p);
+    }
+
+    /// Map/modified-type instance initializers are usually a few constant
+    /// assignments. Render short unnamed bodies inline into the instance, so a
+    /// difference shows where the instance is used instead of as an unrelated
+    /// anonymous procedure. Their debug lines are not compared.
+    fn inline_instance_initializers(&mut self) {
+        let dmb = self.dmb;
+        let mut out = HashMap::new();
+        for inst in &dmb.instances {
+            let p = inst.initializer;
+            if p == NONE || out.contains_key(&p) {
+                continue;
+            }
+            let Some(pr) = dmb.procs.get(p as usize) else {
+                continue;
+            };
+            if pr.strings[0] != NONE || !self.proc_keys[p as usize].is_empty() {
+                continue;
+            }
+            let Some(words) = dmb.proc_code_words(p as usize) else {
+                continue;
+            };
+            let Ok(lines) = render_code_lines(self, words) else {
+                continue;
+            };
+            let code: Vec<String> = lines
+                .into_iter()
+                .filter(|(d, _)| !d)
+                .map(|(_, l)| l)
+                .collect();
+            if code.len() <= 24 {
+                out.insert(
+                    p,
+                    constant_assignments(&code).unwrap_or_else(|| code.join("; ")),
+                );
+            }
+        }
+        for (&p, body) in &out {
+            self.proc_keys[p as usize] = format!("<inline-init {:016x}>", xxh3_64(body.as_bytes()));
+        }
+        self.inline_inits = out;
     }
 
     // ---- globals and hidden initializer tokens --------------------------
@@ -526,7 +656,11 @@ impl<'a> Ctx<'a> {
             let mut count: HashMap<String, usize> = HashMap::new();
             for (k, v) in keyed {
                 let n = count.entry(k.clone()).or_insert(0);
-                let key = if *n == 0 { k.clone() } else { format!("{k}#{n}") };
+                let key = if *n == 0 {
+                    k.clone()
+                } else {
+                    format!("{k}#{n}")
+                };
                 *n += 1;
                 self.global_keys.insert(v, key);
             }
@@ -553,7 +687,10 @@ impl<'a> Ctx<'a> {
             }
             for iv in dmb.class_initial_values(ci).unwrap_or_default() {
                 if iv.value.kind() == ValueKind::HiddenInitializer {
-                    add(iv.value.id(), format!("{path}.{}", self.var_name(iv.variable_id)));
+                    add(
+                        iv.value.id(),
+                        format!("{path}.{}", self.var_name(iv.variable_id)),
+                    );
                 }
             }
         }
@@ -574,7 +711,11 @@ impl<'a> Ctx<'a> {
         let pr = &dmb.procs[p];
         let mut f = Vec::new();
         let mut push = |family: &'static str, label: &str, value: String| {
-            f.push(Field { family, label: label.into(), value })
+            f.push(Field {
+                family,
+                label: label.into(),
+                value,
+            })
         };
         push("proc_meta", "path", self.s(pr.strings[0]));
         push("proc_meta", "name", self.s(pr.strings[1]));
@@ -582,7 +723,11 @@ impl<'a> Ctx<'a> {
         push("proc_meta", "category", self.s(pr.strings[3]));
         push("proc_meta", "src", format!("{:?}", pr.source_location()));
         push("proc_meta", "flags", format!("{:#x}", pr.effective_flags()));
-        push("proc_meta", "invisibility", format!("{:?}", pr.invisibility_setting()));
+        push(
+            "proc_meta",
+            "invisibility",
+            format!("{:?}", pr.invisibility_setting()),
+        );
         let args = dmb
             .proc_arguments_iter(p)
             .map(|it| {
@@ -607,7 +752,21 @@ impl<'a> Ctx<'a> {
             .lists
             .get(pr.code_locals_args[1] as usize)
             .filter(|_| pr.code_locals_args[1] != NONE)
-            .map(|l| l.iter().map(|&v| self.var_name(v)).collect::<Vec<_>>().join(", "))
+            .map(|l| {
+                l.iter()
+                    .map(|&v| {
+                        // Local names are not observable; compiler temporaries
+                        // (DM: empty name, native: __dmb_*) are the same slot kind.
+                        let name = self.var_name(v);
+                        if name.starts_with("__dmb_") {
+                            String::new()
+                        } else {
+                            name
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            })
             .unwrap_or_default();
         push("proc_locals", "locals", locals);
         f
@@ -618,7 +777,9 @@ impl<'a> Ctx<'a> {
 fn scan_global_refs(ctx: &Ctx<'_>) -> HashMap<u32, BTreeSet<String>> {
     let dmb = ctx.dmb;
     let n = dmb.procs.len();
-    let threads = std::thread::available_parallelism().map_or(4, |n| n.get()).min(16);
+    let threads = std::thread::available_parallelism()
+        .map_or(4, |n| n.get())
+        .min(16);
     let chunk = n.div_ceil(threads).max(1);
     let parts: Vec<HashMap<u32, BTreeSet<String>>> = std::thread::scope(|s| {
         (0..n)
@@ -638,8 +799,12 @@ fn scan_global_refs(ctx: &Ctx<'_>) -> HashMap<u32, BTreeSet<String>> {
                         }
                     }
                     for p in start..(start + chunk).min(n) {
-                        let Some(words) = dmb.proc_code_words(p) else { continue };
-                        let Ok(ins) = bytecode::decode(words) else { continue };
+                        let Some(words) = dmb.proc_code_words(p) else {
+                            continue;
+                        };
+                        let Ok(ins) = bytecode::decode(words) else {
+                            continue;
+                        };
                         let key = &ctx.proc_keys[p];
                         for i in &ins {
                             if let Ok(ops) = i.typed_operands() {
@@ -694,6 +859,138 @@ fn labels(instructions: &[Instruction], end: usize) -> HashMap<usize, usize> {
     map
 }
 
+/// A body made only of statements `<constant pushes and list constructors>;
+/// SetVar src->.<field>` (then End) to distinct fields assigns independent
+/// constants: its order is not observable, so it is rendered sorted by field.
+fn constant_assignments(code: &[String]) -> Option<String> {
+    let (end, body) = code.split_last()?;
+    if end != "End" {
+        return None;
+    }
+    let mut out: Vec<(&str, String)> = Vec::new();
+    let mut pending: Vec<&str> = Vec::new();
+    for line in body {
+        if let Some(field) = line.strip_prefix("SetVar src->.") {
+            if pending.is_empty() || field.contains("->") {
+                return None;
+            }
+            out.push((field, pending.join(" ")));
+            pending.clear();
+        } else if (line.starts_with("PushVal ") && !line.starts_with("PushVal inst "))
+            || line.starts_with("NewList ")
+            || line.starts_with("NewAssocList ")
+            || line == "EmptyList"
+        {
+            pending.push(line);
+        } else {
+            return None;
+        }
+    }
+    if !pending.is_empty() {
+        return None;
+    }
+    out.sort();
+    if out.windows(2).any(|w| w[0].0 == w[1].0) {
+        return None;
+    }
+    Some(
+        out.iter()
+            .map(|(f, v)| format!(".{f}={v}"))
+            .collect::<Vec<_>>()
+            .join("; "),
+    )
+}
+
+/// Opcodes after which control never reaches the next instruction.
+fn no_fallthrough(op: u32) -> bool {
+    matches!(op, 0x00 | 0x0f | 0x12 | 0xf8 | 0x78 | 0x79 | 0x7a | 0xb1)
+}
+
+/// Symbolic content of the receiver Cache register before each instruction.
+///
+/// A bare field or proc operand reads the Cache: Dream Maker omits the
+/// receiver when the Cache already holds it (initially `src`), while the
+/// native compiler may set it again. Forward dataflow over the control-flow
+/// graph gives each instruction's incoming Cache as the canonical text of the
+/// object it holds, or None when paths disagree (then operands stay bare).
+/// Two encodings therefore compare equal only when they read the same
+/// receiver expression on every path.
+pub(crate) fn cache_states(ctx: &Ctx<'_>, ins: &[Instruction]) -> Vec<Option<String>> {
+    let n = ins.len();
+    let index: HashMap<usize, usize> = ins.iter().enumerate().map(|(k, i)| (i.offset, k)).collect();
+    let mut state: Vec<Option<Option<String>>> = vec![None; n];
+    if n == 0 {
+        return Vec::new();
+    }
+    state[0] = Some(Some("src".into()));
+    let mut work = vec![0usize];
+    let mut queued = vec![false; n];
+    queued[0] = true;
+    while let Some(k) = work.pop() {
+        queued[k] = false;
+        let mut cache = state[k].clone().unwrap_or(None);
+        let i = &ins[k];
+        if !is_debug(i.opcode) {
+            if let Ok(ops) = i.typed_operands() {
+                for op in &ops {
+                    if let Operand::Variable(v) = op {
+                        cache = ctx.var_chain(v, &cache).1;
+                    }
+                }
+            }
+            if matches!(i.opcode, 0x13d | 0x13e) {
+                cache = None;
+            }
+        }
+        let mut succ: Vec<usize> = Vec::new();
+        if !no_fallthrough(i.opcode) && k + 1 < n {
+            succ.push(k + 1);
+        }
+        match i.branch_targets() {
+            Ok(targets) => succ.extend(
+                targets
+                    .iter()
+                    .filter_map(|t| index.get(&(*t as usize)).copied()),
+            ),
+            Err(_) => {}
+        }
+        for s in succ {
+            let merged = match &state[s] {
+                None => Some(cache.clone()),
+                Some(prev) if *prev == cache => continue,
+                Some(None) => continue,
+                Some(Some(_)) => Some(None),
+            };
+            state[s] = merged;
+            if !queued[s] {
+                queued[s] = true;
+                work.push(s);
+            }
+        }
+    }
+    // Unreachable instructions keep an unknown Cache.
+    state.into_iter().map(|s| s.unwrap_or(None)).collect()
+}
+
+/// Canonical debug stream: each DbgLine with its instruction ordinal and the
+/// file in effect. A DbgFile that only repeats the current file, or that is not
+/// followed by a DbgLine, has no observable effect and disappears.
+pub(crate) fn debug_entries(lines: &[(bool, String)]) -> Vec<String> {
+    let mut file = String::from("DbgFile ?");
+    let mut ordinal = 0;
+    let mut out = Vec::new();
+    for (dbg, text) in lines {
+        if !dbg {
+            ordinal += 1;
+        } else if text.starts_with("DbgFile") {
+            file.clone_from(text);
+        } else {
+            out.push(format!("@{ordinal} {file} {text}"));
+        }
+    }
+    out
+}
+
 pub(crate) fn is_debug(op: u32) -> bool {
     matches!(op, 0x84 | 0x85)
 }
@@ -714,6 +1011,7 @@ pub(crate) fn render_instruction(
     ctx: &Ctx<'_>,
     ins: &Instruction,
     map: &HashMap<usize, usize>,
+    cache: &mut Option<String>,
     out: &mut String,
 ) {
     if ins.opcode == 0x50 {
@@ -749,7 +1047,11 @@ pub(crate) fn render_instruction(
                 }
             }
             Operand::Value(v) => out.push_str(&ctx.value(v)),
-            Operand::Variable(v) => ctx.variable(v, out),
+            Operand::Variable(v) => {
+                let (text, next) = ctx.var_chain(v, cache);
+                out.push_str(&text);
+                *cache = next;
+            }
             Operand::Switch { cases, default } => {
                 out.push('{');
                 for (v, t) in cases {
@@ -773,7 +1075,11 @@ pub(crate) fn render_instruction(
                 label(map, *default, out);
                 out.push('}');
             }
-            Operand::RangeSwitch { ranges, exact, default } => {
+            Operand::RangeSwitch {
+                ranges,
+                exact,
+                default,
+            } => {
                 out.push('{');
                 for (a, b, t) in ranges {
                     let _ = write!(out, "{}..{}=>", ctx.value(a), ctx.value(b));
@@ -803,23 +1109,29 @@ pub(crate) fn render_instruction(
 }
 
 /// Full readable listing (used for content keys and for diff excerpts).
-pub(crate) fn render_code_lines(ctx: &Ctx<'_>, words: &[u32]) -> Result<Vec<(bool, String)>, String> {
-    let ins = bytecode::decode(words).map_err(|e| format!("decode error at {}: {}", e.offset, e.reason))?;
+pub(crate) fn render_code_lines(
+    ctx: &Ctx<'_>,
+    words: &[u32],
+) -> Result<Vec<(bool, String)>, String> {
+    let ins = bytecode::decode(words)
+        .map_err(|e| format!("decode error at {}: {}", e.offset, e.reason))?;
     let map = labels(&ins, words.len());
+    let states = cache_states(ctx, &ins);
     Ok(ins
         .iter()
-        .map(|i| {
+        .zip(states)
+        .map(|(i, mut cache)| {
             let mut s = String::new();
-            render_instruction(ctx, i, &map, &mut s);
+            render_instruction(ctx, i, &map, &mut cache, &mut s);
             (is_debug(i.opcode), s)
         })
         .collect())
 }
 
-fn render_code_text(ctx: &Ctx<'_>, words: &[u32], out: &mut String) {
+fn render_code_text(ctx: &Ctx<'_>, words: &[u32], out: &mut String, debug: bool) {
     match render_code_lines(ctx, words) {
         Ok(lines) => {
-            for (_, l) in lines {
+            for (_, l) in lines.into_iter().filter(|(d, _)| debug || !d) {
                 out.push_str(&l);
                 out.push('\n');
             }
@@ -837,20 +1149,32 @@ pub(crate) fn code_hashes(ctx: &Ctx<'_>, p: usize) -> Code {
         Err(e) => {
             return Code {
                 decode_error: Some(format!("decode error at {}: {}", e.offset, e.reason)),
-                instructions: vec![xxh3_64(&words.iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>())],
+                instructions: vec![xxh3_64(
+                    &words
+                        .iter()
+                        .flat_map(|w| w.to_le_bytes())
+                        .collect::<Vec<_>>(),
+                )],
                 debug: 0,
             }
         }
     };
     let map = labels(&ins, words.len());
-    let mut code = Code { instructions: Vec::with_capacity(ins.len()), ..Default::default() };
+    let mut code = Code {
+        instructions: Vec::with_capacity(ins.len()),
+        ..Default::default()
+    };
     let mut buf = String::new();
     let mut debug = String::new();
-    for i in &ins {
+    let mut file = String::from("DbgFile ?");
+    let states = cache_states(ctx, &ins);
+    for (i, mut cache) in ins.iter().zip(states) {
         buf.clear();
-        render_instruction(ctx, i, &map, &mut buf);
-        if is_debug(i.opcode) {
-            let _ = writeln!(debug, "{}:{buf}", code.instructions.len());
+        render_instruction(ctx, i, &map, &mut cache, &mut buf);
+        if i.opcode == 0x84 {
+            file.clone_from(&buf);
+        } else if i.opcode == 0x85 {
+            let _ = writeln!(debug, "@{} {file} {buf}", code.instructions.len());
         } else {
             code.instructions.push(xxh3_64(buf.as_bytes()));
         }
@@ -865,18 +1189,42 @@ pub(crate) fn class_fields(ctx: &Ctx<'_>, ci: usize) -> Vec<Field> {
     let c = &dmb.classes[ci];
     let mut f = Vec::new();
     let mut push = |family: &'static str, label: String, value: String| {
-        f.push(Field { family, label, value })
+        f.push(Field {
+            family,
+            label,
+            value,
+        })
     };
     push("type_meta", "parent".into(), ctx.ty(c.parent_class_id()));
     push("type_appearance", "name".into(), ctx.s(c.name_string_id()));
-    push("type_appearance", "desc".into(), ctx.s(c.description_string_id()));
-    push("type_appearance", "icon".into(), ctx.res(c.icon_resource_id()));
-    push("type_appearance", "icon_state".into(), ctx.s(c.icon_state_string_id()));
+    push(
+        "type_appearance",
+        "desc".into(),
+        ctx.s(c.description_string_id()),
+    );
+    push(
+        "type_appearance",
+        "icon".into(),
+        ctx.res(c.icon_resource_id()),
+    );
+    push(
+        "type_appearance",
+        "icon_state".into(),
+        ctx.s(c.icon_state_string_id()),
+    );
     push("type_appearance", "dir".into(), c.direction.to_string());
-    push("type_meta", "interface".into(), format!("{:?}", c.native_interface()));
+    push(
+        "type_meta",
+        "interface".into(),
+        format!("{:?}", c.native_interface()),
+    );
     push("type_appearance", "text".into(), ctx.s(c.text));
     push("type_appearance", "maptext".into(), ctx.s(c.maptext));
-    push("type_appearance", "maptext_geometry".into(), format!("{:?}", c.maptext_geometry));
+    push(
+        "type_appearance",
+        "maptext_geometry".into(),
+        format!("{:?}", c.maptext_geometry),
+    );
     push("type_appearance", "suffix".into(), ctx.s(c.suffix));
     push("type_flags", "flags".into(), format!("{:#x}", c.flags));
     push("type_appearance", "layer".into(), num(c.layer_bits));
@@ -890,44 +1238,106 @@ pub(crate) fn class_fields(ctx: &Ctx<'_>, ci: usize) -> Vec<Field> {
         "color_matrix".into(),
         format!("{:?}", c.color_matrix.map(|t| t.map(num))),
     );
-    push("type_meta", "slot5".into(), format!("{:#x}", c.lists_and_procs[5]));
+    push(
+        "type_meta",
+        "slot5".into(),
+        format!("{:#x}", c.lists_and_procs[5]),
+    );
     let list = |lid: u32| -> String {
         dmb.lists
             .get(lid as usize)
             .filter(|_| lid != NONE)
-            .map(|l| l.iter().map(|&p| ctx.proc_key(p)).collect::<Vec<_>>().join(", "))
+            .map(|l| {
+                l.iter()
+                    .map(|&p| ctx.proc_key(p))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            })
             .unwrap_or_default()
     };
     push("type_verbs", "verbs".into(), list(c.verb_list_id()));
-    push("type_procs", "procs".into(), list(c.proc_list_id()));
-    push("type_meta", "initializer".into(), ctx.proc_key(c.initializer_proc_id()));
+    // Proc lists: dispatch is by name, so only the order among same-named
+    // entries (precedence) is observable (DD probe: regrouping by name leaves
+    // calls and typesof unchanged). Compare per name, in list order.
+    let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    if let Some(l) = dmb
+        .lists
+        .get(c.proc_list_id() as usize)
+        .filter(|_| c.proc_list_id() != NONE)
+    {
+        for &p in l {
+            let name = dmb
+                .procs
+                .get(p as usize)
+                .and_then(|pr| ctx.string_bytes(pr.strings[0]))
+                .map(|path| esc(path.rsplit(|b| *b == b'/').next().unwrap_or(path)))
+                .unwrap_or_default();
+            groups.entry(name).or_default().push(ctx.proc_key(p));
+        }
+    }
+    push(
+        "type_procs",
+        "procs".into(),
+        groups
+            .iter()
+            .map(|(n, ks)| format!("{n}=[{}]", ks.join(" > ")))
+            .collect::<Vec<_>>()
+            .join(", "),
+    );
+    push(
+        "type_meta",
+        "initializer".into(),
+        ctx.proc_key(c.initializer_proc_id()),
+    );
     // Declarations: the loader re-sorts declaration pairs by name (FORMAT.md),
     // so wire order is not observable; key by name.
     let mut decls: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for (v, flags) in dmb.class_variable_declarations(ci).unwrap_or_default() {
         let Some(var) = dmb.variables.get(v as usize) else {
-            decls.entry("<bad-var>".into()).or_default().push(String::new());
+            decls
+                .entry("<bad-var>".into())
+                .or_default()
+                .push(String::new());
             continue;
         };
         let default = ctx.tagged(var.kind, var.value, None);
-        decls.entry(ctx.t(var.name)).or_default().push(format!("flags {flags:#x} = {default}"));
+        decls
+            .entry(ctx.t(var.name))
+            .or_default()
+            .push(format!("flags {flags:#x} = {default}"));
     }
     for (name, values) in decls {
         push("type_var_decl", format!("var {name}"), values.join(" | "));
     }
     let mut inits: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for iv in dmb.class_initial_values(ci).unwrap_or_default() {
-        inits.entry(ctx.var_name(iv.variable_id)).or_default().push(ctx.value(&iv.value));
+        inits
+            .entry(ctx.var_name(iv.variable_id))
+            .or_default()
+            .push(ctx.value(&iv.value));
     }
     for (name, values) in inits {
-        push("type_var_default", format!("default {name}"), values.join(" | "));
+        push(
+            "type_var_default",
+            format!("default {name}"),
+            values.join(" | "),
+        );
     }
     let mut overrides: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for o in dmb.class_builtin_overrides(ci).unwrap_or_default() {
-        overrides.entry(ctx.t(o.name_string_id)).or_default().push(ctx.value(&o.value));
+        overrides
+            .entry(ctx.t(o.name_string_id))
+            .or_default()
+            .push(ctx.value(&o.value));
     }
+    // Builtin overrides apply in order; a later entry wins (DD probe:
+    // prepending a duplicate with another value changes nothing).
     for (name, values) in overrides {
-        push("type_builtin_override", format!("override {name}"), values.join(" | "));
+        push(
+            "type_builtin_override",
+            format!("override {name}"),
+            values.last().cloned().unwrap_or_default(),
+        );
     }
     f
 }
@@ -940,4 +1350,71 @@ pub fn render_code_lines_pub(ctx: &Ctx<'_>, words: &[u32]) -> Result<Vec<(bool, 
 /// Escaped byte text, for diagnostics.
 pub fn esc_pub(bytes: &[u8]) -> String {
     esc(bytes)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn independent_constant_assignments_compare_in_any_order() {
+        let a = [
+            "PushVal 1.0",
+            "SetVar src->.b",
+            "PushVal \"x\"",
+            "NewList 1",
+            "SetVar src->.a",
+            "End",
+        ]
+        .map(String::from);
+        let b = [
+            "PushVal \"x\"",
+            "NewList 1",
+            "SetVar src->.a",
+            "PushVal 1.0",
+            "SetVar src->.b",
+            "End",
+        ]
+        .map(String::from);
+        assert_eq!(constant_assignments(&a), constant_assignments(&b));
+        assert!(constant_assignments(&a).is_some());
+        // Repeated fields and effectful statements keep their order.
+        let dup = [
+            "PushVal 1.0",
+            "SetVar src->.a",
+            "PushVal 2.0",
+            "SetVar src->.a",
+            "End",
+        ]
+        .map(String::from);
+        assert_eq!(constant_assignments(&dup), None);
+        let call = ["Call dproc:x, 0", "SetVar src->.a", "End"].map(String::from);
+        assert_eq!(constant_assignments(&call), None);
+    }
+
+    #[test]
+    fn bare_cache_field_equals_explicit_receiver() {
+        let dmb = Dmb::from_bytes(include_bytes!("../tests/fixtures/order_probe.dmb")).unwrap();
+        let ctx = Ctx::new(&dmb, None);
+        let field = dmb.strings.iter().position(|s| s.data == b"zz").unwrap() as u32;
+        let src = Some("src".to_string());
+        let bare = ctx.var_chain(&Variable::Field(field), &src);
+        let explicit = ctx.var_chain(
+            &Variable::SetCache(Box::new(Variable::Src), Box::new(Variable::Field(field))),
+            &None,
+        );
+        assert_eq!(bare, explicit);
+        // initial() wraps the whole access in both spellings.
+        let wrapped = ctx.var_chain(&Variable::Initial(Box::new(Variable::Field(field))), &src);
+        let inner = ctx.var_chain(
+            &Variable::SetCache(
+                Box::new(Variable::Src),
+                Box::new(Variable::Initial(Box::new(Variable::Field(field)))),
+            ),
+            &None,
+        );
+        assert_eq!(wrapped, inner);
+        // An unknown Cache never matches an explicit receiver.
+        assert_ne!(ctx.var_chain(&Variable::Field(field), &None).0, explicit.0);
+    }
 }

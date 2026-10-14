@@ -337,15 +337,44 @@ def compile_one(executable, project, manifest, workers, semantic, artifacts, log
     return result
 
 
-def check_outputs(retained, fresh, manifest):
+def check_outputs(retained, fresh, manifest, oracle="byte", equiv_exe=None):
+    """Compare retained output with the fresh oracle.
+
+    oracle="byte": exact DMB/RSC byte equality (sha256).
+    oracle="equiv": semantic equivalence via dmb-equiv (IDs and unobservable
+    table order may differ); byte hashes are still recorded for information.
+    """
     outputs = {}
     for extension in ("dmb", "rsc"):
         name = manifest.with_suffix("." + extension).name
         hashes = [sha(directory / "artifacts" / name) for directory in (retained, fresh)]
         outputs[extension] = dict(zip(("retained", "fresh"), hashes))
-        if hashes[0] != hashes[1]:
+        if oracle == "byte" and hashes[0] != hashes[1]:
             raise RuntimeError(f"fresh native {extension} oracle mismatch")
+    if oracle == "equiv":
+        outputs["equivalence"] = check_equivalence(retained, fresh, manifest, equiv_exe)
     return outputs
+
+
+def check_equivalence(retained, fresh, manifest, equiv_exe):
+    """Run dmb-equiv on retained vs fresh artifacts; raise unless equivalent."""
+    if not equiv_exe:
+        raise RuntimeError("equivalence oracle requires --equiv-exe (dmb-equiv)")
+    pair = [directory / "artifacts" / manifest.with_suffix(ext).name for directory in (fresh, retained) for ext in (".dmb", ".rsc")]
+    report = retained / "equivalence.json"
+    command = [str(equiv_exe), str(pair[0]), str(pair[2]), "--rsc", str(pair[1]), str(pair[3]), "--json", str(report), "--quiet"]
+    started = time.monotonic()
+    result = subprocess.run(command, capture_output=True, text=True, timeout=600)
+    elapsed = time.monotonic() - started
+    if result.returncode not in (0, 1) or not report.exists():
+        raise RuntimeError(f"dmb-equiv failed ({result.returncode}): {result.stderr[-2000:]}")
+    summary = json.loads(report.read_text(encoding="utf-8"))
+    record = {"equivalent": summary["equivalent"], "total": summary["total"], "report": str(report),
+              "categories": {name: value["count"] for name, value in summary["categories"].items()},
+              "check_seconds": elapsed}
+    if not summary["equivalent"]:
+        raise RuntimeError(f"fresh native semantic oracle mismatch: {record['categories']} (see {report})")
+    return record
 
 
 def main():
@@ -381,6 +410,9 @@ def main():
                         help="with --byte-oracles-only: do not load the BYOND pin, snapshot, closure or inspector")
     parser.add_argument("--byte-oracles-only", action="store_true",
                         help="skip BYOND structural comparison; retain exact fresh DMB/RSC byte oracles")
+    parser.add_argument("--oracle", choices=("equiv", "byte"), default="equiv",
+                        help="fresh-vs-retained oracle: semantic equivalence (dmb-equiv, default) or exact bytes")
+    parser.add_argument("--equiv-exe", help="dmb-equiv executable (default: dmb-equiv next to --compiler)")
     parser.add_argument("--one-shot-requests", action="store_true",
                         help="six concurrent cache-enabled one-shot builds; retained daemon state is not exercised")
     args = parser.parse_args()
@@ -415,6 +447,10 @@ def main():
         return 1
     executable = safe_e(args.compiler)
     regular(executable)
+    equiv_exe = None
+    if args.oracle == "equiv":
+        equiv_exe = Path(args.equiv_exe) if args.equiv_exe else executable.with_name("dmb-equiv" + executable.suffix)
+        regular(equiv_exe)
     build_proof = build_receipt.authenticate(safe_e(args.build_receipt), executable, sha) if args.build_receipt else None
     sources = [safe_e(args.source)]
     if args.worktree_sources:
@@ -671,8 +707,10 @@ def main():
             for index, (project, session) in enumerate(zip(projects, row["sessions"])):
                 oracle = oracles[ordinal]["sessions"][index]
                 session.update({key: oracle[key] for key in ("fresh", "host_context_before_fresh", "host_context_after_fresh")})
-                session["output_hashes"] = check_outputs(destination(index, "retained"), Path(oracle["destination"]), manifest)
-                session["fresh_native_byte_oracle"] = True
+                session["output_hashes"] = check_outputs(destination(index, "retained"), Path(oracle["destination"]), manifest,
+                                                         args.oracle, equiv_exe)
+                session["fresh_native_byte_oracle"] = args.oracle == "byte"
+                session["fresh_native_oracle"] = args.oracle
                 source_context = {"snapshot_manifest_sha256": receipt["source_snapshot_sha256"],
                     "manifest_sha256": sha(project / manifest),
                     "native_pair": session["output_hashes"],
@@ -690,7 +728,8 @@ def main():
                     row["edit"] = row["sessions"][0]["edit"]
             row["end_to_end_s"] = time.monotonic() - row_started
             row["end_to_end_scope"] = "retained requests plus saved fresh-output comparison and structural inspection; fresh prepass excluded"
-            row["fresh_native_byte_oracle"] = True
+            row["fresh_native_byte_oracle"] = args.oracle == "byte"
+            row["fresh_native_oracle"] = args.oracle
             row.pop("phase", None)
             receipt["rows"].append(row)
             receipt.pop("active_request", None)

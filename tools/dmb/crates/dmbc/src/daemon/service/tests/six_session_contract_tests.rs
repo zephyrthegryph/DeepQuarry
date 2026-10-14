@@ -104,6 +104,18 @@ fn published(
     (pair, dmb, rsc)
 }
 
+/// Retained output must be semantically equivalent to a fresh compile
+/// (dmb-equiv); byte identity is the fast path, not the requirement.
+fn assert_equivalent_outputs(
+    retained: &(crate::publish::OutputPair, Vec<u8>, Vec<u8>),
+    fresh: &(crate::publish::OutputPair, Vec<u8>, Vec<u8>),
+    context: &str,
+) {
+    if retained.0 != fresh.0 {
+        dmb_equiv::assert_equivalent_bytes(&retained.1, Some(&retained.2), &fresh.1, Some(&fresh.2), context);
+    }
+}
+
 fn compare_revision(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::OutputPair> {
     let mut pairs = Vec::with_capacity(6);
     // Exactly two requests can be active, including their independent fresh
@@ -158,7 +170,7 @@ fn compare_revision(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::
                             crate::request_runner::run_build(fresh).unwrap(),
                             &fresh_destination,
                         );
-                        assert_eq!(a, b, "root {index} retained output differs from fresh");
+                        assert_equivalent_outputs(&a, &b, &format!("root {index} retained vs fresh"));
                         a.0
                     })
                 })

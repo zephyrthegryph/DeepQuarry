@@ -33,14 +33,50 @@ pub struct PermuteOptions {
     /// builtin string prefix, relative StringID order of declared variable
     /// names, relative order of named procedures, and the class table order.
     pub preserve_semantics: bool,
+    /// Probe: prepend a duplicate (name, 99) entry to every builtin override list.
+    pub dup_overrides: bool,
+    /// Probe: reorder each proc list by descending name, keeping same-name order.
+    pub regroup_proc_lists: bool,
 }
 
 impl PermuteOptions {
     pub fn all(seed: u64) -> Self {
-        Self { seed, classes: true, procs: true, strings: true, variables: true, instances: true, mobs: true, resources: true, lists: true, reverse_decls: false, reverse_footer: false, keep_strings: 0, preserve_semantics: false }
+        Self {
+            seed,
+            classes: true,
+            procs: true,
+            strings: true,
+            variables: true,
+            instances: true,
+            mobs: true,
+            resources: true,
+            lists: true,
+            reverse_decls: false,
+            reverse_footer: false,
+            keep_strings: 0,
+            preserve_semantics: false,
+            dup_overrides: false,
+            regroup_proc_lists: false,
+        }
     }
     pub fn none(seed: u64) -> Self {
-        Self { seed, classes: false, procs: false, strings: false, variables: false, instances: false, mobs: false, resources: false, lists: false, reverse_decls: false, reverse_footer: false, keep_strings: 0, preserve_semantics: false }
+        Self {
+            seed,
+            classes: false,
+            procs: false,
+            strings: false,
+            variables: false,
+            instances: false,
+            mobs: false,
+            resources: false,
+            lists: false,
+            reverse_decls: false,
+            reverse_footer: false,
+            keep_strings: 0,
+            preserve_semantics: false,
+            dup_overrides: false,
+            regroup_proc_lists: false,
+        }
     }
     /// Parse a comma list such as `classes,procs` (or `all`).
     pub fn parse(seed: u64, tables: &str) -> io::Result<Self> {
@@ -62,7 +98,14 @@ impl PermuteOptions {
                 "lists" => o.lists = true,
                 "reverse_decls" => o.reverse_decls = true,
                 "reverse_footer" => o.reverse_footer = true,
-                other => return Err(io::Error::new(io::ErrorKind::InvalidInput, format!("unknown table {other}"))),
+                "dup_overrides" => o.dup_overrides = true,
+                "regroup_proc_lists" => o.regroup_proc_lists = true,
+                other => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        format!("unknown table {other}"),
+                    ))
+                }
             }
         }
         Ok(o)
@@ -147,7 +190,9 @@ fn apply<T: Clone>(items: &[T], map: &[u32]) -> Vec<T> {
     for (old, item) in items.iter().enumerate() {
         out[map[old] as usize] = Some(item.clone());
     }
-    out.into_iter().map(|x| x.expect("permutation is a bijection")).collect()
+    out.into_iter()
+        .map(|x| x.expect("permutation is a bijection"))
+        .collect()
 }
 
 /// Shuffle, then put the `ordered` members back into increasing slot order
@@ -163,7 +208,10 @@ fn constrain(mut map: Vec<u32>, ordered: &[bool]) -> Vec<u32> {
 }
 
 fn builtin_prefix(dmb: &Dmb) -> usize {
-    dmb.strings.iter().position(|s| s.data == b"BLEND_INSET_OVERLAY").map_or(0, |i| i + 1)
+    dmb.strings
+        .iter()
+        .position(|s| s.data == b"pixloc")
+        .map_or(0, |i| i + 1)
 }
 
 struct Maps {
@@ -189,7 +237,14 @@ impl Maps {
         match ValueKind::from_tag(tag) {
             ValueKind::String => m(&self.s, id),
             ValueKind::MobPath => m(&self.m, id),
-            ValueKind::ClientPath | ValueKind::ListPath | ValueKind::FilePath | ValueKind::SavefilePath if id == 0 => 0,
+            ValueKind::ClientPath
+            | ValueKind::ListPath
+            | ValueKind::FilePath
+            | ValueKind::SavefilePath
+                if id == 0 =>
+            {
+                0
+            }
             ValueKind::MovablePath
             | ValueKind::AtomPath
             | ValueKind::AreaPath
@@ -233,28 +288,36 @@ impl Maps {
         }
     }
     fn code(&self, words: &[u32]) -> io::Result<Vec<u32>> {
-        let ins = bytecode::decode(words).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.reason))?;
+        let ins = bytecode::decode(words)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.reason))?;
         let mut out = Vec::with_capacity(words.len());
         for i in &ins {
             out.extend(self.instruction(i)?);
         }
         if out.len() != words.len() {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "re-encoded code changed length"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "re-encoded code changed length",
+            ));
         }
         Ok(out)
     }
     fn instruction(&self, i: &Instruction) -> io::Result<Vec<u32>> {
-        let ops = i.typed_operands().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.reason))?;
+        let ops = i
+            .typed_operands()
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.reason))?;
         let mut w = vec![i.opcode];
         for (index, op) in ops.into_iter().enumerate() {
             match op {
-                Operand::Word(x) => w.push(if index == 0 && matches!(i.opcode, 0x02 | 0x04 | 0x84) {
-                    m(&self.s, x)
-                } else if (i.opcode == 0x30 && index == 1) || (i.opcode == 0xcd && index == 0) {
-                    m(&self.p, x)
-                } else {
-                    x
-                }),
+                Operand::Word(x) => {
+                    w.push(if index == 0 && matches!(i.opcode, 0x02 | 0x04 | 0x84) {
+                        m(&self.s, x)
+                    } else if (i.opcode == 0x30 && index == 1) || (i.opcode == 0xcd && index == 0) {
+                        m(&self.p, x)
+                    } else {
+                        x
+                    })
+                }
                 Operand::Value(v) => w.extend(self.value(&v).encode()),
                 Operand::Variable(v) => w.extend(self.variable(&v).encode()),
                 Operand::Switch { cases, default } => {
@@ -273,7 +336,11 @@ impl Maps {
                     }
                     w.push(default);
                 }
-                Operand::RangeSwitch { ranges, exact, default } => {
+                Operand::RangeSwitch {
+                    ranges,
+                    exact,
+                    default,
+                } => {
                     w.push(ranges.len() as u32);
                     for (a, b, t) in ranges {
                         w.extend(self.value(&a).encode());
@@ -301,7 +368,8 @@ impl Maps {
         while at < words.len() {
             out.push(first(words[at]));
             at += 1;
-            let (v, used) = Value::decode(&words[at..]).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.reason))?;
+            let (v, used) = Value::decode(&words[at..])
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.reason))?;
             out.extend(self.value(&v).encode());
             at += used;
         }
@@ -333,7 +401,11 @@ impl Interner {
 pub fn permute(dmb: &Dmb, opts: &PermuteOptions) -> io::Result<Dmb> {
     let mut rng = Rng(opts.seed ^ 0x5eed_0f_d3b);
     let safe = opts.preserve_semantics;
-    let keep = if safe { opts.keep_strings.max(builtin_prefix(dmb)) } else { opts.keep_strings };
+    let keep = if safe && opts.keep_strings == 0 {
+        builtin_prefix(dmb)
+    } else {
+        opts.keep_strings
+    };
     let mut s_map = permutation_from(dmb.strings.len(), opts.strings, keep, &mut rng);
     let mut p_map = permutation(dmb.procs.len(), opts.procs, &mut rng);
     if safe {
@@ -356,7 +428,9 @@ pub fn permute(dmb: &Dmb, opts: &PermuteOptions) -> io::Result<Dmb> {
         m: permutation(dmb.mobs.len(), opts.mobs, &mut rng),
         r: permutation(dmb.resources.len(), opts.resources, &mut rng),
     };
-    let list = |id: u32| -> Option<&Vec<u32>> { (id != NONE).then(|| dmb.lists.get(id as usize)).flatten() };
+    let list = |id: u32| -> Option<&Vec<u32>> {
+        (id != NONE).then(|| dmb.lists.get(id as usize)).flatten()
+    };
     let mut lists = Interner::default();
     let add = |lists: &mut Interner, words: Option<Vec<u32>>| words.map_or(NONE, |w| lists.add(w));
     let ids = |map: &[u32], words: &[u32]| words.iter().map(|&x| m(map, x)).collect::<Vec<_>>();
@@ -367,25 +441,77 @@ pub fn permute(dmb: &Dmb, opts: &PermuteOptions) -> io::Result<Dmb> {
     for (ci, c) in dmb.classes.iter().enumerate() {
         let mut n = c.clone();
         let [path, parent, name, desc, icon, state] = c.initial_ids;
-        n.initial_ids = [m(&maps.s, path), m(&maps.c, parent), m(&maps.s, name), m(&maps.s, desc), m(&maps.r, icon), m(&maps.s, state)];
+        n.initial_ids = [
+            m(&maps.s, path),
+            m(&maps.c, parent),
+            m(&maps.s, name),
+            m(&maps.s, desc),
+            m(&maps.r, icon),
+            m(&maps.s, state),
+        ];
         n.text = m(&maps.s, c.text);
         n.maptext = m(&maps.s, c.maptext);
         n.suffix = m(&maps.s, c.suffix);
         n.lists_and_procs[0] = add(&mut lists, list(c.verb_list_id()).map(|l| ids(&maps.p, l)));
-        n.lists_and_procs[1] = add(&mut lists, list(c.proc_list_id()).map(|l| ids(&maps.p, l)));
+        n.lists_and_procs[1] = add(
+            &mut lists,
+            list(c.proc_list_id()).map(|l| {
+                let mut entries = l.clone();
+                if opts.regroup_proc_lists {
+                    let name = |p: u32| {
+                        dmb.procs
+                            .get(p as usize)
+                            .and_then(|pr| dmb.string(pr.strings[1]).map(<[u8]>::to_vec))
+                            .unwrap_or_default()
+                    };
+                    entries.sort_by(|a, b| name(*b).cmp(&name(*a)));
+                }
+                ids(&maps.p, &entries)
+            }),
+        );
         n.lists_and_procs[2] = m(&maps.p, c.initializer_proc_id());
-        n.lists_and_procs[3] = add(&mut lists, list(c.initialized_variable_list_id()).map(|l| maps.values_list(l, |v| m(&maps.v, v))).transpose()?);
+        n.lists_and_procs[3] = add(
+            &mut lists,
+            list(c.initialized_variable_list_id())
+                .map(|l| maps.values_list(l, |v| m(&maps.v, v)))
+                .transpose()?,
+        );
         n.lists_and_procs[4] = add(
             &mut lists,
             list(c.defining_variable_list_id()).map(|l| {
-                let mut pairs: Vec<[u32; 2]> = l.chunks(2).map(|p| [m(&maps.v, p[0]), *p.get(1).unwrap_or(&0)]).collect();
+                let mut pairs: Vec<[u32; 2]> = l
+                    .chunks(2)
+                    .map(|p| [m(&maps.v, p[0]), *p.get(1).unwrap_or(&0)])
+                    .collect();
                 if opts.reverse_decls {
                     pairs.reverse();
                 }
                 pairs.concat()
             }),
         );
-        n.overrides = add(&mut lists, list(c.overriding_variable_list_id()).map(|l| maps.values_list(l, |s| m(&maps.s, s))).transpose()?);
+        n.overrides = add(
+            &mut lists,
+            list(c.overriding_variable_list_id())
+                .map(|l| {
+                    let mut words = maps.values_list(l, |s| m(&maps.s, s))?;
+                    if opts.dup_overrides {
+                        // Prepend (name, 99.0) for every entry: first-wins would show 99.
+                        let mut dup = Vec::new();
+                        let mut at = 0;
+                        while at < words.len() {
+                            let (_, used) = Value::decode(&words[at + 1..]).map_err(|e| {
+                                io::Error::new(io::ErrorKind::InvalidData, e.reason)
+                            })?;
+                            dup.extend([words[at], 0x2a, 0x42c6, 0]);
+                            at += 1 + used;
+                        }
+                        dup.extend(words);
+                        words = dup;
+                    }
+                    Ok::<_, io::Error>(words)
+                })
+                .transpose()?,
+        );
         let _ = ci;
         classes.push(n);
     }
@@ -415,7 +541,11 @@ pub fn permute(dmb: &Dmb, opts: &PermuteOptions) -> io::Result<Dmb> {
                 add(&mut lists, list(locals).map(|l| ids(&maps.v, l))),
                 add(
                     &mut lists,
-                    list(args).map(|l| l.chunks(4).flat_map(|a| [a[0], a[1], m(&maps.v, a[2]), a[3]]).collect()),
+                    list(args).map(|l| {
+                        l.chunks(4)
+                            .flat_map(|a| [a[0], a[1], m(&maps.v, a[2]), a[3]])
+                            .collect()
+                    }),
                 ),
             ];
         }
@@ -439,7 +569,10 @@ pub fn permute(dmb: &Dmb, opts: &PermuteOptions) -> io::Result<Dmb> {
     out.variable_footer = add(
         &mut lists,
         list(dmb.variable_footer).map(|l| {
-            let mut pairs: Vec<[u32; 2]> = l.chunks(2).map(|p| [m(&maps.v, p[0]), *p.get(1).unwrap_or(&0)]).collect();
+            let mut pairs: Vec<[u32; 2]> = l
+                .chunks(2)
+                .map(|p| [m(&maps.v, p[0]), *p.get(1).unwrap_or(&0)])
+                .collect();
             if opts.reverse_footer {
                 pairs.reverse();
             }
@@ -453,7 +586,11 @@ pub fn permute(dmb: &Dmb, opts: &PermuteOptions) -> io::Result<Dmb> {
         .iter()
         .map(|i| {
             let mut n = i.clone();
-            n.class = if i.kind == 8 { m(&maps.m, i.class) } else { m(&maps.c, i.class) };
+            n.class = if i.kind == 8 {
+                m(&maps.m, i.class)
+            } else {
+                m(&maps.c, i.class)
+            };
             n.initializer = m(&maps.p, i.initializer);
             n
         })
@@ -487,7 +624,11 @@ pub fn permute(dmb: &Dmb, opts: &PermuteOptions) -> io::Result<Dmb> {
     ow.hub_password = m(&maps.s, w.hub_password);
     ow.server_name = m(&maps.s, w.server_name);
     ow.command_ids = w.command_ids.map(|s| m(&maps.s, s));
-    ow.hub_channel_skin = [m(&maps.s, w.hub_channel_skin[0]), m(&maps.s, w.hub_channel_skin[1]), m(&maps.r, w.hub_channel_skin[2])];
+    ow.hub_channel_skin = [
+        m(&maps.s, w.hub_channel_skin[0]),
+        m(&maps.s, w.hub_channel_skin[1]),
+        m(&maps.r, w.hub_channel_skin[2]),
+    ];
 
     // List table: optionally shuffled, then every list reference is remapped.
     let n = lists.lists.len();

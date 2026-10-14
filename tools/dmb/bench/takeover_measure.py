@@ -11,7 +11,8 @@ What it does, in one command:
   2. Runs bench/native-iteration.py from that worktree with --byte-oracles-only against the
      recovered DeepQuarry baseline source and the body + leaf-variable edits
      (scenarios: fresh cold oracle, retained initial, unchanged, body edit, leaf var edit).
-     Fresh-vs-retained DMB/RSC byte equality is checked by the harness.
+     Fresh-vs-retained output is checked by the harness with the semantic equivalence oracle
+     (dmb-equiv, built alongside dmbc); pass --byte-oracle for exact DMB/RSC byte equality.
   3. Writes a JSON summary (per-request wall, per-stage seconds, peak commit, eviction signals)
      and prints it.
 Inputs: baseline source E:/dq-cache/dmb-takeover/baseline-src (created if missing), bench/takeover_edits.json, engine template from the worktree fixtures. No BYOND pin/inspector needed (--no-pin).
@@ -34,7 +35,7 @@ BASELINE_DME_DEFINES = ["#define VERB_CAT_OOC_RESOURCES \"OOC.Resources\"", "#de
 def build(worktree, target):
     env = dict(os.environ, CARGO_HOME=os.environ.get("DMB_CARGO_HOME", "E:/dq-cache/dmb-takeover/cargo-home"), CARGO_TARGET_DIR=target)
     cmd = [os.environ.get("DMB_GIT_BASH", "C:/Program Files/Git/bin/bash.exe"), SLOTS, "run", "cargo", "--label", "dmb-measure", "--", "E:/cargo/bin/cargo.exe",
-           "build", "--release", "--locked", "--offline", "-p", "dmbc", "--bin", "dmbc"]
+           "build", "--release", "--locked", "--offline", "-p", "dmbc", "--bin", "dmbc", "-p", "dmb-equiv", "--bin", "dmb-equiv"]
     subprocess.run(cmd, cwd=worktree / "tools/dmb", env=env, check=True)
     return target + "/release/dmbc.exe"
 
@@ -96,7 +97,8 @@ def summarize(receipt):
             stage_seconds=secs, native_stages=stage_lines(receipt["root"], row["ordinal"]),
             disk_hits=mem.get("disk_hits"), resident_hits=mem.get("resident_hits"),
             recomputed=mem.get("recomputed"), resident_dropped=mem.get("resident_dropped"),
-            bytes_equal=all(h["retained"] == h["fresh"] for h in row.get("output_hashes", {}).values()),
+            bytes_equal=all(h["retained"] == h["fresh"] for k, h in row.get("output_hashes", {}).items() if k in ("dmb", "rsc")),
+            equivalent=(row.get("output_hashes", {}).get("equivalence") or {}).get("equivalent"),
             output_hashes=row.get("output_hashes")))
     cleanup = receipt.get("owned_job_cleanup", {})
     return dict(schema=1, receipt_root=receipt["root"], status=receipt["status"], rows=rows,
@@ -112,6 +114,8 @@ def main():
     p.add_argument("--job-memory-mib", type=int, default=12288,
                    help="owned Job commit cap; 6144 killed the 8-worker daemon (allocation failure)")
     p.add_argument("--compiler")
+    p.add_argument("--byte-oracle", action="store_true", help="require byte-identical fresh/retained output instead of semantic equivalence")
+    p.add_argument("--equiv-exe", help="dmb-equiv executable (default: next to the compiler)")
     p.add_argument("--target-dir", default=TARGET, help="cargo target dir for the release build")
     p.add_argument("--out", default="measure-summary.json")
     a = p.parse_args()
@@ -127,6 +131,7 @@ def main():
     scen.write_text(json.dumps([{"name": "cold", "project": "comparison.dme", "arguments": ["--bootstrap-catalog", "--engine-template", template, "-DCIBUILDING", "-DCITESTING", "-DDM_VERSION=516", "-DDM_BUILD=1687"]}]))
     cmd = [sys.executable, str(Path(__file__).resolve().parent / "native-iteration.py"),
            "--compiler", exe, "--byte-oracles-only", "--no-pin",
+           "--oracle", "byte" if a.byte_oracle else "equiv", *(["--equiv-exe", a.equiv_exe] if a.equiv_exe else []),
            "--source", BASELINE, "--scenarios", str(scen),
            "--edits", str(Path(__file__).resolve().parent / "takeover_edits.json"), "--workers", str(a.workers), "--total-workers", str(a.workers),
            "--job-memory-mib", str(a.job_memory_mib), "--owned-memory-budget-bytes", str(a.job_memory_mib * 1048576),

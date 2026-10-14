@@ -20,7 +20,9 @@ fn main() -> ExitCode {
         Some("permute") => permute_cmd(&args[1..]),
         Some("dump-proc") => dump_proc(&args[1..]),
         Some("dump-strings") => {
-            let Some(path) = args.get(1) else { return fail("dump-strings FILE.dmb") };
+            let Some(path) = args.get(1) else {
+                return fail("dump-strings FILE.dmb");
+            };
             match std::fs::read(path).and_then(|b| Dmb::from_bytes(&b)) {
                 Ok(d) => {
                     for (i, s) in d.strings.iter().enumerate() {
@@ -87,7 +89,13 @@ fn compare_cmd(args: &[String]) -> ExitCode {
         },
         None => None,
     };
-    let report = match compare_bytes(&a, rsc_bytes.as_ref().map(|r| r.0.as_slice()), &b, rsc_bytes.as_ref().map(|r| r.1.as_slice()), &opts) {
+    let report = match compare_bytes(
+        &a,
+        rsc_bytes.as_ref().map(|r| r.0.as_slice()),
+        &b,
+        rsc_bytes.as_ref().map(|r| r.1.as_slice()),
+        &opts,
+    ) {
         Ok(r) => r,
         Err(e) => return fail(e),
     };
@@ -95,7 +103,14 @@ fn compare_cmd(args: &[String]) -> ExitCode {
     if !quiet {
         print!("{}", report.render_text());
     } else {
-        println!("{}", if report.equivalent() { "EQUIVALENT" } else { "NOT EQUIVALENT" });
+        println!(
+            "{}",
+            if report.equivalent() {
+                "EQUIVALENT"
+            } else {
+                "NOT EQUIVALENT"
+            }
+        );
     }
     eprintln!("dmb-equiv: compared in {elapsed:.2}s");
     if let Some(path) = json {

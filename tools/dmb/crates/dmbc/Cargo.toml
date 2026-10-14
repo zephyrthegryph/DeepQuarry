@@ -33,3 +33,7 @@ dm-link = { path = "../dm-link" }
 
 dm-resources = { path = "../dm-resources" }
 
+[dev-dependencies]
+# Semantic retained-vs-fresh oracle: incremental output may assign IDs stably
+# instead of reproducing fresh table order byte for byte.
+dmb-equiv = { path = "../dmb-equiv" }

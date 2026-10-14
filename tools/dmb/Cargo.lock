@@ -354,6 +354,7 @@ dependencies = [
  "dm-syntax",
  "dm-tree",
  "dm-wire",
+ "dmb-equiv",
  "fs2",
  "mimalloc",
  "rayon",
