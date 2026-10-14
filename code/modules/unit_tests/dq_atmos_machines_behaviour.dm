@@ -195,6 +195,10 @@
 	/// The area's lists as the test found them.
 	var/list/area_saved
 
+/datum/unit_test/dq_atmos_m/New()
+	..()
+	dview(0, test_floor())
+
 /datum/unit_test/dq_atmos_m/Run()
 	set_global(nameof(GLOB.test_prompts), GLOB.test_prompts)
 	test_driver_begin()

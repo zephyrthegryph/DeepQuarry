@@ -218,6 +218,8 @@
 
 /datum/unit_test/dq_hit_pin/Run()
 	set_global(nameof(GLOB.act_last_reply), GLOB.act_last_reply)
+	set_global(nameof(GLOB.latency_last_ineligible), GLOB.latency_last_ineligible)
+	set_global(nameof(GLOB.latency_last_pin_reason), GLOB.latency_last_pin_reason)
 	TEST_ASSERT(!SSexplosions.has_work(), "hit capture started with unrelated explosion work")
 	var/list/bad = list()
 	var/list/expected_by_type = dq_snapshot_read_dir(DQ_HIT_PIN_DIR, bad)
