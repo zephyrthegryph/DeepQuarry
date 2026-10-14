@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Test worlds started with boot_profile=1 now run DreamDaemon with -profile and log the launch-to-world/New time and the shutdown-to-result-marker steps"

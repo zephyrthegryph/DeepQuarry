@@ -6,6 +6,7 @@
 	latency_class = LATENCY_L3
 
 /datum/unit_test/kernel_latency
+	boot_needs = list()
 
 /datum/unit_test/kernel_latency/Run()
 	TEST_ASSERT_EQUAL(kernel_lane_class(LANE_URGENT), LATENCY_L1, "urgent is a deadline lane")
@@ -72,6 +73,7 @@
 /// kernel_admit_lane() keys each shed lane's floor by name. A bare lane number indexed
 /// floor_pass by position and runtimed the first time live shedding started.
 /datum/unit_test/kernel_admit_lane_while_shedding
+	boot_needs = list()
 
 /datum/unit_test/kernel_admit_lane_while_shedding/Run()
 	var/datum/kernel_latency/live = kernel_latency()

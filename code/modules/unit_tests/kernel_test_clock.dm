@@ -51,6 +51,7 @@
 	table -= /datum/system/e6_clock_fixture
 
 /datum/unit_test/kernel_test_clock
+	boot_needs = list()
 
 /datum/unit_test/kernel_test_clock/Run()
 	test_driver_begin()
@@ -97,6 +98,7 @@
 	TEST_ASSERT_NULL(K.test_now, "test_driver_end hands the clock back")
 
 /datum/unit_test/kernel_test_clock_roles
+	boot_needs = list()
 
 /datum/unit_test/kernel_test_clock_roles/Run()
 	defer_cleanup(null, GLOBAL_PROC_REF(e6_clock_fixture_forget))
@@ -116,6 +118,7 @@
 /// The recorder's store: rows carry their position and the kernel time they were reported at, a delta is kept only for a
 /// named entity, and a record is bounded.
 /datum/unit_test/kernel_test_recorder
+	boot_needs = list()
 
 /datum/unit_test/kernel_test_recorder/Run()
 	test_driver_begin()

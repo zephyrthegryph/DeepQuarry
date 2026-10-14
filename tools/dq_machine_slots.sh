@@ -64,6 +64,7 @@ slots_default_test_world() { # one DreamDaemon is mostly single-threaded; leave 
 
 slots_capacity() { # class -> count (0 = off)
 	local cls="$1" up var val
+	[ "$cls" = "merge_base" ] && { echo 1; return; } # the merge worktree lock is always exactly one and never off (no limit would be the race)
 	[ "${DQ_SLOTS:-1}" = "0" ] && { echo 0; return; }
 	up="$(printf '%s' "$cls" | tr 'a-z' 'A-Z')"
 	var="DQ_SLOTS_$up"
@@ -98,6 +99,19 @@ _slots_winpid() { cat "/proc/$1/winpid" 2>/dev/null || echo "$1"; }
 
 _slots_field() { sed -n "s/^$2=//p" "$1" 2>/dev/null | head -n 1; }
 
+_slots_num() { # file key default -> the key's value when it is a number, else the default (a file still being written has none)
+	local v
+	v="$(_slots_field "$1" "$2")"
+	case "$v" in '' | *[!0-9]*) echo "$3" ;; *) echo "$v" ;; esac
+}
+
+_slots_lanes() { # owner file -> " lanes 'a b'" for a merge_base holder
+	local l
+	l="$(_slots_field "$1" lanes)"
+	[ -n "$l" ] && printf " lanes '%s'" "$l"
+	return 0
+}
+
 _slots_mtime() { # file -> epoch seconds (0 when missing)
 	local t
 	t="$(stat -c %Y "$1" 2>/dev/null)" || t=0
@@ -123,6 +137,7 @@ _slots_dead() { # file
 	return 1
 }
 
+SLOTS_SELF="${BASH_SOURCE[0]}"
 SLOTS_HELD=""        # the slot directory this shell holds
 SLOTS_HELD_CLASS=""
 SLOTS_QUEUE=""       # this shell's queue file
@@ -155,7 +170,7 @@ _slots_who() { # class dir -> " [slot N: worktree 'label' held 3m] ..."
 	for f in "$d"/slot.*; do
 		[ -f "$f/owner" ] || continue
 		started="$(_slots_field "$f/owner" started)"
-		out="$out [${f##*/}: $(_slots_field "$f/owner" worktree) '$(_slots_field "$f/owner" label)' pid $(_slots_field "$f/owner" pid), held $(( now - ${started:-$now} ))s]"
+		out="$out [${f##*/}: $(_slots_field "$f/owner" worktree) '$(_slots_field "$f/owner" label)' pid $(_slots_field "$f/owner" pid)$(_slots_lanes "$f/owner"), held $(( now - ${started:-$now} ))s]"
 	done
 	echo "${out:- nobody}"
 }
@@ -373,6 +388,177 @@ slots_group_release() { # hand back all of them (an EXIT trap calls this), and l
 	return 0
 }
 
+# ---- the merge worktree lock: one batch owns E:/projects/dq-wt/merge-base from the clear check until the push lands ------------
+# Class merge_base, exactly one slot, the same slot directory protocol as above (queue, atomic mkdir, owner file, heartbeat, dead-holder
+# reclaim). A batch spans several processes (dq_merge_worktree.sh, git merge, dq_merge_gates.sh, dq_push_master.sh), so no one of them can
+# be the holder: the acquiring script starts a detached holder process (`dq_machine_slots.sh _hold`) that keeps the heartbeat, and the
+# slot's owner file names it. The holder process ends when the slot directory is gone (released), when the slot was taken over, or after
+# DQ_MERGE_LOCK_MAX_SEC (default 21600, six hours: an abandoned batch cannot hold the merge worktree forever). If it is killed or the machine
+# restarts the next waiter reclaims the slot like any dead holder.
+# Who is "the holder" for a later call: the owner file records `session` (DQ_MERGE_SESSION, else CLAUDE_CODE_SESSION_ID, else the nearest ancestor that is not a plain
+# shell, which is the agent's process that spawns every command it runs). A caller is the holder when its DQ_MERGE_SESSION equals the recorded
+# one, or, without that variable, when the recorded session pid is among its own ancestors.
+#   dq_machine_slots.sh merge-lock status | release [--force]     (dq_merge_worktree.sh --release / --join are the usual front ends)
+
+_ml_slot() { echo "$(slots_dir)/merge_base/slot.1"; }
+
+_ml_ancestors() { # pids from this shell's parent upward
+	local p="$$" n=0
+	while [ "$n" -lt 40 ]; do
+		p="$(cat "/proc/$p/ppid" 2>/dev/null)"
+		case "$p" in '' | 0 | 1 | *[!0-9]*) break ;; esac
+		echo "$p"
+		n=$((n + 1))
+	done
+}
+
+_ml_session() { # the id of the caller's batch session
+	local p name
+	if [ -n "${DQ_MERGE_SESSION:-}" ]; then echo "env:$DQ_MERGE_SESSION"; return; fi
+	# An agent session id survives across the separate shells it spawns (msys process ancestry stops at each command's own bash).
+	if [ -n "${CLAUDE_CODE_SESSION_ID:-}" ]; then echo "claude:$CLAUDE_CODE_SESSION_ID"; return; fi
+	for p in $(_ml_ancestors); do
+		name="$(basename "$(cat "/proc/$p/exename" 2>/dev/null)" .exe | tr 'A-Z' 'a-z')"
+		case "$name" in bash | sh | dash | env | timeout | nohup | setsid | git | '') continue ;; esac
+		echo "pid:$p"
+		return
+	done
+	echo "pid:${PPID:-0}"
+}
+
+_ml_is_holder() { # owner file: is the caller the batch's holder?
+	local o="$1" rec mine
+	[ -f "$o" ] || return 1
+	rec="$(_slots_field "$o" session)"
+	[ -n "$rec" ] || return 1
+	case "$rec" in
+		env:*) [ "${DQ_MERGE_SESSION:-}" = "${rec#env:}" ] && return 0; return 1 ;;
+	esac
+	[ -z "${DQ_MERGE_SESSION:-}" ] || return 1
+	mine="$(_ml_session)"
+	[ "$mine" = "$rec" ] && return 0
+	_ml_ancestors | grep -qx -- "${rec#pid:}"
+}
+
+_ml_set_field() { # owner key value: rewrite one line atomically
+	local o="$1" k="$2" v="$3" t
+	t="$o.$$.tmp"
+	{ grep -v "^$k=" "$o" 2>/dev/null; printf '%s=%s\n' "$k" "$v"; } >"$t" && mv -f "$t" "$o"
+}
+
+_ml_event() { # owner: one events.tsv line for the end of a batch
+	local o="$1" now
+	now="$(date +%s)"
+	printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" merge_base 1 "$(_slots_field "$o" worktree)" "$(_slots_field "$o" lanes)" 0 "$((now - $(_slots_num "$o" started "$now")))" >>"$(slots_dir)/events.tsv" 2>/dev/null
+}
+
+_ml_hold() { # slotdir max_sec: the detached holder process; takes the slot over from the acquiring shell and keeps it alive
+	local d="$1" max="${2:-21600}" o t0 now pid="$$" body
+	o="$d/owner"
+	t0="$(date +%s)"
+	body="$(grep -v -e '^pid=' -e '^winpid=' -e '^kind=' "$o" 2>/dev/null)"
+	{ printf 'kind=bash\npid=%s\nwinpid=%s\n' "$pid" "$(_slots_winpid "$pid")"; printf '%s\n' "$body"; } >"$o.$pid.tmp" && mv -f "$o.$pid.tmp" "$o"
+	while true; do
+		[ -d "$d" ] && [ "$(_slots_field "$o" pid)" = "$pid" ] || exit 0 # released, or reclaimed and taken by another batch
+		now="$(date +%s)"
+		if [ $((now - t0)) -ge "$max" ]; then
+			echo "== merge lock: holder pid $pid expired after ${max}s; releasing" >&2
+			break
+		fi
+		touch "$o" 2>/dev/null || exit 0
+		sleep "${DQ_SLOTS_HEARTBEAT_SEC:-15}"
+	done
+	_ml_event "$o"
+	rm -rf "$d"
+}
+
+merge_lock_acquire() { # lanes...: wait for the merge worktree lock (printing who holds it), then keep it with a detached holder
+	local lanes="$*" sess d o hp i
+	_slots_errexit_off
+	sess="$(_ml_session)"
+	d="$(_ml_slot)"
+	if [ -f "$d/owner" ] && ! _slots_dead "$d/owner" && _ml_is_holder "$d/owner"; then
+		echo "dq_merge_worktree: you already hold the merge lock (lanes '$(_slots_field "$d/owner" lanes)'); join more lanes with --join, or finish and --release" >&2
+		_slots_errexit_back
+		return 3
+	fi
+	trap 'slots_release; exit 130' INT TERM
+	_slots_acquire merge_base "${lanes:0:80}" >&2 # stdout of the merge scripts is the worktree path
+	trap - INT TERM
+	d="$SLOTS_HELD"
+	if [ -z "$d" ]; then _slots_errexit_back; return 1; fi
+	o="$d/owner"
+	_ml_set_field "$o" lanes "$lanes"
+	_ml_set_field "$o" session "$sess"
+	if [ -n "$SLOTS_HB_PID" ]; then kill "$SLOTS_HB_PID" 2>/dev/null; SLOTS_HB_PID=""; fi
+	nohup bash "$SLOTS_SELF" _hold "$d" "${DQ_MERGE_LOCK_MAX_SEC:-21600}" >/dev/null 2>&1 &
+	hp=$!
+	disown "$hp" 2>/dev/null || true
+	SLOTS_HELD=""
+	for ((i = 0; i < 100; i++)); do # wait for the holder process to put its pid in the owner file
+		[ "$(_slots_field "$o" pid)" = "$hp" ] && break
+		sleep 0.1
+	done
+	if [ "$(_slots_field "$o" pid)" != "$hp" ]; then
+		echo "dq_merge_worktree: the lock holder process did not start; releasing" >&2
+		rm -rf "$d"
+		_slots_errexit_back
+		return 1
+	fi
+	echo "== merge lock: held (holder pid $hp, lanes '$lanes', session $sess; ends at --release, the push, or after $((${DQ_MERGE_LOCK_MAX_SEC:-21600} / 3600))h)" >&2
+	_slots_errexit_back
+	return 0
+}
+
+merge_lock_holder_check() { # -> 0 when the merge lock is held by a live holder and the caller is that holder
+	local o
+	o="$(_ml_slot)/owner"
+	[ -f "$o" ] || return 1
+	_slots_dead "$o" && return 1
+	_ml_is_holder "$o"
+}
+
+merge_lock_who() {
+	local o now
+	o="$(_ml_slot)/owner"
+	if [ ! -f "$o" ]; then echo "nobody holds the merge lock"; return 0; fi
+	now="$(date +%s)"
+	echo "merge lock held by $(_slots_field "$o" worktree) lanes '$(_slots_field "$o" lanes)' holder pid $(_slots_field "$o" pid), held $((now - $(_slots_num "$o" started "$now")))s$(_slots_dead "$o" && echo ' [DEAD, reclaimed by the next waiter]')"
+}
+
+merge_lock_join() { # lanes...: the holder adds lanes to its batch
+	local o lanes
+	o="$(_ml_slot)/owner"
+	merge_lock_holder_check || { echo "dq_merge_worktree: --join refused: you do not hold the merge lock ($(merge_lock_who))" >&2; return 1; }
+	lanes="$(_slots_field "$o" lanes) $*"
+	_ml_set_field "$o" lanes "$(echo $lanes)"
+	echo "== merge lock: batch lanes now '$(_slots_field "$o" lanes)'" >&2
+}
+
+merge_lock_release() { # [--force]: end the batch. The holder (or anyone with --force, or when the holder is dead) may.
+	local o d force=0
+	[ "${1:-}" = "--force" ] && force=1
+	d="$(_ml_slot)"
+	o="$d/owner"
+	if [ ! -d "$d" ]; then echo "== merge lock: not held"; return 0; fi
+	if [ -f "$o" ] && ! _slots_dead "$o" && ! _ml_is_holder "$o" && [ "$force" -ne 1 ]; then
+		echo "dq_merge_worktree: refused: the merge lock belongs to another batch ($(merge_lock_who)); only its holder releases it (--release --force overrides, for a batch you know is abandoned)" >&2
+		return 1
+	fi
+	_ml_event "$o"
+	rm -rf "$d" # the holder process sees the directory gone and exits by itself
+	echo "== merge lock: released"
+}
+
+merge_lock_require() { # the caller's checkout: return 1 in the shared merge worktree unless the caller holds the lock
+	local top
+	top="$(git rev-parse --show-toplevel 2>/dev/null)" || return 0
+	[ "$(_slots_norm "$top")" = "$(_slots_norm "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}")" ] || return 0
+	merge_lock_holder_check && return 0
+	echo "REFUSED: $top is the shared merge worktree and you do not hold its lock ($(merge_lock_who)). Take it with: bash tools/dq_merge_worktree.sh --lanes \"<branch> ...\"  (it waits for the current batch); then merge, gate and push from this worktree." >&2
+	return 1
+}
+
 slots_run() { # class [--label TEXT] -- command...
 	local cls="${1:?class}" label="" rc
 	shift
@@ -395,19 +581,19 @@ slots_status() { # [class]
 	local root cls d f any=0 now max
 	root="$(slots_dir)"
 	now="$(date +%s)"
-	for cls in ${1:-dm_compile test_world cargo look_state_pin}; do
+	for cls in ${1:-dm_compile test_world cargo look_state_pin merge_base}; do
 		d="$root/$cls"
 		max="$(slots_capacity "$cls")"
 		echo "$cls: at most $max at once$( [ "$max" -eq 0 ] && echo ' (limit off)')"
 		for f in "$d"/slot.*; do
 			[ -f "$f/owner" ] || continue
 			any=1
-			echo "  ${f##*/}: $(_slots_field "$f/owner" worktree) '$(_slots_field "$f/owner" label)' pid $(_slots_field "$f/owner" pid), held $(( now - $(_slots_field "$f/owner" started) ))s, heartbeat $(( now - $(_slots_mtime "$f/owner") ))s ago$(_slots_dead "$f/owner" && echo ' [DEAD, reclaimed by the next waiter]')"
+			echo "  ${f##*/}: $(_slots_field "$f/owner" worktree) '$(_slots_field "$f/owner" label)' pid $(_slots_field "$f/owner" pid)$(_slots_lanes "$f/owner"), held $(( now - $(_slots_num "$f/owner" started "$now") ))s, heartbeat $(( now - $(_slots_mtime "$f/owner") ))s ago$(_slots_dead "$f/owner" && echo ' [DEAD, reclaimed by the next waiter]')"
 		done
 		for f in "$d"/queue/*; do
 			[ -f "$f" ] || continue
 			any=1
-			echo "  waiting ${f##*/}: $(_slots_field "$f" worktree) '$(_slots_field "$f" label)' pid $(_slots_field "$f" pid), queued $(( now - $(_slots_field "$f" queued) ))s$(_slots_dead "$f" && echo ' [DEAD]')"
+			echo "  waiting ${f##*/}: $(_slots_field "$f" worktree) '$(_slots_field "$f" label)' pid $(_slots_field "$f" pid), queued $(( now - $(_slots_num "$f" queued "$now") ))s$(_slots_dead "$f" && echo ' [DEAD]')"
 		done
 	done
 	[ "$any" -eq 1 ] || echo "(nothing held, nobody waiting)"
@@ -484,8 +670,17 @@ if ! (return 0 2>/dev/null); then
 		run) slots_run "$@"; exit $? ;;
 		status) slots_status "$@" ;;
 		stats) slots_stats "$@" ;;
-		reap) for c in dm_compile test_world cargo look_state_pin; do _slots_reap "$(slots_dir)/$c"; done; slots_status ;;
+		reap) for c in dm_compile test_world cargo look_state_pin merge_base; do _slots_reap "$(slots_dir)/$c"; done; slots_status ;;
 		selftest) slots_selftest; exit $? ;;
+		_hold) _ml_hold "$@"; exit 0 ;;
+		merge-lock)
+			sub="${1:-status}"
+			[ $# -gt 0 ] && shift
+			case "$sub" in
+				status) merge_lock_who ;;
+				release) merge_lock_release "$@"; exit $? ;;
+				*) echo "usage: dq_machine_slots.sh merge-lock status | release [--force]" >&2; exit 2 ;;
+			esac ;;
 		*) sed -n '2,12p' "$0"; [ "$cmd" = "-h" ] || [ "$cmd" = "--help" ] || exit 2 ;;
 	esac
 fi

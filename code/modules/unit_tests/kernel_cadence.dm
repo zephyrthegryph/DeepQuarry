@@ -13,6 +13,7 @@
 	abstract_type = /datum/system/test_cadence_reactive
 
 /datum/unit_test/kernel_cadence
+	boot_needs = list()
 
 /datum/unit_test/kernel_cadence/Run()
 	var/list/expected = list(
