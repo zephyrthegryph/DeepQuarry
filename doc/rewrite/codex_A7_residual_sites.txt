@@ -1,7 +1,7 @@
 Source-only estimate; root must certify via analyzer.
 init_lines baseline 249
 world_reads baseline 9
-init_lines retained identity occurrences 158
+init_lines retained identity occurrences 154
 init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animal_chance count=2
 init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animal_type count=1
 init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animals count=4
