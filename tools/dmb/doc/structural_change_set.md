@@ -86,3 +86,37 @@ Every consumer logs `change set: <stage> full (<reason>)` when it falls back.
   new proc, removed proc, removed var, new type, define, map).
 - The harness byte oracle runs on every measured row.
 - `DMB_DOMAIN_CACHE_VERIFY=1` recomputes inherited cache entries and panics on a mismatch.
+
+## Status (2026-10-13, end of lane round 2)
+
+Landed, each consumer logging `native change set: ...` per request:
+
+- **Domain versions:** demand certificates are carried for clean selections (about 750k per edit;
+  0 to 964 dropped). A per-host memo removes about 1.1M repeat issues. Tree issue CPU went from
+  16.1 s to 0.25 s.
+- **Tree splice** (`metadata_splice.rs`): added, removed and changed member rows, including
+  implicit callables, are spliced in fresh-build order with remapped dense IDs. It reuses the
+  prefix chunks of the arena. It declines on type rows, a member on a new or implicit owner,
+  duplicates, inherited redeclarations, overrides without a base, ambiguous intrinsic anchors, and
+  anchors that would move an implicit callable. Verified equal to the full constructor
+  (`DMB_SPLICE_VERIFY=1`) and covered by `metadata_splice_tests.rs`.
+- **Store lock relief** (prerequisite for consumer 3): claims of already-claimed variants are
+  counted atomically under a read lock, and the lease roster insert is deferred until the next
+  roster read. Admission versions get a per-thread first-level cache. Initializer classification
+  went from 2.8 s to 1.0 s.
+- **Selection-owner publication** skips the demand-store sweep when no type was removed. There is
+  a full sweep every 32 revisions, because pruning only bounds memory.
+
+Not done this round:
+
+- **Define edits:** directive replay already hits 5,628 of 5,629 intervals. The cost left is fixed
+  planning overhead (about 0.5–0.9 s) and re-parsing the 97 files whose expansion changed.
+- **Maps:** the full compile stages still run, but their memo checks are now cheap. A map-only
+  path needs the composition model's map sections retained (the patch base keeps only list rows
+  and procedure code).
+- **In-place DMB patch for defaults:** a numeric default edit changes 2 bytes, in the Variables
+  table. Patching needs three things: a retained (type, var) to variable-record index plus the
+  section offset; the new value from scalar resolution; and a decline whenever a lowering receipt
+  reads that `OwnerScalar` domain (`initial()` and const folding). Added or removed procs and vars
+  renumber tables. Making them patchable means changing fresh ID order, which moves the BYOND
+  parity baseline, so it is not recommended.
