@@ -57,3 +57,5 @@ After rebasing onto the read-tracking master, the existing battle arcade `random
 `dq_a4_initialization/arcade_characters` exercises real construction, checks generated correlated cabinet/enemy names and their actual UI output, and confirms fixed initial combat state remains unchanged. The final exact residual report excludes the removed arcade identity. Additional expected init_lines shrink: one; root analyzer certification is pending.
 
 The original stamped proof `b7a1fd8dd9` predates this source addition and the read-tracking rebase. It does **not** certify the reopened branch. A new full A4 focused proof is pending; no new stamp is claimed here.
+
+Final analyzer update on master a75de08d85: init baseline 4106 ->3900 globally, including the last arcade row. The supported shrink-only update and init lint pass. Current source is not stamped: master compile/DreamChecker/base_vars blockers prevent the required new focused proof.
