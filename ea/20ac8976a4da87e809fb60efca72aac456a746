@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"ea20ac8976a4da87e809fb60efca72aac456a746","ok":true,"passed":50,"failed":0,"new_failed":0,"lanes":"rewrite/loot-drift","tests_json":"data/test-runs/20261014T054925_ea20ac8976_focused.json","created":"2026-10-14T06:22:49Z"}
