@@ -772,7 +772,7 @@ MSG_DEF_SELF(snack/egg_refuses, "The egg refuses to take on this color!")
 /obj/item/reagent_containers/food/snacks/egg/proc/takes_colour(datum/act/op/A)
 	var/static/list/colours = list("blue", "green", "mime", "orange", "purple", "rainbow", "red", "yellow")
 	var/obj/item/pen/crayon/C = A.held
-	return ((C.colourName in colours)) ? null : /datum/msg/snack/egg_refuses // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return ((C.colourName in colours)) ? null : /datum/msg/snack/egg_refuses
 
 /obj/item/reagent_containers/food/snacks/egg/proc/coloured(datum/act/op/A)
 	var/obj/item/pen/crayon/C = A.held

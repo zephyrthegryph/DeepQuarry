@@ -93,7 +93,7 @@ MSG_DEF_SELF(robotics/silicon_denied, "Access Denied (silicon detected)")
 	if(!isAI(user))
 		return FALSE
 	var/mob/living/original = user.mind.original_character // ALLOW(reads): who may hack is asked when the question opens and again when it is answered, never cached
-	return (user.mind.special_role && (original && original == user)) // ALLOW(reads): who may hack is asked when the question opens and again when it is answered, never cached
+	return (user.mind.special_role && (original && original == user))
 
 /**
  * Check if the user is allowed to hack a specific borg

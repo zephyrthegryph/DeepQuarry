@@ -206,7 +206,7 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 /// The panel answers someone who can move and act and stands next to the bomb (a remote link, an AI's, works it from anywhere).
 /obj/machinery/nuclearbomb/proc/bomb_reachable(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!user.canmove || user.stat || user.restrained()) // ALLOW(reads): the person is read when a button is pressed, never from a cached menu
+	if(!user.canmove || user.stat || user.restrained())
 		return MSG(nuclearbomb/unreachable)
 	return (get_dist(src, user) <= 1 || (A.authority & AUTH_REMOTE_ACCESS)) ? null : MSG(nuclearbomb/unreachable)
 

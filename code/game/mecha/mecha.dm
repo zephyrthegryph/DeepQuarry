@@ -452,7 +452,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	if(wrecked && wreckage)
 		var/obj/effect/decal/mecha_wreckage/WR = new wreckage(loc)
-		set_wreck(WR) // ALLOW(ownership): names the successor the declared hand-over below uses; a dying holder takes no new relation and the wreckage owns itself
+		set_wreck(WR)
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			if(E.salvageable && prob(30))
 				rel_add(WR, nameof(WR.crowbar_salvage), E)

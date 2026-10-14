@@ -223,7 +223,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	if(lockdown)
 		return TRUE
 	for(var/area/A in areas_added)
-		if(A.firedoors_closed) // ALLOW(reads): an area's alarm flag is read when the door is used and again when the question is answered
+		if(A.firedoors_closed)
 			return TRUE
 	return FALSE
 

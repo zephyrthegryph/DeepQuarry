@@ -38,7 +38,7 @@
 /// machine?" (P2-S1). Simple plans answer from the `biology` var; the humanoid
 /// plan answers from the torso.
 /mob/living/biology()
-	return body ? body.biology_of(null) : biology // ALLOW(reads): biology is fixed when the body is made; a reader asks it, nothing caches it
+	return body ? body.biology_of(null) : biology
 
 /// Any reagent holder owned by this mob changed: the treatment snapshot and
 /// the chem-caused afflictions are stale. The factors are NOT dirtied here

@@ -248,6 +248,7 @@
 #include "dq_flight_operations_tests.dm"
 #include "dq_generated_deps_tests.dm"
 #include "dq_staleness_tests.dm"
+#include "dq_read_tracking_tests.dm"
 #include "dq_generated_station_tests.dm"
 #include "dq_generated_station_planner_tests.dm"
 #include "dq_generated_station_room_definition_tests.dm"

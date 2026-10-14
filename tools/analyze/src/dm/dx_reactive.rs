@@ -533,7 +533,7 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
     }
     // A var no proc ever writes (a per-type default overridden in subtypes, read across objects) is constant: nothing could publish its change, so
     // reading it needs no tracking (the dependency analysis classes it Constant the same way).
-    if let Some(sem) = crate::sem::sem_for(tree) {
+    if let Some(sem) = crate::sem::sem_for(tree).filter(|_| tree.get(crate::gens::auto_tracked::AUTO_REL).is_some()) {
         let written = crate::gens::auto_tracked::writes_outside_setters_of(tree, &sem);
         let calls = crate::gens::auto_tracked::set_calls(tree);
         for t in sem.objtree.iter_types() {
