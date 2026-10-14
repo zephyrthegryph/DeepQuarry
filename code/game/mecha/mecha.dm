@@ -1953,16 +1953,21 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 			return 1
 	return 0
 
-/obj/mecha/proc/internals_access_allowed(mob/living/carbon/human/H)
-	if(istype(H))
-		for(var/atom/ID in list(H.get_active_hand(), H.get_equipped_item(SLOT_ID_ID), H.get_equipped_item(SLOT_ID_BELT)))
-			if(src.check_access(ID,src.internals_req_access))
-				return 1
-	else if(isrobot(H))
-		var/mob/living/silicon/robot/R = H
-		if(src.check_access(R.idcard,src.internals_req_access))
+/obj/mecha/proc/internals_access_allowed(mob/H)
+	for(var/atom/ID in H?.mecha_internals_credentials())
+		if(src.check_access(ID, src.internals_req_access))
 			return 1
 	return 0
+
+/// A pilot supplies the credentials their cockpit access historically used.
+/mob/proc/mecha_internals_credentials()
+	return null
+
+/mob/living/carbon/human/mecha_internals_credentials()
+	return list(get_active_hand(), get_equipped_item(SLOT_ID_ID), get_equipped_item(SLOT_ID_BELT))
+
+/mob/living/silicon/robot/mecha_internals_credentials()
+	return list(idcard)
 
 /obj/mecha/check_access(obj/item/card/id/I, list/access_list)
 	if(!istype(access_list))
