@@ -11,7 +11,7 @@ CAPABILITIES(/mob/living/silicon/robot/platform)
 	op("platform_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load into cargo"), when(PROC_REF(cargo_loadable)), begins(PROC_REF(cargo_loading_text)), wait(3 SECONDS), then(PROC_REF(platform_loaded)))
 	// an empty hand on a closed platform that has no cell in its port takes the last stored thing out
 	op("platform_unload", hand(), label("Unload cargo"), priority(OP_PRIORITY_ATTACK), when(PROC_REF(cargo_unloadable)), begins(PROC_REF(cargo_unloading_text)), wait(3 SECONDS), then(PROC_REF(platform_unloaded)))
-	op("platform_silicon_unload", remote(), label("Unload cargo"), when(PROC_REF(cargo_unloadable_by_silicon)), begins(PROC_REF(cargo_unloading_text)), wait(3 SECONDS), then(PROC_REF(platform_unloaded)))
+	op("platform_silicon_unload", remote(), label("Unload cargo"), when(req_actor_kind(/mob/living/silicon/robot)), when(req_adjacent()), when(PROC_REF(cargo_unloadable_by_silicon)), begins(PROC_REF(cargo_unloading_text)), wait(3 SECONDS), then(PROC_REF(platform_unloaded)))
 
 /// Old attack_ghost: an unoccupied platform offers itself to the ghost; otherwise the default. The question is the op's asks() step; the requirement is read
 /// again when the answer arrives (still a ghost, the platform still empty and alive, the round running).

@@ -428,17 +428,7 @@
 
 //Helper procedure. Called by /mob/living/carbon/human/examine() and /mob/living/carbon/human/Topic() to determine HUD access to security and medical records.
 /proc/hasHUD(mob/M as mob, hudtype)
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		if(hasHUD_vr(H,hudtype)) return 1 //Added records access for certain modes of omni-hud glasses
-		switch(hudtype)
-			if("security")
-				return istype(H.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/hud/security) || istype(H.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses/sechud)
-			if("medical")
-				return istype(H.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/hud/health)
-	else if(isrobot(M))
-		var/mob/living/silicon/robot/R = M
-		return R.sensor_type //Borgo sensors are now binary so just have them on or off
+	return M?.records_hud_access(hudtype)
 
 
 /mob/living/carbon/human/proc/examine_weight()

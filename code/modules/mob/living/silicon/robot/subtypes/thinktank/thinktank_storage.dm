@@ -88,8 +88,7 @@
 
 /// Old attack_ai: an adjacent cyborg unloads cargo; otherwise the next silicon Use / default.
 /mob/living/silicon/robot/platform/proc/cargo_unloadable_by_silicon(datum/act/op/A)
-	var/mob/user = A.actor
-	return read_once(istype(user, /mob/living/silicon/robot) && user.Adjacent(src)) && length(stored_atoms) > 0
+	return length(stored_atoms) > 0
 
 /// What the others see when the last stored thing starts to come out.
 /mob/living/silicon/robot/platform/proc/cargo_unloading_text(datum/act/op/A)

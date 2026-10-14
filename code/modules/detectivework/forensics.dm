@@ -20,7 +20,7 @@
 /// Forensics: Handles most forensic investigation actions while touching an object. Including fingerprints, stray fibers from clothing, and bloody hands smearing objects. Returns true if a fingerprint was made.
 /atom/proc/add_fingerprint(mob/living/M as mob, ignoregloves = FALSE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(isnull(M) || isAI(M) || isnull(M.key))
+	if(isnull(M) || isnull(M.fingerprint_identity()))
 		return FALSE
 
 	//Fibers from worn clothing get transfered along with fingerprints~

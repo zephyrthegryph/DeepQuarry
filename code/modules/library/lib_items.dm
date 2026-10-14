@@ -443,7 +443,7 @@ CAPABILITIES(/obj/item/book/bundle)
 			var/obj/item/paper/P = W
 			data["page_name"] = P.name
 			data["page_kind"] = "paper"
-			var/info = (ishuman(user) || isobserver(user) || issilicon(user)) ? P.info : stars(P.info)
+			var/info = user ? user.written_text_view(P.info) : stars(P.info)
 			data["page_info"] = "[info][P.stamps]"
 		else if(istype(W, /obj/item/photo))
 			var/obj/item/photo/P = W
@@ -455,7 +455,7 @@ CAPABILITIES(/obj/item/book/bundle)
 			data["page_name"] = "Page [page]"
 			data["page_kind"] = "text"
 			var/text = pages[page]
-			data["page_info"] = (ishuman(user) || isobserver(user) || issilicon(user)) ? "[text]" : stars("[text]")
+			data["page_info"] = user ? user.written_text_view("[text]") : stars("[text]")
 		else
 			data["page_name"] = "Page [page]"
 			data["page_kind"] = "text"

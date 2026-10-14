@@ -45,8 +45,9 @@ CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 	on_change(nameof(open), ANY, then(PROC_REF(loop_sync)))
 	owns_one(nameof(oven_loop), /datum/looping_sound/oven, starts = /datum/looping_sound/oven)
 	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
-	op("toggle_door_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle door"), then(PROC_REF(oven_interaction_toggle_door)))
-	op("toggle_door", ui_act("toggle_door"), then(PROC_REF(ui_act_toggle_door)))
+	op("toggle_door_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle door"), when(cond_all(req(/mob/living, of = ON_ACTOR), req_actor_kind(/mob/living/silicon/ai, not = TRUE))), then(PROC_REF(oven_interaction_toggle_door)))
+	op("toggle_door_alt_no_touch", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle door"), when(cond_not(cond_all(req(/mob/living, of = ON_ACTOR), req_actor_kind(/mob/living/silicon/ai, not = TRUE)))), then(PROC_REF(oven_interaction_no_touch)))
+	op("toggle_door", ui_act("toggle_door"), needs(req(/mob/living, of = ON_ACTOR, silent = TRUE), req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(req_silent))), then(PROC_REF(ui_act_toggle_door)))
 
 
 
@@ -84,6 +85,11 @@ CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	return OP_OK
 
+/// The old alt-click consumed its cooldown even when this actor could not touch the door.
+/obj/machinery/appliance/cooker/oven/proc/oven_interaction_no_touch(datum/act/op/A)
+	A.actor.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	return OP_OK
+
 /// Start closed just so people don't try to preheat with it open, lol.
 /obj/machinery/appliance/cooker/oven/var/open = FALSE
 
@@ -94,9 +100,6 @@ CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 	return ..()
 
 /obj/machinery/appliance/cooker/oven/proc/try_toggle_door(mob/user)
-	if(!isliving(user) || isAI(user))
-		return
-
 	if(!user.IsAdvancedToolUser())
 		to_chat(user, span_notice("You lack the dexterity to do that."))
 		return

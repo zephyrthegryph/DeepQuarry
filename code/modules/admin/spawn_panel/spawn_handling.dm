@@ -134,13 +134,7 @@
 		if((where_target_type == WHERE_MOB_HAND || where_target_type == WHERE_TARGETED_MOB_HAND) && isliving(target) && isitem(created_atom))
 			var/mob/living/living_target = target
 			var/obj/item/created_item = created_atom
-			living_target.put_in_hands(created_item)
-
-			if(isrobot(living_target))
-				var/mob/living/silicon/robot/target_robot = living_target
-				if(target_robot.module)
-					target_robot.module.add_item(created_item, target_robot)
-					target_robot.activate_module(created_item)
+			living_target.accept_admin_hand_item(created_item)
 
 	if(pod)
 		pod.podfall()

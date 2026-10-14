@@ -5905,3 +5905,6 @@
 #include "code\library\operations\presentation.dm"
 #include "code\library\materialization\host.dm"
 
+
+#include "code\modules\mob\hud_control.dm"
+#include "code\modules\mob\content_providers.dm"

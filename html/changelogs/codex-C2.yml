@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Declare module silicon controls and use typed content providers."
