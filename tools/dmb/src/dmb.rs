@@ -23,6 +23,8 @@ pub use records::{
 pub use writing::EncodedDmb;
 #[path = "dmb_lists.rs"]
 mod word_lists;
+#[path = "dmb_remap.rs"]
+mod remap;
 #[path = "dmb_list_rows.rs"]
 mod list_rows;
 pub use list_rows::ListRowImage;

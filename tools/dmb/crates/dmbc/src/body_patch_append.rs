@@ -387,6 +387,31 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
             .ok_or("owner type has no class index")?;
         list_updates.push((class as usize, verb, order(false), order(true)));
     }
+    // Fresh named-procedure order is authored encounter order and is
+    // runtime-observable (typesof(/T/proc)): each new procedure goes right
+    // after the procedure of the nearest earlier existing body.
+    let existing_index = |position: usize| -> Result<Option<u32>, String> {
+        let body = &frontend.bodies[position];
+        let identity = crate::lowering::source_unit_identity(frontend, body)?.identity;
+        Ok(tables.index(crate::symbolic::unit_key(identity)))
+    };
+    let mut predecessor_of = BTreeMap::new();
+    for &position in &inserted {
+        let before = (0..position).rev().find(|index| !inserted.contains(index));
+        let after = (position + 1..frontend.bodies.len()).find(|index| !inserted.contains(index));
+        let previous = match before {
+            Some(index) => existing_index(index)?.ok_or("predecessor body has no procedure")?,
+            None => return Err("appended procedure precedes every existing body".into()),
+        };
+        if let Some(index) = after {
+            let next = existing_index(index)?.ok_or("successor body has no procedure")?;
+            if next <= previous {
+                return Err("existing procedures are not in body encounter order".into());
+            }
+        }
+        let identity = crate::lowering::source_unit_identity(frontend, &frontend.bodies[position])?.identity;
+        predecessor_of.insert(identity, previous);
+    }
     // New procedure records in key order of their appended indexes.
     let mut procedures = Vec::new();
     for (unit, record) in fresh {
@@ -419,6 +444,39 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
         }));
     }
     procedures.sort_by_key(|(index, _, _)| *index);
+    let first_new = procedures.first().map(|(index, _, _)| *index);
+    let total = procedures.last().map(|(index, _, _)| *index as usize + 1);
+    let mut placement: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
+    for (index, record, _) in &procedures {
+        let previous = predecessor_of
+            .get(&record.record.identity())
+            .copied()
+            .ok_or("appended procedure has no placement")?;
+        placement.entry(previous).or_default().push(*index);
+    }
+    let proc_map: Option<Vec<u32>> = match (first_new, total) {
+        (Some(first), Some(total)) => {
+            if total >= byond_dmb::ids::NONE as usize {
+                return Err("procedure table would reach the reserved index".into());
+            }
+            let mut order = Vec::with_capacity(total);
+            for old in 0..first {
+                order.push(old);
+                if let Some(new) = placement.get(&old) {
+                    order.extend(new);
+                }
+            }
+            let mut map = vec![0u32; total];
+            for (position, &old) in order.iter().enumerate() {
+                map[old as usize] = position as u32;
+            }
+            if order.len() != total {
+                return Err("appended procedure placement is incomplete".into());
+            }
+            Some(map)
+        }
+        _ => None,
+    };
     let mut units = (*base.units).clone();
     let mut new_procedures = Vec::new();
     for (_, record, procedure) in procedures {
@@ -466,10 +524,19 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
                 let id = crate::composition::append_list(model, replacement)?;
                 model.classes[*class].lists_and_procs[slot] = id;
             }
+            if let Some(map) = &proc_map {
+                let _timer = dm_profile::detail_timer("append.remap_procedures");
+                model.remap_procedures(map).map_err(|error| {
+                    crate::composition::CompositionError::NonContiguous(format!("procedure remap: {error}"))
+                })?;
+            }
             Ok(())
         },
         crate::composition::PatchLink {
-            tables: tables.clone(),
+            tables: match &proc_map {
+                Some(map) => tables.renumbered(dm_link::Table::Procedure, map),
+                None => tables.clone(),
+            },
             mobs: link.mobs.clone(),
             initializers,
         },

@@ -244,6 +244,27 @@ impl LinkTables {
             added,
         ))
     }
+    /// The same tables with every index of `table` renumbered by `map`
+    /// (`map[old] = new`; indexes beyond the map are kept).
+    pub fn renumbered(&self, table: Table, map: &[u32]) -> Self {
+        let indexes = self
+            .bindings
+            .assignments()
+            .iter()
+            .map(|(key, &index)| {
+                let index = if key.table() == table {
+                    map.get(index as usize).copied().unwrap_or(index)
+                } else {
+                    index
+                };
+                (*key, index)
+            })
+            .collect();
+        Self {
+            bindings: BindingTables::validated(indexes, self.bindings.slots().clone(), None),
+            content: Arc::clone(&self.content),
+        }
+    }
     pub fn build(inventory: LinkInventory) -> Result<Self, LinkError> {
         Self::build_with_bindings(inventory, None)
     }
