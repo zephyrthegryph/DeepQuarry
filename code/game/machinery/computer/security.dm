@@ -500,7 +500,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		answer = text2num(answer)
 
 	if(field == "rank")
-		if(answer in SSjob.occupations_by_name)
+		if(SSjob.has_job_title(answer))
 			active1().fields["real_rank"] = answer
 
 	var/old_criminal_status

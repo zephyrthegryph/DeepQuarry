@@ -70,13 +70,13 @@ CAPABILITIES(/datum/round_status_panel)
 		var/timeleft = SSemergency_shuttle.estimate_launch_time()
 		shuttle_data["time_left_seconds"] = timeleft
 		shuttle_data["time_left_display"] = format_shuttle_timer(timeleft)
-	else if(SSemergency_shuttle.shuttle.has_arrive_time())
+	else if(SSemergency_shuttle.has_arrival_countdown())
 		shuttle_data["state"] = SHUTTLE_STATE_ARRIVING
 		var/timeleft = SSemergency_shuttle.estimate_arrival_time()
 		shuttle_data["time_left_seconds"] = timeleft
 		shuttle_data["time_left_display"] = format_shuttle_timer(timeleft)
 		shuttle_data["can_recall"] = SSemergency_shuttle.can_call() || SSemergency_shuttle.can_recall()
-	else if(SSemergency_shuttle.shuttle.moving_status == SHUTTLE_WARMUP)
+	else if(SSemergency_shuttle.is_warming_up())
 		shuttle_data["state"] = SHUTTLE_STATE_WARMUP
 	else
 		shuttle_data["state"] = SHUTTLE_STATE_IDLE
@@ -126,14 +126,14 @@ CAPABILITIES(/datum/round_status_panel)
 		var/new_time_left = ask_number(user, "Enter new shuttle launch countdown (seconds):", 0, INFINITY, "Edit Shuttle Launch Time", SSemergency_shuttle.estimate_launch_time())
 		if(isnull(new_time_left))
 			return FALSE
-		EXPIRY_SET(SSemergency_shuttle, launch_time, (new_time_left * 10), CLOCK_WORLD)
+		SSemergency_shuttle.edit_launch_countdown(new_time_left)
 		// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
 		log_and_message_admins("edited the Emergency Shuttle's launch time to [new_time_left] seconds.", user)
-	else if(SSemergency_shuttle.shuttle.has_arrive_time())
+	else if(SSemergency_shuttle.has_arrival_countdown())
 		var/new_time_left = ask_number(user, "Enter new shuttle arrival time (seconds):", 0, INFINITY, "Edit Shuttle Arrival Time", SSemergency_shuttle.estimate_arrival_time())
 		if(isnull(new_time_left))
 			return FALSE
-		EXPIRY_SET(SSemergency_shuttle.shuttle, arrive_time, (new_time_left * 10), CLOCK_WORLD)
+		SSemergency_shuttle.edit_arrival_countdown(new_time_left)
 		// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
 		log_and_message_admins("edited the Emergency Shuttle's arrival time to [new_time_left] seconds.", user)
 	else
@@ -143,7 +143,7 @@ CAPABILITIES(/datum/round_status_panel)
 /datum/round_status_panel/proc/act_toggle_delay_end(mob/user)
 	if(!admin_require(user.client, R_SERVER, "round_status_panel:toggle_delay_end"))
 		return FALSE
-	SSticker.delay_end = !ticker_delay_end()
+	SSticker.toggle_round_end_delay()
 	// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
 	log_and_message_admins("[ticker_delay_end() ? "delayed the round end" : "has made the round end normally"].", user)
 	return TRUE

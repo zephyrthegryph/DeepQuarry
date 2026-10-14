@@ -242,7 +242,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 			rel_add(src, nameof(latejoin_templates), antag)
 
 	if(SSemergency_shuttle && auto_recall_shuttle)
-		SSemergency_shuttle.auto_recall = TRUE
+		SSemergency_shuttle.set_auto_recall(TRUE)
 
 	feedback_set_details("round_start","[time2text(world.realtime)]")
 	SSdbcore.SetRoundStart() // an io_job write; returns at once
@@ -301,7 +301,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 			if(!antag.antags_are_dead())
 				return 0
 		if(CONFIG_GET(flag/continuous_rounds))
-			SSemergency_shuttle.auto_recall = FALSE
+			SSemergency_shuttle.set_auto_recall(FALSE)
 			return 0
 		return 1
 	return 0

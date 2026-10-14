@@ -152,9 +152,9 @@ CAPABILITIES(/datum/job)
 	// list, so for existing jobs this union is a no-op.  The payoff comes when a new
 	// access flag is added to a department's default_access: all member jobs gain it
 	// from a single edit to the department datum rather than N individual job edits.
-	if(LAZYLEN(src.departments) && LAZYLEN(SSjob.department_datums))
+	if(LAZYLEN(src.departments) && SSjob.department_count())
 		for(var/dept_name in src.departments)
-			var/datum/department/dept = LAZYACCESS(SSjob.department_datums, dept_name)
+			var/datum/department/dept = SSjob.department_by_name(dept_name)
 			if(!istype(dept) || !LAZYLEN(dept.default_access))
 				continue
 			if(length(dept.default_access)) result |= dept.default_access
@@ -202,7 +202,7 @@ CAPABILITIES(/datum/job)
 	return message
 
 /datum/job/proc/get_job_icon()
-	if(!job_job_icon_cache()[title])
+	if(!SSjob.cached_job_icon(title))
 		var/mob/living/carbon/human/dummy/mannequin/mannequin = get_mannequin("#job_icon")
 		dress_mannequin(mannequin)
 		mannequin.set_dir(SOUTH)
@@ -210,9 +210,9 @@ CAPABILITIES(/datum/job)
 		var/icon/preview_icon = getFlatIcon(mannequin)
 
 		preview_icon.Scale(preview_icon.Width() * 2, preview_icon.Height() * 2) // Scaling here to prevent blurring in the browser.
-		SSjob.job_icon_cache[title] = preview_icon
+		SSjob.remember_job_icon(title, preview_icon)
 
-	return job_job_icon_cache()[title]
+	return SSjob.cached_job_icon(title)
 
 /datum/job/proc/dress_mannequin(mob/living/carbon/human/dummy/mannequin/mannequin)
 	mannequin.delete_inventory(TRUE)
@@ -242,7 +242,7 @@ CAPABILITIES(/datum/job)
 /datum/job/proc/register_shift_key(key)
 	if(key)
 		var/list/keylist = list(key)
-		LAZYADDASSOC(SSjob.shift_keys, title, keylist)
+		SSjob.record_shift_keys(title, keylist)
 // end
 
 /datum/job/proc/update_limit(comperator)

@@ -191,7 +191,7 @@ CAPABILITIES(/obj/machinery/status_display)
 				return 1
 			if(SSemergency_shuttle.waiting_to_leave())
 				message1 = "-ETD-"
-				if(SSemergency_shuttle.shuttle.is_launching())
+				if(SSemergency_shuttle.is_launching())
 					message2 = "Launch"
 				else
 					message2 = get_shuttle_timer_departure()

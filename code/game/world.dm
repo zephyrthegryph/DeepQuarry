@@ -306,7 +306,7 @@ GLOBAL_VAR(restart_counter)
 /world/proc/HandleTestRun()
 	//trigger things to run the whole process
 	Kernel.sleep_offline_after_initializations = FALSE
-	SSticker.start_immediately = TRUE
+	SSticker.request_immediate_start(TRUE)
 	CONFIG_SET(number/round_end_countdown, 0)
 	var/after_start
 #ifdef UNIT_TESTS
@@ -332,7 +332,7 @@ GLOBAL_VAR(restart_counter)
 
 /// after() target: ends the round now (a test-harness run with no tests compiled in).
 /proc/force_end_round()
-	SSticker.force_ending = ADMIN_FORCE_END_ROUND
+	SSticker.request_round_ending(ADMIN_FORCE_END_ROUND)
 
 /// Returns a list of data about the world state, don't clutter
 /world/proc/get_world_state_for_logging()
@@ -558,7 +558,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		return list2params(s)
 
 	else if(T == "manifest")
-		if(!SSjob.initialized)
+		if(!SSjob.is_initialized())
 			return null
 
 		var/list/positions = list()

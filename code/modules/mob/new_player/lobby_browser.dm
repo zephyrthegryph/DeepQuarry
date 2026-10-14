@@ -140,7 +140,7 @@
 	if(!user.client.is_localhost() || !check_rights_for(user.client, R_SERVER))
 		return FALSE
 
-	SSticker.start_immediately = TRUE
+	SSticker.request_immediate_start(TRUE)
 	if(ticker_current_state() == GAME_STATE_STARTUP)
 		to_chat(user, span_admin("The server is still setting up, but the round will be started as soon as possible."))
 

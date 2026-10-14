@@ -444,9 +444,8 @@ CAPABILITIES(/datum/data/pda/app/timeclock)
 	if(newassignment != newjob.title && !(newassignment in newjob.alt_titles))
 		return
 	if(newjob.camp_protection && round_duration_in_ds < CONFIG_GET(number/job_camp_time_limit))
-		if(length(job_restricted_keys()))
-			var/list/check = LAZYACCESS(SSjob.restricted_keys, newjob.title)
-			if(user.client.ckey in check)
+		if(SSjob.has_restricted_keys())
+			if(SSjob.is_restricted_key(newjob.title, user.client.ckey))
 				to_chat(user,span_danger("[newjob.title] is not presently selectable because you played as it last round. It will become available to you in [round((CONFIG_GET(number/job_camp_time_limit) - round_duration_in_ds) / 600)] minutes, if slots remain open."))
 				return
 	if(newjob)

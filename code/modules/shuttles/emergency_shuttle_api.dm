@@ -195,3 +195,35 @@
 /datum/system/emergency_shuttle/proc/set_autopilot(enabled)
 	autopilot = enabled
 	tracked_changed(src, nameof(autopilot))
+
+/datum/system/emergency_shuttle/proc/is_evacuation()
+	return evac
+
+/datum/system/emergency_shuttle/proc/set_auto_recall(enabled)
+	auto_recall = enabled
+
+/datum/system/emergency_shuttle/proc/toggle_calls_denied()
+	deny_shuttle = !deny_shuttle
+
+/// Nar'Sie's end-round path makes the launch deadline immediate, without recalling it.
+/datum/system/emergency_shuttle/proc/make_launch_irrevocable()
+	EXPIRY_CLEAR(src, launch_time)
+
+/datum/system/emergency_shuttle/proc/has_arrival_countdown()
+	return shuttle && shuttle.has_arrive_time()
+
+/datum/system/emergency_shuttle/proc/is_launching()
+	return shuttle && shuttle.is_launching()
+
+/datum/system/emergency_shuttle/proc/is_warming_up()
+	return shuttle && shuttle.moving_status == SHUTTLE_WARMUP
+
+/datum/system/emergency_shuttle/proc/is_moving_or_warming_up()
+	return shuttle && (shuttle.moving_status == SHUTTLE_WARMUP || shuttle.moving_status == SHUTTLE_INTRANSIT)
+
+/// Editing an existing countdown does not arm it or alter automatic launch policy.
+/datum/system/emergency_shuttle/proc/edit_launch_countdown(seconds)
+	EXPIRY_SET(src, launch_time, (seconds SECONDS), CLOCK_WORLD)
+
+/datum/system/emergency_shuttle/proc/edit_arrival_countdown(seconds)
+	EXPIRY_SET(shuttle, arrive_time, (seconds SECONDS), CLOCK_WORLD)

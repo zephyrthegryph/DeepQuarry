@@ -73,7 +73,7 @@
 /datum/admins/proc/shuttle_countdown_kind()
 	if(emergency_shuttle_wait_for_launch())
 		return "launch"
-	if(SSemergency_shuttle.shuttle.has_arrive_time())
+	if(SSemergency_shuttle.has_arrival_countdown())
 		return "arrive"
 	return null
 
@@ -99,7 +99,7 @@
 		if(isnull(new_time_left))
 			return
 
-		EXPIRY_SET(SSemergency_shuttle, launch_time, (new_time_left SECONDS), CLOCK_WORLD)
+		SSemergency_shuttle.edit_launch_countdown(new_time_left)
 
 		log_admin("[key_name(user)] edited the Emergency Shuttle's launch time to [new_time_left]")
 		message_admins(span_blue("[key_name_admin(user)] edited the Emergency Shuttle's launch time to [new_time_left SECONDS]"), 1)
@@ -107,7 +107,7 @@
 		var/new_time_left = A.step_value("arrive")
 		if(isnull(new_time_left))
 			return
-		EXPIRY_SET(SSemergency_shuttle.shuttle, arrive_time, (new_time_left SECONDS), CLOCK_WORLD)
+		SSemergency_shuttle.edit_arrival_countdown(new_time_left)
 
 		log_admin("[key_name(user)] edited the Emergency Shuttle's arrival time to [new_time_left]")
 		message_admins(span_blue("[key_name_admin(user)] edited the Emergency Shuttle's arrival time to [new_time_left SECONDS]"), 1)
@@ -116,7 +116,7 @@
 
 /datum/admins/proc/topic_delay_round_end(datum/act/op/A)
 	var/mob/user = A.actor
-	SSticker.delay_end = !ticker_delay_end()
+	SSticker.toggle_round_end_delay()
 	log_admin("[key_name(user)] [ticker_delay_end() ? "delayed the round end" : "has made the round end normally"].")
 	message_admins(span_blue("[key_name(user)] [ticker_delay_end() ? "delayed the round end" : "has made the round end normally"]."), 1)
 

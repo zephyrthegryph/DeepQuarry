@@ -444,7 +444,7 @@ CAPABILITIES(/datum/mind)
 		rel_set(src, nameof(mind), new /datum/mind(key))
 		rel_set(mind, nameof(mind.original_character), src)
 		if(SSticker)
-			rel_add(SSticker, nameof(SSticker.minds), mind)
+			SSticker.remember_mind(mind)
 		else
 			log_world("## DEBUG: mind_initialize(): No ticker ready yet! Please inform Carn")
 	if(!mind.name)	mind.name = real_name

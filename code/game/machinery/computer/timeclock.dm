@@ -133,7 +133,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 
 /obj/machinery/computer/timeclock/proc/getOpenOnDutyJobs(mob/user, department)
 	var/list/available_jobs = list()
-	for(var/datum/job/job in SSjob.occupations)
+	for(var/datum/job/job in SSjob.occupation_snapshot())
 		if(isOpenOnDutyJob(user, department, job))
 			available_jobs[job.title] = list(job.title)
 			if(job.alt_titles)
@@ -161,9 +161,8 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 	if(newassignment != newjob.title && !(newassignment in newjob.alt_titles))
 		return
 	if(newjob.camp_protection && round_duration_in_ds < CONFIG_GET(number/job_camp_time_limit))
-		if(length(SSjob.restricted_keys))
-			var/list/check = LAZYACCESS(SSjob.restricted_keys, newjob.title)
-			if(user.client.ckey in check)
+		if(SSjob.has_restricted_keys())
+			if(SSjob.is_restricted_key(newjob.title, user.client.ckey))
 				to_chat(user,span_danger("[newjob.title] is not presently selectable because you played as it last round. It will become available to you in [round((CONFIG_GET(number/job_camp_time_limit) - round_duration_in_ds) / 600)] minutes, if slots remain open."))
 				return
 
@@ -188,7 +187,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 		return
 	var/new_dept = foundjob.pto_type || PTO_CIVILIAN
 	var/datum/job/ptojob = null
-	for(var/datum/job/job in SSjob.occupations)
+	for(var/datum/job/job in SSjob.occupation_snapshot())
 		if(job.pto_type == new_dept && job.timeoff_factor < 0)
 			ptojob = job
 			break

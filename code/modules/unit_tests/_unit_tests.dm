@@ -1316,6 +1316,7 @@
 #include "gameplay\hands_and_menus.dm"
 #include "gameplay\machines.dm"
 #include "dq_tanning_rack_wetness_tests.dm"
+#include "dq_round_job_boundary_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

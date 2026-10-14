@@ -84,8 +84,8 @@
 /datum/event2/event/raise_funds/proc/count_money()
 	. = 0
 	. += GLOB.station_account.money
-	for(var/i = 1 to SSjob.department_datums.len)
-		var/datum/money_account/account = LAZYACCESS(GLOB.department_accounts, job_department_datums()[i])
+	for(var/i = 1 to SSjob.department_count())
+		var/datum/money_account/account = LAZYACCESS(GLOB.department_accounts, SSjob.department_name_at(i))
 		if(istype(account))
 			. += account.money
 
