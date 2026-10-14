@@ -395,49 +395,27 @@ slots_group_release() { # hand back all of them (an EXIT trap calls this), and l
 # slot's owner file names it. The holder process ends when the slot directory is gone (released), when the slot was taken over, or after
 # DQ_MERGE_LOCK_MAX_SEC (default 21600, six hours: an abandoned batch cannot hold the merge worktree forever). If it is killed or the machine
 # restarts the next waiter reclaims the slot like any dead holder.
-# Who is "the holder" for a later call: the owner file records `session` (DQ_MERGE_SESSION, else CLAUDE_CODE_SESSION_ID, else the nearest ancestor that is not a plain
-# shell, which is the agent's process that spawns every command it runs). A caller is the holder when its DQ_MERGE_SESSION equals the recorded
-# one, or, without that variable, when the recorded session pid is among its own ancestors.
+# Who is "the holder" for a later call: the owner file records `session`, the caller's DQ_MERGE_SESSION, which every merge command must set
+# explicitly (the lane branch name is a good value). It is never inferred: the lanes of one agent session share an environment and a process
+# tree. A caller is the holder only when its DQ_MERGE_SESSION equals the recorded one; without it the merge tools refuse.
 #   dq_machine_slots.sh merge-lock status | release [--force]     (dq_merge_worktree.sh --release / --join are the usual front ends)
 
 _ml_slot() { echo "$(slots_dir)/merge_base/slot.1"; }
 
-_ml_ancestors() { # pids from this shell's parent upward
-	local p="$$" n=0
-	while [ "$n" -lt 40 ]; do
-		p="$(cat "/proc/$p/ppid" 2>/dev/null)"
-		case "$p" in '' | 0 | 1 | *[!0-9]*) break ;; esac
-		echo "$p"
-		n=$((n + 1))
-	done
+_ml_need_session() { # the caller must name its batch; it is never inferred
+	[ -n "${DQ_MERGE_SESSION:-}" ] && return 0
+	echo "REFUSED: DQ_MERGE_SESSION is not set. The merge tools need an explicit batch name, never inferred from the environment (every lane of one agent session shares the same CLAUDE_CODE_SESSION_ID and process tree, so they could not tell lanes apart). Set it to your lane branch name for every merge command, e.g.: export DQ_MERGE_SESSION=rewrite/<lane>" >&2
+	return 1
 }
 
-_ml_session() { # the id of the caller's batch session
-	local p name
-	if [ -n "${DQ_MERGE_SESSION:-}" ]; then echo "env:$DQ_MERGE_SESSION"; return; fi
-	# An agent session id survives across the separate shells it spawns (msys process ancestry stops at each command's own bash).
-	if [ -n "${CLAUDE_CODE_SESSION_ID:-}" ]; then echo "claude:$CLAUDE_CODE_SESSION_ID"; return; fi
-	for p in $(_ml_ancestors); do
-		name="$(basename "$(cat "/proc/$p/exename" 2>/dev/null)" .exe | tr 'A-Z' 'a-z')"
-		case "$name" in bash | sh | dash | env | timeout | nohup | setsid | git | '') continue ;; esac
-		echo "pid:$p"
-		return
-	done
-	echo "pid:${PPID:-0}"
-}
+_ml_session() { echo "env:$DQ_MERGE_SESSION"; }
 
-_ml_is_holder() { # owner file: is the caller the batch's holder?
-	local o="$1" rec mine
+_ml_is_holder() { # owner file: is the caller the batch's holder (same DQ_MERGE_SESSION as the one that took the lock)?
+	local o="$1" rec
 	[ -f "$o" ] || return 1
+	[ -n "${DQ_MERGE_SESSION:-}" ] || return 1
 	rec="$(_slots_field "$o" session)"
-	[ -n "$rec" ] || return 1
-	case "$rec" in
-		env:*) [ "${DQ_MERGE_SESSION:-}" = "${rec#env:}" ] && return 0; return 1 ;;
-	esac
-	[ -z "${DQ_MERGE_SESSION:-}" ] || return 1
-	mine="$(_ml_session)"
-	[ "$mine" = "$rec" ] && return 0
-	_ml_ancestors | grep -qx -- "${rec#pid:}"
+	[ "$rec" = "env:$DQ_MERGE_SESSION" ]
 }
 
 _ml_set_field() { # owner key value: rewrite one line atomically
@@ -474,6 +452,7 @@ _ml_hold() { # slotdir max_sec: the detached holder process; takes the slot over
 
 merge_lock_acquire() { # lanes...: wait for the merge worktree lock (printing who holds it), then keep it with a detached holder
 	local lanes="$*" sess d o hp i
+	_ml_need_session || return 1
 	_slots_errexit_off
 	sess="$(_ml_session)"
 	d="$(_ml_slot)"
@@ -512,6 +491,7 @@ merge_lock_acquire() { # lanes...: wait for the merge worktree lock (printing wh
 
 merge_lock_holder_check() { # -> 0 when the merge lock is held by a live holder and the caller is that holder
 	local o
+	_ml_need_session || return 1
 	o="$(_ml_slot)/owner"
 	[ -f "$o" ] || return 1
 	_slots_dead "$o" && return 1
@@ -538,6 +518,7 @@ merge_lock_join() { # lanes...: the holder adds lanes to its batch
 merge_lock_release() { # [--force]: end the batch. The holder (or anyone with --force, or when the holder is dead) may.
 	local o d force=0
 	[ "${1:-}" = "--force" ] && force=1
+	[ "$force" -eq 1 ] || _ml_need_session || return 1
 	d="$(_ml_slot)"
 	o="$d/owner"
 	if [ ! -d "$d" ]; then echo "== merge lock: not held"; return 0; fi
