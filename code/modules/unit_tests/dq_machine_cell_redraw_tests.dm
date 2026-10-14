@@ -26,9 +26,12 @@
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	for(var/holder_type in list(/obj/machinery/cell_charger, /obj/machinery/floodlight, /obj/machinery/space_heater))
 		var/obj/machinery/M = allocate(holder_type, test_floor())
-		var/obj/item/cell/C = allocate(/obj/item/cell, M)
 		var/slot_name = istype(M, /obj/machinery/cell_charger) ? "charging" : "cell"
-		rel_set(M, slot_name, C)
+		var/obj/item/cell/C = M.vars[slot_name]
+		if(!C)
+			C = allocate(/obj/item/cell, M)
+			rel_set(M, slot_name, C)
+		TEST_ASSERT_EQUAL(M.vars[slot_name], C, "Charge probe must use the real bay occupant")
 		C.set_charge(0)
 		test_drain()
 		TEST_ASSERT(("b_st_0" in dq_overlay_states(C)), "Actual stored cell did not draw its empty charge overlay")
