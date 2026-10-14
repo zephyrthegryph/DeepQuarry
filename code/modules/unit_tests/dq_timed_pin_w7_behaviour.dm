@@ -2075,6 +2075,7 @@
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal
 
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal/run_pin()
+	scope_test_contagion_archive()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
 	M.set_nutrition(200)
 	test_menu(M, M, "nutrition_heal")
@@ -2089,6 +2090,7 @@
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal_cancel_on_move
 
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal_cancel_on_move/run_pin()
+	scope_test_contagion_archive()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
 	M.set_nutrition(200)
 	test_menu(M, M, "nutrition_heal")
@@ -2103,6 +2105,7 @@
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal_too_hungry
 
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal_too_hungry/run_pin()
+	scope_test_contagion_archive()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
 	M.set_nutrition(5)
 	test_chat_clear()
@@ -2110,3 +2113,25 @@
 	TEST_ASSERT_NULL(running(M), "too hungry starts nothing")
 	TEST_ASSERT(said(M, "too hungry"), "it says why")
 
+
+/// Keep prior archive identities borrowed; dispose only templates this fixture creates.
+/datum/unit_test/proc/scope_test_contagion_archive()
+	var/list/before = GLOB.archive_diseases.Copy()
+	var/list/scoped = before.Copy()
+	set_global(nameof(GLOB.archive_diseases), scoped)
+	defer_cleanup(src, TYPE_PROC_REF(/datum/unit_test, release_test_contagion_archive), scoped, before)
+
+/datum/unit_test/proc/release_test_contagion_archive(list/scoped, list/before)
+	var/list/borrowed = list()
+	for(var/key in before)
+		borrowed |= before[key]
+	for(var/key in scoped.Copy())
+		var/datum/affliction/contagion/engineered/archived = scoped[key]
+		if(archived == before[key])
+			continue
+		if(key in before)
+			scoped[key] = before[key]
+		else
+			scoped -= key
+		if(archived && !(archived in borrowed) && !QDELETED(archived))
+			lifeform_end(archived, END_SCOPE)

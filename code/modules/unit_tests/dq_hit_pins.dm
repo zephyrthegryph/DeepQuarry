@@ -195,6 +195,7 @@
 		qdel(leftover)
 
 /datum/unit_test/dq_hit_pin/Run()
+	set_global(nameof(GLOB.act_last_reply), GLOB.act_last_reply)
 	var/list/bad = list()
 	var/list/expected_by_type = dq_snapshot_read_dir(DQ_HIT_PIN_DIR, bad)
 	if(!length(expected_by_type) && !length(bad))
