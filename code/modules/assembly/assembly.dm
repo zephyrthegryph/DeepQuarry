@@ -120,7 +120,8 @@ CAPABILITIES(/obj/item/assembly)
 
 /obj/item/assembly/tgui_host()
 	if(istype(loc, /obj/item/assembly_holder))
-		return loc.tgui_host()
+		var/obj/item/assembly_holder/host = loc
+		return host.tgui_host()
 	return ..()
 
 /// the holder this refers to (a relation view: null once it is deleted).

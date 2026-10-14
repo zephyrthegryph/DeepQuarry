@@ -32,7 +32,7 @@ GLOBAL_LIST_EMPTY(robot_custom_icons)
 		custom_sprite = TRUE
 		icon = CUSTOM_ITEM_SYNTH
 		if(icon_state == "robot")
-			icon_state = "[ckey]-[sprite_name]-Standard" //Compliant with robot.dm line 236 ~Mech
+			set_icon_state("[ckey]-[sprite_name]-Standard") //Compliant with robot.dm line 236 ~Mech
 // To summarize, if you want to add a whitelisted borg sprite, you have to
 // 1. Add ckey and character name to config/custom_sprites, separated by a |
 // 2. Add your custom sprite to custom_synthetic.dmi under icon/mob/custom_synthetic.dmi

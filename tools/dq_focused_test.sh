@@ -534,6 +534,17 @@ print_result() {
 mkdir -p data/focused-runs
 combined_log="data/focused-runs/last.$$.log"
 
+# The end-of-test staleness sweep is bounded in an ordinary focused run; DQ_STALENESS=full (the merge gates, lane_ready, by hand) keeps it full.
+# Call inside the subshell that starts a world: it adds the world param there. tests.log names the mode at suite start and at every test end.
+staleness_world_param() {
+	if [ "${DQ_STALENESS:-bounded}" = "full" ]; then
+		echo "dq_focused_test: staleness sweep mode full (DQ_STALENESS=full)"
+	else
+		export DQ_WORLD_PARAMS="${DQ_WORLD_PARAMS:+$DQ_WORLD_PARAMS&}staleness=bounded"
+		echo "dq_focused_test: staleness sweep mode bounded (DQ_STALENESS=full for the full sweep)"
+	fi
+}
+
 run_once() {
 	# Git Bash can use the same worktree-pinned entry point and system Bun as
 	# the POSIX runner; avoid the batch bootstrap's separate tool download.
@@ -541,6 +552,7 @@ run_once() {
 		if [ "$look_single" -eq 1 ] && [ -n "$LOOK_PARAMS" ]; then
 			export DQ_WORLD_PARAMS="${DQ_WORLD_PARAMS:+$DQ_WORLD_PARAMS&}$LOOK_PARAMS"
 		fi
+		staleness_world_param
 		tools/build/build.sh dm-test "--focus=$focus" ${args[@]+"${args[@]}"}
 	)
 }
@@ -572,6 +584,7 @@ start_world() { # index
 	(
 		if [ -n "${W_SHARD[$i]}" ]; then export DQ_FOCUS_SHARD="${W_SHARD[$i]}"; fi
 		if [ -n "${W_PARAMS[$i]}" ]; then export DQ_WORLD_PARAMS="${W_PARAMS[$i]}"; fi
+		staleness_world_param
 		exec tools/build/build.sh dm-test "--focus=${W_FOCUS[$i]}" "--label=focused-${W_LABEL[$i]}" ${args[@]+"${args[@]}"}
 	) >"$log" 2>&1 &
 	W_PID[$i]=$!

@@ -60,7 +60,7 @@ Implant Specifics:<BR>"}
 	var/datum/damage_packet/packet = A.packet
 	if(!my_brain() || malfunction)
 		return HOOK_DECLINE
-	malfunction = MALFUNCTION_TEMPORARY
+	set_malfunction(MALFUNCTION_TEMPORARY)
 
 	var/delay = 10 //Don't let it just get emped twice in a second to kill someone.
 	var/brain_location = my_brain().owner.organs_by_name[my_brain().parent_organ]

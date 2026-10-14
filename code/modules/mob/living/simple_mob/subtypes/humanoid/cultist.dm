@@ -99,14 +99,14 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 
 	// Telegraph to give a small window to dodge if really close.
 	flick("bloodout",A)
-	icon_state = "bloodout"
+	set_icon_state("bloodout")
 	after(src, jaunt_warning, PROC_REF(do_special_attack_1), with = list(A, destination, starting_turf), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)
 	if(!destination || !starting_turf)
 		ai_busy_end()
-		icon_state = "bloodin"
+		set_icon_state("bloodin")
 		return FALSE
 
 	// Do the dig!
@@ -114,19 +114,19 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	new /obj/effect/decal/cleanable/blood (src.loc)
 	if(A)
 		flick("blood_out",A)
-	icon_state = "bloodout"
+	set_icon_state("bloodout")
 
 	if(handle_jaunt(destination) == FALSE)
 		ai_busy_end()
 		if(A)
 			flick("bloodin",A)
-		icon_state = "bloodin"
+		set_icon_state("bloodin")
 		return FALSE
 
 	// Did we make it?
 	if(!(src in destination))
 		ai_busy_end()
-		icon_state = "bloodin"
+		set_icon_state("bloodin")
 		if(A)
 			flick("bloodin",A)
 		return FALSE
@@ -146,7 +146,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
 		ai_busy_end()
-		icon_state = "bloodin"
+		set_icon_state("bloodin")
 		if(A)
 			flick("bloodin",A)
 		return TRUE
@@ -160,13 +160,13 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 
 	if(handle_jaunt(destination) == FALSE)
 		ai_busy_end()
-		icon_state = "bloodin"
+		set_icon_state("bloodin")
 		if(A)
 			flick("bloodin",A)
 		return FALSE
 
 	ai_busy_end()
-	icon_state = "bloodin"
+	set_icon_state("bloodin")
 	if(A)
 		flick("bloodin",A)
 	return FALSE

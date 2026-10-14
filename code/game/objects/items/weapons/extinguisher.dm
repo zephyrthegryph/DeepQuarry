@@ -71,7 +71,7 @@ CAPABILITIES(/obj/item/extinguisher)
 /obj/item/extinguisher/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	safety = !safety
-	icon_state = "[sprite_name][!safety]"
+	set_icon_state("[sprite_name][!safety]")
 	desc = "The safety is [safety ? "on" : "off"]."
 	to_chat(user, "The safety is [safety ? "on" : "off"].")
 	return TRUE

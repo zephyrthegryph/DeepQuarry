@@ -11,12 +11,12 @@
 	set_transforming(1)
 	canmove = 0
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 	update_canmove()
 	registry_leave(REGISTRY_DEAD_MOBS, src)
 
 	var/atom/movable/overlay/animation = new(loc)
-	animation.icon_state = "blank"
+	animation.set_icon_state("blank")
 	animation.icon = anim_file
 	rel_set(animation, nameof(animation.master), src)
 	flick(anim, animation)

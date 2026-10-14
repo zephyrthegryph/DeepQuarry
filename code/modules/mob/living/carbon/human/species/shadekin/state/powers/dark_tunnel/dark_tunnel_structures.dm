@@ -157,7 +157,7 @@ CAPABILITIES(/obj/structure/dark_portal/minion)
 	locked = null
 	locked_name = ""
 	precision = 1
-	icon_state = "minion0"
+	set_icon_state("minion0")
 
 /// Old attack_hand.
 /obj/structure/dark_portal/minion/proc/interaction_hand(datum/act/op/A)
@@ -198,7 +198,7 @@ CAPABILITIES(/obj/structure/dark_portal/minion)
 			var/obj/structure/dark_portal/target = REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS)[1]
 			locked = target
 			locked_name = target.name
-			icon_state = "minion1"
+			set_icon_state("minion1")
 			after(src, 5 MINUTES, PROC_REF(check_to_close), with = list(target))
 			return TRUE
 		var/list/L = list()
@@ -214,7 +214,7 @@ CAPABILITIES(/obj/structure/dark_portal/minion)
 			return TRUE
 		locked = L[desc]
 		locked_name = desc
-		icon_state = "minion1"
+		set_icon_state("minion1")
 		after(src, 5 MINUTES, PROC_REF(check_to_close_desc), with = list(locked))
 		return TRUE
 	else if(!istype(user, /mob/living))

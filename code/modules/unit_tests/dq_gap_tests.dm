@@ -122,7 +122,7 @@
 	test_time(5 SECONDS)
 	TEST_ASSERT(P.icon_state != "pinoff", "active: its step ran and set what it points at ([P.icon_state])")
 	P.set_active(FALSE)
-	P.icon_state = "pinoff"
+	P.set_icon_state("pinoff")
 	test_time(5 SECONDS)
 	TEST_ASSERT_EQUAL(P.icon_state, "pinoff", "off again: it stopped stepping")
 
@@ -708,7 +708,7 @@
 	using_map.use_overmap = FALSE
 	var/mob/living/simple_mob/vore/overmap/stardog/test_fur/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog/test_fur, get_step(T, EAST))
 	using_map.use_overmap = had_overmap
-	dog.invisibility = INVISIBILITY_NONE // its life step swaps the overmap marker's visibility on this flag, and this dog has no marker
+	dog.set_invisibility(INVISIBILITY_NONE) // its life step swaps the overmap marker's visibility on this flag, and this dog has no marker
 	dog.in_fur += victim
 	hci_click(H, dog, null)
 	test_time(1 SECOND)

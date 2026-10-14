@@ -182,7 +182,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 
 	//Change the all the icon info.
 	icon = 'icons/mob/demon_vr.dmi' //Mass majority of the sprites use this icon
-	icon_state = "[alternate_selection]"
+	set_icon_state("[alternate_selection]")
 	set_icon_living("[alternate_selection]")
 	set_icon_dead("dead")
 	set_icon_rest("[alternate_selection]_rest")

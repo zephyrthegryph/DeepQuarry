@@ -19,7 +19,7 @@
 /// A call's click through the op engine (op_resolve_click()): INTERACTION_TRY_RAN when an op ran or started, INTERACTION_TRY_BLOCKED when the winner refused,
 /// null when no op took it (or the inbox resolved this click already).
 /proc/try_engine(mob/actor, atom/target, obj/item/held, action, quality, no_tool)
-	if(GLOB.op_click_resolved[actor])
+	if(GLOB.op_click_resolved[entity_handle(actor)])
 		return null
 	var/gesture = gesture_of_action(action, quality)
 	if(isnull(gesture) || !(op_has_ops(target) || op_has_ops(held) || op_has_click_ops(actor)))

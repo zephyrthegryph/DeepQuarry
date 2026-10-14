@@ -167,7 +167,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 	if (transparent && !istype(src,/obj/item/organ/external/head) && can_apply_transparency && should_apply_transparency) // EDIT: transparent instead of nonsolid
 		mob_icon += rgb(,,,180) //do it here so any markings become transparent as well
 
-	dir = SOUTH
+	set_dir(SOUTH)
 	icon = mob_icon
 	return mob_icon
 

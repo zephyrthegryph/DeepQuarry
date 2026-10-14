@@ -16,9 +16,9 @@ MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 
 /obj/item/mass_spectrometer/on_reagent_change()
 	if(reagents.total_volume)
-		icon_state = initial(icon_state) + "_s"
+		set_icon_state(initial(icon_state) + "_s")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 
 CAPABILITIES(/obj/item/mass_spectrometer)
 	configure(item_worn(slots = SLOT_BELT))

@@ -20,7 +20,7 @@
 	if(!istype(material))
 		return
 
-	icon_state = "[material.shard_icon][pick("large", "medium", "small")]"
+	set_icon_state("[material.shard_icon][pick("large", "medium", "small")]")
 	randpixel_xy()
 	color = material.icon_colour
 	// 1-(1-x)^2, so that glass shards with 0.3 opacity end up somewhat visible at 0.51 opacity

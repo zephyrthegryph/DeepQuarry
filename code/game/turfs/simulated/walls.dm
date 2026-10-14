@@ -45,6 +45,8 @@ CAPABILITIES(/turf/simulated/wall)
 	adjacency(ADJ_KIND_SMOOTH, dirs = ADJ_ALL_AROUND, connects = PROC_REF(smooth_joins), changed = PROC_REF(smooth_changed))
 	on_change(nameof(material), ANY, then(PROC_REF(smooth_inputs_changed)))
 	on_change(nameof(density), ANY, then(PROC_REF(edge_inputs_changed)))
+	ref_one(nameof(material), /datum/material)
+	setup(PROC_REF(wall_take_materials))
 	param(nameof(wall_material_key), pos = 1)
 	param(nameof(reinf_material_key), pos = 2)
 	param(nameof(girder_material_key), pos = 3)
@@ -59,17 +61,16 @@ CAPABILITIES(/turf/simulated/wall)
 /turf/simulated/wall/var/reinf_material_key
 /turf/simulated/wall/var/girder_material_key
 
-// ALLOW(init/INSTANCE_STATE): a wall takes its materials (the type's forced ones first), girder and radioactivity
-/turf/simulated/wall/Initialize(mapload)
+/// A wall takes its materials (the type's forced ones first), girder and radioactivity once its Initialize() chain has returned.
+/turf/simulated/wall/proc/wall_take_materials()
 	var/list/forced_materials = TYPE_TABLE_GET(src, wall_forced_materials)
 	if(forced_materials)
 		wall_material_key = forced_materials[1]
 		reinf_material_key = length(forced_materials) >= 2 ? forced_materials[2] : null
 		girder_material_key = length(forced_materials) >= 3 ? forced_materials[3] : null
-	. = ..()
 	if(!damage_overlays[1]) //list hasn't been populated
 		generate_overlays()
-	set_material(get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL))
+	rel_set(src, nameof(material), get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL))
 	girder_material = get_material_by_name(girder_material_key || DEFAULT_WALL_MATERIAL)
 	if(!isnull(reinf_material_key))
 		set_reinf_material(get_material_by_name(reinf_material_key))
@@ -245,7 +246,7 @@ TRACKED(/turf/simulated/wall, radioactive)
 			O.forceMove(src)
 
 	clear_plants()
-	set_material(get_material_by_name("placeholder"))
+	rel_set(src, nameof(material), get_material_by_name("placeholder"))
 	set_reinf_material(null)
 	girder_material = null
 	update_connections(1)
@@ -310,7 +311,7 @@ TRACKED(/turf/simulated/wall, radioactive)
 	O.name = "Thermite"
 	O.desc = "Looks hot."
 	O.icon = 'icons/effects/fire.dmi'
-	O.icon_state = "2"
+	O.set_icon_state("2")
 	O.set_anchored(TRUE)
 	O.set_density(TRUE)
 	O.plane = ABOVE_PLANE
@@ -322,7 +323,7 @@ TRACKED(/turf/simulated/wall, radioactive)
 
 	var/turf/simulated/floor/F = src
 	F.burn_tile()
-	F.icon_state = "dmg[rand(1,4)]"
+	F.set_icon_state("dmg[rand(1,4)]")
 	to_chat(user, span_warning("The thermite starts melting through the wall."))
 
 	after(null, 10 SECONDS, GLOBAL_PROC_REF(thermite_cleanup), with = list(O)) // not on the wall: the turf is the plating by then
@@ -1111,19 +1112,19 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	var/obj/machinery/door/window/A = new(src)
 	if(selected_windoor_type == "default")
 		selected_windoor_type = ""
-	A.icon_state = selected_windoor_open_dir+selected_windoor_type
+	A.set_icon_state(selected_windoor_open_dir+selected_windoor_type)
 	A.set_base_state(selected_windoor_open_dir+selected_windoor_type)
 	switch(selected_windoor_dir)
 		if("NORTH")
-			A.dir = NORTH
+			A.set_dir(NORTH)
 		if("SOUTH")
-			A.dir = SOUTH
+			A.set_dir(SOUTH)
 		if("EAST")
-			A.dir = EAST
+			A.set_dir(EAST)
 		if("WEST")
-			A.dir = WEST
+			A.set_dir(WEST)
 	if(selected_windoor_type == "secure")
-		A.max_integrity = 300
+		A.set_max_integrity(300)
 		A.update_integrity(A.max_integrity)
 	rel_set(A, nameof(A.electronics), new/obj/item/airlock_electronics(A))
 	A.electronics.req_access = null
@@ -1243,9 +1244,9 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 				to_chat(user, span_warning("There is already a wall item there!"))
 				return FALSE
 			var/obj/O = new the_rcd.wall_frame_type(get_step(src,direction))
-			O.dir = direction
+			O.set_dir(direction)
 			if(istype(O,/obj/machinery/light))
-				O.dir = GLOB.reverse_dir[O.dir]
+				O.set_dir(GLOB.reverse_dir[O.dir])
 				return TRUE
 			var/static/list/adjusts = list(
 			/obj/machinery/computer/security/telescreen/entertainment,

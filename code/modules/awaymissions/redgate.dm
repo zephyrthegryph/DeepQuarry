@@ -87,12 +87,12 @@
 /// Opens or closes the portal to match its link; `closing` says the partner is going and the link is not yet undone.
 /obj/structure/redgate/proc/toggle_portal(closing = FALSE)
 	if(target() && !closing)
-		icon_state = "on"
+		set_icon_state("on")
 		set_density(TRUE)
 		plane = ABOVE_MOB_PLANE
 		set_glow(src, GLOW(5, 0.75, "#da5656"))
 	else
-		icon_state = "off"
+		set_icon_state("off")
 		set_density(FALSE)
 		plane = OBJ_PLANE
 		set_glow(src, GLOW(0, null, null))
@@ -403,12 +403,12 @@ CAPABILITIES(/obj/item/laserdome_hyperball)
 	//get their uniform
 	if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/redtag))
 		grabbing_team = "red"
-		icon_state = "[initial(icon_state)]_red"
-		item_state = "[initial(icon_state)]_red"
+		set_icon_state("[initial(icon_state)]_red")
+		set_item_state("[initial(icon_state)]_red")
 	else if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/bluetag))
 		grabbing_team = "blue"
-		icon_state = "[initial(icon_state)]_blue"
-		item_state = "[initial(icon_state)]_blue"
+		set_icon_state("[initial(icon_state)]_blue")
+		set_item_state("[initial(icon_state)]_blue")
 	else
 		return	//if they're not on a team, stop!
 
@@ -494,8 +494,8 @@ CAPABILITIES(/obj/structure/hyperball_goal)
 
 		user.drop_from_inventory(ball)
 		ball.forceMove(ball.start_pos) //teleport the ball back to the midfield
-		ball.icon_state = "[initial(ball.icon_state)]"
-		ball.item_state = "[initial(ball.item_state)]"
+		ball.set_icon_state("[initial(ball.icon_state)]")
+		ball.set_item_state("[initial(ball.item_state)]")
 	return OP_PASS
 
 /obj/structure/hyperball_goal/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
@@ -526,8 +526,8 @@ CAPABILITIES(/obj/structure/hyperball_goal)
 						GLOB.global_announcer.autosay("[ball.last_holder] threw the HYPERball and scored an own goal! +Points |de-ducted!|+ [capitalize(goal_team)] team score is now: [HGB.score].","Laserdome Announcer","Entertainment")
 
 		ball.forceMove(ball.start_pos) //teleport the ball back to the midfield
-		ball.icon_state = "[initial(ball.icon_state)]"
-		ball.item_state = "[initial(ball.item_state)]"
+		ball.set_icon_state("[initial(ball.icon_state)]")
+		ball.set_item_state("[initial(ball.item_state)]")
 	else
 		//todo; throw the ball in a random direction
 		src.visible_message("\The [ball] bounces off \the [src]'s rim!")

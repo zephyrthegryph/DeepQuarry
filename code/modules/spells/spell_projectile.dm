@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/projectile/spell_projectile)
 		var/obj/effect/overlay/trail = new /obj/effect/overlay(src.loc)
 		rel_add(src, nameof(trails), trail)
 		trail.icon = proj_trail_icon
-		trail.icon_state = proj_trail_icon_state
+		trail.set_icon_state(proj_trail_icon_state)
 		trail.set_density(FALSE)
 		after(src, proj_trail_lifespan, PROC_REF(expire_trail), with = list(trail)) // our Destroy() takes the trails with us
 

@@ -118,7 +118,7 @@
  * null keeps the default (none for a mob, the eye glyph for anything else).
  */
 /proc/act_message(atom/user, atom/target, self, others, blind, range = world.view, obj/item/item, list/exclude, runemessage)
-	OP_PURE_GUARD("an act message was spoken")
+	op_pure_guard("an act message was spoken")
 	if(!user)
 		return
 	self = msg_fill(self, user, target, item)
@@ -141,7 +141,7 @@
 
 /// act_message() with a declared template (a /datum/msg type). Null msg_type sends nothing.
 /proc/act_message_t(atom/user, atom/target, msg_type, obj/item/item, range)
-	OP_PURE_GUARD("an act message was spoken")
+	op_pure_guard("an act message was spoken")
 	if(!msg_type || !user)
 		return
 	var/datum/msg/def = msg_def(msg_type)

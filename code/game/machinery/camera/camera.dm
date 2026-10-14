@@ -400,7 +400,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		else
 			visible_message(span_notice(" [src] clicks and shuts down. "))
 		play_sfx(src, SFX_ITEMS_WIRECUTTER)
-		icon_state = "[initial(icon_state)]1"
+		set_icon_state("[initial(icon_state)]1")
 	else
 		if(user)
 			act_message(user, src, others = span_notice(" %U% has reactivated %T%!"))
@@ -408,7 +408,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		else
 			visible_message(span_notice(" [src] clicks and reactivates itself. "))
 		play_sfx(src, SFX_ITEMS_WIRECUTTER)
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 
 /obj/machinery/camera/atom_break(damage_flag)
 	. = ..()

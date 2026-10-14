@@ -458,7 +458,7 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental/fire)
 			rel_set(src, nameof(oldposition), T)
 			I.set_dir(src.holder.dir)
 			flick("ion_fade", I)
-			I.icon_state = "blank"
+			I.set_icon_state("blank")
 			I.expire(20)
 	after(src, 0.2 SECONDS, PROC_REF(reschedule_trail))
 

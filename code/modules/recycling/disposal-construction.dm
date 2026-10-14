@@ -117,9 +117,9 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 			dpdir = dir | flip
 
 	if(!(ptype in list(DISPOSAL_PIPE_BIN, DISPOSAL_PIPE_OUTLET, DISPOSAL_PIPE_CHUTE, DISPOSAL_PIPE_UPWARD, DISPOSAL_PIPE_DOWNWARD, DISPOSAL_PIPE_TAGGER, DISPOSAL_PIPE_TAGGER_PARTIAL)))
-		icon_state = "con[base_state]"
+		set_icon_state("con[base_state]")
 	else
-		icon_state = base_state
+		set_icon_state(base_state)
 
 	if(invisibility)				// if invisible, fade icon
 		alpha = 128
@@ -244,7 +244,7 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 	if(anchored)
 		set_anchored(FALSE)
 		if(ispipe)
-			level = 2
+			set_level(2)
 			set_density(FALSE)
 		else
 			set_density(TRUE)
@@ -265,7 +265,7 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 
 		set_anchored(TRUE)
 		if(ispipe)
-			level = 1
+			set_level(1)
 			set_density(FALSE)
 		else
 			set_density(TRUE)

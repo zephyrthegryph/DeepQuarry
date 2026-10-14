@@ -149,10 +149,10 @@ CAPABILITIES(/turf/simulated/shuttle/wall/alien)
 	match_turf(SOUTH, SOUTH)
 	match_turf(WEST, WEST)
 
-	icon_state = "[base_state][join_flags]"
+	set_icon_state("[base_state][join_flags]")
 	if(isDiagonal(join_flags))
 		if(hard_corner) //You are using 'hard' (aka full-tile) corners.
-			icon_state += "h" //Hard corners have 'h' at the end of the state
+			set_icon_state(icon_state + ("h")) //Hard corners have 'h' at the end of the state
 		else //Diagonals need an underlay to not look ugly.
 			takes_underlays = 1
 	else //Everything else doesn't deserve our time!

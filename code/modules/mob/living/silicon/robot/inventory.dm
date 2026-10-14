@@ -188,7 +188,7 @@
 	for(var/slot in 1 to 3)
 		var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
 		if(slot_screen)
-			slot_screen.icon_state = slot == module ? "inv[slot] +a" : "inv[slot]"
+			slot_screen.set_icon_state(slot == module ? "inv[slot] +a" : "inv[slot]")
 	set_module_active(I)
 
 //deselect_module(module) - Deselects the module slot specified by "module"
@@ -200,7 +200,7 @@
 		return
 	var/atom/movable/screen/slot_screen = get_module_slot_screen(module)
 	if(slot_screen)
-		slot_screen.icon_state = "inv[module]"
+		slot_screen.set_icon_state("inv[module]")
 	set_module_active(null)
 
 //toggle_module(module) - Toggles the selection of the module slot specified by "module".
@@ -315,4 +315,4 @@
 		set_sight_mode(sight_mode & ~S.sight_mode)
 	var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
 	if(slot_screen)
-		slot_screen.icon_state = "inv[slot]"
+		slot_screen.set_icon_state("inv[slot]")

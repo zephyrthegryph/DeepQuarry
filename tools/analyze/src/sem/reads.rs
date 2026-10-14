@@ -46,6 +46,9 @@ pub const MESSAGE_CALLS: &[&str] = &["to_chat", "visible_message", "audible_mess
 
 /// Files that declare the framework's own state besides [`ENGINE_DIRS`]: the kernel (`Kernel`, its work tables) and the base datum
 /// (`gc_destroyed`, `rx`). An engine body reading a var declared in one of them is the framework reading itself.
+/// The file whose procs resolve entity handles (see `global_internal`).
+const HANDLE_RESOLUTION_FILE: &str = "code/engine/time/handles.dm";
+
 pub fn framework_file(rel: &str) -> bool {
     ENGINE_DIRS.iter().any(|d| rel.starts_with(d)) || rel.starts_with("code/controllers/kernel/") || rel == "code/datums/datum.dm" || is_test_code(rel)
 }
@@ -736,7 +739,7 @@ pub fn lvalue_name(e: &Expression) -> Option<String> {
     }
 }
 
-fn lvalue_name_of(term: &dreammaker::ast::Spanned<Term>, follow: &[dreammaker::ast::Spanned<Follow>]) -> Option<String> {
+pub(super) fn lvalue_name_of(term: &dreammaker::ast::Spanned<Term>, follow: &[dreammaker::ast::Spanned<Follow>]) -> Option<String> {
     match follow.last().map(|f| &f.elem) {
         Some(Follow::Field(_, n)) => Some(n.as_str().to_string()),
         Some(Follow::Index(..)) => lvalue_name_of(term, &follow[..follow.len() - 1]),
@@ -1369,6 +1372,11 @@ impl<'a, 'e> Walk<'a, 'e> {
                 }
             }
         }
+        // Handle resolution (`resolve_handle()` and its keyed fallbacks) looks a handle up in the world's registries (`GLOB.directory` for a
+        // client's handle). A handle that resolves to null is the deletion signal the lifecycle already publishes, so the lookup is bookkeeping, not an input.
+        if fr.rel == HANDLE_RESOLUTION_FILE {
+            return true;
+        }
         framework_file(&fr.rel) && framework_file(decl_file)
     }
 
@@ -1420,7 +1428,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             let r = Read { root: format!("system:{}", system), hops: Vec::new(), var: name.to_string(), owner: ty.clone(), kind: ReadKind::System, hop_ok: true };
             self.add_read(r, &rel, line);
         } else if self.mute == 0 {
-            let constant = sig.is_const || if is_glob { self.eng.globals().constant_after_init(name) } else { !self.eng.write_index().is_written(name) };
+            let constant = sig.is_const || if is_glob { self.eng.globals().constant_after_init(name) } else { !self.eng.write_index().is_written(name) || (self.eng.globals().field_constant_after_init(name) && !self.eng.is_relation(&ty, name)) };
             if !constant && !self.global_internal(fr, name, if is_glob { &sig.declared } else { &ty }, &sig.file) {
                 self.diag("untracked_global", &rel, line, child.clone());
             }
@@ -2094,6 +2102,61 @@ TRACKED(/datum/thing, charge)
         assert!(dynamic.diags.iter().any(|d| d.rule == "untracked_global" && d.msg == "GLOB.dyn"), "{:?}", dynamic.diags);
         let helper = closed.analyze("/datum/thing", "via_helper");
         assert!(helper.diags.iter().any(|d| d.rule == "untracked_global" && d.msg == "GLOB.dyn"), "a global read inside a walked helper is found: {:?}", helper.diags);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_var_of_a_singleton_that_only_boot_code_fills_reads_like_a_constant() {
+        let content = "/datum/system/fill
+	var/list/boot_only
+	var/list/runtime
+/datum/system/fill/proc/initialize()
+	load()
+/datum/system/fill/proc/load()
+	boot_only = list()
+	boot_only[\"x\"] = 1
+/datum/system/fill/proc/poke()
+	runtime[\"y\"] = 1
+/datum/thing
+	var/charge = 0
+TRACKED(/datum/thing, charge)
+/datum/thing/proc/probe()
+	return charge
+";
+        let test_code = "/datum/system/fill/proc/test_write()
+	boot_only = null
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/globals.dm", GLOBALS), ("code/content.dm", content), ("code/tests/probe.dm", test_code)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let closed = ReadsEngine::new(&sem, &decls, &ann).closed();
+        let globals = closed.globals();
+        assert!(globals.field_constant_after_init("boot_only"), "written only by load(), which only initialize() calls (a unit test's write does not count)");
+        assert!(!globals.field_constant_after_init("runtime"), "poke() is not boot-only");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_handle_resolution_reads_the_registries_as_bookkeeping() {
+        let handles = "/proc/resolve_handle(h)
+	return GLOB.dyn
+";
+        let content = "/datum/thing
+	var/charge = 0
+TRACKED(/datum/thing, charge)
+/datum/thing/proc/probe(h)
+	return resolve_handle(h) + charge
+/datum/thing/proc/direct()
+	return GLOB.dyn + charge
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/globals.dm", GLOBALS), ("code/engine/time/handles.dm", handles), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let closed = ReadsEngine::new(&sem, &decls, &ann).closed();
+        let via = closed.analyze("/datum/thing", "probe");
+        assert!(via.diags.iter().all(|d| d.rule != "untracked_global"), "resolve_handle() is engine bookkeeping: {:?}", via.diags);
+        let direct = closed.analyze("/datum/thing", "direct");
+        assert!(direct.diags.iter().any(|d| d.rule == "untracked_global" && d.msg == "GLOB.dyn"), "a content read of the same global is still found: {:?}", direct.diags);
         std::fs::remove_dir_all(root).unwrap();
     }
 

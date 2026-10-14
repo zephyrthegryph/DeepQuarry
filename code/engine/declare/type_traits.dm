@@ -16,6 +16,7 @@
 // A new trait: a /datum/type_trait subtype with one var per value (and copy_values()), a constructor proc returning entry_make(kind, null, list(args)), STATIC_ENTRY(kind)
 // and an /datum/entry_engine/type_trait subtype naming the two. The domain's reader (power_of(M)) is type_trait_of() typed.
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_trait)
 /// The values of one trait kind for one type (shared, read-only) or one holder (its override).
 /datum/type_trait
 	/// The entry kind this trait is declared by.

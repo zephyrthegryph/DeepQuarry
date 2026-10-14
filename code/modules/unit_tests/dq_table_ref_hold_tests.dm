@@ -41,7 +41,7 @@
 	var/obj/subject = new path(T)
 	var/subject_ref = ref(subject)
 	if(unanchor)
-		subject.anchored = FALSE // out of the adjacency index
+		subject.set_anchored(FALSE) // out of the adjacency index
 	subject = null
 	var/list/side = list()
 	if(neighbours)

@@ -153,12 +153,12 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 		visible_message(span_notice("A set of shadowy lines flickers away in the light."))
 	else
 		visible_message(span_notice("The crystals and shadowy tendrils dissipate with the light shone on it."))
-	icon_state = "dark_maw_used"
+	set_icon_state("dark_maw_used")
 	spent(src)
 
 /obj/effect/abstract/dark_maw/proc/triggered_by(mob/living/L, triggered_instantly = 0)
 	set_armed(FALSE)
-	icon_state = "dark_maw_used"
+	set_icon_state("dark_maw_used")
 	flick("dark_maw_tr", src)
 	L.status_adjust(STAT_STUNNED, 4)
 	visible_message(span_warning("A set of crystals spring out of the ground and shadowy tendrils start wrapping around [L]."))

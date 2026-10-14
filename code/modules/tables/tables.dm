@@ -196,12 +196,12 @@ CAPABILITIES(/obj/structure/table)
 /obj/structure/table/proc/update_material()
 	var/old_max = max_integrity
 	if(!material())
-		max_integrity = 10
+		set_max_integrity(10)
 	else
-		max_integrity = material().integrity / 2
+		set_max_integrity(material().integrity / 2)
 
 		if(reinforced())
-			max_integrity += reinforced().integrity / 2
+			set_max_integrity(max_integrity + (reinforced().integrity / 2))
 
 	// Preserve absolute damage accrued so far when the max changes (mirrors the old
 	// `health += maxhealth - old_maxhealth` behaviour).

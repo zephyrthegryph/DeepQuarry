@@ -71,6 +71,7 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 		named["undo"] = undo
 	return entry_make("graph_stage", null, named, entry_flatten(list(p1, p2, p3, p4, p5, p6)))
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_graph)
 /// The stages of one graph. Read-only after build.
 /datum/state_graph
 	var/id

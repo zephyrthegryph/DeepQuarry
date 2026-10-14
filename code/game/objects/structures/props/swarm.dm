@@ -32,7 +32,7 @@ CAPABILITIES(/obj/structure/cult/pylon/swarm)
 			playsound(src,shatter_sound, 75, 1)
 			set_isbroken(TRUE)
 			set_density(FALSE)
-			icon_state = "[initial(icon_state)]-broken"
+			set_icon_state("[initial(icon_state)]-broken")
 			set_glow(src, GLOW(0, null, null))
 
 /obj/structure/cult/pylon/swarm/attackpylon(mob/user as mob, damage)
@@ -45,7 +45,7 @@ CAPABILITIES(/obj/structure/cult/pylon/swarm)
 			playsound(src,shatter_sound, 75, 1)
 			set_isbroken(TRUE)
 			set_density(FALSE)
-			icon_state = "[initial(icon_state)]-broken"
+			set_icon_state("[initial(icon_state)]-broken")
 			set_glow(src, GLOW(0, null, null))
 		else
 			to_chat(user, "You hit \the [src]!")
@@ -106,7 +106,7 @@ CAPABILITIES(/obj/structure/cult/pylon/swarm)
 			playsound(src,shatter_sound, 75, 1)
 			set_isbroken(TRUE)
 			set_density(FALSE)
-			icon_state = "[initial(icon_state)]-broken"
+			set_icon_state("[initial(icon_state)]-broken")
 			set_glow(src, GLOW(0, null, null))
 
 /obj/structure/cult/pylon/swarm/defender/attackpylon(mob/user as mob, damage)
@@ -119,7 +119,7 @@ CAPABILITIES(/obj/structure/cult/pylon/swarm)
 			playsound(src,shatter_sound, 75, 1)
 			set_isbroken(TRUE)
 			set_density(FALSE)
-			icon_state = "[initial(icon_state)]-broken"
+			set_icon_state("[initial(icon_state)]-broken")
 			set_glow(src, GLOW(0, null, null))
 		else
 			to_chat(user, "You hit \the [src]!")

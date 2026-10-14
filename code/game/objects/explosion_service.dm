@@ -44,6 +44,7 @@ SYSTEM_DEF(explosions)
 	/// Atoms may move between affected turfs or be reached by several nested cell
 	/// blasts. Strongest-first resolution plus this epoch set guarantees one
 	/// ex_act per atom instead of repeatedly destroying the same ownership graph.
+	/// Keyed by the atom's entity_handle(), so the map never keeps a deleted atom alive.
 	VAR_PRIVATE/list/resolved_atoms = list()
 	VAR_PRIVATE/epoch_atoms_resolved = 0
 	VAR_PRIVATE/epoch_atoms_deduplicated = 0
@@ -343,7 +344,7 @@ SYSTEM_DEF(explosions)
 			delivered++
 			if(!AM || QDELETED(AM))
 				continue
-			var/severity = resolved_atoms[AM]
+			var/severity = resolved_atoms[entity_handle(AM)]
 			if(!severity)
 				continue
 			var/has_latent = AM.has_latent()

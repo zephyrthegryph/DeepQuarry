@@ -120,7 +120,7 @@ TRACKED(/obj/structure/sign/poster, ruined)
 	desc = "[initial(desc)] [poster_decl.desc]"
 	if(poster_decl.icon_override)
 		icon = poster_decl.icon_override
-	icon_state = poster_decl.icon_state
+	set_icon_state(poster_decl.icon_state)
 
 	switch (dir)
 		if (NORTH)
@@ -164,7 +164,7 @@ CAPABILITIES(/obj/structure/sign/poster)
 	act_message(user, src, others = span_warning("%U% rips %T% in a single, decisive motion!"))
 	play_sfx(src, SFX_ITEMS_POSTER_RIPPED)
 	set_ruined(TRUE)
-	icon_state = "poster_ripped"
+	set_icon_state("poster_ripped")
 	name = "ripped poster"
 	desc = "You can't make out anything from the poster's original print. It's ruined."
 	add_fingerprint(user)

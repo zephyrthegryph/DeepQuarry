@@ -115,7 +115,7 @@
 				created_atom.icon = file(spawn_params["selected_atom_icon"])
 
 			if(spawn_params["selected_atom_icon_state"])
-				created_atom.icon_state = spawn_params["selected_atom_icon_state"]
+				created_atom.set_icon_state(spawn_params["selected_atom_icon_state"])
 
 		if(spawn_params["atom_icon_size"])
 			if(ismob(created_atom))

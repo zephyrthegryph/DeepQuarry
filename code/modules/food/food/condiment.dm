@@ -79,7 +79,7 @@ MSG_DEF(condiment/swallow, "You swallow some of the contents of %I%.", "%U% swal
 	if(!looks_like_contents)
 		return
 	if(!length(reagents.reagent_list))
-		icon_state = "emptycondiment"
+		set_icon_state("emptycondiment")
 		name = "Condiment Bottle"
 		desc = "An empty condiment bottle."
 		center_of_mass_x = 16
@@ -90,7 +90,7 @@ MSG_DEF(condiment/swallow, "You swallow some of the contents of %I%.", "%U% swal
 		name = look[1]
 		desc = look[2]
 		if(look[3])
-			icon_state = look[3]
+			set_icon_state(look[3])
 		center_of_mass_x = look[4]
 		center_of_mass_y = look[5]
 		return
@@ -99,7 +99,7 @@ MSG_DEF(condiment/swallow, "You swallow some of the contents of %I%.", "%U% swal
 		desc = "Looks like it is [reagents.get_master_reagent_name()], but you are not sure."
 	else
 		desc = "A mixture of various condiments. [reagents.get_master_reagent_name()] is one of them."
-	icon_state = "mixedcondiments"
+	set_icon_state("mixedcondiments")
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 

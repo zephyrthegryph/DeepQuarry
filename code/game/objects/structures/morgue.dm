@@ -41,21 +41,21 @@ CAPABILITIES(/obj/structure/morgue)
 
 /obj/structure/morgue/proc/update(broadcast=0)
 	if (src.connected)
-		src.icon_state = "morgue0"
+		set_icon_state("morgue0")
 	else
 		if (contents_count(src))
-			src.icon_state = "morgue2"
+			set_icon_state("morgue2")
 			get_occupants()
 			for (var/mob/living/carbon/human/H in occupants)
 				if(HAS_SYNTHETIC_BIOLOGY(H) || H.suiciding || !H.ckey || !H.client || (H.has_mutation(NOCLONE)) || (H.species && H.species.flags & NO_SLEEVE))
-					src.icon_state = "morgue2"
+					set_icon_state("morgue2")
 					break
 				else
-					src.icon_state = "morgue3"
+					set_icon_state("morgue3")
 					if(broadcast)
 						GLOB.global_announcer.autosay("[src] was able to establish a mental interface with occupant.", "[src]", "Medical")
 		else
-			src.icon_state = "morgue1"
+			set_icon_state("morgue1")
 	return
 
 /obj/structure/morgue/atom_destruction(damage_flag)
@@ -89,7 +89,7 @@ CAPABILITIES(/obj/structure/morgue)
 	src.connected.layer = OBJ_LAYER
 	var/turf/T = get_step(src, src.dir)
 	if (T.contents.Find(src.connected))
-		src.icon_state = "morgue0"
+		set_icon_state("morgue0")
 		for(var/atom/movable/A as mob|obj in contents_of(src))
 			A.forceMove(src.connected.loc)
 		src.connected.icon_state = "morguet"
@@ -204,12 +204,12 @@ MSG_DEF_SELF(crematorium/locked, "It's locked.")
 
 /obj/structure/morgue/crematorium/update()
 	if (src.connected)
-		src.icon_state = "crema0"
+		set_icon_state("crema0")
 	else
 		if (contents_count(src))
-			src.icon_state = "crema2"
+			set_icon_state("crema2")
 		else
-			src.icon_state = "crema1"
+			set_icon_state("crema1")
 	return
 
 /// Old attack_hand: pull the crematorium tray out or push it in (not while it burns).
@@ -229,7 +229,7 @@ MSG_DEF_SELF(crematorium/locked, "It's locked.")
 		src.connected.layer = OBJ_LAYER
 		var/turf/T = get_step(src, dir)
 		if (T.contents.Find(src.connected))
-			src.icon_state = "crema0"
+			set_icon_state("crema0")
 			for(var/atom/movable/AM as mob|obj in contents_of(src))
 				AM.forceMove(src.connected.loc)
 			src.connected.icon_state = "cremat"
@@ -260,7 +260,7 @@ MSG_DEF_SELF(crematorium/locked, "It's locked.")
 	src.connected.layer = OBJ_LAYER
 	var/turf/T = get_step(src, EAST)
 	if (T.contents.Find(src.connected))
-		src.icon_state = "crema0"
+		set_icon_state("crema0")
 		for(var/atom/movable/A as mob|obj in contents_of(src))
 			A.forceMove(src.connected.loc)
 		src.connected.icon_state = "cremat"
