@@ -230,7 +230,6 @@ draw_untracked	code/game/objects/structures/flora/trees.dm	look.overlay(mutable_
 draw_untracked	code/game/objects/structures/low_wall.dm	return material?.icon_colour
 draw_untracked	code/game/objects/structures/low_wall.dm	return material?.icon_colour
 draw_untracked	code/game/objects/structures/low_wall.dm	look.overlay(look_overlay_image(icon, "frame_other[other_connections[i]]", dir = 1<<(i-1), color = main_color))
-draw_untracked	code/game/objects/structures/low_wall.dm	if(stripe_color)
 draw_untracked	code/game/objects/structures/low_wall.dm	I = image(icon, "grille_other_onframe[connections[i]]", dir = 1<<(i-1))
 draw_untracked	code/game/objects/structures/low_wall.dm	look.overlay(look_overlay_image(icon, "[basestate]_other_onframe[other_connections[i]]", dir = img_dir, color = color))
 draw_untracked	code/game/objects/structures/railing.dm	look.overlay(look_overlay_image(icon, "[icon_modifier]corneroverlay"))
@@ -293,9 +292,7 @@ draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_ove
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
-draw_untracked	code/game/turfs/simulated/wall_types.dm	if(stripe_color)
 draw_untracked	code/game/turfs/simulated/wall_types.dm	look.overlay(look_overlay_image(src.icon, "o_[drawn_state]", color = stripe_color))
-draw_untracked	code/game/turfs/simulated/wall_types.dm	if(stripe_color)
 draw_untracked	code/game/turfs/snow/snow.dm	look.overlay(look_overlay_image(icon, "footprint[i]", dir = text2num(d)))
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")

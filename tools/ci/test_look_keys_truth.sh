@@ -20,6 +20,11 @@ plan() { : >"$tmp/plan.tsv"; for kv in "$@"; do row "${kv%%=*}" "${kv##*=}" >>"$
 fail() { echo "test_look_keys_truth: FAIL: $*" >&2; exit 1; }
 unv() { $S --diff "$tmp/plan.tsv" | tr '\n' ' '; }
 
+# An empty record verifies nothing, including when it is awk's first input.
+plan a=1 b=2 c=3
+: >"$K"
+[ "$(unv)" = "/obj/a /obj/b /obj/c " ] || fail "empty record must leave every type unverified, got: $(unv)"
+
 # base: three types verified.
 plan a=1 b=2 c=3
 { row a 1; row b 2; row c 3; } >"$K"

@@ -51,7 +51,7 @@ plan() { # <out>: write the analyzer's current keys
 }
 
 unverified_of() { # <plan>: the plan's types whose (type, key) is not a recorded row
-	awk -F'\t' 'NR == FNR { ok[$1 "\t" $2] = 1; next } !(($1 "\t" $2) in ok) { print $1 }' "$f" "$1"
+	awk -F'\t' 'FILENAME == ARGV[1] { ok[$1 "\t" $2] = 1; next } !(($1 "\t" $2) in ok) { print $1 }' "$f" "$1"
 }
 
 case "$mode" in
