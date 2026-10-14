@@ -146,3 +146,55 @@ Not done this round:
   encounter-ordered tables. Their link and composition stay whole-program (about 3 s), so 2.5 s is
   not reachable for those edits without either an ID-order change or record-level relinking of
   every shifted reference.
+
+## Addendum: stable, edit-friendly numbering (user decision 2026-10-14)
+
+Incremental output no longer has to be byte-identical to a fresh build. It must be semantically
+equivalent: the same program after IDs and table order are normalized, keeping every order that
+the runtime can observe. A full build always produces fresh numbering. Incremental requests keep
+the previous numbering and extend it.
+
+### Retained edit model
+
+The generation already retains the composed `Dmb` model, the `LinkTables` (key to index), the
+list-row image and the field-record map. A structural patch edits the retained model in place and
+re-encodes it with list-row reuse (about 0.12 s; the string cipher is re-applied on encode, so
+appending strings is cheap). The link tables are extended, never reassigned.
+
+### Rules per table
+
+| Table | New entry | Removed entry | Observable order kept |
+|---|---|---|---|
+| Strings | appended | left unreferenced | none (IDs only) |
+| Procedures | appended (new index = table length) | record kept, unreferenced and dropped from its class lists (tombstone) | each class's proc and verb lists stay in fresh declaration order |
+| Variables (records) | appended | tombstone; dropped from class var lists | each class's var list order (`vars` iteration) stays fresh |
+| Lists | appended rows; changed rows spliced | old row left unreferenced | n/a |
+| Types (classes) | appended **only** when fresh first-encounter order also puts it last; otherwise full path | full path | class table order (`typesof`, type iteration) must equal fresh |
+| Instances, map objects | appended | tombstone | map-object order within the map stays fresh |
+
+Each class's member lists are re-derived from the projection of the edited classes only, so their
+order equals a fresh build's. Overrides are runtime lookups through the class chain. Static
+references (`..()`, typed proc values, `call()` targets) are re-bound by relinking the dependent
+units.
+
+### Dependent units
+
+Units whose lowering read a domain the change set dirtied (the demand tokens dropped by the carry)
+are relowered through the lowering memo, relinked against the extended tables and spliced into
+the model, as body patches already do. A dependent unit count over `PATCH_LIMIT` falls back.
+
+### Compaction
+
+Tombstones and orphan strings are counted on the generation. A full build (cold start, a declined
+patch, or tombstones over 5 % of any table) restores fresh numbering. Every fallback logs its
+reason.
+
+### Verification
+
+- Until `dmb-equiv` lands on `dmb/takeover`: the six_session tests and the harness compare patched
+  output to a fresh build with `dmb-opendream`'s structural comparator (classes and procs paired by
+  path, typed operands resolved). They require zero discrepancies, plus an exact match of
+  class-table order and per-class var/proc list orders.
+- Unchanged-numbering patches (defaults) keep the byte oracle.
+- The runtime-observable order list comes from the `dmb/equiv` doc once it exists. Until then:
+  class order, per-class var and proc/verb list order, and map-object order.

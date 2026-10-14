@@ -1,5 +1,6 @@
 //! OpenDream-output translation and structural DMB comparison on top of the `byond-dmb` codec.
 pub mod compare;
+pub mod semantic_equal;
 pub mod od_emit;
 pub mod od_lower;
 pub mod opendream;

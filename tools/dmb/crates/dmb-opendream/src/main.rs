@@ -59,6 +59,7 @@ const COMMANDS: &[CommandSpec] = &[
     CommandSpec { name: "od-lowering-audit", usage: "INPUT.json BASELINE.json TEMPLATE.dmb RESOURCE_ROOT [--debug-lines] [--examples=N]", positional: 4, tail: Tail::Many { exact: &["--debug-lines"], prefixes: &["--examples="] } },
     CommandSpec::fixed("od-diagnostic", "INPUT.json BASELINE.json TEMPLATE.dmb RESOURCE_ROOT", 4),
     CommandSpec { name: "dmb-compare", usage: "EXPECTED.dmb ACTUAL.dmb [PATH_PREFIX...]", positional: 2, tail: Tail::Any },
+    CommandSpec::fixed("semantic-equal", "EXPECTED.dmb ACTUAL.dmb", 2),
     CommandSpec::fixed("structural-diff", "EXPECTED.dmb ACTUAL.dmb REPORT.json SNAPSHOT_ID", 4),
     CommandSpec::optional("dmb-map-compare", "EXPECTED.dmb ACTUAL.dmb [--semantic-values]", 2, &["--semantic-values"], &[]),
     CommandSpec::optional("od-to-dmb", "INPUT.json BASELINE.json TEMPLATE.dmb RESOURCE_ROOT OUTPUT.dmb OUTPUT.rsc [--debug-lines]", 6, &["--debug-lines"], &[]),

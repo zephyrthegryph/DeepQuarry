@@ -9,6 +9,7 @@ use std::io;
 pub(crate) fn execute(name: &str, args: &[String]) -> io::Result<()> {
     match name {
         "structural-diff" => structural_diff(args),
+        "semantic-equal" => semantic_equal(args),
         "dmb-compare" => dmb_compare(args),
         "dmb-map-compare" => dmb_map_compare(args),
         "dmb-info" => dmb_info(args),
@@ -53,6 +54,21 @@ pub(crate) fn execute(name: &str, args: &[String]) -> io::Result<()> {
     }
 }
 
+/// Interim stable-numbering check: exit status 1 and one line per difference.
+fn semantic_equal(args: &[String]) -> io::Result<()> {
+    let expected = load_dmb(&args[2])?;
+    let actual = load_dmb(&args[3])?;
+    let differences = dmb_opendream::semantic_equal::semantic_differences(&expected, &actual, 50);
+    for difference in &differences {
+        println!("{difference}");
+    }
+    if differences.is_empty() {
+        println!("semantically equal");
+        Ok(())
+    } else {
+        Err(io::Error::other(format!("{} semantic differences", differences.len())))
+    }
+}
 fn structural_diff(args: &[String]) -> io::Result<()> {
     if args[5].is_empty() {
         return Err(io::Error::new(
