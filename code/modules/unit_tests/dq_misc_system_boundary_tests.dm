@@ -164,3 +164,42 @@
 	radiation.queue_shielding_update(run_loc_floor_bottom_left)
 	TEST_ASSERT_EQUAL(length(radiation.dirty_turfs), 1, "Repeated shielding updates lost keyed set semantics")
 	TEST_ASSERT_EQUAL(radiation.dirty_turfs[run_loc_floor_bottom_left], TRUE, "Shielding update did not mark its turf dirty")
+
+/datum/unit_test/dq_misc_profile_boundary
+/datum/unit_test/dq_misc_profile_boundary/Run()
+	var/datum/system/explosions/explosions = allocate(/datum/system/explosions)
+	explosions.configure_atom_type_profiling(TRUE)
+	TEST_ASSERT(explosions.profile_atom_types, "Benchmark profiling reaches the real explosion attribution flag")
+	explosions.configure_atom_type_profiling(FALSE)
+	TEST_ASSERT(!explosions.profile_atom_types, "Disabling attribution clears the same live flag")
+	var/datum/system/behaviours/behaviours = allocate(/datum/system/behaviours)
+	set_var(behaviours, nameof(behaviours.fire_cost), 4.25)
+	set_var(behaviours, nameof(behaviours.ticks), 7)
+	set_var(behaviours, nameof(behaviours.tick_overrun), 0.5)
+	var/list/snapshot = behaviours.performance_snapshot()
+	TEST_ASSERT_EQUAL(snapshot["fire_cost"], 4.25, "Profiler retains actual scheduler cost")
+	TEST_ASSERT_EQUAL(snapshot["ticks"], 7, "Profiler retains actual legacy tick count")
+	TEST_ASSERT_EQUAL(snapshot["tick_overrun"], 0.5, "Profiler retains actual overrun rather than substituting zero")
+	snapshot["ticks"] = 99
+	TEST_ASSERT_EQUAL(behaviours.performance_snapshot()["ticks"], 7, "Diagnostic snapshot edits do not mutate scheduler counters")
+
+/datum/unit_test/dq_misc_shuttle_added_boundary
+	var/notices = 0
+	var/datum/shuttle/observed_shuttle
+
+/datum/unit_test/dq_misc_shuttle_added_boundary/proc/shuttle_added(datum/act/notice/A)
+	var/datum/notice/observer_shuttle_added/event = A
+	notices++
+	observed_shuttle = event.shuttle
+
+/datum/unit_test/dq_misc_shuttle_added_boundary/Run()
+	var/datum/system/shuttles/owner = allocate(/datum/system/shuttles)
+	observe(SSshuttles, /datum/notice/observer_shuttle_added, src, then(PROC_REF(shuttle_added)))
+	defer_cleanup(null, GLOBAL_PROC_REF(unobserve), SSshuttles, /datum/notice/observer_shuttle_added, src)
+	var/datum/shuttle/shuttle = owner.initialize_shuttle(/datum/shuttle/unit_test_active_set)
+	TEST_ASSERT_NOTNULL(shuttle, "The real initializer constructs a concrete deferred shuttle")
+	own(shuttle)
+	TEST_ASSERT_EQUAL(notices, 1, "The moved override publishes exactly once on the historical global source")
+	TEST_ASSERT_EQUAL(observed_shuttle, shuttle, "Observers receive the initializer's actual return datum")
+	owner.initialize_shuttle(/datum/shuttle)
+	TEST_ASSERT_EQUAL(notices, 1, "An abstract category does not emit a shuttle-added notice")

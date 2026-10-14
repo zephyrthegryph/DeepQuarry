@@ -154,6 +154,7 @@ SYSTEM_DEF(time_track)
 		send_maps_values += packet["value"]
 		send_maps_values += packet["calls"]
 
+	var/list/behaviour_stats = SSbehaviours.performance_snapshot()
 	log_perf(
 		list(
 			world.time,
@@ -191,9 +192,9 @@ SYSTEM_DEF(time_track)
 			0, // tick overrun: the machine service runs inside SSbehaviours' budget
 			machines_gas_dirty_last(),
 			machines_gas_woken_last(),
-			SSbehaviours.fire_cost,
-			SSbehaviours.ticks,
-			SSbehaviours.tick_overrun,
+			behaviour_stats["fire_cost"],
+			behaviour_stats["ticks"],
+			behaviour_stats["tick_overrun"],
 			REGISTRY_COUNT(REGISTRY_MOBS),
 			round(GLOB.ai_brain_cost_ms, 0.01),
 			0, // SStimer cost: gone

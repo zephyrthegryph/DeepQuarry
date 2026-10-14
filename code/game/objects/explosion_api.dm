@@ -191,3 +191,7 @@
 		"last_epoch_wall_ms" = last_epoch_ms,
 		"topology_batch_open" = atmos_topology_batch_open,
 	)
+
+/// Enable sampled per-atom-type blast attribution without changing epoch work.
+/datum/system/explosions/proc/configure_atom_type_profiling(enabled)
+	profile_atom_types = enabled
