@@ -4891,3 +4891,6 @@ Affected requirement-pin classes:
   `Initialize()` reads later draws. Cause: the init waves after the 9a149c59de bless that moved item randomness into `rolls()`/`pick_one()`
   (2034398b25 cable coils, the wirecutters handle colour, and the pizza box and tool family), same mechanism as 68e9f5ae83 above. No table or
   weight changed; only which seed finds what moved.
+* **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
+  One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
+  its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
