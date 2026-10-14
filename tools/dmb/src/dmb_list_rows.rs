@@ -135,3 +135,64 @@ impl ListRowImage {
         })
     }
 }
+
+impl ListRowImage {
+    /// Byte offset of the first Variables-table record and the record count,
+    /// found by skipping the procedure table that follows the last list row.
+    fn variable_records(&self) -> io::Result<(usize, usize)> {
+        let start = self
+            .ranges
+            .last()
+            .map(|range| range.end)
+            .ok_or_else(|| io::Error::other("image has no list rows"))?;
+        let mut reader = crate::dmb::codec::Reader {
+            data: self.image.bytes(),
+            at: start,
+            object_size: self.width,
+            compatibility_version: 516,
+        };
+        reader.table(crate::dmb::Proc::read)?;
+        let count = reader.object()? as usize;
+        Ok((reader.at, count))
+    }
+    /// Replace the `value` word of existing Variables-table records whose kind
+    /// byte equals the given kind (`(record, kind, value)`). Records are fixed
+    /// width and no other record depends on their bytes, so the result equals
+    /// the canonical encoding of the model with those values replaced.
+    pub fn patch_variable_values(&self, values: &[(u32, u8, u32)]) -> io::Result<Self> {
+        let (start, count) = self.variable_records()?;
+        let stride = 1 + 4 + self.width;
+        let mut bytes = self.image.bytes().to_vec();
+        for &(record, kind, value) in values {
+            let record = record as usize;
+            if record >= count {
+                return Err(io::Error::other("variable record out of range"));
+            }
+            let at = start + record * stride;
+            if bytes.get(at) != Some(&kind) {
+                return Err(io::Error::other("variable record kind differs"));
+            }
+            bytes[at + 1..at + 5].copy_from_slice(&value.to_le_bytes());
+        }
+        Ok(Self {
+            image: EncodedDmb::from_spliced(bytes),
+            ranges: Arc::clone(&self.ranges),
+            width: self.width,
+        })
+    }
+    /// Current `(kind, value, name)` of one Variables-table record.
+    pub fn variable_record(&self, record: u32) -> io::Result<(u8, u32, u32)> {
+        let (start, count) = self.variable_records()?;
+        let record = record as usize;
+        if record >= count {
+            return Err(io::Error::other("variable record out of range"));
+        }
+        let mut reader = crate::dmb::codec::Reader {
+            data: self.image.bytes(),
+            at: start + record * (1 + 4 + self.width),
+            object_size: self.width,
+            compatibility_version: 516,
+        };
+        Ok((reader.u8()?, reader.u32()?, reader.object()?))
+    }
+}

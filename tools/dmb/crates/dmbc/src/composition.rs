@@ -365,6 +365,7 @@ fn compose_records_access(
     executor: Option<&dm_exec::BuildExecutor>,
     generation: Option<&RetainedGeneration>,
 ) -> Result<byond_dmb::dmb::EncodedDmb, CompositionError> {
+    let phase = dm_profile::detail_timer("compose.decode_engine");
     let mut dmb = {
         let _profile = dm_profile::stage("composition.decode_engine");
         Dmb::from_bytes(engine_bytes).map_err(CompositionError::Decode)?
@@ -401,6 +402,8 @@ fn compose_records_access(
     // The existing binding owner proves exact assignment contents. The floor is
     // the only engine input selecting these three raw emission rosters. Current
     // artifact order is independently checked before admitting the bound plan.
+    drop(phase);
+    let phase = dm_profile::detail_timer("compose.bind_assignments");
     let admitted_plan =
         generation.and_then(|owner| owner.admit_assignment_plan(&batch, engine_procs));
     let mut plan = procedure_plan::CompositionPlan::default();
@@ -496,6 +499,8 @@ fn compose_records_access(
         }
     };
     let [procedure_count, helper_count, initializer_count] = plan.counts;
+    drop(phase);
+    let phase = dm_profile::detail_timer("compose.strings");
     for (index, data) in strings {
         while dmb.strings.len() < index as usize
             && dm_link::is_reserved_string_index(dmb.strings.len() as u32)
@@ -527,6 +532,8 @@ fn compose_records_access(
             None => (StringIndex::build(&dmb)?, None),
         }
     };
+    drop(phase);
+    let phase = dm_profile::detail_timer("compose.types_and_mobs");
     let class_roster = if let Some((plan, _)) = projection {
         let _profile = dm_profile::stage("composition.materialize_types");
         Some(
@@ -550,6 +557,8 @@ fn compose_records_access(
     } else {
         dm_link::MobBindings::new()
     };
+    drop(phase);
+    let phase = dm_profile::detail_timer("compose.patch_link_and_references");
     if let Some(generation) = generation {
         generation.capture_patch_link(
             &batch.tables,
@@ -622,6 +631,8 @@ fn compose_records_access(
             false,
         ),
     };
+    drop(phase);
+    let phase = dm_profile::detail_timer("compose.emit_procedures");
     let mut feature_images = final_instructions::Certificates::new();
     for (slot, metadata) in procedures.iter().zip(metadata) {
         let index = slot.table_index;
@@ -655,6 +666,8 @@ fn compose_records_access(
             generation.is_some(),
         )?;
     }
+    drop(phase);
+    let phase = dm_profile::detail_timer("compose.emit_helpers_initializers");
     for slot in plan.helpers?.iter() {
         let index = slot.table_index;
         reserve_procedure_sentinel(&mut dmb);
@@ -753,9 +766,11 @@ fn compose_records_access(
         }
     }
     drop(linked_records_profile);
+    drop(phase);
+    let phase = dm_profile::detail_timer("compose.members_headers");
     if let Some((plan, values)) = projection {
         let members_profile = dm_profile::stage("composition.member_records");
-        crate::class_projection::materialize_members_with_roster(
+        let field_records = crate::class_projection::materialize_members_with_roster(
             &mut dmb,
             plan,
             (&batch.tables, mob_bindings),
@@ -773,6 +788,9 @@ fn compose_records_access(
             }
             error => unsupported(format!("class members {error:?}")),
         })?;
+        if let Some(generation) = generation {
+            generation.capture_field_records(field_records);
+        }
         drop(members_profile);
         let headers_profile = dm_profile::stage("composition.authored_headers");
         crate::class_projection::finalize_headers_retained(
@@ -795,6 +813,8 @@ fn compose_records_access(
     // The pool is valid only across writers that intern through this context.
     // Arbitrary non-text stages may mutate strings and must not reuse it.
     drop(string_index);
+    drop(phase);
+    let phase = dm_profile::detail_timer("compose.output_stage");
     if let Some(stage) = stage {
         let _profile = dm_profile::stage("composition.nontext_apply");
         let attached = stage.apply(&mut dmb, &batch).map_err(unsupported)?;
@@ -817,6 +837,8 @@ fn compose_records_access(
             }
         }
     }
+    drop(phase);
+    let phase = dm_profile::detail_timer("compose.final_validation");
     let final_validation = dm_profile::stage("composition.final_instruction_validation");
     let (external, debug) = final_instructions::validate(&dmb, &feature_images, executor)?;
     let mut source_features = final_instructions::source_features(&dmb, &feature_images)?;
@@ -851,6 +873,8 @@ fn compose_records_access(
     }
     crate::heap_census::emit_if_enabled("composition.model", |census| census.dmb(&dmb))
         .map_err(CompositionError::Decode)?;
+    drop(phase);
+    let phase = dm_profile::detail_timer("compose.encode");
     let bytes = match generation {
         Some(generation) => generation.encode(
             generation::CertifiedGenerationInputs::after_validation(dmb)
@@ -868,6 +892,7 @@ fn compose_records_access(
         census.output_encoded("dmb.bytes", &bytes)
     })
     .map_err(CompositionError::Decode)?;
+    drop(phase);
     Ok(bytes)
 }
 fn attached_key_present(dmb: &Dmb, key: Key, index: u32, map_initializers: &HashSet<u32>) -> bool {

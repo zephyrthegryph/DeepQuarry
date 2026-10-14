@@ -219,33 +219,13 @@ impl LinkTables {
             return Err(LinkError::IncompleteStringRegistration);
         }
         inventory.validate_shared()?;
-        let mut spellings = BTreeMap::new();
-        for (id, bytes) in inventory.spelling_iter() {
-            if SymbolId::of_bytes(&bytes) != id {
-                return Err(LinkError::InvalidSymbol(id));
-            }
-            if spellings
-                .insert(id, Arc::clone(bytes))
-                .is_some_and(|previous| previous != *bytes)
-            {
-                return Err(LinkError::SymbolCollision(id));
-            }
-        }
-        let mut content = BTreeMap::new();
-        for entry in inventory.entry_iter() {
-            for symbol in symbols(entry.key) {
-                if !spellings.contains_key(&symbol) {
-                    return Err(LinkError::MissingSpelling(symbol));
-                }
-            }
-            if content
-                .get(&entry.key)
-                .is_some_and(|previous| previous != &entry.content)
-            {
-                return Err(LinkError::ContentCollision(entry.key));
-            }
-            content.insert(entry.key, entry.content);
-        }
+        // Bulk-build both maps from sorted rows (one sort, linear tree build)
+        // instead of one tree insert per row. Any invalid or colliding input
+        // falls back to the ordered per-row loop, so errors keep their order.
+        let (spellings, content) = match bulk_maps(&inventory) {
+            Some(maps) => maps,
+            None => ordered_maps(&inventory)?,
+        };
         let mut slots = BTreeMap::new();
         for slot in inventory.slot_iter() {
             let tuple = (slot.owner, slot.name);
@@ -432,6 +412,73 @@ impl LinkTables {
     ) -> Result<ProcedureImage, LinkError> {
         self.bind_relocations_from(code, source)?.encode()
     }
+}
+type SpellingMap = BTreeMap<SymbolId, Arc<[u8]>>;
+type ContentMap = BTreeMap<Key, EntryContent>;
+fn bulk_maps(inventory: &LinkInventory) -> Option<(SpellingMap, ContentMap)> {
+    let mut spellings: Vec<(SymbolId, Arc<[u8]>)> = inventory
+        .spelling_iter()
+        .map(|(id, bytes)| (id, Arc::clone(bytes)))
+        .collect();
+    spellings.sort_by_key(|(id, _)| *id);
+    for pair in spellings.windows(2) {
+        if pair[0].0 == pair[1].0 && pair[0].1 != pair[1].1 {
+            return None;
+        }
+    }
+    if spellings.iter().any(|(id, bytes)| SymbolId::of_bytes(bytes) != *id) {
+        return None;
+    }
+    // Equal duplicates: later rows win, as the per-row inserts did
+    // (`BTreeMap::from_iter` keeps the last of equal keys).
+    let spellings: SpellingMap = spellings.into_iter().collect();
+    let mut entries: Vec<(Key, EntryContent)> = inventory
+        .entry_iter()
+        .map(|entry| (entry.key, entry.content))
+        .collect();
+    entries.sort_by_key(|(key, _)| *key);
+    for pair in entries.windows(2) {
+        if pair[0].0 == pair[1].0 && pair[0].1 != pair[1].1 {
+            return None;
+        }
+    }
+    if entries
+        .iter()
+        .any(|(key, _)| symbols(*key).any(|symbol| !spellings.contains_key(&symbol)))
+    {
+        return None;
+    }
+    Some((spellings, entries.into_iter().collect()))
+}
+fn ordered_maps(inventory: &LinkInventory) -> Result<(SpellingMap, ContentMap), LinkError> {
+    let mut spellings = BTreeMap::new();
+    for (id, bytes) in inventory.spelling_iter() {
+        if SymbolId::of_bytes(&bytes) != id {
+            return Err(LinkError::InvalidSymbol(id));
+        }
+        if spellings
+            .insert(id, Arc::clone(bytes))
+            .is_some_and(|previous| previous != *bytes)
+        {
+            return Err(LinkError::SymbolCollision(id));
+        }
+    }
+    let mut content = BTreeMap::new();
+    for entry in inventory.entry_iter() {
+        for symbol in symbols(entry.key) {
+            if !spellings.contains_key(&symbol) {
+                return Err(LinkError::MissingSpelling(symbol));
+            }
+        }
+        if content
+            .get(&entry.key)
+            .is_some_and(|previous| previous != &entry.content)
+        {
+            return Err(LinkError::ContentCollision(entry.key));
+        }
+        content.insert(entry.key, entry.content);
+    }
+    Ok((spellings, content))
 }
 fn symbols(key: Key) -> impl Iterator<Item = SymbolId> {
     let values = match key {

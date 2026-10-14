@@ -774,6 +774,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     let non_text_types = non_text
         .map(|stage| stage.required_types())
         .unwrap_or_default();
+    let admit_timer = dm_profile::detail_timer("required.admit");
     let (projection, source_type_order) = crate::required_types::admit_prepared_retained(
         projection,
         crate::required_types::PreparedInputs {
@@ -789,6 +790,8 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         memo.and_then(|memo| memo.required_types.as_deref()),
     )
     .map_err(ColdError::Initializer)?;
+    drop(admit_timer);
+    let contribute_timer = dm_profile::detail_timer("required.class_inventory");
     drop(body_types);
     crate::class_inventory::contribute(
         &projection,
@@ -797,6 +800,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         &mut inventory,
     )
     .map_err(ColdError::Initializer)?;
+    drop(contribute_timer);
     measurement.complete();
     dm_profile::request_mark("cold.required_types");
     let stage = Instant::now();

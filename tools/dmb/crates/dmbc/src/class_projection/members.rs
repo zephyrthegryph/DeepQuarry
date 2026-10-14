@@ -47,7 +47,12 @@ pub(crate) fn materialize_members_with_mob_bindings(
     pool: &mut crate::composition::StringIndex,
 ) -> Result<(), ProjectionError> {
     materialize_members_with_roster(dmb, projection, domains, symbols, value_types, pool, None)
+        .map(|_| ())
 }
+/// Variables-table record of each declared field, `(owner, name) -> record`,
+/// retained so a numeric default edit can patch the record in place.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct FieldRecords(pub(crate) Arc<HashMap<(SymbolId, SymbolId), u32>>);
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn materialize_members_with_roster(
     dmb: &mut byond_dmb::dmb::Dmb,
@@ -57,7 +62,7 @@ pub(crate) fn materialize_members_with_roster(
     value_types: &dyn TypeValuePolicy,
     pool: &mut crate::composition::StringIndex,
     roster: Option<&MaterializedClassRoster>,
-) -> Result<(), ProjectionError> {
+) -> Result<FieldRecords, ProjectionError> {
     let (tables, mobs) = domains;
     use byond_dmb::{dmb::Variable, ids::NONE};
     struct Values<'a> {
@@ -737,7 +742,7 @@ pub(crate) fn materialize_members_with_roster(
             dmb.classes[class as usize].lists_and_procs[slot] = list(dmb, entries)?;
         }
     }
-    Ok(())
+    Ok(FieldRecords(Arc::new(declarations)))
 }
 
 #[cfg(test)]

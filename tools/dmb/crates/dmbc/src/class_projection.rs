@@ -542,6 +542,7 @@ pub(crate) fn materialize_types_with_roster(
 mod members;
 pub use members::materialize_members;
 pub(crate) use members::materialize_members_with_roster;
+pub(crate) use members::FieldRecords;
 
 fn encoded_constant(kind: u8, value: u32) -> Result<Vec<u32>, ProjectionError> {
     if kind != 42 && value > 0x00ff_ffff {

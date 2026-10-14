@@ -253,6 +253,70 @@ impl MetadataDependencies {
     }
 }
 
+/// Every changed row is a formal var (flags 0 or tmp) whose metadata differs
+/// only in its initializer, from one numeric literal to another.
+fn default_edits<'a, 'b>(
+    previous: impl ExactSizeIterator<Item = &'a Skeleton>,
+    current: impl ExactSizeIterator<Item = &'b Skeleton>,
+    previous_symbols: &dm_ir::SymbolTable,
+    symbols: &dm_ir::SymbolTable,
+) -> Option<Vec<crate::DefaultEdit>> {
+    let literal = |expression: &Option<dm_ir::SymbolicExpression>, symbols: &dm_ir::SymbolTable| -> Option<u32> {
+        let tokens = &expression.as_ref()?.tokens;
+        if tokens.len() != 1 {
+            return None;
+        }
+        let text = symbols.text(tokens[0].text)?;
+        if !text.bytes().all(|byte| byte.is_ascii_hexdigit() || matches!(byte, b'.' | b'x' | b'X'))
+        {
+            return None;
+        }
+        let value = match text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
+            Some(hex) => u32::from_str_radix(hex, 16).ok()? as f32,
+            None => text.parse::<f32>().ok()?,
+        };
+        value.is_finite().then(|| value.to_bits())
+    };
+    let mut edits = Vec::new();
+    let trace = std::env::var_os("DMB_DEFAULT_EDIT_TRACE").is_some();
+    for (old, new) in previous.zip(current) {
+        if old == new {
+            continue;
+        }
+        if trace {
+            eprintln!("default edit candidate: {old:?} -> {new:?}");
+        }
+        let (
+            Skeleton::Member { owner, name, kind: MemberKind::Var, mode: DefinitionMode::Declare, metadata: before, .. },
+            Skeleton::Member { owner: new_owner, name: new_name, kind: MemberKind::Var, mode: DefinitionMode::Declare, metadata: after, .. },
+        ) = (old, new)
+        else {
+            return None;
+        };
+        if owner != new_owner || name != new_name || !matches!(after.flags, 0 | 4) {
+            return None;
+        }
+        let old_bits = literal(&before.declared_initializer, previous_symbols)?;
+        let value_bits = literal(&after.declared_initializer, symbols)?;
+        let strip = |metadata: &crate::MemberMetadata| {
+            let mut metadata = metadata.clone();
+            metadata.initializer = None;
+            metadata.declared_initializer = None;
+            metadata.canonical = Arc::from([]);
+            metadata
+        };
+        if strip(before) != strip(after) {
+            return None;
+        }
+        edits.push(crate::DefaultEdit {
+            owner: *owner,
+            name: *name,
+            old_bits,
+            value_bits,
+        });
+    }
+    (!edits.is_empty()).then_some(edits)
+}
 pub(crate) fn resolution_order(
     len: usize,
     previous: impl Fn(usize) -> Option<MemberId>,
@@ -366,8 +430,14 @@ impl MetadataDependencies {
         mut symbols: dm_ir::SymbolTable,
         executor: &dm_exec::BuildExecutor,
     ) -> Option<SemanticTree> {
-        let dirty = self.changed(previous, current.clone())?;
+        let dirty = self.changed(previous.clone(), current.clone())?;
         let mut tree = previous_tree.clone();
+        tree.default_edits = default_edits(previous, current.clone(), &previous_tree.symbols, &symbols).map(|edits| {
+            Arc::new(crate::DefaultEdits {
+                from_identity: previous_tree.identity,
+                edits,
+            })
+        });
         // Current exact symbol authority replaces old lexical spellings. Keep
         // only implicit parent paths that the full constructor would ensure.
         for node in previous_tree.types() {

@@ -43,6 +43,8 @@ pub(crate) struct PatchImage {
 #[derive(Clone, Default)]
 pub(super) struct PatchSlot {
     link: Option<Arc<PatchLink>>,
+    /// Variables-table record of each declared field of the patch base.
+    fields: Option<crate::class_projection::FieldRecords>,
     base: Option<Arc<crate::body_patch::BodyPatchBase>>,
     image: Option<Arc<PatchImage>>,
 }
@@ -262,8 +264,47 @@ impl RetainedGeneration {
                 })),
                 base: None,
                 image: None,
+                fields: None,
             };
         });
+    }
+    /// Field records of the model this request composes (after capture_patch_link).
+    pub(super) fn capture_field_records(&self, fields: crate::class_projection::FieldRecords) {
+        self.attempt.with_pending(|_| {
+            self.patch.lock().unwrap_or_else(|e| e.into_inner()).fields = Some(fields);
+        });
+    }
+    /// Variables-table record of a declared field in the patch base.
+    pub(crate) fn field_record(&self, owner: dm_ir::SymbolId, name: dm_ir::SymbolId) -> Option<u32> {
+        let slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
+        slot.fields.as_ref()?.0.get(&(owner, name)).copied()
+    }
+    /// Default-edit patch: replace Variables-table values in the retained
+    /// image (see `crate::body_patch::try_default_patch`). The base advances
+    /// exactly as `patch_rows` advances it.
+    pub(crate) fn patch_variable_values(
+        &self,
+        image: &PatchImage,
+        values: &[(u32, u8, u32)],
+        base: crate::body_patch::BodyPatchBase,
+    ) -> Result<byond_dmb::dmb::EncodedDmb, String> {
+        self.attempt
+            .with_pending(|_| {
+                let patched = image
+                    .rows
+                    .patch_variable_values(values)
+                    .map_err(|error| format!("variable patch: {error}"))?;
+                let encoded = patched.image().clone();
+                validate_encoded(&encoded).map_err(|error| format!("{error:?}"))?;
+                let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
+                slot.base = Some(Arc::new(base.with_output_hash(encoded.content_hash())));
+                slot.image = Some(Arc::new(PatchImage {
+                    rows: patched,
+                    proc_code: Arc::clone(&image.proc_code),
+                }));
+                Ok(encoded)
+            })
+            .unwrap_or_else(|| Err("generation attempt is not pending".into()))
     }
     /// Attach the source half of the patch base to this request's generation
     /// and detach the row image of the model it just encoded.

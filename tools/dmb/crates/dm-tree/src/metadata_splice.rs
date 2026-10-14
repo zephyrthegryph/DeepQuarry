@@ -88,6 +88,7 @@ impl MetadataDependencies {
             self.nodes.iter().map(|node| (node.key, node.member)).collect();
         let roster = splice_types(previous_tree, current, &mut symbols, &type_rows_changed)?;
         let mut tree = previous_tree.clone();
+        tree.default_edits = None;
         tree.symbols = Arc::new(symbols);
         let type_remap: Vec<Option<TypeId>> = match roster {
             Some(roster) => {

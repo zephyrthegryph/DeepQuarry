@@ -426,6 +426,7 @@ fn finish_frozen_inventory(
         mut helpers,
         source_bindings,
     } = state;
+    let initializer_timer = dm_profile::detail_timer("link.initializers");
     let mut initializers = Vec::with_capacity(initialization.len());
     let mut initialization_keys = std::collections::BTreeSet::new();
     for unit in initialization {
@@ -516,11 +517,15 @@ fn finish_frozen_inventory(
         });
     }
 
+    drop(initializer_timer);
+    let order_timer = dm_profile::detail_timer("link.orders");
     drop(source_bindings);
     drop(string_inventory);
     procedure_order::complete(&mut inventory).map_err(IntegrationError::InvalidInitializer)?;
     string_order::complete(&mut inventory, &units).map_err(IntegrationError::InvalidInitializer)?;
+    drop(order_timer);
     let tables = {
+        let _detail = dm_profile::detail_timer("link.table_assignment");
         let _profile = dm_profile::stage("linking.table_assignment");
         match bindings {
             Some(bindings) => bindings.build(inventory),
@@ -530,6 +535,7 @@ fn finish_frozen_inventory(
     };
     // Validate once and retain images certified for these exact current inputs.
     let image_profile = dm_profile::stage("linking.current_images");
+    let _image_detail = dm_profile::detail_timer("link.current_images");
     current_images::issue(
         &mut units,
         &mut helpers,

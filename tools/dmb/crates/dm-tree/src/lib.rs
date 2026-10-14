@@ -148,6 +148,10 @@ pub struct SemanticTree {
     /// the change-set splice replays authored first-encounter order after it.
     /// `None` when unknown (the splice then keeps the type roster fixed).
     authored_type_start: Option<u32>,
+    /// Set only by the in-place metadata update when every changed row is a
+    /// formal non-const, non-shared var whose default changed between numeric
+    /// literals: the output then differs only in those Variables records.
+    default_edits: Option<Arc<DefaultEdits>>,
     by_path: Arc<HashMap<SymbolId, TypeId>>,
     direct: Arc<HashMap<(TypeId, SymbolId, MemberKind), MemberId>>,
     /// One target per ordered skeleton, including all reopens.
@@ -155,6 +159,27 @@ pub struct SemanticTree {
     identity: u128,
     inventory: Arc<resolver::ResolverInventory>,
     intrinsic_fields: Arc<HashMap<(SymbolId, SymbolId), dm_ir::OpaqueFieldBase>>,
+}
+/// One numeric default edit of a formal var (see `SemanticTree::default_edits`).
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct DefaultEdit {
+    pub owner: SymbolId,
+    pub name: SymbolId,
+    /// f32 bits of the previous and the new numeric literal default.
+    pub old_bits: u32,
+    pub value_bits: u32,
+}
+/// Pure default edits from the tree with identity `from_identity`.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DefaultEdits {
+    pub from_identity: u128,
+    pub edits: Vec<DefaultEdit>,
+}
+impl SemanticTree {
+    /// Pure numeric default edits relative to the previous retained tree.
+    pub fn default_edits(&self) -> Option<&DefaultEdits> {
+        self.default_edits.as_deref()
+    }
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum TreeError {
@@ -611,6 +636,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
         selection_publication_deferred,
         selection_prune_skippable: false,
         authored_type_start: None,
+        default_edits: None,
         by_path: Arc::new(by_path),
         direct: Arc::new(HashMap::new()),
         declaration_targets: Arc::from([]),

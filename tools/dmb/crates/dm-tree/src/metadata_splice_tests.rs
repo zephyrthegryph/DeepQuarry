@@ -137,3 +137,18 @@ fn reparenting_an_existing_type_declines_to_the_full_constructor() {
     same_as_fresh(&changed.snapshot.tree, &edited);
     assert_eq!(state.splices(), before);
 }
+
+#[test]
+fn numeric_default_edit_is_reported_relative_to_the_previous_tree() {
+    let mut state = RetainedSemanticTree::new();
+    let first = frontend(&mut state, BASE);
+    let edited = BASE.replace("var/value = 7", "var/value = 9");
+    let changed = frontend(&mut state, &edited);
+    let edits = changed.snapshot.tree.default_edits().expect("pure numeric default edit");
+    assert_eq!(edits.from_identity, first.snapshot.tree.identity());
+    assert_eq!(edits.edits.len(), 1);
+    assert_eq!(edits.edits[0].value_bits, 9f32.to_bits());
+    assert_eq!(edits.edits[0].old_bits, 7f32.to_bits());
+    let typed = frontend(&mut state, &edited.replace("var/value = 9", "var/value = \"x\""));
+    assert!(typed.snapshot.tree.default_edits().is_none());
+}

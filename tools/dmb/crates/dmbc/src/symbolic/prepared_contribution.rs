@@ -397,6 +397,7 @@ fn link_prepared_execution(
     executor: Option<&dm_exec::BuildExecutor>,
     bindings: Option<&dm_link::RetainedBindings>,
 ) -> Result<FrozenBatch, IntegrationError> {
+    let setup_timer = dm_profile::detail_timer("link.setup");
     let mut units = Vec::with_capacity(contributions.len());
     let mut helpers = Vec::new();
     let mut source_bindings = std::collections::BTreeSet::new();
@@ -421,6 +422,8 @@ fn link_prepared_execution(
             source_bindings.insert(unit_reference(unit.identity));
         }
     }
+    drop(setup_timer);
+    let replay_timer = dm_profile::detail_timer("link.replay_contributions");
     for prepared in contributions {
         prepared.contribution.replay(
             &mut inventory,
@@ -430,6 +433,7 @@ fn link_prepared_execution(
             &mut helpers,
         );
     }
+    drop(replay_timer);
     let freeze_detail =
         std::env::var_os("DMB_PROFILE_FREEZE_DETAIL").is_some_and(|value| value == "1");
     finish_frozen_inventory(
