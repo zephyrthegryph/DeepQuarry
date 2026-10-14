@@ -53,8 +53,6 @@ CAPABILITIES(/obj/item/flashlight)
 
 /obj/item/flashlight/var/on = 0
 /obj/item/flashlight/var/power_use = 1
-TRACKED(/obj/item/flashlight, on)
-TRACKED(/obj/item/flashlight, power_use)
 
 /obj/item/flashlight/get_cell()
 	return cell
@@ -437,7 +435,6 @@ CAPABILITIES(/obj/item/flashlight/flare)
 	rolls(nameof(fuel), PROC_REF(roll_fuel))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-TRACKED(/obj/item/flashlight/flare, fuel)
 
 /obj/item/flashlight/flare/draw(datum/look/look)
 	..()
@@ -504,7 +501,6 @@ CAPABILITIES(/obj/item/flashlight/glowstick)
 	rolls(nameof(fuel), PROC_REF(roll_fuel))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-TRACKED(/obj/item/flashlight/glowstick, fuel)
 
 /obj/item/flashlight/glowstick/draw(datum/look/look)
 	..()

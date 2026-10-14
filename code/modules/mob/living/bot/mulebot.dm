@@ -211,7 +211,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	targetName = A.answer.value
 
 /mob/living/bot/mulebot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	locked = !locked
+	set_locked(!locked)
 	to_chat(user, span_notice("You [locked ? "lock" : "unlock"] the mulebot's controls!"))
 	flick("mulebot-emagged", src)
 	play_sfx(src, SFX_EFFECTS_SPARKS1, vary = FALSE)

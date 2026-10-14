@@ -18,7 +18,6 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-TRACKED(/obj/item/melee/baton, status)
 
 CAPABILITIES(/obj/item/melee/baton)
 	configure(item_worn(slots = SLOT_BELT))

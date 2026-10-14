@@ -8,8 +8,6 @@
 /obj/machinery/feeder/var/mob/living/carbon/human/attached
 /obj/machinery/feeder/var/obj/item/reagent_containers/beaker
 /// Feeds while a patient and a container are attached.
-TRACKED(/obj/machinery/feeder, fill_state)
-TRACKED(/obj/machinery/feeder, fill_color)
 /// The fill overlay of the container (a "reagentN" state) and its reagent colour, or null for none: refresh_fill() writes them as the level moves.
 /obj/machinery/feeder/var/fill_state
 /obj/machinery/feeder/var/fill_color

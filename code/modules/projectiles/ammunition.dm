@@ -164,7 +164,6 @@ CAPABILITIES(/obj/item/ammo_casing)
 	var/list/icon_keys		//keys
 	var/list/ammo_states	//values
 
-TRACKED(/obj/item/ammo_magazine, max_ammo)
 
 CAPABILITIES(/obj/item/ammo_magazine)
 	configure(item_worn(slots = SLOT_BELT))

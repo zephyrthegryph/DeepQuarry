@@ -31,7 +31,6 @@ CAPABILITIES(/obj/read_once_menu_probe)
 
 /obj/read_once_tracked_menu_probe
 	var/admitted = FALSE
-TRACKED(/obj/read_once_tracked_menu_probe, admitted)
 CAPABILITIES(/obj/read_once_tracked_menu_probe)
 	op("sample", menu(), label("Sample"), needs(req_is(nameof(admitted), TRUE, because = MSG(read_once_probe/unavailable))), then(TYPE_PROC_REF(/atom, op_swallow)))
 

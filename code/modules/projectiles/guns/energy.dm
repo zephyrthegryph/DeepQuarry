@@ -33,10 +33,6 @@
 /obj/item/gun/energy/var/self_recharge = 0
 /// TRUE while a self-recharging gun may be below full: firing raises it, a step that finds the cell full drops it.
 /obj/item/gun/energy/var/tmp/recharge_due = TRUE
-TRACKED(/obj/item/gun/energy, self_recharge)
-TRACKED(/obj/item/gun/energy, modifystate)
-TRACKED(/obj/item/gun/energy, charge_cost)
-TRACKED(/obj/item/gun/energy, recharge_due)
 
 /obj/item/gun/energy/Initialize(mapload)
 	. = ..()

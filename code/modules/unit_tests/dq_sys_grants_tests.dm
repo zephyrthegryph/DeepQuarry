@@ -20,7 +20,6 @@
 
 /mob/living/carbon/human/dq_grants_hiding
 
-TRACKED(/obj/item/dq_grants_declared, dq_flag)
 
 CAPABILITIES(/obj/item/dq_grants_declared)
 	verb_entry(/obj/proc/dq_sys_grants_test_obj_verb)

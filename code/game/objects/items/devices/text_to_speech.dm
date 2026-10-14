@@ -6,7 +6,6 @@
 	w_class = ITEMSIZE_SMALL
 	var/named
 
-TRACKED(/obj/item/text_to_speech, named)
 
 CAPABILITIES(/obj/item/text_to_speech)
 	op("speak", inputs(in_hand(), hand()), answers(INTENT_USE, INTENT_TOGGLE, INTENT_OPEN, INTENT_EJECT), label("Speak a message"),

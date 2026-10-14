@@ -300,7 +300,6 @@ CAPABILITIES(/obj/e0_fixture/lamp)
 	lazy_only = TRUE
 	var/night = FALSE
 
-TRACKED(/datum/system/e0_night, night)
 
 GLOBAL_DATUM_INIT(e0_night_service, /datum/system/e0_night, new)
 

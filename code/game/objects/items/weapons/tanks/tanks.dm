@@ -81,15 +81,11 @@ DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 
 /// TRUE while the relief valve or a failed seal is venting.
 /obj/item/tank/var/leaking = FALSE
-TRACKED(/obj/item/tank, leaking)
 /// TRUE while the seal is below max integrity. Kept by on_update_integrity(), the hook every
 /// integrity write (take_damage, repair_damage, update_integrity) goes through.
 /obj/item/tank/var/seal_damaged = FALSE
-TRACKED(/obj/item/tank, seal_damaged)
 /// TRUE while a mob holds or wears the tank (set by equipped(), cleared by dropped()).
 /obj/item/tank/var/handled = FALSE
-TRACKED(/obj/item/tank, handled)
-TRACKED(/obj/item/tank, valve_welded)
 
 /obj/item/tank/on_update_integrity(old_value, new_value)
 	. = ..()

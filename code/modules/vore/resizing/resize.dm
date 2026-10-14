@@ -166,9 +166,9 @@
 			special_x = S.icon_scale_x
 			special_y = S.icon_scale_y
 			if(fuzzy || offset_override)
-				center_offset = 0
+				set_center_offset(0)
 			else
-				center_offset = S.center_offset
+				set_center_offset(S.center_offset)
 		resize.Scale(new_size * icon_scale_x * special_x, new_size * icon_scale_y * special_y) //Change the size of the matrix
 		resize.Translate(center_offset * size_multiplier * icon_scale_x * special_x, (vis_height/2) * (new_size - 1)) //Move the player up in the tile so their feet align with the bottom
 		animate(src, transform = resize, time = duration) //Animate the player resizing
@@ -261,7 +261,7 @@
 		if(src?.buckled_to())
 			to_chat(src,span_notice("You have to unbuckle \the [src] before you pick them up."))
 			return FALSE
-		holder_type = /obj/item/holder/micro
+		set_holder_type(/obj/item/holder/micro)
 		var/obj/item/holder/m_holder = get_scooped(M, G)
 		if (m_holder)
 			return TRUE

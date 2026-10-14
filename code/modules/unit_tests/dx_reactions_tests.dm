@@ -14,9 +14,6 @@
 	var/list/notes = list()
 	var/republish = FALSE
 
-TRACKED(/datum/rx_fx, watched)
-TRACKED(/datum/rx_fx, quiet)
-TRACKED(/datum/rx_fx, level)
 
 /datum/rx_fx/reactions()
 	. = ..()

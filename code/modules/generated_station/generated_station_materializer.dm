@@ -1158,7 +1158,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			)
 			// Closet contents are created by the budgeted late-initialization pass.
 			// Instantiating this equipment inline can monopolize several game ticks.
-			fire_closet.starts_with = emergency_supply_types.Copy()
+			fire_closet.set_starts_with(emergency_supply_types.Copy())
 			result.register_furnishing(fire_closet)
 		generation_checkpoint("Installing emergency equipment", 55)
 	return TRUE

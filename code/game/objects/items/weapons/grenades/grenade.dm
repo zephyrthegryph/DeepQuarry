@@ -37,7 +37,6 @@
 		else if(det_time == null)
 			. += "\The [src] is set for instant detonation."
 
-TRACKED(/obj/item/grenade, det_time)
 
 MSG_DEF_SELF(grenade/timer_1s, "You set %T% for 1 second detonation time.")
 MSG_DEF_SELF(grenade/timer_3s, "You set %T% for 3 second detonation time.")

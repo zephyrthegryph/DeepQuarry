@@ -40,8 +40,6 @@ CAPABILITIES(/obj/machinery/ntnet_relay)
 		return 0
 	return 1
 
-TRACKED(/obj/machinery/ntnet_relay, enabled)
-TRACKED(/obj/machinery/ntnet_relay, dos_failure)
 
 /obj/machinery/ntnet_relay/draw(datum/look/look)
 	..()

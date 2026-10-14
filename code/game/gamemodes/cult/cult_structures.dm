@@ -29,7 +29,6 @@
 	proximity_tracked = TRUE
 
 /obj/structure/cult/pylon/var/isbroken = FALSE
-TRACKED(/obj/structure/cult/pylon, isbroken)
 CAPABILITIES(/obj/structure/cult/pylon)
 	configure(light_glow(range = 5, color = "#3e0000"))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))

@@ -45,7 +45,7 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 	dq_set_fluorescent(src, 0)
 	if(invisibility != INVISIBILITY_MAXIMUM)
 		set_invisibility(INVISIBILITY_MAXIMUM)
-		amount = 0
+		set_amount(0)
 
 /obj/effect/decal/cleanable/blood/Initialize(mapload)
 	. = ..()
@@ -134,7 +134,7 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 			if(D.IsSpreadByTouch())
 				perp.expose_contagion(D, BP_R_FOOT)
 
-	amount--
+	set_amount(amount - 1)
 
 /// How long after init fresh blood dries, or 0 for mapped blood (after_init()).
 /obj/effect/decal/cleanable/blood/var/dry_delay = 0
@@ -144,7 +144,7 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 
 /obj/effect/decal/cleanable/blood/proc/dry()
 	set_dried(TRUE)
-	amount = 0
+	set_amount(0)
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood)
 	when(nameof(dry_delay), after_init(nameof(dry_delay), then(PROC_REF(dry_after_init))))
@@ -159,7 +159,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood)
 		if (user.get_equipped_item(SLOT_ID_GLOVES))
 			return OP_OK
 		var/taken = rand(1,amount)
-		amount -= taken
+		set_amount(amount - taken)
 		to_chat(user, span_notice("You get some of \the [src] on your hands."))
 		transfer_blooddna_to(user)
 		user.bloody_hands += taken

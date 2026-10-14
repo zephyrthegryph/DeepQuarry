@@ -1437,7 +1437,7 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 		var/datum/thing = input
 		if(thing.datum_flags & DF_USE_TAG)
 			if(!thing.tag)
-				thing.datum_flags &= ~DF_USE_TAG
+				thing.set_datum_flags(thing.datum_flags & (~DF_USE_TAG))
 				stack_trace("A ref was requested of an object with DF_USE_TAG set but no tag: [thing]")
 			else
 				return "\[[url_encode(thing.tag)]\]"

@@ -140,7 +140,6 @@ CAPABILITIES(/mob/living/simple_mob/lib_fixture_biter)
 	var/lit = FALSE
 	var/shown_note = "A note says hello."
 
-TRACKED(/obj/lib_fixture/glow_box, lit)
 
 CAPABILITIES(/obj/lib_fixture/glow_box)
 	examine_line("It is a box.")

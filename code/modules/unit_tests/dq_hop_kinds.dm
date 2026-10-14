@@ -7,7 +7,6 @@
 	icon_state = "fix"
 	var/shown = 0
 
-TRACKED(/obj/dq_hop_box, shown)
 
 /obj/dq_hop_item
 	name = "hop item"
@@ -27,7 +26,6 @@ TRACKED(/obj/dq_hop_box, shown)
 	icon_state = "fix"
 	var/gauge_level = 0
 
-TRACKED(/obj/dq_hop_cell, gauge_level)
 
 /obj/dq_hop_crate
 	name = "hop crate"

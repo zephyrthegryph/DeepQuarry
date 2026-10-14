@@ -42,7 +42,6 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 	/// when the power changes (scan()), so the look reads a tracked var and redraws when it moves.
 	var/scan_ratio = BODY_SCAN_EMPTY
 
-TRACKED(/obj/machinery/bodyscanner, scan_ratio)
 
 CAPABILITIES(/obj/machinery/bodyscanner)
 	configure(light_glow(color = "#00FF00"))
@@ -271,7 +270,6 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	/// The reading its scanner last showed (the scanner's scan_ratio, mirrored by scan()).
 	var/scan_ratio = BODY_SCAN_EMPTY
 
-TRACKED(/obj/machinery/body_scanconsole, scan_ratio)
 
 CAPABILITIES(/obj/machinery/body_scanconsole)
 	machine_basics(repair = NONE)

@@ -81,7 +81,6 @@ TYPE_TABLE_DECLARE(/obj/structure/candybowl, candy_choices, list( \
 		/obj/item/reagent_containers/food/snacks/oort \
 	))
 
-TRACKED(/obj/structure/candybowl, has_candy)
 
 MSG_DEF_SELF(candybowl/empty, span_warning("there is no candy, someone took too many"))
 

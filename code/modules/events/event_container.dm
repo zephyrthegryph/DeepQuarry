@@ -14,7 +14,6 @@
 
 /// The random-event clock runs (the events service sets it when it makes the container).
 /datum/event_container/var/clock_running = FALSE
-TRACKED(/datum/event_container, clock_running)
 CAPABILITIES(/datum/event_container)
 	every(2 SECONDS, then(PROC_REF(event_clock_step)), when = nameof(clock_running))
 	owns_many(nameof(event_pool))

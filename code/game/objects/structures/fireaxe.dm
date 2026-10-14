@@ -16,8 +16,6 @@
 	/// The axe it starts with (a declared default child), or null for an empty cabinet.
 	var/fireaxe_type = /obj/item/material/twohanded/fireaxe
 
-TRACKED(/obj/structure/fireaxecabinet, open)
-TRACKED(/obj/structure/fireaxecabinet, hitstaken)
 
 MSG_DEF_SELF(fireaxecabinet/locked, "The cabinet won't budge.")
 
@@ -90,7 +88,7 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 			if(hitstaken == 4)
 				play_sfx(src, SFX_EFFECTS_GLASSBR3) //Break cabinet, receive goodies. Cabinet's fucked for life after that.
 				set_smashed(1)
-				locked = 0
+				set_locked(0)
 				set_open(1)
 
 	return OP_OK
@@ -114,12 +112,12 @@ MSG_DEF_SELF(fireaxecabinet/resetting, span_warning("Resetting circuitry..."))
 	play_sfx(src, SFX_MACHINES_LOCKENABLE)
 
 /obj/structure/fireaxecabinet/proc/attackby_tool_done(datum/act/op/A)
-	locked = 0
+	set_locked(0)
 	to_chat(A.actor, span_warning("You disable the locking modules."))
 	return OP_OK
 
 /obj/structure/fireaxecabinet/proc/attackby_tool_done2(datum/act/op/A)
-	locked = 1
+	set_locked(1)
 	to_chat(A.actor, span_warning("You re-enable the locking modules."))
 	return OP_OK
 
@@ -191,7 +189,7 @@ MSG_DEF_SELF(fireaxecabinet/resetting, span_warning("Resetting circuitry..."))
 	if(smashed)
 		to_chat(user, span_warning("The security of the cabinet is compromised."))
 		return OP_OK
-	locked = !locked
+	set_locked(!locked)
 	if(locked)
 		to_chat(user, span_warning("Cabinet locked."))
 	else

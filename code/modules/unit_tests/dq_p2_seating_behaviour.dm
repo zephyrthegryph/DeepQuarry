@@ -110,7 +110,7 @@
 	dq_attack_variant_op(grabber, victim, ATTACK_VARIANT_GRAB)
 	var/obj/item/grab/G = grabber.get_active_hand()
 	if(istype(G))
-		G.state = state
+		G.set_state(state)
 	return G
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -280,7 +280,7 @@
 	var/obj/item/assembly/shock_kit/kit = allocate(/obj/item/assembly/shock_kit, H.loc)
 	touch(H, C, kit)
 	TEST_ASSERT(!QDELETED(C), "an unsecured kit is refused: the chair stays")
-	kit.status = 1
+	kit.set_status(1)
 	touch(H, C, kit)
 	TEST_ASSERT_NOTNULL(locate(/obj/structure/bed/chair/e_chair) in at, "a secured one makes an electric chair")
 	TEST_ASSERT(QDELETED(C), "the chair is gone")

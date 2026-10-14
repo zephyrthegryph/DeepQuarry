@@ -494,8 +494,8 @@ CAPABILITIES(/turf)
 	var/click_parameters = A.arg("click_parameters")
 	act_message(vandal, src, others = span_danger("%U% carves some graffiti into %T%."))
 	var/obj/effect/decal/writing/graffiti = new(src)
-	graffiti.message = message
-	graffiti.author = vandal.ckey
+	graffiti.set_message(message)
+	graffiti.set_author(vandal.ckey)
 
 	if(click_parameters)
 		var/list/mouse_control = params2list(click_parameters)
@@ -564,15 +564,15 @@ CAPABILITIES(/turf)
 		return
 	if(toxvomit == VOMIT_PURPLE)
 		V.set_icon_state("vomitpurp_1")
-		V.random_icon_states = list("vomitpurp_1", "vomitpurp_2", "vomitpurp_3", "vomitpurp_4")
+		V.set_random_icon_states(list("vomitpurp_1", "vomitpurp_2", "vomitpurp_3", "vomitpurp_4"))
 	else if (toxvomit == VOMIT_TOXIC)
 		V.set_icon_state("vomittox_1")
-		V.random_icon_states = list("vomittox_1", "vomittox_2", "vomittox_3", "vomittox_4")
+		V.set_random_icon_states(list("vomittox_1", "vomittox_2", "vomittox_3", "vomittox_4"))
 	else if (toxvomit == VOMIT_NANITE)
 		V.name = "metallic slurry"
 		V.desc = "A puddle of metallic slury that looks vaguely like very fine sand. It almost seems like it's moving..."
 		V.set_icon_state("vomitnanite_1")
-		V.random_icon_states = list("vomitnanite_1", "vomitnanite_2", "vomitnanite_3", "vomitnanite_4")
+		V.set_random_icon_states(list("vomitnanite_1", "vomitnanite_2", "vomitnanite_3", "vomitnanite_4"))
 	if(purge && ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(H.ingested)

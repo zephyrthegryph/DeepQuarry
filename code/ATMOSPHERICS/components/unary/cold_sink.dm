@@ -1,6 +1,3 @@
-TRACKED(/obj/machinery/atmospherics/unary/freezer, pumping)
-TRACKED(/obj/machinery/atmospherics/unary/freezer, cooling)
-TRACKED(/obj/machinery/atmospherics/unary/freezer, set_temperature)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	configure(uses_power(idle = 5))
@@ -157,7 +154,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
 	var/coolant_fraction = clamp(FREEZER_CARNOT_FRACTION * get_part_bonus() * CLAMP(reagent_cooling, REAGENT_COOLING_MINMOD, REAGENT_COOLING_MAXMOD), 0.05, 1)
 	if(abs(coolant_fraction - carnot_fraction) > 0.01)
-		carnot_fraction = coolant_fraction
+		set_carnot_fraction(coolant_fraction)
 		heat_entries_refresh(src)
 	use_power(-heat_entries_power(src))
 	reagents.remove_any(REAGENT_COOLING_CONSUMED)
@@ -182,13 +179,13 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	manip_rating = get_part_rating(/obj/item/stock_parts/manipulator)
 
 	max_power_rating = initial(max_power_rating) * cap_rating / 2			//more powerful
-	carnot_fraction = clamp(FREEZER_CARNOT_FRACTION * max(1, (manip_rating + bin_rating) / 2), 0.05, 1)	//more efficient
+	set_carnot_fraction(clamp(FREEZER_CARNOT_FRACTION * max(1, (manip_rating + bin_rating) / 2), 0.05, 1))	//more efficient
 	air_contents.set_volume(max(initial(internal_volume) - 200, 0) + 200 * bin_rating)
 	set_power_level(power_setting)
 
 /obj/machinery/atmospherics/unary/freezer/proc/set_power_level(new_power_setting)
 	power_setting = new_power_setting
-	power_rating = max_power_rating * (power_setting/100)
+	set_power_rating(max_power_rating * (power_setting/100))
 	heat_entries_refresh(src)
 
 /obj/machinery/atmospherics/unary/freezer/examine(mob/user)

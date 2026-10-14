@@ -347,7 +347,7 @@
 	var/obj/item/pen/crayon/crayon = allocate(/obj/item/pen/crayon/red, run_loc_floor_bottom_left)
 	rc_click(H, egg, crayon, I_HELP)
 	TEST_ASSERT_EQUAL(egg.icon_state, "egg-red", "the egg is red")
-	crayon.colourName = "black"
+	crayon.set_colourName("black")
 	rc_click(H, egg, crayon, I_HELP)
 	TEST_ASSERT_EQUAL(egg.icon_state, "egg-red", "a colour it does not take leaves it red")
 

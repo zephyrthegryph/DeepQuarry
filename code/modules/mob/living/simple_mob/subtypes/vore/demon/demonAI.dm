@@ -107,7 +107,7 @@
 
 /mob/living/simple_mob/vore/demonAI/update_canmove()
 	if(is_shifting)
-		canmove = FALSE
+		set_canmove(FALSE)
 		return canmove
 	else
 		return ..()
@@ -194,4 +194,3 @@ CAPABILITIES(/mob/living/simple_mob/vore/demonAI)
 	return ..()
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
-TRACKED(/mob/living/simple_mob/vore/demonAI, is_shifting)

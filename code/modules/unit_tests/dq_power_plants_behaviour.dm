@@ -393,18 +393,18 @@
 	var/list/expected = list("1" = STAGE_ONE, "199" = STAGE_ONE, "200" = STAGE_TWO, "499" = STAGE_TWO, "500" = STAGE_THREE, "999" = STAGE_THREE,
 		"1000" = STAGE_FOUR, "1999" = STAGE_FOUR, "2000" = STAGE_FIVE, "49999" = STAGE_FIVE, "50000" = STAGE_SUPER)
 	for(var/e in expected)
-		S.energy = text2num(e)
+		S.set_energy(text2num(e))
 		S.current_size = STAGE_SUPER // never expand during the sweep
 		S.check_energy()
 		TEST_ASSERT_EQUAL(S.allowed_size, expected[e], "energy [e] allows size [expected[e]]")
 	S.current_size = STAGE_ONE
-	S.energy = 300
+	S.set_energy(300)
 	S.check_energy()
 	TEST_ASSERT_EQUAL(S.current_size, STAGE_TWO, "energy 300 grows a stage-one singularity to stage two")
 	TEST_ASSERT_EQUAL(S.grav_pull, 6, "a stage-two singularity pulls 6 tiles")
 	TEST_ASSERT_EQUAL(S.consume_range, 1, "and eats 1 tile out")
 	TEST_ASSERT_EQUAL(S.dissipate_strength, 5, "and loses 5 energy a dissipation")
-	S.energy = 100
+	S.set_energy(100)
 	S.check_energy()
 	TEST_ASSERT_EQUAL(S.current_size, STAGE_ONE, "energy 100 shrinks it back to stage one")
 
@@ -438,7 +438,7 @@
 	TEST_ASSERT_EQUAL(S.dissipate_track, 0, "the eleventh step dissipated")
 	TEST_ASSERT_EQUAL(energies[1], 102, "the first step ate the floor under it (+2)")
 	TEST_ASSERT_EQUAL(energies[11], 101, "the eleventh lost 1 to dissipation")
-	S.energy = 0
+	S.set_energy(0)
 	S.check_energy()
 	TEST_ASSERT(QDELETED(S), "a singularity at 0 energy collapses")
 

@@ -54,7 +54,6 @@ MATERIAL_MIX(/obj/item/gun/projectile/smartgun, list(MAT_STEEL = 6000, MAT_DIAMO
 		return
 	return ..()
 
-TRACKED(/obj/item/gun/projectile/smartgun, closed)
 
 CAPABILITIES(/obj/item/gun/projectile/smartgun)
 	configure(item_worn(slots = SLOT_BACK))

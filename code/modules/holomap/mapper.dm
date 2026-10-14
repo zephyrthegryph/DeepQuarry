@@ -196,7 +196,6 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 
 /// Showing and refreshing its map (start_updates()/stop_updates()).
 /obj/item/mapping_unit/var/updating = FALSE
-TRACKED(/obj/item/mapping_unit, updating)
 
 /obj/item/mapping_unit/proc/start_updates()
 	registry_join(REGISTRY_MAPPING_UNITS, src)

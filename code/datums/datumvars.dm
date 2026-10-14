@@ -11,7 +11,7 @@
 /datum/proc/vv_edit_var(var_name, var_value)
 	if(var_name == NAMEOF(src, vars))
 		return FALSE
-	datum_flags |= DF_VAR_EDITED
+	set_datum_flags(datum_flags | DF_VAR_EDITED)
 	// A trait field (VV lists `@kind.field`; SDQL may name the old var): the holder's own copy of its trait block, through set_trait().
 	if(!(var_name in vars))
 		var/list/trait_field = type_trait_field_named(src, var_name)

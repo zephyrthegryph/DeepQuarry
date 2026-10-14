@@ -38,12 +38,10 @@
 	// Future Thoughts: Baystation put "docking" stuff in a subtype, leaving base type pure and free of docking stuff. Is this best?
 
 /datum/shuttle/var/shuttle_flags = SHUTTLE_FLAGS_NONE
-TRACKED(/datum/shuttle, shuttle_flags)
 /// Long jump in transit. A field: the transit repeat runs while it is set. It is a flag rather than
 /// the destination view itself, so a landmark destroyed mid-jump still ends the jump at arrival time
 /// (falling back to the start) instead of stranding the shuttle in transit.
 /datum/shuttle/var/tmp/transit_active = FALSE
-TRACKED(/datum/shuttle, transit_active)
 /// Long jump in transit: the destination and start landmarks (relation views), and whether the
 /// landing warning was made.
 /datum/shuttle/var/tmp/obj/effect/shuttle_landmark/transit_dest
@@ -53,7 +51,6 @@ TRACKED(/datum/shuttle, transit_active)
 /datum/shuttle/var/tmp/registered = FALSE
 /// TRUE while a registered shuttle has launch/move work (shuttle_working(), kept by refresh_working()): the 2 s step runs while it is, and an idle shuttle holds no timer.
 /datum/shuttle/var/tmp/working = FALSE
-TRACKED(/datum/shuttle, working)
 
 CAPABILITIES(/datum/shuttle)
 	every(5, then(PROC_REF(long_jump_transit)), when = nameof(transit_active))

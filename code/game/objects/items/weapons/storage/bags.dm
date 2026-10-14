@@ -422,4 +422,3 @@ CAPABILITIES(/obj/item/storage/bag/santabag)
 	for(var/obj/item/stack/material/S as anything in holder.stored_items())
 		. += S.amount_read_keys()
 
-TRACKED(/obj/item/storage/bag/sheetsnatcher, capacity)

@@ -25,7 +25,7 @@
 	for(var/reagent_type in list(/datum/reagent/ethanol/vodka, /datum/reagent/ethanol/godka))
 		var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 		var/datum/reagent/drink = new reagent_type
-		H.radiation = 100
+		H.set_radiation(100)
 		drink.affect_ingest(H, null, 2)
 		TEST_ASSERT(H.radiation < 100, "[reagent_type] should lower radiation (100 -> [H.radiation])")
 		TEST_ASSERT(H.radiation >= 0, "[reagent_type] must not drive radiation negative")

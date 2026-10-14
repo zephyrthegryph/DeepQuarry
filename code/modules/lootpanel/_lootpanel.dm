@@ -16,7 +16,6 @@
 	var/tmp/turf/source_turf
 	/// TRUE while icons are left to generate (was SSlooting): the step runs on its own until the queue is empty.
 	var/tmp/imaging = FALSE
-TRACKED(/datum/lootpanel, imaging)
 
 CAPABILITIES(/datum/lootpanel)
 	owns_many(nameof(searchables), /datum/search_object)

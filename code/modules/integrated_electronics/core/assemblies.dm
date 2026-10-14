@@ -50,8 +50,6 @@ CAPABILITIES(/obj/item/electronic_assembly)
 /// handle_idle_power() actually has work to do). Recomputed on circuit/cell add/remove via
 /// Entered()/Exited(); null until first computed.
 /obj/item/electronic_assembly/var/tmp/power_relevant = null
-TRACKED(/obj/item/electronic_assembly, power_relevant)
-TRACKED(/obj/item/electronic_assembly, opened)
 
 /// Idle power every 2 s while there is power-relevant work (a battery plus a circuit that makes or draws idle power).
 /obj/item/electronic_assembly/proc/assembly_power_step(datum/act/timer/A)

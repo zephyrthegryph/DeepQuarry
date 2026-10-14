@@ -49,7 +49,6 @@
 	var/overmap_range_min = 0
 	var/overmap_range_max = 5
 
-TRACKED(/obj/machinery/telecomms, toggled)
 /// Whether the node passes signals: switched on and working.
 STAT(/obj/machinery/telecomms, running, ALL)
 

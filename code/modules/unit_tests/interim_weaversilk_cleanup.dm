@@ -50,7 +50,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/effect/weaversilk/trap/trap = allocate(/obj/effect/weaversilk/trap, T)
-	user.m_intent = I_RUN
+	user.set_m_intent(I_RUN)
 	trap.Crossed(user)
 	TEST_ASSERT_EQUAL(user.buckled_to(), trap, "actual running crossing ensnares the real target")
 	TEST_ASSERT(!trap.trap_active, "actual crossing spends the trap")

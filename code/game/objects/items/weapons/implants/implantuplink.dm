@@ -10,7 +10,7 @@ CAPABILITIES(/obj/item/implant/uplink)
 
 /obj/item/implant/uplink/post_implant(mob/source, mob/user = null)
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
-	activation_emote = pick(choices)
+	set_activation_emote(pick(choices))
 	announce_activation(source)
 	if(user && !QDELETED(user))
 		open_request(src, /datum/prompt/choice/implant_emote, PROC_REF(emote_chosen), answerer = user, choices = choices, source = source)
@@ -19,7 +19,7 @@ CAPABILITIES(/obj/item/implant/uplink)
 	var/datum/prompt/choice/implant_emote/ask = A.request
 	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.source))
 		return
-	activation_emote = ask.value
+	set_activation_emote(ask.value)
 	announce_activation(ask.source)
 
 /obj/item/implant/uplink/proc/announce_activation(mob/source)

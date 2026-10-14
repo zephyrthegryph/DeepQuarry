@@ -20,7 +20,6 @@ MSG_DEF_SELF(singularitygen/adaptable, "It looks like it could be adapted to for
 	var/energy = 0
 	var/creation_type = /obj/singularity
 
-TRACKED(/obj/machinery/the_singularitygen, energy)
 
 CAPABILITIES(/obj/machinery/the_singularitygen)
 	anchor()

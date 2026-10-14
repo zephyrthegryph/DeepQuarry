@@ -98,9 +98,6 @@ CAPABILITIES(/obj/machinery/power/thermoregulator/southerncross)
 	/// It has work each service interval: on, on the grid, and the room a degree or more off its target (reconsider()).
 	var/regulating = FALSE
 
-TRACKED(/obj/machinery/power/thermoregulator, pumping)
-TRACKED(/obj/machinery/power/thermoregulator, regulating)
-TRACKED(/obj/machinery/power/thermoregulator, target_temp)
 
 MSG_DEF(thermoregulator/bolted, "You bolt %T% to the floor.", "%U% bolts %T% to the floor.")
 MSG_DEF(thermoregulator/unbolted, "You unbolt %T% from the floor.", "%U% unbolts %T% from the floor.")

@@ -15,7 +15,6 @@
 	var/deployed = FALSE
 	var/obj/item/radio/intercom/science/ghost_reporter
 
-TRACKED(/obj/item/ghost_trap, deployed)
 
 CAPABILITIES(/obj/item/ghost_trap)
 	configure(item_thrown(force = 0))

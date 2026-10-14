@@ -75,9 +75,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/carrier)
 			var/swarm_dam_lower = FLOOR(melee_damage_lower * 0.4, 1)
 			var/swarm_dam_upper = FLOOR(melee_damage_upper * 0.4, 1)
 			swarmling.name = "spiderling"
-			swarmling.endurance = swarm_health
-			swarmling.melee_damage_lower = swarm_dam_lower
-			swarmling.melee_damage_upper = swarm_dam_upper
+			swarmling.set_endurance(swarm_health)
+			swarmling.set_melee_damage_lower(swarm_dam_lower)
+			swarmling.set_melee_damage_upper(swarm_dam_upper)
 			swarmling.faction = faction
 			swarmling.ai_brain?.serve(src) // sworn: it joins its carrier's pack and never splits off
 			swarmling.adjust_scale(0.75)

@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/stack/material/supermatter)
 	active = FALSE
 
 /obj/item/stack/material/supermatter/proc/update_mass()	// Due to how dangerous they can be, the item will get heavier and larger the more are in the stack.
-	slowdown = amount / 10
+	set_slowdown(amount / 10)
 	set_w_class(min(5, round(amount / 10) + 1))
 	throw_range = round(amount / 7) + 1
 

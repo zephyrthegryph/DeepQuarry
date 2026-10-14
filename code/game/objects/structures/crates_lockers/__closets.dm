@@ -46,7 +46,6 @@
 	var/obj/effect/overlay/closet_door/door_obj
 	var/vore_sound = SFX_EFFECTS_METALSCRAPE2
 
-TRACKED(/obj/structure/closet, opened)
 
 MSG_DEF_SELF(closet/wont_budge, "It won't budge!")
 MSG_DEF_SELF(closet/bolts_unreachable, "You can't reach the anchoring bolts when the door is closed!")
@@ -151,7 +150,7 @@ CAPABILITIES(/obj/structure/closet)
 	return starts_with
 
 /obj/structure/closet/latent_generator_clear()
-	starts_with = null
+	set_starts_with(null)
 
 /datum/relation_definition/slot/closet_interior/entry_cost(obj/structure/closet/holder, path)
 	return holder.storage_cost_of_type(path)
@@ -626,7 +625,6 @@ CAPABILITIES(/obj/structure/closet/bluespace)
 	return ..() + list("icon")
 
 
-TRACKED(/obj/structure/closet, storage_capacity)
 /obj/structure/closet/proc/set_storage_cost(value)
 	if(storage_cost == value)
 		return FALSE

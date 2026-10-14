@@ -206,7 +206,6 @@ CAPABILITIES(/datum/dq_investigate_panel)
 	var/tmp/datum/admins/holder
 	var/list/shown_rows
 
-TRACKED(/datum/unban_panel, shown_rows)
 
 /datum/unban_panel/New(datum/admins/owner_holder)
 	..()
@@ -544,8 +543,6 @@ CAPABILITIES(/datum/dq_vending_log_panel)
 	var/list/books
 	var/error_msg = ""
 
-TRACKED(/datum/dq_delete_book_panel, books)
-TRACKED(/datum/dq_delete_book_panel, error_msg)
 
 /datum/dq_delete_book_panel/New(obj/machinery/librarycomp/comp, list/book_rows, error)
 	..()

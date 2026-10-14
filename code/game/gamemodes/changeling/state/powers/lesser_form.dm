@@ -81,7 +81,7 @@
 		implants += I
 
 	C.set_transforming(1)
-	C.canmove = 0
+	C.set_canmove(0)
 	C.icon = null
 	C.cut_overlays()
 	C.set_invisibility(INVISIBILITY_ABSTRACT)

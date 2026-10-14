@@ -13,7 +13,6 @@ MSG_DEF_SELF(tf/masked, "Take the mask off first.")
 	var/ended = 0
 	var/amount = 1
 
-TRACKED(/obj/tf_site, amount)
 
 CAPABILITIES(/obj/tf_site)
 	op("start", menu(), begins(MSG(tf/begins)), starts(PROC_REF(on_start)), wait(3 SECONDS), then(PROC_REF(finished)))

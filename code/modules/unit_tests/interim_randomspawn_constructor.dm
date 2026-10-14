@@ -23,7 +23,7 @@
 	TEST_ASSERT(destination && !destination.density, "The configured real destination is an adjacent passable floor")
 	retained.teleport_x = destination.x
 	retained.teleport_y = destination.y
-	retained.teleport_z = destination.z
+	retained.set_teleport_z(destination.z)
 	var/obj/item/pen/traveller = allocate(/obj/item/pen, T)
 	retained.Trigger(traveller)
 	TEST_ASSERT_EQUAL(traveller.loc, destination, "The actual surviving trigger teleports the original real item to its configured floor")

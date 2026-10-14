@@ -30,7 +30,6 @@
 CAPABILITIES(/obj/item/material/twohanded)
 	configure(item_sounds(hit = SFX_SWING_HIT, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
-TRACKED(/obj/item/material/twohanded, wielded)
 
 /obj/item/material/twohanded/update_held_icon()
 	var/mob/living/M = loc

@@ -346,11 +346,11 @@
 	perform_op(near, C, "cover.open", origin = ORIGIN_SYSTEM)
 	var/menu_empty_bay = menu_keys(near, C, cell)
 	cell.forceMove(C)
-	C.cell = cell
+	C.set_cell(cell)
 	state_changed(C)
 	test_drain()
 	var/menu_filled_bay = menu_keys(near, C, null)
-	C.cell = null
+	C.set_cell(null)
 	state_changed(C)
 	cell.forceMove(get_turf(C))
 	test_time(5 SECONDS)

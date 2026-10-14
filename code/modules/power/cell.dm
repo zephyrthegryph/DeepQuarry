@@ -55,10 +55,6 @@
 	/// gradual_charge(): one-second charge steps still to run.
 	var/tmp/gradual_charge_left = 0
 
-TRACKED(/obj/item/cell, charge)
-TRACKED(/obj/item/cell, self_recharge)
-TRACKED(/obj/item/cell, recharging)
-TRACKED(/obj/item/cell, gradual_charge_left)
 
 // A self-charging cell steps every two seconds while it is below full; a gradual charge steps every second while it has steps left.
 MSG_DEF_SELF(cell/needs_item, "needs an item")

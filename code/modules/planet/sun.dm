@@ -10,7 +10,6 @@ CAPABILITIES(/datum/sun_holder)
 
 /// world.time the running rainbow() ends; rainbow_step() runs every 0.3 s while set (the every() below).
 /datum/sun_holder/var/tmp/rainbow_ends_at = 0
-TRACKED(/datum/sun_holder, rainbow_ends_at)
 
 /datum/sun_holder/reactions()
 	. = ..()

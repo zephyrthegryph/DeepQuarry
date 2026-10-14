@@ -7,7 +7,6 @@
 	name = "hop crate"
 	var/hop_lit = FALSE
 
-TRACKED(/obj/hop_crate, hop_lit)
 
 /obj/hop_lamp
 	name = "hop lamp"

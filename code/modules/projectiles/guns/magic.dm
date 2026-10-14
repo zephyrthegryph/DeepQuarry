@@ -21,7 +21,6 @@
 	var/charge_tick = 0
 
 /obj/item/gun/magic/var/can_charge = TRUE
-TRACKED(/obj/item/gun/magic, can_charge)
 CAPABILITIES(/obj/item/gun/magic)
 	/// Regains charges while it can charge.
 	every(2 SECONDS, then(PROC_REF(magic_step)), when = nameof(can_charge))

@@ -13,7 +13,6 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 	var/range = 2
 
 /obj/item/assembly/prox_sensor/var/timing = FALSE
-TRACKED(/obj/item/assembly/prox_sensor, timing)
 
 /obj/item/assembly/prox_sensor/activate()
 	if(!..())
@@ -71,7 +70,6 @@ TRACKED(/obj/item/assembly/prox_sensor, timing)
 		return FALSE
 	set_scanning(!scanning)
 
-TRACKED(/obj/item/assembly/prox_sensor, scanning)
 
 /obj/item/assembly/prox_sensor/holder_layers()
 	var/list/layers

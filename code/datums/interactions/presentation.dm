@@ -50,7 +50,7 @@
 	screentip_key = key
 	var/text = hovered ? interaction_screentip_text(mob, hovered, held) : null
 	if(!screentip)
-		screentip = new /atom/movable/screen/interaction_screentip // ALLOW(ownership): /client is not a datum and is the one owner of this by design
+		set_screentip(new /atom/movable/screen/interaction_screentip) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
 	if(!(screentip in screen))
 		screen += screentip
 	screentip.maptext = text ? MAPTEXT("<span style='text-align:center'>[replacetext(html_encode(text), "\n", "<br>")]</span>") : null

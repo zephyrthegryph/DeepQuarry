@@ -465,7 +465,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 		. += span_notice("Installed material parts: [jointext(material_component_manifest, "; ")].")
 
 /obj/machinery/proc/assign_uid()
-	uid = gl_uid
+	set_uid(gl_uid)
 	gl_uid++
 
 /obj/machinery/proc/state(msg)
@@ -676,7 +676,6 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 
 /// The maintenance panel is open. Written only by the panel's ops (set_panel_open() from each machine's screwdriver op).
 /obj/machinery/var/panel_open = FALSE // ALLOW(base_vars): the machine maintenance panel's tracked state, read by the panel ops and the maintenance requirements
-TRACKED(/obj/machinery, panel_open)
 
 /// Who is in the machine's sealed occupant slot `slot_id` (a /datum/relation_definition/slot/occupant), or null. The accessor requirements read: the slot
 /// publishes OCCUPANT_KEY when someone gets in or out (code/datums/containment/occupant_slot.dm), so a cached menu follows it.

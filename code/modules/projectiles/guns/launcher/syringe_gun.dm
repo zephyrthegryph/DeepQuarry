@@ -10,7 +10,6 @@ MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375)
 	/// Flying after being fired from a syringe gun: shows the flight sprite and no syringe, until it lands.
 	var/in_flight = FALSE
 
-TRACKED(/obj/item/syringe_cartridge, in_flight)
 
 /// The loaded syringe and its filling, drawn with the cartridge (the legacy look put them under the cartridge sprite; the look has no underlays).
 /obj/item/syringe_cartridge/draw(datum/look/look)

@@ -17,7 +17,6 @@
 
 
 /obj/item/t_scanner/var/on = 0
-TRACKED(/obj/item/t_scanner, on)
 /// The look (the draw sweep: from its template).
 /obj/item/t_scanner/draw(datum/look/look)
 	..()

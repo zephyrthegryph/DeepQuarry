@@ -5,7 +5,7 @@
 	var/obj/machinery/turretid/controller = allocate(/obj/machinery/turretid, T)
 	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, T)
 	var/obj/item/card/id/id = allocate(/obj/item/card/id, T)
-	card.uses = 3
+	card.set_uses(3)
 	id.access = list(ACCESS_AI_UPLOAD)
 	controller.set_ailock(TRUE)
 	var/area_before = controller.control_area

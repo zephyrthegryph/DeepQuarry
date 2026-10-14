@@ -40,7 +40,6 @@
 	force_divisor = 0.1 // 6 when wielded with hardness 60 (steel)
 	thrown_force_divisor = 0.2 // 4 when thrown with weight 20 (steel)
 
-TRACKED(/obj/item/material/butterfly, active)
 
 CAPABILITIES(/obj/item/material/butterfly)
 	configure(item_combat(attack_verbs = list("patted", "tapped")))

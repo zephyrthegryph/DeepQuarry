@@ -78,8 +78,6 @@
 
 // ---- state ----
 
-TRACKED(/obj/machinery/door/airlock, lights)
-TRACKED(/obj/machinery/door/airlock, frozen)
 
 /// Touching the door shocks (a held thing takes a smaller shock): who electrified it is the hold's source. TOP with base 0, the rule of the suit
 /// cycler's stat of the same name: every hold is TRUE, so the door is live while anyone holds it.

@@ -180,7 +180,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
 	var/bump = vore_bump_chance
 	winterize()
 	if(GLOB.world_time_season == "autumn")
-		vore_bump_chance = bump // an autumn squirrel stays as keen in its winter coat
+		set_vore_bump_chance(bump) // an autumn squirrel stays as keen in its winter coat
 
 /// The eyes, drawn unaffected by the tint of the body.
 /mob/living/simple_mob/vore/squirrel/draw(datum/look/look)
@@ -192,18 +192,18 @@ CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
 
 	icon = 'icons/mob/alienanimals_96x64.dmi'
 
-	endurance = 200
+	set_endurance(200)
 	movement_cooldown = 1
 	meat_amount = 6
 	harm_intent_damage = 1
 
 	pixel_x = -32
-	default_pixel_x = -32
-	vis_height = 64
+	set_default_pixel_x(-32)
+	set_vis_height(64)
 
 	swallowTime = 1 SECOND
 	vore_capacity = 3
-	vore_bump_chance = 5
+	set_vore_bump_chance(5)
 	set_mob_size(MOB_LARGE)
 
 /mob/living/simple_mob/vore/squirrel/verb/squirrel_color()

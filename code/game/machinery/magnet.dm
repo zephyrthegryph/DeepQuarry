@@ -181,9 +181,7 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 
 /// TRUE while the magnets are walked along the path.
 /obj/machinery/magnetic_controller/var/path_moving = FALSE
-TRACKED(/obj/machinery/magnetic_controller, path_moving)
 /obj/machinery/magnetic_controller/var/path_stopped = FALSE
-TRACKED(/obj/machinery/magnetic_controller, path_stopped)
 /// Walks the magnets one path step every magnet_delay() while moving.
 /obj/machinery/magnetic_controller/proc/reset_path_repeat(datum/act/A)
 	set_path_stopped(FALSE)

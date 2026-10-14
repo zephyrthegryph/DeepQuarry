@@ -89,7 +89,7 @@
 	can_randomize = FALSE
 
 /datum/preference/toggle/human/offset_override/apply_to_human(mob/living/carbon/human/target, value)
-	target.offset_override = value
+	target.set_offset_override(value)
 
 
 /datum/preference/numeric/human/voice_freq

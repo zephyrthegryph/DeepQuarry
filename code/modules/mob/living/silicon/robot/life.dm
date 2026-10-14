@@ -219,7 +219,7 @@
 /mob/living/silicon/robot/update_canmove()
 	..() // Let's not reinvent the wheel.
 	if(lockdown || !is_component_functioning(ROBOT_SLOT_ACTUATOR))
-		canmove = FALSE
+		set_canmove(FALSE)
 	return canmove
 
 /mob/living/silicon/robot/update_fire()

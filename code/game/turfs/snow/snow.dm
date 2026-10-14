@@ -11,7 +11,6 @@
 	initial_temperature = TN60C
 	var/list/crossed_dirs
 
-TRACKED(/turf/snow, crossed_dirs)
 
 /turf/snow/Entered(atom/A)
 	if(ismob(A) && !A.is_incorporeal())

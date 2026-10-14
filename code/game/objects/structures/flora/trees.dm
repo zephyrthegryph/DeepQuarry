@@ -188,7 +188,6 @@ CAPABILITIES(/obj/structure/flora/tree)
 	var/gift_type = /obj/item/a_gift
 	var/list/ckeys_that_took
 
-TRACKED(/obj/structure/flora/tree/pine/xmas/presents, ckeys_that_took)
 
 CAPABILITIES(/obj/structure/flora/tree/pine/xmas/presents)
 	op("take_present", hand(), label("Take a present"), priority(OP_PRIORITY_NORMAL + 1), needs(req(PROC_REF(can_take_present), because = MSG(xmas_presents/none_left))), then(PROC_REF(interaction_hand)))

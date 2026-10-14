@@ -34,7 +34,6 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 
-TRACKED(/obj/effect/map_effect/beam_point, use_timer)
 
 /// The timer runs while a client is near (STAT_RELEVANCE); with nobody around it parks.
 CAPABILITIES(/obj/effect/map_effect/beam_point)

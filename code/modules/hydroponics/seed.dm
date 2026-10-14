@@ -798,7 +798,7 @@
 
 		if(harvest_sample)
 			var/obj/item/seeds/seeds = new(get_turf(user))
-			seeds.seed_type = name
+			seeds.set_seed_type(name)
 			seeds.update_seed()
 			return
 

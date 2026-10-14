@@ -32,7 +32,6 @@
 	/// It has work each service interval: switched on and working, with algae, room for graphite and CO2 to convert (reconsider()).
 	var/working = FALSE
 
-TRACKED(/obj/machinery/atmospherics/binary/algae_farm, working)
 
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)

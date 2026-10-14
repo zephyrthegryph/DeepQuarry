@@ -9,7 +9,6 @@
 	var/gauge = 0
 	var/stale_open = TRUE
 
-TRACKED(/obj/stale_probe, gauge)
 
 STAT(/obj/stale_probe, stale_low, ALL, virtual = TRUE)
 STAT(/obj/stale_probe, stale_open, ALL)
@@ -31,8 +30,13 @@ CAPABILITIES(/obj/stale_probe)
 	var/glow = 0
 	var/noise = 0
 
-TRACKED(/obj/stale_lamp, glow)
-TRACKED(/obj/stale_lamp, noise)
+/obj/stale_lamp/proc/set_glow(value)
+	if(TRACKED_UNCHANGED(glow, value))
+		return FALSE
+	glow = value
+	tracked_changed(src, nameof(glow))
+	return TRUE
+SETTER(/obj/stale_lamp, glow)
 
 /obj/stale_lamp/derived()
 	. = ..()

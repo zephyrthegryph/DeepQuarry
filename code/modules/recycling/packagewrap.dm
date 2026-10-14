@@ -113,7 +113,6 @@ CAPABILITIES(/obj/item/packageWrap)
 	var/recharge_ticker = 0
 	/// TRUE while the dispenser is short (wrap_used() sets it): the slow step refills it; full, it parks.
 	var/tmp/refilling = FALSE
-TRACKED(/obj/item/packageWrap/borg, refilling)
 
 CAPABILITIES(/obj/item/packageWrap/borg)
 	every(2 SECONDS, then(PROC_REF(refill_step)), when = nameof(refilling))

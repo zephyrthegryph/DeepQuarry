@@ -12,7 +12,7 @@
 
 /// The drink can't be opened (it has no ring pull).
 /proc/rc_drink_make_cant_open(obj/item/reagent_containers/food/drinks/D)
-	D.cant_open = TRUE
+	D.set_cant_open(TRUE)
 
 /// How many times the can has been shaken.
 /proc/rc_can_shaken(obj/item/reagent_containers/food/drinks/cans/C)

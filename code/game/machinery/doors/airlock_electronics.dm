@@ -16,10 +16,6 @@ MATERIAL_MIX(/obj/item/airlock_electronics, list(MAT_STEEL = 50,MAT_GLASS = 50))
 	var/locked = 1
 	var/emagged = 0
 
-TRACKED(/obj/item/airlock_electronics, locked)
-TRACKED(/obj/item/airlock_electronics, conf_access)
-TRACKED(/obj/item/airlock_electronics, one_access)
-TRACKED(/obj/item/airlock_electronics, last_configurator)
 
 MSG_DEF_SELF(airlock_electronics/hardened, "You don't appear to be able to bypass this hardened device!")
 MSG_DEF_SELF(airlock_electronics/logged_out, "It is locked: log in first.")

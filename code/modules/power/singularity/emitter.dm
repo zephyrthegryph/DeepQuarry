@@ -51,7 +51,6 @@ MSG_DEF(emitter/shorted, "You short out the lock.", "%U% emags %T%.")
 
 	max_integrity = 80
 
-TRACKED(/obj/machinery/power/emitter, anomalous)
 
 CAPABILITIES(/obj/machinery/power/emitter)
 	configure(uses_power(active = 30000))
@@ -273,7 +272,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 /obj/machinery/power/emitter/proc/get_emitter_beam()
 	if(anomalous)
 		var/obj/item/projectile/energy/anomaly/projectile = new /obj/item/projectile/energy/anomaly(get_turf(src))
-		projectile.particle_type = particle
+		projectile.set_particle_type(particle)
 		return projectile
 	return new /obj/item/projectile/beam/emitter(get_turf(src))
 
@@ -314,7 +313,6 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	anchored = TRUE
 	state = FLOOR_WELD_WELDED
 
-TRACKED(/obj/machinery/power/emitter, state)
 
 /obj/machinery/power/emitter/floor_weld_state()
 	return state

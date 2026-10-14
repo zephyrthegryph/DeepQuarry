@@ -341,7 +341,6 @@ CAPABILITIES(/obj/machinery/button/remote/airlock/release)
 	name = "single use button"
 	var/has_been_pressed = FALSE
 
-TRACKED(/obj/machinery/button/remote/blast_door/single_use, has_been_pressed)
 
 /obj/machinery/button/remote/blast_door/single_use/can_press(datum/act/A)
 	return !has_been_pressed ? null : MSG(button/spent)

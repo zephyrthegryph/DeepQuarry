@@ -36,7 +36,6 @@ CAPABILITIES(/obj/item/paperplane)
 	sync_stamps()
 
 
-TRACKED(/obj/item/paperplane, stamp_marks)
 
 /// Copies the stamps of the plane's paper into stamp_marks. Called when the paper is folded in and after a stamp lands on it.
 /obj/item/paperplane/proc/sync_stamps()

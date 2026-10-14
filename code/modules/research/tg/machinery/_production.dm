@@ -32,7 +32,6 @@
 	/// The print run under way (fabricator()), owned while it runs.
 	var/datum/fab_run/print_run
 
-TRACKED(/obj/machinery/rnd/production, stripe_color)
 
 CAPABILITIES(/obj/machinery/rnd/production)
 	configure(uses_power(active = 5000))
@@ -189,7 +188,7 @@ CAPABILITIES(/obj/machinery/rnd/production)
 	. = ..()
 	var/total_storage = get_part_rating(/obj/item/stock_parts/matter_bin) * 37.5 * SHEET_MATERIAL_AMOUNT
 	materials.set_local_size(total_storage)
-	efficiency_coeff = compute_efficiency()
+	set_efficiency_coeff(compute_efficiency())
 	update_static_data_for_all_viewers()
 
 ///Computes this machines cost efficiency based on the available parts

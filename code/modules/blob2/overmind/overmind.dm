@@ -103,7 +103,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 		return TRUE
 
 /mob/observer/blob/proc/add_points(points)
-	blob_points = between(0, blob_points + points, max_blob_points)
+	set_blob_points(between(0, blob_points + points, max_blob_points))
 
 /mob/observer/blob/upkeep()
 	..()

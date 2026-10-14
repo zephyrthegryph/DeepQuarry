@@ -10,7 +10,6 @@
 	/// Untracked on purpose: break_raw() writes it with no setter, so nothing publishes it.
 	var/raw_ok = TRUE
 
-TRACKED(/obj/gdeps_probe, gauge)
 
 STAT(/obj/gdeps_probe, gdeps_low, ALL, virtual = TRUE)
 STAT(/obj/gdeps_probe, gdeps_raw, ALL, virtual = TRUE)
@@ -23,14 +22,13 @@ CAPABILITIES(/obj/gdeps_probe)
 	return gauge < 5
 
 /obj/gdeps_probe/proc/break_raw()
-	raw_ok = FALSE
+	set_raw_ok(FALSE)
 
 /// A draw fixture: an exact type (it declares a derived() entry) whose draw reads a var its derived() does not list.
 /obj/gdeps_lamp
 	name = "generated deps lamp"
 	var/glow_level = 0
 
-TRACKED(/obj/gdeps_lamp, glow_level)
 
 /obj/gdeps_lamp/derived()
 	. = ..()

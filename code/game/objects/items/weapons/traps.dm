@@ -24,7 +24,6 @@
 /obj/item/beartrap/start_active
 	deployed = TRUE
 
-TRACKED(/obj/item/beartrap, deployed)
 
 /obj/item/beartrap/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())

@@ -63,7 +63,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	/// Is it in the growing registry? The growth every() below runs while it is.
 	var/growing = FALSE
 
-TRACKED(/obj/effect/plant, growing)
 
 CAPABILITIES(/obj/effect/plant)
 	every(7.5 SECONDS, then(PROC_REF(plant_step)), when = nameof(growing))
@@ -147,8 +146,6 @@ CAPABILITIES(/obj/effect/plant)
 		var/turf/T = get_turf(src)
 		T.ex_act(prob(80) ? 3 : 2)
 
-TRACKED(/obj/effect/plant, health)
-TRACKED(/obj/effect/plant, wall_shift)
 
 /// The most stages the plant reaches: its own, held back at the fringe of its spread.
 /obj/effect/plant/proc/plant_growth_cap()

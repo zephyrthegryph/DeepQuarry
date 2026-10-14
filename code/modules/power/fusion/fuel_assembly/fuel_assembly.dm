@@ -16,7 +16,6 @@
 
 /// Radioactive rods pulse radiation (periodic_step()) for as long as they are radioactive.
 /obj/item/fuel_assembly/var/radioactivity = 0
-TRACKED(/obj/item/fuel_assembly, radioactivity)
 CAPABILITIES(/obj/item/fuel_assembly)
 	every(2 SECONDS, then(PROC_REF(fuel_assembly_step)), when = nameof(radioactivity))
 	param(nameof(fuel_type), pos = 1)

@@ -91,7 +91,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The landmark is tagged for its ship's shuttle.
 /obj/effect/shuttle_landmark/ship/proc/tag_for_shuttle(for_shuttle)
 	landmark_tag += "_[for_shuttle]"
-	base_turf = world.turf
+	set_base_turf(world.turf)
 
 /obj/effect/shuttle_landmark/ship/is_valid(datum/shuttle/shuttle)
 	return (isnull(loc) || ..()) // If it doesn't exist yet, its clear

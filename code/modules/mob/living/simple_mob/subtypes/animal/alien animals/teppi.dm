@@ -646,9 +646,6 @@ MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%.")
 	if(vitality() <= 0.75)
 		. += span_notice("They look beat up.")
 
-TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, eye_color)
-TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, skin_color)
-TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 
 /mob/living/simple_mob/vore/alienanimals/teppi/life_type_post_due()
 	return TRUE

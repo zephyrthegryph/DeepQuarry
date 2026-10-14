@@ -22,7 +22,6 @@ STAT(/obj/e3_rules, e3_mask_or, MASK_OR)
 STAT(/obj/e3_rules, e3_keyed, SUM_PER_KEY)
 STAT(/obj/e3_rules, e3_formula, FORMULA, formula = PROC_REF(compute_formula), reads = list("e3_seed", "e3_sum"))
 
-TRACKED(/obj/e3_rules, e3_seed)
 
 /obj/e3_rules/proc/compute_formula(datum/act/A)
 	return e3_seed * 2 + e3_sum
@@ -38,8 +37,6 @@ STAT(/obj/e3_machine, e3_draw, SUM)
 STAT(/obj/e3_machine, e3_can_run, ALL)
 STAT(/obj/e3_machine, e3_stun, MAX, base = 0, units = LIFE_CYCLE, reapply = REAPPLY_MAX)
 
-TRACKED(/obj/e3_machine, broken)
-TRACKED(/obj/e3_machine, e3_on)
 
 CAPABILITIES(/obj/e3_machine)
 	contributes(STAT_E3_OPERABLE, cond_not(nameof(broken)))
@@ -65,7 +62,6 @@ CAPABILITIES(/obj/e3_machine/stoic)
 	var/channel_on = TRUE
 	var/list/loads
 
-TRACKED(/obj/e3_apc, channel_on)
 
 CAPABILITIES(/obj/e3_apc)
 	ref_many(nameof(loads), /obj/e3_load)
@@ -89,7 +85,6 @@ CAPABILITIES(/obj/e3_load)
 	var/obj/e3_machine/plugged
 	var/live = TRUE
 
-TRACKED(/obj/e3_wire, live)
 
 CAPABILITIES(/obj/e3_wire)
 	ref_one(nameof(plugged), /obj/e3_machine)

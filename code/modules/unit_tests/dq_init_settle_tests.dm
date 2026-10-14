@@ -10,7 +10,6 @@
 	/// What the hook saw: was the map load still open when it ran?
 	var/ran_during_load = FALSE
 
-TRACKED(/obj/dq_settle_lamp, lit)
 
 CAPABILITIES(/obj/dq_settle_lamp)
 	on_change(nameof(lit), ENTER, then(PROC_REF(on_lit)))

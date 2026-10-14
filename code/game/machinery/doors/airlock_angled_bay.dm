@@ -38,7 +38,13 @@
  */
 
 
-TRACKED(/obj/machinery/door/airlock/angled_bay, icon)
+/obj/machinery/door/airlock/angled_bay/proc/set_icon(value)
+	if(TRACKED_UNCHANGED(icon, value))
+		return FALSE
+	icon = value
+	tracked_changed(src, nameof(icon))
+	return TRUE
+SETTER(/obj/machinery/door/airlock/angled_bay, icon)
 
 /obj/machinery/door/airlock/angled_bay
 	icon_state = "preview"

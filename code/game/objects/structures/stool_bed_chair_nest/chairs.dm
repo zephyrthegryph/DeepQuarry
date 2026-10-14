@@ -54,7 +54,6 @@ CAPABILITIES(/obj/structure/bed/chair)
 	return TRUE
 
 /// Tracked, set from post_buckle_mob() on every buckle and unbuckle: the armrests are drawn over the rider.
-TRACKED(/obj/structure/bed/chair, occupied)
 
 /obj/structure/bed/chair/post_buckle_mob()
 	set_occupied(has_buckled_mobs())

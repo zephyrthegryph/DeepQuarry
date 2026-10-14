@@ -65,18 +65,7 @@
 	)
 	var/open_sound = SFX_MACHINES_FIRELOCKOPEN // firedoor sound variable.
 	var/close_sound = SFX_MACHINES_FIRELOCKCLOSE // firedoor sound variable.
-TRACKED(/obj/machinery/door/firedoor, air_hot_0)
-TRACKED(/obj/machinery/door/firedoor, air_cold_0)
-TRACKED(/obj/machinery/door/firedoor, air_hot_1)
-TRACKED(/obj/machinery/door/firedoor, air_cold_1)
-TRACKED(/obj/machinery/door/firedoor, air_hot_2)
-TRACKED(/obj/machinery/door/firedoor, air_cold_2)
-TRACKED(/obj/machinery/door/firedoor, air_hot_3)
-TRACKED(/obj/machinery/door/firedoor, air_cold_3)
-TRACKED(/obj/machinery/door/firedoor, air_hot_4)
-TRACKED(/obj/machinery/door/firedoor, air_cold_4)
 
-TRACKED(/obj/machinery/door/firedoor, hatch_open)
 
 /obj/machinery/door/firedoor/Initialize(mapload)
 	. = ..()

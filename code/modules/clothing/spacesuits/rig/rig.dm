@@ -228,7 +228,6 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 
 /// TRUE while it is on a mob; set by Moved().
 /obj/item/rig/var/carried_by_mob = FALSE
-TRACKED(/obj/item/rig, carried_by_mob)
 
 /obj/item/rig/Moved(old_loc, direction, forced)
 	set_carried_by_mob(ismob(loc) ? TRUE : FALSE)

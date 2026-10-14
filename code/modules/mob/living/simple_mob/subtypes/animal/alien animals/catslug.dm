@@ -150,7 +150,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 	if(yum)
 		yum = (yum * 20) / 3
 		adjust_nutrition(yum) //add the nutriment!
-	O.bitecount ++
+	O.set_bitecount(O.bitecount + 1)
 	if(O.bitecount >= 3)
 		consume(O, user)
 		act_message(src, O, null, MSG_OTHERS(span_notice("%U% eats %T%.")))

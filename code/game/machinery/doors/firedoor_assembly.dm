@@ -8,7 +8,6 @@
 	density = TRUE
 	var/glass = FALSE
 
-TRACKED(/obj/structure/firedoor_assembly, glass)
 
 /// The look (the draw sweep: from its layers).
 /obj/structure/firedoor_assembly/draw(datum/look/look)

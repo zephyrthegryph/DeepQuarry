@@ -530,7 +530,6 @@ CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/tactical)
 CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/aviator)
 	op("aviator_mode_self", in_hand(), label("Switch mode"), then(PROC_REF(aviator_mode_self)))
 
-TRACKED(/obj/item/clothing/glasses/sunglasses/sechud/aviator, on)
 
 /// Old attack_self.
 /obj/item/clothing/glasses/sunglasses/sechud/aviator/proc/aviator_mode_self(datum/act/op/A)
@@ -702,7 +701,6 @@ CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
 	icon_state = "modkit"
 	var/scrip_loaded = 0
 
-TRACKED(/obj/item/glasses_kit, scrip_loaded)
 
 // Five seconds with the kit on someone's eyes (it builds a prescription) or on a pair of glasses (it applies it). Used on yourself it does nothing.
 CAPABILITIES(/obj/item/glasses_kit)

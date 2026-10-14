@@ -10,10 +10,6 @@
 	var/exact = FALSE
 	var/sediment_scan = TRUE
 
-TRACKED(/obj/item/mining_scanner, sediment_scan)
-TRACKED(/obj/item/mining_scanner, range)
-TRACKED(/obj/item/mining_scanner, scan_time)
-TRACKED(/obj/item/mining_scanner, exact)
 
 CAPABILITIES(/obj/item/mining_scanner)
 	held_verb(/obj/item/mining_scanner/proc/toggle_sediment_scan, SLOT_ANY_CARRIED)

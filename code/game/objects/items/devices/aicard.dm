@@ -152,7 +152,7 @@ CAPABILITIES(/obj/item/aicard)
 	if(user.client)
 		to_chat(ai, span_notice(span_bold("Transfer successful:")) + " [ai.name] extracted from current device and placed within mobile core.")
 
-	ai.canmove = 1
+	ai.set_canmove(1)
 	return OP_OK
 
 /obj/item/aicard/proc/clear()

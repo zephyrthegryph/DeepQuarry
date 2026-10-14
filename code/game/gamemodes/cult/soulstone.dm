@@ -83,7 +83,7 @@ CAPABILITIES(/obj/item/soulstone)
 		return FALSE
 	for(var/mob/living/simple_mob/construct/shade/A2 in contents_of(src))
 		A2.disable_godmode()
-		A2.canmove = 1
+		A2.set_canmove(1)
 		to_chat(A2, span_infoplain(span_bold("You have been released from your prison, but you are still bound to [user.name]'s will. Help them suceed in their goals at all costs.")))
 		A2.forceMove(user.loc)
 		A2.cancel_camera()
@@ -150,7 +150,7 @@ CAPABILITIES(/obj/structure/constructshell)
 	var/mob/living/simple_mob/construct/shade/S = new /mob/living/simple_mob/construct/shade( T.loc )
 	S.forceMove(src) //put shade in stone
 	S.enable_godmode()
-	S.canmove = 0//Can't move out of the soul stone
+	S.set_canmove(0)//Can't move out of the soul stone
 	S.name = "Shade of [T.real_name]"
 	S.set_real_name("Shade of [T.real_name]")
 	S.icon = T.icon
@@ -186,7 +186,7 @@ CAPABILITIES(/obj/structure/constructshell)
 
 	T.forceMove(src) //put shade in stone
 	T.enable_godmode()
-	T.canmove = 0
+	T.set_canmove(0)
 	T.fully_heal()
 	set_icon_state("soulstone2")
 

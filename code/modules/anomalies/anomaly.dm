@@ -51,7 +51,6 @@ CAPABILITIES(/obj/item/anomaly_neutralizer)
 
 CAPABILITIES(/obj/item/anomaly_releaser)
 	configure(item_thrown(force = 0))
-TRACKED(/obj/item/anomaly_releaser, used)
 
 /obj/item/anomaly_releaser/science
 	icon = 'icons/obj/devices/tool.dmi'
@@ -171,7 +170,7 @@ CAPABILITIES(/obj/item/gun/energy/anomaly)
 		M.hud_used.update_ammo_hud(M, src)
 	var/obj/item/projectile/energy/anomaly/projectile = new
 	if(particle)
-		projectile.particle_type = particle
+		projectile.set_particle_type(particle)
 	return projectile
 
 /obj/item/storage/box/anomaly

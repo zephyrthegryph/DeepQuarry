@@ -689,7 +689,7 @@
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	var/frames = life_test_frames(H)
 	H.status_set(STAT_SLEEPING, 2)
-	H.canmove = TRUE
+	H.set_canmove(TRUE)
 	life_test_raise(H, MOB_KEY_STATUS)
 	TEST_ASSERT(!life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "a clientless mob queues no HUD pass")
 	TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_canmove_changed)), "the canmove reaction is queued")

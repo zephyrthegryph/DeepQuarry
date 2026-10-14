@@ -169,7 +169,7 @@ CAPABILITIES(/obj/item/eftpos)
 		if(isnull(trycode))
 			return
 		if(trycode >= 1000 && trycode <= 999999)
-			access_code = trycode
+			set_access_code(trycode)
 		else
 			tgui_alert_async(user, "That is not a valid code!")
 		print_reference()
@@ -305,10 +305,10 @@ CAPABILITIES(/obj/item/eftpos)
 	if(istype(I, /obj/item/card))
 		var/obj/item/card/id/C = I
 		if((ACCESS_CENT_CAPTAIN in C.access) || (ACCESS_HOP in C.access) || (ACCESS_CAPTAIN in C.access))
-			access_code = 0
+			set_access_code(0)
 			to_chat(user, "[icon2html(src, user.client)]" + span_info("Access code reset to 0."))
 	else if(istype(I, /obj/item/card/emag))
-		access_code = 0
+		set_access_code(0)
 		to_chat(user, "[icon2html(src, user.client)]" + span_info("Access code reset to 0."))
 	return TRUE
 

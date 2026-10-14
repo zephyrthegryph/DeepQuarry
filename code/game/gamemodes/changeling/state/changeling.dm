@@ -106,10 +106,8 @@ CAPABILITIES(/datum/changeling)
 
 /// The voice we mimic, or "". Costs a chemical every 4 seconds while set (mimic_voice.dm, every()).
 /datum/changeling/var/mimicing = ""
-TRACKED(/datum/changeling, mimicing)
 /// Digital camouflage we turned on. Costs a chemical every 4 seconds while set (digital_camo.dm, every()).
 /datum/changeling/var/camo_draining = FALSE
-TRACKED(/datum/changeling, camo_draining)
 
 /datum/changeling/New(mob/living/new_owner)
 	..()

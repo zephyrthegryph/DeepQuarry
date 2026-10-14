@@ -53,7 +53,7 @@ CAPABILITIES(/obj/singularity/energy_ball)
 		// One step per decisecond, then the zap (basket_ball_step()).
 		basket_ball_step(max(2 SECONDS - 5, 4 + length(orbiting_balls()) * 1.5), dir)
 	else
-		energy = 0 // ensure we dont have miniballs of miniballs
+		set_energy(0) // ensure we dont have miniballs of miniballs
 
 /obj/singularity/energy_ball/proc/zap_after_move()
 	play_sfx(src, SFX_EFFECTS_LIGHTNINGBOLT, extrarange = 30)
@@ -327,7 +327,7 @@ CAPABILITIES(/obj/singularity/energy_ball)
 	if(drain_energy && istype(source, /obj/singularity/energy_ball))
 		var/obj/singularity/energy_ball/EB = source
 		if (EB.energy > 0)
-			EB.energy -= min(EB.energy, max(10, round(EB.energy * 0.05)))
+			EB.set_energy(EB.energy - (min(EB.energy, max(10, round(EB.energy * 0.05)))))
 
 #undef TESLA_DEFAULT_POWER
 #undef TESLA_MINI_POWER

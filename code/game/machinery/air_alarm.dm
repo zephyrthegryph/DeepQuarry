@@ -122,11 +122,6 @@ STAT(/obj/machinery/alarm, aidisabled, ANY)
 /// The power wire shorts the alarm: cut, until mended; pulsed, for twenty minutes (power_wires()).
 STAT(/obj/machinery/alarm, shorted, ANY)
 
-TRACKED(/obj/machinery/alarm, regulating_temperature)
-TRACKED(/obj/machinery/alarm, scanning)
-TRACKED(/obj/machinery/alarm, target_temperature)
-TRACKED(/obj/machinery/alarm, rcon_setting)
-TRACKED(/obj/machinery/alarm, thermostat_mode)
 
 CAPABILITIES(/obj/machinery/alarm)
 	configure(light_glow(power = 0.25))

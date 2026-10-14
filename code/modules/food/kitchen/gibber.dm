@@ -60,8 +60,6 @@ CAPABILITIES(/obj/machinery/gibber/autogibber)
 			M.forceMove(src)
 			M.gib()
 
-TRACKED(/obj/machinery/gibber, operating)
-TRACKED(/obj/machinery/gibber, dirty)
 
 /// Appearance reader: which status light the gibber shows.
 /obj/machinery/gibber/proc/appearance_gibber_light()

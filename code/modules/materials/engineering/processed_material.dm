@@ -29,10 +29,10 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	var/datum/material/new_material = get_material_by_name(material_name)
 	if(!new_material)
 		return FALSE
-	default_type = material_name
+	set_default_type(material_name)
 	set_material(new_material)
-	recipes = material.get_recipes()
-	stacktype = material.stack_type
+	set_recipes(material.get_recipes())
+	set_stacktype(material.stack_type)
 	if(apply_colour || pass_color)
 		color = material.icon_colour
 	if(material.conductive)
@@ -81,8 +81,8 @@ CAPABILITIES(/datum/material/processed_alloy)
 	var/key = "processed_alloy_[copytext(fingerprint, 1, 13)]"
 	var/datum/material/processed_alloy/material = new
 	material.set_name(key)
-	material.display_name = batch.display_name()
-	material.use_name = material.display_name
+	material.set_display_name(batch.display_name())
+	material.set_use_name(material.display_name)
 	rel_set(material, nameof(material.batch_template), batch.copy_batch())
 	// A template is a definition, not a piece of stock: it records the temperature stock is made at and holds no heat of its own.
 	material.batch_template.settle_heat(null)
@@ -316,7 +316,6 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 
 /// Hot stock glowing and cooling towards ambient (update_thermal_processing(), processed_alloy_step()).
 /obj/item/stack/material/processed_alloy/var/hot = FALSE
-TRACKED(/obj/item/stack/material/processed_alloy, hot)
 
 /obj/item/stack/material/processed_alloy/proc/physical_batch() as /datum/material_batch
 	if(batch_state)
@@ -430,10 +429,10 @@ TRACKED(/obj/item/stack/material/processed_alloy, hot)
 	var/datum/material/new_material = get_material_by_name(material_name)
 	if(!istype(new_material, /datum/material/processed_alloy))
 		return FALSE
-	default_type = material_name
+	set_default_type(material_name)
 	set_material(new_material)
-	recipes = material.get_recipes()
-	stacktype = material.stack_type
+	set_recipes(material.get_recipes())
+	set_stacktype(material.stack_type)
 	color = material.icon_colour
 	if(material.conductive)
 		flags &= ~NOCONDUCT

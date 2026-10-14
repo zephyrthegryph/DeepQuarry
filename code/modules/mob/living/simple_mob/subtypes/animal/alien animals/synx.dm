@@ -516,10 +516,10 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	if(!stomach_distended && !transformed) //true if stomach distended is null, 0, or ""
 		set_stomach_distended(!stomach_distended) //switch statement
 		to_chat (src, span_notice("You disgorge your stomach, spilling its contents!"))
-		melee_damage_lower = 1 //Hopefully this will make all brute damage not apply while stomach is distended. I don't see a better way to do this.
-		melee_damage_upper = 1
+		set_melee_damage_lower(1) //Hopefully this will make all brute damage not apply while stomach is distended. I don't see a better way to do this.
+		set_melee_damage_upper(1)
 		set_icon_living(stomach_distended_state)
-		attacktext = (attacktext + distend_attacktext) - initial_attacktext // a new list: the type's table is shared (per_type())
+		set_attacktext((attacktext + distend_attacktext) - initial_attacktext) // a new list: the type's table is shared (per_type())
 
 		for(var/belly in src.vore_organs) //Spit out all contents because our insides are now outsides
 			var/obj/belly/B = belly
@@ -531,20 +531,16 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	if(stomach_distended) //If our stomach has been vomitted
 		set_stomach_distended(!stomach_distended)
 		to_chat (src, span_notice("You swallow your insides!"))
-		melee_damage_lower = SYNX_LOWER_DAMAGE //This is why I'm using a define
-		melee_damage_upper = SYNX_UPPER_DAMAGE
+		set_melee_damage_lower(SYNX_LOWER_DAMAGE) //This is why I'm using a define
+		set_melee_damage_upper(SYNX_UPPER_DAMAGE)
 		set_icon_living(initial(icon_living))
-		attacktext = (attacktext + initial_attacktext) - distend_attacktext // a new list: the type's table is shared (per_type())
+		set_attacktext((attacktext + initial_attacktext) - distend_attacktext) // a new list: the type's table is shared (per_type())
 		return
 
 ///
 ///		Icon generation stuff
 ///
 
-TRACKED(/mob/living/simple_mob/animal/synx, overlay_colors)
-TRACKED(/mob/living/simple_mob/animal/synx, body_style)
-TRACKED(/mob/living/simple_mob/animal/synx, horns)
-TRACKED(/mob/living/simple_mob/animal/synx, eyes)
 
 /// The modular look: tinted body, horns, markings and eyes layers over the base state, and the belly sprites unless transformed (they do not exist yet).
 /mob/living/simple_mob/animal/synx/draw(datum/look/look)

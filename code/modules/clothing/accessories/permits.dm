@@ -10,7 +10,6 @@
 	var/owner = 0	//To prevent people from just renaming the thing if they steal it
 	special_handling = TRUE
 
-TRACKED(/obj/item/clothing/accessory/permit, owner)
 
 MSG_DEF_SELF(permit/already_registered, "%T% already has an owner!")
 MSG_DEF_SELF(permit/reset, "You reset the naming locks on %T%!")

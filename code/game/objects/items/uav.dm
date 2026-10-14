@@ -230,7 +230,6 @@ CAPABILITIES(/obj/item/uav)
 // "2" is UAV_PAIRING.
 
 /obj/item/uav/var/state = UAV_OFF
-TRACKED(/obj/item/uav, state)
 
 /// Whether it flies (the every() gate, polled).
 /obj/item/uav/proc/is_flying(datum/act/A)
@@ -276,13 +275,13 @@ TRACKED(/obj/item/uav, state)
 		if(UAV_OFF) //Packing
 			set_state(UAV_PACKED)
 			set_w_class(ITEMSIZE_LARGE)
-			slowdown = 0.5
+			set_slowdown(0.5)
 			set_density(FALSE)
 			return TRUE
 		if(UAV_PACKED) //Unpacking
 			set_state(UAV_OFF)
 			set_w_class(ITEMSIZE_HUGE)
-			slowdown = 1.5
+			set_slowdown(1.5)
 			set_density(TRUE)
 			return TRUE
 	return FALSE

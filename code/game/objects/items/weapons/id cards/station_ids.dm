@@ -343,7 +343,6 @@ CAPABILITIES(/obj/item/card/id)
 	var/polymorphic_type = 0
 	var/base_icon_state
 
-TRACKED(/obj/item/card/id/event, accessset)
 
 CAPABILITIES(/obj/item/card/id/event)
 	// the old attack_self: a configured card is flashed; an unconfigured one takes its holder's details

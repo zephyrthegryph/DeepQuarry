@@ -124,8 +124,6 @@ CAPABILITIES(/obj/e4_fixture/bed)
 	var/charge_changes = 0
 	var/ops_heard = 0
 
-TRACKED(/obj/e4_fixture/switch, powered)
-TRACKED(/obj/e4_fixture/switch, charge_level)
 
 CAPABILITIES(/obj/e4_fixture/switch)
 	on_change(nameof(powered), ENTER, then(PROC_REF(power_on)))

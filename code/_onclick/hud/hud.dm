@@ -390,9 +390,9 @@ CAPABILITIES(/datum/hud)
 	if(!client)
 		return 0
 
-	HUD.ui_style = ui_style2icon(read_preference(/datum/preference/choiced/ui_style))
-	HUD.ui_color = read_preference(/datum/preference/color/ui_style_color)
-	HUD.ui_alpha = read_preference(/datum/preference/numeric/ui_style_alpha)
+	HUD.set_ui_style(ui_style2icon(read_preference(/datum/preference/choiced/ui_style)))
+	HUD.set_ui_color(read_preference(/datum/preference/color/ui_style_color))
+	HUD.set_ui_alpha(read_preference(/datum/preference/numeric/ui_style_alpha))
 	set_hud_used(HUD)
 
 /// The client HUD of a mob, or null: a mob has one only while a client is logged in (built by Login(), dropped by Logout()).

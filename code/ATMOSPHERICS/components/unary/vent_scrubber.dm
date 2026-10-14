@@ -27,10 +27,6 @@
 	/// Siphoning the room in a panic.
 	var/panic = 0
 
-TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, id_tag)
-TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, frequency)
-TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, panic)
-TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, scrubbing_gas)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
 	configure(uses_power(idle = 150))

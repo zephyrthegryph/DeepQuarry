@@ -179,7 +179,6 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/big)
 	desc = "The jaws of a small dog."
 	defend_chance = 5
 	var/emagged = 0
-TRACKED(/obj/item/melee/robotic/jaws/small, emagged)
 
 CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 	configure(item_combat(force = 15, attack_verbs = list("nibbled", "bit", "gnawed", "chomped", "nommed")))
@@ -332,8 +331,6 @@ CAPABILITIES(/obj/item/melee/robotic/blade)
 	to_chat(user, span_notice("[src] is now [active ? "on" : "off"]."))
 	return OP_OK
 
-TRACKED(/obj/item/melee/robotic/blade, active)
-TRACKED(/obj/item/melee/robotic/blade, lcolor)
 
 /// The look: the blade in its colour, and its glow.
 /obj/item/melee/robotic/blade/draw(datum/look/look)
@@ -461,7 +458,6 @@ CAPABILITIES(/obj/item/melee/robotic/blade/ionic/lance)
 	else
 		set_glow(src, GLOW(0, null, null))
 
-TRACKED(/obj/item/melee/robotic/baton, status)
 
 CAPABILITIES(/obj/item/melee/robotic/baton)
 	configure(item_worn(slots = SLOT_BELT))

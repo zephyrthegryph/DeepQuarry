@@ -53,7 +53,7 @@
 	if(!istype(clothing))
 		return
 	clothing.set_force(combat_of(clothing).force + (force_delta))
-	clothing.slowdown += slowdown_delta
+	clothing.set_slowdown(clothing.slowdown + slowdown_delta)
 	if(LAZYLEN(armor_delta))
 		clothing.set_armor(clothing.get_armor().add(dq_armor(armor_delta)))
 
@@ -66,7 +66,7 @@
 	if(!istype(clothing))
 		return
 	clothing.set_force(combat_of(clothing).force - (force_delta))
-	clothing.slowdown -= slowdown_delta
+	clothing.set_slowdown(clothing.slowdown - slowdown_delta)
 	if(LAZYLEN(armor_delta))
 		clothing.set_armor(clothing.get_armor().add(dq_armor(armor_delta).scaled(-1)))
 

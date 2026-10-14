@@ -13,7 +13,6 @@ SYSTEM_DEF(nightshift)
 
 	var/high_security_mode = FALSE
 
-TRACKED(/datum/system/nightshift, nightshift_active)
 
 /datum/system/nightshift/initialize()
 	initialized = TRUE

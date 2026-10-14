@@ -62,7 +62,7 @@
 	var/datum/pai_software/S = GLOB.pai_software_by_key[soft]
 	if(S && (ram >= S.ram_cost))
 		ram -= S.ram_cost
-		software[S.id] = TRUE
+		set_software_at(S.id, TRUE)
 	return TRUE
 
 /mob/living/silicon/pai/proc/ui_act_image(datum/act/op/A, image)

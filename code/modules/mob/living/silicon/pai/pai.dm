@@ -285,10 +285,10 @@ CAPABILITIES(/mob/living/silicon/pai)
 	resize(1, FALSE, TRUE, TRUE, FALSE)
 
 	pixel_x = chassis_data.pixel_x
-	default_pixel_x = pixel_x
+	set_default_pixel_x(pixel_x)
 	pixel_y = chassis_data.pixel_y
-	default_pixel_y = pixel_y
-	vis_height = chassis_data.vis_height
+	set_default_pixel_y(pixel_y)
+	set_vis_height(chassis_data.vis_height)
 
 	resize(oursize, FALSE, TRUE, TRUE, FALSE)	//And then back again now that we're sure the vis_height is correct.
 	post_chassis_change(chassis_data)
@@ -536,7 +536,7 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 	var/mob/observer/dead/ghost = get_ghost()
 	if(ghost)
 		ghost.notify_revive("Someone is trying to revive you. Re-enter your body if you want to be revived!", 'sound/effects/pai-restore.ogg', source = card)
-	canmove = TRUE
+	set_canmove(TRUE)
 	card.setEmotion(15)
 	play_sfx(card, SFX_EFFECTS_PAI_RESTORE)
 	card.visible_message(span_filter_notice("\The [card] chimes."), runemessage = "chime")
@@ -556,7 +556,7 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 		set_resting(!resting)
 	to_chat(src, span_notice("You are now [resting ? "resting" : "getting up"]."))
 
-	canmove = !resting
+	set_canmove(!resting)
 
 /mob/living/silicon/pai/proc/check_retract_cable()
 	if(!cable)
@@ -575,7 +575,6 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 // Update icons
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-TRACKED(/mob/living/silicon/pai, eye_color)
 
 /mob/living/silicon/pai/draw(datum/look/look)
 	..()
@@ -621,9 +620,9 @@ TRACKED(/mob/living/silicon/pai, eye_color)
 		return
 	if(holo_icon_south.Width() > 32)
 		pixel_x = -16
-		default_pixel_x = -16
+		set_default_pixel_x(-16)
 	if(holo_icon_south.Height() > 32)
-		vis_height = 64
+		set_vis_height(64)
 
 /// Gets icons for all four directions based on the character slot currently loaded
 /mob/living/silicon/pai/proc/get_character_icon()

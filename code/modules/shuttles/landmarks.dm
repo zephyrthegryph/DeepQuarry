@@ -162,7 +162,6 @@ CAPABILITIES(/obj/effect/shuttle_landmark)
 	icon = 'icons/obj/device.dmi'
 	icon_state = "bluflare"
 	var/active
-TRACKED(/obj/item/spaceflare, active)
 
 CAPABILITIES(/obj/item/spaceflare)
 	configure(light_glow(color = "#3728ff"))

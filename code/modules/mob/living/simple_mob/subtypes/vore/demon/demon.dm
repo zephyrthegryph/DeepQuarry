@@ -105,7 +105,7 @@
 
 /mob/living/simple_mob/vore/demon/update_canmove()
 	if(is_shifting)
-		canmove = FALSE
+		set_canmove(FALSE)
 		return canmove
 	. = ..()
 
@@ -186,7 +186,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 	set_icon_living("[alternate_selection]")
 	set_icon_dead("dead")
 	set_icon_rest("[alternate_selection]_rest")
-	vis_height = 47 //Mass majority of sprites use vis_height = 47. If its different, its done below.
+	set_vis_height(47) //Mass majority of sprites use vis_height = 47. If its different, its done below.
 	pixel_x = 0
 	set_vore_icons(FALSE) //No stomach sprites unless specifically specified!
 	//This is where we handle the special ones!
@@ -203,7 +203,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 		//These are the larger variants, so we do some different stuff here!
 		if("brutola")
 			pixel_x = -8
-			vis_height = 64
+			set_vis_height(64)
 			set_vore_icons(SA_ICON_LIVING | SA_ICON_REST)
 			vore_capacity = 2
 			set_icon_dead("[alternate_selection]_dead")
@@ -211,11 +211,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 
 		if("ignia")
 			pixel_x = -8
-			vis_height = 64
+			set_vis_height(64)
 			set_vore_icons(SA_ICON_LIVING)
 			vore_capacity = 2
 			set_icon_dead("[alternate_selection]_dead")
 			icon = 'icons/mob/demon_alt.dmi'
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
-TRACKED(/mob/living/simple_mob/vore/demon, is_shifting)

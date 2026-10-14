@@ -12,7 +12,6 @@ MATERIAL_MIX(/obj/item/assembly/timer, list(MAT_STEEL = 500, MAT_GLASS = 50))
 
 
 /obj/item/assembly/timer/var/timing = FALSE
-TRACKED(/obj/item/assembly/timer, timing)
 
 /obj/item/assembly/timer/activate()
 	if(!..())

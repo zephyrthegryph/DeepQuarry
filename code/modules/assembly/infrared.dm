@@ -24,7 +24,6 @@ CAPABILITIES(/obj/item/assembly/infra)
 	every(2 SECONDS, then(PROC_REF(infra_step)), when = cond_all(nameof(secured), nameof(on)))
 
 /obj/item/assembly/infra/var/on = FALSE
-TRACKED(/obj/item/assembly/infra, on)
 
 /obj/item/assembly/infra/activate()
 	if(!..())

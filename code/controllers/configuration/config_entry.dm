@@ -63,7 +63,7 @@
 		if(vv_VAS)
 			. = ValidateAndSet("[var_value]")
 			if(.)
-				datum_flags |= DF_VAR_EDITED
+				set_datum_flags(datum_flags | DF_VAR_EDITED)
 			return
 		else
 			return ..()

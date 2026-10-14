@@ -23,7 +23,6 @@
 	var/list/affecting	// the list of all items that will be moved this ptick
 	var/id = ""			// the control ID	- must match controller ID
 
-TRACKED(/obj/machinery/conveyor, operating)
 /// Moves what sits on it while running and operable (the declaration also picks the machine
 /// pipeline or the fast lane on speed_process); with nothing to move it sleeps until cargo arrives.
 /obj/machinery/conveyor/centcom_auto
@@ -227,7 +226,6 @@ CAPABILITIES(/obj/machinery/conveyor)
 
 /// TRUE when just operated: one step pushes the position to the linked conveyors.
 /obj/machinery/conveyor_switch/var/operated = FALSE
-TRACKED(/obj/machinery/conveyor_switch, operated)
 CAPABILITIES(/obj/machinery/conveyor_switch)
 	after_init(0, then(PROC_REF(init_update)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operated), wakes_on = list(nameof(operated)))

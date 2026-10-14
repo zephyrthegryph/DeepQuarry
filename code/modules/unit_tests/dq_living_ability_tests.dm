@@ -149,7 +149,7 @@
 	rel_set(dq_test_hud(H), nameof(/datum/hud::zone_sel), allocate(/atom/movable/screen/zone_sel)) // a hud-less human has none, and a grab's step reads the aimed zone
 	var/obj/item/grab/G = new /obj/item/grab(H, V)
 	H.put_in_active_hand(G)
-	G.state = GRAB_NECK
+	G.set_state(GRAB_NECK)
 	GLOB.grab_drain_test_stages = list()
 	H.grab_drain_step(V, G, 1, TYPE_PROC_REF(/mob/living/carbon/human, grab_drain_test_stage), GRAB_NECK, "draining")
 	TEST_ASSERT_EQUAL(length(GLOB.grab_drain_test_stages), 1, "the first stage ran at once")

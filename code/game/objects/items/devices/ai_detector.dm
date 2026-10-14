@@ -21,7 +21,6 @@
 
 /// TRUE while it is carried by a mob: the slow sensing step runs only then.
 /obj/item/multitool/ai_detector/var/tmp/sensing = FALSE
-TRACKED(/obj/item/multitool/ai_detector, sensing)
 
 CAPABILITIES(/obj/item/multitool/ai_detector)
 	every(2 SECONDS, then(PROC_REF(sense_step)), when = nameof(sensing))

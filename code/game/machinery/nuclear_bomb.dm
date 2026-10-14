@@ -165,8 +165,6 @@ GLOBAL_VAR(bomb_set)
 		set_extended(1)
 	return TRUE
 
-TRACKED(/obj/machinery/nuclearbomb, removal_stage)
-TRACKED(/obj/machinery/nuclearbomb, opened)
 
 CAPABILITIES(/obj/machinery/nuclearbomb)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))

@@ -9,8 +9,20 @@
 	var/bench_a = 0
 	var/bench_noise = 0
 
-TRACKED(/obj/machinery/dx_deps_bench_legacy, bench_a)
-TRACKED(/obj/machinery/dx_deps_bench_legacy, bench_noise)
+/obj/machinery/dx_deps_bench_legacy/proc/set_bench_a(value)
+	if(TRACKED_UNCHANGED(bench_a, value))
+		return FALSE
+	bench_a = value
+	tracked_changed(src, nameof(bench_a))
+	return TRUE
+SETTER(/obj/machinery/dx_deps_bench_legacy, bench_a)
+/obj/machinery/dx_deps_bench_legacy/proc/set_bench_noise(value)
+	if(TRACKED_UNCHANGED(bench_noise, value))
+		return FALSE
+	bench_noise = value
+	tracked_changed(src, nameof(bench_noise))
+	return TRUE
+SETTER(/obj/machinery/dx_deps_bench_legacy, bench_noise)
 
 /obj/machinery/dx_deps_bench_legacy/draw(datum/look/look)
 	..()

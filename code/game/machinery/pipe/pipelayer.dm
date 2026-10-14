@@ -22,7 +22,6 @@
 		"heat exchange pipes" = /obj/machinery/atmospherics/pipe/simple/heat_exchanging
 	)
 
-TRACKED(/obj/machinery/pipelayer, a_dis)
 
 MSG_DEF_SELF(pipelayer/no_metal, "It doesn't work without metal.")
 MSG_DEF_SELF(pipelayer/empty, "It is empty.")
@@ -198,7 +197,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	var/obj/item/pipe/P = new pi_type(w_turf, p_type, p_dir)
 	P.setPipingLayer(p_layer)
 	// We used metal to make these, so should be reclaimable!
-	P.material_total = pipe_cost * SHEET_MATERIAL_AMOUNT
+	P.set_material_total(pipe_cost * SHEET_MATERIAL_AMOUNT)
 	P.fasten(null)
 
 	return 1

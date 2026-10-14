@@ -920,7 +920,6 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 	var/closed_state
 	special_handling = TRUE
 
-TRACKED(/obj/item/storage/trinketbox, open)
 
 CAPABILITIES(/obj/item/storage/trinketbox)
 	configure(storage(accepts = list(

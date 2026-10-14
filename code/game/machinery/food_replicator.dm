@@ -165,7 +165,6 @@ MSG_DEF_SELF(food_replicator/container, "There is already a reagent container in
 /// Reconciles its power draw with its state on every power or break change; printing sets its
 /// own draw while it runs.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
-TRACKED(/obj/machinery/food_replicator, printing)
 
 CAPABILITIES(/obj/machinery/food_replicator)
 	configure(uses_power(idle = 20, active = 200))

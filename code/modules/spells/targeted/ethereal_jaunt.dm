@@ -48,7 +48,7 @@
 	var/mobloc = holder.last_valid_turf()
 	animation.forceMove(mobloc)
 	jaunt_steam(mobloc)
-	target.canmove = 0
+	target.set_canmove(0)
 	holder.reappearing = 1
 	after(src, 2 SECONDS, PROC_REF(jaunt_reform), with = list(target, holder, animation), keeps_dead = TRUE)
 
@@ -68,7 +68,7 @@
 				if(T)
 					if(target.forceMove(T))
 						break
-		target.canmove = 1
+		target.set_canmove(1)
 		target.reset_perspective() // Fixes a blackscreen
 	spent(animation)
 	spent(holder)

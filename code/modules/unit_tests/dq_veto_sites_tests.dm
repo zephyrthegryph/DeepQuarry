@@ -7,7 +7,6 @@
 	var/answer
 	var/blocking = TRUE
 
-TRACKED(/datum/dq_site_listener, blocking)
 
 /datum/dq_site_listener/proc/blocks(datum/act/A)
 	return blocking

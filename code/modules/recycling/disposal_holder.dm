@@ -33,7 +33,6 @@ CAPABILITIES(/obj/structure/disposalholder)
 
 /// TRUE while the holder is moving through pipes: move() runs every decisecond.
 /obj/structure/disposalholder/var/active = FALSE
-TRACKED(/obj/structure/disposalholder, active)
 
 /obj/structure/disposalholder/proc/init(list/flush_list, datum/gas_mixture/flush_gas)
 	own_move(flush_gas, src, nameof(gas)) // transfer gas resv. into holder object (from whoever owns it now) -- let's be explicit about the data this proc consumes, please.

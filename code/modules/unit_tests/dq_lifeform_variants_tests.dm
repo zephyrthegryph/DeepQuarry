@@ -50,6 +50,6 @@ CAPABILITIES(/obj/item/dq_variants_probe)
 
 	var/obj/item/dq_variants_probe/P = allocate(/obj/item/dq_variants_probe, T)
 	TEST_ASSERT_EQUAL(P.name, "variant probe", "no key, no row")
-	P.variant = "red"
+	P.set_variant("red")
 	P.apply_variant()
 	TEST_ASSERT_EQUAL(P.name, "red probe", "apply_variant() applies the declared table when the key is set later (a loadout tweak)")

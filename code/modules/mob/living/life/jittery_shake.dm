@@ -13,7 +13,6 @@ jittery_shaking, and the shake runs as an every() on /mob while it holds.
 
 /// Set while STAT_JITTERY is in effect: jittery_shake_tick() runs every decisecond (its every() in CAPABILITIES(/mob)), parked otherwise.
 /mob/var/tmp/jittery_shaking = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
-TRACKED(/mob, jittery_shaking)
 
 /mob/proc/jittery_shake_tick(datum/act/A)
 	// The dead stop shaking: the status ends (its on_end hook parks this).

@@ -31,7 +31,7 @@
 /obj/item/plastique/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	open_panel = !open_panel
+	set_open_panel(!open_panel)
 	to_chat(user, span_notice("You [open_panel ? "open" : "close"] the wire panel."))
 	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
@@ -46,7 +46,6 @@
 	wires_open(src, user)
 	return OP_OK
 
-TRACKED(/obj/item/plastique, timer)
 
 
 /obj/item/plastique/proc/explode_wire(datum/act/A)

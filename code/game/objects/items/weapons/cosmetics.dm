@@ -31,7 +31,6 @@ CAPABILITIES(/obj/item/lipstick/random)
 /obj/item/lipstick/random/proc/name_for_colour(datum/roller/R)
 	return "[colour] lipstick"
 
-TRACKED(/obj/item/lipstick, open)
 
 MSG_DEF_SELF(lipstick/closed, "Twist it open first.")
 

@@ -257,7 +257,7 @@
 				return
 			.["type"] = type
 			var/datum/newguy = new type()
-			newguy.datum_flags |= DF_VAR_EDITED
+			newguy.set_datum_flags(newguy.datum_flags | DF_VAR_EDITED)
 			.["value"] = newguy
 
 		if(VV_NEW_TYPE)
@@ -268,7 +268,7 @@
 			.["type"] = type
 			var/datum/newguy = new type()
 			if(istype(newguy))
-				newguy.datum_flags |= DF_VAR_EDITED
+				newguy.set_datum_flags(newguy.datum_flags | DF_VAR_EDITED)
 			.["value"] = newguy
 
 		if(VV_NEW_LIST)

@@ -12,7 +12,6 @@
 	default_max_vol = 60
 	VAR_PRIVATE/obj/item/reagent_containers/beaker = null // Safer than retooling all of reagent code to support a second reagent var inside this one object
 
-TRACKED(/obj/machinery/reagent_refinery/furnace, filter_side)
 
 /obj/machinery/reagent_refinery/furnace/alt
 	filter_side = 1 // R

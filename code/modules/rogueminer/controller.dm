@@ -107,7 +107,6 @@ CAPABILITIES(/datum/controller/rogue)
 
 /// Difficulty decays every RM_DIFF_DECAY_TIME while set (the every() below).
 /datum/controller/rogue/var/decaying = FALSE
-TRACKED(/datum/controller/rogue, decaying)
 
 /datum/controller/rogue/reactions()
 	. = ..()

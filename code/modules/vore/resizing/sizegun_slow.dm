@@ -25,7 +25,6 @@
 
 /// Set to true when scanning, to stop multiple scans.
 /obj/item/slow_sizegun/var/busy = FALSE
-TRACKED(/obj/item/slow_sizegun, busy)
 /// The look (the draw sweep: from its template).
 /obj/item/slow_sizegun/draw(datum/look/look)
 	..()

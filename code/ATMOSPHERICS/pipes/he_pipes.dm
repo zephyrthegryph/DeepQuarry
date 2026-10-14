@@ -46,8 +46,6 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/heat_exchanging)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(he_step)), when = nameof(tending))
 	on_change(nameof(parent), ANY, then(PROC_REF(reconsider)))
 
-TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, in_space)
-TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, tending)
 
 /// The pipe's shell is its heat body: it couples to its turf like any atom's (slot 0) and to its pipeline's gas (slot 1).
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/thermal_properties()

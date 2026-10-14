@@ -81,10 +81,10 @@
 
 /mob/living/carbon/brain/update_canmove()
 	if(in_contents_of(/obj/mecha) || istype(loc, /obj/item/mmi))
-		canmove = 1
+		set_canmove(1)
 		set_use_me(1)
 	else
-		canmove = 0
+		set_canmove(0)
 	return canmove
 
 /// A brain in a man-machine interface is housed in a machine: its systemic

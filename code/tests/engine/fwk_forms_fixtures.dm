@@ -32,9 +32,6 @@ MSG_BALLOON(fwk/too_quick, "Too quick.")
 	var/list/candidates
 	var/picked
 
-TRACKED(/obj/fwk_site, gate)
-TRACKED(/obj/fwk_site, bags)
-TRACKED(/obj/fwk_site, stock)
 
 CAPABILITIES(/obj/fwk_site)
 	op("fill", menu(), wait(2 SECONDS, repeats = PROC_REF(more_stock), after_step = PROC_REF(add_bag)), then(PROC_REF(finished)), on_interrupt(PROC_REF(broken)))

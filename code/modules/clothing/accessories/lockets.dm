@@ -27,7 +27,7 @@ MSG_DEF_SELF(locket/no_open, "you have to open it first")
 		to_chat(user, "\The [src] doesn't seem to open.")
 		return
 
-	open = !open
+	set_open(!open)
 	to_chat(user, "You flip \the [src] [open?"open":"closed"].")
 	if(open)
 		set_icon_state("[base_icon]_open")

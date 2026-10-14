@@ -12,7 +12,6 @@
 	var/glass = 1
 	var/datum/tgui_module/appearance_changer/mirror/M
 
-TRACKED(/obj/structure/mirror, glass)
 
 CAPABILITIES(/obj/structure/mirror)
 	owns_one(nameof(M), /datum/tgui_module/appearance_changer/mirror, starts = /datum/tgui_module/appearance_changer/mirror, starts_args = list(null))

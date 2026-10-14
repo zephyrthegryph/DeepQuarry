@@ -361,7 +361,7 @@
 	hci_click(H, P, C)
 	settle()
 	var/obj/item/implant/tracking/T = C.imp
-	T.id = 5
+	T.set_id(5)
 	hci_ui(H, P, "tracking_id", list("delta" = 3))
 	settle()
 	TEST_ASSERT_EQUAL(T.id, 8, "the stepper moves the id")

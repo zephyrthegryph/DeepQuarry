@@ -327,7 +327,6 @@ CAPABILITIES(/obj/structure/window)
 		grant(src, granted_verb(/atom/movable/proc/rotate_clockwise), src)
 		grant(src, granted_verb(/atom/movable/proc/turn_around), src)
 
-TRACKED(/obj/structure/window, tilt_sign)
 
 /// Which way the sprite of a slim window leans as it takes damage, rolled once (1 or -1).
 /obj/structure/window/var/tilt_sign = 1

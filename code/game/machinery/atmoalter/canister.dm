@@ -45,8 +45,6 @@
 	/// The band of the pressure gauge (1 under 10 kPa, 2 under one atmosphere, 3 under fifteen, 4 above).
 	var/gauge_band = 1
 
-TRACKED(/obj/machinery/portable_atmospherics/canister, valve_open)
-TRACKED(/obj/machinery/portable_atmospherics/canister, working)
 
 MSG_DEF_SELF(canister/has_liner, "It already has an engineered pressure liner.")
 MSG_DEF_SELF(canister/drain_first, "Drain and restore it before installing a pressure liner.")

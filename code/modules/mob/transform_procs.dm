@@ -7,7 +7,7 @@
 		drop_from_inventory(W)
 	regenerate_icons()
 	set_transforming(1)
-	canmove = 0
+	set_canmove(0)
 	status_set(STAT_STUNNED, 1)
 	icon = null
 	set_invisibility(INVISIBILITY_ABSTRACT)
@@ -66,7 +66,7 @@
 	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	set_transforming(1)
-	canmove = 0
+	set_canmove(0)
 	icon = null
 	set_invisibility(INVISIBILITY_ABSTRACT)
 	return ..()
@@ -152,7 +152,7 @@
 		drop_from_inventory(W)
 	regenerate_icons()
 	set_transforming(1)
-	canmove = 0
+	set_canmove(0)
 	icon = null
 	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)
@@ -170,7 +170,7 @@
 			O.mind.store_memory("In case you look at this after being borged, the objectives are only here until I find a way to make them not show up for you, as I can't simply delete them without screwing up round-end reporting. --NeoFite")
 
 	O.forceMove(loc)
-	O.job = JOB_CYBORG
+	O.set_job(JOB_CYBORG)
 	if(O.mind && O.mind.assigned_role == JOB_CYBORG)
 		if(O.mind.role_alt_title == JOB_ALT_ROBOT)
 			rel_set(O, nameof(O.mmi), new /obj/item/mmi/digital/posibrain(O))
@@ -202,7 +202,7 @@
 		drop_from_inventory(W)
 	regenerate_icons()
 	set_transforming(1)
-	canmove = 0
+	set_canmove(0)
 	icon = null
 	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)
@@ -226,7 +226,7 @@
 		drop_from_inventory(W)
 	regenerate_icons()
 	set_transforming(1)
-	canmove = 0
+	set_canmove(0)
 	icon = null
 	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)	//this really should not be necessary
@@ -261,7 +261,7 @@
 
 	regenerate_icons()
 	set_transforming(1)
-	canmove = 0
+	set_canmove(0)
 	icon = null
 	set_invisibility(INVISIBILITY_ABSTRACT)
 

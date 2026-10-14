@@ -4,7 +4,6 @@
 	var/list/order
 	var/cap_ticks = 0
 
-TRACKED(/obj/every_options_probe, active)
 
 CAPABILITIES(/obj/every_options_probe)
 	every(1 SECOND, then(PROC_REF(at_deadline)), when = nameof(active))

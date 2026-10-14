@@ -117,7 +117,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/raptor)
 	set_icon_living(new_state ? "[initial_icon]_fat" : "[initial_icon]")
 	set_wg_state(new_state)
 
-TRACKED(/mob/living/simple_mob/vore/raptor, wg_state)
 
 /mob/living/simple_mob/vore/raptor/yellow
 	name = "raptor"

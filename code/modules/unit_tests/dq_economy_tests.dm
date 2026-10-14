@@ -100,7 +100,7 @@
 		set_var(budget, "allocation_percent", budget.allocation_percent)
 		set_var(budget, "allocation_configured", FALSE)
 	var/mob/living/carbon/human/employee = new(run_loc_floor_bottom_left)
-	employee.job = JOB_ENGINEER
+	employee.set_job(JOB_ENGINEER)
 	var/datum/mind/employee_mind = new("budget_plan_employee")
 	var/datum/money_account/employee_account = new
 	employee_account.account_number = 812345
@@ -146,7 +146,7 @@
 	var/list/accounts = list()
 	for(var/index in 1 to 2)
 		var/mob/living/carbon/human/employee = new(test_turf)
-		employee.job = JOB_ENGINEER
+		employee.set_job(JOB_ENGINEER)
 		var/datum/mind/employee_mind = own(new /datum/mind("payroll_test_[index]")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 		var/datum/money_account/account = new
 		account.owner_name = "Employee [index]"
@@ -334,7 +334,7 @@
 	var/datum/service_invoice/invoice = SSsupply.create_service_invoice(customer, service, "Test checkout", list("meal and drink" = 1), list("meal and drink" = 200), result, 0, null)
 	TEST_ASSERT(invoice in SSsupply.service_invoices, "Service invoice was not added to the global ledger")
 	var/mob/living/carbon/human/refund_operator = new
-	refund_operator.job = JOB_BARTENDER
+	refund_operator.set_job(JOB_BARTENDER)
 	TEST_ASSERT(SSsupply.refund_service_invoice(invoice, service, "Test checkout", refund_operator), "Service refund failed")
 	TEST_ASSERT_EQUAL(service.money, service_before, "Service refund did not restore department funds")
 	TEST_ASSERT_EQUAL(GLOB.station_account.money, station_before, "Service refund did not restore subsidy funds")
@@ -381,7 +381,7 @@
 
 	var/obj/item/retail_scanner/civilian/terminal = new(test_turf)
 	var/mob/living/carbon/human/user = new(test_turf)
-	user.job = JOB_ENGINEER
+	user.set_job(JOB_ENGINEER)
 	rel_set(terminal, nameof(terminal.linked_account), service)
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 1, 100, 101, customer.account_number, customer.account_number, service, service), "changed ticket amount survived confirmation validation")
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 2, 100, 100, customer.account_number, customer.account_number, service, service), "equal-value itemization change survived confirmation validation")
@@ -391,7 +391,7 @@
 	qdel(terminal)
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 1, 100, 100, customer.account_number, customer.account_number, service, service), "deleted terminal survived confirmation validation")
 	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "an unrelated department employee could refund Service revenue")
-	user.job = JOB_BARTENDER
+	user.set_job(JOB_BARTENDER)
 
 	customer.suspended = TRUE
 	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "refund was issued to a suspended account")
@@ -448,11 +448,11 @@
 	var/datum/service_invoice/invoice = SSsupply.create_service_external_invoice(service, "Anonymous refund test", list("Cash meal" = 1), list("Cash meal" = 30), "Cash customer", 30, "Cash")
 	TEST_ASSERT(invoice, "anonymous cash checkout did not create an invoice")
 	var/mob/living/carbon/human/operator = new(test_turf)
-	operator.job = JOB_ENGINEER
+	operator.set_job(JOB_ENGINEER)
 	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Anonymous refund test", operator), "unrelated employee converted an anonymous invoice into cash")
 	TEST_ASSERT_EQUAL(invoice.state, "Paid", "unauthorized anonymous refund changed invoice state")
 	TEST_ASSERT_EQUAL(service.money, service_money_before + 30, "unauthorized anonymous refund drained Service funds")
-	operator.job = JOB_BARTENDER
+	operator.set_job(JOB_BARTENDER)
 	TEST_ASSERT(SSsupply.refund_service_invoice(invoice, service, "Anonymous refund test", operator), "authorized Service employee could not refund an anonymous sale")
 	TEST_ASSERT_EQUAL(service.money, service_money_before, "authorized anonymous refund did not reverse provider revenue")
 	own_take_member(SSsupply, nameof(/datum/system/supply::service_invoices), invoice)
@@ -608,7 +608,7 @@
 
 	TEST_ASSERT(!SSsupply.refund_service_invoice(account_invoice, service, register.machine_id, customer), "a customer could refund their own Service invoice")
 	var/mob/living/carbon/human/refund_operator = new(test_turf)
-	refund_operator.job = JOB_BARTENDER
+	refund_operator.set_job(JOB_BARTENDER)
 	TEST_ASSERT(SSsupply.refund_service_invoice(account_invoice, service, register.machine_id, refund_operator), "authorized Service staff could not refund a real invoice")
 	receipt_app.update_ui(customer, pda_data)
 	TEST_ASSERT_EQUAL(pda_data["service_receipts"][1]["state"], "Refunded", "PDA receipt did not update after refund")

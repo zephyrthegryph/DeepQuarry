@@ -16,7 +16,6 @@
 /obj/effect/effect/water/var/turf/spray_target
 /// TRUE while the spray travels towards spray_target: step_process() runs every step_delay.
 /obj/effect/effect/water/var/spraying = FALSE
-TRACKED(/obj/effect/effect/water, spraying)
 
 CAPABILITIES(/obj/effect/effect/water)
 	ref_one(nameof(spray_target), /turf)

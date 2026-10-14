@@ -6,7 +6,7 @@
 /obj/machinery/proc/ensure_pump_materials(notify = TRUE)
 	if(material_template == /datum/material_template/pump)
 		return
-	material_total = get_material_total() + 3 * SHEET_MATERIAL_AMOUNT
+	set_material_total(get_material_total() + 3 * SHEET_MATERIAL_AMOUNT)
 	set_material_template(/datum/material_template/pump)
 	if(notify)
 		material_service_changed()

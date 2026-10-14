@@ -193,7 +193,6 @@ TYPE_TABLE_DECLARE(/obj/item/implant/reagent_generator, reagent_implant_self_emo
 
 /// Makes its reagents every 2 s from implantation on.
 /obj/item/implant/reagent_generator/var/generating = FALSE
-TRACKED(/obj/item/implant/reagent_generator, generating)
 CAPABILITIES(/obj/item/implant/reagent_generator)
 	reagents(nameof(usable_volume))
 	every(2 SECONDS, then(PROC_REF(reagent_step)), when = nameof(generating))

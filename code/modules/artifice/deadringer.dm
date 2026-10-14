@@ -11,10 +11,8 @@
 
 /// Armed: watching the holder for injury.
 /obj/item/deadringer/var/activated = FALSE
-TRACKED(/obj/item/deadringer, activated)
 /// Cooldown steps left after triggering.
 /obj/item/deadringer/var/timer = 0
-TRACKED(/obj/item/deadringer, timer)
 /// Armed or cooling down: periodic_step() runs (its every()).
 CAPABILITIES(/obj/item/deadringer)
 	configure(item_worn(slots = SLOT_ID | SLOT_BELT | SLOT_TIE))

@@ -108,7 +108,6 @@
 
 /// Are we currently playing? song_step() plays the song while set (the every() below).
 /datum/song/var/playing = FALSE
-TRACKED(/datum/song, playing)
 
 /datum/song/reactions()
 	. = ..()

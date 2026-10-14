@@ -8,7 +8,7 @@
 		hud_data = new ()
 
 	if(hud_data.icon) // Species wants a specific dmi for the HUD
-		HUD.ui_style = hud_data.icon
+		HUD.set_ui_style(hud_data.icon)
 
 	var/slot_info = list()
 

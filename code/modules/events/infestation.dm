@@ -77,7 +77,7 @@
 
 		if(vermin == VERM_SPIDERS)
 			var/obj/effect/spider/spiderling/S = new(T)
-			S.amount_grown = -1
+			S.set_amount_grown(-1)
 		else
 			var/spawn_type = pick(spawn_types)
 			new spawn_type(T)

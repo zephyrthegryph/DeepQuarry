@@ -329,13 +329,13 @@
 	// the chance named by a var of the holder
 	var/obj/lib_fixture/pod/by_var/by_var = allocate(/obj/lib_fixture/pod/by_var)
 	var/turf/outside = get_turf(by_var)
-	by_var.chance_var = 0
+	by_var.set_chance_var(0)
 	M.forceMove(by_var)
 	var/datum/op_result/var_fail = test_click(M, by_var, null)
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(var_fail?.rolled, FALSE, "escape_chance = nameof(var) reads the holder's var now (0%)")
 	TEST_ASSERT_EQUAL(M.loc, by_var, "so the actor stays")
-	by_var.chance_var = 100
+	by_var.set_chance_var(100)
 	var/datum/op_result/var_ok = test_click(M, by_var, null)
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(var_ok?.rolled, TRUE, "and 100% now")

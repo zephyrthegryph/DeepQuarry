@@ -61,7 +61,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle)
 	name = DEVELOPER_WARNING_NAME
 	var/open = 0	//0 is closed, 1 is open, -1 means it won't be able to toggle
 
-TRACKED(/obj/item/clothing/suit/storage/hooded/toggle, open)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
 	configure(item_worn(hides = HIDEHOLSTER))

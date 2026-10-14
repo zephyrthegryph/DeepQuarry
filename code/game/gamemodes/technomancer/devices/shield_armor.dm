@@ -72,7 +72,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/shield)
 	changed(src)
 	user.update_mob_action_buttons()
 
-TRACKED(/obj/item/clothing/suit/armor/shield, active)
 
 /// Lit while the shield is up; the worn suit follows through the held state.
 /obj/item/clothing/suit/armor/shield/draw(datum/look/look)

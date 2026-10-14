@@ -16,7 +16,7 @@ CAPABILITIES(/obj/structure/flora/grass)
 /obj/structure/flora/grass/roll_icon_state(datum/roller/R)
 	var/list/icon_choice = TYPE_TABLE_GET(src, grass_icon_choice)
 	if(icon_choice)
-		grass_icon = "[icon_choice[1]][R.number(1, 3)][icon_choice[2]]"
+		set_grass_icon("[icon_choice[1]][R.number(1, 3)][icon_choice[2]]")
 	return grass_icon
 
 /obj/structure/flora/grass/brown

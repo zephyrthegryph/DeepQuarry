@@ -25,7 +25,6 @@
 	var/lock_difficulty = 1	//multiplier to picking/bypassing time
 	var/keysound = SFX_ITEMS_TOOLBELT_EQUIP
 
-TRACKED(/obj/structure/simple_door, state)
 
 /// Heat behaviour rule: a flammable material door burns.
 /obj/structure/simple_door/proc/rule_burn(datum/rule/rule)
@@ -47,7 +46,7 @@ TRACKED(/obj/structure/simple_door, state)
 
 /obj/structure/simple_door/proc/set_material(material_name)
 	if(!material_name)
-		material_name = MAT_STEEL
+		set_material_name(MAT_STEEL)
 	material = get_material_by_name(material_name)
 	if(!material)
 		return
@@ -69,7 +68,6 @@ TRACKED(/obj/structure/simple_door, state)
 
 /// A door of a radioactive material gives off its radiation every few seconds.
 /obj/structure/simple_door/var/tmp/radiating = FALSE
-TRACKED(/obj/structure/simple_door, radiating)
 
 CAPABILITIES(/obj/structure/simple_door)
 	every(2 SECONDS, then(PROC_REF(radiate_step)), when = nameof(radiating))

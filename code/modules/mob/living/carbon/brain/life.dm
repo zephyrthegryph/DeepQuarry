@@ -71,11 +71,11 @@
 			if(!alert)//Sounds an alarm, but only once per 'level'
 				emote("alarm")
 				to_chat(src, span_red("Major electrical distruption detected: System rebooting."))
-				alert = 1
+				set_alert(1)
 			if(prob(75))
 				emp_damage -= 1
 		if(20)
-			alert = 0
+			set_alert(0)
 			set_blinded(0)
 			status_set(STAT_BLINDED, 0)
 			status_set(STAT_DEAFENED, 0)
@@ -87,11 +87,11 @@
 			if(!alert)
 				emote("alert")
 				to_chat(src, span_red("Primary systems are now online."))
-				alert = 1
+				set_alert(1)
 			if(prob(50))
 				emp_damage -= 1
 		if(10)
-			alert = 0
+			set_alert(0)
 			status_set(STAT_BLURRY, 0)
 			set_ear_damage(0)
 			emp_damage -= 1
@@ -99,11 +99,11 @@
 			if(!alert)
 				emote("notice")
 				to_chat(src, span_red("System reboot nearly complete."))
-				alert = 1
+				set_alert(1)
 			if(prob(25))
 				emp_damage -= 1
 		if(1)
-			alert = 0
+			set_alert(0)
 			to_chat(src, span_red("All systems restored."))
 			emp_damage -= 1
 

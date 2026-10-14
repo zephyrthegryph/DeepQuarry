@@ -78,9 +78,9 @@ CAPABILITIES(/obj/singularity)
 				investigate_log("has been destroyed by an explosion.", I_SINGULO)
 				spent(src)
 			else
-				energy += 50
+				set_energy(energy + 50)
 		if(2.0 to 3.0)
-			energy += round((rand(20,60)/2),1)
+			set_energy(energy + (round((rand(20,60)/2),1)))
 	return TRUE
 
 /// Will there be an impact? Who knows. Will we see it? No.
@@ -117,7 +117,7 @@ CAPABILITIES(/obj/singularity)
 		return
 
 	if(dissipate_track >= dissipate_delay)
-		energy -= dissipate_strength
+		set_energy(energy - dissipate_strength)
 		dissipate_track = 0
 	else
 		dissipate_track++
@@ -289,7 +289,7 @@ CAPABILITIES(/obj/singularity)
 	return
 
 /obj/singularity/proc/consume(const/atom/A)
-	src.energy += A.singularity_act(src, current_size)
+	set_energy(src.energy + (A.singularity_act(src, current_size)))
 	return
 
 /obj/singularity/proc/move(force_move = 0)

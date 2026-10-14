@@ -69,8 +69,6 @@
 			mate().color = color
 		mate().pair_cube(src)
 
-TRACKED(/obj/item/telecube, ready)
-TRACKED(/obj/item/telecube, glow_color)
 
 /obj/item/telecube/draw(datum/look/look)
 	..()

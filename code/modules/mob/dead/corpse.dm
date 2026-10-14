@@ -119,7 +119,7 @@
 		M.equip_to_slot_or_del(new src.corpseuniform(M), SLOT_ID_UNIFORM)
 		if(istype(M.get_equipped_item(SLOT_ID_UNIFORM), /obj/item/clothing/under))
 			var/obj/item/clothing/under/corpse_uniform = M.get_equipped_item(SLOT_ID_UNIFORM)
-			corpse_uniform.sensor_mode = corpsesensormode
+			corpse_uniform.set_sensor_mode(corpsesensormode)
 	if(src.corpsesuit)
 		M.equip_to_slot_or_del(new src.corpsesuit(M), SLOT_ID_SUIT)
 	if(src.corpseshoes)

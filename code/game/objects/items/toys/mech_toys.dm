@@ -296,12 +296,12 @@ CAPABILITIES(/obj/item/toy/mecha)
 				else //just attack
 					attacker.SpinAnimation(5, 0)
 					play_sfx(attacker, SFX_MECHA_MECHSTEP, 1.5)
-					combat_health--
+					set_combat_health(combat_health - 1)
 					act_message(attacker_controller, src, MSG_SELF(span_danger(" You ram [attacker] into %T%! ")), \
 						MSG_OTHERS(span_danger(" [attacker] devastates %T%! ")), \
 						MSG_BLIND(span_hear(" You hear hard plastic smacking hard plastic.")))
 					if(prob(5))
-						combat_health--
+						set_combat_health(combat_health - 1)
 						play_sfx(src, SFX_EFFECTS_METEORIMPACT, 0.5)
 						act_message(attacker_controller, src, MSG_SELF(span_boldwarning(" ...and you land a CRIPPLING blow on %T%! ")), \
 							MSG_OTHERS(span_boldwarning(" ...and lands a CRIPPLING BLOW! ")))
@@ -309,8 +309,8 @@ CAPABILITIES(/obj/item/toy/mecha)
 			if(4) //both lose
 				attacker.SpinAnimation(5, 0)
 				SpinAnimation(5, 0)
-				combat_health--
-				attacker.combat_health--
+				set_combat_health(combat_health - 1)
+				attacker.set_combat_health(attacker.combat_health - 1)
 				// This is sloppy but we don't have do_sparks.
 				play_sfx(src, SFX_SPARKS)
 				fx_sparks(src, 2, FALSE)
@@ -343,12 +343,12 @@ CAPABILITIES(/obj/item/toy/mecha)
 				else //just attack
 					SpinAnimation(5, 0)
 					play_sfx(src, SFX_MECHA_MECHSTEP, 1.5)
-					attacker.combat_health--
+					attacker.set_combat_health(attacker.combat_health - 1)
 					act_message(src_controller, src, MSG_SELF(span_danger(" You smash %T% into [attacker]! ")), \
 						MSG_OTHERS(span_danger(" %T% smashes [attacker]! ")), \
 						MSG_BLIND(span_hear(" You hear hard plastic smashing hard plastic.")))
 					if(prob(5))
-						attacker.combat_health--
+						attacker.set_combat_health(attacker.combat_health - 1)
 						play_sfx(attacker, SFX_EFFECTS_METEORIMPACT, 0.5)
 						act_message(src_controller, attacker, MSG_SELF(span_boldwarning(" ...and you land a CRIPPLING blow on %T%! ")), \
 							MSG_OTHERS(span_boldwarning(" ...and lands a CRIPPLING BLOW! ")))
@@ -361,7 +361,7 @@ CAPABILITIES(/obj/item/toy/mecha)
 /obj/item/toy/mecha/proc/brawl_end(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent)
 	if(QDELETED(attacker))
 		in_combat = FALSE
-		combat_health = max_combat_health
+		set_combat_health(max_combat_health)
 		return
 	var/mob/living/carbon/src_controller = (opponent)? opponent : attacker_controller
 
@@ -398,8 +398,8 @@ CAPABILITIES(/obj/item/toy/mecha)
 	in_combat = FALSE
 	attacker.in_combat = FALSE
 
-	combat_health = max_combat_health
-	attacker.combat_health = attacker.max_combat_health
+	set_combat_health(max_combat_health)
+	attacker.set_combat_health(attacker.max_combat_health)
 
 	return
 
@@ -453,14 +453,14 @@ CAPABILITIES(/obj/item/toy/mecha)
 
 	switch(special_attack_type)
 		if(SPECIAL_ATTACK_DAMAGE) //+2 damage
-			victim.combat_health-=2
+			victim.set_combat_health(victim.combat_health - 2)
 			play_sfx(src, SFX_WEAPONS_MARAUDER)
 		if(SPECIAL_ATTACK_HEAL) //+2 healing
-			combat_health+=2
+			set_combat_health(combat_health + 2)
 			play_sfx(src, SFX_MECHA_MECH_SHIELD_RAISE)
 		if(SPECIAL_ATTACK_UTILITY) //+1 heal, +1 damage
-			victim.combat_health--
-			combat_health++
+			victim.set_combat_health(victim.combat_health - 1)
+			set_combat_health(combat_health + 1)
 			play_sfx(src, SFX_MECHA_MECHMOVE01, 0.6)
 		if(SPECIAL_ATTACK_OTHER) //other
 			super_special_attack(victim)
@@ -514,9 +514,9 @@ CAPABILITIES(/obj/random/mech_toy)
 	play_sfx(src, SFX_WEAPONS_SONIC_JACKHAMMER)
 	if(victim.combat_health < combat_health) // Instantly kills the other mech if it's health is below our's.
 		visible_message("EXECUTE!!")
-		victim.combat_health = 0
+		victim.set_combat_health(0)
 	else // Otherwise, just deal one damage.
-		victim.combat_health--
+		victim.set_combat_health(victim.combat_health - 1)
 
 /obj/item/toy/mecha/gygax
 	name = "toy gygax"
@@ -546,7 +546,7 @@ CAPABILITIES(/obj/random/mech_toy)
 /obj/item/toy/mecha/honk/super_special_attack(obj/item/toy/mecha/victim)
 	play_sfx(src, SFX_MACHINES_HONKBOT_EVIL_LAUGH)
 	victim.special_attack_cooldown += 3 // Adds cooldown to the other mech and gives a minor self heal
-	combat_health++
+	set_combat_health(combat_health + 1)
 
 /obj/item/toy/mecha/marauder
 	name = "toy marauder"
@@ -601,7 +601,7 @@ CAPABILITIES(/obj/random/mech_toy)
 /obj/item/toy/mecha/reticence/super_special_attack(obj/item/toy/mecha/victim)
 	special_attack_cooldown-- //Has a lower cooldown...
 	victim.special_attack_cooldown++ //and increases the opponent's cooldown by 1...
-	victim.combat_health-- //and some free damage.
+	victim.set_combat_health(victim.combat_health - 1) //and some free damage.
 
 /obj/item/toy/mecha/clarke
 	name = "toy Clarke"

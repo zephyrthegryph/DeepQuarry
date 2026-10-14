@@ -175,7 +175,6 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 	return TRUE
 
 /obj/machinery/radiocarbon_spectrometer/var/scanning = FALSE
-TRACKED(/obj/machinery/radiocarbon_spectrometer, scanning)
 /// Runs the scan while scanning (start_scanning() .. stop_scanning()).
 /obj/machinery/radiocarbon_spectrometer/proc/work_step(datum/act/timer/A)
 	if(!scanned_item() || scanned_item().loc != src)
@@ -194,8 +193,8 @@ TRACKED(/obj/machinery/radiocarbon_spectrometer, scanning)
 		stop_scanning()
 		return
 	var/heat_gain = reagents.remove_reagent(REAGENT_ID_WATER, COOLANT_USAGE) ? -1 : HEAT_GAIN
-	heat += heat_gain
-	heat = CLAMP(heat, 0, HEAT_MAX)
+	set_heat(heat + heat_gain)
+	set_heat(CLAMP(heat, 0, HEAT_MAX))
 
 	/************** RPM **************/
 	// Scanner slows down over time
@@ -226,7 +225,7 @@ TRACKED(/obj/machinery/radiocarbon_spectrometer, scanning)
 	scanner_rpm_delta = 0
 	scanner_rpm = 0
 	radiation = 0
-	heat = 0
+	set_heat(0)
 
 /obj/machinery/radiocarbon_spectrometer/proc/stop_scanning()
 	set_icon_state("analyser")
@@ -235,7 +234,7 @@ TRACKED(/obj/machinery/radiocarbon_spectrometer, scanning)
 	scanner_rpm_delta = 0
 	scanner_rpm = 0
 	radiation = 0
-	heat = 0
+	set_heat(0)
 
 /obj/machinery/radiocarbon_spectrometer/proc/complete_scan()
 	stop_scanning()

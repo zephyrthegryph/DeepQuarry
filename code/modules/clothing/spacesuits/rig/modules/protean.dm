@@ -99,11 +99,11 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 		if(isnum(armorvalue))
 			LAZYSET(armor_settings, armor_chosen, armorvalue)
 			interface_desc = initial(interface_desc)
-			slowdown = 0
+			set_slowdown(0)
 			for(var/entry in TYPE_TABLE_GET(src, armor_types))	//This is dumb and ugly but I dont feel like rewriting rig TGUI just to make this a pretty list
 				var/value = LAZYACCESS(armor_settings, entry) || 0
 				interface_desc += " [entry]: [value]"
-				slowdown += value*armor_weight_ratio
+				set_slowdown(slowdown + (value*armor_weight_ratio))
 			interface_desc += " Slowdown: [slowdown]"
 
 /obj/item/rig_module/protean/armor/proc/armor_type_answered(datum/act/request/context)

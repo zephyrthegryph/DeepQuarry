@@ -146,7 +146,6 @@ CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
 // into latent entries in CONTAINER_SLOT_INTERNALS, not eager objects.
 /// Print progress (percent); 0 while idle.
 /obj/machinery/transhuman/synthprinter/var/busy = 0
-TRACKED(/obj/machinery/transhuman/synthprinter, busy)
 /obj/machinery/transhuman/synthprinter/latent_generator()
 	// `list(circuit = 1, ...)` would use the literal identifier "circuit" as
 	// the key (DM's named-argument list syntax), not circuit's value -- the
@@ -484,7 +483,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 	// The mind brings its identity (languages, OOC notes) by reference.
 	MR.mind_ref.active = 1 //Well, it's about to be.
 	transfer_mind(MR.mind_ref, occupant, "resleeved") //Does mind+ckey+client.
-	occupant.identifying_gender = MR.id_gender
+	occupant.set_identifying_gender(MR.id_gender)
 
 	occupant.apply_vore_prefs() //Cheap hack for now to give them SOME bellies.
 	if(MR.one_time)

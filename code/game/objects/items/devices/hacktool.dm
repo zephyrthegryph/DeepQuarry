@@ -138,7 +138,7 @@ CAPABILITIES(/obj/item/multitool/hacktool)
 	return OP_OK
 
 /obj/item/multitool/hacktool/proc/sanity_check()
-	if(max_known_targets < 1) max_known_targets = 1
+	if(max_known_targets < 1) set_max_known_targets(1)
 	// Cut away the oldest items if the capacity has been reached
 	while(length(known_targets) > max_known_targets)
 		rel_remove(src, nameof(known_targets), known_targets[1])

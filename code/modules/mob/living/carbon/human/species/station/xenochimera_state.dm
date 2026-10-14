@@ -15,7 +15,6 @@ CAPABILITIES(/datum/xenochimera)
 	ref_one(nameof(owner), /mob/living/carbon/human)
 	owns_one(nameof(revival_record), /datum/transhuman/body_record)
 
-TRACKED(/datum/xenochimera, feral)
 
 /datum/xenochimera/New(mob/living/carbon/human/new_owner)
 	..()

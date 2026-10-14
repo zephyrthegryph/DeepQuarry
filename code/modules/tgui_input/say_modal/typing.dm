@@ -48,11 +48,6 @@
 	remove_thinking_indicator()
 	remove_typing_indicator()
 
-/mob/set_stat(new_stat)
-	. = ..()
-	if(.)
-		remove_all_indicators()
-
 /mob/Logout()
 	remove_all_indicators()
 	return ..()

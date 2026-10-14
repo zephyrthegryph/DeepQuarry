@@ -1,7 +1,4 @@
-TRACKED(/obj/item/clothing, valid_accessory_slots)
-TRACKED(/obj/item/clothing, restricted_accessory_slots)
 
-TRACKED(/obj/item/clothing/shoes, overshoes)
 
 /obj/item/clothing
 	name = DEVELOPER_WARNING_NAME // "Clothing"
@@ -706,7 +703,7 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 
 /// Old verb "Switch Shoe Layer".
 /obj/item/clothing/shoes/proc/shoes_toggle_layer_verb(datum/act/op/A)
-	shoes_under_pants = !shoes_under_pants
+	set_shoes_under_pants(!shoes_under_pants)
 
 /obj/item/clothing/shoes/draw(datum/look/look)
 	..()
@@ -1300,7 +1297,7 @@ CAPABILITIES(/obj/item/clothing/under)
 	SStgui.update_uis(src)
 
 /obj/item/clothing/under/proc/apply_sensor_mode(mob/user, new_mode)
-	sensor_mode = new_mode
+	set_sensor_mode(new_mode)
 
 	if (src.loc == user)
 		switch(sensor_mode)
@@ -1623,5 +1620,3 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 		return "gone"
 	return suit.sensor_mode_refusal(answerer, !isnull(value))
 
-TRACKED(/obj/item/clothing/gloves, glove_level)
-TRACKED(/obj/item/clothing/gloves, overgloves)

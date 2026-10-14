@@ -330,7 +330,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 		return
 	act_message(user, src, MSG_SELF(span_info("You nibble away at %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " nibbles away at %T%.")))
 	user.balloon_alert_visible("nibbles away at \the [src].","nibbled away at \the [src].")
-	bitecount++
+	set_bitecount(bitecount + 1)
 	if(reagents)
 		reagents.trans_to_mob(user, bitesize, CHEM_INGEST)
 	// On_Consume() deletes the food once it is empty: the emote fires for a finished meal.
@@ -1059,7 +1059,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donkpocket)
 	warm = 1
 	for(var/reagent in TYPE_TABLE_GET(src, donkpocket_heated_reagents))
 		reagents.add_reagent(reagent, TYPE_TABLE_GET(src, donkpocket_heated_reagents)[reagent])
-	bitesize = 6
+	set_bitesize(6)
 	name = "warm [name]"
 	cooltime()
 
@@ -1569,7 +1569,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/popcorn)
 /obj/item/reagent_containers/food/snacks/popcorn/On_Consume(mob/living/M)
 	if(prob(unpopped))	//lol ...what's the point?
 		to_chat(M, span_red("You bite down on an un-popped kernel!"))
-		unpopped = max(0, unpopped-1)
+		set_unpopped(max(0, unpopped-1))
 	. = ..()
 
 /obj/item/reagent_containers/food/snacks/fries
@@ -3832,7 +3832,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza)
 	var/pizza_type
 	var/list/boxes // If the boxes are stacked, they come here
 	var/boxtag = ""
-TRACKED(/obj/item/pizzabox, open)
 
 // A pizza box: using it opens and shuts it (a stack stays shut); an empty hand takes the pizza out of an open one, or the top box off a stack held in the
 // other hand; a box goes on a shut box up to five high, a pizza into an open one, and a pen writes on the tag of a shut one.
@@ -5310,7 +5309,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chipplate)
 	var/mob/user = A.actor
 	var/obj/item/reagent_containers/food/snacks/returningitem = new vendingobject(loc)
 	reagents.trans_to(returningitem, bitesize)
-	returningitem.bitesize = 2
+	returningitem.set_bitesize(2)
 	user.put_in_hands(returningitem)
 	if (reagents && reagents.total_volume)
 		to_chat(user, "You take a chip from the plate.")
@@ -5380,14 +5379,14 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/dip)
 	item.reagents.trans_to(returningitem, item.reagents.total_volume) //Old chip to new chip
 	if(item.icon_state == "chip_half")
 		returningitem.set_icon_state("[returningitem.icon_state]_half")
-		returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
+		returningitem.set_bitesize(clamp(returningitem.reagents.total_volume,1,10))
 	else if(prob(1))
 		memed = 1
 		to_chat(user, "You scoop up some dip with the chip, but mid-scop, the chip breaks off into the dreadful abyss of dip, never to be seen again...")
 		returningitem.set_icon_state("[returningitem.icon_state]_half")
-		returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
+		returningitem.set_bitesize(clamp(returningitem.reagents.total_volume,1,10))
 	else
-		returningitem.bitesize = clamp(returningitem.reagents.total_volume*0.5,1,10)
+		returningitem.set_bitesize(clamp(returningitem.reagents.total_volume*0.5,1,10))
 	consume(item, user)
 	reagents.trans_to(returningitem, bitesize) //Dip to new chip
 	user.put_in_hands(returningitem)

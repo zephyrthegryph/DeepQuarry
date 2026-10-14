@@ -22,8 +22,6 @@ SYSTEM_DEF(job)
 	var/list/shift_keys = list()
 	var/list/restricted_keys = list()
 
-TRACKED(/datum/system/job, occupations_by_name)
-TRACKED(/datum/system/job, type_occupations)
 
 CAPABILITIES(/datum/system/job)
 	ref_many(nameof(unassigned), /mob/new_player)
@@ -589,7 +587,7 @@ CAPABILITIES(/datum/system/job)
 	else
 		to_chat(human_mob, span_filter_notice("Your job is [rank] and the game just can't handle it! Please report this bug to an administrator."))
 
-	human_mob.job = rank
+	human_mob.set_job(rank)
 	log_game("JOINED [key_name(human_mob)] as \"[rank]\"")
 	log_game("SPECIES [key_name(human_mob)] is a: \"[human_mob.species.name]\"")
 

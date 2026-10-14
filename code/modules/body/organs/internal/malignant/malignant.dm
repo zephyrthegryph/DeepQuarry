@@ -717,7 +717,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/engineered/lattice)
 	set_icon_state("crypto") // TEMP TODO: "lattice-mutated"
 	desc = "A fully grown mutoid ready for radiation training."
 	growth = 0
-	growth_trigger = rand(160,210) // we will quickly start dying now unless trained
+	set_growth_trigger(rand(160,210)) // we will quickly start dying now unless trained
 	return TRUE
 
 // Chemical dispensing organs, USES SUB TYPES

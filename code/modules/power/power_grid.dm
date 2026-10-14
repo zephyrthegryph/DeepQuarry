@@ -13,11 +13,6 @@ READ_LOOKUP(/proc/power_grid_lookup, registry = GLOBAL_PROC_REF(power_grid_regis
 	var/material_problem = FALSE
 	var/list/nodes
 
-TRACKED(/datum/power_grid, avail)
-TRACKED(/datum/power_grid, load)
-TRACKED(/datum/power_grid, brownout)
-TRACKED(/datum/power_grid, problem_timed)
-TRACKED(/datum/power_grid, material_problem)
 
 CAPABILITIES(/datum/power_grid)
 	ref_many(nameof(nodes), /obj/machinery/power)

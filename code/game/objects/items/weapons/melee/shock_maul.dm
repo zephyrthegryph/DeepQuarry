@@ -173,8 +173,6 @@
 
 MSG_DEF_SELF(shock_maul/out_of_charge, span_warning("%T% is out of charge."))
 
-TRACKED(/obj/item/melee/shock_maul, status)
-TRACKED(/obj/item/melee/shock_maul, wielded)
 
 CAPABILITIES(/obj/item/melee/shock_maul)
 	configure(item_worn(slots = SLOT_BACK))

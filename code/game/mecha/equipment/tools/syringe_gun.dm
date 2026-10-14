@@ -31,12 +31,10 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 
 /// Reagent ids selected for synthesis. Replaced whole (never mutated in place) so the setter raises.
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/var/list/processed_reagents = null
-TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, processed_reagents)
 
 /// Mounted with reagents selected for synthesis: the every() runs while it holds. Refreshed when the mounting or the selection changes, and
 /// cleared when a step stops the processing (the old sweep dropped the gun until one of those changed).
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/var/synthesizing = FALSE
-TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, synthesizing)
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/synthesis_wanted()
 	return (chassis && length(processed_reagents)) ? TRUE : FALSE
@@ -361,8 +359,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/crisis_drone)
 
 /// Jammed by a critical failure: the drone stays down until it is detached (and so reset).
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/var/jammed = FALSE
-TRACKED(/obj/item/mecha_parts/mecha_equipment/crisis_drone, jammed)
-TRACKED(/obj/item/mecha_parts/mecha_equipment/crisis_drone, enabled)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/detach(atom/moveto=null)
 	shut_down()

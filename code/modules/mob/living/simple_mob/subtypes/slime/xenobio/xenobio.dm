@@ -50,7 +50,6 @@
 // TRUE while it is feeding on something.
 /mob/living/simple_mob/slime/xenobio
 	var/consuming = FALSE
-TRACKED(/mob/living/simple_mob/slime/xenobio, consuming)
 
 /// The slime's sprite names follow its age and whether it is feeding.
 /mob/living/simple_mob/slime/xenobio/proc/sync_slime_sprites(datum/act/A)
@@ -99,9 +98,9 @@ TRACKED(/mob/living/simple_mob/slime/xenobio, consuming)
 		return
 
 	set_is_adult(TRUE)
-	melee_damage_lower = round(melee_damage_lower * 2) // 20
-	melee_damage_upper = round(melee_damage_upper * 2) // 30
-	endurance = endurance_adult
+	set_melee_damage_lower(round(melee_damage_lower * 2)) // 20
+	set_melee_damage_upper(round(melee_damage_upper * 2)) // 30
+	set_endurance(endurance_adult)
 	max_nutrition = 1200
 	amount_grown = 0
 	update_name()
@@ -111,9 +110,9 @@ TRACKED(/mob/living/simple_mob/slime/xenobio, consuming)
 		return
 
 	set_is_adult(FALSE)
-	melee_damage_lower = round(melee_damage_lower / 2) // 20
-	melee_damage_upper = round(melee_damage_upper / 2) // 30
-	endurance = initial(endurance)
+	set_melee_damage_lower(round(melee_damage_lower / 2)) // 20
+	set_melee_damage_upper(round(melee_damage_upper / 2)) // 30
+	set_endurance(initial(endurance))
 	max_nutrition = initial(max_nutrition)
 	set_nutrition(400)
 	amount_grown = 0

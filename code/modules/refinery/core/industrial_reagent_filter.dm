@@ -16,7 +16,6 @@
 	filter_side = 1 // R
 	icon_state = "filter_r"
 
-TRACKED(/obj/machinery/reagent_refinery/filter, filter_side)
 
 CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 	configure(uses_power(idle = 5, active = 50))

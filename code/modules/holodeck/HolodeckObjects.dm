@@ -288,8 +288,6 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 	unacidable = TRUE
 	var/active = 0
 
-TRACKED(/obj/item/holo/esword, active)
-TRACKED(/obj/item/holo/esword, lcolor)
 
 /obj/item/holo/esword/green
 	lcolor = "#008000"
@@ -481,7 +479,6 @@ CAPABILITIES(/obj/machinery/readybutton)
 		begin_event()
 	return OP_OK
 
-TRACKED(/obj/machinery/readybutton, ready)
 
 /// The look (the draw sweep: from its layers).
 /obj/machinery/readybutton/draw(datum/look/look)
@@ -528,12 +525,12 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holodeck)
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/set_safety(safe)
 	if (safe)
 		faction = FACTION_NEUTRAL
-		melee_damage_lower = 0
-		melee_damage_upper = 0
+		set_melee_damage_lower(0)
+		set_melee_damage_upper(0)
 	else
 		faction = FACTION_CARP
-		melee_damage_lower = initial(melee_damage_lower)
-		melee_damage_upper = initial(melee_damage_upper)
+		set_melee_damage_lower(initial(melee_damage_lower))
+		set_melee_damage_upper(initial(melee_damage_upper))
 
 /mob/living/simple_mob/animal/space/carp/holodeck/gib()
 	derez() //holograms can't gib

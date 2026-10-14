@@ -7,7 +7,7 @@
 	var/mob/living/carbon/human/user = rc_actor(T)
 	var/obj/machinery/door/window/door = allocate(/obj/machinery/door/window, T)
 	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, T)
-	card.uses = 3
+	card.set_uses(3)
 	TEST_ASSERT(user.put_in_active_hand(card), "the actual windoor actor holds a real charged emag")
 	TEST_ASSERT_NOTNULL(SSticker, "the actual windoor animation has the real round service required by open")
 	dq_machine_clear(door)

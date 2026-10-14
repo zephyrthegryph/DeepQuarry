@@ -21,7 +21,6 @@ MATERIAL_MIX(/obj/item/geiger, list(/datum/material/steel = SHEET_MATERIAL_AMOUN
 
 	var/mounted = FALSE
 
-TRACKED(/obj/item/geiger, scanning)
 
 CAPABILITIES(/obj/item/geiger)
 	configure(item_worn(slots = SLOT_BELT, flags = NOBLUDGEON))

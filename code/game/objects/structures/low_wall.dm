@@ -26,7 +26,6 @@
 	var/datum/material/material
 	var/grille_type
 
-TRACKED(/obj/structure/low_wall, material)
 
 /obj/structure/low_wall/draw(datum/look/look)
 	..()

@@ -88,7 +88,7 @@
 	if (islist(priority_overlays))
 		var/list/prio = priority_overlays
 		prio.Cut()
-	priority_overlays = null
+	set_priority_overlays(null)
 	if (length(managed_vis_overlays))
 		rel_clear(src, nameof(managed_vis_overlays))
 	return ..()

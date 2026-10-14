@@ -10,7 +10,6 @@
 	. = ..()
 	set_mode(pick(modes))
 
-TRACKED(/obj/item/pipe_painter, mode)
 
 /// It paints every pipe colour (derives(), at init).
 /obj/item/pipe_painter/proc/all_colours()

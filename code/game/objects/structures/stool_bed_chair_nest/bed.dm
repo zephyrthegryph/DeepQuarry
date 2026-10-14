@@ -27,9 +27,6 @@
 	var/can_unpad = TRUE
 	var/can_dismantle = TRUE
 
-TRACKED(/obj/structure/bed, material)
-TRACKED(/obj/structure/bed, padding_material)
-TRACKED(/obj/structure/bed, base_icon)
 
 /// What a draw reads of the frame and the padding: shared material definitions, which never change, so the look reads them through these and does
 /// not watch them (the redraw comes from the tracked material / padding_material vars).

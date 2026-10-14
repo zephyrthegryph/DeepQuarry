@@ -82,7 +82,6 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 MSG_DEF_SELF(ship/ai_denied, "Access Denied.")
 MSG_DEF_SELF(ship/access_denied, "access denied")
 
-TRACKED(/obj/machinery/computer/ship, ai_control)
 
 /// Requirement (old attack_hand): ID access.
 /obj/machinery/computer/ship/proc/ship_access_holds(datum/act/op/A)

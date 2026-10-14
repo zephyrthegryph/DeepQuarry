@@ -17,7 +17,6 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 
 /// Someone is threatening to press the button: it may slip while it's not held.
 /obj/item/assembly/signaler/var/deadman = FALSE
-TRACKED(/obj/item/assembly/signaler, deadman)
 
 /obj/item/assembly/signaler/proc/join_frequency(datum/act/timer/A)
 	set_frequency(frequency)

@@ -12,7 +12,6 @@
 	var/always_run = FALSE
 
 /// An always_run effect is relevant everywhere: it runs even with nobody around to see it.
-TRACKED(/obj/effect/map_effect, always_run)
 CAPABILITIES(/obj/effect/map_effect)
 	contributes(STAT_RELEVANCE, nameof(always_run))
 

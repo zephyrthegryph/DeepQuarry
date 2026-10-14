@@ -68,7 +68,7 @@ CAPABILITIES(/obj/machinery/disposal/deliveryChute)
 	var/mob/user = A.actor
 	to_chat(user, "You sliced the floorweld off the delivery chute.")
 	var/obj/structure/disposalconstruct/C = new(src.loc)
-	C.ptype = 8
+	C.set_ptype(8)
 	C.update()
 	C.set_anchored(TRUE)
 	C.set_density(TRUE)

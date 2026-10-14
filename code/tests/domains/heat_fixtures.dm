@@ -7,7 +7,6 @@
 	var/datum/gas_mixture/cold
 	var/conductance = 50
 
-TRACKED(/obj/machinery/heat_fixture, heat_on)
 
 /// Two cells of nitrogen it starts with (gas_store()).
 /obj/machinery/heat_fixture/declared_capabilities(list/into)

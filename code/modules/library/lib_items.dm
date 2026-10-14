@@ -247,8 +247,6 @@ CAPABILITIES(/obj/item/book)
 	op("carve_cutters", tool(TOOL_WIRECUTTER), when(req_is(nameof(carved), FALSE)), begins(PROC_REF(carve_text)), wait(3 SECONDS), then(PROC_REF(carve_done)))
 	op("carve_cutters_blocked", tool(TOOL_WIRECUTTER), when(req_is(nameof(carved))), priority(OP_PRIORITY_PART + 1), needs(req(PROC_REF(never), silent = TRUE)))
 
-TRACKED(/obj/item/book, carved)
-TRACKED(/obj/item/book, unique)
 
 /obj/item/book/proc/editing_title(datum/act/op/A)
 	return A.step_value("k248") == "Title"
@@ -321,7 +319,7 @@ TRACKED(/obj/item/book, unique)
 				to_chat(user, "The content is invalid.")
 				return OP_PASS
 			else
-				src.dat += content
+				set_dat(src.dat + content)
 		if("Author")
 			var/newauthor = A.step_value("k266")
 			if(isnull(newauthor))

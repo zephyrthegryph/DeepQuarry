@@ -72,7 +72,6 @@
 	if(HDD.store_file(F))
 		return F
 
-TRACKED(/datum/computer_file/program/wordprocessor, open_file)
 
 CAPABILITIES(/datum/computer_file/program/wordprocessor)
 	interface("NtosWordProcessor")

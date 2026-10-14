@@ -53,7 +53,6 @@ CAPABILITIES(/obj/structure/disposalpipe/junction)
 	var/last_sort = FALSE
 	var/sort_scan = TRUE
 	var/panel_open = FALSE
-TRACKED(/obj/structure/disposalpipe/sortjunction, panel_open)
 
 /obj/structure/disposalpipe/sortjunction/proc/updatedesc()
 	desc = initial(desc)
@@ -80,7 +79,7 @@ TRACKED(/obj/structure/disposalpipe/sortjunction, panel_open)
 	else if(icon_state == "pipe-j2s")
 		sortdir = turn(dir, 90)
 
-	dpdir = sortdir | dir | negdir
+	set_dpdir(sortdir | dir | negdir)
 
 /obj/structure/disposalpipe/sortjunction/Initialize(mapload)
 	. = ..()

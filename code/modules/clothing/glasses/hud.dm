@@ -349,7 +349,6 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud/eng/meson)
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
 	var/eye = null
 
-TRACKED(/obj/item/clothing/glasses/hud/security/eyepatch, eye)
 
 CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
 	configure(item_worn(covers = 0))
@@ -383,7 +382,6 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
 	var/eye = null
 
-TRACKED(/obj/item/clothing/glasses/hud/security/eyepatch2, eye)
 
 CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
 	configure(item_worn(covers = 0))
@@ -417,7 +415,6 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
 	enables_planes =  list(VIS_CH_STATUS,VIS_CH_HEALTH)
 	var/eye = null
 
-TRACKED(/obj/item/clothing/glasses/hud/health/eyepatch, eye)
 
 CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch)
 	configure(item_worn(covers = 0))

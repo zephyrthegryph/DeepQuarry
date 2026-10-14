@@ -194,7 +194,7 @@ CAPABILITIES(/obj/structure/flora/ausbushes)
 /obj/structure/flora/ausbushes/roll_icon_state(datum/roller/R)
 	var/list/icon_choice = TYPE_TABLE_GET(src, ausbush_icon_choice)
 	if(icon_choice)
-		bush_icon = "[icon_choice[1]]_[R.number(1, icon_choice[2])]"
+		set_bush_icon("[icon_choice[1]]_[R.number(1, icon_choice[2])]")
 	return bush_icon || "firstbush_[R.number(1, 4)]"
 
 /obj/structure/flora/ausbushes/reedbush

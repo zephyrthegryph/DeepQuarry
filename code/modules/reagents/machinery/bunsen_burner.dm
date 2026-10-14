@@ -9,7 +9,6 @@
 	var/obj/item/reagent_containers/held_container
 
 /obj/machinery/bunsen_burner/var/heating = FALSE
-TRACKED(/obj/machinery/bunsen_burner, heating)
 /// Boils its container while heating (start_boiling() .. end_boil()).
 // The holder resizes to match the boiling container.
 

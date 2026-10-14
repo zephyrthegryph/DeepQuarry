@@ -17,7 +17,6 @@ CAPABILITIES(/datum/dq_life_owner)
 	var/wanted = TRUE
 	var/list/endings = null
 
-TRACKED(/datum/dq_life_window, wanted)
 
 CAPABILITIES(/datum/dq_life_window)
 	param(nameof(host))

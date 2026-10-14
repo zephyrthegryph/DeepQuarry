@@ -92,7 +92,7 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 /datum/body/proc/ensure_worn_protection()
 	if(!(dirty & BODY_DIRTY_ARMOR))
 		return
-	dirty &= ~BODY_DIRTY_ARMOR
+	set_dirty(dirty & (~BODY_DIRTY_ARMOR))
 	armor_by_part = null
 	siemens_by_part = null
 	heat_limit_by_part = null

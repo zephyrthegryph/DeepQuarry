@@ -123,4 +123,3 @@ CAPABILITIES(/obj/item/modular_computer)
 
 /// Whether the computer is turned on. its every() runs its programs while it is.
 /obj/item/modular_computer/var/enabled = FALSE
-TRACKED(/obj/item/modular_computer, enabled)

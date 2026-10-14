@@ -137,7 +137,6 @@ CAPABILITIES(/mob/living/simple_mob/vore)
 	var/revive_time = 30 SECONDS //Don't do this in combat
 	var/advanced = 1 //allows for ghosts to join mobs who get revived by this, and updates their faction to yours
 
-TRACKED(/obj/item/denecrotizer, charges)
 
 CAPABILITIES(/obj/item/denecrotizer)
 	// The three revives, started by check_target() / ghostjoin_rez() / basic_rez() with the creature; each takes revive_time.

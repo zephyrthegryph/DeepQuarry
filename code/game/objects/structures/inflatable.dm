@@ -148,7 +148,6 @@ CAPABILITIES(/obj/structure/inflatable)
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
 
-TRACKED(/obj/structure/inflatable/door, state)
 
 /// Old attack_ai: those aren't machinery, they're just big slabs of a mineral. A cyborg next to it opens it; the AI can't (the op is a cyborg's).
 /obj/structure/inflatable/door/proc/inflatable_door_silicon_use(datum/act/op/A)

@@ -168,7 +168,6 @@ CAPABILITIES(/obj/item/clothing/gloves/vox)
 	var/partnername = ""
 	special_handling = TRUE
 
-TRACKED(/obj/item/clothing/gloves/weddingring, partnername)
 
 CAPABILITIES(/obj/item/clothing/gloves/weddingring)
 	configure(item_worn(covers = TRAIT_NONE))
