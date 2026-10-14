@@ -1,6 +1,6 @@
 # A2 items initialization sweep
 
-Before:194 rows (190 init_lines,4 world_reads). After analyzer update:98 init_lines,0 world_reads;96 removed. Global init baseline4115→4019;decl unchanged47.
+Before:194 rows (190 init_lines,4 world_reads). After analyzer update:98 init_lines,0 world_reads;96 removed. Global init baseline4115â†’4019;decl unchanged47.
 
 Converted42 setup jobs and one keeps_if guard in36 production files; removed one dead commented-out bug-monitor initializer. Constant ashtray icon_state blank is now a type default.
 
@@ -40,3 +40,7 @@ Exact residual fingerprints: remaining-fingerprints.txt. Expected deleted identi
 Read all initializer bodies in every baseline file before selecting conversions. Checked production subtype Initialize definitions tree-wide for converted holders: no remaining descendant initializer consumes the migrated job. Constructors still finish setup before materialization. Child objects/params exist before callbacks; keeps_if skips stand-in setup on rejection. Tests warm dview/status policies, scope coalesce, adopt only newly created paired detonators, and own MRE products explicitly. Stand-in test uses real public charge fields (no invented getters).
 
 Only changed editor default is ashtray initial icon_state ashtray -> blank; initialized runtime was already blank and its material dish overlay/color/capacity job is retained. Existing raw per-instance assignments are moved verbatim, not renamed/aliased to dodge lints.
+
+## Post-rebase mechanical follow-up
+
+The pipe painter now declares choose_initial_mode setup with the original set_mode(pick(modes)) call unchanged. Its derives(all_colours) runs synchronously inside lifeform_init during the atom parent initialization, before either the former leaf initializer or setup. No pipe-painter descendant initializer exists. There are no pipe-painter transient params, child constructors or additional RNG calls between those boundaries; the unconditional mapper overwrite is retained instead of adopting rolls override suppression. The real pipe_painter_mode constructor test asserts an actual catalog member is selected. This removes the previously retained pipe_painter init fingerprint; baseline update/verification remain root-owned.

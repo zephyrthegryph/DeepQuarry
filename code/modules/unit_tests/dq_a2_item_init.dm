@@ -109,3 +109,11 @@
 	TEST_ASSERT_EQUAL(tray.max_butts, round(tray.material.hardness / 5), "Capacity uses the parent's actual material hardness")
 	TEST_ASSERT_NULL(tray.color, "The material dish clears the parent's overall material tint")
 	TEST_ASSERT_NOTNULL(tray.base_overlay, "The dish setup builds its material-colored base overlay")
+
+/datum/unit_test/dq_a2_item_init/pipe_painter_mode/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/obj/item/pipe_painter/P = allocate(/obj/item/pipe_painter, test_floor())
+	TEST_ASSERT(length(P.modes) > 0, "The real constructor derives its complete paint catalog")
+	TEST_ASSERT_NOTNULL(P.mode, "The real constructor chooses a paint mode before returning")
+	TEST_ASSERT(P.mode in P.modes, "The chosen initial mode belongs to the real derived paint catalog")
+	TEST_ASSERT_EQUAL(length(P.modes), length(GLOB.pipe_colors), "Setup retains every configured paint colour")
