@@ -23,6 +23,7 @@ CAPABILITIES(/obj/machinery/optable)
 	op("optable_interaction_drag", item(/mob/living/carbon), gesture(GESTURE_DRAG), label("Lay on table"), then(PROC_REF(optable_interaction_drag)))
 	op("optable_interaction_item", item(/obj/item), then(PROC_REF(optable_interaction_item)))
 	op("optable_climb_onto", menu(), label("Climb On Table"), then(PROC_REF(optable_climb_onto)))
+	ref_one(nameof(victim), /mob/living/carbon/human)
 
 /// A light blast may knock the table flat.
 /obj/machinery/optable/proc/optable_blast(datum/act/hit/explosion/A)

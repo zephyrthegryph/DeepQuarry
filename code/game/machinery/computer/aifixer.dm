@@ -65,6 +65,7 @@ CAPABILITIES(/obj/machinery/computer/aifixer)
 	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
 	op("use_card", item(/obj/item/aicard), priority(OP_PRIORITY_DEFAULT - 1), label("Use AI card"), needs(req(PROC_REF(can_use_card))), then(PROC_REF(interaction_use_card)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	ref_one(nameof(occupier), /mob/living/silicon/ai)
 
 /obj/machinery/computer/aifixer/ui_data(datum/act/eval/A)
 	var/list/data = list()

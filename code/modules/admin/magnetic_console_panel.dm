@@ -32,6 +32,7 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	op("set_path", ui_act("set_path"), needs(req(PROC_REF(path_prompt_ready), because = MSG(magnet/path_unavailable))), asks(/datum/prompt/text, step = "path", fields = list("question" = "Please define a new path!", "default" = computed(PROC_REF(path_prompt_default)), "max_len" = MAX_MESSAGE_LEN, "ask_flags" = ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(ui_act_set_path)))
 	op("toggle_moving", ui_act("toggle_moving"), then(PROC_REF(ui_act_toggle_moving)))
 	op("open", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open)))
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 
 /obj/machinery/magnetic_controller/ui_data(datum/act/eval/A)
 	var/list/data = list()

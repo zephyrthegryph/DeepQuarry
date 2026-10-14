@@ -50,6 +50,9 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	op("cloning_console_interaction_item", item(/obj/item), then(PROC_REF(cloning_console_interaction_item)))
 	op("cloning_console_interaction_hand", hand(), then(PROC_REF(cloning_console_interaction_hand)))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	ref_one(nameof(scanner), /obj/machinery/dna_scannernew)
+	ref_one(nameof(active_BR), /datum/transhuman/body_record)
+	ref_one(nameof(selected_pod), /obj/machinery/clonepod)
 
 // Linked pods (two-sided with each pod's connected; a pod leaves when either end dies).
 /obj/machinery/computer/cloning/ownership()

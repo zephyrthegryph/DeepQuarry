@@ -246,11 +246,6 @@
 	var/turf/T = get_turf(src)
 	var/obj/item/radio/borg/R = hearturfs[T] // this should be an assoc list of turf-to-radio
 
-	// We heard it on our own radio? We use power for that.
-	if(istype(R) && R.myborg() == src)
-		if(!use_component(ROBOT_SLOT_RADIO))
-			return FALSE // Sorry, couldn't hear
-
 	return R // radio, true, false, what's the difference
 
 /mob/observer/dead/can_hear_radio(list/hearturfs)

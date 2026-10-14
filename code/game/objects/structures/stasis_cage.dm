@@ -16,6 +16,7 @@
 		contain(A)
 
 CAPABILITIES(/obj/structure/stasis_cage)
+	ref_one(nameof(contained))
 	op("stuff_in", item(/mob/living/simple_mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put inside"), needs(req_adjacent()),
 		starts(PROC_REF(stuffing_started)), begins(PROC_REF(stuffing_begins)), wait(2 SECONDS, keeps = STAY | ALIVE | TARGET_PRESENT), then(PROC_REF(stuffed)))
 	op("release", hand(), label("Release"), then(PROC_REF(interaction_release)))

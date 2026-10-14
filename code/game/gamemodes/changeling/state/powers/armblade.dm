@@ -71,6 +71,7 @@
 	projectile_parry_chance = 15	// The base chance for a projectile to be deflected.
 
 CAPABILITIES(/obj/item/melee/changeling)
+	ref_one(nameof(creator))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 5))

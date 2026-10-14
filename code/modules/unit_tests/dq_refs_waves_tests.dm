@@ -91,3 +91,151 @@ CAPABILITIES(/obj/refs_two_step)
 	TEST_ASSERT(QDELETED(first_prompt), "the first prompt is deleted with the op, not kept for the round")
 	GLOB.test_prompts = null
 	test_driver_end()
+
+/// Machinery and item references cleared by their declared relation: deleting the target leaves the holder's var null (a news post's channel,
+/// a news photo's photo, a charge's target, a valve's attacher).
+/datum/unit_test/dq_refs_machinery_item_refs_clear_on_delete
+
+/datum/unit_test/dq_refs_machinery_item_refs_clear_on_delete/Run()
+	var/datum/feed_channel/channel = new
+	var/datum/feed_message/post = new
+	rel_set(post, nameof(post.parent_channel), channel)
+	TEST_ASSERT(post.parent_channel == channel, "the post names its channel")
+	qdel(channel)
+	TEST_ASSERT_NULL(post.parent_channel, "a deleted channel leaves no reference on its post")
+	qdel(post)
+
+	var/obj/item/photo/shot = allocate(/obj/item/photo, run_loc_floor_bottom_left)
+	var/datum/news_photo/attachment = new(shot, FALSE)
+	TEST_ASSERT(attachment.photo == shot, "the attachment names its photo")
+	qdel(shot)
+	TEST_ASSERT_NULL(attachment.photo, "a deleted photo leaves no reference on its news attachment")
+	qdel(attachment)
+
+	var/obj/item/plastique/charge = allocate(/obj/item/plastique, run_loc_floor_bottom_left)
+	var/obj/item/pen/stuck_to = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	rel_set(charge, nameof(charge.target), stuck_to)
+	TEST_ASSERT(charge.target == stuck_to, "the charge names what it is stuck to")
+	qdel(stuck_to)
+	TEST_ASSERT_NULL(charge.target, "a deleted target leaves no reference on the charge")
+
+	var/obj/item/transfer_valve/valve = allocate(/obj/item/transfer_valve, run_loc_floor_bottom_left)
+	var/mob/living/simple_mob/e0_fixture/who = allocate(/mob/living/simple_mob/e0_fixture)
+	rel_set(valve, nameof(valve.attacher), who)
+	TEST_ASSERT(valve.attacher == who, "the valve names who attached it")
+	qdel(who)
+	TEST_ASSERT_NULL(valve.attacher, "a deleted mob leaves no reference on the valve")
+
+/// The uplink selections are boot singletons: an unforced delete leaves them whole (what lets the global hold one without a relation).
+/datum/unit_test/dq_refs_uplink_selection_refuses_unforced_delete
+
+/datum/unit_test/dq_refs_uplink_selection_refuses_unforced_delete/Run()
+	var/datum/uplink_random_selection/selection = new
+	qdel(selection)
+	TEST_ASSERT(!QDELETED(selection), "an unforced delete leaves the selection whole")
+	qdel(selection, TRUE)
+	TEST_ASSERT(QDELETED(selection), "a forced delete removes it")
+
+/// A portal leads to a turf or a landmark as well as an item: its destination is typed /atom, so a wormhole to a turf keeps its link (the
+/// declared relation refused it while the var was typed /obj/item) and a deleted destination clears it.
+/datum/unit_test/dq_refs_portal_leads_to_a_turf
+
+/datum/unit_test/dq_refs_portal_leads_to_a_turf/Run()
+	var/turf/here = run_loc_floor_bottom_left
+	var/turf/there = get_step(here, EAST)
+	var/obj/effect/portal/portal = allocate(/obj/effect/portal, here)
+	rel_set(portal, nameof(portal.target), there)
+	TEST_ASSERT_EQUAL(portal.target_ref(), there, "a portal's destination can be a turf")
+	var/obj/effect/landmark/mark = allocate(/obj/effect/landmark, there)
+	rel_set(portal, nameof(portal.target), mark)
+	TEST_ASSERT_EQUAL(portal.target_ref(), mark, "or a landmark")
+	qdel(mark)
+	TEST_ASSERT_NULL(portal.target_ref(), "a deleted destination clears the portal's link")
+
+/// An advanced pinpointer follows a person as well as an object (the DNA mode): its target is typed /atom and clears when the person is deleted.
+/datum/unit_test/dq_refs_pinpointer_follows_a_person
+
+/datum/unit_test/dq_refs_pinpointer_follows_a_person/Run()
+	var/obj/item/pinpointer/advpinpointer/pointer = allocate(/obj/item/pinpointer/advpinpointer)
+	var/mob/living/carbon/human/person = allocate(/mob/living/carbon/human)
+	rel_set(pointer, nameof(pointer.target), person)
+	TEST_ASSERT_EQUAL(pointer.target_ref(), person, "the pinpointer holds the person it follows")
+	qdel(person)
+	TEST_ASSERT_NULL(pointer.target_ref(), "deleting the person clears the pinpointer's target")
+
+/// Removing an anomaly modifier undoes its effect on the anomaly it was added to; the removal does not bind the anomaly again (it used to write
+/// the link where it should have left it), and the modifier's link clears when the anomaly is deleted.
+/datum/unit_test/dq_refs_anomaly_modifier_removal_undoes_effect
+
+/datum/unit_test/dq_refs_anomaly_modifier_removal_undoes_effect/Run()
+	var/obj/effect/anomaly/anomaly = allocate(/obj/effect/anomaly)
+	var/datum/anomaly_modifiers/move/modifier = new
+	TEST_ASSERT(modifier.on_add(anomaly), "the modifier binds to the anomaly it is added to")
+	TEST_ASSERT_EQUAL(anomaly.move_chance, ANOMALY_MOVECHANCE, "and applies its effect")
+	TEST_ASSERT(modifier.on_remove(anomaly), "the modifier accepts its removal")
+	TEST_ASSERT_EQUAL(anomaly.move_chance, 0, "removal undoes the effect")
+	qdel(anomaly)
+	TEST_ASSERT_NULL(modifier.attached_anomaly, "deleting the anomaly clears the modifier's link")
+	qdel(modifier)
+
+/// An objective's target is a mind and nothing else: the heist objectives that name a type or a material keep it in their own vars, and a
+/// deleted mind clears the objective's target.
+/datum/unit_test/dq_refs_objective_target_is_a_mind
+
+/datum/unit_test/dq_refs_objective_target_is_a_mind/Run()
+	var/datum/objective/heist/loot/loot = new
+	loot.choose_target()
+	TEST_ASSERT(ispath(loot.loot_path, /obj), "the loot objective names the type to steal in its own var")
+	TEST_ASSERT_NULL(loot.target, "and leaves the mind target empty")
+	var/datum/objective/heist/salvage/salvage = new
+	salvage.choose_target()
+	TEST_ASSERT(istext(salvage.material_name), "the salvage objective names its material in its own var")
+	TEST_ASSERT_NULL(salvage.target, "and leaves the mind target empty")
+	var/datum/mind/victim = new("dq_refs_objective_target")
+	rel_set(loot, nameof(loot.target), victim)
+	TEST_ASSERT_EQUAL(loot.target, victim, "a mind can be the target")
+	qdel(victim)
+	TEST_ASSERT_NULL(loot.target, "a deleted mind clears the objective's target")
+	qdel(loot)
+	qdel(salvage)
+
+/// A malfunction research ability owns the next one of its chain: it is built with it and deleted with it.
+/datum/unit_test/dq_refs_malf_research_chain_is_owned
+
+/datum/unit_test/dq_refs_malf_research_chain_is_owned/Run()
+	var/datum/malf_research_ability/interdiction/recall_shuttle/root = new
+	var/datum/malf_research_ability/second = root.next
+	TEST_ASSERT(istype(second, /datum/malf_research_ability/interdiction/unlock_cyborg), "the first ability starts with the second of its tree")
+	var/datum/malf_research_ability/third = second?.next
+	TEST_ASSERT(istype(third, /datum/malf_research_ability/interdiction/hack_cyborg), "which starts with the third")
+	qdel(root)
+	TEST_ASSERT(QDELETED(second), "deleting the head of the chain deletes the next ability")
+	TEST_ASSERT(QDELETED(third), "and the one after it")
+
+/// A hydraulic clamp on any working exosuit (a hoverpod, not only a ripley) holds that chassis as its cargo holder.
+/datum/unit_test/dq_refs_clamp_holds_a_working_chassis
+
+/datum/unit_test/dq_refs_clamp_holds_a_working_chassis/Run()
+	var/obj/mecha/working/hoverpod/pod = allocate(/obj/mecha/working/hoverpod)
+	var/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/clamp = allocate(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp)
+	clamp.attach(pod)
+	TEST_ASSERT_EQUAL(clamp.cargo_holder(), pod, "the clamp's cargo holder is the hoverpod it is bolted to")
+	qdel(pod)
+	TEST_ASSERT_NULL(clamp.cargo_holder(), "deleting the chassis clears the clamp's cargo holder")
+
+/// A keep = FALSE param that is a relation is dropped through the relation: the target's back-edge goes with it.
+/obj/refs_param_probe
+	name = "param probe"
+	var/atom/movable/probe_link
+
+CAPABILITIES(/obj/refs_param_probe)
+	ref_one(nameof(probe_link), /atom/movable)
+	param(nameof(probe_link), pos = 1, keep = FALSE)
+
+/datum/unit_test/dq_refs_dropped_param_leaves_no_back_edge
+
+/datum/unit_test/dq_refs_dropped_param_leaves_no_back_edge/Run()
+	var/obj/item/pen/target = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	var/obj/refs_param_probe/probe = allocate(/obj/refs_param_probe, run_loc_floor_bottom_left, target)
+	TEST_ASSERT_NULL(probe.probe_link, "a keep = FALSE param is dropped when Initialize() returns")
+	TEST_ASSERT(!length(target.om_refs_in), "and the target keeps no back-edge naming the holder")

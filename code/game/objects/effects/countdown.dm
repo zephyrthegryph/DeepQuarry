@@ -17,6 +17,7 @@
 /obj/effect/countdown/var/started = FALSE
 TRACKED(/obj/effect/countdown, started)
 CAPABILITIES(/obj/effect/countdown)
+	ref_one(nameof(attached_to))
 	every(0.2 SECONDS, then(PROC_REF(countdown_step)), when = nameof(started))
 
 /obj/effect/countdown/Initialize(mapload)

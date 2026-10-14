@@ -156,6 +156,7 @@ CAPABILITIES(/obj/item/ghost_catcher)
 	configure(item_combat(force = 0))
 	// Holding a ghost in the beam, up to a minute; the catcher is claimed (busy) until it ends. The user may walk about while it lasts.
 	op("grab", ai(), takes("subject", "effects"), claims(CLAIM_TARGET), wait(60 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE), on_interrupt(PROC_REF(grab_broken)), then(PROC_REF(grab_timed_out)))
+	ref_one(nameof(grabbed_entity), /atom/movable)
 
 /atom/proc/incorporeal_grab(mob/user)
 	if(is_incorporeal())

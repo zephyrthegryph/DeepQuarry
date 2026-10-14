@@ -204,7 +204,7 @@ GLOBAL_REAL_VAR(list/param_given)
 			var/list/checked = schema_check(S, value, FALSE, holder)
 			if(checked[1] == SCHEMA_REJECT)
 				declare_report("[C.origin]: [holder.type].[var_name] = [value] refused by its schema: [checked[2]]")
-				holder.vars[var_name] = initial(holder.vars[var_name]) // ALLOW(api): a refused param falls back to the compiled default
+				holder.vars[E.args["var"]] = initial(holder.vars[E.args["var"]]) // ALLOW(api): a refused param falls back to the compiled default
 			else
 				holder.vars[var_name] = checked[1] // ALLOW(api): a param's schema-normalised value, before init
 
@@ -268,7 +268,15 @@ GLOBAL_REAL_VAR(list/param_drop_pending)
 	var/datum/lifeform_plan/P = lifeform_plan_of(holder)
 	for(var/datum/centry/C as anything in P.param_drops)
 		var/datum/entry/E = C.item
-		holder.vars[E.args["var"]] = initial(holder.vars[E.args["var"]])
+		var/var_name = E.args["var"]
+		// A var a relation declares goes through the relation, or the target keeps a back-edge to a holder that no longer names it.
+		var/kind = rel_kind(holder, var_name)
+		if(kind == OWNK_OWN)
+			rel_take(holder, var_name) // detached, not disposed: a param was handed to the holder, never created by it
+		else if(kind)
+			rel_set(holder, var_name, null)
+		else
+			holder.vars[E.args["var"]] = initial(holder.vars[E.args["var"]])
 
 /// Construction transport policies are provided by the world library.
 /turf/proc/replace_surface(type)

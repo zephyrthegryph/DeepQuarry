@@ -65,6 +65,7 @@ CAPABILITIES(/obj/item/powersink)
 		stage_step(0, 1, tool(TOOL_SCREWDRIVER), label("Attach to the cable"), needs(req(PROC_REF(cable_refusal))), wait(0), then(PROC_REF(attached_to_cable)), key = "attach"),
 		stage_step(1, 0, tool(TOOL_SCREWDRIVER), label("Detach"), wait(0), then(PROC_REF(detached_from_cable)), key = "detach"),
 		stage_step(2, 0, tool(TOOL_SCREWDRIVER), label("Detach"), wait(0), then(PROC_REF(detached_from_cable)), key = "detach_running"))
+	ref_one(nameof(attached), /obj/structure/cable)
 
 /obj/item/powersink/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor

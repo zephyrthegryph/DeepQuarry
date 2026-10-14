@@ -645,6 +645,9 @@
 	AM.pixel_y = contents_original_pixel_y
 
 CAPABILITIES(/obj/structure/prop/machine/nt_pod)
+	ref_one(nameof(outside))
+	ref_one(nameof(door))
+	ref_one(nameof(fluid))
 	op("interaction_drag", item(/atom/movable), gesture(GESTURE_DRAG), then(PROC_REF(interaction_drag)))
 
 /// Old MouseDrop_T.

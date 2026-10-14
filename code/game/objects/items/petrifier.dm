@@ -16,6 +16,8 @@
 CAPABILITIES(/obj/item/petrifier)
 	op("fire", in_hand(), wait(0), needs(req(PROC_REF(can_fire), because = MSG(petrifier/beeps))), then(PROC_REF(fired)))
 	param(nameof(linked), pos = 1)
+	ref_one(nameof(target), /mob/living/carbon/human)
+	ref_one(nameof(linked), /obj/machinery/petrification)
 
 MSG_DEF_SELF(petrifier/beeps, "The device beeps but does nothing.")
 

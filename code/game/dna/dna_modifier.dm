@@ -96,6 +96,7 @@ CAPABILITIES(/datum/dna2/record)
 
 // the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
 CAPABILITIES(/obj/machinery/dna_scannernew)
+	ref_one(nameof(occupant))
 	configure(uses_power(idle = 50, active = 300))
 	default_parts()
 	blast_contents()

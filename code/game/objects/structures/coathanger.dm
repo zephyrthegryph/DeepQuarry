@@ -7,6 +7,7 @@
 	var/list/allowed = list(/obj/item/clothing/suit/storage/toggle/labcoat, /obj/item/clothing/suit/storage/det_trench) // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 
 CAPABILITIES(/obj/structure/coatrack)
+	ref_one(nameof(coat))
 	op("take_coat", hand(), label("Take coat"), when(nameof(coat)), then(PROC_REF(interaction_hand)))
 	op("hang_coat", item(/obj/item), label("Hang coat"), then(PROC_REF(interaction_item)))
 

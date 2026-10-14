@@ -6,6 +6,10 @@
 	var/unlocked = 0									// Changed to 1 when fully researched.
 	var/datum/malf_research_ability/next = null			// Next research (if applicable).
 
+/// The next research of the chain: each ability owns it (its type says which one it starts with), and finishing this one moves it to the researcher.
+CAPABILITIES(/datum/malf_research_ability)
+	owns_one(nameof(next), /datum/malf_research_ability)
+
 
 /datum/malf_research_ability/proc/research_tick(time = 0)
 	invested += time
