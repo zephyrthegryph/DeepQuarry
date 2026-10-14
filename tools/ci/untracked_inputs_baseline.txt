@@ -1,7 +1,6 @@
 # untracked_inputs: reads of untracked state by stat inputs, requirements, outputs and draws (analyze gen deps). rule<TAB>file<TAB>normalized line.
 # Shrink-only: `analyze baseline --update --lint untracked_inputs` drops fixed sites and never adds one.
 stat_input_untracked	code/ATMOSPHERICS/components/unary/unary_base.dm	return !isnull(power_rating) && !(pipe_state in list("scrubber", "uvent", "injector")) // ALLOW(reads): power_rating and pipe_state are fixed by the type
-stat_input_untracked	code/__defines/verdigris/_bindings_types.dm	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CHARGE, 0) // J
 stat_input_untracked	code/_helpers/game.dm	return level in using_map.player_levels
 stat_input_untracked	code/controllers/subsystems/tgui.dm	if(ui.user == user)
 stat_input_untracked	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
@@ -77,7 +76,6 @@ stat_input_untracked	code/modules/paperwork/faxmachine.dm	if(B.name != initial(B
 stat_input_untracked	code/modules/paperwork/faxmachine.dm	return (istype(page1) && B.name == page1.name) || (istype(page2) && B.name == page2.name) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 stat_input_untracked	code/modules/paperwork/filingcabinet.dm	return (length(contents) > 0) ? null : MSG(filingcabinet/empty) // ALLOW(reads, spatial): what the cabinet holds is read when it is opened, never cached; a plain count of its own contents
 stat_input_untracked	code/modules/power/port_gen.dm	return overheating > 0 || temperature > cooling_temperature() + 0.1
-stat_input_untracked	code/modules/power/smes.dm	return vg_entity ? get_charge() : initial_charge // ALLOW(reads): the charge is Rust's own, read where it is asked (a requirement re-checks it, a gate is polled), never cached
 stat_input_untracked	code/modules/reagents/machinery/pump.dm	return (isnull(cell)) ? null : MSG(pump/has_cell) // ALLOW(reads): the cell slot is read when a cell is offered to it, never from a cached menu
 stat_input_untracked	code/modules/shuttles/emergency_shuttle_api.dm	if(!shuttle)
 stat_input_untracked	code/modules/shuttles/emergency_shuttle_api.dm	return shuttle.location

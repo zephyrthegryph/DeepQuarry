@@ -328,9 +328,9 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 
 // ---- the coils ----
 
-/// Why the unit cannot be modified now, or null: charged above 1% with the safeties on, or a switch on.
+/// Why the unit cannot be modified now, or null: charged to 1% or more with the safeties on, or a switch on (the charge is a watched band).
 /obj/machinery/power/smes/buildable/proc/modify_refusal(datum/act/op/A)
-	if((stored_charge() > (capacity/100)) && safeties_enabled)
+	if(safeties_enabled && watched(src, WATCH_CHARGE, list(capacity / 100)) >= 1)
 		return /datum/msg/smes/safety_circuit
 	if(output_attempt || input_attempt)
 		return /datum/msg/smes/turn_it_off
