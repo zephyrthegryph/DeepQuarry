@@ -16,6 +16,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 
 CAPABILITIES(/obj/effect/landmark)
 	membership(joins = REGISTRY_LANDMARKS)
+	registry(REGISTRY_LATEJOIN, when = PROC_REF(is_latejoin_landmark))
 	map_resolver(GLOBAL_PROC_REF(resolve_landmark))
 	derives(nameof(tag), PROC_REF(landmark_tag))
 
@@ -83,6 +84,10 @@ CAPABILITIES(/obj/effect/landmark)
 /obj/effect/landmark/proc/landmark_tag()
 	return "[tag_kind]*[name]"
 
+/// Moving late-join markers belong to the registry; coordinate-only markers do not.
+/obj/effect/landmark/proc/is_latejoin_landmark(datum/act/A)
+	return name == "JoinLate"
+
 /obj/effect/landmark/Initialize(mapload)
 	. = ..()
 
@@ -92,7 +97,6 @@ CAPABILITIES(/obj/effect/landmark)
 		registry += loc
 	switch(name)
 		if("JoinLate") // Bit difference, since we need the spawn point to move.
-			registry_join(REGISTRY_LATEJOIN, src)
 			simulated = TRUE
 			// always use this list with get_turf
 		if("Holding Facility")

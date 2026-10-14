@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Declared conditional late-join landmark registration and added deletion regression coverage."
