@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Portable air pumps and scrubbers update their running indicators when battery charge changes."
