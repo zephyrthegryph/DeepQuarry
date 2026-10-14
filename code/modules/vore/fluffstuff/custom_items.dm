@@ -733,65 +733,6 @@ CAPABILITIES(/obj/item/cane/fluff)
 	item_state = "temphypo"
 	icon_state = "temphypo"
 
-/* //ChompREMOVE - disabled CKEY locked items
-//WickedTempest: Chakat Tempest
-/obj/item/storage/backpack/saddlebag/tempest
-	name = "Tempest's Saddlebags"
-	desc = "A custom-made set of saddlebags, tailored to Chakat Tempest's exact dimensions, and taste in color! One one side, there's small print stitched in: ...to carry the weight of any responsibility, burden or task."
-	icon = 'icons/vore/custom_items_vr.dmi'
-	icon_override = 'icons/vore/custom_items_vr.dmi'
-	item_state = "tempestsaddlebag"
-	icon_state = "tempestbag"
-	max_storage_space = INVENTORY_DUFFLEBAG_SPACE //Since they play a macro character, no reason to put custom slowdown code on here.
-	slowdown = 0
-	taurtype = /datum/sprite_accessory/tail/taur/feline/tempest
-	no_message = "These saddlebags seem to be fitted for someone else, and keep slipping off!"
-	actions_types = list(/datum/action/item_action/toggle_mlembulance)
-	var/datum/looping_sound/ambulance/soundloop
-	var/ambulance_state = FALSE
-	var/ambulance = FALSE
-	EXPIRY_DECLARE(ambulance_last_switch)
-
-CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
-	every(2 SECONDS, then(PROC_REF(tempest_step)), when = nameof(ambulance))
-
-/obj/item/storage/backpack/saddlebag/tempest/Initialize(mapload)
-	soundloop = new(list(src), FALSE)
-	return ..()
-
-
-/obj/item/storage/backpack/saddlebag/tempest/ui_action_click(mob/user, actiontype)
-	set_ambulance(!ambulance)
-	if(ambulance)
-		item_state = "tempestsaddlebag-amb"
-		icon_state = "tempestbag-amb"
-		if (ismob(loc))
-			var/mob/M = loc
-			changed(src)
-		ambulance_state = FALSE
-		set_glow(src, GLOW(2, 1, "#FF0000"))
-		soundloop.start()
-	else
-		item_state = "tempestsaddlebag"
-		icon_state = "tempestbag"
-		if (ismob(loc))
-			var/mob/M = loc
-			changed(src)
-		set_glow(src, GLOW(0, null, null))
-		soundloop.stop()
-
-/obj/item/storage/backpack/saddlebag/tempest/proc/tempest_step(datum/act/timer/A)
-	if(ELAPSED(src, ambulance_last_switch, CLOCK_WORLD) > 1.5 SECONDS)
-		ambulance_state = !(ambulance_state)
-		var/newlight = "#FF0000"
-		if(ambulance_state)
-			newlight = "#0000FF"
-		if (ismob(loc))
-			var/mob/M = loc
-			changed(src)
-		set_glow(src, GLOW(2, 1, newlight))
-		EXPIRY_STAMP(src, ambulance_last_switch, CLOCK_WORLD)
-*/ //ChompREMOVE End
 
 /datum/looping_sound/ambulance
 	mid_sounds = list('sound/items/amulanceweeoo.ogg'=1)
@@ -1690,3 +1631,4 @@ TYPE_TABLE(/obj/item/remote_scene_tool/tally_necklace, equip_spec, dq_spec_join(
 
 CAPABILITIES(/obj/item/remote_scene_tool/tally_doll)
 	configure(item_worn(slots = NONE))
+

@@ -9,7 +9,7 @@
 	colonies across a wide swathe of space. They hold a wide range of forms and creeds.<br/><br/> \
 	While the central Sol government maintains control of its far-flung people, powerful corporate \
 	interests, rampant cyber and bio-augmentation and secretive factions make life on most human \
-	worlds tumultous at best." //CHOMPedit: blurb variable
+	worlds tumultous at best."
 	wikilink="https://wiki.chompstation13.net/index.php?title=Humans"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/humans)
 	num_alternate_languages = 3
@@ -903,7 +903,7 @@
 	dual-star Vazzend system. Their politically de-centralized society and independent natures have led them to become a species and \
 	culture both feared and respected for their scientific breakthroughs. Discovery, loyalty, and utilitarianism dominates their lifestyles \
 	to the degree it can cause conflict with more rigorous and strict authorities. They speak a guttural language known as 'Canilunzt' \
-	which has a heavy emphasis on utilizing tail positioning and ear twitches to communicate intent." //CHOMPedit
+	which has a heavy emphasis on utilizing tail positioning and ear twitches to communicate intent."
 	icobase = 'icons/mob/human_races/r_vulpkanin.dmi'
 	deform = 'icons/mob/human_races/r_vulpkanin.dmi'
 	secondary_langs = list(LANGUAGE_CANILUNZT)

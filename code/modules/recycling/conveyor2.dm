@@ -213,7 +213,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 	icon_state = "switch-off"
 	var/position = 0			// 0 off, -1 reverse, 1 forward
 	var/last_pos = -1			// last direction setting
-	var/oneway = 0				// Voreadd: One way levels mid-round!
+	var/oneway = 0
 
 	var/id = "" 				// must match conveyor IDs to control them
 

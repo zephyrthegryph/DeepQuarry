@@ -201,7 +201,6 @@ GLOBAL_VAR(restart_counter)
 	GLOB.world_startup_time = world.timeofday
 	GLOB.rollover_safety_date = world.realtime - world.timeofday // 00:00 today (ish, since floating point error with world.realtime) of today
 
-	//ChompADD Start - Newsfile
 	var/savefile/F = new(NEWSFILE)
 	if(F)
 		var/title
@@ -210,7 +209,6 @@ GLOBAL_VAR(restart_counter)
 		var/body
 		F["body"] >> body
 		GLOB.servernews_hash = md5("[title]" + "[body]")
-	//ChompADD End
 
 	InitTgs()
 

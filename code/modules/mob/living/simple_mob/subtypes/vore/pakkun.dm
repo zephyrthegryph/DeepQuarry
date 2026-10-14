@@ -110,7 +110,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
 	if(pred && !extra_possessive && !(LAZYFIND(prey_excludes, target)))
 		rel_add(src, nameof(prey_excludes), target)
 		after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), with = list(target))
-	// DQEdit: legacy if-block emptied.
 
 /mob/living/simple_mob/vore/pakkun/load_default_bellies()
 	. = ..()

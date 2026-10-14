@@ -137,7 +137,7 @@ CAPABILITIES(/obj/item/gun/energy/retro)
 	for a human-made energy side-arm. One possible explaination is that the creators of this \
 	weapon, in their later years, had less of a need to optimize their capability for war, \
 	and instead focused on other endeavors. Another explanation is that the vast age of the weapon \
-	may have caused it to degrade, yet still remain functional at a reduced capability." //CHOMPedit changed description to be accurate with new projectile
+	may have caused it to degrade, yet still remain functional at a reduced capability."
 	value = CATALOGUER_REWARD_MEDIUM
 
 /*
