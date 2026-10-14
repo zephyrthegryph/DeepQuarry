@@ -225,7 +225,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 /// The unit's stored charge in SMES units: read from Rust, never cached in DM.
 /obj/machinery/power/smes/proc/stored_charge()
-	return vg_entity ? get_charge() : initial_charge // ALLOW(reads): the charge is Rust's own, read where it is asked (a requirement re-checks it, a gate is polled), never cached
+	return vg_entity ? get_charge() : initial_charge
 
 /// Adds `delta` (negative removes) to the stored charge. Before the unit registers it moves the seed.
 /obj/machinery/power/smes/proc/adjust_stored_charge(delta)
@@ -593,9 +593,9 @@ CAPABILITIES(/obj/machinery/power/smes/buildable/hybrid)
 	without("cut_terminal")
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(hybrid_charge)), when = PROC_REF(hybrid_has_room))
 
-/// There is room for more charge.
+/// There is room for more charge: its charge is below its capacity (a watched band, so the gate wakes when the charge reaches it).
 /obj/machinery/power/smes/buildable/hybrid/proc/hybrid_has_room(datum/act/A)
-	return stored_charge() < capacity
+	return watched(src, WATCH_CHARGE, list(capacity)) < 1
 
 /// Hybrid units make their own charge every frame, never more than there is room for.
 /obj/machinery/power/smes/buildable/hybrid/proc/hybrid_charge(datum/act/timer/A)
