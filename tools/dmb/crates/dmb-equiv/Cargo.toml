@@ -1,0 +1,19 @@
+[package]
+name = "dmb-equiv"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Semantic equivalence checker for BYOND DMB/RSC pairs (ID- and table-order independent)"
+
+[lib]
+name = "dmb_equiv"
+path = "src/lib.rs"
+
+[[bin]]
+name = "dmb-equiv"
+path = "src/main.rs"
+
+[dependencies]
+byond-dmb = { path = "../.." }
+serde_json = "1"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }

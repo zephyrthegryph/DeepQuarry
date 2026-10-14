@@ -1,0 +1,49 @@
+// Probe: which table orders are observable at runtime.
+/datum/zeta
+/datum/alpha
+/datum/alpha/child
+/datum/mid
+	var/zz = 1
+	var/aa = 2
+	var/mm = 3
+	proc/p1()
+	proc/p2()
+/datum/mid/proc/p0()
+/datum/mid/p1()
+	return 2
+/datum/mid/proc/z_late()
+/obj/thing
+	verb/v_b()
+	verb/v_a()
+/obj/thing/verb/v_0()
+/mob/m2
+var/global/gz = 1
+var/global/ga = 2
+var/global/gm = 3
+/proc/gproc_z()
+/proc/gproc_a()
+/proc/dump()
+	var/list/out = list()
+	out += "types:"
+	for(var/T in typesof(/datum)) out += "[T]"
+	out += "atoms:"
+	for(var/T in typesof(/atom)) out += "[T]"
+	out += "procs:"
+	for(var/T in typesof(/datum/mid/proc)) out += "[T]"
+	out += "verbs:"
+	var/obj/thing/O = new
+	for(var/V in O.verbs) out += "[V]"
+	out += "vars:"
+	var/datum/mid/M = new
+	for(var/V in M.vars) out += "[V]=[M.vars[V]]"
+	out += "objvars:"
+	for(var/V in O.vars) out += "[V]"
+	out += "globals:"
+	for(var/V in global.vars) out += "[V]"
+	out += "call:[M.p1()]"
+	out += "strings:[jointext(list("b","a","c"), ",")]"
+	return out
+/world/New()
+	..()
+	text2file(jointext(dump(), "\n"), "out.txt")
+	shutdown()
