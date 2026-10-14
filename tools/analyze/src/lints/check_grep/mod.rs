@@ -454,6 +454,7 @@ impl Lint for CheckGrep {
             let new = match mode {
                 Mode::Update => ceiling.min(count),
                 Mode::Seed => count,
+                Mode::Migrate => ceiling,
             };
             if new != ceiling {
                 crate::scopes::write_ceiling(&path, "check_grep", rule, new)?;

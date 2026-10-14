@@ -354,7 +354,7 @@ impl Lint for DocSnippets {
         let complete: Vec<&Block> = blocks.iter().filter(|b| b.kind() == "complete").collect();
         let path = baseline_path(cx.tree);
         let legacy = legacy_keys(&path);
-        let keep: Vec<&&Block> = if mode == Mode::Update {
+        let keep: Vec<&&Block> = if mode != Mode::Seed {
             complete.iter().filter(|b| legacy.contains(&(b.rel.clone(), b.first_line()))).collect()
         } else {
             complete.iter().collect()
