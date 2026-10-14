@@ -54,3 +54,43 @@
 	scope_setup()
 	var/obj/item/clothing/head/helmet/space/H = allocate(/obj/item/clothing/head/helmet/space, test_floor())
 	TEST_ASSERT_EQUAL(H.sprite_sheets[SPECIES_TESHARI], 'icons/inventory/head/mob_teshari.dmi', "The exact base helmet receives its refitted sprite")
+
+/datum/unit_test/dq_a7_initialization/fishing_slogan/Run()
+	scope_setup()
+	var/obj/item/clothing/head/fishing/H = allocate(/obj/item/clothing/head/fishing, test_floor())
+	TEST_ASSERT(length(H.slogan) > 0, "The real constructor rolls a nonempty fishing slogan")
+	TEST_ASSERT(H.hatsize >= 0 && H.hatsize <= 10, "The correlated slogan roll supplies the configured size")
+	TEST_ASSERT(H.colourtype in list("green", "red", "blue", "yellow", "purple", "orange", "grey"), "The same roll supplies a valid hat hue")
+	TEST_ASSERT_EQUAL(H.name, "\improper '[H.slogan]' hat", "Ordered setup names the hat after its actual slogan")
+	TEST_ASSERT_EQUAL(H.desc, "A peaked cap with text reading '[H.slogan]'.", "The description agrees with the same rolled slogan")
+	TEST_ASSERT_EQUAL(H.icon_state, "[H.colourtype]soft[H.hatsize]", "The initialized icon uses the correlated hue and size")
+	TEST_ASSERT_EQUAL(H.item_state_slots[slot_head_str], H.icon_state, "The actual worn state matches the constructor icon")
+
+/datum/unit_test/dq_a7_initialization/dark_glow/proc/restore_tile(x, y, z, original_type)
+	var/turf/current = locate(x, y, z)
+	if(current && current.type != original_type)
+		current.ChangeTurf(original_type)
+
+/datum/unit_test/dq_a7_initialization/dark_glow/Run()
+	scope_setup()
+	var/turf/T = test_floor()
+	var/x = T.x
+	var/y = T.y
+	var/z = T.z
+	var/original_type = T.type
+	defer_cleanup(src, PROC_REF(restore_tile), x, y, z, original_type)
+	// This dark tile has no flooring or dirty roll, and its parent initialization has no RNG draws.
+	// Select real RNG seeds for both sides of the original 5% gate, then replay them through construction.
+	for(var/should_glow in list(FALSE, TRUE))
+		var/seed
+		for(var/candidate in 1 to 1000)
+			rand_seed(candidate)
+			if(!!prob(5) == should_glow)
+				seed = candidate
+				break
+		TEST_ASSERT(seed, "A deterministic seed exercises the requested real glow branch")
+		rand_seed(seed)
+		var/turf/current = locate(x, y, z)
+		var/turf/simulated/floor/weird_things/dark/D = current.ChangeTurf(/turf/simulated/floor/weird_things/dark)
+		TEST_ASSERT_EQUAL(length(D.overlays), should_glow ? 1 : 0, "Real initialization preserves the conditional glow effect")
+		restore_tile(x, y, z, original_type)

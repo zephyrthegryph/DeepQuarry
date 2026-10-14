@@ -19,14 +19,12 @@
 	var/colourtype
 
 CAPABILITIES(/obj/item/clothing/head/fishing)
+	setup(PROC_REF(roll_slogan))
+	setup(PROC_REF(apply_look))
 	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 0.9))
 
-// ALLOW(init/INSTANCE_STATE): rolls its slogan and draws it
-/obj/item/clothing/head/fishing/Initialize(mapload)
-	. = ..()
-	roll_slogan()
-	apply_look()
+
 
 /// Restored state brings the text (name, desc) itself; only the worn and in-hand icons, a list
 /// Initialize() rebuilt from its own roll, have to follow the restored size and hue.

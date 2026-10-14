@@ -45,3 +45,15 @@ No builds, tests, generation, baseline updates, manifest edits, commits, merge o
 Add `#include "code\modules\unit_tests\dq_a7_initialization_tests.dm"` to the root-owned manifest. Focus `/datum/unit_test/dq_a7_initialization` (five leaves: ranger_ancestor_order, material_identity, datajack_storage, rig_systems, helmet_refit) plus requested `dq_look_pin`.
 
 Analyzer certified global init4115→4024 (91 removed); scoped counts249→161 and9→6 are confirmed. Decl47→46, tracked clean after generation. Moved wall icon_state and RIG item_state now use existing registered setters; no pre-existing setter or declaration changed.
+
+## Exact retained site identities
+
+[Committed residual inventory](codex_A7_residual_sites.txt) lists every retained source identity from this lane’s post-edit audit, including repeated normalized rows. The per-file reasons above classify those identities; this is a source audit snapshot, not a fresh analyzer verdict after rebasing. Master’s subsequently removed declarations and rewritten setters must remain authoritative, and the root verification will establish the final baseline counts.
+
+## Additional ordered setup jobs after review
+
+Fishing hats now declare the existing `roll_slogan` followed by `apply_look` as two ordered setup entries. The helpers, RNG sequence, existing appearance setters and correlated slogan/size/hue generation remain unchanged. Neither the parent Initialize chain nor a descendant consumes the result before setup; no Initialize descendant exists. The item’s other capability entries do not add an intervening setup job. This was avoidable residual work, not a correlated-RNG form gap.
+
+Dark floor tiles declare the original post-parent 5% glow decision as one setup job. They have no Initialize descendants, no ancestor setup jobs and no RNG-consuming parent path (no flooring and `can_dirty = FALSE`). The existing runtime Crossed path and glow image builder remain unchanged. No mapload/transient parameter is consumed by the moved work, and both types retain the inherited `init_from_table = FALSE`; no table fast path is activated by this change.
+
+Two constructor regressions were added: `dq_a7_initialization/fishing_slogan` checks the real correlated text, hue, size and icon values; `dq_a7_initialization/dark_glow` selects and replays real RNG seeds for both conditional construction outcomes, checks actual overlays, and defers restoration of the changed turf before creating it. Estimated additional shrink: four init_lines identities and one world_reads row; analyzer certification is pending.

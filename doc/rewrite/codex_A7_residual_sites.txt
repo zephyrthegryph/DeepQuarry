@@ -1,0 +1,300 @@
+Source-only estimate; root must certify via analyzer.
+init_lines baseline 249
+world_reads baseline 9
+init_lines retained identity occurrences 158
+init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animal_chance count=2
+init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animal_type count=1
+init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animals count=4
+init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::chill count=1
+init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::expr count=2
+init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass count=4
+init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass_chance count=4
+init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if count=7
+init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::season_overlay count=1
+init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::switch count=1
+init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::tree_type count=1
+init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::trees count=4
+init_lines	code/game/turfs/simulated.dm	@/turf/simulated::Initialize::SSplanets.addTurf count=1
+init_lines	code/game/turfs/simulated.dm	@/turf/simulated::Initialize::holy count=1
+init_lines	code/game/turfs/simulated.dm	@/turf/simulated::Initialize::if count=2
+init_lines	code/game/turfs/simulated.dm	@/turf/simulated::Initialize::levelupdate count=1
+init_lines	code/game/turfs/simulated/fancy_shuttles.dm	@/obj/effect/fancy_shuttle::Initialize::GLOB.fancy_shuttles[fancy_shuttle_tag] count=1
+init_lines	code/game/turfs/simulated/fancy_shuttles.dm	@/obj/effect/fancy_shuttle::Initialize::if count=1
+init_lines	code/game/turfs/simulated/fancy_shuttles.dm	@/obj/effect/fancy_shuttle::Initialize::log_mapping count=1
+init_lines	code/game/turfs/simulated/fancy_shuttles.dm	@/obj/effect/fancy_shuttle::Initialize::return count=1
+init_lines	code/game/turfs/simulated/fancy_shuttles.dm	@/obj/effect/fancy_shuttle::Initialize::split_icon count=1
+init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::dirt count=1
+init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::floortype count=1
+init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::if count=3
+init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::install_flooring count=1
+init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::update_dirt count=1
+init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::if count=1
+init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::name count=1
+init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::update_light count=1
+init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass/sif::Initialize::expr count=1
+init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass/sif::Initialize::if count=1
+init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::animal_type count=1
+init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::expr count=2
+init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::grass_type count=1
+init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::if count=4
+init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/rocks/sif::Initialize::expr count=1
+init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/rocks/sif::Initialize::if count=1
+init_lines	code/game/turfs/simulated/water.dm	@/turf/simulated/floor/water::Initialize::handle_fish count=1
+init_lines	code/game/turfs/space/space.dm	@/turf/space::Initialize::space_appearance count=1
+init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::default_material count=1
+init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::forced_material count=1
+init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::if count=2
+init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::material count=1
+init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::return count=1
+init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::default_material count=1
+init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::forced_material count=1
+init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::if count=2
+init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::material count=1
+init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::return count=1
+init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage/knifeharness::Initialize::expr count=2
+init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage/knifeharness::Initialize::hold.max_storage_space count=1
+init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage/knifeharness::Initialize::hold.restrict_hold count=1
+init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage/knifeharness::Initialize::knives count=1
+init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage::Initialize::expr count=1
+init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage::Initialize::hold.max_storage_space count=1
+init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage::Initialize::if count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::O count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::desc count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::dir count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::icon count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::icon_state count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::if count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::name count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/suit::Initialize::MakeHood count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/suit::Initialize::toggleicon count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::H count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::LAZYSET count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::else count=2
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::if count=9
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::log_runtime count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::rolled_down count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::sensor_mode count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::sensorpref count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::switch count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/under::Initialize::worn_state count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::attach_accessory count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::for count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::if count=1
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::tie count=1
+init_lines	code/modules/clothing/spacesuits/breaches.dm	@/obj/item/clothing/suit/space::Initialize::base_name count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/activate::Initialize::if count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/activate::Initialize::return count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/deactivate::Initialize::if count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/deactivate::Initialize::return count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/engage::Initialize::if count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/engage::Initialize::return count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module::Initialize::if count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module::Initialize::rel_set count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module::Initialize::return count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charge_dat count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charge_dat.charges count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charge_dat.display_name count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charge_dat.product_type count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charge_dat.short_name count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charges count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::for count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::if count=3
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::processed_charges count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::processed_charges[charge_dat.short_name] count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::suit_overlay count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::for count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::if count=2
+init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::mode_types count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::rel_clear count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::rel_set count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::vision_datum count=1
+init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::vision_index count=1
+init_lines	code/modules/clothing/spacesuits/spacesuits.dm	@/obj/item/clothing/suit/space::Initialize::LAZYSET count=1
+init_lines	code/modules/clothing/spacesuits/spacesuits.dm	@/obj/item/clothing/suit/space::Initialize::if count=1
+init_lines	code/modules/clothing/under/xenos/vox.dm	@/obj/item/clothing/accessory/storage/vox::Initialize::hold.max_storage_space count=1
+init_lines	code/modules/clothing/under/xenos/vox.dm	@/obj/item/clothing/accessory/storage/vox::Initialize::hold.restrict_hold count=1
+
+Raw retained constructor bodies:
+code/game/turfs/flooring/seasonal.dm /turf/simulated/floor/outdoors/grass/seasonal
+42 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::switch switch(GLOB.world_time_season)
+43 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if if("spring")
+44 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::trees trees = "seasonalspring"
+45 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animals animals = "seasonalspring"
+46 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass grass = "seasonalspring"
+48 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass_chance grass_chance = 30
+49 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if if("summer")
+50 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::trees trees = "seasonalsummer"
+51 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animals animals = "seasonalsummer"
+52 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass grass = "seasonalsummer"
+54 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if if("autumn")
+55 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::trees trees = "seasonalautumn"
+57 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animals animals = "seasonalautumn"
+58 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass grass = "seasonalautumn"
+60 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass_chance grass_chance = 10
+61 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animal_chance animal_chance = 0.25
+62 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if if("winter")
+63 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass_chance grass_chance = 0
+64 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::trees trees = "seasonalwinter"
+66 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animals animals = "seasonalwinter"
+67 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if if(prob(snow_chance))
+68 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::chill chill()
+72 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass grass = "seasonalwinter"
+74 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass_chance grass_chance = 1
+75 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animal_chance animal_chance = 0.1
+78 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if if(tree_chance && prob(tree_chance) && !check_density())
+79 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::tree_type var/tree_type = pickweight(GLOB.grass_trees[trees])
+80 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::expr new tree_type(src)
+83 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if if(animal_chance && prob(animal_chance) && !check_density())
+84 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animal_type var/animal_type = pickweight(GLOB.grass_animals[animals])
+85 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::expr new animal_type(src)
+89 @/turf/simulated/floor/outdoors/grass/seasonal::Initialize::season_overlay set_season_overlay(roll_season_overlay())
+code/game/turfs/simulated.dm /turf/simulated
+70 @/turf/simulated::Initialize::if if(istype(loc, /area/chapel))
+71 @/turf/simulated::Initialize::holy holy = 1
+72 @/turf/simulated::Initialize::levelupdate levelupdate()
+73 @/turf/simulated::Initialize::if if(is_outdoors())
+74 @/turf/simulated::Initialize::SSplanets.addTurf SSplanets.addTurf(src)
+code/game/turfs/simulated/fancy_shuttles.dm /obj/effect/fancy_shuttle
+31 @/obj/effect/fancy_shuttle::Initialize::if if(!fancy_shuttle_tag)
+32 @/obj/effect/fancy_shuttle::Initialize::log_mapping log_mapping("## ERROR Fancy shuttle with no tag at [x],[y],[z]! Type is: [type]")
+33 @/obj/effect/fancy_shuttle::Initialize::return return INITIALIZE_HINT_QDEL
+34 @/obj/effect/fancy_shuttle::Initialize::split_icon split_icon = icon(split_file, null, dir)
+36 @/obj/effect/fancy_shuttle::Initialize::GLOB.fancy_shuttles[fancy_shuttle_tag] GLOB.fancy_shuttles[fancy_shuttle_tag] = list(split_icon, x, y)
+code/game/turfs/simulated/floor.dm /turf/simulated/floor
+48 @/turf/simulated/floor::Initialize::floortype var/floortype = floortype_at_make || initial_flooring
+49 @/turf/simulated/floor::Initialize::if if(floortype)
+50 @/turf/simulated/floor::Initialize::install_flooring install_flooring(get_flooring_data(floortype), TRUE)
+51 @/turf/simulated/floor::Initialize::if if(can_dirty && can_start_dirty)
+52 @/turf/simulated/floor::Initialize::if if(prob(dirty_prob))
+53 @/turf/simulated/floor::Initialize::dirt dirt += rand(50,100)
+54 @/turf/simulated/floor::Initialize::update_dirt update_dirt()
+code/game/turfs/simulated/lava.dm /turf/simulated/floor/lava
+28 @/turf/simulated/floor/lava::Initialize::if if(!is_outdoors())
+29 @/turf/simulated/floor/lava::Initialize::name name = "magma"
+30 @/turf/simulated/floor/lava::Initialize::update_light update_light()
+code/game/turfs/simulated/outdoors/grass.dm /turf/simulated/floor/outdoors/grass/sif
+64 @/turf/simulated/floor/outdoors/grass/sif::Initialize::if if(tree_chance && prob(tree_chance) && !check_density())
+65 @/turf/simulated/floor/outdoors/grass/sif::Initialize::expr new /obj/structure/flora/tree/sif(src)
+code/game/turfs/simulated/outdoors/grass.dm /turf/simulated/floor/outdoors/grass
+70 @/turf/simulated/floor/outdoors/grass::Initialize::if if(grass && grass_chance && prob(grass_chance) && !check_density())
+71 @/turf/simulated/floor/outdoors/grass::Initialize::grass_type var/grass_type = pickweight(GLOB.grass_grass[grass])
+72 @/turf/simulated/floor/outdoors/grass::Initialize::if if(grass_type)
+73 @/turf/simulated/floor/outdoors/grass::Initialize::expr new grass_type(src)
+75 @/turf/simulated/floor/outdoors/grass::Initialize::if if(animals && animal_chance && prob(animal_chance) && !check_density())
+76 @/turf/simulated/floor/outdoors/grass::Initialize::animal_type var/animal_type = pickweight(GLOB.grass_animals[animals])
+77 @/turf/simulated/floor/outdoors/grass::Initialize::if if(animal_type)
+78 @/turf/simulated/floor/outdoors/grass::Initialize::expr new animal_type(src)
+code/game/turfs/simulated/outdoors/grass.dm /turf/simulated/floor/outdoors/rocks/sif
+99 @/turf/simulated/floor/outdoors/rocks/sif::Initialize::if if(animal_chance && prob(animal_chance) && !check_density())
+100 @/turf/simulated/floor/outdoors/rocks/sif::Initialize::expr new /mob/living/simple_mob/vore/slug(src)
+code/game/turfs/simulated/water.dm /turf/simulated/floor/water
+30 @/turf/simulated/floor/water::Initialize::handle_fish handle_fish()
+code/game/turfs/space/space.dm /turf/space
+25 @/turf/space::Initialize::space_appearance space_appearance()
+code/game/turfs/weird_turfs.dm /turf/simulated/floor/weird_things/dark
+code/modules/clothing/accessories/hands.dm /obj/item/clothing/accessory/bracelet/material
+64 @/obj/item/clothing/accessory/bracelet/material::Initialize::forced_material var/forced_material = TYPE_TABLE_GET(src, bracelet_forced_material)
+65 @/obj/item/clothing/accessory/bracelet/material::Initialize::if if(forced_material)
+66 @/obj/item/clothing/accessory/bracelet/material::Initialize::default_material default_material = forced_material
+68 @/obj/item/clothing/accessory/bracelet/material::Initialize::material material = get_material_by_name(default_material || MAT_STEEL)
+69 @/obj/item/clothing/accessory/bracelet/material::Initialize::if if(!istype(material))
+70 @/obj/item/clothing/accessory/bracelet/material::Initialize::return return INITIALIZE_HINT_QDEL
+code/modules/clothing/accessories/rings.dm /obj/item/clothing/accessory/ring/material
+161 @/obj/item/clothing/accessory/ring/material::Initialize::forced_material var/forced_material = TYPE_TABLE_GET(src, ring_forced_material)
+162 @/obj/item/clothing/accessory/ring/material::Initialize::if if(forced_material)
+163 @/obj/item/clothing/accessory/ring/material::Initialize::default_material default_material = forced_material
+165 @/obj/item/clothing/accessory/ring/material::Initialize::material material = get_material_by_name(default_material || MAT_STEEL)
+166 @/obj/item/clothing/accessory/ring/material::Initialize::if if(!istype(material))
+167 @/obj/item/clothing/accessory/ring/material::Initialize::return return INITIALIZE_HINT_QDEL
+code/modules/clothing/accessories/storage.dm /obj/item/clothing/accessory/storage
+23 @/obj/item/clothing/accessory/storage::Initialize::hold.max_storage_space hold.max_storage_space = slots * 2
+24 @/obj/item/clothing/accessory/storage::Initialize::if if (!hide_on_roll)
+25 @/obj/item/clothing/accessory/storage::Initialize::expr on_rolled["down"] = icon_state
+code/modules/clothing/accessories/storage.dm /obj/item/clothing/accessory/storage/knifeharness
+109 @/obj/item/clothing/accessory/storage/knifeharness::Initialize::hold.max_storage_space hold.max_storage_space = ITEMSIZE_COST_SMALL * 2
+110 @/obj/item/clothing/accessory/storage/knifeharness::Initialize::knives var/static/list/knives = list(/obj/item/material/knife/machete/hatchet/unathiknife, /obj/item/material/knife, /obj/item/material/knife/plastic)
+111 @/obj/item/clothing/accessory/storage/knifeharness::Initialize::hold.restrict_hold hold.restrict_hold(knives)
+113 @/obj/item/clothing/accessory/storage/knifeharness::Initialize::expr new /obj/item/material/knife/machete/hatchet/unathiknife(hold)
+114 @/obj/item/clothing/accessory/storage/knifeharness::Initialize::expr new /obj/item/material/knife/machete/hatchet/unathiknife(hold)
+code/modules/clothing/clothing.dm /obj/item/clothing
+41 @/obj/item/clothing::Initialize::if if(starting_accessories)
+42 @/obj/item/clothing::Initialize::for for(var/T in starting_accessories)
+43 @/obj/item/clothing::Initialize::tie var/obj/item/clothing/accessory/tie = new T(src)
+44 @/obj/item/clothing::Initialize::attach_accessory src.attach_accessory(null, tie)
+code/modules/clothing/clothing.dm /obj/item/clothing/ears/offear
+302 @/obj/item/clothing/ears/offear::Initialize::if if(isobj(loc))
+303 @/obj/item/clothing/ears/offear::Initialize::O var/obj/O = loc
+304 @/obj/item/clothing/ears/offear::Initialize::name name = O.name
+305 @/obj/item/clothing/ears/offear::Initialize::desc desc = O.desc
+306 @/obj/item/clothing/ears/offear::Initialize::icon icon = O.icon
+307 @/obj/item/clothing/ears/offear::Initialize::icon_state icon_state = O.icon_state
+308 @/obj/item/clothing/ears/offear::Initialize::dir set_dir(O.dir)
+code/modules/clothing/clothing.dm /obj/item/clothing/suit
+941 @/obj/item/clothing/suit::Initialize::MakeHood MakeHood()
+942 @/obj/item/clothing/suit::Initialize::toggleicon set_toggleicon("[initial(icon_state)]")
+code/modules/clothing/clothing.dm /obj/item/clothing/under
+1155 @/obj/item/clothing/under::Initialize::if if(worn_state)
+1156 @/obj/item/clothing/under::Initialize::LAZYSET LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+1157 @/obj/item/clothing/under::Initialize::else else
+1158 @/obj/item/clothing/under::Initialize::worn_state worn_state = icon_state
+1161 @/obj/item/clothing/under::Initialize::if if(rolled_down < 0)
+1162 @/obj/item/clothing/under::Initialize::if if((icon_exists(icon, "[worn_state]_d") || icon_exists(rolled_down_icon, worn_state) || icon_exists(icon_override, "[worn_state]_d")))
+1163 @/obj/item/clothing/under::Initialize::rolled_down rolled_down = 0
+1165 @/obj/item/clothing/under::Initialize::if if(!ishuman(loc))
+1168 @/obj/item/clothing/under::Initialize::H var/mob/living/carbon/human/H = loc
+1169 @/obj/item/clothing/under::Initialize::sensorpref sensorpref = isnull(H) ? 1 : (ishuman(H) ? H.sensorpref : 1)
+1170 @/obj/item/clothing/under::Initialize::switch switch(sensorpref)
+1171 @/obj/item/clothing/under::Initialize::if if(1) sensor_mode = SUIT_SENSOR_OFF
+1172 @/obj/item/clothing/under::Initialize::if if(2) sensor_mode = SUIT_SENSOR_BINARY
+1173 @/obj/item/clothing/under::Initialize::if if(3) sensor_mode = SUIT_SENSOR_VITAL
+1174 @/obj/item/clothing/under::Initialize::if if(4) sensor_mode = SUIT_SENSOR_TRACKING
+1175 @/obj/item/clothing/under::Initialize::if if(5) sensor_mode = pick(SUIT_SENSOR_OFF, SUIT_SENSOR_BINARY, SUIT_SENSOR_VITAL, SUIT_SENSOR_TRACKING)
+1176 @/obj/item/clothing/under::Initialize::else else
+1177 @/obj/item/clothing/under::Initialize::sensor_mode sensor_mode = pick(SUIT_SENSOR_OFF, SUIT_SENSOR_BINARY, SUIT_SENSOR_VITAL, SUIT_SENSOR_TRACKING)
+1178 @/obj/item/clothing/under::Initialize::log_runtime log_runtime("Invalid switch for suit sensors, defaulting to random. [sensorpref] chosen")
+code/modules/clothing/head/fishing.dm /obj/item/clothing/head/fishing
+code/modules/clothing/spacesuits/breaches.dm /obj/item/clothing/suit/space
+38 @/obj/item/clothing/suit/space::Initialize::base_name base_name = "[name]"
+code/modules/clothing/spacesuits/rig/modules/modules.dm /obj/item/rig_module
+106 @/obj/item/rig_module::Initialize::if if(suit_overlay_inactive)
+107 @/obj/item/rig_module::Initialize::suit_overlay set_suit_overlay(suit_overlay_inactive)
+109 @/obj/item/rig_module::Initialize::if if(charges && charges.len)
+110 @/obj/item/rig_module::Initialize::processed_charges var/list/processed_charges = list()
+111 @/obj/item/rig_module::Initialize::for for(var/list/charge in charges)
+112 @/obj/item/rig_module::Initialize::charge_dat var/datum/rig_charge/charge_dat = new
+114 @/obj/item/rig_module::Initialize::charge_dat.short_name charge_dat.short_name   = charge[1]
+115 @/obj/item/rig_module::Initialize::charge_dat.display_name charge_dat.display_name = charge[2]
+116 @/obj/item/rig_module::Initialize::charge_dat.product_type charge_dat.product_type = charge[3]
+117 @/obj/item/rig_module::Initialize::charge_dat.charges charge_dat.charges      = charge[4]
+119 @/obj/item/rig_module::Initialize::if if(!charge_selected) charge_selected = charge_dat.short_name
+120 @/obj/item/rig_module::Initialize::processed_charges[charge_dat.short_name] processed_charges[charge_dat.short_name] = charge_dat
+122 @/obj/item/rig_module::Initialize::charges charges = processed_charges
+code/modules/clothing/spacesuits/rig/modules/modules.dm /atom/movable/stat_rig_module
+218 @/atom/movable/stat_rig_module::Initialize::rel_set rel_set(src, nameof(module), loc)
+219 @/atom/movable/stat_rig_module::Initialize::if if(!istype(module))
+220 @/atom/movable/stat_rig_module::Initialize::return return INITIALIZE_HINT_QDEL
+code/modules/clothing/spacesuits/rig/modules/modules.dm /atom/movable/stat_rig_module/activate
+263 @/atom/movable/stat_rig_module/activate::Initialize::if if(!istype(module))
+264 @/atom/movable/stat_rig_module/activate::Initialize::return return INITIALIZE_HINT_QDEL
+code/modules/clothing/spacesuits/rig/modules/modules.dm /atom/movable/stat_rig_module/deactivate
+276 @/atom/movable/stat_rig_module/deactivate::Initialize::if if(!istype(module))
+277 @/atom/movable/stat_rig_module/deactivate::Initialize::return return INITIALIZE_HINT_QDEL
+code/modules/clothing/spacesuits/rig/modules/modules.dm /atom/movable/stat_rig_module/engage
+291 @/atom/movable/stat_rig_module/engage::Initialize::if if(!istype(module))
+292 @/atom/movable/stat_rig_module/engage::Initialize::return return INITIALIZE_HINT_QDEL
+code/modules/clothing/spacesuits/rig/modules/specific/vision.dm /obj/item/rig_module/vision
+250 @/obj/item/rig_module/vision::Initialize::if if(!vision_modes)
+253 @/obj/item/rig_module/vision::Initialize::vision_index vision_index = 1
+255 @/obj/item/rig_module/vision::Initialize::mode_types var/list/mode_types = vision_modes.Copy()
+256 @/obj/item/rig_module/vision::Initialize::rel_clear rel_clear(src, nameof(vision_modes))
+257 @/obj/item/rig_module/vision::Initialize::for for(var/vision_mode in mode_types)
+258 @/obj/item/rig_module/vision::Initialize::vision_datum var/datum/rig_vision/vision_datum = rel_add(src, nameof(vision_modes), new vision_mode)
+259 @/obj/item/rig_module/vision::Initialize::if if(!vision)
+260 @/obj/item/rig_module/vision::Initialize::rel_set rel_set(src, nameof(vision), vision_datum)
+code/modules/clothing/spacesuits/spacesuits.dm /obj/item/clothing/suit/space
+87 @/obj/item/clothing/suit/space::Initialize::if if(type == /obj/item/clothing/suit/space)
+88 @/obj/item/clothing/suit/space::Initialize::LAZYSET LAZYSET(sprite_sheets, SPECIES_TESHARI, 'icons/inventory/suit/mob_teshari.dmi')
+code/modules/clothing/under/xenos/vox.dm /obj/item/clothing/accessory/storage/vox
+35 @/obj/item/clothing/accessory/storage/vox::Initialize::hold.max_storage_space hold.max_storage_space = slots * ITEMSIZE_COST_NORMAL
+36 @/obj/item/clothing/accessory/storage/vox::Initialize::hold.restrict_hold hold.restrict_hold(null, ITEMSIZE_NORMAL)
+init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::clothing_index count=1 (restored unchanged existing setter-named call under scope constraint)
