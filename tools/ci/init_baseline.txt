@@ -1012,9 +1012,8 @@ init_lines	code/game/objects/items/weapons/storage/fancy.dm	if(brand)
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	for(var/obj/item/clothing/mask/smokable/cigarette/C in slot_contents(CONTAINER_SLOT_STORAGE))
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	C.brand = brand
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	C.desc += " This one is \a [brand]."
-init_lines	code/game/objects/items/weapons/storage/internal.dm	rel_set(src, nameof(master_item), loc)
-init_lines	code/game/objects/items/weapons/storage/internal.dm	if(!istype(master_item(), /obj/item))
 init_lines	code/game/objects/items/weapons/storage/internal.dm	return INITIALIZE_HINT_QDEL
+init_lines	code/game/objects/items/weapons/storage/internal.dm	rel_set(src, nameof(master_item), loc)
 init_lines	code/game/objects/items/weapons/storage/internal.dm	name = master_item().name
 init_lines	code/game/objects/items/weapons/storage/mre.dm	pickflavor()
 init_lines	code/game/objects/items/weapons/storage/mre.dm	if(seasoning)
@@ -2367,12 +2366,6 @@ init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	set_real_name(brainmo
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	forceMove(get_turf(parent_human()))
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	dq_add_recursive_move(parent_human())
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	global.observe(parent_human(), /datum/notice/movable_attempted_move, src, then(PROC_REF(human_moved)))
-init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	if(brainmob.client.prefs)
-init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	var/mob/living/carbon/human/dummy/mannequin = get_mannequin(brainmob.client.ckey)
-init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	mannequin.delete_inventory(TRUE)
-init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	brainmob.client.prefs.dress_preview_mob(mannequin)
-init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	var/icon/new_icon = getHologramIcon(getCompoundIcon(mannequin))
-init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	icon = new_icon
 init_lines	code/modules/overmap/disperser/disperser_console.dm	link_parts()
 init_lines	code/modules/overmap/disperser/disperser_console.dm	reset_calibration()
 init_lines	code/modules/overmap/events/overmap_event.dm	GLOB.overmap_event_handler.update_hazards(loc)

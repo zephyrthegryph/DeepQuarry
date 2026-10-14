@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Icon state lists are no longer shared between runtime-generated icons, which broke directional previews"
