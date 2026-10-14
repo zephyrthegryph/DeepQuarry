@@ -75,7 +75,7 @@ esac
 [ -n "$lanes" ] || lanes="unnamed batch"
 
 here="$(git rev-parse --show-toplevel 2>/dev/null)" || die "run this inside a DeepQuarry checkout"
-merge_lock_acquire $lanes || { rc=$?; [ "$rc" -eq 3 ] && exit 1; die "could not take the merge lock"; }
+merge_lock_acquire $lanes || { rc=$?; { [ "$rc" -eq 3 ] || [ "$rc" -eq 4 ]; } && exit 1; die "could not take the merge lock"; }
 got_lock=1
 
 # The lock first: the fetch, the target and the clear check below must all be seen by the batch that owns the worktree.
@@ -130,5 +130,6 @@ if [ "$warm" -eq 1 ]; then
 	echo >&2 "dq_merge_worktree: warming gen (analyze binary, generated files)"
 	(cd "$WT" && tools/build/build.sh gen >&2) || echo "dq_merge_worktree: warm-up gen failed (the batch's gate will report it)" >&2
 fi
+merge_lock_mark_base "$(git -C "$WT" rev-parse HEAD)"
 echo >&2 "MERGE WORKTREE READY: $WT ($BRANCH at ${target:0:12})"
 echo "$WT"

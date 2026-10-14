@@ -167,6 +167,12 @@ It is held from that check until the push lands or the batch is abandoned, acros
   of one agent session shares, and not from the process tree): `dq_merge_worktree.sh`, `dq_merge_gates.sh`, `dq_push_master.sh` and `dq_merge_master.sh`
   (in the merge worktree) refuse to run without it. Another lane joins the batch only through the holder: `bash tools/dq_merge_worktree.sh --join "<lane>"`
   (no switch, prints the path); a second plain call from the holder is refused, and anyone else waits.
+- **A heartbeat is not proof of life.** The holder process checks every 60 s (`DQ_MERGE_LOCK_CHECK_SEC`) whether its batch is over and releases the lock itself
+  when the lane worktree that took it (or the merge worktree) no longer exists, or when the merge worktree's HEAD has moved since the batch began
+  (`dq_merge_worktree.sh` records `base`) and is now in origin/master with no gate or push running (`dq_merge_gates.sh` and `dq_push_master.sh` mark
+  `<slot>/busy` with their pid). The same session and worktree cannot queue twice: the second call is refused and the first keeps its place.
+  The push used to release only when it ran inside the merge worktree, so a lane that was refused once, restamped and pushed from its own worktree
+  leaked the lock (a detached holder heartbeated for 100 minutes); `release_batch` now releases whenever the caller holds the lock.
 - **Release.** `dq_push_master.sh` releases it after a successful push, and also when HEAD is already in origin/master (the worktree is level with it).
   `bash tools/dq_merge_worktree.sh --release` ends an abandoned batch; only the holder may, `--release --force` overrides for a batch you know is
   dead. Never delete lock files by hand.

@@ -134,6 +134,53 @@ run_as G --release >/dev/null
 sleep 3
 check "the holder process exited after release" bash -c "! kill -0 $gpid 2>/dev/null"
 
+# ---- 9. the push releases the lock wherever it ran from (a lane that restamps and pushes from its own worktree) ----
+export DQ_MERGE_LOCK_CHECK_SEC=2
+git -C "$T/main" worktree add -q -b lane-p "$T/lane-p" origin/master 2>/dev/null
+(cd "$T/lane-p" && run_as P --lanes laneP >/dev/null 2>&1)
+check "P holds the lock" bash -c "bash '$SL' merge-lock status | grep -q \"lanes 'laneP'\""
+rb="$(sed -n '/^release_batch() {/p' "$ROOT/tools/dq_push_master.sh")"
+check "release_batch is a single definition in the push script" test -n "$rb"
+check "release_batch from the lane worktree frees the holder's lock" bash -c "cd '$T/lane-p' && . '$SL' && $rb; DQ_MERGE_SESSION=P release_batch >/dev/null 2>&1; bash '$SL' merge-lock status | grep -q nobody"
+check "release_batch does not touch another batch's lock" bash -c "cd '$T/lane-p' && DQ_MERGE_SESSION=Q bash '$MW' --lanes laneQ >/dev/null 2>&1 && . '$SL' && $rb; DQ_MERGE_SESSION=R release_batch >/dev/null 2>&1; bash '$SL' merge-lock status | grep -q \"lanes 'laneQ'\""
+run_as Q --release >/dev/null
+
+# ---- 10. a holder whose lane worktree is gone releases itself, heartbeat or not ----
+(cd "$T/lane-p" && run_as S --lanes laneS >/dev/null 2>&1)
+spid="$(sed -n 's/^pid=//p' "$T/slots/merge_base/slot.1/owner")"
+git -C "$T/main" worktree remove --force "$T/lane-p"
+for _ in $(seq 1 40); do [ -d "$T/slots/merge_base/slot.1" ] || break; sleep 1; done
+check "the lock was released after the lane worktree vanished" test ! -d "$T/slots/merge_base/slot.1"
+sleep 2
+check "and the holder process ended" bash -c "! kill -0 $spid 2>/dev/null"
+
+# ---- 11. a holder whose batch HEAD already landed releases itself, but not under a running gate or push ----
+run_as H --lanes laneH >/dev/null 2>&1
+echo h >"$T/mb/h.txt" && git -C "$T/mb" add h.txt && git -C "$T/mb" commit -qm "H's batch"
+sleep 6
+check "unpushed batch work keeps the lock" test -d "$T/slots/merge_base/slot.1"
+sleep 30 & busy=$!
+echo "$busy" >"$T/slots/merge_base/slot.1/busy"
+git -C "$T/mb" push -q origin HEAD:master
+sleep 8
+check "a running gate or push (busy marker) keeps the lock after the push landed" test -d "$T/slots/merge_base/slot.1"
+kill "$busy" 2>/dev/null; wait "$busy" 2>/dev/null
+for _ in $(seq 1 40); do [ -d "$T/slots/merge_base/slot.1" ] || break; sleep 1; done
+check "once nothing runs, the landed batch's lock is released by its holder" test ! -d "$T/slots/merge_base/slot.1"
+
+# ---- 12. the same session and worktree never queue twice ----
+run_as U --lanes laneU >/dev/null 2>&1
+DQ_MERGE_SESSION=V bash "$MW" --lanes laneV >/dev/null 2>"$T/v1.err" &
+v1=$!
+for _ in $(seq 1 30); do grep -q waiting "$T/v1.err" 2>/dev/null && break; sleep 1; done
+DQ_MERGE_SESSION=V bash "$MW" --lanes laneV >/dev/null 2>"$T/v2.err" && rc=0 || rc=$?
+check "a second queue entry from the same session and worktree is refused" bash -c "[ $rc -ne 0 ] && grep -q 'not queueing twice' '$T/v2.err'"
+check "only one entry waits" test "$(ls "$T/slots/merge_base/queue" | wc -l)" -eq 1
+run_as U --release >/dev/null
+for _ in $(seq 1 40); do bash "$SL" merge-lock status | grep -q "lanes 'laneV'" && break; sleep 1; done
+wait "$v1" 2>/dev/null
+run_as V --release >/dev/null
+
 if [ "$fails" -eq 0 ]; then echo "test_merge_lock: ok"; exit 0; fi
 echo "test_merge_lock: $fails FAILED"
 exit 1

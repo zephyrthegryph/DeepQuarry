@@ -36,6 +36,8 @@ cd "$(git rev-parse --show-toplevel)"
 # In the shared merge worktree only the batch that holds the merge lock (tools/dq_merge_worktree.sh) may gate.
 . "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
 merge_lock_require || exit 1
+merge_lock_busy begin
+trap 'merge_lock_busy end' EXIT
 
 tests_arg=()
 lanes=""

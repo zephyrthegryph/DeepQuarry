@@ -187,7 +187,7 @@ _slots_acquire() {
 	now="$(date +%s)"
 	name="$prio-$(printf '%013d' "$now")-$$"
 	SLOTS_QUEUE="$d/queue/$name"
-	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" >"$SLOTS_QUEUE"
+	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\nsession=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" "${DQ_MERGE_SESSION:+env:$DQ_MERGE_SESSION}" >"$SLOTS_QUEUE"
 	SLOTS_T_QUEUED="$now"
 	while true; do
 		_slots_reap "$d"
@@ -430,8 +430,47 @@ _ml_event() { # owner: one events.tsv line for the end of a batch
 	printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" merge_base 1 "$(_slots_field "$o" worktree)" "$(_slots_field "$o" lanes)" 0 "$((now - $(_slots_num "$o" started "$now")))" >>"$(slots_dir)/events.tsv" 2>/dev/null
 }
 
+# Is the batch over although its holder is alive? Prints why and returns 0 when the lock should be released. A heartbeat is not proof of
+# life: it only shows the holder process runs. The batch is over when the lane's worktree (the caller that took the lock) or the merge
+# worktree is gone, or when the merge worktree's HEAD has moved since the batch began and is now in origin/master, with no gate or push
+# running (those mark $slot/busy with their pid).
+_ml_orphaned() { # slotdir
+	local d="$1" o="$1/owner" lane mb base head busy
+	lane="$(_slots_field "$o" worktree)"
+	mb="$(_slots_field "$o" merge_wt)"
+	if [ -n "$lane" ] && [ ! -d "$lane" ]; then echo "the lane worktree $lane no longer exists"; return 0; fi
+	if [ -n "$mb" ] && [ ! -d "$mb" ]; then echo "the merge worktree $mb no longer exists"; return 0; fi
+	busy="$(cat "$d/busy" 2>/dev/null)"
+	if [ -n "$busy" ] && kill -0 "$busy" 2>/dev/null; then return 1; fi
+	base="$(_slots_field "$o" base)"
+	[ -n "$base" ] && [ -n "$mb" ] || return 1
+	head="$(git -C "$mb" rev-parse HEAD 2>/dev/null)" || return 1
+	[ "$head" != "$base" ] || return 1
+	git -C "$mb" fetch -q origin 2>/dev/null
+	if git -C "$mb" merge-base --is-ancestor "$head" origin/master 2>/dev/null; then echo "the batch HEAD ${head:0:12} is already in origin/master and no gate or push is running"; return 0; fi
+	return 1
+}
+
+merge_lock_busy() { # begin|end: a gate or push run in the merge worktree marks itself so the holder does not release under it
+	local d
+	d="$(_ml_slot)"
+	[ -d "$d" ] || return 0
+	case "$1" in
+		begin) merge_lock_holder_check 2>/dev/null && echo "$$" >"$d/busy" 2>/dev/null ;;
+		end) [ "$(cat "$d/busy" 2>/dev/null)" = "$$" ] && rm -f "$d/busy" ;;
+	esac
+	return 0
+}
+
+merge_lock_mark_base() { # the merge worktree's HEAD when the batch began (after dq_merge_worktree.sh moved it)
+	local o
+	o="$(_ml_slot)/owner"
+	[ -f "$o" ] && _ml_set_field "$o" base "$1"
+	return 0
+}
+
 _ml_hold() { # slotdir max_sec: the detached holder process; takes the slot over from the acquiring shell and keeps it alive
-	local d="$1" max="${2:-21600}" o t0 now pid="$$" body
+	local d="$1" max="${2:-21600}" o t0 now pid="$$" body last_check=0 why
 	o="$d/owner"
 	t0="$(date +%s)"
 	body="$(grep -v -e '^pid=' -e '^winpid=' -e '^kind=' "$o" 2>/dev/null)"
@@ -443,9 +482,17 @@ _ml_hold() { # slotdir max_sec: the detached holder process; takes the slot over
 			echo "== merge lock: holder pid $pid expired after ${max}s; releasing" >&2
 			break
 		fi
+		if [ $((now - last_check)) -ge "${DQ_MERGE_LOCK_CHECK_SEC:-60}" ]; then
+			last_check="$now"
+			if why="$(_ml_orphaned "$d")"; then
+				echo "== merge lock: holder pid $pid releasing: $why" >&2
+				break
+			fi
+		fi
 		touch "$o" 2>/dev/null || exit 0
 		sleep "${DQ_SLOTS_HEARTBEAT_SEC:-15}"
 	done
+	[ "$(_slots_field "$o" pid)" = "$pid" ] || exit 0
 	_ml_event "$o"
 	rm -rf "$d"
 }
@@ -456,6 +503,18 @@ merge_lock_acquire() { # lanes...: wait for the merge worktree lock (printing wh
 	_slots_errexit_off
 	sess="$(_ml_session)"
 	d="$(_ml_slot)"
+	# The same session and worktree never queue twice: a second call while one is waiting is refused (the first keeps its place).
+	local qf qtop
+	qtop="$(_slots_worktree)"
+	for qf in "$(slots_dir)"/merge_base/queue/*; do
+		[ -f "$qf" ] || continue
+		_slots_dead "$qf" && continue
+		if [ "$(_slots_field "$qf" session)" = "$sess" ] && [ "$(_slots_field "$qf" worktree)" = "$qtop" ]; then
+			echo "dq_merge_worktree: REFUSED: this session ($sess) and worktree already wait for the merge lock (pid $(_slots_field "$qf" pid)); not queueing twice. Wait for that call, or end it." >&2
+			_slots_errexit_back
+			return 4
+		fi
+	done
 	if [ -f "$d/owner" ] && ! _slots_dead "$d/owner" && _ml_is_holder "$d/owner"; then
 		echo "dq_merge_worktree: you already hold the merge lock (lanes '$(_slots_field "$d/owner" lanes)'); join more lanes with --join, or finish and --release" >&2
 		_slots_errexit_back
@@ -469,6 +528,7 @@ merge_lock_acquire() { # lanes...: wait for the merge worktree lock (printing wh
 	o="$d/owner"
 	_ml_set_field "$o" lanes "$lanes"
 	_ml_set_field "$o" session "$sess"
+	_ml_set_field "$o" merge_wt "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}"
 	if [ -n "$SLOTS_HB_PID" ]; then kill "$SLOTS_HB_PID" 2>/dev/null; SLOTS_HB_PID=""; fi
 	nohup bash "$SLOTS_SELF" _hold "$d" "${DQ_MERGE_LOCK_MAX_SEC:-21600}" >/dev/null 2>&1 &
 	hp=$!

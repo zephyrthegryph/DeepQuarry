@@ -39,7 +39,11 @@ die() { echo "dq_push_master: REFUSED: $*" >&2; exit 1; }
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
 merge_lock_require || exit 1
-release_batch() { if [ "$(_slots_norm "$(git rev-parse --show-toplevel)")" = "$(_slots_norm "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}")" ]; then merge_lock_release; fi; }
+merge_lock_busy begin
+trap 'merge_lock_busy end' EXIT
+# The batch ends with the push wherever it ran from: a lane that restamps and pushes from its own worktree after a refused push still frees
+# the lock it holds (the old check only released from inside the merge worktree, which leaked the lock on that path).
+release_batch() { merge_lock_busy end; if merge_lock_holder_check 2>/dev/null; then merge_lock_release; fi; }
 
 dirty() {
 	git update-index -q --refresh >/dev/null 2>&1
