@@ -3,9 +3,7 @@
 init_reagents	code/modules/xenoarcheaology/finds/find_spawning.dm	S.reagents.add_reagent(new_chem, 3)
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LATEJOIN, src)
 init_scheduling	code/modules/asset_cache/transports/asset_transport.dm	after(src, 1 SECONDS, PROC_REF(send_assets_slow), with = list(C, preload))
-init_visuals	code/game/objects/structures/lattice.dm	icon_state = "latticeblank"
 init_visuals	code/game/objects/structures/mirror.dm	icon_state = "mirror_frame"
-init_visuals	code/game/objects/structures/props/machines.dm	icon_state = "nt_pod"
 init_visuals	code/game/objects/structures/reflectors.dm	add_overlay(deflector_overlay)
 init_visuals	code/game/turfs/simulated/wall_types.dm	icon_state = base_state
 init_visuals	code/modules/clothing/clothing.dm	icon_state = O.icon_state
