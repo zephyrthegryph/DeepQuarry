@@ -60,6 +60,10 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	is_sweep_test = TRUE
 
 /datum/unit_test/dq_look_tree_pin/Run()
+	// Prototype captures must not retain round counters or newly archived diseases.
+	set_global(nameof(GLOB.narsie_cometh), GLOB.narsie_cometh)
+	set_global(nameof(GLOB.queen_amount), GLOB.queen_amount)
+	scope_test_contagion_archive()
 	var/list/bad = list()
 	var/list/expected_by_root = dq_snapshot_read_dir(DQ_LOOK_TREE_DIR, bad)
 	if(!length(expected_by_root) && !length(bad))
@@ -73,6 +77,10 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	is_sweep_test = TRUE
 
 /datum/unit_test/dq_look_state_pin/Run()
+	// Prototype captures must not retain round counters or newly archived diseases.
+	set_global(nameof(GLOB.narsie_cometh), GLOB.narsie_cometh)
+	set_global(nameof(GLOB.queen_amount), GLOB.queen_amount)
+	scope_test_contagion_archive()
 	var/list/bad = list()
 	var/list/expected_by_root = dq_snapshot_read_dir(DQ_LOOK_STATE_DIR, bad)
 	if(!length(expected_by_root) && !length(bad))

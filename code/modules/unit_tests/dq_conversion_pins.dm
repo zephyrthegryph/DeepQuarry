@@ -62,6 +62,9 @@
 	return DQ_PIN_DIR
 
 /datum/unit_test/dq_conversion_pin/Run()
+	// Shop prototypes lazily fill global catalogs; retain the incoming identities.
+	set_global(nameof(GLOB.starting_legal_nifsoft), GLOB.starting_legal_nifsoft)
+	set_global(nameof(GLOB.starting_illegal_nifsoft), GLOB.starting_illegal_nifsoft)
 	// Capturing hit reactions may take an act over. Restore this framework scratch
 	// value after the sweep rather than leaving it for the next focused test.
 	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
