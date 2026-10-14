@@ -1,4 +1,5 @@
 author: "Codex"
 delete-after: true
 changes:
+  - bugfix: "Released petrified occupants regain speech, and gargoyle setup receives its constructor subject before transient arguments are cleared."
   - code_imp: "Removed obsolete edit markers and documentation examples, moved two fixed initialization icons to type defaults, and added destruction regression coverage."

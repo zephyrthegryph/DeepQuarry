@@ -1,6 +1,6 @@
 # Cleanup: edit markers, snippets and lifecycle presentation
 
-Branch: `codex/cleanup-lifecycle-docs-1014`, based on master `3ade0bab68` in a new E: worktree. No old migration branches are merged into it. Verification is pending; this branch will not be pushed.
+Branch: `codex/cleanup-lifecycle-docs-1014`, based on master `874b916db2` in a new E: worktree. No old migration branches are merged into it. This branch will not be pushed.
 
 ## Edit markers
 
@@ -8,7 +8,7 @@ Removed all 36 marker comments in 18 files. The disabled saddlebag implementatio
 
 ## Documentation
 
-All 50 stale baseline sites were covered by 34 obsolete complete examples in seven documents. Those examples were removed and replaced with references to their actual live implementations. The archive and final API design are unchanged. The doc-snippet lint and shrink-only baseline update still need verification.
+All 50 stale baseline sites were covered by 34 obsolete complete examples in seven documents. Those examples were removed and replaced with references to their actual live implementations. The archive and final API design are unchanged. The doc-snippet lint passed and its baseline shrank from 50 to zero.
 
 ## Constant icon defaults
 
@@ -37,8 +37,14 @@ The other 21 rows remain because they are instance-dependent:
 
 ## Destruction consequences
 
-All six `destroy_drop` and five `destroy_effects` rows already use `on_destroy(force)` on master. There are no corresponding `Destroy()` overrides to migrate, and production destruction code is unchanged. The decl lint scans both hook names, so a hook rename cannot shrink these eleven rows.
+All six `destroy_drop` and five `destroy_effects` rows already use `on_destroy(force)` on master. There are no corresponding `Destroy()` overrides to migrate. The new statue regression exposed a phase-order bug: automatic slot spill happened before the specialized cleanup, leaving the released subject muted. Its unchanged cleanup now runs through declared `on_ending()` before spill; `destroy_drop` shrinks from six to five. The other ten rows remain specialized hooks rather than renamed debt.
 
 Nine real-qdel tests cover the eleven rows: machine occupants and perspective, generic micro holders, micro-tunnel camera and message, ventcrawler release, statue mute and injury-stasis removal, belly ghost release, gargoyle crumble message, telecube mate unlink/message, and crystal phoron/ordinary debris. Crystal assertions count only newly created shards. The telecube test uses a nullspace mate and verifies its message and reverse-link cleanup; it does not claim explosion-propagation coverage.
 
 These specialized consequences include cleanup that a generic spill policy would lose. No annotation, baseline increase or new framework workaround is introduced.
+
+The gargoyle regression also exposed transient constructor arguments being discarded before `setup()` read them. Argument disposal now follows setup, preserving rejected-holder handling. A direct setup-argument test verifies consumption, clearing and rejection.
+
+## Verification
+
+Initial lane-ready: production and test builds had zero errors; DreamChecker had zero diagnostics; ratchets passed. The focused batch passed 59 tests and failed the two destruction regressions above plus `dq_conversion_pin`. The latter reports master-side internal-storage and cloning initialization runtimes and stale mecha operation keys. Repairs and final verification are pending; no failed proof is stamped or recovered.

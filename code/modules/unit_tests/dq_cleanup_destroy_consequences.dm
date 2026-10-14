@@ -183,3 +183,28 @@
 			phoron_shards++
 	TEST_ASSERT(phoron_shards > 0, "real crystal destruction produces phoron shards")
 	TEST_ASSERT(shards > phoron_shards, "real crystal destruction also produces ordinary shards")
+
+// Transient constructor input must remain available until setup has finished.
+/obj/dq_cleanup_setup_param
+	var/setup_input
+	var/setup_seen
+	var/keep_setup = TRUE
+CAPABILITIES(/obj/dq_cleanup_setup_param)
+	param(nameof(setup_input), pos = 1, keep = FALSE)
+	keeps_if(PROC_REF(keep_setup_holder))
+	setup(PROC_REF(consume_setup_input))
+/obj/dq_cleanup_setup_param/proc/keep_setup_holder()
+	return keep_setup
+/obj/dq_cleanup_setup_param/proc/consume_setup_input()
+	setup_seen = setup_input
+/obj/dq_cleanup_setup_param/rejected
+	keep_setup = FALSE
+/datum/unit_test/dq_cleanup_destroy/setup_param
+/datum/unit_test/dq_cleanup_destroy/setup_param/Run()
+	scope_fixture()
+	var/obj/dq_cleanup_setup_param/P = allocate(/obj/dq_cleanup_setup_param, test_floor(), 43)
+	TEST_ASSERT_EQUAL(P.setup_seen, 43, "setup receives the actual transient constructor argument")
+	TEST_ASSERT_NULL(P.setup_input, "the transient argument is dropped after setup finishes")
+	var/obj/dq_cleanup_setup_param/rejected/R = allocate(/obj/dq_cleanup_setup_param/rejected, test_floor(), 43)
+	TEST_ASSERT(QDELETED(R), "a rejected holder is discarded")
+	TEST_ASSERT_NULL(R.setup_seen, "a rejected holder never executes setup")

@@ -38,9 +38,6 @@
 		result = INITIALIZE_HINT_NORMAL
 	else
 		result = A.Initialize(arglist(arguments))
-	// param(keep = FALSE) values were for Initialize() alone (code/engine/lifeforms/params.dm)
-	if(param_drop_pending?[A])
-		params_drop(A)
 	// keeps_if() (code/engine/lifeforms/keeps_if.dm): a failed condition is the atom's INITIALIZE_HINT_QDEL.
 	if(init_discard_pending?[A] && keeps_if_discarded(A) && result == INITIALIZE_HINT_NORMAL)
 		result = INITIALIZE_HINT_QDEL
@@ -50,6 +47,11 @@
 			setup_run(A)
 		else
 			setup_pending -= A
+	// Transient constructor params are inputs to setup() too. Drop them only
+	// after setup has consumed them; rejected holders still skip setup entirely.
+	// params_drop() guards a holder a setup callback deleted.
+	if(param_drop_pending?[A])
+		params_drop(A)
 
 	#ifdef BENCHMARK_DEEP_PROFILE
 	var/list/bench_init_mark = benchmark_init_frame_mark(bench_depth)
