@@ -21,6 +21,21 @@
 /// The legacy own entries one type's compiled table declares, in declaration order: what build_own_table() adds beside the type's
 /// ownership() and relations() lists.
 /proc/table_own_entries(datum/type_table/T)
+	if(!isnull(T.own_entries))
+		return T.own_entries
+	T.own_entries = table_own_entries_compute(T)
+	return T.own_entries
+
+/datum/type_table
+	/// table_own_entries()'s result, made on first use: a pure function of the (immutable) table, shared by every type that shares it.
+	var/list/own_entries
+	/// The OWNS_ONE/OWNS_MANY entries of the table, in order (table_owns_entries()), made on first use.
+	var/list/owns_scan
+	/// table_hook_flags() once the stat definitions it reads exist (table_hook_flags_cached()), else null.
+	var/hook_flags_cached
+
+/// The uncached walk behind table_own_entries(); the equality test runs it against the cache.
+/proc/table_own_entries_compute(datum/type_table/T)
 	. = list()
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/E = C.item
@@ -40,6 +55,28 @@
 					. += proto(E.args["var"])
 				else
 					. += owns(E.args["var"], policy = policy, type = E.args["type"], starts = starts, is_list = (E.kind == ENTRY_OWNS_MANY), if_var = E.args["only_if"], else_policy = relation_policy(E.args["otherwise"]), successor = E.args["successor"], successor_var = E.args["successor_var"])
+
+/// The OWNS_ONE/OWNS_MANY entries of `T`, in item order: what build_own_table() reads the starts_set/on_lost/early/starts_after arguments of.
+/proc/table_owns_entries(datum/type_table/T)
+	if(!isnull(T.owns_scan))
+		return T.owns_scan
+	var/list/found = list()
+	for(var/datum/centry/C as anything in T.items)
+		var/datum/entry/E = C.item
+		if(istype(E) && (E.kind == ENTRY_OWNS_ONE || E.kind == ENTRY_OWNS_MANY))
+			found += E
+	T.owns_scan = found
+	return found
+
+/// table_hook_flags(T), kept on the table once the stat definitions exist: before that stat_table_needs_init() answers from an unbuilt
+/// GLOB.stat_defs, so an early answer is recomputed each time and never kept.
+/proc/table_hook_flags_cached(datum/type_table/T)
+	if(!isnull(T.hook_flags_cached))
+		return T.hook_flags_cached
+	var/flags = table_hook_flags(T)
+	if(islist(GLOB?.stat_defs) && GLOB.stat_defs_built)
+		T.hook_flags_cached = flags
+	return flags
 
 /// The starts = of an owns_* entry as the legacy table keeps it: a type, a list, a var name, or a starts spec entry (pick_one, a proc,
 /// when(), with starts_args) that own_init_starts() resolves at init.
