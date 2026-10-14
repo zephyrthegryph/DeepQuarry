@@ -366,6 +366,13 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			break
 	world.presentation_flush()
 
+/// Draws A's look now, then applies the overlay update. A draw normally waits for the next frame; a caller that builds a mob and
+/// reads its icon in the same call (a preview mannequin, a hologram dummy, a job icon) draws before it reads.
+/proc/draw_now(atom/A)
+	if(!QDELETED(A))
+		refresh_one(A, 0, DEP_DRAW)
+		A.ImmediateOverlayUpdate()
+
 /// One entity's refresh of the outputs in `mask` (DEP_*; everything by default): derive values, periodic
 /// gate, look and hidden verbs, open windows, the Rust push, then on_state_changed.
 /proc/refresh_one(datum/D, bits, mask = DEP_ALL)

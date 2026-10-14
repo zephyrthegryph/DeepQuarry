@@ -240,7 +240,8 @@ CAPABILITIES(/datum/preferences)
 	for(var/dir_key in dirs)
 		var/dir = dirs[dir_key]
 		mannequin.set_dir(dir)
-		mannequin.ImmediateOverlayUpdate()
+		// A human draws through the refresh queue, which waits for the next frame: draw this look now so the flatten reads it, not the last one.
+		draw_now(mannequin)
 		if(!force_sync)
 			var/list/flat_result = flattener.flatten(mannequin, dir)
 			if(flat_result && !flattener.unsupported)

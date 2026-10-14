@@ -19,6 +19,7 @@ CAPABILITIES(/obj/machinery/computer/aiupload)
 	op("select_ai", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select AI"), needs(req(PROC_REF(can_select_ai))),
 		asks(/datum/prompt/choice/ai_upload_selection, fields = list("title" = "AI selection", "question" = "AI signals detected:"), step = "selection"), then(PROC_REF(interaction_select_ai)))
 	op("observer_view", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("View"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	ref_one(nameof(current), /mob/living/silicon/ai)
 /obj/machinery/computer/aiupload/proc/interaction_access_internals(datum/act/op/A)
 	var/mob/user = A.actor
 	if(get_dist(src, user) > 1 || user.restrained() || user.lying || user.stat || istype(user, /mob/living/silicon))
@@ -79,6 +80,7 @@ CAPABILITIES(/obj/machinery/computer/borgupload)
 	op("select_borg", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select cyborg"), needs(req(PROC_REF(can_select_borg))),
 		asks(/datum/prompt/choice/borg_upload_selection, fields = list("title" = "Borg selection", "question" = "Unshackled borg signals detected:"), step = "selection"), then(PROC_REF(interaction_select_borg)))
 	op("observer_view", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("View"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	ref_one(nameof(current), /mob/living/silicon/robot)
 /obj/machinery/computer/borgupload/proc/interaction_install(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/aiModule/module = A.held

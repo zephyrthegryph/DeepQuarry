@@ -71,6 +71,10 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/omni_shield)
 
 	var/obj/mecha/my_mech
 
+// The projector is part of the exosuit's omni shield: without the mech it has nothing to draw power from, so it goes with it.
+CAPABILITIES(/obj/item/shield_projector/rectangle/mecha)
+	ref_one(nameof(my_mech), on_other_deleted = OTHER_DELETE_ME)
+
 /obj/item/shield_projector/rectangle/mecha/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(my_mech), loc)

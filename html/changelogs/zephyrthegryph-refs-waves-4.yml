@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "About 200 object, machinery and item references are declared relations, so a deleted target is cleared from the holders that named it"
+  - bugfix: "Portals, pinpointers and heist objectives no longer store things their declared type excludes; dropped constructor parameters now leave no back-reference"

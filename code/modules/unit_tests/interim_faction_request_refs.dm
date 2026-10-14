@@ -24,7 +24,7 @@
 	var/datum/antagonist/second_faction = allocate(/datum/antagonist)
 	var/datum/prompt/choice/faction_join/second = open_request(inviter, /datum/prompt/choice/faction_join, TYPE_PROC_REF(/mob/living, faction_join_answered), answerer = joiner, asker = inviter, player = second_player, faction = second_faction)
 	TEST_ASSERT(second.player == second_player && second.faction == second_faction, "The second request captures its exact original participants")
-	qdel(second_faction)
+	qdel(second_faction, TRUE) // a template refuses an unforced delete (LIFECYCLE_KEEP_UNLESS_FORCED)
 	TEST_ASSERT_NULL(second.faction, "Deleting the captured faction clears the prepared request's real reference")
 	TEST_ASSERT(second.player == second_player, "Deleting the faction preserves the independent mind capture")
 	test_answer(joiner, "Yes!")

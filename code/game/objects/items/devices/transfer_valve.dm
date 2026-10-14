@@ -87,6 +87,7 @@ CAPABILITIES(/obj/item/transfer_valve)
 	op("remove_device", ui_act("remove_device"), then(PROC_REF(ui_act_remove_device)))
 	op("attach", inputs(item(/obj/item/tank), item(/obj/item/assembly)), label("Attach"), then(PROC_REF(interaction_item)))
 	op("view", in_hand(), then(PROC_REF(interaction_self)))
+	ref_one(nameof(attacher), /mob)
 
 /obj/item/transfer_valve/ui_data(datum/act/eval/A)
 	var/list/data = list()

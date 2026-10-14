@@ -12,22 +12,28 @@
 /datum/malf_research_ability/interdiction/recall_shuttle
 	ability = /datum/game_mode/malfunction/verb/recall_shuttle
 	price = 75
-	next = new/datum/malf_research_ability/interdiction/unlock_cyborg()
 	name = "Recall Shuttle"
+
+CAPABILITIES(/datum/malf_research_ability/interdiction/recall_shuttle)
+	owns_one(nameof(next), /datum/malf_research_ability, starts = /datum/malf_research_ability/interdiction/unlock_cyborg)
 
 
 /datum/malf_research_ability/interdiction/unlock_cyborg
 	ability = /datum/game_mode/malfunction/verb/unlock_cyborg
 	price = 1200
-	next = new/datum/malf_research_ability/interdiction/hack_cyborg()
 	name = "Unlock Cyborg"
+
+CAPABILITIES(/datum/malf_research_ability/interdiction/unlock_cyborg)
+	owns_one(nameof(next), /datum/malf_research_ability, starts = /datum/malf_research_ability/interdiction/hack_cyborg)
 
 
 /datum/malf_research_ability/interdiction/hack_cyborg
 	ability = /datum/game_mode/malfunction/verb/hack_cyborg
 	price = 3000
-	next = new/datum/malf_research_ability/interdiction/hack_ai()
 	name = "Hack Cyborg"
+
+CAPABILITIES(/datum/malf_research_ability/interdiction/hack_cyborg)
+	owns_one(nameof(next), /datum/malf_research_ability, starts = /datum/malf_research_ability/interdiction/hack_ai)
 
 
 /datum/malf_research_ability/interdiction/hack_ai

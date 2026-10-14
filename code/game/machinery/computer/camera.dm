@@ -94,6 +94,8 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 	configure(light_glow(color = "#FFEEDB"))
 	owns_one(nameof(radio), starts = /obj/item/radio)
 	click_on(PROC_REF(click_input))
+	ref_one(nameof(pinboard), /obj/effect/overlay/vis)
+	ref_one(nameof(showing), /atom)
 
 /obj/machinery/computer/security/telescreen/entertainment/Initialize(mapload)
 

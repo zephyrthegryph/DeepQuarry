@@ -1333,6 +1333,7 @@ READS_AS(/obj/structure/biowaste_tank/proc/caught_count, BIOWASTE_CAUGHT_KEY)
 	return OP_OK
 
 CAPABILITIES(/obj/structure/biowaste_tank)
+	ref_one(nameof(crusher))
 	owns_one(nameof(muffinmonster), /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster, starts = /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	op("eject", hand(), label("Use"),

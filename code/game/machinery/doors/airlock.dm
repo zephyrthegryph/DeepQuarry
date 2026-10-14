@@ -168,6 +168,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(airlock_emp)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(door_emp)))
 	every(1 SECOND, then(PROC_REF(command_step)), when = nameof(cur_command))
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 
 	section(touch, "What a hand or a held thing does to the door")
 	op("pry", tool(TOOL_CROWBAR), stance(I_HELP, I_DISARM, I_GRAB), wait(0),

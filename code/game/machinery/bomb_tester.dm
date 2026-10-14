@@ -44,6 +44,7 @@ CAPABILITIES(/obj/machinery/bomb_tester)
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("load_tank", item(/obj/item/tank), priority(OP_PRIORITY_DEFAULT - 1), label("Connect tank"), when(req(PROC_REF(tank_slot_available))), then(PROC_REF(interaction_load_tank)))
 	op("open", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open)))
+	ref_one(nameof(test_canister), /obj/machinery/portable_atmospherics/canister)
 
 /// Selection follows the two real occupied tank variables, including one empty slot.
 /obj/machinery/bomb_tester/proc/tank_slot_available(datum/act/op/A)

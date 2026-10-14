@@ -58,6 +58,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/power/changeling)
 	)
 
 CAPABILITIES(/datum/changeling)
+	ref_one(nameof(owner))
 	owns_one(nameof(power_panel), /datum/changeling_panel)
 	owns_many(nameof(absorbed_dna), /datum/absorbed_dna)
 	every(4 SECONDS, then(PROC_REF(mimic_drain)), when = nameof(mimicing))
@@ -462,6 +463,7 @@ CAPABILITIES(/obj/item/changeling_debug)
 	return ..()
 
 CAPABILITIES(/datum/changeling_panel)
+	ref_one(nameof(comp))
 	interface("ChangelingPanel", title = "Changeling Evolution Panel", state = nameof(GLOB.tgui_always_state))
 	op("evolve_power", ui_act("evolve_power", arg("val", schema_text(4096))), then(PROC_REF(ui_act_evolve_power)))
 

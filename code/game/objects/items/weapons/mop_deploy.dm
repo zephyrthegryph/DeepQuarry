@@ -50,6 +50,7 @@ CAPABILITIES(/obj/item/mop_deploy)
 	after_init(1, then(PROC_REF(check_held))) // after the hand that made it has taken it
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("mop", at_target(/turf), at_target(/obj/effect/decal/cleanable), at_target(/obj/effect/overlay), at_target(/obj/effect/rune), begins(MSG(mop_deploy/cleaning)), wait(4 SECONDS), then(PROC_REF(mopped)))
+	ref_one(nameof(creator), /mob/living)
 
 /// Old attack_self.
 /obj/item/mop_deploy/proc/interaction_self(datum/act/op/A)

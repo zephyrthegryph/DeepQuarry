@@ -29,6 +29,7 @@ CAPABILITIES(/obj/machinery/petrification)
 	op("petrify", ui_act("petrify"), then(PROC_REF(ui_act_petrify)))
 	op("remote", ui_act("remote"), then(PROC_REF(ui_act_remote)))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
+	ref_one(nameof(target), /mob/living/carbon/human)
 
 /// Whoever presses a button leaves their prints on the machine.
 /obj/machinery/petrification/proc/ui_fingerprint(datum/act/op/A)
