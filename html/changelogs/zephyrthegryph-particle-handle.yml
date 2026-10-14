@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Shared particle holders are freed when their last user leaves, instead of being dropped without qdel"
