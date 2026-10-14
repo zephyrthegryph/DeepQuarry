@@ -278,6 +278,8 @@
 	var/list/rows = list()
 	var/saved_seed = GLOB.loot_seed
 	var/saved_serial = GLOB.loot_roll_serial
+	var/saved_round_seed = GLOB.round_seed
+	var/saved_roll_serial = GLOB.roll_serial
 	var/list/saved_pool = GLOB.unique_gamma_loot
 	GLOB.unique_gamma_loot = list() // the pool's unique items are world state: the gamma tier falls through to the rare one with it empty
 	var/mob/living/carbon/human/searcher = allocate(/mob/living/carbon/human, T)
@@ -290,6 +292,7 @@
 			rand_seed(dq_test_seed_for("[pile_text][seed]"))
 			GLOB.loot_seed = seed
 			GLOB.loot_roll_serial = 0
+			rolls_fix_seed(seed) // a rolls() stream hashes the round seed and the world's creation serial: fixed here, a row does not depend on what other tests made first
 			var/list/steps = list()
 			var/obj/structure/pile = new pile_type(T)
 			var/total = 8
@@ -311,6 +314,8 @@
 	GLOB.unique_gamma_loot = saved_pool
 	GLOB.loot_seed = saved_seed
 	GLOB.loot_roll_serial = saved_serial
+	GLOB.round_seed = saved_round_seed
+	GLOB.roll_serial = saved_roll_serial
 	own_turf_contents(T)
 	test_driver_end()
 	var/report = dq_loot_pin_compare("search", rows)
