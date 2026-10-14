@@ -765,6 +765,10 @@ impl SharedAdaptedDeclarations {
         })?;
         // The source ledger is a projection, not a made-up origin for seeds.
         tree.declaration_targets = tree.declaration_targets[engine_count..].into();
+        tree.authored_type_start = crate::metadata_update::splice::engine_type_prefix(
+            &tree,
+            skeletons.view().slice(0..engine_count).iter(),
+        );
         drop(build_timer);
         let intrinsics_timer = dm_profile::detail_timer("tree.engine_intrinsics");
         if let Some(seed) = seed {

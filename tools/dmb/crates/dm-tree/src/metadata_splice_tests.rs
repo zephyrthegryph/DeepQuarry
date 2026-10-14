@@ -90,16 +90,50 @@ fn chained_splices_match_fresh() {
 }
 
 #[test]
-fn type_and_redeclaration_edits_decline_to_the_full_constructor() {
-    for edited in [
-        format!("{BASE}/datum/fresh_type\n    var/x = 1\n"),
-        BASE.replace("/datum/other\n    parent_type = /datum/base", "/datum/other\n    parent_type = /datum/base/child"),
-    ] {
+fn new_and_removed_types_splice_and_match_fresh() {
+    let edits = [
+        format!("{BASE}/datum/fresh_type
+    var/x = 1
+"),
+        BASE.replace("/datum/other
+", "/datum/inserted
+    var/y = 2
+/datum/other
+"),
+        format!("{BASE}/datum/base/child/grand/proc/deep()
+    return 1
+"),
+        format!("{BASE}/datum/explicit
+    parent_type = /datum/base/child
+    own = 9
+"),
+        BASE.replace("/datum/item_b
+", ""),
+    ];
+    for edited in edits {
         let mut state = RetainedSemanticTree::new();
         frontend(&mut state, BASE);
         let before = state.splices();
         let changed = frontend(&mut state, &edited);
         same_as_fresh(&changed.snapshot.tree, &edited);
-        assert_eq!(state.splices(), before);
+        assert!(state.splices() > before, "type edit must splice: {edited}");
+        let reverted = frontend(&mut state, BASE);
+        same_as_fresh(&reverted.snapshot.tree, BASE);
     }
+}
+
+#[test]
+fn reparenting_an_existing_type_declines_to_the_full_constructor() {
+    let edited = BASE.replace(
+        "/datum/other
+    parent_type = /datum/base",
+        "/datum/other
+    parent_type = /datum/base/child",
+    );
+    let mut state = RetainedSemanticTree::new();
+    frontend(&mut state, BASE);
+    let before = state.splices();
+    let changed = frontend(&mut state, &edited);
+    same_as_fresh(&changed.snapshot.tree, &edited);
+    assert_eq!(state.splices(), before);
 }

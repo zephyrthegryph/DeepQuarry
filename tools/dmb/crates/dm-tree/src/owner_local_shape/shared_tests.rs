@@ -188,6 +188,9 @@ fn rejected_frontend_keeps_sibling_shape_and_recovery_binds_current_source() {
     let shared = Arc::new(crate::SharedNormalizedDeclarations::default());
     let mut a = RetainedSemanticTree::with_shared_normalized(Arc::clone(&shared));
     let mut b = RetainedSemanticTree::with_shared_normalized(shared);
+    // Counts the full constructor's shared local-shape reuse, not the splice.
+    a.disable_splice();
+    b.disable_splice();
     let executor = dm_exec::BuildExecutor::new(1).unwrap();
     let build = |state: &mut RetainedSemanticTree, path: &str, text| {
         build_with_executor_and_semantic_state(

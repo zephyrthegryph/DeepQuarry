@@ -35,38 +35,20 @@ impl MetadataDependencies {
         mut symbols: dm_ir::SymbolTable,
         executor: &dm_exec::BuildExecutor,
     ) -> Result<Spliced, &'static str> {
-        let type_rows = |declarations: &KeyedDeclarations| -> Vec<(SymbolId, Option<SymbolId>)> {
-            declarations
-                .skeletons()
-                .filter_map(|row| match row {
-                    Skeleton::Type {
-                        path,
-                        explicit_parent,
-                    } => Some((*path, *explicit_parent)),
-                    Skeleton::Member { .. } => None,
-                })
-                .collect()
-        };
-        if type_rows(previous) != type_rows(current) {
-            return Err("type rows changed");
-        }
         let delta = current.delta_since(previous);
         if delta.changes.is_empty() {
-            return Err("no member rows changed");
+            return Err("no rows changed");
         }
         let mut changed_keys = HashSet::new();
         let mut names = HashSet::new();
-        let mut anchors_changed: HashSet<(TypeId, SymbolId)> = HashSet::new();
+        let mut type_rows_changed = HashSet::new();
+        let mut anchors_changed: HashSet<(SymbolId, SymbolId)> = HashSet::new();
         for change in &delta.changes {
             let DeclarationFamily::Member { name, .. } = change.key.family else {
-                return Err("type row changed");
+                type_rows_changed.insert(change.key.owner);
+                continue;
             };
-            let owner = previous_tree
-                .lookup_type(change.key.owner)
-                .ok_or("member on a new owner")?;
-            if previous_tree.types[owner.index()].synthetic {
-                return Err("member on an implicit owner");
-            }
+            let owner = change.key.owner;
             for row in [change.previous, change.current].into_iter().flatten() {
                 let Skeleton::Member { kind, mode, .. } = &row.skeleton else {
                     return Err("member row became a type row");
@@ -83,6 +65,7 @@ impl MetadataDependencies {
             names.insert(name);
         }
         // Lexical authority as in update(): keep only paths the tree must keep.
+        // Type paths retained below re-intern into the current table.
         for node in previous_tree.types() {
             if symbols.text(node.path).is_none() {
                 let text = previous_tree.symbols.text(node.path).ok_or("symbol lost")?;
@@ -103,8 +86,22 @@ impl MetadataDependencies {
         }
         let old_ids: HashMap<DeclarationKey, MemberId> =
             self.nodes.iter().map(|node| (node.key, node.member)).collect();
+        let roster = splice_types(previous_tree, current, &mut symbols, &type_rows_changed)?;
         let mut tree = previous_tree.clone();
         tree.symbols = Arc::new(symbols);
+        let type_remap: Vec<Option<TypeId>> = match roster {
+            Some(roster) => {
+                tree.types = roster.types.into();
+                tree.by_path = Arc::new(roster.by_path);
+                roster.remap
+            }
+            None => (0..previous_tree.types.len()).map(|index| Some(TypeId(index as u32))).collect(),
+        };
+        let types_changed = type_remap.len() != tree.types.len()
+            || type_remap.iter().enumerate().any(|(index, id)| *id != Some(TypeId(index as u32)));
+        let new_type = |old: TypeId| -> Result<TypeId, &'static str> {
+            type_remap[old.index()].ok_or("retained member on a removed type")
+        };
         // Rebuild the arena in current authored order.
         let old_len = previous_tree.members.len();
         let mut remap: Vec<Option<MemberId>> = vec![None; old_len];
@@ -136,7 +133,9 @@ impl MetadataDependencies {
                     }
                     let node = match old {
                         Some(old) if !changed_keys.contains(&row.key) => {
-                            previous_tree.members[old.index()].clone()
+                            let mut node = previous_tree.members[old.index()].clone();
+                            node.owner = new_type(node.owner)?;
+                            node
                         }
                         _ => {
                             fresh.push(id);
@@ -207,7 +206,16 @@ impl MetadataDependencies {
         }
         // A changed anchor must not move an existing implicit callable to the
         // other namespace (that regroups chains the splice does not rebuild).
+        let mut children = vec![Vec::new(); tree.types.len()];
+        for (index, node) in tree.types.iter().enumerate() {
+            if let Some(parent) = node.parent {
+                children[parent.index()].push(TypeId(index as u32));
+            }
+        }
         for &(owner, name) in &anchors_changed {
+            let Some(owner) = tree.lookup_type(owner) else {
+                continue;
+            };
             let mut stack = vec![owner];
             while let Some(current) = stack.pop() {
                 for id in &owned[current.index()] {
@@ -220,13 +228,7 @@ impl MetadataDependencies {
                         return Err("changed anchor moves an implicit callable");
                     }
                 }
-                stack.extend(
-                    tree.types
-                        .iter()
-                        .enumerate()
-                        .filter(|(_, child)| child.parent == Some(current))
-                        .map(|(index, _)| TypeId(index as u32)),
-                );
+                stack.extend(children[current.index()].iter().copied());
             }
         }
         // Changed groups: every current changed row and every removed/changed
@@ -240,20 +242,19 @@ impl MetadataDependencies {
             if change.previous.is_some() {
                 if let Some(old) = old_ids.get(&change.key) {
                     let node = &previous_tree.members[old.index()];
-                    groups.insert((node.owner, node.name, node.kind));
+                    // A removed type takes its whole group with it.
+                    if let Some(owner) = type_remap[node.owner.index()] {
+                        groups.insert((owner, node.name, node.kind));
+                    }
                 }
             }
         }
-        let mut children = vec![Vec::new(); tree.types.len()];
-        for (index, node) in tree.types.iter().enumerate() {
-            if let Some(parent) = node.parent {
-                children[parent.index()].push(TypeId(index as u32));
-            }
-        }
-        let mut direct: HashMap<Group, MemberId> = tree
+        let mut direct: HashMap<Group, MemberId> = previous_tree
             .direct
             .iter()
-            .filter_map(|(key, old)| remap[old.index()].map(|id| (*key, id)))
+            .filter_map(|((owner, name, kind), old)| {
+                Some(((type_remap[owner.index()]?, *name, *kind), remap[old.index()]?))
+            })
             .collect();
         let mut dirty = Vec::new();
         let mut heads = Vec::new();
@@ -433,12 +434,189 @@ impl MetadataDependencies {
             }
         }
         tree.rebuild_inventory_selectors(&names, executor);
+        if types_changed {
+            let by_path = Arc::clone(&tree.by_path);
+            Arc::make_mut(&mut tree.host_selections).retain(|path, _| by_path.contains_key(path));
+            if let Some(issuer) = tree.owner_certificate_issuer.clone() {
+                let (versions, paths) = issuer.certify_hierarchy(&tree);
+                tree.owner_hierarchy = Arc::new(versions);
+                tree.owner_ancestry = Arc::new(paths);
+            }
+        }
         let _ = fresh;
         Ok(Spliced {
             tree,
             dirty: order.len(),
         })
     }
+}
+
+/// Number of types the root and engine hierarchy rows ensure before any
+/// authored row (their first-encounter closure under lexical parents).
+pub(crate) fn engine_type_prefix<'a>(
+    tree: &SemanticTree,
+    engine_rows: impl Iterator<Item = &'a Skeleton>,
+) -> Option<u32> {
+    let mut seen = HashSet::new();
+    seen.insert(SymbolId::of("/"));
+    for row in engine_rows {
+        let mut cursor = Some(match row {
+            Skeleton::Type { path, .. } => *path,
+            Skeleton::Member { owner, .. } => *owner,
+        });
+        while let Some(path) = cursor {
+            if !seen.insert(path) {
+                break;
+            }
+            let text = tree.symbols.text(path)?;
+            cursor = match dm_ir::TypePath::parse(text).ok()?.parent() {
+                Some(parent) => Some(tree.lookup_type(SymbolId::of(parent.as_str()))
+                    .map(|id| tree.types[id.index()].path)?),
+                None => None,
+            };
+        }
+    }
+    let start = seen.len();
+    (start <= tree.types.len() && tree.types[..start].iter().all(|node| seen.contains(&node.path)))
+        .then_some(start as u32)
+}
+
+struct TypeRoster {
+    types: Vec<crate::TypeNode>,
+    by_path: HashMap<SymbolId, TypeId>,
+    remap: Vec<Option<TypeId>>,
+}
+
+/// Replay the full constructor's type ordering (root and engine prefix, then
+/// first encounter over authored rows with lexical ancestors first) and its
+/// parent rules. `None` when the roster is unchanged. Existing types must keep
+/// their parent, explicit flag and synthetic flag; new types need acyclic
+/// parents. Anything else declines to the full constructor.
+fn splice_types(
+    previous: &SemanticTree,
+    current: &KeyedDeclarations,
+    symbols: &mut dm_ir::SymbolTable,
+    type_rows_changed: &HashSet<SymbolId>,
+) -> Result<Option<TypeRoster>, &'static str> {
+    let start = previous.authored_type_start.ok_or("engine type prefix unknown")? as usize;
+    let mut order: Vec<SymbolId> = previous.types[..start].iter().map(|node| node.path).collect();
+    let mut index: HashMap<SymbolId, usize> =
+        order.iter().enumerate().map(|(position, path)| (*path, position)).collect();
+    let mut lexical: HashMap<SymbolId, Option<SymbolId>> = HashMap::new();
+    let mut declared = HashSet::new();
+    let mut explicit: HashMap<SymbolId, SymbolId> = HashMap::new();
+    for row in current.skeletons() {
+        let path = match row {
+            Skeleton::Type { path, explicit_parent } => {
+                declared.insert(*path);
+                if let Some(parent) = explicit_parent {
+                    if explicit.insert(*path, *parent).is_some_and(|old| old != *parent) {
+                        return Err("conflicting explicit parent");
+                    }
+                }
+                *path
+            }
+            Skeleton::Member { owner, .. } => *owner,
+        };
+        let mut chain = Vec::new();
+        let mut cursor = Some(path);
+        while let Some(path) = cursor {
+            if index.contains_key(&path) || chain.contains(&path) {
+                break;
+            }
+            chain.push(path);
+            let text = symbols.text(path).ok_or("type path missing from symbols")?.to_string();
+            let parent = dm_ir::TypePath::parse(&text)
+                .map_err(|_| "invalid type path")?
+                .parent()
+                .map(|parent| symbols.intern(parent.as_str()))
+                .transpose()
+                .map_err(|_| "symbol collision")?;
+            lexical.insert(path, parent);
+            cursor = parent;
+        }
+        for path in chain.into_iter().rev() {
+            index.insert(path, order.len());
+            order.push(path);
+        }
+    }
+    if order.len() == previous.types.len()
+        && order.iter().zip(previous.types.iter()).all(|(path, node)| *path == node.path)
+        && type_rows_changed.is_empty()
+    {
+        return Ok(None);
+    }
+    for path in type_rows_changed {
+        if previous.lookup_type(*path).is_some() && index.contains_key(path) {
+            return Err("type row of an existing type changed");
+        }
+    }
+    let root = SymbolId::of("/");
+    let datum = SymbolId::of("/datum");
+    let mut types = Vec::with_capacity(order.len());
+    for (position, &path) in order.iter().enumerate() {
+        if position < start {
+            let mut node = previous.types[position].clone();
+            node.members = Arc::from([]);
+            types.push(node);
+            continue;
+        }
+        let parent = match explicit.get(&path) {
+            Some(parent) => Some(TypeId(*index.get(parent).ok_or("missing explicit parent")? as u32)),
+            None => lexical.get(&path).copied().flatten().map(|lexical| {
+                if lexical == root && path != datum && index.contains_key(&datum) {
+                    TypeId(index[&datum] as u32)
+                } else {
+                    TypeId(index[&lexical] as u32)
+                }
+            }),
+        };
+        types.push(crate::TypeNode {
+            path,
+            parent,
+            explicit_parent: explicit.contains_key(&path),
+            synthetic: !declared.contains(&path),
+            members: Arc::from([]),
+        });
+    }
+    // Existing types keep their shape exactly; new types must be acyclic.
+    let mut remap = vec![None; previous.types.len()];
+    for (old_index, node) in previous.types.iter().enumerate() {
+        let Some(&position) = index.get(&node.path) else {
+            continue;
+        };
+        remap[old_index] = Some(TypeId(position as u32));
+        let new = &types[position];
+        let old_parent = node.parent.map(|id| previous.types[id.index()].path);
+        let new_parent = new.parent.map(|id| types[id.index()].path);
+        if old_parent != new_parent
+            || node.explicit_parent != new.explicit_parent
+            || node.synthetic != new.synthetic
+        {
+            return Err("existing type hierarchy changed");
+        }
+    }
+    for start_index in 0..types.len() {
+        let mut cursor = types[start_index].parent;
+        let mut steps = 0;
+        while let Some(id) = cursor {
+            steps += 1;
+            if steps > types.len() {
+                return Err("inheritance cycle");
+            }
+            cursor = types[id.index()].parent;
+        }
+    }
+    let by_path = order
+        .iter()
+        .enumerate()
+        .map(|(position, path)| (*path, TypeId(position as u32)))
+        .collect();
+    Ok(Some(TypeRoster {
+        types,
+        by_path,
+        remap,
+    }))
 }
 
 /// DMB_SPLICE_VERIFY=1: compare a spliced tree with the full constructor's.
@@ -450,7 +628,12 @@ pub(crate) fn first_difference(spliced: &SemanticTree, full: &SemanticTree) -> O
         return Some("type count".into());
     }
     for (index, (a, b)) in spliced.types.iter().zip(full.types.iter()).enumerate() {
-        if a.path != b.path || a.parent != b.parent || a.members != b.members {
+        if a.path != b.path
+            || a.parent != b.parent
+            || a.members != b.members
+            || a.explicit_parent != b.explicit_parent
+            || a.synthetic != b.synthetic
+        {
             return Some(format!("type {index}"));
         }
     }

@@ -144,6 +144,10 @@ pub struct SemanticTree {
     /// Set by a clean change-set carry (no type removed): publication may skip
     /// the demand-store sweep. Never set on a full construction.
     selection_prune_skippable: bool,
+    /// Types ensured by the root and engine rows, before any authored row;
+    /// the change-set splice replays authored first-encounter order after it.
+    /// `None` when unknown (the splice then keeps the type roster fixed).
+    authored_type_start: Option<u32>,
     by_path: Arc<HashMap<SymbolId, TypeId>>,
     direct: Arc<HashMap<(TypeId, SymbolId, MemberKind), MemberId>>,
     /// One target per ordered skeleton, including all reopens.
@@ -606,6 +610,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
         owner_certificate_issuer: None,
         selection_publication_deferred,
         selection_prune_skippable: false,
+        authored_type_start: None,
         by_path: Arc::new(by_path),
         direct: Arc::new(HashMap::new()),
         declaration_targets: Arc::from([]),
