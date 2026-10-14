@@ -30,14 +30,6 @@
 /mob/living/carbon/human/alraune	d24ceccfc1408e4e	*
 /mob/living/carbon/human/altevian	cbe66368f85dd28c	*
 /mob/living/carbon/human/diona	7e7739335330ffbc	*
-/mob/living/carbon/human/dummy	28c9da14319ed554	*
-/mob/living/carbon/human/dummy/mannequin	76276ecccc23a3f4	*
-/mob/living/carbon/human/dummy/mannequin/autoequip	c0624780a68c23c4	*
-/mob/living/carbon/human/dummy/mannequin/autoequip/sergal	18c4a08e9e59f2b0	*
-/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran	29ecca0697cdcf1d	*
-/mob/living/carbon/human/dummy/mannequin/autoequip/teshari	6dad06d1b9ac1775	*
-/mob/living/carbon/human/dummy/mannequin/autoequip/unathi	de70be39e89ac6ba	*
-/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin	675946b57885b685	*
 /mob/living/carbon/human/farwa	5427f84ddb5f2f5d	*
 /mob/living/carbon/human/generated_station_command_officer	1c4b6ba9fc9413bd	*
 /mob/living/carbon/human/grey	bc5fec04957d3bce	*
@@ -13795,7 +13787,6 @@
 /obj/item/remote_scene_tool	dd9790308f882a5b	carried_afflictions,economic_adoption,icon_root,identity,last_loc,linked,mind_host,partner_live,partner_name,partner_wearer,possessed_voice,worn_mob
 /obj/item/remote_scene_tool/tally_doll	61da3609afc567fa	carried_afflictions,economic_adoption,icon_root,identity,last_loc,linked,mind_host,partner_live,partner_name,partner_wearer,possessed_voice,worn_mob
 /obj/item/remote_scene_tool/tally_necklace	3cfc104c0b76593a	carried_afflictions,economic_adoption,icon_root,identity,last_loc,linked,mind_host,partner_live,partner_name,partner_wearer,possessed_voice,worn_mob
-/obj/item/remote_scene_tool/voodoo_doll	bed51264b9f9b0d9	*
 /obj/item/remote_scene_tool/voodoo_necklace	653ea1610f4176db	carried_afflictions,economic_adoption,icon_root,identity,last_loc,linked,mind_host,partner_live,partner_name,partner_wearer,possessed_voice,worn_mob
 /obj/item/research_sample	3ac0eb7931498750	carried_afflictions,economic_adoption,fixed_name,identity,mind_host,possessed_voice
 /obj/item/research_sample/bluespace	c23203b87ef9be2a	*

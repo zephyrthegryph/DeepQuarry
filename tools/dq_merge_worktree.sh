@@ -4,6 +4,8 @@
 #   bash tools/dq_merge_worktree.sh --lanes "a b"  # take the merge lock (waits, printing who holds it), create the worktree once,
 #                                                  # or move it to origin/master; stdout is its path
 #   bash tools/dq_merge_worktree.sh --join "c"     # the lock holder adds lanes to its batch (no switch, prints the path)
+#   bash tools/dq_merge_worktree.sh --adopt --lanes "a b"   # the owner of an unpushed batch already merged in the worktree takes the lock
+#                                                  # for its current HEAD: no switch, no re-merge, no discard (every lane named must be in HEAD)
 #   bash tools/dq_merge_worktree.sh --release      # end an abandoned batch and free the lock (--release --force: someone else's)
 #   bash tools/dq_merge_worktree.sh --print-path   # just the path (no fetch, no changes)
 #   bash tools/dq_merge_worktree.sh --warm         # also run `build.sh gen` there (analyzer + generated files)
@@ -57,6 +59,7 @@ for arg in "$@"; do
 		--discard-previous) discard=1 ;;
 		--lanes) mode_next=lanes ;;
 		--join) mode="join"; mode_next=lanes ;;
+		--adopt) mode="adopt" ;;
 		--release) mode="release" ;;
 		--force) force="--force" ;;
 		-h|--help) sed -n '2,36p' "$0"; exit 0 ;;
@@ -73,9 +76,10 @@ case "$mode" in
 	join) [ -n "$lanes" ] || die "--join needs the lanes to add"; merge_lock_join $lanes || exit 1; echo "$WT"; exit 0 ;;
 esac
 [ -n "$lanes" ] || lanes="unnamed batch"
+[ "$mode" != "adopt" ] || [ "$lanes" != "unnamed batch" ] || die "--adopt needs --lanes (the lane branches of your batch that are already merged in the worktree)"
 
 here="$(git rev-parse --show-toplevel 2>/dev/null)" || die "run this inside a DeepQuarry checkout"
-merge_lock_acquire $lanes || { rc=$?; [ "$rc" -eq 3 ] && exit 1; die "could not take the merge lock"; }
+merge_lock_acquire $lanes || { rc=$?; { [ "$rc" -eq 3 ] || [ "$rc" -eq 4 ]; } && exit 1; die "could not take the merge lock"; }
 got_lock=1
 
 # The lock first: the fetch, the target and the clear check below must all be seen by the batch that owns the worktree.
@@ -111,6 +115,20 @@ if [ -n "$dirty" ]; then
 	die "$WT is not clean (listed above). A batch is unfinished there; commit and push it, or clean it by hand."
 fi
 
+if [ "$mode" = "adopt" ]; then
+	[ "$(git -C "$WT" rev-parse --abbrev-ref HEAD)" = "$BRANCH" ] || die "--adopt: $WT is not on $BRANCH"
+	[ "$(git -C "$WT" rev-list --count "origin/master..HEAD")" -gt 0 ] || die "--adopt: $BRANCH holds nothing origin/master lacks; there is no batch to adopt (take the worktree normally with --lanes)"
+	for lane in $lanes; do
+		tip="$(git -C "$WT" rev-parse -q --verify "$lane^{commit}" 2>/dev/null || git -C "$WT" rev-parse -q --verify "origin/$lane^{commit}" 2>/dev/null)" || die "--adopt: lane '$lane' does not resolve to a commit"
+		git -C "$WT" merge-base --is-ancestor "$tip" HEAD || die "--adopt: lane '$lane' (${tip:0:12}) is not in the worktree's HEAD; only the owner of a batch merged there can adopt it (merge it normally, or wait for the lock)"
+		! git -C "$WT" merge-base --is-ancestor "$tip" origin/master || die "--adopt: lane '$lane' (${tip:0:12}) is already in origin/master, so it is not an unpushed batch in the worktree (nothing to adopt for it)"
+	done
+	merge_lock_mark_base "$(git -C "$WT" merge-base HEAD origin/master)"
+	echo >&2 "MERGE WORKTREE ADOPTED: $WT ($BRANCH at $(git -C "$WT" rev-parse --short=12 HEAD), $(git -C "$WT" rev-list --count "origin/master..HEAD") unpushed commit(s), lanes: $lanes)"
+	echo "$WT"
+	exit 0
+fi
+
 cur="$(git -C "$WT" rev-parse --abbrev-ref HEAD)"
 if [ "$cur" = "$BRANCH" ]; then
 	ahead="$(git -C "$WT" rev-list --count "origin/master..HEAD")"
@@ -130,5 +148,6 @@ if [ "$warm" -eq 1 ]; then
 	echo >&2 "dq_merge_worktree: warming gen (analyze binary, generated files)"
 	(cd "$WT" && tools/build/build.sh gen >&2) || echo "dq_merge_worktree: warm-up gen failed (the batch's gate will report it)" >&2
 fi
+merge_lock_mark_base "$(git -C "$WT" rev-parse HEAD)"
 echo >&2 "MERGE WORKTREE READY: $WT ($BRANCH at ${target:0:12})"
 echo "$WT"
