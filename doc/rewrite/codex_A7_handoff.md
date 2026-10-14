@@ -56,4 +56,5 @@ Dark floor tiles declare the original post-parent 5% glow decision as one setup 
 
 Two constructor regressions were added: `dq_a7_initialization/fishing_slogan` checks the real correlated text, hue, size and icon values; `dq_a7_initialization/dark_glow` selects and replays real RNG seeds for both conditional construction outcomes, checks actual overlays, and defers restoration of the changed turf before creating it. Estimated additional shrink: four init_lines identities and one world_reads row; analyzer certification is pending.
 
-Final analyzer update on master a75de08d85: init baseline 4106 ->4010 (96 rows removed). The five extra identities from the fishing/glow follow-up were removed with the supported shrink-only update, and init lint passes. Production/focused lane proof remains blocked by unchanged master missing setter methods and base_vars failures.
+Final analyzer update on master a75de08d85: init baseline 4106 ->4011 (95 rows removed). The four extra identities from the fishing/glow follow-up were removed with the supported shrink-only update, and init lint passes. Production/focused lane proof remains blocked by unchanged master missing setter methods and base_vars failures.
+
