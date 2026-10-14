@@ -4,7 +4,13 @@ GLOBAL_LIST_EMPTY(dq_b5_resolver_calls)
 	GLOB.dq_b5_resolver_calls += list(list(loc, path, edits))
 
 /datum/unit_test/dq_air_boundary/Run()
+	var/datum/system/air/original_owner = SSair
+	var/datum/system/air/original_registered = system_table()[/datum/system/air]
+	defer_cleanup(src, PROC_REF(restore_boundary_owner), original_owner, original_registered)
 	var/datum/system/air/air = allocate(/datum/system/air)
+	restore_boundary_owner(original_owner, original_registered)
+	TEST_ASSERT_EQUAL(SSair, original_owner, "The local fixture must preserve the running system owner")
+	TEST_ASSERT_EQUAL(system_table()[/datum/system/air], original_registered, "The local fixture must preserve the registered system owner")
 	var/datum/pipe_network/network = allocate(/datum/pipe_network)
 	air.start_processing_pipenet(network)
 	air.start_processing_pipenet(network)
@@ -32,8 +38,14 @@ GLOBAL_LIST_EMPTY(dq_b5_resolver_calls)
 	TEST_ASSERT(air.processing_enabled(), "The next toggle must restore the real work gate")
 
 /datum/unit_test/dq_atoms_boundary/Run()
+	var/datum/system/atoms/original_owner = SSatoms
+	var/datum/system/atoms/original_registered = system_table()[/datum/system/atoms]
+	defer_cleanup(src, PROC_REF(restore_boundary_owner), original_owner, original_registered)
 	set_global("dq_b5_resolver_calls", list())
 	var/datum/system/atoms/atoms = allocate(/datum/system/atoms)
+	restore_boundary_owner(original_owner, original_registered)
+	TEST_ASSERT_EQUAL(SSatoms, original_owner, "The local fixture must preserve the running system owner")
+	TEST_ASSERT_EQUAL(system_table()[/datum/system/atoms], original_registered, "The local fixture must preserve the registered system owner")
 	atoms.begin_materialize_suppression()
 	atoms.begin_materialize_suppression()
 	TEST_ASSERT_EQUAL(atoms.materialize_suppressed, 2, "Sandbox suppression must preserve nested depth")
@@ -64,7 +76,13 @@ GLOBAL_LIST_EMPTY(dq_b5_resolver_calls)
 	TEST_ASSERT_EQUAL(call_row[3], edits, "The immediate resolver must receive the same var edits")
 
 /datum/unit_test/dq_mapping_boundary/Run()
+	var/datum/system/mapping/original_owner = SSmapping
+	var/datum/system/mapping/original_registered = system_table()[/datum/system/mapping]
+	defer_cleanup(src, PROC_REF(restore_boundary_owner), original_owner, original_registered)
 	var/datum/system/mapping/mapping = allocate(/datum/system/mapping)
+	restore_boundary_owner(original_owner, original_registered)
+	TEST_ASSERT_EQUAL(SSmapping, original_owner, "The local fixture must preserve the running system owner")
+	TEST_ASSERT_EQUAL(system_table()[/datum/system/mapping], original_registered, "The local fixture must preserve the registered system owner")
 	mapping.ensure_multiz_capacity(3)
 	TEST_ASSERT_EQUAL(length(mapping.multiz_levels), 3, "Atmos synchronization must grow the owner's level table")
 	var/list/traits = new /list(Z_LEVEL_DOWN)
@@ -78,7 +96,13 @@ GLOBAL_LIST_EMPTY(dq_b5_resolver_calls)
 	TEST_ASSERT_EQUAL(mapping.map_templates[template.name], template, "The admin upload must register the real template under its actual name")
 
 /datum/unit_test/dq_garbage_boundary/Run()
+	var/datum/system/garbage/original_owner = SSgarbage
+	var/datum/system/garbage/original_registered = system_table()[/datum/system/garbage]
+	defer_cleanup(src, PROC_REF(restore_boundary_owner), original_owner, original_registered)
 	var/datum/system/garbage/garbage = allocate(/datum/system/garbage)
+	restore_boundary_owner(original_owner, original_registered)
+	TEST_ASSERT_EQUAL(SSgarbage, original_owner, "The local fixture must preserve the running system owner")
+	TEST_ASSERT_EQUAL(system_table()[/datum/system/garbage], original_registered, "The local fixture must preserve the registered system owner")
 	var/list/reference = list("queue record")
 	var/list/queue = list(reference)
 	set_var(garbage, "queues", list(queue))
@@ -96,7 +120,13 @@ GLOBAL_LIST_EMPTY(dq_b5_resolver_calls)
 	TEST_ASSERT_EQUAL(garbage.deletion_statistics(/obj), item, "Editing diagnostic type keys must not discard live statistics")
 
 /datum/unit_test/dq_machine_boundary/Run()
+	var/datum/system/machines/original_owner = SSmachines
+	var/datum/system/machines/original_registered = system_table()[/datum/system/machines]
+	defer_cleanup(src, PROC_REF(restore_boundary_owner), original_owner, original_registered)
 	var/datum/system/machines/machines = allocate(/datum/system/machines)
+	restore_boundary_owner(original_owner, original_registered)
+	TEST_ASSERT_EQUAL(SSmachines, original_owner, "The local fixture must preserve the running system owner")
+	TEST_ASSERT_EQUAL(system_table()[/datum/system/machines], original_registered, "The local fixture must preserve the registered system owner")
 	TEST_ASSERT_EQUAL(machines.next_detached_grid_id(), -1, "Detached power IDs must retain their negative sequence")
 	TEST_ASSERT_EQUAL(machines.next_detached_grid_id(), -2, "Each detached grid must consume the next ID")
 	machines.note_dead_gas_watch()
@@ -106,3 +136,49 @@ GLOBAL_LIST_EMPTY(dq_b5_resolver_calls)
 	machines.queue_area_power_load(A)
 	TEST_ASSERT_EQUAL(length(machines.power_dirty_areas), 1, "Repeated area load changes must retain keyed-set membership")
 	TEST_ASSERT(machines.power_dirty_areas[A], "The real changed area must remain queued")
+
+
+/// A local SYSTEM_DEF clone must not replace the running world owner, even if construction fails.
+/datum/unit_test/dq_air_boundary/proc/restore_boundary_owner(datum/system/air/owner, datum/system/air/registered)
+	SSair = owner
+	var/list/table = system_table()
+	if(registered)
+		table[/datum/system/air] = registered
+	else
+		table -= /datum/system/air
+
+/// A local SYSTEM_DEF clone must not replace the running world owner, even if construction fails.
+/datum/unit_test/dq_atoms_boundary/proc/restore_boundary_owner(datum/system/atoms/owner, datum/system/atoms/registered)
+	SSatoms = owner
+	var/list/table = system_table()
+	if(registered)
+		table[/datum/system/atoms] = registered
+	else
+		table -= /datum/system/atoms
+
+/// A local SYSTEM_DEF clone must not replace the running world owner, even if construction fails.
+/datum/unit_test/dq_mapping_boundary/proc/restore_boundary_owner(datum/system/mapping/owner, datum/system/mapping/registered)
+	SSmapping = owner
+	var/list/table = system_table()
+	if(registered)
+		table[/datum/system/mapping] = registered
+	else
+		table -= /datum/system/mapping
+
+/// A local SYSTEM_DEF clone must not replace the running world owner, even if construction fails.
+/datum/unit_test/dq_garbage_boundary/proc/restore_boundary_owner(datum/system/garbage/owner, datum/system/garbage/registered)
+	SSgarbage = owner
+	var/list/table = system_table()
+	if(registered)
+		table[/datum/system/garbage] = registered
+	else
+		table -= /datum/system/garbage
+
+/// A local SYSTEM_DEF clone must not replace the running world owner, even if construction fails.
+/datum/unit_test/dq_machine_boundary/proc/restore_boundary_owner(datum/system/machines/owner, datum/system/machines/registered)
+	SSmachines = owner
+	var/list/table = system_table()
+	if(registered)
+		table[/datum/system/machines] = registered
+	else
+		table -= /datum/system/machines
