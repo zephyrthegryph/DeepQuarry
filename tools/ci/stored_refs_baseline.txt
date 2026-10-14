@@ -334,77 +334,9 @@ var	code/game/atom/armor.dm	var/tmp/datum/armor_override
 var	code/game/atoms_movable.dm	var/datum/thrownthing/throwing // running: set only mid-throw
 var	code/game/atoms_movable.dm	var/tmp/datum/throw_source
 var	code/game/atoms_movable.dm	var/atom/master = null
-var	code/game/gamemodes/antag_holder.dm	var/datum/changeling/changeling
-var	code/game/gamemodes/changeling/state/changeling.dm	var/mob/living/owner
-var	code/game/gamemodes/changeling/state/changeling.dm	var/datum/changeling/comp
-var	code/game/gamemodes/changeling/state/powers/armblade.dm	var/mob/living/creator //This is just like ninja swords, needed to make sure dumb shit that removes the sword doesn't make it stay around.
-var	code/game/gamemodes/cult/cult_structures.dm	var/obj/item/wepon
-var	code/game/gamemodes/cult/runes.dm	/obj/effect/rune/var/mob/living/carbon/human/dummy/manifest_dummy
-var	code/game/gamemodes/malfunction/malf_hardware.dm	var/mob/living/silicon/ai/owner // AI which owns this.
-var	code/game/gamemodes/malfunction/malf_research.dm	var/mob/living/silicon/ai/owner // AI which owns this research datum.
-var	code/game/gamemodes/malfunction/malf_research.dm	var/datum/malf_research_ability/focus_static // Currently researched item (a relation view into available_abilities)
-var	code/game/gamemodes/malfunction/malf_research_ability.dm	var/datum/malf_research_ability/next = null // Next research (if applicable).
-var	code/game/gamemodes/nuclear/pinpointer.dm	var/obj/item/disk/nuclear/the_disk
-var	code/game/gamemodes/nuclear/pinpointer.dm	var/obj/target
-var	code/game/gamemodes/nuclear/pinpointer.dm	var/obj/machinery/computer/shuttle_control/multi/syndicate/home
-var	code/game/gamemodes/nuclear/pinpointer.dm	var/obj/machinery/computer/shuttle_control/our_shuttle
-var	code/game/gamemodes/objective.dm	var/datum/mind/target = null //If they are focused on a particular person.
-var	code/game/gamemodes/technomancer/catalog.dm	var/mob/living/carbon/human/owner = null
-var	code/game/gamemodes/technomancer/core_obj.dm	var/obj/item/technomancer_core/core = null
-var	code/game/gamemodes/technomancer/spell_objs.dm	var/mob/living/owner
-var	code/game/gamemodes/technomancer/spell_objs.dm	var/obj/item/technomancer_core/core = null
-var	code/game/gamemodes/technomancer/spells/illusion.dm	var/atom/movable/copied
-var	code/game/gamemodes/technomancer/spells/mark_recall.dm	var/mob/caster
-var	code/game/gamemodes/technomancer/spells/track.dm	var/atom/movable/tracked // The thing to point towards (a relation view).
-var	code/game/jobs/job/captain.dm	GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newscast = 1))
-var	code/game/machinery/CableLayer.dm	var/obj/structure/cable/last_piece
-var	code/game/machinery/OpTable.dm	/obj/machinery/optable/var/mob/living/carbon/human/victim
-var	code/game/machinery/air_alarm.dm	var/datum/radio_frequency/radio_connection
-var	code/game/machinery/atmo_control.dm	var/datum/radio_frequency/radio_connection
-var	code/game/machinery/atmoalter/meter.dm	var/obj/machinery/atmospherics/pipe/target
 var	code/game/machinery/atmoalter/meter.dm	var/datum/gas_mixture/watched_air
-var	code/game/machinery/bomb_tester.dm	var/obj/machinery/portable_atmospherics/canister/test_canister
-var	code/game/machinery/buttons.dm	var/mob/living/simple_mob/mobspawned
-var	code/game/machinery/cloning.dm	VAR_PRIVATE/mob/living/occupant_mob = null
-var	code/game/machinery/computer/Operating.dm	var/mob/living/carbon/human/victim = null
-var	code/game/machinery/computer/bodycamera.dm	var/obj/effect/overlay/vis/bpinboard
-var	code/game/machinery/computer/bodycamera.dm	/obj/machinery/computer/security/telescreen/bodycamera/var/obj/item/clothing/accessory/bodycam/the_camera
-var	code/game/machinery/computer/camera.dm	var/obj/effect/overlay/vis/pinboard
-var	code/game/machinery/computer/camera.dm	var/atom/showing
-var	code/game/machinery/computer/cloning.dm	var/obj/machinery/dna_scannernew/scanner //Linked scanner. For scanning.
-var	code/game/machinery/computer/cloning.dm	var/datum/transhuman/body_record/active_BR
-var	code/game/machinery/computer/cloning.dm	var/obj/machinery/clonepod/selected_pod
-var	code/game/machinery/computer/id_restorer.dm	var/obj/item/card/id/inserted
-var	code/game/machinery/computer/law.dm	var/mob/living/silicon/ai/current
-var	code/game/machinery/computer/law.dm	var/mob/living/silicon/robot/current
-var	code/game/machinery/computer/medical.dm	var/datum/data/record/active1
-var	code/game/machinery/computer/message.dm	var/obj/item/pda/customrecepient
-var	code/game/machinery/computer/security.dm	var/datum/data/record/active1
-var	code/game/machinery/cryopod.dm	var/obj/machinery/computer/cryopod/control_computer
 var	code/game/machinery/doors/airlock.dm	/obj/machinery/door/airlock/var/tmp/obj/structure/door_assembly/assembly_at_make
 var	code/game/machinery/pipe/construction.dm	/obj/item/pipe/var/tmp/obj/machinery/atmospherics/make_from
-var	code/game/machinery/pointdefense.dm	var/obj/effect/meteor/engaging = null // The meteor we're shooting at (a relation view)
-var	code/game/machinery/telecomms/telemonitor.dm	var/obj/machinery/telecomms/SelectedMachine
-var	code/game/machinery/telecomms/traffic_control.dm	var/mob/lasteditor
-var	code/game/machinery/telecomms/traffic_control.dm	var/obj/machinery/telecomms/server/SelectedServer
-var	code/game/machinery/telecomms/traffic_control.dm	/obj/machinery/computer/telecomms/traffic/var/mob/editingcode
-var	code/game/machinery/teleporter.dm	var/obj/machinery/computer/teleporter/com
-var	code/game/machinery/teleporter.dm	var/obj/machinery/teleport/hub/com
-var	code/game/machinery/virtual_reality/vr_console.dm	var/mob/living/carbon/human/avatar
-var	code/game/machinery/virtual_reality/vr_console.dm	var/datum/mind/vr_mind
-var	code/game/machinery/vitals_monitor.dm	/obj/machinery/vitals_monitor/var/mob/living/carbon/human/victim
-var	code/game/machinery/washing_machine.dm	var/obj/crayon
-var	code/game/mecha/components/_component.dm	var/obj/mecha/chassis = null
-var	code/game/mecha/equipment/tools/cable_layer.dm	var/obj/structure/cable/last_piece
-var	code/game/mecha/equipment/tools/catapult.dm	var/atom/movable/locked
-var	code/game/mecha/equipment/tools/clamp.dm	var/obj/mecha/working/ripley/cargo_holder
-var	code/game/mecha/equipment/tools/inflatables.dm	var/obj/item/inflatable_dispenser/my_deployer
-var	code/game/mecha/equipment/tools/shield_omni.dm	var/obj/mecha/my_mech
-var	code/game/mecha/equipment/tools/syringe_gun.dm	var/mob/living/Target = null
-var	code/game/mecha/mech_sensor.dm	var/datum/radio_frequency/radio_connection
-var	code/game/mecha/mecha.dm	var/obj/item/mecha_parts/mecha_equipment/tool/jetpack/active_jetpack
-var	code/game/mecha/mecha.dm	var/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/energy_relay
-var	code/game/mecha/mecha.dm	var/obj/machinery/atmospherics/portables_connector/connected_port = null
 var	code/game/mecha/mecha.dm	var/tmp/obj/effect/decal/mecha_wreckage/wreck
 var	code/game/objects/effects/decals/posters/posters.dm	/obj/structure/sign/poster/var/tmp/obj/item/poster/hung_from
 var	code/game/objects/effects/spiders.dm	/obj/effect/spider/eggcluster/var/tmp/atom/laid_by
