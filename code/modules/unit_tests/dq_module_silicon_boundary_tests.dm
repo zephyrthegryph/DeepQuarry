@@ -9,7 +9,7 @@
 	AI.forceMove(T)
 	var/atom/movable/screen/button = allocate(/atom/movable/screen)
 	button.name = I_WALK
-	H.m_intent = I_RUN
+	H.set_m_intent(I_RUN)
 	km_synthetic_click(H, button)
 	TEST_ASSERT_EQUAL(H.m_intent, I_WALK, "Human's native HUD click retains shared movement selection")
 	TEST_ASSERT_EQUAL(H.m_int, "14,14", "Shared movement selection retains its actual HUD position")
@@ -134,3 +134,4 @@
 	R.set_emagged(TRUE)
 	TEST_ASSERT_EQUAL(R.antagonist_override_rank(), 1, "Cyborg's actual tracked emag state supplies the original subversion rank")
 	TEST_ASSERT_EQUAL(H.antagonist_override_rank(), 0, "Human does not acquire another actor's subversion rank")
+
