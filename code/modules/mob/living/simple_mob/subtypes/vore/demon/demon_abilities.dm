@@ -31,7 +31,7 @@
 	if(pulledby)
 		pulledby.stop_pulling()
 	stop_pulling()
-	canmove = FALSE
+	set_canmove(FALSE)
 	set_is_shifting(TRUE)
 
 	//Shifting in
@@ -103,7 +103,7 @@
 	if(pulledby)
 		pulledby.stop_pulling()
 	stop_pulling()
-	canmove = FALSE
+	set_canmove(FALSE)
 	set_is_shifting(TRUE)
 
 	shifted_out = TRUE
@@ -134,7 +134,7 @@
 	set_density(initial(density))
 	force_max_speed = initial(force_max_speed)
 	var/original_canmove = canmove
-	canmove = FALSE
+	set_canmove(FALSE)
 	set_is_shifting(TRUE)
 
 	//Cosmetics mostly
@@ -148,7 +148,7 @@
 	alpha = 127
 
 	set_is_shifting(FALSE)
-	canmove = original_canmove
+	set_canmove(original_canmove)
 	set_incorporeal_move(TRUE)
 	set_density(FALSE)
 	force_max_speed = TRUE
@@ -157,7 +157,7 @@
 /// Phase-in animation done: maybe grab someone on arrival.
 /mob/living/simple_mob/vore/demon/proc/demon_phased_in(original_canmove, from_temporary)
 	set_is_shifting(FALSE)
-	canmove = original_canmove
+	set_canmove(original_canmove)
 
 	if(from_temporary)
 		var/turf/NT = get_turf(src)
@@ -321,7 +321,7 @@
 	set_density(initial(density))
 	force_max_speed = initial(force_max_speed)
 	var/original_canmove = canmove
-	canmove = FALSE
+	set_canmove(FALSE)
 	set_is_shifting(TRUE)
 
 	//Cosmetics mostly
@@ -332,7 +332,7 @@
 /// The end of the phase-in animation.
 /mob/living/simple_mob/vore/demon/proc/phase_in_lands(original_canmove)
 	set_is_shifting(FALSE)
-	canmove = original_canmove
+	set_canmove(original_canmove)
 
 	var/turf/NT = get_turf(src)
 

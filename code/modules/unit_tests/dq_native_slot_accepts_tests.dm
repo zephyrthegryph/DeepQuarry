@@ -1,7 +1,6 @@
 // Native declared-slot evaluation and real equipment custody regression coverage.
 /obj/dq_native_slot_accepts
 	var/admission_ready = FALSE
-TRACKED(/obj/dq_native_slot_accepts, admission_ready)
 CAPABILITIES(/obj/dq_native_slot_accepts)
 	slot("dq-native-slot", accepts = list(req(PROC_REF(admission_reason)), req(PROC_REF(context_reason))))
 /obj/dq_native_slot_accepts/proc/admission_reason(datum/act/op/A)

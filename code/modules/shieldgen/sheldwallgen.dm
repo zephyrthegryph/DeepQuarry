@@ -24,7 +24,6 @@
 		var/max_stored_power = 50000 //50 kW
 		use_power = USE_POWER_OFF	//Draws directly from power net. Does not use APC power.
 
-TRACKED(/obj/machinery/shieldwallgen, power)
 
 /// Runs while switched on, or while bolted down to charge its store (it parks once full).
 /obj/machinery/shieldwallgen/proc/wallgen_has_work()
@@ -322,4 +321,3 @@ CAPABILITIES(/obj/machinery/shieldwall)
 /obj/machinery/shieldwall/step_start_condition()
 	return needs_power
 
-TRACKED(/obj/machinery/shieldwallgen, state)

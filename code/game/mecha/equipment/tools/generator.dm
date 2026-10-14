@@ -23,7 +23,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
 	every(0.2 SECONDS, then(PROC_REF(generator_step)), when = nameof(generating))
 
 /obj/item/mecha_parts/mecha_equipment/generator/var/generating = FALSE
-TRACKED(/obj/item/mecha_parts/mecha_equipment/generator, generating)
 
 /// One cycle while generating and mounted. Answers TRUE when it shut itself down (the nuclear reactor's pulse reads that).
 /obj/item/mecha_parts/mecha_equipment/generator/proc/generator_step(datum/act/timer/A)

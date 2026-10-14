@@ -283,4 +283,3 @@ CAPABILITIES(/obj/machinery/washing_machine)
 /obj/machinery/washing_machine/proc/crayon() as /obj
 	return crayon
 
-TRACKED(/obj/machinery/washing_machine, state)

@@ -6,7 +6,6 @@
 	aspect = null
 	var/glow_color = "#FFFFFF"
 
-TRACKED(/obj/item/spell/aura, glow_color)
 
 CAPABILITIES(/obj/item/spell/aura)
 	every(2 SECONDS, then(PROC_REF(aura_step)))

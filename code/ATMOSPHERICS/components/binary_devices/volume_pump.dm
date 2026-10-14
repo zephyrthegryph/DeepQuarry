@@ -268,7 +268,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 // from a component file would break any later include that uses them.)
 
 
-TRACKED(/obj/machinery/atmospherics/binary/volume_pump, transfer_rate)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/volume_pump/derived()

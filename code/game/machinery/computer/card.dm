@@ -38,7 +38,6 @@ MSG_DEF_SELF(card_console/no_log, "No log exists for that job.")
 MSG_DEF_SELF(card_console/bad_name, "The console buzzes rudely: that is no name.")
 MSG_DEF_SELF(card_console/slots_full, "Both card slots are full.")
 
-TRACKED(/obj/machinery/computer/card, printing)
 
 // The ID card modification console (doc/rewrite/final_api.html, sections 9, 13): an ID card used on it goes in (one with the change-IDs access
 // is scanned as the operator's, any other is loaded to be changed) and opens the window; "Eject ID Card" gives back the operator's card, then

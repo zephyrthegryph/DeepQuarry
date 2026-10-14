@@ -148,7 +148,7 @@
 	TEST_ASSERT(H.put_in_active_hand(kit), "The actual floor-light kit enters a real working hand")
 	TEST_ASSERT_EQUAL(kit.loc, H, "The real actor is the kit's custodian")
 	var/lights_before = length(contents_of(T, /obj/machinery/floor_light))
-	H.custody_blocked = TRUE
+	H.set_custody_blocked(TRUE)
 	TEST_ASSERT_EQUAL(H.release_refusal(kit, H), H.custody_refusal, "The actual custodian override refuses release")
 	var/time_before = op_now()
 	var/list/denied = find_row(op_menu(H, kit, kit), "install")
@@ -164,7 +164,7 @@
 	TEST_ASSERT_EQUAL(H.get_active_hand(), kit, "Custody refusal preserves the original active hand")
 	TEST_ASSERT_EQUAL(kit.loc, H, "Custody refusal leaves the kit with its original custodian")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/machinery/floor_light)), lights_before, "Refused installation creates no floor light")
-	H.custody_blocked = FALSE
+	H.set_custody_blocked(FALSE)
 	TEST_ASSERT_NULL(H.release_refusal(kit, H), "The same real custodian now permits release")
 	var/list/allowed = find_row(op_menu(H, kit, kit), "install")
 	TEST_ASSERT(allowed && allowed["enabled"], "Changing only custody policy refreshes the same kit's menu admission")

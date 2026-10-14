@@ -1,4 +1,3 @@
-TRACKED(/obj/item/clothing/accessory, slot)
 
 /obj/item/clothing/accessory
 	name = "tie"
@@ -1635,7 +1634,6 @@ CAPABILITIES(/obj/item/clothing/accessory/bunny_tail)
 /obj/item/clothing/accessory/collar/shock/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
 
-TRACKED(/obj/item/clothing/accessory, glove_level)
 
 CAPABILITIES(/obj/item/clothing/accessory/scarf/teshari/neckscarf)
 	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)

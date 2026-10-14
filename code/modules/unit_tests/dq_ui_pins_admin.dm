@@ -317,8 +317,8 @@
 	console.network = "dqpin_net"
 	var/turf/beside = locate(T.x + 1, T.y, T.z)
 	var/obj/machinery/telecomms/server/box = test.allocate(/obj/machinery/telecomms/server, beside)
-	box.id = "dqpin_server"
-	box.network = "dqpin_net"
+	box.set_id("dqpin_server")
+	box.set_network("dqpin_net")
 	host = console
 	watch_host()
 	snap("initial")

@@ -42,6 +42,6 @@
 	TEST_ASSERT(H.equip_to_slot_if_possible(U, SLOT_ID_UNIFORM, disable_warning = TRUE), "the wearer equips the uniform")
 	TEST_ASSERT(D.current_film, "the dosimeter starts with a film")
 	TEST_ASSERT_EQUAL(D.current_film.state, 0, "the film starts unexposed")
-	H.radiation = 100
+	H.set_radiation(100)
 	D.check_holder()
 	TEST_ASSERT_EQUAL(D.current_film.state, 1, "the film darkens from the wearer's radiation")

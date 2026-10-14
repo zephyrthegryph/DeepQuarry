@@ -81,8 +81,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_OVERMAP_SHIPS)
 
 /// Mirror of "not still": adjust_speed() (the only writer of speed) publishes the start/stop transition through this field.
 /obj/effect/overmap/visitable/ship/var/tmp/under_way = FALSE
-TRACKED(/obj/effect/overmap/visitable/ship, under_way)
-TRACKED(/obj/effect/overmap/visitable/ship, speed)
 
 /// Under way (not still).
 CAPABILITIES(/obj/effect/overmap/visitable/ship)

@@ -510,7 +510,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/deployable/barrier/B = mach(/obj/machinery/deployable/barrier, tile(3, 2))
 	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, tile(2, 2))
-	E.uses = 10
+	E.set_uses(10)
 	hci_click(H, B, E)
 	settle()
 	TEST_ASSERT_EQUAL(B.emagged, 1, "the first sequencer breaks the access lock")
@@ -524,7 +524,7 @@
 	var/obj/machinery/gear_dispenser/G = mach(/obj/machinery/gear_dispenser, tile(3, 2))
 	var/obj/machinery/gear_dispenser/custom/C = mach(/obj/machinery/gear_dispenser/custom, tile(3, 3))
 	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, tile(2, 2))
-	E.uses = 10
+	E.set_uses(10)
 	hci_click(H, G, E)
 	settle()
 	TEST_ASSERT(G.emagged(), "an emag subverts the dispenser")
@@ -1161,7 +1161,7 @@ CAPABILITIES(/obj/machinery/dq_native_emag_storage)
 /datum/unit_test/dq_hc_struct/emag_menus_follow_integrator_policy/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, H.loc)
-	card.uses = 0
+	card.set_uses(0)
 	TEST_ASSERT(!card.can_emag(H), "the actual card is exhausted")
 	var/list/types = list(/obj/machinery/computer/arcade/battle, /obj/machinery/computer/arcade/clawmachine, /obj/machinery/computer/arcade/orion_trail, /obj/machinery/computer/message_monitor, /obj/machinery/computer/prison_shuttle, /obj/machinery/computer/specops_shuttle, /obj/machinery/computer/supplycomp)
 	for(var/path in types)

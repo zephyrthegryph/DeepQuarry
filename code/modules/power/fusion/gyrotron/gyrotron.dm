@@ -20,7 +20,6 @@
 	anchored = TRUE
 	state = FLOOR_WELD_WELDED
 
-TRACKED(/obj/machinery/power/emitter/gyrotron, id_tag)
 
 CAPABILITIES(/obj/machinery/power/emitter/gyrotron)
 	default_parts()

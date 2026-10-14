@@ -10,7 +10,6 @@
 
 	circuit = /obj/item/circuitboard/fusion_fuel_compressor
 
-TRACKED(/obj/machinery/fusion_fuel_compressor, blitzprogress)
 
 // The fuel compressor (doc/rewrite/final_api.html section 16): sheets of a fusion fuel (FUSION_ROD_SHEET_AMT of them), an open container
 // holding 300 units of one pure reagent, or a supermatter crystal dragged onto it become a fuel rod. One supermatter sheet starts a blitz rod,

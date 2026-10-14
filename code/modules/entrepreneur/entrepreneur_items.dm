@@ -300,7 +300,6 @@ CAPABILITIES(/obj/item/entrepreneur/dumbbell)
 
 /// TRUE while it is carried by a mob: the slow reading step runs only then.
 /obj/item/entrepreneur/emf/var/tmp/reading = FALSE
-TRACKED(/obj/item/entrepreneur/emf, reading)
 
 /obj/item/entrepreneur/emf/examine(mob/user)
 	. = ..()

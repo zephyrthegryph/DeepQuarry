@@ -10,7 +10,6 @@
 	/// Untracked on purpose: break_raw() writes it with no setter, so nothing publishes it.
 	var/raw_ok = TRUE
 
-TRACKED(/obj/gdeps_probe, gauge)
 
 STAT(/obj/gdeps_probe, gdeps_low, ALL, virtual = TRUE)
 STAT(/obj/gdeps_probe, gdeps_raw, ALL, virtual = TRUE)
@@ -30,7 +29,6 @@ CAPABILITIES(/obj/gdeps_probe)
 	name = "generated deps lamp"
 	var/glow_level = 0
 
-TRACKED(/obj/gdeps_lamp, glow_level)
 
 /obj/gdeps_lamp/derived()
 	. = ..()

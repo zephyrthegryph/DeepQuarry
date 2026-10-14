@@ -49,7 +49,6 @@ CAPABILITIES(/obj/item/melee/classic_baton)
 	w_class = ITEMSIZE_SMALL
 	var/on = 0
 
-TRACKED(/obj/item/melee/telebaton, on)
 
 CAPABILITIES(/obj/item/melee/telebaton)
 	configure(item_worn(slots = SLOT_BELT))

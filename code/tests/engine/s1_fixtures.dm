@@ -44,7 +44,13 @@ CAPABILITIES(/obj/s1_fixture/rack)
 	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed)))
 	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted)))
 
-TRACKED(/obj/s1_fixture/rack, welded)
+/obj/s1_fixture/rack/proc/set_welded(value)
+	if(TRACKED_UNCHANGED(welded, value))
+		return FALSE
+	welded = value
+	tracked_changed(src, nameof(welded))
+	return TRUE
+SETTER(/obj/s1_fixture/rack, welded)
 
 /obj/s1_fixture/rack/proc/not_welded(datum/act/op/A)
 	return welded ? MSG(s1/welded) : null
@@ -78,7 +84,13 @@ CAPABILITIES(/obj/s1_fixture/picky)
 	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed)))
 	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted)))
 
-TRACKED(/obj/s1_fixture/picky, welded)
+/obj/s1_fixture/picky/proc/set_welded(value)
+	if(TRACKED_UNCHANGED(welded, value))
+		return FALSE
+	welded = value
+	tracked_changed(src, nameof(welded))
+	return TRUE
+SETTER(/obj/s1_fixture/picky, welded)
 
 /obj/s1_fixture/picky/proc/takes_gizmos_only(datum/act/op/A)
 	return istype(A.target, /obj/item/s1_fixture/gizmo) ? null : MSG(s1/no_trinkets)
@@ -225,7 +237,6 @@ CAPABILITIES(/obj/s1_fixture/ticker/fast)
 	name = "s1 terminal"
 	var/charge = 0
 
-TRACKED(/obj/s1_fixture/terminal, charge)
 
 /// Its on_change names the far var through the relation, terminal.charge.
 /obj/s1_fixture/meter

@@ -27,7 +27,6 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 
 	var/uplink = FALSE
 
-TRACKED(/obj/item/multitool, uplink)
 
 CAPABILITIES(/obj/item/multitool)
 	configure(item_tooling(speed = 1))

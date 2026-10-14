@@ -139,7 +139,7 @@ CAPABILITIES(/datum/contract_requirement)
 	if(state != CONTRACT_REQUIREMENT_PENDING || !isnum(amount) || amount <= 0)
 		return FALSE
 	var/old_progress = progress
-	progress = min(target, progress + amount)
+	set_progress(min(target, progress + amount))
 	if(progress >= target)
 		state = CONTRACT_REQUIREMENT_COMPLETE
 	if(progress != old_progress)
@@ -156,7 +156,7 @@ CAPABILITIES(/datum/contract_requirement)
 	if(!(state in list(CONTRACT_REQUIREMENT_PENDING, CONTRACT_REQUIREMENT_COMPLETE)) || !isnum(amount) || amount < 0)
 		return FALSE
 	var/old_progress = progress
-	progress = min(target, amount)
+	set_progress(min(target, amount))
 	state = progress >= target ? CONTRACT_REQUIREMENT_COMPLETE : CONTRACT_REQUIREMENT_PENDING
 	if(progress > old_progress)
 		contract?.record_contribution(contributor_account, progress - old_progress, detail || name)
@@ -444,7 +444,7 @@ CAPABILITIES(/datum/contract_requirement/staged_sustained_event)
 	cancel_pending_timers()
 	stages = deepCopyList(new_stages)
 	target = length(stages)
-	progress = 0
+	set_progress(0)
 	state = CONTRACT_REQUIREMENT_PENDING
 	completed_stages.Cut()
 	return TRUE
@@ -682,7 +682,7 @@ CAPABILITIES(/datum/contract_requirement/fact_portfolio)
 	for(var/category in category_totals)
 		aggregate += category_totals[category]
 	var/old_progress = progress
-	progress = min(target, aggregate)
+	set_progress(min(target, aggregate))
 	state = progress >= target && length(category_totals) >= distinct_category_target ? CONTRACT_REQUIREMENT_COMPLETE : CONTRACT_REQUIREMENT_PENDING
 	if(progress > old_progress)
 		contract?.record_contribution(event.value(contributor_field), progress - old_progress, event.value("detail"))

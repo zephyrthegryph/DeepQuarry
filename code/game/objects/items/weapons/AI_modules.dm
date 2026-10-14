@@ -156,7 +156,6 @@ CAPABILITIES(/obj/item/aiModule)
 	var/targetName = ""
 	desc = "A 'safeguard' AI module: 'Safeguard <name>. Anyone threatening or attempting to harm <name> is no longer to be considered a crew member, and is a threat which must be neutralized.'"
 
-TRACKED(/obj/item/aiModule/safeguard, targetName)
 
 CAPABILITIES(/obj/item/aiModule/safeguard)
 	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/safeguard, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(target_named)))
@@ -217,7 +216,6 @@ CAPABILITIES(/obj/item/aiModule/safeguard)
 	var/targetName = ""
 	desc = "A 'one crew member' AI module: 'Only <name> is a crew member.'"
 
-TRACKED(/obj/item/aiModule/oneHuman, targetName)
 
 CAPABILITIES(/obj/item/aiModule/oneHuman)
 	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/oneHuman, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(target_named)))
@@ -429,7 +427,6 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 	var/newFreeFormLaw = ""
 	desc = "A 'freeform' Core AI module: '<freeform>'"
 
-TRACKED(/obj/item/aiModule/freeformcore, newFreeFormLaw)
 
 CAPABILITIES(/obj/item/aiModule/freeformcore)
 	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/freeformcore, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(law_entered)))
@@ -456,7 +453,6 @@ CAPABILITIES(/obj/item/aiModule/freeformcore)
 	var/newFreeFormLaw = ""
 	desc = "A hacked AI law module: '<freeform>'"
 
-TRACKED(/obj/item/aiModule/syndicate, newFreeFormLaw)
 
 CAPABILITIES(/obj/item/aiModule/syndicate)
 	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/syndicate, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(law_entered)))

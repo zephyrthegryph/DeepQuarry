@@ -32,7 +32,6 @@
 
 /// The planet's clock, weather and sun run (the planet service sets it when it makes the planet).
 /datum/planet/var/clock_running = FALSE
-TRACKED(/datum/planet, clock_running)
 CAPABILITIES(/datum/planet)
 	every(2 SECONDS, then(PROC_REF(planet_step)), when = nameof(clock_running))
 	ref_many(nameof(planet_floors))

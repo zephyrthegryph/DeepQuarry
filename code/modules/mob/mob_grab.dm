@@ -285,7 +285,7 @@ CAPABILITIES(/obj/item/grab)
 			act_message(assailant, affecting, others = span_warning("%U% pins %T% down to the ground (now hands)!"))
 			apply_pinning(affecting, assailant)
 
-		state = GRAB_AGGRESSIVE
+		set_state(GRAB_AGGRESSIVE)
 		set_icon_state("grabbed1")
 		hud.icon_state = "reinforce1"
 		add_attack_logs(assailant, affecting, "Aggressively grabbed", FALSE) // Not important enough to notify admins, but still helpful.
@@ -295,7 +295,7 @@ CAPABILITIES(/obj/item/grab)
 			return
 
 		act_message(assailant, affecting, others = span_warning("%U% has reinforced %THEIR% grip on %T% (now neck)!"))
-		state = GRAB_NECK
+		set_state(GRAB_NECK)
 		set_icon_state("grabbed+1")
 		assailant.set_dir(get_dir(assailant, affecting))
 		add_attack_logs(assailant,affecting,"Neck grabbed")
@@ -306,7 +306,7 @@ CAPABILITIES(/obj/item/grab)
 		act_message(assailant, affecting, others = span_danger("%U% starts to tighten %THEIR% grip on %T%'s neck!"))
 		hud.icon_state = "kill1"
 
-		state = GRAB_KILL
+		set_state(GRAB_KILL)
 		act_message(assailant, affecting, others = span_danger("%U% has tightened %THEIR% grip on %T%'s neck!"))
 		add_attack_logs(assailant,affecting,"Strangled")
 		affecting.setClickCooldown(10)
@@ -380,7 +380,7 @@ CAPABILITIES(/obj/item/grab)
 	if(state == GRAB_KILL)
 		act_message(assailant, affecting, others = span_warning("%U% lost %THEIR% tight grip on %T%'s neck!"))
 		hud.icon_state = "kill"
-		state = GRAB_NECK
+		set_state(GRAB_NECK)
 
 /obj/item/grab/proc/handle_resist()
 	var/mob/living/carbon/human/assailant = src?.grab_assailant()

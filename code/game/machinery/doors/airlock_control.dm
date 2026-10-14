@@ -9,7 +9,6 @@
 	/// The command the door is currently attempting to complete; command_step() retries it every second while set (airlock.dm declares the every()).
 	var/cur_command
 
-TRACKED(/obj/machinery/door/airlock, cur_command)
 
 /obj/machinery/door/airlock/proc/command_step(datum/act/A)
 	if (power_systems_on())
@@ -173,7 +172,6 @@ TRACKED(/obj/machinery/door/airlock, cur_command)
 	var/alert = 0
 	var/previousPressure
 
-TRACKED(/obj/machinery/airlock_sensor, alert)
 
 // ---- what an airlock sensor is, declared ----
 //

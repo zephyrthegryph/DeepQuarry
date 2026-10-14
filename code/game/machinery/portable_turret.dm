@@ -104,21 +104,6 @@
 	var/timeout = 10
 	var/can_salvage = TRUE	// If false, salvaging doesn't give you anything.
 
-TRACKED(/obj/machinery/porta_turret, enabled)
-TRACKED(/obj/machinery/porta_turret, power_held)
-TRACKED(/obj/machinery/porta_turret, lethal)
-TRACKED(/obj/machinery/porta_turret, check_arrest)
-TRACKED(/obj/machinery/porta_turret, check_records)
-TRACKED(/obj/machinery/porta_turret, check_weapons)
-TRACKED(/obj/machinery/porta_turret, check_access)
-TRACKED(/obj/machinery/porta_turret, check_anomalies)
-TRACKED(/obj/machinery/porta_turret, check_synth)
-TRACKED(/obj/machinery/porta_turret, check_all)
-TRACKED(/obj/machinery/porta_turret, check_down)
-TRACKED(/obj/machinery/porta_turret, controllock)
-TRACKED(/obj/machinery/porta_turret, attacked)
-TRACKED(/obj/machinery/porta_turret, engaging)
-TRACKED(/obj/machinery/porta_turret, auto_repair)
 
 /// Whether the turret fires now: switched on and working.
 STAT(/obj/machinery/porta_turret, armed, ALL)
@@ -187,7 +172,6 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	var/area/here = isturf(loc) ? loc.loc : null
 	return !!length(here?.turret_controls)
 
-TRACKED(/obj/machinery/porta_turret, ailock)
 
 /// The firewall (ailock) is down: a silicon over its link may work the window (req_window_usable() asks this only of a remote user).
 /obj/machinery/porta_turret/proc/firewall_open(datum/act/op/A)

@@ -10,6 +10,6 @@
 	var/atom/A = new typepath(loc)
 	if(variant && istype(A, /obj/item))
 		var/obj/item/I = A
-		I.variant = variant
+		I.set_variant(variant)
 		I.apply_variant()
 	return A

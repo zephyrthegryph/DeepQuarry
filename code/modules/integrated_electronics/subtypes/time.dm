@@ -49,7 +49,6 @@
 	var/max_power_draw = 250
 
 /obj/item/integrated_circuit/time/ticker/var/is_running = FALSE
-TRACKED(/obj/item/integrated_circuit/time/ticker, is_running)
 
 CAPABILITIES(/obj/item/integrated_circuit/time/ticker)
 	every(PROC_REF(ticker_delay), then(PROC_REF(tick)), when = nameof(is_running))

@@ -40,7 +40,6 @@
 
 /// TRUE while worn (equipped() sets it): the slow step treats the wearer; taken off, it parks.
 /obj/item/clothing/gloves/regen/var/tmp/regenerating = FALSE
-TRACKED(/obj/item/clothing/gloves/regen, regenerating)
 
 CAPABILITIES(/obj/item/clothing/gloves/regen)
 	configure(item_protection(siemens = 0, cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))

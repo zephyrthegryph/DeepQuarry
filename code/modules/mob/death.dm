@@ -9,7 +9,7 @@
 	if(stat != DEAD)
 		death(1)
 	set_transforming(1)
-	canmove = 0
+	set_canmove(0)
 	set_icon(null)
 	set_invisibility(INVISIBILITY_ABSTRACT)
 	update_canmove()

@@ -12,7 +12,6 @@
 	var/meat_type
 	var/victim_name = "corpse"
 
-TRACKED(/obj/structure/kitchenspike, occupied)
 
 CAPABILITIES(/obj/structure/kitchenspike)
 	op("spike", item(/obj/item/grab), label("Use"), then(PROC_REF(interaction_item)))

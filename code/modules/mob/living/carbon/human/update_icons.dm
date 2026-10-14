@@ -17,11 +17,11 @@ GLOBAL_LIST_EMPTY(light_overlay_cache) //see make_worn_icon() on helmets // ALLO
 	var/cent_offset = species.center_offset
 	if(fuzzy || offset_override || dir == EAST || dir == WEST)
 		cent_offset = 0
-	vis_height = species.icon_height
+	set_vis_height(species.icon_height)
 	appearance_flags |= PIXEL_SCALE
 	if(fuzzy)
 		appearance_flags &= ~PIXEL_SCALE
-		center_offset = 0
+		set_center_offset(0)
 
 	// Regular stuff again.
 	var/matrix/M = matrix()
@@ -38,7 +38,7 @@ GLOBAL_LIST_EMPTY(light_overlay_cache) //see make_worn_icon() on helmets // ALLO
 		else
 			M.Scale(desired_scale_x, desired_scale_y)
 			if(isnull(rest_dir))
-				rest_dir = pick(FALSE, TRUE)
+				set_rest_dir(pick(FALSE, TRUE))
 			if(rest_dir)
 				M.Translate((1 / desired_scale_x * -4) + (desired_scale_x * cent_offset), 0)
 				M.Turn(-90)

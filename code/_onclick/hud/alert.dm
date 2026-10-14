@@ -43,7 +43,7 @@
 		rel_set(alert, nameof(alert.master_ref), new_master)
 	else
 		alert.set_icon_state("[initial(alert.icon_state)][severity]")
-		alert.severity = severity
+		alert.set_severity(severity)
 
 	rel_add(src, nameof(alerts), alert, category)
 	if(client && hud_used)

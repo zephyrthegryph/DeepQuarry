@@ -12,6 +12,7 @@
 CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 	param(nameof(amount), pos = 1, overrides = TRUE)
 	param(nameof(quiet_spill), pos = 2)
+	after_init(0, then(PROC_REF(settle)))
 
 /// A spill that tells no admins (its constructor param).
 /obj/effect/decal/cleanable/liquid_fuel/var/quiet_spill = TRUE
@@ -24,18 +25,16 @@ CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 		message_admins("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z]) (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z])")
 
-	var/has_spread = 0
-	//Be absorbed by any other liquid fuel in the tile.
+	return ..()
+
+/// Spilled fuel is absorbed by any other liquid fuel in the tile; alone, it spreads.
+/obj/effect/decal/cleanable/liquid_fuel/proc/settle(datum/act/A)
 	for(var/obj/effect/decal/cleanable/liquid_fuel/other in contents_of(loc))
 		if(other != src)
-			other.amount += src.amount
+			other.set_amount(other.amount + src.amount)
 			other.Spread()
-			has_spread = 1
-			break
-
-	. = ..()
-	if(!has_spread)
-		Spread()
+			return
+	Spread()
 
 /obj/effect/decal/cleanable/liquid_fuel/proc/Spread(exclude=list())
 	//Allows liquid fuels to sometimes flow into other tiles.
@@ -48,13 +47,13 @@ CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 		if(origin.CanPass(src, target) && target.CanPass(src, origin))
 			var/obj/effect/decal/cleanable/liquid_fuel/other_fuel = locate_on(target, /obj/effect/decal/cleanable/liquid_fuel)
 			if(other_fuel)
-				other_fuel.amount += amount*0.25
+				other_fuel.set_amount(other_fuel.amount + (amount*0.25))
 				if(!(other_fuel in exclude))
 					exclude += src
 					other_fuel.Spread(exclude)
 			else
 				new/obj/effect/decal/cleanable/liquid_fuel(target, amount*0.25,1)
-			amount *= 0.75
+			set_amount(amount * 0.75)
 
 /obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel
 	icon_state = "mustard"
@@ -92,4 +91,4 @@ CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel)
 					return
 			O.hotspot_expose((T20C*2) + 380,500) //Light flamethrower fuel on fire immediately.
 
-	amount *= 0.25
+	set_amount(amount * 0.25)

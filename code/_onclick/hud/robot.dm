@@ -3,9 +3,9 @@
 
 	// Don't care about your prefs! Our icon is more important
 	if(HUD.ui_style == 'icons/mob/screen/minimalist.dmi')
-		HUD.ui_style = 'icons/mob/screen1_robot_minimalist.dmi'
+		HUD.set_ui_style('icons/mob/screen1_robot_minimalist.dmi')
 	else
-		HUD.ui_style = 'icons/mob/screen1_robot.dmi'
+		HUD.set_ui_style('icons/mob/screen1_robot.dmi')
 
 	// HUD.adding / HUD.other own their screen elements; named vars pointing at listed elements
 	// (inv1-3, move_intent, autowhisper_display, throw_icon, pullin; the last two owned by
@@ -221,7 +221,7 @@
 			else if(speed == -1)
 				using.set_icon_state("speed_2")
 			rel_set(HUD, nameof(HUD.control_vtec), using)
-			m_intent = I_RUN
+			set_m_intent(I_RUN)
 			HUD.move_intent.icon_state = "running"
 			client.screen += HUD.control_vtec
 
@@ -245,7 +245,7 @@
 			control_vtec.icon_state = "speed_1"
 		else if(R.speed == -1)
 			control_vtec.icon_state = "speed_2"
-		R.m_intent = I_RUN
+		R.set_m_intent(I_RUN)
 		R.hud_used.move_intent.icon_state = "running"
 		R.client?.screen += control_vtec
 	else

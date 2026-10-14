@@ -155,7 +155,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 	. = TRUE
 
 /mob/living/bot/secbot/proc/ui_act_patrol(datum/act/op/A)
-	will_patrol = !will_patrol
+	set_will_patrol(!will_patrol)
 	. = TRUE
 
 /mob/living/bot/secbot/proc/ui_act_declarearrests(datum/act/op/A)

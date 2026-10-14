@@ -53,7 +53,7 @@ MSG_DEF_SELF(sleevecard/no_backup, span_notice("Your sleevemate flashes an error
 	if(istype(I, /obj/item/card/emag))
 		var/obj/item/card/emag/E = I
 		if(E.uses && !emagged)
-			E.uses --
+			E.set_uses(E.uses - 1)
 			act_message(user, src, MSG_SELF(span_warning("You swipe your [E] over %T%.")), MSG_OTHERS(span_warning("%U% swipes a card over %T%.")), range = 2, runemessage = "click")
 			emagged = TRUE
 			if(pai)

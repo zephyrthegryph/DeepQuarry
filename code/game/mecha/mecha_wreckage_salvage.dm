@@ -27,7 +27,7 @@ MSG_DEF_SELF(mecha_wreckage/nothing_to_pry, "You don't see anything that can be 
 	var/N = new type(get_turf(user))
 	act_message(user, src, MSG_SELF("You cut [N] from %T%"), MSG_OTHERS("%U% cuts [N] from %T%"), MSG_BLIND("You hear a sound of welder nearby"))
 	if(istype(N, /obj/item/mecha_parts/part))
-		welder_salvage -= type
+		remove_welder_salvage(type)
 	salvage_num--
 	return OP_OK
 

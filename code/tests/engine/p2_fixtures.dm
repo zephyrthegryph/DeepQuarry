@@ -89,7 +89,6 @@ MSG_DEF_SELF(p2/ui_forbidden, "That is not allowed.")
 	var/began = 0
 	var/label_shown = TRUE
 
-TRACKED(/obj/machinery/p2_box, label_shown)
 
 CAPABILITIES(/obj/machinery/p2_box)
 	machine_basics(null, repair = NONE, frame = NONE, powered = FALSE)

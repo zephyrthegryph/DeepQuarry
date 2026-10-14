@@ -109,7 +109,6 @@ MSG_DEF(vending/shorted, "You short out %T%'s product lock.", "%U% shorts out %T
 	var/can_rotate = 1 //Defaults to yes, can be set to 0 for vendors without or with unwanted directionals.
 
 // What the window shows and what the machine's timed work reads.
-TRACKED(/obj/machinery/vending, shut_up)
 /// Shocks its customers like an airlock: the shock wire cut (until mended) or pulsed (30 s), an event; live only while operable (shock_live()).
 STAT(/obj/machinery/vending, electrified, TOP, base = 0)
 /// Does it check the customer's ID for the product lock (the ID scan wire pulsed turns it off; cut, it scans for good: id_scan()).
@@ -224,7 +223,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(LAZYLEN(prices))
 		has_prices = TRUE
 	if(LAZYLEN(premium))
-		has_premium = TRUE
+		set_has_premium(TRUE)
 
 	if(!LAZYLEN(refill) && refillable)			// Manually setting refill list prevents the automatic population. By default filled with all entries from normal product.
 		refill = products

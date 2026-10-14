@@ -22,7 +22,6 @@
 	var/interaction_message = null
 	var/state
 
-TRACKED(/obj/structure/prop, interaction_message)
 
 CAPABILITIES(/obj/structure/prop)
 	op("message", hand(), label("Use"), priority(OP_PRIORITY_DEFAULT), when(nameof(interaction_message)), then(PROC_REF(interaction_hand)))   // under whatever else a prop does with a hand

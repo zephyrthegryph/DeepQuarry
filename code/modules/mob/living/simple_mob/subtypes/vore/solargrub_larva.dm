@@ -192,7 +192,6 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 
 /// 0 stopped, 1 idle drain, 2 active drain.
 /obj/machinery/abstract_grub_machine/var/draining = 1
-TRACKED(/obj/machinery/abstract_grub_machine, draining)
 /// It names the grub that made it (its owner's owns_one(starts =)).
 /obj/machinery/abstract_grub_machine/default_child_backref()
 	return nameof(grub)
@@ -242,10 +241,10 @@ CAPABILITIES(/obj/machinery/abstract_grub_machine)
 		shuffle_power_usages()
 
 /obj/machinery/abstract_grub_machine/proc/shuffle_power_usages()
-	total_active_power_usage = rand(30 KILOWATTS, 60 KILOWATTS)
-	total_idle_power_usage = rand(1 KILOWATTS, 5 KILOWATTS)
-	active_power_usages = split_into_3(total_active_power_usage)
-	idle_power_usages = split_into_3(total_idle_power_usage)
+	set_total_active_power_usage(rand(30 KILOWATTS, 60 KILOWATTS))
+	set_total_idle_power_usage(rand(1 KILOWATTS, 5 KILOWATTS))
+	set_active_power_usages(split_into_3(total_active_power_usage))
+	set_idle_power_usages(split_into_3(total_idle_power_usage))
 
 /obj/item/multitool/afterattack(obj/O, mob/user, proximity)
 	if(proximity)

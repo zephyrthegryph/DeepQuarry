@@ -52,8 +52,6 @@ CAPABILITIES(/datum/computer_file/program)
 /datum/computer_file/program/tgui_host()
 	return computer().tgui_host()
 
-TRACKED(/datum/computer_file/program, program_icon_state)
-TRACKED(/datum/computer_file/program, program_key_state)
 
 /datum/computer_file/program/clone()
 	var/datum/computer_file/program/temp = ..()

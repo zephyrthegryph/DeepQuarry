@@ -224,7 +224,6 @@ CAPABILITIES(/obj/item/solar_assembly)
 	op("take_electronics", tool(TOOL_CROWBAR), label("Take out the electronics"), wait(0), when(nameof(tracker)),
 		says(MSG(solar_assembly/electronics_out)), then(PROC_REF(electronics_out)))
 
-TRACKED(/obj/item/solar_assembly, tracker)
 
 /// Wrenched down it stays put (an empty hand does nothing to it).
 /obj/item/solar_assembly/proc/touched(datum/act/op/A)

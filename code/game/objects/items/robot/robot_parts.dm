@@ -208,7 +208,7 @@ CAPABILITIES(/obj/item/robot_parts/robot_suit)
 					O.mind.store_memory("In case you look at this after being borged, the objectives are only here until I find a way to make them not show up for you, as I can't simply delete them without screwing up round-end reporting. --NeoFite")
 				for(var/datum/language/L in O.identity().languages)
 					O.add_language(L.name)
-			O.job = JOB_CYBORG
+			O.set_job(JOB_CYBORG)
 			var/obj/item/cell/chest_cell = rel_take(chest, nameof(chest.cell)) // detach from the chest first: set_cell() adopts it
 			chest_cell?.forceMove(O) // the borg's cell is CONTAINED
 			O.set_cell(chest_cell)

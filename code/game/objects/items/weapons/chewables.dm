@@ -14,7 +14,6 @@
 
 /// TRUE while worn in the mask slot by a mob with a mouth.
 /obj/item/clothing/mask/chewable/var/chewing = FALSE
-TRACKED(/obj/item/clothing/mask/chewable, chewing)
 CAPABILITIES(/obj/item/clothing/mask/chewable)
 	configure(item_worn(covers = 0))
 	setup(PROC_REF(configure_wrapped_slots))
@@ -178,7 +177,6 @@ CAPABILITIES(/obj/item/storage/chewables)
 CAPABILITIES(/obj/item/storage/box/fancy/chewables/tobacco/nico)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOX))
 
-TRACKED(/obj/item/storage/box/fancy/chewables/tobacco/nico, open)
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/draw(datum/look/look)
 	. = ..()

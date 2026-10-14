@@ -139,7 +139,7 @@ CAPABILITIES(/obj/machinery/compressor)
 /obj/machinery/compressor/proc/ident_entered(datum/act/op/A)
 	var/datum/prompt/text/answer = A.answer
 	if(answer?.value && A.actor?.Adjacent(src))
-		comp_id = answer.value
+		set_comp_id(answer.value)
 	return OP_OK
 
 /// Started and whole (BROKEN also marks "no partner connected"; see locate_machinery()).
@@ -307,7 +307,7 @@ CAPABILITIES(/obj/machinery/power/turbine)
 /obj/machinery/computer/turbine_computer/proc/ident_entered(datum/act/op/A)
 	var/datum/prompt/text/answer = A.answer
 	if(answer?.value && A.actor?.Adjacent(src))
-		id = answer.value
+		set_id(answer.value)
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/computer/turbine_computer)

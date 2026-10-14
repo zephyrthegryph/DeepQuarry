@@ -15,7 +15,6 @@
 	var/alerting = 0
 	use_power = USE_POWER_IDLE
 	var/datum/tgui_module/power_monitor/power_monitor
-TRACKED(/obj/machinery/computer/power_monitor, alerting)
 
 /// Checks the sensors for alerts every machine service interval; a change (alerts cleared or detected) redraws it.
 /obj/machinery/computer/power_monitor/proc/monitor_step(datum/act/timer/A)

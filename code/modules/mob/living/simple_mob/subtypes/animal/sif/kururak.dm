@@ -124,7 +124,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 		src.pack_gauge()
 
 /mob/living/simple_mob/animal/sif/kururak/apply_melee_effects(atom/A)	// Only gains instinct.
-	instinct += rand(1, 2)
+	set_instinct(instinct + (rand(1, 2)))
 	return ..()
 
 /mob/living/simple_mob/animal/sif/kururak/should_special_attack(atom/A)

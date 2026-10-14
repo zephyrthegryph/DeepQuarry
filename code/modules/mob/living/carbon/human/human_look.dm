@@ -301,8 +301,8 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /mob/living/carbon/human/proc/look_effect_tail_offsets(offset_x, offset_y, loaf_y)
 	pixel_x = offset_x
 	pixel_y = offset_y
-	default_pixel_x = offset_x
-	default_pixel_y = offset_y
+	set_default_pixel_x(offset_x)
+	set_default_pixel_y(offset_y)
 	if(!isnull(loaf_y))
 		pixel_y = loaf_y
 

@@ -160,7 +160,7 @@
 /obj/structure/table/proc/slam_applies(datum/act/op/A)
 	var/obj/item/grab/G = A.held
 	var/mob/living/M = G?.grab_target()
-	if(get_dist(src, A.actor) >= 2 || G.state >= 2) // ALLOW(reads): how firm a grab is is read when it is used; the click asks again
+	if(get_dist(src, A.actor) >= 2 || G.state >= 2)
 		return /datum/msg/req_failed
 	return (isliving(M) && !can_climb_turf(src)) ? null : /datum/msg/req_failed
 

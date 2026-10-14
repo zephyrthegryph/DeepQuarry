@@ -214,7 +214,6 @@ CAPABILITIES(/obj/item/xenobio)
 
 /// Set after a monkey is ground: make_cubes() runs every second while it is (every()).
 /obj/item/slime_grinder/var/cube_making = FALSE
-TRACKED(/obj/item/slime_grinder, cube_making)
 
 /// What the grinder is working on: the REF text of the target of the running grind, or "cubes" while the last monkey's cubes are made. Null: free.
 /obj/item/slime_grinder/var/grinding = null

@@ -4,8 +4,6 @@
 	var/left = 0
 	var/right = 0
 
-TRACKED(/datum/dq_state_batch_fixture, left)
-TRACKED(/datum/dq_state_batch_fixture, right)
 STAT(/datum/dq_state_batch_fixture, state_batch_sum, SUM)
 
 CAPABILITIES(/datum/dq_state_batch_fixture)

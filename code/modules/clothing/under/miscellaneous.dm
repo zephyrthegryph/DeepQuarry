@@ -1968,9 +1968,9 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace)
 	var/mob/user = A.actor
 	var/obj/item/emag_source = A.held
 	emagged = TRUE
-	target_size = (rand(25,200)) /100 // set to our rule cap
+	set_target_size((rand(25,200)) /100) // set to our rule cap
 	if(target_size < 0.25) // set to our rule cap
-		target_size = 0.25 // set to our rule cap
+		set_target_size(0.25) // set to our rule cap
 	act_message(user, src, MSG_SELF(span_notice("You swipes the [emag_source] over %T%.")), \
 		MSG_OTHERS(span_notice("%U% swipes the [emag_source] over %T%.")))
 	return OP_OK
@@ -2045,7 +2045,7 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 		H.resize(new_size/100, ignore_prefs = TRUE) // Ignores prefs because you can only resize yourself
 		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
 			MSG_OTHERS(span_notice("The space around %U% distorts as they change size!")))
-		target_size = new_size/100
+		set_target_size(new_size/100)
 		EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 
 

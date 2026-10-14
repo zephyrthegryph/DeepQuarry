@@ -63,7 +63,7 @@
 	src.forceMove(card.loc)
 	card.forceMove(src)
 	card.screen_loc = null
-	canmove = TRUE
+	set_canmove(TRUE)
 
 	if(isturf(loc))
 		var/turf/T = get_turf(src)
@@ -138,7 +138,7 @@
 		card.forceMove(get_turf(src))
 		src.forceMove(card)
 
-	canmove = 1
+	set_canmove(1)
 	set_resting(0)
 	if(isopenspace(card.loc))
 		fall()

@@ -41,7 +41,6 @@
 	..()
 	look.state("gsensor[on]")
 
-TRACKED(/obj/machinery/air_sensor, output)
 
 /// What the sensor reports from `air_sample`, at the resolution it broadcasts.
 /obj/machinery/air_sensor/proc/sensor_readings(datum/gas_mixture/air_sample)
@@ -683,7 +682,6 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 
 /// Automation: each step re-reads the latest sensor broadcasts and commands the injectors.
 /obj/machinery/computer/general_air_control/fuel_injection/var/automation = 0
-TRACKED(/obj/machinery/computer/general_air_control/fuel_injection, automation)
 
 /// While its automation is on, every machine service interval; without a radio the work stops until automation is switched again.
 /obj/machinery/computer/general_air_control/fuel_injection/proc/work_step(datum/act/timer/A)

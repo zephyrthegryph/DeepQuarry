@@ -18,7 +18,6 @@
 	name = T_BOARD("slime processor")
 	build_path = /obj/machinery/processor
 
-TRACKED(/obj/machinery/processor, processing)
 
 CAPABILITIES(/obj/machinery/processor)
 	every(1 SECOND, then(PROC_REF(processing_step)), when = nameof(processing))

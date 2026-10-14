@@ -126,8 +126,6 @@
 	data["processing"] = processing
 	return data
 
-TRACKED(/obj/machinery/biogenerator, processing)
-TRACKED(/obj/machinery/biogenerator, points)
 
 CAPABILITIES(/obj/machinery/biogenerator)
 	reagents(1000)

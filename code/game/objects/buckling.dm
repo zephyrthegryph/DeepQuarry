@@ -45,7 +45,6 @@
 	/// mounted another way (riding animals use their mount verb) and so ignore the drag.
 	var/drag_buckle = TRUE
 
-TRACKED(/atom/movable, drag_buckle)
 
 /// Every movable's default drag (op "drag_buckle", in CAPABILITIES(/atom/movable), code/modules/lighting/lighting_atom.dm): a mob dragged onto it is
 /// buckled to it, while something can be buckled to it (climbing is the climb capability's own drag; a buckle() seat answers first, at its own tier).

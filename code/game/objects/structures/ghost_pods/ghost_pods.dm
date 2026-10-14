@@ -15,8 +15,6 @@
 	var/delay_to_self_open = 0 // How long to wait for first attempt.  Note that the timer by default starts when the pod is created.
 	var/delay_to_try_again = 0 // How long to wait if first attempt fails.  Set to 0 to never try again.
 
-TRACKED(/obj/structure/ghost_pod, used)
-TRACKED(/obj/structure/ghost_pod, busy)
 
 CAPABILITIES(/obj/structure/ghost_pod)
 	ref_one(nameof(opening_actor))
@@ -78,7 +76,6 @@ CAPABILITIES(/obj/structure/ghost_pod)
 /obj/structure/ghost_pod/manual
 	var/confirm_before_open = FALSE // Recommended to be TRUE if the pod contains a surprise.
 
-TRACKED(/obj/structure/ghost_pod/manual, confirm_before_open)
 
 CAPABILITIES(/obj/structure/ghost_pod/manual)
 	silicon_hand(adjacent = TRUE) // borgs can open pods
@@ -111,7 +108,6 @@ CAPABILITIES(/obj/structure/ghost_pod/manual)
 	var/next_auto_delay = 0
 	/// Set when the pod will not try again (it gave its one try, or has no retry delay).
 	var/auto_done = FALSE
-TRACKED(/obj/structure/ghost_pod/automatic, auto_done)
 
 CAPABILITIES(/obj/structure/ghost_pod/automatic)
 	every(PROC_REF(auto_delay), then(PROC_REF(auto_trigger)), when = cond_all(cond_not(nameof(used)), cond_not(nameof(auto_done))))
@@ -244,8 +240,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
 	var/remains_active = FALSE
 	var/activated = FALSE
 
-TRACKED(/obj/structure/ghost_pod/manual, remains_active)
-TRACKED(/obj/structure/ghost_pod/manual, activated)
 
 /// A ghost may take over the pod: not banned, OOC notes set, the pod stays open to ghosts, is activated and unused.
 /obj/structure/ghost_pod/manual/proc/may_inhabit(datum/act/op/A)

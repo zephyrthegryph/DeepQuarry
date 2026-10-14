@@ -46,7 +46,6 @@ DECLARE_SHARED_CACHE(rock_border_overlays, GLOBAL_PROC_REF(build_rock_border_ove
 
 /// The cardinal sides of this rock that are open (a neighbour that is not dense), written by the adjacency index (code/game/turfs/turf_edges.dm).
 /turf/simulated/wall/solidrock/var/open_mask = 0
-TRACKED(/turf/simulated/wall/solidrock, open_mask)
 
 /turf/simulated/wall/solidrock/edges_changed(mask)
 	..()

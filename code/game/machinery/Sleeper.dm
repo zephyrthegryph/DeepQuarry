@@ -87,10 +87,6 @@ CAPABILITIES(/obj/machinery/sleep_console)
 
 	use_power = USE_POWER_IDLE
 
-TRACKED(/obj/machinery/sleeper, filtering)
-TRACKED(/obj/machinery/sleeper, pumping)
-TRACKED(/obj/machinery/sleeper, stasis_rate)
-TRACKED(/obj/machinery/sleeper, auto_eject_dead)
 
 CAPABILITIES(/obj/machinery/sleeper)
 	configure(uses_power(idle = 15, active = 200))

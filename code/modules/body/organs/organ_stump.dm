@@ -14,7 +14,6 @@ CAPABILITIES(/obj/item/organ/external/stump)
 
 /// TRUE once the stump has joined a body.
 /obj/item/organ/external/stump/var/stump_joined = FALSE
-TRACKED(/obj/item/organ/external/stump, stump_joined)
 
 /obj/item/organ/external/stump/joined_body(mob/living/M)
 	. = ..()

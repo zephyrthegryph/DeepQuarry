@@ -930,10 +930,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			set_eyes(input_style_list[12])
 
-TRACKED(/mob/living/simple_mob/vore/bigdragon, overlay_colors)
-TRACKED(/mob/living/simple_mob/vore/bigdragon, body_style)
-TRACKED(/mob/living/simple_mob/vore/bigdragon, horns)
-TRACKED(/mob/living/simple_mob/vore/bigdragon, eyes)
 
 CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
 	knows(LANGUAGE_DRUDAKAR)

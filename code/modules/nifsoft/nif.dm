@@ -219,8 +219,6 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 //Attackby proc, for maintenance
 
-TRACKED(/obj/item/nif, open)
-TRACKED(/obj/item/nif, stat)
 
 MSG_DEF(nif/rewired, span_notice("You replace any burned out wiring in %T%."), "%U% replaces some wiring in %T%.")
 MSG_DEF(nif/pried_open, span_notice("You unscrew and pry open %T%."), "%U% unscrews and pries open %T%.")

@@ -168,7 +168,7 @@ CAPABILITIES(/obj/item/pipe)
 
 /obj/item/pipe/proc/actor_able(datum/act/op/A)
 	var/mob/user = A.actor
-	return (!user.stat && !user.restrained() && user.canmove) ? null : MSG(pipe_item/cannot_flip) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+	return (!user.stat && !user.restrained() && user.canmove) ? null : MSG(pipe_item/cannot_flip)
 
 /obj/item/pipe/proc/flipped(datum/act/op/A)
 	do_a_flip()

@@ -924,7 +924,7 @@
 	registry_join(REGISTRY_MONEY_ACCOUNTS, fallback_account)
 	var/mob/living/carbon/human/fallback_clinician = new(test_turf)
 	fallback_clinician.set_real_name(fallback_account.owner_name)
-	fallback_clinician.job = JOB_MEDICAL_DOCTOR
+	fallback_clinician.set_job(JOB_MEDICAL_DOCTOR)
 	var/datum/mind/fallback_mind = new("fallback_clinician")
 	rel_set(fallback_mind, nameof(fallback_mind.initial_account), fallback_account)
 	fallback_mind.assigned_role = JOB_MEDICAL_DOCTOR
@@ -1449,7 +1449,7 @@
 
 /datum/unit_test/dq_contract_refunds_do_not_settle/Run()
 	var/mob/living/carbon/human/refund_operator = new
-	refund_operator.job = JOB_BARTENDER
+	refund_operator.set_job(JOB_BARTENDER)
 	var/datum/contract_definition/service_definition = SScontracts.definitions["service_hospitality_census"]
 	var/datum/contract/outcome/service = service_definition.create_contract(list("revenue_target" = 300, "customer_target" = 2))
 	dq_contract_test_zero_rewards(service)
@@ -1642,7 +1642,7 @@
 		accounts += account
 		var/mob/living/carbon/human/player = new(run_loc_floor_bottom_left)
 		player.set_real_name(account.owner_name)
-		player.job = "Scientist"
+		player.set_job("Scientist")
 		var/datum/mind/player_mind = own(new /datum/mind("reassignment_test_[index]")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 		rel_set(player_mind, nameof(player_mind.initial_account), account)
 		player_mind.transfer_to(player)

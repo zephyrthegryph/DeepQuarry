@@ -249,7 +249,6 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow)
 
 	var/buildstate = 0
 
-TRACKED(/obj/item/crossbowframe, buildstate)
 
 /// The look (the draw sweep: from its template).
 /obj/item/crossbowframe/draw(datum/look/look)

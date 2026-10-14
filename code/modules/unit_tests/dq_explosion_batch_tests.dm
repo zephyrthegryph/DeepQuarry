@@ -119,7 +119,7 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 
 /datum/unit_test/dq_explosion_batch/bomb_proof/Run()
 	var/obj/structure/dq_blast_probe/P = allocate(/obj/structure/dq_blast_probe, test_floor())
-	P.resistance_flags |= BOMB_PROOF
+	P.set_resistance_flags(P.resistance_flags | BOMB_PROOF)
 	blast(list(P), 1)
 	TEST_ASSERT(!QDELETED(P), "a bomb-proof object survives a devastating blast")
 	TEST_ASSERT_EQUAL(P.get_integrity(), P.max_integrity, "a bomb-proof object takes no blast")

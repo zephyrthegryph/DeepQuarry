@@ -31,7 +31,6 @@ CAPABILITIES(/obj/item/card)
 	reset_icon()
 
 /// The sprite stack is tracked: the card redraws when it is set (the setter compares the list, so a new list is a new look).
-TRACKED(/obj/item/card, sprite_stack)
 
 /obj/item/card/proc/reset_icon()
 	set_sprite_stack(initial_sprite_stack)
@@ -112,7 +111,7 @@ TRACKED(/obj/item/card, sprite_stack)
 
 /// Pays `used` uses for emagging A and logs it; a spent card breaks.
 /obj/item/card/emag/proc/spend(mob/user, atom/A, used)
-	uses -= used
+	set_uses(uses - used)
 	A.add_fingerprint(user)
 	// Because some things (read lift doors) don't get emagged
 	if(used)
@@ -142,8 +141,8 @@ CAPABILITIES(/obj/item/card/emag)
 		if(T.get_amount() < 1)
 			to_chat(user, span_notice("You are not adding enough telecrystals to fuel \the [src]."))
 			return OP_PASS
-		uses += T.get_amount()*0.5 //Gives 5 uses per 10 TC
-		uses = CEILING(uses, 1) //Ensures no decimal uses nonsense, rounds up to be nice
+		set_uses(uses + (T.get_amount()*0.5)) //Gives 5 uses per 10 TC
+		set_uses(CEILING(uses, 1)) //Ensures no decimal uses nonsense, rounds up to be nice
 		to_chat(user, span_notice("You add \the [O] to \the [src]. Increasing the uses of \the [src] to [uses]."))
 		consume(O, user)
 	return OP_PASS
@@ -173,7 +172,6 @@ CAPABILITIES(/obj/item/card/emag)
 	var/list/sprite_stack = list("") // ALLOW(instance_list): each decorative card starts with its own mutable appearance stack
 
 
-TRACKED(/obj/item/card_fluff, sprite_stack)
 
 /obj/item/card_fluff/proc/reset_icon()
 	set_sprite_stack(list(""))

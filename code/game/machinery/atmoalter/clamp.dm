@@ -22,7 +22,6 @@
 		update_networks()
 		dir = target_ref().dir
 
-TRACKED(/obj/machinery/clamp, open)
 
 MSG_DEF_SELF(clamp/switched, "You switch the clamp.")
 MSG_DEF_SELF(clamp/active, "You can't remove it while it's active!")

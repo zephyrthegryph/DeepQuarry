@@ -16,7 +16,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A packet of an unknown seed keeps its own.
 /obj/item/seeds/proc/seed_made(given_type)
 	if(!(seed_type in SSplants.seeds))
-		seed_type = initial(seed_type)
+		set_seed_type(initial(seed_type))
 	update_seed()
 
 //Grabs the appropriate seed datum from the global list.

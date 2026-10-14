@@ -21,7 +21,6 @@
 	/// TRUE from the occupant's confirmation until the pod launches.
 	var/in_transit = FALSE
 
-TRACKED(/obj/machinery/transportpod, in_transit)
 
 CAPABILITIES(/obj/machinery/transportpod)
 	occupant_pod(OCCUPANT_SLOT_TRANSPORTPOD)

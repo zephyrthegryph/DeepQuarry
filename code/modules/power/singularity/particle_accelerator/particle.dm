@@ -55,7 +55,7 @@ CAPABILITIES(/obj/effect/accelerated_particle)
 			G.set_energy(G.energy + energy)
 		else if(istype(A,/obj/singularity))
 			var/obj/singularity/G = A
-			G.energy += energy
+			G.set_energy(G.energy + energy)
 		else if(istype(A, /obj/machinery/particle_smasher))
 			var/obj/machinery/particle_smasher/G = A
 			G.set_energy(G.energy + energy)

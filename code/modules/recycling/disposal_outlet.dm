@@ -75,7 +75,7 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 	var/obj/structure/disposalconstruct/C = new(src.loc)
 	transfer_fingerprints_to(C)
 	C.set_dir(dir)
-	C.ptype = 7
+	C.set_ptype(7)
 	C.update()
 	C.set_anchored(TRUE)
 	C.set_density(TRUE)

@@ -48,7 +48,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		drop_point = pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN)) //Can be changed to whatever exit list you want. By default, uses REGISTRY_MEMBERS(REGISTRY_LATEJOIN)
 		if(drop_point)
 			unfortunate_soul.forceMove(get_turf(drop_point))
-			unfortunate_soul.endurance = max(50, unfortunate_soul.endurance) //If they died, send them back with 50 endurance or their current endurance. Whatever's higher. We're evil, but not mean.
+			unfortunate_soul.set_endurance(max(50, unfortunate_soul.endurance)) //If they died, send them back with 50 endurance or their current endurance. Whatever's higher. We're evil, but not mean.
 		else
 			message_admins("Redspace Drain expired, but no drop point was found, leaving [unfortunate_soul] in limbo. This is a bug. Please report it with this info: redspace_drain/on_end")
 
@@ -80,7 +80,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		if(unfortunate_soul.bloodstr.get_reagent_amount(REAGENT_ID_NUMBENZYME) < 2) //We lose all feeling in our body. We can't tell how injured we are.
 			unfortunate_soul.bloodstr.add_reagent(REAGENT_ID_NUMBENZYME,1)
 	if(unfortunate_soul.life_tick % 20 == 0) //Once every 20 ticks, we permanetly cripple them.
-		unfortunate_soul.endurance = max(10, unfortunate_soul.endurance - 1) //Endurance is reduced by 1, but never below 10. This is PERMANENT for the rest of the round or until resleeving.
+		unfortunate_soul.set_endurance(max(10, unfortunate_soul.endurance - 1)) //Endurance is reduced by 1, but never below 10. This is PERMANENT for the rest of the round or until resleeving.
 
 	//The mental effects.
 	unfortunate_soul.status_set(STAT_FEAR, min(100, unfortunate_soul.status_units(STAT_FEAR) + 2)) //Fear is increased by 1, but never above 100. You're in a scary place.

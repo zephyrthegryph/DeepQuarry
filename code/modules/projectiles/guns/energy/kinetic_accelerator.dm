@@ -708,7 +708,7 @@ CAPABILITIES(/obj/item/borg/upgrade/modkit/tracer/adjustable)
 /obj/item/borg/upgrade/modkit/tracer/adjustable/proc/interaction_self(datum/act/op/A)
 	var/picked = A.step_value("color")
 	if(picked)
-		bolt_color = picked
+		set_bolt_color(picked)
 	return OP_OK
 
 #undef KA_ENVIRO_TYPE_COLD

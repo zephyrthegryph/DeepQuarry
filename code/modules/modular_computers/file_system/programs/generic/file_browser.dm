@@ -15,7 +15,6 @@
 	usage_flags = PROGRAM_ALL
 	category = PROG_UTIL
 
-TRACKED(/datum/computer_file/program/filemanager, open_file)
 
 CAPABILITIES(/datum/computer_file/program/filemanager)
 	interface("NtosFileManager")

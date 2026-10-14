@@ -295,7 +295,6 @@
 	icon_state = "fix"
 	var/mode = 0
 
-TRACKED(/obj/dq_draw_underlay, mode)
 
 /obj/dq_draw_underlay/draw(datum/look/look)
 	..()
@@ -328,7 +327,6 @@ TRACKED(/obj/dq_draw_underlay, mode)
 	icon_state = "fix"
 	var/boom = FALSE
 
-TRACKED(/obj/dq_draw_throws, boom)
 
 /obj/dq_draw_throws/draw(datum/look/look)
 	..()

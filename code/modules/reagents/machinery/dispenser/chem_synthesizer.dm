@@ -77,10 +77,8 @@
 		REAGENT_ID_COPPER, REAGENT_ID_MERCURY, REAGENT_ID_RADIUM, REAGENT_ID_WATER, REAGENT_ID_ETHANOL, REAGENT_ID_SUGAR, REAGENT_ID_SACID, REAGENT_ID_TUNGSTEN, REAGENT_ID_CALCIUM
 		)
 
-TRACKED(/obj/machinery/chemical_synthesizer, busy)
 
 /obj/machinery/chemical_synthesizer/var/_recharge_reagents = TRUE
-TRACKED(/obj/machinery/chemical_synthesizer, _recharge_reagents)
 /// Refills its cartridges while it recharges at all (full, it sleeps until a cartridge is drawn or added).
 // The reagents datum acts as the machine's reaction vessel.
 

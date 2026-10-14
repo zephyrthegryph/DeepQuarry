@@ -10,7 +10,6 @@
 	var/state = 0
 	var/created_name = null
 
-TRACKED(/obj/structure/ladder_assembly, state)
 
 CAPABILITIES(/obj/structure/ladder_assembly)
 	op("name_ladder", item(/obj/item/pen),
@@ -70,7 +69,7 @@ MSG_DEF_SELF(ladder_assembly/on_shuttle, span_warning("%T% cannot be constructed
 /obj/structure/ladder_assembly/proc/interaction_item(datum/act/op/A)
 	var/t = sanitizeSafe(A.step_value("k15"), MAX_NAME_LEN)
 	if(in_range(src, A.actor))
-		created_name = t
+		set_created_name(t)
 	return OP_PASS
 
 // Try to construct this into a real stairway.

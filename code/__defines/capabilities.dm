@@ -16,16 +16,11 @@
 #define CAP_NO_LAYER "__none"
 
 /**
- * Declares a tracked var: generates `set_<V>(value)`, which compares, writes and returns TRUE when the value
- * changed; a change publishes the key "V" (publish_change(src, nameof(V))) only when READERS(src, "V") says someone
- * reads it (an on_change / on_cross reaction, a generated read, an observer), and re-derives the outputs that read
- * V. Declare the var normally next to it. A hand-written `proc/set_<V>()` (for side effects) replaces this line,
- * calls tracked_changed(src, nameof(V)) and registers itself with SETTER(T, V). tools/ci/tracked_lint.py rejects
- * every write to V outside its setter.
- *
- *	/obj/machinery/pump
- *		var/target_pressure = ONE_ATMOSPHERE
- *	TRACKED(/obj/machinery/pump, target_pressure)
+ * Tracking is automatic (doc/rewrite/read_driven_tracking.md): a var that reactive code reads (a draw, a stat input, a requirement, ui_data, a
+ * `nameof(v)` in a CAPABILITIES block) or that is written through `set_<v>()` gets a generated setter in code/engine/_generated/auto_tracked.dm.
+ * The setter compares (TRACKED_UNCHANGED), writes, returns TRUE on a change and publishes the key "V" through tracked_changed(), which re-derives
+ * what reads V. Declare nothing: write the var through `set_<v>()` (`analyze fix` rewrites a raw write). A setter with side effects is a hand-written
+ * `T/proc/set_<V>(value)` that calls tracked_changed(src, nameof(V)) and registers itself with SETTER(T, V).
  */
 /// TRUE for a GLOBAL_PROC_REF() (a /proc/ path), FALSE for a type proc ref: holder_call() and dispatch_call() pass a
 /// global proc the holder as an argument instead of calling it on the holder.
@@ -35,6 +30,7 @@
 /// never published a change between null and a falsy value; null is a different state from 0, "" and FALSE.
 #define TRACKED_UNCHANGED(OLD, NEW) (((OLD) == (NEW)) && (isnull(OLD) == isnull(NEW)))
 
+/// The generated file's vocabulary (`analyze gen auto_tracked` writes one line per derived var). Banned everywhere else (tools/ci/lint_scopes.toml).
 #define TRACKED(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SETTER(T, V)
 
 /// A field of a profile record (/datum/record, code/engine/declare/profiles.dm) that something draws or reacts to: its setter

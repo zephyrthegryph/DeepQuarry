@@ -19,8 +19,6 @@ DECLARE_SHARED_CACHE(reagent_fill_overlays, GLOBAL_PROC_REF(build_reagent_fill_o
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
-TRACKED(/obj/machinery/iv_drip, fill_state)
-TRACKED(/obj/machinery/iv_drip, fill_color)
 /// The fill overlay of the container (a "reagentN" state) and its reagent colour, or null for none: refresh_fill() writes them as the level moves.
 /obj/machinery/iv_drip/var/fill_state
 /obj/machinery/iv_drip/var/fill_color

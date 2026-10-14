@@ -276,7 +276,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cat)
 	else
 		to_chat(user, span_notice("You name \the [name]. Meow!"))
 		name = tmp_name
-		named = TRUE
+		set_named(TRUE)
 	return OP_OK
 
 /obj/item/cat_box

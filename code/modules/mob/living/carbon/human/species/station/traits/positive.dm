@@ -106,7 +106,7 @@
 
 /datum/trait/positive/endurance_high/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.endurance = S.total_health
+	H.set_endurance(S.total_health)
 
 /datum/trait/positive/nonconductive
 	name = "Non-Conductive"
@@ -782,7 +782,7 @@
 
 /datum/trait/positive/endurance_very_high/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.endurance = S.total_health
+	H.set_endurance(S.total_health)
 
 /datum/trait/positive/endurance_extremely_high
 	name = "High Endurance, Extreme"
@@ -793,7 +793,7 @@
 
 /datum/trait/positive/endurance_extremely_high/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.endurance = S.total_health
+	H.set_endurance(S.total_health)
 
 /datum/trait/positive/pain_tolerance_minor // Minor Pain Tolerance, 10% reduced pain
 	name = "Pain Tolerance, Minor"

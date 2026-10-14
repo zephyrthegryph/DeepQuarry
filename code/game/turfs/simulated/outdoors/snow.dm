@@ -6,7 +6,6 @@
 	initial_flooring = /datum/decl/flooring/snow
 	var/list/crossed_dirs
 
-TRACKED(/turf/simulated/floor/outdoors/snow, crossed_dirs)
 
 /turf/simulated/floor/outdoors/snow/Entered(atom/A)
 	if(isliving(A))

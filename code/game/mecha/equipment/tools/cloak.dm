@@ -7,7 +7,6 @@
 	equip_type = EQUIP_SPECIAL
 
 /obj/item/mecha_parts/mecha_equipment/cloak/var/cloaking = FALSE
-TRACKED(/obj/item/mecha_parts/mecha_equipment/cloak, cloaking)
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/cloak)
 	every(2 SECONDS, then(PROC_REF(cloak_step)), when = nameof(cloaking))

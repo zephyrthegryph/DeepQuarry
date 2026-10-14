@@ -134,7 +134,6 @@ MSG_DEF_SELF(picnic_blanket/center, "Fold it up from the center.")
 	. = ..()
 	unfold()
 
-TRACKED(/obj/structure/picnic_blanket_deployed/for_mapping_use, unfoldable)
 
 /obj/structure/picnic_blanket_deployed/for_mapping_use/pred_can_fold_up(datum/act/op/A)
 	return unfoldable ? MSG(picnic_blanket/center) : ..()

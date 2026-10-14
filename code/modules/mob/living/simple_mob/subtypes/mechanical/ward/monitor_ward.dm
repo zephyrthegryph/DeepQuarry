@@ -75,7 +75,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/ward/monitor/crew)
 
 /mob/living/simple_mob/mechanical/ward/monitor
 	var/spotted = FALSE // TRUE while it has seen someone (update_spotted())
-TRACKED(/mob/living/simple_mob/mechanical/ward/monitor, spotted)
 
 /// The ward's look is the base life state: icon_living follows whether it has spotted anyone (update_spotted()).
 /// Whether anyone is in sight: swaps the living sprite and the glow, and redraws.

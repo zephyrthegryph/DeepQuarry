@@ -13,7 +13,6 @@ dizzy_shaking, and the shake runs as an every() on /mob while it holds.
 
 /// Set while STAT_DIZZY is in effect: dizzy_shake_tick() runs every decisecond (its every() in CAPABILITIES(/mob)), parked otherwise.
 /mob/var/tmp/dizzy_shaking = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
-TRACKED(/mob, dizzy_shaking)
 
 /mob/proc/dizzy_shake_tick(datum/act/A)
 	// The dead stop shaking: the status ends (its on_end hook parks this).

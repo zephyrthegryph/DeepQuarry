@@ -16,9 +16,6 @@
 	var/should_run_calls = 0
 	var/draw_calls = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_laser, energy)
-TRACKED(/obj/cap_fixture/dx_deps_laser, pointing)
-TRACKED(/obj/cap_fixture/dx_deps_laser, spare)
 
 /obj/cap_fixture/dx_deps_laser/derived()
 	. = ..()
@@ -41,7 +38,6 @@ TRACKED(/obj/cap_fixture/dx_deps_laser, spare)
 	var/tier = 0
 	var/draw_calls = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_legacy, tier)
 
 /obj/cap_fixture/dx_deps_legacy/draw(datum/look/look)
 	..()
@@ -53,8 +49,13 @@ TRACKED(/obj/cap_fixture/dx_deps_legacy, tier)
 	var/glow = FALSE
 	var/other = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_source, glow)
-TRACKED(/obj/cap_fixture/dx_deps_source, other)
+/obj/cap_fixture/dx_deps_source/proc/set_glow(value)
+	if(TRACKED_UNCHANGED(glow, value))
+		return FALSE
+	glow = value
+	tracked_changed(src, nameof(glow))
+	return TRUE
+SETTER(/obj/cap_fixture/dx_deps_source, glow)
 
 /// draw() reads the source's glow through the declared REL view `source`.
 /obj/cap_fixture/dx_deps_watcher
@@ -107,8 +108,6 @@ TRACKED(/obj/cap_fixture/dx_deps_source, other)
 /obj/cap_fixture/dx_deps_derive/relations()
 	. = ..()
 	. += rel_one(nameof(feed))
-TRACKED(/obj/cap_fixture/dx_deps_derive, a)
-TRACKED(/obj/cap_fixture/dx_deps_derive, b)
 
 /obj/cap_fixture/dx_deps_derive/derived()
 	. = ..()
@@ -157,8 +156,6 @@ TRACKED(/obj/cap_fixture/dx_deps_derive, b)
 	var/tier = 0
 	var/lie = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_writer, tier)
-TRACKED(/obj/cap_fixture/dx_deps_writer, lie)
 
 /obj/cap_fixture/dx_deps_writer/derived()
 	. = ..()
@@ -175,8 +172,6 @@ TRACKED(/obj/cap_fixture/dx_deps_writer, lie)
 	var/shade = 0
 	var/other = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_sloppy, shade)
-TRACKED(/obj/cap_fixture/dx_deps_sloppy, other)
 
 /obj/cap_fixture/dx_deps_sloppy/derived()
 	. = ..()
@@ -193,9 +188,6 @@ TRACKED(/obj/cap_fixture/dx_deps_sloppy, other)
 	var/noise = 0
 	var/pushes = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_pusher, target)
-TRACKED(/obj/cap_fixture/dx_deps_pusher, mode)
-TRACKED(/obj/cap_fixture/dx_deps_pusher, noise)
 
 /obj/cap_fixture/dx_deps_pusher/derived()
 	. = ..()
@@ -218,8 +210,6 @@ TRACKED(/obj/cap_fixture/dx_deps_pusher, noise)
 	var/gadget = FALSE
 	var/spare = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_cap, gadget)
-TRACKED(/obj/cap_fixture/dx_deps_cap, spare)
 
 /obj/cap_fixture/dx_deps_cap/declared_capabilities(list/into)
 	..()
@@ -456,3 +446,19 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare)
 	TEST_ASSERT(found, "the audit saw the stale look")
 	TEST_ASSERT(length(GLOB.refresh_drift) > 0 && findtext(GLOB.refresh_drift[1], "shade"), "and named the likely undeclared read: [length(GLOB.refresh_drift) ? GLOB.refresh_drift[1] : "no report"]")
 	GLOB.refresh_drift.Cut()
+
+/obj/cap_fixture/dx_deps_writer/proc/set_tier(value)
+	if(TRACKED_UNCHANGED(tier, value))
+		return FALSE
+	tier = value
+	tracked_changed(src, nameof(tier))
+	return TRUE
+SETTER(/obj/cap_fixture/dx_deps_writer, tier)
+
+/obj/cap_fixture/dx_deps_sloppy/proc/set_other(value)
+	if(TRACKED_UNCHANGED(other, value))
+		return FALSE
+	other = value
+	tracked_changed(src, nameof(other))
+	return TRUE
+SETTER(/obj/cap_fixture/dx_deps_sloppy, other)

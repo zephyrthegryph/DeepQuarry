@@ -63,7 +63,6 @@ base_var	code/datums/soul_link.dm	@/mob/living::owned_soul_links
 base_var	code/datums/soul_link.dm	@/mob/living::shared_soul_links
 base_var	code/datums/sparse_vars/alt_appearance.dm	@/atom::alt_appearances_owned
 base_var	code/datums/sparse_vars/alt_appearance.dm	@/atom::alt_appearances_viewing
-base_var	code/datums/variants/gear_tweak_variant.dm	@/obj/item::variant
 base_var	code/engine/refs/containment/latency_policy.dm	@/atom/movable::latent_touched_at
 base_var	code/engine/refs/containment/latency_policy.dm	@/atom/movable::latent_refused_until
 base_var	code/game/atom/_atom.dm	@/atom::flags
@@ -76,10 +75,8 @@ base_var	code/game/atom/_atom.dm	@/atom::forensic_data
 base_var	code/game/atom/_atom.dm	@/atom::last_bumped
 base_var	code/game/atom/_atom.dm	@/atom::reagents
 base_var	code/game/atom/_atom.dm	@/atom::our_overlays
-base_var	code/game/atom/_atom.dm	@/atom::priority_overlays
 base_var	code/game/atom/_atom.dm	@/atom::managed_vis_overlays
 base_var	code/game/atom/_atom.dm	@/atom::atom_colours
-base_var	code/game/atom/_atom.dm	@/atom::rad_insulation
 base_var	code/game/atom/_atom.dm	@/atom::rad_shield_material
 base_var	code/game/atom/_atom.dm	@/atom::rad_shield_thickness_mm
 base_var	code/game/atom/_atom.dm	@/atom::emp_protection_flags
@@ -89,7 +86,6 @@ base_var	code/game/atom/atom_defense.dm	@/atom::uses_integrity
 base_var	code/game/atom/atom_defense.dm	@/atom::atom_integrity
 base_var	code/game/atom/atom_defense.dm	@/atom::integrity_failure
 base_var	code/game/atom/atom_defense.dm	@/atom::damage_deflection
-base_var	code/game/atom/atom_defense.dm	@/atom::resistance_flags
 base_var	code/game/atom/atom_defense.dm	@/atom::last_damage_flag
 base_var	code/game/atom/atom_defense.dm	@/atom::damage_band
 base_var	code/game/atom/atom_type_table.dm	@/atom::init_from_table
@@ -97,7 +93,6 @@ base_var	code/game/atom/damage_flavour.dm	@/atom::damage_wear
 base_var	code/game/atom/damage_flavour.dm	@/atom::announce_damage_bands
 base_var	code/game/atom/damage_packet.dm	@/atom::emp_integrity_factor
 base_var	code/game/atoms_movable.dm	@/atom/movable::last_move
-base_var	code/game/atoms_movable.dm	@/atom/movable::anchored
 base_var	code/game/atoms_movable.dm	@/atom/movable::moving_diagonally
 base_var	code/game/atoms_movable.dm	@/atom/movable::move_speed
 base_var	code/game/atoms_movable.dm	@/atom/movable::l_move_time
@@ -105,8 +100,6 @@ base_var	code/game/atoms_movable.dm	@/atom/movable::throwing
 base_var	code/game/atoms_movable.dm	@/atom/movable::throw_source
 base_var	code/game/atoms_movable.dm	@/atom/movable::throw_speed
 base_var	code/game/atoms_movable.dm	@/atom/movable::throw_range
-base_var	code/game/atoms_movable.dm	@/atom/movable::icon_scale_x
-base_var	code/game/atoms_movable.dm	@/atom/movable::icon_scale_y
 base_var	code/game/atoms_movable.dm	@/atom/movable::icon_rotation
 base_var	code/game/atoms_movable.dm	@/atom/movable::icon_expected_height
 base_var	code/game/atoms_movable.dm	@/atom/movable::icon_expected_width
@@ -125,10 +118,8 @@ base_var	code/game/gamemodes/endgame/supermatter_cascade/portal.dm	@/mob::riftim
 base_var	code/game/gamemodes/technomancer/instability.dm	@/mob/living::last_instability
 base_var	code/game/gamemodes/technomancer/instability.dm	@/mob/living::last_instability_event
 base_var	code/game/gamemodes/technomancer/spells/summon/summon.dm	@/mob/living::summoned
-base_var	code/game/machinery/machinery.dm	@/obj/machinery::use_power
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::power_init_complete
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::component_parts
-base_var	code/game/machinery/machinery.dm	@/obj/machinery::uid
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::clicksound
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::clickvol
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::interact_offline
@@ -158,7 +149,6 @@ base_var	code/game/objects/items.dm	@/obj/item::slowdown
 base_var	code/game/objects/items.dm	@/obj/item::zoomdevicename
 base_var	code/game/objects/items.dm	@/obj/item::zoom
 base_var	code/game/objects/items.dm	@/obj/item::embed_chance
-base_var	code/game/objects/items.dm	@/obj/item::sprite_sheets
 base_var	code/game/objects/items.dm	@/obj/item::sprite_sheets_obj
 base_var	code/game/objects/items.dm	@/obj/item::worn_layer
 base_var	code/game/objects/items.dm	@/obj/item::no_random_knockdown
@@ -171,7 +161,6 @@ base_var	code/game/objects/items.dm	@/obj/item::persist_storable
 base_var	code/game/objects/items.dm	@/obj/item::possessed_voice
 base_var	code/game/objects/items.dm	@/obj/item::warned_of_possession
 base_var	code/game/objects/items.dm	@/obj/item::cleaving
-base_var	code/game/objects/items.dm	@/obj/item::tool_qualities
 base_var	code/game/objects/items.dm	@/obj/item::my_augment
 base_var	code/game/objects/items.dm	@/obj/item::identity
 base_var	code/game/objects/items.dm	@/obj/item::identity_type
@@ -214,8 +203,6 @@ base_var	code/modules/admin/admin_attack_log.dm	@/atom::lastattacker
 base_var	code/modules/belly_overlay/belly_overlay_tgui.dm	@/mob::belly_overlay_tgui
 base_var	code/modules/body/body.dm	@/mob/living::body
 base_var	code/modules/body/body.dm	@/mob/living::body_type
-base_var	code/modules/body/body.dm	@/mob/living::endurance
-base_var	code/modules/body/body.dm	@/mob/living::biology
 base_var	code/modules/body/body_effects.dm	@/mob/living::body_effect_timers
 base_var	code/modules/body/body_effects.dm	@/mob/living::body_effect_serial
 base_var	code/modules/body/body_effects.dm	@/mob/living::body_effect_origins
@@ -267,7 +254,6 @@ base_var	code/modules/heat/heat_objects.dm	@/obj/machinery::heat_dissipation
 base_var	code/modules/heat/heat_objects.dm	@/obj/machinery::heat_output_now
 base_var	code/modules/keybindings/hover.dm	@/mob::hovered_atom_view
 base_var	code/modules/lighting/lighting_atom.dm	@/atom::light_system
-base_var	code/modules/lighting/lighting_atom.dm	@/atom::light_on
 base_var	code/modules/lighting/lighting_atom.dm	@/atom::light_flags
 base_var	code/modules/lighting/lighting_atom.dm	@/atom::light
 base_var	code/modules/lighting/lighting_atom.dm	@/atom::light_sources
@@ -290,7 +276,6 @@ base_var	code/modules/mob/animations.dm	@/mob::floatiness
 base_var	code/modules/mob/combat_mode.dm	@/mob::combat_mode
 base_var	code/modules/mob/combat_mode.dm	@/mob::attack_variant
 base_var	code/modules/mob/freelook/mask/update_triggers.dm	@/mob/living::updating_cult_vision
-base_var	code/modules/mob/holder.dm	@/mob/living::holder_type
 base_var	code/modules/mob/inventory.dm	@/mob::s_active
 base_var	code/modules/mob/language/snowflake.dm	@/mob::hive_lang_range
 base_var	code/modules/mob/living/butchering.dm	@/mob/living::meat_amount
@@ -308,7 +293,6 @@ base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::a
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::life_tick
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::pose
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::pose_move
-base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::pose_indicator
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::bloodstr
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::ingested
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::touching
@@ -325,12 +309,10 @@ base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::active_regen
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::active_regen_delay
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::teleporters
-base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::rest_dir
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::genetic_side_effects
 base_var	code/modules/mob/living/carbon/human/human_attackhand.dm	@/mob/living/carbon/human::default_attack
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::damage_multiplier
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::synthetic
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::identifying_gender
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::step_count
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::vr_holder
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::vr_link
@@ -374,7 +356,6 @@ base_var	code/modules/mob/living/life/life_om.dm	@/mob/living::life_set
 base_var	code/modules/mob/living/life/life_om.dm	@/mob/living::life_z
 base_var	code/modules/mob/living/life/living_systems.dm	@/mob::global_hud_claims
 base_var	code/modules/mob/living/living.dm	@/mob/living::character_setup_button
-base_var	code/modules/mob/living/living_defines.dm	@/mob/living::hud_updateflag
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::max_nutrition
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::now_pushing
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::tod
@@ -418,7 +399,6 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::damageoverlaytemp
 base_var	code/modules/mob/mob_defines.dm	@/mob::computer_id
 base_var	code/modules/mob/mob_defines.dm	@/mob::logging
 base_var	code/modules/mob/mob_defines.dm	@/mob::other_mobs
-base_var	code/modules/mob/mob_defines.dm	@/mob::memory
 base_var	code/modules/mob/mob_defines.dm	@/mob::disabilities
 base_var	code/modules/mob/mob_defines.dm	@/mob::other
 base_var	code/modules/mob/mob_defines.dm	@/mob::nickname
@@ -431,14 +411,11 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::bhunger
 base_var	code/modules/mob/mob_defines.dm	@/mob::ajourn
 base_var	code/modules/mob/mob_defines.dm	@/mob::phoron
 base_var	code/modules/mob/mob_defines.dm	@/mob::lying_prev
-base_var	code/modules/mob/mob_defines.dm	@/mob::canmove
-base_var	code/modules/mob/mob_defines.dm	@/mob::pinned
 base_var	code/modules/mob/mob_defines.dm	@/mob::embedded
 base_var	code/modules/mob/mob_defines.dm	@/mob::languages
 base_var	code/modules/mob/mob_defines.dm	@/mob::language_keys
 base_var	code/modules/mob/mob_defines.dm	@/mob::species_language
 base_var	code/modules/mob/mob_defines.dm	@/mob::only_species_language
-base_var	code/modules/mob/mob_defines.dm	@/mob::speak_emote
 base_var	code/modules/mob/mob_defines.dm	@/mob::facing_dir
 base_var	code/modules/mob/mob_defines.dm	@/mob::name_archive
 base_var	code/modules/mob/mob_defines.dm	@/mob::timeofdeath
@@ -453,9 +430,7 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::seer
 base_var	code/modules/mob/mob_defines.dm	@/mob::mapobjs
 base_var	code/modules/mob/mob_defines.dm	@/mob::in_throw_mode
 base_var	code/modules/mob/mob_defines.dm	@/mob::inertia_dir
-base_var	code/modules/mob/mob_defines.dm	@/mob::job
 base_var	code/modules/mob/mob_defines.dm	@/mob::dna
-base_var	code/modules/mob/mob_defines.dm	@/mob::radiation
 base_var	code/modules/mob/mob_defines.dm	@/mob::voice_name
 base_var	code/modules/mob/mob_defines.dm	@/mob::ventcraw_item_admin_allow
 base_var	code/modules/mob/mob_defines.dm	@/mob::faction
@@ -472,15 +447,11 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::universal_speak
 base_var	code/modules/mob/mob_defines.dm	@/mob::universal_understand
 base_var	code/modules/mob/mob_defines.dm	@/mob::stance_damage
 base_var	code/modules/mob/mob_defines.dm	@/mob::teleop
-base_var	code/modules/mob/mob_defines.dm	@/mob::shouldnt_see
 base_var	code/modules/mob/mob_defines.dm	@/mob::active_genes
-base_var	code/modules/mob/mob_defines.dm	@/mob::mob_size
 base_var	code/modules/mob/mob_defines.dm	@/mob::forbid_seeing_deadchat
 base_var	code/modules/mob/mob_defines.dm	@/mob::get_rig_stats
 base_var	code/modules/mob/mob_defines.dm	@/mob::custom_speech_bubble
 base_var	code/modules/mob/mob_defines.dm	@/mob::low_priority
-base_var	code/modules/mob/mob_defines.dm	@/mob::default_pixel_x
-base_var	code/modules/mob/mob_defines.dm	@/mob::default_pixel_y
 base_var	code/modules/mob/mob_defines.dm	@/mob::registered_z
 base_var	code/modules/mob/mob_defines.dm	@/mob::progressbars
 base_var	code/modules/mob/mob_defines.dm	@/mob::do_afters
@@ -537,7 +508,6 @@ base_var	code/modules/vore/eating/living.dm	@/mob/living::next_preyloop
 base_var	code/modules/vore/eating/living.dm	@/mob/living::stuffing_feeder
 base_var	code/modules/vore/eating/living.dm	@/mob/living::adminbus_trash
 base_var	code/modules/vore/eating/living.dm	@/mob/living::adminbus_eat_minerals
-base_var	code/modules/vore/eating/living.dm	@/mob/living::vis_height
 base_var	code/modules/vore/eating/living.dm	@/mob/living::appendage_color
 base_var	code/modules/vore/eating/living.dm	@/mob/living::appendage_alt_setting
 base_var	code/modules/vore/eating/living.dm	@/mob/living::digestion_in_progress
@@ -561,7 +531,6 @@ base_var	code/modules/vore/eating/mob.dm	@/mob::spont_belly_left
 base_var	code/modules/vore/eating/mob.dm	@/mob::spont_belly_right
 base_var	code/modules/vore/eating/mob.dm	@/mob::vore_capacity
 base_var	code/modules/vore/eating/mob.dm	@/mob::vore_capacity_ex
-base_var	code/modules/vore/eating/mob.dm	@/mob::vore_fullness_ex
 base_var	code/modules/vore/eating/mob.dm	@/mob::belly_size_multiplier
 base_var	code/modules/vore/eating/mob.dm	@/mob::vore_icon_bellies
 base_var	code/modules/vore/eating/mob.dm	@/mob::updating_fullness
@@ -574,8 +543,6 @@ base_var	code/modules/vore/eating/mob.dm	@/mob::voice_sounds_list
 base_var	code/modules/vore/eating/mob.dm	@/mob::died_in_vr
 base_var	code/modules/vore/eating/mob.dm	@/mob::last_move_time
 base_var	code/modules/vore/eating/vorepanel.dm	@/mob::vorePanel
-base_var	code/modules/vore/resizing/resize.dm	@/mob::center_offset
-base_var	code/modules/vore/resizing/resize.dm	@/mob::offset_override
 base_var	code/modules/vore/resizing/resize.dm	@/mob/living::holder_default
 base_var	code/modules/vore/resizing/resize.dm	@/mob/living::pickup_active
 base_var	code/modules/xenoarcheaology/effect_master.dm	@/atom::artifact_master

@@ -79,7 +79,7 @@
 	var/list/belts = list()
 	for(var/i in 1 to 3)
 		var/obj/machinery/conveyor/C = allocate(/obj/machinery/conveyor, locate(origin.x + i, origin.y + 1, origin.z), EAST)
-		C.id = "dq_line"
+		C.set_id("dq_line")
 		belts += C
 	var/obj/machinery/conveyor/middle = belts[2]
 	middle.broken()

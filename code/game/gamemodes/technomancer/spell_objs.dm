@@ -145,7 +145,6 @@ CAPABILITIES(/obj/item/spell)
 /mob/proc/unref_spell(obj/item/spell/the_spell)
 	return
 
-TRACKED(/obj/item/spell, toggled)
 
 // Proc: draw()
 // Parameters: 1

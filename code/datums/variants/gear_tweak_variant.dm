@@ -41,7 +41,7 @@
 	if(!(metadata in valid_variants))
 		return
 	var/v = valid_variants[metadata]
-	I.variant = v
+	I.set_variant(v)
 	I.apply_variant()
 
 // Base hooks. A consolidated type declares its table with variants(nameof(variant), PROC_REF(x)) (code/engine/lifeforms/variants.dm),

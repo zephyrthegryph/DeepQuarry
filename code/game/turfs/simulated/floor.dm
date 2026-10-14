@@ -34,7 +34,6 @@
 	heat_capacity = FLOOR_HEAT_CAPACITY
 
 
-TRACKED(/turf/simulated/floor, broken)
 
 /turf/simulated/floor/is_plating()
 	return (!flooring || flooring.is_plating)

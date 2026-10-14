@@ -159,8 +159,6 @@
 	var/fires = 0
 	var/exits = 0
 	var/key_deliveries = 0
-TRACKED(/obj/item/dq_rule_private, left)
-TRACKED(/obj/item/dq_rule_private, right)
 CAPABILITIES(/obj/item/dq_rule_private)
 	on_change(nameof(left), ANY, then(PROC_REF(left_changed)))
 	on_change(nameof(right), ANY, then(PROC_REF(right_changed)))

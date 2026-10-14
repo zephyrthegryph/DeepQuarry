@@ -5,7 +5,6 @@
 GLOBAL_LIST_EMPTY(floor_decals)
 
 /// The decals of a floor are a tracked list that is replaced, never changed in place: a floor draws them, and writing a new list publishes it.
-TRACKED(/turf, decals)
 
 /obj/effect/floor_decal
 	name = "floor decal"

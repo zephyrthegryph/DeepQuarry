@@ -7,8 +7,6 @@ MSG_DEF_SELF(req_protocol/override, "The override wins.")
 	var/commits = 0
 	var/static/datum/msg/refusal_message = new /datum/msg/req_protocol/blocked
 
-TRACKED(/obj/req_protocol_fixture, mode)
-TRACKED(/obj/req_protocol_fixture, commits)
 
 CAPABILITIES(/obj/req_protocol_fixture)
 	op("boolean_when", menu(), label("Boolean condition"), when(PROC_REF(boolean_ready)), then(PROC_REF(commit)))

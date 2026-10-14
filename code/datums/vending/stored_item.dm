@@ -31,7 +31,6 @@
 CAPABILITIES(/datum/stored_item)
 	ref_many(nameof(instances)) // the stock ledger holds the actual products
 
-TRACKED(/datum/stored_item, amount)
 
 /datum/stored_item/New(stored, path, name = null, amount = 0)
 	src.item_path = path

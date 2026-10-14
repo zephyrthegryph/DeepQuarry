@@ -138,9 +138,6 @@ CAPABILITIES(/obj/machinery/microwave)
 /obj/machinery/microwave/proc/appearance_mw_bloody_operating()
 	return !broken && dirty >= MAX_MICROWAVE_DIRTINESS && operating ? 1 : 0
 
-TRACKED(/obj/machinery/microwave, operating)
-TRACKED(/obj/machinery/microwave, dirty)
-TRACKED(/obj/machinery/microwave, broken)
 
 /obj/machinery/microwave/proc/post_state_change()
 	update_static_data_for_all_viewers()
@@ -438,7 +435,6 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 
 /// A cook loop is running: cook_loop() every loop_wait until its cycles run out.
 /obj/machinery/microwave/var/loop_running = FALSE
-TRACKED(/obj/machinery/microwave, loop_running)
 
 /// The cook loop's cadence.
 /obj/machinery/microwave/proc/loop_delay(datum/act/A)

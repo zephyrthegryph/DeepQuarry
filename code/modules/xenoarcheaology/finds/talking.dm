@@ -9,7 +9,6 @@
 	/// Has it a holder to talk through? The talk every() below runs while it does.
 	var/talking = FALSE
 
-TRACKED(/datum/talking_atom, talking)
 
 CAPABILITIES(/datum/talking_atom)
 	every(2 SECONDS, then(PROC_REF(talk_step)), when = nameof(talking))

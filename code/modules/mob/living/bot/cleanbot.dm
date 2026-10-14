@@ -239,11 +239,11 @@ CAPABILITIES(/mob/living/bot/cleanbot)
 	. = TRUE
 
 /mob/living/bot/cleanbot/proc/ui_act_blood(datum/act/op/A)
-	blood = !blood
+	set_blood(!blood)
 	. = TRUE
 
 /mob/living/bot/cleanbot/proc/ui_act_patrol(datum/act/op/A)
-	will_patrol = !will_patrol
+	set_will_patrol(!will_patrol)
 	patrol_path = null
 	. = TRUE
 

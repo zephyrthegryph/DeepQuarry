@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - refactor: "Tracking is automatic: a var reactive code reads gets a generated setter; TRACKED() lines are gone and banned"

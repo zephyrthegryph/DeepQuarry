@@ -28,7 +28,7 @@
 
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(!HAS_SYNTHETIC_BIOLOGY(S), "a mouse is organic")
-	S.biology = BIOLOGY_SYNTHETIC
+	S.set_biology(BIOLOGY_SYNTHETIC)
 	TEST_ASSERT(HAS_SYNTHETIC_BIOLOGY(S), "a simple mob's biology var is the one source of truth")
 
 /// P2-S1: a brain housed in an MMI is synthetic by its housing.

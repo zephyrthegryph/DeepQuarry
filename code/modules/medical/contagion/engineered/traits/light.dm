@@ -46,11 +46,11 @@
 			to_chat(H, span_warning(pick("Your muscles feel tight.", "You feel lethargic.", "Your muscles feel hard and tough.")))
 	if(A.stage >= 5)
 		currenthealthmodifier += healthchange
-		H.endurance += healthchange
+		H.set_endurance(H.endurance + healthchange)
 
 /datum/viral_trait/light/End(datum/affliction/contagion/engineered/A)
 	. = ..()
 	var/mob/living/carbon/human/H = A.host
 	if(!H)
 		return
-	H.endurance -= currenthealthmodifier
+	H.set_endurance(H.endurance - currenthealthmodifier)

@@ -112,7 +112,7 @@ MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 
 /obj/machinery/recycling/crusher/take_item(obj/item/O)
 	. = ..()
-	working = TRUE
+	set_working(TRUE)
 	set_icon_state("crusher-process")
 	set_use_power(USE_POWER_ACTIVE)
 	after(src, 5 SECONDS, PROC_REF(crush_done), with = list(O))
@@ -135,13 +135,13 @@ MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 			set_use_power(USE_POWER_IDLE)
 			set_icon_state("crusher")
 			destroyed(O, src, BRUTE)
-			working = FALSE
+			set_working(FALSE)
 			return
 	new /obj/item/debris_pack(get_step(src, dir), modified_mats)
 	set_use_power(USE_POWER_IDLE)
 	set_icon_state("crusher")
 	destroyed(O, src, BRUTE)
-	working = FALSE
+	set_working(FALSE)
 
 /**
  * This machine takes heaps of junk and holds onto them until it has enough of one material to make a sheet.
@@ -158,7 +158,6 @@ MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 
 /// TRUE while it hands out dust piles (after a sort): dispense_if_possible() every 2 seconds.
 /obj/machinery/recycling/sorter/var/dispensing = FALSE
-TRACKED(/obj/machinery/recycling/sorter, dispensing)
 CAPABILITIES(/obj/machinery/recycling/sorter)
 	every(2 SECONDS, then(PROC_REF(dispense_if_possible)), when = nameof(dispensing))
 
@@ -169,7 +168,7 @@ CAPABILITIES(/obj/machinery/recycling/sorter)
 
 /obj/machinery/recycling/sorter/take_item(obj/item/O)
 	. = ..()
-	working = TRUE
+	set_working(TRUE)
 	set_icon_state("sorter-process")
 	set_use_power(USE_POWER_ACTIVE)
 	after(src, 2 SECONDS, PROC_REF(sort_done), with = list(O))
@@ -198,7 +197,7 @@ CAPABILITIES(/obj/machinery/recycling/sorter)
 	set_dispensing(FALSE)
 	set_use_power(USE_POWER_IDLE)
 	set_icon_state("sorter")
-	working = FALSE
+	set_working(FALSE)
 
 /**
  * This machine makes sheets after being provided with material dust from a sorter.
@@ -217,7 +216,7 @@ CAPABILITIES(/obj/machinery/recycling/sorter)
 
 /obj/machinery/recycling/stamper/take_item(obj/item/O)
 	. = ..()
-	working = TRUE
+	set_working(TRUE)
 	set_icon_state("stamper-process")
 	set_use_power(USE_POWER_ACTIVE)
 	after(src, 6.4 SECONDS, PROC_REF(stamp_done), with = list(O))
@@ -226,7 +225,7 @@ CAPABILITIES(/obj/machinery/recycling/sorter)
 	dust_to_sheet(O)
 	set_icon_state("stamper")
 	set_use_power(USE_POWER_IDLE)
-	working = FALSE
+	set_working(FALSE)
 
 /obj/machinery/recycling/stamper/proc/dust_to_sheet(obj/item/material_dust/D)
 	if(!istype(D))

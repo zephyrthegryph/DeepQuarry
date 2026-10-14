@@ -1,4 +1,3 @@
-TRACKED(/obj/item/organ, parent_organ)
 
 /obj/item/organ
 	name = "organ"
@@ -55,9 +54,6 @@ TRACKED(/obj/item/organ, parent_organ)
 	var/robotic = 0
 
 // The organ's state is tracked: written through set_status(), set_damage(), set_max_damage() and set_robotic(), which publish the write.
-TRACKED(/obj/item/organ, status)
-TRACKED(/obj/item/organ, damage)
-TRACKED(/obj/item/organ, max_damage)
 
 
 // afflictions on the organ are cured; organ mods removed.

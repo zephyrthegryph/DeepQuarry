@@ -19,7 +19,7 @@
 
 /datum/armour_dimensional_theme/proc/apply(turf/source)
 	var/obj/effect/effect/smoke/poof = new(source)
-	poof.time_to_live = 2 SECONDS
+	poof.set_time_to_live(2 SECONDS)
 	var/list/target_area = get_target_area(source)
 	for (var/turf/target in target_area)
 		convert_turf(target)

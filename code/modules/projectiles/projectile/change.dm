@@ -48,7 +48,7 @@
 				new_mob = new /mob/living/silicon/robot(M.loc)
 				new_mob.gender = M.gender
 				new_mob.set_invisibility(INVISIBILITY_NONE)
-				new_mob.job = JOB_CYBORG
+				new_mob.set_job(JOB_CYBORG)
 				var/mob/living/silicon/robot/Robot = new_mob
 				rel_set(Robot, nameof(Robot.mmi), new /obj/item/mmi(new_mob))
 				Robot.mmi.take_identity(M)	//Does not transfer key/client.

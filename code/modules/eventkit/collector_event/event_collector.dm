@@ -51,7 +51,6 @@
 
 /// Are we waiting for the timer to get negatives? periodic_step() works the recipe while set (its every()).
 /obj/structure/event_collector/var/awaiting_next_recipe = FALSE
-TRACKED(/obj/structure/event_collector, awaiting_next_recipe)
 CAPABILITIES(/obj/structure/event_collector)
 	every(2 SECONDS, then(PROC_REF(event_collector_step)), when = nameof(awaiting_next_recipe))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))

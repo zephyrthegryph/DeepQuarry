@@ -55,7 +55,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 		var/list/settings = postertypes[poster]
 		. += settings[2]
 
-TRACKED(/obj/machinery/holoposter, alerting)
 
 /// What the poster shows: dark without power, a glitch when broken, the alert while the station is on alert, else its advert, lit in the
 /// advert's colour.

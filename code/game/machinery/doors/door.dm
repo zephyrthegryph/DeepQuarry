@@ -50,9 +50,6 @@
 
 	var/update_adjacent_tiles = TRUE
 
-TRACKED(/obj/machinery/door, operating)
-TRACKED(/obj/machinery/door, autoclose)
-TRACKED(/obj/machinery/door, normalspeed)
 
 MSG_DEF_SELF(door/already_reinforced, "It is already reinforced.")
 MSG_DEF_SELF(door/repair_first, "It looks broken. Repair it before reinforcing it.")
@@ -355,7 +352,7 @@ CAPABILITIES(/obj/machinery/door)
 
 /// The welder finished: the door is heat proof and the sheets are spent.
 /obj/machinery/door/proc/plasteel_welded(datum/act/op/A)
-	heat_proof = TRUE
+	set_heat_proof(TRUE)
 	set_reinforcing(0)
 	return OP_OK
 

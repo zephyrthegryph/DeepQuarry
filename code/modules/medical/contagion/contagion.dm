@@ -306,7 +306,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 /datum/affliction/contagion/proc/stage_act()
 	if(!host || QDELETED(src) || !body)
 		return FALSE
-	stage = min(stage, max_stages)
+	set_stage(min(stage, max_stages))
 	return TRUE
 
 

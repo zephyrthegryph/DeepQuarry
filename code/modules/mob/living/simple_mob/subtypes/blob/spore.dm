@@ -114,15 +114,15 @@ CAPABILITIES(/mob/living/simple_mob/blob/spore)
 
 /mob/living/simple_mob/blob/spore/proc/infest(mob/living/carbon/human/H)
 	is_infesting = TRUE
-	endurance += H.body?.worn_armor(UPPER_TORSO, MELEE) //That zombie's got armor, I want armor!
+	set_endurance(endurance + (H.body?.worn_armor(UPPER_TORSO, MELEE))) //That zombie's got armor, I want armor!
 
-	endurance += 40
+	set_endurance(endurance + 40)
 	fully_heal()
 	name = "Infested [H.real_name]" // Not using the Z word.
 	desc = "A parasitic organism attached to a deceased body, controlling it directly as if it were a puppet."
-	melee_damage_lower += 8  // 10 total.
-	melee_damage_upper += 11 // 15 total.
-	attacktext = list("clawed")
+	set_melee_damage_lower(melee_damage_lower + 8)  // 10 total.
+	set_melee_damage_upper(melee_damage_upper + 11) // 15 total.
+	set_attacktext(list("clawed"))
 
 	H.forceMove(src)
 	rel_set(src, nameof(infested), H)

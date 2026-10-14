@@ -25,7 +25,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/replenishing)
 	/// Is it worn and has it something to say? The echo every() below runs while it is.
 	var/echoing = FALSE
 
-TRACKED(/obj/item/clothing/mask/gas/poltergeist, echoing)
 
 CAPABILITIES(/obj/item/clothing/mask/gas/poltergeist)
 	every(2 SECONDS, then(PROC_REF(poltergeist_step)), when = nameof(echoing))

@@ -71,7 +71,6 @@ CAPABILITIES(/obj/item/flash)
 /obj/item/flash/proc/screwdriver_act_tool_failed(datum/act/op/A)
 	act_message(A.actor, src, others = span_infoplain(span_bold("%U%") + " fails to repair %T%."))
 
-TRACKED(/obj/item/flash, broken)
 
 /obj/item/flash/draw(datum/look/look)
 	..()

@@ -10,8 +10,6 @@
 	var/occupied = 1
 	var/destroyed = 0
 
-TRACKED(/obj/structure/displaycase, occupied)
-TRACKED(/obj/structure/displaycase, destroyed)
 
 // Glass-on-glass hit sound while the case still stands.
 /obj/structure/displaycase/play_attack_sound(damage_amount, damage_type, damage_flag)

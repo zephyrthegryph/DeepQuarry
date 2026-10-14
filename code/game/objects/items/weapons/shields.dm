@@ -145,8 +145,6 @@ CAPABILITIES(/obj/item/shield/riot)
 			return (base_block_chance - round(damage / 3)) //block bullets and beams using the old block chance
 	return base_block_chance
 
-TRACKED(/obj/item/shield/energy, active)
-TRACKED(/obj/item/shield/energy, lcolor)
 
 CAPABILITIES(/obj/item/shield/energy)
 	configure(item_worn(slots = SLOT_EARS))
@@ -240,7 +238,6 @@ CAPABILITIES(/obj/item/shield/energy)
 	else
 		return 0
 */
-TRACKED(/obj/item/shield/riot/tele, active)
 
 CAPABILITIES(/obj/item/shield/riot/tele)
 	configure(item_worn(slots = TRAIT_NONE))
@@ -315,7 +312,6 @@ CAPABILITIES(/obj/item/shield/fluff/wolfgirlshield)
 	var/on = 0
 	var/light_applied
 
-TRACKED(/obj/item/shield/riot/explorer, on)
 
 //POURPEL WHY U NO COVER
 

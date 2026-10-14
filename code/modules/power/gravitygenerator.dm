@@ -191,8 +191,6 @@ CAPABILITIES(/obj/machinery/gravity_generator/part)
 	/// GRAVGEN_IDLE, GRAVGEN_UP or GRAVGEN_DOWN: spinning up or down (spin_step()) or settled.
 	var/charging_state = GRAVGEN_IDLE
 
-TRACKED(/obj/machinery/gravity_generator/main, broken_state)
-TRACKED(/obj/machinery/gravity_generator/main, current_overlay)
 
 // The main part: its window and breaker, its eight parts (owned), and its spin (spin_step(), every machine service interval while it spins
 // and is whole).

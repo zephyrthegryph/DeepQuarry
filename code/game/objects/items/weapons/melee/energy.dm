@@ -103,9 +103,6 @@
 	if(colorable)
 		. += span_notice("Alt-click to recolor it.")
 
-TRACKED(/obj/item/melee/energy, colorable)
-TRACKED(/obj/item/melee/energy, active)
-TRACKED(/obj/item/melee/energy, lcolor)
 
 CAPABILITIES(/obj/item/melee/energy)
 	configure(item_combat(sharp = FALSE, edge = FALSE, armor_penetration = 0))

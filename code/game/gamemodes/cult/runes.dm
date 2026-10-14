@@ -535,7 +535,6 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 /obj/effect/rune/var/mob/living/carbon/human/dummy/manifest_dummy
 /// A homunculus is manifested: manifest_tick() runs every 3 seconds while it is (the gate of the rune's every()).
 /obj/effect/rune/var/manifesting = FALSE
-TRACKED(/obj/effect/rune, manifesting)
 
 /// The summoner bleeds for the homunculus every 3 seconds while they hold the rune; it dies when they stop.
 /obj/effect/rune/proc/manifest_tick(datum/act/timer/A)

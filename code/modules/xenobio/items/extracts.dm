@@ -21,7 +21,6 @@ CAPABILITIES(/obj/item/slime_extract)
 
 /// TRUE while the extract emits (slime_extract_start_emitting() starts it).
 /obj/item/slime_extract/var/tmp/emitting = FALSE
-TRACKED(/obj/item/slime_extract, emitting)
 
 /// One slow step of an emitting extract; a kind with nothing to emit stops.
 /obj/item/slime_extract/proc/emit_step(datum/act/A)

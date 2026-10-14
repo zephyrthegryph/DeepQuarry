@@ -153,8 +153,8 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 			set_invisibility(INVISIBILITY_ABSTRACT)
 			src.child_om_marker.invisibility = INVISIBILITY_NONE
 			//legacy ai_holder wander tuning removed.
-			src.melee_damage_lower = 50
-			src.melee_damage_upper = 100
+			set_melee_damage_lower(50)
+			set_melee_damage_upper(100)
 			src.set_mob_size(MOB_HUGE)
 			set_glow(src.child_om_marker, GLOW(5, 1, "#ff8df5"))
 			src.movement_cooldown = 5
@@ -163,8 +163,8 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 		set_invisibility(INVISIBILITY_NONE)
 		src.child_om_marker.invisibility = INVISIBILITY_ABSTRACT
 		//legacy ai_holder wander tuning removed.
-		src.melee_damage_lower = 1
-		src.melee_damage_upper = 5
+		set_melee_damage_lower(1)
+		set_melee_damage_upper(5)
 		src.set_mob_size(MOB_SMALL)
 		set_glow(src.child_om_marker, GLOW(0, null, null))
 		src.movement_cooldown = 0
@@ -1247,7 +1247,6 @@ CAPABILITIES(/obj/effect/dog_teleporter/mouth_return)
 
 /// Something on it is still being digested. A field: it digests every 2 s while set.
 /turf/simulated/floor/water/digestive_enzymes/var/we_process = FALSE
-TRACKED(/turf/simulated/floor/water/digestive_enzymes, we_process)
 CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 	every(2 SECONDS, then(PROC_REF(digestive_enzymes_step)), when = nameof(we_process))
 
@@ -1429,7 +1428,7 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 	if(countdown <= 0)
 		SwitchState()
 	else
-		countdown --
+		set_countdown(countdown - 1)
 	if(!state)
 		for(var/mob/living/L in contents_of(src.loc))
 			if(isliving(L))
@@ -1447,11 +1446,11 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 	else if(!user.combat_mode)
 		act_message(user, src, null, MSG_OTHERS(span_warningplain("%U% knocks on %T%.")), MSG_BLIND(span_warningplain("Someone knocks on %T%.")))
 		playsound(src, knock_sound, 50, 0, 3)
-		countdown -= 10
+		set_countdown(countdown - 10)
 	else
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U% hammers on %T%!")), MSG_BLIND(span_warning("Someone hammers loudly on %T%!")))
 		playsound(src, knock_sound, 50, 0, 3)
-		countdown -= 25
+		set_countdown(countdown - 25)
 
 /// Old attack_hand.
 /obj/structure/auto_flesh_door/proc/interaction_hand(datum/act/op/A, stance)
@@ -1464,11 +1463,11 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 	else if(stance == I_HELP)
 		act_message(user, src, null, MSG_OTHERS(span_warningplain("%U% knocks on %T%.")), MSG_BLIND(span_warningplain("Someone knocks on %T%.")))
 		playsound(src, knock_sound, 50, 0, 3)
-		countdown -= 10
+		set_countdown(countdown - 10)
 	else
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U% hammers on %T%!")), MSG_BLIND(span_warning("Someone hammers loudly on %T%!")))
 		playsound(src, knock_sound, 50, 0, 3)
-		countdown -= 25
+		set_countdown(countdown - 25)
 	return OP_OK
 
 /obj/structure/auto_flesh_door/CanPass(atom/movable/mover, turf/target)
@@ -1493,7 +1492,7 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 	set_state(1)
 	isSwitchingStates = 0
 	update_nearby_tiles()
-	countdown = rand(10,20)
+	set_countdown(rand(10,20))
 	layer = OBJ_LAYER
 	plane = OBJ_PLANE
 
@@ -1510,7 +1509,7 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 	set_state(0)
 	isSwitchingStates = 0
 	update_nearby_tiles()
-	countdown = rand(50,250)
+	set_countdown(rand(50,250))
 	layer = ABOVE_MOB_LAYER
 	plane = ABOVE_MOB_PLANE
 	for(var/mob/living/L in contents_of(src.loc))

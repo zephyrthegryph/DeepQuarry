@@ -13,9 +13,7 @@
 	req_access = list(ACCESS_AI_UPLOAD)
 
 /obj/machinery/ai_slipper/var/cooldown_on = FALSE
-TRACKED(/obj/machinery/ai_slipper, cooldown_on)
 /obj/machinery/ai_slipper/var/cooldown_stopped = FALSE
-TRACKED(/obj/machinery/ai_slipper, cooldown_stopped)
 
 /obj/machinery/ai_slipper/proc/appearance_on()
 	return (!power_lost() && !broken_now() && !disabled) ? 1 : 0

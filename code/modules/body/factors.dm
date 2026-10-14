@@ -282,7 +282,7 @@ GLOBAL_TABLE(body_factor_rules, GLOBAL_PROC_REF(build_body_factor_rules))
 /// Rebuild `factors` from every source. Visits each source's static table
 /// once; allocates only when something contributes.
 /datum/body/proc/recompute_factors()
-	dirty &= ~BODY_DIRTY_FACTORS
+	set_dirty(dirty & (~BODY_DIRTY_FACTORS))
 	var/list/acc = null
 	for(var/datum/affliction/A as anything in afflictions)
 		acc = A.accumulate_factors(acc)

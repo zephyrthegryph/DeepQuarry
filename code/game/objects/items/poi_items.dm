@@ -194,7 +194,6 @@ CAPABILITIES(/obj/item/poi/brokenoldreactor)
 	return "[drone_name] [examine_canalyzer]"
 
 /// Requirement: a fried circuit is past working on.
-TRACKED(/obj/item/poi/broken_drone_circuit, fried)
 
 CAPABILITIES(/obj/item/poi/broken_drone_circuit)
 	// the old attack_self: study the circuit for a while

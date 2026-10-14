@@ -6,7 +6,13 @@
 	/// The page of units the window shows.
 	var/current_page = 1
 
-TRACKED(/datum/tgui_module/rcon, current_page)
+/datum/tgui_module/rcon/proc/set_current_page(value)
+	if(TRACKED_UNCHANGED(current_page, value))
+		return FALSE
+	current_page = value
+	tracked_changed(src, nameof(current_page))
+	return TRUE
+SETTER(/datum/tgui_module/rcon, current_page)
 
 /// The tagged units an RCON console on the host's levels lists now (with remote control on), and the breaker boxes: read live from the
 /// registries every time, so a unit that goes, or whose tag or remote wire changes, leaves the list without anything rescanning.

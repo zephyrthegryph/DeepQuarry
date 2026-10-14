@@ -5,7 +5,7 @@
 /datum/unit_test/proc/rad_mouse(turf/where)
 	var/mob/living/simple_mob/animal/passive/mouse/white/mouse = allocate(/mob/living/simple_mob/animal/passive/mouse/white, where)
 	mouse.ai_brain?.go_sleep()
-	mouse.radiation = 0
+	mouse.set_radiation(0)
 	return mouse
 
 /// Runs the radiation service until every queued pulse has been applied.
@@ -82,7 +82,7 @@
 	TEST_ASSERT(target.radiation > 0, "moving the door out of the path should let radiation through")
 	var/obj/structure/window/reinforced/full/shield = allocate(/obj/structure/window/reinforced/full, row[4])
 	shield.set_rad_insulation(0)
-	target.radiation = 0
+	target.set_radiation(0)
 	radiation_pulse(source, 4, 0.5, 100, 0, 50)
 	rad_drain()
 	TEST_ASSERT_EQUAL(target.radiation, 0, "an object set to full insulation should block")

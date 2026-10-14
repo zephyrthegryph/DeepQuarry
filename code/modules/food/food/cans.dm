@@ -7,7 +7,6 @@
 
 /// How many times this can has been shaken; it settles back down over time.
 /obj/item/reagent_containers/food/drinks/cans/var/shaken = 0
-TRACKED(/obj/item/reagent_containers/food/drinks/cans, shaken)
 
 // A can is opened by using it, except in a hostile stance, where it is shaken (shaking a shut can makes it foam when it is opened).
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans)

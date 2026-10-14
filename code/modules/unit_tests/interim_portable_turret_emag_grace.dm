@@ -6,7 +6,7 @@
 	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, T)
 	var/datum/turret_checks/remote = allocate(/datum/turret_checks)
 	made += list(user, turret, card)
-	card.uses = 3
+	card.set_uses(3)
 	turret.set_enabled(TRUE)
 	TEST_ASSERT(!emag_emagged(turret) && !turret.controllock, "the actual portable turret starts unsubverted and remotely controllable")
 	TEST_ASSERT(user.put_in_active_hand(card), "the actual actor holds the charged emag")

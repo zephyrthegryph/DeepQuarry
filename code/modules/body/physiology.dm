@@ -160,9 +160,9 @@ CAPABILITIES(/datum/body)
 /// Recompute the physiology if something dirtied it.
 /datum/body/proc/ensure_physiology()
 	if(physiology && (dirty & BODY_DIRTY_PHYSIOLOGY))
-		dirty &= ~BODY_DIRTY_PHYSIOLOGY
+		set_dirty(dirty & (~BODY_DIRTY_PHYSIOLOGY))
 		if(!physiology.recompute())
-			dirty |= BODY_DIRTY_PHYSIOLOGY // the owner isn't set up yet
+			set_dirty(dirty | BODY_DIRTY_PHYSIOLOGY) // the owner isn't set up yet
 
 /// Fraction of normal ventilation (0..1): air actually moved.
 /datum/body/proc/ventilation()

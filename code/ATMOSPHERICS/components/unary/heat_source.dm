@@ -1,6 +1,3 @@
-TRACKED(/obj/machinery/atmospherics/unary/heater, pumping)
-TRACKED(/obj/machinery/atmospherics/unary/heater, heating)
-TRACKED(/obj/machinery/atmospherics/unary/heater, set_temperature)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	configure(uses_power(idle = 5))

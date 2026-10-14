@@ -79,7 +79,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/chicken)
 /obj/item/reagent_containers/food/snacks/egg/var/amount_grown = 0
 /// TRUE while the egg grows toward hatching (a laid egg that may become a chick starts it); picked up, it stops.
 /obj/item/reagent_containers/food/snacks/egg/var/tmp/growing = FALSE
-TRACKED(/obj/item/reagent_containers/food/snacks/egg, growing)
 
 // This only starts normally if there are less than MAX_CHICKENS chickens
 /obj/item/reagent_containers/food/snacks/egg/proc/grow_step(datum/act/A)

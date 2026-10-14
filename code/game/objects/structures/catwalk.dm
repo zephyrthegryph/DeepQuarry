@@ -40,7 +40,6 @@
 /obj/structure/catwalk/proc/update_falling()
 	if(istype(loc, /turf/simulated/open)) after(loc, 0.1 SECONDS, TYPE_PROC_REF(/turf/simulated/open, update)) //We get called in Destroy() and things: the open turf, not us, owns the update.
 
-TRACKED(/obj/structure/catwalk, hatch_open)
 
 /obj/structure/catwalk/draw(datum/look/look)
 	..()
@@ -88,7 +87,6 @@ TRACKED(/obj/structure/catwalk, hatch_open)
 		if(istype(ST, tiletype))
 			set_plating_color(plating_colors[tiletype])
 
-TRACKED(/obj/structure/catwalk, plated_tile)
 
 MSG_DEF_SELF(catwalk/plate_begins, span_notice("Placing tile..."))
 

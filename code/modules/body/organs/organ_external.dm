@@ -91,12 +91,6 @@
 
 	// HUD element variable, see organ_icon.dm get_damage_hud_image()
 	var/image/hud_damage_image
-TRACKED(/obj/item/organ/external, transparent)
-TRACKED(/obj/item/organ/external, s_tone)
-TRACKED(/obj/item/organ/external, s_col)
-TRACKED(/obj/item/organ/external, model)
-TRACKED(/obj/item/organ/external, h_col)
-TRACKED(/obj/item/organ/external, open)
 
 
 // child limbs and internal organs go with it; it leaves its owner's organ tables.

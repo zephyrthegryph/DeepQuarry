@@ -59,7 +59,6 @@ MSG_DEF_SELF(cryo_cell/cold_liquid, "You feel a cold liquid surround you. Your s
 	/// Switched on from its window: it holds its occupant under and trades heat with them while it works.
 	var/cooling = FALSE
 
-TRACKED(/obj/machinery/atmospherics/unary/cryo_cell, cooling)
 
 /// The occupant's body against the cell's gas, W/K: the old full settle per service interval, as a conductance (the body's capacity over two
 /// seconds), so the pair meets within an interval whatever the step length.

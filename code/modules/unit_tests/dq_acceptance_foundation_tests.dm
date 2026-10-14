@@ -4,8 +4,6 @@
 /obj/item/dq_acceptance_native
 	var/acceptance_limit = 0
 	var/list/acceptance_changes
-TRACKED(/obj/item/dq_acceptance_native, acceptance_limit)
-TRACKED(/obj/item/dq_acceptance_native, acceptance_changes)
 CAPABILITIES(/obj/item/dq_acceptance_native)
 	acceptance("dq-acceptance", req(PROC_REF(first_reason)))
 /obj/item/dq_acceptance_native/proc/first_reason(datum/act/op/A)
@@ -148,7 +146,6 @@ CAPABILITIES(/obj/item/dq_acceptance_pure)
 
 /obj/item/dq_acceptance_metadata_fault
 	var/probe = 0
-TRACKED(/obj/item/dq_acceptance_metadata_fault, probe)
 CAPABILITIES(/obj/item/dq_acceptance_metadata_fault)
 	acceptance("dq-acceptance-metadata-fault", part_make(/datum/entry/part/req/dq_acceptance_metadata_fault))
 /datum/entry/part/req/dq_acceptance_metadata_fault/check(datum/act/op/A)
@@ -197,7 +194,6 @@ CAPABILITIES(/obj/item/dq_acceptance_metadata_fault)
 
 /datum/dq_acceptance_dependency
 	var/allowed = TRUE
-TRACKED(/datum/dq_acceptance_dependency, allowed)
 
 /obj/dq_acceptance_wait
 	var/datum/dq_acceptance_dependency/dependency
@@ -313,8 +309,6 @@ CAPABILITIES(/obj/dq_acceptance_wait)
 /obj/dq_acceptance_metadata_cleanup
 	var/fault_metadata = FALSE
 	var/probe = 0
-TRACKED(/obj/dq_acceptance_metadata_cleanup, fault_metadata)
-TRACKED(/obj/dq_acceptance_metadata_cleanup, probe)
 /obj/dq_acceptance_metadata_cleanup/needs_fault
 CAPABILITIES(/obj/dq_acceptance_metadata_cleanup/needs_fault)
 	op("cleanup", ui_act("cleanup"), needs(part_make(/datum/entry/part/req/dq_metadata_cleanup)), wait(10 SECONDS), then(PROC_REF(done)))
@@ -581,10 +575,8 @@ CAPABILITIES(/obj/item/dq_acceptance_query_members_reader)
 // Distinct actual invocation roots retain ordered refusal and setter recovery.
 /mob/dq_acceptance_role_reads
 	var/query_ready = FALSE
-TRACKED(/mob/dq_acceptance_role_reads, query_ready)
 /obj/item/dq_acceptance_role_destination
 	var/query_ready = FALSE
-TRACKED(/obj/item/dq_acceptance_role_destination, query_ready)
 CAPABILITIES(/obj/item/dq_acceptance_role_destination)
 	acceptance("dq-query-distinct-roles", req(PROC_REF(roles_reason)))
 /obj/item/dq_acceptance_role_destination/proc/roles_reason(datum/act/op/A)

@@ -89,7 +89,7 @@ MSG_DEF(boulder/dig_pending, null, null)
 	if(loc?.release_refusal(src, user))
 		return OP_OK
 	to_chat(user, span_notice("You finish [P.drill_verb] [src]."))
-	excavation_level += P.excavation_amount
+	set_excavation_level(excavation_level + P.excavation_amount)
 
 	if(prob(excavation_level))
 		//success

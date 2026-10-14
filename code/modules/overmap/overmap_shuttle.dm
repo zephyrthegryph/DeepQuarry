@@ -130,8 +130,6 @@
 	/// Whether a tank sits in the port, kept for the look.
 	var/loaded = FALSE
 
-TRACKED(/obj/structure/fuel_port, opened)
-TRACKED(/obj/structure/fuel_port, loaded)
 
 /obj/structure/fuel_port/Initialize(mapload)
 	. = ..()

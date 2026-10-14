@@ -260,10 +260,10 @@ CAPABILITIES(/obj/machinery/shipsensors)
 
 			take_damage(rand(10,50), BURN, FIRE)
 			toggle()
-		heat += power_of(src).idle/15000
+		set_heat(heat + (power_of(src).idle/15000))
 
 	if (heat > 0)
-		heat = max(0, heat - heat_reduction)
+		set_heat(max(0, heat - heat_reduction))
 	if(!use_power && heat <= 0)
 		return PROCESS_KILL
 

@@ -109,7 +109,7 @@
 // Public sequencer swipes pin the legacy declarations before replacement.
 /datum/unit_test/dq_hc_computers/proc/hc_emag(mob/living/carbon/human/H)
 	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, hc_side())
-	E.uses = 8
+	E.set_uses(8)
 	TEST_ASSERT(H.put_in_active_hand(E), "the sequencer is held for an actual click")
 	return E
 

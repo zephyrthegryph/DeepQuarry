@@ -117,8 +117,8 @@ CAPABILITIES(/mob/living/silicon/robot/drone/mining)
 
 /mob/living/silicon/robot/drone/setup_laws()
 	..()
-	additional_law_channels -= "Binary"
-	additional_law_channels["Drone"] = ":d"
+	remove_additional_law_channels("Binary")
+	set_additional_law_channels_at("Drone", ":d")
 	rel_set(src, nameof(laws), new law_type)
 
 /mob/living/silicon/robot/drone/setup_module()

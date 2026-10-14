@@ -24,7 +24,6 @@
 	var/min_activation = 45 SECONDS
 	var/max_activation = 90 SECONDS
 
-TRACKED(/datum/anomaly_stats, stability)
 
 CAPABILITIES(/datum/anomaly_stats)
 	owns_one(nameof(modifier), /datum/anomaly_modifiers)

@@ -95,7 +95,7 @@ MSG_DEF(generated_station_upload_terminal/uploading, span_notice("You begin uplo
 /obj/machinery/generated_station_upload_terminal/proc/upload_done(datum/act/op/A)
 	if(uploaded)
 		return
-	uploaded = TRUE
+	set_uploaded(TRUE)
 	var/datum/generated_station_simulation/simulation = generated_station_runtime(station_id)
 	for(var/key in SSexpedition?.sites)
 		var/datum/expedition_site/candidate = expedition_sites()[key]

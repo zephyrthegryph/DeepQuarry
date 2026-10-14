@@ -184,11 +184,6 @@ CAPABILITIES(/obj/item/defib_kit/compact)
 	var/wielded = 0
 	var/cooldown = 0
 
-TRACKED(/obj/item/shockpaddles, safety)
-TRACKED(/obj/item/shockpaddles, cooldown)
-TRACKED(/obj/item/shockpaddles, wielded)
-TRACKED(/obj/item/shockpaddles, combat)
-TRACKED(/obj/item/shockpaddles, chargecost)
 
 /obj/item/shockpaddles/proc/start_cooldown(delay)
 	set_cooldown(1)
@@ -646,7 +641,6 @@ CAPABILITIES(/obj/item/shockpaddles)
 
 /// Reactor overload ticks left after an EMP; it irradiates the area while nonzero.
 /obj/item/shockpaddles/standalone/var/fail_counter = 0
-TRACKED(/obj/item/shockpaddles/standalone, fail_counter)
 CAPABILITIES(/obj/item/shockpaddles/standalone)
 	every(2 SECONDS, then(PROC_REF(standalone_step)), when = nameof(fail_counter))
 

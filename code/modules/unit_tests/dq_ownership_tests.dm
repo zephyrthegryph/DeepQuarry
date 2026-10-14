@@ -402,7 +402,6 @@ CAPABILITIES(/datum/own_test_child)
 /datum/own_test_watch_target
 	var/power_level = 0
 	var/label = "x"
-TRACKED(/datum/own_test_watch_target, power_level)
 
 /datum/own_test_watch_holder
 	var/datum/own_test_watch_target/watched

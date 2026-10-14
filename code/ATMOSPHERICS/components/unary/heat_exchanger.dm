@@ -22,7 +22,6 @@
 	/// The first of the pair (by map position): it declares the pair's heat link.
 	var/leads_pair = FALSE
 
-TRACKED(/obj/machinery/atmospherics/unary/heat_exchanger, leads_pair)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
 	climb()
@@ -70,7 +69,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
 		var/our_conductance = our_material ? our_material.thermal_conductance(1, 0.005, T20C) / 1000 : 50
 		var/their_conductance = their_material ? their_material.thermal_conductance(1, 0.005, T20C) / 1000 : 50
 		fraction = clamp(min(our_conductance, their_conductance) / 50, 0.02, 1)
-	exchange_conductance = HEAT_EXCHANGER_CONDUCTANCE * fraction
+	set_exchange_conductance(HEAT_EXCHANGER_CONDUCTANCE * fraction)
 
 /// It comes off its pipe whether or not its loops run (only its gas holds it).
 /obj/machinery/atmospherics/unary/heat_exchanger/pipe_device_idle(datum/act/A)

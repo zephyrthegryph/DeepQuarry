@@ -105,8 +105,6 @@
 	if(index == 3)
 		rust_device_dirty()
 
-TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, set_flow_rate)
-TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, filter_type)
 
 /// The Rust group is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/trinary/atmos_filter/derived()

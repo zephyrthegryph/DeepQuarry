@@ -78,7 +78,6 @@ CAPABILITY_DEF(shadekin_dark, CAP_SHADEKIN_DARK, key = NONE)
 /// TRUE while the maw lies in wait (placed, not yet triggered): it checks the light every 2 s and
 /// dispels in the light.
 /obj/effect/abstract/dark_maw/var/armed = FALSE
-TRACKED(/obj/effect/abstract/dark_maw, armed)
 CAPABILITIES(/obj/effect/abstract/dark_maw)
 	ref_one(nameof(owner), /mob/living)
 	ref_one(nameof(target), /obj/belly)

@@ -15,7 +15,6 @@
 
 	closet_appearance = /datum/decl/closet_appearance/secure_closet
 
-TRACKED(/obj/structure/closet/secure_closet, broken)
 
 MSG_DEF_SELF(secure_closet/close_first, "Close the locker first.")
 MSG_DEF_SELF(secure_closet/broken, "The locker appears to be broken.")

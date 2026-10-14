@@ -52,7 +52,7 @@ GLOBAL_LIST_INIT(dq_marker_variants, list(
 	colour = v[1]
 	shadeColour = v[2]
 	set_icon_state(v[3])
-	colourName = variant
+	set_colourName(variant)
 
 /obj/item/pen/crayon/marker/apply_variant()
 	if(!variant)
@@ -63,4 +63,4 @@ GLOBAL_LIST_INIT(dq_marker_variants, list(
 	colour = v[1]
 	shadeColour = v[2]
 	set_icon_state(v[3])
-	colourName = variant
+	set_colourName(variant)

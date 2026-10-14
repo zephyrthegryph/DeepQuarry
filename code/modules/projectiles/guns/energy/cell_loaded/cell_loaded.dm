@@ -185,7 +185,6 @@ CAPABILITIES(/obj/item/ammo_magazine/cell_mag)
 	var/type_name = null
 	projectile_type = /obj/item/projectile/beam
 
-TRACKED(/obj/item/ammo_casing/microbattery, type_color)
 
 CAPABILITIES(/obj/item/ammo_casing/microbattery)
 	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
