@@ -15401,8 +15401,8 @@
 /obj/item/storage/firstaid/stabilisation	93db577e3db064fb	allow_quick_empty,allow_quick_gather,carried_afflictions,economic_adoption,hud,icon_variety,identity,is_seeing,max_storage_space,mind_host,pocketable,possessed_voice,special_handling,storage_slots
 /obj/item/storage/firstaid/surgery	7aceedbb79155dda	allow_quick_empty,allow_quick_gather,carried_afflictions,economic_adoption,hud,icon_variety,identity,is_seeing,max_storage_space,mind_host,pocketable,possessed_voice,special_handling,storage_slots
 /obj/item/storage/firstaid/toxin	03ccc2ed03b61f17	allow_quick_empty,allow_quick_gather,carried_afflictions,economic_adoption,hud,icon_variety,identity,is_seeing,max_storage_space,mind_host,pocketable,possessed_voice,special_handling,storage_slots
-/obj/item/storage/internal	78a3332fe8bdaff7	allow_quick_empty,allow_quick_gather,carried_afflictions,economic_adoption,hud,identity,is_seeing,master_item,max_storage_space,mind_host,pocketable,possessed_voice,special_handling,storage_slots
-/obj/item/storage/internal/gripper	6df29ba0be818176	allow_quick_empty,allow_quick_gather,carried_afflictions,economic_adoption,hud,identity,is_seeing,master_item,max_storage_space,mind_host,pocketable,possessed_voice,special_handling,storage_slots
+/obj/item/storage/internal	39d05f73dfda82d8	allow_quick_empty,allow_quick_gather,carried_afflictions,economic_adoption,hud,identity,is_seeing,master_item,max_storage_space,mind_host,pocketable,possessed_voice,special_handling,storage_slots
+/obj/item/storage/internal/gripper	4f7217819ff9fd77	allow_quick_empty,allow_quick_gather,carried_afflictions,economic_adoption,hud,identity,is_seeing,master_item,max_storage_space,mind_host,pocketable,possessed_voice,special_handling,storage_slots
 /obj/item/storage/laundry_basket	15be9c837f1c73b9	allow_quick_empty,allow_quick_gather,carried_afflictions,economic_adoption,hud,identity,is_seeing,max_storage_space,mind_host,pocketable,possessed_voice,special_handling,storage_slots
 /obj/item/storage/laundry_basket/offhand	9ee4a3fe734d4fc9	allow_quick_empty,allow_quick_gather,carried_afflictions,economic_adoption,hud,identity,is_seeing,max_storage_space,mind_host,pocketable,possessed_voice,special_handling,storage_slots
 /obj/item/storage/lockbox	f8f3b8289bbad586	*
@@ -18983,7 +18983,7 @@
 /obj/structure/closet/secure_closet/warden/snowfield	97a3928af3ba5c1e	bluespace_exit_points,broken,closet_appearance,collects_in_play,door_obj,is_animating_door,locked,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/secure_closet/xenoarchaeologist	157a7823262525b1	bluespace_exit_points,broken,closet_appearance,collects_in_play,door_obj,is_animating_door,locked,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/shuttleemerg	8455fade179e5e7d	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
-/obj/structure/closet/statue	17ac6dececca24aa	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,original_int,release_delay,starts_with,statue_of,statue_shape,storage_capacity,storage_cost,timer
+/obj/structure/closet/statue	b52dbe701b6701a8	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,original_int,release_delay,starts_with,statue_of,statue_shape,storage_capacity,storage_cost,timer
 /obj/structure/closet/syndicate	d6e719995a2800ae	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/syndicate/nuclear	6ec28bc957164e04	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/syndicate/personal	89138e7225cf5bba	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
@@ -19537,7 +19537,7 @@
 /obj/structure/largecrate/vehicle/bike	5774ace496ca1478	starts_with
 /obj/structure/largecrate/vehicle/quadbike	49e96193aac4be2f	starts_with
 /obj/structure/largecrate/vehicle/quadtrailer	83c8d13e9d0c5f87	starts_with
-/obj/structure/lattice	e609d1043ecbe10e	
+/obj/structure/lattice	802c58b38d772dc7	
 /obj/structure/ledge	cdae661bff340e37	
 /obj/structure/ledge/ledge_nub	72098c6888628fec	
 /obj/structure/ledge/ledge_stairs	ecbb63e6e52ba82e	
@@ -19834,7 +19834,7 @@
 /obj/structure/prop/machine/nt_obelisk/starts_on	cfeeb1c58d6a4b77	interaction_message
 /obj/structure/prop/machine/nt_optable	32d05a82645efeac	interaction_message
 /obj/structure/prop/machine/nt_optable/starts_active	6db09d04c604c332	interaction_message
-/obj/structure/prop/machine/nt_pod	b35fca6bc8d898bd	door,fluid,interaction_message,outside
+/obj/structure/prop/machine/nt_pod	6d5850574b3ed6b7	door,fluid,interaction_message,outside
 /obj/structure/prop/machine/random_radio	d6d4d3e17f37e19c	interaction_message
 /obj/structure/prop/machine/smelter	0c9358259e5c2822	interaction_message
 /obj/structure/prop/machine/smelter/starts_on	e1ccffd3ba106462	interaction_message
