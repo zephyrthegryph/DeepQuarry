@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"470567d8705d72ca838a33a1e388f033ed24da1d","ok":true,"passed":47,"failed":0,"new_failed":0,"lanes":"rewrite/merge-lock2","tests_json":"data/test-runs/20261014T022625_470567d870.json","created":"2026-10-14T02:26:27Z"}
