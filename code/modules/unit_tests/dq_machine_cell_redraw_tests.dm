@@ -8,6 +8,7 @@
 		var/obj/machinery/portable_atmospherics/powered/M = allocate(machine_type, test_floor())
 		var/obj/item/cell/C = M.cell
 		TEST_ASSERT(C, "Portable machine did not create its real starting cell")
+		own(C)
 		C.set_charge(C.maxcharge)
 		M.set_on(TRUE)
 		test_drain()
@@ -32,6 +33,7 @@
 			C = allocate(/obj/item/cell, M)
 			rel_set(M, slot_name, C)
 		TEST_ASSERT_EQUAL(M.vars[slot_name], C, "Charge probe must use the real bay occupant")
+		own(C)
 		C.set_charge(0)
 		test_drain()
 		TEST_ASSERT(("b_st_0" in dq_overlay_states(C)), "Actual stored cell did not draw its empty charge overlay")
@@ -48,6 +50,7 @@
 	var/obj/item/gun/energy/laser/G = allocate(/obj/item/gun/energy/laser, R)
 	var/obj/item/cell/C = G.power_supply
 	TEST_ASSERT(C, "Real laser did not create its actual power supply")
+	own(C)
 	rel_set(R, nameof(R.charging), G)
 	C.set_charge(C.maxcharge)
 	test_drain()
