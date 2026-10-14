@@ -83,6 +83,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/item/clipboard)
+	ref_one(nameof(toppaper), /obj/item)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 0))
 	interface("Clipboard", title = "Clipboard")

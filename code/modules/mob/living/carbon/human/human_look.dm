@@ -192,9 +192,9 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /// transparency, taur clip and digitigrade legs.
 /mob/living/carbon/human/proc/body_part_icon_key(obj/item/organ/external/part)
 	. = "[part.data.get_species_race_key(src)][part.data.body_gender][part.s_tone]"
-	if(part.s_col && part.s_col.len >= 3)
+	if(length(part.s_col) >= 3)
 		. += "[rgb(part.s_col[1],part.s_col[2],part.s_col[3])]"
-	if(part.body_hair && part.h_col && part.h_col.len >= 3)
+	if(part.body_hair && length(part.h_col) >= 3)
 		. += "[rgb(part.h_col[1],part.h_col[2],part.h_col[3])]"
 		. += species.color_mult ? "[ICON_MULTIPLY]" : "[ICON_ADD]"
 	else

@@ -39,7 +39,7 @@ const MAX_HOPS: usize = 4;
 
 /// Procs whose call inside a pure body is an effect (purity check). `set_<var>` and `rel_*` are matched by prefix.
 pub const IMPURE_CALLS: &[&str] = &[
-    "hold", "hold_until", "hold_override", "release", "release_all", "grant", "revoke", "om_grant", "om_grant_for", "publish_change", "qdel", "act_done", "act_cancel",
+    "hold", "hold_until", "hold_override", "release", "release_all", "grant", "revoke", "om_grant", "om_grant_for", "publish_change", "qdel", "act_done", "act_cancel", "build_all_button_icons", "build_button_icon",
 ];
 /// Calls that talk to a player: forbidden in a pure body (the no-message guard).
 pub const MESSAGE_CALLS: &[&str] = &["to_chat", "visible_message", "audible_message", "say", "emote", "show_message", "playsound", "play_sfx"];
@@ -584,6 +584,12 @@ impl<'a> ReadsEngine<'a> {
         out
     }
 
+    /// A read of `x`, `y` or `z` on the turf hop (`get_turf(a).z`): a turf never moves, and which turf a thing stands on is the turf hop,
+    /// published when the thing moves, so the coordinate is a constant of the hop's target.
+    pub fn turf_coordinate(&self, r: &Read) -> bool {
+        matches!(r.var.as_str(), "x" | "y" | "z") && r.hops.last().map(|h| h == HOP_TURF).unwrap_or(false)
+    }
+
     /// Whether a var read through `owner` is reactive, constant, or unknown.
     pub fn classify(&self, owner: &str, var: &str, written: &WriteIndex) -> VarClass {
         if self.is_tracked(owner, var) || self.is_relation(owner, var) {
@@ -821,9 +827,14 @@ impl<'a, 'e> Walk<'a, 'e> {
         if !framework_file(rel) {
             return false;
         }
+        if r.var == "contents" {
+            return true;
+        }
         match self.eng.sem.var_decl(&r.owner, &r.var) {
             Some(v) => framework_file(&v.file),
-            None => false,
+            // `contents` is a BYOND built-in with no declaration: the containment ledger counting what its holder holds is the framework's
+            // own bookkeeping (a thing entering the holder publishes through doMove(), not through this count).
+            None => r.var == "contents",
         }
     }
 
@@ -1528,7 +1539,11 @@ impl<'a, 'e> Walk<'a, 'e> {
         if !v.tracked() {
             return Val::local((!sig.declared.is_empty()).then(|| sig.declared));
         }
-        let owner = sem.var_owner(&ty_used, name).unwrap_or_else(|| ty_used.clone());
+        let mut owner = sem.var_owner(&ty_used, name).unwrap_or_else(|| ty_used.clone());
+        // A subtype may track a var an ancestor declares (`TRACKED(/area, flags)` for `/atom/var/flags`): the read is of that subtype's tracked var.
+        if owner != ty_used && owner != "/" && !self.eng.is_tracked(&owner, name) && self.eng.is_tracked(&ty_used, name) {
+            owner = ty_used.clone();
+        }
         if owner == "/" {
             // A global var (`SSair`, `world`): never a read of the holder; not reactive by contract.
             return Val::local((!sig.declared.is_empty()).then(|| sig.declared));
@@ -2354,4 +2369,27 @@ TRACKED(/obj/lamp, charge)
         std::fs::remove_dir_all(root).unwrap();
     }
 
+
+    #[test]
+    fn a_turf_coordinate_and_the_ledger_contents_count_are_not_inputs() {
+        let content = "#define get_turf(A) get_step(A,0)
+/turf
+	var/z = 0
+/obj/lamp/proc/level()
+	var/turf/T = get_turf(src)
+	return T.z
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content), ("code/engine/ledger.dm", "/obj/lamp/proc/count()
+	return length(contents)
+")]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &ann).closed();
+        let level = eng.analyze("/obj/lamp", "level");
+        let z = level.reads.iter().find(|r| r.var == "z").expect("z read");
+        assert!(eng.turf_coordinate(z), "z through the turf hop is a constant of the hop target: {:?}", level.keys());
+        let count = eng.analyze("/obj/lamp", "count");
+        assert!(count.reads.iter().all(|r| r.var != "contents" || count.internal.contains(r)), "a framework file counting contents is bookkeeping: {:?}", count.reads);
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }

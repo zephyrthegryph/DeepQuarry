@@ -360,7 +360,6 @@ var	code/game/atom/armor.dm	var/tmp/datum/armor_override
 var	code/game/atoms_movable.dm	var/datum/thrownthing/throwing // running: set only mid-throw
 var	code/game/atoms_movable.dm	var/tmp/datum/throw_source
 var	code/game/atoms_movable.dm	var/atom/master = null
-var	code/game/dna/dna_modifier.dm	VAR_PRIVATE/mob/living/occupant = null
 var	code/game/gamemodes/antag_holder.dm	var/datum/changeling/changeling
 var	code/game/gamemodes/changeling/state/changeling.dm	var/mob/living/owner
 var	code/game/gamemodes/changeling/state/changeling.dm	var/datum/changeling/comp
@@ -395,7 +394,6 @@ var	code/game/machinery/bomb_tester.dm	var/obj/machinery/portable_atmospherics/c
 var	code/game/machinery/buttons.dm	var/mob/living/simple_mob/mobspawned
 var	code/game/machinery/cloning.dm	VAR_PRIVATE/mob/living/occupant_mob = null
 var	code/game/machinery/computer/Operating.dm	var/mob/living/carbon/human/victim = null
-var	code/game/machinery/computer/aifixer.dm	var/mob/living/silicon/ai/occupier
 var	code/game/machinery/computer/bodycamera.dm	var/obj/effect/overlay/vis/bpinboard
 var	code/game/machinery/computer/bodycamera.dm	/obj/machinery/computer/security/telescreen/bodycamera/var/obj/item/clothing/accessory/bodycam/the_camera
 var	code/game/machinery/computer/camera.dm	var/obj/effect/overlay/vis/pinboard
@@ -432,7 +430,6 @@ var	code/game/machinery/nuclear_bomb.dm	var/obj/item/disk/nuclear/auth
 var	code/game/machinery/petrification.dm	var/mob/living/carbon/human/target
 var	code/game/machinery/pipe/construction.dm	/obj/item/pipe/var/tmp/obj/machinery/atmospherics/make_from
 var	code/game/machinery/pointdefense.dm	var/obj/effect/meteor/engaging = null // The meteor we're shooting at (a relation view)
-var	code/game/machinery/telecomms/logbrowser.dm	var/obj/machinery/telecomms/server/SelectedServer
 var	code/game/machinery/telecomms/telemonitor.dm	var/obj/machinery/telecomms/SelectedMachine
 var	code/game/machinery/telecomms/traffic_control.dm	var/mob/lasteditor
 var	code/game/machinery/telecomms/traffic_control.dm	var/obj/machinery/telecomms/server/SelectedServer
@@ -618,7 +615,6 @@ var	code/modules/body/body.dm	var/mob/living/owner
 var	code/modules/body/body_effects.dm	var/atom/origin
 var	code/modules/body/organs/internal/horror.dm	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
 var	code/modules/body/organs/organ.dm	var/mob/living/carbon/human/owner // Current mob owning the organ.
-var	code/modules/body/organs/organ.dm	var/datum/organ_data/data = new() // Stores data for appearance and investigation
 var	code/modules/body/organs/organ_external.dm	var/mob/living/applied_pressure
 var	code/modules/body/organs/organ_external.dm	var/obj/item/organ/external/parent // Master-limb.
 var	code/modules/body/organs/organ_external.dm	var/atom/movable/splinted
@@ -654,14 +650,12 @@ var	code/modules/client/prefs_helpers/body_styles.dm	var/tmp/datum/markings_subw
 var	code/modules/client/shock.dm	/client/var/datum/tgui_shock/tgui_shocker
 var	code/modules/client/statpanel_service.dm	/client/var/datum/tgui_window/stat_panel
 var	code/modules/client/verbs/character_directory.dm	GLOBAL_DATUM(character_directory, /datum/character_directory)
-var	code/modules/clothing/accessories/accessory.dm	var/tmp/obj/item/clothing/has_suit // The suit the tie may be attached to
 var	code/modules/clothing/accessories/accessory.dm	var/obj/item/clothing/mask/breath/breathmask
 var	code/modules/clothing/accessories/accessory.dm	var/tmp/datum/radio_frequency/radio_connection
 var	code/modules/clothing/accessories/lockets.dm	var/tmp/obj/item/held //Item inside locket.
 var	code/modules/clothing/accessory_slot_registry.dm	var/tmp/obj/item/clothing/target
 var	code/modules/clothing/accessory_slot_registry.dm	GLOBAL_DATUM_INIT(accessory_slot_registry, /datum/accessory_slot_registry, new)
 var	code/modules/clothing/clothing.dm	var/mob/wearer //Who the person currently wearing us is.
-var	code/modules/clothing/clothing.dm	var/obj/item/rig/master_rig
 var	code/modules/clothing/clothing_appearance_handler.dm	GLOBAL_DATUM_INIT(clothing_appearance_handler, /datum/clothing_appearance_handler, new)
 var	code/modules/clothing/glasses/glasses.dm	var/tmp/atom/movable/screen/overlay
 var	code/modules/clothing/glasses/hud.dm	var/obj/item/clothing/glasses/hud/omni/hud = null
@@ -1091,7 +1085,6 @@ var	code/modules/paperwork/adminpaper.dm	var/tmp/datum/admins/admindatum
 var	code/modules/paperwork/adminpaper.dm	var/tmp/mob/sender
 var	code/modules/paperwork/adminpaper.dm	var/tmp/obj/machinery/photocopier/faxmachine/destination
 var	code/modules/paperwork/clipboard.dm	var/tmp/obj/item/pen/haspen //The stored pen.
-var	code/modules/paperwork/clipboard.dm	var/tmp/obj/item/toppaper //The topmost piece of paper.
 var	code/modules/pda/app.dm	var/tmp/obj/item/pda/pda // if this is null, and the app is running code, something's gone wrong
 var	code/modules/pda/cart_apps.dm	var/tmp/datum/data/record/general_records
 var	code/modules/pda/cart_apps.dm	var/tmp/datum/data/record/medical_records
@@ -1126,7 +1119,6 @@ var	code/modules/projectiles/guns/energy/kinetic_accelerator.dm	var/tmp/obj/item
 var	code/modules/projectiles/guns/launcher/crossbow.dm	var/tmp/obj/item/cell/cell // Used for firing superheated rods.
 var	code/modules/projectiles/guns/launcher/grenade_launcher.dm	var/tmp/obj/item/grenade/chambered
 var	code/modules/projectiles/guns/launcher/pneumatic.dm	var/tmp/obj/item/tank/tank // Tank of gas for use in firing the cannon.
-var	code/modules/projectiles/guns/launcher/syringe_gun.dm	var/tmp/obj/item/reagent_containers/syringe/syringe
 var	code/modules/projectiles/guns/launcher/syringe_gun.dm	var/tmp/obj/item/syringe_cartridge/next
 var	code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm	var/tmp/obj/item/sniper_rifle_part/barrel
 var	code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm	var/tmp/obj/item/sniper_rifle_part/stock
@@ -1253,7 +1245,6 @@ var	code/modules/stockmarket/stocks.dm	var/tmp/datum/stock/stock
 var	code/modules/telesci/hyper_pad.dm	var/tmp/obj/machinery/hyperpad/centre/primary
 var	code/modules/telesci/telesci_computer.dm	var/tmp/obj/machinery/telepad/telepad
 var	code/modules/tgui/modal.dm	var/tmp/datum/owning_source
-var	code/modules/tgui/modules/_base.dm	var/tmp/datum/host
 var	code/modules/tgui/modules/appearance_changer.dm	var/obj/machinery/computer/transhuman/designer/linked_body_design_console = null
 var	code/modules/tgui/modules/camera.dm	var/tmp/obj/machinery/camera/active_camera
 var	code/modules/tgui/modules/law_manager.dm	var/tmp/mob/living/silicon/owner

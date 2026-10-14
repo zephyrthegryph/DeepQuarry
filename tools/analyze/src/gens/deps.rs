@@ -85,7 +85,7 @@ pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, outp
             out.push(Untracked { what: r.key(), rel, line });
             continue;
         }
-        if !r.hop_ok || eng.classify(&r.owner, &r.var, written) == VarClass::Unknown {
+        if !r.hop_ok || (!eng.turf_coordinate(r) && eng.classify(&r.owner, &r.var, written) == VarClass::Unknown) {
             let (rel, line) = set.sites.get(r).cloned().unwrap_or_default();
             out.push(Untracked { what: r.key(), rel, line });
         }

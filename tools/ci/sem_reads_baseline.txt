@@ -15,17 +15,6 @@ unknown_read	code/_helpers/icons.dm	PROCESS_OVERLAYS_OR_UNDERLAYS(flat, appearan
 unknown_read	code/_helpers/icons.dm	PROCESS_OVERLAYS_OR_UNDERLAYS(flat, appearance.overlays, 1)
 unknown_read	code/_helpers/unsorted.dm	if(thing.datum_flags & DF_USE_TAG)
 unknown_read	code/_helpers/unsorted.dm	if(!thing.tag)
-unknown_read	code/_onclick/hud/action/action.dm	button.name = name
-unknown_read	code/_onclick/hud/action/action.dm	if(desc)
-unknown_read	code/_onclick/hud/action/action.dm	if(!background_icon || !background_icon_state || (current_button.active_underlay_icon_state == background_icon_state && !force))
-unknown_read	code/_onclick/hud/action/action.dm	current_button.underlays.Cut()
-unknown_read	code/_onclick/hud/action/action.dm	if(!button_icon || !button_icon_state || (current_button.icon_state == button_icon_state && !force))
-unknown_read	code/_onclick/hud/action/action.dm	if(!overlay_icon || !overlay_icon_state || (current_button.active_overlay_icon_state == overlay_icon_state && !force))
-unknown_read	code/_onclick/hud/action/action.dm	current_button.cut_overlay(current_button.button_overlay)
-unknown_read	code/_onclick/hud/action/item_action.dm	if(!item_overlay)
-unknown_read	code/_onclick/hud/action/item_action.dm	if(item_overlay_appearance)
-unknown_read	code/_onclick/hud/action/item_action.dm	if(!force && current.icon == muse.icon && current.icon_state == muse.icon_state)
-unknown_read	code/_onclick/hud/action/item_action.dm	var/mutable_appearance/muse_appearance = new(muse.appearance)
 unknown_read	code/_onclick/hud/alert.dm	else if(!severity || severity == alert.severity)
 unknown_read	code/_onclick/hud/alert.dm	if(alert.timeout)
 unknown_read	code/_onclick/hud/alert.dm	if(!hud_shown)
@@ -35,48 +24,25 @@ unknown_read	code/_onclick/hud/alert.dm	I.alpha = ui_alpha
 unknown_read	code/controllers/subsystems/overlays.dm	var/key = "[overlay.icon]-[overlay.icon_state]-[overlay.dir]"
 unknown_read	code/controllers/subsystems/overlays.dm	var/key = "[overlay.icon]-[overlay.icon_state]-[overlay.dir]"
 unknown_read	code/controllers/subsystems/overlays.dm	var/key = "[overlay.icon]-[overlay.icon_state]-[overlay.dir]"
-unknown_read	code/controllers/subsystems/overlays.dm	var/key = "[overlay.icon]-[overlay.icon_state]-[overlay.dir]"
-unknown_read	code/controllers/subsystems/overlays.dm	var/key = "[overlay.icon]-[overlay.icon_state]-[overlay.dir]"
-unknown_read	code/controllers/subsystems/overlays.dm	var/key = "[overlay.icon]-[overlay.icon_state]-[overlay.dir]"
-unknown_read	code/controllers/subsystems/overlays.dm	build_overlays[index] = iconstate2appearance(icon, overlay)
-unknown_read	code/controllers/subsystems/overlays.dm	if(!overlays)
-unknown_read	code/controllers/subsystems/overlays.dm	if(islist(priority_overlays))
 unknown_read	code/controllers/subsystems/overlays.dm	if(islist(priority_overlays))
 unknown_read	code/datums/chat_message.dm	return maptext_height
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
-unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
-unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
-unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
-unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
-unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
-unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
-unknown_read	code/engine/refs/containment/spatial.dm	return A ? length(A.contents) : 0
-unknown_read	code/game/area/areas.dm	return (flags & flag) == flag
 unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
 unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
 unknown_read	code/game/atom/_atom.dm	var/list/icon_dimensions = get_icon_dimensions(icon)
-unknown_read	code/game/dna/dna_modifier.dm	return occupant
-unknown_read	code/game/gamemodes/technomancer/catalog.dm	if(T && (T.z in using_map.player_levels))
-unknown_read	code/game/mecha/mecha.dm	return T && isPlayerLevel(T.z)
 unknown_read	code/game/objects/items/devices/radio/radio.dm	if(!on)
-unknown_read	code/modules/admin/player_effects.dm	return (istype(M) && M.ckey) ? null : /datum/msg/req_silent
-unknown_read	code/modules/admin/player_effects.dm	return L.client || L.teleop ? /datum/msg/player_effects/ai_player : null
 unknown_read	code/modules/body/body.dm	var/gained = domains & ~dirty
 unknown_read	code/modules/body/body.dm	if(gained && owner)
 unknown_read	code/modules/clothing/under/miscellaneous.dm	if(!H.vore_prefs.resizable)
-unknown_read	code/modules/fireworks/firework_launcher.dm	var/datum/planet/P = planets_z_to_planet()[T.z]
 unknown_read	code/modules/mob/inventory.dm	if (src.client)
 unknown_read	code/modules/mob/living/carbon/human/human_helpers.dm	return identifying_gender ? identifying_gender : gender
 unknown_read	code/modules/mob/living/carbon/human/human_helpers.dm	return identifying_gender ? identifying_gender : gender
-unknown_read	code/modules/mob/living/carbon/human/species/station/xenochimera_state.dm	return xc.feral
 unknown_read	code/modules/mob/living/carbon/human/update_icons.dm	appearance_flags |= PIXEL_SCALE
 unknown_read	code/modules/mob/living/carbon/human/update_icons.dm	if(isnull(rest_dir))
 unknown_read	code/modules/mob/living/silicon/ai/life.dm	if(APU_power)
 unknown_read	code/modules/power/port_gen.dm	return overheating > 0 || temperature > cooling_temperature() + 0.1
-unknown_read	code/modules/tgui/modules/communications.dm	return (!using_map || (get_z(A.actor) in using_map.contact_levels)) ? null : MSG(communications/out_of_range)
-unknown_read	code/modules/tgui/modules/crew_monitor.dm	return (T && (T.z in using_map.player_levels)) ? null : MSG(crew_monitor/out_of_range)
 unknown_read	code/modules/tgui/modules/law_manager.dm	if(user.mind && user.mind.special_role)
 unknown_read	code/modules/tgui/states.dm	if(check_rights_for(user.client, R_ADMIN|R_EVENT|R_DEBUG))
 unknown_read	code/modules/tgui/states.dm	if(!cell || cell.charge <= 0 || lockcharge)
@@ -136,7 +102,6 @@ dynamic_read	code/engine/lifeforms/forms.dm	if(!(E.args["var"] in D.vars))
 dynamic_read	code/engine/lifeforms/forms.dm	if(!(var_name in D.vars))
 hop_not_relation	code/game/atom/_atom.dm	return L.AllowDrop() ? L : L.drop_location()
 hop_not_relation	code/game/atom/_atom.dm	return L.AllowDrop() ? L : L.drop_location()
-hop_not_relation	code/game/dna/dna_modifier.dm	return occupant
 hop_not_relation	code/game/objects/items/weapons/RCD.dm	if(module.holder) // Is it attached to a RIG?
 hop_not_relation	code/game/objects/items/weapons/RCD.dm	return module.holder.cell
 hop_not_relation	code/modules/body/body.dm	if(gained && owner)

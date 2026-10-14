@@ -839,7 +839,7 @@ CAPABILITIES(/obj/effect/map_helper)
 			using_map.base_turf_by_z["[T.z]"] = baseturf
 	else if(ispath(path, /obj/effect/map_helper/no_tele/area))
 		if(A)
-			A.flags |= BLUE_SHIELDED
+			A.set_flags(A.flags | BLUE_SHIELDED)
 			for(var/turf/AT in contents_of(A))
 				AT.block_tele = 1
 	else if(ispath(path, /obj/effect/map_helper/no_tele))
@@ -861,7 +861,7 @@ CAPABILITIES(/obj/effect/map_helper)
 			ZT.make_outdoors()
 	else if(ispath(path, /obj/effect/map_helper/no_phaseshift/area))
 		if(A)
-			A.flags |= PHASE_SHIELDED
+			A.set_flags(A.flags | PHASE_SHIELDED)
 
 /obj/effect/map_helper/base_turf
 	name = "z-wide baseturf editor"

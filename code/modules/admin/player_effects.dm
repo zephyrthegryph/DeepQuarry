@@ -366,7 +366,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 
 /datum/eventkit/player_effects/proc/item_tf_ready(datum/act/op/A)
 	var/mob/living/M = target()
-	return (istype(M) && M.ckey) ? null : /datum/msg/req_silent
+	return (istype(M) && mob_state_played(M)) ? null : /datum/msg/req_silent
 
 /// The types whose path contains the text of the first question.
 /datum/eventkit/player_effects/proc/typepath_matches(datum/act/op/A)
@@ -961,7 +961,7 @@ MSG_DEF_SELF(player_effects/nif_present, "Target already has a NIF.")
 	var/mob/living/L = target()
 	if(!istype(L))
 		return /datum/msg/player_effects/ai_not_living
-	return L.client || L.teleop ? /datum/msg/player_effects/ai_player : null
+	return mob_state_played(L) || L.teleop ? /datum/msg/player_effects/ai_player : null
 
 MSG_DEF_SELF(player_effects/ai_not_living, "This can only be used on instances of type /mob/living")
 MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")
