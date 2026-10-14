@@ -69,6 +69,7 @@ CAPABILITIES(/obj/item/plastique)
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	ref_one(nameof(target), /atom)
 
 /// ASK_HELD used either actual hand, not the input event's saved held reference.
 /obj/item/plastique/proc/timer_item_in_hands(datum/act/op/A)

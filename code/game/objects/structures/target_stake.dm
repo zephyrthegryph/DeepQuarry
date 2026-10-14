@@ -19,6 +19,7 @@
 		set_density(TRUE)
 
 CAPABILITIES(/obj/structure/target_stake)
+	ref_one(nameof(pinned_target))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 

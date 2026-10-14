@@ -18,6 +18,7 @@
 
 CAPABILITIES(/obj/item/spell/illusion)
 	owns_one(nameof(illusion), /mob/living/simple_mob/illusion)
+	ref_one(nameof(copied))
 
 /obj/item/spell/illusion/on_ranged_cast(atom/hit_atom, mob/user)
 	if(istype(hit_atom, /atom/movable))

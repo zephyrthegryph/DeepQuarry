@@ -24,6 +24,8 @@
 	var/atom/hunting
 
 CAPABILITIES(/obj/effect/temporary_effect/pulse/snake)
+	ref_one(nameof(creator))
+	ref_one(nameof(hunting))
 	param(nameof(hunting), pos = 1)
 	param(nameof(creator), pos = 2)
 

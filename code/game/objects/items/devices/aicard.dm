@@ -31,6 +31,7 @@ CAPABILITIES(/obj/item/aicard)
 	op("wipe", ui_act("wipe"), then(PROC_REF(ui_act_wipe)))
 	op("radio", ui_act("radio"), then(PROC_REF(ui_act_radio)))
 	op("wireless", ui_act("wireless"), then(PROC_REF(ui_act_wireless)))
+	ref_one(nameof(carded_ai), /mob/living/silicon/ai)
 
 /// /obj/item/aicard's window data.
 /obj/item/aicard/ui_data(datum/act/eval/A)

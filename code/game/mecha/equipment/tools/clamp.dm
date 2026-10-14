@@ -4,7 +4,8 @@
 	equip_cooldown = 15
 	energy_drain = 10
 	var/dam_force = 20
-	var/obj/mecha/working/ripley/cargo_holder
+	/// The chassis whose cargo bay it loads (any working exosuit: a hoverpod carries a clamp too, not only a ripley).
+	var/obj/mecha/working/cargo_holder
 	required_type = list(/obj/mecha/working)
 	ready_sound = SFX_MECHA_GASDISCONNECTED
 
@@ -16,6 +17,7 @@
 
 // The pilot's work on a door: the keeps drop HELD (the pilot holds nothing) and ADJACENT (the pilot rides inside the chassis).
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp)
+	ref_one(nameof(cargo_holder))
 	op("pry_firedoor_blocked", ai(), takes("door"), wait(10 SECONDS, keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(pried_blocked_firedoor)))
 	op("pry_firedoor", ai(), takes("door"), wait(5 SECONDS, keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(pried_firedoor)))
 	op("pry_airlock", ai(), takes("door"), wait(15 SECONDS, keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(pried_airlock)))
@@ -118,7 +120,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp)
 		var/T = chassis.loc
 		if(do_after_cooldown(target))
 			if(T == chassis.loc && src == chassis.selected)
-				var/obj/mecha/working/ripley/holder = cargo_holder()
+				var/obj/mecha/working/holder = cargo_holder()
 				rel_add(holder, nameof(holder.cargo), O)
 				if(!move_into(holder, MECHA_SLOT_CARGO, O))
 					O.forceMove(holder)
@@ -179,7 +181,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp)
 				var/T = chassis.loc
 				if(do_after_cooldown(target))
 					if(T == chassis.loc && src == chassis.selected)
-						var/obj/mecha/working/ripley/holder = cargo_holder()
+						var/obj/mecha/working/holder = cargo_holder()
 						rel_add(holder, nameof(holder.cargo), O)
 						if(!move_into(holder, MECHA_SLOT_CARGO, O))
 							O.forceMove(holder)
@@ -213,5 +215,5 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp)
 	return 1
 
 /// cargo holder
-/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/cargo_holder() as /obj/mecha/working/ripley
+/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/cargo_holder() as /obj/mecha/working
 	return cargo_holder

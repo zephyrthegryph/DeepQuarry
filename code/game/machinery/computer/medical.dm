@@ -67,6 +67,7 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 		then(PROC_REF(modal_edit)))
 	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(med_data_emp)))
+	ref_one(nameof(active1), /datum/data/record)
 
 TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_questions, list(
 	// General

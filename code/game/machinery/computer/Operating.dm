@@ -49,6 +49,7 @@ CAPABILITIES(/obj/machinery/computer/operating)
 	op("choiceOff", ui_act(), then(PROC_REF(control_used)), then(PROC_REF(choiceOff)))
 	op("spo2_adj", ui_act(arg("new", num(0, 100))), then(PROC_REF(control_value_used)), then(PROC_REF(spo2_adjusted)))
 	op("health_adj", ui_act(arg("new", num(-100, 100))), then(PROC_REF(control_value_used)), then(PROC_REF(health_adjusted)))
+	ref_one(nameof(victim), /mob/living/carbon/human)
 
 /obj/machinery/computer/operating/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

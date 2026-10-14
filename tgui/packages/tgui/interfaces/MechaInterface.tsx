@@ -1,9 +1,8 @@
 // Exosuit main interface — TGUI.
 //
-// Five fully-structured views in one window, switched by `view`:
+// Four fully-structured views in one window, switched by `view`:
 //   main       — stats + commands + equipment + eject
 //   log        — internal log entries
-//   attack_ai  — AI attack interface (equipment select to fire on target)
 //   access     — ID access add/remove keycode dialog
 //   maint      — maintenance console actions
 
@@ -55,7 +54,7 @@ type AccessKey = {
 };
 
 type Data = {
-  view: 'main' | 'log' | 'attack_ai' | 'access' | 'maint';
+  view: 'main' | 'log' | 'access' | 'maint';
   title: string;
   // main view
   damage_reports: DamageReport[];
@@ -96,9 +95,6 @@ type Data = {
   can_eject: BooleanLike;
   // log view
   log_entries: LogEntry[];
-  // attack_ai view
-  ai_targets: EquipPiece[];
-  ai_target_name: string;
   // access view
   access_current: AccessKey[];
   access_available: AccessKey[];
@@ -123,7 +119,6 @@ export const MechaInterface = () => {
         ) : null}
         {data.view === 'main' && <MainView />}
         {data.view === 'log' && <LogView />}
-        {data.view === 'attack_ai' && <AttackAiView />}
         {data.view === 'access' && <AccessView />}
         {data.view === 'maint' && <MaintView />}
       </Window.Content>
@@ -455,30 +450,6 @@ const LogView = () => {
             <Stack.Item key={i}>
               <Box bold>{e.time}</Box>
               <Box ml={2}>{e.message}</Box>
-            </Stack.Item>
-          ))}
-        </Stack>
-      )}
-    </Section>
-  );
-};
-
-const AttackAiView = () => {
-  const { data, act } = useBackend<Data>();
-  return (
-    <Section title={`Attack: ${data.ai_target_name}`}>
-      {data.ai_targets.length === 0 ? (
-        <EmptyState>No equipment available for attack.</EmptyState>
-      ) : (
-        <Stack vertical>
-          {data.ai_targets.map((eq) => (
-            <Stack.Item key={eq.ref}>
-              <Button
-                fluid
-                onClick={() => act('ai_use_equipment', { ref: eq.ref })}
-              >
-                {eq.kind}: {eq.name}
-              </Button>
             </Stack.Item>
           ))}
         </Stack>

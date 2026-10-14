@@ -22,6 +22,7 @@ CAPABILITIES(/obj/machinery/computer/telecomms/server)
 	interface("TelecommsLogBrowser")
 	tcomms_probe_console()
 	op("delete", ui_act("delete", arg("id", num())), needs(req(PROC_REF(may_delete)), req(PROC_REF(entry_exists))), then(PROC_REF(ui_act_delete)))
+	ref_one(nameof(SelectedServer), /obj/machinery/telecomms/server)
 
 /obj/machinery/computer/telecomms/server/probed()
 	return servers
@@ -107,4 +108,4 @@ CAPABILITIES(/obj/machinery/computer/telecomms/server)
 
 /// SelectedServer (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/server/proc/SelectedServer() as /obj/machinery/telecomms/server
-	return SelectedServer // ALLOW(reads): the server shown is asked when it is needed, never cached
+	return SelectedServer

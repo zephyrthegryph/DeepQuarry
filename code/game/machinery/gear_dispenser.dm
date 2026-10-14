@@ -333,6 +333,8 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 
 CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
 	op("take", hand(), priority(OP_PRIORITY_DEFAULT), ungated(), label("Take"), then(PROC_REF(interaction_take)))
+	ref_one(nameof(door), /obj/effect/overlay/vis)
+	ref_one(nameof(held_gear_disp), /datum/gear_disp)
 
 /obj/machinery/gear_dispenser/suit_fancy/proc/interaction_take(datum/act/op/A)
 	var/mob/living/carbon/human/user = A.actor

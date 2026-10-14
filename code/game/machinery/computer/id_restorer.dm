@@ -14,7 +14,6 @@
 	var/icon_success = "restorer_success"
 	var/icon_fail = "restorer_fail"
 
-	var/obj/item/card/id/inserted
 
 CAPABILITIES(/obj/machinery/computer/id_restorer)
 	configure(light_glow(color = "#11cc00"))
@@ -31,7 +30,3 @@ CAPABILITIES(/obj/machinery/computer/id_restorer)
 
 /datum/frame/frame_types/id_restorer/get_icon_state(state)
 	return "restorer_b[state]"
-
-/// inserted (a relation view: it reads null once the target is deleted).
-/obj/machinery/computer/id_restorer/proc/inserted() as /obj/item/card/id
-	return inserted

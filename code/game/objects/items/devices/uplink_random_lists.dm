@@ -13,6 +13,9 @@ GLOBAL_DATUM_INIT(all_uplink_selection, /datum/uplink_random_selection/all, new)
 	src.keep_probability = keep_probability
 	src.reselect_probability = reselect_probability
 
+/// The two selections are made once at boot (GLOB.default_uplink_selection, GLOB.all_uplink_selection) and nothing deletes one.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/uplink_random_selection)
+
 /datum/uplink_random_selection
 	var/list/datum/uplink_random_item/items
 	var/list/datum/uplink_random_item/all_items

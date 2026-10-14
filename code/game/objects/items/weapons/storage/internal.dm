@@ -7,6 +7,7 @@
 CAPABILITIES(/obj/item/storage/internal)
 	acceptance("equip", req_acceptance_type(list(), because = "it can't be worn"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = ABSTRACT))
+	ref_one(nameof(master_item), /obj/item)
 
 /obj/item/storage/internal/Initialize(mapload)
 	. = ..()

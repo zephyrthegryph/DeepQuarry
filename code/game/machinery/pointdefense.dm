@@ -208,6 +208,7 @@ CAPABILITIES(/obj/machinery/pointdefense)
 		then(PROC_REF(ident_entered)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	default_parts()
+	ref_one(nameof(engaging), /obj/effect/meteor)
 
 /obj/machinery/pointdefense/proc/work_step(datum/act/timer/A)
 	var/desiredir = ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH

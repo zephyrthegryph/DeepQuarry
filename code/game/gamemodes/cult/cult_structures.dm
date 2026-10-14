@@ -20,8 +20,6 @@
 	name = "Pylon"
 	desc = "A floating crystal that hums with an unearthly energy."
 	icon_state = "pylon"
-	var/obj/item/wepon
-
 	var/shatter_message = "The pylon shatters!"
 	var/impact_sound = SFX_EFFECTS_GLASSHIT
 	var/shatter_sound = SFX_EFFECTS_GLASSBR3
@@ -178,7 +176,3 @@ CAPABILITIES(/obj/effect/gateway/active)
 	var/mob/living/M = A
 
 	to_chat(M, span_danger("Walking into \the [src] is probably a bad idea, you think."))
-
-/// Wepon (a relation view).
-/obj/structure/cult/pylon/proc/wepon() as /obj/item
-	return wepon

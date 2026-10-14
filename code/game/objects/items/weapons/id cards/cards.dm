@@ -287,6 +287,9 @@ CAPABILITIES(/obj/item/card_fluff)
 	var/mob/living/silicon/robot/robot_owner
 	var/last_robot_loc
 
+CAPABILITIES(/obj/item/card/id/synthetic/borg)
+	ref_one(nameof(robot_owner), /mob/living/silicon/robot)
+
 /obj/item/card/id/synthetic/borg/Initialize(mapload)
 	. = ..()
 	if(isrobot(loc))
