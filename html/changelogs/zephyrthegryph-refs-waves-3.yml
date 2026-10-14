@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The medical console lists the discovered viruses again"
+  - bugfix: "A deleted fake sun leaves the family registry, the admin fax cache is bounded, and atmospheric field generators no longer keep a never-read area list"
+  - refactor: "Types that refuse deletion (parsed maps, player preferences) are recognised by the stored-references lint"

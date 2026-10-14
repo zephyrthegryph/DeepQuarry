@@ -151,8 +151,7 @@
 
 /// The observe question opens once the round is set up (the handler says why not otherwise).
 /mob/new_player/proc/round_observable(datum/act/op/A)
-	var/datum/system/ticker/service = SSticker
-	return service && service.current_state != GAME_STATE_STARTUP
+	return SSticker && ticker_current_state() != GAME_STATE_STARTUP
 
 /mob/new_player/proc/observe_apply()
 	if(!spawning)

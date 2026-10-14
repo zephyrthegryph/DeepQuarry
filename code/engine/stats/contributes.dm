@@ -18,6 +18,7 @@
 #define CV_PROC 5
 #define CV_TREE 6
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_contrib)
 /// A contribution of the entity's type to one of its stats (the compiled form of a contributes() entry).
 /datum/stat_contrib
 	var/stat_id
@@ -59,6 +60,7 @@
 	/// The relation vars to walk from the written entity back to the reader, nearest the reader first: one for "rel.var", more for "a.b.var".
 	var/list/path
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_type_info)
 /// Everything the stat layer knows about one entity type, built from its compiled table. Read-only after build.
 /datum/stat_type_info
 	var/owner_type

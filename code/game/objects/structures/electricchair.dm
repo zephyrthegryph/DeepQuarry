@@ -33,10 +33,10 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 
 	if(on)
 		on = 0
-		icon_state = "echair0"
+		set_icon_state("echair0")
 	else
 		on = 1
-		icon_state = "echair1"
+		set_icon_state("echair1")
 	to_chat(user, span_notice("You switch [on ? "on" : "off"] [src]."))
 	return
 

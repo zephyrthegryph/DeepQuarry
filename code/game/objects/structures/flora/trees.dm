@@ -130,7 +130,7 @@ CAPABILITIES(/obj/structure/flora/tree)
 
 	set_is_stump(TRUE)
 	set_density(FALSE)
-	icon_state = "[base_state]_stump"
+	set_icon_state("[base_state]_stump")
 	cut_overlays() // For the Sif tree and other future glowy trees.
 	set_glow(src, GLOW(0, null, null))
 

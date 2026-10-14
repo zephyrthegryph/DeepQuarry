@@ -16,7 +16,7 @@
 		return
 	use_power(power_of(src).active)
 	playsound(src, chime_sound, 75)
-	icon_state = "dbchime-active"
+	set_icon_state("dbchime-active")
 	set_glow(src, GLOW(2, 0.5, "#33FF33"))
 	visible_message("\The [src]'s light flashes.")
 	after(src, 3 SECONDS, PROC_REF(chime_end))

@@ -67,7 +67,7 @@
 	var/obj/item/broken_bottle/B = new /obj/item/broken_bottle(newloc)
 	if(prob(33))
 		new/obj/item/material/shard(newloc) // Create a glass shard at the target's location!
-	B.icon_state = src.icon_state
+	B.set_icon_state(src.icon_state)
 
 	var/icon/I = new('icons/obj/drinks.dmi', src.icon_state)
 	I.Blend(B.broken_outline, ICON_OVERLAY, rand(5), 1)

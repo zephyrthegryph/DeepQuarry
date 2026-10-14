@@ -18,6 +18,7 @@
 #define PLAN_LEVEL_GROUP 2
 #define PLAN_LEVEL_KEY 3
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_plan)
 /// One compiled op. Immutable after build, shared by every instance of the type; never write one.
 /datum/op_plan
 	var/key
@@ -107,6 +108,7 @@
 	/// Build problems found while compiling this plan (also reported through table_error()).
 	var/list/problems
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 /// The compiled ops of a type table, by key and in order.
 /datum/op_index
 	var/list/by_key

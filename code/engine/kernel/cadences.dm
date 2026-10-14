@@ -64,6 +64,7 @@
 
 // ---------------------------------------------------------------- cadences
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/cadence)
 /// A periodic cadence: how often its members step, what they are told the step was, and the lane that pays for it.
 /datum/cadence
 	abstract_type = /datum/cadence

@@ -90,8 +90,8 @@ CAPABILITIES(/obj/item/storage/bible)
 /obj/item/storage/bible/proc/apply_religion(mob/living/carbon/human/user)
 	deity_name = user.mind.my_religion.deity
 	name = user.mind.my_religion.bible_name
-	icon_state = user.mind.my_religion.bible_icon_state
-	item_state = user.mind.my_religion.bible_item_state
+	set_icon_state(user.mind.my_religion.bible_icon_state)
+	set_item_state(user.mind.my_religion.bible_item_state)
 	to_chat(user, span_notice("You invoke [user.mind.my_religion.deity] and prepare a copy of [src]."))
 
 /obj/item/storage/bible/booze

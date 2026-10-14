@@ -158,7 +158,7 @@ CAPABILITIES(/datum/shuttle/autodock/ferry/specops)
 	for(var/obj/effect/landmark/L in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(L.name == "Marauder Exit")
 			var/obj/effect/portal/P = new(L.loc)
-			P.invisibility = INVISIBILITY_ABSTRACT //So it is not seen by anyone.
+			P.set_invisibility(INVISIBILITY_ABSTRACT) //So it is not seen by anyone.
 			P.failchance = 0//So it has no fail chance when teleporting.
 			rel_set(P, nameof(P.target), pick(spawn_marauder))//Where the marauder will arrive.
 			spawn_marauder.Remove(P.target_ref())

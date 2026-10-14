@@ -48,9 +48,14 @@
 		if(result)
 			return result
 	// The ops had their say: the mob's click handling below must not resolve them a second time (the router's route_click() only classifies and performs).
-	GLOB.op_click_resolved[actor] = TRUE
-	E.actor.op_compatibility_click(E.target, E.params)
-	GLOB.op_click_resolved -= actor
+	var/actor_key = entity_handle(actor)
+	GLOB.op_click_resolved[actor_key] = TRUE
+	try
+		E.actor.op_compatibility_click(E.target, E.params)
+	catch(var/exception/click_error)
+		GLOB.op_click_resolved -= actor_key // the flag never outlives the click, whatever the handling threw
+		throw click_error
+	GLOB.op_click_resolved -= actor_key
 	return null
 
 /// Actors whose click the inbox already resolved among the ops (it is in the mob's own click handling now). A click that reaches the router any other

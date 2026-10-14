@@ -66,7 +66,7 @@ TYPE_TABLE_DECLARE(/obj/item/broken_gun, broken_gun_forced_type, null)
 	if(ispath(path))
 		name = "[pick("busted", "broken", "shattered", "scrapped")] [initial(path.name)]"
 		icon = initial(path.icon)
-		icon_state = initial(path.icon_state)
+		set_icon_state(initial(path.icon_state))
 
 		my_guntype = path
 

@@ -150,7 +150,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 
 	if(istype(src.loc, /turf/unsimulated/map))
 		if(!src.invisibility)
-			src.invisibility = INVISIBILITY_ABSTRACT
+			set_invisibility(INVISIBILITY_ABSTRACT)
 			src.child_om_marker.invisibility = INVISIBILITY_NONE
 			//legacy ai_holder wander tuning removed.
 			src.melee_damage_lower = 50
@@ -160,7 +160,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 			src.movement_cooldown = 5
 
 	else if(src.invisibility)
-		src.invisibility = INVISIBILITY_NONE
+		set_invisibility(INVISIBILITY_NONE)
 		src.child_om_marker.invisibility = INVISIBILITY_ABSTRACT
 		//legacy ai_holder wander tuning removed.
 		src.melee_damage_lower = 1
@@ -877,7 +877,7 @@ CAPABILITIES(/obj/structure/control_pod)
 	user.forceMove(src)
 	move_player(user, host, "took control of [host] through [src]", share = TRUE)
 	log_admin("[host.ckey] has taken contol of \the [host].")
-	icon_state = "control_node1"
+	set_icon_state("control_node1")
 	plane = ABOVE_MOB_PLANE
 	set_glow(src, GLOW(5, 0.75, "#f94bff"))
 
@@ -890,7 +890,7 @@ CAPABILITIES(/obj/structure/control_pod)
 	move_player(host, controller, "ejected from [host] through [src]")
 	visible_message(span_warning("\The [controller] is ejected from \the [src], tumbling free!"))
 	log_admin("[controller.ckey] is no longer controlling [host], they have been returned to their body, [controller].")
-	icon_state = "control_node0"
+	set_icon_state("control_node0")
 	plane = OBJ_PLANE
 	set_glow(src, GLOW(0, null, null))
 	var/our_x = rand(-5,5) + x
@@ -1007,9 +1007,9 @@ MSG_DEF_SELF(ship_emote/incapable, "you can't do that right now")
 
 	for(var/obj/effect/dog_eye/e in our_eyes)
 		if(close)
-			e.icon_state = "eye_closed"	// u . u
+			e.set_icon_state("eye_closed")	// u . u
 		else
-			e.icon_state = "eye_open"	// * w *
+			e.set_icon_state("eye_open")	// * w *
 
 /obj/effect/dog_eye
 	name = "eye"

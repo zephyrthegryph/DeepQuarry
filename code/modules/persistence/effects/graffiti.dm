@@ -24,7 +24,7 @@
 /datum/persistent/graffiti/CreateEntryInstance(turf/creating, list/token)
 	var/obj/effect/decal/writing/inst = new /obj/effect/decal/writing(creating, token["age"]+1, token["message"], token["author"])
 	if(token["icon_state"])
-		inst.icon_state = token["icon_state"]
+		inst.set_icon_state(token["icon_state"])
 	if(token["pixel_x"])
 		inst.pixel_x = token["pixel_x"]
 	if(token["pixel_y"])

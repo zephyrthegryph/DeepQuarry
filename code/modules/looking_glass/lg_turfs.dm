@@ -21,7 +21,7 @@
 
 
 /turf/simulated/floor/looking_glass/proc/activate()
-	icon_state = "origin_switching"
+	set_icon_state("origin_switching")
 
 	animate(src, color = "#000000", time = 3 SECONDS)
 	after(src, 3 SECONDS, PROC_REF(activate_finish))

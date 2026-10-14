@@ -49,7 +49,7 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 	if(item_icon)
 		if(!istype(item, /obj/item/clothing))
 			item.icon = CUSTOM_ITEM_OBJ
-			item.icon_state = item_icon
+			item.set_icon_state(item_icon)
 			return
 		else
 			if(inherit_inhands)
@@ -59,8 +59,8 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 				item.set_item_icons(null)
 
 			item.icon = CUSTOM_ITEM_OBJ
-			item.icon_state = item_icon
-			item.item_state = null
+			item.set_icon_state(item_icon)
+			item.set_item_state(null)
 			item.set_icon_override(CUSTOM_ITEM_MOB)
 
 		var/obj/item/clothing/under/U = item

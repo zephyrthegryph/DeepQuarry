@@ -23,7 +23,7 @@
 	new_holder.turf_type = T.type
 	new_holder.set_dir(T.dir)
 	new_holder.icon = T.icon
-	new_holder.icon_state =  T.icon_state
+	new_holder.set_icon_state(T.icon_state)
 	new_holder.copy_overlays(T, TRUE)
 	new_holder.underlays = T.underlays.Copy()
 	new_holder.decals = T.decals ? T.decals.Copy() : null
@@ -32,7 +32,7 @@
 	var/turf/simulated/shuttle/new_dest = T.ChangeTurf(my_turf().type,,1)
 	my_turf().lighting_clear_overlay()
 	new_dest.set_dir(my_turf().dir)
-	new_dest.icon_state = my_turf().icon_state
+	new_dest.set_icon_state(my_turf().icon_state)
 	new_dest.icon = my_turf().icon
 	new_dest.copy_overlays(my_turf(), TRUE)
 	new_dest.underlays = my_turf().underlays.Copy()
@@ -62,7 +62,7 @@
 		new_source = my_turf().ChangeTurf(turf_type,,1)
 		new_source.lighting_clear_overlay()
 		new_source.set_dir(dir)
-		new_source.icon_state = icon_state
+		new_source.set_icon_state(icon_state)
 		new_source.icon = icon
 		new_source.copy_overlays(src, TRUE)
 		new_source.underlays = underlays.Copy()
@@ -406,7 +406,7 @@ CAPABILITIES(/turf/simulated/floor/flesh)
 /turf/simulated/floor/flock/Crossed(atom/movable/AM)
 	. = ..()
 	if(isliving(AM))
-		icon_state = "floor-on"
+		set_icon_state("floor-on")
 		set_glow(src, GLOW(3, 3, "#26c5a9"))
 		after(src, 5 SECONDS, PROC_REF(crossing_glow_off))
 
@@ -459,7 +459,7 @@ CAPABILITIES(/turf/simulated/shuttle/plating/airless/carry)
 	icon = 'icons/goonstation/turf/meatland.dmi'
 
 /turf/simulated/floor/flock/proc/crossing_glow_off()
-	icon_state = "floor"
+	set_icon_state("floor")
 	set_glow(src, GLOW(0, 0, "#ffffff"))
 
 

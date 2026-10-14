@@ -402,7 +402,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
 	var/choice = A.step_value("a1")
 	if(!choice)
 		return
-	icon_state = "moebiushelm_[choice]"
+	set_icon_state("moebiushelm_[choice]")
 	update_clothing_icon()
 	to_chat(user, span_notice("[src] color changed to: [choice]"))
 

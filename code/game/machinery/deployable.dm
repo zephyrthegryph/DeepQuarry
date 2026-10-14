@@ -36,7 +36,7 @@ Deployable items
 		if(emagged < 2.0)
 			set_locked(!locked)
 			set_anchored(!anchored)
-			icon_state = "barrier[locked]"
+			set_icon_state("barrier[locked]")
 			if((locked == 1.0) && (emagged < 2.0))
 				to_chat(user, "Barrier lock toggled on.")
 				return TRUE
@@ -98,7 +98,7 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 	if(prob(50/packet.severity))
 		set_locked(!locked)
 		set_anchored(!anchored)
-		icon_state = "barrier[locked]"
+		set_icon_state("barrier[locked]")
 	return HOOK_DECLINE
 
 /obj/machinery/deployable/barrier/CanPass(atom/movable/mover, turf/target)//So bullets will fly over and stuff.
@@ -183,7 +183,7 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 	if(toppled)
 		return
 	toppled = TRUE
-	icon_state = "cutout_pushed_over"
+	set_icon_state("cutout_pushed_over")
 	set_density(FALSE)
 	name = initial(name)
 	desc = initial(desc)
@@ -193,7 +193,7 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 	if(!toppled)
 		return
 	toppled = FALSE
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 	set_density(TRUE)
 	name = fake_name
 	desc = fake_desc

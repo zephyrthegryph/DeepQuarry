@@ -231,9 +231,9 @@ CAPABILITIES(/obj/item/camera)
 	var/mob/user = A.actor
 	on = !on
 	if(on)
-		src.icon_state = icon_on
+		set_icon_state(icon_on)
 	else
-		src.icon_state = icon_off
+		set_icon_state(icon_off)
 	to_chat(user, "You switch the camera [on ? "on" : "off"].")
 	return OP_OK
 
@@ -333,7 +333,7 @@ CAPABILITIES(/obj/item/camera)
 	pictures_left--
 	desc = "A polaroid camera. It has [pictures_left] photos left."
 	to_chat(user, span_notice("[pictures_left] photos left."))
-	icon_state = icon_off
+	set_icon_state(icon_off)
 	on = 0
 	after(src, 6.4 SECONDS, PROC_REF(recharged))
 
@@ -412,7 +412,7 @@ CAPABILITIES(/obj/item/camera)
 	return p
 
 /obj/item/camera/proc/recharged()
-	icon_state = icon_on
+	set_icon_state(icon_on)
 	on = 1
 
 

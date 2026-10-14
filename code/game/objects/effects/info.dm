@@ -18,8 +18,8 @@ CAPABILITIES(/obj/effect/abstract/info)
 
 /obj/effect/abstract/info/MouseEntered(location, control, params)
 	. = ..()
-	icon_state = "info_hovered"
+	set_icon_state("info_hovered")
 
 /obj/effect/abstract/info/MouseExited()
 	. = ..()
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))

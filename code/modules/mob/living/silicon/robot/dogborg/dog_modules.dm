@@ -144,12 +144,12 @@ CAPABILITIES(/obj/item/robot_tongue)
 			name = "hacked tongue of doom"
 			desc = "Your tongue has been upgraded successfully. Congratulations."
 			icon = 'icons/mob/dogborg_vr.dmi'
-			icon_state = "syndietongue"
+			set_icon_state("syndietongue")
 		else
 			name = "synthetic tongue"
 			desc = "Useful for slurping mess off the floor before affectionately licking the crew members in the face."
 			icon = 'icons/mob/dogborg_vr.dmi'
-			icon_state = "synthtongue"
+			set_icon_state("synthtongue")
 	return TRUE
 
 /obj/item/robot_tongue/afterattack(atom/target, mob/user, proximity)
@@ -286,11 +286,11 @@ CAPABILITIES(/obj/item/pupscrubber)
 	if(!enabled)
 		R.scrubbing = TRUE
 		enabled = TRUE
-		icon_state = "scrub1"
+		set_icon_state("scrub1")
 	else
 		R.scrubbing = FALSE
 		enabled = FALSE
-		icon_state = "scrub0"
+		set_icon_state("scrub0")
 	return TRUE
 
 /obj/item/lightreplacer/dogborg

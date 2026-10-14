@@ -3,7 +3,7 @@
 
 /mob/living/silicon/robot/proc/do_transform_animation()
 	notransform = TRUE
-	dir = SOUTH
+	set_dir(SOUTH)
 	var/obj/effect/temp_visual/decoy/fading/fivesecond/ANM = new /obj/effect/temp_visual/decoy/fading/fivesecond(loc, src)
 	ANM.layer = layer - 0.01
 	new /obj/effect/temp_visual/small_smoke(loc)

@@ -20,44 +20,44 @@
 	for(var/atom/movable/screen/pai/button in hud_used?.other) // a pAI nobody plays has no hud
 		if(button.name == "medical records")
 			if(soft_mr)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "security records")
 			if(soft_sr)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "door jack")
 			if(soft_dj)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "atmosphere sensor")
 			if(soft_as)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "remote signaler")
 			if(soft_si)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "universal translator")
 			if(soft_ut && translator_on)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "ar hud")
 			if(soft_ar && paiHUD)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "death alarm")
 			if(soft_da && paiDA)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 
 /mob/living/silicon/pai/verb/wipe_software()
 	set name = "Enter Storage"

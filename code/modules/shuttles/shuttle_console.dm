@@ -240,4 +240,4 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control)
 	else
 		set_info("<center><h2>Daily Docking Codes</h2></center><br>The docking codes for this shift are '[dockingcodes]'.<br>These codes are secret, as they will allow hostile shuttles to dock with impunity if discovered.<br>")
 	info_links = info
-	icon_state = "paper_words"
+	set_icon_state("paper_words")

@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 			src.up = !src.up
 			set_body_parts_covered(worn_of(src).covers | ((EYES|FACE)))
 			set_flags_inv(worn_of(src).hides | ((HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
-			icon_state = base_state
+			set_icon_state(base_state)
 			flash_protection = FLASH_PROTECTION_MAJOR
 			tint = initial(tint)
 			to_chat(user, "You flip the [src] down to protect your eyes.")
@@ -64,7 +64,7 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 			src.up = !src.up
 			set_body_parts_covered(worn_of(src).covers & (~(EYES|FACE)))
 			set_flags_inv(worn_of(src).hides & (~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
-			icon_state = "[base_state]up"
+			set_icon_state("[base_state]up")
 			flash_protection = FLASH_PROTECTION_NONE
 			tint = TINT_NONE
 			to_chat(user, "You push the [src] up out of your face.")
@@ -154,11 +154,11 @@ CAPABILITIES(/obj/item/clothing/head/cakehat)
 	if (onfire)
 		set_force(3)
 		injury_kind = INJURY_BURN
-		icon_state = "cake1"
+		set_icon_state("cake1")
 	else
 		set_force(null)
 		injury_kind = INJURY_BLUNT
-		icon_state = "cake0"
+		set_icon_state("cake0")
 	return
 
 /*
@@ -178,10 +178,10 @@ CAPABILITIES(/obj/item/clothing/head/ushanka)
 /obj/item/clothing/head/ushanka/proc/ushanka_flaps_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]up"
+		set_icon_state("[icon_state]up")
 		to_chat(user, "You raise the ear flaps on the ushanka.")
 	else
-		src.icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		to_chat(user, "You lower the ear flaps on the ushanka.")
 	return OP_OK
 

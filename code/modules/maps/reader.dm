@@ -71,6 +71,9 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 	var/zcrd
 	var/gridLines
 
+/// A parsed map is cached for the whole round (GLOB.cached_maps): nothing deletes one, so it counts as never-deleted.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/parsed_map)
+
 /datum/parsed_map
 	var/original_path
 	var/map_format

@@ -202,6 +202,11 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 			return row
 	return null
 
+/// The hold row of (stat, source, key) on `E`, or null when `E` holds none. The record is the engine's own state: callers outside the engine ask here.
+/proc/stat_hold_row_of(datum/E, stat_id, source, key = null)
+	var/datum/stat_record/rec = isdatum(E) ? E.rx?.stats : null
+	return rec ? stat_hold_find(rec, stat_id, source, key) : null
+
 /// Releases `source`'s hold on a stat (SRC_ALL drops every source's); on a SUM_PER_KEY stat `key` limits it to that key (null: every key of the source). TRUE when something was released.
 /proc/release(datum/E, stat, source, key = null)
 	OP_PURE_GUARD("a hold on [E?.type] was released")

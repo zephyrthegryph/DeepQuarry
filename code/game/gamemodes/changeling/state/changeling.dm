@@ -16,6 +16,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/make_hud_button = TRUE // Is this ability significant enough to dedicate screen space for a HUD button?
 	var/ability_icon_state = null // icon_state for icons for the ability HUD.  Must be in screen_spells.dmi.
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/power/changeling)
 /datum/power/changeling
 	var/allowduringlesserform = FALSE
 	var/genomecost = 500000 // Cost for the changeling to evolve this power.

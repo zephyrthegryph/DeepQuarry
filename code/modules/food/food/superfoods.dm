@@ -221,7 +221,7 @@ CAPABILITIES(/obj/structure/thecake)
 			consume(W, user)
 			stage++
 			desc = desclist[stage]
-			icon_state = "thecake_finished"
+			set_icon_state("thecake_finished")
 			edible = 1
 			name = "The Infinity Cake!"
 		else if(stage == maxstages)
@@ -231,7 +231,7 @@ CAPABILITIES(/obj/structure/thecake)
 			consume(W, user)
 			stage++
 			desc = desclist[stage]
-			icon_state = "thecake_stage-[stage]"
+			set_icon_state("thecake_stage-[stage]")
 		else
 			to_chat(user, span_warning("Hmm, doesnt seem like this layer is supposed to be added there?"))
 	return OP_PASS
@@ -504,7 +504,7 @@ CAPABILITIES(/obj/structure/chaoscake)
 			else
 				to_chat(user, span_notice("You cut a slice of the cake. The slice looks like the cake was just baked, and you can see before your eyes as the spot where you cut the slice slowly regenerates!"))
 				slices = slices - 1
-				icon_state = "chaoscake-[slices]"
+				set_icon_state("chaoscake-[slices]")
 				new /obj/item/reagent_containers/food/snacks/chaoscakeslice(src.loc)
 
 		else
@@ -517,7 +517,7 @@ CAPABILITIES(/obj/structure/chaoscake)
 			consume(W, user)
 			stage++
 			desc = desclist2[stage]
-			icon_state = "chaoscake-6"
+			set_icon_state("chaoscake-6")
 			edible = 1
 			name = "The Chaos Cake!"
 		else if(stage == maxstages)
@@ -527,7 +527,7 @@ CAPABILITIES(/obj/structure/chaoscake)
 			consume(W, user)
 			stage++
 			desc = desclist2[stage]
-			icon_state = "chaoscake_stage-[stage]"
+			set_icon_state("chaoscake_stage-[stage]")
 		else
 			to_chat(user, span_warning("Hmm, doesnt seem like this layer is supposed to be added there?"))
 	return OP_PASS

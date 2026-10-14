@@ -146,7 +146,8 @@
 	else if(parser.curToken().value=="{" && istype(parser.curToken(), /datum/token/symbol))
 		rel_set(def, nameof(def.block), new /datum/node/BlockDefinition/FunctionBlock)
 		LAZYADD(parser.curBlock().statements, def)
-		parser.curBlock().functions[def.func_name]=def
+		var/datum/node/BlockDefinition/enclosing = parser.curBlock()
+		rel_add(enclosing, nameof(enclosing.functions), def, def.func_name)
 		parser.AddBlock(def.block)
 	else
 		rel_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))

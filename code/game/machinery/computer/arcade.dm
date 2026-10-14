@@ -1246,7 +1246,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 		play_sfx(src, SFX_ARCADE_STEAL, ignore_walls = FALSE)
 	else if(gamepaid == 1)
 		gameStatus = "CLAWMACHINE_ON"
-		icon_state = "clawmachine_new_move"
+		set_icon_state("clawmachine_new_move")
 		instructions = "Guide the claw to the prize you want!"
 		wintick = 0
 
@@ -1285,7 +1285,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 		winscreen = "Aw, shucks. Try again!"
 	wintick = 0
 	set_gamepaid(0)
-	icon_state = "clawmachine_new"
+	set_icon_state("clawmachine_new")
 	gameStatus = "CLAWMACHINE_END"
 
 /obj/machinery/computer/arcade/clawmachine/proc/on_emag(datum/act/op/A)

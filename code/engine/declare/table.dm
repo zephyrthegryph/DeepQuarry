@@ -23,6 +23,7 @@
 	/// The key extend/configure/without address it by: its own key =, namespaced by the capability for an op.
 	var/eff_key
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_table)
 /// One type's compiled table. Read-only after build: never write one.
 /datum/type_table
 	var/owner_type
@@ -114,7 +115,7 @@ GLOBAL_VAR(declare_report_capture)
 	return T
 
 /proc/table_build(datum/D)
-	var/list/chain = list()
+	var/list/chain = list(new /datum/entry/skip_built)
 	D.declared_entries(chain)
 	var/list/blocks = table_split_blocks(chain)
 	var/datum/type_table/T = null
@@ -133,6 +134,15 @@ GLOBAL_VAR(declare_report_capture)
 		T = table_compile(D.type, T, null, null)
 	type_table_cache()[D.type] = T
 	return T
+
+/// The first item of the chain table_build() asks declared_entries() for: a block whose table is already compiled adds its marker and nothing
+/// else (the generated `declare_block_skipped(into, T)`), because table_build() only reads the entries of blocks it has not compiled. A chain
+/// without it (profile_sets_of(), tests) gets every block's entries.
+/datum/entry/skip_built
+	kind = "skip_built"
+
+/proc/declare_block_skipped(list/into, block_type)
+	return length(into) && istype(into[1], /datum/entry/skip_built) && !isnull(type_blocks_cache()[block_type])
 
 /// A declared_entries() chain split at its blocks: list(list(block, entries), ...) in order.
 /proc/table_split_blocks(list/chain)

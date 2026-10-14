@@ -20,7 +20,7 @@
 	var/material_temperature = SSair?.initialized ? get_temperature() : initial_temperature
 	var/list/facts = wall_material_facts(material_temperature)
 	var/missing = max_integrity - get_integrity()
-	max_integrity = facts[WALL_FACT_INTEGRITY]
+	set_max_integrity(facts[WALL_FACT_INTEGRITY])
 	update_integrity(max(1, max_integrity - missing))
 	explosion_resistance = facts[WALL_FACT_EXPLOSION]
 	thermal_conductivity = facts[WALL_FACT_CONDUCTIVITY]
@@ -70,7 +70,7 @@ DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material
 
 /// Gives the wall these materials (the tracked material and reinforcement redraw it and make the walls around it join it again).
 /turf/simulated/wall/proc/apply_materials(datum/material/newmaterial, datum/material/newrmaterial, datum/material/newgmaterial)
-	set_material(newmaterial)
+	rel_set(src, nameof(material), newmaterial)
 	set_reinf_material(newrmaterial)
 	if(!newgmaterial)
 		girder_material = DEFAULT_WALL_MATERIAL

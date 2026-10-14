@@ -339,7 +339,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 	var/obj/item/reagent_containers/pill/P = new(loc)
 	P.name = "[answer] pack"
 	P.desc = "A small condiment pack. The label says it contains [answer]."
-	P.icon_state = "bouilloncube"//Reskinned monkey cube
+	P.set_icon_state("bouilloncube")//Reskinned monkey cube
 	reagents.trans_to_obj(P, 10)
 	return TRUE
 
@@ -363,7 +363,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 		P.name = "[answer] pill"
 		P.pixel_x = rand(-7, 7) // Random position
 		P.pixel_y = rand(-7, 7)
-		P.icon_state = "pill[pillsprite]"
+		P.set_icon_state("pill[pillsprite]")
 		if(P.icon_state in list("pill1", "pill2", "pill3", "pill4")) // if using greyscale, take colour from reagent
 			P.color = reagents.get_color()
 		reagents.trans_to_obj(P, amount_per_pill)
@@ -424,7 +424,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 		P.name = "[answer] bottle"
 		P.pixel_x = rand(-7, 7) // random position
 		P.pixel_y = rand(-7, 7)
-		P.icon_state = "bottle-[bottlesprite]" || "bottle-1"
+		P.set_icon_state("bottle-[bottlesprite]" || "bottle-1")
 		reagents.trans_to_obj(P, amount_per_bottle)
 	return TRUE
 

@@ -129,9 +129,9 @@ CAPABILITIES(/datum/plane_holder)
 	//Invisibility-managed
 	if(invis_toggle)
 		if(want && invisibility)
-			invisibility = INVISIBILITY_NONE //Does not need a mouse_opacity toggle because these are for effects
+			set_invisibility(INVISIBILITY_NONE) //Does not need a mouse_opacity toggle because these are for effects
 		else if(!want && !invisibility)
-			invisibility = INVISIBILITY_ABSTRACT
+			set_invisibility(INVISIBILITY_ABSTRACT)
 	//Alpha-managed
 	else
 		if(want && !alpha)

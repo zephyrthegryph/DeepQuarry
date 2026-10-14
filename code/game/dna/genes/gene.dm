@@ -1,3 +1,4 @@
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/gene)
 /datum/gene // Traitgenes Removed /dna/ from path... WHY WAS THIS A SUBTYPE OF DNA!? It's taking a huge struct and making 50 of them at startup, growing with every new var and list stuffed in /datum/dna - Willbird
 	// Display name
 	var/name="BASE GENE"

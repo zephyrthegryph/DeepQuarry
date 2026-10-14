@@ -84,49 +84,49 @@
 					after(src, 0.5 SECONDS, PROC_REF(cross_spin), with = list(A, 2, 5))
 					attackcycle = 0
 					parry_chance = 100
-					icon_state = "UPshield_mecha"
+					set_icon_state("UPshield_mecha")
 				if(2)
 					after(src, 0.5 SECONDS, PROC_REF(rising_star), with = list(A, 3, 7))
 					attackcycle = 0
 					parry_chance = 100
-					icon_state = "UPshield_mecha"
+					set_icon_state("UPshield_mecha")
 				if(3)
 					after(src, 0.5 SECONDS, PROC_REF(random_firing), with = list(A, 10, 1, 7))
 					attackcycle = 0
-					icon_state = "shield_mecha"
+					set_icon_state("shield_mecha")
 		if(I_GRAB) //phase2
 			switch(attackcycle)
 				if(1)
 					after(src, 0.5 SECONDS, PROC_REF(dual_spin), with = list(A, 2, 5))
 					attackcycle = 0
 					parry_chance = 100
-					icon_state = "UPshield_mecha"
+					set_icon_state("UPshield_mecha")
 				if(2)
 					after(src, 0.5 SECONDS, PROC_REF(bullet_blossom), with = list(A, 3, 8))
 					attackcycle = 0
 					parry_chance = 100
-					icon_state = "UPshield_mecha"
+					set_icon_state("UPshield_mecha")
 				if(3)
 					after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), with = list(A, 10, 1, 7))
 					attackcycle = 0
-					icon_state = "shield_mecha"
+					set_icon_state("shield_mecha")
 		if(I_DISARM) //phase3
 			switch(attackcycle)
 				if(1)
 					after(src, 0.5 SECONDS, PROC_REF(dual_spin), with = list(A, 2, 4))
 					attackcycle = 0
 					parry_chance = 100
-					icon_state = "UPshield_mecha"
+					set_icon_state("UPshield_mecha")
 				if(2)
 					after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), with = list(A, 3, 15))
 					attackcycle = 0
 					parry_chance = 100
-					icon_state = "UPshield_mecha"
+					set_icon_state("UPshield_mecha")
 				if(3)
 					after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), with = list(A, 10, 1, 5))
 					attackcycle = 0
 					parry_chance = 0
-					icon_state = "shield_mecha"
+					set_icon_state("shield_mecha")
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/janus
 	name = "astral collective janus"

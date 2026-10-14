@@ -45,7 +45,7 @@
 
 /obj/machinery/crystal/proc/randomize_color()
 	if(prob(30))
-		icon_state = "crystal2"
+		set_icon_state("crystal2")
 		set_glow(src, GLOW(3, 3, "#CC00CC"))
 	else
 		set_glow(src, GLOW(3, 3, "#33CC33"))
@@ -65,7 +65,7 @@
 
 /obj/machinery/crystal/ice/randomize_color()
 	if(prob(30))
-		icon_state = "icecrystal1"
+		set_icon_state("icecrystal1")
 	set_glow(src, GLOW(3, 3, "#C4FFFF"))
 
 // Magma crystals.
@@ -85,7 +85,7 @@
 
 /obj/machinery/crystal/lava/randomize_color()
 	if(prob(50))
-		icon_state = "grey_crystal2"
+		set_icon_state("grey_crystal2")
 
 	if(prob(30))
 		color = "#E03131"

@@ -2,6 +2,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 /// The process_mob() result asking for a vore panel update. Shared, read-only.
 GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/digest_mode)
 /datum/digest_mode
 	var/id = DM_HOLD
 	var/noise_chance = 0

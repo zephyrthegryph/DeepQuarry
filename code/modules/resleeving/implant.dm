@@ -72,7 +72,7 @@ CAPABILITIES(/obj/item/backup_implanter)
 	update()
 
 /obj/item/backup_implanter/proc/update()
-	icon_state = "[initial(icon_state)][LAZYLEN(imps)]"
+	set_icon_state("[initial(icon_state)][LAZYLEN(imps)]")
 	germ_level = 0
 
 /// Old attack_self.
