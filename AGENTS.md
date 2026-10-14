@@ -194,6 +194,9 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
 `BUN_RUNTIME_TRANSPILER_CACHE_PATH=0` (Bun's shared cache once built a sibling worktree);
 `build.ts` refuses to run if its root differs from the invoking worktree's toplevel.
 
+- **Native compiler (opt-in).** `DQ_COMPILER=native` (after `tools/build/build.sh dmbc` once) compiles with the in-tree Rust
+  compiler `tools/dmb` through a resident daemon instead of DreamMaker; `DQ_COMPILER_STRICT=1` forbids the DreamMaker fallback.
+  The default is still DreamMaker. See `doc/testing.md` "Native compiler (incremental)" and `doc/rewrite/native_compiler_issues.md`.
 - **Icon repack** (`tools/dq_icons/`): `png` + `dmi.toml` into `icons/gen/`, dirty-checked.
   A fresh worktree seeds `icons/gen/` from the main checkout's copy (or `DQ_ICON_SEED`), so only
   changed icons repack. The repack pool is 4 workers (`DQ_ICON_WORKERS`), and the repack exits with
