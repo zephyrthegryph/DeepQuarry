@@ -209,12 +209,6 @@
 			. += "[trigger] | turf: -[row] x[lost]"
 	if(!length(.))
 		. += "[trigger] | nothing"
-	// Capture the immediate hit result before settling its real explosion epoch.
-	for(var/attempt in 1 to 200)
-		if(!SSexplosions.has_work())
-			break
-		wait_ticks(1)
-	TEST_ASSERT(!SSexplosions.has_work(), "[type] [trigger] left explosion work after 200 real ticks")
 	if(!QDELETED(target))
 		qdel(target)
 	own_turf_contents(T)
@@ -224,6 +218,7 @@
 
 /datum/unit_test/dq_hit_pin/Run()
 	set_global(nameof(GLOB.act_last_reply), GLOB.act_last_reply)
+	TEST_ASSERT(!SSexplosions.has_work(), "hit capture started with unrelated explosion work")
 	var/list/bad = list()
 	var/list/expected_by_type = dq_snapshot_read_dir(DQ_HIT_PIN_DIR, bad)
 	if(!length(expected_by_type) && !length(bad))
@@ -247,9 +242,17 @@
 				rows += "[trigger] | runtime while capturing: [captured.name]"
 		sortTim(rows, GLOBAL_PROC_REF(cmp_text_asc))
 		actual_by_type[type] = rows
+	// Keep all immediate captures unchanged, then settle this fixture's epochs,
+	// including work submitted by target destruction, before room restoration.
+	for(var/attempt in 1 to 200)
+		if(!SSexplosions.has_work())
+			break
+		wait_ticks(1)
+	TEST_ASSERT(!SSexplosions.has_work(), "hit capture explosion work did not finish within 200 real ticks")
 	if(room.has_gravity != room_gravity)
 		room.gravitychange(room_gravity)
-	own_turf_contents(T)
+	for(var/turf/B as anything in block_turfs(test_block))
+		own_turf_contents(B)
 	var/report = dq_snapshot_compare(DQ_HIT_PIN_DIR, "hit_pins", actual_by_type, expected_by_type, bad)
 	TEST_ASSERT(isnull(report), report)
 
