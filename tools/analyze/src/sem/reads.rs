@@ -583,7 +583,7 @@ impl<'a> ReadsEngine<'a> {
             return VarClass::Constant;
         }
         // a `var/const` never changes, whatever other types name a var the same
-        if !written.is_written(var) || self.sem.var_decl(owner, var).map(|v| v.is_const).unwrap_or(false) {
+        if !written.is_written_on(self.sem, owner, var) || self.sem.var_decl(owner, var).map(|v| v.is_const).unwrap_or(false) {
             return VarClass::Constant;
         }
         VarClass::Unknown
@@ -678,6 +678,8 @@ impl Decls {
 #[derive(Default)]
 pub struct WriteIndex {
     written: HashSet<String>,
+    declared_written: HashSet<(String, String)>,
+    unresolved_written: HashSet<String>,
 }
 
 impl WriteIndex {
@@ -685,16 +687,93 @@ impl WriteIndex {
         self.written.contains(var)
     }
 
+    /// A proved field write affects that declaration and its inherited users. An
+    /// unresolved receiver retains the old conservative name-wide fallback.
+    pub fn is_written_on(&self, sem: &Sem, owner: &str, var: &str) -> bool {
+        if self.unresolved_written.contains(var) { return true; }
+        let Some(declarer) = sem.var_owner(owner, var) else { return self.is_written(var) };
+        self.declared_written.contains(&(declarer, var.to_string()))
+    }
+
     pub fn build(sem: &Sem) -> WriteIndex {
         let procs: Vec<ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin()).collect();
         // Plain threads, not rayon: this runs under a memo init (see `par_map`).
-        let sets: Vec<HashSet<String>> = super::par_map(&procs, |p| proc_writes(*p));
+        let sets: Vec<ScopedWrites> = super::par_map(&procs, |p| scoped_proc_writes(sem, *p));
         let mut w = WriteIndex::default();
         for s in sets {
-            w.written.extend(s);
+            w.written.extend(s.names);
+            w.declared_written.extend(s.declared);
+            w.unresolved_written.extend(s.unresolved);
         }
         w
     }
+}
+
+#[derive(Default)]
+struct ScopedWrites {
+    names: HashSet<String>,
+    declared: HashSet<(String, String)>,
+    unresolved: HashSet<String>,
+}
+
+/// Resolve only the self receiver we can prove without a second expression walk.
+/// Foreign receivers, deeper paths, dynamic access and uncertain locals keep the
+/// existing name-wide result. This does not infer constants from a naming convention.
+fn scoped_proc_writes(sem: &Sem, p: ProcRef) -> ScopedWrites {
+    let body = sem.proc_body(p);
+    let names = proc_writes(p);
+    let mut out = ScopedWrites { names, ..Default::default() };
+    if matches!(body.name.as_str(), "New" | "Initialize" | "initialize" | "Init") { return out; }
+    let Some(code) = body.code else { return out };
+    let mut locals: HashSet<String> = body.params.iter().map(|p| p.name.to_string()).collect();
+    fn collect_locals(code: &Block, locals: &mut HashSet<String>) {
+        for stmt in code {
+            match &stmt.elem {
+                Statement::Var(v) => { locals.insert(v.name.to_string()); }
+                Statement::Vars(vs) => for v in vs { locals.insert(v.name.to_string()); },
+                Statement::ForList(v) => { locals.insert(v.name.to_string()); }
+                Statement::ForKeyValue(v) => { locals.insert(v.key.to_string()); locals.insert(v.value.to_string()); }
+                _ => {}
+            }
+            for child in stmt_blocks(&stmt.elem) { collect_locals(child, locals); }
+        }
+    }
+    collect_locals(code, &mut locals);
+    let mut seen = HashSet::new();
+    let mut record = |expr: &Expression| {
+        let expr = strip_parens(expr);
+        let Some(name) = lvalue_name(expr) else { return };
+        seen.insert(name.clone());
+        let Expression::Base { term, follow } = expr else { out.unresolved.insert(name); return };
+        let mut end = follow.len();
+        while end > 0 && matches!(follow[end - 1].elem, Follow::Index(..)) { end -= 1; }
+        let self_field = match (&term.elem, &follow[..end]) {
+            (Term::Ident(root), []) => root.as_str() != "src" && !locals.contains(root),
+            (Term::Ident(root), [field]) => root.as_str() == "src" && matches!(field.elem, Follow::Field(..)),
+            _ => false,
+        };
+        if self_field {
+            if let Some(declarer) = sem.var_owner(&body.owner, &name) {
+                out.declared.insert((declarer, name));
+                return;
+            }
+        }
+        out.unresolved.insert(name);
+    };
+    super::ast::walk_block(code, &mut |e, _| {
+        if let Expression::AssignOp { lhs, .. } = e { record(lhs); }
+        if let Expression::Base { term, follow } = e {
+            if let Some(last) = follow.last() {
+                if matches!(last.elem, Follow::Unary(dreammaker::ast::UnaryOp::PreIncr | dreammaker::ast::UnaryOp::PostIncr | dreammaker::ast::UnaryOp::PreDecr | dreammaker::ast::UnaryOp::PostDecr)) {
+                    let lhs = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into() };
+                    record(&lhs);
+                }
+            }
+        }
+    });
+    // Keep every unsupported existing write shape conservative.
+    out.unresolved.extend(out.names.difference(&seen).cloned());
+    out
 }
 
 /// The var names one proc's body writes (a constructor's writes are init and do not count).
@@ -2235,5 +2314,89 @@ TRACKED(/obj/lamp, charge)
         assert!(!unbounded.keys().contains("loc.lit"), "and it is not followed");
         // The legacy walk still calls the container a hop that is not a relation only when it is not a kind: it is one now.
         std::fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod scoped_write_index_tests {
+    use super::*;
+    use crate::tree::{SourceFile, Tree};
+
+    const BASE: &str = r#"
+#define CAPABILITIES(T...)
+#define ref_one(V,T)
+/datum/look
+/datum/material
+    var/icon_base = "metal"
+/datum/flooring
+    var/icon_base = "grass"
+/obj/beacon
+    var/icon_base = "beacon"
+/obj/beacon/proc/set_icon_base(value)
+    src.icon_base = value
+/obj/floor_probe
+    var/datum/flooring/flooring
+CAPABILITIES(/obj/floor_probe, ref_one(nameof(flooring), /datum/flooring))
+/obj/floor_probe/draw(datum/look/look)
+    return flooring.icon_base
+/obj/wall_probe
+    var/datum/material/material
+CAPABILITIES(/obj/wall_probe, ref_one(nameof(material), /datum/material))
+/obj/wall_probe/draw(datum/look/look)
+    return material.icon_base
+"#;
+
+    fn fixture(extra: &str) -> (tempfile::TempDir, Tree) {
+        let dir = tempfile::tempdir_in(std::env::current_dir().unwrap()).unwrap();
+        std::fs::create_dir_all(dir.path().join("code/content")).unwrap();
+        let source = format!("{BASE}\n{extra}");
+        std::fs::write(dir.path().join("code/content/probe.dm"), &source).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/probe.dm", &source)]);
+        tree.root = dir.path().to_path_buf();
+        (dir, tree)
+    }
+
+    fn material_class(tree: &Tree) -> VarClass {
+        let sem = super::super::sem_for(tree).expect("real semantic fixture");
+        let decls = Decls::get(tree);
+        let ann = Annotations::get(&sem, &decls);
+        let engine = ReadsEngine::new(&sem, &decls, &ann).closed();
+        engine.classify("/datum/material", "icon_base", &WriteIndex::build(&sem))
+    }
+
+    #[test]
+    fn unrelated_beacon_setter_does_not_mutate_material_or_flooring_declarations() {
+        let (_dir, tree) = fixture("");
+        let sem = super::super::sem_for(&tree).unwrap();
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let engine = ReadsEngine::new(&sem, &decls, &ann).closed();
+        let writes = WriteIndex::build(&sem);
+        assert!(writes.is_written("icon_base"), "legacy name-wide queries remain conservative");
+        assert_eq!(engine.classify("/obj/beacon", "icon_base", &writes), VarClass::Unknown);
+        assert_eq!(engine.classify("/datum/material", "icon_base", &writes), VarClass::Constant);
+        assert_eq!(engine.classify("/datum/flooring", "icon_base", &writes), VarClass::Constant);
+        let deps = crate::gens::deps::analyzed(&tree);
+        let deps = deps.as_ref().as_ref().unwrap();
+        for key in ["/obj/floor_probe::draw", "/obj/wall_probe::draw"] {
+            assert!(deps.draws.contains(key), "the real closed generator must discover {key}");
+            assert!(deps.consumers[key].is_empty(), "an unrelated writer must not add a generated untracked input: {:?}", deps.consumers[key]);
+        }
+    }
+
+    #[test]
+    fn direct_and_inherited_runtime_writers_still_refuse_constant_proof() {
+        let (_dir, tree) = fixture("/datum/material/proc/change()\n    icon_base = \"changed\"\n");
+        assert_eq!(material_class(&tree), VarClass::Unknown);
+        let (_dir, tree) = fixture("/datum/material/child/proc/change()\n    src.icon_base = \"changed\"\n");
+        assert_eq!(material_class(&tree), VarClass::Unknown);
+    }
+
+    #[test]
+    fn unknown_receiver_keeps_name_wide_fallback_and_constructor_only_stays_constant() {
+        let (_dir, tree) = fixture("/proc/change_unknown(receiver)\n    receiver.icon_base = \"changed\"\n");
+        assert_eq!(material_class(&tree), VarClass::Unknown);
+        let (_dir, tree) = fixture("/datum/material/New()\n    src.icon_base = \"initialized\"\n");
+        assert_eq!(material_class(&tree), VarClass::Constant);
     }
 }
