@@ -31,7 +31,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 /obj/item/archaeological_find/proc/excavate_find()
 	var/item_type = "object"
 	var/secondary_item_type = "object"
-	icon_state = "unknown[rand(1,4)]"
+	set_icon_state("unknown[rand(1,4)]")
 	var/additional_desc = "" //Description for the item we find!
 	var/secondary_item_desc = "" //Description for the secondary item that can be found
 	var/obj/item/new_item //The item we're finding!
@@ -97,9 +97,9 @@ CAPABILITIES(/obj/item/archaeological_find)
 			additional_desc = "It [pick("whispers faintly","makes a quiet roaring sound","whistles softly","thrums quietly","throbs")] if you put it to your ear."
 		if(ARCHAEO_STATUETTE)
 			name = "statuette"
-			icon = 'icons/obj/xenoarchaeology.dmi'
+			set_icon('icons/obj/xenoarchaeology.dmi')
 			item_type = "statuette"
-			icon_state = "statuette[rand(1,3)]"
+			set_icon_state("statuette[rand(1,3)]")
 			additional_desc = "It depicts a [pick("small","ferocious","wild","pleasing","hulking")] \
 			[pick("alien figure","rodent-like creature","reptilian alien","primate","unidentifiable object")] \
 			[pick("performing unspeakable acts","posing heroically","in a fetal position","cheering","sobbing","making a plaintive gesture","making a rude gesture")]. \
@@ -107,9 +107,9 @@ CAPABILITIES(/obj/item/archaeological_find)
 			new_item = new /obj/item/vampiric(src.loc) //Possibly make multiple subtypes of this?
 		if(ARCHAEO_INSTRUMENT)
 			name = "instrument"
-			icon = 'icons/obj/xenoarchaeology.dmi'
+			set_icon('icons/obj/xenoarchaeology.dmi')
 			item_type = "instrument"
-			icon_state = "instrument"
+			set_icon_state("instrument")
 			var/possible_object_paths = list()
 			possible_object_paths += subtypesof(/obj/item/instrument)
 			var/new_instrument = pick(possible_object_paths)
@@ -193,7 +193,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			possible_object_paths += subtypesof(/obj/item/tank)
 			var/new_tank = pick(possible_object_paths)
 			new_item = new new_tank(src.loc)
-			icon_state = pick("oxygen","oxygen_fr","oxygen_f","phoron","anesthetic")
+			set_icon_state(pick("oxygen","oxygen_fr","oxygen_f","phoron","anesthetic"))
 			additional_desc = "It [pick("gloops","sloshes")] slightly when you shake it."
 
 		if(ARCHAEO_TOOL)
@@ -238,8 +238,8 @@ CAPABILITIES(/obj/item/archaeological_find)
 			if(istype(new_item, /obj/item/pen/reagent/sleepy))
 				additional_desc = "It sloshes when you move it around."
 			if(prob(30))
-				icon = 'icons/obj/xenoarchaeology.dmi'
-				icon_state = "pen1"
+				set_icon('icons/obj/xenoarchaeology.dmi')
+				set_icon_state("pen1")
 				apply_image_decorations = TRUE
 
 		if(ARCHAEO_CRYSTAL)
@@ -247,17 +247,17 @@ CAPABILITIES(/obj/item/archaeological_find)
 				become_anomalous = TRUE
 			apply_prefix = FALSE
 			if(prob(25))
-				icon = 'icons/obj/xenoarchaeology.dmi'
+				set_icon('icons/obj/xenoarchaeology.dmi')
 				item_type = "smooth green crystal"
-				icon_state = "Green lump"
+				set_icon_state("Green lump")
 			else if(prob(33))
-				icon = 'icons/obj/xenoarchaeology.dmi'
+				set_icon('icons/obj/xenoarchaeology.dmi')
 				item_type = "irregular purple crystal"
-				icon_state = "Phazon"
+				set_icon_state("Phazon")
 			else
-				icon = 'icons/obj/xenoarchaeology.dmi'
+				set_icon('icons/obj/xenoarchaeology.dmi')
 				item_type = "rough red crystal"
-				icon_state = "changerock"
+				set_icon_state("changerock")
 			additional_desc = pick("It shines faintly as it catches the light.","It appears to have a faint inner glow.","It seems to draw you inward as you look it at.","Something twinkles faintly as you look at it.","It's mesmerizing to behold.")
 			apply_material_decorations = FALSE
 			if(prob(10))
@@ -441,8 +441,8 @@ CAPABILITIES(/obj/item/archaeological_find)
 			//humanoid remains
 			apply_prefix = FALSE
 			item_type = "humanoid organ"
-			icon = 'icons/effects/blood.dmi'
-			icon_state = "remains"
+			set_icon('icons/effects/blood.dmi')
+			set_icon_state("remains")
 			apply_image_decorations = FALSE
 			apply_material_decorations = FALSE
 
@@ -472,8 +472,8 @@ CAPABILITIES(/obj/item/archaeological_find)
 			//robot remains
 			apply_prefix = FALSE
 			item_type = "Alien cybernetic pod"
-			icon = 'icons/mob/robots.dmi'
-			icon_state = "remainsrobot"
+			set_icon('icons/mob/robots.dmi')
+			set_icon_state("remainsrobot")
 			apply_image_decorations = FALSE
 			apply_material_decorations = FALSE
 			new_item = new /obj/structure/ghost_pod/manual/lost_drone/dogborg(src.loc) //We find a lost drone pod!
