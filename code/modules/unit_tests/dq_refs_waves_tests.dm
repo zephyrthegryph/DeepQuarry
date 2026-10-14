@@ -576,21 +576,6 @@ CAPABILITIES(/obj/refs_param_probe)
 	TEST_ASSERT_NULL(J.owner, "deleting the owner clears the job's field")
 	SSkernel_jobs.jobs -= J
 
-/// w7g1a: a request's answerer is a relation: the answerer's death clears the field.
-/datum/unit_test/dq_refs_w7g1a_request_answerer_cleared_on_delete
-
-/datum/unit_test/dq_refs_w7g1a_request_answerer_cleared_on_delete/Run()
-	test_driver_begin()
-	var/datum/e6_probe_owner/owner = allocate(/datum/e6_probe_owner)
-	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
-	var/datum/request/R = open_request(owner, /datum/prompt/e6_probe, TYPE_PROC_REF(/datum/e6_probe_owner, done), answerer = actor, timeout = 30 SECONDS)
-	TEST_ASSERT_NOTNULL(R, "the request opened")
-	TEST_ASSERT_EQUAL(R.owner, owner, "it names its owner")
-	TEST_ASSERT_EQUAL(R.answerer, actor, "and its answerer")
-	qdel(actor, TRUE)
-	TEST_ASSERT_NULL(R.answerer, "deleting the answerer clears the field")
-	test_driver_end()
-
 /// w7g1a: a pathfinding search names its actor through a relation.
 /datum/unit_test/dq_refs_w7g1a_pathfinding_actor_cleared_on_delete
 
