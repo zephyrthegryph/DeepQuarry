@@ -4106,3 +4106,12 @@ world_reads	code/modules/vehicles/train.dm	for(var/obj/vehicle/train/T in orange
 world_reads	code/modules/xenoarcheaology/finds/find_spawning.dm	currently_banned_chems += GLOB.obtainable_chemical_blacklist
 world_reads	code/modules/xenoarcheaology/tools/artifact_harvester.dm	rel_set(src, nameof(owned_scanner), locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
 world_reads	maps/common/common_shuttles_crew.dm	GLOB.shuttdisp_list |= src //Populates the global list for the roundstart hook.
+init_lines	code/game/objects/structures/props/machines.dm	mask.set_icon(icon)
+init_lines	code/modules/holomap/mapper.dm	mark.set_icon('icons/effects/64x64.dmi')
+init_lines	code/modules/holomap/mapper.dm	tmp.set_icon(canvas)
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
