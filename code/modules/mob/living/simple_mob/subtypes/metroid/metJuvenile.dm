@@ -143,6 +143,7 @@ TRACKED(/mob/living/simple_mob/metroid/juvenile, consuming)
 
 //Code to remove metroid from someone
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile)
+	ref_one(nameof(victim), /mob/living)
 	op("metroid_juvenile_hand", hand(), ungated(), then(PROC_REF(metroid_juvenile_interaction_hand)))
 
 /// Old attack_hand: wrestle it off its victim.

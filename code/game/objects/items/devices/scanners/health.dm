@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/healthanalyzer)
 	if(ishuman(A.actor))
 		var/mob/living/carbon/human/H = A.actor
 		var/datum/xenochimera/state = H.xenochimera
-		return (!state?.feral && H.species?.has_fine_manipulation) ? null : span_warning("You don't have the dexterity to do this!") // ALLOW(reads): current dexterity is queried before instant scanning; advisory menu state cannot authorize an effect because the requirement is checked again
+		return (!state?.feral && H.species?.has_fine_manipulation) ? null : span_warning("You don't have the dexterity to do this!")
 	if(istype(A.actor, /mob/living/silicon))
 		return null
 	if(istype(A.actor, /mob/living/simple_mob))

@@ -167,7 +167,7 @@
 	if(site.flight_destination_id)
 		SSflight?.unregister_destination(site.flight_destination_id)
 	if(site.origin_console() && site.origin_console().active_expedition() == site)
-		rel_clear(site.origin_console(), nameof(/datum/flight_vessel::active_expedition))
+		rel_clear(site.origin_console(), nameof(/obj/machinery/computer/shuttle_control/explore::active_expedition))
 	if(site.assigned_flight_vessel()?.active_expedition() == site)
 		rel_clear(site.assigned_flight_vessel(), nameof(/datum/flight_vessel::active_expedition))
 	own_clear(site, nameof(site.landing_waypoint), OWN_DELETE)

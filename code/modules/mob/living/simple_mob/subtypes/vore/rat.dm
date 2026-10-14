@@ -104,6 +104,7 @@
 	desc = "In what passes for a hierarchy among verminous rodents, this one is king. It seems to be more interested on scavenging."
 	var/mob/living/carbon/human/food
 	var/hunger = 0
+
 /*
 /mob/living/simple_mob/vore/aggressive/rat/tame/life_type_post_due()
 	return TRUE
@@ -180,6 +181,7 @@
 			food = null
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
+	ref_one(nameof(food), /mob/living/carbon/human)
 	op("tame_rat_interaction_feed", item(/obj/item/reagent_containers/food/snacks), label("Feed"), then(PROC_REF(tame_rat_interaction_feed)))
 
 /// Feed the rat your food to satisfy it.

@@ -48,6 +48,7 @@ CAPABILITIES(/obj/item/electronic_assembly/clothing)
 	var/obj/item/integrated_circuit/built_in/action_button/action_circuit = null
 
 CAPABILITIES(/obj/item/clothing)
+	ref_one(nameof(master_rig), /obj/item/rig)
 	configure(item_protection(siemens = 0.9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 	owns_one(nameof(IC), /obj/item/electronic_assembly/clothing)

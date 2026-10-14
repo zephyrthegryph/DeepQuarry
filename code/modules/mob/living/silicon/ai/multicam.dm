@@ -7,6 +7,7 @@
 	var/mob/observer/eye/aiEye/pic_in_pic/aiEye
 
 CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
+	ref_one(nameof(ai), /mob/living/silicon/ai)
 	owns_one(nameof(aiEye), /mob/observer/eye/aiEye/pic_in_pic, starts = /mob/observer/eye/aiEye/pic_in_pic, starts_args = NO_LOC)
 
 /atom/movable/screen/movable/pic_in_pic/ai/Initialize(mapload)
@@ -194,6 +195,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 // The screen owns its eye (implicit OWN aiEye); `screen` is only the way back (a relation),
 // so ownership stays a tree (tools/ci/ownership_cycle_lint.py).
 CAPABILITIES(/mob/observer/eye/aiEye/pic_in_pic)
+	ref_one(nameof(screen), /atom/movable/screen/movable/pic_in_pic/ai)
 	ref_many(nameof(cameras_telegraphed))
 
 // stops telegraphing to the cameras it watched.

@@ -191,26 +191,26 @@ SYSTEM_DEF(machines)
 		// replace a member's wrapper while preserving its authoritative Rust mix;
 		// resolving a private wrapper var inside the FFI made otherwise valid
 		// queued transfers silently report zero.
-		var/datum/gas_mixture/source = transfer[2]
-		var/datum/gas_mixture/sink = transfer[3]
-		operations[operation_offset + 1] = source.arena_id()
-		operations[operation_offset + 2] = sink.arena_id()
+		operations[operation_offset + 1] = transfer[2]
+		operations[operation_offset + 2] = transfer[3]
 		operations[operation_offset + 3] = transfer[4]
 	var/list/actual_moles = vg_batch_transfer_hook(operations)
 	var/list/touched_turfs = list()
 	for(var/i = 1 to length(pending_pump_transfers))
 		var/list/transfer = pending_pump_transfers[i]
-		var/obj/machinery/atmospherics/M = transfer[1]
+		var/obj/machinery/atmospherics/M = resolve_handle(transfer[1])
 		var/actual = (islist(actual_moles) && i <= length(actual_moles)) ? actual_moles[i] : 0
 		if(!M || QDELETED(M))
 			continue
 		M.pump_transaction_committed(actual)
 		if(actual < MINIMUM_MOLES_TO_PUMP)
 			continue
+		var/datum/gas_mixture/destination = resolve_handle(transfer[8])
+		if(!destination)
+			continue // the sink is gone: no power, flow or turf update for this entry
 		var/source_moles = max(transfer[6], MINIMUM_MOLES_TO_PUMP)
 		M.last_flow_rate = (actual / source_moles) * transfer[7]
 		var/power_draw = transfer[5] * actual
-		var/datum/gas_mixture/destination = transfer[3]
 		M.record_material_pumping(power_draw, destination, actual)
 		M.last_power_draw = power_draw
 		M.use_power(power_draw)

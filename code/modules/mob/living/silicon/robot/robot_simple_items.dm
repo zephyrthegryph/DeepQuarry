@@ -623,6 +623,7 @@ CAPABILITIES(/obj/item/surgical/bioregen/cyborg)
 /// held item of the cyborg's ops (/mob/living/silicon/robot/held_for_ops()), so it puts a cell into an APC through the APC's own insert op and takes
 /// one out through its take op (into a free pocket: carry()). What it may hold is its CONSTRAINT_HOLD.
 CAPABILITIES(/obj/item/gripper)
+	ref_one(nameof(shown_item), /obj/item)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_one(nameof(current_pocket))
 	ref_one(nameof(our_robot))
@@ -819,6 +820,9 @@ CAPABILITIES(/obj/item/storage/internal/gripper)
 /obj/item/reagent_containers/glass/bucket/cyborg
 	var/mob/living/silicon/robot/R
 	var/last_robot_loc
+
+CAPABILITIES(/obj/item/reagent_containers/glass/bucket/cyborg)
+	ref_one(nameof(R), /atom) // Initialize() binds loc.loc: the robot when a module builds it, any place when something else does
 
 /obj/item/reagent_containers/glass/bucket/cyborg/Initialize(mapload)
 	. = ..()

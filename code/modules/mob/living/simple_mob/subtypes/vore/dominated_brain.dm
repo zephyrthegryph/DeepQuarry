@@ -18,6 +18,10 @@
 	var/was_mob
 
 CAPABILITIES(/mob/living/dominated_brain)
+	ref_one(nameof(prey_body), /mob/living)
+	ref_one(nameof(pred_body), /mob/living)
+	ref_one(nameof(prey_mind), /datum/mind)
+	ref_one(nameof(pred_mind), /datum/mind)
 	op("resist_control", menu(button = "Resist Control"), when(PROC_REF(resisting_control)), starts(PROC_REF(resist_control_started)), wait(10 SECONDS), then(PROC_REF(resist_control_done)), on_interrupt(PROC_REF(resist_control_interrupted)))
 	op("resist_control_dominate", menu(button = "Resist Control"), when(PROC_REF(dominating_predator)), then(PROC_REF(resist_control_dominate)))
 	op("return_to_body", menu(button = "Return to Body"), when(PROC_REF(body_is_here)), starts(PROC_REF(return_to_body_started)), wait(10 SECONDS), then(PROC_REF(return_to_body_done)), on_interrupt(PROC_REF(return_to_body_interrupted)))

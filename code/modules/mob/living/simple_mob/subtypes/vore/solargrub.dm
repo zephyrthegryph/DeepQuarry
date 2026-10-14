@@ -62,6 +62,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	glow_override = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/solargrub)
+	ref_one(nameof(attached), /obj/structure/cable)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
 /datum/say_list/solargrub

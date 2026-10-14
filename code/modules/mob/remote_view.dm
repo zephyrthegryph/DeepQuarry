@@ -10,6 +10,8 @@
 	VAR_PROTECTED/atom/remote_view_target
 
 CAPABILITIES(/datum/remote_view)
+	ref_one(nameof(host_mob), /mob)
+	ref_one(nameof(remote_view_target), /atom)
 	owns_one(nameof(settings), /datum/remote_view_config)
 
 /mob
@@ -341,6 +343,9 @@ CAPABILITIES(/datum/remote_view)
 	VAR_PRIVATE/obj/item/host_item
 	VAR_PRIVATE/show_message
 
+CAPABILITIES(/datum/remote_view/item_zoom)
+	ref_one(nameof(host_item), /obj/item)
+
 
 /datum/remote_view/item_zoom/start(atom/focused_on, viewsize, vconfig_path, obj/item/our_item, tileoffset, show_visible_messages)
 	. = ..()
@@ -424,6 +429,9 @@ CAPABILITIES(/datum/remote_view)
  */
 /datum/remote_view/viewer_managed
 	VAR_PRIVATE/datum/view_coordinator // The object whose `viewers` list we join, with look() and unlook() logic (a relation view)
+
+CAPABILITIES(/datum/remote_view/viewer_managed)
+	ref_one(nameof(view_coordinator), /datum)
 
 
 /datum/remote_view/viewer_managed/start(atom/focused_on, viewsize, vconfig_path, datum/coordinator, list/viewer_list)

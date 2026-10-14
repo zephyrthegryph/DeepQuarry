@@ -1,7 +1,7 @@
 
 ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a player character with various 'special treatments' from a list.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target in get_mob_with_client_list())
 	var/datum/eventkit/player_effects/spawner = new()
-	rel_set(spawner, nameof(/datum/accessory_stat_modifier::target), target)
+	rel_set(spawner, nameof(/datum/eventkit/player_effects::target), target)
 	spawner.tgui_interact(user.mob)
 
 /datum/eventkit/player_effects
@@ -255,7 +255,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	shadekin.phase_out(get_turf(shadekin)) //Homf
 	var/datum/shadekin/smite_SK = shadekin.get_shadekin_state()
 	if(smite_SK)
-		smite_SK.dark_energy = initial(smite_SK.dark_energy)
+		smite_SK.set_dark_energy(initial(smite_SK.dark_energy))
 	//For fun: a timed sequence (shadekin_smite_step), nothing sleeps.
 	shadekin_smite_step(shadekin, target(), myself == "Control" ? target().ckey : null, 1)
 
@@ -606,7 +606,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 		return
 	var/change_sight = answer_of(A, "number")
 	if(change_sight)
-		var/datum/species/own_species = rel_private(Tar, nameof(/datum/dna::species)) // PROTO: private copy
+		var/datum/species/own_species = rel_private(Tar, nameof(/mob/living/carbon/human::species)) // PROTO: private copy
 		own_species.darksight = change_sight
 
 /datum/eventkit/player_effects/proc/ui_act_cocoon(datum/act/op/A)
@@ -650,9 +650,9 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	var/energy_new = answer_of(A, "now")
 	if(isnull(energy_max) || isnull(energy_new))
 		return
-	var/datum/species/own_species = rel_private(Tar, nameof(/datum/dna::species)) // PROTO: private copy
+	var/datum/species/own_species = rel_private(Tar, nameof(/mob/living/carbon/human::species)) // PROTO: private copy
 	own_species.lleill_energy_max = energy_max
-	own_species = rel_private(Tar, nameof(/datum/dna::species))
+	own_species = rel_private(Tar, nameof(/mob/living/carbon/human::species))
 	own_species.lleill_energy = energy_new
 
 /datum/eventkit/player_effects/proc/ui_act_lleill_invisibility(datum/act/op/A)
@@ -961,7 +961,7 @@ MSG_DEF_SELF(player_effects/nif_present, "Target already has a NIF.")
 	var/mob/living/L = target()
 	if(!istype(L))
 		return /datum/msg/player_effects/ai_not_living
-	return L.client || L.teleop ? /datum/msg/player_effects/ai_player : null
+	return mob_state_played(L) || L.teleop ? /datum/msg/player_effects/ai_player : null
 
 MSG_DEF_SELF(player_effects/ai_not_living, "This can only be used on instances of type /mob/living")
 MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")

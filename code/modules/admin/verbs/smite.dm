@@ -150,7 +150,7 @@
 			shadekin.phase_out(get_turf(shadekin)) //Homf
 			var/datum/shadekin/smite_SK = shadekin.get_shadekin_state()
 			if(smite_SK)
-				smite_SK.dark_energy = initial(smite_SK.dark_energy)
+				smite_SK.set_dark_energy(initial(smite_SK.dark_energy))
 			//For fun: a timed sequence (shadekin_smite_step), nothing sleeps.
 			shadekin_smite_step(shadekin, target, myself == "Control" ? ckey : null, 1)
 

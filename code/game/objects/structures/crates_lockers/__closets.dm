@@ -425,12 +425,12 @@ CAPABILITIES(/obj/structure/closet)
 	if(!toggle(user))
 		to_chat(user, span_notice("It won't budge!"))
 
-/// The decl that defines what decals the closet shows (its mapped path or one resolved already), or null for a closet with its own icon.
+/// The decl that defines what decals the closet shows (looked up from its mapped path), or null for a closet with its own icon.
 /obj/structure/closet/proc/closet_looks()
 	RETURN_TYPE(/datum/decl/closet_appearance)
 	if(ispath(closet_appearance))
 		return GLOB.closet_appearances[closet_appearance]
-	return closet_appearance
+	return null
 
 /obj/structure/closet/draw(datum/look/look)
 	..()

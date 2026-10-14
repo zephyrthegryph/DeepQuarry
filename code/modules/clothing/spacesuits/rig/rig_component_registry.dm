@@ -40,7 +40,7 @@
 	// Spawn the six physical components
 	if(holder().cell_type)
 		var/new_cell_type_path = holder().cell_type
-		rel_set(holder(), nameof(/obj/mecha::cell), new new_cell_type_path(holder()))
+		rel_set(holder(), nameof(/obj/item/rig::cell), new new_cell_type_path(holder()))
 	if(holder().air_type)
 		var/new_air_type_path = holder().air_type
 		rel_set(holder(), nameof(/obj/item/rig::air_supply), new new_air_type_path(holder()))

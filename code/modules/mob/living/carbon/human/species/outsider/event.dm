@@ -188,32 +188,32 @@ Variables you may want to make use of are:
 	vision_flags ^= SEE_OBJS
 
 /datum/species/event1/proc/toggle_infection()
-	flags ^= NO_INFECT
+	set_flags(flags ^ NO_INFECT)
 
 /datum/species/event1/proc/toggle_noslip()
-	flags ^= NO_SLIP
+	set_flags(flags ^ NO_SLIP)
 
 /datum/species/event1/proc/toggle_cloning()
-	flags ^= NO_SLEEVE
+	set_flags(flags ^ NO_SLEEVE)
 
 /datum/species/event1/proc/toggle_dna()
-	flags ^= NO_DNA
+	set_flags(flags ^ NO_DNA)
 
 /datum/species/event1/proc/toggle_defibbing()
-	flags ^= NO_DEFIB
+	set_flags(flags ^ NO_DEFIB)
 
 /datum/species/event1/proc/toggle_pain()
-	flags ^= NO_PAIN
+	set_flags(flags ^ NO_PAIN)
 	// The flag feeds BF_PAIN_IMMUNITY: refresh the factors of every body wearing this species.
 	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 		if(H.species == src)
 			H.body?.invalidate(BODY_DIRTY_FACTORS)
 
 /datum/species/event1/proc/toggle_embedding()
-	flags ^= NO_EMBED
+	set_flags(flags ^ NO_EMBED)
 
 /datum/species/event1/proc/toggle_plant() //Maybe it's a distant cousin of the Venus Fly Trap.
-	flags ^= IS_PLANT
+	set_flags(flags ^ IS_PLANT)
 
 /datum/species/event1/get_bodytype(mob/living/carbon/human/H) //Default to human sprites, if they're based on another species, var edit use_bodyshape to the correct thing in _defines/mobs.dm of the species you want to use.
 	return use_bodyshape

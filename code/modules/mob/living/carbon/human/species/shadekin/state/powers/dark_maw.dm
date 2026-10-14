@@ -43,7 +43,7 @@ CAPABILITY_DEF(shadekin_dark, CAP_SHADEKIN_DARK, key = NONE)
 
 /mob/living/proc/ability_dark_enough_for_maw(datum/act/op/A)
 	var/turf/T = get_turf(src)
-	return (!!T && T.get_lumcount() < 0.5) ? null : /datum/msg/req_failed
+	return (!!T && watched(T, WATCH_LUM, list(0.5)) == 0) ? null : /datum/msg/req_failed
 
 /mob/living/proc/ability_can_afford_20(datum/act/op/A)
 	var/datum/shadekin/SK = get_shadekin_state()
@@ -80,6 +80,9 @@ CAPABILITY_DEF(shadekin_dark, CAP_SHADEKIN_DARK, key = NONE)
 /obj/effect/abstract/dark_maw/var/armed = FALSE
 TRACKED(/obj/effect/abstract/dark_maw, armed)
 CAPABILITIES(/obj/effect/abstract/dark_maw)
+	ref_one(nameof(owner), /mob/living)
+	ref_one(nameof(target), /obj/belly)
+	ref_one(nameof(maw_user), /mob)
 	setup(PROC_REF(aim_at_owner_belly))
 	every(2 SECONDS, then(PROC_REF(dark_maw_step)), when = nameof(armed))
 	param(nameof(maw_user), pos = 1, keep = FALSE)

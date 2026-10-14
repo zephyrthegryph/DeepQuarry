@@ -1,6 +1,7 @@
 /mob/Logout()
 	mob_state_set_played(!!client)
 	PUBLISH_LEGACY(src, /datum/notice/mob_logout)
+	ckey_changed()
 	SStgui.on_logout(src) // Cleanup any TGUIs the user has open
 	registry_leave(REGISTRY_PLAYERS, src)
 	disconnect_time = world.realtime // ition: logging when we disappear.

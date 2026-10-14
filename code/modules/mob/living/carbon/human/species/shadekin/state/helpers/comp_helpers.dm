@@ -135,13 +135,13 @@
 /datum/shadekin/proc/shadekin_set_energy(new_energy)
 	if(!isnum(new_energy))
 		return
-	dark_energy = CLAMP(new_energy, 0, max_dark_energy)
+	set_dark_energy(CLAMP(new_energy, 0, max_dark_energy))
 
 ///Sets the shadekin's maximum energy.
 /datum/shadekin/proc/shadekin_set_max_energy(new_max_energy)
 	if(!isnum(new_max_energy))
 		return //No.
-	max_dark_energy = new_max_energy
+	set_max_dark_energy(new_max_energy)
 
 ///Adjusts the shadekin's energy by the given amount.
 /datum/shadekin/proc/shadekin_adjust_energy(amount)

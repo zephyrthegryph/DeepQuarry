@@ -3,6 +3,7 @@
 	name = "Robot Decal & Animation Control"
 
 CAPABILITIES(/datum/tgui_module/robot_ui_decals)
+	ref_one(nameof(host), /mob/living/silicon/robot)
 	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	interface("RobotDecals", state = nameof(GLOB.tgui_self_state))
 	op("toggle_decal", ui_act("toggle_decal", arg("value", schema_text(4096))), then(PROC_REF(ui_act_toggle_decal)))

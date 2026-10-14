@@ -37,7 +37,6 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	var/turns_since_scan = 0
-	var/mob/flee_target
 
 CAPABILITIES(/mob/living/simple_mob/clockwork)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

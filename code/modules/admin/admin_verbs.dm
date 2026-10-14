@@ -814,7 +814,7 @@ ADMIN_VERB(add_hidden_area, R_ADMIN|R_FUN, "Add Ghostsight Block Area", "Blocks 
 	var/area/target_area = blocked_areas[selected_area]
 	if(!target_area)
 		return
-	target_area.flags |= AREA_BLOCK_GHOST_SIGHT
+	target_area.set_flags(target_area.flags | AREA_BLOCK_GHOST_SIGHT)
 	GLOB.ghostnet.addArea(target_area)
 
 ADMIN_VERB(remove_hidden_area, R_ADMIN|R_FUN, "Remove Ghostsight Block Area", "Unblocks ghost sight in the taget area.", ADMIN_CATEGORY_GAME)
@@ -847,7 +847,7 @@ ADMIN_VERB(remove_hidden_area, R_ADMIN|R_FUN, "Remove Ghostsight Block Area", "U
 	var/area/target_area = blocked_areas[selected_area]
 	if(!target_area)
 		return
-	target_area.flags &= ~(AREA_BLOCK_GHOST_SIGHT)
+	target_area.set_flags(target_area.flags & (~(AREA_BLOCK_GHOST_SIGHT)))
 	GLOB.ghostnet.removeArea(target_area)
 
 ADMIN_VERB(hide_motion_tracker_feedback, R_ADMIN|R_EVENT, "Toggle Motion Echos", "Hides or reveals motion tracker echos globally.", ADMIN_CATEGORY_EVENTS)

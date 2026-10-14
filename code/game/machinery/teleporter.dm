@@ -185,7 +185,7 @@ CAPABILITIES(/obj/machinery/teleport/hub)
 
 		if(com().one_time_use) //Make one-time-use cards only usable one time!
 			com().one_time_use = 0
-			rel_clear(com().teleport_control, nameof(/datum/cinematic::locked))
+			rel_clear(com().teleport_control, nameof(/datum/tgui_module/teleport_control::locked))
 	else
 		fx_sparks(src, 5)
 		accurate = 1
