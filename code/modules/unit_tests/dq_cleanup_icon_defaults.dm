@@ -1,0 +1,42 @@
+// Constant defaults and their real initialized presentation on valid fixtures.
+/datum/unit_test/dq_look_pin/cleanup_type_defaults
+
+/datum/unit_test/dq_look_pin/cleanup_type_defaults/New()
+	..()
+	dview(0, test_floor())
+
+/datum/unit_test/dq_look_pin/cleanup_type_defaults/proc/restore_floor(x, y, z, floor_type)
+	var/turf/current = locate(x, y, z)
+	if(current && current.type != floor_type)
+		current.ChangeTurf(floor_type)
+
+/datum/unit_test/dq_look_pin/cleanup_type_defaults/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
+	var/turf/center = locate(run_loc_floor_bottom_left.x + 2, run_loc_floor_bottom_left.y + 2, run_loc_floor_bottom_left.z)
+	TEST_ASSERT(isfloorturf(center), "the look fixture begins on a real test-room floor")
+	for(var/direction in GLOB.cardinal)
+		TEST_ASSERT(isfloorturf(get_step(center, direction)), "the lattice fixture is surrounded by four floors")
+	defer_cleanup(src, PROC_REF(restore_floor), center.x, center.y, center.z, center.type)
+	var/turf/space/gap = center.ChangeTurf(/turf/space)
+	var/obj/structure/lattice/L = allocate(/obj/structure/lattice, gap)
+	TEST_ASSERT(!QDELETED(L), "the real lattice survives on an open turf")
+	TEST_ASSERT_EQUAL(initial(L.icon_state), "latticeblank", "the fixed lattice state is its type default")
+	TEST_ASSERT(findtext("[L.icon]", "smoothlattice.dmi"), "initialization still installs the smoothing icon")
+	test_time(0.2 SECONDS)
+	TEST_ASSERT_EQUAL(L.icon_state, "lattice15", "the real delayed presentation connects to all four surrounding floors")
+	qdel(L)
+
+	var/obj/structure/prop/machine/nt_pod/P = allocate(/obj/structure/prop/machine/nt_pod, test_floor())
+	TEST_ASSERT(!QDELETED(P), "the real pod survives initialization")
+	for(var/obj/effect/overlay/vis/V in P.vis_contents)
+		own(V) // Each mask/overlay is created uniquely by this pod's initializer.
+	refresh_flush()
+	TEST_ASSERT_EQUAL(initial(P.icon_state), "nt_pod", "the pod's runtime state is its type default")
+	TEST_ASSERT_EQUAL(P.icon_state, "nt_pod", "initialized pod presentation retains its runtime state")
+	TEST_ASSERT_EQUAL(length(P.vis_contents), 4, "initialization still creates the mask and three unique visual parts")
+	TEST_ASSERT(P.outside && P.door && P.fluid, "the three real visual-part links remain populated")
+	TEST_ASSERT_EQUAL(P.outside.icon_state, "nt_pod_over", "the pod keeps its external overlay")
+	TEST_ASSERT_EQUAL(P.door.icon_state, "nothing", "the empty pod's glass begins hidden")
+	TEST_ASSERT_EQUAL(P.fluid.icon_state, "nothing", "the empty pod's fluid begins hidden")
