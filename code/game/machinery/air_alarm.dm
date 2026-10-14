@@ -124,7 +124,7 @@ STAT(/obj/machinery/alarm, shorted, ANY)
 
 
 CAPABILITIES(/obj/machinery/alarm)
-	rolls(nameof(name), PROC_REF(roll_alarm_name), when = PROC_REF(default_alarm_name))
+	rolls(nameof(name), PROC_REF(roll_alarm_name))
 	setup(PROC_REF(register_initial_alarm))
 	configure(light_glow(power = 0.25))
 	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
@@ -247,7 +247,7 @@ CAPABILITIES(/obj/machinery/alarm)
 	rel_set(src, nameof(alarm_area), get_area(src)) // paired: the area's air_alarms lists it
 	area_uid = alarm_area?.air_uid()
 	set_frequency(frequency)
-	TLV = default_TLV()
+	set_TLV(default_TLV())
 	if(!alarm_area?.main_air_alarm_is_operating()) // select main alarm
 		alarm_area?.elect_main_air_alarm()
 	else
@@ -912,8 +912,7 @@ CAPABILITIES(/datum/air_alarm_remote)
 	return list(pixel_x, pixel_y)
 
 /obj/machinery/alarm/proc/roll_alarm_name(datum/roller/R)
+	if(name != "alarm")
+		return name
 	var/area/A = get_area(src)
 	return "[A?.name] Air Alarm \[[R.number(1, 9999)]\]"
-
-/obj/machinery/alarm/proc/default_alarm_name()
-	return name == "alarm"

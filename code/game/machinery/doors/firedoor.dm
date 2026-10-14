@@ -80,13 +80,13 @@
 	ASSERT(istype(A))
 
 	LAZYADD(A.all_doors, src)
-	areas_added = list(A)
+	set_areas_added(list(A))
 
 	for(var/direction in GLOB.cardinal)
 		A = get_area(get_step(src,direction))
 		if(istype(A) && !(A in areas_added))
 			LAZYADD(A.all_doors, src)
-			areas_added += A
+			add_areas_added(A)
 
 /// Phase 2: leaves the door lists of every area it guards.
 /obj/machinery/door/firedoor/lifecycle_dematerialize()

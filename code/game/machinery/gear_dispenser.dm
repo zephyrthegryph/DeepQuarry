@@ -958,7 +958,6 @@ CAPABILITIES(/datum/prompt/choice/gear_dispenser)
 
 #undef GD_BUSY
 #undef GD_ONEITEM
-#undef GD_NOGREED
 #undef GD_UNLIMITED
 #undef GD_UNIQUE
 
@@ -983,3 +982,5 @@ CAPABILITIES(/datum/prompt/choice/gear_dispenser)
 /obj/machinery/gear_dispenser/proc/register_distribution_bucket()
 	if(!GLOB.gear_distributed_to["[type]"] && (dispenser_flags & GD_NOGREED))
 		GLOB.gear_distributed_to["[type]"] = list()
+
+#undef GD_NOGREED

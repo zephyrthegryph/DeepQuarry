@@ -203,7 +203,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 DESTROY_EFFECTS(/obj/structure/atmospheric_retention_field, new /datum/destroy_effects_data(neighbor_type = /obj/structure/atmospheric_retention_field))
 
 CAPABILITIES(/obj/structure/atmospheric_retention_field)
-	setup(PROC_REF(update_nearby_tiles))
+	setup(PROC_REF(refresh_initial_atmos))
 	configure(light_glow(range = 3, power = 1, color = "#FFFFFF"))
 	smoothing()
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -229,3 +229,6 @@ CAPABILITIES(/obj/structure/atmospheric_retention_field)
 	plane = OBJ_PLANE
 	layer = UNDER_JUNK_LAYER
 
+
+/obj/structure/atmospheric_retention_field/proc/refresh_initial_atmos()
+	update_nearby_tiles()
