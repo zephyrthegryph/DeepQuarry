@@ -292,6 +292,39 @@ test_types() {
 		}'
 }
 
+# close_matches <name-or-glob>: up to 8 declared test types that look like what was typed (a missing dir prefix such as dq_eg2/, a typo
+# in one word, a glob whose literal parts match something else), one per line, best first.
+close_matches() {
+	local want="${1,,}" lit
+	lit="${want//[*?[\]]/ }"
+	awk -v want="$want" -v lit="$lit" '
+		BEGIN { n = split(lit, frag, " ") }
+		NF {
+			t = tolower($0); base = t; sub(/.*\//, "", base); score = 0
+			if (index(t, want) || (length(t) >= 5 && index(want, t))) score += 100
+			if (base == want) score += 90
+			for (i = 1; i <= n; i++) if (length(frag[i]) >= 3 && index(t, frag[i])) score += 20 + length(frag[i])
+			for (k = 1; k <= length(want) && k <= length(t) && substr(want, k, 1) == substr(t, k, 1); k++) ;
+			if (k > 6) score += k
+			wb = want; sub(/.*\//, "", wb)
+			for (k = 1; k <= length(wb) && k <= length(base) && substr(wb, k, 1) == substr(base, k, 1); k++) ;
+			if (k > 6) score += k
+			if (score > 0) print score " " $0
+		}' <<<"$all_types" | sort -k1,1nr -k2 | head -n 8 | cut -d' ' -f2
+}
+report_unknown() { # arg what
+	local m
+	echo "$2" >&2
+	m="$(close_matches "${1#/datum/unit_test/}")"
+	if [ -n "$m" ]; then
+		echo "  close matches:" >&2
+		sed 's/^/    /' <<<"$m" >&2
+	else
+		echo "  (no declared test type looks like it; use --list with a *word* glob to search the declared types)" >&2
+	fi
+}
+
+bad_names=0
 args=()
 tests=()
 repeat=1
@@ -342,21 +375,24 @@ for arg in "$@"; do
 					fi
 				done <<<"$all_types"
 				if [ "$matched" -eq 0 ]; then
-					echo "no /datum/unit_test type matches '$arg'" >&2
-					exit 2
+					report_unknown "$arg" "no /datum/unit_test type matches '$arg'"
+					bad_names=1
 				fi
 			else
 				# A name the build does not compile would reach the world as an unknown type and fail the run at boot: refuse it here.
 				[ -n "$all_types" ] || all_types="$(test_types)"
 				if ! grep -qxF -- "$name" <<<"$all_types"; then
-					echo "no compiled /datum/unit_test type named '$name' (is its file included in _unit_tests.dm?)" >&2
-					exit 2
+					report_unknown "$arg" "no compiled /datum/unit_test type named '$name' (is its file included in _unit_tests.dm?)"
+					bad_names=1
+					continue
 				fi
 				tests+=("$name")
 			fi
 			;;
 	esac
 done
+# Every unknown name is reported before anything compiles (a typo or a missing dir prefix used to cost a whole run).
+[ "$bad_names" -eq 0 ] || { echo "dq_focused_test: unknown test name(s) above; nothing was compiled" >&2; exit 2; }
 [ ${#tests[@]} -gt 0 ] || usage
 if [ "$list_only" -eq 1 ]; then
 	printf '%s
@@ -581,13 +617,39 @@ add_world() { # label shard params tests...
 start_world() { # index
 	local i="$1" log="data/focused-runs/split.$$.$1.log"
 	W_LOG[$i]="$log"
+	rm -f "$log.rc"
+	# The world's own exit status is written to $log.rc by the subshell that ran it. A run's verdict must not depend on bash still holding
+	# the child's status for `wait` (it returned 127, "no such child", for a world that had printed every test and exited 0); `wait` only
+	# reaps, and a disagreement with the record is printed as evidence.
 	(
-		if [ -n "${W_SHARD[$i]}" ]; then export DQ_FOCUS_SHARD="${W_SHARD[$i]}"; fi
-		if [ -n "${W_PARAMS[$i]}" ]; then export DQ_WORLD_PARAMS="${W_PARAMS[$i]}"; fi
-		staleness_world_param
-		exec tools/build/build.sh dm-test "--focus=${W_FOCUS[$i]}" "--label=focused-${W_LABEL[$i]}" ${args[@]+"${args[@]}"}
+		(
+			if [ -n "${W_SHARD[$i]}" ]; then export DQ_FOCUS_SHARD="${W_SHARD[$i]}"; fi
+			if [ -n "${W_PARAMS[$i]}" ]; then export DQ_WORLD_PARAMS="${W_PARAMS[$i]}"; fi
+			staleness_world_param
+			exec tools/build/build.sh dm-test "--focus=${W_FOCUS[$i]}" "--label=focused-${W_LABEL[$i]}" ${args[@]+"${args[@]}"}
+		)
+		echo $? >"$log.rc.tmp" && mv -f "$log.rc.tmp" "$log.rc"
 	) >"$log" 2>&1 &
 	W_PID[$i]=$!
+}
+# world_status <index>: the world's exit status. The record file wins; wait is the fallback (a world killed outright leaves no record).
+world_status() {
+	local i="$1" wrc rec=""
+	wait "${W_PID[$i]}" 2>/dev/null
+	wrc=$?
+	[ -f "${W_LOG[$i]}.rc" ] && rec="$(tr -cd '0-9' <"${W_LOG[$i]}.rc")"
+	case "$rec" in
+		'' | *[!0-9]*)
+			if [ "$wrc" -eq 127 ]; then
+				echo "== worlds: world ${W_LABEL[$i]} (pid ${W_PID[$i]}) left no exit record and wait found no such child (127): counted as failed; log ${W_LOG[$i]}" >&2
+				return 125
+			fi
+			return "$wrc" ;;
+	esac
+	if [ "$wrc" -ne "$rec" ]; then
+		echo "== worlds: world ${W_LABEL[$i]} (pid ${W_PID[$i]}): wait returned $wrc but the world recorded exit $rec; using $rec (log ${W_LOG[$i]})" >&2
+	fi
+	return "$rec"
 }
 run_worlds() {
 	local began n i waited=0 running jsons=() rc=0 j shard W_DONE
@@ -620,11 +682,11 @@ run_worlds() {
 	start_world 0
 	# Wait for world 0 to finish compiling (it logs "Test world runN" when it launches), or to die.
 	while ! grep -q 'Test world run' "${W_LOG[0]}" 2>/dev/null; do
-		if ! kill -0 "${W_PID[0]}" 2>/dev/null; then break; fi
+		if [ -f "${W_LOG[0]}.rc" ] || ! kill -0 "${W_PID[0]}" 2>/dev/null; then break; fi
 		sleep 2
 	done
 	if ! grep -q 'Test world run' "${W_LOG[0]}" 2>/dev/null; then
-		wait "${W_PID[0]}"
+		world_status 0
 		rc=$?
 		echo "== worlds: world 0 ended before launching its world (exit $rc); the others were not started"
 		cat "${W_LOG[0]}"
@@ -653,7 +715,7 @@ run_worlds() {
 		running=0
 		for ((i = 0; i < next; i++)); do
 			[ "${W_DONE[$i]}" -eq 1 ] && continue
-			if kill -0 "${W_PID[$i]}" 2>/dev/null; then
+			if [ ! -f "${W_LOG[$i]}.rc" ] && kill -0 "${W_PID[$i]}" 2>/dev/null; then
 				running=$((running + 1))
 			else
 				W_DONE[$i]=1
@@ -683,7 +745,7 @@ run_worlds() {
 	unset DQ_KEEP_DERIVED_DME
 	: >"$combined_log"
 	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do
-		wait "${W_PID[$i]}"
+		world_status "$i"
 		W_RC[$i]=$?
 		echo "================ world ${W_LABEL[$i]}, exit ${W_RC[$i]}"
 		if [ "${W_RC[$i]}" -eq 0 ]; then tail -n 6 "${W_LOG[$i]}"; else cat "${W_LOG[$i]}"; rc=1; fi
@@ -743,7 +805,14 @@ if [ "$do_split" -eq 1 ]; then
 	look_dump_merge
 	if [ "$rc" -eq 0 ]; then look_keys_record; fi
 	print_result "$combined_log" "$rc" "$SPLIT_JSON"
-	rm -f "$combined_log" data/focused-runs/split."$$".*.log
+	rm -f "$combined_log"
+	if [ "$rc" -eq 0 ]; then
+		rm -f data/focused-runs/split."$$".*.log data/focused-runs/split."$$".*.log.rc
+	else
+		echo "== worlds: unclean run; the per-world logs and exit records are kept: data/focused-runs/split.$$.N.log (and .log.rc)" >&2
+	fi
+	# Kept evidence is pruned after two days.
+	find data/focused-runs -maxdepth 1 -name 'split.*' -mtime +2 -delete 2>/dev/null
 	exit "$rc"
 fi
 

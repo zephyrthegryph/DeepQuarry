@@ -139,7 +139,7 @@ syntax pre-check from the Codex compiler.
 Measured data and reasoning: `doc/rewrite/merge_pipeline_report.md`. The batch recipe, in order:
 
 ```sh
-WT="$(bash tools/dq_merge_worktree.sh)"            # 1. the persistent worktree, moved to origin/master
+WT="$(bash tools/dq_merge_worktree.sh --lanes "<branch> ...")"  # 1. take the merge lock (waits its turn), then the persistent worktree, moved to origin/master
 cd "$WT"
 git merge --no-ff <branch> ...                      #    (bash tools/dq_merge_master.sh settles generated files)
 bash tools/dq_merge_gates.sh --lanes "<branch> ..." # 2. gen, then the test world (smoke set + the tests of any lane whose stamp is stale),
@@ -147,8 +147,37 @@ bash tools/dq_merge_gates.sh --lanes "<branch> ..." # 2. gen, then the test worl
 bash tools/dq_focused_test.sh --detach <more tests> #    only if a failure needs more tests: in the background
 bash tools/dq_focused_test.sh --status <runid>      #    poll until it prints state=passed or failed
 bash tools/dq_known_failures.sh --check <json>      # 3. NEW vs KNOWN failures (no throwaway worktree)
-bash tools/dq_push_master.sh                        # 4. the fail-closed push (skips what the gates passed on this exact HEAD)
+bash tools/dq_push_master.sh                        # 4. the fail-closed push (skips what the gates passed on this exact HEAD); frees the lock
+bash tools/dq_merge_worktree.sh --release           #    only if the batch is abandoned before the push lands
 ```
+
+**The merge lock (one batch owns the merge worktree).** `dq_merge_worktree.sh` used to check that the worktree was clear and then merge
+with no lock, so two agents passing the check together half-applied one `git merge` on top of the other and left a stale index. Now a call
+takes the exclusive `merge_base` lock first (one slot, the machine-slot protocol of section 10: queue, atomic take, heartbeat, dead-holder
+reclaim), waits for it while printing who holds it and for which lanes, and only then fetches, runs the clear check and moves the worktree.
+It is held from that check until the push lands or the batch is abandoned, across `git merge`, `dq_merge_gates.sh` and `dq_push_master.sh`:
+
+- **Holder.** The lock is kept by a small detached process (`dq_machine_slots.sh _hold`) that touches the owner file every 15 s and records the
+  batch's lanes (`--lanes`) and the caller's session. It ends when the lock is released, or after `DQ_MERGE_LOCK_MAX_SEC` (6 h), so a forgotten
+  batch cannot block the worktree forever. If it dies (killed, reboot) the next waiter reclaims the lock like any dead machine slot
+  ("reclaiming a dead slot"). A call that fails the clear check (dirty tree, unpushed commits) frees the lock before it exits.
+- **Who is the holder.** The caller's `DQ_MERGE_SESSION` if set, else its nearest non-shell ancestor process (the agent that runs every command
+  of the batch), recorded in the owner file. Another lane joins the batch only through the holder: `bash tools/dq_merge_worktree.sh --join "<lane>"`
+  (no switch, prints the path); a second plain call from the holder is refused, and anyone else waits.
+- **Release.** `dq_push_master.sh` releases it after a successful push, and also when HEAD is already in origin/master (the worktree is level with it).
+  `bash tools/dq_merge_worktree.sh --release` ends an abandoned batch; only the holder may, `--release --force` overrides for a batch you know is
+  dead. Never delete lock files by hand.
+- **Refusals.** `dq_merge_gates.sh` and `dq_push_master.sh` exit 1 at the top when run in the merge worktree (`DQ_MERGE_WT`) by a caller that
+  does not hold the lock. Other worktrees are unaffected.
+- **Status.** `bash tools/dq_machine_slots.sh status` lists `merge_base` with its holder, lanes, pid and heartbeat; `bash tools/dq_machine_slots.sh
+  merge-lock status` prints just that line.
+- **No automatic stashing, no merge on a dirty tree.** The merge tools source `tools/dq_git_safe.sh`, which turns `merge.autoStash`, `rebase.autoStash` and
+  `pull.autoStash` off for every git command they run, whatever any config says (none is set in the repo, the merge worktree or the global config; the
+  first sighting came from a merge started while another batch had staged files), and `dq_merge_master.sh` passes `--no-autostash`, refuses to start in the
+  merge worktree without the lock, and refuses when the tree has staged or modified tracked files.
+- **Test.** `bash tools/ci/test_merge_lock.sh` runs two contenders against a scratch repo and worktree under `data/` (never merge-base) with its
+  own slot directory: the second waits and names the holder, unlocked gates/push are refused, join/release are holder-only, a failed clear check
+  frees the lock, a killed holder is reclaimed.
 
 **Persistent worktree (`tools/dq_merge_worktree.sh`).** One worktree, `E:/projects/dq-wt/merge-base`, branch
 `rewrite/integ-current`, is never removed. Each call fetches, checks it is clean, in no merge or rebase, and holds no
@@ -226,7 +255,7 @@ semaphore shared by every worktree on the machine (state under `E:/dq-cache/slot
 | `cargo` | 1 | every cargo invocation of `build.ts` (analyze, verdigris, dmb-check) | `DQ_SLOTS_CARGO` |
 | `look_state_pin` | 2 | a `dq_focused_test.sh` run holding a look pin, for the whole run | `DQ_SLOTS_LOOK_STATE_PIN` (old name `DQ_LOOK_PIN_SLOTS`) |
 
-`DQ_SLOTS=0` turns all of it off and a class at 0 is unlimited. A waiter prints the class, its place in the queue and who holds the slots
+`DQ_SLOTS=0` turns all of it off and a class at 0 is unlimited (except `merge_base`, the merge worktree lock of section 9: always exactly one slot). A waiter prints the class, its place in the queue and who holds the slots
 (`worktree 'label' pid, held Ns`) every 30 seconds. The merge worktree (`E:/projects/dq-wt/merge-base`, `DQ_MERGE_WT`) jumps the queue
 (`DQ_SLOT_PRIORITY=0` does the same for another caller); within a priority it is arrival order, and a slot is taken only by the first in the queue.
 A holder that crashes does not block anyone: a slot or queue entry whose pid is gone (the Windows pid of a node or bash holder), or whose heartbeat
@@ -252,6 +281,12 @@ bun test tools/build/lib/machine_slots.test.ts     # the same protocol from the 
 ## 11. Lane-ready stamps: a lane proves itself once, a merge tests the combination
 
 When a lane finishes, from its worktree:
+
+**Split worlds record their own exit status.** `dq_focused_test.sh` once counted a fully green world as exit 127 (`wait` found no such child). Each world's subshell now writes its exit status to `data/focused-runs/split.<pid>.N.log.rc`; that record is the verdict, `wait` only reaps, a disagreement is printed, and a world with no record and no child counts as failed (125). An unclean run keeps its `split.<pid>.N.log` files and records (pruned after two days). The root cause of the lost child was not reproduced in isolation. `bash tools/ci/test_focused_world_status.sh` covers the new logic.
+
+**Stamps and docs.** `tools/dq_lane_check.sh` ignores master changes under `html/changelogs/`, `doc/`, `data/` and root `*.md` unless the file is listed in `tools/ci/lane_ready_doc_reads.txt` (docs a tool reads); the verdict names the files that decided it.
+
+**Test names are checked first.** `dq_lane_ready.sh --tests` and `dq_focused_test.sh` check every name and glob against the `/datum/unit_test` types the build compiles before anything is merged, generated or compiled, report all the misses at once, and print close matches (a missing `dq_eg2/` prefix, a one-letter typo, a glob that matches nothing). `bash tools/dq_focused_test.sh --list '*word*'` searches the declared types without compiling.
 
 ```sh
 bash tools/dq_lane_ready.sh --tests "dq_my_test dq_my_other/*"      # [--covers 'code/game/machinery/**'] [--no-pins] [--no-merge]

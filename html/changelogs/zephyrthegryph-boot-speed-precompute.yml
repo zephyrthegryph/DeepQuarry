@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Boot: per-table ownership entries, owns scan and hook flags are kept on the compiled table, and the op clash check compares only ops that share a binding"

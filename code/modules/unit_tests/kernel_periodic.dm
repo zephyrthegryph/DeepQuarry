@@ -35,6 +35,7 @@
 	return STEP_DONE
 
 /datum/unit_test/kernel_periodic
+	boot_needs = list()
 
 /datum/unit_test/kernel_periodic/proc/steps_at_least(datum/system/test_periodic/S, n)
 	return S.steps >= n

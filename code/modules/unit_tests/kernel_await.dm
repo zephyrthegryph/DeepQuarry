@@ -1,6 +1,7 @@
 /// await(): the kernel's one wait, and the rustg_job I/O kind.
 
 /datum/unit_test/kernel_await
+	boot_needs = list()
 	var/awaited_result
 	var/awaited_done = FALSE
 
