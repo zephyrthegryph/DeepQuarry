@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Character previews, job icons and AI and pAI holograms no longer show a blank or one-edit-old look"
