@@ -26,7 +26,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 		for(var/obj/machinery/pointdefense_control/PC as anything in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS))
 			if(PC != src && PC.id_tag == id_tag)
 				WARNING("Two [src] with the same id_tag of [id_tag]")
-				id_tag = null
+				set_id_tag(null)
 	default_apply_parts()
 
 /obj/machinery/pointdefense_control/get_description_interaction()
@@ -297,3 +297,4 @@ CAPABILITIES(/obj/machinery/pointdefense)
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/pointdefense/step_start_condition()
 	return active && LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS))
+

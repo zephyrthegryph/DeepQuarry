@@ -177,7 +177,7 @@ TYPE_TABLE(/obj/machinery/camera/all, camera_initial_motion, TRUE)
 	var/number = by_area[A.name] + 1
 	by_area[A.name] = number
 
-	c_tag = "[A.name] #[number]"
+	set_c_tag("[A.name] #[number]")
 
 // CHECKS
 
@@ -231,3 +231,4 @@ TYPE_TABLE(/obj/machinery/camera/all, camera_initial_motion, TRUE)
 
 CAPABILITIES(/obj/machinery/camera/autoname)
 	setup(PROC_REF(allocate_area_camera_number))
+

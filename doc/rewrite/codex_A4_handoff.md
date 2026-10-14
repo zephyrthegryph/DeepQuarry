@@ -59,3 +59,5 @@ After rebasing onto the read-tracking master, the existing battle arcade `random
 The original stamped proof `b7a1fd8dd9` predates this source addition and the read-tracking rebase. It does **not** certify the reopened branch. A new full A4 focused proof is pending; no new stamp is claimed here.
 
 Final analyzer update on master a75de08d85: init baseline 4106 ->3900 globally, including the last arcade row. The supported shrink-only update and init lint pass. Current source is not stamped: master compile/DreamChecker/base_vars blockers prevent the required new focused proof.
+
+Tracking follow-up after the read-driven master merge: two moved writes in camera autonaming and point-defense identity cleanup now use their existing generated setters. One remaining finding is outside A4 files: antagonist_create.dm:69 assigns nuke.r_code directly. The native nuclear-code rolls entry makes that field tracked. The caller needs nuke.set_r_code(code), but this task's explicit file scope does not authorize editing the antagonist consumer. This is a lane integration dependency, not an unchanged-master failure; no baseline or ALLOW workaround was added.
