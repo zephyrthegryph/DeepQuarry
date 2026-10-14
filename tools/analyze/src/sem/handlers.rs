@@ -143,7 +143,7 @@ fn compute(tree: &Tree) -> Analysis {
         let mut unknown = Vec::new();
         if let (Some(set), true) = (&closed, h.role.reads_covered()) {
             for r in &set.reads {
-                if r.kind == super::reads::ReadKind::Var && !set.internal.contains(r) && eng.classify(&r.owner, &r.var, &written) == super::reads::VarClass::Unknown {
+                if r.kind == super::reads::ReadKind::Var && !set.internal.contains(r) && !eng.turf_coordinate(r) && eng.classify(&r.owner, &r.var, &written) == super::reads::VarClass::Unknown {
                     let (rel, line) = set.sites.get(r).cloned().unwrap_or_default();
                     unknown.push((r.key(), r.var.clone(), r.owner.clone(), rel, line));
                 }

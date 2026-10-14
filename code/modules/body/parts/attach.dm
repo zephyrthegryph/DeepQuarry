@@ -171,9 +171,9 @@ SETTER(/obj/item/organ, organ_tag)
 /proc/dq_part_cache(mob/living/M, obj/item/organ/part)
 	if(istype(part, /obj/item/organ/external))
 		if(!M.organs_by_name)
-			M.organs_by_name = list()
+			M.set_organs_by_name(list())
 		rel_add(M, nameof(M.organs), part)
-		M.organs_by_name[part.organ_tag] = part // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list; kept in step only here and in dq_part_uncache()
+		M.set_organs_by_name_at(part.organ_tag, part)
 	// Internal organs: nothing to cache, the limb's keyed organ slot is the record.
 
 /// Removes `part` from `M`'s organ caches. A key another part now holds stays.
@@ -181,7 +181,7 @@ SETTER(/obj/item/organ, organ_tag)
 	if(istype(part, /obj/item/organ/external))
 		rel_remove(M, nameof(M.organs), part)
 		if(M.organs_by_name?[part.organ_tag] == part)
-			M.organs_by_name -= part.organ_tag
+			M.remove_organs_by_name(part.organ_tag)
 
 /// `part` and every part below it, parents before children, read from the
 /// ledger's tree slots.

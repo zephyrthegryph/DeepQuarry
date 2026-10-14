@@ -255,7 +255,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	shadekin.phase_out(get_turf(shadekin)) //Homf
 	var/datum/shadekin/smite_SK = shadekin.get_shadekin_state()
 	if(smite_SK)
-		smite_SK.dark_energy = initial(smite_SK.dark_energy)
+		smite_SK.set_dark_energy(initial(smite_SK.dark_energy))
 	//For fun: a timed sequence (shadekin_smite_step), nothing sleeps.
 	shadekin_smite_step(shadekin, target(), myself == "Control" ? target().ckey : null, 1)
 
@@ -961,7 +961,7 @@ MSG_DEF_SELF(player_effects/nif_present, "Target already has a NIF.")
 	var/mob/living/L = target()
 	if(!istype(L))
 		return /datum/msg/player_effects/ai_not_living
-	return L.client || L.teleop ? /datum/msg/player_effects/ai_player : null
+	return mob_state_played(L) || L.teleop ? /datum/msg/player_effects/ai_player : null
 
 MSG_DEF_SELF(player_effects/ai_not_living, "This can only be used on instances of type /mob/living")
 MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")

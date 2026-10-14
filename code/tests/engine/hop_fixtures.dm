@@ -29,3 +29,14 @@ CAPABILITIES(/obj/hop_lamp)
 
 /obj/hop_lamp/proc/crate_flipped(datum/act/A)
 	hop_heard++
+
+// A mob whose hook follows its key: ckey is published from Login() and Logout() (ckey_changed()).
+/mob/hop_keyed
+	name = "hop keyed"
+	var/hop_key_heard = 0
+
+CAPABILITIES(/mob/hop_keyed)
+	on_change("ckey", ANY, then(PROC_REF(key_changed)))
+
+/mob/hop_keyed/proc/key_changed(datum/act/A)
+	hop_key_heard++
