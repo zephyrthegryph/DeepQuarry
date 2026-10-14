@@ -26,3 +26,5 @@ unowned declaration generator was extended for declared relation storage.
 Native request outcome constants such as REQ_CANCELLED remain request protocol
 values. They are not renamed to obtain a lexical REQ_ count of zero. The retired
 forms are legacy requirement macros and the predicate compiler.
+
+Repair verification at 87fc37268e: all seven failed/new dispatch cases passed (data/test-runs/20261013T225435_87fc37268e.json). Both look pins passed in the preceding repair batch without golden changes. A fresh lane-ready run is required for the final merged commit; partial results have not been used to reconstruct a stamp.
