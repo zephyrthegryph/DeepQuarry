@@ -118,6 +118,9 @@
 	var/list/event_types
 	var/datum/contract/contract
 
+CAPABILITIES(/datum/contract_requirement)
+	ref_one(nameof(contract), /datum/contract)
+
 /datum/contract_requirement/New(_required = TRUE)
 	. = ..()
 	required = _required

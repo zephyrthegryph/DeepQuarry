@@ -379,7 +379,7 @@ CAPABILITIES(/obj/item/camera)
 
 	var/obj/item/photo/p = new()
 	p.name = "photo"
-	p.icon = ic
+	p.set_icon(ic)
 	p.set_tiny(pc)
 	p.img = photoimage
 	p.desc = mobs
@@ -397,7 +397,7 @@ CAPABILITIES(/obj/item/camera)
 	var/obj/item/photo/p = new/obj/item/photo()
 
 	p.name = name
-	p.icon = icon(icon, icon_state)
+	p.set_icon(icon(icon, icon_state))
 	p.set_tiny(icon(tiny))
 	p.img = icon(img)
 	p.desc = desc

@@ -13,8 +13,10 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { pruneStaleRunCopies, runCopyBase } from './lib/run_copies';
 import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
+import { computeCompileHash } from './lib/compile_hash';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { claimFreePort, shouldRetryBoot } from './lib/free_port';
 import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, withSlot } from './lib/machine_slots';
@@ -1015,69 +1017,6 @@ function writeDerivedDme(target: string): void {
 // per-worktree like everything else there -- never shared between worktrees.
 const DMB_CACHE_DIR = 'data/dmb-cache';
 
-/**
- * The .dm files transitively #include'd from `dmeText` (paths relative to
- * the repo root). A small, self-contained walk of the same #include graph
- * ValidateDmeTarget checks, kept separate (rather than shared) so this cache
- * addition stays a minimal, independent diff.
- */
-function resolveDmeIncludes(dmeText: string): string[] {
-  const resolveInclude = (baseDir: string, raw: string): string => {
-    const combined = baseDir === '.' ? raw : `${baseDir}/${raw}`;
-    const out: string[] = [];
-    for (const seg of combined.replace(/\\/g, '/').split('/')) {
-      if (seg === '' || seg === '.') continue;
-      if (seg === '..') { out.pop(); continue; }
-      out.push(seg);
-    }
-    return out.join('/');
-  };
-  const dirOf = (file: string): string => {
-    const i = file.lastIndexOf('/');
-    return i === -1 ? '.' : file.slice(0, i);
-  };
-  const ACTIVE_INCLUDE = /^[ \t]*#include\s+"([^"]+\.dm)"/gm;
-  const reachable = new Set<string>();
-  const queue: string[] = [];
-  const seed = (content: string, baseDir: string) => {
-    for (const m of content.matchAll(ACTIVE_INCLUDE)) {
-      queue.push(resolveInclude(baseDir, m[1]));
-    }
-  };
-  seed(dmeText, '.');
-  while (queue.length > 0) {
-    const file = queue.pop() as string;
-    if (reachable.has(file)) continue;
-    reachable.add(file);
-    if (!fs.existsSync(file)) continue; // missing include: DreamMaker will report it
-    seed(fs.readFileSync(file, 'utf-8'), dirOf(file));
-  }
-  return [...reachable].sort();
-}
-
-/**
- * Content hash of everything that determines a derived-dme compile's
- * output: the derived .dme text itself, the full content of every .dm file
- * it transitively includes, the define list, and the DM compiler version.
- * Order-independent in the define list; file order is fixed (sorted) so the
- * hash is stable across runs.
- */
-function computeCompileHash(dmeText: string, defines: string[], dmVersion: string | null): string {
-  const hash = createHash('sha256');
-  hash.update(dmeText);
-  for (const file of resolveDmeIncludes(dmeText)) {
-    hash.update(file);
-    try {
-      hash.update(fs.readFileSync(file));
-    } catch {
-      hash.update('<unreadable>');
-    }
-  }
-  hash.update(JSON.stringify([...defines].sort()));
-  hash.update(dmVersion ?? '');
-  return hash.digest('hex');
-}
-
 async function compileDerived(dme: string, get: any, defines: string[]): Promise<void> {
   writeDerivedDme(dme);
   const dmeText = fs.readFileSync(dme, 'utf-8');
@@ -1098,6 +1037,9 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
       // No cache record yet, or it's unreadable/stale-format: fall through and recompile.
     }
   }
+  // The inputs changed (or no record): DreamMaker keeps an existing .rsc rather than repacking it, so a stale
+  // one would ship old icons/sounds. Remove it so the compile rebuilds the resource file.
+  fs.rmSync(rscFile, { force: true });
   try {
     await DreamMaker(dme, {
       defines: allDefines,
@@ -1341,7 +1283,12 @@ async function runIsolatedTestWorld(
 ): Promise<IsolatedRun> {
   const slot = acquireRunSlot();
   const base = dmbFile.replace(/\.dmb$/, '');
-  const runBase = `${base}.${slot.tag}`;
+  // The copy is named for this process as well as the slot. Slot names are reused, and a previous occupant's file can still be
+  // held (its DreamDaemon closing its handles, a scanner holding it) when removeDerivedArtifacts() gives up after 5 s and leaves
+  // it behind: copying onto that name failed with EBUSY (copyfile deepquarry.test.dmb -> deepquarry.test.run2.dmb). A name no
+  // earlier run used cannot be held by one; leftovers of dead processes are pruned (and any that stay locked are logged).
+  pruneStaleRunCopies(base, pidAlive, (m) => Juke.logger.warn(m));
+  const runBase = runCopyBase(base, slot.tag, process.pid);
   const logDir = `data/logs/${slot.tag}`;
   const resultsFile = `${slot.dir}/unit_tests.json`;
   try {

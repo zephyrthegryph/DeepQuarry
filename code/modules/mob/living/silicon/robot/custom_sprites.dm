@@ -30,7 +30,7 @@ GLOBAL_LIST_EMPTY(robot_custom_icons)
 	var/sprite_owner = GLOB.robot_custom_icons[sprite_name]
 	if(sprite_owner && sprite_owner == ckey)
 		custom_sprite = TRUE
-		icon = CUSTOM_ITEM_SYNTH
+		set_icon(CUSTOM_ITEM_SYNTH)
 		if(icon_state == "robot")
 			set_icon_state("[ckey]-[sprite_name]-Standard") //Compliant with robot.dm line 236 ~Mech
 // To summarize, if you want to add a whitelisted borg sprite, you have to

@@ -4,6 +4,10 @@
 	var/tmp/obj/machinery/message_server/useMS
 	var/tmp/obj/machinery/exonet_node/node
 
+CAPABILITIES(/datum/event/pda_spam)
+	ref_one(nameof(useMS), /obj/machinery/message_server)
+	ref_one(nameof(node), /obj/machinery/exonet_node)
+
 /datum/event/pda_spam/setup()
 	COOLDOWN_START(src, spam_cooldown, 5 MINUTES)
 	pick_message_server()

@@ -327,7 +327,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 			continue;
 
 		if(Entry[1] == src.ckey && Entry[2] == src.real_name)
-			icon = CUSTOM_ITEM_SYNTH
+			set_icon(CUSTOM_ITEM_SYNTH)
 			custom_sprite = TRUE
 			proto_set(src, nameof(selected_sprite), new/datum/ai_icon("Custom", "[src.ckey]-ai", "4", "[ckey]-ai-crash", "#FFFFFF", "#FFFFFF", "#FFFFFF")) // the AI's private custom icon
 		else

@@ -28,6 +28,7 @@ CAPABILITIES(/mob/observer/dead)
 		host().dq_exonet_log_panel_cache = null
 
 CAPABILITIES(/datum/exonet_log_panel)
+	ref_one(nameof(host), /mob/observer/dead)
 	interface("ExonetLog", title = "Exonet Message Log", state = nameof(GLOB.tgui_always_state))
 	ui_shape(lines = any)
 

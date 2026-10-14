@@ -57,6 +57,7 @@ CAPABILITIES(/obj/structure/casino_table/board_game)
 	var/table_icon = "gamble_preview"
 
 CAPABILITIES(/datum/board_game)
+	ref_one(nameof(parent), /obj/structure/casino_table/board_game)
 	op("invite_player", ui_act("invite_player"), asks(/datum/prompt/choice, fields = list("question" = "Invite a nearby player to the game.", "title" = "Invite Player", "choices" = computed(PROC_REF(invitable_players)), "timeout" = 0), step = "k83"), then(PROC_REF(ui_act_invite_player)))
 
 /datum/board_game/New(atom/holder)

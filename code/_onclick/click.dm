@@ -121,7 +121,7 @@
 	var/turf/T = get_turf(src)
 
 	var/obj/item/projectile/beam/laser_vision/LE = new (T)
-	LE.icon = 'icons/effects/genetics.dmi'
+	LE.set_icon('icons/effects/genetics.dmi')
 	LE.set_icon_state("eyelasers")
 	play_sfx(src, SFX_WEAPONS_TASER2)
 	rel_set(LE, nameof(LE.firer), src)

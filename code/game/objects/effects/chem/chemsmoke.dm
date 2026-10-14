@@ -183,7 +183,7 @@ CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem)
 
 	if(chemholder.reagents.reagent_list.len)
 		chemholder.reagents.trans_to_obj(smoke, chemholder.reagents.total_volume / dist, copy = 1) //copy reagents to the smoke so mob/breathe() can handle inhaling the reagents
-	smoke.icon = I
+	smoke.set_icon(I)
 	smoke.plane = ABOVE_PLANE
 	smoke.set_dir(pick(GLOB.cardinal))
 	smoke.pixel_x = -32 + rand(-8, 8)

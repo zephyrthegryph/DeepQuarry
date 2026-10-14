@@ -85,6 +85,7 @@ TRACKED(/obj/item/anomaly_releaser, used)
 	var/obj/effect/anomaly/buffered_anomaly
 
 CAPABILITIES(/obj/item/anomaly_scanner)
+	ref_one(nameof(buffered_anomaly), /obj/effect/anomaly)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))

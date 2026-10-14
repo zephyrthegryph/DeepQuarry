@@ -115,6 +115,7 @@ CAPABILITIES(/datum/contract_opportunity_signal)
 	var/datum/contract_event/batch_event
 
 CAPABILITIES(/datum/contract_opportunity_window)
+	ref_one(nameof(batch_event), /datum/contract_event)
 	owns_many(nameof(observations), /datum/contract_opportunity_observation)
 
 /datum/contract_opportunity_window/New(_key, _bucket, datum/contract_opportunity_rule/rule)

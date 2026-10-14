@@ -16,6 +16,9 @@
 	var/total_power_drained = 0
 	var/drain_loc
 
+CAPABILITIES(/obj/item/rig_module/power_sink)
+	ref_one(nameof(interfaced_with), /atom)
+
 /obj/item/rig_module/power_sink/deactivate(forced = FALSE, mob/user)
 
 	if(interfaced_with())

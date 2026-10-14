@@ -10,6 +10,9 @@
 	/// Relation view: the atom (or turf) this report is about.
 	var/atom/target
 
+CAPABILITIES(/datum/generated_station_knowledge_report)
+	ref_one(nameof(target), /atom)
+
 /datum/generated_station_knowledge_report/proc/is_expired(at_time = EXPIRY_AT(null, CLOCK_WORLD, 0))
 	return expires_at > 0 && at_time >= expires_at
 
@@ -60,6 +63,7 @@
 	var/tmp/datum/generated_station_defense_runtime/defense_runtime
 
 CAPABILITIES(/datum/generated_station_director)
+	ref_one(nameof(simulation), /datum/generated_station_simulation)
 	owns_many(nameof(orders))
 	owns_many(nameof(reports))
 	owns_many(nameof(squads))

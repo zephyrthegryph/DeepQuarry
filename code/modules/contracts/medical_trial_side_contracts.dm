@@ -14,6 +14,8 @@
 	var/list/payload
 	var/evidence_id
 
+CAPABILITIES(/datum/contract_document)
+	ref_one(nameof(holder), /obj/item/paper)
 
 /datum/contract_document/New(obj/item/paper/new_holder, _contract_id, _document_kind, _destination, list/_payload)
 	. = ..()
@@ -64,6 +66,9 @@
 	var/target_name
 	var/action_key
 	var/datum/contract_requirement/event_count/action_requirement
+
+CAPABILITIES(/datum/contract/medical_trial_personal)
+	ref_one(nameof(action_requirement), /datum/contract_requirement/event_count)
 
 /datum/contract/medical_trial_personal/proc/initialize_side_contract()
 	scope = CONTRACT_SCOPE_PERSONAL

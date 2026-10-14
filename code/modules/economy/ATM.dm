@@ -192,6 +192,8 @@ MSG_DEF_SELF(atm/firewalled, "A firewall prevents you from interfacing with this
 	return data
 
 CAPABILITIES(/obj/machinery/atm)
+	ref_one(nameof(authenticated_account), /datum/money_account)
+	ref_one(nameof(held_card), /obj/item/card)
 	configure(uses_power(idle = 10))
 	after_init(0, then(PROC_REF(assign_machine_id)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(has_mains_power), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)

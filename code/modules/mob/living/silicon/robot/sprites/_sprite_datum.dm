@@ -220,7 +220,7 @@
 		var/obj/item/melee/robotic/jaws/small/small_jaws = locate_in_list(module.modules, /obj/item/melee/robotic/jaws/small)
 		if(small_jaws)
 			small_jaws.name = "self defense knife"
-			small_jaws.icon = 'icons/obj/tools_robot.dmi'
+			small_jaws.set_icon('icons/obj/tools_robot.dmi')
 			small_jaws.set_icon_state("knife_cyborg")
 			small_jaws.set_hitsound('sound/weapons/slash.ogg')
 			small_jaws.desc = "A sharp knife used for defending crew against hostile threats. Not effective for non-defense use. If emagged, can be upgraded to a claymore."
@@ -229,7 +229,7 @@
 		if(big_jaws)
 			big_jaws.name = "claymore"
 			big_jaws.desc = "Now this is a knife!"
-			big_jaws.icon = 'icons/obj/tools_robot.dmi'
+			big_jaws.set_icon('icons/obj/tools_robot.dmi')
 			big_jaws.set_icon_state("claymore_cyborg")
 			big_jaws.set_hitsound('sound/weapons/slice.ogg')
 			big_jaws.set_attack_verb(list("sliced", "slashed", "jabbed", "stabbed"))

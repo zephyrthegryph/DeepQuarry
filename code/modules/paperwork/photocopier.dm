@@ -280,7 +280,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 		I.MapColors(rgb(77,77,77), rgb(150,150,150), rgb(28,28,28), rgb(100,100,100))
 		p.img.MapColors(rgb(77,77,77), rgb(150,150,150), rgb(28,28,28), rgb(100,100,100))
 		p.tiny.MapColors(rgb(77,77,77), rgb(150,150,150), rgb(28,28,28), rgb(100,100,100))
-	p.icon = I
+	p.set_icon(I)
 	if(need_toner)
 		set_toner(toner - 5)	//photos use a lot of ink!
 	if(toner < 0)
@@ -356,7 +356,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	var/icon/ic = icon('icons/obj/items.dmi',"photo")
 	small_img.Scale(8, 8)
 	ic.Blend(small_img,ICON_OVERLAY, 10, 13)
-	p.icon = ic
+	p.set_icon(ic)
 	set_toner(toner - 10) // PHOTOCOPYING YOUR ASS IS EXPENSIVE (And so you can't just spam it a bunch).
 	if(toner < 0)
 		set_toner(0)

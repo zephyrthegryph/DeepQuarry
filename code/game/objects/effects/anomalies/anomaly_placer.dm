@@ -1,3 +1,5 @@
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/anomaly_placer)
+
 /datum/anomaly_placer
 	var/static/list/allowed_areas
 

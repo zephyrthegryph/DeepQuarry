@@ -116,8 +116,7 @@ GLOBAL_LIST_INIT(expedition_loot_pools, list(
 // DECORATION
 // ---------------------------------------------------------------------------
 
-// Biome-appropriate set-dressing pool (weighted toward cheap non-dense decals,
-// with the odd structural prop). The cavern pool is the default.
+// Set-dressing pool (weighted toward cheap non-dense decals, with the odd structural prop).
 GLOBAL_LIST_INIT(expedition_cave_decor_pool, list(
 	/obj/effect/decal/cleanable/dirt = 8,
 	/obj/effect/decal/cleanable/cobweb = 5,
@@ -127,35 +126,13 @@ GLOBAL_LIST_INIT(expedition_cave_decor_pool, list(
 	/obj/structure/flora/mushroom = 4,
 	/obj/structure/flora/bush = 2,
 ))
-TYPE_TABLE_DECLARE(/datum/expedition_biome, expedition_decor_pool, GLOB.expedition_cave_decor_pool)
-TYPE_TABLE(/datum/expedition_biome/plains, expedition_decor_pool, list( \
-	/obj/effect/decal/cleanable/dirt = 8, \
-	/obj/effect/decal/remains/deer = 4, \
-	/obj/structure/flora/ausbushes = 5, \
-	/obj/structure/flora/bush = 4, \
-	/obj/structure/flora/tree/weepingcherry1 = 2, \
-))
-TYPE_TABLE(/datum/expedition_biome/orbital, expedition_decor_pool, list( \
-	/obj/effect/decal/cleanable/blood = 6, \
-	/obj/effect/decal/cleanable/ash = 6, \
-	/obj/effect/decal/remains/robot = 4, \
-	/obj/effect/decal/remains/human = 4, \
-	/obj/effect/decal/mecha_wreckage = 3, \
-	/obj/effect/decal/cleanable/blood/gibs = 3, \
-))
-TYPE_TABLE(/datum/expedition_biome/asteroid, expedition_decor_pool, list( \
-	/obj/effect/decal/cleanable/ash = 8, \
-	/obj/effect/decal/remains/robot = 4, \
-	/obj/effect/decal/remains/ribcage = 4, \
-	/obj/effect/decal/mecha_wreckage = 3, \
-))
 
-// Scatter `count` pieces of biome-appropriate decoration on walkable floors
+// Scatter `count` pieces of decoration on walkable floors
 // within `radius` of a centre.
-/proc/expedition_decorate(turf/center, radius, datum/expedition_biome/biome, count)
+/proc/expedition_decorate(turf/center, radius, count)
 	if(!isturf(center))
 		return
-	var/list/pool = istype(biome) ? TYPE_TABLE_GET(biome, expedition_decor_pool) : GLOB.expedition_cave_decor_pool
+	var/list/pool = GLOB.expedition_cave_decor_pool
 	if(!length(pool))
 		return
 	var/list/spots = list()

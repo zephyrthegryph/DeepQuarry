@@ -5,6 +5,9 @@
 	/// The human suffering it (who owns it, in genetic_side_effects): a relation view.
 	var/mob/living/carbon/human/host
 
+CAPABILITIES(/datum/genetics/side_effect)
+	ref_one(nameof(host), /mob/living/carbon/human)
+
 /proc/trigger_side_effect(mob/living/carbon/human/H)
 	if(!ishuman(H)) return
 	var/tp = pick(subtypesof(/datum/genetics/side_effect))

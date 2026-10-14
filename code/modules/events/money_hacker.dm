@@ -5,6 +5,9 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 	endWhen = 100
 	EXPIRY_DECLARE(end_time)
 
+CAPABILITIES(/datum/event/money_hacker)
+	ref_one(nameof(affected_account), /datum/money_account)
+
 /datum/event/money_hacker/setup()
 	EXPIRY_SET(src, end_time, 6000, CLOCK_WORLD)
 	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))

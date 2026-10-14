@@ -205,6 +205,8 @@ CAPABILITIES(/datum/generated_station_utility_topology)
 	var/datum/generated_station_utility_topology/result
 
 CAPABILITIES(/datum/generated_station_utility_builder)
+	ref_one(nameof(spec), /datum/generated_station_spec)
+	ref_one(nameof(materialization), /datum/generated_station_materialization)
 	owns_one(nameof(result), /datum/generated_station_utility_topology)
 
 /// Reserves fixtures and station-wide routes against local coordinates before live turfs exist.

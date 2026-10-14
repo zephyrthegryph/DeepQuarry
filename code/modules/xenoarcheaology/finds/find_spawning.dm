@@ -81,7 +81,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 		if(ARCHAEO_BOWL)
 			item_type = "bowl"
 			new_item = new /obj/item/reagent_containers/glass/replenishing(src.loc)
-			new_item.icon = 'icons/obj/xenoarchaeology.dmi'
+			new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 			new_item.set_icon_state("bowl")
 			apply_image_decorations = TRUE
 			new_item.color = rgb(rand(0,255),rand(0,255),rand(0,255))
@@ -89,7 +89,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 		if(ARCHAEO_URN)
 			item_type = "urn"
 			new_item = new /obj/item/reagent_containers/glass/replenishing(src.loc)
-			new_item.icon = 'icons/obj/xenoarchaeology.dmi'
+			new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 			new_item.set_icon_state("urn[rand(1,2)]")
 			apply_image_decorations = TRUE
 			additional_desc = "It [pick("whispers faintly","makes a quiet roaring sound","whistles softly","thrums quietly","throbs")] if you put it to your ear."
@@ -175,7 +175,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 		if(ARCHAEO_BOX)
 			item_type = "box"
 			new_item = new /obj/item/storage/box(src.loc)
-			new_item.icon = 'icons/obj/xenoarchaeology.dmi'
+			new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 			new_item.set_icon_state("box")
 			var/obj/item/storage/box/new_box = new_item
 			var/max_size = pick(1,2,2,3,3,3,4,4)
@@ -262,7 +262,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 				apply_image_decorations = TRUE
 			if(prob(25))
 				new_item = new /obj/item/soulstone(src.loc)
-				new_item.icon = 'icons/obj/xenoarchaeology.dmi'
+				new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 				new_item.set_icon_state(icon_state)
 				new_item.name = "Redspace Gem"
 				new_item.desc = "A glowing stone made of what appears to be a pure chunk of redspace. It seems to have the power to transfer the consciousness of dead or nearly-dead humanoids into it."
@@ -284,7 +284,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 		if(ARCHAEO_TELEBEACON)
 			new_item = new /obj/item/radio/beacon(src.loc)
 			talkative = FALSE
-			new_item.icon = 'icons/obj/xenoarchaeology.dmi'
+			new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 			new_item.set_icon_state("unknown[rand(1,4)]")
 			new_item.desc = ""
 
@@ -295,7 +295,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			new_item.name = pick("great-sword","claymore","longsword","broadsword","shortsword","gladius")
 			item_type = new_item.name
 			if(prob(30))
-				new_item.icon = 'icons/obj/xenoarchaeology.dmi'
+				new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 				new_item.set_icon_state("blade1")
 
 		if(ARCHAEO_CULTROBES)

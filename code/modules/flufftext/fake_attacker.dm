@@ -152,6 +152,9 @@ CAPABILITIES(/obj/effect/fake_attacker/human)
 	every(2 SECONDS, then(PROC_REF(fake_attacker_human_step)))
 	param(nameof(haunting), pos = 1, keep = FALSE)
 	param(nameof(clone_appearance_from), pos = 2, apply = PROC_REF(haunt), keep = FALSE)
+	ref_one(nameof(target), /mob/living)
+	ref_one(nameof(haunting), /mob)
+	ref_one(nameof(clone_appearance_from), /atom)
 
 /// Who the fake attacker haunts and whose look it takes (its constructor params, dropped once set up).
 /obj/effect/fake_attacker/human/var/tmp/mob/haunting

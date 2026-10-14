@@ -8,6 +8,7 @@
  * adapter. This is the only place click modifiers are read; the lint
  * "input: modifier ladders" in tools/ci/check_grep.sh enforces that.
  */
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/input_router)
 /datum/input_router
 
 GLOBAL_DATUM_INIT(input_router, /datum/input_router, new)

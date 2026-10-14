@@ -17,6 +17,8 @@ GLOBAL_DATUM(character_directory, /datum/character_directory)
 
 
 // This is a global singleton. Keep in mind that all operations should occur on usr, not src.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/character_directory)
+
 /datum/character_directory
 
 CAPABILITIES(/datum/character_directory)

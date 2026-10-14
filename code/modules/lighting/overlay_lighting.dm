@@ -78,6 +78,9 @@
 	var/cone_hint_y
 
 CAPABILITIES(/datum/overlay_lighting)
+	ref_one(nameof(owner), /atom/movable)
+	ref_one(nameof(current_holder), /atom/movable)
+	ref_one(nameof(parent_attached_to), /atom/movable)
 	owns_one(nameof(cone), /obj/effect/overlay/light_cone)
 	owns_one(nameof(directional_atom), /obj/effect/abstract/directional_lighting)
 	owns_one(nameof(visible_mask), /obj/effect/overlay/light_visible)

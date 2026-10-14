@@ -114,6 +114,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 // clears its holder's cached panel.
 
 CAPABILITIES(/datum/permissions_panel)
+	ref_one(nameof(holder))
 	interface("PermissionsPanel", title = "Permissions", rights = R_PERMISSIONS)
 	op("nav_permissions", ui_act("nav_permissions"), then(PROC_REF(ui_act_nav_permissions)))
 	op("nav_ranks", ui_act("nav_ranks"), then(PROC_REF(ui_act_nav_ranks)))

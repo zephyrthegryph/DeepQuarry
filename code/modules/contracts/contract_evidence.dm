@@ -8,6 +8,10 @@
 	/// The body last seen (a relation view).
 	var/mob/living/body
 
+CAPABILITIES(/datum/contract_subject_identity)
+	ref_one(nameof(subject_mind), /datum/mind)
+	ref_one(nameof(body), /mob/living)
+
 /datum/contract_subject_identity/New(_id, mob/living/subject)
 	. = ..()
 	id = _id

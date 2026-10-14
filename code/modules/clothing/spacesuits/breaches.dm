@@ -8,6 +8,9 @@
 	var/breach_type = BURN                      // Punctured or melted
 	var/tmp/obj/item/clothing/suit/space/holder	// Suit containing the list of breaches holding this instance.
 
+CAPABILITIES(/datum/breach)
+	ref_one(nameof(holder), /obj/item/clothing/suit/space)
+
 /obj/item/clothing/suit/space
 	armor_spec = "cold=60"
 

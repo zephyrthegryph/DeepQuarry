@@ -107,6 +107,7 @@ MSG_DEF_SELF(microscope/no_sample, "the microscope has no sample to examine")
 	rel_clear(src, nameof(sample))
 
 CAPABILITIES(/obj/machinery/microscope)
+	ref_one(nameof(sample), /obj/item)
 	drag_onto(PROC_REF(mousedrop_input))
 	op("microscope_insert_sample", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert sample"), needs(req_is(nameof(sample), FALSE, because = MSG(microscope/sample)), req_held_releasable()), then(PROC_REF(interaction_attackby)))
 	op("microscope_examine", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Examine sample"), needs(req_is(nameof(sample), TRUE, because = MSG(microscope/no_sample))), captures(nameof(sample), resume = CANCEL_IF_CHANGED), begins(PROC_REF(examine_text)), wait(2 SECONDS), on_interrupt(PROC_REF(examine_stopped)), then(PROC_REF(examine_done)))

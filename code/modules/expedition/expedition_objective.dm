@@ -131,7 +131,6 @@
 	var/datum/expedition_building/B = new()
 	B.loot_difficulty = S.difficulty
 	B.loot_size = S.size
-	rel_set(B, nameof(B.loot_biome), S.biome)
 	var/dim = 14 + S.size * 4
 	if(!B.build(center, rand(dim - 2, dim + 4), rand(dim - 2, dim + 4)))
 		spent(B)
@@ -480,6 +479,7 @@ CAPABILITIES(/datum/expedition_objective/destroy)
 
 CAPABILITIES(/datum/expedition_objective)
 	ref_many(nameof(tracked))
+	ref_one(nameof(site), /datum/expedition_site)
 
 CAPABILITIES(/datum/expedition_objective/commission_engine)
 	ref_many(nameof(generators))

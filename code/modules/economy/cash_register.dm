@@ -109,6 +109,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/cash_register)
+	ref_one(nameof(confirm_item), /obj/item)
+	ref_one(nameof(linked_account), /datum/money_account)
 	after_init(0, then(PROC_REF(set_up_register)))
 	interface("RetailScanner")
 	without("ui_open")

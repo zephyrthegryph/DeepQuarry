@@ -69,7 +69,6 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/janitor)
 	Commonly used to allow non-augmented crew to interact with virtual interfaces. \
 	<br>They are also fitted with toggleable cosmetic electrochromic lenses. \
 	The lenses will not protect against sudden bright flashes or welding."
-	var/obj/item/clothing/glasses/hud/omni/hud = null
 	var/mode = "civ"
 	icon_state = "glasses"
 	var/datum/tgui_module/tgarscreen
@@ -86,6 +85,7 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/janitor)
 
 CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	owns_one(nameof(tgarscreen), starts = nameof(tgarscreen_path))
+	owns_one(nameof(offline_tgarscreen), /datum/tgui_module)
 	op("omnihud_display_self", in_hand(), then(PROC_REF(omnihud_display_self)))
 	op("omnihud_chromatize_verb", menu(), label("Toggle AR Glasses Shading"), needs(carried()), then(PROC_REF(omnihud_chromatize_verb)))
 	op("omnihud_toggle_ar_planes_verb", menu(), label("Toggle AR Heads-Up Display"), needs(carried()), then(PROC_REF(omnihud_toggle_ar_planes_verb)))

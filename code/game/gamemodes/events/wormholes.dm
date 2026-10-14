@@ -77,7 +77,7 @@
 	var/obj/effect/portal/P = new /obj/effect/portal( enter )
 	rel_set(P, nameof(P.target), exit)
 	P.creator = null
-	P.icon = 'icons/obj/objects.dmi'
+	P.set_icon('icons/obj/objects.dmi')
 	P.failchance = 0
 	P.set_icon_state("bhole3") // Better icon as well
 	P.name = "wormhole"

@@ -39,10 +39,11 @@ MSG_DEF(credits/card_swiped, "You swipe a card through %T%.", "%U% swipes a card
 
 /// One customer's payment, set aside for one op: where it goes and what it is for.
 /datum/reservation/credits
-	var/datum/money_account/payee
+	/// The account the sale is paid into, as a handle (entity_handle): the reservation is dropped, not deleted, so it must not pin it. Null handle: no payee.
+	var/payee_h
 	var/purpose
 	/// The machine sold through: named on the statement, the one the customer is seen paying.
-	var/atom/till
+	var/till_h
 
 /datum/resource/credits
 	res_id = RES_CREDITS
@@ -88,8 +89,8 @@ MSG_DEF(credits/card_swiped, "You swipe a card through %T%.", "%U% swipes a card
 	R.actor = A.actor // ALLOW(ownership): a reservation lives until its op ends, then the engine drops it
 	var/obj/machinery/till = A.holder
 	if(istype(till))
-		R.till = till // ALLOW(ownership): a reservation lives until its op ends, then the engine drops it
-		R.payee = till.credits_payee(A) // ALLOW(ownership): a reservation lives until its op ends, then the engine drops it
+		R.till_h = entity_handle(till)
+		R.payee_h = entity_handle(till.credits_payee(A))
 		R.purpose = till.credits_purpose(A)
 	LAZYADD(rx_of(source).reservations, R)
 	return R
@@ -106,25 +107,27 @@ MSG_DEF(credits/card_swiped, "You swipe a card through %T%.", "%U% swipes a card
 	if(R.amount <= 0)
 		return OP_OK
 	var/mob/user = R.actor
-	var/terminal = R.till ? "[R.till.name]" : "Terminal"
+	var/atom/till = resolve_handle(R.till_h)
+	var/datum/money_account/payee = resolve_handle(R.payee_h)
+	var/terminal = till ? "[till.name]" : "Terminal"
 	if(istype(R.holder, /obj/item/spacecash))
 		var/obj/item/spacecash/cash = R.holder
 		if(QDELETED(cash) || cash.worth < R.amount)
 			return OP_FAILED
-		if(user && R.till)
-			act_message_t(user, R.till, /datum/msg/credits/cash_in)
+		if(user && till)
+			act_message_t(user, till, /datum/msg/credits/cash_in)
 		if(cash.worth - R.amount <= 0)
 			consume(cash, user)
 		else
 			cash.adjust_worth(-R.amount)
-		R.payee?.credit(R.amount, "(cash)", R.purpose, terminal) // a machine has no idea who paid with cash
+		payee?.credit(R.amount, "(cash)", R.purpose, terminal) // a machine has no idea who paid with cash
 		return OP_OK
 	var/datum/money_account/account = R.holder
 	if(!istype(account) || account.suspended || account.money < R.amount)
 		return OP_FAILED
-	if(user && R.till)
-		act_message_t(user, R.till, /datum/msg/credits/card_swiped)
-		play_sfx(R.till, SFX_MACHINES_ID_SWIPE)
-	if(R.payee)
-		return transfer_account_funds(account, R.payee, R.amount, R.purpose, terminal) ? OP_OK : OP_FAILED
+	if(user && till)
+		act_message_t(user, till, /datum/msg/credits/card_swiped)
+		play_sfx(till, SFX_MACHINES_ID_SWIPE)
+	if(payee)
+		return transfer_account_funds(account, payee, R.amount, R.purpose, terminal) ? OP_OK : OP_FAILED
 	return account.debit(R.amount, R.purpose, R.purpose, terminal) ? OP_OK : OP_FAILED

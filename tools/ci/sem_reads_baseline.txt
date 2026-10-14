@@ -31,7 +31,6 @@ unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
 unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
-unknown_read	code/game/atom/_atom.dm	var/list/icon_dimensions = get_icon_dimensions(icon)
 unknown_read	code/game/objects/items/devices/radio/radio.dm	if(!on)
 unknown_read	code/modules/body/body.dm	var/gained = domains & ~dirty
 unknown_read	code/modules/body/body.dm	if(gained && owner)
@@ -102,8 +101,6 @@ dynamic_read	code/engine/lifeforms/forms.dm	if(!(E.args["var"] in D.vars))
 dynamic_read	code/engine/lifeforms/forms.dm	if(!(var_name in D.vars))
 hop_not_relation	code/game/atom/_atom.dm	return L.AllowDrop() ? L : L.drop_location()
 hop_not_relation	code/game/atom/_atom.dm	return L.AllowDrop() ? L : L.drop_location()
-hop_not_relation	code/game/objects/items/weapons/RCD.dm	if(module.holder) // Is it attached to a RIG?
-hop_not_relation	code/game/objects/items/weapons/RCD.dm	return module.holder.cell
 hop_not_relation	code/modules/body/body.dm	if(gained && owner)
 hop_not_relation	code/modules/body/body.dm	PUBLISH_CHANGE(owner, MOB_KEY_HEALTH)
 hop_not_relation	code/modules/body/limb_state.dm	var/mob/living/carbon/human/H = owner

@@ -50,6 +50,9 @@
 	var/stored_phase_energy = 0
 	var/stored_reactive_energy = 0
 
+CAPABILITIES(/datum/material_response)
+	ref_one(nameof(parent), /obj/item)
+
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 
 

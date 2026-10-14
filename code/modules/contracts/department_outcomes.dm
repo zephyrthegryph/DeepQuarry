@@ -222,6 +222,9 @@
 	/// Synthetic tests may shorten the timers without weakening live terms.
 	var/stage_duration_override = 0
 
+CAPABILITIES(/datum/contract/outcome/engine_performance)
+	ref_one(nameof(performance_requirement), /datum/contract_requirement/staged_sustained_event)
+
 /datum/contract/outcome/engine_performance/on_negotiated_terms_changed()
 	..()
 	if(!performance_requirement)

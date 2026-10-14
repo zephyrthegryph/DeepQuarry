@@ -74,6 +74,9 @@ CAPABILITIES(/obj/item/organ/internal/appendix/horror)
 	/// The vent we're escaping into: a relation view, null once it is deleted.
 	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
 
+CAPABILITIES(/obj/item/organ/internal/intestine/horror)
+	ref_one(nameof(entry_vent), /obj/machinery/atmospherics/unary/vent_pump)
+
 /obj/item/organ/internal/intestine/horror/organ_tick(cycles)
 	..()
 	if(!owner && !escaping) return

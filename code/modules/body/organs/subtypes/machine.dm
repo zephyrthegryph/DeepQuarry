@@ -42,6 +42,7 @@
 CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 	after_init(0, then(PROC_REF(mmi_after_init)))
 	owns_one(nameof(stored_mmi), /obj/item/mmi)
+	ref_one(nameof(installed_mmi), /obj/item/mmi)
 	param(nameof(installed_mmi), pos = 2, keep = FALSE)
 
 
@@ -89,7 +90,7 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 
 	name = stored_mmi.name
 	desc = stored_mmi.desc
-	icon = stored_mmi.icon
+	set_icon(stored_mmi.icon)
 
 	stored_mmi.icon_state = "mmi_full"
 	set_icon_state(stored_mmi.icon_state)

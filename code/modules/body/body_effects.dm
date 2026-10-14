@@ -475,3 +475,6 @@
 /datum/body_effect_origin
 	/// A relation view: null once the origin is deleted.
 	var/atom/origin
+
+CAPABILITIES(/datum/body_effect_origin)
+	ref_one(nameof(origin), /atom)

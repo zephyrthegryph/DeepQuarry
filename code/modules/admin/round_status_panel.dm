@@ -25,6 +25,9 @@
 
 // The admin holder owns this panel (round_status_panel); owner_admin is a plain relation back.
 
+CAPABILITIES(/datum/round_status_panel)
+	ref_one(nameof(owner_admin))
+
 // Foundation UI (doc/rewrite/operations_and_actions.md "UI"): tgui_id opens the window, ui_rights is the union of every
 // action's rights (call/recall need R_ADMIN|R_EVENT, the timer and delay actions R_SERVER) and each action narrows with
 // admin_require(). Nothing here pushes the window by hand: an act_<x>() that returns TRUE updates it.
