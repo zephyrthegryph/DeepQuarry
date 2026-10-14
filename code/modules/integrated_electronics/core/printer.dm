@@ -136,6 +136,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/item/integrated_circuit_printer)
+	ref_one(nameof(queued_assembly), /obj/item/electronic_assembly)
 	interface("ICPrinter", state = nameof(GLOB.tgui_physical_state))
 	without("ui_open")
 	op("import_circuit", ui_act("import_circuit"), then(PROC_REF(ui_act_import_circuit)))

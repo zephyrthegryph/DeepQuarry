@@ -460,7 +460,7 @@ CAPABILITIES(/obj/item/clothing/accessory/chameleon)
 	var/obj/item/projectile/copy_type = copy_projectile
 	if(P && ispath(copy_projectile))
 		P.name = initial(copy_type.name)
-		P.icon = initial(copy_type.icon)
+		P.set_icon(initial(copy_type.icon))
 		P.set_icon_state(initial(copy_type.icon_state))
 		P.pass_flags = initial(copy_type.pass_flags)
 		P.fire_sound = initial(copy_type.fire_sound)

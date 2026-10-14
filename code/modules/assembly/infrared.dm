@@ -144,6 +144,7 @@ TRACKED(/obj/item/assembly/infra, on)
 	consume(src)
 
 CAPABILITIES(/obj/effect/beam/i_beam)
+	ref_one(nameof(master), /obj/item/assembly/infra)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	every(2 SECONDS, then(PROC_REF(i_beam_step)))
 

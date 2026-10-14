@@ -130,6 +130,10 @@ CAPABILITIES(/datum/contract_requirement/qualified_material_delivery)
 	var/datum/contract_requirement/staged_sustained_event/output_requirement
 	var/tmp/datum/contract_requirement/sustained_event/thermal_requirement
 
+CAPABILITIES(/datum/contract/social/alternative_fuel_trial)
+	ref_one(nameof(output_requirement), /datum/contract_requirement/staged_sustained_event)
+	ref_one(nameof(thermal_requirement), /datum/contract_requirement/sustained_event)
+
 /datum/contract/social/alternative_fuel_trial/on_negotiated_terms_changed()
 	..()
 	if(!output_requirement)
@@ -357,6 +361,9 @@ CAPABILITIES(/datum/contract_requirement/qualified_material_delivery)
 
 /datum/contract/social/balanced_operations
 	var/tmp/datum/contract_requirement/event_count/cycle_requirement
+
+CAPABILITIES(/datum/contract/social/balanced_operations)
+	ref_one(nameof(cycle_requirement), /datum/contract_requirement/event_count)
 
 /datum/contract/social/balanced_operations/on_negotiated_terms_changed()
 	..()

@@ -26,21 +26,8 @@
 
 
 /datum/event2/event/grid_check
-	var/tmp/obj/machinery/power/generator/engine	// The turbine that will send a power spike.
-
-/datum/event2/event/grid_check/set_up()
-	// no turbines under LINDA (see get_overpower); engine stays null
-	// and start() will no-op the power_spike branch.
-	rel_clear(src, nameof(engine))
 
 /datum/event2/event/grid_check/start()
 	// This sets off a chain of events that lead to the actual grid check (or perhaps worse).
-	// First, the Supermatter engine makes a power spike.
-	if(engine())
-		engine().power_spike()
-	// After that, the engine checks if a grid checker exists on the same powernet, and if so, it triggers a blackout.
-	// If not, lots of stuff breaks.  See code/modules/power/generator.dm for that piece of code.
-
-/// The turbine that will send a power spike.
-/datum/event2/event/grid_check/proc/engine() as /obj/machinery/power/generator
-	return engine
+	// There are no turbines under LINDA (see get_overpower), so there is no engine power spike to send first.
+	// A grid checker on the same powernet would trigger a blackout and, if not, lots of stuff breaks.  See code/modules/power/generator.dm for that piece of code.

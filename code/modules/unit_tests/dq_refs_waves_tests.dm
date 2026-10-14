@@ -331,3 +331,230 @@ CAPABILITIES(/obj/refs_param_probe)
 	TEST_ASSERT_NULL(mind.current, "rel_clear leaves the mind with no current body")
 	TEST_ASSERT(!rel_names(mind, nameof(mind.current), body), "and the body's reverse index no longer names the mind")
 	qdel(mind)
+
+/// w6a2: a board game's seated player is a declared relation: deleting the player clears the seat instead of keeping the mob alive.
+/datum/unit_test/dq_refs_w6a2_board_game_player_clears_on_delete
+
+/datum/unit_test/dq_refs_w6a2_board_game_player_clears_on_delete/Run()
+	var/mob/living/carbon/human/one = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/structure/casino_table/board_game/checkers/table = allocate(/obj/structure/casino_table/board_game/checkers, run_loc_floor_bottom_left)
+	var/datum/board_game/checkers/game = table.game_ui
+	TEST_ASSERT(istype(game), "the checkers table holds a checkers game")
+	rel_set(game, nameof(game.player_one), one)
+	TEST_ASSERT_EQUAL(game.player_one, one, "the player takes the seat")
+	TEST_ASSERT_EQUAL(game.parent, table, "the game names its table")
+	qdel(one, TRUE)
+	TEST_ASSERT_NULL(game.player_one, "deleting the player clears the seat")
+
+/// w6a3: a contract's funding account is a declared relation: deleting the account clears the field instead of keeping it alive.
+/datum/unit_test/dq_refs_w6a3_contract_funding_account_clears_on_delete
+
+/datum/unit_test/dq_refs_w6a3_contract_funding_account_clears_on_delete/Run()
+	var/datum/money_account/funder = new
+	var/datum/contract/contract = new
+	rel_set(contract, nameof(contract.funding_account), funder)
+	TEST_ASSERT_EQUAL(contract.funding_account, funder, "the contract names its funding account")
+	qdel(funder, TRUE)
+	TEST_ASSERT_NULL(contract.funding_account, "deleting the account clears the contract's field")
+	qdel(contract, TRUE)
+
+/// w6a3: an EFTPOS scanner's linked account is a declared relation: deleting the account unlinks it.
+/datum/unit_test/dq_refs_w6a3_eftpos_linked_account_clears_on_delete
+
+/datum/unit_test/dq_refs_w6a3_eftpos_linked_account_clears_on_delete/Run()
+	var/obj/item/eftpos/scanner = allocate(/obj/item/eftpos, run_loc_floor_bottom_left)
+	var/datum/money_account/account = new
+	rel_set(scanner, nameof(scanner.linked_account), account)
+	TEST_ASSERT_EQUAL(scanner.linked_account, account, "the scanner links the account")
+	qdel(account, TRUE)
+	TEST_ASSERT_NULL(scanner.linked_account, "deleting the account unlinks the scanner")
+	own_turf_contents(run_loc_floor_bottom_left) // the account's setup left a receipt and its parcel on the block: the test owns them
+
+/// W6B: a genetic side effect names the human suffering it as a relation: deleting the human clears the pointer.
+/datum/unit_test/dq_refs_w6b_side_effect_host_clears_when_deleted
+
+/datum/unit_test/dq_refs_w6b_side_effect_host_clears_when_deleted/Run()
+	var/mob/living/carbon/human/host = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/datum/genetics/side_effect/effect = new
+	rel_set(effect, nameof(effect.host), host)
+	TEST_ASSERT_EQUAL(effect.host, host, "the side effect names its host")
+	qdel(host)
+	TEST_ASSERT_NULL(effect.host, "deleting the host clears the side effect's pointer")
+	qdel(effect)
+
+/// W6B: a book's barcode scanner names its associated computer as a relation.
+/datum/unit_test/dq_refs_w6b_barcode_scanner_book_clears_when_deleted
+
+/datum/unit_test/dq_refs_w6b_barcode_scanner_book_clears_when_deleted/Run()
+	var/obj/item/barcodescanner/scanner = allocate(/obj/item/barcodescanner)
+	var/obj/item/book/book = allocate(/obj/item/book)
+	rel_set(scanner, nameof(scanner.book), book)
+	TEST_ASSERT_EQUAL(scanner.book, book, "the scanner names the scanned book")
+	qdel(book)
+	TEST_ASSERT_NULL(scanner.book, "deleting the book clears the scanner's pointer")
+
+/// w6a4: the retail scanner names its linked account as a relation: deleting the account clears the link.
+/datum/unit_test/dq_refs_w6a4_retail_scanner_account_clears_on_delete
+
+/datum/unit_test/dq_refs_w6a4_retail_scanner_account_clears_on_delete/Run()
+	var/obj/item/retail_scanner/scanner = allocate(/obj/item/retail_scanner, run_loc_floor_bottom_left)
+	var/datum/money_account/account = new
+	rel_set(scanner, nameof(scanner.linked_account), account)
+	TEST_ASSERT_EQUAL(scanner.linked_account, account, "the scanner links the account")
+	qdel(account, TRUE)
+	TEST_ASSERT_NULL(scanner.linked_account, "deleting the account unlinks the scanner")
+
+/// w6a4: a flight port names the vessel occupying it as a relation: deleting the vessel frees the berth.
+/datum/unit_test/dq_refs_w6a4_flight_port_occupant_clears_on_delete
+
+/datum/unit_test/dq_refs_w6a4_flight_port_occupant_clears_on_delete/Run()
+	var/datum/flight_port/port = new
+	var/datum/flight_vessel/vessel = new
+	rel_set(port, nameof(port.occupied_by), vessel)
+	TEST_ASSERT_EQUAL(port.occupied_by, vessel, "the port names its occupant")
+	qdel(vessel, TRUE)
+	TEST_ASSERT_NULL(port.occupied_by, "deleting the vessel clears the berth")
+	qdel(port, TRUE)
+
+/// w6a1: a telecube's mate clears when the other cube is deleted.
+/datum/unit_test/dq_refs_w6a1_telecube_mate_clears_on_delete
+
+/datum/unit_test/dq_refs_w6a1_telecube_mate_clears_on_delete/Run()
+	var/obj/item/telecube/a = allocate(/obj/item/telecube, run_loc_floor_bottom_left)
+	var/obj/item/telecube/c = allocate(/obj/item/telecube, run_loc_floor_bottom_left)
+	rel_set(a, nameof(a.mate), c)
+	TEST_ASSERT_EQUAL(a.mate, c, "the cube names its mate")
+	qdel(c, TRUE)
+	TEST_ASSERT_NULL(a.mate, "deleting the mate clears the pointer")
+
+/// w6a1: an affliction's owner and location clear when they are deleted.
+/datum/unit_test/dq_refs_w6a1_affliction_owner_location_clear_on_delete
+
+/datum/unit_test/dq_refs_w6a1_affliction_owner_location_clear_on_delete/Run()
+	var/datum/affliction/aff = new
+	var/mob/living/carbon/human/owner = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/organ/part = allocate(/obj/item/organ, run_loc_floor_bottom_left)
+	rel_set(aff, nameof(aff.owner), owner)
+	rel_set(aff, nameof(aff.location), part)
+	qdel(part, TRUE)
+	TEST_ASSERT_NULL(aff.location, "deleting the part clears the location")
+	qdel(owner, TRUE)
+	TEST_ASSERT_NULL(aff.owner, "deleting the owner clears the owner")
+	qdel(aff, TRUE)
+
+/// w6a1: the belly overlay panel survives its mob being deleted first (owner() reads null, on_destroy does not runtime).
+/datum/unit_test/dq_refs_w6a1_belly_overlay_owner_deleted_first
+
+/datum/unit_test/dq_refs_w6a1_belly_overlay_owner_deleted_first/Run()
+	var/mob/living/carbon/human/owner = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/datum/belly_overlay_tgui/panel = new /datum/belly_overlay_tgui(owner)
+	TEST_ASSERT_EQUAL(panel.owner(), owner, "the panel names its mob")
+	qdel(owner, TRUE)
+	TEST_ASSERT_NULL(panel.owner(), "deleting the mob clears the panel's owner")
+	qdel(panel, TRUE)
+
+/// w6a1: the admin PM prompt names its ticket as a relation: deleting the ticket clears it (a real ticket needs a client, so the test sets the field the way open_request does).
+/datum/unit_test/dq_refs_w6a1_adminpm_ticket_clears_on_delete
+
+/// A ticket that skips the constructor (the real one deletes itself without a client).
+/datum/ticket/dq_refs_w6a1_fixture
+
+/datum/ticket/dq_refs_w6a1_fixture/New()
+	return
+
+/datum/unit_test/dq_refs_w6a1_adminpm_ticket_clears_on_delete/Run()
+	var/datum/ticket/stand_in = new /datum/ticket/dq_refs_w6a1_fixture
+	var/datum/prompt/text/admin_pm/asked = new
+	rel_set(asked, nameof(asked.ticket), stand_in)
+	TEST_ASSERT_EQUAL(asked.ticket, stand_in, "the prompt names its ticket")
+	qdel(stand_in, TRUE)
+	TEST_ASSERT_NULL(asked.ticket, "deleting the ticket clears the prompt's pointer")
+	qdel(asked, TRUE)
+
+/// w6a1: reopening the whitelist editor (an owned var on the admin holder) disposes of the previous editor.
+/datum/unit_test/dq_refs_w6a1_whitelist_editor_reopen_disposes_old
+
+/datum/unit_test/dq_refs_w6a1_whitelist_editor_reopen_disposes_old/Run()
+	var/fixture_key = "dq_refs_w6a1_wl"
+	set_global("admin_datums", GLOB.admin_datums.Copy())
+	set_global("deadmins", GLOB.deadmins.Copy())
+	var/datum/admins/holder = allocate(/datum/admins, list(), fixture_key)
+	GLOB.admin_datums -= fixture_key
+	var/datum/whitelist_editor/first = new
+	rel_set(holder, nameof(/datum/admins::whitelist_editor), first)
+	TEST_ASSERT_EQUAL(holder.whitelist_editor, first, "the holder names its editor")
+	var/datum/whitelist_editor/second = new
+	rel_set(holder, nameof(/datum/admins::whitelist_editor), second)
+	TEST_ASSERT(QDELETED(first), "the replaced editor is disposed of")
+	TEST_ASSERT_EQUAL(holder.whitelist_editor, second, "the holder names the new editor")
+
+/// w6a4: a prompt field a relation declares is written through the relation: deleting the target clears the prompt's field.
+/datum/unit_test/dq_refs_w6a4_open_request_relation_field_clears_on_delete
+
+/datum/unit_test/dq_refs_w6a4_open_request_relation_field_clears_on_delete/Run()
+	var/datum/exported_crate/record = new
+	var/datum/prompt/yes_no/supply_delete_record/asked = open_request(src, /datum/prompt/yes_no/supply_delete_record, null, timeout = 0, record = record)
+	TEST_ASSERT_NOTNULL(asked, "the prompt opened")
+	TEST_ASSERT_EQUAL(asked.record, record, "the prompt names the record")
+	qdel(record, TRUE)
+	TEST_ASSERT_NULL(asked.record, "deleting the record clears the prompt's field")
+	qdel(asked, TRUE)
+
+/// w6a4: the emergency shuttle system names its shuttle through its own relation.
+/datum/unit_test/dq_refs_w6a4_emergency_shuttle_relation_declared
+
+/datum/unit_test/dq_refs_w6a4_emergency_shuttle_relation_declared/Run()
+	var/datum/shuttle/autodock/ferry/emergency/w6a4_stub/stub = new
+	var/datum/shuttle/autodock/ferry/emergency/prior = SSemergency_shuttle.vars["shuttle"]
+	rel_clear(SSemergency_shuttle, "shuttle")
+	rel_set(SSemergency_shuttle, nameof(/datum/system/emergency_shuttle::shuttle), stub)
+	TEST_ASSERT_EQUAL(SSemergency_shuttle.vars["shuttle"], stub, "the system names the shuttle it was given")
+	qdel(stub, TRUE)
+	TEST_ASSERT_NULL(SSemergency_shuttle.vars["shuttle"], "deleting the shuttle clears the system's field")
+	if(prior && !QDELETED(prior))
+		rel_set(SSemergency_shuttle, "shuttle", prior)
+
+/// A bare emergency shuttle for the relation test: the real constructor registers radio, landmarks and the shuttle registry.
+/datum/shuttle/autodock/ferry/emergency/w6a4_stub
+	defer_initialisation = TRUE
+	shuttle_area = /area
+
+/datum/shuttle/autodock/ferry/emergency/w6a4_stub/New()
+	return
+
+/// w6a2: a declared keep = FALSE param is dropped through its relation after init, so the target keeps no back-edge to the holder.
+/datum/unit_test/dq_refs_w6a2_dropped_param_leaves_no_back_edge
+
+/datum/unit_test/dq_refs_w6a2_dropped_param_leaves_no_back_edge/Run()
+	var/obj/item/mmi/brain_box = allocate(/obj/item/mmi, run_loc_floor_bottom_left)
+	var/obj/item/organ/internal/mmi_holder/holder = allocate(/obj/item/organ/internal/mmi_holder, run_loc_floor_bottom_left, TRUE, brain_box)
+	TEST_ASSERT_NULL(holder.installed_mmi, "the constructor param is dropped when init returns")
+	TEST_ASSERT(!rel_names(holder, nameof(holder.installed_mmi), brain_box), "and the target's reverse index no longer names the holder")
+
+/// w6a2: the locket owns its keepsake, and opening it hands the paper over to the floor alive instead of disposing of it.
+/datum/unit_test/dq_refs_w6a2_locket_open_hands_keepsake_over
+
+/datum/unit_test/dq_refs_w6a2_locket_open_hands_keepsake_over/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/item/clothing/accessory/locket/locket = allocate(/obj/item/clothing/accessory/locket, T)
+	locket.open = TRUE
+	var/obj/item/paper/paper = allocate(/obj/item/paper, T)
+	TEST_ASSERT(user.put_in_inactive_hand(paper), "the keepsake is in hand")
+	test_op_handler(locket, "locket_insert_item", user, paper)
+	TEST_ASSERT_EQUAL(locket.held(), paper, "the locket holds the paper")
+	test_op_handler(locket, "locket_flip_self", user) // open -> closed
+	TEST_ASSERT_EQUAL(locket.held(), paper, "closing the locket keeps the keepsake")
+	test_op_handler(locket, "locket_flip_self", user) // closed -> open: the keepsake falls out
+	TEST_ASSERT(!QDELETED(paper), "opening the locket does not dispose of the keepsake")
+	TEST_ASSERT_NULL(locket.held(), "and the locket no longer holds it")
+	TEST_ASSERT_EQUAL(get_turf(paper), get_turf(user), "the keepsake lies where the wearer stands")
+
+/// w6a2: the same holds for a stump built from the limb it replaces.
+/datum/unit_test/dq_refs_w6a2_stump_param_leaves_no_back_edge
+
+/datum/unit_test/dq_refs_w6a2_stump_param_leaves_no_back_edge/Run()
+	var/obj/item/organ/external/limb = allocate(/obj/item/organ/external/arm, run_loc_floor_bottom_left)
+	var/obj/item/organ/external/stump/stump = allocate(/obj/item/organ/external/stump, run_loc_floor_bottom_left, null, limb)
+	TEST_ASSERT_NULL(stump.stump_of, "the limb param is dropped when init returns")
+	TEST_ASSERT(!rel_names(stump, nameof(stump.stump_of), limb), "and the limb's reverse index no longer names the stump")

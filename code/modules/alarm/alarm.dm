@@ -24,6 +24,7 @@
 	var/hidden = FALSE				//If this alarm can be seen from consoles or other things.
 
 CAPABILITIES(/datum/alarm)
+	ref_one(nameof(origin), /atom)
 	owns_many(nameof(sources))
 
 /datum/alarm/New(atom/origin, atom/source, duration, severity, hidden)

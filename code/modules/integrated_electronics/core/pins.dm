@@ -22,6 +22,9 @@ D [1]/  ||
 	var/list/linked // Lazy: most pins are never wired.
 	var/io_type = DATA_CHANNEL
 
+CAPABILITIES(/datum/integrated_io)
+	ref_one(nameof(holder), /obj/item/integrated_circuit)
+
 /datum/integrated_io/New(newloc, name, new_data)
 	..()
 	src.name = name

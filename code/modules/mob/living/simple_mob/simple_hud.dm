@@ -19,7 +19,7 @@
 	if(LAZYLEN(hud_gears))
 		for(var/gear_slot in hud_gears)
 			inv_box = new /atom/movable/screen/inventory()
-			inv_box.icon = ui_style
+			inv_box.set_icon(ui_style)
 			inv_box.color = ui_color
 			inv_box.alpha = ui_alpha
 
@@ -42,7 +42,7 @@
 	if(has_hidden_gear)
 		using = new /atom/movable/screen()
 		using.name = "toggle"
-		using.icon = ui_style
+		using.set_icon(ui_style)
 		using.set_icon_state("other")
 		using.screen_loc = ui_inventory
 		using.hud_layerise()
@@ -52,7 +52,7 @@
 
 	// The combat mode button (it replaced the intent selector).
 	using = HUD.make_combat_mode_button(src)
-	using.icon = ui_style
+	using.set_icon(ui_style)
 	using.color = ui_color
 	using.alpha = ui_alpha
 	rel_add(HUD, nameof(HUD.adding), using)
@@ -61,7 +61,7 @@
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()
 	using.name = "mov_intent"
-	using.icon = ui_style
+	using.set_icon(ui_style)
 	using.set_icon_state((m_intent == I_RUN ? "running" : "walking"))
 	using.screen_loc = ui_movi
 	using.color = ui_color
@@ -72,7 +72,7 @@
 	//Resist button
 	using = new /atom/movable/screen()
 	using.name = "resist"
-	using.icon = ui_style
+	using.set_icon(ui_style)
 	using.set_icon_state("act_resist")
 	using.screen_loc = ui_pull_resist
 	using.color = ui_color
@@ -103,7 +103,7 @@
 	hud_elements |= hud_used?.autowhisper_display
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("aw-select")
 	aw.name = "autowhisper mode"
 	aw.screen_loc = "EAST-1:28,CENTER-2:13"
@@ -111,7 +111,7 @@
 	rel_add(HUD, nameof(HUD.extra_screens), aw)
 
 	aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("lang")
 	aw.name = "check known languages"
 	aw.screen_loc = ui_under_health
@@ -119,7 +119,7 @@
 	rel_add(HUD, nameof(HUD.extra_screens), aw)
 
 	aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("up")
 	aw.name = "move upwards"
 	aw.screen_loc = ui_under_health
@@ -127,7 +127,7 @@
 	rel_add(HUD, nameof(HUD.extra_screens), aw)
 
 	aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("down")
 	aw.name = "move downwards"
 	aw.screen_loc = ui_under_health
@@ -152,7 +152,7 @@
 		//Drop button
 		using = new /atom/movable/screen()
 		using.name = "drop"
-		using.icon = ui_style
+		using.set_icon(ui_style)
 		using.set_icon_state("act_drop")
 		using.screen_loc = ui_drop_throw
 		using.color = ui_color
@@ -162,7 +162,7 @@
 		//Equip detail
 		using = new /atom/movable/screen()
 		using.name = "equip"
-		using.icon = ui_style
+		using.set_icon(ui_style)
 		using.set_icon_state("act_equip")
 		using.screen_loc = ui_equip
 		using.color = ui_color
@@ -173,7 +173,7 @@
 		inv_box = new /atom/movable/screen/inventory/hand()
 		rel_set(inv_box, nameof(inv_box.hud), HUD)
 		inv_box.name = "r_hand"
-		inv_box.icon = ui_style
+		inv_box.set_icon(ui_style)
 		inv_box.set_icon_state("r_hand_inactive")
 		if(!hand)	//This being 0 or null means the right hand is in use
 			inv_box.set_icon_state("r_hand_active")
@@ -188,7 +188,7 @@
 		inv_box = new /atom/movable/screen/inventory/hand()
 		rel_set(inv_box, nameof(inv_box.hud), HUD)
 		inv_box.name = "l_hand"
-		inv_box.icon = ui_style
+		inv_box.set_icon(ui_style)
 		inv_box.set_icon_state("l_hand_inactive")
 		if(hand)	//This being 1 means the left hand is in use
 			inv_box.set_icon_state("l_hand_active")
@@ -203,7 +203,7 @@
 		//Swaphand titlebar
 		using = new /atom/movable/screen/inventory()
 		using.name = "hand"
-		using.icon = ui_style
+		using.set_icon(ui_style)
 		using.set_icon_state("hand1")
 		using.screen_loc = ui_swaphand1
 		using.color = ui_color
@@ -212,7 +212,7 @@
 
 		using = new /atom/movable/screen/inventory()
 		using.name = "hand"
-		using.icon = ui_style
+		using.set_icon(ui_style)
 		using.set_icon_state("hand2")
 		using.screen_loc = ui_swaphand2
 		using.color = ui_color

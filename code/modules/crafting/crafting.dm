@@ -14,7 +14,7 @@
 /datum/personal_crafting/proc/create_mob_button(mob/user, client/CL)
 	var/datum/hud/H = user.hud_used
 	var/atom/movable/screen/craft/C = new()
-	C.icon = H.ui_style
+	C.set_icon(H.ui_style)
 	C.color = H.ui_color
 	C.alpha = H.ui_alpha
 	rel_add(H, nameof(H.other_important), C)
@@ -522,6 +522,7 @@
 	return data
 
 CAPABILITIES(/datum/personal_crafting)
+	ref_one(nameof(owner), /mob)
 	op("toggle_recipes", ui_act(), then(PROC_REF(ui_act_toggle_recipes)))
 	op("toggle_compact", ui_act(), then(PROC_REF(ui_act_toggle_compact)))
 	interface("PersonalCrafting", state = nameof(GLOB.tgui_not_incapacitated_turf_state))

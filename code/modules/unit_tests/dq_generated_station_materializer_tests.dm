@@ -216,21 +216,6 @@
 		var/most_repeated_content = 0
 		var/content_fixture_count = 0
 		var/machinery_count = 0
-		for(var/datum/generated_room_fragment_placement/fragment_placement in solution.fragments)
-			var/datum/generated_room_fragment/activity_motif/motif = fragment_placement.fragment
-			if(!istype(motif))
-				continue
-			for(var/feature_type in motif.feature_types)
-				content_fixture_count++
-				var/datum/generated_room_feature/fragment_feature = new feature_type
-				var/fragment_type_key = "[fragment_feature.atom_type]"
-				var/fragment_feature_key = fragment_feature.id
-				content_types[fragment_type_key] = TRUE
-				content_type_counts[fragment_feature_key] = (content_type_counts[fragment_feature_key] || 0) + 1
-				most_repeated_content = max(most_repeated_content, content_type_counts[fragment_feature_key])
-				if(ispath(fragment_feature.atom_type, /obj/machinery))
-					machinery_count++
-				qdel(fragment_feature)
 		for(var/datum/generated_room_placement/placement in solution.placements)
 			content_fixture_count++
 			var/placement_type_key = "[placement.feature.atom_type]"

@@ -7,6 +7,10 @@
 	var/list/keywords = list() // Used for searching.
 	var/tmp/datum/codex_tree/holder
 
+CAPABILITIES(/datum/lore/codex)
+	ref_one(nameof(parent), /datum/lore/codex)
+	ref_one(nameof(holder), /datum/codex_tree)
+
 /datum/lore/codex/New(new_holder, new_parent)
 	..()
 	rel_set(src, nameof(holder), new_holder)

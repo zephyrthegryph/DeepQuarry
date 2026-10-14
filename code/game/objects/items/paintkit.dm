@@ -38,7 +38,7 @@
 	if(can_customize(I))
 		I.name = new_name ? new_name : I.name
 		I.desc = new_desc ? new_desc : I.desc
-		I.icon = new_icon_file ? new_icon_file : I.icon
+		I.set_icon(new_icon_file ? new_icon_file : I.icon)
 		I.set_icon_override(new_icon_override_file ? new_icon_override_file : I.icon_override)
 		if(new_icon)
 			I.set_icon_state(new_icon)
@@ -102,7 +102,7 @@
 			helmet.set_icon_state("[new_icon]_helmet")
 			helmet.set_item_state("[new_icon]_helmet")
 			if(new_icon_file)
-				helmet.icon = new_icon_file
+				helmet.set_icon(new_icon_file)
 			if(new_icon_override_file)
 				helmet.set_icon_override(new_icon_override_file)
 			if(new_light_overlay)
@@ -120,8 +120,8 @@
 			var/obj/item/clothing/head/hood/S = suit.hood
 			S.set_icon_state("[new_icon]_helmet")
 			if(new_icon_file)
-				suit.icon = new_icon_file
-				S.icon = new_icon_file
+				suit.set_icon(new_icon_file)
+				S.set_icon(new_icon_file)
 			if(new_icon_override_file)
 				suit.set_icon_override(new_icon_override_file)
 				S.set_icon_override(new_icon_override_file)
@@ -133,7 +133,7 @@
 			suit.set_icon_state("[new_icon]_suit")
 			suit.set_item_state("[new_icon]_suit")
 			if(new_icon_file)
-				suit.icon = new_icon_file
+				suit.set_icon(new_icon_file)
 			if(new_icon_override_file)
 				suit.set_icon_override(new_icon_override_file)
 			to_chat(user, "You set about modifying the suit into [suit].")
@@ -154,7 +154,7 @@
 	RIG.suit_type = "customized [initial(RIG.suit_type)]"
 	RIG.name = "[new_name]"
 	RIG.desc = new_desc
-	RIG.icon = new_icon_file
+	RIG.set_icon(new_icon_file)
 	RIG.set_icon_state(new_icon)
 	RIG.set_icon_override(new_icon_override_file)
 	for(var/obj/item/piece in list(RIG.gloves,RIG.helmet,RIG.boots,RIG.chest))
@@ -164,16 +164,16 @@
 		piece.desc = "It seems to be part of a [RIG.name]."
 		piece.set_icon_state("[RIG.suit_state]")
 		if(istype(piece, /obj/item/clothing/shoes))
-			piece.icon = 'icons/mob/custom_items_rig_boots.dmi'
+			piece.set_icon('icons/mob/custom_items_rig_boots.dmi')
 			piece.set_icon_override('icons/mob/custom_items_rig_boots.dmi')
 		if(istype(piece, /obj/item/clothing/suit))
-			piece.icon = 'icons/mob/custom_items_rig_suit.dmi'
+			piece.set_icon('icons/mob/custom_items_rig_suit.dmi')
 			piece.set_icon_override('icons/mob/custom_items_rig_suit.dmi')
 		if(istype(piece, /obj/item/clothing/head))
-			piece.icon = 'icons/mob/custom_items_rig_helmet.dmi'
+			piece.set_icon('icons/mob/custom_items_rig_helmet.dmi')
 			piece.set_icon_override('icons/mob/custom_items_rig_helmet.dmi')
 		if(istype(piece, /obj/item/clothing/gloves))
-			piece.icon = 'icons/mob/custom_items_rig_gloves.dmi'
+			piece.set_icon('icons/mob/custom_items_rig_gloves.dmi')
 			piece.set_icon_override('icons/mob/custom_items_rig_gloves.dmi')
 	if(RIG.helmet && istype(RIG.helmet, /obj/item/clothing/head/helmet) && new_light_overlay)
 		var/obj/item/clothing/head/helmet/H = RIG.helmet
@@ -225,7 +225,7 @@
 	M.name = new_name
 	M.desc = new_desc
 	if(new_icon_file)
-		M.icon = new_icon_file
+		M.set_icon(new_icon_file)
 	M.set_initial_icon(new_icon)
 	use(1, user)
 

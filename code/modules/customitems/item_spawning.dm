@@ -48,7 +48,7 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 		item.desc = item_desc
 	if(item_icon)
 		if(!istype(item, /obj/item/clothing))
-			item.icon = CUSTOM_ITEM_OBJ
+			item.set_icon(CUSTOM_ITEM_OBJ)
 			item.set_icon_state(item_icon)
 			return
 		else
@@ -58,7 +58,7 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 				item.set_item_state_slots(null)
 				item.set_item_icons(null)
 
-			item.icon = CUSTOM_ITEM_OBJ
+			item.set_icon(CUSTOM_ITEM_OBJ)
 			item.set_icon_state(item_icon)
 			item.set_item_state(null)
 			item.set_icon_override(CUSTOM_ITEM_MOB)

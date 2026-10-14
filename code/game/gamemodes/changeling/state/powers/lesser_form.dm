@@ -82,12 +82,12 @@
 
 	C.set_transforming(1)
 	C.canmove = 0
-	C.icon = null
+	C.set_icon(null)
 	C.cut_overlays()
 	C.set_invisibility(INVISIBILITY_ABSTRACT)
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( C.loc )
 	animation.set_icon_state("blank")
-	animation.icon = 'icons/mob/mob.dmi'
+	animation.set_icon('icons/mob/mob.dmi')
 	rel_set(animation, nameof(animation.master), src)
 	flick("monkey2h", animation)
 	after(src, 4.8 SECONDS, PROC_REF(changeling_lesser_transform_finish), with = list(animation, chosen_dna, implants))

@@ -77,7 +77,7 @@ DECLARE_SHARED_CACHE(underwater_visuals, GLOBAL_PROC_REF(build_underwater_visual
 /// Builder for underwater_visuals: the weather layer an underwater tile shows through its vis_contents, one shared atom per icon and state.
 /proc/build_underwater_visuals(visuals_icon, visuals_state)
 	var/atom/movable/weather_visuals/visuals = new(null)
-	visuals.icon = visuals_icon
+	visuals.set_icon(visuals_icon)
 	visuals.set_icon_state(visuals_state)
 	return visuals
 

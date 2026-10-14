@@ -103,7 +103,7 @@ CAPABILITIES(/obj/item/target)
 		var/obj/bmark = new
 		bmark.pixel_x = p_x
 		bmark.pixel_y = p_y
-		bmark.icon = 'icons/effects/effects.dmi'
+		bmark.set_icon('icons/effects/effects.dmi')
 		bmark.set_icon_state("scorch")
 
 		if(decaltype == 1)
@@ -140,7 +140,7 @@ CAPABILITIES(/obj/item/target)
 
 		add_overlay(bmark) // add the decal
 
-		icon = virtualIcon // apply bulletholes over decals
+		set_icon(virtualIcon) // apply bulletholes over decals
 
 		return
 

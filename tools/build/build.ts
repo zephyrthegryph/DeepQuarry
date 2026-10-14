@@ -17,6 +17,7 @@ import { pruneStaleRunCopies, runCopyBase } from './lib/run_copies';
 import Juke from './juke/index.js';
 import { assertBuildRoot } from './lib/build_root';
 import { bun, bunRoot } from './lib/bun';
+import { computeCompileHash } from './lib/compile_hash';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { claimFreePort, shouldRetryBoot } from './lib/free_port';
 import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, withSlot } from './lib/machine_slots';
@@ -1045,13 +1046,35 @@ const DMB_CACHE_DIR = 'data/dmb-cache';
 
 async function compileDerived(dme: string, get: any, defines: string[]): Promise<CompiledOutput> {
   writeDerivedDme(dme);
+  const dmeText = fs.readFileSync(dme, 'utf-8');
   const allDefines = [...defines, ...get(DefineParameter)];
   const dmVersion = get(DmVersionParameter);
-  // Every derived build invokes the selected compiler. A DM-source fingerprint
-  // cannot prove map/resource bytes, FILE_DIR search or negative lookup inputs,
-  // effective compiler identity, or the current output pair. Reuse requires an
-  // authenticated complete closure; neither an icon repack nor file existence
-  // supplies that authority. Native retains its existing compiler-owned reuse.
+  const dmbFile = dme.replace(/\.dme$/, '.dmb');
+  const rscFile = dme.replace(/\.dme$/, '.rsc');
+  const cacheFile = `${DMB_CACHE_DIR}/${path.basename(dme)}.hash.json`;
+  const native = compilerMode() === 'native';
+  // The content-hash reuse below is for DreamMaker only. A DM-source fingerprint cannot prove map/resource bytes, FILE_DIR
+  // search or negative lookup inputs, the effective compiler identity or the current output pair, and it cannot tell a
+  // DreamMaker output from a native one left in the same files. A native build always invokes the compiler, which keeps
+  // its own incremental reuse (a rebuild through the resident daemon).
+  const hash = computeCompileHash(dmeText, allDefines, dmVersion);
+  if (!native && fs.existsSync(dmbFile) && fs.existsSync(rscFile)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
+      if (cached.hash === hash) {
+        Juke.logger.info(`compileDerived: reusing ${dmbFile} (compile inputs unchanged since ${cached.compiledAt}).`);
+        return currentCompiledOutput(dmbFile, false);
+      }
+    } catch {
+      // No cache record yet, or it's unreadable/stale-format: fall through and recompile.
+    }
+  }
+  // The inputs changed (or no record): DreamMaker keeps an existing .rsc rather than repacking it, so a stale
+  // one would ship old icons/sounds. Remove it so the compile rebuilds the resource file.
+  if (!native) fs.rmSync(rscFile, { force: true });
+  // A native build never writes a hash record; drop one a DreamMaker build left so a later DreamMaker build cannot
+  // reuse a native pair on the strength of it.
+  if (native) fs.rmSync(cacheFile, { force: true });
   let output: CompiledOutput;
   try {
     output = await DreamMaker(dme, {
@@ -1064,8 +1087,17 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
     // Don't leave a half-built derived dme/rsc lying around after a failed compile.
     // A failed native build leaves the previous published generation and its
     // conventional compatibility files intact. No child launches after failure.
-    await removeDerivedArtifacts(compilerMode() === 'native' ? dme : dme.replace(/\.dme$/, '.*'));
+    await removeDerivedArtifacts(native ? dme : dme.replace(/\.dme$/, '.*'));
+    try {
+      fs.rmSync(cacheFile, { force: true });
+    } catch {
+      // best-effort
+    }
     throw error;
+  }
+  if (!native) {
+    fs.mkdirSync(DMB_CACHE_DIR, { recursive: true });
+    writeJson(cacheFile, { hash, defines: allDefines, dmVersion, compiledAt: new Date().toISOString() });
   }
   return output;
 }

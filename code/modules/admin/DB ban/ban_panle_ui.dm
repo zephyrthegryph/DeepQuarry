@@ -27,6 +27,7 @@
 	spent(src)
 
 CAPABILITIES(/datum/tgui_ban_panel)
+	ref_one(nameof(admin_datum))
 	interface("BanPanel", title = "Ban Panel", rights = R_BAN)
 	op("confirmBan", ui_act("confirmBan", arg("cid", schema_text(4096)), arg("ckey", schema_text(4096)), arg("duration", num()), arg("ip", schema_text(4096)), arg("job", schema_text(4096)), arg("reason", schema_text(4096)), arg("type", num())), then(PROC_REF(ui_act_confirmban)))
 	op("searchBans", ui_act("searchBans", arg("aCkey", schema_text(4096)), arg("banType", num()), arg("cid", schema_text(4096)), arg("ckey", schema_text(4096)), arg("ip", schema_text(4096)), arg("minMatch", num())), then(PROC_REF(ui_act_searchbans)))

@@ -578,12 +578,12 @@ CAPABILITIES(/obj/machinery/door)
 
 /obj/machinery/door/proc/toggle()
 	if(glass)
-		icon = icon_tinted
+		set_icon(icon_tinted)
 		glass = 0
 		if(!operating && density)
 			set_opacity(1)
 	else
-		icon = initial(icon)
+		set_icon(initial(icon))
 		glass = 1
 		if(!operating)
 			set_opacity(0)

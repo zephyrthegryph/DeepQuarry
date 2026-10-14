@@ -544,7 +544,7 @@ TRACKED(/obj/item/organ, max_damage)
 		return FALSE
 	var/reparent = owner && dq_part_destination_owner(holder, slot_id) == owner
 	if(reparent)
-		GLOB.dq_part_reparenting = src
+		GLOB.dq_part_reparenting = entity_handle(src)
 	. = dq_ledger_commit(src, holder, slot_id)
 	if(reparent)
 		GLOB.dq_part_reparenting = null
@@ -561,7 +561,7 @@ TRACKED(/obj/item/organ, max_damage)
 	user.drop_from_inventory(src)
 	var/obj/item/reagent_containers/food/snacks/organ/O = new(get_turf(src))
 	O.name = name
-	O.icon = icon
+	O.set_icon(icon)
 	O.set_icon_state(icon_state)
 
 	// Pass over the blood.
@@ -577,6 +577,7 @@ MSG_DEF(organ/butcher_begin, span_danger("You are preparing to butcher %T%!"), s
 // An organ in hand: bitten (outside combat, aiming at the mouth); an organ on the table: butchered with a blade (a screwdriver for a robotic
 // one) or revived with peridaxon.
 CAPABILITIES(/obj/item/organ)
+	ref_one(nameof(owner), /mob/living)
 	owns_one(nameof(data), /datum/organ_data, starts = /datum/organ_data)
 	derives(nameof(w_class), PROC_REF(birth_size))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))

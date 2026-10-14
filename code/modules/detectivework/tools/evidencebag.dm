@@ -79,6 +79,7 @@
 
 
 CAPABILITIES(/obj/item/evidencebag)
+	ref_one(nameof(stored_item), /obj/item)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	drag_onto(PROC_REF(mousedrop_input))
 

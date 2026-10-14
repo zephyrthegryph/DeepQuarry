@@ -242,6 +242,7 @@
 #include "dq_ai_cost_tests.dm"
 #include "dq_economy_tests.dm"
 #include "dq_refs_waves_tests.dm"
+#include "dq_refs_prompt_callers_tests.dm"
 #include "dq_contract_tests.dm"
 #include "dq_debug_verb_gate_tests.dm"
 #include "dq_expedition_tests.dm"

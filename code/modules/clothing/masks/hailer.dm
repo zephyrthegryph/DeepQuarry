@@ -58,6 +58,7 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer/swat)
 TRACKED(/obj/item/clothing/mask/gas/sechailer, aggressiveness)
 
 CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
+	owns_one(nameof(hailer), /obj/item/hailer)
 	configure(item_worn(covers = FACE))
 	op("sechailer_phrase_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Select phrase"), then(PROC_REF(sechailer_phrase_alt)))
 	op("sechailer_selectphrase_verb", menu(), label("Select gas mask phrase"), needs(carried()), then(PROC_REF(sechailer_selectphrase_verb_op)))
@@ -165,11 +166,12 @@ MSG_DEF_SELF(sechailer/restrictor_dead, span_warning("You adjust the restrictor 
 	transfer_blooddna_to(mask)
 	transfer_fingerprints_to(mask)
 	transfer_fibres_to(mask)
+	var/obj/item/hailer/freed = rel_take(src, nameof(hailer))
 	if(!isturf(mask.loc))
-		user.put_in_hands(hailer())
+		user.put_in_hands(freed)
 		user.put_in_hands(mask)
 	else
-		hailer().forceMove(mask.loc)
+		freed.forceMove(mask.loc)
 	consume(src, user)
 	return OP_OK
 

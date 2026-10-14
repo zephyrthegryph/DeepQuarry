@@ -22,7 +22,7 @@
 	T.lighting_clear_overlay()
 	new_holder.turf_type = T.type
 	new_holder.set_dir(T.dir)
-	new_holder.icon = T.icon
+	new_holder.set_icon(T.icon)
 	new_holder.set_icon_state(T.icon_state)
 	new_holder.copy_overlays(T, TRUE)
 	new_holder.underlays = T.underlays.Copy()
@@ -33,7 +33,7 @@
 	my_turf().lighting_clear_overlay()
 	new_dest.set_dir(my_turf().dir)
 	new_dest.set_icon_state(my_turf().icon_state)
-	new_dest.icon = my_turf().icon
+	new_dest.set_icon(my_turf().icon)
 	new_dest.copy_overlays(my_turf(), TRUE)
 	new_dest.underlays = my_turf().underlays.Copy()
 	new_dest.set_decals(my_turf().decals)
@@ -63,7 +63,7 @@
 		new_source.lighting_clear_overlay()
 		new_source.set_dir(dir)
 		new_source.set_icon_state(icon_state)
-		new_source.icon = icon
+		new_source.set_icon(icon)
 		new_source.copy_overlays(src, TRUE)
 		new_source.underlays = underlays.Copy()
 		new_source.set_decals(decals)

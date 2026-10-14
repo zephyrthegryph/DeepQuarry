@@ -168,7 +168,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 		mob_icon += rgb(,,,180) //do it here so any markings become transparent as well
 
 	set_dir(SOUTH)
-	icon = mob_icon
+	set_icon(mob_icon)
 	return mob_icon
 
 /obj/item/organ/external/proc/apply_colouration(icon/applying)

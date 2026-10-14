@@ -66,7 +66,7 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 			// subtype.
 			var/icon/ground = _swap_icon(I.icon, swaps)
 			if(ground)
-				I.icon = ground
+				I.set_icon(ground)
 			if(I.icon_override)
 				var/icon/swapped_override = _swap_icon(I.icon_override, swaps)
 				if(swapped_override)

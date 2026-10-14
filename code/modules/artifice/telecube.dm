@@ -85,7 +85,7 @@ TRACKED(/obj/item/telecube, glow_color)
 	if(mate())
 		var/turf/T = get_turf(mate())
 		mate().visible_message(span_critical("\The [mate()] collapses into itself!"))
-		mate().mate = null
+		rel_clear(mate(), nameof(mate))
 		explosion(T,1,3,7)
 
 	..()
@@ -223,6 +223,7 @@ TRACKED(/obj/item/telecube, glow_color)
 	. = ..()
 
 CAPABILITIES(/obj/item/telecube)
+	ref_one(nameof(mate), /obj/item/telecube)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 

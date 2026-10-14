@@ -28,6 +28,7 @@
 	var/list/shandlers
 
 CAPABILITIES(/datum/planet_sunlight_handler)
+	ref_one(nameof(sun), /datum/simple_sun)
 	ref_many(nameof(shandlers))
 	owns_one(nameof(owned_sun), /datum/simple_sun)
 	owns_one(nameof(vis_overhead), /atom/movable/sun_vis_simple)
@@ -127,6 +128,9 @@ CAPABILITIES(/datum/planet_sunlight_handler)
 
 /datum/simple_sun/planetary
 	var/tmp/datum/sun_holder/sun
+
+CAPABILITIES(/datum/simple_sun/planetary)
+	ref_one(nameof(sun), /datum/sun_holder)
 
 /datum/simple_sun/planetary/New(datum/planet/planet)
 	rel_set(src, nameof(sun), planet.sun_holder)

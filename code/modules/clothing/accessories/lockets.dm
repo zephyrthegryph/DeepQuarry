@@ -10,6 +10,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/accessory/locket)
+	owns_one(nameof(held), /obj/item)
 	configure(item_worn(slots = SLOT_MASK | SLOT_TIE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("locket_flip_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Flip open"), then(PROC_REF(locket_flip_self)))
@@ -23,19 +24,18 @@ MSG_DEF_SELF(locket/no_open, "you have to open it first")
 	if(!base_icon)
 		base_icon = icon_state
 
-	if(!icon_exists(icon, "[base_icon]_open"))
-		to_chat(user, "\The [src] doesn't seem to open.")
-		return
-
+	// The locket opens whether or not its sheet has an open picture (the repo has none for the default locket): only the picture is optional.
+	var/has_open_picture = icon_exists(icon, "[base_icon]_open")
 	open = !open
 	to_chat(user, "You flip \the [src] [open?"open":"closed"].")
 	if(open)
-		set_icon_state("[base_icon]_open")
+		if(has_open_picture)
+			set_icon_state("[base_icon]_open")
 		if(held())
-			to_chat(user, "\The [held()] falls out!")
-			held().forceMove(get_turf(user))
-			rel_clear(src, nameof(held))
-	else
+			var/obj/item/fallen = rel_take(src, nameof(held))
+			to_chat(user, "\The [fallen] falls out!")
+			fallen.forceMove(get_turf(user))
+	else if(has_open_picture)
 		set_icon_state("[base_icon]")
 
 /// A paper or photo must be releasable from its current holder before insertion.

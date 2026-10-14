@@ -122,7 +122,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	color = null
 	name = target.name
 	desc = target.desc
-	icon = target.icon
+	set_icon(target.icon)
 	set_icon_state(target.icon_state)
 	alpha = max(target.alpha, 150)
 	copy_overlays(target, TRUE)
@@ -165,7 +165,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	name = initial(name)
 	desc = initial(desc)
 
-	icon = initial(icon)
+	set_icon(initial(icon))
 	set_icon_state(initial(icon_state))
 
 	alpha = initial(alpha)

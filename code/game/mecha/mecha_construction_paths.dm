@@ -188,7 +188,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/mecha_blueprint)
 	act_message(A.actor, src, MSG_SELF(span_infoplain("You connect [part] to %T%")), MSG_OTHERS(span_infoplain("%U% has connected [part] to %T%.")))
 	if(mecha_parts_done(A))
 		var/datum/mecha_blueprint/plan = mecha_blueprint()
-		icon = plan.icon_finished
+		set_icon(plan.icon_finished)
 		set_icon_state("[plan.icon_prefix]0")
 		set_density(TRUE)
 	log_world("MECHA CONSTRUCTION: [A.actor] attached [part] to [src] ([blueprint]), parts [parts_mask]")

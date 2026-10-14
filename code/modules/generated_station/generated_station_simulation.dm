@@ -7,6 +7,9 @@
 	var/list/stockpiles
 	var/list/minimum_stockpiles
 
+CAPABILITIES(/datum/generated_station_department_runtime)
+	ref_one(nameof(department), /datum/generated_station_department_instance)
+
 /datum/generated_station_department_runtime/New(datum/generated_station_department_instance/new_department)
 	..()
 	rel_set(src, nameof(department), new_department)
@@ -40,6 +43,7 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 
 CAPABILITIES(/datum/generated_station_simulation)
 	owns_many(nameof(departments))
+	ref_one(nameof(spec), /datum/generated_station_spec)
 
 /datum/generated_station_simulation/New(datum/generated_station_spec/new_spec)
 	..()

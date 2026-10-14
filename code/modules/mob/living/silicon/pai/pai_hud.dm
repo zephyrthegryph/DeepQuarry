@@ -93,7 +93,7 @@
 
 	// The combat mode button (it replaced the intent selector).
 	var/atom/movable/screen/combat_mode/combat_button = HUD.make_combat_mode_button(src, "intent_help-s", "intent_harm-s")
-	combat_button.icon = ui_style
+	combat_button.set_icon(ui_style)
 	combat_button.alpha = ui_alpha
 	combat_button.layer = LAYER_HUD_ITEM
 	rel_add(HUD, nameof(HUD.adding), combat_button)
@@ -101,7 +101,7 @@
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()
 	using.name = "mov_intent"
-	using.icon = ui_style
+	using.set_icon(ui_style)
 	using.set_icon_state((m_intent == I_RUN ? "running" : "walking"))
 	using.screen_loc = ui_movi
 	using.color = ui_color
@@ -112,7 +112,7 @@
 	//Resist button
 	using = new /atom/movable/screen()
 	using.name = "resist"
-	using.icon = ui_style
+	using.set_icon(ui_style)
 	using.set_icon_state("act_resist")
 	using.screen_loc = ui_movi
 	using.color = ui_color
@@ -305,7 +305,7 @@
 	rel_add(HUD, nameof(HUD.hud_elements), hud_used?.autowhisper_display)
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("aw-select")
 	aw.name = "autowhisper mode"
 	aw.screen_loc = "EAST-1:28,CENTER-2:13"
@@ -313,7 +313,7 @@
 	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("lang")
 	aw.name = "check known languages"
 	aw.screen_loc = ui_under_health
@@ -321,7 +321,7 @@
 	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("pose")
 	aw.name = "set pose"
 	aw.screen_loc = ui_under_health
@@ -329,7 +329,7 @@
 	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("up")
 	aw.name = "move upwards"
 	aw.screen_loc = ui_under_health
@@ -337,7 +337,7 @@
 	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	aw = new /atom/movable/screen()
-	aw.icon = 'icons/mob/screen/minimalist.dmi'
+	aw.set_icon('icons/mob/screen/minimalist.dmi')
 	aw.set_icon_state("down")
 	aw.name = "move downwards"
 	aw.screen_loc = ui_under_health

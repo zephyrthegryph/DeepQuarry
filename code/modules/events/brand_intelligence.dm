@@ -71,3 +71,4 @@
 CAPABILITIES(/datum/event/brand_intelligence)
 	ref_many(nameof(vendingMachines))
 	ref_many(nameof(infectedVendingMachines))
+	ref_one(nameof(originMachine), /obj/machinery/vending)

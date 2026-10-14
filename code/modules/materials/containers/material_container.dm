@@ -30,6 +30,9 @@
 	/// The atom this container belongs to (holds it in one of its vars; deleted with it).
 	var/atom/owner
 
+CAPABILITIES(/datum/material_container)
+	ref_one(nameof(owner), /atom)
+
 
 /**
  * Sets up the event hooks and fills the list of materials with the appropriate references.

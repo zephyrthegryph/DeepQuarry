@@ -85,6 +85,9 @@ CAPABILITIES(/obj/item/assembly/electronic_assembly)
 	max_components = IC_COMPONENTS_BASE * 3/4
 	max_complexity = IC_COMPLEXITY_BASE * 3/4
 
+CAPABILITIES(/obj/item/electronic_assembly/device)
+	ref_one(nameof(holder), /obj/item/assembly/electronic_assembly)
+
 /obj/item/electronic_assembly/device/Initialize(mapload)
 	. = ..()
 	var/obj/item/integrated_circuit/built_in/device_input/input = new(src)

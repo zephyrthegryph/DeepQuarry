@@ -9,6 +9,9 @@
 
 	var/active = FALSE
 
+CAPABILITIES(/area/looking_glass)
+	ref_one(nameof(our_landmark), /obj/effect/landmark/looking_glass)
+
 /area/looking_glass/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(our_landmark), locate_within(src, /obj/effect/landmark/looking_glass))

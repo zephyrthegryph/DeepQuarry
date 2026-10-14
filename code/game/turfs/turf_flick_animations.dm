@@ -8,7 +8,7 @@
 	var/atom/movable/overlay/animation = new /atom/movable/overlay(location)
 	if(direction)
 		animation.set_dir(direction)
-	animation.icon = a_icon
+	animation.set_icon(a_icon)
 	if(isatom(target))
 		var/atom/A = target
 		animation.layer = A.layer + 1

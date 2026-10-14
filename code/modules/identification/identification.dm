@@ -22,6 +22,9 @@
 	// What 'identification type' is needed to identify this.
 	var/identification_type = IDENTITY_TYPE_NONE
 
+CAPABILITIES(/datum/identification)
+	ref_one(nameof(holder), /obj)
+
 /datum/identification/New(obj/new_holder)
 	ASSERT(new_holder)
 	rel_set(src, nameof(holder), new_holder)

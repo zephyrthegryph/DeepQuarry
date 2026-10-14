@@ -59,6 +59,9 @@
 	/// The build holder this button belongs to (a relation view; the holder owns us)
 	var/tmp/obj/effect/bmode/buildholder/master
 
+CAPABILITIES(/obj/effect/bmode)
+	ref_one(nameof(master), /obj/effect/bmode/buildholder)
+
 // Comes off its builder's screen: its holder's client.
 
 /obj/effect/bmode/builddir
@@ -214,6 +217,7 @@ CAPABILITIES(/obj/effect/bmode/buildhelp)
 	var/warned = 0
 
 CAPABILITIES(/obj/effect/bmode/buildholder)
+	ref_one(nameof(throw_atom), /atom/movable)
 	ref_many(nameof(selected_mobs), /mob/living)
 	owns_one(nameof(builddir), /obj/effect/bmode/builddir)
 	owns_one(nameof(buildhelp), /obj/effect/bmode/buildhelp)

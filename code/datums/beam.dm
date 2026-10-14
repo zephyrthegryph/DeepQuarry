@@ -106,9 +106,9 @@ CAPABILITIES(/datum/beam)
 		if(N+32>length)
 			var/icon/II = new(icon, icon_state)
 			II.DrawBox(null,1,(length-N),32,32)
-			X.icon = II
+			X.set_icon(II)
 		else
-			X.icon = base_icon
+			X.set_icon(base_icon)
 		X.transform = rot_matrix
 
 		//Calculate pixel offsets (If necessary)

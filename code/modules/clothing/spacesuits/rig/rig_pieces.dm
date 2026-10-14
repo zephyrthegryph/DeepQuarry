@@ -83,6 +83,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig, fit_spec, list(REQ_FITS_BODYTYPES(
 TYPE_TABLE(/obj/item/clothing/suit/space/rig, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage))))
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig)
+	ref_one(nameof(tacknife), /obj/item/material/knife)
 	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDEJUMPSUIT|HIDETAIL, flags = THICKMATERIAL | AIRTIGHT))
 	configure(item_protection(heat_parts = CHEST|LEGS|ARMS, cold_parts = CHEST|LEGS|ARMS, max_pressure = TRAIT_NONE, min_pressure = TRAIT_NONE))
 	op("rig_suit_draw_knife_hand", hand(), ungated(), label("Rig suit draw knife hand"), then(PROC_REF(rig_suit_draw_knife_hand)))

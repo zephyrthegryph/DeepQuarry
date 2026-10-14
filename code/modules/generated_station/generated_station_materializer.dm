@@ -31,7 +31,6 @@ CAPABILITIES(/datum/generated_room_placement)
 	var/wall_placements = 0
 	var/largest_empty_region = 0
 	var/list/placements
-	var/list/fragments
 	var/list/circulation
 	var/list/door_circulation
 	var/list/occupied
@@ -56,15 +55,6 @@ CAPABILITIES(/datum/generated_room_solution)
 	var/key = tile_key(x, y)
 	circulation[key] = TRUE
 	door_circulation[key] = TRUE
-
-/// One authored fragment footprint selected for a generated room.
-/datum/generated_room_fragment_placement
-	var/datum/generated_room_fragment/fragment
-	var/x
-	var/y
-	var/rotation = 0
-	var/mirrored = FALSE
-
 
 /// Area types owned by a materialized station. Separate instances are created
 /// for every department so APC and alarm state cannot bleed between rooms.
@@ -264,7 +254,6 @@ CAPABILITIES(/datum/generated_station_materialization)
 	var/area/generated_station/transit/transit_area
 	var/tmp/area/generated_station/maintenance/maintenance_area
 	var/datum/generated_station_materialization/result
-	var/datum/generated_station_validation_result/last_architecture_validation
 	var/datum/generated_station_tile_plan/tile_plan
 	var/datum/generated_station_materialization_job/active_job
 	/// Synthesis lookups, kept between its slices.
@@ -284,6 +273,7 @@ CAPABILITIES(/datum/generated_station_materializer)
 	owns_one(nameof(active_job), /datum/generated_station_materialization_job)
 	owns_one(nameof(result), /datum/generated_station_materialization)
 	owns_one(nameof(tile_plan), /datum/generated_station_tile_plan)
+	ref_one(nameof(spec), /datum/generated_station_spec)
 
 
 /datum/generated_station_materializer/proc/materialize(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE)

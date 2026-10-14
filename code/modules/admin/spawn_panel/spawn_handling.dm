@@ -112,7 +112,7 @@
 
 		if(spawn_params["apply_icon_override"])
 			if(spawn_params["selected_atom_icon"])
-				created_atom.icon = file(spawn_params["selected_atom_icon"])
+				created_atom.set_icon(file(spawn_params["selected_atom_icon"]))
 
 			if(spawn_params["selected_atom_icon_state"])
 				created_atom.set_icon_state(spawn_params["selected_atom_icon_state"])

@@ -47,17 +47,6 @@
 		for(var/datum/generated_room_solution/solution in materialized.room_solutions)
 			var/list/content_types = list()
 			var/list/content_paths = list()
-			for(var/datum/generated_room_fragment_placement/fragment_placement in solution.fragments)
-				var/datum/generated_room_fragment/activity_motif/motif = fragment_placement.fragment
-				if(!istype(motif))
-					continue
-				for(var/feature_type in motif.feature_types)
-					var/datum/generated_room_feature/fragment_feature = new feature_type
-					content_types["[fragment_feature.atom_type]"] = TRUE
-					content_paths |= fragment_feature.atom_type
-					if(ispath(fragment_feature.atom_type, /obj/machinery))
-						machinery++
-					qdel(fragment_feature)
 			for(var/datum/generated_room_placement/placement in solution.placements)
 				content_types["[placement.feature.atom_type]"] = TRUE
 				content_paths |= placement.feature.atom_type

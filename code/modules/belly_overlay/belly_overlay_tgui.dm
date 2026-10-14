@@ -17,6 +17,7 @@
 	var/last_show_sig
 
 CAPABILITIES(/datum/belly_overlay_tgui)
+	ref_one(nameof(owner), /mob)
 	owns_one(nameof(active_ui), /datum/tgui)
 	interface("BellyOverlay", title = "Belly Overlay", state = nameof(GLOB.tgui_always_state))
 	ui_shape(visible = bool(), layers = list_of())

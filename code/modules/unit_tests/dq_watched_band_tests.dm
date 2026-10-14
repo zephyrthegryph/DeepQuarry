@@ -89,3 +89,65 @@
 	var/watched_cost = TICK_USAGE_REAL - start
 	log_world("LUM WATCH TIMING: 5000 lighting_object.update(): unwatched [unwatched] tick%, watched [watched_cost] tick%")
 	SSwatched.arm_pending(0)
+
+// A SMES's charge read as a band (WATCH_CHARGE): the gates that read it re-check when Rust reports the charge crossing a level.
+
+/datum/unit_test/dq_watched_charge_band_publishes_on_a_crossing
+
+/datum/unit_test/dq_watched_charge_band_publishes_on_a_crossing/Run()
+	var/obj/machinery/power/smes/buildable/hybrid/S = allocate(/obj/machinery/power/smes/buildable/hybrid, test_floor())
+	TEST_ASSERT_NOTNULL(S.vg_entity, "the SMES has no Rust entity")
+	set_var(S, nameof(S.recharge_rate), 0) // a hybrid unit makes its own charge: hold it still
+	set_var(S, nameof(S.input_attempt), FALSE)
+	set_var(S, nameof(S.output_attempt), FALSE)
+	set_var(S, nameof(S.safeties_enabled), TRUE)
+	S.set_capacity(1000000)
+	S.push_to_rust()
+	S.set_stored_charge(0)
+	dq_test_ticks(5) // the seed and the pushed settings settle before anything is read
+	TEST_ASSERT_NULL(S.modify_refusal(null), "an empty unit may be modified")
+	SSwatched.arm_pending(0)
+	var/list/levels = list(S.capacity / 100)
+	TEST_ASSERT(watched_armed(S, WATCH_CHARGE, levels), "the read armed a charge band watch after it")
+	var/wakes = SSwatched.charge_wakes
+	OM_TEST_WAIT_UNTIL(SSwatched.charge_wakes > wakes, 60) // the starting band is reported once
+	dq_test_ticks(5) // the registration's own reports settle
+	wakes = SSwatched.charge_wakes
+	dq_test_ticks(3)
+	TEST_ASSERT_EQUAL(SSwatched.charge_wakes, wakes, "no crossing, no wake (charge [S.stored_charge()] of [S.capacity], band [watched(S, WATCH_CHARGE, list(S.capacity / 100))])")
+	S.set_stored_charge(S.capacity / 2)
+	OM_TEST_WAIT_UNTIL(SSwatched.charge_wakes > wakes, 60)
+	TEST_ASSERT(SSwatched.charge_wakes > wakes, "the charge crossing the level woke the watch (charge [S.stored_charge()], wakes [SSwatched.charge_wakes] from [wakes], armed [watched_armed(S, WATCH_CHARGE, levels)])")
+	TEST_ASSERT_EQUAL(S.modify_refusal(null), /datum/msg/smes/safety_circuit, "a charged unit with its safeties on refuses")
+	TEST_ASSERT(S.hybrid_has_room(null), "an empty unit has room")
+	// The hybrid gate follows the capacity level: re-read, re-armed on the new levels (one watch per SMES).
+	TEST_ASSERT(S.hybrid_has_room(null), "half charge still has room")
+	SSwatched.arm_pending(0)
+	TEST_ASSERT(watched_armed(S, WATCH_CHARGE, list(S.capacity)), "a read with other levels widened the watch")
+	TEST_ASSERT(watched_armed(S, WATCH_CHARGE, levels), "the first reader's levels are still watched")
+	S.set_stored_charge(S.capacity)
+	TEST_ASSERT(!S.hybrid_has_room(null), "a full unit has no room")
+
+// The emitter's beam reads its network's availability through the power grid's tracked avail (power_avail() -> /datum/power_grid): a Rust-polled
+// value DM holds as state, so no world-watch channel is needed; the draw re-evaluates when the grid's avail changes.
+
+/datum/unit_test/dq_emitter_beam_follows_the_grids_avail
+
+/datum/unit_test/dq_emitter_beam_follows_the_grids_avail/Run()
+	var/obj/machinery/power/emitter/E = allocate(/obj/machinery/power/emitter, test_floor())
+	var/grid_id = -4711
+	power_test_join(grid_id, E)
+	var/datum/power_grid/grid = power_grid(grid_id)
+	TEST_ASSERT_NOTNULL(grid, "the detached test grid exists")
+	set_var(E, nameof(E.powered), TRUE)
+	set_var(E, nameof(E.active), TRUE)
+	grid.set_avail(0)
+	state_changed(E)
+	refresh_flush()
+	TEST_ASSERT(!E.beam_shown(), "no availability, no beam")
+	var/before = length(E.rx?.look_overlays)
+	grid.set_avail(5000)
+	refresh_flush()
+	TEST_ASSERT(E.beam_shown(), "a live network shows the beam")
+	TEST_ASSERT(length(E.rx?.look_overlays) > before, "the grid's avail changing redrew the emitter with its beam (overlays [before] -> [length(E.rx?.look_overlays)])")
+	power_test_drop_grid(grid_id)

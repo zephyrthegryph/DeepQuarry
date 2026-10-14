@@ -76,6 +76,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/item/eftpos)
+	ref_one(nameof(linked_account), /datum/money_account)
 	rolls(nameof(access_code), range_of(1111, 111111))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	interface("Eftpos", title = "EFTPOS scanner")

@@ -64,6 +64,8 @@
 	var/resupplies_used = 0
 
 CAPABILITIES(/datum/contract/medical_trial)
+	ref_one(nameof(observation_requirement), /datum/contract_requirement/event_count)
+	ref_one(nameof(analysis_requirement), /datum/contract_requirement/event_count)
 	owns_one(nameof(profile), /datum/medical_trial_profile)
 	owns_many(nameof(participants))
 
@@ -422,6 +424,9 @@ CAPABILITIES(/datum/contract/medical_trial)
 	EXPIRY_DECLARE(consent_time)
 	var/completed = FALSE
 	var/faxed = FALSE
+
+CAPABILITIES(/datum/medical_trial_participant)
+	ref_one(nameof(consent_record), /obj/item/paper)
 
 /datum/medical_trial_participant/New(_subject_id, list/_baseline, _healthy_volunteer, _clinician_account)
 	. = ..()

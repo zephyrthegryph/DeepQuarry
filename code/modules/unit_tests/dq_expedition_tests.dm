@@ -289,10 +289,6 @@
 		for(var/datum/generated_room_solution/solution in site.station_materialization.room_solutions)
 			TEST_ASSERT(!findtext(solution.definition_id, "-minimum-"), "Seed [seed] room [solution.module_id] fell back to [solution.definition_id]")
 			var/authored_fixture_count = length(solution.placements)
-			for(var/datum/generated_room_fragment_placement/fragment_placement in solution.fragments)
-				var/datum/generated_room_fragment/activity_motif/motif = fragment_placement.fragment
-				if(istype(motif))
-					authored_fixture_count += length(motif.feature_types)
 			var/minimum_authored_fixtures = findtext(solution.definition_id, "-micro-") ? 1 : 2
 			TEST_ASSERT(authored_fixture_count >= minimum_authored_fixtures, "Seed [seed] room [solution.module_id] has fewer than [minimum_authored_fixtures] authored fixtures")
 			TEST_ASSERT(solution.occupied_tiles >= max(2, FLOOR(solution.floor_tiles * 0.12, 1)), "Seed [seed] room [solution.module_id] leaves nearly all [solution.floor_tiles] floor tiles empty")

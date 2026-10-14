@@ -346,7 +346,7 @@ CAPABILITIES(/datum/prompt/choice/artifact_blade_action)
 /obj/item/melee/artifact_blade/proc/conjure_animation(turf/target) //Taken from occult wizard code.
 	var/atom/movable/overlay/animation = new /atom/movable/overlay(target)
 	animation.name = "conjure"
-	animation.icon = 'icons/effects/effects.dmi'
+	animation.set_icon('icons/effects/effects.dmi')
 	animation.plane = OBJ_PLANE
 	animation.layer = ABOVE_JUNK_LAYER
 	animation.set_icon_state("cultwall")
