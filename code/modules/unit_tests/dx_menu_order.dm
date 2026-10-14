@@ -32,13 +32,11 @@
 		keys += C.oplan.key
 	return jointext(keys, ",")
 
-/// The three strings of one scenario, joined with " | ".
-/proc/dx_menu_order_line(mob/living/carbon/human/H, atom/target, obj/item/held)
+/// The three strings of one scenario, joined with " | ". Only capture and mismatches need the diagnostic all-order sort.
+/proc/dx_menu_order_line(mob/living/carbon/human/H, atom/target, obj/item/held, expected = null, capture = TRUE)
 	var/datum/op_resolution/R = op_resolve(H, target, held, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null, TRUE)
-	var/datum/op_resolution/S = new
-	S.ordered = R.all.Copy()
-	op_resolution_sort(S)
-	var/all = dx_menu_order_keys(S.ordered)
+	// Joining the unsorted candidates preserves the old empty-scenario classification without a third sort.
+	var/all = dx_menu_order_keys(R.all)
 	// op_resolve() sorts pass-one candidates; only pass two evaluates when().
 	var/click = dx_menu_order_keys(op_resolution_matches(R))
 	var/list/menu = list()
@@ -46,7 +44,13 @@
 		menu += row["key"]
 	if(!length(all) && !length(click) && !length(menu))
 		return null
-	return "[all] | [click] | [jointext(menu, ",")]"
+	var/answered = "[click] | [jointext(menu, ",")]"
+	if(capture || answered != dx_menu_order_answered(expected))
+		var/datum/op_resolution/S = new
+		S.ordered = R.all.Copy()
+		op_resolution_sort(S)
+		all = dx_menu_order_keys(S.ordered)
+	return "[all] | [answered]"
 
 /// The part of a scenario line a player sees: the click survivors and the menu. The "all" part also lists ops that cannot answer the input (a
 /// held storage's put_in beside a target storage's), so it is recorded for diagnosis but not asserted.
@@ -66,9 +70,11 @@
 	var/diffs = 0
 	var/capture = !length(golden)
 	var/obj/item/storage/box/crate = allocate(/obj/item/storage/box, T)
+	var/list/held_types = dx_menu_order_helds()
+	var/list/modes = list("on", "as_held", "in_box")
 	for(var/holder_type in dx_menu_order_holders())
-		for(var/held_type in dx_menu_order_helds())
-			for(var/mode in list("on", "as_held", "in_box"))
+		for(var/held_type in held_types)
+			for(var/mode in modes)
 				if(mode != "on" && !ispath(holder_type, /obj/item))
 					continue
 				if(mode != "on" && !isnull(held_type))
@@ -90,7 +96,7 @@
 						target = crate
 						held = allocate(holder_type, T)
 						label = "box <- [holder_type]"
-				var/line = dx_menu_order_line(H, target, held)
+				var/line = dx_menu_order_line(H, target, held, golden[label], capture)
 				if(mode == "on" && !QDELETED(target))
 					qdel(target)
 				if(held && !QDELETED(held))
