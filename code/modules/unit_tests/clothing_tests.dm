@@ -229,17 +229,22 @@ CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
 		/obj/item/clothing/accessory/armband,
 	)
 
-	// Retain the fixed slot families, then exercise one candidate per declared
-	// icon file. Inspecting type defaults does not construct the whole sweep.
+	// Retain the fixed slot families, then cover every declared icon and actual
+	// wearable slot bit. A multi-slot garment covers each of its declared slots.
+	// worn_of_type() reads the static trait, without constructing the sweep.
 	var/list/icon_files = list()
+	var/covered_slots = 0
 	for(var/obj/item/clothing/path as anything in selected)
 		icon_files["[initial(path.icon)]"] = TRUE
+		covered_slots |= worn_of_type(path).slots
 	for(var/obj/item/clothing/path as anything in clothing_candidates())
 		var/icon_file = "[initial(path.icon)]"
-		if(icon_files[icon_file])
+		var/slots = worn_of_type(path).slots
+		if(icon_files[icon_file] && !(slots & ~covered_slots))
 			continue
-		selected += path
+		selected |= path
 		icon_files[icon_file] = TRUE
+		covered_slots |= slots
 	return selected
 /// Both tiers use the same candidate set and hood/material exclusions.
 /datum/unit_test/all_clothing_shall_be_valid/proc/clothing_candidates()
@@ -254,10 +259,14 @@ CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
 /datum/unit_test/all_clothing_shall_be_valid/representative/Run()
 	var/list/selected = curated_types()
 	var/list/covered_icons = list()
+	var/covered_slots = 0
 	for(var/obj/item/clothing/path as anything in selected)
 		covered_icons["[initial(path.icon)]"] = TRUE
+		covered_slots |= worn_of_type(path).slots
 	var/list/candidates = clothing_candidates()
 	TEST_ASSERT(length(selected) < length(candidates), "Normal-tier coverage must remain smaller than the exhaustive sweep")
 	for(var/obj/item/clothing/path as anything in candidates)
 		TEST_ASSERT(covered_icons["[initial(path.icon)]"], "The representative must cover icon file [initial(path.icon)]")
+		var/slots = worn_of_type(path).slots
+		TEST_ASSERT(!(slots & ~covered_slots), "The representative must cover every declared wearable slot of [path] (missing flags [slots & ~covered_slots])")
 	return ..()
