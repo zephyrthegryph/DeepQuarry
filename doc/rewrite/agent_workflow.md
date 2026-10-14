@@ -167,6 +167,12 @@ It is held from that check until the push lands or the batch is abandoned, acros
   of one agent session shares, and not from the process tree): `dq_merge_worktree.sh`, `dq_merge_gates.sh`, `dq_push_master.sh` and `dq_merge_master.sh`
   (in the merge worktree) refuse to run without it. Another lane joins the batch only through the holder: `bash tools/dq_merge_worktree.sh --join "<lane>"`
   (no switch, prints the path); a second plain call from the holder is refused, and anyone else waits.
+- **Every mode takes the lock or refuses.** A call without `--lanes` queues as "unnamed batch" like any other; `--warm` and `--discard-previous` take the same
+  path; only `--print-path` skips it (it changes nothing). A merge, commit or switch typed straight into merge-base, or run by an older copy of these
+  tools, is caught by the `reference-transaction` hook (`tools/hooks/reference-transaction`, installed with `bash tools/hooks/install_pre_push.sh`): an update of
+  `rewrite/integ-current` inside the merge worktree is refused unless the caller holds the lock. **Adopting an unpushed batch:** the owner of lanes already
+  merged in the worktree runs `bash tools/dq_merge_worktree.sh --adopt --lanes "<branches>"`; it waits for the lock, requires the worktree clean, every lane
+  in HEAD and still unpushed, then holds the lock for the current HEAD with no switch, re-merge or discard.
 - **A heartbeat is not proof of life.** The holder process checks every 60 s (`DQ_MERGE_LOCK_CHECK_SEC`) whether its batch is over and releases the lock itself
   when the lane worktree that took it (or the merge worktree) no longer exists, or when the merge worktree's HEAD has moved since the batch began
   (`dq_merge_worktree.sh` records `base`) and is now in origin/master with no gate or push running (`dq_merge_gates.sh` and `dq_push_master.sh` mark
@@ -294,6 +300,8 @@ When a lane finishes, from its worktree:
 **Split worlds record their own exit status.** `dq_focused_test.sh` once counted a fully green world as exit 127 (`wait` found no such child). Each world's subshell now writes its exit status to `data/focused-runs/split.<pid>.N.log.rc`; that record is the verdict, `wait` only reaps, a disagreement is printed, and a world with no record and no child counts as failed (125). An unclean run keeps its `split.<pid>.N.log` files and records (pruned after two days). The root cause of the lost child was not reproduced in isolation. `bash tools/ci/test_focused_world_status.sh` covers the new logic. `bash tools/ci/test_lane_check_docs.sh` builds a scratch repo and shows a stamp kept on a changelog/doc-only master move and invalidated on a code move or a read doc.
 
 **Stamps and docs.** `tools/dq_lane_check.sh` ignores master changes under `html/changelogs/`, `doc/`, `data/bench/` (the only committed `data/` files, bench output nothing reads) and root `*.md` unless the file is listed in `tools/ci/lane_ready_doc_reads.txt` (docs a tool reads); the verdict names the files that decided it.
+
+**Run copies of the world are per process.** `runIsolatedTestWorld()` copies the compiled `.dmb`/`.rsc` to `<base>.runN.p<pid>.*`. The slot-only name (`...test.run2.dmb`) was reused, and the cleanup gives up after 5 s and leaves a file behind when something still holds it (the previous world's DreamDaemon closing its handles, or a scanner); the next occupant's `copyFileSync` onto that file then failed with `EBUSY` (the lost look-pin shard). A name no earlier process used cannot be held, leftovers of dead processes are pruned at the next run, and one that stays locked is logged with its error code. The exact holder was not captured (the failing run's files were gone), so this fixes the collision, not a proven holder; no retry was added. `bun test tools/build/lib/run_copies.test.ts` covers the naming and the pruning.
 
 **Test names are checked first.** `dq_lane_ready.sh --tests` and `dq_focused_test.sh` check every name and glob against the `/datum/unit_test` types the build compiles before anything is merged, generated or compiled, report all the misses at once, and print close matches (a missing `dq_eg2/` prefix, a one-letter typo, a glob that matches nothing). `bash tools/dq_focused_test.sh --list '*word*'` searches the declared types without compiling.
 

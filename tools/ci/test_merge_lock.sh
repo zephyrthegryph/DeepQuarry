@@ -181,6 +181,45 @@ for _ in $(seq 1 40); do bash "$SL" merge-lock status | grep -q "lanes 'laneV'" 
 wait "$v1" 2>/dev/null
 run_as V --release >/dev/null
 
+# ---- 13. no mode changes the merge worktree without the lock; an unpushed batch already there is adopted, not re-merged or discarded ----
+echo z >"$T/mb/z.txt" && git -C "$T/mb" add z.txt && git -C "$T/mb" commit -qm "Z's batch, merged without the lock"
+git -C "$T/mb" branch laneZ HEAD
+zhead="$(git -C "$T/mb" rev-parse HEAD)"
+run_as Y >/dev/null 2>"$T/y.err" && rc=0 || rc=$?
+check "a plain call (no --lanes) on a worktree holding an unpushed batch is refused" test "$rc" -ne 0
+check "and left the lock free and the worktree alone" bash -c "bash '$SL' merge-lock status | grep -q nobody && [ \"\$(git -C '$T/mb' rev-parse HEAD)\" = $zhead ]"
+run_as Y --warm --lanes laneY >/dev/null 2>&1 && rc=0 || rc=$?
+check "--warm does not bypass the lock or the check" bash -c "[ $rc -ne 0 ] && [ \"\$(git -C '$T/mb' rev-parse HEAD)\" = $zhead ] && bash '$SL' merge-lock status | grep -q nobody"
+run_as Y --adopt >/dev/null 2>&1 && rc=0 || rc=$?
+check "--adopt without --lanes is refused" test "$rc" -ne 0
+git -C "$T/main" branch -q laneOther "$(git -C "$T/main" commit-tree -p origin/master -m other "origin/master^{tree}")"
+run_as Y --adopt --lanes laneOther >/dev/null 2>"$T/y2.err" && rc=0 || rc=$?
+check "--adopt of a lane that is not in HEAD is refused (not the owner)" bash -c "[ $rc -ne 0 ] && grep -q 'is not in the worktree' '$T/y2.err' && bash '$SL' merge-lock status | grep -q nobody"
+git -C "$T/main" branch -q laneOld origin/master
+run_as Y --adopt --lanes laneOld >/dev/null 2>"$T/y3.err" && rc=0 || rc=$?
+check "--adopt of a lane already in origin/master is refused" bash -c "[ $rc -ne 0 ] && grep -q 'already in origin/master' '$T/y3.err' && bash '$SL' merge-lock status | grep -q nobody"
+out="$(run_as Z --adopt --lanes laneZ 2>"$T/z.err")" && rc=0 || rc=$?
+check "the owner adopts its batch: path printed" bash -c "[ $rc -eq 0 ] && [ '$out' = '$T/mb' ]"
+check "adopting changed nothing: same HEAD, no discard branch" bash -c "[ \"\$(git -C '$T/mb' rev-parse HEAD)\" = $zhead ] && [ -z \"\$(git -C '$T/mb' branch --list 'rewrite/integ-prev-*')\" ]"
+check "the lock is held for the batch" bash -c "bash '$SL' merge-lock status | grep -q \"lanes 'laneZ'\""
+check "a second batch cannot stack on it" bash -c "! DQ_SLOTS_POLL_SEC=1 timeout 5 env DQ_MERGE_SESSION=W bash '$MW' --lanes laneW >/dev/null 2>&1"
+git -C "$T/mb" push -q origin HEAD:master
+for _ in $(seq 1 40); do [ -d "$T/slots/merge_base/slot.1" ] || break; sleep 1; done
+check "the adopted batch's lock self-releases once it landed" test ! -d "$T/slots/merge_base/slot.1"
+
+# ---- 14. the reference-transaction guard refuses a raw merge/commit in the merge worktree without the lock ----
+cp "$ROOT/tools/hooks/reference-transaction" "$T/main/.git/hooks/reference-transaction" && chmod +x "$T/main/.git/hooks/reference-transaction"
+export DQ_MERGE_LOCK_LIB="$SL"
+git -C "$T/mb" commit -q --allow-empty -m "raw commit without the lock" 2>"$T/h.err" && rc=0 || rc=$?
+check "a raw commit in the merge worktree without the lock is refused by the hook" bash -c "[ $rc -ne 0 ] && grep -q 'do not hold its lock' '$T/h.err'"
+git -C "$T/main" commit -q --allow-empty -m "main checkout is not guarded" 2>/dev/null && ok "other checkouts are not guarded" || fail "the hook blocked a non-merge worktree"
+run_as K --lanes laneK >/dev/null 2>&1
+DQ_MERGE_SESSION=K git -C "$T/mb" commit -q --allow-empty -m "holder commit" && ok "the lock holder may commit in the merge worktree" || fail "holder blocked by the hook"
+git -C "$T/mb" push -q origin HEAD:master
+run_as K --release >/dev/null
+rm -f "$T/main/.git/hooks/reference-transaction"
+unset DQ_MERGE_LOCK_LIB
+
 if [ "$fails" -eq 0 ]; then echo "test_merge_lock: ok"; exit 0; fi
 echo "test_merge_lock: $fails FAILED"
 exit 1
