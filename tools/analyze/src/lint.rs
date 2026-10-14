@@ -35,6 +35,10 @@ pub struct Site {
     pub msg: String,
     /// Grouping key for [`Policy::Ceilings`] (e.g. `B1:code/x.dm:/obj/foo`); empty otherwise.
     pub key: String,
+    /// Declaration identity (`owner::var`) for a declaration site; empty for a statement site. A `Policy::Sites` ratchet fingerprints a
+    /// site with one by `ident` instead of by line text, so retyping or re-commenting the declaration still matches its baseline row.
+    #[serde(default)]
+    pub ident: String,
 }
 
 /// An ALLOW annotation that kept a site (for the unused-annotation check).
@@ -66,24 +70,29 @@ impl Sink {
 
     /// A site in the file being scanned (`scan_file`).
     pub fn site(&mut self, rule: &str, line: usize) {
-        self.sites.push(Site { rule: rule.to_string(), rel: self.cur.clone(), line: line as u32, msg: String::new(), key: String::new() });
+        self.sites.push(Site { rule: rule.to_string(), rel: self.cur.clone(), line: line as u32, msg: String::new(), key: String::new(), ident: String::new() });
     }
 
     pub fn site_msg(&mut self, rule: &str, line: usize, msg: impl Into<String>) {
-        self.sites.push(Site { rule: rule.to_string(), rel: self.cur.clone(), line: line as u32, msg: msg.into(), key: String::new() });
+        self.sites.push(Site { rule: rule.to_string(), rel: self.cur.clone(), line: line as u32, msg: msg.into(), key: String::new(), ident: String::new() });
     }
 
     /// A site in any file (`scan_tree`).
     pub fn site_in(&mut self, rule: &str, rel: &str, line: usize) {
-        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: String::new(), key: String::new() });
+        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: String::new(), key: String::new(), ident: String::new() });
     }
 
     pub fn site_in_msg(&mut self, rule: &str, rel: &str, line: usize, msg: impl Into<String>) {
-        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: msg.into(), key: String::new() });
+        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: msg.into(), key: String::new(), ident: String::new() });
     }
 
     pub fn site_keyed(&mut self, rule: &str, rel: &str, line: usize, msg: impl Into<String>, key: impl Into<String>) {
-        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: msg.into(), key: key.into() });
+        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: msg.into(), key: key.into(), ident: String::new() });
+    }
+
+    /// A declaration site: `ident` is `owner::var`, the baseline fingerprint (see [`Site::ident`]).
+    pub fn site_decl(&mut self, rule: &str, rel: &str, line: usize, msg: impl Into<String>, ident: impl Into<String>) {
+        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: msg.into(), key: String::new(), ident: ident.into() });
     }
 
     pub fn note(&mut self, text: impl Into<String>) {
