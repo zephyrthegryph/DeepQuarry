@@ -7,9 +7,7 @@
 	var/shockdamage = 20
 	var/emp_zap = FLUX_EMP
 
-// ALLOW(init/INSTANCE_STATE): a flux anomaly wobbles
-/obj/effect/anomaly/flux/Initialize(mapload)
-	. = ..()
+/obj/effect/anomaly/flux/proc/start_flux_filters()
 	apply_wibbly_filters(src)
 
 /obj/effect/anomaly/flux/anomalyEffect()
@@ -30,6 +28,7 @@
 	mobShock(A)
 
 CAPABILITIES(/obj/effect/anomaly/flux)
+	setup(PROC_REF(start_flux_filters))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	param(nameof(emp_zap), pos = 3)
 	op("flux_shock", hand(), ungated(), label("Interaction flux shock"), then(PROC_REF(interaction_flux_shock)))

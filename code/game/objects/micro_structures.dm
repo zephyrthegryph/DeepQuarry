@@ -23,6 +23,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 
 CAPABILITIES(/obj/structure/micro_tunnel)
+	setup(PROC_REF(place_initial_tunnel_offset))
 	// outside: climb in, or reach in (a creature that may squeeze in is asked which); a cyborg uses it from beside the hole
 	op("use", inputs(hand(), remote()), label("Use"), when(PROC_REF(actor_outside)), needs(req_adjacent()),
 		asks(/datum/prompt/choice, fields = list("title" = "Enter or reach", "question" = "Would you like to enter the tunnel, or reach inside it?", "choices" = list("Enter", "Reach"), "buttons" = TRUE, "timeout" = 0), step = "enter_or_reach", when = PROC_REF(asks_enter_or_reach)),
@@ -53,8 +54,7 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 	var/area/our_area = get_area(src)
 	return "[our_area?.name] [name]"
 
-/obj/structure/micro_tunnel/Initialize(mapload)
-	. = ..()
+/obj/structure/micro_tunnel/proc/place_initial_tunnel_offset()
 	if(pixel_x || pixel_y)
 		return
 	offset_tunnel()

@@ -31,8 +31,7 @@ CAPABILITIES(/obj/effect/temporary_effect)
 	pixel_x = -32
 	pixel_y = -32
 
-/obj/effect/temporary_effect/cleave_attack/Initialize(mapload) // Makes the slash fade smoothly. When completely transparent it should qdel itself.
-	. = ..()
+/obj/effect/temporary_effect/cleave_attack/proc/start_slash_fade()
 	animate(src, alpha = 0, time = time_to_die - 1)
 
 /obj/effect/temporary_effect/shuttle_landing
@@ -131,10 +130,10 @@ CAPABILITIES(/obj/effect/dummy/lighting_obj/moblight/fire)
 	var/icon_dist
 
 CAPABILITIES(/obj/effect/abstract/directional_lighting)
+	setup(PROC_REF(display_light_spot))
 	owns_one(nameof(light_spot), /obj/effect/abstract/light_spot, starts = /obj/effect/abstract/light_spot, starts_args = NO_LOC)
 
-/obj/effect/abstract/directional_lighting/Initialize(mapload)
-	. = ..()
+/obj/effect/abstract/directional_lighting/proc/display_light_spot()
 	vis_contents += light_spot
 
 /obj/effect/abstract/directional_lighting/proc/face_light(atom/movable/source, angle, distance)
@@ -170,3 +169,6 @@ CAPABILITIES(/obj/effect/abstract/directional_lighting)
 	moveToNullspace()
 	return TRUE
 
+
+CAPABILITIES(/obj/effect/temporary_effect/cleave_attack)
+	setup(PROC_REF(start_slash_fade))

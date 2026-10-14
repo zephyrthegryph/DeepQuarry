@@ -45,6 +45,7 @@
 	return teleplumb_crystal ? "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean." : desc
 
 CAPABILITIES(/obj/structure/toilet)
+	setup(PROC_REF(connect_initial_plumbing))
 	hose_sockets(list(/datum/hose_connector/endless_drain))
 	owns_one(nameof(bin), /obj/item/stock_parts/matter_bin, starts = nameof(bin))
 	owns_one(nameof(teleplumb_crystal), /obj/item, starts = PROC_REF(make_teleplumb_crystal))
@@ -72,9 +73,7 @@ CAPABILITIES(/obj/structure/toilet)
 	on_notice(/datum/notice/disposal_receive, then(PROC_REF(toilet_reflux)))
 	derives(nameof(desc), PROC_REF(model_desc))
 
-/obj/structure/toilet/Initialize(mapload)
-	. = ..()
-
+/obj/structure/toilet/proc/connect_initial_plumbing()
 	if(teleplumb_crystal)
 		rel_set(src, nameof(teleplumb_dest), locate(/obj/effect/landmark/teleplumb_exit))
 

@@ -187,8 +187,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood)
 	amount = 0
 	var/list/drips
 
-/obj/effect/decal/cleanable/blood/drip/Initialize(mapload)
-	. = ..()
+/obj/effect/decal/cleanable/blood/drip/proc/record_initial_drip()
 	LAZYOR(drips, icon_state)
 
 /obj/effect/decal/cleanable/blood/writing
@@ -351,3 +350,6 @@ CAPABILITIES(/obj/effect/decal/cleanable/vomit)
 
 #undef DRYING_TIME
 
+
+CAPABILITIES(/obj/effect/decal/cleanable/blood/drip)
+	setup(PROC_REF(record_initial_drip))

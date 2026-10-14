@@ -15,6 +15,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LANDMARKS)
 REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 
 CAPABILITIES(/obj/effect/landmark)
+	setup(PROC_REF(record_named_coordinate))
+	setup(PROC_REF(record_special_coordinates))
 	membership(joins = REGISTRY_LANDMARKS)
 	map_resolver(GLOBAL_PROC_REF(resolve_landmark))
 	derives(nameof(tag), PROC_REF(landmark_tag))
@@ -86,25 +88,11 @@ CAPABILITIES(/obj/effect/landmark)
 /obj/effect/landmark/Initialize(mapload)
 	. = ..()
 
-	// A subtype placed with a coordinate-only name still records (it stays: its type has work).
-	var/list/registry = landmark_coordinate_registry(name)
-	if(registry)
-		registry += loc
 	switch(name)
 		if("JoinLate") // Bit difference, since we need the spawn point to move.
 			registry_join(REGISTRY_LATEJOIN, src)
 			simulated = TRUE
 			// always use this list with get_turf
-		if("Holding Facility")
-			GLOB.holdingfacility += loc
-		if("tdome1")
-			GLOB.tdome1 += loc
-		if("tdome2")
-			GLOB.tdome2 += loc
-		if("tdomeadmin")
-			GLOB.tdomeadmin += loc
-		if("tdomeobserve")
-			GLOB.tdomeobserve += loc
 
 // Landmarks survive deletion unless flagged delete_me or forced.
 /obj/effect/landmark/lifecycle_keep(force)
@@ -251,3 +239,22 @@ CAPABILITIES(/obj/effect/landmark/costume/sexymime)
 	name = "wildlife"
 	var/wildlife_type = 2		//1 for water, 2 for land; thats all for now
 
+
+/obj/effect/landmark/proc/record_named_coordinate()
+	// A subtype placed with a coordinate-only name still records (it stays: its type has work).
+	var/list/registry = landmark_coordinate_registry(name)
+	if(registry)
+		registry += loc
+
+/obj/effect/landmark/proc/record_special_coordinates()
+	switch(name)
+		if("Holding Facility")
+			GLOB.holdingfacility += loc
+		if("tdome1")
+			GLOB.tdome1 += loc
+		if("tdome2")
+			GLOB.tdome2 += loc
+		if("tdomeadmin")
+			GLOB.tdomeadmin += loc
+		if("tdomeobserve")
+			GLOB.tdomeobserve += loc

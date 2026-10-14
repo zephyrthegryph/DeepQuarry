@@ -15,6 +15,7 @@
 	var/atom/parent
 
 CAPABILITIES(/obj/effect/abstract/particle_holder)
+	setup(PROC_REF(install_parent_particles))
 	ref_one(nameof(parent))
 	param(nameof(particle_path), pos = 1)
 	param(nameof(particle_flags), pos = 2)
@@ -29,6 +30,7 @@ CAPABILITIES(/obj/effect/abstract/particle_holder)
 		stack_trace("particle holder was created with no loc!")
 		return INITIALIZE_HINT_QDEL
 
+/obj/effect/abstract/particle_holder/proc/install_parent_particles()
 	if(loc.plane == TURF_PLANE)
 		vis_flags &= ~VIS_INHERIT_PLANE // don't yoink the floor plane. we'll just sit on game plane, it's fine
 

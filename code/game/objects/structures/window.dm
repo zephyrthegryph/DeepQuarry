@@ -258,6 +258,8 @@ MSG_DEF(window/wiring, span_notice("You begin to wire %T% for electrochromic tin
 		update_nearby_tiles(need_rebuild=1)
 
 CAPABILITIES(/obj/structure/window)
+	setup(PROC_REF(register_window_controls))
+	setup(PROC_REF(refresh_window_tiles))
 	smoothing()
 	rolls(nameof(tilt_sign), pick_one(list(-1, 1)))
 	param(nameof(dir), pos = 1)
@@ -286,12 +288,9 @@ CAPABILITIES(/obj/structure/window)
 		state = 0
 
 	// If we started anchored we'll need to disable rotation
-	make_rotatable()
-	update_verbs()
 
 	ini_dir = dir
 
-	update_nearby_tiles(need_rebuild=1)
 
 // neighbouring windows and tables re-smooth without it.
 /obj/structure/window/on_destroy(force)
@@ -681,3 +680,10 @@ CAPABILITIES(/obj/machinery/button/windowtint)
 	var/obj/item/stack/material/stack_type = glasstype
 	var/material_id = stack_type ? initial(stack_type.default_type) : MAT_GLASS
 	set_rad_insulation(material_rad_insulation(material_id, is_fulltile() ? RAD_FULLTILE_WINDOW_THICKNESS_MM : RAD_WINDOW_THICKNESS_MM, RAD_VERY_LIGHT_INSULATION))
+
+/obj/structure/window/proc/register_window_controls()
+	make_rotatable()
+	update_verbs()
+
+/obj/structure/window/proc/refresh_window_tiles()
+	update_nearby_tiles(need_rebuild=1)

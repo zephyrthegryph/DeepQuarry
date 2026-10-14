@@ -47,22 +47,17 @@
 
 // When destroyed by explosions, properly handle contents: the riders take the full blast.
 CAPABILITIES(/obj/structure/transit_tube_pod)
+	setup(PROC_REF(follow_tube))
 	blast_contents()
 	// The pod carries its own air: one cell of breathable mix, owned by the pod (gas_store()).
 	gas_store(nameof(air_contents), CELL_VOLUME, T20C, list(GAS_O2 = O2STANDARD * ONE_ATMOSPHERE * 2, GAS_N2 = N2STANDARD * ONE_ATMOSPHERE))
 
-/obj/structure/transit_tube_pod/Initialize(mapload)
-	. = ..()
-	// Give auto tubes time to align before trying to start moving
-	follow_tube()
-
-/obj/structure/transit_tube/Initialize(mapload)
-	. = ..()
-
+/obj/structure/transit_tube/proc/configure_initial_directions()
 	if(tube_dirs == null)
 		init_dirs()
 
 CAPABILITIES(/obj/structure/transit_tube)
+	setup(PROC_REF(configure_initial_directions))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 
 /// Something walked into it (the bump action's notice).

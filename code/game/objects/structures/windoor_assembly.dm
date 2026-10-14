@@ -43,6 +43,7 @@
 			set_dir(start_dir)
 		else //If the user is facing northeast. northwest, southeast, southwest or north, default to north
 			set_dir(NORTH)
+/obj/structure/windoor_assembly/proc/prepare_assembly_controls()
 	update_state()
 
 	update_nearby_tiles(need_rebuild=1)
@@ -87,6 +88,7 @@ MSG_DEF_SELF(windoor_assembly/bolted_down, "Unbolt it from the floor first.")
 MSG_DEF_SELF(windoor_assembly/broken_board, "The assembly has broken airlock electronics.")
 
 CAPABILITIES(/obj/structure/windoor_assembly)
+	setup(PROC_REF(prepare_assembly_controls))
 	construction(start(STAGE_WINDOOR_ASSEMBLY_FRAME),
 		stage(STAGE_WINDOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))),
 		stage(STAGE_WINDOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))),

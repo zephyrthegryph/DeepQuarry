@@ -22,8 +22,7 @@ CAPABILITIES(/obj/effect/temp_visual/decoy)
 	if(customappearance)
 		appearance = customappearance
 
-/obj/effect/temp_visual/decoy/fading/Initialize(mapload)
-	. = ..()
+/obj/effect/temp_visual/decoy/fading/proc/start_decoy_fade()
 	animate(src, alpha = 0, time = duration)
 
 /obj/effect/temp_visual/decoy/fading/fivesecond
@@ -181,3 +180,6 @@ CAPABILITIES(/obj/effect/temp_visual/heal)
 	name = "glowing cracks"
 	icon_state = "purplecrack"
 	duration = 6
+
+CAPABILITIES(/obj/effect/temp_visual/decoy/fading)
+	setup(PROC_REF(start_decoy_fade))

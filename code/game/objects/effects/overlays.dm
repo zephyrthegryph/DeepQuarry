@@ -158,10 +158,6 @@ CAPABILITIES(/obj/effect/overlay/snow)
 
 	var/static/matrix/normal_transform
 
-/obj/effect/overlay/light_cone/Initialize(mapload)
-	. = ..()
-	apply_standard_transform()
-
 /obj/effect/overlay/light_cone/proc/reset_transform(apply_standard)
 	transform = initial(transform)
 	if(apply_standard)
@@ -183,3 +179,6 @@ CAPABILITIES(/obj/effect/overlay/snow)
 	layer = FLOAT_LAYER
 	vis_flags = VIS_INHERIT_ID
 	appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PIXEL_SCALE
+
+CAPABILITIES(/obj/effect/overlay/light_cone)
+	setup(PROC_REF(apply_standard_transform))
