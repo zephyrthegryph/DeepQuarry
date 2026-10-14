@@ -47,7 +47,7 @@ CAPABILITIES(/obj/item/stack/sandbags)
 
 /// Declared setup: prepare sandbag recipes, after its parents initialize.
 /obj/item/stack/sandbags/proc/prepare_sandbag_recipes()
-	recipes = GLOB.sandbag_recipes
+	set_recipes(GLOB.sandbag_recipes)
 	update_slowdown()
 
 /// A bigger pile slows its carrier more.
@@ -171,3 +171,4 @@ CAPABILITIES(/obj/item/stack/emptysandbag)
 	SB.color = color
 	if(user)
 		to_chat(user, span_notice("You fill a sandbag."))
+
