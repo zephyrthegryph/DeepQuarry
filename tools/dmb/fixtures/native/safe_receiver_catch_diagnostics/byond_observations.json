@@ -1,0 +1,168 @@
+{
+  "schema": 1,
+  "receipt": "E:/dq-cache/dmb-safe-receiver-catch-diagnostics/0cd09caf991548f395272900e7db579e/receipt.json",
+  "receipt_sha256": "fa9f7a9b47a509532057f28ca279fc63b3a0e612d05b52211780d2269f7f03c8",
+  "pins": {
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    }
+  },
+  "source_sha256": {
+    "safe_untyped_known.dm": "f89f77d6abd46afacc95203a73dd7383336885497bdc249379fefd69eafd30ea",
+    "safe_untyped_known.dme": "5e5055eb8754d27ce56fb7c8bfdab9f550819baa0c225fa47008961740153992",
+    "safe_untyped_missing.dm": "201eb8aa153a0a9e5157960600b7fbafbd7dbe639a265f5f7eb5ec41eda7b189",
+    "safe_untyped_missing.dme": "ef664b48755a05745d14e9108bf368ce06e8a79bb3ff0f38a35fcd83d30a61a8",
+    "safe_typed_datum_missing.dm": "0a26c910ea494df4b773a72aa5e84f0b6d67b6c229fe5920e83006f471e2fcb6",
+    "safe_typed_datum_missing.dme": "6a7bb8104da75654a62173487974d6e9d7375757eb28fe8e70d9b367237f57fc",
+    "safe_typed_list_copy.dm": "79d6c31d06676f9c04ac7041dc716b3da774e852ab62024307769aced0b3fb02",
+    "safe_typed_list_copy.dme": "ef6886bb391f2264d882d4508aca748ad5441e0f6ef09030231baf1aaa63c465",
+    "safe_typed_source_known.dm": "9fdc9fa25f7fb9ab938e0d7007360619ccf2f03dabcee88e765c547cf474c3c7",
+    "safe_typed_source_known.dme": "e95cc17db035c2fdfdb3ca4c8edab02cffc3e0f17cc7d0909128e98872085de4",
+    "catch_parameter.dm": "06abb3a0667971b1563c430ed1d9ac1c1671bc7f38420a78989916745f9fccd2",
+    "catch_parameter.dme": "91a649fb3a1cb1d6e78ca6fcb075e9d8508534438ad31f6049f8da4581b658a6",
+    "catch_local.dm": "4843adf38aeda996fc9c8771f7fa4b407645fea26c97f9731e0f205439cbf54f",
+    "catch_local.dme": "c4c9c4298af657e48a65b2b78a922ab9599cee65b59f8dd867b88736da1a7b83",
+    "catch_distinct.dm": "470002d252b38f46c792ad7f63443b7298143822452afb63d63c721ed492502e",
+    "catch_distinct.dme": "c5bbb09c6d7b1b40d37af53ee182c94138d565d60fd32794b4ab185b8f0f0815",
+    "catch_nested.dm": "b6f2c3e22301d598c55b100f97c9fdccc19d3e8fafb63e947c88f1965a248169",
+    "catch_nested.dme": "98eac926ba701de69485c8656e11b57d6152c1adcd79810d09f32978ecf42826",
+    "catch_typed.dm": "90aac4fdf29632c4a6bef1975e1c10a47a4c026f48b6e4f04dba84e886a0422c",
+    "catch_typed.dme": "39106e2c6c9ea8b774c06e341adde857aa3a7f4d669aed1a1bf58567284fd2cc"
+  },
+  "byond": {
+    "safe_untyped_known": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.42097720003221184,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "safe_untyped_missing": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.4206175999715924,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "safe_untyped_missing.dm",
+          "line": 2,
+          "severity": "error",
+          "message": "value.MissingReceiverMethod: undefined proc"
+        }
+      ]
+    },
+    "safe_typed_datum_missing": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.40125449997140095,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "safe_typed_datum_missing.dm",
+          "line": 2,
+          "severity": "error",
+          "message": "value.MissingReceiverMethod: undefined proc"
+        }
+      ]
+    },
+    "safe_typed_list_copy": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.41616780002368614,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "safe_typed_source_known": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.441523400018923,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "catch_parameter": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.43096650001825765,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "catch_parameter.dm",
+          "line": 4,
+          "severity": "error",
+          "message": "value: duplicate definition"
+        },
+        {
+          "file": "catch_parameter.dm",
+          "line": 1,
+          "severity": "error",
+          "message": "value: previous definition"
+        }
+      ]
+    },
+    "catch_local": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.44854559999657795,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "catch_local.dm",
+          "line": 5,
+          "severity": "error",
+          "message": "value: duplicate definition"
+        },
+        {
+          "file": "catch_local.dm",
+          "line": 2,
+          "severity": "error",
+          "message": "value: previous definition"
+        }
+      ]
+    },
+    "catch_distinct": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.46328450000146404,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "catch_nested": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.4689733000122942,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "catch_nested.dm",
+          "line": 5,
+          "severity": "error",
+          "message": "value: duplicate definition"
+        },
+        {
+          "file": "catch_nested.dm",
+          "line": 1,
+          "severity": "error",
+          "message": "value: previous definition"
+        }
+      ]
+    },
+    "catch_typed": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.44406379997963086,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    }
+  }
+}

@@ -1,0 +1,6 @@
+"a"=(/obj/phase0_placed/z_item,/obj/phase0_placed/a_item,/turf/phase0_floor,/area/phase0_area)
+"b"=(/obj/phase0_placed/a_item,/obj/phase0_placed/z_item,/turf/phase0_floor,/area/phase0_area)
+(1,1,1)={"
+ab
+ba
+"}

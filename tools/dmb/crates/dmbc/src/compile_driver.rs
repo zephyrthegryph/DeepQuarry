@@ -1,0 +1,441 @@
+//! Uncached production admission and publication adapter.
+//! All semantic inputs are captured before this boundary; no fallback compiler
+//! is invoked when admission fails.
+use crate::{cold, driver_facts, engine::EngineSnapshot, lowering::LoweringConfig};
+use dm_ir::Resolver;
+use dm_tree::frontend::ColdFrontend;
+
+/// Hold this handle through capture, compilation and installation. Independent
+/// worktrees have distinct locks; two processes targeting one manifest serialize.
+pub fn acquire_build_lock(project: &std::path::Path) -> std::io::Result<std::fs::File> {
+    let directory = project
+        .parent()
+        .ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::InvalidInput, "manifest has no parent")
+        })?
+        .join(".dmbc");
+    std::fs::create_dir_all(&directory)?;
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(directory.join("build.lock"))?;
+    crate::request_lease::acquire(&file)?;
+    Ok(file)
+}
+
+/// Resolve source scalar constants once, using the same backend spelling rules
+/// used by executable lowering. The returned overlay retains dependency edges.
+pub fn scalars(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    predefined: &dyn Resolver,
+    predefined_identity: u128,
+) -> dm_tree::constant_resolution::ScalarSnapshot {
+    scalars_with_artifacts(frontend, engine, predefined, predefined_identity, None)
+}
+pub(crate) fn scalars_with_artifacts(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    predefined: &dyn Resolver,
+    predefined_identity: u128,
+    artifacts: Option<&dyn dm_tree::constant_resolution::ScalarArtifacts>,
+) -> dm_tree::constant_resolution::ScalarSnapshot {
+    use dm_tree::constant_resolution::ScalarQuery;
+    let tree = &frontend.snapshot.tree;
+    let mut requests = tree
+        .host_declaration_selections()
+        .flat_map(|(_, selection)| selection.scalar_requests.iter().copied())
+        .collect::<Vec<_>>();
+    for name in ["turf", "area", "maxx", "maxy", "maxz"] {
+        requests.push(ScalarQuery::EffectiveDefault {
+            owner: dm_ir::SymbolId::of("/world"),
+            name: dm_ir::SymbolId::of(name),
+        });
+    }
+    let mut identity = b"native-scalar-policy-v1:byond-string-decoder:nameof-reference".to_vec();
+    identity.extend_from_slice(&engine.identity().to_le_bytes());
+    identity.extend_from_slice(&predefined_identity.to_le_bytes());
+    let calls = crate::pure_calls::PinnedPureCalls::new(engine).ok();
+    dm_tree::constant_resolution::resolve_pinned_with_artifacts(
+        &frontend.snapshot,
+        &requests,
+        xxhash_rust::xxh3::xxh3_128(&identity),
+        scalar_decode,
+        scalar_nameof,
+        Some(predefined),
+        calls
+            .as_ref()
+            .map(|calls| calls as &dyn dm_tree::constants::PureCalls),
+        artifacts,
+    )
+}
+
+pub(crate) fn scalar_decode(raw: &str) -> Option<Vec<u8>> {
+    dm_codegen_byond::decode_constant_string_literal(raw)
+        .ok()
+        .flatten()
+}
+pub(crate) fn scalar_nameof(expression: &dm_syntax::Expr) -> Option<String> {
+    dm_codegen_byond::nameof_reference(expression).map(str::to_owned)
+}
+
+pub fn map_defaults(
+    scalars: &dm_tree::constant_resolution::ScalarSnapshot,
+) -> Result<Vec<crate::world_projection::Directive>, String> {
+    use dm_tree::constant_resolution::{ScalarOutcome, ScalarQuery};
+    let tree = &scalars.source.tree;
+    let mut values = Vec::new();
+    for name in ["turf", "area", "maxx", "maxy", "maxz"] {
+        let owner = dm_ir::SymbolId::of("/world");
+        let symbol = dm_ir::SymbolId::of(name);
+        let member = tree
+            .lookup_type(owner)
+            .and_then(|owner| tree.resolve(owner, symbol, dm_tree::MemberKind::Var))
+            .and_then(|member| tree.member(member));
+        // Captured engine defaults are handled by the map driver. Only authored
+        // values replace them; unsupported authored expressions must fail.
+        // The declaration index already groups exact source occurrences by
+        // target. Inspect only this owner's members, not the program roster.
+        let authored = tree
+            .lookup_type(owner)
+            .and_then(|id| tree.type_node(id))
+            .is_some_and(|node| {
+                node.members.iter().any(|&id| {
+                    tree.member(id).is_some_and(|member| member.name == symbol)
+                        && !scalars
+                            .source
+                            .occurrences
+                            .for_target(dm_tree::Target::Member(id))
+                            .is_empty()
+                })
+            });
+        if !authored {
+            continue;
+        }
+        if member.is_none_or(|member| member.metadata.initializer.is_none()) {
+            return Err(format!(
+                "world.{name} authored default has no certified effective initializer"
+            ));
+        }
+        match scalars.outcome(ScalarQuery::EffectiveDefault {
+            owner,
+            name: symbol,
+        }) {
+            Some(ScalarOutcome::Value(value)) => values.push((name, value)),
+            other => return Err(format!("world.{name} map default is unresolved: {other:?}")),
+        }
+    }
+    crate::world_projection::project(values).map_err(|error| format!("map defaults: {error:?}"))
+}
+
+/// The driver always prepares ABI facts through the pinned coverage policy.
+/// A failed preparation never publishes a partial executable.
+#[allow(clippy::too_many_arguments)]
+pub fn compile<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    workers: usize,
+) -> Result<cold::ColdOutput, cold::ColdError> {
+    compile_observed(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        workers,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn compile_observed<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    workers: usize,
+    observer: Option<&cold::ColdObserver<'_>>,
+) -> Result<cold::ColdOutput, cold::ColdError> {
+    compile_observed_with_memo(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        workers,
+        observer,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn compile_observed_with_memo<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    workers: usize,
+    observer: Option<&cold::ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+) -> Result<cold::ColdOutput, cold::ColdError> {
+    compile_observed_input(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        workers,
+        observer,
+        memo,
+        None,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn compile_revision_observed_with_memo<R: Resolver>(
+    frontend: &dm_tree::frontend::FrontendRevision,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    workers: usize,
+    observer: Option<&cold::ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+) -> Result<cold::ColdOutput, cold::ColdError> {
+    compile_observed_input(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        workers,
+        observer,
+        memo,
+        Some(frontend),
+        None,
+    )
+}
+
+/// Request hosts share this executor with input capture and the frontend.
+#[allow(clippy::too_many_arguments)]
+pub fn compile_revision_observed_with_memo_on_executor<R: Resolver>(
+    frontend: &dm_tree::frontend::FrontendRevision,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    executor: &dm_exec::BuildExecutor,
+    observer: Option<&cold::ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+) -> Result<cold::ColdOutput, cold::ColdError> {
+    compile_observed_input(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        executor.workers(),
+        observer,
+        memo,
+        Some(frontend),
+        Some(executor),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn prepare_revision_observed_with_memo_on_executor<R: Resolver>(
+    frontend: &dm_tree::frontend::FrontendRevision,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    executor: &dm_exec::BuildExecutor,
+    observer: Option<&cold::ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+) -> Result<cold::PreparedCold, cold::ColdError> {
+    prepare_observed_input(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        executor.workers(),
+        observer,
+        memo,
+        Some(frontend),
+        Some(executor),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn compile_observed_input<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    workers: usize,
+    observer: Option<&cold::ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    revision: Option<&dm_tree::frontend::FrontendRevision>,
+    executor: Option<&dm_exec::BuildExecutor>,
+) -> Result<cold::ColdOutput, cold::ColdError> {
+    let owned_executor;
+    let executor = match executor {
+        Some(executor) => executor,
+        None => {
+            owned_executor = dm_exec::BuildExecutor::new(workers)
+                .map_err(|error| cold::ColdError::AbiPreparation(error.to_string()))?;
+            &owned_executor
+        }
+    };
+    prepare_observed_input(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        workers,
+        observer,
+        memo,
+        revision,
+        Some(executor),
+    )?
+    .compose_borrowed(engine_bytes, frontend, values, stage, executor, observer)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn prepare_observed_input<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    workers: usize,
+    observer: Option<&cold::ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    revision: Option<&dm_tree::frontend::FrontendRevision>,
+    executor: Option<&dm_exec::BuildExecutor>,
+) -> Result<cold::PreparedCold, cold::ColdError> {
+    let owned_executor;
+    let executor = match executor {
+        Some(executor) => executor,
+        None => {
+            owned_executor = dm_exec::BuildExecutor::new(workers)
+                .map_err(|error| cold::ColdError::AbiPreparation(error.to_string()))?;
+            &owned_executor
+        }
+    };
+    let order = crate::type_creation_order::collect_retained(
+        &frontend.allocation_ledger,
+        &frontend.expanded.text,
+        frontend.snapshot.tree.symbols(),
+        &links.inventory,
+        memo.and_then(|memo| memo.required_types.as_deref())
+            .map(|store| &store.allocations),
+    )
+    .map_err(cold::ColdError::Initializer)?;
+    let calls =
+        crate::pure_calls::PinnedPureCalls::new(engine).map_err(cold::ColdError::Initializer)?;
+    let evaluator = driver_facts::DriverEvaluator {
+        pure_calls: Some(&calls),
+        resolver,
+        symbols: frontend.snapshot.tree.symbols(),
+        resource_search_context: resource_context,
+    };
+    cold::prepare_captured_classified_with_pinned_abi_memo_revision(
+        frontend,
+        resolver,
+        cold::CapturedLinkInputs {
+            engine_bytes,
+            engine,
+            references: &links.references,
+            inventory: links.inventory,
+        },
+        cold::CapturedDeclarationInputs {
+            initializers: &evaluator,
+            type_values: values,
+            resource_search_context: resource_context,
+            source_type_order: order.order(),
+            source_allocation_roster: Some(&order),
+        },
+        LoweringConfig {
+            workers,
+            ..Default::default()
+        },
+        maps,
+        stage,
+        observer,
+        memo,
+        revision,
+        executor,
+    )
+}

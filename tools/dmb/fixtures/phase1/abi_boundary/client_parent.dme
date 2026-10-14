@@ -1,0 +1,3 @@
+/client
+    parent_type = /datum
+    var/example

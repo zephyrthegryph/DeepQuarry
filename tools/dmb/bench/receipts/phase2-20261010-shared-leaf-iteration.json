@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "scope": "partial prototype end-to-end compiler measurements; not acceptance",
+  "compiler_commit": "607e2c961ffbecb055bb5ad84ca52813f2e73c74",
+  "profile": {
+    "dmbc_opt_level": 0,
+    "dmbc_codegen_units": 256,
+    "dm_tree_opt_level": 1,
+    "acceptance": false
+  },
+  "receipt": "E:\\dq-cache\\dmb-native-iterations\\20261010-030240-9da00893\\receipt.json",
+  "receipt_sha256": "f1ded9bdc8d695d3f6070997c912db3ea40b1f23937cd56b4a3a6d2f9fb086d1",
+  "compiler_sha256": "bb2d0ae30c649d2e0c0741d7cb1dee61c66c0e8ce1e91bce7213c91f18cfc5b1",
+  "inspector_sha256": "d7e72d2406f01e5883f115ca218aa73749c2ff37ba70cd3c742ea68cd606969d",
+  "status": "failed",
+  "failure": "structural inspector failed",
+  "failure_detail": "Inspector report writing returned Windows112 disk space error; compilation succeeded.",
+  "daemon_cleanup": {
+    "pid": 45284,
+    "tree_error": null,
+    "direct_error": null,
+    "wait_error": null,
+    "returncode": 1,
+    "reaped": true
+  },
+  "rows": [
+    {
+      "kind": "initial",
+      "retained_wall_seconds": 83.37061029998586,
+      "fresh_wall_seconds": 36.740811499999836,
+      "fresh_native_byte_oracle": true
+    },
+    {
+      "kind": "unchanged",
+      "retained_wall_seconds": 1.9406000000308268,
+      "fresh_wall_seconds": 38.02958970004693,
+      "fresh_native_byte_oracle": true
+    },
+    {
+      "kind": "body",
+      "retained_wall_seconds": 65.84939430002123,
+      "fresh_wall_seconds": 38.52036549994955,
+      "fresh_native_byte_oracle": true
+    }
+  ],
+  "post_cohort_new_proc": {
+    "kind": "new_proc",
+    "retained_wall_seconds": 64.39188559999457,
+    "fresh_wall_seconds": 36.88682090002112,
+    "independent_post_cohort_byte_equality": true,
+    "output_sha256": {
+      "retained": {
+        ".dmb": "45fb19fc590ab73a45837981f15141feb1465af188883647f28a79af4c0e0be8",
+        ".rsc": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+      },
+      "fresh": {
+        ".dmb": "45fb19fc590ab73a45837981f15141feb1465af188883647f28a79af4c0e0be8",
+        ".rsc": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+      }
+    },
+    "scope": "Both compile children succeeded; this row was not appended by the harness because structural report writing failed. Hashes verified after daemon reaping."
+  },
+  "gates": {
+    "BYOND_structural": "open; incomplete semantics and unexplained differences",
+    "runtime": "deferred Phase5",
+    "memory": "open; pressure evicted sessions",
+    "remaining_edit_rows": "not measured"
+  }
+}

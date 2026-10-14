@@ -1,0 +1,38 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-d02f53bd52aad7c5.exe",
+  "binary_sha256": "6cc83aa63de1922ff160e2fbad65622ad4cb2ea4dbfe6d62d6fefd1e4f415dc2",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "composition::procedure_plan::metadata_roster::tests::",
+      "selected": [
+        "composition::procedure_plan::metadata_roster::tests::ordered_metadata_reuses_exact_owners_and_declines_changed_current_authority"
+      ],
+      "exit": 0,
+      "seconds": 0.053379899996798486,
+      "stdout": "\nrunning 1 test\ntest composition::procedure_plan::metadata_roster::tests::ordered_metadata_reuses_exact_owners_and_declines_changed_current_authority ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 672 filtered out; finished in 0.02s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "composition::tests::frame_contribution",
+      "selected": [
+        "composition::tests::frame_contribution_rebinds_code_and_rejects_changed_numeric_and_string_authority",
+        "composition::tests::frame_contribution_requires_current_resolved_argument_source_numbers"
+      ],
+      "exit": 0,
+      "seconds": 0.06932979996781796,
+      "stdout": "\nrunning 2 tests\ntest composition::tests::frame_contribution_rebinds_code_and_rejects_changed_numeric_and_string_authority ... ok\ntest composition::tests::frame_contribution_requires_current_resolved_argument_source_numbers ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 671 filtered out; finished in 0.04s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "composition::procedure_plan::argument_sources_tests::",
+      "selected": [
+        "composition::procedure_plan::argument_sources_tests::references_reuse_only_current_binding_start_and_exact_helper_order"
+      ],
+      "exit": 0,
+      "seconds": 0.025866899988614023,
+      "stdout": "\nrunning 1 test\ntest composition::procedure_plan::argument_sources_tests::references_reuse_only_current_binding_start_and_exact_helper_order ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 672 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    }
+  ]
+}

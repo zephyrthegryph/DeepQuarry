@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "compiler": "DreamMaker 516.1687",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "source_sha256": "fb3b2548af55f7e40f211336e9b4942c272317b805b98482bb3521b8c6228170",
+  "native_sha256": "1e49af4f2b6d7fb31f8bd234804266c954f2c9f8d5862449066babab24996274",
+  "compile_only": true,
+  "runtime_executed": false,
+  "source_receipt": "E:/dq-cache/dmb-native-v2/input-middle-probe-20261010/matrix",
+  "observed_operands": [
+    [
+      2,
+      127,
+      16
+    ],
+    [
+      2,
+      127,
+      8
+    ],
+    [
+      2,
+      5,
+      1
+    ],
+    [
+      2,
+      7,
+      2
+    ],
+    [
+      2,
+      0,
+      1
+    ],
+    [
+      2,
+      125,
+      1
+    ],
+    [
+      2,
+      125,
+      64
+    ],
+    [
+      2,
+      0,
+      64
+    ]
+  ]
+}

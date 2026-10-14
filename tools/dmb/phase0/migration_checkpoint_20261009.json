@@ -1,0 +1,1088 @@
+{
+  "scope": "native compiler migration; not performance admission",
+  "targeted_correctness_and_freshness_wave": {
+    "compile_oracle_receipt": "E:/dq-cache/dmb-native-v2/compile-oracle-20261009-2044/receipt.json",
+    "typed_parameter_evidence": "E:/dq-cache/dmb-native-v2/typed-parameter-probes-20261009-2110/receipt.json",
+    "implemented": [
+      "file and icon intrinsic construction gets explicit initializer markers, retaining emitted-write coverage checks",
+      "directory membership proofs exclude only caller-issued exact generated paths; direct file and negative probes remain checked",
+      "current generated-path policy participates in session, resource and publication validation",
+      "session schema 3 invalidates old disposable proof records without deleting outputs",
+      "bounded sequence answers reuse the existing request resolver memo",
+      "ranked procedure inspection uses the structural comparator's existing duplicate ordering"
+    ],
+    "focused_passed": {
+      "output_membership_policy": 1,
+      "initializer_marker_classification": 1,
+      "freshness_retry_policy": 2,
+      "session_validation": 4,
+      "bounded_resolver_sequences": 1,
+      "ranked_procedure_selector": 1
+    },
+    "driver_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-205530-2b3c3a43.json",
+    "resolver_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-205801-bd4778d4.json",
+    "remaining": [
+      "new binary compile-only oracle and real DeepQuarry benchmark pending",
+      "leading-slash parameter spelling is a BYOND type declaration with zero arguments; full shared declaration support is in progress",
+      "whole-program BYOND structural differences and runtime baseline remain open"
+    ]
+  },
+  "latest_prototype_cohort": {
+    "status": "passed",
+    "compiler_sha256": "3f791bbbc234243fedfeb0a8371e3e0ac3414e1ba57aff86879e3ee9906f7582",
+    "build_provenance": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261009-230335-70e12998.json",
+      "sha256": "2b00bbab24d7316b098ac3a7eb72c756b8daa68d396a22911a330b03016c6b72",
+      "compiler_sha256": "3f791bbbc234243fedfeb0a8371e3e0ac3414e1ba57aff86879e3ee9906f7582",
+      "commit": "9eb5b8f1d5a689dd7127c35368717fc8bcc03256",
+      "dmbc_opt_level": 1,
+      "dm_tree_opt_level": 1,
+      "dmbc_codegen_units": 256,
+      "lto": false,
+      "declared_acceptance_profile": false,
+      "benchmark_acceptance_admitted": false,
+      "scope": "successful-build receipt matched to exact executable bytes"
+    },
+    "workers": 2,
+    "source_snapshot_sha256": "17eb62aa3e91e185894e7ab03f5dc28d0cd2aba3e8f6d53413de7b758701768b",
+    "scope": "real-source daemon iteration wall telemetry plus fresh native DMB/RSC byte oracle; not runtime or r6 acceptance",
+    "BYOND_baseline_gate": "open",
+    "total_end_to_end_s": 806.7286692999769,
+    "daemon_cleanup": {
+      "pid": 51960,
+      "tree_error": null,
+      "direct_error": null,
+      "wait_error": null,
+      "returncode": 1,
+      "reaped": true
+    },
+    "full_receipt": "E:\\dq-cache\\dmb-native-iterations\\20261009-230836-ce23fe65\\receipt.json",
+    "rows": [
+      {
+        "kind": "initial",
+        "retained_wall_s": 50.2378439999884,
+        "fresh_wall_s": 20.359345700009726,
+        "fresh_native_byte_oracle": true,
+        "output_hashes": {
+          "dmb": {
+            "retained": "58e292f8602c4bc0556db9e97f2a77b724ba5484ea4e86f011bcc1407ddc4049",
+            "fresh": "58e292f8602c4bc0556db9e97f2a77b724ba5484ea4e86f011bcc1407ddc4049"
+          },
+          "rsc": {
+            "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+            "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+          }
+        },
+        "BYOND_structural": {
+          "baseline_admission": "open",
+          "comparison_scope": "same_captured_source_and_configuration",
+          "semantic_coverage": "incomplete",
+          "total_discrepancies": 1834121,
+          "unexplained_discrepancies": 1834121,
+          "complete": false,
+          "report": "E:\\dq-cache\\dmb-native-iterations\\20261009-230836-ce23fe65\\0\\session-0\\structural\\structural-diff.json",
+          "report_sha256": "dd9b9646732fc214fae1841f951c3ec6d3d71e8b0ff9cbac806db8365e1c36e4"
+        }
+      },
+      {
+        "kind": "unchanged",
+        "retained_wall_s": 1.067161000042688,
+        "fresh_wall_s": 18.086787599953823,
+        "fresh_native_byte_oracle": true,
+        "output_hashes": {
+          "dmb": {
+            "retained": "58e292f8602c4bc0556db9e97f2a77b724ba5484ea4e86f011bcc1407ddc4049",
+            "fresh": "58e292f8602c4bc0556db9e97f2a77b724ba5484ea4e86f011bcc1407ddc4049"
+          },
+          "rsc": {
+            "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+            "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+          }
+        },
+        "BYOND_structural": {
+          "baseline_admission": "open",
+          "comparison_scope": "same_captured_source_and_configuration",
+          "semantic_coverage": "incomplete",
+          "total_discrepancies": 1834121,
+          "unexplained_discrepancies": 1834121,
+          "complete": false,
+          "report": "E:\\dq-cache\\dmb-native-iterations\\20261009-230836-ce23fe65\\0\\session-0\\structural\\structural-diff.json",
+          "report_sha256": "dd9b9646732fc214fae1841f951c3ec6d3d71e8b0ff9cbac806db8365e1c36e4"
+        }
+      },
+      {
+        "kind": "body",
+        "retained_wall_s": 35.237285599985626,
+        "fresh_wall_s": 18.38413030002266,
+        "fresh_native_byte_oracle": true,
+        "output_hashes": {
+          "dmb": {
+            "retained": "e8bef41ca5ade373b488c00c18664496f70e08aa6f6f47eaed8ceb73684afa7f",
+            "fresh": "e8bef41ca5ade373b488c00c18664496f70e08aa6f6f47eaed8ceb73684afa7f"
+          },
+          "rsc": {
+            "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+            "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+          }
+        },
+        "BYOND_structural": {
+          "baseline_admission": "not_evaluable_cross_revision",
+          "comparison_scope": "cross_revision_original_BYOND_diagnostic_only",
+          "semantic_coverage": "incomplete",
+          "total_discrepancies": 1834122,
+          "unexplained_discrepancies": 1834122,
+          "complete": false,
+          "report": "E:\\dq-cache\\dmb-native-iterations\\20261009-230836-ce23fe65\\2\\session-0\\structural\\structural-diff.json",
+          "report_sha256": "82f370d1cfea210a65c4bf73b82e01c065ee99c5dcbb21b9c1f16c917c08ec6b"
+        }
+      },
+      {
+        "kind": "structural",
+        "retained_wall_s": 34.64886850002222,
+        "fresh_wall_s": 17.78398659999948,
+        "fresh_native_byte_oracle": true,
+        "output_hashes": {
+          "dmb": {
+            "retained": "1a90c61074196a54792647310a8b8ca5bb93253aa4ac070e842caa38582b0c1f",
+            "fresh": "1a90c61074196a54792647310a8b8ca5bb93253aa4ac070e842caa38582b0c1f"
+          },
+          "rsc": {
+            "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+            "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+          }
+        },
+        "BYOND_structural": {
+          "baseline_admission": "not_evaluable_cross_revision",
+          "comparison_scope": "cross_revision_original_BYOND_diagnostic_only",
+          "semantic_coverage": "incomplete",
+          "total_discrepancies": 1834127,
+          "unexplained_discrepancies": 1834127,
+          "complete": false,
+          "report": "E:\\dq-cache\\dmb-native-iterations\\20261009-230836-ce23fe65\\3\\session-0\\structural\\structural-diff.json",
+          "report_sha256": "c6996ba626a0a60935a8e67e575c94daaa312fedfe7d42c99e4ca747d789f4e5"
+        }
+      }
+    ],
+    "limitations": [
+      "Prototype O1/256 compiler and O1 dm-tree profile; not acceptance profile and not directly comparable to previous differently optimized builds.",
+      "All native byte-oracle rows passed; BYOND structural semantic coverage and equivalence remain open.",
+      "Daemon pressure released rich buffers then whole sessions; body/procedure edits used disk replay, not resident procedure reuse.",
+      "Measurements exclude pending source changes after commit 9eb5b8f1d5.",
+      "No DreamDaemon or runtime suite was run."
+    ]
+  },
+  "scalar_and_owner_selection_validation": {
+    "scalar_focused_passed": 4,
+    "scalar_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-204020-85ff2eac.json",
+    "host_selection_focused_passed": 2,
+    "implemented": [
+      "scalar outcomes replay exact dependency observations in the shared host fact store",
+      "failed candidate probes roll back current graph effects; cycle ancestors decline retention",
+      "effective owner artifacts supply callable, variable and scalar selection rosters",
+      "engine-only providers retain against exact engine ownership without source payloads",
+      "session and retention generations expose lifecycle resets without affecting output identity"
+    ],
+    "driver_focused_passed": {
+      "catalog_stages": 1,
+      "engine_only_providers": 1,
+      "prepared_frame_metadata": 1,
+      "one_shot_frame": 1,
+      "frame_authority": 2,
+      "diagnostic_ordering": 1,
+      "image_header_family": 1,
+      "memo_meaning_equality": 1
+    },
+    "driver_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-204524-8e6c468f.json",
+    "remaining_gates": "final all-targets check pending; performance admission pending"
+  },
+  "relative_declaration_migration": {
+    "source_status": "shared relative AST, borrowed skeleton leaves and active symbol catalog wired; workspace checked and focused frontend fixtures passed",
+    "workspace_all_targets_passed_seconds": 29.460584299988113,
+    "workspace_receipt": "E:/dq-cache/dmb-native-v2/cargo-step-20261009-155444-1e782a.log",
+    "independent_focused_gates": {
+      "symbols": 6,
+      "source_text": 5,
+      "predefined_core": 2,
+      "predefined_native_fixture": 1,
+      "compiler_adapter": 9
+    },
+    "independent_commit": "ab806d016d",
+    "frontend_fixtures_passed": 57,
+    "shared_roster_fixtures_passed": 1,
+    "relative_iterator_fixtures_passed": 3,
+    "driver_fixture_gate": "current-header fixture passed after the earlier build timeout; initializer assembly, export coverage and retained census fixtures also passed",
+    "driver_fixture_receipt": "E:/dq-cache/dmb-native-v2/cargo-step-20261009-161957-b8a0bd.log",
+    "remaining_global_work": [
+      "dirty grammar scanning (unchanged roster reuse implemented)",
+      "current origin projection",
+      "final shallow symbol map projection"
+    ],
+    "end_to_end_timings": null,
+    "runtime_gate": "deferred to Phase 5"
+  },
+  "initializer_and_retention_validation": {
+    "commit": "6c2438d45a",
+    "initializer_assembly_fixtures": 3,
+    "export_coverage_fixtures": 2,
+    "resolved_current_source_fixture": 1,
+    "semantic_state_fixtures_after_clear_fix": 11,
+    "retained_census_fixtures_after_clear_fix": 1,
+    "retained_census_receipt": "E:/dq-cache/dmb-native-v2/cargo-step-20261009-162630-816fd0.log",
+    "retained_census_build_seconds": 173.07614560000366,
+    "clear_fix": "release declaration contribution keys, grammar descriptor keys and active symbol catalog; lifetime hit counters retained",
+    "scope": "Focused fixtures. No performance or BYOND parity admission for this executable yet. Dirty grammar, relative origins and retained class projection remain active work."
+  },
+  "shared_frontend_and_owner_wave": {
+    "source_status": "wired; workspace and focused frontend/driver validation passed",
+    "workspace_all_targets_passed_seconds": 23.175723399966955,
+    "workspace_receipt": "E:/dq-cache/dmb-native-v2/cargo-step-20261009-165050-28655c.log",
+    "syntax_fixtures": 101,
+    "frontend_fixtures": 63,
+    "target_index_fixtures": 2,
+    "source_text_fixtures": 6,
+    "region_memo_fixtures": 7,
+    "driver_validation": {
+      "initializer_encoding": 1,
+      "owner_projection": 1,
+      "borrowed_default_admission": 1,
+      "disk_warmup": 2,
+      "expansion_disk_read_only_and_publication": 3,
+      "daemon_housekeeping": 3,
+      "idle_host_tiers": 2,
+      "startup_source_ownership": 4,
+      "startup_artifact_source_rebinding": 3,
+      "retained_census_clear": 1,
+      "owner_projection_charge": 1,
+      "initial_driver_build_seconds": 296.69554210000206,
+      "initial_driver_receipt": "E:/dq-cache/dmb-native-v2/cargo-step-20261009-165125-15c7ed.log",
+      "zero_test_filters": "runner_disk::tests and startup file-name filters executed zero; replaced with runner_host::disk::tests and startup::{owned_tests,artifact_tests}, listed above"
+    },
+    "implemented": [
+      "one resumable joined-stream grammar scanner/grouping producer with exact suffix convergence",
+      "relative origin leaves mapped once into current provenance",
+      "immutable body recipes with current source/settings/path issuance",
+      "exact shared target-index admission with fresh occurrences",
+      "joined SourceText allocation ownership and weak-lifetime observation",
+      "retained symbolic owner projections with per-owner source-bearing decline",
+      "initializer encoding reuse on the already admitted assembly owner",
+      "read-only retained-host disk warmup and resident-only subsequent requests",
+      "deadline-driven idle daemon housekeeping with bounded deterministic transitions"
+    ],
+    "end_to_end_timings": null,
+    "remaining": [
+      "global expansion admission/planning and joined assembly",
+      "full current descriptor/source projection and final symbol map",
+      "table binding owner and linked image reuse (drafted, not activated)",
+      "disk population economics, six-worktree acceptance and BYOND parity gates"
+    ]
+  },
+  "commits": {
+    "worker_stacks_and_daemon_identity": "3b0c85a7c4",
+    "keyed_owner_normalization_and_effective_metadata": "67bd12ef40",
+    "authenticated_bounded_iteration_runner": "91560320b1"
+  },
+  "validation": {
+    "workspace_all_targets": {
+      "passed": true,
+      "build_seconds": 46.32
+    },
+    "executor_tests": {
+      "passed": 10
+    },
+    "retained_semantic_tree_tests": {
+      "passed": 9,
+      "test_seconds": 0.19
+    },
+    "iteration_receipt_tests": {
+      "passed": 7,
+      "test_seconds": 0.151
+    }
+  },
+  "later_focused_validation": {
+    "lexical_tests": 4,
+    "keyed_contribution_tests": 4,
+    "stable_dependency_key_tests": 1,
+    "body_export_and_cli_tests": 2,
+    "daemon_export_request_key_tests": 1,
+    "effective_metadata_census_tests": 1,
+    "shadow_admission_tests": 7,
+    "all_passed": true,
+    "scope": "Focused fixtures only; newer active source is not covered implicitly"
+  },
+  "real_debug_attempt": {
+    "compiler_commit": "91b8e0b3e7",
+    "profile": "dev",
+    "workers": 2,
+    "status": "initial compiler child exceeded 300 seconds",
+    "admitted_rows": 0,
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261009-143020-2e057da8/receipt.json",
+    "owned_daemon_reaped": true,
+    "optimized_iteration_timings": null
+  },
+  "real_optimized_iteration": {
+    "compiler_commit": "91b8e0b3e7",
+    "profile": "release, LTO disabled; prototype, not revision-6 acceptance profile",
+    "compiler_sha256": "30cd1adff26a4d8190e53f34f25357af9dfdb6cec9dfc7dbb4a8b700def3a2f7",
+    "workers": 2,
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261009-150050-d1e53719/receipt.json",
+    "initial_daemon_seconds": 37.2669709000038,
+    "initial_fresh_seconds": 24.132178399944678,
+    "unchanged_daemon_seconds": 0.7204238999984227,
+    "unchanged_fresh_seconds": 17.822633699979633,
+    "body_edit_daemon_seconds": 16.383325100003276,
+    "body_edit_fresh_seconds": 18.15642850002041,
+    "new_procedure_daemon_seconds": 21.064688500016928,
+    "new_procedure_fresh_seconds": 20.215884900011588,
+    "fresh_native_byte_oracles_passed": 4,
+    "BYOND_structural_baseline_gate": "open",
+    "owned_daemon_reaped": true,
+    "scope": "Client launch through reap, real captured DeepQuarry; excludes staging and structural-inspector time. Newer uncommitted owner-path/catalog/identity and selected-query work is not in this executable."
+  },
+  "retained_shape_and_selected_query_validation": {
+    "retained_tree_commit": "418902a60f",
+    "callable_catalog_tests": 2,
+    "lexical_path_tests": 2,
+    "semantic_state_tests": 11,
+    "canonical_identity_test": 1,
+    "shared_variable_resolution_test": 1,
+    "selected_codegen_tests": 3,
+    "selected_analysis_tests": 2,
+    "current_query_and_memo_test": 1,
+    "selected_wire_test": 1,
+    "resolved_cli_option_test": 1,
+    "shadow_admission_tests": 7,
+    "workspace_all_targets_check_seconds": 48.97249529999681,
+    "all_passed": true,
+    "scope": "Focused fixtures and all-target type checking. Resolved CLI end-to-end fixture, next storage-inventory/receiver slices, real fresh benchmark for this batch, and BYOND parity remain open."
+  },
+  "storage_receiver_and_bounded_query_validation": {
+    "storage_inventory_tests": 4,
+    "shared_receiver_resolution_tests": 2,
+    "backend_receiver_tests": 14,
+    "bounded_query_and_cross_page_duplicate_test": 1,
+    "resolved_pipeline_current_source_shift_test": 1,
+    "workspace_all_targets_check_seconds": 30.779216599999927,
+    "all_passed": true,
+    "scope": "Current retained storage, receiver core, streaming query and census source. Immutable relative declaration/symbol contribution drafts remain unreferenced; no real benchmark or BYOND parity admission for this wave."
+  },
+  "open": [
+    "real benchmarks for the newer retained owner-path/catalog/identity and selected-query batch",
+    "global type/member installation and dense projection",
+    "compiler-selected nonlocal executable reference facts",
+    "BYOND structural discrepancies and incomplete semantic coverage",
+    "Phase 5 runtime baseline and power_bridge behavior mismatch",
+    "six real worktree memory and concurrency admission"
+  ],
+  "benchmark_policy": "The optimized iteration receipt establishes native/fresh byte parity for four captured revisions at commit 91b8e0b3e7. It is not a matched throughput/CPU/memory admission cohort, does not establish BYOND parity, and excludes newer active source. Validation/build times are not compiler benchmarks.",
+  "current_binding_and_output_handoff_wave": {
+    "source_status": "production wired; focused fixtures passed",
+    "workspace_all_targets_seconds": 29.9,
+    "link_fixtures_passed": 24,
+    "cli_output_contract_fixtures_passed": 3,
+    "latest_image_fixtures_passed": 2,
+    "expansion_input_census_fixtures_passed": 1,
+    "expansion_input_receipt_fixtures_passed": 3,
+    "build_launcher_mock_fixtures_passed": 16,
+    "dmbc_fixture_build_seconds": 253,
+    "end_to_end_timings": null,
+    "runtime_gate": "deferred to Phase 5",
+    "remaining": [
+      "binding assignment still rebuilt before exact owner equality admission",
+      "packed mob/client output composition reuse next slice",
+      "changed joined text still assembled contiguously",
+      "session destination relocation and client cache-root transport next slice",
+      "six-worktree memory/concurrency and BYOND baseline open"
+    ]
+  },
+  "wire_join_and_destination_wave": {
+    "source_status": "production wired; focused fixtures passed",
+    "workspace_all_targets_seconds": 40.76,
+    "shared_tmp_independent_byond_fixture": 1,
+    "shared_tmp_initial_fixture_failure": "missing inventory spellings fixed; backend distinction verified against DreamMaker 516.1687 capture",
+    "session_output_fixtures": 2,
+    "session_fixture_initial_failure": "provider stamp count corrected to include read authentication",
+    "cli_and_output_contract_fixtures": 11,
+    "retained_wire_image_fixtures": 2,
+    "type_path_binding_fixtures": 1,
+    "independent_wire_domain_fixtures": 2,
+    "joined_owner_fixtures": 2,
+    "end_to_end_timings": null,
+    "runtime_gate": "deferred to Phase 5",
+    "remaining": [
+      "changed joined text still contiguous",
+      "disk typed hits still deserialize DTOs",
+      "daemon disk population/fallback still Phase2 policy",
+      "six-worktree compaction variant preservation open",
+      "BYOND whole-program structural/runtime baseline open"
+    ]
+  },
+  "lazy_disk_candidate_and_string_wave": {
+    "source_status": "wired; focused fixtures passed",
+    "workspace_all_targets_seconds": 37.2,
+    "string_reference_fixtures": 2,
+    "preprocess_planner_fixtures": 2,
+    "cache_candidate_fixtures": 4,
+    "borrowed_frame_fixture": 1,
+    "borrowed_failure_compatibility_fixture": 1,
+    "semantic_disk_candidate_fixture": 1,
+    "lazy_disk_fixtures": 2,
+    "resident_map_unopened_disk_fixture": 1,
+    "diagnostic_classification_fixtures": 2,
+    "daemon_deadline_fixtures": 4,
+    "idle_owner_fixtures": 2,
+    "cumulative_edit_history_fixtures": 2,
+    "dmbc_fixture_build_seconds": 171,
+    "initial_failures": [
+      "compaction typed rejection did not persist to a fresh snapshot; supersedes now includes typed-rejected recognized segments",
+      "borrowed frame test numeric literals inferred i32; corrected explicit u8 wire data"
+    ],
+    "optimized_build_b6417c4297": {
+      "status": "watchdog timeout; no new executable",
+      "seconds": 300.6789116,
+      "owned_pid": 11688,
+      "reaped": true
+    },
+    "end_to_end_timings": null,
+    "runtime_gate": "deferred to Phase 5",
+    "remaining": [
+      "lossless multi-candidate and atomic split compaction being implemented next",
+      "executable disk DTOs and read-answer vectors still allocate",
+      "shared immutable engine payload across worktrees next",
+      "six-worktree real memory/concurrency admission",
+      "BYOND whole-program structural and Phase5 runtime parity"
+    ]
+  },
+  "atomic_cache_and_engine_wave": {
+    "cache_commit": "ebd4eb84a9",
+    "workspace_all_targets_seconds": 28.89,
+    "cache_fixtures_passed": 22,
+    "cache_fixture_seconds": 0.08,
+    "expansion_fixtures_passed": 4,
+    "expansion_fixture_seconds": 0.04,
+    "engine_sharing_fixtures_passed": 3,
+    "dmbc_fixture_build_seconds": 198,
+    "initial_failure": "test-only Mutex import absent after moving unused production import; fixed before four expansion and three engine fixtures passed",
+    "compaction": "authenticated group marker publishes only complete leaf set; preserves all exact-distinct candidates",
+    "limits": [
+      "engine inventory bounded by count, not decoded heap bytes",
+      "physically deleted old files cannot be recovered after later corruption",
+      "expansion candidate leasing remains conservative before semantic admission",
+      "six-worktree real workload and BYOND whole-program baseline remain open"
+    ],
+    "end_to_end_timings": null
+  },
+  "optimized_build_5f70007e94": {
+    "status": "passed",
+    "bounded_resume_seconds": 297.7439415,
+    "previous_attempt_seconds": 300.796946,
+    "executable": "E:/dq-cache/dmb-native-v2/frozen-build/20261009-180519-72d38c3e.exe",
+    "sha256": "631027b8e19aa53f746c6e9a9f2e25e578cc747a8c05ea35410e2aed73adbedc",
+    "acceptance_profile": false,
+    "lto": false,
+    "benchmark": "E:/dq-cache/dmb-native-iterations/20261009-181025-122ab6ad/receipt.json",
+    "benchmark_status": "failed: initial retained lowering rejected three continued interpolation expressions; no complete cohort",
+    "failed_initial_client_seconds": 37.4519541,
+    "daemon_cleanup": {
+      "pid": 53320,
+      "reaped": true
+    }
+  },
+  "continuation_interpolation_repair": {
+    "shared_syntax_fixture_passed": 1,
+    "syntax_build_seconds": 2.88,
+    "codegen_fixture": "passed",
+    "scope": "splice expression continuations outside nested literals; preserve literal decoder authority",
+    "codegen_build_seconds": 62
+  },
+  "shared_pipeline_wave": {
+    "workspace_all_targets": "passed",
+    "workspace_all_targets_seconds": 86,
+    "dmbc_fixture_build_seconds": 250,
+    "map_candidate_fixtures_passed": 2,
+    "focused_dmbc_fixtures_passed": 20,
+    "query_fixture_initial_failure": "fixture assumed absence known without engine ancestry; existing resolver correctly returns unsupported; fixing fixture, not weakening uncertainty",
+    "byond_word_owner_fixtures": 2,
+    "analysis_opaque_export_fixture": 1,
+    "independent_reference_fixtures": [
+      "formal_abi_inheritance",
+      "type_visibility",
+      "matrix_transform"
+    ],
+    "implementation": [
+      "daemon-wide engine payload sharing",
+      "eight-worker physical executor inventory including idle/retiring pools",
+      "prepared source lexical reuse after current file proof validation",
+      "resource-only pinned admission",
+      "shared copy-on-write DMB word ownership",
+      "formal declaration ABI inheritance and matching artifact keys",
+      "visibility bit inheritance and zero reset",
+      "bounded read-only revision-pinned query CLI/protocol"
+    ],
+    "new_benchmarks": "initial cohort failed on continued interpolation lowering, repaired focused syntax/codegen tests pass; rerun pending",
+    "remaining": [
+      "matrix transform producer draft unhooked",
+      "shared initializer syntax draft unhooked",
+      "canonical generation owner draft unhooked",
+      "six-worktree real memory/concurrency workload",
+      "fresh native replay and BYOND whole-program structural baseline",
+      "Phase5 runtime gate"
+    ],
+    "runtime_gate": "deferred to Phase5",
+    "byond_word_owner_build_seconds": 17.52,
+    "analysis_export_build_seconds": 31.26,
+    "legacy_byond_unit_build": {
+      "status": "300s watchdog timeout; owned child tree terminated",
+      "pid": 39172,
+      "reaped": true,
+      "replacement": "two newly added word-owner fixtures moved to focused integration target, both passed"
+    },
+    "query_fixture_correction": "source corrected: opaque absence unsupported, authored Type known; focused rerun pending next compiler gate"
+  },
+  "shared_generation_catalog_and_recipes": {
+    "source_status": "production hooks complete; workspace all-target check and bounded focused fixtures passed",
+    "workspace_check_seconds": 71.37794110004324,
+    "workspace_check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-185246-5f785d59.json",
+    "integration_repairs": [
+      "second inline transform census match",
+      "modified initializer fixture Box to Arc"
+    ],
+    "implemented": [
+      "shared initializer syntax admitted against exact current spelling and full initial AST",
+      "prepared-source physical owner census and pressure release",
+      "one canonical encoded generation admitted against fully validated exact final model",
+      "ordered link plan shares numeric slots only for exact assignment owner and artifact roster",
+      "procedure metadata paths/display/selectors retained on existing symbolic artifacts",
+      "shared source and engine symbol catalog with exact empty-overlay receipt authority",
+      "fixed-size declaration locators with exact captured source bytes checked before every bind",
+      "stable bounded emission counting passes with sparse canonical-sort fallback",
+      "borrowed current filesystem proof paths without skipping live proof obligations",
+      "target-specific matrix transform headers and captured BYOND field regressions",
+      "bounded lifecycle pipe write-all/owned handle cleanup",
+      "compile diagnostic parity requires source exit2 and known template authority"
+    ],
+    "python_focused_fixtures_passed": 13,
+    "optimized_build": {
+      "commit": "93773e98a1ae39b3b74a73555acf217ae052582b",
+      "status": "three bounded attempts hit 300-second watchdog; all owned children reaped; no new executable or benchmark result",
+      "receipts": [
+        "E:/dq-cache/dmb-native-v2/frozen-build/20261009-183346-8f14f784.json",
+        "E:/dq-cache/dmb-native-v2/frozen-build/20261009-183959-7b58cf5d.json",
+        "E:/dq-cache/dmb-native-v2/frozen-build/20261009-184549-e1d81637.json"
+      ]
+    },
+    "end_to_end_timings": null,
+    "remaining": [
+      "current source/provenance issuance and full proof walks",
+      "full procedure and metadata emission roster visitation",
+      "locals/args/variable reconstruction",
+      "whole output model materialization and equality",
+      "six-worktree end-to-end acceptance",
+      "compile-error corpus parity and template admission",
+      "whole-program BYOND structural baseline",
+      "runtime baseline deferred to Phase5"
+    ],
+    "dmbc_focused_fixtures_passed": 18,
+    "dm_tree_focused_fixtures_passed": 5,
+    "focused_receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-190131-97359fbe.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/current-dmbc-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-185610-tree-focused.json"
+    ],
+    "disk_cleanup": {
+      "incident": "focused build failed from E disk exhaustion, not fixture failure",
+      "action": "owned Cargo clean -p dmbc --profile dev removed 12.5 GiB; verification retry passed with incremental storage disabled and dmbc test debug info disabled",
+      "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-190101-deba2f00.json"
+    }
+  },
+  "catalog_and_frame_contribution_migration": {
+    "status": "production hooks compile; four focused dmbc fixtures and retained diagnostic shift/repair fixture passed",
+    "diagnostic_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-195907-2d833051.json",
+    "workspace_check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-195522-2d056087.json",
+    "frame_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-195647-a04ef4c5.json",
+    "implemented": [
+      "constants, runtime membership and prepared host facts share one current-revision observation store with stage-local exact dependencies",
+      "current namespaces always perform exact constant spelling collision admission",
+      "proc, var and default edits reuse runtime catalog only for an equal current type set",
+      "procedure recipe owns one latest frame contribution checked against exact current ABI, string assignments, numeric frontiers and helper sources",
+      "current bytecode always binds against current mob assignments before frame emission",
+      "one-shot output uses the same emitter while skipping retained frame lookup and capture copies"
+    ],
+    "limitations": [
+      "structural requests still collect current type membership and recompute pinned/scalar facts",
+      "full procedure metadata validation and output model visitation remain",
+      "raw output, whole-program BYOND baseline and Phase5 runtime gates remain open",
+      "all optimized compiler build attempts hit their 300-second watchdog; no new end-to-end benchmark",
+      "unoptimized prototype timing is explicitly not release-profile performance acceptance"
+    ],
+    "new_end_to_end_timings": null
+  },
+  "host_fact_and_snapshot_proof_migration": {
+    "status": "workspace all-target check, four focused dmbc fixtures and scalar rebind fixture passed; no new end-to-end timings",
+    "dm_tree_focused_passed": 1,
+    "scalar_rebind_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-194300-9c36052b.json",
+    "dmbc_focused_passed": 4,
+    "host_facts_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-193943-698f07f8.json",
+    "workspace_check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-193805-f4f50ccf.json",
+    "workspace_check_seconds": 77.7774798,
+    "implemented": [
+      "current-revision host facts retained through the shared observation store with exact engine and declaration owner admission",
+      "scalar outcome facts reissued against current occurrence bindings without retaining historical source locations",
+      "snapshot proof capture borrows canonical roster and deduplicates borrowed directory parents; full filesystem validation retained",
+      "map defaults use the declaration target index instead of five whole-program occurrence scans",
+      "bounded structural summary sidecar checked against the authoritative complete diff",
+      "optional benchmark build receipt authenticates exact executable and prototype optimization settings"
+    ],
+    "python_focused_passed": 10,
+    "limitations": [
+      "structural host fact invalidation still rebuilds pinned facts and scalar outcomes",
+      "full source proof validation and final output model materialization remain",
+      "raw structural report authentication still loads the complete report",
+      "optimized codegen64 and codegen256 builds hit the 300-second watchdog; owned processes reaped",
+      "prototype lower optimization builds are not revision6 release-profile acceptance"
+    ],
+    "end_to_end_timings": null
+  },
+  "current_projection_and_publication_migration": {
+    "status": "production hooks and bounded focused gates passed; real benchmark pending",
+    "workspace_all_targets": {
+      "seconds": 94.6759345,
+      "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-191800-52f328e0.json"
+    },
+    "focused_dmbc_passed": 13,
+    "focused_tree_passed": 2,
+    "worktree_authority_fake_api_passed": 4,
+    "receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-191946-04ce760f.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/current-migration-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/current-projection-focused.json"
+    ],
+    "implemented": [
+      "request-local projected macro stacks and include chains with fresh FileId authority",
+      "artifact-backed locals and argument row buffers with exact current numeric dependencies",
+      "immutable field rows shared between current projection and existing admitted owner artifacts",
+      "full prepublication input restat including external binary template and retained resource proofs",
+      "shared daemon/CLI bounded rebuild policy: two rebuilds then explicit latest captured-snapshot warning",
+      "verification journals fail on moving inputs instead of overwriting immutable captures",
+      "recording journal finalization before publication latch",
+      "pinned executable target macro admission rejects unsupported BYOND overrides",
+      "six registered worktree roots authenticated before benchmark timers"
+    ],
+    "limitations": [
+      "ordered current projection and model materialization still rebuilt",
+      "field-row Arc allocations add cold overhead; no measured benefit claimed",
+      "current transient ClassProjection roster absent from general census; retained rows accounted",
+      "six-worktree harness source authenticated but real concurrency workload not yet run",
+      "whole-program BYOND structural and Phase5 runtime baseline still open"
+    ],
+    "new_end_to_end_timings": null,
+    "frozen_build_attempt": {
+      "commit": "0c34d40c9a48872b88fc44ae675a8ceb4fbaa070",
+      "codegen_units": 64,
+      "status": "300-second watchdog; owned children reaped; dependency compilation progressed; no executable",
+      "receipt": "E:/dq-cache/dmb-native-v2/frozen-build/20261009-191055-7e114405.json"
+    }
+  },
+  "header_preprocessing_and_native_dependency_wave": {
+    "status": "isolated native and workspace all-target checks passed; focused fixes passed; new real benchmark pending",
+    "implemented": [
+      "absolute typed headers issue BYOND type side effects and zero arguments through one signature parser and allocation ledger",
+      "pragma multiple is authenticated in preprocessing and memo replay with bounded recursive inclusion",
+      "authoritative missing variables produce source errors without reclassifying opaque unsupported answers",
+      "global slot references normalize through the DMB footer with explicit malformed-reference coverage gaps",
+      "frame metadata depends on used string IDs and nonempty variable rosters rather than unrelated table frontiers",
+      "native compiler depends only on base binary codecs; inspection and OpenDream translation remain optional format-library features",
+      "procedure store generation and policy replacement counters expose lifecycle changes without affecting admission"
+    ],
+    "isolated_native_check": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-212017-814dc514.json",
+    "workspace_check": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-212052-564769da.json",
+    "focused_receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-210710-ffae1c1d.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-210829-c0b3495e.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-211024-dac709ce.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-211255-9b2c0813.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-211227-36764b3f.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-211405-5dbccc2e.json"
+    ],
+    "compile_only_evidence": [
+      "E:/dq-cache/dmb-native-v2/typed-parameter-probes-20261009-2110/receipt.json",
+      "E:/dq-cache/dmb-native-v2/typed-parameter-mixed-20261009-2120/receipt.json",
+      "E:/dq-cache/dmb-native-v2/turfpack-oracle-20261009-2124/receipt.json"
+    ],
+    "limitations": [
+      "no updated end-to-end timings or whole-program structural admission yet",
+      "126 Input middle words remain explicitly uncovered without an opcode contract",
+      "per-owner domain certification implementation remains in progress",
+      "Phase5 runtime, actual six-worktree concurrency and history replay gates remain open"
+    ],
+    "new_end_to_end_timings": null
+  },
+  "ongoing_correctness_wave": {
+    "status": "workspace all-target check and bounded focused gates passed; output validation and real benchmark pending",
+    "frozen_prototype_build": {
+      "commit": "d99017db7aeb5e3c8268df6b16b543a0abba337a",
+      "seconds": 247.03003289998742,
+      "binary": "E:/dq-cache/dmb-native-v2/frozen-build/20261009-212324-16d8d746.exe",
+      "sha256": "6c40e4e424289b3cac1421f10e89982068b228eecfad471599ccacfa9f00d0ea",
+      "acceptance_profile": false
+    },
+    "compile_only_corpus": "E:/dq-cache/dmb-native-v2/compile-oracle-20261009-2129/receipt.json",
+    "findings": [
+      "relative typed parameter corpus has zero structural differences",
+      "absolute parameter undefined body remains rejected with different native classification; compile-error parity open",
+      "reserved constructor absence queries prevented initializer markers despite earlier token fixture; production evaluator fix pending emission validation",
+      "BYOND Global operands use direct VarIDs; native footer-ordinal emission is a genuine correctness bug, with planner/writer fix pending gate",
+      "BYOND method membership follows physical declaration encounters; native hashed allocation is not authority for source encounter order",
+      "prompt matrix compiles in both, with null encoding differences and unknown Input middle operand semantics retained"
+    ],
+    "focused_receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-212953-51123efe.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-213503-dfbefbcc.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-213739-ae29cb13.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-214500-3180cd26.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/current-owner-global-admission-focused.json"
+    ],
+    "daemon_python_focused_passed": 4,
+    "compiler_selection_bun_passed": 12,
+    "constructor_reserved_name_evidence": "E:/dq-cache/dmb-native-v2/constructor-shadow-20261009-2133/receipt.json",
+    "remaining": [
+      "global planner production fixture and real emitted output validation",
+      "callable and hierarchy domain wrapper/disk gates",
+      "daemon absolute path and shared admission deadline Rust fixtures",
+      "new protocol4 immutable executable and inspector",
+      "four-case real end-to-end benchmark",
+      "whole-program structural, six-worktree, history replay and Phase5 runtime gates"
+    ],
+    "workspace_check": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-214321-b06194a5.json",
+    "dmbc_focused_passed": 15,
+    "implemented": [
+      "direct variable-record global bindings with predicted frame/field/static allocation and writer equality checks",
+      "source-issued method membership roster separated from override chains and hashed table allocation",
+      "reserved file/icon constructor classification independent of incomplete callable catalogs",
+      "hierarchy and callable owner certificates issued by the shared observed artifact store, qualified by current engine/scalar providers",
+      "process-local domain versions omitted from persisted receipts, with reads retained for exact replay",
+      "daemon protocol4 absolute caller paths, invalid-request64 and one600s total session/worker admission deadline",
+      "analysis query export labels persistent versus process-local domain versions"
+    ],
+    "limitations": [
+      "global/variable queries and several output stages still use whole-program admission",
+      "Proc receipts still include callee body content; name-specific projections planned",
+      "new output not yet admitted against fresh native or BYOND",
+      "daemon fixtures do not substitute for real six-worktree acceptance",
+      "unknown global typo classification remains unsupported without complete engine namespace proof",
+      "Phase5 runtime remains deferred"
+    ]
+  },
+  "qualified_retained_migration_next_wave": {
+    "status": "source implementation in progress, not build or benchmark admitted",
+    "frozen_compiler_commit": "d65d5e8c59b3e31a80b8485edb9173a7910403b1",
+    "compile_oracle_receipt": "E:/dq-cache/dmb-native-v2/compile-oracle-20261009-2157/receipt.json",
+    "compile_oracle_findings": {
+      "hidden_marker_differences": 2,
+      "receiver_differences": 9,
+      "relative_parameter_differences": 0,
+      "prompt_differences": 16,
+      "absolute_parameter_native_exit": 70,
+      "runtime": "not run"
+    },
+    "implemented_source": [
+      "local name-qualified callable and variable receipts in existing store",
+      "retained header source selectors with current wire value binding",
+      "retained required-type ancestry with current allocation boundaries",
+      "production session generation and memo ownership wiring"
+    ],
+    "pressure_findings": {
+      "receipt": "E:/dq-cache/dmb-native-iterations/20261009-215659-6e725b3d/daemon.stderr",
+      "observation": "artifacts tier pressure=true after cold deletes symbolic memo",
+      "next_source_fix": "release rich and wire buffers first, preserve compact symbolic and ABI, keep whole-session escalation after subsequent pressured sample"
+    },
+    "benchmark_status": "immutable d65 four-case cohort passed fresh native DMB/RSC byte oracle; BYOND gate open",
+    "not_complete": [
+      "compact disk completion end-to-end path",
+      "focused gates on new source",
+      "new retained performance measurements",
+      "whole-program BYOND structural and deferred runtime gates"
+    ]
+  },
+  "latest_completed_qualified_owner_benchmark": {
+    "scope": "captured real DeepQuarry end-to-end prototype diagnostic, not release acceptance",
+    "receipt": "E:\\dq-cache\\dmb-native-iterations\\20261009-215659-6e725b3d\\receipt.json",
+    "compiler_build": {
+      "commit": "d65d5e8c59b3e31a80b8485edb9173a7910403b1",
+      "archive_sha256": "962b5f645532e8500bb81f1fec8505894ba3dfea264341550257d09a266499d8",
+      "changed_files": 64,
+      "removed_files": 0,
+      "exit_code": 0,
+      "build_seconds": 234.32575949997408,
+      "watchdog_seconds": 300,
+      "command": [
+        "E:/cargo/bin/cargo.exe",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "dmbc",
+        "--bin",
+        "dmbc",
+        "--config",
+        "profile.release.package.dmbc.codegen-units=256",
+        "--config",
+        "profile.release.package.dmbc.opt-level=0"
+      ],
+      "acceptance_profile": false,
+      "lto": false,
+      "dmbc_codegen_units": 256,
+      "dmbc_opt_level": 0,
+      "owned_child_cleanup": null,
+      "binary": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261009-214921-d6ad8d0b.exe",
+      "binary_sha256": "d9b1f4dce349063dd1ac8fc4aad0f4bf7e9d76592973425cffbd3ad7c93e06fd"
+    },
+    "status": "passed",
+    "BYOND_baseline_gate": "open",
+    "rows": [
+      {
+        "kind": "initial",
+        "retained_wall_seconds": 82.11706209997647,
+        "fresh_wall_seconds": 39.753086299984716,
+        "fresh_native_byte_oracle": true,
+        "retained_memo": {
+          "disk_hits": 0,
+          "encode_seconds": 14.7236818,
+          "errors": [],
+          "explanation_seconds": 0.1482266,
+          "host": {
+            "enabled": true,
+            "engine_generation": 1,
+            "procedure_generation": 1,
+            "procedure_policy_replacements": 0,
+            "rich_generation": 1,
+            "scope": "process_local_diagnostic_only",
+            "session": 1
+          },
+          "issued_preparations": 48681,
+          "key_preparation_seconds": 1.4220191,
+          "lookup_seconds": 0.4614523,
+          "occurrence_reads_seconds": 0.7588071,
+          "parsed_preparations": 0,
+          "pending_dropped": 0,
+          "policy": "b36ee453ea563558d26a12385c0e2762",
+          "publication_cpu_scope_seconds": 1.4276381,
+          "publication_failed": 0,
+          "published_records": 48256,
+          "recomputed": 48681,
+          "resident_dropped": 117,
+          "resident_hits": 0,
+          "resident_retention": "Enabled",
+          "symbolic_declines": {
+            "capture_excluded": 0,
+            "contribution_rebind": 0,
+            "debug_rebase": 0,
+            "key_changed": 0,
+            "modified_reissue": 0,
+            "nonreusable_completion": 0,
+            "read_changed": 0,
+            "record_absent": 48681,
+            "source_identity": 0
+          }
+        }
+      },
+      {
+        "kind": "unchanged",
+        "retained_wall_seconds": 1.641438000020571,
+        "fresh_wall_seconds": 33.12580249999883,
+        "fresh_native_byte_oracle": true,
+        "retained_memo": null
+      },
+      {
+        "kind": "body",
+        "retained_wall_seconds": 61.43472290004138,
+        "fresh_wall_seconds": 36.406294899992645,
+        "fresh_native_byte_oracle": true,
+        "retained_memo": {
+          "disk_hits": 48680,
+          "encode_seconds": 0.0001241,
+          "errors": [],
+          "explanation_seconds": 0.1427798,
+          "host": {
+            "enabled": true,
+            "engine_generation": 1,
+            "procedure_generation": 2,
+            "procedure_policy_replacements": 0,
+            "rich_generation": 2,
+            "scope": "process_local_diagnostic_only",
+            "session": 1
+          },
+          "issued_preparations": 48681,
+          "key_preparation_seconds": 1.3570012,
+          "lookup_seconds": 32.45677,
+          "occurrence_reads_seconds": 1.89e-05,
+          "parsed_preparations": 0,
+          "pending_dropped": 0,
+          "policy": "b36ee453ea563558d26a12385c0e2762",
+          "publication_cpu_scope_seconds": 0.0,
+          "publication_failed": 0,
+          "published_records": 0,
+          "recomputed": 1,
+          "resident_dropped": 117,
+          "resident_hits": 0,
+          "resident_retention": "Enabled",
+          "symbolic_declines": {
+            "capture_excluded": 0,
+            "contribution_rebind": 0,
+            "debug_rebase": 0,
+            "key_changed": 0,
+            "modified_reissue": 0,
+            "nonreusable_completion": 7,
+            "read_changed": 0,
+            "record_absent": 48681,
+            "source_identity": 0
+          }
+        }
+      },
+      {
+        "kind": "structural",
+        "retained_wall_seconds": 62.960628299973905,
+        "fresh_wall_seconds": 38.87399340001866,
+        "fresh_native_byte_oracle": true,
+        "retained_memo": {
+          "disk_hits": 48679,
+          "encode_seconds": 0.0006423,
+          "errors": [],
+          "explanation_seconds": 0.1411387,
+          "host": {
+            "enabled": true,
+            "engine_generation": 1,
+            "procedure_generation": 3,
+            "procedure_policy_replacements": 0,
+            "rich_generation": 3,
+            "scope": "process_local_diagnostic_only",
+            "session": 1
+          },
+          "issued_preparations": 48682,
+          "key_preparation_seconds": 1.3738637,
+          "lookup_seconds": 33.2599088,
+          "occurrence_reads_seconds": 9.75e-05,
+          "parsed_preparations": 0,
+          "pending_dropped": 0,
+          "policy": "b36ee453ea563558d26a12385c0e2762",
+          "publication_cpu_scope_seconds": 0.0,
+          "publication_failed": 0,
+          "published_records": 0,
+          "recomputed": 3,
+          "resident_dropped": 117,
+          "resident_hits": 0,
+          "resident_retention": "Enabled",
+          "symbolic_declines": {
+            "capture_excluded": 0,
+            "contribution_rebind": 0,
+            "debug_rebase": 0,
+            "key_changed": 0,
+            "modified_reissue": 0,
+            "nonreusable_completion": 7,
+            "read_changed": 0,
+            "record_absent": 48682,
+            "source_identity": 0
+          }
+        }
+      }
+    ],
+    "BYOND_structural": {
+      "complete": false,
+      "semantic_coverage": "incomplete",
+      "total_discrepancies": 1834121,
+      "unexplained_discrepancies": 1834121
+    },
+    "outside_builds_total_cohort_seconds": 1038.7828123000218,
+    "limitations": [
+      "dmbc opt-level 0; not acceptance profile",
+      "six-worktree acceptance not run",
+      "full runtime baseline deferred",
+      "retained symbolic records erased by pressure cleanup in this frozen compiler",
+      "new migration source is not represented by these measurements"
+    ]
+  },
+  "current_source_validation": {
+    "state": "focused_and_workspace_gates_passed_pending_real_benchmark",
+    "workspace_all_targets": "PASS final 15.2448475s E:/dq-cache/dmb-native-v2/integration-gates/20261009-224902-7c168c1c.json",
+    "compact_disk_checks": 3,
+    "checked_frozen_restore_checks": 3,
+    "scalar_dependency_checks": 6,
+    "produced_shared_owner_checks": 1,
+    "retained_header_checks": 12,
+    "required_ancestry_checks": 2,
+    "pressure_owner_checks": 1,
+    "initializer_classification_checks": 8,
+    "initializer_assembly_checks": 3,
+    "host_catalog_checks": 1,
+    "bound_image_checks": 3,
+    "owner_metadata_failures": "Repaired and focused fixtures passed: pruning uses installed current member order; inherited selections retain exact demanded same-name chain; cyclic/invalid parents decline. Final workspace integration pending.",
+    "new_source_benchmarks": "not run; latest measured cohort remains d65 prototype receipt",
+    "required_type_checks": 5,
+    "owner_metadata_checks": 5,
+    "analysis_current_coordinates_and_cache_checks": 2
+  },
+  "previous_latest_prototype_cohort_before_2335": {
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261009-200314-60477533/receipt.json",
+    "compiler_commit": "d889b0cac1",
+    "profile": "main crate opt-level 0; dependencies optimized; not revision 6 release acceptance",
+    "fresh_native_dmb_and_rsc_byte_oracles_passed": 8,
+    "retained_end_to_end_seconds": {
+      "initial": 86.8013271,
+      "unchanged": 1.6487348,
+      "body_edit": 69.4849209,
+      "new_proc": 65.6718014,
+      "new_type_and_constant": 68.5424855,
+      "constant_edit": 64.5477635,
+      "shifted_proc_body": 64.7484221,
+      "asset_edit": 72.2342179
+    },
+    "fresh_native_end_to_end_seconds": [
+      46.9654475,
+      41.8782306,
+      44.0754947,
+      38.2174932,
+      40.0676746,
+      37.2691415,
+      36.4943155,
+      38.8000703
+    ],
+    "byond_structural_gate": "open; 1850404 unexplained differences; traversal completion is not semantic parity",
+    "runtime_gate": "deferred to Phase 5",
+    "limitations": [
+      "retained edits slower than fresh in this prototype; zero resident hits and approximately 34 seconds memo lookup need confirmed attribution",
+      "latest scalar, engine-provider and frame-metadata migration sources are newer than the measured executable",
+      "external unrelated Cargo activity was sampled; continuous benchmark isolation is not established",
+      "optimized build attempts hit the 300-second watchdog; no current release-profile timings"
+    ]
+  },
+  "shared_owner_and_compact_migration_validation": {
+    "workspace_all_targets_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-233449-7d63e177.json",
+    "metadata_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-232910-c53c5ae7.json",
+    "compact_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-233013-9581fedd.json",
+    "additional_focused_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-233421-213d9b5d-focused.json",
+    "shared_admission_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-233437-d1614a37.json",
+    "focused_passed": 44,
+    "frontend_direct_fixtures": [
+      "frontend::semantic_state::tests::admitted_reused_tree_restores_demand_issuer_after_abandoned_candidate",
+      "frontend::semantic_state::tests::body_edit_shares_semantics_but_issues_new_source_occurrences_and_body"
+    ],
+    "implemented": [
+      "shared inherited variable, callable presence and signature receipt issuer",
+      "source allocation and required prefix/selected type roster producers",
+      "compact query facts disk replay and resident promotion",
+      "current modified descriptor replay with exact emitted roster admission",
+      "shared header membership layers with failure-path pruning",
+      "one immutable fresh read/version/key receipt shared by rich and symbolic memo",
+      "opt-in idle owner diagnosis plus ordinary private-memory release boundaries"
+    ],
+    "unmeasured": true,
+    "limitations": [
+      "memory and performance improvements have not yet been measured",
+      "ProcedureStatic and global UniqueStaticVar remain conservative",
+      "plain instance tuples and modified helpers still retain rich replay fallback",
+      "six-worktree acceptance, compile-error corpus and long history replay remain open",
+      "BYOND semantic structural and deferred Phase 5 runtime gates remain open"
+    ]
+  }
+}

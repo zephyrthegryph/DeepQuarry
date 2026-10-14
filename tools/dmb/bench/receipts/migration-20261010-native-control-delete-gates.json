@@ -1,0 +1,29 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_codegen_byond-e88a7b9d1cff44dd.exe",
+  "binary_sha256": "06d76eaa9b3f7d20aeabcbfa3336e58b73c5ae5c3b2201eb41fc019ca3eae838",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "simple::tests::typed_native_control",
+      "selected": [
+        "simple::tests::typed_native_control::typed_mixed_switch_cases_match_authenticated_native_matrix",
+        "simple::tests::typed_native_control::typed_try_loop_transfers_match_authenticated_native_matrix"
+      ],
+      "exit": 0,
+      "seconds": 0.03236729995114729,
+      "stdout": "\nrunning 2 tests\ntest simple::tests::typed_native_control::typed_mixed_switch_cases_match_authenticated_native_matrix ... ok\ntest simple::tests::typed_native_control::typed_try_loop_transfers_match_authenticated_native_matrix ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 312 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "simple::tests::typed_delete_native",
+      "selected": [
+        "simple::tests::typed_delete_native::lexical_src_parameter_is_cleared_and_does_not_terminate_body",
+        "simple::tests::typed_delete_native::mutable_local_argument_and_temporary_deletion_match_native"
+      ],
+      "exit": 0,
+      "seconds": 0.02675909997196868,
+      "stdout": "\nrunning 2 tests\ntest simple::tests::typed_delete_native::lexical_src_parameter_is_cleared_and_does_not_terminate_body ... ok\ntest simple::tests::typed_delete_native::mutable_local_argument_and_temporary_deletion_match_native ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 312 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    }
+  ]
+}

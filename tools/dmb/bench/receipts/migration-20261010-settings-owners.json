@@ -1,0 +1,18 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_tree-ba83d63b7812f68d.exe",
+  "binary_sha256": "539ac5673f1ba9118d05801de41066a9201e6e9123443a71486ac1c2735b5119",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "frontend::settings_receipt_tests::",
+      "selected": [
+        "frontend::settings_receipt_tests::inconsistent_producer_settings_decline_issuance_without_replacing_validation",
+        "frontend::settings_receipt_tests::parser_settings_receipts_bind_current_nodes_and_decline_foreign_or_changed_settings"
+      ],
+      "exit": 0,
+      "seconds": 0.03577600000426173,
+      "stdout": "\nrunning 2 tests\ntest frontend::settings_receipt_tests::inconsistent_producer_settings_decline_issuance_without_replacing_validation ... ok\ntest frontend::settings_receipt_tests::parser_settings_receipts_bind_current_nodes_and_decline_foreign_or_changed_settings ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 252 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    }
+  ]
+}

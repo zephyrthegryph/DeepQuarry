@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "reference_commit": "ac1af55d1a9a8e023e46bd058be59ed82c503f52",
+  "comparison_id": "dcd1b1f39fe14bd6a3ad65fd8d2bc1da",
+  "hash_algorithm": "sha256 provenance audit (preserved compiler unchanged)",
+  "pairs": {
+    "byond": [
+      {
+        "original": "E:\\projects\\CHOMPStation2\\tools\\dmb\\target\\full-suite-comparison-dcd1b1f39fe14bd6a3ad65fd8d2bc1da\\source-final\\comparison.dmb",
+        "frozen": "D:\\dmb-native-v2-phase0\\frozen\\pairs\\byond\\world.dmb",
+        "sha256": "8ff8911a26547da3e2cb49daa185b45cc723b4fc2f73d4cbc48efa43f20e5775",
+        "bytes": 47843708
+      },
+      {
+        "original": "E:\\projects\\CHOMPStation2\\tools\\dmb\\target\\full-suite-comparison-dcd1b1f39fe14bd6a3ad65fd8d2bc1da\\source-final\\comparison.rsc",
+        "frozen": "D:\\dmb-native-v2-phase0\\frozen\\pairs\\byond\\world.rsc",
+        "sha256": "0fb10183c9ac53cdbe2598d29e035a989a31932174d689165adbfdc68a712828",
+        "bytes": 223679650
+      }
+    ],
+    "native": [
+      {
+        "original": "E:\\projects\\CHOMPStation2\\tools\\dmb\\target\\full-suite-comparison-dcd1b1f39fe14bd6a3ad65fd8d2bc1da\\rust-output-final\\generations\\2be3e35918c9bd4cc7f90b0ad9c71e55655e61f604584e60085d446fbdbc9fbc\\world.dmb",
+        "frozen": "D:\\dmb-native-v2-phase0\\frozen\\pairs\\native\\world.dmb",
+        "sha256": "174359e9e849bdd610043f5879bbb781c35d406fe92142b295f822d19130a6ed",
+        "bytes": 48175758
+      },
+      {
+        "original": "E:\\projects\\CHOMPStation2\\tools\\dmb\\target\\full-suite-comparison-dcd1b1f39fe14bd6a3ad65fd8d2bc1da\\rust-output-final\\generations\\2be3e35918c9bd4cc7f90b0ad9c71e55655e61f604584e60085d446fbdbc9fbc\\world.rsc",
+        "frozen": "D:\\dmb-native-v2-phase0\\frozen\\pairs\\native\\world.rsc",
+        "sha256": "c069e6cd94d7d0d50f905811b6764489bc84348ea34f8537b53f52e93a2bb025",
+        "bytes": 222851707
+      }
+    ]
+  },
+  "preserved_native_binary": {
+    "path": "D:\\dmb-native-v2-phase0\\frozen\\compiler-integration-fiftieth.exe",
+    "sha256": "87eaa5f265756588e001a29931528d40091a72d8f542abdba940ee6aacb19040"
+  },
+  "limitations": [
+    "Recovered assets are compiled RSC payloads; formats transformed by DreamMaker need not reproduce their original source encoding or timestamps.",
+    "Non-imported external resources copied from retained runtime directories; the original DMB/RSC bytes remain independently pinned.",
+    "Runtime seed controls must be recorded from the preserved world; no seed override is invented."
+  ],
+  "test_selection": {
+    "path": "D:\\dmb-native-v2-phase0\\frozen\\expected-runnable-tests.txt",
+    "sha256": "89d5c508437fee2a83530a11f18ea608cca808f2b0796957386b0401e4fadcaf",
+    "tests": 1089
+  },
+  "external_runtime_inputs": [
+    {
+      "path": "code/modules/unit_tests/data/dq_constraint_parity.json",
+      "sha256": "e8543f5ed9dac113f6750368d537409069320f055eebdce408db5513ce971cb4",
+      "bytes": 692309
+    }
+  ],
+  "frozen_engine_receipt": "tools/dmb/phase0/frozen-engine.json",
+  "full_manifest": {
+    "path": "D:\\dmb-native-v2-phase0\\frozen-manifest.json",
+    "sha256": "ca20759e24dd9b87afb027fea8dac90cda2786dc3420c6391ad3452579f14e26"
+  }
+}

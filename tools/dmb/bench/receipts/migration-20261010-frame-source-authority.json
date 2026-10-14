@@ -1,0 +1,39 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-d02f53bd52aad7c5.exe",
+  "binary_sha256": "6cc83aa63de1922ff160e2fbad65622ad4cb2ea4dbfe6d62d6fefd1e4f415dc2",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "composition::tests::frame_contribution",
+      "selected": [
+        "composition::tests::frame_contribution_rebinds_code_and_rejects_changed_numeric_and_string_authority",
+        "composition::tests::frame_contribution_requires_current_resolved_argument_source_numbers"
+      ],
+      "exit": 0,
+      "seconds": 0.07301420002477244,
+      "stdout": "\nrunning 2 tests\ntest composition::tests::frame_contribution_rebinds_code_and_rejects_changed_numeric_and_string_authority ... ok\ntest composition::tests::frame_contribution_requires_current_resolved_argument_source_numbers ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 671 filtered out; finished in 0.05s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "composition::procedure_plan::argument_sources_tests::",
+      "selected": [
+        "composition::procedure_plan::argument_sources_tests::references_reuse_only_current_binding_start_and_exact_helper_order"
+      ],
+      "exit": 0,
+      "seconds": 0.17011629999615252,
+      "stdout": "\nrunning 1 test\ntest composition::procedure_plan::argument_sources_tests::references_reuse_only_current_binding_start_and_exact_helper_order ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 672 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "request_runner::runner_freshness::tests::",
+      "selected": [
+        "request_runner::runner_freshness::tests::changed_capture_never_publishes_even_on_final_attempt",
+        "request_runner::runner_freshness::tests::rebuild_policy_stops_at_three_and_does_not_retry_unrelated_failures"
+      ],
+      "exit": 0,
+      "seconds": 0.02828530000988394,
+      "stdout": "\nrunning 2 tests\ntest request_runner::runner_freshness::tests::changed_capture_never_publishes_even_on_final_attempt ... ok\ntest request_runner::runner_freshness::tests::rebuild_policy_stops_at_three_and_does_not_retry_unrelated_failures ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 671 filtered out; finished in 0.00s\n\n",
+      "stderr": "native publication rejected: 1 changed inputs; first paths: [\"source.dm\"]\nnative inputs changed before publication; rebuilding (1/2)\nnative inputs changed before publication; rebuilding (2/2)\nnative inputs changed before publication; rebuilding (1/2)\nnative inputs changed before publication; rebuilding (2/2)\n"
+    }
+  ]
+}

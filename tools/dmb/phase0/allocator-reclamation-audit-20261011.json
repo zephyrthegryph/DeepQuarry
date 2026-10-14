@@ -1,0 +1,191 @@
+{
+  "schema": 1,
+  "scope": "read-only pinned allocator implementation audit; not a runtime measurement or proof of private-memory reclaimability",
+  "dependency": {
+    "libmimalloc_sys": "0.1.49",
+    "mimalloc": "0.1.52",
+    "selected_implementation": "v3",
+    "selector_proof": "no v2 feature in compiler allocator declarations; sys build defaults to v3"
+  },
+  "sources": [
+    {
+      "path": "E:/dq-cache/dmb-native-v2/cargo-home/registry/src/index.crates.io-1949cf8c6b5b557f/libmimalloc-sys-0.1.49/build.rs",
+      "sha256": "4917ec3e9a59e216b1b568ce37ea5cb97ba0ba1b9c50789a29d1cd429de9119f",
+      "bytes": 4980,
+      "role": "v2 feature selects v2; otherwise pinned build selects v3",
+      "anchors": [
+        {
+          "line": 8,
+          "text": "let version = if env::var(\"CARGO_FEATURE_V2\").is_ok() {"
+        },
+        {
+          "line": 9,
+          "text": "\"v2\""
+        },
+        {
+          "line": 11,
+          "text": "\"v3\""
+        }
+      ]
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/cargo-home/registry/src/index.crates.io-1949cf8c6b5b557f/mimalloc-0.1.52/Cargo.toml",
+      "sha256": "1fae15585ec90fe874b90c1652056283727b88f548ec7fb445117e94e66fbf69",
+      "bytes": 1695,
+      "role": "default feature roster does not select v2",
+      "anchors": [
+        {
+          "line": 48,
+          "text": "default = []"
+        },
+        {
+          "line": 54,
+          "text": "v2 = [\"libmimalloc-sys/v2\"]"
+        },
+        {
+          "line": 62,
+          "text": "version = \"0.1.49\""
+        }
+      ]
+    },
+    {
+      "path": "tools/dmb/crates/dm-profile/Cargo.toml",
+      "sha256": "049526f4bb0938019c74a4e2b1d0cb0ad8331fdfd19de59d6231f08ecbbe4ce2",
+      "bytes": 628,
+      "role": "compiler pins allocator and extended maintenance API",
+      "anchors": [
+        {
+          "line": 11,
+          "text": "mimalloc = \"0.1.52\""
+        },
+        {
+          "line": 12,
+          "text": "libmimalloc-sys = { version = \"=0.1.49\", features = [\"extended\"] }"
+        }
+      ]
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/cargo-home/registry/src/index.crates.io-1949cf8c6b5b557f/libmimalloc-sys-0.1.49/src/extended.rs",
+      "sha256": "4840b3d1e67cd1ac883b2a64f4bef34e94257d9f0ec5a6de2d9cf601581437c3",
+      "bytes": 45143,
+      "role": "exposed maintenance entrypoints",
+      "anchors": [
+        {
+          "line": 234,
+          "text": "pub fn mi_collect(force: bool);"
+        },
+        {
+          "line": 752,
+          "text": "pub fn mi_heap_collect(heap: *mut mi_heap_t, force: bool);"
+        }
+      ]
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/cargo-home/registry/src/index.crates.io-1949cf8c6b5b557f/libmimalloc-sys-0.1.49/c_src/mimalloc/v3/src/theap.c",
+      "sha256": "7f76bcace4b0578f2063477752138adabd99f7b10a276998e296a312c47a7cfe",
+      "bytes": 24989,
+      "role": "collection visits current thread heap plus eligible arena purges; heap collect is not process-wide",
+      "anchors": [
+        {
+          "line": 135,
+          "text": "_mi_arenas_collect(collect == MI_FORCE /* force purge? */, collect >= MI_FORCE /* visit all? */, theap->tld);"
+        },
+        {
+          "line": 149,
+          "text": "void mi_collect(bool force) mi_attr_noexcept {"
+        },
+        {
+          "line": 150,
+          "text": "// cannot really collect process wide, just a theap.."
+        },
+        {
+          "line": 151,
+          "text": "mi_theap_collect(_mi_theap_default(), force);"
+        },
+        {
+          "line": 154,
+          "text": "void mi_heap_collect(mi_heap_t* heap, bool force) {"
+        },
+        {
+          "line": 155,
+          "text": "// cannot really collect a heap, just a theap.."
+        }
+      ]
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/cargo-home/registry/src/index.crates.io-1949cf8c6b5b557f/libmimalloc-sys-0.1.49/c_src/mimalloc/v3/src/options.c",
+      "sha256": "96ef01e41f4b3043118e8c801e660b1d3f185d6fb824e5298a038aee89b6a392",
+      "bytes": 28797,
+      "role": "default origin-heap abandoned-page reclamation policy; no change proposed",
+      "anchors": [
+        {
+          "line": 165,
+          "text": "{ 0,   MI_OPTION_UNINIT, MI_OPTION_LEGACY(page_reclaim_on_free, abandoned_reclaim_on_free) },// reclaim abandoned (small) pages on a free: -1 = disable completely, 0 = only reclaim into the originating theap, 1 = reclaim on free across theaps"
+        }
+      ]
+    },
+    {
+      "path": "tools/dmb/crates/dm-profile/src/allocator_maintenance.rs",
+      "sha256": "89736f50d48a00dedc1f0971ca357e432df73a99a6791dbf5574f011972e866c",
+      "bytes": 952,
+      "role": "current maintenance uses forced public collection already",
+      "anchors": [
+        {
+          "line": 10,
+          "text": "/// It is not a process-wide live-heap scan or a bound on private memory."
+        },
+        {
+          "line": 11,
+          "text": "pub fn reclaim_unused_allocator_pages() {"
+        },
+        {
+          "line": 15,
+          "text": "unsafe { libmimalloc_sys::mi_collect(true) };"
+        }
+      ]
+    },
+    {
+      "path": "tools/dmb/crates/dm-exec/src/lib.rs",
+      "sha256": "5ac2edc208dc602010678dc6c2429db4bb56ba4226fb0326d6306bdfaf2ddf14",
+      "bytes": 10967,
+      "role": "executor destruction signals termination and joins actual OS worker threads",
+      "anchors": [
+        {
+          "line": 209,
+          "text": "impl Drop for BuildExecutor {"
+        },
+        {
+          "line": 214,
+          "text": "drop(self.pool.take());"
+        },
+        {
+          "line": 215,
+          "text": "join_workers(&self.handles);"
+        },
+        {
+          "line": 224,
+          "text": "let _ = handle.join();"
+        }
+      ]
+    }
+  ],
+  "observed_cohort_context": {
+    "path": "E:/dq-cache/dmb-native-iterations/20261011-194857-26cb0016/daemon.stderr",
+    "role": "previous root-owned measured cohort; values describe that capture only",
+    "tier3_rust_requested_live_after_bytes": 2019358171,
+    "tier3_private_after_bytes": 4260884480,
+    "reclaim_seconds": 0.030683
+  },
+  "conclusion": {
+    "production_change": false,
+    "stronger_audited_pointer_free_public_operation_found": false,
+    "gap_attribution": "unattributed: private minus requested-live is not a measurement of wholly unused pages",
+    "limitations": [
+      "mi_collect(true) is not a process-wide live-page collector",
+      "worker joins do not prove remaining pages are empty or physically reclaimable",
+      "no CPU cost, private-memory reduction, RSS, or fixed reclaimed-byte guarantee",
+      "no global allocator policy or heap pointer manipulation proposed",
+      "optional-owner detach and actual private resampling remain separate production policy"
+    ]
+  }
+}

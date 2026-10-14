@@ -1,0 +1,166 @@
+use serde::{Deserialize, Serialize};
+use std::io::{self, Read, Write};
+const MAX_FRAME: usize = 4 * 1024 * 1024;
+pub(super) const VERSION: u32 = 5;
+#[derive(Serialize, Deserialize)]
+pub(super) enum Request {
+    Hello { version: u32, compiler: u128 },
+    Retire,
+    Query(super::query::QueryRequest),
+    Build(crate::request::BuildRequest),
+}
+#[derive(Serialize, Deserialize)]
+pub(super) enum Reply {
+    Hello {
+        version: u32,
+        compiler: u128,
+        retiring: bool,
+    },
+    Accepted,
+    Completed(crate::request::BuildOutcome),
+    Diagnostic {
+        stdout: bool,
+        bytes: Vec<u8>,
+    },
+    Rejected(crate::request_failure::RequestFailure),
+    Retiring,
+    Query(super::query::QueryReply),
+}
+pub(super) fn send(stream: &mut impl Write, value: &impl Serialize) -> io::Result<()> {
+    let bytes = serde_json::to_vec(value)?;
+    if bytes.len() > MAX_FRAME {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "daemon frame too large",
+        ));
+    }
+    stream.write_all(&(bytes.len() as u32).to_le_bytes())?;
+    stream.write_all(&bytes)?;
+    stream.flush()
+}
+pub(super) fn receive<T: serde::de::DeserializeOwned>(stream: &mut impl Read) -> io::Result<T> {
+    receive_bounded(stream, MAX_FRAME)
+}
+pub(super) fn receive_bounded<T: serde::de::DeserializeOwned>(
+    stream: &mut impl Read,
+    limit: usize,
+) -> io::Result<T> {
+    let mut length = [0; 4];
+    stream.read_exact(&mut length)?;
+    let length = u32::from_le_bytes(length) as usize;
+    if length > MAX_FRAME.min(limit) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "daemon frame too large",
+        ));
+    }
+    let mut bytes = vec![0; length];
+    stream.read_exact(&mut bytes)?;
+    serde_json::from_slice(&bytes).map_err(io::Error::other)
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn caller_specific_frame_limit_rejects_before_payload_read() {
+        assert!(receive_bounded::<Request>(&mut &(64_u32.to_le_bytes())[..], 32).is_err());
+    }
+    #[test]
+    fn oversize_refused_before_allocation() {
+        assert!(receive::<Request>(&mut &((MAX_FRAME + 1) as u32).to_le_bytes()[..]).is_err());
+    }
+    #[test]
+    fn handshake_roundtrip() {
+        let mut bytes = Vec::new();
+        send(
+            &mut bytes,
+            &Request::Hello {
+                version: VERSION,
+                compiler: 42,
+            },
+        )
+        .unwrap();
+        assert!(matches!(
+            receive::<Request>(&mut &bytes[..]).unwrap(),
+            Request::Hello { compiler: 42, .. }
+        ));
+    }
+    #[test]
+    fn diagnostic_wire_preserves_non_utf8_and_newline_fragments() {
+        let expected = vec![0xff, 0xce, 0xbb, b'\n', 0];
+        let mut wire = Vec::new();
+        send(
+            &mut wire,
+            &Reply::Diagnostic {
+                stdout: true,
+                bytes: expected.clone(),
+            },
+        )
+        .unwrap();
+        match receive::<Reply>(&mut &wire[..]).unwrap() {
+            Reply::Diagnostic { stdout, bytes } => {
+                assert!(stdout);
+                assert_eq!(bytes, expected);
+            }
+            _ => panic!("wrong reply"),
+        }
+    }
+    #[test]
+    fn typed_rejection_preserves_source_exit_through_transport() {
+        let failure =
+            crate::request_failure::RequestFailure::source("code/test.dm:4:error: invalid source");
+        let mut wire = Vec::new();
+        send(&mut wire, &Reply::Rejected(failure.clone())).unwrap();
+        match receive::<Reply>(&mut &wire[..]).unwrap() {
+            Reply::Rejected(decoded) => {
+                assert_eq!(decoded, failure);
+                let error: Box<dyn std::error::Error> = decoded.into();
+                assert_eq!(crate::request_failure::exit_code(error.as_ref()), 2);
+                assert_eq!(error.to_string(), "code/test.dm:4:error: invalid source");
+            }
+            _ => panic!("wrong reply"),
+        }
+    }
+    /// Simulated frame transport only; no daemon process is exercised.
+    #[test]
+    fn unicode_fragmented_diagnostics_precede_exact_source_rejection() {
+        let diagnostics = "code/\u{03bb}.dm:7:error: invalid na\u{00ef}ve expression\n".as_bytes();
+        let split = diagnostics.iter().position(|byte| *byte == 0xce).unwrap() + 1;
+        let mut wire = Vec::new();
+        for bytes in [&diagnostics[..split], &diagnostics[split..]] {
+            send(
+                &mut wire,
+                &Reply::Diagnostic {
+                    stdout: false,
+                    bytes: bytes.to_vec(),
+                },
+            )
+            .unwrap();
+        }
+        let expected =
+            crate::request_failure::RequestFailure::source("source analysis failed: \u{03bb}");
+        send(&mut wire, &Reply::Rejected(expected.clone())).unwrap();
+        let mut input = wire.as_slice();
+        let mut stderr = Vec::new();
+        for _ in 0..2 {
+            match receive::<Reply>(&mut input).unwrap() {
+                Reply::Diagnostic {
+                    stdout: false,
+                    bytes,
+                } => stderr.extend(bytes),
+                _ => panic!("diagnostic order/channel changed"),
+            }
+        }
+        assert_eq!(stderr, diagnostics);
+        match receive::<Reply>(&mut input).unwrap() {
+            Reply::Rejected(failure) => {
+                assert_eq!(failure, expected);
+                let boxed: Box<dyn std::error::Error> = failure.into();
+                assert_eq!(crate::request_failure::exit_code(boxed.as_ref()), 2);
+                assert_eq!(boxed.to_string(), "source analysis failed: \u{03bb}");
+            }
+            _ => panic!("source rejection missing after diagnostics"),
+        }
+        assert!(input.is_empty());
+    }
+}

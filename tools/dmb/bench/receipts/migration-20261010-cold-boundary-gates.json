@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "source_commit": "255bc7ea1d",
+  "scope": "Five focused passing fixtures; no runtime, whole-suite or performance acceptance",
+  "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-083213-c6bf7aef-focused.json",
+  "receipt_sha256": "bc97fe277f366ddd4a64dcf9472c634fab87718a0fab666b7eec187ee7c351d1",
+  "binary_sha256": "4aeaa1e78b871ced25778eab8bcae40349aa26767dc96adc9521f1c24b9e6885",
+  "checks": {
+    "driver_facts::abi_body_release_tests": 1,
+    "heap_census::cold_boundary::tests": 1,
+    "cold::ledger_release_tests": 2,
+    "cold::prepared_tests": 1
+  },
+  "limitations": [
+    "Combined census counts exposed backing with pointer deduplication; private backing remains unknown",
+    "Retained cold build remains blocked by the last observed four-billion-byte watchdog limit",
+    "No new admitted end-to-end timings"
+  ]
+}

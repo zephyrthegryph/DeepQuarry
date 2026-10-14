@@ -1,0 +1,1233 @@
+{
+  "schema": 1,
+  "scope": "focused integration checks; not full-suite, runtime baseline or benchmark acceptance",
+  "compiler_library_check_passed": true,
+  "library_check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-052447-b817f70b-job-cargo.json",
+  "focused_passed": {
+    "shared_publication_and_leases": 11,
+    "frontend_replay_and_request_lifecycle": 8,
+    "binding_request_lifecycle": 2,
+    "compiler_artifact_and_composition_lifecycle": 17,
+    "resource_comparison": 5,
+    "procedure_hit_verification": 4,
+    "batch_spool_and_orphan_lifecycle": 10,
+    "authenticated_body_fork": 1,
+    "exact_input_and_certificate_delta": 5
+  },
+  "focused_failure": {
+    "test": "failed_header_pruning_preserves_published_selector_owner",
+    "cause": "Header miss returned a separate Arc rather than the admitted stored owner",
+    "fix_commit": "1bec0c4b6b9826c9726b9eda7dbc66226fb5b11b",
+    "rerun_status": "passed",
+    "rerun_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060510-aacd9df2-focused.json"
+  },
+  "test_binary_source": "working tree, including preserved pre-existing edits; not an immutable compiler benchmark pin",
+  "focused_receipts": [
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-052550-a4a96960-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-052852-da67ab84-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-052917-99453442-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-053357-469d8d15-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-053430-a7845966-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-053547-d39cea37-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060501-d03936c9-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060510-aacd9df2-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060530-c8b5c89a-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-061747-3e0bf6ab-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060655-e847dfa9-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070538-9bda9c89-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070704-76e29f85-focused.json"
+  ],
+  "resources": {
+    "distinct_assets": 3852,
+    "changed_or_missing": 0,
+    "byond_identical_duplicate_records": 8,
+    "duplicate_bytes": 294398,
+    "complete_tool_comparison": true,
+    "semantic_equivalent": true,
+    "shared_input_closure_authenticated": false
+  },
+  "focused_validation_0725": {
+    "dmbc_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-072008-9457c50c-job-cargo.json",
+    "dmbc_binary_sha256": "3e83053d0cef09404765f307376f0a5d0d2b27516621169ab6a435b4a71129c4",
+    "passed": 19,
+    "failed": 7,
+    "scope": "26 selected fixtures; transport, verifier and certificate replay gates remain open",
+    "receipts": [
+      "20261011-072326-39c5a048-focused.json",
+      "20261011-072348-73f1e9a1-focused.json",
+      "20261011-072409-daa8eb9d-focused.json",
+      "20261011-072430-6fb14484-focused.json",
+      "20261011-072439-1ee3dd1a-focused.json",
+      "20261011-072450-3e4776fc-focused.json",
+      "20261011-072519-50bf907a-focused.json"
+    ],
+    "session_payload_tests_passed": 2,
+    "session_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-072450-2e23d121-job-cargo.json"
+  },
+  "latest_prototype_real_game_compile": {
+    "source_commit": "4e66f8ff4a8f8a1a65abd5ef8d178430a684ee4c",
+    "native_compilation_seconds": 122.728,
+    "initializer_seconds": 23.677,
+    "procedure_lowering_seconds": 26.68,
+    "peak_owned_job_commit_bytes": 4823846912,
+    "focused_tests_passed": 1,
+    "receipt": "tools/dmb/bench/receipts/runtime-20261011-inventory-fresh-4e66.json",
+    "optimized_benchmark_acceptance": false,
+    "full_suite": false
+  },
+  "corrected_normal_inventory": {
+    "compiled_type_paths": 2045,
+    "eligible_normal_tests": 2001,
+    "permanent_exclusions": 30,
+    "exhaustive_tier_exclusions": 14,
+    "complete_type_path_accounting": true,
+    "suite_execution_complete": false,
+    "fix_commit": "5cb64725ef",
+    "native_fresh_retained_and_byond_fixture": "tools/dmb/bench/receipts/runtime-20261011-type-path-inventory-4e66.json"
+  },
+  "full_runtime_baseline": "open",
+  "latest_full_game_incremental_benchmark": "open",
+  "six_worktree_acceptance": "open",
+  "shared_configuration_and_input_closure": "open",
+  "verification_scope": "Named executable procedure memo hits validated. Current initializer and publication sources compile, but focused execution found initializer transport/verifier and certificate replay failures; these gates remain open.",
+  "runtime_fixture_revisions": {
+    "nested_map": 6,
+    "initializer_inheritance_resources": 14,
+    "matches_byond_observations": true,
+    "matches_fresh_native_bytes": true,
+    "full_game_acceptance": false,
+    "source": "1bec0c4b6b9826c9726b9eda7dbc66226fb5b11b"
+  },
+  "focused_real_game_runtime": {
+    "native_passed": 11,
+    "byond_passed": 11,
+    "status_and_runtime_observations_match": true,
+    "runtime_errors": 0,
+    "native_compilation_seconds": 114.94,
+    "native_profile": "prototype, dmbc opt-level 0; not optimized benchmark acceptance",
+    "evidence": "tools/dmb/bench/receipts/focused-runtime-observations-20261011-power-damage.json",
+    "full_suite": false,
+    "shared_input_closure_authenticated": false,
+    "accepted_runtime_baseline": false
+  },
+  "migration_source_pending_validation": [
+    {
+      "commit": "f492bed0a2",
+      "change": "Contextual portable initializer policy authenticates inner engine association",
+      "tests_run": false
+    },
+    {
+      "commit": "0e9eed6021",
+      "change": "Prepared request roster issues shared symbolic source binding set",
+      "tests_run": false,
+      "cross_request_reuse": false
+    },
+    {
+      "commit": "4619268921",
+      "change": "One-shot initializer shared fragment/assembly core and optional exact portable disk transport",
+      "tests_run": false,
+      "focused_filter": "initializer_lowering::disk::tests::",
+      "disk_reuse_declines": [
+        "modified descriptors",
+        "resource-bearing recipes",
+        "unproven custom evaluator policies",
+        "failure payloads"
+      ]
+    }
+  ],
+  "validation_blocker": {
+    "kind": "disk blocker cleared by external space recovery",
+    "free_bytes_observed": 11758084096,
+    "owned_deletion_performed": false,
+    "focused_validation_resumed": true,
+    "formal_cohort_disk_gate_closed": false
+  },
+  "dirty_scheduling": "open: exact local-input delta foundation remains separate from exhaustive semantic read change authority; no unaffected-row skip enabled",
+  "delta_foundation_validation": {
+    "source_commits": [
+      "4a8de8750d",
+      "58a104b10f",
+      "fbd440c3db"
+    ],
+    "tests_passed": 5,
+    "scheduler_skip_enabled": false,
+    "tree_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070549-35f7e628-job-cargo.json",
+    "session_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070451-52916be9-job-cargo.json",
+    "initial_build_failure": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070329-04f1638b-job-cargo.json",
+    "failure_fix": "fbd440c3db",
+    "nonmatching_fixture_filter_guard": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070518-2e9baefd-focused.json",
+    "performance_acceptance": false
+  },
+  "frozen_migration_validation_154ee49": {
+    "source_commit": "154ee49d18bdeecb3476dae7f0fd5dfe7eab6b97",
+    "build_receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080446-8937a1aa-job-cargo.json",
+    "build_passed": true,
+    "focused_receipts": [
+      "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080713-2b54d351-focused.json",
+      "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080732-63736739-focused.json",
+      "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080737-f7b70e66-focused.json",
+      "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080758-3661f3f1-focused.json",
+      "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080804-a30067d1-focused.json"
+    ],
+    "focused_passed": 33,
+    "focused_failed": 4,
+    "fixes_committed_pending_rerun": [
+      "57b434487e",
+      "2a278b3f07",
+      "654715b420"
+    ],
+    "limitations": [
+      "No acceptance of later bulk coordinator, physical containment or local-input issuer changes from these receipts.",
+      "Not a compiler timing or full runtime parity gate."
+    ]
+  },
+  "focused_validation_bc33": {
+    "source_commit": "bc33eb0ff6664d33f6b227729f285e08e136db21",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-083526-7747049f-job-cargo.json",
+    "receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-083917-15d1d5b0-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-083952-1acff8c9-focused.json"
+    ],
+    "passed": 39,
+    "failed": 1,
+    "failure": {
+      "name": "six_source_sessions_asymmetric_edits_and_panic_reset_match_fresh_bytes",
+      "cause": "Fixture retained a sealed request publication token across an independent fresh oracle request",
+      "fix_commit": "ba899ef086",
+      "rerun": "pending"
+    },
+    "scope": "focused shared publication, physical resource journal, per-unit ABI and initializer transport; not runtime or performance acceptance"
+  },
+  "cli_build_bc33": {
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-084048-90e92caa-job-cargo.json",
+    "status": "watchdog timeout after 300 seconds; owned job reaped",
+    "compiler_errors_reported": false,
+    "retry": "running from completed artifacts",
+    "scope": "Rust prototype tooling build; not DM compilation timing"
+  },
+  "focused_validation_e8e60": {
+    "source_commit": "e8e60cce27f41a4ed0ba17e69e67d5c1bb6dfae1",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-090133-680c77c3-job-cargo.json",
+    "build_scope": "dmbc, dm-tree and dm-codegen-byond test executables emitted; aggregate build failed on two old dm-session fixture calls missing versions; fixed4ad9854996, core rerun pending",
+    "passed": 31,
+    "failed": 2,
+    "receipts": [
+      "20261011-090626-bc43b727-focused.json",
+      "20261011-090640-ff6cd602-focused.json",
+      "20261011-090703-52981488-focused.json",
+      "20261011-090704-70ea130a-focused.json",
+      "20261011-090713-2a0ebadf-focused.json"
+    ],
+    "receipt_root": "E:/dq-cache/dmb-native-v2/integration-gates",
+    "failures": [
+      {
+        "test": "structural_abi_scheduler_reuses_unrelated_owner_and_rebinds_formal_wave",
+        "cause": "qualified candidate count0 expected1; ordinary exact fallback succeeds; optimization remains open",
+        "fix": "in progress"
+      },
+      {
+        "test": "repeated_include_duplicate_locations_keep_distinct_current_encounters",
+        "cause": "fixture expected duplicate declaration from second same file include, but actual include planner suppresses it",
+        "fix": "in progress"
+      }
+    ],
+    "scope": "bounded selected tests; not runtime parity, current CLI acceptance or benchmark"
+  },
+  "focused_validation_9ef6": {
+    "source_commit": "9ef6daf3aadd98e8566e464ea1f161c046b9917d",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-091415-5e0cd94a-job-cargo.json",
+    "passed": 49,
+    "failed": 0,
+    "receipts": [
+      "20261011-091927-489ba5ef-focused.json",
+      "20261011-091922-e583d37e-focused.json",
+      "20261011-091922-884b3be5-focused.json",
+      "20261011-091922-46d6a155-focused.json",
+      "20261011-091949-77625207-focused.json"
+    ],
+    "scope": "selected shared-core, six synthetic sessions, ABI, current diagnostics; not full suite or real concurrency acceptance",
+    "filter_correction": "first intrinsic namespace filter matched no tests; corrected namespace passed in final receipt"
+  },
+  "compile_error_contract_9ef6": {
+    "cases": 14,
+    "acceptance_matches": 14,
+    "rejection_class_matches": 14,
+    "exact_diagnostic_matches": 11,
+    "remaining": [
+      "initializer wording prefix in two cases",
+      "malformed signature line1 versus BYOND line2"
+    ],
+    "runtime": "not run"
+  },
+  "focused_validation_5ec311": {
+    "source_commit": "5ec311bfe8915da60b7124fb3cf9ab35a588a91f",
+    "archive_sha256": "d8869a76022ae078faa22d40bfbdeedf0c7afa05f02410e7d63348a899486cdc",
+    "build_receipt": "20261011-092923-f9df44a4-job-cargo.json",
+    "passed": 35,
+    "failed": 1,
+    "receipts": [
+      "20261011-093335-d7c74101-focused.json",
+      "20261011-093335-2dfdee18-focused.json",
+      "20261011-093354-6550bcff-focused.json"
+    ],
+    "failure": "nested implicit constructor fixture rejected by parser before evaluator; agent correction pending",
+    "scope": "focused shared initializer, all map memo fixtures, constructor diagnostics and shared callable index; not full suite"
+  },
+  "focused_validation_ed1b67": {
+    "source_commit": "ed1b67e3866162cc1021bafc1551c9ca04f81eb6",
+    "archive_sha256": "db62a9557d4e3a2389ee56886dce7bbe6f6faf7b1ac98aafb42ff5ba122693fe",
+    "build_receipt": "20261011-094428-a85f7b9a-job-cargo.json",
+    "passed": 10,
+    "failed": 2,
+    "receipts": [
+      "20261011-094810-94232495-focused.json",
+      "20261011-094810-2bdda847-focused.json",
+      "20261011-094810-51967c13-focused.json",
+      "20261011-094912-605aca33-focused.json"
+    ],
+    "failures": [
+      "callback header pinned client child MouseEntered flags missing",
+      "body missing declared type wording retains space in return value"
+    ],
+    "scope": "focused actual constructor and continuation producers, compact frontend diagnostic spans, callback header facts; not full suite"
+  },
+  "owned_cleanup_20261011": {
+    "scope": "explicit audited leaf files only; no source, receipts, original BYOND pairs, immutable pins or current Cargo artifacts",
+    "runtime_copies": {
+      "files": 27,
+      "bytes": 3456318779
+    },
+    "older_compiler_artifacts": {
+      "files": 719,
+      "bytes": 4952272530
+    },
+    "refresh_runtime_copies": {
+      "files": 6,
+      "bytes": 877377948
+    },
+    "total_removed_bytes": 9285969257,
+    "free_bytes_after": 17803718656,
+    "matching_closure_cohort": "20261010-051017-f65f20d7 preserved",
+    "scripts_root": "E:/dq-cache/dmb-native-v2/integration-gates",
+    "initial_script_refusal": "Original cleanup field did not match typed receipt schema; no files deleted in refused attempt. Exact typed schema corrected and all preflight verified before removal."
+  },
+  "focused_validation_e400": {
+    "source_commit": "e4008f2aa752027ee8863e846aaaf702155b9be5",
+    "archive_sha256": "93fdbc5b6162e4c80d285edf96fc1d9a2e8ca187d12098722c2417af338a84ca",
+    "build_receipt": "20261011-095809-c61fc0ef-job-cargo.json",
+    "passed": 8,
+    "failed": 3,
+    "receipts": [
+      "20261011-100122-e07a112c-focused.json",
+      "20261011-100122-1f5cf961-focused.json",
+      "20261011-100206-a7d025d9-focused.json",
+      "20261011-100206-4cf87a23-focused.json"
+    ],
+    "failures": [
+      "callback materializer MissingMember while binding semantic root parent",
+      "pinned safe-colon CPU expression rejected by grammar",
+      "scalar control mock declares opaque typed alias instead of intended scalar metadata"
+    ],
+    "scope": "focused semantic source features and transport plus native opaque-read authority; not runtime or benchmark"
+  },
+  "coherent_safe_colon_check_0e075": {
+    "source_commit": "0e075b3ad96d56b9e4716757a5299e7bfc97135e",
+    "archive_sha256": "5b42cf664adea17324edb3b0ff906690adad91608b4e44ea50a31cabb6f1e605",
+    "build_receipt": "20261011-102500-f2aa0488-job-cargo.json",
+    "exit_code": 0,
+    "packages": [
+      "dmbc",
+      "dm-codegen-byond",
+      "dm-session",
+      "dm-tree",
+      "dm-syntax",
+      "dm-ir",
+      "dm-analysis"
+    ],
+    "scope": "cargo check including focused fixture source; not executed tests, runtime or benchmark",
+    "open": [
+      "focused execution pending",
+      "folded initializer source features confirmed by BYOND probe, implementation pending",
+      "map fresh-recomputation verification pending",
+      "current real DeepQuarry cohort and full runtime parity pending"
+    ]
+  },
+  "focused_validation_0e075": {
+    "source_commit": "0e075b3ad96d56b9e4716757a5299e7bfc97135e",
+    "archive_sha256": "5b42cf664adea17324edb3b0ff906690adad91608b4e44ea50a31cabb6f1e605",
+    "build_receipt": "20261011-102549-8ee5164a-job-cargo.json",
+    "passed": 15,
+    "failed": 3,
+    "receipts": [
+      "20261011-103106-a087b3c2-focused.json",
+      "20261011-103106-91a1dd6a-focused.json",
+      "20261011-103106-cdeefff5-focused.json",
+      "20261011-103124-24a2c7bf-focused.json",
+      "20261011-103152-76e0c44c-focused.json",
+      "20261011-103200-e59cb768-focused.json"
+    ],
+    "failures": [
+      "scalar constant mock read still fails after untyped metadata correction",
+      "graphics declaration-only frontend fixture lacks native icon override authority",
+      "real pinned host returns RuntimeType(/list) Unsupported rather than assumed Symbol authority"
+    ],
+    "no_test_filter_receipt": "20261011-103106-10f177be-focused.json (incorrect prefix; rerun with actual listed prefix; not a test failure)",
+    "scope": "focused shared grammar, source metadata, pinned headers, semantic transport, current-host read validity and retained error recovery; not full suite or DeepQuarry benchmark"
+  },
+  "focused_validation_523197": {
+    "source_commit": "52319758b98d27cbedfa44d9977973cf01231110",
+    "archive_sha256": "93350558447d68d468bf1406a6ae04b5a78dd84253b80c4b2d7155158cd64ec2",
+    "build_receipt": "20261011-103815-abe9b876-job-cargo.json",
+    "passed": 7,
+    "failed": 0,
+    "receipts": [
+      "20261011-104115-eff8623d-focused.json",
+      "20261011-104115-d6bd7167-focused.json"
+    ],
+    "scope": "real pinned host list and opaque-read authority, scalar controls, map parse/geometry/unit original-receipt verification; not full suite or benchmark",
+    "resolved_prior_failures": [
+      "scalar constant fixture now uses actual predefined constant namespace",
+      "typed list value read preserves opaque runtime mapping; concrete receiver checks remain strict"
+    ],
+    "remaining": [
+      "graphics declaration fixture correction and folded-source-features implementation gate pending",
+      "full DM runtime parity and current DeepQuarry timings remain open"
+    ]
+  },
+  "map_verify_compile_check_e512": {
+    "source_commit": "e51244191e7e979cee218aa5e2ee73065663925c",
+    "archive_sha256": "6c8c75105e6e812bb2f16ebfa365fb0859efde24b966345bf1211b52a68e2c68",
+    "receipt": "20261011-103540-d067b295-job-cargo.json",
+    "exit_code": 0,
+    "scope": "cargo check --tests; not compiler performance"
+  },
+  "combined_migration_compile_check_dd1022": {
+    "source_commit": "dd1022c74d31c27223bbb41e3106c902419bb405",
+    "archive_sha256": "5b534ef5bec51d81d31c0bad8466f2c3b80c2388845687f35bde221b7865d26f",
+    "receipt": "20261011-111126-50f21aa6-job-cargo.json",
+    "exit_code": 0,
+    "packages": [
+      "dmbc",
+      "dm-codegen-byond",
+      "dm-ir",
+      "dm-tree"
+    ],
+    "scope": "cargo check --tests only; includes lazy body-owner migration and current nameof admission, not executed tests or compiler benchmark",
+    "remaining": [
+      "focused fixture execution",
+      "proc-static lexical context migration",
+      "current CLI paired BYOND compilation",
+      "real DeepQuarry end-to-end timings",
+      "full DM runtime parity"
+    ]
+  },
+  "focused_validation_dd1022": {
+    "source_commit": "dd1022c74d31c27223bbb41e3106c902419bb405",
+    "archive_sha256": "5b534ef5bec51d81d31c0bad8466f2c3b80c2388845687f35bde221b7865d26f",
+    "build_receipt": "20261011-111222-55e23f80-job-cargo.json",
+    "passed": 19,
+    "failed": 1,
+    "receipts": [
+      "20261011-111709-8f9855e9-focused.json",
+      "20261011-111709-b8c5e755-focused.json",
+      "20261011-111709-d952f2f5-focused.json",
+      "20261011-111738-bc78a33f-focused.json",
+      "20261011-111737-d4a7933d-focused.json"
+    ],
+    "failures": [
+      "Unchanged-chunk body owner fixture did not retain identity after source-origin shift; shared executor investigating"
+    ],
+    "no_test_filter_receipts": [
+      "20261011-111709-296d71e3-focused.json",
+      "20261011-111709-b8c5e755-focused.json second filter only"
+    ],
+    "scope": "Focused source-feature/nameof/modified scalar, real graphics declaration header, borrowed prepared roster, lazy envelope and local proof execution; not full suite or compiler benchmark",
+    "remaining": [
+      "body owner shift fix and rerun",
+      "new lexical static carrier check",
+      "actual current CLI paired BYOND and real DeepQuarry cohort",
+      "full runtime parity"
+    ]
+  },
+  "migration_followup_d36": {
+    "source_commit": "d36af91e3136e9910c316a7bb3da59670ae8b830",
+    "archive_sha256": "a063413d6fa1da2a75092f95b0a5ddd0d9573ef95aef1ecfadc5bde9c3090d44",
+    "check_receipt": "20261011-112421-51904524-job-cargo.json",
+    "check_exit_code": 101,
+    "production_check": "passed before lib-test fixture compilation failed",
+    "fixture_failure": "Modified local candidate test called verification_equal on shared artifact instead of PreparedContribution; corrected source in80e1eae7aa, not yet executed",
+    "changes": [
+      "Current lexical locals carried through ProcedureStatic canonical answer and same stored-declaration walk",
+      "Reflective receiver and feature ancestry use semantic type authority",
+      "Modified candidate uses existing current recipe rebind path"
+    ],
+    "body_owner_prior_failure": "Fixture expected unchanged owner while mutating same chunk; corrected to genuine unchanged included chunk in39d3153e23; execution pending",
+    "scope": "Source implementation and compile check only; not compiler performance or full migration acceptance",
+    "remaining": [
+      "Execute corrected lexical/native-engine/body-owner/modified fixtures",
+      "New typed folded SourceError repair1f098c513b check",
+      "Real compiler paired BYOND gates and DeepQuarry end-to-end iterations",
+      "Latest normal DM tests and matched BYOND runtime closure",
+      "Six registered worktree protocol acceptance and non-daemon disk-cache gates"
+    ]
+  },
+  "header_feature_driver_parser_gate": {
+    "source_commit": "2547bf259c",
+    "command": "python -m unittest discover -s tools/dmb/fixtures/native/loop_local_diagnostics -p test_header_features.py",
+    "passed": 3,
+    "failed": 0,
+    "scope": "Decoded-header parser controls only; paired compiler feature flag comparison not yet run"
+  },
+  "actual_cli_284539": {
+    "source_commit": "284539f4f959771dcd67d425f39207612fecbdd9",
+    "archive_sha256": "0a54bceaee0a8e6c19ceba2736e56fd48030c3b418d1384e552738326e34a5a6",
+    "binary": "E:/dq-cache/dmb-native-v2/frozen-build/20261011-284539f4f9-dmbc.exe",
+    "binary_sha256": "af289ee065ff7e0e3fea520881961b45afdd775d5d7d335af35c2536244e20b8",
+    "build_receipt": "20261011-114251-b854976c-job-cargo.json",
+    "profile": {
+      "dmbc_opt_level": 0,
+      "dm_tree_opt_level": 2,
+      "dm_codegen_beyond_opt_level": 2,
+      "codegen_units": 256,
+      "lto": false,
+      "acceptance_profile": false
+    },
+    "compile_error_contract": {
+      "receipt": "E:/dq-cache/dmb-compile-error-contract/20261011-284539/ffdc29532c0f46ca91f7ba85f09e14c6/receipt.json",
+      "cases": 18,
+      "acceptance_and_rejection_class_agree": 18,
+      "exact_diagnostics_agree": 18
+    },
+    "folded_feature_contract": {
+      "receipt": "E:/dq-cache/dmb-folded-source-features/20261011-284539/6d100525fa4a41229f49fcdaeab866d4/receipt.json",
+      "cases": 14,
+      "acceptance_agrees": 14,
+      "accepted_header_bits_match": true,
+      "remaining": "Four missing-name rejections remain unsupported instead of source errors; current intrinsic namespace authority is incomplete"
+    },
+    "modified_feature_contract": {
+      "receipt": "E:/dq-cache/dmb-modified-source-features/20261011-284539/fe2afb2950914a1aacffb3a9b8e159aa/receipt.json",
+      "cases": 8,
+      "acceptance_agrees": 8,
+      "accepted_header_bits_match": true,
+      "remaining": "Two direct modified nameof rejections lose typed source-error class; absent static local also remains unsupported"
+    },
+    "runtime": "not run on this binary"
+  },
+  "real_deepquarry_cohort_284539": {
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261011-114642-3ab2bf20/receipt.json",
+    "status": "failed",
+    "rows_admitted": 0,
+    "initial_compile_exit": 70,
+    "compiler_failed_stage_total_seconds": 43.624,
+    "compiler_failed_stage_time_is_complete_compile": false,
+    "failure": "holographic_nature.dm:11 PROC_REF(on_entered) relative nameof(.proc/on_entered) incorrectly queried as Type",
+    "cleanup_reaped": true,
+    "scope": "Captured real DeepQuarry source with current prototype compiler; no successful output, oracle or end-to-end timings admitted; not latest HEAD/full suite/six-worktree acceptance"
+  },
+  "owned_cleanup_followup": {
+    "manifest": "E:/dq-cache/dmb-native-v2/integration-gates/cleanup-reaped-debug-objects-20261011.json",
+    "files": 14,
+    "logical_bytes": 560474342,
+    "scope": "Exact old debug codegen objects from authenticated reaped timeout; binaries, receipts, rlibs and current release objects preserved"
+  },
+  "actual_cli_51a148": {
+    "binary_sha256": "6c52c4710ac5ca519d229741820f1537683c705f81a45b7b2cb090e13049d8d7",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-120204-8b47a77f-job-cargo.json",
+    "remaining": [
+      "Actual paired diagnostic/feature gates",
+      "Completed cold/unchanged/body/new-var byte-oracle rows",
+      "Latest DM tests and matched BYOND runtime closure",
+      "Six registered worktree acceptance",
+      "Final release performance/CPU/memory/I/O gates"
+    ],
+    "archive_sha256": "fade99efa4e9bd01e78b0c3ec4fd32549546c8a9174469e7aa8d3c8330776bdd",
+    "cohort_status": "failed: initial request exceeded 300 seconds during ProcedureLowering; no output or timings admitted; daemon and client reaped",
+    "build_exit_code": 0,
+    "acceptance_profile": false,
+    "source_commit": "51a148bc3e8d3c2abe1fdff8d280b5f240f9c34d",
+    "binary": "E:/dq-cache/dmb-native-v2/frozen-build/20261011-51a148bc3e-dmbc.exe",
+    "cohort_receipt": "E:/dq-cache/dmb-native-iterations/20261011-120313-3e315ebc/receipt.json",
+    "cleanup_reaped": true,
+    "current_gates": {
+      "modified_features": {
+        "acceptance_agrees": true,
+        "header_bits_match": true,
+        "cases": 8,
+        "exact_diagnostics_agree": false,
+        "rejection_class_agrees": true,
+        "receipt": "E:/dq-cache/dmb-modified-source-features/20261011-51a148/f28f0367a1394facb0329330abeef802/receipt.json"
+      },
+      "disk_fixture": {
+        "failure": "fixture supplied unsupported --cache-root flag; no disk replay admitted",
+        "complete": false,
+        "receipt": "E:/dq-cache/dmb-modified-procedure-disk-contract/3a4c21da79654ee798deb1456aa7f48d/receipt.json"
+      },
+      "compile_error_contract": {
+        "exit": 0,
+        "cases": 18,
+        "receipt": "E:/dq-cache/dmb-compile-error-contract/20261011-51a148/544d86c9fdc548b78c34e9096c926806/receipt.json"
+      },
+      "folded_features": {
+        "acceptance_agrees": true,
+        "header_bits_match": true,
+        "cases": 14,
+        "exact_diagnostics_agree": false,
+        "rejection_class_agrees": true,
+        "receipt": "E:/dq-cache/dmb-folded-source-features/20261011-51a148/3a2919f6d28a46408935ddb3110c3669/receipt.json"
+      }
+    }
+  },
+  "diagnostic_cohort_921751": {
+    "binary_sha256": "715b4ca718aba41ff05637774769bc494868d5c55a011a93e5c5e415bb86fcc4",
+    "intentional_stop": "E:/dq-cache/dmb-native-iterations/20261011-121716-9d182fe7/intentional-stop.json",
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261011-121716-9d182fe7/receipt.json",
+    "status": "intentionally stopped after identifying quadratic incidence insertion",
+    "observed_progress": {
+      "admission_windows_seconds": 0.116,
+      "phase_wall_seconds": 65.014,
+      "scope": "Partial progress only, not complete compiler benchmark",
+      "total_procedures": 48681,
+      "procedures": 11968,
+      "lowering_windows_seconds": 64.889
+    },
+    "scalable_index": "0d937a6152: ordered maps and reverse removal, validation pending",
+    "cleanup_reaped": true,
+    "cleanup_manifest": "E:/dq-cache/dmb-native-v2/integration-gates/cleanup-obsolete-diagnostic-cohort-cache-20261011.json",
+    "timings_admitted": false,
+    "source_commit": "92175106d40f744f93037be2f32855e4f3897fc2",
+    "admitted_output": false,
+    "proven_fix": "22361423f2: absent variant removal no longer scans prior subscription rosters"
+  },
+  "latest_846_validation": {
+    "compiler_commit": "84677b2f6f054283e58888c549389a18cf97f0d3",
+    "compiler_sha256": "2d04fa2da0948f101c7b425215b03f0049d1d9a1c2592339ebb21276134c55f7",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-124237-3275e24e-job-cargo.json",
+    "five_package_check_passed": true,
+    "check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-124106-ed447e56-job-cargo.json",
+    "shared_index_focused_passed": 9,
+    "shared_index_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-124223-5578edf9-focused.json",
+    "disk_replay_receipt": "E:/dq-cache/dmb-modified-procedure-disk-contract/1e2f1d6f4f6a4e9aa55cbc94b4a844ac/receipt.json",
+    "disk_replay_result": "Four accepted revisions byte-identical to fresh; exact modified procedure disk hits after unrelated edits and source relocation. Removed nested type still exits internal error 70, gate incomplete.",
+    "cohort_receipt": "E:/dq-cache/dmb-native-iterations/20261011-124933-47c90f92/receipt.json",
+    "cohort_status": "failed source error; all 48681 procedure lowering completed in 41.413s; internal stage total107.212s; actual client launch-to-reap116.079s. No admitted output or end-to-end successful benchmark.",
+    "cleanup_bytes": 595621314,
+    "cleanup_manifest": "E:/dq-cache/dmb-native-v2/integration-gates/cleanup-obsolete-symbols-and-timeout-leaves-20261011.json",
+    "scope": "Prototype functional checks; no completed new benchmark, full runtime, or six-worktree acceptance",
+    "cohort_failure": "code/modules/reagents/machinery/grinder.dm:138 .proc/puny_protons undefined type path; current source defines global /proc/puny_protons, relative reflection lacks global fallback",
+    "folded_paired_receipt": "E:/dq-cache/dmb-folded-source-features/20261011-84677b/e379f65e0ae14ed887ef56d9f322b2e2/receipt.json",
+    "modified_paired_receipt": "E:/dq-cache/dmb-modified-source-features/20261011-84677b/6dbf611c24404b0cbae8bb1ef7be10a9/receipt.json",
+    "paired_exact_diagnostic_cases": 22,
+    "compile_error_paired_receipt": "E:/dq-cache/dmb-compile-error-contract/20261011-84677b/a9972ed633b64010819dbb788b1a7511/receipt.json",
+    "compile_error_exact_cases": 18
+  },
+  "followup_correctness_source": {
+    "nested_modified_fix": "09a53fa1a3",
+    "relative_global_fix": "ce548d2523",
+    "relative_byond_controls": "E:/dq-cache/dmb-nameof-relative-global/16dc703beb0f4c72a5558767e8f071ca/receipt.json",
+    "failure_schema": "0x0206_0022",
+    "five_package_check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-125835-e57c5348-job-cargo.json",
+    "five_package_check_passed": true,
+    "query_occurrence_commit": "d7eb1ada49",
+    "retained_export_commit": "a7d86bfff4",
+    "new_compiler_build_status": "running, exact a7 snapshot; no output/runtime validation yet",
+    "six_worktree_projection_bytes": 9001992102,
+    "six_worktree_with_reserve_bytes": 26181861286,
+    "six_worktree_limit": "Requires new current source/BYOND capture; historical source Git commit is unproven. No roots created."
+  },
+  "latest_a7_validation": {
+    "compiler_commit": "a7d86bfff44d744dbded3627b8b3b24cb315f364",
+    "compiler_sha256": "b26e9bab81c613ad179f2de43c46edbcda5b48acbd0bcfe2dd8827e89d921cea",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-130129-4a73a9a3-job-cargo.json",
+    "build_passed": true,
+    "disk_contract_receipt": "E:/dq-cache/dmb-modified-procedure-disk-contract/459775962a1345e1921767e72b7b6316/receipt.json",
+    "disk_contract_complete": true,
+    "disk_contract_revisions": 5,
+    "relative_paired_receipt": "E:/dq-cache/dmb-nameof-relative-global/20261011-a7d86b/e280aca3a91d421cbf692e3be533e715/receipt.json",
+    "relative_acceptance_and_class_agree": true,
+    "relative_diagnostics_agree": false,
+    "relative_gap": "Missing relative reference correctly rejects, but ordinary procedure omits nameof and return recovery diagnostics",
+    "cohort_receipt": "E:/dq-cache/dmb-native-iterations/20261011-130426-88c2a001/receipt.json",
+    "cohort_status": "passed all four fresh native DMB/RSC byte oracles; BYOND structural admission remains open",
+    "scope": "Prototype profile, no full runtime or six-worktree acceptance",
+    "end_to_end_client_seconds": {
+      "initial": 127.48482779995538,
+      "unchanged": 2.0282464999472722,
+      "body": 76.0277628999902,
+      "new_variable": 92.40090869995765
+    },
+    "measured_profile": "dmbc opt0, tree/codegen opt2, two workers; prototype, acceptance_profile=false",
+    "sampled_owned_peak_private_bytes": 6366347264,
+    "strict_private_peak_proved": false,
+    "byond_structural_admission": "open; complete=false, positional differences not classified semantic bug count",
+    "list_index_runtime_receipt": "E:/dq-cache/dmb-list-index-runtime/20261011-a7d86b/929cac15d50341c7a8edfb89a63cee29/receipt.json",
+    "list_index_runtime_matches": true,
+    "focused11_status": "passed all 11 selected current-source DM tests, native backend without fallback, trusted mode; full runtime baseline open",
+    "focused11_receipt": "E:/dq-cache/dmb-native-v2/focused11-a7d86b-20261011/receipt.json",
+    "focused11_input_closure_authenticated": false,
+    "focused11_accepted_runtime_baseline": false,
+    "focused11_peak_job_commit_bytes": 4936761344
+  },
+  "compact_retention_implementation": {
+    "procedure_commit": "dfb4073d69",
+    "initializer_pressure_commit": "f3219fc06f",
+    "status": "committed; six-package test-target typecheck running on frozen2d784; focused execution and benchmarks pending",
+    "scope": "Weak exact issuer witnesses, compact exact ABI, same-core logical pressure pruning; classification96MiB and assembly64MiB caps are not physical memory bounds",
+    "symbolic_pressure_commit": "61068e686f",
+    "startup_and_candidate_routing_commit": "2d78415084",
+    "modifier_pressure_commit": "8238fbb2fb",
+    "limits": "procedure192MiB, initializers96MiB aggregate, assembly64MiB, startup32MiB conservative logical charges; not physical process bounds"
+  },
+  "current_validation_builds": {
+    "failed_checks": [
+      {
+        "commit": "f3219fc06f",
+        "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-133256-90e5064b-job-cargo.json",
+        "cause": "source mapping census callback returned bool; fixed15d374"
+      },
+      {
+        "commit": "15d3743315",
+        "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-133451-1b1d775e-job-cargo.json",
+        "cause": "private census helper calls; fixed14ee88"
+      },
+      {
+        "commit": "14ee88b416",
+        "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-133702-82624426-job-cargo.json",
+        "cause": "new pressure test used boolean insertion API as Arc; fixedb301093"
+      },
+      {
+        "commit": "66dd35993e",
+        "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141309-ca1aace4-job-cargo.json",
+        "cause": "Moved output digest helper retained binary crate imports; fix assigned to query owner",
+        "production_check_passed": false
+      },
+      {
+        "commit": "b8c6216812",
+        "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141441-303d483c-job-cargo.json",
+        "cause": "Resolved query parity fixture string error conversion; fix assigned to query owner",
+        "production_check_passed": true
+      },
+      {
+        "commit": "cfd55e5a55",
+        "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141742-6ac4a4b8-job-cargo.json",
+        "cause": "Compact ABI charge delegated through a test-only module; moved same helper into production child d12dd3be0e",
+        "production_check_passed": false
+      }
+    ],
+    "scope": "Cargo check --tests is typechecking, not test execution or benchmark"
+  },
+  "benchmark_disk_blocker": {
+    "free_bytes_observed": 1978937344,
+    "minimum_free_gib": 16,
+    "cleanup": "obsolete compiler library deletion rejected by automatic review: blocked by policy; no deletion performed",
+    "user_input_requested": true,
+    "coding_continues": true,
+    "resolved": true,
+    "free_bytes_latest": 44088565760,
+    "resolution": "External cleanup observed; no rejected deletion retried"
+  },
+  "latest_1a185_validation": {
+    "compiler_commit": "1a185920ca2adc72884f2ee874955f4fca9c62e5",
+    "archive_sha256": "595cc8786eb691fc5f46a94707c2bcdb223b9b245cd2a8759ad31bdf4f832494",
+    "binary_sha256": "cbc2c51db4c7e59d405cd02c6a399bdadd10ea7356488ecb13e35333b79f586d",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-135646-6d165254-job-cargo.json",
+    "build_passed": true,
+    "prior_build_watchdog_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-135115-94f72220-job-cargo.json",
+    "scope": "Prototype profile; Rust build seconds are not DM compiler benchmarks; later source slices remain unvalidated",
+    "relative_paired_receipt": "E:/dq-cache/dmb-nameof-relative-global/20261011-1a185/e67fe9de0ea64a068e64e7fe13d123e1/receipt.json",
+    "relative_acceptance_class_and_exact_diagnostics_agree": true,
+    "disk_contract_receipt": "E:/dq-cache/dmb-modified-procedure-disk-contract/20261011-1a185/8c9ca601cfcb4a2bacf00c1207f88699/receipt.json",
+    "disk_contract_complete": true,
+    "disk_contract_fresh_oracles_passed": 5
+  },
+  "current_source_migration": {
+    "borrowed_symbolic_locator_commit": "66dd35993e",
+    "obsolete_cold_algorithm_removed_commit": "6ff8beb846",
+    "reserved_abi_map_charge_commit": "f0501e7249",
+    "benchmark_status": "not measured on these commits",
+    "analysis_owner_capture_commit": "99a80a9ecb",
+    "abi_production_helper_commit": "d12dd3be0e",
+    "eager_duplicate_freezer_removed_commit": "3e98dc49b7",
+    "current_rich_promotion_reads_commit": "5ce80e276c",
+    "shadow_rejection_evidence_commit": "b751155e4a",
+    "fixed_word_roles_commit": "58947ada75",
+    "captured_input_role_commit": "f3199ff696"
+  },
+  "shared_core_focused_20261011": {
+    "source_commit": "b8c62168126f1b1aca4004d53eedbfcf02034af7",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141600-2df9df86-job-cargo.json",
+    "test_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141642-e89e2a4f-focused.json",
+    "passed": 10,
+    "failed": 0,
+    "scope": "borrowed exact lookup, logical pressure, six publication owners, concurrent refresh and immutable rebind; not six real worktrees or whole-program parity"
+  },
+  "current_six_package_check": {
+    "commit": "13a852d0b3b42b07dcfb3ca65befc3d60677f322",
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-143533-5a2a6473-job-cargo.json",
+    "passed": true,
+    "scope": "Six packages and test targets typecheck; includes eager freezer removal and rich promotion dependency fix; not execution or runtime proof"
+  },
+  "latest_d12_build_attempt": {
+    "compiler_commit": "d12dd3be0e2ae61df09f20fcbeca89015cef3189",
+    "archive_sha256": "c2ed60c480932940567ba5e4366a3625c6b6abf0d32e75cfe59270c8e2fd0e7a",
+    "watchdog_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-142115-08f08d72-job-cargo.json",
+    "first_exit_code": 124,
+    "reaped": true,
+    "scope": "Rust dependency rebuild stopped at300s, not a DM benchmark; identical bounded warm retry running"
+  },
+  "latest_d12_validation": {
+    "compiler_commit": "d12dd3be0e2ae61df09f20fcbeca89015cef3189",
+    "binary_sha256": "4e9b46ff78d8b3b06eb54abd5bbf3e06adb5c82ee7d5ad3b854a353b68c96266",
+    "pin": "E:/dq-cache/dmb-native-v2/frozen-build/20261011-d12dd3be0e-dmbc.exe.pin.json",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-142625-54978e0d-job-cargo.json",
+    "build_passed": true,
+    "disk_contract_receipt": "E:/dq-cache/dmb-modified-procedure-disk-contract/20261011-d12/80fcb293c6cc4ec8a4ef2621f75b6a79/receipt.json",
+    "disk_contract_complete": true,
+    "disk_contract_fresh_oracles_passed": 5,
+    "scope": "Prototype profile; later source changes not included; focused runtime and real benchmark pending",
+    "runtime_contract": {
+      "receipt": "E:/dq-cache/dmb-incremental-runtime-contract/20261011-d12/7d113c426d2941ae91260cf5418d2146/receipt.json",
+      "complete": false,
+      "matches": false,
+      "passed_revisions": 12,
+      "failed_revision": "resource_replace",
+      "cause": "reporting panic on 128-bit ResourceIn.search_context serialized as JSON number",
+      "fix_commit": "13a852d0b3",
+      "daemon_reaped": true,
+      "scope": "First12 retained/fresh/BYOND explicit runtime observations agree with fresh byte oracle; asset replacement gate remains open until fixed binary rerun"
+    }
+  },
+  "cli_selection_focused_20261011": {
+    "source_commits": [
+      "b751155e4a",
+      "f8cec40ede"
+    ],
+    "passed": 28,
+    "failed": 0,
+    "assertions": 245,
+    "runtime": "Bun1.3.14",
+    "scope": "mocked process outcomes and publication contracts; not real integration or DM runtime proof"
+  },
+  "latest_13a_validation": {
+    "compiler_commit": "13a852d0b3b42b07dcfb3ca65befc3d60677f322",
+    "binary_sha256": "35b1a332f12e6652edf6e9399047a31949d3a613e36e780fca2bde4288bcfc9c",
+    "pin": "E:/dq-cache/dmb-native-v2/frozen-build/20261011-13a852d0b3-dmbc.exe.pin.json",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-143637-4bb6da73-job-cargo.json",
+    "build_passed": true,
+    "scope": "Prototype profile, fixed asset report panic; actual runtime rerun and new real benchmark pending",
+    "runtime_contract": {
+      "receipt": "E:/dq-cache/dmb-incremental-runtime-contract/20261011-13a/a013d7f1f43a4fe592d63739682f5c68/receipt.json",
+      "complete": true,
+      "matches": true,
+      "passed_revisions": 14,
+      "daemon_reaped": true,
+      "scope": "Explicit standalone retained/fresh/BYOND runtime expectations and retained/fresh DMB/RSC byte equality, including resource replacement; not full DeepQuarry suite or runtime baseline"
+    },
+    "benchmark_status": "Failed during daemon pressure compaction before first output admission; no completed four-row timings",
+    "failed_benchmark": {
+      "receipt": "E:/dq-cache/dmb-native-iterations/20261011-144232-0ff773c7/receipt.json",
+      "reason": "Daemon memory allocation failure under6GiB ownedJob; pressuretier2 private6008659968 ->5765988352 thenallocation192 failed",
+      "daemon_exit": 3221226505,
+      "daemon_reaped": true,
+      "unadmitted_child_wall_s": 110.406,
+      "timing_admitted": false,
+      "fix_work": "bounded streaming pressure pruning and non-diagnostic compact census; preserve limits"
+    }
+  },
+  "pressure_allocation_repair": {
+    "streaming_core_commit": "3198a0a4d8",
+    "bounded_compact_census_commit": "400ae2720a",
+    "early_facade_release_commit": "4b0444bae0",
+    "store_entry_logs_commit": "c547f3ff31",
+    "scope": "Source fixes for observed pressure allocation failure; current boundedcheckrunning, no claimed memory/speed improvement untilrealrerun",
+    "six_package_check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-145256-8b08c932-job-cargo.json",
+    "six_package_check_passed": true,
+    "shared_core_focused_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-145501-a0f1fa50-focused.json",
+    "shared_core_focused_passed": 11,
+    "shared_core_focused_failed": 0,
+    "compiler_focused_validation": {
+      "compiler_commit": "400ae2720a401610d859cdfc118e8fcc811f9ff3",
+      "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-145502-f9d7139c-job-cargo.json",
+      "passed": 16,
+      "failed": 3,
+      "receipts": [
+        "20261011-145920-b81ba832-focused.json",
+        "20261011-145930-613adc4e-focused.json",
+        "20261011-145951-acda3ad9-focused.json",
+        "20261011-145957-8f0fd1b1-focused.json",
+        "20261011-150022-b5afc6fa-focused.json"
+      ],
+      "scope": "Focused compact-census/promotion/report/frame checks passed; two stale facade identity checks require published-owner assertions; actual query static resolver failure fixed in05ec496691 but rerun pending. Not full suite or real benchmark."
+    },
+    "latest_real_attempt": {
+      "receipt": "E:/dq-cache/dmb-native-iterations/20261011-150434-8414fe9e/receipt.json",
+      "compiler_commit": "400ae2720a401610d859cdfc118e8fcc811f9ff3",
+      "compiler_sha256": "1a94ef15de083ee8bde13859bc30a9c8fe249ab57c85488c796ca4bea579c080",
+      "status": "failed",
+      "admitted_rows": 0,
+      "unadmitted_retained_child_wall_s": 108.172,
+      "timing_admitted": false,
+      "reason": "Fresh oracle failed allocation during TreeResolution while resident daemon still held its graph inside same6GiB Job",
+      "owned_daemon_reaped": true,
+      "harness_scheduling_fix": "59589e885f",
+      "scope": "Retained initial request completed; fresh equality not established; no speed/memory claim"
+    },
+    "followup_commits": {
+      "final_locked_reconciliation": "2f8ad99311",
+      "published_owner_fixtures": "600aab43e5",
+      "current_static_query_resolver": "05ec496691",
+      "resolved_query_api": "b97c6ee272"
+    },
+    "final_reconciliation_focused": {
+      "source_commit": "59589e885f67fd2bf84aef67686eebd820bfe79f",
+      "core_build_receipt": "20261011-151459-3b35c896-job-cargo.json",
+      "core_test_receipts": [
+        "20261011-151534-648e1041-focused.json",
+        "20261011-151545-ed5527e7-focused.json"
+      ],
+      "core_passed": 13,
+      "core_failed": 0,
+      "compiler_build_receipt": "20261011-151100-9c1dfa67-job-cargo.json",
+      "compiler_receipts": [
+        "20261011-151441-452bd154-focused.json",
+        "20261011-151541-fb962a9d-focused.json"
+      ],
+      "compiler_passed": 11,
+      "compiler_failed": 1,
+      "query_export_failure": "Ordinary AnalyzeResolved selected producer still lacked startup static overlay; returned no selected rows; fixed5de36d7c11, rerun pending",
+      "scope": "Focused correctness only; no real benchmark or full runtime baseline"
+    }
+  },
+  "focused_pair_policy": {
+    "source_commits": [
+      "eb31e39631",
+      "cc58bc5ac6"
+    ],
+    "focused_tests_passed": 5,
+    "scope": "Synthetic exact runtime parity vs passing acceptance; no real DeepQuarry runtime claim"
+  },
+  "argument_source_frame_capture": {
+    "receipt": "E:/dq-cache/dmb-argument-source-contract/b76f49cec19c4679a78d7024caa95535/receipt.json",
+    "compiler_commit": "400ae2720a401610d859cdfc118e8fcc811f9ff3",
+    "complete": true,
+    "metadata_equal": false,
+    "observed": "Three BYOND helpers each retain preceding first parameter with flags/source zero; native formal rows empty",
+    "runtime_limitation": "Direct calls matched but did not execute argument-source helpers; runtime semantics unproved",
+    "next": "Capture first/third argument helpers and typed/default/source earlier parameter rows before emission fix",
+    "extended_receipt": "E:/dq-cache/dmb-argument-source-contract/f59634645b3046708722d69420335a30/receipt.json",
+    "extended_observed": "BYOND helperN has precisely preceding names0..N with flags/source/reserved0 including typed/defaulted and prior allowed-values parameter; native empty",
+    "composition_fix_commit": "57d5207098"
+  },
+  "latest_57_focused": {
+    "compiler_commit": "57d5207098ad02a3c3d7f00635f26d43c7fe5ee0",
+    "build_receipt": "20261011-152358-bc3cbfff-job-cargo.json",
+    "helper_and_partial_admission_receipt": "20261011-152816-0acdb822-focused.json",
+    "helper_and_partial_admission_passed": 2,
+    "inspector_receipt": "20261011-152817-6a833e96-focused.json",
+    "inspector_passed": 2,
+    "query_receipt": "20261011-152808-8c2f3678-focused.json",
+    "query_selected_output_equality_passed": true,
+    "query_overall_test_passed": false,
+    "query_failure": "Ordinary host-query oracle used tree-only symbols; expected static spelling null versus actual shared. Meaning/fingerprint equal; fixture corrected e9d982d365, full rerun pending",
+    "scope": "Focused fixtures; release compiler build running; actual paired helper rerun and real cohort not yet complete"
+  },
+  "latest_57_release": {
+    "compiler_commit": "57d5207098ad02a3c3d7f00635f26d43c7fe5ee0",
+    "binary_sha256": "9a3110c4557401b4dd1e748acf3bf133a312a4ef1228975304e00b69219c3cb6",
+    "build_receipt": "20261011-152907-8f72ac73-job-cargo.json",
+    "acceptance_profile": false,
+    "argument_source_receipt": "E:/dq-cache/dmb-argument-source-contract/03f7f35b44be4d0aadb85a03a049868a/receipt.json",
+    "helper_metadata_equal": true,
+    "argument_source_runtime_limitation": "Direct calls match but hidden allowed-values helpers not executed",
+    "incremental_runtime_receipt": "E:/dq-cache/dmb-incremental-runtime-contract/20261011-57d/9e0be85859a84092a34da1bc9697d74c/receipt.json",
+    "incremental_runtime_scenarios_passed": 14,
+    "retained_fresh_bytes_equal": true,
+    "trusted_observations_match_byond": true,
+    "scope": "Standalone bounded runtime fixtures, not full DeepQuarry suite or benchmark"
+  },
+  "latest_57_real_cohort": {
+    "receipt": "E:\\dq-cache\\dmb-native-iterations\\20261011-153802-50c556f7/receipt.json",
+    "compiler_commit": "57d5207098ad02a3c3d7f00635f26d43c7fe5ee0",
+    "status": "passed",
+    "rows": [
+      {
+        "kind": "initial",
+        "retained_end_to_end_seconds": 125.07800000000043,
+        "fresh_cache_off_end_to_end_seconds": 74.11000000000058,
+        "fresh_native_byte_oracle": true
+      },
+      {
+        "kind": "unchanged",
+        "retained_end_to_end_seconds": 7.54700000000048,
+        "fresh_cache_off_end_to_end_seconds": 71.76499999999942,
+        "fresh_native_byte_oracle": true
+      },
+      {
+        "kind": "body",
+        "retained_end_to_end_seconds": 84.82799999999952,
+        "fresh_cache_off_end_to_end_seconds": 74.26499999999942,
+        "fresh_native_byte_oracle": true
+      },
+      {
+        "kind": "structural",
+        "retained_end_to_end_seconds": 86.89100000000053,
+        "fresh_cache_off_end_to_end_seconds": 69.90599999999995,
+        "fresh_native_byte_oracle": true
+      }
+    ],
+    "oracle_scheduling": "fresh prepass before daemon startup; same source paths and ordered revisions",
+    "acceptance_profile": false,
+    "sampled_peak_private_bytes": 6060654592,
+    "strict_private_peak_proved": false,
+    "owned_job_reaped": true,
+    "byond_structural_semantic_coverage": "incomplete",
+    "initial_unclassified_fixed_words": 10,
+    "raw_positional_discrepancies_are_not_semantic_bug_counts": true,
+    "observed_pressure": "Tier3 compaction29.805s and32.721s; remaining private4.82/4.46GB exceeds soft4GB; semantic session then evicted",
+    "scope": "Captured real DeepQuarry prototype profile, compiler-cold fresh processes but not OS-cold disk; native oracle passes, throughput and full runtime gates open"
+  },
+  "latest_b5_focused": {
+    "compiler_commit": "b5e4cc3802d74543820c8fb2d482fef3818efea3",
+    "archive_sha256": "1a32371f6543d43c85393fa306b5568699032f813fea60064b691db6b27bfabb",
+    "build_receipt": "20261011-155224-f1bff218-job-cargo.json",
+    "core_receipt": "20261011-155653-2f738e4d-focused.json",
+    "core_passed": 16,
+    "compiler_receipt": "20261011-155659-07609a5d-focused.json",
+    "compiler_passed": 14,
+    "resolved_export_full_fixture_passed": true,
+    "owners_only_query_preparation_passed": true,
+    "scope": "Focused30 only; no full Rust/DM suite; pressure timing improvements not yet measured;4bf allocation logging not included"
+  },
+  "actual_query_preparation_cli": {
+    "fixture_commit": "287828bf14",
+    "compiler_commit": "4bf626fc4ff660133868bad6032b21a79e105aed",
+    "receipt": "E:\\dq-cache\\dmb-query-preparation-contract\\f51387da961f4c2bafa48b6736f3234d\\receipt.json",
+    "sha256": "e6f394e292a8798ddec45bde2935377b9083194b45adfd627266c8f22921f1ad",
+    "passed": true,
+    "scope": "Owned-pipe CLI and one-shot preparation; current resolved answers, stale source pin rejection, Source exit 2, no installed executable pair. Counted diagnostic build, not performance acceptance. First two fixture assertion failures preserved separately."
+  },
+  "current_compile_error_contract": {
+    "receipt": "E:/dq-cache/dmb-compile-error-contract/20261011-4bf/df5ca5ee29e34857a489e631f4b16cc8/receipt.json",
+    "acceptance_matches": 18,
+    "exact_diagnostic_matches": 17,
+    "cases": 18,
+    "open_case": "undefined_modified_initializer_type",
+    "scope": "Native primary error stable; identical captured source and pinned BYOND raw stdout differed between one and two errors across captures. Baseline stability controls required before adding a secondary diagnostic."
+  },
+  "counted_4bf_real_cohort": {
+    "receipt": "E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\receipt.json",
+    "sha256": "66c0e8c1533f697a2e97b6d10ffde570784b3e51b1abebed82ab201e91fe1c91",
+    "status": "passed",
+    "compiler_commit": "4bf626fc4ff660133868bad6032b21a79e105aed",
+    "allocation_counting": true,
+    "performance_acceptance": false,
+    "rows": [
+      {
+        "kind": "initial",
+        "client_end_to_end_seconds": 111.6880000000001,
+        "fresh_cache_off_seconds": 76.76599999999962,
+        "fresh_native_byte_oracle": true
+      },
+      {
+        "kind": "unchanged",
+        "client_end_to_end_seconds": 6.109000000000378,
+        "fresh_cache_off_seconds": 78.26599999999962,
+        "fresh_native_byte_oracle": true
+      },
+      {
+        "kind": "body",
+        "client_end_to_end_seconds": 80.26599999999962,
+        "fresh_cache_off_seconds": 78.40599999999995,
+        "fresh_native_byte_oracle": true
+      },
+      {
+        "kind": "structural",
+        "client_end_to_end_seconds": 93.0,
+        "fresh_cache_off_seconds": 76.23400000000038,
+        "fresh_native_byte_oracle": true
+      }
+    ],
+    "pressure_observations": [
+      "dmbd artifact release tier=2 project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme private-before=Some(6003208192) private-after=Some(5781225472) seconds=1.596297 rust-requested-live-before=4937616785 rust-requested-live-after=4262886826",
+      "dmbd artifact release tier=3 project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme private-before=Some(5455904768) private-after=Some(4830298112) seconds=26.639521 rust-requested-live-before=4262877636 rust-requested-live-after=2051388613",
+      "dmbd idle release tier=session project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme pressure=true private-before=Some(4830330880) private-after=Some(1206206464) seconds=3.901533 rust-requested-live-before=2051388028 rust-requested-live-after=401263",
+      "dmbd artifact release tier=2 project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme private-before=Some(5802496000) private-after=Some(5393412096) seconds=1.632723 rust-requested-live-before=4794911584 rust-requested-live-after=4077650377",
+      "dmbd artifact release tier=3 project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme private-before=Some(5392773120) private-after=Some(4455243776) seconds=29.480160 rust-requested-live-before=4077641091 rust-requested-live-after=1985420635",
+      "dmbd idle release tier=session project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme pressure=true private-before=Some(4455272448) private-after=Some(670117888) seconds=4.535285 rust-requested-live-before=1985420050 rust-requested-live-after=410015",
+      "dmbd artifact release tier=2 project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme private-before=Some(5825343488) private-after=Some(5442080768) seconds=1.410192 rust-requested-live-before=4795492777 rust-requested-live-after=4078198823"
+    ],
+    "sampled_peak_private_bytes": 6269521920,
+    "owned_job_reaped": true,
+    "daemon_reaped": true,
+    "scope": "Diagnostic counted prototype build, not acceptance speed; independent fresh prepass, native oracle passes, BYOND semantic structural coverage incomplete. Allocator reclamation prototype cb23 not included."
+  },
+  "diagnostic_baseline_repeats": {
+    "receipt": "E:/dq-cache/dmb-modified-initializer-diagnostic-repeat/d1dd08b6dcac46adafca08f5200d9916/receipt.json",
+    "complete": true,
+    "baseline_stable": true,
+    "baseline_repeats": 3,
+    "observed_secondary_amount_error": false,
+    "scope": "Three independent repeats plus global proc, two-field, empty-field and valid-type controls. Original discrepant BYOND log preserved; no speculative secondary native diagnostic."
+  },
+  "list_runtime_debug_origins": {
+    "receipt": "E:/dq-cache/dmb-list-index-runtime-contract/20261011-origin-debug-4bf/c749652a70e34c83951f9481b82884c6/receipt.json",
+    "complete": true,
+    "matches": true,
+    "scope": "Actual paired trusted standalone nested list runtime, DEBUG enabled, exception file/line/message comparison plus marker and runtime observations. First no-DEBUG reference failed attribution assertion and is preserved. Not full DeepQuarry runtime gate."
+  },
+  "current_engine_decode_inventory": {
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/reinspect-9e56b442ffdf4a658575c9cf3fa4e5a5/receipt.json",
+    "inspector_sha256": "a7425cadf4dbd4e1cdea9bdbb64500b131f8d8852042826940ff3d14039b3a66",
+    "inspector_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-170602-efae8a58-job-cargo.json",
+    "optimized_inspector_failed_build": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-170322-9ceb2670-job-cargo.json",
+    "observed_operand_coverage": "complete",
+    "scope": "Reinterpretation of preserved initial BYOND/native images with corrected icon grammar and count roles. Diagnostic opt0 inspector after optimized LLVM allocation failure; same4GB cap. All observed roles decoded, but1,628,231 unexplained positional differences remain, not semantic bug counts or opcode equivalence. Does not reauthenticate implicit source closure or close BYOND runtime parity."
+  },
+  "captured_runtime_library_focused": {
+    "tests_passed": 6,
+    "files": [
+      "tools/build/lib/captured_runtime_library.test.ts",
+      "tools/build/lib/focused_compiled_run.test.ts"
+    ],
+    "scope": "Focused Bun contract fixtures passed, including source/build/pair-independent ABI evidence and retained output checks. Actual coherent snapshot library build and DeepQuarry runtime comparison pending."
+  },
+  "qualified_wave_e423_focused": {
+    "source_commit": "e423001c5838cb1e069d27de4fb50cff20b57189",
+    "source_archive_sha256": "5ce3da8dbd179653a7228f2573501b78c6d72a9ca131a064a1aa5c672d32834a",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-165857-0b221054-job-cargo.json",
+    "focused_receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-170228-8331bd1a-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-170229-293c3339-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-170315-7ffba839-focused.json"
+    ],
+    "passed": 24,
+    "failed": 2,
+    "scope": "Five qualified admission checks including repeated shared-leaf observer delivery passed; inspector three passed; classification twelve passed but current-target and different-owner checks failed; modifier two and six-session panic/reset two passed. Binding failures remain open; no performance or whole-program parity claim. Empty mistyped filter receipt 170256 preserved and excluded."
+  },
+  "incremental_runtime_e64": {
+    "receipt": "E:/dq-cache/dmb-incremental-runtime-contract/20261011-e64/ea1f27da245d481480b1d21b45d6dc12/receipt.json",
+    "complete": true,
+    "matches": true,
+    "compiler_commit": "e64fbafd2a70a93cc2ebaf9bc26bda2fe367ecdb",
+    "scope": "Fourteen standalone retained/fresh revision pairs and trusted BYOND/native runtime observations passed, covering defaults, inheritance, body and structural edits, deletion and resources. Actual output bytes compared before runtime mutation. Does not close full DeepQuarry runtime baseline or later per-wave admission observer fixes."
+  },
+  "six_git_worktree_corrected_capture": {
+    "receipt": "E:/dq-cache/dmb-six-git-contract/4cc2f11888ed4c04a5a4c81132b4198b/receipt.json",
+    "complete": true,
+    "compiler_commit": "e64fbafd2a70a93cc2ebaf9bc26bda2fe367ecdb",
+    "compiler_sha256": "93b00fcc2825cb7846664a4226e69250d3cc95d698f74839702ed6ac1c7ec770",
+    "fixture_commit": "ec6cd89275",
+    "scope": "Six actual owned Git worktrees, independent fresh output pairs before daemon startup, concurrent required-existing clients, asymmetric body/structural edits, source-error isolation and recovery all passed. Daemon and Job reaped, owned worktrees removed. Tiny integration contract only; not real DeepQuarry six-worktree performance or full runtime parity."
+  },
+  "shared_pressure_focused_589": {
+    "source_commit": "589eda04e19fa2217a1e79c6f2353fca16e62e68",
+    "source_archive_sha256": "f53b3de0d9a7f401f9ccaa1b79cdb1777d16f82dd2cce32cfed1ae9b20dc1989",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-164323-5658a606-job-cargo.json",
+    "build_seconds": 284.61,
+    "focused_receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-164827-5e49e427-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-164833-067cbe42-focused.json"
+    ],
+    "focused_tests_passed": 15,
+    "inspector_failed_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-164839-097563c4-focused.json",
+    "scope": "Shared core five tests, symbolic pressure six, initializer pressure one, footprint census two, actual busy named-pipe one passed. Inspector one passed and two failed locating named pinned icon procedures; investigation pending. No performance or full runtime gate claim."
+  },
+  "allocator_reclamation_build": {
+    "commit": "cb23d1937ab6dfd887eb38de2c71e2b3e76717d5",
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-163346-4a1481b5-job-cargo.json",
+    "binary_sha256": "a8dc925f2400930c16c8193864780238b7b0b1d3b96c0fd83edba1151b429403",
+    "scope": "Bounded release compilation succeeded after a first 300-second dependency build timed out and reaped. No measured reclamation benefit yet. This binary predates shared footprint accounting and named-pipe retry."
+  },
+  "six_git_worktree_second_capture": {
+    "receipt": "E:/dq-cache/dmb-six-git-contract/0b6df1d03ad146aaa1b60b56fe2aacc3/receipt.json",
+    "passed": false,
+    "scope": "Concurrent process-launch race fixed. One required-daemon client encountered a busy Windows named pipe while the daemon remained alive; autostart was disabled. Bounded busy retry committed d32e98c50b; actual corrected-binary rerun pending. All children reaped and six owned worktrees removed."
+  },
+  "six_git_worktree_first_capture": {
+    "receipt": "E:/dq-cache/dmb-six-git-contract/1877e5198711454b8199cdbe5afe4697/receipt.json",
+    "passed": false,
+    "scope": "Twelve fresh oracles completed; concurrent client Job resume hit ctypes ThreadEntry identity race. Six owned worktrees removed and children reaped. Same shared helper fix pending."
+  },
+  "fresh_owner_source_fixes": {
+    "initializer_commit": "097857ae0b1ebde4e2a10e9c10323baae4f21424",
+    "startup_commit": "6b1b352420",
+    "shared_insertion_codegen_commit": "10d402a958cd09ab09389f04a6e7c51f974fb8cf",
+    "failed_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-171254-b3588f63-job-cargo.json",
+    "scope": "Fresh insertion avoids deduplicating a rejected local input against its old receipt owner. Source fixes pending focused execution; prior bounded build failed rustc allocation and was fully reaped, not a source diagnostic. Borrowed producer bridge reduces closure-specialized heavy insertion bodies; memory benefit unmeasured."
+  },
+  "captured_runtime_python_focused": {
+    "passed": 3,
+    "modules": [
+      "test_snapshot_runtime_library",
+      "test_build_captured_verdigris"
+    ],
+    "scope": "Pure focused source-policy checks passed from phase0 directory. Actual captured Rust library and full DeepQuarry runtime comparison remain pending."
+  },
+  "fresh_owner_10d_focused": {
+    "source_commit": "10d402a958cd09ab09389f04a6e7c51f974fb8cf",
+    "source_archive_sha256": "43e049ff53cda2d2737284ab7e29f74410f32866d3359ff63b15fdb38e4f058c",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-172037-591dc915-job-cargo.json",
+    "focused_receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-172504-8908399d-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-172504-fceb21f7-focused.json"
+    ],
+    "passed": 25,
+    "failed": 0,
+    "scope": "Shared fresh insertion two, qualified admission five, full targeted classification fourteen (including both formerly failing current-target/owner tests), modifier two, startup allocation/final one and inventory one. Build260.344s reaped under4GB, peak Job2,993,147,904 bytes. Does not validate later projection/compact changes or full runtime/performance gates."
+  },
+  "projection_compact_f5_focused": {
+    "source_commit": "f5a9e361954cbbe653cf79657a3829b1513f363a",
+    "source_archive_sha256": "debdc2f9b6fd72e476deb25848001c8d8d7374c63b32df68dfb9260a45ecd8fd",
+    "failed_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-172558-8122068d-job-cargo.json",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-172738-1e67769c-job-cargo.json",
+    "focused_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-173043-4cdbbc1c-focused.json",
+    "passed": 19,
+    "failed": 0,
+    "scope": "Nine complete retained projection fixtures and ten compact disk fixtures passed. First build caught branch return mismatch, fixed f5. Corrected177.703s build reaped under4GB. Source fixes include rejected local default refresh and mandatory own declaration receipt checks. No runtime/performance/mapped-word migration gate claim."
+  },
+  "incremental_runtime_f5": {
+    "receipt": "E:/dq-cache/dmb-incremental-runtime-contract/20261011-f5/da1ac835275c4d6a928ad114b7ea52b7/receipt.json",
+    "complete": true,
+    "matches": true,
+    "compiler_commit": "f5a9e361954cbbe653cf79657a3829b1513f363a",
+    "compiler_sha256": "7f4cae9e1e8296ad45e2887a60c1937854581b4bfa79d162e25bdae3cf4c7cfc",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-173049-1a245fca-job-cargo.json",
+    "scope": "Sixteen standalone retained/fresh revisions and all eleven declared trusted BYOND/native runtime markers passed, including type addition/deletion. Daemon reaped. Counted prototype only; later mapped-word migration and full DeepQuarry runtime baseline not validated."
+  },
+  "six_git_worktree_f5": {
+    "receipt": "E:/dq-cache/dmb-six-git-contract/ed18cd8adce3495480bd695b3fc7ce37/receipt.json",
+    "complete": true,
+    "compiler_commit": "f5a9e361954cbbe653cf79657a3829b1513f363a",
+    "compiler_sha256": "7f4cae9e1e8296ad45e2887a60c1937854581b4bfa79d162e25bdae3cf4c7cfc",
+    "scope": "Six actual owned tiny Git worktrees matched independent fresh output pairs under concurrent clients, source error isolation and recovery. Daemon and Job reaped and owned worktrees removed. Not real DeepQuarry six-worktree performance acceptance."
+  },
+  "deepquarry_f5_diagnostic_cohort": {
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261011-173833-8d9ac6e9/receipt.json",
+    "status": "passed",
+    "compiler_commit": "f5a9e361954cbbe653cf79657a3829b1513f363a",
+    "compiler_sha256": "7f4cae9e1e8296ad45e2887a60c1937854581b4bfa79d162e25bdae3cf4c7cfc",
+    "acceptance_profile": false,
+    "workers": 2,
+    "retained_client_launch_through_reap_seconds": {
+      "initial": 118.641,
+      "unchanged": 1.89,
+      "body": 95.578,
+      "new_variable": 85.359
+    },
+    "fresh_uncached_client_seconds": [
+      85.328,
+      79.968,
+      77.844,
+      79.25
+    ],
+    "all_four_native_byte_oracles": true,
+    "byond_baseline_gate": "open",
+    "body_disk_hits": 48680,
+    "body_recomputed_procedures": 1,
+    "body_disk_lookup_seconds": 29.6139178,
+    "body_frontend_seconds": 11.2558603,
+    "peak_job_commit_bytes": 6149767168,
+    "sampled_peak_private_bytes": 6147223552,
+    "scope": "Counted diagnostic opt0 compiler/opt2 tree+codegen, not release acceptance or semantic BYOND parity. Unchanged improves over prior6.109s diagnostic; body and structural remain slow. Later mapped words and duplicate validator scan removal excluded from this binary. All owned children reaped. Initial publication population is separate from uncached fresh compilation. Total1015.015s includes independent fresh oracle prepass, captures and structural diagnostic reports."
+  }
+}

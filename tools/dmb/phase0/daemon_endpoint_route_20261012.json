@@ -1,0 +1,22 @@
+{
+  "scope": "Tiny actual daemon/CLI correctness smoke; not a real-project performance or runtime gate",
+  "compiler_commit": "dd2beae8b11acd40bbcf320593102d102a45fa01",
+  "compiler_sha256": "b2ce5c747b046ea2188d535ef21a177a6b42200f8090bce3377f4d88a9541676",
+  "source_archive_sha256": "b74c180a9dc426f83938c505ecb5468cb2a9a7bf371aa3314f2be9405839f936",
+  "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-021605-9af2ece9-job-cargo.json",
+  "preceding_timed_out_build": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-021033-8a05ee2e-job-cargo.json",
+  "build_limits": "Each build used Cargo -j1, a 300 second watchdog and 4,000,000,000 byte owned Job; all children reaped",
+  "endpoint_contract": "Read-only exact compiler-generated metadata; no legacy endpoint guessing; protocol5 and owned server PID checked",
+  "smoke_harness_commit": "1eab95ff88",
+  "smoke_receipt": "E:/dq-cache/dmb-daemon-smoke/d6bc9479b84e47bda7501d16e18d9f7b/receipt.json",
+  "result": "passed",
+  "fresh_byte_parity": ["initial", "unchanged", "body", "leaf-var"],
+  "smoke_wall_seconds": 4.609,
+  "timing_admitted": false,
+  "children_reaped": true,
+  "remaining_gates": [
+    "Real DeepQuarry retained iteration measurements and fresh-byte comparisons",
+    "Required whole-program BYOND structural baseline and Phase5 runtime baseline",
+    "Real six-worktree concurrency, memory acceptance and complete history replay"
+  ]
+}

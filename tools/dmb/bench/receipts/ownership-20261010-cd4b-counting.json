@@ -1,0 +1,43 @@
+{
+  "scope": "bounded ownership diagnostic; no performance or output acceptance",
+  "compiler_sha256": "51d8ddd3afd5ea08baa975b68919624f774d897f60ec07c5039959685c9f7936",
+  "manifest_sha256": "a7be9696c99d0c1302b677944856927bba208390985c77d06264f2a246a20f0d",
+  "deadline_seconds": 300,
+  "status": "diagnostic_stopped",
+  "source_commit": "cd4b705841ee4c343a299d52408ee31720276f40",
+  "allocation_counting": true,
+  "acceptance_profile": false,
+  "error": "sampled owned private-memory budget exceeded",
+  "daemon_cleanup": {
+    "pid": 31280,
+    "tree_error": null,
+    "direct_error": null,
+    "wait_error": null,
+    "returncode": 1,
+    "reaped": true
+  },
+  "owned_memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 4003221504,
+    "samples": 291,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 31280,
+        "private_bytes": 3998687232
+      },
+      {
+        "pid": 21668,
+        "private_bytes": 4534272
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "failed",
+    "reason": "sampled owned private-memory budget exceeded",
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "owned daemon and registered harness children (compiler/client/inspector); 200ms samples include observation overhead; excludes unrelated processes and unregistered descendants"
+  },
+  "heap_path": "E:\\dq-cache\\dmb-native-v2\\ownership-diagnostics\\20261010-085403-b91c8f8d\\heap.jsonl",
+  "outputs_admitted": false
+}

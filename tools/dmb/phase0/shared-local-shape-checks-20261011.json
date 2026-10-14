@@ -1,0 +1,61 @@
+{
+  "scope": "Focused shared local shape correctness only; not real six-worktree or performance acceptance",
+  "commit": "3aa85b31edab1ac3356511bb79748fe0ab1a2f99",
+  "archive_sha256": "ea165f4ba1386200daed600e4508d9a4ea52f61aba7fe30b6410cab136d60bd7",
+  "build": {
+    "command": [
+      "E:/cargo/bin/cargo.exe",
+      "test",
+      "--lib",
+      "--no-run",
+      "--locked",
+      "--offline",
+      "-j1",
+      "-p",
+      "dm-tree",
+      "--config",
+      "profile.test.package.dm-ir.debug=0"
+    ],
+    "exit_code": 0,
+    "seconds": 85.20400000000154,
+    "memory_cap": 4000000000,
+    "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-211030-2c65ca25-job-cargo.log",
+    "error": null,
+    "cleanup": {
+      "reaped": true,
+      "error": null,
+      "memory": {
+        "configured_job_memory_bytes": 3999997952,
+        "peak_job_commit_bytes": 1804677120,
+        "peak_process_commit_bytes": 1774301184,
+        "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+      }
+    },
+    "scope": "bounded correctness build; not a compiler performance benchmark"
+  },
+  "checks": {
+    "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_tree-d24004216c90a625.exe",
+    "binary_sha256": "9b8ba8bc9573e511af93b478ac75cc0f9373b47b917a2ec35778b21e9e7de828",
+    "scope": "focused fixture execution, not full suite or runtime parity",
+    "rows": [
+      {
+        "filter": "owner_local_shape::shared_tests",
+        "selected": [
+          "owner_local_shape::shared_tests::asymmetric_shape_edits_keep_sibling_variant_and_release_last_lease",
+          "owner_local_shape::shared_tests::shared_shape_negative_name_reads_replay_each_current_catalog",
+          "owner_local_shape::shared_tests::two_frontends_share_exact_local_shapes_and_bind_fresh_dense_members"
+        ],
+        "exit": 0,
+        "seconds": 0.0470000000022992,
+        "stdout": "\nrunning 3 tests\ntest owner_local_shape::shared_tests::asymmetric_shape_edits_keep_sibling_variant_and_release_last_lease ... ok\ntest owner_local_shape::shared_tests::shared_shape_negative_name_reads_replay_each_current_catalog ... ok\ntest owner_local_shape::shared_tests::two_frontends_share_exact_local_shapes_and_bind_fresh_dense_members ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 314 filtered out; finished in 0.02s\n\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "result": "PASS: three focused sharing, asymmetric edit/lease release, and negative-read replay tests",
+  "remaining": [
+    "Real six-worktree integration",
+    "New compiler DeepQuarry end-to-end cohort",
+    "BYOND semantic/runtime parity"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "exit_code": 0,
+  "files": {
+    "compile.log": "e3d737645acb86ebed66780a819a8e650a2b078096851b6c2191c21f0cf97cf8",
+    "compile.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "probe.dm": "a29029d2eb61ef7e7393e85f2dedbd401b536a21c19b80c1d866693b63a7c2cf",
+    "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+    "probe.native.bin": "5b09e0c80aeecb5b864a556a18f038313158f240adefd6d5503e8daf5961a8d9"
+  }
+}

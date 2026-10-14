@@ -1,0 +1,1 @@
+/client/script = 'example.dms'

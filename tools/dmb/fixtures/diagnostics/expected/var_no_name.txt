@@ -1,0 +1,2 @@
+var_no_name.dm:2:error: missing left-hand argument to =.
+var_no_name.dmb - 1 error, 0 warnings

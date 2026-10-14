@@ -1,0 +1,18 @@
+import importlib.util
+from pathlib import Path
+HERE = Path(__file__).resolve().parent
+CASES = ('global_cpu', 'global_graphics', 'constant_cpu', 'constant_graphics', 'skipped_cpu', 'skipped_graphics')
+CASES += ('nameof_present_type', 'nameof_missing_type', 'nameof_present_proc', 'nameof_missing_proc', 'nameof_present_member', 'nameof_missing_member', 'nameof_present_ident', 'nameof_missing_ident')
+
+def main():
+    path = HERE.parent / 'loop_local_diagnostics' / 'run.py'
+    spec = importlib.util.spec_from_file_location('folded_feature_probe', path)
+    driver = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(driver)
+    driver.HERE = HERE
+    driver.CASES = driver.ORIGINAL_CASES = CASES
+    driver.FEATURE_CAPTURE_FILES = ('byond-capture.json', 'skipped-byond-capture.json')
+    driver.SCOPE = 'compile-only folded nameof source-feature observations; no runtime'
+    return driver.main()
+if __name__ == '__main__':
+    raise SystemExit(main())

@@ -130,8 +130,8 @@ the culprit is the leak before the failing test. Fix it with `set_global()`/`set
 
 `doc/rewrite/build_timings.md` has the numbers. What you notice: `build.sh dm` runs DreamChecker beside
 DreamMaker, the verdigris bindings check is skipped when its inputs did not change, a focused run starts with
-2 test blocks instead of 8, and `tools/build/build.sh dmb-check` (or `DQ_DMB_PRECHECK=1`) is an optional 14 s
-syntax pre-check from the Codex compiler.
+2 test blocks instead of 8. The native compiler (`DQ_COMPILER=native`, doc/testing.md "Native compiler (incremental)") replaces the old
+syntax pre-check.
 
 
 ## 9. Merge batches (October 2026, `rewrite/merge-speed`)
@@ -267,7 +267,7 @@ semaphore shared by every worktree on the machine (state under `E:/dq-cache/slot
 |---|---|---|---|
 | `dm_compile` | 2 | every `DreamMaker()` compile (`lib/byond.ts`) | `DQ_SLOTS_DM_COMPILE` |
 | `test_world` | a third of the CPUs, 2 to 6 (5 on 16) | each unit-test world's DreamDaemon launch (`runIsolatedTestWorld()` in `build.ts`: focused, split, look and sharded worlds) | `DQ_SLOTS_TEST_WORLD` |
-| `cargo` | 1 | every cargo invocation of `build.ts` (analyze, verdigris, dmb-check) | `DQ_SLOTS_CARGO` |
+| `cargo` | 1 | every cargo invocation of `build.ts` (analyze, verdigris, dmbc) | `DQ_SLOTS_CARGO` |
 | `look_state_pin` | 2 | a `dq_focused_test.sh` run holding a look pin, for the whole run | `DQ_SLOTS_LOOK_STATE_PIN` (old name `DQ_LOOK_PIN_SLOTS`) |
 
 `DQ_SLOTS=0` turns all of it off and a class at 0 is unlimited (except `merge_base`, the merge worktree lock of section 9: always exactly one slot). A waiter prints the class, its place in the queue and who holds the slots

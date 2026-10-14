@@ -1,0 +1,69 @@
+{
+  "schema": "dm-migration-observation-v1",
+  "compiler_commit": "30b5d3a844ed0f24c1fa7e42a724c8d8fed2d02a",
+  "compiler_sha256": "719f1c7faed0aa5970df6bfe761cdafd730104002d08172f8fa1849efc42ac8f",
+  "source_workload": "authenticated recovered DeepQuarry ac1af55d1a; not live master",
+  "workers": 2,
+  "profile": {
+    "dmbc_opt_level": 0,
+    "dm_tree_opt_level": 1,
+    "dmbc_codegen_units": 256,
+    "acceptance_profile": false
+  },
+  "scope": "end-to-end client launch through reap; includes daemon compilation; cold retained case populates disk cache",
+  "receipt_origin": "E:\\dq-cache\\dmb-native-iterations\\20261010-051017-f65f20d7\\receipt.json",
+  "receipt_sha256": "612aaca70606d4f9c99599f1e82065ef829f19dfe5b853c8795133e91cbe49b9",
+  "rows": [
+    {
+      "scenario": "cold_cache_population",
+      "retained_wall_s": 87.17987420002464,
+      "fresh_no_cache_wall_s": 33.073838700016495,
+      "fresh_native_byte_oracle": true
+    },
+    {
+      "scenario": "unchanged",
+      "retained_wall_s": 1.3675120999687351,
+      "fresh_no_cache_wall_s": 31.58596540003782,
+      "fresh_native_byte_oracle": true
+    },
+    {
+      "scenario": "body_edit",
+      "retained_wall_s": 57.20481710002059,
+      "fresh_no_cache_wall_s": 34.59703180001816,
+      "fresh_native_byte_oracle": true
+    },
+    {
+      "scenario": "new_procedure",
+      "retained_wall_s": 46.14697190001607,
+      "fresh_no_cache_wall_s": 34.44976549997227,
+      "fresh_native_byte_oracle": true
+    },
+    {
+      "scenario": "new_variable",
+      "retained_wall_s": 43.41658289998304,
+      "fresh_no_cache_wall_s": 30.82305659999838,
+      "fresh_native_byte_oracle": true
+    },
+    {
+      "scenario": "default_edit",
+      "retained_wall_s": 54.94224060000852,
+      "fresh_no_cache_wall_s": 31.327710299985483,
+      "fresh_native_byte_oracle": true
+    },
+    {
+      "scenario": "signature_edit",
+      "retained_wall_s": 35.684705700026825,
+      "fresh_no_cache_wall_s": 30.576890199969057,
+      "fresh_native_byte_oracle": true
+    }
+  ],
+  "runtime_tests": "not_run",
+  "BYOND_structural_parity": "open; initial report has 1858569 unexplained discrepancies and 70 unclassified Input occurrences",
+  "controlled_isolation": "not_proved; foreign Cargo/rustc processes present in boundary samples",
+  "critical_path_cpu_s": null,
+  "total_cpu_s": null,
+  "io_bytes": null,
+  "memory_acceptance": "open; daemon dropped semantic session above soft 4GB threshold",
+  "owned_daemon": "reaped by cohort finalizer; see original receipt",
+  "migration_acceptance": "open"
+}

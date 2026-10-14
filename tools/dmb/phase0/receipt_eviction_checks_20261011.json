@@ -1,0 +1,156 @@
+{
+  "scope": "Bounded focused tests only; not full runtime parity or benchmark",
+  "snapshot": "f480cf02d95f870a0e387284a58d9c5e4c3734dd",
+  "archive_sha256": "8c8a3694360a024c66e76b5d2ed9a2a5bc9eb43c6c4da3c9d06c2d317419ed7e",
+  "records": [
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-224903-aa12df0b-job-cargo.json",
+      "sha256": "087c87b52942727b421b13222349a47f01094f1244e38080cb647ebf38d40649",
+      "record": {
+        "command": [
+          "D:\\Program Files\\Git\\bin\\bash.exe",
+          "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+          "run",
+          "cargo",
+          "--label",
+          "dmb-review frozen correctness build",
+          "--",
+          "E:/cargo/bin/cargo.exe",
+          "test",
+          "--lib",
+          "--no-run",
+          "--locked",
+          "--offline",
+          "-j1",
+          "-p",
+          "dmbc",
+          "--no-default-features",
+          "--config",
+          "profile.test.package.dm-ir.debug=0",
+          "--config",
+          "profile.test.package.dmbc.debug=0",
+          "--config",
+          "profile.test.package.dmbc.codegen-units=256"
+        ],
+        "exit_code": 0,
+        "seconds": 180.76600000000326,
+        "memory_cap": 4000000000,
+        "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-224903-aa12df0b-job-cargo.log",
+        "error": null,
+        "cleanup": {
+          "reaped": true,
+          "error": null,
+          "memory": {
+            "configured_job_memory_bytes": 3999997952,
+            "peak_job_commit_bytes": 3036622848,
+            "peak_process_commit_bytes": 2981298176,
+            "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+          }
+        },
+        "scope": "bounded correctness build; not a compiler performance benchmark",
+        "original_command": [
+          "E:/cargo/bin/cargo.exe",
+          "test",
+          "--lib",
+          "--no-run",
+          "--locked",
+          "--offline",
+          "-j1",
+          "-p",
+          "dmbc",
+          "--no-default-features",
+          "--config",
+          "profile.test.package.dm-ir.debug=0",
+          "--config",
+          "profile.test.package.dmbc.debug=0",
+          "--config",
+          "profile.test.package.dmbc.codegen-units=256"
+        ],
+        "machine_slot": {
+          "kind": "cargo",
+          "tools": {
+            "script": {
+              "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+              "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+              "bytes": 22161
+            },
+            "bash": {
+              "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+              "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+              "bytes": 45560
+            }
+          },
+          "worktree": "E:\\projects\\dq-wt\\dmb-review",
+          "slotDirectory": "E:\\dq-cache\\slots",
+          "capacities": {
+            "DQ_SLOTS_DM_COMPILE": "2",
+            "DQ_SLOTS_TEST_WORLD": "3",
+            "DQ_SLOTS_CARGO": "1",
+            "DQ_SLOTS_LOOK_STATE_PIN": "2"
+          },
+          "waitIncludedInOwnedChildDeadline": true,
+          "jobContainment": "caller must add suspended bash to existing Job before resume"
+        },
+        "target_ownership": {
+          "target": "E:\\dq-cache\\dmb-native-v2\\cargo-target",
+          "owner": {
+            "schema": 1,
+            "worktree": "E:\\projects\\dq-wt\\dmb-review"
+          },
+          "marker": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\.dq-workspace-owner-v1.json",
+          "scope": "operational target ownership only, not cache/source admission"
+        },
+        "existing_target_assignment": "parent-audited sole frozen-review workspace; not shared with other worktrees",
+        "queue_wait_included_in_300_second_child_deadline": true
+      }
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-231201-7bdbfae5-focused.json",
+      "sha256": "d22931ee758e3249f9f6f7a8cf519f2796d1442626600a40be3a64f5c2adeaf7",
+      "record": {
+        "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-fa1f0987474bcdc2.exe",
+        "binary_sha256": "18ef2848d0204233f9f49656e361a8220ae444f1da5582e74b0bdf9630a57ca2",
+        "scope": "focused fixture execution, not full suite or runtime parity",
+        "rows": [
+          {
+            "filter": "heap_census::artifact_accounting::tests",
+            "selected": [
+              "heap_census::artifact_accounting::tests::empty_shared_core_reports_lease_gaps_without_inventing_heap_bytes",
+              "heap_census::artifact_accounting::tests::shared_local_shape_census_reports_engine_leases_without_inventing_bytes"
+            ],
+            "exit": 0,
+            "seconds": 0.0319999999992433,
+            "stdout": "\nrunning 2 tests\ntest heap_census::artifact_accounting::tests::empty_shared_core_reports_lease_gaps_without_inventing_heap_bytes ... ok\ntest heap_census::artifact_accounting::tests::shared_local_shape_census_reports_engine_leases_without_inventing_bytes ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 938 filtered out; finished in 0.01s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "lowering::symbolic_input::retained::pressure::tests",
+            "selected": [
+              "lowering::symbolic_input::retained::pressure::tests::compact_charge_matches_diagnostic_capacity_and_declines_before_pointer_growth",
+              "lowering::symbolic_input::retained::pressure::tests::debug_payload_capacity_is_charged_before_retention",
+              "lowering::symbolic_input::retained::pressure::tests::payload_allocation_allowance_deduplicates_shared_and_empty_encounters",
+              "lowering::symbolic_input::retained::pressure::tests::pressure_keeps_actual_compact_code_and_rejects_undercharged_budget",
+              "lowering::symbolic_input::retained::pressure::tests::pressure_prunes_dead_weak_receipt_locators_and_preserves_escaped_live_leaf",
+              "lowering::symbolic_input::retained::pressure::tests::shared_pressure_footprint_preserves_exact_unique_and_shared_backing",
+              "lowering::symbolic_input::retained::pressure::tests::unknown_nested_payload_still_declines_pressure_retention"
+            ],
+            "exit": 0,
+            "seconds": 0.0459999999984575,
+            "stdout": "\nrunning 7 tests\ntest lowering::symbolic_input::retained::pressure::tests::compact_charge_matches_diagnostic_capacity_and_declines_before_pointer_growth ... ok\ntest lowering::symbolic_input::retained::pressure::tests::debug_payload_capacity_is_charged_before_retention ... ok\ntest lowering::symbolic_input::retained::pressure::tests::payload_allocation_allowance_deduplicates_shared_and_empty_encounters ... ok\ntest lowering::symbolic_input::retained::pressure::tests::pressure_keeps_actual_compact_code_and_rejects_undercharged_budget ... ok\ntest lowering::symbolic_input::retained::pressure::tests::pressure_prunes_dead_weak_receipt_locators_and_preserves_escaped_live_leaf ... ok\ntest lowering::symbolic_input::retained::pressure::tests::shared_pressure_footprint_preserves_exact_unique_and_shared_backing ... ok\ntest lowering::symbolic_input::retained::pressure::tests::unknown_nested_payload_still_declines_pressure_retention ... ok\n\ntest result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 933 filtered out; finished in 0.03s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "lowering_memo_compact::typed::verified_tests",
+            "selected": [
+              "lowering_memo_compact::typed::verified_tests::compact_preflight_pair_reuse_requires_exact_original_and_current_certificate"
+            ],
+            "exit": 0,
+            "seconds": 0.03200000000288128,
+            "stdout": "\nrunning 1 test\ntest lowering_memo_compact::typed::verified_tests::compact_preflight_pair_reuse_requires_exact_original_and_current_certificate ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 939 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          }
+        ]
+      }
+    }
+  ]
+}

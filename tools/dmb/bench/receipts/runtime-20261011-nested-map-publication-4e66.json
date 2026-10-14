@@ -1,0 +1,1545 @@
+{
+  "schema": 1,
+  "scope": "nested map modifier across retained initial/unchanged/body/structural/nested-map/scalar-map revisions",
+  "acceptance_profile": false,
+  "complete": true,
+  "matches": true,
+  "root": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d",
+  "steps": [
+    {
+      "name": "initial",
+      "status": "passed",
+      "expected": [
+        "DQ_NESTED parent_present 1",
+        "DQ_NESTED child_type 1",
+        "DQ_NESTED nested_amount 7",
+        "DQ_NESTED leaf_scalar 11",
+        "DQ_NESTED body_marker 13",
+        "DQ_NESTED finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "ad5dd963c7ad1d7c6a5ac412ecf25b51efb142821d58f06f72b9d78214003857"
+      },
+      "asset_sha256": {
+        "probe.dmm": "ea152d8998f7797225ef371533b0cbe0e5922e6929d16ec686cb88a70ca1304e"
+      },
+      "source_sha256": "ef228a4bd97bebcabd30a882f774ecce6ba628802b92e29c98dc8c04d4eda84c",
+      "resource_sha256": "ce68ef13d40f4ff782adb9a84a2c9e33f6cd3aa776d78e83f218f6ae85664088",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "c0423be1105288c0a66498652bec13e1c1a7cea0b0bd9b1f4a39c1d5a17e2a72",
+          "bytes": 16111
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "46d08ddd4633e4797d2151108e0988998c31ce3598ae5c8c78e3f5eaa54e66da",
+          "bytes": 72
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 13",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 13",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\retained\\store",
+          "pair_id": "6e816bce764232472957489cf1ea1d10",
+          "dmb_bytes": 24129,
+          "rsc_bytes": 72,
+          "dmb_hash": "2001377b54cfd9966eae1c6a4d2de5ba",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "output_project": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\retained\\store",
+          "pair_id": "6e816bce764232472957489cf1ea1d10",
+          "dmb_bytes": 24129,
+          "rsc_bytes": 72,
+          "dmb_hash": "2001377b54cfd9966eae1c6a4d2de5ba",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "slot": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\retained\\slots\\slot-55420-0",
+          "dmb": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\retained\\slots\\slot-55420-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\retained\\slots\\slot-55420-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3",
+            "bytes": 24129,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\retained\\slots\\slot-55420-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "bytes": 72,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\retained\\slots\\slot-55420-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3",
+            "after_runtime_sha256": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "after_runtime_sha256": "81a41269f7df0694afc258fcf23be2b26a8fe8fc6a59a04633ac5d5b4906b17a"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 13",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 13",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\fresh\\store",
+          "pair_id": "6e816bce764232472957489cf1ea1d10",
+          "dmb_bytes": 24129,
+          "rsc_bytes": 72,
+          "dmb_hash": "2001377b54cfd9966eae1c6a4d2de5ba",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "output_project": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\fresh\\store",
+          "pair_id": "6e816bce764232472957489cf1ea1d10",
+          "dmb_bytes": 24129,
+          "rsc_bytes": 72,
+          "dmb_hash": "2001377b54cfd9966eae1c6a4d2de5ba",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "slot": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\fresh\\slots\\slot-36188-0",
+          "dmb": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\fresh\\slots\\slot-36188-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\fresh\\slots\\slot-36188-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3",
+            "bytes": 24129,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\fresh\\slots\\slot-36188-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "bytes": 72,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\fresh\\slots\\slot-36188-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3",
+            "after_runtime_sha256": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\00-initial\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "after_runtime_sha256": "854c0f9d4cfe674a1713cddb616b7dbc11364b3591f1963bf906a1a3e9f55d8a"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 13",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 13",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3",
+          "fresh": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3"
+        },
+        "rsc": {
+          "retained": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+          "fresh": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75"
+        }
+      }
+    },
+    {
+      "name": "unchanged",
+      "status": "passed",
+      "expected": [
+        "DQ_NESTED parent_present 1",
+        "DQ_NESTED child_type 1",
+        "DQ_NESTED nested_amount 7",
+        "DQ_NESTED leaf_scalar 11",
+        "DQ_NESTED body_marker 13",
+        "DQ_NESTED finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "ad5dd963c7ad1d7c6a5ac412ecf25b51efb142821d58f06f72b9d78214003857"
+      },
+      "asset_sha256": {
+        "probe.dmm": "ea152d8998f7797225ef371533b0cbe0e5922e6929d16ec686cb88a70ca1304e"
+      },
+      "source_sha256": "ef228a4bd97bebcabd30a882f774ecce6ba628802b92e29c98dc8c04d4eda84c",
+      "resource_sha256": "ce68ef13d40f4ff782adb9a84a2c9e33f6cd3aa776d78e83f218f6ae85664088",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "c0423be1105288c0a66498652bec13e1c1a7cea0b0bd9b1f4a39c1d5a17e2a72",
+          "bytes": 16111
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "851a7e3bc1dd2c78249c7840402268e98fc75841de221051fb057198aca189c0",
+          "bytes": 72
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 13",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 13",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\retained\\store",
+          "pair_id": "6e816bce764232472957489cf1ea1d10",
+          "dmb_bytes": 24129,
+          "rsc_bytes": 72,
+          "dmb_hash": "2001377b54cfd9966eae1c6a4d2de5ba",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "output_project": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\retained\\store",
+          "pair_id": "6e816bce764232472957489cf1ea1d10",
+          "dmb_bytes": 24129,
+          "rsc_bytes": 72,
+          "dmb_hash": "2001377b54cfd9966eae1c6a4d2de5ba",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "slot": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\retained\\slots\\slot-48696-0",
+          "dmb": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\retained\\slots\\slot-48696-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\retained\\slots\\slot-48696-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3",
+            "bytes": 24129,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\retained\\slots\\slot-48696-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "bytes": 72,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\retained\\slots\\slot-48696-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3",
+            "after_runtime_sha256": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "after_runtime_sha256": "87e3ece6d760e0a56023f6ecbcc9b9b5f479e3089213ea406ead0b8fa15bf639"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 13",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 13",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\fresh\\store",
+          "pair_id": "6e816bce764232472957489cf1ea1d10",
+          "dmb_bytes": 24129,
+          "rsc_bytes": 72,
+          "dmb_hash": "2001377b54cfd9966eae1c6a4d2de5ba",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "output_project": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\fresh\\store",
+          "pair_id": "6e816bce764232472957489cf1ea1d10",
+          "dmb_bytes": 24129,
+          "rsc_bytes": 72,
+          "dmb_hash": "2001377b54cfd9966eae1c6a4d2de5ba",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "slot": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\fresh\\slots\\slot-54760-0",
+          "dmb": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\fresh\\slots\\slot-54760-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\fresh\\slots\\slot-54760-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3",
+            "bytes": 24129,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\fresh\\slots\\slot-54760-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "bytes": 72,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\fresh\\slots\\slot-54760-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3",
+            "after_runtime_sha256": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\01-unchanged\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "after_runtime_sha256": "1de7fc07c107f433ecd10138f1dd0b282b2c032f406b8493aa4de3a653c1ab92"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 13",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 13",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3",
+          "fresh": "57d1bebe0d277647654ccd165441fe292da97ea665e32ed129b882c790de0ef3"
+        },
+        "rsc": {
+          "retained": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+          "fresh": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75"
+        }
+      }
+    },
+    {
+      "name": "body",
+      "status": "passed",
+      "expected": [
+        "DQ_NESTED parent_present 1",
+        "DQ_NESTED child_type 1",
+        "DQ_NESTED nested_amount 7",
+        "DQ_NESTED leaf_scalar 11",
+        "DQ_NESTED body_marker 17",
+        "DQ_NESTED finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "ad5dd963c7ad1d7c6a5ac412ecf25b51efb142821d58f06f72b9d78214003857"
+      },
+      "asset_sha256": {
+        "probe.dmm": "ea152d8998f7797225ef371533b0cbe0e5922e6929d16ec686cb88a70ca1304e"
+      },
+      "source_sha256": "7abc8d86ae9066eb27b2735734399793ec424ca629c7e5509a4b95abd528abfe",
+      "resource_sha256": "ce68ef13d40f4ff782adb9a84a2c9e33f6cd3aa776d78e83f218f6ae85664088",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "4ccf807af36f1d4f9b28e3dd66e0dd86cc8daa3e6dde10e2d4206d3d8518b05c",
+          "bytes": 16111
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "47a6fac096c66501b9b247d01d9f23b14f961f443d32b88f3971d3e720ffe131",
+          "bytes": 72
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\retained\\store",
+          "pair_id": "314a4e56df53de917fb89829bac2e1ec",
+          "dmb_bytes": 24129,
+          "rsc_bytes": 72,
+          "dmb_hash": "bc28a360e99e6c0e3b6d8f4e7e803b89",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "output_project": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\retained\\store",
+          "pair_id": "314a4e56df53de917fb89829bac2e1ec",
+          "dmb_bytes": 24129,
+          "rsc_bytes": 72,
+          "dmb_hash": "bc28a360e99e6c0e3b6d8f4e7e803b89",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "slot": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\retained\\slots\\slot-32132-0",
+          "dmb": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\retained\\slots\\slot-32132-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\retained\\slots\\slot-32132-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "fe1edaa58d18183e4496bb5418a75c9459f32197804ed4d2fb2034cdd587dbca",
+            "bytes": 24129,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\retained\\slots\\slot-32132-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "bytes": 72,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\retained\\slots\\slot-32132-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "fe1edaa58d18183e4496bb5418a75c9459f32197804ed4d2fb2034cdd587dbca",
+            "after_runtime_sha256": "fe1edaa58d18183e4496bb5418a75c9459f32197804ed4d2fb2034cdd587dbca"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "after_runtime_sha256": "5774b047dc362cf1b724c970e24cfe1517cce7fbd4f40b21b9cf7e4554edcf04"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\fresh\\store",
+          "pair_id": "314a4e56df53de917fb89829bac2e1ec",
+          "dmb_bytes": 24129,
+          "rsc_bytes": 72,
+          "dmb_hash": "bc28a360e99e6c0e3b6d8f4e7e803b89",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "output_project": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\fresh\\store",
+          "pair_id": "314a4e56df53de917fb89829bac2e1ec",
+          "dmb_bytes": 24129,
+          "rsc_bytes": 72,
+          "dmb_hash": "bc28a360e99e6c0e3b6d8f4e7e803b89",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "slot": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\fresh\\slots\\slot-45112-0",
+          "dmb": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\fresh\\slots\\slot-45112-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\fresh\\slots\\slot-45112-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "fe1edaa58d18183e4496bb5418a75c9459f32197804ed4d2fb2034cdd587dbca",
+            "bytes": 24129,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\fresh\\slots\\slot-45112-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "bytes": 72,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\fresh\\slots\\slot-45112-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "fe1edaa58d18183e4496bb5418a75c9459f32197804ed4d2fb2034cdd587dbca",
+            "after_runtime_sha256": "fe1edaa58d18183e4496bb5418a75c9459f32197804ed4d2fb2034cdd587dbca"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\02-body\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "after_runtime_sha256": "1a0fc88423dc51013b6c143564277ee3f10e60a3f62f299ff58cfbb3b8abe863"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "fe1edaa58d18183e4496bb5418a75c9459f32197804ed4d2fb2034cdd587dbca",
+          "fresh": "fe1edaa58d18183e4496bb5418a75c9459f32197804ed4d2fb2034cdd587dbca"
+        },
+        "rsc": {
+          "retained": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+          "fresh": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75"
+        }
+      }
+    },
+    {
+      "name": "structural",
+      "status": "passed",
+      "expected": [
+        "DQ_NESTED parent_present 1",
+        "DQ_NESTED child_type 1",
+        "DQ_NESTED nested_amount 7",
+        "DQ_NESTED leaf_scalar 11",
+        "DQ_NESTED body_marker 17",
+        "DQ_NESTED finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "ad5dd963c7ad1d7c6a5ac412ecf25b51efb142821d58f06f72b9d78214003857"
+      },
+      "asset_sha256": {
+        "probe.dmm": "ea152d8998f7797225ef371533b0cbe0e5922e6929d16ec686cb88a70ca1304e"
+      },
+      "source_sha256": "75fc6f0dd43efcda819a8d3435da7e68606dae0a44ed0cf1039c76917517dec9",
+      "resource_sha256": "ce68ef13d40f4ff782adb9a84a2c9e33f6cd3aa776d78e83f218f6ae85664088",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "fe7757ae8fafcf8c6d34f0a7fe16d86d98b99d4c2812d3f0d488f7c9d647b3bc",
+          "bytes": 16133
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "f440b0debf9ba0edc238e75fba8196c9ff9a5beaac8aeb9e3a6157cd79ac362b",
+          "bytes": 72
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\retained\\store",
+          "pair_id": "6882cf57fd8177f682fceb5c0ad9443f",
+          "dmb_bytes": 24157,
+          "rsc_bytes": 72,
+          "dmb_hash": "0437e90562dd8835cef505c2635fa00d",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "output_project": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\retained\\store",
+          "pair_id": "6882cf57fd8177f682fceb5c0ad9443f",
+          "dmb_bytes": 24157,
+          "rsc_bytes": 72,
+          "dmb_hash": "0437e90562dd8835cef505c2635fa00d",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "slot": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\retained\\slots\\slot-27660-0",
+          "dmb": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\retained\\slots\\slot-27660-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\retained\\slots\\slot-27660-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "892c9d26c4d76406e0fc414bbd8fc93d562c3907f8a56cafe9942dc00927a167",
+            "bytes": 24157,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\retained\\slots\\slot-27660-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "bytes": 72,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\retained\\slots\\slot-27660-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "892c9d26c4d76406e0fc414bbd8fc93d562c3907f8a56cafe9942dc00927a167",
+            "after_runtime_sha256": "892c9d26c4d76406e0fc414bbd8fc93d562c3907f8a56cafe9942dc00927a167"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "after_runtime_sha256": "162078b68b665793f764094deff9d8af67746e9d6fadbbe4111138c22a8b73df"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\fresh\\store",
+          "pair_id": "6882cf57fd8177f682fceb5c0ad9443f",
+          "dmb_bytes": 24157,
+          "rsc_bytes": 72,
+          "dmb_hash": "0437e90562dd8835cef505c2635fa00d",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "output_project": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\fresh\\store",
+          "pair_id": "6882cf57fd8177f682fceb5c0ad9443f",
+          "dmb_bytes": 24157,
+          "rsc_bytes": 72,
+          "dmb_hash": "0437e90562dd8835cef505c2635fa00d",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "slot": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\fresh\\slots\\slot-50864-0",
+          "dmb": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\fresh\\slots\\slot-50864-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\fresh\\slots\\slot-50864-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "892c9d26c4d76406e0fc414bbd8fc93d562c3907f8a56cafe9942dc00927a167",
+            "bytes": 24157,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\fresh\\slots\\slot-50864-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "bytes": 72,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\fresh\\slots\\slot-50864-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "892c9d26c4d76406e0fc414bbd8fc93d562c3907f8a56cafe9942dc00927a167",
+            "after_runtime_sha256": "892c9d26c4d76406e0fc414bbd8fc93d562c3907f8a56cafe9942dc00927a167"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\03-structural\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "after_runtime_sha256": "cc72b11a65dfafd9419d89d487a685deec55ffff4b3a9d91c642a8f4278bd849"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 7",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "892c9d26c4d76406e0fc414bbd8fc93d562c3907f8a56cafe9942dc00927a167",
+          "fresh": "892c9d26c4d76406e0fc414bbd8fc93d562c3907f8a56cafe9942dc00927a167"
+        },
+        "rsc": {
+          "retained": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+          "fresh": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75"
+        }
+      }
+    },
+    {
+      "name": "map_nested",
+      "status": "passed",
+      "expected": [
+        "DQ_NESTED parent_present 1",
+        "DQ_NESTED child_type 1",
+        "DQ_NESTED nested_amount 19",
+        "DQ_NESTED leaf_scalar 11",
+        "DQ_NESTED body_marker 17",
+        "DQ_NESTED finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "ad5dd963c7ad1d7c6a5ac412ecf25b51efb142821d58f06f72b9d78214003857"
+      },
+      "asset_sha256": {
+        "probe.dmm": "091888067a720ac6392ab4c16f35ec8abf4261443acf81f11a5fcf9f113b732a"
+      },
+      "source_sha256": "75fc6f0dd43efcda819a8d3435da7e68606dae0a44ed0cf1039c76917517dec9",
+      "resource_sha256": "ce68ef13d40f4ff782adb9a84a2c9e33f6cd3aa776d78e83f218f6ae85664088",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "d25cf1be2b761a1c09e60333cb66d3ebda8234598506bcdcaf33a80f5376e869",
+          "bytes": 16133
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "9b15abd8088ecc729a7938688ca3ec3944e0e0ce8ac3d12a6246171efb976ffb",
+          "bytes": 72
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 19",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 19",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\retained\\store",
+          "pair_id": "34a6f1619d85bd4c5efcab6c988a05e8",
+          "dmb_bytes": 24157,
+          "rsc_bytes": 72,
+          "dmb_hash": "5287eb0e7d473a2437a58fdab8434076",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "output_project": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\retained\\store",
+          "pair_id": "34a6f1619d85bd4c5efcab6c988a05e8",
+          "dmb_bytes": 24157,
+          "rsc_bytes": 72,
+          "dmb_hash": "5287eb0e7d473a2437a58fdab8434076",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "slot": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\retained\\slots\\slot-13700-0",
+          "dmb": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\retained\\slots\\slot-13700-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\retained\\slots\\slot-13700-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "49de33f1326cf42c8a3cf1a704a988a8cf8e33518e74206b8294da821b472cb9",
+            "bytes": 24157,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\retained\\slots\\slot-13700-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "bytes": 72,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\retained\\slots\\slot-13700-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "49de33f1326cf42c8a3cf1a704a988a8cf8e33518e74206b8294da821b472cb9",
+            "after_runtime_sha256": "49de33f1326cf42c8a3cf1a704a988a8cf8e33518e74206b8294da821b472cb9"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "after_runtime_sha256": "872a110222befc28f349437e65334f097e8fccafc9e3145f2d7f0765a56a4913"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 19",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 19",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\fresh\\store",
+          "pair_id": "34a6f1619d85bd4c5efcab6c988a05e8",
+          "dmb_bytes": 24157,
+          "rsc_bytes": 72,
+          "dmb_hash": "5287eb0e7d473a2437a58fdab8434076",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "output_project": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\fresh\\store",
+          "pair_id": "34a6f1619d85bd4c5efcab6c988a05e8",
+          "dmb_bytes": 24157,
+          "rsc_bytes": 72,
+          "dmb_hash": "5287eb0e7d473a2437a58fdab8434076",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "slot": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\fresh\\slots\\slot-46928-0",
+          "dmb": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\fresh\\slots\\slot-46928-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\fresh\\slots\\slot-46928-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "49de33f1326cf42c8a3cf1a704a988a8cf8e33518e74206b8294da821b472cb9",
+            "bytes": 24157,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\fresh\\slots\\slot-46928-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "bytes": 72,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\fresh\\slots\\slot-46928-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "49de33f1326cf42c8a3cf1a704a988a8cf8e33518e74206b8294da821b472cb9",
+            "after_runtime_sha256": "49de33f1326cf42c8a3cf1a704a988a8cf8e33518e74206b8294da821b472cb9"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\04-map_nested\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "after_runtime_sha256": "995ddcafee69df687a35d0c882e7ef89c461b8072b48bb0d7b2eb480f1f5e223"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 19",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 19",
+          "DQ_NESTED leaf_scalar 11",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "49de33f1326cf42c8a3cf1a704a988a8cf8e33518e74206b8294da821b472cb9",
+          "fresh": "49de33f1326cf42c8a3cf1a704a988a8cf8e33518e74206b8294da821b472cb9"
+        },
+        "rsc": {
+          "retained": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+          "fresh": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75"
+        }
+      }
+    },
+    {
+      "name": "map_scalar",
+      "status": "passed",
+      "expected": [
+        "DQ_NESTED parent_present 1",
+        "DQ_NESTED child_type 1",
+        "DQ_NESTED nested_amount 19",
+        "DQ_NESTED leaf_scalar 23",
+        "DQ_NESTED body_marker 17",
+        "DQ_NESTED finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "ad5dd963c7ad1d7c6a5ac412ecf25b51efb142821d58f06f72b9d78214003857"
+      },
+      "asset_sha256": {
+        "probe.dmm": "5a89e023e405deebbd66d9f2e1ba511dca64b31696821fa987c46d0642ac9ae6"
+      },
+      "source_sha256": "75fc6f0dd43efcda819a8d3435da7e68606dae0a44ed0cf1039c76917517dec9",
+      "resource_sha256": "ce68ef13d40f4ff782adb9a84a2c9e33f6cd3aa776d78e83f218f6ae85664088",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "52dc427d2402132da7ef65605ccad87350a51fed80447cbce0d5d10953a669a9",
+          "bytes": 16133
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "397f8b1e03fc2098d5cd9b5b20f95b65287cd2d7894ef0f5b32fbaab5b9f8cb1",
+          "bytes": 72
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 19",
+          "DQ_NESTED leaf_scalar 23",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 19",
+          "DQ_NESTED leaf_scalar 23",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\retained\\store",
+          "pair_id": "1034d82a695d4f6247c90e03155f66cd",
+          "dmb_bytes": 24157,
+          "rsc_bytes": 72,
+          "dmb_hash": "dac60a963247c544de595e70c5537787",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "output_project": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\retained\\store",
+          "pair_id": "1034d82a695d4f6247c90e03155f66cd",
+          "dmb_bytes": 24157,
+          "rsc_bytes": 72,
+          "dmb_hash": "dac60a963247c544de595e70c5537787",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "slot": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\retained\\slots\\slot-6596-0",
+          "dmb": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\retained\\slots\\slot-6596-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\retained\\slots\\slot-6596-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "18bf32f276e8be3ea250b323193819cefd221960f31ccc4f523c19bacd3d3e4f",
+            "bytes": 24157,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\retained\\slots\\slot-6596-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "bytes": 72,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\retained\\slots\\slot-6596-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "18bf32f276e8be3ea250b323193819cefd221960f31ccc4f523c19bacd3d3e4f",
+            "after_runtime_sha256": "18bf32f276e8be3ea250b323193819cefd221960f31ccc4f523c19bacd3d3e4f"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "after_runtime_sha256": "dd42e71919878a95b9717d8ef38bb8a1682051a260d37507fccbdc761cbc2f34"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 19",
+          "DQ_NESTED leaf_scalar 23",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 19",
+          "DQ_NESTED leaf_scalar 23",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\fresh\\store",
+          "pair_id": "1034d82a695d4f6247c90e03155f66cd",
+          "dmb_bytes": 24157,
+          "rsc_bytes": 72,
+          "dmb_hash": "dac60a963247c544de595e70c5537787",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "output_project": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\fresh\\store",
+          "pair_id": "1034d82a695d4f6247c90e03155f66cd",
+          "dmb_bytes": 24157,
+          "rsc_bytes": 72,
+          "dmb_hash": "dac60a963247c544de595e70c5537787",
+          "rsc_hash": "82f649d96d48fff21a04ac298914bf37",
+          "slot": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\fresh\\slots\\slot-57644-0",
+          "dmb": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\fresh\\slots\\slot-57644-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\fresh\\slots\\slot-57644-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "18bf32f276e8be3ea250b323193819cefd221960f31ccc4f523c19bacd3d3e4f",
+            "bytes": 24157,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\fresh\\slots\\slot-57644-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "bytes": 72,
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\fresh\\slots\\slot-57644-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "18bf32f276e8be3ea250b323193819cefd221960f31ccc4f523c19bacd3d3e4f",
+            "after_runtime_sha256": "18bf32f276e8be3ea250b323193819cefd221960f31ccc4f523c19bacd3d3e4f"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-nested-map-runtime-4e66\\1afc89c4e0894732b489e00f0c32dc4d\\05-map_scalar\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+            "after_runtime_sha256": "8736cdb568a2fa762cdd87ca38e2cdd9a4d4d91960108bcc3d1bbb3e01fbd807"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 19",
+          "DQ_NESTED leaf_scalar 23",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_NESTED parent_present 1",
+          "DQ_NESTED child_type 1",
+          "DQ_NESTED nested_amount 19",
+          "DQ_NESTED leaf_scalar 23",
+          "DQ_NESTED body_marker 17",
+          "DQ_NESTED finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "18bf32f276e8be3ea250b323193819cefd221960f31ccc4f523c19bacd3d3e4f",
+          "fresh": "18bf32f276e8be3ea250b323193819cefd221960f31ccc4f523c19bacd3d3e4f"
+        },
+        "rsc": {
+          "retained": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75",
+          "fresh": "72ff025b40c713a35b20c07133a9634a7ac1d3777047c9229ae16f1989466a75"
+        }
+      }
+    }
+  ],
+  "executions": {
+    "00-initial/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.3130084999720566,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.114246999961324,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.12617730000056326,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.042080100043676794,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.0958642000332475,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.09938209998654202,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.04662310000276193,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.086636499967426,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.3176672999979928,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.109836500021629,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.11112909996882081,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.04759620002005249,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.1017564000212587,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.10335950000444427,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.045539400016423315,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.083529900002759,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.3128042000462301,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.0923444000072777,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.11831289995461702,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.04657300002872944,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.0909114999813028,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.09612589998869225,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.19932499999413267,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.1067596999928355,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-structural/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.3132842999766581,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-structural/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.0927447999711148,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-structural/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.12646980001591146,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-structural/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.04709700000239536,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-structural/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.2503534000134096,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-structural/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.1031949000316672,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-structural/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.04868529998930171,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-structural/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.1074231999809854,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-map_nested/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.3057289000134915,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-map_nested/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.1082824000041,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-map_nested/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.1252292999997735,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-map_nested/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.04975619999459013,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-map_nested/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.119699600036256,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-map_nested/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.10201809997670352,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-map_nested/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.20198339998023584,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-map_nested/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.102611300011631,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-map_scalar/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.3165116999880411,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-map_scalar/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.2558844000450335,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-map_scalar/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.23447640001541004,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-map_scalar/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.11039590003201738,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-map_scalar/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.3717897000024095,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-map_scalar/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.6923128999769688,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-map_scalar/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.051135600020643324,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-map_scalar/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.0834740999853238,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    }
+  },
+  "fixture_sources": {
+    "probe.dm": "fdc0e0eb1b2886e02502c4b45190fec76c1e3567db12bb2cb7809cc5a67e3173",
+    "probe.dme": "ad5dd963c7ad1d7c6a5ac412ecf25b51efb142821d58f06f72b9d78214003857",
+    "contract-resource.txt": "311850d715ab414c42f6c0b23fc7380cf8339f3c6d56f377b8e270a046a9b201",
+    "probe.dmm": "ea152d8998f7797225ef371533b0cbe0e5922e6929d16ec686cb88a70ca1304e",
+    "scenarios.json": "157e98b897d83b0f9b5cefd699e7070274481c6a5e39c64829b103c216d60a10"
+  },
+  "pinned_inputs": {
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-4e66f8ff4a-dmbc.exe",
+      "sha256": "57dc978ab61dc0964635c984ca1038f186b32c511bdefbc79fa3482adf0965c2"
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    },
+    "dd": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+      "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+    }
+  },
+  "daemon_namespace": "runtime-contract-df5d15b8fff144fcb3b799c4020af6f0",
+  "owned_daemon_pid": 52852,
+  "daemon_cleanup": {
+    "pid": 52852,
+    "tree_error": null,
+    "direct_error": null,
+    "wait_error": null,
+    "returncode": 1,
+    "reaped": true
+  },
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 76464128,
+    "samples": 129,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 52852,
+        "private_bytes": 17653760
+      },
+      {
+        "pid": 16132,
+        "private_bytes": 58810368
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "registered owned daemon/compile/acquire/runtime handles, 200ms samples; not strict peak or descendant proof"
+  }
+}

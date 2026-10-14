@@ -1,261 +1,72 @@
 # BYOND compiled format tooling
 
-## Incremental compiler prototype
+## Native v2 (Phase 1 closed 2026-10-12)
 
-See [implementation status](IMPLEMENTATION_STATUS.md) for verified native
-frontend coverage, measured cache performance, and remaining integration work.
-See [iteration performance](PERFORMANCE.md) for cache validation and timings,
-and [parallel workers](PARALLEL.md) for bounded daemon concurrency.
-The implemented migration is described in [incremental core](INCREMENTAL_CORE.md)
-and [pipeline stages](INCREMENTAL_PIPELINE.md). These distinguish current APIs
-from remaining coarse operations; older timing reports describe their measured
-implementation, not the newly integrated graph and scheduler.
-
-See [persistent compiler architecture](ARCHITECTURE.md) for the proposed complete
-incremental query graph, reusable analysis APIs, shared disk caches, parallel
-scheduler, linker and binary patch design. It includes the measured bottlenecks,
-implementation stages, and explicit correctness and reuse contracts.
-The accepted [revised architecture](REVISED_ARCHITECTURE.md) supersedes its output
-and persistence policies. [Correctness gates](CORRECTNESS.md) distinguish verified
-fixture parity from pending real-project runtime and performance checks.
-
-Canonical output is the default: recorded semantic dependencies validate cached
-prepared procedures, and materialization uses a fixed source order. Persistent
-Salsa graphs track procedure descriptors and actual positive/negative binding
-facts. Flat prepared sections reuse resolved control flow and relocate current
-table IDs; their current-source debug sidecars do not require a symbolic tree.
-Authored misses parse and lower on the same bounded persistent workers. Map
-initializers have a separate persistent graph using the same graph/store and
-work-engine implementations. Every publication is
-an immutable generation. Unchanged assets reuse the verified RSC by identity.
-Transactional redb metadata and batched procedure caches survive daemon restarts
-and share a Git-common cache across worktrees. `DM_COMPILER_CACHE_ROOT` overrides
-all native cache stages for an isolated fresh reference.
-
-The build adapter supports `DQ_COMPILER=byond|native|shadow`. Internal failures
-may fall back visibly to BYOND; source errors do not. Set `DQ_COMPILER_STRICT=1`
-to forbid fallback. Shadow produces BYOND output and checks native output against
-an independent fresh native build. `analysis-jsonl` exports versioned declaration,
-signature, inheritance and origin facts with explicit reference coverage.
-
-The `crates/` workspace contains a DM preprocessor, parser, semantic model,
-BYOND code generator, daemon coordinator, and output publisher. For a small
-project containing supported global procedures, run:
+[DESIGN.md](DESIGN.md) defines the replacement architecture;
+[STATUS.md](STATUS.md) records current evidence and unfinished gates.
+The new uncached command uses captured semantic inputs and publishes an
+immutable DMB/RSC pair before installing the conventional manifest output paths:
 
 ```powershell
-cargo run --manifest-path tools/dmb/Cargo.toml -p dm-compile -- build-project tools/dmb/fixtures/native_compiler/simple.dme tools/dmb/fixtures/native_template.bin tools/dmb/target/project-output
+cargo run -j1 --manifest-path tools/dmb/Cargo.toml -p dmbc -- compile deepquarry.dme --workers 2 -DCITESTING=1 --progress
 ```
 
-This writes an immutable validated `world.dmb` / `world.rsc` pair under
-`project-output/generations/` and appends its content ID to `HEAD`. An identical
-rebuild reuses the files. A torn final `HEAD` line is ignored by readers and
-repaired by the next publication. `dm-output` also has a fixed-layout in-place
-patch API for exclusive ownership of an existing pair.
-`build-project` uses a persistent content store even without a daemon. For a
-long-lived process, `dm-compiled` accepts `BuildProject` requests through the
-`dm-compile build-project-daemon` command.
-Patch commands also use canonical assembly. For an output pair owned exclusively
-by the compiler, `build-project-patch`
-updates fixed-layout changes in place with an undo journal. It rejects layout
-changes; use `build-project` to publish a new immutable generation then.
-`build-project-patch-daemon` performs the same operation through the daemon.
-The `--exclusive` flag asserts that the server is stopped and no other process
-is reading or writing either output file. Both live output paths must exist.
-An interrupted patch is rolled back from its journal before the next request.
+This path is experimental. Captured historical DeepQuarry builds complete and
+match independent fresh-native outputs; that does not establish BYOND runtime
+parity or current-master admission. Unsupported semantics fail before output
+publication. The CLI and daemon share the request pipeline; `--no-daemon` selects
+a one-shot host. Retained sessions reuse admitted source, semantic, query and
+procedure artifacts, but full output projection and several global stages remain.
+The pinned target is BYOND 516.1687; the driver
+supplies its default version macros and accepts explicit source defines.
 
-```powershell
-cargo run --manifest-path tools/dmb/Cargo.toml -p dm-compiled -- 47616
-cargo run --manifest-path tools/dmb/Cargo.toml -p dm-compile -- build-project-daemon 127.0.0.1:47616 tools/dmb/fixtures/native_compiler/simple.dme tools/dmb/fixtures/native_template.bin tools/dmb/target/project-output
-cargo run --manifest-path tools/dmb/Cargo.toml -p dm-compile -- build-project-patch tools/dmb/fixtures/native_compiler/simple.dme tools/dmb/fixtures/native_template.bin C:/path/to/live.dmb C:/path/to/live.rsc --exclusive
-cargo run --manifest-path tools/dmb/Cargo.toml -p dm-compile -- build-project-patch-daemon 127.0.0.1:47616 tools/dmb/fixtures/native_compiler/simple.dme tools/dmb/fixtures/native_template.bin C:/path/to/live.dmb C:/path/to/live.rsc --exclusive
-```
+### Shared request core
 
-The daemon patch command writes only changed spans to the live DMB/RSC pair;
-it does not publish a second complete output generation. The shared disk cache
-stores DMB and RSC as separate content-addressed blobs, linked by a small
-manifest. A code-only edit writes a new DMB blob and reuses an identical RSC
-blob across builds and worktrees. Verification of published output can reuse a
-persisted proof of unchanged files; missing or invalid proofs require digest
-verification. Patch builds verify their exclusively owned live output pair.
-Set `DM_BUILD_TRACE=1` on the daemon process to print timing for discovery,
-hashing, resource fingerprinting, cache lookup, compilation, and output work.
+`request_runner::run_build_with_host` uses the same frontend-through-publication
+pipeline as the CLI. An explicit retained `runner_host::BuildHost` owns one worker
+pool, exact authenticated engine inputs and bounded immutable artifact candidates.
+Each request binds fresh profiling context and current resolver/source/ABI facts;
+validated disk candidates can promote without republishing. Worker-count changes
+join and replace the pool. `BuildHost::one_shot()` bypasses resident retention.
 
-Explicit legacy-history procedure-body edits reuse a persisted linked checkpoint and lower only
-changed procedures through per-procedure Salsa inputs. Unchanged procedures
-keep their IDs; new strings and locals append to existing tables. Checkpoints
-live under the shared cache root, survive non-daemon builds and cold starts,
-and are versioned and checksummed, with a 64 MiB record limit and 32 retained
-records per compilation context. Signature, declaration, static initializer,
-procedure metadata, map, resource, or compiler-context changes fall back to a
-full build. Corrupt checkpoint records also fall back to compilation.
+The host retains frontend revisions, owner artifacts, startup issuance and
+procedure candidates across edits. Admission always uses current source and
+binding authority. Throughput, memory, concurrency and BYOND correctness gates
+remain open; retained support is not a completion or readiness claim. See the
+measured receipts in `phase0/migration_checkpoint_20261009.json` for validation scopes.
 
-The direct compiler emits type inheritance, class/global/static variables,
-dynamic initializers, procedures and verbs, world settings, DMM templates,
-resources, and active skins. Procedure lowering includes structured control
-flow, exceptions, arrays, named arguments, safe access, constructors, and a
-growing native-verified builtin catalog. Earlier game snapshots produced full-game
-output. Current game compilation, runtime parity and real structural-edit latency
-remain active integration gates; unsupported source constructs are diagnosed.
-The daemon verifies source, map, and asset contents and resource search-path
-shadowing before reusing retained project inputs.
-Project builds require verified source, map, asset and search-path proofs before
-using cached output. Reliable unchanged-file proofs can avoid rereading bytes;
-missing or invalid proofs require the stronger fallback. The
-preprocessor separately caches leaf includes against their source and incoming
-macro state, so a changed include can reuse unaffected siblings. The leaf
-cache has bounded path, macro, and byte budgets; large macro environments
-are preprocessed without retaining a snapshot for every include.
-Its versioned cache is saved at
-`<git-common-dir>/dm-compiled-cache/preprocess-v3/` as per-project indexes and
-content-addressed expansion shards, and loaded by new CLI
-processes. The project ID comes from the Git-relative DME path: matching worktrees
-share a cache, while separate project manifests keep separate entries.
-Standalone projects use `.dm-cache/` beside the DME. Macro fingerprints and
-changed definitions replace full macro snapshots; retained preprocessing cache
-data is capped at 160 MiB. Cached inputs retain a SHA-256 digest and byte length;
-source origins retain compact line offsets and share their path allocations.
-Procedure syntax and semantic records use bounded transactional snapshots and
-batched writes, without a database operation per procedure. Legacy packs are
-read-only migration inputs. Missing or damaged records are rebuilt after validation;
-published output and patch journals use their own durability rules.
-The one-shot `dm-compile check PROJECT.dme` diagnostic caps expanded source
-at 16 MiB before building a whole-project AST; set `DM_CHECK_MAX_SOURCE_BYTES`
-to an explicit byte limit when testing a larger parser input. This cap does
-not apply to project builds. Project builds have a separate 64 MiB default
-limit, configurable with `DM_BUILD_MAX_SOURCE_BYTES`. Cache misses parse procedure
-bodies on bounded workers; prepared graph hits avoid body parsing. Daemon
-build-input snapshots have a separate aggregate 96 MiB
-budget that includes dependency tables and strong metadata proofs, so projects
-near the expanded-source limit can still retain their input snapshots.
-Both CLI and daemon additionally use a
-Windows process memory ceiling of 2 GiB; `DM_MEMORY_LIMIT_MB` changes it
-(`0` explicitly disables the ceiling). `dm-compile preprocess PROJECT.dme`
-checks preprocessing without constructing the full-project AST.
-Compiler work runs on a dedicated thread with a 16 MiB stack; the process
-memory ceiling also applies to that thread.
-`dm-compile audit-project PROJECT.dme` also inventories parser gaps in
-256 KiB chunks, retaining at most 50 diagnostic samples. It reports skipped
-oversized declarations explicitly. Saved expansions automatically invalidate
-when the preprocessor or lexer changes. Active DMF skins are tracked as assets,
-and mixed UTF-8/Windows-1252 source text is decoded before preprocessing.
-Project builds retain compact declarations and prepare procedure bodies in a
-bounded job window. The default declaration chunk budget is 1 MiB, configurable with
-`DM_BUILD_MAX_PARSE_CHUNK_BYTES`; oversized declarations are reported.
+### Crate boundary
 
-The whole-project audits work without producing a DMB or starting a server:
+`byond-dmb` (the root crate) is the codec only: DMB/RSC readers and writers, operands, bytecode,
+hash and ids. Native compiler crates depend on it directly. `crates/dmb-opendream` holds the old
+OpenDream-output translator (`od_lower`, `od_emit`, `translate`), the structural comparator
+(`compare`), the `dmb-inspect` tool and the format-investigation examples
+(`cargo run -p dmb-opendream --example NAME`). There are no Cargo features to select.
 
-```powershell
-$env:DM_PREPROCESS_DUMP = 'tools/dmb/target/expanded.dm'
-dm-compile preprocess deepquarry.dme -DCITESTING
-dm-compile audit-source tools/dmb/target/expanded.dm
-dm-compile audit-declarations tools/dmb/target/expanded.dm
-dm-compile audit-initializers tools/dmb/target/expanded.dm tools/dmb/fixtures/native_template.bin
-dm-compile audit-lowering tools/dmb/target/expanded.dm tools/dmb/fixtures/native_template.bin
-```
+On Windows, pairs share `%LOCALAPPDATA%/dmbd/pairs` on that drive and
+`<drive>:\.dmbd\pairs` on other drives.
+`--output-store PATH` selects an alternative store and is required for network
+volumes. Other platforms currently use `.dmbc/outputs` beside the project.
+One worktree's complete capture/compile/install
+sequence holds an OS lock; different worktrees have independent build locks.
+Conventional output files are compatibility copies; run consumers should acquire
+the authenticated pair through `publish::PairStore`.
 
-The lowering audit reports grouped failures and source spans. Passing it means
-the procedures can be lowered independently; it does not establish linking,
-metadata, resource, or runtime correctness.
-The `dm-resources` crate provides deterministic RSC entries and content
-fingerprints for asset inputs. Literal resource expressions and constant
-declarations now produce paired DMB/RSC entries; the build cache invalidates
-when an asset changes. Positional `file(...)` and `icon(...)` calls, plus named
-`icon(...)` arguments, are lowered; some resource-bearing metadata remains
-unsupported.
+Daemon wire clients must send absolute caller-resolved paths for the manifest,
+engine template, cache, pair store, capture/replay files and output directories.
+Relative paths are rejected before session admission with status 64; this is a
+request error and does not trigger BYOND fallback. The CLI resolves its own paths
+before routing. Session and worker admission share a bounded wait; cancellation
+or expiry returns status 75. These safeguards do not establish the six-worktree
+concurrency acceptance gate.
 
-Build configurations can pass `-DNAME`, `-DNAME=VALUE`, or `--define NAME=VALUE`
-after the normal arguments to `check`, `check-project-daemon`, `build-project`,
-`build-project-daemon`, and `build-project-patch`. For example, append
-`-DCITESTING` to select the unit-test build. Defines participate in session
-identity, preprocessing, active map selection, and output cache keys.
+## Preserved compiler reference
 
-Procedure graphs persist prepared envelopes, descriptors and observed semantic
-witnesses under the shared compiler cache. A body edit can reuse the frozen
-declaration skeleton and other valid procedure results, including after a process
-restart. A structural edit refreshes the skeleton and known semantic facts;
-procedures whose descriptors and facts remain equal can still reuse prepared
-sections. This is a conservative refresh, not yet a minimal declaration-delta
-graph. It is separate from explicit `legacy-history` builds, which alone depend
-on a previous linked checkpoint and its table-allocation history.
-
-The default cache root is `<git-common-dir>/dm-compiled-cache/`; standalone
-projects use `.dm-cache/` beside the DME. Worktree/configuration sessions keep
-their mutable graph state separate while sharing content-addressed disk records.
-Missing, corrupt or incompatible records recompute safely. The frontend pool
-retains discovery caches, outlines and canonical graphs together for up to six
-sessions under a default 512 MiB aggregate retained charge. Graph and lowering
-records use the coordinator/frontend cache root consistently. Successful check
-summaries are shared; diagnostic summaries are scoped to a revision. Each graph
-also has bounded retained-state charges documented in
-[incremental core](INCREMENTAL_CORE.md).
-
-Parsed procedures also use transactional store records, bounded namespace reads
-and batched writes. Their spans are relative to the procedure and relocated for
-the current source. Workers share one immutable parser startup snapshot but keep
-private readers and pending writes; graph hits do not initialize that snapshot.
-Old `proc-parse-v1` packs are read-only migration inputs, not the current writer.
-Individual parser records remain capped at 2 MiB, and checksum/structural failures
-fall back to parsing. Source tools and semantic misses do not yet share every
-typed body AST. Canonical assembly and publication still contain whole-image
-work even when semantic procedure results are reused.
-
-Map assignment helpers have a persistent graph within each canonical session.
-A separate 16 MiB/512-entry cache retains exact-content template/grid spans so
-procedure edits do not reparse unchanged maps. Grid keys use exact indexed
-lookups, with a deterministic longest match when key widths differ.
-
-The small server integration fixture can be built and executed in trusted mode:
-
-```powershell
-./tools/dmb/dev-scripts/native_runtime_smoke.ps1 -ByondDirectory 'C:/path/to/BYOND516/bin'
-```
-
-It checks dynamic class/global initializers, static locals, method and field
-access, renamed methods, inherited dispatch, nested labeled loops, comparison
-values, list iteration, try/catch, switch, output, and shutdown. The run must
-print `RUST_COMPILER_SMOKE 23` without a runtime error and exit within its
-15-second watchdog. This fixture passes on BYOND 516.1687; it does not certify
-the full game.
-
-For integration, build the actual unit-test configuration with
-`-DCBT -DCIBUILDING -DCITESTING`, then run the resulting generation with:
-
-```powershell
-./tools/dmb/dev-scripts/run_project_tests.ps1 -DmbFile C:/path/to/generation/world.dmb -ByondDirectory 'C:/path/to/BYOND516/bin'
-```
-
-This uses trusted mode, a six-minute watchdog, and a 2 GiB runtime memory
-limit. Results are isolated under `tools/dmb/target/runtime-tests/`; the runner
-requires nonempty test results and the game's clean-run marker. Its working
-directory is the repository root so runtime configuration and FFI libraries
-resolve normally. `-RuntimeDirectory` selects an isolated runtime asset tree.
-`-TestNamesFile` selects existing compiled tests using the game's `test-select`
-parameter. Supply one absolute `/datum/unit_test/...` path per line; no
-recompilation or bytecode patch is needed for this selection. The runner
-requires fresh result JSON and a clean shutdown marker before reporting success.
-Child native crash dialogs are suppressed while crash exits remain failures.
-
-The current game test-room template contains two missing type paths. For a
-comparison against the current native compiler, prepare a disposable overlay:
-
-```powershell
-$overlay = ./tools/dmb/dev-scripts/prepare_test_asset_overlay.ps1 | ConvertFrom-Json
-./tools/dmb/dev-scripts/run_project_tests.ps1 -DmbFile C:/path/to/generation/world.dmb -ByondDirectory 'C:/path/to/BYOND516/bin' -RuntimeDirectory $overlay.RuntimeDirectory
-```
-
-This replaces those paths only in a copied template. Use the same overlay for
-native and Rust outputs; it does not change the source worktree or imply that
-unrelated game failures are compiler defects.
-
-`byond-dmb` is a standalone Rust package for reading and writing Dream
-Maker's compiled files. It parses the BYOND 516 DMB container into typed
-tables and its RSC companion archive. Procedure bytecode is split into
-instructions with exact operand boundaries. All opcodes observed in both
-DeepQuarry builds have identified operations; value tags and variable access
-modifiers have typed decoders in `src/operands.rs`.
-`Instruction::typed_operands()` also exposes nested variable accesses, tagged
-constants, and switch case tables; every instruction in both compiled builds
-passes typed operand decoding and word-for-word reassembly.
+The original prototype's usage and measurements are archived in
+[REFERENCE_COMPILER_README.md](phase0/REFERENCE_COMPILER_README.md).
+Its command, daemon, compiled-artifact and output-host crates are removed from
+this workspace. Frozen reference outputs and executables remain the Phase 0
+baseline; the new command above is the supported experimental path.
 
 ## Resource archive
 
@@ -295,14 +106,15 @@ typed `ResourceKind` values; other byte codes remain available as `Other`.
 From the repository root:
 
 ```powershell
-cargo test --manifest-path tools/dmb/Cargo.toml
-cargo run --manifest-path tools/dmb/Cargo.toml -- rsc-info deepquarry.rsc
-cargo run --manifest-path tools/dmb/Cargo.toml -- rsc-copy deepquarry.rsc copied.rsc
-cargo run --manifest-path tools/dmb/Cargo.toml -- dmb-info deepquarry.dmb
-cargo run --manifest-path tools/dmb/Cargo.toml -- dmb-copy deepquarry.dmb copied.dmb
-cargo run --manifest-path tools/dmb/Cargo.toml -- pair-info deepquarry.dmb deepquarry.rsc
-cargo run --manifest-path tools/dmb/Cargo.toml -- opcode-audit deepquarry.dmb
-cargo run --manifest-path tools/dmb/Cargo.toml -- rsc-id-audit deepquarry.rsc
+python tools/dmb/check_source_shape.py
+cargo test --manifest-path tools/dmb/Cargo.toml -p byond-dmb -p dmb-opendream
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- rsc-info deepquarry.rsc
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- rsc-copy deepquarry.rsc copied.rsc
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- dmb-info deepquarry.dmb
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- dmb-copy deepquarry.dmb copied.dmb
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- pair-info deepquarry.dmb deepquarry.rsc
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- opcode-audit deepquarry.dmb
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- rsc-id-audit deepquarry.rsc
 ```
 
 The source fixture in `fixtures/v516_builtins.dme` can be compiled with
@@ -356,7 +168,7 @@ separate from lossless file round trips.
 `dmb-inspect od-to-dmb` accepts OpenDream's compiled JSON, an OpenDream
 baseline JSON, a Dream Maker native scaffold DMB, a resource root, and output
 paths. It builds DMB/RSC tables, remaps IDs, and lowers the OpenDream
-instructions currently understood by `src/od_lower.rs`. Unsupported
+instructions currently understood by `crates/dmb-opendream/src/od_lower.rs`. Unsupported
 instructions and values produce errors with the procedure and byte offset.
 This is a **partial translator**: a successful write confirms container and
 reference validity. Runtime behavior must be checked for the translated
@@ -385,7 +197,7 @@ try {
 For a program compiled by that OpenDream build, run from the repository root:
 
 ```powershell
-cargo run --manifest-path tools/dmb/Cargo.toml -- od-to-dmb `
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- od-to-dmb `
     C:\path\to\program.json `
     "$stage\native_template.json" `
     "$stage\native_template.dmb" `
@@ -416,10 +228,10 @@ loader parses real compiler output, and the DMB/RSC reader/writer round-trips
 the two DeepQuarry builds byte for byte. These checks cover the constructs in
 the fixtures; they do not prove general semantic equivalence. The translator
 retains explicit errors for unproved OpenDream bytecode and constant forms.
-Native probes identify the header fields observed in these builds. The current
-DeepQuarry export passes lowering for all 59,982 procedures. Its complete
-DMB/RSC emission passes reference, instruction and branch audits. The latest
-completed package gate passes 564 tests (453 core), including the
+Native probes identify the header fields observed in these builds. The historical
+translated DeepQuarry export passed lowering for all 59,982 procedures. Its complete
+DMB/RSC emission passed reference, instruction and branch audits. That historical
+package gate passed 564 tests (453 core), including the
 wide-string-ID regression. Resource registration order matches all 3,856
 native entries. Paired trusted full-game servers complete initialization;
 shared baseline runtime errors remain. The translated-only lighting null turf
@@ -431,7 +243,7 @@ The full translated DM suite completes with 982 passed, 34 failed, and 58 skippe
 Remaining structural bytecode differences are under review. The exporter
 preserves the original length mutations and native extension instructions.
 See [`doc/audits/PARITY_REPORT.md`](doc/audits/PARITY_REPORT.md) for the current integration results
-and [`TRANSLATION_GAPS.md`](TRANSLATION_GAPS.md) for historical snapshots and
+and [`TRANSLATION_GAPS.md`](crates/dmb-opendream/doc/TRANSLATION_GAPS.md) for historical snapshots and
 remaining limits.
 
 Compare captured native and translated server errors with
@@ -492,7 +304,7 @@ Ordered paired tests check procedure bodies and argument metadata as well as pat
 Constant `file()` and `icon()` declaration initializers receive native hidden
 markers; constructors depending on runtime globals retain null defaults.
 The Rust loader accepts both old and extended JSON. See
-[`TRANSLATION_GAPS.md`](TRANSLATION_GAPS.md) for exact coverage and
+[`TRANSLATION_GAPS.md`](crates/dmb-opendream/doc/TRANSLATION_GAPS.md) for exact coverage and
 remaining limitations.
 
 The earlier full static diagnostic snapshot emitted 189 warnings; this count is historical. Modified type
@@ -542,7 +354,7 @@ procedures, arguments, locals, and normalized bytecode without starting
 DreamDaemon. Optional path prefixes restrict the report to authored code:
 
 ```powershell
-cargo run --manifest-path tools/dmb/Cargo.toml -- dmb-compare `
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- dmb-compare `
     C:\path\to\reference.dmb C:\path\to\output.dmb /world/New /obj/my_type
 ```
 
@@ -617,3 +429,15 @@ and stops the process it started:
     -DreamDaemon 'D:\Program Files (x86)\BYOND516\bin\dd.exe' `
     -ExpectedLog 'CALLS 8 8'
 ```
+
+## Documents
+
+Current: [STATUS.md](STATUS.md) (state, numbers, lanes), [DESIGN.md](DESIGN.md) (binding design and
+decision record), contract files [PREPROCESS.md](PREPROCESS.md), [LINK.md](LINK.md),
+[PUBLISH.md](PUBLISH.md), [QUERY.md](QUERY.md), [PARALLEL.md](PARALLEL.md),
+[PERFORMANCE.md](PERFORMANCE.md), and the format notes [FORMAT.md](FORMAT.md),
+[RSC_TIMESTAMPS.md](RSC_TIMESTAMPS.md), [RESOURCE_FILENAME_ENCODING.md](RESOURCE_FILENAME_ENCODING.md),
+[HUB_PASSWORD_FORMAT.md](HUB_PASSWORD_FORMAT.md), [CLIENT_HEADER_PROBES.md](CLIENT_HEADER_PROBES.md),
+[OPENDREAM_OPCODE_MATRIX.md](OPENDREAM_OPCODE_MATRIX.md). Translator-era notes live beside the
+translator in `crates/dmb-opendream/doc/`. Superseded plans, the pre-2026-10-12 status log and the
+7 October review are in `archive/`.

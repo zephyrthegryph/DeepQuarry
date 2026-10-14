@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "scope": "Source-only interleaved generated/authored registration control; reference attempt blocked before DM launch. No runtime or chronology conclusion.",
+  "receipt": "E:\\dq-cache\\dmb-interleaved-string-reference\\20bcc266776e4045a47fc91f448aea0e\\receipt.json",
+  "receipt_sha256": "43a268cf00a7073e5268c5a7f809bd49c4bf5f82baba5343ac8d6bf4a93dab7f",
+  "watchdog_seconds": 30,
+  "owned_job_reaped": true,
+  "source": "var/seed = \"z_\" + \"first\"; var/later = \"a_second\"; return seed",
+  "remaining_risk": "Current generated packed value supplements append after lexical captured candidates; relative chronology unobserved. No custom folder/parser or production change made."
+}

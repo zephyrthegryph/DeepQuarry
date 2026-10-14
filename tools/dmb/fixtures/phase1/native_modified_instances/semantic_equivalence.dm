@@ -1,0 +1,9 @@
+/world
+/obj/base
+    var/amount=0
+    var/text_value
+var/global/a=/obj/base{amount=1}
+var/global/b=/obj/base{amount=1+0}
+var/global/c=/obj/base{amount=(1)}
+var/global/d=/obj/base{text_value="x"}
+var/global/e=/obj/base{text_value="x"+""}

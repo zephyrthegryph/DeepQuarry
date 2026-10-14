@@ -109,3 +109,6 @@ define_sanity_output.txt
 /code/engine/_generated/
 /code/_generated/reads.dm
 /tgui/packages/tgui/interfaces/generated/
+# Native compiler immutable output pairs and compatibility installation receipt.
+.dmbc/
+*.dmb-pair.json

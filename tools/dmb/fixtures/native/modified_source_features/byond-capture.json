@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "scope": "compile-only modified/default nameof source-feature observations; no runtime",
+  "complete": true,
+  "runtime": "not run",
+  "root": "E:\\dq-cache\\dmb-modified-source-features\\fb9bb75a79284c5eb8f2e2024ad1ae03",
+  "overall_watchdog_seconds": 300,
+  "child_watchdog_seconds": 30,
+  "job_memory_bytes": 4294967296,
+  "pins": {
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    }
+  },
+  "cases": {
+    "modified_cpu": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.4174322000471875,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "modified_cpu.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "nameof: requires a var, proc reference, or type path"
+          },
+          {
+            "file": "modified_cpu.dm",
+            "line": 3,
+            "severity": "error",
+            "message": ": missing expression"
+          }
+        ]
+      }
+    },
+    "modified_graphics": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.8630052000517026,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "modified_graphics.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "nameof: requires a var, proc reference, or type path"
+          },
+          {
+            "file": "modified_graphics.dm",
+            "line": 3,
+            "severity": "error",
+            "message": ": missing expression"
+          }
+        ]
+      }
+    },
+    "modified_skipped_cpu": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.41678979992866516,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    },
+    "parameter_cpu": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.42201760003808886,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    }
+  },
+  "source_sha256": {
+    "modified_cpu.dm": "0128ba2ed5b5d6ceefcd3d2d47ef16ae70c4aef51fffb0af0e67aadd61fd2d0d",
+    "modified_cpu.dme": "5dc20a58a3a0ad8ed119749f026d18f5444ccf74b48ee282c7fb08a752878f86",
+    "modified_graphics.dm": "1058ee528b2ba31a6a4f8c97b94b12db579e8014dfbc02004077e9f954fb3ca3",
+    "modified_graphics.dme": "425586fc8882211cbe0e42a23256bb43e35bff22703259b35db8b0f55d55ab6f",
+    "modified_skipped_cpu.dm": "f74582b8bb20d7171f1f8e549b7be32282e455617ef09186dd7551d64d57ccc3",
+    "modified_skipped_cpu.dme": "de8db75fb9b79cd083c6dda3a9a6774b5ff0f7fef4079e96d1fca352f6c0c12e",
+    "parameter_cpu.dm": "853f0d2ca6749d1fd5fb45bb2fbc75caf7471229f6e67561c99f1fa0ac9570a5",
+    "parameter_cpu.dme": "92b5884d096c2c2fb2d2853a4987db1692bf17279844d92ec729151fc9bbfaed"
+  },
+  "pin_after_checks": {
+    "dm": {
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "unchanged": true
+    }
+  },
+  "backend": "byond-only",
+  "paired_parity": "not measured",
+  "acceptance_agrees": false,
+  "rejection_class_agrees": false,
+  "diagnostics_agree": false,
+  "owned_job_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 4294967296,
+      "peak_job_commit_bytes": 60092416,
+      "peak_process_commit_bytes": 58785792,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "captured_outputs": {
+    "modified_skipped_cpu.byond.bin": {
+      "bytes": 15265,
+      "sha256": "1e8d62f0c79fdb0cbb95087643d70e2039b9378ed6fdede47dcfe5883ce36b3d"
+    },
+    "parameter_cpu.byond.bin": {
+      "bytes": 15204,
+      "sha256": "b1a99a8a7b7786ee6583d06ed652dce9f07efb82de51ada38b757994a83be893"
+    }
+  }
+}

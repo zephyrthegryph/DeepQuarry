@@ -1,0 +1,14 @@
+{
+  "scope": "bounded benchmark helper admission fixtures; no compiler benchmark or parity gate",
+  "command": "python -m unittest discover -s tools/dmb/bench -p test_native_fresh.py",
+  "tests": 4,
+  "exit_code": 0,
+  "seconds": 0.034,
+  "benchmark_executed": false,
+  "checks": [
+    "ordered semantic configuration and unsupported routing rejection",
+    "published/acquired pair identity, artifact bytes and tamper rejection",
+    "post-run source mutation and unexpected namespace additions rejected",
+    "only the proven newly issued empty build lock is accepted and remains untouched"
+  ]
+}

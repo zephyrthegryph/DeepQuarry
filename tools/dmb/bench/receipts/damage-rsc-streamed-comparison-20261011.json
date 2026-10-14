@@ -1,0 +1,366 @@
+{
+  "schema": 1,
+  "shared_input_closure_authenticated": false,
+  "decoder_source": "tools/dmb/src/rsc.rs:240",
+  "captures": [
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\damage-focused-byond-20261011\\preserved-output\\byond-captured.rsc",
+      "sha256": "0f3dac0bf43b084af287951819938ba88ebe6513e413195a447d284c17dc8c2b",
+      "bytes": 223974039,
+      "live_entries": 3860,
+      "distinct_names": 3852,
+      "duplicate_names": {
+        "sound/items/pickup/flesh.ogg": 2,
+        "sound/mecha/mechmove03.ogg": 2,
+        "sound/rakshasa/Decay3.ogg": 2,
+        "sound/mob/spooky/decay1.ogg": 2,
+        "icons/mob/human_races/r_vox_ch.dmi": 2,
+        "icons/mob/human_races/cyberlimbs/cit/replikant/replikant.dmi": 2,
+        "icons/mob/wolfpelt_vr.dmi": 2,
+        "icons/mob/mobs_monsters/tgclowns.dmi": 2
+      },
+      "opaque_wrappers": {},
+      "inputClosureAuthenticated": false
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\damage-focused-d993-6gb-20261011\\preserved-output\\slot-56956-0\\deepquarry.rsc",
+      "sha256": "03aa1727f6716e551f13ace08683ff77a6541c587c02737d95207e0f845ad8c9",
+      "bytes": 223679641,
+      "live_entries": 3852,
+      "distinct_names": 3852,
+      "duplicate_names": {},
+      "opaque_wrappers": {},
+      "inputClosureAuthenticated": false
+    }
+  ],
+  "missing_native": [],
+  "added_native": [],
+  "content_or_multiplicity_differences": [
+    {
+      "name": "icons/mob/human_races/cyberlimbs/cit/replikant/replikant.dmi",
+      "byond": [
+        {
+          "kind": 3,
+          "id": 2480738461,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 755,
+          "asset_sha256": "446147a342f817c24aa79df750fd8937582aff9f382c24bbc05168621ace9b05",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 121122351
+        },
+        {
+          "kind": 3,
+          "id": 2480738461,
+          "timestamp": 1791713533,
+          "source_timestamp": 1790142525,
+          "bytes": 755,
+          "asset_sha256": "446147a342f817c24aa79df750fd8937582aff9f382c24bbc05168621ace9b05",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 223850959
+        }
+      ],
+      "native": [
+        {
+          "kind": 3,
+          "id": 2480738461,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 755,
+          "asset_sha256": "446147a342f817c24aa79df750fd8937582aff9f382c24bbc05168621ace9b05",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 121122351
+        }
+      ]
+    },
+    {
+      "name": "icons/mob/human_races/r_vox_ch.dmi",
+      "byond": [
+        {
+          "kind": 3,
+          "id": 4176955078,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 9969,
+          "asset_sha256": "6d20a376f01dec5a104969ba0c519ae82710fbb3265d6e7fd12847046e37ed42",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 98585550
+        },
+        {
+          "kind": 3,
+          "id": 4176955078,
+          "timestamp": 1791713531,
+          "source_timestamp": 1790142527,
+          "bytes": 9969,
+          "asset_sha256": "6d20a376f01dec5a104969ba0c519ae82710fbb3265d6e7fd12847046e37ed42",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 223840933
+        }
+      ],
+      "native": [
+        {
+          "kind": 3,
+          "id": 4176955078,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 9969,
+          "asset_sha256": "6d20a376f01dec5a104969ba0c519ae82710fbb3265d6e7fd12847046e37ed42",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 98585550
+        }
+      ]
+    },
+    {
+      "name": "icons/mob/mobs_monsters/tgclowns.dmi",
+      "byond": [
+        {
+          "kind": 3,
+          "id": 400535235,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 76816,
+          "asset_sha256": "3b764d41eaddade5ca67d827d480b2a0386cf53f6258d1ac2ae06ed77d586fbb",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 208093684
+        },
+        {
+          "kind": 3,
+          "id": 400535235,
+          "timestamp": 1791713568,
+          "source_timestamp": 1790142529,
+          "bytes": 76816,
+          "asset_sha256": "3b764d41eaddade5ca67d827d480b2a0386cf53f6258d1ac2ae06ed77d586fbb",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 223897164
+        }
+      ],
+      "native": [
+        {
+          "kind": 3,
+          "id": 400535235,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 76816,
+          "asset_sha256": "3b764d41eaddade5ca67d827d480b2a0386cf53f6258d1ac2ae06ed77d586fbb",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 208093684
+        }
+      ]
+    },
+    {
+      "name": "icons/mob/wolfpelt_vr.dmi",
+      "byond": [
+        {
+          "kind": 3,
+          "id": 4108963363,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 4135,
+          "asset_sha256": "7887e0f26b30bb4e2ec7cec48e1fd572333fd93a9b1e1ed069091584acc3cd45",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 171574826
+        },
+        {
+          "kind": 3,
+          "id": 4108963363,
+          "timestamp": 1791713547,
+          "source_timestamp": 1790142538,
+          "bytes": 4135,
+          "asset_sha256": "7887e0f26b30bb4e2ec7cec48e1fd572333fd93a9b1e1ed069091584acc3cd45",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 223851797
+        }
+      ],
+      "native": [
+        {
+          "kind": 3,
+          "id": 4108963363,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 4135,
+          "asset_sha256": "7887e0f26b30bb4e2ec7cec48e1fd572333fd93a9b1e1ed069091584acc3cd45",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 171574826
+        }
+      ]
+    },
+    {
+      "name": "sound/items/pickup/flesh.ogg",
+      "byond": [
+        {
+          "kind": 2,
+          "id": 2552593291,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 78987,
+          "asset_sha256": "d9f88c1f57cc6bdfbb24a0f18abee172d63af809f88df517bf0bd5902156c2e6",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 22694045
+        },
+        {
+          "kind": 2,
+          "id": 2552593291,
+          "timestamp": 1791713527,
+          "source_timestamp": 1791417895,
+          "bytes": 78987,
+          "asset_sha256": "d9f88c1f57cc6bdfbb24a0f18abee172d63af809f88df517bf0bd5902156c2e6",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 223679641
+        }
+      ],
+      "native": [
+        {
+          "kind": 2,
+          "id": 2552593291,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 78987,
+          "asset_sha256": "d9f88c1f57cc6bdfbb24a0f18abee172d63af809f88df517bf0bd5902156c2e6",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 22694045
+        }
+      ]
+    },
+    {
+      "name": "sound/mecha/mechmove03.ogg",
+      "byond": [
+        {
+          "kind": 2,
+          "id": 1404053862,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 42485,
+          "asset_sha256": "a6a2565a815c51033fb702769aaef12b576386a7d2e23f0680bd7be36a36b142",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 30337501
+        },
+        {
+          "kind": 2,
+          "id": 1404053862,
+          "timestamp": 1791713527,
+          "source_timestamp": 1791417896,
+          "bytes": 42485,
+          "asset_sha256": "a6a2565a815c51033fb702769aaef12b576386a7d2e23f0680bd7be36a36b142",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 223758679
+        }
+      ],
+      "native": [
+        {
+          "kind": 2,
+          "id": 1404053862,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 42485,
+          "asset_sha256": "a6a2565a815c51033fb702769aaef12b576386a7d2e23f0680bd7be36a36b142",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 30337501
+        }
+      ]
+    },
+    {
+      "name": "sound/mob/spooky/decay1.ogg",
+      "byond": [
+        {
+          "kind": 2,
+          "id": 4183343890,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 39670,
+          "asset_sha256": "51f1292baea450f967d424a6aa715c6ad686da5b8e22f88d0ebc6d3b1e1e4bef",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 63350015
+        },
+        {
+          "kind": 2,
+          "id": 4183343890,
+          "timestamp": 1791713530,
+          "source_timestamp": 1791417896,
+          "bytes": 39670,
+          "asset_sha256": "51f1292baea450f967d424a6aa715c6ad686da5b8e22f88d0ebc6d3b1e1e4bef",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 223801213
+        }
+      ],
+      "native": [
+        {
+          "kind": 2,
+          "id": 4183343890,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 39670,
+          "asset_sha256": "51f1292baea450f967d424a6aa715c6ad686da5b8e22f88d0ebc6d3b1e1e4bef",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 63350015
+        }
+      ]
+    },
+    {
+      "name": "sound/rakshasa/Decay3.ogg",
+      "byond": [
+        {
+          "kind": 2,
+          "id": 2728987231,
+          "timestamp": 1791713527,
+          "source_timestamp": 1791417897,
+          "bytes": 41136,
+          "asset_sha256": "a7d0252136cc1834990e2c46ee15485f595f2a0de76664fd5b06bde71af81afb",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 31408033
+        },
+        {
+          "kind": 2,
+          "id": 2728987231,
+          "timestamp": 1791713563,
+          "source_timestamp": 1791417897,
+          "bytes": 41136,
+          "asset_sha256": "a7d0252136cc1834990e2c46ee15485f595f2a0de76664fd5b06bde71af81afb",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 223855980
+        }
+      ],
+      "native": [
+        {
+          "kind": 2,
+          "id": 2728987231,
+          "timestamp": 0,
+          "source_timestamp": 0,
+          "bytes": 41136,
+          "asset_sha256": "a7d0252136cc1834990e2c46ee15485f595f2a0de76664fd5b06bde71af81afb",
+          "trailing_bytes": 0,
+          "trailing_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "offset": 31408033
+        }
+      ]
+    }
+  ],
+  "same_live_order": false,
+  "elapsed_seconds": 0.9484919999958947,
+  "all_distinct_named_asset_payloads_equal": true,
+  "byond_duplicate_record_bytes": 294398,
+  "archive_byte_delta": 294398,
+  "all_byte_delta_explained_by_duplicate_records": true
+}

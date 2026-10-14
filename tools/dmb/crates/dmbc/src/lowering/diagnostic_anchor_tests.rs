@@ -1,0 +1,243 @@
+use super::*;
+use crate::debug_sources::RelativeDebugAnchor;
+struct Source(String);
+impl dm_preprocess::SourceProvider for Source {
+    fn read(&self, path: &std::path::Path) -> Result<String, String> {
+        if path.extension().is_some_and(|ext| ext == "dme") {
+            Ok("#include \"probe.dm\"\n".into())
+        } else {
+            Ok(self.0.clone())
+        }
+    }
+}
+
+#[test]
+fn current_lexer_cursor_rebinds_shared_and_wire_recipes_without_stale_next_offsets() {
+    for (source, expected) in [
+        (
+            include_str!("../../../../fixtures/native/diagnostic_anchor_cursor/blank_comments.dm"),
+            Some(6),
+        ),
+        (
+            include_str!("../../../../fixtures/native/diagnostic_anchor_cursor/same_line.dm"),
+            Some(2),
+        ),
+        (
+            include_str!(
+                "../../../../fixtures/native/diagnostic_anchor_cursor/following_statement.dm"
+            ),
+            Some(3),
+        ),
+        (
+            include_str!(
+                "../../../../fixtures/native/diagnostic_anchor_cursor/nested_expression.dm"
+            ),
+            Some(2),
+        ),
+        (
+            include_str!("../../../../fixtures/native/diagnostic_anchor_cursor/eof.dm"),
+            Some(2),
+        ),
+    ] {
+        let terminal_include =
+            source == include_str!("../../../../fixtures/native/diagnostic_anchor_cursor/eof.dm");
+        let source = source.replace(" as anything", " as text|anything");
+        let mut first: Option<Vec<RelativeDebugAnchor>> = None;
+        for shift in [0, 2] {
+            let current = "\n".repeat(shift) + &source;
+            let frontend = dm_tree::frontend::build(
+                std::path::Path::new("cursor.dme"),
+                &Source(current),
+                &Default::default(),
+                1,
+            )
+            .unwrap();
+            let body = &frontend.bodies[0];
+            let parsed = frontend.parse_body(body).unwrap();
+            let capture = RefCell::new(MemoCapture::default());
+            let provider = MemoDebugProvider {
+                parameters: None,
+                original: FrontendDebugProvider::new(&frontend, parsed.item().header_span.start),
+                base: body.expanded_span.start,
+                entry: parsed.item().header_span.start,
+                capture: Some(&capture),
+            };
+            let code = compile_simple_proc_with_resolver_and_debug(
+                &parsed.item().children,
+                &Default::default(),
+                frontend.snapshot.tree.symbols(),
+                frontend.snapshot.tree.as_ref(),
+                Some(&provider),
+            )
+            .unwrap();
+            let origins = provider.original.finish();
+            assert_eq!(code.procedure.warnings.len(), 1);
+            let warning = &code.procedure.warnings[0];
+            let origin = &origins.entries[warning.source_ordinal.unwrap() as usize];
+            assert_eq!(
+                origin.line,
+                expected
+                    .map(|line| line as u32 + if terminal_include { 0 } else { shift as u32 })
+                    .unwrap_or(0)
+            );
+            if terminal_include {
+                assert_eq!(origin.semantic_path.as_ref(), "cursor.dme");
+            }
+            let anchors = capture.borrow().debug.clone();
+            assert!(anchors.iter().any(|anchor| matches!(
+                anchor,
+                RelativeDebugAnchor::LexerCursorAfterBodyOffset(_)
+            )));
+            assert_eq!(
+                crate::lowering_memo::rebase_debug(&frontend, body, &anchors),
+                Some(origins.clone())
+            );
+            let encoded = dm_wire::encode(0x0d1a_0001, &anchors).unwrap();
+            let decoded: Vec<RelativeDebugAnchor> =
+                dm_wire::decode(0x0d1a_0001, &encoded, encoded.len()).unwrap();
+            assert_eq!(
+                crate::lowering_memo::rebase_debug(&frontend, body, &decoded),
+                Some(origins.clone())
+            );
+            if let Some(previous) = &first {
+                assert_eq!(
+                    crate::lowering_memo::rebase_debug(&frontend, body, previous),
+                    Some(origins.clone())
+                );
+            } else {
+                first = Some(anchors);
+            }
+            let frozen: crate::debug_sources::FrozenDebugOrigins = origins.into();
+            let bound = crate::procedure_warnings::bind(
+                &code.procedure.warnings,
+                &frozen,
+                frontend.snapshot.tree.symbols(),
+                &code.procedure.local_names,
+            )
+            .unwrap();
+            assert_eq!(
+                bound[0].location.line,
+                expected
+                    .map(|line| line as usize + if terminal_include { 0 } else { shift as usize })
+            );
+            let rendered = crate::initializer_policy::warnings::render(&bound).unwrap();
+            assert!(rendered[0]
+                .contains("warning (anything_no_list): 'anything' has no meaning without a list"));
+            if expected.is_none() {
+                assert!(!rendered[0].contains(":0:"));
+            }
+        }
+    }
+}
+
+#[test]
+fn pair_failure_cursor_receipts_rebind_current_source_and_reject_out_of_body() {
+    let source =
+        include_str!("../../../../fixtures/native/loop_local_diagnostics/pair_value_comments.dm");
+    let mut stored = None;
+    for shift in [0, 3] {
+        let frontend = dm_tree::frontend::build(
+            std::path::Path::new("cursor.dme"),
+            &Source("\n".repeat(shift) + source),
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+        let body = &frontend.bodies[0];
+        let parsed = frontend.parse_body(body).unwrap();
+        let errors = dm_codegen_byond::compile_simple_proc(&parsed.item().children).unwrap_err();
+        let anchor = errors[0].primary_anchor.unwrap();
+        let current = error_anchor::bind(&frontend, body, anchor, false).unwrap();
+        assert_eq!(current.line, 6 + shift);
+        assert_eq!(current.include_occurrence, body.source.include_occurrence);
+        assert_eq!(current.semantic_path.as_ref(), "probe.dm");
+        let relative = error_anchor::relative(anchor, body).unwrap();
+        if let Some(first) = stored {
+            assert_eq!(relative, first);
+        } else {
+            stored = Some(relative);
+        }
+        let wire = dm_wire::encode(0x0300_0001, &relative).unwrap();
+        let restored = dm_wire::decode(0x0300_0001, &wire, wire.len()).unwrap();
+        let replay = error_anchor::bind(&frontend, body, restored, true).unwrap();
+        assert_eq!(replay.span, current.span);
+        assert_eq!(replay.line, current.line);
+        assert_eq!(replay.include_chain, current.include_chain);
+        assert!(error_anchor::bind(
+            &frontend,
+            body,
+            dm_codegen_byond::DiagnosticAnchor::LexerCursorAfterOffset(usize::MAX),
+            true
+        )
+        .is_none());
+    }
+}
+
+#[test]
+fn inline_pair_cursor_uses_current_parser_body_instead_of_include_return() {
+    let source =
+        include_str!("../../../../fixtures/native/loop_local_diagnostics/pair_value_inline.dm");
+    let mut previous = None;
+    for shift in [0, 3] {
+        let frontend = dm_tree::frontend::build(
+            std::path::Path::new("cursor.dme"),
+            &Source("\n".repeat(shift) + source),
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+        let body = &frontend.bodies[0];
+        let arena = dm_tree::frontend::BodyArena::new_typed(
+            &frontend,
+            dm_codegen_byond::typed_statements_supported,
+        );
+        let (error, statement_body) = arena
+            .with_parsed(body, |parsed| {
+                let statements = parsed.shared_statement_body().unwrap();
+                let error = dm_codegen_byond::compile_statement_view_with_resolver(
+                    statements.view(),
+                    &Default::default(),
+                    frontend.snapshot.tree.symbols(),
+                    frontend.snapshot.tree.as_ref(),
+                    None,
+                )
+                .err()
+                .expect("the issued inline loop must reject the duplicate binding")
+                .remove(0);
+                (error, statements)
+            })
+            .unwrap();
+        let issued = error.primary_anchor.unwrap();
+        let corrected = error_anchor::parser_current(issued, Some(&statement_body), error.span);
+        assert!(matches!(
+            corrected,
+            dm_codegen_byond::DiagnosticAnchor::AtOffset(_)
+        ));
+        let current = error_anchor::bind(&frontend, body, corrected, false).unwrap();
+        assert_eq!(current.line, 3 + shift);
+        assert_eq!(current.semantic_path.as_ref(), "probe.dm");
+        assert_eq!(current.include_occurrence, body.source.include_occurrence);
+        let relative = error_anchor::relative(corrected, body).unwrap();
+        if let Some(previous) = previous {
+            let replay = error_anchor::bind(&frontend, body, previous, true).unwrap();
+            assert_eq!(replay.span, current.span);
+            assert_eq!(replay.semantic_path, current.semantic_path);
+            assert_eq!(replay.line, current.line);
+            assert_eq!(replay.include_occurrence, current.include_occurrence);
+            assert_eq!(replay.include_chain, current.include_chain);
+        }
+        let wire = dm_wire::encode(0x0300_0001, &relative).unwrap();
+        let restored = dm_wire::decode(0x0300_0001, &wire, wire.len()).unwrap();
+        let restored = error_anchor::bind(&frontend, body, restored, true).unwrap();
+        assert_eq!(restored.span, current.span);
+        assert_eq!(restored.semantic_path, current.semantic_path);
+        assert_eq!(restored.line, current.line);
+        assert_eq!(restored.include_occurrence, current.include_occurrence);
+        assert_eq!(restored.include_chain, current.include_chain);
+        assert_eq!(
+            error_anchor::parser_current(issued, Some(&statement_body), None),
+            issued
+        );
+        previous = Some(relative);
+    }
+}

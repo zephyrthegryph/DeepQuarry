@@ -1,0 +1,677 @@
+{
+  "schema": 1,
+  "scope": "compiler-only error contract; legality/class/locations/wording observed independently",
+  "complete": true,
+  "runtime": "not run",
+  "root": "E:\\dq-cache\\dmb-compile-error-contract\\51d625a360784c599287efe1051e43d8",
+  "overall_watchdog_seconds": 300,
+  "child_watchdog_seconds": 30,
+  "job_memory_bytes": 4294967296,
+  "pins": {
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-9ef6daf3aa-dmbc.exe",
+      "sha256": "a9b06a1ca7f8958792bf66006815d13a80586fe657e89c04f6ef353db5fa0781"
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    }
+  },
+  "cases": {
+    "undefined_initializer_proc": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.3910145999980159,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "undefined_initializer_proc.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "formerly_missing_initializer: undefined proc"
+          }
+        ]
+      },
+      "native": {
+        "child": {
+          "exit": 2,
+          "wall_s": 0.21924269996816292,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "undefined_initializer_proc.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "initializer assignment: formerly_missing_initializer: undefined proc"
+          }
+        ],
+        "exit_class": "Source"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": false,
+      "primary_error_messages": {
+        "byond": "formerly_missing_initializer: undefined proc",
+        "native": "initializer assignment: formerly_missing_initializer: undefined proc"
+      }
+    },
+    "undefined_initializer_multiline": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.38831629999913275,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "undefined_initializer_multiline.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "formerly_missing_initializer: undefined proc"
+          }
+        ]
+      },
+      "native": {
+        "child": {
+          "exit": 2,
+          "wall_s": 0.15615309996064752,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "undefined_initializer_multiline.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "initializer assignment: formerly_missing_initializer: undefined proc"
+          }
+        ],
+        "exit_class": "Source"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": false,
+      "primary_error_messages": {
+        "byond": "formerly_missing_initializer: undefined proc",
+        "native": "initializer assignment: formerly_missing_initializer: undefined proc"
+      }
+    },
+    "undefined_body_proc": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.5379384999978356,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "undefined_body_proc.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "formerly_missing_body: undefined proc"
+          }
+        ]
+      },
+      "native": {
+        "child": {
+          "exit": 2,
+          "wall_s": 0.15575720003107563,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "undefined_body_proc.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "formerly_missing_body: undefined proc"
+          }
+        ],
+        "exit_class": "Source"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": true,
+      "primary_error_messages": {
+        "byond": "formerly_missing_body: undefined proc",
+        "native": "formerly_missing_body: undefined proc"
+      }
+    },
+    "undefined_body_var": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.38192039995919913,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "undefined_body_var.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "returnformerly_missing_value: undefined var"
+          }
+        ]
+      },
+      "native": {
+        "child": {
+          "exit": 2,
+          "wall_s": 0.15709049999713898,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "undefined_body_var.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "returnformerly_missing_value: undefined var"
+          }
+        ],
+        "exit_class": "Source"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": true,
+      "primary_error_messages": {
+        "byond": "returnformerly_missing_value: undefined var",
+        "native": "returnformerly_missing_value: undefined var"
+      }
+    },
+    "undefined_body_type": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.39570780005306005,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "undefined_body_type.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "/datum/formerly_missing_type: undefined type path"
+          }
+        ]
+      },
+      "native": {
+        "child": {
+          "exit": 2,
+          "wall_s": 0.1916841000202112,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "undefined_body_type.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "/datum/formerly_missing_type: undefined type path"
+          }
+        ],
+        "exit_class": "Source"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": true,
+      "primary_error_messages": {
+        "byond": "/datum/formerly_missing_type: undefined type path",
+        "native": "/datum/formerly_missing_type: undefined type path"
+      }
+    },
+    "malformed_signature": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.43657809996511787,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "malformed_signature.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "bad argument definition"
+          }
+        ]
+      },
+      "native": {
+        "child": {
+          "exit": 2,
+          "wall_s": 0.14650589996017516,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "malformed_signature.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "bad argument definition"
+          }
+        ],
+        "exit_class": "Source"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": false,
+      "primary_error_messages": {
+        "byond": "bad argument definition",
+        "native": "bad argument definition"
+      }
+    },
+    "malformed_default": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.5805166999925859,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "malformed_default.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "missing expression"
+          }
+        ]
+      },
+      "native": {
+        "child": {
+          "exit": 2,
+          "wall_s": 0.14925849996507168,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "malformed_default.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "missing expression"
+          }
+        ],
+        "exit_class": "Source"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": true,
+      "primary_error_messages": {
+        "byond": "missing expression",
+        "native": "missing expression"
+      }
+    },
+    "undefined_default_proc": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.40533029998186976,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "undefined_default_proc.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "formerly_missing_default: undefined proc"
+          }
+        ]
+      },
+      "native": {
+        "child": {
+          "exit": 2,
+          "wall_s": 0.20156430004863068,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "undefined_default_proc.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "formerly_missing_default: undefined proc"
+          }
+        ],
+        "exit_class": "Source"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": true,
+      "primary_error_messages": {
+        "byond": "formerly_missing_default: undefined proc",
+        "native": "formerly_missing_default: undefined proc"
+      }
+    },
+    "duplicate_named_args": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.41273029998410493,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      },
+      "native": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.24720240000169724,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [],
+        "exit_class": "Accepted"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": true,
+      "primary_error_messages": {
+        "byond": null,
+        "native": null
+      }
+    },
+    "duplicate_local_static": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.42014750000089407,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "duplicate_local_static.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "value: duplicate definition"
+          },
+          {
+            "file": "duplicate_local_static.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "value: previous definition"
+          }
+        ]
+      },
+      "native": {
+        "child": {
+          "exit": 2,
+          "wall_s": 0.1876007000100799,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "duplicate_local_static.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "value: duplicate definition"
+          },
+          {
+            "file": "duplicate_local_static.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "value: previous definition"
+          }
+        ],
+        "exit_class": "Source"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": true,
+      "primary_error_messages": {
+        "byond": "value: duplicate definition",
+        "native": "value: duplicate definition"
+      }
+    },
+    "duplicate_type_static": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.5859669000492431,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "duplicate_type_static.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "value: duplicate definition"
+          },
+          {
+            "file": "duplicate_type_static.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "value: previous definition"
+          }
+        ]
+      },
+      "native": {
+        "child": {
+          "exit": 2,
+          "wall_s": 0.16289799998048693,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "duplicate_type_static.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "value: duplicate definition"
+          },
+          {
+            "file": "duplicate_type_static.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "value: previous definition"
+          }
+        ],
+        "exit_class": "Source"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": true,
+      "primary_error_messages": {
+        "byond": "value: duplicate definition",
+        "native": "value: duplicate definition"
+      }
+    },
+    "inherited_variable_redeclaration": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.42186010000295937,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "inherited_variable_redeclaration.dm",
+            "line": 5,
+            "severity": "error",
+            "message": "value: duplicate definition"
+          },
+          {
+            "file": "inherited_variable_redeclaration.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "value: previous definition"
+          }
+        ]
+      },
+      "native": {
+        "child": {
+          "exit": 2,
+          "wall_s": 0.15532209997763857,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "inherited_variable_redeclaration.dm",
+            "line": 5,
+            "severity": "error",
+            "message": "value: duplicate definition"
+          },
+          {
+            "file": "inherited_variable_redeclaration.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "value: previous definition"
+          }
+        ],
+        "exit_class": "Source"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": true,
+      "primary_error_messages": {
+        "byond": "value: duplicate definition",
+        "native": "value: duplicate definition"
+      }
+    },
+    "inherited_static_redeclaration": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.426687800034415,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "inherited_static_redeclaration.dm",
+            "line": 5,
+            "severity": "error",
+            "message": "value: duplicate definition"
+          },
+          {
+            "file": "inherited_static_redeclaration.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "value: previous definition"
+          }
+        ]
+      },
+      "native": {
+        "child": {
+          "exit": 2,
+          "wall_s": 0.15420600003562868,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "inherited_static_redeclaration.dm",
+            "line": 5,
+            "severity": "error",
+            "message": "value: duplicate definition"
+          },
+          {
+            "file": "inherited_static_redeclaration.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "value: previous definition"
+          }
+        ],
+        "exit_class": "Source"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": true,
+      "primary_error_messages": {
+        "byond": "value: duplicate definition",
+        "native": "value: duplicate definition"
+      }
+    },
+    "valid_control": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.3991480999975465,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      },
+      "native": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.20519300003070384,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [],
+        "exit_class": "Accepted"
+      },
+      "acceptance_agrees": true,
+      "rejection_class_agrees": true,
+      "diagnostics_agree": true,
+      "primary_error_messages": {
+        "byond": null,
+        "native": null
+      }
+    }
+  },
+  "source_sha256": {
+    "undefined_initializer_proc.dm": "1072955a51f4d1ac6a3496c8bb0aded21d9496b6abc34c4ba4a6a4aed6288b32",
+    "undefined_initializer_proc.dme": "354a8bd717c3ea53aa63bc5280565d662e69f51466812bd01a7b5bfa9b798863",
+    "undefined_initializer_multiline.dm": "3dbea13af1c81f0232d126277d56db4c29089f69d3d9918d9bd12be57a1b37d4",
+    "undefined_initializer_multiline.dme": "a4834c8b50708886d33041922a75ad2ff5bfbc1376433d83c3cfc216152ec4ea",
+    "undefined_body_proc.dm": "0d942b65a27bf0a0453085ed10bb14362e658d42dbd75019277f1dc08125848c",
+    "undefined_body_proc.dme": "62780b5851d6cbeeacf9fe37d53dc5013dff4df2871af8e6200f53f5de0e519f",
+    "undefined_body_var.dm": "8c076378dda239a887210ff6848050578d79265f77769f6291c2c67ccfd6bc43",
+    "undefined_body_var.dme": "09e37e524b56eb0a03c1ef6334ad4483861f310eeb3a617f79e2c309114a1cd8",
+    "undefined_body_type.dm": "ac2fd951754eacc01fba14b67a312c617322f0d2aff40092321efd4729386f8f",
+    "undefined_body_type.dme": "e54629ed7bdb6772999edd97b2f37b8efcb7056a6ef76c3eeea3aa566de7124c",
+    "malformed_signature.dm": "1f6543631c0b8fa7228ba3a21fe682af7076062b274c13fdfe057837354ecb86",
+    "malformed_signature.dme": "5d7aaabe41e29e0d0b14e595d7f5e71e87db399df6b149590e7fe1931ca376f2",
+    "malformed_default.dm": "6ef57c724e23d46da6c81131f3c0b7bbd14f3d662276138d01fa65f8bd4a909a",
+    "malformed_default.dme": "2c485445f073aa84eda8e9102eaa336e155c59d97b06f2fc7cd7e43c60dc21fa",
+    "undefined_default_proc.dm": "c62e57712414e24991951a2244523197fa064cb5f269b9c775b46238a658d9e5",
+    "undefined_default_proc.dme": "cc4cc94fa2bb2028cb33621d490d436ce22ff076342a680f77f57822bfd02bc1",
+    "duplicate_named_args.dm": "946d966f5ec0bc95b641cbb8025e648eff4886914dc2be08a1232adaf09011e4",
+    "duplicate_named_args.dme": "562fbf70dee6caa8c5029bef1f8cfde4179c5d924b9f646468ed68d076991b99",
+    "duplicate_local_static.dm": "08728f792066361e9d8e049a4606cd51a47989011d488f7d8d302e4f55a14257",
+    "duplicate_local_static.dme": "55f737112c3288307290e0a0018e5e256dc48aca7e6bc106f14f85d49ebe90cc",
+    "duplicate_type_static.dm": "8e80cefac76cc9bbdea5095a6b3fe12c2e455d4bb325062d8399e5a639b42900",
+    "duplicate_type_static.dme": "6d2927fc12ae44c58920d0ebbc87daefbc8a728eec08346acc29e4f9ebf86140",
+    "inherited_variable_redeclaration.dm": "305038f619c7bbc804e92a2a831be5ca051550b9087047e8fa63112adf5cd0b9",
+    "inherited_variable_redeclaration.dme": "a0b5ce95b45a2b03e8d109df0cc52db7e77e2a0f2f9b0937b8ac48eaf8603129",
+    "inherited_static_redeclaration.dm": "59f4f4b656c76ddc487fe846fbc26185a3729df8cf47282df205746c889c49d0",
+    "inherited_static_redeclaration.dme": "9cee86bc4be2edf9ef17851b2bca5bcb4f5cf29a4ff1e960f8cb5b0853e8e8bd",
+    "valid_control.dm": "6aef18c6082f5481567549248f61062ccd2599f45c3adbffa9d2771a6553f162",
+    "valid_control.dme": "043653d1e5449a4519b700c08c1574305f54c3d31076c46c58f9fab92f18ccbd"
+  },
+  "pin_after_checks": {
+    "native": {
+      "sha256": "a9b06a1ca7f8958792bf66006815d13a80586fe657e89c04f6ef353db5fa0781",
+      "unchanged": true
+    },
+    "template": {
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540",
+      "unchanged": true
+    },
+    "dm": {
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "unchanged": true
+    }
+  },
+  "backend": "both",
+  "acceptance_agrees": true,
+  "rejection_class_agrees": true,
+  "diagnostics_agree": false,
+  "owned_job_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 4294967296,
+      "peak_job_commit_bytes": 60190720,
+      "peak_process_commit_bytes": 58826752,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "source_commit": "9ef6daf3aadd98e8566e464ea1f161c046b9917d",
+  "external_receipt_sha256": "357afe3f3fb13e3ce6931da2fb470bd0ec77d5ffd3c85d910d7ff4be34921ed6",
+  "summary": {
+    "cases": 14,
+    "acceptance_matches": 14,
+    "rejection_class_matches": 14,
+    "exact_diagnostic_matches": 11,
+    "remaining": [
+      "initializer wording prefix in two cases",
+      "malformed signature line1 versus BYOND line2"
+    ],
+    "runtime": "not run"
+  }
+}

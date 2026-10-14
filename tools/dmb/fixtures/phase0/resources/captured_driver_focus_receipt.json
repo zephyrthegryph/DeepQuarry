@@ -1,0 +1,17 @@
+{
+  "schema": "focused-built-binary-v1",
+  "utc": "2026-10-07T04:12:18.3502599Z",
+  "binary": "E:/dmb-native-v2-phase0/cargo-target/debug/deps/dmbc-0f643ac088c769fa.exe",
+  "binary_sha256": "A2E26B3DB481C57AA1FBC8C0A11543DE46F05A558A6D7ADEF5826210F857492F",
+  "filter": "captured_non_text_driver::tests",
+  "args": [
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "passed": 2,
+  "failed": 0,
+  "reported_seconds": 0.17,
+  "cargo_invoked": false,
+  "dreamdaemon_invoked": false,
+  "additional_raw_formats_gate": "pending: available dm_resources binary has no new test"
+}

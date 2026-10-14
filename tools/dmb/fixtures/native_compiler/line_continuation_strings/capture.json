@@ -1,0 +1,14 @@
+{
+  "compiler_version": "516.1687",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "source_sha256": "b3b1c61510e67fcc866598a64315f00b970ba9aef66aeeca41504a8656556841",
+  "manifest_sha256": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae",
+  "dmb_sha256": "22c0923cbfe1837c509ac1221f730d04d14c2dbc065c2311c25a310edaab0133",
+  "runtime": "not run",
+  "purpose": "escaped newlines discard indentation in quoted, macro and block literals; raw quoted newline rejected",
+  "raw_newline": {
+    "source_sha256": "e45ad390460a86505730e4584f6f54aed497e2aa5e3498092576d5a76a3e1b77",
+    "exit_code": 4294967295,
+    "diagnostics": "DM compiler version 516.1687\r\nloading raw_newline.dme\r\nraw_newline.dm:2:error: unterminated text (expecting \")\r\nraw_newline.dm:2:error: right: expected end of statement\r\nraw_newline.dm:2:error: unterminated text (expecting \")\r\nraw_newline.dmb - 3 errors, 0 warnings (10/9/26 5:43 pm)\r\nTotal time: 0:00\r\n"
+  }
+}

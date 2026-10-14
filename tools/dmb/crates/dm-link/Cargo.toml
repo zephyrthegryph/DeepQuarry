@@ -1,0 +1,10 @@
+[package]
+name = "dm-link"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Deterministic semantic table assignment and immutable procedure linking"
+
+[dependencies]
+dm-ir = { path = "../dm-ir" }
+dm-session = { path = "../dm-session" }

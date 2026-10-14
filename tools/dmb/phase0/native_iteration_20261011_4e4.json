@@ -1,0 +1,147 @@
+{
+  "scope": "Real captured DeepQuarry diagnostic opt0; not release acceptance or full BYOND semantic parity",
+  "receipt": "E:\\dq-cache\\dmb-native-iterations\\20261011-221229-86485ac4\\receipt.json",
+  "receipt_sha256": "b942a9d3ecab4d256150afd14fc19b3fdeb76c9be213b79cbb63ab1800a90421",
+  "compiler_sha256": "d618a13ed140ebddfec7ce0adf134de1d731aaea2d18cf140bcb844274b0acb8",
+  "build_provenance": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build-current\\20261011-4e4c9b5065-counted-opt0.pin.json",
+    "sha256": "f9d04febc64e14ecd7482b82739db7251a537da4c12ea632ef08b1598b806575",
+    "compiler_sha256": "d618a13ed140ebddfec7ce0adf134de1d731aaea2d18cf140bcb844274b0acb8",
+    "commit": "4e4c9b50657a8a1f5ba814c28448a877223e95dd",
+    "dmbc_opt_level": 0,
+    "dm_tree_opt_level": 2,
+    "dmbc_codegen_units": 256,
+    "lto": false,
+    "declared_acceptance_profile": false,
+    "benchmark_acceptance_admitted": false,
+    "scope": "successful-build receipt matched to exact executable bytes"
+  },
+  "rows": [
+    {
+      "kind": "initial",
+      "retained_launch_through_reap_seconds": 132.93800000000192,
+      "retained_burst_seconds": 133.04599999999846,
+      "fresh_native_byte_oracle": true,
+      "stats": {
+        "frontend_seconds": 19.5250257,
+        "compilation_seconds": 92.7058329
+      },
+      "memo": {
+        "resident_hits": 0,
+        "disk_hits": 0,
+        "recomputed": 48681,
+        "lookup_seconds": 0.4981469,
+        "host": {
+          "enabled": true,
+          "engine_generation": 1,
+          "procedure_generation": 1,
+          "procedure_policy_replacements": 0,
+          "rich_generation": 1,
+          "scope": "process_local_diagnostic_only",
+          "session": 1
+        }
+      }
+    },
+    {
+      "kind": "unchanged",
+      "retained_launch_through_reap_seconds": 1.6719999999986612,
+      "retained_burst_seconds": 1.7340000000003783,
+      "fresh_native_byte_oracle": true,
+      "stats": {
+        "frontend_seconds": 19.5250257,
+        "compilation_seconds": 92.7058329
+      },
+      "memo": {
+        "resident_hits": 0,
+        "disk_hits": 0,
+        "recomputed": 48681,
+        "lookup_seconds": 0.4981469,
+        "host": {
+          "enabled": true,
+          "engine_generation": 1,
+          "procedure_generation": 1,
+          "procedure_policy_replacements": 0,
+          "rich_generation": 1,
+          "scope": "process_local_diagnostic_only",
+          "session": 1
+        }
+      }
+    },
+    {
+      "kind": "body",
+      "retained_launch_through_reap_seconds": 66.5,
+      "retained_burst_seconds": 66.5779999999977,
+      "fresh_native_byte_oracle": true,
+      "stats": {
+        "frontend_seconds": 5.9654618,
+        "compilation_seconds": 51.6552714
+      },
+      "memo": {
+        "resident_hits": 0,
+        "disk_hits": 48680,
+        "recomputed": 1,
+        "lookup_seconds": 23.6571985,
+        "host": {
+          "enabled": true,
+          "engine_generation": 1,
+          "procedure_generation": 2,
+          "procedure_policy_replacements": 0,
+          "rich_generation": 4,
+          "scope": "process_local_diagnostic_only",
+          "session": 1
+        }
+      }
+    },
+    {
+      "kind": "structural",
+      "retained_launch_through_reap_seconds": 77.875,
+      "retained_burst_seconds": 77.93699999999808,
+      "fresh_native_byte_oracle": true,
+      "stats": {
+        "frontend_seconds": 11.9670236,
+        "compilation_seconds": 56.0972159
+      },
+      "memo": {
+        "resident_hits": 0,
+        "disk_hits": 48677,
+        "recomputed": 4,
+        "lookup_seconds": 21.8677169,
+        "host": {
+          "enabled": true,
+          "engine_generation": 1,
+          "procedure_generation": 3,
+          "procedure_policy_replacements": 0,
+          "rich_generation": 7,
+          "scope": "process_local_diagnostic_only",
+          "session": 1
+        }
+      }
+    }
+  ],
+  "unchanged_stats_limitation": "Unchanged fast path repeats prior compilation counters; only wall time is new",
+  "owned_job_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 6442450944,
+      "peak_job_commit_bytes": 6190198784,
+      "peak_process_commit_bytes": 6183096320,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "daemon_cleanup": {
+    "pid": 21216,
+    "tree_error": "taskkill exited 255",
+    "direct_error": null,
+    "wait_error": null,
+    "returncode": 1,
+    "reaped": true
+  },
+  "BYOND_baseline_gate": "open",
+  "limitations": [
+    "Full runtime baseline deferred",
+    "Continuous host isolation not proven",
+    "Body still replays 48680 disk procedures; retained symbolic owner not sufficient under pressure",
+    "Single cohort; timing change not causal proof"
+  ]
+}

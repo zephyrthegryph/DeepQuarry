@@ -1,0 +1,6 @@
+DM compiler version 516.1687
+loading control.dme
+control.dm:9:error: source_red: invalid variable
+control.dm:9:error: =: expected a constant expression
+control.dmb - 2 errors, 0 warnings (10/7/26 3:05 am)
+Total time: 0:00

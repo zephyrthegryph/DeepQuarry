@@ -1,0 +1,2 @@
+define_wrong_argc.dm:3:error: incorrect number of macro arguments
+define_wrong_argc.dmb - 1 error, 0 warnings

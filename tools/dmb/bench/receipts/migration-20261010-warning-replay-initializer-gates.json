@@ -1,0 +1,81 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-996c0240a0401c5b.exe",
+  "binary_sha256": "f77490c6a54993b40be6e0fa55f35d1126387e928d135d67d6ad61acdee993e1",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "procedure_warnings::tests::",
+      "selected": [
+        "procedure_warnings::tests::current_rebinding_rejects_unbound_ordinals_and_missing_names",
+        "procedure_warnings::tests::subject_free_warning_preserves_exact_message_and_rejects_fake_name"
+      ],
+      "exit": 0,
+      "seconds": 0.024391299986746162,
+      "stdout": "\nrunning 2 tests\ntest procedure_warnings::tests::current_rebinding_rejects_unbound_ordinals_and_missing_names ... ok\ntest procedure_warnings::tests::subject_free_warning_preserves_exact_message_and_rejects_fake_name ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 661 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "lowering_memo_wire::warning_wire_tests::",
+      "selected": [
+        "lowering_memo_wire::warning_wire_tests::rich_warning_replay_rejects_invalid_receipts_and_binds_current_coordinates"
+      ],
+      "exit": 0,
+      "seconds": 0.025540700007695705,
+      "stdout": "\nrunning 1 test\ntest lowering_memo_wire::warning_wire_tests::rich_warning_replay_rejects_invalid_receipts_and_binds_current_coordinates ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 662 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "lowering_memo_compact::tests::compact_disk_preserves_current_local_array_warning_receipts",
+      "selected": [
+        "lowering_memo_compact::tests::compact_disk_preserves_current_local_array_warning_receipts"
+      ],
+      "exit": 0,
+      "seconds": 0.14124039997113869,
+      "stdout": "\nrunning 1 test\ntest lowering_memo_compact::tests::compact_disk_preserves_current_local_array_warning_receipts ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 662 filtered out; finished in 0.12s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "initializer_policy::warnings::tests::",
+      "selected": [
+        "initializer_policy::warnings::tests::inherited_receivers_warn_once_but_distinct_includes_remain_distinct",
+        "initializer_policy::warnings::tests::pinned_frontend_startup_classification_binds_current_warning_lines",
+        "initializer_policy::warnings::tests::warning_uses_current_location_and_exact_dreammaker_shape"
+      ],
+      "exit": 0,
+      "seconds": 0.24201549997087568,
+      "stdout": "\nrunning 3 tests\ntest initializer_policy::warnings::tests::inherited_receivers_warn_once_but_distinct_includes_remain_distinct ... ok\ntest initializer_policy::warnings::tests::pinned_frontend_startup_classification_binds_current_warning_lines ... ok\ntest initializer_policy::warnings::tests::warning_uses_current_location_and_exact_dreammaker_shape ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 660 filtered out; finished in 0.10s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "initializer_code::tests::",
+      "selected": [
+        "initializer_code::tests::current_receipt_matches_fresh_order_errors_and_replacement"
+      ],
+      "exit": 0,
+      "seconds": 0.021326599991880357,
+      "stdout": "\nrunning 1 test\ntest initializer_code::tests::current_receipt_matches_fresh_order_errors_and_replacement ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 662 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "symbolic::initializer_contribution::tests::",
+      "selected": [
+        "symbolic::initializer_contribution::tests::shared_encoding_rebinds_current_coverage_and_rejects_missing_license"
+      ],
+      "exit": 0,
+      "seconds": 0.021421900019049644,
+      "stdout": "\nrunning 1 test\ntest symbolic::initializer_contribution::tests::shared_encoding_rebinds_current_coverage_and_rejects_missing_license ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 662 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "map_memo::output_tests::",
+      "selected": [
+        "map_memo::output_tests::current_semantic_path_binding_checks_include_authority",
+        "map_memo::output_tests::retained_map_outputs_share_code_match_fresh_and_invalidate_storage_reads"
+      ],
+      "exit": 0,
+      "seconds": 0.028682000003755093,
+      "stdout": "\nrunning 2 tests\ntest map_memo::output_tests::current_semantic_path_binding_checks_include_authority ... ok\ntest map_memo::output_tests::retained_map_outputs_share_code_match_fresh_and_invalidate_storage_reads ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 661 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_codegen_byond-e88a7b9d1cff44dd.exe",
+  "binary_sha256": "c0503a0d6e070112a183c025dfecce5fa43e48ccdf31c4f44f531841f061ed56",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "simple::tests::input_warnings_native::",
+      "selected": [
+        "simple::tests::input_warnings_native::input_filter_warnings_match_authenticated_matrix_and_current_ordinals"
+      ],
+      "exit": 0,
+      "seconds": 0.025355899997521192,
+      "stdout": "\nrunning 1 test\ntest simple::tests::input_warnings_native::input_filter_warnings_match_authenticated_matrix_and_current_ordinals ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 322 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "simple::tests::local_sized_arrays_native::",
+      "selected": [
+        "simple::tests::local_sized_arrays_native::local_sized_array_initializers_match_native_complete_words",
+        "simple::tests::local_sized_arrays_native::local_sized_warning_uses_current_statement_debug_ordinal"
+      ],
+      "exit": 0,
+      "seconds": 0.032877699995879084,
+      "stdout": "\nrunning 2 tests\ntest simple::tests::local_sized_arrays_native::local_sized_array_initializers_match_native_complete_words ... ok\ntest simple::tests::local_sized_arrays_native::local_sized_warning_uses_current_statement_debug_ordinal ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 321 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "simple::typed_switch::tests::",
+      "selected": [
+        "simple::typed_switch::tests::authored_forward_and_backward_gotos_both_check_budget",
+        "simple::typed_switch::tests::authored_goto_dispatch_matches_existing_native_matrix",
+        "simple::typed_switch::tests::constant_string_and_null_tables_preserve_executable_debug_sources",
+        "simple::typed_switch::tests::constant_switch_tables_have_no_synthetic_locals_and_valid_case_targets",
+        "simple::typed_switch::tests::dynamic_switch_alternative_keeps_existing_runtime_fallback",
+        "simple::typed_switch::tests::overlapping_range_and_exact_case_preserve_authored_fallback",
+        "simple::typed_switch::tests::range_null_string_table_matches_authenticated_native_fixture",
+        "simple::typed_switch::tests::switch_default_targets_preserve_native_authored_transfers"
+      ],
+      "exit": 0,
+      "seconds": 0.033075899991672486,
+      "stdout": "\nrunning 8 tests\ntest simple::typed_switch::tests::authored_forward_and_backward_gotos_both_check_budget ... ok\ntest simple::typed_switch::tests::authored_goto_dispatch_matches_existing_native_matrix ... ok\ntest simple::typed_switch::tests::constant_string_and_null_tables_preserve_executable_debug_sources ... ok\ntest simple::typed_switch::tests::constant_switch_tables_have_no_synthetic_locals_and_valid_case_targets ... ok\ntest simple::typed_switch::tests::dynamic_switch_alternative_keeps_existing_runtime_fallback ... ok\ntest simple::typed_switch::tests::overlapping_range_and_exact_case_preserve_authored_fallback ... ok\ntest simple::typed_switch::tests::range_null_string_table_matches_authenticated_native_fixture ... ok\ntest simple::typed_switch::tests::switch_default_targets_preserve_native_authored_transfers ... ok\n\ntest result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 315 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "simple::tests::typed_delete_native::",
+      "selected": [
+        "simple::tests::typed_delete_native::indexed_and_effectful_indexed_deletion_match_native",
+        "simple::tests::typed_delete_native::lexical_src_parameter_is_cleared_and_does_not_terminate_body",
+        "simple::tests::typed_delete_native::mutable_and_readonly_intrinsic_deletion_match_native",
+        "simple::tests::typed_delete_native::mutable_local_argument_and_temporary_deletion_match_native",
+        "simple::tests::typed_delete_native::nonlocal_deletion_requires_exact_nonopaque_writable_metadata",
+        "simple::tests::typed_delete_native::resolver_native::typed_safe_const_fields_and_globals_match_authenticated_native"
+      ],
+      "exit": 0,
+      "seconds": 0.035082200018223375,
+      "stdout": "\nrunning 6 tests\ntest simple::tests::typed_delete_native::indexed_and_effectful_indexed_deletion_match_native ... ok\ntest simple::tests::typed_delete_native::lexical_src_parameter_is_cleared_and_does_not_terminate_body ... ok\ntest simple::tests::typed_delete_native::mutable_and_readonly_intrinsic_deletion_match_native ... ok\ntest simple::tests::typed_delete_native::mutable_local_argument_and_temporary_deletion_match_native ... ok\ntest simple::tests::typed_delete_native::nonlocal_deletion_requires_exact_nonopaque_writable_metadata ... ok\ntest simple::tests::typed_delete_native::resolver_native::typed_safe_const_fields_and_globals_match_authenticated_native ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 317 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "encoder::src_cache::tests::",
+      "selected": [
+        "encoder::src_cache::tests::src_cache_reuses_only_proven_same_receiver_and_invalidates_boundaries"
+      ],
+      "exit": 0,
+      "seconds": 0.030617000011261553,
+      "stdout": "\nrunning 1 test\ntest encoder::src_cache::tests::src_cache_reuses_only_proven_same_receiver_and_invalidates_boundaries ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 322 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    }
+  ]
+}

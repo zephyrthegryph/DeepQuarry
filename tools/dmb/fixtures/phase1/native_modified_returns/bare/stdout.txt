@@ -1,0 +1,5 @@
+DM compiler version 516.1687
+loading probe.dme
+probe.dme:5:error: amount: undefined var
+probe.dmb - 1 error, 0 warnings (10/7/26 4:01 am)
+Total time: 0:00

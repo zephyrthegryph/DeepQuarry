@@ -1,0 +1,3876 @@
+{
+  "schema": 1,
+  "scope": "nine explicit standalone semantic observations including embedded resource replacement",
+  "acceptance_profile": false,
+  "complete": true,
+  "matches": true,
+  "root": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053",
+  "steps": [
+    {
+      "name": "initial",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 3",
+        "DQ_CONTRACT parent_default 18",
+        "DQ_CONTRACT parent_explicit 15",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 11",
+        "DQ_CONTRACT static_first 21",
+        "DQ_CONTRACT static_second 22",
+        "DQ_CONTRACT structural 0",
+        "DQ_CONTRACT resource 14",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "bb3da8944759e329fad5c40ef7180863521c5309b137ad560e9ce9d2113d0fb3",
+      "resource_sha256": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "a77461cb6a5470297cff668a136028dfb263f36093ea1f4f4f96597d2c6a1400",
+          "bytes": 16833
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "b5b37f380a25e01e4a6800f0988ebe3d2df79d8120256d3b3aca3408511af820",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 18",
+          "DQ_CONTRACT parent_explicit 15",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 18",
+          "DQ_CONTRACT parent_explicit 15",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\retained\\store",
+          "pair_id": "862d361c59fa640b5233380d3b192aa1",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "a8ac6af1049fbbb6baf1220b0c5c4acf",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\retained\\store",
+          "pair_id": "862d361c59fa640b5233380d3b192aa1",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "a8ac6af1049fbbb6baf1220b0c5c4acf",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\retained\\slots\\slot-55636-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\retained\\slots\\slot-55636-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\retained\\slots\\slot-55636-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\retained\\slots\\slot-55636-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\retained\\slots\\slot-55636-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4",
+            "after_runtime_sha256": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "6d270aad1d780b5942c4493bb69cdc2bea117d6d1d0b4c99c8033eed613528bb"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 18",
+          "DQ_CONTRACT parent_explicit 15",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 18",
+          "DQ_CONTRACT parent_explicit 15",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\fresh\\store",
+          "pair_id": "862d361c59fa640b5233380d3b192aa1",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "a8ac6af1049fbbb6baf1220b0c5c4acf",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\fresh\\store",
+          "pair_id": "862d361c59fa640b5233380d3b192aa1",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "a8ac6af1049fbbb6baf1220b0c5c4acf",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\fresh\\slots\\slot-55844-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\fresh\\slots\\slot-55844-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\fresh\\slots\\slot-55844-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\fresh\\slots\\slot-55844-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\fresh\\slots\\slot-55844-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4",
+            "after_runtime_sha256": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\00-initial\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "06dd300ca42ff6ca75719d3b993cdb6dcd961977b6a474684001bb6b0c68072d"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 18",
+          "DQ_CONTRACT parent_explicit 15",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 18",
+          "DQ_CONTRACT parent_explicit 15",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4",
+          "fresh": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4"
+        },
+        "rsc": {
+          "retained": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+          "fresh": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89"
+        }
+      }
+    },
+    {
+      "name": "unchanged",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 3",
+        "DQ_CONTRACT parent_default 18",
+        "DQ_CONTRACT parent_explicit 15",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 11",
+        "DQ_CONTRACT static_first 21",
+        "DQ_CONTRACT static_second 22",
+        "DQ_CONTRACT structural 0",
+        "DQ_CONTRACT resource 14",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "bb3da8944759e329fad5c40ef7180863521c5309b137ad560e9ce9d2113d0fb3",
+      "resource_sha256": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "a77461cb6a5470297cff668a136028dfb263f36093ea1f4f4f96597d2c6a1400",
+          "bytes": 16833
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "2e6b77f6af3a7924a79a17c6fec65b1c8b2ac054278a09907ab6fba7d1c4da94",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 18",
+          "DQ_CONTRACT parent_explicit 15",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 18",
+          "DQ_CONTRACT parent_explicit 15",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\retained\\store",
+          "pair_id": "862d361c59fa640b5233380d3b192aa1",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "a8ac6af1049fbbb6baf1220b0c5c4acf",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\retained\\store",
+          "pair_id": "862d361c59fa640b5233380d3b192aa1",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "a8ac6af1049fbbb6baf1220b0c5c4acf",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\retained\\slots\\slot-21776-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\retained\\slots\\slot-21776-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\retained\\slots\\slot-21776-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\retained\\slots\\slot-21776-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\retained\\slots\\slot-21776-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4",
+            "after_runtime_sha256": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "32e40a9a7fdad4ee9f39137575ebc9cc0699482b932ec3e0a4a3c8bb91c3f872"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 18",
+          "DQ_CONTRACT parent_explicit 15",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 18",
+          "DQ_CONTRACT parent_explicit 15",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\fresh\\store",
+          "pair_id": "862d361c59fa640b5233380d3b192aa1",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "a8ac6af1049fbbb6baf1220b0c5c4acf",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\fresh\\store",
+          "pair_id": "862d361c59fa640b5233380d3b192aa1",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "a8ac6af1049fbbb6baf1220b0c5c4acf",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\fresh\\slots\\slot-54348-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\fresh\\slots\\slot-54348-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\fresh\\slots\\slot-54348-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\fresh\\slots\\slot-54348-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\fresh\\slots\\slot-54348-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4",
+            "after_runtime_sha256": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\01-unchanged\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "fcd4a62f353f668da5c78ca22d377ed7501afaf2f43e0c846502d3ce0c813335"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 18",
+          "DQ_CONTRACT parent_explicit 15",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 18",
+          "DQ_CONTRACT parent_explicit 15",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4",
+          "fresh": "ac78343c1b87aa2fc73743f315a8bd04a0892c989c859b53eaded03ac47b09f4"
+        },
+        "rsc": {
+          "retained": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+          "fresh": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89"
+        }
+      }
+    },
+    {
+      "name": "body",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 3",
+        "DQ_CONTRACT parent_default 38",
+        "DQ_CONTRACT parent_explicit 35",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 11",
+        "DQ_CONTRACT static_first 21",
+        "DQ_CONTRACT static_second 22",
+        "DQ_CONTRACT structural 0",
+        "DQ_CONTRACT resource 14",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "5573270d5fe29618c6b14e7b70c0abd8b9047597cdbbe69e0c3b8e4df545007b",
+      "resource_sha256": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "a1a3f64dcb3c3c9b2948d0cc3ff9e46f94f632cbc15743567e7f117feaa3c6a9",
+          "bytes": 16833
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "c24f714e8c1a40c24b8212921a73b19f47dfccd5bd264667f1a31a1c4ca7e585",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 38",
+          "DQ_CONTRACT parent_explicit 35",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 38",
+          "DQ_CONTRACT parent_explicit 35",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\retained\\store",
+          "pair_id": "062b29dcd2d030bf4951b51be502d08a",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "1388ce56ac2e43c16ec6fe047047c410",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\retained\\store",
+          "pair_id": "062b29dcd2d030bf4951b51be502d08a",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "1388ce56ac2e43c16ec6fe047047c410",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\retained\\slots\\slot-29464-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\retained\\slots\\slot-29464-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\retained\\slots\\slot-29464-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "003478eea8f3367faf06cc140d4fa792ccf4d17b6d73aa1cf558adf91e993927",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\retained\\slots\\slot-29464-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\retained\\slots\\slot-29464-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "003478eea8f3367faf06cc140d4fa792ccf4d17b6d73aa1cf558adf91e993927",
+            "after_runtime_sha256": "003478eea8f3367faf06cc140d4fa792ccf4d17b6d73aa1cf558adf91e993927"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "68384f0672898ce0bddd63484635b2c5638c1aa5e71475ac2a45e1e288de8a16"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 38",
+          "DQ_CONTRACT parent_explicit 35",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 38",
+          "DQ_CONTRACT parent_explicit 35",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\fresh\\store",
+          "pair_id": "062b29dcd2d030bf4951b51be502d08a",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "1388ce56ac2e43c16ec6fe047047c410",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\fresh\\store",
+          "pair_id": "062b29dcd2d030bf4951b51be502d08a",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "1388ce56ac2e43c16ec6fe047047c410",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\fresh\\slots\\slot-47208-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\fresh\\slots\\slot-47208-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\fresh\\slots\\slot-47208-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "003478eea8f3367faf06cc140d4fa792ccf4d17b6d73aa1cf558adf91e993927",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\fresh\\slots\\slot-47208-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\fresh\\slots\\slot-47208-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "003478eea8f3367faf06cc140d4fa792ccf4d17b6d73aa1cf558adf91e993927",
+            "after_runtime_sha256": "003478eea8f3367faf06cc140d4fa792ccf4d17b6d73aa1cf558adf91e993927"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\02-body\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "7ae91aa1fe37200ed82ec1265137f825866b325dad0ced3d0ae78ea2d8fad668"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 38",
+          "DQ_CONTRACT parent_explicit 35",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 3",
+          "DQ_CONTRACT parent_default 38",
+          "DQ_CONTRACT parent_explicit 35",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "003478eea8f3367faf06cc140d4fa792ccf4d17b6d73aa1cf558adf91e993927",
+          "fresh": "003478eea8f3367faf06cc140d4fa792ccf4d17b6d73aa1cf558adf91e993927"
+        },
+        "rsc": {
+          "retained": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+          "fresh": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89"
+        }
+      }
+    },
+    {
+      "name": "inherited_default",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 9",
+        "DQ_CONTRACT parent_default 44",
+        "DQ_CONTRACT parent_explicit 41",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 11",
+        "DQ_CONTRACT static_first 21",
+        "DQ_CONTRACT static_second 22",
+        "DQ_CONTRACT structural 0",
+        "DQ_CONTRACT resource 14",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "c7c32727a77aacb86d82f606fd035e63261af9b2678253f5822876746a5c00ac",
+      "resource_sha256": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "e778c1ff8f0a972f89f625a48d623e88d970f69c7cad129ee93ee8541e266145",
+          "bytes": 16833
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "74a51d2e8400ec42ad8544931f06c7ca1ee8d06c70658d7d995ba61562991547",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 44",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 44",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\retained\\store",
+          "pair_id": "f11e35ce61f2f3161480502e1d09e0c1",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "0ad40fa2dc72b80f46217272ae6edebc",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\retained\\store",
+          "pair_id": "f11e35ce61f2f3161480502e1d09e0c1",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "0ad40fa2dc72b80f46217272ae6edebc",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\retained\\slots\\slot-53844-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\retained\\slots\\slot-53844-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\retained\\slots\\slot-53844-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "119aa7ca5e7b8ca388757ec12325f4c3e5e72fbf47b4e87dbc4a8e6e303c346a",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\retained\\slots\\slot-53844-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\retained\\slots\\slot-53844-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "119aa7ca5e7b8ca388757ec12325f4c3e5e72fbf47b4e87dbc4a8e6e303c346a",
+            "after_runtime_sha256": "119aa7ca5e7b8ca388757ec12325f4c3e5e72fbf47b4e87dbc4a8e6e303c346a"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "7c9104e97f5ffa4a4330af0f2576151153726f05e10318eb985de15899584e24"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 44",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 44",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\fresh\\store",
+          "pair_id": "f11e35ce61f2f3161480502e1d09e0c1",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "0ad40fa2dc72b80f46217272ae6edebc",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\fresh\\store",
+          "pair_id": "f11e35ce61f2f3161480502e1d09e0c1",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "0ad40fa2dc72b80f46217272ae6edebc",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\fresh\\slots\\slot-22316-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\fresh\\slots\\slot-22316-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\fresh\\slots\\slot-22316-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "119aa7ca5e7b8ca388757ec12325f4c3e5e72fbf47b4e87dbc4a8e6e303c346a",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\fresh\\slots\\slot-22316-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\fresh\\slots\\slot-22316-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "119aa7ca5e7b8ca388757ec12325f4c3e5e72fbf47b4e87dbc4a8e6e303c346a",
+            "after_runtime_sha256": "119aa7ca5e7b8ca388757ec12325f4c3e5e72fbf47b4e87dbc4a8e6e303c346a"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\03-inherited_default\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "2f9d55278905784fe8d52a948efa8ee448b8452e6c39fa1466e558002b967ced"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 44",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 44",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "119aa7ca5e7b8ca388757ec12325f4c3e5e72fbf47b4e87dbc4a8e6e303c346a",
+          "fresh": "119aa7ca5e7b8ca388757ec12325f4c3e5e72fbf47b4e87dbc4a8e6e303c346a"
+        },
+        "rsc": {
+          "retained": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+          "fresh": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89"
+        }
+      }
+    },
+    {
+      "name": "argument_default",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 9",
+        "DQ_CONTRACT parent_default 45",
+        "DQ_CONTRACT parent_explicit 41",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 11",
+        "DQ_CONTRACT static_first 21",
+        "DQ_CONTRACT static_second 22",
+        "DQ_CONTRACT structural 0",
+        "DQ_CONTRACT resource 14",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "4b64af8d52804f07e784779fc5d8eba056eef01a13be8d83eb72e4759a8e390e",
+      "resource_sha256": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "6a05fed72eb41f2cda4f23780ec6669694060a547a9950e3abe54980d4da81ff",
+          "bytes": 16833
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "930bef28d92f90c81aaf3cbf44592a31178119309127510893a96ff9a3031d11",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\retained\\store",
+          "pair_id": "76df2758979d1a50b8164de5aac831c2",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "1b54cb8c3e63eb9023d873e063ade61c",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\retained\\store",
+          "pair_id": "76df2758979d1a50b8164de5aac831c2",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "1b54cb8c3e63eb9023d873e063ade61c",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\retained\\slots\\slot-47252-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\retained\\slots\\slot-47252-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\retained\\slots\\slot-47252-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "d593abde394c5a5486e9a936d5574be3c95117916b098f626f73bbd178638489",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\retained\\slots\\slot-47252-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\retained\\slots\\slot-47252-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "d593abde394c5a5486e9a936d5574be3c95117916b098f626f73bbd178638489",
+            "after_runtime_sha256": "d593abde394c5a5486e9a936d5574be3c95117916b098f626f73bbd178638489"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "30e03e640f30731942a9eef896c0602437d631e877b7e59aa6c9561061b13eac"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\fresh\\store",
+          "pair_id": "76df2758979d1a50b8164de5aac831c2",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "1b54cb8c3e63eb9023d873e063ade61c",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\fresh\\store",
+          "pair_id": "76df2758979d1a50b8164de5aac831c2",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "1b54cb8c3e63eb9023d873e063ade61c",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\fresh\\slots\\slot-53600-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\fresh\\slots\\slot-53600-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\fresh\\slots\\slot-53600-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "d593abde394c5a5486e9a936d5574be3c95117916b098f626f73bbd178638489",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\fresh\\slots\\slot-53600-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\fresh\\slots\\slot-53600-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "d593abde394c5a5486e9a936d5574be3c95117916b098f626f73bbd178638489",
+            "after_runtime_sha256": "d593abde394c5a5486e9a936d5574be3c95117916b098f626f73bbd178638489"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\04-argument_default\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "e0bdd0ba7f214639fe80d3a0e43edbdb951a50fab59e810383b1c4c10c00e2ee"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 21",
+          "DQ_CONTRACT static_second 22",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "d593abde394c5a5486e9a936d5574be3c95117916b098f626f73bbd178638489",
+          "fresh": "d593abde394c5a5486e9a936d5574be3c95117916b098f626f73bbd178638489"
+        },
+        "rsc": {
+          "retained": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+          "fresh": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89"
+        }
+      }
+    },
+    {
+      "name": "procedure_static",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 9",
+        "DQ_CONTRACT parent_default 45",
+        "DQ_CONTRACT parent_explicit 41",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 11",
+        "DQ_CONTRACT static_first 41",
+        "DQ_CONTRACT static_second 42",
+        "DQ_CONTRACT structural 0",
+        "DQ_CONTRACT resource 14",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "0ae9c32a04656b65ce88d6b3d7b0b96cd239673da4c16155b80e8b37a1869ba4",
+      "resource_sha256": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "7c32303ccce2da41156f84c89d69b36a94d411d7a034a1f8b8efd4c61ddf9a44",
+          "bytes": 16833
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "808ff958ebf0ebc50cb6a05ff42e230f9b9bec8fb7dcf113bb00286317a48b6f",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\retained\\store",
+          "pair_id": "23ed69aaf267644b75a3527202ee103e",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "6e9823411c939db2b40db9c8b69bb524",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\retained\\store",
+          "pair_id": "23ed69aaf267644b75a3527202ee103e",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "6e9823411c939db2b40db9c8b69bb524",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\retained\\slots\\slot-9528-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\retained\\slots\\slot-9528-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\retained\\slots\\slot-9528-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "7790546a667584ffbffebb782ba7b6b0e95f6a64e7148c0c680a3355ed53ea9f",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\retained\\slots\\slot-9528-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\retained\\slots\\slot-9528-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "7790546a667584ffbffebb782ba7b6b0e95f6a64e7148c0c680a3355ed53ea9f",
+            "after_runtime_sha256": "7790546a667584ffbffebb782ba7b6b0e95f6a64e7148c0c680a3355ed53ea9f"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "4d2b451a0dacbd00ebded8426125bbb6eeb0db4513c55efc6fd9914809c97c1f"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\fresh\\store",
+          "pair_id": "23ed69aaf267644b75a3527202ee103e",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "6e9823411c939db2b40db9c8b69bb524",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\fresh\\store",
+          "pair_id": "23ed69aaf267644b75a3527202ee103e",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "6e9823411c939db2b40db9c8b69bb524",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\fresh\\slots\\slot-57060-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\fresh\\slots\\slot-57060-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\fresh\\slots\\slot-57060-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "7790546a667584ffbffebb782ba7b6b0e95f6a64e7148c0c680a3355ed53ea9f",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\fresh\\slots\\slot-57060-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\fresh\\slots\\slot-57060-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "7790546a667584ffbffebb782ba7b6b0e95f6a64e7148c0c680a3355ed53ea9f",
+            "after_runtime_sha256": "7790546a667584ffbffebb782ba7b6b0e95f6a64e7148c0c680a3355ed53ea9f"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\05-procedure_static\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "315826cd04a4a2ba66b97bd52955ca4ef05deb06bd3b7569b46c15bde4b219d0"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 11",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "7790546a667584ffbffebb782ba7b6b0e95f6a64e7148c0c680a3355ed53ea9f",
+          "fresh": "7790546a667584ffbffebb782ba7b6b0e95f6a64e7148c0c680a3355ed53ea9f"
+        },
+        "rsc": {
+          "retained": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+          "fresh": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89"
+        }
+      }
+    },
+    {
+      "name": "global_default",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 9",
+        "DQ_CONTRACT parent_default 45",
+        "DQ_CONTRACT parent_explicit 41",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 17",
+        "DQ_CONTRACT static_first 41",
+        "DQ_CONTRACT static_second 42",
+        "DQ_CONTRACT structural 0",
+        "DQ_CONTRACT resource 14",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "608372851dc76ed422edaadb95b43f6354f7cd17e460dfbdac01d611b5ff5fb5",
+      "resource_sha256": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "2d49ce278fefd799d8c1bafb2d1865a7e5c6e662d188d3f7c74fc4f1b9d7603c",
+          "bytes": 16833
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "86b9793b542f59537eb7a183ce5be7916bc4ac0a80cf7aaed24793ac8c37f77c",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\retained\\store",
+          "pair_id": "914a95abd3c568e9f06909c8b975c726",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "374f1fcd0c404ce3d6d118809761743e",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\retained\\store",
+          "pair_id": "914a95abd3c568e9f06909c8b975c726",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "374f1fcd0c404ce3d6d118809761743e",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\retained\\slots\\slot-37508-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\retained\\slots\\slot-37508-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\retained\\slots\\slot-37508-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\retained\\slots\\slot-37508-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\retained\\slots\\slot-37508-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+            "after_runtime_sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "ca861c26fe1bdf6cfae46696dd1020f76f99639ac3d67148631a8eb79a156dea"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\fresh\\store",
+          "pair_id": "914a95abd3c568e9f06909c8b975c726",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "374f1fcd0c404ce3d6d118809761743e",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\fresh\\store",
+          "pair_id": "914a95abd3c568e9f06909c8b975c726",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "374f1fcd0c404ce3d6d118809761743e",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\fresh\\slots\\slot-23656-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\fresh\\slots\\slot-23656-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\fresh\\slots\\slot-23656-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\fresh\\slots\\slot-23656-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\fresh\\slots\\slot-23656-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+            "after_runtime_sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\06-global_default\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "5998653ecbca89d2764860702ce025d4b1a79791918870144613471481a17db4"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+          "fresh": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e"
+        },
+        "rsc": {
+          "retained": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+          "fresh": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89"
+        }
+      }
+    },
+    {
+      "name": "parent_change",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 21",
+        "DQ_CONTRACT parent_default 57",
+        "DQ_CONTRACT parent_explicit 53",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 17",
+        "DQ_CONTRACT static_first 41",
+        "DQ_CONTRACT static_second 42",
+        "DQ_CONTRACT structural 0",
+        "DQ_CONTRACT resource 14",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "8257a79ed86ba227df26702248d2a42f0b168234747dee8fc3a77cbbcb2b0f7c",
+      "resource_sha256": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "e1ee75bb9330edeacaf5e2bdc1960fb4dfdedfc6b94811893f7c37dccebced11",
+          "bytes": 16833
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "e32a7b43ed9519dd86076107689e157bd8e2c67efc7ea9600fd7de5727dc7469",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 21",
+          "DQ_CONTRACT parent_default 57",
+          "DQ_CONTRACT parent_explicit 53",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 21",
+          "DQ_CONTRACT parent_default 57",
+          "DQ_CONTRACT parent_explicit 53",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\retained\\store",
+          "pair_id": "0b2062eeacf48026636ca5f063d1fec4",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "4a8b7c946cbdc8d15e3e0f7b777a8d98",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\retained\\store",
+          "pair_id": "0b2062eeacf48026636ca5f063d1fec4",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "4a8b7c946cbdc8d15e3e0f7b777a8d98",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\retained\\slots\\slot-48172-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\retained\\slots\\slot-48172-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\retained\\slots\\slot-48172-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "98eff02a4c314b2d797863ca976387bd5f61bf65815cf8588c6c783809c9d8ee",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\retained\\slots\\slot-48172-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\retained\\slots\\slot-48172-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "98eff02a4c314b2d797863ca976387bd5f61bf65815cf8588c6c783809c9d8ee",
+            "after_runtime_sha256": "98eff02a4c314b2d797863ca976387bd5f61bf65815cf8588c6c783809c9d8ee"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "d96a5139ed44137671673ad0c6084259f1f454da87e57a190225d98653ed680b"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 21",
+          "DQ_CONTRACT parent_default 57",
+          "DQ_CONTRACT parent_explicit 53",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 21",
+          "DQ_CONTRACT parent_default 57",
+          "DQ_CONTRACT parent_explicit 53",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\fresh\\store",
+          "pair_id": "0b2062eeacf48026636ca5f063d1fec4",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "4a8b7c946cbdc8d15e3e0f7b777a8d98",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\fresh\\store",
+          "pair_id": "0b2062eeacf48026636ca5f063d1fec4",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "4a8b7c946cbdc8d15e3e0f7b777a8d98",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\fresh\\slots\\slot-47416-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\fresh\\slots\\slot-47416-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\fresh\\slots\\slot-47416-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "98eff02a4c314b2d797863ca976387bd5f61bf65815cf8588c6c783809c9d8ee",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\fresh\\slots\\slot-47416-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\fresh\\slots\\slot-47416-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "98eff02a4c314b2d797863ca976387bd5f61bf65815cf8588c6c783809c9d8ee",
+            "after_runtime_sha256": "98eff02a4c314b2d797863ca976387bd5f61bf65815cf8588c6c783809c9d8ee"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\07-parent_change\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "9005467bfc5cc7987858c4b703f5d1caeaf9710a72049b3d65eba8edae643269"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 21",
+          "DQ_CONTRACT parent_default 57",
+          "DQ_CONTRACT parent_explicit 53",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 21",
+          "DQ_CONTRACT parent_default 57",
+          "DQ_CONTRACT parent_explicit 53",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "98eff02a4c314b2d797863ca976387bd5f61bf65815cf8588c6c783809c9d8ee",
+          "fresh": "98eff02a4c314b2d797863ca976387bd5f61bf65815cf8588c6c783809c9d8ee"
+        },
+        "rsc": {
+          "retained": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+          "fresh": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89"
+        }
+      }
+    },
+    {
+      "name": "parent_restore",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 9",
+        "DQ_CONTRACT parent_default 45",
+        "DQ_CONTRACT parent_explicit 41",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 17",
+        "DQ_CONTRACT static_first 41",
+        "DQ_CONTRACT static_second 42",
+        "DQ_CONTRACT structural 0",
+        "DQ_CONTRACT resource 14",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "608372851dc76ed422edaadb95b43f6354f7cd17e460dfbdac01d611b5ff5fb5",
+      "resource_sha256": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "2d49ce278fefd799d8c1bafb2d1865a7e5c6e662d188d3f7c74fc4f1b9d7603c",
+          "bytes": 16833
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "aff4b9b24c8bd7fca05d100afe8f4ed0f6079c589e7d562ba102946b0cf010ee",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\retained\\store",
+          "pair_id": "914a95abd3c568e9f06909c8b975c726",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "374f1fcd0c404ce3d6d118809761743e",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\retained\\store",
+          "pair_id": "914a95abd3c568e9f06909c8b975c726",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "374f1fcd0c404ce3d6d118809761743e",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\retained\\slots\\slot-36436-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\retained\\slots\\slot-36436-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\retained\\slots\\slot-36436-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\retained\\slots\\slot-36436-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\retained\\slots\\slot-36436-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+            "after_runtime_sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "6012d9ba01fda74f2ce9008ec93a4e6a8ec2dd3a5f1b42c93ef10cd8ccda444d"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\fresh\\store",
+          "pair_id": "914a95abd3c568e9f06909c8b975c726",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "374f1fcd0c404ce3d6d118809761743e",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\fresh\\store",
+          "pair_id": "914a95abd3c568e9f06909c8b975c726",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "374f1fcd0c404ce3d6d118809761743e",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\fresh\\slots\\slot-13552-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\fresh\\slots\\slot-13552-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\fresh\\slots\\slot-13552-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\fresh\\slots\\slot-13552-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\fresh\\slots\\slot-13552-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+            "after_runtime_sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\08-parent_restore\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "c50b422f5736a29918e1d65168b62f1346cb9a924995f40289d913c8a6aa3108"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+          "fresh": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e"
+        },
+        "rsc": {
+          "retained": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+          "fresh": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89"
+        }
+      }
+    },
+    {
+      "name": "structural_add",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 9",
+        "DQ_CONTRACT parent_default 45",
+        "DQ_CONTRACT parent_explicit 41",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 17",
+        "DQ_CONTRACT static_first 41",
+        "DQ_CONTRACT static_second 42",
+        "DQ_CONTRACT structural 13",
+        "DQ_CONTRACT resource 14",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "7abd83d1d10e33c39d20e38092f9c0e9104537a2ffc961f04c06658b57fccac6",
+      "resource_sha256": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "847e7144fbcc6ae0a6dba5e7d0b2d5368f6fb10ef5610cf7fb88bb52cbbca147",
+          "bytes": 16954
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "ec9a6d14a36ab2b8797c2c52c408cf895fc76c97a0fa3e4870260768be808a56",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 13",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 13",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\retained\\store",
+          "pair_id": "0a79cd219959b59e92a9c1b4e6047564",
+          "dmb_bytes": 25625,
+          "rsc_bytes": 47,
+          "dmb_hash": "984ccd8f4d511517a28b4178197d3703",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\retained\\store",
+          "pair_id": "0a79cd219959b59e92a9c1b4e6047564",
+          "dmb_bytes": 25625,
+          "rsc_bytes": 47,
+          "dmb_hash": "984ccd8f4d511517a28b4178197d3703",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\retained\\slots\\slot-24268-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\retained\\slots\\slot-24268-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\retained\\slots\\slot-24268-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "ab683de7cfaead67ce5f9f6019715fc8a0540dfbe7368fac1e38e357011def6a",
+            "bytes": 25625,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\retained\\slots\\slot-24268-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\retained\\slots\\slot-24268-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "ab683de7cfaead67ce5f9f6019715fc8a0540dfbe7368fac1e38e357011def6a",
+            "after_runtime_sha256": "ab683de7cfaead67ce5f9f6019715fc8a0540dfbe7368fac1e38e357011def6a"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "4e60136c1ddd8f089fbb1f18d59083d687d20297269d5b63231172c1b4aa7f81"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 13",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 13",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\fresh\\store",
+          "pair_id": "0a79cd219959b59e92a9c1b4e6047564",
+          "dmb_bytes": 25625,
+          "rsc_bytes": 47,
+          "dmb_hash": "984ccd8f4d511517a28b4178197d3703",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\fresh\\store",
+          "pair_id": "0a79cd219959b59e92a9c1b4e6047564",
+          "dmb_bytes": 25625,
+          "rsc_bytes": 47,
+          "dmb_hash": "984ccd8f4d511517a28b4178197d3703",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\fresh\\slots\\slot-14096-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\fresh\\slots\\slot-14096-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\fresh\\slots\\slot-14096-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "ab683de7cfaead67ce5f9f6019715fc8a0540dfbe7368fac1e38e357011def6a",
+            "bytes": 25625,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\fresh\\slots\\slot-14096-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\fresh\\slots\\slot-14096-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "ab683de7cfaead67ce5f9f6019715fc8a0540dfbe7368fac1e38e357011def6a",
+            "after_runtime_sha256": "ab683de7cfaead67ce5f9f6019715fc8a0540dfbe7368fac1e38e357011def6a"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\09-structural_add\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "244f0210eafd1c4c74a9af795a05f3da9e70480ed9aeb89b2cac9ce81f5cb944"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 13",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 13",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "ab683de7cfaead67ce5f9f6019715fc8a0540dfbe7368fac1e38e357011def6a",
+          "fresh": "ab683de7cfaead67ce5f9f6019715fc8a0540dfbe7368fac1e38e357011def6a"
+        },
+        "rsc": {
+          "retained": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+          "fresh": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89"
+        }
+      }
+    },
+    {
+      "name": "runtime_initializer",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 9",
+        "DQ_CONTRACT parent_default 45",
+        "DQ_CONTRACT parent_explicit 41",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 17",
+        "DQ_CONTRACT static_first 41",
+        "DQ_CONTRACT static_second 42",
+        "DQ_CONTRACT structural 19",
+        "DQ_CONTRACT resource 14",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "54845880a96e6a8980bed128eb3282ea0d36272666c705d5b78c322a4bcde85e",
+      "resource_sha256": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "54b0d666b0fb8a376fdd987fb4715e87d069b8272342dc9bfeabd61265ff986f",
+          "bytes": 17001
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "0f412a70543fcbf1c77d382e96340b2295cfbe0f40972b518b86746b74b71bd0",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 19",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 19",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\retained\\store",
+          "pair_id": "99600c2d7361c2397622b7ce257ea07b",
+          "dmb_bytes": 25734,
+          "rsc_bytes": 47,
+          "dmb_hash": "7b62fc24925daa12ea98d31295540fae",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\retained\\store",
+          "pair_id": "99600c2d7361c2397622b7ce257ea07b",
+          "dmb_bytes": 25734,
+          "rsc_bytes": 47,
+          "dmb_hash": "7b62fc24925daa12ea98d31295540fae",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\retained\\slots\\slot-16184-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\retained\\slots\\slot-16184-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\retained\\slots\\slot-16184-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "97d09e8886965c5b0e0673e2f33e87306b79d2255492a586f9f5873ddf0ef692",
+            "bytes": 25734,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\retained\\slots\\slot-16184-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\retained\\slots\\slot-16184-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "97d09e8886965c5b0e0673e2f33e87306b79d2255492a586f9f5873ddf0ef692",
+            "after_runtime_sha256": "97d09e8886965c5b0e0673e2f33e87306b79d2255492a586f9f5873ddf0ef692"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "d94d9652eb3d2e7a221a5cdc806ebe83ae55c5493fefe332f472efc2871a80e9"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 19",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 19",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\fresh\\store",
+          "pair_id": "99600c2d7361c2397622b7ce257ea07b",
+          "dmb_bytes": 25734,
+          "rsc_bytes": 47,
+          "dmb_hash": "7b62fc24925daa12ea98d31295540fae",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\fresh\\store",
+          "pair_id": "99600c2d7361c2397622b7ce257ea07b",
+          "dmb_bytes": 25734,
+          "rsc_bytes": 47,
+          "dmb_hash": "7b62fc24925daa12ea98d31295540fae",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\fresh\\slots\\slot-44964-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\fresh\\slots\\slot-44964-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\fresh\\slots\\slot-44964-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "97d09e8886965c5b0e0673e2f33e87306b79d2255492a586f9f5873ddf0ef692",
+            "bytes": 25734,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\fresh\\slots\\slot-44964-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\fresh\\slots\\slot-44964-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "97d09e8886965c5b0e0673e2f33e87306b79d2255492a586f9f5873ddf0ef692",
+            "after_runtime_sha256": "97d09e8886965c5b0e0673e2f33e87306b79d2255492a586f9f5873ddf0ef692"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\10-runtime_initializer\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "951302cdcc6a029042374e869747a02e2bd9c91d5250016a88386ee33e70fcb5"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 19",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 19",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "97d09e8886965c5b0e0673e2f33e87306b79d2255492a586f9f5873ddf0ef692",
+          "fresh": "97d09e8886965c5b0e0673e2f33e87306b79d2255492a586f9f5873ddf0ef692"
+        },
+        "rsc": {
+          "retained": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+          "fresh": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89"
+        }
+      }
+    },
+    {
+      "name": "structural_delete",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 9",
+        "DQ_CONTRACT parent_default 45",
+        "DQ_CONTRACT parent_explicit 41",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 17",
+        "DQ_CONTRACT static_first 41",
+        "DQ_CONTRACT static_second 42",
+        "DQ_CONTRACT structural 0",
+        "DQ_CONTRACT resource 14",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "608372851dc76ed422edaadb95b43f6354f7cd17e460dfbdac01d611b5ff5fb5",
+      "resource_sha256": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "2d49ce278fefd799d8c1bafb2d1865a7e5c6e662d188d3f7c74fc4f1b9d7603c",
+          "bytes": 16833
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "e3d4a45f340f626e33121230b865cf2bbb105d483b6169cef900ab774ab55468",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\retained\\store",
+          "pair_id": "914a95abd3c568e9f06909c8b975c726",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "374f1fcd0c404ce3d6d118809761743e",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\retained\\store",
+          "pair_id": "914a95abd3c568e9f06909c8b975c726",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "374f1fcd0c404ce3d6d118809761743e",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\retained\\slots\\slot-23004-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\retained\\slots\\slot-23004-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\retained\\slots\\slot-23004-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\retained\\slots\\slot-23004-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\retained\\slots\\slot-23004-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+            "after_runtime_sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "1ddd8d9398845af4be2f1a12f8fb94ad4a19617b64cd885afa6568a15a4c3105"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\fresh\\store",
+          "pair_id": "914a95abd3c568e9f06909c8b975c726",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "374f1fcd0c404ce3d6d118809761743e",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\fresh\\store",
+          "pair_id": "914a95abd3c568e9f06909c8b975c726",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "374f1fcd0c404ce3d6d118809761743e",
+          "rsc_hash": "4b7e3e081a303e43f49d4255d2d0230c",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\fresh\\slots\\slot-44188-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\fresh\\slots\\slot-44188-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\fresh\\slots\\slot-44188-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\fresh\\slots\\slot-44188-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\fresh\\slots\\slot-44188-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+            "after_runtime_sha256": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\11-structural_delete\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+            "after_runtime_sha256": "9c2d8fcd17093af10a548eff8e08600ac10bbdcdd4b4eb0f74718fa506eddc7e"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 14",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e",
+          "fresh": "2295f65e98d5c9eed1e7e31dfe2b65652e3dc2e8772b92d1e619b7980939c33e"
+        },
+        "rsc": {
+          "retained": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89",
+          "fresh": "88dd79800a9013b892c47bbd01dee13afe4a4434c7b3db789634b2bfc62e7c89"
+        }
+      }
+    },
+    {
+      "name": "resource_replace",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 9",
+        "DQ_CONTRACT parent_default 45",
+        "DQ_CONTRACT parent_explicit 41",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 17",
+        "DQ_CONTRACT static_first 41",
+        "DQ_CONTRACT static_second 42",
+        "DQ_CONTRACT structural 0",
+        "DQ_CONTRACT resource 29",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "608372851dc76ed422edaadb95b43f6354f7cd17e460dfbdac01d611b5ff5fb5",
+      "resource_sha256": "3840bc236ee03aacbb1ef7d5108ddfa347c59f10b68d4174affbb53140f31273",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "f9a886417976e84bcb873cc9d73512866a94c8f147743b088107089a950b80e3",
+          "bytes": 16833
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "04a0cc41f53eac98b1206c332bdf4672a76a0156f7673eab27f3cd4caae1311c",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 29",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 29",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\retained\\store",
+          "pair_id": "dd8a4ffa65de330fbb1c1f0354cb8635",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "d195375c31bdc2fe3fd49fa1a0500572",
+          "rsc_hash": "bf933649f2e2a2f53512a1e2f27f83e9",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\retained\\store",
+          "pair_id": "dd8a4ffa65de330fbb1c1f0354cb8635",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "d195375c31bdc2fe3fd49fa1a0500572",
+          "rsc_hash": "bf933649f2e2a2f53512a1e2f27f83e9",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\retained\\slots\\slot-23788-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\retained\\slots\\slot-23788-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\retained\\slots\\slot-23788-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\retained\\slots\\slot-23788-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "52c3985f53a3042c0e34bd8596b36593f3693c33188be894f10f6d6e05e77476",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\retained\\slots\\slot-23788-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985",
+            "after_runtime_sha256": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "52c3985f53a3042c0e34bd8596b36593f3693c33188be894f10f6d6e05e77476",
+            "after_runtime_sha256": "438c8522b25d544442c2927334e7787b11b6781af3d60c8aa658372462848fae"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 29",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 29",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\fresh\\store",
+          "pair_id": "dd8a4ffa65de330fbb1c1f0354cb8635",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "d195375c31bdc2fe3fd49fa1a0500572",
+          "rsc_hash": "bf933649f2e2a2f53512a1e2f27f83e9",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\fresh\\store",
+          "pair_id": "dd8a4ffa65de330fbb1c1f0354cb8635",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "d195375c31bdc2fe3fd49fa1a0500572",
+          "rsc_hash": "bf933649f2e2a2f53512a1e2f27f83e9",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\fresh\\slots\\slot-35404-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\fresh\\slots\\slot-35404-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\fresh\\slots\\slot-35404-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\fresh\\slots\\slot-35404-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "52c3985f53a3042c0e34bd8596b36593f3693c33188be894f10f6d6e05e77476",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\fresh\\slots\\slot-35404-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985",
+            "after_runtime_sha256": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\12-resource_replace\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "52c3985f53a3042c0e34bd8596b36593f3693c33188be894f10f6d6e05e77476",
+            "after_runtime_sha256": "0f371194c41e642dd8c66963f3abc892bfdb6a6e2423110bee99143b362a982e"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 29",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 29",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985",
+          "fresh": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985"
+        },
+        "rsc": {
+          "retained": "52c3985f53a3042c0e34bd8596b36593f3693c33188be894f10f6d6e05e77476",
+          "fresh": "52c3985f53a3042c0e34bd8596b36593f3693c33188be894f10f6d6e05e77476"
+        }
+      }
+    },
+    {
+      "name": "resource_unchanged",
+      "status": "passed",
+      "expected": [
+        "DQ_CONTRACT inherited 9",
+        "DQ_CONTRACT parent_default 45",
+        "DQ_CONTRACT parent_explicit 41",
+        "DQ_CONTRACT argument_defaults 9",
+        "DQ_CONTRACT global 17",
+        "DQ_CONTRACT static_first 41",
+        "DQ_CONTRACT static_second 42",
+        "DQ_CONTRACT structural 0",
+        "DQ_CONTRACT resource 29",
+        "DQ_CONTRACT finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "608372851dc76ed422edaadb95b43f6354f7cd17e460dfbdac01d611b5ff5fb5",
+      "resource_sha256": "3840bc236ee03aacbb1ef7d5108ddfa347c59f10b68d4174affbb53140f31273",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "f9a886417976e84bcb873cc9d73512866a94c8f147743b088107089a950b80e3",
+          "bytes": 16833
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "f35c526da473bd2341f90a668529ac2868ed65ef9906800693498e05247ac538",
+          "bytes": 47
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 29",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 29",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\retained\\store",
+          "pair_id": "dd8a4ffa65de330fbb1c1f0354cb8635",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "d195375c31bdc2fe3fd49fa1a0500572",
+          "rsc_hash": "bf933649f2e2a2f53512a1e2f27f83e9",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\retained\\store",
+          "pair_id": "dd8a4ffa65de330fbb1c1f0354cb8635",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "d195375c31bdc2fe3fd49fa1a0500572",
+          "rsc_hash": "bf933649f2e2a2f53512a1e2f27f83e9",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\retained\\slots\\slot-40496-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\retained\\slots\\slot-40496-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\retained\\slots\\slot-40496-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\retained\\slots\\slot-40496-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "52c3985f53a3042c0e34bd8596b36593f3693c33188be894f10f6d6e05e77476",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\retained\\slots\\slot-40496-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985",
+            "after_runtime_sha256": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "52c3985f53a3042c0e34bd8596b36593f3693c33188be894f10f6d6e05e77476",
+            "after_runtime_sha256": "c9a29030cd72dc4568783a05c031e14ed81e6120a839580240da005bd71215d3"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 29",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 29",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\fresh\\store",
+          "pair_id": "dd8a4ffa65de330fbb1c1f0354cb8635",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "d195375c31bdc2fe3fd49fa1a0500572",
+          "rsc_hash": "bf933649f2e2a2f53512a1e2f27f83e9",
+          "output_project": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\fresh\\store",
+          "pair_id": "dd8a4ffa65de330fbb1c1f0354cb8635",
+          "dmb_bytes": 25426,
+          "rsc_bytes": 47,
+          "dmb_hash": "d195375c31bdc2fe3fd49fa1a0500572",
+          "rsc_hash": "bf933649f2e2a2f53512a1e2f27f83e9",
+          "slot": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\fresh\\slots\\slot-32368-0",
+          "dmb": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\fresh\\slots\\slot-32368-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\fresh\\slots\\slot-32368-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985",
+            "bytes": 25426,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\fresh\\slots\\slot-32368-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "52c3985f53a3042c0e34bd8596b36593f3693c33188be894f10f6d6e05e77476",
+            "bytes": 47,
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\fresh\\slots\\slot-32368-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985",
+            "after_runtime_sha256": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-incremental-runtime-1bec\\dcd4b35cd4e34f48bb575d8d39e64053\\13-resource_unchanged\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "52c3985f53a3042c0e34bd8596b36593f3693c33188be894f10f6d6e05e77476",
+            "after_runtime_sha256": "0d4b04e01d4d05c8a619caa1088592071b62a17d71af37111fe348bcd32f2baa"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 29",
+          "DQ_CONTRACT finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_CONTRACT inherited 9",
+          "DQ_CONTRACT parent_default 45",
+          "DQ_CONTRACT parent_explicit 41",
+          "DQ_CONTRACT argument_defaults 9",
+          "DQ_CONTRACT global 17",
+          "DQ_CONTRACT static_first 41",
+          "DQ_CONTRACT static_second 42",
+          "DQ_CONTRACT structural 0",
+          "DQ_CONTRACT resource 29",
+          "DQ_CONTRACT finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985",
+          "fresh": "cba3527fbd28023fce8dd994ca7946c3adbdca868960add5ba65879f9b79f985"
+        },
+        "rsc": {
+          "retained": "52c3985f53a3042c0e34bd8596b36593f3693c33188be894f10f6d6e05e77476",
+          "fresh": "52c3985f53a3042c0e34bd8596b36593f3693c33188be894f10f6d6e05e77476"
+        }
+      }
+    }
+  ],
+  "executions": {
+    "00-initial/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.324159299954772,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.096782999986317,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.1316705999779515,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.045185299997683614,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.1113296000403352,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.10776219994295388,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.05235660000471398,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.123837299994193,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.3206881000078283,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.0903041000128724,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.12264629994751886,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.04767500003799796,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.0868521999800578,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.10989429999608546,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.04985760001000017,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "01-unchanged/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.3081295999581926,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.3270177000085823,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.0947033000411466,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.12605229998007417,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.049219499982427806,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.0980903999879956,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.13093470002058893,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.05512469995301217,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "02-body/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.107851600041613,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-inherited_default/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.33788669999921694,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-inherited_default/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.1248267000191845,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-inherited_default/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.13490920001640916,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-inherited_default/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.06016500003170222,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-inherited_default/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.0990471999975853,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-inherited_default/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.11597530002472922,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-inherited_default/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.05021419998956844,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "03-inherited_default/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.1034570999909192,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-argument_default/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.334394000004977,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-argument_default/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.1190795000293292,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-argument_default/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.1399175000260584,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-argument_default/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.05089469999074936,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-argument_default/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.1194849000312388,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-argument_default/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.11835529998643324,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-argument_default/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.05030820000683889,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "04-argument_default/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.1314418999827467,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-procedure_static/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.32505639997543767,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-procedure_static/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.0996024999767542,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-procedure_static/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.13424939999822527,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-procedure_static/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.04780669999308884,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-procedure_static/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.1031698000151664,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-procedure_static/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.10366250004153699,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-procedure_static/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.04980659997090697,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "05-procedure_static/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.2692591000231914,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "06-global_default/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.31855259998701513,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "06-global_default/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.1001626000506803,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "06-global_default/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.1643902999931015,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "06-global_default/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.08338269998785108,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "06-global_default/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.14764149999246,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "06-global_default/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.11143580003408715,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "06-global_default/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.05913090001558885,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "06-global_default/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.3232302000396885,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "07-parent_change/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.33198540000012144,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "07-parent_change/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.310566000000108,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "07-parent_change/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.3183478999999352,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "07-parent_change/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.054812800022773445,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "07-parent_change/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.1091647000284865,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "07-parent_change/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.286772400024347,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "07-parent_change/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.0488171000033617,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "07-parent_change/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.0947141000069678,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "08-parent_restore/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.32348339998861775,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "08-parent_restore/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.2806743999826722,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "08-parent_restore/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.13679950003279373,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "08-parent_restore/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.22382380004273728,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "08-parent_restore/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.0935583999962546,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "08-parent_restore/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.2801198000088334,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "08-parent_restore/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.04714750003768131,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "08-parent_restore/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.281970200012438,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "09-structural_add/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.312261099985335,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "09-structural_add/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.262958500010427,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "09-structural_add/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.22877600003266707,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "09-structural_add/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.19922079995740205,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "09-structural_add/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.296114100026898,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "09-structural_add/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.10381970001617447,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "09-structural_add/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.049804700014647096,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "09-structural_add/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.1065594000392593,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "10-runtime_initializer/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.31600769999204203,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "10-runtime_initializer/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.0935970999998972,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "10-runtime_initializer/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.1404900000197813,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "10-runtime_initializer/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.04911839996930212,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "10-runtime_initializer/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.1253045999910682,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "10-runtime_initializer/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.1143700999673456,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "10-runtime_initializer/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.05100140004651621,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "10-runtime_initializer/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.0968726999708451,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "11-structural_delete/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.3155184999923222,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "11-structural_delete/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.0976224000332877,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "11-structural_delete/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.13165419996948913,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "11-structural_delete/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.04773439996642992,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "11-structural_delete/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.100401299947407,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "11-structural_delete/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.11738459998741746,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "11-structural_delete/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.0544886999996379,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "11-structural_delete/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.124360399961006,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "12-resource_replace/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.3129291000077501,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "12-resource_replace/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.0837809000513516,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "12-resource_replace/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.12031259998911992,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "12-resource_replace/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.04991110000992194,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "12-resource_replace/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.0872026000288315,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "12-resource_replace/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.11092930001905188,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "12-resource_replace/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.048354600032325834,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "12-resource_replace/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.1201334000215866,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "13-resource_unchanged/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.31326520000584424,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "13-resource_unchanged/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.0950427000061609,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "13-resource_unchanged/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.1275197000359185,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "13-resource_unchanged/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.047927499981597066,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "13-resource_unchanged/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.0897913000080734,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "13-resource_unchanged/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.11047219997271895,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "13-resource_unchanged/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.047265200002584606,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "13-resource_unchanged/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.0979502000263892,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    }
+  },
+  "fixture_sources": {
+    "probe.dm": "10212c08d94cae4ed4f0e8fc0d85b8366050120a3c48426ccb4075d15cd0dc02",
+    "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae",
+    "contract-resource.txt": "9a92adbc0cee38ef658c71ce1b1bf8c65668f166bfb213644c895ccb1ad07a25",
+    "scenarios.json": "c3630d2f3563b707e01287894d946ad050d386b8eae9634431effacef08287a3"
+  },
+  "pinned_inputs": {
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-054218-1bec0c4b6b.exe",
+      "sha256": "9531f94d7e66a8abcb9079f24423806c1c522af4f816155f5d476897c32dc0ef"
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    },
+    "dd": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+      "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+    }
+  },
+  "daemon_namespace": "runtime-contract-58d8e3b0dbb54f68815da335e768c5ac",
+  "owned_daemon_pid": 44508,
+  "daemon_cleanup": {
+    "pid": 44508,
+    "tree_error": null,
+    "direct_error": null,
+    "wait_error": null,
+    "returncode": 1,
+    "reaped": true
+  },
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 78917632,
+    "samples": 295,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 44508,
+        "private_bytes": 20103168
+      },
+      {
+        "pid": 57996,
+        "private_bytes": 58814464
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "registered owned daemon/compile/acquire/runtime handles, 200ms samples; not strict peak or descendant proof"
+  }
+}

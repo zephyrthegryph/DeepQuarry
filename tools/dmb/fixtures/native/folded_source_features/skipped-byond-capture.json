@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "scope": "compile-only folded nameof source-feature observations; no runtime",
+  "complete": true,
+  "runtime": "not run",
+  "root": "E:\\dq-cache\\dmb-folded-source-features\\2eba88ad79974ba88e0df223a863fe8c",
+  "overall_watchdog_seconds": 300,
+  "child_watchdog_seconds": 30,
+  "job_memory_bytes": 4294967296,
+  "pins": {
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    }
+  },
+  "cases": {
+    "skipped_cpu": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.3892969998996705,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    },
+    "skipped_graphics": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.38577599998097867,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    }
+  },
+  "source_sha256": {
+    "skipped_cpu.dm": "3337f0b645a302d26f02143f48a9ef5ad199877be1a7cee335c4356a13d2524f",
+    "skipped_cpu.dme": "741bdfe0acdf5c2d5427d074002f21a713d9accf6d728c4dd4e753779bce20d1",
+    "skipped_graphics.dm": "61a3e1d1d3019ea7347c9eb7256897fc5cf64ae43f11288e5fb284e25ff8e3ec",
+    "skipped_graphics.dme": "f009060e6df62a4d88e20ff0a8e51377c3a1b9b60150653a914d076dc016bffd"
+  },
+  "pin_after_checks": {
+    "dm": {
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "unchanged": true
+    }
+  },
+  "backend": "byond-only",
+  "paired_parity": "not measured",
+  "acceptance_agrees": false,
+  "rejection_class_agrees": false,
+  "diagnostics_agree": false,
+  "owned_job_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 4294967296,
+      "peak_job_commit_bytes": 60092416,
+      "peak_process_commit_bytes": 58785792,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "captured_outputs": {
+    "skipped_cpu": {
+      "bytes": 15121,
+      "sha256": "5c991f5d451a4d6b57710a592f0cc939dc6a0bbfd33f6561d9ae75576caa7006"
+    },
+    "skipped_graphics": {
+      "bytes": 15136,
+      "sha256": "8be8c3630364bf66491a78e75cae4bee8f5167d82154ba80e327391d20f693b7"
+    }
+  }
+}

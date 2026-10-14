@@ -1,0 +1,152 @@
+{
+  "case": "lists",
+  "status": "observed_match",
+  "reference": [
+    {
+      "label": "sequence",
+      "value": [
+        "z",
+        "a",
+        "z",
+        "m"
+      ]
+    },
+    {
+      "label": "associative_keys",
+      "value": [
+        "z",
+        "a",
+        "m"
+      ]
+    },
+    {
+      "label": "associative_values",
+      "value": [
+        1,
+        4,
+        3
+      ]
+    },
+    {
+      "label": "reinserted_keys",
+      "value": [
+        "z",
+        "m",
+        "a"
+      ]
+    }
+  ],
+  "native": [
+    {
+      "label": "sequence",
+      "value": [
+        "z",
+        "a",
+        "z",
+        "m"
+      ]
+    },
+    {
+      "label": "associative_keys",
+      "value": [
+        "z",
+        "a",
+        "m"
+      ]
+    },
+    {
+      "label": "associative_values",
+      "value": [
+        1,
+        4,
+        3
+      ]
+    },
+    {
+      "label": "reinserted_keys",
+      "value": [
+        "z",
+        "m",
+        "a"
+      ]
+    }
+  ],
+  "differences": [],
+  "provenance": {
+    "results": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\results.json",
+    "source_hashes": {
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\source\\lists.dme": "b7ae303439e5933aca5cfdbdbe464481a3ede0e13bf6400e5e3ae752bfa30e66",
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\source\\common.dm": "426285dfb48222978fca2550be2cc6dd438154b65d98ad1856d544a2a9426c08",
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\source\\lists.dm": "30a123258b0e44be8a021019a37e694c3d01e4e12d5702a229fd0b9a9c59a39e"
+    },
+    "observations": {
+      "byond": {
+        "path": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\byond-observations.json",
+        "sha256": "7e308aae522ea7c1780f4cffe459a575c8099af53bdec0ccb99d74966bea6dc6"
+      },
+      "native": {
+        "path": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\native-observations.json",
+        "sha256": "7e308aae522ea7c1780f4cffe459a575c8099af53bdec0ccb99d74966bea6dc6"
+      }
+    },
+    "compiler_hashes": {
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "D:\\dmb-native-v2-phase0\\frozen\\compiler-integration-fiftieth.exe": "87eaa5f265756588e001a29931528d40091a72d8f542abdba940ee6aacb19040"
+    },
+    "native_builtins": {
+      "path": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "commands_and_outcomes": {
+      "byond_compile": {
+        "exit_code": 0,
+        "seconds": 2.5705982000072254,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\source\\lists.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\byond-compile.log"
+      },
+      "byond_runtime": {
+        "exit_code": 0,
+        "seconds": 1.2182172000029823,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\source\\lists.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\byond-runtime.log"
+      },
+      "native_compile": {
+        "exit_code": 0,
+        "seconds": 1.5877189000020735,
+        "timed_out": false,
+        "command": [
+          "D:\\dmb-native-v2-phase0\\frozen\\compiler-integration-fiftieth.exe",
+          "build-project",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\source\\lists.dme",
+          "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\native"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\native-compile.log"
+      },
+      "native_runtime": {
+        "exit_code": 0,
+        "seconds": 1.1369056999974418,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\native-slot\\world.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-lists\\native-runtime.log"
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "scope": "Source changes committed during an isolated measured cohort; execution validation pending",
+  "changes": [
+    {
+      "commit": "d704666003",
+      "change": "Exact procedure candidate prefixes use stack backing through the existing shared artifact core",
+      "limitation": "Does not remove full-roster disk replay; no measured improvement asserted"
+    },
+    {
+      "commit": "7c78261ff2",
+      "change": "Pressure tier 3 retains constant/runtime catalog issuer authority while releasing heavy preparation; tier 5 releases issuers with symbolic core",
+      "validation": "Regression added for unchanged issuer stability and engine/type-path invalidation; not executed yet",
+      "limitation": "Existing private catalog allocation accounting remains explicitly incomplete"
+    },
+    {
+      "commit": "9dfa3ddc3c",
+      "change": "Captured invocation rejects NUL and Windows alternate-data-stream manifest paths",
+      "limitation": "Filesystem junction containment is separate"
+    },
+    {
+      "commit": "7761789e2f",
+      "tests_commit": "d156573709",
+      "change": "Shadow integration preserves and validates core-issued resource journal coverage",
+      "limitation": "Observed native demand coverage is not authenticated shared BYOND input closure"
+    }
+  ],
+  "active_measurement": {
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261012-115006-392c2f27/receipt.json",
+    "compiler_source": "3ede538f96",
+    "includes_changes_above": false,
+    "status_at_recording": "running",
+    "performance_admission": "Diagnostic counted opt0 CLI profile, not release acceptance"
+  },
+  "remaining": [
+    "Validate committed follow-up slices after measured cohort finishes",
+    "Authenticate shared input closure and implicit compiler configuration",
+    "Complete whole-program BYOND structural correctness gate",
+    "Real six-worktree acceptance and Phase 5 runtime baseline"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "scope": "Fresh private captured-byte authority; not full compiler input closure or runtime acceptance",
+  "prepared_root": "E:/dq-cache/dmb-native-v2/current-runtime-source-20261011-0e40b329cf20",
+  "receipt": "E:/dq-cache/dmb-native-v2/current-runtime-source-20261011-0e40b329cf20/final-verification-receipt.json",
+  "files": 27345,
+  "bytes": 1280913560,
+  "source_snapshot_sha256": "cbd96296723697144a8720f98d804345070e2f7037a981b76f1b956b0edc74ce",
+  "input_closure_sha256": "10a0d164e16a1c9ef6301a0e6f489ce2c870a0f9868af280a78324ed69fb6f37",
+  "generated_runtime_abi": "57759af855de3189",
+  "generator_exit": 0,
+  "generator_seconds": 77.344,
+  "final_verification_seconds": 213.5,
+  "owned_children_reaped": true,
+  "original_copy_time_authenticated": false,
+  "full_input_closure_authenticated": false,
+  "accepted_runtime_baseline": false,
+  "first_library_build_receipt": "E:/dq-cache/dmb-native-v2/captured-runtime-build-20261011-1819/runtime-build-receipt.json",
+  "first_library_build_exit": 101,
+  "first_library_build_failure": "Offline compiler Cargo home lacks locked byondapi revision",
+  "retry_dependency_home": "E:/cargo",
+  "dependency_audit": "Exact locked byondapi revision and all 194 locked registry packages present; no foreign DLL copied"
+}

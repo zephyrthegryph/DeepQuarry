@@ -1,0 +1,21 @@
+{
+  "captured_local_date": "2026-10-06",
+  "scope": "decoded-dmb-encoding-only",
+  "build": "cargo build -j1 -p byond-dmb --example measure_encoding",
+  "profile": "dev; byond-dmb package opt-level=2",
+  "executable_sha256": "D7DFD7D8DADD67DEF3964C5631506AB6F67CA7E6979A7357CAD7E8EDBE132D4D",
+  "input": "D:/dmb-native-v2-phase0/frozen/pairs/byond/world.dmb",
+  "input_bytes": 47843708,
+  "input_md5": "48c0a36bbf95587391b7779bcade6fe1",
+  "output_bytes": 47843708,
+  "byte_identical": true,
+  "read_seconds": 0.0184861,
+  "decode_seconds": 0.1571834,
+  "validation_seconds": 0.0200406,
+  "encoding_seconds": 0.1611278,
+  "includes_symbolic_linking": false,
+  "includes_publication": false,
+  "includes_resource_encoding": false,
+  "input_os_cache_state": "uncontrolled",
+  "samples": 1
+}

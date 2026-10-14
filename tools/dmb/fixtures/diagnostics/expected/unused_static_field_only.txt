@@ -1,0 +1,3 @@
+unused_static_field_only.dm:8:warning (unused_var): d: variable defined but not used
+unused_static_field_only.dm:9:warning (unused_var): e: variable defined but not used
+unused_static_field_only.dmb - 0 errors, 2 warnings

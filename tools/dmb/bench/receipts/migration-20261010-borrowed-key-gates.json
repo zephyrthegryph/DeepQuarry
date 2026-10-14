@@ -1,0 +1,61 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-d02f53bd52aad7c5.exe",
+  "binary_sha256": "ee58519fd0b9f2f597ffe4e719111c405bfaf4070698bd4a0dd6ddb771fd8751",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "lowering_memo::key_recipe::tests",
+      "selected": [
+        "lowering_memo::key_recipe::tests::borrowed_key_occurrence_matches_independent_inherited_reopen_chain",
+        "lowering_memo::key_recipe::tests::distinct_equal_metadata_falls_back_to_exact_equality_and_changes_decline",
+        "lowering_memo::key_recipe::tests::resident_recipe_exact_inputs_and_issued_tail_match_legacy_bytes"
+      ],
+      "exit": 0,
+      "seconds": 0.038475200009997934,
+      "stdout": "\nrunning 3 tests\ntest lowering_memo::key_recipe::tests::borrowed_key_occurrence_matches_independent_inherited_reopen_chain ... ok\ntest lowering_memo::key_recipe::tests::distinct_equal_metadata_falls_back_to_exact_equality_and_changes_decline ... ok\ntest lowering_memo::key_recipe::tests::resident_recipe_exact_inputs_and_issued_tail_match_legacy_bytes ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 667 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "procedure_policy::canonical::tests",
+      "selected": [
+        "procedure_policy::canonical::tests::canonical_owner_reuses_exact_inputs_and_rejects_mutation",
+        "procedure_policy::canonical::tests::prepared_replay_shares_input_owner_and_mutable_compatibility_detaches"
+      ],
+      "exit": 0,
+      "seconds": 0.03295769996475428,
+      "stdout": "\nrunning 2 tests\ntest procedure_policy::canonical::tests::canonical_owner_reuses_exact_inputs_and_rejects_mutation ... ok\ntest procedure_policy::canonical::tests::prepared_replay_shares_input_owner_and_mutable_compatibility_detaches ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 668 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "driver_facts::abi_artifacts::production_tests::real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature",
+      "selected": [
+        "driver_facts::abi_artifacts::production_tests::real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature"
+      ],
+      "exit": 0,
+      "seconds": 0.3464217000291683,
+      "stdout": "\nrunning 1 test\ntest driver_facts::abi_artifacts::production_tests::real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 669 filtered out; finished in 0.32s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "heap_census::resident_abi::tests",
+      "selected": [
+        "heap_census::resident_abi::tests::retained_input_capacity_and_abi_metadata_are_charged_without_serialization"
+      ],
+      "exit": 0,
+      "seconds": 0.02844700001878664,
+      "stdout": "\nrunning 1 test\ntest heap_census::resident_abi::tests::retained_input_capacity_and_abi_metadata_are_charged_without_serialization ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 669 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "lowering::symbolic_input::retained::tests",
+      "selected": [
+        "lowering::symbolic_input::retained::tests::replay_meaning_fast_equality_preserves_canonical_fallback_and_rejection",
+        "lowering::symbolic_input::retained::tests::symbolic_census_deduplicates_shared_records_and_counts_pruned_members"
+      ],
+      "exit": 0,
+      "seconds": 0.03755830001318827,
+      "stdout": "\nrunning 2 tests\ntest lowering::symbolic_input::retained::tests::replay_meaning_fast_equality_preserves_canonical_fallback_and_rejection ... ok\ntest lowering::symbolic_input::retained::tests::symbolic_census_deduplicates_shared_records_and_counts_pruned_members ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 668 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    }
+  ]
+}

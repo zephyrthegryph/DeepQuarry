@@ -1,0 +1,128 @@
+{
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "files": [
+    {
+      "sha256": "2b4a36b3152af89c2af116c71c13e3d20ee2acb0c8cbc4b468d8e2d388727ae0",
+      "path": ".gitattributes"
+    },
+    {
+      "sha256": "badafc946fbf8cb2c9d02e397ae25c9e1288e4fda1c5f3ba56fedef4909632b0",
+      "path": "context/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "context/compile.stderr.log"
+    },
+    {
+      "sha256": "82749645b54d8c3774e2de8c3d86cdd7af6ec7f7a4ad2485da9372dc4a6b8a95",
+      "path": "context/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "context/probe.dme"
+    },
+    {
+      "sha256": "a60563e6a6d272a57eca4bfb162cb94408284a47bdf6019f8ce6c4f5e155a7bf",
+      "path": "context/probe.native.bin"
+    },
+    {
+      "sha256": "badafc946fbf8cb2c9d02e397ae25c9e1288e4fda1c5f3ba56fedef4909632b0",
+      "path": "default/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "default/compile.stderr.log"
+    },
+    {
+      "sha256": "fd4ca7865799d984a5d342f1abcd2893817f453434db39627b172b653ecf6a6c",
+      "path": "default/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "default/probe.dme"
+    },
+    {
+      "sha256": "96a058d45631f336e1124754fb71a771f2db2937410d5744de258f562c9f9865",
+      "path": "default/probe.native.bin"
+    },
+    {
+      "sha256": "e001278d5ce491d053d59d67fa4c3901b30222ab8212d4579017a9b03d8c6032",
+      "path": "inferred/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "inferred/compile.stderr.log"
+    },
+    {
+      "sha256": "5e9a7113dc3fea14dee15e16e8b0d45bdf484dff73db625c819e2e8fe7b6c0ae",
+      "path": "inferred/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "inferred/probe.dme"
+    },
+    {
+      "sha256": "badafc946fbf8cb2c9d02e397ae25c9e1288e4fda1c5f3ba56fedef4909632b0",
+      "path": "read/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "read/compile.stderr.log"
+    },
+    {
+      "sha256": "65e1ffa78e82264831e989d3b82523f40d7597294f58e96f23e2c61ba0983370",
+      "path": "read/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "read/probe.dme"
+    },
+    {
+      "sha256": "8e598e66f7cbefa0d9ac1d068bd45be4b5a5896c05c50f44718746c28725faa5",
+      "path": "read/probe.native.bin"
+    },
+    {
+      "sha256": "04d1b06c708b9e2225ab255f4c6a8bb539ec9f564d0dbcb0c139e3b48009112f",
+      "path": "typed/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "typed/compile.stderr.log"
+    },
+    {
+      "sha256": "e76d67a87ac2f057c7ce8d9d6178117df9217e7722f3f9442d628e967926dad3",
+      "path": "typed/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "typed/probe.dme"
+    },
+    {
+      "sha256": "badafc946fbf8cb2c9d02e397ae25c9e1288e4fda1c5f3ba56fedef4909632b0",
+      "path": "write/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "write/compile.stderr.log"
+    },
+    {
+      "sha256": "e63dae9d40d722e6cb027a040671a90d1af48eeb6108dee274cdeb182739a652",
+      "path": "write/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "write/probe.dme"
+    },
+    {
+      "sha256": "a49f3752ffdcc62b33cb7cd66e79e1001a21eda542b04b6d9623d852472ab12e",
+      "path": "write/probe.native.bin"
+    }
+  ],
+  "facts": {
+    "read": "GetVar SetCache(World,Field sleep_offline)",
+    "default": "world declaration sleep_offline1 accepted",
+    "write": "SetVar SetCache(World,Field sleep_offline)",
+    "inferred": "istype(world.sleep_offline) rejected unknown variable type",
+    "typed": "dot name rejected undefined var"
+  }
+}

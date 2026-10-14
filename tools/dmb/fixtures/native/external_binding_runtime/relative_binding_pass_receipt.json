@@ -1,0 +1,104 @@
+{
+  "schema": 2,
+  "scope": "real load_ext/call_ext direct and procedure-static binding with operand-preserving OR; not game parity",
+  "complete": true,
+  "root": "E:\\dq-cache\\dmb-external-binding\\f2305f9c68aa4595829a258a4d26192e",
+  "executions": {
+    "byond-compile": {
+      "exit": 0,
+      "wall_s": 0.31887519999872893,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.1114863000111654,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "native-compile": {
+      "exit": 0,
+      "wall_s": 0.10543140000663698,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "acquire": {
+      "exit": 0,
+      "wall_s": 0.04597699997248128,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "native-runtime": {
+      "exit": 0,
+      "wall_s": 1.1072924000327475,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    }
+  },
+  "fixture_sources": {
+    "probe.dm": "15c16d2be85e3220006bbda83776f775cbcf89fa226af8d46a9795415c230923",
+    "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+  },
+  "pinned_inputs": {
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-130329-a022b251.exe",
+      "sha256": "c3eb97c2abe4d15754639a3fcde6928c2414148af7f14c04025f4bff9fc403b3"
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    },
+    "dd": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+      "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+    },
+    "library": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\verdigris.dll",
+      "sha256": "7e427a36c045e185f65464db17c0eb73636d0af2d0c6f337f348c623e8547bce",
+      "runtime_spelling": "verdigris",
+      "scope": "same authenticated library bytes and requested spelling for both runtimes"
+    }
+  },
+  "hosted_libraries": {
+    "byond": "E:\\dq-cache\\dmb-external-binding\\f2305f9c68aa4595829a258a4d26192e\\byond-source\\verdigris.dll",
+    "native": "E:\\dq-cache\\dmb-external-binding\\f2305f9c68aa4595829a258a4d26192e\\slots\\slot-38184-0\\verdigris.dll"
+  },
+  "byond": {
+    "markers": [
+      "DQ_FFI direct 1",
+      "DQ_FFI direct_abi 57759af855de3189",
+      "DQ_FFI static 1",
+      "DQ_FFI static_abi 57759af855de3189",
+      "DQ_FFI finished"
+    ],
+    "runtimes": []
+  },
+  "native": {
+    "markers": [
+      "DQ_FFI direct 1",
+      "DQ_FFI direct_abi 57759af855de3189",
+      "DQ_FFI static 1",
+      "DQ_FFI static_abi 57759af855de3189",
+      "DQ_FFI finished"
+    ],
+    "runtimes": []
+  },
+  "matches": true,
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 58773504,
+    "samples": 14,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 54276,
+        "private_bytes": 58773504
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "registered owned compile/acquisition/runtime children, 200ms samples; not strict peak or unregistered-descendant proof"
+  }
+}

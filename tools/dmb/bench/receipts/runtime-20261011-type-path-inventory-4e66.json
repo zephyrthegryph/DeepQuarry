@@ -1,0 +1,298 @@
+{
+  "schema": 1,
+  "scope": "typed datum iteration versus type-path inventory and initial tier lookup",
+  "acceptance_profile": false,
+  "complete": true,
+  "matches": true,
+  "root": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90",
+  "steps": [
+    {
+      "name": "initial",
+      "status": "passed",
+      "expected": [
+        "DQ_INVENTORY typed_count 0",
+        "DQ_INVENTORY untyped_count 2",
+        "DQ_INVENTORY excluded_count 1",
+        "DQ_INVENTORY finished"
+      ],
+      "immutable_asset_sha256": {
+        "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+      },
+      "asset_sha256": {},
+      "source_sha256": "da9a35bf38cb98a5a6a47dc3a9eb36226cf39390caa9325b2d09a8347083921a",
+      "resource_sha256": "9092f01a598731ebec49f09eeae2a8c8af1a1c67e690fa1096621ef2ded88ed2",
+      "byond_outputs": {
+        "dmb": {
+          "present": true,
+          "sha256": "ed4ccf458e0f563efba645cb2f0c57eccfb979ae2591731cf26238f5c97cc2d5",
+          "bytes": 16068
+        },
+        "rsc": {
+          "present": true,
+          "sha256": "698231bcc1e6b29189cb23eef85183dbde101877647defd9d9a668dbb3d99372",
+          "bytes": 73
+        }
+      },
+      "byond": {
+        "markers": [
+          "DQ_INVENTORY typed_count 0",
+          "DQ_INVENTORY untyped_count 2",
+          "DQ_INVENTORY excluded_count 1",
+          "DQ_INVENTORY finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_INVENTORY typed_count 0",
+          "DQ_INVENTORY untyped_count 2",
+          "DQ_INVENTORY excluded_count 1",
+          "DQ_INVENTORY finished"
+        ],
+        "matches_expected": true
+      },
+      "retained_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\retained\\store",
+          "pair_id": "8ad18517ef8a912d468586914aafa668",
+          "dmb_bytes": 24095,
+          "rsc_bytes": 73,
+          "dmb_hash": "2eee40af5fe110090515e7f97f7bb53d",
+          "rsc_hash": "adee394b56bc33ebe981560722ea669d",
+          "output_project": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\retained\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\retained\\store",
+          "pair_id": "8ad18517ef8a912d468586914aafa668",
+          "dmb_bytes": 24095,
+          "rsc_bytes": 73,
+          "dmb_hash": "2eee40af5fe110090515e7f97f7bb53d",
+          "rsc_hash": "adee394b56bc33ebe981560722ea669d",
+          "slot": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\retained\\slots\\slot-55340-0",
+          "dmb": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\retained\\slots\\slot-55340-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\retained\\slots\\slot-55340-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "123297e5e1d7c4c860b1fae575119e90606c2f99a948d28b84efa3d9d7a93658",
+            "bytes": 24095,
+            "path": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\retained\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\retained\\slots\\slot-55340-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "b2aad494e91af1f54d5dd0b36f880bee7984836562279b71aa1e5b6fbabe4daa",
+            "bytes": 73,
+            "path": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\retained\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\retained\\slots\\slot-55340-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\retained\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "123297e5e1d7c4c860b1fae575119e90606c2f99a948d28b84efa3d9d7a93658",
+            "after_runtime_sha256": "123297e5e1d7c4c860b1fae575119e90606c2f99a948d28b84efa3d9d7a93658"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\retained\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "b2aad494e91af1f54d5dd0b36f880bee7984836562279b71aa1e5b6fbabe4daa",
+            "after_runtime_sha256": "cd0c37c4337643f5b3c3a0531e94fba2de0dac48e6fffa6b2315bd88806eded0"
+          }
+        }
+      },
+      "retained": {
+        "markers": [
+          "DQ_INVENTORY typed_count 0",
+          "DQ_INVENTORY untyped_count 2",
+          "DQ_INVENTORY excluded_count 1",
+          "DQ_INVENTORY finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_INVENTORY typed_count 0",
+          "DQ_INVENTORY untyped_count 2",
+          "DQ_INVENTORY excluded_count 1",
+          "DQ_INVENTORY finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_pair": {
+        "published": {
+          "schema_version": 1,
+          "kind": "native_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\fresh\\store",
+          "pair_id": "8ad18517ef8a912d468586914aafa668",
+          "dmb_bytes": 24095,
+          "rsc_bytes": 73,
+          "dmb_hash": "2eee40af5fe110090515e7f97f7bb53d",
+          "rsc_hash": "adee394b56bc33ebe981560722ea669d",
+          "output_project": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\fresh\\artifacts\\probe.dme"
+        },
+        "acquired": {
+          "schema_version": 1,
+          "kind": "acquired_pair",
+          "store": "\\\\?\\E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\fresh\\store",
+          "pair_id": "8ad18517ef8a912d468586914aafa668",
+          "dmb_bytes": 24095,
+          "rsc_bytes": 73,
+          "dmb_hash": "2eee40af5fe110090515e7f97f7bb53d",
+          "rsc_hash": "adee394b56bc33ebe981560722ea669d",
+          "slot": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\fresh\\slots\\slot-15964-0",
+          "dmb": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\fresh\\slots\\slot-15964-0\\deepquarry.dmb",
+          "rsc": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\fresh\\slots\\slot-15964-0\\deepquarry.rsc"
+        },
+        "outputs": {
+          "dmb": {
+            "sha256": "123297e5e1d7c4c860b1fae575119e90606c2f99a948d28b84efa3d9d7a93658",
+            "bytes": 24095,
+            "path": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\fresh\\artifacts\\probe.dmb",
+            "acquired_path": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\fresh\\slots\\slot-15964-0\\deepquarry.dmb"
+          },
+          "rsc": {
+            "sha256": "b2aad494e91af1f54d5dd0b36f880bee7984836562279b71aa1e5b6fbabe4daa",
+            "bytes": 73,
+            "path": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\fresh\\artifacts\\probe.rsc",
+            "acquired_path": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\fresh\\slots\\slot-15964-0\\deepquarry.rsc"
+          }
+        },
+        "runtime_copies": {
+          "dmb": {
+            "path": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\fresh\\runtime-owned\\deepquarry.dmb",
+            "initial_sha256": "123297e5e1d7c4c860b1fae575119e90606c2f99a948d28b84efa3d9d7a93658",
+            "after_runtime_sha256": "123297e5e1d7c4c860b1fae575119e90606c2f99a948d28b84efa3d9d7a93658"
+          },
+          "rsc": {
+            "path": "E:\\dq-cache\\dmb-type-path-inventory\\6c49eb10c2e545258beee8acd3e53b90\\00-initial\\fresh\\runtime-owned\\deepquarry.rsc",
+            "initial_sha256": "b2aad494e91af1f54d5dd0b36f880bee7984836562279b71aa1e5b6fbabe4daa",
+            "after_runtime_sha256": "6509f23b96cd074be24a4e83e03db5adbb61f5a057f2bb23a63e4b861d66eaa1"
+          }
+        }
+      },
+      "fresh": {
+        "markers": [
+          "DQ_INVENTORY typed_count 0",
+          "DQ_INVENTORY untyped_count 2",
+          "DQ_INVENTORY excluded_count 1",
+          "DQ_INVENTORY finished"
+        ],
+        "runtime_errors": [],
+        "expected": [
+          "DQ_INVENTORY typed_count 0",
+          "DQ_INVENTORY untyped_count 2",
+          "DQ_INVENTORY excluded_count 1",
+          "DQ_INVENTORY finished"
+        ],
+        "matches_expected": true
+      },
+      "fresh_byte_oracle": {
+        "dmb": {
+          "retained": "123297e5e1d7c4c860b1fae575119e90606c2f99a948d28b84efa3d9d7a93658",
+          "fresh": "123297e5e1d7c4c860b1fae575119e90606c2f99a948d28b84efa3d9d7a93658"
+        },
+        "rsc": {
+          "retained": "b2aad494e91af1f54d5dd0b36f880bee7984836562279b71aa1e5b6fbabe4daa",
+          "fresh": "b2aad494e91af1f54d5dd0b36f880bee7984836562279b71aa1e5b6fbabe4daa"
+        }
+      }
+    }
+  ],
+  "executions": {
+    "00-initial/byond-compile": {
+      "exit": 0,
+      "wall_s": 0.31848819996230304,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.0862373000127263,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/retained-compile": {
+      "exit": 0,
+      "wall_s": 0.13107820000732318,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/retained-acquire": {
+      "exit": 0,
+      "wall_s": 0.043653400032781065,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/retained-runtime": {
+      "exit": 0,
+      "wall_s": 1.1164955000276677,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/fresh-compile": {
+      "exit": 0,
+      "wall_s": 0.10371739999391139,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/fresh-acquire": {
+      "exit": 0,
+      "wall_s": 0.04969020001590252,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "00-initial/fresh-runtime": {
+      "exit": 0,
+      "wall_s": 1.1157077999669127,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    }
+  },
+  "fixture_sources": {
+    "probe.dm": "da9a35bf38cb98a5a6a47dc3a9eb36226cf39390caa9325b2d09a8347083921a",
+    "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae",
+    "contract-resource.txt": "9092f01a598731ebec49f09eeae2a8c8af1a1c67e690fa1096621ef2ded88ed2",
+    "scenarios.json": "7a847c121858eb5c87baccbb2e7ee8d18661381579c90149f49cc65445106630"
+  },
+  "pinned_inputs": {
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-4e66f8ff4a-dmbc.exe",
+      "sha256": "57dc978ab61dc0964635c984ca1038f186b32c511bdefbc79fa3482adf0965c2"
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    },
+    "dd": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+      "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+    }
+  },
+  "daemon_namespace": "runtime-contract-981d21b8baf04efb8e964aeedf3415a3",
+  "owned_daemon_pid": 31388,
+  "daemon_cleanup": {
+    "pid": 31388,
+    "tree_error": null,
+    "direct_error": null,
+    "wait_error": null,
+    "returncode": 1,
+    "reaped": true
+  },
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 63873024,
+    "samples": 23,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 31388,
+        "private_bytes": 5070848
+      },
+      {
+        "pid": 31472,
+        "private_bytes": 58802176
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "registered owned daemon/compile/acquire/runtime handles, 200ms samples; not strict peak or descendant proof"
+  }
+}

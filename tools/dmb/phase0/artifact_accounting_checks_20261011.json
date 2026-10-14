@@ -1,0 +1,125 @@
+{
+  "scope": "Bounded focused accounting tests; not full Rust suite or runtime parity",
+  "snapshot_commit": "745a11d8917796c640c3cc5666672e045a75d55d",
+  "records": [
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-224647-9338c711-job-cargo.json",
+      "sha256": "ff1b8afad2e21ac7308cb1fa1ee0c35efe4525ec6ef0d897913000041eb3a9f0",
+      "record": {
+        "command": [
+          "D:\\Program Files\\Git\\bin\\bash.exe",
+          "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+          "run",
+          "cargo",
+          "--label",
+          "dmb-review frozen correctness build",
+          "--",
+          "E:/cargo/bin/cargo.exe",
+          "test",
+          "--lib",
+          "--no-run",
+          "--locked",
+          "--offline",
+          "-j1",
+          "-p",
+          "dm-session",
+          "--config",
+          "profile.test.package.dm-ir.debug=0"
+        ],
+        "exit_code": 0,
+        "seconds": 43.06199999999808,
+        "memory_cap": 4000000000,
+        "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-224647-9338c711-job-cargo.log",
+        "error": null,
+        "cleanup": {
+          "reaped": true,
+          "error": null,
+          "memory": {
+            "configured_job_memory_bytes": 3999997952,
+            "peak_job_commit_bytes": 1341751296,
+            "peak_process_commit_bytes": 1256648704,
+            "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+          }
+        },
+        "scope": "bounded correctness build; not a compiler performance benchmark",
+        "original_command": [
+          "E:/cargo/bin/cargo.exe",
+          "test",
+          "--lib",
+          "--no-run",
+          "--locked",
+          "--offline",
+          "-j1",
+          "-p",
+          "dm-session",
+          "--config",
+          "profile.test.package.dm-ir.debug=0"
+        ],
+        "machine_slot": {
+          "kind": "cargo",
+          "tools": {
+            "script": {
+              "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+              "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+              "bytes": 22161
+            },
+            "bash": {
+              "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+              "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+              "bytes": 45560
+            }
+          },
+          "worktree": "E:\\projects\\dq-wt\\dmb-review",
+          "slotDirectory": "E:\\dq-cache\\slots",
+          "capacities": {
+            "DQ_SLOTS_DM_COMPILE": "2",
+            "DQ_SLOTS_TEST_WORLD": "3",
+            "DQ_SLOTS_CARGO": "1",
+            "DQ_SLOTS_LOOK_STATE_PIN": "2"
+          },
+          "waitIncludedInOwnedChildDeadline": true,
+          "jobContainment": "caller must add suspended bash to existing Job before resume"
+        },
+        "target_ownership": {
+          "target": "E:\\dq-cache\\dmb-native-v2\\workspace-targets\\dmb-review",
+          "owner": {
+            "schema": 1,
+            "worktree": "E:\\projects\\dq-wt\\dmb-review"
+          },
+          "marker": "E:\\dq-cache\\dmb-native-v2\\workspace-targets\\dmb-review\\.dq-workspace-owner-v1.json",
+          "scope": "operational target ownership only, not cache/source admission"
+        },
+        "existing_target_assignment": null,
+        "queue_wait_included_in_300_second_child_deadline": true
+      }
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-224736-618bd9d2-focused.json",
+      "sha256": "0ea12cfaa86ed06e6181153e61d2e6da56870c638c439759b551bb5b47502eb3",
+      "record": {
+        "binary": "E:\\dq-cache\\dmb-native-v2\\workspace-targets\\dmb-review\\debug\\deps\\dm_session-39431b6a81f02362.exe",
+        "binary_sha256": "0378662a41f43f23576acfe097328216c44c618a13468a1fe032c69f14a37378",
+        "scope": "focused fixture execution, not full suite or runtime parity",
+        "rows": [
+          {
+            "filter": "artifacts::storage_accounting::tests",
+            "selected": [
+              "artifacts::storage_accounting::tests::storage_accounting_keeps_incidence_counts_separate_from_heap_bytes",
+              "artifacts::storage_accounting::tests::storage_accounting_tracks_shared_claims_and_exposes_private_owner_gaps"
+            ],
+            "exit": 0,
+            "seconds": 0.014999999999417923,
+            "stdout": "\nrunning 2 tests\ntest artifacts::storage_accounting::tests::storage_accounting_keeps_incidence_counts_separate_from_heap_bytes ... ok\ntest artifacts::storage_accounting::tests::storage_accounting_tracks_shared_claims_and_exposes_private_owner_gaps ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 86 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          }
+        ]
+      }
+    }
+  ],
+  "python_mock_tests": {
+    "machine_slot_policy": 2,
+    "initializer_observation": 1,
+    "result": "passed",
+    "scope": "Pure fixture policy checks; no DM execution"
+  }
+}

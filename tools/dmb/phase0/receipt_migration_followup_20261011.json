@@ -1,0 +1,40 @@
+{
+  "scope": "Bounded prototype implementation and focused checks; unfinished integration gates",
+  "tested_commit": "3d5f0bd1facc79938fa4ab13705b70ee1c96e42a",
+  "archive_sha256": "7a12e9398a767c6abb07d8887bfc4c75d2ef60b67bf26a19c47bc633e73e96bd",
+  "successful_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-183112-1c3b7d6b-job-cargo.json",
+  "successful_build_seconds": 206.75,
+  "failed_focused_receipts": [
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-183457-1fa2c090-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-183537-c15e44c5-focused.json"
+  ],
+  "fixture_repairs": {
+    "7ea3be0720": "Align duplicate/removal read mutations with typed answer rows",
+    "57309d6011": "Use supported changed modifier 2; preserve unsupported 16 control"
+  },
+  "repaired_frozen_commit": "57309d601168dfb7f371f0fe1b84b68ad0c27190",
+  "repaired_archive_sha256": "1142024a66d684cc0e53c41ef20986262c65cfcf5ab9a768a6aeadd11d853b0b",
+  "repaired_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-184101-9b0c2c18-job-cargo.json",
+  "repaired_build_exit": 124,
+  "repaired_build_seconds": 300.25,
+  "owned_children_reaped": true,
+  "repaired_fixture_execution": "pending; build timed out during code generation without reported source errors",
+  "later_source_features": [
+    "Bounded lossless scalar/list compact answer transport",
+    "Existing request memo retains bounded declaration answers",
+    "Exact equality avoids canonical copies while preserving canonical fallback"
+  ],
+  "runtime_library_receipts": [
+    "E:/dq-cache/dmb-native-v2/captured-runtime-build-20261011-1819/runtime-build-receipt.json",
+    "E:/dq-cache/dmb-native-v2/captured-runtime-build-20261011-1825/runtime-build-receipt.json",
+    "E:/dq-cache/dmb-native-v2/captured-runtime-build-20261011-1835/runtime-build-receipt.json"
+  ],
+  "runtime_library_status": "Release attempts remain unadmitted: offline dependency miss, then bounded dependency/project compilation timeouts; captured-source diagnostic profile attempt pending",
+  "latest_end_to_end_speed": "No new benchmark for these changes",
+  "remaining": [
+    "Validate repaired focused fixtures and later source additions",
+    "Build source-qualified runtime library and run authorized focused comparison",
+    "Build new compiler binary and compare real DeepQuarry incremental outputs with fresh oracle",
+    "BYOND structural parity, full Phase 5 runtime baseline and real-worktree concurrency gates remain open"
+  ]
+}

@@ -1,0 +1,3 @@
+/datum/probe/proc/read()
+    return 1
+#include "child.dm"

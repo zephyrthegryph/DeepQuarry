@@ -1,0 +1,2 @@
+missing_quote.dm:2:error: unterminated text (expecting ")
+missing_quote.dmb - 1 error, 0 warnings

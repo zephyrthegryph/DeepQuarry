@@ -1,0 +1,48 @@
+{
+  "pins": {
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+  },
+  "cases": {
+    "mixed": {
+      "source_sha256": "c5517b849b100b3044e1f4bddea01188a6e8661211b06e8eae3e6cae3c3879ae",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "e5e9fa0a388215bb49e2ea17ce9df3699038f2475f9729513308c95fa3418ebf",
+      "compile": {
+        "exit": 0,
+        "wall_s": 0.44868670002324507,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "runtime": {
+        "exit": 0,
+        "wall_s": 1.2207407000241801,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "markers": [
+        "DQ_REGISTER eager",
+        "DQ_REGISTER static_future",
+        "DQ_REGISTER bare_future",
+        "DQ_REGISTER root",
+        "DQ_REGISTER finished"
+      ]
+    }
+  },
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 58761216,
+    "samples": 9,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 56764,
+        "private_bytes": 58761216
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "owned daemon and registered harness children (compiler/client/inspector); 200ms samples include observation overhead; excludes unrelated processes and unregistered descendants"
+  }
+}

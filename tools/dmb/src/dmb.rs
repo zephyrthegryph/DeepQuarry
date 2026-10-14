@@ -4,1236 +4,36 @@
 //! Unknown fields retain their exact numeric values. Procedure bytecode is
 //! stored as list words; semantic opcode decoding is a separate layer.
 use crate::hash::nqcrc;
-use serde::{Deserialize, Serialize};
 use crate::ids::{ResourceId, NONE};
 use std::collections::{HashMap, HashSet};
 use std::io::{self, ErrorKind};
-use std::hash::{Hash, Hasher};
-use std::sync::Arc;
-pub use crate::list_words::{ListTable, ListWords};
 
-fn invalid(message: &'static str) -> io::Error {
-    io::Error::new(ErrorKind::InvalidData, message)
-}
+#[path = "dmb_codec.rs"]
+mod codec;
+use codec::*;
+#[path = "dmb_records.rs"]
+mod records;
+use records::crypt_string;
+#[path = "dmb_write.rs"]
+mod writing;
+pub use records::{
+    mob_sight, Class, ClassInterface, DmString, GridRun, Header, Instance, MapObject, MobType,
+    Proc, ProcSource, ResourceRef, Variable, World, WorldViewEncoding,
+};
+pub use writing::EncodedDmb;
+#[path = "dmb_lists.rs"]
+mod word_lists;
+#[path = "dmb_remap.rs"]
+mod remap;
+#[path = "dmb_list_rows.rs"]
+mod list_rows;
+pub use list_rows::ListRowImage;
+pub use word_lists::{EncodedListRows, WordLists};
+#[path = "dmb_resources.rs"]
+mod resource_attachment;
+pub use resource_attachment::{attach_resource_refs, ResourceAttachment, ResourceLookup};
 
-struct Reader<'a> {
-    data: &'a [u8],
-    at: usize,
-    object_size: usize,
-    compatibility_version: u16,
-}
-
-impl<'a> Reader<'a> {
-    fn take(&mut self, len: usize) -> io::Result<&'a [u8]> {
-        let end = self
-            .at
-            .checked_add(len)
-            .ok_or_else(|| invalid("offset overflow"))?;
-        let bytes = self.data.get(self.at..end).ok_or_else(|| {
-            io::Error::new(
-                ErrorKind::InvalidData,
-                format!("truncated DMB at byte {} reading {len} bytes", self.at),
-            )
-        })?;
-        self.at = end;
-        Ok(bytes)
-    }
-    fn u8(&mut self) -> io::Result<u8> {
-        Ok(self.take(1)?[0])
-    }
-    fn u16(&mut self) -> io::Result<u16> {
-        Ok(u16::from_le_bytes(self.take(2)?.try_into().unwrap()))
-    }
-    fn u32(&mut self) -> io::Result<u32> {
-        Ok(u32::from_le_bytes(self.take(4)?.try_into().unwrap()))
-    }
-    fn object(&mut self) -> io::Result<u32> {
-        if self.object_size == 2 {
-            Ok(u32::from(self.u16()?))
-        } else {
-            self.u32()
-        }
-    }
-    fn f32_bits(&mut self) -> io::Result<u32> {
-        self.u32()
-    }
-    fn line(&mut self) -> io::Result<Vec<u8>> {
-        let rest = &self.data[self.at..];
-        let len = rest
-            .iter()
-            .position(|&x| x == b'\n')
-            .ok_or_else(|| invalid("missing DMB header newline"))?
-            + 1;
-        Ok(self.take(len)?.to_vec())
-    }
-    fn table<T>(&mut self, mut read: impl FnMut(&mut Self) -> io::Result<T>) -> io::Result<Vec<T>> {
-        let count = self.object()? as usize;
-        let mut entries = Vec::new();
-        for _ in 0..count {
-            entries.push(read(self)?);
-        }
-        Ok(entries)
-    }
-}
-
-struct Writer {
-    bytes: Vec<u8>,
-    pages: Vec<Arc<[u8]>>,
-    sink: Option<Box<dyn FnMut(&[u8])->io::Result<()>>>,
-    sink_error: Option<io::Error>,
-    sealed: usize,
-    segmented: bool,
-    object_size: usize,
-    object_overflow: bool,
-    compatibility_version: u16,
-}
-impl Writer {
-    fn new(object_size: usize, compatibility_version: u16) -> Self {
-        Self {
-            bytes: Vec::new(),
-            pages: Vec::new(), sink:None, sink_error:None, sealed: 0, segmented: false,
-            object_size,
-            object_overflow: false,
-            compatibility_version,
-        }
-    }
-    fn at(&self) -> usize {
-        self.sealed + self.bytes.len()
-    }
-    fn raw(&mut self, bytes: &[u8]) {
-        if self.sink_error.is_some() {return;}
-        self.bytes.extend_from_slice(bytes);
-        if self.sink.is_some() {self.bounded_page();}
-    }
-    fn seal(&mut self) {
-        if self.segmented && !self.bytes.is_empty() {
-            self.sealed += self.bytes.len();
-            let bytes=std::mem::take(&mut self.bytes);
-            if let Some(sink)=&mut self.sink {if self.sink_error.is_none() {if let Err(error)=sink(&bytes) {self.sink_error=Some(error);}}}
-            else {self.pages.push(bytes.into());}
-        }
-    }
-    fn shared(&mut self, bytes: &Arc<[u8]>) {
-        if self.segmented && bytes.len() >= 4096 {
-            self.seal(); self.sealed += bytes.len();
-            if let Some(sink)=&mut self.sink {if self.sink_error.is_none() {if let Err(error)=sink(bytes) {self.sink_error=Some(error);}}}
-            else {self.pages.push(Arc::clone(bytes));}
-        } else { self.raw(bytes); }
-    }
-    fn bounded_page(&mut self) {
-        if self.bytes.len() >= 256 * 1024 { self.seal(); }
-    }
-    fn u8(&mut self, value: u8) {
-        self.bytes.push(value);
-    }
-    fn u16(&mut self, value: u16) {
-        self.raw(&value.to_le_bytes());
-    }
-    fn u32(&mut self, value: u32) {
-        self.raw(&value.to_le_bytes());
-    }
-    fn object(&mut self, value: u32) {
-        if self.object_size == 2 {
-            if value > u16::MAX as u32 {
-                self.object_overflow = true;
-            }
-            self.u16(value as u16);
-        } else {
-            self.u32(value);
-        }
-    }
-    fn table<T>(&mut self, items: &[T], mut write: impl FnMut(&mut Self, &T)) -> io::Result<()> {
-        let count = u32::try_from(items.len()).map_err(|_| invalid("table exceeds u32 count"))?;
-        self.object(count);
-        for item in items {
-            write(self, item);
-            self.bounded_page();
-        }
-        Ok(())
-    }
-}
-
-fn compatibility_version(line: &[u8]) -> io::Result<u16> {
-    let text = std::str::from_utf8(line).map_err(|_| invalid("non-ASCII compatibility line"))?;
-    let number = text
-        .strip_prefix("min compatibility v")
-        .and_then(|tail| tail.split_ascii_whitespace().next())
-        .ok_or_else(|| invalid("unsupported compatibility header"))?;
-    number
-        .parse::<u16>()
-        .map_err(|_| invalid("invalid compatibility version"))
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Header {
-    /// Optional native CGI executor prefix, including all its authored lines.
-    pub executor_line: Option<Vec<u8>>,
-    pub version_line: Vec<u8>,
-    pub compatibility_line: Vec<u8>,
-    pub flags: u32,
-    /// Present when bit 31 of `flags` is set. Its bit meanings need probes.
-    pub extended_flags: Option<u32>,
-}
-impl Header {
-    /// Dream Maker emits DbgFile/DbgLine instructions when this bit is set.
-    pub fn debug_symbols(&self) -> bool {
-        self.flags & 0x0002_0000 != 0
-    }
-    pub fn uses_large_object_ids(&self) -> bool {
-        self.flags & 0x4000_0000 != 0
-    }
-    pub fn loop_checks_disabled(&self) -> bool {
-        self.flags & 0x2 != 0
-    }
-    pub fn sleeps_offline(&self) -> bool {
-        self.flags & 0x20 != 0
-    }
-    pub fn hidden_from_hub(&self) -> bool {
-        self.flags & 0x2000 != 0
-    }
-    pub fn verb_panel_disabled(&self) -> bool {
-        self.flags & 0x400 != 0
-    }
-    pub fn hub_authentication_disabled(&self) -> bool {
-        self.flags & 0x8000 != 0
-    }
-    pub fn client_map_disabled(&self) -> bool {
-        self.flags & 0x10_0000 != 0
-    }
-    pub fn popup_menus_disabled(&self) -> bool {
-        self.flags & 0x1000_0000 != 0
-    }
-    pub fn uses_dynamic_calls(&self) -> bool {
-        self.flags & 0x2000_0000 != 0
-    }
-    pub fn resource_preload_mode(&self) -> Option<u8> {
-        match self.flags & 0x1800 {
-            0 => Some(1),
-            0x800 => Some(0),
-            0x1000 => Some(2),
-            _ => None,
-        }
-    }
-    pub fn movement_mode_setting(&self) -> Option<u8> {
-        match self.extended_flags.unwrap_or(0) & 0xc {
-            0 => Some(0),
-            4 => Some(1),
-            8 => Some(2),
-            _ => None,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct GridRun {
-    pub turf: u32,
-    pub area: u32,
-    pub contents: u32,
-    pub copies: u8,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct Class {
-    pub initial_ids: [u32; 6],
-    pub direction: u8,
-    pub interface: u8,
-    pub extended_interface: Option<u32>,
-    pub text: u32,
-    pub maptext: u32,
-    pub maptext_geometry: [u16; 4],
-    pub suffix: u32,
-    pub flags: u64,
-    pub lists_and_procs: [u32; 6],
-    pub layer_bits: u32,
-    pub transform_flag: u8,
-    pub transform: Option<[u32; 6]>,
-    pub color_matrix_flag: u8,
-    pub color_matrix: Option<[u32; 20]>,
-    pub overrides: u32,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ClassInterface {
-    Regular,
-    Image,
-    Sound,
-    Icon,
-    Matrix,
-    Regex,
-    MutableAppearance,
-    Generator,
-    DatabaseQuery,
-    Other {
-        discriminator: u8,
-        extension: Option<u32>,
-    },
-}
-
-impl Class {
-    pub fn native_interface(&self) -> ClassInterface {
-        match (self.interface, self.extended_interface) {
-            (1, None) => ClassInterface::Regular,
-            (15, Some(65)) => ClassInterface::Image,
-            (15, Some(545)) => ClassInterface::Sound,
-            (15, Some(769)) => ClassInterface::Icon,
-            (15, Some(1025)) => ClassInterface::Matrix,
-            (15, Some(8193)) => ClassInterface::Regex,
-            (15, Some(16449)) => ClassInterface::MutableAppearance,
-            (15, Some(32769)) => ClassInterface::Generator,
-            (15, Some(36865)) => ClassInterface::DatabaseQuery,
-            (discriminator, extension) => ClassInterface::Other {
-                discriminator,
-                extension,
-            },
-        }
-    }
-    /// Initial invisibility is zero when this flag is set.
-    pub fn is_normally_visible(&self) -> bool {
-        self.flags & 0x4 != 0
-    }
-
-    /// The three low luminosity bits stored with the initial appearance.
-    pub fn luminosity(&self) -> u8 {
-        ((self.flags >> 3) & 0x7) as u8
-    }
-
-    pub fn set_luminosity(&mut self, value: u8) -> io::Result<()> {
-        if value > 7 {
-            return Err(invalid("packed luminosity exceeds three bits"));
-        }
-        self.flags = (self.flags & !(0x7 << 3)) | (u64::from(value) << 3);
-        Ok(())
-    }
-
-    pub fn has_mouse_event_proc(&self) -> bool {
-        self.flags & 0x800 != 0
-    }
-
-    pub fn is_mouse_drop_zone(&self) -> bool {
-        self.flags & 0x100 != 0
-    }
-
-    pub fn set_mouse_drop_zone(&mut self, enabled: bool) {
-        self.flags = (self.flags & !0x100) | (u64::from(enabled) << 8);
-    }
-
-    pub fn has_mouse_move_proc(&self) -> bool {
-        self.flags & 0x80000 != 0
-    }
-
-    pub fn has_mouse_wheel_proc(&self) -> bool {
-        self.flags & 0x100000 != 0
-    }
-
-    /// Initial animate_movement (0 through 3). Zero additionally sets bit 10.
-    pub fn animate_movement(&self) -> u8 {
-        if self.flags & 0x400 != 0 {
-            0
-        } else {
-            ((((self.flags >> 14) & 0x3) as u8) + 1) & 0x3
-        }
-    }
-
-    pub fn set_animate_movement(&mut self, value: u8) -> io::Result<()> {
-        if value > 3 {
-            return Err(invalid("animate_movement exceeds two bits"));
-        }
-        self.flags &= !(0xc000 | 0x400);
-        self.flags |= u64::from(value.wrapping_sub(1) & 0x3) << 14;
-        if value == 0 {
-            self.flags |= 0x400;
-        }
-        Ok(())
-    }
-
-    pub fn is_opaque(&self) -> bool {
-        self.flags & 0x1 != 0
-    }
-
-    pub fn set_opaque(&mut self, opaque: bool) {
-        self.flags = (self.flags & !0x1) | u64::from(opaque);
-    }
-
-    /// Initial density bit in the class flag word.
-    pub fn is_dense(&self) -> bool {
-        self.flags & 0x2 != 0
-    }
-
-    pub fn set_dense(&mut self, dense: bool) {
-        self.flags = (self.flags & !0x2) | (u64::from(dense) << 1);
-    }
-
-    /// Enum encoding: 0 neuter, 1 male, 2 female, 3 plural.
-    pub fn gender_code(&self) -> u8 {
-        ((self.flags >> 6) & 0x3) as u8
-    }
-
-    pub fn set_gender_code(&mut self, code: u8) -> io::Result<()> {
-        if code > 3 {
-            return Err(invalid("gender code exceeds two bits"));
-        }
-        self.flags = (self.flags & !(0x3 << 6)) | (u64::from(code) << 6);
-        Ok(())
-    }
-
-    /// Initial mouse_opacity (0 through 3), packed as value minus one.
-    pub fn mouse_opacity(&self) -> u8 {
-        (((self.flags >> 12) as u8 & 0x3) + 1) & 0x3
-    }
-
-    pub fn set_mouse_opacity(&mut self, value: u8) -> io::Result<()> {
-        if value > 3 {
-            return Err(invalid("mouse_opacity exceeds two bits"));
-        }
-        let encoded = (value.wrapping_sub(1) & 0x3) as u64;
-        self.flags = (self.flags & !(0x3 << 12)) | (encoded << 12);
-        Ok(())
-    }
-
-    /// Initial atom appearance_flags, packed above the 21 low class flag bits.
-    pub fn appearance_flags(&self) -> u32 {
-        (self.flags >> 21) as u32
-    }
-
-    pub fn set_appearance_flags(&mut self, value: u32) {
-        self.flags = (self.flags & ((1u64 << 21) - 1)) | (u64::from(value) << 21);
-    }
-
-    pub fn path_string_id(&self) -> u32 {
-        self.initial_ids[0]
-    }
-    pub fn parent_class_id(&self) -> u32 {
-        self.initial_ids[1]
-    }
-    pub fn name_string_id(&self) -> u32 {
-        self.initial_ids[2]
-    }
-    pub fn description_string_id(&self) -> u32 {
-        self.initial_ids[3]
-    }
-    pub fn icon_resource_id(&self) -> u32 {
-        self.initial_ids[4]
-    }
-    pub fn icon_state_string_id(&self) -> u32 {
-        self.initial_ids[5]
-    }
-    pub fn verb_list_id(&self) -> u32 {
-        self.lists_and_procs[0]
-    }
-    pub fn proc_list_id(&self) -> u32 {
-        self.lists_and_procs[1]
-    }
-    pub fn initializer_proc_id(&self) -> u32 {
-        self.lists_and_procs[2]
-    }
-    pub fn initialized_variable_list_id(&self) -> u32 {
-        self.lists_and_procs[3]
-    }
-    pub fn defining_variable_list_id(&self) -> u32 {
-        self.lists_and_procs[4]
-    }
-    pub fn overriding_variable_list_id(&self) -> u32 {
-        self.overrides
-    }
-
-    fn read(r: &mut Reader<'_>) -> io::Result<Self> {
-        let mut initial_ids = [0; 6];
-        for id in &mut initial_ids {
-            *id = r.object()?;
-        }
-        let direction = r.u8()?;
-        let interface = r.u8()?;
-        let extended_interface = if interface == 15 {
-            Some(r.u32()?)
-        } else {
-            None
-        };
-        let text = r.object()?;
-        let maptext = r.object()?;
-        let mut maptext_geometry = [0; 4];
-        for value in &mut maptext_geometry {
-            *value = r.u16()?;
-        }
-        let suffix = r.object()?;
-        let flags = u64::from(r.u32()?) | (u64::from(r.u32()?) << 32);
-        let mut lists_and_procs = [0; 6];
-        for id in &mut lists_and_procs {
-            *id = r.object()?;
-        }
-        let layer_bits = r.f32_bits()?;
-        let transform_flag = r.u8()?;
-        let transform = if transform_flag != 0 {
-            let mut values = [0; 6];
-            for value in &mut values {
-                *value = r.f32_bits()?;
-            }
-            Some(values)
-        } else {
-            None
-        };
-        let color_matrix_flag = r.u8()?;
-        let color_matrix = if color_matrix_flag != 0 {
-            let mut values = [0; 20];
-            for value in &mut values {
-                *value = r.f32_bits()?;
-            }
-            Some(values)
-        } else {
-            None
-        };
-        let overrides = r.object()?;
-        Ok(Self {
-            initial_ids,
-            direction,
-            interface,
-            extended_interface,
-            text,
-            maptext,
-            maptext_geometry,
-            suffix,
-            flags,
-            lists_and_procs,
-            layer_bits,
-            transform_flag,
-            transform,
-            color_matrix_flag,
-            color_matrix,
-            overrides,
-        })
-    }
-    fn write(&self, w: &mut Writer) {
-        for id in self.initial_ids {
-            w.object(id);
-        }
-        w.u8(self.direction);
-        w.u8(self.interface);
-        if let Some(value) = self.extended_interface {
-            w.u32(value);
-        }
-        w.object(self.text);
-        w.object(self.maptext);
-        for value in self.maptext_geometry {
-            w.u16(value);
-        }
-        w.object(self.suffix);
-        w.u32(self.flags as u32);
-        w.u32((self.flags >> 32) as u32);
-        for id in self.lists_and_procs {
-            w.object(id);
-        }
-        w.u32(self.layer_bits);
-        w.u8(self.transform_flag);
-        if let Some(values) = self.transform {
-            for value in values {
-                w.u32(value);
-            }
-        }
-        w.u8(self.color_matrix_flag);
-        if let Some(values) = self.color_matrix {
-            for value in values {
-                w.u32(value);
-            }
-        }
-        w.object(self.overrides);
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct MobType {
-    pub class: u32,
-    pub key: u32,
-    pub sight: u8,
-    pub extended_sight: Option<(u32, u8, u8)>,
-}
-pub mod mob_sight {
-    pub const BLIND: u32 = 1;
-    pub const SEE_MOBS: u32 = 4;
-    pub const SEE_OBJS: u32 = 8;
-    pub const SEE_TURFS: u32 = 16;
-    pub const SEE_SELF: u32 = 32;
-    pub const SEE_INFRA: u32 = 64;
-    pub const SEE_PIXELS: u32 = 256;
-    pub const SEE_THRU: u32 = 512;
-    pub const SEE_BLACKNESS: u32 = 1024;
-    pub const SEE_INFRARED: u32 = 65536;
-}
-impl MobType {
-    /// Effective `sight` bit mask; bit 0x80 in the wire record marks the
-    /// extended form and is removed from the semantic value.
-    pub fn sight_bits(&self) -> u32 {
-        self.extended_sight
-            .map_or(u32::from(self.sight), |record| record.0)
-            & !0x80
-    }
-    pub fn see_in_dark_setting(&self) -> Option<u8> {
-        self.extended_sight.map(|record| record.1)
-    }
-    pub fn see_invisible_setting(&self) -> Option<u8> {
-        self.extended_sight.map(|record| record.2)
-    }
-    fn read(r: &mut Reader<'_>) -> io::Result<Self> {
-        let class = r.object()?;
-        let key = r.object()?;
-        let sight = r.u8()?;
-        let extended_sight = if sight & 0x80 != 0 {
-            Some((r.u32()?, r.u8()?, r.u8()?))
-        } else {
-            None
-        };
-        Ok(Self {
-            class,
-            key,
-            sight,
-            extended_sight,
-        })
-    }
-    fn write(&self, w: &mut Writer) {
-        w.object(self.class);
-        w.object(self.key);
-        w.u8(self.sight);
-        if let Some((flags, dark, invisible)) = self.extended_sight {
-            w.u32(flags);
-            w.u8(dark);
-            w.u8(invisible);
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DmString {
-    pub data: Vec<u8>,
-    /// Original count of 0xffff length chunks, kept for exact round trips.
-    pub long_chunks: u16,
-}
-
-fn reserved_proc_record(index:usize,proc:&Proc)->bool {
-    index==NONE as usize&&proc.strings==[NONE;4]&&proc.code_locals_args==[NONE;3]
-        &&proc.source_parameter==255&&proc.source_kind==0&&proc.flags==4&&proc.extended_flags.is_none()
-}
-
-fn crypt_string(data: &mut [u8], offset: usize) {
-    let mut key = offset as u8;
-    for byte in data {
-        *byte ^= key;
-        key = key.wrapping_add(9);
-    }
-}
-
-/// An immutable borrow of the exact image whose references were checked.
-/// Only Dmb's validator can construct this proof; mutation requires ending the
-/// borrow, so serializers cannot accidentally apply it to another generation.
-pub struct ReferenceValidatedImage<'a> { image: &'a Dmb }
-/// Immutable ordered physical pages. List spans refer to absolute output
-/// offsets, independent of page boundaries. Pages can be persisted/composed
-/// without allocating a second complete wire image.
-pub struct ChunkedDmb {
-    pub pages: Vec<Arc<[u8]>>,
-    pub list_spans: Vec<std::ops::Range<usize>>,
-    pub len: usize,
-}
-fn validate_tagged_keys(words:&[u32],bound:usize,message:&'static str)->io::Result<()> {
-    let mut at=0usize;
-    while at<words.len() {
-        let key=words[at];if key!=NONE&&key as usize>=bound {return Err(invalid(message));}
-        let (_,count)=crate::operands::Value::decode(&words[at+1..]).map_err(|_|invalid("malformed tagged value list"))?;
-        at=at.checked_add(count+1).ok_or_else(||invalid("tagged value list overflow"))?;
-    } Ok(())
-}
-/// Fallible physical list objects. A source owns actual records, never dummy
-/// logical vectors; callers authorize reference validity before composition.
-/// Authoritative fallible typed rows for a physical image. Native images
-/// use their vectors; addressed images supply the same logical rows explicitly.
-pub trait WireRecordSource {
-    fn proc_count(&self)->usize;
-    fn proc_row(&self,index:usize)->io::Result<Proc>;
-    fn variable_count(&self)->usize;
-    fn variable_row(&self,index:usize)->io::Result<Variable>;
-    fn proc_rows(&self,start:usize,end:usize)->io::Result<Vec<Proc>> {
-        if start>end||end>self.proc_count()||end-start>1024 {return Err(invalid("proc row window exceeds bound"));}
-        (start..end).map(|index|self.proc_row(index)).collect()
-    }
-    fn variable_rows(&self,start:usize,end:usize)->io::Result<Vec<Variable>> {
-        if start>end||end>self.variable_count()||end-start>1024 {return Err(invalid("variable row window exceeds bound"));}
-        (start..end).map(|index|self.variable_row(index)).collect()
-    }
-}
-pub trait WireListSource {
-    fn len(&self)->usize;
-    fn word_count(&self,index:usize)->io::Result<usize>;
-    fn read_wire(&self,index:usize,object_width:usize)->io::Result<Arc<[u8]>>;
-    fn resident_words(&self,_index:usize)->Option<&ListWords> {None}
-    fn read_words(&self,index:usize,width:usize)->io::Result<ListWords> {
-        if let Some(words)=self.resident_words(index) {return Ok(words.clone());}
-        let bytes=self.read_wire(index,width)?;let count=self.word_count(index)?;
-        if !matches!(width,2|4)||bytes.len()!=2+count*width||bytes.get(..2)!=Some((count as u16).to_le_bytes().as_slice()) {
-            return Err(invalid("wire list logical shape mismatch"));
-        }
-        Ok(bytes[2..].chunks_exact(width).map(|b|if width==2 {u16::from_le_bytes([b[0],b[1]]) as u32}
-            else {u32::from_le_bytes([b[0],b[1],b[2],b[3]])}).collect::<Vec<_>>().into())
-    }
-    fn prepare_window(&self,start:usize,max_rows:usize)->io::Result<usize> {Ok(start.saturating_add(max_rows).min(self.len()))}
-}
-impl ChunkedDmb {
-    pub fn into_bytes(self) -> (Vec<u8>, Vec<std::ops::Range<usize>>) {
-        let mut bytes = Vec::with_capacity(self.len);
-        for page in self.pages { bytes.extend_from_slice(&page); }
-        (bytes, self.list_spans)
-    }
-}
-impl<'a> ReferenceValidatedImage<'a> {
-    pub fn image(&self) -> &'a Dmb { self.image }
-    pub fn to_bytes_with_list_spans_cached(&self, cache: &mut DmbWireCache) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
-        self.image.serialize_with_list_spans(true, Some(cache))
-    }
-    pub fn to_bytes_with_list_spans(&self) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
-        self.image.serialize_with_list_spans(true, None)
-    }
-    pub fn to_chunks_cached(&self, cache: &mut DmbWireCache) -> io::Result<ChunkedDmb> {
-        self.image.serialize_chunks(true, Some(cache))
-    }
-}
-
-/// Bounded content-addressed wire records. Hashes select collision buckets only;
-/// exact record equality is mandatory before reuse. Physical table positions are
-/// deliberately absent, so inserting a declaration does not discard unrelated
-/// record encodings. Offset-dependent string encryption is never cached here.
-#[derive(Default)]
-pub struct DmbWireCache {
-    records: HashMap<(u8, usize, u16, u64), Vec<(WireRecord, Arc<[u8]>)>>,
-    active: HashSet<(u8, usize, u16, u64)>,
-    bytes: usize,
-    pub hits: u64,
-    pub misses: u64,
-}
-#[derive(Clone, Eq, PartialEq, Hash)]
-enum WireRecord {
-    Class(Class), Mob(MobType), List(ListWords), Proc(Proc), Variable(Variable),
-    Reference(u32), Instance(Instance), MapObject(MapObject), World(World),
-    Resource(ResourceRef), Grid(GridRun),
-}
-impl DmbWireCache {
-    pub fn resident_bytes(&self) -> usize { self.bytes }
-    pub fn clear(&mut self) { self.records.clear(); self.active.clear(); self.bytes = 0; }
-    fn finish_generation(&mut self) {
-        self.records.retain(|key, _| self.active.contains(key));
-        self.bytes = self.records.values().flat_map(|bucket| bucket.iter()).map(|(record, bytes)| {
-            let dynamic = match record {
-                WireRecord::List(words) => words.capacity() * 4,
-                WireRecord::World(world) => world.client_script_files.capacity() * 4,
-                _ => 0,
-            };
-            bytes.len() + dynamic + std::mem::size_of::<WireRecord>() + 96
-        }).sum();
-        self.active.clear();
-    }
-    fn append_list(&mut self, writer: &mut Writer, words: &ListWords) {
-        let mut hash = std::collections::hash_map::DefaultHasher::new();
-        words.hash(&mut hash);
-        let key = (3, writer.object_size, writer.compatibility_version, hash.finish());
-        self.active.insert(key);
-        if let Some((_, bytes)) = self.records.get(&key).and_then(|bucket| bucket.iter()
-            .find(|(old, _)| matches!(old, WireRecord::List(prior) if prior.as_slice() == words.as_slice()))) {
-            writer.shared(bytes);
-            self.hits += 1;
-            return;
-        }
-        self.append(writer, 3, WireRecord::List(words.clone()), |writer| {
-            writer.u16(words.len() as u16);
-            for &word in words { writer.object(word); }
-        });
-    }
-    fn append(&mut self, writer: &mut Writer, section: u8, record: WireRecord,
-        encode: impl FnOnce(&mut Writer)) {
-        let mut hash = std::collections::hash_map::DefaultHasher::new();
-        match &record {
-            WireRecord::Class(value) => value.hash(&mut hash),
-            WireRecord::Mob(value) => value.hash(&mut hash),
-            WireRecord::List(value) => value.hash(&mut hash),
-            WireRecord::Proc(value) => value.hash(&mut hash),
-            WireRecord::Variable(value) => value.hash(&mut hash),
-            WireRecord::Reference(value) => value.hash(&mut hash),
-            WireRecord::Instance(value) => value.hash(&mut hash),
-            WireRecord::MapObject(value) => value.hash(&mut hash),
-            WireRecord::World(value) => value.hash(&mut hash),
-            WireRecord::Resource(value) => value.hash(&mut hash),
-            WireRecord::Grid(value) => value.hash(&mut hash),
-        }
-        let key = (section, writer.object_size, writer.compatibility_version, hash.finish());
-        self.active.insert(key);
-        if let Some((_, bytes)) = self.records.get(&key).and_then(|bucket|
-            bucket.iter().find(|(old, _)| *old == record)) {
-            writer.shared(bytes);
-            self.hits += 1;
-            return;
-        }
-        self.misses += 1;
-        let mut fragment = Writer::new(writer.object_size, writer.compatibility_version);
-        encode(&mut fragment);
-        writer.object_overflow |= fragment.object_overflow;
-        let encoded: Arc<[u8]> = fragment.bytes.into();
-        writer.shared(&encoded);
-        // Overflowed records are never proofs of valid wire data.
-        if fragment.object_overflow { return; }
-        let dynamic = match &record {
-            WireRecord::List(words) => words.capacity() * 4,
-            WireRecord::World(world) => world.client_script_files.capacity() * 4,
-            _ => 0,
-        };
-        let charge = encoded.len() + dynamic + std::mem::size_of::<WireRecord>() + 96;
-        if self.bytes.saturating_add(charge) > 64 * 1024 * 1024 { return; }
-        self.bytes += charge;
-        self.records.entry(key).or_default().push((record, encoded));
-    }
-}
-
-/// Session-local successful procedure-reference proofs. Derived state is never
-/// serialized into a DMB and cannot change the emitted generation.
-#[derive(Default)]
-pub struct ReferenceValidationCache {
-    procedures: HashMap<usize, ProcedureReferenceProof>,
-    classes: HashMap<usize, ClassReferenceProof>,
-    other: HashMap<WireRecord, [usize; 7]>,
-    bytes: usize,
-}
-struct ClassReferenceProof {
-    record: Class,
-    lists: Vec<(u32, Vec<u32>)>,
-    bounds: [usize; 6],
-}
-impl ClassReferenceProof {
-    fn charge(&self) -> usize {
-        std::mem::size_of::<Self>() + 64 + self.lists.capacity() * std::mem::size_of::<(u32, Vec<u32>)>()
-            + self.lists.iter().map(|(_, words)| words.capacity() * 4).sum::<usize>()
-    }
-}
-struct ProcedureReferenceProof {
-    record: Proc,
-    locals: Vec<u32>,
-    arguments: Vec<u32>,
-    bounds: [usize; 4],
-}
-impl ReferenceValidationCache {
-    fn accepts_record(&self, record: &WireRecord, bounds: [usize; 7]) -> bool {
-        self.other.get(record).is_some_and(|previous|
-            previous.iter().zip(bounds).all(|(old, current)| *old <= current))
-    }
-    fn remember_record(&mut self, record: WireRecord, bounds: [usize; 7]) {
-        if self.other.contains_key(&record) { return; }
-        let charge = std::mem::size_of::<WireRecord>() + 128;
-        if self.bytes.saturating_add(charge) > 32 * 1024 * 1024 { return; }
-        self.bytes += charge;
-        self.other.insert(record, bounds);
-    }
-    pub fn resident_bytes(&self) -> usize { self.bytes }
-    pub fn clear(&mut self) { self.procedures.clear(); self.classes.clear(); self.other.clear(); self.bytes = 0; }
-    fn remember_class_rows(&mut self, index: usize, record: &Class, lists:Vec<(u32,Vec<u32>)>, bounds: [usize; 6]) {
-        if let Some(old) = self.classes.remove(&index) { self.bytes = self.bytes.saturating_sub(old.charge()); }
-        let proof = ClassReferenceProof { record: record.clone(), lists, bounds };
-        let charge = proof.charge();
-        if self.bytes.saturating_add(charge) > 32 * 1024 * 1024 { return; }
-        self.bytes += charge;
-        self.classes.insert(index, proof);
-    }
-    fn remember(&mut self, index: usize, record: &Proc, locals: &[u32], arguments: &[u32], bounds: [usize; 4]) {
-        let charge = std::mem::size_of::<ProcedureReferenceProof>() + 64
-            + 4 * (locals.len() + arguments.len());
-        if self.bytes.saturating_add(charge) > 32 * 1024 * 1024 { return; }
-        if let Some(old) = self.procedures.remove(&index) {
-            self.bytes = self.bytes.saturating_sub(std::mem::size_of::<ProcedureReferenceProof>() + 64
-                + 4 * (old.locals.len() + old.arguments.len()));
-        }
-        self.procedures.insert(index, ProcedureReferenceProof {
-            record: record.clone(), locals: locals.to_vec(), arguments: arguments.to_vec(), bounds,
-        });
-        self.bytes += charge;
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct Proc {
-    pub strings: [u32; 4],
-    pub source_parameter: u8,
-    pub source_kind: u8,
-    pub flags: u8,
-    pub extended_flags: Option<(u32, u8)>,
-    pub code_locals_args: [u32; 3],
-}
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ProcSource {
-    Default,
-    InView(u8),
-    InOView(u8),
-    InRange(u8),
-    InUsr,
-    IsUsr,
-    IsUsrLoc,
-    Other { kind: u8, parameter: u8 },
-}
-impl Proc {
-    pub fn source_location(&self) -> ProcSource {
-        match self.source_kind {
-            0 => ProcSource::Default,
-            1 => ProcSource::InView(self.source_parameter),
-            2 => ProcSource::InOView(self.source_parameter),
-            3 => ProcSource::IsUsrLoc,
-            5 => ProcSource::InRange(self.source_parameter),
-            8 => ProcSource::InUsr,
-            32 => ProcSource::IsUsr,
-            kind => ProcSource::Other {
-                kind,
-                parameter: self.source_parameter,
-            },
-        }
-    }
-    /// Extended records replace the compact flag bits, retaining the same
-    /// low-bit meanings and adding background/instant controls.
-    pub fn effective_flags(&self) -> u32 {
-        self.extended_flags
-            .map_or(u32::from(self.flags), |extra| extra.0)
-    }
-    pub fn is_hidden(&self) -> bool {
-        self.effective_flags() & 1 != 0
-    }
-    pub fn waits_for_completion(&self) -> bool {
-        self.effective_flags() & 4 != 0
-    }
-    pub fn runs_in_background(&self) -> bool {
-        self.effective_flags() & 0x100 != 0
-    }
-    pub fn is_instant(&self) -> bool {
-        self.effective_flags() & 0x200 != 0
-    }
-    pub fn has_explicit_source(&self) -> bool {
-        self.effective_flags() & 0x2 != 0
-    }
-    pub fn has_no_category(&self) -> bool {
-        self.effective_flags() & 0x20 != 0
-    }
-    pub fn popup_menu_disabled(&self) -> bool {
-        self.effective_flags() & 0x40 != 0
-    }
-    /// Explicit `set invisibility` value. Wire byte 255 encodes level zero;
-    /// positive values use the byte directly and are capped at 127.
-    pub fn invisibility_setting(&self) -> Option<u8> {
-        let (flags, level) = self.extended_flags?;
-        if flags & 0x8 == 0 {
-            None
-        } else if flags & 0x10 == 0 {
-            Some(0)
-        } else {
-            Some(level)
-        }
-    }
-    fn read(r: &mut Reader<'_>) -> io::Result<Self> {
-        let mut strings = [0; 4];
-        for value in &mut strings {
-            *value = r.object()?;
-        }
-        let source_parameter = r.u8()?;
-        let source_kind = r.u8()?;
-        let flags = r.u8()?;
-        let extended_flags = if flags & 0x80 != 0 {
-            Some((r.u32()?, r.u8()?))
-        } else {
-            None
-        };
-        let mut code_locals_args = [0; 3];
-        for value in &mut code_locals_args {
-            *value = r.object()?;
-        }
-        Ok(Self {
-            strings,
-            source_parameter,
-            source_kind,
-            flags,
-            extended_flags,
-            code_locals_args,
-        })
-    }
-    fn write(&self, w: &mut Writer) {
-        for value in self.strings {
-            w.object(value);
-        }
-        w.u8(self.source_parameter);
-        w.u8(self.source_kind);
-        w.u8(self.flags);
-        if let Some((value, byte)) = self.extended_flags {
-            w.u32(value);
-            w.u8(byte);
-        }
-        for value in self.code_locals_args {
-            w.object(value);
-        }
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct Variable {
-    pub kind: u8,
-    pub value: u32,
-    pub name: u32,
-}
-impl Variable {
-    pub fn value_kind(&self) -> crate::operands::ValueKind {
-        crate::operands::ValueKind::from_tag(self.kind)
-    }
-    pub fn number(&self) -> Option<f32> {
-        (self.kind == 42).then(|| f32::from_bits(self.value))
-    }
-    /// Compiler-assigned marker for a value constructed by an initializer proc.
-    /// The initializer bytecode uses the variable ID, not this marker.
-    pub fn hidden_initializer_marker(&self) -> Option<u32> {
-        (self.kind == 62).then_some(self.value)
-    }
-}
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct Instance {
-    pub kind: u8,
-    pub class: u32,
-    pub initializer: u32,
-}
-impl Instance {
-    pub fn value_kind(&self) -> crate::operands::ValueKind {
-        crate::operands::ValueKind::from_tag(self.kind)
-    }
-}
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct MapObject {
-    pub offset: u16,
-    pub instance: u32,
-}
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct ResourceRef {
-    pub id: u32,
-    pub kind: u8,
-}
-
-/// Native loader interpretation of the serialized world.view word.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum WorldViewEncoding {
-    Radius(i16),
-    Dimensions { width: u8, height: u8 },
-}
-impl WorldViewEncoding {
-    /// Dimensions of the native loader's signed 16-bit axis fields.
-    pub fn dimensions(self) -> (i16, i16) {
-        match self {
-            Self::Radius(radius) => {
-                let side = radius.wrapping_mul(2).wrapping_add(1);
-                (side, side)
-            }
-            Self::Dimensions { width, height } => (i16::from(width), i16::from(height)),
-        }
-    }
-}
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct World {
-    pub ids: [u32; 7],
-    /// `world.tick_lag` expressed in integer milliseconds by Dream Maker.
-    pub tick_lag: u32,
-    pub client: u32,
-    pub image: u32,
-    /// Initial /savefile/byond_version value.
-    pub savefile_byond_version: u32,
-    pub eye: u8,
-    pub direction: u8,
-    pub control: u16,
-    /// Authored client Import-handler presence. Kept under its original public
-    /// field name for compatibility; use the semantic accessors below.
-    pub unknown_byte: u8,
-    pub client_script: u32,
-    pub client_script_files: Vec<u32>,
-    /// Serialized world.view word; use view_encoding() for the native radius/axis interpretation.
-    pub view_dimensions: u16,
-    pub hub_password: u32,
-    pub server_name: u32,
-    pub hub_number: u32,
-    pub version: u32,
-    pub cache_lifespan: u16,
-    pub command_ids: [u32; 2],
-    pub hub_channel_skin: [u32; 3],
-    pub icon_dimensions_format: [u16; 3],
-}
-impl World {
-    pub fn has_client_import_handler(&self) -> bool {
-        self.unknown_byte != 0
-    }
-    pub fn set_client_import_handler(&mut self, present: bool) {
-        self.unknown_byte = u8::from(present);
-    }
-    pub fn mob_type_id(&self) -> u32 {
-        self.ids[0]
-    }
-    pub fn turf_class_id(&self) -> u32 {
-        self.ids[1]
-    }
-    pub fn area_class_id(&self) -> u32 {
-        self.ids[2]
-    }
-    pub fn proc_list_id(&self) -> u32 {
-        self.ids[3]
-    }
-    pub fn global_initializer_proc_id(&self) -> u32 {
-        self.ids[4]
-    }
-    pub fn domain_string_id(&self) -> u32 {
-        self.ids[5]
-    }
-    pub fn name_string_id(&self) -> u32 {
-        self.ids[6]
-    }
-    pub fn client_command_text_id(&self) -> u32 {
-        self.command_ids[0]
-    }
-    pub fn client_command_prompt_id(&self) -> u32 {
-        self.command_ids[1]
-    }
-    pub fn hub_string_id(&self) -> u32 {
-        self.hub_channel_skin[0]
-    }
-    pub fn channel_string_id(&self) -> u32 {
-        self.hub_channel_skin[1]
-    }
-    pub fn skin_resource_id(&self) -> u32 {
-        self.hub_channel_skin[2]
-    }
-    pub fn icon_size(&self) -> (u16, u16) {
-        (
-            self.icon_dimensions_format[0],
-            self.icon_dimensions_format[1],
-        )
-    }
-    pub fn map_format(&self) -> u16 {
-        self.icon_dimensions_format[2]
-    }
-    pub fn view_encoding(&self) -> WorldViewEncoding {
-        let signed = self.view_dimensions as i16;
-        if signed <= 255 {
-            WorldViewEncoding::Radius(signed)
-        } else {
-            WorldViewEncoding::Dimensions {
-                width: (self.view_dimensions >> 8) as u8,
-                height: self.view_dimensions as u8,
-            }
-        }
-    }
-    pub fn native_view_size(&self) -> (i16, i16) {
-        self.view_encoding().dimensions()
-    }
-    /// Raw high/low bytes, retained for compatibility. These are not always axes.
-    pub fn view_size(&self) -> (u8, u8) {
-        (
-            (self.view_dimensions >> 8) as u8,
-            self.view_dimensions as u8,
-        )
-    }
-
-    pub fn set_view_size(&mut self, width: u8, height: u8) {
-        self.view_dimensions = (u16::from(width) << 8) | u16::from(height);
-    }
-
-    fn read(r: &mut Reader<'_>) -> io::Result<Self> {
-        let mut ids = [0; 7];
-        for value in &mut ids {
-            *value = r.object()?;
-        }
-        let tick_lag = r.u32()?;
-        let client = r.object()?;
-        let image = r.object()?;
-        let savefile_byond_version = if r.compatibility_version <= 514 {
-            0
-        } else {
-            r.u32()?
-        };
-        let eye = r.u8()?;
-        let direction = r.u8()?;
-        let control = r.u16()?;
-        let unknown_byte = r.u8()?;
-        let client_script = r.object()?;
-        let script_file_count = r.u16()? as usize;
-        let mut client_script_files = Vec::with_capacity(script_file_count);
-        for _ in 0..script_file_count {
-            client_script_files.push(r.object()?);
-        }
-        let view_dimensions = r.u16()?;
-        let hub_password = r.object()?;
-        let server_name = r.object()?;
-        let hub_number = r.u32()?;
-        let version = r.u32()?;
-        let cache_lifespan = r.u16()?;
-        let mut command_ids = [0; 2];
-        for value in &mut command_ids {
-            *value = r.object()?;
-        }
-        let mut hub_channel_skin = [0; 3];
-        for value in &mut hub_channel_skin {
-            *value = r.object()?;
-        }
-        let mut icon_dimensions_format = [0; 3];
-        for value in &mut icon_dimensions_format {
-            *value = r.u16()?;
-        }
-        Ok(Self {
-            ids,
-            tick_lag,
-            client,
-            image,
-            savefile_byond_version,
-            eye,
-            direction,
-            control,
-            unknown_byte,
-            client_script,
-            client_script_files,
-            view_dimensions,
-            hub_password,
-            server_name,
-            hub_number,
-            version,
-            cache_lifespan,
-            command_ids,
-            hub_channel_skin,
-            icon_dimensions_format,
-        })
-    }
-    fn write(&self, w: &mut Writer) {
-        for value in self.ids {
-            w.object(value);
-        }
-        w.u32(self.tick_lag);
-        w.object(self.client);
-        w.object(self.image);
-        if w.compatibility_version > 514 {
-            w.u32(self.savefile_byond_version);
-        }
-        w.u8(self.eye);
-        w.u8(self.direction);
-        w.u16(self.control);
-        w.u8(self.unknown_byte);
-        w.object(self.client_script);
-        w.u16(self.client_script_files.len() as u16);
-        for value in &self.client_script_files {
-            w.object(*value);
-        }
-        w.u16(self.view_dimensions);
-        w.object(self.hub_password);
-        w.object(self.server_name);
-        w.u32(self.hub_number);
-        w.u32(self.version);
-        w.u16(self.cache_lifespan);
-        for value in self.command_ids {
-            w.object(value);
-        }
-        for value in self.hub_channel_skin {
-            w.object(value);
-        }
-        for value in self.icon_dimensions_format {
-            w.u16(value);
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Dmb {
     pub header: Header,
     pub dimensions: [u16; 3],
@@ -1241,7 +41,7 @@ pub struct Dmb {
     pub classes: Vec<Class>,
     pub mobs: Vec<MobType>,
     pub strings: Vec<DmString>,
-    pub lists: ListTable,
+    pub lists: WordLists,
     pub procs: Vec<Proc>,
     pub variables: Vec<Variable>,
     /// List ID of (variable ID, declaration flags) pairs for globals.
@@ -1251,147 +51,6 @@ pub struct Dmb {
     pub map_objects: Vec<MapObject>,
     pub world: World,
     pub resources: Vec<ResourceRef>,
-}
-
-/// Reusable index for looking up many DMB resource references in one archive.
-pub struct ResourceLookup<'a> {
-    archive: &'a [crate::rsc::Entry],
-    by_key: HashMap<(u32, u8), usize>,
-}
-
-impl<'a> ResourceLookup<'a> {
-    pub fn new(archive: &'a [crate::rsc::Entry]) -> Self {
-        let mut by_key = HashMap::new();
-        for (index, entry) in archive.iter().enumerate() {
-            if let crate::rsc::Entry::Named(resource) = entry {
-                by_key.entry((resource.id, resource.kind)).or_insert(index);
-            }
-        }
-        Self { archive, by_key }
-    }
-
-    pub fn get(&self, dmb: &Dmb, index: ResourceId) -> Option<&'a crate::rsc::NamedResource> {
-        let reference = dmb.resources.get(index.index())?;
-        let entry = self
-            .archive
-            .get(*self.by_key.get(&(reference.id, reference.kind))?)?;
-        match entry {
-            crate::rsc::Entry::Named(resource) => Some(resource),
-            crate::rsc::Entry::Opaque { .. } => None,
-        }
-    }
-}
-
-/// Attach borrowed assets while retaining only references to archive payloads.
-/// Distinct spellings of identical content share a table and archive entry.
-pub fn attach_resource_refs<'a>(
-    dmb: &mut Dmb,
-    resources: impl IntoIterator<Item = &'a crate::rsc::NamedResource>,
-) -> io::Result<(Vec<ResourceId>, Vec<&'a crate::rsc::NamedResource>)> {
-    let mut references = HashMap::new();
-    for (id, resource) in dmb.resources.iter().enumerate() {
-        references
-            .entry((resource.id, resource.kind))
-            .or_insert(id as u32);
-    }
-    let mut archive: Vec<&crate::rsc::NamedResource> = Vec::new();
-    let mut entries: HashMap<(u32, u8), usize> = HashMap::new();
-    let mut ids = Vec::new();
-    for resource in resources {
-        if resource.content_id()? != resource.id {
-            return Err(invalid("RSC resource ID does not match asset content"));
-        }
-        let key = (resource.id, resource.kind);
-        if let Some(&entry) = entries.get(&key) {
-            if archive[entry].asset_bytes()? != resource.asset_bytes()? {
-                return Err(invalid("RSC resource ID collision"));
-            }
-        } else {
-            entries.insert(key, archive.len());
-            archive.push(resource);
-        }
-        let index = if let Some(&index) = references.get(&key) {
-            index
-        } else {
-            let index = u32::try_from(dmb.resources.len())
-                .map_err(|_| invalid("resource index exceeds u32"))?;
-            ResourceId::from_raw(index).ok_or_else(|| invalid("reserved resource index"))?;
-            dmb.resources.push(ResourceRef {
-                id: resource.id,
-                kind: resource.kind,
-            });
-            references.insert(key, index);
-            index
-        };
-        ids.push(ResourceId::from_raw(index).ok_or_else(|| invalid("reserved resource index"))?);
-    }
-    Ok((ids, archive))
-}
-
-/// Keeps resource tables indexed while inserting a batch of assets.
-pub struct ResourceAttachment<'a> {
-    dmb: &'a mut Dmb,
-    archive: &'a mut Vec<crate::rsc::Entry>,
-    references: HashMap<(u32, u8), u32>,
-    archive_entries: HashMap<(u32, u8), usize>,
-}
-
-impl<'a> ResourceAttachment<'a> {
-    pub fn new(dmb: &'a mut Dmb, archive: &'a mut Vec<crate::rsc::Entry>) -> Self {
-        let mut references = HashMap::new();
-        for (index, reference) in dmb.resources.iter().enumerate() {
-            references
-                .entry((reference.id, reference.kind))
-                .or_insert(index as u32);
-        }
-        let mut archive_entries = HashMap::new();
-        for (index, entry) in archive.iter().enumerate() {
-            if let crate::rsc::Entry::Named(resource) = entry {
-                archive_entries
-                    .entry((resource.id, resource.kind))
-                    .or_insert(index);
-            }
-        }
-        Self {
-            dmb,
-            archive,
-            references,
-            archive_entries,
-        }
-    }
-
-    pub fn attach(&mut self, resource: crate::rsc::NamedResource) -> io::Result<ResourceId> {
-        if resource.content_id()? != resource.id {
-            return Err(invalid("RSC resource ID does not match asset content"));
-        }
-        let key = (resource.id, resource.kind);
-        if let Some(&index) = self.references.get(&key) {
-            let entry = self
-                .archive_entries
-                .get(&key)
-                .and_then(|&position| self.archive.get(position))
-                .ok_or_else(|| invalid("DMB resource reference missing from RSC"))?;
-            let crate::rsc::Entry::Named(existing) = entry else {
-                return Err(invalid("RSC resource index is not named"));
-            };
-            if existing.asset_bytes()? != resource.asset_bytes()? {
-                return Err(invalid("RSC resource ID collision"));
-            }
-            return ResourceId::from_raw(index).ok_or_else(|| invalid("reserved resource index"));
-        }
-        let index = u32::try_from(self.dmb.resources.len())
-            .map_err(|_| invalid("resource index exceeds u32"))?;
-        let typed =
-            ResourceId::from_raw(index).ok_or_else(|| invalid("reserved resource index"))?;
-        self.dmb.resources.push(ResourceRef {
-            id: resource.id,
-            kind: resource.kind,
-        });
-        self.references.insert(key, index);
-        self.archive_entries.insert(key, self.archive.len());
-        self.archive.push(crate::rsc::Entry::Named(resource));
-        Ok(typed)
-    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1448,20 +107,6 @@ impl ProcArgument {
 }
 
 impl Dmb {
-    pub fn list_words(&self, id: u32) -> Option<&[u32]> {
-        self.lists.get(id as usize).map(ListWords::as_slice)
-    }
-    pub fn append_shared_list(&mut self, words: Arc<[u32]>) -> io::Result<u32> {
-        if words.len()>u16::MAX as usize {return Err(invalid("list exceeds u16 element count"));}
-        if self.lists.len()==NONE as usize {self.lists.push(Vec::new());}
-        let id=u32::try_from(self.lists.len()).map_err(|_|invalid("list table exceeds u32"))?;
-        self.lists.push(words);
-        if self.lists.len()>u16::MAX as usize {self.header.flags|=0x4000_0000;}
-        Ok(id)
-    }
-    pub fn materialize_sources(&mut self) {
-        for list in &mut self.lists {let _=list.to_mut();}
-    }
     /// Checks the typed cross-table references needed to construct a world.
     /// Generic list contents and bytecode words have context-specific meanings.
     /// Remove unreachable list records and intern identical immutable word arrays.
@@ -1500,7 +145,7 @@ impl Dmb {
         let mut remap = vec![NONE; old_count];
         use std::hash::{Hash, Hasher};
         let mut intern = std::collections::HashMap::<u64, Vec<u32>>::new();
-        let mut lists = Vec::<ListWords>::new();
+        let mut lists = WordLists::default();
         for (old, words) in self.lists.iter().enumerate() {
             if !live[old] {
                 continue;
@@ -1513,11 +158,11 @@ impl Dmb {
             } else {
                 // 0xffff is NONE even when the table uses 32-bit object IDs.
                 if lists.len() == NONE as usize {
-                    lists.push(Vec::new().into());
+                    lists.push(Vec::new());
                 }
                 let id =
                     u32::try_from(lists.len()).map_err(|_| invalid("list table exceeds u32"))?;
-                lists.push(words.clone());
+                lists.push_shared(std::sync::Arc::clone(self.lists.shared(old).unwrap()));
                 bucket.push(id);
                 id
             };
@@ -1544,7 +189,7 @@ impl Dmb {
         }
         map(&mut self.world.ids[3]);
         map(&mut self.variable_footer);
-        self.lists = lists.into();
+        self.lists = lists;
         self.validate_references()?;
         Ok(old_count.saturating_sub(self.lists.len()))
     }
@@ -1595,15 +240,15 @@ impl Dmb {
                 }
             }
             if changed.contains(&proc_.code_locals_args[2]) {
-                let arguments = self
-                    .proc_arguments(index)
+                let mut arguments = self
+                    .proc_arguments_iter(index)
                     .ok_or_else(|| invalid("malformed proc argument list"))?;
-                if arguments.iter().any(|arg| {
+                if arguments.clone().any(|arg| {
                     arg.variable_id != NONE && arg.variable_id as usize >= self.variables.len()
                 }) {
                     return Err(invalid("proc argument contains invalid VarID"));
                 }
-                if arguments.iter().any(|arg| {
+                if arguments.any(|arg| {
                     arg.source_expression_index().is_some_and(|reference| {
                         usize::from(reference) >= self.proc_references.len()
                     })
@@ -1616,63 +261,10 @@ impl Dmb {
     }
 
     pub fn validate_references(&self) -> io::Result<()> {
-        self.validate_references_impl(None)
-    }
-    /// Reuse successful proofs only for byte-identical records and dependent
-    /// lists. Growth of referenced tables preserves an in-range proof; shrinking
-    /// any referenced table revalidates the record. Other sections use the same
-    /// validation path as a fresh image.
-    pub fn reference_validated<'a>(&'a self, cache: &mut ReferenceValidationCache) -> io::Result<ReferenceValidatedImage<'a>> {
-        self.validate_references_incremental(cache)?;
-        Ok(ReferenceValidatedImage { image: self })
-    }
-    pub fn validate_references_incremental(&self, cache: &mut ReferenceValidationCache) -> io::Result<()> {
-        cache.procedures.retain(|index, _| *index < self.procs.len());
-        cache.classes.retain(|index, _| *index < self.classes.len());
-        cache.bytes = cache.procedures.values().map(|proof| std::mem::size_of::<ProcedureReferenceProof>() + 64
-            + 4 * (proof.locals.len() + proof.arguments.len())).sum::<usize>()
-            + cache.classes.values().map(ClassReferenceProof::charge).sum::<usize>()
-            + cache.other.len() * (std::mem::size_of::<WireRecord>() + 128);
-        self.validate_references_impl(Some(cache))
-    }
-    fn validate_references_impl(&self, mut cache: Option<&mut ReferenceValidationCache>) -> io::Result<()> {
-        self.validate_references_source(cache.take(),None,None)
-    }
-    /// Check actual metadata and non-code list rows without reading procedure
-    /// instructions. The native validator also treats code as an opaque list.
-    pub fn validate_metadata_with_lists(&self,source:&dyn WireListSource,cache:&mut ReferenceValidationCache)->io::Result<()> {
-        cache.procedures.retain(|index,_|*index<self.procs.len());
-        cache.classes.retain(|index,_|*index<self.classes.len());
-        self.validate_references_source(Some(cache),Some(source),None)
-    }
-    pub fn validate_physical_sources(&self,lists:&dyn WireListSource,records:&dyn WireRecordSource,cache:&mut ReferenceValidationCache)->io::Result<()> {
-        cache.procedures.retain(|index,_|*index<records.proc_count());
-        cache.classes.retain(|index,_|*index<self.classes.len());
-        self.validate_references_source(Some(cache),Some(lists),Some(records))
-    }
-    fn validate_references_source(&self, mut cache: Option<&mut ReferenceValidationCache>,source:Option<&dyn WireListSource>,records:Option<&dyn WireRecordSource>) -> io::Result<()> {
-        let proc_count=records.map_or(self.procs.len(),|source|source.proc_count());
-        let variable_count=records.map_or(self.variables.len(),|source|source.variable_count());
-        let list_count=source.map_or(self.lists.len(),|source|source.len());
-        let width=if self.header.flags&0x4000_0000!=0 {4}else{2};
-        let get_words=|id:usize|->io::Result<Option<ListWords>> {if id>=list_count {return Ok(None);}match source {
-            Some(source)=>source.read_words(id,width).map(Some),None=>Ok(self.lists.get(id).cloned())
-        }};
         fn in_table(id: u32, len: usize) -> bool {
             id == NONE || (id as usize) < len
         }
-        let other_bounds = [self.strings.len(), self.classes.len(), self.mobs.len(), list_count,
-            proc_count, self.instances.len(), self.resources.len()];
         for (class_index, class) in self.classes.iter().enumerate() {
-            let bounds = [self.strings.len(), self.classes.len(), self.resources.len(), list_count,
-                proc_count, variable_count];
-            if cache.as_ref().and_then(|cache| cache.classes.get(&class_index)).is_some_and(|proof|
-                proof.record == *class
-                && proof.bounds.iter().zip(bounds).all(|(old, current)| *old <= current)
-                && proof.lists.iter().all(|(id, words)| get_words(*id as usize).ok().flatten()
-                    .is_some_and(|actual|actual.as_slice()==words.as_slice()))) {
-                continue;
-            }
             if !in_table(class.path_string_id(), self.strings.len())
                 || !in_table(class.parent_class_id(), self.classes.len())
                 || !in_table(class.name_string_id(), self.strings.len())
@@ -1682,72 +274,64 @@ impl Dmb {
                 || !in_table(class.text, self.strings.len())
                 || !in_table(class.maptext, self.strings.len())
                 || !in_table(class.suffix, self.strings.len())
-                || !in_table(class.lists_and_procs[0], list_count)
-                || !in_table(class.lists_and_procs[1], list_count)
-                || !in_table(class.lists_and_procs[2], proc_count)
-                || !in_table(class.lists_and_procs[3], list_count)
-                || !in_table(class.lists_and_procs[4], list_count)
-                || !in_table(class.overrides, list_count)
+                || !in_table(class.lists_and_procs[0], self.lists.len())
+                || !in_table(class.lists_and_procs[1], self.lists.len())
+                || !in_table(class.lists_and_procs[2], self.procs.len())
+                || !in_table(class.lists_and_procs[3], self.lists.len())
+                || !in_table(class.lists_and_procs[4], self.lists.len())
+                || !in_table(class.overrides, self.lists.len())
             {
                 return Err(invalid("class cross-table reference out of range"));
             }
             for list_id in [class.verb_list_id(), class.proc_list_id()] {
                 if list_id != NONE
-                    && get_words(list_id as usize)?.ok_or_else(||invalid("class procedure list missing"))?
+                    && self.lists[list_id as usize]
                         .iter()
-                        .any(|&id| !in_table(id, proc_count))
+                        .any(|&id| !in_table(id, self.procs.len()))
                 {
                     return Err(invalid("class procedure list contains invalid ProcID"));
                 }
             }
             if class.initialized_variable_list_id() != NONE {
-                let words=get_words(class.initialized_variable_list_id() as usize)?.ok_or_else(||invalid("class initial value list missing"))?;
-                validate_tagged_keys(&words,variable_count,"class initial value has invalid VarID")?;
+                let values = self
+                    .class_initial_values(class_index)
+                    .ok_or_else(|| invalid("malformed class initial value list"))?;
+                if values
+                    .iter()
+                    .any(|v| !in_table(v.variable_id, self.variables.len()))
+                {
+                    return Err(invalid("class initial value has invalid VarID"));
+                }
             }
             if class.defining_variable_list_id() != NONE {
-                let values=get_words(class.defining_variable_list_id() as usize)?.ok_or_else(||invalid("class declaration list missing"))?;
-                if values.len()%2!=0 {return Err(invalid("malformed class declaration list"));}
-                if values.chunks_exact(2).any(|v| !in_table(v[0], variable_count)) {
+                let values = self
+                    .class_variable_declarations(class_index)
+                    .ok_or_else(|| invalid("malformed class declaration list"))?;
+                if values.iter().any(|v| !in_table(v.0, self.variables.len())) {
                     return Err(invalid("class declaration has invalid VarID"));
                 }
             }
             if class.overriding_variable_list_id() != NONE {
-                let words=get_words(class.overriding_variable_list_id() as usize)?.ok_or_else(||invalid("class builtin override list missing"))?;
-                validate_tagged_keys(&words,self.strings.len(),"class builtin override has invalid StringID")?;
-            }
-            if let Some(cache) = cache.as_deref_mut() {
-                let mut ids=vec![class.lists_and_procs[0],class.lists_and_procs[1],class.lists_and_procs[3],class.lists_and_procs[4],class.overrides];
-                ids.sort_unstable();ids.dedup();
-                let mut rows=Vec::new();for id in ids.into_iter().filter(|&id|id!=NONE) {
-                    if let Some(words)=get_words(id as usize)? {rows.push((id,words.to_vec()));}
+                let values = self
+                    .class_builtin_overrides(class_index)
+                    .ok_or_else(|| invalid("malformed class builtin override list"))?;
+                if values
+                    .iter()
+                    .any(|v| !in_table(v.name_string_id, self.strings.len()))
+                {
+                    return Err(invalid("class builtin override has invalid StringID"));
                 }
-                cache.remember_class_rows(class_index,class,rows,bounds);
             }
         }
         for mob in &self.mobs {
-            let proof_record = WireRecord::Mob(mob.clone());
-            if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
             if !in_table(mob.class, self.classes.len()) || !in_table(mob.key, self.strings.len()) {
                 return Err(invalid("mob cross-table reference out of range"));
             }
-            if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
-        for proc_index in 0..proc_count {
-            let proc_owned=match records {Some(source)=>source.proc_row(proc_index)?,None=>self.procs[proc_index].clone()};
-            let proc=&proc_owned;
+        for (proc_index, proc) in self.procs.iter().enumerate() {
             // Native wide tables reserve the nullable ProcID at FFFF as an
             // empty record. Its list references are absent by construction.
-            if reserved_proc_record(proc_index,proc) {
-                continue;
-            }
-            let bounds = [self.strings.len(), list_count, variable_count, self.proc_references.len()];
-            let locals_words = get_words(proc.code_locals_args[1] as usize)?;
-            let argument_words = get_words(proc.code_locals_args[2] as usize)?;
-            if cache.as_ref().and_then(|cache| cache.procedures.get(&proc_index)).is_some_and(|proof|
-                proof.record == *proc
-                && proof.bounds.iter().zip(bounds).all(|(old, current)| *old <= current)
-                && locals_words.as_ref().is_some_and(|words| words == &proof.locals)
-                && argument_words.as_ref().is_some_and(|words| words == &proof.arguments)) {
+            if self.is_reserved_proc_slot(proc_index) {
                 continue;
             }
             if proc_index == NONE as usize
@@ -1762,94 +346,77 @@ impl Dmb {
                 || proc
                     .code_locals_args
                     .iter()
-                    .any(|&id| !in_table(id, list_count))
+                    .any(|&id| !in_table(id, self.lists.len()))
             {
                 return Err(invalid("proc cross-table reference out of range"));
             }
-            let locals = locals_words.as_ref()
+            let locals = self
+                .lists
+                .get(proc.code_locals_args[1] as usize)
                 .ok_or_else(|| invalid("proc locals list missing"))?;
-            if locals.iter().any(|&id| !in_table(id, variable_count)) {
+            if locals.iter().any(|&id| !in_table(id, self.variables.len())) {
                 return Err(invalid("proc locals list contains invalid VarID"));
             }
-            let argument_words=argument_words.as_ref().ok_or_else(||invalid("proc argument list missing"))?;
-            if argument_words.len()%4!=0 {return Err(invalid("malformed proc argument list"));}
-            let arguments:Vec<_>=argument_words.chunks_exact(4).map(|arg|ProcArgument {type_flags:arg[0],value_source:arg[1],variable_id:arg[2],reserved:arg[3]}).collect();
+            let mut arguments = self
+                .proc_arguments_iter(proc_index)
+                .ok_or_else(|| invalid("malformed proc argument list"))?;
             if arguments
-                .iter()
-                .any(|arg| !in_table(arg.variable_id, variable_count))
+                .clone()
+                .any(|arg| !in_table(arg.variable_id, self.variables.len()))
             {
                 return Err(invalid("proc argument contains invalid VarID"));
             }
-            if arguments.iter().any(|arg| {
+            if arguments.any(|arg| {
                 arg.source_expression_index()
                     .is_some_and(|index| usize::from(index) >= self.proc_references.len())
             }) {
                 return Err(invalid("proc argument expression reference out of range"));
             }
-            if let Some(cache) = cache.as_deref_mut() {
-                cache.remember(proc_index, proc, locals, argument_words, bounds);
-            }
         }
-        for variable_index in 0..variable_count {
-            let variable=match records {Some(source)=>source.variable_row(variable_index)?,None=>self.variables[variable_index].clone()};
-            let proof_record = WireRecord::Variable(variable.clone());
-            if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
+        for variable in &self.variables {
             if !in_table(variable.name, self.strings.len()) {
                 return Err(invalid("variable name out of range"));
             }
-            if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
         for instance in &self.instances {
-            let proof_record = WireRecord::Instance(instance.clone());
-            if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
             let descriptors = if instance.kind == 8 {
                 self.mobs.len()
             } else {
                 self.classes.len()
             };
             if !in_table(instance.class, descriptors)
-                || !in_table(instance.initializer, proc_count)
+                || !in_table(instance.initializer, self.procs.len())
             {
                 return Err(invalid("instance cross-table reference out of range"));
             }
-            if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
         for run in &self.grid {
-            let proof_record = WireRecord::Grid(run.clone());
-            if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
             if !in_table(run.turf, self.instances.len())
                 || !in_table(run.area, self.instances.len())
-                || !in_table(run.contents, list_count)
+                || !in_table(run.contents, self.lists.len())
             {
                 return Err(invalid("grid cross-table reference out of range"));
             }
-            if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
         for object in &self.map_objects {
-            let proof_record = WireRecord::MapObject(object.clone());
-            if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
             if !in_table(object.instance, self.instances.len()) {
                 return Err(invalid("map object instance out of range"));
             }
-            if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
         for &id in &self.proc_references {
-            let proof_record = WireRecord::Reference(id);
-            if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
-            if !in_table(id, proc_count) {
+            if !in_table(id, self.procs.len()) {
                 return Err(invalid("procedure reference out of range"));
             }
-            if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
-        if !in_table(self.variable_footer, list_count) {
+        if !in_table(self.variable_footer, self.lists.len()) {
             return Err(invalid("global declaration list out of range"));
         }
         let w = &self.world;
         if !in_table(w.ids[0], self.mobs.len())
             || !in_table(w.ids[1], self.classes.len())
             || !in_table(w.ids[2], self.classes.len())
-            || !in_table(w.ids[3], list_count)
-            || !in_table(w.ids[4], proc_count)
+            || !in_table(w.ids[3], self.lists.len())
+            || !in_table(w.ids[4], self.procs.len())
             || !in_table(w.ids[5], self.strings.len())
             || !in_table(w.ids[6], self.strings.len())
             || !in_table(w.client, self.classes.len())
@@ -1930,10 +497,19 @@ impl Dmb {
             return None;
         }
         let list_id = self.procs.get(proc_index)?.code_locals_args[0];
-        self.list_words(list_id)
+        self.lists.get(list_id as usize).map(Vec::as_slice)
     }
 
     pub fn proc_arguments(&self, proc_index: usize) -> Option<Vec<ProcArgument>> {
+        self.proc_arguments_iter(proc_index).map(Iterator::collect)
+    }
+
+    /// Decode argument records directly from the retained list without allocating
+    /// a second argument vector. Cloning the iterator preserves validation order.
+    pub fn proc_arguments_iter(
+        &self,
+        proc_index: usize,
+    ) -> Option<impl ExactSizeIterator<Item = ProcArgument> + Clone + '_> {
         if self.is_reserved_proc_slot(proc_index) {
             return None;
         }
@@ -1942,17 +518,12 @@ impl Dmb {
         if words.len() % 4 != 0 {
             return None;
         }
-        Some(
-            words
-                .chunks_exact(4)
-                .map(|arg| ProcArgument {
-                    type_flags: arg[0],
-                    value_source: arg[1],
-                    variable_id: arg[2],
-                    reserved: arg[3],
-                })
-                .collect(),
-        )
+        Some(words.chunks_exact(4).map(|arg| ProcArgument {
+            type_flags: arg[0],
+            value_source: arg[1],
+            variable_id: arg[2],
+            reserved: arg[3],
+        }))
     }
 
     pub fn argument_source_proc_id(&self, argument: &ProcArgument) -> Option<u32> {
@@ -2241,809 +812,76 @@ impl Dmb {
     pub fn to_bytes(&self) -> io::Result<Vec<u8>> {
         self.to_bytes_with_list_spans().map(|(bytes, _)| bytes)
     }
-
-    /// Serialize and produce the exact list-record index in the same pass.
     pub fn to_bytes_with_list_spans(&self) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
-        self.serialize_with_list_spans(false, None)
+        writing::write(self, None).map(|(owner, spans)| (owner.into_bytes(), spans))
     }
-    // The only true caller is the immutable validator token above. Wire-width,
-    // header and grid checks remain mandatory for both entry points.
-    fn serialize_with_list_spans(&self, references_proven: bool, mut wire_cache: Option<&mut DmbWireCache>) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
-        self.serialize_chunks(references_proven, wire_cache.take()).map(ChunkedDmb::into_bytes)
+    /// Canonical serialization with a digest bound to its immutable byte owner.
+    pub fn encode(&self) -> io::Result<EncodedDmb> {
+        writing::write(self, None).map(|(owner, _)| owner)
     }
-    fn serialize_chunks(&self, references_proven: bool, mut wire_cache: Option<&mut DmbWireCache>) -> io::Result<ChunkedDmb> {
-        self.serialize_chunks_source(references_proven,wire_cache.take(),None,None,None)
+    pub fn encode_on_executor(&self, executor: &dm_exec::BuildExecutor) -> io::Result<EncodedDmb> {
+        writing::write(self, Some(executor)).map(|(owner, _)| owner)
     }
-    /// Physical encoder boundary for a separately certified list-object table.
-    /// The caller must validate the metadata together with this exact source.
-    /// Logical readers continue using Dmb; disk-backed images use a distinct
-    /// owner with explicit fallible materialization.
-    pub fn encode_metadata_with_lists(&self,lists:&dyn WireListSource,cache:&mut DmbWireCache)->io::Result<ChunkedDmb> {
-        self.serialize_chunks_source(true,Some(cache),Some(lists),None,None)
-    }
-    /// Bounded streaming encoding; sink errors abort publication. No page bytes
-    /// are retained after the sink consumes them.
-    pub fn encode_metadata_to_sink(&self,lists:&dyn WireListSource,cache:&mut DmbWireCache,
-        sink:Box<dyn FnMut(&[u8])->io::Result<()>>)->io::Result<(usize,Vec<std::ops::Range<usize>>)> {
-        let encoded=self.serialize_chunks_source(true,Some(cache),Some(lists),Some(sink),None)?;
-        Ok((encoded.len,encoded.list_spans))
-    }
-    pub fn encode_physical_to_sink(&self,lists:&dyn WireListSource,records:&dyn WireRecordSource,cache:&mut DmbWireCache,
-        sink:Box<dyn FnMut(&[u8])->io::Result<()>>)->io::Result<(usize,Vec<std::ops::Range<usize>>)> {
-        let encoded=self.serialize_chunks_source(true,Some(cache),Some(lists),Some(sink),Some(records))?;Ok((encoded.len,encoded.list_spans))
-    }
-    pub fn encode_physical_chunks(&self,lists:&dyn WireListSource,records:&dyn WireRecordSource,cache:&mut DmbWireCache)->io::Result<ChunkedDmb> {
-        self.serialize_chunks_source(true,Some(cache),Some(lists),None,Some(records))
-    }
-    fn serialize_chunks_source(&self, references_proven: bool, mut wire_cache: Option<&mut DmbWireCache>, lists:Option<&dyn WireListSource>,sink:Option<Box<dyn FnMut(&[u8])->io::Result<()>>>,records:Option<&dyn WireRecordSource>) -> io::Result<ChunkedDmb> {
-        let proc_count=records.map_or(self.procs.len(),|source|source.proc_count());
-        let variable_count=records.map_or(self.variables.len(),|source|source.variable_count());
-        let list_count=lists.map_or(self.lists.len(),|source|source.len());
-        let list_len=|id:usize|->io::Result<usize> {match lists {Some(source)=>source.word_count(id),None=>Ok(self.lists[id].len())}};
-        if self.header.version_line != b"world bin v516\n"
-            || !self
-                .header
-                .compatibility_line
-                .starts_with(b"min compatibility v")
-            || !self.header.compatibility_line.ends_with(b"\n")
-            || self
-                .header
-                .compatibility_line
-                .iter()
-                .filter(|&&byte| byte == b'\n')
-                .count()
-                != 1
-            || (self.header.flags & 0x8000_0000 != 0) != self.header.extended_flags.is_some()
-        {
-            return Err(invalid("unsupported DMB header"));
-        }
-        if !references_proven { self.validate_references()?; }
-        let cells = self
-            .dimensions
-            .iter()
-            .try_fold(1usize, |product, &value| {
-                product.checked_mul(usize::from(value))
-            })
-            .ok_or_else(|| invalid("grid dimensions overflow"))?;
-        let mut covered = 0usize;
-        for run in &self.grid {
-            if run.copies == 0 {
-                return Err(invalid("zero-length grid run"));
-            }
-            covered = covered
-                .checked_add(usize::from(run.copies))
-                .ok_or_else(|| invalid("grid run count overflow"))?;
-        }
-        if covered != cells {
-            return Err(invalid("grid runs do not cover map dimensions"));
-        }
-        for id in 0..list_count {if list_len(id)?>u16::MAX as usize {return Err(invalid("list exceeds u16 element count"));}}
-        if self.world.client_script_files.len() > u16::MAX as usize {
-            return Err(invalid("client script file list exceeds u16 count"));
-        }
-        if compatibility_version(&self.header.compatibility_line)? <= 514
-            && self.world.savefile_byond_version != 0
-        {
-            return Err(invalid(
-                "savefile version has no field at this compatibility level",
-            ));
-        }
-        for class in &self.classes {
-            if (class.interface == 15) != class.extended_interface.is_some()
-                || (class.transform_flag != 0) != class.transform.is_some()
-                || (class.color_matrix_flag != 0) != class.color_matrix.is_some()
-            {
-                return Err(invalid("class presence flag disagrees with data"));
-            }
-        }
-        if self
-            .mobs
-            .iter()
-            .any(|mob| (mob.sight & 0x80 != 0) != mob.extended_sight.is_some())
-        {
-            return Err(invalid("mob sight flag disagrees with data"));
-        }
-
-        let mut w = Writer::new(
-            if self.header.flags & 0x4000_0000 != 0 {
-                4
-            } else {
-                2
-            },
-            compatibility_version(&self.header.compatibility_line)?,
-        );
-        w.segmented = true;
-        w.sink=sink;
-        // Reserve once for the mandatory new dense generation. The upper bound
-        // avoids geometric reallocations/copies while remaining close to the
-        // actual image (only optional fixed-size record fields are overestimated).
-        let width = w.object_size;
-        let mut estimate = self.header.executor_line.as_ref().map_or(0, Vec::len)
-            .checked_add(self.header.version_line.len()).and_then(|n| n.checked_add(self.header.compatibility_line.len()))
-            .and_then(|n| n.checked_add(512)).ok_or_else(|| invalid("wire image size overflow"))?;
-        let mut reserve = |count: usize, record: usize| -> io::Result<()> {
-            estimate = count.checked_mul(record).and_then(|n| estimate.checked_add(n))
-                .ok_or_else(|| invalid("wire image size overflow"))?;
-            Ok(())
+    /// Canonical encoder with optional row serialization from an admitted previous
+    /// generation. All current model validation, ordering and final hashing remain.
+    /// Retain the opaque row certificate only after independent output validation.
+    pub fn encode_reusing_list_rows(
+        &self,
+        previous: Option<&WordLists>,
+        executor: Option<&dm_exec::BuildExecutor>,
+    ) -> io::Result<(EncodedDmb, EncodedListRows)> {
+        let previous = previous.and_then(WordLists::encoding);
+        let (image, ranges) = writing::write_reusing_lists(self, executor, previous.as_deref())?;
+        let width = if self.header.flags & 0x4000_0000 != 0 {
+            4
+        } else {
+            2
         };
-        reserve(self.grid.len(), 3 * width + 1)?;
-        reserve(self.classes.len(), 16 * width + 132)?;
-        reserve(self.mobs.len(), 2 * width + 7)?;
-        reserve(proc_count, 7 * width + 8)?;
-        reserve(variable_count, 5 + width)?;
-        reserve(self.proc_references.len(), width)?;
-        reserve(self.instances.len(), 5 + width)?;
-        reserve(self.map_objects.len(), 2 + width)?;
-        reserve(self.resources.len(), 5)?;
-        reserve(self.world.client_script_files.len(), width)?;
-        for string in &self.strings { reserve(1, string.data.len().checked_add(2 * (usize::from(string.long_chunks) + 1))
-            .ok_or_else(|| invalid("wire string size overflow"))?)?; }
-        for id in 0..list_count { reserve(1, list_len(id)?.checked_mul(width).and_then(|n| n.checked_add(2))
-            .ok_or_else(|| invalid("wire list size overflow"))?)?; }
-        w.bytes.try_reserve_exact(estimate.min(256 * 1024)).map_err(io::Error::other)?;
-        if let Some(line) = &self.header.executor_line {
-            // Native world.executor text may contain newlines. The reader stops
-            // at a version line followed by a compatibility line, so reject
-            // that ambiguous sentinel rather than valid multiline text.
-            if !line.starts_with(b"#!")
-                || !line.ends_with(b"\n")
-                || line
-                    .windows(b"\nworld bin v516\nmin compatibility v".len())
-                    .any(|part| part == b"\nworld bin v516\nmin compatibility v")
-            {
-                return Err(invalid("invalid executor shebang"));
-            }
-            w.raw(line);
-        }
-        w.raw(&self.header.version_line);
-        w.raw(&self.header.compatibility_line);
-        w.u32(self.header.flags);
-        if let Some(flags) = self.header.extended_flags {
-            w.u32(flags);
-        }
-        for value in self.dimensions {
-            w.u16(value);
-        }
-        for run in &self.grid {
-            let encode = |w: &mut Writer| { w.object(run.turf); w.object(run.area); w.object(run.contents); w.u8(run.copies); };
-            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(&mut w, 11, WireRecord::Grid(run.clone()), encode); } else { encode(&mut w); }
-            w.bounded_page();
-        }
-        let total_string_bytes = self.strings.iter().try_fold(0usize, |sum, string| {
-            sum.checked_add(string.data.len() + 1)
-                .ok_or_else(|| invalid("string total overflow"))
-        })?;
-        w.u32(u32::try_from(total_string_bytes).map_err(|_| invalid("string total exceeds u32"))?);
-        w.table(&self.classes, |w, item| {
-            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 1, WireRecord::Class(item.clone()), |w| item.write(w)); } else { item.write(w); }
-        })?;
-        w.table(&self.mobs, |w, item| {
-            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 2, WireRecord::Mob(item.clone()), |w| item.write(w)); } else { item.write(w); }
-        })?;
-        w.object(
-            u32::try_from(self.strings.len()).map_err(|_| invalid("string count exceeds u32"))?,
-        );
-        let mut string_hash = u32::MAX;
-        let string_origin = self.header.executor_line.as_ref().map_or(0, Vec::len);
-        let mut encrypted_string=Vec::with_capacity(64*1024);
-        for string in &self.strings {
-            let mut remaining = string.data.len();
-            for _ in 0..string.long_chunks {
-                let offset = w.at() - string_origin;
-                w.u16(u16::MAX ^ offset as u16);
-                remaining = remaining
-                    .checked_sub(u16::MAX as usize)
-                    .ok_or_else(|| invalid("invalid long string chunks"))?;
-            }
-            if remaining >= u16::MAX as usize {
-                return Err(invalid("string needs additional length chunks"));
-            }
-            let offset = w.at() - string_origin;
-            w.u16((remaining as u16) ^ offset as u16);
-            let offset = w.at() - string_origin;
-            // Encrypt before handing bytes to the fallible streaming sink.
-            // No borrowed slice may span a Writer page flush.
-            let mut encrypted_offset=offset;
-            for chunk in string.data.chunks(64*1024) {
-                encrypted_string.clear();encrypted_string.extend_from_slice(chunk);
-                crypt_string(&mut encrypted_string,encrypted_offset);
-                w.raw(&encrypted_string);
-                encrypted_offset=encrypted_offset.wrapping_add(chunk.len().wrapping_mul(9));
-            }
-            string_hash = nqcrc(string_hash, &string.data);
-            string_hash = nqcrc(string_hash, &[0]);
-            w.bounded_page();
-        }
-        w.u32(string_hash);
-        let mut list_spans = Vec::with_capacity(list_count);
-        let mut prepared_until=0;
-        w.object(u32::try_from(list_count).map_err(|_|invalid("list table exceeds u32"))?);
-        for id in 0..list_count {
-            if let Some(source)=lists {
-                if id>=prepared_until {
-                    prepared_until=source.prepare_window(id,4096)?;
-                    if prepared_until<=id||prepared_until>list_count {return Err(invalid("wire list preparation made no progress"));}
-                }
-                if let (Some(cache),Some(words))=(wire_cache.as_deref_mut(),source.resident_words(id)) {
-                    let start=w.at();cache.append_list(&mut w,words);list_spans.push(start..w.at());w.bounded_page();continue;
-                }
-                let start=w.at();let bytes=source.read_wire(id,width)?;
-                let count=list_len(id)?;
-                if bytes.len()!=2+count*width || bytes.get(..2)!=Some((count as u16).to_le_bytes().as_slice()) {
-                    return Err(invalid("wire list source shape mismatch"));
-                }
-                w.shared(&bytes);list_spans.push(start..w.at());w.bounded_page();continue;
-            }
-            let list=&self.lists[id];
-            let start = w.at();
-            let encode = |w: &mut Writer| {
-                w.u16(list.len() as u16);
-                for &value in list { w.object(value); }
-            };
-            if let Some(cache) = wire_cache.as_deref_mut() { cache.append_list(&mut w, list); } else { encode(&mut w); }
-            list_spans.push(start..w.at());
-            w.bounded_page();
-        }
-        w.object(u32::try_from(proc_count).map_err(|_|invalid("proc table count exceeds u32"))?);
-        for start in (0..proc_count).step_by(1024) {
-          let end=(start+1024).min(proc_count);
-          let rows=match records {Some(source)=>source.proc_rows(start,end)?,None=>self.procs[start..end].to_vec()};
-          if rows.len()!=end-start {return Err(invalid("proc row window count mismatch"));}
-          for item in rows {
-            if (item.flags&0x80!=0)!=item.extended_flags.is_some() {return Err(invalid("proc flag disagrees with data"));}
-            if let Some(cache)=wire_cache.as_deref_mut() {cache.append(&mut w,4,WireRecord::Proc(item.clone()),|w|item.write(w));}else{item.write(&mut w);}w.bounded_page();
-          }
-        }
-        w.object(u32::try_from(variable_count).map_err(|_|invalid("variable table count exceeds u32"))?);
-        for start in (0..variable_count).step_by(1024) {
-          let end=(start+1024).min(variable_count);
-          let rows=match records {Some(source)=>source.variable_rows(start,end)?,None=>self.variables[start..end].to_vec()};
-          if rows.len()!=end-start {return Err(invalid("variable row window count mismatch"));}
-          for item in rows {
-            let encode=|w:&mut Writer| {w.u8(item.kind);w.u32(item.value);w.object(item.name);};
-            if let Some(cache)=wire_cache.as_deref_mut() {cache.append(&mut w,5,WireRecord::Variable(item.clone()),encode);}else{encode(&mut w);}w.bounded_page();
-          }
-        }
-        w.u32(self.variable_footer);
-        w.table(&self.proc_references, |w, value| {
-            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 6, WireRecord::Reference(*value), |w| w.object(*value)); } else { w.object(*value); }
-        })?;
-        w.table(&self.instances, |w, item| {
-            let encode = |w: &mut Writer| { w.u8(item.kind); w.u32(item.class); w.object(item.initializer); };
-            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 7, WireRecord::Instance(item.clone()), encode); } else { encode(w); }
-        })?;
-        w.u32(
-            u32::try_from(self.map_objects.len())
-                .map_err(|_| invalid("map object count exceeds u32"))?,
-        );
-        for item in &self.map_objects {
-            let encode = |w: &mut Writer| { w.u16(item.offset); w.object(item.instance); };
-            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(&mut w, 8, WireRecord::MapObject(item.clone()), encode); } else { encode(&mut w); }
-        }
-        if let Some(cache) = wire_cache.as_deref_mut() { cache.append(&mut w, 9, WireRecord::World(self.world.clone()), |w| self.world.write(w)); } else { self.world.write(&mut w); }
-        w.table(&self.resources, |w, item| {
-            let encode = |w: &mut Writer| { w.u32(item.id); w.u8(item.kind); };
-            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 10, WireRecord::Resource(item.clone()), encode); } else { encode(w); }
-        })?;
-        if w.object_overflow {
-            return Err(invalid("object ID exceeds selected 16-bit width"));
-        }
-        if let Some(cache) = wire_cache.as_deref_mut() { cache.finish_generation(); }
-        let len = w.at();
-        w.seal();
-        if let Some(error)=w.sink_error {return Err(error);}
-        Ok(ChunkedDmb { pages: w.pages, list_spans, len })
+        let certificate = self.lists.issue_encoding(&image, ranges, width)?;
+        Ok((image, certificate))
+    }
+    /// Replace whole list rows (procedure code, for example) of a model whose
+    /// certified list encoding is retained, splicing the certified image instead
+    /// of re-encoding. The result is byte-identical to `encode()` of the patched
+    /// model: the list table follows the offset-ciphered string table and no
+    /// later record depends on byte offsets. Errors leave the model unchanged.
+    pub fn patch_list_rows(
+        &mut self,
+        replacements: &[(usize, std::sync::Arc<Vec<u32>>)],
+    ) -> io::Result<EncodedDmb> {
+        let width = if self.header.flags & 0x4000_0000 != 0 {
+            4
+        } else {
+            2
+        };
+        self.lists.patch_rows(replacements, width)
+    }
+    /// The certified list-row image of this model's last canonical encoding,
+    /// when one is retained and its words and width still match.
+    pub fn list_row_image(&self) -> Option<ListRowImage> {
+        let width = if self.header.flags & 0x4000_0000 != 0 {
+            4
+        } else {
+            2
+        };
+        let encoding = self.lists.encoding()?;
+        (encoding.width() == width && encoding.matches(self.lists.storage()))
+            .then(|| encoding.row_image())
+    }
+    /// Encodes canonical table chunks on the existing build executor. No global
+    /// pool or additional OS workers are created.
+    pub fn to_bytes_on_executor(&self, executor: &dm_exec::BuildExecutor) -> io::Result<Vec<u8>> {
+        self.to_bytes_with_list_spans_on_executor(executor)
+            .map(|(bytes, _)| bytes)
+    }
+    pub fn to_bytes_with_list_spans_on_executor(
+        &self,
+        executor: &dm_exec::BuildExecutor,
+    ) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
+        writing::write(self, Some(executor)).map(|(owner, spans)| (owner.into_bytes(), spans))
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::rsc::{Entry, NamedResource};
-
-    #[test]
-    fn writer_rejects_unterminated_and_multiline_header_fields() {
-        for line in [
-            b"min compatibility v516 516".as_slice(),
-            b"min compatibility v516 516\nextra\n",
-        ] {
-            let mut dmb =
-                Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap();
-            dmb.header.compatibility_line = line.to_vec();
-            assert!(dmb.to_bytes().is_err());
-        }
-        let mut dmb = Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap();
-        dmb.header.executor_line = Some(b"#!/usr/bin/env DreamDaemon".to_vec());
-        assert!(dmb.to_bytes().is_err());
-        dmb.header.executor_line =
-            Some(b"#!cmd\nworld bin v516\nmin compatibility v516 516\n".to_vec());
-        assert!(dmb.to_bytes().is_err());
-    }
-
-    #[test]
-    fn native_wide_proc_reserved_record_is_the_only_blank_exception() {
-        let mut dmb = Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap();
-        let filler = dmb.procs[0].clone();
-        dmb.procs.resize(0x10000, filler);
-        let blank = Proc {
-            strings: [0xffff; 4],
-            source_parameter: 255,
-            source_kind: 0,
-            flags: 4,
-            extended_flags: None,
-            code_locals_args: [0xffff; 3],
-        };
-        dmb.procs[0xffff] = blank.clone();
-        assert!(dmb.is_reserved_proc_slot(0xffff));
-        assert!(!dmb.is_reserved_proc_slot(0x10000));
-        dmb.lists.resize(0x10000, Vec::new());
-        dmb.lists[0xffff] = (vec![0, 0, 0, 0]).into();
-        assert!(dmb.proc_code_words(0xffff).is_none());
-        assert!(dmb.proc_arguments(0xffff).is_none());
-        dmb.validate_references().unwrap();
-        dmb.procs[0xffff].flags = 0;
-        assert!(!dmb.is_reserved_proc_slot(0xffff));
-        assert!(dmb.validate_references().is_err());
-        dmb.procs[0xffff] = blank.clone();
-        dmb.procs[0xfffe] = blank;
-        assert!(!dmb.is_reserved_proc_slot(0xfffe));
-        assert!(dmb.validate_references().is_err());
-    }
-
-    #[test]
-    fn finalized_list_compaction_preserves_semantics_and_roundtrip() {
-        let mut dmb = Dmb::from_bytes(include_bytes!(
-            "../fixtures/translation/builtin_next.native.bin"
-        ))
-        .unwrap();
-        let before = dmb.clone();
-        // A duplicate live procedure body plus an unreachable construction snapshot.
-        let old = dmb.procs[0].code_locals_args[0];
-        let duplicate = dmb.lists.len() as u32;
-        dmb.lists.push(dmb.lists[old as usize].to_vec());
-        dmb.procs[0].code_locals_args[0] = duplicate;
-        dmb.lists.push(vec![0xdead_beef]);
-        assert!(dmb.compact_lists().unwrap() >= 2);
-        assert!(crate::compare::compare_dmbs(&before, &dmb, &Default::default()).is_empty());
-        assert!(crate::compare::compare_maps(&before, &dmb, 100).is_empty());
-        for index in 0..before.procs.len() {
-            assert_eq!(before.proc_code_words(index), dmb.proc_code_words(index));
-        }
-        let encoded = dmb.to_bytes().unwrap();
-        let decoded = Dmb::from_bytes(&encoded).unwrap();
-        assert_eq!(decoded.to_bytes().unwrap(), encoded);
-        assert_eq!(dmb.compact_lists().unwrap(), 0);
-    }
-
-    #[test]
-    fn list_compaction_keeps_none_reserved_above_u16() {
-        let mut dmb = minimal();
-        dmb.lists = (0..65_538).map(|i| vec![i]).collect();
-        dmb.grid = (0..65_538)
-            .filter(|&i| i != 0xffff)
-            .map(|i| GridRun {
-                turf: 0xffff,
-                area: 0xffff,
-                contents: i,
-                copies: 1,
-            })
-            .collect();
-        let words: Vec<_> = dmb
-            .grid
-            .iter()
-            .map(|run| dmb.lists[run.contents as usize].to_vec())
-            .collect();
-        dmb.compact_lists().unwrap();
-        assert_eq!(dmb.world.ids[3], 0xffff);
-        assert_eq!(dmb.variable_footer, 0xffff);
-        assert!(dmb.lists.len() > 65_535);
-        assert!(dmb.lists[65_535].is_empty());
-        for (run, expected) in dmb.grid.iter().zip(words) {
-            assert_ne!(run.contents, 0xffff);
-            assert_eq!(dmb.lists[run.contents as usize], expected);
-        }
-    }
-
-    #[test]
-    fn optional_class_list_ids_do_not_resolve_list_65535() {
-        let mut dmb = Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap();
-        let class_id = dmb
-            .classes
-            .iter()
-            .position(|class| dmb.string(class.path_string_id()) == Some(b"/alist"))
-            .unwrap();
-        assert_eq!(dmb.classes[class_id].defining_variable_list_id(), 0xffff);
-        assert_eq!(dmb.classes[class_id].initialized_variable_list_id(), 0xffff);
-        assert_eq!(dmb.classes[class_id].overriding_variable_list_id(), 0xffff);
-        dmb.lists.resize(65_536, Vec::new());
-        dmb.lists[65_535] = (vec![0, 0]).into();
-        assert_eq!(dmb.class_variable_declarations(class_id), None);
-        assert_eq!(dmb.class_initial_values(class_id), None);
-        assert_eq!(dmb.class_builtin_overrides(class_id), None);
-    }
-
-    fn minimal() -> Dmb {
-        Dmb {
-            header: Header {
-                executor_line: None,
-                version_line: b"world bin v516\n".to_vec(),
-                compatibility_line: b"min compatibility v516 516\n".to_vec(),
-                flags: 0x4000_0000,
-                extended_flags: None,
-            },
-            dimensions: [1, 1, 1],
-            grid: vec![GridRun {
-                turf: 0xffff,
-                area: 0xffff,
-                contents: 0xffff,
-                copies: 1,
-            }],
-            classes: vec![],
-            mobs: vec![],
-            strings: vec![DmString {
-                data: b"hello".to_vec(),
-                long_chunks: 0,
-            }],
-            lists: vec![vec![0, 42]].into(),
-            procs: vec![],
-            variables: vec![],
-            variable_footer: 0xffff,
-            proc_references: vec![],
-            instances: vec![],
-            map_objects: vec![],
-            world: World {
-                ids: [0xffff; 7],
-                tick_lag: 10,
-                client: 0xffff,
-                image: 0xffff,
-                savefile_byond_version: 0,
-                eye: 0,
-                direction: 2,
-                control: 0,
-                unknown_byte: 0,
-                client_script: 0xffff,
-                client_script_files: vec![],
-                view_dimensions: 0x0b0b,
-                hub_password: 0xffff,
-                server_name: 0xffff,
-                hub_number: 0,
-                version: 0,
-                cache_lifespan: 0,
-                command_ids: [0xffff; 2],
-                hub_channel_skin: [0xffff; 3],
-                icon_dimensions_format: [32, 32, 0],
-            },
-            resources: vec![ResourceRef { id: 23, kind: 6 }],
-        }
-    }
-
-    #[test]
-    fn list_delta_validator_checks_affected_local_and_argument_schemas() {
-        let mut dmb = minimal();
-        dmb.variables.push(Variable {
-            kind: 0,
-            value: 0,
-            name: 0,
-        });
-        dmb.lists.extend([vec![0], Vec::new()]);
-        dmb.procs.push(Proc {
-            strings: [0; 4],
-            source_parameter: 0,
-            source_kind: 0,
-            flags: 0,
-            extended_flags: None,
-            code_locals_args: [0, 1, 2],
-        });
-        dmb.validate_references().unwrap();
-        dmb.lists[0] = (vec![0, 42, 0]).into();
-        dmb.validate_changed_lists(&[0]).unwrap();
-        dmb.lists[1] = (vec![1]).into();
-        assert!(dmb.validate_changed_lists(&[1]).is_err());
-        assert!(dmb.validate_references().is_err());
-        dmb.lists[1] = (vec![0]).into();
-        dmb.lists[2] = (vec![7]).into();
-        assert!(dmb.validate_changed_lists(&[2]).is_err());
-        assert!(dmb.validate_changed_lists(&[u32::MAX]).is_err());
-        dmb.lists[2].clear();
-        dmb.validate_changed_lists(&[0, 1, 2]).unwrap();
-        dmb.validate_references().unwrap();
-    }
-
-    #[test]
-    fn string_change_reencodes_offsets_and_checksum() {
-        let mut dmb = minimal();
-        let original = dmb.to_bytes().unwrap();
-        assert_eq!(Dmb::from_bytes(&original).unwrap(), dmb);
-        dmb.strings[0].data = b"a longer string".to_vec();
-        let changed = dmb.to_bytes().unwrap();
-        assert_ne!(changed, original);
-        assert_eq!(Dmb::from_bytes(&changed).unwrap(), dmb);
-    }
-
-    #[test]
-    fn narrow_object_ids_roundtrip_and_reject_overflow() {
-        let mut dmb = minimal();
-        dmb.header.flags &= !0x4000_0000;
-        dmb.header.compatibility_line = b"min compatibility v516 468\n".to_vec();
-        let encoded = dmb.to_bytes().unwrap();
-        assert_eq!(Dmb::from_bytes(&encoded).unwrap(), dmb);
-        dmb.grid[0].turf = 0x1_0000;
-        assert!(dmb.to_bytes().is_err());
-    }
-
-    #[test]
-    fn compatibility_514_omits_savefile_version() {
-        let mut dmb = minimal();
-        dmb.header.flags &= !0x4000_0000;
-        dmb.header.compatibility_line = b"min compatibility v514 468\n".to_vec();
-        let bytes = dmb.to_bytes().unwrap();
-        assert_eq!(Dmb::from_bytes(&bytes).unwrap(), dmb);
-    }
-
-    #[test]
-    fn world_view_dimensions_match_dm_order() {
-        let mut world = minimal().world;
-        world.set_view_size(9, 13);
-        assert_eq!(world.view_dimensions, 0x090d);
-        assert_eq!(world.view_size(), (9, 13));
-    }
-
-    #[test]
-    fn extended_header_word_round_trips() {
-        let mut dmb = minimal();
-        assert_eq!(dmb.header.movement_mode_setting(), Some(0));
-        dmb.header.flags |= 0x8000_0000;
-        dmb.header.extended_flags = Some(0x1234_567c);
-        assert_eq!(dmb.header.movement_mode_setting(), None);
-        let encoded = dmb.to_bytes().unwrap();
-        assert_eq!(Dmb::from_bytes(&encoded).unwrap(), dmb);
-        dmb.header.extended_flags = None;
-        assert!(dmb.to_bytes().is_err());
-    }
-
-    #[test]
-    fn declaration_and_argument_lists_decode_without_losing_raw_words() {
-        let mut dmb = minimal();
-        dmb.strings.push(DmString {
-            data: b"target".to_vec(),
-            long_chunks: 0,
-        });
-        dmb.variables.push(Variable {
-            kind: 0,
-            value: 0,
-            name: 1,
-        });
-        dmb.lists.push(vec![0, 5]);
-        let declarations = (dmb.lists.len() - 1) as u32;
-        dmb.classes.push(Class {
-            initial_ids: [0; 6],
-            direction: 2,
-            interface: 1,
-            extended_interface: None,
-            text: 0xffff,
-            maptext: 0xffff,
-            maptext_geometry: [0; 4],
-            suffix: 0xffff,
-            flags: 4,
-            lists_and_procs: [0xffff, 0xffff, 0xffff, 0xffff, declarations, 0xffff],
-            layer_bits: 0,
-            transform_flag: 0,
-            transform: None,
-            color_matrix_flag: 0,
-            color_matrix: None,
-            overrides: 0xffff,
-        });
-        assert_eq!(dmb.class_variable_declarations(0), Some(vec![(0, 5)]));
-        dmb.lists.push(vec![8, 0x7d01, 0, 0]);
-        let args = (dmb.lists.len() - 1) as u32;
-        dmb.procs.push(Proc {
-            strings: [0; 4],
-            source_parameter: 0,
-            source_kind: 0,
-            flags: 0,
-            extended_flags: None,
-            code_locals_args: [0xffff, 0xffff, args],
-        });
-        let decoded = dmb.proc_arguments(0).unwrap();
-        assert_eq!(decoded.len(), 1);
-        assert_eq!(decoded[0].value_source_kind(), 1);
-        assert_eq!(decoded[0].value_source_parameter(), 125);
-        assert_eq!(decoded[0].variable_id, 0);
-        let source = ProcArgument {
-            value_source: 0x140,
-            ..decoded[0]
-        };
-        assert_eq!(source.source_expression_index(), Some(1));
-        dmb.proc_references = vec![0, 7];
-        assert_eq!(dmb.argument_source_proc_id(&source), Some(7));
-    }
-
-    #[test]
-    fn extended_proc_flags_match_compiler_settings() {
-        let proc = Proc {
-            strings: [0; 4],
-            source_parameter: 0,
-            source_kind: 0,
-            flags: 0x80,
-            extended_flags: Some((0x285, 0)),
-            code_locals_args: [0; 3],
-        };
-        assert!(proc.is_hidden());
-        assert!(proc.is_instant());
-        assert!(proc.waits_for_completion());
-        assert!(!proc.runs_in_background());
-        assert_eq!(proc.invisibility_setting(), None);
-        let mut proc = proc;
-        proc.extended_flags = Some((0x9c, 42));
-        assert_eq!(proc.invisibility_setting(), Some(42));
-        proc.extended_flags = Some((0x8c, 255));
-        assert_eq!(proc.invisibility_setting(), Some(0));
-        proc.source_kind = 1;
-        proc.source_parameter = 5;
-        assert_eq!(proc.source_location(), ProcSource::InView(5));
-    }
-
-    #[test]
-    fn extended_mob_sight_keeps_setting_bytes_distinct_from_flags() {
-        let mob = MobType {
-            class: 0,
-            key: 0xffff,
-            sight: 0x80,
-            extended_sight: Some((0x10084, 12, 42)),
-        };
-        assert_eq!(
-            mob.sight_bits(),
-            mob_sight::SEE_INFRARED | mob_sight::SEE_MOBS
-        );
-        assert_eq!(mob.see_in_dark_setting(), Some(12));
-        assert_eq!(mob.see_invisible_setting(), Some(42));
-    }
-
-    #[test]
-    fn appearance_flags_occupy_high_class_flag_bits() {
-        let mut class = Class {
-            initial_ids: [0; 6],
-            direction: 2,
-            interface: 1,
-            extended_interface: None,
-            text: 0xffff,
-            maptext: 0xffff,
-            maptext_geometry: [0; 4],
-            suffix: 0xffff,
-            flags: 0x6430_4804,
-            lists_and_procs: [0xffff; 6],
-            layer_bits: 0,
-            transform_flag: 0,
-            transform: None,
-            color_matrix_flag: 0,
-            color_matrix: None,
-            overrides: 0xffff,
-        };
-        assert_eq!(class.appearance_flags(), 0x321);
-        assert_eq!(class.native_interface(), ClassInterface::Regular);
-        assert!(!class.is_dense());
-        assert!(!class.is_opaque());
-        assert_eq!(class.gender_code(), 0);
-        assert_eq!(class.mouse_opacity(), 1);
-        assert!(class.is_normally_visible());
-        assert!(class.has_mouse_event_proc());
-        assert!(!class.has_mouse_move_proc());
-        assert!(class.has_mouse_wheel_proc());
-        assert_eq!(class.animate_movement(), 2);
-        class.set_opaque(true);
-        assert!(class.is_opaque());
-        class.set_opaque(false);
-        class.set_dense(true);
-        assert!(class.is_dense());
-        class.set_dense(false);
-        class.set_gender_code(2).unwrap();
-        assert_eq!(class.gender_code(), 2);
-        class.set_gender_code(0).unwrap();
-        class.set_mouse_opacity(0).unwrap();
-        assert_eq!(class.mouse_opacity(), 0);
-        class.set_mouse_opacity(1).unwrap();
-        class.set_luminosity(7).unwrap();
-        assert_eq!(class.luminosity(), 7);
-        class.set_luminosity(0).unwrap();
-        class.set_animate_movement(0).unwrap();
-        assert_eq!(class.animate_movement(), 0);
-        class.set_animate_movement(2).unwrap();
-        class.set_appearance_flags(0x100);
-        assert_eq!(class.flags, 0x2010_4804);
-    }
-
-    #[test]
-    fn resource_refs_match_archive_id_and_kind() {
-        let dmb = minimal();
-        let archive = [Entry::Named(NamedResource {
-            kind: 6,
-            id: 23,
-            timestamp: 0,
-            source_timestamp: 0,
-            declared_size: 0,
-            name: b"icon.png".to_vec(),
-            data: vec![],
-        })];
-        assert!(dmb.missing_resources(&archive).is_empty());
-        assert_eq!(dmb.missing_resources(&[]), dmb.resources);
-        assert_eq!(
-            ResourceLookup::new(&archive)
-                .get(&dmb, ResourceId::from_raw(0).unwrap())
-                .unwrap()
-                .name,
-            b"icon.png"
-        );
-    }
-
-    #[test]
-    fn writer_rejects_dangling_cross_table_reference() {
-        let mut dmb = Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap();
-        dmb.validate_references().unwrap();
-        dmb.classes[0].lists_and_procs[2] = dmb.procs.len() as u32 + 1;
-        assert_eq!(dmb.to_bytes().unwrap_err().kind(), ErrorKind::InvalidData);
-    }
-
-    #[test]
-    fn attach_resource_writes_matching_dmb_and_rsc_entries() {
-        let mut dmb = minimal();
-        let mut archive = Vec::new();
-        let resource =
-            NamedResource::from_data(6, b"new.png".to_vec(), b"abc".to_vec(), 0, 0).unwrap();
-        let index = {
-            let mut batch = ResourceAttachment::new(&mut dmb, &mut archive);
-            let index = batch.attach(resource.clone()).unwrap();
-            assert_eq!(batch.attach(resource.clone()).unwrap(), index);
-            index
-        };
-        assert_eq!(index.raw(), 1);
-        assert_eq!(
-            ResourceLookup::new(&archive).get(&dmb, index),
-            Some(&resource)
-        );
-        assert_eq!(archive.len(), 1);
-    }
-
-    #[test]
-    fn indexed_resource_batch_reuses_entries() {
-        let mut dmb = minimal();
-        let mut archive = Vec::new();
-        let first =
-            NamedResource::from_data(6, b"one.txt".to_vec(), b"one".to_vec(), 0, 0).unwrap();
-        let second =
-            NamedResource::from_data(6, b"two.txt".to_vec(), b"two".to_vec(), 0, 0).unwrap();
-        let (first_id, second_id) = {
-            let mut batch = ResourceAttachment::new(&mut dmb, &mut archive);
-            let first_id = batch.attach(first.clone()).unwrap();
-            let second_id = batch.attach(second.clone()).unwrap();
-            assert_eq!(batch.attach(first.clone()).unwrap(), first_id);
-            (first_id, second_id)
-        };
-        assert_eq!(archive.len(), 2);
-        let lookup = ResourceLookup::new(&archive);
-        assert_eq!(lookup.get(&dmb, first_id), Some(&first));
-        assert_eq!(lookup.get(&dmb, second_id), Some(&second));
-    }
-
-    #[test]
-    fn code_edit_uses_a_fresh_list_slot() {
-        let mut dmb = minimal();
-        // The raw list under test is not a procedure locals/arguments table.
-        let empty_list = dmb.lists.len() as u32;
-        dmb.lists.push(Vec::new());
-        dmb.procs.push(Proc {
-            strings: [0; 4],
-            source_parameter: 0,
-            source_kind: 0,
-            flags: 0,
-            extended_flags: None,
-            code_locals_args: [0, empty_list, empty_list],
-        });
-        let old_list = dmb.lists[0].to_vec();
-        let instructions = crate::bytecode::decode(&[0x50, 7, 0]).unwrap();
-        dmb.replace_proc_code(0, &instructions).unwrap();
-        assert_eq!(dmb.lists[0], old_list);
-        assert_eq!(dmb.proc_code_words(0).unwrap(), [0x50, 7, 0]);
-        let reparsed = Dmb::from_bytes(&dmb.to_bytes().unwrap()).unwrap();
-        assert_eq!(reparsed.proc_code_words(0).unwrap(), [0x50, 7, 0]);
-    }
-}
+#[path = "dmb_tests.rs"]
+mod tests;

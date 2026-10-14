@@ -1,0 +1,117 @@
+{
+  "schema": 1,
+  "scope": "Focused shared-pipeline validation; not runtime parity or performance acceptance",
+  "validated_changes": [
+    "Engine-scoped shared normalized declarations preserve current source issuers and exact answer replay.",
+    "Effective owner metadata retains sparse local deltas; no-op updates preserve allocation identity.",
+    "Expansion receipts stream exact controls instead of storing duplicate source descriptors.",
+    "Helper-header modified instances replay through the current SourceRecipe issuer.",
+    "One bounded cancellation-aware lease path protects build and publication waits.",
+    "Shadow resource comparison uses the existing Rust archive decoder and exact live payloads.",
+    "Fresh and retained headers share one inheritance-field catalog.",
+    "Callable anchors share through the same engine-scoped leases; current source/occurrence ownership remains local.",
+    "Read-only selected-reference queries use previously captured ordinary compiler selections and require both exact semantic and source revision pins. Responses are bounded and client-validated.",
+    "Instance list initializer stores now use the captured native double-src field receiver; already nested and non-src shapes stay intact."
+  ],
+  "receipts": [
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-004826-c9fa7a48.json",
+      "check": "workspace all targets",
+      "passed": true
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-005827-6f6b5d3d-focused.json",
+      "check": "publication leases, catalog issuers, helper recipes, initializer diagnostics, compact replay",
+      "count": 14,
+      "passed": true
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-005847-35c1c570-focused.json",
+      "check": "sparse owner metadata, no-op identities, shared frontend normalization",
+      "count": 12,
+      "passed": true
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-003917-203a3d32.json",
+      "check": "expansion receipt control replay",
+      "count": 8,
+      "passed": true
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-004328-93dd6978.json",
+      "check": "resource payload comparator",
+      "count": 3,
+      "passed": true
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-010151-796ead7d.json",
+      "check": "indexed shared claims and payload destruction outside mutex",
+      "count": 4,
+      "passed": true
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-010201-43c4577b.json",
+      "check": "eight captured native Input forms: exact tuple and argument stack opcode shape",
+      "count": 1,
+      "passed": true
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-010229-eae61779.json",
+      "check": "Input radius coverage excludes unknown selectors, invalid bounds and InputColor",
+      "count": 1,
+      "passed": true
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-010856-a9facc3a.json",
+      "check": "sixteen native Input forms: tuple, stack opcodes, current builtin versus shadowed parameter choices",
+      "count": 2,
+      "passed": true
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-011602-0029d794-focused.json",
+      "check": "shared callable anchors, changed variants, source-order duplicate handling",
+      "count": 3,
+      "passed": true
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-011613-710bd443.json",
+      "check": "current invalid-field positions across retained and fresh projections, source status2; ordinary valid fields avoid source projection",
+      "count": 2,
+      "passed": true
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-012028-f1f71d1a-focused.json",
+      "check": "actual selected-reference producer through server+client envelope validation, bounded queries, publication leases, gender native golden",
+      "count": 9,
+      "passed": true
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-012132-190558f7.json",
+      "check": "initializer receiver complete-word native golden and fragment/current-target preservation",
+      "count": 17,
+      "passed": true
+    }
+  ],
+  "remaining_limits": [
+    "InputColor and unproved Input expression shapes remain explicit bytecode coverage gaps.",
+    "Full DeepQuarry fresh-native oracle and new end-to-end timings pending.",
+    "Whole-program BYOND structural coverage, runtime parity and six-worktree acceptance remain open.",
+    "Private BTree roster/index memory remains explicitly unknown.",
+    "Selected-reference queries capture at most256 procedures/512KiB during explicit resolved analysis. Uncaptured bodies are not relowered by the read-only endpoint; full on-demand query coverage remains open.",
+    "Full-project BYOND structural difference totals after Input and initializer receiver fixes have not yet been measured."
+  ],
+  "foundation_commit": "5532ef1e16",
+  "input_commit": "380e03669d",
+  "callable_commit": "328692d3d1",
+  "shadow_resource_adapter": {
+    "command": "bun test tools/build/lib/shadow_resources.test.ts",
+    "passed": true,
+    "tests": 1,
+    "assertions": 6,
+    "observed_seconds": 0.378
+  },
+  "workspace_all_targets": {
+    "passed": true,
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-012222-b224f01a.json"
+  }
+}

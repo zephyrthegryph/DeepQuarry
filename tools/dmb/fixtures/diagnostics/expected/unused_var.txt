@@ -1,0 +1,2 @@
+unused_var.dm:2:warning (unused_var): unused: variable defined but not used
+unused_var.dmb - 0 errors, 1 warning

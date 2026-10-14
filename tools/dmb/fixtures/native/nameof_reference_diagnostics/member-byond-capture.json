@@ -1,0 +1,201 @@
+{
+  "schema": 1,
+  "scope": "compile-only nameof reference legality observations; no runtime",
+  "complete": true,
+  "runtime": "not run",
+  "root": "E:\\dq-cache\\dmb-nameof-reference-diagnostics\\00e401858b7a4d57865874853e04f4ca",
+  "overall_watchdog_seconds": 300,
+  "child_watchdog_seconds": 30,
+  "job_memory_bytes": 4294967296,
+  "pins": {
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    }
+  },
+  "cases": {
+    "member_absent": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.4137236999813467,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "member_absent.dm",
+            "line": 4,
+            "severity": "error",
+            "message": "R.missing: undefined var"
+          },
+          {
+            "file": "member_absent.dm",
+            "line": 4,
+            "severity": "error",
+            "message": "nameof: requires a var, proc reference, or type path"
+          },
+          {
+            "file": "member_absent.dm",
+            "line": 4,
+            "severity": "error",
+            "message": "return: missing expression"
+          }
+        ]
+      }
+    },
+    "member_present": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.41388030000962317,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    },
+    "static_absent": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.5621261999476701,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "static_absent.dm",
+            "line": 4,
+            "severity": "error",
+            "message": "/datum/receiver::missing: undefined var"
+          },
+          {
+            "file": "static_absent.dm",
+            "line": 4,
+            "severity": "error",
+            "message": "nameof: requires a var, proc reference, or type path"
+          },
+          {
+            "file": "static_absent.dm",
+            "line": 4,
+            "severity": "error",
+            "message": "return: missing expression"
+          }
+        ]
+      }
+    },
+    "static_present": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.41992180002853274,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    },
+    "absent_declared_type_nameof": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.5578127999324352,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "absent_declared_type_nameof.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "R: undefined type: /datum/actually_absent"
+          },
+          {
+            "file": "absent_declared_type_nameof.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "nameof: requires a var, proc reference, or type path"
+          },
+          {
+            "file": "absent_declared_type_nameof.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "return: missing expression"
+          }
+        ]
+      }
+    },
+    "absent_declared_type_read": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.6640785000054166,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "absent_declared_type_read.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "returnR: undefined type: /datum/actually_absent"
+          }
+        ]
+      }
+    },
+    "static_parameter_nameof": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.4321017999900505,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    },
+    "static_local_nameof": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.44934700010344386,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    }
+  },
+  "source_sha256": {
+    "member_absent.dm": "87ce08111edaa4c6b03c201c77263a547a0274c2b35d06623e1dde5b4f1b84a3",
+    "member_absent.dme": "c7b71f5e2506b2815096a6838b3e86f7b30fbcf5149d389a0f18a90ee9bfdb38",
+    "member_present.dm": "ddb970e1da0deae69f8e9834b5fc579c053a65ede1e29bb2b7bcd738c25f71c5",
+    "member_present.dme": "70661c9a39555b7e3602f34562676f8d588ceb28e358ca152f9ee5eb8afacb81",
+    "static_absent.dm": "e10ed5011c46070fc46370fcdef1520aab06325ccea24e169ca21864868da90d",
+    "static_absent.dme": "21ab9c1254db476024a51c2bcb8f7a44413931dd4adfb81b8fabf5c19e924c08",
+    "static_present.dm": "da5c30d49cd3e613612df8fa2ed32b7a5c39619259ab00ef38c6a47943f20ef6",
+    "static_present.dme": "79727755f055da4695f6585384de2e0ecd9406e64256e2c6583eedf07694e27d",
+    "absent_declared_type_nameof.dm": "ed151c631922ca3650fba4f83e778aefe1fed1dddffe8a07fb1df098ee1e5f11",
+    "absent_declared_type_nameof.dme": "cabe82c4e9689f05978f720365c588962c2d1907f5b0a9882b9556e8a09c7a61",
+    "absent_declared_type_read.dm": "a256d3e60b7c625ab49103164dc9ff3848d1e243da1c0941b1b6b29c5709851d",
+    "absent_declared_type_read.dme": "4e0c6e687a4b94cf09a964beddf3ec3da8dfa3949f5d8eab0a843be4bbf3e354",
+    "static_parameter_nameof.dm": "fa788932372d37e3d5795a15a4c883ed0aee7178255b4998ca342e1a15428d4c",
+    "static_parameter_nameof.dme": "e7b05bc8ba983ec4a0bf132b08463f642cc05dad1eaa512e6d6b5a118d916bf7",
+    "static_local_nameof.dm": "82fcc653ad1807dcfa32c4e57159306144b86644e7d1496f71ffb6ca2a07a5b3",
+    "static_local_nameof.dme": "b81482670dabecc55cfb6b2a824c358d9ead2e6f315940689ccbe272101a3647"
+  },
+  "pin_after_checks": {
+    "dm": {
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "unchanged": true
+    }
+  },
+  "backend": "byond-only",
+  "paired_parity": "not measured",
+  "acceptance_agrees": false,
+  "rejection_class_agrees": false,
+  "diagnostics_agree": false,
+  "owned_job_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 4294967296,
+      "peak_job_commit_bytes": 60080128,
+      "peak_process_commit_bytes": 58785792,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  }
+}

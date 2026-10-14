@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "kind": "bounded_runtime_suite",
+  "status": "failed",
+  "backend": "byond",
+  "tier": null,
+  "focus": [
+    "/datum/unit_test/nuke_cinematic",
+    "/datum/unit_test/dq_power_idle_apc_and_smes_sleep",
+    "/datum/unit_test/dq_power_apc_cycle",
+    "/datum/unit_test/dq_idle_turret_wakes_for_nearby_mob",
+    "/datum/unit_test/dq_real_canister_release_spreads_via_master_loop",
+    "/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule",
+    "/datum/unit_test/dq_expanded_department_outcomes",
+    "/datum/unit_test/dq_radiation_insulated_movable_blocks",
+    "/datum/unit_test/dq_constraint_declarations_compile",
+    "/datum/unit_test/dq_rule_thresholds",
+    "/datum/unit_test/dq_damage_flavour_bands"
+  ],
+  "command": [
+    "D:\\Program Files\\Git\\bin\\bash.exe",
+    "tools/dq_focused_test.sh",
+    "/datum/unit_test/nuke_cinematic",
+    "/datum/unit_test/dq_power_idle_apc_and_smes_sleep",
+    "/datum/unit_test/dq_power_apc_cycle",
+    "/datum/unit_test/dq_idle_turret_wakes_for_nearby_mob",
+    "/datum/unit_test/dq_real_canister_release_spreads_via_master_loop",
+    "/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule",
+    "/datum/unit_test/dq_expanded_department_outcomes",
+    "/datum/unit_test/dq_radiation_insulated_movable_blocks",
+    "/datum/unit_test/dq_constraint_declarations_compile",
+    "/datum/unit_test/dq_rule_thresholds",
+    "/datum/unit_test/dq_damage_flavour_bands",
+    "--focused-compiled-output=E:\\dq-cache\\dmb-native-v2\\damage-focused-byond-20261011\\preserved-output\\capture.json",
+    "--focused-compiled-output-sha256=8e4f62dccef2f14c65a2ead2a6b1d4d41420ccc1ab5b0c4a99abd6f0a30d5e25"
+  ],
+  "checkout": "E:\\projects\\dq-wt\\dmb-review",
+  "compilation_performed": false,
+  "historical_same_generation": true,
+  "compile_watchdog_seconds": null,
+  "dd_watchdog_seconds": 300,
+  "cohort_watchdog_seconds": 300,
+  "inputClosureAuthenticated": false,
+  "acceptedRuntimeBaseline": false,
+  "job_memory_bytes": 4000000000,
+  "runner_sha256": "88f77dcc3cc92b4bc2280a285f7b026051c308ad5b199a282ea13d3213291171",
+  "log": "E:\\dq-cache\\dmb-native-v2\\power-damage-focused-byond-replay-20261011\\build.log",
+  "pins": {
+    "bash": {
+      "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+      "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+      "bytes": 45560
+    },
+    "byond": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "bytes": 46080
+    },
+    "dd": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dreamdaemon.exe",
+      "sha256": "d410d44cade616cb5ef57a440a4c531eb5f6589eeb56211682d1ca6a10ff8999",
+      "bytes": 268800
+    },
+    "focused_compiled_output": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\damage-focused-byond-20261011\\preserved-output\\capture.json",
+      "sha256": "8e4f62dccef2f14c65a2ead2a6b1d4d41420ccc1ab5b0c4a99abd6f0a30d5e25",
+      "bytes": 1635
+    }
+  },
+  "owned_child_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 3999997952,
+      "peak_job_commit_bytes": 1827569664,
+      "peak_process_commit_bytes": 1414914048,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "build_configuration": {
+    "workers": null,
+    "ordered_extra_defines": [],
+    "security": "trusted",
+    "cargo_home": "E:\\dq-cache\\dmb-native-v2\\cargo-home",
+    "cargo_target": "E:\\dq-cache\\dmb-native-v2\\cargo-target"
+  },
+  "root_pid": 17384,
+  "owned_memory": {
+    "configured_job_memory_bytes": 3999997952,
+    "peak_job_commit_bytes": 1827569664,
+    "peak_process_commit_bytes": 1414914048,
+    "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+  },
+  "compile_receipt": "E:\\projects\\dq-wt\\dmb-review\\data\\compiler-attempts\\compiler-77ff7ee1-52cd-449d-b74d-a9036125cf41.json",
+  "actual_compilation": {
+    "requestedBackend": "byond",
+    "actualBackend": "byond",
+    "orderedDefines": [
+      "CBT",
+      "CIBUILDING",
+      "CITESTING",
+      "DEBUG"
+    ],
+    "fallback": null,
+    "nativePair": null,
+    "compiler": {
+      "executable": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "version": 516,
+      "build": 1687
+    }
+  },
+  "root_returncode": 1,
+  "exit_code": 1,
+  "wall_seconds": 189.99348980002105
+}

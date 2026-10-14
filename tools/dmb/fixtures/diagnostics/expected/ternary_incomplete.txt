@@ -1,0 +1,2 @@
+ternary_incomplete.dme:2:error: expected ':'
+ternary_incomplete.dmb - 1 error, 0 warnings

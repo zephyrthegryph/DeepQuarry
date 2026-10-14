@@ -1,0 +1,33 @@
+{
+  "files": [
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\REPORT.md",
+      "bytes": 1962,
+      "sha256": "bce6fd3578fb2815493fa470a8805ecfa4d0368b65f35464a43ba7eff3d91aa0"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\evidence.json",
+      "bytes": 58535,
+      "sha256": "6faf75162b3d37e142024c7e8e905b2f68b69376cea902c6e435caa8c925e789"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\normalized.json",
+      "bytes": 4968052,
+      "sha256": "1e39336baf63c6a2e9132a66dbff9666c712eba0348d61b5019d45aaf14c95c2"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\preserved-comparison.json",
+      "bytes": 2579260,
+      "sha256": "190afc7bf05fff744e39fc7ccebc2aa67e8f09ac6ac9b63f5a4849c8b6b4ccb9"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\snapshot-receipt.json",
+      "bytes": 13321354,
+      "sha256": "ca20759e24dd9b87afb027fea8dac90cda2786dc3420c6391ad3452579f14e26"
+    }
+  ],
+  "equality_claim": false,
+  "normal_exit_gate_passed": false,
+  "comparison_coverage_complete": false,
+  "qualification": "Six frozen output observations plus preserved observations; normalization is heuristic and ownership/source coverage remains incomplete."
+}

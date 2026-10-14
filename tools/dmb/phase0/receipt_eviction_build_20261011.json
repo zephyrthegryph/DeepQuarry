@@ -1,0 +1,146 @@
+{
+  "scope": "Diagnostic prototype build provenance; not release-profile performance acceptance",
+  "build_receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-231230-344c5278-job-cargo.json",
+  "build_receipt_sha256": "1ba1a45daa818d0d6ddacfaa24833eb4f4808742e543aa81242136a60dda459b",
+  "build": {
+    "command": [
+      "D:\\Program Files\\Git\\bin\\bash.exe",
+      "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+      "run",
+      "cargo",
+      "--label",
+      "dmb-review frozen correctness build",
+      "--",
+      "E:/cargo/bin/cargo.exe",
+      "build",
+      "--release",
+      "--locked",
+      "--offline",
+      "-j1",
+      "-p",
+      "dmbc",
+      "--bin",
+      "dmbc",
+      "--features",
+      "allocation-counting",
+      "--config",
+      "profile.release.package.dmbc.opt-level=0",
+      "--config",
+      "profile.release.package.dmbc.codegen-units=256",
+      "--config",
+      "profile.release.package.dmbc.debug=0",
+      "--config",
+      "profile.release.package.dm-tree.opt-level=2",
+      "--config",
+      "profile.release.package.dm-tree.codegen-units=256",
+      "--config",
+      "profile.release.package.dm-tree.debug=0",
+      "--config",
+      "profile.release.package.dm-codegen-byond.opt-level=2",
+      "--config",
+      "profile.release.package.dm-codegen-byond.codegen-units=256",
+      "--config",
+      "profile.release.package.dm-codegen-byond.debug=0"
+    ],
+    "exit_code": 0,
+    "seconds": 269.9370000000017,
+    "memory_cap": 4000000000,
+    "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-231230-344c5278-job-cargo.log",
+    "error": null,
+    "cleanup": {
+      "reaped": true,
+      "error": null,
+      "memory": {
+        "configured_job_memory_bytes": 3999997952,
+        "peak_job_commit_bytes": 1658068992,
+        "peak_process_commit_bytes": 1601728512,
+        "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+      }
+    },
+    "scope": "bounded correctness build; not a compiler performance benchmark",
+    "original_command": [
+      "E:/cargo/bin/cargo.exe",
+      "build",
+      "--release",
+      "--locked",
+      "--offline",
+      "-j1",
+      "-p",
+      "dmbc",
+      "--bin",
+      "dmbc",
+      "--features",
+      "allocation-counting",
+      "--config",
+      "profile.release.package.dmbc.opt-level=0",
+      "--config",
+      "profile.release.package.dmbc.codegen-units=256",
+      "--config",
+      "profile.release.package.dmbc.debug=0",
+      "--config",
+      "profile.release.package.dm-tree.opt-level=2",
+      "--config",
+      "profile.release.package.dm-tree.codegen-units=256",
+      "--config",
+      "profile.release.package.dm-tree.debug=0",
+      "--config",
+      "profile.release.package.dm-codegen-byond.opt-level=2",
+      "--config",
+      "profile.release.package.dm-codegen-byond.codegen-units=256",
+      "--config",
+      "profile.release.package.dm-codegen-byond.debug=0"
+    ],
+    "machine_slot": {
+      "kind": "cargo",
+      "tools": {
+        "script": {
+          "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+          "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+          "bytes": 22161
+        },
+        "bash": {
+          "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+          "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+          "bytes": 45560
+        }
+      },
+      "worktree": "E:\\projects\\dq-wt\\dmb-review",
+      "slotDirectory": "E:\\dq-cache\\slots",
+      "capacities": {
+        "DQ_SLOTS_DM_COMPILE": "2",
+        "DQ_SLOTS_TEST_WORLD": "3",
+        "DQ_SLOTS_CARGO": "1",
+        "DQ_SLOTS_LOOK_STATE_PIN": "2"
+      },
+      "waitIncludedInOwnedChildDeadline": true,
+      "jobContainment": "caller must add suspended bash to existing Job before resume"
+    },
+    "target_ownership": {
+      "target": "E:\\dq-cache\\dmb-native-v2\\cargo-target",
+      "owner": {
+        "schema": 1,
+        "worktree": "E:\\projects\\dq-wt\\dmb-review"
+      },
+      "marker": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\.dq-workspace-owner-v1.json",
+      "scope": "operational target ownership only, not cache/source admission"
+    },
+    "existing_target_assignment": null,
+    "queue_wait_included_in_300_second_child_deadline": true
+  },
+  "compiler_pin": "E:\\dq-cache\\dmb-native-v2\\frozen-build-current\\20261011-f480cf02d9-counted-opt0.pin.json",
+  "compiler_pin_sha256": "bac54a0ac25f04cbfa2d38858aabf48d10dc5fdb7566addc4b891ad263b69351",
+  "pin": {
+    "exit_code": 0,
+    "binary_sha256": "49e641992a587480b6451f4311ef600e256092ed0185e28ca7750195be176101",
+    "commit": "f480cf02d95f870a0e387284a58d9c5e4c3734dd",
+    "archive_sha256": "8c8a3694360a024c66e76b5d2ed9a2a5bc9eb43c6c4da3c9d06c2d317419ed7e",
+    "build_receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-231230-344c5278-job-cargo.json",
+    "build_receipt_sha256": "1ba1a45daa818d0d6ddacfaa24833eb4f4808742e543aa81242136a60dda459b",
+    "dmbc_opt_level": 0,
+    "dm_tree_opt_level": 2,
+    "dmbc_codegen_units": 256,
+    "lto": false,
+    "acceptance_profile": false,
+    "scope": "Counted diagnostic prototype; not release acceptance. Profile matches previous opt0 cohort."
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "compiler_sha256": {
+    "byond": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "native": "85ed3f4e9e4cb89dee6abd33504f89ce741927a2349fd7402f3cbeab444b2a8e",
+    "engine_template": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+  },
+  "fixture_receipt_sha256": "01df3484b0d3682617152063a472381da6683d283ba149799f1639cb00a3668e",
+  "results": [
+    {
+      "case": "bare",
+      "source_sha256": "57cc245d2eb88e04905953ec6dc17b57b0ff7a7d7262736374e42eb99c64f055",
+      "defines": [],
+      "source_unchanged": true,
+      "passed": false,
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dmb-native-v2-phase0\\return-error-comparison-2\\bare\\probe.dme"
+        ],
+        "exit_code": 4294967295,
+        "timed_out": false,
+        "seconds": 0.32558760000392795,
+        "log": "E:\\dmb-native-v2-phase0\\return-error-comparison-2\\bare\\byond.log",
+        "diagnostics": [
+          {
+            "file": "probe.dme",
+            "line": 5,
+            "severity": "error",
+            "message": "amount: undefined var"
+          }
+        ]
+      },
+      "native": {
+        "command": [
+          "E:\\dmb-native-v2-phase0\\cargo-target\\release\\dmbc.exe",
+          "compile",
+          "--no-daemon",
+          "E:\\dmb-native-v2-phase0\\return-error-comparison-2\\bare\\probe.dme",
+          "--workers",
+          "1",
+          "--engine-template",
+          "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+          "--bootstrap-catalog"
+        ],
+        "exit_code": 1,
+        "timed_out": false,
+        "seconds": 0.04204600001685321,
+        "log": "E:\\dmb-native-v2-phase0\\return-error-comparison-2\\bare\\native.log",
+        "diagnostics": [
+          {
+            "file": "probe.dme",
+            "line": 5,
+            "severity": "native unsupported",
+            "message": "a block following a return expression has unsupported semantics"
+          }
+        ]
+      }
+    },
+    {
+      "case": "outer_visible",
+      "source_sha256": "92467ab80832eeecd4390cc6c3c01867b39f85203e17fc045cff3544a6652a4f",
+      "defines": [],
+      "source_unchanged": true,
+      "passed": false,
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dmb-native-v2-phase0\\return-error-comparison-2\\outer_visible\\probe.dme"
+        ],
+        "exit_code": 4294967295,
+        "timed_out": false,
+        "seconds": 0.3173462999984622,
+        "log": "E:\\dmb-native-v2-phase0\\return-error-comparison-2\\outer_visible\\byond.log",
+        "diagnostics": [
+          {
+            "file": "probe.dme",
+            "line": 7,
+            "severity": "error",
+            "message": "amount: bad variable"
+          }
+        ]
+      },
+      "native": {
+        "command": [
+          "E:\\dmb-native-v2-phase0\\cargo-target\\release\\dmbc.exe",
+          "compile",
+          "--no-daemon",
+          "E:\\dmb-native-v2-phase0\\return-error-comparison-2\\outer_visible\\probe.dme",
+          "--workers",
+          "1",
+          "--engine-template",
+          "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+          "--bootstrap-catalog"
+        ],
+        "exit_code": 1,
+        "timed_out": false,
+        "seconds": 0.047299700003350154,
+        "log": "E:\\dmb-native-v2-phase0\\return-error-comparison-2\\outer_visible\\native.log",
+        "diagnostics": [
+          {
+            "file": "probe.dme",
+            "line": 7,
+            "severity": "native unsupported",
+            "message": "a block following a return expression has unsupported semantics"
+          }
+        ]
+      }
+    }
+  ],
+  "passed": false
+}

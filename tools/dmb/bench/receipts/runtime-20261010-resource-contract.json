@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "kind": "eleven_revision_retained_fresh_byond_runtime_contract",
+  "receipt": "E:\\dq-cache\\dmb-incremental-runtime-contract\\9ddc69010606403180f129722177946a\\receipt.json",
+  "sha256": "e18297fee172ca19be947594fbb2bfb13f02c08b8d6444ab9cabd9aabe44dfc8",
+  "complete": true,
+  "pinned_inputs": {
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-173216-214adbd0.exe",
+      "sha256": "72e879e72d7384ef96efbeda58da0a42e746e169a343f15f1c6ba06ebc21e953"
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    },
+    "dd": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+      "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+    }
+  },
+  "revisions": [
+    {
+      "name": "initial",
+      "status": "passed"
+    },
+    {
+      "name": "unchanged",
+      "status": "passed"
+    },
+    {
+      "name": "body",
+      "status": "passed"
+    },
+    {
+      "name": "inherited_default",
+      "status": "passed"
+    },
+    {
+      "name": "argument_default",
+      "status": "passed"
+    },
+    {
+      "name": "procedure_static",
+      "status": "passed"
+    },
+    {
+      "name": "global_default",
+      "status": "passed"
+    },
+    {
+      "name": "structural_add",
+      "status": "passed"
+    },
+    {
+      "name": "structural_delete",
+      "status": "passed"
+    },
+    {
+      "name": "resource_replace",
+      "status": "passed"
+    },
+    {
+      "name": "resource_unchanged",
+      "status": "passed"
+    }
+  ],
+  "limitations": [
+    "Standalone declared-value corpus, not full game runtime parity.",
+    "Prototype compiler profile, no performance claim.",
+    "New ABI batch and documented datum missing-method changes are not in this frozen compiler."
+  ]
+}

@@ -1,0 +1,2 @@
+division_by_zero_const.dm:2:error: 0: attempted division by zero
+division_by_zero_const.dmb - 1 error, 0 warnings

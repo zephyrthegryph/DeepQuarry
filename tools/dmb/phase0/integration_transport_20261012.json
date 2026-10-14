@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "mocked Bun integration regression; no native/BYOND child",
+  "production_commits": [
+    "9dfa3ddc3c",
+    "7761789e2f"
+  ],
+  "test_commits": [
+    "d156573709",
+    "362b09b249"
+  ],
+  "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\integration-transport-87643d952d644e80b508f36ca51bfd0f\\receipt.json",
+  "receipt_sha256": "97874e88d44cf6a1b9a150fecf0c3f9bdf8cfa6d3e8e9eae1e73f5ff7984cced",
+  "test_count": 40,
+  "failed": 0,
+  "expectations": 383,
+  "reported_test_wall_ms": 742,
+  "watchdog_seconds": 120,
+  "owned_benchmark_completed_before_tests": {
+    "receipt": "E:\\dq-cache\\dmb-native-iterations\\20261012-115006-392c2f27\\receipt.json",
+    "sha256": "07fa0f6f37ca036b8a8a1c40195a44715ae7b96e7d3d30baeab38513eeda3b36",
+    "status": "passed",
+    "owned_job_reaped": true
+  },
+  "files_unchanged": true,
+  "bun_unchanged": true,
+  "remaining_limitations": [
+    "Observed native resource-demand transport is not BYOND input-access completeness.",
+    "Complete shared source/resource closure and implicit target profile remain unissued.",
+    "No Rust build, real DM runtime or full test-suite validation in this slice."
+  ]
+}

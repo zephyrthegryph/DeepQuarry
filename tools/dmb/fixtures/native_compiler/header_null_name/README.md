@@ -1,0 +1,1 @@
+BYOND 516.1687 compile-only capture; pinned compiler verified before/after. Null name restores each type leaf (underscores become spaces), without inheriting the generated display name. Explicit text names remain inherited. No DreamDaemon.

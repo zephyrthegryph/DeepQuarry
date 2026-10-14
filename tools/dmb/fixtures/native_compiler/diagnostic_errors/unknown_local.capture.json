@@ -1,0 +1,32 @@
+{
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "compiler_version": "516.1687",
+  "engine_template_sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540",
+  "source_sha256": "e573efc7f05bb2c710ac032685a645aabc0c90c5dd644496d6b700e1969a062f",
+  "files": {
+    "unknown_local.dm": "e573efc7f05bb2c710ac032685a645aabc0c90c5dd644496d6b700e1969a062f",
+    "unknown_local.dme": "788610f82d177e190c1a5e51f7b0de6f7b814e396751d1fae13cbbba20367ec4"
+  },
+  "source_unchanged": true,
+  "captured_source_error": true,
+  "runtime": "not run",
+  "byond": {
+    "command": [
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "E:\\dq-cache\\dmb-native-v2\\diagnostic-errors-20261010-captured\\unknown_local\\unknown_local.dme"
+    ],
+    "exit_code": 4294967295,
+    "timed_out": false,
+    "seconds": 0.3419389000046067,
+    "cleanup": null,
+    "log": "E:\\dq-cache\\dmb-native-v2\\diagnostic-errors-20261010-captured\\unknown_local\\byond.log",
+    "diagnostics": [
+      {
+        "file": "unknown_local.dm",
+        "line": 2,
+        "severity": "error",
+        "message": "returndefinitely_missing_name: undefined var"
+      }
+    ]
+  }
+}

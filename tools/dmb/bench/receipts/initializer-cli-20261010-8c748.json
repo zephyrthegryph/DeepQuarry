@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "scope": "compile-only CLI diagnostics/output admission; no runtime",
+  "status": "passed",
+  "receipt": "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\receipt.json",
+  "receipt_sha256": "56e5d6f823a8de955ff77d803341b3fd090800951de22b13a748d50303f9df5d",
+  "compiler": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-062643-ed038b5f.json",
+    "sha256": "239bee43ed8fc8f74f9e77d5b381530e528459856344077181147434f0033a9c",
+    "compiler_sha256": "813dde447a9c16f1cf7803b4c7f79aa5b9e26acbeb9b0f57001bbf3dabc452af",
+    "commit": "8c748ae82040f58e69e17cce229508283f44c066",
+    "dmbc_opt_level": 0,
+    "dm_tree_opt_level": 1,
+    "dmbc_codegen_units": 256,
+    "lto": false,
+    "declared_acceptance_profile": false,
+    "benchmark_acceptance_admitted": false,
+    "scope": "successful-build receipt matched to exact executable bytes"
+  },
+  "cases": [
+    {
+      "name": "global",
+      "negative": false,
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14425239997217432,
+      "diagnostics": [],
+      "published_paths": [
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\global\\artifacts\\global.dmb",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\global\\artifacts\\global.dmb-pair.json",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\global\\artifacts\\global.rsc",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\global\\store\\pairs\\bbf0fe314d52e0e330d2b954d9630201\\deepquarry.dmb",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\global\\store\\pairs\\bbf0fe314d52e0e330d2b954d9630201\\deepquarry.rsc",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\global\\store\\pairs\\bbf0fe314d52e0e330d2b954d9630201\\pair.json"
+      ]
+    },
+    {
+      "name": "static",
+      "negative": false,
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14463679998880252,
+      "diagnostics": [],
+      "published_paths": [
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\static\\artifacts\\static.dmb",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\static\\artifacts\\static.dmb-pair.json",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\static\\artifacts\\static.rsc",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\static\\store\\pairs\\1bb7bb011b66e8342fe51fb5a83560d5\\deepquarry.dmb",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\static\\store\\pairs\\1bb7bb011b66e8342fe51fb5a83560d5\\deepquarry.rsc",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\static\\store\\pairs\\1bb7bb011b66e8342fe51fb5a83560d5\\pair.json"
+      ]
+    },
+    {
+      "name": "local",
+      "negative": false,
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.5048968999763019,
+      "diagnostics": [],
+      "published_paths": [
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\local\\artifacts\\local.dmb",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\local\\artifacts\\local.dmb-pair.json",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\local\\artifacts\\local.rsc",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\local\\store\\pairs\\343692d0330c7e60b1789722e0f4dfcd\\deepquarry.dmb",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\local\\store\\pairs\\343692d0330c7e60b1789722e0f4dfcd\\deepquarry.rsc",
+        "E:\\dq-cache\\dmb-native-v2\\initializer-cli-8c748-b-20261010\\local\\store\\pairs\\343692d0330c7e60b1789722e0f4dfcd\\pair.json"
+      ]
+    },
+    {
+      "name": "nested_list",
+      "negative": true,
+      "status": "passed",
+      "exit_code": 2,
+      "seconds": 0.08843339997110888,
+      "diagnostics": [
+        {
+          "file": "nested_list.dm",
+          "line": 4,
+          "severity": "error",
+          "message": "=: expected a constant expression"
+        }
+      ],
+      "published_paths": []
+    },
+    {
+      "name": "new_argument",
+      "negative": true,
+      "status": "passed",
+      "exit_code": 2,
+      "seconds": 0.1037291000247933,
+      "diagnostics": [
+        {
+          "file": "new_argument.dm",
+          "line": 5,
+          "severity": "error",
+          "message": "=: expected a constant expression"
+        }
+      ],
+      "published_paths": []
+    },
+    {
+      "name": "reopened",
+      "negative": true,
+      "status": "passed",
+      "exit_code": 2,
+      "seconds": 0.3346559999627061,
+      "diagnostics": [
+        {
+          "file": "reopened.dm",
+          "line": 6,
+          "severity": "error",
+          "message": ": expected a constant expression"
+        }
+      ],
+      "published_paths": []
+    },
+    {
+      "name": "inherited",
+      "negative": true,
+      "status": "passed",
+      "exit_code": 2,
+      "seconds": 0.21359639998991042,
+      "diagnostics": [
+        {
+          "file": "inherited.dm",
+          "line": 6,
+          "severity": "error",
+          "message": ": expected a constant expression"
+        }
+      ],
+      "published_paths": []
+    }
+  ]
+}

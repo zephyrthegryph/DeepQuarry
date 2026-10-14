@@ -1,0 +1,39 @@
+{
+  "status": "failed",
+  "error": "sampled owned private-memory budget exceeded",
+  "compiler_sha256": "aa6425af0423548333964791fbf6e8aaeb18f5faeb55bd8886b12d4359b7b377",
+  "workers": 2,
+  "session_count": 1,
+  "rows": [],
+  "daemon_cleanup": {
+    "pid": 16240,
+    "tree_error": null,
+    "direct_error": null,
+    "wait_error": null,
+    "returncode": 1,
+    "reaped": true
+  },
+  "owned_memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 4037353472,
+    "samples": 235,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 16240,
+        "private_bytes": 4037353472
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "failed",
+    "reason": "sampled owned private-memory budget exceeded",
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "owned daemon and registered harness children (compiler/client/inspector); 200ms samples include observation overhead; excludes unrelated processes and unregistered descendants"
+  },
+  "total_end_to_end_s": 101.18546910001896,
+  "scope": "real-source daemon iteration wall telemetry plus fresh native DMB/RSC byte oracle; not runtime or r6 acceptance",
+  "receipt": "E:\\dq-cache\\dmb-native-iterations\\20261010-065647-199f8e0c\\receipt.json",
+  "receipt_sha256": "c28e08c66a882de5e27b402cf72de056e367659805a35fd7f9fb3701e0c83aa4",
+  "note": "First retained cold request stopped. No admitted timing/output comparison. Sampled peak belongs to the daemon alone; owned children reaped. No memory-budget increase."
+}

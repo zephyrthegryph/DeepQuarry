@@ -1,0 +1,10 @@
+{
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "compiler_version": "516.1687",
+  "source_sha256": "a08b70b69d67adb34656beeb53101a6b0e7553de99b593429584494d07352818",
+  "manifest_sha256": "d526d2155a298fca3a107bda960eb1d5787f0e9030b0a6d827ab15fb59decf7d",
+  "dmb_sha256": "eff7b907e511711d64a3e57a31521c713a0b0e9fae01922103fc1ff740ca5a08",
+  "exit_code": 0,
+  "runtime": "not run",
+  "purpose": "blank physical lines following escaped quoted/block continuation; raw control preserves bytes"
+}

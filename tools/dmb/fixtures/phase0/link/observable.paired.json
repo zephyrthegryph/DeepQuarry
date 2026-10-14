@@ -1,0 +1,344 @@
+{
+  "case": "observable",
+  "status": "baseline_divergence",
+  "reference": [
+    {
+      "label": "types",
+      "value": [
+        "/obj/link_order",
+        "/obj/link_order/base",
+        "/obj/link_order/a_child",
+        "/obj/link_order/z_child"
+      ]
+    },
+    {
+      "label": "vars",
+      "value": [
+        "z_value",
+        "a_value",
+        "reopened_value",
+        "animate_movement",
+        "loc",
+        "x",
+        "y",
+        "z",
+        "screen_loc",
+        "pixel_step_size",
+        "bounds",
+        "locs",
+        "step_x",
+        "step_y",
+        "step_size",
+        "bound_x",
+        "bound_y",
+        "bound_width",
+        "bound_height",
+        "glide_size",
+        "vis_contents",
+        "vis_locs",
+        "vis_flags",
+        "particles",
+        "pixloc",
+        "type",
+        "parent_type",
+        "tag",
+        "name",
+        "desc",
+        "suffix",
+        "text",
+        "icon",
+        "icon_state",
+        "overlays",
+        "underlays",
+        "dir",
+        "visibility",
+        "luminosity",
+        "opacity",
+        "density",
+        "layer",
+        "gender",
+        "mouse_over_pointer",
+        "mouse_drag_pointer",
+        "mouse_drop_pointer",
+        "mouse_drop_zone",
+        "verbs",
+        "vars",
+        "contents",
+        "invisibility",
+        "infra_luminosity",
+        "pixel_x",
+        "pixel_y",
+        "mouse_opacity",
+        "pixel_z",
+        "override",
+        "maptext",
+        "maptext_width",
+        "maptext_height",
+        "transform",
+        "alpha",
+        "color",
+        "blend_mode",
+        "appearance",
+        "maptext_x",
+        "maptext_y",
+        "plane",
+        "appearance_flags",
+        "pixel_w",
+        "filters",
+        "render_source",
+        "render_target",
+        "icon_w",
+        "icon_z"
+      ]
+    },
+    {
+      "label": "verbs",
+      "value": [
+        "/obj/link_order/base/verb/a_verb",
+        "/obj/link_order/base/verb/z_verb"
+      ]
+    },
+    {
+      "label": "override_result",
+      "value": "child|base"
+    },
+    {
+      "label": "proc_reference",
+      "value": "/obj/link_order/base/proc/foo"
+    },
+    {
+      "label": "verb_reference",
+      "value": "/obj/link_order/base/verb/z_verb"
+    }
+  ],
+  "native": [
+    {
+      "label": "types",
+      "value": [
+        "/obj/link_order",
+        "/obj/link_order/base",
+        "/obj/link_order/z_child",
+        "/obj/link_order/a_child"
+      ]
+    },
+    {
+      "label": "vars",
+      "value": [
+        "z_value",
+        "a_value",
+        "reopened_value",
+        "animate_movement",
+        "loc",
+        "x",
+        "y",
+        "z",
+        "screen_loc",
+        "pixel_step_size",
+        "bounds",
+        "locs",
+        "step_x",
+        "step_y",
+        "step_size",
+        "bound_x",
+        "bound_y",
+        "bound_width",
+        "bound_height",
+        "glide_size",
+        "vis_contents",
+        "vis_locs",
+        "vis_flags",
+        "particles",
+        "pixloc",
+        "type",
+        "parent_type",
+        "tag",
+        "name",
+        "desc",
+        "suffix",
+        "text",
+        "icon",
+        "icon_state",
+        "overlays",
+        "underlays",
+        "dir",
+        "visibility",
+        "luminosity",
+        "opacity",
+        "density",
+        "layer",
+        "gender",
+        "mouse_over_pointer",
+        "mouse_drag_pointer",
+        "mouse_drop_pointer",
+        "mouse_drop_zone",
+        "verbs",
+        "vars",
+        "contents",
+        "invisibility",
+        "infra_luminosity",
+        "pixel_x",
+        "pixel_y",
+        "mouse_opacity",
+        "pixel_z",
+        "override",
+        "maptext",
+        "maptext_width",
+        "maptext_height",
+        "transform",
+        "alpha",
+        "color",
+        "blend_mode",
+        "appearance",
+        "maptext_x",
+        "maptext_y",
+        "plane",
+        "appearance_flags",
+        "pixel_w",
+        "filters",
+        "render_source",
+        "render_target",
+        "icon_w",
+        "icon_z"
+      ]
+    },
+    {
+      "label": "verbs",
+      "value": [
+        "/obj/link_order/base/verb/z_verb",
+        "/obj/link_order/base/verb/a_verb"
+      ]
+    },
+    {
+      "label": "override_result",
+      "value": "child|base"
+    },
+    {
+      "label": "proc_reference",
+      "value": "/obj/link_order/base/proc/foo"
+    },
+    {
+      "label": "verb_reference",
+      "value": "/obj/link_order/base/verb/z_verb"
+    }
+  ],
+  "differences": [
+    {
+      "label": "types",
+      "reference": [
+        "/obj/link_order",
+        "/obj/link_order/base",
+        "/obj/link_order/a_child",
+        "/obj/link_order/z_child"
+      ],
+      "native": [
+        "/obj/link_order",
+        "/obj/link_order/base",
+        "/obj/link_order/z_child",
+        "/obj/link_order/a_child"
+      ],
+      "classification": "observable_order"
+    },
+    {
+      "label": "verbs",
+      "reference": [
+        "/obj/link_order/base/verb/a_verb",
+        "/obj/link_order/base/verb/z_verb"
+      ],
+      "native": [
+        "/obj/link_order/base/verb/z_verb",
+        "/obj/link_order/base/verb/a_verb"
+      ],
+      "classification": "observable_order"
+    }
+  ],
+  "provenance": {
+    "results": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\results.json",
+    "source_hashes": {
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\source\\observable.dme": "d400f9b88b6f26257893d53a102ca469c026cd730d2dfab7e23e4a41ad09d2a5",
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\source\\common.dm": "426285dfb48222978fca2550be2cc6dd438154b65d98ad1856d544a2a9426c08",
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\source\\observable.dm": "8b21221ebaae0362a71f4cd1fc09823d2669b9f042b2e5301da5578114cf4ff6"
+    },
+    "observations": {
+      "byond": {
+        "path": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\byond-observations.json",
+        "sha256": "2c6ee016ac0af52fceb59846c81ed2e17201ad1757bb89473e9d38bce14528d9"
+      },
+      "native": {
+        "path": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\native-observations.json",
+        "sha256": "f8cd0dc298970bd04456945daeeab01890114999771b8f356061831889538c23"
+      }
+    },
+    "compiler_hashes": {
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "D:\\dmb-native-v2-phase0\\frozen\\compiler-integration-fiftieth.exe": "87eaa5f265756588e001a29931528d40091a72d8f542abdba940ee6aacb19040"
+    },
+    "native_builtins": {
+      "path": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "commands_and_outcomes": {
+      "byond_compile": {
+        "exit_code": 0,
+        "seconds": 0.3214365000021644,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\source\\observable.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\byond-compile.log"
+      },
+      "byond_runtime": {
+        "exit_code": 0,
+        "seconds": 1.2174648999935016,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\source\\observable.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\byond-runtime.log"
+      },
+      "native_compile": {
+        "exit_code": 0,
+        "seconds": 3.2299808000097983,
+        "timed_out": false,
+        "command": [
+          "D:\\dmb-native-v2-phase0\\frozen\\compiler-integration-fiftieth.exe",
+          "build-project",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\source\\observable.dme",
+          "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\native"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\native-compile.log"
+      },
+      "native_runtime": {
+        "exit_code": 0,
+        "seconds": 1.5244794000027468,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\native-slot\\world.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\native-runtime.log"
+      }
+    }
+  },
+  "decoded_metadata_divergences": [
+    {
+      "classification": "procedure_metadata_divergence",
+      "fixture_setting": "set src in world",
+      "proc": "/obj/link_order/base/z_verb",
+      "field": "proc.source",
+      "expected_raw": "Other { kind: 16, parameter: 127 }",
+      "actual_raw": "Default",
+      "comparison_log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\opcode-diff.log",
+      "comparison_log_sha256": "c822c9a15a924913a74a9a734a7abfc7a3a81afc1e79f3ba09c2e90bd0e87ad7",
+      "scope": "Comparator reports one discrepancy for the compared /obj/link_order prefix; no broader metadata parity claim."
+    }
+  ]
+}

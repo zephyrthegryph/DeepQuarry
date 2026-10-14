@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "compiler": {
+    "version": "516.1687",
+    "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+  },
+  "files": [
+    {
+      "path": "positive.dm",
+      "sha256": "61052829b2e00255b1521db221083e88090ac9917f807e402a5e079a6d2b6ae3"
+    },
+    {
+      "path": "positive.dme",
+      "sha256": "1233acdcd657624a794bf03ddc1678ebc5cfa97ea07827d81e7222902d8b5921"
+    },
+    {
+      "path": "positive.stdout.log",
+      "sha256": "42fc5ed606a6817676f159e6a48fbc24f9ce2732d0db1e3b91a3cc0e62037044"
+    },
+    {
+      "path": "positive.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "positive.native.bin",
+      "sha256": "3dcf1c232cee044f19432d64ee66246c7ad25d117b934d254f63fb2425fa2af8"
+    },
+    {
+      "path": "control.dm",
+      "sha256": "1374fea5d8b70737aa952ae576d1179067817c7fcc9ebd74c0c718d7cb4df506"
+    },
+    {
+      "path": "control.dme",
+      "sha256": "10f075dd059fc75e9cf0bd25f3b99dbebf9f828d587063f9240d5ef96ff04a03"
+    },
+    {
+      "path": "control.stdout.log",
+      "sha256": "d97751360d5099b34f5037b8162bd02e413d822e2c46dd09cfb5afa425e28a6e"
+    },
+    {
+      "path": "control.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runtime_src.dm",
+      "sha256": "fa6a7545acf3e33eaeb18a7b14b581747096e7f9d5eb5d4c948386b3d9bbcbf9"
+    },
+    {
+      "path": "runtime_src.dme",
+      "sha256": "3dc84d887de9959f3c99f777b5809d078eed1c5402d0b68ee3da9a764c94e225"
+    },
+    {
+      "path": "runtime_src.stdout.log",
+      "sha256": "332470557c49182c1e5cb76ef4688ba5a23e16f691bba0a4f14561e02ea9d13e"
+    },
+    {
+      "path": "runtime_src.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runtime_global.dm",
+      "sha256": "9b155ac4237dfa3cf66009d5930d231ca4498b8dcbffa4c53c6f8dc3ace9893e"
+    },
+    {
+      "path": "runtime_global.dme",
+      "sha256": "153d4ef9c4dcc66e0a816312bc355a3f2e13088889e8f430cf41fcff891f3641"
+    },
+    {
+      "path": "runtime_global.stdout.log",
+      "sha256": "365d9e3307664fdb4822f9fef7c60ae3fe1338c36058f671ec0b69c563548d96"
+    },
+    {
+      "path": "runtime_global.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runtime_call.dm",
+      "sha256": "a933b376079caacbb99e7acaaa62a727fffc9ca907b5c6ca2f6cda3ed6e94f74"
+    },
+    {
+      "path": "runtime_call.dme",
+      "sha256": "62559873a789bc452d23ad70421d0097def2d81eb1fcfcc49146f1fcab76678d"
+    },
+    {
+      "path": "runtime_call.stdout.log",
+      "sha256": "736ef666a738b221e0ae7bb2278a026ce52cbe43b4037b3abe9c36e946ad561e"
+    },
+    {
+      "path": "runtime_call.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "cases": [
+    {
+      "name": "rgb_three",
+      "expression": "rgb(255,201,49)",
+      "value": "#ffc931",
+      "native_string_index": 439,
+      "native_variable_index": 69,
+      "native_variable": "Variable { kind: 6, value: 439, name: 440 } name=rgb_three",
+      "native_proc_code": "proc#0 /proc/rgb_three\n0000 0060 PushVal [6, 439]\n0003 0012 Ret []\n0004 0000 End []"
+    },
+    {
+      "name": "rgb_four",
+      "expression": "rgb(255,201,49,128)",
+      "value": "#ffc93180",
+      "native_string_index": 441,
+      "native_variable_index": 70,
+      "native_variable": "Variable { kind: 6, value: 441, name: 442 } name=rgb_four",
+      "native_proc_code": "proc#1 /proc/rgb_four\n0000 0060 PushVal [6, 441]\n0003 0012 Ret []\n0004 0000 End []"
+    },
+    {
+      "name": "rgb_fractional",
+      "expression": "rgb(12.9,0.9,254.9)",
+      "value": "#0c00fe",
+      "native_string_index": 443,
+      "native_variable_index": 71,
+      "native_variable": "Variable { kind: 6, value: 443, name: 444 } name=rgb_fractional",
+      "native_proc_code": "proc#2 /proc/rgb_fractional\n0000 0060 PushVal [6, 443]\n0003 0012 Ret []\n0004 0000 End []"
+    },
+    {
+      "name": "rgb_outside",
+      "expression": "rgb(-5,300,512)",
+      "value": "#00ffff",
+      "native_string_index": 445,
+      "native_variable_index": 72,
+      "native_variable": "Variable { kind: 6, value: 445, name: 446 } name=rgb_outside",
+      "native_proc_code": "proc#3 /proc/rgb_outside\n0000 0060 PushVal [6, 445]\n0003 0012 Ret []\n0004 0000 End []"
+    },
+    {
+      "name": "rgb_alias",
+      "expression": "rgb(R_COMPONENT,201,49)",
+      "value": "#ffc931",
+      "native_string_index": 439,
+      "native_variable_index": 73,
+      "native_variable": "Variable { kind: 6, value: 439, name: 447 } name=rgb_alias",
+      "native_proc_code": "proc#4 /proc/rgb_alias\n0000 0060 PushVal [6, 439]\n0003 0012 Ret []\n0004 0000 End []"
+    }
+  ],
+  "receiver_class": "Class { initial_ids: [596, 1, 597, 65535, 65535, 65535], direction: 2, interface: 1, extended_interface: None, text: 598, maptext: 65535, maptext_geometry: [32, 32, 0, 0], suffix: 65535, flags: 0, lists_and_procs: [65535, 65535, 65535, 65535, 0, 65535], layer_bits: 0, transform_flag: 0, transform: None, color_matrix_flag: 0, color_matrix: None, overrides: 65535 } path=/datum/probe",
+  "negative_controls": {
+    "control": "bare nonconst instancefield rejected2errors",
+    "runtime_src": "src.field rejected2errors",
+    "runtime_global": "global nonconst rejected1error",
+    "runtime_call": "rand argument rejected1error"
+  },
+  "initial_macros": []
+}

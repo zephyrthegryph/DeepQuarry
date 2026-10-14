@@ -17,6 +17,10 @@ GLOBAL_VAR_INIT(failed_any_test, FALSE)
 GLOBAL_VAR_INIT(e0_proofs_passed, 0)
 GLOBAL_VAR_INIT(e0_proofs_pending, 0)
 GLOBAL_VAR_INIT(e0_proofs_failed, 0)
+/// Structured exceptions for the current test, including construction and cleanup.
+GLOBAL_LIST_EMPTY(unit_test_runtime_events)
+GLOBAL_VAR_INIT(unit_test_runtime_capture, FALSE)
+GLOBAL_VAR_INIT(unit_test_runtime_events_truncated, FALSE)
 /// When unit testing, all logs sent to log_mapping are stored here and retrieved in log_mapping unit test.
 GLOBAL_LIST_EMPTY(unit_test_mapping_logs)
 /// Global assoc list of required mapping items, [item typepath] to [required item datum].
@@ -910,19 +914,30 @@ GLOBAL_VAR(dq_test_select_names)
 	text2file(profile, file_name)
 	log_test("Profile for [test_path] written to [file_name]")
 
-/proc/RunUnitTest(datum/unit_test/test_path, list/test_results, current_index, total_tests)
+/// One eligibility predicate for execution and runtime-issued inventories.
+/proc/dq_test_ineligibility(datum/unit_test/test_path)
 	if(ispath(test_path, /datum/unit_test/focus_only))
-		return
-
+		return "focus_only"
 	if(initial(test_path.abstract_type) == test_path)
+		return "abstract"
+	return null
+
+/proc/dq_test_automatic_rows()
+	return list("ownership_framework_checks")
+
+/proc/RunUnitTest(datum/unit_test/test_path, list/test_results, current_index, total_tests)
+	if(dq_test_ineligibility(test_path))
 		return
 
+	var/runtimes_before = GLOB.total_runtimes
+	GLOB.unit_test_runtime_events = null
+	GLOB.unit_test_runtime_events_truncated = FALSE
+	GLOB.unit_test_runtime_capture = TRUE
 	var/datum/unit_test/test = new test_path
 
 	GLOB.current_test = test
 	var/duration = 0
 	var/tick_start_index = 0
-	var/runtimes_before = GLOB.total_runtimes
 	var/list/sites_before = SSexpedition?.sites?.Copy()
 	var/list/globals_before = unit_test_globals_snapshot()
 	var/list/gravity_before = unit_test_gravity_snapshot()
@@ -1032,7 +1047,8 @@ GLOBAL_VAR(dq_test_select_names)
 		message = message ? "[message]\n\t[leak]" : "\t[leak]"
 		log_test("\t[leak]")
 
-	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "ticks" = tick_stats)
+	GLOB.unit_test_runtime_capture = FALSE
+	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "runtime_errors" = GLOB.unit_test_runtime_events || list(), "runtime_errors_truncated" = GLOB.unit_test_runtime_events_truncated, "ticks" = tick_stats)
 
 /// GLOB vars the state guard ignores: run bookkeeping and counters that move on their own.
 /proc/unit_test_globals_ignored()
@@ -1304,6 +1320,9 @@ GLOBAL_VAR(boot_unclean)
 		qdel(map_bot)
 
 	var/list/tests_to_run = subtypesof(/datum/unit_test)
+	// Capture the complete compiled type roster before focus/shard/domain/tier
+	// selection. A filtered inventory cannot satisfy the consumer's full count.
+	var/list/pre_tier_tests = world.params[TEST_INVENTORY_FILE_PARAMETER] ? tests_to_run.Copy() : null
 	var/list/focused_tests = GLOB.focused_tests
 	if(length(focused_tests))
 		tests_to_run = focused_tests.Copy()
@@ -1342,8 +1361,8 @@ GLOBAL_VAR(boot_unclean)
 
 	// Tier: a plain run is the normal tier; "all" adds the exhaustive sweeps,
 	// "exhaustive" runs only those. A focused run runs exactly what it named.
+	var/tier_param = world.params?[TEST_TIER_PARAMETER] || "normal"
 	if(!length(focused_tests))
-		var/tier_param = world.params?[TEST_TIER_PARAMETER] || "normal"
 		var/want_normal = tier_param != "exhaustive" && tier_param != "e0"
 		var/want_exhaustive = tier_param == "all" || tier_param == "exhaustive"
 		// The E0 proofs (TEST_TIER_E0) run only on `--tier=e0`: not in a plain run, not in `all`, so the normal suite stays green.
@@ -1358,6 +1377,35 @@ GLOBAL_VAR(boot_unclean)
 		tests_to_run = tiered
 
 	sortTim(tests_to_run, GLOBAL_PROC_REF(cmp_unit_test_priority))
+
+	// Compile-once batch orchestration receives the exact runtime roster.
+	// Normal source selection above remains authoritative; no source scanner.
+	if(world.params[TEST_INVENTORY_FILE_PARAMETER])
+		var/list/eligible = list()
+		var/list/excluded = list()
+		var/list/tier_excluded = list()
+		// This roster holds type paths, not instantiated unit-test datums.
+		for(var/test_path in pre_tier_tests)
+			var/datum/unit_test/test_type = test_path
+			var/test_tier = initial(test_type.tier) == TEST_TIER_EXHAUSTIVE ? "exhaustive" : "normal"
+			if(tier_param != "all" && test_tier != tier_param)
+				tier_excluded += list(list("name" = "[test_path]", "tier" = test_tier))
+		for(var/test_path in tests_to_run)
+			var/reason = dq_test_ineligibility(test_path)
+			if(reason)
+				excluded += list(list("name" = "[test_path]", "reason" = reason))
+			else
+				eligible += "[test_path]"
+		var/inventory_file = world.params[TEST_INVENTORY_FILE_PARAMETER]
+		fdel(inventory_file)
+		file(inventory_file) << json_encode(list("schema" = 1, "tier" = tier_param, "eligible" = eligible, "excluded" = excluded, "automaticRows" = dq_test_automatic_rows(), "preTierCount" = length(pre_tier_tests), "tierExcluded" = tier_excluded))
+		var/result_file = world.params[TEST_RESULTS_FILE_PARAMETER] || "data/unit_tests.json"
+		fdel(result_file)
+		file(result_file) << "{}"
+		SSticker.force_ending = ADMIN_FORCE_END_ROUND
+		SSticker.declare_completion()
+		return
+
 
 	var/list/test_results = list()
 	var/total_tests = length(tests_to_run)
@@ -1397,9 +1445,14 @@ GLOBAL_VAR(boot_unclean)
 		catch(var/exception/e)
 			GLOB.failed_any_test = TRUE
 			GLOB.current_test = null
+			GLOB.unit_test_runtime_capture = FALSE
+			if(LAZYLEN(GLOB.unit_test_runtime_events) < 256)
+				LAZYADD(GLOB.unit_test_runtime_events, list(list("name" = e.name, "file" = e.file, "line" = e.line, "description" = e.desc)))
+			else
+				GLOB.unit_test_runtime_events_truncated = TRUE
 			log_world("::error::[TEST_OUTPUT_RED("FAIL")] [unit_path]: harness runtime: [e.name] at [e.file]:[e.line]")
 			log_test("HARNESS RUNTIME in [unit_path]: [e.name] at [e.file]:[e.line] -- [e.desc]")
-			test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration_ds" = 0, "runtimes" = 1, "ticks" = null)
+			test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration_ds" = 0, "runtimes" = 1, "runtime_errors" = GLOB.unit_test_runtime_events, "runtime_errors_truncated" = GLOB.unit_test_runtime_events_truncated, "ticks" = null)
 	SSticker.delay_end = FALSE
 	// Ownership framework checks after the last test: a mutated shared definition or an
 	// orphaned/stale owner stamp fails the run like a failed test, one line per finding.
@@ -1413,8 +1466,10 @@ GLOBAL_VAR(boot_unclean)
 		GLOB.failed_any_test = TRUE
 		log_world("::error::[TEST_OUTPUT_RED("FAIL")] [line]")
 		log_test(line)
-	if(length(framework_failures))
-		test_results["ownership_framework_checks"] = list("status" = UNIT_TEST_FAILED, "message" = jointext(framework_failures, "\n"), "name" = "ownership_framework_checks", "duration_ds" = 0, "runtimes" = 0, "ticks" = null)
+	if(length(framework_failures) || world.params[TEST_EXACT_AUTOMATIC_ROWS_PARAMETER])
+		var/list/automatic_rows = dq_test_automatic_rows()
+		var/framework_row = automatic_rows[1]
+		test_results[framework_row] = list("status" = length(framework_failures) ? UNIT_TEST_FAILED : UNIT_TEST_PASSED, "message" = jointext(framework_failures, "\n"), "name" = framework_row, "duration_ds" = 0, "runtimes" = 0, "runtime_errors" = list(), "runtime_errors_truncated" = FALSE, "ticks" = null)
 #ifdef REFERENCE_TRACKING
 	if(length(GLOB.dq_refsearch_type_counts))
 		var/list/searched = list()

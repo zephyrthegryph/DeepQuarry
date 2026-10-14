@@ -1,0 +1,195 @@
+{
+  "files": [
+    {
+      "sha256": "2b4a36b3152af89c2af116c71c13e3d20ee2acb0c8cbc4b468d8e2d388727ae0",
+      "path": ".gitattributes"
+    },
+    {
+      "sha256": "ebca342e1659c2fdcbe394b740360a9e3e99ada200c62e3169e2f275230846b1",
+      "path": "alist_len_infer/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "alist_len_infer/compile.stderr.log"
+    },
+    {
+      "sha256": "5aef26c0775080f50da447adae12da5082d79826f414a2594574f64cfbf2b4b5",
+      "path": "alist_len_infer/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "alist_len_infer/probe.dme"
+    },
+    {
+      "sha256": "224d9eb5e423bba118372e0549aecc4891b712e545ff889add3379403ce2f813",
+      "path": "alist_len_read/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "alist_len_read/compile.stderr.log"
+    },
+    {
+      "sha256": "89af8a572409e5b38e4c90c5e2f51193bfeaca04463f2e94aee00021dcc5d7a5",
+      "path": "alist_len_read/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "alist_len_read/probe.dme"
+    },
+    {
+      "sha256": "947629d46c621d8ed88af332c21e1d8a7db087d89c8ef4257358a30c0062458a",
+      "path": "alist_len_read/probe.native.bin"
+    },
+    {
+      "sha256": "16edfdc4522d44ba2d41f480224c188a77defdbcb0a1f00bdc2f6975ece6d6ae",
+      "path": "alist_type_infer/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "alist_type_infer/compile.stderr.log"
+    },
+    {
+      "sha256": "f52ab6565be146131f75b45aee62e66a18fe2deb4203066bb350c540afc3dc5a",
+      "path": "alist_type_infer/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "alist_type_infer/probe.dme"
+    },
+    {
+      "sha256": "224d9eb5e423bba118372e0549aecc4891b712e545ff889add3379403ce2f813",
+      "path": "alist_type_read/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "alist_type_read/compile.stderr.log"
+    },
+    {
+      "sha256": "b85944665b431ded78a66ffe6007878f728a13670a14db5a852e4ff1ea86740c",
+      "path": "alist_type_read/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "alist_type_read/probe.dme"
+    },
+    {
+      "sha256": "30e599ecb607d55cd60689fe7e2ae0d99992eb3054d1b72d16d5f6e59ea97a4f",
+      "path": "alist_type_read/probe.native.bin"
+    },
+    {
+      "sha256": "ebca342e1659c2fdcbe394b740360a9e3e99ada200c62e3169e2f275230846b1",
+      "path": "list_len_infer/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "list_len_infer/compile.stderr.log"
+    },
+    {
+      "sha256": "ec83a36e4052fe70304b4058bc375bf222b8296c52bda9da59bd5fd3444997b5",
+      "path": "list_len_infer/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "list_len_infer/probe.dme"
+    },
+    {
+      "sha256": "224d9eb5e423bba118372e0549aecc4891b712e545ff889add3379403ce2f813",
+      "path": "list_len_read/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "list_len_read/compile.stderr.log"
+    },
+    {
+      "sha256": "3738bf13a8c316b8bc7732cd9b3c360a22c8793f76f3dc76cf4d8bd1715f5a56",
+      "path": "list_len_read/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "list_len_read/probe.dme"
+    },
+    {
+      "sha256": "e069f97299801ab8478285eeeedd235e4a3232ecd49f5ad857f64e91a6fda54e",
+      "path": "list_len_read/probe.native.bin"
+    },
+    {
+      "sha256": "4a74161ec5c94bd50f59b235210b09b8071463bcc773cc7aa091329dab15fbb0",
+      "path": "list_parent_type_infer/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "list_parent_type_infer/compile.stderr.log"
+    },
+    {
+      "sha256": "a5de0b10580eb335f9bde838bcb61279193e08dc388f6444437fb9d1386cf10c",
+      "path": "list_parent_type_infer/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "list_parent_type_infer/probe.dme"
+    },
+    {
+      "sha256": "224d9eb5e423bba118372e0549aecc4891b712e545ff889add3379403ce2f813",
+      "path": "list_parent_type_read/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "list_parent_type_read/compile.stderr.log"
+    },
+    {
+      "sha256": "07b7a7325b8686be7c8b4176e81dd8f2f9887cbd1abfb0f8da2a80a89927aefd",
+      "path": "list_parent_type_read/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "list_parent_type_read/probe.dme"
+    },
+    {
+      "sha256": "2d1c61218caed44a58f89fd1201fdd022fc1c7646b4dcb5b42ea8bf5f32ccca7",
+      "path": "list_parent_type_read/probe.native.bin"
+    },
+    {
+      "sha256": "16edfdc4522d44ba2d41f480224c188a77defdbcb0a1f00bdc2f6975ece6d6ae",
+      "path": "list_type_infer/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "list_type_infer/compile.stderr.log"
+    },
+    {
+      "sha256": "9d41c6c5e21de482304cffe964858c799ce74522501776e22fd0bee341e9f6ca",
+      "path": "list_type_infer/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "list_type_infer/probe.dme"
+    },
+    {
+      "sha256": "224d9eb5e423bba118372e0549aecc4891b712e545ff889add3379403ce2f813",
+      "path": "list_type_read/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "list_type_read/compile.stderr.log"
+    },
+    {
+      "sha256": "c4371ab0fb7f0b61353b8cb2facefd4ec9e178e932d4561e7b8292682aaff288",
+      "path": "list_type_read/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "list_type_read/probe.dme"
+    },
+    {
+      "sha256": "10b7f2819f979ed0dff548037b1bbcb33fc2803f2b6f776a7de615730eff1a0c",
+      "path": "list_type_read/probe.native.bin"
+    }
+  ],
+  "observations": {
+    "inference": "all five implicit istype controls rejected unknown variable type",
+    "alist": "type37 len57 instance Field reads",
+    "limits": "No inheritance, writable-storage, modifier/default, or other-field proof claimed",
+    "list": "type37 parent_type130 len57 all instance Field reads"
+  },
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+}

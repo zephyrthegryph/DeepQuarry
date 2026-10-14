@@ -1,0 +1,41 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-996c0240a0401c5b.exe",
+  "binary_sha256": "fce8773a39a249b75ea3c69cb0b7fafbf3737fdb748409ead81b4dcae2c510a9",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "class_projection::retained::tests",
+      "selected": [
+        "class_projection::retained::tests::compact_owner_locator_keeps_exact_metadata_and_order_authority",
+        "class_projection::retained::tests::current_ordered_projection_shares_admitted_field_rows_and_invalidates_values",
+        "class_projection::retained::tests::interleaved_owner_payloads_rebind_shifted_sources_and_match_fresh_reorder"
+      ],
+      "exit": 0,
+      "seconds": 0.052843499986920506,
+      "stdout": "\nrunning 3 tests\ntest class_projection::retained::tests::compact_owner_locator_keeps_exact_metadata_and_order_authority ... ok\ntest class_projection::retained::tests::current_ordered_projection_shares_admitted_field_rows_and_invalidates_values ... ok\ntest class_projection::retained::tests::interleaved_owner_payloads_rebind_shifted_sources_and_match_fresh_reorder ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 654 filtered out; finished in 0.02s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "initializer_policy::warnings::tests",
+      "selected": [
+        "initializer_policy::warnings::tests::inherited_receivers_warn_once_but_distinct_includes_remain_distinct",
+        "initializer_policy::warnings::tests::pinned_frontend_startup_classification_binds_current_warning_lines",
+        "initializer_policy::warnings::tests::warning_uses_current_location_and_exact_dreammaker_shape"
+      ],
+      "exit": 0,
+      "seconds": 0.12369380000745878,
+      "stdout": "\nrunning 3 tests\ntest initializer_policy::warnings::tests::inherited_receivers_warn_once_but_distinct_includes_remain_distinct ... ok\ntest initializer_policy::warnings::tests::pinned_frontend_startup_classification_binds_current_warning_lines ... ok\ntest initializer_policy::warnings::tests::warning_uses_current_location_and_exact_dreammaker_shape ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 654 filtered out; finished in 0.10s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "heap_census::resident_owner_projection::tests",
+      "selected": [
+        "heap_census::resident_owner_projection::tests::owned_nested_default_and_unused_vector_capacity_raise_conservative_charge"
+      ],
+      "exit": 0,
+      "seconds": 0.023104899970348924,
+      "stdout": "\nrunning 1 test\ntest heap_census::resident_owner_projection::tests::owned_nested_default_and_unused_vector_capacity_raise_conservative_charge ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 656 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    }
+  ]
+}

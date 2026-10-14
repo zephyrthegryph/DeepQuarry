@@ -1,0 +1,6 @@
+/world/New()
+    ..()
+    phase0_preprocess_observe("result", result, 7)
+    phase0_preprocess_observe("conditional_present", ("conditional" in global.vars), 0)
+    phase0_preprocess_observe("unexpected_present", ("unexpected" in global.vars), 0)
+    phase0_preprocess_finish()

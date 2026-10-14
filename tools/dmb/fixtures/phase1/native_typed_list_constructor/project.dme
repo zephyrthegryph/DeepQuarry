@@ -1,0 +1,8 @@
+/datum/item
+/datum/holder
+    var/list/datum/item/values = new()
+/proc/local_list()
+    var/list/datum/item/values = new()
+    return values
+/proc/explicit_list()
+    return new /list()

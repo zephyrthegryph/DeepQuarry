@@ -243,82 +243,127 @@ impl Decoder<'_> {
     }
 
     fn operand(&mut self, kind: char) -> Result<Operand, DecodeError> {
+        Ok(self
+            .walk_operand(kind, true, &mut |_| {})?
+            .expect("collecting operand"))
+    }
+
+    // One grammar for owned inspection and borrowed validation. Validation
+    // traverses every operand and retains roundtrip checks without case vectors.
+    fn walk_operand(
+        &mut self,
+        kind: char,
+        collect: bool,
+        branch: &mut impl FnMut(usize),
+    ) -> Result<Option<Operand>, DecodeError> {
         Ok(match kind {
-            'u' => Operand::Word(self.word()?),
-            'v' => Operand::Variable(self.variable()?),
-            'V' => Operand::Value(self.value()?),
+            'u' => {
+                let value = self.word()?;
+                collect.then_some(Operand::Word(value))
+            }
+            'v' => {
+                let value = self.variable()?;
+                collect.then_some(Operand::Variable(value))
+            }
+            'V' => {
+                let value = self.value()?;
+                collect.then_some(Operand::Value(value))
+            }
             'S' => {
                 let count = self.word()?;
                 let mut cases = Vec::new();
                 for _ in 0..count {
-                    cases.push((self.value()?, self.word()?));
+                    let value = self.value()?;
+                    branch(self.at);
+                    let target = self.word()?;
+                    if collect {
+                        cases.push((value, target));
+                    }
                 }
-                Operand::Switch {
-                    cases,
-                    default: self.word()?,
-                }
+                branch(self.at);
+                let default = self.word()?;
+                collect.then_some(Operand::Switch { cases, default })
             }
             'P' => {
                 let count = self.word()?;
                 let mut cases = Vec::new();
                 for _ in 0..count {
-                    cases.push((self.word()?, self.word()?));
+                    let threshold = self.word()?;
+                    branch(self.at);
+                    let target = self.word()?;
+                    if collect {
+                        cases.push((threshold, target));
+                    }
                 }
-                Operand::PickSwitch {
-                    cases,
-                    default: self.word()?,
-                }
+                branch(self.at);
+                let default = self.word()?;
+                collect.then_some(Operand::PickSwitch { cases, default })
             }
             'R' => {
                 let count = self.word()?;
                 let mut ranges = Vec::new();
                 for _ in 0..count {
-                    ranges.push((self.value()?, self.value()?, self.word()?));
+                    let lower = self.value()?;
+                    let upper = self.value()?;
+                    branch(self.at);
+                    let target = self.word()?;
+                    if collect {
+                        ranges.push((lower, upper, target));
+                    }
                 }
                 let count = self.word()?;
                 let mut exact = Vec::new();
                 for _ in 0..count {
-                    exact.push((self.value()?, self.word()?));
+                    let value = self.value()?;
+                    branch(self.at);
+                    let target = self.word()?;
+                    if collect {
+                        exact.push((value, target));
+                    }
                 }
-                Operand::RangeSwitch {
+                branch(self.at);
+                let default = self.word()?;
+                collect.then_some(Operand::RangeSwitch {
                     ranges,
                     exact,
-                    default: self.word()?,
-                }
+                    default,
+                })
             }
             'Q' => {
                 let count = self.word()?;
                 let mut words = Vec::new();
                 for _ in 0..count {
-                    words.push(self.word()?);
+                    branch(self.at);
+                    let word = self.word()?;
+                    if collect {
+                        words.push(word);
+                    }
                 }
-                Operand::PickProb(words)
+                collect.then_some(Operand::PickProb(words))
             }
             _ => unreachable!("opcode table has invalid operand kind"),
         })
     }
 }
 
+#[path = "bytecode_validation.rs"]
+mod validation;
+pub use validation::{visit_instructions, InstructionView};
+
 pub fn decode(words: &[u32]) -> Result<Vec<Instruction>, DecodeError> {
-    let mut reader = Decoder { words, at: 0 };
     let mut instructions = Vec::new();
-    while reader.at < words.len() {
-        let offset = reader.at;
-        let opcode = reader.word()?;
-        let descriptor = descriptors().get(&opcode).ok_or_else(|| DecodeError {
-            offset,
-            reason: format!("unknown opcode {opcode:#x}"),
-        })?;
-        for kind in descriptor.operands.chars() {
-            reader.operand(kind)?;
-        }
-        instructions.push(Instruction {
-            offset,
-            opcode,
-            name: descriptor.name,
-            operands: words[offset + 1..reader.at].to_vec(),
-        });
-    }
+    visit_instructions(
+        words,
+        |instruction| {
+            instructions.push(Instruction {
+                offset: instruction.offset,
+                opcode: instruction.opcode,
+                name: instruction.name,
+                operands: instruction.operands.to_vec(),
+            })
+        },
+        |_| {},
+    )?;
     Ok(instructions)
 }
 

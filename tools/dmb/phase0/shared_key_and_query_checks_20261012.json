@@ -1,0 +1,33 @@
+{
+  "first_source_commit": "ce6ac7fe5a30d99676af3874e8e96f27215aea97",
+  "first_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-101116-63e489c1-job-cargo.json",
+  "first_focused_receipts": [
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261012-101604-91c2138d-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261012-101603-4a9e1eee-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261012-101624-146cf8c0-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261012-101656-b22540b0-focused.json"
+  ],
+  "passed_checks": {
+    "endpoint_descriptor": 2,
+    "shared_key_backing": 2,
+    "symbolic_publication_and_code_admission": 7,
+    "compact_pressure": 7,
+    "local_source_policy_guard": 1,
+    "typed_list_argument_flags": 1
+  },
+  "selection_error": "First receipt also records a wrong publication module filter; subsequent receipt uses actual symbolic_input module",
+  "correctness_fix": "Typed list formal arguments now preserve their authored element-family input flags; captured BYOND old_locs expected291 rather than native0. Existing compiler-image policy invalidates old disk ABI records.",
+  "followup_source_commit": "260a114a471e4b6dd867efde808e28779133c7b0",
+  "followup_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-102135-e40c5cc7-job-cargo.json",
+  "query_failure_recovery": {
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-102435-54b08617-focused.json",
+    "result": "passed",
+    "fixture_correction": "Resolve spelling through exact semantic roster, join structural keys to source occurrences/body queries; occurrence serialization does not contain raw member spellings"
+  },
+  "modified_local_reissue": {
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-102407-e55ad5c2-focused.json",
+    "result": "failed at current recipe reissue after correcting unsupported fixture return syntax",
+    "status": "under investigation; shared-key migration acceptance remains open"
+  },
+  "scope": "Bounded focused checks, not full suite, runtime parity or release acceptance"
+}

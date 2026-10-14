@@ -1,0 +1,1 @@
+protected control fixture resource

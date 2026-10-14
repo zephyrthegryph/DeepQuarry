@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "scope": "Captured DeepQuarry client launch through reap; separate fresh native oracle. Not runtime parity or revision-6 acceptance.",
+  "source_commit": "ac1af55d1a",
+  "compiler_commit": "d548eaffe09ee94a5deedc6e8580939b0e322c2e",
+  "compiler_sha256": "83727433762b2a8086392075029b9a8b281229887e6954cd49e80934eb3765c5",
+  "profile": {"dmbc_opt_level": 0, "dmbc_codegen_units": 256, "dm_tree_opt_level": 1, "lto": false, "acceptance": false},
+  "workers": 2,
+  "cohort_receipt": "E:/dq-cache/dmb-native-iterations/20261010-013213-0b060595/receipt.json",
+  "cohort_status": "failed",
+  "failure": "Overall 1800-second watchdog left 31.6 seconds for final structural comparison; that comparison timed out. Both final compiler processes exited successfully.",
+  "owned_daemon_reaped": true,
+  "rows": [
+    {"ordinal": 0, "case": "initial", "retained_s": 88.32618179998826, "fresh_s": 37.130372899991926, "fresh_native_byte_oracle": true},
+    {"ordinal": 1, "case": "unchanged", "retained_s": 1.6971107000135817, "fresh_s": 35.02687219996005, "fresh_native_byte_oracle": true},
+    {"ordinal": 2, "case": "body", "retained_s": 62.059125900035724, "fresh_s": 34.40095730003668, "fresh_native_byte_oracle": true},
+    {"ordinal": 3, "case": "new_proc", "retained_s": 48.62651500001084, "fresh_s": 32.68875550001394, "fresh_native_byte_oracle": true},
+    {"ordinal": 4, "case": "new_var", "retained_s": 62.13294580002548, "fresh_s": 33.4171747000073, "fresh_native_byte_oracle": true},
+    {"ordinal": 5, "case": "default", "retained_s": 38.32046680001076, "fresh_s": 33.17739959998289, "fresh_native_byte_oracle": true},
+    {"ordinal": 6, "case": "signature", "retained_s": 62.52067940001143, "fresh_s": 34.735018000006676, "fresh_native_byte_oracle": true, "evidence": "Completed child.json and last_run.json for both requests plus independent post-cohort SHA256 comparison of final conventional artifacts; structural comparison incomplete."}
+  ],
+  "final_artifact_sha256": {
+    "retained_dmb": "86d1ddf8666fc66d554217f7fdb9c7e72854289612cd0818509bf78ca188bb37",
+    "fresh_dmb": "86d1ddf8666fc66d554217f7fdb9c7e72854289612cd0818509bf78ca188bb37",
+    "retained_rsc": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+    "fresh_rsc": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+  },
+  "limitations": [
+    "All seven native output pairs agree with independently fresh output, but this is not BYOND correctness.",
+    "Initial same-source BYOND structural baseline has 1858674 unexplained differences and incomplete semantic coverage.",
+    "Memory pressure evicts retained sessions; the default case retained 48682 procedure hits yet still took 38.32 seconds.",
+    "Prototype O0 compiler profile cannot be compared as the same profile to previous O1 or release acceptance results.",
+    "Structural comparison runtime is outside compile wall measurements and dominated the cohort deadline.",
+    "Pending authored-sharing, initializer admission, compact RichIR retention and comparison-memo changes are not included in these timings.",
+    "Runtime baseline, six-worktree acceptance, history replay and CPU/memory/I/O acceptance remain open."
+  ]
+}

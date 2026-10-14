@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "reference": {
+    "path": "E:\\dq-cache\\dmb-vars-literal-reference\\137cef792ea9496e93353b07ab95d2d4\\receipt.json",
+    "sha256": "e3a876c741b33b377e4d1d3bd020f9833b5c5ee995d5902943ddb1e454b416ad"
+  },
+  "runtime": {
+    "path": "E:\\dq-cache\\dmb-vars-literal-runtime\\8899b6b27f96447988eab4c2f916ea4d\\receipt.json",
+    "sha256": "f12aa5041435745fedc1e128074117c186db9a1a38b4311b40daf9fddbea0cb1"
+  },
+  "complete": true,
+  "matches": false,
+  "byond": {
+    "markers": [
+      "DQ_VISIBLE_ORDER boot trace=type-static;global-first;global-second;procedure; resource=contract-resource.txt",
+      "DQ_VISIBLE_ORDER holder trace=type-static;global-first;global-second;procedure; vars=a_second;z_first;type_value;",
+      "DQ_VISIBLE_ORDER procedure result=procedure trace=type-static;global-first;global-second;procedure;",
+      "DQ_VISIBLE_ORDER types=/datum/orderkind;/datum/orderkind/z_first;/datum/orderkind/a_second;",
+      "DQ_VISIBLE_ORDER finished"
+    ],
+    "runtimes": {}
+  },
+  "native": {
+    "markers": [
+      "DQ_VISIBLE_ORDER boot trace=type-static;global-first;global-second;procedure; resource=contract-resource.txt",
+      "DQ_VISIBLE_ORDER holder trace=type-static;global-first;global-second;procedure; vars=z_first;a_second;type_value;",
+      "DQ_VISIBLE_ORDER procedure result=procedure trace=type-static;global-first;global-second;procedure;",
+      "DQ_VISIBLE_ORDER types=/datum/orderkind;/datum/orderkind/z_first;/datum/orderkind/a_second;",
+      "DQ_VISIBLE_ORDER finished"
+    ],
+    "runtimes": {}
+  },
+  "cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 3999997952,
+      "peak_job_commit_bytes": 86384640,
+      "peak_process_commit_bytes": 58748928,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "findings": [
+    "Earlier unused literal changes BYOND vars iteration order",
+    "Earlier root procedure also changes BYOND procedure-static registration order; unconditional root-static-before-globals rule is disproved"
+  ],
+  "fieldStringIds": "not yet inspected; no inference from runtime order alone",
+  "inputClosureAuthenticated": false,
+  "acceptedRuntimeBaseline": false
+}

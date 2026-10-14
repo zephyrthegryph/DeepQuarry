@@ -1,0 +1,49 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-996c0240a0401c5b.exe",
+  "binary_sha256": "c501f14ee81f87ad0971ea7d884f8eb3db9774c5004ba77cf7faeefd76fb22ce",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "procedure_policy::canonical::tests",
+      "selected": [
+        "procedure_policy::canonical::tests::canonical_owner_reuses_exact_inputs_and_rejects_mutation",
+        "procedure_policy::canonical::tests::prepared_replay_shares_input_owner_and_mutable_compatibility_detaches"
+      ],
+      "exit": 0,
+      "seconds": 0.03730699996231124,
+      "stdout": "\nrunning 2 tests\ntest procedure_policy::canonical::tests::canonical_owner_reuses_exact_inputs_and_rejects_mutation ... ok\ntest procedure_policy::canonical::tests::prepared_replay_shares_input_owner_and_mutable_compatibility_detaches ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 668 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "driver_facts::abi_artifacts::production_tests::real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature",
+      "selected": [
+        "driver_facts::abi_artifacts::production_tests::real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature"
+      ],
+      "exit": 0,
+      "seconds": 0.3701963999774307,
+      "stdout": "\nrunning 1 test\ntest driver_facts::abi_artifacts::production_tests::real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 669 filtered out; finished in 0.33s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "heap_census::resident_abi::tests",
+      "selected": [
+        "heap_census::resident_abi::tests::retained_input_capacity_and_abi_metadata_are_charged_without_serialization"
+      ],
+      "exit": 0,
+      "seconds": 0.03423680004198104,
+      "stdout": "\nrunning 1 test\ntest heap_census::resident_abi::tests::retained_input_capacity_and_abi_metadata_are_charged_without_serialization ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 669 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "lowering::symbolic_input::retained::tests",
+      "selected": [
+        "lowering::symbolic_input::retained::tests::replay_meaning_fast_equality_preserves_canonical_fallback_and_rejection",
+        "lowering::symbolic_input::retained::tests::symbolic_census_deduplicates_shared_records_and_counts_pruned_members"
+      ],
+      "exit": 0,
+      "seconds": 0.04664720001164824,
+      "stdout": "\nrunning 2 tests\ntest lowering::symbolic_input::retained::tests::replay_meaning_fast_equality_preserves_canonical_fallback_and_rejection ... ok\ntest lowering::symbolic_input::retained::tests::symbolic_census_deduplicates_shared_records_and_counts_pruned_members ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 668 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    }
+  ]
+}

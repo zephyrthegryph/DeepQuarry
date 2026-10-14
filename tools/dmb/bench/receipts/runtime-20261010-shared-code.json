@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "kind": "focused_runtime_gate",
+  "source_commit": "4ee86f9f90e929c0ffda879cd45097de9e177202",
+  "compiler": {
+    "path": "E:/dq-cache/dmb-native-v2/frozen-build/20261010-165957-3642b3ec.exe",
+    "sha256": "f88d3447e759703ecf39a60799ce9b71b1e207ce400b71c1be0e735f6b49e98e",
+    "acceptance_profile": false
+  },
+  "incremental_runtime": {
+    "path": "E:/dq-cache/dmb-incremental-runtime-contract/f2614d557eff43a2b5da2ec62bfc80e4/receipt.json",
+    "sha256": "6aa06d47407e0fbfbe2ff9d8e0e8b4e814f7652906eeebe04ba50fe76b046fea",
+    "complete": true,
+    "passed_revisions": 9,
+    "observations_per_revision": 8,
+    "retained_fresh_byte_equality": true,
+    "byond_retained_fresh_expected_runtime_values": true,
+    "scope": "Standalone semantic fixture before embedded-resource extension; not full game acceptance"
+  },
+  "parameter_diagnostic_probe": {
+    "path": "E:/dq-cache/dmb-parameter-diagnostics/a59729d4922645939d38de8772b3bd37/receipt.json",
+    "sha256": "3b4e77dc31186dd1258a2680704b85fa60bdebde67699bae3c235441b2ebb68e",
+    "complete": true,
+    "acceptance_agrees": false,
+    "proven_defects": [
+      "BYOND accepts duplicate formal parameter names and reads the last slot; native incorrectly rejects them",
+      "BYOND rejects local declarations conflicting with a formal parameter and reports its prior definition; native incorrectly accepts them"
+    ]
+  },
+  "full_game_acceptance": false,
+  "full_migration_acceptance": false,
+  "remaining": [
+    "Fix and repeat parameter probe with a newly frozen executable",
+    "Run extended embedded-resource incremental runtime corpus",
+    "Complete real native game suites and compare per-test errors",
+    "Validate six-worktree retained builds against fresh outputs"
+  ]
+}

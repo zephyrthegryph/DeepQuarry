@@ -1,0 +1,763 @@
+{
+  "version": 1,
+  "compiler": "BYOND 516.1687",
+  "results_path": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\results.json",
+  "results_sha256": "5b1997081e49938e42e5a267a013a5a68d6bd343bd6567b50726856b0c7d77dd",
+  "tools": {
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+  },
+  "cases": [
+    {
+      "id": "child-effects",
+      "observations": [
+        {
+          "label": "result",
+          "value": 2,
+          "expected": 2,
+          "matches_expected": 1
+        }
+      ],
+      "observations_path": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-child-effects\\byond-observations.json",
+      "observations_sha256": "bae22e364ef6f69b7bb252cbf937e32e5296a50d9a01e586fff686c6f15ae1d8",
+      "input_hashes": {
+        "runtime_common.dm": "107a8eed1353f611b7190cc12e6a380e9c2b75c75e621b584cf50a1795fa73dc",
+        "child-effects/child.dm": "69973c572daaea0005b15535dffa2f73cfac069a6f179fbca2ed88737355cd9b",
+        "child-effects/parent.dm": "5bfe17e6e066a5eff20c94610f0e54e9377c86d8d099393fe4c2caaa7784eea7",
+        "child-effects/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "child-effects/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "child-effects/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "conditional-boundary/child.dm": "ce8bd39fa5606fee7f29ceb3dcdf9d5b3d05411ebd03740fd54299ccef711641",
+        "conditional-boundary/phase0_preprocess.dme": "209c8f7262809145c7f4852a7939a19d83299ff3e9f2e3ae9cfc728a8ca936ff",
+        "conditional-boundary/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "conditional-boundary/runtime_observe.dm": "3f0114b18e672bdd3e17f114afa4d46aac445edd938ffb5b2e2651e422c08125",
+        "deferred-manifest/body.dm": "bb21465ed1515318d9b7bf675b3a681d8cf1796f06cf233990e2b4dc518d2523",
+        "deferred-manifest/phase0_preprocess.dme": "8dd55a10445c55678e7a50e8aa462e2f7ffb06bb0dd4333b449d3e64caa5342f",
+        "deferred-manifest/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "deferred-manifest/runtime_observe.dm": "c5f2be6039b98830f4e0a6fb59323a49b8f5f21c7d1a88b34fd6f661eaf7bc30",
+        "deferred-manifest/second.dme": "8e8352fcf82ad687549d97582a8b09254fc4141bb8331f2b2a53d3135d604e35",
+        "deferred-manifest/startup.dme": "50b91f1459b67ae8cd5bb3c19c1f0b2322cd6e2f2e94875b10fb4934a44f6e72",
+        "diagnostics/body.dm": "e35e9739acc30f41f7f56dd1f386cca839d7cf928c8b6cea34fe9107cb003816",
+        "diagnostics/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "file-dir-stack/child.dm": "6ab9cb000d40e1d558f304fcd17ee24df5a521f828c6f8a776fd1bd58561de82",
+        "file-dir-stack/phase0_preprocess.dme": "0300926dc10dab03b96eb12c9a80fe45634a84e65f50428cb703afe1a764dc57",
+        "file-dir-stack/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "file-dir-stack/runtime_observe.dm": "1c924f19f08d4662f22d35b40a4b70646a9de1cf51fe66247250a6cb85d52b60",
+        "incoming-internal/body.dm": "25f6ec30257e3d5cc45be70a60d66e7ff02e6567fb4d2407482d82ad74ef6eb6",
+        "incoming-internal/phase0_preprocess.dme": "e7562821dd99f3df69071c5f1a146b3821ffc36c427c7be1c2fc352003684006",
+        "incoming-internal/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "incoming-internal/runtime_observe.dm": "7b9828224d5e92ce2d202eeb1290e0d0fef1341759cb313eebe157f324de4545",
+        "joined-expression/members.dm": "5bfd5bdc5779dad2986a7af65a0b4c468c2bc274bb2ebca08725e689a55f44e7",
+        "joined-expression/operand.dm": "cb898749d76e51fdaf6c6636920ccdb4f415fc1cffd1e2497636b38cc2469807",
+        "joined-expression/parent.dm": "012fe22b50a6a435dc0ffaa453f29b495a34c724b44d8da52af19345c6e84718",
+        "joined-expression/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "joined-expression/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "joined-expression/runtime_observe.dm": "af5e362b4efac4f0ba619642977679b8ef1255a6460a2e9648ac84d0b54869f5",
+        "non-text/body.dm": "768609e229f936e595ff349ff21d7eb5394832f05808a2d95f07f74a42b5351e",
+        "non-text/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "non-text/phase0_preprocess_active.dme": "1b0c2356765bd01f0e350f986e2416a7c49efdf150b70e7849bea3c4a210a60f",
+        "paths-origins/phase0_preprocess.dme": "c58a78b67e3a8d5a37aa4b0b1ee4c07e642e4ff52110a44e7eda599191a5d7ce",
+        "paths-origins/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "paths-origins/runtime_observe.dm": "0bc518ec01311da22a296fa3edb560445c3669c77bc721ce5f3f7236d13738bb",
+        "repeated/body.dm": "3563e37985aa3bf583f7b3850c71f05be9198c9481ee9b567d77c049ee0f16f7",
+        "repeated/phase0_preprocess.dme": "981e9d024b545cd07e067b2c54f5c8f58dfe459154a2d4c16a2380815357b289",
+        "repeated/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "repeated/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "paths-origins/a/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "paths-origins/b/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "file-dir-stack/early/marker.txt": "1925258482b3f0de16a25dfabbbc729dccb3be00573ef48e0f687afc252bb44b",
+        "file-dir-stack/late/marker.txt": "f152945b358aa26a9e72e25381deff94e254c547089bd690dccd218e9414d148"
+      },
+      "compile": {
+        "exit_code": 0,
+        "seconds": 0.49131860000488814,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-child-effects\\source\\child-effects\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-child-effects\\byond-compile.log",
+        "log_sha256": "cfdbf4a9f30fea66af21e1456b30f7eeb642b657a03bdcc29185b030acd1401e"
+      },
+      "runtime": {
+        "exit_code": 0,
+        "seconds": 1.7707567000034032,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-child-effects\\source\\child-effects\\phase0_runtime.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-child-effects\\byond-runtime.log",
+        "log_sha256": "a658f3995260c371f7288feebd0ba54b9ce4a42316a86e38ad0431d8ce458979"
+      }
+    },
+    {
+      "id": "incoming-internal",
+      "observations": [
+        {
+          "label": "result",
+          "value": 7,
+          "expected": 7,
+          "matches_expected": 1
+        },
+        {
+          "label": "conditional_present",
+          "value": 0,
+          "expected": 0,
+          "matches_expected": 1
+        },
+        {
+          "label": "unexpected_present",
+          "value": 0,
+          "expected": 0,
+          "matches_expected": 1
+        }
+      ],
+      "observations_path": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-incoming-internal\\byond-observations.json",
+      "observations_sha256": "4b3769a174ee70e1378fc6018e08046fea6dd0382fda5cdff91129db0b4f9b8d",
+      "input_hashes": {
+        "runtime_common.dm": "107a8eed1353f611b7190cc12e6a380e9c2b75c75e621b584cf50a1795fa73dc",
+        "child-effects/child.dm": "69973c572daaea0005b15535dffa2f73cfac069a6f179fbca2ed88737355cd9b",
+        "child-effects/parent.dm": "5bfe17e6e066a5eff20c94610f0e54e9377c86d8d099393fe4c2caaa7784eea7",
+        "child-effects/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "child-effects/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "child-effects/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "conditional-boundary/child.dm": "ce8bd39fa5606fee7f29ceb3dcdf9d5b3d05411ebd03740fd54299ccef711641",
+        "conditional-boundary/phase0_preprocess.dme": "209c8f7262809145c7f4852a7939a19d83299ff3e9f2e3ae9cfc728a8ca936ff",
+        "conditional-boundary/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "conditional-boundary/runtime_observe.dm": "3f0114b18e672bdd3e17f114afa4d46aac445edd938ffb5b2e2651e422c08125",
+        "deferred-manifest/body.dm": "bb21465ed1515318d9b7bf675b3a681d8cf1796f06cf233990e2b4dc518d2523",
+        "deferred-manifest/phase0_preprocess.dme": "8dd55a10445c55678e7a50e8aa462e2f7ffb06bb0dd4333b449d3e64caa5342f",
+        "deferred-manifest/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "deferred-manifest/runtime_observe.dm": "c5f2be6039b98830f4e0a6fb59323a49b8f5f21c7d1a88b34fd6f661eaf7bc30",
+        "deferred-manifest/second.dme": "8e8352fcf82ad687549d97582a8b09254fc4141bb8331f2b2a53d3135d604e35",
+        "deferred-manifest/startup.dme": "50b91f1459b67ae8cd5bb3c19c1f0b2322cd6e2f2e94875b10fb4934a44f6e72",
+        "diagnostics/body.dm": "e35e9739acc30f41f7f56dd1f386cca839d7cf928c8b6cea34fe9107cb003816",
+        "diagnostics/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "file-dir-stack/child.dm": "6ab9cb000d40e1d558f304fcd17ee24df5a521f828c6f8a776fd1bd58561de82",
+        "file-dir-stack/phase0_preprocess.dme": "0300926dc10dab03b96eb12c9a80fe45634a84e65f50428cb703afe1a764dc57",
+        "file-dir-stack/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "file-dir-stack/runtime_observe.dm": "1c924f19f08d4662f22d35b40a4b70646a9de1cf51fe66247250a6cb85d52b60",
+        "incoming-internal/body.dm": "25f6ec30257e3d5cc45be70a60d66e7ff02e6567fb4d2407482d82ad74ef6eb6",
+        "incoming-internal/phase0_preprocess.dme": "e7562821dd99f3df69071c5f1a146b3821ffc36c427c7be1c2fc352003684006",
+        "incoming-internal/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "incoming-internal/runtime_observe.dm": "7b9828224d5e92ce2d202eeb1290e0d0fef1341759cb313eebe157f324de4545",
+        "joined-expression/members.dm": "5bfd5bdc5779dad2986a7af65a0b4c468c2bc274bb2ebca08725e689a55f44e7",
+        "joined-expression/operand.dm": "cb898749d76e51fdaf6c6636920ccdb4f415fc1cffd1e2497636b38cc2469807",
+        "joined-expression/parent.dm": "012fe22b50a6a435dc0ffaa453f29b495a34c724b44d8da52af19345c6e84718",
+        "joined-expression/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "joined-expression/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "joined-expression/runtime_observe.dm": "af5e362b4efac4f0ba619642977679b8ef1255a6460a2e9648ac84d0b54869f5",
+        "non-text/body.dm": "768609e229f936e595ff349ff21d7eb5394832f05808a2d95f07f74a42b5351e",
+        "non-text/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "non-text/phase0_preprocess_active.dme": "1b0c2356765bd01f0e350f986e2416a7c49efdf150b70e7849bea3c4a210a60f",
+        "paths-origins/phase0_preprocess.dme": "c58a78b67e3a8d5a37aa4b0b1ee4c07e642e4ff52110a44e7eda599191a5d7ce",
+        "paths-origins/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "paths-origins/runtime_observe.dm": "0bc518ec01311da22a296fa3edb560445c3669c77bc721ce5f3f7236d13738bb",
+        "repeated/body.dm": "3563e37985aa3bf583f7b3850c71f05be9198c9481ee9b567d77c049ee0f16f7",
+        "repeated/phase0_preprocess.dme": "981e9d024b545cd07e067b2c54f5c8f58dfe459154a2d4c16a2380815357b289",
+        "repeated/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "repeated/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "paths-origins/a/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "paths-origins/b/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "file-dir-stack/early/marker.txt": "1925258482b3f0de16a25dfabbbc729dccb3be00573ef48e0f687afc252bb44b",
+        "file-dir-stack/late/marker.txt": "f152945b358aa26a9e72e25381deff94e254c547089bd690dccd218e9414d148"
+      },
+      "compile": {
+        "exit_code": 0,
+        "seconds": 0.4196029000013368,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-incoming-internal\\source\\incoming-internal\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-incoming-internal\\byond-compile.log",
+        "log_sha256": "cfdbf4a9f30fea66af21e1456b30f7eeb642b657a03bdcc29185b030acd1401e"
+      },
+      "runtime": {
+        "exit_code": 0,
+        "seconds": 1.2041347000049427,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-incoming-internal\\source\\incoming-internal\\phase0_runtime.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-incoming-internal\\byond-runtime.log",
+        "log_sha256": "9b847de146276947eefde5b65e7f62ac5cae4357641a0b2ce037d2ed0b379a38"
+      }
+    },
+    {
+      "id": "repeated",
+      "observations": [
+        {
+          "label": "result",
+          "value": 1,
+          "expected": 2,
+          "matches_expected": 0
+        }
+      ],
+      "observations_path": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-repeated\\byond-observations.json",
+      "observations_sha256": "549137cb3f4216a58e2fae565ae28df01daebb2c93e0757176dae18a921979e7",
+      "input_hashes": {
+        "runtime_common.dm": "107a8eed1353f611b7190cc12e6a380e9c2b75c75e621b584cf50a1795fa73dc",
+        "child-effects/child.dm": "69973c572daaea0005b15535dffa2f73cfac069a6f179fbca2ed88737355cd9b",
+        "child-effects/parent.dm": "5bfe17e6e066a5eff20c94610f0e54e9377c86d8d099393fe4c2caaa7784eea7",
+        "child-effects/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "child-effects/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "child-effects/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "conditional-boundary/child.dm": "ce8bd39fa5606fee7f29ceb3dcdf9d5b3d05411ebd03740fd54299ccef711641",
+        "conditional-boundary/phase0_preprocess.dme": "209c8f7262809145c7f4852a7939a19d83299ff3e9f2e3ae9cfc728a8ca936ff",
+        "conditional-boundary/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "conditional-boundary/runtime_observe.dm": "3f0114b18e672bdd3e17f114afa4d46aac445edd938ffb5b2e2651e422c08125",
+        "deferred-manifest/body.dm": "bb21465ed1515318d9b7bf675b3a681d8cf1796f06cf233990e2b4dc518d2523",
+        "deferred-manifest/phase0_preprocess.dme": "8dd55a10445c55678e7a50e8aa462e2f7ffb06bb0dd4333b449d3e64caa5342f",
+        "deferred-manifest/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "deferred-manifest/runtime_observe.dm": "c5f2be6039b98830f4e0a6fb59323a49b8f5f21c7d1a88b34fd6f661eaf7bc30",
+        "deferred-manifest/second.dme": "8e8352fcf82ad687549d97582a8b09254fc4141bb8331f2b2a53d3135d604e35",
+        "deferred-manifest/startup.dme": "50b91f1459b67ae8cd5bb3c19c1f0b2322cd6e2f2e94875b10fb4934a44f6e72",
+        "diagnostics/body.dm": "e35e9739acc30f41f7f56dd1f386cca839d7cf928c8b6cea34fe9107cb003816",
+        "diagnostics/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "file-dir-stack/child.dm": "6ab9cb000d40e1d558f304fcd17ee24df5a521f828c6f8a776fd1bd58561de82",
+        "file-dir-stack/phase0_preprocess.dme": "0300926dc10dab03b96eb12c9a80fe45634a84e65f50428cb703afe1a764dc57",
+        "file-dir-stack/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "file-dir-stack/runtime_observe.dm": "1c924f19f08d4662f22d35b40a4b70646a9de1cf51fe66247250a6cb85d52b60",
+        "incoming-internal/body.dm": "25f6ec30257e3d5cc45be70a60d66e7ff02e6567fb4d2407482d82ad74ef6eb6",
+        "incoming-internal/phase0_preprocess.dme": "e7562821dd99f3df69071c5f1a146b3821ffc36c427c7be1c2fc352003684006",
+        "incoming-internal/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "incoming-internal/runtime_observe.dm": "7b9828224d5e92ce2d202eeb1290e0d0fef1341759cb313eebe157f324de4545",
+        "joined-expression/members.dm": "5bfd5bdc5779dad2986a7af65a0b4c468c2bc274bb2ebca08725e689a55f44e7",
+        "joined-expression/operand.dm": "cb898749d76e51fdaf6c6636920ccdb4f415fc1cffd1e2497636b38cc2469807",
+        "joined-expression/parent.dm": "012fe22b50a6a435dc0ffaa453f29b495a34c724b44d8da52af19345c6e84718",
+        "joined-expression/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "joined-expression/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "joined-expression/runtime_observe.dm": "af5e362b4efac4f0ba619642977679b8ef1255a6460a2e9648ac84d0b54869f5",
+        "non-text/body.dm": "768609e229f936e595ff349ff21d7eb5394832f05808a2d95f07f74a42b5351e",
+        "non-text/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "non-text/phase0_preprocess_active.dme": "1b0c2356765bd01f0e350f986e2416a7c49efdf150b70e7849bea3c4a210a60f",
+        "paths-origins/phase0_preprocess.dme": "c58a78b67e3a8d5a37aa4b0b1ee4c07e642e4ff52110a44e7eda599191a5d7ce",
+        "paths-origins/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "paths-origins/runtime_observe.dm": "0bc518ec01311da22a296fa3edb560445c3669c77bc721ce5f3f7236d13738bb",
+        "repeated/body.dm": "3563e37985aa3bf583f7b3850c71f05be9198c9481ee9b567d77c049ee0f16f7",
+        "repeated/phase0_preprocess.dme": "981e9d024b545cd07e067b2c54f5c8f58dfe459154a2d4c16a2380815357b289",
+        "repeated/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "repeated/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "paths-origins/a/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "paths-origins/b/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "file-dir-stack/early/marker.txt": "1925258482b3f0de16a25dfabbbc729dccb3be00573ef48e0f687afc252bb44b",
+        "file-dir-stack/late/marker.txt": "f152945b358aa26a9e72e25381deff94e254c547089bd690dccd218e9414d148"
+      },
+      "compile": {
+        "exit_code": 0,
+        "seconds": 0.4861166000046069,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-repeated\\source\\repeated\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-repeated\\byond-compile.log",
+        "log_sha256": "cfdbf4a9f30fea66af21e1456b30f7eeb642b657a03bdcc29185b030acd1401e"
+      },
+      "runtime": {
+        "exit_code": 0,
+        "seconds": 1.6208696000103373,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-repeated\\source\\repeated\\phase0_runtime.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-repeated\\byond-runtime.log",
+        "log_sha256": "9843ae504c7917645c5a88f9694265879ddd16d0464dda8a98427cf90c0d9f1b"
+      }
+    },
+    {
+      "id": "conditional-boundary",
+      "observations": [
+        {
+          "label": "after",
+          "value": 2,
+          "expected": 2,
+          "matches_expected": 1
+        }
+      ],
+      "observations_path": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-conditional-boundary\\byond-observations.json",
+      "observations_sha256": "99573a7b7c21fc038e3f8eff25b9a630d477951637a8bb610edbe59f294028eb",
+      "input_hashes": {
+        "runtime_common.dm": "107a8eed1353f611b7190cc12e6a380e9c2b75c75e621b584cf50a1795fa73dc",
+        "child-effects/child.dm": "69973c572daaea0005b15535dffa2f73cfac069a6f179fbca2ed88737355cd9b",
+        "child-effects/parent.dm": "5bfe17e6e066a5eff20c94610f0e54e9377c86d8d099393fe4c2caaa7784eea7",
+        "child-effects/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "child-effects/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "child-effects/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "conditional-boundary/child.dm": "ce8bd39fa5606fee7f29ceb3dcdf9d5b3d05411ebd03740fd54299ccef711641",
+        "conditional-boundary/phase0_preprocess.dme": "209c8f7262809145c7f4852a7939a19d83299ff3e9f2e3ae9cfc728a8ca936ff",
+        "conditional-boundary/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "conditional-boundary/runtime_observe.dm": "3f0114b18e672bdd3e17f114afa4d46aac445edd938ffb5b2e2651e422c08125",
+        "deferred-manifest/body.dm": "bb21465ed1515318d9b7bf675b3a681d8cf1796f06cf233990e2b4dc518d2523",
+        "deferred-manifest/phase0_preprocess.dme": "8dd55a10445c55678e7a50e8aa462e2f7ffb06bb0dd4333b449d3e64caa5342f",
+        "deferred-manifest/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "deferred-manifest/runtime_observe.dm": "c5f2be6039b98830f4e0a6fb59323a49b8f5f21c7d1a88b34fd6f661eaf7bc30",
+        "deferred-manifest/second.dme": "8e8352fcf82ad687549d97582a8b09254fc4141bb8331f2b2a53d3135d604e35",
+        "deferred-manifest/startup.dme": "50b91f1459b67ae8cd5bb3c19c1f0b2322cd6e2f2e94875b10fb4934a44f6e72",
+        "diagnostics/body.dm": "e35e9739acc30f41f7f56dd1f386cca839d7cf928c8b6cea34fe9107cb003816",
+        "diagnostics/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "file-dir-stack/child.dm": "6ab9cb000d40e1d558f304fcd17ee24df5a521f828c6f8a776fd1bd58561de82",
+        "file-dir-stack/phase0_preprocess.dme": "0300926dc10dab03b96eb12c9a80fe45634a84e65f50428cb703afe1a764dc57",
+        "file-dir-stack/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "file-dir-stack/runtime_observe.dm": "1c924f19f08d4662f22d35b40a4b70646a9de1cf51fe66247250a6cb85d52b60",
+        "incoming-internal/body.dm": "25f6ec30257e3d5cc45be70a60d66e7ff02e6567fb4d2407482d82ad74ef6eb6",
+        "incoming-internal/phase0_preprocess.dme": "e7562821dd99f3df69071c5f1a146b3821ffc36c427c7be1c2fc352003684006",
+        "incoming-internal/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "incoming-internal/runtime_observe.dm": "7b9828224d5e92ce2d202eeb1290e0d0fef1341759cb313eebe157f324de4545",
+        "joined-expression/members.dm": "5bfd5bdc5779dad2986a7af65a0b4c468c2bc274bb2ebca08725e689a55f44e7",
+        "joined-expression/operand.dm": "cb898749d76e51fdaf6c6636920ccdb4f415fc1cffd1e2497636b38cc2469807",
+        "joined-expression/parent.dm": "012fe22b50a6a435dc0ffaa453f29b495a34c724b44d8da52af19345c6e84718",
+        "joined-expression/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "joined-expression/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "joined-expression/runtime_observe.dm": "af5e362b4efac4f0ba619642977679b8ef1255a6460a2e9648ac84d0b54869f5",
+        "non-text/body.dm": "768609e229f936e595ff349ff21d7eb5394832f05808a2d95f07f74a42b5351e",
+        "non-text/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "non-text/phase0_preprocess_active.dme": "1b0c2356765bd01f0e350f986e2416a7c49efdf150b70e7849bea3c4a210a60f",
+        "paths-origins/phase0_preprocess.dme": "c58a78b67e3a8d5a37aa4b0b1ee4c07e642e4ff52110a44e7eda599191a5d7ce",
+        "paths-origins/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "paths-origins/runtime_observe.dm": "0bc518ec01311da22a296fa3edb560445c3669c77bc721ce5f3f7236d13738bb",
+        "repeated/body.dm": "3563e37985aa3bf583f7b3850c71f05be9198c9481ee9b567d77c049ee0f16f7",
+        "repeated/phase0_preprocess.dme": "981e9d024b545cd07e067b2c54f5c8f58dfe459154a2d4c16a2380815357b289",
+        "repeated/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "repeated/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "paths-origins/a/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "paths-origins/b/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "file-dir-stack/early/marker.txt": "1925258482b3f0de16a25dfabbbc729dccb3be00573ef48e0f687afc252bb44b",
+        "file-dir-stack/late/marker.txt": "f152945b358aa26a9e72e25381deff94e254c547089bd690dccd218e9414d148"
+      },
+      "compile": {
+        "exit_code": 0,
+        "seconds": 0.6070697999966796,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-conditional-boundary\\source\\conditional-boundary\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-conditional-boundary\\byond-compile.log",
+        "log_sha256": "cfdbf4a9f30fea66af21e1456b30f7eeb642b657a03bdcc29185b030acd1401e"
+      },
+      "runtime": {
+        "exit_code": 0,
+        "seconds": 1.4815948999894317,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-conditional-boundary\\source\\conditional-boundary\\phase0_runtime.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-conditional-boundary\\byond-runtime.log",
+        "log_sha256": "5296508dd271c5e57844d991ab07f835ffe0519fc7a52f75fd584e1f47612df2"
+      }
+    },
+    {
+      "id": "joined-expression",
+      "observations": [
+        {
+          "label": "result",
+          "value": 3,
+          "expected": 3,
+          "matches_expected": 1
+        },
+        {
+          "label": "member",
+          "value": 3,
+          "expected": 3,
+          "matches_expected": 1
+        }
+      ],
+      "observations_path": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-joined-expression\\byond-observations.json",
+      "observations_sha256": "b90c75b29236d2392ab7dc190228377fd9a8b81cef8739a7690db1a8555d461e",
+      "input_hashes": {
+        "runtime_common.dm": "107a8eed1353f611b7190cc12e6a380e9c2b75c75e621b584cf50a1795fa73dc",
+        "child-effects/child.dm": "69973c572daaea0005b15535dffa2f73cfac069a6f179fbca2ed88737355cd9b",
+        "child-effects/parent.dm": "5bfe17e6e066a5eff20c94610f0e54e9377c86d8d099393fe4c2caaa7784eea7",
+        "child-effects/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "child-effects/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "child-effects/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "conditional-boundary/child.dm": "ce8bd39fa5606fee7f29ceb3dcdf9d5b3d05411ebd03740fd54299ccef711641",
+        "conditional-boundary/phase0_preprocess.dme": "209c8f7262809145c7f4852a7939a19d83299ff3e9f2e3ae9cfc728a8ca936ff",
+        "conditional-boundary/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "conditional-boundary/runtime_observe.dm": "3f0114b18e672bdd3e17f114afa4d46aac445edd938ffb5b2e2651e422c08125",
+        "deferred-manifest/body.dm": "bb21465ed1515318d9b7bf675b3a681d8cf1796f06cf233990e2b4dc518d2523",
+        "deferred-manifest/phase0_preprocess.dme": "8dd55a10445c55678e7a50e8aa462e2f7ffb06bb0dd4333b449d3e64caa5342f",
+        "deferred-manifest/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "deferred-manifest/runtime_observe.dm": "c5f2be6039b98830f4e0a6fb59323a49b8f5f21c7d1a88b34fd6f661eaf7bc30",
+        "deferred-manifest/second.dme": "8e8352fcf82ad687549d97582a8b09254fc4141bb8331f2b2a53d3135d604e35",
+        "deferred-manifest/startup.dme": "50b91f1459b67ae8cd5bb3c19c1f0b2322cd6e2f2e94875b10fb4934a44f6e72",
+        "diagnostics/body.dm": "e35e9739acc30f41f7f56dd1f386cca839d7cf928c8b6cea34fe9107cb003816",
+        "diagnostics/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "file-dir-stack/child.dm": "6ab9cb000d40e1d558f304fcd17ee24df5a521f828c6f8a776fd1bd58561de82",
+        "file-dir-stack/phase0_preprocess.dme": "0300926dc10dab03b96eb12c9a80fe45634a84e65f50428cb703afe1a764dc57",
+        "file-dir-stack/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "file-dir-stack/runtime_observe.dm": "1c924f19f08d4662f22d35b40a4b70646a9de1cf51fe66247250a6cb85d52b60",
+        "incoming-internal/body.dm": "25f6ec30257e3d5cc45be70a60d66e7ff02e6567fb4d2407482d82ad74ef6eb6",
+        "incoming-internal/phase0_preprocess.dme": "e7562821dd99f3df69071c5f1a146b3821ffc36c427c7be1c2fc352003684006",
+        "incoming-internal/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "incoming-internal/runtime_observe.dm": "7b9828224d5e92ce2d202eeb1290e0d0fef1341759cb313eebe157f324de4545",
+        "joined-expression/members.dm": "5bfd5bdc5779dad2986a7af65a0b4c468c2bc274bb2ebca08725e689a55f44e7",
+        "joined-expression/operand.dm": "cb898749d76e51fdaf6c6636920ccdb4f415fc1cffd1e2497636b38cc2469807",
+        "joined-expression/parent.dm": "012fe22b50a6a435dc0ffaa453f29b495a34c724b44d8da52af19345c6e84718",
+        "joined-expression/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "joined-expression/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "joined-expression/runtime_observe.dm": "af5e362b4efac4f0ba619642977679b8ef1255a6460a2e9648ac84d0b54869f5",
+        "non-text/body.dm": "768609e229f936e595ff349ff21d7eb5394832f05808a2d95f07f74a42b5351e",
+        "non-text/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "non-text/phase0_preprocess_active.dme": "1b0c2356765bd01f0e350f986e2416a7c49efdf150b70e7849bea3c4a210a60f",
+        "paths-origins/phase0_preprocess.dme": "c58a78b67e3a8d5a37aa4b0b1ee4c07e642e4ff52110a44e7eda599191a5d7ce",
+        "paths-origins/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "paths-origins/runtime_observe.dm": "0bc518ec01311da22a296fa3edb560445c3669c77bc721ce5f3f7236d13738bb",
+        "repeated/body.dm": "3563e37985aa3bf583f7b3850c71f05be9198c9481ee9b567d77c049ee0f16f7",
+        "repeated/phase0_preprocess.dme": "981e9d024b545cd07e067b2c54f5c8f58dfe459154a2d4c16a2380815357b289",
+        "repeated/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "repeated/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "paths-origins/a/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "paths-origins/b/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "file-dir-stack/early/marker.txt": "1925258482b3f0de16a25dfabbbc729dccb3be00573ef48e0f687afc252bb44b",
+        "file-dir-stack/late/marker.txt": "f152945b358aa26a9e72e25381deff94e254c547089bd690dccd218e9414d148"
+      },
+      "compile": {
+        "exit_code": 0,
+        "seconds": 0.40689119999296963,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-joined-expression\\source\\joined-expression\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-joined-expression\\byond-compile.log",
+        "log_sha256": "4d6f56b80fd800cdcfe888fa28f3487731b146f2ced200cc3ab81d62ba9db9b1"
+      },
+      "runtime": {
+        "exit_code": 0,
+        "seconds": 1.8755347000114853,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-joined-expression\\source\\joined-expression\\phase0_runtime.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-joined-expression\\byond-runtime.log",
+        "log_sha256": "142cf9c36276bfac13e3075c35db6ccc99dcb17048b16a77089f1a66a0e452d1"
+      }
+    },
+    {
+      "id": "file-dir-stack",
+      "observations": [
+        {
+          "label": "during_text",
+          "value": "earl",
+          "expected": "late",
+          "matches_expected": 0
+        },
+        {
+          "label": "after_text",
+          "value": "early",
+          "expected": "early",
+          "matches_expected": 1
+        }
+      ],
+      "observations_path": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-file-dir-stack\\byond-observations.json",
+      "observations_sha256": "541b52eaa9937a6fd5a4338627c4c3629dfffa88d217c2632e771b0b16216a0f",
+      "input_hashes": {
+        "runtime_common.dm": "107a8eed1353f611b7190cc12e6a380e9c2b75c75e621b584cf50a1795fa73dc",
+        "child-effects/child.dm": "69973c572daaea0005b15535dffa2f73cfac069a6f179fbca2ed88737355cd9b",
+        "child-effects/parent.dm": "5bfe17e6e066a5eff20c94610f0e54e9377c86d8d099393fe4c2caaa7784eea7",
+        "child-effects/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "child-effects/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "child-effects/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "conditional-boundary/child.dm": "ce8bd39fa5606fee7f29ceb3dcdf9d5b3d05411ebd03740fd54299ccef711641",
+        "conditional-boundary/phase0_preprocess.dme": "209c8f7262809145c7f4852a7939a19d83299ff3e9f2e3ae9cfc728a8ca936ff",
+        "conditional-boundary/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "conditional-boundary/runtime_observe.dm": "3f0114b18e672bdd3e17f114afa4d46aac445edd938ffb5b2e2651e422c08125",
+        "deferred-manifest/body.dm": "bb21465ed1515318d9b7bf675b3a681d8cf1796f06cf233990e2b4dc518d2523",
+        "deferred-manifest/phase0_preprocess.dme": "8dd55a10445c55678e7a50e8aa462e2f7ffb06bb0dd4333b449d3e64caa5342f",
+        "deferred-manifest/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "deferred-manifest/runtime_observe.dm": "c5f2be6039b98830f4e0a6fb59323a49b8f5f21c7d1a88b34fd6f661eaf7bc30",
+        "deferred-manifest/second.dme": "8e8352fcf82ad687549d97582a8b09254fc4141bb8331f2b2a53d3135d604e35",
+        "deferred-manifest/startup.dme": "50b91f1459b67ae8cd5bb3c19c1f0b2322cd6e2f2e94875b10fb4934a44f6e72",
+        "diagnostics/body.dm": "e35e9739acc30f41f7f56dd1f386cca839d7cf928c8b6cea34fe9107cb003816",
+        "diagnostics/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "file-dir-stack/child.dm": "6ab9cb000d40e1d558f304fcd17ee24df5a521f828c6f8a776fd1bd58561de82",
+        "file-dir-stack/phase0_preprocess.dme": "0300926dc10dab03b96eb12c9a80fe45634a84e65f50428cb703afe1a764dc57",
+        "file-dir-stack/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "file-dir-stack/runtime_observe.dm": "1c924f19f08d4662f22d35b40a4b70646a9de1cf51fe66247250a6cb85d52b60",
+        "incoming-internal/body.dm": "25f6ec30257e3d5cc45be70a60d66e7ff02e6567fb4d2407482d82ad74ef6eb6",
+        "incoming-internal/phase0_preprocess.dme": "e7562821dd99f3df69071c5f1a146b3821ffc36c427c7be1c2fc352003684006",
+        "incoming-internal/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "incoming-internal/runtime_observe.dm": "7b9828224d5e92ce2d202eeb1290e0d0fef1341759cb313eebe157f324de4545",
+        "joined-expression/members.dm": "5bfd5bdc5779dad2986a7af65a0b4c468c2bc274bb2ebca08725e689a55f44e7",
+        "joined-expression/operand.dm": "cb898749d76e51fdaf6c6636920ccdb4f415fc1cffd1e2497636b38cc2469807",
+        "joined-expression/parent.dm": "012fe22b50a6a435dc0ffaa453f29b495a34c724b44d8da52af19345c6e84718",
+        "joined-expression/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "joined-expression/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "joined-expression/runtime_observe.dm": "af5e362b4efac4f0ba619642977679b8ef1255a6460a2e9648ac84d0b54869f5",
+        "non-text/body.dm": "768609e229f936e595ff349ff21d7eb5394832f05808a2d95f07f74a42b5351e",
+        "non-text/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "non-text/phase0_preprocess_active.dme": "1b0c2356765bd01f0e350f986e2416a7c49efdf150b70e7849bea3c4a210a60f",
+        "paths-origins/phase0_preprocess.dme": "c58a78b67e3a8d5a37aa4b0b1ee4c07e642e4ff52110a44e7eda599191a5d7ce",
+        "paths-origins/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "paths-origins/runtime_observe.dm": "0bc518ec01311da22a296fa3edb560445c3669c77bc721ce5f3f7236d13738bb",
+        "repeated/body.dm": "3563e37985aa3bf583f7b3850c71f05be9198c9481ee9b567d77c049ee0f16f7",
+        "repeated/phase0_preprocess.dme": "981e9d024b545cd07e067b2c54f5c8f58dfe459154a2d4c16a2380815357b289",
+        "repeated/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "repeated/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "paths-origins/a/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "paths-origins/b/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "file-dir-stack/early/marker.txt": "1925258482b3f0de16a25dfabbbc729dccb3be00573ef48e0f687afc252bb44b",
+        "file-dir-stack/late/marker.txt": "f152945b358aa26a9e72e25381deff94e254c547089bd690dccd218e9414d148"
+      },
+      "compile": {
+        "exit_code": 0,
+        "seconds": 1.0213579000119353,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-file-dir-stack\\source\\file-dir-stack\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-file-dir-stack\\byond-compile.log",
+        "log_sha256": "cfdbf4a9f30fea66af21e1456b30f7eeb642b657a03bdcc29185b030acd1401e"
+      },
+      "runtime": {
+        "exit_code": 0,
+        "seconds": 1.494135399989318,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-file-dir-stack\\source\\file-dir-stack\\phase0_runtime.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-file-dir-stack\\byond-runtime.log",
+        "log_sha256": "d98bde4799d1a9293cd7adbc6c38d15555a631f936559a91705e27d6b67f12ab"
+      }
+    },
+    {
+      "id": "paths-origins",
+      "observations": [
+        {
+          "label": "a_file_suffix",
+          "value": "a/body.dm",
+          "expected": "a/body.dm",
+          "matches_expected": 1
+        },
+        {
+          "label": "a_line",
+          "value": 2,
+          "expected": 2,
+          "matches_expected": 1
+        },
+        {
+          "label": "b_file_suffix",
+          "value": "b/body.dm",
+          "expected": "b/body.dm",
+          "matches_expected": 1
+        },
+        {
+          "label": "b_line",
+          "value": 2,
+          "expected": 2,
+          "matches_expected": 1
+        }
+      ],
+      "observations_path": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-paths-origins\\byond-observations.json",
+      "observations_sha256": "7b3251449563b27525682104c389fb7a5feb8df84097265b0a0f247cb9c256e6",
+      "input_hashes": {
+        "runtime_common.dm": "107a8eed1353f611b7190cc12e6a380e9c2b75c75e621b584cf50a1795fa73dc",
+        "child-effects/child.dm": "69973c572daaea0005b15535dffa2f73cfac069a6f179fbca2ed88737355cd9b",
+        "child-effects/parent.dm": "5bfe17e6e066a5eff20c94610f0e54e9377c86d8d099393fe4c2caaa7784eea7",
+        "child-effects/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "child-effects/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "child-effects/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "conditional-boundary/child.dm": "ce8bd39fa5606fee7f29ceb3dcdf9d5b3d05411ebd03740fd54299ccef711641",
+        "conditional-boundary/phase0_preprocess.dme": "209c8f7262809145c7f4852a7939a19d83299ff3e9f2e3ae9cfc728a8ca936ff",
+        "conditional-boundary/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "conditional-boundary/runtime_observe.dm": "3f0114b18e672bdd3e17f114afa4d46aac445edd938ffb5b2e2651e422c08125",
+        "deferred-manifest/body.dm": "bb21465ed1515318d9b7bf675b3a681d8cf1796f06cf233990e2b4dc518d2523",
+        "deferred-manifest/phase0_preprocess.dme": "8dd55a10445c55678e7a50e8aa462e2f7ffb06bb0dd4333b449d3e64caa5342f",
+        "deferred-manifest/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "deferred-manifest/runtime_observe.dm": "c5f2be6039b98830f4e0a6fb59323a49b8f5f21c7d1a88b34fd6f661eaf7bc30",
+        "deferred-manifest/second.dme": "8e8352fcf82ad687549d97582a8b09254fc4141bb8331f2b2a53d3135d604e35",
+        "deferred-manifest/startup.dme": "50b91f1459b67ae8cd5bb3c19c1f0b2322cd6e2f2e94875b10fb4934a44f6e72",
+        "diagnostics/body.dm": "e35e9739acc30f41f7f56dd1f386cca839d7cf928c8b6cea34fe9107cb003816",
+        "diagnostics/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "file-dir-stack/child.dm": "6ab9cb000d40e1d558f304fcd17ee24df5a521f828c6f8a776fd1bd58561de82",
+        "file-dir-stack/phase0_preprocess.dme": "0300926dc10dab03b96eb12c9a80fe45634a84e65f50428cb703afe1a764dc57",
+        "file-dir-stack/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "file-dir-stack/runtime_observe.dm": "1c924f19f08d4662f22d35b40a4b70646a9de1cf51fe66247250a6cb85d52b60",
+        "incoming-internal/body.dm": "25f6ec30257e3d5cc45be70a60d66e7ff02e6567fb4d2407482d82ad74ef6eb6",
+        "incoming-internal/phase0_preprocess.dme": "e7562821dd99f3df69071c5f1a146b3821ffc36c427c7be1c2fc352003684006",
+        "incoming-internal/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "incoming-internal/runtime_observe.dm": "7b9828224d5e92ce2d202eeb1290e0d0fef1341759cb313eebe157f324de4545",
+        "joined-expression/members.dm": "5bfd5bdc5779dad2986a7af65a0b4c468c2bc274bb2ebca08725e689a55f44e7",
+        "joined-expression/operand.dm": "cb898749d76e51fdaf6c6636920ccdb4f415fc1cffd1e2497636b38cc2469807",
+        "joined-expression/parent.dm": "012fe22b50a6a435dc0ffaa453f29b495a34c724b44d8da52af19345c6e84718",
+        "joined-expression/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "joined-expression/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "joined-expression/runtime_observe.dm": "af5e362b4efac4f0ba619642977679b8ef1255a6460a2e9648ac84d0b54869f5",
+        "non-text/body.dm": "768609e229f936e595ff349ff21d7eb5394832f05808a2d95f07f74a42b5351e",
+        "non-text/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "non-text/phase0_preprocess_active.dme": "1b0c2356765bd01f0e350f986e2416a7c49efdf150b70e7849bea3c4a210a60f",
+        "paths-origins/phase0_preprocess.dme": "c58a78b67e3a8d5a37aa4b0b1ee4c07e642e4ff52110a44e7eda599191a5d7ce",
+        "paths-origins/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "paths-origins/runtime_observe.dm": "0bc518ec01311da22a296fa3edb560445c3669c77bc721ce5f3f7236d13738bb",
+        "repeated/body.dm": "3563e37985aa3bf583f7b3850c71f05be9198c9481ee9b567d77c049ee0f16f7",
+        "repeated/phase0_preprocess.dme": "981e9d024b545cd07e067b2c54f5c8f58dfe459154a2d4c16a2380815357b289",
+        "repeated/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "repeated/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "paths-origins/a/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "paths-origins/b/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "file-dir-stack/early/marker.txt": "1925258482b3f0de16a25dfabbbc729dccb3be00573ef48e0f687afc252bb44b",
+        "file-dir-stack/late/marker.txt": "f152945b358aa26a9e72e25381deff94e254c547089bd690dccd218e9414d148"
+      },
+      "compile": {
+        "exit_code": 0,
+        "seconds": 0.8947785000054864,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-paths-origins\\source\\paths-origins\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-paths-origins\\byond-compile.log",
+        "log_sha256": "1de275e7958d9a5dce8b2be0e6955d31ab0be1a8926b5c8fd77fbe0c465c7c88"
+      },
+      "runtime": {
+        "exit_code": 0,
+        "seconds": 1.7224466000043321,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-paths-origins\\source\\paths-origins\\phase0_runtime.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-paths-origins\\byond-runtime.log",
+        "log_sha256": "033772ff5fb4e45114bcfb504a8257bf01c1cf4a2bf1a0a758854b50d3b026ae"
+      }
+    },
+    {
+      "id": "deferred-manifest",
+      "observations": [
+        {
+          "label": "early",
+          "value": 1,
+          "expected": 1,
+          "matches_expected": 1
+        },
+        {
+          "label": "second",
+          "value": 3,
+          "expected": 3,
+          "matches_expected": 1
+        },
+        {
+          "label": "late",
+          "value": 2,
+          "expected": 2,
+          "matches_expected": 1
+        }
+      ],
+      "observations_path": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-deferred-manifest\\byond-observations.json",
+      "observations_sha256": "48a16aec540ddb7d2bf3c0e4feebb416f42d11506037a0758f804b4007114ef7",
+      "input_hashes": {
+        "runtime_common.dm": "107a8eed1353f611b7190cc12e6a380e9c2b75c75e621b584cf50a1795fa73dc",
+        "child-effects/child.dm": "69973c572daaea0005b15535dffa2f73cfac069a6f179fbca2ed88737355cd9b",
+        "child-effects/parent.dm": "5bfe17e6e066a5eff20c94610f0e54e9377c86d8d099393fe4c2caaa7784eea7",
+        "child-effects/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "child-effects/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "child-effects/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "conditional-boundary/child.dm": "ce8bd39fa5606fee7f29ceb3dcdf9d5b3d05411ebd03740fd54299ccef711641",
+        "conditional-boundary/phase0_preprocess.dme": "209c8f7262809145c7f4852a7939a19d83299ff3e9f2e3ae9cfc728a8ca936ff",
+        "conditional-boundary/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "conditional-boundary/runtime_observe.dm": "3f0114b18e672bdd3e17f114afa4d46aac445edd938ffb5b2e2651e422c08125",
+        "deferred-manifest/body.dm": "bb21465ed1515318d9b7bf675b3a681d8cf1796f06cf233990e2b4dc518d2523",
+        "deferred-manifest/phase0_preprocess.dme": "8dd55a10445c55678e7a50e8aa462e2f7ffb06bb0dd4333b449d3e64caa5342f",
+        "deferred-manifest/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "deferred-manifest/runtime_observe.dm": "c5f2be6039b98830f4e0a6fb59323a49b8f5f21c7d1a88b34fd6f661eaf7bc30",
+        "deferred-manifest/second.dme": "8e8352fcf82ad687549d97582a8b09254fc4141bb8331f2b2a53d3135d604e35",
+        "deferred-manifest/startup.dme": "50b91f1459b67ae8cd5bb3c19c1f0b2322cd6e2f2e94875b10fb4934a44f6e72",
+        "diagnostics/body.dm": "e35e9739acc30f41f7f56dd1f386cca839d7cf928c8b6cea34fe9107cb003816",
+        "diagnostics/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "file-dir-stack/child.dm": "6ab9cb000d40e1d558f304fcd17ee24df5a521f828c6f8a776fd1bd58561de82",
+        "file-dir-stack/phase0_preprocess.dme": "0300926dc10dab03b96eb12c9a80fe45634a84e65f50428cb703afe1a764dc57",
+        "file-dir-stack/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "file-dir-stack/runtime_observe.dm": "1c924f19f08d4662f22d35b40a4b70646a9de1cf51fe66247250a6cb85d52b60",
+        "incoming-internal/body.dm": "25f6ec30257e3d5cc45be70a60d66e7ff02e6567fb4d2407482d82ad74ef6eb6",
+        "incoming-internal/phase0_preprocess.dme": "e7562821dd99f3df69071c5f1a146b3821ffc36c427c7be1c2fc352003684006",
+        "incoming-internal/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "incoming-internal/runtime_observe.dm": "7b9828224d5e92ce2d202eeb1290e0d0fef1341759cb313eebe157f324de4545",
+        "joined-expression/members.dm": "5bfd5bdc5779dad2986a7af65a0b4c468c2bc274bb2ebca08725e689a55f44e7",
+        "joined-expression/operand.dm": "cb898749d76e51fdaf6c6636920ccdb4f415fc1cffd1e2497636b38cc2469807",
+        "joined-expression/parent.dm": "012fe22b50a6a435dc0ffaa453f29b495a34c724b44d8da52af19345c6e84718",
+        "joined-expression/phase0_preprocess.dme": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+        "joined-expression/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "joined-expression/runtime_observe.dm": "af5e362b4efac4f0ba619642977679b8ef1255a6460a2e9648ac84d0b54869f5",
+        "non-text/body.dm": "768609e229f936e595ff349ff21d7eb5394832f05808a2d95f07f74a42b5351e",
+        "non-text/phase0_preprocess.dme": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+        "non-text/phase0_preprocess_active.dme": "1b0c2356765bd01f0e350f986e2416a7c49efdf150b70e7849bea3c4a210a60f",
+        "paths-origins/phase0_preprocess.dme": "c58a78b67e3a8d5a37aa4b0b1ee4c07e642e4ff52110a44e7eda599191a5d7ce",
+        "paths-origins/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "paths-origins/runtime_observe.dm": "0bc518ec01311da22a296fa3edb560445c3669c77bc721ce5f3f7236d13738bb",
+        "repeated/body.dm": "3563e37985aa3bf583f7b3850c71f05be9198c9481ee9b567d77c049ee0f16f7",
+        "repeated/phase0_preprocess.dme": "981e9d024b545cd07e067b2c54f5c8f58dfe459154a2d4c16a2380815357b289",
+        "repeated/phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+        "repeated/runtime_observe.dm": "495abac30c0733de05b28ed72b873a49ffd2c70e9a9ba75d39d23cd12ee2df8f",
+        "paths-origins/a/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "paths-origins/b/body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+        "file-dir-stack/early/marker.txt": "1925258482b3f0de16a25dfabbbc729dccb3be00573ef48e0f687afc252bb44b",
+        "file-dir-stack/late/marker.txt": "f152945b358aa26a9e72e25381deff94e254c547089bd690dccd218e9414d148"
+      },
+      "compile": {
+        "exit_code": 0,
+        "seconds": 1.2183157000108622,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-deferred-manifest\\source\\deferred-manifest\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-deferred-manifest\\byond-compile.log",
+        "log_sha256": "1de275e7958d9a5dce8b2be0e6955d31ab0be1a8926b5c8fd77fbe0c465c7c88"
+      },
+      "runtime": {
+        "exit_code": 0,
+        "seconds": 2.1396849999873666,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-deferred-manifest\\source\\deferred-manifest\\phase0_runtime.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-deferred-manifest\\byond-runtime.log",
+        "log_sha256": "654bc2aa361100da2b2279ebf339ce4ecd3a45cf470effe39f9b33799f245da1"
+      }
+    }
+  ],
+  "file_dir_archive_evidence": {
+    "path": "D:\\dmb-native-v2-phase0\\preprocess-observations-byond\\preprocess-file-dir-stack\\source\\file-dir-stack\\phase0_runtime.rsc",
+    "sha256": "317bf0bacb589350dbd7bdfa786217816fc16229de7dcd4789a11590332392f7",
+    "bytes": 39,
+    "hex": "220000000100902450939168c56ac44bc56a060000006d61726b65722e747874006561726c790a",
+    "observed_named_entry": "marker.txt",
+    "observed_payload_hex": "6561726c790a",
+    "interpretation": "One archived early-newline payload; cannot distinguish final search domain from same-name archive collision using runtime references alone."
+  }
+}

@@ -1,0 +1,4 @@
+#define FILE_DIR "early"
+#include "child.dm"
+#undef FILE_DIR
+var/after = 'marker.txt'

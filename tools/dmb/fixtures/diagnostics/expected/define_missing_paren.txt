@@ -1,0 +1,2 @@
+define_missing_paren.dm:3:error: missing ) in macro call
+define_missing_paren.dmb - 1 error, 0 warnings

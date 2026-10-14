@@ -1,0 +1,5 @@
+DM compiler version 516.1687
+loading probe.dme
+probe.dm:1:error: 'missing.png': cannot find file
+probe.dmb - 1 error, 0 warnings (10/6/26 10:49 pm)
+Total time: 0:00

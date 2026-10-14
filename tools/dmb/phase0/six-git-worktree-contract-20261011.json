@@ -1,0 +1,48 @@
+{
+  "scope": "tiny six registered Git roots, same daemon, fresh byte oracle; not large-project acceptance",
+  "result": "PASS",
+  "receipt": "E:\\dq-cache\\dmb-six-git-contract\\693058de307e4182a1f57514af7b8d09\\receipt.json",
+  "receipt_sha256": "c3c6c5d1726815fb204c50cfadc176b9d585adb3cf5d97d51d26ab34888ed5d0",
+  "compiler_commit": "3aa85b31edab1ac3356511bb79748fe0ab1a2f99",
+  "pins": {
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build-current\\20261011-3aa85b31ed-counted-opt0.exe",
+      "sha256": "884d3d5a21c1b2ad3dd9bc1931bb0d20f2ff98231854ec2ca1731811afda7dc8"
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    }
+  },
+  "children": 37,
+  "job_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 4294967296,
+      "peak_job_commit_bytes": 78299136,
+      "peak_process_commit_bytes": 65339392,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "daemon_cleanup": {
+    "pid": 16408,
+    "tree_error": null,
+    "direct_error": null,
+    "wait_error": null,
+    "returncode": 1,
+    "reaped": true
+  },
+  "all_owned_worktrees_removed": true,
+  "verified": [
+    "Twelve initial/edited retained outputs equal independent fresh byte oracles",
+    "Asymmetric body and declaration edits isolated across six actual registered roots",
+    "Source rejection class/raw errors equal fresh; no publication and prior pair preserved",
+    "Five unaffected roots and six recovered roots equal fresh outputs"
+  ],
+  "remaining": [
+    "Real DeepQuarry six-worktree geometry/memory acceptance",
+    "Full runtime baseline and BYOND semantic parity"
+  ],
+  "acceptance_large_project": false
+}

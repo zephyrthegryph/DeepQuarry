@@ -1,0 +1,4 @@
+#define VALUE 2
+#include "startup.dme"
+#include "second.dme"
+#include "body.dm"

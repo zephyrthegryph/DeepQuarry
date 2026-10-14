@@ -1,0 +1,114 @@
+{
+  "schema": 2,
+  "scope": "standalone global initialization, safe receivers and Profile callback only",
+  "complete": true,
+  "root": "E:\\dq-cache\\dmb-boot-receiver\\935c6868e5644b2bafd21745417a6d2f",
+  "executions": {
+    "byond-compile": {
+      "exit": 0,
+      "wall_s": 0.3350095000350848,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.124970700009726,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "native-compile": {
+      "exit": 0,
+      "wall_s": 0.1409715000190772,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "acquire": {
+      "exit": 0,
+      "wall_s": 0.04971799999475479,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "native-runtime": {
+      "exit": 0,
+      "wall_s": 1.113019099982921,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    }
+  },
+  "fixture_sources": {
+    "probe.dm": "a5e373b0c0a44f0f58a31d21e67d2b6b6d5140a86795076ffd779a825d198ad7",
+    "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+  },
+  "pinned_inputs": {
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-120646-c7c33419.exe",
+      "sha256": "a8e84b81b900b84ed8bbb52f6cbb76c862a4af0e2fc2e7472ed776498f0c2dfd"
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    },
+    "dd": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+      "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+    }
+  },
+  "byond": {
+    "markers": [
+      "DQ_BOOT early_cache_null 0",
+      "DQ_BOOT early_cache_typed 0",
+      "DQ_BOOT null_safe ",
+      "DQ_BOOT null_not 1",
+      "DQ_BOOT configured_loaded 0",
+      "DQ_BOOT configured_not 1",
+      "DQ_BOOT or_null 1",
+      "DQ_BOOT or_short 1",
+      "DQ_BOOT callback 17",
+      "DQ_BOOT callback_short 17",
+      "DQ_BOOT cache_list 1",
+      "DQ_BOOT cache_hash 0",
+      "DQ_BOOT cache_safe 42",
+      "DQ_BOOT cache_direct 42",
+      "DQ_BOOT finished"
+    ],
+    "runtimes": []
+  },
+  "native": {
+    "markers": [
+      "DQ_BOOT early_cache_null 0",
+      "DQ_BOOT early_cache_typed 0",
+      "DQ_BOOT null_safe ",
+      "DQ_BOOT null_not 1",
+      "DQ_BOOT configured_loaded 0",
+      "DQ_BOOT configured_not 1",
+      "DQ_BOOT or_null 1",
+      "DQ_BOOT or_short 1",
+      "DQ_BOOT callback 17",
+      "DQ_BOOT callback_short 17",
+      "DQ_BOOT cache_list 1",
+      "DQ_BOOT cache_hash 0",
+      "DQ_BOOT cache_safe 42",
+      "DQ_BOOT cache_direct 42",
+      "DQ_BOOT finished"
+    ],
+    "runtimes": []
+  },
+  "matches": true,
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 58765312,
+    "samples": 14,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 52688,
+        "private_bytes": 58765312
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "registered owned compile/acquisition/runtime children, 200ms samples; not strict peak or unregistered-descendant proof"
+  }
+}

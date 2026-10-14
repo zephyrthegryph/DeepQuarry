@@ -1,0 +1,37 @@
+{
+  "scope": "real game clean boot and five focused normal tests; not full-suite or whole-program parity",
+  "acceptance_benchmark": false,
+  "authenticated_shared_source_closure": false,
+  "native_compiler_commit": "78a747344fdab34cfc428dd93590ec536df701bc",
+  "native_compiler_sha256": "96964033836ae3e57ecd1b4cf036b638464e735bce727e74ea49d87c36e8c93f",
+  "runner_commit": "b984ce6e48ec0240ad5262e77190503dcbc49c68",
+  "native_test_receipt": "data/test-runs/20261010T184328_b984ce6e48.json",
+  "native_attempt_receipt": "data/compiler-attempts/compiler-92c1644c-98e7-4b5f-bf2e-f8fe58ade5c0.json",
+  "native_guardian_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-134038-9f030720-wrapper.json",
+  "byond_test_receipt": "data/test-runs/20261010T173811_f973daf59a.json",
+  "actual_native_backend": "native",
+  "fallback": null,
+  "security": "trusted",
+  "native_clean_boot": true,
+  "byond_clean_boot": true,
+  "native_passed": 5,
+  "byond_passed": 5,
+  "native_failed": 0,
+  "byond_failed": 0,
+  "native_skipped": 0,
+  "byond_skipped": 0,
+  "native_per_test_runtimes": 0,
+  "tests": [
+    "/datum/unit_test/dq_power_cut_splits_and_repair_merges",
+    "/datum/unit_test/dq_power_apc_cycle",
+    "/datum/unit_test/dq_power_idle_apc_and_smes_sleep",
+    "/datum/unit_test/dq_power_monitor_reading",
+    "/datum/unit_test/dq_damage_flavour_bands"
+  ],
+  "limitations": [
+    "Only the listed tests were executed.",
+    "Compiler uses a prototype build profile; no current throughput acceptance claim.",
+    "Runtime libraries and working directory are hosted-world inputs outside the DMB/RSC pair.",
+    "Generalized initializer registration and shared linker contributions still require their own gates."
+  ]
+}

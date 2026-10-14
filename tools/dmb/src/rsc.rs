@@ -141,6 +141,31 @@ impl NamedResource {
     }
 }
 
+/// Producer view over shared immutable payloads; mutable archive records remain unchanged.
+#[derive(Clone, Copy, Debug)]
+pub struct NamedResourceView<'a> {
+    pub kind: u8,
+    pub id: u32,
+    pub timestamp: u32,
+    pub source_timestamp: u32,
+    pub declared_size: u32,
+    pub name: &'a [u8],
+    pub data: &'a [u8],
+}
+impl NamedResource {
+    pub fn as_view(&self) -> NamedResourceView<'_> {
+        NamedResourceView {
+            kind: self.kind,
+            id: self.id,
+            timestamp: self.timestamp,
+            source_timestamp: self.source_timestamp,
+            declared_size: self.declared_size,
+            name: &self.name,
+            data: &self.data,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Entry {
     Named(NamedResource),
@@ -208,6 +233,11 @@ impl Entry {
 
 /// Reads one entry, or returns None only at a clean end of stream.
 pub fn read_entry(reader: &mut impl Read) -> io::Result<Option<Entry>> {
+    read_entry_with_limit(reader, MAX_ENTRY_SIZE)
+}
+
+/// Same lossless decoder with a caller's stricter payload allocation bound.
+pub fn read_entry_with_limit(reader: &mut impl Read, limit: usize) -> io::Result<Option<Entry>> {
     let mut first = [0u8; 1];
     if reader.read(&mut first)? == 0 {
         return Ok(None);
@@ -216,7 +246,7 @@ pub fn read_entry(reader: &mut impl Read) -> io::Result<Option<Entry>> {
     length_bytes[0] = first[0];
     reader.read_exact(&mut length_bytes[1..])?;
     let length = u32::from_le_bytes(length_bytes) as usize;
-    if length > MAX_ENTRY_SIZE {
+    if length > limit.min(MAX_ENTRY_SIZE) {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             "RSC entry exceeds decode limit",
@@ -263,47 +293,155 @@ pub fn read_entry(reader: &mut impl Read) -> io::Result<Option<Entry>> {
     })))
 }
 
-/// Serialize borrowed resources into one exactly sized archive without cloning payloads.
-pub fn named_archive_bytes(resources: &[&NamedResource]) -> io::Result<Vec<u8>> {
-    let mut size = 0usize;
-    for resource in resources {
-        size = size.checked_add(named_entry_size(resource)?.checked_add(5)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,"RSC archive too large"))?)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,"RSC archive too large"))?;
+/// Immutable encoder-issued archive bytes and their streaming content hash.
+/// No public constructor or mutable access can detach the hash from its payload.
+#[derive(Debug, PartialEq, Eq)]
+pub struct EncodedRsc {
+    bytes: Vec<u8>,
+    hash: u128,
+}
+impl EncodedRsc {
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
     }
-    let mut output = Vec::new();
-    output.try_reserve_exact(size).map_err(|error| io::Error::new(io::ErrorKind::OutOfMemory,error))?;
-    for resource in resources { write_named(&mut output,resource)?; }
-    Ok(output)
+    pub fn content_hash(&self) -> u128 {
+        self.hash
+    }
+    pub fn len(&self) -> usize {
+        self.bytes.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.bytes.is_empty()
+    }
+    pub fn capacity(&self) -> usize {
+        self.bytes.capacity()
+    }
+    /// Consuming the owner relinquishes its certificate before mutable access.
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.bytes
+    }
+}
+impl AsRef<[u8]> for EncodedRsc {
+    fn as_ref(&self) -> &[u8] {
+        self.bytes()
+    }
+}
+impl std::ops::Deref for EncodedRsc {
+    type Target = [u8];
+    fn deref(&self) -> &[u8] {
+        self.bytes()
+    }
 }
 
-fn named_entry_size(resource: &NamedResource) -> io::Result<usize> {
-    if resource.name.contains(&0) { return Err(io::Error::new(io::ErrorKind::InvalidInput,"RSC name contains NUL")); }
-    let size = NAMED_HEADER_SIZE.checked_add(resource.name.len()).and_then(|size| size.checked_add(1))
+struct ArchiveWriter {
+    bytes: Vec<u8>,
+    hash: xxhash_rust::xxh3::Xxh3,
+}
+impl Write for ArchiveWriter {
+    fn write(&mut self, input: &[u8]) -> io::Result<usize> {
+        let count = self.bytes.write(input)?;
+        self.hash.update(&input[..count]);
+        Ok(count)
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        self.bytes.flush()
+    }
+}
+
+/// Compatibility byte output consumes the same immutable encoder owner.
+pub fn named_archive_bytes(resources: &[&NamedResource]) -> io::Result<Vec<u8>> {
+    named_archive_encoded(resources).map(EncodedRsc::into_bytes)
+}
+
+/// Serialize and hash borrowed resource framing and payloads in a single pass.
+pub fn named_archive_encoded(resources: &[&NamedResource]) -> io::Result<EncodedRsc> {
+    named_views_encoded(
+        &resources
+            .iter()
+            .map(|record| record.as_view())
+            .collect::<Vec<_>>(),
+    )
+}
+
+/// Encode borrowed payload views without copying their source ownership.
+pub fn named_views_encoded(resources: &[NamedResourceView<'_>]) -> io::Result<EncodedRsc> {
+    let mut size = 0usize;
+    for resource in resources {
+        size = size
+            .checked_add(named_view_size(resource)?.checked_add(5).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidInput, "RSC archive too large")
+            })?)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "RSC archive too large"))?;
+    }
+    let mut output = ArchiveWriter {
+        bytes: Vec::new(),
+        hash: xxhash_rust::xxh3::Xxh3::new(),
+    };
+    output
+        .bytes
+        .try_reserve_exact(size)
+        .map_err(|error| io::Error::new(io::ErrorKind::OutOfMemory, error))?;
+    for resource in resources {
+        write_named_view(&mut output, resource)?;
+    }
+    output.flush()?;
+    Ok(EncodedRsc {
+        hash: output.hash.digest128(),
+        bytes: output.bytes,
+    })
+}
+
+fn named_view_size(resource: &NamedResourceView<'_>) -> io::Result<usize> {
+    if resource.name.contains(&0) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "RSC name contains NUL",
+        ));
+    }
+    let size = NAMED_HEADER_SIZE
+        .checked_add(resource.name.len())
+        .and_then(|size| size.checked_add(1))
         .and_then(|size| size.checked_add(resource.data.len()))
-        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,"RSC entry is too large"))?;
-    if size > MAX_ENTRY_SIZE { return Err(io::Error::new(io::ErrorKind::InvalidInput,"RSC entry is too large")); }
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "RSC entry is too large"))?;
+    if size > MAX_ENTRY_SIZE {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "RSC entry is too large",
+        ));
+    }
     Ok(size)
 }
 
 /// Write a named resource by reference, with identical framing to `write_entry`.
 pub fn write_named(writer: &mut impl Write, resource: &NamedResource) -> io::Result<()> {
-    writer.write_all(&(named_entry_size(resource)? as u32).to_le_bytes())?;
-    writer.write_all(&[1,resource.kind])?;
+    write_named_view(writer, &resource.as_view())
+}
+
+pub fn write_named_view(
+    writer: &mut impl Write,
+    resource: &NamedResourceView<'_>,
+) -> io::Result<()> {
+    writer.write_all(&(named_view_size(resource)? as u32).to_le_bytes())?;
+    writer.write_all(&[1, resource.kind])?;
     writer.write_all(&resource.id.to_le_bytes())?;
     writer.write_all(&resource.timestamp.to_le_bytes())?;
     writer.write_all(&resource.source_timestamp.to_le_bytes())?;
     writer.write_all(&resource.declared_size.to_le_bytes())?;
-    writer.write_all(&resource.name)?;
+    writer.write_all(resource.name)?;
     writer.write_all(&[0])?;
-    writer.write_all(&resource.data)
+    writer.write_all(resource.data)
 }
 
 pub fn write_entry(writer: &mut impl Write, entry: &Entry) -> io::Result<()> {
     match entry {
-        Entry::Named(resource) => write_named(writer,resource),
-        Entry::Opaque { wrapper,payload } => {
-            if payload.len() > MAX_ENTRY_SIZE { return Err(io::Error::new(io::ErrorKind::InvalidInput,"RSC entry is too large")); }
+        Entry::Named(resource) => write_named(writer, resource),
+        Entry::Opaque { wrapper, payload } => {
+            if payload.len() > MAX_ENTRY_SIZE {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "RSC entry is too large",
+                ));
+            }
             writer.write_all(&(payload.len() as u32).to_le_bytes())?;
             writer.write_all(&[*wrapper])?;
             writer.write_all(payload)
@@ -328,6 +466,35 @@ pub fn write_all(writer: &mut impl Write, entries: &[Entry]) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn encoded_archive_hash_covers_exact_framing_and_payload_without_rehash_owner() {
+        let first =
+            NamedResource::from_data(6, b"icons/a.png".to_vec(), vec![0, 255, 2, 3], 19, 23)
+                .unwrap();
+        let second =
+            NamedResource::from_data(0, vec![b'b', 255], b"text".to_vec(), 29, 31).unwrap();
+        let rows = [&first, &second];
+        let encoded = named_archive_encoded(&rows).unwrap();
+        let mut expected = Vec::new();
+        for row in rows {
+            write_named(&mut expected, row).unwrap();
+        }
+        assert_eq!(encoded.bytes(), expected);
+        assert_eq!(
+            encoded.content_hash(),
+            xxhash_rust::xxh3::xxh3_128(&expected)
+        );
+        assert_eq!(named_archive_bytes(&rows).unwrap(), expected);
+        assert_eq!(encoded.len(), expected.len());
+        assert!(encoded.capacity() >= encoded.len());
+        let mut mutable = encoded.into_bytes();
+        mutable[0] ^= 1;
+        assert_ne!(mutable, expected);
+        let empty = named_archive_encoded(&[]).unwrap();
+        assert!(empty.is_empty());
+        assert_eq!(empty.content_hash(), xxhash_rust::xxh3::xxh3_128(&[]));
+    }
+
     #[test]
     fn native_incremental_archive_splits_deleted_capacity_into_asset_remnants() {
         let load = |mut bytes: &[u8]| read_all(&mut bytes).unwrap();

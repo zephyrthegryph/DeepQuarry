@@ -1,0 +1,3072 @@
+{
+  "schema": 1,
+  "compiler": {
+    "version": "516.1687",
+    "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+  },
+  "files": [
+    {
+      "path": "positive.dm",
+      "sha256": "aedc599f620cbe9419899b1b44688d48dee79e6da647ff1fe5fe34b1fd06a80d"
+    },
+    {
+      "path": "positive.dme",
+      "sha256": "1233acdcd657624a794bf03ddc1678ebc5cfa97ea07827d81e7222902d8b5921"
+    },
+    {
+      "path": "positive.stdout.log",
+      "sha256": "e30f0b29d9ed7e158d6884bbae6c7b4b3a566ecbf44139f5413f4dcd82792693"
+    },
+    {
+      "path": "positive.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "positive.native.bin",
+      "sha256": "46950dd0fb457679b3b7e11d64c8df695068de2168891882754e5dc0a506dfe7"
+    },
+    {
+      "path": "undef.dm",
+      "sha256": "1a77cb506640caa610f57f76d84223b9fac2177e9d3b377b430a0e1c58919ebf"
+    },
+    {
+      "path": "undef.dme",
+      "sha256": "57d3755b1f98753bdb2a2496ada7eeff539ecb8cb8394d3c6819820dca301f7f"
+    },
+    {
+      "path": "undef.stdout.log",
+      "sha256": "aa3837b20f9401064da63b125632a1bc1aaab2a56ca67eb0e5dc46ce4c7f10c8"
+    },
+    {
+      "path": "undef.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "undef.native.bin",
+      "sha256": "2864379db0b81520c98734259034e7f773fa33fb52b6e9d01e1378ed8fa539be"
+    },
+    {
+      "path": "qualified.dm",
+      "sha256": "49f12f7ed712d62e538e1d6fc62f38dad102cec87145bbda093705fe4650e254"
+    },
+    {
+      "path": "qualified.dme",
+      "sha256": "169b03a71dac49393ab608d93e9f5c078858b8a87929a603bc17d0bffce7df43"
+    },
+    {
+      "path": "qualified.stdout.log",
+      "sha256": "5b525b099e7980f8b023328a31fb539624b0bfe3534b7ffa99c1d9f1aa374076"
+    },
+    {
+      "path": "qualified.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "define.dm",
+      "sha256": "ffc378171b5d1ba7ad1ebb5488e752311e70523d2813701696177ab51369ff5b"
+    },
+    {
+      "path": "define.dme",
+      "sha256": "c01d45e670cda283088eca1f5fbe44392ca704007eaa5c17c8bd940bb7162eae"
+    },
+    {
+      "path": "define.stdout.log",
+      "sha256": "074c06de13dc233cbd85147d4ba1f8667badd1d75fcccd1315bf21c24ba95177"
+    },
+    {
+      "path": "define.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "define.native.bin",
+      "sha256": "1cac25042e6cbcc0ba88e697f349503b2a576682f7fba5bf9b40a70c9a9fd15a"
+    },
+    {
+      "path": "shadow.dm",
+      "sha256": "d77b9139b3c1fb17cca85a7cbe9922161706e5ec822889ed3aad1ae7f10898d9"
+    },
+    {
+      "path": "shadow.dme",
+      "sha256": "703a73f81c63db1b9b599960459000bc055443a91ae671879953c0b6810383dd"
+    },
+    {
+      "path": "shadow.stdout.log",
+      "sha256": "2f5242adc6240521eade38b755b3850985d12ad371d6bb46e6dea58fd3ea2d2e"
+    },
+    {
+      "path": "shadow.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "shadow.native.bin",
+      "sha256": "1f225ad0de69994b487dc07ca647810ae9d88fafdda733c5cdca758bf7f9e980"
+    },
+    {
+      "path": "precedence.dm",
+      "sha256": "dea421be2a9e8b37174dd69f63e774a538745ed913d3785aca878abf5f3271d0"
+    },
+    {
+      "path": "precedence.dme",
+      "sha256": "ada4822555bbc927f5e79355c6221ebee3e00dd6f535ad63e8412e16c74d0657"
+    },
+    {
+      "path": "precedence.stdout.log",
+      "sha256": "a3b56f2d6af9bf941bc0865a6060230aa548f5dfb7d218fc26d74b10551fda39"
+    },
+    {
+      "path": "precedence.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "precedence.native.bin",
+      "sha256": "726b58e1eb97d981cf0cf0ae3435b373f6144f6f5bea27d7c37e354f6ea322e2"
+    }
+  ],
+  "initial_macros": [
+    {
+      "name": "ANIMATION_CONTINUE",
+      "replacement": "512",
+      "kind": "integer",
+      "value": 512,
+      "root_words": [
+        80,
+        512,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        512,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ANIMATION_END_LOOP",
+      "replacement": "16",
+      "kind": "integer",
+      "value": 16,
+      "root_words": [
+        80,
+        16,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        16,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ANIMATION_END_NOW",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ANIMATION_LINEAR_TRANSFORM",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ANIMATION_PARALLEL",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ANIMATION_RELATIVE",
+      "replacement": "256",
+      "kind": "integer",
+      "value": 256,
+      "root_words": [
+        80,
+        256,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        256,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ANIMATION_SLICE",
+      "replacement": "8",
+      "kind": "integer",
+      "value": 8,
+      "root_words": [
+        80,
+        8,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        8,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "AREA_LAYER",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "BACKGROUND_LAYER",
+      "replacement": "20000",
+      "kind": "integer",
+      "value": 20000,
+      "root_words": [
+        80,
+        20000,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        20000,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "BACK_EASING",
+      "replacement": "6",
+      "kind": "integer",
+      "value": 6,
+      "root_words": [
+        80,
+        6,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        6,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "BLEND_ADD",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "BLEND_DEFAULT",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "BLEND_INSET_OVERLAY",
+      "replacement": "5",
+      "kind": "integer",
+      "value": 5,
+      "root_words": [
+        80,
+        5,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        5,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "BLEND_MULTIPLY",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "BLEND_OVERLAY",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "BLEND_SUBTRACT",
+      "replacement": "3",
+      "kind": "integer",
+      "value": 3,
+      "root_words": [
+        80,
+        3,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        3,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "BOUNCE_EASING",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "CIRCULAR_EASING",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "COLORSPACE_HCY",
+      "replacement": "3",
+      "kind": "integer",
+      "value": 3,
+      "root_words": [
+        80,
+        3,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        3,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "COLORSPACE_HSL",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "COLORSPACE_HSV",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "COLORSPACE_RGB",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "CONTROL_FREAK_ALL",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "CONTROL_FREAK_MACROS",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "CONTROL_FREAK_SKIN",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "CUBIC_EASING",
+      "replacement": "3",
+      "kind": "integer",
+      "value": 3,
+      "root_words": [
+        80,
+        3,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        3,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "DM_BUILD",
+      "replacement": "1687",
+      "kind": "integer",
+      "value": 1687,
+      "root_words": [
+        80,
+        1687,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1687,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "DOWN",
+      "replacement": "32",
+      "kind": "integer",
+      "value": 32,
+      "root_words": [
+        80,
+        32,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        32,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "EASE_IN",
+      "replacement": "64",
+      "kind": "integer",
+      "value": 64,
+      "root_words": [
+        80,
+        64,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        64,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "EASE_OUT",
+      "replacement": "128",
+      "kind": "integer",
+      "value": 128,
+      "root_words": [
+        80,
+        128,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        128,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "EAST",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "EDGE_PERSPECTIVE",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "EFFECTS_LAYER",
+      "replacement": "5000",
+      "kind": "integer",
+      "value": 5000,
+      "root_words": [
+        80,
+        5000,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        5000,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ELASTIC_EASING",
+      "replacement": "5",
+      "kind": "integer",
+      "value": 5,
+      "root_words": [
+        80,
+        5,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        5,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "EYE_PERSPECTIVE",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "FALSE",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "FEMALE",
+      "replacement": "\"female\"",
+      "kind": "text",
+      "value": "female",
+      "root_words": [
+        96,
+        6,
+        90,
+        18,
+        0
+      ],
+      "datum_words": [
+        96,
+        6,
+        90,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "FILTER_COLOR_HCY",
+      "replacement": "3",
+      "kind": "integer",
+      "value": 3,
+      "root_words": [
+        80,
+        3,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        3,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "FILTER_COLOR_HSL",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "FILTER_COLOR_HSV",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "FILTER_COLOR_RGB",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "FILTER_OVERLAY",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "FILTER_UNDERLAY",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "FLOAT_LAYER",
+      "replacement": "(-1)",
+      "kind": "number",
+      "value": -1.0,
+      "root_words": [
+        96,
+        42,
+        49024,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        96,
+        42,
+        49024,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "FLOAT_PLANE",
+      "replacement": "(-32767)",
+      "kind": "number",
+      "value": -32767.0,
+      "root_words": [
+        96,
+        42,
+        50943,
+        65024,
+        18,
+        0
+      ],
+      "datum_words": [
+        96,
+        42,
+        50943,
+        65024,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "FLY_LAYER",
+      "replacement": "5",
+      "kind": "integer",
+      "value": 5,
+      "root_words": [
+        80,
+        5,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        5,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "FORWARD_STEPS",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ICON_ADD",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ICON_AND",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ICON_MULTIPLY",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ICON_OR",
+      "replacement": "5",
+      "kind": "integer",
+      "value": 5,
+      "root_words": [
+        80,
+        5,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        5,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ICON_OVERLAY",
+      "replacement": "3",
+      "kind": "integer",
+      "value": 3,
+      "root_words": [
+        80,
+        3,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        3,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ICON_SUBTRACT",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ICON_UNDERLAY",
+      "replacement": "6",
+      "kind": "integer",
+      "value": 6,
+      "root_words": [
+        80,
+        6,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        6,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "ISOMETRIC_MAP",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "JSON_ALLOW_COMMENTS",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "JSON_PRETTY_PRINT",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "JSON_STRICT",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "JUMP_EASING",
+      "replacement": "8",
+      "kind": "integer",
+      "value": 8,
+      "root_words": [
+        80,
+        8,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        8,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "KEEP_APART",
+      "replacement": "64",
+      "kind": "integer",
+      "value": 64,
+      "root_words": [
+        80,
+        64,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        64,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "KEEP_TOGETHER",
+      "replacement": "32",
+      "kind": "integer",
+      "value": 32,
+      "root_words": [
+        80,
+        32,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        32,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "LEGACY_MOVEMENT_MODE",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "LINEAR_EASING",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "LINEAR_RAND",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "LONG_GLIDE",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MALE",
+      "replacement": "\"male\"",
+      "kind": "text",
+      "value": "male",
+      "root_words": [
+        96,
+        6,
+        89,
+        18,
+        0
+      ],
+      "datum_words": [
+        96,
+        6,
+        89,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MASK_INVERSE",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MASK_SWAP",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MATRIX_ROTATE",
+      "replacement": "5",
+      "kind": "integer",
+      "value": 5,
+      "root_words": [
+        80,
+        5,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        5,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MATRIX_SCALE",
+      "replacement": "6",
+      "kind": "integer",
+      "value": 6,
+      "root_words": [
+        80,
+        6,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        6,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MATRIX_TRANSLATE",
+      "replacement": "7",
+      "kind": "integer",
+      "value": 7,
+      "root_words": [
+        80,
+        7,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        7,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MOB_LAYER",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MOB_PERSPECTIVE",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MOUSE_ACTIVE_POINTER",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MOUSE_ARROW_POINTER",
+      "replacement": "5",
+      "kind": "integer",
+      "value": 5,
+      "root_words": [
+        80,
+        5,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        5,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MOUSE_CROSSHAIRS_POINTER",
+      "replacement": "6",
+      "kind": "integer",
+      "value": 6,
+      "root_words": [
+        80,
+        6,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        6,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MOUSE_DRAG_POINTER",
+      "replacement": "3",
+      "kind": "integer",
+      "value": 3,
+      "root_words": [
+        80,
+        3,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        3,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MOUSE_DROP_POINTER",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MOUSE_HAND_POINTER",
+      "replacement": "7",
+      "kind": "integer",
+      "value": 7,
+      "root_words": [
+        80,
+        7,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        7,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MOUSE_INACTIVE_POINTER",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "MS_WINDOWS",
+      "replacement": "\"MS Windows\"",
+      "kind": "text",
+      "value": "MS Windows",
+      "root_words": [
+        96,
+        6,
+        161,
+        18,
+        0
+      ],
+      "datum_words": [
+        96,
+        6,
+        161,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "NEUTER",
+      "replacement": "\"neuter\"",
+      "kind": "text",
+      "value": "neuter",
+      "root_words": [
+        96,
+        6,
+        88,
+        18,
+        0
+      ],
+      "datum_words": [
+        96,
+        6,
+        88,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "NORMAL_RAND",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "NORTH",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "NORTHEAST",
+      "replacement": "5",
+      "kind": "integer",
+      "value": 5,
+      "root_words": [
+        80,
+        5,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        5,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "NORTHWEST",
+      "replacement": "9",
+      "kind": "integer",
+      "value": 9,
+      "root_words": [
+        80,
+        9,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        9,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "NO_CLIENT_COLOR",
+      "replacement": "16",
+      "kind": "integer",
+      "value": 16,
+      "root_words": [
+        80,
+        16,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        16,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "NO_STEPS",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "OBJ_LAYER",
+      "replacement": "3",
+      "kind": "integer",
+      "value": 3,
+      "root_words": [
+        80,
+        3,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        3,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "OUTLINE_SHARP",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "OUTLINE_SQUARE",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "PASS_MOUSE",
+      "replacement": "1024",
+      "kind": "integer",
+      "value": 1024,
+      "root_words": [
+        80,
+        1024,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1024,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "PIXEL_MOVEMENT_MODE",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "PIXEL_SCALE",
+      "replacement": "512",
+      "kind": "integer",
+      "value": 512,
+      "root_words": [
+        80,
+        512,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        512,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "PLANE_MASTER",
+      "replacement": "128",
+      "kind": "integer",
+      "value": 128,
+      "root_words": [
+        80,
+        128,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        128,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "PLURAL",
+      "replacement": "\"plural\"",
+      "kind": "text",
+      "value": "plural",
+      "root_words": [
+        96,
+        6,
+        91,
+        18,
+        0
+      ],
+      "datum_words": [
+        96,
+        6,
+        91,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "PROFILE_AVERAGE",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "PROFILE_CLEAR",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "PROFILE_REFRESH",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "PROFILE_RESTART",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "PROFILE_START",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "PROFILE_STOP",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "QUAD_EASING",
+      "replacement": "7",
+      "kind": "integer",
+      "value": 7,
+      "root_words": [
+        80,
+        7,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        7,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "RESET_ALPHA",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "RESET_COLOR",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "RESET_TRANSFORM",
+      "replacement": "8",
+      "kind": "integer",
+      "value": 8,
+      "root_words": [
+        80,
+        8,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        8,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_BLACKNESS",
+      "replacement": "1024",
+      "kind": "integer",
+      "value": 1024,
+      "root_words": [
+        80,
+        1024,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1024,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_INFRA",
+      "replacement": "64",
+      "kind": "integer",
+      "value": 64,
+      "root_words": [
+        80,
+        64,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        64,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_MOBS",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_OBJS",
+      "replacement": "8",
+      "kind": "integer",
+      "value": 8,
+      "root_words": [
+        80,
+        8,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        8,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_PIXELS",
+      "replacement": "256",
+      "kind": "integer",
+      "value": 256,
+      "root_words": [
+        80,
+        256,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        256,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_SELF",
+      "replacement": "32",
+      "kind": "integer",
+      "value": 32,
+      "root_words": [
+        80,
+        32,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        32,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_THRU",
+      "replacement": "512",
+      "kind": "integer",
+      "value": 512,
+      "root_words": [
+        80,
+        512,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        512,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_TURFS",
+      "replacement": "16",
+      "kind": "integer",
+      "value": 16,
+      "root_words": [
+        80,
+        16,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        16,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SIDE_MAP",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SINE_EASING",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SLIDE_STEPS",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SOUND_MUTE",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SOUND_PAUSED",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SOUND_STREAM",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SOUND_UPDATE",
+      "replacement": "16",
+      "kind": "integer",
+      "value": 16,
+      "root_words": [
+        80,
+        16,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        16,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SOUTH",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SOUTHEAST",
+      "replacement": "6",
+      "kind": "integer",
+      "value": 6,
+      "root_words": [
+        80,
+        6,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        6,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SOUTHWEST",
+      "replacement": "10",
+      "kind": "integer",
+      "value": 10,
+      "root_words": [
+        80,
+        10,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        10,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SQUARE_RAND",
+      "replacement": "3",
+      "kind": "integer",
+      "value": 3,
+      "root_words": [
+        80,
+        3,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        3,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SYNC_STEPS",
+      "replacement": "3",
+      "kind": "integer",
+      "value": 3,
+      "root_words": [
+        80,
+        3,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        3,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "TILED_ICON_MAP",
+      "replacement": "32768",
+      "kind": "integer",
+      "value": 32768,
+      "root_words": [
+        80,
+        32768,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        32768,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "TILE_BOUND",
+      "replacement": "256",
+      "kind": "integer",
+      "value": 256,
+      "root_words": [
+        80,
+        256,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        256,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "TILE_MOVEMENT_MODE",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "TILE_MOVER",
+      "replacement": "2048",
+      "kind": "integer",
+      "value": 2048,
+      "root_words": [
+        80,
+        2048,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2048,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "TOPDOWN_LAYER",
+      "replacement": "10000",
+      "kind": "integer",
+      "value": 10000,
+      "root_words": [
+        80,
+        10000,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        10000,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "TOPDOWN_MAP",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "TRUE",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "TURF_LAYER",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "UNIFORM_RAND",
+      "replacement": "0",
+      "kind": "integer",
+      "value": 0,
+      "root_words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "UNIX",
+      "replacement": "\"UNIX\"",
+      "kind": "text",
+      "value": "UNIX",
+      "root_words": [
+        96,
+        6,
+        160,
+        18,
+        0
+      ],
+      "datum_words": [
+        96,
+        6,
+        160,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "UP",
+      "replacement": "16",
+      "kind": "integer",
+      "value": 16,
+      "root_words": [
+        80,
+        16,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        16,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "VIS_HIDE",
+      "replacement": "128",
+      "kind": "integer",
+      "value": 128,
+      "root_words": [
+        80,
+        128,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        128,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "VIS_INHERIT_DIR",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "VIS_INHERIT_ICON",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "VIS_INHERIT_ICON_STATE",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "VIS_INHERIT_ID",
+      "replacement": "32",
+      "kind": "integer",
+      "value": 32,
+      "root_words": [
+        80,
+        32,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        32,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "VIS_INHERIT_LAYER",
+      "replacement": "8",
+      "kind": "integer",
+      "value": 8,
+      "root_words": [
+        80,
+        8,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        8,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "VIS_INHERIT_PLANE",
+      "replacement": "16",
+      "kind": "integer",
+      "value": 16,
+      "root_words": [
+        80,
+        16,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        16,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "VIS_UNDERLAY",
+      "replacement": "64",
+      "kind": "integer",
+      "value": 64,
+      "root_words": [
+        80,
+        64,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        64,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "WAVE_BOUNDED",
+      "replacement": "2",
+      "kind": "integer",
+      "value": 2,
+      "root_words": [
+        80,
+        2,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        2,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "WAVE_SIDEWAYS",
+      "replacement": "1",
+      "kind": "integer",
+      "value": 1,
+      "root_words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "WEST",
+      "replacement": "8",
+      "kind": "integer",
+      "value": 8,
+      "root_words": [
+        80,
+        8,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        8,
+        18,
+        0
+      ]
+    }
+  ],
+  "not_macro": [
+    "DM_VERSION"
+  ],
+  "controls": {
+    "positive": "0 errors,0 warnings; root/datum exact emitted values and marker1",
+    "undef": "0 errors,0 warnings; literal substitution removed",
+    "qualified": "20 expected errors: global.literal malformed",
+    "define": "0 errors,0 warnings; directions return73",
+    "shadow": "0 errors,0 warnings; directions resolve authored fields afterundef"
+  },
+  "precedence": [
+    {
+      "path": "/proc/FLOAT_LAYER_power",
+      "expression": "FLOAT_LAYER**2",
+      "words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "number_bits": 1065353216
+    },
+    {
+      "path": "/proc/FLOAT_LAYER_negpower",
+      "expression": "-FLOAT_LAYER**2",
+      "words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "number_bits": 1065353216
+    },
+    {
+      "path": "/proc/FLOAT_LAYER_multiply",
+      "expression": "FLOAT_LAYER*2",
+      "words": [
+        96,
+        42,
+        49152,
+        0,
+        18,
+        0
+      ],
+      "number_bits": 3221225472
+    },
+    {
+      "path": "/proc/FLOAT_LAYER_negative",
+      "expression": "-FLOAT_LAYER",
+      "words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "number_bits": 1065353216
+    },
+    {
+      "path": "/proc/FLOAT_LAYER_divide",
+      "expression": "8/FLOAT_LAYER",
+      "words": [
+        96,
+        42,
+        49408,
+        0,
+        18,
+        0
+      ],
+      "number_bits": 3238002688
+    },
+    {
+      "path": "/proc/FLOAT_LAYER_parenthesized",
+      "expression": "(FLOAT_LAYER)**2",
+      "words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "number_bits": 1065353216
+    },
+    {
+      "path": "/proc/FLOAT_PLANE_power",
+      "expression": "FLOAT_PLANE**2",
+      "words": [
+        96,
+        42,
+        20095,
+        64512,
+        18,
+        0
+      ],
+      "number_bits": 1317010432
+    },
+    {
+      "path": "/proc/FLOAT_PLANE_negpower",
+      "expression": "-FLOAT_PLANE**2",
+      "words": [
+        96,
+        42,
+        20095,
+        64512,
+        18,
+        0
+      ],
+      "number_bits": 1317010432
+    },
+    {
+      "path": "/proc/FLOAT_PLANE_multiply",
+      "expression": "FLOAT_PLANE*2",
+      "words": [
+        96,
+        42,
+        51071,
+        65024,
+        18,
+        0
+      ],
+      "number_bits": 3347054080
+    },
+    {
+      "path": "/proc/FLOAT_PLANE_negative",
+      "expression": "-FLOAT_PLANE",
+      "words": [
+        80,
+        32767,
+        18,
+        0
+      ],
+      "number_bits": 1191181824
+    },
+    {
+      "path": "/proc/FLOAT_PLANE_divide",
+      "expression": "8/FLOAT_PLANE",
+      "words": [
+        96,
+        42,
+        47488,
+        256,
+        18,
+        0
+      ],
+      "number_bits": 3112173824
+    },
+    {
+      "path": "/proc/FLOAT_PLANE_parenthesized",
+      "expression": "(FLOAT_PLANE)**2",
+      "words": [
+        96,
+        42,
+        20095,
+        64512,
+        18,
+        0
+      ],
+      "number_bits": 1317010432
+    },
+    {
+      "path": "/proc/negative_power",
+      "expression": "-2**2",
+      "words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "number_bits": 1082130432
+    },
+    {
+      "path": "/proc/grouped_negative",
+      "expression": "(-2)**2",
+      "words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "number_bits": 1082130432
+    },
+    {
+      "path": "/proc/negative_group",
+      "expression": "-(2**2)",
+      "words": [
+        96,
+        42,
+        49280,
+        0,
+        18,
+        0
+      ],
+      "number_bits": 3229614080
+    },
+    {
+      "path": "/proc/power_chain",
+      "expression": "2**3**2",
+      "words": [
+        80,
+        64,
+        18,
+        0
+      ],
+      "number_bits": 1115684864
+    },
+    {
+      "path": "/proc/left_power",
+      "expression": "(2**3)**2",
+      "words": [
+        80,
+        64,
+        18,
+        0
+      ],
+      "number_bits": 1115684864
+    },
+    {
+      "path": "/proc/negative_chain",
+      "expression": "-2**3**2",
+      "words": [
+        80,
+        64,
+        18,
+        0
+      ],
+      "number_bits": 1115684864
+    },
+    {
+      "path": "/proc/logical_power",
+      "expression": "!0**0",
+      "words": [
+        80,
+        1,
+        18,
+        0
+      ],
+      "number_bits": 1065353216
+    },
+    {
+      "path": "/proc/logical_group",
+      "expression": "!(0**0)",
+      "words": [
+        80,
+        0,
+        18,
+        0
+      ],
+      "number_bits": 0
+    },
+    {
+      "path": "/proc/bitwise_power",
+      "expression": "~2**2",
+      "words": [
+        96,
+        42,
+        22399,
+        65530,
+        18,
+        0
+      ],
+      "number_bits": 1468006394
+    }
+  ]
+}

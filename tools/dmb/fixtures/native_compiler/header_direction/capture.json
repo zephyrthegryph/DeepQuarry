@@ -1,0 +1,11 @@
+{
+  "compiler_sha256_after": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "source_sha256": "d0cf4d075bcd3f7cb2cb981cdf432ec59694460c4093ec745ae95a5760474f57",
+  "exit_code": 0,
+  "output_sha256": "69e55b37bd7a476de3e7c09006e326c94854c38e148c35f260a0a448e0f4c41c",
+  "manifest_sha256": "d526d2155a298fca3a107bda960eb1d5787f0e9030b0a6d827ab15fb59decf7d",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "fraction_source_sha256": "156d9dd2926680d92fcad0f2fac785ea5cef9e0069bcad9311f779649bccf501",
+  "fraction_manifest_sha256": "42dcc5dcc30654050f5c33cd35570be9ef4eeee9401b2d7f145aec5f5f1e44ae",
+  "fraction_output_sha256": "2fdb0bc541ccad8412fcd5e54bd6f581ab2d2d16a9b213a6e8a1a8e753ade9dd"
+}

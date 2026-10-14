@@ -1,0 +1,33 @@
+{
+  "run": "native-2",
+  "session": "replay-86cd8c1d305f43bca1de876bc9341fb6",
+  "receipt_path": "D:/dmb-native-v2-phase0/runtime-replays-corrected/replay-86cd8c1d305f43bca1de876bc9341fb6/native-2/receipt.json",
+  "receipt_sha256": "87234E2A1FAE61BFE2C35D404DE730A8EC947DADF289DCA7FF5A369C439CF31D",
+  "results_sha256": "035CFB05DDCC6D7E6DB2DE0F7CEE2AC6ACFF159E56C91285BA1F9DEFC47B513E",
+  "status": "complete-results",
+  "exit_code": 0,
+  "elapsed_seconds": 2883.4531067,
+  "peak_private_bytes": 1989644288,
+  "counts": [
+    {
+      "status": 0,
+      "count": 995
+    },
+    {
+      "status": 1,
+      "count": 36
+    },
+    {
+      "status": 2,
+      "count": 58
+    }
+  ],
+  "execution_complete": true,
+  "normal_exit_gate_passed": true,
+  "status_changes_from_native_1": [
+    {"test": "/datum/unit_test/dq_power_monitor_hibernates_until_grid_warning", "first_status": 1, "second_status": 0},
+    {"test": "/datum/unit_test/dq_idle_auxiliary_machines_hibernate", "first_status": 0, "second_status": 1},
+    {"test": "/datum/unit_test/dq_reactor_timers_fire_at_their_tick", "first_status": 0, "second_status": 1}
+  ],
+  "qualification": "Second corrected observation; three same-output test statuses changed. Cause is unproven. Remaining repetitions and normalized variable-identity classification pending. Counts alone do not establish parity."
+}

@@ -1,0 +1,50 @@
+{
+  "frozen_commit": "6923e6b9da7074eb6432b20be35b313b0edab5b9",
+  "archive_sha256": "a2467e6e22da210ab3232a3a15c5b586fbfe8215f1bb92aab7474451ddfaf4ec",
+  "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-191428-b1c31d79-job-cargo.json",
+  "build_seconds": 250.954,
+  "build_job_cap_bytes": 4000000000,
+  "children_reaped": true,
+  "focused_passes": {
+    "canonical_memo": 4,
+    "memo_storage": 1,
+    "observer_delivery": 7,
+    "modifier_facts": 3,
+    "compact_replay": 10
+  },
+  "focused_failures": {
+    "compact_replay": 1,
+    "cause": "Test-only string corruption helper indexed an empty string table",
+    "repair_commit": "76b96f398e",
+    "repair_execution": "pending"
+  },
+  "later_unvalidated_changes": [
+    "f83d4ca5b6 opt-in request memo census hook",
+    "0c419a957d immutable canonical answer pair"
+  ],
+  "runtime_runner_checks": {
+    "source_commit": "56ba495b4f",
+    "bun_selected_passes": 6,
+    "python_selected_passes": 12,
+    "runtime_execution": "Saved power pair retry in progress; no acceptance claim"
+  },
+  "latest_focused_validation": {
+    "frozen_commit": "92987e8baf3a6b0296241b65ee67ae25b8baabed",
+    "archive_sha256": "b5eff1a6ee562e50075ca7c0a6ca2deecd66157957592a7d8a56ebffd322c0ef",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-193618-aa222e0f-job-cargo.json",
+    "build_seconds": 240.922,
+    "children_reaped": true,
+    "selected_passes": 27,
+    "selected_failures": 0,
+    "compact_selected_passes": 11,
+    "immutable_answer_pair_selected_passes": 1,
+    "receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-194118-ad269588-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-194117-2a9ab33b-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-194116-c5d85e59-focused.json"
+    ],
+    "request_runner_binary_hook": "Not compiled by library-only test harness; new binary build pending"
+  },
+  "new_end_to_end_benchmark": false,
+  "full_suite_parity": "open"
+}

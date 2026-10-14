@@ -1,0 +1,1 @@
+Authenticated BYOND 516.1687 compile-only reference; compiler SHA checked before/after. Qualified static member syntax folds nonconstant authored initial values, including inheritance and overrides. Captured global numeric records provide the oracle. No DreamDaemon or whole-program parity assertion.

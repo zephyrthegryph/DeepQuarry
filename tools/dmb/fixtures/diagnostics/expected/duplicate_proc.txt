@@ -1,0 +1,3 @@
+duplicate_proc.dm:4:error: test: duplicate definition
+duplicate_proc.dm:1:error: test: previous definition
+duplicate_proc.dmb - 2 errors, 0 warnings

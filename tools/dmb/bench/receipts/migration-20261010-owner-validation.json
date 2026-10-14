@@ -1,0 +1,37 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_tree-ba83d63b7812f68d.exe",
+  "binary_sha256": "f1f911c399e5ac5b052eb7d2ccd235369f46f2b74748409862b6d00bdd9b19e4",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "owner_local_shape::validation_tests",
+      "selected": [
+        "owner_local_shape::validation_tests::negative_name_receipt_replays_and_rejects_changed_catalog"
+      ],
+      "exit": 0,
+      "seconds": 0.06140070001129061,
+      "stdout": "\nrunning 1 test\ntest owner_local_shape::validation_tests::negative_name_receipt_replays_and_rejects_changed_catalog ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 251 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "member_arena::publication::tests::failed_structural_binding_preserves_fresh_diagnostics_and_recovery",
+      "selected": [
+        "member_arena::publication::tests::failed_structural_binding_preserves_fresh_diagnostics_and_recovery"
+      ],
+      "exit": 0,
+      "seconds": 0.09604890004266053,
+      "stdout": "\nrunning 1 test\ntest member_arena::publication::tests::failed_structural_binding_preserves_fresh_diagnostics_and_recovery ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 251 filtered out; finished in 0.04s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "member_arena::publication::tests::owner_validation_rebinds_appended_members_and_callable_namespace_changes",
+      "selected": [
+        "member_arena::publication::tests::owner_validation_rebinds_appended_members_and_callable_namespace_changes"
+      ],
+      "exit": 0,
+      "seconds": 0.22701229999074712,
+      "stdout": "\nrunning 1 test\ntest member_arena::publication::tests::owner_validation_rebinds_appended_members_and_callable_namespace_changes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 251 filtered out; finished in 0.02s\n\n",
+      "stderr": ""
+    }
+  ]
+}

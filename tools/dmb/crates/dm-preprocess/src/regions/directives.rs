@@ -1,0 +1,1048 @@
+use super::*;
+use crate::{
+    directive_identifier, eval_condition, macro_defined, parse_include, Conditional, DiagnosticKind,
+};
+
+pub(super) fn plan<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+) -> DirectivePlan {
+    plan_with_memo(project, provider, defines, None)
+}
+pub(super) fn plan_with_memo<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    memo: Option<&dyn ExpansionMemo>,
+) -> DirectivePlan {
+    let mut pass = DirectivePass {
+        provider,
+        memo,
+        recording: None,
+        plan: DirectivePlan {
+            project_dir: canonical_path(project.parent().unwrap_or(Path::new(""))),
+            ..DirectivePlan::default()
+        },
+        visited: BTreeSet::new(),
+        repeatable: BTreeSet::new(),
+        file_dir_definitions: Vec::new(),
+        environment: MacroEnvironment::default(),
+        file_dir_origins: Vec::new(),
+        conditionals: Vec::new(),
+        detail: PassDetail::default(),
+    };
+    for (name, replacement) in [
+        ("EXCEPTION", "new /exception(message, __FILE__, __LINE__)"),
+        ("REGEX_QUOTE", "regex(message, 1)"),
+        ("REGEX_QUOTE_REPLACEMENT", "regex(message, 2)"),
+    ] {
+        pass.plan.final_macros.insert(
+            name.into(),
+            Macro {
+                parameters: Some(vec!["message".into()]),
+                variadic: false,
+                replacement: replacement.into(),
+            },
+        );
+    }
+    // Pinned native spellings are initial object macros. Undef removes only
+    // substitution; any remaining runtime/global meaning belongs to the resolver.
+    // Install them before caller definitions; source define/undef effects then
+    // apply through the same ordered environment as every other macro.
+    for (name, replacement) in [
+        // Exact native516.1687 #ifdef and root/datum values: native_sdk_macros/receipt.json.
+        ("ANIMATION_CONTINUE", "512"),
+        ("ANIMATION_END_LOOP", "16"),
+        ("ANIMATION_END_NOW", "1"),
+        ("ANIMATION_LINEAR_TRANSFORM", "2"),
+        ("ANIMATION_PARALLEL", "4"),
+        ("ANIMATION_RELATIVE", "256"),
+        ("ANIMATION_SLICE", "8"),
+        ("AREA_LAYER", "1"),
+        ("BACKGROUND_LAYER", "20000"),
+        ("BACK_EASING", "6"),
+        ("BLEND_ADD", "2"),
+        ("BLEND_DEFAULT", "0"),
+        ("BLEND_INSET_OVERLAY", "5"),
+        ("BLEND_MULTIPLY", "4"),
+        ("BLEND_OVERLAY", "1"),
+        ("BLEND_SUBTRACT", "3"),
+        ("BOUNCE_EASING", "4"),
+        ("CIRCULAR_EASING", "2"),
+        ("COLORSPACE_HCY", "3"),
+        ("COLORSPACE_HSL", "2"),
+        ("COLORSPACE_HSV", "1"),
+        ("COLORSPACE_RGB", "0"),
+        ("CONTROL_FREAK_ALL", "1"),
+        ("CONTROL_FREAK_MACROS", "4"),
+        ("CONTROL_FREAK_SKIN", "2"),
+        ("CUBIC_EASING", "3"),
+        ("DM_BUILD", "1687"),
+        ("DOWN", "32"),
+        ("EASE_IN", "64"),
+        ("EASE_OUT", "128"),
+        ("EAST", "4"),
+        ("EDGE_PERSPECTIVE", "2"),
+        ("EFFECTS_LAYER", "5000"),
+        ("ELASTIC_EASING", "5"),
+        ("EYE_PERSPECTIVE", "1"),
+        ("FALSE", "0"),
+        ("FEMALE", "\"female\""),
+        ("FILTER_COLOR_HCY", "3"),
+        ("FILTER_COLOR_HSL", "2"),
+        ("FILTER_COLOR_HSV", "1"),
+        ("FILTER_COLOR_RGB", "0"),
+        ("FILTER_OVERLAY", "1"),
+        ("FILTER_UNDERLAY", "2"),
+        ("FLOAT_LAYER", "(-1)"),
+        ("FLOAT_PLANE", "(-32767)"),
+        ("FLY_LAYER", "5"),
+        ("FORWARD_STEPS", "1"),
+        ("ICON_ADD", "0"),
+        ("ICON_AND", "4"),
+        ("ICON_MULTIPLY", "2"),
+        ("ICON_OR", "5"),
+        ("ICON_OVERLAY", "3"),
+        ("ICON_SUBTRACT", "1"),
+        ("ICON_UNDERLAY", "6"),
+        ("ISOMETRIC_MAP", "1"),
+        ("JSON_ALLOW_COMMENTS", "2"),
+        ("JSON_PRETTY_PRINT", "1"),
+        ("JSON_STRICT", "1"),
+        ("JUMP_EASING", "8"),
+        ("KEEP_APART", "64"),
+        ("KEEP_TOGETHER", "32"),
+        ("LEGACY_MOVEMENT_MODE", "0"),
+        ("LINEAR_EASING", "0"),
+        ("LINEAR_RAND", "2"),
+        ("LONG_GLIDE", "1"),
+        ("MALE", "\"male\""),
+        ("MASK_INVERSE", "1"),
+        ("MASK_SWAP", "2"),
+        ("MATRIX_ROTATE", "5"),
+        ("MATRIX_SCALE", "6"),
+        ("MATRIX_TRANSLATE", "7"),
+        ("MOB_LAYER", "4"),
+        ("MOB_PERSPECTIVE", "0"),
+        ("MOUSE_ACTIVE_POINTER", "1"),
+        ("MOUSE_ARROW_POINTER", "5"),
+        ("MOUSE_CROSSHAIRS_POINTER", "6"),
+        ("MOUSE_DRAG_POINTER", "3"),
+        ("MOUSE_DROP_POINTER", "4"),
+        ("MOUSE_HAND_POINTER", "7"),
+        ("MOUSE_INACTIVE_POINTER", "0"),
+        ("MS_WINDOWS", "\"MS Windows\""),
+        ("NEUTER", "\"neuter\""),
+        ("NORMAL_RAND", "1"),
+        ("NORTH", "1"),
+        ("NORTHEAST", "5"),
+        ("NORTHWEST", "9"),
+        ("NO_CLIENT_COLOR", "16"),
+        ("NO_STEPS", "0"),
+        ("OBJ_LAYER", "3"),
+        ("OUTLINE_SHARP", "1"),
+        ("OUTLINE_SQUARE", "2"),
+        ("PASS_MOUSE", "1024"),
+        ("PIXEL_MOVEMENT_MODE", "2"),
+        ("PIXEL_SCALE", "512"),
+        ("PLANE_MASTER", "128"),
+        ("PLURAL", "\"plural\""),
+        ("PROFILE_AVERAGE", "4"),
+        ("PROFILE_CLEAR", "2"),
+        ("PROFILE_REFRESH", "0"),
+        ("PROFILE_RESTART", "2"),
+        ("PROFILE_START", "0"),
+        ("PROFILE_STOP", "1"),
+        ("QUAD_EASING", "7"),
+        ("RESET_ALPHA", "4"),
+        ("RESET_COLOR", "2"),
+        ("RESET_TRANSFORM", "8"),
+        ("SEE_BLACKNESS", "1024"),
+        ("SEE_INFRA", "64"),
+        ("SEE_MOBS", "4"),
+        ("SEE_OBJS", "8"),
+        ("SEE_PIXELS", "256"),
+        ("SEE_SELF", "32"),
+        ("SEE_THRU", "512"),
+        ("SEE_TURFS", "16"),
+        ("SIDE_MAP", "2"),
+        ("SINE_EASING", "1"),
+        ("SLIDE_STEPS", "2"),
+        ("SOUND_MUTE", "1"),
+        ("SOUND_PAUSED", "2"),
+        ("SOUND_STREAM", "4"),
+        ("SOUND_UPDATE", "16"),
+        ("SOUTH", "2"),
+        ("SOUTHEAST", "6"),
+        ("SOUTHWEST", "10"),
+        ("SQUARE_RAND", "3"),
+        ("SYNC_STEPS", "3"),
+        ("TILED_ICON_MAP", "32768"),
+        ("TILE_BOUND", "256"),
+        ("TILE_MOVEMENT_MODE", "1"),
+        ("TILE_MOVER", "2048"),
+        ("TOPDOWN_LAYER", "10000"),
+        ("TOPDOWN_MAP", "0"),
+        ("TRUE", "1"),
+        ("TURF_LAYER", "2"),
+        ("UNIFORM_RAND", "0"),
+        ("UNIX", "\"UNIX\""),
+        ("UP", "16"),
+        ("VIS_HIDE", "128"),
+        ("VIS_INHERIT_DIR", "4"),
+        ("VIS_INHERIT_ICON", "1"),
+        ("VIS_INHERIT_ICON_STATE", "2"),
+        ("VIS_INHERIT_ID", "32"),
+        ("VIS_INHERIT_LAYER", "8"),
+        ("VIS_INHERIT_PLANE", "16"),
+        ("VIS_UNDERLAY", "64"),
+        ("WAVE_BOUNDED", "2"),
+        ("WAVE_SIDEWAYS", "1"),
+        ("WEST", "8"),
+    ] {
+        pass.plan.final_macros.insert(
+            name.into(),
+            Macro {
+                parameters: None,
+                variadic: false,
+                replacement: replacement.into(),
+            },
+        );
+    }
+    for (name, replacement) in defines {
+        let definition = Macro {
+            parameters: None,
+            variadic: false,
+            replacement: replacement.clone(),
+        };
+        if name == "FILE_DIR" {
+            pass.push_file_dir(&definition);
+            pass.file_dir_origins.push(None);
+        }
+        pass.plan.final_macros.insert(name.clone(), definition);
+    }
+    for (name, definition) in &pass.plan.final_macros {
+        pass.environment.insert(name, definition.clone(), None);
+    }
+    let occurrence = pass.occurrence(project, None, None, Span::default(), 1);
+    let started = std::time::Instant::now();
+    pass.visit(occurrence);
+    if std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "1") {
+        let d = &pass.detail;
+        eprintln!(
+            "detail directives: total={:.3}s source={:.3}s (provider={:.3}s) context={:.3}s match={:.3}s replay={:.3}s intervals={} hits={}",
+            started.elapsed().as_secs_f64(),
+            d.source.as_secs_f64(),
+            d.provider.as_secs_f64(),
+            d.context.as_secs_f64(),
+            d.matching.as_secs_f64(),
+            d.replay.as_secs_f64(),
+            d.intervals,
+            d.hits,
+        );
+    }
+    pass.plan
+}
+
+/// Diagnostic wall-time split of the ordered pass (DMB_TIMINGS_DETAIL=1).
+#[derive(Default)]
+struct PassDetail {
+    source: std::time::Duration,
+    provider: std::time::Duration,
+    context: std::time::Duration,
+    matching: std::time::Duration,
+    replay: std::time::Duration,
+    intervals: usize,
+    hits: usize,
+}
+
+struct DirectivePass<'a, P> {
+    provider: &'a P,
+    memo: Option<&'a dyn ExpansionMemo>,
+    recording: Option<directive_memo::Recording>,
+    plan: DirectivePlan,
+    visited: BTreeSet<PathBuf>,
+    repeatable: BTreeSet<PathBuf>,
+    file_dir_definitions: Vec<Macro>,
+    environment: MacroEnvironment,
+    file_dir_origins: Vec<Option<DefinitionOrigin>>,
+    // Includes splice their directives into the same encounter stream.
+    conditionals: Vec<Conditional>,
+    detail: PassDetail,
+}
+
+impl<P: SourceProvider> DirectivePass<'_, P> {
+    fn evaluate(&self, word: &str, rest: &str) -> Result<bool, String> {
+        if let Some(recording) = self.recording.as_ref() {
+            evaluate(
+                word,
+                rest,
+                &directive_memo::Lookup {
+                    environment: &self.environment,
+                    recording,
+                },
+            )
+        } else {
+            evaluate(word, rest, &self.environment)
+        }
+    }
+    fn finish_recording(&mut self, region: usize, pending: &mut Vec<RegionLine>) {
+        self.freeze_lines(region, pending);
+        if let Some(recording) = self.recording.take() {
+            if let Some(memo) = self.memo {
+                memo.insert_directive(Arc::new(recording.finish(&self.conditionals)));
+            }
+        }
+    }
+    fn replay_directives(
+        &mut self,
+        occurrence: usize,
+        region: usize,
+        lines: prepared_source::PreparedLines<'_>,
+        record: &DirectiveRecord,
+        pending: &mut Vec<RegionLine>,
+        recoveries: &mut BTreeSet<usize>,
+    ) {
+        for action in record.actions() {
+            match action {
+                directive_memo::Action::RecoveryDirective { input } => {
+                    let line = lines.get(*input).expect("checked recovery directive index");
+                    recoveries.insert(line.source_span.start);
+                }
+                directive_memo::Action::Text(input) => {
+                    let line = lines
+                        .get(*input)
+                        .expect("recorded directive input outside range");
+                    pending.push(RegionLine {
+                        source_span: line.source_span,
+                        source_line: line.source_line,
+                        text: crate::SourceText::clone(line.text),
+                    });
+                }
+                directive_memo::Action::Freeze => self.freeze_lines(region, pending),
+                directive_memo::Action::Multiple => {
+                    self.repeatable
+                        .insert(self.plan.occurrences[occurrence].path.as_ref().clone());
+                }
+                directive_memo::Action::Define {
+                    input,
+                    name,
+                    definition,
+                } => {
+                    let line = lines
+                        .get(*input)
+                        .expect("recorded directive input outside range");
+                    self.apply_define(
+                        occurrence,
+                        region,
+                        line.source_span,
+                        line.source_line,
+                        name.clone(),
+                        definition.clone(),
+                    );
+                }
+                directive_memo::Action::Undef { name, .. } => self.apply_undef(region, name),
+                directive_memo::Action::Error {
+                    input,
+                    kind,
+                    message,
+                } => self.error(
+                    occurrence,
+                    lines
+                        .get(*input)
+                        .expect("recorded directive input outside range")
+                        .source_line,
+                    *kind,
+                    message.clone(),
+                ),
+                directive_memo::Action::Warning { input, message } => self.warn(
+                    occurrence,
+                    lines
+                        .get(*input)
+                        .expect("recorded directive input outside range")
+                        .source_line,
+                    message.clone(),
+                ),
+            }
+        }
+        self.conditionals = record.outgoing().to_vec();
+    }
+    fn apply_define(
+        &mut self,
+        occurrence: usize,
+        region: usize,
+        span: Span,
+        source_line: usize,
+        name: String,
+        definition: Macro,
+    ) {
+        let path = self.plan.occurrences[occurrence].path.clone();
+        if let Some(recording) = self.recording.as_mut() {
+            recording.actions.push(directive_memo::Action::Define {
+                input: recording.current,
+                name: name.clone(),
+                definition: definition.clone(),
+            });
+            recording.local.insert(name.clone());
+        }
+        let origin = DefinitionOrigin {
+            path: path.clone(),
+            source_span: span,
+            source_line,
+        };
+        if name == "FILE_DIR"
+            && definition.parameters.is_none()
+            && !definition.replacement.trim().is_empty()
+        {
+            let path = self.push_file_dir(&definition);
+            self.file_dir_origins.push(Some(origin.clone()));
+            self.plan.regions[region]
+                .effects
+                .push(MacroEffect::PushFileDir {
+                    path,
+                    definition: definition.clone(),
+                });
+        }
+        self.plan.regions[region].effects.push(MacroEffect::Define {
+            name: name.clone(),
+            definition: definition.clone(),
+        });
+        self.environment
+            .insert(&name, definition.clone(), Some(origin));
+        self.plan.final_macros.insert(name, definition);
+    }
+    fn apply_undef(&mut self, region: usize, name: &str) {
+        if let Some(recording) = self.recording.as_mut() {
+            recording.actions.push(directive_memo::Action::Undef {
+                input: recording.current,
+                name: name.to_owned(),
+            });
+            recording.local.insert(name.to_owned());
+            if name == "FILE_DIR" {
+                recording.directory_read();
+            }
+        }
+        self.plan.regions[region].effects.push(MacroEffect::Undef {
+            name: name.to_owned(),
+        });
+        self.plan.final_macros.remove(name);
+        self.environment.remove(name);
+        if name == "FILE_DIR" {
+            self.plan.file_dirs.pop();
+            self.file_dir_definitions.pop();
+            self.file_dir_origins.pop();
+            self.plan.regions[region]
+                .effects
+                .push(MacroEffect::PopFileDir);
+            if let Some(restored) = self.file_dir_definitions.last() {
+                self.plan
+                    .final_macros
+                    .insert(name.to_owned(), restored.clone());
+            }
+            if let Some(restored) = self.file_dir_definitions.last() {
+                let origin = self.file_dir_origins.last().cloned().flatten();
+                self.environment.insert(name, restored.clone(), origin);
+            }
+        }
+    }
+    fn occurrence(
+        &mut self,
+        path: &Path,
+        parent: Option<usize>,
+        include_spelling: Option<&Path>,
+        directive_span: Span,
+        directive_line: usize,
+    ) -> usize {
+        let index = self.plan.occurrences.len();
+        let semantic_path = if let Some(parent) = parent {
+            let parent_occurrence = &self.plan.occurrences[parent];
+            // Preserve the authored include operand. Recovering it from an
+            // access path can leak drive/UNC roots after host normalization.
+            let relative = include_spelling.expect("child occurrence has include spelling");
+            Path::new(parent_occurrence.semantic_path.as_ref())
+                .parent()
+                .unwrap_or(Path::new(""))
+                .join(relative)
+        } else {
+            PathBuf::from(path.file_name().unwrap_or(path.as_os_str()))
+        };
+        self.plan.occurrences.push(IncludeOccurrence {
+            path: Arc::new(canonical_path(path)),
+            semantic_path: Arc::from(semantic_path.to_string_lossy().replace('\\', "/")),
+            parent,
+            directive_span,
+            directive_line,
+            suppressed: false,
+            eof_cursor_line: None,
+            eof_cursor_encounter: None,
+            return_cursor: parent.and_then(|parent_occurrence| {
+                let parent = &self.plan.occurrences[parent_occurrence];
+                let text = self.plan.source_texts.get(parent.path.as_ref())?;
+                (directive_span.start <= directive_span.end
+                    && directive_span.end <= text.len()
+                    && text.is_char_boundary(directive_span.start)
+                    && text.is_char_boundary(directive_span.end))
+                .then_some(IncludeReturnCursor {
+                    parent_occurrence,
+                    decoded_offset: directive_span.end,
+                    directive_anchor_line: None,
+                    encounter_ordinal: None,
+                })
+            }),
+        });
+        index
+    }
+
+    fn error(&mut self, occurrence: usize, line: usize, kind: DiagnosticKind, message: String) {
+        let ordinal = self
+            .plan
+            .regions
+            .iter()
+            .rev()
+            .find(|region| region.occurrence == occurrence)
+            .map_or(self.plan.items.len(), |region| region.encounter_ordinal);
+        if let Some(recording) = self.recording.as_mut() {
+            recording.actions.push(directive_memo::Action::Error {
+                input: recording.current,
+                kind,
+                message: message.clone(),
+            });
+        }
+        self.plan.diagnostic_ordinals.push(ordinal);
+        self.plan.diagnostics.push(Diagnostic {
+            path: self.plan.occurrences[occurrence].path.as_ref().clone(),
+            line,
+            kind,
+            message,
+        });
+    }
+
+    /// DreamMaker prints `#warn` text as a warning and keeps compiling.
+    fn warn(&mut self, occurrence: usize, line: usize, message: String) {
+        if let Some(recording) = self.recording.as_mut() {
+            recording.actions.push(directive_memo::Action::Warning {
+                input: recording.current,
+                message: message.clone(),
+            });
+        }
+        self.plan.warnings.push(Diagnostic {
+            path: self.plan.occurrences[occurrence].path.as_ref().clone(),
+            line,
+            kind: DiagnosticKind::UserError,
+            message,
+        });
+    }
+
+    fn begin_region(&mut self, occurrence: usize, start: usize) -> usize {
+        let index = self.plan.regions.len();
+        self.plan.regions.push(IncludeRegion {
+            occurrence,
+            source_span: Span::new(start, start),
+            encounter_ordinal: self.plan.items.len(),
+            manifest_source: self.plan.occurrences[occurrence]
+                .path
+                .extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("dme")),
+            segments: Vec::new(),
+            effects: Vec::new(),
+        });
+        self.plan.items.push(OrderedItem::Text(index));
+        index
+    }
+
+    fn freeze_lines(&mut self, region: usize, pending: &mut Vec<RegionLine>) {
+        if pending.is_empty() {
+            return;
+        }
+        if let Some(recording) = self.recording.as_mut() {
+            recording.actions.push(directive_memo::Action::Freeze);
+        }
+        // Every segment sees its exact full incoming environment. Persistent
+        // roots and Arc bindings share unchanged entries across define epochs;
+        // token-pasted names require no pruning guess and no full-table clone.
+        self.plan.regions[region].segments.push(ExpansionSegment {
+            lines: std::mem::take(pending),
+            macros: self.environment.clone(),
+        });
+    }
+
+    fn push_file_dir(&mut self, definition: &Macro) -> PathBuf {
+        let path = PathBuf::from(
+            definition
+                .replacement
+                .trim()
+                .trim_matches(['"', '\''])
+                .replace('\\', "/"),
+        );
+        self.plan.file_dirs.push(path.clone());
+        self.file_dir_definitions.push(definition.clone());
+        path
+    }
+
+    fn visit(&mut self, occurrence: usize) {
+        let path = self.plan.occurrences[occurrence].path.clone();
+        // Ordinary files are included once; an active #pragma multiple opts
+        // this exact file path into subsequent inclusion under current macros.
+        if !self.visited.insert(path.as_ref().clone()) && !self.repeatable.contains(path.as_ref()) {
+            self.plan.occurrences[occurrence].suppressed = true;
+            return;
+        }
+        // Repeatable includes can recurse under macro guards. Bound only the
+        // active chain, allowing finite same-file recursion without risking a
+        // process stack overflow for an unguarded repeated include.
+        let mut ancestor = self.plan.occurrences[occurrence].parent;
+        let mut repeated_ancestors = 0;
+        while let Some(parent) = ancestor {
+            if self.plan.occurrences[parent].path == path {
+                repeated_ancestors += 1;
+            }
+            if repeated_ancestors >= 64 {
+                self.error(
+                    occurrence,
+                    1,
+                    DiagnosticKind::Unsupported,
+                    "repeatable include recursion exceeds 64 occurrences".into(),
+                );
+                return;
+            }
+            ancestor = self.plan.occurrences[parent].parent;
+        }
+        self.plan.dependencies.insert(path.as_ref().clone());
+        let source_started = std::time::Instant::now();
+        let prepared = match self.provider.prepared_source(&path) {
+            Some(prepared) => prepared,
+            None => match self.provider.read(&path) {
+                Ok(source) => Arc::new(prepared_source::PreparedSource::from_text(source.into())),
+                Err(error) => {
+                    // DreamMaker reports an unreadable include at its #include
+                    // directive, naming the authored operand.
+                    let current = &self.plan.occurrences[occurrence];
+                    match current.parent {
+                        Some(parent) => {
+                            let line = current.directive_line;
+                            let parent_dir = Path::new(self.plan.occurrences[parent].semantic_path.as_ref())
+                                .parent()
+                                .map(Path::to_path_buf)
+                                .unwrap_or_default();
+                            let semantic = PathBuf::from(current.semantic_path.as_ref());
+                            let spelling = semantic
+                                .strip_prefix(&parent_dir)
+                                .unwrap_or(&semantic)
+                                .to_string_lossy()
+                                .into_owned();
+                            // DreamMaker prints the operand with the host separator.
+                            let spelling = if cfg!(windows) {
+                                spelling.replace('/', "\\")
+                            } else {
+                                spelling
+                            };
+                            self.error(
+                                parent,
+                                line,
+                                DiagnosticKind::Io,
+                                format!("unable to open \"{spelling}\"."),
+                            );
+                        }
+                        None => self.error(occurrence, 1, DiagnosticKind::Io, error),
+                    }
+                    return;
+                }
+            },
+        };
+        self.detail.provider += source_started.elapsed();
+        self.plan
+            .source_line_starts
+            .insert(path.as_ref().clone(), prepared.line_starts().clone());
+        self.plan
+            .source_texts
+            .insert(path.as_ref().clone(), prepared.original().clone());
+        self.detail.source += source_started.elapsed();
+        let mut line_number = 0;
+        let mut returns = Vec::new();
+        let mut recoveries = BTreeSet::new();
+        let diagnostic_start = self.plan.diagnostics.len();
+        let mut region = self.begin_region(occurrence, 0);
+        let mut pending = Vec::new();
+        let lines = prepared.lines();
+        let mut cursor = 0;
+        while cursor < lines.len() {
+            if self
+                .recording
+                .as_ref()
+                .is_some_and(|recording| recording.end == cursor)
+            {
+                self.finish_recording(region, &mut pending);
+            }
+            if self.recording.is_none() && !prepared.is_include(cursor) {
+                if let Some(memo) = self.memo {
+                    let end = (cursor..lines.len())
+                        .find(|&index| prepared.is_include(index))
+                        .unwrap_or(lines.len());
+                    let context_started = std::time::Instant::now();
+                    let context =
+                        directive_memo::context(prepared.original(), lines.slice(cursor..end));
+                    self.detail.context += context_started.elapsed();
+                    self.detail.intervals += 1;
+                    if let Some(context) = context {
+                        let matching_started = std::time::Instant::now();
+                        let mut hit = None;
+                        memo.visit_directive_candidates(context.2, &mut |record| {
+                            let accepted = record.matches(
+                                context.0,
+                                &context.1,
+                                end - cursor,
+                                &self.environment,
+                                &self.conditionals,
+                                (&self.plan.file_dirs, &self.file_dir_definitions),
+                            );
+                            if accepted {
+                                hit = Some(std::sync::Arc::clone(record));
+                            }
+                            accepted
+                        });
+                        self.detail.matching += matching_started.elapsed();
+                        if let Some(record) = hit {
+                            self.detail.hits += 1;
+                            let replay_started = std::time::Instant::now();
+                            self.replay_directives(
+                                occurrence,
+                                region,
+                                lines.slice(cursor..end),
+                                &record,
+                                &mut pending,
+                                &mut recoveries,
+                            );
+                            self.detail.replay += replay_started.elapsed();
+                            line_number += lines
+                                .slice(cursor..end)
+                                .iter()
+                                .map(|line| line.source_lines)
+                                .sum::<usize>();
+                            cursor = end;
+                            continue;
+                        }
+                        self.recording = Some(directive_memo::Recording::new(
+                            cursor,
+                            end,
+                            context,
+                            &self.conditionals,
+                            &self.plan.file_dirs,
+                            &self.file_dir_definitions,
+                        ));
+                    }
+                }
+            }
+            if let Some(recording) = self.recording.as_mut() {
+                recording.current = cursor - recording.start;
+            }
+            let logical = lines.get(cursor).expect("directive cursor outside source");
+            cursor += 1;
+            let source_line = logical.source_line;
+            line_number += logical.source_lines;
+            let span = logical.source_span;
+            let start = span.start;
+            let end = span.end;
+            let active = self.conditionals.last().is_none_or(|frame| frame.active);
+            let Some(syntax) = prepared.directive(cursor - 1) else {
+                if active {
+                    if let Some(recording) = self.recording.as_mut() {
+                        recording
+                            .actions
+                            .push(directive_memo::Action::Text(recording.current));
+                    }
+                    pending.push(RegionLine {
+                        source_span: span,
+                        source_line,
+                        text: crate::SourceText::clone(logical.text),
+                    });
+                }
+                continue;
+            };
+            let (word, rest) = syntax.parts(logical.text);
+            // Record only executed directive decisions in the ordinary pass;
+            // retained directive replay carries the same checked line event.
+            if matches!(word, "if" | "ifdef" | "ifndef" | "elif" | "else" | "endif")
+                || active && matches!(word, "define" | "include")
+            {
+                recoveries.insert(span.start);
+                if let Some(recording) = self.recording.as_mut() {
+                    recording
+                        .actions
+                        .push(directive_memo::Action::RecoveryDirective {
+                            input: recording.current,
+                        });
+                }
+            }
+
+            if matches!(word, "if" | "ifdef" | "ifndef" | "elif" | "else" | "endif") {
+                self.conditional(occurrence, source_line, word, rest);
+                continue;
+            }
+            if word == "include" {
+                self.freeze_lines(region, &mut pending);
+                self.plan.regions[region].source_span.end = start;
+                if active {
+                    let child = self.plan.occurrences.len();
+                    self.include(occurrence, span, source_line, rest);
+                    if self
+                        .plan
+                        .occurrences
+                        .get(child)
+                        .is_some_and(|entry| entry.parent == Some(occurrence))
+                    {
+                        // The child visit has completed. Issue the CURRENT
+                        // ordered stream boundary, including suppressed includes.
+                        if let Some(returned) = &mut self.plan.occurrences[child].return_cursor {
+                            returned.encounter_ordinal = Some(self.plan.items.len());
+                        }
+                        returns.push((child, cursor));
+                    }
+                }
+                region = self.begin_region(occurrence, end);
+                continue;
+            }
+            if !active {
+                continue;
+            }
+            match word {
+                "define" => {
+                    self.freeze_lines(region, &mut pending);
+                    match syntax
+                        .definition
+                        .as_ref()
+                        .expect("define syntax captured")
+                        .clone()
+                    {
+                        Ok((name, definition)) => {
+                            self.apply_define(
+                                occurrence,
+                                region,
+                                span,
+                                source_line,
+                                name,
+                                definition,
+                            );
+                        }
+                        Err(error) => {
+                            self.error(occurrence, source_line, DiagnosticKind::Macro, error)
+                        }
+                    }
+                }
+                "undef" => {
+                    self.freeze_lines(region, &mut pending);
+                    match syntax
+                        .identifier
+                        .as_ref()
+                        .expect("undef syntax captured")
+                        .clone()
+                    {
+                        Ok(name) => {
+                            self.apply_undef(region, &name);
+                        }
+                        Err(error) => {
+                            self.error(occurrence, source_line, DiagnosticKind::Macro, error)
+                        }
+                    }
+                }
+                "error" => self.error(
+                    occurrence,
+                    source_line,
+                    DiagnosticKind::UserError,
+                    rest.trim_end_matches(['\r', '\n']).into(),
+                ),
+                "pragma" => {
+                    if rest.trim() == "multiple" {
+                        self.repeatable.insert(path.as_ref().clone());
+                        if let Some(recording) = self.recording.as_mut() {
+                            recording.actions.push(directive_memo::Action::Multiple);
+                        }
+                    }
+                }
+                "warning" | "warn" => self.warn(
+                    occurrence,
+                    source_line,
+                    format!("#{word} {}", rest.trim()),
+                ),
+                "" => {}
+                // DreamMaker rejects a directive it does not know; one it knows
+                // but the native planner does not implement stays unsupported.
+                other if !matches!(other, "define" | "undef" | "include" | "if" | "ifdef"
+                    | "ifndef" | "elif" | "else" | "endif" | "error" | "warn" | "warning"
+                    | "pragma") => self.error(
+                    occurrence,
+                    source_line,
+                    DiagnosticKind::Directive,
+                    format!("unknown directive {other}"),
+                ),
+                other => self.error(
+                    occurrence,
+                    source_line,
+                    DiagnosticKind::Unsupported,
+                    format!("unsupported preprocessor directive #{other}"),
+                ),
+            }
+        }
+        self.freeze_lines(region, &mut pending);
+        self.finish_recording(region, &mut pending);
+        self.plan.regions[region].source_span.end = prepared.original().len();
+        // Native accepts an active unfinished conditional at root EOF, but an
+        // inactive root EOF is an error. A child EOF never closes the stack.
+        if self.plan.occurrences[occurrence].parent.is_none()
+            && self.conditionals.last().is_some_and(|frame| !frame.active)
+        {
+            self.error(
+                occurrence,
+                line_number + 1,
+                DiagnosticKind::Conditional,
+                "still skipping code at end of file (possibly an unclosed #if/#ifdef/#ifndef)".into(),
+            );
+        }
+        // Issue recovery boundaries from the SAME completed logical-line plan.
+        // An intervening omitted directive leaves BYOND's recovery cursor on
+        // the originating include site (pinned include_return_diagnostics).
+        // Unexpanded ordinary text cannot certify this progression.
+        for (child, after) in returns {
+            let anchor = (after..lines.len())
+                .find_map(|index| {
+                    let line = lines.get(index)?;
+                    (!line.text.trim().is_empty()).then_some(index)
+                })
+                .and_then(|index| {
+                    let line = lines.get(index)?;
+                    (self.plan.diagnostics.len() == diagnostic_start
+                        && recoveries.contains(&line.source_span.start))
+                    .then_some(self.plan.occurrences[child].directive_line)
+                });
+            if let Some(cursor) = &mut self.plan.occurrences[child].return_cursor {
+                cursor.directive_anchor_line = anchor;
+            }
+        }
+        if self.plan.diagnostics.len() == diagnostic_start {
+            self.plan.occurrences[occurrence].eof_cursor_line = line_number.checked_add(1);
+            self.plan.occurrences[occurrence].eof_cursor_encounter = Some(self.plan.items.len());
+        }
+    }
+
+    fn include(&mut self, parent: usize, span: Span, line: usize, rest: &str) {
+        let Some(relative) = parse_include(rest) else {
+            self.error(
+                parent,
+                line,
+                DiagnosticKind::Include,
+                "expected quoted #include path".into(),
+            );
+            return;
+        };
+        let child = self.plan.occurrences[parent]
+            .path
+            .parent()
+            .unwrap_or(Path::new(""))
+            .join(&relative);
+        let occurrence = self.occurrence(&child, Some(parent), Some(&relative), span, line);
+        let kind = match child.extension().and_then(|extension| extension.to_str()) {
+            Some(extension) if extension.eq_ignore_ascii_case("dmm") => Some(NonTextKind::Map),
+            Some(extension) if extension.eq_ignore_ascii_case("dmf") => Some(NonTextKind::Skin),
+            Some(extension)
+                if extension.eq_ignore_ascii_case("dm")
+                    || extension.eq_ignore_ascii_case("dme") =>
+            {
+                None
+            }
+            _ => {
+                self.error(
+                    parent,
+                    line,
+                    DiagnosticKind::Unsupported,
+                    "unverified include extension".into(),
+                );
+                return;
+            }
+        };
+        if let Some(kind) = kind {
+            let path = self.plan.occurrences[occurrence].path.as_ref().clone();
+            self.plan.dependencies.insert(path);
+            self.plan
+                .items
+                .push(OrderedItem::NonText { occurrence, kind });
+        } else {
+            self.visit(occurrence);
+        }
+    }
+
+    fn conditional(&mut self, occurrence: usize, line: usize, word: &str, rest: &str) {
+        let active = self.conditionals.last().is_none_or(|frame| frame.active);
+        match word {
+            "if" | "ifdef" | "ifndef" => {
+                let result = if active {
+                    self.evaluate(word, rest)
+                } else {
+                    Ok(false)
+                };
+                let yes = result.unwrap_or_else(|error| {
+                    self.error(occurrence, line, DiagnosticKind::Conditional, error);
+                    false
+                });
+                self.conditionals.push(Conditional {
+                    parent_active: active,
+                    branch_taken: yes,
+                    active: active && yes,
+                    else_seen: false,
+                });
+            }
+            "elif" | "else" => {
+                let Some(mut frame) = self.conditionals.pop() else {
+                    self.error(
+                        occurrence,
+                        line,
+                        DiagnosticKind::Conditional,
+                        format!("unexpected #{word}"),
+                    );
+                    return;
+                };
+                if frame.else_seen {
+                    self.error(
+                        occurrence,
+                        line,
+                        DiagnosticKind::Conditional,
+                        format!("#{word} after #else"),
+                    );
+                }
+                let result = if !frame.parent_active || frame.branch_taken {
+                    Ok(false)
+                } else if word == "else" {
+                    Ok(true)
+                } else {
+                    self.evaluate("if", rest)
+                };
+                let yes = result.unwrap_or_else(|error| {
+                    self.error(occurrence, line, DiagnosticKind::Conditional, error);
+                    false
+                });
+                frame.active = frame.parent_active && yes;
+                frame.branch_taken |= yes;
+                frame.else_seen |= word == "else";
+                self.conditionals.push(frame);
+            }
+            "endif" => {
+                if self.conditionals.pop().is_none() {
+                    self.error(
+                        occurrence,
+                        line,
+                        DiagnosticKind::Conditional,
+                        "unexpected #endif".into(),
+                    );
+                }
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+fn evaluate(word: &str, expression: &str, macros: &dyn crate::MacroLookup) -> Result<bool, String> {
+    match word {
+        "ifdef" | "ifndef" => directive_identifier(expression)
+            .map(|name| macro_defined(name, macros) == (word == "ifdef")),
+        _ => eval_condition(expression, macros),
+    }
+}

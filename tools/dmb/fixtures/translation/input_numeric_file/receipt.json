@@ -1,0 +1,12 @@
+{
+  "command": [
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+    "E:\\dq-cache\\dmb-native-v2\\input-numeric-file-20261010\\probe.dme"
+  ],
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "source_sha256": "be01ddab3b8df37f576a4d4eb55ad80922d063f28cfa007e0454851dbf296bfd",
+  "exit": 0,
+  "elapsed_seconds": 0.3192656999453902,
+  "compile_only": true,
+  "native_sha256": "66819d114ce6456d82f9839e312b0612f46ca18356ef8d9a792bc370ba353c35"
+}

@@ -1,0 +1,434 @@
+{
+  "schema": "dm-sized-array-initializers-v1",
+  "status": "captured",
+  "producer_sha256": "cd674061f19996886f1b08badebfd337cea7099b05141ef2d1918e4f371fceec",
+  "compiler": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "file_version": "5.0.516.1687",
+  "child_watchdog_s": 30,
+  "aggregate_admission_deadline_s": 360,
+  "cases": [
+    {
+      "name": "instance_list",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\sized_array_initializers\\instance_list.dm",
+      "source_sha256": "ec2d7335d690abe127ba4e3fe006c9936e0b17808f04c73958df1144f4f80b4d",
+      "inputs": {
+        "instance_list.dm": "ec2d7335d690abe127ba4e3fe006c9936e0b17808f04c73958df1144f4f80b4d",
+        "instance_list.dme": "c32552ce0611057998e9910a1c6853ffb8c6109816bfaee1a0c293b3a2004e4e"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\instance_list\\instance_list.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.3280378999770619,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\instance_list\\byond.log",
+        "diagnostics": [
+          {
+            "file": "instance_list.dm",
+            "line": 2,
+            "severity": "warning (list_double_init)",
+            "message": "value: list doubly initialized"
+          }
+        ],
+        "log_sha256": "c52a970ddd44c87acbac5299283d89ff8fd4cc6659c7d9e339d32626a03ff8cc"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\instance_list\\instance_list.dmb",
+          "bytes": 15253,
+          "sha256": "e9a7ac06e28b8a94512a4d19897e66da442120e4ee9b503e582a66354d1346cb"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "diagnostics": "DM compiler version 516.1687\r\nloading instance_list.dme\r\ninstance_list.dm:2:warning (list_double_init): value: list doubly initialized\r\nsaving instance_list.dmb\r\ninstance_list.dmb - 0 errors, 1 warning (10/10/26 8:50 am)\r\nTotal time: 0:00\r\n",
+      "status": "captured"
+    },
+    {
+      "name": "instance_null",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\sized_array_initializers\\instance_null.dm",
+      "source_sha256": "f30fbc2d3825935b6e58963b8d9619c6cb808c3200ae6b2284d995a7bffc0213",
+      "inputs": {
+        "instance_null.dm": "f30fbc2d3825935b6e58963b8d9619c6cb808c3200ae6b2284d995a7bffc0213",
+        "instance_null.dme": "f569f0c09084ef57b7f1ad03e893f6a681a9b387cd52b9d765d9e1e31f65503b"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\instance_null\\instance_null.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.3316507000126876,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\instance_null\\byond.log",
+        "diagnostics": [
+          {
+            "file": "instance_null.dm",
+            "line": 2,
+            "severity": "warning (list_double_init)",
+            "message": "value: list doubly initialized"
+          }
+        ],
+        "log_sha256": "379c27e87aa868689c6d670ddcb213c67afe8617f2c9c3e51773ebef81e3ad5d"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\instance_null\\instance_null.dmb",
+          "bytes": 15229,
+          "sha256": "1c01af622bc690d29df71719633d6b7ad60ecaed80454fa9e021dccd1d709437"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "diagnostics": "DM compiler version 516.1687\r\nloading instance_null.dme\r\ninstance_null.dm:2:warning (list_double_init): value: list doubly initialized\r\nsaving instance_null.dmb\r\ninstance_null.dmb - 0 errors, 1 warning (10/10/26 8:50 am)\r\nTotal time: 0:00\r\n",
+      "status": "captured"
+    },
+    {
+      "name": "global_list",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\sized_array_initializers\\global_list.dm",
+      "source_sha256": "756d5669fa259baeb208232439ec0ccf82072728b58294428630dd4637aa74ca",
+      "inputs": {
+        "global_list.dm": "756d5669fa259baeb208232439ec0ccf82072728b58294428630dd4637aa74ca",
+        "global_list.dme": "40f7c1dacd6990623e6a7fca4e20b4c2ffd5b012ca737dc64082f990b6712752"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\global_list\\global_list.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.33402319997549057,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\global_list\\byond.log",
+        "diagnostics": [
+          {
+            "file": "global_list.dm",
+            "line": 1,
+            "severity": "warning (list_double_init)",
+            "message": "value: list doubly initialized"
+          }
+        ],
+        "log_sha256": "d1cc1abe4bcefdd8d51aa91c37208a5190cd229f1f33ce24f6cec57fed7a8062"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\global_list\\global_list.dmb",
+          "bytes": 15166,
+          "sha256": "64a6d2918ac1089ab140280e19d05d6ff7e696071b35d20c294b220d5a588ade"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "diagnostics": "DM compiler version 516.1687\r\nloading global_list.dme\r\nglobal_list.dm:1:warning (list_double_init): value: list doubly initialized\r\nsaving global_list.dmb\r\nglobal_list.dmb - 0 errors, 1 warning (10/10/26 8:50 am)\r\nTotal time: 0:00\r\n",
+      "status": "captured"
+    },
+    {
+      "name": "global_null",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\sized_array_initializers\\global_null.dm",
+      "source_sha256": "66fd7ce99768e904f4fce273895f3f46782ed8b0491fca35ef2487dce4ee8e54",
+      "inputs": {
+        "global_null.dm": "66fd7ce99768e904f4fce273895f3f46782ed8b0491fca35ef2487dce4ee8e54",
+        "global_null.dme": "7d29a44c1d381a789f1f56a01da0ac0fbb62e8531029e3ad56161cc28855c3f4"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\global_null\\global_null.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.3243559999973513,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\global_null\\byond.log",
+        "diagnostics": [
+          {
+            "file": "global_null.dm",
+            "line": 1,
+            "severity": "warning (list_double_init)",
+            "message": "value: list doubly initialized"
+          }
+        ],
+        "log_sha256": "c33835016f75371c6df73ce2a2849c53a368be0065f1a0aab19efae259d8d510"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\global_null\\global_null.dmb",
+          "bytes": 15148,
+          "sha256": "0fc7da1fc08977a05405a007bf8887955c04a74c0ecd07028edf3d8bdbd66e3d"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "diagnostics": "DM compiler version 516.1687\r\nloading global_null.dme\r\nglobal_null.dm:1:warning (list_double_init): value: list doubly initialized\r\nsaving global_null.dmb\r\nglobal_null.dmb - 0 errors, 1 warning (10/10/26 8:50 am)\r\nTotal time: 0:00\r\n",
+      "status": "captured"
+    },
+    {
+      "name": "static_list",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\sized_array_initializers\\static_list.dm",
+      "source_sha256": "8af9d212b160307c3eb04dabc05222b7efb10eeba4323bf4cd4865329d79dd4c",
+      "inputs": {
+        "static_list.dm": "8af9d212b160307c3eb04dabc05222b7efb10eeba4323bf4cd4865329d79dd4c",
+        "static_list.dme": "5bfdd754415f6e025f174758fd59f729d0e671d99a79c5d1e19b86784bff89f3"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\static_list\\static_list.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.330976799945347,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\static_list\\byond.log",
+        "diagnostics": [
+          {
+            "file": "static_list.dm",
+            "line": 2,
+            "severity": "warning (list_double_init)",
+            "message": "value: list doubly initialized"
+          }
+        ],
+        "log_sha256": "9201e113292c6e3f6547ed67f437541adcaefe048a219e3f8e0c12bca152f840"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\static_list\\static_list.dmb",
+          "bytes": 15215,
+          "sha256": "3e2788a7451af76cbb7760b341e440a183a627c6765a79796e9160a75e109a84"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "diagnostics": "DM compiler version 516.1687\r\nloading static_list.dme\r\nstatic_list.dm:2:warning (list_double_init): value: list doubly initialized\r\nsaving static_list.dmb\r\nstatic_list.dmb - 0 errors, 1 warning (10/10/26 8:50 am)\r\nTotal time: 0:00\r\n",
+      "status": "captured"
+    },
+    {
+      "name": "static_null",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\sized_array_initializers\\static_null.dm",
+      "source_sha256": "bda5210a50a999a7d019e2f615ff5e6b5d8f97486b12a6cb5f6a0c190e00d628",
+      "inputs": {
+        "static_null.dm": "bda5210a50a999a7d019e2f615ff5e6b5d8f97486b12a6cb5f6a0c190e00d628",
+        "static_null.dme": "9037a3de61f7450eee3ab420a7c2246c3b6f678b0b25708937ae03df7d99ddf2"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\static_null\\static_null.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.3190566000412218,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\static_null\\byond.log",
+        "diagnostics": [
+          {
+            "file": "static_null.dm",
+            "line": 2,
+            "severity": "warning (list_double_init)",
+            "message": "value: list doubly initialized"
+          }
+        ],
+        "log_sha256": "05751edd6ac6498ea54585ea5e40580224ca649f1a52e0bca51a33dbc95fb661"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\static_null\\static_null.dmb",
+          "bytes": 15197,
+          "sha256": "84ee7b70d8b756dbcc73021bfacbcf29e16f03f9479863fc66652b1a321ce9c3"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "diagnostics": "DM compiler version 516.1687\r\nloading static_null.dme\r\nstatic_null.dm:2:warning (list_double_init): value: list doubly initialized\r\nsaving static_null.dmb\r\nstatic_null.dmb - 0 errors, 1 warning (10/10/26 8:50 am)\r\nTotal time: 0:00\r\n",
+      "status": "captured"
+    },
+    {
+      "name": "multidim_list",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\sized_array_initializers\\multidim_list.dm",
+      "source_sha256": "03ae378c610be9d6264d3cda525ad81803ae6294c5ce07c84a798361abee380a",
+      "inputs": {
+        "multidim_list.dm": "03ae378c610be9d6264d3cda525ad81803ae6294c5ce07c84a798361abee380a",
+        "multidim_list.dme": "d3da623efd1fddfed17d89080950f9e29f90ef5f7228d8d300de2524f0bcb9cc"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\multidim_list\\multidim_list.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.31982989999232814,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\multidim_list\\byond.log",
+        "diagnostics": [
+          {
+            "file": "multidim_list.dm",
+            "line": 2,
+            "severity": "warning (list_double_init)",
+            "message": "value: list doubly initialized"
+          }
+        ],
+        "log_sha256": "94873bf14de5f6bec4633f25751e08457559ae2494fa749f94d1a0564aca3582"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\multidim_list\\multidim_list.dmb",
+          "bytes": 15265,
+          "sha256": "d696fe929f4af201f1cf99994df57a05b4685c2c74d11a597cab083e1dc1f342"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "diagnostics": "DM compiler version 516.1687\r\nloading multidim_list.dme\r\nmultidim_list.dm:2:warning (list_double_init): value: list doubly initialized\r\nsaving multidim_list.dmb\r\nmultidim_list.dmb - 0 errors, 1 warning (10/10/26 8:50 am)\r\nTotal time: 0:00\r\n",
+      "status": "captured"
+    },
+    {
+      "name": "multidim_implicit",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\sized_array_initializers\\multidim_implicit.dm",
+      "source_sha256": "6b244cfe7a882c3d04c7cd222f9d5dcb9935171b097c69ce1761daa246cdd776",
+      "inputs": {
+        "multidim_implicit.dm": "6b244cfe7a882c3d04c7cd222f9d5dcb9935171b097c69ce1761daa246cdd776",
+        "multidim_implicit.dme": "50d1aeb1b004ebddf7ce8cbca124975d84016833068f960d71bba9b7474899b5"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\multidim_implicit\\multidim_implicit.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.47559310001088306,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\multidim_implicit\\byond.log",
+        "diagnostics": [],
+        "log_sha256": "d8a4aee5dd79a75fa72d312a03ac8f031ac9f7c6cafcae13d06f448367f427c2"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\multidim_implicit\\multidim_implicit.dmb",
+          "bytes": 15257,
+          "sha256": "cbb246136a2aa37e8457f705568887fc38b0d38823ec0d3922050235e9c7f015"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "diagnostics": "DM compiler version 516.1687\r\nloading multidim_implicit.dme\r\nsaving multidim_implicit.dmb\r\nmultidim_implicit.dmb - 0 errors, 0 warnings (10/10/26 8:50 am)\r\nTotal time: 0:00\r\n",
+      "status": "captured"
+    },
+    {
+      "name": "inherited_list",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\sized_array_initializers\\inherited_list.dm",
+      "source_sha256": "917bba5be6eeb8423768eab2252d8d494cded8329c75216aa6884287195f9eb8",
+      "inputs": {
+        "inherited_list.dm": "917bba5be6eeb8423768eab2252d8d494cded8329c75216aa6884287195f9eb8",
+        "inherited_list.dme": "6e34d18d1978e888599013b653c73e5844fe77fed66fac6b0967bf238c96126f"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\inherited_list\\inherited_list.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.33351110003422946,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\inherited_list\\byond.log",
+        "diagnostics": [],
+        "log_sha256": "ab31e6c08c68f81bb06e7e18982faee48d428b5dbe979dd7f725370b6a89b628"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\inherited_list\\inherited_list.dmb",
+          "bytes": 15371,
+          "sha256": "981d94ab4a3934838e0567be782e8302e1ef644206e95e4df04c750fc0fae6a7"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "diagnostics": "DM compiler version 516.1687\r\nloading inherited_list.dme\r\nsaving inherited_list.dmb\r\ninherited_list.dmb - 0 errors, 0 warnings (10/10/26 8:50 am)\r\nTotal time: 0:00\r\n",
+      "status": "captured"
+    },
+    {
+      "name": "inherited_null",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\sized_array_initializers\\inherited_null.dm",
+      "source_sha256": "543e3bfd68a56b13fbeb3879fbf0c5e2adcfd979c887611eaa1e98eace4fbbf2",
+      "inputs": {
+        "inherited_null.dm": "543e3bfd68a56b13fbeb3879fbf0c5e2adcfd979c887611eaa1e98eace4fbbf2",
+        "inherited_null.dme": "e82e51df3e61d5f3b05d6023372fce2880f8ebc0adbabdaeb682afac55d96221"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\inherited_null\\inherited_null.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.3333098999573849,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\inherited_null\\byond.log",
+        "diagnostics": [],
+        "log_sha256": "36bc816767217c3f2c9c3820461f637235fda597b49c206f81647aabc990b68f"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\inherited_null\\inherited_null.dmb",
+          "bytes": 15330,
+          "sha256": "fd2146e13780267d043f2fe493706eecf10c1db5893d8192fbc9225a0bd72ebf"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "diagnostics": "DM compiler version 516.1687\r\nloading inherited_null.dme\r\nsaving inherited_null.dmb\r\ninherited_null.dmb - 0 errors, 0 warnings (10/10/26 8:50 am)\r\nTotal time: 0:00\r\n",
+      "status": "captured"
+    }
+  ],
+  "scope": "actual compile-only output capture; receiver semantics not yet decoded; no native or runtime execution",
+  "version": {
+    "command": [
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe"
+    ],
+    "exit_code": 1,
+    "timed_out": false,
+    "seconds": 0.21839990001171827,
+    "cleanup": null,
+    "log": "E:\\dq-cache\\dmb-native-v2\\sized-arrays-20261010-0910\\version.log",
+    "diagnostics": [],
+    "log_sha256": "865efe09cc6a29c7102ee596363784a36fa4031f773d3caad44d171d5737763b"
+  }
+}

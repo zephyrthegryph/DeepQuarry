@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "inspector_sha256": "ae3659b4697f970e8d92a0d8556df3db1247fa4501851a833885de3e35608f45",
+  "world_path": "E:\\dmb-native-v2-phase0\\preprocess-final-1\\preprocess-paths-origins\\source\\paths-origins\\phase0_runtime.dmb",
+  "world_sha256": "e2e632e8927a6a6667437947f8932e5fd52e4d64f7ed7e3396e374f6316c9504",
+  "source_capture": "paired-final-capture.json",
+  "records": [
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "class-path",
+        "E:\\dmb-native-v2-phase0\\preprocess-final-1\\preprocess-paths-origins\\source\\paths-origins\\phase0_runtime.dmb",
+        "/datum/a"
+      ],
+      "stdout": "class#0 Class { initial_ids: [606, 2, 247, 65535, 65535, 65535], direction: 2, interface: 1, extended_interface: None, text: 247, maptext: 65535, maptext_geometry: [32, 32, 0, 0], suffix: 65535, flags: 0, lists_and_procs: [65535, 65535, 65535, 65535, 0, 65535], layer_bits: 0, transform_flag: 0, transform: None, color_matrix_flag: 0, color_matrix: None, overrides: 65535 }\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "class-path",
+        "E:\\dmb-native-v2-phase0\\preprocess-final-1\\preprocess-paths-origins\\source\\paths-origins\\phase0_runtime.dmb",
+        "/datum/b"
+      ],
+      "stdout": "class#1 Class { initial_ids: [607, 2, 248, 65535, 65535, 65535], direction: 2, interface: 1, extended_interface: None, text: 248, maptext: 65535, maptext_geometry: [32, 32, 0, 0], suffix: 65535, flags: 0, lists_and_procs: [65535, 65535, 65535, 65535, 1, 65535], layer_bits: 0, transform_flag: 0, transform: None, color_matrix_flag: 0, color_matrix: None, overrides: 65535 }\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "list",
+        "E:\\dmb-native-v2-phase0\\preprocess-final-1\\preprocess-paths-origins\\source\\paths-origins\\phase0_runtime.dmb",
+        "0"
+      ],
+      "stdout": "[67, 0, 68, 0]\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "list",
+        "E:\\dmb-native-v2-phase0\\preprocess-final-1\\preprocess-paths-origins\\source\\paths-origins\\phase0_runtime.dmb",
+        "1"
+      ],
+      "stdout": "[69, 0, 68, 0]\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "variable",
+        "E:\\dmb-native-v2-phase0\\preprocess-final-1\\preprocess-paths-origins\\source\\paths-origins\\phase0_runtime.dmb",
+        "67"
+      ],
+      "stdout": "Variable { kind: 6, value: 437, name: 438 } name=file_value\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "variable",
+        "E:\\dmb-native-v2-phase0\\preprocess-final-1\\preprocess-paths-origins\\source\\paths-origins\\phase0_runtime.dmb",
+        "69"
+      ],
+      "stdout": "Variable { kind: 6, value: 440, name: 438 } name=file_value\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "string",
+        "E:\\dmb-native-v2-phase0\\preprocess-final-1\\preprocess-paths-origins\\source\\paths-origins\\phase0_runtime.dmb",
+        "437"
+      ],
+      "stdout": "a/../a/body.dm\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "string",
+        "E:\\dmb-native-v2-phase0\\preprocess-final-1\\preprocess-paths-origins\\source\\paths-origins\\phase0_runtime.dmb",
+        "440"
+      ],
+      "stdout": "b/body.dm\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  ],
+  "finding": "BYOND __FILE__ preserves a/../a/body.dm spelling; suffix-only runtime normalization concealed the full-path difference."
+}

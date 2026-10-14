@@ -1,0 +1,14 @@
+{
+  "compiler": "516.1687",
+  "compiler_sha": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "source_sha": "57c445f783ec381900f9ae161ab1237854379209cc6d10cfda1eb79cd6cb5744",
+  "dmb_sha": "41f0d68a95c0784c992ad4aa38c4403b7ce24b5f38f3e345bf266f0810f805c7",
+  "compile_only": true,
+  "exit": 0,
+  "seconds": 0.38558559998637065,
+  "banner": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/10/26 12:14 am)\nTotal time: 0:00\n",
+  "command": [
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+    "probe.dme"
+  ]
+}

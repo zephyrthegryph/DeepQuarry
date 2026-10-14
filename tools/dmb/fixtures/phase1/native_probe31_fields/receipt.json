@@ -1,0 +1,227 @@
+{
+  "files": [
+    {
+      "sha256": "2b4a36b3152af89c2af116c71c13e3d20ee2acb0c8cbc4b468d8e2d388727ae0",
+      "path": ".gitattributes"
+    },
+    {
+      "sha256": "372c86ffbe72124e732554ce9d9a86681e1673ee58a4342afd1754481d0d1ef0",
+      "path": "callee_caller/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "callee_caller/compile.stderr.log"
+    },
+    {
+      "sha256": "eda64d3bc136755755b1f82246922980c260aa04693100a7aa93addb5170e4f6",
+      "path": "callee_caller/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "callee_caller/probe.dme"
+    },
+    {
+      "sha256": "b4712ccb87a68b6be1366c49f16c66f96ce46fb44b01365eb3d5be3569ff3b4b",
+      "path": "callee_caller/probe.native.bin"
+    },
+    {
+      "sha256": "372c86ffbe72124e732554ce9d9a86681e1673ee58a4342afd1754481d0d1ef0",
+      "path": "callee_caller_chain/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "callee_caller_chain/compile.stderr.log"
+    },
+    {
+      "sha256": "9e38ceb62a1d94853ed209f45b4be40ee6c18776970bc9751f3d47694ba9953a",
+      "path": "callee_caller_chain/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "callee_caller_chain/probe.dme"
+    },
+    {
+      "sha256": "bf287f223687fd34bbfd578ab06491f02f0e55508a2f48afee0252fdc076e609",
+      "path": "callee_caller_chain/probe.native.bin"
+    },
+    {
+      "sha256": "372c86ffbe72124e732554ce9d9a86681e1673ee58a4342afd1754481d0d1ef0",
+      "path": "callee_caller_type/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "callee_caller_type/compile.stderr.log"
+    },
+    {
+      "sha256": "313150a34ca5aa320bf1c3cb6502a1a3d3ad0ffc8bcd6823741f85b43767979a",
+      "path": "callee_caller_type/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "callee_caller_type/probe.dme"
+    },
+    {
+      "sha256": "21b208f2586884a22e2e96e323fb1d5ce8075ac2d6bfd4d125068c86a0fee7ed",
+      "path": "callee_caller_type/probe.native.bin"
+    },
+    {
+      "sha256": "372c86ffbe72124e732554ce9d9a86681e1673ee58a4342afd1754481d0d1ef0",
+      "path": "callee_name/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "callee_name/compile.stderr.log"
+    },
+    {
+      "sha256": "44091bd56a493f3eddc2117c8c0423a4ad26cac50464792ceed36cf74c342093",
+      "path": "callee_name/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "callee_name/probe.dme"
+    },
+    {
+      "sha256": "b165b2ea3b4bdfcf7c868a701e833ee388563340bc29e180e4de3c62e0f63201",
+      "path": "callee_name/probe.native.bin"
+    },
+    {
+      "sha256": "22ffbc255a0ad789d9c67b7b6c5dc1b6527ba6a9b02ee9959fbc860efbf90778",
+      "path": "callee_name_type/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "callee_name_type/compile.stderr.log"
+    },
+    {
+      "sha256": "141d1bea834bfbb59247115447b7bb27e1777e3894d623ee69c345a7b922fd43",
+      "path": "callee_name_type/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "callee_name_type/probe.dme"
+    },
+    {
+      "sha256": "372c86ffbe72124e732554ce9d9a86681e1673ee58a4342afd1754481d0d1ef0",
+      "path": "image_override/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "image_override/compile.stderr.log"
+    },
+    {
+      "sha256": "beb817c37aabd4368085adb9e922e884a26b95876ac07b1306f7cd379fd9bf5c",
+      "path": "image_override/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "image_override/probe.dme"
+    },
+    {
+      "sha256": "a6c07f837cb311fc7b1718e415a37136b86578f9fd7e8d171d0b83e0e7b9cb13",
+      "path": "image_override/probe.native.bin"
+    },
+    {
+      "sha256": "31f80091e103aa5395f8f284b8e1fb1717a99e0d1ddb94e50acef598f7e9d834",
+      "path": "image_override_type/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "image_override_type/compile.stderr.log"
+    },
+    {
+      "sha256": "7a3685970f197850b5ee1c017ada58fa9d21a2fda93c7370c84e1efdec99fa6b",
+      "path": "image_override_type/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "image_override_type/probe.dme"
+    },
+    {
+      "sha256": "372c86ffbe72124e732554ce9d9a86681e1673ee58a4342afd1754481d0d1ef0",
+      "path": "image_override_write/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "image_override_write/compile.stderr.log"
+    },
+    {
+      "sha256": "5b4177173ac08acee374df5269ca690495064295903c57e9877f89c93de23b23",
+      "path": "image_override_write/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "image_override_write/probe.dme"
+    },
+    {
+      "sha256": "682ae9803a7c7c38dfde4dae0d89fc9cd3649efb75ed4756d069bc0b1afb29d7",
+      "path": "image_override_write/probe.native.bin"
+    },
+    {
+      "sha256": "372c86ffbe72124e732554ce9d9a86681e1673ee58a4342afd1754481d0d1ef0",
+      "path": "turf_contents/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "turf_contents/compile.stderr.log"
+    },
+    {
+      "sha256": "b7f54706a0ddd3f73162da7b77401c148c8bd1b5ce37753ee135aab1bceb6632",
+      "path": "turf_contents/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "turf_contents/probe.dme"
+    },
+    {
+      "sha256": "f1438e135d9d66c594ff6745b1e992c5f5d22b4abb61f153ccf9511157ab4986",
+      "path": "turf_contents/probe.native.bin"
+    },
+    {
+      "sha256": "372c86ffbe72124e732554ce9d9a86681e1673ee58a4342afd1754481d0d1ef0",
+      "path": "turf_contents_type/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "turf_contents_type/compile.stderr.log"
+    },
+    {
+      "sha256": "992ae90e81c78a68a4421a423dbf70d6026b48d3625a2cbea45cffa37f7285e2",
+      "path": "turf_contents_type/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "turf_contents_type/probe.dme"
+    },
+    {
+      "sha256": "0df367c24dde296b6f0ac7a3b8f367fccb55beb701edc1d3274c6492c40ac81f",
+      "path": "turf_contents_type/probe.native.bin"
+    },
+    {
+      "sha256": "372c86ffbe72124e732554ce9d9a86681e1673ee58a4342afd1754481d0d1ef0",
+      "path": "turf_contents_write/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "turf_contents_write/compile.stderr.log"
+    },
+    {
+      "sha256": "61746af9ed877a54c08f087f44002d8f2052ef9779b7cc469c3c2cda6de2d375",
+      "path": "turf_contents_write/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "turf_contents_write/probe.dme"
+    },
+    {
+      "sha256": "fb0a244358aa6590f48ceff7bc17acb27b9a6f547b865f747561ee068b7c8c5e",
+      "path": "turf_contents_write/probe.native.bin"
+    }
+  ],
+  "observations": {
+    "turf_vis_contents": "field281 list40 implicit type; Copy and setter accepted",
+    "callee_caller": "field361; implicit istype tag89 class13 decoded /callee",
+    "image_override": "field219 readwrite accepted type unknown",
+    "callee_name": "field39 read accepted implicit type unknown"
+  },
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+}

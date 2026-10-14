@@ -1,0 +1,31 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-996c0240a0401c5b.exe",
+  "binary_sha256": "f4c08667a08e256368093ee6655331122d65571d00bdb505d2afbad0f4928351",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "initializer_policy::warnings::tests",
+      "selected": [
+        "initializer_policy::warnings::tests::inherited_receivers_warn_once_but_distinct_includes_remain_distinct",
+        "initializer_policy::warnings::tests::warning_uses_current_location_and_exact_dreammaker_shape"
+      ],
+      "exit": 0,
+      "seconds": 0.027863600000273436,
+      "stdout": "\nrunning 2 tests\ntest initializer_policy::warnings::tests::inherited_receivers_warn_once_but_distinct_includes_remain_distinct ... ok\ntest initializer_policy::warnings::tests::warning_uses_current_location_and_exact_dreammaker_shape ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 653 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "session::tests",
+      "selected": [
+        "session::tests::configured_record_owner_never_acquires_a_build_lease",
+        "session::tests::configured_session_identity_includes_defines_and_compiler_engine",
+        "session::tests::immutable_session_reuse_validates_inputs_and_rejects_corruption",
+        "session::tests::retained_namespace_releases_request_lock_and_reuses_exact_records"
+      ],
+      "exit": 0,
+      "seconds": 0.17660170001909137,
+      "stdout": "\nrunning 4 tests\ntest session::tests::configured_record_owner_never_acquires_a_build_lease ... ok\ntest session::tests::configured_session_identity_includes_defines_and_compiler_engine ... ok\ntest session::tests::immutable_session_reuse_validates_inputs_and_rejects_corruption ... ok\ntest session::tests::retained_namespace_releases_request_lock_and_reuses_exact_records ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 651 filtered out; finished in 0.02s\n\n",
+      "stderr": ""
+    }
+  ]
+}
