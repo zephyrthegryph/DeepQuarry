@@ -15,6 +15,17 @@
 # It never runs checkout, reset, restore, stash or cherry-pick.
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
+# In the shared merge worktree only the batch that holds the merge lock may merge; and a merge never starts on a tree with staged or
+# modified tracked files (another batch's half-finished merge, or work a merge would have to set aside).
+. "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
+merge_lock_require || exit 1
+git update-index -q --refresh >/dev/null 2>&1
+if ! git diff --quiet || ! git diff --cached --quiet; then
+	echo "dq_merge_master: REFUSED: the tree has staged or modified tracked files (a merge in progress, or unfinished work); commit or finish it first. Nothing was merged:" >&2
+	git status --short --untracked-files=no | head -10 >&2
+	exit 1
+fi
 
 GEN_RE='^(code/engine/_generated/|code/_generated/reads\.dm$|tgui/packages/tgui/interfaces/generated/)'
 GEN_PATHS=(code/engine/_generated code/_generated/reads.dm tgui/packages/tgui/interfaces/generated)
@@ -28,7 +39,7 @@ fi
 
 merge_rc=0
 # --no-commit: a real merge is committed below, with the normalized look keys in it (no separate commit).
-git merge --no-edit --no-commit "$ref" || merge_rc=$?
+git merge --no-edit --no-commit --no-autostash "$ref" || merge_rc=$?
 
 if [ "$merge_rc" -ne 0 ]; then
 	mapfile -t conflicted < <(git diff --name-only --diff-filter=U)

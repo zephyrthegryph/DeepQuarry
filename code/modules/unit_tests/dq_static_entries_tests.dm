@@ -28,6 +28,7 @@ CAPABILITIES(/datum/dq_static_fixture/searcher)
 
 /// The constructors build interned entries; the rows keep their weights and order.
 /datum/unit_test/dq_static_entry_constructors
+	boot_needs = list()
 
 /datum/unit_test/dq_static_entry_constructors/Run()
 	var/datum/entry/E = loot(table = list(/obj/item/tool/wrench = 3, /obj/item/tool/crowbar), count = 2)
@@ -55,6 +56,7 @@ CAPABILITIES(/datum/dq_static_fixture/searcher)
 
 /// A subtype's configure() changes what it inherits; a subtype without a block shares its ancestor's declaration.
 /datum/unit_test/dq_static_entry_inheritance
+	boot_needs = list()
 
 /datum/unit_test/dq_static_entry_inheritance/Run()
 	var/datum/loot_decl/parent = loot_decl_for(/datum/dq_static_fixture/parent)
@@ -92,6 +94,7 @@ CAPABILITIES(/datum/dq_static_fixture/searcher)
 
 /// A second declaration under an inherited one, and a configure() of nothing, are reported (not silently replaced).
 /datum/unit_test/dq_static_entry_errors
+	boot_needs = list()
 
 /datum/unit_test/dq_static_entry_errors/Run()
 	var/datum/type_table/parent_table = static_table_of(/datum/dq_static_fixture/parent)

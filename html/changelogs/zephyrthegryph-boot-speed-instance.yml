@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Boot: building the shared type-trait tables looks up each declaring table once instead of scanning the tables seen so far"
