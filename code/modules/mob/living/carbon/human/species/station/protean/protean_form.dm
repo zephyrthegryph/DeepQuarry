@@ -9,6 +9,9 @@
 	/// world.time of the last form change (form strain).
 	EXPIRY_DECLARE(last_switch_time)
 
+CAPABILITIES(/datum/forms/protean)
+	ref_one(nameof(rig), /obj/item/rig/protean)
+
 TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/form/protean_blob))
 
 /datum/forms/protean/attach()

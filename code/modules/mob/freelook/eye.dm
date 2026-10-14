@@ -48,6 +48,7 @@ CAPABILITIES(/mob/observer/eye)
 	after_init(0, then(PROC_REF(eye_godmode_ready)))
 	ref_one(nameof(eye_looker), /mob, on_unlink = PROC_REF(looker_lost))
 	ref_one(nameof(active_looker), /mob)
+	ref_one(nameof(visualnet), /datum/visualnet)
 
 /// The mob looking through this eye.
 /mob/observer/eye/proc/eye_owner() as /mob

@@ -30,3 +30,8 @@
 /// The nest or spawner a mob came from: LK_NEST on the mob, LK_NEST_SPAWNS on the nest (any atom, many). Read nest_of(L).
 #define LK_NEST "nest"
 #define LK_NEST_SPAWNS "nest_spawns"
+
+/// The pseudo segments of the turf and area hops (code/engine/refs/hops.dm): not vars. A reactive read of `get_turf(src).x` crosses HOP_TURF, of
+/// `get_area(src).x` crosses HOP_AREA; hop_step() resolves them and the movement choke point publishes them (hop_moved()).
+#define HOP_TURF "turf"
+#define HOP_AREA "area"

@@ -9,7 +9,7 @@
 /datum/unit_test/proc/dq_phase_test_human()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/datum/shadekin/SK = H.add_shadekin(/datum/shadekin/full)
-	SK.dark_energy = SK.max_dark_energy
+	SK.set_dark_energy(SK.max_dark_energy)
 	return H
 
 /// B13: a requirement failure must not spend energy. Being mid-phase already (ability_not_phasing) is the cheapest requirement to force
@@ -21,7 +21,7 @@
 	var/datum/shadekin/SK = H.get_shadekin_state()
 	TEST_ASSERT(granted(H, shadekin_phase()), "shadekin_phase is granted")
 
-	SK.doing_phase = TRUE
+	SK.set_doing_phase(TRUE)
 	var/before = SK.shadekin_get_energy()
 	var/datum/op_result/result = dq_use_ability_op(H, ABILITY_ID_SHADEKIN_PHASE_SHIFT)
 	TEST_ASSERT_EQUAL(result?.outcome, ACT_REFUSED, "the shift is refused")
@@ -145,7 +145,7 @@
 		ChangeArea(dark_turf, new /area/shadekin())
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, dark_turf)
 	var/datum/shadekin/SK = H.add_shadekin(/datum/shadekin/full)
-	SK.dark_energy = SK.max_dark_energy
+	SK.set_dark_energy(SK.max_dark_energy)
 	return H
 
 /// Only the full variant grants dark respite; phase_only does not.
@@ -177,7 +177,7 @@
 	var/mob/living/carbon/human/H = dq_respite_test_human()
 	var/datum/shadekin/SK = H.get_shadekin_state()
 	H.apply_body_effect(/datum/body_effect/dark_respite) // as an emergency warp would, not through the ability
-	SK.manual_respite = FALSE
+	SK.set_manual_respite(FALSE)
 	var/datum/op_result/result = dq_use_ability_op(H, ABILITY_ID_SHADEKIN_DARK_RESPITE)
 	TEST_ASSERT_EQUAL(result?.outcome, ACT_REFUSED, "the op actually refuses, unlike the legacy verb")
 	TEST_ASSERT_EQUAL(result?.reason, /datum/msg/shadekin_ability/respite_forced, "blocked with the documented reason")
@@ -228,7 +228,7 @@
 /datum/unit_test/dq_ability_regenerate_other_needs_energy/Run()
 	var/mob/living/carbon/human/H = dq_phase_test_human()
 	var/datum/shadekin/SK = H.get_shadekin_state()
-	SK.dark_energy = 10
+	SK.set_dark_energy(10)
 	var/turf/T = get_turf(H)
 	allocate(/mob/living/carbon/human, get_step(T, NORTH))
 	var/datum/op_result/result = dq_use_ability_op(H, ABILITY_ID_SHADEKIN_REGENERATE_OTHER)
@@ -277,7 +277,7 @@
 	var/mob/living/carbon/human/H = dq_phase_test_human()
 	var/datum/shadekin/SK = H.get_shadekin_state()
 	TEST_ASSERT(isnull(H.ability_can_afford_dark_tunnel(null)), "full energy affords the tunnel")
-	SK.dark_energy = 10
+	SK.set_dark_energy(10)
 	TEST_ASSERT(!isnull(H.ability_can_afford_dark_tunnel(null)), "blocked with too little energy")
 
 /datum/unit_test/dq_ability_dark_tunneling_once_only
@@ -286,7 +286,7 @@
 	var/mob/living/carbon/human/H = dq_phase_test_human()
 	var/datum/shadekin/SK = H.get_shadekin_state()
 	TEST_ASSERT(isnull(H.ability_no_dark_tunnel_yet(null)), "no tunnel yet")
-	SK.created_dark_tunnel = TRUE
+	SK.set_created_dark_tunnel(TRUE)
 	TEST_ASSERT(!isnull(H.ability_no_dark_tunnel_yet(null)), "blocked after one use")
 
 // ---- Borg abilities ----

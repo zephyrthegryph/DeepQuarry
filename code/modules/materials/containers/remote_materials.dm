@@ -44,7 +44,7 @@ CAPABILITIES(/datum/remote_materials)
 	if (!isatom(new_owner))
 		log_world("remote_materials: created without an atom owner ([new_owner])")
 		return
-	rel_set(src, nameof(/datum/action_group::owner), new_owner)
+	rel_set(src, nameof(/datum/remote_materials::owner), new_owner)
 
 	src.allow_standalone = allow_standalone
 	src.mat_container_flags = mat_container_flags

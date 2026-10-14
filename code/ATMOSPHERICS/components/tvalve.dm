@@ -81,6 +81,7 @@
 	return 1
 
 CAPABILITIES(/obj/machinery/atmospherics/tvalve)
+	ref_one(nameof(node3))
 	without("silicon_hand") // a manual valve: silicons can't turn it (digital valves declare their own)
 	op("toggle", hand(), label("Toggle"), wait(0), then(PROC_REF(wheel_turned)))
 	pipe_device_unwrench()

@@ -31,7 +31,7 @@
 	// Setup cached dna data, as storing the entire DNA cloned is horrifically laggy
 	b_type = dna.b_type
 	unique_enzymes = dna.unique_enzymes
-	body_gender = dna.GetUIState(DNA_UI_GENDER)
+	set_body_gender(dna.GetUIState(DNA_UI_GENDER))
 	if(!isnull(dna.GetUIValue(DNA_UI_SKIN_TONE)))
 		skin_tone = dna.GetUIValue(DNA_UI_SKIN_TONE)
 	skin_color = list(dna.GetUIValue(DNA_UI_SKIN_R), dna.GetUIValue(DNA_UI_SKIN_G), dna.GetUIValue(DNA_UI_SKIN_B))

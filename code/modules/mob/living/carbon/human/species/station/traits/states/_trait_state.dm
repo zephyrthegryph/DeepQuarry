@@ -19,6 +19,9 @@
 /// The mob holding this state: a one-sided relation view (the mob owns us in trait_states).
 /datum/trait_state/var/mob/living/owner
 
+CAPABILITIES(/datum/trait_state)
+	ref_one(nameof(owner), /mob/living)
+
 /datum/trait_state/New(mob/living/owner)
 	..()
 	rel_set(src, nameof(owner), owner)

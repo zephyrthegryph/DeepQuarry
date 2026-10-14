@@ -252,7 +252,7 @@ fn record_procs(sem: &crate::sem::Sem) -> Vec<(String, u32, String)> {
 }
 
 /// The sites from the model, or None without one. ALLOW questions are asked live (recorded for the unused-annotation check).
-fn typed_sites(cx: &Cx, singletons: &HashSet<String>, exempt_prefixes: &[String], exempt_files: &[String], homes: &HashSet<(String, String)>) -> Option<Vec<(&'static str, String, u32)>> {
+fn typed_sites(cx: &Cx, singletons: &HashSet<String>, exempt_prefixes: &[String], exempt_files: &[String], homes: &HashSet<(String, String)>) -> Option<Vec<(&'static str, String, u32, String)>> {
     let all = cx.all_files();
     let key = incr::ctx_key(&all.iter().map(|f| (f.rel.as_str(), f.fkey)).collect::<Vec<_>>());
     let model: Option<(Vec<TypedVar>, Vec<(String, u32, String)>)> = incr::cached("base_vars-typed2", key, || cx.sem().map(|sem| (typed_vars(&sem), record_procs(&sem))));
@@ -269,12 +269,12 @@ fn typed_sites(cx: &Cx, singletons: &HashSet<String>, exempt_prefixes: &[String]
         }
         let housed = homes.contains(&(v.owner.clone(), v.name.clone())) || home_types.iter().any(|h| v.vtype == *h || v.vtype.starts_with(&format!("{}/", h)));
         if v.base && !housed {
-            out.push(("base_var", v.rel.clone(), v.line));
+            out.push(("base_var", v.rel.clone(), v.line, format!("{}::{}", v.owner, v.name)));
         }
         if v.list_init {
             let exempt = exempt_prefixes.iter().any(|p| v.rel.starts_with(p.as_str())) || exempt_files.iter().any(|e| *e == v.rel);
             if !exempt && !is_singleton(&v.owner, &empty) && !singletons.contains(&v.owner) && !crate::dm::sys::kept_recorded(f, v.line as usize, "instance_list") {
-                out.push(("list_init", v.rel.clone(), v.line));
+                out.push(("list_init", v.rel.clone(), v.line, format!("{}::{}", v.owner, v.name)));
             }
         }
     }
@@ -282,7 +282,7 @@ fn typed_sites(cx: &Cx, singletons: &HashSet<String>, exempt_prefixes: &[String]
         if accessor_prefixes.iter().any(|p| name.starts_with(p.as_str())) {
             continue;
         }
-        out.push(("records_data_only", rel, line));
+        out.push(("records_data_only", rel, line, String::new()));
     }
     Some(out)
 }
@@ -310,8 +310,8 @@ impl Lint for BaseVars {
         // On the typed tree: the vars each type declares, wherever and however they are written (a multi-var line, a nested
         // block, a macro that declares them), at their real line. The text parse is the fallback without a model.
         if let Some(sites) = recorded_into(out, || typed_sites(cx, &global_set, exempt_prefixes, exempt_files, &homes)) {
-            for (rule, rel, line) in sites {
-                out.site_in(rule, &rel, line as usize);
+            for (rule, rel, line, ident) in sites {
+                out.site_decl(rule, &rel, line as usize, String::new(), ident);
             }
             return;
         }

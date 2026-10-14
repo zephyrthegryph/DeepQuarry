@@ -18,6 +18,9 @@
 	VAR_PRIVATE/is_calm = TRUE
 	VAR_PRIVATE/next_message_time = 0
 
+CAPABILITIES(/datum/trait_state/crowd_detection)
+	ref_one(nameof(human_parent), /mob/living/carbon/human)
+
 /datum/trait_state/crowd_detection/setup()
 	if(!ishuman(owner))
 		return FALSE

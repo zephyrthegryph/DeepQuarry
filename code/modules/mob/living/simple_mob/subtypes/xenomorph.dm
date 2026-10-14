@@ -48,17 +48,23 @@
 	var/xeno_build_time = 5 //time to build a structure
 
 	//HUD
-	var/datum/action/innate/xeno_ch/xeno_build/build_action = new
-	var/datum/action/innate/xeno_ch/xeno_neuro/neurotox_action = new
-	var/datum/action/innate/xeno_ch/xeno_acidspit/acidspit_action = new
-	var/datum/action/innate/xeno_ch/xeno_corrode/corrode_action = new
-	var/datum/action/innate/xeno_ch/xeno_pounce/pounce_action = new
-	var/datum/action/innate/xeno_ch/xeno_spin/spin_action = new
+	var/datum/action/innate/xeno_ch/xeno_build/build_action
+	var/datum/action/innate/xeno_ch/xeno_neuro/neurotox_action
+	var/datum/action/innate/xeno_ch/xeno_acidspit/acidspit_action
+	var/datum/action/innate/xeno_ch/xeno_corrode/corrode_action
+	var/datum/action/innate/xeno_ch/xeno_pounce/pounce_action
+	var/datum/action/innate/xeno_ch/xeno_spin/spin_action
 
 
 
 
 CAPABILITIES(/mob/living/simple_mob/xeno_ch)
+	owns_one(nameof(build_action), /datum/action/innate/xeno_ch/xeno_build, starts = /datum/action/innate/xeno_ch/xeno_build)
+	owns_one(nameof(neurotox_action), /datum/action/innate/xeno_ch/xeno_neuro, starts = /datum/action/innate/xeno_ch/xeno_neuro)
+	owns_one(nameof(acidspit_action), /datum/action/innate/xeno_ch/xeno_acidspit, starts = /datum/action/innate/xeno_ch/xeno_acidspit)
+	owns_one(nameof(corrode_action), /datum/action/innate/xeno_ch/xeno_corrode, starts = /datum/action/innate/xeno_ch/xeno_corrode)
+	owns_one(nameof(pounce_action), /datum/action/innate/xeno_ch/xeno_pounce, starts = /datum/action/innate/xeno_ch/xeno_pounce)
+	owns_one(nameof(spin_action), /datum/action/innate/xeno_ch/xeno_spin, starts = /datum/action/innate/xeno_ch/xeno_spin)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	op("xeno_build", menu(button = "Build Resin Structure"), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(xeno_build_choices)), "radial" = TRUE, "radius" = 60, "autopick_single_option" = TRUE, "timeout" = 0), step = "choice"), wait(PROC_REF(xeno_build_wait)), then(PROC_REF(xeno_build_done)))
 	verb_entry(/mob/living/simple_mob/verb/toggle_speech_sounds, login = TRUE) // TGPanel

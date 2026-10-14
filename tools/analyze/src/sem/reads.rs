@@ -39,7 +39,7 @@ const MAX_HOPS: usize = 4;
 
 /// Procs whose call inside a pure body is an effect (purity check). `set_<var>` and `rel_*` are matched by prefix.
 pub const IMPURE_CALLS: &[&str] = &[
-    "hold", "hold_until", "hold_override", "release", "release_all", "grant", "revoke", "om_grant", "om_grant_for", "publish_change", "qdel", "act_done", "act_cancel",
+    "hold", "hold_until", "hold_override", "release", "release_all", "grant", "revoke", "om_grant", "om_grant_for", "publish_change", "qdel", "act_done", "act_cancel", "build_all_button_icons", "build_button_icon",
 ];
 /// Calls that talk to a player: forbidden in a pure body (the no-message guard).
 pub const MESSAGE_CALLS: &[&str] = &["to_chat", "visible_message", "audible_message", "say", "emote", "show_message", "playsound", "play_sfx"];
@@ -367,6 +367,10 @@ impl Annotations {
     }
 }
 
+/// The pseudo segments of the turf and area hops: not vars, resolved by `hop_step()` at run time (code/engine/refs/hops.dm).
+pub const HOP_TURF: &str = "turf";
+pub const HOP_AREA: &str = "area";
+
 /// How the engine decides a var is covered by the graph (see [`ReadsEngine::classify`]).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VarClass {
@@ -458,6 +462,16 @@ struct Frame<'a> {
     locals: HashMap<String, Val>,
     /// ident -> types it was narrowed to by `istype(ident, /type)` anywhere in the body.
     narrow: HashMap<String, Vec<String>>,
+    /// The first tracked value the body returns (`return x`, `. = x`): a caller that keeps it (`var/turf/T = get_turf(src)`) reads through its root.
+    ret: Option<Val>,
+}
+
+impl<'a> Frame<'a> {
+    fn note_return(&mut self, v: &Val) {
+        if self.ret.is_none() && v.tracked() {
+            self.ret = Some(v.clone());
+        }
+    }
 }
 
 struct Walk<'a, 'e> {
@@ -570,6 +584,12 @@ impl<'a> ReadsEngine<'a> {
         out
     }
 
+    /// A read of `x`, `y` or `z` on the turf hop (`get_turf(a).z`): a turf never moves, and which turf a thing stands on is the turf hop,
+    /// published when the thing moves, so the coordinate is a constant of the hop's target.
+    pub fn turf_coordinate(&self, r: &Read) -> bool {
+        matches!(r.var.as_str(), "x" | "y" | "z") && r.hops.last().map(|h| h == HOP_TURF).unwrap_or(false)
+    }
+
     /// Whether a var read through `owner` is reactive, constant, or unknown.
     pub fn classify(&self, owner: &str, var: &str, written: &WriteIndex) -> VarClass {
         if self.is_tracked(owner, var) || self.is_relation(owner, var) {
@@ -600,13 +620,16 @@ impl<'a> ReadsEngine<'a> {
         if name == "loc" && (self.sem.is_subtype(owner, "/atom") || self.sem.is_subtype(ty_used, "/atom")) {
             return Some("container");
         }
+        if name == HOP_TURF || name == HOP_AREA {
+            return Some(if name == HOP_TURF { "turf" } else { "area" });
+        }
         None
     }
 
     /// A BYOND built-in var the engine publishes from its own choke point, so a read of it is reactive without being a TRACKED var:
     /// `loc` from `doMove()` / `Moved()` (the container hop's publisher).
     pub fn is_published_builtin(&self, owner: &str, var: &str) -> bool {
-        var == "loc" && self.sem.is_subtype(owner, "/atom")
+        (matches!(var, "loc" | HOP_TURF | HOP_AREA) && self.sem.is_subtype(owner, "/atom")) || (var == "ckey" && self.sem.is_subtype(owner, "/mob"))
     }
 
     /// A relation declared with a macro or in a `relations()` body, on the type or an ancestor.
@@ -804,9 +827,14 @@ impl<'a, 'e> Walk<'a, 'e> {
         if !framework_file(rel) {
             return false;
         }
+        if r.var == "contents" {
+            return true;
+        }
         match self.eng.sem.var_decl(&r.owner, &r.var) {
             Some(v) => framework_file(&v.file),
-            None => false,
+            // `contents` is a BYOND built-in with no declaration: the containment ledger counting what its holder holds is the framework's
+            // own bookkeeping (a thing entering the holder publishes through doMove(), not through this count).
+            None => r.var == "contents",
         }
     }
 
@@ -837,9 +865,9 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     /// Walks one proc body with `this` as src. `bind` are the evaluated args for its params.
-    fn run_proc(&mut self, p: ProcRef<'a>, this: Val, bind: &[Val], first_is_ctx: bool) {
+    fn run_proc(&mut self, p: ProcRef<'a>, this: Val, bind: &[Val], first_is_ctx: bool) -> Option<Val> {
         if p.is_builtin() || self.depth > MAX_DEPTH {
-            return;
+            return None;
         }
         let no_act = std::mem::take(&mut self.no_act);
         let owner = {
@@ -848,7 +876,7 @@ impl<'a, 'e> Walk<'a, 'e> {
         };
         let vkey = (owner.clone(), p.name().to_string(), this.root.clone(), this.hops.clone(), bind.iter().map(|v| (v.root.clone(), v.hops.clone())).collect());
         if !self.visited.insert(vkey) {
-            return;
+            return None;
         }
         if !self.eng.virtual_dispatch {
             self.out.followed.insert(format!("{}::{}", owner, p.name()));
@@ -866,7 +894,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             let outer = self.override_depth > 0 || self.engine_depth > 0;
             let known = self.eng.memo.read().unwrap().get(&key).map(|n| n.trivial);
             if known == Some(true) {
-                return;
+                return None;
             }
             if known.is_none() && !self.computing.contains(&key) {
                 self.computing.insert(key.clone());
@@ -890,13 +918,14 @@ impl<'a, 'e> Walk<'a, 'e> {
                 drop(memo);
                 self.eng.memo.write().unwrap().insert(key.clone(), std::sync::Arc::new(MemoNode { own, children, trivial }));
                 if trivial {
-                    return;
+                    return None;
                 }
             }
+            // (A context-free walk has no tracked root to hand back: what it returns is local.)
             self.children.push((key, outer));
-            return;
+            return None;
         }
-        self.enter(p, this, bind, first_is_ctx, no_act, &owner);
+        self.enter(p, this, bind, first_is_ctx, no_act, &owner)
     }
 
     /// Merges every memoized node the walk reached (and the nodes they call, once each) into the set. `outer` carries "found beneath an
@@ -954,10 +983,10 @@ impl<'a, 'e> Walk<'a, 'e> {
         }
     }
 
-    fn enter(&mut self, p: ProcRef<'a>, this: Val, bind: &[Val], first_is_ctx: bool, no_act: bool, owner: &str) {
+    fn enter(&mut self, p: ProcRef<'a>, this: Val, bind: &[Val], first_is_ctx: bool, no_act: bool, owner: &str) -> Option<Val> {
         if let Some(summary) = self.eng.ann.summaries.get(&(owner.to_string(), p.name().to_string())) {
             self.apply_summary(owner, p.name(), summary, &this, bind);
-            return;
+            return None;
         }
         let value = p.get();
         if !self.eng.opaque_dirs.is_empty() {
@@ -968,11 +997,11 @@ impl<'a, 'e> Walk<'a, 'e> {
                     let site = (self.rel.clone(), self.line);
                     self.out.opaque.entry(key).or_insert(site);
                 }
-                return;
+                return None;
             }
         }
-        let Some(code) = &value.code else { return };
-        let mut fr = Frame { proc: p, rel: self.rel_of(p), this, locals: HashMap::new(), narrow: HashMap::new() };
+        let Some(code) = &value.code else { return None };
+        let mut fr = Frame { proc: p, rel: self.rel_of(p), this, locals: HashMap::new(), narrow: HashMap::new(), ret: None };
         for (i, prm) in value.parameters.iter().enumerate() {
             let declared = type_str(&prm.var_type);
             let mut v = match bind.get(i) {
@@ -1001,6 +1030,7 @@ impl<'a, 'e> Walk<'a, 'e> {
         self.depth -= 1;
         self.engine_depth -= in_engine as u32;
         self.rel = outer_rel;
+        fr.ret
     }
 
     /// A proc with a declared `PROC_SUMMARY`: its reads and writes land on the receiver (a type proc) or on the first tracked argument
@@ -1023,10 +1053,10 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     /// Follows `p` (the proc `name` resolves to on `ty`), and, for a closed walk, every override of it in `ty`'s subtypes.
-    fn run_virtual(&mut self, p: ProcRef<'a>, ty: &str, name: &str, this: Val, bind: &[Val]) {
-        self.run_proc(p, this.clone(), bind, false);
+    fn run_virtual(&mut self, p: ProcRef<'a>, ty: &str, name: &str, this: Val, bind: &[Val]) -> Option<Val> {
+        let ret = self.run_proc(p, this.clone(), bind, false);
         if !self.eng.virtual_dispatch || !this.tracked() {
-            return;
+            return ret;
         }
         let declaring = {
             let o = &p.ty().get().path;
@@ -1043,6 +1073,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             self.run_proc(op, v, bind, false);
             self.override_depth -= 1;
         }
+        ret
     }
 
     fn block(&mut self, fr: &mut Frame<'a>, b: &Block) {
@@ -1130,6 +1161,10 @@ impl<'a, 'e> Walk<'a, 'e> {
                 }
                 self.block(fr, block);
             }
+            Statement::Return(Some(e)) => {
+                let v = self.eval(fr, e);
+                fr.note_return(&v);
+            }
             _ => {
                 for e in stmt_exprs(s) {
                     self.eval(fr, e);
@@ -1198,6 +1233,11 @@ impl<'a, 'e> Walk<'a, 'e> {
         let line = term.location.line;
         if follow.is_empty() {
             if let Term::Ident(n) = &term.elem {
+                if n == "." && matches!(op, AssignOp::Assign) {
+                    fr.note_return(&rv);
+                    fr.locals.insert(n.clone(), rv);
+                    return;
+                }
                 if fr.locals.contains_key(n) {
                     if !matches!(op, AssignOp::Assign) {
                         self.eval(fr, lhs);
@@ -1269,7 +1309,9 @@ impl<'a, 'e> Walk<'a, 'e> {
                 if let Some(parent) = fr.proc.parent_proc() {
                     let this = fr.this.clone();
                     let bind = if vals.is_empty() { self.current_params(fr) } else { vals };
-                    self.run_proc(parent, this, &bind, false);
+                    if let Some(r) = self.run_proc(parent, this, &bind, false) {
+                        return r;
+                    }
                 }
                 Val::local(None)
             }
@@ -1466,6 +1508,10 @@ impl<'a, 'e> Walk<'a, 'e> {
                 None => Val::local(None),
             };
         }
+        // A turf's container is its area: the area hop.
+        if name == "loc" && v.tracked() && sem.is_subtype(&ty, "/turf") {
+            return self.pseudo_hop(v, HOP_AREA, &rel, line);
+        }
         let mut sig = sem.var_decl(&ty, name);
         let mut ty_used = ty.clone();
         if sig.is_none() {
@@ -1493,7 +1539,11 @@ impl<'a, 'e> Walk<'a, 'e> {
         if !v.tracked() {
             return Val::local((!sig.declared.is_empty()).then(|| sig.declared));
         }
-        let owner = sem.var_owner(&ty_used, name).unwrap_or_else(|| ty_used.clone());
+        let mut owner = sem.var_owner(&ty_used, name).unwrap_or_else(|| ty_used.clone());
+        // A subtype may track a var an ancestor declares (`TRACKED(/area, flags)` for `/atom/var/flags`): the read is of that subtype's tracked var.
+        if owner != ty_used && owner != "/" && !self.eng.is_tracked(&owner, name) && self.eng.is_tracked(&ty_used, name) {
+            owner = ty_used.clone();
+        }
         if owner == "/" {
             // A global var (`SSair`, `world`): never a read of the holder; not reactive by contract.
             return Val::local((!sig.declared.is_empty()).then(|| sig.declared));
@@ -1611,8 +1661,25 @@ impl<'a, 'e> Walk<'a, 'e> {
             return Val::local(None);
         }
         let _ = owner;
-        self.run_virtual(p, &ty, name, v, &argv);
-        Val::local(None)
+        self.run_virtual(p, &ty, name, v, &argv).unwrap_or_else(|| Val::local(None))
+    }
+
+    /// `v`'s turf or area, as a hop that keeps v's root: a read of the pseudo var on v (what `loc_changed()` publishes when it changes) and a
+    /// value typed /turf or /area whose reads subscribe through the hop. A turf's turf is itself, an area's area is itself, and the area of a
+    /// turf hop is the area hop.
+    fn pseudo_hop(&mut self, v: Val, kind: &str, rel: &str, line: u32) -> Val {
+        let base = if kind == HOP_AREA { "/area" } else { "/turf" };
+        if v.ty.as_deref().map(|t| self.eng.sem.is_subtype(t, base)).unwrap_or(false) {
+            return v;
+        }
+        let mut hops = v.hops.clone();
+        if kind == HOP_AREA && hops.last().map(|h| h == HOP_TURF).unwrap_or(false) {
+            hops.pop();
+        }
+        let r = Read { root: v.root_name(), hops: hops.clone(), var: kind.to_string(), owner: "/atom".to_string(), kind: ReadKind::Var, hop_ok: v.hop_ok };
+        self.add_read(r, rel, line);
+        hops.push(kind.to_string());
+        Val { ty: Some(base.to_string()), root: v.root.clone(), hops, hop_ok: v.hop_ok, list: false }
     }
 
     fn reads_as_for(&self, ty: &str, name: &str) -> Option<&'e (String, Option<String>)> {
@@ -1684,6 +1751,20 @@ impl<'a, 'e> Walk<'a, 'e> {
             let bound = LookupBound { registry: decl.registry.clone(), identity_key: decl.identity_key.clone(), lookup: name.to_string(), argument };
             return Val { ty: Some(decl.result.clone()), root: Root::Lookup(Box::new(bound)), hops: Vec::new(), hop_ok: true, list: false };
         }
+        // The turf and area hops (doc/rewrite/final_api.html section 7, "Hop kinds"): `get_turf(x)` (`get_step(x, 0)`) and `get_area(x)` keep x's
+        // root. The pseudo segment is published by the movement choke point (`loc_changed()`), and walked by `hop_step()` / `hop_sources()`
+        // (code/engine/refs/hops.dm).
+        if name == "get_step" || name == "get_area" {
+            let here = name == "get_area" || matches!(args.get(1), Some(Expression::Base { term, follow }) if follow.is_empty() && matches!(term.elem, Term::Int(0)));
+            if let (true, Some(a)) = (here, argv.first()) {
+                if a.tracked() {
+                    return self.pseudo_hop(a.clone(), if name == "get_area" { HOP_AREA } else { HOP_TURF }, &rel, line);
+                }
+            }
+            if name == "get_step" {
+                return Val::local(Some("/turf".to_string()));
+            }
+        }
         if name == "native" {
             if let Some(Expression::Base { term, .. }) = args.first() {
                 if let Term::String(s) = &term.elem {
@@ -1722,7 +1803,9 @@ impl<'a, 'e> Walk<'a, 'e> {
                         { let r = Read { root: this.root_name(), hops, var: k.0.clone(), owner: String::new(), kind: ReadKind::Accessor, hop_ok: this.hop_ok }; self.add_read(r, &rel, line); }
                         return Val::local(None);
                     }
-                    self.run_virtual(p, &ty, name, this, &argv);
+                    if let Some(r) = self.run_virtual(p, &ty, name, this, &argv) {
+                        return r;
+                    }
                 } else if matches!(this.root, Root::Global(_)) && self.eng.virtual_dispatch {
                     self.run_proc(p, this, &argv, false);
                 }
@@ -1772,7 +1855,9 @@ impl<'a, 'e> Walk<'a, 'e> {
                     }
                 }
                 let g = Val::local(None);
-                self.run_proc(p, g, &bind, false);
+                if let Some(r) = self.run_proc(p, g, &bind, false) {
+                    return r;
+                }
             } else if self.eng.virtual_dispatch {
                 // Walked like any proc, every parameter bound to what the call passed: a tracked argument keeps its root, so what the body
                 // reads of it is a read of the caller's entity. Global state the body reads is classified in `global_field`.
@@ -1789,8 +1874,11 @@ impl<'a, 'e> Walk<'a, 'e> {
                     })
                     .collect();
                 self.no_act = true;
-                self.run_proc(p, Val::local(None), &bind, false);
+                let ret = self.run_proc(p, Val::local(None), &bind, false);
                 self.no_act = false;
+                if let Some(r) = ret {
+                    return r;
+                }
             } else {
                 self.diag("unannotated_global", &rel, line, format!("global proc `{}` is called without READS_FROM", name));
             }
@@ -2234,6 +2322,116 @@ TRACKED(/obj/lamp, charge)
         assert!(unbounded.diags.iter().any(|d| d.rule == "hop_not_relation"), "a call on /atom could run any override: {:?}", unbounded.diags);
         assert!(!unbounded.keys().contains("loc.lit"), "and it is not followed");
         // The legacy walk still calls the container a hop that is not a relation only when it is not a kind: it is one now.
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_returned_value_keeps_its_root_and_the_turf_and_area_are_hop_kinds() {
+        let content = "#define get_turf(A) get_step(A,0)
+/area
+	var/lights = 0
+TRACKED(/area, lights)
+/turf
+	var/wet = 0
+TRACKED(/turf, wet)
+/proc/get_area(atom/A)
+	var/turf/T = get_turf(A)
+	return T ? T.loc : null
+/obj/lamp
+	var/cell
+	var/charge = 0
+TRACKED(/obj/lamp, charge)
+/obj/lamp/proc/own()
+	return src
+/obj/lamp/proc/via_return()
+	var/obj/lamp/L = own()
+	return L.charge
+/obj/lamp/proc/floor_wet()
+	var/turf/T = get_turf(src)
+	return T.wet
+/obj/lamp/proc/room_lit()
+	var/area/A = get_area(src)
+	return A.lights
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &ann).closed();
+        let ret = eng.analyze("/obj/lamp", "via_return");
+        assert!(ret.keys().contains("charge"), "a value a walked proc returns keeps its root: {:?}", ret.keys());
+        let wet = eng.analyze("/obj/lamp", "floor_wet");
+        assert_eq!(wet.keys(), BTreeSet::from(["turf".to_string(), "turf.wet".to_string()]), "get_turf(src) is the turf hop");
+        assert!(wet.reads.iter().all(|r| r.hop_ok), "{:?}", wet.reads);
+        let lit = eng.analyze("/obj/lamp", "room_lit");
+        assert!(lit.keys().contains("area.lights") && lit.keys().contains("area"), "get_area(src) is the area hop: {:?}", lit.keys());
+        assert!(lit.diags.iter().all(|d| d.rule != "hop_not_relation"), "{:?}", lit.diags);
+        assert_eq!(eng.classify("/obj/lamp", "turf", &WriteIndex::build(&sem)), VarClass::Reactive, "the turf hop is published by the move choke point");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+
+    #[test]
+    fn a_turf_coordinate_and_the_ledger_contents_count_are_not_inputs() {
+        let content = "#define get_turf(A) get_step(A,0)
+/turf
+	var/z = 0
+/mob
+	var/ckey
+/obj/lamp/proc/level()
+	var/turf/T = get_turf(src)
+	return T.z
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content), ("code/engine/ledger.dm", "/obj/lamp/proc/count()
+	return length(contents)
+")]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &ann).closed();
+        assert_eq!(eng.classify("/mob", "ckey", &WriteIndex::build(&sem)), VarClass::Reactive, "ckey is published from Login() and Logout()");
+        let level = eng.analyze("/obj/lamp", "level");
+        let z = level.reads.iter().find(|r| r.var == "z").expect("z read");
+        assert!(eng.turf_coordinate(z), "z through the turf hop is a constant of the hop target: {:?}", level.keys());
+        let count = eng.analyze("/obj/lamp", "count");
+        assert!(count.reads.iter().all(|r| r.var != "contents" || count.internal.contains(r)), "a framework file counting contents is bookkeeping: {:?}", count.reads);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_draw_hears_a_hop_chain_up_to_three_links() {
+        let content = "#define get_turf(A) get_step(A,0)
+/obj/cell
+	var/level = 0
+TRACKED(/obj/cell, level)
+/obj/crate
+	var/obj/cell/gauge
+REL(/obj/crate, gauge)
+/obj/reader
+	var/obj/crate/box
+/obj/reader/proc/two()
+	var/obj/crate/C = loc
+	return C.gauge.level
+/turf
+	var/obj/cell/under
+REL(/turf, under)
+/obj/reader/proc/floor()
+	var/turf/T = get_turf(src)
+	return T.under.level
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &ann).closed();
+        for (proc, path) in [("two", vec!["loc", "gauge"]), ("floor", vec!["turf", "under"])] {
+            let set = eng.analyze("/obj/reader", proc);
+            let far = set.reads.iter().find(|r| r.var == "level").unwrap_or_else(|| panic!("{proc}: {:?}", set.keys()));
+            assert_eq!(far.hops, path, "{proc}");
+            assert!(crate::gens::deps::draw_hop_heard(far), "{proc}: a chain of a container or turf hop and a relation is heard by the draw");
+        }
+        let mut deep = eng.analyze("/obj/reader", "two").reads.iter().find(|r| r.var == "level").cloned().unwrap();
+        deep.hops = vec!["loc".into(), "gauge".into(), "gauge".into(), "gauge".into()];
+        assert!(!crate::gens::deps::draw_hop_heard(&deep), "four links are past the depth a draw hears");
+        deep.hops = vec!["gauge".into()];
+        assert!(!crate::gens::deps::draw_hop_heard(&deep), "a chain that does not start with a container, turf or area hop is not a draw hop");
         std::fs::remove_dir_all(root).unwrap();
     }
 }

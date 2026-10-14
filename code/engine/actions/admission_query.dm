@@ -71,7 +71,7 @@ PROC_SUMMARY(/proc/op_query_read_pairs) // vars[] / call() dispatcher: the walk 
 			var/list/next = list()
 			for(var/datum/owner as anything in owners)
 				. += list(list(owner, hop))
-				var/value = owner.vars[hop]
+				var/value = hop_step(owner, hop)
 				if(islist(value))
 					var/list/members = value
 					for(var/member_key in members)

@@ -54,6 +54,7 @@
 	return PROJECTILE_FORCE_MISS
 
 CAPABILITIES(/mob/living/simple_mob/illusion)
+	ref_one(nameof(copying), /atom/movable)
 	configure(mob_kind(mob_class = MOB_CLASS_ILLUSION))
 	configure(mob_movement(bump = 0))
 	op("illusion_hand_help", hand(), ungated(), stance(I_HELP), label("Hug"), then(PROC_REF(illusion_interaction_hand_help)))

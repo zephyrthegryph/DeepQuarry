@@ -21,6 +21,7 @@ GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 		GLOB.dq_private_notes_panels -= "[REF(host)]"
 
 CAPABILITIES(/datum/private_notes_panel)
+	ref_one(nameof(host), /mob/living)
 	interface("PrivateNotes", state = nameof(GLOB.tgui_default_state))
 	op("edit", ui_act("edit"), then(PROC_REF(ui_act_edit)))
 	op("save", ui_act("save"), then(PROC_REF(ui_act_save)))
@@ -86,6 +87,7 @@ CAPABILITIES(/datum/private_notes_panel)
 		GLOB.dq_ooc_notes_panels -= "[REF(host)]"
 
 CAPABILITIES(/datum/ooc_notes_panel)
+	ref_one(nameof(host), /mob/living)
 	interface("OocNotes", state = nameof(GLOB.tgui_default_state))
 	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
 	op("save", ui_act("save"), then(PROC_REF(ui_act_save)))

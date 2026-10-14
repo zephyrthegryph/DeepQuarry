@@ -258,6 +258,7 @@ MSG_DEF_SELF(cat/named, "%T% already has a name!")
 
 /// Naming with a pen: asked, then written by cat_name_entered(). The one question is an asks() step of each op (a pen and a penlight).
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cat)
+	ref_one(nameof(friend), /mob/living)
 	op("name_with_pen", item(/obj/item/pen), label("Use"), needs(req_is(nameof(named), FALSE, because = MSG(cat/named))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(cat_name_entered)))
 	op("name_with_penlight", item(/obj/item/flashlight/pen), label("Use"), needs(req_is(nameof(named), FALSE, because = MSG(cat/named))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(cat_name_entered)))
 	look_from(nameof(icon_state), living = "*", dead = "*_dead", rest = "*_rest")

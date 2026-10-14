@@ -2167,9 +2167,9 @@
 			var/mob/living/carbon/human/H = M
 			var/datum/xenochimera/xc = M.get_xenochimera_state()
 			if(xc && xc.feral > 0 && nutrition_of(H) > 150 && H.traumatic_shock < 20 && H.status_units(STAT_JITTERY) < 100) //Same check as feral triggers to stop them immediately re-feralling
-				xc.feral -= removed * 3 // should calm them down quick, provided they're actually in a state to STAY calm.
+				xc.set_feral(xc.feral - (removed * 3)) // should calm them down quick, provided they're actually in a state to STAY calm.
 				if (xc.feral <=0) //check if they're unferalled
-					xc.feral = 0
+					xc.set_feral(0)
 					to_chat(H, span_info("Your mind starts to clear, soothed into a state of clarity as your senses return."))
 					log_and_message_admins("is no longer feral.", H)
 
@@ -2518,9 +2518,9 @@
 			var/mob/living/carbon/human/H = M
 			var/datum/xenochimera/xc = M.get_xenochimera_state()
 			if(xc && xc.feral > 0 && nutrition_of(H) > 100 && H.traumatic_shock < min(60, nutrition_of(H)/10) && H.status_units(STAT_JITTERY) < 100) // same check as feral triggers to stop them immediately re-feralling
-				xc.feral -= removed * 3 // should calm them down quick, provided they're actually in a state to STAY calm.
+				xc.set_feral(xc.feral - (removed * 3)) // should calm them down quick, provided they're actually in a state to STAY calm.
 				if (xc.feral <=0) //check if they're unferalled
-					xc.feral = 0
+					xc.set_feral(0)
 					to_chat(H, span_info("Your mind starts to clear, soothed into a state of clarity as your senses return."))
 					log_and_message_admins("is no longer feral.", H)
 
@@ -2608,9 +2608,9 @@
 		var/mob/living/carbon/human/H = M
 		var/datum/xenochimera/xc = M.get_xenochimera_state()
 		if(xc && xc.feral > 0 && nutrition_of(H) > 150 && H.traumatic_shock < 20 && H.status_units(STAT_JITTERY) < 100) //Same check as feral triggers to stop them immediately re-feralling
-			xc.feral -= removed * 3 //Should calm them down quick, provided they're actually in a state to STAY calm.
+			xc.set_feral(xc.feral - (removed * 3)) //Should calm them down quick, provided they're actually in a state to STAY calm.
 			if(xc.feral <=0) //Check if they're unferalled
-				xc.feral = 0
+				xc.set_feral(0)
 				to_chat(H, span_info("Your mind starts to clear, soothed into a state of clarity as your senses return."))
 				log_and_message_admins("is no longer feral.", H)
 

@@ -120,7 +120,7 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 			var/name = "[initial(NS.name)][context]"
 			var/datum/stored_item/vending_product/product = new/datum/stored_item/vending_product(src, NS, name)
 
-			product.price = initial(NS.cost)
+			product.set_price(initial(NS.cost))
 			product.set_amount(10)
 			product.set_category(category)
 			product.item_desc = initial(NS.desc)

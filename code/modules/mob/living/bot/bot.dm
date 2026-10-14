@@ -694,6 +694,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	no_vore = TRUE
 
 CAPABILITIES(/mob/living/bot)
+	ref_one(nameof(target), /atom)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "devourable" = FALSE, "feeding" = FALSE, "can_be_drop_pred" = FALSE))
 	configure(mob_movement(makes_dirt = FALSE))
 	silicon_hand()
