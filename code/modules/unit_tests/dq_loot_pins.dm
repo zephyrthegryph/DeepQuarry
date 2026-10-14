@@ -101,11 +101,12 @@
 	/// 1 to 4: this run rolls every fourth declaration (the four parts run in four worlds at once); 0: all of them.
 	var/part = 0
 
-/// The declarations this run rolls.
+/// The declarations this run rolls. A sharded sweep does not slice them: a declaration's cost is clustered (the crates cost minutes a seed, a landmark
+/// milliseconds), so a slice of declarations left one world with most of the work. Run() slices the (declaration, seed) units instead.
 /datum/unit_test/dq_loot_roll_pin/proc/pin_owners()
 	if(part)
 		return dq_loot_pin_part(part)
-	return sweep_types(dq_loot_pin_owners())
+	return dq_loot_pin_owners()
 
 /// Every fourth declaration, starting at the part's own: the parts cost about the same.
 /proc/dq_loot_pin_part(part)
@@ -133,6 +134,8 @@
 	var/list/owners = pin_owners()
 	var/started = REALTIMEOFDAY
 	var/done = 0
+	var/unit = 0
+	log_test("loot roll pin: [length(owners)] declaration(s) x [pin_seed_count()] seed(s) x [DQ_LOOT_PIN_ROLLS] rolls[GLOB.dq_test_shard_count > 1 ? ", slice [GLOB.dq_test_shard_index + 1]/[GLOB.dq_test_shard_count] of the (declaration, seed) units" : ""]")
 	for(var/owner in owners)
 		var/ref = dq_loot_pin_ref(owner)
 		if(!ref)
@@ -140,6 +143,8 @@
 			continue
 		log_test("loot roll pin: [++done]/[length(owners)] [owner] ([round((REALTIMEOFDAY - started) / 10)] s)")
 		for(var/k in 1 to pin_seed_count())
+			if(!sweep_owns(unit++))
+				continue
 			var/seed_started = REALTIMEOFDAY
 			var/seed = dq_loot_pin_seed(k)
 			rand_seed(dq_test_seed_for("[owner][seed]"))
