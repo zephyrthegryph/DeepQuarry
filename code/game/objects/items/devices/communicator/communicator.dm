@@ -426,8 +426,5 @@ CAPABILITIES(/obj/item/communicator/watch)
 #undef MANITAB
 #undef SETTTAB
 
-CAPABILITIES(/obj/item/communicator)
-	setup(PROC_REF(prepare_camera_connection))
-
 CAPABILITIES(/obj/machinery/camera/communicator)
 	setup(PROC_REF(prepare_communicator_huds))
