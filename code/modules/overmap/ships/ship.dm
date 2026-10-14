@@ -65,7 +65,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_OVERMAP_SHIPS)
 	if(SSflight && flight_vessel_id)
 		var/datum/flight_vessel/vessel = own_take_member(SSflight, nameof(/datum/system/flight::vessels), flight_vessel_id)
 		if(vessel)
-			SSflight.vessel_by_ship -= REF(src)
+			SSflight.forget_ship_index(src)
 			spent(vessel)
 	return ..()
 
@@ -289,7 +289,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 
 /obj/effect/overmap/visitable/ship/get_distress_info()
 	var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)
-	var/datum/flight_destination/orbit = SSflight?.destinations[vessel?.orbit_parent_id]
+	var/datum/flight_destination/orbit = SSflight?.destination_by_id(vessel?.orbit_parent_id)
 	return "\[ORBIT:[orbit?.name || "unregistered"]\]"
 
 #undef SHIP_MOVE_RESOLUTION

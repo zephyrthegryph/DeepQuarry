@@ -102,12 +102,13 @@ GLOBAL_LIST_EMPTY(refined_chems_sold)
 		var/word_export = "This shift's nerdle Was: [nerdle_round_word()]! <br>"
 		word_export += "There were [nerdle_player_count()] players this shift!<br>"
 		var/static/list/splashes = list("We know what you are!", "That's how we do!", "Basically free!", "Hear them roar!", "The streak is alive!","Don't fall for them tricks!")
-		for(var/i in 1 to SSnerdle.player_attempts.len)
-			if(nerdle_player_attempts()[i] > 0)
+		var/list/attempts = SSnerdle.attempt_histogram()
+		for(var/i in 1 to length(attempts))
+			if(attempts[i] > 0)
 				if(i < 7)
-					word_export += "There were [nerdle_player_attempts()[i]] people who got it in [i]! [splashes[i]]<br>"
+					word_export += "There were [attempts[i]] people who got it in [i]! [splashes[i]]<br>"
 				else
-					word_export += "And there were [nerdle_player_attempts()[i]] losers who couldn't quite get it. You'll get em next time!<br>"
+					word_export += "And there were [attempts[i]] losers who couldn't quite get it. You'll get em next time!<br>"
 
 		valid_stats_list.Add(word_export)
 

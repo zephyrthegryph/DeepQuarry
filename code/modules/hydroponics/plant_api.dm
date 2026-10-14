@@ -56,3 +56,5 @@
 /datum/system/plants/proc/remove_plant(obj/effect/plant/plant)
 	registry_leave(REGISTRY_GROWING_PLANTS, plant)
 	plant.set_growing(FALSE)
+/datum/system/plants/proc/seed_named(seed_name)
+	return seeds[seed_name]

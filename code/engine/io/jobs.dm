@@ -77,7 +77,7 @@
 	arg_count = 2
 
 /datum/io_backend/sql/active_limit()
-	return SSdbcore?.max_concurrent_queries || 10
+	return SSdbcore?.query_concurrency_limit() || 10
 
 /datum/io_backend/sql/start(datum/io_job/J)
 	if(!SSdbcore || !SSdbcore.IsConnected())

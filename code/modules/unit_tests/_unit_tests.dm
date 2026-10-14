@@ -366,6 +366,7 @@
 #include "dq_tail_animation.dm"
 #include "dq_profile_records.dm"
 #include "dq_shuttle_tests.dm"
+#include "dq_misc_system_boundary_tests.dm"
 #include "dq_state_tests.dm"
 #include "dq_sys_loot_tests.dm"
 #include "dq_lifecycle_tests.dm"

@@ -36,3 +36,5 @@
 		else
 			announce("Good morning, crew. As it is now day time, all of the lights aboard the station have been restored to their former brightness.")
 	return TRUE
+/datum/system/nightshift/proc/configure_automatic_nightshift(enabled)
+	automatic = enabled

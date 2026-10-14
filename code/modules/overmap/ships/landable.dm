@@ -221,14 +221,14 @@ CAPABILITIES(/obj/effect/shuttle_landmark/visiting_shuttle)
 	switch(status)
 		if(SHIP_STATUS_LANDED)
 			var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)
-			var/datum/flight_port/port = SSflight?.ports[vessel?.docked_port_id]
-			var/datum/flight_destination/location = SSflight?.destinations[port?.host_destination_id]
+			var/datum/flight_port/port = SSflight?.port_by_id(vessel?.docked_port_id)
+			var/datum/flight_destination/location = SSflight?.destination_by_id(port?.host_destination_id)
 			return location ? "Docked at [location.name], [port.name]." : "Landed at an unregistered port."
 		if(SHIP_STATUS_TRANSIT)
 			return "In local transfer."
 		if(SHIP_STATUS_OVERMAP)
 			var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)
-			var/datum/flight_destination/orbit = SSflight?.destinations[vessel?.orbit_parent_id]
+			var/datum/flight_destination/orbit = SSflight?.destination_by_id(vessel?.orbit_parent_id)
 			return "In orbit of [orbit?.name || "an unregistered body"]."
 
 

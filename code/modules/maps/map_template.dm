@@ -80,8 +80,7 @@ CAPABILITIES(/datum/map_template)
 	if(SSatoms.initialized == INITIALIZATION_INSSATOMS)
 		return null
 
-	var/prev_shuttle_queue_state = shuttles_block_init_queue()
-	SSshuttles.block_init_queue = TRUE
+	var/prev_shuttle_queue_state = SSshuttles.hold_initialization_queue()
 
 	var/list/atom/atoms = list()
 	var/list/area/areas = list()
@@ -125,7 +124,7 @@ CAPABILITIES(/datum/map_template)
 	for(var/obj/machinery/atmospherics/atmos_to_reenable as anything in atmos_machines)
 		atmos_to_reenable.being_loaded = FALSE
 
-	SSshuttles.block_init_queue = ctx["shuttle_queue"]
+	SSshuttles.restore_initialization_queue(ctx["shuttle_queue"])
 	SSshuttles.process_init_queues() // We will flush the queue unless there were other blockers, in which case they will do it.
 
 	admin_notice(span_danger("Submap initializations finished."), R_DEBUG)

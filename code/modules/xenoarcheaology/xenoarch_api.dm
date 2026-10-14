@@ -4,3 +4,5 @@
 
 /datum/system/xenoarch/proc/continual_generation(mob/living/user)
 	generate_more_artifacts(user)
+/datum/system/xenoarch/proc/artifact_spawn_candidates()
+	return length(artifact_spawning_turfs) ? artifact_spawning_turfs.Copy() : list()

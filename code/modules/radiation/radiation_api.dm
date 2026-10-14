@@ -34,3 +34,5 @@
 
 /datum/system/radiation/proc/is_enabled()
 	return enabled
+/datum/system/radiation/proc/queue_shielding_update(turf/target)
+	dirty_turfs[target] = TRUE

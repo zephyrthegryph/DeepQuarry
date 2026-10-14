@@ -180,7 +180,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return SSchemistry.ready()?.chemical_reagents[D.id]
 
 /proc/registry_seed(datum/seed/D)
-	return SSplants?.seeds[D.name]
+	return SSplants?.seed_named(D.name)
 
 /proc/registry_robot_sprite(datum/D)
 	return (D in SSrobot_sprites?.all_cyborg_sprites) ? D : null

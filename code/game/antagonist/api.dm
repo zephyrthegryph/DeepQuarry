@@ -35,3 +35,5 @@
 				antag.update_icons_added(player)
 		else
 			antag.update_all_icons()
+/datum/system/antag/proc/has_antagonist_catalog()
+	return !!all_antag_types

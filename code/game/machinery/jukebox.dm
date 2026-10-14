@@ -68,7 +68,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 		atom_break()
 
 /obj/machinery/media/jukebox/proc/getTracksList()
-	return hacked ? SSmedia_tracks.all_tracks : SSmedia_tracks.jukebox_tracks
+	return SSmedia_tracks.tracks_for_jukebox(hacked)
 
 /obj/machinery/media/jukebox/proc/work_step(datum/act/timer/A)
 	if(!operable())
@@ -461,7 +461,7 @@ CAPABILITIES(/obj/machinery/media/jukebox/ghost)
 	use_power = USE_POWER_OFF
 
 /obj/machinery/media/jukebox/casinojukebox/getTracksList()
-	return SSmedia_tracks.casino_tracks
+	return SSmedia_tracks.tracks_for_casino()
 
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/media/jukebox/step_start_condition()

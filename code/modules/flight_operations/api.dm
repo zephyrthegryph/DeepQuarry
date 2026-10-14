@@ -120,3 +120,14 @@
 	rel_set(vessel, nameof(vessel.active_plan), plan) // the vessel owns its active plan; plans is the service's id lookup
 	rel_add(src, nameof(plans), plan, plan.id)
 	return plan
+/datum/system/flight/proc/destination_by_id(id)
+	return destinations[id]
+
+/datum/system/flight/proc/index_destination_target(atom/target, destination_id)
+	destination_by_target[REF(target)] = destination_id
+
+/datum/system/flight/proc/forget_ship_index(obj/effect/overmap/visitable/ship/ship)
+	vessel_by_ship -= REF(ship)
+
+/datum/system/flight/proc/port_by_id(id)
+	return ports[id]

@@ -241,15 +241,15 @@ CAPABILITIES(/datum/secrets_menu)
 	switch(val)
 		if("Automatic")
 			if(CONFIG_GET(flag/enable_night_shifts))
-				SSnightshift.automatic = TRUE
+				SSnightshift.configure_automatic_nightshift(TRUE)
 				SSnightshift.check_nightshift(TRUE)
 			else
 				SSnightshift.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
 		if("On")
-			SSnightshift.automatic = FALSE
+			SSnightshift.configure_automatic_nightshift(FALSE)
 			SSnightshift.update_nightshift(active = TRUE, announce = TRUE, forced = TRUE)
 		if("Off")
-			SSnightshift.automatic = FALSE
+			SSnightshift.configure_automatic_nightshift(FALSE)
 			SSnightshift.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
 	if(holder())
 		log_admin("[key_name(holder())] used secret: [action].")

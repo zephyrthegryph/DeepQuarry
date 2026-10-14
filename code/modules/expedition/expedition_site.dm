@@ -97,7 +97,7 @@ CAPABILITIES(/datum/expedition_site)
 	return origin_console() && !QDELETED(origin_console()) && origin_console().active_expedition() == src
 
 /datum/expedition_site/proc/has_travel_lease()
-	var/datum/flight_destination/destination = SSflight?.destinations[flight_destination_id]
+	var/datum/flight_destination/destination = SSflight?.destination_by_id(flight_destination_id)
 	return LAZYLEN(destination?.active_plans)
 
 /// The landing (a relation view: null once it is gone).

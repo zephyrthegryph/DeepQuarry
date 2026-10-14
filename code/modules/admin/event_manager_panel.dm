@@ -12,8 +12,7 @@
 
 // the event service forgets its manager panel.
 /datum/event_manager_panel/lifecycle_dematerialize()
-	if(SSevents?.tgui_event_manager_panel == src)
-		rel_clear(SSevents, nameof(/datum/system/events::tgui_event_manager_panel))
+	SSevents?.forget_manager_panel(src)
 	..()
 
 CAPABILITIES(/datum/event_manager_panel)

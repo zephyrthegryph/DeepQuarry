@@ -36,3 +36,6 @@
 	else
 		var/list/data = queued_echo_turfs[rfe]
 		data[4] += list(client)
+/datum/system/motiontracker/proc/toggle_echo_visibility()
+	hide_all = !hide_all
+	return hide_all

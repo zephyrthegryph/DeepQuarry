@@ -50,7 +50,7 @@
 	var/datum/expedition_site/site = vessel?.active_expedition()
 	if(!site || QDELETED(site))
 		return FALSE
-	var/datum/flight_destination/destination = SSflight?.destinations[site.flight_destination_id]
+	var/datum/flight_destination/destination = SSflight?.destination_by_id(site.flight_destination_id)
 	if(LAZYLEN(destination?.active_plans))
 		to_chat(user, span_warning("The assignment cannot be abandoned while a flight plan is using it."))
 		return FALSE

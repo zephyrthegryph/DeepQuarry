@@ -9,14 +9,9 @@
 /datum/persistent/paintings/Initialize()
 	. = ..()
 	if(fexists(filename))
-		SSpersistence.all_paintings = json_decode(file2text(filename))
-		var/list/tokens = persistence_all_paintings()
-		for(var/list/token in tokens)
-			token["age"]++ // Increment age!
-			if(!CheckTokenSanity(token))
-				tokens -= token
+		SSpersistence.load_painting_records(json_decode(file2text(filename)), src)
 
-	SSpersistence.unpicked_paintings = SSpersistence.all_paintings.Copy()
+	SSpersistence.prepare_painting_selection()
 
 	for(var/obj/structure/sign/painting/P in persistence_painting_frames())
 		P.load_persistent()
@@ -31,15 +26,15 @@
 	for(var/obj/structure/sign/painting/P in persistence_painting_frames())
 		P.save_persistent()
 
-	if(SSpersistence.all_paintings.len > max_entries)
-		var/this_many = SSpersistence.all_paintings.len
+	if(SSpersistence.painting_count() > max_entries)
+		var/this_many = SSpersistence.painting_count()
 		var/over = this_many - max_entries
 		log_admin("There are [over] more painting(s) stored than the maximum allowed.")
 		while(over > 0)
-			var/list/d = persistence_all_paintings()[1]
+			var/list/d = SSpersistence.painting_record_at(1)
 			var/png_filename = "data/paintings/[d["persistence_id"]]/[d["md5"]].png"
 			fdel(png_filename)
-			if(SSpersistence.all_paintings.Remove(list(d)))
+			if(SSpersistence.remove_painting(d))
 				log_admin("A painting was deleted")
 			else
 				log_and_message_admins("Attempted to delete a painting, but failed.")
@@ -47,4 +42,4 @@
 
 	if(fexists(filename))
 		fdel(filename)
-	to_file(file(filename), json_encode(persistence_all_paintings()))
+	to_file(file(filename), json_encode(SSpersistence.painting_records()))

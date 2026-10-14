@@ -148,7 +148,7 @@ CAPABILITIES(/datum/system/expedition)
 		rel_set(descriptor.assigned_flight_vessel(), nameof(/datum/flight_vessel::active_expedition), site)
 	rel_set(site, nameof(site.assigned_flight_vessel), descriptor.assigned_flight_vessel())
 	rel_set(site, nameof(site.payout_turf), descriptor.payout_turf())
-	var/datum/flight_destination/destination = SSflight?.destinations[old_destination_id]
+	var/datum/flight_destination/destination = SSflight?.destination_by_id(old_destination_id)
 	if(destination)
 		var/generated_destination_id = site.flight_destination_id
 		if(generated_destination_id && generated_destination_id != old_destination_id)
@@ -157,7 +157,7 @@ CAPABILITIES(/datum/system/expedition)
 		rel_set(destination, nameof(destination.expedition), site)
 		rel_set(destination, nameof(destination.target), site.overmap_sector())
 		if(site.overmap_sector())
-			SSflight.destination_by_target[REF(site.overmap_sector())] = destination.id
+			SSflight.index_destination_target(site.overmap_sector(), destination.id)
 		site.flight_destination_id = destination.id
 	rel_clear(descriptor, nameof(descriptor.origin_console))
 	rel_clear(descriptor, nameof(descriptor.assigned_shuttle))
