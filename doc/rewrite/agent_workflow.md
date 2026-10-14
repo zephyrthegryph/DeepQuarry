@@ -139,6 +139,7 @@ syntax pre-check from the Codex compiler.
 Measured data and reasoning: `doc/rewrite/merge_pipeline_report.md`. The batch recipe, in order:
 
 ```sh
+export DQ_MERGE_SESSION=<your lane branch>         # 0. names your batch; every merge command needs it
 WT="$(bash tools/dq_merge_worktree.sh --lanes "<branch> ...")"  # 1. take the merge lock (waits its turn), then the persistent worktree, moved to origin/master
 cd "$WT"
 git merge --no-ff <branch> ...                      #    (bash tools/dq_merge_master.sh settles generated files)
@@ -161,8 +162,10 @@ It is held from that check until the push lands or the batch is abandoned, acros
   batch's lanes (`--lanes`) and the caller's session. It ends when the lock is released, or after `DQ_MERGE_LOCK_MAX_SEC` (6 h), so a forgotten
   batch cannot block the worktree forever. If it dies (killed, reboot) the next waiter reclaims the lock like any dead machine slot
   ("reclaiming a dead slot"). A call that fails the clear check (dirty tree, unpushed commits) frees the lock before it exits.
-- **Who is the holder.** The caller's `DQ_MERGE_SESSION` if set, else its nearest non-shell ancestor process (the agent that runs every command
-  of the batch), recorded in the owner file. Another lane joins the batch only through the holder: `bash tools/dq_merge_worktree.sh --join "<lane>"`
+- **Who is the holder.** `DQ_MERGE_SESSION`, which every merge command must set explicitly (`export DQ_MERGE_SESSION=<your lane branch>`); it is recorded
+  in the owner file and a later call is the holder only if its value is equal. It is never inferred (not from `CLAUDE_CODE_SESSION_ID`, which every lane
+  of one agent session shares, and not from the process tree): `dq_merge_worktree.sh`, `dq_merge_gates.sh`, `dq_push_master.sh` and `dq_merge_master.sh`
+  (in the merge worktree) refuse to run without it. Another lane joins the batch only through the holder: `bash tools/dq_merge_worktree.sh --join "<lane>"`
   (no switch, prints the path); a second plain call from the holder is refused, and anyone else waits.
 - **Release.** `dq_push_master.sh` releases it after a successful push, and also when HEAD is already in origin/master (the worktree is level with it).
   `bash tools/dq_merge_worktree.sh --release` ends an abandoned batch; only the holder may, `--release --force` overrides for a batch you know is
@@ -282,9 +285,9 @@ bun test tools/build/lib/machine_slots.test.ts     # the same protocol from the 
 
 When a lane finishes, from its worktree:
 
-**Split worlds record their own exit status.** `dq_focused_test.sh` once counted a fully green world as exit 127 (`wait` found no such child). Each world's subshell now writes its exit status to `data/focused-runs/split.<pid>.N.log.rc`; that record is the verdict, `wait` only reaps, a disagreement is printed, and a world with no record and no child counts as failed (125). An unclean run keeps its `split.<pid>.N.log` files and records (pruned after two days). The root cause of the lost child was not reproduced in isolation. `bash tools/ci/test_focused_world_status.sh` covers the new logic.
+**Split worlds record their own exit status.** `dq_focused_test.sh` once counted a fully green world as exit 127 (`wait` found no such child). Each world's subshell now writes its exit status to `data/focused-runs/split.<pid>.N.log.rc`; that record is the verdict, `wait` only reaps, a disagreement is printed, and a world with no record and no child counts as failed (125). An unclean run keeps its `split.<pid>.N.log` files and records (pruned after two days). The root cause of the lost child was not reproduced in isolation. `bash tools/ci/test_focused_world_status.sh` covers the new logic. `bash tools/ci/test_lane_check_docs.sh` builds a scratch repo and shows a stamp kept on a changelog/doc-only master move and invalidated on a code move or a read doc.
 
-**Stamps and docs.** `tools/dq_lane_check.sh` ignores master changes under `html/changelogs/`, `doc/`, `data/` and root `*.md` unless the file is listed in `tools/ci/lane_ready_doc_reads.txt` (docs a tool reads); the verdict names the files that decided it.
+**Stamps and docs.** `tools/dq_lane_check.sh` ignores master changes under `html/changelogs/`, `doc/`, `data/bench/` (the only committed `data/` files, bench output nothing reads) and root `*.md` unless the file is listed in `tools/ci/lane_ready_doc_reads.txt` (docs a tool reads); the verdict names the files that decided it.
 
 **Test names are checked first.** `dq_lane_ready.sh --tests` and `dq_focused_test.sh` check every name and glob against the `/datum/unit_test` types the build compiles before anything is merged, generated or compiled, report all the misses at once, and print close matches (a missing `dq_eg2/` prefix, a one-letter typo, a glob that matches nothing). `bash tools/dq_focused_test.sh --list '*word*'` searches the declared types without compiling.
 
