@@ -543,10 +543,12 @@ CAPABILITIES(/obj/refs_param_probe)
 	TEST_ASSERT(user.put_in_inactive_hand(paper), "the keepsake is in hand")
 	test_op_handler(locket, "locket_insert_item", user, paper)
 	TEST_ASSERT_EQUAL(locket.held(), paper, "the locket holds the paper")
-	var/obj/item/taken = rel_take(locket, nameof(locket.held)) // what opening the locket does to the keepsake
-	TEST_ASSERT_EQUAL(taken, paper, "taking the keepsake hands back the paper")
-	TEST_ASSERT(!QDELETED(paper), "taking the keepsake does not dispose of it")
+	test_op_handler(locket, "locket_flip_self", user) // open -> closed
+	TEST_ASSERT_EQUAL(locket.held(), paper, "closing the locket keeps the keepsake")
+	test_op_handler(locket, "locket_flip_self", user) // closed -> open: the keepsake falls out
+	TEST_ASSERT(!QDELETED(paper), "opening the locket does not dispose of the keepsake")
 	TEST_ASSERT_NULL(locket.held(), "and the locket no longer holds it")
+	TEST_ASSERT_EQUAL(get_turf(paper), get_turf(user), "the keepsake lies where the wearer stands")
 
 /// w6a2: the same holds for a stump built from the limb it replaces.
 /datum/unit_test/dq_refs_w6a2_stump_param_leaves_no_back_edge

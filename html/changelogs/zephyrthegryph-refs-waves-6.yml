@@ -2,3 +2,4 @@ author: "zephyrthegryph"
 delete-after: true
 changes:
   - refactor: "More module references (clothing, economy, expedition, fireworks, hardware, heat, generated stations and others) are declared relations; dead generated-station placement and validation fields are removed"
+  - bugfix: "Lockets can be opened again: they refused because the default locket has no open picture, so no keepsake could be put in or fall out"
