@@ -1,0 +1,219 @@
+{
+  "compiler": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "cases": [
+    {
+      "name": "datum_vars",
+      "exit_code": 0,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "63a37c8ccee8413a0115f21bc7d4e2d2c8c18ba90ccf8a11160bc0ea97ca7980",
+        "probe.native.bin": "3e6e28a2636de7e33a77f6e4a5ebede3193120cc9065aeba98657dcdd53e0e3f",
+        "probe.dme": "4e3a7a8e91b5d2596e9330db39c8a97aad32ff7bc1cf488f1e0a30f1814574e9",
+        "decoded.txt": "6102096182d027d614cf58c7ba70ec035f822f4f8792b443afcbb730f82cfbec"
+      },
+      "decoded": "proc#0 /datum/proc/proof\n0000 0029 Call [65500, 65486, 65500, 94, 65501, 25, 0]\n0008 0012 Ret []\n0009 0000 End []\n"
+    },
+    {
+      "name": "client_screen",
+      "exit_code": 0,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "63a37c8ccee8413a0115f21bc7d4e2d2c8c18ba90ccf8a11160bc0ea97ca7980",
+        "probe.native.bin": "50deaaf6bba65a6cbd08ac237e6897b59b6c1149177e3e89ed7c0d777807fca4",
+        "probe.dme": "7eb78015e5a24acf4373fb707a78d06e59267e208245487ae1ff455a7d8f58bc",
+        "decoded.txt": "cb8f3a5a4a861cb011898068bce3ec19a301354842f81af0c01718a5b2def82c"
+      },
+      "decoded": "proc#0 /client/proc/proof\n0000 0029 Call [65500, 65486, 65500, 168, 65501, 25, 0]\n0008 0012 Ret []\n0009 0000 End []\n"
+    },
+    {
+      "name": "movable_vis_contents",
+      "exit_code": 0,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "63a37c8ccee8413a0115f21bc7d4e2d2c8c18ba90ccf8a11160bc0ea97ca7980",
+        "probe.native.bin": "2c349d180c3ef33ec7fa2c2bb3ded2199318f63ad8de02957be206da55e42bc6",
+        "probe.dme": "9d72df3eb92bb38becc57e8a2d2dea04a0adbd19c4c0915ca3936c9a0a0c9056",
+        "decoded.txt": "3a8aff5a2cae09af168a67ece96bc59697999a6c710b769b7f7b7cf2a29f5803"
+      },
+      "decoded": "proc#0 /atom/movable/proc/proof\n0000 0029 Call [65500, 65486, 65500, 281, 65501, 25, 0]\n0008 0012 Ret []\n0009 0000 End []\n"
+    },
+    {
+      "name": "image_vis_contents",
+      "exit_code": 0,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "63a37c8ccee8413a0115f21bc7d4e2d2c8c18ba90ccf8a11160bc0ea97ca7980",
+        "probe.native.bin": "3a971c8b48eb641fa9b1aee0e25ff0da7ff604a0f0168d6c3688062a96b33e01",
+        "probe.dme": "4e6d65bdcce8184530172f162042eecc0d8ee7fd62ebd155191c943b252c530c",
+        "decoded.txt": "c210f71248643a874e1b22b9e3d38d679fa9f5a1d093a0b08f23480e04bde345"
+      },
+      "decoded": "proc#0 /image/proc/proof\n0000 0029 Call [65500, 65486, 65500, 281, 65501, 25, 0]\n0008 0012 Ret []\n0009 0000 End []\n"
+    },
+    {
+      "name": "world_internet_address",
+      "exit_code": 0,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "63a37c8ccee8413a0115f21bc7d4e2d2c8c18ba90ccf8a11160bc0ea97ca7980",
+        "probe.native.bin": "c242b9f0039adb56c085d2216ac2ef9145e2a56a7eae8d50e55e212568f555d6",
+        "probe.dme": "418e7a283beb644c8f617d7e871d6d69555146262ab07da9c73ed8a4cc56d5c3",
+        "decoded.txt": "5e39b277bbf78ffa0713f0ec1945af1b722190a87180b2ca41005ed2cb13e121"
+      },
+      "decoded": "proc#0 /world/proc/proof\n0000 0033 GetVar [65500, 65486, 204]\n0004 0012 Ret []\n0005 0000 End []\n"
+    },
+    {
+      "name": "world_map_cpu",
+      "exit_code": 0,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "63a37c8ccee8413a0115f21bc7d4e2d2c8c18ba90ccf8a11160bc0ea97ca7980",
+        "probe.native.bin": "79b31955bcec8bfe1a0ba12a13aea7571b90a9b4a598a91efafc9e927dbc09d5",
+        "probe.dme": "085cd9238ac548f39b7f6c70eb59db6584bce12e6d6a9b3a3213dc94816d8a14",
+        "decoded.txt": "ce92080df34f5bf79132128b152e814870c10705ac92cb6ec2e763744f4340c5"
+      },
+      "decoded": "proc#0 /world/proc/proof\n0000 0033 GetVar [65500, 65486, 315]\n0004 0012 Ret []\n0005 0000 End []\n"
+    },
+    {
+      "name": "list_bad_method",
+      "exit_code": 4294967295,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nprobe.dme:2:error: value.FieldTypeNoSuchMethod: undefined proc\nprobe.dmb - 1 error, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "29a2d4fee051c98c457ddeba63bb35f2769c285a1fbb428fca93675e06418b1c",
+        "probe.dme": "4b1c09b62bd219c17b74307d28024a21798e0c40d6e901d840e895a24e54448d"
+      }
+    },
+    {
+      "name": "datum_vars_bad_method",
+      "exit_code": 4294967295,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nprobe.dme:2:error: vars.FieldTypeNoSuchMethod: undefined proc\nprobe.dmb - 1 error, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "81c499389f3170f7c0d68a9a5ae3c486840b49250c5cd3ba571fb63945ec84c8",
+        "probe.dme": "31c3550965f6dd200ef6a227fadca451bfbd5fb790731c23f887c321f85f8681"
+      }
+    },
+    {
+      "name": "client_screen_bad_method",
+      "exit_code": 4294967295,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nprobe.dme:2:error: screen.FieldTypeNoSuchMethod: undefined proc\nprobe.dmb - 1 error, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "2499512dbdcfdf053a8a17376b59e98fedc1fd5e952883b5e543a9b16a06af74",
+        "probe.dme": "56243dc1f39512a702c4f236a198313127d51988ce4c83435cda5c7c8606b45d"
+      }
+    },
+    {
+      "name": "movable_vis_contents_bad_method",
+      "exit_code": 4294967295,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nprobe.dme:2:error: vis_contents.FieldTypeNoSuchMethod: undefined proc\nprobe.dmb - 1 error, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "7b9c9cd4c0420e6a2801c864bb2336050590220371bb72b102a8f866a98a3895",
+        "probe.dme": "18950ab6a329b8f993b4e20f8de72e5c516fb954ff0cd06fd8e17c82277fad52"
+      }
+    },
+    {
+      "name": "image_vis_contents_bad_method",
+      "exit_code": 4294967295,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nprobe.dme:2:error: vis_contents.FieldTypeNoSuchMethod: undefined proc\nprobe.dmb - 1 error, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "7b9c9cd4c0420e6a2801c864bb2336050590220371bb72b102a8f866a98a3895",
+        "probe.dme": "d7ebf55a97eb132ef7ded9d65d8cf51603a2d80adbf79cf2d767950227be8e1a"
+      }
+    },
+    {
+      "name": "image_vis_contents_write",
+      "exit_code": 0,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "63a37c8ccee8413a0115f21bc7d4e2d2c8c18ba90ccf8a11160bc0ea97ca7980",
+        "probe.native.bin": "878e6b4193cc3ef21b7a8abc87a111efcd4ca4ba1cc2f9dc3612f70aa1cab0d3",
+        "probe.dme": "c2f87320023dd9d5beeaae3f8dd076a9d36a2e0c47fb51f697d694c94a584797",
+        "decoded.txt": "04894bbe87008495a1d2b06579d8d32b81d01b7d302ca28c202f4cb4d287d948"
+      },
+      "decoded": "proc#0 /image/proc/proof\n0000 0033 GetVar [65510]\n0002 0034 SetVar [65500, 65486, 281]\n0006 0000 End []\n"
+    },
+    {
+      "name": "world_internet_address_write",
+      "exit_code": 0,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "63a37c8ccee8413a0115f21bc7d4e2d2c8c18ba90ccf8a11160bc0ea97ca7980",
+        "probe.native.bin": "5875dc51768010642e96b2b17a0963b09182d7b21c26908c2abb96c9527c4262",
+        "probe.dme": "501cdac34cc38b8f7f88d68583b1fe69215406d30003be1c5a502aa296e0e6ac",
+        "decoded.txt": "dc3974e564df8c21991c09ad336fb08ea439c25cdcb1442f120457d6f486670b"
+      },
+      "decoded": "proc#0 /world/proc/proof\n0000 0033 GetVar [65510]\n0002 0034 SetVar [65500, 65486, 204]\n0006 0000 End []\n"
+    },
+    {
+      "name": "world_map_cpu_write",
+      "exit_code": 4294967295,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nprobe.dme:2:error: map_cpu: cannot change constant value\nprobe.dmb - 1 error, 0 warnings (10/7/26 5:25 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "f1652fcbd85aaee597424173a86cae5c19afd5b7885ad75486c8db49a3f1aa2c",
+        "probe.dme": "88ff645429cbf35c4ffb21e7512696d0464f8424521f5d5350e90790c6829ce9"
+      }
+    },
+    {
+      "name": "untyped_bad_method",
+      "exit_code": 4294967295,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nprobe.dme:2:error: value.FieldTypeNoSuchMethod: undefined proc\nprobe.dmb - 1 error, 0 warnings (10/7/26 5:26 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "27f433b10316345a6a1c7943a4db90e05d4a4b6440a039b3c539e2c6740ffb88",
+        "probe.dme": "e2d18a5302e0072f714a54192f291ceb57a5e80004a257fd8aa2179b61352346"
+      }
+    },
+    {
+      "name": "untyped_copy",
+      "exit_code": 4294967295,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nprobe.dme:2:error: value.Copy: undefined proc\nprobe.dmb - 1 error, 0 warnings (10/7/26 5:26 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "5705ab3ff08cb7a869b67f3ae857d5ae410deae41e936476bb02a85a8e85f4a6",
+        "probe.dme": "ed3e0f0644d7e04581a069c07f17c9dd1173cca18fe014608a1e539cfb4ea684"
+      }
+    },
+    {
+      "name": "client_screen_new",
+      "exit_code": 0,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/7/26 5:26 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "3afb248eba1efcc81b9b3d99eba604c78554545c4a12a37ef7e0bdf71cc21d83",
+        "decoded.txt": "b21afd17987b86fa5fd2b46f6889bdaea04561b2e2ab74f2c9dcdc7288b7eed0",
+        "probe.native.bin": "cdf72d833a513bd95d9d62192fdcce8b7e4a23cd6e87861826fac159cac262c0",
+        "probe.dme": "3a28199794dd80272313f5289d7c4fafa28617b2aa9cdf40c0d30a1dac873785"
+      },
+      "decoded": "proc#0 /client/proc/proof\n0000 0060 PushVal [40, 0]\n0003 0001 New [0]\n0005 0034 SetVar [65500, 65486, 168]\n0009 0000 End []\n"
+    },
+    {
+      "name": "movable_vis_contents_new",
+      "exit_code": 0,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/7/26 5:26 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "3afb248eba1efcc81b9b3d99eba604c78554545c4a12a37ef7e0bdf71cc21d83",
+        "decoded.txt": "d7eba77b44b2652413ef21b1f848b7158868f8c02ca9878b75bb76ca44f66c78",
+        "probe.native.bin": "23d65a93610bde9af087ff01efb181a18904d82d2fac8c2218b19ce16f406ed8",
+        "probe.dme": "2c28c33df6353851de46c7db624e97d774b1eee6c7094133f6015a8247605bf6"
+      },
+      "decoded": "proc#0 /atom/movable/proc/proof\n0000 0060 PushVal [40, 0]\n0003 0001 New [0]\n0005 0034 SetVar [65500, 65486, 281]\n0009 0000 End []\n"
+    },
+    {
+      "name": "image_vis_contents_new",
+      "exit_code": 0,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/7/26 5:26 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "3afb248eba1efcc81b9b3d99eba604c78554545c4a12a37ef7e0bdf71cc21d83",
+        "decoded.txt": "e7cbeb534cf16a9b572343e53212155e45cdd4ee0df85687b0dde1c36ce7f303",
+        "probe.native.bin": "673b8d1ac251b1c6c38fbc6e38176e95ad3785e8f1e071af281f531baeb309b1",
+        "probe.dme": "dd44cf0fb00746183ecb13705b8dd3ac8d5f213ffa26742b936d784d5fdebb69"
+      },
+      "decoded": "proc#0 /image/proc/proof\n0000 0060 PushVal [40, 0]\n0003 0001 New [0]\n0005 0034 SetVar [65500, 65486, 281]\n0009 0000 End []\n"
+    },
+    {
+      "name": "datum_vars_new",
+      "exit_code": 4294967295,
+      "log": "DM compiler version 516.1687\nloading probe.dme\nprobe.dme:2:error: vars: cannot change constant value\nprobe.dmb - 1 error, 0 warnings (10/7/26 5:26 am)\nTotal time: 0:00\n",
+      "files": {
+        "compiler.log": "14712b073f22cf12eba00d641c1e6433941c16ac29df7d24903966959e0d4b48",
+        "probe.dme": "5b728787ca32017011a64846fc2067ab11b976160efb1035a75bb68856efe728"
+      }
+    }
+  ]
+}

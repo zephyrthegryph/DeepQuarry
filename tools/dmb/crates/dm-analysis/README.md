@@ -1,51 +1,78 @@
-# Analysis facts
+# Shared resolved analysis
 
-`Snapshot::from_frontend` accepts an existing declaration index, parser AST and
-preprocessed project. It exports canonical declarations and inheritance, exact
-authored procedure headers, include origins, and existing diagnostics. It does
-not reparse or invent semantic resolution.
+`dm-analysis` streams JSON-lines from the compiler's issued `ColdFrontend`.
+It uses the same declaration model and resolver as compilation; it does not parse
+source again or depend on compiler cache internals.
 
-JSONL begins with a versioned `snapshot` record and an explicit coverage report.
-Each subsequent line is one tagged fact. Signature headers are source facts;
-parameter types and defaults are not claimed semantically resolved. Unsupported
-parser items or parser diagnostics mark declaration coverage partial. References
-start unavailable. The resolution producer supplies canonical resolved targets,
-unresolved references and dynamic references through `add_references`, with an
-honest coverage level. An export with partial coverage remains useful to tooling
-without pretending that missing facts are negative answers.
+```powershell
+# From tools/dmb; defines are explicit target inputs.
+cargo run -j1 -p dmbc -- analyze --no-daemon project.dme --workers 2 -DDM_VERSION=516 -DDM_BUILD=1687 > analysis.jsonl
+python crates/dm-analysis/examples/list_shared_variables.py analysis.jsonl
+```
 
-Use `write_jsonl` for streaming export and `read_jsonl` for version-checked import.
-`persist` publishes the full snapshot through `dm-store` under caller-provided
-read witnesses. Analysis construction and JSON encoding happen outside the
-database lock. Locations use expanded-file ID zero and preprocessing origins;
-unmapped source IDs produce no location rather than a fabricated one.
+Stdout contains only JSON-lines. Diagnostics and frontend timings go to stderr.
+Analysis excludes procedure lowering, linking, resource loading and publication.
 
-Location indexes are built once per snapshot; each lookup searches line starts
-and include-origin boundaries. Imports reject any individual encoded fact larger
-than 8 MiB before growing the record buffer beyond that limit.
+For executable syntax and lexical bindings, add `--bodies` to `analyze`:
 
-## Shared native query model
+```powershell
+dmbc analyze project.dme --bodies --workers 2 > bodies.jsonl
+```
 
-`Coordinator::project_analysis_view(key, source_budget, builtin_image)` returns
-an immutable `FrontendView` backed by the native compiler's persisted syntax
-fragments and owner recipe DAG. `analysis-jsonl` uses this path. It does not
-assemble a whole-project AST or compile output binaries.
+This uses the compiler's authenticated body parser and current declaration model.
+Each parsed body is released after export, so the CLI does not retain every AST.
+The additional rows use `dm-typed-body-analysis-v1` and
+`dm-lexical-body-analysis-v1`. Lexical bindings cover arguments, local declarations
+and their scopes. Nonlocal meanings require resolver queries; selectors and
+unsupported call forms remain explicit gaps. Read the binding summary and
+`semantic_resolution_complete` before treating reference coverage as complete.
+`--bodies` is an analysis option, not a compilation option.
 
-`view.items()` yields borrowed `ItemRef` values in source order; use `span()` and
-`header_span()` to translate local fragment offsets. `fragment_at(offset)` finds
-its content ID. Fragment IDs exclude worktree lineage and absolute positions;
-procedure records expose canonical paths and body digests separately.
+## Versioned contract
 
-`view.declarations` supplies canonical owners, fields, procedure occurrences,
-inheritance, and override lookup. `resolve_field` and `resolve_procedure` follow
-its inheritance model. `view.resolved` queries the native owner model, including
-builtin and global field metadata. Its `resolve_value` evaluates a requested
-field through the existing cached resolver and returns exact positive/negative
-semantic read witnesses. Export does not eagerly evaluate every default.
+The first row is `schema: dm-tree-analysis-v3`. Consumers must reject unsupported
+schema versions and inspect its `model`, engine certification and unsupported
+domains. Optional engine seed facts distinguish certified hierarchy from source
+only inheritance; an intrinsic catalog does not imply decoded intrinsic metadata.
 
-`Snapshot::from_shared_frontend` exports these shared facts. JSONL schema 2 adds
-`fragment`, `procedure_fragment`, `resolved_owner`, and `resolved_field` records;
-the reader also accepts schema 1. General expression/reference resolution is
-still unavailable, and signatures remain exact source headers with partial
-semantic coverage. The adapter does not infer resolved parameter types or
-pretend dynamic expressions are constant values.
+Type and member IDs are structural hexadecimal strings. Member suffixes use the
+semantic tree's normalized owner-local override depth, including implicit bodies
+that precede formal declarations. A body edit does not renumber declarations.
+Meaning fingerprints describe semantic content separately from identity.
+
+`member` rows contain signatures, modifiers, settings and declared/effective
+initializers. `occurrence` and `body` rows carry current paths, logical spans,
+include context and macro invocation/definition traces. Join `occurrence.target`
+to a declaration `id`. Absolute source positions are separate from structural
+identity. Macro expansions do not provide a character-level inverse edit map.
+
+`resolved_query` rows use `dm-resolved-query-v1`. The automatic member queries
+resolve effective storage, declared types, constants and procedure dispatch.
+Their `subject` identifies the declaration being inspected; their answer may
+identify an inherited or effective override, rather than that declaration's body.
+
+Answers distinguish `known` (including false presence), `missing`, and
+`unsupported`. Never interpret unsupported as absent. IDs/fingerprints are hex
+strings; `query_wire` is a JSON-encoded string preserving complete u64/u128 query
+values even when the outer consumer uses floating-point JSON numbers. Domain
+versions can be null when a resolver cannot certify a domain.
+
+Rust tools can submit other queries with
+`tree_export::write_queries_jsonl(symbols, resolver, queries, writer)` and
+`AnalysisQuery { subject, query }`. This calls the generic `dm_ir::Resolver`
+contract directly and retains negative and unsupported answers. These extra rows
+are opt-in; the CLI does not enumerate every possible query.
+
+## Lint migration scope
+
+Declaration documentation, signatures, inheritance, settings and shared-variable
+checks can consume this model today. The streaming example lists resolved shared
+variables without parsing DM or assuming declaration spelling determines storage.
+A consumer may keep its own compact ID/location index when joining rows.
+
+Complete resolved executable reference edges, full resource discovery, opaque
+intrinsic metadata, and complete constant evaluation are not exported. Lints requiring those facts
+must retain their existing implementation until their required domain is supplied.
+Exact source rewriting also needs independent edit-range validation, especially
+for macro-expanded declarations. This export is not a complete replacement for
+the existing lint engine.

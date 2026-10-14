@@ -1,0 +1,7 @@
+/obj/matrix_probe
+    transform = matrix(2,0,3,0,4,5)
+/obj/matrix_probe/child
+/obj/matrix_probe/reset
+    transform = null
+/obj/identity_probe
+    transform = matrix()

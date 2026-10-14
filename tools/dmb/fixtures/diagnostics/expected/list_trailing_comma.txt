@@ -1,0 +1,1 @@
+list_trailing_comma.dmb - 0 errors, 0 warnings

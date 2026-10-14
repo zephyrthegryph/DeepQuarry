@@ -1,0 +1,1019 @@
+{
+ "a": "DreamMaker 516.1687: dm.exe -DCBT -DCIBUILDING -DCITESTING -DDEBUG comparison.dme",
+ "b": "native dmbc (dmb/takeover 4e53b4badd): compile --no-cache comparison.dme -DCBT -DCIBUILDING -DCITESTING -DDEBUG -DDM_VERSION=516 -DDM_BUILD=1687 --bootstrap-catalog --engine-template fixtures/native_template.bin",
+ "categories": {
+  "header.header": {
+   "count": 1,
+   "examples": [
+    {
+     "detail": "compatibility_line: min compatibility v516 516\\n vs min compatibility v515 468\\n",
+     "path": "header"
+    }
+   ]
+  },
+  "order.proc_table": {
+   "count": 40836,
+   "examples": [
+    {
+     "detail": "relative order differs (position 48231 in A, 0 in B)",
+     "path": "/sound/New"
+    },
+    {
+     "detail": "relative order differs (position 48232 in A, 1 in B)",
+     "path": "/sound/proc/operator:="
+    },
+    {
+     "detail": "relative order differs (position 48233 in A, 2 in B)",
+     "path": "/sound/proc/RscFile"
+    },
+    {
+     "detail": "relative order differs (position 48234 in A, 3 in B)",
+     "path": "/icon/New"
+    },
+    {
+     "detail": "relative order differs (position 48235 in A, 4 in B)",
+     "path": "/icon/proc/operator:="
+    },
+    {
+     "detail": "relative order differs (position 48236 in A, 5 in B)",
+     "path": "/icon/proc/Icon"
+    },
+    {
+     "detail": "relative order differs (position 48237 in A, 6 in B)",
+     "path": "/icon/proc/RscFile"
+    },
+    {
+     "detail": "relative order differs (position 48238 in A, 7 in B)",
+     "path": "/icon/proc/IconStates"
+    },
+    {
+     "detail": "relative order differs (position 48239 in A, 8 in B)",
+     "path": "/icon/proc/Turn"
+    },
+    {
+     "detail": "relative order differs (position 48240 in A, 9 in B)",
+     "path": "/icon/proc/Flip"
+    },
+    {
+     "detail": "relative order differs (position 48241 in A, 10 in B)",
+     "path": "/icon/proc/Shift"
+    },
+    {
+     "detail": "relative order differs (position 48242 in A, 11 in B)",
+     "path": "/icon/proc/SetIntensity"
+    },
+    {
+     "detail": "relative order differs (position 48243 in A, 12 in B)",
+     "path": "/icon/proc/Blend"
+    },
+    {
+     "detail": "relative order differs (position 48244 in A, 13 in B)",
+     "path": "/icon/proc/SwapColor"
+    },
+    {
+     "detail": "relative order differs (position 48245 in A, 14 in B)",
+     "path": "/icon/proc/DrawBox"
+    }
+   ]
+  },
+  "order.type_table": {
+   "count": 32989,
+   "examples": [
+    {
+     "detail": "relative order differs (position 19514 in A, 0 in B)",
+     "path": "/datum"
+    },
+    {
+     "detail": "relative order differs (position 19757 in A, 1 in B)",
+     "path": "/atom/movable"
+    },
+    {
+     "detail": "relative order differs (position 19758 in A, 2 in B)",
+     "path": "/atom"
+    },
+    {
+     "detail": "relative order differs (position 41668 in A, 3 in B)",
+     "path": "/mob"
+    },
+    {
+     "detail": "relative order differs (position 39195 in A, 4 in B)",
+     "path": "/obj"
+    },
+    {
+     "detail": "relative order differs (position 40292 in A, 5 in B)",
+     "path": "/image"
+    },
+    {
+     "detail": "relative order differs (position 40294 in A, 6 in B)",
+     "path": "/mutable_appearance"
+    },
+    {
+     "detail": "relative order differs (position 19792 in A, 7 in B)",
+     "path": "/turf"
+    },
+    {
+     "detail": "relative order differs (position 40283 in A, 8 in B)",
+     "path": "/area"
+    },
+    {
+     "detail": "relative order differs (position 19793 in A, 9 in B)",
+     "path": "/client"
+    },
+    {
+     "detail": "relative order differs (position 40297 in A, 10 in B)",
+     "path": "/alist"
+    },
+    {
+     "detail": "relative order differs (position 40298 in A, 11 in B)",
+     "path": "/pixloc"
+    },
+    {
+     "detail": "relative order differs (position 40299 in A, 12 in B)",
+     "path": "/vector"
+    },
+    {
+     "detail": "relative order differs (position 40300 in A, 13 in B)",
+     "path": "/callee"
+    },
+    {
+     "detail": "relative order differs (position 40301 in A, 14 in B)",
+     "path": "/sound"
+    }
+   ]
+  },
+  "order.var_name_strings": {
+   "count": 12921,
+   "examples": [
+    {
+     "detail": "relative order differs (position 597 in A, 140 in B)",
+     "path": "template"
+    },
+    {
+     "detail": "relative order differs (position 605 in A, 207 in B)",
+     "path": "sound"
+    },
+    {
+     "detail": "relative order differs (position 416 in A, 208 in B)",
+     "path": "frame"
+    },
+    {
+     "detail": "relative order differs (position 419 in A, 209 in B)",
+     "path": "moving"
+    },
+    {
+     "detail": "relative order differs (position 2930 in A, 216 in B)",
+     "path": "new_icon"
+    },
+    {
+     "detail": "relative order differs (position 275 in A, 217 in B)",
+     "path": "i"
+    },
+    {
+     "detail": "relative order differs (position 219 in A, 218 in B)",
+     "path": "filename"
+    },
+    {
+     "detail": "relative order differs (position 2805 in A, 219 in B)",
+     "path": "column"
+    },
+    {
+     "detail": "relative order differs (position 233 in A, 220 in B)",
+     "path": "start"
+    },
+    {
+     "detail": "relative order differs (position 3934 in A, 222 in B)",
+     "path": "movable"
+    },
+    {
+     "detail": "relative order differs (position 16572 in A, 223 in B)",
+     "path": "regex"
+    },
+    {
+     "detail": "relative order differs (position 9430 in A, 225 in B)",
+     "path": "super_early_init"
+    },
+    {
+     "detail": "relative order differs (position 2280 in A, 230 in B)",
+     "path": "current_announcer_voice"
+    },
+    {
+     "detail": "relative order differs (position 1381 in A, 232 in B)",
+     "path": "bitflags"
+    },
+    {
+     "detail": "relative order differs (position 2281 in A, 243 in B)",
+     "path": "magic_appearance_detecting_image"
+    }
+   ]
+  },
+  "proc.bytecode": {
+   "count": 13434,
+   "examples": [
+    {
+     "detail": "bytecode differs at stmt 4 of 24/24 (DbgLine 66): `GetVar null-ref` vs `PushVal null`",
+     "path": "/area/add_shared_particles"
+    },
+    {
+     "detail": "bytecode differs at stmt 0 of 12/15 (DbgLine 23): `GetVar null-ref` vs `PushVal null`",
+     "path": "/area/looking_glass/Destroy"
+    },
+    {
+     "detail": "bytecode differs at stmt 34 of 47/53 (DbgLine 19): `GetVar local0->.optional` vs `PushVal 0.0`",
+     "path": "/area/looking_glass/Initialize"
+    },
+    {
+     "detail": "bytecode differs at stmt 27 of 50/56 (DbgLine 20): `JmpLoop L11` vs `PushVal 0.0`",
+     "path": "/area/proc/EvalValidSpawnTurfs"
+    },
+    {
+     "detail": "bytecode differs at stmt 41 of 42/43 (DbgLine 87): `End` vs `Jmp L42`",
+     "path": "/area/proc/adjust_mob"
+    },
+    {
+     "detail": "bytecode differs at stmt 17 of 34/39 (DbgLine 587): `PushVal 196351.0` vs `PushVal 262143.0`",
+     "path": "/area/proc/check_phase_shift"
+    },
+    {
+     "detail": "bytecode differs at stmt 6 of 79/81 (DbgLine 35): `GetVar null-ref` vs `PushVal null`",
+     "path": "/area/proc/elect_main_air_alarm"
+    },
+    {
+     "detail": "bytecode differs at stmt 9 of 14/16 (DbgLine 55): `PushVal 3.0` vs `PushVal 2.0`",
+     "path": "/area/proc/main_air_alarm_is_operating"
+    },
+    {
+     "detail": "bytecode differs at stmt 4 of 377/377 (DbgLine 695): `GetVar null-ref` vs `PushVal null`",
+     "path": "/area/proc/move_contents_to"
+    },
+    {
+     "detail": "bytecode differs at stmt 30 of 142/144 (DbgLine 426): `GetVar null-ref` vs `PushVal null`",
+     "path": "/area/proc/play_ambience"
+    },
+    {
+     "detail": "bytecode differs at stmt 1 of 30/28 (DbgLine 280): `GetVar src` vs `GetVar src->.reactor_id`",
+     "path": "/area/proc/power_change"
+    },
+    {
+     "detail": "bytecode differs at stmt 8 of 9/12 (DbgLine 270): `End` vs `PushVal 0.0`",
+     "path": "/area/proc/power_subscribe"
+    },
+    {
+     "detail": "bytecode differs at stmt 10 of 13/16 (DbgLine 273): `GetVar null-ref` vs `PushVal null`",
+     "path": "/area/proc/power_unsubscribe"
+    },
+    {
+     "detail": "bytecode differs at stmt 21 of 24/25 (DbgLine 264): `PushVal 0.0` vs `Jmp L22`",
+     "path": "/area/proc/powered"
+    },
+    {
+     "detail": "bytecode differs at stmt 28 of 32/33 (DbgLine 350): `JmpLoop L10` vs `Jmp L29`",
+     "path": "/area/proc/retally_power"
+    }
+   ]
+  },
+  "proc.debug_info": {
+   "count": 47512,
+   "examples": [
+    {
+     "detail": "debug entries 1/1; first difference at entry 0: `@0 DbgFile ? DbgLine 383` vs `@0 DbgFile \"code/game/area/Space Station 13 areas.dm\" DbgLine 383`",
+     "path": "/area/<init>"
+    },
+    {
+     "detail": "debug entries 1/2; first difference at entry 1: `<none>` vs `@2 DbgFile \"code/_onclick/adjacent.dm\" DbgLine 17`",
+     "path": "/area/Adjacent"
+    },
+    {
+     "detail": "debug entries 1/2; first difference at entry 1: `<none>` vs `@2 DbgFile \"code/game/area/areas.dm\" DbgLine 520`",
+     "path": "/area/AllowDrop"
+    },
+    {
+     "detail": "debug entries 3/4; first difference at entry 3: `<none>` vs `@11 DbgFile \"code/game/area/areas.dm\" DbgLine 61`",
+     "path": "/area/Destroy"
+    },
+    {
+     "detail": "debug entries 7/12; first difference at entry 1: `@10 DbgFile \"code/modules/media/mediamanager.dm\" DbgLine 41` vs `@8 DbgFile \"code/modules/media/mediamanager.dm\" DbgLine 40`",
+     "path": "/area/Entered#0"
+    },
+    {
+     "detail": "debug entries 24/29; first difference at entry 2: `@9 DbgFile \"code/game/area/areas.dm\" DbgLine 388` vs `@7 DbgFile \"code/game/area/areas.dm\" DbgLine 387`",
+     "path": "/area/Entered#1"
+    },
+    {
+     "detail": "debug entries 4/6; first difference at entry 3: `@19 DbgFile \"code/game/area/areas.dm\" DbgLine 623` vs `@17 DbgFile \"code/game/area/areas.dm\" DbgLine 622`",
+     "path": "/area/Exited"
+    },
+    {
+     "detail": "debug entries 5/6; first difference at entry 5: `<none>` vs `@11 DbgFile \"code/game/area/areas.dm\" DbgLine 68`",
+     "path": "/area/Initialize"
+    },
+    {
+     "detail": "debug entries 4/7; first difference at entry 3: `@17 DbgFile \"code/game/turfs/initialization/init.dm\" DbgLine 11` vs `@9 DbgFile \"code/game/turfs/initialization/init.dm\" DbgLine 10`",
+     "path": "/area/LateInitialize#0"
+    },
+    {
+     "detail": "debug entries 9/12; first difference at entry 3: `@13 DbgFile \"code/game/area/Away Mission areas.dm\" DbgLine 29` vs `@11 DbgFile \"code/game/area/Away Mission areas.dm\" DbgLine 28`",
+     "path": "/area/LateInitialize#1"
+    },
+    {
+     "detail": "debug entries 7/9; first difference at entry 1: `@7 DbgFile \"code/game/area/areas.dm\" DbgLine 77` vs `@5 DbgFile \"code/game/area/areas.dm\" DbgLine 76`",
+     "path": "/area/LateInitialize#2"
+    },
+    {
+     "detail": "debug entries 2/3; first difference at entry 2: `<none>` vs `@6 DbgFile \"code/game/area/areas.dm\" DbgLine 56`",
+     "path": "/area/New"
+    },
+    {
+     "detail": "debug entries 2/3; first difference at entry 0: `@0 DbgFile ? DbgLine 1300` vs `@0 DbgFile \"code/game/area/Space Station 13 areas.dm\" DbgLine 1300`",
+     "path": "/area/ai/<init>"
+    },
+    {
+     "detail": "debug entries 3/5; first difference at entry 2: `@9 DbgFile \"code/game/area/ai_monitored.dm\" DbgLine 17` vs `@7 DbgFile \"code/game/area/ai_monitored.dm\" DbgLine 16`",
+     "path": "/area/ai_monitored/Entered"
+    },
+    {
+     "detail": "debug entries 3/5; first difference at entry 2: `@9 DbgFile \"code/game/area/ai_monitored.dm\" DbgLine 22` vs `@7 DbgFile \"code/game/area/ai_monitored.dm\" DbgLine 21`",
+     "path": "/area/ai_monitored/Exited"
+    }
+   ]
+  },
+  "proc.proc_args": {
+   "count": 1,
+   "examples": [
+    {
+     "detail": "args: target as 0x81 in /datum/game_mode/malfunction/verb/unlock_cyborg/<arg0 in> r0 vs target as 0x1 in /datum/game_mode/malfunction/verb/unlock_cyborg/<arg0 in> r0",
+     "path": "/datum/game_mode/malfunction/verb/unlock_cyborg"
+    }
+   ]
+  },
+  "proc.proc_locals": {
+   "count": 94,
+   "examples": [
+    {
+     "detail": "locals: lengths 1 vs 2; first difference at [1]: <end> vs ",
+     "path": "/atom/vv_edit_var"
+    },
+    {
+     "detail": "locals: lengths 8 vs 9; first difference at [6]: seconds vs ",
+     "path": "/client/verb/who"
+    },
+    {
+     "detail": "locals: lengths 5 vs 7; first difference at [5]: <end> vs ",
+     "path": "/datum/component/shadekin/proc/update_shadekin_hud"
+    },
+    {
+     "detail": "locals: lengths 13 vs 14; first difference at [7]: T vs ",
+     "path": "/datum/component/xenochimera/proc/handle_feralness"
+    },
+    {
+     "detail": "locals: lengths 2 vs 3; first difference at [1]: remaining vs ",
+     "path": "/datum/controller/subsystem/explosions/stat_entry"
+    },
+    {
+     "detail": "locals: lengths 10 vs 11; first difference at [9]: candidate vs ",
+     "path": "/datum/controller/subsystem/job/proc/fill_head_position"
+    },
+    {
+     "detail": "locals: lengths 5 vs 6; first difference at [5]: <end> vs ",
+     "path": "/datum/disease/advance/proc/GenerateProperties"
+    },
+    {
+     "detail": "locals: lengths 6 vs 9; first difference at [4]: H vs ",
+     "path": "/datum/disease/advance/proc/random_disease_name"
+    },
+    {
+     "detail": "locals: lengths 5 vs 6; first difference at [3]: points_lost vs ",
+     "path": "/datum/event2/event/raise_funds/end"
+    },
+    {
+     "detail": "locals: lengths 11 vs 12; first difference at [7]: old_heat_capacity vs ",
+     "path": "/datum/gas_reaction/plasmafire/react"
+    },
+    {
+     "detail": "locals: lengths 2 vs 3; first difference at [2]: <end> vs ",
+     "path": "/datum/gas_reaction/water_vapor/react"
+    },
+    {
+     "detail": "locals: lengths 7 vs 10; first difference at [1]: resiliance vs ",
+     "path": "/datum/internal_wiki/page/virus/assemble"
+    },
+    {
+     "detail": "locals: lengths 18 vs 24; first difference at [2]: debt vs ",
+     "path": "/datum/life_system/hud/carbon/human/tick"
+    },
+    {
+     "detail": "locals: lengths 1 vs 2; first difference at [1]: <end> vs ",
+     "path": "/datum/life_system/hud/silicon/pai/health_icons"
+    },
+    {
+     "detail": "locals: lengths 2 vs 3; first difference at [2]: <end> vs ",
+     "path": "/datum/life_system/hud/silicon/robot/tick"
+    }
+   ]
+  },
+  "type.type_appearance": {
+   "count": 58,
+   "examples": [
+    {
+     "detail": "icon_state: null vs \"\"",
+     "path": "/atom/movable/screen/movable/mapper_holder"
+    },
+    {
+     "detail": "icon_state: null vs \"\"",
+     "path": "/atom/movable/screen/rig_booting"
+    },
+    {
+     "detail": "name: null vs \"\"",
+     "path": "/image/client_only"
+    },
+    {
+     "detail": "text: null vs \"\"",
+     "path": "/image/client_only"
+    },
+    {
+     "detail": "name: null vs \"\"",
+     "path": "/image/client_only/electrify_notice"
+    },
+    {
+     "detail": "text: null vs \"\"",
+     "path": "/image/client_only/electrify_notice"
+    },
+    {
+     "detail": "name: null vs \"\"",
+     "path": "/image/client_only/motion_echo"
+    },
+    {
+     "detail": "text: null vs \"\"",
+     "path": "/image/client_only/motion_echo"
+    },
+    {
+     "detail": "name: null vs \"\"",
+     "path": "/image/compass_marker"
+    },
+    {
+     "detail": "text: null vs \"\"",
+     "path": "/image/compass_marker"
+    },
+    {
+     "detail": "icon_state: null vs \"\"",
+     "path": "/mob/living/simple_mob/vr/glitch"
+    },
+    {
+     "detail": "name: null vs \"\"",
+     "path": "/mutable_appearance/appearance_mirror"
+    },
+    {
+     "detail": "text: null vs \"\"",
+     "path": "/mutable_appearance/appearance_mirror"
+    },
+    {
+     "detail": "icon_state: null vs \"\"",
+     "path": "/obj/effect/constructing_effect"
+    },
+    {
+     "detail": "icon_state: null vs \"\"",
+     "path": "/obj/effect/decal/cleanable/blood/tracks"
+    }
+   ]
+  },
+  "type.type_mob": {
+   "count": 4,
+   "examples": [
+    {
+     "detail": "mob sight: 164 Some((164, 2, 25)) vs 128 Some((164, 2, 25))",
+     "path": "/mob/living/simple_mob/mechanical/mecha/combat/marauder"
+    },
+    {
+     "detail": "mob sight: 164 Some((164, 2, 25)) vs 128 Some((164, 2, 25))",
+     "path": "/mob/living/simple_mob/mechanical/mecha/combat/marauder/mauler"
+    },
+    {
+     "detail": "mob sight: 164 Some((164, 2, 25)) vs 128 Some((164, 2, 25))",
+     "path": "/mob/living/simple_mob/mechanical/mecha/combat/marauder/seraph"
+    },
+    {
+     "detail": "mob sight: 188 Some((188, 2, 61)) vs 128 Some((188, 2, 61))",
+     "path": "/mob/observer/dead"
+    }
+   ]
+  },
+  "type.type_verbs": {
+   "count": 4,
+   "examples": [
+    {
+     "detail": "verbs: lengths 8 vs 8; first difference at [0]: /mob/living/carbon/brain/caught_soul/verb/nme_brain vs /mob/living/carbon/brain/caught_soul/resist",
+     "path": "/mob/living/carbon/brain/caught_soul"
+    },
+    {
+     "detail": "verbs: lengths 3 vs 3; first difference at [0]: /mob/living/silicon/verb/set_flavor vs /mob/living/silicon/set_default_language",
+     "path": "/mob/living/silicon"
+    },
+    {
+     "detail": "verbs: lengths 13 vs 13; first difference at [1]: /mob/living/silicon/pai/verb/paiInterface vs /mob/living/silicon/pai/lay_down",
+     "path": "/mob/living/silicon/pai"
+    },
+    {
+     "detail": "verbs: lengths 3 vs 3; first difference at [0]: /mob/living/simple_mob/verb/toggle_speech_sounds vs /mob/living/simple_mob/lay_down",
+     "path": "/mob/living/simple_mob"
+    }
+   ]
+  }
+ },
+ "equivalent": false,
+ "notes": [
+  "non-semantic order global_footer: 1534 elements moved",
+  "non-semantic order rsc_archive: 1 elements moved"
+ ],
+ "order_policy": [
+  {
+   "order": "type_table",
+   "semantic": true
+  },
+  {
+   "order": "proc_table",
+   "semantic": true
+  },
+  {
+   "order": "var_name_strings",
+   "semantic": true
+  },
+  {
+   "order": "global_footer",
+   "semantic": false
+  },
+  {
+   "order": "rsc_archive",
+   "semantic": false
+  }
+ ],
+ "schema": 1,
+ "seconds": 11.9117084,
+ "signatures": {
+  "proc.bytecode": {
+   "AugAdd local1 vs Test": 1,
+   "AugAdd src->.F vs Round": 1,
+   "Call arg0->dproc:X, N vs Add": 1,
+   "Call arg2->dproc:X, N vs PushVal N": 1,
+   "Call dproc:X, N vs PopCache": 5,
+   "Call local0->dproc:X, N vs PushVal N": 1,
+   "Call local3->dproc:X, N vs PushVal N": 1,
+   "Call src->.F->dproc:X, N vs PushVal N": 1,
+   "Call src->dproc:X, N vs Jmp L": 6,
+   "Call src->dproc:X, N vs PushVal N": 2,
+   "CallGlob N, P vs PushVal N": 1,
+   "CallParent vs Jmp L": 41,
+   "CallParent vs PushVal N": 10,
+   "CallStatement arg0->dproc:X, N vs PushVal N": 1,
+   "CallStatement global:SSshuttles->dproc:X, N vs PushVal N": 1,
+   "CallStatement global:xenomorphs->dproc:X, N vs Jmp L": 1,
+   "CallStatement local0->dproc:X, N vs PushVal N": 2,
+   "CallStatement local0->dproc:X, N vs Round": 1,
+   "CallStatement local3->dproc:X, N vs PushVal N": 1,
+   "CallStatement local4->dproc:X, N vs PushVal N": 1,
+   "CallStatement local8->dproc:X, N vs Jmp L": 1,
+   "CallStatement src->.F->dproc:X, N vs Jmp L": 1,
+   "CallStatement src->.F->dproc:X, N vs PushVal N": 4,
+   "CallStatement src->dproc:X, N vs Jmp L": 20,
+   "CallStatement src->dproc:X, N vs PushVal N": 17,
+   "CallStatement src->dproc:X, N vs Test": 1,
+   "CallStatement usr->dproc:X, N vs Jmp L": 1,
+   "Clamp vs Round": 1,
+   "Dec src->.F vs PushVal N": 1,
+   "End vs GetVar .": 51,
+   "End vs Jmp L": 412,
+   "End vs PushVal N": 382,
+   "Format S, N vs Format S, N": 1,
+   "Format S, N vs JmpOr L": 627,
+   "Format S, N vs Test": 166,
+   "GetVar . vs Jmp L": 5,
+   "GetVar . vs PushVal N": 15,
+   "GetVar .F->.F vs GetVar .F": 7,
+   "GetVar arg0 vs Add": 19,
+   "GetVar arg0 vs GetVar arg0->.F": 91,
+   "GetVar arg0 vs Jmp L": 44,
+   "GetVar arg0 vs PushVal N": 34,
+   "GetVar arg0->.F vs Add": 4,
+   "GetVar arg0->.F vs Jmp L": 6,
+   "GetVar arg0->.F vs PushVal N": 22,
+   "GetVar arg1 vs Add": 9,
+   "GetVar arg1 vs GetVar arg1->.F": 62,
+   "GetVar arg1 vs Jmp L": 13,
+   "GetVar arg1 vs PushVal N": 17,
+   "GetVar arg1->.F vs Jmp L": 2,
+   "GetVar arg1->.F vs Pop": 1,
+   "GetVar arg1->.F vs PushVal N": 5,
+   "GetVar arg2 vs Add": 2,
+   "GetVar arg2 vs Jmp L": 3,
+   "GetVar arg2 vs PushVal N": 3,
+   "GetVar arg2->.F vs Jmp L": 6,
+   "GetVar arg3 vs Add": 1,
+   "GetVar arg3 vs GetVar arg3->.F": 1,
+   "GetVar arg3 vs Jmp L": 1,
+   "GetVar arg3 vs PushVal N": 1,
+   "GetVar arg3 vs PushVal S": 1,
+   "GetVar arg4 vs Add": 1,
+   "GetVar arg4 vs PushVal N": 1,
+   "GetVar arg5 vs Jmp L": 1,
+   "GetVar arg6 vs Jmp L": 1,
+   "GetVar global:L@[P,<global-init>]=hidden vs Jmp L": 2,
+   "GetVar global:ammo_screen_loc_list vs PushVal N": 1,
+   "GetVar global:cardinal vs Jmp L": 1,
+   "GetVar global:common vs Jmp L": 1,
+   "GetVar global:fauna vs Jmp L": 1,
+   "GetVar global:internal vs Jmp L": 1,
+   "GetVar global:log_directory vs PushVal N": 1,
+   "GetVar global:ntnet_global vs PushVal N": 1,
+   "GetVar global:reagent_addictive_standard vs Jmp L": 1,
+   "GetVar global:station_account vs PushVal N": 1,
+   "GetVar global:tgui_modals vs PushVal N": 1,
+   "GetVar global:using_map->.F vs PushVal N": 1,
+   "GetVar initial(local0->.F) vs JmpOr L": 1,
+   "GetVar initial(local1->.F) vs PushVal N": 1,
+   "GetVar initial(src->.F) vs Jmp L": 1,
+   "GetVar initial(src->.F) vs JmpOr L": 1,
+   "GetVar initial(src->.F) vs PushVal N": 2,
+   "GetVar local0 vs Add": 9,
+   "GetVar local0 vs GetVar local0->.F": 25,
+   "GetVar local0 vs Jmp L": 53,
+   "GetVar local0 vs PushVal N": 30,
+   "GetVar local0 vs PushVal null": 1,
+   "GetVar local0 vs Round": 1,
+   "GetVar local0->.F vs Add": 2,
+   "GetVar local0->.F vs Jmp L": 6,
+   "GetVar local0->.F vs JmpOr L": 1,
+   "GetVar local0->.F vs PushVal N": 4,
+   "GetVar local0->.F->.F->.F vs Jmp L": 1,
+   "GetVar local1 vs Add": 5,
+   "GetVar local1 vs GetVar local1->.F": 3,
+   "GetVar local1 vs Jmp L": 16,
+   "GetVar local1 vs PushVal N": 15,
+   "GetVar local1->.F vs Jmp L": 1,
+   "GetVar local1->.F vs PushVal N": 2,
+   "GetVar local10 vs Add": 1,
+   "GetVar local11 vs Add": 1,
+   "GetVar local15 vs Jmp L": 1,
+   "GetVar local15 vs PushVal N": 1,
+   "GetVar local16 vs Jmp L": 1,
+   "GetVar local2 vs Add": 3,
+   "GetVar local2 vs GetVar local2->.F": 2,
+   "GetVar local2 vs Jmp L": 7,
+   "GetVar local2 vs PushVal N": 4,
+   "GetVar local2->.F vs Jmp L": 1,
+   "GetVar local2->.F vs PushVal N": 3,
+   "GetVar local3 vs Add": 1,
+   "GetVar local3 vs Jmp L": 1,
+   "GetVar local3 vs PushVal N": 3,
+   "GetVar local3->.F vs PushVal N": 1,
+   "GetVar local4 vs Add": 3,
+   "GetVar local4 vs GetVar local4->.F": 1,
+   "GetVar local4 vs Jmp L": 2,
+   "GetVar local4 vs PushVal N": 5,
+   "GetVar local4->.F vs PushVal N": 1,
+   "GetVar local5 vs Add": 1,
+   "GetVar local5 vs Jmp L": 3,
+   "GetVar local5 vs PushVal N": 1,
+   "GetVar local5->.F vs PushVal N": 4,
+   "GetVar local7 vs Jmp L": 2,
+   "GetVar null-ref vs Jmp L": 9,
+   "GetVar null-ref vs PushVal N": 1,
+   "GetVar null-ref vs PushVal null": 5370,
+   "GetVar src vs Add": 58,
+   "GetVar src vs GetVar src->.F": 33,
+   "GetVar src vs Jmp L": 5,
+   "GetVar src vs PushVal N": 21,
+   "GetVar src->.F vs Add": 17,
+   "GetVar src->.F vs GetVar src->.F->.F": 4,
+   "GetVar src->.F vs Jmp L": 70,
+   "GetVar src->.F vs JmpOr L": 2,
+   "GetVar src->.F vs Mul": 1,
+   "GetVar src->.F vs PushVal N": 112,
+   "GetVar src->.F vs PushVal null": 6,
+   "GetVar src->.F vs Test": 1,
+   "GetVar src->.F->.F vs Add": 1,
+   "GetVar src->.F->.F vs Jmp L": 1,
+   "GetVar src->.F->.F vs PushVal N": 7,
+   "GetVar usr vs Jmp L": 14,
+   "GetVar usr->.F vs Jmp L": 2,
+   "GetVar world->.F vs Jmp L": 3,
+   "GetVar world->.F vs PushVal N": 4,
+   "Inc local0 vs Jmp L": 2,
+   "Inc local0 vs PushVal N": 1,
+   "Inc local1 vs PushVal N": 2,
+   "Inc local2 vs PushVal N": 1,
+   "IterLoad N, N vs Block": 10,
+   "IterLoad N, N vs BlockCoordinates": 4,
+   "IterLoad N, N vs Hearers": 18,
+   "IterLoad N, N vs IterLoad N, N": 250,
+   "IterLoad N, N vs OHearers": 3,
+   "IterLoad N, N vs ORange N": 63,
+   "IterLoad N, N vs OView": 40,
+   "IterLoad N, N vs OViewers": 12,
+   "IterLoad N, N vs PushVal path11 P": 1,
+   "IterLoad N, N vs PushVal path9 P": 2,
+   "IterLoad N, N vs Range N": 160,
+   "IterLoad N, N vs View": 108,
+   "IterLoad N, N vs Viewers": 41,
+   "IterPop vs Jmp L": 3,
+   "IterPush vs Block": 1,
+   "IterPush vs ORange N": 3,
+   "IterPush vs OView": 1,
+   "IterPush vs Range N": 2,
+   "IterPush vs View": 3,
+   "Jmp L vs JmpLoop L": 1,
+   "Jmp L vs PushVal N": 24,
+   "JmpAnd L vs JmpAnd L": 13,
+   "JmpAnd L vs LocateType": 1,
+   "JmpLoop L vs Jmp L": 30,
+   "JmpLoop L vs PushVal N": 101,
+   "JmpOr L vs GetVar local7": 1,
+   "JmpOr L vs JmpOr L": 88,
+   "JmpOr L vs LocateType": 5,
+   "Jz L vs GetFlag": 971,
+   "NewImage vs NewImageArgs N": 87,
+   "NewList N vs Jmp L": 4,
+   "NewList N vs PushCache": 3,
+   "NewList N vs PushVal N": 12,
+   "NewList N vs PushVal S": 9,
+   "NewList N vs PushVal mobpath P": 1,
+   "NewList N vs PushVal path32 P": 39,
+   "NewList N vs PushVal path9 P": 1,
+   "OutputFormat S, N vs Format S, N": 5,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 2,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 2,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 3,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 3,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 2,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 3,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 2,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 3,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 5,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 3,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 6,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 3,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 7,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 3,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 5,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PushVal N": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 3,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 10,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 9,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 25,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 18,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 19,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 40,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 5,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 29,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;else=>L} vs Jmp L": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;N=>L;else=>L}": 12,
+   "PickSwitch {N=>L;N=>L;N=>L;N=>L;else=>L} vs PushVal N": 1,
+   "PickSwitch {N=>L;N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;N=>L;else=>L}": 77,
+   "PickSwitch {N=>L;N=>L;else=>L} vs PickSwitch {N=>L;N=>L;else=>L}": 1,
+   "PickSwitch {N=>L;N=>L;else=>L} vs PushVal mobpath P": 2,
+   "PickSwitch {N=>L;else=>L} vs PushVal N": 1,
+   "PushCache vs GetVar .F": 191,
+   "PushCache vs GetVar local0": 1,
+   "PushCache vs GetVar local3": 1,
+   "PushVal N vs Abs": 1,
+   "PushVal N vs GetVar global:CLOSE_DURATION": 1,
+   "PushVal N vs GetVar global:FREQ_LISTENING": 1,
+   "PushVal N vs GetVar global:OPEN_DURATION": 1,
+   "PushVal N vs GetVar global:num_power_levels": 1,
+   "PushVal N vs GetVar global:platform_respawn_time": 1,
+   "PushVal N vs Jmp L": 139,
+   "PushVal N vs JmpOr L": 24,
+   "PushVal N vs Mul": 1,
+   "PushVal N vs NewList N": 1,
+   "PushVal N vs Pop": 1,
+   "PushVal N vs PushVal N": 1204,
+   "PushVal N vs PushVal S": 2,
+   "PushVal S vs Add": 170,
+   "PushVal S vs Bxor": 1,
+   "PushVal S vs Jmp L": 37,
+   "PushVal S vs JmpOr L": 14,
+   "PushVal S vs PushVal N": 31,
+   "PushVal S vs PushVal S": 43,
+   "PushVal S vs PushVal null": 1,
+   "PushVal S vs PushVal path32 P": 7,
+   "PushVal S vs PushVal path9 P": 1,
+   "PushVal S vs PushVal procpath P": 1,
+   "PushVal S vs Round": 1,
+   "PushVal mobpath P vs Jmp L": 2,
+   "PushVal mobpath P vs PushVal N": 1,
+   "PushVal null vs Call src->dproc:X, N": 2,
+   "PushVal null vs GetVar arg0": 10,
+   "PushVal null vs GetVar arg0->.F": 4,
+   "PushVal null vs GetVar arg1": 3,
+   "PushVal null vs GetVar arg1->.F": 1,
+   "PushVal null vs GetVar arg2": 1,
+   "PushVal null vs GetVar global:SScontracts->.F": 2,
+   "PushVal null vs GetVar global:SSsupply->.F": 1,
+   "PushVal null vs GetVar local0": 4,
+   "PushVal null vs GetVar local0->.F": 1,
+   "PushVal null vs GetVar local0->.F->.F": 1,
+   "PushVal null vs GetVar local1": 7,
+   "PushVal null vs GetVar local1->.F": 4,
+   "PushVal null vs GetVar local2": 4,
+   "PushVal null vs GetVar local2->.F": 4,
+   "PushVal null vs GetVar local3": 3,
+   "PushVal null vs GetVar local3->.F": 1,
+   "PushVal null vs GetVar local4": 3,
+   "PushVal null vs GetVar local4->.F": 1,
+   "PushVal null vs GetVar local5": 2,
+   "PushVal null vs GetVar local6": 2,
+   "PushVal null vs GetVar local7": 1,
+   "PushVal null vs GetVar local8": 1,
+   "PushVal null vs GetVar local9->.F": 1,
+   "PushVal null vs GetVar null-ref": 92,
+   "PushVal null vs GetVar src": 1,
+   "PushVal null vs GetVar src->.F": 26,
+   "PushVal null vs GetVar src->.F->.F": 2,
+   "PushVal null vs GetVar usr": 1,
+   "PushVal null vs Jmp L": 19,
+   "PushVal null vs NewList N": 1,
+   "PushVal null vs PickSwitch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "PushVal null vs PushVal N": 265,
+   "PushVal null vs PushVal S": 2,
+   "PushVal null vs PushVal inf": 1,
+   "PushVal null vs PushVal path32 P": 1,
+   "PushVal null vs SetVar local24": 1,
+   "PushVal path P vs JmpAnd L": 11,
+   "PushVal path10 P vs PushVal path9 P": 94,
+   "PushVal path11 P vs Jmp L": 1,
+   "PushVal path32 P vs Add": 1,
+   "PushVal path32 P vs Jmp L": 2,
+   "PushVal path32 P vs PushCache": 17,
+   "PushVal path32 P vs PushVal N": 7,
+   "PushVal path32 P vs PushVal S": 2,
+   "PushVal path9 P vs Jmp L": 2,
+   "PushVal path9 P vs NewList N": 1,
+   "PushVal path9 P vs PushVal N": 4,
+   "PushVal path9 P vs PushVal S": 1,
+   "PushVal path9 P vs PushVal path32 P": 1,
+   "PushVal rsc(N:Nbc5 'soundP.F') vs PushVal N": 1,
+   "SetCacheJmpIfNull L vs PopCache": 2,
+   "SetCacheJmpIfNull L vs SetCachePopJmpIfNull L": 1,
+   "SetCachePopJmpIfNull L vs SetCacheJmpIfNull L": 9,
+   "SetVar local0 vs SetVar local1": 1,
+   "SetVar local0->.F vs Test": 1,
+   "SetVar local1 vs SetVar local2": 1,
+   "SetVar local2 vs SetVar local3": 3,
+   "SetVar local3 vs SetVar local4": 2,
+   "SetVar local3 vs SetVar local5": 1,
+   "SetVar local4 vs SetVar local5": 3,
+   "SetVar local7 vs SetVar local8": 1,
+   "SetVar local8 vs SetVar local9": 2,
+   "SetVar src->.F vs SetVar src->.F": 3,
+   "SetVar src->.F vs Test": 1,
+   "Square vs GetVar arg1": 2,
+   "Square vs GetVar local0": 1,
+   "Square vs GetVar local1": 1,
+   "Square vs GetVar local2": 1,
+   "Square vs GetVar local7": 1,
+   "Square vs GetVar src->.F": 5,
+   "Square vs PushVal N": 21,
+   "Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 2,
+   "Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 1,
+   "Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 3,
+   "Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 2,
+   "Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 2,
+   "Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 4,
+   "Switch {N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local0": 1,
+   "Switch {N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;N=>L;N=>L;N=>L;else=>L}": 8,
+   "Switch {N=>L;N=>L;N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;N=>L;N=>L;else=>L}": 15,
+   "Switch {N=>L;N=>L;N=>L;else=>L} vs SetVar local0": 1,
+   "Switch {N=>L;N=>L;N=>L;else=>L} vs SetVar local1": 1,
+   "Switch {N=>L;N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;N=>L;else=>L}": 7,
+   "Switch {N=>L;N=>L;else=>L} vs SetVar local2": 1,
+   "Switch {N=>L;N=>L;else=>L} vs Switch {N=>L;N=>L;else=>L}": 4,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 1,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 1,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 1,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 1,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 2,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 1,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 3,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 1,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 1,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 4,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 3,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 1,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 2,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 1,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 3,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 3,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 1,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 9,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 4,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs SetVar local0": 1,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 7,
+   "Switch {S=>L;S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 3,
+   "Switch {S=>L;S=>L;S=>L;S=>L;else=>L} vs SetVar local0": 1,
+   "Switch {S=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;S=>L;else=>L}": 11,
+   "Switch {S=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;else=>L}": 14,
+   "Switch {S=>L;S=>L;else=>L} vs SetVar local0": 1,
+   "Switch {S=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;else=>L}": 1,
+   "Switch {S=>L;S=>L;null=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;S=>L;null=>L;else=>L}": 3,
+   "Switch {S=>L;else=>L} vs SetVar local0": 2,
+   "Switch {S=>L;null=>L;S=>L;S=>L;S=>L;else=>L} vs Switch {null=>L;S=>L;S=>L;S=>L;S=>L;else=>L}": 3,
+   "Switch {S=>L;null=>L;S=>L;else=>L} vs Switch {S=>L;S=>L;null=>L;else=>L}": 1,
+   "Switch {null=>L;S=>L;S=>L;else=>L} vs Switch {S=>L;null=>L;S=>L;else=>L}": 1,
+   "Switch {path11 P=>L;path11 P=>L;path11 P=>L;path11 P=>L;path11 P=>L;else=>L} vs Switch {path11 P=>L;path11 P=>L;path11 P=>L;path11 P=>L;path11 P=>L;else=>L}": 2,
+   "Switch {path32 P=>L;mobpath P=>L;path9 P=>L;path10 P=>L;path11 P=>L;else=>L} vs Switch {path32 P=>L;path9 P=>L;mobpath P=>L;path11 P=>L;path10 P=>L;else=>L}": 1,
+   "Switch {path32 P=>L;path10 P=>L;path9 P=>L;mobpath P=>L;path11 P=>L;path10 P=>L;else=>L} vs Switch {path32 P=>L;path9 P=>L;path9 P=>L;mobpath P=>L;path11 P=>L;path10 P=>L;else=>L}": 1,
+   "Switch {path32 P=>L;path32 P=>L;path32 P=>L;path32 P=>L;else=>L} vs Switch {path32 P=>L;path32 P=>L;path32 P=>L;path32 P=>L;else=>L}": 1,
+   "SwitchRange {-inf..N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local0": 1,
+   "SwitchRange {-inf..N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local1": 1,
+   "SwitchRange {-inf..N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local5": 1,
+   "SwitchRange {-inf..N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local0": 2,
+   "SwitchRange {-inf..N=>L;N=>L;else=>L} vs SetVar local2": 1,
+   "SwitchRange {-inf..N=>L;Ninf=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local0": 1,
+   "SwitchRange {-inf..N=>L;Ninf=>L;N=>L;else=>L} vs SetVar local9": 1,
+   "SwitchRange {-inf..N=>L;null=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local0": 1,
+   "SwitchRange {N=>L;N=>L;-inf..N=>L;else=>L} vs SetVar local1": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;-inf..N=>L;else=>L} vs SetVar local2": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local1": 3,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local2": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local2": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local0": 2,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local3": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local3": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local1": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local0": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local1": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local2": 3,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local3": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local0": 5,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local1": 3,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local4": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local5": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local8": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local0": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local1": 3,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local3": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local9": 5,
+   "SwitchRange {N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local0": 4,
+   "SwitchRange {N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local1": 2,
+   "SwitchRange {N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local2": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local3": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local4": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local5": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;else=>L} vs SetVar local0": 1,
+   "SwitchRange {N=>L;N=>L;N=>L;else=>L} vs SetVar local1": 1,
+   "SwitchRange {N=>L;N=>L;Ninf=>L;N=>L;else=>L} vs SetVar local0": 7,
+   "SwitchRange {N=>L;N=>L;Ninf=>L;N=>L;else=>L} vs SetVar local1": 2,
+   "SwitchRange {N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local0": 5,
+   "SwitchRange {N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local1": 3,
+   "SwitchRange {N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local2": 2,
+   "SwitchRange {N=>L;N=>L;Ninf=>L;else=>L} vs SetVar local5": 1,
+   "SwitchRange {N=>L;N=>L;else=>L} vs SetVar local7": 1,
+   "SwitchRange {N=>L;Ninf=>L;else=>L} vs SetVar local0": 2,
+   "SwitchRange {N=>L;Ninf=>L;else=>L} vs SetVar local1": 1,
+   "SwitchRange {N=>L;Ninf=>L;else=>L} vs SetVar local3": 1,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;N=>L;N=>L;-inf..N=>L;else=>L} vs SetVar local0": 1,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;-inf..N=>L;else=>L} vs SetVar local0": 1,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local4": 1,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local0": 1,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local0": 2,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local1": 2,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local2": 2,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local3": 1,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local0": 2,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local1": 3,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;N=>L;else=>L} vs SetVar local2": 2,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;else=>L} vs SetVar local1": 1,
+   "SwitchRange {Ninf=>L;N=>L;N=>L;else=>L} vs SetVar local9": 1,
+   "SwitchRange {Ninf=>L;N=>L;else=>L} vs SetVar local7": 1,
+   "Teq vs JmpOr L": 18,
+   "Test vs JmpAnd L": 1,
+   "Tge vs Round": 1,
+   "Tne vs JmpOr L": 4
+  },
+  "proc.debug_info": {
+   "<none> vs @N DbgFile S DbgLine N": 20445,
+   "@N DbgFile ? DbgLine N vs @N DbgFile S DbgLine N": 12067,
+   "@N DbgFile S DbgLine N vs @N DbgFile S DbgLine N": 15000
+  }
+ },
+ "total": 147854,
+ "source": "E:/dq-cache/dmb-takeover/baseline-src (DeepQuarry takeover baseline, comparison.dme)"
+}

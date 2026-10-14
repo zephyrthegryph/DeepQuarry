@@ -1,0 +1,9 @@
+{
+  "scope": "build checkout guard fixture; no DM build, compiler benchmark or runtime parity",
+  "command": "bun test tools/build/lib/build_root.test.ts",
+  "tests": 1,
+  "assertions": 5,
+  "exit_code": 0,
+  "seconds": 0.266,
+  "checks": ["matching checkout", "sibling loaded module rejection", "sibling invocation rejection", "missing checkout pin rejection", "enabled transpiler cache rejection"]
+}

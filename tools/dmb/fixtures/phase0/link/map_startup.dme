@@ -1,0 +1,3 @@
+#include "common.dm"
+#include "map_startup.dm"
+#include "map_startup.dmm"

@@ -5,6 +5,69 @@
 use std::collections::BTreeSet;
 use std::fmt;
 
+mod portable_answer;
+pub use portable_answer::PortableResolvedAnswer;
+mod warnings;
+pub mod builtin_names;
+pub use warnings::WarningCode;
+
+mod symbols;
+pub use symbols::{SymbolCollision, SymbolId, SymbolTable, SymbolTableStorage};
+mod string_roster;
+pub use string_roster::{StringPayload, StringRoster, StringRosterError};
+
+mod declarations;
+pub use declarations::{
+    ArrayDeclaration, DeclarationMeaning, DeclaredTypeKnowledge, ExpressionToken, OpaqueFieldBase,
+    Parameter, ProcedureMetadata, ProcedureSetting, ProcedureSettingNode, ProcedureSignature,
+    SemanticValue, SettingOperation, SymbolicExpression,
+};
+mod initializer;
+pub use initializer::{
+    InitializerScope, InitializerSite, InitializerTarget, InitializerUnit, InitializerValue,
+    InitializerWrite,
+};
+pub mod map;
+mod modified_instance;
+pub mod skin;
+pub use modified_instance::{CapturedModifiedResource, ModifiedCaptureError, ModifiedInstance};
+pub mod constants;
+mod procedure_static;
+pub use procedure_static::{
+    ProcedureIdentity, ProcedureStaticDeclaration, ProcedureStaticIdentity,
+};
+
+mod canonical_answer;
+pub mod predefined_resolution;
+pub mod receiver_resolution;
+pub mod reference_resolution;
+pub use canonical_answer::CanonicalResolvedAnswer;
+mod resolver;
+mod selected_references;
+pub use resolver::{
+    procedure_value_query, ProcedureDefinition, ReadDomain, ResolveQuery, ResolvedMeaning, Resolver,
+};
+pub use selected_references::{
+    SelectedBuiltin, SelectedMeaning, SelectedReference, SelectedReferences,
+    SELECTED_REFERENCES_POLICY,
+};
+mod receipt_observer;
+pub use receipt_observer::{ResolvedReadObserver, TransparentReceiptObserver};
+mod memo_resolver;
+pub use memo_resolver::{MemoResolver, MemoStats, MemoStorageView};
+
+mod word_storage;
+pub use word_storage::{
+    ByteOwnerStorage, ImmutableByteOwner, SharedWords, WordIter, WordStorage, WordStorageError,
+    WordStorageView,
+};
+
+mod symbolic;
+pub use symbolic::{
+    Relocation, RelocationEncoding, RelocationError, RelocationKind, RelocationView, SymRef,
+    SymbolicCode,
+};
+
 macro_rules! id {
     ($name:ident) => {
         #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]

@@ -1,0 +1,111 @@
+{
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "observations": {
+    "ambiguous": "typed annotation chooses /datum/file0; unannotated chooses /datum/other_file1",
+    "simple": "typed and unannotated infer unique attachment type /datum/file",
+    "union": "bare path union annotation rejected must be type path or atomic",
+    "typed": "annotation as /datum/message emits no return coercion"
+  },
+  "files": [
+    {
+      "sha256": "2b4a36b3152af89c2af116c71c13e3d20ee2acb0c8cbc4b468d8e2d388727ae0",
+      "path": ".gitattributes"
+    },
+    {
+      "sha256": "27881cfc5956e40bd40a8d9acc37d913149352a6a5bd22d0783bac3202625c9e",
+      "path": "typed/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "typed/compile.stderr.log"
+    },
+    {
+      "sha256": "cd0146fd2f9e946fc2e56353098a25979282cb16a300a2391dc73e738e05a850",
+      "path": "typed/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "typed/probe.dme"
+    },
+    {
+      "sha256": "79f54e0e33ae208ae172aa3bbb958544a5b59db0e56728eb9d9caa8c81179e01",
+      "path": "typed/probe.native.bin"
+    },
+    {
+      "sha256": "27881cfc5956e40bd40a8d9acc37d913149352a6a5bd22d0783bac3202625c9e",
+      "path": "typed_ambiguous/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "typed_ambiguous/compile.stderr.log"
+    },
+    {
+      "sha256": "d0d6b93b3ae3f844d6787e534186a421827ed5bdc84822cefe0f97dadbc7fd26",
+      "path": "typed_ambiguous/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "typed_ambiguous/probe.dme"
+    },
+    {
+      "sha256": "e060a543457745553a27982c714a5d13e1e352c3b80ab182d92c4cc6549921c3",
+      "path": "typed_ambiguous/probe.native.bin"
+    },
+    {
+      "sha256": "27881cfc5956e40bd40a8d9acc37d913149352a6a5bd22d0783bac3202625c9e",
+      "path": "unannotated/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "unannotated/compile.stderr.log"
+    },
+    {
+      "sha256": "237fafa2eb423a8ed1406d659bed9acee7b2ec6db3cea4f7f310ec7363bb8c65",
+      "path": "unannotated/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "unannotated/probe.dme"
+    },
+    {
+      "sha256": "79f54e0e33ae208ae172aa3bbb958544a5b59db0e56728eb9d9caa8c81179e01",
+      "path": "unannotated/probe.native.bin"
+    },
+    {
+      "sha256": "27881cfc5956e40bd40a8d9acc37d913149352a6a5bd22d0783bac3202625c9e",
+      "path": "unannotated_ambiguous/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "unannotated_ambiguous/compile.stderr.log"
+    },
+    {
+      "sha256": "542b2e0e3f1e110278a2b914b13601d9751fb5fae598a6f15b5cc562db5ea684",
+      "path": "unannotated_ambiguous/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "unannotated_ambiguous/probe.dme"
+    },
+    {
+      "sha256": "3510f1b1139546edb1f7c8cc0c8edb9881f4e4015227437c677a417cebfe1cf2",
+      "path": "unannotated_ambiguous/probe.native.bin"
+    },
+    {
+      "sha256": "508cce8952bdf84bae96c74e3c4bb82e3e8fb6cfe70c06915af7afe72a54be01",
+      "path": "union/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "union/compile.stderr.log"
+    },
+    {
+      "sha256": "fe3b6fc2950aa7a207f2a41e9add3340ec89173547660d2688171bd279391b2e",
+      "path": "union/probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "union/probe.dme"
+    }
+  ]
+}

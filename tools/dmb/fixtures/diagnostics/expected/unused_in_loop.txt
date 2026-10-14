@@ -1,0 +1,2 @@
+unused_in_loop.dm:3:warning (unused_var): y: variable defined but not used
+unused_in_loop.dmb - 0 errors, 1 warning

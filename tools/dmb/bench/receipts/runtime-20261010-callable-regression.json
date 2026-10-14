@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "scope": "actual paired callable runtime regression, not full game runtime parity",
+  "complete": false,
+  "receipt": "E:\\dq-cache\\dmb-callable-runtime\\61ba0b26a66047789fa781b72762cce0\\receipt.json",
+  "receipt_sha256": "a92c26d325263fec01dc9cbd6dc916476dac65d67988ff75f6079a9a456925b1",
+  "native_pin": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-190317-5d6cca42.exe",
+    "sha256": "3c4e06bc20ffd6f3999ec23d32d77dbd2fe6a68222cff3d2fa6749526398d149"
+  },
+  "byond_pin": {
+    "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+    "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+  },
+  "dd_pin": {
+    "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+    "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+  },
+  "fixture_sources": {
+    "probe.dm": "2c18dc1fbd820d179234ae445b7244966f44facafdc83fdd84975d882d423ae4",
+    "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+  },
+  "byond_observations": {
+    "markers": [
+      "DQ_CALL copy_length 2",
+      "DQ_CALL copy_value 99",
+      "DQ_CALL original_value 7",
+      "DQ_CALL safe_known 11",
+      "DQ_CALL safe_null 1",
+      "DQ_CALL colon_verb 23",
+      "DQ_CALL typed_verb 23",
+      "DQ_CALL self_verb 23",
+      "DQ_CALL catch_number 42",
+      "DQ_CALL catch_exception 1",
+      "DQ_CALL finished"
+    ],
+    "runtimes": []
+  },
+  "native_error": "callable results differ from independent expected contract: ['DQ_CALL copy_length 2', 'DQ_CALL copy_value 99', 'DQ_CALL original_value 7', 'DQ_CALL safe_known 11', 'DQ_CALL safe_null 1', 'DQ_CALL colon_verb ', 'DQ_CALL typed_verb 23', 'DQ_CALL self_verb 23', 'DQ_CALL catch_number 42', 'DQ_CALL catch_exception 1', 'DQ_CALL finished']",
+  "root_cause": "dynamic colon source verb call uses DynamicProc 0xffdd rather than BYOND DynamicVerb 0xffde",
+  "operand_evidence": {
+    "byond_proc": "/proc/dynamic_verb#0",
+    "byond_call_words": [
+      65500,
+      65497,
+      0,
+      65502,
+      439,
+      0
+    ],
+    "native_call_words": [
+      65500,
+      65497,
+      0,
+      65501,
+      593,
+      0
+    ],
+    "mixed_source_proc_verb_byond_call_words": [
+      65500,
+      65497,
+      0,
+      65501,
+      438,
+      0
+    ]
+  },
+  "resolution": "source correction pending new executable paired runtime validation",
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 58765312,
+    "samples": 15,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 45740,
+        "private_bytes": 58765312
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "registered owned compile/acquisition/runtime children, 200ms samples; not strict peak or unregistered-descendant proof"
+  }
+}

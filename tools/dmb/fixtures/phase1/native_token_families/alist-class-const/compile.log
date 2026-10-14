@@ -1,0 +1,5 @@
+DM compiler version 516.1687
+loading probe.dme
+probe.dm:3:error: =: constant initializer required
+probe.dmb - 1 error, 0 warnings (10/7/26 4:43 am)
+Total time: 0:01

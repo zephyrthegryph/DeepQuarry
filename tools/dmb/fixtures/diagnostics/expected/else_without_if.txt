@@ -1,0 +1,2 @@
+else_without_if.dm:2:error: else: 'else' clause without preceding 'if' statement
+else_without_if.dmb - 1 error, 0 warnings

@@ -1,0 +1,110 @@
+[
+  {
+    "label": "types",
+    "value": [
+      "/obj/link_order",
+      "/obj/link_order/base",
+      "/obj/link_order/a_child",
+      "/obj/link_order/z_child"
+    ]
+  },
+  {
+    "label": "vars",
+    "value": [
+      "z_value",
+      "a_value",
+      "reopened_value",
+      "animate_movement",
+      "loc",
+      "x",
+      "y",
+      "z",
+      "screen_loc",
+      "pixel_step_size",
+      "bounds",
+      "locs",
+      "step_x",
+      "step_y",
+      "step_size",
+      "bound_x",
+      "bound_y",
+      "bound_width",
+      "bound_height",
+      "glide_size",
+      "vis_contents",
+      "vis_locs",
+      "vis_flags",
+      "particles",
+      "pixloc",
+      "type",
+      "parent_type",
+      "tag",
+      "name",
+      "desc",
+      "suffix",
+      "text",
+      "icon",
+      "icon_state",
+      "overlays",
+      "underlays",
+      "dir",
+      "visibility",
+      "luminosity",
+      "opacity",
+      "density",
+      "layer",
+      "gender",
+      "mouse_over_pointer",
+      "mouse_drag_pointer",
+      "mouse_drop_pointer",
+      "mouse_drop_zone",
+      "verbs",
+      "vars",
+      "contents",
+      "invisibility",
+      "infra_luminosity",
+      "pixel_x",
+      "pixel_y",
+      "mouse_opacity",
+      "pixel_z",
+      "override",
+      "maptext",
+      "maptext_width",
+      "maptext_height",
+      "transform",
+      "alpha",
+      "color",
+      "blend_mode",
+      "appearance",
+      "maptext_x",
+      "maptext_y",
+      "plane",
+      "appearance_flags",
+      "pixel_w",
+      "filters",
+      "render_source",
+      "render_target",
+      "icon_w",
+      "icon_z"
+    ]
+  },
+  {
+    "label": "verbs",
+    "value": [
+      "/obj/link_order/base/verb/a_verb",
+      "/obj/link_order/base/verb/z_verb"
+    ]
+  },
+  {
+    "label": "override_result",
+    "value": "child|base"
+  },
+  {
+    "label": "proc_reference",
+    "value": "/obj/link_order/base/proc/foo"
+  },
+  {
+    "label": "verb_reference",
+    "value": "/obj/link_order/base/verb/z_verb"
+  }
+]

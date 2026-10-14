@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "source_sha256": "7ea8e0b839bf4a0a5cb1491aea737d46fa14b39d8ed8561f2fce09e4b814e025",
+  "native_sha256": "de0c958ce474520ac55e808ee7d76b908eb8a61435b2c1b0800c27770eddfcf6",
+  "compile_only": true,
+  "runtime_executed": false,
+  "receipt_directory": "E:/dq-cache/dmb-native-v2/input-middle-review-20261010/center-golden"
+}

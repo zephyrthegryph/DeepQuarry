@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "scope": "Three completed batches from bounded native normal-tier segment",
+  "compiler_source": "4e66f8ff4a8f8a1a65abd5ef8d178430a684ee4c",
+  "inventory_fix": "5cb64725ef",
+  "checkpoint": "E:/projects/dq-wt/dmb-review/data/normal-suite/20261011T123758_494fce6fdf_normal-batches-e2e42e7e-3282-46bb-9e44-98990100da60.json",
+  "checkpoint_sha256": "57208f9b8caad5acf0fe54dfbb5d161fd566b71443a80c7aa73be7a7a711c100",
+  "completed_batches": 3,
+  "selected_tests": 96,
+  "selected_failures": 0,
+  "automatic_rows": 3,
+  "runtime_errors": 0,
+  "full_normal_inventory_tests": 2001,
+  "complete": false,
+  "inputClosureAuthenticated": false,
+  "acceptedRuntimeBaseline": false,
+  "stop": "300 second cohort watchdog; fourth batch unfinished",
+  "wrapper_receipt": "tools/dmb/bench/receipts/runtime-20261011-normal-native-4e66-partial.json"
+}

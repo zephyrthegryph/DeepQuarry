@@ -1,0 +1,6 @@
+DM compiler version 516.1687
+loading inherited_override.dme
+inherited_override.dm:15:error: /datum/child/proc/callback: undefined type path
+inherited_override.dm:15:error: =: expected a constant expression
+inherited_override.dmb - 2 errors, 0 warnings (10/7/26 2:52 am)
+Total time: 0:00

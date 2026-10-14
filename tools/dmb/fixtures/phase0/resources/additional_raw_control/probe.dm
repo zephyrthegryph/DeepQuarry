@@ -1,0 +1,6 @@
+/var/gif_asset='probe.gif'
+/var/wav_asset='probe.wav'
+/var/mid_asset='probe.mid'
+/var/mp3_asset='probe.mp3'
+/var/font_asset='probe.woff2'
+/var/webp_asset='probe.webp'

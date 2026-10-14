@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "scope": "compile-only folded nameof source-feature observations; no runtime",
+  "complete": true,
+  "runtime": "not run",
+  "root": "E:\\dq-cache\\dmb-folded-source-features\\19b29d68f0314413a4509327feff1a89",
+  "overall_watchdog_seconds": 300,
+  "child_watchdog_seconds": 30,
+  "job_memory_bytes": 4294967296,
+  "pins": {
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    }
+  },
+  "cases": {
+    "global_cpu": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.5563187999650836,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    },
+    "global_graphics": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.4188768999883905,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    },
+    "constant_cpu": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.5473609999753535,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    },
+    "constant_graphics": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.4310799000086263,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    }
+  },
+  "source_sha256": {
+    "global_cpu.dm": "05ccc60acba7f47839e62a48935cc796c01d53c93455dcb81182692472d9e375",
+    "global_cpu.dme": "0d8c5202f0da81f84e34b55a7a837565aa28baf6de1e437047041a621ab4588d",
+    "global_graphics.dm": "eee6610ba8fe1760d0ab8f8e41dfb42a5613fa619613538552d55e1f37dd8a12",
+    "global_graphics.dme": "48b52ef0a93cabd782fcfb50d799ca75cd808d0a442c1495b705395e38f4207d",
+    "constant_cpu.dm": "3cd848acb2e109367f6286be4fb0772dc1d50018cea2adc8f3e1a574910be286",
+    "constant_cpu.dme": "6958c624b331f4feef7140dc10acabf7d12f4ba9bc546811361badfc438ba1ee",
+    "constant_graphics.dm": "6b3539407a67843ad9b01410a0b0ad4a6f7741c425a000f69b7055079ef98e9b",
+    "constant_graphics.dme": "56abc6e7323e06fb3d205a58f267e2035f7e3f9f10f7964f340ae7b30305c28c"
+  },
+  "pin_after_checks": {
+    "dm": {
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "unchanged": true
+    }
+  },
+  "backend": "byond-only",
+  "paired_parity": "not measured",
+  "acceptance_agrees": false,
+  "rejection_class_agrees": false,
+  "diagnostics_agree": false,
+  "owned_job_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 4294967296,
+      "peak_job_commit_bytes": 60067840,
+      "peak_process_commit_bytes": 58761216,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "captured_outputs": {
+    "global_cpu": {
+      "bytes": 15120,
+      "sha256": "e3fe81fcccc412e4eed68a313b0c204cffd26de649479436945e053612ea0849"
+    },
+    "global_graphics": {
+      "bytes": 15125,
+      "sha256": "ee520be791d61040825949b3f83296e8b5a183cb6406ff77d7a8ad30b0eabd80"
+    },
+    "constant_cpu": {
+      "bytes": 15122,
+      "sha256": "78ecbdf1c1bcd93ae4af4f776d73af6e1b9899e991d8d8fe7650fb6ebb6259c3"
+    },
+    "constant_graphics": {
+      "bytes": 15127,
+      "sha256": "15a9cb41cfbcd367c135ca967e7af4aba8b69fc7db1a9e5a17981a3ef387510f"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_tree-ba83d63b7812f68d.exe",
+  "binary_sha256": "75df153bb93ba1a244d3170f5ced0cd44a099d8c40c812570498ac20dc8388ee",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "member_arena::publication::tests::",
+      "selected": [
+        "member_arena::publication::tests::changed_dense_previous_and_owner_bindings_decline_old_chunks",
+        "member_arena::publication::tests::metadata_update_releases_previous_publication_without_changing_current_tree",
+        "member_arena::publication::tests::structural_append_reuses_exact_final_owner_chunks_and_preserves_cow"
+      ],
+      "exit": 0,
+      "seconds": 0.11145899997791275,
+      "stdout": "\nrunning 3 tests\ntest member_arena::publication::tests::changed_dense_previous_and_owner_bindings_decline_old_chunks ... ok\ntest member_arena::publication::tests::metadata_update_releases_previous_publication_without_changing_current_tree ... ok\ntest member_arena::publication::tests::structural_append_reuses_exact_final_owner_chunks_and_preserves_cow ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 244 filtered out; finished in 0.06s\n\n",
+      "stderr": ""
+    }
+  ]
+}

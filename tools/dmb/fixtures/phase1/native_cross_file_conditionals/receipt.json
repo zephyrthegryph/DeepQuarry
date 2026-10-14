@@ -1,0 +1,182 @@
+{
+  "schema": 1,
+  "compiler": "D:/Program Files (x86)/BYOND516/bin/dm.exe",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "version": "516.1687",
+  "runtime_executed": false,
+  "cases": [
+    {
+      "name": "balanced-parent",
+      "expected_accept": true,
+      "files": [
+        {
+          "path": "child.dm",
+          "sha256": "fc1980b5915b367dc90a59172947b09198298783574d2fdafeff33d34ad39163"
+        },
+        {
+          "path": "project.dme",
+          "sha256": "3dd6987c65a4f07cc265cb7e779fa2334f91829624fd09637c0afb3cd1f7da04"
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "232c0266729f6c748f7f0a708cf05ecd751ada5355124a03273a509d447f35b9"
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "project.native.bin",
+          "sha256": "bad1bcfdbbd3d0c3abceb5e5f0b007aeeaa2f4de99a0572820c77d9bb49a0bc1"
+        }
+      ],
+      "log": "DM compiler version 516.1687\r\nloading project.dme\r\nsaving project.dmb\r\nproject.dmb - 0 errors, 0 warnings (10/7/26 4:38 am)\r\nTotal time: 0:00\r\n"
+    },
+    {
+      "name": "child-open-active",
+      "expected_accept": true,
+      "files": [
+        {
+          "path": "child.dm",
+          "sha256": "a6355f85aafec258abf5209d8140d276bb1e38f0377422bbd5183d9dc978e9cb"
+        },
+        {
+          "path": "project.dme",
+          "sha256": "dd57c0dce85b7c4a2f963193ba894648a386ef670654badedd0692eda563a777"
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "232c0266729f6c748f7f0a708cf05ecd751ada5355124a03273a509d447f35b9"
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "project.native.bin",
+          "sha256": "bad1bcfdbbd3d0c3abceb5e5f0b007aeeaa2f4de99a0572820c77d9bb49a0bc1"
+        }
+      ],
+      "log": "DM compiler version 516.1687\r\nloading project.dme\r\nsaving project.dmb\r\nproject.dmb - 0 errors, 0 warnings (10/7/26 4:38 am)\r\nTotal time: 0:00\r\n"
+    },
+    {
+      "name": "child-open-inactive",
+      "expected_accept": true,
+      "files": [
+        {
+          "path": "child.dm",
+          "sha256": "72f0ab286153d8c06ad6080dc8262d9369054c272533d53ff8fb8ab5c71d4f54"
+        },
+        {
+          "path": "project.dme",
+          "sha256": "dd57c0dce85b7c4a2f963193ba894648a386ef670654badedd0692eda563a777"
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "232c0266729f6c748f7f0a708cf05ecd751ada5355124a03273a509d447f35b9"
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "project.native.bin",
+          "sha256": "65a6018b22caa4beb81c92eaae008ebb4b72fc6f353b2b7d2a03c994be2e0051"
+        }
+      ],
+      "log": "DM compiler version 516.1687\r\nloading project.dme\r\nsaving project.dmb\r\nproject.dmb - 0 errors, 0 warnings (10/7/26 4:38 am)\r\nTotal time: 0:00\r\n"
+    },
+    {
+      "name": "parent-open-active",
+      "expected_accept": true,
+      "files": [
+        {
+          "path": "child.dm",
+          "sha256": "e0459afc86c62d5a46ed884845580922994eb42e2cfba40b97ab8c6263ed963f"
+        },
+        {
+          "path": "project.dme",
+          "sha256": "3a8d52dc42c4dc69902d7b12c3e6c8f6e6b45ec4c2f8a1449ede1ad02e1899c6"
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "232c0266729f6c748f7f0a708cf05ecd751ada5355124a03273a509d447f35b9"
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "project.native.bin",
+          "sha256": "bad1bcfdbbd3d0c3abceb5e5f0b007aeeaa2f4de99a0572820c77d9bb49a0bc1"
+        }
+      ],
+      "log": "DM compiler version 516.1687\r\nloading project.dme\r\nsaving project.dmb\r\nproject.dmb - 0 errors, 0 warnings (10/7/26 4:38 am)\r\nTotal time: 0:00\r\n"
+    },
+    {
+      "name": "parent-open-inactive",
+      "expected_accept": false,
+      "files": [
+        {
+          "path": "child.dm",
+          "sha256": "e0459afc86c62d5a46ed884845580922994eb42e2cfba40b97ab8c6263ed963f"
+        },
+        {
+          "path": "project.dme",
+          "sha256": "d2db2c6911ab3de4ec49bbde72a645e6118d09653291a294334eabf5ddfbaf21"
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "036dc382ef776f49723c4beb92e192f9a1c3da0c43cfcb410418170a50ec9d86"
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "log": "DM compiler version 516.1687\r\nloading project.dme\r\nproject.dme:4:error: still skipping code at end of file (possibly an unclosed #if/#ifdef/#ifndef)\r\nproject.dmb - 1 error, 0 warnings (10/7/26 4:38 am)\r\nTotal time: 0:00\r\n"
+    },
+    {
+      "name": "unclosed-0",
+      "expected_accept": false,
+      "files": [
+        {
+          "path": "project.dme",
+          "sha256": "2b5ad7497c6847c198103cfc8e8a60afa5e2e3f47981aaca33f0e382a8565a4e"
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "9b5abd817be46eb7ca37e289b38c450830273db72016b29629e73930424561ff"
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "log": "DM compiler version 516.1687\r\nloading project.dme\r\nproject.dme:3:error: still skipping code at end of file (possibly an unclosed #if/#ifdef/#ifndef)\r\nproject.dmb - 1 error, 0 warnings (10/7/26 4:39 am)\r\nTotal time: 0:00\r\n"
+    },
+    {
+      "name": "unclosed-1",
+      "expected_accept": true,
+      "files": [
+        {
+          "path": "project.dme",
+          "sha256": "0351e48389582ef6c9ded7042e67d821e6d061cad80ec558210f2c651ba51021"
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "9722bb40b7a8e25c792b14107f08db14c4d0982a80dda73159acb068e5fbd228"
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "project.native.bin",
+          "sha256": "205f8702516fd513f6c133334a49e0a4b05831640c31c7b0140887f2daea15e4"
+        }
+      ],
+      "log": "DM compiler version 516.1687\r\nloading project.dme\r\nsaving project.dmb\r\nproject.dmb - 0 errors, 0 warnings (10/7/26 4:39 am)\r\nTotal time: 0:00\r\n"
+    }
+  ]
+}

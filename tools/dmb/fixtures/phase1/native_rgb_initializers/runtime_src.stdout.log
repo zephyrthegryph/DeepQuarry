@@ -1,0 +1,6 @@
+DM compiler version 516.1687
+loading runtime_src.dme
+runtime_src.dm:4:error: src.source_red: undefined var
+runtime_src.dm:4:error: =: expected a constant expression
+runtime_src.dmb - 2 errors, 0 warnings (10/7/26 3:05 am)
+Total time: 0:00

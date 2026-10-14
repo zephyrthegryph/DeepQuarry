@@ -1,0 +1,386 @@
+{
+  "compiler": "D:/Program Files (x86)/BYOND516/bin/dm.exe",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "binary_sha256": "283a293df37c1bd62fd7c749540f20241a51a5cc107b3f5fecc1df23f48c0240",
+  "source_sha256": "4066449f1e8deb3c11fd7e349de2f851a12dfa4b2e4f9499c7196af3bd61bb66",
+  "result": "47 native runtime assignment controls accepted, 0errors0warnings; no DreamDaemon",
+  "meaning": "Mutable binding acceptance only. Storage must separately be positive InstanceField; tmp/persistence/unknown flags remain opaque.",
+  "facts": [
+    {
+      "owner": "/atom",
+      "name": "alpha",
+      "procedure": 0,
+      "selector": 241,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "088425758d5ab0286d2188fa0b651e0041dd12033c6371352d512f2eb229519c"
+    },
+    {
+      "owner": "/atom",
+      "name": "appearance_flags",
+      "procedure": 1,
+      "selector": 270,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "2584873e391af378415c4cc6ce48028a1347cdb04b97c9082e15469f25a7f4ce"
+    },
+    {
+      "owner": "/atom",
+      "name": "blend_mode",
+      "procedure": 2,
+      "selector": 254,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "df512bdf2990ee8f7b0d2359cb0883b67156f2eac7ce8e3746cd1a9c84939a6f"
+    },
+    {
+      "owner": "/atom",
+      "name": "color",
+      "procedure": 3,
+      "selector": 242,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "79322cc9f45c5f6017e38acdc3d12a659e04837078763149a7a8ab9df3581760"
+    },
+    {
+      "owner": "/atom",
+      "name": "density",
+      "procedure": 4,
+      "selector": 48,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "d2b7df41330fbd354955b3cdc557ba7e8b9f96c5f48e4db3306d8edffebf6f61"
+    },
+    {
+      "owner": "/atom",
+      "name": "desc",
+      "procedure": 5,
+      "selector": 40,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "8c56940b7e561133abdaa2e2c68e74c44c72e1fbe21b1e8f5289ee894a3922b3"
+    },
+    {
+      "owner": "/atom",
+      "name": "dir",
+      "procedure": 6,
+      "selector": 58,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "754d8563ef4862b6ecde2d52693ce01ae49054a60ae973914ad3909984a50b39"
+    },
+    {
+      "owner": "/atom",
+      "name": "gender",
+      "procedure": 7,
+      "selector": 67,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "96b7c7ed40aa6ca50066634ca666a56c62d99a63983497195e3e6956792917df"
+    },
+    {
+      "owner": "/atom",
+      "name": "icon",
+      "procedure": 8,
+      "selector": 43,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "68b3510270a1ad0422d88d519c8579a483705cc45fdc9b521900f951dcc34001"
+    },
+    {
+      "owner": "/atom",
+      "name": "icon_state",
+      "procedure": 9,
+      "selector": 44,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "42760bdcf1f04639a6cd78aafca74e868c20d10dff11acefa9adeb828ec05428"
+    },
+    {
+      "owner": "/atom",
+      "name": "infra_luminosity",
+      "procedure": 10,
+      "selector": 180,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "2ef7e73a129574a99fa457e616d2ea6c7f7153b5bb4200cab911a077b2b01780"
+    },
+    {
+      "owner": "/atom",
+      "name": "invisibility",
+      "procedure": 11,
+      "selector": 181,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "56f39746a1874d85ec077e2566c1ef551f35a574a01af47c451696f53e15eacc"
+    },
+    {
+      "owner": "/atom",
+      "name": "layer",
+      "procedure": 12,
+      "selector": 115,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "579ad5a56c9e0b08bbf0e69c08343394c2f095ed2d1512e2d162ba8fea43c0e3"
+    },
+    {
+      "owner": "/atom",
+      "name": "luminosity",
+      "procedure": 13,
+      "selector": 46,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "6a62295a4fb653defed83fcaa6d2005eeb362a4645e779d4aed1bf359b13af77"
+    },
+    {
+      "owner": "/atom",
+      "name": "maptext_height",
+      "procedure": 14,
+      "selector": 238,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "da7c1fa9c8fa0153e673d3a34ae1d7f30e4b14df7ccf88497387b610a42e0da9"
+    },
+    {
+      "owner": "/atom",
+      "name": "maptext_width",
+      "procedure": 15,
+      "selector": 237,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "fca1f88c5a884796257e7da112f62c225f28ce4bfd5c5a4f81f3177bc63d6a94"
+    },
+    {
+      "owner": "/atom",
+      "name": "maptext_x",
+      "procedure": 16,
+      "selector": 267,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "621b8afce959b2034d0d2ceb38d3c0d2be31e6aef70fe6eb5e8a0446ace70ace"
+    },
+    {
+      "owner": "/atom",
+      "name": "maptext_y",
+      "procedure": 17,
+      "selector": 268,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "b135188b4027981c2048a3da3e3daf48622e70395f763f415845964dd118d85e"
+    },
+    {
+      "owner": "/atom",
+      "name": "mouse_drag_pointer",
+      "procedure": 18,
+      "selector": 149,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "9f95b756da49164a3c63815408df1e95ed9dca6fc765999bb2a1e6b90811f22c"
+    },
+    {
+      "owner": "/atom",
+      "name": "mouse_opacity",
+      "procedure": 19,
+      "selector": 184,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "27fe343b7c952a0f2a8576154c76eb648690f767c9ec22d99b0b64230625e2df"
+    },
+    {
+      "owner": "/atom",
+      "name": "mouse_over_pointer",
+      "procedure": 20,
+      "selector": 148,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "cd19ea92326f617c047cd9de1f5f43cc7f7d17c7cb22c1e7f1f2cb6b0f848ca9"
+    },
+    {
+      "owner": "/atom",
+      "name": "name",
+      "procedure": 21,
+      "selector": 39,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "250c060ab7feaded2c2f6f4c57f0b56c2c9925485c84d65dba47c1a7e5daf7c4"
+    },
+    {
+      "owner": "/atom",
+      "name": "opacity",
+      "procedure": 22,
+      "selector": 47,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "e746118c2520b211c4440fcd8398f64eb082b04ce0b451ee41104712159c7782"
+    },
+    {
+      "owner": "/atom",
+      "name": "pixel_x",
+      "procedure": 23,
+      "selector": 187,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "59daa3e33b899e0fe6d65e11d965c224ede43ce60ee14674d2d2195e8b5dcc1c"
+    },
+    {
+      "owner": "/atom",
+      "name": "pixel_y",
+      "procedure": 24,
+      "selector": 188,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "2bcd7c5c20aa91cf5adc7ee8effbc6ef5ba7e5473889bbd183ba18c11b008b96"
+    },
+    {
+      "owner": "/atom",
+      "name": "pixel_z",
+      "procedure": 25,
+      "selector": 218,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "a36049c5a5909d2639149b19a810e431ef5d7782eda1f63c479cd8f41b0a97e6"
+    },
+    {
+      "owner": "/atom",
+      "name": "plane",
+      "procedure": 26,
+      "selector": 269,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "45d169c24c148ce29f60023b82f87f91184ce3e93bb0e49b8dae94339a9942f6"
+    },
+    {
+      "owner": "/atom",
+      "name": "render_target",
+      "procedure": 27,
+      "selector": 298,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "7268aff7d2c858ec9e23c8715e5fa5597b16471fe9e822adbd1423a34061fa8c"
+    },
+    {
+      "owner": "/atom",
+      "name": "suffix",
+      "procedure": 28,
+      "selector": 41,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "24b2c2c0091140c68cf96a04bf824d8472e9f06dc82705847aeaca86981362c5"
+    },
+    {
+      "owner": "/atom",
+      "name": "transform",
+      "procedure": 29,
+      "selector": 240,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "31eb55a95ec0e1b4579f8745985aec069655767532de0ca3f096e68baf5a8a8c"
+    },
+    {
+      "owner": "/atom/movable",
+      "name": "animate_movement",
+      "procedure": 30,
+      "selector": 165,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "eab1030fea2bcf8bc83372816ae06fa9efc44d18d7ca1e94fcf1e53cd2805f45"
+    },
+    {
+      "owner": "/atom/movable",
+      "name": "bound_height",
+      "procedure": 31,
+      "selector": 229,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "c5cf38b012cada8b203dc18981f2041932693c1ef49da41647946d438b8b1d83"
+    },
+    {
+      "owner": "/atom/movable",
+      "name": "bound_width",
+      "procedure": 32,
+      "selector": 228,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "d49add112d85de8912ca86db4b1173e74cd88735c1b0671496b483575cf0cadc"
+    },
+    {
+      "owner": "/atom/movable",
+      "name": "glide_size",
+      "procedure": 33,
+      "selector": 235,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "d8b738ef8c997989c548e0111e5293be17b1767609dbe324f07f0dd1c199f30d"
+    },
+    {
+      "owner": "/atom/movable",
+      "name": "screen_loc",
+      "procedure": 34,
+      "selector": 169,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "98c59974f5485c7a0ab56c0971f25bd81fddd1d6d75362cfde3660c1c7df693c"
+    },
+    {
+      "owner": "/atom/movable",
+      "name": "vis_flags",
+      "procedure": 35,
+      "selector": 299,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "67c9df7522c0449bdb1590d3ae88016d93471ff2b6aa3c96697da3a7e5c2a0e7"
+    },
+    {
+      "owner": "/image",
+      "name": "appearance_flags",
+      "procedure": 36,
+      "selector": 270,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "0e41189995da2f843a54e5ed9326c77556c3e8b95aa8c4846367598566f64141"
+    },
+    {
+      "owner": "/image",
+      "name": "maptext_height",
+      "procedure": 37,
+      "selector": 238,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "309d7ee7f9a599bb52c856117ca5e76cf5d3ccd365004d8ac28b6a99182a8f3c"
+    },
+    {
+      "owner": "/image",
+      "name": "maptext_width",
+      "procedure": 38,
+      "selector": 237,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "35b3778faabff504d12f98e5dd15b782b80333dc8f720483207a1e4791585d60"
+    },
+    {
+      "owner": "/image",
+      "name": "maptext_x",
+      "procedure": 39,
+      "selector": 267,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "2e879e25b670539924964ff9ab048f70e2683d7a429d1c2979c95f0ec944c7ca"
+    },
+    {
+      "owner": "/image",
+      "name": "maptext_y",
+      "procedure": 40,
+      "selector": 268,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "062ae407162fcafd54fee7d567fcf9010ccd7c4705f7e12a8ec3cfee933bfa6f"
+    },
+    {
+      "owner": "/image",
+      "name": "mouse_opacity",
+      "procedure": 41,
+      "selector": 184,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "b16777938758111ea4d107931502102544d2f4ad89e5351a50c1f9831795547c"
+    },
+    {
+      "owner": "/image",
+      "name": "plane",
+      "procedure": 42,
+      "selector": 269,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "a96cf4922b694c5e85c6e98d4552bc41752ec4ff4256b5b6abf38168db9821f4"
+    },
+    {
+      "owner": "/mob",
+      "name": "see_in_dark",
+      "procedure": 43,
+      "selector": 179,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "bc0bd825308ccbf7b1bb40e28f8bc09bb9a270eb7df14307cdf21a914f52ae03"
+    },
+    {
+      "owner": "/mob",
+      "name": "see_invisible",
+      "procedure": 44,
+      "selector": 182,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "44d640095673087784fc892c5c50f7660b633373a184a5faed8d0d85128bf7fe"
+    },
+    {
+      "owner": "/mob",
+      "name": "sight",
+      "procedure": 45,
+      "selector": 68,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "2d8de3c21efef4efe9c2bc084024132c1709d199404d8b56128899d7eac8cbf0"
+    },
+    {
+      "owner": "/turf",
+      "name": "vis_flags",
+      "procedure": 46,
+      "selector": 299,
+      "opcode": "SetVar[Cache,Src,name]",
+      "log_sha256": "775a485c50fc113281c0e3bb9d4722fa65f2ad190193a5fd9ca82757086f30f0"
+    }
+  ]
+}

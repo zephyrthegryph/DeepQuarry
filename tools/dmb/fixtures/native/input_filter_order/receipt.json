@@ -1,0 +1,176 @@
+{
+  "schema": "dm-input-filter-order-v1",
+  "status": "captured",
+  "producer_sha256": "9accfab316e63856d93e1620176dc2d1b8bdf581cb972e9341756494b11f48bb",
+  "compiler": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "file_version": "5.0.516.1687",
+  "child_watchdog_s": 30,
+  "aggregate_admission_deadline_s": 360,
+  "cases": [
+    {
+      "name": "matrix",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\input_filter_order\\matrix.dm",
+      "source_sha256": "2720149605b965a4f4f756fabe3feff155abb01f09c051f464eaff07c57e620b",
+      "inputs": {
+        "matrix.dm": "2720149605b965a4f4f756fabe3feff155abb01f09c051f464eaff07c57e620b",
+        "matrix.dme": "70b513ce7f23ee095fbd0b735af3169a78c4b12057f086d4c42b4824478c0024"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\input-filter-order-20261010-guardian-wave\\matrix\\matrix.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 1.1971320000011474,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\input-filter-order-20261010-guardian-wave\\matrix\\byond.log",
+        "diagnostics": [
+          {
+            "file": "matrix.dm",
+            "line": 4,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 12,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 20,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 28,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 36,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 44,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 51,
+            "severity": "warning (anything_no_list)",
+            "message": "'anything' has no meaning without a list"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 52,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 55,
+            "severity": "warning (anything_no_list)",
+            "message": "'anything' has no meaning without a list"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 56,
+            "severity": "warning (filter_rightmost)",
+            "message": "'anything' should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 59,
+            "severity": "warning (anything_no_list)",
+            "message": "'anything' has no meaning without a list"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 60,
+            "severity": "warning (filter_rightmost)",
+            "message": "'anything' should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 63,
+            "severity": "warning (anything_no_list)",
+            "message": "'anything' has no meaning without a list"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 68,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 72,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 76,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 88,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 88,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 92,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          }
+        ],
+        "log_sha256": "ad05dc577b364c6fc70820c6d2027535e59f7514815d9f1fe2dfa84ff984250d"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\input-filter-order-20261010-guardian-wave\\matrix\\matrix.dmb",
+          "bytes": 18190,
+          "sha256": "936c647ab19d7501d6bcb56b930a31b9375024a15b70472e3a66c94eb516799e"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "diagnostics": "DM compiler version 516.1687\r\nloading matrix.dme\r\nmatrix.dm:4:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:12:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:20:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:28:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:36:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:44:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:51:warning (anything_no_list): 'anything' has no meaning without a list\r\nmatrix.dm:52:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:55:warning (anything_no_list): 'anything' has no meaning without a list\r\nmatrix.dm:56:warning (filter_rightmost): 'anything' should be right-most\r\nmatrix.dm:59:warning (anything_no_list): 'anything' has no meaning without a list\r\nmatrix.dm:60:warning (filter_rightmost): 'anything' should be right-most\r\nmatrix.dm:63:warning (anything_no_list): 'anything' has no meaning without a list\r\nmatrix.dm:68:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:72:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:76:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:88:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:88:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:92:warning (filter_rightmost): object type filter should be right-most\r\nsaving matrix.dmb\r\nmatrix.dmb - 0 errors, 19 warnings (10/10/26 1:36 pm)\r\nTotal time: 0:00\r\n",
+      "status": "captured"
+    }
+  ],
+  "scope": "actual compile-only ordered input-filter capture; diagnostic scope from exact source; no native or runtime execution",
+  "version": {
+    "command": [
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe"
+    ],
+    "exit_code": 1,
+    "timed_out": false,
+    "seconds": 0.2851308999815956,
+    "cleanup": null,
+    "log": "E:\\dq-cache\\dmb-native-v2\\input-filter-order-20261010-guardian-wave\\version.log",
+    "diagnostics": [],
+    "log_sha256": "865efe09cc6a29c7102ee596363784a36fa4031f773d3caad44d171d5737763b"
+  }
+}

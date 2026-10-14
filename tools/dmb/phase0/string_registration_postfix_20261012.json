@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "scope": "Tiny pinned compile-only StringID/footer/operand comparison, relative registration order only; no runtime/full parity acceptance.",
+  "native_commit": "d9174674ff",
+  "native_sha256": "75573c9f97f7de166f70b2b46edaa1453a23a96c8addf065d21305479705046e",
+  "inspector_sha256": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb",
+  "observations": {
+    "member": {
+      "receipt": "E:\\dq-cache\\dmb-string-controls-d917\\207973c40c004bbcaf936efb714c4d8c\\receipt.json",
+      "receipt_sha256": "170ba25daf9aa43ef3e135086b8ee0919faecb32d219eaea31cacb3d9defe6db",
+      "dmb_sha256": "2b5fdd966d88f9b27f2f920acc1845e2313943cb8820608bb9a25ec3ec6c8d3d",
+      "field_footer": 119,
+      "field_ids": [
+        180,
+        181,
+        182,
+        183
+      ],
+      "variables": [
+        "Variable { kind: 42, value: 1065353216, name: 593 } name=a_second",
+        "Variable { kind: 42, value: 1073741824, name: 594 } name=type_value",
+        "Variable { kind: 42, value: 1077936128, name: 595 } name=z_first",
+        "Variable { kind: 42, value: 1082130432, name: 596 } name=control_value"
+      ],
+      "string_ids": {
+        "a_second": 593,
+        "type_value": 594,
+        "z_first": 595,
+        "control_value": 596
+      },
+      "procedure": "proc#67 /proc/unused_registration\n0000 0084 DbgFile [597]\n0002 0085 DbgLine [2]\n0004 0033 GetVar [65500, 65497, 0, 595]\n0009 0012 Ret []\n000a 0084 DbgFile [597]\n000c 0085 DbgLine [1]\n000e 0000 End []",
+      "relative_order_matches_byond": true,
+      "native_relative_order": [
+        "a_second",
+        "type_value",
+        "z_first"
+      ]
+    },
+    "folded": {
+      "receipt": "E:\\dq-cache\\dmb-string-controls-d917\\48a7cc6ec3bc43138fc8a6ead7912493\\receipt.json",
+      "receipt_sha256": "e8eabaa60fd7d6900dd0226272969201326efecf1db5a114b4a1d2cb844f0a15",
+      "dmb_sha256": "46e602bb31e04ee1f7c14e293c664b64891bc64c1beead17452dc2e2bd1f913d",
+      "field_footer": 119,
+      "field_ids": [
+        179,
+        180,
+        181,
+        182
+      ],
+      "variables": [
+        "Variable { kind: 42, value: 1065353216, name: 593 } name=a_second",
+        "Variable { kind: 42, value: 1073741824, name: 594 } name=type_value",
+        "Variable { kind: 42, value: 1077936128, name: 595 } name=z_first",
+        "Variable { kind: 42, value: 1082130432, name: 596 } name=control_value"
+      ],
+      "string_ids": {
+        "a_second": 593,
+        "type_value": 594,
+        "z_first": 595,
+        "control_value": 596
+      },
+      "procedure": "proc#67 /proc/unused_registration\n0000 0084 DbgFile [599]\n0002 0085 DbgLine [2]\n0004 0060 PushVal [6, 597]\n0007 0060 PushVal [6, 598]\n000a 003e Add []\n000b 0012 Ret []\n000c 0084 DbgFile [599]\n000e 0085 DbgLine [1]\n0010 0000 End []",
+      "relative_order_matches_byond": false,
+      "native_relative_order": [
+        "a_second",
+        "type_value",
+        "z_first"
+      ]
+    },
+    "direct": {
+      "receipt": "E:\\dq-cache\\dmb-string-controls-d917\\dca1b18c71e3487199bf47115bd9a0dd\\receipt.json",
+      "receipt_sha256": "3bb1ab4bd2326c23ef147b8f769b19c64b6521c09439eb0f400fd1043d26c3f6",
+      "dmb_sha256": "8d3650cffbc7a92a773da5495080d829c66abe9b69627cbdd5e41b47d86a27eb",
+      "field_footer": 119,
+      "field_ids": [
+        179,
+        180,
+        181,
+        182
+      ],
+      "variables": [
+        "Variable { kind: 42, value: 1065353216, name: 594 } name=a_second",
+        "Variable { kind: 42, value: 1073741824, name: 595 } name=type_value",
+        "Variable { kind: 42, value: 1077936128, name: 592 } name=z_first",
+        "Variable { kind: 42, value: 1082130432, name: 596 } name=control_value"
+      ],
+      "string_ids": {
+        "a_second": 594,
+        "type_value": 595,
+        "z_first": 592,
+        "control_value": 596
+      },
+      "procedure": "proc#67 /proc/unused_registration\n0000 0084 DbgFile [597]\n0002 0085 DbgLine [2]\n0004 0060 PushVal [6, 592]\n0007 0012 Ret []\n0008 0084 DbgFile [597]\n000a 0085 DbgLine [1]\n000c 0000 End []",
+      "relative_order_matches_byond": true,
+      "native_relative_order": [
+        "z_first",
+        "a_second",
+        "type_value"
+      ]
+    }
+  },
+  "finding": "Member and direct literal relative order match. Folded value still differs: native emits two string pushes plus Add, so no packed z_first relocation exists to supplement registration, whereas BYOND folds and registers z_first early.",
+  "remaining": [
+    "folded generated registration using existing shared constant evaluator",
+    "interleaved generated/authored observation blocked before DM launch",
+    "nameof/named-argument/dynamic registration unobserved"
+  ]
+}

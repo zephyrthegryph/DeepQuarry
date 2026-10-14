@@ -1,0 +1,13 @@
+{
+  "compiler_sha256": "8CAC7E8BD48219F8A7FB622535A1CE1A914D0A9A3E909BC9CEB84B3074709DC0",
+  "compiler": "D:/Program Files (x86)/BYOND516/bin/dm.exe",
+  "source_assets": {
+    "probe.mp4": "icons/hud/rig/tentacles.mp4",
+    "asset.dm": "code/__defines/font_awesome_icons.dm"
+  },
+  "pid": 41496,
+  "args": [
+    "probe.dme"
+  ],
+  "exit_code": 0
+}

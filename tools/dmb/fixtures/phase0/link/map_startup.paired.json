@@ -1,0 +1,116 @@
+{
+  "record": {
+    "case": "link-map_startup",
+    "source": "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\map_startup.dme",
+    "source_sha256": "230f34bfe6850c490cafe85177960f51d4fa811653e662549796c27df4128875",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.5555490999977337,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\map_startup.dme"
+      ],
+      "log": "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\byond-compile.log"
+    },
+    "reference_compile_outcome_matches": true,
+    "byond_runtime": {
+      "exit_code": 0,
+      "seconds": 1.392070000001695,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+        "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\map_startup.dmb",
+        "0",
+        "-trusted",
+        "-close"
+      ],
+      "log": "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\byond-runtime.log"
+    },
+    "reference_runtime_capture_complete": true,
+    "native_compile": {
+      "exit_code": 0,
+      "seconds": 1.0748063000064576,
+      "timed_out": false,
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dm-compile.exe",
+        "build-project",
+        "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\map_startup.dme",
+        "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+        "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\native"
+      ],
+      "log": "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\native-compile.log"
+    },
+    "native_runtime": {
+      "exit_code": 0,
+      "seconds": 1.2119634999980917,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+        "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\native-slot\\world.dmb",
+        "0",
+        "-trusted",
+        "-close"
+      ],
+      "log": "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\native-runtime.log"
+    },
+    "observations_equal": true,
+    "native_runtime_capture_complete": true
+  },
+  "reference_values": {
+    "creation_before_world_new": "area|turf(2,2,1)|turf(1,2,1)|turf(2,1,1)|turf(1,1,1)|a_item(1,1,1)|z_item(1,1,1)|z_item(2,1,1)|a_item(2,1,1)|z_item(1,2,1)|a_item(1,2,1)|a_item(2,2,1)|z_item(2,2,1)|",
+    "placed_world_iteration": [
+      "/obj/phase0_placed/a_item@1,1,1",
+      "/obj/phase0_placed/z_item@1,1,1",
+      "/obj/phase0_placed/z_item@2,1,1",
+      "/obj/phase0_placed/a_item@2,1,1",
+      "/obj/phase0_placed/z_item@1,2,1",
+      "/obj/phase0_placed/a_item@1,2,1",
+      "/obj/phase0_placed/a_item@2,2,1",
+      "/obj/phase0_placed/z_item@2,2,1"
+    ]
+  },
+  "native_values": {
+    "creation_before_world_new": "area|turf(2,2,1)|turf(1,2,1)|turf(2,1,1)|turf(1,1,1)|a_item(1,1,1)|z_item(1,1,1)|z_item(2,1,1)|a_item(2,1,1)|z_item(1,2,1)|a_item(1,2,1)|a_item(2,2,1)|z_item(2,2,1)|",
+    "placed_world_iteration": [
+      "/obj/phase0_placed/a_item@1,1,1",
+      "/obj/phase0_placed/z_item@1,1,1",
+      "/obj/phase0_placed/z_item@2,1,1",
+      "/obj/phase0_placed/a_item@2,1,1",
+      "/obj/phase0_placed/z_item@1,2,1",
+      "/obj/phase0_placed/a_item@1,2,1",
+      "/obj/phase0_placed/a_item@2,2,1",
+      "/obj/phase0_placed/z_item@2,2,1"
+    ]
+  },
+  "divergent_labels": [],
+  "sha256": {
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\byond-observations.json": "4822d6f5e09f2bbfbf6c19729d1865b297e0203defe93079b7b9a8f37fd4bf00",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\native-observations.json": "4822d6f5e09f2bbfbf6c19729d1865b297e0203defe93079b7b9a8f37fd4bf00",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\map-diff.log": "2532fc170396a2f150f428909260907fe2e892be4d9007fa17e8eafe67443c37",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\common.dm": "426285dfb48222978fca2550be2cc6dd438154b65d98ad1856d544a2a9426c08",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\initialization.dm": "93543a335502dc4cf89e7aff94092baf98ef7b1cb55ef70b99d3b3641a60a6f3",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\lists.dm": "30a123258b0e44be8a021019a37e694c3d01e4e12d5702a229fd0b9a9c59a39e",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\map_startup.dm": "3103180dcc7c0d09a076412743ec05c7561c1c6745bd723af0d294691fb3fc7c",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\metadata_modes.dm": "8a445bb87e5858cc84ee62c64c9586e784304193f216ec2e282ab148609387a3",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\observable.dm": "8b21221ebaae0362a71f4cd1fc09823d2669b9f042b2e5301da5578114cf4ff6",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\reopens_parent.dm": "35699b5c1d1b91f4ff4b15d651d023c6778009e6cea451558ec283749d28b07a",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\resources.dm": "c15a7729d09054a3ff2948d8a9f61490ed98cf23801851995efac4d16cbcf247",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\initialization.dme": "13aac7099a297d3f6eca4f3bf7c77f1c3e09b3ede1c76293e45d61659b13b4ab",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\lists.dme": "b7ae303439e5933aca5cfdbdbe464481a3ede0e13bf6400e5e3ae752bfa30e66",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\map_startup.dme": "230f34bfe6850c490cafe85177960f51d4fa811653e662549796c27df4128875",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\metadata_modes.dme": "c711033741ad47bd8c485879cb76cf664a51dd01bd58eb692cb5f9e7478e46d8",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\observable.dme": "d400f9b88b6f26257893d53a102ca469c026cd730d2dfab7e23e4a41ad09d2a5",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\reopens_parent.dme": "8095a608ee9fb0a60def3b76a956f5a1b1533df33394cd86133eeb1f4f97748e",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\resources.dme": "745fde03f320a0ebdee6d573ff2032769ca91bba1f0f37e832480e046466459e",
+    "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\source\\map_startup.dmm": "72cc4ba5a27c76c860068f58bab408e0101b6dd613d956bb334f5cfa6410ff0d"
+  },
+  "decoded_comparison": "no decoded map discrepancies\n",
+  "tools": {
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0",
+    "D:\\dmb-native-v2-phase0\\reference-release\\dm-compile.exe": "a9cadac131c0e8c6d112a4e0c05526692330a3d8ffc515e1a3c94e37a72e56d7"
+  },
+  "scope": "Finite fixture observation only; no universal ordering rule or full parity claim."
+}

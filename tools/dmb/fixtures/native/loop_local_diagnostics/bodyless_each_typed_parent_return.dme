@@ -1,0 +1,2 @@
+#include "bodyless_each_typed_parent_return.dm"
+    return 7

@@ -1,0 +1,2 @@
+nonconst_initial.dm:5:error: =: expected a constant expression
+nonconst_initial.dmb - 1 error, 0 warnings

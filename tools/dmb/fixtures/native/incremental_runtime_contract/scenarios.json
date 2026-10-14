@@ -1,0 +1,288 @@
+{
+  "schema": 1,
+  "scope": "explicit standalone runtime expectations, not full DM test acceptance",
+  "steps": [
+    {
+      "name": "initial",
+      "expected": [
+        3,
+        18,
+        15,
+        9,
+        11,
+        21,
+        22,
+        0,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "unchanged",
+      "expected": [
+        3,
+        18,
+        15,
+        9,
+        11,
+        21,
+        22,
+        0,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "body",
+      "before": "return ..(delta) + 10",
+      "after": "return ..(delta) + 30",
+      "expected": [
+        3,
+        38,
+        35,
+        9,
+        11,
+        21,
+        22,
+        0,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "inherited_default",
+      "before": "var/inherited_value = 3",
+      "after": "var/inherited_value = 9",
+      "expected": [
+        9,
+        44,
+        41,
+        9,
+        11,
+        21,
+        22,
+        0,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "argument_default",
+      "before": "child/measure(delta = 5)",
+      "after": "child/measure(delta = 6)",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        11,
+        21,
+        22,
+        0,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "procedure_static",
+      "before": "var/static/counter = 20",
+      "after": "var/static/counter = 40",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        11,
+        41,
+        42,
+        0,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "global_default",
+      "before": "runtime_contract_global = 11",
+      "after": "runtime_contract_global = 17",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        0,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "parent_change",
+      "before": "parent_type = /datum/runtime_contract/base\n",
+      "after": "parent_type = /datum/runtime_contract/alternate\n",
+      "expected": [
+        21,
+        57,
+        53,
+        9,
+        17,
+        41,
+        42,
+        0,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "parent_restore",
+      "before": "parent_type = /datum/runtime_contract/alternate\n",
+      "after": "parent_type = /datum/runtime_contract/base\n",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        0,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "structural_add",
+      "before": "/datum/runtime_contract/base/child/proc/extra()\n    return 0",
+      "after": "/datum/runtime_contract/base/child\n    var/extra_value = 13\n\n/datum/runtime_contract/base/child/proc/added()\n    return extra_value\n\n/datum/runtime_contract/base/child/proc/extra()\n    return added()",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        13,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "runtime_initializer",
+      "before": "/datum/runtime_contract/base/child\n    var/extra_value = 13\n\n/datum/runtime_contract/base/child/proc/added()\n    return extra_value\n\n/datum/runtime_contract/base/child/proc/extra()\n    return added()",
+      "after": "/datum/runtime_contract/base/child\n    var/list/extra_value = list(19)\n\n/datum/runtime_contract/base/child/proc/added()\n    return extra_value[1]\n\n/datum/runtime_contract/base/child/proc/extra()\n    return added()",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        19,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "structural_delete",
+      "before": "/datum/runtime_contract/base/child\n    var/list/extra_value = list(19)\n\n/datum/runtime_contract/base/child/proc/added()\n    return extra_value[1]\n\n/datum/runtime_contract/base/child/proc/extra()\n    return added()",
+      "after": "/datum/runtime_contract/base/child/proc/extra()\n    return 0",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        0,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "resource_replace",
+      "resource_before": "14",
+      "resource_after": "29",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        0,
+        29,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "resource_unchanged",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        0,
+        29,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "new_type_add",
+      "before": "/proc/runtime_contract_new_type_values()\n    return list(0, 0)\n",
+      "after": "/datum/runtime_contract/base/new_type\n    var/own_value = 31\n\n/proc/runtime_contract_new_type_values()\n    var/datum/runtime_contract/base/new_type/value = new\n    return list(value.inherited_value, value.own_value)\n",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        0,
+        29,
+        9,
+        31
+      ]
+    },
+    {
+      "name": "new_type_delete",
+      "before": "/datum/runtime_contract/base/new_type\n    var/own_value = 31\n\n/proc/runtime_contract_new_type_values()\n    var/datum/runtime_contract/base/new_type/value = new\n    return list(value.inherited_value, value.own_value)\n",
+      "after": "/proc/runtime_contract_new_type_values()\n    return list(0, 0)\n",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        0,
+        29,
+        0,
+        0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+/proc/abi_new_global_628104()
+    return 1
+/datum/abi_probe/proc/abi_new_class_628104()
+    return 1
+/datum/abi_probe/New()
+    return ..()
+/datum/abi_probe/proc/New()
+    return ..()
+/proc/sin(x)
+    return x

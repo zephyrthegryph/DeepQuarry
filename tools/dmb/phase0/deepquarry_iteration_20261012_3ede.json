@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "receipt": "E:/dq-cache/dmb-native-iterations/20261012-115006-392c2f27/receipt.json",
+  "receipt_sha256": "07fa0f6f37ca036b8a8a1c40195a44715ae7b96e7d3d30baeab38513eeda3b36",
+  "compiler_source": "3ede538f96",
+  "profile": "Counted diagnostic dmbc opt0, tree/codegen opt2, two workers; not release acceptance",
+  "timing_scope": "Compiler client launch through reap, independent fresh oracle and structural inspection excluded",
+  "fresh_initial_seconds": 101.9142135,
+  "retained_initial_seconds": 171.7836873,
+  "unchanged_seconds": 3.0556523,
+  "body_edit_seconds": 78.1052902,
+  "leaf_variable_edit_seconds": 103.2067225,
+  "all_four_fresh_native_dmb_rsc_matches": true,
+  "body": {"disk_hits": 48680, "resident_hits": 0, "recomputed": 1, "frontend_seconds": 11.6557735, "compilation_seconds": 50.9645628},
+  "leaf_variable": {"disk_hits": 48681, "resident_hits": 0, "recomputed": 0, "frontend_seconds": 19.5644024, "compilation_seconds": 67.8270256},
+  "baseline_structural": {
+    "unexplained_discrepancies": 539365,
+    "bytecode": 413153,
+    "strings_by_use": 122318,
+    "procedure_table": 3894,
+    "other_categories": 0,
+    "admission": "open; counts do not establish opcode equivalence or runtime correctness"
+  },
+  "owned_job_peak_commit_bytes": 6131163136,
+  "owned_job_reaped": true,
+  "changes_not_included": ["7c78261ff2 catalog issuer retention", "d704666003 stack candidate prefixes", "7761789e2f integration resource coverage"],
+  "limitations": ["No release performance claim", "No controlled alternating-run performance improvement claim", "Full retained core still lost before edits", "No full runtime suite or production acceptance"]
+}

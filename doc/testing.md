@@ -543,6 +543,31 @@ Fresh worktrees should not pay cold build costs:
 - **Heartbeat.** `Juke.exec` prints `still running: <command> (<m>s)` to stderr every 60 s while a child
   process runs (cargo, the DM compile, DreamDaemon, icon repack), so a long step is not mistaken for a hang.
 
+### Native compiler (incremental)
+
+`DQ_COMPILER=native` compiles with the in-tree Rust compiler (`tools/dmb`) through its
+resident daemon instead of DreamMaker. The daemon retains parsed source and per-procedure
+results, so an unchanged rebuild takes about 1.3 s and a proc-body edit about 20 s; a cold
+first build is about two minutes.
+
+```
+tools/build/build.sh dmbc                      # build tools/dmb/target/release/dmbc (cargo machine slot); skipped when current
+DQ_COMPILER=native bash tools/dq_focused_test.sh /datum/unit_test/<name>
+DQ_COMPILER=native tools/build/build.sh dm-test
+```
+
+That one variable is enough: the executable defaults to `tools/dmb/target/release/dmbc[.exe]` and
+the engine template to `tools/dmb/fixtures/native_template.bin`. With `DQ_COMPILER=native` the
+`dm`, `dm-test`, `test-repeat`, `bench` and `balance` targets depend on `dmbc` and rebuild it
+when its sources changed. Overrides: `DQ_NATIVE_COMPILER`, `DQ_NATIVE_ENGINE_TEMPLATE` (an explicit
+compiler is never rebuilt), `DQ_NATIVE_WORKERS` (default 8), `DQ_NATIVE_NO_DAEMON=1` (one-shot, cold),
+`DQ_COMPILER_STRICT=1` (no DreamMaker fallback on a compiler internal error).
+
+The daemon starts on the first native build, is reused by later builds and other worktrees using the
+same `dmbc` binary (identity is a hash of the executable), outlives the build that started it, and is
+replaced automatically when the binary changes or a daemon crashes. Its log is
+`E:/dq-cache/dmb-daemon/lifecycle.log`. Set `DMB_DAEMON_NAMESPACE` to isolate a private daemon.
+
 ### Working tree with someone else's unfinished work
 
 If another branch of work has left the manifest pointing at deleted files, or

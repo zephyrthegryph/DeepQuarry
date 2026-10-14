@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "kind": "bounded_runtime_suite",
+  "status": "completed",
+  "backend": "native",
+  "tier": null,
+  "focus": [
+    "/datum/unit_test/nuke_cinematic",
+    "/datum/unit_test/dq_power_idle_apc_and_smes_sleep",
+    "/datum/unit_test/dq_power_apc_cycle",
+    "/datum/unit_test/dq_idle_turret_wakes_for_nearby_mob",
+    "/datum/unit_test/dq_real_canister_release_spreads_via_master_loop",
+    "/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule",
+    "/datum/unit_test/dq_expanded_department_outcomes",
+    "/datum/unit_test/dq_radiation_insulated_movable_blocks",
+    "/datum/unit_test/dq_constraint_declarations_compile",
+    "/datum/unit_test/dq_rule_thresholds",
+    "/datum/unit_test/dq_damage_flavour_bands"
+  ],
+  "command": [
+    "D:\\Program Files\\Git\\bin\\bash.exe",
+    "tools/dq_focused_test.sh",
+    "/datum/unit_test/nuke_cinematic",
+    "/datum/unit_test/dq_power_idle_apc_and_smes_sleep",
+    "/datum/unit_test/dq_power_apc_cycle",
+    "/datum/unit_test/dq_idle_turret_wakes_for_nearby_mob",
+    "/datum/unit_test/dq_real_canister_release_spreads_via_master_loop",
+    "/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule",
+    "/datum/unit_test/dq_expanded_department_outcomes",
+    "/datum/unit_test/dq_radiation_insulated_movable_blocks",
+    "/datum/unit_test/dq_constraint_declarations_compile",
+    "/datum/unit_test/dq_rule_thresholds",
+    "/datum/unit_test/dq_damage_flavour_bands"
+  ],
+  "checkout": "E:\\projects\\dq-wt\\dmb-review",
+  "compilation_performed": true,
+  "historical_same_generation": false,
+  "compile_watchdog_seconds": 300,
+  "dd_watchdog_seconds": 300,
+  "cohort_watchdog_seconds": 600,
+  "inputClosureAuthenticated": false,
+  "acceptedRuntimeBaseline": false,
+  "job_memory_bytes": 6000000000,
+  "runner_sha256": "88f77dcc3cc92b4bc2280a285f7b026051c308ad5b199a282ea13d3213291171",
+  "log": "E:\\dq-cache\\dmb-native-v2\\power-focused-bc712-20261011\\build.log",
+  "pins": {
+    "bash": {
+      "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+      "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+      "bytes": 45560
+    },
+    "byond": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "bytes": 46080
+    },
+    "dd": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dreamdaemon.exe",
+      "sha256": "d410d44cade616cb5ef57a440a4c531eb5f6589eeb56211682d1ca6a10ff8999",
+      "bytes": 268800
+    },
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-061030-bc7124752d.exe",
+      "sha256": "199a10f6f750cbcd7e55d8b4a951ca4afa6f490b86f118f9b6566db8c1394493",
+      "bytes": 31671296
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540",
+      "bytes": 15100
+    }
+  },
+  "owned_child_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 5999996928,
+      "peak_job_commit_bytes": 4050124800,
+      "peak_process_commit_bytes": 3432992768,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "build_configuration": {
+    "workers": 2,
+    "ordered_extra_defines": [],
+    "security": "trusted",
+    "cargo_home": "E:\\dq-cache\\dmb-native-v2\\cargo-home",
+    "cargo_target": "E:\\dq-cache\\dmb-native-v2\\cargo-target"
+  },
+  "root_pid": 38192,
+  "owned_memory": {
+    "configured_job_memory_bytes": 5999996928,
+    "peak_job_commit_bytes": 4050124800,
+    "peak_process_commit_bytes": 3432992768,
+    "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+  },
+  "compile_receipt": "E:\\projects\\dq-wt\\dmb-review\\data\\compiler-attempts\\compiler-bfa5d6b3-1a78-4f30-85ae-4dcdccd770a4.json",
+  "actual_compilation": {
+    "requestedBackend": "native",
+    "actualBackend": "native",
+    "orderedDefines": [
+      "CBT",
+      "CIBUILDING",
+      "CITESTING",
+      "DEBUG"
+    ],
+    "fallback": null,
+    "compiler": {
+      "executable": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-061030-bc7124752d.exe",
+      "sha256": "199a10f6f750cbcd7e55d8b4a951ca4afa6f490b86f118f9b6566db8c1394493",
+      "version": null,
+      "build": null
+    },
+    "nativePair": {
+      "pairId": "dbb9ba3bd2afc9a326c8a5827332fbcb",
+      "dmbHash": "07ecc041276df02fe97df6a25f683fce",
+      "rscHash": "94187ddf583bf8a6c80f0712194aba15",
+      "dmbBytes": 68628298,
+      "rscBytes": 223679641
+    }
+  },
+  "preserved_output": {
+    "capture": "E:\\dq-cache\\dmb-native-v2\\power-focused-bc712-20261011\\preserved-output\\capture.json",
+    "sha256": "c6cb46a6c52db312c3cd4edfefb8d032767b0054013d62b10b5467f4932ed162",
+    "pairEvidence": {
+      "kind": "issued_native_acquisition",
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\power-focused-bc712-20261011\\preserved-output\\acquire.json",
+      "sha256": "0c03e7c2b4490384895477ec20da70cba4c171b3631ce98beded049e8ca7d46d",
+      "pairId": "dbb9ba3bd2afc9a326c8a5827332fbcb"
+    },
+    "sharedInputClosure": false,
+    "inputClosureAuthenticated": false
+  },
+  "preservation_receipt": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\power-focused-bc712-20261011\\preserved-output\\preservation.json",
+    "sha256": "2c3ca6383c578b9ffe81c0c0bb52a7b4f6ac4fb3f8b0b1d3c3c921afd48ed6ec",
+    "bytes": 563
+  },
+  "root_returncode": 0,
+  "exit_code": 0,
+  "wall_seconds": 354.4510283000418
+}

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "analyze baseline generates the tree first and refuses an update that would drop a row the check still matches"

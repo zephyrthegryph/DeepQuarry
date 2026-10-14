@@ -1,0 +1,1 @@
+multiline_string_ok.dmb - 0 errors, 0 warnings

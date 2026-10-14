@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "kind": "bounded_correctness_validation",
+  "subjectCommit": "e682617358",
+  "subjectCommitAssociation": "parent-issued; receipts do not independently contain source archive identity",
+  "evidence": [
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-201616-819fe2df-job-cargo.json",
+      "bytes": 928,
+      "sha256": "a0a784252607e847d8304dab43ede768bd9ce010dcc909937c017d953a8f7764",
+      "receipt": {
+        "command": [
+          "E:/cargo/bin/cargo.exe",
+          "test",
+          "--lib",
+          "--no-run",
+          "--locked",
+          "--offline",
+          "-j1",
+          "-p",
+          "dmbc",
+          "--no-default-features",
+          "--config",
+          "profile.test.package.dmbc.debug=0",
+          "--config",
+          "profile.test.package.dmbc.codegen-units=256"
+        ],
+        "exit_code": 0,
+        "seconds": 183.43700000000172,
+        "memory_cap": 4000000000,
+        "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-201616-819fe2df-job-cargo.log",
+        "error": null,
+        "cleanup": {
+          "reaped": true,
+          "error": null,
+          "memory": {
+            "configured_job_memory_bytes": 3999997952,
+            "peak_job_commit_bytes": 2970152960,
+            "peak_process_commit_bytes": 2941739008,
+            "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+          }
+        },
+        "scope": "bounded correctness build; not a compiler performance benchmark"
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-202022-023f03d9-focused.json",
+      "bytes": 2651,
+      "sha256": "2cd080db7cb3896cf65912bde3115076dfdc5e7ab01012be75a26afe1ebf52ae",
+      "receipt": {
+        "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-ae0d7f4a77b95e43.exe",
+        "binary_sha256": "710bda203d281106a8eeb430566ec11de1f5b332f1a5bfdddb2a18c7de971fd2",
+        "scope": "focused fixture execution, not full suite or runtime parity",
+        "rows": [
+          {
+            "filter": "daemon::service::housekeeping::optional_tests",
+            "selected": [
+              "daemon::service::housekeeping::optional_tests::optional_release_resamples_pressure_before_remaining_artifacts_and_session"
+            ],
+            "exit": 0,
+            "seconds": 0.01599999999962165,
+            "stdout": "\nrunning 1 test\ntest daemon::service::housekeeping::optional_tests::optional_release_resamples_pressure_before_remaining_artifacts_and_session ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 930 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "daemon::service::housekeeping::tests::idle_tiers_and_pressure_have_explicit_order",
+            "selected": [
+              "daemon::service::housekeeping::tests::idle_tiers_and_pressure_have_explicit_order"
+            ],
+            "exit": 0,
+            "seconds": 0.014999999999417923,
+            "stdout": "\nrunning 1 test\ntest daemon::service::housekeeping::tests::idle_tiers_and_pressure_have_explicit_order ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 930 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "runner_host::idle::optional_tests",
+            "selected": [
+              "runner_host::idle::optional_tests::optional_detachment_preserves_current_source_query_and_classification_until_last_tier"
+            ],
+            "exit": 0,
+            "seconds": 0.030999999999039574,
+            "stdout": "\nrunning 1 test\ntest runner_host::idle::optional_tests::optional_detachment_preserves_current_source_query_and_classification_until_last_tier ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 930 filtered out; finished in 0.01s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "initializer_policy::modifier_facts::tests::initializer_delegates_preserve_current_canonical_answer_ownership",
+            "selected": [
+              "initializer_policy::modifier_facts::tests::initializer_delegates_preserve_current_canonical_answer_ownership"
+            ],
+            "exit": 0,
+            "seconds": 0.01600000000325963,
+            "stdout": "\nrunning 1 test\ntest initializer_policy::modifier_facts::tests::initializer_delegates_preserve_current_canonical_answer_ownership ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 930 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          }
+        ]
+      }
+    }
+  ],
+  "buildPassed": true,
+  "focusedPassed": 4,
+  "runtimeParity": "not_run_by_these_gates",
+  "performanceAcceptance": false,
+  "scope": "Pressure stage telemetry and adjacent ownership fixtures; not full suite or benchmark."
+}

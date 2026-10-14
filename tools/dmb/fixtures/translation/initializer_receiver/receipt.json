@@ -1,0 +1,9 @@
+{
+  "compiler": "BYOND 516.1687",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "source_sha256": "11f3dcf336dd59cf94aa9ff4b7d420db2800ef246daa06364f8d4f04e52555a6",
+  "native_sha256": "18157dce08eff74772a75966c4b4613a634f014fb3e24f4a358804495a6263cc",
+  "compile_only": true,
+  "source_probe": "E:/dq-cache/dmb-native-v2/initializer-src-cache-probe-20261010",
+  "expected_receiver": "SetCache(Src,SetCache(Src,Field))"
+}

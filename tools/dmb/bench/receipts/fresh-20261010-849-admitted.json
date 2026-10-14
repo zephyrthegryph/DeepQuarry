@@ -1,0 +1,138 @@
+{
+  "schema": "dm-native-fresh-v1",
+  "status": "passed",
+  "workers": 2,
+  "watchdog_seconds": 300,
+  "owned_private_budget_bytes": 4000000000,
+  "acceptance_admitted": false,
+  "scope": "one fresh compile with progress logging and sampled owned private memory; no incremental, BYOND, runtime or r6 acceptance",
+  "disk_preflight": {
+    "status": "passed",
+    "checked_path": "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08",
+    "free_bytes": 114388914176,
+    "total_bytes": 1000186310656,
+    "required_free_bytes": 17179869184,
+    "policy": "configurable headroom floor; no reservation or completion guarantee"
+  },
+  "build": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-114518-439355e0.json",
+    "sha256": "0e3def722d70d2d12396f261f2db405ea97d281e31fd58c7e5119aebe9a1dc8c",
+    "compiler_sha256": "a64219e326139a2abe1519b2af55d87970f540f9318cf9053ec1bc2b82237cbd",
+    "commit": "849c29eadff4a5574ee779186153a26a57d6b427",
+    "dmbc_opt_level": 0,
+    "dm_tree_opt_level": 1,
+    "dmbc_codegen_units": 256,
+    "lto": false,
+    "declared_acceptance_profile": false,
+    "benchmark_acceptance_admitted": false,
+    "scope": "successful-build receipt matched to exact executable bytes"
+  },
+  "compiler_sha256": "a64219e326139a2abe1519b2af55d87970f540f9318cf9053ec1bc2b82237cbd",
+  "template_sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540",
+  "input_closure_sha256": "f53395b45f90f80abf962221733a5535bae787e1011de8b1fa9abb5b49f3656e",
+  "source_snapshot_sha256": "68deedaf353c95364407b374d2a1eb42607875d14a8597d90461239e2696e5c7",
+  "scenario_sha256": "33812c10845713c800a8569c070a87e34d8163f431ae734721df1db56866e5ef",
+  "configuration_evidence": [
+    "E:\\dq-cache\\dmb-native-v2\\recovered-baseline-20261010\\recapture\\byond-version.json",
+    "E:\\dq-cache\\dmb-native-v2\\recovered-baseline-20261010\\filtered-admission\\configuration-evidence.json"
+  ],
+  "semantic_configuration_sha256": "6fb25d402464088e7d7d019c05a00a825b7554e81202e6e40471ed4315bdfbd6",
+  "isolated_files": 24218,
+  "build_lock_absent_before_run": true,
+  "arguments": [
+    "compile",
+    "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\project\\comparison.dme",
+    "--workers",
+    "2",
+    "--progress",
+    "--no-daemon",
+    "--no-cache",
+    "--exact-inputs",
+    "--artifact-directory",
+    "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\artifacts",
+    "--output-store",
+    "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\store",
+    "--compile-result-file",
+    "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\compile-result.json",
+    "--bootstrap-catalog",
+    "-DCIBUILDING",
+    "-DCITESTING",
+    "-DDM_VERSION=516",
+    "-DDM_BUILD=1687",
+    "--engine-template",
+    "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin"
+  ],
+  "compile_execution": {
+    "exit": 0,
+    "wall_s": 38.75812549999682,
+    "wall_scope": "client launch through reap; daemon work included for retained requests"
+  },
+  "acquisition_execution": {
+    "exit": 0,
+    "wall_s": 0.3754666000022553,
+    "wall_scope": "client launch through reap; daemon work included for retained requests"
+  },
+  "telemetry": [
+    {
+      "name": "comparison.stats.json",
+      "sha256": "e8946a07c7da7f7113bef10e74ecef2ee29d8c6803eb7d5f0539b225c5d6e206",
+      "bytes": 1119,
+      "path": "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\telemetry\\comparison.stats.json"
+    },
+    {
+      "name": "comparison.last-run.json",
+      "sha256": "606673ea762d0434f09924f0554ee9d44823b5c2aab57e5eaa1ebb66ff9321f3",
+      "bytes": 84,
+      "path": "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\telemetry\\comparison.last-run.json"
+    }
+  ],
+  "generated_build_lock": {
+    "path": "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\project\\.dmbc\\build.lock",
+    "relative": ".dmbc/build.lock",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "scope": "new exact compile_driver build.lock leaf; retained in place, not a source input"
+  },
+  "source_unchanged_after_compile": true,
+  "admitted_output": true,
+  "outputs": {
+    "dmb": {
+      "sha256": "31e0722755236bfcfeca22ae677d0a4f90aa3ebfbc5dfebdb9c1313e514722bb",
+      "bytes": 58580014,
+      "path": "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\artifacts\\comparison.dmb",
+      "acquired_path": "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\slots\\slot-6332-0\\deepquarry.dmb"
+    },
+    "rsc": {
+      "sha256": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+      "bytes": 223679650,
+      "path": "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\artifacts\\comparison.rsc",
+      "acquired_path": "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\slots\\slot-6332-0\\deepquarry.rsc"
+    }
+  },
+  "compile_timing": {
+    "wall_seconds": 38.75812549999682,
+    "scope": "fresh compiler launch through reap; source isolation and output acquisition excluded"
+  },
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 1426874368,
+    "samples": 331,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 37828,
+        "private_bytes": 1426874368
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "registered owned fresh compiler and acquisition children only; 200ms samples, unregistered descendants/unrelated processes excluded; not strict peak proof"
+  },
+  "child_evidence": {
+    "compile": "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\compile\\child.json",
+    "acquire": "E:\\dq-cache\\dmb-native-fresh\\20261010-114752-12fb3a08\\acquire\\child.json"
+  }
+}

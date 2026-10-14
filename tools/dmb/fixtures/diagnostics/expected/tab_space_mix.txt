@@ -1,0 +1,2 @@
+tab_space_mix.dm:3:error: inconsistent indentation
+tab_space_mix.dmb - 1 error, 0 warnings

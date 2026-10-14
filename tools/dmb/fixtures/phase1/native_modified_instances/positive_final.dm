@@ -1,0 +1,16 @@
+/world
+/obj/base
+    var/amount=0
+    var/other=0
+    var/const/C=7
+var/global/a=/obj/base{amount=1}
+var/global/b=/obj/base{amount=1}
+var/global/c=/obj/base{amount=1;other=2}
+var/global/d=/obj/base{other=2;amount=1}
+/datum/outer
+    var/const/C=9
+    var/a=/obj/base{amount=1}
+    proc/local()
+        var/local_type=/obj/base{amount=1}
+/proc/root_local()
+    var/local_type=/obj/base{amount=1}

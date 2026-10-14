@@ -1,0 +1,11 @@
+/datum/base/proc/check(a)
+    set hidden = 1
+    return 0
+/datum/base/check(a)
+    set waitfor = 0
+    set background = 1
+    return 1
+/datum/child
+    parent_type = /datum/base
+/datum/child/check()
+    return

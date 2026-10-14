@@ -1,0 +1,7 @@
+/world
+/obj/base
+    var/amount=0
+/datum/holder
+    var/amount=9
+    proc/p()
+        return /obj/base{amount=1}

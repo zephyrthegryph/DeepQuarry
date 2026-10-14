@@ -13,7 +13,7 @@
 # Classes and default counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off):
 #   dm_compile      DQ_SLOTS_DM_COMPILE=2       a DreamMaker compile (tools/build/lib/byond.ts DreamMaker())
 #   test_world      DQ_SLOTS_TEST_WORLD=cpus/3  (2 to 6; 5 on 16 CPUs) one DreamDaemon unit-test world (tools/build/build.ts runIsolatedTestWorld())
-#   cargo           DQ_SLOTS_CARGO=1            a cargo build (analyze, verdigris, dmb-check)
+#   cargo           DQ_SLOTS_CARGO=1            a cargo build (analyze, verdigris, dmbc)
 #   look_state_pin  DQ_SLOTS_LOOK_STATE_PIN=2   a focused run holding dq_look_state_pin / dq_look_tree_pin
 #                                               (DQ_LOOK_PIN_SLOTS is accepted as the old name)
 # Lock order when a run needs several: look_state_pin, then test_world; dm_compile and cargo are never held while waiting

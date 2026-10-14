@@ -1,0 +1,2 @@
+goto_missing_label.dm:2:error:goto nowhere: bad link
+goto_missing_label.dmb - 1 error, 0 warnings

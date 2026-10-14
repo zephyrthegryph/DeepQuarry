@@ -1,0 +1,23 @@
+proc#0 /proc/local_list
+  0000 0060 PushVal [40, 0]
+  0003 0001 New [0]
+  0005 0034 SetVar [65498, 0]
+  0008 0033 GetVar [65498, 0]
+proc#1 /proc/explicit_list
+  0000 0060 PushVal [40, 0]
+  0003 0001 New [0]
+  0005 0012 Ret []
+  0006 0000 End []
+proc#2 /sound/New
+  0007 0050 PushInt [100]
+  0009 0034 SetVar [65497, 4]
+  000c 0033 GetVar [65497, 0]
+  000f 0060 PushVal [40, 0]
+  0012 007d IsType []
+  0013 000d Test []
+  0014 0011 Jz [27]
+proc#69 
+  0000 0060 PushVal [40, 0]
+  0003 0001 New [0]
+  0005 0034 SetVar [65500, 65486, 65500, 65486, 437]
+  000b 0000 End []

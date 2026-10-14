@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "source_commit": "de898e62e84389eb2eb8d52b2b9b74ddca43701c",
+  "source_archive_sha256": "e59ebb7dcc7983a8a26b5ddb3cef01688057d8e30965fcb255ad0fc1f73fd8a3",
+  "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-123508-2a4a101d-job-cargo.json",
+  "build_seconds": 191.6680495,
+  "build_peak_owned_commit_bytes": 3082698752,
+  "build_reaped": true,
+  "passed": {
+    "catalog_pressure_and_changed_dependencies": {"count": 1, "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-123932-802d4bdf-focused.json"},
+    "exact_key_layout_publication_and_local_reissue": {"count": 9, "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-123959-05ed2f15-focused.json"},
+    "switch_scratch_lexical_collision_both_lowering_paths": {"count": 1, "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-123959-1835ed9c-focused.json"}
+  },
+  "issues_found_and_preserved": [
+    "Initial stack-prefix implementation incorrectly assumed 16-byte SymbolIds, causing copy_from_slice panic; fixed to original 8-byte symbol encoding in de898e62e8",
+    "End-to-end pressure fixture still asserts host_facts is absent at tier 3 despite the new retained-catalog contract; fixture update pending",
+    "Two mistaken short test selectors selected no fixtures; subsequent full module selectors verified nonempty execution"
+  ],
+  "pressure_compile_closeout": {
+    "fixture_source_commit": "0c97e9d8810ba120451f7d772737d2ce995e9c8b",
+    "archive_sha256": "ec051e8cee4bb8a73dc8c8ce2d7c2b7bbe62bc38713d7fa718c7a68ff16c0017",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-124222-e49f45f1-job-cargo.json",
+    "focused_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-124611-c8b8c510-focused.json",
+    "passed": 2,
+    "verified": "Pressure preserves catalog-only authority and current semantic owner; rebuilt output equals initial and fresh output; changed catalog dependencies invalidate",
+    "production_admission_weakened": false,
+    "build_reaped": true
+  },
+  "scope": "Focused Rust checks, not full runtime or release performance acceptance",
+  "performance": "No measured performance claim for these later changes"
+}

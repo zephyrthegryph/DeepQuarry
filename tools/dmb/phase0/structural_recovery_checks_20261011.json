@@ -1,0 +1,172 @@
+{
+  "scope": "Bounded focused recovery/receipt/report checks; not full Rust suite or runtime parity",
+  "snapshot": "ff081f7ad5904cebc250436aea8aa7f9fd683af0",
+  "archive_sha256": "8b2c0523ba1e23aab98a50554a5f4206e309388b823fc4fa341b9ae8c0ec09a8",
+  "records": [
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-233955-d6a0f5bd-job-cargo.json",
+      "sha256": "27176aecc9fce61ef84f169ec208a6496251a649e847c75dfb0fd384ebe2413d",
+      "record": {
+        "command": [
+          "D:\\Program Files\\Git\\bin\\bash.exe",
+          "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+          "run",
+          "cargo",
+          "--label",
+          "dmb-review frozen correctness build",
+          "--",
+          "E:/cargo/bin/cargo.exe",
+          "test",
+          "--lib",
+          "--no-run",
+          "--locked",
+          "--offline",
+          "-j1",
+          "-p",
+          "dmbc",
+          "--no-default-features",
+          "--config",
+          "profile.test.package.dm-ir.debug=0",
+          "--config",
+          "profile.test.package.dmbc.debug=0",
+          "--config",
+          "profile.test.package.dmbc.codegen-units=256"
+        ],
+        "exit_code": 0,
+        "seconds": 196.375,
+        "memory_cap": 4000000000,
+        "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-233955-d6a0f5bd-job-cargo.log",
+        "error": null,
+        "cleanup": {
+          "reaped": true,
+          "error": null,
+          "memory": {
+            "configured_job_memory_bytes": 3999997952,
+            "peak_job_commit_bytes": 3045289984,
+            "peak_process_commit_bytes": 2989072384,
+            "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+          }
+        },
+        "scope": "bounded correctness build; not a compiler performance benchmark",
+        "original_command": [
+          "E:/cargo/bin/cargo.exe",
+          "test",
+          "--lib",
+          "--no-run",
+          "--locked",
+          "--offline",
+          "-j1",
+          "-p",
+          "dmbc",
+          "--no-default-features",
+          "--config",
+          "profile.test.package.dm-ir.debug=0",
+          "--config",
+          "profile.test.package.dmbc.debug=0",
+          "--config",
+          "profile.test.package.dmbc.codegen-units=256"
+        ],
+        "machine_slot": {
+          "kind": "cargo",
+          "tools": {
+            "script": {
+              "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+              "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+              "bytes": 22161
+            },
+            "bash": {
+              "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+              "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+              "bytes": 45560
+            }
+          },
+          "worktree": "E:\\projects\\dq-wt\\dmb-review",
+          "slotDirectory": "E:\\dq-cache\\slots",
+          "worldMode": null,
+          "capacities": {
+            "DQ_SLOTS_DM_COMPILE": "2",
+            "DQ_SLOTS_TEST_WORLD": "3",
+            "DQ_SLOTS_CARGO": "1",
+            "DQ_SLOTS_LOOK_STATE_PIN": "2"
+          },
+          "waitIncludedInOwnedChildDeadline": true,
+          "jobContainment": "caller must add suspended bash to existing Job before resume"
+        },
+        "target_ownership": {
+          "target": "E:\\dq-cache\\dmb-native-v2\\cargo-target",
+          "owner": {
+            "schema": 1,
+            "worktree": "E:\\projects\\dq-wt\\dmb-review"
+          },
+          "marker": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\.dq-workspace-owner-v1.json",
+          "scope": "operational target ownership only, not cache/source admission"
+        },
+        "existing_target_assignment": null,
+        "queue_wait_included_in_300_second_child_deadline": true
+      }
+    },
+    {
+      "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-234345-31ebef78-focused.json",
+      "sha256": "6213f6416faca741fc9911d7bb80847feb452c0801340a33e6a693557b3c1e9a",
+      "record": {
+        "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-fa1f0987474bcdc2.exe",
+        "binary_sha256": "719e0732903df7fe75953aac655711b64f81754724960ab5a9df87dac90a08c8",
+        "scope": "focused fixture execution, not full suite or runtime parity",
+        "rows": [
+          {
+            "filter": "lowering::symbolic_input::receipt_groups::global_owner_tests",
+            "selected": [
+              "lowering::symbolic_input::receipt_groups::global_owner_tests::global_owner_grouping_preserves_conflicting_repeated_query_answers",
+              "lowering::symbolic_input::receipt_groups::global_owner_tests::global_owner_leaves_share_common_answers_with_distinct_tails_and_reduce_exposed_union"
+            ],
+            "exit": 0,
+            "seconds": 0.014999999999417923,
+            "stdout": "\nrunning 2 tests\ntest lowering::symbolic_input::receipt_groups::global_owner_tests::global_owner_grouping_preserves_conflicting_repeated_query_answers ... ok\ntest lowering::symbolic_input::receipt_groups::global_owner_tests::global_owner_leaves_share_common_answers_with_distinct_tails_and_reduce_exposed_union ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 942 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "lowering::tests::semantics::procedure_memo_frozen_preparation_hits_without_prelookup_body_parse",
+            "selected": [
+              "lowering::tests::semantics::procedure_memo_frozen_preparation_hits_without_prelookup_body_parse"
+            ],
+            "exit": 0,
+            "seconds": 0.06300000000192085,
+            "stdout": "\nrunning 1 test\ntest lowering::tests::semantics::procedure_memo_frozen_preparation_hits_without_prelookup_body_parse ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 943 filtered out; finished in 0.04s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "request_runner::runner_report::frontend_timing_tests::preparation_report_distinguishes_shared_abi_views_without_semantic_recompute_claims",
+            "selected": [
+              "request_runner::runner_report::frontend_timing_tests::preparation_report_distinguishes_shared_abi_views_without_semantic_recompute_claims"
+            ],
+            "exit": 0,
+            "seconds": 0.014999999999417923,
+            "stdout": "\nrunning 1 test\ntest request_runner::runner_report::frontend_timing_tests::preparation_report_distinguishes_shared_abi_views_without_semantic_recompute_claims ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 943 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "daemon::service::tests::six_session_contract::declaration_error_recovery",
+            "selected": [
+              "daemon::service::tests::six_session_contract::declaration_error_recovery::missing_initializer_type_preserves_published_rosters_and_new_type_recovery_matches_fresh"
+            ],
+            "exit": 0,
+            "seconds": 1.5630000000019209,
+            "stdout": "\nrunning 1 test\ntest daemon::service::tests::six_session_contract::declaration_error_recovery::missing_initializer_type_preserves_published_rosters_and_new_type_recovery_matches_fresh ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 943 filtered out; finished in 1.53s\n\n",
+            "stderr": ""
+          }
+        ]
+      }
+    }
+  ],
+  "strict_native_mock_checks": {
+    "command": "bun test tools/build/lib/compiler_selection.test.ts -t strict|successful internal fallback records BYOND",
+    "passed": 4,
+    "failed": 0,
+    "expectations": 36,
+    "scope": "Tool-observed mock dispatch checks; no compiler/runtime spawned",
+    "source_pins": {
+      "tools/build/lib/compiler_selection.ts": "34eef5d5c61e2bc8722396d1668cce89c2abcdd9b2469a3153d0666f9cf6ebac",
+      "tools/build/lib/compiler_selection.test.ts": "7af0f41762986fdee1e036e31a45d7e7ac2226f65752f49d03646f7231f0b9c3"
+    }
+  }
+}

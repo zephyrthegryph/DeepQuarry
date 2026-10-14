@@ -1,0 +1,2 @@
+/proc/proof(list/value)
+    return value.FieldTypeNoSuchMethod()

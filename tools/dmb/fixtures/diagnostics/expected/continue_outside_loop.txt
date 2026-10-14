@@ -1,0 +1,2 @@
+continue_outside_loop.dm:2:error: continue: not in a loop
+continue_outside_loop.dmb - 1 error, 0 warnings

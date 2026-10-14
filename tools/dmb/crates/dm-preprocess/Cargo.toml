@@ -4,8 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-dm-store = { path = "../dm-store" }
+dm-session = { path = "../dm-session" }
+dm-exec = { path = "../dm-exec" }
+dm-profile = { path = "../dm-profile" }
 dm-syntax = { path = "../dm-syntax" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 sha2 = "0.10"
+
+im = "15.1"
+
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+
+dm-wire = { path = "../dm-wire" }

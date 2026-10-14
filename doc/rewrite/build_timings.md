@@ -32,7 +32,7 @@ the changes listed at the end.
 | First build in a fresh worktree | + 2 min 12 s analyze build | + 0 (cache hit) |
 | Merge of two branches touching declarations | conflict on `declare.dm` (464 commits in 30 days) | clean (generated files untracked) |
 
-## Codex `tools/dmb` as a pre-check
+## Codex `tools/dmb` as a pre-check (historical; replaced by `DQ_COMPILER=native`)
 
 `dm-compile check deepquarry.dme` (preprocess and parse only, no type or proc resolution) takes 13-14 s against
 DreamMaker's 70-150 s. It is wired as an optional pre-check: `tools/build/build.sh dmb-check`, or

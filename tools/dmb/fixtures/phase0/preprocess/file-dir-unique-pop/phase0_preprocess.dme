@@ -1,0 +1,5 @@
+#define FILE_DIR "early"
+#include "before.dm"
+#include "child.dm"
+#undef FILE_DIR
+#include "after.dm"

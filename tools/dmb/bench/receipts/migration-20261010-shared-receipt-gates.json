@@ -1,0 +1,130 @@
+{
+  "schema": 1,
+  "scope": "35 focused Rust checks; not full suite, runtime parity or performance acceptance",
+  "receipts": [
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-072206-1769831f-focused.json",
+      "receipt_sha256": "58d72294e38414eba489ed1120743473a68df39f11dca564154f30cf1f331c74",
+      "binary_sha256": "94c75d0d983969144ba643f14f23fc6cb105feaa1f44d88533f6adbcab077a8e",
+      "checks": [
+        {
+          "filter": "resolver::sequence_tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "memo_resolver::tests::shared_override_sequence_survives_memo_hits_without_backing_copies",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "memo_resolver::tests::bounded_sequence_answers_reuse_exact_meanings_and_decline_oversized_payloads",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-073203-8df782d0-focused.json",
+      "receipt_sha256": "5b01c06849a7e97b3d0ba3dfa5f09f78ad920bc97d3e8e236e10e88b768b9beb",
+      "binary_sha256": "023b622b350a953b821c6ccb531453596dd09c29492572c3fd8697d6206ea08b",
+      "checks": [
+        {
+          "filter": "observations::receipt::tests",
+          "selected": 4,
+          "exit": 0
+        },
+        {
+          "filter": "artifacts::leased::tests",
+          "selected": 4,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-074008-02a67828-focused.json",
+      "receipt_sha256": "2bd42933f15628e8238e49de4d84828ea3fba5449d023f249ee80efc6185f048",
+      "binary_sha256": "8aba59215f2e985b09651194642c3c3f13416a9a5ec359a0fe45ffc9aa9cc977",
+      "checks": [
+        {
+          "filter": "owner_metadata::selections::tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "owner_metadata::hierarchy::tests",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "owner_metadata::variables::tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "owner_metadata::callables::tests",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "owner_metadata::demanded_selections::tests",
+          "selected": 3,
+          "exit": 0
+        },
+        {
+          "filter": "owner_normalization::receipts::tests",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "owner_normalization::shared_tests",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-074024-7d09fbc1-focused.json",
+      "receipt_sha256": "7517832ec3116a82ca36b32ca68090d591bb118a7637fc14ff08c9530661de41",
+      "binary_sha256": "2ab2299a135feaa66d238446d7080b30c9db2c7c869d84fd7cb1e6ab978c8679",
+      "checks": [
+        {
+          "filter": "heap_census::receipts::tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "lowering::symbolic_input::retained::tests",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "lowering_memo_compact::tests",
+          "selected": 6,
+          "exit": 0
+        },
+        {
+          "filter": "initializer_policy::classification::prepared_keys::tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "lowering_memo_wire::borrowed_wire_tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "map_memo::wire::borrowed_tests",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    }
+  ],
+  "corrected_fixture_failures": [
+    "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-072206-71a6bf1f-focused.json",
+    "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-073203-b3f778ee-focused.json",
+    "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-073426-f87a80c7-focused.json"
+  ],
+  "fixture_notes": "Incomplete engine coverage remains Unsupported; receipt reuse is compared only within unchanged coverage. Complete intrinsic admission is tested separately."
+}

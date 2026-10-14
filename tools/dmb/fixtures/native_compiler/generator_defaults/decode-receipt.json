@@ -1,0 +1,66 @@
+{
+  "schema": "dm-generator-default-decode-v1",
+  "capture_receipt_sha256": "463fa95b614ec93f1e3b8b0d98a47bf853802bf7f04d72d1048c2973da0f0bc7",
+  "inspector": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-045056-inspector-101eee68.exe",
+  "inspector_sha256": "1f2ba85d7f249eaf86dcd4e786d1cf75873257b21834841d42dcad35c64093ae",
+  "dmb_sha256": "329f9f6879d039cd13095172a7fc4782f0e99b3e0b31f4b0dd9eaa6ee5681da8",
+  "rows": [
+    {
+      "command": [
+        "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-045056-inspector-101eee68.exe",
+        "class-path",
+        "E:\\dq-cache\\dmb-native-v2\\generator-probe-20261010-30f74c9e\\generator.dmb",
+        "/particles/token_families"
+      ],
+      "exit": 0,
+      "log": "E:\\dq-cache\\dmb-native-v2\\generator-probe-20261010-30f74c9e\\class-path.txt",
+      "log_sha256": "8a84ab4304bba6b7413ee4ee55ae3ed32ad3348e8476518209618f09f390cddd"
+    },
+    {
+      "command": [
+        "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-045056-inspector-101eee68.exe",
+        "class-initials",
+        "E:\\dq-cache\\dmb-native-v2\\generator-probe-20261010-30f74c9e\\generator.dmb",
+        "23"
+      ],
+      "exit": 0,
+      "log": "E:\\dq-cache\\dmb-native-v2\\generator-probe-20261010-30f74c9e\\class-initials.txt",
+      "log_sha256": "7bc84e1c016d4babceafa03d5f6127c6daeec3902ea789c74af4a5672ddb5fae"
+    },
+    {
+      "command": [
+        "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-045056-inspector-101eee68.exe",
+        "proc-code",
+        "E:\\dq-cache\\dmb-native-v2\\generator-probe-20261010-30f74c9e\\generator.dmb",
+        "67"
+      ],
+      "exit": 0,
+      "log": "E:\\dq-cache\\dmb-native-v2\\generator-probe-20261010-30f74c9e\\proc-code.txt",
+      "log_sha256": "34639670a150ffa5bf0d2d5babf29c01955d60a04889f8aaf2f909a3833d3290"
+    }
+  ],
+  "observed_defaults": {
+    "position": {
+      "tag": 62,
+      "data": 2
+    },
+    "velocity": {
+      "tag": 62,
+      "data": 2
+    },
+    "drift": {
+      "tag": 62,
+      "data": 4
+    }
+  },
+  "observed_equality_partition": [
+    [
+      "position",
+      "velocity"
+    ],
+    [
+      "drift"
+    ]
+  ],
+  "scope": "exact pinned captured three expressions only; not arbitrary generators or semantic hash proof"
+}

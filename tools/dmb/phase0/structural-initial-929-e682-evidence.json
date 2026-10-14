@@ -1,0 +1,226 @@
+{
+  "schema": 1,
+  "kind": "pinned_structural_diagnostic",
+  "comparison": {
+    "schema": 1,
+    "status": "compared",
+    "inputClosureAuthenticated": false,
+    "acceptedRuntimeBaseline": false,
+    "runtimeParity": "not_run",
+    "structuralAdmission": "not_yet_evaluated",
+    "snapshotLabel": "a0f5147ad68ba8d026c4ea7258a013cb5c9e17b3b9ef3f71654a81769310258b",
+    "inputsBefore": [
+      {
+        "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-e682617358-inspector-opt0.exe",
+        "bytes": 7853056,
+        "sha256": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb"
+      },
+      {
+        "path": "E:\\dq-cache\\dmb-native-v2\\recovered-baseline-20261010\\recapture\\byond\\world.dmb",
+        "bytes": 47843658,
+        "sha256": "a3d3eadadc61d8222698f3fcf071ade48223ab5e9b873ebb3603445dbcf610eb"
+      },
+      {
+        "path": "E:\\dq-cache\\dmb-native-iterations\\20261011-194857-26cb0016\\oracles\\0\\session-0\\artifacts\\comparison.dmb",
+        "bytes": 58588319,
+        "sha256": "5cc26ae63495c1c70267543b7f515efa80542c8a743e8892e257c9b0169e3496"
+      },
+      {
+        "path": "E:\\dq-cache\\dmb-native-iterations\\20261011-194857-26cb0016\\oracles\\0\\session-0\\artifacts\\comparison.rsc",
+        "bytes": 223679650,
+        "sha256": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+      }
+    ],
+    "execution": {
+      "exit": 0,
+      "wall_s": 93.21900000000096,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "rawReport": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\structural-initial-929-e682-20261011-2031\\structural-diff.json",
+      "bytes": 54046616,
+      "sha256": "0ce5ca1f4bb3e4b052f2232c348eddd50f4ed3a0246c141ce9f95178fd2cfcfa"
+    },
+    "summaryPin": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\structural-initial-929-e682-20261011-2031\\structural-diff.json.summary.json",
+      "bytes": 6377,
+      "sha256": "ea5770d80cf35e9767d7702117e39c35c8378b118859d433274b10f09e2bad91"
+    },
+    "summary": {
+      "schema_version": 1,
+      "snapshot_id": "a0f5147ad68ba8d026c4ea7258a013cb5c9e17b3b9ef3f71654a81769310258b",
+      "scope": "unscoped_diagnostic_only_requires_authenticated_source_and_configuration",
+      "opcode_equivalence": "not_asserted_by_difference_counts_or_instruction_shapes",
+      "traversal_complete": true,
+      "tool_complete": true,
+      "semantic_coverage": "complete",
+      "complete": true,
+      "total_discrepancies": 653634,
+      "unexplained_discrepancies": 653634,
+      "uncovered": {},
+      "categories": {
+        "bytecode": {
+          "discrepancy_count": 479722,
+          "unique_case_count": 462234
+        },
+        "globals": {
+          "discrepancy_count": 0,
+          "unique_case_count": 0
+        },
+        "other": {
+          "discrepancy_count": 0,
+          "unique_case_count": 0
+        },
+        "procedure_flags": {
+          "discrepancy_count": 0,
+          "unique_case_count": 0
+        },
+        "procedure_table": {
+          "discrepancy_count": 3915,
+          "unique_case_count": 3912
+        },
+        "strings_by_use": {
+          "discrepancy_count": 169997,
+          "unique_case_count": 169997
+        },
+        "type_headers": {
+          "discrepancy_count": 0,
+          "unique_case_count": 0
+        },
+        "type_set": {
+          "discrepancy_count": 0,
+          "unique_case_count": 0
+        },
+        "variable_defaults": {
+          "discrepancy_count": 0,
+          "unique_case_count": 0
+        }
+      }
+    },
+    "inputsAfter": [
+      {
+        "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-e682617358-inspector-opt0.exe",
+        "bytes": 7853056,
+        "sha256": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb"
+      },
+      {
+        "path": "E:\\dq-cache\\dmb-native-v2\\recovered-baseline-20261010\\recapture\\byond\\world.dmb",
+        "bytes": 47843658,
+        "sha256": "a3d3eadadc61d8222698f3fcf071ade48223ab5e9b873ebb3603445dbcf610eb"
+      },
+      {
+        "path": "E:\\dq-cache\\dmb-native-iterations\\20261011-194857-26cb0016\\oracles\\0\\session-0\\artifacts\\comparison.dmb",
+        "bytes": 58588319,
+        "sha256": "5cc26ae63495c1c70267543b7f515efa80542c8a743e8892e257c9b0169e3496"
+      },
+      {
+        "path": "E:\\dq-cache\\dmb-native-iterations\\20261011-194857-26cb0016\\oracles\\0\\session-0\\artifacts\\comparison.rsc",
+        "bytes": 223679650,
+        "sha256": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+      }
+    ],
+    "cleanup": {
+      "reaped": true,
+      "error": null,
+      "memory": {
+        "configured_job_memory_bytes": 3999997952,
+        "peak_job_commit_bytes": 626520064,
+        "peak_process_commit_bytes": 625242112,
+        "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+      }
+    }
+  },
+  "inspectorValidation": [
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-e682617358-inspector-opt0.exe.pin.json",
+      "bytes": 508,
+      "sha256": "f90ed7f6d6a8fe65b3d56cb00f07d1be2db4648223f5854dc3c272701fe3826f",
+      "receipt": {
+        "binary": "E:/dq-cache/dmb-native-v2/frozen-build/20261011-e682617358-inspector-opt0.exe",
+        "sha256": "4EEE5287F76F1401EC161F7C8058781BD5A75FC46FAF7979D60F49B01DE0F0CB",
+        "commit": "e682617358a463b0e4dac71ded3687f6d1f7ebe2",
+        "archive_sha256": "3378ae42899e8742adc0e670e24726611c0ba89029a76bbf0cef07f3cbc95715",
+        "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-202628-122e002c-job-cargo.json",
+        "scope": "bounded diagnostic inspector; not compiler speed acceptance"
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-202628-122e002c-job-cargo.json",
+      "bytes": 1009,
+      "sha256": "bf81e85db7cc44a982fcbd9c330a325b39f42cc533d917e8b9f09d83129350b8",
+      "receipt": {
+        "command": [
+          "E:/cargo/bin/cargo.exe",
+          "build",
+          "--release",
+          "--locked",
+          "--offline",
+          "-j1",
+          "-p",
+          "byond-dmb",
+          "--bin",
+          "dmb-inspect",
+          "--config",
+          "profile.release.package.byond-dmb.opt-level=0",
+          "--config",
+          "profile.release.package.byond-dmb.codegen-units=256",
+          "--config",
+          "profile.release.package.byond-dmb.debug=0"
+        ],
+        "exit_code": 0,
+        "seconds": 30.89099999999962,
+        "memory_cap": 4000000000,
+        "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-202628-122e002c-job-cargo.log",
+        "error": null,
+        "cleanup": {
+          "reaped": true,
+          "error": null,
+          "memory": {
+            "configured_job_memory_bytes": 3999997952,
+            "peak_job_commit_bytes": 593362944,
+            "peak_process_commit_bytes": 528359424,
+            "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+          }
+        },
+        "scope": "bounded correctness build; not a compiler performance benchmark"
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-202623-dfa15246-focused.json",
+      "bytes": 1751,
+      "sha256": "4fd1b0e321b4a5b3db1479efdb37034009a526f72b0f67404184b9899e4bbf8b",
+      "receipt": {
+        "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\byond_dmb-cf4d838ec205be09.exe",
+        "binary_sha256": "5b437c6d484ef2a1ea86a347e135525a26d5db4966d6a66ec5d361cead327509",
+        "scope": "focused fixture execution, not full suite or runtime parity",
+        "rows": [
+          {
+            "filter": "compare::procedures::alignment::tests",
+            "selected": [
+              "compare::procedures::alignment::tests::bounded_fallback_preserves_every_row",
+              "compare::procedures::alignment::tests::insertion_and_repeated_instructions_are_deterministic",
+              "compare::procedures::alignment::tests::targets_require_actual_paired_nodes"
+            ],
+            "exit": 0,
+            "seconds": 0.014999999999417923,
+            "stdout": "\nrunning 3 tests\ntest compare::procedures::alignment::tests::bounded_fallback_preserves_every_row ... ok\ntest compare::procedures::alignment::tests::insertion_and_repeated_instructions_are_deterministic ... ok\ntest compare::procedures::alignment::tests::targets_require_actual_paired_nodes ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 128 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "compare::tests::code_maps::safe_reference_jump_targets_normalize_across_instruction_widths",
+            "selected": [
+              "compare::tests::code_maps::safe_reference_jump_targets_normalize_across_instruction_widths"
+            ],
+            "exit": 0,
+            "seconds": 0.0319999999992433,
+            "stdout": "\nrunning 1 test\ntest compare::tests::code_maps::safe_reference_jump_targets_normalize_across_instruction_widths ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 130 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          }
+        ]
+      }
+    }
+  ],
+  "acceptance": "open: nonzero structural discrepancies; complete decoding does not prove semantic equivalence",
+  "sourceClosureScope": "captured historical baseline labels only; full implicit/shared input closure not independently reissued here",
+  "runtimeParity": "not asserted"
+}

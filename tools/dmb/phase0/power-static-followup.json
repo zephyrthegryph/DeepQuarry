@@ -1,0 +1,399 @@
+{
+  "status": "Static evidence only; runtime causality unresolved",
+  "method": "Pinned inspector; one frozen DMB decoded at a time. No DreamDaemon, profiler, builds, or binary/source mutations.",
+  "inputs": [
+    {
+      "path": "D:/dmb-native-v2-phase0/frozen/pairs/byond/world.dmb",
+      "sha256": "8ff8911a26547da3e2cb49daa185b45cc723b4fc2f73d4cbc48efa43f20e5775"
+    },
+    {
+      "path": "D:/dmb-native-v2-phase0/frozen/pairs/native/world.dmb",
+      "sha256": "174359e9e849bdd610043f5879bbb781c35d406fe92142b295f822d19130a6ed"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "D:/dmb-native-v2-phase0/reference-release/dmb-inspect.exe",
+      "bytes": 3240448,
+      "sha256": "ae3659b4697f970e8d92a0d8556df3db1247fa4501851a833885de3e35608f45"
+    },
+    {
+      "path": "D:/dmb-native-v2-phase0/power-bridge-byond-code.log",
+      "bytes": 6314,
+      "sha256": "e61f58de586d91daf6de5e7206b0349b8ace5bb93d5aab2735eae5b760e0dcbb"
+    },
+    {
+      "path": "D:/dmb-native-v2-phase0/power-bridge-native-code.log",
+      "bytes": 5971,
+      "sha256": "1c525e52f7cd3ec8015d391caed3a8ae800d799f69087f0aa278169eae657ae6"
+    },
+    {
+      "path": "D:/dmb-native-v2-phase0/frozen/source/code/modules/power/power_bridge.dm",
+      "bytes": 7179,
+      "sha256": "32d0500e305ec68d0b85f943ba5f0ae79f1aee3e65b803daf7a3646a6a4921e3"
+    },
+    {
+      "path": "D:/dmb-native-v2-phase0/frozen/source/code/__defines/verdigris/_bindings.dm",
+      "bytes": 83110,
+      "sha256": "ff27230ce8264341af8f24cf4d050ef23f5d1a49fe99f50935d8d50f03217703"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-class-byond.log",
+      "bytes": 386,
+      "sha256": "dd1cc95263674c25acf48a8cece0c9148d89043990979c0f265b936b29a10a33"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-class-native.log",
+      "bytes": 383,
+      "sha256": "dbc89238c998039032ef7127e932e43c26c2bbd65f05c3201eccb91b68bf7ca4"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-fields-byond.log",
+      "bytes": 587,
+      "sha256": "353e34339cb4b781f837e846352eac077c449c04c3cb63fa54e74d5777ccbbbb"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-fields-native.log",
+      "bytes": 652,
+      "sha256": "5d41b8dd93c0b402d8ac840454d3c6163e563def753ca60cdff164c07ca04f89"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-variable-tail-byond.log",
+      "bytes": 482,
+      "sha256": "0ed9ab5a5ec9ad45129b639c5be1c366a3b60583c1357c227793f4cd47c3f632"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-variable-tail-native.log",
+      "bytes": 470,
+      "sha256": "5e444d3262760a0dff0367d5fff7b2e3176bcc06c4de1f33ba398effb71fdf4c"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-initializer-byond.log",
+      "bytes": 3379,
+      "sha256": "8f835acff77af1d782d1d4a7b018a795a155149064fecfa24bb6aecb7c887f1e"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-initializer-native.log",
+      "bytes": 1698,
+      "sha256": "e4da0c34eb8ce0ecb6af6309544f1f7e4274be6e793a71bf2896e439bd42b2bd"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-facade-byond.log",
+      "bytes": 1768,
+      "sha256": "16e57cbedaa3a90e0f0d586465d9dd18bb438eccab5c1120ec72cdb5b61ddfa8"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-facade-native.log",
+      "bytes": 1398,
+      "sha256": "2620a4ec3c2ec7565a10476715e286a2031a05f4252ba23464c5d35759b82e07"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-key-alloc-byond.log",
+      "bytes": 1111,
+      "sha256": "e4d3063ea8417b627d03304bfb48b51e7f9ac51f316b79cba7c64fb4073c4345"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-key-alloc-native.log",
+      "bytes": 803,
+      "sha256": "b52e20ced5cd3b5d984caff05dd7c43a83d0439e4d1e6ee211eb3985eb2eedc9"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-initializer-metadata-byond.log",
+      "bytes": 159,
+      "sha256": "7dd38cfe7fc3273448994b9053827b153d7ea05e973f682a71279fa2b459af86"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-initializer-metadata-native.log",
+      "bytes": 169,
+      "sha256": "4cb88ff792574c1f5d8ee44cbe78767ef329071b78739c3ae35f9339c9617bf5"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-parent-byond.log",
+      "bytes": 410,
+      "sha256": "d84835511c10cbbe5256cf0d972dca01c66cef792ff01c82ef7d158059893730"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-parent-native.log",
+      "bytes": 403,
+      "sha256": "15fafc200f2fd4a1b2f09821bbd3ad714f00571e36da36b0bfc82dff18455b57"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-grandparent-byond.log",
+      "bytes": 401,
+      "sha256": "57f95f1ecee51c604b188218cd55291e5f319d865e7b88c654609e5f9294b71a"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-grandparent-native.log",
+      "bytes": 392,
+      "sha256": "9deb777b32b309e97a64ecb52e24bb971c462c3aa6aba88bcab3125f6856621e"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-parent-initializer-byond.log",
+      "bytes": 159,
+      "sha256": "6dd38b00bb7d0bcdafe91172b6a6ac0a8851669f54bbc501a9710855f68c0073"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-parent-initializer-native.log",
+      "bytes": 169,
+      "sha256": "5c845c18eda51def3dd622827bb1361a3864e04c330c5a2c641b05d74179547e"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-datum-byond.log",
+      "bytes": 393,
+      "sha256": "a4c1ee76a42818a6c0f5a27bb476aac11d482f5898ad940d55b3bc27540362b8"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-datum-native.log",
+      "bytes": 385,
+      "sha256": "47018f39768e38bba6dc26388d3a3350440d18656db270198d151b8e622925d0"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-init-frame-byond.log",
+      "bytes": 4,
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-init-frame-native.log",
+      "bytes": 8,
+      "sha256": "e9dcb6811b2daa05c264a5a1cb3d2b462e1abc561fe4bb62f063e52b0ea98f9b"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-parent-full-byond.log",
+      "bytes": 159,
+      "sha256": "fcc5ef417dc4c45a5bf0893e6ee45cfa117cc72be4ba7303ce75a00e4d9d48d3"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-parent-full-native.log",
+      "bytes": 94,
+      "sha256": "72c7fcdfbb2c92e4e1de352ac3990571d556660022f2d0cd936a3df1ccfe2d36"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-new-byond.log",
+      "bytes": 645,
+      "sha256": "81017c76accc567ca9827eb3621e9bc2ba90257e11cbc57a6a207c6fddb3e7f0"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-new-native.log",
+      "bytes": 580,
+      "sha256": "38ed3d2d0046a3ad06bfe78ed65dbf36c97c77d54de4e95fc110ba38fdf0914a"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-master-new-byond.log",
+      "bytes": 3315,
+      "sha256": "2f3e0c82efed8ba1918fa66c6fb8a99e6374df950c9be1be902c88b934ccb60e"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-master-new-native.log",
+      "bytes": 2650,
+      "sha256": "1999e5898404605969fe2e8b618cabe8459cb13d9352e2eca4dd188fc27f903d"
+    },
+    {
+      "path": "D:/dmb-native-v2-phase0/frozen/source/code/controllers/master.dm",
+      "bytes": 45403,
+      "sha256": "5f6e901c373d5f1c99d88ae7054e7532adb6a0bb041ec4f9920495a9fe2aebbf"
+    },
+    {
+      "path": "D:/dmb-native-v2-phase0/frozen/source/code/__defines/MC.dm",
+      "bytes": 7898,
+      "sha256": "41e3a80a1c5267bc93ff56f89664b628b19d14bf66e5d491acd589c3454dc666"
+    }
+  ],
+  "retired_branch": {
+    "symbolic_sequence": [
+      "src.power_regions",
+      "local events",
+      "local at",
+      "ListGet(events,at)",
+      "ListGet(power_regions,inner_result)",
+      "store network"
+    ],
+    "byond": {
+      "procedure": 4177,
+      "file_string": 15324,
+      "field_string": 15326,
+      "debug_line154": "0x13b",
+      "receiver": "0x13d",
+      "events": "0x141",
+      "at": "0x144",
+      "inner_list_get": "0x147",
+      "outer_list_get": "0x148",
+      "store": "0x149",
+      "events_slot": 1,
+      "at_slot": 7,
+      "network_slot": 10
+    },
+    "native": {
+      "procedure": 33419,
+      "field_string": 79473,
+      "kind3_branch": "0x112 Jnz -> 0x116",
+      "receiver": "0x116",
+      "events": "0x11a",
+      "at": "0x11d",
+      "inner_list_get": "0x120",
+      "outer_list_get": "0x121",
+      "store": "0x122",
+      "events_slot": 1,
+      "at_slot": 7,
+      "network_slot": 11
+    },
+    "qualification": "This certifies operand/read presence after structural local and field renaming, not equal dispatch, receiver state, event payloads, exceptions, or runtime behavior."
+  },
+  "power_regions_defaults": {
+    "byond": {
+      "class": 40,
+      "variable": 4986,
+      "name_string": 15326,
+      "kind": 62,
+      "value": 380,
+      "class_initializer": 52082,
+      "new_empty_list": "0x10c",
+      "store": "0x10e",
+      "store_operand": [
+        65500,
+        65486,
+        65500,
+        65486,
+        15326
+      ]
+    },
+    "native": {
+      "class": 697,
+      "variable": 10298,
+      "name_string": 79473,
+      "kind": 0,
+      "value": 0,
+      "class_initializer": 51120,
+      "new_empty_list": "0x8d",
+      "store": "0x8f",
+      "store_operand": [
+        65500,
+        65486,
+        79473
+      ]
+    },
+    "qualification": "The serialized declaration defaults differ. Both captured class initializer procedures explicitly allocate an empty list and store this field. No evidence shows whether allocation ran, when first read occurred, or final runtime receiver state. Kind62 payload380 is retained opaque here; it is not interpreted as list-table ID380."
+  },
+  "power_facade": {
+    "byond_procedure": 4174,
+    "native_procedure": 33415,
+    "byond_read": "0x12 GetVar(src,power_regions); 0x16 Arg0; 0x19 ListGet",
+    "native_read": "0xb GetVar(src,power_regions); 0xf Arg0; 0x12 ListGet",
+    "byond_write": "0x59 ListSet",
+    "native_write": "0x46 ListSet",
+    "guard": "Only !id returns before read; no length/capacity expansion precedes it in either procedure.",
+    "candidate": "A positive numeric id exceeds a freshly empty list. This source-level capacity defect candidate does not require sparse handle values, but actual runtime id/list state are unobserved."
+  },
+  "power_key_alloc": {
+    "byond_procedure": 1737,
+    "native_procedure": 33408,
+    "byond_growth": "0x37 GetVar(key_objects);0x3a Length;0x3b local key;0x3e Tl;0x40 Jz;0x44 local key;0x47 SetVar(key_objects.len);0x5a ListSet",
+    "native_growth": "0x24 GetVar(key_objects);0x27 Length;0x28 local key;0x2b Tl;0x2d Jz;0x2f local key;0x32 SetVar(key_objects.len);0x40 ListSet",
+    "qualification": "Both key allocator bodies contain explicit capacity growth absent from power_facade. Shared/global receiver binding differences are retained, not declared equivalent."
+  },
+  "remaining": [
+    "Native blank-origin raw bounds errors cannot be attributed to process_power using frozen logs.",
+    "Missing native debug origins collapse erroruid/cooldown reporting; fewer reported per-test failures do not prove correctness.",
+    "Need actual receiver state/event payload capture or equal-payload replay after source-aware native errors before causal proof.",
+    "Captured DLL source provenance gap and header/compat differences remain unresolved."
+  ],
+  "commands": [
+    "class-path WORLD /datum/controller/subsystem/machines",
+    "list BYOND 33411",
+    "list NATIVE 6252",
+    "variable BYOND 4985..4991",
+    "variable NATIVE 10297..10303",
+    "proc-code BYOND 52082",
+    "proc-code NATIVE 51120",
+    "proc-code BYOND 4174",
+    "proc-code NATIVE 33415",
+    "proc-code BYOND 1737",
+    "proc-code NATIVE 33408"
+  ],
+  "initialization_topology": {
+    "typed_binding": "Class.initializer_proc_id() reads lists_and_procs[2]. The captured machines records bind BYOND52082 and native51120 directly; neither uses sentinel65535 or a different callback slot.",
+    "byond_chain": [
+      {
+        "id": 40,
+        "path": "/datum/controller/subsystem/machines",
+        "parent": 96,
+        "initializer": 52082
+      },
+      {
+        "id": 96,
+        "path": "/datum/controller/subsystem",
+        "parent": 101,
+        "initializer": 52117
+      },
+      {
+        "id": 101,
+        "path": "/datum/controller",
+        "parent": 19514,
+        "initializer": 65535
+      },
+      {
+        "id": 19514,
+        "path": "/datum",
+        "parent": 65535,
+        "initializer": 65535
+      }
+    ],
+    "native_chain": [
+      {
+        "id": 697,
+        "path": "/datum/controller/subsystem/machines",
+        "parent": 349,
+        "initializer": 51120
+      },
+      {
+        "id": 349,
+        "path": "/datum/controller/subsystem",
+        "parent": 25,
+        "initializer": 48850
+      },
+      {
+        "id": 25,
+        "path": "/datum/controller",
+        "parent": 0,
+        "initializer": 65535
+      },
+      {
+        "id": 0,
+        "path": "/datum",
+        "parent": 65535,
+        "initializer": 65535
+      }
+    ],
+    "class_modes": "All four classes on each captured chain have flags0, interface1, extended_interfaceNone; same named ancestry.",
+    "initializer_modes": {
+      "machine": "Both anonymous, strings=[65535,65535,65535,65535], flags4, sourcekind0, sourceparameter255, extendedflagsNone; argument/local lists empty. Both terminate END.",
+      "parent": "Parent subsystem initializers also anonymous flags4, sourcekind0/sourceparameter255, extendedflagsNone."
+    },
+    "default_marker": "Typed Variable.hidden_initializer_marker treats kind62 as compiler-assigned initializer marker. Payload380 is not interpreted as a table pointer. Native plain-null placeholder lacks this marker; runtime meaning/timing effect remains unresolved.",
+    "allocation_order": "Native dependency list assignment comes first; BYOND dependency assignment comes last. Power list assignments retain power_ops, power_regions, power_dirty_areas, power_material_cables order in both. BYOND targets redundant nested Src-cache path; native single Src-cache path. These are recorded differences, not proved equivalent.",
+    "limit": "Direct initializer binding, metadata and named parent-chain agreement eliminate a missing class slot or obvious flags/source-frame mismatch as a static explanation. They do not prove runtime invocation, inheritance scheduling, allocation timing or the engine meaning of kind62 versus null under different header compatibility flags."
+  },
+  "parent_initializer_body": {
+    "byond": "52117: DBG line95/file14091, NewList[0] at0x4, nested Src SetVar rolling_usage string14111 at0x6, END0xc",
+    "native": "48850: NewList[0] at0x0, single Src SetVar rolling_usage string69845 at0x2, END0x6",
+    "finding": "Both complete parent bodies allocate/store rolling_usage only; neither contains an explicit parent call. Controller and datum class records have no initializer slot. These facts do not prove VM automatic parent initialization scheduling.",
+    "construction_gap": "Frozen subsystem source only has commented New declaration; named construction dispatch/global startup allocation has not yet been decoded. No causal conclusion."
+  },
+  "construction": {
+    "byond_new": 4140,
+    "native_new": 2743,
+    "membership": "Direct machines procedure list includes own New in both; not inherited fallback. Both flags4/source0,255.",
+    "source": "SUBSYSTEM_DEF(machines) expands own New: NEW_SS_GLOBAL(SSmachines); PreInit(). GLOBAL_REAL declares typed global without authored new. Master.New enumerates subsystem types, then constructs new I for missing instances.",
+    "sequence": "Both compare global SSmachines to src; istype previous with exact machines class40/697; Recover(), qdel(previous); global SSmachines=src; PreInit(); END.",
+    "difference": "BYOND calls Recover/PreInit with opcode0x2a CallStatement, native0x29 Call; both followed POP. Debug absent native. Global slot32998/23349 and qdel proc-ref894/2615 not yet independently table-renamed.",
+    "limit": "No explicit initializer call appears in own New. VM scheduling of bound class/parent initializers before New remains engine behavior not proved here. Master New dynamic allocation bytecode has not yet been decoded."
+  },
+  "master_allocation": {
+    "byond_proc": 4843,
+    "native_proc": 2269,
+    "dispatch": "Both /datum/controller/master own proc lists contain New; flags4/source0,255.",
+    "dynamic_new": "Missing subsystem loop: local4(I) then New[0], then append result to local0(_subsystems), BYOND0x105/0x108/0x10a versus native0xd7/0xda/0xdc.",
+    "source": "master.dm127 builds subsystem_types;142 constructs new I. Both code paths iterate local1, Find(I) in local2 existing list, reuse existing or new I.",
+    "concrete_difference": "master.dm74 declares var/static/random_seed. BYOND reads/writes Global slot5948 at0x1d/0x2a/0x2f. Native reads/writes Src field69807(random_seed) at0x14/0x20/0x24. Shared-versus-instance semantics diverge; power causality unproved.",
+    "limit": "Dynamic type values/iteration order and existing-subsystem runtime contents unobserved. New opcode present does not prove VM class/parent initializer timing. No runtime launched."
+  }
+}

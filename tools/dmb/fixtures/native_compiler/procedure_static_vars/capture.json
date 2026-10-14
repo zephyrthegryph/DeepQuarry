@@ -1,0 +1,9 @@
+{
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "compiler_version": "516.1687",
+  "source_sha256": "e3542afb53756543993d5d72a362a68dbb8c241ec7892ee65028852f399ba407",
+  "manifest_sha256": "d526d2155a298fca3a107bda960eb1d5787f0e9030b0a6d827ab15fb59decf7d",
+  "dmb_sha256": "372797ed7b5b0467cf73c2a6d9f3e12c79afaca99135c7fa138ab1af91f37245",
+  "exit_code": 0,
+  "runtime": "not run"
+}

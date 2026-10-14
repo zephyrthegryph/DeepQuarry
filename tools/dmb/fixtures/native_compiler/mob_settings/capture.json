@@ -1,0 +1,16 @@
+{
+  "compiler": "516.1687",
+  "compiler_path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+  "compiler_sha": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "source_sha": "f12b101fb0b205f0cefd52e17be55b47fc0792e5752a469f4d9b917c514a7a4f",
+  "compile_only": true,
+  "exit": 0,
+  "seconds": 0.31188059999840334,
+  "command": [
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+    "probe.dme"
+  ],
+  "evidence_directory": "E:\\dq-cache\\dmb-native-v2\\mob-settings-20261010-golden",
+  "banner": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/10/26 12:02 am)\nTotal time: 0:00\n",
+  "dmb_sha": "75fcd425866450647f8ed3472b37ccadb9dd1f8f86dca64f27788a90f39b8ef3"
+}

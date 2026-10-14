@@ -1,10 +1,18 @@
+import { ByondCompileFailure, observedCompileOutcome, type CompileOutcome } from './compile_outcome';
+import { CompilerProvenanceError } from './compiler_provenance';
+import { bindCompilerInvocation, type CompilerInvocation } from './compiler_invocation';
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import Bun from 'bun';
 import Juke from '../juke/index.js';
 import { regQuery } from './winreg';
-import { completeNativeFallback, nativeDreamMaker } from '../../dmb/integration/build';
+import { acquiredWorldArguments, resolveDreamDaemonExecutable } from './byond_runtime';
+import { compilerMode, selectedCompiler } from './compiler_selection';
+import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, NativeAcquisitionError, assertDirectoryChain, type CompiledOutput } from './native_pair';
+import { copyWritableRuntimePair } from './runtime_pair_copy';
+import { observeRuntimeLibrary, stageRuntimeLibrary, verifyObservedRuntimeLibrary, type HostedLibraryIdentity } from './runtime_library';
 import { withSlot } from './machine_slots';
 
 /** Cached path to DM compiler */
@@ -115,36 +123,146 @@ async function getAllNamedDmVersions(
   return namedDmVersionList;
 }
 
-type Option = Partial<{
+export type DreamMakerOptions = Partial<{
   defines: string[];
   warningsAsErrors: boolean;
   namedDmVersion: string | null;
   ignoreWarningCodes: string[];
 }>;
 
-/**
- * Compiles `dmeFile`. Holds a machine-wide `dm_compile` slot for the whole compile (lib/machine_slots.ts; two at a time by
- * default, DQ_SLOTS_DM_COMPILE=N changes it, the merge worktree goes first), so a dozen worktrees do not stretch every compile.
+declare const byondSnapshotAuthority: unique symbol;
+/** Reserved for a producer that compiles an authenticated immutable closure.
+ * No current producer issues this receipt; a manifest hash is insufficient.
  */
-export async function DreamMaker(
-  dmeFile: string,
-  options: Option = {},
-): Promise<void> {
-  return withSlot('dm_compile', `DreamMaker ${dmeFile}`, () => compileWithDreamMaker(dmeFile, options), (m) => Juke.logger.info(m));
+export type AuthenticatedByondSnapshot = {
+  readonly [byondSnapshotAuthority]: true;
+  readonly schema: 1;
+  readonly immutableRoot: string;
+  readonly files: readonly { readonly path: string; readonly bytes: number; readonly sha256: string }[];
+  readonly resourceSearchRoots: readonly string[];
+  readonly configuration: {
+    readonly project: string;
+    readonly effectiveDefines: Readonly<Record<string, string>>;
+    readonly compilerSha256: string;
+    readonly version: number;
+    readonly build: number;
+  };
+  readonly outputSha256: { readonly dmb: string; readonly rsc: string };
+};
+export type DreamMakerIdentity =
+  | { readonly status: 'observed'; readonly executable: string; readonly sha256: string }
+  | { readonly status: 'unknown'; readonly executable: string; readonly reason: string };
+export type PreparedDreamMaker = {
+  readonly executable: string; readonly identity: DreamMakerIdentity;
+  readonly version: number; readonly build: number;
+  readonly defines: readonly string[]; readonly namedDmVersion: string | null;
+};
+const issuedDreamMakers = new WeakSet<PreparedDreamMaker>();
+/** Only the current preparation producer can issue this configuration evidence.
+ * This does not certify all implicit predefines or any input/resource closure.
+ */
+export function currentDreamMakerConfiguration(prepared: PreparedDreamMaker, defines: readonly string[]) {
+  if (!issuedDreamMakers.has(prepared)) throw new Error('DreamMaker configuration was not issued by current preparation.');
+  if (prepared.identity.status !== 'observed') throw new Error('DreamMaker configuration requires a resolved executable identity.');
+  if (JSON.stringify(prepared.defines) !== JSON.stringify(defines)) throw new Error('DreamMaker configuration ordered defines changed.');
+  checkDreamMakerIdentity(prepared);
+  return Object.freeze({ compilerSha256: prepared.identity.sha256, executable: prepared.identity.executable,
+    version: prepared.version, build: prepared.build, orderedDefines: prepared.defines,
+    implicitPredefinesComplete: false as const, inputClosureAuthenticated: false as const });
+}
+/** A bare command uses process search rules; never hash a similarly named cwd file. */
+export function observeDreamMakerIdentity(executable: string): DreamMakerIdentity {
+  if (!path.isAbsolute(executable) && !/[\\/]/.test(executable)) {
+    return { status: 'unknown', executable, reason: 'executable resolved by process PATH search; exact file identity unavailable' };
+  }
+  const resolved = fs.realpathSync.native(path.resolve(executable));
+  if (!fs.statSync(resolved).isFile()) throw new Error('DreamMaker executable is not a regular file.');
+  return { status: 'observed', executable: resolved, sha256: createHash('sha256').update(fs.readFileSync(resolved)).digest('hex') };
+}
+function checkDreamMakerIdentity(prepared: PreparedDreamMaker): void {
+  if (prepared.identity.status === 'observed') {
+    const current = observeDreamMakerIdentity(prepared.executable);
+    if (current.status !== 'observed' || current.sha256 !== prepared.identity.sha256 || current.executable !== prepared.identity.executable) {
+      throw new Error('DreamMaker executable changed after preparation.');
+    }
+  }
+}
+export async function prepareDreamMaker(options: DreamMakerOptions): Promise<PreparedDreamMaker> {
+  const identity = observeDreamMakerIdentity(await getDmPath(options.namedDmVersion));
+  const version = await testDmVersion(identity.executable);
+  const prepared = Object.freeze({ executable: identity.executable, identity: Object.freeze(identity), ...version,
+    defines: Object.freeze([...(options.defines ?? [])]), namedDmVersion: options.namedDmVersion ?? null });
+  checkDreamMakerIdentity(prepared);
+  issuedDreamMakers.add(prepared);
+  return prepared;
+}
+async function testDmVersion(dmPath: string) {
+  const execReturn = await Juke.exec(dmPath, [], {
+    silent: true,
+    throw: false,
+  });
+  const version = execReturn.combined.match(
+    `DM compiler version (\\d+)\\.(\\d+)`,
+  );
+  if (version == null) {
+    Juke.logger.error(
+      `Unexpected DreamMaker return, ensure "${dmPath}" is correct DM path.`,
+    );
+    throw new Juke.ExitCode(1);
+  }
+  const requiredMajorVersion = 515;
+  const requiredMinorVersion = 1597; // First with -D switch functionality
+  const major = Number(version[1]);
+  const minor = Number(version[2]);
+  if (
+    major < requiredMajorVersion ||
+    (major === requiredMajorVersion && minor < requiredMinorVersion)
+  ) {
+    Juke.logger.error(
+      `${requiredMajorVersion}.${requiredMinorVersion} or later DM version required. Version ${major}.${minor} found at: ${dmPath}`,
+    );
+    throw new Juke.ExitCode(1);
+  }
+  return { version: major, build: minor };
 }
 
-async function compileWithDreamMaker(
+export type ByondCompilationResult = {
+  readonly outcome?: CompileOutcome;
+  readonly invocation: { readonly command: readonly string[]; readonly version: number; readonly build: number; readonly compilerIdentity?: DreamMakerIdentity; readonly orderedDefines?: readonly string[]; readonly workingDirectory?: string };
+  readonly snapshot?: AuthenticatedByondSnapshot;
+};
+
+export async function DreamMaker(
   dmeFile: string,
-  options: Option = {},
-): Promise<void> {
+  options: DreamMakerOptions = {},
+  invocation?: CompilerInvocation,
+): Promise<CompiledOutput> {
+  // A future core-issued closed snapshot can route both backends through the
+  // same owned project. Until that issuer exists, selection passes no override.
+  const output = await selectedCompiler(dmeFile, options, (capturedProject, prepared, bound) => withSlot('dm_compile', `DreamMaker ${dmeFile}`, () => compileByond(capturedProject ?? dmeFile, options, prepared, bound), (m) => Juke.logger.info(m)), Juke.exec, () => prepareDreamMaker(options), invocation);
+  rememberCompiledOutput(dmeFile, output);
+  return output;
+}
+
+async function compileByond(
+  dmeFile: string,
+  options: DreamMakerOptions,
+  prepared?: PreparedDreamMaker,
+  invocation?: CompilerInvocation,
+): Promise<ByondCompilationResult> {
   if (options.namedDmVersion !== null) {
     Juke.logger.info('Using named byond version:', options.namedDmVersion);
   }
-  const dmPath = await getDmPath(options.namedDmVersion);
-  const native = await nativeDreamMaker(dmeFile, dmPath, options);
-  if (native.handled) return;
+  const compiler = prepared ?? await prepareDreamMaker(options);
+  if (compiler.namedDmVersion !== (options.namedDmVersion ?? null) || JSON.stringify(compiler.defines) !== JSON.stringify(options.defines ?? [])) {
+    throw new Error('Prepared DreamMaker configuration differs from compilation request.');
+  }
+  checkDreamMakerIdentity(compiler);
+  const dmPath = compiler.executable;
   // Get project basename
-  const dmeBaseName = dmeFile.replace(/\.dme$/, '');
+  const bound = bindCompilerInvocation(invocation, options.defines ?? []);
+  const outputProject = bound ? path.join(bound.root, bound.relativeManifest) : dmeFile;
+  const dmeBaseName = outputProject.replace(/\.dme$/, '');
   // Make sure output files are writable
   const testOutputFile = (name: string) => {
     try {
@@ -167,41 +285,14 @@ async function compileWithDreamMaker(
     }
   };
 
-  const testDmVersion = async (dmPath: string) => {
-    const execReturn = await Juke.exec(dmPath, [], {
-      silent: true,
-      throw: false,
-    });
-    const version = execReturn.combined.match(
-      `DM compiler version (\\d+)\\.(\\d+)`,
-    );
-    if (version == null) {
-      Juke.logger.error(
-        `Unexpected DreamMaker return, ensure "${dmPath}" is correct DM path.`,
-      );
-      throw new Juke.ExitCode(1);
-    }
-    const requiredMajorVersion = 515;
-    const requiredMinorVersion = 1597; // First with -D switch functionality
-    const major = Number(version[1]);
-    const minor = Number(version[2]);
-    if (
-      major < requiredMajorVersion ||
-      (major === requiredMajorVersion && minor < requiredMinorVersion)
-    ) {
-      Juke.logger.error(
-        `${requiredMajorVersion}.${requiredMinorVersion} or later DM version required. Version ${major}.${minor} found at: ${dmPath}`,
-      );
-      throw new Juke.ExitCode(1);
-    }
-  };
-
-  await testDmVersion(dmPath);
   testOutputFile(`${dmeBaseName}.dmb`);
   testOutputFile(`${dmeBaseName}.rsc`);
 
   const runWithWarningChecks = async (dmPath: string, args: string[]) => {
-    const execReturn = await Juke.exec(dmPath, args);
+    const execReturn = await Juke.exec(dmPath, args, { throw: false, ...(bound ? { cwd: bound.root } : {}) });
+    if (execReturn.code !== 0) {
+      throw new ByondCompileFailure(execReturn.code, observedCompileOutcome(execReturn.code, execReturn.combined, execReturn.code, execReturn.signal), execReturn.signal);
+    }
     if (options.warningsAsErrors) {
       const ignoredWarningCodes = options.ignoreWarningCodes ?? [];
       if (ignoredWarningCodes.length > 0) {
@@ -220,7 +311,7 @@ async function compileWithDreamMaker(
           : new RegExp(base_regex, 'm');
       if (options.warningsAsErrors && execReturn.combined.match(reg)) {
         Juke.logger.error(`Compile warnings treated as errors`);
-        throw new Juke.ExitCode(2);
+        throw new ByondCompileFailure(2, observedCompileOutcome(execReturn.code, execReturn.combined, 2));
       }
     }
     return execReturn;
@@ -231,15 +322,24 @@ async function compileWithDreamMaker(
     Juke.logger.info('Using defines:', defines.join(', '));
   }
 
-  await runWithWarningChecks(dmPath, [
+  const observed = await runWithWarningChecks(dmPath, [
     ...defines.map((def) => `-D${def}`),
     dmeFile,
   ]);
-  if (native.fallback) completeNativeFallback(dmeFile, native.fallback);
+  checkDreamMakerIdentity(compiler);
+  return { outcome: observedCompileOutcome(observed.code, observed.combined), invocation: { command: [dmPath, ...defines.map(def => `-D${def}`), dmeFile], version: compiler.version, build: compiler.build,
+    compilerIdentity: compiler.identity, orderedDefines: compiler.defines, ...(bound ? { workingDirectory: bound.root } : {}) } };
 }
 
 type DDOptions = {
+  runtimeLibrary?: import('./captured_runtime_library').CapturedRuntimeLibrary;
   dmbFile: string;
+  /** Exact successful native pair, or explicit conventional fallback output. */
+  compiledOutput?: CompiledOutput;
+  /** After exact acquisition, before runtime preparation or spawn. Failure stops hosting. */
+  onPreparedOutput?: (dmbFile: string) => void;
+  onRuntimeIdentity?: (identity: { executable: string; sha256: string; version: null; security: string; library?: HostedLibraryIdentity }) => void;
+  watchdogMaximumMs?: number;
   namedDmVersion?: string | null;
   /**
    * Watchdog for runs that terminate themselves (e.g. the unit-test boot, which
@@ -381,7 +481,7 @@ function runDreamDaemonWithWatchdog(
   // runner's per-shard estimate) -- it exists for exactly the case where
   // that estimate is wrong for someone's machine/run.
   const envMinutes = Number(process.env.DQ_DD_WATCHDOG_MINUTES);
-  const hardTimeoutMs = envMinutes > 0 ? envMinutes * 60 * 1000 : (options.watchdogTimeoutMs ?? 120 * 60 * 1000);
+  const hardTimeoutMs = Math.min(options.watchdogMaximumMs ?? Infinity, envMinutes > 0 ? envMinutes * 60 * 1000 : (options.watchdogTimeoutMs ?? 120 * 60 * 1000));
   return new Promise((resolve) => {
     const child = spawn(exe, args, {
       stdio: 'inherit',
@@ -391,6 +491,7 @@ function runDreamDaemonWithWatchdog(
       options.onSpawn(child.pid);
     }
     let settled = false;
+    let hardTimeout = false;
     let graceTimer: ReturnType<typeof setTimeout> | null = null;
     const poll = setInterval(checkDone, 250);
     const hardTimer = setTimeout(() => finish(true, 'hard timeout', true), hardTimeoutMs);
@@ -400,6 +501,7 @@ function runDreamDaemonWithWatchdog(
         return;
       }
       settled = true;
+      hardTimeout = isHardTimeout;
       clearInterval(poll);
       clearTimeout(hardTimer);
       if (graceTimer) {
@@ -496,6 +598,10 @@ function runDreamDaemonWithWatchdog(
       finish(false, 'exited', false);
     });
     child.on('error', () => finish(false, 'spawn error', false));
+    child.on('close', (code, signal) => {
+      finish(false, 'closed', false);
+      resolve({ code: code ?? 0, signal, stdout: '', stderr: '', combined: '', killedByWatchdog: hardTimeout } as DDResult);
+    });
   });
 }
 
@@ -544,13 +650,121 @@ export async function DreamDaemon(
   options: DDOptions,
   ...args: any[]
 ): Promise<DDResult> {
-  checkVerdigrisAbi();
+  const output = options.compiledOutput ?? currentCompiledOutput(options.dmbFile, compilerMode() === 'native');
+  // BYOND defaults its world directory to the DMB directory, independently of
+  // the spawned process cwd. Acquiring a pair must preserve the caller's world
+  // directory for config, focus files, logs and other runtime libraries.
+  const privateConventional = Boolean(options.runtimeLibrary) && output.kind !== 'native_pair';
+  const hostedArgs = acquiredWorldArguments(args, options.dmbFile, output.kind === 'native_pair' || privateConventional);
+  return withCompiledOutput(output, Juke.exec, async dmbFile => {
+    let privateDirectory: string | undefined;
+    let hosted: DDOptions | undefined;
+    return withRuntimeIdentityChecks(async () => {
+    if (privateConventional) {
+      const root = path.resolve(process.env.DQ_NATIVE_RUN_ROOT ?? 'E:/dq-cache/dmb-build-integration');
+      if (!root.toLowerCase().startsWith('e:\\dq-cache\\')) throw new CompilerProvenanceError('Captured runtime directory must be owned below E:/dq-cache');
+      let ancestor = root;
+      while (!fs.existsSync(ancestor)) ancestor = path.dirname(ancestor);
+      assertDirectoryChain(ancestor);
+      fs.mkdirSync(root, { recursive: true });
+      assertDirectoryChain(root);
+      privateDirectory = fs.mkdtempSync(path.join(root, 'captured-byond-'));
+      copyWritableRuntimePair({ dmb: dmbFile, rsc: dmbFile.replace(/\.dmb$/i, '.rsc') }, path.join(privateDirectory, 'world'));
+      dmbFile = path.join(privateDirectory, 'world.dmb');
+    }
+    options.onPreparedOutput?.(dmbFile);
+    hosted = { ...options, dmbFile, compiledOutput: output };
+    return await runHostedWorld(hosted, hostedArgs);
+    }, () => {
+      let preservedLog: string | undefined;
+      if ((output.kind === 'native_pair' || privateConventional) && hosted?.daemonLog && fs.existsSync(hosted.daemonLog)) {
+        const destination = options.daemonLog ?? options.dmbFile.replace(/\.dmb$/, '.log');
+        preservedLog = archiveHostedDaemonLog(hosted.daemonLog, destination);
+      }
+      if (privateDirectory) {
+        removePrivateHostedLeaves(privateDirectory, preservedLog);
+      }
+    });
+  });
+}
+
+export function archiveHostedDaemonLog(source: string, destination: string): string | undefined {
+  try { fs.copyFileSync(source, destination); return undefined; }
+  catch (error) {
+    Juke.logger.warn(`Daemon log preserved at ${source}: ${error}`);
+    return source;
+  }
+}
+
+/** Exact leaves of this request's newly created private directory only. */
+export function removePrivateHostedLeaves(directory: string, preservedLog?: string): void {
+  assertDirectoryChain(directory);
+  for (const name of ['world.dmb', 'world.rsc', 'world.dyn.rsc', 'world.log']) {
+    const file = path.join(directory, name);
+    if (preservedLog && path.resolve(file) === path.resolve(preservedLog)) continue;
+    fs.rmSync(file, { force: true });
+  }
+  // Unknown additional evidence stays owned; never recursively delete it.
+  try { fs.rmdirSync(directory); }
+  catch (error) {
+    if (!['ENOTEMPTY', 'EEXIST'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
+  }
+}
+
+/** Runtime input failures must escape the runner's ordinary nonzero-exit handling. */
+export async function withRuntimeIdentityChecks<T>(run: () => Promise<T>, verify: () => void): Promise<T> {
+  let runtimeFailed = false;
+  let runtimeError: unknown;
+  try {
+    return await run();
+  } catch (error) {
+    runtimeFailed = true;
+    runtimeError = error;
+    throw error;
+  } finally {
+    try {
+      verify();
+    } catch (cleanupError) {
+      const evidence = { runtimeError: runtimeFailed ? runtimeError : null, runtimeIdentityError: cleanupError };
+      if (runtimeError instanceof CompilerProvenanceError || runtimeError instanceof NativeAcquisitionError) {
+        // These already stop admission. Preserve their original typed identity.
+        try {
+          // Do not create a self-referencing error/evidence object.
+          Object.assign(runtimeError, { runtimeIdentityCleanup: { runtimeIdentityError: cleanupError } });
+        } catch {
+          const failure = new CompilerProvenanceError(`Runtime input identity or library cleanup failed: ${cleanupError}`);
+          Object.assign(failure, { runtimeIdentityCleanup: evidence });
+          throw failure;
+        }
+        throw runtimeError;
+      }
+      const failure = new CompilerProvenanceError(`Runtime input identity or library cleanup failed: ${cleanupError}`);
+      Object.assign(failure, { runtimeIdentityCleanup: evidence });
+      throw failure;
+    }
+  }
+}
+
+async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult> {
+  const capturedLibrary = options.runtimeLibrary
+    ? (await import('./captured_runtime_library')).verifyCapturedRuntimeLibrary(options.runtimeLibrary)
+    : undefined;
+  if (!capturedLibrary) checkVerdigrisAbi();
+  const library = capturedLibrary || options.compiledOutput?.kind === 'native_pair'
+    ? stageRuntimeLibrary(capturedLibrary ?? path.resolve(process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so'), path.dirname(options.dmbFile))
+    : undefined;
+  let conventionalLibrary: HostedLibraryIdentity | undefined;
+  return withRuntimeIdentityChecks(async () => {
   await approveWorldDlls(options.dmbFile);
-  const dmPath = await getDmPath(options.namedDmVersion);
-  const baseDir = path.dirname(dmPath);
-  const ddExeName =
-    process.platform === 'win32' ? 'dreamdaemon.exe' : 'DreamDaemon';
-  const ddExePath = baseDir === '.' ? ddExeName : path.join(baseDir, ddExeName);
+  const ddExePath = await resolveDreamDaemonExecutable(options.namedDmVersion, getDmPath);
+  if (options.onRuntimeIdentity) {
+    // Hash the actual resolved file; unresolved PATH commands cannot certify it.
+    if (!path.isAbsolute(ddExePath)) throw new CompilerProvenanceError('runtime identity requires an absolute DreamDaemon executable');
+    const libraryIdentity = library?.identity ?? observeRuntimeLibrary(path.resolve(process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so'));
+    if (!library) conventionalLibrary = libraryIdentity;
+    options.onRuntimeIdentity({ executable: ddExePath, sha256: createHash('sha256').update(fs.readFileSync(ddExePath)).digest('hex'),
+      version: null, security: args.find(arg => ['-safe', '-trusted', '-ultrasafe'].includes(arg)) ?? 'unspecified', library: libraryIdentity });
+  }
 
   if (options.watchdogFile) {
     // On Windows dreamdaemon.exe writes nothing to our stdout, so a world that
@@ -561,7 +775,11 @@ export async function DreamDaemon(
       fs.rmSync(options.daemonLog, { force: true });
       args = [...args, '-logself'];
     }
-    return runDreamDaemonWithWatchdog(ddExePath, [options.dmbFile, ...args], options);
+    return await runDreamDaemonWithWatchdog(ddExePath, [options.dmbFile, ...args], options);
   }
-  return Juke.exec(ddExePath, [options.dmbFile, ...args]);
+  return await Juke.exec(ddExePath, [options.dmbFile, ...args]);
+  }, () => {
+    if (conventionalLibrary) verifyObservedRuntimeLibrary(conventionalLibrary);
+    library?.remove();
+  });
 }

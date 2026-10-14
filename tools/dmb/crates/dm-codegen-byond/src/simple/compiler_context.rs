@@ -1,0 +1,41 @@
+//! One compiler context for lowering and evaluator-issued semantic references.
+use super::*;
+pub(super) fn compiler_context<'a>(
+    bindings: &'a LowerBindings,
+    lookup: Option<&'a crate::lower_resolver::ProjectResolver<'a>>,
+) -> Compiler<'a> {
+    Compiler {
+        result: SimpleProc::default(),
+        reference_capture: None,
+        bindings,
+        lookup,
+        debug: None,
+        debug_current: None,
+        debug_last: None,
+        statement_span: None,
+        diagnostic_expression_coordinates: false,
+        statement_mask: None,
+        discarded_call_root: None,
+        resolver_failure: std::cell::RefCell::new(None),
+        nameof_return_context: false,
+        nameof_return_recovery: None,
+        locals: Vec::new(),
+        local_slots: dm_syntax::ScopeMap::default(),
+        local_declarations: HashMap::new(),
+        local_types: dm_syntax::ScopeMap::default(),
+        string_roster: StringRoster::default(),
+        seen_classes: BTreeSet::new(),
+        seen_resources: BTreeSet::new(),
+        next_label: 0,
+        label_try_depths: HashMap::new(),
+        user_labels: HashMap::new(),
+        user_label_iterator_depths: HashMap::new(),
+        label_breaks: HashMap::new(),
+        label_loop_depths: HashMap::new(),
+        label_iterator_depths: HashMap::new(),
+        try_depth: 0,
+        loops: Vec::new(),
+        breaks: Vec::new(),
+        iterator_depth: 0,
+    }
+}

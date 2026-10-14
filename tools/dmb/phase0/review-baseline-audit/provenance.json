@@ -1,0 +1,331 @@
+{
+  "operation": "offline normalization of preserved channels; no worlds or compilers launched",
+  "command": [
+    "C:\\Users\\bmene\\miniconda3\\python.exe",
+    "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\phase0\\normalize_runtime.py",
+    "--run",
+    "byond:1=D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-1",
+    "--run",
+    "byond:2=D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-2",
+    "--run",
+    "byond:3=D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-3",
+    "--run",
+    "byond:preserved=D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-preserved",
+    "--run",
+    "native:1=D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-1",
+    "--run",
+    "native:2=D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-2",
+    "--run",
+    "native:3=D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-3",
+    "--run",
+    "native:preserved=D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-preserved",
+    "--output",
+    "E:\\dmb-native-v2-phase0\\review-baseline-audit\\normalized-reproduced.json"
+  ],
+  "seconds": 273.461853899993,
+  "files": [
+    {
+      "path": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\phase0\\normalize_runtime.py",
+      "bytes": 12990,
+      "sha256": "e8b701df5a15c715bcdf9b500cacf5b01bab757c3abec221d9c33f384c72e23e"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\frozen\\pairs\\byond\\world.dmb",
+      "bytes": 47843708,
+      "sha256": "8ff8911a26547da3e2cb49daa185b45cc723b4fc2f73d4cbc48efa43f20e5775"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\frozen\\pairs\\byond\\world.rsc",
+      "bytes": 223679650,
+      "sha256": "0fb10183c9ac53cdbe2598d29e035a989a31932174d689165adbfdc68a712828"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\frozen\\pairs\\native\\world.dmb",
+      "bytes": 48175758,
+      "sha256": "174359e9e849bdd610043f5879bbb781c35d406fe92142b295f822d19130a6ed"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\frozen\\pairs\\native\\world.rsc",
+      "bytes": 222851707,
+      "sha256": "c069e6cd94d7d0d50f905811b6764489bc84348ea34f8537b53f52e93a2bb025"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\frozen\\preserved\\byond\\runtime-errors.log",
+      "bytes": 247604459,
+      "sha256": "8b4871f6e31d434b8fef96efddeea4e96a6114cab9efa9dfc8966483ded87697"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\frozen\\preserved\\native\\runtime-errors.log",
+      "bytes": 126234966,
+      "sha256": "2702c0c052b431573052951b1dfca27d0f9905a73b3b5315575cb96a26430054"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\evidence.json",
+      "bytes": 58535,
+      "sha256": "6faf75162b3d37e142024c7e8e905b2f68b69376cea902c6e435caa8c925e789"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-1\\receipt.json",
+      "bytes": 2720,
+      "sha256": "b31d88adda9e4cbe7360703ee7e97c98a73d970d10176b1fddf0d51d39db834d"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-1\\runtime-errors.log",
+      "bytes": 247817956,
+      "sha256": "32b6e98cec1b014d58a163bd451a6029a7e5824122094b4616ab3812301f7800"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-1\\runtime.log.json",
+      "bytes": 3384180,
+      "sha256": "5838e7211200aea6f3308f657f3c0318c764ee7d5fb2ee476c2e8b91f64b6544"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-1\\stderr.log",
+      "bytes": 1686134,
+      "sha256": "2c0b90f28939be726f5865d7c15f65c68ee851edc7ba8f3474f7e0c088ca0219"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-1\\stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-1\\unit_tests.json",
+      "bytes": 272774,
+      "sha256": "d75816e010f1c872f0ce2369d0a187586670765598edb61f48e523c29f1de114"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-2\\receipt.json",
+      "bytes": 5671,
+      "sha256": "c7c8875b252ffc0717d4b0464fe582e401631c633f56254bff1b73744724a076"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-2\\runtime-errors.log",
+      "bytes": 247794233,
+      "sha256": "50831d93e66f2ce858ea88ad232087247eb49971f9886d604b6c8141c4fdcc5d"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-2\\runtime.log.json",
+      "bytes": 3382816,
+      "sha256": "a2c79d03a561fc5b122e6ba380ac4a017ac7da8a098e9843360cc3c8b7f7ad57"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-2\\stderr.log",
+      "bytes": 1688828,
+      "sha256": "ad01424a969aacb0d85d9b07bbe53d4ad8b8f6ceafc0c5e19e53fe2e29641355"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-2\\stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-2\\unit_tests.json",
+      "bytes": 275497,
+      "sha256": "85019ed19f09ce9bdd805738c72a9e00484c848944c3e7df1836a593fecdb71d"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-3\\receipt.json",
+      "bytes": 5696,
+      "sha256": "8e331f834006e5762175ab0d309c3c6ed9a866dd98524d2450bffd95f32a8d65"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-3\\runtime-errors.log",
+      "bytes": 247663644,
+      "sha256": "3126e2b13bf93722cd45c24f2f4b3fa9e1d3130084562adc4cdc0a7de2887151"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-3\\runtime.log.json",
+      "bytes": 3384810,
+      "sha256": "752298a99bdd2e4b7223d7a795b2774d2f3ebdc871eafa8a3b9108ff427cf17b"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-3\\stderr.log",
+      "bytes": 1689115,
+      "sha256": "0f46c36368f66519f787daa6d8ab5b5171251e1c1d7914fded60217798ead90a"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-3\\stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-3\\unit_tests.json",
+      "bytes": 275321,
+      "sha256": "98e4a505df69d363086b76a77dd91e0365e7526fb0f19f0caca83a83c8a13f60"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-preserved\\runtime-errors.log",
+      "bytes": 247604459,
+      "sha256": "8b4871f6e31d434b8fef96efddeea4e96a6114cab9efa9dfc8966483ded87697"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-preserved\\runtime.log.json",
+      "bytes": 3355825,
+      "sha256": "b30713a26e4a5aa56096a268a80fc0ed78c83dcd4666c597edb31b0cec8deac5"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-preserved\\stderr.log",
+      "bytes": 1688202,
+      "sha256": "f6d0a757650301e23d13a027b85c598a1fa951ef5d1fe642693d09839eacf77d"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-preserved\\stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-preserved\\unit_tests.json",
+      "bytes": 274972,
+      "sha256": "7cef7f251c8e708bf91db8b84da111bb958005ed86a7dfd4ff7da2adb91bb299"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-1\\receipt.json",
+      "bytes": 5678,
+      "sha256": "a09ee2f03f4ac5ab4441736261f19440d7087de9446ca6647acba675e88d5e7e"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-1\\runtime-errors.log",
+      "bytes": 126226298,
+      "sha256": "0fc7d08c314e82070ffe7b369350d1d3dcef40f007b0597f59ae0f57982120a8"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-1\\runtime.log.json",
+      "bytes": 3097095,
+      "sha256": "f45f6885bcd82eceee25b7f49e470dc441a717edfc5cf626a7e85aace980690c"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-1\\stderr.log",
+      "bytes": 1522984,
+      "sha256": "bed4b608a1db2e9a58a26cd52445045e6adab5ad3cd930009fb3cfdb9853e04b"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-1\\stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-1\\unit_tests.json",
+      "bytes": 249816,
+      "sha256": "dd6b9af525b66378643339d6b99a2a4461f3cae48bab39518643726a470a669d"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-2\\receipt.json",
+      "bytes": 5678,
+      "sha256": "87234e2a1fae61bfe2c35d404de730a8ec947dadf289dca7ff5a369c439cf31d"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-2\\runtime-errors.log",
+      "bytes": 126307755,
+      "sha256": "f9e659210f378e3b825f73e0a504c7beff7f6fb2de18c20a0e0425af3168744e"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-2\\runtime.log.json",
+      "bytes": 3102969,
+      "sha256": "b0a7bf79218dd07a5cf2d438c975be07371cc7f80b467664ef042dfc8923648e"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-2\\stderr.log",
+      "bytes": 1526200,
+      "sha256": "66f8bc6f22c1503a4aa48eb5cde19bc0a0d8411c01ba9346d4511b165d085206"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-2\\stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-2\\unit_tests.json",
+      "bytes": 252553,
+      "sha256": "035cfb05ddcc6d7e6db2de0f7cee2ac6acff159e56c91285ba1f9defc47b513e"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-3\\receipt.json",
+      "bytes": 5678,
+      "sha256": "9dda0ed4e2eb8c66b00303190b6daf8512511701b6e6d19af2c3af6733ffc82e"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-3\\runtime-errors.log",
+      "bytes": 126272333,
+      "sha256": "42015f06880eb197c3fe9e027fa5b102ee65d368cc09130d3907deb36dc3b14a"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-3\\runtime.log.json",
+      "bytes": 3099762,
+      "sha256": "0c3f3bd9945b8b28bd15b9b7aa87b174ce2e2edeaa9b761ca32aa17ac1521361"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-3\\stderr.log",
+      "bytes": 1525701,
+      "sha256": "4a58163ad10212209b4ad510f4fd904b469fd5748f1358f41690368e558c37c9"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-3\\stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-3\\unit_tests.json",
+      "bytes": 252251,
+      "sha256": "091ef38d7f584818ca9f23b078be4ce7d479585192d01ff9079c1df7cc4e3aa1"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-preserved\\runtime-errors.log",
+      "bytes": 126234966,
+      "sha256": "2702c0c052b431573052951b1dfca27d0f9905a73b3b5315575cb96a26430054"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-preserved\\runtime.log.json",
+      "bytes": 3088303,
+      "sha256": "062e3364f9b2df19f0dce601dad4abf92ed1f89a955f64bd5160349dc9967d7d"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-preserved\\stderr.log",
+      "bytes": 1525037,
+      "sha256": "a8906c8648a3ce1319c495260e2cef8b7cdd7cd289b5e338005e2f7668b9ca08"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-preserved\\stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-preserved\\unit_tests.json",
+      "bytes": 251948,
+      "sha256": "5b474ade5856bbf9da5416b9686eb1816ba16a6722d320dff23ebf6fd9b1237e"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\normalized.json",
+      "bytes": 4968052,
+      "sha256": "1e39336baf63c6a2e9132a66dbff9666c712eba0348d61b5019d45aaf14c95c2"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\preserved-comparison.json",
+      "bytes": 2579260,
+      "sha256": "190afc7bf05fff744e39fc7ccebc2aa67e8f09ac6ac9b63f5a4849c8b6b4ccb9"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\snapshot-receipt.json",
+      "bytes": 13321354,
+      "sha256": "ca20759e24dd9b87afb027fea8dac90cda2786dc3420c6391ad3452579f14e26"
+    },
+    {
+      "path": "E:\\dmb-native-v2-phase0\\review-baseline-audit\\normalized-reproduced.json",
+      "bytes": 4968052,
+      "sha256": "1e39336baf63c6a2e9132a66dbff9666c712eba0348d61b5019d45aaf14c95c2"
+    },
+    {
+      "path": "E:\\dmb-native-v2-phase0\\review-baseline-audit\\preserved-comparison-reproduced.json",
+      "bytes": 2579260,
+      "sha256": "190afc7bf05fff744e39fc7ccebc2aa67e8f09ac6ac9b63f5a4849c8b6b4ccb9"
+    },
+    {
+      "path": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\phase0\\finalize_baseline.py",
+      "bytes": 16972,
+      "sha256": "e50f7d684591d51dc5b1503ddeefce368cae60df869fd54882b9c0a8dbc030c1"
+    }
+  ],
+  "normalized_structural_equality": true,
+  "normalized_byte_equality": true,
+  "preserved_comparison_structural_equality": true
+}

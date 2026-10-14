@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "stage_prefixes": {
+    "native cold ": [
+      "StartupCapture",
+      "AbiPreparation",
+      "Initializers",
+      "InitializerClassification",
+      "InitializerCodegen",
+      "ProcedureLowering",
+      "RequiredTypeAdmission",
+      "SymbolicLinking",
+      "Composition"
+    ],
+    "native nontext ": [
+      "NonTextParsing",
+      "ResourceDemand",
+      "ResourceAdmission",
+      "RetainedResourceOrder",
+      "ResourceCatalog",
+      "AssetCapture",
+      "ResourceOrder",
+      "ResourceProjection",
+      "SymbolBinding",
+      "MapProjection",
+      "MapDescriptors",
+      "MapInitializers"
+    ],
+    "native resource ": [
+      "FilesystemProofCapture",
+      "CatalogRestore",
+      "DemandAdmission",
+      "InputValidation",
+      "ArchiveAuthentication"
+    ]
+  },
+  "prefixes": [
+    "native stages:",
+    "native compile:",
+    "native resolver memo:",
+    "native lowering memo:",
+    "native declaration reuse:",
+    "native session validation:",
+    "native session hit:",
+    "native input preparation:",
+    "native failed stages:",
+    "native cache unavailable:",
+    "native cache snapshot rejected:",
+    "native cache publication skipped:",
+    "native cache population incomplete:",
+    "native expansion cache population incomplete:",
+    "native map cache population incomplete:",
+    "native cache lease skipped:",
+    "native telemetry skipped:"
+  ]
+}

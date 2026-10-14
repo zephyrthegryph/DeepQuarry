@@ -325,7 +325,7 @@ the live intrinsic entry is now emitted.
 ## Original results
 
 The follow-up classification and prioritized fixes are in
-[BYTECODE_ISSUES.md](../../BYTECODE_ISSUES.md). Improved alias/duplicate matching pairs
+[BYTECODE_ISSUES.md](../../crates/dmb-opendream/doc/BYTECODE_ISSUES.md). Improved alias/duplicate matching pairs
 59,465 records with zero unmatched named/initializer records: 10,704 normalized
 matches and 48,761 differences. The original raw-path comparison below remains
 as a record of the initial audit. The follow-up identifies distinct equality,

@@ -1,0 +1,206 @@
+{
+  "status": "partial diagnosis; confirmed runtime reporting divergence; event payload causality unresolved",
+  "scope": "Phase0 evidence only; no semantic fix",
+  "procedure": "/datum/controller/subsystem/machines/proc/process_power",
+  "procedure_ids": {
+    "byond": 4177,
+    "native": 33419
+  },
+  "evidence": [
+    {
+      "path": "D:\\dmb-native-v2-phase0\\power-bridge-byond-code.log",
+      "sha256": "e61f58de586d91daf6de5e7206b0349b8ace5bb93d5aab2735eae5b760e0dcbb",
+      "bytes": 6314
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\power-bridge-native-code.log",
+      "sha256": "1c525e52f7cd3ec8015d391caed3a8ae800d799f69087f0aa278169eae657ae6",
+      "bytes": 5971
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\power-bridge-opcode-diff.log",
+      "sha256": "43edcd1aefdef6def30e24dc6ce8d14da8d64ce62a58f50fadd4209ee0e8ce3c",
+      "bytes": 14174
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\frozen\\preserved\\byond\\stderr.log",
+      "bytes": 1688202,
+      "sha256": "f6d0a757650301e23d13a027b85c598a1fa951ef5d1fe642693d09839eacf77d"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\frozen\\preserved\\native\\stderr.log",
+      "bytes": 1525037,
+      "sha256": "a8906c8648a3ce1319c495260e2cef8b7cdd7cd289b5e338005e2f7668b9ca08"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\frozen\\source\\code\\modules\\error_handler\\error_handler.dm",
+      "bytes": 6367,
+      "sha256": "b0e8c4a4ffb94c8d7d71db4e333c2dd0dccca4de91fb9884294028913824c833"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\frozen\\source\\verdigris\\ffi\\src\\power.rs",
+      "bytes": 17076,
+      "sha256": "4f02e931a916735fc03422c6da9d1beb8cd10f6cc4a3a8fb4b3dce349d5aa736"
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\frozen\\runtime\\verdigris.dll",
+      "bytes": 4231680,
+      "sha256": "0a241776e8a482f4912144f123a93c9472f25ffca7f1555c0358e9c3288517c5"
+    },
+    {
+      "path": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\translation\\client_header_probe\\feature_load_ext.dm",
+      "bytes": 63,
+      "sha256": "464d44f06805e816c16a20866126e68509815df8bb4718287da5d60306871200"
+    },
+    {
+      "path": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\translation\\client_header_probe\\feature_load_ext.native.bin",
+      "bytes": 15203,
+      "sha256": "21262af28873c45c8ffbd316ed2c1f5b420242dd650055921219b9b93d3bb90d"
+    },
+    {
+      "path": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\translation\\client_header_probe\\feature_call_ext.dm",
+      "bytes": 48,
+      "sha256": "194d254e29383d659848c8f697115c071f60c4652af78976db0e4c36b5a3374b"
+    },
+    {
+      "path": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\translation\\client_header_probe\\feature_call_ext.native.bin",
+      "bytes": 15191,
+      "sha256": "16cec216cad21abd215a69002d4a080ee2a92e091212256b4410659e68d4e920"
+    },
+    {
+      "path": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\translation\\client_header_probe\\feature_dynamic_call.dm",
+      "bytes": 64,
+      "sha256": "3b33148807dcb9e8513abfb707dd4a72311cfaaf5bca008fc3bd1f45b2dd1bbb"
+    },
+    {
+      "path": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\translation\\client_header_probe\\feature_dynamic_call.native.bin",
+      "bytes": 15220,
+      "sha256": "072badff7dd76ab8022d692ec5a1d09678facde7fd7ed895efa1bb29b2e11a69"
+    },
+    {
+      "path": "D:/dmb-native-v2-phase0/frozen/pairs/byond/world.dmb",
+      "bytes": 47843708,
+      "sha256": "8ff8911a26547da3e2cb49daa185b45cc723b4fc2f73d4cbc48efa43f20e5775"
+    },
+    {
+      "path": "D:/dmb-native-v2-phase0/frozen/pairs/native/world.dmb",
+      "bytes": 48175758,
+      "sha256": "174359e9e849bdd610043f5879bbb781c35d406fe92142b295f822d19130a6ed"
+    }
+  ],
+  "source_findings": [
+    {
+      "path": "frozen/source/code/modules/power/power_bridge.dm",
+      "lines": [
+        47,
+        85,
+        91,
+        151,
+        154,
+        156
+      ],
+      "finding": "power_regions is a list used with numeric region handle IDs, without demonstrated dense positional bounds; retired removal also uses numeric value subtraction."
+    },
+    {
+      "path": "frozen/source/verdigris/ffi/src/power.rs",
+      "lines": [
+        287,
+        292,
+        296
+      ],
+      "finding": "Region identity exported as raw handle bits+1; decoding reconstructs raw handle rather than specifying a dense list position.",
+      "qualification": "Frozen Rust source does not match the captured DLL interface: power_step_ffi/power_edit_ffi/power_region_ffi strings exist in the DLL, power_region_of_ffi does not. These Rust lines do not prove the DLL runtime handle contract."
+    }
+  ],
+  "bytecode_findings": [
+    "Both retired branches compare the event kind against numeric constant3.",
+    "Both contain the same nested GetVar/events[at]/ListGet/ListGet indexing shape; evidence does not support a missing bounds/index lowering operation.",
+    "Native switch uses __dmb_switch_8 temporary and Teq/Pop/Jnz; reference uses switch dispatch. Call versus CallStatement and debug/local layouts differ. These differences alone do not establish a behavioral defect."
+  ],
+  "unresolved": [
+    "Which native blank-origin raw errors come from process_power, and the exact numeric event IDs/list lengths at each read.",
+    "Captured DLL source provenance and exact runtime FFI return payloads.",
+    "Whether bytecode dispatch, header compatibility or upstream initialization additionally changes execution; equivalent wrapper traces do not settle dynamic values."
+  ],
+  "classification": "Reference and native both log millions of bounds errors. Missing native debug origins demonstrably change runtime reporting/silencing semantics; specific power event causality remains unresolved. Fewer failed tests do not establish correctness.",
+  "next_evidence": "Source-aware native error reporting and equal-event-stream/captured-payload replay would be needed for causal proof; no new runtime was launched in this investigation.",
+  "runtime_reporting": {
+    "mechanism": "Frozen /world/Error writes runtime-errors.log before cooldown, then uses erroruid=[E.file][E.line]. A silenced bucket returns before GLOB.error_cache, world.log, GLOB.current_test.Fail and log_runtime. Native missing debug origins therefore collapse unrelated sites into one blank file/line cooldown bucket.",
+    "native_global_debug_scan": {
+      "tool": "D:/dmb-native-v2-phase0/reference-release/dmb-inspect.exe",
+      "commands": [
+        "opcode-context frozen/pairs/native/world.dmb 84",
+        "opcode-context frozen/pairs/native/world.dmb 85"
+      ],
+      "result": "Both exit 0, empty stdout: no decoded non-reserved procedure contains DbgFile or DbgLine."
+    },
+    "startup": "Native dq_lifecycle_time errors have blank file/line; stderr line342 reports silencing for 10 minutes. Reference lifecycle errors have transaction.dm:101. Reference power errors at power_bridge.dm:85 and :107 occur at 03:13:37, before later retired-branch :154 test failures.",
+    "raw_logs": [
+      {
+        "side": "byond",
+        "path": "D:/dmb-native-v2-phase0/frozen/preserved/byond/runtime-errors.log",
+        "bytes": 247604459,
+        "sha256": "8b4871f6e31d434b8fef96efddeea4e96a6114cab9efa9dfc8966483ded87697",
+        "bounds_messages": 3087060,
+        "blank_origin_bounds": 0,
+        "power_origin_counts": {
+          "85": 1099,
+          "107": 1099,
+          "154": 117,
+          "151": 111
+        }
+      },
+      {
+        "side": "native",
+        "path": "D:/dmb-native-v2-phase0/frozen/preserved/native/runtime-errors.log",
+        "bytes": 126234966,
+        "sha256": "2702c0c052b431573052951b1dfca27d0f9905a73b3b5315575cb96a26430054",
+        "bounds_messages": 3068028,
+        "blank_origin_bounds": 3068028,
+        "power_origin_counts": {}
+      }
+    ],
+    "limit": "Raw native bounds messages have blank origins and empty descriptions. Their similar count does not prove which procedures failed or equal event streams. The apparent absence of native errors/per-test failures is not trustworthy parity evidence."
+  },
+  "ffi_trace": {
+    "vg_power_step": {
+      "byond_proc": 224,
+      "native_proc": 284,
+      "byond_static_slot": 455,
+      "native_static_slot": 23853,
+      "wrapper": "GetVar global static __f; CallExt argc0; Ret. Both raw static defaults are null."
+    },
+    "initializer": {
+      "byond_proc": 61126,
+      "native_proc": 48755,
+      "sequence": "Read __verdigris or call __detect_verdigris; push exact byond:power_step_ffi string; LoadExt; store wrapper __f slot. Native packed string 286105 and reference string1344 have equal bytes."
+    },
+    "library": {
+      "byond_detect_proc": 109,
+      "native_detect_proc": 169,
+      "byond_global_slot": 12,
+      "native_global_slot": 23314,
+      "windows": "verdigris",
+      "unix_candidates": [
+        "./libverdigris.so",
+        "libverdigris"
+      ],
+      "observation": "Equivalent system_type/UNIX/FExists selection in frozen procedures; no runtime library handle or returned event payload was captured."
+    },
+    "other_wrappers": {
+      "vg_power_region": "Reference222/static453 and native282/static23850 both Arg0 CallExt argc1 Ret.",
+      "vg_power_edit": "Reference219/static450 and native279/static23844 both Arg0 CallExt argc1 Ret."
+    },
+    "source_closure_gap": "Captured DLL contains old power_step_ffi, power_edit_ffi, power_region_ffi interface absent from frozen Rust source; power_region_of_ffi absent from DLL. Executable provenance gap prevents attributing DLL behavior to frozen source."
+  },
+  "header_difference": {
+    "byond_flags": "0x61e2050d",
+    "native_flags": "0x40000540",
+    "xor": "0x21e2004d",
+    "byond_min_compat": "v516516",
+    "native_min_compat": "v515468",
+    "external_library_flag_evidence": "Existing feature_load_ext.native.bin and feature_call_ext.native.bin each have 0x20000340; feature_dynamic_call.native.bin has 0x340. CLIENT_HEADER_PROBES.md and tests/client_header.rs independently record mask0x20000000 for external library use. Native real output lacks this bit.",
+    "qualification": "Header/compat differences are hypotheses for investigation, not evidence that the bit changes event payload or disables FFI."
+  },
+  "required_backend_change": "Emit source-aware DbgFile/DbgLine relocations (SourceFile/LineDelta) before meaningful statements and preserve exception source origins before interpreting runtime parity or per-test error differences. This evidence record does not claim that backend work is implemented."
+}

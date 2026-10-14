@@ -1,0 +1,18 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_session-232129ba139714e0.exe",
+  "binary_sha256": "ad42f0b112e450a779560cd154fc48d6a7b5e208674186ef5f8f06de2787c5c4",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "observations::receipt_admission::tests::",
+      "selected": [
+        "observations::receipt_admission::tests::grouping_keeps_conflicting_answers_and_rejects_noncanonical_input",
+        "observations::receipt_admission::tests::shared_negative_leaves_validate_once_and_always_reach_observer"
+      ],
+      "exit": 0,
+      "seconds": 0.029135299962945282,
+      "stdout": "\nrunning 2 tests\ntest observations::receipt_admission::tests::grouping_keeps_conflicting_answers_and_rejects_noncanonical_input ... ok\ntest observations::receipt_admission::tests::shared_negative_leaves_validate_once_and_always_reach_observer ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    }
+  ]
+}

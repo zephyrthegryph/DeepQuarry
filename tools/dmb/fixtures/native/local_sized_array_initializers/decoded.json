@@ -1,0 +1,131 @@
+{
+  "inspector_sha256": "5a73ad00b2b2bec2bc2941816a5c31e95481dcbf7ddebc0f1fad6cf9f7f03035",
+  "procedures": [
+    {
+      "case": "explicit_list",
+      "inspection": {
+        "command": [
+          "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-062957-inspector-a0bb00f6.exe",
+          "proc-code",
+          "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\local_sized_array_initializers\\explicit_list.native.bin",
+          "/proc/probe"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.03638420003699139,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\local-sized-arrays-20261010\\explicit_list.proc-code.log",
+        "diagnostics": []
+      },
+      "decoded": "proc#0 /proc/probe\n0000 0033 GetVar [65497, 0]\n0003 009e IsNull []\n0004 000d Test []\n0005 0011 Jz [12]\n0007 0050 PushInt [3]\n0009 0034 SetVar [65497, 0]\n000c 0050 PushInt [4]\n000e 0050 PushInt [5]\n0010 001a NewList [2]\n0012 0034 SetVar [65498, 0]\n0015 0050 PushInt [3]\n0017 0019 EmptyList []\n0018 0033 GetVar [65498, 0]\n001b 0012 Ret []\n001c 0000 End []\n"
+    },
+    {
+      "case": "explicit_null",
+      "inspection": {
+        "command": [
+          "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-062957-inspector-a0bb00f6.exe",
+          "proc-code",
+          "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\local_sized_array_initializers\\explicit_null.native.bin",
+          "/proc/probe"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.03489030001219362,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\local-sized-arrays-20261010\\explicit_null.proc-code.log",
+        "diagnostics": []
+      },
+      "decoded": "proc#0 /proc/probe\n0000 0033 GetVar [65497, 0]\n0003 009e IsNull []\n0004 000d Test []\n0005 0011 Jz [12]\n0007 0050 PushInt [3]\n0009 0034 SetVar [65497, 0]\n000c 0033 GetVar [65510]\n000e 0034 SetVar [65498, 0]\n0011 0050 PushInt [3]\n0013 0019 EmptyList []\n0014 0033 GetVar [65498, 0]\n0017 0012 Ret []\n0018 0000 End []\n"
+    },
+    {
+      "case": "implicit",
+      "inspection": {
+        "command": [
+          "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-062957-inspector-a0bb00f6.exe",
+          "proc-code",
+          "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\local_sized_array_initializers\\implicit.native.bin",
+          "/proc/probe"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.03584339999360964,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\local-sized-arrays-20261010\\implicit.proc-code.log",
+        "diagnostics": []
+      },
+      "decoded": "proc#0 /proc/probe\n0000 0033 GetVar [65497, 0]\n0003 009e IsNull []\n0004 000d Test []\n0005 0011 Jz [12]\n0007 0050 PushInt [3]\n0009 0034 SetVar [65497, 0]\n000c 0050 PushInt [3]\n000e 0019 EmptyList []\n000f 0034 SetVar [65498, 0]\n0012 0033 GetVar [65498, 0]\n0015 0012 Ret []\n0016 0000 End []\n"
+    },
+    {
+      "case": "multidim_implicit",
+      "inspection": {
+        "command": [
+          "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-062957-inspector-a0bb00f6.exe",
+          "proc-code",
+          "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\local_sized_array_initializers\\multidim_implicit.native.bin",
+          "/proc/probe"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.034689699998125434,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\local-sized-arrays-20261010\\multidim_implicit.proc-code.log",
+        "diagnostics": []
+      },
+      "decoded": "proc#0 /proc/probe\n0000 0033 GetVar [65497, 0]\n0003 009e IsNull []\n0004 000d Test []\n0005 0011 Jz [12]\n0007 0050 PushInt [3]\n0009 0034 SetVar [65497, 0]\n000c 0060 PushVal [40, 0]\n000f 0050 PushInt [2]\n0011 0050 PushInt [3]\n0013 0001 New [2]\n0015 0034 SetVar [65498, 0]\n0018 0033 GetVar [65498, 0]\n001b 0012 Ret []\n001c 0000 End []\n"
+    },
+    {
+      "case": "multidim_list",
+      "inspection": {
+        "command": [
+          "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-062957-inspector-a0bb00f6.exe",
+          "proc-code",
+          "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\local_sized_array_initializers\\multidim_list.native.bin",
+          "/proc/probe"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.03660790005233139,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\local-sized-arrays-20261010\\multidim_list.proc-code.log",
+        "diagnostics": []
+      },
+      "decoded": "proc#0 /proc/probe\n0000 0033 GetVar [65497, 0]\n0003 009e IsNull []\n0004 000d Test []\n0005 0011 Jz [12]\n0007 0050 PushInt [3]\n0009 0034 SetVar [65497, 0]\n000c 0050 PushInt [4]\n000e 0050 PushInt [5]\n0010 001a NewList [2]\n0012 0034 SetVar [65498, 0]\n0015 0060 PushVal [40, 0]\n0018 0050 PushInt [2]\n001a 0050 PushInt [3]\n001c 0001 New [2]\n001e 0033 GetVar [65498, 0]\n0021 0012 Ret []\n0022 0000 End []\n"
+    },
+    {
+      "case": "nonliteral",
+      "inspection": {
+        "command": [
+          "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-062957-inspector-a0bb00f6.exe",
+          "proc-code",
+          "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\local_sized_array_initializers\\nonliteral.native.bin",
+          "/proc/probe"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.034664299979340285,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\local-sized-arrays-20261010\\nonliteral.proc-code.log",
+        "diagnostics": []
+      },
+      "decoded": "proc#0 /proc/probe\n0000 0033 GetVar [65497, 0]\n0003 009e IsNull []\n0004 000d Test []\n0005 0011 Jz [12]\n0007 0050 PushInt [3]\n0009 0034 SetVar [65497, 0]\n000c 0050 PushInt [4]\n000e 0050 PushInt [5]\n0010 001a NewList [2]\n0012 0034 SetVar [65498, 0]\n0015 0033 GetVar [65497, 0]\n0018 0019 EmptyList []\n0019 0033 GetVar [65498, 0]\n001c 0012 Ret []\n001d 0000 End []\n"
+    },
+    {
+      "case": "scalar",
+      "inspection": {
+        "command": [
+          "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-062957-inspector-a0bb00f6.exe",
+          "proc-code",
+          "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\local_sized_array_initializers\\scalar.native.bin",
+          "/proc/probe"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.036008099967148155,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\local-sized-arrays-20261010\\scalar.proc-code.log",
+        "diagnostics": []
+      },
+      "decoded": "proc#0 /proc/probe\n0000 0033 GetVar [65497, 0]\n0003 009e IsNull []\n0004 000d Test []\n0005 0011 Jz [12]\n0007 0050 PushInt [3]\n0009 0034 SetVar [65497, 0]\n000c 0050 PushInt [7]\n000e 0034 SetVar [65498, 0]\n0011 0050 PushInt [3]\n0013 0019 EmptyList []\n0014 0033 GetVar [65498, 0]\n0017 0012 Ret []\n0018 0000 End []\n"
+    }
+  ]
+}

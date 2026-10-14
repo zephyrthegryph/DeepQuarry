@@ -1,0 +1,4 @@
+proc#0 /world/proc/proof
+0000 0033 GetVar [65510]
+0002 0034 SetVar [65500, 65486, 204]
+0006 0000 End []

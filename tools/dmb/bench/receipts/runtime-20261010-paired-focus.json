@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "kind": "preliminary_paired_focused_runtime",
+  "native": {
+    "path": "E:\\projects\\dq-wt\\dmb-review\\data\\test-runs\\20261010T224214_240b6dc20c.json",
+    "sha256": "9255f5213d7a8e25628b92b58a8032e0488b731b2f59922551cd433cba488eea",
+    "counts": {
+      "passed": 6,
+      "failed": 2,
+      "skipped": 0
+    },
+    "compilation": {
+      "requestedBackend": "native",
+      "actualBackend": "native",
+      "orderedDefines": [
+        "CBT",
+        "CIBUILDING",
+        "CITESTING",
+        "DEBUG"
+      ],
+      "fallback": null,
+      "compiler": {
+        "executable": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-173216-214adbd0.exe",
+        "sha256": "72e879e72d7384ef96efbeda58da0a42e746e169a343f15f1c6ba06ebc21e953",
+        "version": null,
+        "build": null
+      },
+      "nativePair": {
+        "pairId": "982ccdd0f530632b872c56ed4cdeae73",
+        "dmbHash": "3b4f4053d7fff8a2eac8679574c5b7f5",
+        "rscHash": "94187ddf583bf8a6c80f0712194aba15",
+        "dmbBytes": 68621018,
+        "rscBytes": 223679641
+      }
+    }
+  },
+  "byond": {
+    "path": "E:\\projects\\dq-wt\\dmb-review\\data\\test-runs\\20261010T224600_ec3b42eb60.json",
+    "sha256": "9f3db004999d53c9db7c08bc0293332ed8492d97bbf5fb74fc896cb6a6bd125b",
+    "counts": {
+      "passed": 6,
+      "failed": 2,
+      "skipped": 0
+    },
+    "compilation": {
+      "requestedBackend": "byond",
+      "actualBackend": "byond",
+      "orderedDefines": [
+        "CBT",
+        "CIBUILDING",
+        "CITESTING",
+        "DEBUG"
+      ],
+      "fallback": null,
+      "nativePair": null,
+      "compiler": {
+        "executable": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+        "version": 516,
+        "build": 1687
+      }
+    }
+  },
+  "tests": [
+    {
+      "name": "/datum/unit_test/dq_service_real_machine_and_pda_lifecycle",
+      "native_status": 1,
+      "byond_status": 1,
+      "native_runtimes": 0,
+      "byond_runtimes": 0,
+      "runtime_errors_equal": true,
+      "exact_message_equal": true,
+      "native_message": "\tUNIT TEST LEAK: /datum/unit_test/dq_service_real_machine_and_pda_lifecycle left 1 object(s) on its block: /obj/item/card/id x1",
+      "byond_message": "\tUNIT TEST LEAK: /datum/unit_test/dq_service_real_machine_and_pda_lifecycle left 1 object(s) on its block: /obj/item/card/id x1"
+    },
+    {
+      "name": "/datum/unit_test/dq_lifecycle_sandbox/representative",
+      "native_status": 1,
+      "byond_status": 1,
+      "native_runtimes": 0,
+      "byond_runtimes": 0,
+      "runtime_errors_equal": true,
+      "exact_message_equal": false,
+      "native_message": "\tFAILURE #1: 15 problem(s) across 25 latent-safe types:\n/obj/item/clothing/suit/armor/vest: Initialize() changed the world: GLOB.refresh_queue 16311 -> 16312\n/obj/item/clothing/head/helmet: Initialize() changed the world: GLOB.refresh_queue 16315 -> 16318\n/obj/item/clothing/under/color/grey: Initialize() changed the world: GLOB.refresh_queue 16319 -> 16320\n/obj/item/storage/backpack: Initialize() changed the world: GLOB.refresh_queue 16321 -> 16322\n/obj/item/storage/box: Initialize() changed the world: GLOB.refresh_queue 16323 -> 16324\n/obj/item/storage/toolbox: Initialize() changed the world: GLOB.refresh_queue 16325 -> 16326\n/obj/item/storage/firstaid/regular: Initialize() changed the world: GLOB.refresh_queue 16332 -> 16333\n/obj/item/radio: Initialize() changed the world: GLOB.refresh_queue 16334 -> 16335\n/obj/item/trash/candy: Initialize() changed the world: GLOB.refresh_queue 16336 -> 16337\n/obj/item/circuitboard/autolathe: Initialize() changed the world: GLOB.refresh_queue 16338 -> 16339\n/obj/item/bluespace_crystal: Initialize() changed the world: GLOB.refresh_queue 16340 -> 16341\n/obj/item/reagent_containers/pill/paracetamol: Initialize() changed the world: GLOB.refresh_queue 16343 -> 16345\n/obj/item/ammo_casing/a9mm: Initialize() changed the world: GLOB.refresh_queue 16347 -> 16349\n/obj/item/ammo_magazine/m9mm: Initialize() changed the world: GLOB.refresh_queue 16370 -> 16391\n/obj/item/pda: Initialize() changed the world: GLOB.refresh_queue 16392 -> 16393 (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_lifecycle_tests.dm:264",
+      "byond_message": "\tFAILURE #1: 15 problem(s) across 25 latent-safe types:\n/obj/item/clothing/suit/armor/vest: Initialize() changed the world: GLOB.refresh_queue 5142 -> 5143\n/obj/item/clothing/head/helmet: Initialize() changed the world: GLOB.refresh_queue 5146 -> 5149\n/obj/item/clothing/under/color/grey: Initialize() changed the world: GLOB.refresh_queue 5150 -> 5151\n/obj/item/storage/backpack: Initialize() changed the world: GLOB.refresh_queue 5152 -> 5153\n/obj/item/storage/box: Initialize() changed the world: GLOB.refresh_queue 5154 -> 5155\n/obj/item/storage/toolbox: Initialize() changed the world: GLOB.refresh_queue 5156 -> 5157\n/obj/item/storage/firstaid/regular: Initialize() changed the world: GLOB.refresh_queue 5163 -> 5164\n/obj/item/radio: Initialize() changed the world: GLOB.refresh_queue 5165 -> 5166\n/obj/item/trash/candy: Initialize() changed the world: GLOB.refresh_queue 5167 -> 5168\n/obj/item/circuitboard/autolathe: Initialize() changed the world: GLOB.refresh_queue 5169 -> 5170\n/obj/item/bluespace_crystal: Initialize() changed the world: GLOB.refresh_queue 5171 -> 5172\n/obj/item/reagent_containers/pill/paracetamol: Initialize() changed the world: GLOB.refresh_queue 5174 -> 5176\n/obj/item/ammo_casing/a9mm: Initialize() changed the world: GLOB.refresh_queue 5178 -> 5180\n/obj/item/ammo_magazine/m9mm: Initialize() changed the world: GLOB.refresh_queue 5201 -> 5222\n/obj/item/pda: Initialize() changed the world: GLOB.refresh_queue 5223 -> 5224 (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_lifecycle_tests.dm:264"
+    },
+    {
+      "name": "/datum/unit_test/dq_damage_flavour_bands",
+      "native_status": 0,
+      "byond_status": 0,
+      "native_runtimes": 0,
+      "byond_runtimes": 0,
+      "runtime_errors_equal": true,
+      "exact_message_equal": true,
+      "native_message": "",
+      "byond_message": ""
+    },
+    {
+      "name": "/datum/unit_test/mech_construction",
+      "native_status": 0,
+      "byond_status": 0,
+      "native_runtimes": 0,
+      "byond_runtimes": 0,
+      "runtime_errors_equal": true,
+      "exact_message_equal": true,
+      "native_message": "",
+      "byond_message": ""
+    },
+    {
+      "name": "/datum/unit_test/dq_body_factor_combine_math",
+      "native_status": 0,
+      "byond_status": 0,
+      "native_runtimes": 0,
+      "byond_runtimes": 0,
+      "runtime_errors_equal": true,
+      "exact_message_equal": true,
+      "native_message": "",
+      "byond_message": ""
+    },
+    {
+      "name": "/datum/unit_test/dq_verdigris_loaded",
+      "native_status": 0,
+      "byond_status": 0,
+      "native_runtimes": 0,
+      "byond_runtimes": 0,
+      "runtime_errors_equal": true,
+      "exact_message_equal": true,
+      "native_message": "",
+      "byond_message": ""
+    },
+    {
+      "name": "/datum/unit_test/type_list_cached_per_type",
+      "native_status": 0,
+      "byond_status": 0,
+      "native_runtimes": 0,
+      "byond_runtimes": 0,
+      "runtime_errors_equal": true,
+      "exact_message_equal": true,
+      "native_message": "",
+      "byond_message": ""
+    },
+    {
+      "name": "/datum/unit_test/dq_boot_bind_power_machines",
+      "native_status": 0,
+      "byond_status": 0,
+      "native_runtimes": 0,
+      "byond_runtimes": 0,
+      "runtime_errors_equal": true,
+      "exact_message_equal": true,
+      "native_message": "",
+      "byond_message": ""
+    }
+  ],
+  "limitations": [
+    "Not a full suite or accepted runtime baseline.",
+    "Focused source closure and runtime DLL identity were not issued for these historical runs; future reports now capture runtime identity.",
+    "Native refresh queue starts 11169 entries above BYOND; same 15 per-type deltas do not prove identical boot behavior.",
+    "Historical full BYOND batch had 14 sandbox failures; this identical focus has 15 for both compilers.",
+    "Prototype compiler profile; wall time is not performance acceptance."
+  ],
+  "accepted_runtime_parity": false
+}

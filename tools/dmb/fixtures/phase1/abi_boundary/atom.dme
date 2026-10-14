@@ -1,0 +1,4 @@
+/atom/New()
+    return ..()
+/atom/Del()
+    return ..()

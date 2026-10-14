@@ -1,0 +1,63 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-d02f53bd52aad7c5.exe",
+  "binary_sha256": "7191b7dafdbe1906092f997fb4f75558a06aac6bd949708bf1341d2beafa0c05",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "driver_facts::abi_artifacts::tests::",
+      "selected": [
+        "driver_facts::abi_artifacts::tests::typed_abi_negative_semantic_reads_replay_and_current_keys_replace_history",
+        "driver_facts::abi_artifacts::tests::typed_inputs_seal_exact_owner_boundary_predecessor_and_policy"
+      ],
+      "exit": 0,
+      "seconds": 0.04295570001704618,
+      "stdout": "\nrunning 2 tests\ntest driver_facts::abi_artifacts::tests::typed_abi_negative_semantic_reads_replay_and_current_keys_replace_history ... ok\ntest driver_facts::abi_artifacts::tests::typed_inputs_seal_exact_owner_boundary_predecessor_and_policy ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 670 filtered out; finished in 0.02s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "driver_facts::abi_artifacts::production_tests::",
+      "selected": [
+        "driver_facts::abi_artifacts::production_tests::authored_setting_error_and_blocked_override_preserve_source_diagnostics",
+        "driver_facts::abi_artifacts::production_tests::formal_abi_tests::child_abi_inherits_original_formal_settings_not_effective_parent_override",
+        "driver_facts::abi_artifacts::production_tests::formal_abi_tests::original_formal_waitfor_zero_remains_inherited_and_child_explicit_setting_wins",
+        "driver_facts::abi_artifacts::production_tests::real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature",
+        "driver_facts::abi_artifacts::production_tests::typed_abi_requires_actual_engine_owner_and_prunes_failed_or_deleted_units"
+      ],
+      "exit": 0,
+      "seconds": 0.9282380000222474,
+      "stdout": "\nrunning 5 tests\ntest driver_facts::abi_artifacts::production_tests::authored_setting_error_and_blocked_override_preserve_source_diagnostics ... ok\ntest driver_facts::abi_artifacts::production_tests::formal_abi_tests::child_abi_inherits_original_formal_settings_not_effective_parent_override ... ok\ntest driver_facts::abi_artifacts::production_tests::formal_abi_tests::original_formal_waitfor_zero_remains_inherited_and_child_explicit_setting_wins ... ok\ntest driver_facts::abi_artifacts::production_tests::real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature ... ok\ntest driver_facts::abi_artifacts::production_tests::typed_abi_requires_actual_engine_owner_and_prunes_failed_or_deleted_units ... ok\n\ntest result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 667 filtered out; finished in 0.90s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "driver_facts::abi_body_release_tests::",
+      "selected": [
+        "driver_facts::abi_body_release_tests::abi_roster_releases_bodies_and_current_consumer_matches_artifact_path"
+      ],
+      "exit": 0,
+      "seconds": 0.057435199967585504,
+      "stdout": "\nrunning 1 test\ntest driver_facts::abi_body_release_tests::abi_roster_releases_bodies_and_current_consumer_matches_artifact_path ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 671 filtered out; finished in 0.03s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "resource_manifest::tests::resource_manifest_requires_asset_archive_and_exact_current_demand_proofs",
+      "selected": [
+        "resource_manifest::tests::resource_manifest_requires_asset_archive_and_exact_current_demand_proofs"
+      ],
+      "exit": 0,
+      "seconds": 0.10471819998929277,
+      "stdout": "\nrunning 1 test\ntest resource_manifest::tests::resource_manifest_requires_asset_archive_and_exact_current_demand_proofs ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 671 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "request_runner::runner_freshness::tests::",
+      "selected": [
+        "request_runner::runner_freshness::tests::changed_capture_never_publishes_even_on_final_attempt",
+        "request_runner::runner_freshness::tests::rebuild_policy_stops_at_three_and_does_not_retry_unrelated_failures"
+      ],
+      "exit": 0,
+      "seconds": 0.026285399973858148,
+      "stdout": "\nrunning 2 tests\ntest request_runner::runner_freshness::tests::changed_capture_never_publishes_even_on_final_attempt ... ok\ntest request_runner::runner_freshness::tests::rebuild_policy_stops_at_three_and_does_not_retry_unrelated_failures ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 670 filtered out; finished in 0.00s\n\n",
+      "stderr": "native publication rejected: 1 changed inputs; first paths: [\"source.dm\"]\nnative inputs changed before publication; rebuilding (1/2)\nnative inputs changed before publication; rebuilding (2/2)\nnative inputs changed before publication; rebuilding (1/2)\nnative inputs changed before publication; rebuilding (2/2)\n"
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "scope": "BYOND compile-only helper metadata; no runtime acceptance",
+  "receipt": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\helper-formal-prefix-call-reference-20261011\\receipt.json",
+    "sha256": "0c62e4c4eec2e7edc0d56444926945678f03139332adb3a0a7cf784394470072",
+    "bytes": 1995,
+    "data": {
+      "sources": {
+        "current": "eee9a78892cf33b01c6860d3cdcfdc263da24524934e0544b42a2a81c66c489e",
+        "later": "2cd50a707be4ff544d974783e3d26424f45c86d1a75f44e3a1c54ff387e34f1c",
+        "dynamic": "ecd1e13e0d57a5639f8382555a630aa30dec1e378309c1da142eb2b88200f55a"
+      },
+      "tools": {
+        "dm": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+        "inspector": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb"
+      },
+      "cases": {
+        "current": {
+          "compile": {
+            "exit": 0,
+            "wall_s": 0.43800000000192085,
+            "wall_scope": "client launch through reap; daemon work included for retained requests"
+          },
+          "dmbSha256": "3f0212386c4f9d4cdc23a52a3e9a3bddb8fafce30436177222743e2e26a8ed26",
+          "helpers": [
+            {
+              "reference": "0",
+              "procId": "69",
+              "formals": [
+                0,
+                0,
+                68,
+                0
+              ],
+              "count": 1
+            }
+          ]
+        },
+        "later": {
+          "compile": {
+            "exit": 4294967295,
+            "wall_s": 0.4059999999990396,
+            "wall_scope": "client launch through reap; daemon work included for retained requests"
+          }
+        },
+        "dynamic": {
+          "compile": {
+            "exit": 0,
+            "wall_s": 0.4220000000022992,
+            "wall_scope": "client launch through reap; daemon work included for retained requests"
+          },
+          "dmbSha256": "c18a60fc549a81edc672377e66bbf7f8dbf199e2f51640a4fc987c56f0e6b1bd",
+          "helpers": [
+            {
+              "reference": "0",
+              "procId": "1",
+              "formals": [],
+              "count": 0
+            }
+          ]
+        }
+      },
+      "cleanup": {
+        "reaped": true,
+        "error": null,
+        "memory": {
+          "configured_job_memory_bytes": 3999997952,
+          "peak_job_commit_bytes": 60014592,
+          "peak_process_commit_bytes": 58712064,
+          "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+        }
+      }
+    }
+  },
+  "laterDiagnostic": "DM compiler version 516.1687\nloading probe.dme\nprobe.dm:3:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\nprobe.dm:3:warning (var_before_def): later: use of later precedes its definition\nprobe.dm:3:warning (var_before_def): later: definition is here\nerror: invalid variable\nprobe.dmb - 1 error, 3 warnings (10/11/26 8:40 pm)\nTotal time: 0:00\n",
+  "targetedGameInspection": {
+    "path": "E:/dq-cache/dmb-native-v2/helper-admin-delete-inspection-proc-20261011",
+    "result": "current formal helper contains atom_target; owner differences only debug file/line instructions"
+  }
+}

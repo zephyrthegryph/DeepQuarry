@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "scope": "Read-only initializer ordering audit; no BYOND/runtime acceptance",
+  "capturedClientObservation": "E:/dq-cache/dmb-native-v2/client-initializer-inspection-20261011/receipt.json",
+  "observedPattern": "Both class initializers contain nine list writes. Native moves description_holders and tgui_windows after seven other independent constant-list allocations.",
+  "producerPath": [
+    "dm-preprocess ExpandedRegions.emission_regions",
+    "dm-tree frontend_pipeline.rs -> emission_order::ordered_occurrences",
+    "dm-tree initializers::plan(source, frontend.emission_order)",
+    "dmbc initializer_policy/classification/parallel.rs -> source_ordinal bucket reconstruction",
+    "dmbc initializer_policy/classification.rs -> finish_pending_shared"
+  ],
+  "sourceAudit": "Instance writes remain in incoming ledger order; classification sorting applies only to shared literal/runtime phases. The client reorder is not an instance assembly sort.",
+  "newFocusedFixture": "initializer_source_order_tests::initializer_ledger_preserves_current_include_order_for_dependent_instance_writes",
+  "fixtureStatus": "source-only, unregistered and unexecuted; parent must register and gate",
+  "remainingProof": "Determine current emitted-region projection against exact BYOND source context before changing ordering. A source-order fixture is not proof of legal BYOND execution of dependent initializers.",
+  "productionChange": null
+}

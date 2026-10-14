@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "compiler_sha256": "44676a829e6b81f4432b08e911799501b9e95bba07a2dcfedf81dbd63fad12ce",
+  "build_provenance": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-074312-2536fdad.json",
+    "sha256": "35f2375a261fde0113748b3aaedaa8754063fc6963e152ccc894c6a0d8401fc3",
+    "compiler_sha256": "44676a829e6b81f4432b08e911799501b9e95bba07a2dcfedf81dbd63fad12ce",
+    "commit": "b513b6dc076b45fdb94b7c568a174a51bda46c8d",
+    "dmbc_opt_level": 0,
+    "dm_tree_opt_level": 1,
+    "dmbc_codegen_units": 256,
+    "lto": false,
+    "declared_acceptance_profile": false,
+    "benchmark_acceptance_admitted": false,
+    "scope": "successful-build receipt matched to exact executable bytes"
+  },
+  "workers": 2,
+  "scope": "real-source daemon iteration wall telemetry plus fresh native DMB/RSC byte oracle; not runtime or r6 acceptance",
+  "rows": [],
+  "error": "sampled owned private-memory budget exceeded",
+  "daemon_cleanup": {
+    "pid": 39160,
+    "tree_error": null,
+    "direct_error": null,
+    "wait_error": null,
+    "returncode": 1,
+    "reaped": true
+  },
+  "owned_memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 4002021376,
+    "samples": 210,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 39160,
+        "private_bytes": 3997458432
+      },
+      {
+        "pid": 35508,
+        "private_bytes": 4562944
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "failed",
+    "reason": "sampled owned private-memory budget exceeded",
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "owned daemon and registered harness children (compiler/client/inspector); 200ms samples include observation overhead; excludes unrelated processes and unregistered descendants"
+  },
+  "source_receipt": "E:\\dq-cache\\dmb-native-iterations\\20261010-074852-7589a4cb\\receipt.json",
+  "timing_admitted": false,
+  "limitations": [
+    "First retained cold request stopped at the memory guard before output; no new cold or iteration timing.",
+    "Unrelated Cargo and rustc were observed at the host boundary; controlled isolation is not proved.",
+    "No BYOND structural or fresh-native comparison completed."
+  ]
+}

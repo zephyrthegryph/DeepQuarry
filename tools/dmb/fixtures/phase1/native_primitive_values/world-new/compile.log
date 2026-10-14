@@ -1,0 +1,5 @@
+DM compiler version 516.1687
+loading project.dme
+project.dme:2:error: /world: not a prototype
+project.dmb - 1 error, 0 warnings (10/7/26 4:46 am)
+Total time: 0:00

@@ -1,0 +1,67 @@
+{
+  "schema": "dm-input-shapes-v1",
+  "status": "captured",
+  "producer_sha256": "c64a9a103d3e4da7cf8a3eb40e3c66e4e2369cfc1e125fab4130bddfcee5fb86",
+  "compiler": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "file_version": "5.0.516.1687",
+  "child_watchdog_s": 30,
+  "aggregate_admission_deadline_s": 240,
+  "cases": [
+    {
+      "name": "input_shapes",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\translation\\input_remaining_shapes\\input_shapes.dm",
+      "source_sha256": "ca8d02f431def0824138220dfc34b818d5540155bc8c5a76d05bb170c1416a15",
+      "inputs": {
+        "input_shapes.dm": "ca8d02f431def0824138220dfc34b818d5540155bc8c5a76d05bb170c1416a15",
+        "input_shapes.dme": "05f92a53b7729c03007b7e96a4162c97c4c2cb65186b97b721922c608c53c601"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\input-shapes-20261010-root\\input_shapes\\input_shapes.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.327096100023482,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\input-shapes-20261010-root\\input_shapes\\byond.log",
+        "diagnostics": [
+          {
+            "file": "input_shapes.dm",
+            "line": 9,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          }
+        ],
+        "log_sha256": "03312da326011c2919ea3908ffa3a51b982e2afddc60b971f681b478fb937628"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\input-shapes-20261010-root\\input_shapes\\input_shapes.dmb",
+          "bytes": 15725,
+          "sha256": "e8cc3241059e390f0686532d3099d6b21e85bc2464e04892987381d4509f3a01"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "status": "captured"
+    }
+  ],
+  "scope": "actual compile-only output capture; receiver semantics not yet decoded; no native or runtime execution",
+  "version": {
+    "command": [
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe"
+    ],
+    "exit_code": 1,
+    "timed_out": false,
+    "seconds": 0.08184780000010505,
+    "cleanup": null,
+    "log": "E:\\dq-cache\\dmb-native-v2\\input-shapes-20261010-root\\version.log",
+    "diagnostics": [],
+    "log_sha256": "865efe09cc6a29c7102ee596363784a36fa4031f773d3caad44d171d5737763b"
+  }
+}

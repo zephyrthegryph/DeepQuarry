@@ -1,0 +1,293 @@
+{
+  "schema": 1,
+  "kind": "captured_focused_power_pair",
+  "compilerCommit": "3aa85b31edab1ac3356511bb79748fe0ab1a2f99",
+  "runtimeResume": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\captured-power-pair-3aa-runtime-20261011-2208\\resume-receipt.json",
+    "bytes": 14664,
+    "sha256": "2d379af2370988c9f67ad1e988216d46503987b8c8dfa759740439008a02fbd8"
+  },
+  "compileReceipt": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\captured-power-pair-3aa-20261011-2155\\focused-pair-receipt.json",
+    "bytes": 3721,
+    "sha256": "eae67b0cc872865cff7b10e2cf92a1920f8762c30472b50b555091a05646862a"
+  },
+  "compileEvidenceScope": "Fresh BYOND and native outputs compiled earlier; compile receipt explicitly recorded runtime not run. This later evidence authenticates actual hosted executions of those exact captured outputs.",
+  "orderedDefines": [
+    "CBT",
+    "CIBUILDING",
+    "CITESTING",
+    "DEBUG",
+    "UNIT_TESTS"
+  ],
+  "focus": [
+    "/datum/unit_test/dq_power_cut_splits_and_repair_merges",
+    "/datum/unit_test/dq_power_apc_cycle",
+    "/datum/unit_test/dq_power_idle_apc_and_smes_sleep"
+  ],
+  "sourceBeforeVerified": true,
+  "sourceAfterVerified": true,
+  "executions": {
+    "byond": {
+      "exit_code": 0,
+      "elapsedSeconds": 48.96800000000076,
+      "reaped": true,
+      "timeout": false
+    },
+    "native": {
+      "exit_code": 0,
+      "elapsedSeconds": 56.09400000000096,
+      "reaped": true,
+      "timeout": false
+    }
+  },
+  "comparison": {
+    "matches": true,
+    "parity": true,
+    "all_tests_passed": true,
+    "differences": [],
+    "byondClean": true,
+    "nativeClean": true,
+    "observedRecords": {
+      "byond": {
+        "path": "E:\\projects\\dq-wt\\dmb-review\\data\\test-runs\\20261012T030618_4e4c9b5065.json",
+        "sha256": "42f8291f651a2918c70b0e0b16157bd06b1540c17a1e9b8348a55ac872df7d07"
+      },
+      "native": {
+        "path": "E:\\projects\\dq-wt\\dmb-review\\data\\test-runs\\20261012T030714_4e4c9b5065.json",
+        "sha256": "11b8dd81f382a05f478706043cdf8ad8b044a3078be63070a8baef3dbf48329f"
+      }
+    },
+    "scope": "exact observed focused rows and boot clean flags; timing excluded; implicit closure unissued"
+  },
+  "allTestsPassed": true,
+  "cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 6442450944,
+      "peak_job_commit_bytes": 1648631808,
+      "peak_process_commit_bytes": 1199075328,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "elapsedSeconds": 175.15599999999904,
+  "pins": {
+    "tools": {
+      "native": {
+        "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build-current\\20261011-3aa85b31ed-counted-opt0.exe",
+        "sha256": "884d3d5a21c1b2ad3dd9bc1931bb0d20f2ff98231854ec2ca1731811afda7dc8",
+        "bytes": 37046272
+      },
+      "template": {
+        "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+        "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540",
+        "bytes": 15100
+      },
+      "byond": {
+        "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+        "bytes": 46080
+      },
+      "dd": {
+        "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+        "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0",
+        "bytes": 38400
+      },
+      "bash": {
+        "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+        "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+        "bytes": 45560
+      },
+      "bun": {
+        "path": "C:\\Users\\bmene\\AppData\\Roaming\\npm\\node_modules\\bun\\bin\\bun.exe",
+        "sha256": "0187f68d843f825a72ada4a7eca60db896ed753759a7f8252edcd31ac1bf1b9c",
+        "bytes": 98480216
+      }
+    },
+    "vdReceipt": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\captured-runtime-build-20261011-1846\\runtime-build-receipt.json",
+      "sha256": "5adf1a5699e0ede1b79861da71ca8b7b610b7daf7e327ef4b5f8e315424c5deb",
+      "bytes": 6789285
+    },
+    "library": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\captured-runtime-target-20261011-1846\\i686-pc-windows-msvc\\release\\verdigris.dll",
+      "sha256": "69cce291dbeb75d03187fa2a18accb882e8d8a914d02324bd1a799da0a0793a2",
+      "bytes": 13466624
+    },
+    "snapshot": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\current-runtime-source-20261011-0e40b329cf20\\source-snapshot.json",
+      "sha256": "cbd96296723697144a8720f98d804345070e2f7037a981b76f1b956b0edc74ce",
+      "bytes": 3392460
+    },
+    "closure": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\current-runtime-source-20261011-0e40b329cf20\\input-closure.json",
+      "sha256": "10a0d164e16a1c9ef6301a0e6f489ce2c870a0f9868af280a78324ed69fb6f37",
+      "bytes": 5465761
+    },
+    "pairReceipt": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\captured-power-pair-3aa-20261011-2155\\focused-pair-receipt.json",
+      "sha256": "eae67b0cc872865cff7b10e2cf92a1920f8762c30472b50b555091a05646862a",
+      "bytes": 3721
+    },
+    "adapter": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\phase0\\focused_pair_runtime_capture.ts",
+      "sha256": "ea873d64df56f234815d44d9fc32ff3496191b099e3089834922e38e3d9bafb2",
+      "bytes": 5743
+    },
+    "runner": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\bench\\runtime-suite.py",
+      "sha256": "7524d1be36b97ddd7f2f025a076b651098285dea300b40c3dfb26441024db3eb",
+      "bytes": 22558
+    },
+    "launcher": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\resume-captured-power-pair-3aa.py",
+      "sha256": "0d477189d85fbbf621e59f03c5d42cba963baf629c182bb9d81917155a86a341",
+      "bytes": 8471
+    }
+  },
+  "runtimeRecords": {
+    "byond": {
+      "pin": {
+        "path": "E:\\projects\\dq-wt\\dmb-review\\data\\test-runs\\20261012T030618_4e4c9b5065.json",
+        "bytes": 2944,
+        "sha256": "42f8291f651a2918c70b0e0b16157bd06b1540c17a1e9b8348a55ac872df7d07"
+      },
+      "compilation": {
+        "requestedBackend": "byond",
+        "actualBackend": "byond",
+        "orderedDefines": [
+          "CBT",
+          "CIBUILDING",
+          "CITESTING",
+          "DEBUG",
+          "UNIT_TESTS"
+        ],
+        "fallback": null,
+        "nativePair": null,
+        "compiler": {
+          "executable": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+          "version": 516,
+          "build": 1687
+        }
+      },
+      "tests": {
+        "/datum/unit_test/dq_power_cut_splits_and_repair_merges": {
+          "status": 0,
+          "message": "",
+          "runtimes": 0,
+          "runtime_errors": [],
+          "runtime_errors_truncated": 0
+        },
+        "/datum/unit_test/dq_power_apc_cycle": {
+          "status": 0,
+          "message": "",
+          "runtimes": 0,
+          "runtime_errors": [],
+          "runtime_errors_truncated": 0
+        },
+        "/datum/unit_test/dq_power_idle_apc_and_smes_sleep": {
+          "status": 0,
+          "message": "",
+          "runtimes": 0,
+          "runtime_errors": [],
+          "runtime_errors_truncated": 0
+        }
+      },
+      "runtimeEvidence": {
+        "runtime_identity": {
+          "executable": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0",
+          "version": null,
+          "security": "-trusted",
+          "library": {
+            "source": "E:\\dq-cache\\dmb-native-v2\\captured-power-pair-3aa-runtime-20261011-2208\\captures\\byond-runtime-capture\\verdigris.dll",
+            "hosted": "E:\\dq-cache\\dmb-build-integration\\captured-byond-GyHYYL\\verdigris.dll",
+            "sha256": "69cce291dbeb75d03187fa2a18accb882e8d8a914d02324bd1a799da0a0793a2",
+            "bytes": 13466624
+          }
+        }
+      }
+    },
+    "native": {
+      "pin": {
+        "path": "E:\\projects\\dq-wt\\dmb-review\\data\\test-runs\\20261012T030714_4e4c9b5065.json",
+        "bytes": 3250,
+        "sha256": "11b8dd81f382a05f478706043cdf8ad8b044a3078be63070a8baef3dbf48329f"
+      },
+      "compilation": {
+        "requestedBackend": "native",
+        "actualBackend": "native",
+        "orderedDefines": [
+          "CBT",
+          "CIBUILDING",
+          "CITESTING",
+          "DEBUG",
+          "UNIT_TESTS"
+        ],
+        "fallback": null,
+        "compiler": {
+          "executable": "E:\\dq-cache\\dmb-native-v2\\frozen-build-current\\20261011-3aa85b31ed-counted-opt0.exe",
+          "sha256": "884d3d5a21c1b2ad3dd9bc1931bb0d20f2ff98231854ec2ca1731811afda7dc8",
+          "version": null,
+          "build": null
+        },
+        "nativePair": {
+          "pairId": "b154f5eaec8c8eaf5e95eb65b392d927",
+          "dmbHash": "c1f367e2414af3c8e7d8a83a545ff9a0",
+          "rscHash": "94187ddf583bf8a6c80f0712194aba15",
+          "dmbBytes": 68629261,
+          "rscBytes": 223679641
+        }
+      },
+      "tests": {
+        "/datum/unit_test/dq_power_cut_splits_and_repair_merges": {
+          "status": 0,
+          "message": "",
+          "runtimes": 0,
+          "runtime_errors": [],
+          "runtime_errors_truncated": 0
+        },
+        "/datum/unit_test/dq_power_apc_cycle": {
+          "status": 0,
+          "message": "",
+          "runtimes": 0,
+          "runtime_errors": [],
+          "runtime_errors_truncated": 0
+        },
+        "/datum/unit_test/dq_power_idle_apc_and_smes_sleep": {
+          "status": 0,
+          "message": "",
+          "runtimes": 0,
+          "runtime_errors": [],
+          "runtime_errors_truncated": 0
+        }
+      },
+      "runtimeEvidence": {
+        "runtime_identity": {
+          "executable": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0",
+          "version": null,
+          "security": "-trusted",
+          "library": {
+            "source": "E:\\dq-cache\\dmb-native-v2\\captured-power-pair-3aa-runtime-20261011-2208\\captures\\native-runtime-capture\\verdigris.dll",
+            "hosted": "E:\\dq-cache\\dmb-native-v2\\captured-power-pair-3aa-runtime-20261011-2208\\native\\runs\\run-4q6azI\\slot-41284-0\\verdigris.dll",
+            "sha256": "69cce291dbeb75d03187fa2a18accb882e8d8a914d02324bd1a799da0a0793a2",
+            "bytes": 13466624
+          }
+        }
+      }
+    }
+  },
+  "limitations": {
+    "inputClosureAuthenticated": false,
+    "acceptedRuntimeBaseline": false,
+    "originalCopyTimeAuthenticated": false,
+    "compilerProfile": "counted opt0 diagnostic prototype, not release performance acceptance",
+    "runtimeLibraryProfile": "diagnostic-unoptimized; exact source-qualified ABI57759af855de3189",
+    "fullSuite": "not run",
+    "promptEvaluation": "not asserted",
+    "repeats": "not a three-repeat acceptance baseline"
+  }
+}

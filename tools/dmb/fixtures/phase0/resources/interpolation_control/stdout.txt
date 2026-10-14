@@ -1,0 +1,6 @@
+DM compiler version 516.1687
+loading probe.dme
+probe.dm:2:error: prob: extra args
+probe.dm:2:error: prob: extra args
+probe.dmb - 2 errors, 0 warnings (10/6/26 11:36 pm)
+Total time: 0:00

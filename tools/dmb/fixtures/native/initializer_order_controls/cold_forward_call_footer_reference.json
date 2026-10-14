@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "receipt": "E:\\dq-cache\\dmb-cold-order-reference\\d37248c149ec44f38dc88e403eabe066\\receipt.json",
+  "sha256": "91eaf49fa3ec9d7162d9df9f4a40fd005839a6d335c01a0d6883e4d09ed7d8c3",
+  "source": "var/global_first = make_value()\n/datum/startup_probe\n    var/static/class_middle = make_value()\n/datum/startup_probe/proc/first()\n    var/static/counter = make_value()\n    return counter\n/datum/startup_probe/proc/second()\n    var/static/counter = make_value()\n    return counter\nvar/global_last = make_value()\n/proc/make_value()\n    return 7\n",
+  "sourceSha256": "09ff1b582d8d7f7227b896825c87909a2e7d9ae0bbfbf160fa5f27e1f81f4849",
+  "dmbSha256": "0c0a58dda9a58a9a4e6dfc2648a9807e99110cd63e9c6bb5d7ef1d0ade7e28fd",
+  "selectedFooterVariables": {
+    "177": "Variable { kind: 0, value: 0, name: 502 } name=global_first\n",
+    "178": "Variable { kind: 0, value: 0, name: 503 } name=class_middle\n",
+    "179": "Variable { kind: 0, value: 0, name: 504 } name=counter\n",
+    "180": "Variable { kind: 0, value: 0, name: 504 } name=counter\n",
+    "181": "Variable { kind: 0, value: 0, name: 509 } name=global_last\n"
+  },
+  "expectedOrder": [
+    "global_first",
+    "class_middle",
+    "counter",
+    "counter",
+    "global_last"
+  ],
+  "cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 3999997952,
+      "peak_job_commit_bytes": 86401024,
+      "peak_process_commit_bytes": 58687488,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "runtime": "not run",
+  "qualification": "Exact compile-only BYOND footer order; does not certify runtime effects or complete input closure",
+  "globalOperandEvidence": {
+    "receipt": "E:\\dq-cache\\dmb-cold-order-reference\\d37248c149ec44f38dc88e403eabe066\\global-init-code-receipt.json",
+    "sha256": "b5338f72201aa4716d24502fc02ccac84e5afe279e4c69c1509176af385ab899",
+    "code": "proc#70 \n0000 0030 CallGlob [0, 2]\n0003 0034 SetVar [65499, 177]\n0006 0030 CallGlob [0, 2]\n0009 0034 SetVar [65499, 178]\n000c 0030 CallGlob [0, 2]\n000f 0034 SetVar [65499, 179]\n0012 0030 CallGlob [0, 2]\n0015 0034 SetVar [65499, 180]\n0018 0030 CallGlob [0, 2]\n001b 0034 SetVar [65499, 181]\n001e 0000 End []\n",
+    "domain": "SetVar Global operands use VariableRecord IDs177..181, not footer ordinal slots67..71"
+  }
+}

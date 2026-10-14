@@ -1,0 +1,8 @@
+{
+  "compiler_version": "516.1687",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "source_sha256": "84ef086d062b4fe7e6893139e5d3110c400ae6e2b92829076e27aa182c19c6ef",
+  "dmb_sha256": "ae7cf51baec546135a844e6fb72a62c9d584d7d75e2b4c524c55372b2b9b53be",
+  "runtime": "not run",
+  "purpose": "class declaration tmp bit is retained; shared slot footer tmp bit is stripped"
+}

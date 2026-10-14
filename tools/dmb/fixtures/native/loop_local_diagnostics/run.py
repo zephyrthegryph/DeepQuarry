@@ -1,0 +1,214 @@
+"""Bounded paired compiler-only loop declaration diagnostics; never starts DreamDaemon."""
+import argparse
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import sys
+import time
+import uuid
+
+HERE = Path(__file__).resolve().parent
+BENCH = HERE.parents[2] / "bench"
+CASES = ('enclosing_each', 'enclosing_pair_key', 'enclosing_pair_value', 'enclosing_range', 'sibling_each', 'sibling_range', 'existing_each', 'existing_range', 'same_pair_name', 'filtered_each', 'pair_value_blank', 'pair_value_comments', 'pair_value_inline', 'pair_value_eof', 'pair_value_continued', 'same_pair_comments')
+ORIGINAL_CASES = CASES
+CASES += ('bodyless_each_typed_eof', 'bodyless_each_typed_empty_braces',
+          'bodyless_each_typed_semicolon', 'bodyless_each_typed_dedented_return',
+          'bodyless_pair_eof', 'bodyless_pair_empty_braces',
+          'bodyless_pair_semicolon', 'bodyless_pair_dedented_return')
+CASES += ('bodyless_each_typed_next_proc', 'bodyless_each_typed_parent_next_proc', 'bodyless_each_typed_parent_return', 'bodyless_pair_next_proc', 'bodyless_pair_parent_next_proc', 'bodyless_pair_parent_return')
+CASES += tuple('bodyless_context_' + kind + '_' + context
+               for kind in ('each', 'pair')
+               for context in ('absolute_datum_proc', 'relative_datum_proc',
+                               'following_type', 'following_statement'))
+CASES += ('bodyless_range_eof', 'bodyless_range_semicolon',
+          'bodyless_cstyle_eof', 'bodyless_cstyle_semicolon',
+          'bodyless_each_global_boundary', 'bodyless_pair_global_boundary',
+          'bodyless_each_absolute_global_boundary', 'bodyless_pair_absolute_global_boundary')
+DM_SHA = "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+SCOPE = "compiler-only loop declaration controls; BYOND legality is observed, not assumed"
+DEFAULT_OUTPUT_ROOT = Path("E:/dq-cache/dmb-loop-local-diagnostics")
+FEATURE_CAPTURE_FILES = ()
+
+def diagnostics(text):
+    return [{"file": match[1], "line": int(match[2]), "severity": match[3], "message": match[4]}
+            for line in text.splitlines()
+            if (match := re.match(r"^(.*\.dme?):(\d+):(error|warning|note):\s*(.*)$", line))]
+
+def native_exit_class(exit_code):
+    """The compiler's typed RequestFailure exit contract, not diagnostic text guessing."""
+    return {0: "Accepted", 2: "Source", 70: "Internal", 64: "InvalidRequest",
+            1: "Infrastructure", 75: "Cancelled"}.get(exit_code, "OtherFailure")
+
+
+def bounded_log(directory):
+    text = []
+    for name in ("stdout.log", "stderr.log"):
+        path = directory / name
+        if path.stat().st_size > 1024 * 1024:
+            raise ValueError("tiny compiler log exceeds 1MiB")
+        text.append(path.read_text(encoding="utf-8-sig", errors="replace"))
+    return "\n".join(text)
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--cases", nargs="+", choices=CASES, default=ORIGINAL_CASES)
+    parser.add_argument("--backend", choices=("both", "byond-only"), default="both")
+    for name in ("native", "template", "dm"):
+        parser.add_argument("--" + name, required=name == "dm", type=Path)
+        parser.add_argument("--" + name + "-sha256", required=name == "dm")
+    parser.add_argument("--output-root", type=Path,
+                        default=DEFAULT_OUTPUT_ROOT)
+    parser.add_argument("--feature-header-gate", action="store_true")
+    parser.add_argument("--feature-inspector", type=Path)
+    parser.add_argument("--feature-inspector-sha256")
+    args = parser.parse_args()
+    cases = tuple(args.cases)
+    backends = ("byond", "native") if args.backend == "both" else ("byond",)
+    pins = ("native", "template", "dm") if args.backend == "both" else ("dm",)
+    if args.feature_header_gate:
+        if args.backend != "both" or not FEATURE_CAPTURE_FILES:
+            parser.error("feature header gate requires a paired feature corpus")
+        if args.feature_inspector is None or args.feature_inspector_sha256 is None:
+            parser.error("feature header gate requires explicit inspector path and SHA256")
+        pins += ("feature_inspector",)
+    if any(getattr(args, name) is None or getattr(args, name + "_sha256") is None for name in pins):
+        parser.error("selected backends require explicit executable/template pins")
+    if os.name != "nt":
+        raise ValueError("pinned Windows compiler fixture requires Windows")
+    sys.path.insert(0, str(BENCH))
+    spec = importlib.util.spec_from_file_location("local_receiver_iteration", BENCH / "native-iteration.py")
+    h = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(h)
+    from upgrade_owned_job import OwnedJob
+    h.safe_e(args.output_root)
+    args.output_root.mkdir(parents=True, exist_ok=True)
+    root = args.output_root / uuid.uuid4().hex
+    root.mkdir()
+    receipt = {"schema": 1, "scope": SCOPE,
+               "complete": False, "runtime": "not run", "root": str(root),
+               "overall_watchdog_seconds": 300, "child_watchdog_seconds": 30,
+               "job_memory_bytes": 4 * 1024 ** 3, "pins": {}, "cases": {}}
+    deadline = time.monotonic() + 300
+    job = None
+    previous_job = h._owned_job
+    try:
+        for name in pins:
+            file = getattr(args, name).resolve(strict=True)
+            h.regular(file)
+            expected = getattr(args, name + "_sha256")
+            if not re.fullmatch(r"[0-9a-f]{64}", expected) or h.sha(file) != expected:
+                raise ValueError("pinned SHA mismatch: " + name)
+            if name == "dm" and expected != DM_SHA:
+                raise ValueError("DreamMaker must be pinned 516.1687 capture compiler")
+            setattr(args, name, file)
+            receipt["pins"][name] = {"path": str(file), "sha256": expected}
+        source_hashes = {path.name: h.sha(path) for case in cases
+                         for path in (HERE / (case + ".dm"), HERE / (case + ".dme"))}
+        receipt["source_sha256"] = source_hashes
+        job = OwnedJob(4 * 1024 ** 3)
+        h._owned_job = job
+        for case in cases:
+            outcomes = {}
+            receipt["cases"][case] = outcomes
+            for backend in backends:
+                directory = root / case / backend
+                directory.mkdir(parents=True)
+                for suffix in (".dm", ".dme"):
+                    shutil.copyfile(HERE / (case + suffix), directory / (case + suffix))
+                project = directory / (case + ".dme")
+                arguments = [str(project)] if backend == "byond" else [
+                    "compile", str(project), "--workers", "1", "--no-daemon", "--no-cache",
+                    "--exact-inputs", "--engine-template", str(args.template), "--bootstrap-catalog",
+                    "--artifact-directory", str(directory / "artifacts"),
+                    "--output-store", str(directory / "store"),
+                    "--compile-result-file", str(directory / "result.json")]
+                evidence = h.run_child(args.dm if backend == "byond" else args.native,
+                    arguments, directory / "child", min(deadline, time.monotonic() + 30),
+                    cache_directory=root / "cache")
+                text = bounded_log(directory / "child")
+                outcomes[backend] = {"child": evidence, "diagnostics": diagnostics(text)}
+                if backend == "native":
+                    outcomes[backend]["exit_class"] = native_exit_class(evidence.get("exit"))
+                if evidence.get("timeout") or evidence.get("timed_out") or evidence.get("status") == "timeout":
+                    raise TimeoutError("compiler child watchdog expired")
+                if backend == "byond" and not re.search(r"\b516\.1687\b", text):
+                    raise ValueError("DreamMaker did not report pinned version")
+                for suffix in (".dm", ".dme"):
+                    name = case + suffix
+                    if h.sha(directory / name) != source_hashes[name] or h.sha(HERE / name) != source_hashes[name]:
+                        raise ValueError("source changed during probe")
+            if args.backend == "byond-only":
+                continue
+            outcomes["acceptance_agrees"] = ((outcomes["byond"]["child"]["exit"] == 0)
+                                               == (outcomes["native"]["child"]["exit"] == 0))
+            byond_errors = [d for d in outcomes["byond"]["diagnostics"] if d["severity"] == "error"]
+            native_errors = [d for d in outcomes["native"]["diagnostics"] if d["severity"] == "error"]
+            byond_rejected = outcomes["byond"]["child"]["exit"] != 0
+            outcomes["rejection_class_agrees"] = (
+                outcomes["acceptance_agrees"] and
+                (not byond_rejected or
+                 (bool(byond_errors) and outcomes["native"]["child"]["exit"] == 2 and bool(native_errors))))
+            # Preserve exact files, line numbers, severity and wording.
+            outcomes["diagnostics_agree"] = (
+                outcomes["byond"]["diagnostics"] == outcomes["native"]["diagnostics"])
+            outcomes["primary_error_messages"] = {
+                "byond": byond_errors[0]["message"] if byond_errors else None,
+                "native": native_errors[0]["message"] if native_errors else None,
+            }
+            if args.feature_header_gate:
+                if outcomes["byond"]["child"]["exit"] == 0 and outcomes["native"]["child"]["exit"] == 0:
+                    spec = importlib.util.spec_from_file_location("paired_feature_headers",
+                        Path(__file__).resolve().parent / "header_features.py")
+                    features = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(features)
+                    outcomes["header_features"] = features.compare(case, root / case, HERE,
+                        FEATURE_CAPTURE_FILES, args, h, BENCH, deadline, bounded_log)
+                else:
+                    outcomes["header_features"] = {"scope": "rejected cases use diagnostic parity only",
+                                                    "not_compared": True}
+                for suffix in (".dm", ".dme"):
+                    if h.sha(HERE / (case + suffix)) != source_hashes[case + suffix]:
+                        raise ValueError("source changed during feature gate")
+        receipt["pin_after_checks"] = {}
+        for name in pins:
+            actual = h.sha(getattr(args, name))
+            receipt["pin_after_checks"][name] = {
+                "sha256": actual, "unchanged": actual == receipt["pins"][name]["sha256"]}
+            if not receipt["pin_after_checks"][name]["unchanged"]:
+                raise ValueError("compiler/template pin changed during probe: " + name)
+        receipt["complete"] = True
+        if args.backend == "byond-only":
+            receipt["backend"] = "byond-only"
+            receipt["paired_parity"] = "not measured"
+        else:
+            receipt["backend"] = "both"
+        receipt["acceptance_agrees"] = all(receipt["cases"][case].get("acceptance_agrees", False) for case in cases)
+        receipt["rejection_class_agrees"] = all(receipt["cases"][case].get("rejection_class_agrees", False) for case in cases)
+        receipt["diagnostics_agree"] = all(receipt["cases"][case].get("diagnostics_agree", False) for case in cases)
+        receipt["feature_header_gate"] = args.feature_header_gate
+        receipt["header_features_agree"] = all(
+            row.get("header_features", {}).get("matches", row.get("header_features", {}).get("not_compared", False))
+            for row in receipt["cases"].values()) if args.feature_header_gate else None
+    except Exception as error:
+        receipt["error"] = str(error)
+    finally:
+        if job is not None:
+            receipt["owned_job_cleanup"] = job.close()
+            if not receipt["owned_job_cleanup"].get("reaped"):
+                receipt["complete"] = False
+                receipt["error"] = "owned compiler job was not fully reaped"
+        h._owned_job = previous_job
+        (root / "receipt.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
+        print(root / "receipt.json")
+    # A successful paired probe certifies every reported comparison, including
+    # source coordinates. Legality alone must not close the diagnostic gate.
+    return 0 if receipt["complete"] and (args.backend == "byond-only" or (
+        receipt.get("acceptance_agrees") and receipt.get("rejection_class_agrees")
+        and receipt.get("diagnostics_agree")
+        and (not args.feature_header_gate or receipt.get("header_features_agree")))) else 1
+
+if __name__ == "__main__":
+    raise SystemExit(main())

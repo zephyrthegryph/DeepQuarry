@@ -1,0 +1,67 @@
+{
+  "schema": "diagnostic-cursor-discovery-v1",
+  "status": "captured",
+  "compiler": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+  "compiler_before": {
+    "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "file_version": "5.0.516.1687"
+  },
+  "producer_sha256": "34aff2e0f6440d4d45adf1e480b42a71ede68d03360d7a3e1c19cdd2cdb22d69",
+  "aggregate_watchdog_s": 60,
+  "child_watchdog_s": 10,
+  "cases": [
+    {
+      "name": "type_masks",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\diagnostic_anchor_cursor\\type_masks.dm",
+      "source_sha256": "1dee1be845dff04c509ef910d3500e9d9c32511f883d3328d246c3b5a9ceb8ab",
+      "source_transform": {
+        "mixed_filter": null,
+        "strip_final_newline": false
+      },
+      "inputs": {
+        "probe.dm": "1dee1be845dff04c509ef910d3500e9d9c32511f883d3328d246c3b5a9ceb8ab",
+        "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+      },
+      "source_unchanged": true,
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-type-masks-a\\type_masks\\probe.dme"
+        ],
+        "seconds": 0.3578451999928802,
+        "exit_code": 0,
+        "timed_out": false,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-type-masks-a\\type_masks\\byond.log",
+        "log_sha256": "5368867110b9ce22c95574e6231c40f431d99d556cfe7d813aa7c459d61ec737"
+      },
+      "diagnostics": "DM compiler version 516.1687\nloading probe.dme\nprobe.dm:5:warning (anything_no_list): 'anything' has no meaning without a list\nprobe.dm:7:warning (anything_no_list): 'anything' has no meaning without a list\nprobe.dm:9:warning (anything_no_list): 'anything' has no meaning without a list\nprobe.dm:9:warning (anything_no_list): 'anything' has no meaning without a list\nprobe.dm:11:warning (anything_no_list): 'anything' has no meaning without a list\nprobe.dm:13:warning (anything_no_list): 'anything' has no meaning without a list\nprobe.dm:15:warning (anything_no_list): 'anything' has no meaning without a list\nprobe.dm:17:warning (anything_no_list): 'anything' has no meaning without a list\nprobe.dm:19:warning (anything_no_list): 'anything' has no meaning without a list\nsaving probe.dmb\nprobe.dmb - 0 errors, 9 warnings (10/10/26 2:34 pm)\nTotal time: 0:00\n",
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-type-masks-a\\type_masks\\probe.dmb",
+          "sha256": "1f5a599673e04705e500104c9b2099546ce1bb4c03aa5986ce0ba4493e25868a",
+          "bytes": 15928
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      }
+    }
+  ],
+  "scope": "compile-only actual diagnostic coordinates; no native or DD",
+  "version": {
+    "command": [
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe"
+    ],
+    "seconds": 0.1076883000205271,
+    "exit_code": 1,
+    "timed_out": false,
+    "cleanup": null,
+    "log": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-type-masks-a\\version.log",
+    "log_sha256": "865efe09cc6a29c7102ee596363784a36fa4031f773d3caad44d171d5737763b"
+  },
+  "compiler_after": {
+    "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "file_version": "5.0.516.1687"
+  }
+}

@@ -1,0 +1,16 @@
+/proc/center_radius()
+    return input("x") as obj in view(5,usr)
+/proc/center_first()
+    return input("x") as obj in view(usr,5)
+/proc/center_dynamic(n)
+    return input("x") as obj in view(n,usr)
+/proc/center_oview()
+    return input("x") as obj in oview(7,usr)
+/proc/shadow_center(usr)
+    return input("x") as obj in view(5,usr)
+/proc/shadow_first(usr)
+    return input("x") as obj in view(usr,5)
+/proc/shadow_world(world,usr)
+    return input("x") as obj in world
+/proc/shadow_usr(world,usr)
+    return input("x") as obj in usr

@@ -8,13 +8,14 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { pruneStaleRunCopies, runCopyBase } from './lib/run_copies';
 import Juke from './juke/index.js';
+import { assertBuildRoot } from './lib/build_root';
 import { bun, bunRoot } from './lib/bun';
 import { computeCompileHash } from './lib/compile_hash';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
@@ -62,10 +63,19 @@ import {
   type WorldBenchDocument,
   writeJson,
 } from './lib/bench';
+import { loadNormalResume, loadSuiteResume, verifyResumeAcquiredPair } from './lib/normal_suite_resume';
+import { suiteBatches, exactSuiteUnion, bindSuitePlan, sameSuiteRuntime, suiteRowSucceeded, type RuntimeIdentity, type IssuedSuiteInventory } from './lib/normal_suite_plan';
 import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
+import { compilerMode, nativeDefaultCompiler } from './lib/compiler_selection';
+import { currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
+import { beginCompilerReceipt, CompilerProvenanceError, type CompilerProvenance } from './lib/compiler_provenance';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
+import { archiveRuntimeLogs, type RuntimeLogArchive } from './lib/runtime_log_archive';
+import { loadFocusedCompiledOutput, type CapturedCompiledRun } from './lib/focused_compiled_run';
+import { copyWritableRuntimePair } from './lib/runtime_pair_copy';
+
 import {
   checkVerdigrisProvenance,
   installVerdigrisLibrary,
@@ -109,6 +119,7 @@ function findDreamChecker(): string | null {
   return null;
 }
 
+assertBuildRoot(import.meta.url);
 Juke.chdir('../..', import.meta.url);
 
 // Worktree guard. Many agents build in parallel git worktrees with
@@ -812,47 +823,6 @@ export const GenTarget = new Juke.Target({
   },
 });
 
-// `tools/build/build.sh dmb-check`: the Codex native compiler's syntax check (tools/dmb, `dm-compile check`) over
-// deepquarry.dme, about 14 s instead of DreamMaker's 70-110 s. It only preprocesses and parses (no type or proc
-// resolution), so it catches a broken macro, bracket or include before the real compile, not a bad path. It is an
-// optional pre-check: `DQ_DMB_PRECHECK=1` runs it before dm-test's compile; DreamMaker stays the real build.
-// Known parser gaps (false positives on code DreamMaker accepts) are listed in tools/dmb/precheck_known.txt and
-// ignored. The binary is built into DQ_DMB_TARGET (default E:/dq-cache/dmb-target, else tools/dmb/target).
-const DMB_TARGET = process.env.DQ_DMB_TARGET || (process.platform === 'win32' && fs.existsSync('E:/') ? 'E:/dq-cache/dmb-target' : 'tools/dmb/target');
-const DMB_BIN = `${DMB_TARGET}/release/${process.platform === 'win32' ? 'dm-compile.exe' : 'dm-compile'}`;
-export const DmbCheckTarget = new Juke.Target({
-  dependsOn: () => [GenTarget],
-  executes: async () => {
-    if (!fs.existsSync(DMB_BIN)) {
-      Juke.logger.info(`dmb-check: building ${DMB_BIN} (once, about 2 minutes)`);
-      await cargoExec(['build', '--release', '-q', '--manifest-path', 'tools/dmb/Cargo.toml', '-p', 'dm-compile'], {
-        env: { ...process.env, CARGO_TARGET_DIR: DMB_TARGET },
-      });
-    }
-    const started = Date.now();
-    const result = spawnSync(DMB_BIN, ['check', `${DME_NAME}.dme`], {
-      encoding: 'utf-8',
-      maxBuffer: 64 * 1024 * 1024,
-      env: { ...process.env, DM_CHECK_MAX_SOURCE_BYTES: process.env.DM_CHECK_MAX_SOURCE_BYTES || '200000000' },
-    });
-    let known: string[] = [];
-    try {
-      known = fs.readFileSync('tools/dmb/precheck_known.txt', 'utf-8').split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
-    } catch {
-      // no list
-    }
-    const diagnostics = `${result.stdout || ''}${result.stderr || ''}`.split(/\r?\n/).filter((l) => l.startsWith('Diagnostic'));
-    const fresh = diagnostics.filter((d) => !known.some((k) => d.includes(k)));
-    for (const d of diagnostics) console.log(fresh.includes(d) ? d : `${d} (known parser gap)`);
-    Juke.logger.info(`dmb-check: ${diagnostics.length} diagnostic(s), ${fresh.length} new, in ${((Date.now() - started) / 1000).toFixed(1)} s`);
-    if (result.error) throw result.error;
-    if (fresh.length) {
-      Juke.logger.error('dmb-check: the native syntax check found errors (DreamMaker would likely fail too)');
-      throw new Juke.ExitCode(1);
-    }
-  },
-});
-
 // `tools/build/build.sh analyze` runs every engine lint (what tools/ci/check_ratchets.sh and
 // tools/ci/check_grep.sh wrap); extra arguments go to `analyze check` (e.g. --lint scheduler).
 export const AnalyzeTarget = new Juke.Target({
@@ -863,6 +833,51 @@ export const AnalyzeTarget = new Juke.Target({
       return;
     }
     await Juke.exec(ANALYZE_BIN, ['check', ...(args || [])]);
+  },
+});
+
+/** Release build of the native DM compiler (tools/dmb), the default DQ_COMPILER=native executable. */
+const DMBC_EXE = `tools/dmb/target/release/${process.platform === 'win32' ? 'dmbc.exe' : 'dmbc'}`;
+export const DmbcTarget = new Juke.Target({
+  onlyWhen: () => !process.env.DQ_NATIVE_COMPILER, // an explicit compiler is never rebuilt here
+  inputs: [
+    'tools/dmb/Cargo.toml',
+    'tools/dmb/Cargo.lock',
+    'tools/dmb/build.rs',
+    'tools/dmb/src/**/*.rs',
+    'tools/dmb/crates/**/Cargo.toml',
+    'tools/dmb/crates/**/*.rs',
+  ],
+  outputs: [DMBC_EXE],
+  executes: async () => {
+    // Windows will not let cargo replace an executable a resident dmbc daemon is still running ("failed to remove file ...
+    // dmbc.exe: Access is denied"), but it does let the running file be renamed. Move the old one aside, and sweep the aside
+    // copies of earlier builds that no daemon holds any more.
+    const exeDir = path.dirname(DMBC_EXE);
+    const exeName = path.basename(DMBC_EXE);
+    for (const entry of fs.existsSync(exeDir) ? fs.readdirSync(exeDir) : []) {
+      if (!entry.startsWith(`${exeName}.old-`)) continue;
+      try {
+        fs.rmSync(`${exeDir}/${entry}`);
+      } catch {
+        // still running under a daemon; try again on the next build
+      }
+    }
+    if (fs.existsSync(DMBC_EXE)) {
+      try {
+        fs.renameSync(DMBC_EXE, `${DMBC_EXE}.old-${Date.now()}`);
+      } catch (error) {
+        Juke.logger.warn(`dmbc: could not move the previous ${DMBC_EXE} aside (${error}); cargo may fail to replace it`);
+      }
+    }
+    // One cargo build at a time machine-wide; the slot script queues and reclaims crashed holders.
+    const slots = 'tools/dq_machine_slots.sh';
+    const cargo = ['cargo', 'build', '--release', '-p', 'dmbc', '--manifest-path', 'tools/dmb/Cargo.toml'];
+    if (fs.existsSync(slots)) {
+      await Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...cargo]);
+    } else {
+      await Juke.exec(cargo[0], cargo.slice(1));
+    }
   },
 });
 
@@ -884,6 +899,7 @@ export const DmTarget = new Juke.Target({
   ],
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
+    nativeDefaultCompiler() && DmbcTarget,
     IconRepackTarget, // regenerate .dmi from PNG+TOML before DM compile
     ValidateDmeTarget, // fail fast if any code/ .dm is missing from the DME
     VerdigrisBindingsCheckTarget, // _bindings.dm must match the Rust binds
@@ -904,6 +920,7 @@ export const DmTarget = new Juke.Target({
     NamedVersionFile,
   ],
   outputs: ({ get }) => {
+    if (compilerMode() !== 'byond') return []; // Native worlds require this invocation's exact pair result.
     if (get(DmVersionParameter)) {
       return []; // Always rebuild when dm version is provided
     }
@@ -951,6 +968,19 @@ export const LabelParameter = new Juke.Parameter({ type: 'string' });
  * pickAutoShardCount()). Omitted, it defaults to defaultShardCount() (cores
  * minus one, capped at 4); `--shards=1` is the single-world mode. See
  * doc/testing.md "Sharded runs". */
+export const NormalPlanSha256Parameter = new Juke.Parameter({ type: 'string', name: 'normal-plan-sha256' });
+export const NormalPlanParameter = new Juke.Parameter({ type: 'string' });
+export const NormalResumeParameter = new Juke.Parameter({ type: 'string' });
+export const NormalResumeSha256Parameter = new Juke.Parameter({ type: 'string', name: 'normal-resume-sha256' });
+export const NormalBatchesParameter = new Juke.Parameter({ type: 'number' });
+export const SuiteBatchesParameter = new Juke.Parameter({ type: 'number' });
+export const SuiteResumeParameter = new Juke.Parameter({ type: 'string' });
+export const SuiteResumeSha256Parameter = new Juke.Parameter({ type: 'string', name: 'suite-resume-sha256' });
+/** Explicit historical generation replay; never current-source compile reuse. */
+export const FocusedCompiledOutputParameter = new Juke.Parameter({ type: 'string', name: 'focused-compiled-output' });
+export const FocusedCompiledOutputSha256Parameter = new Juke.Parameter({ type: 'string', name: 'focused-compiled-output-sha256' });
+export const SuiteCompiledOutputParameter = new Juke.Parameter({ type: 'string', name: 'suite-compiled-output' });
+export const SuiteCompiledOutputSha256Parameter = new Juke.Parameter({ type: 'string', name: 'suite-compiled-output-sha256' });
 export const ShardsParameter = new Juke.Parameter({ type: 'number' });
 /** `dm-test --exhaustive`: shorthand for `--tier=all`. */
 export const ExhaustiveParameter = new Juke.Parameter({ type: 'boolean' });
@@ -1011,13 +1041,10 @@ function writeDerivedDme(target: string): void {
   fs.writeFileSync(target, text);
 }
 
-// Where compileDerived() records the content hash it compiled a .dmb/.rsc
-// pair from, so a later call (a rerun on an unchanged tree: flake reruns,
-// focused reruns) can skip DreamMaker() entirely. Lives under data/, so it's
-// per-worktree like everything else there -- never shared between worktrees.
+// Per-worktree test-sweep result fingerprints; these do not admit compiled outputs.
 const DMB_CACHE_DIR = 'data/dmb-cache';
 
-async function compileDerived(dme: string, get: any, defines: string[]): Promise<void> {
+async function compileDerived(dme: string, get: any, defines: string[]): Promise<CompiledOutput> {
   writeDerivedDme(dme);
   const dmeText = fs.readFileSync(dme, 'utf-8');
   const allDefines = [...defines, ...get(DefineParameter)];
@@ -1025,13 +1052,18 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
   const dmbFile = dme.replace(/\.dme$/, '.dmb');
   const rscFile = dme.replace(/\.dme$/, '.rsc');
   const cacheFile = `${DMB_CACHE_DIR}/${path.basename(dme)}.hash.json`;
+  const native = compilerMode() === 'native';
+  // The content-hash reuse below is for DreamMaker only. A DM-source fingerprint cannot prove map/resource bytes, FILE_DIR
+  // search or negative lookup inputs, the effective compiler identity or the current output pair, and it cannot tell a
+  // DreamMaker output from a native one left in the same files. A native build always invokes the compiler, which keeps
+  // its own incremental reuse (a rebuild through the resident daemon).
   const hash = computeCompileHash(dmeText, allDefines, dmVersion);
-  if (fs.existsSync(dmbFile) && fs.existsSync(rscFile)) {
+  if (!native && fs.existsSync(dmbFile) && fs.existsSync(rscFile)) {
     try {
       const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
       if (cached.hash === hash) {
         Juke.logger.info(`compileDerived: reusing ${dmbFile} (compile inputs unchanged since ${cached.compiledAt}).`);
-        return;
+        return currentCompiledOutput(dmbFile, false);
       }
     } catch {
       // No cache record yet, or it's unreadable/stale-format: fall through and recompile.
@@ -1039,9 +1071,13 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
   }
   // The inputs changed (or no record): DreamMaker keeps an existing .rsc rather than repacking it, so a stale
   // one would ship old icons/sounds. Remove it so the compile rebuilds the resource file.
-  fs.rmSync(rscFile, { force: true });
+  if (!native) fs.rmSync(rscFile, { force: true });
+  // A native build never writes a hash record; drop one a DreamMaker build left so a later DreamMaker build cannot
+  // reuse a native pair on the strength of it.
+  if (native) fs.rmSync(cacheFile, { force: true });
+  let output: CompiledOutput;
   try {
-    await DreamMaker(dme, {
+    output = await DreamMaker(dme, {
       defines: allDefines,
       warningsAsErrors: get(WarningParameter).includes('error'),
       ignoreWarningCodes: get(NoWarningParameter),
@@ -1049,7 +1085,9 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
     });
   } catch (error) {
     // Don't leave a half-built derived dme/rsc lying around after a failed compile.
-    await removeDerivedArtifacts(dme.replace(/\.dme$/, '.*'));
+    // A failed native build leaves the previous published generation and its
+    // conventional compatibility files intact. No child launches after failure.
+    await removeDerivedArtifacts(native ? dme : dme.replace(/\.dme$/, '.*'));
     try {
       fs.rmSync(cacheFile, { force: true });
     } catch {
@@ -1057,11 +1095,18 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
     }
     throw error;
   }
-  fs.mkdirSync(DMB_CACHE_DIR, { recursive: true });
-  writeJson(cacheFile, { hash, defines: allDefines, dmVersion, compiledAt: new Date().toISOString() });
+  if (!native) {
+    fs.mkdirSync(DMB_CACHE_DIR, { recursive: true });
+    writeJson(cacheFile, { hash, defines: allDefines, dmVersion, compiledAt: new Date().toISOString() });
+  }
+  return output;
 }
 
 type WorldRun = {
+  compilation: CompilerProvenance | null;
+  compilerReceipt: string;
+  capturedCompiledOutput?: CapturedCompiledRun['evidence'];
+  runtimeIdentity?: RuntimeIdentity;
   clean: boolean;
   cleanText: string | null;
   results: Record<string, UnitTestEntry> | null;
@@ -1091,6 +1136,9 @@ async function runTestWorld(
   worldParams: Record<string, string>,
   sample: boolean,
 ): Promise<WorldRun> {
+  const compiled = currentCompiledOutput(dmbFile, compilerMode() === 'native');
+  const compilerReceipt = beginCompilerReceipt('data/compiler-attempts', compiled);
+  Juke.logger.info(`Compiler attempt evidence: ${compilerReceipt.file}`);
   Juke.rm('data/logs/ci', { recursive: true });
   Juke.rm('data/unit_tests.json');
   Juke.rm('data/bench/process.json');
@@ -1100,6 +1148,8 @@ async function runTestWorld(
   const params = new URLSearchParams({ 'log-directory': 'ci', ...worldParams }).toString();
   const started = Date.now();
   let killedByWatchdog = false;
+  let runtimeError: string | null = null;
+  let runtimeIdentity: RuntimeIdentity | undefined;
   let daemonExitCode: number | null = null;
   let daemonSignal: string | null = null;
   let daemonReason: string | null = null;
@@ -1111,6 +1161,8 @@ async function runTestWorld(
         namedDmVersion: dmVersion,
         watchdogFile: 'data/unit_tests.json',
         onSpawn: (pid) => sampler?.start(pid),
+        onPreparedOutput: (dmb) => compilerReceipt.prepared(dmb),
+        onRuntimeIdentity: identity => { runtimeIdentity = identity; },
       },
       '-close',
       ddSecurityFlag(),
@@ -1126,6 +1178,14 @@ async function runTestWorld(
     daemonSignal = result.signal;
     daemonReason = result.watchdogReason ?? null;
   } catch (error) {
+    runtimeError = String(error);
+    if (error instanceof NativeAcquisitionError || error instanceof CompilerProvenanceError) {
+      try { compilerReceipt.finalize({ resultsAvailable: false, killedByWatchdog, error: runtimeError }); }
+      catch (finalizationError) {
+        Juke.logger.error(`Compiler attempt finalization failed; primary failure preserved: ${finalizationError}`);
+      }
+      throw error;
+    }
     // DreamDaemon exits non-zero even on clean runs; the files below decide.
     // The error is kept for the benchmark diagnostics.
     daemonError = String(error);
@@ -1143,7 +1203,11 @@ async function runTestWorld(
   } catch {
     // the world died before finishing
   }
+  compilerReceipt.finalize({ resultsAvailable: results !== null, killedByWatchdog, error: runtimeError });
   return {
+    compilation: compiled.provenance ?? null,
+    compilerReceipt: compilerReceipt.file,
+    runtimeIdentity,
     clean: cleanText !== null,
     cleanText,
     results,
@@ -1266,7 +1330,7 @@ function linkOrCopy(from: string, to: string): void {
 /** Default hard timeout for a focused run; the full suite keeps lib/byond.ts's 120 minutes. */
 const FOCUSED_TIMEOUT_MINUTES = Number(process.env.DQ_FOCUS_TIMEOUT_MINUTES) || 15;
 
-type IsolatedRun = WorldRun & { logDir: string };
+type IsolatedRun = WorldRun & { logDir: string; rawLogs?: RuntimeLogArchive; inventory?: IssuedSuiteInventory };
 
 /**
  * Boots `dmbFile` in its own run slot (see above). `focus` lists test type
@@ -1279,8 +1343,15 @@ async function runIsolatedTestWorld(
   dmVersion: string | null,
   worldParams: Record<string, string>,
   focus: string[] | null,
-  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; worldSlot?: HeldSlot | null } = {},
+  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; worldSlot?: HeldSlot | null; compiledOutput?: CompiledOutput; issueInventory?: boolean; exactBatch?: boolean; onPreparedOutput?: (dmb: string) => void; capturedRun?: CapturedCompiledRun } = {},
 ): Promise<IsolatedRun> {
+  const compiled = options.compiledOutput ?? currentCompiledOutput(dmbFile, compilerMode() === 'native');
+  const compilerReceipt = beginCompilerReceipt('data/compiler-attempts', compiled);
+  if (options.capturedRun) {
+    // Early replay evidence survives failed boots/missing test result files.
+    fs.writeFileSync(`${compilerReceipt.file}.captured-output.json`, `${JSON.stringify(options.capturedRun.evidence, null, 2)}\n`, { flag: 'wx' });
+  }
+  Juke.logger.info(`Compiler attempt evidence: ${compilerReceipt.file}`);
   const slot = acquireRunSlot();
   const base = dmbFile.replace(/\.dmb$/, '');
   // The copy is named for this process as well as the slot. Slot names are reused, and a previous occupant's file can still be
@@ -1290,21 +1361,29 @@ async function runIsolatedTestWorld(
   pruneStaleRunCopies(base, pidAlive, (m) => Juke.logger.warn(m));
   const runBase = runCopyBase(base, slot.tag, process.pid);
   const logDir = `data/logs/${slot.tag}`;
+  const rawLogs: RuntimeLogArchive = {};
+  let logDirectoryCleared = false;
+  let worldSpawned = false;
   const resultsFile = `${slot.dir}/unit_tests.json`;
+  const inventoryFile = `${slot.dir}/normal_inventory.json`;
+  let runtimeIdentity: RuntimeIdentity | undefined;
+  const receiptOutcome = { resultsAvailable: false, killedByWatchdog: false, error: null as string | null };
+  let escapedFailure = false;
   try {
     fs.rmSync(logDir, { recursive: true, force: true });
+    logDirectoryCleared = true;
     // DreamDaemon keeps icons made at runtime in <world>.dyn.rsc beside the
     // .dmb. Run slots are reused, so without this a world inherited the last
     // one's cache, possibly from another build ("failed to write new icon").
     fs.rmSync(`${runBase}.dyn.rsc`, { force: true });
-    if (options.linkFrom) {
-      // A sharded run's private copy (see runSharded()): hard links, so N
-      // shards don't each copy the ~270 MB .dmb/.rsc again.
-      linkOrCopy(`${options.linkFrom}.dmb`, `${runBase}.dmb`);
-      linkOrCopy(`${options.linkFrom}.rsc`, `${runBase}.rsc`);
+    if (compiled.kind === 'native_pair') {
+      // DreamDaemon acquires this exact generation and owns independent writable
+      // copies until the hosted child closes; conventional paths are not read.
+    } else if (options.linkFrom) {
+      // Each world owns a writable archive; DD can mutate it during hosting.
+      copyWritableRuntimePair({ dmb: `${options.linkFrom}.dmb`, rsc: `${options.linkFrom}.rsc` }, runBase);
     } else {
-      fs.copyFileSync(`${base}.dmb`, `${runBase}.dmb`);
-      fs.copyFileSync(`${base}.rsc`, `${runBase}.rsc`);
+      copyWritableRuntimePair(compiled, runBase);
     }
     // Generated spritesheets and the asset caches go to a directory per run
     // slot (SPRITESHEET_DIR): worlds in one worktree -- a sharded run, or two
@@ -1317,10 +1396,14 @@ async function runIsolatedTestWorld(
       'spritesheet-dir': spritesheetDir,
       ...worldParams,
     };
+    if (options.issueInventory) params['test-inventory-file'] = inventoryFile;
+    if (options.exactBatch) params['test-exact-automatic-rows'] = '1';
     if (focus) {
       const focusFile = `${slot.dir}/focus.txt`;
       fs.writeFileSync(focusFile, `${focus.join('\n')}\n`);
-      params['test-focus'] = focusFile;
+      // A normal suite partition must retain normal-mode semantics. In
+      // particular, the unknown-focus sentinel must see no focused request.
+      params[options.exactBatch ? 'test-select' : 'test-focus'] = focusFile;
     }
     let portClaim = await claimFreePort();
     let port = portClaim.port;
@@ -1348,12 +1431,17 @@ async function runIsolatedTestWorld(
       const result = await DreamDaemon(
         {
           dmbFile: `${runBase}.dmb`,
+          compiledOutput: compiled.kind === 'native_pair' ? compiled : { ...compiled, dmb: path.resolve(`${runBase}.dmb`), rsc: path.resolve(`${runBase}.rsc`) },
           namedDmVersion: dmVersion,
+          runtimeLibrary: options.capturedRun?.runtimeLibrary,
           watchdogFile: resultsFile,
           watchdogCleanFile: `${logDir}/finished_run.lk`,
           stallFile: `${logDir}/tests.log`,
           watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
-          onSpawn: options.sampler ? (pid) => options.sampler?.start(pid) : undefined,
+          onSpawn: (pid) => { worldSpawned = true; options.sampler?.start(pid); },
+          onPreparedOutput: (dmb) => { options.capturedRun?.verifyHosted(dmb); options.onPreparedOutput?.(dmb); compilerReceipt.prepared(dmb); },
+          watchdogMaximumMs: options.issueInventory || options.exactBatch || options.capturedRun ? 300_000 : undefined,
+          onRuntimeIdentity: identity => { runtimeIdentity = identity; },
         },
         String(port),
         '-close',
@@ -1364,10 +1452,13 @@ async function runIsolatedTestWorld(
         new URLSearchParams(params).toString(),
       );
       killedByWatchdog = !!result.killedByWatchdog;
+      receiptOutcome.killedByWatchdog = killedByWatchdog;
       daemonExitCode = result.code;
       daemonSignal = result.signal;
       daemonReason = result.watchdogReason ?? null;
       } catch (error) {
+        receiptOutcome.error = String(error);
+        if (error instanceof NativeAcquisitionError || error instanceof CompilerProvenanceError) throw error;
         // DreamDaemon exits non-zero even on clean runs; the files below decide.
         daemonError = String(error);
       }
@@ -1383,6 +1474,7 @@ async function runIsolatedTestWorld(
       portClaim.release();
       worldSlot?.release();
     }
+    options.capturedRun?.verifyRetained();
     let cleanText: string | null = null;
     try {
       cleanText = fs.readFileSync(`${logDir}/clean_run.lk`, 'utf-8');
@@ -1395,8 +1487,14 @@ async function runIsolatedTestWorld(
     } catch {
       // the world died before finishing
     }
+    receiptOutcome.resultsAvailable = results !== null;
+    const inventory = options.issueInventory ? JSON.parse(fs.readFileSync(inventoryFile, 'utf8')) as IssuedSuiteInventory : undefined;
     const processSummary = options.sampler ? options.sampler.stop() : null;
     return {
+      compilation: compiled.provenance ?? null,
+      compilerReceipt: compilerReceipt.file,
+      capturedCompiledOutput: options.capturedRun?.evidence,
+      inventory, runtimeIdentity,
       clean: cleanText !== null,
       cleanText,
       results,
@@ -1409,12 +1507,34 @@ async function runIsolatedTestWorld(
       daemonReason,
       daemonError,
       logDir,
+      rawLogs,
     };
+  } catch (error) {
+    escapedFailure = true;
+    receiptOutcome.error = String(error);
+    throw error;
   } finally {
-    await removeDerivedArtifacts(`${runBase}.dmb`);
-    await removeDerivedArtifacts(`${runBase}.rsc`);
-    await removeDerivedArtifacts(`${runBase}.dyn.rsc`);
-    slot.release();
+    try {
+      try {
+        if (!logDirectoryCleared) throw new Error('world log directory was not cleared; refusing stale evidence');
+        Object.assign(rawLogs, archiveRuntimeLogs(logDir, worldSpawned ? `${runBase}.log` : null), { worldSpawned });
+        Juke.logger.info(`Runtime raw logs: ${rawLogs.manifest} SHA256 ${rawLogs.sha256} complete=${rawLogs.complete}`);
+      } catch (error) {
+        Object.assign(rawLogs, { complete: false, error: String(error) });
+        Juke.logger.error(`Runtime raw log archival failed: ${error}`);
+      }
+      try { compilerReceipt.finalize(receiptOutcome); }
+      catch (error) {
+        if (!escapedFailure) throw error;
+        Juke.logger.error(`Compiler attempt finalization failed; primary failure preserved: ${error}`);
+      }
+    } finally {
+      try {
+        await removeDerivedArtifacts(`${runBase}.dmb`);
+        await removeDerivedArtifacts(`${runBase}.rsc`);
+        await removeDerivedArtifacts(`${runBase}.dyn.rsc`);
+      } finally { slot.release(); }
+    }
   }
 }
 
@@ -1521,7 +1641,9 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
     return null;
   }
   recordSweepHashes(run.results);
-  const record = testRunRecord(runIdentity(label), label, defines, run.clean, run.durationSeconds, run.results);
+  const record = testRunRecord(runIdentity(label), label, [...(run.compilation?.orderedDefines ?? defines)], run.clean, run.durationSeconds, run.results, run.compilation, run.runtimeIdentity);
+  record.compiler_receipt = run.compilerReceipt;
+  if (run.capturedCompiledOutput) Object.assign(record, { captured_compiled_output: run.capturedCompiledOutput });
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   Juke.logger.info(
     `Unit-test summary: ${record.counts.passed} passed, ${record.counts.failed} failed, ${record.counts.skipped} skipped `
@@ -2003,6 +2125,7 @@ async function runShardWorld(
   priority: boolean,
   worldParams: Record<string, string>,
   linkFrom: string,
+  compiledOutput: CompiledOutput,
   wholeTier: boolean,
   worldSlot: HeldSlot | null,
 ): Promise<ShardRun> {
@@ -2022,7 +2145,7 @@ async function runShardWorld(
         ...worldParams,
       },
       null,
-      { watchdogTimeoutMs: shardWatchdogMs, sampler, label: `${tag} of ${shardCount}`, linkFrom, worldSlot },
+      { watchdogTimeoutMs: shardWatchdogMs, sampler, label: `${tag} of ${shardCount}`, linkFrom, compiledOutput, worldSlot },
     );
     return { ...run, index: shardIndex };
   } finally {
@@ -2103,7 +2226,7 @@ function defaultShardCount(): number {
  * their results into one data/test-runs/ record. */
 async function runSharded(shardCount: number, get: any): Promise<void> {
   reportFocus();
-  await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
+  const compiledOutput = await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
   const priority = process.env.DQ_DD_PRIORITY === '1';
   const tier = resolveTier(get);
   const worldParams = testWorldParams(get);
@@ -2128,12 +2251,12 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   const watchdogMinutes = shardWatchdogMinutes(shardCount, wholeTier);
   const started = Date.now();
   // One private copy of the build for this run (a concurrent recompile in this
-  // worktree must not swap the binary under running worlds), which every
-  // shard's run slot hard-links. Copying it once per shard was over 1 GB of
-  // synchronous writes before any world started: minutes on a busy disk.
+  // worktree must not swap the binary under running worlds). Each shard then
+  // stages independent writable files so runtime archive changes stay private.
   const privateBase = `${DME_NAME}.test.shards-${process.pid}`;
-  await fs.promises.copyFile(`${DME_NAME}.test.dmb`, `${privateBase}.dmb`);
-  await fs.promises.copyFile(`${DME_NAME}.test.rsc`, `${privateBase}.rsc`);
+  if (compiledOutput.kind === 'conventional') {
+    copyWritableRuntimePair(compiledOutput, privateBase);
+  }
   let runs: ShardRun[];
   // All the shards' test_world slots at once (one queue entry): a shard never waits for a slot while its siblings hold theirs, so two
   // sharded runs cannot each hold part of the budget. A slot goes back as its shard's world ends.
@@ -2151,14 +2274,17 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
           priority,
           worldParams,
           privateBase,
+          compiledOutput,
           wholeTier,
           worldSlots[i] ?? null,
         )),
     );
   } finally {
     for (const slot of worldSlots) slot?.release();
-    await removeDerivedArtifacts(`${privateBase}.dmb`);
-    await removeDerivedArtifacts(`${privateBase}.rsc`);
+    if (compiledOutput.kind === 'conventional') {
+      await removeDerivedArtifacts(`${privateBase}.dmb`);
+      await removeDerivedArtifacts(`${privateBase}.rsc`);
+    }
   }
   const wallSeconds = (Date.now() - started) / 1000;
   for (const run of runs) {
@@ -2184,7 +2310,9 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
     clean,
     wallSeconds,
     results,
+    compiledOutput.provenance ?? null,
   );
+  record.compiler_receipts = runs.map((run) => run.compilerReceipt);
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   const shardTimes = runs.map((r) => `${Math.round(r.durationSeconds)}s`).join('/');
   // A shard that wrote no results lost every test assigned to it: say so in
@@ -2220,6 +2348,73 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   }
 }
 
+/** Sequential normal suite, issued by the compiled runtime, never a source scanner. */
+async function runSuiteBatches(get: any, batchSize: number, generalized = false, capturedRun?: CapturedCompiledRun): Promise<void> {
+  const tier = resolveTier(get);
+  if ((!generalized && tier !== 'normal') || focusedTestNames(get) || get(ShardsParameter) !== undefined && get(ShardsParameter) !== null || get(DomainsParameter)?.length
+      || get(AffectedParameter) || get(IncrementalParameter)) throw new Error('batch suites require an unfiltered tier; normal-batches requires normal');
+  const resumePath = get(generalized ? SuiteResumeParameter : NormalResumeParameter);
+  const resume = resumePath ? (generalized ? loadSuiteResume<IsolatedRun> : loadNormalResume<IsolatedRun>)(resumePath,
+    String(get(generalized ? SuiteResumeSha256Parameter : NormalResumeSha256Parameter) ?? ''), batchSize) : null;
+  if (resume && resume.plan.tier !== tier) throw new Error('resume tier differs from requested suite');
+  if (resume && (JSON.stringify([...TEST_DEFINES, ...get(DefineParameter)]) !== JSON.stringify(resume.checkpoint.compilation.orderedDefines) || compilerMode() !== resume.checkpoint.compilation.requestedBackend || get(DmVersionParameter))) throw new Error('historical resume requires identical ordered defines/backend and no compiler-version override');
+  const output = resume?.output ?? capturedRun?.output ?? await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
+  const id = runIdentity(generalized ? 'suite-batches' : 'normal-batches');
+  const evidenceFile = `data/${generalized ? 'suite' : 'normal-suite'}/${id.id}-${randomUUID()}.json`;
+  const evidence: { schema: number; status: string; compilation: unknown; nativeOutput?: CompiledOutput; batchSize: number; inventory?: IsolatedRun; plan?: { path: string | null; sha256: string | null; eligibleOrder: string[]; observedOrderDiffers: boolean };
+    batches: { requested: string[]; run: IsolatedRun }[]; continuation?: unknown; inputClosureAuthenticated: false; selectionProtocol: string; capturedCompiledOutput?: unknown; compilation_performed: boolean; error?: string } = {
+    schema: 1, status: 'issuing_inventory', batchSize, capturedCompiledOutput: capturedRun?.evidence, compilation_performed: !resume && !capturedRun, compilation: output.provenance ?? null, nativeOutput: output.kind === 'native_pair' ? output : undefined,
+    batches: resume ? [...resume.completed] : [], inputClosureAuthenticated: false,
+    selectionProtocol: generalized ? 'suite-select-v1' : 'normal-select-v1',
+    continuation: resume ? { checkpoint: resume.checkpointPath, sha256: resume.checkpointSha256, scope: 'historical same compiled generation; current source closure is not authenticated' } : undefined };
+  writeJson(evidenceFile, evidence);
+  try {
+    const issued = resume?.inventory ?? await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': tier }, null,
+      { compiledOutput: output, capturedRun, issueInventory: true, watchdogTimeoutMs: 300_000, label: `${tier} inventory` });
+    evidence.inventory = issued; writeJson(evidenceFile, evidence);
+    if (!issued.clean || issued.killedByWatchdog || !issued.inventory || !issued.runtimeIdentity) throw new Error(`${tier} runtime inventory admission failed`);
+    if (issued.inventory.tier !== tier) throw new Error('runtime issued another suite tier');
+    let plan = resume?.plan ?? issued.inventory;
+    const previousPath = get(NormalPlanParameter);
+    if (previousPath) {
+      const expectedHash = get(NormalPlanSha256Parameter);
+      const bytes = fs.readFileSync(previousPath);
+      const actualHash = createHash('sha256').update(bytes).digest('hex');
+      if (!expectedHash || actualHash !== String(expectedHash).toLowerCase()) throw new Error('captured plan SHA256 missing/differs');
+      const previous = JSON.parse(bytes.toString('utf8')) as { inventory?: IsolatedRun; batchSize?: number };
+      if (!previous.inventory?.inventory || previous.batchSize !== batchSize) throw new Error('captured plan lacks issued inventory or identical batch size');
+      plan = bindSuitePlan(issued.inventory, previous.inventory.inventory);
+    }
+    evidence.plan = { path: previousPath ?? resume?.originalPlan?.path ?? null, sha256: previousPath ? String(get(NormalPlanSha256Parameter)).toLowerCase() : resume?.originalPlan?.sha256 ?? null,
+      eligibleOrder: plan.eligible, observedOrderDiffers: JSON.stringify(plan.eligible) !== JSON.stringify(issued.inventory.eligible) };
+    const batches = suiteBatches(plan, batchSize);
+    evidence.status = 'running'; writeJson(evidenceFile, evidence);
+    for (let index = evidence.batches.length; index < batches.length; index++) {
+      const requested = batches[index];
+      const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': tier }, requested,
+        { compiledOutput: output, capturedRun, exactBatch: true, onPreparedOutput: resume ? (dmb) => verifyResumeAcquiredPair(resume.checkpoint, dmb) : undefined,
+          watchdogTimeoutMs: 300_000, label: `${tier} batch${index + 1}/${batches.length}` });
+      evidence.batches.push({ requested, run }); writeJson(evidenceFile, evidence);
+      if (!sameSuiteRuntime(run.runtimeIdentity, issued.runtimeIdentity)) throw new Error('DreamDaemon identity/security changed');
+      if (!run.results || run.killedByWatchdog) throw new Error('batch exited without complete results');
+      recordTestRun(run, `${tier}-batch${index + 1}`, get(DefineParameter));
+    }
+    if (resume) loadSuiteResume<IsolatedRun>(resume.checkpointPath, resume.checkpointSha256, batchSize);
+    const union = exactSuiteUnion(plan, evidence.batches.map(({ requested, run }) => ({ requested, results: run.results })));
+    if (evidence.batches.some(({ run }) => !run.clean)
+        || Object.values(union.tests).some(row => !suiteRowSucceeded(row))
+        || union.frameworkFindings.some(row => !suiteRowSucceeded(row))) throw new Error(`${tier} suite contains test/runtime/framework failures`);
+    evidence.status = 'passed';
+  } catch (error) {
+    evidence.status = 'failed'; evidence.error = String(error); throw error;
+  } finally {
+    try { capturedRun?.verifyRetained(); }
+    catch (error) { evidence.status = 'failed'; evidence.error = String(error); throw error; }
+    finally { writeJson(evidenceFile, evidence); }
+    if (!resume && !capturedRun) await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
+  }
+}
+
 export const DmTestTarget = new Juke.Target({
   parameters: [
     DefineParameter,
@@ -2229,6 +2424,18 @@ export const DmTestTarget = new Juke.Target({
     LabelParameter,
     FocusParameter,
     ShardsParameter,
+    NormalBatchesParameter,
+    SuiteBatchesParameter,
+    SuiteResumeParameter,
+    SuiteResumeSha256Parameter,
+    FocusedCompiledOutputParameter,
+    FocusedCompiledOutputSha256Parameter,
+    SuiteCompiledOutputParameter,
+    SuiteCompiledOutputSha256Parameter,
+    NormalResumeParameter,
+    NormalResumeSha256Parameter,
+    NormalPlanParameter,
+    NormalPlanSha256Parameter,
     DomainsParameter,
     TierParameter,
     AffectedParameter,
@@ -2236,15 +2443,56 @@ export const DmTestTarget = new Juke.Target({
     ExhaustiveParameter,
     ProfileTestsParameter,
   ],
-  dependsOn: ({ get }) => [
+  dependsOn: ({ get }) => get(NormalResumeParameter) || get(SuiteResumeParameter) || get(FocusedCompiledOutputParameter) || get(SuiteCompiledOutputParameter) ? [] : [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
+    nativeDefaultCompiler() && DmbcTarget,
     IconRepackTarget, // tests boot the world, which uses the .rsc
     ValidateDmeTarget, // catch missing includes before compiling
     VerdigrisTarget, // tests boot the world, which loads the FFI lib
     MapBoundsTarget, // tests boot the world, which reads template bounds
-    process.env.DQ_DMB_PRECHECK === '1' && DmbCheckTarget, // optional 14 s syntax pre-check (tools/dmb)
   ],
   executes: async ({ get }) => {
+    const normalBatches = get(NormalBatchesParameter);
+    const suiteBatchCount = get(SuiteBatchesParameter);
+    const suiteCapturedPath = get(SuiteCompiledOutputParameter);
+    const suiteCapturedSha = get(SuiteCompiledOutputSha256Parameter);
+    if (suiteCapturedSha && !suiteCapturedPath) throw new Error('suite-compiled-output-sha256 requires suite-compiled-output');
+    if (suiteCapturedPath && (!suiteCapturedSha || normalBatches == null && suiteBatchCount == null
+        || focusedTestNames(get) || get(FocusedCompiledOutputParameter) || get(FocusedCompiledOutputSha256Parameter)
+        || get(NormalResumeParameter) || get(NormalResumeSha256Parameter) || get(SuiteResumeParameter) || get(SuiteResumeSha256Parameter)
+        || get(NormalPlanParameter) || get(NormalPlanSha256Parameter) || get(DmVersionParameter)
+        || get(WarningParameter).length || get(NoWarningParameter).length)) {
+      throw new Error('Captured suite output requires a fresh batch inventory, without focus/resume/plan/compiler-policy overrides.');
+    }
+    const suiteCapturedRun = suiteCapturedPath ? loadFocusedCompiledOutput(suiteCapturedPath, suiteCapturedSha, compilerMode(), [...TEST_DEFINES, ...get(DefineParameter)]) : undefined;
+    const capturedPath = get(FocusedCompiledOutputParameter);
+    const capturedSha = get(FocusedCompiledOutputSha256Parameter);
+    if (capturedSha && !capturedPath) throw new Error('focused-compiled-output-sha256 requires focused-compiled-output');
+    if (capturedPath && (!capturedSha || !focusedTestNames(get)?.length || normalBatches != null || suiteBatchCount != null
+        || get(NormalResumeParameter) || get(SuiteResumeParameter) || get(NormalPlanParameter)
+        || get(DmVersionParameter) || get(WarningParameter).length || get(NoWarningParameter).length
+        || get(ShardsParameter) != null && get(ShardsParameter) !== 1)) {
+      throw new Error('Captured output requires a pinned focused single-world run, without batch/resume/compiler-policy overrides.');
+    }
+    const capturedRun = capturedPath ? loadFocusedCompiledOutput(capturedPath, capturedSha, compilerMode(), [...TEST_DEFINES, ...get(DefineParameter)]) : undefined;
+    if (suiteBatchCount != null && normalBatches != null) throw new Error('suite-batches and normal-batches are exclusive');
+    if (get(SuiteResumeSha256Parameter) && !get(SuiteResumeParameter)) throw new Error('suite-resume-sha256 requires suite-resume');
+    if (get(SuiteResumeParameter) && (suiteBatchCount == null || get(NormalResumeParameter) || get(NormalPlanParameter))) throw new Error('suite-resume requires suite-batches and forbids other resume/plan options');
+    if (suiteBatchCount != null && get(NormalResumeParameter)) throw new Error('suite-batches requires suite-resume, not normal-resume');
+    if (get(NormalResumeSha256Parameter) && !get(NormalResumeParameter)) throw new Error('normal-resume-sha256 requires normal-resume');
+    if (get(NormalResumeParameter) && (normalBatches == null || get(NormalPlanParameter))) throw new Error('normal-resume requires normal-batches and forbids normal-plan');
+    if (get(NormalPlanSha256Parameter) && !get(NormalPlanParameter)) throw new Error('normal-plan-sha256 requires normal-plan');
+    if (get(NormalPlanParameter) && normalBatches == null && suiteBatchCount == null) throw new Error('normal-plan requires a batch runner');
+    if (suiteBatchCount != null) {
+      if (!Number.isInteger(suiteBatchCount) || suiteBatchCount < 1 || suiteBatchCount > 32) throw new Error('suite-batches must be1..32');
+      await runSuiteBatches(get, suiteBatchCount, true, suiteCapturedRun);
+      return;
+    }
+    if (normalBatches !== null && normalBatches !== undefined) {
+      if (!Number.isInteger(normalBatches) || normalBatches < 1 || normalBatches > 32) throw new Error('normal-batches must be1..32');
+      await runSuiteBatches(get, normalBatches, false, suiteCapturedRun);
+      return;
+    }
     const focus = focusedTestNames(get);
     // Sharded by default (defaultShardCount()); --shards=1 is the single-world
     // mode, --shards=0 sizes from free dd-slots. A --focus run is one world:
@@ -2266,12 +2514,12 @@ export const DmTestTarget = new Juke.Target({
       return;
     }
     reportFocus(focus);
-    await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
+    const compiledOutput = capturedRun?.output ?? await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
     const selection = resolveTestSelection(get);
     const worldParams = testWorldParams(get);
     if (selection) worldParams['test-select'] = writeRunList('select.txt', selection);
     if (!focus) Juke.logger.info(`dm-test: single world, tier ${worldParams['test-tier']}.`);
-    const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, focus);
+    const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, focus, { compiledOutput, capturedRun });
     fs.rmSync(`${SHARD_DIR}/${process.pid}`, { recursive: true, force: true });
     if (!run.clean) {
       printLogTails(run.logDir, run.killedByWatchdog ? 40 : 80);
@@ -2296,7 +2544,7 @@ export const DmTestTarget = new Juke.Target({
     // already cleans up fully on a failed compile.
     // DQ_KEEP_DERIVED_DME=1 (tools/dq_focused_test.sh --split-slow): a second dm-test shares this .dmb and re-reads the
     // derived .dme for its compile-hash check; deleting it under that run would fail its cache hit.
-    if (process.env.DQ_KEEP_DERIVED_DME !== '1') await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
+    if (!capturedRun && process.env.DQ_KEEP_DERIVED_DME !== '1') await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
     if (!run.clean) {
       Juke.logger.error('Test run was not clean, exiting');
       throw new Juke.ExitCode(1);
@@ -2311,7 +2559,7 @@ export const DmTestTarget = new Juke.Target({
  */
 export const TestRepeatTarget = new Juke.Target({
   parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter, RunsParameter],
-  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  dependsOn: () => [nativeDefaultCompiler() && DmbcTarget, IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
   executes: async ({ get }) => {
     const runs = Math.max(get(RunsParameter) ?? 3, 1);
     reportFocus();
@@ -2453,7 +2701,7 @@ export const BenchTarget = new Juke.Target({
     ScenarioParameter, RunsParameter, WarmupParameter, ArgParameter, ProfileParameter, LabelParameter,
     ExclusiveParameter,
   ],
-  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  dependsOn: () => [nativeDefaultCompiler() && DmbcTarget, IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
   executes: async ({ get }) => {
     const scenarios = get(ScenarioParameter).flatMap((s) => s.split(','));
     const runs = Math.max(get(RunsParameter) ?? 1, 1);
@@ -2651,7 +2899,7 @@ export const BenchReportTarget = new Juke.Target({
  */
 export const BalanceTarget = new Juke.Target({
   parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter, ArgParameter, LabelParameter, ThresholdParameter],
-  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  dependsOn: () => [nativeDefaultCompiler() && DmbcTarget, IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
   executes: async ({ get }) => {
     const worldParams: Record<string, string> = { bench: 'balance' };
     for (const arg of get(ArgParameter)) {

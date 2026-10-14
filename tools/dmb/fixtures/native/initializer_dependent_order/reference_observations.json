@@ -1,0 +1,349 @@
+{
+  "schema": 1,
+  "scope": "BYOND compile-only legality observations; no runtime/parity acceptance",
+  "attempts": [
+    {
+      "path": "E:\\dq-cache\\dmb-initializer-order-reference\\0a6d544e9d6d4df1a9585b3129b3fd78\\receipt.json",
+      "sha256": "98143fd256f6687470137947c0a1d35ab210d13a993f2a848bf3cb45e522f17e",
+      "receipt": {
+        "schema": 1,
+        "kind": "initializer_order_BYOND_compile_only",
+        "runtime": "not run",
+        "cases": {
+          "forward": {
+            "execution": {
+              "exit": 127,
+              "wall_s": 2.9219999999986612,
+              "wall_scope": "client launch through reap; daemon work included for retained requests"
+            },
+            "machineSlot": {
+              "kind": "dm_compile",
+              "tools": {
+                "script": {
+                  "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+                  "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+                  "bytes": 22161
+                },
+                "bash": {
+                  "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+                  "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+                  "bytes": 45560
+                }
+              },
+              "worktree": "E:\\projects\\dq-wt\\dmb-review",
+              "slotDirectory": "E:\\dq-cache\\slots",
+              "capacities": {
+                "DQ_SLOTS_DM_COMPILE": "2",
+                "DQ_SLOTS_TEST_WORLD": "3",
+                "DQ_SLOTS_CARGO": "1",
+                "DQ_SLOTS_LOOK_STATE_PIN": "2"
+              },
+              "waitIncludedInOwnedChildDeadline": true,
+              "jobContainment": "caller must add suspended bash to existing Job before resume"
+            },
+            "manifestSha256": "47096df23aaae9301578583222b1c2dd5db36fb480299c4e0dc22a2ee90379b5",
+            "outputs": {}
+          },
+          "reverse": {
+            "execution": {
+              "exit": 127,
+              "wall_s": 3.436999999998079,
+              "wall_scope": "client launch through reap; daemon work included for retained requests"
+            },
+            "machineSlot": {
+              "kind": "dm_compile",
+              "tools": {
+                "script": {
+                  "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+                  "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+                  "bytes": 22161
+                },
+                "bash": {
+                  "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+                  "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+                  "bytes": 45560
+                }
+              },
+              "worktree": "E:\\projects\\dq-wt\\dmb-review",
+              "slotDirectory": "E:\\dq-cache\\slots",
+              "capacities": {
+                "DQ_SLOTS_DM_COMPILE": "2",
+                "DQ_SLOTS_TEST_WORLD": "3",
+                "DQ_SLOTS_CARGO": "1",
+                "DQ_SLOTS_LOOK_STATE_PIN": "2"
+              },
+              "waitIncludedInOwnedChildDeadline": true,
+              "jobContainment": "caller must add suspended bash to existing Job before resume"
+            },
+            "manifestSha256": "c5a1ba927d7fcacf530bcda7d9699ac63fa938fb2b69380beeaabc4fd856c8e7",
+            "outputs": {}
+          }
+        },
+        "inputClosureAuthenticated": false,
+        "acceptedRuntimeBaseline": false,
+        "compiler": {
+          "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+        },
+        "sourceHashes": {
+          "probe.dm": "2660208c475fadb4300532fd132a527f368e8d805733ce106506e1aea2ec8b83",
+          "probe.dme": "47096df23aaae9301578583222b1c2dd5db36fb480299c4e0dc22a2ee90379b5",
+          "first.dm": "79fcf6ff8c2d628a397e7e806d64cf5a2c541210b0c5518a299a9634e36750f5",
+          "second.dm": "c48964becfe8cc26b566d71eafd8ff82eb7a4c775053da7d20260cf01e1ab5cc",
+          "contract-resource.txt": "05ef4d41ab155f4cead30c3c4a3aefc5437d801a9ec02d48c48b9aac1200a15a"
+        },
+        "reverseManifestSha256": "c5a1ba927d7fcacf530bcda7d9699ac63fa938fb2b69380beeaabc4fd856c8e7",
+        "cleanup": {
+          "reaped": true,
+          "error": null,
+          "memory": {
+            "configured_job_memory_bytes": 3999997952,
+            "peak_job_commit_bytes": 92499968,
+            "peak_process_commit_bytes": 58748928,
+            "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+          }
+        }
+      },
+      "diagnostics": {
+        "forward": "== machine slots: dm_compile slot 2 of 2\nDM compiler version 516.1687\nloading probe.dme\nfirst.dm:1:error: =: expected a constant expression\nsecond.dm:2:error: first: invalid variable\nsecond.dm:2:error: =: expected a constant expression\nprobe.dmb - 3 errors, 0 warnings (10/11/26 11:13 pm)\nTotal time: 0:00\n",
+        "reverse": "== machine slots: dm_compile slot 2 of 2\nDM compiler version 516.1687\nloading probe.dme\nsecond.dm:2:warning (var_before_def): first: use of first precedes its definition\nfirst.dm:1:warning (var_before_def): first: definition is here\nfirst.dm:1:error: =: expected a constant expression\nerror: invalid variable\nsecond.dm:2:error: =: expected a constant expression\nprobe.dmb - 3 errors, 2 warnings (10/11/26 11:13 pm)\nTotal time: 0:00\n"
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-initializer-order-reference\\a9fe0bbdf7d042c5b7593ad735818cde\\receipt.json",
+      "sha256": "a1e71df2185d16326a67f4f2a399291cec449a67ceb0ad7ae7a555877728a4ce",
+      "receipt": {
+        "schema": 1,
+        "kind": "initializer_order_BYOND_compile_only",
+        "runtime": "not run",
+        "cases": {
+          "forward": {
+            "execution": {
+              "exit": 127,
+              "wall_s": 2.202999999997701,
+              "wall_scope": "client launch through reap; daemon work included for retained requests"
+            },
+            "machineSlot": {
+              "kind": "dm_compile",
+              "tools": {
+                "script": {
+                  "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+                  "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+                  "bytes": 22161
+                },
+                "bash": {
+                  "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+                  "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+                  "bytes": 45560
+                }
+              },
+              "worktree": "E:\\projects\\dq-wt\\dmb-review",
+              "slotDirectory": "E:\\dq-cache\\slots",
+              "capacities": {
+                "DQ_SLOTS_DM_COMPILE": "2",
+                "DQ_SLOTS_TEST_WORLD": "3",
+                "DQ_SLOTS_CARGO": "1",
+                "DQ_SLOTS_LOOK_STATE_PIN": "2"
+              },
+              "waitIncludedInOwnedChildDeadline": true,
+              "jobContainment": "caller must add suspended bash to existing Job before resume"
+            },
+            "manifestSha256": "47096df23aaae9301578583222b1c2dd5db36fb480299c4e0dc22a2ee90379b5",
+            "outputs": {}
+          },
+          "reverse": {
+            "execution": {
+              "exit": 127,
+              "wall_s": 2.077999999997701,
+              "wall_scope": "client launch through reap; daemon work included for retained requests"
+            },
+            "machineSlot": {
+              "kind": "dm_compile",
+              "tools": {
+                "script": {
+                  "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+                  "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+                  "bytes": 22161
+                },
+                "bash": {
+                  "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+                  "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+                  "bytes": 45560
+                }
+              },
+              "worktree": "E:\\projects\\dq-wt\\dmb-review",
+              "slotDirectory": "E:\\dq-cache\\slots",
+              "capacities": {
+                "DQ_SLOTS_DM_COMPILE": "2",
+                "DQ_SLOTS_TEST_WORLD": "3",
+                "DQ_SLOTS_CARGO": "1",
+                "DQ_SLOTS_LOOK_STATE_PIN": "2"
+              },
+              "waitIncludedInOwnedChildDeadline": true,
+              "jobContainment": "caller must add suspended bash to existing Job before resume"
+            },
+            "manifestSha256": "c5a1ba927d7fcacf530bcda7d9699ac63fa938fb2b69380beeaabc4fd856c8e7",
+            "outputs": {}
+          }
+        },
+        "inputClosureAuthenticated": false,
+        "acceptedRuntimeBaseline": false,
+        "compiler": {
+          "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+        },
+        "sourceHashes": {
+          "probe.dm": "134c2fbcfdd2cfda62267da3b71c0c6737d677bc28c744c5858d39afd18c4f6e",
+          "probe.dme": "47096df23aaae9301578583222b1c2dd5db36fb480299c4e0dc22a2ee90379b5",
+          "first.dm": "73c836ebac645aa17573fdc614824f14e29f0e83d28804967c3ca435c6f18cd3",
+          "second.dm": "bbcefb7e38b360653fa7817e9a76f676455a46308c06976e4537282919c6b640",
+          "contract-resource.txt": "05ef4d41ab155f4cead30c3c4a3aefc5437d801a9ec02d48c48b9aac1200a15a"
+        },
+        "reverseManifestSha256": "c5a1ba927d7fcacf530bcda7d9699ac63fa938fb2b69380beeaabc4fd856c8e7",
+        "cleanup": {
+          "reaped": true,
+          "error": null,
+          "memory": {
+            "configured_job_memory_bytes": 3999997952,
+            "peak_job_commit_bytes": 92536832,
+            "peak_process_commit_bytes": 58744832,
+            "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+          }
+        }
+      },
+      "diagnostics": {
+        "forward": "== machine slots: dm_compile slot 1 of 2\nDM compiler version 516.1687\nloading probe.dme\nsecond.dm:2:error: src.first.value: undefined var\nsecond.dm:2:error: =: expected a constant expression\nprobe.dmb - 2 errors, 0 warnings (10/11/26 11:14 pm)\nTotal time: 0:00\n",
+        "reverse": "== machine slots: dm_compile slot 1 of 2\nDM compiler version 516.1687\nloading probe.dme\nsecond.dm:2:error: src.first.value: undefined var\nsecond.dm:2:error: =: expected a constant expression\nprobe.dmb - 2 errors, 0 warnings (10/11/26 11:14 pm)\nTotal time: 0:00\n"
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-initializer-order-reference\\0f3ca0b07e174683b36708a6f7f1f99b\\receipt.json",
+      "sha256": "59d774393e0e4be286fb00dc35ed4cdc25db8a50b2a5bb0d51d7479dee088460",
+      "receipt": {
+        "schema": 1,
+        "kind": "initializer_order_BYOND_compile_only",
+        "runtime": "not run",
+        "cases": {
+          "forward": {
+            "execution": {
+              "exit": 0,
+              "wall_s": 2.062000000001717,
+              "wall_scope": "client launch through reap; daemon work included for retained requests"
+            },
+            "machineSlot": {
+              "kind": "dm_compile",
+              "tools": {
+                "script": {
+                  "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+                  "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+                  "bytes": 22161
+                },
+                "bash": {
+                  "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+                  "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+                  "bytes": 45560
+                }
+              },
+              "worktree": "E:\\projects\\dq-wt\\dmb-review",
+              "slotDirectory": "E:\\dq-cache\\slots",
+              "capacities": {
+                "DQ_SLOTS_DM_COMPILE": "2",
+                "DQ_SLOTS_TEST_WORLD": "3",
+                "DQ_SLOTS_CARGO": "1",
+                "DQ_SLOTS_LOOK_STATE_PIN": "2"
+              },
+              "waitIncludedInOwnedChildDeadline": true,
+              "jobContainment": "caller must add suspended bash to existing Job before resume"
+            },
+            "manifestSha256": "47096df23aaae9301578583222b1c2dd5db36fb480299c4e0dc22a2ee90379b5",
+            "outputs": {
+              ".dmb": {
+                "path": "E:\\dq-cache\\dmb-initializer-order-reference\\0f3ca0b07e174683b36708a6f7f1f99b\\forward\\probe.dmb",
+                "sha256": "bac6b5a71bf33bdbae4fd17b72647540f892dd6224b3ff02996ae6679670028f",
+                "bytes": 16092
+              },
+              ".rsc": {
+                "path": "E:\\dq-cache\\dmb-initializer-order-reference\\0f3ca0b07e174683b36708a6f7f1f99b\\forward\\probe.rsc",
+                "sha256": "04480a2c2b9a51f3fb846931c135962ba460f3b8506d449490da53733ece90e5",
+                "bytes": 69
+              }
+            }
+          },
+          "reverse": {
+            "execution": {
+              "exit": 0,
+              "wall_s": 2.0309999999990396,
+              "wall_scope": "client launch through reap; daemon work included for retained requests"
+            },
+            "machineSlot": {
+              "kind": "dm_compile",
+              "tools": {
+                "script": {
+                  "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+                  "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+                  "bytes": 22161
+                },
+                "bash": {
+                  "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+                  "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+                  "bytes": 45560
+                }
+              },
+              "worktree": "E:\\projects\\dq-wt\\dmb-review",
+              "slotDirectory": "E:\\dq-cache\\slots",
+              "capacities": {
+                "DQ_SLOTS_DM_COMPILE": "2",
+                "DQ_SLOTS_TEST_WORLD": "3",
+                "DQ_SLOTS_CARGO": "1",
+                "DQ_SLOTS_LOOK_STATE_PIN": "2"
+              },
+              "waitIncludedInOwnedChildDeadline": true,
+              "jobContainment": "caller must add suspended bash to existing Job before resume"
+            },
+            "manifestSha256": "c5a1ba927d7fcacf530bcda7d9699ac63fa938fb2b69380beeaabc4fd856c8e7",
+            "outputs": {
+              ".dmb": {
+                "path": "E:\\dq-cache\\dmb-initializer-order-reference\\0f3ca0b07e174683b36708a6f7f1f99b\\reverse\\probe.dmb",
+                "sha256": "88416a21e78946b9ac460dd382eb52b9b2b29d292ceb8735161201d5ec8e84af",
+                "bytes": 16092
+              },
+              ".rsc": {
+                "path": "E:\\dq-cache\\dmb-initializer-order-reference\\0f3ca0b07e174683b36708a6f7f1f99b\\reverse\\probe.rsc",
+                "sha256": "0d8900f0a0dc975853c5a17be6889bdd30ae69d2b0c5a104e329ad8d486015e6",
+                "bytes": 69
+              }
+            }
+          }
+        },
+        "inputClosureAuthenticated": false,
+        "acceptedRuntimeBaseline": false,
+        "compiler": {
+          "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+        },
+        "sourceHashes": {
+          "probe.dm": "171d7a3c0e94b1a67ea247fb40b0e41c6e9fbdefe84b3dd226aed11711979558",
+          "probe.dme": "47096df23aaae9301578583222b1c2dd5db36fb480299c4e0dc22a2ee90379b5",
+          "first.dm": "73c836ebac645aa17573fdc614824f14e29f0e83d28804967c3ca435c6f18cd3",
+          "second.dm": "a71fb43f22958b4424e425a52e595a3955924897610535bb715069afdc354a03",
+          "contract-resource.txt": "05ef4d41ab155f4cead30c3c4a3aefc5437d801a9ec02d48c48b9aac1200a15a"
+        },
+        "reverseManifestSha256": "c5a1ba927d7fcacf530bcda7d9699ac63fa938fb2b69380beeaabc4fd856c8e7",
+        "cleanup": {
+          "reaped": true,
+          "error": null,
+          "memory": {
+            "configured_job_memory_bytes": 3999997952,
+            "peak_job_commit_bytes": 92545024,
+            "peak_process_commit_bytes": 58753024,
+            "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+          }
+        }
+      },
+      "diagnostics": {
+        "forward": "== machine slots: dm_compile slot 1 of 2\nDM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/11/26 11:15 pm)\nTotal time: 0:00\n",
+        "reverse": "== machine slots: dm_compile slot 1 of 2\nDM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/11/26 11:15 pm)\nTotal time: 0:00\n"
+      }
+    }
+  ]
+}

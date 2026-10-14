@@ -1,0 +1,26 @@
+{
+  "scope": "bounded ownership diagnostic, not a benchmark or output acceptance",
+  "compiler_commit": "fe63af6e8c648945170e66dc5b850f58f36969a1",
+  "compiler_sha256": "e910ba379c883a352b7b99cdc3f58e8d0fdbd3848cc2cebd93a467eeced929b9",
+  "evidence_directory": "E:/dq-cache/dmb-native-v2/ownership-diagnostics/20261010-070906-4a23a6b1",
+  "status": "sampled owned private-memory budget exceeded",
+  "budget_bytes": 4000000000,
+  "sampled_peak_private_bytes": 4045627392,
+  "sample_interval_seconds": 0.2,
+  "samples": 367,
+  "owned_daemon_reaped": true,
+  "outputs_admitted": false,
+  "retained_declaration_known_capacity_bytes": 881011583,
+  "frontend_known_capacity_bytes": 536375094,
+  "capacity_accounting_limitations": [
+    "Reports overlap and must not be summed.",
+    "Known capacity excludes opaque collection indexes and allocator overhead.",
+    "Process private bytes may include allocator-reserved freed pages.",
+    "No quantitative attribution of the remaining private-memory gap is established."
+  ],
+  "followup": [
+    "Issue variable dependency certificates on demand through the existing resolver.",
+    "Share resolver sequence payloads without changing canonical bytes.",
+    "Introduce generic shared receipt storage with exact canonical replay."
+  ]
+}
