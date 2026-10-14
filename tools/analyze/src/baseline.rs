@@ -59,11 +59,34 @@ pub fn read_sites(path: &Path) -> BTreeMap<String, Counter> {
 /// A site with its fingerprint text.
 pub struct Fp<'a> {
     pub site: &'a Site,
+    /// The line text, for the report.
     pub text: String,
+    /// What the ratchet compares and the baseline stores: `@owner::var` for a declaration site (retyping or re-commenting the
+    /// declaration keeps it; renaming it or moving it to another owner makes a new site), else the canonical line text.
+    pub fp: String,
+}
+
+/// Marks a declaration-identity fingerprint in a baseline row's third column.
+pub const IDENT_MARK: &str = "@";
+
+/// The compared fingerprint for `site` whose line reads `text`.
+pub fn fp_of(site: &Site, text: &str) -> String {
+    if site.ident.is_empty() {
+        canon_text(&site.rule, text)
+    } else {
+        format!("{}{}", IDENT_MARK, site.ident)
+    }
 }
 
 pub fn fingerprints<'a>(tree: &Tree, found: &[&'a Site]) -> Vec<Fp<'a>> {
-    found.iter().map(|s| Fp { site: s, text: tree.site_text(&s.rel, s.line as usize) }).collect()
+    found
+        .iter()
+        .map(|s| {
+            let text = tree.site_text(&s.rel, s.line as usize);
+            let fp = fp_of(s, &text);
+            Fp { site: s, text, fp }
+        })
+        .collect()
 }
 
 /// `write_sites`. `rules` lists the rules to write, in order; `by_rule` maps a rule to its sites.
@@ -89,19 +112,23 @@ pub fn write_sites(
         let mut budget: Counter = old.get(rule).cloned().unwrap_or_default();
         let empty: Vec<&Site> = Vec::new();
         let found = lookup.get(rule).copied().unwrap_or(&empty);
-        let mut fps: Vec<(String, u32, String)> =
-            fingerprints(tree, found).into_iter().map(|f| (f.site.rel.clone(), f.site.line, f.text)).collect();
+        let mut fps: Vec<(String, u32, String, String)> =
+            fingerprints(tree, found).into_iter().map(|f| (f.site.rel.clone(), f.site.line, f.text, f.fp)).collect();
         fps.sort();
-        for (rel, _n, text) in fps {
-            let key = (rel.clone(), canon_text(rule, &text));
+        for (rel, _n, text, fp) in fps {
             if mode == Mode::Update {
+                // A row still in the line-text form (written before declaration identities) is claimed by its line text, so the
+                // first `--update` after the change rewrites it as an identity row without adding or dropping one.
+                let ident_key = (rel.clone(), fp.clone());
+                let legacy_key = (rel.clone(), canon_text(rule, &text));
+                let key = if budget.get(&ident_key).copied().unwrap_or(0) > 0 { ident_key } else { legacy_key };
                 let b = budget.entry(key).or_insert(0);
                 if *b <= 0 {
                     continue;
                 }
                 *b -= 1;
             }
-            rows.push(format!("{}\t{}\t{}", rule, rel, text));
+            rows.push(format!("{}	{}	{}", rule, rel, if fp.starts_with(IDENT_MARK) { &fp } else { &text }));
         }
     }
     let mut out = String::new();
@@ -135,7 +162,7 @@ pub fn check_sites(
         let known: i64 = budget.values().sum();
         let mut fresh: Vec<(String, u32, String)> = Vec::new();
         for fp in fingerprints(tree, found) {
-            let key = (fp.site.rel.clone(), canon_text(rule, &fp.text));
+            let key = (fp.site.rel.clone(), fp.fp.clone());
             match budget.get_mut(&key) {
                 Some(b) if *b > 0 => *b -= 1,
                 _ => fresh.push((fp.site.rel.clone(), fp.site.line, fp.text)),
@@ -264,7 +291,7 @@ mod tests {
     use crate::tree::SourceFile;
 
     fn site(rule: &str, rel: &str, line: u32) -> Site {
-        Site { rule: rule.into(), rel: rel.into(), line, msg: String::new(), key: String::new() }
+        Site { rule: rule.into(), rel: rel.into(), line, msg: String::new(), key: String::new(), ident: String::new() }
     }
 
     #[test]
@@ -319,5 +346,73 @@ init_lines	code/a.dm	power = 5
         assert_eq!(std::fs::read_to_string(&path).unwrap(), "# header\nspawn\tcode/a.dm\tspawn(1)\n");
         let n = write_sites(&path, &["header"], &tree, &by_rule, &["spawn"], Mode::Seed).unwrap();
         assert_eq!(n, 2);
+    }
+
+    fn decl(rule: &str, rel: &str, line: u32, ident: &str) -> Site {
+        Site { ident: ident.into(), ..site(rule, rel, line) }
+    }
+
+    fn check_one(tree: &Tree, base: &str, sites: &[Site]) -> (bool, String) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("b.txt");
+        std::fs::write(&path, base).unwrap();
+        let by_rule = vec![("var", sites.iter().collect::<Vec<_>>())];
+        let mut out = String::new();
+        let failed = check_sites("stored_refs", tree, &by_rule, &|_| String::new(), &path, &[], &mut out);
+        (failed, out)
+    }
+
+    const ROW: &str = "# h
+var	code/a.dm	@/obj/x::armor_override
+";
+
+    #[test]
+    fn decl_retyped_var_still_matches_its_baseline_row() {
+        let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", "/obj/x
+	var/tmp/datum/armor/armor_override
+")]);
+        let (failed, out) = check_one(&tree, ROW, &[decl("var", "code/a.dm", 2, "/obj/x::armor_override")]);
+        assert!(!failed, "{out}");
+    }
+
+    #[test]
+    fn decl_renamed_var_counts_as_new() {
+        let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", "/obj/x
+	var/tmp/datum/armor_ref
+")]);
+        let (failed, out) = check_one(&tree, ROW, &[decl("var", "code/a.dm", 2, "/obj/x::armor_ref")]);
+        assert!(failed, "{out}");
+        assert!(out.contains("code/a.dm:2:"), "{out}");
+        // The same name under another owner is another var.
+        let (failed, _) = check_one(&tree, ROW, &[decl("var", "code/a.dm", 2, "/obj/y::armor_override")]);
+        assert!(failed);
+    }
+
+    #[test]
+    fn decl_fixed_var_drops_out_on_update_and_legacy_rows_migrate_one_to_one() {
+        let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", "/obj/x
+	var/datum/a
+	var/datum/b
+")]);
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("b.txt");
+        // Two line-text rows (the old format) and one identity row; `c` is fixed (no site remains).
+        std::fs::write(&path, "# h
+var	code/a.dm	var/datum/a
+var	code/a.dm	var/datum/b
+var	code/a.dm	@/obj/x::c
+").unwrap();
+        let s = vec![decl("var", "code/a.dm", 2, "/obj/x::a"), decl("var", "code/a.dm", 3, "/obj/x::b")];
+        let by_rule = vec![("var", s.iter().collect::<Vec<_>>())];
+        let n = write_sites(&path, &["h"], &tree, &by_rule, &["var"], Mode::Update).unwrap();
+        assert_eq!(n, 2);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "# h
+var	code/a.dm	@/obj/x::a
+var	code/a.dm	@/obj/x::b
+");
+        // Update never adds: a site with no row stays out.
+        let more = vec![decl("var", "code/a.dm", 2, "/obj/x::a"), decl("var", "code/a.dm", 3, "/obj/x::b"), decl("var", "code/a.dm", 3, "/obj/x::new")];
+        let by_rule = vec![("var", more.iter().collect::<Vec<_>>())];
+        assert_eq!(write_sites(&path, &["h"], &tree, &by_rule, &["var"], Mode::Update).unwrap(), 2);
     }
 }
