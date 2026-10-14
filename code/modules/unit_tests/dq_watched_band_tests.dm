@@ -127,3 +127,27 @@
 	TEST_ASSERT(watched_armed(S, WATCH_CHARGE, levels), "the first reader's levels are still watched")
 	S.set_stored_charge(S.capacity)
 	TEST_ASSERT(!S.hybrid_has_room(null), "a full unit has no room")
+
+// The emitter's beam reads its network's availability through the power grid's tracked avail (power_avail() -> /datum/power_grid): a Rust-polled
+// value DM holds as state, so no world-watch channel is needed; the draw re-evaluates when the grid's avail changes.
+
+/datum/unit_test/dq_emitter_beam_follows_the_grids_avail
+
+/datum/unit_test/dq_emitter_beam_follows_the_grids_avail/Run()
+	var/obj/machinery/power/emitter/E = allocate(/obj/machinery/power/emitter, test_floor())
+	var/grid_id = -4711
+	power_test_join(grid_id, E)
+	var/datum/power_grid/grid = power_grid(grid_id)
+	TEST_ASSERT_NOTNULL(grid, "the detached test grid exists")
+	set_var(E, nameof(E.powered), TRUE)
+	set_var(E, nameof(E.active), TRUE)
+	grid.set_avail(0)
+	state_changed(E)
+	refresh_flush()
+	TEST_ASSERT(!E.beam_shown(), "no availability, no beam")
+	var/before = length(E.rx?.look_overlays)
+	grid.set_avail(5000)
+	refresh_flush()
+	TEST_ASSERT(E.beam_shown(), "a live network shows the beam")
+	TEST_ASSERT(length(E.rx?.look_overlays) > before, "the grid's avail changing redrew the emitter with its beam (overlays [before] -> [length(E.rx?.look_overlays)])")
+	power_test_drop_grid(grid_id)
