@@ -8,11 +8,13 @@ CAPABILITIES(/obj/item/storage/internal)
 	acceptance("equip", req_acceptance_type(list(), because = "it can't be worn"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = ABSTRACT))
 	ref_one(nameof(master_item), /obj/item)
+	keeps_if(PROC_REF(has_item_owner))
+	setup(PROC_REF(link_item_owner))
 
-/obj/item/storage/internal/Initialize(mapload)
-	. = ..()
-	if(!istype(loc, /obj/item))
-		return INITIALIZE_HINT_QDEL
+/obj/item/storage/internal/proc/has_item_owner()
+	return istype(loc, /obj/item)
+
+/obj/item/storage/internal/proc/link_item_owner()
 	rel_set(src, nameof(master_item), loc)
 	name = master_item().name
 
