@@ -327,7 +327,6 @@ var	code/engine/state/serializer.dm	@/datum/controller/global_vars::state_regist
 var	code/engine/stats/def.dm	@/datum/stat_def::schema
 var	code/engine/stats/store.dm	@/datum/rx_state::stats
 var	code/game/area/ai_monitored.dm	@/area/ai_monitored::motioncamera
-var	code/game/atom/armor.dm	@/atom::armor_override
 var	code/game/atoms_movable.dm	@/atom/movable::throwing
 var	code/game/atoms_movable.dm	@/atom/movable::throw_source
 var	code/game/atoms_movable.dm	@/atom/movable/overlay::master
