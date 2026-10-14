@@ -591,6 +591,7 @@ list	code/engine/declare/activation.dm	var/static/list/engines
 list	code/engine/declare/activation.dm	@/datum/activation::applied
 list	code/engine/declare/activation.dm	@/datum/activation::owned
 list	code/engine/declare/activation.dm	@/datum/rx_state::activations
+list	code/engine/declare/capability_tables.dm	@/datum/controller/global_vars::capability_runtime_records
 list	code/engine/declare/checks.dm	@/datum/requirement_definition/combinator::parts
 list	code/engine/declare/definition_registry.dm	@/datum/definition_registry::behaviour_by_type
 list	code/engine/declare/definition_registry.dm	@/datum/definition_registry::clocks

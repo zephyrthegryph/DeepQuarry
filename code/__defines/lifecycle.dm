@@ -91,6 +91,3 @@ GLOBAL_VAR_INIT(lifecycle_keep_expected, FALSE)
 #endif
 /// PATH refuses every qdel(), forced or not.
 #define LIFECYCLE_KEEP_ALWAYS(PATH) ##PATH/lifecycle_keep(force) { return TRUE; }
-
-// code/__defines/_init.dm defines this type before this macro exists, so its mark lives here: the world's one early-init record is never deleted.
-LIFECYCLE_KEEP_UNLESS_FORCED(/datum/super_early_init)
