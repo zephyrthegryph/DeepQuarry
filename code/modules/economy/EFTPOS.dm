@@ -15,8 +15,7 @@
 	var/access_code = 0
 	var/tmp/datum/money_account/linked_account
 
-/obj/item/eftpos/Initialize(mapload)
-	. = ..()
+/obj/item/eftpos/proc/prepare_financial_terminal()
 	//by default, connect to the station account
 	//the user of the EFTPOS device can change the target account though, and no-one will be the wiser (except whoever's being charged)
 	rel_set(src, nameof(linked_account), GLOB.station_account)
@@ -76,6 +75,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/item/eftpos)
+	setup(PROC_REF(prepare_financial_terminal))
 	ref_one(nameof(linked_account), /datum/money_account)
 	rolls(nameof(access_code), range_of(1111, 111111))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

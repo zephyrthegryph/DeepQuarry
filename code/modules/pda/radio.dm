@@ -17,9 +17,7 @@
 	on = 0 //Are we currently active??
 	var/menu_message = ""
 
-// ALLOW(init/INSTANCE_STATE): binds to the PDA it is made inside
-/obj/item/radio/integrated/Initialize(mapload)
-	. = ..()
+/obj/item/radio/integrated/proc/bind_containing_pda()
 	if(istype(loc?.loc, /obj/item/pda))
 		rel_set(src, nameof(hostpda), loc.loc)
 
@@ -101,3 +99,6 @@
 /// The active bot; if null, show bot list (a relation view: null once that is deleted).
 /obj/item/radio/integrated/proc/active() as /mob/living/bot
 	return active
+
+CAPABILITIES(/obj/item/radio/integrated)
+	setup(PROC_REF(bind_containing_pda))

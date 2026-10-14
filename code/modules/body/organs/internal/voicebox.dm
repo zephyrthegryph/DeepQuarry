@@ -12,10 +12,6 @@
 	will_assist_languages = list(LANGUAGE_GALCOM)
 	var/mute = FALSE
 
-/obj/item/organ/internal/voicebox/Initialize(mapload)
-	. = ..()
-	amend_assist_langs()
-
 /obj/item/organ/internal/voicebox/proc/amend_assist_langs()	// Adds the list of language datums assisted by the voicebox to the list used in speaking
 	for(var/L in will_assist_languages)
 		LAZYOR(assists_languages, GLOB.all_languages[L])
@@ -35,3 +31,6 @@
 	name = "vocal synthesizer"
 	will_assist_languages = list(LANGUAGE_GALCOM, LANGUAGE_EAL) // Synthetics spawn with this by default
 	starts_prosthetic = FBP_MECHANICAL
+
+CAPABILITIES(/obj/item/organ/internal/voicebox)
+	setup(PROC_REF(amend_assist_langs))

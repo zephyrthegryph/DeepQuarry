@@ -1377,12 +1377,6 @@ init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initiali
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::blob_core
 init_lines	code/modules/body/body.dm	@/mob/living::Initialize::if
 init_lines	code/modules/body/body.dm	@/mob/living::Initialize::rel_set
-init_lines	code/modules/body/organs/internal/_organ_internal.dm	@/obj/item/organ/internal::Initialize::if
-init_lines	code/modules/body/organs/internal/_organ_internal.dm	@/obj/item/organ/internal::Initialize::make_sellable
-init_lines	code/modules/body/organs/internal/brain.dm	@/obj/item/organ/internal/brain::Initialize::sync_defib_window
-init_lines	code/modules/body/organs/internal/brain.dm	@/obj/item/organ/internal/brain::Initialize::make_mind_host
-init_lines	code/modules/body/organs/internal/horror.dm	@/obj/item/organ/internal/voicebox/horror::Initialize::redspace
-init_lines	code/modules/body/organs/internal/voicebox.dm	@/obj/item/organ/internal/voicebox::Initialize::amend_assist_langs
 init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::if
 init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::born_in
 init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::place_in_body
@@ -1618,46 +1612,6 @@ init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initiali
 init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::I.plane
 init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::LAZYADD
 init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::rebuild_overlay_lists
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::rel_set
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::machine_id
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::print_reference
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.name
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.set_info
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.set_info
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.set_info
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.set_info
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.set_info
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.set_info
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.set_info
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.set_info
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::if
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.stamped
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.add_stamp_mark
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.stamped
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.stamps
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::if
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::while
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::t
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::i
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::LAZYREMOVE
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::rel_add
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::expr
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::else
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::for
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::p
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::rel_add
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::LAZYREMOVE
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::if
-init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::move_trader
-init_lines	code/modules/economy/vending.dm	@/obj/machinery/vending::Initialize::if
-init_lines	code/modules/economy/vending.dm	@/obj/machinery/vending::Initialize::LAZYADD
-init_lines	code/modules/economy/vending.dm	@/obj/machinery/vending::Initialize::if
-init_lines	code/modules/economy/vending.dm	@/obj/machinery/vending::Initialize::LAZYADD
-init_lines	code/modules/economy/vending.dm	@/obj/machinery/vending::Initialize::build_inventory
-init_lines	code/modules/economy/vending_refills.dm	@/obj/item/refill_cartridge/autoname::Initialize::if
-init_lines	code/modules/economy/vending_refills.dm	@/obj/item/refill_cartridge/autoname::Initialize::tmp
-init_lines	code/modules/economy/vending_refills.dm	@/obj/item/refill_cartridge/autoname::Initialize::name
 init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::if
 init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::LAZYSET
 init_lines	code/modules/events/meteor_strike.dm	@/obj/structure/meteorite::Initialize::icon
@@ -1854,18 +1808,12 @@ init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj
 init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/ears/circuitry::Initialize::built_in_speaker
 init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/ears/circuitry::Initialize::IC.force_add_circuit
 init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/suit/circuitry::Initialize::setup_integrated_circuit
-init_lines	code/modules/integrated_electronics/core/assemblies/device.dm	@/obj/item/assembly/electronic_assembly::Initialize::rel_set
-init_lines	code/modules/integrated_electronics/core/assemblies/device.dm	@/obj/item/electronic_assembly/device::Initialize::input
-init_lines	code/modules/integrated_electronics/core/assemblies/device.dm	@/obj/item/electronic_assembly/device::Initialize::output
-init_lines	code/modules/integrated_electronics/core/assemblies/device.dm	@/obj/item/electronic_assembly/device::Initialize::rel_set
-init_lines	code/modules/integrated_electronics/core/assemblies/device.dm	@/obj/item/electronic_assembly/device::Initialize::rel_set
 init_lines	code/modules/integrated_electronics/core/integrated_circuit.dm	@/obj/item/integrated_circuit::Initialize::displayed_name
 init_lines	code/modules/integrated_electronics/core/integrated_circuit.dm	@/obj/item/integrated_circuit::Initialize::if
 init_lines	code/modules/integrated_electronics/core/integrated_circuit.dm	@/obj/item/integrated_circuit::Initialize::if
 init_lines	code/modules/integrated_electronics/core/integrated_circuit.dm	@/obj/item/integrated_circuit::Initialize::setup_io
 init_lines	code/modules/integrated_electronics/core/integrated_circuit.dm	@/obj/item/integrated_circuit::Initialize::setup_io
 init_lines	code/modules/integrated_electronics/core/integrated_circuit.dm	@/obj/item/integrated_circuit::Initialize::setup_io
-init_lines	code/modules/integrated_electronics/subtypes/camera.dm	@/obj/item/integrated_circuit/output/video_camera::Initialize::update_camera_name
 init_lines	code/modules/integrated_electronics/subtypes/camera.dm	@/obj/machinery/camera/intcircuit::Initialize::if
 init_lines	code/modules/integrated_electronics/subtypes/camera.dm	@/obj/machinery/camera/intcircuit::Initialize::network
 init_lines	code/modules/integrated_electronics/subtypes/camera.dm	@/obj/machinery/camera/intcircuit::Initialize::c_tag
@@ -1886,18 +1834,6 @@ init_lines	code/modules/integrated_electronics/subtypes/data_transfer.dm	@/obj/i
 init_lines	code/modules/integrated_electronics/subtypes/data_transfer.dm	@/obj/item/integrated_circuit/transfer/pulsedemultiplexer::Initialize::complexity
 init_lines	code/modules/integrated_electronics/subtypes/data_transfer.dm	@/obj/item/integrated_circuit/transfer/pulsedemultiplexer::Initialize::desc
 init_lines	code/modules/integrated_electronics/subtypes/data_transfer.dm	@/obj/item/integrated_circuit/transfer/pulsedemultiplexer::Initialize::extended_desc
-init_lines	code/modules/integrated_electronics/subtypes/illegal.dm	@/obj/item/integrated_circuit/illegal/EPv2_Discoverer::Initialize::exonet.make_address
-init_lines	code/modules/integrated_electronics/subtypes/illegal.dm	@/obj/item/integrated_circuit/illegal/EPv2_Discoverer::Initialize::desc
-init_lines	code/modules/integrated_electronics/subtypes/illegal.dm	@/obj/item/integrated_circuit/illegal/EPv2_Discoverer::Initialize::rel_set
-init_lines	code/modules/integrated_electronics/subtypes/illegal.dm	@/obj/item/integrated_circuit/illegal/EPv2_Discoverer::Initialize::message_admins
-init_lines	code/modules/integrated_electronics/subtypes/input.dm	@/obj/item/integrated_circuit/input/signaler::Initialize::pin_data
-init_lines	code/modules/integrated_electronics/subtypes/input.dm	@/obj/item/integrated_circuit/input/signaler::Initialize::pin_data
-init_lines	code/modules/integrated_electronics/subtypes/input.dm	@/obj/item/integrated_circuit/input/EPv2::Initialize::exonet.make_address
-init_lines	code/modules/integrated_electronics/subtypes/input.dm	@/obj/item/integrated_circuit/input/EPv2::Initialize::desc
-init_lines	code/modules/integrated_electronics/subtypes/input.dm	@/obj/item/integrated_circuit/input/EPv2::Initialize::rel_set
-init_lines	code/modules/integrated_electronics/subtypes/manipulation.dm	@/obj/item/integrated_circuit/manipulation/grenade::Initialize::if
-init_lines	code/modules/integrated_electronics/subtypes/manipulation.dm	@/obj/item/integrated_circuit/manipulation/grenade::Initialize::grenade
-init_lines	code/modules/integrated_electronics/subtypes/manipulation.dm	@/obj/item/integrated_circuit/manipulation/grenade::Initialize::attach_grenade
 init_lines	code/modules/integrated_electronics/subtypes/memory.dm	@/obj/item/integrated_circuit/memory::Initialize::for
 init_lines	code/modules/integrated_electronics/subtypes/memory.dm	@/obj/item/integrated_circuit/memory::Initialize::expr
 init_lines	code/modules/integrated_electronics/subtypes/memory.dm	@/obj/item/integrated_circuit/memory::Initialize::expr
@@ -2533,8 +2469,6 @@ init_lines	code/modules/pda/pda.dm	@/obj/item/pda::Initialize::icon
 init_lines	code/modules/pda/pda.dm	@/obj/item/pda::Initialize::log_runtime
 init_lines	code/modules/pda/pda.dm	@/obj/item/pda::Initialize::add_overlay
 init_lines	code/modules/pda/pda.dm	@/obj/item/pda::Initialize::start_program
-init_lines	code/modules/pda/radio.dm	@/obj/item/radio/integrated::Initialize::if
-init_lines	code/modules/pda/radio.dm	@/obj/item/radio/integrated::Initialize::rel_set
 init_lines	code/modules/pda/radio.dm	@/obj/item/radio/integrated/signal::Initialize::if
 init_lines	code/modules/pda/radio.dm	@/obj/item/radio/integrated/signal::Initialize::frequency
 init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::if
@@ -4059,11 +3993,8 @@ world_reads	code/modules/admin/callproc/callproc.dm	if(GLOB.AdminProcCallHandler
 world_reads	code/modules/admin/callproc/callproc.dm	GLOB.AdminProcCallHandler = src
 world_reads	code/modules/asset_cache/transports/asset_transport.dm	for(var/client/C in GLOB.clients)
 world_reads	code/modules/blob2/overmind/overmind.dm	languages |= GLOB.all_languages[L]
-world_reads	code/modules/body/organs/internal/horror.dm	redspace = GLOB.all_languages[LANGUAGE_REDSPACE]
 world_reads	code/modules/body/organs/organ.dm	data.setup_from_species(GLOB.all_species[SPECIES_HUMAN])
 world_reads	code/modules/body/organs/organ.dm	data.setup_from_species(GLOB.all_species["Human"])
-world_reads	code/modules/economy/EFTPOS.dm	rel_set(src, nameof(linked_account), GLOB.station_account)
-world_reads	code/modules/economy/EFTPOS.dm	machine_id = "[station_name()] EFTPOS #[GLOB.num_financial_terminals++]"
 world_reads	code/modules/emotes/emote_define.dm	LAZYSET(GLOB.emotes_by_key, key, src)
 world_reads	code/modules/food/kitchen/gibber.dm	for(var/i in GLOB.cardinal)
 world_reads	code/modules/hydroponics/beekeeping/beehive.dm	recipes = GLOB.wax_recipes

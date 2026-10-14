@@ -26,11 +26,11 @@
 	return 0
 
 CAPABILITIES(/obj/item/integrated_circuit/illegal/EPv2_Discoverer)
+	setup(PROC_REF(prepare_discovery_address))
 	ref_one(nameof(node), /obj/machinery/exonet_node)
 	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
 
-/obj/item/integrated_circuit/illegal/EPv2_Discoverer/Initialize(mapload)
-	. = ..()
+/obj/item/integrated_circuit/illegal/EPv2_Discoverer/proc/prepare_discovery_address()
 	exonet.make_address("EPv2_Discovery_circuit-\ref[src]")
 	desc += "<br>This circuit's EPv2 address is: [exonet.address]"
 	rel_set(src, nameof(node), get_exonet_node())

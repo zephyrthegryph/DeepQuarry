@@ -26,8 +26,7 @@
 	var/pick_inventory_quantity = 0		//This is how many things will be picked if pick_inventory is TRUE
 	var/move_trader = FALSE
 
-/obj/trader/Initialize(mapload)
-	. = ..()
+/obj/trader/proc/prepare_trader_inventory()
 	if(pick_inventory)
 		while(pick_inventory_quantity > 0)
 			var/t = pickweight(start_products || list())
@@ -44,6 +43,7 @@
 		move_trader()
 
 CAPABILITIES(/obj/trader)
+	setup(PROC_REF(prepare_trader_inventory))
 	op("trader_hand", hand(), label("Trade"), then(PROC_REF(interaction_trader_hand)))
 	op("trader_item", item(/obj/item), label("Interaction trader item"), then(PROC_REF(interaction_trader_item)))
 

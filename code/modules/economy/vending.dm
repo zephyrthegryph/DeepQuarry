@@ -117,6 +117,7 @@ STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/vending, shoot_inventory, ANY)
 
 CAPABILITIES(/obj/machinery/vending)
+	setup(PROC_REF(prepare_vendor_inventory))
 	configure(uses_power(idle = 10))
 	machine_basics(repair = NONE)
 	panel()
@@ -176,9 +177,7 @@ CAPABILITIES(/obj/machinery/vending)
 /obj/machinery/vending/proc/timed_work_wanted(datum/act/A)
 	return active && (shoot_inventory || (!shut_up && length(slogan_list)))
 
-// ALLOW(init/INSTANCE_STATE): the vendor's slogans and ads are split from its type's strings once, and its stock records are built from its product lists
-/obj/machinery/vending/Initialize(mapload)
-	. = ..()
+/obj/machinery/vending/proc/prepare_vendor_inventory()
 	if(product_slogans)
 		LAZYADD(slogan_list, splittext(product_slogans, ";"))
 	if(product_ads)

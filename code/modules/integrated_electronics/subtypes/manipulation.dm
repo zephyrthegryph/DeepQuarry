@@ -171,12 +171,12 @@ CAPABILITIES(/obj/item/integrated_circuit/manipulation/weapon_firing)
 	var/pre_attached_grenade_type
 
 CAPABILITIES(/obj/item/integrated_circuit/manipulation/grenade)
+	setup(PROC_REF(attach_starting_grenade))
 	owns_one(nameof(attached_grenade), /obj/item/grenade)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-/obj/item/integrated_circuit/manipulation/grenade/Initialize(mapload)
-	. = ..()
+/obj/item/integrated_circuit/manipulation/grenade/proc/attach_starting_grenade()
 	if(pre_attached_grenade_type)
 		var/grenade = new pre_attached_grenade_type(src)
 		attach_grenade(grenade)
