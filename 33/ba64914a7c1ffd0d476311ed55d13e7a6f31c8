@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"33ba64914a7c1ffd0d476311ed55d13e7a6f31c8","ok":true,"passed":70,"failed":0,"new_failed":0,"lanes":"boot-speed/world","tests_json":"data/test-runs/20261014T030537_33ba64914a_focused.json","created":"2026-10-14T03:05:42Z"}
