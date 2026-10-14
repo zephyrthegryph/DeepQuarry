@@ -22,6 +22,9 @@ SYSTEM_DEF(job)
 	var/list/shift_keys = list()
 	var/list/restricted_keys = list()
 
+TRACKED(/datum/system/job, occupations_by_name)
+TRACKED(/datum/system/job, type_occupations)
+
 CAPABILITIES(/datum/system/job)
 	ref_many(nameof(unassigned), /mob/new_player)
 
@@ -50,8 +53,8 @@ CAPABILITIES(/datum/system/job)
 		occupations += job
 		if(!(is_type_in_list(job, GLOB.exclude_jobs)))
 			occupation_with_excludes += job
-		occupations_by_name[job.title] = job
-		type_occupations[job_path] = job
+		set_occupations_by_name_at(job.title, job)
+		set_type_occupations_at(job_path, job)
 		if(LAZYLEN(job.departments))
 			add_to_departments(job)
 
