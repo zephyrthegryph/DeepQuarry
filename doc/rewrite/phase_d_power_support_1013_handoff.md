@@ -1,0 +1,14 @@
+# Phase D power support files
+
+Four fully migrated leaf files move from `code/modules/power/` into `code/domains/power/content/`, preserving their relative paths:
+
+- `antimatter/containment_jar.dm`
+- `cells/esoteric_cells.dm`
+- `debug_items.dm`
+- `sensors/sensor_monitoring.dm`
+
+Commit d566edcb04 contains only four exact renames and their four include-path replacements. Include order is unchanged. The moved blobs match master 86ad72702e byte for byte; the most recent source edits predate October 13, so the move does not overlap that day's source work.
+
+The focused gate includes `dq_requirement_protocol_pin`, `dq_conversion_pin`, `dq_hc_struct/power_hit_declarations`, `dq_hc_tgui/power_monitor_buttons` and `dq_power_monitor_reading`. The containment test exercises the jar's real explosion/stability behavior; the monitor tests cover neighboring sensor/module behavior. There are no dedicated esoteric-cell or debug-item behavior tests in the current suite.
+
+Verification is pending. No snapshot rows have been blessed for the move.
