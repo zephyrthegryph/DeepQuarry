@@ -6,7 +6,7 @@
  * partially repeated in choker/collar/setUniqueSpeciesSprite() overrides.
  *
  * Call sites on /obj/item/clothing/accessory delegate here; the cached
- * inv_overlay / mob_overlay vars remain on the accessory for backward compat.
+ * inv_overlay var remains on the accessory for backward compat.
  *
  * Sprite selection priority (highest → lowest):
  *   1. icon_override   — explicit per-item DMI override

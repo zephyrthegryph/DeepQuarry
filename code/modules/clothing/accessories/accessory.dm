@@ -13,7 +13,6 @@ TRACKED(/obj/item/clothing/accessory, slot)
 	var/can_remove = TRUE						// Can it be taken off once attached?
 	var/tmp/obj/item/clothing/has_suit	// The suit the tie may be attached to
 	var/tmp/image/inv_overlay = null				// Overlay used when attached to clothing.
-	var/tmp/image/mob_overlay = null
 	var/overlay_state = null
 	var/punch_force	= 0							// added melee damage
 	var/punch_injury_kind						// what punches inflict (INJURY_*); null = the punch's own kind
@@ -27,26 +26,19 @@ TRACKED(/obj/item/clothing/accessory, slot)
 	..()
 
 // Delegate to the global clothing_appearance_handler singleton.
-// The cached inv_overlay / mob_overlay vars remain on the accessory for
-// backward compatibility with code that checks them directly.
+// The cached inv_overlay var remains on the accessory.
 /obj/item/clothing/accessory/proc/get_inv_overlay()
 	if(!inv_overlay)
 		inv_overlay = GLOB.clothing_appearance_handler.build_inv_overlay(src)
 	return inv_overlay
 
+/// The on-mob overlay. Pure: built from the accessory's inputs on every draw and not stored.
 /obj/item/clothing/accessory/proc/get_mob_overlay()
 	if(!istype(loc, /obj/item/clothing))
 		return null
-	// Update the wearer view before delegating (existing callers expect this side-effect).
-	if(ishuman(has_suit()?.loc))
-		rel_set(src, nameof(wearer), has_suit().loc)
-	else
-		rel_clear(src, nameof(wearer))
-	var/mob/living/carbon/human/H = wearer
-	if(!ishuman(H))
+	if(!ishuman(has_suit()?.loc))
 		return null
-	set_mob_overlay(GLOB.clothing_appearance_handler.build_mob_overlay(src))
-	return mob_overlay
+	return GLOB.clothing_appearance_handler.build_mob_overlay(src)
 
 //when user attached an accessory to S
 /obj/item/clothing/accessory/proc/on_attached(obj/item/clothing/S, mob/user)
@@ -522,7 +514,6 @@ CAPABILITIES(/obj/item/clothing/accessory/medal)
 		if(breath_masked)
 			set_item_flags(worn_of(src).flags & (~AIRTIGHT))
 	to_chat(user, span_notice(gaiterstring))
-	spent(mob_overlay, user) // we're gonna need to refresh these
 	update_clothing_icon()	//so our mob-overlays update
 
 /obj/item/clothing/accessory/gaiter/half //functions like a gaiter

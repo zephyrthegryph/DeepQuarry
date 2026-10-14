@@ -365,7 +365,7 @@ CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
 	return OP_PASS
 
 /obj/item/clothing/accessory/dosimeter/proc/check_holder()
-	var/mob/living/carbon/human/H = wearer
+	var/mob/living/carbon/human/H = ishuman(has_suit()?.loc) ? has_suit().loc : null
 	if(H)
 		if(current_film && (H.radiation >= 25) && (current_film.state == 0))
 			update_state(1)
