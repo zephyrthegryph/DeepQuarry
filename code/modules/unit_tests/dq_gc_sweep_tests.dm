@@ -35,6 +35,9 @@
 	var/latency_registered = 0
 
 /datum/unit_test/dq_gc_sweep/Run()
+	// Pin and eligibility diagnostics are scratch text, not live registration state.
+	set_global(nameof(GLOB.latency_last_ineligible), GLOB.latency_last_ineligible)
+	set_global(nameof(GLOB.latency_last_pin_reason), GLOB.latency_last_pin_reason)
 	var/turf/T = test_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for the GC sweep")
 	TEST_ASSERT(dq_gc_sweep_controls(), "the reference count is exact")
