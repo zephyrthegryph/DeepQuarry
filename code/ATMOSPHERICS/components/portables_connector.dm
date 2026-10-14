@@ -26,6 +26,7 @@
 	level = 1
 
 CAPABILITIES(/obj/machinery/atmospherics/portables_connector)
+	ref_one(nameof(connected_device))
 	pipe_device_unwrench()
 
 /obj/machinery/atmospherics/portables_connector/fuel

@@ -497,9 +497,8 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 			var/segment = hop.path[i]
 			var/list/next_frontier = list()
 			for(var/datum/at as anything in frontier)
-				for(var/list/pair as anything in rel_sources(at))
-					var/datum/source = pair[1]
-					if(pair[2] == segment && !QDELETED(source))
+				for(var/datum/source as anything in hop_sources(at, segment))
+					if(!QDELETED(source))
 						next_frontier |= list(source)
 			frontier = next_frontier
 			if(!length(frontier))
@@ -791,7 +790,7 @@ PROC_SUMMARY(/proc/stat_hop_attach) // vars[] / call() dispatcher: the walk cann
 /proc/stat_hop_attach(datum/E, rel_var)
 	var/datum/stat_record/rec = stat_record_of(E)
 	var/datum/old = rec.hop_targets?[rel_var]
-	var/datum/target = E.vars[rel_var]
+	var/datum/target = hop_step(E, rel_var)
 	if(!isdatum(target) || QDELETED(target))
 		target = null
 	if(old == target)

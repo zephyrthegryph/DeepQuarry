@@ -26,6 +26,7 @@ GLOBAL_LIST_EMPTY(dq_flavor_panels)
 		GLOB.dq_flavor_panels -= "[REF(host)]"
 
 CAPABILITIES(/datum/flavor_panel)
+	ref_one(nameof(host), /mob/living/carbon/human)
 	interface("FlavorText", title = "Update Flavour Text", state = nameof(GLOB.tgui_default_state))
 	op("edit", ui_act("edit", arg("key", schema_text(4096))), then(PROC_REF(ui_act_edit)))
 	op("done", ui_act("done"), then(PROC_REF(ui_act_done)))

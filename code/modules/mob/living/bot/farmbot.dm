@@ -34,6 +34,7 @@
 
 // The controls open on a touch in help intent (the hand op below), so the window's own open op answers the menu and a remote user only.
 CAPABILITIES(/mob/living/bot/farmbot)
+	ref_one(nameof(tank_at_make), /obj/structure/reagent_dispensers/watertank)
 	interface("Farmbot", input = menu())
 	op("touch", hand(), stance(I_HELP), label("Open controls"), then(PROC_REF(farmbot_touched)))
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
@@ -351,6 +352,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 
 
 CAPABILITIES(/obj/item/farmbot_arm_assembly)
+	ref_one(nameof(tank_at_make), /obj)
 	param(nameof(tank_at_make), pos = 1, apply = PROC_REF(take_tank), keep = FALSE)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

@@ -1010,7 +1010,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 
 			rel_set(P, nameof(/obj/item/paper/admin::admindatum), user.admin_datum())
 			P.origin = replyorigin
-			rel_set(P, nameof(/datum/ai_brain::destination), sendto)
+			rel_set(P, nameof(/obj/item/paper/admin::destination), sendto)
 
 			P.adminbrowse(user.mob)
 

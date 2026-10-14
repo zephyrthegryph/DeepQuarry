@@ -146,6 +146,7 @@ MSG_DEF_SELF(protean_rig/module_class, "The hardsuit already has a module of tha
 MSG_DEF_SELF(protean_rig/installing, "You begin installing %I% into %T%.")
 
 CAPABILITIES(/obj/item/rig/protean)
+	ref_one(nameof(soaking_wearer), /mob/living/carbon/human)
 	configure(item_worn(flags = NOSTRIP))
 	configure(item_protection(siemens = 1))
 	op("protean_rig_hand", hand(), ungated(), then(PROC_REF(protean_rig_hand)))

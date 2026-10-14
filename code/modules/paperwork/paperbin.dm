@@ -54,7 +54,7 @@ CAPABILITIES(/obj/item/paper_bin)
 	var/mob/living/carbon/human/H = user
 	if(!istype(H))
 		return null
-	var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND] // ALLOW(reads): the hand's state is read when it reaches into the bin, never cached
+	var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
 	if (H.hand)
 		temp = H.organs_by_name[BP_L_HAND]
 	return (temp && !temp.is_usable()) ? temp : null

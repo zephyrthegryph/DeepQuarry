@@ -169,7 +169,7 @@
 	if(istype(suit, /obj/item/clothing/suit/space/rig))
 		if(dark_energy)
 			to_chat(owner, span_warning("You feel your energy waning and your powers being blocked from the heavy equipment you're wearing!"))
-		dark_energy = 0
+		set_dark_energy(0)
 		return
 
 	var/turf/T = get_turf(owner)
@@ -346,6 +346,7 @@
 	handle_comp()
 
 CAPABILITIES(/datum/shadekin)
+	ref_one(nameof(owner), /mob/living)
 	ref_many(nameof(active_dark_maws))
 	interface("ShadekinConfig", title = "Shadekin Config")
 	op("adjust_time", ui_act("adjust_time", arg("val", num())), then(PROC_REF(ui_act_adjust_time)))

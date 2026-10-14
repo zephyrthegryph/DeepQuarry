@@ -247,3 +247,87 @@ CAPABILITIES(/obj/refs_param_probe)
 			stray_edges++
 	TEST_ASSERT_EQUAL(stray_edges, 0, "and the target keeps no back-edge naming the holder")
 	TEST_ASSERT(!rel_names(probe, nameof(probe.probe_link), target), "and the target's reverse index no longer names the holder")
+
+/// A panel's host is a relation: deleting the mob clears it, and the panel stays whole until its window closes.
+/datum/unit_test/dq_refs_panel_host_clears_when_mob_is_deleted
+
+/datum/unit_test/dq_refs_panel_host_clears_when_mob_is_deleted/Run()
+	var/mob/living/carbon/human/host = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/datum/languages_panel/panel = new(host)
+	TEST_ASSERT_EQUAL(panel.host, host, "the panel names its host")
+	qdel(host)
+	TEST_ASSERT_NULL(panel.host, "deleting the host clears the panel's host")
+	qdel(panel)
+
+/// A VR avatar and its body name each other (vr_holder / vr_link are one linked pair): writing one end sets the other, deleting either clears both.
+/datum/unit_test/dq_refs_vr_pair_links_and_clears
+
+/datum/unit_test/dq_refs_vr_pair_links_and_clears/Run()
+	var/mob/living/carbon/human/body = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/avatar = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	rel_set(avatar, nameof(avatar.vr_holder), body)
+	TEST_ASSERT_EQUAL(body.vr_link, avatar, "the body names the avatar once the avatar names the body")
+	qdel(avatar)
+	TEST_ASSERT_NULL(body.vr_link, "deleting the avatar clears the body's link")
+
+/// A borg module's matter reserve is a relation: deleting the synth clears the decompiler's pointer to it.
+/datum/unit_test/dq_refs_decompiler_synth_clears_when_deleted
+
+/datum/unit_test/dq_refs_decompiler_synth_clears_when_deleted/Run()
+	var/obj/item/matter_decompiler/decompiler = allocate(/obj/item/matter_decompiler)
+	var/datum/matter_synth/metal/synth = new(1000)
+	rel_set(decompiler, nameof(decompiler.metal), synth)
+	TEST_ASSERT_EQUAL(decompiler.metal, synth, "the decompiler names the reserve")
+	qdel(synth)
+	TEST_ASSERT_NULL(decompiler.metal, "deleting the reserve clears the decompiler's pointer")
+
+/// A xenomorph owns its six ability actions: they exist from init and go with it.
+/datum/unit_test/dq_refs_xeno_owns_its_actions
+
+/datum/unit_test/dq_refs_xeno_owns_its_actions/Run()
+	var/mob/living/simple_mob/xeno_ch/xeno = allocate(/mob/living/simple_mob/xeno_ch, run_loc_floor_bottom_left)
+	var/datum/action/innate/xeno_ch/xeno_build/build = xeno.build_action
+	TEST_ASSERT(istype(build), "the build action exists from init")
+	TEST_ASSERT(istype(xeno.spin_action), "so do the others")
+	qdel(xeno)
+	TEST_ASSERT(QDELETED(build), "deleting the xenomorph deletes its actions")
+
+/// A malf hardware installs into its AI through the AI's owned `hardware` slot: the AI owns it, clearing the slot deletes it.
+/datum/unit_test/dq_refs_malf_hardware_is_owned_by_its_ai
+
+/datum/unit_test/dq_refs_malf_hardware_is_owned_by_its_ai/Run()
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, run_loc_floor_bottom_left, null, null, null, TRUE)
+	var/datum/malf_hardware/dual_cpu/hardware = new
+	rel_set(hardware, nameof(hardware.owner), AI)
+	hardware.install()
+	TEST_ASSERT_EQUAL(AI.hardware, hardware, "install() puts the hardware in the AI's slot")
+	TEST_ASSERT_EQUAL(hardware.owner_ref(), AI, "and the hardware names its AI")
+	rel_clear(AI, nameof(AI.hardware))
+	TEST_ASSERT(QDELETED(hardware), "clearing the slot deletes the hardware the AI owned")
+	TEST_ASSERT_NULL(AI.hardware, "and the slot is empty")
+
+/// A xenomorph's hotbar actions exist from creation (the mob owns them) and are deleted with it.
+/datum/unit_test/dq_refs_xeno_actions_exist_from_creation
+
+/datum/unit_test/dq_refs_xeno_actions_exist_from_creation/Run()
+	var/mob/living/simple_mob/xeno_ch/hunter/hunter = allocate(/mob/living/simple_mob/xeno_ch/hunter, run_loc_floor_bottom_left)
+	TEST_ASSERT_NOTNULL(hunter.build_action, "the build action exists once the mob exists")
+	TEST_ASSERT_NOTNULL(hunter.pounce_action, "and so does the hunter's pounce action")
+	hunter.pounce_action.Grant(hunter)
+	TEST_ASSERT_EQUAL(hunter.pounce_action.parent_xeno, hunter, "granting binds the action to its xeno")
+	var/datum/action/innate/xeno_ch/xeno_pounce/pounce = hunter.pounce_action
+	qdel(hunter)
+	TEST_ASSERT(QDELETED(pounce), "the actions are deleted with the mob that owns them")
+
+/// Storing a mind in a sleevemate leaves the mind with no current body: clearing the link goes through the relation, not a raw write.
+/datum/unit_test/dq_refs_mind_current_clears_through_the_relation
+
+/datum/unit_test/dq_refs_mind_current_clears_through_the_relation/Run()
+	var/mob/living/carbon/human/body = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/datum/mind/mind = new("refs_test")
+	rel_set(mind, nameof(mind.current), body)
+	TEST_ASSERT_EQUAL(mind.current, body, "the mind's current body is set")
+	rel_clear(mind, nameof(/datum/mind::current))
+	TEST_ASSERT_NULL(mind.current, "rel_clear leaves the mind with no current body")
+	TEST_ASSERT(!rel_names(mind, nameof(mind.current), body), "and the body's reverse index no longer names the mind")
+	qdel(mind)

@@ -44,6 +44,7 @@
 		. += M.examine(user)
 
 CAPABILITIES(/obj/item/holder)
+	ref_one(nameof(held_at_make), /mob)
 	ref_one(nameof(held_mob), /mob/living)
 	configure(item_worn(slots = SLOT_HEAD | SLOT_HOLSTER))
 	drag_onto(PROC_REF(drop_input))

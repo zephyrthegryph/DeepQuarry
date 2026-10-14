@@ -48,3 +48,15 @@
 	b.set_hop_lit(TRUE)
 	test_drain()
 	TEST_ASSERT_EQUAL(L.hop_heard, base + 3, "the new crate is watched")
+
+/datum/unit_test/dq_hop_ckey_is_published_from_login_and_logout
+
+/datum/unit_test/dq_hop_ckey_is_published_from_login_and_logout/Run()
+	var/mob/hop_keyed/M = allocate(/mob/hop_keyed)
+	test_drain()
+	var/base = M.hop_key_heard
+	M.ckey = "hoptestkey" // a key arriving without a client, as a disconnected player's mob keeps its key
+	M.ckey_changed()
+	test_drain()
+	TEST_ASSERT_EQUAL(M.hop_key_heard, base + 1, "a key arriving or leaving publishes ckey to the hook that reads it")
+	M.ckey = null

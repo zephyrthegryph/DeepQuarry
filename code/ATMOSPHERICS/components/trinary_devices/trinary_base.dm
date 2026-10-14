@@ -181,6 +181,7 @@
 	return list(node1_connect, node2_connect, node3_connect)
 
 CAPABILITIES(/obj/machinery/atmospherics/trinary)
+	ref_one(nameof(node3))
 	gas_port(nameof(air1), volume = nameof(air1_volume))
 	gas_port(nameof(air2), volume = nameof(air2_volume))
 	gas_port(nameof(air3), volume = nameof(air3_volume))

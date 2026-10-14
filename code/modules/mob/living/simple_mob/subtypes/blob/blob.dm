@@ -43,6 +43,7 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/blob)
+	ref_one(nameof(blob_type), /datum/blob_type)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_SLIME))
 	links(/mob/living/simple_mob/blob::overmind, /mob/observer/blob::blob_mobs, b_many = TRUE)

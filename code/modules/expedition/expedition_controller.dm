@@ -143,7 +143,7 @@ CAPABILITIES(/datum/system/expedition)
 	if(site.landing_waypoint)
 		site.landing_waypoint.name = "[descriptor_name] - Expedition Landing Zone"
 	if(descriptor.origin_console()?.active_expedition() == descriptor)
-		rel_set(descriptor.origin_console(), nameof(/datum/flight_vessel::active_expedition), site)
+		rel_set(descriptor.origin_console(), nameof(/obj/machinery/computer/shuttle_control/explore::active_expedition), site)
 	if(descriptor.assigned_flight_vessel()?.active_expedition() == descriptor)
 		rel_set(descriptor.assigned_flight_vessel(), nameof(/datum/flight_vessel::active_expedition), site)
 	rel_set(site, nameof(site.assigned_flight_vessel), descriptor.assigned_flight_vessel())

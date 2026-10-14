@@ -673,7 +673,7 @@ CAPABILITIES(/obj/machinery/vending/hydronutrients)
 			spent(S)
 			var/datum/stored_item/vending_product/product = new/datum/stored_item/vending_product(src, entry, name)
 
-			product.price = (entry in prices) ? prices[entry] : 0
+			product.set_price((entry in prices) ? prices[entry] : 0)
 			product.set_amount((current_list[1][entry]) ? current_list[1][entry] : 1)
 			product.set_category(category)
 
