@@ -1145,6 +1145,7 @@ init_lines	code/game/objects/structures/props/beam_prism.dm	for(var/obj/structur
 init_lines	code/game/objects/structures/props/beam_prism.dm	rel_set(P, nameof(P.remote_dial), src)
 init_lines	code/game/objects/structures/props/machines.dm	icon_state = "nt_pod"
 init_lines	code/game/objects/structures/props/machines.dm	var/obj/effect/overlay/vis/mask = new
+init_lines	code/game/objects/structures/props/machines.dm	mask.set_icon(icon)
 init_lines	code/game/objects/structures/props/machines.dm	mask.set_icon_state("nt_pod_mask")
 init_lines	code/game/objects/structures/props/machines.dm	mask.render_target = "*nt_podmask[REF(src)]"
 init_lines	code/game/objects/structures/props/machines.dm	mask.vis_flags = VIS_INHERIT_ID
@@ -1738,6 +1739,7 @@ init_lines	code/modules/holomap/mapper.dm	base_prefix = marker_prefix
 init_lines	code/modules/holomap/mapper.dm	if(!mask_icon)
 init_lines	code/modules/holomap/mapper.dm	mask_icon = icon('icons/effects/64x64.dmi', "mapper_mask")
 init_lines	code/modules/holomap/mapper.dm	var/atom/movable/screen/mapper/marker/mark = new()
+init_lines	code/modules/holomap/mapper.dm	mark.set_icon('icons/effects/64x64.dmi')
 init_lines	code/modules/holomap/mapper.dm	mark.set_icon_state("mapper_none")
 init_lines	code/modules/holomap/mapper.dm	mark.layer = 10
 init_lines	code/modules/holomap/mapper.dm	rel_add(src, nameof(icon_image_cache), mark, "bad")
@@ -1745,6 +1747,7 @@ init_lines	code/modules/holomap/mapper.dm	var/atom/movable/screen/mapper/map/tmp
 init_lines	code/modules/holomap/mapper.dm	var/icon/canvas = icon(HOLOMAP_ICON, "blank")
 init_lines	code/modules/holomap/mapper.dm	canvas.Crop(1,1,world.maxx,world.maxy)
 init_lines	code/modules/holomap/mapper.dm	canvas.DrawBox("#A7BE97",1,1,world.maxx,world.maxy)
+init_lines	code/modules/holomap/mapper.dm	tmp.set_icon(canvas)
 init_lines	code/modules/holomap/mapper.dm	rel_add(src, nameof(map_image_cache), tmp, "bad")
 init_lines	code/modules/holomap/mapper.dm	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
 init_lines	code/modules/holomap/mapper.dm	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
@@ -3299,6 +3302,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	switch(find_type)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_BOWL)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = "bowl"
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/reagent_containers/glass/replenishing(src.loc)
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state("bowl")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_image_decorations = TRUE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.color = rgb(rand(0,255),rand(0,255),rand(0,255))
@@ -3306,6 +3310,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	additional_desc =
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_URN)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = "urn"
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/reagent_containers/glass/replenishing(src.loc)
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state("urn[rand(1,2)]")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_image_decorations = TRUE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	additional_desc = "It [pick("whispers faintly","makes a quiet roaring sound","whistles softly","thrums quietly","throbs")] if you put it to your ear."
@@ -3385,6 +3390,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_image_decor
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_BOX)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = "box"
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/storage/box(src.loc)
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state("box")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/obj/item/storage/box/new_box = new_item
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/max_size = pick(1,2,2,3,3,3,4,4)
@@ -3464,6 +3470,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(prob(10))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_image_decorations = TRUE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(prob(25))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/soulstone(src.loc)
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state(icon_state)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.name = "Redspace Gem"
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.desc = "A glowing stone made of what appears to be a pure chunk of redspace. It seems to have the power to transfer the consciousness of dead or nearly-dead humanoids into it."
@@ -3481,6 +3488,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_image_decor
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_TELEBEACON)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/radio/beacon(src.loc)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	talkative = FALSE
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state("unknown[rand(1,4)]")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.desc = ""
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_CLAYMORE)
@@ -3490,6 +3498,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_forc
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.name = pick("great-sword","claymore","longsword","broadsword","shortsword","gladius")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = new_item.name
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(prob(30))
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state("blade1")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_CULTROBES)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_prefix = FALSE
@@ -4106,12 +4115,3 @@ world_reads	code/modules/vehicles/train.dm	for(var/obj/vehicle/train/T in orange
 world_reads	code/modules/xenoarcheaology/finds/find_spawning.dm	currently_banned_chems += GLOB.obtainable_chemical_blacklist
 world_reads	code/modules/xenoarcheaology/tools/artifact_harvester.dm	rel_set(src, nameof(owned_scanner), locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
 world_reads	maps/common/common_shuttles_crew.dm	GLOB.shuttdisp_list |= src //Populates the global list for the roundstart hook.
-init_lines	code/game/objects/structures/props/machines.dm	mask.set_icon(icon)
-init_lines	code/modules/holomap/mapper.dm	mark.set_icon('icons/effects/64x64.dmi')
-init_lines	code/modules/holomap/mapper.dm	tmp.set_icon(canvas)
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon('icons/obj/xenoarchaeology.dmi')
