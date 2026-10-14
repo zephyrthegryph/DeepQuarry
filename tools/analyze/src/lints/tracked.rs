@@ -1066,17 +1066,45 @@ fn drop_declared(engine: &crate::run::Engine, root: &std::path::Path, apply: boo
         eprintln!("analyze fix: the semantic model is unavailable");
         return ExitCode::from(2);
     };
-    let defs = crate::gens::auto_tracked::setter_defs(&sem);
-    let outside = crate::gens::auto_tracked::writes_outside_setters(&sem);
+    let defs = crate::gens::auto_tracked::setter_defs(tree, &sem);
     let scopes = crate::scopes::Scopes::load(&root.join("tools/ci/lint_scopes.toml")).unwrap_or_default();
-    let exclude: Vec<String> = scopes.for_lint("auto_tracked", "").list("exclude").iter().chain(scopes.for_lint("auto_tracked", "").list("exclude_fixtures")).chain(scopes.for_lint("auto_tracked", "").list("exclude_heat")).chain(scopes.for_lint("auto_tracked", "").list("exclude_memo")).cloned().collect();
+    let auto = scopes.for_lint("auto_tracked", "");
+    let exclude: Vec<String> = ["exclude", "exclude_fixtures", "exclude_heat", "exclude_memo"].iter().flat_map(|k| auto.list(k).iter().cloned().collect::<Vec<_>>()).collect();
+    let include = auto.list("include");
     let line_pat = pat_match!(r"^(\s*)TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)\s*(?://.*)?$");
-    let (mut dropped, mut kept) = (0usize, 0usize);
+    let calls = crate::gens::auto_tracked::set_calls(tree);
+    // Pass 1: every plain TRACKED line, and the ones the generator would be asked to cover.
+    let mut lines: Vec<(String, String, String)> = Vec::new();
     for f in tree.select(&CODE_DM) {
-        if f.rel == crate::gens::auto_tracked::AUTO_REL || f.rel == "code/__defines/capabilities.dm" || crate::sem::gen::test_only(&f.rel) || f.rel.contains("benchmarks/") || (!prefixes.is_empty() && !prefixes.iter().any(|p| f.rel.starts_with(p.as_str()))) {
+        if f.rel == crate::gens::auto_tracked::AUTO_REL || f.rel == "code/__defines/capabilities.dm" || (!prefixes.is_empty() && !prefixes.iter().any(|p| f.rel.starts_with(p.as_str()))) || !f.text().contains("TRACKED(") {
             continue;
         }
-        if !f.text().contains("TRACKED(") {
+        for line in f.raw().text.split('\n') {
+            if let Some(m) = line_pat.captures(line.trim_end_matches('\r')) {
+                lines.push((f.rel.clone(), m.s(2).to_string(), m.s(3).to_string()));
+            }
+        }
+    }
+    let mut asked: BTreeSet<(String, String)> = BTreeSet::new();
+    for (_, ty, var) in &lines {
+        let read = an.reads.iter().any(|(o, v)| v == var && (o == ty || sem.is_subtype(ty, o) || sem.is_subtype(o, ty)));
+        let called = crate::gens::auto_tracked::called_here(tree, &sem, &defs, &calls, ty, var);
+        let included = include.iter().any(|e| e == &format!("{ty}::{var}"));
+        if read || called || included {
+            asked.insert((ty.clone(), var.clone()));
+        }
+    }
+    // What the generator does with them once the lines are gone: the same decision it makes at `analyze gen`.
+    let decided = crate::gens::auto_tracked::decide(tree, &sem, &asked, &exclude);
+    let tracked: BTreeSet<(String, String)> = decided.tracked.iter().map(|a| (a.ty.clone(), a.var.clone())).collect();
+    let covered: BTreeSet<(String, String)> = decided.blocked.iter().filter(|(_, _, why)| why == "an ancestor tracks it").map(|(t, v, _)| (t.clone(), v.clone())).collect();
+    let why_blocked: std::collections::BTreeMap<(String, String), String> = decided.blocked.iter().map(|(t, v, w)| ((t.clone(), v.clone()), w.clone())).collect();
+    let line_pat = pat_match!(r"^(\s*)TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)\s*(?://.*)?$");
+    let (mut dropped, mut kept) = (0usize, 0usize);
+    let (mut read_n, mut called_n, mut idle_n) = (0usize, 0usize, 0usize);
+    let mut files: BTreeSet<&str> = lines.iter().map(|(f, _, _)| f.as_str()).collect();
+    for f in tree.select(&CODE_DM) {
+        if !files.remove(f.rel.as_str()) {
             continue;
         }
         let text = f.raw().text.to_string();
@@ -1085,28 +1113,37 @@ fn drop_declared(engine: &crate::run::Engine, root: &std::path::Path, apply: boo
         for line in text.split('\n') {
             let content = line.trim_end_matches('\r');
             if let Some(m) = line_pat.captures(content) {
-                let (ty, var) = (m.s(2), m.s(3));
+                let key = (m.s(2).to_string(), m.s(3).to_string());
+                let (ty, var) = (&key.0, &key.1);
                 let read = an.reads.iter().any(|(o, v)| v == var && (o == ty || sem.is_subtype(ty, o) || sem.is_subtype(o, ty)));
-                let written = crate::gens::auto_tracked::set_calls(tree).contains(var) || outside.contains(var) || (crate::gens::auto_tracked::set_calls(tree).contains(&format!("{var}[]")));
-                let alone = defs.get(&format!("set_{}", var)).is_none_or(|types| types.iter().all(|t| t == ty));
-                let excluded = exclude.iter().any(|e| e == var || e == &format!("{ty}::{var}"));
-                let builtin = sem.var_decl(ty, var).is_none_or(|s| s.file.is_empty() || s.is_static || s.is_const);
-                if read && written && alone && !excluded && !builtin {
-                    println!("{}: drop {}", f.rel, content.trim());
+                let named = calls.contains(var.as_str()) || calls.contains(&format!("{var}[]"));
+                let generated = tracked.contains(&key) || covered.contains(&key);
+                // Nothing reads it and no `set_v()` call can be this var's: there is no setter to keep.
+                let builtin = sem.var_decl(ty, var).is_none_or(|s| s.file.is_empty());
+                let idle = !read && !builtin && (!named || !crate::gens::auto_tracked::untyped_call(tree, var)) && !asked.contains(&key);
+                if generated || idle {
+                    println!("{}: drop {}{}", f.rel, content.trim(), if read { "" } else if generated { "  (called, not read)" } else { "  (never written)" });
+                    if read {
+                        read_n += 1
+                    } else if generated {
+                        called_n += 1
+                    } else {
+                        idle_n += 1
+                    }
                     dropped += 1;
                     changed = true;
                     continue;
                 }
+                println!("{}: KEEP {}  ({})", f.rel, content.trim(), why_blocked.get(&key).cloned().unwrap_or_else(|| "nothing asks the generator for it".to_string()));
                 kept += 1;
             }
             out.push(line);
         }
         if changed && apply {
-            let _ = std::fs::write(root.join(&f.rel), out.join("
-"));
+            let _ = std::fs::write(root.join(&f.rel), out.join("\n"));
         }
     }
-    println!("{} TRACKED declaration(s) {}, {} kept (no reactive reader, or another set_<v> on the path)", dropped, if apply { "dropped" } else { "droppable (dry run; --apply writes them)" }, kept);
+    println!("{} TRACKED declaration(s) {} ({} read, {} called only, {} never written), {} kept", dropped, if apply { "dropped" } else { "droppable (dry run; --apply writes them)" }, read_n, called_n, idle_n, kept);
     ExitCode::SUCCESS
 }
 
