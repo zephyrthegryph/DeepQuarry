@@ -120,3 +120,29 @@ Not done this round:
   reads that `OwnerScalar` domain (`initial()` and const folding). Added or removed procs and vars
   renumber tables. Making them patchable means changing fresh ID order, which moves the BYOND
   parity baseline, so it is not recommended.
+
+## Status (round 3)
+
+- **Type splice:** new and removed types (explicit, implicit and nested) are spliced. The splice
+  replays the full constructor's first-encounter order after the engine prefix
+  (`authored_type_start`), applies its parent rules (explicit `parent_type`, the `/datum` rule),
+  remaps TypeIds and recertifies the hierarchy. It declines when an existing type's parent,
+  explicit flag or synthetic flag would change, and on cycles or missing explicit parents.
+- **Default patch** (`body_patch::try_default_patch`): the in-place update reports pure numeric
+  default edits of formal non-const vars (flags 0 or tmp), bound to the base tree's identity.
+  - The patch rewrites only those Variables-table records in the retained image. Records are found
+    by skipping the procedure table after the last list row.
+  - It skips ABI, lowering, initializers, link and composition. It still captures startup and ABI
+    facts once, for the query host.
+  - It declines on `initial(...)` naming the var, on body, input or archive changes, and when a
+    record does not hold the old value.
+  - String defaults are not patched: a new string changes the offset-ciphered string table, and
+    every later byte moves.
+- **Link and composition:** measured per step. Composition is about 1.15 s for a leaf var: members
+  and headers 0.54, procedure emit 0.22, types 0.12, encode 0.12. Encode already reuses list rows.
+  Link is about 1.9 s: table assignment 0.5–0.7 (now bulk-built maps), required types 0.6, orders
+  0.4.
+- **Limit:** with fresh-build ID order kept, added or removed procs and vars renumber
+  encounter-ordered tables. Their link and composition stay whole-program (about 3 s), so 2.5 s is
+  not reachable for those edits without either an ID-order change or record-level relinking of
+  every shifted reference.
