@@ -486,7 +486,7 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 	var/last_robot_loc
 
 CAPABILITIES(/obj/item/reagent_containers/glass/beaker/large/borg)
-	ref_one(nameof(R), /mob/living/silicon/robot)
+	ref_one(nameof(R), /atom) // Initialize() binds loc.loc: the robot when a module builds it, any place when something else does
 
 /obj/item/reagent_containers/glass/beaker/large/borg/Initialize(mapload)
 	. = ..()
