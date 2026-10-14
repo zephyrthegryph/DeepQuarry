@@ -30,6 +30,7 @@
 
 	// create a conveyor
 CAPABILITIES(/obj/machinery/conveyor)
+	setup(PROC_REF(prepare_conveyor_belt))
 	configure(uses_power(active = 100))
 	on_change(nameof(operating), ANY, then(PROC_REF(operating_changed)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), STAT_OPERABLE))
@@ -47,9 +48,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 /// A conveyor that starts running (its constructor param).
 /obj/machinery/conveyor/var/starts_on = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a conveyor watches what enters its turf, sets its belt direction and parts, and may start running
-/obj/machinery/conveyor/Initialize(mapload)
-	. = ..()
+/obj/machinery/conveyor/proc/prepare_conveyor_belt()
 	if(loc)
 		observe(loc, /datum/notice/atom_entered, src, then(PROC_REF(on_turf_entered)))
 	update_dir()

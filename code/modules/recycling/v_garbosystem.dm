@@ -15,8 +15,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 
 /obj/machinery/v_garbosystem/var/operating = FALSE
 /// Grinds what sits on it every frame while operating and operable.
-/obj/machinery/v_garbosystem/Initialize(mapload)
-	. = ..()
+/obj/machinery/v_garbosystem/proc/bind_adjacent_crusher()
 	for(var/dir in GLOB.cardinal)
 		rel_set(src, nameof(crusher), locate(/obj/machinery/recycling/crusher, get_step(src, dir)))
 		if(src.crusher())
@@ -55,6 +54,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/v_garbosystem)
+	setup(PROC_REF(bind_adjacent_crusher))
 	finds(nameof(button), /obj/machinery/button/garbosystem, back = nameof(/obj/machinery/button/garbosystem::grinder))
 	configure(uses_power(idle = 5, active = 100))
 	hose_sockets(list(/datum/hose_connector/output))

@@ -337,8 +337,5 @@ CAPABILITIES(/obj/item/reagent_containers/glass/bottle)
 	desc = "A container of glucose. Used to treat bloodloss through a hardsuit in unconscious patients."
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose)
+	setup(PROC_REF(on_reagent_change))
 	configure(reagents(add = list(REAGENT_ID_GLUCOSE = 100)))
-
-/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose/Initialize(mapload)
-	. = ..()
-	on_reagent_change()

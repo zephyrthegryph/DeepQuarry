@@ -139,6 +139,7 @@ MSG_DEF_SELF(hydroponics/not_by_this, "You can't do that.")
 // A tray grows while it is not cryogenically frozen: started work whose step runs each machine interval while there is something to grow or
 // soak in, and parks on its growth timer between cycles (schedule_growth_wake()); planting, reagents and the freezer start it again.
 CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
+	setup(PROC_REF(prepare_tray_scratch_and_connection))
 	reagents(200)
 	owns_one(nameof(seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(temp_chem_holder), /obj, starts = /obj, starts_args = NO_LOC)
@@ -231,9 +232,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 /obj/machinery/portable_atmospherics/hydroponics/proc/has_seed(datum/act/A)
 	return !!seed
 
-/obj/machinery/portable_atmospherics/hydroponics/Initialize(mapload)
-	. = ..()
-	temp_chem_holder.create_reagents(10) // ALLOW(decl): holder on a bare scratch /obj child, not on src
+/obj/machinery/portable_atmospherics/hydroponics/proc/prepare_tray_scratch_and_connection()
+	temp_chem_holder.create_reagents(10)
 	if(mechanical)
 		connect()
 

@@ -32,6 +32,7 @@
 	tgui_id = "CookingAppliance"
 
 CAPABILITIES(/obj/machinery/appliance/cooker)
+	setup(PROC_REF(prepare_cooker_state))
 	owns_many(nameof(cooking_objs), starts = PROC_REF(make_cooking_objs))
 	owns_one(nameof(thermostat_watch), /datum/native_watch/heat)
 
@@ -85,8 +86,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 	// to_world("Our cooking_power is [cooking_power] and our efficiency is [(cooking_power / optimal_power) * 100].") // Debug lines, uncomment if you need to test.
 	return (cooking_power / optimal_power) * 100
 
-/obj/machinery/appliance/cooker/Initialize(mapload)
-	. = ..()
+/obj/machinery/appliance/cooker/proc/prepare_cooker_state()
 	set_cooking(FALSE)
 
 /// The cooker's status light: idle, preheating, or off.

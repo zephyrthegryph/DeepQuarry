@@ -348,8 +348,7 @@ CAPABILITIES(/obj/item/beehive_assembly)
 	pass_color = TRUE
 	strict_color_stacking = TRUE
 
-/obj/item/stack/material/wax/Initialize(mapload)
-	. = ..()
+/obj/item/stack/material/wax/proc/prepare_wax_recipes()
 	recipes = GLOB.wax_recipes
 
 /datum/material/wax
@@ -422,3 +421,6 @@ CAPABILITIES(/obj/machinery/honey_extractor)
 	new /obj/item/stack/material/wax(loc)
 	set_honey(honey + processing)
 	set_processing(0)
+
+CAPABILITIES(/obj/item/stack/material/wax)
+	setup(PROC_REF(prepare_wax_recipes))

@@ -29,8 +29,7 @@
 
 /// The tank's reagents: 5000 units (reagents() in its CAPABILITIES block); each kind of tank adds to or replaces the contents with configure(reagents(add = | starts =)).
 
-/obj/structure/reagent_dispensers/Initialize(mapload)
-	. = ..()
+/obj/structure/reagent_dispensers/proc/prepare_tank_sockets()
 	if(has_sockets)
 		add_hose_connector(/datum/hose_connector/input)
 		add_hose_connector(/datum/hose_connector/output)
@@ -55,6 +54,7 @@
 	return "[src]"
 
 CAPABILITIES(/obj/structure/reagent_dispensers)
+	setup(PROC_REF(prepare_tank_sockets))
 	reagents(5000)
 	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_item)))
 	extend("melee_hit", when(cond_not(req(/obj/item/reagent_containers)))) // a container click on a tank taps it, hostile or not, instead of hitting it

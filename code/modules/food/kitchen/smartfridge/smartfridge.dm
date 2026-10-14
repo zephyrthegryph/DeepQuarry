@@ -34,6 +34,7 @@ STAT(/obj/machinery/smartfridge, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/smartfridge, electrified, TOP, base = 0)
 
 CAPABILITIES(/obj/machinery/smartfridge)
+	setup(PROC_REF(register_persistent_stock))
 	default_parts()
 	configure(uses_power(idle = 5, active = 100))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), gate = PROC_REF(step_gate), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
@@ -75,8 +76,7 @@ CAPABILITIES(/obj/machinery/smartfridge)
 /obj/machinery/smartfridge/secure
 	is_secure = 1
 
-/obj/machinery/smartfridge/Initialize(mapload)
-	. = ..()
+/obj/machinery/smartfridge/proc/register_persistent_stock()
 	if(persistent)
 		SSpersistence.track_value(src, persistent)
 
@@ -457,8 +457,7 @@ CAPABILITIES(/obj/machinery/smartfridge/secure)
 	name = "\improper Smart Chemavator - Lower"
 	circuit = /obj/item/circuitboard/smartfridge/chemvator/down
 
-/obj/machinery/smartfridge/chemistry/chemvator/down/Initialize(mapload)
-	. = ..()
+/obj/machinery/smartfridge/chemistry/chemvator/down/proc/bind_upper_chemvator()
 	var/obj/machinery/smartfridge/chemistry/chemvator/above = locate(/obj/machinery/smartfridge/chemistry/chemvator,get_zstep(src,UP))
 	if(istype(above))
 		rel_set(above, nameof(above.attached), src)
@@ -478,3 +477,6 @@ CAPABILITIES(/obj/machinery/smartfridge/secure)
 /// the attached this refers to (a relation view: null once it is deleted).
 /obj/machinery/smartfridge/chemistry/chemvator/proc/attached() as /obj/machinery/smartfridge/chemistry/chemvator
 	return attached
+
+CAPABILITIES(/obj/machinery/smartfridge/chemistry/chemvator/down)
+	setup(PROC_REF(bind_upper_chemvator))

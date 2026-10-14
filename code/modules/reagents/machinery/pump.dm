@@ -20,6 +20,7 @@
 
 /// Pumps every machine frame while on (set_pump_on()).
 CAPABILITIES(/obj/machinery/pump)
+	setup(PROC_REF(prepare_pump_cell_and_parts))
 	configure(uses_power(active = 200 * CELLRATE))
 	default_parts()
 	hose_sockets(list(/datum/hose_connector/output))
@@ -36,8 +37,7 @@ CAPABILITIES(/obj/machinery/pump)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 
-/obj/machinery/pump/Initialize(mapload)
-	. = ..()
+/obj/machinery/pump/proc/prepare_pump_cell_and_parts()
 	rel_set(src, nameof(cell), default_use_hicell()) // component_parts owns the cell; this is a view onto it
 
 	RefreshParts()

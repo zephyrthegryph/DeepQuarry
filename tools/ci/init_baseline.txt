@@ -1666,64 +1666,10 @@ init_lines	code/modules/exploration/lootsafe.dm	@/obj/structure/closet/crate/sec
 init_lines	code/modules/exploration/lootsafe.dm	@/obj/structure/closet/crate/secure/lootsafe/devillock::Initialize::make_code
 init_lines	code/modules/exploration/lootsafe.dm	@/obj/structure/closet/crate/secure/lootsafe/devillock::Initialize::generate_loot
 init_lines	code/modules/fireworks/firework_launcher.dm	@/obj/machinery/firework_launcher::Initialize::EXPIRY_STAMP
-init_lines	code/modules/food/food/drinks/bottle.dm	@/obj/item/reagent_containers/food/drinks/bottle::Initialize::if
-init_lines	code/modules/food/food/drinks/bottle.dm	@/obj/item/reagent_containers/food/drinks/bottle::Initialize::unacidable
-init_lines	code/modules/food/food/drinks/bottle.dm	@/obj/item/reagent_containers/food/drinks/bottle::Initialize::drop_sound
-init_lines	code/modules/food/food/drinks/bottle.dm	@/obj/item/reagent_containers/food/drinks/bottle::Initialize::pickup_sound
-init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat::Initialize::reagents.remove_reagent
-init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks/slice::Initialize::if
-init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks/slice::Initialize::whole
-init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks/slice::Initialize::if
-init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks/slice::Initialize::reagent_amount
-init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks/slice::Initialize::whole.reagents.trans_to_obj
-init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks/slice::Initialize::spent
-init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch::Initialize::rel_set
-init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks/tastybread::Initialize::if
-init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks/tastybread::Initialize::expr
-init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks/tastybread::Initialize::return
-init_lines	code/modules/food/food/snacks/meat.dm	@/obj/item/reagent_containers/food/snacks/meat/chicken::Initialize::reagents.remove_reagent
-init_lines	code/modules/food/food/snacks/meat.dm	@/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat::Initialize::reagents.remove_reagent
 init_lines	code/modules/food/food/z_custom_food.dm	@/obj/item/reagent_containers/food/snacks/customizable::Initialize::topping
 init_lines	code/modules/food/food/z_custom_food.dm	@/obj/item/reagent_containers/food/snacks/customizable::Initialize::filling
 init_lines	code/modules/food/food/z_custom_food.dm	@/obj/item/reagent_containers/food/snacks/customizable::Initialize::updateName
-init_lines	code/modules/food/glass/bottle.dm	@/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose::Initialize::on_reagent_change
-init_lines	code/modules/food/kitchen/cooking_machines/_cooker.dm	@/obj/machinery/appliance/cooker::Initialize::cooking
 init_lines	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	@/obj/item/reagent_containers/food/snacks/variable::Initialize::reagents.maximum_volume
-init_lines	code/modules/food/kitchen/cooking_machines/_mixer.dm	@/obj/machinery/appliance/mixer::Initialize::cooking
-init_lines	code/modules/food/kitchen/cooking_machines/_mixer.dm	@/obj/machinery/appliance/mixer::Initialize::selected_option
-init_lines	code/modules/food/kitchen/cooking_machines/_mixer.dm	@/obj/machinery/appliance/mixer::Initialize::CI
-init_lines	code/modules/food/kitchen/cooking_machines/_mixer.dm	@/obj/machinery/appliance/mixer::Initialize::CI.combine_target
-init_lines	code/modules/food/kitchen/cooking_machines/container.dm	@/obj/item/reagent_containers/cooking_container/oven::Initialize::insertable
-init_lines	code/modules/food/kitchen/cooking_machines/container.dm	@/obj/item/reagent_containers/cooking_container/oven::Initialize::expr
-init_lines	code/modules/food/kitchen/cooking_machines/container.dm	@/obj/item/reagent_containers/cooking_container/oven::Initialize::expr
-init_lines	code/modules/food/kitchen/cooking_machines/container.dm	@/obj/item/reagent_containers/cooking_container/grill::Initialize::insertable
-init_lines	code/modules/food/kitchen/cooking_machines/container.dm	@/obj/item/reagent_containers/cooking_container/grill::Initialize::expr
-init_lines	code/modules/food/kitchen/cooking_machines/container.dm	@/obj/item/reagent_containers/cooking_container/grill::Initialize::expr
-init_lines	code/modules/food/kitchen/cooking_machines/container.dm	@/obj/item/reagent_containers/cooking_container/grill::Initialize::expr
-init_lines	code/modules/food/kitchen/cooking_machines/container.dm	@/obj/item/reagent_containers/cooking_container/grill::Initialize::expr
-init_lines	code/modules/food/kitchen/cooking_machines/container.dm	@/obj/item/reagent_containers/cooking_container/grill::Initialize::expr
-init_lines	code/modules/food/kitchen/cooking_machines/container.dm	@/obj/item/reagent_containers/cooking_container/grill::Initialize::expr
-init_lines	code/modules/food/kitchen/gibber.dm	@/obj/machinery/gibber/autogibber::Initialize::for
-init_lines	code/modules/food/kitchen/gibber.dm	@/obj/machinery/gibber/autogibber::Initialize::input_obj
-init_lines	code/modules/food/kitchen/gibber.dm	@/obj/machinery/gibber/autogibber::Initialize::if
-init_lines	code/modules/food/kitchen/gibber.dm	@/obj/machinery/gibber/autogibber::Initialize::if
-init_lines	code/modules/food/kitchen/gibber.dm	@/obj/machinery/gibber/autogibber::Initialize::rel_set
-init_lines	code/modules/food/kitchen/gibber.dm	@/obj/machinery/gibber/autogibber::Initialize::gib_throw_dir
-init_lines	code/modules/food/kitchen/gibber.dm	@/obj/machinery/gibber/autogibber::Initialize::spent
-init_lines	code/modules/food/kitchen/gibber.dm	@/obj/machinery/gibber/autogibber::Initialize::expr
-init_lines	code/modules/food/kitchen/gibber.dm	@/obj/machinery/gibber/autogibber::Initialize::if
-init_lines	code/modules/food/kitchen/gibber.dm	@/obj/machinery/gibber/autogibber::Initialize::log_world
-init_lines	code/modules/food/kitchen/icecream.dm	@/obj/machinery/icecream_vat::Initialize::while
-init_lines	code/modules/food/kitchen/icecream.dm	@/obj/machinery/icecream_vat::Initialize::LAZYADD
-init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge::Initialize::if
-init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge::Initialize::SSpersistence.track_value
-init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge/chemistry/chemvator/down::Initialize::above
-init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge/chemistry/chemvator/down::Initialize::if
-init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge/chemistry/chemvator/down::Initialize::rel_set
-init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge/chemistry/chemvator/down::Initialize::rel_set
-init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge/chemistry/chemvator/down::Initialize::item_records
-init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge/chemistry/chemvator/down::Initialize::else
-init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge/chemistry/chemvator/down::Initialize::to_chat
 init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P
 init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::for
 init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P
@@ -1754,7 +1700,6 @@ init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::d
 init_lines	code/modules/holomap/station_holomap.dm	@/obj/machinery/station_map::Initialize::original_zLevel
 init_lines	code/modules/holomap/station_holomap.dm	@/obj/machinery/station_map::Initialize::if
 init_lines	code/modules/holomap/station_holomap.dm	@/obj/machinery/station_map::Initialize::setup_holomap
-init_lines	code/modules/hydroponics/beekeeping/beehive.dm	@/obj/item/stack/material/wax::Initialize::recipes
 init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::Initialize::if
 init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::Initialize::dried_type
 init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::Initialize::if
@@ -1828,9 +1773,6 @@ init_lines	code/modules/hydroponics/spreading/spreading.dm	@/obj/effect/plant::I
 init_lines	code/modules/hydroponics/spreading/spreading.dm	@/obj/effect/plant::Initialize::EXPIRY_SET
 init_lines	code/modules/hydroponics/spreading/spreading.dm	@/obj/effect/plant::Initialize::spread_chance
 init_lines	code/modules/hydroponics/spreading/spreading.dm	@/obj/effect/plant::Initialize::spread_distance
-init_lines	code/modules/hydroponics/trays/tray.dm	@/obj/machinery/portable_atmospherics/hydroponics::Initialize::temp_chem_holder.create_reagents
-init_lines	code/modules/hydroponics/trays/tray.dm	@/obj/machinery/portable_atmospherics/hydroponics::Initialize::if
-init_lines	code/modules/hydroponics/trays/tray.dm	@/obj/machinery/portable_atmospherics/hydroponics::Initialize::connect
 init_lines	code/modules/hydroponics/trays/tray_soil.dm	@/obj/machinery/portable_atmospherics/hydroponics/soil/invisible::Initialize::if
 init_lines	code/modules/hydroponics/trays/tray_soil.dm	@/obj/machinery/portable_atmospherics/hydroponics/soil/invisible::Initialize::return
 init_lines	code/modules/hydroponics/trays/tray_soil.dm	@/obj/machinery/portable_atmospherics/hydroponics/soil/invisible::Initialize::proto_set
@@ -2864,83 +2806,13 @@ init_lines	code/modules/projectiles/targeting/targeting_overlay.dm	@/obj/aiming_
 init_lines	code/modules/projectiles/targeting/targeting_overlay.dm	@/obj/aiming_overlay::Initialize::if
 init_lines	code/modules/projectiles/targeting/targeting_overlay.dm	@/obj/aiming_overlay::Initialize::return
 init_lines	code/modules/projectiles/targeting/targeting_overlay.dm	@/obj/aiming_overlay::Initialize::moveToNullspace
-init_lines	code/modules/reagents/machinery/dispenser/cartridge.dm	@/obj/item/reagent_containers/chem_disp_cartridge::Initialize::if
-init_lines	code/modules/reagents/machinery/dispenser/cartridge.dm	@/obj/item/reagent_containers/chem_disp_cartridge::Initialize::R
-init_lines	code/modules/reagents/machinery/dispenser/cartridge.dm	@/obj/item/reagent_containers/chem_disp_cartridge::Initialize::setLabel
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::if
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::for
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::add_cartridge
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::panel_open
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::P
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::P.name
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::P.desc
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::P.set_info
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::for
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	@/obj/machinery/chemical_synthesizer::Initialize::expr
-init_lines	code/modules/reagents/machinery/dispenser/dispenser2.dm	@/obj/machinery/chemical_dispenser::Initialize::if
-init_lines	code/modules/reagents/machinery/dispenser/dispenser2.dm	@/obj/machinery/chemical_dispenser::Initialize::for
-init_lines	code/modules/reagents/machinery/dispenser/dispenser2.dm	@/obj/machinery/chemical_dispenser::Initialize::add_cartridge
-init_lines	code/modules/reagents/machinery/dispenser/reagent_tank.dm	@/obj/structure/reagent_dispensers::Initialize::if
-init_lines	code/modules/reagents/machinery/dispenser/reagent_tank.dm	@/obj/structure/reagent_dispensers::Initialize::add_hose_connector
-init_lines	code/modules/reagents/machinery/dispenser/reagent_tank.dm	@/obj/structure/reagent_dispensers::Initialize::add_hose_connector
 init_lines	code/modules/reagents/machinery/distillery.dm	@/obj/machinery/portable_atmospherics/powered/reagent_distillery::Initialize::if
 init_lines	code/modules/reagents/machinery/distillery.dm	@/obj/machinery/portable_atmospherics/powered/reagent_distillery::Initialize::base_state
-init_lines	code/modules/reagents/machinery/pump.dm	@/obj/machinery/pump::Initialize::rel_set
-init_lines	code/modules/reagents/machinery/pump.dm	@/obj/machinery/pump::Initialize::RefreshParts
 init_lines	code/modules/reagents/reagent_containers/blood_pack.dm	@/obj/item/reagent_containers/blood::Initialize::base_name
 init_lines	code/modules/reagents/reagent_containers/blood_pack.dm	@/obj/item/reagent_containers/blood::Initialize::base_desc
-init_lines	code/modules/reagents/reagent_containers/blood_pack.dm	@/obj/item/reagent_containers/blood::Initialize::if
-init_lines	code/modules/reagents/reagent_containers/blood_pack.dm	@/obj/item/reagent_containers/blood::Initialize::label_text
-init_lines	code/modules/reagents/reagent_containers/blood_pack.dm	@/obj/item/reagent_containers/blood::Initialize::update_iv_label
-init_lines	code/modules/reagents/reagent_containers/borghypo.dm	@/obj/item/reagent_containers/borghypo::Initialize::for
-init_lines	code/modules/reagents/reagent_containers/borghypo.dm	@/obj/item/reagent_containers/borghypo::Initialize::reagent_volumes[T]
-init_lines	code/modules/reagents/reagent_containers/borghypo.dm	@/obj/item/reagent_containers/borghypo::Initialize::hypo_reagent
-init_lines	code/modules/reagents/reagent_containers/borghypo.dm	@/obj/item/reagent_containers/borghypo::Initialize::LAZYADD
 init_lines	code/modules/reagents/reagent_containers/glass.dm	@/obj/item/reagent_containers/glass::Initialize::base_name
 init_lines	code/modules/reagents/reagent_containers/glass.dm	@/obj/item/reagent_containers/glass::Initialize::base_desc
 init_lines	code/modules/reagents/reagent_containers/glass.dm	@/obj/item/reagent_containers/glass/beaker::Initialize::desc
-init_lines	code/modules/reagents/reagent_containers/hypospray.dm	@/obj/item/reagent_containers/hypospray/vial::Initialize::icon_state
-init_lines	code/modules/reagents/reagent_containers/hypospray.dm	@/obj/item/reagent_containers/hypospray/vial::Initialize::volume
-init_lines	code/modules/reagents/reagent_containers/hypospray.dm	@/obj/item/reagent_containers/hypospray/vial::Initialize::reagents.maximum_volume
-init_lines	code/modules/reagents/reagent_containers/hypospray.dm	@/obj/item/reagent_containers/hypospray/autoinjector/used::Initialize::cap_key_set
-init_lines	code/modules/reagents/reagent_containers/pill.dm	@/obj/item/reagent_containers/pill/zoom::Initialize::if
-init_lines	code/modules/reagents/reagent_containers/pill.dm	@/obj/item/reagent_containers/pill/zoom::Initialize::reagents.add_reagent
-init_lines	code/modules/reagents/reagent_containers/pill.dm	@/obj/item/reagent_containers/pill/zoom::Initialize::color
-init_lines	code/modules/reagents/reagent_containers/syringes.dm	@/obj/item/reagent_containers/syringe/ld50_syringe/choral::Initialize::mode
-init_lines	code/modules/reagents/reagent_containers/syringes.dm	@/obj/item/reagent_containers/syringe/old::Initialize::if
-init_lines	code/modules/reagents/reagent_containers/syringes.dm	@/obj/item/reagent_containers/syringe/old::Initialize::new_disease
-init_lines	code/modules/reagents/reagent_containers/syringes.dm	@/obj/item/reagent_containers/syringe/old::Initialize::contamination
-init_lines	code/modules/recycling/conveyor2.dm	@/obj/machinery/conveyor::Initialize::if
-init_lines	code/modules/recycling/conveyor2.dm	@/obj/machinery/conveyor::Initialize::observe
-init_lines	code/modules/recycling/conveyor2.dm	@/obj/machinery/conveyor::Initialize::update_dir
-init_lines	code/modules/recycling/conveyor2.dm	@/obj/machinery/conveyor::Initialize::if
-init_lines	code/modules/recycling/conveyor2.dm	@/obj/machinery/conveyor::Initialize::operating
-init_lines	code/modules/recycling/conveyor2.dm	@/obj/machinery/conveyor::Initialize::default_apply_parts
 init_lines	code/modules/recycling/disposal-construction.dm	@/obj/structure/disposalconstruct::Initialize::if
 init_lines	code/modules/recycling/disposal-construction.dm	@/obj/structure/disposalconstruct::Initialize::ptype
 init_lines	code/modules/recycling/disposal-construction.dm	@/obj/structure/disposalconstruct::Initialize::switch
@@ -2962,16 +2834,6 @@ init_lines	code/modules/recycling/disposal-construction.dm	@/obj/structure/dispo
 init_lines	code/modules/recycling/disposal-construction.dm	@/obj/structure/disposalconstruct::Initialize::else
 init_lines	code/modules/recycling/disposal-construction.dm	@/obj/structure/disposalconstruct::Initialize::update
 init_lines	code/modules/recycling/disposal.dm	@/obj/structure/disposalpipe::Initialize::base_icon_state
-init_lines	code/modules/recycling/disposal.dm	@/obj/structure/disposalpipe/segment::Initialize::update
-init_lines	code/modules/recycling/disposal.dm	@/obj/structure/disposalpipe/up::Initialize::update
-init_lines	code/modules/recycling/disposal.dm	@/obj/structure/disposalpipe/down::Initialize::update
-init_lines	code/modules/recycling/disposal_junctions.dm	@/obj/structure/disposalpipe/junction::Initialize::update
-init_lines	code/modules/recycling/disposal_junctions.dm	@/obj/structure/disposalpipe/sortjunction::Initialize::if
-init_lines	code/modules/recycling/disposal_junctions.dm	@/obj/structure/disposalpipe/sortjunction::Initialize::LAZYADD
-init_lines	code/modules/recycling/disposal_junctions.dm	@/obj/structure/disposalpipe/sortjunction::Initialize::updatedir
-init_lines	code/modules/recycling/disposal_junctions.dm	@/obj/structure/disposalpipe/sortjunction::Initialize::updatename
-init_lines	code/modules/recycling/disposal_junctions.dm	@/obj/structure/disposalpipe/sortjunction::Initialize::updatedesc
-init_lines	code/modules/recycling/disposal_junctions.dm	@/obj/structure/disposalpipe/sortjunction::Initialize::update
 init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::trunk
 init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::add_disposal_connection
 init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::face
@@ -2986,22 +2848,6 @@ init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal:
 init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::air_contents.copy_from_ratio
 init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::air_contents.set_volume
 init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::mode
-init_lines	code/modules/recycling/disposal_outlet.dm	@/obj/structure/disposaloutlet::Initialize::update_target
-init_lines	code/modules/recycling/disposal_outlet.dm	@/obj/structure/disposaloutlet::Initialize::trunk
-init_lines	code/modules/recycling/disposal_outlet.dm	@/obj/structure/disposaloutlet::Initialize::add_disposal_connection
-init_lines	code/modules/recycling/disposal_outlet.dm	@/obj/structure/disposaloutlet::Initialize::observe
-init_lines	code/modules/recycling/disposal_outlet.dm	@/obj/structure/disposaloutlet::Initialize::if
-init_lines	code/modules/recycling/disposal_outlet.dm	@/obj/structure/disposaloutlet::Initialize::PUBLISH_LEGACY
-init_lines	code/modules/recycling/disposal_tagger.dm	@/obj/structure/disposalpipe/tagger::Initialize::if
-init_lines	code/modules/recycling/disposal_tagger.dm	@/obj/structure/disposalpipe/tagger::Initialize::LAZYADD
-init_lines	code/modules/recycling/disposal_tagger.dm	@/obj/structure/disposalpipe/tagger::Initialize::updatename
-init_lines	code/modules/recycling/disposal_tagger.dm	@/obj/structure/disposalpipe/tagger::Initialize::updatedesc
-init_lines	code/modules/recycling/disposal_tagger.dm	@/obj/structure/disposalpipe/tagger::Initialize::update
-init_lines	code/modules/recycling/v_garbosystem.dm	@/obj/machinery/v_garbosystem::Initialize::for
-init_lines	code/modules/recycling/v_garbosystem.dm	@/obj/machinery/v_garbosystem::Initialize::rel_set
-init_lines	code/modules/recycling/v_garbosystem.dm	@/obj/machinery/v_garbosystem::Initialize::if
-init_lines	code/modules/recycling/v_garbosystem.dm	@/obj/machinery/v_garbosystem::Initialize::crusher
-init_lines	code/modules/recycling/v_garbosystem.dm	@/obj/machinery/v_garbosystem::Initialize::expr
 init_lines	code/modules/refinery/core/industrial_reagent_mixer.dm	@/obj/machinery/reagent_refinery/mixer::Initialize::mixer_angle
 init_lines	code/modules/refinery/core/industrial_reagent_mixer.dm	@/obj/machinery/reagent_refinery/mixer::Initialize::default_apply_parts
 init_lines	code/modules/refinery/core/industrial_reagent_reactor.dm	@/obj/machinery/reagent_refinery/reactor::Initialize::update_gas_network
@@ -4065,8 +3911,6 @@ world_reads	code/modules/body/organs/organ.dm	data.setup_from_species(GLOB.all_s
 world_reads	code/modules/economy/EFTPOS.dm	rel_set(src, nameof(linked_account), GLOB.station_account)
 world_reads	code/modules/economy/EFTPOS.dm	machine_id = "[station_name()] EFTPOS #[GLOB.num_financial_terminals++]"
 world_reads	code/modules/emotes/emote_define.dm	LAZYSET(GLOB.emotes_by_key, key, src)
-world_reads	code/modules/food/kitchen/gibber.dm	for(var/i in GLOB.cardinal)
-world_reads	code/modules/hydroponics/beekeeping/beehive.dm	recipes = GLOB.wax_recipes
 world_reads	code/modules/integrated_electronics/subtypes/camera.dm	GLOB.cameranet.addCamera(src)
 world_reads	code/modules/maint_recycler/code/util.dm	GLOB.recycler_vendor_locations |= get_turf(src)
 world_reads	code/modules/mining/machine_silo.dm	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
@@ -4104,9 +3948,6 @@ world_reads	code/modules/overmap/sectors.dm	levels_for_distress[i] = GLOB.map_te
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	ammo_type = pick(GLOB.global_ammo_types)
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	desc += " Uses [GLOB.global_ammo_types[ammo_type]] rounds."
 world_reads	code/modules/recycling/disposal-construction.dm	if(ptype == DISPOSAL_PIPE_STRAIGHT && (dir in GLOB.cornerdirs))
-world_reads	code/modules/recycling/disposal_junctions.dm	LAZYADD(GLOB.tagger_locations["[sortType]"], get_z(src))
-world_reads	code/modules/recycling/disposal_tagger.dm	LAZYADD(GLOB.tagger_locations["[sort_tag]"], get_z(src))
-world_reads	code/modules/recycling/v_garbosystem.dm	for(var/dir in GLOB.cardinal)
 world_reads	code/modules/research/message_server.dm	if(istype(GLOB.blackbox, /obj/machinery/blackbox_recorder))
 world_reads	code/modules/research/message_server.dm	GLOB.blackbox = src
 world_reads	code/modules/resleeving/sleevecard.dm	default_language = GLOB.all_languages[LANGUAGE_GALCOM] // Same issue as bots

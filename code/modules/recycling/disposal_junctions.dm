@@ -6,18 +6,12 @@
 	icon_state = "pipe-j1"
 
 CAPABILITIES(/obj/structure/disposalpipe/junction)
+	setup(PROC_REF(update))
 	derives(nameof(dpdir), PROC_REF(junction_ends)) // at init: the pipe's ends follow how it was placed
-
-// ALLOW(init/INSTANCE_STATE): its pipe directions follow the way it was placed
-/obj/structure/disposalpipe/junction/Initialize(mapload)
-	. = ..()
-	update()
-	return
 
 // next direction to move
 // if coming in from secondary dirs, then next is primary dir
 // if coming in from primary dir, then next is equal chance of other dirs
-
 /obj/structure/disposalpipe/junction/nextdir(fromdir)
 	var/flipdir = turn(fromdir, 180)
 	if(flipdir != dir)	// came from secondary dir
@@ -81,8 +75,7 @@ CAPABILITIES(/obj/structure/disposalpipe/junction)
 
 	set_dpdir(sortdir | dir | negdir)
 
-/obj/structure/disposalpipe/sortjunction/Initialize(mapload)
-	. = ..()
+/obj/structure/disposalpipe/sortjunction/proc/register_sorting_junction()
 	if(sortType)
 		LAZYADD(GLOB.tagger_locations["[sortType]"], get_z(src))
 
@@ -265,6 +258,7 @@ CAPABILITIES(/obj/structure/disposalpipe/junction)
 // ---- the wires ----
 
 CAPABILITIES(/obj/structure/disposalpipe/sortjunction)
+	setup(PROC_REF(register_sorting_junction))
 	space(SPACE_PANEL, door = nameof(panel_open))
 	wires(name = "Disposals Sorting Pipe", count = 6, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	on_wire(WIRE_SORT_SCAN, cut = PROC_REF(scan_wire_cut), pulse = PROC_REF(scan_wire_pulsed))

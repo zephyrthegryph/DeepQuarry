@@ -77,15 +77,15 @@ CAPABILITIES(/obj/item/reagent_containers/hypospray)
 
 // Comes with an empty vial.
 
-/obj/item/reagent_containers/hypospray/vial/Initialize(mapload)
-	. = ..()
-	icon_state = "[initial(icon_state)]" // ALLOW(decl): discards a map-edited icon_state
-	volume = loaded_vial.volume
+/obj/item/reagent_containers/hypospray/vial/proc/prepare_starting_vial()
+	set_icon_state("[initial(icon_state)]") // Preserve the original reset of a map-edited sprite.
+	set_volume(loaded_vial.volume)
 	reagents.maximum_volume = loaded_vial.reagents.maximum_volume
 
 // The vial hypospray takes a 30-unit vial for its drug supply: a vial is loaded in three seconds (once), and an empty hand takes it out when the hypospray
 // is in the other hand. What the vial held is the hypospray's while it is in.
 CAPABILITIES(/obj/item/reagent_containers/hypospray/vial)
+	setup(PROC_REF(prepare_starting_vial))
 	owns_one(nameof(loaded_vial), /obj/item/reagent_containers/glass/beaker/vial, starts = /obj/item/reagent_containers/glass/beaker/vial)
 	configure(injector(slow = nameof(prototype), vial = nameof(loaded_vial)))
 	op("load", item(/obj/item/reagent_containers/glass/beaker/vial), priority(OP_PRIORITY_PART + 5), label("Load the vial"),
@@ -150,8 +150,7 @@ CAPABILITIES(/obj/item/reagent_containers/hypospray/autoinjector)
 /obj/item/reagent_containers/hypospray/autoinjector/empty
 	filled = 0
 
-/obj/item/reagent_containers/hypospray/autoinjector/used/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/hypospray/autoinjector/used/proc/close_spent_injector()
 	cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, FALSE)
 
 /// A used injector shows spent, whatever it still holds.
@@ -417,3 +416,6 @@ CAPABILITIES(/obj/item/reagent_containers/hypospray/autoinjector)
 	name = "prototype hypospray"
 	desc = "This reproduction hypospray is nearly a perfect replica of the early model DeForest hyposprays, sharing many of the same features. However, there are additional safety measures installed to prevent unwanted injections."
 	prototype = 1
+
+CAPABILITIES(/obj/item/reagent_containers/hypospray/autoinjector/used)
+	setup(PROC_REF(close_spent_injector))

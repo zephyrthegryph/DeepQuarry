@@ -228,10 +228,10 @@ CAPABILITIES(/obj/item/reagent_containers/syringe/drugs)
 	configure(reagents(add = list(REAGENT_ID_BLISS = 5, REAGENT_ID_MINDBREAKER = 5, REAGENT_ID_CRYPTOBIOLIN = 5)))
 
 CAPABILITIES(/obj/item/reagent_containers/syringe/ld50_syringe/choral)
+	setup(PROC_REF(prepare_injection_mode))
 	configure(reagents(add = list(REAGENT_ID_CHLORALHYDRATE = 50)))
 
-/obj/item/reagent_containers/syringe/ld50_syringe/choral/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/syringe/ld50_syringe/choral/proc/prepare_injection_mode()
 	set_mode(NEEDLE_INJECT)
 
 /obj/item/reagent_containers/syringe/steroid
@@ -319,9 +319,7 @@ CAPABILITIES(/obj/item/reagent_containers/syringe/steroid)
 	desc = "An old, broken syringe. Are you sure it's a good idea to pick it up without gloves?"
 	mode = NEEDLE_BROKEN
 
-// ALLOW(init/INSTANCE_STATE): rolls whether this old syringe is contaminated
-/obj/item/reagent_containers/syringe/old/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/syringe/old/proc/prepare_old_contamination()
 	if(prob(75))
 		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(1, 3), rand(7, 9), 2, infected = src)
 		set_contamination("old", list(new_disease))
@@ -329,3 +327,6 @@ CAPABILITIES(/obj/item/reagent_containers/syringe/steroid)
 /// A dirty syringe's infection takes hold in the limb.
 /obj/item/organ/external/proc/syringe_infection()
 	germ_level += INFECTION_LEVEL_ONE+30
+
+CAPABILITIES(/obj/item/reagent_containers/syringe/old)
+	setup(PROC_REF(prepare_old_contamination))

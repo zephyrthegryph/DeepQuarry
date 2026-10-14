@@ -16,8 +16,7 @@
 
 /obj/item/reagent_containers/food/drinks/bottle/on_reagent_change() return // To suppress price updating. Bottles have their own price tags.
 
-/obj/item/reagent_containers/food/drinks/bottle/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/food/drinks/bottle/proc/prepare_glass_bottle()
 	if(isGlass)
 		unacidable = TRUE
 		set_drop_sound(SFX_ITEMS_DROP_BOTTLE)
@@ -110,6 +109,7 @@
 
 // A bottle is opened (or its rag pulled out) by bottle_self(), the legacy entry below, and not by the drinks' own open op.
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
+	setup(PROC_REF(prepare_glass_bottle))
 	configure(item_combat(force = 6))
 	without("open")
 	op("bottle_self", in_hand(), then(PROC_REF(bottle_self)))

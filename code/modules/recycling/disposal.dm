@@ -282,25 +282,16 @@ CAPABILITIES(/obj/structure/disposalpipe)
 	icon_state = "pipe-s"
 
 CAPABILITIES(/obj/structure/disposalpipe/segment)
+	setup(PROC_REF(update))
 	derives(nameof(dpdir), PROC_REF(segment_ends)) // at init: the pipe's ends follow how it was placed
-
-// ALLOW(init/INSTANCE_STATE): its pipe directions follow the way it was placed
-/obj/structure/disposalpipe/segment/Initialize(mapload)
-	. = ..()
-
-	update()
 
 ///// Z-Level stuff
 /obj/structure/disposalpipe/up
 	icon_state = "pipe-u"
 
 CAPABILITIES(/obj/structure/disposalpipe/up)
+	setup(PROC_REF(update))
 	derives(nameof(dpdir), PROC_REF(facing_end)) // at init: the pipe's ends follow how it was placed
-
-// ALLOW(init/INSTANCE_STATE): its pipe direction follows the way it was placed
-/obj/structure/disposalpipe/up/Initialize(mapload)
-	. = ..()
-	update()
 
 /obj/structure/disposalpipe/up/nextdir(fromdir)
 	var/nextdir
@@ -347,12 +338,8 @@ CAPABILITIES(/obj/structure/disposalpipe/up)
 	icon_state = "pipe-d"
 
 CAPABILITIES(/obj/structure/disposalpipe/down)
+	setup(PROC_REF(update))
 	derives(nameof(dpdir), PROC_REF(facing_end)) // at init: the pipe's ends follow how it was placed
-
-// ALLOW(init/INSTANCE_STATE): its pipe direction follows the way it was placed
-/obj/structure/disposalpipe/down/Initialize(mapload)
-	. = ..()
-	update()
 
 /obj/structure/disposalpipe/down/nextdir(fromdir)
 	var/nextdir

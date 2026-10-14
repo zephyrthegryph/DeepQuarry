@@ -22,8 +22,7 @@
 /obj/machinery/gibber/autogibber
 	var/tmp/turf/input_plate
 
-/obj/machinery/gibber/autogibber/Initialize(mapload)
-	. = ..()
+/obj/machinery/gibber/autogibber/proc/bind_gibber_input_plate()
 	for(var/i in GLOB.cardinal)
 		var/obj/machinery/mineral/input/input_obj = locate( /obj/machinery/mineral/input, get_step(src.loc, i) )
 		if(input_obj)
@@ -44,6 +43,7 @@
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
 
 CAPABILITIES(/obj/machinery/gibber/autogibber)
+	setup(PROC_REF(bind_gibber_input_plate))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 
 /// Something walked into it (the bump action's notice).

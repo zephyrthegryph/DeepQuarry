@@ -1010,10 +1010,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomslice)
 	bitesize = 6
 
 
-/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat/Initialize(mapload)
-	. = ..()
-	reagents.remove_reagent(REAGENT_ID_PACID,6)
-
 /obj/item/reagent_containers/food/snacks/meatball
 	name = "meatball"
 	desc = "A great meal all round."
@@ -2732,8 +2728,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearchili)
  *  whole item, transferring the reagents and deleting the whole item, which may
  *  have performance implications.
  */
-/obj/item/reagent_containers/food/snacks/slice/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/food/snacks/slice/proc/fill_from_whole_food()
 	if(filled)
 		var/obj/item/reagent_containers/food/snacks/whole = new whole_path()
 		if(whole && whole.slices_num)
@@ -4842,11 +4837,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickenkatsu)
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_BEERBATTER = 2, REAGENT_ID_OIL = 1)))
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch)
+	setup(PROC_REF(bind_batter_coating))
 	configure(reagents(add = list(REAGENT_ID_BATTER = 6.5)))
 	configure(reagents(add = list(REAGENT_ID_OIL = 4)))
 
-/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch/proc/bind_batter_coating()
 	rel_set(src, nameof(coating), reagents.get_reagent(REAGENT_ID_BATTER))
 
 /obj/item/reagent_containers/food/snacks/funnelcake
@@ -7340,12 +7335,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/greentealeaf)
 	nutriment_desc = list("bread" = 4, "sweetness" = 6)
 	bitesize = 4
 
-// ALLOW(init/INSTANCE_STATE): a one in a hundred roll swaps it for the sequel
-/obj/item/reagent_containers/food/snacks/tastybread/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/food/snacks/tastybread/proc/roll_bread_sequel()
 	if(prob(1))
 		new /obj/item/reagent_containers/food/snacks/tastybread/sequel(src)
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 
 /obj/item/reagent_containers/food/snacks/sliceable/blondies
 	name = "blondies"
@@ -8608,3 +8602,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/acorn)
 /// the coating this refers to (a relation view: null once it is deleted).
 /obj/item/reagent_containers/food/snacks/proc/coating() as /datum/reagent/nutriment/coating
 	return coating
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice)
+	setup(PROC_REF(fill_from_whole_food))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tastybread)
+	setup(PROC_REF(roll_bread_sequel))
