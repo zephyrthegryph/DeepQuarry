@@ -1,0 +1,5 @@
+# C1 machinery silicon entry handoff
+
+silicon_entry baseline103→95; scoped machinery rows19→11. Eight legacy checks become genuine declared actor-kind control routes or requirements, preserving silent upload refusal and existing robotics refusal text. Five real physical/remote regression leaves added under dq_p2_door/silicon (signaler routes, upload internals, robotics controls, slipper swipe, camera tool behavior).
+
+Eleven remaining rows need provider/identity/occupant contracts beyond machinery-only scope: AiSlipper/partyalarm viewer-kind facts; security/newscaster silicon camera providers and author identity; electronics access-card precedence; recharge robot/platform/pAI admission and charging (including bumped non-actors); telecomms virtual AI versus adjacent cyborg tools with pAI/drone exclusions. These were retained rather than concealed in requirement wrappers. No protected declaration/setter changes. Pin key cause classes, if verified: ai_slipper_silicon_swipe, signaler_robot and ai_wire_tools select the same old kind-specific effects. Final lane verification pending; no push or merge.

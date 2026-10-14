@@ -48,32 +48,21 @@ MSG_DEF_SELF(robotics/silicon_denied, "Access Denied (silicon detected)")
 		return FALSE
 	return TRUE
 
-/**
- * Check if a user can send a lockdown/detonate command to a specific borg
- *
- * Returns TRUE if a user can send the command (does not guarantee it will work)
- * Returns FALSE if a user cannot
- * Arguments:
- * * user - The [mob/user] to be checked
- * * R - The [mob/living/silicon/robot] to be checked
- * * telluserwhy - Bool of whether the user should be sent a to_chat message if they don't have access
- */
-/obj/machinery/computer/robotics/proc/can_control(mob/user, mob/living/silicon/robot/R, telluserwhy = FALSE)
-	if(!istype(user))
-		return FALSE
-	if(!console_shows(R))
-		return FALSE
-	if(isAI(user))
-		if(R.connected_ai != user)
-			if(telluserwhy)
-				to_chat(user, span_warning("AIs can only control cyborgs which are linked to them."))
-			return FALSE
-	if(isrobot(user))
-		if(R != user)
-			if(telluserwhy)
-				to_chat(user, span_warning("Cyborgs cannot control other cyborgs."))
-			return FALSE
-	return TRUE
+MSG_DEF_SELF(robotics/unlinked_control, "AIs can only control cyborgs which are linked to them.")
+MSG_DEF_SELF(robotics/other_cyborg_control, "Cyborgs cannot control other cyborgs.")
+
+/// Both controls operate only on a live cyborg the console currently shows.
+/obj/machinery/computer/robotics/proc/control_target_available(datum/act/op/A)
+	return read_once(console_shows(hack_target(A))) ? null : MSG(req_silent)
+
+/// Applied only to the AI actor kind by the declared requirements below.
+/obj/machinery/computer/robotics/proc/control_linked_to_actor(datum/act/op/A)
+	var/mob/living/silicon/robot/R = hack_target(A)
+	return R && R.connected_ai == A.actor ? null : MSG(robotics/unlinked_control)
+
+/// Applied only to a cyborg actor; it controls itself, never another cyborg.
+/obj/machinery/computer/robotics/proc/control_is_actor(datum/act/op/A)
+	return hack_target(A) == A.actor ? null : MSG(robotics/other_cyborg_control)
 
 /**
  * Check if the user is the right kind of entity to be able to hack borgs
@@ -120,8 +109,8 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	interface("RoboticsControlConsole")
 	op("arm", ui_act("arm"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_arm)))
 	op("nuke", ui_act("nuke"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_nuke)))
-	op("killbot", ui_act("killbot", arg("ref")), then(PROC_REF(ui_act_killbot)))
-	op("stopbot", ui_act("stopbot", arg("ref")), needs(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/access_denied))), then(PROC_REF(ui_act_stopbot)))
+	op("killbot", ui_act("killbot", arg("ref")), needs(req(/mob, of = ON_ACTOR, silent = TRUE), req(PROC_REF(control_target_available), silent = TRUE), any_of(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(robotics/unlinked_control)), req(PROC_REF(control_linked_to_actor))), any_of(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/other_cyborg_control)), req(PROC_REF(control_is_actor)))), then(PROC_REF(ui_act_killbot)))
+	op("stopbot", ui_act("stopbot", arg("ref")), needs(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/access_denied))), needs(req(/mob, of = ON_ACTOR, silent = TRUE), req(PROC_REF(control_target_available), silent = TRUE), any_of(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(robotics/unlinked_control)), req(PROC_REF(control_linked_to_actor))), any_of(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/other_cyborg_control)), req(PROC_REF(control_is_actor)))), then(PROC_REF(ui_act_stopbot)))
 	op("hackbot", ui_act("hackbot", arg("ref")), needs(req(PROC_REF(hack_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), then(PROC_REF(ui_act_hackbot)))
 	extend(TAG_UI, needs(req(PROC_REF(ui_authenticated))))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
@@ -187,8 +176,6 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 
 /obj/machinery/computer/robotics/proc/ui_act_killbot(datum/act/op/A, ref)
 	var/mob/living/silicon/robot/R = ui_ref(ref, null, /mob/living/silicon/robot)
-	if(!can_control(A.actor, R, TRUE))
-		return
 	if(R.mind && R.mind.special_role && R.emagged)
 		to_chat(R, span_userdanger("Extreme danger!  Termination codes detected.  Scrambling security codes and automatic AI unlink triggered."))
 		R.ResetSecurityCodes()
@@ -205,8 +192,6 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 
 /obj/machinery/computer/robotics/proc/ui_act_stopbot(datum/act/op/A, ref)
 	var/mob/living/silicon/robot/R = ui_ref(ref, null, /mob/living/silicon/robot)
-	if(!can_control(A.actor, R, TRUE))
-		return
 	message_admins(span_notice("[ADMIN_LOOKUPFLW(A.actor)] [!R.lockcharge ? "locked down" : "released"] [ADMIN_LOOKUPFLW(R)]!"))
 	log_game("[key_name(A.actor)] [!R.lockcharge ? "locked down" : "released"] [key_name(R)]!")
 	R.SetLockdown(!R.lockcharge)
