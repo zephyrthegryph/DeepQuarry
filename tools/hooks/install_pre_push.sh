@@ -12,3 +12,11 @@ fi
 cp "$root/tools/hooks/pre-push" "$hooks/pre-push"
 chmod +x "$hooks/pre-push"
 echo "installed $hooks/pre-push"
+# The merge-lock guard: refuses updates of rewrite/integ-current inside the merge worktree without the merge lock.
+if [ -e "$hooks/reference-transaction" ] && ! cmp -s "$hooks/reference-transaction" "$root/tools/hooks/reference-transaction"; then
+	echo "install_pre_push: $hooks/reference-transaction exists and differs; merge it by hand" >&2
+	exit 1
+fi
+cp "$root/tools/hooks/reference-transaction" "$hooks/reference-transaction"
+chmod +x "$hooks/reference-transaction"
+echo "installed $hooks/reference-transaction"
