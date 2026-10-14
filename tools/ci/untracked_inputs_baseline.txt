@@ -18,16 +18,13 @@ stat_input_untracked	code/game/atom/_atom.dm	return L.AllowDrop() ? L : L.drop_l
 stat_input_untracked	code/game/gamemodes/technomancer/catalog.dm	if(T && (T.z in using_map.player_levels))
 stat_input_untracked	code/game/jobs/whitelist.dm	if(!GLOB.whitelist)
 stat_input_untracked	code/game/jobs/whitelist.dm	return ("[M.ckey]" in GLOB.whitelist)
-stat_input_untracked	code/game/machinery/computer/aifixer.dm	return occupier // ALLOW(reads): the loaded AI is asked when it is needed, never cached
 stat_input_untracked	code/game/machinery/computer/arcade.dm	if(gamepaid == 0 && GLOB.vendor_account && !GLOB.vendor_account.suspended)
 stat_input_untracked	code/game/machinery/computer/arcade.dm	if(gamepaid == 0 && GLOB.vendor_account && !GLOB.vendor_account.suspended)
-stat_input_untracked	code/game/machinery/computer/cloning.dm	return (!QDELETED(active_BR)) ? null : MSG(req_failed) // ALLOW(reads): the selected record is read when the button is pressed and again when it is answered, never cached
 stat_input_untracked	code/game/machinery/computer/cloning.dm	return (!QDELETED(active_BR)) ? null : MSG(req_failed) // ALLOW(reads): the selected record is read when the button is pressed and again when it is answered, never cached
 stat_input_untracked	code/game/machinery/computer/law.dm	if(using_map && !(read_once(user.z) in using_map.contact_levels))
 stat_input_untracked	code/game/machinery/computer/robot.dm	var/mob/living/original = user.mind.original_character // ALLOW(reads): who may hack is asked when the question opens and again when it is answered, never cached
 stat_input_untracked	code/game/machinery/computer/skills.dm	if(!using_map || (read_once(z) in using_map.contact_levels))
 stat_input_untracked	code/game/machinery/doors/firedoor.dm	if(A.firedoors_closed) // ALLOW(reads): an area's alarm flag is read when the door is used and again when the question is answered
-stat_input_untracked	code/game/machinery/telecomms/logbrowser.dm	return SelectedServer // ALLOW(reads): the server shown is asked when it is needed, never cached
 stat_input_untracked	code/game/machinery/telecomms/machine_interactions.dm	return (listening_level == TCOMMS_STATION_Z || z == TCOMMS_SATELLITE_Z) ? null : MSG(tcomms/cannot_lock) // ALLOW(reads): the relay's level is asked when the button is pressed
 stat_input_untracked	code/game/objects/items/bodybag.dm	var/reason = loc?.release_refusal(src, A.actor) // ALLOW(reads): where the bag is carried and whether that lets it go are read when it is unfolded
 stat_input_untracked	code/game/objects/items/bodybag.dm	var/reason = A.held.loc?.release_refusal(A.held, A.actor) // ALLOW(reads): where the injector is carried and whether that lets it go are read when it is put in
@@ -35,7 +32,6 @@ stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	if(!isnull(G
 stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
 stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 stat_input_untracked	code/game/objects/items/devices/radio/radio.dm	if(!on)
-stat_input_untracked	code/game/objects/items/petrifier.dm	return target // ALLOW(reads): the one it aims at is read when the device is used, never from a cached menu
 stat_input_untracked	code/game/objects/items/weapons/RCD.dm	if(module.holder) // Is it attached to a RIG?
 stat_input_untracked	code/game/objects/items/weapons/RCD.dm	return module.holder.cell
 stat_input_untracked	code/game/objects/items/weapons/scrolls.dm	return !user.mind || GLOB.wizards.is_antagonist(user.mind)
@@ -156,43 +152,31 @@ draw_untracked	code/engine/declare/activation.dm	OP_PURE_GUARD("[def?.key] was g
 draw_untracked	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 draw_untracked	code/engine/refs/containment/spatial.dm	return A ? length(A.contents) : 0
 draw_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
-draw_untracked	code/game/gamemodes/technomancer/spells/illusion.dm	return copied
 draw_untracked	code/game/machinery/adv_med.dm	look.overlay(look_overlay_image(layer = layer + 0.1, plane = plane, dir = SOUTH, transform = turn(matrix(), dir == EAST ? 90 : -90), of = occupant, filters = list(
 draw_untracked	code/game/machinery/adv_med.dm	look.overlay(look_overlay_image(layer = layer + 0.1, plane = plane, dir = SOUTH, transform = turn(matrix(), dir == EAST ? 90 : -90), of = occupant, filters = list(
 draw_untracked	code/game/machinery/adv_med.dm	filter("type" = "alpha", "icon" = icon(icon, "alpha_mask", dir = dir == EAST ? EAST : WEST)),
 draw_untracked	code/game/machinery/atm_ret_field.dm	var/image/I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
 draw_untracked	code/game/machinery/cell_charger.dm	look.overlay(cell.icon_state, icon = cell.icon)
-draw_untracked	code/game/machinery/cloning.dm	return occupant_mob
-draw_untracked	code/game/machinery/computer/aifixer.dm	return occupier // ALLOW(reads): the loaded AI is asked when it is needed, never cached
 draw_untracked	code/game/machinery/doors/brigdoors.dm	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, maptext_width, maptext_height))
 draw_untracked	code/game/machinery/doors/brigdoors.dm	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, maptext_width, maptext_height))
 draw_untracked	code/game/machinery/doors/firedoor.dm	for(var/i = 1 to ALERT_STATES.len)
 draw_untracked	code/game/machinery/doors/firedoor.dm	look.overlay(image(icon = icon, icon_state = "alert_[ALERT_STATES[i]]", dir = cdir))
 draw_untracked	code/game/machinery/feeder.dm	look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
 draw_untracked	code/game/machinery/floor_light.dm	look.overlay(CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, layer+0.001))
-draw_untracked	code/game/machinery/gear_dispenser.dm	return held_gear_disp
 draw_untracked	code/game/machinery/iv_drip.dm	look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
-draw_untracked	code/game/machinery/medical_kiosk.dm	return active_user
 draw_untracked	code/game/machinery/portable_turret.dm	look.overlay(turret_opening_image(icon, turret_type, layer))
 draw_untracked	code/game/machinery/portable_turret.dm	look.overlay(turret_opening_image(icon, turret_type, layer))
-draw_untracked	code/game/machinery/vitals_monitor.dm	return victim
 draw_untracked	code/game/mecha/equipment/tools/shield.dm	look.overlay("shield_droid", icon = icon)
 draw_untracked	code/game/mecha/mecha_appearance.dm	if(icon_exists(icon, "[mecha_base_state()]_cutter"))
 draw_untracked	code/game/mecha/space/shuttle.dm	look.overlay(look_appearance(icon, "[base]-mask+base", color = base_paint, layer = layer + 1))
 draw_untracked	code/game/objects/effects/decals/Cleanable/tracks.dm	look.overlay(look_overlay_image(icon, state, dir = num2dir(truedir), color = track.basecolor))
-draw_untracked	code/game/objects/effects/simple_portals.dm	return linked_portal
 draw_untracked	code/game/objects/items.dm	standing.alpha = alpha
 draw_untracked	code/game/objects/items.dm	standing.color = color
 draw_untracked	code/game/objects/items/bodybag.dm	look.overlay(look_overlay_image(icon, "indicator[opened]", color = COLOR_LIME, appearance_flags = RESET_COLOR))
-draw_untracked	code/game/objects/items/devices/aicard.dm	return carded_ai
-draw_untracked	code/game/objects/items/devices/communicator/communicator.dm	if(video_source)
 draw_untracked	code/game/objects/items/devices/flash.dm	return R.cell
 draw_untracked	code/game/objects/items/devices/flash.dm	if(module.holder && module.holder.wearer())
 draw_untracked	code/game/objects/items/devices/flash.dm	if(module.holder && module.holder.wearer())
 draw_untracked	code/game/objects/items/devices/flash.dm	var/mob/living/carbon/human/H = module.holder.wearer()
-draw_untracked	code/game/objects/items/devices/multitool.dm	return buffer
-draw_untracked	code/game/objects/items/devices/multitool.dm	return connecting
-draw_untracked	code/game/objects/items/devices/multitool.dm	return connectable
 draw_untracked	code/game/objects/items/devices/radio/intercom.dm	if(!on)
 draw_untracked	code/game/objects/items/devices/radio/intercom.dm	look.overlay(mutable_appearance(icon, "[stem]_ov"))
 draw_untracked	code/game/objects/items/devices/transfer_valve.dm	look.underlay(look_overlay_image(icon, "[tank_two.icon_state]", pixel_x = -13))
@@ -221,7 +205,6 @@ draw_untracked	code/game/objects/structures/bonfire.dm	look.overlay(mutable_appe
 draw_untracked	code/game/objects/structures/catwalk.dm	look.overlay(look_overlay_image(icon, "catwalk[connect]", dir = 1<<(i-1)))
 draw_untracked	code/game/objects/structures/cliff.dm	if(icon_exists(icon, subtraction_icon_state))
 draw_untracked	code/game/objects/structures/cliff.dm	look.overlay(CACHED_KEY(cliff_overlays, cache_string, icon, subtraction_icon_state, ground[1], ground[2], ground[3], layer - 0.2))
-draw_untracked	code/game/objects/structures/coathanger.dm	return coat
 draw_untracked	code/game/objects/structures/crates_lockers/__closets.dm	if(ispath(closet_appearance))
 draw_untracked	code/game/objects/structures/crates_lockers/__closets.dm	return GLOB.closet_appearances[closet_appearance]
 draw_untracked	code/game/objects/structures/crates_lockers/__closets.dm	return closet_appearance

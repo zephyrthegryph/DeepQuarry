@@ -20,6 +20,7 @@ TRACKED(/obj/effect/effect/water, spraying)
 
 CAPABILITIES(/obj/effect/effect/water)
 	ref_one(nameof(spray_target), /turf)
+	ref_one(nameof(spray_actor))
 	every(PROC_REF(spray_delay), then(PROC_REF(step_process)), when = nameof(spraying))
 
 /// The deciseconds between steps.

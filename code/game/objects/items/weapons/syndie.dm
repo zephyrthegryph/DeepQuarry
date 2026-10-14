@@ -129,6 +129,7 @@ CAPABILITIES(/obj/item/syndie/c4explosive)
 
 CAPABILITIES(/obj/item/flame/lighter/zippo/c4detonator)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	ref_one(nameof(bomb), /obj/item/syndie/c4explosive)
 
 /obj/item/flame/lighter/zippo/c4detonator/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor

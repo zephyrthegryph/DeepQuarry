@@ -18,6 +18,9 @@
 	var/backup_caption = ""
 	var/post_time = 0
 
+CAPABILITIES(/datum/feed_message)
+	ref_one(nameof(parent_channel), /datum/feed_channel)
+
 /datum/feed_channel
 	var/channel_name=""
 	var/list/datum/feed_message/messages = list() // ALLOW(instance_list): d: newscaster channel posts
@@ -177,6 +180,8 @@ CAPABILITIES(/obj/machinery/newscaster)
 	op("open", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open)))
 	op("as_touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_as_touch)))
 	display_disconnect_op()
+	ref_one(nameof(viewing_channel), /datum/feed_channel)
+	ref_one(nameof(node), /obj/machinery/exonet_node)
 
 /obj/machinery/newscaster/security_unit                   //Security unit
 	name = "Security Newscaster"
@@ -692,6 +697,9 @@ TRACKED(/obj/machinery/newscaster, hitstaken)
 /datum/news_photo
 	var/is_synth = 0
 	var/obj/item/photo/photo
+
+CAPABILITIES(/datum/news_photo)
+	ref_one(nameof(photo), /obj/item/photo)
 
 /datum/news_photo/New(obj/item/photo/p, synth)
 	is_synth = synth

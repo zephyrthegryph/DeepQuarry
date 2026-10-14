@@ -23,6 +23,7 @@ CAPABILITIES(/obj/item/card/id/syndicate)
 	owns_one(nameof(agentcard_module), /datum/tgui_module/agentcard, starts = /datum/tgui_module/agentcard)
 	without("show") // its own self-use edits or shows the card
 	op("agent_card", in_hand(), label("Edit or show"), then(PROC_REF(interaction_agent_card)))
+	ref_one(nameof(registered_user), /mob)
 
 // the card's registered user is unset.
 /obj/item/card/id/syndicate/on_destroy(force)

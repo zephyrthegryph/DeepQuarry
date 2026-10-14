@@ -6,6 +6,7 @@
 
 CAPABILITIES(/obj/item/storage/internal)
 	configure(item_worn(flags = ABSTRACT))
+	ref_one(nameof(master_item), /obj/item)
 
 /obj/item/storage/internal/Initialize(mapload)
 	. = ..()

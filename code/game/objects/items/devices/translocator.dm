@@ -54,6 +54,7 @@ CAPABILITIES(/obj/item/perfect_tele)
 		then(PROC_REF(beacon_chosen)))
 	// a cell goes in; one of our own beacons goes back in
 	op("load", inputs(item(/obj/item/cell), item(/obj/item/perfect_tele_beacon)), label("Insert"), then(PROC_REF(interaction_item)))
+	ref_one(nameof(destination), /obj/item/perfect_tele_beacon)
 
 /obj/item/perfect_tele/Initialize(mapload)
 	. = ..()
@@ -435,6 +436,7 @@ CAPABILITIES(/obj/item/perfect_tele_beacon)
 		then(PROC_REF(belly_chosen)))
 	// the five seconds of getting it down, started by belly_chosen() with the belly
 	op("eat_wait", ai(), takes("belly"), wait(5 SECONDS), then(PROC_REF(attack_self_timed_done)))
+	ref_one(nameof(tele_hand), /obj/item/perfect_tele)
 
 /// The warning is asked of someone who did not make the beacon and has not been warned.
 /obj/item/perfect_tele_beacon/proc/needs_warning(datum/act/op/A)

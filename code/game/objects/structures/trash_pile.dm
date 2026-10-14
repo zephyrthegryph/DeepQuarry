@@ -13,6 +13,7 @@ CAPABILITIES(/obj/structure/trash_pile)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	climb()
 	owns_one(nameof(mouse_nest), starts = /obj/structure/mob_spawner/mouse_nest)
+	ref_one(nameof(hider))
 	// the old attack_ghost: offer to spawn as a mouse (refused with the old reasons; never fell through to the default)
 	op("become_mouse", observer(), label("Become mouse"), needs(req(PROC_REF(mouse_allowed))),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Are you sure you want to squeek?", "question" = "Are you -sure- you want to become a mouse?", "timeout" = 0), keeps = TARGET_PRESENT),

@@ -121,6 +121,7 @@ CAPABILITIES(/obj/effect/dummy/chameleon)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(chameleon_disrupted))))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(chameleon_disrupted))))
 	op("disrupt", inputs(item(/obj/item), hand()), label("Disrupt"), then(PROC_REF(interaction_disrupt)))
+	ref_one(nameof(master), /obj/item/chameleon)
 
 /// A blast or a round drops the disguise, and the hit stops there.
 /obj/effect/dummy/chameleon/proc/chameleon_disrupted(datum/act/A)

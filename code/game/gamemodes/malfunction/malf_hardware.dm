@@ -4,6 +4,9 @@
 	var/driver = null							// Driver - if not null this verb is given to the AI to control hardware
 	var/mob/living/silicon/ai/owner		// AI which owns this.
 
+CAPABILITIES(/datum/malf_hardware)
+	ref_one(nameof(owner))
+
 /datum/malf_hardware/proc/install()
 	if(owner_ref() && istype(owner_ref(), /mob/living/silicon/ai))
 		owner_ref().hardware = src

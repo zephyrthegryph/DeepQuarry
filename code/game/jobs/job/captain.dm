@@ -1,5 +1,8 @@
 GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newscast = 1))
 
+/// The one minor announcement is the captain's arrival call, held for the round: nothing makes or deletes another (a console's own announcement is a plain /datum/announcement).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/announcement/minor)
+
 //////////////////////////////////
 //			Captain
 //////////////////////////////////

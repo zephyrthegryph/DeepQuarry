@@ -42,6 +42,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 	op("sprites", menu(), label("Toggle Vac-Pack Sprites"), needs(carried()),
 		asks(/datum/prompt/choice, fields = list("title" = "Vac-Pack Visibility Options", "question" = "Vac-Pack Visibility Options", "choices" = list("Show Pack", "Show Tube", "Hidden"), "timeout" = 0)),
 		then(PROC_REF(visibility_chosen)))
+	ref_one(nameof(vac_owner), /mob/living)
 
 /obj/item/vac_attachment/proc/has_output(datum/act/op/A)
 	return !!output_dest

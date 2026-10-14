@@ -13,6 +13,9 @@
 
 GLOBAL_DATUM_INIT(orbit_watcher, /datum/orbit_watcher, new)
 
+/// The one listener lives for the round: nothing deletes it.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/orbit_watcher)
+
 /datum/orbit_watcher/proc/watch(atom/movable/AM)
 	if(!QDELETED(AM))
 		observe(AM, /datum/notice/moved, src, then(PROC_REF(on_moved)))

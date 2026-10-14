@@ -12,22 +12,28 @@
 /datum/malf_research_ability/networking/basic_hack
 	ability = /datum/game_mode/malfunction/verb/basic_encryption_hack
 	price = 25
-	next = new/datum/malf_research_ability/networking/advanced_hack()
 	name = "Basic Encryption Hack"
+
+CAPABILITIES(/datum/malf_research_ability/networking/basic_hack)
+	owns_one(nameof(next), /datum/malf_research_ability, starts = /datum/malf_research_ability/networking/advanced_hack)
 
 
 /datum/malf_research_ability/networking/advanced_hack
 	ability = /datum/game_mode/malfunction/verb/advanced_encryption_hack
 	price = 400
-	next = new/datum/malf_research_ability/networking/elite_hack()
 	name = "Advanced Encryption Hack"
+
+CAPABILITIES(/datum/malf_research_ability/networking/advanced_hack)
+	owns_one(nameof(next), /datum/malf_research_ability, starts = /datum/malf_research_ability/networking/elite_hack)
 
 
 /datum/malf_research_ability/networking/elite_hack
 	ability = /datum/game_mode/malfunction/verb/elite_encryption_hack
 	price = 1000
-	next = new/datum/malf_research_ability/networking/system_override()
 	name = "Elite Encryption Hack"
+
+CAPABILITIES(/datum/malf_research_ability/networking/elite_hack)
+	owns_one(nameof(next), /datum/malf_research_ability, starts = /datum/malf_research_ability/networking/system_override)
 
 
 /datum/malf_research_ability/networking/system_override

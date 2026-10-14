@@ -3,6 +3,9 @@
 	var/datum/changeling/changeling
 	var/is_antag = FALSE
 
+CAPABILITIES(/datum/antag_holder)
+	ref_one(nameof(changeling))
+
 /datum/antag_holder/proc/apply_antags(mob/M)
 	if(!M)
 		return

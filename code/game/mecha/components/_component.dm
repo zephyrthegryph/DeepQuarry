@@ -169,6 +169,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/mecha_parts/component)
+	ref_one(nameof(chassis))
 	// One nanopaste repair a second (paste_repair_step starts the next while the paste lasts).
 	op("paste_repair", ai(), takes("site"), wait(1 SECOND), then(PROC_REF(paste_repair_done)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

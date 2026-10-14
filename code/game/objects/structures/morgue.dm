@@ -143,6 +143,7 @@ CAPABILITIES(/obj/structure/morgue)
 // The morgue owns its tray (implicit OWN, deleted with it); the tray names its morgue (one-sided REL).
 
 CAPABILITIES(/obj/structure/m_tray)
+	ref_one(nameof(connected))
 	silicon_hand(adjacent = TRUE)
 	op("push_in", hand(), label("Push in"), then(PROC_REF(interaction_hand)))
 	op("place", item(/atom/movable), gesture(GESTURE_DRAG), label("Place on tray"), then(PROC_REF(interaction_drag)))

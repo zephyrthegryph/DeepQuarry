@@ -171,6 +171,7 @@ CAPABILITIES(/obj/item/radio)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(radio_emp)))
 	derives(nameof(internal_channels), PROC_REF(starting_channels))
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 
 /// The guard every window button of the family asks first (a subtype overrides it).
 /obj/item/radio/proc/ui_gate(datum/act/op/A)
@@ -744,7 +745,6 @@ CAPABILITIES(/obj/item/radio/borg)
 	op("insert_key", item(/obj/item/encryptionkey), label("Insert key"), then(PROC_REF(interaction_item)))
 
 /obj/item/radio/borg
-	var/tmp/mob/living/silicon/robot/myborg // Cyborg which owns this radio (a relation view). Used for power checks
 	// owned: installed encryption key, kept in the radio's contents
 	var/obj/item/encryptionkey/keyslot = null//Borg radios can handle a single encryption key
 	icon = 'icons/obj/robot_component.dmi' // Cyborgs radio icons should look like the component.
@@ -991,7 +991,3 @@ DECLARE_REGISTRY(/obj/item/radio, REGISTRY_LISTENING_OBJECTS)
 /// Relation view: radio connection (reads null once it is gone).
 /obj/item/radio/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
-
-/// Relation view: myborg (reads null once it is gone).
-/obj/item/radio/borg/proc/myborg() as /mob/living/silicon/robot
-	return myborg

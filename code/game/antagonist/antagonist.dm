@@ -85,8 +85,12 @@
 	var/can_hear_aooc = TRUE		// If FALSE, the antag can neither speak nor hear AOOC. If TRUE, they can at least hear it.
 	var/can_speak_aooc = TRUE		// If TRUE, the antag can freely spean in AOOC.
 
+// The antagonist templates are built once by SSantag and live for the round: nothing deletes one.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/antagonist)
+
 CAPABILITIES(/datum/antagonist)
 	owns_many(nameof(global_objectives), /datum/objective)
+	ref_one(nameof(leader))
 
 /datum/antagonist/New()
 	..()

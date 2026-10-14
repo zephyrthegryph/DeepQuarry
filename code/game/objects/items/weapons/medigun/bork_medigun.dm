@@ -111,6 +111,7 @@
 CAPABILITIES(/obj/item/bork_medigun)
 	configure(item_combat(force = 0))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	ref_one(nameof(current_target), /mob)
 
 /// Old attack_hand.
 /obj/item/bork_medigun/proc/interaction_hand(datum/act/op/A)

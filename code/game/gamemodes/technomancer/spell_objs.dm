@@ -105,6 +105,8 @@
 	return null
 
 CAPABILITIES(/obj/item/spell)
+	ref_one(nameof(owner))
+	ref_one(nameof(core))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))

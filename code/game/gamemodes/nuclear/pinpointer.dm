@@ -18,6 +18,7 @@
 /obj/item/pinpointer/var/active = FALSE
 TRACKED(/obj/item/pinpointer, active)
 CAPABILITIES(/obj/item/pinpointer)
+	ref_one(nameof(the_disk))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	every(2 SECONDS, then(PROC_REF(pinpointer_step)), when = nameof(active))
@@ -70,7 +71,8 @@ CAPABILITIES(/obj/item/pinpointer)
 	desc = "A larger version of the normal pinpointer, this unit features a helpful quantum entanglement detection system to locate various objects that do not broadcast a locator signal."
 	var/mode = 0  // Mode 0 locates disk, mode 1 locates coordinates.
 	var/turf/location
-	var/obj/target
+	/// What it points at: an item (a stolen-item signature) or a person (a DNA match), not only an object.
+	var/atom/target
 
 /obj/item/pinpointer/advpinpointer/pinpointer_step(datum/act/timer/A)
 	if(mode == 0)
@@ -212,6 +214,9 @@ CAPABILITIES(/obj/item/pinpointer)
 	var/mode = 0	//Mode 0 locates disk, mode 1 locates the shuttle
 	var/obj/machinery/computer/shuttle_control/multi/syndicate/home
 
+CAPABILITIES(/obj/item/pinpointer/nukeop)
+	ref_one(nameof(home))
+
 /// The old override ran the parent's body first (its ..()), so this does too.
 /obj/item/pinpointer/nukeop/pinpointer_toggle(mob/user)
 	..()
@@ -294,6 +299,9 @@ CAPABILITIES(/obj/item/pinpointer)
 	var/shuttle_comp_id = null
 	var/obj/machinery/computer/shuttle_control/our_shuttle
 
+CAPABILITIES(/obj/item/pinpointer/shuttle)
+	ref_one(nameof(our_shuttle))
+
 /// The old override ran the parent's body first (its ..()), so this does too.
 /obj/item/pinpointer/shuttle/pinpointer_toggle(mob/user)
 	..()
@@ -347,7 +355,7 @@ CAPABILITIES(/obj/item/pinpointer)
 	return location
 
 /// Target (a relation view).
-/obj/item/pinpointer/advpinpointer/proc/target_ref() as /obj
+/obj/item/pinpointer/advpinpointer/proc/target_ref() as /atom
 	return target
 
 /// Home (a relation view).
@@ -360,6 +368,7 @@ CAPABILITIES(/obj/item/pinpointer)
 
 /// Old object verbs.
 CAPABILITIES(/obj/item/pinpointer/advpinpointer)
+	ref_one(nameof(target))
 	op("advpinpointer_toggle_mode_effect", menu(), label("Toggle Pinpointer Mode"), then(PROC_REF(advpinpointer_toggle_mode_effect)))
 
 /datum/prompt/choice/pinpointer_carried

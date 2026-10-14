@@ -118,6 +118,9 @@ DECLARE_GAS(/obj/item/tank/jetpack/carbondioxide, "air_contents", "volume", T20C
 	name = "jetpack"
 	var/obj/item/rig/holder
 
+CAPABILITIES(/obj/item/tank/jetpack/rig)
+	ref_one(nameof(holder), /obj/item/rig)
+
 /obj/item/tank/jetpack/rig/examine()
 	. = ..()
 	. += "It's a jetpack. If you can see this, report it on the bug tracker."
