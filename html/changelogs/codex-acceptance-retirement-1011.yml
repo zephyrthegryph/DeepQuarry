@@ -6,3 +6,4 @@ changes:
   - bugfix: "Pilot slugs ignore ship helms without a valid destination."
   - bugfix: "Nikki's RIG owns its configured cape without treating it as a space-suit chest."
   - bugfix: "Equipment refusal menus follow changes to garment names and grammar."
+  - bugfix: "Unpaired cloning consoles initialize safely, and invalid internal storage locations are rejected without runtime errors."

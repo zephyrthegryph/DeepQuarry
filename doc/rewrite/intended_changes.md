@@ -4913,3 +4913,9 @@ without a turf; valid helm weighting and the no-candidate no-op are preserved.
 Its runtime is fixed rather than recorded as an appearance.
 
 Acceptance verification repair (2026-10-13): native requirement dispatch and composition now evaluate check(), including numeric requirements implemented only in the null-or-reason protocol. Ordered refusal text and because overrides are preserved. Worn-item teardown tests assert the existing SLOT_DROP_HOLDER body-slot policy; nullspace helm tests construct a genuinely locationless helm instead of the fixture allocator's floor fallback. No snapshot rows are re-blessed for these repairs.
+
+## Master mecha AI surface retirement (f13b84652d)
+
+For /obj/mecha and /obj/mecha/working/ripley, conversion pins drop only ai_use_equipment from the declared keys row. Master f13b84652d deletes that dead AI-equipment window, its handler and unused active-caller link. Decoded click and menu rows are unchanged; their shared-row encoding is preserved. No constructor runtime is blessed.
+
+Master 5b0a2f09d0 introduced typed links for cloning.scanner and internal storage.master_item. Returning null for a missing scanner, and validating internal storage's item location before linking it, restore the prior behavior. Their goldens remain unchanged.

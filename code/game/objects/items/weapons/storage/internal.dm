@@ -11,9 +11,9 @@ CAPABILITIES(/obj/item/storage/internal)
 
 /obj/item/storage/internal/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(master_item), loc)
-	if(!istype(master_item(), /obj/item))
+	if(!istype(loc, /obj/item))
 		return INITIALIZE_HINT_QDEL
+	rel_set(src, nameof(master_item), loc)
 	name = master_item().name
 
 /// Internal storage is part of its owner and is never worn on its own.
