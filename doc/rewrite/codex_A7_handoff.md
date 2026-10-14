@@ -23,15 +23,13 @@ Order checks:
 - `/clothing/under`: worn_state/map sprite detection and initial owner sensor preference are per-instance. Random sensor choice depends on a real human owner; preserve invalid-preference logging. No declarative conditional multi-field owner-context roll demonstrated.
 - Material ring/bracelet: forced-material default before parent, resolved material type guard after parent. Kept constructor validity order; display assignments moved.
 - Accessory storage base, knifeharness and vox: base capacity/on_rolled must precede child overrides and child starting knives. Moving base alone overwrites child capacity; moving children requires protected ownership/starts declarations. Retained coordinated group.
-- Fishing hat: correlated slogan, size and colour RNG plus saved-state-compatible rendering, not a single independent rolls target. Left intact rather than hiding randomness in setup.
 - Space suit: two same-type Initialize definitions in spacesuits.dm and breaches.dm; remembers map/loadout name before future breach modification. Retained until chain semantics and subclass naming snapshots can be migrated together; no second CAPABILITIES block.
 - RIG module base: conditional overlay setter plus construction of charge datums and charge selection; descendants use those objects. Kept protected setter and construction order.
 - Stat module base/activate/deactivate/engage: constructor-location typed link and invalid-parent deletion guards; only display naming moved.
 - RIG vision: per-instance owned mode creation and selection involves protected relation mutation declarations; no declaration changes here.
 - `/turf`: shared prototype-table initialization fast path; keep constructor/map semantics and existing framework initializer unchanged.
 - `/turf/simulated`: area holiness, level update, outdoor membership require canonical declaration block outside A7 (sunlight_handler.dm). Do not add a duplicate block.
-- Weird dark turf: random glow conditional invokes additional correlated appearance randomness. Preserve RNG consumption.
-- Seasonal/grass/sif/rocks: pre-parent density-gated peer spawn order and seasonal branching affects next density check and parent spawning; winter can chill into a different turf. Cannot delay into post-chain setup safely or roll independent fields without changing RNG coupling. Six world_reads remain here and fancy_shuttles.
+- Seasonal/grass/sif/rocks: pre-parent density-gated peer spawn order and seasonal branching affects next density check and parent spawning; winter can chill into a different turf. Cannot delay into post-chain setup safely or roll independent fields without changing RNG coupling. The remaining world-read rows are mapped in the exact inventory below.
 - Fancy shuttle: INITIALIZE_IMMEDIATE helper records coordinate/icon data before shuttle walls construct; post-chain setup can run too late. Preserve mapping-error log and cache order.
 - Floor: ephemeral floortype_at_make constructor input is not guaranteed available after setup; floor install must precede subclass code. Dirt choice/material-dependent draw occurs after floor install and before descendants.
 - Lava: pre-parent outdoors-derived name and light retained, audio migrated.
