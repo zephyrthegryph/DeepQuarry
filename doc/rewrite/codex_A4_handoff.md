@@ -19,7 +19,6 @@ Removed only unused existing init annotations from deleted initializers; no anno
 - clamp (5), meter (1): constructor target (param) and map-neighbor network/target state; retained exact assignments/calls rather than changing attachment timing.
 - camera (10): pre-parent mapped invulnerability/network validation and interning; preserves exact error logging/assert order. HUD installation and post-init upgrades moved into setup.
 - clonepod/full (2): dynamic starting biomass contents; converting starts would edit the existing ownership/collection declaration, reserved. No new child-var ownership guessed.
-- arcade/battle (1): one existing RNG call writes correlated cabinet name and enemy name, and is reused for new rounds. rolls returns a single target and map/default suppression affects each independently; no pure multi-output form was found. No extra persistent shadow roll record or side-effectful roll generator added.
 - cryo (1): per-instance direction captured from the mapped facing.
 - doorbell (3): constructor building/dir offsets. UID assignment moved into durable setup.
 - airlock (3): admin-level secure wiring must be set before parent/capability initialization; close-group join moved into setup.
@@ -50,3 +49,11 @@ Root owns manifest. Include this file behind the unit-test guard, plus dq_look_p
 [Committed residual inventory](codex_A4_residual_sites.txt) lists every retained source identity from this lane’s post-edit audit, including repeated normalized rows. The per-file reasons above classify those identities; this is a source audit snapshot, not a fresh analyzer verdict after rebasing. Master’s subsequently removed declarations and rewritten setters must remain authoritative, and the root verification will establish the final baseline counts.
 
 This documentation-only supplement does not change the source proved by stamped commit `b7a1fd8dd9`. No compile, test or generation was rerun for the supplement; documentation-only stamp carry is governed by `agent_workflow.md`.
+
+## Reopened arcade initializer proof
+
+After rebasing onto the read-tracking master, the existing battle arcade `randomize_characters` helper becomes one declared setup job. Correlated cabinet/enemy generation is preserved in the unchanged helper, including its existing RNG calls and runtime round-reset callers. There are no Initialize descendants or ancestor setup jobs; the work is post-parent, does not consume mapload/transient arguments, and still finishes before the constructor returns. Correlated RNG alone was not a valid reason to retain this site.
+
+`dq_a4_initialization/arcade_characters` exercises real construction, checks generated correlated cabinet/enemy names and their actual UI output, and confirms fixed initial combat state remains unchanged. The final exact residual report excludes the removed arcade identity. Additional expected init_lines shrink: one; root analyzer certification is pending.
+
+The original stamped proof `b7a1fd8dd9` predates this source addition and the read-tracking rebase. It does **not** certify the reopened branch. A new full A4 focused proof is pending; no new stamp is claimed here.

@@ -109,10 +109,7 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 	var/blocked = 0 //Player cannot attack/heal while set
 	var/turtle = 0
 
-// ALLOW(init/INSTANCE_STATE): rolls its arcade characters per machine
-/obj/machinery/computer/arcade/battle/Initialize(mapload)
-	. = ..()
-	randomize_characters()
+
 
 /obj/machinery/computer/arcade/battle/proc/randomize_characters()
 	var/name_action
@@ -128,6 +125,7 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 	name = (name_action + name_part1 + name_part2)
 
 CAPABILITIES(/obj/machinery/computer/arcade/battle)
+	setup(PROC_REF(randomize_characters))
 	interface("ArcadeBattle")
 	op("newgame", ui_act("newgame"), then(PROC_REF(ui_act_newgame)))
 	op("attack", ui_act("attack"), then(PROC_REF(ui_act_attack)))

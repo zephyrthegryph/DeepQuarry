@@ -34,7 +34,6 @@ init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initiali
 init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::resistance_flags
 init_lines	code/game/machinery/cloning.dm	@/obj/machinery/clonepod/full::Initialize::for
 init_lines	code/game/machinery/cloning.dm	@/obj/machinery/clonepod/full::Initialize::track_biomass_container
-init_lines	code/game/machinery/computer/arcade.dm	@/obj/machinery/computer/arcade/battle::Initialize::randomize_characters
 init_lines	code/game/machinery/cryo.dm	@/obj/machinery/atmospherics/unary/cryo_cell::Initialize::initialize_directions
 init_lines	code/game/machinery/doorbell.dm	@/obj/machinery/button/doorbell::Initialize::if
 init_lines	code/game/machinery/doorbell.dm	@/obj/machinery/button/doorbell::Initialize::pixel_x
