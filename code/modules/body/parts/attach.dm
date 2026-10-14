@@ -173,7 +173,7 @@ SETTER(/obj/item/organ, organ_tag)
 		if(!M.organs_by_name)
 			M.set_organs_by_name(list())
 		rel_add(M, nameof(M.organs), part)
-		M.set_organs_by_name_at(part.organ_tag, part) // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list; kept in step only here and in dq_part_uncache()
+		M.set_organs_by_name_at(part.organ_tag, part)
 	// Internal organs: nothing to cache, the limb's keyed organ slot is the record.
 
 /// Removes `part` from `M`'s organ caches. A key another part now holds stays.

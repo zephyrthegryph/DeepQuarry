@@ -79,29 +79,28 @@ stat_input_untracked	code/modules/food/food/z_custom_food.dm	return (length(cont
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	return (length(contents) > 0) ? null : MSG(cooking_container/nothing_in_it) // ALLOW(spatial,reads): a count of what is inside, read when it is emptied; the click asks again
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	for (var/obj/item/J in contents) // ALLOW(reads): the sizes of what is inside are read when a thing is put in; the click asks again
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	total += J.w_class
-stat_input_untracked	code/modules/ghosttrap/trap.dm	if(!GLOB.ghost_traps)
-stat_input_untracked	code/modules/ghosttrap/trap.dm	return GLOB.ghost_traps[trap_key]
-stat_input_untracked	code/modules/ghosttrap/trap.dm	GLOB.ghost_traps[G.object] = G
-stat_input_untracked	code/modules/integrated_electronics/_defines.dm	return assembly
-stat_input_untracked	code/modules/integrated_electronics/core/assemblies.dm	return access_card
-stat_input_untracked	code/modules/integrated_electronics/core/assemblies/clothing.dm	return clothing
-stat_input_untracked	code/modules/integrated_electronics/core/assemblies/implant.dm	return implant
-stat_input_untracked	code/modules/integrated_electronics/core/integrated_circuit.dm	return loc.tgui_host()
-stat_input_untracked	code/modules/integrated_electronics/subtypes/camera.dm	else
 stat_input_untracked	code/modules/library/lib_items.dm	return length(contents) > 0 // ALLOW(reads, spatial): the shelf's books are read when it is reached into, never cached; a plain count of its own contents
 stat_input_untracked	code/modules/lighting/lighting_turf.dm	if (!lighting_object)
 stat_input_untracked	code/modules/lighting/lighting_turf.dm	L = lighting_corner_NE
 stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
+stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
+stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
 stat_input_untracked	code/modules/lighting/lighting_turf.dm	L = lighting_corner_SE
+stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
+stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
+stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
 stat_input_untracked	code/modules/lighting/lighting_turf.dm	L = lighting_corner_SW
+stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
+stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
+stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
 stat_input_untracked	code/modules/lighting/lighting_turf.dm	L = lighting_corner_NW
-stat_input_untracked	code/modules/messages/act_message.dm	OP_PURE_GUARD("an act message was spoken")
-stat_input_untracked	code/modules/mob/holder.dm	return held_mob?.GetIdCard()
+stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
+stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
+stat_input_untracked	code/modules/lighting/lighting_turf.dm	totallums += L.lum_r + L.lum_b + L.lum_g
 stat_input_untracked	code/modules/mob/living/carbon/human/inventory.dm	for(var/datum/category_group/underwear/UWC in GLOB.global_underwear.categories)
 stat_input_untracked	code/modules/mob/living/carbon/human/species/shadekin/state/powers/phase_shift.dm	if(check_rights_for(client, R_HOLDER))
 stat_input_untracked	code/modules/mob/living/silicon/pai/api.dm	return (check_ckey in GLOB.paikeys)
 stat_input_untracked	code/modules/mob/living/silicon/robot/robot_ui_decals.dm	return (!!R?.sprite_datum) ? null : /datum/msg/req_silent
-stat_input_untracked	code/modules/mob/new_player/lobby_browser.dm	return service && service.current_state != GAME_STATE_STARTUP
 stat_input_untracked	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	return GLOB.ntnet_global && !GLOB.ntnet_global.setting_disabled
 stat_input_untracked	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	return GLOB.ntnet_global && !GLOB.ntnet_global.setting_disabled
 stat_input_untracked	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	return (!!GLOB.ntnet_global) ? null : /datum/msg/req_silent
@@ -315,21 +314,6 @@ draw_untracked	code/game/turfs/simulated/fancy_shuttles.dm	WARNING("Fancy shuttl
 draw_untracked	code/game/turfs/simulated/fancy_shuttles.dm	WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
 draw_untracked	code/game/turfs/simulated/fancy_shuttles.dm	WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
 draw_untracked	code/game/turfs/simulated/floor.dm	return (!flooring || flooring.is_plating)
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	if(flooring.check_season)
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	return "[flooring.icon_base]-[GLOB.world_time_season]"
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	return flooring.icon_base
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	if(flooring)
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	else if(flooring)
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	look.identity(flooring.name, flooring.desc)
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	look.set_icon(flooring.icon)
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	for(var/image/edge_image as anything in flooring.get_edge_overlays(has_border, inner_corners))
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	if(!isnull(broken) && (flooring.flags & TURF_CAN_BREAK))
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	look.overlay(flooring.get_flooring_overlay("[flooring.icon_base]-broken-[broken]","[flooring.icon_base]-broken[broken]"))
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	look.overlay(flooring.get_flooring_overlay("[flooring.icon_base]-broken-[broken]","broken[broken]"))
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	if(!isnull(burnt) && (flooring.flags & TURF_CAN_BURN))
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	look.overlay(flooring.get_flooring_overlay("[flooring.icon_base]-burned-[burnt]","burned[burnt]"))
-draw_untracked	code/game/turfs/simulated/wall_icon.dm	if(!material)
-draw_untracked	code/game/turfs/simulated/wall_icon.dm	return look_overlay_image(wall_masks, "[material.icon_base]fwall_open", color = material.icon_colour)
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
@@ -405,9 +389,12 @@ draw_untracked	code/modules/materials/registry.dm	return GLOB.name_to_material[n
 draw_untracked	code/modules/mining/mine_items.dm	return material_static
 draw_untracked	code/modules/mining/mine_turfs.dm	return mineral_static
 draw_untracked	code/modules/mob/living/carbon/human/human_look.dm	. = "[part.data.get_species_race_key(src)][part.data.body_gender][part.s_tone]"
+draw_untracked	code/modules/mob/living/carbon/human/human_look.dm	. = "[part.data.get_species_race_key(src)][part.data.body_gender][part.s_tone]"
+draw_untracked	code/modules/mob/living/carbon/human/human_look.dm	. = "[part.data.get_species_race_key(src)][part.data.body_gender][part.s_tone]"
+draw_untracked	code/modules/mob/living/carbon/human/human_look.dm	if(part.s_col && part.s_col.len >= 3)
 draw_untracked	code/modules/mob/living/carbon/human/human_look.dm	if(part.s_col && part.s_col.len >= 3)
 draw_untracked	code/modules/mob/living/carbon/human/human_look.dm	if(part.body_hair && part.h_col && part.h_col.len >= 3)
-draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
+draw_untracked	code/modules/mob/living/carbon/human/human_look.dm	if(part.body_hair && part.h_col && part.h_col.len >= 3)
 draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	if(!S || S.name == src.name)
 draw_untracked	code/modules/mob/living/carbon/human/species/species_getters.dm	return blood_mask
 draw_untracked	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	if(!H || base_species == name) return ..()

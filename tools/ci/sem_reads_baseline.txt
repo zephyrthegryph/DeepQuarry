@@ -53,7 +53,6 @@ unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.conten
 unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 unknown_read	code/engine/refs/containment/spatial.dm	return A ? length(A.contents) : 0
-unknown_read	code/engine/stats/recompute.dm	var/list/direct = E.rx?.stats?.hop_in?[hop.rel_var]
 unknown_read	code/game/area/areas.dm	return (flags & flag) == flag
 unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
 unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
@@ -62,7 +61,6 @@ unknown_read	code/game/dna/dna_modifier.dm	return occupant
 unknown_read	code/game/gamemodes/technomancer/catalog.dm	if(T && (T.z in using_map.player_levels))
 unknown_read	code/game/mecha/mecha.dm	return T && isPlayerLevel(T.z)
 unknown_read	code/game/objects/items/devices/radio/radio.dm	if(!on)
-unknown_read	code/game/turfs/simulated/walls.dm	return (material && material.hardness >= 10 && material.hardness <= 100)
 unknown_read	code/modules/admin/player_effects.dm	return (istype(M) && M.ckey) ? null : /datum/msg/req_silent
 unknown_read	code/modules/admin/player_effects.dm	return L.client || L.teleop ? /datum/msg/player_effects/ai_player : null
 unknown_read	code/modules/body/body.dm	var/gained = domains & ~dirty
