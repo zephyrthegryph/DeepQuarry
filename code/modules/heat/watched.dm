@@ -14,18 +14,29 @@
 // body while the watch lives.
 
 /// The band of `value` among the increasing `levels`: how many of them are at or under it.
-/proc/watched_band(value, list/levels)
+/proc/watched_band(value, list/levels, strict = FALSE)
 	READS_FROM()
 	. = 0
 	for(var/level in levels)
-		if(value < level)
+		if(strict ? value <= level : value < level)
 			break
 		.++
+
+/// The levels a strict reader's watch is armed on: each level and the next value DM can tell above it, so a value that sits exactly on a
+/// level and then rises still crosses something Rust reports (a band boundary is inclusive there).
+/proc/watched_strict_levels(list/levels)
+	READS_FROM()
+	. = list()
+	for(var/level in levels)
+		. += level
+		. += level > 0 ? level * 1.0000002 : (level < 0 ? level * 0.9999998 : 1e-30)
 
 /// `A`'s Rust-owned `source` (WATCH_HEAT: its temperature), as its band among the increasing `levels`. Reactive code reads Rust-owned state only
 /// through this: the read subscribes to WATCHED_KEY on A, which the band watch publishes.
 READS_AS(/proc/watched, WATCHED_KEY)
-/proc/watched(atom/A, source, list/levels)
+/// `strict`: a level counts only once the value is above it (`value > level`, the old strict comparison of a reader that refused "above 1%");
+/// by default a value on a level is in the band above it.
+/proc/watched(atom/A, source, list/levels, strict = FALSE)
 	READS_FROM(A)
 	if(!A || !length(levels))
 		return 0
@@ -39,19 +50,20 @@ READS_AS(/proc/watched, WATCHED_KEY)
 				CRASH("watched(): WATCH_LUM reads a turf, not [A.type]")
 			value = T.get_lumcount()
 			if(!T.lighting_object)
-				return watched_band(value, levels) // no dynamic lighting: its lum is fixed
+				return watched_band(value, levels, strict) // no dynamic lighting: its lum is fixed
 		if(WATCH_CHARGE)
 			var/obj/machinery/power/smes/S = A
 			if(!istype(S))
 				CRASH("watched(): WATCH_CHARGE reads a SMES, not [A.type]")
 			value = S.stored_charge()
 			if(!S.vg_entity)
-				return watched_band(value, levels) // not registered with Rust yet: its charge is the seed, nothing to watch
+				return watched_band(value, levels, strict) // not registered with Rust yet: its charge is the seed, nothing to watch
 		else
 			CRASH("watched(): unknown source [source]")
-	if(!watched_armed(A, source, levels))
-		SSwatched.request(A, source, levels)
-	return watched_band(value, levels)
+	var/list/armed = strict ? watched_strict_levels(levels) : levels
+	if(!watched_armed(A, source, armed))
+		SSwatched.request(A, source, armed)
+	return watched_band(value, levels, strict)
 
 /// TRUE when `A` already has the band watch `watched()` would arm for these levels.
 /proc/watched_armed(atom/A, source, list/levels)
