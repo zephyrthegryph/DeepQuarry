@@ -599,3 +599,48 @@ mod tests {
         }
     }
 }
+
+/// Stable-numbering append (doc/structural_change_set.md, addendum): freeze
+/// one new contribution on its own and return its unit with the link entries
+/// it contributes, for append-only extension of the retained link tables.
+/// Declines contributions that need whole-program state (helpers, modified
+/// instances, required types, shared-slot aliases).
+pub(crate) fn freeze_appended(
+    prepared: PreparedContribution,
+    symbols: &SymbolTable,
+) -> Result<(FrozenUnit, Vec<(Key, dm_link::EntryContent)>), String> {
+    if !prepared.modified_seeds.is_empty()
+        || prepared.modified_recipes.as_ref().is_some_and(|recipes| !recipes.is_empty())
+    {
+        return Err("appended procedure has modified instances".into());
+    }
+    if !prepared.required_types.is_empty() {
+        return Err("appended procedure requires types".into());
+    }
+    let mut inventory = LinkInventory::default();
+    let mut strings = StringInventory::new(&inventory);
+    let mut units = Vec::new();
+    let mut helpers = Vec::new();
+    prepared
+        .contribution
+        .replay(&mut inventory, &mut strings, symbols, &mut units, &mut helpers);
+    drop(strings);
+    if !helpers.is_empty() {
+        return Err("appended procedure has argument-source helpers".into());
+    }
+    if inventory.slot_iter().next().is_some() {
+        return Err("appended procedure aliases a shared slot".into());
+    }
+    if inventory.string_registration.is_some() {
+        return Err("appended procedure registers source strings".into());
+    }
+    let unit = units.pop().ok_or("appended contribution produced no unit")?;
+    if !units.is_empty() {
+        return Err("appended contribution produced several units".into());
+    }
+    let entries = inventory
+        .entry_iter()
+        .map(|entry| (entry.key, entry.content))
+        .collect();
+    Ok((unit, entries))
+}

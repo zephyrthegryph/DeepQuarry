@@ -152,6 +152,9 @@ pub struct SemanticTree {
     /// formal non-const, non-shared var whose default changed between numeric
     /// literals: the output then differs only in those Variables records.
     default_edits: Option<Arc<DefaultEdits>>,
+    /// Set only by the change-set splice when every changed row is an added
+    /// proc or verb on an existing type (stable-numbering append patch).
+    appended_callables: Option<Arc<AppendedCallables>>,
     by_path: Arc<HashMap<SymbolId, TypeId>>,
     direct: Arc<HashMap<(TypeId, SymbolId, MemberKind), MemberId>>,
     /// One target per ordered skeleton, including all reopens.
@@ -175,7 +178,18 @@ pub struct DefaultEdits {
     pub from_identity: u128,
     pub edits: Vec<DefaultEdit>,
 }
+/// Callables added relative to the tree with identity `from_identity`.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AppendedCallables {
+    pub from_identity: u128,
+    /// `(owner, name, kind)` of each added row.
+    pub members: Vec<(SymbolId, SymbolId, MemberKind)>,
+}
 impl SemanticTree {
+    /// Callables added by the last splice relative to the previous tree.
+    pub fn appended_callables(&self) -> Option<&AppendedCallables> {
+        self.appended_callables.as_deref()
+    }
     /// Pure numeric default edits relative to the previous retained tree.
     pub fn default_edits(&self) -> Option<&DefaultEdits> {
         self.default_edits.as_deref()
@@ -637,6 +651,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
         selection_prune_skippable: false,
         authored_type_start: None,
         default_edits: None,
+        appended_callables: None,
         by_path: Arc::new(by_path),
         direct: Arc::new(HashMap::new()),
         declaration_targets: Arc::from([]),

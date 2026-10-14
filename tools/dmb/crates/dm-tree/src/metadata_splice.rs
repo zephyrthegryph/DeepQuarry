@@ -89,6 +89,22 @@ impl MetadataDependencies {
         let roster = splice_types(previous_tree, current, &mut symbols, &type_rows_changed)?;
         let mut tree = previous_tree.clone();
         tree.default_edits = None;
+        tree.appended_callables = None;
+        let appended: Option<Vec<(SymbolId, SymbolId, MemberKind)>> = delta
+            .changes
+            .iter()
+            .map(|change| match (change.previous, change.current, change.key.family) {
+                (None, Some(row), DeclarationFamily::Member { name, kind })
+                    if matches!(kind, MemberKind::Proc | MemberKind::Verb)
+                        && previous_tree.lookup_type(change.key.owner).is_some() =>
+                {
+                    let _ = row;
+                    Some((change.key.owner, name, kind))
+                }
+                _ => None,
+            })
+            .collect();
+        let previous_identity = previous_tree.identity;
         tree.symbols = Arc::new(symbols);
         let type_remap: Vec<Option<TypeId>> = match roster {
             Some(roster) => {
@@ -445,6 +461,12 @@ impl MetadataDependencies {
             }
         }
         let _ = fresh;
+        tree.appended_callables = appended.map(|members| {
+            Arc::new(crate::AppendedCallables {
+                from_identity: previous_identity,
+                members,
+            })
+        });
         Ok(Spliced {
             tree,
             dirty: order.len(),

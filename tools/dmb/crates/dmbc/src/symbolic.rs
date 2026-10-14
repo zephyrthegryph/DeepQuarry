@@ -742,6 +742,7 @@ mod helper_reuse_tests;
 pub(crate) mod origin_roster;
 mod parallel;
 mod prepared_contribution;
+pub(crate) use prepared_contribution::freeze_appended;
 pub(crate) mod procedure_artifact;
 mod procedure_order;
 mod string_order;

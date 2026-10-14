@@ -345,6 +345,7 @@ dependencies = [
  "dm-syntax",
  "dm-tree",
  "dm-wire",
+ "dmb-opendream",
  "fs2",
  "mimalloc",
  "rayon",

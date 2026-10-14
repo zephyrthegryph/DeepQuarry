@@ -296,12 +296,123 @@ impl RetainedGeneration {
                     .map_err(|error| format!("variable patch: {error}"))?;
                 let encoded = patched.image().clone();
                 validate_encoded(&encoded).map_err(|error| format!("{error:?}"))?;
+                // Keep the retained model describing the published image so a
+                // later structural patch can edit it (stable numbering).
+                {
+                    let _timer = dm_profile::detail_timer("patch.default_model_sync");
+                    let mut current = self.current.lock().unwrap_or_else(|e| e.into_inner());
+                    let synced = current.as_ref().and_then(|generation| {
+                        (generation.encoded.content_hash() == image.rows.image().content_hash())
+                            .then(|| {
+                                let mut inputs = CertifiedGenerationInputs {
+                                    model: generation.inputs.model.clone(),
+                                    string_seed: generation.inputs.string_seed.clone(),
+                                };
+                                for &(record, _, value) in values {
+                                    inputs.model.variables[record as usize].value = value;
+                                }
+                                Generation {
+                                    inputs,
+                                    encoded: encoded.clone(),
+                                }
+                            })
+                    });
+                    *current = synced.map(Arc::new);
+                }
                 let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
                 slot.base = Some(Arc::new(base.with_output_hash(encoded.content_hash())));
                 slot.image = Some(Arc::new(PatchImage {
                     rows: patched,
                     proc_code: Arc::clone(&image.proc_code),
                 }));
+                Ok(encoded)
+            })
+            .unwrap_or_else(|| Err("generation attempt is not pending".into()))
+    }
+    /// First free physical index of each link table in the retained model
+    /// that describes the published image `base_hash` (append-only linking).
+    pub(crate) fn model_table_starts(
+        &self,
+        base_hash: u128,
+    ) -> Option<std::collections::BTreeMap<dm_link::Table, u32>> {
+        let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
+        let generation = current.as_ref()?;
+        if generation.encoded.content_hash() != base_hash {
+            return None;
+        }
+        let model = &generation.inputs.model;
+        use dm_link::Table;
+        Some(
+            [
+                (Table::String, model.strings.len()),
+                (Table::Procedure, model.procs.len()),
+                (Table::List, model.lists.len()),
+                (Table::Variable, model.variables.len()),
+                (Table::VariableRecord, model.variables.len()),
+                (Table::Type, model.classes.len()),
+                (Table::Instance, model.instances.len()),
+            ]
+            .into_iter()
+            .map(|(table, len)| (table, len as u32))
+            .collect(),
+        )
+    }
+    /// Structural append patch on the retained composed model, which must
+    /// still describe the published image with `base_hash`. `strings` runs
+    /// before the string index is built (table strings), `edit` after. The
+    /// edited model is encoded with list-row reuse and becomes the current
+    /// generation and patch base (`link` carries the extended tables).
+    pub(crate) fn patch_model(
+        &self,
+        base_hash: u128,
+        strings: impl FnOnce(&mut Dmb) -> Result<(), CompositionError>,
+        edit: impl FnOnce(&mut Dmb, &mut StringIndex) -> Result<(), CompositionError>,
+        link: PatchLink,
+        base: crate::body_patch::BodyPatchBase,
+        executor: &dm_exec::BuildExecutor,
+    ) -> Result<byond_dmb::dmb::EncodedDmb, String> {
+        self.attempt
+            .with_pending(|_| {
+                let mut model = {
+                    let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
+                    let generation = current
+                        .as_ref()
+                        .ok_or("retained model released")?;
+                    if generation.encoded.content_hash() != base_hash {
+                        return Err("retained model differs from the patch base".to_string());
+                    }
+                    generation.inputs.model.clone()
+                };
+                strings(&mut model).map_err(|error| format!("{error:?}"))?;
+                let (mut index, seed) = self.string_index(&model).map_err(|error| format!("{error:?}"))?;
+                edit(&mut model, &mut index).map_err(|error| format!("{error:?}"))?;
+                let encoded = self
+                    .encode_pending(
+                        CertifiedGenerationInputs::after_validation(model).with_string_seed(Some(seed)),
+                        Some(executor),
+                    )
+                    .map_err(|error| format!("{error:?}"))?;
+                let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
+                let generation = current.as_ref().ok_or("encoded generation absent")?;
+                let rows = generation
+                    .inputs
+                    .model
+                    .list_row_image()
+                    .ok_or("list rows not certified")?;
+                let proc_code = Arc::new(
+                    generation
+                        .inputs
+                        .model
+                        .procs
+                        .iter()
+                        .map(|proc| proc.code_locals_args[0])
+                        .collect(),
+                );
+                drop(current);
+                let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
+                slot.link = Some(Arc::new(link));
+                slot.base = Some(Arc::new(base.with_output_hash(encoded.content_hash())));
+                slot.image = Some(Arc::new(PatchImage { rows, proc_code }));
                 Ok(encoded)
             })
             .unwrap_or_else(|| Err("generation attempt is not pending".into()))

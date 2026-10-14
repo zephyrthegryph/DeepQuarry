@@ -328,7 +328,7 @@ pub(super) struct ProcedureMetadata {
     pub default_display: Result<std::sync::Arc<str>, CompositionError>,
     pub value_sources: Vec<Result<u32, CompositionError>>,
 }
-fn metadata(
+pub(super) fn metadata(
     unit: &FrozenUnit,
     projection: Option<&crate::class_projection::ClassProjection>,
     symbols: &SymbolTable,

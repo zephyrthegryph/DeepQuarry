@@ -199,6 +199,51 @@ impl LinkTables {
     pub fn binding_tables(&self) -> BindingTables {
         self.bindings.clone()
     }
+    /// Append-only extension for stable incremental numbering
+    /// (doc/structural_change_set.md, addendum). Keys already bound keep
+    /// their index and must carry identical content; each new key takes
+    /// `next(table)` (the caller's current physical table length, skipping
+    /// reserved indexes) in the given order. Returns the extended tables and
+    /// the new `(key, index)` assignments in order. Never renumbers.
+    /// `starts` gives each table's first free physical index.
+    pub fn extended(
+        &self,
+        entries: impl IntoIterator<Item = (Key, EntryContent)>,
+        starts: &BTreeMap<Table, u32>,
+    ) -> Result<(Self, Vec<(Key, u32)>), LinkError> {
+        let mut counters = starts.clone();
+        let mut indexes = self.bindings.assignments().clone();
+        let mut content = (*self.content).clone();
+        let mut added = Vec::new();
+        for (key, value) in entries {
+            if let Some(existing) = content.get(&key) {
+                if existing != &value {
+                    return Err(LinkError::ContentCollision(key));
+                }
+                continue;
+            }
+            let table = key.table();
+            let counter = counters
+                .get_mut(&table)
+                .ok_or(LinkError::UnknownKey(key))?;
+            while is_reserved_table_index(table, *counter) {
+                *counter = counter.checked_add(1).ok_or(LinkError::IndexOverflow(table))?;
+            }
+            let index = *counter;
+            *counter = counter.checked_add(1).ok_or(LinkError::IndexOverflow(table))?;
+            indexes.insert(key, index);
+            content.insert(key, value);
+            added.push((key, index));
+        }
+        let slots = self.bindings.slots().clone();
+        Ok((
+            Self {
+                bindings: BindingTables::validated(indexes, slots, None),
+                content: Arc::new(content),
+            },
+            added,
+        ))
+    }
     pub fn build(inventory: LinkInventory) -> Result<Self, LinkError> {
         Self::build_with_bindings(inventory, None)
     }
@@ -222,7 +267,7 @@ impl LinkTables {
         // Bulk-build both maps from sorted rows (one sort, linear tree build)
         // instead of one tree insert per row. Any invalid or colliding input
         // falls back to the ordered per-row loop, so errors keep their order.
-        let (spellings, content) = match bulk_maps(&inventory) {
+        let (_spellings, content) = match bulk_maps(&inventory) {
             Some(maps) => maps,
             None => ordered_maps(&inventory)?,
         };
@@ -634,6 +679,12 @@ impl ArgumentSourceReferences {
     }
     pub fn index(&self, key: Key) -> Option<u8> {
         self.references.get(&key).copied()
+    }
+    /// No references: for appended procedures that have no helpers.
+    pub fn none() -> Self {
+        Self {
+            references: BTreeMap::new(),
+        }
     }
 }
 

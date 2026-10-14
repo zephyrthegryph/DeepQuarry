@@ -158,7 +158,20 @@ fn compare_revision(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::
                             crate::request_runner::run_build(fresh).unwrap(),
                             &fresh_destination,
                         );
-                        assert_eq!(a, b, "root {index} retained output differs from fresh");
+                        // Stable incremental numbering may differ from a fresh build
+                        // only when the programs are semantically equivalent
+                        // (doc/structural_change_set.md, addendum).
+                        if a.0 != b.0 {
+                            assert_eq!(a.2, b.2, "root {index} retained resources differ from fresh");
+                            let expected = byond_dmb::dmb::Dmb::from_bytes(&b.1).unwrap();
+                            let actual = byond_dmb::dmb::Dmb::from_bytes(&a.1).unwrap();
+                            let differences =
+                                dmb_opendream::semantic_equal::semantic_differences(&expected, &actual, 20);
+                            assert!(
+                                differences.is_empty(),
+                                "root {index} retained output is not equivalent to fresh: {differences:#?}"
+                            );
+                        }
                         a.0
                     })
                 })

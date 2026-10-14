@@ -41,6 +41,9 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 use xxhash_rust::xxh3::Xxh3;
 
+#[path = "body_patch_append.rs"]
+mod append;
+
 /// At most this many relowered bodies are patched; more fall back.
 const PATCH_LIMIT: usize = 4096;
 
@@ -402,10 +405,15 @@ pub(crate) fn try_patch<R: dm_ir::Resolver>(request: PatchRequest<'_, R>) -> Res
         return Err("retained output differs from the patch base".into());
     }
     let shape = request.shape;
-    if shape.bodies.len() != base.shape.bodies.len() {
-        return Err("declaration skeleton changed".into());
-    }
-    if shape.skeleton != base.shape.skeleton {
+    if shape.bodies.len() != base.shape.bodies.len() || shape.skeleton != base.shape.skeleton {
+        let tree = &request.frontend.snapshot.tree;
+        if tree.appended_callables().is_some() {
+            return append::try_append_patch(request, &base, &link, &image)
+                .map_err(|reason| format!("declaration skeleton changed; append patch: {reason}"));
+        }
+        if shape.bodies.len() != base.shape.bodies.len() {
+            return Err("declaration skeleton changed".into());
+        }
         return try_default_patch(request, &base, &image)
             .map_err(|reason| format!("declaration skeleton changed; default patch: {reason}"));
     }

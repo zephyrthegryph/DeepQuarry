@@ -41,7 +41,14 @@ fn class_orders(dmb: &Dmb, class: usize) -> Vec<(&'static str, Vec<String>)> {
         ("verbs", procs(record.verb_list_id())),
         ("procs", procs(record.proc_list_id())),
         ("defined vars", pairs(record.defining_variable_list_id())),
-        ("initialized vars", pairs(record.initialized_variable_list_id())),
+        (
+            "initialized vars",
+            dmb.class_initial_values(class)
+                .unwrap_or_default()
+                .into_iter()
+                .map(|entry| var_name(dmb, entry.variable_id))
+                .collect(),
+        ),
     ]
 }
 /// Every difference found, up to `limit`; empty means equivalent.

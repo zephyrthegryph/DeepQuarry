@@ -33,3 +33,6 @@ dm-link = { path = "../dm-link" }
 
 dm-resources = { path = "../dm-resources" }
 
+
+[dev-dependencies]
+dmb-opendream = { path = "../dmb-opendream" }

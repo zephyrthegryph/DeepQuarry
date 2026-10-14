@@ -140,3 +140,42 @@ fn numeric_default_edits_match_fresh_with_and_without_initial_reads() {
         }
     }
 }
+
+#[test]
+fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
+    // Added procs/verbs/overrides append to the retained model (semantic
+    // equivalence is asserted by compare_revision); a referenced new name
+    // must decline. Reverting is a removal and rebuilds fresh numbering.
+    let cases: [(&str, String, bool); 4] = [
+        ("new proc", format!("{TREE}/datum/base/proc/added_probe()\n    return 41\n"), true),
+        (
+            "new proc above existing bodies",
+            TREE.replace("/proc/other()", "/datum/base/proc/early_probe()
+    return 7
+
+/proc/other()"),
+            true,
+        ),
+        ("new override of a called proc (declines)", format!("{TREE}/datum/base/child/result()\n    return own\n"), false),
+        (
+            "referenced new proc",
+            format!("{TREE}/datum/base/proc/used_probe()\n    return 2\n/proc/caller()\n    var/datum/base/item = new\n    return item.used_probe()\n"),
+            false,
+        ),
+    ];
+    for (label, edited, patches) in cases {
+        let roots = Roots::new();
+        let mut shared = shared();
+        Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+        edit_all(&roots, TREE);
+        let initial = compare_revision(&shared, &roots);
+        let before = crate::body_patch::applied(&roots.manifest(0));
+        edit_all(&roots, &edited);
+        let current = compare_revision(&shared, &roots);
+        assert_ne!(current, initial, "{label} must publish new content");
+        let applied = crate::body_patch::applied(&roots.manifest(0)) - before;
+        assert_eq!(applied, u64::from(patches), "{label}: append patch applied");
+        edit_all(&roots, TREE);
+        assert_eq!(compare_revision(&shared, &roots), initial, "{label}: revert reproduces initial bytes");
+    }
+}

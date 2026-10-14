@@ -199,3 +199,7 @@ mod tests {
         assert!(class.has_mouse_event_proc());
     }
 }
+
+pub(super) fn recognizes_callback(name: dm_ir::SymbolId) -> bool {
+    header_features::HeaderFeatures::recognizes(name)
+}

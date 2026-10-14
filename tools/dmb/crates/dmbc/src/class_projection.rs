@@ -707,3 +707,8 @@ mod shared_writer_tests;
 #[cfg(test)]
 #[path = "class_projection/shared_tmp_tests.rs"]
 mod shared_tmp_tests;
+
+/// Whether a callable name sets class or header callback flags.
+pub(crate) fn recognizes_callback(name: dm_ir::SymbolId) -> bool {
+    callbacks::recognizes_callback(name)
+}

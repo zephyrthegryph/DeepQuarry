@@ -949,10 +949,11 @@ pub use owned::{
 
 mod frame_contribution;
 mod procedure_plan;
+pub(crate) mod append;
 
 mod generation;
 pub use generation::RetainedGeneration;
-pub(crate) use generation::PatchImage;
+pub(crate) use generation::{PatchImage, PatchLink};
 
 mod procedure_metadata_recipe;
 pub(crate) use procedure_metadata_recipe::ProcedureMetadataRecipe;
