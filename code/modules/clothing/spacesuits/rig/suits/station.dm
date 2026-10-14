@@ -201,10 +201,8 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/ce)
 	offline_vision_restriction = 1
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/hazmat
-	//ywadd start
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/hazmat
 	boot_type = /obj/item/clothing/shoes/magboots/rig/hazmat
-	//ywadd end
 
 	req_access = list()
 	req_one_access = list()
@@ -213,7 +211,6 @@ CAPABILITIES(/obj/item/rig/hazmat)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_XENOARC, POCKET_BAYSUIT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.75))
 
-//ywadd start
 
 
 /obj/item/clothing/gloves/gauntlets/rig/hazmat
@@ -223,7 +220,6 @@ CAPABILITIES(/obj/item/rig/hazmat)
 	icon = 'icons/vore/rig_yw/rigs_shoes.dmi'
 	icon_state = "science_rig"
 	icon_override = 'icons/vore/rig_yw/rigs_shoes_onmob.dmi'
-//ywadd end
 
 /obj/item/rig/hazmat/equipped
 

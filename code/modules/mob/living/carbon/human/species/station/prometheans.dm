@@ -55,8 +55,6 @@
 	virus_immune =	1
 	blood_volume =	560
 	factor_baseline = alist(BF_INCOMING_PHYSICAL = 0.7, BF_INCOMING_THERMAL = 1.6, BF_DEMAND = 0)
-	//chompedit Old values of .75 brute and 2 burn were imbalanced. (brute)
-	//chompedit (burn)
 	flash_mod =		0.5 //No centralized, lensed eyes.
 	item_slowdown_mod = 1.33
 	throwforce_absorb_threshold = 10

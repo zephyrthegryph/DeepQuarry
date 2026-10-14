@@ -85,5 +85,4 @@
 	else
 		return //just leave them
 
-// DQEdit - legacy /datum/ai_brain/.../can_attack and /engage_target overrides
 // removed in the combat migration.

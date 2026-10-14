@@ -304,7 +304,7 @@
 				<li> Due to the TEG generating such a high amount of power, you can safely go into the SMES chamber and max out the INPUT and OUTPUT to both SMES units. One will ensure that even in the rare event of a TEG shutdown, the R-UST will have enough power to allow engineers to set up different reactions to ensure the outpost stays powered. The other SMES will ensure the outpost has some spare power until the TEG is repaired, or otherwise replaced. </li><br>
 				</ol>
 				</body>
-			</html>"}			// CHOMPedit END : Updating the R-UST manual
+			</html>"}
 
 /obj/item/book/manual/engineering_singularity_safety
 	name = "Singularity Safety in Special Circumstances"

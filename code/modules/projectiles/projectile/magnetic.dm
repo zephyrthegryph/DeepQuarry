@@ -1,7 +1,7 @@
 // Rod for railguns. Slightly less nasty than the sniper round.
 /obj/item/projectile/bullet/magnetic
 	name = "rod"
-	icon = 'icons/obj/projectiles.dmi' //Ywedit, uses default icon path not _yw
+	icon = 'icons/obj/projectiles.dmi'
 	icon_state = "rod"
 	fire_sound = SFX_WEAPONS_RAILGUN
 	damage = 65
