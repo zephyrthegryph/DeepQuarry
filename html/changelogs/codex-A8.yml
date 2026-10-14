@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Declare mining, overmap and shuttle initialization jobs."

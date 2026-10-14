@@ -181,8 +181,7 @@ CAPABILITIES(/obj/effect/resonance)
 	layer = ABOVE_MOB_LAYER
 	duration = 0.4 SECONDS
 
-/obj/effect/temp_visual/resonance_crush/Initialize(mapload)
-	. = ..()
+/obj/effect/temp_visual/resonance_crush/proc/start_crush_animation()
 	transform = matrix()*1.5
 	animate(src, transform = matrix()*0.1, alpha = 50, time = 0.4 SECONDS)
 
@@ -191,3 +190,6 @@ CAPABILITIES(/obj/effect/resonance)
 
 /obj/item/resonator/proc/field_burst()
 	set_fieldsactive(fieldsactive - 1)
+
+CAPABILITIES(/obj/effect/temp_visual/resonance_crush)
+	setup(PROC_REF(start_crush_animation))

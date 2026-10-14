@@ -831,11 +831,10 @@ CAPABILITIES(/obj/item/gps/computer)
 	max_n_of_items = 100
 
 CAPABILITIES(/obj/machinery/smartfridge/survival_pod)
+	setup(PROC_REF(stock_mapped_supplies))
 	configure(light_glow(range = 5, power = 1.2, color = "#DDFFD3"))
 
-// ALLOW(init/INSTANCE_STATE): stocks the items the map placed on its tile
-/obj/machinery/smartfridge/survival_pod/Initialize(mapload)
-	. = ..()
+/obj/machinery/smartfridge/survival_pod/proc/stock_mapped_supplies()
 	for(var/obj/item/O in contents_of(loc))
 		if(accept_check(O))
 			stock(O)
@@ -861,15 +860,13 @@ CAPABILITIES(/obj/machinery/smartfridge/survival_pod)
 
 // start - fans weren't updating atmos when destroyed or placed
 
-/obj/structure/fans/Initialize(mapload)
-	.=..()
-	update_nearby_tiles()
 // end
 
 /obj/structure/fans/atom_deconstruct()
 	replace_with(src, buildstacktype, buildstackamount)
 
 CAPABILITIES(/obj/structure/fans)
+	setup(PROC_REF(update_nearby_tiles))
 	op("disassemble", tool(TOOL_WRENCH), label("Disassemble"), begins(PROC_REF(disassemble_begins)), wait(4 SECONDS), then(PROC_REF(disassemble_done)))
 
 /obj/structure/fans/proc/disassemble_begins(datum/act/op/A)

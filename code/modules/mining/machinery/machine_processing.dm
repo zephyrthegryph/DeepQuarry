@@ -22,16 +22,17 @@
 	. = ..()
 	machine()?.wake_mining()
 
-/obj/machinery/mineral/processing_unit_console/Initialize(mapload)
-	. = ..()
+/obj/machinery/mineral/processing_unit_console/proc/bind_processing_machine()
 	rel_set(src, nameof(machine), locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
 	if (machine())
 		rel_set(machine(), nameof(/obj/machinery/bodyscanner::console), src)
 	else
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 
 CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
+	setup(PROC_REF(bind_processing_machine))
 	// The console's window: an ore's setting, when the button names none, is asked in the op (asks()). A named setting is
 	// PROCESS_NONE .. PROCESS_ALLOY (0..3: the defines are file-local, the declaration compiles elsewhere).
 	interface("MiningOreProcessingConsole")
@@ -230,8 +231,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 		ORE_VERDANTIUM = 60,
 		ORE_RUTILE = 40)
 
-/obj/machinery/mineral/processing_unit/Initialize(mapload)
-	. = ..()
+/obj/machinery/mineral/processing_unit/proc/prepare_processing_ores_and_markers()
 	for(var/ore, value in GLOB.ore_data)
 		var/datum/ore/OD = value
 		LAZYSET(ores_processing, OD.name, 0)
@@ -272,6 +272,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 /// arrives (on_input_entered()).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mineral/processing_unit)
+	setup(PROC_REF(prepare_processing_ores_and_markers))
 	configure(light_glow(range = 3))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(active), cond_not(nameof(panel_open))), wakes_on = list(nameof(active), nameof(panel_open)))
 

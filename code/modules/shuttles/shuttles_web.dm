@@ -185,8 +185,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 
 // Note - Searching own area for doors/sensors is fine for legacy web shuttles as they are single-area.
 //        However if this code is copied to future multi-area shuttles, should search in all shuttle areas
-/obj/machinery/computer/shuttle_control/web/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/shuttle_control/web/proc/bind_mapped_doors_and_sensors()
 	var/area/my_area = get_area(src)
 	if(my_doors)
 		var/list/find_doors = my_doors.Copy()
@@ -453,8 +452,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	var/shuttle_name					//Text name of the shuttle to connect to
 	var/list/destinations				//Make sure this STARTS with a destination that builds a route to one that always exists as an anchor.
 
-/obj/shuttle_connector/Initialize(mapload)
-	. = ..()
+/obj/shuttle_connector/proc/observe_shuttle_routes()
 	observe(SSshuttles, /datum/notice/observer_shuttle_added, src, then(PROC_REF(setup_routes)))
 
 // This is called whenever a shuttle is initialized.  If its our shuttle, do our thing!
@@ -529,6 +527,7 @@ CAPABILITIES(/obj/machinery/shuttle_sensor)
 		return aircontents
 
 CAPABILITIES(/obj/machinery/computer/shuttle_control/web)
+	setup(PROC_REF(bind_mapped_doors_and_sensors))
 	ref_many(nameof(linked_doors))
 	ref_many(nameof(linked_sensors))
 	op("rename_command", ui_act("rename_command"), then(PROC_REF(ui_act_rename_command)))
@@ -552,3 +551,6 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control/web)
 
 /datum/shuttle/autodock/web_shuttle/proc/rename_shuttle_apply(datum/act/request/A)
 	return rename_shuttle_stage(A.request.answerer, A.request.value, TRUE)
+
+CAPABILITIES(/obj/shuttle_connector)
+	setup(PROC_REF(observe_shuttle_routes))

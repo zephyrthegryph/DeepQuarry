@@ -56,6 +56,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_OVERMAP_SHIPS)
 	. = ..()
 	min_speed = round(min_speed, SHIP_MOVE_RESOLUTION)
 	max_speed = round(max_speed, SHIP_MOVE_RESOLUTION)
+
+/obj/effect/overmap/visitable/ship/proc/prepare_ship_vector_and_flight()
 	rel_set(src, nameof(vector), add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
 	SSflight?.register_vessel(src)
@@ -84,6 +86,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_OVERMAP_SHIPS)
 
 /// Under way (not still).
 CAPABILITIES(/obj/effect/overmap/visitable/ship)
+	setup(PROC_REF(prepare_ship_vector_and_flight))
 	configure(light_glow(power = 4))
 	every(1 SECOND, then(PROC_REF(ship_step)), when = nameof(under_way))
 	drag_onto(PROC_REF(drop_input))

@@ -15,14 +15,14 @@
 	var/weaknesses //if the BSA can destroy them and with what
 
 CAPABILITIES(/obj/effect/overmap/event)
+	setup(PROC_REF(refresh_initial_hazards))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/effect/overmap/event/proc/roll_look(datum/roller/R)
 	return length(event_icon_states) ? R.choose(event_icon_states) : icon_state
 
-/obj/effect/overmap/event/Initialize(mapload)
-	. = ..()
+/obj/effect/overmap/event/proc/refresh_initial_hazards()
 	GLOB.overmap_event_handler.update_hazards(loc)
 
 /obj/effect/overmap/event/Moved(atom/old_loc, direction, forced = FALSE)

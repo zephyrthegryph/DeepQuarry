@@ -1989,55 +1989,9 @@ init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::I
 init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::Initialize::flags
 init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::Initialize::update_strings
 init_lines	code/modules/media/media_machinery.dm	@/obj/machinery/media::Initialize::update_media_source
-init_lines	code/modules/mining/abandonedcrates.dm	@/obj/structure/closet/crate/secure/loot::Initialize::generate_loot
 init_lines	code/modules/mining/machine_silo.dm	@/obj/machinery/ore_silo::Initialize::if
 init_lines	code/modules/mining/machine_silo.dm	@/obj/machinery/ore_silo::Initialize::GLOB.ore_silo_default
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit_console::Initialize::rel_set
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit_console::Initialize::if
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit_console::Initialize::rel_set
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit_console::Initialize::else
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit_console::Initialize::log_mapping
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit_console::Initialize::return
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit::Initialize::for
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit::Initialize::OD
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit::Initialize::LAZYSET
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit::Initialize::ores_stored[OD.name]
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit::Initialize::for
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit::Initialize::rel_set
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit::Initialize::if
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit::Initialize::for
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit::Initialize::rel_set
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit::Initialize::if
-init_lines	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit::Initialize::watch_input
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_unit_console::Initialize::rel_set
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_unit_console::Initialize::if
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_unit_console::Initialize::rel_set
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_unit_console::Initialize::else
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_unit_console::Initialize::stack_trace
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_unit_console::Initialize::return
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::Initialize::for
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::Initialize::S
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::Initialize::s_matname
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::Initialize::LAZYSET
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::Initialize::LAZYSET
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::Initialize::for
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::Initialize::rel_set
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::Initialize::if
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::Initialize::for
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::Initialize::rel_set
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::Initialize::if
-init_lines	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::Initialize::watch_input
-init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::for
-init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::rel_set
-init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::if
-init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::expr
-init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::for
-init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::rel_set
-init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::if
-init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::expr
-init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::watch_input
 init_lines	code/modules/mining/mine_items.dm	@/obj/item/stack/flag::Initialize::base_state
-init_lines	code/modules/mining/mine_items.dm	@/obj/structure/trailblazer::Initialize::color
 init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::if
 init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::if
 init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::make_ore
@@ -2058,12 +2012,6 @@ init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initializ
 init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::if
 init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::ore_reagent
 init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::layer
-init_lines	code/modules/mining/resonator.dm	@/obj/effect/temp_visual/resonance_crush::Initialize::transform
-init_lines	code/modules/mining/resonator.dm	@/obj/effect/temp_visual/resonance_crush::Initialize::animate
-init_lines	code/modules/mining/shelter_atoms.dm	@/obj/machinery/smartfridge/survival_pod::Initialize::for
-init_lines	code/modules/mining/shelter_atoms.dm	@/obj/machinery/smartfridge/survival_pod::Initialize::if
-init_lines	code/modules/mining/shelter_atoms.dm	@/obj/machinery/smartfridge/survival_pod::Initialize::stock
-init_lines	code/modules/mining/shelter_atoms.dm	@/obj/structure/fans::Initialize::update_nearby_tiles
 init_lines	code/modules/mob/dead/corpse.dm	@/obj/effect/landmark/mobcorpse::Initialize::createCorpse
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::appearance
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::invisibility
@@ -2367,9 +2315,6 @@ init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::forceMove
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::dq_add_recursive_move
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::global.observe
-init_lines	code/modules/overmap/disperser/disperser_console.dm	@/obj/machinery/computer/ship/disperser::Initialize::link_parts
-init_lines	code/modules/overmap/disperser/disperser_console.dm	@/obj/machinery/computer/ship/disperser::Initialize::reset_calibration
-init_lines	code/modules/overmap/events/overmap_event.dm	@/obj/effect/overmap/event::Initialize::GLOB.overmap_event_handler.update_hazards
 init_lines	code/modules/overmap/overmap_object.dm	@/obj/effect/overmap::Initialize::if
 init_lines	code/modules/overmap/overmap_object.dm	@/obj/effect/overmap::Initialize::return
 init_lines	code/modules/overmap/overmap_object.dm	@/obj/effect/overmap::Initialize::if
@@ -2387,9 +2332,6 @@ init_lines	code/modules/overmap/overmap_object.dm	@/obj/effect/overmap::Initiali
 init_lines	code/modules/overmap/overmap_object.dm	@/obj/effect/overmap::Initialize::cam_background.assigned_map
 init_lines	code/modules/overmap/overmap_object.dm	@/obj/effect/overmap::Initialize::cam_background.del_on_map_removal
 init_lines	code/modules/overmap/overmap_object.dm	@/obj/effect/overmap::Initialize::update_screen
-init_lines	code/modules/overmap/overmap_shuttle.dm	@/obj/structure/fuel_port::Initialize::if
-init_lines	code/modules/overmap/overmap_shuttle.dm	@/obj/structure/fuel_port::Initialize::expr
-init_lines	code/modules/overmap/overmap_shuttle.dm	@/obj/structure/fuel_port::Initialize::loaded
 init_lines	code/modules/overmap/sectors.dm	@/obj/effect/overmap/visitable::Initialize::if
 init_lines	code/modules/overmap/sectors.dm	@/obj/effect/overmap/visitable::Initialize::find_z_levels
 init_lines	code/modules/overmap/sectors.dm	@/obj/effect/overmap/visitable::Initialize::register_z_levels
@@ -2419,21 +2361,8 @@ init_lines	code/modules/overmap/sectors.dm	@/obj/effect/overmap/visitable::Initi
 init_lines	code/modules/overmap/sectors.dm	@/obj/effect/overmap/visitable::Initialize::levels_for_distress[i]
 init_lines	code/modules/overmap/sectors.dm	@/obj/effect/overmap/visitable::Initialize::if
 init_lines	code/modules/overmap/sectors.dm	@/obj/effect/overmap/visitable::Initialize::levels_for_distress
-init_lines	code/modules/overmap/ships/computers/helm.dm	@/obj/machinery/computer/ship/helm::Initialize::get_known_sectors
-init_lines	code/modules/overmap/ships/computers/helm.dm	@/obj/machinery/computer/ship/navigation::Initialize::if
-init_lines	code/modules/overmap/ships/computers/helm.dm	@/obj/machinery/computer/ship/navigation::Initialize::nav_tgui.attempt_hook_up
-init_lines	code/modules/overmap/ships/engines/gas_thruster.dm	@/obj/machinery/atmospherics/unary/engine::Initialize::update_nearby_tiles
-init_lines	code/modules/overmap/ships/engines/gas_thruster.dm	@/obj/machinery/atmospherics/unary/engine::Initialize::for
-init_lines	code/modules/overmap/ships/engines/gas_thruster.dm	@/obj/machinery/atmospherics/unary/engine::Initialize::if
-init_lines	code/modules/overmap/ships/engines/gas_thruster.dm	@/obj/machinery/atmospherics/unary/engine::Initialize::rel_add
-init_lines	code/modules/overmap/ships/engines/gas_thruster.dm	@/obj/machinery/atmospherics/unary/engine::Initialize::if
-init_lines	code/modules/overmap/ships/engines/gas_thruster.dm	@/obj/machinery/atmospherics/unary/engine::Initialize::atom_break
-init_lines	code/modules/overmap/ships/engines/gas_thruster.dm	@/obj/machinery/atmospherics/unary/engine::Initialize::expr
 init_lines	code/modules/overmap/ships/ship.dm	@/obj/effect/overmap/visitable/ship::Initialize::min_speed
 init_lines	code/modules/overmap/ships/ship.dm	@/obj/effect/overmap/visitable/ship::Initialize::max_speed
-init_lines	code/modules/overmap/ships/ship.dm	@/obj/effect/overmap/visitable/ship::Initialize::rel_set
-init_lines	code/modules/overmap/ships/ship.dm	@/obj/effect/overmap/visitable/ship::Initialize::vector_overlay
-init_lines	code/modules/overmap/ships/ship.dm	@/obj/effect/overmap/visitable/ship::Initialize::expr
 init_lines	code/modules/overmap/spacetravel.dm	@/obj/effect/overmap/visitable/sector/temporary::Initialize::if
 init_lines	code/modules/overmap/spacetravel.dm	@/obj/effect/overmap/visitable/sector/temporary::Initialize::CRASH
 init_lines	code/modules/overmap/spacetravel.dm	@/obj/effect/overmap/visitable/sector/temporary::Initialize::start_x
@@ -3132,24 +3061,6 @@ init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark::Ini
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark::Initialize::SSshuttles.register_landmark
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark/automatic::Initialize::original_name
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark/automatic::Initialize::landmark_tag
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::my_area
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::if
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::find_doors
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::for
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::if
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::rel_add
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::find_doors
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::for
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::log_shuttle
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::if
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::find_sensors
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::for
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::if
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::rel_add
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::find_sensors
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::for
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::log_shuttle
-init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/shuttle_connector::Initialize::observe
 init_lines	code/modules/spells/spellbook.dm	@/obj/item/spellbook/oneuse::Initialize::name
 init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::if
 init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::rel_set
@@ -4071,15 +3982,6 @@ world_reads	code/modules/integrated_electronics/subtypes/camera.dm	GLOB.camerane
 world_reads	code/modules/maint_recycler/code/util.dm	GLOB.recycler_vendor_locations |= get_turf(src)
 world_reads	code/modules/mining/machine_silo.dm	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
 world_reads	code/modules/mining/machine_silo.dm	GLOB.ore_silo_default = src
-world_reads	code/modules/mining/machinery/machine_processing.dm	rel_set(src, nameof(machine), locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
-world_reads	code/modules/mining/machinery/machine_processing.dm	for(var/ore, value in GLOB.ore_data)
-world_reads	code/modules/mining/machinery/machine_processing.dm	for (var/dir in GLOB.cardinal)
-world_reads	code/modules/mining/machinery/machine_processing.dm	for (var/dir in GLOB.cardinal)
-world_reads	code/modules/mining/machinery/machine_stacking.dm	rel_set(src, nameof(machine), locate_in_list(range(5,src), /obj/machinery/mineral/stacking_machine))
-world_reads	code/modules/mining/machinery/machine_stacking.dm	for (var/dir in GLOB.cardinal)
-world_reads	code/modules/mining/machinery/machine_stacking.dm	for (var/dir in GLOB.cardinal)
-world_reads	code/modules/mining/machinery/machine_unloading.dm	for(var/dir in GLOB.cardinal)
-world_reads	code/modules/mining/machinery/machine_unloading.dm	for(var/dir in GLOB.cardinal)
 world_reads	code/modules/mining/mine_turfs.dm	dir = pick(GLOB.alldirs)
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
@@ -4099,7 +4001,6 @@ world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	if(GLOB.ntnet_gl
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::relays), src)
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	NTNet_static = GLOB.ntnet_global // a registered singleton: shared
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet().relays)]")
-world_reads	code/modules/overmap/events/overmap_event.dm	GLOB.overmap_event_handler.update_hazards(loc)
 world_reads	code/modules/overmap/sectors.dm	levels_for_distress[i] = GLOB.map_templates_loaded[current]
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	ammo_type = pick(GLOB.global_ammo_types)
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	desc += " Uses [GLOB.global_ammo_types[ammo_type]] rounds."

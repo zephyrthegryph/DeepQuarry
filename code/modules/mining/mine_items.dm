@@ -379,12 +379,9 @@ CAPABILITIES(/obj/item/stack/lightpole)
 	catalogue_data = list(/datum/category_item/catalogue/material/trail_blazer)
 
 CAPABILITIES(/obj/structure/trailblazer)
+	setup(PROC_REF(set_color))
 	climb()
 	op("hand", hand(), ungated(), label("Use"), wait(8 SECONDS), then(PROC_REF(knock_down_done)))
-
-/obj/structure/trailblazer/Initialize(mapload)
-	. = ..()
-	set_color()
 
 /obj/structure/trailblazer/proc/set_color()
 	set_icon_state("redtrail_light_on")

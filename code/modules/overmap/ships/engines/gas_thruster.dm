@@ -76,11 +76,11 @@
 	return 0
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/engine)
+	setup(PROC_REF(bind_ship_engine))
 	configure(uses_power(channel = EQUIP, idle = 1000))
 	owns_one(nameof(controller), starts = /datum/ship_engine/gas_thruster)
 
-/obj/machinery/atmospherics/unary/engine/Initialize(mapload)
-	. = ..()
+/obj/machinery/atmospherics/unary/engine/proc/bind_ship_engine()
 	update_nearby_tiles(need_rebuild=1)
 
 	for(var/obj/effect/overmap/visitable/ship/S as anything in shuttles_ships())

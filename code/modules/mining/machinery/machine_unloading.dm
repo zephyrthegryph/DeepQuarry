@@ -9,8 +9,7 @@
 	var/tmp/obj/machinery/mineral/input
 	var/tmp/obj/machinery/mineral/output
 
-/obj/machinery/mineral/unloading_machine/Initialize(mapload)
-	. = ..()
+/obj/machinery/mineral/unloading_machine/proc/bind_unloading_markers()
 	for(var/dir in GLOB.cardinal)
 		rel_set(src, nameof(input), locate(/obj/machinery/mineral/input, get_step(src, dir)))
 		if(input_marker())
@@ -38,6 +37,7 @@
 /// until something arrives (on_input_entered()).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mineral/unloading_machine)
+	setup(PROC_REF(bind_unloading_markers))
 	started_work(step = PROC_REF(work_step))
 
 /obj/machinery/mineral/unloading_machine/proc/work_step(datum/act/timer/A)

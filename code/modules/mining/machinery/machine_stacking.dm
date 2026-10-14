@@ -9,15 +9,15 @@
 	anchored = TRUE
 	var/tmp/obj/machinery/mineral/stacking_machine/machine
 
-/obj/machinery/mineral/stacking_unit_console/Initialize(mapload)
-	. = ..()
+/obj/machinery/mineral/stacking_unit_console/proc/bind_stacking_machine()
 	rel_set(src, nameof(machine), locate_in_list(range(5,src), /obj/machinery/mineral/stacking_machine))
 	if (machine())
 		rel_set(machine(), nameof(/obj/machinery/bodyscanner::console), src)
 	else
 		//Silently failing and causing mappers to scratch their heads while runtiming isn't ideal.
 		stack_trace(span_danger("Warning: Stacking machine console at [src.x], [src.y], [src.z] could not find its machine!"))
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 
 /obj/machinery/mineral/stacking_unit_console/proc/interaction_use(datum/act/op/A)
 	var/mob/user = A.actor
@@ -26,6 +26,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
+	setup(PROC_REF(bind_stacking_machine))
 	interface("MiningStackingConsole")
 	op("change_stack", ui_act("change_stack", arg("amt", num(1, 50))), then(PROC_REF(ui_act_change_stack)))
 	op("release_stack", ui_act("release_stack", arg("stack", schema_text(4096))), then(PROC_REF(ui_act_release_stack)))
@@ -79,8 +80,7 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 	var/list/stack_paths
 	var/stack_amt = 50; // Amount to stack before releassing
 
-/obj/machinery/mineral/stacking_machine/Initialize(mapload)
-	. = ..()
+/obj/machinery/mineral/stacking_machine/proc/prepare_stacking_materials_and_markers()
 	// stack_paths holds type paths (material id -> stack type), not instances.
 	for(var/stack_path in (subtypesof(/obj/item/stack/material) - typesof(/obj/item/stack/material/cyborg)))
 		var/obj/item/stack/material/S = stack_path
@@ -111,6 +111,7 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mineral/stacking_machine)
+	setup(PROC_REF(prepare_stacking_materials_and_markers))
 	started_work(step = PROC_REF(work_step))
 
 /obj/machinery/mineral/stacking_machine/proc/work_step(datum/act/timer/A)

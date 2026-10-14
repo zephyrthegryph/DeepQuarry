@@ -25,6 +25,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	ai_control = FALSE // AI/Borgs shouldn't really be flying off in ships without crew help
 
 CAPABILITIES(/obj/machinery/computer/ship/helm)
+	setup(PROC_REF(get_known_sectors))
 	configure(light_glow(color = "#7faaff"))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(autopilot), cond_not(nameof(autopilot_disabled))), wakes_on = list(nameof(autopilot), nameof(autopilot_disabled)))
 	owns_many(nameof(known_sectors))
@@ -61,10 +62,6 @@ CAPABILITIES(/obj/machinery/computer/ship/helm)
 
 CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 	configure(light_glow(color = "#70ffa0"))
-
-/obj/machinery/computer/ship/helm/Initialize(mapload)
-	. = ..()
-	get_known_sectors()
 
 /obj/machinery/computer/ship/helm/proc/get_known_sectors()
 	// ALLOW(spatial): a deliberate whole-world search: the target is not tied to any holder or z-level index
@@ -398,11 +395,11 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 	var/datum/tgui_module/ship/nav/nav_tgui
 
 CAPABILITIES(/obj/machinery/computer/ship/navigation)
+	setup(PROC_REF(hook_navigation_module))
 	op("ship_emote_beyond", menu(), ungated(), reach(REACH_ANY), label("Emote Beyond"), needs(req(PROC_REF(ship_emote_in_view)), req(PROC_REF(ship_emoter_capable)), req(PROC_REF(ship_emoter_not_muted))), asks(/datum/prompt/text, step = "message", fields = list("title" = "Emote Beyond", "question" = "Type a message to emote.", "encode" = FALSE, "timeout" = 0)), then(PROC_REF(emote_beyond_entered)))
 	owns_one(nameof(nav_tgui), starts = /datum/tgui_module/ship/nav)
 
-/obj/machinery/computer/ship/navigation/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/ship/navigation/proc/hook_navigation_module()
 	if(linked())
 		nav_tgui.attempt_hook_up(linked())
 
