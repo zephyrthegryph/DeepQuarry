@@ -2,7 +2,6 @@
 	var/tmp/area/picked_area
 	/// Relation list (REL_LIST): the airlocks this event bolts.
 	var/list/obj/machinery/door/airlock/target_airlocks
-	var/tmp/obj/machinery/power/apc/apc
 
 	var/static/list/excluded = list(
 		/area/shuttle,
@@ -61,19 +60,9 @@
 				hold(door, STAT_AICONTROLDISABLED, null, SRC_ROUND_EVENT)
 				door.electrify(-1)
 
-/datum/event/hostile_runtime/tick()
-	if(activeFor == releaseWhen)
-		if(apc() && apc().operating)
-			for(var/obj/machinery/light/light in picked_area())
-				light.flicker(10)
-
 /// Accessor for the picked_area var.
 /datum/event/hostile_runtime/proc/picked_area() as /area
 	return picked_area
-
-/// Accessor for the apc var.
-/datum/event/hostile_runtime/proc/apc() as /obj/machinery/power/apc
-	return apc
 
 CAPABILITIES(/datum/event/hostile_runtime)
 	ref_many(nameof(target_airlocks))

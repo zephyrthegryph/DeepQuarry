@@ -54,6 +54,10 @@ CAPABILITIES(/turf/simulated)
 	var/datum/planet_sunlight_handler/pshandler
 	var/sleeping = FALSE
 
+CAPABILITIES(/datum/sunlight_handler)
+	ref_one(nameof(sun), /datum/simple_sun)
+	ref_one(nameof(pshandler), /datum/planet_sunlight_handler)
+
 /datum/sunlight_handler/New(parent)
 	. = ..()
 	rel_set(src, nameof(holder), parent)

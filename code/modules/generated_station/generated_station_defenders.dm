@@ -8,6 +8,11 @@
 	/// Relation view: the last hostile that hurt this defender.
 	var/atom/last_contact
 
+CAPABILITIES(/datum/generated_station_defender_agent)
+	ref_one(nameof(defender), /mob/living/simple_mob)
+	ref_one(nameof(runtime), /datum/generated_station_defense_runtime)
+	ref_one(nameof(last_contact), /atom)
+
 /datum/generated_station_defender_agent/New(mob/living/simple_mob/new_defender, datum/generated_station_defense_runtime/new_runtime, new_department_id, new_squad_id, turf/new_home)
 	..()
 	rel_set(src, nameof(defender), new_defender)
@@ -75,6 +80,7 @@
 CAPABILITIES(/datum/generated_station_defense_runtime)
 	links(/datum/generated_station_defense_runtime::director, /datum/generated_station_director::defense_runtime)
 	owns_many(nameof(agents))
+	ref_one(nameof(site), /datum/expedition_site)
 
 /// Area entry is only an event trigger. A report requires a real powered camera
 /// relay in this department to confirm line of sight.

@@ -41,6 +41,7 @@ CAPABILITIES(/mob/living)
 	ref_many(nameof(organs), /obj/item/organ/external)
 	// Equipped or pump-supplied breathing tank; custody belongs to its actual slot.
 	ref_one(nameof(internal))
+	ref_one(nameof(faction_reputation), /datum/faction_reputation_ledger)
 	owns_one(nameof(ai_brain), /datum/ai_brain)
 	on_change(STAT_AI_AUTHORITY, ANY, then(PROC_REF(ai_authority_changed)))
 	on_change(STAT_RELEVANCE, ANY, then(PROC_REF(ai_relevance_changed)))

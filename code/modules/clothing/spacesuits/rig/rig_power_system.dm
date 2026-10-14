@@ -36,6 +36,9 @@
 	/// Vision restriction when offline. 0 = none, 1 = welder vision, 2 = blind.
 	var/offline_vision_restriction = 1
 
+CAPABILITIES(/datum/rig_power_system)
+	ref_one(nameof(holder), /obj/item/rig)
+
 /datum/rig_power_system/New(obj/item/rig/new_holder)
 	rel_set(src, nameof(holder), new_holder)
 

@@ -33,6 +33,7 @@
 	rel_set(src, nameof(forward_host), host)
 
 CAPABILITIES(/datum/admin_report)
+	ref_one(nameof(forward_host))
 	interface("AdminReport", rights = R_ADMIN|R_MOD|R_DEBUG|R_SERVER|R_EVENT)
 	op("forward_topic", ui_act("forward_topic", arg("href", schema_text(4096))), then(PROC_REF(ui_act_forward_topic)))
 	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))

@@ -21,6 +21,7 @@
 	COOLDOWN_DECLARE(tgui_message_cooldown) // int to avoid spam
 
 CAPABILITIES(/datum/entity_narrate)
+	ref_one(nameof(tgui_selected_refs), /atom)
 	owns_many(nameof(entity_refs))
 	interface(null, title = "Entity Narration", rights = R_FUN, window_var = nameof(tgui_id))
 	op("change_mode_multi", ui_act("change_mode_multi"), then(PROC_REF(ui_act_change_mode_multi)))
@@ -467,6 +468,9 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 /// One tracked narration entity: its target is a relation view, so a deleted entity reads null.
 /datum/entity_narrate_entry
 	var/atom/target
+
+CAPABILITIES(/datum/entity_narrate_entry)
+	ref_one(nameof(target), /atom)
 
 /// Starts tracking `A` under `unique_name`.
 /datum/entity_narrate/proc/track(unique_name, atom/A)

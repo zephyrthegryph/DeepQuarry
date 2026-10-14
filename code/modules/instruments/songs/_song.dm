@@ -429,6 +429,8 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	return music_player
 
 CAPABILITIES(/datum/song)
+	ref_one(nameof(parent), /atom)
+	ref_one(nameof(music_player), /atom)
 	op("start_new_song", ui_act(), then(PROC_REF(ui_act_start_new_song)))
 	op("toggle_sustain_hold_indefinitely", ui_act(), then(PROC_REF(ui_act_toggle_sustain_hold_indefinitely)))
 	ref_many(nameof(hearing_mobs))

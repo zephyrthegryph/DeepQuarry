@@ -24,6 +24,7 @@
 	rel_set(src, nameof(parent), holder)
 
 CAPABILITIES(/datum/board_game/vore_sweeper)
+	ref_one(nameof(dealer), /mob)
 	interface("VoreSweeper", state = nameof(GLOB.tgui_board_game_state))
 	op("be_dealer", ui_act("be_dealer"), then(PROC_REF(ui_act_be_dealer)))
 	op("clear_dealer", ui_act("clear_dealer"), then(PROC_REF(ui_act_clear_dealer)))

@@ -1,4 +1,5 @@
 CAPABILITIES(/datum/error_viewer)
+	ref_one(nameof(dq_back_to), /datum/error_viewer)
 	op("refresh", ui_act(), then(PROC_REF(ui_act_refresh)))
 	op("back", ui_act(), then(PROC_REF(ui_act_back)))
 	interface("ErrorViewer", title = "Error Viewer", rights = R_ADMIN|R_DEBUG)

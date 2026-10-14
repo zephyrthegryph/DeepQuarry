@@ -32,6 +32,10 @@
 	var/datum/generated_station_defense_runtime/defense_runtime
 	var/obj/machinery/camera/camera
 
+CAPABILITIES(/obj/machinery/generated_station_data_relay)
+	ref_one(nameof(defense_runtime), /datum/generated_station_defense_runtime)
+	ref_one(nameof(camera), /obj/machinery/camera)
+
 /// Camera software calls this when it positively identifies an intruder.
 /obj/machinery/generated_station_data_relay/proc/report_hostile(atom/contact, confidence = 80)
 	var/datum/generated_station_defense_runtime/runtime = defense_runtime

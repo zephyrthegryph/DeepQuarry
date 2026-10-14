@@ -89,6 +89,7 @@ BLIND     // can't see anything
 	PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 
 CAPABILITIES(/obj/item/clothing/glasses)
+	ref_one(nameof(overlay), /atom/movable/screen)
 	configure(item_worn(slots = SLOT_EYES))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("glasses_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Glasses toggle self"), then(PROC_REF(glasses_toggle_self)))

@@ -57,6 +57,7 @@ MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, 
 TRACKED(/obj/item/rig_module, suit_overlay)
 
 CAPABILITIES(/obj/item/rig_module)
+	ref_one(nameof(holder), /obj/item/rig)
 	owns_many(nameof(stat_modules), starts = list(/atom/movable/stat_rig_module/activate, /atom/movable/stat_rig_module/deactivate, /atom/movable/stat_rig_module/engage, /atom/movable/stat_rig_module/select, /atom/movable/stat_rig_module/charge))
 	op("mend_paste", item(/obj/item/stack/nanopaste), label("Mend with nanopaste"), needs(req(PROC_REF(damaged))),
 		begins(MSG(rig_module/mending)), wait(3 SECONDS), then(PROC_REF(mend_with_paste)))
@@ -225,6 +226,7 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 	return 0
 
 CAPABILITIES(/atom/movable/stat_rig_module)
+	ref_one(nameof(module), /obj/item/rig_module)
 	click_on(PROC_REF(click_input))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm): the stat-panel button runs

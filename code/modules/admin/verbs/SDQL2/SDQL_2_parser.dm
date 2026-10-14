@@ -57,6 +57,9 @@
 	var/static/list/binary_operators = list("+", "-", "/", "*", "&", "|", "^", "%")
 	var/static/list/comparitors = list("=", "==", "!=", "<>", "<", "<=", ">", ">=")
 
+CAPABILITIES(/datum/SDQL_parser)
+	ref_one(nameof(requester), /mob)
+
 /datum/SDQL_parser/New(query_list)
 	query = query_list
 

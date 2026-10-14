@@ -39,6 +39,9 @@
 	/// The registry key ("[accessory ref]:[clothing ref]") this modifier was registered under.
 	var/registry_key
 
+CAPABILITIES(/datum/accessory_stat_modifier)
+	ref_one(nameof(target), /obj/item/clothing)
+
 /datum/accessory_stat_modifier/New(obj/item/clothing/new_target, label_str)
 	rel_set(src, nameof(target), new_target)
 	if(label_str)

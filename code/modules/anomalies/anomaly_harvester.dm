@@ -1,4 +1,5 @@
 CAPABILITIES(/obj/machinery/anomaly_harvester)
+	ref_one(nameof(harvested), /obj/effect/anomaly)
 	configure(uses_power(active = 40000, idle = 1000))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	op("release_all", ui_act(), then(PROC_REF(ui_act_release_all)))

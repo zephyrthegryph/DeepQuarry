@@ -345,11 +345,11 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 	var/obj/item/item = A.held
 	if(istype(item, /obj/item/stack/material/processed_alloy))
 		if(stock())
-			to_chat(user, span_warning("There is already stock() on [src]."))
+			to_chat(user, span_warning("There is already stock on [src]."))
 			return OP_PASS
 		var/obj/item/stack/material/processed_alloy/incoming = item
 		if(!istype(incoming.material, /datum/material/processed_alloy))
-			to_chat(user, span_warning("[incoming] is not processed stock()."))
+			to_chat(user, span_warning("[incoming] is not processed stock."))
 			return OP_PASS
 		if(!user.drop_from_inventory(incoming))
 			return OP_PASS
@@ -371,6 +371,7 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 	return OP_DECLINE
 
 CAPABILITIES(/obj/structure/material_anvil)
+	ref_one(nameof(stock), /obj/item/stack/material/processed_alloy)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 

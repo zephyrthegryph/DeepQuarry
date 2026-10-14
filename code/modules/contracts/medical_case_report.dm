@@ -48,6 +48,10 @@
 	var/consent_evidence_id
 	var/datum/contract_requirement/event_count/evidence_requirement
 
+CAPABILITIES(/datum/contract/medical_case_report)
+	ref_one(nameof(consent_record), /obj/item/paper)
+	ref_one(nameof(evidence_requirement), /datum/contract_requirement/event_count)
+
 /datum/contract/medical_case_report/proc/initialize_case(list/context)
 	target_ref = context?["target_ref"]
 	target_name = context?["target_name"]

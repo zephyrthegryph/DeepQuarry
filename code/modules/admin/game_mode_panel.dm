@@ -14,6 +14,7 @@
 // The game mode owns this panel (tgui_game_mode_panel); target_mode is a plain relation back.
 
 CAPABILITIES(/datum/game_mode_panel)
+	ref_one(nameof(target_mode))
 	interface("GameModePanel", title = "Edit Game Mode", rights = R_ADMIN|R_EVENT)
 	op("toggle", ui_act("toggle", arg("key", schema_text(4096))), then(PROC_REF(ui_act_toggle)))
 	op("set", ui_act("set", arg("key", schema_text(4096))), then(PROC_REF(ui_act_set)))

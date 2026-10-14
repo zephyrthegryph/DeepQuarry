@@ -42,6 +42,7 @@
 	"}
 
 CAPABILITIES(/obj/machinery/account_database)
+	ref_one(nameof(detailed_account_view), /datum/money_account)
 	after_init(0, then(PROC_REF(assign_machine_id)))
 	climb()
 	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))

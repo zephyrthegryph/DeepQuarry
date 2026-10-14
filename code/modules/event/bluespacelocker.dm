@@ -10,6 +10,10 @@
 	)
 	var/list/area/pickable_areas
 
+CAPABILITIES(/datum/event/bluespace_locker)
+	ref_one(nameof(entry_point), /obj/structure/closet)
+	ref_one(nameof(exit_point), /obj/structure/closet)
+
 /datum/event/bluespace_locker/setup()
 	pickable_areas = get_station_areas(excluded)
 
@@ -45,7 +49,7 @@
 
 	if(!isemptylist(valid_lockers))
 		return pick(valid_lockers)
-	return FALSE
+	return null
 
 /datum/event/bluespace_locker/start()
 	if(!entry_point() || !exit_point())

@@ -39,6 +39,7 @@
 	var/obj/item/ai_verbs/verb_holder
 
 CAPABILITIES(/obj/item/rig_module/ai_container)
+	ref_one(nameof(integrated_ai), /mob)
 	owns_one(nameof(verb_holder), /obj/item/ai_verbs)
 
 /obj/item/rig_module/ai_container/periodic_step()

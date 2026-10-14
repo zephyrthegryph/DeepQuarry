@@ -5,6 +5,7 @@
 	rel_set(src, nameof(target), target)
 
 CAPABILITIES(/datum/filter_editor)
+	ref_one(nameof(target), /atom)
 	interface("Filteriffic", rights = R_VAREDIT)
 	op("add_filter", ui_act("add_filter", arg("name", schema_text(4096)), arg("priority", num()), arg("type")), then(PROC_REF(ui_act_add_filter)))
 	op("remove_filter", ui_act("remove_filter", arg("name", schema_text(4096))), then(PROC_REF(ui_act_remove_filter)))

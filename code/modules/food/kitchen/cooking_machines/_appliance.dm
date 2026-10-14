@@ -911,6 +911,9 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	var/oil = 0
 	var/max_oil = 0//Used for fryers.
 
+CAPABILITIES(/datum/cooking_item)
+	ref_one(nameof(container), /obj/item/reagent_containers/cooking_container)
+
 /datum/cooking_item/New(obj/item/I)
 	rel_set(src, nameof(container), I)
 
