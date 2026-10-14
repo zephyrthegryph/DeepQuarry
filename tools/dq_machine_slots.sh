@@ -395,7 +395,7 @@ slots_group_release() { # hand back all of them (an EXIT trap calls this), and l
 # slot's owner file names it. The holder process ends when the slot directory is gone (released), when the slot was taken over, or after
 # DQ_MERGE_LOCK_MAX_SEC (default 21600, six hours: an abandoned batch cannot hold the merge worktree forever). If it is killed or the machine
 # restarts the next waiter reclaims the slot like any dead holder.
-# Who is "the holder" for a later call: the owner file records `session` (DQ_MERGE_SESSION, else the nearest ancestor that is not a plain
+# Who is "the holder" for a later call: the owner file records `session` (DQ_MERGE_SESSION, else CLAUDE_CODE_SESSION_ID, else the nearest ancestor that is not a plain
 # shell, which is the agent's process that spawns every command it runs). A caller is the holder when its DQ_MERGE_SESSION equals the recorded
 # one, or, without that variable, when the recorded session pid is among its own ancestors.
 #   dq_machine_slots.sh merge-lock status | release [--force]     (dq_merge_worktree.sh --release / --join are the usual front ends)
@@ -415,6 +415,8 @@ _ml_ancestors() { # pids from this shell's parent upward
 _ml_session() { # the id of the caller's batch session
 	local p name
 	if [ -n "${DQ_MERGE_SESSION:-}" ]; then echo "env:$DQ_MERGE_SESSION"; return; fi
+	# An agent session id survives across the separate shells it spawns (msys process ancestry stops at each command's own bash).
+	if [ -n "${CLAUDE_CODE_SESSION_ID:-}" ]; then echo "claude:$CLAUDE_CODE_SESSION_ID"; return; fi
 	for p in $(_ml_ancestors); do
 		name="$(basename "$(cat "/proc/$p/exename" 2>/dev/null)" .exe | tr 'A-Z' 'a-z')"
 		case "$name" in bash | sh | dash | env | timeout | nohup | setsid | git | '') continue ;; esac
