@@ -28,3 +28,5 @@ values. They are not renamed to obtain a lexical REQ_ count of zero. The retired
 forms are legacy requirement macros and the predicate compiler.
 
 Repair verification at 87fc37268e: all seven failed/new dispatch cases passed (data/test-runs/20261013T225435_87fc37268e.json). Both look pins passed in the preceding repair batch without golden changes. A fresh lane-ready run is required for the final merged commit; partial results have not been used to reconstruct a stamp.
+
+Final merged proof at 4c2262dd6e: 112 tests passed, zero failures, production DreamMaker errors zero, DreamChecker diagnostics zero, analyzer tests passed. The stamp was correctly refused because two draw lint findings remained. The user approved restoring sem/reads.rs and sem/globals.rs exactly from d67f63371a, reinstating master's boot-only global/field classification and its regression tests. No partial proof is used to synthesize a stamp.

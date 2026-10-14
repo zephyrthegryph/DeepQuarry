@@ -50,6 +50,9 @@ pub struct GlobalIndex {
     runtime_written: HashSet<String>,
     /// Every global var that is written anywhere.
     written: HashSet<String>,
+    /// Var names (of any object) written by a proc that is not boot-only: the name-based test for a var of a global singleton (`SSjob.x`,
+    /// `using_map.x`). Test code is compiled out of production and does not count.
+    runtime_field_written: HashSet<String>,
     /// How many procs the boot set holds (for the report).
     pub boot_procs: usize,
 }
@@ -58,6 +61,12 @@ impl GlobalIndex {
     /// True when `var` (a `GLOB` field or a real global) is never changed after the world booted.
     pub fn constant_after_init(&self, var: &str) -> bool {
         !self.runtime_written.contains(var)
+    }
+
+    /// True when no proc outside the boot set writes a var of this name on any object: a var of a global singleton that only boot code fills reads
+    /// like a constant. Name-based, so it over-approximates who writes (a same-named var elsewhere keeps it dynamic).
+    pub fn field_constant_after_init(&self, var: &str) -> bool {
+        !self.runtime_field_written.contains(var)
     }
 
     pub fn is_written(&self, var: &str) -> bool {
@@ -72,6 +81,10 @@ impl GlobalIndex {
             let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
             for p in t.iter_self_procs() {
                 if p.is_builtin() {
+                    continue;
+                }
+                // Test code is compiled out of production: it neither writes state nor calls a proc the world could run.
+                if super::reads::is_test_code(sem.rel(p.get().location)) {
                     continue;
                 }
                 let Some(code) = &p.get().code else { continue };
@@ -154,6 +167,9 @@ impl GlobalIndex {
                     out.runtime_written.insert(w.clone());
                 }
             }
+            if !boot[i] {
+                out.runtime_field_written.extend(f.field_writes.iter().cloned());
+            }
         }
         out
     }
@@ -167,6 +183,8 @@ struct Facts {
     refs: HashSet<String>,
     /// Global vars written.
     writes: HashSet<String>,
+    /// Names of vars written on any object (`x = ..`, `a.x = ..`, `a.x[i] = ..`, `a.x.Add(..)`, `a.x++`).
+    field_writes: HashSet<String>,
 }
 
 /// The global var an lvalue-ish expression names: `GLOB.x` (+ index steps) or a real global `x` (+ index steps), and whether anything but
@@ -186,6 +204,16 @@ fn global_of(term: &dreammaker::ast::Spanned<Term>, follow: &[dreammaker::ast::S
     Some((n.clone(), 0))
 }
 
+/// Records the var name an lvalue-ish expression writes (a bare identifier that is a local or parameter is not a var).
+fn note_field(term: &dreammaker::ast::Spanned<Term>, follow: &[dreammaker::ast::Spanned<Follow>], locals: &HashSet<String>, f: &mut Facts) {
+    let Some(name) = super::reads::lvalue_name_of(term, follow) else { return };
+    let bare = !follow.iter().any(|x| matches!(&x.elem, Follow::Field(..)));
+    if bare && locals.contains(&name) {
+        return;
+    }
+    f.field_writes.insert(name);
+}
+
 fn only_index(follow: &[dreammaker::ast::Spanned<Follow>]) -> bool {
     follow.iter().all(|f| matches!(&f.elem, Follow::Index(..)) || matches!(&f.elem, Follow::Field(_, n) if n.as_str() == "len"))
 }
@@ -197,6 +225,7 @@ fn scan(code: &dreammaker::ast::Block, params: &HashSet<String>, globals: &HashS
         match e {
             Expression::AssignOp { lhs, .. } => {
                 if let Expression::Base { term, follow } = &**lhs {
+                    note_field(term, follow, &locals, f);
                     if let Some((g, skip)) = global_of(term, follow, globals, glob_fields, &locals) {
                         if only_index(&follow[skip..]) {
                             f.writes.insert(g);
@@ -216,6 +245,7 @@ fn scan(code: &dreammaker::ast::Block, params: &HashSet<String>, globals: &HashS
                     }
                     if ARG_MUTATORS.contains(&n.as_str()) {
                         if let Some(Expression::Base { term: t, follow: fo }) = args.first() {
+                            note_field(t, fo, &locals, f);
                             if let Some((g, skip)) = global_of(t, fo, globals, glob_fields, &locals) {
                                 if only_index(&fo[skip..]) {
                                     f.writes.insert(g);
@@ -235,6 +265,7 @@ fn scan(code: &dreammaker::ast::Block, params: &HashSet<String>, globals: &HashS
                     if let Follow::Call(_, name, _) = &fo.elem {
                         f.calls.insert(name.as_str().to_string());
                         if LIST_MUTATORS.contains(&name.as_str()) {
+                            note_field(term, &follow[..i], &locals, f);
                             if let Some((g, skip)) = global_of(term, &follow[..i], globals, glob_fields, &locals) {
                                 if i >= skip && only_index(&follow[skip..i]) {
                                     f.writes.insert(g);
@@ -248,6 +279,7 @@ fn scan(code: &dreammaker::ast::Block, params: &HashSet<String>, globals: &HashS
                     if let Follow::Unary(op) = &fo.elem {
                         use dreammaker::ast::UnaryOp::*;
                         if matches!(op, PreIncr | PostIncr | PreDecr | PostDecr) {
+                            note_field(term, &follow[..i], &locals, f);
                             if let Some((g, skip)) = global_of(term, &follow[..i], globals, glob_fields, &locals) {
                                 if i >= skip && only_index(&follow[skip..i]) {
                                     f.writes.insert(g);
