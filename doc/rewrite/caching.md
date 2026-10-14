@@ -24,16 +24,7 @@ TYPE_TABLE_* bits per type) is the one per-type table outside it: it is the type
 
 ## 1. Declaring and reading
 
-```dm
-/proc/build_window_overlays(icon_file, basestate, connections)
-	. = list()
-	...
-
-DECLARE_SHARED_CACHE(window_overlays, GLOBAL_PROC_REF(build_window_overlays), SC_NEVER)
-
-/obj/structure/window/update_overlays()
-	add_overlay(CACHED3(window_overlays, icon, basestate, connections))
-```
+The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/engine/state/shared_cache.dm](../../code/engine/state/shared_cache.dm) and [code/__defines/shared_cache.dm](../../code/__defines/shared_cache.dm).
 
 | Macro | Use |
 |---|---|
@@ -88,9 +79,7 @@ The hooks are a null check in `om_emit()`/`om_wants()` and a mask test in
 
 The store is a plain global list (`_scs_<name>`). In release builds `CACHED(n, k)` expands to
 
-```dm
-(_scs_n[k] || _sc_n.miss(k))
-```
+The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/engine/state/shared_cache.dm](../../code/engine/state/shared_cache.dm) and [code/__defines/shared_cache.dm](../../code/__defines/shared_cache.dm).
 
 one list index, with the proc call only on a miss: the same code as a hand-rolled inline
 static-list lookup. Hits are counted only with `-DSHARED_CACHE_STATS` (a global counter,
