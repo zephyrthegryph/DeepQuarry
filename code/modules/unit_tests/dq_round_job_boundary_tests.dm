@@ -1,6 +1,12 @@
 /datum/unit_test/dq_ticker_boundary/Run()
+	var/datum/system/ticker/original_owner = SSticker
+	var/datum/system/ticker/original_registered = system_table()[/datum/system/ticker]
+	defer_cleanup(src, PROC_REF(restore_boundary_owner), original_owner, original_registered)
 	set_global("coalesce_runs", GLOB.coalesce_runs)
 	var/datum/system/ticker/ticker = allocate(/datum/system/ticker)
+	restore_boundary_owner(original_owner, original_registered)
+	TEST_ASSERT_EQUAL(SSticker, original_owner, "The local fixture must preserve the running system owner")
+	TEST_ASSERT_EQUAL(system_table()[/datum/system/ticker], original_registered, "The local fixture must preserve the registered system owner")
 	ticker.request_immediate_start(TRUE)
 	TEST_ASSERT(ticker.start_immediately, "Immediate start must set the ticker's real lobby flag")
 	ticker.request_immediate_start(FALSE)
@@ -20,7 +26,13 @@
 	TEST_ASSERT(!(mind in ticker.minds), "A deleted mind must leave the declared roster relation")
 
 /datum/unit_test/dq_job_boundary/Run()
+	var/datum/system/job/original_owner = SSjob
+	var/datum/system/job/original_registered = system_table()[/datum/system/job]
+	defer_cleanup(src, PROC_REF(restore_boundary_owner), original_owner, original_registered)
 	var/datum/system/job/jobs = allocate(/datum/system/job)
+	restore_boundary_owner(original_owner, original_registered)
+	TEST_ASSERT_EQUAL(SSjob, original_owner, "The local fixture must preserve the running system owner")
+	TEST_ASSERT_EQUAL(system_table()[/datum/system/job], original_registered, "The local fixture must preserve the registered system owner")
 	var/datum/job/job = allocate(/datum/job)
 	set_var(jobs, "occupations", list(job))
 	set_var(jobs, "occupations_by_name", list("boundary-job" = job))
@@ -50,7 +62,13 @@
 	TEST_ASSERT_EQUAL(jobs.department_by_name("boundary-department"), department, "Access defaults must use the registered department datum")
 
 /datum/unit_test/dq_emergency_boundary/Run()
+	var/datum/system/emergency_shuttle/original_owner = SSemergency_shuttle
+	var/datum/system/emergency_shuttle/original_registered = system_table()[/datum/system/emergency_shuttle]
+	defer_cleanup(src, PROC_REF(restore_boundary_owner), original_owner, original_registered)
 	var/datum/system/emergency_shuttle/emergency = allocate(/datum/system/emergency_shuttle)
+	restore_boundary_owner(original_owner, original_registered)
+	TEST_ASSERT_EQUAL(SSemergency_shuttle, original_owner, "The local fixture must preserve the running system owner")
+	TEST_ASSERT_EQUAL(system_table()[/datum/system/emergency_shuttle], original_registered, "The local fixture must preserve the registered system owner")
 	TEST_ASSERT(!emergency.is_evacuation(), "An untouched emergency controller must still represent transfer, not evacuation")
 	emergency.set_auto_recall(TRUE)
 	TEST_ASSERT(emergency.auto_recall, "Automatic recall requests must reach the owner's actual policy")
@@ -67,3 +85,31 @@
 	TEST_ASSERT_EQUAL(emergency.launch_time, 0, "The end-round path must preserve its zero launch deadline")
 	TEST_ASSERT(!emergency.has_arrival_countdown(), "A controller without a ferry must not advertise an arrival countdown")
 	TEST_ASSERT(!emergency.is_moving_or_warming_up(), "A controller without a ferry must not block late antagonist spawning")
+
+
+/// A local SYSTEM_DEF clone must not replace the running world owner, even if construction fails.
+/datum/unit_test/dq_ticker_boundary/proc/restore_boundary_owner(datum/system/ticker/owner, datum/system/ticker/registered)
+	SSticker = owner
+	var/list/table = system_table()
+	if(registered)
+		table[/datum/system/ticker] = registered
+	else
+		table -= /datum/system/ticker
+
+/// A local SYSTEM_DEF clone must not replace the running world owner, even if construction fails.
+/datum/unit_test/dq_job_boundary/proc/restore_boundary_owner(datum/system/job/owner, datum/system/job/registered)
+	SSjob = owner
+	var/list/table = system_table()
+	if(registered)
+		table[/datum/system/job] = registered
+	else
+		table -= /datum/system/job
+
+/// A local SYSTEM_DEF clone must not replace the running world owner, even if construction fails.
+/datum/unit_test/dq_emergency_boundary/proc/restore_boundary_owner(datum/system/emergency_shuttle/owner, datum/system/emergency_shuttle/registered)
+	SSemergency_shuttle = owner
+	var/list/table = system_table()
+	if(registered)
+		table[/datum/system/emergency_shuttle] = registered
+	else
+		table -= /datum/system/emergency_shuttle
