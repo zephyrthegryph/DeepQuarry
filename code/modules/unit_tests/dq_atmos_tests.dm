@@ -4850,7 +4850,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	portable_generator.TogglePower()
 	TEST_ASSERT(portable_generator.has_work(), "a started portable generator's step has work")
 	var/obj/machinery/smartfridge/smartfridge = new(T)
-	smartfridge.set_shoot_inventory(FALSE)
+	smartfridge.shoot_inventory = FALSE
 	TEST_ASSERT(test_machine_idle(smartfridge), "stable smartfridge remained scheduled")
 	var/obj/machinery/smartfridge/drying_rack/drying_rack = new(T)
 	TEST_ASSERT(test_machine_idle(drying_rack), "empty drying rack remained scheduled")

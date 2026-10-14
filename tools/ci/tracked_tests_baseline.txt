@@ -1,2 +1,3 @@
 # tracked_tests: raw writes of TRACKED/SETTER/STAT/derive() vars in tests and benchmarks. rule<TAB>file<TAB>normalized line.
 # Shrink-only: `analyze baseline --update --lint tracked_tests` drops fixed sites and never adds one.
+outside_setter	code/modules/unit_tests/dq_atmos_tests.dm	smartfridge.shoot_inventory = FALSE

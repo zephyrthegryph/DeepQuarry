@@ -124,3 +124,11 @@ CAPABILITIES(/obj/e2_lever)
 	op("pull_slow", hand(), wait(2 SECONDS), toggles(nameof(pulled)), logs(LOG_GAME))
 
 #endif
+
+/obj/e2_box/proc/set_sealed(value)
+	if(TRACKED_UNCHANGED(sealed, value))
+		return FALSE
+	sealed = value
+	tracked_changed(src, nameof(sealed))
+	return TRUE
+SETTER(/obj/e2_box, sealed)

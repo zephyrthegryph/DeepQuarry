@@ -446,3 +446,19 @@ SETTER(/obj/cap_fixture/dx_deps_source, glow)
 	TEST_ASSERT(found, "the audit saw the stale look")
 	TEST_ASSERT(length(GLOB.refresh_drift) > 0 && findtext(GLOB.refresh_drift[1], "shade"), "and named the likely undeclared read: [length(GLOB.refresh_drift) ? GLOB.refresh_drift[1] : "no report"]")
 	GLOB.refresh_drift.Cut()
+
+/obj/cap_fixture/dx_deps_writer/proc/set_tier(value)
+	if(TRACKED_UNCHANGED(tier, value))
+		return FALSE
+	tier = value
+	tracked_changed(src, nameof(tier))
+	return TRUE
+SETTER(/obj/cap_fixture/dx_deps_writer, tier)
+
+/obj/cap_fixture/dx_deps_sloppy/proc/set_other(value)
+	if(TRACKED_UNCHANGED(other, value))
+		return FALSE
+	other = value
+	tracked_changed(src, nameof(other))
+	return TRUE
+SETTER(/obj/cap_fixture/dx_deps_sloppy, other)

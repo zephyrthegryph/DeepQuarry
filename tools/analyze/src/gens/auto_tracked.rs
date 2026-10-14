@@ -138,6 +138,11 @@ pub fn called_candidates(tree: &Tree, sem: &crate::sem::Sem, eng: &ReadsEngine, 
             if v.declaration.is_none() {
                 continue;
             }
+            if let Ok(want) = std::env::var("DQ_AUTO_DEBUG") {
+                if *name == want {
+                    eprintln!("auto_tracked debug: {}.{} called_here={} candidate={} declared_reactive={}", path, name, called_here(tree, sem, &defs, calls, &path, name), candidate(eng, written, calls, &path, name), declared_reactive(eng, &path, name));
+                }
+            }
             if called_here(tree, sem, &defs, calls, &path, name) && candidate(eng, written, calls, &path, name) {
                 out.insert((path.clone(), name.clone()));
             }
@@ -312,7 +317,7 @@ pub fn setter_defs(tree: &Tree, sem: &crate::sem::Sem) -> HashMap<String, Vec<St
             if !["set_", "add_", "include_", "remove_", "clear_", "insert_", "swap_", "cut_"].iter().any(|p| name.starts_with(p)) {
                 continue;
             }
-            if p.value.iter().any(|v| sem.file_of(v.location) != Some(AUTO_REL) && sem.file_of(v.location) != Some(TRACKED_LISTS_REL) && !from_tracked_macro(tree, sem, v.location)) {
+            if p.declaration.is_some() && p.value.iter().any(|v| sem.file_of(v.location) != Some(AUTO_REL) && sem.file_of(v.location) != Some(TRACKED_LISTS_REL) && !from_tracked_macro(tree, sem, v.location)) {
                 out.entry(name.clone()).or_default().push(path.clone());
             }
         }
@@ -362,13 +367,13 @@ pub fn decide(tree: &Tree, sem: &crate::sem::Sem, candidates: &BTreeSet<(String,
             }
             let name = format!("set_{}", var);
             if let Some(types) = defs.get(&name) {
-                if let Some(t) = types.iter().find(|t| sem.is_subtype(owner, t)) {
+                if let Some(t) = types.iter().find(|t| sem.is_subtype(owner, t) || sem.is_subtype(t, owner)) {
                     return Some(format!("{} already defines {}()", t, name));
                 }
             }
             if sig.is_list() {
                 for gen in [format!("add_{var}"), format!("include_{var}"), format!("remove_{var}"), format!("set_{var}_at"), format!("clear_{var}"), format!("insert_{var}"), format!("swap_{var}"), format!("cut_{var}")] {
-                    if let Some(t) = defs.get(&gen).and_then(|types| types.iter().find(|t| sem.is_subtype(owner, t))) {
+                    if let Some(t) = defs.get(&gen).and_then(|types| types.iter().find(|t| sem.is_subtype(owner, t) || sem.is_subtype(t, owner))) {
                         return Some(format!("{} already defines {}(), a list mutator the generator would write", t, gen));
                     }
                 }
@@ -383,8 +388,8 @@ pub fn decide(tree: &Tree, sem: &crate::sem::Sem, candidates: &BTreeSet<(String,
             None => kept.push(Auto { ty: owner.clone(), var: var.clone(), list: sem.var_decl(owner, var).map(|s| s.is_list()).unwrap_or(false) }),
         }
     }
-    // A subtype's own `set_v` (an override that calls `..()`) is fine: it overrides the generated setter the way it overrode the TRACKED() one. A
-    // `set_v` on the type itself or an ancestor is a clash.
+    // A `proc/set_v` declared on the type, an ancestor or a subtype is a clash (the compiler rejects the second declaration). An override
+    // written without `proc/` (`/mob/living/set_stat(x)`, calling `..()`) is not a declaration and is ignored by `setter_defs`.
     // A var tracked on a type and again on one of its subtypes needs one setter: the ancestor's.
     let by_var: BTreeMap<&str, Vec<&Auto>> = kept.iter().fold(BTreeMap::new(), |mut m, a| {
         m.entry(a.var.as_str()).or_default().push(a);

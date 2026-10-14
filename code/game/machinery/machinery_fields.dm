@@ -225,3 +225,11 @@ READS_AS(/obj/machinery/proc/operable, MACHINE_KEY_STAT)
 	tracked_changed(src, "emagged")
 	return TRUE
 SETTER(/obj/machinery, emagged)
+
+/obj/machinery/computer/cryopod/proc/set_mode(value)
+	if(TRACKED_UNCHANGED(mode, value))
+		return FALSE
+	mode = value
+	tracked_changed(src, nameof(mode))
+	return TRUE
+SETTER(/obj/machinery/computer/cryopod, mode)
