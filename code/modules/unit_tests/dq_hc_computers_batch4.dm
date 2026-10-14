@@ -81,6 +81,26 @@
 
 // ---- cloning console ----
 
+/datum/unit_test/dq_hc_computers/internal_storage_owner_guard
+/datum/unit_test/dq_hc_computers/internal_storage_owner_guard/run_gate()
+	var/obj/item/tool/screwdriver/I = allocate(/obj/item/tool/screwdriver, hc_spot())
+	var/obj/item/storage/internal/B = allocate(/obj/item/storage/internal, I)
+	TEST_ASSERT(B && !QDELETED(B), "Internal storage survives inside its actual item owner")
+	TEST_ASSERT_EQUAL(B.master_item(), I, "The valid item is retained through the typed link")
+	TEST_ASSERT_EQUAL(B.name, I.name, "The owner's display name is preserved")
+
+/datum/unit_test/dq_hc_computers/cloning_scanner_nullable
+/datum/unit_test/dq_hc_computers/cloning_scanner_nullable/run_gate()
+	var/obj/machinery/computer/cloning/C = hc_console(/obj/machinery/computer/cloning)
+	TEST_ASSERT_NULL(C.findscanner(), "An unpaired console returns a null scanner reference")
+	TEST_ASSERT_NULL(C.scanner(), "An unpaired console initializes without a typed-link error")
+	var/obj/machinery/dna_scannernew/S = allocate(/obj/machinery/dna_scannernew, get_step(C, NORTH))
+	C.updatemodules()
+	TEST_ASSERT_EQUAL(C.scanner(), S, "Refreshing binds the actual adjacent scanner")
+	qdel(S)
+	C.updatemodules()
+	TEST_ASSERT_NULL(C.scanner(), "Removing the scanner restores the null link")
+
 /datum/unit_test/dq_hc_computers/cloning_basics
 /datum/unit_test/dq_hc_computers/cloning_basics/run_gate()
 	var/obj/machinery/computer/cloning/C = hc_console(/obj/machinery/computer/cloning)
