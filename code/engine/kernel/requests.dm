@@ -76,11 +76,6 @@
 	/// The reservations held while the handler runs.
 	var/list/reservations
 
-CAPABILITIES(/datum/request)
-	ref_one(nameof(owner)) // the sweep and the qdeleting notice end the request when the owner goes; a cleared owner reads as deleted
-	ref_one(nameof(answerer), /mob)
-	ref_one(nameof(payer))
-
 /// Whether the answer goes ahead with the request's costs: any answer does; a yes/no only on yes.
 /datum/request/proc/confirmed()
 	return TRUE
@@ -219,7 +214,7 @@ CAPABILITIES(/datum/system/requests)
 		var/datum/act/op/asking = context
 		if(isatom(asking.holder))
 			R.subject = asking.holder // ALLOW(ownership): a transient reference: the request is deleted when it ends
-	rel_set(R, nameof(owner), owner)
+	R.owner = owner // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
 	R.handler = handler
 	R.valid = valid
 	R.opened_at = world.time // ALLOW(sys_world_time_write): the request's own open stamp, read for diagnostics, not an expiry

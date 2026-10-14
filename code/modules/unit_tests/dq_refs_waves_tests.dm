@@ -133,7 +133,9 @@ CAPABILITIES(/obj/refs_two_step)
 
 /datum/unit_test/dq_refs_uplink_selection_refuses_unforced_delete/Run()
 	var/datum/uplink_random_selection/selection = new
+	GLOB.lifecycle_keep_expected = TRUE // this test checks the refusal itself
 	qdel(selection)
+	GLOB.lifecycle_keep_expected = FALSE
 	TEST_ASSERT(!QDELETED(selection), "an unforced delete leaves the selection whole")
 	qdel(selection, TRUE)
 	TEST_ASSERT(QDELETED(selection), "a forced delete removes it")
