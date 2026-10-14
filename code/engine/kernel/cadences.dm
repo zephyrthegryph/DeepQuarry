@@ -37,7 +37,7 @@
 	if(E.periodic_pipe)
 		member_leave(E.periodic_pipe, E, PERIODIC_SOURCE)
 	E.periodic_pipe = P
-	E.set_datum_flags(E.datum_flags | DF_ISPROCESSING)
+	E.datum_flags |= DF_ISPROCESSING
 	member_join(P, E, PERIODIC_SOURCE)
 	return TRUE
 
@@ -47,7 +47,7 @@
 	if(E.periodic_pipe)
 		member_leave(E.periodic_pipe, E, PERIODIC_SOURCE)
 	E.periodic_pipe = null
-	E.set_datum_flags(E.datum_flags & (~DF_ISPROCESSING))
+	E.datum_flags &= ~DF_ISPROCESSING
 
 /// One frame of periodic work: the body a process() override used to have. `delta` is the
 /// cadence's nominal step in the units the old subsystem passed (deciseconds for most; see the

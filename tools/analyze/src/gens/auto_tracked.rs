@@ -109,6 +109,11 @@ pub fn writes_outside_setters_of(tree: &Tree, sem: &crate::sem::Sem) -> Arc<Hash
     tree.memo("gen/writes-outside-setters", || writes_outside_setters(sem))
 }
 
+/// A var named in a CAPABILITIES block: tracked unless a declaration already makes it reactive, or it is constant.
+pub fn named_candidate(eng: &ReadsEngine, owner: &str, var: &str) -> bool {
+    !declared_reactive(eng, owner, var) && !eng.sem.var_decl(owner, var).map(|v| v.is_const).unwrap_or(false)
+}
+
 /// A read the inference tracks: no declaration makes it reactive, it is not constant, and something writes it.
 pub fn candidate(eng: &ReadsEngine, written: &HashSet<String>, calls: &BTreeSet<String>, owner: &str, var: &str) -> bool {
     if declared_reactive(eng, owner, var) {

@@ -153,7 +153,7 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 				// re-entrant qdel(D) (qdel()'s own check, above this call), and the teardown
 				// guard refuses new ownership, relations, timers, hooks and tasks on D.
 				D.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
-				D.set_datum_flags(D.datum_flags | DF_DESTROYING)
+				D.datum_flags |= DF_DESTROYING
 				PUBLISH_LEGACY(D, /datum/notice/qdeleting, force)
 				if(length(GLOB.notice_late_queue))
 					notice_late_subject_deleting(D) // notices queued past the depth cap for D reach its observers now, while D is still whole

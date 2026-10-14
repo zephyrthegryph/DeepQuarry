@@ -125,7 +125,8 @@ exempt_files = ["code/__defines/tgs.dm"]
 # Vars the read-driven inference (tools/analyze/src/gens/auto_tracked.rs) never gives a generated setter: `var` for any type, `/type::var` for
 # one. Engine lifecycle state whose writes are on the qdel and bridge hot paths and which reactive code reads only through QDELETED() and
 # its siblings; the destroy itself publishes through on_destroy().
-exclude = ["gc_destroyed", "vg_entity"]
+exclude = ["gc_destroyed", "vg_entity", "datum_flags"]
+# (datum_flags: lifecycle bits the engine sets inside a refresh (cadence_start) and during destroy; a setter would mark the holder from its own refresh.)
 # Vars the inference tracks although no reactive code reads them in a way it can see, or no `set_v()` call is typed to their type: their callers reach the
 # machine through an accessor the call scan cannot type (`connected().set_locked(...)`, `machine().set_active(...)`) while another type owns a
 # hand-written `set_v`; or a base-type var a `when(nameof(v))` gate reads that only subtypes' defaults ever set (base_vars wants it housed).
@@ -139,7 +140,7 @@ exclude_memo = ["/obj/item/cell::material_discharge_credit", "/atom::flags"]
 # (atom flags: lifecycle bits (ATOM_INITIALIZED, ATOM_MATERIALIZED) set while an atom is materialized, which can happen inside a draw.)
 exclude_heat = ["/obj/machinery/power/port_gen/pacman::temperature"]
 # Test fixtures that count their own draws from inside draw(): an output must not write tracked state (PURITY), and the counter is the test's probe.
-exclude_fixtures = ["/obj/dq_small_look_composer::draws", "/obj/machinery/dq_idle_redraw_probe::draws", "/obj/item/remote_scene_tool/voodoo_doll/dq_small_counting::draws", "/obj/cap_fixture/dx_deps_derive::draw_calls", "/obj/cap_fixture/dx_deps_laser::draw_calls", "/obj/cap_fixture/dx_deps_legacy::draw_calls", "/obj/cap_fixture/dx_deps_watcher::draw_calls"]
+exclude_fixtures = ["/obj/gdeps_probe::raw_ok", "/obj/dq_small_look_composer::draws", "/obj/machinery/dq_idle_redraw_probe::draws", "/obj/item/remote_scene_tool/voodoo_doll/dq_small_counting::draws", "/obj/cap_fixture/dx_deps_derive::draw_calls", "/obj/cap_fixture/dx_deps_laser::draw_calls", "/obj/cap_fixture/dx_deps_legacy::draw_calls", "/obj/cap_fixture/dx_deps_watcher::draw_calls"]
 
 [lint.untracked_inputs]
 # Test fixtures read untracked state on purpose (dq_generated_deps_tests.dm proves an untracked stat is never cached).

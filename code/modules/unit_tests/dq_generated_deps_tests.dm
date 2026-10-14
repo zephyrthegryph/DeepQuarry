@@ -22,7 +22,7 @@ CAPABILITIES(/obj/gdeps_probe)
 	return gauge < 5
 
 /obj/gdeps_probe/proc/break_raw()
-	set_raw_ok(FALSE)
+	raw_ok = FALSE
 
 /// A draw fixture: an exact type (it declares a derived() entry) whose draw reads a var its derived() does not list.
 /obj/gdeps_lamp

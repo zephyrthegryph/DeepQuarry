@@ -222,6 +222,19 @@ pub fn marker_named_vars(m: &Marker) -> Vec<String> {
     out
 }
 
+/// The vars a CAPABILITIES block hands to the engine to WRITE (`gas_level(into = nameof(v))`, `toggles(nameof(v))`): the engine calls their setters at run
+/// time, so no text write names them.
+pub fn marker_driven_vars(m: &Marker) -> Vec<String> {
+    let mut out = Vec::new();
+    for c in crate::pat!(r"\binto\s*=\s*nameof\(\s*(\w+)\s*\)").captures_iter(&m.body) {
+        out.push(c.s(1).to_string());
+    }
+    for c in crate::pat!(r"\btoggles\(\s*nameof\(\s*(\w+)\s*\)").captures_iter(&m.body) {
+        out.push(c.s(1).to_string());
+    }
+    out
+}
+
 /// Every consumer of a stat or a draw and its untracked reads, computed once per tree (the generator and the lint share it).
 pub struct DepsAnalysis {
     /// "<type>::<proc>" -> its untracked reads.
@@ -361,11 +374,19 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         draws.insert(id);
     }
     let mut leaves = Vec::new();
+    let mut named: BTreeSet<(String, String)> = BTreeSet::new();
     for m in decls.markers_named("CAPABILITIES") {
         if let Some(owner) = m.args.first().filter(|o| o.starts_with('/')) {
             for name in marker_named_vars(m) {
                 if let Some(declaring) = sem.var_owner(owner, &name) {
                     reads.insert((declaring, name));
+                }
+            }
+        }
+        if let Some(owner) = m.args.first().filter(|o| o.starts_with('/')) {
+            for name in marker_driven_vars(m) {
+                if let Some(declaring) = sem.var_owner(owner, &name) {
+                    named.insert((declaring, name));
                 }
             }
         }
@@ -387,6 +408,9 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let mut candidates: BTreeSet<(String, String)> = reads.iter().filter(|(owner, var)| super::auto_tracked::candidate(&eng, &outside_setters, &set_calls, owner, var)).cloned().collect();
     // A var written through a generated setter stays tracked after its last reader goes (the calls `analyze fix` wrote must keep compiling), and
     // so does a var whose `TRACKED()` line was dropped while nothing walked reads it: the transition set (see `auto_tracked::called_candidates`).
+    // A var a CAPABILITIES block names with nameof() is driven by the engine (`gas_level(into = nameof(v))` writes it through its setter at run time, a
+    // `toggles()` gate flips it): it needs the setter whether or not a text write exists.
+    candidates.extend(named.iter().filter(|(o, v)| super::auto_tracked::named_candidate(&eng, o, v)).cloned());
     candidates.extend(super::auto_tracked::called_candidates(tree, &sem, &eng, &outside_setters, &set_calls));
     Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, draw_hops, reads, candidates })
 }

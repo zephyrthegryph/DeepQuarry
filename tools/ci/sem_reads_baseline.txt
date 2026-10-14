@@ -13,6 +13,7 @@ unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /image::@actor:underla
 unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /image::@actor:underlays[].plane
 unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /image::@actor:overlays[].layer
 unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /image::@actor:overlays[].plane
+unknown_read	code/_helpers/unsorted.dm	@/::REF reads /datum::@actor:datum_flags
 unknown_read	code/_helpers/unsorted.dm	@/::REF reads /datum::@actor:tag
 unknown_read	code/controllers/subsystems/overlays.dm	@/::overlays2text reads /image::@actor:overlays[].dir
 unknown_read	code/controllers/subsystems/overlays.dm	@/::overlays2text reads /image::@actor:overlays[].icon

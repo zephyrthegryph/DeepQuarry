@@ -416,7 +416,6 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::languages
 base_var	code/modules/mob/mob_defines.dm	@/mob::language_keys
 base_var	code/modules/mob/mob_defines.dm	@/mob::species_language
 base_var	code/modules/mob/mob_defines.dm	@/mob::only_species_language
-base_var	code/modules/mob/mob_defines.dm	@/mob::speak_emote
 base_var	code/modules/mob/mob_defines.dm	@/mob::facing_dir
 base_var	code/modules/mob/mob_defines.dm	@/mob::name_archive
 base_var	code/modules/mob/mob_defines.dm	@/mob::timeofdeath
@@ -448,7 +447,6 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::universal_speak
 base_var	code/modules/mob/mob_defines.dm	@/mob::universal_understand
 base_var	code/modules/mob/mob_defines.dm	@/mob::stance_damage
 base_var	code/modules/mob/mob_defines.dm	@/mob::teleop
-base_var	code/modules/mob/mob_defines.dm	@/mob::shouldnt_see
 base_var	code/modules/mob/mob_defines.dm	@/mob::active_genes
 base_var	code/modules/mob/mob_defines.dm	@/mob::forbid_seeing_deadchat
 base_var	code/modules/mob/mob_defines.dm	@/mob::get_rig_stats
