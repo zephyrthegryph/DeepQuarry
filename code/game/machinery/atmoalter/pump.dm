@@ -50,12 +50,9 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 	..()
 	look.watch(cell)
 	look.state((on && cell && cell.charge) ? "psiphon:1" : "psiphon:0")
-	look.overlay("siphon-open", when = !!holding) // ALLOW(derived_reads): the tank bay's insert and the eject button redraw it
+	look.overlay("siphon-open", when = !!holding)
 	look.overlay("siphon-connector", when = !!connected_port())
 
-/obj/machinery/portable_atmospherics/powered/pump/derived()
-	. = ..()
-	. += drawn_from(nameof(on))
 
 /// An EMP scrambles a working pump's settings (before the hit lands; the hit goes on).
 /obj/machinery/portable_atmospherics/powered/pump/proc/pump_emp(datum/act/hit/emp/A)

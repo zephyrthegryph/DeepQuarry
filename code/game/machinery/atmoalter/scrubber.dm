@@ -49,12 +49,9 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 	..()
 	look.watch(cell)
 	look.state((on && cell && cell.charge) ? "pscrubber:1" : "pscrubber:0")
-	look.overlay("scrubber-open", when = !!holding) // ALLOW(derived_reads): the tank bay's insert and the eject button redraw it
+	look.overlay("scrubber-open", when = !!holding)
 	look.overlay("scrubber-connector", when = !!connected_port())
 
-/obj/machinery/portable_atmospherics/powered/scrubber/derived()
-	. = ..()
-	. += drawn_from(nameof(on))
 
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
 // section): polls = FALSE (declared with the other vars above) moves this off SSmachines'
