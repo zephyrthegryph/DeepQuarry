@@ -285,7 +285,7 @@ TRACKED(/obj/dq_draw_watched, shown)
 	var/obj/machinery/reagent_refinery/furnace/F = allocate(/obj/machinery/reagent_refinery/furnace, T)
 	refresh_flush()
 	var/before = F.rx?.look_key
-	F.dir = EAST // BYOND turns a mover on Move() without calling set_dir(); this is what that leaves behind
+	set_var(F, nameof(F.dir), EAST) // BYOND turns a mover on Move() without calling set_dir(); this is what that leaves behind
 	F.Moved(T, EAST)
 	refresh_flush()
 	TEST_ASSERT(F.rx?.look_key != before || !F.reagents.total_volume, "Moved() publishes a dir that changed")

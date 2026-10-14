@@ -13,6 +13,7 @@
 
 
 CAPABILITIES(/obj/item/storage/wallet)
+	ref_one(nameof(front_id), /obj/item/card/id)
 	configure(item_worn(slots = SLOT_ID))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 	configure(storage(accepts = list(
@@ -143,7 +144,7 @@ CAPABILITIES(/obj/item/storage/wallet/poly)
 /// An EMP glitches the wallet's colour display for a while.
 /obj/item/storage/wallet/poly/proc/poly_wallet_emp(datum/act/A)
 	var/original_state = icon_state
-	icon_state = "wallet-emp"
+	set_icon_state("wallet-emp")
 
 	after(src, 20 SECONDS, PROC_REF(emp_recovered), with = list(original_state))
 
@@ -155,7 +156,7 @@ CAPABILITIES(/obj/item/storage/wallet/poly)
 
 /obj/item/storage/wallet/poly/proc/emp_recovered(original_state)
 	if(src)
-		icon_state = original_state
+		set_icon_state(original_state)
 
 /// Relation view: front id (reads null once it is gone).
 /obj/item/storage/wallet/proc/front_id() as /obj/item/card/id

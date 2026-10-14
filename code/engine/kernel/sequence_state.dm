@@ -4,6 +4,7 @@
 // The kernel's own per-entity sequence records; released by seq_stop()/seq_teardown() (sequence.dm)
 /datum/var/tmp/list/seq_states
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/seq_state)
 /// One entity's state in one sequence: what outlives a frame.
 /datum/seq_state
 	/// The sequence (a shared definition).

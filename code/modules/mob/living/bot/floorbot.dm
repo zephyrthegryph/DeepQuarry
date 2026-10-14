@@ -24,11 +24,11 @@
 
 /mob/living/bot/floorbot/update_icons()
 	if(bot_busy())
-		icon_state = "floorbot-c"
+		set_icon_state("floorbot-c")
 	else if(amount > 0)
-		icon_state = "floorbot[on]"
+		set_icon_state("floorbot[on]")
 	else
-		icon_state = "floorbot[on]e"
+		set_icon_state("floorbot[on]e")
 
 CAPABILITIES(/mob/living/bot/floorbot)
 	interface("Floorbot")

@@ -26,7 +26,10 @@
 # The merge agent's side: tools/dq_lane_check.sh <branch>, tools/dq_merge_gates.sh --lanes "<branches>".
 # Exit status: 0 stamped, 1 a gate failed (nothing stamped), 2 a usage problem.
 set -uo pipefail
+# The gates keep the full end-of-test staleness sweep (dq_focused_test.sh would otherwise bound it).
+export DQ_STALENESS=full
 cd "$(git rev-parse --show-toplevel)"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
 
 tests=()
 covers=()
@@ -54,6 +57,12 @@ case "$branch" in master|rewrite/integ-current) die "REFUSED: $branch is not a l
 git update-index -q --refresh >/dev/null 2>&1
 if ! git diff --quiet || ! git diff --cached --quiet; then die "REFUSED: uncommitted changes to tracked files; commit the lane first (the stamp names an exact commit)" 2; fi
 if git ls-files --others --exclude-standard -- 'code/*.dm' deepquarry.dme | grep -q .; then die "REFUSED: untracked .dm files under code/; add and commit them" 2; fi
+
+# Check every --tests name and glob against the declared test types now, before the merge, the gen and any compile: a typo or a missing
+# dir prefix (dq_eg2/) used to surface after a 30 minute run. --list expands without compiling and prints close matches for a miss.
+if [ ${#tests[@]} -gt 0 ]; then
+	bash tools/dq_focused_test.sh --list "${tests[@]}" >/dev/null || die "REFUSED: --tests names a test that does not exist (close matches above); nothing was merged or compiled" 2
+fi
 
 t_start=$(date +%s)
 if [ "$reuse_gates" -eq 1 ]; then

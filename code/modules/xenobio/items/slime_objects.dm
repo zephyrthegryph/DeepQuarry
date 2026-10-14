@@ -17,7 +17,7 @@ CAPABILITIES(/obj/item/slime_cube)
 	var/mob/user = A.actor
 	if(!searching)
 		to_chat(user, span_warning("You stare at the slimy cube, watching as some activity occurs."))
-		icon_state = "slime cube active"
+		set_icon_state("slime cube active")
 		searching = 1
 		request_player()
 		after(src, 60 SECONDS, PROC_REF(reset_search))
@@ -121,7 +121,7 @@ CAPABILITIES(/datum/slime_cube_invitation_review)
 	choices = list("Yes", "No")
 
 /obj/item/slime_cube/proc/reset_search() //We give the players sixty seconds to decide, then reset the timer.
-	icon_state = "slime cube"
+	set_icon_state("slime cube")
 	if(searching == 1)
 		searching = 0
 		var/turf/T = get_turf_or_move(src.loc)

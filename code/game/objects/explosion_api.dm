@@ -65,13 +65,14 @@
 		var/obj/O = AM
 		if(O.resistance_flags & BOMB_PROOF)
 			return
-	var/prior_severity = resolved_atoms[AM]
+	var/atom_h = entity_handle(AM)
+	var/prior_severity = resolved_atoms[atom_h]
 	if(prior_severity)
 		epoch_atoms_deduplicated++
 		if(severity < prior_severity)
-			resolved_atoms[AM] = severity // ALLOW(ownership): per-epoch scratch map atom -> severity number, Cut() at the end of the same epoch
+			resolved_atoms[atom_h] = severity
 		return
-	resolved_atoms[AM] = severity // ALLOW(ownership): per-epoch scratch map atom -> severity number, Cut() at the end of the same epoch
+	resolved_atoms[atom_h] = severity
 	var/list/batch = blast_batches[AM.type]
 	if(!batch)
 		batch = list(AM.type) // [1] is the batch's type; atoms follow

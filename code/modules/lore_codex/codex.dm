@@ -31,7 +31,7 @@ CAPABILITIES(/obj/item/book/codex)
 	var/mob/user = A.actor
 	if(!tree)
 		rel_set(src, nameof(tree), CACHED_KEY(codex_trees, root_type, src, root_type))
-	icon_state = "[initial(icon_state)]-open"
+	set_icon_state("[initial(icon_state)]-open")
 	tree.display(user)
 
 /obj/item/book/codex/lore/vir // s throughout this object.

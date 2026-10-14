@@ -63,7 +63,7 @@ CAPABILITIES(/obj/structure/low_wall)
 		spent(src)
 		return
 	set_material(get_material_by_name(materialtype))
-	max_integrity = material.integrity
+	set_max_integrity(material.integrity)
 	update_integrity(max_integrity)
 
 

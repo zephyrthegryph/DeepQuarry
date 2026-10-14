@@ -87,6 +87,15 @@ bash tools/dq_focused_test.sh --detach <names>; bash tools/dq_focused_test.sh --
 warnings, and `data/logs/runN/boot_report.json` holds the counts. It is the boot's fault, not your test's, unless
 your change runs at boot. `doc/rewrite/boot_gate.md`.
 
+**Bounded staleness sweep (focused runs).** The staleness checker's end-of-test sweep (`staleness_test_end`) checks every
+entity the boot created (about 15,700) after the first test, 8-15 s. A focused run passes the world param `staleness=bounded`:
+each test end checks what the test created (entities that were queued for a first draw when the first test began count as boot backlog, not the test's), 300 entities of the boot backlog in order, and 100 from the rotating cursor, and
+flushes the refresh queue only when it holds 500 or fewer entries (the checks skip a queued atom). `dm-test` (the full suite,
+sharded), `tools/dq_merge_gates.sh` and `tools/dq_lane_ready.sh` stay `full`: the param is absent there, and the two scripts
+export `DQ_STALENESS=full`, which `dq_focused_test.sh` honours (`DQ_STALENESS=full bash tools/dq_focused_test.sh ...` forces
+it by hand). `tests.log` says which ran: `STALENESS: test-end mode ...` at suite start and, per test, `STALENESS: end of <test>
+mode=... entities_checked=... backlog_remaining=...`.
+
 A long list of names (a broad glob) reaches `dm-test` as `--focus=@file`, since a Windows command line stops at
 8191 characters.
 
@@ -100,11 +109,28 @@ them can hide a failure in the full suite, which still does all of them:
 
 | Skipped in focused runs | Full suite | Why it is safe |
 |---|---|---|
-| Round-start settle before the first test: 2 s instead of 10 s (`HandleTestRun`, `code/game/world.dm`) | 10 s | Nothing is skipped, only started sooner. A test that fails only when focused depends on round-start settling and should wait for what it needs itself. |
+| Round-start settle before the first test: 1 s instead of 10 s (0 s for `--boot`) (`HandleTestRun`, `code/game/world.dm`) | 10 s | Nothing is skipped, only started sooner. A test that fails only when focused depends on round-start settling and should wait for what it needs itself. |
 | Round-end report delay: 0 s instead of 5 s (`declare_completion`, `code/_helpers/roundend.dm`) | 5 s | The delay lets players read the report; a test world has none. |
 | Generating every asset and spritesheet at boot, about 2.3 s (`SSassets.Initialize`) | all generated | `get_asset_datum()` builds an asset on first use, and the `spritesheets` and `test_asset_smart_cache` tests call it, so focusing those still generates and checks every sheet. |
 
 `unit_test_is_focused_run()` is the switch; add a row here if you add another.
+
+### Boot work a focused run defers (`boot_needs`)
+
+A test sets `boot_needs = list(BOOT_NEED_...)` (`code/__defines/_boot_needs.dm`) to name the boot work it reads. The default,
+null, means "needs all of it". A focused world skips a piece of work only when **every** selected test declared a list that
+leaves it out (`unit_test_boot_skips()`), and logs `BOOT DEFERRED: ...` to `runtime.log` and `tests.log` for each skip. The
+full suite, the merge gates and production never skip any of it. A test that starts needing one of these adds it to its list.
+
+| Token | Skipped work | If a test needs it |
+|---|---|---|
+| `BOOT_NEED_OWN_VALIDATE` | `own_validate_boot()` (the full suite still reports declaration conflicts at boot) | ownership tables build on first use |
+| `BOOT_NEED_EARLY_ASSETS` | Early Assets system | `get_asset_datum()` builds each on first use |
+| `BOOT_NEED_LIGHTING` | `create_all_lighting_objects()`; Lighting stays uninitialized | list it for any test reading light, luminosity or lighting objects |
+| `BOOT_NEED_RADIO` | `GLOB.autospeaker` | list it for any test that announces or speaks on radio |
+| `BOOT_NEED_HOLOMAPS` | holo minimap generation | list it for any test reading `SSholomaps` |
+
+Static entries are deliberately not deferrable: the map load itself resolves `map_resolver` and loot entries through them.
 
 Compile time is not reduced: `dm-test` never runs DreamChecker (only `dm` and
 `lint` do), and the icon repack and Verdigris build are already skipped when

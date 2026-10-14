@@ -36,12 +36,12 @@ CAPABILITIES(/obj/structure/generic_structure)
 	if(activatable_hand)
 		if(!on)
 			on = 1
-			icon_state = icon_state_on
+			set_icon_state(icon_state_on)
 			if(icon_on)
 				icon = icon_on
 			else
 				icon = 'icons/obj/props/decor.dmi'
-			icon_state = icon_state_on
+			set_icon_state(icon_state_on)
 			src.visible_message(span_notice("[text_activated]"))
 			if(effect == 1)
 				fx_sparks(src, 3)
@@ -93,7 +93,7 @@ CAPABILITIES(/obj/structure/generic_structure)
 				playsound(src, sound_activated, 50, 1)
 		else if(togglable)
 			on = 0
-			icon_state = icon_state_off
+			set_icon_state(icon_state_off)
 			if(icon_off)
 				icon = icon_off
 			else
@@ -406,7 +406,7 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 	P.sound_activated = s_sound
 	P.delay_time = s_delay
 	P.object = s_object
-	P.icon_state = s_icon_state_off
+	P.set_icon_state(s_icon_state_off)
 	P.icon_off = s_icon
 	P.icon_on = s_icon2
 	if(s_icon)

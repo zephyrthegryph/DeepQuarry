@@ -191,7 +191,7 @@ CAPABILITIES(/obj/effect/map_effect/portal/master)
 	var/list/observed_turfs = list()
 	for(var/obj/effect/map_effect/portal/P as anything in (portal_lines || list()) + src)
 		P.name = null
-		P.icon_state = null
+		P.set_icon_state(null)
 
 		if(!P.counterpart)
 			return

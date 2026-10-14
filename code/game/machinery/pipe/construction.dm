@@ -99,7 +99,7 @@ Buildable meters
 /obj/item/pipe/proc/update()
 	var/obj/machinery/atmospherics/fakeA = pipe_type
 	name = "[initial(fakeA.name)] fitting"
-	icon_state = initial(fakeA.pipe_state)
+	set_icon_state(initial(fakeA.pipe_state))
 
 /obj/item/pipe/proc/do_a_flip()
 	set_dir(turn(dir, -180))
@@ -111,7 +111,7 @@ Buildable meters
 	// We may switch to this later, but for now gotta do some magic.
 	mirrored = !mirrored
 	var/obj/machinery/atmospherics/fakeA = pipe_type
-	icon_state = "[initial(fakeA.pipe_state)][mirrored ? "m" : ""]"
+	set_icon_state("[initial(fakeA.pipe_state)][mirrored ? "m" : ""]")
 
 /obj/item/pipe/handle_rotation_verbs(angle, mob/user)
 	. = ..()
@@ -190,13 +190,13 @@ CAPABILITIES(/obj/item/pipe)
 	return OP_OK
 
 /obj/item/pipe/proc/on_floor(datum/act/A)
-	return (isturf(loc)) ? null : MSG(pipe_item/not_on_floor) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+	return (isturf(loc)) ? null : MSG(pipe_item/not_on_floor)
 
 /// What stands in the way of building it here (null: nothing): a dense device's tile, or a pipe already on its layer and directions.
 /obj/item/pipe/proc/tile_blocker()
 	var/obj/machinery/atmospherics/fakeA = pipe_type
 	var/flags = initial(fakeA.pipe_flags)
-	for(var/obj/machinery/atmospherics/M in contents_of(loc)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+	for(var/obj/machinery/atmospherics/M in contents_of(loc))
 		if((M.pipe_flags & flags & PIPING_ONE_PER_TURF))	//Only one dense/requires density object per tile, eg connectors/cryo/heater/coolers.
 			return /datum/msg/pipe_item/hogged
 		if((M.piping_layer != piping_layer) && !((M.pipe_flags | flags) & PIPING_ALL_LAYER))
@@ -294,7 +294,7 @@ CAPABILITIES(/obj/item/pipe_meter)
 	op("fasten", tool(TOOL_WRENCH), label("Fasten"), wait(0), needs(req(PROC_REF(pipe_here), because = MSG(pipe_meter/no_pipe))), says(MSG(pipe_meter/fastened)), then(PROC_REF(fastened)))
 
 /obj/item/pipe_meter/proc/pipe_here(datum/act/A)
-	for(var/obj/machinery/atmospherics/pipe/P in contents_of(loc)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+	for(var/obj/machinery/atmospherics/pipe/P in contents_of(loc))
 		if(P.piping_layer == piping_layer)
 			return null
 	return MSG(pipe_meter/no_pipe)

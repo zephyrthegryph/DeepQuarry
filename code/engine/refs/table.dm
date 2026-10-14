@@ -372,7 +372,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 			if(OWNK_SHARED)
 				LAZYADD(T.shared_vars, var_name)
 	link_entries_for(decl, D, T)
-	T.engine_hooks = table_hook_flags(table_of(D))
+	T.engine_hooks = table_hook_flags_cached(table_of(D))
 	T.keep_vars = decl.keep
 	T.pool_reset_vars = decl.pool_reset
 	T.forward_vars = decl.forward
@@ -392,10 +392,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		LAZYSET(T.lost_handlers, var_name, legacy_lost[var_name])
 	// owns_*(starts_set =, on_lost =, starts_after =) of the type's CAPABILITIES lists.
 	var/list/start_after = null
-	for(var/datum/centry/C as anything in table_of(D).items)
-		var/datum/entry/E = C.item
-		if(!istype(E) || (E.kind != ENTRY_OWNS_ONE && E.kind != ENTRY_OWNS_MANY))
-			continue
+	for(var/datum/entry/E as anything in table_owns_entries(table_of(D)))
 		if(E.args["early"])
 			LAZYSET(T.early_vars, E.args["var"], TRUE)
 		if(E.args["starts_set"])

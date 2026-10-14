@@ -166,7 +166,7 @@ CAPABILITIES(/obj/item/glamour_face)
 		H.name = chosen_target.name
 		H.desc = chosen_target.desc
 		H.icon = chosen_target.icon
-		H.icon_state = chosen_target.icon_state
+		H.set_icon_state(chosen_target.icon_state)
 		H.copy_overlays(chosen_target, TRUE)
 		H.resize(chosen_target.size_multiplier, ignore_prefs = TRUE)
 		rel_set(src, nameof(homunculus), H)

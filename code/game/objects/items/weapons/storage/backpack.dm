@@ -79,11 +79,11 @@ CAPABILITIES(/obj/item/storage/backpack/holding/duffle)
 	if(!user.canmove || user.stat || user.restrained())
 		return OP_REFUSED
 	if(tilted)
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 		to_chat(user, "You adjust the angle of \the [src] to rest across your lower back.")
 		tilted = 0
 	else
-		icon_state = "[icon_state]_tilted"
+		set_icon_state("[icon_state]_tilted")
 		to_chat(user, "You adjust the angle of \the [src] to rest diagonally across your back.")
 		tilted = 1
 	changed(src)
@@ -199,11 +199,11 @@ CAPABILITIES(/obj/item/storage/backpack/dufflebag)
 	if(!user.canmove || user.stat || user.restrained())
 		return OP_REFUSED
 	if(tilted)
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 		to_chat(user, "You adjust the angle of \the [src] to rest across your lower back.")
 		tilted = 0
 	else
-		icon_state = "[icon_state]_tilted"
+		set_icon_state("[icon_state]_tilted")
 		to_chat(user, "You adjust the angle of \the [src] to rest diagonally across your back.")
 		tilted = 1
 	changed(src)
@@ -589,7 +589,7 @@ TYPE_TABLE(/obj/item/storage/backpack/saddlebag_common, equip_spec, dq_spec_join
 	var/datum/sprite_accessory/tail/taur/TT = istype(H) ? H.tail_style : null
 	if(!istype(TT))
 		return lowertext(no_message)
-	item_state = "[icon_base]_[TT.icon_sprite_tag]"	//icon_sprite_tag is something like "deer"
+	set_item_state("[icon_base]_[TT.icon_sprite_tag]")	//icon_sprite_tag is something like "deer"
 	return TRUE
 
 

@@ -39,7 +39,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 
 /// Whoever works the lock is not shut in with it.
 /obj/structure/closet/secure_closet/proc/actor_outside(datum/act/op/A)
-	return (A.actor?.loc != src) ? null : /datum/msg/req_failed // ALLOW(reads): where the one at the lock is, read when the entry is offered and again at the click
+	return (A.actor?.loc != src) ? null : /datum/msg/req_failed
 
 /// A locked locker is shut for good until unlocked: it opens only unlocked.
 /obj/structure/closet/secure_closet/can_open()
@@ -149,7 +149,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 	look.overlay(owner_picture, when = !isnull(owner_picture))
 
 /obj/structure/closet/secure_closet/mind/allowed(mob/user)
-	if(user.mind == owner_ref()) // ALLOW(reads): whose mind it is is read at the click; the locker is made for one mind and never changes it
+	if(user.mind == owner_ref())
 		return TRUE
 	else
 		return FALSE

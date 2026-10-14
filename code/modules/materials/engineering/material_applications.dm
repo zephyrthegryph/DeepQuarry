@@ -53,7 +53,7 @@
 				break
 		var/datum/material/reference = get_material_by_name(reference_id)
 		var/integrity_factor = clamp(structure.integrity / max(reference.integrity, 1), 0.2, 4)
-		max_integrity = max(1, round(initial(max_integrity) * integrity_factor))
+		set_max_integrity(max(1, round(initial(max_integrity) * integrity_factor)))
 		if(uses_integrity)
 			update_integrity(max_integrity * condition)
 	primary.dq_apply_material_behaviors(src)

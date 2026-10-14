@@ -233,8 +233,8 @@ MSG_DEF(window/wiring, span_notice("You begin to wire %T% for electrochromic tin
 	var/obj/structure/window/reinforced/polarized/P = new(loc, dir)
 	if(is_fulltile())
 		P.set_fulltile(TRUE)
-		P.icon_state = "fwindow"
-	P.max_integrity = max_integrity
+		P.set_icon_state("fwindow")
+	P.set_max_integrity(max_integrity)
 	P.update_integrity(get_integrity())
 	P.state = state
 	P.set_anchored(anchored)

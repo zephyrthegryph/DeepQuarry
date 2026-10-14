@@ -14,9 +14,9 @@
 	var/listening = 1.0
 /obj/item/implantpad/proc/update()
 	if (src.case)
-		src.icon_state = "implantpad-1"
+		set_icon_state("implantpad-1")
 	else
-		src.icon_state = "implantpad-0"
+		set_icon_state("implantpad-0")
 	return
 
 

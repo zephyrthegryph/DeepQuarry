@@ -30,7 +30,7 @@
 		to_return += list(fill)
 		for(var/j in 1 to TOTAL_VISIBLE_STATES)
 			var/obj/effect/overlay/gas/gas = new (null, i)
-			gas.icon_state = initial(gas_type.gas_overlay)
+			gas.set_icon_state(initial(gas_type.gas_overlay))
 			gas.alpha = log(4, (j+0.4*TOTAL_VISIBLE_STATES) / (0.35*TOTAL_VISIBLE_STATES)) * 255
 			fill += gas
 	return to_return

@@ -14,6 +14,7 @@
 /// A handler returns STEP_DONE (or nothing), STEP_YIELD (resume next tick, from the same member) or
 /// STEP_PARK / PROCESS_KILL (leave the schedule until wake_work()).
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_item)
 /datum/work_item
 	/// Display name for the profiler; defaults to the handler.
 	var/name

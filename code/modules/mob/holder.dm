@@ -93,7 +93,7 @@
 		held_mob.update_transform()
 		held_mob.vis_flags = original_vis_flags
 		rel_clear(src, nameof(held_mob))
-		invisibility = INVISIBILITY_ABSTRACT
+		set_invisibility(INVISIBILITY_ABSTRACT)
 		schedule_cleanup_check() // once the move is over
 	..()
 
@@ -190,7 +190,7 @@ CAPABILITIES(/obj/item/holder/diona)
 /obj/item/holder/pai/take_held(mob/held)
 	..()
 	if(held)
-		item_state = held.icon_state
+		set_item_state(held.icon_state)
 
 /obj/item/holder/mouse
 	name = "mouse"
@@ -405,10 +405,10 @@ CAPABILITIES(/obj/item/holder/fish)
 	return H
 
 /obj/item/holder/proc/sync(mob/living/M)
-	dir = 2
+	set_dir(2)
 	overlays.Cut()
 	if(M.item_state)
-		item_state = M.item_state
+		set_item_state(M.item_state)
 	color = M.color
 	name = M.name
 	desc = M.desc

@@ -382,7 +382,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 		for(var/obj/structure/railing/overhang/hazard/nanite/R in turf_contents_of_type(src, /obj/structure/railing/overhang/hazard/nanite))
 			R.set_icon_modifier("inactive_")
 		for(var/obj/structure/dummystairs/hazardledge/stairs in turf_contents_of_type(src, /obj/structure/dummystairs/hazardledge))
-			stairs.icon_state = "stair_hazard"
+			stairs.set_icon_state("stair_hazard")
 		return
 	name = "nanite goop."
 	desc = "A deep pool of pulsating, possibly deadly nanite goop."
@@ -401,7 +401,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 	for(var/obj/structure/dummystairs/hazardledge/stairs in turf_contents_of_type(src, /obj/structure/dummystairs/hazardledge))
 		depth = 1
 		movement_cost = 8
-		stairs.icon_state = "stair_hazard_nanite"
+		stairs.set_icon_state("stair_hazard_nanite")
 	for(var/atom/AM in turf_contents_of_type(src, /atom))
 		Entered(AM)
 

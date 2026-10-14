@@ -173,7 +173,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 	var/obj/machinery/door/window/windoor = secure ? new /obj/machinery/door/window/brigdoor(loc) : new /obj/machinery/door/window(loc)
 	var/side = facing == "l" ? "left" : "right"
 	var/open_state = secure ? "[side]secure" : side
-	windoor.icon_state = "[open_state]open"
+	windoor.set_icon_state("[open_state]open")
 	windoor.set_base_state(open_state)
 	windoor.set_dir(dir)
 	windoor.set_density(FALSE)

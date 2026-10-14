@@ -219,12 +219,12 @@ CAPABILITIES(/mob/living/bot/mulebot)
 
 /mob/living/bot/mulebot/update_icons()
 	if(open)
-		icon_state = "mulebot-hatch"
+		set_icon_state("mulebot-hatch")
 		return
 	if(target_path.len && !paused)
-		icon_state = "mulebot1"
+		set_icon_state("mulebot1")
 		return
-	icon_state = "mulebot0"
+	set_icon_state("mulebot0")
 
 /mob/living/bot/mulebot/handleRegular()
 	if(!safety && prob(1))

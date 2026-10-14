@@ -91,10 +91,8 @@ SOURCE_DEF(mutation_hulk)
 	var/on_end
 	var/on_increase
 
-/// Status id -> /datum/status_policy, built once at global init from status_policy_rows().
-
-/// The policy table's source rows: list(STAT_X, field = value, ...).
-GLOBAL_LIST_INIT(status_policy_rows, list(
+/// Status id -> /datum/status_policy, built once at global init from the source rows: list(STAT_X, field = value, ...).
+GLOBAL_LIST_INIT(status_policies, status_policies_build(list(
 		list(STAT_STUNNED, "scaled" = TRUE, "announce" = /proc/publish_living_status_stun, "alert" = "stunned", "alert_type" = /atom/movable/screen/alert/stunned, "indicator" = "stunned",
 			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_incapacitation_changed, "on_end" = /mob/proc/status_incapacitation_changed),
 		list(STAT_WEAKENED, "scaled" = TRUE, "announce" = /proc/publish_living_status_weaken, "alert" = "weakened", "alert_type" = /atom/movable/screen/alert/weakened, "indicator" = "weakened",
@@ -119,13 +117,11 @@ GLOBAL_LIST_INIT(status_policy_rows, list(
 		// Dizziness and jitters are 0-1000 points: 3 wear off per cycle, 15 while resting.
 		list(STAT_DIZZY, "wear" = 3, "wear_resting" = 15, "max_units" = 1000, "on_start" = /mob/proc/status_dizzy_started, "on_end" = /mob/proc/status_dizzy_ended),
 		list(STAT_JITTERY, "wear" = 3, "wear_resting" = 15, "max_units" = 1000, "on_start" = /mob/proc/status_jittery_started, "on_end" = /mob/proc/status_jittery_ended),
-))
+)))
 
-GLOBAL_LIST(status_policies)
-
-/proc/status_policies_build()
+/proc/status_policies_build(list/rows)
 	. = list()
-	for(var/list/row as anything in GLOB.status_policy_rows)
+	for(var/list/row as anything in rows)
 		var/datum/status_policy/P = new
 		P.id = row[1]
 		for(var/key in row)
@@ -135,9 +131,6 @@ GLOBAL_LIST(status_policies)
 
 /// Status id -> /datum/status_policy.
 /proc/status_policies()
-	// Built on first use: GLOB init order is not declaration order, so the rows may not exist yet at global init.
-	if(!GLOB.status_policies)
-		GLOB.status_policies = status_policies_build()
 	return GLOB.status_policies
 
 /// The policy of status `id`.
@@ -163,8 +156,7 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 
 /// The own dose's hold row of `id`, or null.
 /datum/proc/status_dose(id)
-	var/datum/stat_record/rec = rx?.stats
-	return rec ? stat_hold_find(rec, id, SRC_STATUS, null) : null
+	return stat_hold_row_of(src, id, SRC_STATUS)
 
 /// Deciseconds of biological time until the own dose of `id` ends (0 when there is none). A hold from another source has no duration and
 /// doesn't count: read has_status() for "in effect at all".

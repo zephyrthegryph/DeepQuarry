@@ -22,7 +22,6 @@ SYSTEM_DEF(shuttles)
 	// Shuttles with work run their shuttle_step() through its every() gated on `working` (shuttle.dm).
 
 	var/overmap_halted = FALSE                     // Whether ships can move on the overmap; used for adminbus.
-	var/list/ships = list()                        // List of all ships.
 
 	var/list/shuttles = list()                     // Maps shuttle tags to shuttle datums, so that they can be looked up.
 	var/list/process_shuttles = list()             // Simple list of shuttles, for processing
@@ -102,7 +101,7 @@ SYSTEM_DEF(shuttles)
 		if(S.always_process)
 			always++
 	return list(
-		"counts" = list("registered" = length(shuttles), "processing" = length(process_shuttles), "current" = length(current_run), "ships" = length(ships), "landmarks" = length(registered_shuttle_landmarks), "active" = active, "always" = always),
+		"counts" = list("registered" = length(shuttles), "processing" = length(process_shuttles), "current" = length(current_run), "ships" = REGISTRY_COUNT(REGISTRY_OVERMAP_SHIPS), "landmarks" = length(registered_shuttle_landmarks), "active" = active, "always" = always),
 		"work" = list("entries_scanned" = profile_entries_scanned, "process_calls" = profile_process_calls, "idle_skips" = profile_idle_skips, "kills" = profile_kills, "bad_entries" = profile_bad_entries, "yields" = profile_yields),
 		"top_type_cost_ms" = type_costs,
 		"type_calls" = profile_type_calls.Copy(),
@@ -220,9 +219,9 @@ SYSTEM_DEF(shuttles)
 	if(overmap_halted == new_setting)
 		return
 	overmap_halted = !overmap_halted
-	for(var/obj/effect/overmap/visitable/ship/ship_effect as anything in ships)
+	for(var/obj/effect/overmap/visitable/ship/ship_effect as anything in REGISTRY_MEMBERS(REGISTRY_OVERMAP_SHIPS))
 		overmap_halted ? ship_effect.halt() : ship_effect.unhalt()
 
 /datum/system/shuttles/stat_entry(msg)
-	msg = "Shuttles:[length(process_shuttles)]/[length(shuttles)], Ships:[length(ships)], L:[length(registered_shuttle_landmarks)][overmap_halted ? ", HALT" : ""]"
+	msg = "Shuttles:[length(process_shuttles)]/[length(shuttles)], Ships:[REGISTRY_COUNT(REGISTRY_OVERMAP_SHIPS)], L:[length(registered_shuttle_landmarks)][overmap_halted ? ", HALT" : ""]"
 	return ..()

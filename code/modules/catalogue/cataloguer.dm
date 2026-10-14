@@ -335,11 +335,11 @@ CAPABILITIES(/obj/item/cataloguer/compact/pathfinder)
 	deployed = !(deployed)
 	if(deployed)
 		set_w_class(ITEMSIZE_NORMAL)
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 		to_chat(user, span_notice("You flick open \the [src]."))
 	else
 		set_w_class(ITEMSIZE_SMALL)
-		icon_state = "[initial(icon_state)]_closed"
+		set_icon_state("[initial(icon_state)]_closed")
 		to_chat(user, span_notice("You close \the [src]."))
 
 	if (ismob(user))

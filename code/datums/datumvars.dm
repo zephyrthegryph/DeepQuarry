@@ -26,8 +26,26 @@
 	if(hascall(src, "__setter_[var_name]") || (istype(src, /datum/record) && hascall(src, "set_[var_name]")))
 		call(src, "set_[var_name]")(var_value)
 		return TRUE
-	vars[var_name] = var_value // ALLOW(api): VV: admins edit any var by name
-	refresh_dispatched(src) // an admin's edit of a var with no setter publishes nothing: its outputs re-derive
+	// A built-in the engine publishes from its own choke point is edited through it: a move is a move (Moved() tells whatever reads loc), a turn is
+	// set_dir(). A raw write would change the var and tell nobody.
+	if(ismovable(src))
+		var/atom/movable/mover = src
+		if(var_name == NAMEOF(mover, loc))
+			if(isnull(var_value))
+				return !!mover.moveToNullspace()
+			if(!isatom(var_value))
+				return FALSE
+			return !!mover.forceMove(var_value)
+	if(isatom(src))
+		var/atom/turner = src
+		if(var_name == NAMEOF(turner, dir))
+			turner.set_dir(var_value)
+			return TRUE
+	// Any other var, and a stat's name, go through vars_write(): a stat as an admin override hold (released by releasing its source), a schema var
+	// clamped or refused, a plain var written and published to whatever reads it, its outputs re-derived (code/engine/stats/vars_write.dm).
+	if(!vars_write(src, var_name, var_value, SRC_VV))
+		return FALSE
+	refresh_dispatched(src) // an admin's edit of a var nothing declares publishes to nobody: the outputs re-derive anyway
 	return TRUE
 
 /datum/proc/vv_get_var(var_name)

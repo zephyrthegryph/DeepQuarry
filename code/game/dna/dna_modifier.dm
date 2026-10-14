@@ -212,7 +212,7 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 		to_chat(user, span_warning("\The [src] won't take you!"))
 		return
 	set_occupant(user)
-	icon_state = "scanner_1"
+	set_icon_state("scanner_1")
 	add_fingerprint(user)
 	SStgui.update_uis(src)
 
@@ -289,7 +289,7 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	if(!move_into(src, OCCUPANT_SLOT_DNA_SCANNER, M))
 		return
 	set_occupant(M)
-	icon_state = "scanner_1"
+	set_icon_state("scanner_1")
 
 	// search for ghosts, if the corpse is empty and the scanner is connected to a cloner
 	if(locate(/obj/machinery/computer/cloning, get_step(src, NORTH)) \
@@ -318,7 +318,7 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	else
 		slot_remove(WC, loc)
 	set_occupant(null)
-	icon_state = "scanner_0"
+	set_icon_state("scanner_0")
 	SStgui.update_uis(src)
 
 /obj/machinery/computer/scan_consolenew
@@ -444,7 +444,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 
 /// The user works the console from a tile (not from inside a locker, a mech or the scanner); a silicon works it over its link.
 /obj/machinery/computer/scan_consolenew/proc/user_standing(datum/act/op/A)
-	return (isturf(A.actor?.loc) || (A.authority & AUTH_REMOTE_ACCESS)) ? null : MSG(dna_console/not_standing) // ALLOW(reads): where the user stands is read when the button is pressed; a menu shows no buttons of a window
+	return (isturf(A.actor?.loc) || (A.authority & AUTH_REMOTE_ACCESS)) ? null : MSG(dna_console/not_standing)
 
 /// Every button leaves a print.
 /obj/machinery/computer/scan_consolenew/proc/window_touched(datum/act/op/A)

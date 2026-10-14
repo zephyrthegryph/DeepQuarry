@@ -50,19 +50,18 @@
 	render_map = TRUE
 
 DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
+REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_OVERMAP_SHIPS)
 
 /obj/effect/overmap/visitable/ship/Initialize(mapload)
 	. = ..()
 	min_speed = round(min_speed, SHIP_MOVE_RESOLUTION)
 	max_speed = round(max_speed, SHIP_MOVE_RESOLUTION)
-	SSshuttles.ships += src
 	rel_set(src, nameof(vector), add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
 	SSflight?.register_vessel(src)
 
 // leaves the ship list and its flight vessel.
 /obj/effect/overmap/visitable/ship/lifecycle_dematerialize()
-	SSshuttles.ships -= src
 	if(SSflight && flight_vessel_id)
 		var/datum/flight_vessel/vessel = own_take_member(SSflight, nameof(/datum/system/flight::vessels), flight_vessel_id)
 		if(vessel)
@@ -237,7 +236,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 
 /// The look is the one writer of the heading: set_dir() keeps every other caller facing north.
 /obj/effect/overmap/visitable/ship/look_set_dir(new_dir)
-	dir = new_dir
+	set_dir(new_dir)
 
 /obj/effect/overmap/visitable/ship/set_dir(new_dir)
 	return ..(NORTH) // NO! We always face north.

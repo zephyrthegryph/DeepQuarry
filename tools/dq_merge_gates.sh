@@ -29,7 +29,13 @@
 # What it still leaves to dq_push_master.sh: the second merge of origin/master, and any stamp it cannot honor (a different HEAD,
 # an unclean tree). It never runs build.sh lint (DreamChecker + analyze + tgui lint, all covered above).
 set -uo pipefail
+# The gates keep the full end-of-test staleness sweep (dq_focused_test.sh would otherwise bound it).
+export DQ_STALENESS=full
 cd "$(git rev-parse --show-toplevel)"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
+# In the shared merge worktree only the batch that holds the merge lock (tools/dq_merge_worktree.sh) may gate.
+. "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
+merge_lock_require || exit 1
 
 tests_arg=()
 lanes=""
@@ -144,7 +150,8 @@ fi
 if [ "$run_tests" -eq 1 ] && [ "$smoke" -eq 1 ] && [ -f tools/ci/gameplay_tests.txt ]; then
 	while IFS= read -r line; do
 		line="${line%%#*}"
-		line="$(echo "$line" | tr -d '' | xargs)"
+		line="$(echo "$line" | tr -d '
+' | xargs)"
 		[ -n "$line" ] && add_test "$line"
 	done <tools/ci/gameplay_tests.txt
 fi

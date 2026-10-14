@@ -1,4 +1,7 @@
 // Contains all of the variables and such to make tg prefs work
+/// A player's preferences persist for the round (GLOB.preferences_datums, keyed by ckey): only a forced qdel() removes one.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/preferences)
+
 /datum/preferences
 	/// The savefile relating to character preferences, PREFERENCE_CHARACTER
 	var/list/character_data

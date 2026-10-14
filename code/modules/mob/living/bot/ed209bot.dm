@@ -21,9 +21,9 @@ CAPABILITIES(/mob/living/bot/secbot/ed209)
 
 /mob/living/bot/secbot/ed209/update_icons()
 	if(on && bot_busy())
-		icon_state = "ed209-c"
+		set_icon_state("ed209-c")
 	else
-		icon_state = "ed209[on]"
+		set_icon_state("ed209[on]")
 
 /mob/living/bot/secbot/ed209/explode()
 	act_message(src, null, others = span_warning("%U% blows apart!"))
@@ -126,8 +126,8 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 
 /obj/item/secbot_assembly/ed209_assembly/proc/vest_added(datum/act/op/A)
 	name = "vest/legs/frame assembly"
-	item_state = "ed209_shell"
-	icon_state = "ed209_shell"
+	set_item_state("ed209_shell")
+	set_icon_state("ed209_shell")
 	to_chat(A.actor, span_notice("You add the armor to [src]."))
 	return OP_OK
 
@@ -138,15 +138,15 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 
 /obj/item/secbot_assembly/ed209_assembly/proc/helmet_added(datum/act/op/A)
 	name = "covered and shielded frame assembly"
-	item_state = "ed209_hat"
-	icon_state = "ed209_hat"
+	set_item_state("ed209_hat")
+	set_icon_state("ed209_hat")
 	to_chat(A.actor, span_notice("You add the helmet to [src]."))
 	return OP_OK
 
 /obj/item/secbot_assembly/ed209_assembly/sensor_added(datum/act/op/A)
 	name = "covered, shielded and sensored frame assembly"
-	item_state = "ed209_prox"
-	icon_state = "ed209_prox"
+	set_item_state("ed209_prox")
+	set_icon_state("ed209_prox")
 	to_chat(A.actor, span_notice("You add the prox sensor to [src]."))
 	return OP_OK
 
@@ -161,8 +161,8 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 
 /obj/item/secbot_assembly/ed209_assembly/proc/taser_added(datum/act/op/A)
 	name = "taser ED-209 assembly"
-	item_state = "ed209_taser"
-	icon_state = "ed209_taser"
+	set_item_state("ed209_taser")
+	set_icon_state("ed209_taser")
 	to_chat(A.actor, span_notice("You add [A.held] to [src]."))
 	return OP_OK
 
@@ -177,8 +177,8 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 	var/turf/where = get_turf(src)
 	var/obj/item/secbot_assembly/ed209_assembly/slime/slime_assembly = new(where)
 	slime_assembly.name = "xenotaser SL-ED-209 assembly"
-	slime_assembly.item_state = "sled209_taser"
-	slime_assembly.icon_state = "sled209_taser"
+	slime_assembly.set_item_state("sled209_taser")
+	slime_assembly.set_icon_state("sled209_taser")
 	graph_place(slime_assembly, STAGE_ED209_TASERED)
 	slime_assembly.created_name = created_name
 	slime_assembly.lasercolor = lasercolor

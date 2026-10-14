@@ -152,6 +152,13 @@ GLOBAL_VAR(restart_counter)
  */
 /world/New()
 	log_world("World loaded at [time_stamp()]!")
+#ifdef UNIT_TESTS
+	// `-params boot_profile=1` (DQ_WORLD_PARAMS): the harness stamps launch_tod (deciseconds since midnight UTC) when it spawns DreamDaemon, so this line is the
+	// time the .dmb/.rsc load, global initialisation and the compiled map took before any DM code could log.
+	var/boot_launch_tod = text2num(world.params?["launch_tod"] || "0")
+	if(boot_launch_tod)
+		log_world("Boot timing: world/New reached [round((world.timeofday - boot_launch_tod) / 10, 0.1)]s after DreamDaemon was spawned (world.time [world.time]).")
+#endif
 	Kernel.registration_open = TRUE
 	kernel()
 
@@ -315,7 +322,11 @@ GLOBAL_VAR(restart_counter)
 	// after 2 s; a test that only passes after the longer settle should wait
 	// for what it needs itself (see doc/testing.md).
 	if(unit_test_is_focused_run())
-		start_delay = 2 SECONDS
+		start_delay = 1 SECONDS
+		// --boot (only dq_boot_gate): the gate reads what the boot logged, so there is nothing to settle.
+		if(unit_test_is_boot_only_run())
+			start_delay = 0
+		log_world("Unit tests: round-start settle [start_delay / (1 SECONDS)] s ([unit_test_is_boot_only_run() ? "boot-only" : "focused"] run).")
 #endif
 	SSticker.OnRoundstart(null, after_start, delay = start_delay)
 
@@ -667,6 +678,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			LAZYADD(fail_reasons, "Missing GLOB.log_directory!")
 	else
 		fail_reasons = list("Missing GLOB!")
+	log_world("Finishing the test run: writing the result markers ([fail_reasons ? "failed" : "clean"]).")
 	if(!fail_reasons)
 		text2file("Success!", "[GLOB.log_directory]/clean_run.lk")
 	else
@@ -676,11 +688,13 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	// is given time to finish before it is declared unclean.
 	if(GLOB && GLOB.log_directory)
 		text2file(fail_reasons ? "Failed" : "Finished", "[GLOB.log_directory]/finished_run.lk")
+		log_world("Result markers written (finished_run.lk).")
 	// Shut down once Reboot() has returned (the MC is already down, so this is a world tick
 	// callback, not a timer): deleting the world from inside Reboot() leaves byond in a bad way.
 	world_next_tick(GLOBAL_PROC_REF(world_finish_test_shutdown))
 
 /proc/world_finish_test_shutdown()
+	log_world("Test world: shutting down the world.")
 	spent(world) //shut it down
 
 /// Callbacks run at the start of the next world tick (/world/Tick()), in order. For world procs
@@ -718,6 +732,7 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 		else
 			to_chat(world, span_boldannounce("Rebooting world immediately due to host request"))
 	else
+		log_world("Reboot: shutting the kernel down.")
 		Kernel.shutdown_kernel()	//run the systems' shutdowns
 		for(var/client/C in GLOB.clients)
 			if(CONFIG_GET(string/server))	//if you set a server location in config.txt, it sends you there instead of trying to reconnect to the same world address. -- NeoFite

@@ -2144,7 +2144,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 
 /mob/living/carbon/human/proc/vv_species_choices(datum/act/op/A)
-	return sortTim(GLOB.all_species, GLOBAL_PROC_REF(cmp_text_asc))
+	return sortTim(GLOB.all_species.Copy(), GLOBAL_PROC_REF(cmp_text_asc))
 
 /mob/living/carbon/human/proc/vv_topic_set_species(datum/act/op/A)
 	var/mob/user = A.actor

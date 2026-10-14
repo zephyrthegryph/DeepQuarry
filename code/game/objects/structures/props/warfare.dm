@@ -70,17 +70,17 @@
 	. = ..()
 	switch(state)
 		if("empty")
-			icon_state = "rocket_pod"
+			set_icon_state("rocket_pod")
 		if("single")
-			icon_state = "rocket_pod_loaded"
+			set_icon_state("rocket_pod_loaded")
 		if("banshee")
-			icon_state = "rocket_pod_loadedb"
+			set_icon_state("rocket_pod_loadedb")
 		if("keeper")
-			icon_state = "rocket_pod_loadedk"
+			set_icon_state("rocket_pod_loadedk")
 		if("fatty")
-			icon_state = "rocket_pod_loadedf"
+			set_icon_state("rocket_pod_loadedf")
 		if("napalm")
-			icon_state = "rocket_pod_loadedn"
+			set_icon_state("rocket_pod_loadedn")
 
 /obj/structure/prop/war/tgmc_missile_rack/single
 	icon_state = "rocket_pod_loaded"
@@ -109,9 +109,9 @@
 	. = ..()
 	switch(state)
 		if("empty")
-			icon_state = "minirocket_pod"
+			set_icon_state("minirocket_pod")
 		if("loaded")
-			icon_state = "minirocket_pod_loaded"
+			set_icon_state("minirocket_pod_loaded")
 
 /obj/structure/prop/war/tgmc_minirockets/loaded
 	icon_state = "minirocket_pod_loaded"
@@ -132,9 +132,9 @@
 	. = ..()
 	switch(state)
 		if("empty")
-			icon_state = "laser_beam"
+			set_icon_state("laser_beam")
 		if("loaded")
-			icon_state = "laser_beam_loaded"
+			set_icon_state("laser_beam_loaded")
 
 /obj/structure/prop/war/tgmc_laser/loaded
 	icon_state = "laser_beam_loaded"
@@ -155,11 +155,11 @@
 	. = ..()
 	switch(state)
 		if("empty")
-			icon_state = "30mm_cannon"
+			set_icon_state("30mm_cannon")
 		if("loaded")
-			icon_state = "30mm_cannon_loaded1"
+			set_icon_state("30mm_cannon_loaded1")
 		if("loadedempty")
-			icon_state = "30mm_cannon_loaded0"
+			set_icon_state("30mm_cannon_loaded0")
 
 /obj/structure/prop/war/tgmc_30mm/loaded
 	icon_state = "30mm_cannon_loaded1"

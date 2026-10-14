@@ -97,13 +97,15 @@ CAPABILITIES(/obj/effect/hotspot)
 	param(nameof(starting_temperature), pos = 2)
 
 /// The fire's starting volume and temperature (its constructor params).
+/// Every live hotspot (counts, the admin panel): a registry, so a deleted fire leaves it on its own.
+REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
+
 /obj/effect/hotspot/var/starting_volume
 /obj/effect/hotspot/var/starting_temperature
 
-// ALLOW(init/INSTANCE_STATE): a hotspot joins the air system's hotspots and a hot group, exposes its turf, and faces a random way
+// ALLOW(init/INSTANCE_STATE): a hotspot joins a hot group, exposes its turf, and faces a random way
 /obj/effect/hotspot/Initialize(mapload)
 	. = ..()
-	SSair.hotspots += src
 	if(!isnull(starting_volume))
 		volume = starting_volume
 	if(!isnull(starting_temperature))
@@ -352,14 +354,13 @@ CAPABILITIES(/obj/effect/hotspot)
 	if(fire_stage == stage)
 		return
 	fire_stage = stage
-	icon_state = stage
-	dir = pick(GLOB.cardinals)
+	set_icon_state(stage)
+	set_dir(pick(GLOB.cardinals))
 	update_color()
 
 // a dying fire cools its tile and leaves its hot group.
 /obj/effect/hotspot/lifecycle_dematerialize()
 	..()
-	SSair.hotspots -= src
 
 /obj/effect/hotspot/on_destroy(force)
 	var/turf/open/cur_turf = loc

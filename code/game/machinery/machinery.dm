@@ -252,7 +252,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 		var/obj/effect/overlay/pulse2 = new /obj/effect/overlay(src.loc)
 		pulse2.icon = 'icons/effects/effects.dmi'
-		pulse2.icon_state = "empdisable"
+		pulse2.set_icon_state("empdisable")
 		pulse2.name = "emp sparks"
 		pulse2.set_anchored(TRUE)
 		pulse2.set_dir(pick(GLOB.cardinal))
@@ -453,7 +453,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	if(!part_count)
 		return FALSE
 	var/integrity_factor = clamp((total_integrity / part_count) / 150, 0.5, 2.5)
-	max_integrity = max(1, round(initial(max_integrity) * integrity_factor))
+	set_max_integrity(max(1, round(initial(max_integrity) * integrity_factor)))
 	if(uses_integrity)
 		update_integrity(max_integrity)
 	material_emp_resistance = clamp(round(total_dielectric / part_count * 0.6), 0, 75)

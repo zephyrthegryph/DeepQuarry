@@ -136,6 +136,7 @@ GLOBAL_LIST_EMPTY(pool_list_templates)
 /proc/take(type)
 	return pool_take(type)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/object_pool)
 /// One per pooled type: the free list, the per-use fields and the counters.
 /datum/object_pool
 	var/pool_type

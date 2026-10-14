@@ -78,7 +78,7 @@ DECLARE_SHARED_CACHE(underwater_visuals, GLOBAL_PROC_REF(build_underwater_visual
 /proc/build_underwater_visuals(visuals_icon, visuals_state)
 	var/atom/movable/weather_visuals/visuals = new(null)
 	visuals.icon = visuals_icon
-	visuals.icon_state = visuals_state
+	visuals.set_icon_state(visuals_state)
 	return visuals
 
 /turf/simulated/floor/water/underwater/open/draw(datum/look/look)

@@ -301,14 +301,23 @@
 	PUBLISH_LEGACY(src, /datum/notice/atom_dir_change, dir, new_dir)
 	var/old_dir = dir
 	dir = new_dir
-	// A drawn type that reads dir redraws, and so does a look that watches this atom (dir is a tracked read of every look); an atom nothing draws or watches pays one var read.
-	if((rx?.look_key || rel_watchers) && old_dir != new_dir)
+	// A drawn type that reads dir redraws, and so does a look that watches this atom (dir is a tracked read of every look), and so does a stat, an
+	// on_change() hook or a pending operation that reads it; an atom nothing draws, watches or reads pays one var read and the demand test.
+	if(old_dir != new_dir && (rx?.look_key || rel_watchers || GLOB.stat_input_keys?[nameof(dir)] || GLOB.derived_read_vars?[nameof(dir)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(dir)))))
 		tracked_changed(src, nameof(dir))
 SETTER(/atom, dir)
 
 /// The engine's look applies a dir through this (the engine does not reach the atom layer): set_dir() on every atom.
 /atom/look_set_dir(new_dir)
 	set_dir(new_dir)
+
+/// The engine's look applies a base icon_state through this: set_icon_state() publishes it.
+/atom/look_set_icon_state(new_state)
+	set_icon_state(new_state)
+
+/// The engine's look applies an invisibility level through this: set_invisibility() publishes it.
+/atom/look_set_invisibility(new_invisibility)
+	set_invisibility(new_invisibility)
 
 /// Density is a tracked base var (G8): this is its only writer. A change publishes nameof(density) to its readers.
 /atom/proc/set_density(new_density)
@@ -325,7 +334,10 @@ SETTER(/atom, density)
 	if(invisibility == new_invisibility)
 		return FALSE
 	invisibility = new_invisibility
+	if(GLOB.stat_input_keys?[nameof(invisibility)] || GLOB.derived_read_vars?[nameof(invisibility)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(invisibility))))
+		tracked_changed(src, nameof(invisibility))
 	return TRUE
+SETTER(/atom, invisibility)
 
 /atom/proc/ex_act(strength = 3)
 	var/datum/act/explode/blast = ACT_TRY(src, explode, strength)
@@ -644,8 +656,6 @@ SETTER(/atom, density)
 	user.client.Click(src, loc, null, list2params(paramslist))
 	return TRUE
 
-GLOBAL_LIST_EMPTY(icon_dimensions)
-
 /// get_oversized_icon_offsets() for an unshifted atom (shared; callers only read it).
 GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 
@@ -720,7 +730,12 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 
 /// Its icon state (after() target for a state that reverts, like a flash of a sprite).
 /atom/proc/set_icon_state(new_state)
+	if(icon_state == new_state)
+		return
 	icon_state = new_state
+	if(GLOB.stat_input_keys?[nameof(icon_state)] || GLOB.derived_read_vars?[nameof(icon_state)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(icon_state))))
+		tracked_changed(src, nameof(icon_state))
+SETTER(/atom, icon_state)
 
 /// Its base colour, under any colour layers (a debug or effect tint that reverts later).
 /atom/proc/set_base_color(new_color)

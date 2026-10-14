@@ -16,6 +16,7 @@
 // A new trait: a /datum/type_trait subtype with one var per value (and copy_values()), a constructor proc returning entry_make(kind, null, list(args)), STATIC_ENTRY(kind)
 // and an /datum/entry_engine/type_trait subtype naming the two. The domain's reader (power_of(M)) is type_trait_of() typed.
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_trait)
 /// The values of one trait kind for one type (shared, read-only) or one holder (its override).
 /datum/type_trait
 	/// The entry kind this trait is declared by.
@@ -65,11 +66,19 @@
 
 /// One shared trait per declaring table, indexed by every type under it.
 /datum/entry_engine/type_trait/static_built(list/by_type)
+	GLOB.type_trait_tables[kind] = type_trait_table_build(by_type, kind, trait_type)
+
+/// type -> the shared trait of `kind` for every type in `by_type` whose table declares one. A table is looked up once (an assoc lookup, not a
+/// scan of the tables seen so far), so the cost is the types plus the tables, not their product. The equality test (dq_table_cache_tests.dm) compares it with the
+/// scanning original.
+/proc/type_trait_table_build(list/by_type, kind, trait_type)
 	var/list/built_of_table = list()
+	var/list/seen = list()
 	var/list/table = list()
 	for(var/type in by_type)
 		var/datum/type_table/T = by_type[type]
-		if(!(T in built_of_table))
+		if(!seen[T])
+			seen[T] = TRUE
 			var/datum/centry/C = static_find(T, kind)
 			var/datum/entry/E = C?.item
 			var/datum/type_trait/made = null
@@ -81,7 +90,7 @@
 		var/datum/type_trait/known = built_of_table[T]
 		if(known)
 			table[type] = known
-	GLOB.type_trait_tables[kind] = table
+	return table
 
 /// kind -> type -> the shared /datum/type_trait (built once at setup by the kinds' engines).
 GLOBAL_LIST_EMPTY(type_trait_tables)

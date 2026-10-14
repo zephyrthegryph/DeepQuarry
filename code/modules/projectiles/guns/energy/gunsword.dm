@@ -53,8 +53,8 @@
 /obj/item/cell/device/weapon/gunsword/proc/activate(mob/living/user)
 	if(active)
 		return
-	icon_state = "gsaber"
-	item_state = "gsaber"
+	set_icon_state("gsaber")
+	set_item_state("gsaber")
 	active = 1
 	embed_chance = active_embed_chance
 	set_force(active_force)
@@ -73,8 +73,8 @@
 	if(!active)
 		return
 	play_sfx(src, SFX_WEAPONS_SABEROFF)
-	icon_state = "gsaberoff"
-	item_state = "gsaberoff"
+	set_icon_state("gsaberoff")
+	set_item_state("gsaberoff")
 	active = 0
 	embed_chance = initial(embed_chance)
 	set_force(combat_of_type(type).force)

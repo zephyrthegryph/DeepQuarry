@@ -150,7 +150,7 @@
 				jobdatum = J
 				break
 		if(src.corpseidicon)
-			W.icon_state = corpseidicon
+			W.set_icon_state(corpseidicon)
 		if(src.corpseidaccess)
 			if(jobdatum)
 				W.set_access(jobdatum.get_access())

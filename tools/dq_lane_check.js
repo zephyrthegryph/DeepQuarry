@@ -5,7 +5,7 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 
 const NOTES = 'refs/notes/lane-ready';
-const NON_CODE = [/^html\/changelogs\//, /^doc\//, /^data\//, /^[A-Za-z_.-]+\.md$/];
+const NON_CODE = [/^html\/changelogs\//, /^doc\//, /^data\/bench\//, /^[A-Za-z_.-]+\.md$/];
 
 function git(args, opts = {}) {
   const r = spawnSync('git', args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...opts });
@@ -21,10 +21,10 @@ function globToRegex(glob) {
   return new RegExp(`^${esc}`);
 }
 
-function globalPrefixes() {
+function globalPrefixes(file = 'tools/ci/lane_ready_global.txt') {
   try {
     return fs
-      .readFileSync('tools/ci/lane_ready_global.txt', 'utf8')
+      .readFileSync(file, 'utf8')
       .split(/\r?\n/)
       .map((l) => l.trim())
       .filter((l) => l && !l.startsWith('#'));
@@ -106,10 +106,19 @@ function check(ref, master) {
   const covers = (s.covers || []).map(globToRegex);
   const globals = globalPrefixes();
   const hits = [];
+  const ignored = [];
   const snaps = snapshotDirs(tfiles);
+  const docReads = globalPrefixes('tools/ci/lane_ready_doc_reads.txt');
   for (const f of delta) {
     if (REGENERATED.some((re) => re.test(f))) continue;
     let why = '';
+    // Changelogs, docs, data and root markdown are not compiled, generated, linted or tested: master changing them never moves a
+    // result, unless a tool reads that very file (tools/ci/lane_ready_doc_reads.txt). This also beats the "directory the branch changed" rule.
+    if (NON_CODE.some((re) => re.test(f))) {
+      if (docReads.some((g) => f.startsWith(g))) hits.push(`${f} (a doc a tool reads, tools/ci/lane_ready_doc_reads.txt)`);
+      else ignored.push(f);
+      continue;
+    }
     if (own.includes(f)) why = 'a file the branch changed';
     else if ([...snaps].some((d) => f.startsWith(d))) why = 'a snapshot its tests read';
     else if (tfiles.has(f)) why = 'a file that defines its tests';
@@ -122,9 +131,10 @@ function check(ref, master) {
     if (why) hits.push(`${f} (${why})`);
   }
   if (hits.length) {
-    return { verdict: 'INVALID', why: `master changed ${hits.length} file(s) the stamp depends on since ${String(s.master_commit).slice(0, 10)}: ${hits.slice(0, 4).join('; ')}${hits.length > 4 ? '; ...' : ''}`, tests };
+    return { verdict: 'INVALID', why: `master changed ${hits.length} file(s) the stamp depends on since ${String(s.master_commit).slice(0, 10)}: ${hits.slice(0, 8).join('; ')}${hits.length > 8 ? '; ...' : ''}${ignored.length ? ` (${ignored.length} changelog/doc/data file(s) ignored)` : ''}`, tests };
   }
-  return { verdict: 'VALID', why: `master moved ${delta.length} file(s) since ${String(s.master_commit).slice(0, 10)}, none the branch's files, directories or tests depend on`, tests };
+  const others = delta.length - ignored.length;
+  return { verdict: 'VALID', why: `kept: master moved ${delta.length} file(s) since ${String(s.master_commit).slice(0, 10)}; ${ignored.length} changelog/doc/data file(s) ignored${ignored.length ? ` (${ignored.slice(0, 3).join(', ')}${ignored.length > 3 ? ', ...' : ''})` : ''}; ${others} other file(s), none the branch's files, directories, covers or tests depend on`, tests };
 }
 
 const args = process.argv.slice(2);

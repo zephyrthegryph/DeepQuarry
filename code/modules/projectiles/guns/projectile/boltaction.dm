@@ -93,11 +93,11 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial)
 	var/mob/user = A.actor
 	if(sawn_off)
 		return
-	icon_state = "sawn_rifle"
+	set_icon_state("sawn_rifle")
 	set_w_class(ITEMSIZE_NORMAL)
 	recoil = 2 // Owch
 	accuracy = -15 // You know damn well why.
-	item_state = "gun"
+	set_item_state("gun")
 	set_slot_flags(worn_of(src).slots & (~SLOT_BACK))// You can't sling it on your back
 	set_slot_flags(worn_of(src).slots | ((SLOT_BELT|SLOT_HOLSTER)))// But you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
 	name = "sawn-off rifle"

@@ -57,6 +57,7 @@ GLOBAL_PROTECT(surgical_steps)
 			return S
 	return null
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/surgical_step)
 /datum/surgical_step
 	// Base types set abstract_type to their own path; they are not registered.
 	abstract_type = /datum/surgical_step

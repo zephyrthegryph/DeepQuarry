@@ -20,7 +20,7 @@
 	var/material_temperature = SSair?.initialized ? get_temperature() : initial_temperature
 	var/list/facts = wall_material_facts(material_temperature)
 	var/missing = max_integrity - get_integrity()
-	max_integrity = facts[WALL_FACT_INTEGRITY]
+	set_max_integrity(facts[WALL_FACT_INTEGRITY])
 	update_integrity(max(1, max_integrity - missing))
 	explosion_resistance = facts[WALL_FACT_EXPLOSION]
 	thermal_conductivity = facts[WALL_FACT_CONDUCTIVITY]
@@ -70,7 +70,7 @@ DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material
 
 /// Gives the wall these materials (the tracked material and reinforcement redraw it and make the walls around it join it again).
 /turf/simulated/wall/proc/apply_materials(datum/material/newmaterial, datum/material/newrmaterial, datum/material/newgmaterial)
-	set_material(newmaterial)
+	rel_set(src, nameof(material), newmaterial)
 	set_reinf_material(newrmaterial)
 	if(!newgmaterial)
 		girder_material = DEFAULT_WALL_MATERIAL
@@ -223,7 +223,7 @@ DECLARE_SHARED_CACHE_EX(wall_overlay_sets, GLOBAL_PROC_REF(build_wall_overlay_se
 	if(propagate)
 		adjacency_refresh(src, TRUE) // a material change the index cannot see: this wall and its neighbours look again
 	var/list/dirs = adjacency_mask_dirs(smooth_mask)
-	special_wall_connections(dirs, orange(src, 1))
+	special_wall_connections(dirs)
 	set_wall_connections(string_list(dirs_to_corner_states(dirs)))
 
 /// wall_connections, or the unconnected corner states before update_connections() has run.
@@ -231,7 +231,7 @@ DECLARE_SHARED_CACHE_EX(wall_overlay_sets, GLOBAL_PROC_REF(build_wall_overlay_se
 	var/static/list/unconnected = list("0", "0", "0", "0")
 	return wall_connections || unconnected
 
-/turf/simulated/wall/proc/special_wall_connections(list/dirs, list/inrange)
+/turf/simulated/wall/proc/special_wall_connections(list/dirs)
 	if(material.icon_base == "hull") // Could be improved...
 		var/additional_dirs = 0
 		for(var/direction in GLOB.alldirs)

@@ -202,7 +202,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 
 /// Where a loaf may be cut: it lies on a table, an operating table or a tray.
 /obj/item/reagent_containers/food/snacks/proc/on_cutting_surface()
-	return isturf(loc) && ((locate_within(loc, /obj/structure/table)) || (locate_within(loc, /obj/machinery/optable)) || (locate_within(loc, /obj/item/tray))) // ALLOW(reads): where the loaf lies is read when it is cut; the click asks again
+	return isturf(loc) && ((locate_within(loc, /obj/structure/table)) || (locate_within(loc, /obj/machinery/optable)) || (locate_within(loc, /obj/item/tray)))
 
 /// An edged thing is held to a loaf on a cutting surface.
 /obj/item/reagent_containers/food/snacks/proc/is_cut_by_held(datum/act/op/A)
@@ -310,7 +310,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 		var/obj/item/T = new package_trash
 		user.put_in_hands(T)
 	if(package_open_state)
-		icon_state = package_open_state
+		set_icon_state(package_open_state)
 		if(package_opening_state)
 			flick(package_opening_state, src)
 
@@ -320,7 +320,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 	balloon_alert(user, "unsealed \the [src]")
 	playsound(loc,opening_sound, rand(10,50), 1)
 	if(canned_open_state)
-		icon_state = canned_open_state
+		set_icon_state(canned_open_state)
 
 ////////////////////////////////////////////////////////////////////////////////
 /// FOOD END
@@ -778,7 +778,7 @@ MSG_DEF_SELF(snack/egg_refuses, "The egg refuses to take on this color!")
 	var/obj/item/pen/crayon/C = A.held
 	var/clr = C.colourName
 	to_chat(A.actor, span_blue("You color \the [src] [clr]"))
-	icon_state = "egg-[clr]"
+	set_icon_state("egg-[clr]")
 	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/egg/blue
@@ -1816,7 +1816,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 	return H
 
 /obj/item/reagent_containers/food/snacks/monkeycube/proc/Unwrap(mob/user as mob)
-	icon_state = "monkeycube"
+	set_icon_state("monkeycube")
 	desc = "Just add water!"
 	to_chat(user, "You unwrap the cube.")
 	set_wrapped(FALSE)
@@ -5360,7 +5360,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/dip)
 
 /// What a chip dipped here becomes, or null when it is not one that can be.
 /obj/item/reagent_containers/food/snacks/dip/proc/dipped_type(obj/item/reagent_containers/food/snacks/item)
-	if(istype(item, /obj/item/reagent_containers/food/snacks/chip/nacho) && item.icon_state == "nacho") // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	if(istype(item, /obj/item/reagent_containers/food/snacks/chip/nacho) && item.icon_state == "nacho")
 		return nachotrans
 	if(istype(item, /obj/item/reagent_containers/food/snacks/chip) && (item.icon_state == "chip" || item.icon_state == "chip_half"))
 		return chiptrans
@@ -5379,12 +5379,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/dip)
 	var/memed = 0
 	item.reagents.trans_to(returningitem, item.reagents.total_volume) //Old chip to new chip
 	if(item.icon_state == "chip_half")
-		returningitem.icon_state = "[returningitem.icon_state]_half"
+		returningitem.set_icon_state("[returningitem.icon_state]_half")
 		returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
 	else if(prob(1))
 		memed = 1
 		to_chat(user, "You scoop up some dip with the chip, but mid-scop, the chip breaks off into the dreadful abyss of dip, never to be seen again...")
-		returningitem.icon_state = "[returningitem.icon_state]_half"
+		returningitem.set_icon_state("[returningitem.icon_state]_half")
 		returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
 	else
 		returningitem.bitesize = clamp(returningitem.reagents.total_volume*0.5,1,10)

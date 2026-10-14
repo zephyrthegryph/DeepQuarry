@@ -68,7 +68,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 		return /datum/msg/charger/wrong_cell
 	if(charging)
 		return /datum/msg/bay/full
-	var/area/a = loc?.loc // ALLOW(reads): the area a machine stands in is legacy map state, read when a cell is offered, never from a cached menu
+	var/area/a = loc?.loc
 	if(isarea(a) && a.power_equip == 0)
 		return /datum/msg/charger/no_area_power
 	return null
@@ -128,7 +128,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 	var/obj/item/cell/cell = charging
 	if(cell && operable())
 		look.overlay("ccharger-o[chargelevel]")
-		look.overlay(cell.icon_state, icon = cell.icon) // ALLOW(sys_dx_untracked_read): a cell's sprite is fixed for its life
+		look.overlay(cell.icon_state, icon = cell.icon)
 		look.overlay("ccharger-[cell.connector_type]-on") // ALLOW(sys_dx_untracked_read): a cell's connector type is fixed for its life
 	else if(anchored)
 		look.overlay("ccharger1")

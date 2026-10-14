@@ -101,7 +101,7 @@ CAPABILITIES(/obj/item/clothing/shoes/white)
 		return
 	rel_set(src, nameof(chained), cuffs)
 	slowdown = 15
-	icon_state = "orange1"
+	set_icon_state("orange1")
 
 /obj/item/clothing/shoes/orange/proc/remove_cuffs(mob/user as mob)
 	if (!chained()) return
@@ -110,7 +110,7 @@ CAPABILITIES(/obj/item/clothing/shoes/white)
 	chained().add_fingerprint(user)
 
 	slowdown = initial(slowdown)
-	icon_state = "orange"
+	set_icon_state("orange")
 	rel_clear(src, nameof(chained))
 
 CAPABILITIES(/obj/item/clothing/shoes/orange)

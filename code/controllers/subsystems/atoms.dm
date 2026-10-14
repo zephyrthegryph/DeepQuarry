@@ -56,16 +56,29 @@ SYSTEM_DEF(atoms)
 
 	atom_initialized = INITIALIZATION_INNEW_MAPLOAD
 	booting = TRUE
+	var/atoms_phase_start = REALTIMEOFDAY
 	InitializeAtoms()
+	log_world("Atoms boot: InitializeAtoms (map atoms) took [(REALTIMEOFDAY - atoms_phase_start) / 10]s.")
 	booting = FALSE
 	atom_initialized = INITIALIZATION_INNEW_REGULAR
 
 	// Services that set up on the initialized map declare needs = list(/datum/system/atoms) (pai, xenoarch,
 	// events, night shift, antagonists, radio, crew transfer); the boot DAG boots them next.
+	atoms_phase_start = REALTIMEOFDAY
 	validate_property_registry()
+	log_world("Atoms boot: validate_property_registry took [(REALTIMEOFDAY - atoms_phase_start) / 10]s.")
+	atoms_phase_start = REALTIMEOFDAY
 	// Map load and the initial materialize batch are done: validate the ownership table of every
 	// mapped and registered type now, not on first use (doc/rewrite/ownership.md sec 8).
+	#ifdef UNIT_TESTS
+	if(unit_test_boot_skips(BOOT_NEED_OWN_VALIDATE))
+		unit_test_boot_skipped(BOOT_NEED_OWN_VALIDATE, "own_validate_boot (ownership tables are built on first use instead)")
+	else
+		own_validate_boot()
+	#else
 	own_validate_boot()
+	#endif
+	log_world("Atoms boot: own_validate_boot took [(REALTIMEOFDAY - atoms_phase_start) / 10]s.")
 
 /datum/system/atoms/proc/InitializeAtoms(list/atoms, list/atoms_to_return)
 	var/list/run = initialize_atoms_begin(atoms_to_return)
