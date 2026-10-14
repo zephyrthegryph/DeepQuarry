@@ -189,8 +189,7 @@
 /obj/item/tool/screwdriver/test_driver
 	icon = 'icons/obj/directional_test.dmi'
 
-/obj/item/tool/screwdriver/test_driver/Initialize(mapload)
-	. = ..()
+/obj/item/tool/screwdriver/test_driver/proc/prepare_reactive_icon()
 	add_reactive_icon(directions = list(NORTH, EAST, SOUTH, WEST, SOUTHWEST, SOUTHEAST, NORTHEAST, NORTHWEST), range = 3)
 
 /datum/reactive_icon_update/proc/mob_check(mob/triggering_mob)
@@ -207,3 +206,6 @@ CAPABILITIES(/datum/reactive_icon_update)
 /obj/item/tool/screwdriver/test_driver/draw(datum/look/look)
 	..()
 	look.state("screwdriver")
+
+CAPABILITIES(/obj/item/tool/screwdriver/test_driver)
+	setup(PROC_REF(prepare_reactive_icon))

@@ -21,6 +21,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/ntnet_relay)
+	setup(PROC_REF(register_initial_relay))
 	configure(uses_power(active = 20000, idle = 100))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
@@ -101,8 +102,7 @@ CAPABILITIES(/obj/machinery/ntnet_relay)
 	GLOB.ntnet_global.add_log("Manual override: Network blacklist cleared.")
 	. = TRUE
 
-/obj/machinery/ntnet_relay/Initialize(mapload)
-	. = ..()
+/obj/machinery/ntnet_relay/proc/register_initial_relay()
 	assign_uid()
 	default_apply_parts()
 	if(GLOB.ntnet_global)

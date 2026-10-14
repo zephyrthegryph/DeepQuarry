@@ -26,9 +26,7 @@
 	gen[circuit] = 1
 	return gen
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
-/obj/machinery/telepad/Initialize(mapload)
-	. = ..()
+/obj/machinery/telepad/proc/prepare_empty_parts()
 	rel_take_all(src, nameof(component_parts))
 	RefreshParts()
 
@@ -47,6 +45,7 @@
 	return default_part_replacement(A.actor, A.held) ? OP_OK : OP_DECLINE
 
 CAPABILITIES(/obj/machinery/telepad)
+	setup(PROC_REF(prepare_empty_parts))
 	configure(uses_power(idle = 200, active = 5000))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("part_replacement_impl", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))

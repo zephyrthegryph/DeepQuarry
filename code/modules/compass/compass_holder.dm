@@ -25,10 +25,10 @@
 	)
 
 CAPABILITIES(/obj/compass_holder)
+	setup(PROC_REF(prepare_compass_markers))
 	owns_many(nameof(compass_waypoints))
 
-/obj/compass_holder/Initialize(mapload, ...)
-	. = ..()
+/obj/compass_holder/proc/prepare_compass_markers()
 	if(show_heading)
 		set_compass_heading_marker(new /image/compass_marker)
 		compass_heading_marker.maptext = "<center>" + span_normal(span_cyan(span_bold("△"))) + "</center>"
@@ -59,7 +59,7 @@ CAPABILITIES(/obj/compass_holder)
 		I.filters = filter(type="drop_shadow", color = "#77777777", size = 2, offset = 1,x = 0, y = 0)
 		I.layer = LAYER_HUD_UNDER
 		I.plane = PLANE_PLAYER_HUD
-		LAZYADD(compass_static_labels, I)
+		add_compass_static_labels(I)
 
 	rebuild_overlay_lists()
 

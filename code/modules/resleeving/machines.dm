@@ -159,8 +159,7 @@ CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
 	gen[circuit] = 1
 	return gen
 
-/obj/machinery/transhuman/synthprinter/Initialize(mapload)
-	. = ..()
+/obj/machinery/transhuman/synthprinter/proc/prepare_empty_parts()
 	rel_clear(src, nameof(component_parts)) // this machine runs without stock parts
 	RefreshParts()
 
@@ -190,6 +189,7 @@ CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
 /// Prints while busy with a body; idle, it sleeps until one is queued.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/transhuman/synthprinter)
+	setup(PROC_REF(prepare_empty_parts))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(busy), wakes_on = list(nameof(busy)))
 	op("synthprinter_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(synthprinter_interaction_hand)))
 	op("synthprinter_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(synthprinter_interaction_item)))
@@ -337,8 +337,7 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	gen[circuit] = 1
 	return gen
 
-/obj/machinery/transhuman/resleever/Initialize(mapload)
-	. = ..()
+/obj/machinery/transhuman/resleever/proc/prepare_empty_parts()
 	rel_clear(src, nameof(component_parts)) // this machine runs without stock parts
 	RefreshParts()
 
@@ -371,6 +370,7 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	return istext(answer) ? answer : (answer ? null : /datum/msg/req_failed)
 
 CAPABILITIES(/obj/machinery/transhuman/resleever)
+	setup(PROC_REF(prepare_empty_parts))
 	interface("ResleevingPod", title = "Resleever")
 	without("ui_open")
 	ui_shape(occupied = bool(), name = schema_text(), health = num(), stat = num(), mindStatus = bool(), mindName = schema_text())

@@ -42,8 +42,7 @@
 // Standard procs
 //-------------------------------------------
 
-/obj/vehicle/train/engine/Initialize(mapload)
-	. = ..()
+/obj/vehicle/train/engine/proc/stop_initial_engine()
 	turn_off()	//so engine verbs are correctly set
 
 /obj/vehicle/train/engine/Move(atom/newloc, direct = 0, movetime)
@@ -74,6 +73,7 @@ CAPABILITIES(/obj/vehicle/train/trolley)
 	return OP_OK
 
 CAPABILITIES(/obj/vehicle/train/engine)
+	setup(PROC_REF(stop_initial_engine))
 	op("engine_key", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Insert key"), then(PROC_REF(interaction_engine_key)))
 	op("engine_remove_key_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Remove key"), then(PROC_REF(interaction_engine_remove_key)))
 	op("engine_start_engine", menu(), label("Start engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), FALSE, because = MSG(vehicle/already_running))), then(PROC_REF(engine_start_engine)))
@@ -402,6 +402,7 @@ CAPABILITIES(/obj/vehicle/train/engine)
 	paint_color = "#efdd16"
 
 CAPABILITIES(/obj/vehicle/train/trolley_tank)
+	setup(PROC_REF(register_tank_sale))
 	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
 	reagents(CARGOTANKER_VOLUME)
 	climb()
@@ -415,8 +416,7 @@ CAPABILITIES(/obj/vehicle/train/trolley_tank)
 		then(PROC_REF(relabelled)))
 	op("trolley_tank_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Interaction trolley tank drag"), then(PROC_REF(interaction_trolley_tank_drag)))
 
-/obj/vehicle/train/trolley_tank/Initialize(mapload)
-	. = ..()
+/obj/vehicle/train/trolley_tank/proc/register_tank_sale()
 	make_sellable(/datum/sellable/trolley_tank)
 
 /obj/vehicle/train/trolley_tank/insert_cell(obj/item/cell/C, mob/living/carbon/human/H)

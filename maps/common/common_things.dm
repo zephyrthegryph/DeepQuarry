@@ -172,12 +172,11 @@
 	name = "science outpost linked multitool"
 	desc = "It has the data for the science outpost's quantum pad pre-loaded... assuming you didn't override it."
 
-/obj/item/multitool/scioutpost/Initialize(mapload)
-	. = ..()
+/obj/item/multitool/scioutpost/proc/find_outpost_pad()
 	for(var/obj/machinery/power/quantumpad/scioutpost/outpost in world)
 		rel_set(src, nameof(connectable), outpost)
 		if(connectable())
-			icon_state = "multitool_red"
+			set_icon_state("multitool_red")
 		return
 
 /obj/machinery/power/quantumpad/scioutpost
@@ -317,3 +316,6 @@ CAPABILITIES(/obj/sc_away_spawner)
 	icon_contents = "boxes"
 	icon_state = "smartfridge"
 	name = "Advanced storage"
+
+CAPABILITIES(/obj/item/multitool/scioutpost)
+	setup(PROC_REF(find_outpost_pad))

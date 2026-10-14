@@ -12,6 +12,7 @@
 	var/const/max_notices = 5
 
 CAPABILITIES(/obj/structure/noticeboard)
+	setup(PROC_REF(collect_initial_notices))
 	owns_many(nameof(notices))
 	interface("NoticeBoard")
 	without("ui_open")
@@ -26,9 +27,7 @@ CAPABILITIES(/obj/structure/noticeboard)
 	op("use_wrench", tool(TOOL_WRENCH), starts(PROC_REF(wrench_started)), begins(PROC_REF(wrench_begins)), wait(5 SECONDS), then(PROC_REF(wrench_act_tool_done)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Offset"), wait(0), asks(/datum/prompt/choice/noticeboard_offset, step = "offset"), then(PROC_REF(offset_chosen)))
 
-// ALLOW(init/INSTANCE_STATE): takes the notices the map placed on its tile
-/obj/structure/noticeboard/Initialize(mapload)
-	. = ..()
+/obj/structure/noticeboard/proc/collect_initial_notices()
 	for(var/obj/item/paper/note in get_turf(src))
 		if(LAZYLEN(notices) >= max_notices)
 			break

@@ -18,11 +18,6 @@
 	var/footer = null
 	var/footerOn = FALSE
 
-/obj/item/paper/admin/Initialize(mapload)
-	. = ..()
-	generateInteractions()
-
-
 /obj/item/paper/admin/proc/generateInteractions()
 	//clear first
 	admin_fax_links = null
@@ -92,6 +87,7 @@
 	tgui_interact(ask.answerer)
 
 CAPABILITIES(/obj/item/paper/admin)
+	setup(PROC_REF(generateInteractions))
 	op("penmode", ui_act("penmode"), then(PROC_REF(admin_paper_penmode)))
 	op("clear", ui_act("clear"), then(PROC_REF(admin_paper_clear)))
 	op("toggleheader", ui_act("toggleheader"), then(PROC_REF(admin_paper_toggleheader)))

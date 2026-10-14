@@ -23,14 +23,14 @@
 	var/tmp/datum/transcore_db/our_db_static	// These persist all round and are never destroyed, just keep a hard ref
 
 CAPABILITIES(/obj/machinery/computer/transhuman/designer)
+	setup(PROC_REF(connect_initial_database))
 	configure(light_glow(color = "#315ab4"))
 	owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(designer_gui), /datum/tgui_module/appearance_changer/body_designer)
 	op("body_designer_insert_disk", item(/obj/item/disk/body_record), priority(OP_PRIORITY_DEFAULT - 1), label("Insert disk"), then(PROC_REF(body_designer_interaction_insert_disk)))
 	op("body_designer_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(body_designer_interaction_hand)))
 
-/obj/machinery/computer/transhuman/designer/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/transhuman/designer/proc/connect_initial_database()
 	our_db_static = SStranscore.db_by_key(db_key)
 
 

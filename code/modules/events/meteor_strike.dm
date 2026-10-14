@@ -81,14 +81,14 @@ CAPABILITIES(/obj/effect/meteor_falling)
 	density = TRUE
 
 CAPABILITIES(/obj/structure/meteorite)
+	setup(PROC_REF(rotate_initial_meteorite))
 	initial_contents(PROC_REF(roll_contents))
 	climb()
 	op("item", item(/obj/item/pickaxe), label("Use"), begins(PROC_REF(break_apart_text)), wait(PROC_REF(break_apart_time)), then(PROC_REF(break_apart_done)))
 
 // ALLOW(init/INSTANCE_STATE): rolls the ore or artifact this meteorite holds
-/obj/structure/meteorite/Initialize(mapload)
-	. = ..()
-	icon = turn(icon, 90)
+/obj/structure/meteorite/proc/rotate_initial_meteorite()
+	set_icon(turn(icon, 90))
 
 /// What it holds: mostly iron ore, sometimes a mix of precious ores, now and then an artifact.
 /obj/structure/meteorite/proc/roll_contents(datum/roller/R)

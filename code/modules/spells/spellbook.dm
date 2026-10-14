@@ -160,11 +160,11 @@
 	desc = "This template spellbook was never meant for the eyes of man..."
 	special_handling = TRUE
 
-/obj/item/spellbook/oneuse/Initialize(mapload)
-	. = ..()
+/obj/item/spellbook/oneuse/proc/append_spell_name()
 	name += spellname
 
 CAPABILITIES(/obj/item/spellbook/oneuse)
+	setup(PROC_REF(append_spell_name))
 	op("learn_spell", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Read"), then(PROC_REF(interaction_learn_spell)))
 	op("pass", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction pass"), passes())
 

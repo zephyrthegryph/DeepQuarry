@@ -16,9 +16,7 @@
 /// It has a step to take: an alarm to count down, or a diffuse pass while enabled.
 /obj/machinery/shield_diffuser/proc/diffuser_has_work()
 	return enabled || alarm
-// ALLOW(init/INSTANCE_STATE): takes its built parts and hides under the floor tile it is placed on
-/obj/machinery/shield_diffuser/Initialize(mapload)
-	. = ..()
+/obj/machinery/shield_diffuser/proc/hide_under_initial_floor()
 
 	var/turf/T = get_turf(src)
 	hide(!T.is_plating())
@@ -33,6 +31,7 @@
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/shield_diffuser)
+	setup(PROC_REF(hide_under_initial_floor))
 	configure(uses_power(idle = 25, active = 500))
 	default_parts()
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(diffuser_has_work), wakes_on = list(nameof(enabled), nameof(alarm)))

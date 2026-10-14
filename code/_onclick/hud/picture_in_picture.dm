@@ -17,15 +17,14 @@
 
 CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	ref_one(nameof(center))
+	setup(PROC_REF(prepare_popup_views))
 	owns_one(nameof(button_expand), /atom/movable/screen/component_button)
 	owns_one(nameof(button_pop), /atom/movable/screen/component_button)
 	owns_one(nameof(button_shrink), /atom/movable/screen/component_button)
 	owns_one(nameof(button_x), /atom/movable/screen/component_button)
 	owns_one(nameof(popup_screen), /atom/movable/screen/map_view_tg, starts = /atom/movable/screen/map_view_tg, starts_args = NO_LOC)
 
-// ALLOW(init/INSTANCE_STATE): its map view is made per window and named after this instance
-/atom/movable/screen/movable/pic_in_pic/Initialize(mapload)
-	. = ..()
+/atom/movable/screen/movable/pic_in_pic/proc/prepare_popup_views()
 	make_backgrounds()
 	popup_screen.generate_view("camera-[REF(src)]_map")
 

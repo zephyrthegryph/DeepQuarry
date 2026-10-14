@@ -27,6 +27,7 @@
 	var/kickstand = 1
 
 CAPABILITIES(/obj/vehicle/bike)
+	setup(PROC_REF(prepare_initial_bike))
 	owns_one(nameof(ion), starts = /datum/effect/effect/system/ion_trail_follow)
 	op("vehicle_paint", tool(TOOL_MULTITOOL), when(req_is(nameof(open), TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Paint"), wait(0), asks(/datum/prompt/color/vehicle_paint, fields = list("default" = nameof(paint_color)), step = "colour"), then(PROC_REF(vehicle_paint_picked)))
 	op("bike_kickstand_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle kickstand"), then(PROC_REF(interaction_bike_kickstand)))
@@ -39,8 +40,7 @@ CAPABILITIES(/obj/vehicle/bike)
 	. = ..()
 	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 
-/obj/vehicle/bike/Initialize(mapload)
-	. = ..()
+/obj/vehicle/bike/proc/prepare_initial_bike()
 	ion.set_up(src)
 	turn_off()
 

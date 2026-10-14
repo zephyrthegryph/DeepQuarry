@@ -110,6 +110,7 @@
 	/// filter curve EQ w/ telephone preset
 
 CAPABILITIES(/obj/machinery/maint_recycler)
+	setup(PROC_REF(prepare_display_objects))
 	configure(light_glow(color = "#0f8f0f"))
 	configure(uses_power(idle = 300, active = 300))
 	after_init(0, then(PROC_REF(move_after_init)))
@@ -129,18 +130,17 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
 
-/obj/machinery/maint_recycler/Initialize(mapload)
-	. = ..()
+/obj/machinery/maint_recycler/proc/prepare_display_objects()
 	//init hatch
-	hatch.icon = 'code/modules/maint_recycler/icons/maint_recycler.dmi'
-	hatch.icon_state = "door closed"
+	hatch.set_icon('code/modules/maint_recycler/icons/maint_recycler.dmi')
+	hatch.set_icon_state("door closed")
 	hatch.layer = src.layer+0.1
 	src.vis_contents |= hatch
 
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
-	monitor_screen.icon = src.icon
-	monitor_screen.icon_state = "screen_off"
+	monitor_screen.set_icon(src.icon)
+	monitor_screen.set_icon_state("screen_off")
 
 	src.vis_contents |= monitor_screen
 

@@ -20,10 +20,6 @@
 		return TRUE
 	return ..()
 
-/obj/structure/shuttle/window/Initialize(mapload)
-	. = ..()
-	auto_join()
-
 /obj/structure/shuttle/window/proc/auto_join()
 	match_windows(NORTH, NORTH)
 	match_windows(EAST, EAST)
@@ -83,3 +79,6 @@
 /obj/structure/shuttle/engine/router
 	name = "router"
 	icon_state = "router"
+
+CAPABILITIES(/obj/structure/shuttle/window)
+	setup(PROC_REF(auto_join))

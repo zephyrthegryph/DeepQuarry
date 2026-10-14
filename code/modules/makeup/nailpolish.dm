@@ -11,9 +11,7 @@
 	var/colour = "#FFFFFF"
 	var/open = FALSE
 
-// ALLOW(init/INSTANCE_STATE): its description and sprite show the colour it was given
-/obj/item/nailpolish/Initialize(mapload)
-	. = ..()
+/obj/item/nailpolish/proc/describe_polish_color()
 	desc = "<font color='[colour]'>Nail polish,</font> " + initial(desc)
 
 SETTER(/obj/item/nailpolish, colour)
@@ -27,6 +25,7 @@ SETTER(/obj/item/nailpolish, colour)
 
 
 CAPABILITIES(/obj/item/nailpolish)
+	setup(PROC_REF(describe_polish_color))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("nail_paint", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Paint nails"),

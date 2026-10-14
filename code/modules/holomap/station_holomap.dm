@@ -30,6 +30,7 @@
 
 
 CAPABILITIES(/obj/machinery/station_map)
+	setup(PROC_REF(prepare_initial_holomap))
 	configure(light_glow(color = "#64C864"))
 	configure(uses_power(idle = 10, active = 500))
 	without("silicon_hand") // silicons can't use it by a plain click
@@ -42,9 +43,8 @@ CAPABILITIES(/obj/machinery/station_map)
 
 /// The mob looking at the map (startWatching()/stopWatching()); it checks on them while set.
 /obj/machinery/station_map/var/mob/watching_mob
-/obj/machinery/station_map/Initialize(mapload)
-	. = ..()
-	original_zLevel = loc.z
+/obj/machinery/station_map/proc/prepare_initial_holomap()
+	set_original_zLevel(loc.z)
 	if(holomaps_holomaps_initialized())
 		setup_holomap()
 

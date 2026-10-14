@@ -20,8 +20,7 @@
 
 	var/lg_id = "change_me"
 
-/obj/machinery/computer/looking_glass/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/looking_glass/proc/link_viewing_area()
 	for(var/area/looking_glass/lga in world)
 		if(lga.lg_id == lg_id)
 			my_area = lga
@@ -53,6 +52,7 @@
 	.["Teshari 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "eis")
 
 CAPABILITIES(/obj/machinery/computer/looking_glass)
+	setup(PROC_REF(link_viewing_area))
 	per_type(nameof(supported_programs), PROC_REF(build_supported_programs))
 	per_type(nameof(secret_programs), PROC_REF(build_secret_programs))
 	configure(uses_power(active = 8000))

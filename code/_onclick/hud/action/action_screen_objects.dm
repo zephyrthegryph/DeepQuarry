@@ -283,10 +283,6 @@ CAPABILITIES(/atom/movable/screen/movable/action_button)
 
 // the hud owns us as its toggle_palette; one deleted on its own clears that var.
 
-/atom/movable/screen/button_palette/Initialize(mapload)
-	. = ..()
-	update_name()
-
 /atom/movable/screen/button_palette/proc/set_hud(datum/hud/our_hud)
 	rel_set(src, nameof(our_hud), our_hud)
 	refresh_owner()
@@ -335,6 +331,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 
 CAPABILITIES(/atom/movable/screen/button_palette)
 	ref_one(nameof(our_hud))
+	setup(PROC_REF(update_name))
 	click_on(PROC_REF(click_input))
 	tooltip(PROC_REF(palette_tooltip))
 

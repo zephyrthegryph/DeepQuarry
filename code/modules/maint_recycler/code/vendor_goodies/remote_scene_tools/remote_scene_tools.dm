@@ -182,7 +182,6 @@ why aren't these accessories?
 	var/obj/item/remote_scene_tool/RST2 = new secondary(loc = src)
 	RST.link_to(RST2)
 	RST2.link_to(RST)
-	calibrate_size()
 
 /obj/item/remote_scene_tool/proc/getWearer()
 	if(ismob(loc))
@@ -229,3 +228,6 @@ CAPABILITIES(/obj/item/remote_scene_tool)
 /// Accessor for the worn_mob var.
 /obj/item/remote_scene_tool/proc/worn_mob() as /mob
 	return worn_mob
+
+CAPABILITIES(/obj/item/storage/box/remote_scene_tools)
+	setup(PROC_REF(calibrate_size))

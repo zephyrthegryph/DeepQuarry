@@ -9,10 +9,6 @@
 	unacidable = TRUE
 	layer = STAIRS_LAYER
 
-/obj/structure/stairs/Initialize(mapload)
-	. = ..()
-	check_integrity()
-
 // Returns TRUE if the stairs are a complete and connected unit, FALSE if a piece is missing or obstructed
 // Will attempt to reconnect broken pieces
 // Parameters:
@@ -536,3 +532,6 @@ CAPABILITIES(/obj/structure/stairs/spawner)
 /obj/structure/stairs/spawner/west
 	dir = WEST
 	bound_width = 64
+
+CAPABILITIES(/obj/structure/stairs)
+	setup(PROC_REF(check_integrity))

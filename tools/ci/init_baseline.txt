@@ -110,23 +110,6 @@ init_lines	code/ATMOSPHERICS/pipes/simple.dm	@/obj/machinery/atmospherics/pipe/s
 init_lines	code/ATMOSPHERICS/pipes/simple.dm	@/obj/machinery/atmospherics/pipe/simple::Initialize::alpha
 init_lines	code/_helpers/radiation.dm	@/turf/simulated::Initialize::if
 init_lines	code/_helpers/radiation.dm	@/turf/simulated::Initialize::RAD_SHIELDING_CHANGED
-init_lines	code/_onclick/hud/ability_screen_objects.dm	@/atom/movable/screen/movable/ability_master::Initialize::if
-init_lines	code/_onclick/hud/ability_screen_objects.dm	@/atom/movable/screen/movable/ability_master::Initialize::rel_set
-init_lines	code/_onclick/hud/ability_screen_objects.dm	@/atom/movable/screen/movable/ability_master::Initialize::update_abilities
-init_lines	code/_onclick/hud/ability_screen_objects.dm	@/atom/movable/screen/movable/ability_master::Initialize::else
-init_lines	code/_onclick/hud/ability_screen_objects.dm	@/atom/movable/screen/movable/ability_master::Initialize::message_admins
-init_lines	code/_onclick/hud/action/action_screen_objects.dm	@/atom/movable/screen/button_palette::Initialize::update_name
-init_lines	code/_onclick/hud/picture_in_picture.dm	@/atom/movable/screen/movable/pic_in_pic::Initialize::make_backgrounds
-init_lines	code/_onclick/hud/picture_in_picture.dm	@/atom/movable/screen/movable/pic_in_pic::Initialize::popup_screen.generate_view
-init_lines	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/movable/mapper_holder::Initialize::frame.icon_state
-init_lines	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/movable/mapper_holder::Initialize::expr
-init_lines	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/movable/mapper_holder::Initialize::expr
-init_lines	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/movable/mapper_holder::Initialize::expr
-init_lines	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/movable/mapper_holder::Initialize::expr
-init_lines	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/movable/mapper_holder::Initialize::mask_full.vis_contents.Add
-init_lines	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/movable/mapper_holder::Initialize::mask_ping.vis_contents.Add
-init_lines	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/movable/mapper_holder::Initialize::frame.vis_contents.Add
-init_lines	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/movable/mapper_holder::Initialize::vis_contents.Add
 init_lines	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/mapper::Initialize::rel_set
 init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::gvars_datum_init_order
 init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::gvars_datum_protected_varlist
@@ -149,15 +132,9 @@ init_lines	code/datums/gear/loadout_shoes.dm	@/obj/item/clothing/shoes/none::Ini
 init_lines	code/datums/gear/loadout_shoes.dm	@/obj/item/clothing/shoes/none::Initialize::thing.forceMove
 init_lines	code/datums/gear/loadout_shoes.dm	@/obj/item/clothing/shoes/none::Initialize::moveToNullspace
 init_lines	code/datums/gear/loadout_shoes.dm	@/obj/item/clothing/shoes/none::Initialize::expire
-init_lines	code/datums/reactive_icon_update.dm	@/obj/item/tool/screwdriver/test_driver::Initialize::add_reactive_icon
 init_lines	code/datums/repositories/decls.dm	@/datum/decl::Initialize::SHOULD_CALL_PARENT
 init_lines	code/datums/repositories/decls.dm	@/datum/decl::Initialize::SHOULD_NOT_SLEEP
 init_lines	code/datums/variants/crayon_variants.dm	@/obj/item/pen/crayon::Initialize::apply_variant
-init_lines	code/defines/obj/weapon.dm	@/obj/item/stock_parts/capacitor::Initialize::max_charge
-init_lines	code/game/area/ai_monitored.dm	@/area/ai_monitored::Initialize::for
-init_lines	code/game/area/ai_monitored.dm	@/area/ai_monitored::Initialize::if
-init_lines	code/game/area/ai_monitored.dm	@/area/ai_monitored::Initialize::rel_set
-init_lines	code/game/area/ai_monitored.dm	@/area/ai_monitored::Initialize::rel_set
 init_lines	code/game/area/areas.dm	@/area::Initialize::apply_ceiling
 init_lines	code/game/area/areas.dm	@/area::Initialize::luminosity
 init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::SHOULD_NOT_SLEEP
@@ -1215,7 +1192,6 @@ init_lines	code/game/objects/structures/window.dm	@/obj/structure/window::Initia
 init_lines	code/game/objects/structures/window.dm	@/obj/structure/window::Initialize::update_verbs
 init_lines	code/game/objects/structures/window.dm	@/obj/structure/window::Initialize::ini_dir
 init_lines	code/game/objects/structures/window.dm	@/obj/structure/window::Initialize::update_nearby_tiles
-init_lines	code/game/shuttle_engines.dm	@/obj/structure/shuttle/window::Initialize::auto_join
 init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::switch
 init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if
 init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::trees
@@ -1323,8 +1299,6 @@ init_lines	code/game/turfs/weird_turfs.dm	@/turf/simulated/floor/weird_things/da
 init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::if
 init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::return
 init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::GLOB.AdminProcCallHandler
-init_lines	code/modules/artifice/cursedform.dm	@/obj/item/paper/carbon/cursedform::Initialize::info
-init_lines	code/modules/artifice/cursedform.dm	@/obj/item/paper/carbon/cursedform::Initialize::info_links
 init_lines	code/modules/artifice/telecube.dm	@/obj/item/telecube::Initialize::on_floor
 init_lines	code/modules/artifice/telecube.dm	@/obj/item/telecube::Initialize::if
 init_lines	code/modules/artifice/telecube.dm	@/obj/item/telecube::Initialize::glow_color
@@ -1587,37 +1561,6 @@ init_lines	code/modules/clothing/under/xenos/vox.dm	@/obj/item/clothing/accessor
 init_lines	code/modules/clothing/under/xenos/vox.dm	@/obj/item/clothing/accessory/storage/vox::Initialize::hold.restrict_hold
 init_lines	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::Initialize::if
 init_lines	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::Initialize::initialize_ai_brain
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::if
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::compass_heading_marker
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::compass_heading_marker.maptext
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::compass_heading_marker.filters
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::compass_heading_marker.layer
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::compass_heading_marker.plane
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::for
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::I
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::image_anchor
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::str
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::str_col
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::if
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::angle
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::if
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::str
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::else
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::str
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::str_col
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::else
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::str
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::str_col
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::I.maptext
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::M
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::M.Translate
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::M.Turn
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::I.transform
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::I.filters
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::I.layer
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::I.plane
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::LAZYADD
-init_lines	code/modules/compass/compass_holder.dm	@/obj/compass_holder::Initialize::rebuild_overlay_lists
 init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::rel_set
 init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::machine_id
 init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::print_reference
@@ -1660,7 +1603,6 @@ init_lines	code/modules/economy/vending_refills.dm	@/obj/item/refill_cartridge/a
 init_lines	code/modules/economy/vending_refills.dm	@/obj/item/refill_cartridge/autoname::Initialize::name
 init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::if
 init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::LAZYSET
-init_lines	code/modules/events/meteor_strike.dm	@/obj/structure/meteorite::Initialize::icon
 init_lines	code/modules/exploration/lootsafe.dm	@/obj/structure/closet/crate/secure/lootsafe/numberlock::Initialize::make_code
 init_lines	code/modules/exploration/lootsafe.dm	@/obj/structure/closet/crate/secure/lootsafe/numberlock::Initialize::generate_loot
 init_lines	code/modules/exploration/lootsafe.dm	@/obj/structure/closet/crate/secure/lootsafe/devillock::Initialize::make_code
@@ -1731,29 +1673,6 @@ init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P.na
 init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P.card_icon
 init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P.back_icon
 init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::rel_add
-init_lines	code/modules/holodeck/HolodeckControl.dm	@/obj/machinery/computer/HolodeckControl::Initialize::current_program
-init_lines	code/modules/holodeck/HolodeckControl.dm	@/obj/machinery/computer/HolodeckControl::Initialize::linkedholodeck
-init_lines	code/modules/holodeck/HolodeckControl.dm	@/obj/machinery/computer/HolodeckControl::Initialize::if
-init_lines	code/modules/holodeck/HolodeckControl.dm	@/obj/machinery/computer/HolodeckControl::Initialize::to_chat
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::base_prefix
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::if
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::mask_icon
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::mark
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::mark.set_icon
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::mark.set_icon_state
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::mark.layer
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::rel_add
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::tmp
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::canvas
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::canvas.Crop
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::canvas.DrawBox
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::tmp.set_icon
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::rel_add
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::debug_mappers_list
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::debug_beacons_list
-init_lines	code/modules/holomap/station_holomap.dm	@/obj/machinery/station_map::Initialize::original_zLevel
-init_lines	code/modules/holomap/station_holomap.dm	@/obj/machinery/station_map::Initialize::if
-init_lines	code/modules/holomap/station_holomap.dm	@/obj/machinery/station_map::Initialize::setup_holomap
 init_lines	code/modules/hydroponics/beekeeping/beehive.dm	@/obj/item/stack/material/wax::Initialize::recipes
 init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::Initialize::if
 init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::Initialize::dried_type
@@ -1843,8 +1762,6 @@ init_lines	code/modules/identification/item_procs.dm	@/obj/item::Initialize::if
 init_lines	code/modules/identification/item_procs.dm	@/obj/item::Initialize::rel_set
 init_lines	code/modules/instruments/instrument_data/_instrument_data.dm	@/datum/instrument::Initialize::if
 init_lines	code/modules/instruments/instrument_data/_instrument_data.dm	@/datum/instrument::Initialize::calculate_samples
-init_lines	code/modules/instruments/items.dm	@/obj/item/instrument::Initialize::allowed_instrument_ids
-init_lines	code/modules/instruments/stationary.dm	@/obj/structure/musician::Initialize::allowed_instrument_ids
 init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/under/circuitry::Initialize::setup_integrated_circuit
 init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/gloves/circuitry::Initialize::setup_integrated_circuit
 init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/glasses/circuitry::Initialize::setup_integrated_circuit
@@ -1902,50 +1819,17 @@ init_lines	code/modules/integrated_electronics/subtypes/memory.dm	@/obj/item/int
 init_lines	code/modules/integrated_electronics/subtypes/memory.dm	@/obj/item/integrated_circuit/memory::Initialize::expr
 init_lines	code/modules/integrated_electronics/subtypes/memory.dm	@/obj/item/integrated_circuit/memory::Initialize::expr
 init_lines	code/modules/integrated_electronics/subtypes/memory.dm	@/obj/item/integrated_circuit/memory::Initialize::complexity
-init_lines	code/modules/library/lib_items.dm	@/obj/structure/bookcase::Initialize::for
-init_lines	code/modules/library/lib_items.dm	@/obj/structure/bookcase::Initialize::if
-init_lines	code/modules/library/lib_items.dm	@/obj/structure/bookcase::Initialize::I.forceMove
-init_lines	code/modules/looking_glass/lg_area.dm	@/area/looking_glass::Initialize::rel_set
-init_lines	code/modules/looking_glass/lg_area.dm	@/area/looking_glass::Initialize::if
-init_lines	code/modules/looking_glass/lg_area.dm	@/area/looking_glass::Initialize::log_mapping
-init_lines	code/modules/looking_glass/lg_area.dm	@/area/looking_glass::Initialize::for
-init_lines	code/modules/looking_glass/lg_area.dm	@/area/looking_glass::Initialize::rel_add
-init_lines	code/modules/looking_glass/lg_area.dm	@/area/looking_glass::Initialize::if
-init_lines	code/modules/looking_glass/lg_area.dm	@/area/looking_glass::Initialize::rel_add
-init_lines	code/modules/looking_glass/lg_console.dm	@/obj/machinery/computer/looking_glass::Initialize::for
-init_lines	code/modules/looking_glass/lg_console.dm	@/obj/machinery/computer/looking_glass::Initialize::if
-init_lines	code/modules/looking_glass/lg_console.dm	@/obj/machinery/computer/looking_glass::Initialize::my_area
-init_lines	code/modules/looking_glass/lg_console.dm	@/obj/machinery/computer/looking_glass::Initialize::expr
-init_lines	code/modules/looking_glass/lg_console.dm	@/obj/machinery/computer/looking_glass::Initialize::if
-init_lines	code/modules/looking_glass/lg_console.dm	@/obj/machinery/computer/looking_glass::Initialize::log_mapping
-init_lines	code/modules/looking_glass/lg_imageholder.dm	@/obj/effect/landmark/looking_glass::Initialize::viewers
 init_lines	code/modules/lore_codex/codex.dm	@/obj/item/book/codex::Initialize::rel_set
-init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::hatch.icon
-init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::hatch.icon_state
-init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::hatch.layer
-init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::vis_contents
-init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::monitor_screen.plane
-init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::monitor_screen.layer
-init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::monitor_screen.icon
-init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::monitor_screen.icon_state
-init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::vis_contents
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::for
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::entry
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::entry.initialize
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::rel_add
-init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::monitor_screen.plane
-init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::monitor_screen.layer
-init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::monitor_screen.icon
-init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::monitor_screen.icon_state
-init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::vis_contents
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::shuffle_inplace
 init_lines	code/modules/maint_recycler/code/util.dm	@/obj/effect/recycler_vendor_beacon::Initialize::GLOB.recycler_vendor_locations
 init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST
 init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST2
 init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST.link_to
 init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST2.link_to
-init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::calibrate_size
-init_lines	code/modules/makeup/nailpolish.dm	@/obj/item/nailpolish::Initialize::desc
 init_lines	code/modules/maps/merge_conflicts.dm	@/obj/merge_conflict_marker::Initialize::msg
 init_lines	code/modules/maps/merge_conflicts.dm	@/obj/merge_conflict_marker::Initialize::to_chat
 init_lines	code/modules/maps/merge_conflicts.dm	@/obj/merge_conflict_marker::Initialize::CRASH
@@ -1988,7 +1872,6 @@ init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::I
 init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::Initialize::if
 init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::Initialize::flags
 init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::Initialize::update_strings
-init_lines	code/modules/media/media_machinery.dm	@/obj/machinery/media::Initialize::update_media_source
 init_lines	code/modules/mining/abandonedcrates.dm	@/obj/structure/closet/crate/secure/loot::Initialize::generate_loot
 init_lines	code/modules/mining/machine_silo.dm	@/obj/machinery/ore_silo::Initialize::if
 init_lines	code/modules/mining/machine_silo.dm	@/obj/machinery/ore_silo::Initialize::GLOB.ore_silo_default
@@ -2322,13 +2205,6 @@ init_lines	code/modules/mob/mob_planes.dm	@/atom/movable/screen/plane_master/lig
 init_lines	code/modules/mob/mob_planes.dm	@/atom/movable/screen/plane_master/emissive::Initialize::add_filter
 init_lines	code/modules/mob/mob_planes.dm	@/atom/movable/screen/plane_master/openspace::Initialize::add_filter
 init_lines	code/modules/mob/mob_planes.dm	@/atom/movable/screen/plane_master/openspace::Initialize::add_filter
-init_lines	code/modules/modular_computers/NTNet/NTNet_relay.dm	@/obj/machinery/ntnet_relay::Initialize::assign_uid
-init_lines	code/modules/modular_computers/NTNet/NTNet_relay.dm	@/obj/machinery/ntnet_relay::Initialize::default_apply_parts
-init_lines	code/modules/modular_computers/NTNet/NTNet_relay.dm	@/obj/machinery/ntnet_relay::Initialize::if
-init_lines	code/modules/modular_computers/NTNet/NTNet_relay.dm	@/obj/machinery/ntnet_relay::Initialize::rel_add
-init_lines	code/modules/modular_computers/NTNet/NTNet_relay.dm	@/obj/machinery/ntnet_relay::Initialize::NTNet_static
-init_lines	code/modules/modular_computers/NTNet/NTNet_relay.dm	@/obj/machinery/ntnet_relay::Initialize::GLOB.ntnet_global.add_log
-init_lines	code/modules/modular_computers/NTNet/NTNet_relay.dm	@/obj/machinery/ntnet_relay::Initialize::soundloop.start
 init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	@/obj/item/modular_computer::Initialize::if
 init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	@/obj/item/modular_computer::Initialize::overlay_icon
 init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	@/obj/item/modular_computer::Initialize::install_default_hardware
@@ -2339,8 +2215,6 @@ init_lines	code/modules/modular_computers/hardware/_hardware.dm	@/obj/item/compu
 init_lines	code/modules/modular_computers/hardware/hard_drive.dm	@/obj/item/computer_hardware/hard_drive::Initialize::install_default_programs
 init_lines	code/modules/modular_computers/hardware/portable_hard_drive.dm	@/obj/item/computer_hardware/hard_drive/portable::Initialize::stored_files
 init_lines	code/modules/modular_computers/hardware/portable_hard_drive.dm	@/obj/item/computer_hardware/hard_drive/portable::Initialize::recalculate_size
-init_lines	code/modules/multiz/pipes.dm	@/obj/machinery/atmospherics/pipe/zpipe::Initialize::init_dir
-init_lines	code/modules/multiz/stairs.dm	@/obj/structure/stairs::Initialize::check_integrity
 init_lines	code/modules/multiz/turf.dm	@/turf/simulated/open::Initialize::ASSERT
 init_lines	code/modules/nifsoft/nif.dm	@/obj/item/nif::Initialize::if
 init_lines	code/modules/nifsoft/nif.dm	@/obj/item/nif::Initialize::big_icon
@@ -2467,7 +2341,6 @@ init_lines	code/modules/overmap/turfs.dm	@/turf/unsimulated/map::Initialize::if
 init_lines	code/modules/overmap/turfs.dm	@/turf/unsimulated/map::Initialize::px
 init_lines	code/modules/overmap/turfs.dm	@/turf/unsimulated/map::Initialize::coord_marks
 init_lines	code/modules/overmap/turfs.dm	@/turf/unsimulated/map::Initialize::make_z_transparent
-init_lines	code/modules/paperwork/adminpaper.dm	@/obj/item/paper/admin::Initialize::generateInteractions
 init_lines	code/modules/paperwork/filingcabinet.dm	@/obj/structure/filingcabinet::Initialize::for
 init_lines	code/modules/paperwork/filingcabinet.dm	@/obj/structure/filingcabinet::Initialize::if
 init_lines	code/modules/paperwork/filingcabinet.dm	@/obj/structure/filingcabinet::Initialize::I.forceMove
@@ -2545,10 +2418,6 @@ init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persisten
 init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::ProcessAndApplyTokens
 init_lines	code/modules/persistence/graffiti.dm	@/obj/effect/decal/writing::Initialize::if
 init_lines	code/modules/persistence/graffiti.dm	@/obj/effect/decal/writing::Initialize::SSpersistence.track_value
-init_lines	code/modules/persistence/noticeboard.dm	@/obj/structure/noticeboard::Initialize::for
-init_lines	code/modules/persistence/noticeboard.dm	@/obj/structure/noticeboard::Initialize::if
-init_lines	code/modules/persistence/noticeboard.dm	@/obj/structure/noticeboard::Initialize::expr
-init_lines	code/modules/persistence/noticeboard.dm	@/obj/structure/noticeboard::Initialize::move_into
 init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::if
 init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::SSpersistence.all_paintings
 init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::tokens
@@ -3003,13 +2872,6 @@ init_lines	code/modules/recycling/v_garbosystem.dm	@/obj/machinery/v_garbosystem
 init_lines	code/modules/recycling/v_garbosystem.dm	@/obj/machinery/v_garbosystem::Initialize::crusher
 init_lines	code/modules/recycling/v_garbosystem.dm	@/obj/machinery/v_garbosystem::Initialize::expr
 init_lines	code/modules/refinery/core/industrial_reagent_mixer.dm	@/obj/machinery/reagent_refinery/mixer::Initialize::mixer_angle
-init_lines	code/modules/refinery/core/industrial_reagent_mixer.dm	@/obj/machinery/reagent_refinery/mixer::Initialize::default_apply_parts
-init_lines	code/modules/refinery/core/industrial_reagent_reactor.dm	@/obj/machinery/reagent_refinery/reactor::Initialize::update_gas_network
-init_lines	code/modules/refinery/core/industrial_reagent_reactor.dm	@/obj/machinery/reagent_refinery/reactor::Initialize::COOLDOWN_START
-init_lines	code/modules/refinery/equipment/chemcontainer.dm	@/obj/item/reagent_containers/chem_canister::Initialize::if
-init_lines	code/modules/refinery/equipment/chemcontainer.dm	@/obj/item/reagent_containers/chem_canister::Initialize::R
-init_lines	code/modules/refinery/equipment/chemcontainer.dm	@/obj/item/reagent_containers/chem_canister::Initialize::if
-init_lines	code/modules/refinery/equipment/chemcontainer.dm	@/obj/item/reagent_containers/chem_canister::Initialize::canister
 init_lines	code/modules/research/message_server.dm	@/obj/machinery/message_server::Initialize::decryptkey
 init_lines	code/modules/research/message_server.dm	@/obj/machinery/message_server::Initialize::send_pda_message
 init_lines	code/modules/research/message_server.dm	@/obj/machinery/blackbox_recorder::Initialize::if
@@ -3069,17 +2931,11 @@ init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_no
 init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::LAZYSET
 init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::for
 init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::unlock_ids[id]
-init_lines	code/modules/resleeving/computers.dm	@/obj/machinery/computer/transhuman/resleeving::Initialize::updatemodules
-init_lines	code/modules/resleeving/designer.dm	@/obj/machinery/computer/transhuman/designer::Initialize::our_db_static
 init_lines	code/modules/resleeving/implant.dm	@/obj/item/backup_implanter::Initialize::for
 init_lines	code/modules/resleeving/implant.dm	@/obj/item/backup_implanter::Initialize::imp
 init_lines	code/modules/resleeving/implant.dm	@/obj/item/backup_implanter::Initialize::rel_add
 init_lines	code/modules/resleeving/implant.dm	@/obj/item/backup_implanter::Initialize::imp.germ_level
 init_lines	code/modules/resleeving/implant.dm	@/obj/item/backup_implanter::Initialize::update
-init_lines	code/modules/resleeving/machines.dm	@/obj/machinery/transhuman/synthprinter::Initialize::rel_clear
-init_lines	code/modules/resleeving/machines.dm	@/obj/machinery/transhuman/synthprinter::Initialize::RefreshParts
-init_lines	code/modules/resleeving/machines.dm	@/obj/machinery/transhuman/resleever::Initialize::rel_clear
-init_lines	code/modules/resleeving/machines.dm	@/obj/machinery/transhuman/resleever::Initialize::RefreshParts
 init_lines	code/modules/resleeving/sleevecard.dm	@/mob/living/silicon/pai/infomorph::Initialize::pda.ownjob
 init_lines	code/modules/resleeving/sleevecard.dm	@/mob/living/silicon/pai/infomorph::Initialize::pda.set_owner
 init_lines	code/modules/resleeving/sleevecard.dm	@/mob/living/silicon/pai/infomorph::Initialize::pda.name
@@ -3094,12 +2950,6 @@ init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/telepor
 init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/west::Initialize::teleport_z
 init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/east::Initialize::teleport_y
 init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/east::Initialize::teleport_z
-init_lines	code/modules/rogueminer/zone_console.dm	@/obj/machinery/computer/roguezones::Initialize::rel_set
-init_lines	code/modules/samples/samples.dm	@/obj/item/research_sample::Initialize::make_sellable
-init_lines	code/modules/shieldgen/emergency_shield.dm	@/obj/machinery/shield/malfai::Initialize::update_integrity
-init_lines	code/modules/shieldgen/emergency_shield.dm	@/obj/machinery/shield::Initialize::update_nearby_tiles
-init_lines	code/modules/shieldgen/shield_diffuser.dm	@/obj/machinery/shield_diffuser::Initialize::T
-init_lines	code/modules/shieldgen/shield_diffuser.dm	@/obj/machinery/shield_diffuser::Initialize::hide
 init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::if
 init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::for
 init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::if
@@ -3113,9 +2963,6 @@ init_lines	code/modules/shieldgen/shield_generator.dm	@/obj/machinery/power/shie
 init_lines	code/modules/shieldgen/shield_generator.dm	@/obj/machinery/power/shield_generator::Initialize::SM
 init_lines	code/modules/shieldgen/shield_generator.dm	@/obj/machinery/power/shield_generator::Initialize::rel_add
 init_lines	code/modules/shieldgen/shield_generator.dm	@/obj/machinery/power/shield_generator::Initialize::toggle_flag
-init_lines	code/modules/shieldgen/shield_generator.dm	@/obj/machinery/power/shield_generator/charged::Initialize::current_energy
-init_lines	code/modules/shieldgen/shield_generator.dm	@/obj/machinery/power/shield_generator/upgraded::Initialize::RefreshParts
-init_lines	code/modules/shieldgen/shield_generator.dm	@/obj/machinery/power/shield_generator/upgraded::Initialize::current_energy
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark::Initialize::if
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark::Initialize::if
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark::Initialize::A
@@ -3150,7 +2997,6 @@ init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttl
 init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::for
 init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/machinery/computer/shuttle_control/web::Initialize::log_shuttle
 init_lines	code/modules/shuttles/shuttles_web.dm	@/obj/shuttle_connector::Initialize::observe
-init_lines	code/modules/spells/spellbook.dm	@/obj/item/spellbook/oneuse::Initialize::name
 init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::if
 init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::rel_set
 init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::if
@@ -3166,19 +3012,6 @@ init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::alph
 init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::update_connections
 init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::update_desc
 init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::update_material
-init_lines	code/modules/telesci/telepad.dm	@/obj/machinery/telepad::Initialize::rel_take_all
-init_lines	code/modules/telesci/telepad.dm	@/obj/machinery/telepad::Initialize::RefreshParts
-init_lines	code/modules/vehicles/Securitrain.dm	@/obj/vehicle/train/security/engine::Initialize::turn_off
-init_lines	code/modules/vehicles/bike.dm	@/obj/vehicle/bike::Initialize::ion.set_up
-init_lines	code/modules/vehicles/bike.dm	@/obj/vehicle/bike::Initialize::turn_off
-init_lines	code/modules/vehicles/cargo_train.dm	@/obj/vehicle/train/engine::Initialize::turn_off
-init_lines	code/modules/vehicles/cargo_train.dm	@/obj/vehicle/train/trolley_tank::Initialize::make_sellable
-init_lines	code/modules/vehicles/janicart.dm	@/obj/vehicle/train/engine/janicart::Initialize::turn_off
-init_lines	code/modules/vehicles/quad.dm	@/obj/vehicle/train/engine/quadbike::Initialize::turn_off
-init_lines	code/modules/vehicles/rover.dm	@/obj/vehicle/train/rover/engine::Initialize::turn_off
-init_lines	code/modules/vehicles/train.dm	@/obj/vehicle/train::Initialize::for
-init_lines	code/modules/vehicles/train.dm	@/obj/vehicle/train::Initialize::if
-init_lines	code/modules/vehicles/train.dm	@/obj/vehicle/train::Initialize::latch
 init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_share_lists
 init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::if
 init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::rel_set
@@ -3998,20 +3831,11 @@ init_lines	code/modules/xenoarcheaology/tools/ano_device_battery.dm	@/obj/item/a
 init_lines	code/modules/xenoarcheaology/tools/artifact_harvester.dm	@/obj/machinery/artifact_harvester::Initialize::rel_set
 init_lines	code/modules/xenoarcheaology/tools/artifact_harvester.dm	@/obj/machinery/artifact_harvester::Initialize::if
 init_lines	code/modules/xenoarcheaology/tools/artifact_harvester.dm	@/obj/machinery/artifact_harvester::Initialize::rel_set
-init_lines	maps/common/common_shuttles_crew.dm	@/obj/machinery/status_display/shuttle_display::Initialize::GLOB.shuttdisp_list
-init_lines	maps/common/common_shuttles_crew.dm	@/obj/machinery/status_display/shuttle_display::Initialize::get_my_shuttle
-init_lines	maps/common/common_shuttles_crew.dm	@/obj/machinery/status_display/shuttle_display::Initialize::update
-init_lines	maps/common/common_things.dm	@/obj/item/multitool/scioutpost::Initialize::for
-init_lines	maps/common/common_things.dm	@/obj/item/multitool/scioutpost::Initialize::rel_set
-init_lines	maps/common/common_things.dm	@/obj/item/multitool/scioutpost::Initialize::if
-init_lines	maps/common/common_things.dm	@/obj/item/multitool/scioutpost::Initialize::icon_state
 init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::if
 init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::log_mapping
 init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::flags
 init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::return
 init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::spawning
-init_lines	maps/southern_cross/southern_cross_overrides.dm	@/obj/item/card/id/platform::Initialize::access
-init_lines	maps/southern_cross/southern_cross_overrides.dm	@/obj/item/card/id/platform::Initialize::access
 init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::if
 init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::WARNING
 init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::delete_me
@@ -4095,10 +3919,6 @@ world_reads	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	if(!GLOB
 world_reads	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	GLOB.woof_maximum = 0 //Let's start duplicating again
 world_reads	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	GLOB.woof_current++
 world_reads	code/modules/mob/mob_planes.dm	add_filter("em_block_masking", 1, color_matrix_filter(GLOB.em_mask_matrix))
-world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	if(GLOB.ntnet_global)
-world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::relays), src)
-world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	NTNet_static = GLOB.ntnet_global // a registered singleton: shared
-world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet().relays)]")
 world_reads	code/modules/overmap/events/overmap_event.dm	GLOB.overmap_event_handler.update_hazards(loc)
 world_reads	code/modules/overmap/sectors.dm	levels_for_distress[i] = GLOB.map_templates_loaded[current]
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	ammo_type = pick(GLOB.global_ammo_types)
@@ -4111,7 +3931,5 @@ world_reads	code/modules/research/message_server.dm	if(istype(GLOB.blackbox, /ob
 world_reads	code/modules/research/message_server.dm	GLOB.blackbox = src
 world_reads	code/modules/resleeving/sleevecard.dm	default_language = GLOB.all_languages[LANGUAGE_GALCOM] // Same issue as bots
 world_reads	code/modules/shieldgen/shield_gen.dm	for(var/obj/machinery/shield_capacitor/cap in range(1, src))
-world_reads	code/modules/vehicles/train.dm	for(var/obj/vehicle/train/T in orange(1, src))
 world_reads	code/modules/xenoarcheaology/finds/find_spawning.dm	currently_banned_chems += GLOB.obtainable_chemical_blacklist
 world_reads	code/modules/xenoarcheaology/tools/artifact_harvester.dm	rel_set(src, nameof(owned_scanner), locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
-world_reads	maps/common/common_shuttles_crew.dm	GLOB.shuttdisp_list |= src //Populates the global list for the roundstart hook.

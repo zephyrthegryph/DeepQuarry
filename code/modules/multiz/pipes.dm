@@ -28,10 +28,6 @@
 
 	level = 1
 
-/obj/machinery/atmospherics/pipe/zpipe/Initialize(mapload)
-	. = ..()
-	init_dir()
-
 /obj/machinery/atmospherics/pipe/zpipe/init_dir()
 	switch(dir)
 		if(SOUTH)
@@ -258,3 +254,6 @@
 	layer = PIPES_AUX_LAYER
 	icon_connect_type = "-aux"
 	color = PIPE_COLOR_CYAN
+
+CAPABILITIES(/obj/machinery/atmospherics/pipe/zpipe)
+	setup(PROC_REF(init_dir))

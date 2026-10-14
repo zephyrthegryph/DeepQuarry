@@ -21,6 +21,7 @@
 	opacity = 1
 
 CAPABILITIES(/obj/structure/bookcase)
+	setup(PROC_REF(collect_initial_books))
 	blast_contents()
 	climb()
 	op("take_book", hand(), ungated(),
@@ -33,9 +34,7 @@ CAPABILITIES(/obj/structure/bookcase)
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), starts(PROC_REF(screwdriver_started)), begins(PROC_REF(screwdriver_begins)), wait(2.5 SECONDS), then(PROC_REF(screwdriver_act_tool_done)))
 
-// ALLOW(init/INSTANCE_STATE): gathers the books the map placed on its tile
-/obj/structure/bookcase/Initialize(mapload)
-	. = ..()
+/obj/structure/bookcase/proc/collect_initial_books()
 	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/book))
 			I.forceMove(src)

@@ -54,11 +54,11 @@ TYPE_TABLE_DECLARE(/obj/item/research_sample, research_sample_resources, list(/o
 	name = "[name_prefix] [name_suffix]"
 	return "generic_sample[sample_icon]"
 
-/obj/item/research_sample/Initialize(mapload)
-	. = ..()
+/obj/item/research_sample/proc/register_sample_sale()
 	make_sellable(/datum/sellable/research_sample)
 
 CAPABILITIES(/obj/item/research_sample)
+	setup(PROC_REF(register_sample_sale))
 	rolls(nameof(icon_state), PROC_REF(roll_sample), when = cond_not(nameof(fixed_name)))
 	op("pick_up", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(sample_pick_up)))
 	op("pick_up_robot", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(sample_pick_up_robot)))

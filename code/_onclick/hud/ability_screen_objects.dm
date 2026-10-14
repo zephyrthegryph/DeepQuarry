@@ -14,11 +14,10 @@
 
 CAPABILITIES(/atom/movable/screen/movable/ability_master)
 	ref_one(nameof(my_mob))
+	setup(PROC_REF(prepare_ability_buttons))
 	owns_many(nameof(ability_objects), /atom/movable/screen/ability)
 
-// ALLOW(init/INSTANCE_STATE): binds to the mob it is created inside and draws that mob's abilities
-/atom/movable/screen/movable/ability_master/Initialize(mapload)
-	. = ..()
+/atom/movable/screen/movable/ability_master/proc/prepare_ability_buttons()
 	if(ismob(loc))
 		rel_set(src, nameof(my_mob), loc)
 		update_abilities(0, loc)

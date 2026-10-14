@@ -14,7 +14,6 @@
 /obj/machinery/reagent_refinery/mixer/Initialize(mapload)
 	set_mixer_angle(dir2angle(dir))
 	. = ..()
-	default_apply_parts()
 
 /obj/machinery/reagent_refinery/mixer/refinery_step()
 	if(!anchored)
@@ -111,6 +110,7 @@
 	return got_input
 
 CAPABILITIES(/obj/machinery/reagent_refinery/mixer)
+	setup(PROC_REF(default_apply_parts))
 	configure(uses_power(idle = 0, active = 50))
 	without("reagent_refinery_set_transfer_amount")
 	op("set_rotation", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_set_rotation)))

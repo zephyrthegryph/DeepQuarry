@@ -10,8 +10,7 @@
 
 	mouse_opacity = 0
 
-/obj/effect/landmark/looking_glass/Initialize(mapload)
-	. = ..()
+/obj/effect/landmark/looking_glass/proc/prepare_viewer_list()
 	viewers = list()
 
 /obj/effect/landmark/looking_glass/proc/gain_viewer(client/C)
@@ -78,3 +77,6 @@
 
 #undef LG_IMAGE_SIZE
 
+
+CAPABILITIES(/obj/effect/landmark/looking_glass)
+	setup(PROC_REF(prepare_viewer_list))

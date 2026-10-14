@@ -27,6 +27,7 @@
 	var/obj/effect/overlay/recycler/monitor_screen
 
 CAPABILITIES(/obj/machinery/maint_vendor)
+	setup(PROC_REF(prepare_vendor_display))
 	configure(light_glow(color = "#0f8f0f"))
 	configure(uses_power(idle = 10))
 	after_init(0, then(PROC_REF(move_after_init)))
@@ -45,13 +46,6 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 		var/datum/maint_recycler_vendor_entry/entry = new t()
 		entry.initialize()
 		rel_add(src, nameof(product_datums), entry)
-	//move to relevant location
-	monitor_screen.plane = PLANE_LIGHTING_ABOVE
-	monitor_screen.layer = src.layer + 0.1
-	monitor_screen.icon = src.icon
-	monitor_screen.icon_state = "screen_off"
-
-	src.vis_contents |= monitor_screen
 	shuffle_inplace(product_datums) //looks weird to have a billion carpet entries right next to eachother
 
 /// A mapped one moves to a marker, once the markers exist.
@@ -220,3 +214,12 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 	. = ..()
 	if(power_lost())
 		set_on_state(FALSE)
+
+/obj/machinery/maint_vendor/proc/prepare_vendor_display()
+	//move to relevant location
+	monitor_screen.plane = PLANE_LIGHTING_ABOVE
+	monitor_screen.layer = src.layer + 0.1
+	monitor_screen.set_icon(src.icon)
+	monitor_screen.set_icon_state("screen_off")
+
+	src.vis_contents |= monitor_screen

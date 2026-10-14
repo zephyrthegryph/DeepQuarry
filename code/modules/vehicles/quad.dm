@@ -33,15 +33,14 @@
 	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = when(cond_not(nameof(built_from_assembly)), /obj/item/cell/high)) // a bike built from an assembly brings no cell
 
 CAPABILITIES(/obj/vehicle/train/engine/quadbike)
+	setup(PROC_REF(stop_initial_quad))
 	param(nameof(built_from_assembly), pos = 1)
 	op("vehicle_paint", tool(TOOL_MULTITOOL), when(req_is(nameof(open), TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Paint"), wait(0), asks(/datum/prompt/color/vehicle_paint, fields = list("default" = nameof(paint_color)), step = "colour"), then(PROC_REF(vehicle_paint_picked)))
 
 /// Whether the bike was built from an assembly (its constructor param): it then brings no cell of its own.
 /obj/vehicle/train/engine/quadbike/var/built_from_assembly = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a quad bike not built from an assembly comes with a cell and an engine sound, and starts switched off
-/obj/vehicle/train/engine/quadbike/Initialize(mapload)
-	. = ..()
+/obj/vehicle/train/engine/quadbike/proc/stop_initial_quad()
 	turn_off()
 
 /obj/vehicle/train/engine/quadbike/built

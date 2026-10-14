@@ -33,10 +33,6 @@
 
 	var/gene_sequencing = FALSE // Traitgenes edit - create a dna injector for fixing dna, but don't let it be abusable
 
-/obj/machinery/computer/transhuman/resleeving/Initialize(mapload)
-	. = ..()
-	updatemodules()
-
 // its pods are released.
 /obj/machinery/computer/transhuman/resleeving/on_destroy(force)
 	releasepods()
@@ -675,6 +671,7 @@ CAPABILITIES(/obj/item/disk/transcore)
 // Linked machines are independent: one-sided relation lists, each machine's `connected` a plain
 // back relation. Either end dying drops the link.
 CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
+	setup(PROC_REF(updatemodules))
 	configure(light_glow(color = "#315ab4"))
 	op("resleeving_console_interaction_item", item(/obj/item), then(PROC_REF(resleeving_console_interaction_item)))
 	op("resleeving_console_interaction_hand", hand(), ungated(), then(PROC_REF(resleeving_console_interaction_hand)))
