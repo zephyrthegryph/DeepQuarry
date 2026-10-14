@@ -650,7 +650,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 
 //I am the icon meister. Bow fefore me.	//>fefore
 /mob/living/silicon/ai/proc/hologram_from_dummy(mob/living/carbon/human/dummy/dummy)
-	dummy.regenerate_icons()
+	draw_now(dummy)
 	var/new_holo = getHologramIcon(getCompoundIcon(dummy))
 	spent(holo_icon)
 	spent(dummy)
