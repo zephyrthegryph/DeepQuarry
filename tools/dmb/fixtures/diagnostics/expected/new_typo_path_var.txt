@@ -1,0 +1,2 @@
+new_typo_path_var.dm:4:error: /datum/thign: undefined type path
+new_typo_path_var.dmb - 1 error, 0 warnings

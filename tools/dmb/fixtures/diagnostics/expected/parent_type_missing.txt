@@ -1,0 +1,2 @@
+parent_type_missing.dm:2:error: /datum/missing_parent: invalid parent type
+parent_type_missing.dmb - 1 error, 0 warnings

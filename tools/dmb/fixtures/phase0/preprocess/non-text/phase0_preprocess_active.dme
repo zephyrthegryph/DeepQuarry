@@ -1,0 +1,2 @@
+#define ENABLE_NON_TEXT 1
+#include "body.dm"

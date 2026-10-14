@@ -1,0 +1,14 @@
+DM compiler version 516.1687
+loading probe.dme
+probe.dm:5:warning (anything_no_list): 'anything' has no meaning without a list
+probe.dm:7:warning (anything_no_list): 'anything' has no meaning without a list
+probe.dm:9:warning (anything_no_list): 'anything' has no meaning without a list
+probe.dm:9:warning (anything_no_list): 'anything' has no meaning without a list
+probe.dm:11:warning (anything_no_list): 'anything' has no meaning without a list
+probe.dm:13:warning (anything_no_list): 'anything' has no meaning without a list
+probe.dm:15:warning (anything_no_list): 'anything' has no meaning without a list
+probe.dm:17:warning (anything_no_list): 'anything' has no meaning without a list
+probe.dm:19:warning (anything_no_list): 'anything' has no meaning without a list
+saving probe.dmb
+probe.dmb - 0 errors, 9 warnings (10/10/26 2:34 pm)
+Total time: 0:00

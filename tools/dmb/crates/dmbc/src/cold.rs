@@ -1,0 +1,887 @@
+//! Common captured orchestration over current semantic inputs and shared artifacts.
+//! Admission is deliberately bounded by the production composer. A successful
+//! return means every declaration was admitted, rather than a partial artifact.
+use crate::{
+    composition::CompositionError,
+    lowering::{AbiPolicy, LoweringConfig, LoweringDiagnostic},
+    symbolic::{IntegrationError, ReferenceBindings},
+};
+use dm_ir::Resolver;
+use dm_link::LinkInventory;
+use dm_tree::frontend::ColdFrontend;
+use std::time::{Duration, Instant};
+mod diagnostic_continuation;
+mod initializer_factory;
+mod prepared;
+pub(crate) mod body_patch;
+pub use prepared::{PreparedCold, PreparedComposition};
+
+#[derive(Clone, Copy, Debug)]
+pub enum ColdStage {
+    StartupCapture,
+    AbiPreparation,
+    Initializers,
+    InitializerClassification,
+    InitializerCodegen,
+    InitializerFragmentKeys,
+    InitializerAssemblyKeys,
+    InitializerGroupExecution,
+    ProcedureLowering,
+    RequiredTypeAdmission,
+    SymbolicLinking,
+    Composition,
+}
+pub type ColdMeasurement = crate::stage_measurements::Measurement<ColdStage>;
+impl crate::stage_measurements::StageName for ColdStage {
+    fn profile_name(self) -> &'static str {
+        match self {
+            Self::StartupCapture => "cold.startup_capture",
+            Self::AbiPreparation => "cold.abi_preparation",
+            Self::Initializers => "cold.initializers",
+            Self::InitializerClassification => "initializer.classification",
+            Self::InitializerCodegen => "initializer.codegen",
+            Self::InitializerFragmentKeys => "initializer.fragment_keys",
+            Self::InitializerAssemblyKeys => "initializer.assembly_keys",
+            Self::InitializerGroupExecution => "initializer.group_execution",
+            Self::ProcedureLowering => "cold.procedure_lowering",
+            Self::RequiredTypeAdmission => "cold.required_type_admission",
+            Self::SymbolicLinking => "cold.symbolic_linking",
+            Self::Composition => "cold.composition",
+        }
+    }
+}
+pub type ColdObserver<'a> = crate::stage_measurements::Observer<'a, ColdStage>;
+type StageMeasurement<'a> = crate::stage_measurements::Scope<'a, ColdStage>;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct ColdTimings {
+    pub abi_preparation: Duration,
+    pub lowering: Duration,
+    pub initializers: Duration,
+    pub symbolic_linking: Duration,
+    pub composition: Duration,
+    pub total: Duration,
+}
+
+pub struct ColdOutput {
+    pub dmb: byond_dmb::dmb::EncodedDmb,
+    pub timings: ColdTimings,
+    pub warnings: Vec<crate::initializer_policy::warnings::InitializerWarning>,
+    /// Owned exact startup stage output, available to resident hosts.
+    pub startup: Option<std::sync::Arc<crate::startup::StartupFacts>>,
+}
+#[derive(Debug)]
+pub enum ColdError {
+    EngineMismatch,
+    AbiPreparation(String),
+    Lowering(Vec<LoweringDiagnostic>),
+    NonAuthoritativeAbi,
+    Linking(IntegrationError),
+    Composition(CompositionError),
+    Initializer(String),
+    InitializerInvariant(String),
+    Projection(crate::class_projection::ProjectionError),
+    RuntimeTypeValues(crate::class_projection::ProjectionError),
+}
+fn initializer_lowering_error(
+    error: crate::initializer_diagnostics::InitializerLoweringError,
+) -> ColdError {
+    use crate::initializer_diagnostics::InitializerLoweringError as E;
+    match error {
+        E::Diagnostics(diagnostics) => ColdError::Lowering(diagnostics),
+        E::Invariant(message) => ColdError::InitializerInvariant(message),
+        E::Unsupported(message) => ColdError::Initializer(message),
+    }
+}
+/// Captured declaration/initializer policy for the production class path.
+/// Link inventory remains explicit; no observable table order is guessed here.
+pub struct CapturedDeclarationInputs<'a> {
+    pub initializers: &'a dyn crate::initializer_policy::CapturedInitializerEvaluator,
+    pub type_values: &'a dyn crate::class_projection::TypeValuePolicy,
+    pub resource_search_context: Option<u128>,
+    /// Complete observable order of fresh source types; excludes retained,
+    /// root and world entries. Discovery must capture this order explicitly.
+    pub source_type_order: &'a [dm_ir::SymbolId],
+    pub source_allocation_roster:
+        Option<&'a std::sync::Arc<crate::type_creation_order::AllocationRoster>>,
+}
+pub struct CapturedLinkInputs<'a> {
+    /// Same pinned bytes used to seed the declaration model.
+    pub engine_bytes: &'a [u8],
+    pub engine: &'a crate::engine::EngineSnapshot,
+    pub references: &'a ReferenceBindings,
+    pub inventory: LinkInventory,
+}
+/// The caller captures source/resources and engine facts before this function.
+/// No filesystem, durable item store or historical mutable bindings are read.
+/// Resource encoding/publication are subsequent stages and excluded from these
+/// timings; these are not end-to-end compiler benchmark figures.
+/// One captured cold path for declarations, ordinary/helper procedures and
+/// classified initializer artifacts. The same shared freezer/writer publishes
+/// their exact table assignment together; unsupported facts fail the whole run.
+pub fn compile_captured_classified_program<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    policy: &P,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+) -> Result<ColdOutput, ColdError> {
+    compile_captured_classified_with_stage(
+        frontend,
+        resolver,
+        policy,
+        links,
+        declarations,
+        config,
+        Vec::new(),
+        None,
+    )
+}
+
+/// Production pinned ABI preparation and cold output in one coherent path.
+/// Policy preparation consumes the captured resolver; no project maps or
+/// mutable output tables are fabricated to decide inherited procedure ABI.
+pub fn compile_captured_classified_with_pinned_abi<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+) -> Result<ColdOutput, ColdError> {
+    compile_captured_classified_with_pinned_abi_observed(
+        frontend,
+        resolver,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn compile_captured_classified_with_pinned_abi_observed<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    observer: Option<&ColdObserver<'_>>,
+) -> Result<ColdOutput, ColdError> {
+    compile_captured_classified_with_pinned_abi_memo(
+        frontend,
+        resolver,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        observer,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn compile_captured_classified_with_pinned_abi_memo<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    observer: Option<&ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+) -> Result<ColdOutput, ColdError> {
+    let executor = dm_exec::BuildExecutor::new(config.workers)
+        .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    compile_captured_classified_with_pinned_abi_memo_revision(
+        frontend,
+        resolver,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        observer,
+        memo,
+        None,
+        &executor,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn compile_captured_classified_with_pinned_abi_memo_revision<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    observer: Option<&ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    revision: Option<&dm_tree::frontend::FrontendRevision>,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<ColdOutput, ColdError> {
+    let engine_bytes = links.engine_bytes;
+    let types = declarations.type_values;
+    prepare_captured_classified_with_pinned_abi_memo_revision(
+        frontend,
+        resolver,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        observer,
+        memo,
+        revision,
+        executor,
+    )?
+    .compose_borrowed(engine_bytes, frontend, types, non_text, executor, observer)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    observer: Option<&ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    revision: Option<&dm_tree::frontend::FrontendRevision>,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<PreparedCold, ColdError> {
+    let total = Instant::now();
+    let measurement = StageMeasurement::new(observer, ColdStage::StartupCapture);
+    let roster =
+        crate::lowering::PreparedBodyRoster::issue(frontend).map_err(ColdError::Lowering)?;
+    let bodies = dm_tree::frontend::BodyArena::new_typed(
+        frontend,
+        dm_codegen_byond::typed_statements_supported_for_capture,
+    );
+    let startup = crate::startup::capture_with_prepared_bodies(
+        frontend,
+        revision,
+        &links.inventory.spellings,
+        executor,
+        &bodies,
+        memo.and_then(|memo| memo.startup.as_deref()),
+        &roster,
+    )
+    .map_err(|error| static_diagnostics::capture_error(frontend, &bodies, error))?;
+    measurement.complete();
+    dm_profile::request_mark("cold.startup_captured");
+    let measurement = StageMeasurement::new(observer, ColdStage::AbiPreparation);
+    let prepared =
+        crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
+            frontend,
+            links.engine,
+            resolver,
+            &startup,
+            declarations.resource_search_context,
+            executor,
+            memo.and_then(|memo| memo.abi.as_deref()),
+        )
+        .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    dm_profile::request_mark("cold.abi_units_prepared");
+    if !prepared.prepared.diagnostics.is_empty() {
+        return Err(ColdError::Lowering(
+            crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared)
+                .map_err(|error| ColdError::AbiPreparation(error.to_string()))?,
+        ));
+    }
+    let policy = crate::driver_facts::FrozenPreparedPolicy::new_with_units(
+        frontend,
+        &prepared.prepared,
+        std::sync::Arc::clone(startup.unit_members()),
+    )
+    .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    measurement.complete();
+    let abi_preparation = total.elapsed();
+    dm_profile::request_mark("cold.abi_prepared");
+    let mut output = prepare_with_startup(
+        frontend,
+        resolver,
+        &policy,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        &startup,
+        observer,
+        memo,
+        executor,
+        bodies,
+        Some(&prepared.prepared),
+        Some(&roster),
+    )?;
+    output.query_abi = Some(std::sync::Arc::clone(prepared.prepared.units_owner()));
+    output.timings.abi_preparation = abi_preparation;
+    output.timings.total = total.elapsed();
+    output.started = total;
+    Ok(output)
+}
+
+/// Captured map initialization and non-text output share the declaration/body
+/// freezer and final writer. Their semantic capture remains a prior stage.
+#[allow(clippy::too_many_arguments)] // Explicit captured boundaries; no project snapshot bundle.
+pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    policy: &P,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+) -> Result<ColdOutput, ColdError> {
+    let executor = dm_exec::BuildExecutor::new(config.workers)
+        .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    let bodies = dm_tree::frontend::BodyArena::new(frontend);
+    let startup = crate::startup::capture_with_executor_and_bodies(
+        frontend,
+        &links.inventory.spellings,
+        &executor,
+        &bodies,
+    )
+    .map_err(|error| static_diagnostics::capture_error(frontend, &bodies, error))?;
+    compile_with_startup(
+        frontend,
+        resolver,
+        policy,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        &startup,
+        None,
+        None,
+        &executor,
+        bodies,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn compile_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
+    resolver: &R,
+    policy: &P,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    startup: &crate::startup::CapturedStartup<'frontend>,
+    observer: Option<&ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    executor: &dm_exec::BuildExecutor,
+    bodies: dm_tree::frontend::BodyArena<'frontend>,
+) -> Result<ColdOutput, ColdError> {
+    let engine_bytes = links.engine_bytes;
+    let types = declarations.type_values;
+    prepare_with_startup(
+        frontend,
+        resolver,
+        policy,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        startup,
+        observer,
+        memo,
+        executor,
+        bodies,
+        None,
+        None,
+    )?
+    .compose_borrowed(engine_bytes, frontend, types, non_text, executor, observer)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
+    resolver: &R,
+    policy: &P,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    startup: &crate::startup::CapturedStartup<'frontend>,
+    observer: Option<&ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    executor: &dm_exec::BuildExecutor,
+    bodies: dm_tree::frontend::BodyArena<'frontend>,
+    prepared_abi: Option<&crate::driver_facts::PreparedSourceAbi>,
+    prepared_roster: Option<&crate::lowering::PreparedBodyRoster<'frontend>>,
+) -> Result<PreparedCold, ColdError> {
+    startup
+        .validate_for(frontend)
+        .map_err(ColdError::Initializer)?;
+    let total = Instant::now();
+    for artifact in &map_initializers {
+        if !matches!(artifact.identity, dm_link::InitializerIdentity::Map { .. }) {
+            return Err(ColdError::Initializer(
+                "captured map artifacts cannot replace declaration initializers".into(),
+            ));
+        }
+        artifact.validate().map_err(ColdError::Initializer)?;
+    }
+    let captured = frontend.engine.as_ref().ok_or(ColdError::EngineMismatch)?;
+    if captured.identity != links.engine.identity()
+        || !links
+            .engine
+            .matches_template(links.engine_bytes, links.engine.interpretation_schema())
+    {
+        return Err(ColdError::EngineMismatch);
+    }
+    let stage = Instant::now();
+    let measurement = StageMeasurement::new(observer, ColdStage::Initializers);
+    let static_resolver = startup
+        .resolver(frontend, resolver)
+        .map_err(ColdError::Initializer)?;
+    let resolver = &static_resolver;
+    let plan = startup.plan();
+    crate::heap_census::emit_if_enabled("startup.ready", |census| {
+        census.frontend(frontend);
+        census.startup(startup);
+        census.body_arena(&bodies);
+    })
+    .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
+    let startup_evaluator = crate::startup::StartupEvaluator {
+        resource_search_context: declarations.resource_search_context,
+        ordinary: declarations.initializers,
+        resolver,
+        symbols: plan.symbols.as_ref(),
+    };
+    let evaluator = crate::initializer_policy::EngineCapturedEvaluator {
+        engine: links.engine,
+        evaluator: &startup_evaluator,
+    };
+    let parallel_factory = declarations
+        .initializers
+        .parallel_evaluator()
+        .map(|ordinary| initializer_factory::StartupParallelFactory {
+            ordinary,
+            resolver,
+            symbols: plan.symbols.as_ref(),
+            resource_search_context: declarations.resource_search_context,
+        });
+    let initializer_observer = |event: crate::initializer_lowering::InitializerMeasurement| {
+        if let Some(observer) = observer {
+            observer(ColdMeasurement {
+                stage: match event.stage {
+                    crate::initializer_lowering::InitializerStage::Classification => {
+                        ColdStage::InitializerClassification
+                    }
+                    crate::initializer_lowering::InitializerStage::Codegen => {
+                        ColdStage::InitializerCodegen
+                    }
+                    crate::initializer_lowering::InitializerStage::FragmentKeys => {
+                        ColdStage::InitializerFragmentKeys
+                    }
+                    crate::initializer_lowering::InitializerStage::AssemblyKeys => {
+                        ColdStage::InitializerAssemblyKeys
+                    }
+                    crate::initializer_lowering::InitializerStage::GroupExecution => {
+                        ColdStage::InitializerGroupExecution
+                    }
+                },
+                elapsed: event.elapsed,
+                succeeded: event.succeeded,
+            });
+        }
+    };
+    let detail_phase = dm_profile::detail_timer("init.startup_allocation");
+    let startup_allocation =
+        crate::startup_allocation::StartupAllocationRoster::issue_current_with_artifacts(
+            plan,
+            declarations.source_type_order,
+            frontend,
+            memo.and_then(|memo| memo.startup.as_ref()),
+        )
+        .map_err(ColdError::InitializerInvariant)?;
+    drop(detail_phase);
+    let initialization = crate::initializer_lowering::lower_captured_on_executor_with_allocation(
+        frontend,
+        startup,
+        &evaluator,
+        resolver,
+        declarations.resource_search_context,
+        crate::initializer_lowering::InitializerExecution {
+            executor,
+            evaluator: parallel_factory.as_ref().map(|factory| {
+                crate::initializer_policy::ParallelEvaluator {
+                    factory,
+                    engine: Some(links.engine),
+                }
+            }),
+            observer: observer.map(|_| {
+                &initializer_observer as &crate::initializer_lowering::InitializerObserver<'_>
+            }),
+            memo,
+            classification: memo.and_then(|memo| {
+                memo.initializers.as_ref().map(|store| {
+                    crate::initializer_policy::InitializerReuse {
+                        store: store.as_ref(),
+                        resolver,
+                        policy: memo.policy,
+                        resource_search_context: declarations.resource_search_context,
+                    }
+                })
+            }),
+        },
+        Some(&startup_allocation),
+    )
+    .map_err(|error| {
+        diagnostic_continuation::collect(error, || {
+            // This is the ordinary current body producer with no memo,
+            // contribution preparation, linker, or publication callbacks.
+            let execution = crate::lowering::LoweringExecution::new(executor, &bodies);
+            let execution = match prepared_roster {
+                Some(roster) => execution.with_prepared_roster(roster),
+                None => execution,
+            };
+            crate::lowering::lower_frontend_with_statics_on_executor_and_bodies(
+                frontend, resolver, policy, config, startup, execution,
+            )
+            .diagnostics
+        })
+    })?;
+    let detail_phase = dm_profile::detail_timer("init.class_projection");
+    let mut projection = crate::class_projection::project_classified_with_artifacts(
+        &frontend.snapshot,
+        &frontend.emission_order,
+        plan,
+        &initialization.classified,
+        &initialization.units,
+        memo.and_then(|memo| memo.class_projections.as_deref()),
+    )
+    .map_err(ColdError::Projection)?;
+    drop(detail_phase);
+    startup_allocation
+        .order_membership(&mut projection.shared_slot_order)
+        .map_err(ColdError::InitializerInvariant)?;
+    let detail_phase = dm_profile::detail_timer("init.bind_field_sources");
+    projection
+        .bind_field_sources(frontend, plan)
+        .map_err(ColdError::Projection)?;
+    drop(detail_phase);
+    crate::heap_census::emit_if_enabled("initializer_ledger.ready", |census| {
+        census.frontend(frontend);
+        census.startup(startup);
+        census.initializer_ledger(&initialization.classified);
+        census.body_arena(&bodies);
+        census.current_projection(&projection);
+        census.current_initializer_units(&initialization.units);
+        census.current_map_initializers(&map_initializers);
+        if let Some(prepared) = prepared_abi {
+            census.prepared_source_abi(prepared);
+        } else {
+            census.boundary_opaque_abi_policy();
+        }
+        if let Some(memo) = memo {
+            census.cold_retained_owners(memo);
+        }
+        if let Some(store) = memo.and_then(|memo| memo.initializers.as_ref()) {
+            if census.arc_object("initializer_classification.owner", store) {
+                census.initializer_artifacts(store);
+            }
+        }
+    })
+    .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
+    // Capture only stored descriptor defaults while their source ledger is live.
+    // Keep failures deferred until the former seed stage so body diagnostics win
+    // exactly as before; this capture performs no resolver/evaluator operations.
+    let detail_phase = dm_profile::detail_timer("init.default_seeds_and_warnings");
+    let pending_modified_defaults =
+        crate::modified_initializers::default_seeds(frontend, plan, &initialization.classified);
+    let mut warnings =
+        crate::initializer_policy::warnings::capture(frontend, plan, &initialization.classified)
+            .map_err(initializer_lowering_error)?;
+    warnings
+        .extend(crate::callable_warnings::capture(frontend).map_err(initializer_lowering_error)?);
+    // Body-edit patches keep initializer and callable warnings (line-shifted),
+    // recompute local warnings and rebind unit warnings.
+    let initializer_warning_count = warnings.len();
+    warnings.extend(crate::local_warnings::capture(frontend).map_err(initializer_lowering_error)?);
+    drop(detail_phase);
+    let detail_phase = dm_profile::detail_timer("init.release_classified");
+    drop(initialization.classified);
+    // Current output descriptors already own any syntax they require. The
+    // semantic classification receipts and token roster survive this release.
+    if let Some(store) = memo.and_then(|memo| memo.initializers.as_ref()) {
+        store.release_runtime_syntax();
+    }
+    drop(detail_phase);
+    measurement.complete();
+    let initializers = stage.elapsed();
+    dm_profile::request_mark("cold.initializers_done");
+    let mut inventory = links.inventory;
+    crate::class_inventory::contribute_source_strings(frontend, &bodies, &mut inventory)
+        .map_err(ColdError::Initializer)?;
+    dm_profile::request_mark("cold.source_strings");
+    let stage = Instant::now();
+    let measurement = StageMeasurement::new(observer, ColdStage::ProcedureLowering);
+    let pre_lowering_timer = dm_profile::detail_timer("cold.pre_lowering_setup");
+    let owned_roster = if prepared_roster.is_none() {
+        Some(crate::lowering::PreparedBodyRoster::issue(frontend).map_err(ColdError::Lowering)?)
+    } else {
+        None
+    };
+    let roster = prepared_roster
+        .or(owned_roster.as_ref())
+        .expect("current prepared body roster");
+    let source_bindings = roster
+        .source_bindings(frontend)
+        .expect("current prepared symbolic namespace");
+    let freeze_detail =
+        std::env::var_os("DMB_PROFILE_FREEZE_DETAIL").is_some_and(|value| value == "1");
+    drop(pre_lowering_timer);
+    let lowering_stage_timer = dm_profile::detail_timer("cold.lowering_stage_call");
+    let complete = |unit: crate::lowering::CompletedInput| {
+        unit.prepare(
+            plan.symbols.as_ref(),
+            source_bindings,
+            links.references,
+            freeze_detail,
+        )
+    };
+    let batch = crate::lowering::lower_frontend_completed_input_on_execution(
+        frontend,
+        resolver,
+        policy,
+        config,
+        Some(startup),
+        memo,
+        crate::lowering::LoweringExecution::new(executor, &bodies)
+            .with_progress(observer.is_some())
+            .with_prepared_roster(&roster)
+            .with_disk_replay_bindings(crate::lowering::DiskReplayBindings {
+                source: source_bindings,
+                external: links.references,
+            }),
+        true,
+        &complete,
+    );
+    drop(lowering_stage_timer);
+    // Completion has consumed all rich units; the prepared roster owns the
+    // immutable current symbolic namespace until this request finishes.
+    let lowering = stage.elapsed();
+    if !batch.diagnostics.is_empty() {
+        return Err(ColdError::Lowering(batch.diagnostics));
+    }
+    batch
+        .identity_index()
+        .map_err(|identity| ColdError::Linking(IntegrationError::DuplicateUnit(identity)))?;
+    if let Some((_, error)) = batch.completion_errors.into_iter().next() {
+        return Err(error);
+    }
+    let mut contributions: Vec<_> = batch.units.into_iter().map(|unit| unit.value).collect();
+    // Body-edit patch base: Arc-only copies of each unit's link footprint inputs.
+    let patch_records: Vec<_> = contributions
+        .iter()
+        .map(crate::symbolic::PreparedContribution::patch_record)
+        .collect();
+    crate::heap_census::emit_if_enabled("lowering.ready", |census| {
+        census.frontend(frontend);
+        census.startup(startup);
+        census.prepared(&contributions);
+    })
+    .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
+    let mut unit_warnings = Vec::with_capacity(contributions.len());
+    for contribution in &contributions {
+        let current = contribution
+            .current_warnings(frontend.snapshot.tree.symbols())
+            .map_err(ColdError::InitializerInvariant)?;
+        unit_warnings.push((contribution.identity(), current.clone()));
+        warnings.extend(current);
+    }
+    let patch_warnings = crate::body_patch::PatchWarnings::new(
+        warnings[..initializer_warning_count].to_vec(),
+        unit_warnings,
+    );
+    let body_types: Vec<_> = contributions
+        .iter()
+        .flat_map(|value| value.required_types().iter().copied())
+        .collect();
+    let body_seeds: Vec<_> = contributions
+        .iter_mut()
+        .flat_map(crate::symbolic::PreparedContribution::take_modified_seeds)
+        .collect();
+    // Consume the request-local parse owner before linking/composition.
+    // Reusable startup facts never retain executable syntax.
+    drop(bodies);
+    measurement.complete();
+    dm_profile::request_mark("cold.lowered");
+    // Discover anonymous descriptors only from actual emitted operand sites.
+    // Recursive descriptor initializers append to one request-local graph.
+    let seeds = initialization
+        .units
+        .iter()
+        .map(|unit| (unit.code.as_ref(), &unit.debug_origins))
+        .chain(
+            map_initializers
+                .iter()
+                .map(|unit| (unit.code.as_ref(), unit.debug_origins.as_ref())),
+        );
+    let modified_defaults = pending_modified_defaults.map_err(ColdError::Initializer)?;
+    let modified = crate::modified_initializers::collect_owned_prepared_diagnosed(
+        body_seeds,
+        seeds,
+        &modified_defaults,
+        plan.symbols.as_ref(),
+        resolver,
+        declarations.initializers.pure_calls(),
+        memo.and_then(|memo| memo.initializer_fragments.as_deref()),
+        memo.map(|memo| &memo.verification),
+        Some(frontend),
+    )
+    .map_err(initializer_lowering_error)?;
+    // Descriptor/debug facts are owned by modified; release their seed copies.
+    drop(modified_defaults);
+    crate::modified_output::contribute(&modified.descriptors, &mut inventory)
+        .map_err(ColdError::Initializer)?;
+    dm_profile::request_mark("cold.modified_collected");
+    let modified_stage = crate::modified_initializers::Stage {
+        descriptors: &modified.descriptors,
+        types: declarations.type_values,
+        next: non_text,
+    };
+    let non_text = Some(&modified_stage as &dyn crate::composition::NonTextOutputStage);
+    // Every anonymous initializer uses the same operand reachability pass and
+    // freezer, including type operands used only inside descriptor field values.
+    let initialization_artifacts: Vec<_> = map_initializers
+        .into_iter()
+        .chain(modified.artifacts)
+        .collect();
+    let measurement = StageMeasurement::new(observer, ColdStage::RequiredTypeAdmission);
+    let non_text_types = non_text
+        .map(|stage| stage.required_types())
+        .unwrap_or_default();
+    let admit_timer = dm_profile::detail_timer("required.admit");
+    let (projection, source_type_order) = crate::required_types::admit_prepared_retained(
+        projection,
+        crate::required_types::PreparedInputs {
+            source_order: declarations.source_type_order,
+            source_allocation_roster: declarations.source_allocation_roster,
+            body_type_requests: &body_types,
+            initializers: &initialization.units,
+            maps: &initialization_artifacts,
+            inventory: &inventory,
+            symbols: plan.symbols.as_ref(),
+            non_text_types: &non_text_types,
+        },
+        memo.and_then(|memo| memo.required_types.as_deref()),
+    )
+    .map_err(ColdError::Initializer)?;
+    drop(admit_timer);
+    let contribute_timer = dm_profile::detail_timer("required.class_inventory");
+    drop(body_types);
+    crate::class_inventory::contribute(
+        &projection,
+        plan.symbols.as_ref(),
+        &source_type_order,
+        &mut inventory,
+    )
+    .map_err(ColdError::Initializer)?;
+    drop(contribute_timer);
+    measurement.complete();
+    dm_profile::request_mark("cold.required_types");
+    let stage = Instant::now();
+    let measurement = StageMeasurement::new(observer, ColdStage::SymbolicLinking);
+    let initialization: Vec<crate::initialization_artifact::InitializationArtifact> =
+        initialization
+            .units
+            .into_iter()
+            .map(Into::into)
+            .chain(initialization_artifacts)
+            .collect();
+    let frame_records = contributions
+        .iter()
+        .try_fold(0usize, |count, unit| {
+            count.checked_add(unit.variable_record_count()?)
+        })
+        .and_then(|count| {
+            initialization.iter().try_fold(
+                count,
+                |count, unit: &crate::initialization_artifact::InitializationArtifact| {
+                    count.checked_add(unit.code.procedure.local_names.len())
+                },
+            )
+        })
+        .ok_or_else(|| ColdError::Initializer("variable record count overflow".into()))?;
+    crate::class_inventory::bind_global_records(&projection, frame_records, &mut inventory)
+        .map_err(ColdError::Initializer)?;
+    let frozen = crate::symbolic::link_prepared_artifact_tables_on_executor_with_bindings(
+        contributions,
+        plan.symbols.as_ref(),
+        links.references,
+        inventory,
+        initialization,
+        executor,
+        memo.and_then(|memo| memo.link_bindings.as_deref()),
+    )
+    .map_err(ColdError::Linking)?;
+    measurement.complete();
+    dm_profile::request_mark("cold.linked");
+    let symbolic_linking = stage.elapsed();
+    crate::heap_census::emit_if_enabled("linking.ready", |census| {
+        census.frontend(frontend);
+        census.startup(startup);
+        census.frozen(&frozen);
+    })
+    .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
+    // The descriptor wrapper borrowed these fields through required-type admission.
+    // No source/ABI/evaluator owner escapes the preparation stage.
+    Ok(PreparedCold {
+        warnings,
+        frozen,
+        projection,
+        modified: modified.descriptors,
+        symbols: std::sync::Arc::clone(&plan.symbols),
+        startup: Some(startup.facts()),
+        query_abi: None,
+        patch_records,
+        patch_warnings: Some(patch_warnings),
+        timings: ColdTimings {
+            abi_preparation: Duration::ZERO,
+            lowering,
+            initializers,
+            symbolic_linking,
+            composition: Duration::ZERO,
+            total: total.elapsed(),
+        },
+        started: total,
+    })
+}
+
+#[cfg(test)]
+#[path = "cold/tests.rs"]
+mod tests;
+
+#[cfg(test)]
+#[path = "cold/prepared_tests.rs"]
+mod prepared_tests;
+
+#[cfg(test)]
+#[path = "cold/ledger_release_tests.rs"]
+mod ledger_release_tests;
+
+#[path = "cold/static_diagnostics.rs"]
+mod static_diagnostics;

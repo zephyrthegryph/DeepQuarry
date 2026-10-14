@@ -1,0 +1,2 @@
+undefined_var.dm:2:error: undefined_thing: undefined var
+undefined_var.dmb - 1 error, 0 warnings

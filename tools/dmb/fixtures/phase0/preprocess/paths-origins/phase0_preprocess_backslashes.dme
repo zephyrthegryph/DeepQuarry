@@ -1,0 +1,4 @@
+/datum/a
+#include "a\..\a\body.dm"
+/datum/b
+#include "b\body.dm"

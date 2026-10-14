@@ -1,0 +1,42 @@
+{
+  "schema": "dm-generator-default-capture-v1",
+  "compiler": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "file_version": "5.0.516.1687",
+  "compile_only": true,
+  "child_watchdog_s": 30,
+  "defines": [],
+  "source_fixture": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\translation\\initializer_token_identity\\families.dm",
+  "source_fixture_sha256": "6765c4eb4834201205e91ed4a10cb38125cfcced13805e6eccabb00adc0e38f4",
+  "fragment_policy": "exact byte suffix beginning /particles/token_families, three assignments",
+  "inputs": {
+    "generator.dm": "b32a9fc2949ee60e2c88120b4c0510c719e6f2153e9a08ee409a9caeac5154b2",
+    "generator.dme": "f82e60f81ab790a9f50b81187c39ae5d0c29982301dbf53f494d630cbf3bdccf"
+  },
+  "source_unchanged": true,
+  "byond": {
+    "command": [
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "E:\\dq-cache\\dmb-native-v2\\generator-probe-20261010-30f74c9e\\generator.dme"
+    ],
+    "exit_code": 0,
+    "timed_out": false,
+    "seconds": 0.46932719997130334,
+    "cleanup": null,
+    "log": "E:\\dq-cache\\dmb-native-v2\\generator-probe-20261010-30f74c9e\\byond.log",
+    "diagnostics": []
+  },
+  "log_sha256": "433d55370eda8aca3d2f40b39b625f0fe8deebec49e393ddab2d1498a387bb6e",
+  "version_banner_verified": true,
+  "outputs": {
+    "dmb": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\generator-probe-20261010-30f74c9e\\generator.dmb",
+      "sha256": "329f9f6879d039cd13095172a7fc4782f0e99b3e0b31f4b0dd9eaa6ee5681da8",
+      "bytes": 15398
+    },
+    "rsc": {
+      "status": "absent"
+    }
+  },
+  "status": "captured"
+}

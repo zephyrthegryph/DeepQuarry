@@ -1,0 +1,2 @@
+proc_in_proc.dm:3:error: proc definition not allowed inside another proc
+proc_in_proc.dmb - 1 error, 0 warnings

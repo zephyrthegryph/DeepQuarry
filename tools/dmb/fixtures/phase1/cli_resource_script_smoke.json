@@ -1,0 +1,15 @@
+{
+  "scope": "tiny-resource-and-client-stylesheet-CLI-smoke",
+  "compiler_sha256": "FE966EE3A986DF096E9848EEAA16054512A2833117E457F9194A291FA2DEF33C",
+  "project_sha256": "15019DC0B103E5DB4CE6EE1EBA220D25C7A2BDC08CF975090AE542372813E692",
+  "dmb_sha256": "7273218C9E7AA6F06BE999D546FC7728B39970FF39900629E50DC93CB77214C8",
+  "rsc_sha256": "89A5DC40C1BFE33F3CFD8EBF3B3D792691A5870C2DB07464444095C00D687938",
+  "marker_sha256": "D219F3AD12B3141E3E89B2AEE4DB02B7212C520C058E048DFD85F856AB68694B",
+  "dmb_bytes": 21969,
+  "rsc_bytes": 64,
+  "completed": true,
+  "timing_scope": "single debug smoke, not DeepQuarry acceptance",
+  "observed_total_seconds": 0.718,
+  "typed_reference_audit": "all typed cross-table references resolve",
+  "inspector_sha256": "3A16AD445C13C74A7126A0742F8D95561BC79A6B0CC22A83E2868BA53F4DC197"
+}

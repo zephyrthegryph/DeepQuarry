@@ -1,0 +1,52 @@
+[
+  {
+    "name": "cold",
+    "project": "benchmark.dme",
+    "no_cache": true,
+    "arguments": [
+      "--no-daemon",
+      "--engine-template",
+      "E:\\dmb-native-v2-phase0\\review-benchmark-inputs\\project\\.dmbc\\benchmark-engine.bin",
+      "--bootstrap-catalog",
+      "-DDM_VERSION=516",
+      "-DDM_BUILD=1687",
+      "--output-store",
+      "E:\\dmb-native-v2-phase0\\review-benchmark-inputs\\pair-store"
+    ]
+  },
+  {
+    "name": "body-edit",
+    "project": "benchmark.dme",
+    "arguments": [
+      "--no-daemon",
+      "--engine-template",
+      "E:\\dmb-native-v2-phase0\\review-benchmark-inputs\\project\\.dmbc\\benchmark-engine.bin",
+      "--bootstrap-catalog",
+      "-DDM_VERSION=516",
+      "-DDM_BUILD=1687",
+      "--output-store",
+      "E:\\dmb-native-v2-phase0\\review-benchmark-inputs\\pair-store"
+    ],
+    "edits": [
+      {
+        "path": ".dmbc/phase2-probe-a.dm",
+        "before": "return 101",
+        "after": "return 102"
+      }
+    ]
+  },
+  {
+    "name": "unchanged",
+    "project": "benchmark.dme",
+    "arguments": [
+      "--no-daemon",
+      "--engine-template",
+      "E:\\dmb-native-v2-phase0\\review-benchmark-inputs\\project\\.dmbc\\benchmark-engine.bin",
+      "--bootstrap-catalog",
+      "-DDM_VERSION=516",
+      "-DDM_BUILD=1687",
+      "--output-store",
+      "E:\\dmb-native-v2-phase0\\review-benchmark-inputs\\pair-store"
+    ]
+  }
+]

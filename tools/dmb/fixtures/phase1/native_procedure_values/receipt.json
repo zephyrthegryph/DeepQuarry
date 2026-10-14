@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "compiler": {
+    "version": "516.1687",
+    "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+  },
+  "files": [
+    {
+      "path": "control.dm",
+      "sha256": "545339b12fde7c3ff8d1ac870a3202c5c063944bfba6659ed29f3f8b6a59e7fc"
+    },
+    {
+      "path": "control.dme",
+      "sha256": "10f075dd059fc75e9cf0bd25f3b99dbebf9f828d587063f9240d5ef96ff04a03"
+    },
+    {
+      "path": "control.stdout.log",
+      "sha256": "e15242f00300d820c927a5a2a0e8b02aecce3b7316a3764b681e9f9a03653d74"
+    },
+    {
+      "path": "control.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "control.native.bin",
+      "sha256": "d340452028bac9c524a9abaad615b482cae923593d6ce32303c5ce97aa800e7c"
+    },
+    {
+      "path": "selection.dm",
+      "sha256": "6b6cae78c0176d3fae739d838c30fae5f3307107cca8a4c896ed6ad5613ffb20"
+    },
+    {
+      "path": "selection.dme",
+      "sha256": "e9dfe89df3f9d2a1acfb76d4884cb241a901c7fbbe28313ba594e3e4bb60e05e"
+    },
+    {
+      "path": "selection.stdout.log",
+      "sha256": "97d0e5b49d9d84f44f56e84b23ab2138f4960f96f2c9cddf7860368d50701e3a"
+    },
+    {
+      "path": "selection.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "selection.native.bin",
+      "sha256": "7053a37344f3614e57e6c56661080017f1f1f3c0c073d436694656f60597a0af"
+    },
+    {
+      "path": "inherited.dm",
+      "sha256": "a263050c81138e9d3948dbfb765c50bf245090d58f3cdd51fb576465afcc2004"
+    },
+    {
+      "path": "inherited.dme",
+      "sha256": "bccd04cab90f004b044b26e17b591c848bd7b9ab7cfaa65f62c0d340d76d0c6c"
+    },
+    {
+      "path": "inherited.stdout.log",
+      "sha256": "bf19876fc4b565474a0282e63085f8bc1a34e3f236f153e4ac668eef852f1b5c"
+    },
+    {
+      "path": "inherited.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inherited_override.dm",
+      "sha256": "f7a4b75850e7a26b8adcc6e83d213ef309dbb6f95443c750e5c6af83dfb6ccb5"
+    },
+    {
+      "path": "inherited_override.dme",
+      "sha256": "fa4ae890171049894ae93387079a47abbc4eef93f71989c94e8feb73b636463a"
+    },
+    {
+      "path": "inherited_override.stdout.log",
+      "sha256": "af7167aa0ae93e06f3777cabdf1be30a5427012b410c0daa5a616aa0c6a3bfe3"
+    },
+    {
+      "path": "inherited_override.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "selection_variable_records": [
+    {
+      "index": 67,
+      "decoded": "Variable { kind: 38, value: 0, name: 444 } name=global_ref"
+    },
+    {
+      "index": 68,
+      "decoded": "Variable { kind: 38, value: 1, name: 445 } name=proc_ref"
+    },
+    {
+      "index": 69,
+      "decoded": "Variable { kind: 38, value: 2, name: 446 } name=implicit_ref"
+    },
+    {
+      "index": 70,
+      "decoded": "Variable { kind: 38, value: 3, name: 447 } name=verb_ref"
+    },
+    {
+      "index": 71,
+      "decoded": "Variable { kind: 38, value: 1, name: 448 } name=inherited_ref"
+    }
+  ],
+  "semantics": {
+    "global_ref": "tag38 proc0 /proc/global_callback",
+    "proc_ref": "tag38 proc1 formal /datum/base/proc/callback returning1",
+    "implicit_ref": "tag38 proc2 implicit /datum/base/callback returning2",
+    "verb_ref": "tag38 proc3 /datum/base/verb/action",
+    "inherited_ref": "tag38 proc1 explicit base formal; receiverchilddoesnotchange selection",
+    "child_formal_literal": "/datum/child/proc/callback rejected undefinedtypepath withorwithout ownimplicitoverride"
+  },
+  "initial_macros": []
+}

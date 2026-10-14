@@ -1,0 +1,2 @@
+colon_undefined.dm:2:error: returnT:nonexistent_field_colon: undefined var
+colon_undefined.dmb - 1 error, 0 warnings

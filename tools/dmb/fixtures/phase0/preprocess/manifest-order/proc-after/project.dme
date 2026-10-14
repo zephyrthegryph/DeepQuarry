@@ -1,0 +1,3 @@
+#include "child.dm"
+/datum/probe/read()
+    return 2

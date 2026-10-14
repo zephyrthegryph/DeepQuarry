@@ -1,0 +1,158 @@
+{
+  "schema": "dm-input-warning-masks-v1",
+  "status": "captured",
+  "producer_sha256": "5e45abb46081d26f72678ebca8fb4302be967a4fd3e24737558bd79e54edda51",
+  "compiler": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "file_version": "5.0.516.1687",
+  "child_watchdog_s": 30,
+  "aggregate_admission_deadline_s": 360,
+  "cases": [
+    {
+      "name": "matrix",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\input_warning_masks\\matrix.dm",
+      "source_sha256": "a722d192b4a7392146dd12c3e878adbc3c964b7ef383ab219f8022b4f50a6842",
+      "inputs": {
+        "matrix.dm": "a722d192b4a7392146dd12c3e878adbc3c964b7ef383ab219f8022b4f50a6842",
+        "matrix.dme": "70b513ce7f23ee095fbd0b735af3169a78c4b12057f086d4c42b4824478c0024"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\input-warning-masks-20261010-final\\matrix\\matrix.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.3168669999577105,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\input-warning-masks-20261010-final\\matrix\\byond.log",
+        "diagnostics": [
+          {
+            "file": "matrix.dm",
+            "line": 2,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 4,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 6,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 8,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 10,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 12,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 14,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 16,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 18,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 24,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 26,
+            "severity": "warning (filter_rightmost)",
+            "message": "object type filter should be right-most"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 28,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 30,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 44,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 46,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          },
+          {
+            "file": "matrix.dm",
+            "line": 48,
+            "severity": "warning (list_without_filter)",
+            "message": "it is recommended that you use an object filter or 'anything' when combining constant input types with lists"
+          }
+        ],
+        "log_sha256": "77321a6e745571e2c6a3d9cf6e240870472a20bf5948063ce2e32023deb849c5"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\input-warning-masks-20261010-final\\matrix\\matrix.dmb",
+          "bytes": 17275,
+          "sha256": "1976beb24c0bb0c78753d5056ab9703736bbadcca6a5105922335256ddabce48"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "diagnostics": "DM compiler version 516.1687\r\nloading matrix.dme\r\nmatrix.dm:2:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:4:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:6:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:8:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:10:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:12:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:14:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:16:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:18:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:24:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:26:warning (filter_rightmost): object type filter should be right-most\r\nmatrix.dm:28:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:30:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:44:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:46:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nmatrix.dm:48:warning (list_without_filter): it is recommended that you use an object filter or 'anything' when combining constant input types with lists\r\nsaving matrix.dmb\r\nmatrix.dmb - 0 errors, 16 warnings (10/10/26 10:35 am)\r\nTotal time: 0:00\r\n",
+      "status": "captured"
+    }
+  ],
+  "scope": "actual compile-only sized-array capture; allocation/overwrite semantics not yet decoded; no native or runtime execution",
+  "version": {
+    "command": [
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe"
+    ],
+    "exit_code": 1,
+    "timed_out": false,
+    "seconds": 0.2025190000422299,
+    "cleanup": null,
+    "log": "E:\\dq-cache\\dmb-native-v2\\input-warning-masks-20261010-final\\version.log",
+    "diagnostics": [],
+    "log_sha256": "865efe09cc6a29c7102ee596363784a36fa4031f773d3caad44d171d5737763b"
+  }
+}

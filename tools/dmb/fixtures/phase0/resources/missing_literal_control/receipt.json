@@ -1,0 +1,10 @@
+{
+  "exit_code": -1,
+  "args": [
+    "probe.dme"
+  ],
+  "compiler": "D:/Program Files (x86)/BYOND516/bin/dm.exe",
+  "compiler_sha256": "8CAC7E8BD48219F8A7FB622535A1CE1A914D0A9A3E909BC9CEB84B3074709DC0",
+  "pid": 39120,
+  "source_sha256": "B7128AD99474171D876326664AE9E6492678E9CB83466E0DD1972B602A0AD5A0"
+}

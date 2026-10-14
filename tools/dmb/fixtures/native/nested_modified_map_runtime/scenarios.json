@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "steps": [
+    {
+      "name": "initial",
+      "expected": [
+        1,
+        1,
+        7,
+        11,
+        13
+      ]
+    },
+    {
+      "name": "unchanged",
+      "expected": [
+        1,
+        1,
+        7,
+        11,
+        13
+      ]
+    },
+    {
+      "name": "body",
+      "before": "    return 13\n",
+      "after": "    return 17\n",
+      "expected": [
+        1,
+        1,
+        7,
+        11,
+        17
+      ]
+    },
+    {
+      "name": "structural",
+      "before": "    var/scalar = 0\n",
+      "after": "    var/scalar = 0\n    var/unrelated = 23\n",
+      "expected": [
+        1,
+        1,
+        7,
+        11,
+        17
+      ]
+    },
+    {
+      "name": "map_nested",
+      "asset_edit": {
+        "path": "probe.dmm",
+        "before": "amount = 7",
+        "after": "amount = 19"
+      },
+      "expected": [
+        1,
+        1,
+        19,
+        11,
+        17
+      ]
+    },
+    {
+      "name": "map_scalar",
+      "asset_edit": {
+        "path": "probe.dmm",
+        "before": "scalar = 11",
+        "after": "scalar = 23"
+      },
+      "expected": [
+        1,
+        1,
+        19,
+        23,
+        17
+      ]
+    }
+  ]
+}

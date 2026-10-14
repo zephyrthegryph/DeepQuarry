@@ -1,0 +1,53 @@
+{
+  "files": [
+    {
+      "path": ".gitattributes",
+      "sha256": "2b4a36b3152af89c2af116c71c13e3d20ee2acb0c8cbc4b468d8e2d388727ae0"
+    },
+    {
+      "path": "formal_then_implicit/compile.log",
+      "sha256": "727b081e950be6a0e2aee2ea25f8e746e9215bd9c76137e70d96c015b6eedd99"
+    },
+    {
+      "path": "formal_then_implicit/compile.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "formal_then_implicit/probe.dm",
+      "sha256": "b0360813437dc13938aef8834e8e01092928dccdca724e4a0f1ed199b1a94c64"
+    },
+    {
+      "path": "formal_then_implicit/probe.dme",
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+    },
+    {
+      "path": "formal_then_implicit/probe.native.bin",
+      "sha256": "98ee2cd833a809b4664f8b9692e02f1604ec02c8c1ffec176d8036350a4355ac"
+    },
+    {
+      "path": "implicit_then_formal/compile.log",
+      "sha256": "055cc0c855b5a6e5a23a74b14220f69b0b0bdc8a8a8a152dd3daa28dd7b88efb"
+    },
+    {
+      "path": "implicit_then_formal/compile.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "implicit_then_formal/probe.dm",
+      "sha256": "7f10733fd1668319bb3e4cf937b0df1dc520b7042558e88650f7ea83b34680b8"
+    },
+    {
+      "path": "implicit_then_formal/probe.dme",
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+    },
+    {
+      "path": "implicit_then_formal/probe.native.bin",
+      "sha256": "b5e89b02d838568d577e376f463813690a3ee29d9b1315c6ba7025ea98a4f6f5"
+    }
+  ],
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "observations": {
+    "formal_then_implicit": "0errors0warnings; body0 __PROC__ PushVal38,0; overridebody1 PushVal38,1 thenCallParent NewList2",
+    "implicit_then_formal": "accepted with no_parent and override_before_def warnings; body0 implicit PushVal38,0; body1 formal PushVal38,1"
+  }
+}

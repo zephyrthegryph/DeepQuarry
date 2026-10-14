@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "scope": "Tiny compile-only first-root member StringID chronology; no DreamDaemon, runtime, full source parity or throughput acceptance.",
+  "reference_receipt": "E:\\dq-cache\\dmb-member-string-reference\\903e88ed4b2b4032987f63172f34e2fb\\receipt.json",
+  "reference_receipt_sha256": "f16221068b448b7ba2ee02851f8706195be5a6e0f002ca71b22bf8b5b39f65d6",
+  "native_receipt": "E:\\dq-cache\\dmb-member-string-reference\\903e88ed4b2b4032987f63172f34e2fb\\native\\receipt.json",
+  "native_receipt_sha256": "e21dc4b02fd64aa916395f05cf43123790934bade21a2146602f73ff45b0c22e",
+  "native_commit": "dd2beae8b11acd40bbcf320593102d102a45fa01",
+  "native_sha256": "b2ce5c747b046ea2188d535ef21a177a6b42200f8090bce3377f4d88a9541676",
+  "inspector": {
+    "path": "E:/dq-cache/dmb-native-v2/frozen-build/20261011-e682617358-inspector-opt0.exe",
+    "sha256": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb"
+  },
+  "source": "/proc/unused_registration(datum/orderholder/holder) returns holder.z_first before fields authored a_second,type_value,z_first",
+  "byond": {
+    "field_footer": 0,
+    "field_ids": [
+      69,
+      70,
+      71,
+      72
+    ],
+    "string_ids": {
+      "a_second": 439,
+      "type_value": 440,
+      "z_first": 441
+    },
+    "getvar_member_string_id": 441
+  },
+  "native_before_fix": {
+    "field_footer": 119,
+    "field_ids": [
+      180,
+      181,
+      182,
+      183
+    ],
+    "string_ids": {
+      "a_second": 594,
+      "type_value": 595,
+      "z_first": 592
+    },
+    "getvar_member_string_id": 592
+  },
+  "finding": "Frozen string operand supplement incorrectly registers z_first early. Literal and formal/local source registrations remain authoritative; field relocation does not register a lexical string.",
+  "validation_after_fix": "Pending root rebuild and same compile-only control.",
+  "initial_attempt": "7226a3958af4425e8cd13bb460d23068 compiled forward successfully but fixture omitted referenced resource, so receipt collection failed on absent RSC. Corrected fixture adds resource before complete recapture."
+}

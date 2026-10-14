@@ -1,0 +1,93 @@
+{
+  "schema": "dm-native-fresh-v1",
+  "status": "failed",
+  "workers": 2,
+  "watchdog_seconds": 300,
+  "owned_private_budget_bytes": 4000000000,
+  "acceptance_admitted": false,
+  "scope": "one fresh compile with progress logging and sampled owned private memory; no incremental, BYOND, runtime or r6 acceptance",
+  "disk_preflight": {
+    "status": "passed",
+    "checked_path": "E:\\dq-cache\\dmb-native-fresh\\20261010-100448-5ecab1b7",
+    "free_bytes": 108744155136,
+    "total_bytes": 1000186310656,
+    "required_free_bytes": 17179869184,
+    "policy": "configurable headroom floor; no reservation or completion guarantee"
+  },
+  "build": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-100012-b5b45f11.json",
+    "sha256": "1de2a4095fdc8a4b0458f924aa1dcd5faaa17290b53eafea4deb2e762ac1a567",
+    "compiler_sha256": "b0fd42a3869af52a96792948d874e798ba48d36562c60f8e710043e6bfe9e188",
+    "commit": "c9b7b7dadfa60de1bfcbf6cca439ef24b390ee90",
+    "dmbc_opt_level": 0,
+    "dm_tree_opt_level": 1,
+    "dmbc_codegen_units": 256,
+    "lto": false,
+    "declared_acceptance_profile": false,
+    "benchmark_acceptance_admitted": false,
+    "scope": "successful-build receipt matched to exact executable bytes"
+  },
+  "compiler_sha256": "b0fd42a3869af52a96792948d874e798ba48d36562c60f8e710043e6bfe9e188",
+  "template_sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540",
+  "input_closure_sha256": "f53395b45f90f80abf962221733a5535bae787e1011de8b1fa9abb5b49f3656e",
+  "source_snapshot_sha256": "68deedaf353c95364407b374d2a1eb42607875d14a8597d90461239e2696e5c7",
+  "scenario_sha256": "33812c10845713c800a8569c070a87e34d8163f431ae734721df1db56866e5ef",
+  "configuration_evidence": [
+    "E:\\dq-cache\\dmb-native-v2\\recovered-baseline-20261010\\recapture\\byond-version.json",
+    "E:\\dq-cache\\dmb-native-v2\\recovered-baseline-20261010\\filtered-admission\\configuration-evidence.json"
+  ],
+  "semantic_configuration_sha256": "6fb25d402464088e7d7d019c05a00a825b7554e81202e6e40471ed4315bdfbd6",
+  "isolated_files": 24218,
+  "build_lock_absent_before_run": true,
+  "arguments": [
+    "compile",
+    "E:\\dq-cache\\dmb-native-fresh\\20261010-100448-5ecab1b7\\project\\comparison.dme",
+    "--workers",
+    "2",
+    "--progress",
+    "--no-daemon",
+    "--no-cache",
+    "--exact-inputs",
+    "--artifact-directory",
+    "E:\\dq-cache\\dmb-native-fresh\\20261010-100448-5ecab1b7\\artifacts",
+    "--output-store",
+    "E:\\dq-cache\\dmb-native-fresh\\20261010-100448-5ecab1b7\\store",
+    "--compile-result-file",
+    "E:\\dq-cache\\dmb-native-fresh\\20261010-100448-5ecab1b7\\compile-result.json",
+    "--bootstrap-catalog",
+    "-DCIBUILDING",
+    "-DCITESTING",
+    "-DDM_VERSION=516",
+    "-DDM_BUILD=1687",
+    "--engine-template",
+    "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin"
+  ],
+  "compile_execution": {
+    "exit": 70,
+    "wall_s": 22.057298799976707,
+    "wall_scope": "client launch through reap; daemon work included for retained requests"
+  },
+  "admitted_output": false,
+  "error": "fresh compile failed with status 70",
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 1363935232,
+    "samples": 109,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 55692,
+        "private_bytes": 1363935232
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "registered owned fresh compiler and acquisition children only; 200ms samples, unregistered descendants/unrelated processes excluded; not strict peak proof"
+  },
+  "child_evidence": {
+    "compile": "E:\\dq-cache\\dmb-native-fresh\\20261010-100448-5ecab1b7\\compile\\child.json"
+  }
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "name": "probe.gif",
+    "kind": 13,
+    "source_bytes": 1633,
+    "payload_bytes": 1633,
+    "equal": true,
+    "source_sha256": "d7ee0009c792f47e5563f77b50de805ddb7e429510c23a15a34ae8acdc1d18d7",
+    "payload_sha256": "d7ee0009c792f47e5563f77b50de805ddb7e429510c23a15a34ae8acdc1d18d7"
+  },
+  {
+    "name": "probe.wav",
+    "kind": 2,
+    "source_bytes": 160418,
+    "payload_bytes": 160418,
+    "equal": true,
+    "source_sha256": "c4a10e1e340fb8fffb8901272ec000f1d75346d6cb114f5977caad274915d931",
+    "payload_sha256": "c4a10e1e340fb8fffb8901272ec000f1d75346d6cb114f5977caad274915d931"
+  },
+  {
+    "name": "probe.mid",
+    "kind": 1,
+    "source_bytes": 100,
+    "payload_bytes": 100,
+    "equal": true,
+    "source_sha256": "8068bbb8dcf4ef9712b53184050850bbe734156a77f88facb272fdd0b8765b2e",
+    "payload_sha256": "8068bbb8dcf4ef9712b53184050850bbe734156a77f88facb272fdd0b8765b2e"
+  },
+  {
+    "name": "probe.mp3",
+    "kind": 2,
+    "source_bytes": 7334,
+    "payload_bytes": 7334,
+    "equal": true,
+    "source_sha256": "ee5ec85e620b216401a4894312f680f52a2d2c12eed35d35216f64072384aeef",
+    "payload_sha256": "ee5ec85e620b216401a4894312f680f52a2d2c12eed35d35216f64072384aeef"
+  },
+  {
+    "name": "probe.woff2",
+    "kind": 0,
+    "source_bytes": 19000,
+    "payload_bytes": 19000,
+    "equal": true,
+    "source_sha256": "a4b951c0f582686a6b73f4e0ec29dbd7437daa7e26a512d8015b74d9ec798ea6",
+    "payload_sha256": "a4b951c0f582686a6b73f4e0ec29dbd7437daa7e26a512d8015b74d9ec798ea6"
+  },
+  {
+    "name": "probe.webp",
+    "kind": 0,
+    "source_bytes": 196842,
+    "payload_bytes": 196842,
+    "equal": true,
+    "source_sha256": "9662b37321dc9897814aef699bac2caacafd0185bd9403b8709cd27a0af86618",
+    "payload_sha256": "9662b37321dc9897814aef699bac2caacafd0185bd9403b8709cd27a0af86618"
+  }
+]

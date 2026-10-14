@@ -1,0 +1,20 @@
+[
+  {
+    "name": "tiny.png",
+    "kind": 6,
+    "source_length": 123,
+    "payload_length": 123,
+    "equal": true,
+    "source_sha256": "7d6872fa320a9b27d9dd13874b2b3b7349a719ccc5590a2acf523df70ed3ac60",
+    "payload_sha256": "7d6872fa320a9b27d9dd13874b2b3b7349a719ccc5590a2acf523df70ed3ac60"
+  },
+  {
+    "name": "skin.dmf",
+    "kind": 0,
+    "source_length": 118,
+    "payload_length": 118,
+    "equal": true,
+    "source_sha256": "59669775118dca4d4270d95332203214efcd326063ee1a44524a3795786d34db",
+    "payload_sha256": "59669775118dca4d4270d95332203214efcd326063ee1a44524a3795786d34db"
+  }
+]

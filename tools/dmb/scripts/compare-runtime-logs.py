@@ -1,7 +1,7 @@
-"""Compare captured BYOND runtime errors; exit 1 for translated-only errors.
+"""Compare captured BYOND runtime errors; exit 1 for differences in either output.
 
 This checks reported errors, not gameplay equivalence. Counts and source lines
-are retained, but different counts/line mappings do not change error identity.
+are retained. Counts must agree; line mappings do not change error identity.
 """
 
 import argparse
@@ -31,20 +31,27 @@ def runtime_errors(path):
     return records
 
 
+def compare_errors(native, translated):
+    return {
+        "native_only": [native[key] for key in sorted(native.keys() - translated.keys())],
+        "translated_only": [translated[key] for key in sorted(translated.keys() - native.keys())],
+        "shared": [{"native": native[key], "translated": translated[key]} for key in sorted(native.keys() & translated.keys())],
+        "count_changes": [
+            {"native": native[key], "translated": translated[key]}
+            for key in sorted(native.keys() & translated.keys())
+            if native[key]["count"] != translated[key]["count"]
+        ],
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("native_log")
     parser.add_argument("translated_log")
     args = parser.parse_args()
-    native = runtime_errors(args.native_log)
-    translated = runtime_errors(args.translated_log)
-    result = {
-        "native_only": [native[key] for key in sorted(native.keys() - translated.keys())],
-        "translated_only": [translated[key] for key in sorted(translated.keys() - native.keys())],
-        "shared": [{"native": native[key], "translated": translated[key]} for key in sorted(native.keys() & translated.keys())],
-    }
+    result = compare_errors(runtime_errors(args.native_log), runtime_errors(args.translated_log))
     print(json.dumps(result, indent=2))
-    return bool(result["translated_only"])
+    return bool(result["native_only"] or result["translated_only"] or result["count_changes"])
 
 
 if __name__ == "__main__":

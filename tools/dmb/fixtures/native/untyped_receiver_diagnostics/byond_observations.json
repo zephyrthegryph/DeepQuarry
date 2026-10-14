@@ -1,0 +1,302 @@
+{
+  "schema": 1,
+  "receipt": "E:/dq-cache/dmb-untyped-receiver-diagnostics/f5b581d5b9384f319bff46b60a817697/receipt.json",
+  "receipt_sha256": "0fac6a3a3bd649152e0e9ee8fb11f69005c4eca4d72a3fa393d4b1efcc8babab",
+  "pins": {
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    }
+  },
+  "source_sha256": {
+    "other_type_dot.dm": "f6b68cbaf0e73e8ac372b4b2c39b5730ad52c60cfe816f135a3d0038f500e1b1",
+    "other_type_dot.dme": "34fc6d31f4b81b09315254b66337d7bac47c1cfac02d3353d94f1c1dac56bea5",
+    "other_type_colon.dm": "3dbdc6fd1c0a3086ac5abe4b158f8570cc0ef04a5a3d89f5e2476196472902fa",
+    "other_type_colon.dme": "79cef3067d43444909c6d8629e9241e1c965073c4c07cb164d22fa03014aad7f",
+    "global_name_dot.dm": "43d8033dae649398816cc83415e773932195986bd0c629a31fbfc48bf4afd593",
+    "global_name_dot.dme": "fb50b813390d9f284d1680a1d982048a38bc76e64d5209380b071618757e6719",
+    "global_name_colon.dm": "f13b31617a95ec7c6cdc12cd4a88359b4a96e292516a79b18944ae51f8206e6e",
+    "global_name_colon.dme": "c6ae6102ff5aba04dd6e640cbd3b6586e04990925f067833d68b168d9469f4b5",
+    "datum_new_dot.dm": "d60fc717c32668f4dc2dfd8e851b207d481ee1a088c284ca645426cecfabff03",
+    "datum_new_dot.dme": "4f15bec374dbcf7dfbb73730f6701d5a2e44649129380cafdc144b85b60386eb",
+    "datum_new_colon.dm": "1f01ff263f856f57c70640e7a113703750983a22934b80ea6993efcc72b5c127",
+    "datum_new_colon.dme": "375eb5482319ada022b2bf5c17d6bb06c3a2290cf09b3bf4926250151cf63d98",
+    "list_copy_dot.dm": "52b0a195f383c5eddfd8c7a9e84bb505eec84081c6f199e8944c7d526c482776",
+    "list_copy_dot.dme": "e9af045b1305006ba0538e558e2a121de6477c20e185516b863a9193560aa5f0",
+    "list_copy_colon.dm": "308083ac2325169a74cb6f5fe9eb391f7a0054fdec97ee5d61b54763cb7cb72a",
+    "list_copy_colon.dme": "5c845a10b580b536be83d5222e7c582c5f0cbeab111127c15f078b3ac5a84835",
+    "undefined_dot.dm": "480465ffbca10582c80026cc5a1b191fe423a2a375ce962eb2a832348694ddfe",
+    "undefined_dot.dme": "3d5327fe2f80ef83cd130b4526d7f6f021afff3f7b7b2677a3bae4276bc33db5",
+    "undefined_colon.dm": "e277cc98d0051d95d6fc9d998a75894a53a04edb680b7f0f1ee2cd084fc0f253",
+    "undefined_colon.dme": "4cbd8d141df780a77fd9935fe68e8ee34f19f8f247f16020f500f8d3e18eec95",
+    "list_typed_copy.dm": "47f7bc5f95004685952d7680b87e1920cb788911aa361ab60f136c83a5bcfb7c",
+    "list_typed_copy.dme": "8aac14c2174b9091a5df83981c77f771c7d84bff904a35cb66a4f29a97dcf6cb",
+    "datum_typed_copy.dm": "ef7e2dc9be914af5d3dc8a58d011f6daedc860a9f1a199adc57abbf2f3592eab",
+    "datum_typed_copy.dme": "4841369ccf84a58f4a76f777ac55fdf4d35d8b6b809a7f99661769dd5d28b9fa",
+    "other_type_typed.dm": "4532147856b6e00ac5136bc1d49110f79b3809ecb8dab306758f08b7bc4b7b02",
+    "other_type_typed.dme": "9706f86b7efd54d3128019938605788821d1e3a47523af7b033f2f0705d69d93",
+    "self_declared_dot.dm": "6c9115cb91c651c8934c6c933b126d02061642c8e1bbd137de72dbba3e17b9f4",
+    "self_declared_dot.dme": "8fb304eb7dde6e6c2d8d16808665b435deb1ea5986f5693b9083a7bcfd0dcdd4",
+    "self_missing_dot.dm": "1dd94f48de623672d3037c0e648ea65611072a0627a2380f1ca60d854db43951",
+    "self_missing_dot.dme": "52885c977ba8236a4a6d69ce04d1b273be9ff8d4655fe5f0db055f4fd62cfbc3",
+    "self_missing_colon.dm": "b189d12dfe8f06d6d58128f40d9f658b6dd8e7ef5d99fec5a7a5b91549604ed8",
+    "self_missing_colon.dme": "e42f1f4accfda6c21e61414d20f44703b81a06be8ca1debd6b0ff5696a810529",
+    "verb_only_dot.dm": "133f881c0b2bc53b894c6dca5ae0fceb935a472e9d3f877984e4c452451ef87c",
+    "verb_only_dot.dme": "58ec6fe4ac74850f21b35796fc0a9b97a864d697ecac7adff37b4a216702daea",
+    "verb_only_colon.dm": "d5aadf2bb8422ca6434ab902dc0d228feeed63f1bf6345cc67822728943f1be9",
+    "verb_only_colon.dme": "df36062a148cd99cfc766ef1d2f449623bc32c3b0c79a983b8f6eb381eead5da",
+    "mixed_proc_verb_colon.dm": "7c4e16d86b1953047e85be5c35a00bfdf44645ec6ecc60bcf342ca4d966c71fa",
+    "mixed_proc_verb_colon.dme": "2159537b6df5410ee6883e1d7ef08d44637ee30b7a016cb905ad73aa66626b47",
+    "typed_source_verb.dm": "fc6e7bd03cfcf0899312c9279a9133c4299ea49c9b46ba5423645c4d400d7cad",
+    "typed_source_verb.dme": "c59740529cfdf91be22122626fd4981fad1a7ef718e8307e38eb881ce2669a3c",
+    "self_source_verb.dm": "46152e2962f3a7d4a4b7f59461c9f448cfd15ef1df725505f7f99e5819513201",
+    "self_source_verb.dme": "0ec0304d3c40599c627c1d235751af6cae4f31342a28a07d3fc1121825588585"
+  },
+  "byond": {
+    "other_type_dot": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.5131161999888718,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "other_type_dot.dm",
+          "line": 4,
+          "severity": "error",
+          "message": "value.known: undefined proc"
+        }
+      ]
+    },
+    "other_type_colon": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.48109940002905205,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "global_name_dot": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.4621980999945663,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "global_name_dot.dm",
+          "line": 4,
+          "severity": "error",
+          "message": "value.known: undefined proc"
+        }
+      ]
+    },
+    "global_name_colon": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.4698829000117257,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "global_name_colon.dm",
+          "line": 4,
+          "severity": "error",
+          "message": "value:known: undefined proc"
+        }
+      ]
+    },
+    "datum_new_dot": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.45009150000987574,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "datum_new_dot.dm",
+          "line": 2,
+          "severity": "error",
+          "message": "value.New: undefined proc"
+        }
+      ]
+    },
+    "datum_new_colon": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.4320084999781102,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "list_copy_dot": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.47804369998630136,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "list_copy_dot.dm",
+          "line": 2,
+          "severity": "error",
+          "message": "value.Copy: undefined proc"
+        }
+      ]
+    },
+    "list_copy_colon": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.4821284000063315,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "undefined_dot": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.4773484999896027,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "undefined_dot.dm",
+          "line": 2,
+          "severity": "error",
+          "message": "value.MissingReceiverMethod: undefined proc"
+        }
+      ]
+    },
+    "undefined_colon": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.48219750000862405,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "undefined_colon.dm",
+          "line": 2,
+          "severity": "error",
+          "message": "value:MissingReceiverMethod: undefined proc"
+        }
+      ]
+    },
+    "list_typed_copy": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.5909077000105754,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "datum_typed_copy": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.4912138000363484,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "datum_typed_copy.dm",
+          "line": 2,
+          "severity": "error",
+          "message": "value.Copy: undefined proc"
+        }
+      ]
+    },
+    "other_type_typed": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.4482759000384249,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "self_declared_dot": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.4796656999969855,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "self_missing_dot": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.4471006999956444,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "self_missing_dot.dm",
+          "line": 2,
+          "severity": "error",
+          "message": "src.MissingReceiverMethod: undefined proc"
+        }
+      ]
+    },
+    "self_missing_colon": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.4776653000153601,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "self_missing_colon.dm",
+          "line": 2,
+          "severity": "error",
+          "message": "src:MissingReceiverMethod: undefined proc"
+        }
+      ]
+    },
+    "verb_only_dot": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.44746809999924153,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "verb_only_dot.dm",
+          "line": 4,
+          "severity": "error",
+          "message": "value.verb_known: undefined proc"
+        }
+      ]
+    },
+    "verb_only_colon": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.49530070001492277,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "mixed_proc_verb_colon": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.4689895000192337,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "typed_source_verb": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.46869489998789504,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "self_source_verb": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.4764562000054866,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    }
+  }
+}

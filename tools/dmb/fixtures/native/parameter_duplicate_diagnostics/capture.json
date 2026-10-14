@@ -1,0 +1,214 @@
+{
+  "compiler_version": "516.1687",
+  "compiler": {
+    "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+    "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+  },
+  "engine_template": {
+    "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+    "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+  },
+  "source_sha256": {
+    "duplicate_parameter.dm": "24301d11cd9bd87a024910668cbbbf69c89641a668c76b6299ff65a28ea5b483",
+    "duplicate_parameter.dme": "da2ebd848d21fd4e86ce40de6cfda5daff0a8bed8e11f9c8245a147d8a579d34",
+    "local_shadows_parameter.dm": "2e9c136d6c1e739a6025a564bd78db1a3bb4c15d60e42934bfe3ba15f5830ff8",
+    "local_shadows_parameter.dme": "a6e0544c38c056f62e934b046099904e287e7d438926e05d77055c12159275be",
+    "distinct_parameters.dm": "398ce959d838eccc748d08a74d44e5f9c137f1f804501bed1d4ac2390f751eda",
+    "distinct_parameters.dme": "1643ba5c1c8b097b6116405fa92f5fd9b0b665addeb070283f60bf4d16875be0"
+  },
+  "native_sha256": "b93eea251c8fae138d5e36a69cf48fba784a07695097c50b40496a121eada158",
+  "runtime": "not run",
+  "source_receipt": "E:\\dq-cache\\dmb-parameter-diagnostics\\a59729d4922645939d38de8772b3bd37\\receipt.json",
+  "byond": {
+    "duplicate_parameter": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.6931653000065126,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "local_shadows_parameter": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.492920899996534,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "local_shadows_parameter.dm",
+          "line": 2,
+          "severity": "error",
+          "message": "value: duplicate definition"
+        },
+        {
+          "file": "local_shadows_parameter.dm",
+          "line": 1,
+          "severity": "error",
+          "message": "value: previous definition"
+        }
+      ]
+    },
+    "distinct_parameters": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.4790363000356592,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    }
+  },
+  "rules": {
+    "duplicate_formals": "accepted; name selects last argument slot",
+    "local_shadows_parameter": "rejected; primary local line plus previous signature line"
+  },
+  "extended_capture": {
+    "receipt": "E:\\dq-cache\\dmb-parameter-diagnostics\\eac28bdbc0ce4744860bf7e840418dbb\\receipt.json",
+    "receipt_sha256": "282236940cec3ca3deb33b9c3b59f08763e4769fee51643575b794a1b70c4c75",
+    "source_sha256": {
+      "duplicate_parameter.dm": "24301d11cd9bd87a024910668cbbbf69c89641a668c76b6299ff65a28ea5b483",
+      "duplicate_parameter.dme": "da2ebd848d21fd4e86ce40de6cfda5daff0a8bed8e11f9c8245a147d8a579d34",
+      "local_shadows_parameter.dm": "2e9c136d6c1e739a6025a564bd78db1a3bb4c15d60e42934bfe3ba15f5830ff8",
+      "local_shadows_parameter.dme": "a6e0544c38c056f62e934b046099904e287e7d438926e05d77055c12159275be",
+      "distinct_parameters.dm": "398ce959d838eccc748d08a74d44e5f9c137f1f804501bed1d4ac2390f751eda",
+      "distinct_parameters.dme": "1643ba5c1c8b097b6116405fa92f5fd9b0b665addeb070283f60bf4d16875be0",
+      "duplicate_typed_first.dm": "fcccc4a4a04bcf92dd45f5f169ea3353e96751531b1765f56c8548aa3e5cdea1",
+      "duplicate_typed_first.dme": "2a4ffe7f64ba579d49027a7d28e831c8485d508fed58d9e292ebace948a6416b",
+      "duplicate_typed_last.dm": "5d34b6470d897ba734b8daebded82244e39db73f6e388693a592d0ea7d9dc9b0",
+      "duplicate_typed_last.dme": "154800d0319d939ea35d0e73814976cc5e436659ab8a3abfa5ec26a1c0f562a3",
+      "nested_parameter_shadow.dm": "945b0e9f159bd13e93ff1a66f877702c140b100d9be79b73c03bf1bc536c709f",
+      "nested_parameter_shadow.dme": "a6d5b2df9a4cf9907ee8080143ce0e1881517cc27d408a32c41362db58f11e7f",
+      "for_parameter_shadow.dm": "8537aa49e8c75f7885e5f917b45b2e458369de45b91ac074b0c4675ea8fee306",
+      "for_parameter_shadow.dme": "6b39fa427b4734427a2fab096504c68b6cf35ab7b9f8e406079dd93f52585a7f"
+    },
+    "pins": {
+      "native": {
+        "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-165957-3642b3ec.exe",
+        "sha256": "f88d3447e759703ecf39a60799ce9b71b1e207ce400b71c1be0e735f6b49e98e"
+      },
+      "template": {
+        "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+        "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+      },
+      "dm": {
+        "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+      }
+    },
+    "byond": {
+      "duplicate_parameter": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.42776859999867156,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      },
+      "local_shadows_parameter": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.44875659997342154,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "local_shadows_parameter.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "value: duplicate definition"
+          },
+          {
+            "file": "local_shadows_parameter.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "value: previous definition"
+          }
+        ]
+      },
+      "distinct_parameters": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.40278360003139824,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      },
+      "duplicate_typed_first": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.4096321999677457,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "duplicate_typed_first.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "value.formerly_missing: undefined proc"
+          }
+        ]
+      },
+      "duplicate_typed_last": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.4441911000176333,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "duplicate_typed_last.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "value.formerly_missing: undefined proc"
+          }
+        ]
+      },
+      "nested_parameter_shadow": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.5864524000207894,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "nested_parameter_shadow.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "value: duplicate definition"
+          },
+          {
+            "file": "nested_parameter_shadow.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "value: previous definition"
+          }
+        ]
+      },
+      "for_parameter_shadow": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.4563763000187464,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "for_parameter_shadow.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "value: duplicate definition"
+          },
+          {
+            "file": "for_parameter_shadow.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "value: previous definition"
+          }
+        ]
+      }
+    },
+    "rules": [
+      "Earlier typed duplicate formal remains a lexical type constraint when last duplicate is untyped.",
+      "Nested and iterator locals cannot shadow formal parameters."
+    ]
+  }
+}

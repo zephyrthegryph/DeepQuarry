@@ -1,0 +1,27 @@
+{
+  "compile_only": true,
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "cases": [
+    {
+      "case": "plain",
+      "exit": 0,
+      "elapsed_seconds": 0.4579387999838218,
+      "source_sha256": "77399d5c6f43427c023260841965cac083990e0b47a3c934fb557aee6c73cf77",
+      "native_sha256": "fc437eaff3a44be37d74de75b817f1bae90fe06894cc7dd404cb62ab005a97a1"
+    },
+    {
+      "case": "title-default",
+      "exit": 0,
+      "elapsed_seconds": 0.3048669000272639,
+      "source_sha256": "ad85cdc5349faedb9ad7206e7c0d25f513ee912285f9683763906b2c2ba0f1fe",
+      "native_sha256": "5ec6eae68f3d8820ac2709cfe376856db2528ce8e13942d995b81464661f634d"
+    },
+    {
+      "case": "choices",
+      "exit": 0,
+      "elapsed_seconds": 0.3078481000266038,
+      "source_sha256": "891ef9e29339b6037236a5ccfe559ec41e3ea5e504d9bf98c6efe8ab1e6ed94c",
+      "native_sha256": "a005451791330afcb572d49e2d946c372c4b70fdb234fbc3988a40dc08d5e23d"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-d02f53bd52aad7c5.exe",
+  "binary_sha256": "e27cd4ac4587f5b52d73a316b5b741d14926c29717bdc25fbd905fc463f368dc",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "startup_allocation::tests::",
+      "selected": [
+        "startup_allocation::tests::source_owner_allocation_precedes_root_even_when_root_is_declared_first"
+      ],
+      "exit": 0,
+      "seconds": 0.03455360000953078,
+      "stdout": "\nrunning 1 test\ntest startup_allocation::tests::source_owner_allocation_precedes_root_even_when_root_is_declared_first ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 674 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "driver_facts::abi_artifacts::production_tests::",
+      "selected": [
+        "driver_facts::abi_artifacts::production_tests::authored_setting_error_and_blocked_override_preserve_source_diagnostics",
+        "driver_facts::abi_artifacts::production_tests::formal_abi_tests::child_abi_inherits_original_formal_settings_not_effective_parent_override",
+        "driver_facts::abi_artifacts::production_tests::formal_abi_tests::original_formal_waitfor_zero_remains_inherited_and_child_explicit_setting_wins",
+        "driver_facts::abi_artifacts::production_tests::real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature",
+        "driver_facts::abi_artifacts::production_tests::typed_abi_requires_actual_engine_owner_and_prunes_failed_or_deleted_units"
+      ],
+      "exit": 0,
+      "seconds": 0.8918013999937102,
+      "stdout": "\nrunning 5 tests\ntest driver_facts::abi_artifacts::production_tests::authored_setting_error_and_blocked_override_preserve_source_diagnostics ... ok\ntest driver_facts::abi_artifacts::production_tests::formal_abi_tests::child_abi_inherits_original_formal_settings_not_effective_parent_override ... ok\ntest driver_facts::abi_artifacts::production_tests::formal_abi_tests::original_formal_waitfor_zero_remains_inherited_and_child_explicit_setting_wins ... ok\ntest driver_facts::abi_artifacts::production_tests::real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature ... ok\ntest driver_facts::abi_artifacts::production_tests::typed_abi_requires_actual_engine_owner_and_prunes_failed_or_deleted_units ... ok\n\ntest result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 670 filtered out; finished in 0.87s\n\n",
+      "stderr": ""
+    }
+  ]
+}

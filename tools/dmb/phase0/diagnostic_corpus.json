@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "name": "raw_quoted_newline",
+      "root": "../fixtures/native_compiler/line_continuation_strings",
+      "capture": "capture.json",
+      "capture_sha256": "4a4602892c2a19d2688488e8b094a23ea073f996e891d04eda14a1feb8f90ac6",
+      "source": "raw_newline.dm",
+      "manifest": "raw_newline.dme",
+      "source_receipt_path": [
+        "raw_newline"
+      ],
+      "defines": [],
+      "files": {
+        "raw_newline.dm": "e45ad390460a86505730e4584f6f54aed497e2aa5e3498092576d5a76a3e1b77",
+        "raw_newline.dme": "7cbeff95e63cb6c2606ed97d21cd76b53292701d175ce99764deec60346b2967"
+      }
+    },
+    {
+      "name": "unknown_local",
+      "root": "../fixtures/native_compiler/diagnostic_errors",
+      "capture": "unknown_local.capture.json",
+      "capture_sha256": "dfbcce56c2db210a7d99063269d909bcbfb3ed6b699c383b5ce7532935ba1961",
+      "source": "unknown_local.dm",
+      "manifest": "unknown_local.dme",
+      "defines": [],
+      "files": {
+        "unknown_local.dm": "e573efc7f05bb2c710ac032685a645aabc0c90c5dd644496d6b700e1969a062f",
+        "unknown_local.dme": "788610f82d177e190c1a5e51f7b0de6f7b814e396751d1fae13cbbba20367ec4"
+      }
+    },
+    {
+      "name": "invalid_parameter",
+      "root": "../fixtures/native_compiler/diagnostic_errors",
+      "capture": "invalid_parameter.capture.json",
+      "capture_sha256": "a100690503890969bb226d37d44c12f6b0799e5e61beaba872e63a5e31c68fa7",
+      "source": "invalid_parameter.dm",
+      "manifest": "invalid_parameter.dme",
+      "defines": [],
+      "files": {
+        "invalid_parameter.dm": "f2b439c9b6f693a26e26eb3d79271675d85514c0c11ddf3b59a6a60ab3753278",
+        "invalid_parameter.dme": "ec95e44dd0ee0693ef01d2d529508551fbfcf434a2dc4a0f7c4a7bde88b5aedb"
+      }
+    },
+    {
+      "name": "unterminated_expression",
+      "root": "../fixtures/native_compiler/diagnostic_errors",
+      "capture": "unterminated_expression.capture.json",
+      "capture_sha256": "75ae578b4574eb7127200ab7d36128ee8a720ff416fc3b490d600f1c8e650ded",
+      "source": "unterminated_expression.dm",
+      "manifest": "unterminated_expression.dme",
+      "defines": [],
+      "files": {
+        "unterminated_expression.dm": "cfe8182475529b69844506c99972791b321767a23fad486be276dd675c2ff938",
+        "unterminated_expression.dme": "57ebdb1cc141469b033ca0a6661776165c69479981d639c05aa4fad38e785dc4"
+      }
+    }
+  ]
+}

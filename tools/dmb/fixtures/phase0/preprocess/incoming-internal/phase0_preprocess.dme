@@ -1,0 +1,2 @@
+#define EXTERNAL 7
+#include "body.dm"

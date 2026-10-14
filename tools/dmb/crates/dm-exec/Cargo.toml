@@ -1,0 +1,10 @@
+[package]
+name = "dm-exec"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "A bounded, joined worker pool for one DM compiler build"
+
+[dependencies]
+rayon = "1.12"
+dm-profile = { path = "../dm-profile" }

@@ -1,0 +1,50 @@
+{
+  "observations": {
+    "roots": "probe /standalone2,/appearance3,/hook5,/procpath29 allparent1 /datum; /hook/startup4 parent5 /hook",
+    "prototype": "empty.native.bin class24 /standalone_empty parent0 /datum, all6 lists_and_procs and overrides65535, fixed ordinary header",
+    "refs": "procpath type literal tag32/class29; holder comparison literal tag38procindex0; procpath typed name access ordinaryField39"
+  },
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "sha256": "2b4a36b3152af89c2af116c71c13e3d20ee2acb0c8cbc4b468d8e2d388727ae0"
+    },
+    {
+      "path": "compile.log",
+      "sha256": "7e5e8eb29607981787deb56c6b78808d94e36f103afeb2c2813a3f4b4130860b"
+    },
+    {
+      "path": "compile.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "empty.compile.log",
+      "sha256": "c7fb18f61500042b45386b615ed20684b5b5db67fb7d418067fb13f3643da68a"
+    },
+    {
+      "path": "empty.compile.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "empty.dme",
+      "sha256": "06f272c74930c83ed79d33f0b5aabb266c116d15d9123cb343f04efe7b61d405"
+    },
+    {
+      "path": "empty.native.bin",
+      "sha256": "ce75782b16275e152a4f0bf58eea7a5c576cf66d43f105b46618881326317406"
+    },
+    {
+      "path": "probe.dm",
+      "sha256": "7acd69cfa22b7cc199c078389e509a03ec6dfb2fad2a33163eee304c3470bea8"
+    },
+    {
+      "path": "probe.dme",
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+    },
+    {
+      "path": "probe.native.bin",
+      "sha256": "8ba1870ce31bfa20eb41d85922b2cca6baae4dfeff9a1350aa572201ac397c7a"
+    }
+  ]
+}

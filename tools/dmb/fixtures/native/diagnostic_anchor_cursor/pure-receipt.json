@@ -1,0 +1,234 @@
+{
+  "schema": "diagnostic-cursor-discovery-v1",
+  "status": "captured",
+  "compiler": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+  "compiler_before": {
+    "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "file_version": "5.0.516.1687"
+  },
+  "producer_sha256": "662efb46572ada34c36fe5d6ba53071f22fa43b7ba22b75c41803746f7f97b3b",
+  "aggregate_watchdog_s": 60,
+  "child_watchdog_s": 10,
+  "cases": [
+    {
+      "name": "blank_comments",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\diagnostic_anchor_cursor\\blank_comments.dm",
+      "source_sha256": "67cae4bc11ddc86070396f06fe57d99f85c6c922d283f998d3e96ca03239dbf0",
+      "source_transform": "exact bytes",
+      "inputs": {
+        "probe.dm": "67cae4bc11ddc86070396f06fe57d99f85c6c922d283f998d3e96ca03239dbf0",
+        "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+      },
+      "source_unchanged": true,
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\blank_comments\\probe.dme"
+        ],
+        "seconds": 0.3180679999641143,
+        "exit_code": 0,
+        "timed_out": false,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\blank_comments\\byond.log",
+        "log_sha256": "8f385a54a0fc71fc76c2e582d3409f8e687052bb0cc64ef0ecf6eae8fa33c695"
+      },
+      "diagnostics": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/10/26 2:33 pm)\nTotal time: 0:00\n",
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\blank_comments\\probe.dmb",
+          "sha256": "c0f5a7cbec6d8b517f1991d5c67b8edde7d901ec48a2620a5fe919cafacc8a31",
+          "bytes": 15222
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      }
+    },
+    {
+      "name": "same_line",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\diagnostic_anchor_cursor\\same_line.dm",
+      "source_sha256": "db975a1e5f1fe39ab28c076f17a4ae7d4c9b262878e7b43f77e368e82e73e0db",
+      "source_transform": "exact bytes",
+      "inputs": {
+        "probe.dm": "db975a1e5f1fe39ab28c076f17a4ae7d4c9b262878e7b43f77e368e82e73e0db",
+        "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+      },
+      "source_unchanged": true,
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\same_line\\probe.dme"
+        ],
+        "seconds": 0.3904791999957524,
+        "exit_code": 0,
+        "timed_out": false,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\same_line\\byond.log",
+        "log_sha256": "8f385a54a0fc71fc76c2e582d3409f8e687052bb0cc64ef0ecf6eae8fa33c695"
+      },
+      "diagnostics": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/10/26 2:33 pm)\nTotal time: 0:00\n",
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\same_line\\probe.dmb",
+          "sha256": "bf347c8fb917d4f5a5fb787f2916f185a0d3efa4db71067cfc3d4506d975baa6",
+          "bytes": 15205
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      }
+    },
+    {
+      "name": "following_statement",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\diagnostic_anchor_cursor\\following_statement.dm",
+      "source_sha256": "58cf62ffc8e93246990f727faae9b43147d7267d7d287b4fa4dcb2f76992afed",
+      "source_transform": "exact bytes",
+      "inputs": {
+        "probe.dm": "58cf62ffc8e93246990f727faae9b43147d7267d7d287b4fa4dcb2f76992afed",
+        "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+      },
+      "source_unchanged": true,
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\following_statement\\probe.dme"
+        ],
+        "seconds": 0.3415921999840066,
+        "exit_code": 0,
+        "timed_out": false,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\following_statement\\byond.log",
+        "log_sha256": "8f385a54a0fc71fc76c2e582d3409f8e687052bb0cc64ef0ecf6eae8fa33c695"
+      },
+      "diagnostics": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/10/26 2:33 pm)\nTotal time: 0:00\n",
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\following_statement\\probe.dmb",
+          "sha256": "bf347c8fb917d4f5a5fb787f2916f185a0d3efa4db71067cfc3d4506d975baa6",
+          "bytes": 15205
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      }
+    },
+    {
+      "name": "nested_expression",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\diagnostic_anchor_cursor\\nested_expression.dm",
+      "source_sha256": "cc4e6863ddfb77202f4e9c2f1f9a43085cf05c931ef7542f74e9e0e8fcdd3581",
+      "source_transform": "exact bytes",
+      "inputs": {
+        "probe.dm": "cc4e6863ddfb77202f4e9c2f1f9a43085cf05c931ef7542f74e9e0e8fcdd3581",
+        "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+      },
+      "source_unchanged": true,
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\nested_expression\\probe.dme"
+        ],
+        "seconds": 0.33682590001262724,
+        "exit_code": 0,
+        "timed_out": false,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\nested_expression\\byond.log",
+        "log_sha256": "8f385a54a0fc71fc76c2e582d3409f8e687052bb0cc64ef0ecf6eae8fa33c695"
+      },
+      "diagnostics": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/10/26 2:33 pm)\nTotal time: 0:00\n",
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\nested_expression\\probe.dmb",
+          "sha256": "b2cc73110084909cf4f88f497a3e3e720a56cdf2e0f2a9536a154e024da98f9d",
+          "bytes": 15183
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      }
+    },
+    {
+      "name": "eof",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\diagnostic_anchor_cursor\\eof.dm",
+      "source_sha256": "69934af824fbf48c14d16521603b0f4874fb9d41b3e7f5546b0d77b626cd2d12",
+      "source_transform": "exact bytes",
+      "inputs": {
+        "probe.dm": "69934af824fbf48c14d16521603b0f4874fb9d41b3e7f5546b0d77b626cd2d12",
+        "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+      },
+      "source_unchanged": true,
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\eof\\probe.dme"
+        ],
+        "seconds": 0.3329988000332378,
+        "exit_code": 0,
+        "timed_out": false,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\eof\\byond.log",
+        "log_sha256": "8f385a54a0fc71fc76c2e582d3409f8e687052bb0cc64ef0ecf6eae8fa33c695"
+      },
+      "diagnostics": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/10/26 2:33 pm)\nTotal time: 0:00\n",
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\eof\\probe.dmb",
+          "sha256": "8f7193f3dbff467d93e429e34fd183471b6414ea645541b1cc2f59520d2ee0eb",
+          "bytes": 15175
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      }
+    },
+    {
+      "name": "eof_no_newline",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native\\diagnostic_anchor_cursor\\eof.dm",
+      "source_sha256": "69934af824fbf48c14d16521603b0f4874fb9d41b3e7f5546b0d77b626cd2d12",
+      "source_transform": "remove final CR/LF bytes",
+      "inputs": {
+        "probe.dm": "70c76a1929361b45f5aee0c330d76fbfba14479485c240df2eee7fd5c56888c7",
+        "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+      },
+      "source_unchanged": true,
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\eof_no_newline\\probe.dme"
+        ],
+        "seconds": 0.34806779999053106,
+        "exit_code": 0,
+        "timed_out": false,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\eof_no_newline\\byond.log",
+        "log_sha256": "8f385a54a0fc71fc76c2e582d3409f8e687052bb0cc64ef0ecf6eae8fa33c695"
+      },
+      "diagnostics": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/10/26 2:33 pm)\nTotal time: 0:00\n",
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\eof_no_newline\\probe.dmb",
+          "sha256": "8f7193f3dbff467d93e429e34fd183471b6414ea645541b1cc2f59520d2ee0eb",
+          "bytes": 15175
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      }
+    }
+  ],
+  "scope": "compile-only actual diagnostic coordinates; no native or DD",
+  "version": {
+    "command": [
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe"
+    ],
+    "seconds": 0.06526809994829819,
+    "exit_code": 1,
+    "timed_out": false,
+    "cleanup": null,
+    "log": "E:\\dq-cache\\dmb-native-v2\\diagnostic-anchor-discovery\\20261010-cursor-a\\version.log",
+    "log_sha256": "865efe09cc6a29c7102ee596363784a36fa4031f773d3caad44d171d5737763b"
+  },
+  "compiler_after": {
+    "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "file_version": "5.0.516.1687"
+  }
+}

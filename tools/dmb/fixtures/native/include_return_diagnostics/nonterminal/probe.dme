@@ -1,0 +1,3 @@
+#include "child.dm"
+/proc/next()
+    return 2

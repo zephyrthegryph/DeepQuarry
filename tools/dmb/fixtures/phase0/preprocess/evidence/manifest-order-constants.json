@@ -1,0 +1,515 @@
+{
+  "version": 1,
+  "tools": {
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe": "ae3659b4697f970e8d92a0d8556df3db1247fa4501851a833885de3e35608f45"
+  },
+  "cases": [
+    {
+      "case": "field-before",
+      "inputs": {
+        "project.dme": "/datum/probe\n    var/value = 1\n#include \"child.dm\"\n",
+        "child.dm": "/datum/probe\n    value = 2\n"
+      },
+      "records": [
+        {
+          "command": [
+            "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\field-before\\project.dme"
+          ],
+          "exit_code": 0,
+          "stdout": "DM compiler version 516.1687\nloading project.dme\nsaving project.dmb\nproject.dmb - 0 errors, 0 warnings (10/6/26 6:46 pm)\nTotal time: 0:00\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "class-path",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\field-before\\project.dmb",
+            "/datum/probe"
+          ],
+          "exit_code": 0,
+          "stdout": "class#0 Class { initial_ids: [576, 1, 577, 65535, 65535, 65535], direction: 2, interface: 1, extended_interface: None, text: 578, maptext: 65535, maptext_geometry: [32, 32, 0, 0], suffix: 65535, flags: 0, lists_and_procs: [65535, 65535, 65535, 0, 1, 65535], layer_bits: 0, transform_flag: 0, transform: None, color_matrix_flag: 0, color_matrix: None, overrides: 65535 }\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "list",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\field-before\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "[67, 42, 16384, 0]\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "variable",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\field-before\\project.dmb",
+            "67"
+          ],
+          "exit_code": 0,
+          "stdout": "Variable { kind: 42, value: 1065353216, name: 437 } name=value\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-flag-context",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\field-before\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#0 flags=0x4 path=/sound/New\nproc#1 flags=0x4 path=/sound/proc/operator:=\nproc#2 flags=0x4 path=/sound/proc/RscFile\nproc#3 flags=0x4 path=/icon/New\nproc#4 flags=0x4 path=/icon/proc/operator:=\nproc#5 flags=0x4 path=/icon/proc/Icon\nproc#6 flags=0x4 path=/icon/proc/RscFile\nproc#7 flags=0x4 path=/icon/proc/IconStates\nproc#8 flags=0x4 path=/icon/proc/Turn\nproc#9 flags=0x4 path=/icon/proc/Flip\nproc#10 flags=0x4 path=/icon/proc/Shift\nproc#11 flags=0x4 path=/icon/proc/SetIntensity\nproc#12 flags=0x4 path=/icon/proc/Blend\nproc#13 flags=0x4 path=/icon/proc/SwapColor\nproc#14 flags=0x4 path=/icon/proc/DrawBox\nproc#15 flags=0x4 path=/icon/proc/Insert\nproc#16 flags=0x4 path=/icon/proc/MapColors\nproc#17 flags=0x4 path=/icon/proc/Scale\nproc#18 flags=0x4 path=/icon/proc/Crop\nproc#19 flags=0x4 path=/icon/proc/GetPixel\nproc#20 flags=0x4 path=/icon/proc/Width\nproc#21 flags=0x4 path=/icon/proc/Height\nproc#22 flags=0x4 path=/matrix/New\nproc#23 flags=0x4 path=/matrix/proc/operator:=\nproc#24 flags=0x4 path=/matrix/proc/Multiply\nproc#25 flags=0x4 path=/matrix/proc/Add\nproc#26 flags=0x4 path=/matrix/proc/Subtract\nproc#27 flags=0x4 path=/matrix/proc/Invert\nproc#28 flags=0x4 path=/matrix/proc/Turn\nproc#29 flags=0x4 path=/matrix/proc/Scale\n",
+          "stderr": ""
+        }
+      ],
+      "world_sha256": "abc1a4023ddbb970b27f4d9be3a2be4a08ddc5da15d48aca5888d656928874f4"
+    },
+    {
+      "case": "field-after",
+      "inputs": {
+        "project.dme": "#include \"child.dm\"\n/datum/probe\n    value = 1\n",
+        "child.dm": "/datum/probe\n    var/value = 2\n"
+      },
+      "records": [
+        {
+          "command": [
+            "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\field-after\\project.dme"
+          ],
+          "exit_code": 0,
+          "stdout": "DM compiler version 516.1687\nloading project.dme\nsaving project.dmb\nproject.dmb - 0 errors, 0 warnings (10/6/26 6:46 pm)\nTotal time: 0:00\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "class-path",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\field-after\\project.dmb",
+            "/datum/probe"
+          ],
+          "exit_code": 0,
+          "stdout": "class#0 Class { initial_ids: [576, 1, 577, 65535, 65535, 65535], direction: 2, interface: 1, extended_interface: None, text: 578, maptext: 65535, maptext_geometry: [32, 32, 0, 0], suffix: 65535, flags: 0, lists_and_procs: [65535, 65535, 65535, 0, 1, 65535], layer_bits: 0, transform_flag: 0, transform: None, color_matrix_flag: 0, color_matrix: None, overrides: 65535 }\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "list",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\field-after\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "[67, 42, 16256, 0]\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "variable",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\field-after\\project.dmb",
+            "67"
+          ],
+          "exit_code": 0,
+          "stdout": "Variable { kind: 42, value: 1073741824, name: 437 } name=value\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-flag-context",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\field-after\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#0 flags=0x4 path=/sound/New\nproc#1 flags=0x4 path=/sound/proc/operator:=\nproc#2 flags=0x4 path=/sound/proc/RscFile\nproc#3 flags=0x4 path=/icon/New\nproc#4 flags=0x4 path=/icon/proc/operator:=\nproc#5 flags=0x4 path=/icon/proc/Icon\nproc#6 flags=0x4 path=/icon/proc/RscFile\nproc#7 flags=0x4 path=/icon/proc/IconStates\nproc#8 flags=0x4 path=/icon/proc/Turn\nproc#9 flags=0x4 path=/icon/proc/Flip\nproc#10 flags=0x4 path=/icon/proc/Shift\nproc#11 flags=0x4 path=/icon/proc/SetIntensity\nproc#12 flags=0x4 path=/icon/proc/Blend\nproc#13 flags=0x4 path=/icon/proc/SwapColor\nproc#14 flags=0x4 path=/icon/proc/DrawBox\nproc#15 flags=0x4 path=/icon/proc/Insert\nproc#16 flags=0x4 path=/icon/proc/MapColors\nproc#17 flags=0x4 path=/icon/proc/Scale\nproc#18 flags=0x4 path=/icon/proc/Crop\nproc#19 flags=0x4 path=/icon/proc/GetPixel\nproc#20 flags=0x4 path=/icon/proc/Width\nproc#21 flags=0x4 path=/icon/proc/Height\nproc#22 flags=0x4 path=/matrix/New\nproc#23 flags=0x4 path=/matrix/proc/operator:=\nproc#24 flags=0x4 path=/matrix/proc/Multiply\nproc#25 flags=0x4 path=/matrix/proc/Add\nproc#26 flags=0x4 path=/matrix/proc/Subtract\nproc#27 flags=0x4 path=/matrix/proc/Invert\nproc#28 flags=0x4 path=/matrix/proc/Turn\nproc#29 flags=0x4 path=/matrix/proc/Scale\n",
+          "stderr": ""
+        }
+      ],
+      "world_sha256": "c1ad6534e5885a783825596b0e28c3c43f26d54def7f83e953fbfd7ee5005843"
+    },
+    {
+      "case": "proc-before",
+      "inputs": {
+        "project.dme": "/datum/probe/proc/read()\n    return 1\n#include \"child.dm\"\n",
+        "child.dm": "/datum/probe/read()\n    return 2\n"
+      },
+      "records": [
+        {
+          "command": [
+            "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-before\\project.dme"
+          ],
+          "exit_code": 0,
+          "stdout": "DM compiler version 516.1687\nloading project.dme\nsaving project.dmb\nproject.dmb - 0 errors, 0 warnings (10/6/26 6:46 pm)\nTotal time: 0:00\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "class-path",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-before\\project.dmb",
+            "/datum/probe"
+          ],
+          "exit_code": 0,
+          "stdout": "class#0 Class { initial_ids: [578, 1, 579, 65535, 65535, 65535], direction: 2, interface: 1, extended_interface: None, text: 580, maptext: 65535, maptext_geometry: [32, 32, 0, 0], suffix: 65535, flags: 0, lists_and_procs: [65535, 3, 65535, 65535, 65535, 65535], layer_bits: 0, transform_flag: 0, transform: None, color_matrix_flag: 0, color_matrix: None, overrides: 65535 }\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "list",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-before\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "[80, 1, 18, 0]\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "variable",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-before\\project.dmb",
+            "67"
+          ],
+          "exit_code": 0,
+          "stdout": "Variable { kind: 0, value: 0, name: 65 } name=file\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-flag-context",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-before\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#0 flags=0x4 path=/datum/probe/proc/read\nproc#1 flags=0x4 path=/datum/probe/read\nproc#2 flags=0x4 path=/sound/New\nproc#3 flags=0x4 path=/sound/proc/operator:=\nproc#4 flags=0x4 path=/sound/proc/RscFile\nproc#5 flags=0x4 path=/icon/New\nproc#6 flags=0x4 path=/icon/proc/operator:=\nproc#7 flags=0x4 path=/icon/proc/Icon\nproc#8 flags=0x4 path=/icon/proc/RscFile\nproc#9 flags=0x4 path=/icon/proc/IconStates\nproc#10 flags=0x4 path=/icon/proc/Turn\nproc#11 flags=0x4 path=/icon/proc/Flip\nproc#12 flags=0x4 path=/icon/proc/Shift\nproc#13 flags=0x4 path=/icon/proc/SetIntensity\nproc#14 flags=0x4 path=/icon/proc/Blend\nproc#15 flags=0x4 path=/icon/proc/SwapColor\nproc#16 flags=0x4 path=/icon/proc/DrawBox\nproc#17 flags=0x4 path=/icon/proc/Insert\nproc#18 flags=0x4 path=/icon/proc/MapColors\nproc#19 flags=0x4 path=/icon/proc/Scale\nproc#20 flags=0x4 path=/icon/proc/Crop\nproc#21 flags=0x4 path=/icon/proc/GetPixel\nproc#22 flags=0x4 path=/icon/proc/Width\nproc#23 flags=0x4 path=/icon/proc/Height\nproc#24 flags=0x4 path=/matrix/New\nproc#25 flags=0x4 path=/matrix/proc/operator:=\nproc#26 flags=0x4 path=/matrix/proc/Multiply\nproc#27 flags=0x4 path=/matrix/proc/Add\nproc#28 flags=0x4 path=/matrix/proc/Subtract\nproc#29 flags=0x4 path=/matrix/proc/Invert\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-before\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "Proc { strings: [437, 438, 65535, 65535], source_parameter: 255, source_kind: 0, flags: 4, extended_flags: None, code_locals_args: [0, 1, 1] } path=/datum/probe/proc/read\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-code",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-before\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#0 /datum/probe/proc/read\n0000 0050 PushInt [1]\n0002 0012 Ret []\n0003 0000 End []\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-before\\project.dmb",
+            "1"
+          ],
+          "exit_code": 0,
+          "stdout": "Proc { strings: [439, 438, 65535, 65535], source_parameter: 255, source_kind: 0, flags: 4, extended_flags: None, code_locals_args: [2, 1, 1] } path=/datum/probe/read\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-code",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-before\\project.dmb",
+            "1"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#1 /datum/probe/read\n0000 0050 PushInt [2]\n0002 0012 Ret []\n0003 0000 End []\n",
+          "stderr": ""
+        }
+      ],
+      "world_sha256": "ff350bf819fb726cfea7e7e8cfea479bf3305940588bf58f1ba0acdeec0e0e44"
+    },
+    {
+      "case": "proc-after",
+      "inputs": {
+        "project.dme": "#include \"child.dm\"\n/datum/probe/read()\n    return 2\n",
+        "child.dm": "/datum/probe/proc/read()\n    return 1\n"
+      },
+      "records": [
+        {
+          "command": [
+            "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-after\\project.dme"
+          ],
+          "exit_code": 0,
+          "stdout": "DM compiler version 516.1687\nloading project.dme\nsaving project.dmb\nproject.dmb - 0 errors, 0 warnings (10/6/26 6:46 pm)\nTotal time: 0:00\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "class-path",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-after\\project.dmb",
+            "/datum/probe"
+          ],
+          "exit_code": 0,
+          "stdout": "class#0 Class { initial_ids: [578, 1, 579, 65535, 65535, 65535], direction: 2, interface: 1, extended_interface: None, text: 580, maptext: 65535, maptext_geometry: [32, 32, 0, 0], suffix: 65535, flags: 0, lists_and_procs: [65535, 3, 65535, 65535, 65535, 65535], layer_bits: 0, transform_flag: 0, transform: None, color_matrix_flag: 0, color_matrix: None, overrides: 65535 }\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "list",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-after\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "[80, 1, 18, 0]\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "variable",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-after\\project.dmb",
+            "67"
+          ],
+          "exit_code": 0,
+          "stdout": "Variable { kind: 0, value: 0, name: 65 } name=file\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-flag-context",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-after\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#0 flags=0x4 path=/datum/probe/proc/read\nproc#1 flags=0x4 path=/datum/probe/read\nproc#2 flags=0x4 path=/sound/New\nproc#3 flags=0x4 path=/sound/proc/operator:=\nproc#4 flags=0x4 path=/sound/proc/RscFile\nproc#5 flags=0x4 path=/icon/New\nproc#6 flags=0x4 path=/icon/proc/operator:=\nproc#7 flags=0x4 path=/icon/proc/Icon\nproc#8 flags=0x4 path=/icon/proc/RscFile\nproc#9 flags=0x4 path=/icon/proc/IconStates\nproc#10 flags=0x4 path=/icon/proc/Turn\nproc#11 flags=0x4 path=/icon/proc/Flip\nproc#12 flags=0x4 path=/icon/proc/Shift\nproc#13 flags=0x4 path=/icon/proc/SetIntensity\nproc#14 flags=0x4 path=/icon/proc/Blend\nproc#15 flags=0x4 path=/icon/proc/SwapColor\nproc#16 flags=0x4 path=/icon/proc/DrawBox\nproc#17 flags=0x4 path=/icon/proc/Insert\nproc#18 flags=0x4 path=/icon/proc/MapColors\nproc#19 flags=0x4 path=/icon/proc/Scale\nproc#20 flags=0x4 path=/icon/proc/Crop\nproc#21 flags=0x4 path=/icon/proc/GetPixel\nproc#22 flags=0x4 path=/icon/proc/Width\nproc#23 flags=0x4 path=/icon/proc/Height\nproc#24 flags=0x4 path=/matrix/New\nproc#25 flags=0x4 path=/matrix/proc/operator:=\nproc#26 flags=0x4 path=/matrix/proc/Multiply\nproc#27 flags=0x4 path=/matrix/proc/Add\nproc#28 flags=0x4 path=/matrix/proc/Subtract\nproc#29 flags=0x4 path=/matrix/proc/Invert\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-after\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "Proc { strings: [437, 438, 65535, 65535], source_parameter: 255, source_kind: 0, flags: 4, extended_flags: None, code_locals_args: [0, 1, 1] } path=/datum/probe/proc/read\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-code",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-after\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#0 /datum/probe/proc/read\n0000 0050 PushInt [1]\n0002 0012 Ret []\n0003 0000 End []\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-after\\project.dmb",
+            "1"
+          ],
+          "exit_code": 0,
+          "stdout": "Proc { strings: [439, 438, 65535, 65535], source_parameter: 255, source_kind: 0, flags: 4, extended_flags: None, code_locals_args: [2, 1, 1] } path=/datum/probe/read\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-code",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-1\\proc-after\\project.dmb",
+            "1"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#1 /datum/probe/read\n0000 0050 PushInt [2]\n0002 0012 Ret []\n0003 0000 End []\n",
+          "stderr": ""
+        }
+      ],
+      "world_sha256": "ff350bf819fb726cfea7e7e8cfea479bf3305940588bf58f1ba0acdeec0e0e44"
+    },
+    {
+      "case": "field-two-overrides",
+      "inputs": {
+        "project.dme": "/datum/probe\n    var/value = 0\n    value = 1\n#include \"child.dm\"\n",
+        "child.dm": "/datum/probe\n    value = 2\n"
+      },
+      "records": [
+        {
+          "command": [
+            "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-2\\field-two-overrides\\project.dme"
+          ],
+          "exit_code": 0,
+          "stdout": "DM compiler version 516.1687\nloading project.dme\nsaving project.dmb\nproject.dmb - 0 errors, 0 warnings (10/6/26 6:47 pm)\nTotal time: 0:00\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "class-path",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-2\\field-two-overrides\\project.dmb",
+            "/datum/probe"
+          ],
+          "exit_code": 0,
+          "stdout": "class#0 Class { initial_ids: [576, 1, 577, 65535, 65535, 65535], direction: 2, interface: 1, extended_interface: None, text: 578, maptext: 65535, maptext_geometry: [32, 32, 0, 0], suffix: 65535, flags: 0, lists_and_procs: [65535, 65535, 65535, 0, 1, 65535], layer_bits: 0, transform_flag: 0, transform: None, color_matrix_flag: 0, color_matrix: None, overrides: 65535 }\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "list",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-2\\field-two-overrides\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "[67, 42, 16256, 0, 67, 42, 16384, 0]\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-code",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-2\\field-two-overrides\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#0 /sound/New\n0000 0033 GetVar [65497, 4]\n0003 009e IsNull []\n0004 000d Test []\n0005 0011 Jz [12]\n0007 0050 PushInt [100]\n0009 0034 SetVar [65497, 4]\n000c 0033 GetVar [65497, 0]\n000f 0060 PushVal [40, 0]\n0012 007d IsType []\n0013 000d Test []\n0014 0011 Jz [27]\n0016 0033 GetVar [65497, 0]\n0019 000f Jmp [31]\n001b 0033 GetVar [65497, 0]\n001e 00d7 FCopyRsc []\n001f 0034 SetVar [65500, 65486, 65]\n0023 0033 GetVar [65497, 1]\n0026 0034 SetVar [156]\n0028 0033 GetVar [65497, 2]\n002b 0034 SetVar [155]\n002d 0033 GetVar [65497, 3]\n0030 0034 SetVar [141]\n0032 0033 GetVar [65497, 4]\n0035 0034 SetVar [199]\n0037 002c CallParent []\n0038 0012 Ret []\n0039 0000 End []\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-code",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-2\\field-two-overrides\\project.dmb",
+            "1"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#1 /sound/proc/operator:=\n0000 0033 GetVar [65486]\n0002 0034 SetVar [65488]\n0004 0033 GetVar [65497, 0]\n0007 0060 PushVal [32, 15]\n000a 007d IsType []\n000b 000d Test []\n000c 0011 Jz [72]\n000e 0033 GetVar [65500, 65497, 0, 94]\n0013 0052 IterLoad [5, 0]\n0016 0053 IterNext []\n0017 0034 SetVar [65498, 0]\n001a 0011 Jz [70]\n001c 0033 GetVar [65500, 65497, 0, 94]\n0021 0033 GetVar [65498, 0]\n0024 007b ListGet []\n0025 0034 SetVar [65498, 1]\n0028 0033 GetVar [65498, 1]\n002b 0147 IsList []\n002c 000d Test []\n002d 0011 Jz [57]\n002f 0029 Call [65500, 65498, 1, 65501, 25, 0]\n0036 0034 SetVar [65498, 1]\n0039 0033 GetVar [65498, 1]\n003c 0033 GetVar [65500, 65486, 94]\n0040 0033 GetVar [65498, 0]\n0043 007c ListSet []\n0044 00f8 JmpLoop [22]\n0046 000f Jmp [92]\n0048 0033 GetVar [65497, 0]\n004b 00e4 IsFile []\n004c 000d Test []\n004d 0011 Jz [88]\n004f 0033 GetVar [65497, 0]\n0052 0034 SetVar [65500, 65486, 65]\n0056 000f Jmp [92]\n0058 0060 PushVal [6, 439]\n005b 00c7 Crash []\n005c 0000 End []\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-code",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-2\\field-two-overrides\\project.dmb",
+            "2"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#2 /sound/proc/RscFile\n0000 0033 GetVar [65500, 65486, 65]\n0004 0012 Ret []\n0005 0000 End []\n",
+          "stderr": ""
+        }
+      ],
+      "world_sha256": "018305236f79d1b6e4d8cf216bb84e332199b198b0bf33f6ff72b951829cdcaa"
+    },
+    {
+      "case": "proc-two-overrides",
+      "inputs": {
+        "project.dme": "/datum/probe/proc/read()\n    return 0\n/datum/probe/read()\n    return 1\n#include \"child.dm\"\n",
+        "child.dm": "/datum/probe/read()\n    return 2\n"
+      },
+      "records": [
+        {
+          "command": [
+            "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-2\\proc-two-overrides\\project.dme"
+          ],
+          "exit_code": 0,
+          "stdout": "DM compiler version 516.1687\nloading project.dme\nsaving project.dmb\nproject.dmb - 0 errors, 0 warnings (10/6/26 6:47 pm)\nTotal time: 0:00\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "class-path",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-2\\proc-two-overrides\\project.dmb",
+            "/datum/probe"
+          ],
+          "exit_code": 0,
+          "stdout": "class#0 Class { initial_ids: [578, 1, 579, 65535, 65535, 65535], direction: 2, interface: 1, extended_interface: None, text: 580, maptext: 65535, maptext_geometry: [32, 32, 0, 0], suffix: 65535, flags: 0, lists_and_procs: [65535, 4, 65535, 65535, 65535, 65535], layer_bits: 0, transform_flag: 0, transform: None, color_matrix_flag: 0, color_matrix: None, overrides: 65535 }\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "list",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-2\\proc-two-overrides\\project.dmb",
+            "4"
+          ],
+          "exit_code": 0,
+          "stdout": "[2, 1, 0]\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-code",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-2\\proc-two-overrides\\project.dmb",
+            "0"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#0 /datum/probe/proc/read\n0000 0050 PushInt [0]\n0002 0012 Ret []\n0003 0000 End []\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-code",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-2\\proc-two-overrides\\project.dmb",
+            "1"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#1 /datum/probe/read\n0000 0050 PushInt [1]\n0002 0012 Ret []\n0003 0000 End []\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+            "proc-code",
+            "E:\\dmb-native-v2-phase0\\preprocess-manifest-order-2\\proc-two-overrides\\project.dmb",
+            "2"
+          ],
+          "exit_code": 0,
+          "stdout": "proc#2 /datum/probe/read\n0000 0050 PushInt [2]\n0002 0012 Ret []\n0003 0000 End []\n",
+          "stderr": ""
+        }
+      ],
+      "world_sha256": "025bf3ebd370b58e768186fcb4aa203e54885e8d16489fc4510fc58beb507d1e"
+    }
+  ],
+  "deferred_original_capture": {
+    "world": "E:\\dmb-native-v2-phase0\\preprocess-final-1\\preprocess-deferred-manifest\\source\\deferred-manifest\\phase0_runtime.dmb",
+    "world_sha256": "90e280bdd3d041ffa62532745c5db0bdf120f1eb3e1bdf9f86692fd5f7d8369d",
+    "command": [
+      "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+      "proc-flag-context",
+      "E:\\dmb-native-v2-phase0\\preprocess-final-1\\preprocess-deferred-manifest\\source\\deferred-manifest\\phase0_runtime.dmb",
+      "0"
+    ],
+    "exit_code": 0,
+    "stdout": "proc#0 flags=0x4 path=/world/proc/late\nproc#1 flags=0x4 path=/world/New\nproc#2 flags=0x4 path=/proc/second\nproc#3 flags=0x4 path=/proc/early\nproc#4 flags=0x4 path=/proc/phase0_preprocess_observe\nproc#5 flags=0x4 path=/proc/phase0_preprocess_finish\nproc#6 flags=0x4 path=/proc/phase0_preprocess_value\nproc#7 flags=0x4 path=/proc/phase0_preprocess_global\nproc#8 flags=0x4 path=/sound/New\nproc#9 flags=0x4 path=/sound/proc/operator:=\nproc#10 flags=0x4 path=/sound/proc/RscFile\nproc#11 flags=0x4 path=/icon/New\nproc#12 flags=0x4 path=/icon/proc/operator:=\nproc#13 flags=0x4 path=/icon/proc/Icon\nproc#14 flags=0x4 path=/icon/proc/RscFile\nproc#15 flags=0x4 path=/icon/proc/IconStates\nproc#16 flags=0x4 path=/icon/proc/Turn\nproc#17 flags=0x4 path=/icon/proc/Flip\nproc#18 flags=0x4 path=/icon/proc/Shift\nproc#19 flags=0x4 path=/icon/proc/SetIntensity\nproc#20 flags=0x4 path=/icon/proc/Blend\nproc#21 flags=0x4 path=/icon/proc/SwapColor\nproc#22 flags=0x4 path=/icon/proc/DrawBox\nproc#23 flags=0x4 path=/icon/proc/Insert\nproc#24 flags=0x4 path=/icon/proc/MapColors\nproc#25 flags=0x4 path=/icon/proc/Scale\nproc#26 flags=0x4 path=/icon/proc/Crop\nproc#27 flags=0x4 path=/icon/proc/GetPixel\nproc#28 flags=0x4 path=/icon/proc/Width\nproc#29 flags=0x4 path=/icon/proc/Height\n",
+    "stderr": ""
+  },
+  "findings": [
+    "Two same-owner assignment overrides retain encounter order [1,2].",
+    "Procedure base declaration0 and two implicit overrides1,2 have effective override chain [2,1,0].",
+    "Original deferred-manifest BYOND output places same-owner global second before early, contradicting blanket manifest-last ordering assumed by preserved native tests."
+  ]
+}

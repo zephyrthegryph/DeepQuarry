@@ -1,0 +1,10 @@
+/list/Add()
+    return
+/list/Copy()
+    return
+/list/Insert()
+    return
+/list/New()
+    return
+/list/Remove()
+    return

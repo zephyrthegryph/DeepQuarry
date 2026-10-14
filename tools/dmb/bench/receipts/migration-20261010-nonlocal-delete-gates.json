@@ -1,0 +1,22 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_codegen_byond-e88a7b9d1cff44dd.exe",
+  "binary_sha256": "e03239d2034222f8af2ddde30e520ca15b4921fd6d14169fc9116a79ede79d0b",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "simple::tests::typed_delete_native::",
+      "selected": [
+        "simple::tests::typed_delete_native::indexed_and_effectful_indexed_deletion_match_native",
+        "simple::tests::typed_delete_native::lexical_src_parameter_is_cleared_and_does_not_terminate_body",
+        "simple::tests::typed_delete_native::mutable_and_readonly_intrinsic_deletion_match_native",
+        "simple::tests::typed_delete_native::mutable_local_argument_and_temporary_deletion_match_native",
+        "simple::tests::typed_delete_native::nonlocal_deletion_requires_exact_nonopaque_writable_metadata",
+        "simple::tests::typed_delete_native::resolver_native::typed_safe_const_fields_and_globals_match_authenticated_native"
+      ],
+      "exit": 0,
+      "seconds": 0.03519379999488592,
+      "stdout": "\nrunning 6 tests\ntest simple::tests::typed_delete_native::indexed_and_effectful_indexed_deletion_match_native ... ok\ntest simple::tests::typed_delete_native::lexical_src_parameter_is_cleared_and_does_not_terminate_body ... ok\ntest simple::tests::typed_delete_native::mutable_and_readonly_intrinsic_deletion_match_native ... ok\ntest simple::tests::typed_delete_native::mutable_local_argument_and_temporary_deletion_match_native ... ok\ntest simple::tests::typed_delete_native::nonlocal_deletion_requires_exact_nonopaque_writable_metadata ... ok\ntest simple::tests::typed_delete_native::resolver_native::typed_safe_const_fields_and_globals_match_authenticated_native ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 315 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    }
+  ]
+}

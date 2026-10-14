@@ -1,0 +1,96 @@
+{
+  "schema": 2,
+  "scope": "strict independent BYOND procedure typesof ordering, including override and inheritance; not whole-program parity",
+  "complete": true,
+  "root": "E:\\dq-cache\\dmb-procedure-order\\fc0ed7dfc4944313832bcbbe0fa21361",
+  "executions": {
+    "byond-compile": {
+      "exit": 0,
+      "wall_s": 0.3218145000282675,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.0801006000256166,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "native-compile": {
+      "exit": 0,
+      "wall_s": 0.2262687999755144,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "acquire": {
+      "exit": 0,
+      "wall_s": 0.049231300014071167,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "native-runtime": {
+      "exit": 0,
+      "wall_s": 1.1099054999649525,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    }
+  },
+  "fixture_sources": {
+    "probe.dm": "727f0e6b72ead7f873ae832c33a4d2b6dda942687bb244849775ddd552b1bc5a",
+    "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+  },
+  "pinned_inputs": {
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-133422-a3b8838c.exe",
+      "sha256": "96964033836ae3e57ecd1b4cf036b638464e735bce727e74ea49d87c36e8c93f"
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    },
+    "dd": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+      "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+    }
+  },
+  "byond": {
+    "markers": [
+      "DQ_ENUM base /datum/order_owner/proc/zebra",
+      "DQ_ENUM base /datum/order_owner/proc/alpha",
+      "DQ_ENUM base /datum/order_owner/proc/middle",
+      "DQ_ENUM child /datum/order_owner/child/proc/child_last",
+      "DQ_ENUM child /datum/order_owner/child/proc/child_first",
+      "DQ_ENUM finished"
+    ],
+    "runtimes": []
+  },
+  "native": {
+    "markers": [
+      "DQ_ENUM base /datum/order_owner/proc/zebra",
+      "DQ_ENUM base /datum/order_owner/proc/alpha",
+      "DQ_ENUM base /datum/order_owner/proc/middle",
+      "DQ_ENUM child /datum/order_owner/child/proc/child_last",
+      "DQ_ENUM child /datum/order_owner/child/proc/child_first",
+      "DQ_ENUM finished"
+    ],
+    "runtimes": []
+  },
+  "matches": true,
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 58753024,
+    "samples": 14,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 18940,
+        "private_bytes": 58753024
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "registered owned compile/acquisition/runtime children, 200ms samples; not strict peak or unregistered-descendant proof"
+  }
+}

@@ -1,0 +1,4 @@
+#include "bodyless_pair_parent_next_proc.dm"
+
+/proc/following()
+    return 7

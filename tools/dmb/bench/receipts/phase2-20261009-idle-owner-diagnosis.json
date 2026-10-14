@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "scope": "Bounded untimed owner diagnosis, not performance or BYOND admission",
+  "compiler_commit": "5c20a06ed58f0a4001821772dd51b5d88ddf5e68",
+  "binary_sha256": "f895e2eef456e9f7b44c88fd4c6c140eb7123002900d3514c0d58cd5b43f8e6e",
+  "profile": {"dmbc_opt_level": 0, "dmbc_codegen_units": 256, "dm_tree_opt_level": 1, "lto": false},
+  "receipt": "E:/dq-cache/dmb-native-v2/idle-diagnostics/20261009-235215-55e419d7/receipt.json",
+  "census": "E:/dq-cache/dmb-native-v2/idle-diagnostics/20261009-235215-55e419d7/idle-census.jsonl",
+  "fresh_native_byte_oracle": {"initial": true, "body_edit": true},
+  "daemon_cleanup": {"pid": 2012, "reaped": true},
+  "first_rich_release_private_bytes": {"before": 5455114240, "after": 4885262336},
+  "whole_session_pressure_eviction_observed": true,
+  "after_rich_release_independent_categories": {
+    "declarations": {
+      "retained_effective_metadata.buffers_known_capacity_bytes": 205171456,
+      "retained_declarations.payload_known_capacity_bytes": 164399320,
+      "semantic_metadata_known_capacity_bytes": 109410160
+    },
+    "expansion_inputs_known_capacity_bytes": 511780487,
+    "symbolic": {
+      "reads_known_capacity_bytes": 157044448,
+      "frozen_code_known_capacity_bytes": 82420748,
+      "versions_known_capacity_bytes": 51022320,
+      "keys_known_capacity_bytes": 45516622
+    },
+    "projections_keys_known_capacity_bytes": 103556028
+  },
+  "limitations": [
+    "Category reports overlap and must not be summed.",
+    "Allocator metadata, BTree nodes and reserved freed pages are not fully exposed.",
+    "Opt-in census adds substantial traversal cost; these are not build benchmarks.",
+    "Diagnostic optimization profile differs from the previous measured cohort.",
+    "Singleton bucket capacity fix was identified afterward and is not measured here.",
+    "No BYOND structural or runtime acceptance is claimed."
+  ]
+}

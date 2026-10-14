@@ -1,0 +1,143 @@
+{
+  "case": "initialization",
+  "status": "baseline_divergence",
+  "reference": [
+    {
+      "label": "startup",
+      "value": "global_z|static_z|local_static|global_a|"
+    },
+    {
+      "label": "base_constructed",
+      "value": "global_z|static_z|local_static|global_a|instance_z|base_New|"
+    },
+    {
+      "label": "local_static_twice",
+      "value": "global_z|static_z|local_static|global_a|instance_z|base_New|"
+    },
+    {
+      "label": "child_constructed",
+      "value": "global_z|static_z|local_static|global_a|instance_z|base_New|instance_z|child_value|base_New|child_New|"
+    }
+  ],
+  "native": [
+    {
+      "label": "startup",
+      "value": "static_z|global_z|global_a|local_static|"
+    },
+    {
+      "label": "base_constructed",
+      "value": "static_z|global_z|global_a|local_static|instance_z|base_New|"
+    },
+    {
+      "label": "local_static_twice",
+      "value": "static_z|global_z|global_a|local_static|instance_z|base_New|"
+    },
+    {
+      "label": "child_constructed",
+      "value": "static_z|global_z|global_a|local_static|instance_z|base_New|instance_z|child_value|base_New|child_New|"
+    }
+  ],
+  "differences": [
+    {
+      "label": "base_constructed",
+      "reference": "global_z|static_z|local_static|global_a|instance_z|base_New|",
+      "native": "static_z|global_z|global_a|local_static|instance_z|base_New|",
+      "classification": "initialization_order"
+    },
+    {
+      "label": "child_constructed",
+      "reference": "global_z|static_z|local_static|global_a|instance_z|base_New|instance_z|child_value|base_New|child_New|",
+      "native": "static_z|global_z|global_a|local_static|instance_z|base_New|instance_z|child_value|base_New|child_New|",
+      "classification": "initialization_order"
+    },
+    {
+      "label": "local_static_twice",
+      "reference": "global_z|static_z|local_static|global_a|instance_z|base_New|",
+      "native": "static_z|global_z|global_a|local_static|instance_z|base_New|",
+      "classification": "initialization_order"
+    },
+    {
+      "label": "startup",
+      "reference": "global_z|static_z|local_static|global_a|",
+      "native": "static_z|global_z|global_a|local_static|",
+      "classification": "initialization_order"
+    }
+  ],
+  "provenance": {
+    "results": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\results.json",
+    "source_hashes": {
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\source\\initialization.dme": "13aac7099a297d3f6eca4f3bf7c77f1c3e09b3ede1c76293e45d61659b13b4ab",
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\source\\common.dm": "426285dfb48222978fca2550be2cc6dd438154b65d98ad1856d544a2a9426c08",
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\source\\initialization.dm": "93543a335502dc4cf89e7aff94092baf98ef7b1cb55ef70b99d3b3641a60a6f3"
+    },
+    "observations": {
+      "byond": {
+        "path": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\byond-observations.json",
+        "sha256": "72c1d28bfd1b3dbf36133828ec9ef50f223468f8bd8c1c0f3d227ba70fe06c10"
+      },
+      "native": {
+        "path": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\native-observations.json",
+        "sha256": "836f9c8d3ee2897c44f48c5d9ae430a827669b67e5440db7cc79a097b7514360"
+      }
+    },
+    "compiler_hashes": {
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "D:\\dmb-native-v2-phase0\\frozen\\compiler-integration-fiftieth.exe": "87eaa5f265756588e001a29931528d40091a72d8f542abdba940ee6aacb19040"
+    },
+    "native_builtins": {
+      "path": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "commands_and_outcomes": {
+      "byond_compile": {
+        "exit_code": 0,
+        "seconds": 0.3357543000020087,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\source\\initialization.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\byond-compile.log"
+      },
+      "byond_runtime": {
+        "exit_code": 0,
+        "seconds": 1.1185882999998285,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\source\\initialization.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\byond-runtime.log"
+      },
+      "native_compile": {
+        "exit_code": 0,
+        "seconds": 3.803154299996095,
+        "timed_out": false,
+        "command": [
+          "D:\\dmb-native-v2-phase0\\frozen\\compiler-integration-fiftieth.exe",
+          "build-project",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\source\\initialization.dme",
+          "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\native"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\native-compile.log"
+      },
+      "native_runtime": {
+        "exit_code": 0,
+        "seconds": 1.123443699994823,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\native-slot\\world.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-initialization\\native-runtime.log"
+      }
+    }
+  }
+}

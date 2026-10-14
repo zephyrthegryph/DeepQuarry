@@ -1,0 +1,26 @@
+{
+  "scope": "Three-test trusted console comparison using the older f5 diagnostic native compiler",
+  "receipt": "E:/dq-cache/dmb-native-v2/captured-power-pair-f5-resume-20261011-1925/resume-receipt.json",
+  "status": "passed",
+  "byond_passes": 3,
+  "native_passes": 3,
+  "per_test_runtime_errors": 0,
+  "boot_clean_flags_match": true,
+  "observed_focused_parity": true,
+  "source_before_after_verified": true,
+  "raw_runtime_logs_complete": true,
+  "children_reaped": true,
+  "aggregate_seconds": 243.375,
+  "runtime_library_profile": "diagnostic-unoptimized",
+  "native_compiler_sha256": "7f4cae9e1e8296ad45e2887a60c1937854581b4bfa79d162e25bdae3cf4c7cfc",
+  "full_input_closure_authenticated": false,
+  "accepted_full_runtime_baseline": false,
+  "latest_migration_binary_validated": false,
+  "historical_power_error_root_cause": "Not closed by this current captured-source focused result",
+  "remaining": [
+    "Latest compiler binary focused runtime validation",
+    "Full Phase 5 runtime baseline",
+    "Whole-program BYOND structural and semantic comparison",
+    "Real DeepQuarry end-to-end incremental benchmarks for current migration"
+  ]
+}

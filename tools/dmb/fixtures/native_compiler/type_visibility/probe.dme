@@ -1,0 +1,7 @@
+/obj/hidden_probe
+    invisibility = 101
+/obj/hidden_probe/child
+/obj/hidden_probe/reset
+    invisibility = 0
+/obj/visible_probe
+    invisibility = 0

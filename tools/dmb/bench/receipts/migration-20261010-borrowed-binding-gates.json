@@ -1,0 +1,52 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_tree-ba83d63b7812f68d.exe",
+  "binary_sha256": "0d3044a6324b2a0c8e46ca7e2587311297765a3679822342e45ae3e87067599d",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "member_binding::tests",
+      "selected": [
+        "member_binding::tests::admitted_namespace_is_one_shared_owner_and_sparse_metadata_is_exact",
+        "member_binding::tests::exact_borrowed_recipes_construct_only_changed_final_chunks"
+      ],
+      "exit": 0,
+      "seconds": 0.03752340003848076,
+      "stdout": "\nrunning 2 tests\ntest member_binding::tests::admitted_namespace_is_one_shared_owner_and_sparse_metadata_is_exact ... ok\ntest member_binding::tests::exact_borrowed_recipes_construct_only_changed_final_chunks ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 248 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "member_arena::publication::tests",
+      "selected": [
+        "member_arena::publication::tests::changed_dense_previous_and_owner_bindings_decline_old_chunks",
+        "member_arena::publication::tests::failed_structural_binding_preserves_fresh_diagnostics_and_recovery",
+        "member_arena::publication::tests::metadata_update_releases_previous_publication_without_changing_current_tree",
+        "member_arena::publication::tests::structural_append_reuses_exact_final_owner_chunks_and_preserves_cow"
+      ],
+      "exit": 0,
+      "seconds": 0.10909639997407794,
+      "stdout": "\nrunning 4 tests\ntest member_arena::publication::tests::changed_dense_previous_and_owner_bindings_decline_old_chunks ... ok\ntest member_arena::publication::tests::failed_structural_binding_preserves_fresh_diagnostics_and_recovery ... ok\ntest member_arena::publication::tests::metadata_update_releases_previous_publication_without_changing_current_tree ... ok\ntest member_arena::publication::tests::structural_append_reuses_exact_final_owner_chunks_and_preserves_cow ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 246 filtered out; finished in 0.07s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "owner_metadata::sparse_tests",
+      "selected": [
+        "owner_metadata::sparse_tests::sparse_metadata_replays_locals_and_invalidates_changed_inherited_base"
+      ],
+      "exit": 0,
+      "seconds": 0.04871540004387498,
+      "stdout": "\nrunning 1 test\ntest owner_metadata::sparse_tests::sparse_metadata_replays_locals_and_invalidates_changed_inherited_base ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 249 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "metadata_update::stable_key_tests",
+      "selected": [
+        "metadata_update::stable_key_tests::dependency_edges_use_stable_source_keys_after_unrelated_dense_id_insertion",
+        "metadata_update::stable_key_tests::inheritance_noop_preserves_shared_metadata_but_divergence_detaches"
+      ],
+      "exit": 0,
+      "seconds": 0.04550119995838031,
+      "stdout": "\nrunning 2 tests\ntest metadata_update::stable_key_tests::dependency_edges_use_stable_source_keys_after_unrelated_dense_id_insertion ... ok\ntest metadata_update::stable_key_tests::inheritance_noop_preserves_shared_metadata_but_divergence_detaches ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 248 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    }
+  ]
+}

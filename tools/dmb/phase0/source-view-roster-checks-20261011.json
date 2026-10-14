@@ -1,0 +1,208 @@
+{
+  "schema": 1,
+  "source_commit": "c0b8447119f601fb9e0ee021c89a00fc03339fb5",
+  "source_archive_sha256": "590113b7ea83c932b2d2a8a03ed2fe06fba078744415f14db9ab8962accb1ad6",
+  "scope": "eight bounded ownership/current-binding fixtures; no runtime, performance or full migration acceptance",
+  "status": "passed",
+  "initial_build_watchdog": "300s timeout, all children reaped; unchanged bounded retry passed",
+  "selected_tests": 8,
+  "receipts": [
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-203129-5ffd3fba-job-cargo.json",
+      "sha256": "df4edf951ec4399feed3bddf5bb0f88e8edc1d64eab0f84b58c711a3a4fadc1a",
+      "receipt": {
+        "command": [
+          "E:/cargo/bin/cargo.exe",
+          "test",
+          "--lib",
+          "--no-run",
+          "--locked",
+          "--offline",
+          "-j1",
+          "-p",
+          "dm-preprocess",
+          "-p",
+          "dm-tree",
+          "-p",
+          "dmbc",
+          "--no-default-features",
+          "--config",
+          "profile.test.package.dmbc.debug=0",
+          "--config",
+          "profile.test.package.dmbc.codegen-units=256"
+        ],
+        "exit_code": 124,
+        "seconds": 300.1090000000004,
+        "memory_cap": 4000000000,
+        "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-203129-5ffd3fba-job-cargo.log",
+        "error": null,
+        "cleanup": {
+          "reaped": true,
+          "error": null,
+          "memory": {
+            "configured_job_memory_bytes": 3999997952,
+            "peak_job_commit_bytes": 2963591168,
+            "peak_process_commit_bytes": 2934857728,
+            "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+          }
+        },
+        "scope": "bounded correctness build; not a compiler performance benchmark"
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-203639-141e6ced-job-cargo.json",
+      "sha256": "ee4c782216b7cdc084ad1b7d0df1e862c4cf3559ab8f4501bd54271686187220",
+      "receipt": {
+        "command": [
+          "E:/cargo/bin/cargo.exe",
+          "test",
+          "--lib",
+          "--no-run",
+          "--locked",
+          "--offline",
+          "-j1",
+          "-p",
+          "dm-preprocess",
+          "-p",
+          "dm-tree",
+          "-p",
+          "dmbc",
+          "--no-default-features",
+          "--config",
+          "profile.test.package.dmbc.debug=0",
+          "--config",
+          "profile.test.package.dmbc.codegen-units=256"
+        ],
+        "exit_code": 0,
+        "seconds": 96.23399999999674,
+        "memory_cap": 4000000000,
+        "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-203639-141e6ced-job-cargo.log",
+        "error": null,
+        "cleanup": {
+          "reaped": true,
+          "error": null,
+          "memory": {
+            "configured_job_memory_bytes": 3999997952,
+            "peak_job_commit_bytes": 1795883008,
+            "peak_process_commit_bytes": 1766146048,
+            "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+          }
+        },
+        "scope": "bounded correctness build; not a compiler performance benchmark"
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-203845-a56ec08c-focused.json",
+      "sha256": "9280b85dc4ef0cb5b6c51f180e06a20b59657d68febb0c58df3f2f3b6a3ef269",
+      "receipt": {
+        "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_preprocess-957514cddce22c98.exe",
+        "binary_sha256": "1e2123f14c37be0f19a61ecb99fd1f7e992cb6b18fe57275fee6bfb24f11fc10",
+        "scope": "focused fixture execution, not full suite or runtime parity",
+        "rows": [
+          {
+            "filter": "source_text::tests::checked_source_views_share_bounds_and_full_owner_without_copying",
+            "selected": [
+              "source_text::tests::checked_source_views_share_bounds_and_full_owner_without_copying"
+            ],
+            "exit": 0,
+            "seconds": 0.014999999999417923,
+            "stdout": "\nrunning 1 test\ntest source_text::tests::checked_source_views_share_bounds_and_full_owner_without_copying ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 141 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          }
+        ]
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-203846-13eb2451-focused.json",
+      "sha256": "29e91e3024475ddac6329117b2686616beac24e04e214a988985b6a0359a1b7e",
+      "receipt": {
+        "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_tree-e3c8952682eec289.exe",
+        "binary_sha256": "b10303da9f845421389f74d88ca17e0e70d03e79f124181294a86865f59c8f10",
+        "scope": "focused fixture execution, not full suite or runtime parity",
+        "rows": [
+          {
+            "filter": "frontend::declaration_state::shared::tests::real_frontend_declaration_chunks_share_only_containing_region_sources",
+            "selected": [
+              "frontend::declaration_state::shared::tests::real_frontend_declaration_chunks_share_only_containing_region_sources"
+            ],
+            "exit": 0,
+            "seconds": 0.09299999999711872,
+            "stdout": "\nrunning 1 test\ntest frontend::declaration_state::shared::tests::real_frontend_declaration_chunks_share_only_containing_region_sources ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 312 filtered out; finished in 0.06s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "frontend::declaration_state::tests::declaration_capture_shares_checked_region_view_and_rebinds_current_origins",
+            "selected": [
+              "frontend::declaration_state::tests::declaration_capture_shares_checked_region_view_and_rebinds_current_origins"
+            ],
+            "exit": 0,
+            "seconds": 0.01600000000325963,
+            "stdout": "\nrunning 1 test\ntest frontend::declaration_state::tests::declaration_capture_shares_checked_region_view_and_rebinds_current_origins ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 312 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "frontend::declaration_state::tests::current_bindings_share_relative_payload_and_catalog_removes_old_names",
+            "selected": [
+              "frontend::declaration_state::tests::current_bindings_share_relative_payload_and_catalog_removes_old_names"
+            ],
+            "exit": 0,
+            "seconds": 0.030999999999039574,
+            "stdout": "\nrunning 1 test\ntest frontend::declaration_state::tests::current_bindings_share_relative_payload_and_catalog_removes_old_names ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 312 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "frontend::relative_declarations::arena::tests::compact_nodes_borrow_headers_and_keep_recursive_order_with_smaller_slots",
+            "selected": [
+              "frontend::relative_declarations::arena::tests::compact_nodes_borrow_headers_and_keep_recursive_order_with_smaller_slots"
+            ],
+            "exit": 0,
+            "seconds": 0.01599999999962165,
+            "stdout": "\nrunning 1 test\ntest frontend::relative_declarations::arena::tests::compact_nodes_borrow_headers_and_keep_recursive_order_with_smaller_slots ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 312 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "frontend::relative_declarations::arena::tests::transformed_headers_and_wide_coordinates_preserve_owned_spelling",
+            "selected": [
+              "frontend::relative_declarations::arena::tests::transformed_headers_and_wide_coordinates_preserve_owned_spelling"
+            ],
+            "exit": 0,
+            "seconds": 0.030999999999039574,
+            "stdout": "\nrunning 1 test\ntest frontend::relative_declarations::arena::tests::transformed_headers_and_wide_coordinates_preserve_owned_spelling ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 312 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          }
+        ]
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-203847-32b9d8e8-focused.json",
+      "sha256": "59a33dc2fb055d2120683a4515fd083ec0fa61a1f0e639c07413c9fe53654e7c",
+      "receipt": {
+        "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-ae0d7f4a77b95e43.exe",
+        "binary_sha256": "a7fb97b94ab8e94a73c87abe9208d1fd462b8868565d1dfda039ca3734a14070",
+        "scope": "focused fixture execution, not full suite or runtime parity",
+        "rows": [
+          {
+            "filter": "initializer_policy::classification::token_roster::ownership_tests",
+            "selected": [
+              "initializer_policy::classification::token_roster::ownership_tests::fork_shares_immutable_layout_and_clear_is_request_local"
+            ],
+            "exit": 0,
+            "seconds": 0.030999999999039574,
+            "stdout": "\nrunning 1 test\ntest initializer_policy::classification::token_roster::ownership_tests::fork_shares_immutable_layout_and_clear_is_request_local ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 931 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          },
+          {
+            "filter": "heap_census::retained_declarations::tests",
+            "selected": [
+              "heap_census::retained_declarations::tests::retained_declaration_census_visits_payloads_without_mutating_or_serializing"
+            ],
+            "exit": 0,
+            "seconds": 0.046999999998661224,
+            "stdout": "\nrunning 1 test\ntest heap_census::retained_declarations::tests::retained_declaration_census_visits_payloads_without_mutating_or_serializing ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 931 filtered out; finished in 0.02s\n\n",
+            "stderr": ""
+          }
+        ]
+      }
+    }
+  ]
+}

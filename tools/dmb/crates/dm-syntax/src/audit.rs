@@ -2,12 +2,43 @@
 //! the source text; this module never builds a whole-project token or AST Vec.
 
 use crate::{
-    parse, parse_proc_body, quoted_end, AstFile, Diagnostic, DiagnosticKind, Item, ItemKind, Span,
-    Statement, StatementKind,
+    parse, parse_proc_body, AstFile, Diagnostic, DiagnosticKind, Item, ItemKind, Span, Statement,
+    StatementKind,
 };
 use std::collections::BTreeMap;
 
 const MAX_DIAGNOSTIC_GROUPS: usize = 256;
+
+#[cfg(test)]
+mod stable_group_tests {
+    use super::*;
+    #[test]
+    fn body_length_edits_preserve_following_grammar_groups() {
+        let original = (0..180)
+            .map(|n| format!("/proc/p{n}()\n    return {n}\n"))
+            .collect::<String>();
+        let changed = original.replace(
+            "    return 2\n",
+            "    return list(1, 2, 3, 4, 5, 6, 7, 8)\n",
+        );
+        let groups = |source: &str| {
+            let mut groups = Vec::new();
+            let report = for_each_stable_source_chunk(source, source.len(), 32, |text, _| {
+                groups.push(text.to_string())
+            });
+            assert_eq!(report.skipped_declarations, 0);
+            assert_eq!(groups.concat(), source);
+            groups
+        };
+        let first = groups(&original);
+        let second = groups(&changed);
+        assert_eq!(first.len(), second.len());
+        assert_eq!(first.iter().zip(&second).filter(|(a, b)| a != b).count(), 1);
+        for group in second {
+            assert!(parse(&group).diagnostics.is_empty());
+        }
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct ChunkReport {
@@ -50,18 +81,6 @@ pub fn for_each_source_chunk_with_limits(
     source: &str,
     target_chunk_bytes: usize,
     max_declaration_bytes: usize,
-    visit: impl FnMut(&str, usize),
-) -> ChunkReport {
-    let mut boundaries = Vec::new();
-    for_each_top_level_boundary(source, |at| boundaries.push(at));
-    source_chunks_from_boundaries(source, target_chunk_bytes, max_declaration_bytes, &boundaries, visit)
-}
-
-pub(crate) fn source_chunks_from_boundaries(
-    source: &str,
-    target_chunk_bytes: usize,
-    max_declaration_bytes: usize,
-    boundaries: &[usize],
     mut visit: impl FnMut(&str, usize),
 ) -> ChunkReport {
     let limit = max_declaration_bytes.max(1);
@@ -103,12 +122,35 @@ pub(crate) fn source_chunks_from_boundaries(
         }
         declaration_start = boundary;
     };
-    for &boundary in boundaries { on_boundary(boundary); }
+    for_each_top_level_boundary(source, &mut on_boundary);
     on_boundary(source.len());
     if chunk_end > chunk_start {
         parse_chunk(chunk_start, chunk_end, &mut report);
     }
     report
+}
+
+/// Group complete root declarations by header anchors, rather than body byte
+/// counts. Body edits preserve following groups; an insertion resynchronizes at
+/// the next anchor. Large type blocks remain indivisible grammar units.
+pub fn for_each_stable_source_chunk(
+    source: &str,
+    max_declaration_bytes: usize,
+    max_declarations: usize,
+    mut visit: impl FnMut(&str, usize),
+) -> ChunkReport {
+    crate::stable_chunks::scan_stable_source_chunks_from::<()>(
+        source,
+        crate::BoundaryCheckpoint::default(),
+        max_declaration_bytes,
+        max_declarations,
+        |text, offset, _| {
+            visit(text, offset);
+            std::ops::ControlFlow::Continue(())
+        },
+    )
+    .expect("initial joined-stream stable checkpoint is valid")
+    .0
 }
 
 /// Reparse exactly one procedure from the original source when lowering it.
@@ -176,15 +218,15 @@ impl StreamingAudit {
             group = "<other>".into();
         }
         *self.diagnostic_groups.entry(group.clone()).or_default() += 1;
-        if !self.diagnostic_examples.contains_key(&group) {
+        self.diagnostic_examples.entry(group).or_insert_with(|| {
             let mut example = diagnostic.clone();
             example.span.start += offset;
             example.span.end += offset;
             if example.message.len() > 512 {
                 example.message.truncate(512);
             }
-            self.diagnostic_examples.insert(group, example);
-        }
+            example
+        });
         if self.diagnostics.len() < sample_limit {
             diagnostic.span.start += offset;
             diagnostic.span.end += offset;
@@ -355,117 +397,16 @@ pub fn audit_source_streaming(
     result
 }
 
-pub(crate) fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
-    let mut at_line_start = true;
-    let mut indented = false;
-    let mut delimiter_depth = 0usize;
-    let mut pos = 0usize;
-    while pos < source.len() {
-        let rest = &source[pos..];
-        if rest.starts_with("//") {
-            pos += rest.find('\n').unwrap_or(rest.len());
-            continue;
-        }
-        if rest.starts_with("/*") {
-            let mut depth = 1usize;
-            let mut cursor = 2usize;
-            while depth > 0 && cursor + 1 < rest.len() {
-                if rest[cursor..].starts_with("/*") {
-                    depth += 1;
-                    cursor += 2;
-                } else if rest[cursor..].starts_with("*/") {
-                    depth -= 1;
-                    cursor += 2;
-                } else {
-                    cursor += rest[cursor..].chars().next().unwrap().len_utf8();
-                }
-            }
-            let end = if depth == 0 { cursor } else { rest.len() };
-            (at_line_start, indented) =
-                after_token_line_start(&rest[..end], at_line_start, indented, true);
-            pos += end;
-            continue;
-        }
-        let literal_start = rest.starts_with("@{\"") || rest.starts_with("{\"") || rest.starts_with("@\"") || rest.starts_with('"');
-        let string = if rest.starts_with("@{\"") {
-            quoted_end(&rest[1..], true, true).map(|end| end + 1)
-        } else if rest.starts_with("{\"") {
-            quoted_end(rest, true, false)
-        } else if rest.starts_with("@\"") {
-            quoted_end(&rest[1..], false, true).map(|end| end + 1)
-        } else if rest.starts_with('"') {
-            quoted_end(rest, false, false)
-        } else {
-            None
-        };
-        if let Some(end) = string {
-            (at_line_start, indented) =
-                after_token_line_start(&rest[..end], at_line_start, indented, false);
-            pos += end;
-            continue;
-        }
-        // A piece can stop inside a literal. Its interior is never a genuine
-        // declaration boundary; the segmented scanner carries it forward.
-        if literal_start { break; }
-        if rest.starts_with('\'') {
-            let mut escaped = false;
-            let mut end = rest.len();
-            for (at, ch) in rest.char_indices().skip(1) {
-                if escaped {
-                    escaped = false;
-                } else if ch == '\\' {
-                    escaped = true;
-                } else if ch == '\'' {
-                    end = at + 1;
-                    break;
-                }
-            }
-            (at_line_start, indented) =
-                after_token_line_start(&rest[..end], at_line_start, indented, false);
-            pos += end;
-            continue;
-        }
-        let ch = rest.chars().next().unwrap();
-        if ch == '\n' {
-            at_line_start = true;
-            indented = false;
-        } else if matches!(ch, ' ' | '\t') && at_line_start {
-            indented = true;
-        } else if !matches!(ch, ' ' | '\t' | '\r') {
-            // Expanded #include directives can leave spaces before the first
-            // absolute declaration path of an included file.
-            if at_line_start && delimiter_depth == 0 && (!indented || ch == '/') {
-                visit(pos);
-            }
-            at_line_start = false;
-        }
-        match ch {
-            '(' | '[' | '{' => delimiter_depth += 1,
-            ')' | ']' | '}' => delimiter_depth = delimiter_depth.saturating_sub(1),
-            _ => {}
-        }
-        pos += ch.len_utf8();
-    }
-}
-
-fn after_token_line_start(
-    token: &str,
-    previous: bool,
-    previously_indented: bool,
-    trivia: bool,
-) -> (bool, bool) {
-    match token.rfind('\n') {
-        Some(at) => {
-            let tail = &token[at + 1..];
-            (
-                tail.bytes()
-                    .all(|byte| matches!(byte, b' ' | b'\t' | b'\r')),
-                tail.bytes().any(|byte| matches!(byte, b' ' | b'\t')),
-            )
-        }
-        None if trivia => (previous, previously_indented),
-        None => (false, previously_indented),
-    }
+fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
+    let _ = crate::boundary_scan::scan_top_level_boundaries::<()>(
+        source,
+        crate::boundary_scan::BoundaryCheckpoint::default(),
+        |checkpoint| {
+            visit(checkpoint.offset());
+            std::ops::ControlFlow::Continue(())
+        },
+    )
+    .expect("initial joined-stream boundary checkpoint is valid");
 }
 
 #[cfg(test)]
@@ -535,34 +476,34 @@ mod tests {
     }
 
     #[test]
-    fn raw_regex_brackets_preserve_following_declarations() {
-        let source = r#"/proc/om_is_handle(h)
-    var/static/regex/shape = regex(@"^(\d+:\d+|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$")
-    return istext(h) && shape.Find(h)
-/proc/after()
-    return @"[not_var]"
-/proc/unbalanced()
-    return @"["
-"#;
-        let mut boundaries = Vec::new();
-        for_each_top_level_boundary(source, |at| boundaries.push(at));
-        assert!(boundaries.contains(&source.find("/proc/after()").unwrap()));
-        assert!(boundaries.contains(&source.find("/proc/unbalanced()").unwrap()));
-        let report = for_each_parsed_chunk(source, 200, |ast, _| {
-            assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
-        });
-        assert_eq!(report.skipped_declarations, 0);
-        assert!(report.parsed_chunks > 1);
-        let audit = audit_source_streaming(source, 200, 5);
-        assert_eq!(audit.procedures, 3);
-    }
-
-    #[test]
     fn raw_block_string_does_not_create_declaration_boundary() {
         let source = "/proc/a()\n    var/text = @{\"line\n/proc/not_real()\nend\"}\n/proc/b()\n    return 2\n";
         let audit = audit_source_streaming(source, 256, 5);
         assert_eq!(audit.procedures, 2);
         assert_eq!(audit.skipped_declarations, 0);
+    }
+
+    #[test]
+    fn raw_inline_regex_preserves_following_chunk_boundaries() {
+        let source = r#"/proc/om_is_handle(h)
+    var/static/regex/shape = regex(@"^(\d+:\d+|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$")
+    return shape
+/mob/dview
+    anchored = 1
+/atom/movable
+    var/anchored = 0
+"#;
+        let mut headers = Vec::new();
+        let report = for_each_source_chunk_with_limits(source, 64, source.len(), |chunk, _| {
+            let ast = parse(chunk);
+            assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
+            headers.extend(ast.items.into_iter().map(|item| item.header));
+        });
+        assert_eq!(report.skipped_declarations, 0);
+        assert_eq!(
+            headers,
+            ["/proc/om_is_handle(h)", "/mob/dview", "/atom/movable"]
+        );
     }
 
     #[test]
@@ -616,5 +557,120 @@ mod tests {
                 .start,
             0
         );
+    }
+}
+
+#[cfg(test)]
+mod ascii_scan_tests {
+    use super::*;
+    use crate::{boundary_scan::after_token_line_start, quoted_end};
+    fn reference_boundaries(source: &str, mut visit: impl FnMut(usize)) {
+        let mut at_line_start = true;
+        let mut indented = false;
+        let mut delimiter_depth = 0usize;
+        let mut pos = 0usize;
+        while pos < source.len() {
+            let rest = &source[pos..];
+            if rest.starts_with("//") {
+                pos += rest.find('\n').unwrap_or(rest.len());
+                continue;
+            }
+            if rest.starts_with("/*") {
+                let mut depth = 1usize;
+                let mut cursor = 2usize;
+                while depth > 0 && cursor + 1 < rest.len() {
+                    if rest[cursor..].starts_with("/*") {
+                        depth += 1;
+                        cursor += 2;
+                    } else if rest[cursor..].starts_with("*/") {
+                        depth -= 1;
+                        cursor += 2;
+                    } else {
+                        cursor += rest[cursor..].chars().next().unwrap().len_utf8();
+                    }
+                }
+                let end = if depth == 0 { cursor } else { rest.len() };
+                (at_line_start, indented) =
+                    after_token_line_start(&rest[..end], at_line_start, indented, true);
+                pos += end;
+                continue;
+            }
+            let string = if rest.starts_with("@{\"") {
+                quoted_end(&rest[1..], true, true).map(|end| end + 1)
+            } else if rest.starts_with("{\"") {
+                quoted_end(rest, true, false)
+            } else if rest.starts_with("@\"") {
+                quoted_end(&rest[1..], false, true).map(|end| end + 1)
+            } else if rest.starts_with('"') {
+                quoted_end(rest, false, false)
+            } else {
+                None
+            };
+            if let Some(end) = string {
+                (at_line_start, indented) =
+                    after_token_line_start(&rest[..end], at_line_start, indented, false);
+                pos += end;
+                continue;
+            }
+            if rest.starts_with('\'') {
+                let mut escaped = false;
+                let mut end = rest.len();
+                for (at, ch) in rest.char_indices().skip(1) {
+                    if escaped {
+                        escaped = false;
+                    } else if ch == '\\' {
+                        escaped = true;
+                    } else if ch == '\'' {
+                        end = at + 1;
+                        break;
+                    }
+                }
+                (at_line_start, indented) =
+                    after_token_line_start(&rest[..end], at_line_start, indented, false);
+                pos += end;
+                continue;
+            }
+            let ch = rest.chars().next().unwrap();
+            if ch == '\n' {
+                at_line_start = true;
+                indented = false;
+            } else if matches!(ch, ' ' | '\t') && at_line_start {
+                indented = true;
+            } else if !matches!(ch, ' ' | '\t' | '\r') {
+                // Expanded #include directives can leave spaces before the first
+                // absolute declaration path of an included file.
+                if at_line_start && delimiter_depth == 0 && (!indented || ch == '/') {
+                    visit(pos);
+                }
+                at_line_start = false;
+            }
+            match ch {
+                '(' | '[' | '{' => delimiter_depth += 1,
+                ')' | ']' | '}' => delimiter_depth = delimiter_depth.saturating_sub(1),
+                _ => {}
+            }
+            pos += ch.len_utf8();
+        }
+    }
+
+    #[test]
+    fn ascii_boundary_scan_matches_character_reference() {
+        for source in [
+        "/datum/a\n    proc/f()\n        return call(\n/datum/not_boundary,\n        1)\n/datum/b\n",
+        "/datum/日本\n    var/text = {\"line\n/obj/not_boundary\n\"}\n /obj/next\n",
+        "/* outer\n/* inner */\n*/ /obj/a\n// /obj/comment\n/obj/b\n",
+        "/datum/a\n    var/x = \"outer [call(\"nested [1]\")]\"\n/obj/b\n",
+        "/datum/a\n    var/x = 'icons/日本.dmi'\n/obj/b\n",
+        "/datum/a\n    var/x = @{\"raw \\text\n/obj/inside\"}\n/obj/b\n",
+    ] {
+        for end in (0..=source.len()).filter(|end| source.is_char_boundary(*end)) {
+            let prefix = &source[..end];
+            let mut expected = Vec::new();
+            reference_boundaries(prefix, |offset| expected.push(offset));
+            let mut actual = Vec::new();
+            for_each_top_level_boundary(prefix, |offset| actual.push(offset));
+            assert_eq!(actual, expected, "{prefix:?}");
+        }
+    }
     }
 }

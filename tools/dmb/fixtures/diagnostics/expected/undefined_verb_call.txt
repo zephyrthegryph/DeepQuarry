@@ -1,0 +1,2 @@
+undefined_verb_call.dm:2:error: src.not_a_verb: undefined proc
+undefined_verb_call.dmb - 1 error, 0 warnings

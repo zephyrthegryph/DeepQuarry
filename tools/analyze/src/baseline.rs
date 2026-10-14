@@ -116,6 +116,22 @@ pub fn write_sites(
         let mut budget: Counter = old.get(rule).cloned().unwrap_or_default();
         let empty: Vec<&Site> = Vec::new();
         let found = lookup.get(rule).copied().unwrap_or(&empty);
+        // What `check_sites` accepts of this rule against the file as it is now: an update may never keep fewer rows than that.
+        let accepted = {
+            let mut b: Counter = old.get(rule).cloned().unwrap_or_default();
+            let mut n = 0usize;
+            for fp in fingerprints(tree, found) {
+                match b.get_mut(&(fp.site.rel.clone(), fp.fp.clone())) {
+                    Some(c) if *c > 0 => {
+                        *c -= 1;
+                        n += 1;
+                    }
+                    _ => {}
+                }
+            }
+            n
+        };
+        let rows_before = rows.len();
         let mut fps: Vec<(String, u32, String, String)> =
             fingerprints(tree, found).into_iter().map(|f| (f.site.rel.clone(), f.site.line, f.text, f.fp)).collect();
         fps.sort();
@@ -133,6 +149,12 @@ pub fn write_sites(
                 *b -= 1;
             }
             rows.push(format!("{}	{}	{}", rule, rel, if fp.starts_with(IDENT_MARK) { &fp } else { &text }));
+        }
+        if mode != Mode::Seed && rows.len() - rows_before < accepted {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("baseline update for `{}` would keep {} rows but the check accepts {} sites: refusing to drop a row the check still matches", rule, rows.len() - rows_before, accepted),
+            ));
         }
         if mode == Mode::Migrate {
             // Rows no current site claims stay as they were (a migration changes the form of a row, never the number of rows).
@@ -510,5 +532,37 @@ unknown_read	code/a.dm	b = old text
         assert!(once.contains("b = old text"), "{once}");
         assert_eq!(write_sites(&path, &["h"], &tree, &by_rule, &["unknown_read"], Mode::Migrate).unwrap(), 2);
         assert_eq!(std::fs::read_to_string(&path).unwrap(), once);
+    }
+
+    #[test]
+    fn update_keeps_every_row_the_check_still_matches_in_a_mixed_baseline() {
+        let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", "/obj/x
+	a = 1
+	b = 2
+	c = 3
+	d = 4
+")]);
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("b.txt");
+        // Identity rows (one shared by two sites), a line-text row, a row for a fixed site, and a legacy row whose text no longer matches.
+        std::fs::write(&path, "# h
+r	code/a.dm	@/obj/x::p reads /obj/y::v
+r	code/a.dm	@/obj/x::p reads /obj/y::v
+r	code/a.dm	@/obj/x::q reads /obj/y::w
+r	code/a.dm	c = 3
+r	code/a.dm	@/obj/x::gone reads /obj/y::z
+r	code/a.dm	stale text
+").unwrap();
+        let sites = [decl("r", "code/a.dm", 2, "/obj/x::p reads /obj/y::v"), decl("r", "code/a.dm", 3, "/obj/x::p reads /obj/y::v"), decl("r", "code/a.dm", 4, "/obj/x::q reads /obj/y::w"), decl("r", "code/a.dm", 5, "/obj/x::s reads /obj/y::t")];
+        let by_rule = vec![("r", sites.iter().collect::<Vec<_>>())];
+        let mut out = String::new();
+        let before = check_sites("t", &tree, &by_rule, &|_| String::new(), &path, &[], &mut out);
+        assert!(before, "the site with no row is new: {out}");
+        let n = write_sites(&path, &["h"], &tree, &by_rule, &["r"], Mode::Update).unwrap();
+        assert_eq!(n, 3, "the three sites with a row stay; the new one is not added");
+        let kept: Vec<&Site> = sites.iter().take(3).collect();
+        let by_rule = vec![("r", kept)];
+        let mut out = String::new();
+        assert!(!check_sites("t", &tree, &by_rule, &|_| String::new(), &path, &[], &mut out), "{out}");
     }
 }

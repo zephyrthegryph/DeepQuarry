@@ -1,0 +1,44 @@
+{
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "compiler_version": "516.1687",
+  "engine_template_sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540",
+  "source_sha256": "cfe8182475529b69844506c99972791b321767a23fad486be276dd675c2ff938",
+  "files": {
+    "unterminated_expression.dm": "cfe8182475529b69844506c99972791b321767a23fad486be276dd675c2ff938",
+    "unterminated_expression.dme": "57ebdb1cc141469b033ca0a6661776165c69479981d639c05aa4fad38e785dc4"
+  },
+  "source_unchanged": true,
+  "captured_source_error": true,
+  "runtime": "not run",
+  "byond": {
+    "command": [
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "E:\\dq-cache\\dmb-native-v2\\diagnostic-errors-20261010-captured\\unterminated_expression\\unterminated_expression.dme"
+    ],
+    "exit_code": 4294967295,
+    "timed_out": false,
+    "seconds": 0.3412497999961488,
+    "cleanup": null,
+    "log": "E:\\dq-cache\\dmb-native-v2\\diagnostic-errors-20261010-captured\\unterminated_expression\\byond.log",
+    "diagnostics": [
+      {
+        "file": "unterminated_expression.dme",
+        "line": 0,
+        "severity": "error",
+        "message": "missing expression"
+      },
+      {
+        "file": "unterminated_expression.dme",
+        "line": 2,
+        "severity": "error",
+        "message": "}: missing comma ',' or right-paren ')'"
+      },
+      {
+        "file": "unterminated_expression.dm",
+        "line": 2,
+        "severity": "error",
+        "message": "list started here"
+      }
+    ]
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "scope": "Compiler executable build attempts, not DM compilation or benchmark timings",
+  "source_commit": "3aa85b31edab1ac3356511bb79748fe0ab1a2f99",
+  "attempts": [
+    {
+      "command": [
+        "E:/cargo/bin/cargo.exe",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "dmbc",
+        "--bin",
+        "dmbc",
+        "--features",
+        "allocation-counting",
+        "--config",
+        "profile.release.package.dmbc.opt-level=1",
+        "--config",
+        "profile.release.package.dmbc.codegen-units=256",
+        "--config",
+        "profile.release.package.dmbc.debug=0",
+        "--config",
+        "profile.release.package.dm-tree.opt-level=2",
+        "--config",
+        "profile.release.package.dm-tree.codegen-units=256",
+        "--config",
+        "profile.release.package.dm-tree.debug=0",
+        "--config",
+        "profile.release.package.dm-codegen-byond.opt-level=2",
+        "--config",
+        "profile.release.package.dm-codegen-byond.codegen-units=256",
+        "--config",
+        "profile.release.package.dm-codegen-byond.debug=0"
+      ],
+      "exit_code": 124,
+      "seconds": 300.09400000000096,
+      "memory_cap": 4000000000,
+      "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-211214-29b9751d-job-cargo.log",
+      "error": null,
+      "cleanup": {
+        "reaped": true,
+        "error": null,
+        "memory": {
+          "configured_job_memory_bytes": 3999997952,
+          "peak_job_commit_bytes": 903168000,
+          "peak_process_commit_bytes": 871567360,
+          "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+        }
+      },
+      "scope": "bounded correctness build; not a compiler performance benchmark"
+    },
+    {
+      "command": [
+        "E:/cargo/bin/cargo.exe",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "dmbc",
+        "--bin",
+        "dmbc",
+        "--features",
+        "allocation-counting",
+        "--config",
+        "profile.release.package.dmbc.opt-level=1",
+        "--config",
+        "profile.release.package.dmbc.codegen-units=256",
+        "--config",
+        "profile.release.package.dmbc.debug=0",
+        "--config",
+        "profile.release.package.dm-tree.opt-level=2",
+        "--config",
+        "profile.release.package.dm-tree.codegen-units=256",
+        "--config",
+        "profile.release.package.dm-tree.debug=0",
+        "--config",
+        "profile.release.package.dm-codegen-byond.opt-level=2",
+        "--config",
+        "profile.release.package.dm-codegen-byond.codegen-units=256",
+        "--config",
+        "profile.release.package.dm-codegen-byond.debug=0"
+      ],
+      "exit_code": 124,
+      "seconds": 300.0620000000017,
+      "memory_cap": 4000000000,
+      "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-211723-acdb81e4-job-cargo.log",
+      "error": null,
+      "cleanup": {
+        "reaped": true,
+        "error": null,
+        "memory": {
+          "configured_job_memory_bytes": 3999997952,
+          "peak_job_commit_bytes": 1781682176,
+          "peak_process_commit_bytes": 1753239552,
+          "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+        }
+      },
+      "scope": "bounded correctness build; not a compiler performance benchmark"
+    }
+  ],
+  "decision": "Two fixed 300 second opt1 attempts timed out/reaped; switch current immutable source to previous diagnostic opt0 settings, with no watchdog or memory increase.",
+  "acceptance": false
+}

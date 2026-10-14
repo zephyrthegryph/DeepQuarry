@@ -1,0 +1,258 @@
+{
+  "schema": "dm-initializer-receiver-contexts-v1",
+  "status": "captured",
+  "producer_sha256": "e9bc1b517a6231f511183e7533a01e9af4be9b085d2ba0206430a7345bc37700",
+  "compiler": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "file_version": "5.0.516.1687",
+  "child_watchdog_s": 30,
+  "aggregate_admission_deadline_s": 240,
+  "cases": [
+    {
+      "name": "declared",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\translation\\initializer_receiver_contexts\\declared.dm",
+      "source_sha256": "dcb926e075d29dee269ea5f73a10722f873abe669960cf851c37dc9375d61d10",
+      "inputs": {
+        "declared.dm": "dcb926e075d29dee269ea5f73a10722f873abe669960cf851c37dc9375d61d10",
+        "declared.dme": "aa5d0bf34faf2cc88f6fbb792653dd967060f20552de2189b28c93bc621c91d4"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\declared\\declared.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.3380237999954261,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\declared\\byond.log",
+        "diagnostics": [],
+        "log_sha256": "4255f1f984d90124c1caae2486487fa5561e1f6f820b1fbc9573d557626b6583"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\declared\\declared.dmb",
+          "bytes": 15243,
+          "sha256": "0ea1cb6d7e6b60cba5c225a8a9b8473bbedee306adb879a0e7b6bf3248c212eb"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "status": "captured"
+    },
+    {
+      "name": "reopened",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\translation\\initializer_receiver_contexts\\reopened.dm",
+      "source_sha256": "de5e8124cf39c14cae752ea09d5e70b43034437416d87530539f2ca193c2ec7c",
+      "inputs": {
+        "reopened.dm": "de5e8124cf39c14cae752ea09d5e70b43034437416d87530539f2ca193c2ec7c",
+        "reopened.dme": "3e7004e64738d199b0ff45270dd869bf091d924d0164d109d637871f00d9b0af"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\reopened\\reopened.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.33565080002881587,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\reopened\\byond.log",
+        "diagnostics": [],
+        "log_sha256": "6a6988f57bd0dfc7b2129aa5114b1763b65ec6371425192abf6c38cb2942546e"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\reopened\\reopened.dmb",
+          "bytes": 15247,
+          "sha256": "0ba46d261534a34d8e43eab23dfe73990ac51e9419b7a56d4da3a7b2742ab7e8"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "status": "captured"
+    },
+    {
+      "name": "inherited",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\translation\\initializer_receiver_contexts\\inherited.dm",
+      "source_sha256": "a8b8def86dcc61d782716acdf6788b57d8912aba9e5609ecaadf6295da4769a6",
+      "inputs": {
+        "inherited.dm": "a8b8def86dcc61d782716acdf6788b57d8912aba9e5609ecaadf6295da4769a6",
+        "inherited.dme": "bccd04cab90f004b044b26e17b591c848bd7b9ab7cfaa65f62c0d340d76d0c6c"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\inherited\\inherited.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.3370098000159487,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\inherited\\byond.log",
+        "diagnostics": [],
+        "log_sha256": "81a806c4eb0f9d45986aa34da54f4f6d4f9070f565d9aabefd610ea7f8a92888"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\inherited\\inherited.dmb",
+          "bytes": 15360,
+          "sha256": "58992070e888eebdfa4aac8a691deef10572e0166aca028dbfd8efbf680b996a"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "status": "captured"
+    },
+    {
+      "name": "uninitialized_typed_list",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\translation\\initializer_receiver_contexts\\uninitialized_typed_list.dm",
+      "source_sha256": "6153a7c2fadf64ee9658b5e42d246cbcb846d280fc0ff68ce287735be97f8098",
+      "inputs": {
+        "uninitialized_typed_list.dm": "6153a7c2fadf64ee9658b5e42d246cbcb846d280fc0ff68ce287735be97f8098",
+        "uninitialized_typed_list.dme": "f9181ed58ca74e15c0239260a7671086a3d91e3b68667e0a82cc67d7e3ea682d"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\uninitialized_typed_list\\uninitialized_typed_list.dme"
+        ],
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.34597570000914857,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\uninitialized_typed_list\\byond.log",
+        "diagnostics": [],
+        "log_sha256": "1ca6fd013089818cf7ed300987ce1124b5c7998be28a72a7a97a49d28ac9a3b7"
+      },
+      "outputs": {
+        "dmb": {
+          "path": "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\uninitialized_typed_list\\uninitialized_typed_list.dmb",
+          "bytes": 15214,
+          "sha256": "7d97190f5ee37d32594a9e59817e9b8fdcbb0d88469ce0722193fd7d0a373b8c"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "status": "captured"
+    },
+    {
+      "name": "list_method_assignment",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\translation\\initializer_receiver_contexts\\list_method_assignment.dm",
+      "source_sha256": "b2b9986102e0007c1ea2480dbec3a9f0da94d260babf007d1da86ae951612963",
+      "inputs": {
+        "list_method_assignment.dm": "b2b9986102e0007c1ea2480dbec3a9f0da94d260babf007d1da86ae951612963",
+        "list_method_assignment.dme": "bd44471557bb8463bad4086aa583b8672d4d2e9b6996be1664cb155dcf2b1fab"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\list_method_assignment\\list_method_assignment.dme"
+        ],
+        "exit_code": 4294967295,
+        "timed_out": false,
+        "seconds": 0.34590330003993586,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\list_method_assignment\\byond.log",
+        "diagnostics": [
+          {
+            "file": "list_method_assignment.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "values.Add: invalid variable"
+          },
+          {
+            "file": "list_method_assignment.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "=: expected a constant expression"
+          }
+        ],
+        "log_sha256": "eee137b395636dd4b6c48a6f2811681377728be8b0f95ae0da33dfa770f6f2fb"
+      },
+      "outputs": {
+        "dmb": {
+          "status": "absent"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "expected_diagnostics": [
+        "list_method_assignment.dm:3:error: values.Add: invalid variable",
+        "list_method_assignment.dm:3:error: =: expected a constant expression"
+      ],
+      "status": "captured_negative"
+    },
+    {
+      "name": "scalar_proc_default",
+      "source": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\translation\\initializer_receiver_contexts\\scalar_proc_default.dm",
+      "source_sha256": "0e7ac4c56209801079076075f82285bed29679c6038938ea3a97df7e44105731",
+      "inputs": {
+        "scalar_proc_default.dm": "0e7ac4c56209801079076075f82285bed29679c6038938ea3a97df7e44105731",
+        "scalar_proc_default.dme": "e463b7f7fc2bf3343b081c50bed639e5056f436c77541e7dfd5972590645182e"
+      },
+      "source_unchanged": true,
+      "defines": [],
+      "byond": {
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\scalar_proc_default\\scalar_proc_default.dme"
+        ],
+        "exit_code": 4294967295,
+        "timed_out": false,
+        "seconds": 0.3307994999922812,
+        "cleanup": null,
+        "log": "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\scalar_proc_default\\byond.log",
+        "diagnostics": [
+          {
+            "file": "scalar_proc_default.dm",
+            "line": 4,
+            "severity": "error",
+            "message": "=: expected a constant expression"
+          }
+        ],
+        "log_sha256": "d370eff0e9f6cf820570fbcec7b84afa495816681519a386b02cedaa9c2ad1da"
+      },
+      "outputs": {
+        "dmb": {
+          "status": "absent"
+        },
+        "rsc": {
+          "status": "absent"
+        }
+      },
+      "expected_diagnostics": [
+        "scalar_proc_default.dm:4:error: =: expected a constant expression"
+      ],
+      "status": "captured_negative"
+    }
+  ],
+  "scope": "actual compile-only output capture; receiver semantics not yet decoded; no native or runtime execution",
+  "version": {
+    "command": [
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe"
+    ],
+    "exit_code": 1,
+    "timed_out": false,
+    "seconds": 0.24043389997677878,
+    "cleanup": null,
+    "log": "E:\\dq-cache\\dmb-native-v2\\initializer-receiver-contexts-20261010-root-c\\version.log",
+    "diagnostics": [],
+    "log_sha256": "865efe09cc6a29c7102ee596363784a36fa4031f773d3caad44d171d5737763b"
+  }
+}

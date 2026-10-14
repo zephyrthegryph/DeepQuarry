@@ -1,0 +1,64 @@
+[
+  {
+    "kind": "body",
+    "path": "code/_helpers/unsorted.dm",
+    "before": "return max(low,min(high,num))",
+    "after": "return max(low,min(high,num)) + 1"
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "variable",
+    "path": "code/datums/weakrefs.dm",
+    "before": "/datum/weakref\n\tvar/reference",
+    "after": "/datum/weakref\n\tvar/tmp/dmb_leaf_iteration_marker = 1\n\tvar/reference"
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "default",
+    "path": "code/datums/weakrefs.dm",
+    "before": "dmb_leaf_iteration_marker = 1",
+    "after": "dmb_leaf_iteration_marker = 2"
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "new_proc",
+    "path": "code/datums/weakrefs.dm",
+    "before": "/datum/weakref\n\tvar/tmp/dmb_leaf",
+    "after": "/datum/weakref/proc/dmb_iteration_probe()\n\treturn 1\n\n/datum/weakref/proc/dmb_iteration_probe_removed()\n\treturn 2\n\n/datum/weakref\n\tvar/tmp/dmb_leaf"
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "removed_proc",
+    "path": "code/datums/weakrefs.dm",
+    "before": "/datum/weakref/proc/dmb_iteration_probe_removed()\n\treturn 2\n\n",
+    "after": ""
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "removed_var",
+    "path": "code/datums/weakrefs.dm",
+    "before": "\tvar/tmp/dmb_leaf_iteration_marker = 2\n",
+    "after": ""
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "new_type",
+    "path": "code/datums/weakrefs.dm",
+    "before": "/datum/weakref\n\tvar/reference",
+    "after": "/datum/dmb_iteration_probe_type\n\tvar/probe_value = 1\n\n/datum/weakref\n\tvar/reference"
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "define",
+    "path": "code/__defines/misc.dm",
+    "before": "#define MAX_MESSAGE_LEN       4096",
+    "after": "#define MAX_MESSAGE_LEN       4097"
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "map",
+    "path": "maps/virgo_minitest/virgo_minitest-sector-2.dmm",
+    "before": "name = \"exterior access button\"",
+    "after": "name = \"exterior access button 2\""
+  }
+]

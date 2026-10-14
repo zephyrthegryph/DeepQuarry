@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "scope": "38 focused passing Rust fixtures; not full suite, runtime parity or performance acceptance",
+  "receipts": [
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-080057-4b639c3d-focused.json",
+      "sha256": "98001ddf19abb64afcbf6f95926a1549e58f649d99e1606d3297eaf4f9dbdc09",
+      "binary_sha256": "beec5bf5c9dd2c5084695420f6f30c64c66b9b0fa665673797cd8489ea0b6788",
+      "passed_checks": [
+        {
+          "filter": "frontend::semantic_state::symbol_owner_tests",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "frontend::semantic_state::tests",
+          "selected": 14,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-080613-b0c3bd37-focused.json",
+      "sha256": "e372ca70ceccfa48b9f89a3226bbddcb9e3953de8ddcd85b2b09696986428808",
+      "binary_sha256": "2fd6ebfc7c53cd6ec23e252c0c32161e8e444472a54332436fe9c7f51638b218",
+      "passed_checks": [
+        {
+          "filter": "simple::typed_switch::tests::",
+          "selected": 7,
+          "exit": 0
+        },
+        {
+          "filter": "simple::typed_switch::overlap::tests::",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "simple::tests::control_flow_1::switch_alternatives_and_inclusive_range_decode",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-081915-981747c1-focused.json",
+      "sha256": "bf3a21effdfeeccb16c76d8dbcfa574352b78d4f54c5478ff02ce441aae053c6",
+      "binary_sha256": "7a39f62bc0e15c710916700c85fc1e15edf60dbc6a8a14b45573b1958d4dd1af",
+      "passed_checks": [
+        {
+          "filter": "initializer_policy::classification::artifact::tests",
+          "selected": 7,
+          "exit": 0
+        },
+        {
+          "filter": "heap_census::retained_declarations::tests::retained_declaration_census_visits_payloads_without_mutating_or_serializing",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "daemon::query::semantic_pages::tests",
+          "selected": 4,
+          "exit": 0
+        },
+        {
+          "filter": "daemon::query::semantic_client::tests",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    }
+  ],
+  "resolved_failures": [
+    "Native authored goto budget mismatch fixed against authenticated existing fixtures.",
+    "Retained grammar census assertion now follows actual SourceText storage."
+  ]
+}

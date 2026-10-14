@@ -1,0 +1,41 @@
+{
+  "input": [
+    "engine_input",
+    "engine_capture",
+    "session_validation",
+    "input_scan"
+  ],
+  "frontend": [
+    "frontend.directive_planning",
+    "frontend.expansion",
+    "frontend.source_indexing",
+    "frontend.declaration_parsing",
+    "frontend.declaration_origins",
+    "frontend.body_indexing"
+  ],
+  "tree": [
+    "frontend.tree_resolution",
+    "captured_facts"
+  ],
+  "resources_maps": [
+    "resources_maps"
+  ],
+  "abi_initializers": [
+    "cold.startup_capture",
+    "cold.abi_preparation",
+    "cold.initializers"
+  ],
+  "lowering": [
+    "cold.procedure_lowering"
+  ],
+  "link": [
+    "linking_inputs",
+    "cold.required_type_admission",
+    "cold.symbolic_linking"
+  ],
+  "composition_publication": [
+    "cold.composition",
+    "cache_flush",
+    "publication"
+  ]
+}

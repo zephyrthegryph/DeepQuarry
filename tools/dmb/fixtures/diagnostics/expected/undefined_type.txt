@@ -1,0 +1,2 @@
+undefined_type.dm:2:error: /datum/does_not_exist: undefined type path
+undefined_type.dmb - 1 error, 0 warnings

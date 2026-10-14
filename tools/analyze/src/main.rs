@@ -242,6 +242,15 @@ fn main() -> ExitCode {
                 eprintln!("analyze baseline: pass --update, --seed or --migrate");
                 return ExitCode::from(2);
             };
+            // The reads the read lints judge come from the generated files, so a baseline rewrite judges the tree the check will:
+            // generate first, as `check_ratchets.sh` does (a no-op when nothing changed).
+            if std::env::var("DQ_BASELINE_NO_GEN").is_err() {
+                let rc = dq_analyze::sem::cli::gen(&[], &root);
+                if format!("{rc:?}") != format!("{:?}", ExitCode::SUCCESS) {
+                    eprintln!("analyze baseline: `analyze gen` failed; fix it first (the baseline must be written from the generated tree)");
+                    return rc;
+                }
+            }
             let o = options(&args, &root);
             let engine = match Engine::new(run::registry(), o) {
                 Ok(e) => e,

@@ -1,0 +1,6 @@
+DM compiler version 516.1687
+loading probe.dme
+probe.dm:5:error: =: expected a constant expression
+probe.dm:6:error: =: expected a constant expression
+probe.dmb - 2 errors, 0 warnings (10/7/26 4:43 am)
+Total time: 0:00

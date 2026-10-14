@@ -1,0 +1,31 @@
+{
+  "scope": "Captured three-test power comparison; runtime admission incomplete",
+  "pair_receipt": "E:/dq-cache/dmb-native-v2/captured-power-pair-f5-20261011-1858/focused-pair-receipt.json",
+  "compiled_pair": "passed",
+  "byond_compile_seconds": 172.281,
+  "native_compile_seconds": 132.766,
+  "native_compiler": "Older f5 diagnostic binary; excludes current mapped/canonical migration changes",
+  "runtime_receipt": "E:/dq-cache/dmb-native-v2/captured-power-pair-f5-20261011-1858/focused-runtime-pair-receipt.json",
+  "runtime_status": "Adapter rejected producer hard-linked Cargo tool and DLL before hosting",
+  "children_reaped": true,
+  "runtime_library": {
+    "receipt": "E:/dq-cache/dmb-native-v2/captured-runtime-build-20261011-1846/runtime-build-receipt.json",
+    "profile": "diagnostic-unoptimized",
+    "cargo_seconds": 200.641,
+    "source_inputs_before_equal_after": true,
+    "sha256": "69cce291dbeb75d03187fa2a18accb882e8d8a914d02324bd1a799da0a0793a2"
+  },
+  "focused_validation": {
+    "frozen_commit": "57309d601168dfb7f371f0fe1b84b68ad0c27190",
+    "successful_retry_build_seconds": 244.563,
+    "other_selected_passes": 18,
+    "compact_selected_passes": 6,
+    "compact_selected_failures": 5,
+    "failure_cause": "Fixture added a process-local OwnerScalar query to a persistent domain roster",
+    "fixture_repair_commit": "2df055e6a7",
+    "repair_execution": "pending"
+  },
+  "accepted_runtime_baseline": false,
+  "full_input_closure_authenticated": false,
+  "new_incremental_benchmark": "Not measured for current source changes"
+}

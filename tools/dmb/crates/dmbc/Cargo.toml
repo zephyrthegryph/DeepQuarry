@@ -1,0 +1,39 @@
+[package]
+name = "dmbc"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Native compiler client and immutable output pair publication"
+
+[features]
+allocation-counting = ["dm-profile/allocation-counting"]
+
+[dependencies]
+mimalloc = "0.1.52"
+rayon = "1.12"
+dm-profile = { path = "../dm-profile" }
+dm-exec = { path = "../dm-exec" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+fs2 = "0.4"
+dm-tree = { path = "../dm-tree" }
+dm-analysis = { path = "../dm-analysis" }
+dm-preprocess = { path = "../dm-preprocess" }
+dm-syntax = { path = "../dm-syntax" }
+
+byond-dmb = { path = "../..", default-features = false }
+dm-ir = { path = "../dm-ir" }
+dm-session = { path = "../dm-session" }
+dm-cache = { path = "../dm-cache" }
+dm-wire = { path = "../dm-wire" }
+dm-codegen-byond = { path = "../dm-codegen-byond" }
+dm-link = { path = "../dm-link" }
+
+dm-resources = { path = "../dm-resources" }
+
+[dev-dependencies]
+# Semantic retained-vs-fresh oracle: incremental output may assign IDs stably
+# instead of reproducing fresh table order byte for byte.
+dmb-equiv = { path = "../dmb-equiv" }

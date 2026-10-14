@@ -1,0 +1,2 @@
+warn_directive.dm:1:warning: #warn custom warning here
+warn_directive.dmb - 0 errors, 1 warning

@@ -1,0 +1,2 @@
+assoc_list_bad_key.dm:2:error: missing expression
+assoc_list_bad_key.dmb - 1 error, 0 warnings

@@ -1,0 +1,2 @@
+global_proc_undefined_path.dm:2:error: /proc/not_here: undefined type path
+global_proc_undefined_path.dmb - 1 error, 0 warnings

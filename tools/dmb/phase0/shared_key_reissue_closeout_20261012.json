@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "scope": "Focused shared-key migration checks; not full runtime, release or whole-program parity acceptance",
+  "earlier_evidence": "shared_key_and_query_checks_20261012.json",
+  "final_fixture_source": "14b80951ae",
+  "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-104825-ace7c92f-job-cargo.json",
+  "modified_local_reissue": {
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-105212-0244cc75-focused.json",
+    "result": "passed",
+    "selected_tests": 1,
+    "verified": [
+      "unchanged nested initializer contribution matches fresh",
+      "source location shift reissues current nested recipes",
+      "removed nested type declines reuse"
+    ],
+    "fixture_repairs": [
+      "parenthesized modified-type return expression uses supported grammar",
+      "actual recorded domain receipts replace an empty version roster",
+      "same retained BuildHost supplies the current catalog issuer",
+      "production typed BodyArena issues the statement capture needed by recipe reissue"
+    ],
+    "production_admission_weakened": false
+  },
+  "later_string_checks": {
+    "source": "3ede538f96",
+    "receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261012-113448-fc792d02-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261012-113448-ebade969-focused.json"
+    ],
+    "passed": 7,
+    "compile_only_byond_controls": "string_registration_folded_postfix_20261012.json"
+  },
+  "limitations": [
+    "No measured memory or throughput improvement is asserted for shared key backing",
+    "Current real DeepQuarry cohort remains pending",
+    "Whole-program BYOND structural gate and Phase 5 runtime baseline remain open"
+  ]
+}

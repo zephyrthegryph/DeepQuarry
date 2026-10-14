@@ -1,0 +1,2 @@
+/client/proc/proof()
+    return screen.FieldTypeNoSuchMethod()

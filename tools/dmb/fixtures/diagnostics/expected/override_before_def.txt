@@ -1,0 +1,3 @@
+override_before_def.dm:1:warning (override_before_def): f: procedure override precedes definition
+override_before_def.dm:4:warning (override_before_def): f: definition is here
+override_before_def.dmb - 0 errors, 2 warnings

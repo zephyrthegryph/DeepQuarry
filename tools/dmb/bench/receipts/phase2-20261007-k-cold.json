@@ -1,0 +1,28 @@
+{
+  "scope": "complete-compiler-cli-through-conventional-install",
+  "mode": "cold",
+  "project": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\deepquarry_phase2_20261007_a.dme",
+  "compiler_sha256": "96898C530C6CF1F79F5CEF119141FE9CDC71B873FCF201E9BA1BE2FA83D7C4B7",
+  "defines": [
+    "DM_VERSION=516",
+    "DM_BUILD=1687"
+  ],
+  "workers": 2,
+  "watchdog_seconds": 285,
+  "memory_sample_interval_seconds": 1,
+  "sampled_max_private_bytes": 3020480512,
+  "sampled_cpu_seconds": 60.828125,
+  "competing_cargo_rustc_count_at_start": 10,
+  "status": "completed",
+  "pid": 51152,
+  "process_seconds": 72.5556516,
+  "competing_cargo_rustc_count_at_end": 9,
+  "exit_code": 0,
+  "session_hit": false,
+  "dmb_sha256": "6EF6C58B3626DAB7821A17CD3CD5A7A2CBD05DDC3D50C2AB04603435DC5A99F0",
+  "dmb_bytes": 64190292,
+  "rsc_sha256": "BD29B5132EDFDB697B53C4666733A99A1D3A7F49083576E6023926B041AB3585",
+  "rsc_bytes": 217623051,
+  "dmb-pair.json_sha256": "CF721FA548797B4C10198DC624EED427485EBDFEEFEED80B5989368E0200A10E",
+  "dmb-pair.json_bytes": 203
+}

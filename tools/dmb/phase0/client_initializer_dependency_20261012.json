@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "scope": "Targeted no-data-dependency analysis of the captured /client hidden initializer only; not runtime parity or a blanket ordering-equivalence rule.",
+  "decoded_receipt": "E:\\dq-cache\\dmb-native-iterations\\20261012-115006-392c2f27\\client-init-targeted\\receipt.json",
+  "instructions": {
+    "byond": {
+      "decoded_sha256": "a1fde78b0b7f424744ee869cc3293f8c097218eb38ec89dda8a94ca52b64c6c2",
+      "opcode_names": [
+        "DbgFile",
+        "DbgLine",
+        "EmptyList",
+        "End",
+        "NewList",
+        "PushInt",
+        "SetVar"
+      ],
+      "distinct_target_fields": 9,
+      "new_lists_have_zero_initial_elements": true,
+      "GetVar_or_call_or_constructor_opcode_present": false
+    },
+    "native": {
+      "decoded_sha256": "b5e0525bf56db84fd0cf26e97d34026873ca5445f1e7e8c53caef103bfb77c4b",
+      "opcode_names": [
+        "DbgFile",
+        "DbgLine",
+        "EmptyList",
+        "End",
+        "NewList",
+        "PushInt",
+        "SetVar"
+      ],
+      "distinct_target_fields": 9,
+      "new_lists_have_zero_initial_elements": true,
+      "GetVar_or_call_or_constructor_opcode_present": false
+    }
+  },
+  "source_declarations": [
+    {
+      "path": "code/modules/examine/examine.dm",
+      "line": 51,
+      "text": "/client/var/description_holders[0]"
+    },
+    {
+      "path": "code/modules/tgui/external.dm",
+      "line": 162,
+      "text": "/client/var/list/tgui_windows = list()"
+    },
+    {
+      "path": "code/_onclick/hud/map_popups.dm",
+      "line": 8,
+      "text": "var/list/screen_maps = list()"
+    },
+    {
+      "path": "code/modules/client/client defines.dm",
+      "lines": [
+        95,
+        96,
+        104,
+        129,
+        133,
+        139
+      ],
+      "names": [
+        "department_hours",
+        "play_hours",
+        "sent_assets",
+        "panel_tabs",
+        "misc_tabs",
+        "misc_cache"
+      ],
+      "initializers": "list()"
+    }
+  ],
+  "conclusion": "All nine runtime initializers allocate empty independent lists and assign distinct src fields. The preceding native initializers have no field reads, calls or constructors and cannot consume description_holders or tgui_windows before their assignment. No specific data dependency error is evidenced in this client initializer.",
+  "limits": "Allocation order differs. Reference identities, failure during allocation and general initializer effects are not covered. Effectful owners require separate decoded or runtime evidence. No production change made."
+}

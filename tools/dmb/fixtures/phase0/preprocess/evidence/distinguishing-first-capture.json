@@ -1,0 +1,142 @@
+{
+  "status": "first capture retained; unintended fixture errors repaired separately",
+  "results": [
+    {
+      "case": "preprocess-repeat-same-include",
+      "source": "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-repeat-same-include\\source\\repeat-same-include\\phase0_runtime.dme",
+      "source_sha256": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+      "expected_compile_error": false,
+      "byond_compile": {
+        "exit_code": 0,
+        "seconds": 0.3586761999904411,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-repeat-same-include\\source\\repeat-same-include\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-repeat-same-include\\byond-compile.log"
+      },
+      "byond_runtime": {
+        "exit_code": null,
+        "seconds": 30.02908119998756,
+        "timed_out": true,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-repeat-same-include\\source\\repeat-same-include\\phase0_runtime.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-repeat-same-include\\byond-runtime.log"
+      }
+    },
+    {
+      "case": "preprocess-repeat-distinct-include",
+      "source": "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-repeat-distinct-include\\source\\repeat-distinct-include\\phase0_runtime.dme",
+      "source_sha256": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+      "expected_compile_error": false,
+      "byond_compile": {
+        "exit_code": 4294967295,
+        "seconds": 0.3587695000023814,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-repeat-distinct-include\\source\\repeat-distinct-include\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-repeat-distinct-include\\byond-compile.log"
+      }
+    },
+    {
+      "case": "preprocess-file-dir-unique-pop",
+      "source": "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-unique-pop\\source\\file-dir-unique-pop\\phase0_runtime.dme",
+      "source_sha256": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+      "expected_compile_error": false,
+      "byond_compile": {
+        "exit_code": 4294967295,
+        "seconds": 0.4554260000004433,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-unique-pop\\source\\file-dir-unique-pop\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-unique-pop\\byond-compile.log"
+      }
+    },
+    {
+      "case": "preprocess-file-dir-unique-retained",
+      "source": "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-unique-retained\\source\\file-dir-unique-retained\\phase0_runtime.dme",
+      "source_sha256": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+      "expected_compile_error": false,
+      "byond_compile": {
+        "exit_code": 4294967295,
+        "seconds": 0.4118353000085335,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-unique-retained\\source\\file-dir-unique-retained\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-unique-retained\\byond-compile.log"
+      }
+    },
+    {
+      "case": "preprocess-file-dir-same-name",
+      "source": "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-same-name\\source\\file-dir-same-name\\phase0_runtime.dme",
+      "source_sha256": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+      "expected_compile_error": false,
+      "byond_compile": {
+        "exit_code": 0,
+        "seconds": 0.3577560999983689,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-same-name\\source\\file-dir-same-name\\phase0_runtime.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-same-name\\byond-compile.log"
+      },
+      "byond_runtime": {
+        "exit_code": 0,
+        "seconds": 1.1761737999913748,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-same-name\\source\\file-dir-same-name\\phase0_runtime.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-same-name\\byond-runtime.log"
+      }
+    }
+  ],
+  "results_sha256": "0495a2e69af3f62d3f2cb48a648129dd809316a04b05da7d953f023bfa0a3d41",
+  "logs": {
+    "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-same-name\\byond-compile.log": {
+      "sha256": "9ae754d8db7031fb3b7992f17567e30d74268d364d90d1c77733c022521f8021",
+      "text": "DM compiler version 516.1687\nloading phase0_runtime.dme\nsaving phase0_runtime.dmb\nphase0_runtime.dmb - 0 errors, 0 warnings (10/6/26 4:35 pm)\nTotal time: 0:00\n"
+    },
+    "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-same-name\\byond-runtime.log": {
+      "sha256": "98ae08b788dd128dddb6afc150b7158ec9929744e4e15f5bc24f8e0c0eca54da",
+      "text": "Logging in...\nBYOND pager is offline. Connecting as Guest.\nTue Oct  6 16:35:17 2026\nWorld opened on network port 56054.\nWelcome BYOND! (5.0 Public Version 516.1687)\nPHASE0 {\"label\":\"before_payload\",\"value\":\"early-shared\\n\"}\nPHASE0 {\"label\":\"during_payload\",\"value\":\"early-shared\\n\"}\nPHASE0 {\"label\":\"after_payload\",\"value\":\"early-shared\\n\"}\nPHASE0 {\"label\":\"before_alias\",\"value\":\"shared.txt\"}\nPHASE0 {\"label\":\"during_alias\",\"value\":\"shared.txt\"}\nPHASE0 {\"label\":\"after_alias\",\"value\":\"shared.txt\"}\nPHASE0 {\"label\":\"before_during_equal\",\"value\":1}\nPHASE0 DONE\n"
+    },
+    "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-unique-pop\\byond-compile.log": {
+      "sha256": "bf7d80e1b2b2a6b21f1980f2251f3d6421952ce096090d927451ac7d0fb7692a",
+      "text": "DM compiler version 516.1687\nloading phase0_runtime.dme\nbefore.dm:1:error: D:dmb: undefined var\nbefore.dm:1:error: native: undefined var\nbefore.dm:1:error: v2: undefined var\nbefore.dm:1:error: phase0preprocess: undefined var\nbefore.dm:1:error: distinguishing: undefined var\nbefore.dm:1:error: byondpreprocess: undefined var\nbefore.dm:1:error: file: undefined var\nbefore.dm:1:error: dir: undefined var\nbefore.dm:1:error: unique: undefined var\nbefore.dm:1:error: popsourcefile: undefined var\nbefore.dm:1:error: dir: undefined var\nbefore.dm:1:error: unique: undefined var\nbefore.dm:1:error: popearly: undefined var\nchild.dm:2:error: D:dmb: undefined var\nchild.dm:2:error: native: undefined var\nchild.dm:2:error: v2: undefined var\nchild.dm:2:error: phase0preprocess: undefined var\nchild.dm:2:error: distinguishing: undefined var\nchild.dm:2:error: byondpreprocess: undefined var\nchild.dm:2:error: file: undefined var\nchild.dm:2:error: dir: undefined var\nchild.dm:2:error: unique: undefined var\nchild.dm:2:error: popsourcefile: undefined var\nchild.dm:2:error: dir: undefined var\nchild.dm:2:error: unique: undefined var\nchild.dm:2:error: poplate: undefined var\nafter.dm:1:error: D:dmb: undefined var\nafter.dm:1:error: native: undefined var\nafter.dm:1:error: v2: undefined var\nafter.dm:1:error: phase0preprocess: undefined var\nafter.dm:1:error: distinguishing: undefined var\nafter.dm:1:error: byondpreprocess: undefined var\nafter.dm:1:error: file: undefined var\nafter.dm:1:error: dir: undefined var\nafter.dm:1:error: unique: undefined var\nafter.dm:1:error: popsourcefile: undefined var\nafter.dm:1:error: dir: undefined var\nafter.dm:1:error: unique: undefined var\nafter.dm:1:error: popearly: undefined var\nphase0_runtime.dmb - 39 errors, 0 warnings (10/6/26 4:35 pm)\nTotal time: 0:00\n"
+    },
+    "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-file-dir-unique-retained\\byond-compile.log": {
+      "sha256": "b6b545a25f35dc8f4e4e8181dbd00d302c8a50edbb9c4a2005cbc41753f549c7",
+      "text": "DM compiler version 516.1687\nloading phase0_runtime.dme\nbefore.dm:1:error: D:dmb: undefined var\nbefore.dm:1:error: native: undefined var\nbefore.dm:1:error: v2: undefined var\nbefore.dm:1:error: phase0preprocess: undefined var\nbefore.dm:1:error: distinguishing: undefined var\nbefore.dm:1:error: byondpreprocess: undefined var\nbefore.dm:1:error: file: undefined var\nbefore.dm:1:error: dir: undefined var\nbefore.dm:1:error: unique: undefined var\nbefore.dm:1:error: retainedsourcefile: undefined var\nbefore.dm:1:error: dir: undefined var\nbefore.dm:1:error: unique: undefined var\nbefore.dm:1:error: retainedearly: undefined var\nchild.dm:2:error: D:dmb: undefined var\nchild.dm:2:error: native: undefined var\nchild.dm:2:error: v2: undefined var\nchild.dm:2:error: phase0preprocess: undefined var\nchild.dm:2:error: distinguishing: undefined var\nchild.dm:2:error: byondpreprocess: undefined var\nchild.dm:2:error: file: undefined var\nchild.dm:2:error: dir: undefined var\nchild.dm:2:error: unique: undefined var\nchild.dm:2:error: retainedsourcefile: undefined var\nchild.dm:2:error: dir: undefined var\nchild.dm:2:error: unique: undefined var\nchild.dm:2:error: retainedlate: undefined var\nafter.dm:1:error: D:dmb: undefined var\nafter.dm:1:error: native: undefined var\nafter.dm:1:error: v2: undefined var\nafter.dm:1:error: phase0preprocess: undefined var\nafter.dm:1:error: distinguishing: undefined var\nafter.dm:1:error: byondpreprocess: undefined var\nafter.dm:1:error: file: undefined var\nafter.dm:1:error: dir: undefined var\nafter.dm:1:error: unique: undefined var\nafter.dm:1:error: retainedsourcefile: undefined var\nafter.dm:1:error: dir: undefined var\nafter.dm:1:error: unique: undefined var\nafter.dm:1:error: retainedlate: undefined var\nphase0_runtime.dmb - 39 errors, 0 warnings (10/6/26 4:35 pm)\nTotal time: 0:00\n"
+    },
+    "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-repeat-distinct-include\\byond-compile.log": {
+      "sha256": "5d1899be5b9e9cb5f4e64994f757d5e95e5921804713d19d8547eb172a86d315",
+      "text": "DM compiler version 516.1687\nloading phase0_runtime.dme\nbody.dm:8:error: result: duplicate definition\nbody_second.dm:8:error: result: previous definition\nphase0_runtime.dmb - 2 errors, 0 warnings (10/6/26 4:35 pm)\nTotal time: 0:00\n"
+    },
+    "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-repeat-same-include\\byond-compile.log": {
+      "sha256": "8259e54aadf958d333cc9c3aead1683de4b107c75a273976579ac967aa410b11",
+      "text": "DM compiler version 516.1687\nloading phase0_runtime.dme\nsaving phase0_runtime.dmb\nphase0_runtime.dmb - 0 errors, 0 warnings (10/6/26 4:34 pm)\nTotal time: 0:00\n"
+    },
+    "D:\\dmb-native-v2-phase0\\preprocess-distinguishing-byond\\preprocess-repeat-same-include\\byond-runtime.log": {
+      "sha256": "25122e7c80dc3fdcda3540a8268c732f9bd698a2b55ad42048822729b5ad93f8",
+      "text": "Logging in...\nBYOND pager is offline. Connecting as Guest.\nTue Oct  6 16:34:44 2026\nWorld opened on network port 65119.\nWelcome BYOND! (5.0 Public Version 516.1687)\nPHASE0 {\"label\":\"result\",\"value\":1}\nPHASE0 {\"label\":\"first_value\",\"value\":1}\nPHASE0 {\"label\":\"second_present\",\"value\":0}\nruntime error: Global var second_value does not exist.\nproc name: New (/world/New)\n  usr: null\n  src: world\n  call stack:\nworld: New()\n"
+    }
+  }
+}

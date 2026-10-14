@@ -1,0 +1,252 @@
+{
+  "schema": 1,
+  "receipt_root": "E:\\dq-cache\\dmb-native-iterations\\20261013-141351-2ad73107",
+  "status": "passed",
+  "rows": [
+    {
+      "kind": "initial",
+      "pre_request_settle_s": 0.0,
+      "retained_wall_s": 44.70299999999952,
+      "fresh_wall_s": 29.26599999999962,
+      "stage_seconds": {
+        "compilation_seconds": 25.5704428,
+        "declaration_reuse.descriptor_scan_seconds": 0.234727,
+        "declaration_reuse.ordered_merge_seconds": 1.892719,
+        "declaration_reuse.worker_fresh_facts_seconds": 1.9079855000000001,
+        "declaration_reuse.worker_lookup_decode_and_parse_seconds": 1.1781366,
+        "expansion_memo.staging_wall_seconds": 2.6056299,
+        "frontend_seconds": 10.6535,
+        "frontend_stage_wall_seconds.declaration_parsing": 3.9323727,
+        "frontend_stage_wall_seconds.directive_planning": 2.1643802,
+        "frontend_stage_wall_seconds.expansion_including_join": 0.80271,
+        "frontend_stage_wall_seconds.provenance_and_body_indexing": 0.3837212,
+        "frontend_stage_wall_seconds.total": 10.6535,
+        "frontend_stage_wall_seconds.tree_resolution": 3.3699934,
+        "input_preparation_seconds": 0.7186046,
+        "memo.encode_seconds": 4.5821161,
+        "memo.explanation_seconds": 0.0866323,
+        "memo.key_preparation_seconds": 0.0780652,
+        "memo.lookup_seconds": 0.2491884,
+        "memo.occurrence_reads_seconds": 0.3618361,
+        "memo.staging_wall_seconds": 4.8930093,
+        "nontext_seconds": 2.7792166,
+        "publication_seconds": 0.6738542,
+        "seconds": 44.5282197
+      },
+      "native_stages": {
+        "input_preparation": 0.719,
+        "frontend": 10.653,
+        "captured_facts": 0.113,
+        "resources_maps": 2.779,
+        "linking_inputs": 0.045,
+        "compilation": 25.57,
+        "publication": 0.674,
+        "total": 44.568,
+        "ABI": 3.021,
+        "lowering": 9.539,
+        "initialization": 9.35,
+        "linking": 1.622,
+        "composition": 1.137
+      },
+      "disk_hits": 0,
+      "resident_hits": 0,
+      "recomputed": 48681,
+      "resident_dropped": 3686,
+      "bytes_equal": true,
+      "output_hashes": {
+        "dmb": {
+          "retained": "825efb814f0b6d196696de67cf9a356191acf3926ef975055bdf99c38141bc45",
+          "fresh": "825efb814f0b6d196696de67cf9a356191acf3926ef975055bdf99c38141bc45"
+        },
+        "rsc": {
+          "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+          "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+        }
+      }
+    },
+    {
+      "kind": "unchanged",
+      "pre_request_settle_s": 76.04699999999866,
+      "retained_wall_s": 0.8430000000007567,
+      "fresh_wall_s": 27.35900000000038,
+      "stage_seconds": {},
+      "native_stages": {},
+      "disk_hits": null,
+      "resident_hits": null,
+      "recomputed": null,
+      "resident_dropped": null,
+      "bytes_equal": true,
+      "output_hashes": {
+        "dmb": {
+          "retained": "825efb814f0b6d196696de67cf9a356191acf3926ef975055bdf99c38141bc45",
+          "fresh": "825efb814f0b6d196696de67cf9a356191acf3926ef975055bdf99c38141bc45"
+        },
+        "rsc": {
+          "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+          "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+        }
+      }
+    },
+    {
+      "kind": "body",
+      "pre_request_settle_s": 76.10899999999856,
+      "retained_wall_s": 6.65599999999904,
+      "fresh_wall_s": 28.98400000000038,
+      "stage_seconds": {
+        "compilation_seconds": 1.1330361,
+        "declaration_reuse.descriptor_scan_seconds": 0.0156452,
+        "declaration_reuse.ordered_merge_seconds": 0.0949256,
+        "declaration_reuse.worker_fresh_facts_seconds": 0.0004152,
+        "declaration_reuse.worker_lookup_decode_and_parse_seconds": 0.0004632,
+        "expansion_memo.staging_wall_seconds": 0.0,
+        "frontend_seconds": 1.7567339,
+        "frontend_stage_wall_seconds.declaration_parsing": 0.4477769,
+        "frontend_stage_wall_seconds.directive_planning": 0.6397925,
+        "frontend_stage_wall_seconds.expansion_including_join": 0.2281334,
+        "frontend_stage_wall_seconds.provenance_and_body_indexing": 0.3843359,
+        "frontend_stage_wall_seconds.total": 1.7567339,
+        "frontend_stage_wall_seconds.tree_resolution": 0.0563308,
+        "input_preparation_seconds": 0.2881802,
+        "memo.encode_seconds": 0.0,
+        "memo.explanation_seconds": 0.0,
+        "memo.key_preparation_seconds": 0.0,
+        "memo.lookup_seconds": 0.0,
+        "memo.occurrence_reads_seconds": 0.0,
+        "memo.staging_wall_seconds": 0.0,
+        "nontext_seconds": 0.6094447,
+        "publication_seconds": 1.4278654,
+        "seconds": 6.440459
+      },
+      "native_stages": {
+        "input_preparation": 0.288,
+        "frontend": 1.757,
+        "captured_facts": 0.002,
+        "resources_maps": 0.609,
+        "linking_inputs": 0.038,
+        "compilation": 1.133,
+        "publication": 1.428,
+        "total": 6.448,
+        "ABI": 0.0,
+        "lowering": 0.0,
+        "initialization": 0.0,
+        "linking": 0.0,
+        "composition": 0.0
+      },
+      "disk_hits": 0,
+      "resident_hits": 0,
+      "recomputed": 0,
+      "resident_dropped": 0,
+      "bytes_equal": true,
+      "output_hashes": {
+        "dmb": {
+          "retained": "cc12828b96d29923eae9d2acabfb272c9b54b8c2c8cf308c87adeef13b82262a",
+          "fresh": "cc12828b96d29923eae9d2acabfb272c9b54b8c2c8cf308c87adeef13b82262a"
+        },
+        "rsc": {
+          "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+          "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+        }
+      }
+    },
+    {
+      "kind": "structural",
+      "pre_request_settle_s": 74.21800000000076,
+      "retained_wall_s": 46.0,
+      "fresh_wall_s": 29.811999999999898,
+      "stage_seconds": {
+        "compilation_seconds": 24.8965201,
+        "declaration_reuse.descriptor_scan_seconds": 0.0209273,
+        "declaration_reuse.ordered_merge_seconds": 0.3795564,
+        "declaration_reuse.worker_fresh_facts_seconds": 0.0004766,
+        "declaration_reuse.worker_lookup_decode_and_parse_seconds": 0.0002582,
+        "expansion_memo.staging_wall_seconds": 0.0,
+        "frontend_seconds": 13.6837339,
+        "frontend_stage_wall_seconds.declaration_parsing": 1.1480631,
+        "frontend_stage_wall_seconds.directive_planning": 0.979449,
+        "frontend_stage_wall_seconds.expansion_including_join": 0.3253425,
+        "frontend_stage_wall_seconds.provenance_and_body_indexing": 0.8717243,
+        "frontend_stage_wall_seconds.total": 13.6837339,
+        "frontend_stage_wall_seconds.tree_resolution": 10.3587648,
+        "input_preparation_seconds": 0.4183021,
+        "memo.encode_seconds": 4.36e-05,
+        "memo.explanation_seconds": 0.0209125,
+        "memo.key_preparation_seconds": 0.0608604,
+        "memo.lookup_seconds": 8.5204916,
+        "memo.occurrence_reads_seconds": 1.08e-05,
+        "memo.staging_wall_seconds": 0.0,
+        "nontext_seconds": 2.2155738,
+        "publication_seconds": 1.047248,
+        "seconds": 45.645501
+      },
+      "native_stages": {
+        "input_preparation": 0.418,
+        "frontend": 13.684,
+        "captured_facts": 0.225,
+        "resources_maps": 2.216,
+        "linking_inputs": 0.09,
+        "compilation": 24.897,
+        "publication": 1.047,
+        "total": 45.679,
+        "ABI": 6.534,
+        "lowering": 6.854,
+        "initialization": 6.538,
+        "linking": 1.774,
+        "composition": 1.56
+      },
+      "disk_hits": 0,
+      "resident_hits": 48680,
+      "recomputed": 1,
+      "resident_dropped": 0,
+      "bytes_equal": true,
+      "output_hashes": {
+        "dmb": {
+          "retained": "27a67063536c0e16a5636076b217a8301411893f59e85f6927a52710595544c2",
+          "fresh": "27a67063536c0e16a5636076b217a8301411893f59e85f6927a52710595544c2"
+        },
+        "rsc": {
+          "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+          "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+        }
+      }
+    }
+  ],
+  "owned_job_memory": {
+    "configured_job_memory_bytes": 12884901888,
+    "peak_job_commit_bytes": 8153124864,
+    "peak_process_commit_bytes": 8145907712,
+    "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+  },
+  "total_end_to_end_s": 471.2340000000004,
+  "command": [
+    "C:\\Users\\bmene\\AppData\\Local\\Python\\pythoncore-3.12-64\\python.exe",
+    "E:\\projects\\dq-wt\\dmb-incr3\\tools\\dmb\\bench\\native-iteration.py",
+    "--compiler",
+    "E:/dq-cache/dmb-takeover/incr3-target/release/dmbc.exe",
+    "--byte-oracles-only",
+    "--no-pin",
+    "--source",
+    "E:/dq-cache/dmb-takeover/baseline-src",
+    "--scenarios",
+    "E:\\dq-cache\\dmb-takeover\\scenarios.json",
+    "--edits",
+    "E:\\projects\\dq-wt\\dmb-incr3\\tools\\dmb\\bench\\takeover_edits.json",
+    "--workers",
+    "8",
+    "--total-workers",
+    "8",
+    "--job-memory-mib",
+    "12288",
+    "--owned-memory-budget-bytes",
+    "12884901888",
+    "--sample-owned-memory",
+    "--require-owned-daemon",
+    "--overall-seconds",
+    "3600",
+    "--minimum-free-gib",
+    "16",
+    "--output-root",
+    "E:/dq-cache/dmb-native-iterations"
+  ],
+  "compiler": "E:/dq-cache/dmb-takeover/incr3-target/release/dmbc.exe",
+  "harness_wall_s": 471.99717950820923
+}

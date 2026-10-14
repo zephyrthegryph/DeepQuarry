@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "scope": "Bounded BYOND compile-only controls and decoded holder field footer/StringIDs. No native compilation, DreamDaemon, runtime order, full source closure or parity admission in this evidence.",
+  "fixture_commit": "8f7a4e6eb7",
+  "compiler": {
+    "path": "D:/Program Files (x86)/BYOND516/bin/DM.exe",
+    "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "banner": "DM compiler version 516.1687"
+  },
+  "inspector": {
+    "path": "E:/dq-cache/dmb-native-v2/frozen-build/20261011-e682617358-inspector-opt0.exe",
+    "sha256": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb",
+    "commands": ["class-path FILE.dmb /datum/orderholder", "list FILE.dmb 7", "variable FILE.dmb 72", "variable FILE.dmb 73", "variable FILE.dmb 74"]
+  },
+  "formal": {
+    "receipt": "E:/dq-cache/dmb-string-formal-reference/e764d4019736498e9709848a225bfc34/receipt.json",
+    "forward": {
+      "compile_exit": 0,
+      "dmb_sha256": "2c948d31e614bbb80fd0ca8b3a8bacfdd5f733a9ca695b5ec303cf5d29d04030",
+      "holder_class": 4,
+      "field_footer_list": 7,
+      "field_footer_words": [72, 0, 73, 1, 74, 0],
+      "records": [
+        {"var_id": 72, "name": "z_first", "string_id": 439},
+        {"var_id": 73, "name": "type_value", "string_id": 451},
+        {"var_id": 74, "name": "a_second", "string_id": 440}
+      ]
+    },
+    "reverse": {
+      "compile_exit": 0,
+      "dmb_sha256": "c34a93ba466928161c4df30ad417e8f125dca13c6a19d53b16027b24d573ed9d",
+      "holder_class": 4,
+      "field_footer_list": 7,
+      "field_footer_words": [72, 0, 73, 0, 74, 1],
+      "records": [
+        {"var_id": 72, "name": "a_second", "string_id": 440},
+        {"var_id": 73, "name": "z_first", "string_id": 439},
+        {"var_id": 74, "name": "type_value", "string_id": 451}
+      ]
+    },
+    "owned_job_reaped": true,
+    "observed_string_id_relative_order": ["z_first", "a_second", "type_value"]
+  },
+  "local": {
+    "receipt": "E:/dq-cache/dmb-string-local-reference/454e3a1755894135a943378b090eaf14/receipt.json",
+    "forward": {
+      "compile_exit": 0,
+      "dmb_sha256": "d1c4e07efbe01631e053b3fd60f85e4fc10e1c016a14c3f8f825b42a5f4421d8",
+      "holder_class": 4,
+      "field_footer_list": 7,
+      "field_footer_words": [72, 0, 73, 1, 74, 0],
+      "records": [
+        {"var_id": 72, "name": "z_first", "string_id": 439},
+        {"var_id": 73, "name": "type_value", "string_id": 451},
+        {"var_id": 74, "name": "a_second", "string_id": 440}
+      ]
+    },
+    "reverse": {
+      "status": "not admitted: machine slot queue watchdog expired before DM launch",
+      "watchdog_seconds": 30,
+      "timeout_receipt": "E:/dq-cache/dmb-string-local-reference/454e3a1755894135a943378b090eaf14/reverse-compile/timeout.json"
+    },
+    "owned_job_reaped": true,
+    "observed_string_id_relative_order": ["z_first", "a_second", "type_value"]
+  },
+  "implementation": {
+    "fix_commit": "2138b77724",
+    "proven_prior_bug": "Captured a_second literal was appended before supplemental z_first formal/local names, contrary to all three decoded controls.",
+    "change": "Merge exact current formal/local declaration coordinates and lexical literal-token order in the existing first-root registration roster; borrow the current BodyArena statement owner consumed by lowering.",
+    "validation": "Source formatting/diff checks only from this agent. New unit fixtures and native structural/runtime comparisons await the parent validation slot."
+  },
+  "pending": [
+    "local reverse BYOND capture",
+    "unreachable and folded BYOND forward/reverse captures",
+    "native compilation and paired structural/runtime comparison",
+    "BYOND literal-before-local companion control",
+    "member/dynamic/SName reference registration chronology; frozen operand supplements remain unobserved"
+  ]
+}

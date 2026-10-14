@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "receipt": {
+    "path": "E:\\dq-cache\\dmb-proc-after-runtime\\970185db477f437ca9e29c9e10da76db\\receipt.json",
+    "sha256": "1965d5bd57b35234ee4ad3a4839d5d67566f86aa354d4e6e035f8b0fa0cf60dd"
+  },
+  "byond": {
+    "markers": [
+      "DQ_VISIBLE_ORDER boot trace=type-static;procedure;global-first;global-second; resource=contract-resource.txt",
+      "DQ_VISIBLE_ORDER holder trace=type-static;procedure;global-first;global-second; vars=z_first;type_value;a_second;",
+      "DQ_VISIBLE_ORDER procedure result=procedure trace=type-static;procedure;global-first;global-second;",
+      "DQ_VISIBLE_ORDER types=/datum/orderkind;/datum/orderkind/z_first;/datum/orderkind/a_second;",
+      "DQ_VISIBLE_ORDER finished"
+    ],
+    "runtimes": {}
+  },
+  "native": {
+    "markers": [
+      "DQ_VISIBLE_ORDER boot trace=type-static;global-first;global-second;procedure; resource=contract-resource.txt",
+      "DQ_VISIBLE_ORDER holder trace=type-static;global-first;global-second;procedure; vars=z_first;a_second;type_value;",
+      "DQ_VISIBLE_ORDER procedure result=procedure trace=type-static;global-first;global-second;procedure;",
+      "DQ_VISIBLE_ORDER types=/datum/orderkind;/datum/orderkind/z_first;/datum/orderkind/a_second;",
+      "DQ_VISIBLE_ORDER finished"
+    ],
+    "runtimes": {}
+  },
+  "cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 3999997952,
+      "peak_job_commit_bytes": 86315008,
+      "peak_process_commit_bytes": 58740736,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "footerEvidence": "E:/dq-cache/dmb-static-order-placement-footer/receipt.json",
+  "scope": "Root callable placement control; no general opcode or shared closure claim"
+}

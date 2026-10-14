@@ -1,0 +1,3 @@
+# Fixture receipts pin exact captured bytes, including source and log line endings.
+# Never normalize captures when adding them or checking out another worktree.
+* -text whitespace=cr-at-eol

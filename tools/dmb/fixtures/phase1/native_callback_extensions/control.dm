@@ -1,0 +1,56 @@
+/atom/Cross()
+    return
+/atom/Crossed()
+    return
+/atom/Uncross()
+    return
+/atom/Uncrossed()
+    return
+/atom/MouseMove()
+    return
+/atom/MouseWheel()
+    return
+/atom/movable/Bump()
+    return
+/atom/movable/Move()
+    return
+/client/Export()
+    return
+/client/MouseMove()
+    return
+/client/MouseWheel()
+    return
+/client/Northeast()
+    return
+/client/Northwest()
+    return
+/client/Southeast()
+    return
+/client/Southwest()
+    return
+/client/Center()
+    return
+/world/Export()
+    return
+/world/IsBanned()
+    return
+/world/Profile()
+    return
+/world/Tick()
+    return
+/area/Enter()
+    return
+/area/Entered()
+    return
+/area/Exit()
+    return
+/area/Exited()
+    return
+/turf/Enter()
+    return
+/turf/Entered()
+    return
+/turf/Exit()
+    return
+/turf/Exited()
+    return

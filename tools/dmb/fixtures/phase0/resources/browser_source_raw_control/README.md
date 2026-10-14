@@ -1,0 +1,1 @@
+Fresh BYOND 516.1687 compile-only control of current DeepQuarry MP4 and DM-source resource literals. Both exact payloads remain byte-identical generic kind0; receipts and source/payload SHA-256 equality included. No runtime started.

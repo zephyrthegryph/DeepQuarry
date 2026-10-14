@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "native_sha256": "85ed3f4e9e4cb89dee6abd33504f89ce741927a2349fd7402f3cbeab444b2a8e",
+  "engine_template_sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540",
+  "fixture": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\phase1\\worker_determinism",
+  "project": "probe.dme",
+  "source_sha256": {
+    "asset.txt": "01d34515bf287dbd738e90878b61e52b5413ae6c736f99cd294049a7ad941835",
+    "base.dm": "64c5bf55c656833fddd17ede4abf6ea5e7ba08f35b83a77706a440d0d1529f49",
+    "child.dm": "631247eab916917ec7d539793ad5fe3d818d16a0d31a7951210b239db4b25eac",
+    "probe.dme": "c3513716df1ca99aeb0d145939026c1a6272da93173f7a704f900f7d6890f974",
+    "procedures.dm": "42088b44e2c596467661b480b81974c01de55cdee24c884d97e813dbf4cdac0a",
+    "README.md": "aa1c4d9e5dd3f88c58fc485a4ad23d682c3e57a2b01094178dd5036ce524a052"
+  },
+  "defines": [],
+  "same_source_path": "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\source\\probe.dme",
+  "runs": [
+    {
+      "workers": 1,
+      "repetition": 1,
+      "command": [
+        "E:\\dmb-native-v2-phase0\\cargo-target\\release\\dmbc.exe",
+        "compile",
+        "--no-daemon",
+        "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\source\\probe.dme",
+        "--workers",
+        "1",
+        "--engine-template",
+        "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+        "--bootstrap-catalog",
+        "--output-store",
+        "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\repeat-1-workers-1\\store"
+      ],
+      "passed": true,
+      "timed_out": false,
+      "exit_code": 0,
+      "published": {
+        "pair": {
+          "version": 1,
+          "id": 292861214422174965158197679046227243969,
+          "dmb_bytes": 23413,
+          "dmb_hash": 236501383938050845929658549009075745127,
+          "rsc_bytes": 42,
+          "rsc_hash": 91784590612838269589782907066896738734
+        },
+        "sha256": {
+          "dmb": "a7f546cca8f2a3bf6ad988dd888c4c7312f6e45fe3904eeba2224f073cbd3075",
+          "rsc": "15c5a64beb6a1f7f52681e79a8184889564c06fc43b1e899b4173dfad74db43c"
+        },
+        "store_directory": "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\repeat-1-workers-1\\store\\pairs\\dc5304ab69464540f73d486a70c1b3c1"
+      },
+      "seconds": 0.10553010000148788
+    },
+    {
+      "workers": 2,
+      "repetition": 1,
+      "command": [
+        "E:\\dmb-native-v2-phase0\\cargo-target\\release\\dmbc.exe",
+        "compile",
+        "--no-daemon",
+        "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\source\\probe.dme",
+        "--workers",
+        "2",
+        "--engine-template",
+        "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+        "--bootstrap-catalog",
+        "--output-store",
+        "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\repeat-1-workers-2\\store"
+      ],
+      "passed": true,
+      "timed_out": false,
+      "exit_code": 0,
+      "published": {
+        "pair": {
+          "version": 1,
+          "id": 292861214422174965158197679046227243969,
+          "dmb_bytes": 23413,
+          "dmb_hash": 236501383938050845929658549009075745127,
+          "rsc_bytes": 42,
+          "rsc_hash": 91784590612838269589782907066896738734
+        },
+        "sha256": {
+          "dmb": "a7f546cca8f2a3bf6ad988dd888c4c7312f6e45fe3904eeba2224f073cbd3075",
+          "rsc": "15c5a64beb6a1f7f52681e79a8184889564c06fc43b1e899b4173dfad74db43c"
+        },
+        "store_directory": "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\repeat-1-workers-2\\store\\pairs\\dc5304ab69464540f73d486a70c1b3c1"
+      },
+      "seconds": 0.11779839999508113
+    },
+    {
+      "workers": 1,
+      "repetition": 2,
+      "command": [
+        "E:\\dmb-native-v2-phase0\\cargo-target\\release\\dmbc.exe",
+        "compile",
+        "--no-daemon",
+        "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\source\\probe.dme",
+        "--workers",
+        "1",
+        "--engine-template",
+        "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+        "--bootstrap-catalog",
+        "--output-store",
+        "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\repeat-2-workers-1\\store"
+      ],
+      "passed": true,
+      "timed_out": false,
+      "exit_code": 0,
+      "published": {
+        "pair": {
+          "version": 1,
+          "id": 292861214422174965158197679046227243969,
+          "dmb_bytes": 23413,
+          "dmb_hash": 236501383938050845929658549009075745127,
+          "rsc_bytes": 42,
+          "rsc_hash": 91784590612838269589782907066896738734
+        },
+        "sha256": {
+          "dmb": "a7f546cca8f2a3bf6ad988dd888c4c7312f6e45fe3904eeba2224f073cbd3075",
+          "rsc": "15c5a64beb6a1f7f52681e79a8184889564c06fc43b1e899b4173dfad74db43c"
+        },
+        "store_directory": "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\repeat-2-workers-1\\store\\pairs\\dc5304ab69464540f73d486a70c1b3c1"
+      },
+      "seconds": 0.09663200000068173
+    },
+    {
+      "workers": 2,
+      "repetition": 2,
+      "command": [
+        "E:\\dmb-native-v2-phase0\\cargo-target\\release\\dmbc.exe",
+        "compile",
+        "--no-daemon",
+        "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\source\\probe.dme",
+        "--workers",
+        "2",
+        "--engine-template",
+        "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+        "--bootstrap-catalog",
+        "--output-store",
+        "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\repeat-2-workers-2\\store"
+      ],
+      "passed": true,
+      "timed_out": false,
+      "exit_code": 0,
+      "published": {
+        "pair": {
+          "version": 1,
+          "id": 292861214422174965158197679046227243969,
+          "dmb_bytes": 23413,
+          "dmb_hash": 236501383938050845929658549009075745127,
+          "rsc_bytes": 42,
+          "rsc_hash": 91784590612838269589782907066896738734
+        },
+        "sha256": {
+          "dmb": "a7f546cca8f2a3bf6ad988dd888c4c7312f6e45fe3904eeba2224f073cbd3075",
+          "rsc": "15c5a64beb6a1f7f52681e79a8184889564c06fc43b1e899b4173dfad74db43c"
+        },
+        "store_directory": "E:\\dmb-native-v2-phase0\\worker-output-comparison-1\\repeat-2-workers-2\\store\\pairs\\dc5304ab69464540f73d486a70c1b3c1"
+      },
+      "seconds": 0.11320479999994859
+    }
+  ],
+  "passed": true,
+  "seconds": 0.4362900000123773
+}

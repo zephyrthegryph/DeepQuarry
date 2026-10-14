@@ -1,0 +1,32 @@
+{
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "compiler_version": "516.1687",
+  "engine_template_sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540",
+  "source_sha256": "f2b439c9b6f693a26e26eb3d79271675d85514c0c11ddf3b59a6a60ab3753278",
+  "files": {
+    "invalid_parameter.dm": "f2b439c9b6f693a26e26eb3d79271675d85514c0c11ddf3b59a6a60ab3753278",
+    "invalid_parameter.dme": "ec95e44dd0ee0693ef01d2d529508551fbfcf434a2dc4a0f7c4a7bde88b5aedb"
+  },
+  "source_unchanged": true,
+  "captured_source_error": true,
+  "runtime": "not run",
+  "byond": {
+    "command": [
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "E:\\dq-cache\\dmb-native-v2\\diagnostic-errors-20261010-captured\\invalid_parameter\\invalid_parameter.dme"
+    ],
+    "exit_code": 4294967295,
+    "timed_out": false,
+    "seconds": 0.33703960001002997,
+    "cleanup": null,
+    "log": "E:\\dq-cache\\dmb-native-v2\\diagnostic-errors-20261010-captured\\invalid_parameter\\byond.log",
+    "diagnostics": [
+      {
+        "file": "invalid_parameter.dm",
+        "line": 2,
+        "severity": "error",
+        "message": "bad argument definition"
+      }
+    ]
+  }
+}

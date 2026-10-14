@@ -1,0 +1,24 @@
+DM compiler version 516.1687
+loading qualified.dme
+qualified.dm:2:error: returnglobal.1: undefined var
+qualified.dm:6:error: returnglobal.2: undefined var
+qualified.dm:10:error: returnglobal.4: undefined var
+qualified.dm:14:error: returnglobal.8: undefined var
+qualified.dm:18:error: returnglobal.5: undefined var
+qualified.dm:22:error: returnglobal.9: undefined var
+qualified.dm:26:error: returnglobal.6: undefined var
+qualified.dm:30:error: returnglobal.10: undefined var
+qualified.dm:34:error: returnglobal.16: undefined var
+qualified.dm:38:error: returnglobal.32: undefined var
+qualified.dm:4:error: returnglobal.1: undefined var
+qualified.dm:8:error: returnglobal.2: undefined var
+qualified.dm:12:error: returnglobal.4: undefined var
+qualified.dm:16:error: returnglobal.8: undefined var
+qualified.dm:20:error: returnglobal.5: undefined var
+qualified.dm:24:error: returnglobal.9: undefined var
+qualified.dm:28:error: returnglobal.6: undefined var
+qualified.dm:32:error: returnglobal.10: undefined var
+qualified.dm:36:error: returnglobal.16: undefined var
+qualified.dm:40:error: returnglobal.32: undefined var
+qualified.dmb - 20 errors, 0 warnings (10/7/26 2:27 am)
+Total time: 0:01

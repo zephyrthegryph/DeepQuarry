@@ -1,0 +1,34 @@
+{
+  "scope": "Focused correctness checks; not full runtime parity or throughput acceptance",
+  "source_commit": "ab788cbffe1ad3073a325bc4789992bb423792a6",
+  "source_archive_sha256": "02d051e0bbc7d3afbd4b6896e91221a8b0e165468b092f9157b193d11ae52084",
+  "binary_sha256": "5cc9d1070987c0c2701ad58f70620bb3902ec47517c85a0ce15940e1233cc354",
+  "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-001429-8844ff34-job-cargo.json",
+  "build_seconds": 190.891,
+  "build_job_reaped": true,
+  "focused_receipts": [
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261012-002157-b2e32f3d-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261012-002226-cf570d50-focused.json"
+  ],
+  "passed_tests": 11,
+  "passed_scopes": [
+    "new generation accepts while old accepted streams drain; discovery transfers",
+    "same generation cannot steal a live listener",
+    "discovery cannot admit builds",
+    "compiler generation namespace identity",
+    "four fixed lifecycle deadline cases",
+    "two first root callable startup allocation cases",
+    "connected idle Windows pipe waits for data"
+  ],
+  "remaining_failure": {
+    "filter": "daemon::transport::platform::acl_tests::",
+    "result": "30 second watchdog timeout; group did not complete",
+    "diagnosis": "busy pipe fixture closes second client after writing before server acceptance; disconnected instance path discarded buffered request",
+    "followup": "1d6f855b85 preserves nonempty disconnected buffer and adds deterministic close-before-acceptance fixture; not validated by these receipts"
+  },
+  "limitations": [
+    "new string-registration implementation is absent from this binary",
+    "paired BYOND startup and vars-order runtime controls remain pending",
+    "full runtime suite and whole-program semantic parity remain open"
+  ]
+}

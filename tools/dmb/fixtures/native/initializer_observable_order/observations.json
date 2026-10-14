@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "scope": "Actual tiny ordering observations, not whole-game parity or full source closure",
+  "reference": {
+    "path": "E:\\dq-cache\\dmb-observable-order-reference\\fed3234898374b7c94ebc6122ea9048c\\receipt.json",
+    "sha256": "33466845c913fc6ef5bf83a9fa4d8150f5bdd90ec99dcbec7835722dc3ea55d2"
+  },
+  "runtime": {
+    "path": "E:\\dq-cache\\dmb-observable-order-runtime\\685ec03d1cc044bc9d79dfa2c8bdbc22\\receipt.json",
+    "sha256": "323540f6c4158d19e0c88a14d1a326b5097c918458ad6c0f64c698bbc6b60b23"
+  },
+  "complete": true,
+  "matches": false,
+  "byond": {
+    "markers": [
+      "DQ_VISIBLE_ORDER boot trace=type-static;procedure;global-first;global-second; resource=contract-resource.txt",
+      "DQ_VISIBLE_ORDER holder trace=type-static;procedure;global-first;global-second; vars=z_first;type_value;a_second;",
+      "DQ_VISIBLE_ORDER procedure result=procedure trace=type-static;procedure;global-first;global-second;",
+      "DQ_VISIBLE_ORDER types=/datum/orderkind;/datum/orderkind/z_first;/datum/orderkind/a_second;",
+      "DQ_VISIBLE_ORDER finished"
+    ],
+    "runtimes": {}
+  },
+  "native": {
+    "markers": [
+      "DQ_VISIBLE_ORDER boot trace=type-static;global-first;global-second;procedure; resource=contract-resource.txt",
+      "DQ_VISIBLE_ORDER holder trace=type-static;global-first;global-second;procedure; vars=z_first;a_second;type_value;",
+      "DQ_VISIBLE_ORDER procedure result=procedure trace=type-static;global-first;global-second;procedure;",
+      "DQ_VISIBLE_ORDER types=/datum/orderkind;/datum/orderkind/z_first;/datum/orderkind/a_second;",
+      "DQ_VISIBLE_ORDER finished"
+    ],
+    "runtimes": {}
+  },
+  "cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 3999997952,
+      "peak_job_commit_bytes": 86372352,
+      "peak_process_commit_bytes": 58740736,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "qualification": {
+    "inputClosureAuthenticated": false,
+    "acceptedRuntimeBaseline": false
+  },
+  "differences": [
+    "Procedure-static constructor runs before globals in BYOND, after globals in native",
+    "Type-static member occurs between authored ordinary fields in BYOND vars, after both ordinary fields in native"
+  ],
+  "matching": [
+    "typesof observed ordered roster"
+  ],
+  "earlierAdapterFailure": "E:/dq-cache/dmb-observable-order-runtime/0f6960ff413440c6bedc62537fabffcc/receipt.json"
+}

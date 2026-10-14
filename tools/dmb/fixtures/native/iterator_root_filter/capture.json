@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "scope": "pinned compiler-only root iterator words; no runtime",
+  "compiler": {
+    "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+    "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "version": "516.1687"
+  },
+  "source_sha256": {
+    "probe.dm": "1e2681f211e1f5ae4decbce768db448e0b6df9f5e3f9f207285780d5f202d954",
+    "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+  },
+  "child_watchdog_seconds": 30,
+  "complete": true,
+  "compile": {
+    "exit": 0,
+    "wall_s": 0.6281267000013031,
+    "wall_scope": "client launch through reap; daemon work included for retained requests"
+  },
+  "output_sha256": {
+    "probe.dmb": "9c42e22fc8c5fa69bb3c1936e7a8a83ff7e5da12888861904c1dab4d4b71fc20"
+  },
+  "pin_after_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "inspector": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-062957-inspector-a0bb00f6.exe",
+    "sha256": "5a73ad00b2b2bec2bc2941816a5c31e95481dcbf7ddebc0f1fad6cf9f7f03035"
+  },
+  "decodes": {
+    "root_obj": {
+      "exit": 0,
+      "wall_s": 0.3965791999944486,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "root_mob": {
+      "exit": 0,
+      "wall_s": 0.3282284999731928,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "root_turf": {
+      "exit": 0,
+      "wall_s": 0.2410663000191562,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "root_area": {
+      "exit": 0,
+      "wall_s": 0.24021860002540052,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "root_movable": {
+      "exit": 0,
+      "wall_s": 0.2394448000122793,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    }
+  },
+  "source_after_sha256": {
+    "probe.dm": "1e2681f211e1f5ae4decbce768db448e0b6df9f5e3f9f207285780d5f202d954",
+    "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+  },
+  "cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 4294967296,
+      "peak_job_commit_bytes": 60026880,
+      "peak_process_commit_bytes": 58695680,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  }
+}

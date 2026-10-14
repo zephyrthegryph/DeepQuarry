@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "compiler_version": "516.1687",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "inspector_sha256": "3a16ad445c13c74a7126a0742f8d95561bc79a6b0cc22a83e2868ba53f4dc197",
+  "runtime_executed": false,
+  "observed": "implicit typed-list local, explicit new/list and class initializer emit PushVal[40,0] New[0]; /list is primitive, no class binding",
+  "files": [
+    {
+      "path": "compile.log",
+      "sha256": "9dd9e39f7a9a3e98b43270f28f1237d30dc51e98705072d27f1123a12ebc9942"
+    },
+    {
+      "path": "project.dme",
+      "sha256": "00d2355b7d4329fda94405be9940f28eab0f042eceae2452c182ba5047eadf85"
+    },
+    {
+      "path": "project.native.bin",
+      "sha256": "323a5d3113a396dd20cdac710052f24d8d12fbe4cadfed475e9f1cfeb9e70abb"
+    },
+    {
+      "path": "tag40.txt",
+      "sha256": "cc0ee5530a7eeb5f00ec4cc6c2532141758218b29ed00262a77c2050f6ce0237"
+    }
+  ]
+}

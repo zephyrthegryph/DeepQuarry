@@ -1,0 +1,3 @@
+duplicate_local.dm:3:error: a: duplicate definition
+duplicate_local.dm:2:error: a: previous definition
+duplicate_local.dmb - 2 errors, 0 warnings

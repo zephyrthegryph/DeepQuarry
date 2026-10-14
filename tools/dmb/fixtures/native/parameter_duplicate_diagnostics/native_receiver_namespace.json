@@ -1,0 +1,274 @@
+{
+  "schema": 1,
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "compiler_version": "516.1687",
+  "reference": {
+    "contents.html": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\help\\ref\\contents.html",
+      "sha256": "69b6fec3b1e292f4a719f61d6ffe838dac0ab891ad1c829268231da4123d863d"
+    },
+    "info.html": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\help\\ref\\info.html",
+      "sha256": "5d428076e32d78713c2fe358b6710451788216604fe0e00ccd7be630454217dd"
+    }
+  },
+  "closed_owners": [
+    "/datum"
+  ],
+  "limits": "Only reviewed documented /datum proc namespace and its source-defined descendants are closed. Other native owner namespaces and global procedures remain open. Known positive names are never converted to negative by omitted executable/ABI evidence.",
+  "owners": {
+    "/atom": {
+      "documented_procs": [
+        "Click",
+        "Cross",
+        "Crossed",
+        "DblClick",
+        "Enter",
+        "Entered",
+        "Exit",
+        "Exited",
+        "MouseDown",
+        "MouseDrag",
+        "MouseDrop",
+        "MouseEntered",
+        "MouseExited",
+        "MouseMove",
+        "MouseUp",
+        "MouseWheel",
+        "New",
+        "Stat",
+        "Uncross",
+        "Uncrossed"
+      ],
+      "catalog_only": [],
+      "documented_missing_from_catalog": []
+    },
+    "/atom/movable": {
+      "documented_procs": [
+        "Bump",
+        "Move"
+      ],
+      "catalog_only": [],
+      "documented_missing_from_catalog": []
+    },
+    "/client": {
+      "documented_procs": [
+        "AllowUpload",
+        "Center",
+        "CheckPassport",
+        "Click",
+        "Command",
+        "DblClick",
+        "Del",
+        "East",
+        "Export",
+        "GetAPI",
+        "Import",
+        "IsByondMember",
+        "MeasureText",
+        "MouseDown",
+        "MouseDrag",
+        "MouseDrop",
+        "MouseEntered",
+        "MouseExited",
+        "MouseMove",
+        "MouseUp",
+        "MouseWheel",
+        "Move",
+        "New",
+        "North",
+        "Northeast",
+        "Northwest",
+        "RenderIcon",
+        "SendPage",
+        "SetAPI",
+        "SoundQuery",
+        "South",
+        "Southeast",
+        "Southwest",
+        "Stat",
+        "Topic",
+        "West"
+      ],
+      "catalog_only": [],
+      "documented_missing_from_catalog": []
+    },
+    "/database": {
+      "documented_procs": [
+        "Close",
+        "Error",
+        "ErrorMsg",
+        "New",
+        "Open"
+      ],
+      "catalog_only": [],
+      "documented_missing_from_catalog": []
+    },
+    "/database/query": {
+      "documented_procs": [
+        "Add",
+        "Clear",
+        "Close",
+        "Columns",
+        "Error",
+        "ErrorMsg",
+        "Execute",
+        "GetColumn",
+        "GetRowData",
+        "New",
+        "NextRow",
+        "Reset",
+        "RowsAffected"
+      ],
+      "catalog_only": [],
+      "documented_missing_from_catalog": []
+    },
+    "/datum": {
+      "documented_procs": [
+        "Del",
+        "New",
+        "Read",
+        "Topic",
+        "Write"
+      ],
+      "catalog_only": [],
+      "documented_missing_from_catalog": []
+    },
+    "/icon": {
+      "documented_procs": [
+        "Blend",
+        "Crop",
+        "DrawBox",
+        "Flip",
+        "GetPixel",
+        "Height",
+        "IconStates",
+        "Insert",
+        "MapColors",
+        "New",
+        "Scale",
+        "SetIntensity",
+        "Shift",
+        "SwapColor",
+        "Turn",
+        "Width"
+      ],
+      "catalog_only": [],
+      "documented_missing_from_catalog": []
+    },
+    "/list": {
+      "documented_procs": [
+        "Add",
+        "Copy",
+        "Cut",
+        "Find",
+        "Insert",
+        "Join",
+        "Remove",
+        "RemoveAll",
+        "Splice",
+        "Swap"
+      ],
+      "catalog_only": [
+        "New"
+      ],
+      "documented_missing_from_catalog": []
+    },
+    "/matrix": {
+      "documented_procs": [
+        "Add",
+        "Interpolate",
+        "Invert",
+        "Multiply",
+        "Scale",
+        "Subtract",
+        "Translate",
+        "Turn"
+      ],
+      "catalog_only": [
+        "New"
+      ],
+      "documented_missing_from_catalog": []
+    },
+    "/mob": {
+      "documented_procs": [
+        "Login",
+        "Logout"
+      ],
+      "catalog_only": [],
+      "documented_missing_from_catalog": []
+    },
+    "/regex": {
+      "documented_procs": [
+        "Find",
+        "New",
+        "Replace"
+      ],
+      "catalog_only": [
+        "Find_char",
+        "Replace_char"
+      ],
+      "documented_missing_from_catalog": []
+    },
+    "/savefile": {
+      "documented_procs": [
+        "ExportText",
+        "Flush",
+        "ImportText",
+        "Lock",
+        "New",
+        "Unlock"
+      ],
+      "catalog_only": [],
+      "documented_missing_from_catalog": []
+    },
+    "/vector": {
+      "documented_procs": [
+        "Cross",
+        "Dot",
+        "Interpolate",
+        "Normalize",
+        "Turn"
+      ],
+      "catalog_only": [
+        "New"
+      ],
+      "documented_missing_from_catalog": []
+    },
+    "/world": {
+      "documented_procs": [
+        "AddCredits",
+        "ClearMedal",
+        "Del",
+        "Error",
+        "Export",
+        "GetConfig",
+        "GetCredits",
+        "GetMedal",
+        "GetScores",
+        "Import",
+        "IsBanned",
+        "IsSubscribed",
+        "New",
+        "OpenPort",
+        "PayCredits",
+        "Profile",
+        "Reboot",
+        "Repop",
+        "SetConfig",
+        "SetMedal",
+        "SetScores",
+        "Tick",
+        "Topic"
+      ],
+      "catalog_only": [
+        "ODHotReloadInterface",
+        "ODHotReloadResource"
+      ],
+      "documented_missing_from_catalog": []
+    }
+  },
+  "native_catalog_sha256": "ff2caefcef1cc2deee5b1e5bd56b0aeb371fe8aacc66f7c5948061cdf0571b47",
+  "member_name_union_closed": true,
+  "member_name_union_limits": "Documented native receiver procedure-name union is available for explicit colon dispatch; native catalog-only names remain unsupported. Root global procedure names are excluded. Native verbs and unissued source rosters remain unsupported."
+}

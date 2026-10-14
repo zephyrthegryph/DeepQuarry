@@ -1,0 +1,16 @@
+/icon/Insert()
+    return
+/icon/New()
+    return
+/image/New()
+    return
+/matrix/Add()
+    return
+/matrix/Multiply()
+    return
+/matrix/New()
+    return
+/matrix/Subtract()
+    return
+/sound/New()
+    return

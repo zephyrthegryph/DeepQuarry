@@ -1,0 +1,110 @@
+{
+  "pins": {
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+  },
+  "cases": {
+    "custom": {
+      "source_sha256": "00eda3f7e03a053892b1d9e8d27cb68f787da3a96977d8074bf2d9610eef8af8",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "1352d4a2613c36c0bc5a984a0dc0627f2e3c61da5de0965dc9e622d499bdac7b",
+      "compile": {
+        "exit": 0,
+        "wall_s": 0.3297156000044197,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "runtime": {
+        "exit": 0,
+        "wall_s": 1.1149234999902546,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "markers": [
+        "DQ_REGISTER first",
+        "DQ_REGISTER static",
+        "DQ_REGISTER late",
+        "DQ_REGISTER finished"
+      ]
+    },
+    "rootproc": {
+      "source_sha256": "d3db7580d0d9e7f21a1277f888ac26b5736593155e211dd39e66c5498539f82c",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "df9e1b451f668a8504fc1e0f4051b24df1e859800fa57f0c49eecdb8e1540843",
+      "compile": {
+        "exit": 0,
+        "wall_s": 0.3394362999824807,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "runtime": {
+        "exit": 0,
+        "wall_s": 1.1794949000468478,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "markers": [
+        "DQ_REGISTER late",
+        "DQ_REGISTER first",
+        "DQ_REGISTER static",
+        "DQ_REGISTER finished"
+      ]
+    },
+    "world_explicit": {
+      "source_sha256": "af167d6be691f4aed49dc1a49118df22f5af4e219f06d4192cda99c431e2e404",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "1f6d340260a76f0863a1e319dcb6fbb7f2dbb1aabc3ff30f2da5b7ff9737327e",
+      "compile": {
+        "exit": 0,
+        "wall_s": 0.32099550002021715,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "runtime": {
+        "exit": 0,
+        "wall_s": 1.098705800017342,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "markers": [
+        "DQ_REGISTER late",
+        "DQ_REGISTER first",
+        "DQ_REGISTER static",
+        "DQ_REGISTER finished"
+      ]
+    },
+    "world_bare": {
+      "source_sha256": "47e09342d770773d1a96ca2ec50f24366767c74455e80111d2086e6e6324117f",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "8ef08a925f8b71394ba49ea6dd3fe0f0aabc5f4caef9930f71cf664453d1bca6",
+      "compile": {
+        "exit": 0,
+        "wall_s": 0.31181599997216836,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "runtime": {
+        "exit": 0,
+        "wall_s": 1.0899084999691695,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "markers": [
+        "DQ_REGISTER first",
+        "DQ_REGISTER static",
+        "DQ_REGISTER late",
+        "DQ_REGISTER finished"
+      ]
+    }
+  },
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 58781696,
+    "samples": 29,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 49220,
+        "private_bytes": 58781696
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "owned daemon and registered harness children (compiler/client/inspector); 200ms samples include observation overhead; excludes unrelated processes and unregistered descendants"
+  }
+}

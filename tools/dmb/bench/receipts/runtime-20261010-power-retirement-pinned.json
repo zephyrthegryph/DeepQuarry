@@ -1,0 +1,134 @@
+{
+  "schema": 2,
+  "scope": "four deterministic retirement decoder cases only",
+  "complete": true,
+  "root": "E:\\dq-cache\\dmb-power-retirement\\4533df6aa5a2469b97ec64669a034c3a",
+  "executions": {
+    "byond-compile": {
+      "exit": 0,
+      "wall_s": 0.35958600003505126,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.164106099982746,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "native-compile": {
+      "exit": 0,
+      "wall_s": 0.19405340001685545,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "acquire": {
+      "exit": 0,
+      "wall_s": 0.07238639995921403,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "native-runtime": {
+      "exit": 0,
+      "wall_s": 1.1268179999897256,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    }
+  },
+  "fixture_sources": {
+    "probe.dm": "4e3105ce4afbc60c3b2835f98cebe7211774317edb4f2e63a077160ac2bac59b",
+    "probe.dme": "b7ffe07a5847c4dfbcaec9b4aa274d7225ef9c9b62cce58086fb5aac263b16ae"
+  },
+  "pinned_inputs": {
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261010-104906-538fa8f9.exe",
+      "sha256": "89e7c20993fd6b31f7294274f898b2a88f1b5678f0ac7c9b130ad2fa36009866"
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    },
+    "dd": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+      "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+    }
+  },
+  "byond": {
+    "markers": [
+      "DQ_RETIRE begin valid",
+      "DQ_RETIRE lookup valid 3",
+      "DQ_RETIRE network valid 7",
+      "DQ_RETIRE decoded valid 1",
+      "DQ_RETIRE end valid 1 1",
+      "DQ_RETIRE begin outer_bounds",
+      "DQ_RETIRE lookup outer_bounds 3",
+      "DQ_RETIRE end outer_bounds 1 0",
+      "DQ_RETIRE begin inner_bounds",
+      "DQ_RETIRE lookup inner_bounds 3",
+      "DQ_RETIRE end inner_bounds 1 0",
+      "DQ_RETIRE begin mixed_packets",
+      "DQ_RETIRE bind mixed_packets",
+      "DQ_RETIRE lookup mixed_packets 6",
+      "DQ_RETIRE network mixed_packets 7",
+      "DQ_RETIRE decoded mixed_packets 2",
+      "DQ_RETIRE end mixed_packets 1 1",
+      "DQ_RETIRE finished"
+    ],
+    "runtimes": [
+      {
+        "source": "<standalone source unavailable>",
+        "line": 0,
+        "message": "list index out of bounds",
+        "count": 2
+      }
+    ]
+  },
+  "native": {
+    "markers": [
+      "DQ_RETIRE begin valid",
+      "DQ_RETIRE lookup valid 3",
+      "DQ_RETIRE network valid 7",
+      "DQ_RETIRE decoded valid 1",
+      "DQ_RETIRE end valid 1 1",
+      "DQ_RETIRE begin outer_bounds",
+      "DQ_RETIRE lookup outer_bounds 3",
+      "DQ_RETIRE end outer_bounds 1 0",
+      "DQ_RETIRE begin inner_bounds",
+      "DQ_RETIRE lookup inner_bounds 3",
+      "DQ_RETIRE end inner_bounds 1 0",
+      "DQ_RETIRE begin mixed_packets",
+      "DQ_RETIRE bind mixed_packets",
+      "DQ_RETIRE lookup mixed_packets 6",
+      "DQ_RETIRE network mixed_packets 7",
+      "DQ_RETIRE decoded mixed_packets 2",
+      "DQ_RETIRE end mixed_packets 1 1",
+      "DQ_RETIRE finished"
+    ],
+    "runtimes": [
+      {
+        "source": "<standalone source unavailable>",
+        "line": 0,
+        "message": "list index out of bounds",
+        "count": 2
+      }
+    ]
+  },
+  "matches": true,
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 58761216,
+    "samples": 15,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 51580,
+        "private_bytes": 58761216
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "registered owned compile/acquisition/runtime children, 200ms samples; not strict peak or unregistered-descendant proof"
+  }
+}

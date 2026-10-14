@@ -1,0 +1,60 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-996c0240a0401c5b.exe",
+  "binary_sha256": "4e60d921a04fae718ba6ccee8c2e0599cfb1284a6e7f05392382518562900669",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "initializer_policy::modifier_facts::tests::",
+      "selected": [
+        "initializer_policy::modifier_facts::tests::modifier_locator_replays_full_inputs_and_shares_classification_write_owner",
+        "initializer_policy::modifier_facts::tests::modifier_receipts_revalidate_current_answers_and_preserve_global_error_ordinals"
+      ],
+      "exit": 0,
+      "seconds": 0.0326710999943316,
+      "stdout": "\nrunning 2 tests\ntest initializer_policy::modifier_facts::tests::modifier_locator_replays_full_inputs_and_shares_classification_write_owner ... ok\ntest initializer_policy::modifier_facts::tests::modifier_receipts_revalidate_current_answers_and_preserve_global_error_ordinals ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 656 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "initializer_policy::classification::artifact::tests::",
+      "selected": [
+        "initializer_policy::classification::artifact::tests::ancestry_receipts_tests::classification_pass_shares_exact_ancestry_and_rejects_changed_answer",
+        "initializer_policy::classification::artifact::tests::current_roster_skips_full_weight_but_bounded_admission_preserves_unknown_decline",
+        "initializer_policy::classification::artifact::tests::direct_input_tests::short_locator_requires_full_write_fact_config_and_current_binding",
+        "initializer_policy::classification::artifact::tests::opaque_pure_call_provider_never_admits_unrecorded_external_answers",
+        "initializer_policy::classification::artifact::tests::ordered_roster_reassembly_preserves_tokens_groups_and_modifier_error_precedence",
+        "initializer_policy::classification::artifact::tests::roster_hit_updates_current_error_ordinal_without_using_it_as_token_seed",
+        "initializer_policy::classification::artifact::tests::runtime_recipe_binds_fresh_syntax_and_matches_uncached_result",
+        "initializer_policy::classification::artifact::tests::scalar_reads_revalidate_and_current_ordinal_does_not_enter_payload"
+      ],
+      "exit": 0,
+      "seconds": 0.037037800007965416,
+      "stdout": "\nrunning 8 tests\ntest initializer_policy::classification::artifact::tests::ancestry_receipts_tests::classification_pass_shares_exact_ancestry_and_rejects_changed_answer ... ok\ntest initializer_policy::classification::artifact::tests::current_roster_skips_full_weight_but_bounded_admission_preserves_unknown_decline ... ok\ntest initializer_policy::classification::artifact::tests::direct_input_tests::short_locator_requires_full_write_fact_config_and_current_binding ... ok\ntest initializer_policy::classification::artifact::tests::opaque_pure_call_provider_never_admits_unrecorded_external_answers ... ok\ntest initializer_policy::classification::artifact::tests::ordered_roster_reassembly_preserves_tokens_groups_and_modifier_error_precedence ... ok\ntest initializer_policy::classification::artifact::tests::roster_hit_updates_current_error_ordinal_without_using_it_as_token_seed ... ok\ntest initializer_policy::classification::artifact::tests::runtime_recipe_binds_fresh_syntax_and_matches_uncached_result ... ok\ntest initializer_policy::classification::artifact::tests::scalar_reads_revalidate_and_current_ordinal_does_not_enter_payload ... ok\n\ntest result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 650 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "initializer_policy::classification::artifact::bind_text_tests::",
+      "selected": [
+        "initializer_policy::classification::artifact::bind_text_tests::runtime_binding_preserves_current_tokens_ordinals_and_exact_syntax"
+      ],
+      "exit": 0,
+      "seconds": 0.023693100025411695,
+      "stdout": "\nrunning 1 test\ntest initializer_policy::classification::artifact::bind_text_tests::runtime_binding_preserves_current_tokens_ordinals_and_exact_syntax ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 657 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "lowering_memo_compact::tests::",
+      "selected": [
+        "lowering_memo_compact::tests::compact_disk_reissues_modified_descriptor_from_current_source",
+        "lowering_memo_compact::tests::compact_disk_replays_checked_frozen_code_and_declines_changed_receipts_and_abi",
+        "lowering_memo_compact::tests::compact_disk_replays_current_abi_companions_and_rejects_changed_helper_order",
+        "lowering_memo_compact::tests::compact_disk_replays_plain_instance_helper_with_current_abi_and_receipts",
+        "lowering_memo_compact::tests::compact_disk_replays_plain_instance_with_separate_current_binding_authority",
+        "lowering_memo_compact::tests::compact_sequence_rejects_advertised_oversize_before_payload_elements"
+      ],
+      "exit": 0,
+      "seconds": 0.35739550000289455,
+      "stdout": "\nrunning 6 tests\ntest lowering_memo_compact::tests::compact_disk_reissues_modified_descriptor_from_current_source ... ok\ntest lowering_memo_compact::tests::compact_disk_replays_checked_frozen_code_and_declines_changed_receipts_and_abi ... ok\ntest lowering_memo_compact::tests::compact_disk_replays_current_abi_companions_and_rejects_changed_helper_order ... ok\ntest lowering_memo_compact::tests::compact_disk_replays_plain_instance_helper_with_current_abi_and_receipts ... ok\ntest lowering_memo_compact::tests::compact_disk_replays_plain_instance_with_separate_current_binding_authority ... ok\ntest lowering_memo_compact::tests::compact_sequence_rejects_advertised_oversize_before_payload_elements ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 652 filtered out; finished in 0.33s\n\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,378 @@
+{
+ "schema": 1,
+ "compiler": "dmb/incr5 5c990bdfb7 release",
+ "note": "loop.py daemon edit sequence (bench/takeover_edits.json structural rows), 8 workers, loaded machine; native stage seconds; byte_equal vs --no-daemon --no-cache fresh build",
+ "rows": [
+  {
+   "step": "s0",
+   "stages": {
+    "input_preparation": 0.717,
+    "frontend": 12.636,
+    "captured_facts": 0.147,
+    "resources_maps": 2.658,
+    "linking_inputs": 0.046,
+    "compilation": 25.596,
+    "publication": 0.381,
+    "total": 47.891,
+    "ABI": 2.644,
+    "lowering": 10.626,
+    "initialization": 9.071,
+    "linking": 1.23,
+    "composition": 1.09
+   },
+   "byte_equal": null,
+   "notes": [
+    "declined after 0.003s, full compilation: no patch base retained"
+   ]
+  },
+  {
+   "step": "s1-variable",
+   "stages": {
+    "input_preparation": 0.239,
+    "frontend": 2.747,
+    "captured_facts": 0.097,
+    "resources_maps": 0.725,
+    "linking_inputs": 0.031,
+    "compilation": 8.523,
+    "publication": 0.491,
+    "total": 14.38,
+    "ABI": 1.124,
+    "lowering": 1.512,
+    "initialization": 2.227,
+    "linking": 1.331,
+    "composition": 1.182
+   },
+   "byte_equal": true,
+   "notes": [
+    "declined after 0.129s, full compilation: declaration skeleton changed; default patch: not a pure numeric default edit",
+    "tree splice dirty=1 in 0.336s",
+    "demand tokens carried=751674 dropped=0 (update); rows=1 hierarchy=0 member_owners=1 names=1 order_changed=true in 0.201s"
+   ]
+  },
+  {
+   "step": "s1-variable-fresh",
+   "stages": {
+    "input_preparation": 0.569,
+    "frontend": 6.494,
+    "captured_facts": 0.164,
+    "resources_maps": 2.823,
+    "linking_inputs": 0.048,
+    "compilation": 13.376,
+    "publication": 0.249,
+    "total": 24.088,
+    "ABI": 2.368,
+    "lowering": 3.551,
+    "initialization": 4.301,
+    "linking": 1.325,
+    "composition": 1.249
+   },
+   "byte_equal": null,
+   "notes": []
+  },
+  {
+   "step": "s2-default",
+   "stages": {
+    "input_preparation": 0.246,
+    "frontend": 2.483,
+    "captured_facts": 0.008,
+    "resources_maps": 0.51,
+    "linking_inputs": 0.048,
+    "compilation": 1.653,
+    "publication": 0.459,
+    "total": 6.397,
+    "ABI": 0.0,
+    "lowering": 0.0,
+    "initialization": 0.0,
+    "linking": 0.0,
+    "composition": 0.0
+   },
+   "byte_equal": true,
+   "notes": [
+    "1 variable records",
+    "applied changed_bodies=0 shifted_initializers=0 patched_rows=1 1.532s",
+    "demand tokens carried=751676 dropped=1 (update); rows=1 hierarchy=0 member_owners=1 names=1 order_changed=false in 0.171s"
+   ]
+  },
+  {
+   "step": "s2-default-fresh",
+   "stages": {
+    "input_preparation": 0.614,
+    "frontend": 6.065,
+    "captured_facts": 0.156,
+    "resources_maps": 2.116,
+    "linking_inputs": 0.039,
+    "compilation": 14.558,
+    "publication": 0.273,
+    "total": 24.135,
+    "ABI": 2.391,
+    "lowering": 4.229,
+    "initialization": 4.66,
+    "linking": 1.603,
+    "composition": 1.151
+   },
+   "byte_equal": null,
+   "notes": []
+  },
+  {
+   "step": "s3-new_proc",
+   "stages": {
+    "input_preparation": 0.248,
+    "frontend": 2.668,
+    "captured_facts": 0.144,
+    "resources_maps": 0.878,
+    "linking_inputs": 0.046,
+    "compilation": 9.661,
+    "publication": 0.553,
+    "total": 16.46,
+    "ABI": 1.238,
+    "lowering": 2.713,
+    "initialization": 2.012,
+    "linking": 1.198,
+    "composition": 1.338
+   },
+   "byte_equal": true,
+   "notes": [
+    "declined after 0.143s, full compilation: declaration skeleton changed",
+    "tree splice dirty=2 in 0.365s",
+    "demand tokens carried=751676 dropped=0 (update); rows=2 hierarchy=0 member_owners=1 names=2 order_changed=true in 0.174s"
+   ]
+  },
+  {
+   "step": "s3-new_proc-fresh",
+   "stages": {
+    "input_preparation": 0.501,
+    "frontend": 5.417,
+    "captured_facts": 0.142,
+    "resources_maps": 2.076,
+    "linking_inputs": 0.037,
+    "compilation": 13.3,
+    "publication": 0.274,
+    "total": 22.037,
+    "ABI": 2.34,
+    "lowering": 3.567,
+    "initialization": 4.534,
+    "linking": 1.403,
+    "composition": 0.967
+   },
+   "byte_equal": null,
+   "notes": []
+  },
+  {
+   "step": "s4-removed_proc",
+   "stages": {
+    "input_preparation": 0.25,
+    "frontend": 3.017,
+    "captured_facts": 0.116,
+    "resources_maps": 0.903,
+    "linking_inputs": 0.041,
+    "compilation": 7.945,
+    "publication": 0.524,
+    "total": 14.527,
+    "ABI": 1.145,
+    "lowering": 1.536,
+    "initialization": 1.714,
+    "linking": 1.18,
+    "composition": 1.191
+   },
+   "byte_equal": true,
+   "notes": [
+    "declined after 0.148s, full compilation: declaration skeleton changed",
+    "tree splice dirty=0 in 0.393s",
+    "demand tokens carried=751687 dropped=2 (update); rows=1 hierarchy=0 member_owners=1 names=1 order_changed=true in 0.236s"
+   ]
+  },
+  {
+   "step": "s4-removed_proc-fresh",
+   "stages": {
+    "input_preparation": 0.552,
+    "frontend": 5.575,
+    "captured_facts": 0.122,
+    "resources_maps": 4.017,
+    "linking_inputs": 0.036,
+    "compilation": 12.424,
+    "publication": 0.278,
+    "total": 23.316,
+    "ABI": 2.177,
+    "lowering": 3.528,
+    "initialization": 4.174,
+    "linking": 1.122,
+    "composition": 0.975
+   },
+   "byte_equal": null,
+   "notes": []
+  },
+  {
+   "step": "s5-removed_var",
+   "stages": {
+    "input_preparation": 0.277,
+    "frontend": 2.858,
+    "captured_facts": 0.128,
+    "resources_maps": 0.963,
+    "linking_inputs": 0.046,
+    "compilation": 9.273,
+    "publication": 0.551,
+    "total": 16.283,
+    "ABI": 1.147,
+    "lowering": 1.565,
+    "initialization": 2.355,
+    "linking": 1.425,
+    "composition": 1.554
+   },
+   "byte_equal": true,
+   "notes": [
+    "declined after 0.130s, full compilation: declaration skeleton changed; default patch: not a pure numeric default edit",
+    "tree splice dirty=0 in 0.374s",
+    "demand tokens carried=751687 dropped=1 (update); rows=1 hierarchy=0 member_owners=1 names=1 order_changed=true in 0.166s"
+   ]
+  },
+  {
+   "step": "s5-removed_var-fresh",
+   "stages": {
+    "input_preparation": 0.626,
+    "frontend": 6.223,
+    "captured_facts": 0.149,
+    "resources_maps": 2.147,
+    "linking_inputs": 0.036,
+    "compilation": 13.001,
+    "publication": 0.387,
+    "total": 22.889,
+    "ABI": 2.229,
+    "lowering": 3.656,
+    "initialization": 4.361,
+    "linking": 1.271,
+    "composition": 1.043
+   },
+   "byte_equal": null,
+   "notes": []
+  },
+  {
+   "step": "s6-new_type",
+   "stages": {
+    "input_preparation": 0.237,
+    "frontend": 3.86,
+    "captured_facts": 0.127,
+    "resources_maps": 0.844,
+    "linking_inputs": 0.044,
+    "compilation": 9.767,
+    "publication": 0.504,
+    "total": 18.408,
+    "ABI": 1.084,
+    "lowering": 2.911,
+    "initialization": 2.229,
+    "linking": 1.184,
+    "composition": 1.235
+   },
+   "byte_equal": true,
+   "notes": [
+    "declined after 0.126s, full compilation: declaration skeleton changed; default patch: not a pure numeric default edit",
+    "tree splice dirty=1 in 0.416s",
+    "demand tokens carried=751646 dropped=41 (update); rows=2 hierarchy=1 member_owners=1 names=1 order_changed=true in 0.236s"
+   ]
+  },
+  {
+   "step": "s6-new_type-fresh",
+   "stages": {
+    "input_preparation": 0.819,
+    "frontend": 8.846,
+    "captured_facts": 0.153,
+    "resources_maps": 2.487,
+    "linking_inputs": 0.046,
+    "compilation": 15.512,
+    "publication": 0.277,
+    "total": 28.508,
+    "ABI": 2.929,
+    "lowering": 4.451,
+    "initialization": 4.667,
+    "linking": 1.553,
+    "composition": 1.374
+   },
+   "byte_equal": null,
+   "notes": []
+  },
+  {
+   "step": "s7-define",
+   "stages": {
+    "input_preparation": 1.363,
+    "frontend": 3.039,
+    "captured_facts": 0.006,
+    "resources_maps": 0.62,
+    "linking_inputs": 0.041,
+    "compilation": 10.047,
+    "publication": 0.502,
+    "total": 17.83,
+    "ABI": 1.212,
+    "lowering": 2.177,
+    "initialization": 2.705,
+    "linking": 1.344,
+    "composition": 1.214
+   },
+   "byte_equal": true,
+   "notes": [
+    "declined after 0.156s, full compilation: declaration skeleton changed; default patch: not a pure numeric default edit",
+    "demand tokens carried=750726 dropped=964 (update); rows=18 hierarchy=0 member_owners=13 names=8 order_changed=false in 0.270s"
+   ]
+  },
+  {
+   "step": "s7-define-fresh",
+   "stages": {
+    "input_preparation": 0.617,
+    "frontend": 8.111,
+    "captured_facts": 0.181,
+    "resources_maps": 2.956,
+    "linking_inputs": 0.052,
+    "compilation": 18.084,
+    "publication": 0.339,
+    "total": 30.856,
+    "ABI": 3.057,
+    "lowering": 5.92,
+    "initialization": 5.318,
+    "linking": 1.451,
+    "composition": 1.779
+   },
+   "byte_equal": null,
+   "notes": []
+  },
+  {
+   "step": "s8-map",
+   "stages": {
+    "input_preparation": 1.387,
+    "frontend": 1.798,
+    "captured_facts": 0.003,
+    "resources_maps": 0.88,
+    "linking_inputs": 0.044,
+    "compilation": 10.014,
+    "publication": 0.618,
+    "total": 16.471,
+    "ABI": 1.285,
+    "lowering": 1.699,
+    "initialization": 2.268,
+    "linking": 1.743,
+    "composition": 1.65
+   },
+   "byte_equal": true,
+   "notes": [
+    "declined after 0.164s, full compilation: non-text input changed: \\\\?\\E:\\dq-cache\\dmb-takeover\\incr5\\src\\maps\\virgo_minitest\\virgo_minitest-sector-2.dmm content"
+   ]
+  },
+  {
+   "step": "s8-map-fresh",
+   "stages": {
+    "input_preparation": 0.591,
+    "frontend": 6.519,
+    "captured_facts": 0.207,
+    "resources_maps": 2.867,
+    "linking_inputs": 0.051,
+    "compilation": 18.159,
+    "publication": 0.288,
+    "total": 29.052,
+    "ABI": 2.495,
+    "lowering": 5.85,
+    "initialization": 6.053,
+    "linking": 1.701,
+    "composition": 1.415
+   },
+   "byte_equal": null,
+   "notes": []
+  }
+ ]
+}

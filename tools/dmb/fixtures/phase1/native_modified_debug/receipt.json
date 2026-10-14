@@ -1,0 +1,50 @@
+{
+  "observation": "Both returned grouped values and class variable defaults share Instance0 across same/reordered distinct fields with DEBUG absent or defined0. Proc0/1 PushVal41,0; variables69/70 kind41,value0.",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "sha256": "2b4a36b3152af89c2af116c71c13e3d20ee2acb0c8cbc4b468d8e2d388727ae0"
+    },
+    {
+      "path": "debug0/compile.log",
+      "sha256": "f696326ecbfd8f6632bc45b815a1bbc61e927e33be8cbdf929b92178bd0752da"
+    },
+    {
+      "path": "debug0/compile.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "debug0/probe.dm",
+      "sha256": "fee8df64131550c22224fed725cd52e280365141f3ac7bf0dfbfdbc7880d53f6"
+    },
+    {
+      "path": "debug0/probe.dme",
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+    },
+    {
+      "path": "debug0/probe.native.bin",
+      "sha256": "0325eaab4b95ce3ca3db99f250f9b669a141a96c09388b55a1399b5be17fccad"
+    },
+    {
+      "path": "plain/compile.log",
+      "sha256": "f696326ecbfd8f6632bc45b815a1bbc61e927e33be8cbdf929b92178bd0752da"
+    },
+    {
+      "path": "plain/compile.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "plain/probe.dm",
+      "sha256": "19332cab1d42ed6baa3492cc1b67ca23450db7fa7a9937cb08c6a5afc3ef1d5a"
+    },
+    {
+      "path": "plain/probe.dme",
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+    },
+    {
+      "path": "plain/probe.native.bin",
+      "sha256": "0325eaab4b95ce3ca3db99f250f9b669a141a96c09388b55a1399b5be17fccad"
+    }
+  ],
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+}

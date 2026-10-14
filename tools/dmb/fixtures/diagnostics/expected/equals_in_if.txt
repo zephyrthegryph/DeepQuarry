@@ -1,0 +1,2 @@
+equals_in_if.dm:2:warning (accidental_assign): assignment in condition, may have intended == operator instead
+equals_in_if.dmb - 0 errors, 1 warning

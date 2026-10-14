@@ -1,0 +1,300 @@
+{
+  "schema": 1,
+  "scope": "eleven focused runtime observations; not full suite or authenticated source-closure baseline",
+  "complete": true,
+  "matches": true,
+  "all_passed": true,
+  "inputClosureAuthenticated": false,
+  "acceptedRuntimeBaseline": false,
+  "native_compile_seconds": 114.94,
+  "native_compile_profile": "prototype opt0 driver, opt1 tree/codegen; not optimized acceptance timing",
+  "test_runs": [
+    {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\data\\test-runs\\20261011T111622_e444cd002a.json",
+      "sha256": "f9931a98b8cde852e5779895f7d916c444b3a00f7ca1f3cccd6a217e04c3de90",
+      "compilation": {
+        "requestedBackend": "native",
+        "actualBackend": "native",
+        "orderedDefines": [
+          "CBT",
+          "CIBUILDING",
+          "CITESTING",
+          "DEBUG"
+        ],
+        "fallback": null,
+        "compiler": {
+          "executable": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-061030-bc7124752d.exe",
+          "sha256": "199a10f6f750cbcd7e55d8b4a951ca4afa6f490b86f118f9b6566db8c1394493",
+          "version": null,
+          "build": null
+        },
+        "nativePair": {
+          "pairId": "dbb9ba3bd2afc9a326c8a5827332fbcb",
+          "dmbHash": "07ecc041276df02fe97df6a25f683fce",
+          "rscHash": "94187ddf583bf8a6c80f0712194aba15",
+          "dmbBytes": 68628298,
+          "rscBytes": 223679641
+        }
+      },
+      "runtime_identity": {
+        "executable": "D:\\Program Files (x86)\\BYOND516\\bin\\dreamdaemon.exe",
+        "sha256": "d410d44cade616cb5ef57a440a4c531eb5f6589eeb56211682d1ca6a10ff8999",
+        "version": null,
+        "security": "-trusted",
+        "library": {
+          "source": "E:\\projects\\dq-wt\\dmb-review\\verdigris.dll",
+          "hosted": "E:\\dq-cache\\dmb-native-v2\\power-focused-bc712-20261011\\runs\\run-lgbX2X\\slot-58068-0\\verdigris.dll",
+          "sha256": "7e427a36c045e185f65464db17c0eb73636d0af2d0c6f337f348c623e8547bce",
+          "bytes": 5301248
+        }
+      },
+      "counts": {
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\data\\test-runs\\20261011T113241_0cdf82981f.json",
+      "sha256": "ca539cc8bcdcedf32f78070fc1418310a55fde6449182beb8c7679c3df01efd4",
+      "compilation": {
+        "requestedBackend": "byond",
+        "actualBackend": "byond",
+        "orderedDefines": [
+          "CBT",
+          "CIBUILDING",
+          "CITESTING",
+          "DEBUG"
+        ],
+        "fallback": null,
+        "nativePair": null,
+        "compiler": {
+          "executable": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+          "version": 516,
+          "build": 1687
+        }
+      },
+      "runtime_identity": {
+        "executable": "D:\\Program Files (x86)\\BYOND516\\bin\\dreamdaemon.exe",
+        "sha256": "d410d44cade616cb5ef57a440a4c531eb5f6589eeb56211682d1ca6a10ff8999",
+        "version": null,
+        "security": "-trusted",
+        "library": {
+          "source": "E:\\projects\\dq-wt\\dmb-review\\verdigris.dll",
+          "hosted": "E:\\projects\\dq-wt\\dmb-review\\verdigris.dll",
+          "sha256": "7e427a36c045e185f65464db17c0eb73636d0af2d0c6f337f348c623e8547bce",
+          "bytes": 5301248
+        }
+      },
+      "counts": {
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "hosting_fix": "d689bb2632",
+  "readonly_replay_failed": true,
+  "unchanged_captured_byond_pair_writable_replay_passed": true,
+  "rows": [
+    {
+      "name": "/datum/unit_test/nuke_cinematic",
+      "native": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "byond": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "matches": true
+    },
+    {
+      "name": "/datum/unit_test/dq_power_idle_apc_and_smes_sleep",
+      "native": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "byond": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "matches": true
+    },
+    {
+      "name": "/datum/unit_test/dq_power_apc_cycle",
+      "native": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "byond": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "matches": true
+    },
+    {
+      "name": "/datum/unit_test/dq_idle_turret_wakes_for_nearby_mob",
+      "native": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "byond": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "matches": true
+    },
+    {
+      "name": "/datum/unit_test/dq_real_canister_release_spreads_via_master_loop",
+      "native": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "byond": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "matches": true
+    },
+    {
+      "name": "/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule",
+      "native": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "byond": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "matches": true
+    },
+    {
+      "name": "/datum/unit_test/dq_expanded_department_outcomes",
+      "native": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "byond": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "matches": true
+    },
+    {
+      "name": "/datum/unit_test/dq_radiation_insulated_movable_blocks",
+      "native": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "byond": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "matches": true
+    },
+    {
+      "name": "/datum/unit_test/dq_constraint_declarations_compile",
+      "native": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "byond": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "matches": true
+    },
+    {
+      "name": "/datum/unit_test/dq_rule_thresholds",
+      "native": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "byond": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "matches": true
+    },
+    {
+      "name": "/datum/unit_test/dq_damage_flavour_bands",
+      "native": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "byond": {
+        "status": 0,
+        "message": "",
+        "runtimes": 0,
+        "runtime_errors": [],
+        "runtime_errors_truncated": 0
+      },
+      "matches": true
+    }
+  ]
+}

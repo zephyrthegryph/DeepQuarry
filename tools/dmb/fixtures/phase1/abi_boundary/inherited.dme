@@ -1,0 +1,4 @@
+/datum/abi_probe/New()
+    return ..()
+/datum/abi_probe/Del()
+    return ..()

@@ -1,0 +1,250 @@
+//! Calls dispatch lowering over the shared compiler context.
+use super::*;
+
+impl Compiler<'_> {
+    pub(super) fn expression_call(
+        &mut self,
+        expr: &Expr,
+        callee: &Expr,
+        args: &[Expr],
+        statement: &str,
+    ) -> Result<(), LowerError> {
+        let named_arguments = args
+            .iter()
+            .any(|arg| dm_syntax::named_argument(arg).is_some());
+        let arglist_argument = dm_syntax::arglist_argument(args);
+        let target_kind = dm_syntax::call_target(callee);
+        if let dm_syntax::CallTarget::Dynamic {
+            dispatcher,
+            targets: target,
+        } = target_kind
+        {
+            if !(1..=2).contains(&target.len()) || named_arguments {
+                return Err(error(
+                    statement,
+                    "dynamic call requires target, name, and positional arguments",
+                ));
+            }
+            self.record_selection(
+                callee,
+                dispatcher,
+                dm_ir::SelectedMeaning::DynamicCall {
+                    dispatcher: SymbolId::of(dispatcher),
+                    target_count: target.len() as u8,
+                },
+            );
+            for target in target {
+                self.expression(target, statement)?;
+            }
+            if let Some(list) = arglist_argument {
+                self.expression(list, statement)?;
+                self.emit(
+                    match (dispatcher, target.len()) {
+                        ("call", 1) => 0xcb,
+                        ("call", 2) => 0xcc,
+                        ("call_ext", 1) => 0x17b,
+                        ("call_ext", 2) => 0x117,
+                        _ => unreachable!(),
+                    },
+                    vec![],
+                );
+                return Ok(());
+            }
+            for arg in args {
+                self.expression(arg, statement)?;
+            }
+            self.emit(
+                match (dispatcher, target.len()) {
+                    ("call", 1) => 0x2b,
+                    ("call", 2) => 0xb5,
+                    ("call_ext", 1) => 0x17a,
+                    ("call_ext", 2) => 0x116,
+                    _ => unreachable!(),
+                },
+                vec![Word::Immediate(args.len() as u32)],
+            );
+            return Ok(());
+        }
+        if let dm_syntax::CallTarget::SafeMember {
+            object,
+            selector,
+            via_colon,
+        } = target_kind
+        {
+            let proc_selector = if via_colon {
+                self.member_call_selector(object, selector, true, statement)?
+            } else {
+                self.safe_member_call_selector(object, selector, statement)?
+            };
+            self.record_call_selection(callee, selector, &proc_selector, true);
+            self.expression(object, statement)?;
+            let end = self.label();
+            self.emit(317, vec![Word::Branch(end)]);
+            self.emit(opcode::PUSH_CACHE, vec![]);
+            if named_arguments {
+                self.named_arguments(args, statement)?;
+            } else if let Some(list) = arglist_argument {
+                self.expression(list, statement)?;
+            } else {
+                for arg in args {
+                    self.expression(arg, statement)?;
+                }
+            }
+            self.emit(opcode::POP_CACHE, vec![]);
+            self.emit(
+                opcode::CALL,
+                vec![
+                    Word::Variable(proc_selector),
+                    Word::Immediate(if named_arguments || arglist_argument.is_some() {
+                        u16::MAX as u32
+                    } else {
+                        args.len() as u32
+                    }),
+                ],
+            );
+            self.result.code.items.push(CodeItem::Label(end));
+            return Ok(());
+        }
+        if let dm_syntax::CallTarget::Member { object, selector } = target_kind {
+            if dm_syntax::is_global_receiver(object) {
+                if !self.has_global_proc(selector)? {
+                    let mut failure = error(
+                        statement,
+                        &format!("unresolved global procedure: {selector}"),
+                    );
+                    // Only a definitive current resolver absence is a source
+                    // rejection. Opaque queries fail in has_global_proc itself.
+                    if self.lookup.is_some() {
+                        failure.kind = LowerErrorKind::SourceError;
+                        failure.reason = format!("{selector}: undefined proc");
+                    }
+                    return Err(failure);
+                }
+                if named_arguments {
+                    self.named_arguments(args, statement)?;
+                    let reference = self.global_proc(selector)?;
+                    self.record_selection(
+                        callee,
+                        selector,
+                        dm_ir::SelectedMeaning::ProcedureCall {
+                            reference,
+                            safe: false,
+                        },
+                    );
+                    self.emit(0xcd, vec![Word::Reference(reference)]);
+                } else {
+                    for arg in args {
+                        self.expression(arg, statement)?;
+                    }
+                    let reference = self.global_proc(selector)?;
+                    self.record_selection(
+                        callee,
+                        selector,
+                        dm_ir::SelectedMeaning::ProcedureCall {
+                            reference,
+                            safe: false,
+                        },
+                    );
+                    self.emit(
+                        opcode::CALL_GLOB,
+                        vec![
+                            Word::Immediate(args.len() as u32),
+                            Word::Reference(reference),
+                        ],
+                    );
+                }
+                return Ok(());
+            }
+            let via_colon = matches!(
+                &callee.kind,
+                ExprKind::Member {
+                    via_colon: true,
+                    ..
+                }
+            );
+            let proc_selector =
+                self.member_call_selector(object, selector, via_colon, statement)?;
+            self.record_call_selection(callee, selector, &proc_selector, false);
+            let mut safe_labels = Vec::new();
+            if let Ok(owner) = self.variable_expr(object, statement) {
+                if named_arguments {
+                    self.named_arguments(args, statement)?;
+                } else if let Some(list) = arglist_argument {
+                    self.expression(list, statement)?;
+                } else {
+                    for arg in args {
+                        self.expression(arg, statement)?;
+                    }
+                }
+                self.emit(
+                    self.direct_call_opcode(expr),
+                    vec![
+                        Word::Variable(VariableWord::SetCache(
+                            Box::new(owner),
+                            Box::new(proc_selector.clone()),
+                        )),
+                        Word::Immediate(if named_arguments || arglist_argument.is_some() {
+                            u16::MAX as u32
+                        } else {
+                            args.len() as u32
+                        }),
+                    ],
+                );
+            } else {
+                self.expression(object, statement)?;
+                safe_labels = self.defer_safe_postfix_labels(object);
+                self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
+                self.emit(opcode::PUSH_CACHE, vec![]);
+                if named_arguments {
+                    self.named_arguments(args, statement)?;
+                } else if let Some(list) = arglist_argument {
+                    self.expression(list, statement)?;
+                } else {
+                    for arg in args {
+                        self.expression(arg, statement)?;
+                    }
+                }
+                self.emit(opcode::POP_CACHE, vec![]);
+                self.emit(
+                    opcode::CALL,
+                    vec![
+                        Word::Variable(proc_selector),
+                        Word::Immediate(if named_arguments || arglist_argument.is_some() {
+                            u16::MAX as u32
+                        } else {
+                            args.len() as u32
+                        }),
+                    ],
+                );
+            }
+            self.result.code.items.extend(safe_labels);
+            return Ok(());
+        }
+        let dm_syntax::CallTarget::Named(name) = target_kind else {
+            if matches!(&callee.kind, ExprKind::Literal(_)) {
+                // `5()`: a literal is never callable.
+                return Err(source_error(
+                    statement,
+                    &format!("{}missing expression", super::helpers::AT_END),
+                ));
+            }
+            return Err(error(statement, "only simple src proc calls are supported"));
+        };
+        if self.intrinsic_call(name, args, statement, named_arguments, arglist_argument)? {
+            self.record_selection(
+                callee,
+                name,
+                dm_ir::SelectedMeaning::IntrinsicCall(SymbolId::of(name)),
+            );
+            return Ok(());
+        }
+        self.named_call(
+            expr,
+            name,
+            args,
+            statement,
+            named_arguments,
+            arglist_argument,
+        )
+    }
+}

@@ -1,0 +1,9 @@
+/obj/gender_probe
+    gender = "male"
+/obj/gender_probe/child
+/obj/gender_probe/female
+    gender = "female"
+/obj/gender_probe/reset
+    gender = "neuter"
+/obj/gender_probe/plural
+    gender = "plural"

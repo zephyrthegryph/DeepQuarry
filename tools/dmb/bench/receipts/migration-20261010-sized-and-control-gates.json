@@ -1,0 +1,29 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_codegen_byond-efaba833b5463397.exe",
+  "binary_sha256": "9976affe450effc80a931bb7c2bdf2ac2f452731bca444c852617b1aa9bf7275",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "initializer::sized_array_tests",
+      "selected": [
+        "initializer::sized_array_tests::explicit_sized_values_match_authenticated_complete_words_and_fragment_assembly",
+        "initializer::sized_array_tests::implicit_allocation_and_inherited_override_match_authenticated_words"
+      ],
+      "exit": 0,
+      "seconds": 0.048449399997480214,
+      "stdout": "\nrunning 2 tests\ntest initializer::sized_array_tests::explicit_sized_values_match_authenticated_complete_words_and_fragment_assembly ... ok\ntest initializer::sized_array_tests::implicit_allocation_and_inherited_override_match_authenticated_words ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 310 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "simple::tests::typed_native_control",
+      "selected": [
+        "simple::tests::typed_native_control::typed_mixed_switch_cases_match_authenticated_native_matrix",
+        "simple::tests::typed_native_control::typed_try_loop_transfers_match_authenticated_native_matrix"
+      ],
+      "exit": 101,
+      "seconds": 0.04239509999752045,
+      "stdout": "\nrunning 2 tests\ntest simple::tests::typed_native_control::typed_mixed_switch_cases_match_authenticated_native_matrix ... FAILED\ntest simple::tests::typed_native_control::typed_try_loop_transfers_match_authenticated_native_matrix ... ok\n\nfailures:\n\n---- simple::tests::typed_native_control::typed_mixed_switch_cases_match_authenticated_native_matrix stdout ----\n\nthread 'simple::tests::typed_native_control::typed_mixed_switch_cases_match_authenticated_native_matrix' (30096) panicked at crates\\dm-codegen-byond\\src\\simple\\tests\\typed_native_control.rs:63:14:\ncalled `Result::unwrap()` on an `Err` value: DuplicateId { table: Class, id: 0 }\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\n\nfailures:\n    simple::tests::typed_native_control::typed_mixed_switch_cases_match_authenticated_native_matrix\n\ntest result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 310 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    }
+  ]
+}

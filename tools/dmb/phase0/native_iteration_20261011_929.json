@@ -1,0 +1,43 @@
+{
+  "scope": "One counted diagnostic-profile real DeepQuarry cohort; not release acceptance",
+  "receipt": "E:/dq-cache/dmb-native-iterations/20261011-194857-26cb0016/receipt.json",
+  "compiler_commit": "92987e8baf3a6b0296241b65ee67ae25b8baabed",
+  "compiler_sha256": "738cdfce0567d4803e02220be247c231b2c5f80cfc2605fcf15686e5348a2b24",
+  "status": "passed",
+  "workers": 2,
+  "job_memory_mib": 6144,
+  "child_watchdog_seconds": 300,
+  "children_reaped": true,
+  "times_launch_through_reap_seconds": [
+    {"kind": "initial", "daemon": 119.766, "fresh": 78.625},
+    {"kind": "unchanged", "daemon": 1.672, "fresh": 78.765},
+    {"kind": "body", "daemon": 80.0, "fresh": 92.953},
+    {"kind": "new_variable", "daemon": 83.734, "fresh": 84.062}
+  ],
+  "fresh_native_byte_oracles_passed": 4,
+  "body": {
+    "disk_procedure_hits": 48680,
+    "resident_procedure_hits": 0,
+    "recomputed_procedures": 1,
+    "retained_frontend_host_hit": false,
+    "frontend_wall_seconds": 10.330,
+    "abi_wall_seconds": 7.242,
+    "lowering_wall_seconds": 18.355,
+    "initializer_wall_seconds": 25.141,
+    "link_wall_seconds": 2.825,
+    "composition_wall_seconds": 4.552,
+    "lookup_summed_worker_wall_seconds": 23.071
+  },
+  "memory": {
+    "peak_owned_job_commit_bytes": 6152290304,
+    "scope": "Windows job commit; not working-set or strict private peak",
+    "artifact_release_seconds_observed": 34.368,
+    "session_release_seconds_observed": 4.655,
+    "remaining_problem": "Pressure evicts retained frontend/query host; subsequent edits hydrate disk artifacts"
+  },
+  "previous_same_profile_body_seconds": 95.578,
+  "previous_same_profile_structural_seconds": 85.359,
+  "byond_structural_gate": "open: unexplained differences; fresh-native consistency is not BYOND semantic parity",
+  "full_runtime_baseline": "open",
+  "total_harness_seconds": 1007.0
+}

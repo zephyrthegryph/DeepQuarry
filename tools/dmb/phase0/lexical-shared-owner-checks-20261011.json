@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "source_commit": "eb0f48a41c076d39092488ec9411d5157f2c8edf",
+  "source_archive_sha256": "f021abeae67ce163e4961a49cbefe452544ab9517e8b444f5a96add2ced292f3",
+  "scope": "two bounded shared dictionary/current-answer fixtures; no runtime, performance or full migration acceptance",
+  "status": "passed",
+  "selected_tests": 2,
+  "receipts": [
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-204033-2b18f856-job-cargo.json",
+      "sha256": "3fbb7552bb3fdeb8f7aaa488f80f3bdcb1e8727d63b86ae47cba6acfc3374d70",
+      "receipt": {
+        "command": [
+          "E:/cargo/bin/cargo.exe",
+          "test",
+          "--lib",
+          "--no-run",
+          "--locked",
+          "--offline",
+          "-j1",
+          "-p",
+          "dm-ir",
+          "-p",
+          "dm-tree",
+          "--config",
+          "profile.test.package.dm-ir.debug=0"
+        ],
+        "exit_code": 0,
+        "seconds": 104.18699999999808,
+        "memory_cap": 4000000000,
+        "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-204033-2b18f856-job-cargo.log",
+        "error": null,
+        "cleanup": {
+          "reaped": true,
+          "error": null,
+          "memory": {
+            "configured_job_memory_bytes": 3999997952,
+            "peak_job_commit_bytes": 1797488640,
+            "peak_process_commit_bytes": 1766694912,
+            "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+          }
+        },
+        "scope": "bounded correctness build; not a compiler performance benchmark"
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-204258-f9f69fd9-focused.json",
+      "sha256": "ded34464876a234a04a9f3cb4a05fe0b9496248d441ad0f1e8ebacd79e328b2e",
+      "receipt": {
+        "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_ir-2334686079acd185.exe",
+        "binary_sha256": "66c1eae6edfe5b637cfc6bffb65f023db320d88d37d7587aa0f86893cb3d81ca",
+        "scope": "focused fixture execution, not full suite or runtime parity",
+        "rows": [
+          {
+            "filter": "symbols::tests::shared_text_lookup_preserves_multilevel_overlay_owners_and_absence",
+            "selected": [
+              "symbols::tests::shared_text_lookup_preserves_multilevel_overlay_owners_and_absence"
+            ],
+            "exit": 0,
+            "seconds": 0.01599999999962165,
+            "stdout": "\nrunning 1 test\ntest symbols::tests::shared_text_lookup_preserves_multilevel_overlay_owners_and_absence ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 74 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          }
+        ]
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-204258-7cd5e00e-focused.json",
+      "sha256": "b452573c3964756556a05785baebc4bbd975ea480a1bd440713bee59c13b31a9",
+      "receipt": {
+        "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_tree-d24004216c90a625.exe",
+        "binary_sha256": "dee6e3ef4ad08622ce46a4b9bab9f02948c6f6d7f8cdf6b4c82c3696cec83aa8",
+        "scope": "focused fixture execution, not full suite or runtime parity",
+        "rows": [
+          {
+            "filter": "type_paths::tests::lexical_observations_share_dictionary_owner_and_compare_exact_content",
+            "selected": [
+              "type_paths::tests::lexical_observations_share_dictionary_owner_and_compare_exact_content"
+            ],
+            "exit": 0,
+            "seconds": 0.046999999998661224,
+            "stdout": "\nrunning 1 test\ntest type_paths::tests::lexical_observations_share_dictionary_owner_and_compare_exact_content ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 313 filtered out; finished in 0.00s\n\n",
+            "stderr": ""
+          }
+        ]
+      }
+    }
+  ]
+}

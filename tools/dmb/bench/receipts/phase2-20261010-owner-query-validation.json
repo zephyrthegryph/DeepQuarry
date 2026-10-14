@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "scope": "Focused migration checks, not whole-program runtime or performance acceptance",
+  "focused_checks_passed": 55,
+  "checks": [
+    {"package": "dm-session", "filter": "artifacts::tests", "count": 12, "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-235853-1d97e3eb.json"},
+    {"package": "dm-tree", "filter": "resolver::storage_inventory::uniqueness::tests", "count": 1, "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-000009-99ce73ee.json"},
+    {"package": "dm-preprocess", "filter": "regions::region_memo", "count": 11, "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-000452-9f41bc88.json"},
+    {"package": "dmbc", "filter": "class_projection::members::", "count": 5, "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-000613-62ab2cf7.json"},
+    {"package": "dmbc", "filters": ["daemon::query::tests", "daemon::service::queue_tests", "startup::static_certificate_tests", "heap_census::expansion_inputs::tests", "class_projection::headers::tests", "lowering_memo_compact::tests"], "count": 26, "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-000943-c4bc74c6-focused.json"}
+  ],
+  "workspace_all_targets": {"passed": true, "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-000944-c83b4cd5.json"},
+  "captured_byond_golden_fixtures": ["tools/dmb/fixtures/native_compiler/mob_settings", "tools/dmb/fixtures/native_compiler/gender_settings"],
+  "remaining_limits": [
+    "Memory savings and incremental timings of this batch are not measured yet.",
+    "Modified helper instances retain the rich fallback until a current expression issuer is available.",
+    "Global-variable absence and invalid-setting diagnostic classification remain incomplete.",
+    "Whole-program BYOND structural acceptance and full runtime baseline are open.",
+    "The 300-commit replay and real six-worktree acceptance are not complete."
+  ]
+}

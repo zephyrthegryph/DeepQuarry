@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "scope": "Targeted decoded comparison of existing pinned DeepQuarry client initializer after cohort completion; no runtime, no new compile, no full semantic parity inference.",
+  "cohort_receipt": "E:\\dq-cache\\dmb-native-iterations\\20261012-115006-392c2f27\\receipt.json",
+  "cohort_receipt_sha256": "07fa0f6f37ca036b8a8a1c40195a44715ae7b96e7d3d30baeab38513eeda3b36",
+  "timings_launch_through_reap_seconds": {
+    "initial": 171.78368729999966,
+    "unchanged": 3.055652299999565,
+    "body": 78.10529019999922,
+    "structural": 103.20672250000007
+  },
+  "all_four_fresh_native_dmb_rsc_oracles": true,
+  "owned_job_reaped": true,
+  "BYOND_baseline_gate": "open",
+  "runtime": "not run",
+  "targeted_receipt": "E:\\dq-cache\\dmb-native-iterations\\20261012-115006-392c2f27\\client-init-targeted\\receipt.json",
+  "targeted_receipt_sha256": "6c6cd35a50b8cf231eed2b26bc85d6c2157e7d2e1a936eb7005d25872fe142f8",
+  "field_strings": {
+    "byond": {
+      "94990": "description_holders",
+      "94991": "tgui_windows"
+    },
+    "native": {
+      "9025": "description_holders",
+      "15100": "tgui_windows"
+    }
+  },
+  "finding": "description_holders and tgui_windows allocation instructions are present in both outputs. BYOND places them first; native places them after other client allocations. The structural summary deleted examples represent positional moves, not missing initialization.",
+  "allocations": {
+    "description_holders": {
+      "byond_string_id": 94990,
+      "native_string_id": 9025,
+      "byond_word_offsets": [
+        4,
+        6,
+        7
+      ],
+      "native_word_offsets": [
+        88,
+        90,
+        91
+      ],
+      "instructions": "PushInt0; EmptyList; SetVar(src.description_holders)"
+    },
+    "tgui_windows": {
+      "byond_string_id": 94991,
+      "native_string_id": 15100,
+      "byond_word_offsets": [
+        17,
+        19
+      ],
+      "native_word_offsets": [
+        101,
+        103
+      ],
+      "instructions": "NewList0; SetVar(src.tgui_windows)"
+    }
+  },
+  "limitations": "No claim that initializer ordering generally harmless; constructors or effects in other owners need targeted trace evidence. No production fix justified for missing client allocation."
+}

@@ -1,0 +1,5 @@
+macro "default"
+window "default"
+    elem "main"
+        type = MAIN
+        icon = 'missing.png'

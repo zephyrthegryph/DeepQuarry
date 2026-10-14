@@ -1,0 +1,4 @@
+/datum/probe
+    var/value = 0
+    value = 1
+#include "child.dm"

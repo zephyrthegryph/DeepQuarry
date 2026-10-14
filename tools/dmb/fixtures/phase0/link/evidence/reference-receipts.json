@@ -1,0 +1,278 @@
+[
+  {
+    "case": "preprocess-child-effects",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-child-effects\\source\\child-effects\\phase0_preprocess.dme",
+    "source_sha256": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.34563229999912437,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-child-effects\\source\\child-effects\\phase0_preprocess.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-child-effects\\byond-compile.log"
+    }
+  },
+  {
+    "case": "preprocess-incoming-internal",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-incoming-internal\\source\\incoming-internal\\phase0_preprocess.dme",
+    "source_sha256": "e7562821dd99f3df69071c5f1a146b3821ffc36c427c7be1c2fc352003684006",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.3421602000016719,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-incoming-internal\\source\\incoming-internal\\phase0_preprocess.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-incoming-internal\\byond-compile.log"
+    }
+  },
+  {
+    "case": "preprocess-repeated",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-repeated\\source\\repeated\\phase0_preprocess.dme",
+    "source_sha256": "981e9d024b545cd07e067b2c54f5c8f58dfe459154a2d4c16a2380815357b289",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.3297737999964738,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-repeated\\source\\repeated\\phase0_preprocess.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-repeated\\byond-compile.log"
+    }
+  },
+  {
+    "case": "preprocess-conditional-boundary",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-conditional-boundary\\source\\conditional-boundary\\phase0_preprocess.dme",
+    "source_sha256": "209c8f7262809145c7f4852a7939a19d83299ff3e9f2e3ae9cfc728a8ca936ff",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.32351590000325814,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-conditional-boundary\\source\\conditional-boundary\\phase0_preprocess.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-conditional-boundary\\byond-compile.log"
+    }
+  },
+  {
+    "case": "preprocess-joined-expression",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-joined-expression\\source\\joined-expression\\phase0_preprocess.dme",
+    "source_sha256": "09e4564f920da91a3293c7c9503487ac2e602b84c2f7eaa49a06d13b11236bb0",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.3307040999934543,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-joined-expression\\source\\joined-expression\\phase0_preprocess.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-joined-expression\\byond-compile.log"
+    }
+  },
+  {
+    "case": "preprocess-file-dir-stack",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-file-dir-stack\\source\\file-dir-stack\\phase0_preprocess.dme",
+    "source_sha256": "0300926dc10dab03b96eb12c9a80fe45634a84e65f50428cb703afe1a764dc57",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.32508409999718424,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-file-dir-stack\\source\\file-dir-stack\\phase0_preprocess.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-file-dir-stack\\byond-compile.log"
+    }
+  },
+  {
+    "case": "preprocess-paths-origins",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-paths-origins\\source\\paths-origins\\phase0_preprocess.dme",
+    "source_sha256": "c58a78b67e3a8d5a37aa4b0b1ee4c07e642e4ff52110a44e7eda599191a5d7ce",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.3366760999924736,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-paths-origins\\source\\paths-origins\\phase0_preprocess.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-paths-origins\\byond-compile.log"
+    }
+  },
+  {
+    "case": "preprocess-diagnostics",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-diagnostics\\source\\diagnostics\\phase0_preprocess.dme",
+    "source_sha256": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+    "expected_compile_error": true,
+    "byond_compile": {
+      "exit_code": 4294967295,
+      "seconds": 0.35057149999192916,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-diagnostics\\source\\diagnostics\\phase0_preprocess.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-diagnostics\\byond-compile.log"
+    }
+  },
+  {
+    "case": "preprocess-non-text",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-non-text\\source\\non-text\\phase0_preprocess.dme",
+    "source_sha256": "f468e5de39c2c35a1057e9784af5e8424a88796823b870bcb33efada6cb0c8bc",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.33922639999946114,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-non-text\\source\\non-text\\phase0_preprocess.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-non-text\\byond-compile.log"
+    }
+  },
+  {
+    "case": "preprocess-deferred-manifest",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-deferred-manifest\\source\\deferred-manifest\\phase0_preprocess.dme",
+    "source_sha256": "8dd55a10445c55678e7a50e8aa462e2f7ffb06bb0dd4333b449d3e64caa5342f",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.34583520000160206,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-deferred-manifest\\source\\deferred-manifest\\phase0_preprocess.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\preprocess-deferred-manifest\\byond-compile.log"
+    }
+  },
+  {
+    "case": "link-observable",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-observable\\source\\observable.dme",
+    "source_sha256": "d400f9b88b6f26257893d53a102ca469c026cd730d2dfab7e23e4a41ad09d2a5",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.35787390000768937,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-observable\\source\\observable.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-observable\\byond-compile.log"
+    },
+    "byond_runtime": {
+      "exit_code": 0,
+      "seconds": 1.350693100001081,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-observable\\source\\observable.dmb",
+        "0",
+        "-trusted",
+        "-close"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-observable\\byond-runtime.log"
+    }
+  },
+  {
+    "case": "link-lists",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-lists\\source\\lists.dme",
+    "source_sha256": "b7ae303439e5933aca5cfdbdbe464481a3ede0e13bf6400e5e3ae752bfa30e66",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.33626140000706073,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-lists\\source\\lists.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-lists\\byond-compile.log"
+    },
+    "byond_runtime": {
+      "exit_code": 0,
+      "seconds": 1.1163524000003235,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-lists\\source\\lists.dmb",
+        "0",
+        "-trusted",
+        "-close"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-lists\\byond-runtime.log"
+    }
+  },
+  {
+    "case": "link-initialization",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-initialization\\source\\initialization.dme",
+    "source_sha256": "13aac7099a297d3f6eca4f3bf7c77f1c3e09b3ede1c76293e45d61659b13b4ab",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.3458784999966156,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-initialization\\source\\initialization.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-initialization\\byond-compile.log"
+    },
+    "byond_runtime": {
+      "exit_code": 0,
+      "seconds": 1.177802000005613,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-initialization\\source\\initialization.dmb",
+        "0",
+        "-trusted",
+        "-close"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-initialization\\byond-runtime.log"
+    }
+  },
+  {
+    "case": "link-resources",
+    "source": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\source\\resources.dme",
+    "source_sha256": "745fde03f320a0ebdee6d573ff2032769ca91bba1f0f37e832480e046466459e",
+    "expected_compile_error": false,
+    "byond_compile": {
+      "exit_code": 0,
+      "seconds": 0.3394574000121793,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\source\\resources.dme"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\byond-compile.log"
+    },
+    "byond_runtime": {
+      "exit_code": 0,
+      "seconds": 1.1452409000048647,
+      "timed_out": false,
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+        "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\source\\resources.dmb",
+        "0",
+        "-trusted",
+        "-close"
+      ],
+      "log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\byond-runtime.log"
+    }
+  }
+]

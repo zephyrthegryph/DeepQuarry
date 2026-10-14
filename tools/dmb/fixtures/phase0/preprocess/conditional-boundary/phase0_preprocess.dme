@@ -1,0 +1,5 @@
+#define ENABLE 1
+#if ENABLE
+#include "child.dm"
+var/after = ENABLE
+#endif

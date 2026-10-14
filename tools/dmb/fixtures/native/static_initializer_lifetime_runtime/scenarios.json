@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "steps": [
+    {
+      "name": "initial",
+      "expected": [
+        1,
+        7,
+        7,
+        19,
+        2,
+        11,
+        22
+      ]
+    },
+    {
+      "name": "unchanged",
+      "expected": [
+        1,
+        7,
+        7,
+        19,
+        2,
+        11,
+        22
+      ]
+    },
+    {
+      "name": "body",
+      "before": "    return 7\n",
+      "after": "    return 13\n",
+      "expected": [
+        1,
+        13,
+        13,
+        19,
+        2,
+        11,
+        22
+      ]
+    },
+    {
+      "name": "structural",
+      "before": "    var/instance_value\n",
+      "after": "    var/instance_value\n    var/unrelated_default = 31\n",
+      "expected": [
+        1,
+        13,
+        13,
+        19,
+        2,
+        11,
+        22
+      ]
+    }
+  ]
+}

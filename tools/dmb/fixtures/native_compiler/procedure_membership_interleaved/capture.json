@@ -1,0 +1,38 @@
+{
+  "scope": "BYOND-only method membership compile oracle",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "inspector_sha256": "62f508de383b748f26914c70c1bf8a1ecf9b1712c3eb5225bfd1c5fd5e009fcf",
+  "source_sha256": "802c77caf11c1f109e992c29ce4ae10a0d07dcad353e4e6178f17ba7358c229d",
+  "compile_exit": 0,
+  "class_exit": 0,
+  "dmb_sha256": "18cdd055fac42a82098bea7523f467230dddbceb8dbc8a21dfb6e9eb96348885",
+  "compiler_sha256_after": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "inspector_sha256_after": "62f508de383b748f26914c70c1bf8a1ecf9b1712c3eb5225bfd1c5fd5e009fcf",
+  "inspection": [
+    {
+      "label": "membership",
+      "exit": 0
+    },
+    {
+      "label": "proc0",
+      "exit": 0
+    },
+    {
+      "label": "proc1",
+      "exit": 0
+    },
+    {
+      "label": "proc2",
+      "exit": 0
+    },
+    {
+      "label": "proc3",
+      "exit": 0
+    },
+    {
+      "label": "proc4",
+      "exit": 0
+    }
+  ],
+  "inspector_sha256_final": "62f508de383b748f26914c70c1bf8a1ecf9b1712c3eb5225bfd1c5fd5e009fcf"
+}

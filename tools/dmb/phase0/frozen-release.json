@@ -1,0 +1,44 @@
+{
+  "reference_commit": "ac1af55d1a9a8e023e46bd058be59ed82c503f52",
+  "profile": "release, thin LTO, line-tables-only debug, codegen-units16",
+  "production_source": "Initial release built before Clippy hygiene; original ac1af55d1a production compiler",
+  "build_log": "D:/dmb-native-v2-phase0/release-build.log",
+  "files": [
+    {
+      "name": "dm-compile.exe",
+      "path": "D:\\dmb-native-v2-phase0\\reference-release\\dm-compile.exe",
+      "bytes": 6366208,
+      "sha256": "A9CADAC131C0E8C6D112A4E0C05526692330A3D8FFC515E1A3C94E37A72E56D7"
+    },
+    {
+      "name": "dm_compile.pdb",
+      "path": "D:\\dmb-native-v2-phase0\\reference-release\\dm_compile.pdb",
+      "bytes": 23056384,
+      "sha256": "236459498E09B158FB091D6521F1503B8CDE7C0658E2CBB03D39522B65F5F94D"
+    },
+    {
+      "name": "dm-compiled.exe",
+      "path": "D:\\dmb-native-v2-phase0\\reference-release\\dm-compiled.exe",
+      "bytes": 6176256,
+      "sha256": "5D75AC7D4AA248DAD46917E46F5B4ED996A5C9AF3C41929C16355A104E5C5F16"
+    },
+    {
+      "name": "dm_compiled.pdb",
+      "path": "D:\\dmb-native-v2-phase0\\reference-release\\dm_compiled.pdb",
+      "bytes": 22671360,
+      "sha256": "431FC665ABE5654ED4FB77FB5B1FD4A3C4F13886688C0674B4AE0F94039D03E0"
+    },
+    {
+      "name": "dmb-inspect.exe",
+      "path": "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+      "bytes": 3240448,
+      "sha256": "AE3659B4697F970E8D92A0D8556DF3DB1247FA4501851A833885DE3E35608F45"
+    },
+    {
+      "name": "dmb_inspect.pdb",
+      "path": "D:\\dmb-native-v2-phase0\\reference-release\\dmb_inspect.pdb",
+      "bytes": 10825728,
+      "sha256": "55A232BF7E2F760F0B2198C27FE76DF4E3EDD67ECD608709EADAC86917BC5B85"
+    }
+  ]
+}

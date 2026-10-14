@@ -1,0 +1,11 @@
+[package]
+name = "dm-cache"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Immutable self-contained validated compiler cache segments"
+
+[dependencies]
+fs2 = "0.4"
+memmap2 = "0.9"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }

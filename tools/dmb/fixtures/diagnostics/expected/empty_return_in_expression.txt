@@ -1,0 +1,2 @@
+empty_return_in_expression.dm:2:error: missing expression
+empty_return_in_expression.dmb - 1 error, 0 warnings

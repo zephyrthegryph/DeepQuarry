@@ -1,0 +1,18 @@
+[
+  {
+    "label": "startup",
+    "value": "global_z|static_z|local_static|global_a|"
+  },
+  {
+    "label": "base_constructed",
+    "value": "global_z|static_z|local_static|global_a|instance_z|base_New|"
+  },
+  {
+    "label": "local_static_twice",
+    "value": "global_z|static_z|local_static|global_a|instance_z|base_New|"
+  },
+  {
+    "label": "child_constructed",
+    "value": "global_z|static_z|local_static|global_a|instance_z|base_New|instance_z|child_value|base_New|child_New|"
+  }
+]

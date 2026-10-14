@@ -963,3 +963,7 @@ mod tests {
         assert_eq!(code[4].operands, [5]);
     }
 }
+
+#[path = "builtin_named_calls.rs"]
+mod named_calls;
+pub use named_calls::is_intrinsic_named_call;

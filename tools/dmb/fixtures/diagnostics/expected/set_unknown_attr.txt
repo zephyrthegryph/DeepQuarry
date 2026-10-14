@@ -1,0 +1,2 @@
+set_unknown_attr.dm:2:error: frobnicate: undefined var
+set_unknown_attr.dmb - 1 error, 0 warnings

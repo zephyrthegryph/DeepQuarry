@@ -1,0 +1,5 @@
+proc#0 /client/proc/proof
+0000 0060 PushVal [40, 0]
+0003 0001 New [0]
+0005 0034 SetVar [65500, 65486, 168]
+0009 0000 End []

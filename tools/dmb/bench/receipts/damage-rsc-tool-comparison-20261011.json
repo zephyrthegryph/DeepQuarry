@@ -1,0 +1,75 @@
+{
+  "schema_version": 2,
+  "snapshot_id": "1313b8631705e9a368ef99dbdba88940688f92cc9513403776f46b0a0787687b",
+  "complete": true,
+  "expected_resources": 3852,
+  "actual_resources": 3852,
+  "differences": 0,
+  "unknown_wrappers": 0,
+  "examples": [],
+  "semantic_equivalent": true,
+  "expected_records": 3860,
+  "actual_records": 3852,
+  "expected_duplicate_records": 8,
+  "actual_duplicate_records": 0,
+  "duplicate_names": [
+    {
+      "name": "icons/mob/human_races/cyberlimbs/cit/replikant/replikant.dmi",
+      "expected": 2,
+      "actual": 1,
+      "expected_conflict": false,
+      "actual_conflict": false
+    },
+    {
+      "name": "icons/mob/human_races/r_vox_ch.dmi",
+      "expected": 2,
+      "actual": 1,
+      "expected_conflict": false,
+      "actual_conflict": false
+    },
+    {
+      "name": "icons/mob/mobs_monsters/tgclowns.dmi",
+      "expected": 2,
+      "actual": 1,
+      "expected_conflict": false,
+      "actual_conflict": false
+    },
+    {
+      "name": "icons/mob/wolfpelt_vr.dmi",
+      "expected": 2,
+      "actual": 1,
+      "expected_conflict": false,
+      "actual_conflict": false
+    },
+    {
+      "name": "sound/items/pickup/flesh.ogg",
+      "expected": 2,
+      "actual": 1,
+      "expected_conflict": false,
+      "actual_conflict": false
+    },
+    {
+      "name": "sound/mecha/mechmove03.ogg",
+      "expected": 2,
+      "actual": 1,
+      "expected_conflict": false,
+      "actual_conflict": false
+    },
+    {
+      "name": "sound/mob/spooky/decay1.ogg",
+      "expected": 2,
+      "actual": 1,
+      "expected_conflict": false,
+      "actual_conflict": false
+    },
+    {
+      "name": "sound/rakshasa/Decay3.ogg",
+      "expected": 2,
+      "actual": 1,
+      "expected_conflict": false,
+      "actual_conflict": false
+    }
+  ],
+  "distinct_name_order_equal": true,
+  "timestamp_differences": 3845
+}
