@@ -37,13 +37,7 @@ CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
 		rel_add(src, nameof(test_humans), H, body_type)
 	#endif
 
-	var/list/scan = subtypesof(/obj/item/clothing)
-	scan -= typesof(/obj/item/clothing/head/hood) // These are part of clothing, need to be tested uniquely
-	// Remove material armors, as dev_warning cannot be used to set their name
-	scan -= /obj/item/clothing/suit/armor/material
-	scan -= /obj/item/clothing/head/helmet/material
-	scan -= /obj/item/clothing/ears/offear // This is used for equip logic, not ingame
-	scan -= /obj/item/clothing/mask/ai // Breaks unit test entirely TODO
+	var/list/scan = clothing_candidates()
 
 	for(var/path as anything in sweep_types(scan))
 		var/obj/item/clothing/C = new path(storage)
@@ -221,7 +215,7 @@ CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
 	tier = TEST_TIER_NORMAL
 
 /datum/unit_test/all_clothing_shall_be_valid/representative/curated_types()
-	return list(
+	var/list/selected = list(
 		/obj/item/clothing/under/color/grey,
 		/obj/item/clothing/suit/armor/vest,
 		/obj/item/clothing/suit/storage/hooded/wintercoat,
@@ -234,3 +228,36 @@ CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
 		/obj/item/clothing/ears/earmuffs,
 		/obj/item/clothing/accessory/armband,
 	)
+
+	// Retain the fixed slot families, then exercise one candidate per declared
+	// icon file. Inspecting type defaults does not construct the whole sweep.
+	var/list/icon_files = list()
+	for(var/obj/item/clothing/path as anything in selected)
+		icon_files["[initial(path.icon)]"] = TRUE
+	for(var/obj/item/clothing/path as anything in clothing_candidates())
+		var/icon_file = "[initial(path.icon)]"
+		if(icon_files[icon_file])
+			continue
+		selected += path
+		icon_files[icon_file] = TRUE
+	return selected
+/// Both tiers use the same candidate set and hood/material exclusions.
+/datum/unit_test/all_clothing_shall_be_valid/proc/clothing_candidates()
+	var/list/scan = subtypesof(/obj/item/clothing)
+	scan -= typesof(/obj/item/clothing/head/hood)
+	scan -= /obj/item/clothing/suit/armor/material
+	scan -= /obj/item/clothing/head/helmet/material
+	scan -= /obj/item/clothing/ears/offear
+	scan -= /obj/item/clothing/mask/ai
+	return scan
+
+/datum/unit_test/all_clothing_shall_be_valid/representative/Run()
+	var/list/selected = curated_types()
+	var/list/covered_icons = list()
+	for(var/obj/item/clothing/path as anything in selected)
+		covered_icons["[initial(path.icon)]"] = TRUE
+	var/list/candidates = clothing_candidates()
+	TEST_ASSERT(length(selected) < length(candidates), "Normal-tier coverage must remain smaller than the exhaustive sweep")
+	for(var/obj/item/clothing/path as anything in candidates)
+		TEST_ASSERT(covered_icons["[initial(path.icon)]"], "The representative must cover icon file [initial(path.icon)]")
+	return ..()

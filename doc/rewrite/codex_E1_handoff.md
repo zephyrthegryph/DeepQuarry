@@ -1,0 +1,3 @@
+# E1 normal clothing representative
+
+Master already assigns the complete clothing sweep to TEST_TIER_EXHAUSTIVE and has a normal representative with eleven fixed slot families. This branch completes the missing per-icon-file coverage: retain those fixed families and select one additional candidate for every distinct declared clothing icon file, using type defaults without constructing the whole sweep. Both tiers share the original exclusions and run the unchanged structural/art assertions. The representative asserts that every candidate icon is covered and that the selected set is smaller than the exhaustive set. No gameplay, tracked setters or ownership declarations changed. Final focused representative gate pending; no full suite, push or merge.
