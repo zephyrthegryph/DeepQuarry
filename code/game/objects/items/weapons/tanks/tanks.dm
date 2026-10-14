@@ -239,7 +239,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	else
 		if(!src.proxyassembly.assembly.a_left)
 			assy.a_right.dropInto(user.loc)
-			rel_clear(assy.a_right, nameof(/client::holder))
+			rel_clear(assy.a_right, nameof(/obj/item/assembly::holder))
 			rel_take(assy, nameof(assy.a_right))
 			rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 			destroyed(assy, user)

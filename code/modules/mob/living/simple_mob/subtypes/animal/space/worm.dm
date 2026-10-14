@@ -465,6 +465,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm)
+	ref_one(nameof(previous), /mob/living/simple_mob/animal/space/space_worm)
+	ref_one(nameof(next), /mob/living/simple_mob/animal/space/space_worm)
+	ref_one(nameof(currentlyEating), /atom)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 	immune_to_incapacitation()

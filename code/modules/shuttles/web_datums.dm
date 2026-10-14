@@ -16,7 +16,7 @@
 	rel_set(src, nameof(start), _start)
 	rel_set(src, nameof(end), _end)
 	if(_interim)
-		interim = SSshuttles.get_landmark(_interim)
+		rel_set(src, nameof(interim), SSshuttles.get_landmark(_interim))
 	travel_time = _time
 	one_way = _oneway
 
@@ -369,5 +369,6 @@ CAPABILITIES(/datum/shuttle_web_master)
 CAPABILITIES(/datum/shuttle_route)
 	ref_one(nameof(start))
 	ref_one(nameof(end))
+	ref_one(nameof(interim))
 CAPABILITIES(/datum/shuttle_destination)
 	ref_many(nameof(routes))

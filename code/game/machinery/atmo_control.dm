@@ -461,7 +461,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/large_tank_control)
 		return FALSE
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, nameof(/datum/admin_rank::source), src)
+	rel_set(signal, nameof(/datum/signal::source), src)
 	switch(A.key)
 		if("in_refresh_status")
 			input_info = null
@@ -604,7 +604,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 		return FALSE
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, nameof(/datum/admin_rank::source), src)
+	rel_set(signal, nameof(/datum/signal::source), src)
 	switch(A.key)
 		if("in_refresh_status")
 			input_info = null
@@ -749,7 +749,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, nameof(/datum/admin_rank::source), src)
+	rel_set(signal, nameof(/datum/signal::source), src)
 	signal.data = list(
 		"tag" = device_tag,
 		"status" = 1,
@@ -769,7 +769,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, nameof(/datum/admin_rank::source), src)
+	rel_set(signal, nameof(/datum/signal::source), src)
 	signal.data = list(
 		"tag" = device_tag,
 		"power_toggle" = 1,
@@ -785,7 +785,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, nameof(/datum/admin_rank::source), src)
+	rel_set(signal, nameof(/datum/signal::source), src)
 	signal.data = list(
 		"tag" = device_tag,
 		"inject" = 1,

@@ -82,7 +82,7 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 		return
 	var/datum/ntnet_conversation/C = new /datum/ntnet_conversation()
 	C.add_client(src)
-	rel_set(C, nameof(/datum/ntnet_conversation/::operator), src)
+	rel_set(C, nameof(/datum/ntnet_conversation::operator), src)
 	C.title = channel_title
 	active_channel = C.id
 	return TRUE

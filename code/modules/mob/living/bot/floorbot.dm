@@ -132,24 +132,24 @@ CAPABILITIES(/mob/living/bot/floorbot)
 #ifdef FLOORBOT_PATCHES_HOLES
 		for(var/turf/space/T in view(src)) // Breaches are of higher priority
 			if(confirmTarget(T))
-				target = T
+				rel_set(src, nameof(target), T)
 				return
 
 		for(var/turf/simulated/mineral/floor/T in view(src)) // Asteroids are of smaller priority
 			if(confirmTarget(T))
-				target = T
+				rel_set(src, nameof(target), T)
 				return
 #endif
 		// Look for broken floors even if we aren't improvefloors
 		for(var/turf/simulated/floor/T in view(src))
 			if(confirmTarget(T))
-				target = T
+				rel_set(src, nameof(target), T)
 				return
 
 	if(amount < maxAmount && (eattiles || maketiles))
 		for(var/obj/item/stack/S in view(src))
 			if(confirmTarget(S))
-				target = S
+				rel_set(src, nameof(target), S)
 				return
 
 /mob/living/bot/floorbot/confirmTarget(atom/A) // The fact that we do some checks twice may seem confusing but remember that the bot's settings may be toggled while it's moving and we want them to stop in that case

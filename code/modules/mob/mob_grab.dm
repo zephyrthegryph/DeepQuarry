@@ -192,6 +192,7 @@
 
 
 CAPABILITIES(/obj/item/grab)
+	ref_one(nameof(victim_at_make), /mob)
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	op("tighten", in_hand(), label("Tighten grip"), then(PROC_REF(interaction_tighten)))
 	// The hands-on inspection of a grabbed limb (mob_grab_specials.dm): each step starts the next, an interrupted one goes on to the next as well.

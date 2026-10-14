@@ -334,7 +334,7 @@ CAPABILITIES(/datum/prompt/choice/petrify_consent)
 		P.tint = tint
 		P.able_to_unpetrify = able_to_unpetrify
 		P.discard_clothes = discard_clothes
-		rel_set(P, nameof(/datum/accessory_stat_modifier::target), target_ref())
+		rel_set(P, nameof(/obj/item/petrifier::target), target_ref())
 		rel_add(src, nameof(/obj/machinery/petrification::remotes), P, target_ref())
 		user.put_in_hands(P)
 	return TRUE

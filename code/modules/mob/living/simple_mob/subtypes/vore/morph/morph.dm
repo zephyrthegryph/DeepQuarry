@@ -59,6 +59,8 @@
 	/obj/effect))
 
 CAPABILITIES(/mob/living/simple_mob/vore/morph)
+	ref_one(nameof(form), /atom/movable)
+	ref_one(nameof(original_mind), /datum/mind)
 	configure(mob_movement(bump = SLIME))
 	immune_to_incapacitation()
 	verb_entry(/mob/living/proc/ventcrawl)
@@ -66,6 +68,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph)
 	verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color)
 
 CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
+	ref_one(nameof(parent_morph), /mob/living/simple_mob/vore/morph)
+	ref_one(nameof(prey_body), /mob/living/carbon/human)
+	ref_one(nameof(prey_mind), /datum/mind)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 	verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color, hidden = TRUE)
 	param(nameof(prey_mind), pos = 1)

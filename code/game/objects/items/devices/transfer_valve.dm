@@ -140,7 +140,7 @@ CAPABILITIES(/obj/item/transfer_valve)
 	. = TRUE
 	if(attached_device)
 		attached_device.forceMove(get_turf(src))
-		rel_clear(attached_device, nameof(/client::holder))
+		rel_clear(attached_device, nameof(/obj/item/assembly::holder))
 		rel_take(src, nameof(/obj/item/transfer_valve::attached_device))
 	if(.)
 		add_fingerprint(user)

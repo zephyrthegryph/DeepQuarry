@@ -227,6 +227,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
+	ref_one(nameof(friend), /mob/living/carbon/human)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/appearance_switch)
 	verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/recolor)

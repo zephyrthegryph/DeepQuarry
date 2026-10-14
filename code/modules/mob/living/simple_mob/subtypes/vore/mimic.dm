@@ -121,6 +121,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	var/knockdown_chance = 10 //Stubbing your toe on furniture hurts.
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
+	ref_one(nameof(real_crate), /obj/structure/closet/crate)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 

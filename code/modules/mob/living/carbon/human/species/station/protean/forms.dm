@@ -50,6 +50,8 @@
 
 
 CAPABILITIES(/datum/forms)
+	ref_one(nameof(owner), /mob/living/carbon/human)
+	ref_one(nameof(current), /datum/form)
 	owns_many(nameof(forms))
 
 /// Form types this character can take, first one is the starting form.

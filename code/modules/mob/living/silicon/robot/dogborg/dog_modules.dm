@@ -88,6 +88,9 @@ CAPABILITIES(/obj/item/shockpaddles/robot/hound)
 	desc = "An advanced chemical synthesizer and injection system utilizing carrier's reserves, designed for heavy-duty medical equipment."
 	var/datum/matter_synth/water = null
 
+CAPABILITIES(/obj/item/reagent_containers/borghypo/hound)
+	ref_one(nameof(water), /datum/matter_synth)
+
 // More chems for Medihound
 TYPE_TABLE(/obj/item/reagent_containers/borghypo/hound, borghypo_reagent_ids, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL))
 
@@ -122,6 +125,7 @@ MSG_DEF(tongue/cram, span_notice("You begin cramming %T% down your throat..."), 
 MSG_DEF(tongue/lick_clean, span_notice("You begin to lick %T% clean..."), span_filter_notice("%U% begins to lick %T% clean..."))
 
 CAPABILITIES(/obj/item/robot_tongue)
+	ref_one(nameof(water), /datum/matter_synth)
 	configure(item_sounds(hit = SFX_EFFECTS_ATTACKBLOB))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	// a lick of anything but a person is five seconds of standing still; a person's face is instant (afterattack)
@@ -303,6 +307,7 @@ CAPABILITIES(/obj/item/pupscrubber)
 
 /// Using it in the hand asks what to do: check the reserves (and fabricate a light from them), or change the colour of the lights it makes.
 CAPABILITIES(/obj/item/lightreplacer/dogborg)
+	ref_one(nameof(glass), /datum/matter_synth)
 	op("choose", in_hand(), label("Reserves or colour"), priority(above("colour")),
 		asks(/datum/prompt/choice, fields = list("question" = "Do you wish to check the reserves or change the color?", "title" = "Selection List", "choices" = list("Reserves", "Color"), "buttons" = TRUE)),
 		then(PROC_REF(dogborg_chosen)))
@@ -479,6 +484,9 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 /obj/item/reagent_containers/glass/beaker/large/borg
 	var/mob/living/silicon/robot/R
 	var/last_robot_loc
+
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/large/borg)
+	ref_one(nameof(R), /mob/living/silicon/robot)
 
 /obj/item/reagent_containers/glass/beaker/large/borg/Initialize(mapload)
 	. = ..()

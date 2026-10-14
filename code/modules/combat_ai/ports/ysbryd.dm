@@ -75,4 +75,5 @@ TYPE_TABLE(/mob/living/simple_mob/ysbryd, get_ai_behaviors, list( \
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/ysbryd)
+	ref_one(nameof(chosen_target), /mob/living)
 	immune_to_incapacitation()

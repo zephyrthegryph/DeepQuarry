@@ -164,6 +164,7 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/fruitgland, poison_options, list( \
 	))
 
 CAPABILITIES(/obj/item/organ/internal/fruitgland)
+	ref_one(nameof(organ_owner), /mob/living)
 	configure(reagents(volume = nameof(usable_volume)))
 
 

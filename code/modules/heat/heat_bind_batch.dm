@@ -27,7 +27,7 @@
 
 /// Open bind scopes; create_heat_body() reserves while > 0.
 GLOBAL_VAR_INIT(dq_heat_bind_depth, 0)
-/// Atom -> its queued configure args (`handle, capacity, temperature, kind, target, conductance, keep`).
+/// Atom handle (entity_handle) -> its queued configure args (`handle, capacity, temperature, kind, target, conductance, keep`).
 GLOBAL_LIST_EMPTY(dq_heat_bind_pending)
 /// Reserved handles not yet handed out.
 GLOBAL_LIST_EMPTY(dq_heat_body_pool)
@@ -39,7 +39,7 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 #define DQ_HEAT_RESERVE_CHUNK 64
 
 /// Configures `A`'s pending heat body now if it has one (every read site calls this first).
-#define HEAT_BODY_RESOLVE(A) if(length(GLOB.dq_heat_bind_pending) && GLOB.dq_heat_bind_pending[A]) { dq_heat_bind_flush(list(A)) }
+#define HEAT_BODY_RESOLVE(A) if(length(GLOB.dq_heat_bind_pending) && GLOB.dq_heat_bind_pending[entity_handle_of(A)]) { dq_heat_bind_flush(list(A)) }
 
 /proc/dq_heat_bind_begin()
 	GLOB.dq_heat_bind_depth++
@@ -71,7 +71,7 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 	var/handle = dq_heat_body_take()
 	if(isnull(handle))
 		return null
-	GLOB.dq_heat_bind_pending[A] = list(handle, capacity, temperature, kind, target, conductance, keep ? TRUE : FALSE)
+	GLOB.dq_heat_bind_pending[entity_handle(A)] = list(handle, capacity, temperature, kind, target, conductance, keep ? TRUE : FALSE)
 	return handle
 
 /// Configures the pending bodies of `atoms` (default: all) in one Rust call, then runs
@@ -80,14 +80,26 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 	var/list/pending = GLOB.dq_heat_bind_pending
 	if(!length(pending))
 		return
-	var/list/which = atoms || pending.Copy()
+	var/list/which
+	if(atoms)
+		which = list()
+		for(var/atom/want as anything in atoms)
+			var/want_h = entity_handle_of(want)
+			if(want_h)
+				which += want_h
+	else
+		which = pending.Copy()
 	var/list/configure_args = list()
 	var/list/done = list()
-	for(var/atom/A as anything in which)
-		var/list/spec = pending[A]
+	for(var/h in which)
+		var/list/spec = pending[h]
 		if(!spec)
 			continue
-		pending -= A
+		pending -= h
+		// An entry whose atom no longer resolves is dropped.
+		var/atom/A = resolve_handle(h)
+		if(!A)
+			continue
 		// Released or replaced while pending: nothing to configure.
 		if(A.heat_body != spec[1])
 			continue
@@ -103,4 +115,4 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 /// `A`'s heat body is leaving: it is no longer pending.
 /proc/dq_heat_bind_forget(atom/A)
 	if(length(GLOB.dq_heat_bind_pending))
-		GLOB.dq_heat_bind_pending -= A
+		GLOB.dq_heat_bind_pending -= entity_handle_of(A)

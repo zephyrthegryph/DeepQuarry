@@ -34,6 +34,8 @@ CAPABILITIES(/mob/new_player)
 	rel_set(src, nameof(channel), CHANNEL)
 
 CAPABILITIES(/datum/news_panel)
+	ref_one(nameof(host), /mob/new_player)
+	ref_one(nameof(channel), /datum/feed_channel)
 	interface("LatestNews", title = "Latest News", state = nameof(GLOB.tgui_always_state))
 	op("next", ui_act("next"), then(PROC_REF(ui_act_next)))
 	op("prev", ui_act("prev"), then(PROC_REF(ui_act_prev)))

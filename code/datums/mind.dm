@@ -104,7 +104,7 @@ CAPABILITIES(/datum/mind)
 		rel_clear(current, nameof(current.mind))
 
 	if(new_character.mind)		//remove any mind currently in our new body's mind variable
-		rel_clear(new_character.mind, nameof(/datum/forms::current))
+		rel_clear(new_character.mind, nameof(/datum/mind::current))
 
 	rel_set(src, nameof(current), new_character) //link ourself to our new body
 	rel_set(new_character, nameof(new_character.mind), src) //and link our new body to ourself

@@ -132,6 +132,7 @@ MSG_DEF_SELF(glamour_face/no_targets, span_warning("There are no appropriate tar
 
 /// Old attack_self, as two ops by whether a homunculus exists: none yet, ask whose likeness; one summoned, ask what to do with it (and, to speak, what it says).
 CAPABILITIES(/obj/item/glamour_face)
+	links(/obj/item/glamour_face::homunculus, /mob/living/simple_mob/homunculus::owner)
 	op("self", in_hand(), label("Use"), when(req_is(nameof(homunculus), FALSE)), needs(req(PROC_REF(has_homunculus_targets), because = MSG(glamour_face/no_targets))), asks(/datum/prompt/choice, fields = list("title" = "homunculus", "question" = "Which target do you wish to create a homunculus of?", "choices" = computed(PROC_REF(homunculus_targets_now)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "target"), then(PROC_REF(homunculus_target_chosen)))
 	op("homunculus", in_hand(), label("Use"), when(req_is(nameof(homunculus), TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Actions", "question" = "What would you like to do with your homunculus?", "choices" = list("Recall", "Speak Through", "Cancel"), "buttons" = TRUE, "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "action"), asks(/datum/prompt/text, fields = list("title" = "Speak Through", "question" = "What should the homunculus say:", "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "words", when = PROC_REF(speaking_through)), then(PROC_REF(homunculus_action_chosen)))
 
@@ -333,7 +334,7 @@ TYPE_TABLE_DECLARE(/obj/structure/glamour_ring, other_choices, list("Yes", "No")
 		if(!istype(LL) || !COOLDOWN_FINISHED(LL, ring_cooldown))
 			to_chat(M, span_warning("You must wait a while before drawing energy from the glamour again."))
 			return OP_OK
-		var/datum/species/lleill/own = rel_private(L, nameof(/datum/dna::species)) // per-mob change: never mutate the shared species
+		var/datum/species/lleill/own = rel_private(L, nameof(/mob/living/carbon/human::species)) // per-mob change: never mutate the shared species
 		if(!istype(own))
 			return OP_OK
 		COOLDOWN_START(own, ring_cooldown, 10 MINUTES)

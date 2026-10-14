@@ -12,15 +12,12 @@ var	code/ATMOSPHERICS/components/binary_devices/pump.dm	var/datum/radio_frequenc
 var	code/ATMOSPHERICS/components/binary_devices/volume_pump.dm	var/datum/radio_frequency/radio_connection
 var	code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm	var/obj/machinery/atmospherics/node
 var	code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm	var/datum/pipe_network/network
-var	code/ATMOSPHERICS/components/portables_connector.dm	var/obj/machinery/portable_atmospherics/connected_device
 var	code/ATMOSPHERICS/components/portables_connector.dm	var/obj/machinery/atmospherics/node
 var	code/ATMOSPHERICS/components/portables_connector.dm	var/datum/pipe_network/network
 var	code/ATMOSPHERICS/components/trinary_devices/filter.dm	var/datum/radio_frequency/radio_connection
-var	code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm	var/obj/machinery/atmospherics/node3
 var	code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm	var/datum/pipe_network/network1
 var	code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm	var/datum/pipe_network/network2
 var	code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm	var/datum/pipe_network/network3
-var	code/ATMOSPHERICS/components/tvalve.dm	var/obj/machinery/atmospherics/node3
 var	code/ATMOSPHERICS/components/tvalve.dm	var/datum/pipe_network/network_node1
 var	code/ATMOSPHERICS/components/tvalve.dm	var/datum/pipe_network/network_node2
 var	code/ATMOSPHERICS/components/tvalve.dm	var/datum/pipe_network/network_node3
@@ -674,168 +671,16 @@ var	code/modules/mining/machinery/machine_unloading.dm	var/tmp/obj/machinery/min
 var	code/modules/mining/resonator.dm	var/tmp/mob/creator
 var	code/modules/mining/shelter_atoms.dm	var/tmp/obj/machinery/door/airlock/voidcraft/survival_pod/door
 var	code/modules/mining/shelter_atoms.dm	var/tmp/obj/machinery/light/target_light
-var	code/modules/mob/dead/observer/observer.dm	var/datum/visualnet/ghost/visualnet
-var	code/modules/mob/dead/observer/observer.dm	var/datum/hud/living/carbon/hud = null // hud
-var	code/modules/mob/freelook/ai/eye.dm	var/obj/machinery/hologram/holopad/holo = null
-var	code/modules/mob/freelook/chunk.dm	var/datum/obfuscation/obfuscation = new()
-var	code/modules/mob/freelook/eye.dm	var/datum/visualnet/visualnet
-var	code/modules/mob/holder.dm	/obj/item/holder/var/tmp/mob/held_at_make
-var	code/modules/mob/language/language_panel.dm	var/mob/host
-var	code/modules/mob/living/bot/bot.dm	var/atom/target = null
-var	code/modules/mob/living/bot/farmbot.dm	/mob/living/bot/farmbot/var/tmp/obj/structure/reagent_dispensers/watertank/tank_at_make
-var	code/modules/mob/living/bot/farmbot.dm	/obj/item/farmbot_arm_assembly/var/tmp/obj/tank_at_make
 var	code/modules/mob/living/butchering.dm	var/obj/meat_type // The meat object to drop
-var	code/modules/mob/living/carbon/brain/brain.dm	var/datum/mind_host/host
-var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/reagents/metabolism/bloodstream/bloodstr = null
-var	code/modules/mob/living/carbon/human/attacks_panel.dm	var/mob/living/carbon/human/host
-var	code/modules/mob/living/carbon/human/flavor_panel.dm	var/mob/living/carbon/human/host
-var	code/modules/mob/living/carbon/human/human_attackhand.dm	var/datum/unarmed_attack/default_attack
-var	code/modules/mob/living/carbon/human/human_defines.dm	var/mob/living/carbon/human/vr_holder = null
-var	code/modules/mob/living/carbon/human/human_defines.dm	var/mob/living/carbon/human/vr_link = null
-var	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	var/mob/living/homunculus // relation: the homunculus we summoned
-var	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	var/mob/living/owner
-var	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	var/obj/belly/target
-var	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	/obj/effect/abstract/dark_maw/var/tmp/mob/maw_user
-var	code/modules/mob/living/carbon/human/species/shadekin/state/shadekin.dm	VAR_PRIVATE/mob/living/owner
 var	code/modules/mob/living/carbon/human/species/species.dm	var/obj/effect/decal/cleanable/blood/tracks/move_trail = /obj/effect/decal/cleanable/blood/tracks/footprints // What marks are left when walking
-var	code/modules/mob/living/carbon/human/species/station/alraune.dm	var/mob/living/organ_owner = null
-var	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	var/mob/living/carbon/human/owner
-var	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	var/datum/form/current
-var	code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm	var/obj/item/rig/protean/rig
-var	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	var/datum/protean_power/power
-var	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	var/mob/living/carbon/human/soaking_wearer
-var	code/modules/mob/living/carbon/human/species/station/traits/states/_trait_state.dm	/datum/trait_state/var/mob/living/owner
-var	code/modules/mob/living/carbon/human/species/station/traits/states/crowd_detection.dm	VAR_PROTECTED/mob/living/carbon/human/human_parent
-var	code/modules/mob/living/carbon/human/species/station/traits/states/gargoyle.dm	var/obj/structure/gargoyle/statue //another easy ref
-var	code/modules/mob/living/carbon/human/species/station/xenochimera_state.dm	VAR_PRIVATE/mob/living/carbon/human/owner
-var	code/modules/mob/living/inventory.dm	var/mob/living/host
 var	code/modules/mob/living/life/life_sequence.dm	var/datum/gas_mixture/env
 var	code/modules/mob/living/life/living_systems.dm	/mob/living/var/mob/living/tf_mob_holder = null // ALLOW(base_vars): was a declared field on this type; moved, not added
-var	code/modules/mob/living/living.dm	var/mob/living/owner
-var	code/modules/mob/living/living.dm	var/atom/movable/screen/character_setup/screen_icon
-var	code/modules/mob/living/notes_panels.dm	var/mob/living/host
-var	code/modules/mob/living/notes_panels.dm	var/mob/living/host
-var	code/modules/mob/living/say.dm	var/mob/parent
-var	code/modules/mob/living/silicon/ai/ai.dm	var/obj/machinery/camera/camera = null
-var	code/modules/mob/living/silicon/ai/ai.dm	var/datum/malf_hardware/hardware = null // Installed piece of hardware.
-var	code/modules/mob/living/silicon/ai/ai.dm	var/obj/machinery/power/apc/hack = null // APC that is currently being hacked.
-var	code/modules/mob/living/silicon/ai/ai.dm	var/atom/movable/screen/movable/pic_in_pic/ai/master_multicam
-var	code/modules/mob/living/silicon/ai/ai.dm	/mob/living/silicon/ai/var/tmp/obj/item/mmi/brain_at_make
-var	code/modules/mob/living/silicon/ai/ai.dm	var/mob/living/silicon/ai/powered_ai = null
-var	code/modules/mob/living/silicon/ai/ai_remote_control.dm	var/mob/living/silicon/robot/deployed_shell = null //For shell control
-var	code/modules/mob/living/silicon/ai/multicam.dm	var/mob/living/silicon/ai/ai
 var	code/modules/mob/living/silicon/ai/multicam.dm	GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
-var	code/modules/mob/living/silicon/ai/multicam.dm	var/atom/movable/screen/movable/pic_in_pic/ai/screen
-var	code/modules/mob/living/silicon/pai/pai.dm	var/obj/machinery/camera/current = null
-var	code/modules/mob/living/silicon/pai/pai.dm	var/obj/item/paicard/card // The card we inhabit
-var	code/modules/mob/living/silicon/pai/pai.dm	var/obj/item/radio/borg/pai/radio // Our primary radio
-var	code/modules/mob/living/silicon/pai/pai.dm	var/obj/item/pai_cable/cable // The cable we produce and use when door or camera jacking
-var	code/modules/mob/living/silicon/pai/pai.dm	var/datum/data/record/medicalActive1 // Datacore record declarations for record software
-var	code/modules/mob/living/silicon/pai/pai.dm	var/datum/data/record/medicalActive2
-var	code/modules/mob/living/silicon/pai/pai.dm	var/datum/data/record/securityActive1 // Could probably just combine all these into one
-var	code/modules/mob/living/silicon/pai/pai.dm	var/datum/data/record/securityActive2
-var	code/modules/mob/living/silicon/robot/component.dm	var/mob/living/silicon/robot/owner
-var	code/modules/mob/living/silicon/robot/component.dm	var/obj/item/holder
-var	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	var/datum/matter_synth/water = null
-var	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	var/datum/matter_synth/water = null // readds water
-var	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	var/datum/matter_synth/glass = null
-var	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	var/mob/living/silicon/robot/R
-var	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	var/mob/living/carbon/patient = null
-var	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	var/mob/living/silicon/robot/hound = null
-var	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	var/datum/matter_synth/metal/metal = null
-var	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	var/datum/matter_synth/glass/glass = null
-var	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	var/datum/matter_synth/wood/wood = null
-var	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	var/datum/matter_synth/plastic/plastic = null
-var	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	var/datum/matter_synth/water = null
-var	code/modules/mob/living/silicon/robot/dogborg/robot_belly.dm	var/mob/living/silicon/robot/owner
-var	code/modules/mob/living/silicon/robot/drone/drone.dm	var/obj/machinery/drone_fabricator/master_fabricator
-var	code/modules/mob/living/silicon/robot/drone/drone_console.dm	var/obj/machinery/drone_fabricator/dronefab
-var	code/modules/mob/living/silicon/robot/drone/drone_items.dm	var/datum/matter_synth/metal/metal = null
-var	code/modules/mob/living/silicon/robot/drone/drone_items.dm	var/datum/matter_synth/glass/glass = null
-var	code/modules/mob/living/silicon/robot/drone/drone_items.dm	var/datum/matter_synth/wood/wood = null
-var	code/modules/mob/living/silicon/robot/drone/drone_items.dm	var/datum/matter_synth/plastic/plastic = null
-var	code/modules/mob/living/silicon/robot/robot.dm	var/atom/movable/screen/inv1 = null
-var	code/modules/mob/living/silicon/robot/robot.dm	var/atom/movable/screen/inv2 = null
-var	code/modules/mob/living/silicon/robot/robot.dm	var/atom/movable/screen/inv3 = null
-var	code/modules/mob/living/silicon/robot/robot.dm	var/datum/effect/effect/system/ion_trail_follow/ion_trail = null
-var	code/modules/mob/living/silicon/robot/robot.dm	var/datum/matter_synth/water_res
-var	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	/obj/item/gripper/var/obj/item/shown_item
-var	code/modules/mob/living/silicon/robot/robot_remote_control.dm	var/mob/living/silicon/ai/mainframe = null
-var	code/modules/mob/living/silicon/robot/robot_simple_items.dm	var/mob/living/silicon/robot/R
-var	code/modules/mob/living/silicon/silicon.dm	var/obj/item/radio/common_radio
 var	code/modules/mob/living/simple_mob/harvesting.dm	var/obj/harvest_tool // a type path, never an instance
 var	code/modules/mob/living/simple_mob/overmap_mob.dm	var/mob/living/simple_mob/vore/overmap/parent_mob_type // a type path, never an instance
-var	code/modules/mob/living/simple_mob/overmap_mob.dm	var/mob/living/simple_mob/vore/overmap/parent
 var	code/modules/mob/living/simple_mob/overmap_mob.dm	var/mob/living/simple_mob/vore/overmap/parent_mob_type // a type path, never an instance
-var	code/modules/mob/living/simple_mob/overmap_mob.dm	var/mob/living/simple_mob/vore/overmap/parent
-var	code/modules/mob/living/simple_mob/simple_mob.dm	var/obj/movement_target //Used by some mobs to hunt down food. Mainly noodle and Ian.
-var	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/jellyfish.dm	/mob/living/simple_mob/vore/alienanimals/space_jellyfish/var/tmp/mob/living/simple_mob/vore/alienanimals/space_jellyfish/budded_from
-var	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	var/mob/living/controller
-var	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	var/obj/effect/dog_teleporter/target //Target for teleporting to, automatically set by id
 var	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	var/mob/living/simple_mob/vore/overmap/stardog/linked_mob
-var	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	/mob/living/simple_mob/vore/alienanimals/teppi/var/tmp/mob/living/simple_mob/vore/alienanimals/teppi/parent_one
-var	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	/mob/living/simple_mob/vore/alienanimals/teppi/var/tmp/mob/living/simple_mob/vore/alienanimals/teppi/parent_two
-var	code/modules/mob/living/simple_mob/subtypes/animal/pets/cat.dm	var/mob/living/friend = null // Our best pal, who we'll follow. Meow.
-var	code/modules/mob/living/simple_mob/subtypes/animal/pets/fox.dm	var/mob/flee_target
-var	code/modules/mob/living/simple_mob/subtypes/animal/pets/fox.dm	var/mob/living/friend = null // Our best pal, who we'll follow. awoo.
-var	code/modules/mob/living/simple_mob/subtypes/animal/sif/leech.dm	var/obj/item/organ/external/host_bodypart // Where in the body we are infesting.
-var	code/modules/mob/living/simple_mob/subtypes/animal/sif/leech.dm	var/mob/living/carbon/host // Our humble host.
-var	code/modules/mob/living/simple_mob/subtypes/animal/space/clockwork.dm	var/mob/flee_target
-var	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	var/mob/living/simple_mob/animal/space/space_worm/previous //next/previous segments, correspondingly
-var	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	var/mob/living/simple_mob/animal/space/space_worm/next //head is the nextest segment
-var	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	var/atom/currentlyEating // Worm's current Maw target.
-var	code/modules/mob/living/simple_mob/subtypes/blob/blob.dm	var/datum/blob_type/blob_type = null // Used for the blob core items, as they have no overmind mob.
-var	code/modules/mob/living/simple_mob/subtypes/bullet_heck/bullet_patterns.dm	/mob/living/simple_mob/mechanical/mecha/eclipse/var/atom/volley_target
-var	code/modules/mob/living/simple_mob/subtypes/glamour/homunculus.dm	var/obj/item/glamour_face/owner // relation: the face that made us (its homunculus view clears when we go)
-var	code/modules/mob/living/simple_mob/subtypes/glamour/ysbryd.dm	var/mob/living/chosen_target
-var	code/modules/mob/living/simple_mob/subtypes/illusion/illusion.dm	var/atom/movable/copying = null // The thing we're trying to look like.
-var	code/modules/mob/living/simple_mob/subtypes/mechanical/golem.dm	var/mob/living/master = null
-var	code/modules/mob/living/simple_mob/subtypes/mechanical/ward/ward.dm	var/mob/living/owner = null // The mob that made the ward, if any. Used to ensure the ward does not interfere with its creator.
-var	code/modules/mob/living/simple_mob/subtypes/metroid/metJuvenile.dm	var/mob/living/victim = null // the person the metroid is currently feeding on
-var	code/modules/mob/living/simple_mob/subtypes/metroid/metObjects.dm	/obj/effect/metroid/egg/var/tmp/atom/laid_by
-var	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	var/mob/living/victim = null // the person the slime is currently feeding on
-var	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	/mob/living/simple_mob/slime/xenobio/var/tmp/mob/living/simple_mob/slime/xenobio/predecessor
-var	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	var/mob/living/prey_body //The body of the person who dominated the brain
-var	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	var/datum/mind/prey_mind
-var	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	var/mob/living/pred_body //The body of the person who was dominated
-var	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	var/datum/mind/pred_mind
-var	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	var/mob/living/carbon/human/friend
-var	code/modules/mob/living/simple_mob/subtypes/vore/mimic.dm	var/obj/structure/closet/crate/real_crate
-var	code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm	var/atom/movable/form = null
-var	code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm	var/datum/mind/original_mind
-var	code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm	var/mob/living/simple_mob/vore/morph/parent_morph
-var	code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm	var/mob/living/carbon/human/prey_body
-var	code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm	var/datum/mind/prey_mind
-var	code/modules/mob/living/simple_mob/subtypes/vore/otie.dm	var/mob/living/carbon/human/friend
 var	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	var/mob/living/carbon/human/food
-var	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	var/mob/living/carbon/human/henlo_human //Human we're stalking currently
-var	code/modules/mob/living/simple_mob/subtypes/vore/slug.dm	var/mob/living/last_prey = null
-var	code/modules/mob/living/simple_mob/subtypes/vore/slug.dm	var/mob/living/simple_mob/vore/slug/owner_slug = null
-var	code/modules/mob/living/simple_mob/subtypes/vore/solargrub.dm	var/obj/structure/cable/attached // the attached cable
-var	code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm	var/mob/living/simple_mob/animal/solargrub_larva/grub
-var	code/modules/mob/living/simple_mob/subtypes/vore/weather.dm	/mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
-var	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	var/datum/action/innate/xeno_ch/xeno_build/build_action = new
-var	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	var/datum/action/innate/xeno_ch/xeno_neuro/neurotox_action = new
-var	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	var/datum/action/innate/xeno_ch/xeno_acidspit/acidspit_action = new
-var	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	var/datum/action/innate/xeno_ch/xeno_corrode/corrode_action = new
-var	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	var/datum/action/innate/xeno_ch/xeno_pounce/pounce_action = new
-var	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	var/datum/action/innate/xeno_ch/xeno_spin/spin_action = new
-var	code/modules/mob/living/simple_mob/subtypes/xenomorph_abilities.dm	var/mob/living/simple_mob/xeno_ch/parent_xeno
-var	code/modules/mob/living/turfslip.dm	var/mob/living/owner
-var	code/modules/mob/mind_host.dm	var/obj/item/owner
-var	code/modules/mob/mind_host.dm	var/obj/item/organ/internal/brain/tissue
-var	code/modules/mob/mob_defines.dm	var/tmp/mob/living/carbon/LAssailant = null
-var	code/modules/mob/mob_defines.dm	var/tmp/datum/click_intercept
-var	code/modules/mob/mob_defines.dm	var/tmp/datum/focus //What receives our keyboard inputs. src by default
-var	code/modules/mob/mob_grab.dm	/obj/item/grab/var/tmp/mob/victim_at_make
-var	code/modules/mob/mob_planes.dm	var/mob/my_mob
-var	code/modules/mob/mob_planes.dm	var/mob/my_mob
-var	code/modules/mob/new_player/news_panel.dm	var/mob/new_player/host
-var	code/modules/mob/new_player/news_panel.dm	var/datum/feed_channel/channel
-var	code/modules/mob/remote_view.dm	VAR_PROTECTED/mob/host_mob
-var	code/modules/mob/remote_view.dm	VAR_PROTECTED/atom/remote_view_target
-var	code/modules/mob/remote_view.dm	VAR_PRIVATE/obj/item/host_item
-var	code/modules/mob/remote_view.dm	VAR_PRIVATE/datum/view_coordinator // The object whose `viewers` list we join, with look() and unlook() logic (a relation view)
 var	code/modules/modular_computers/NTNet/NTNRC/conversation.dm	var/tmp/datum/computer_file/program/chatclient/operator // "Administrator" of this channel. Creator starts as channel's operator,
 var	code/modules/modular_computers/computers/modular_computer/variables.dm	var/tmp/datum/computer_file/program/active_program // A currently active program running on the computer.
 var	code/modules/modular_computers/computers/modular_computer/variables.dm	var/tmp/datum/ai_slot // AI slot, an intellicard housing that allows modifications of AIs.
@@ -1029,7 +874,6 @@ var	code/modules/shuttles/shuttle_autodock.dm	var/tmp/obj/effect/shuttle_landmar
 var	code/modules/shuttles/shuttle_emergency.dm	var/tmp/datum/radio_frequency/radio_connection
 var	code/modules/shuttles/shuttle_ferry.dm	var/tmp/obj/effect/shuttle_landmark/landmark_station // the landmark (set the _tag var, New() resolves it)
 var	code/modules/shuttles/shuttle_ferry.dm	var/tmp/obj/effect/shuttle_landmark/landmark_offsite // the landmark (set the _tag var, New() resolves it)
-var	code/modules/shuttles/web_datums.dm	var/var/obj/effect/shuttle_landmark/interim // Where the shuttle sits during the movement. Make sure no other shuttle shares this or Very Bad Things will happen.
 var	code/modules/shuttles/web_datums.dm	var/tmp/obj/effect/shuttle_landmark/my_landmark // Where the shuttle will move to when it actually arrives.
 var	code/modules/shuttles/web_datums.dm	var/tmp/datum/shuttle_web_master/master // The datum that does the coordination with the actual shuttle datum.
 var	code/modules/shuttles/web_datums.dm	var/tmp/datum/shuttle/autodock/web_shuttle/my_shuttle // Ref to the shuttle this datum is coordinating with.
@@ -1272,7 +1116,6 @@ list	code/game/machinery/camera/camera.dm	var/client_huds = null
 list	code/game/machinery/camera/camera_assembly.dm	var/static/list/obj/item/possible_upgrades = list(/obj/item/assembly/prox_sensor, /obj/item/stack/material/osmium, /obj/item/stock_parts/scanning_module)
 list	code/game/machinery/frame.dm	GLOBAL_LIST(construction_frame_wall)
 list	code/game/machinery/frame.dm	GLOBAL_LIST(construction_frame_floor)
-list	code/game/machinery/machine_service.dm	var/list/pending_pump_transfers = list()
 list	code/game/machinery/machinery.dm	var/static/list/probes = list()
 list	code/game/objects/items/devices/radio/radio.dm	var/tmp/list/datum/radio_frequency/secure_radio_connections // SSradio's live subscriptions (shared frequency datums the radio does not own)
 list	code/game/objects/items/devices/radio/radio_service.dm	var/list/data = list() // ALLOW(instance_list): d: every signal carries data
@@ -1284,7 +1127,6 @@ list	code/modules/admin/holder2.dm	var/list/datum/admin_rank/ranks
 list	code/modules/asset_cache/asset_list.dm	var/assets
 list	code/modules/belly_overlay/belly_overlay_asset.dm	GLOBAL_LIST_EMPTY(dq_belly_overlay_aci_by_name)
 list	code/modules/economy/economy_misc.dm	GLOBAL_LIST_EMPTY_TYPED(department_accounts, /datum/money_account)
-list	code/modules/heat/heat_bind_batch.dm	GLOBAL_LIST_EMPTY(dq_heat_bind_pending)
 list	code/modules/lighting/lighting_corner.dm	var/list/datum/light_source/affecting // Light sources affecting us.
 list	code/modules/medical/causes/_cause.dm	GLOBAL_LIST_EMPTY(affliction_triggers_all)
 list	code/modules/medical/contagion/engineered/engineered.dm	GLOBAL_LIST_EMPTY(archive_diseases)
