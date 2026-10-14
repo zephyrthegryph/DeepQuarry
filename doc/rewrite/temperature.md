@@ -34,12 +34,7 @@ Energy is conserved everywhere, in SI units.
 
 ### 2.1 The DM API
 
-```dm
-/atom/proc/get_temperature()                  // from the view (or overlay); ambient if the atom has no heat node
-/atom/proc/add_heat(joules)                   // a command; creates the heat node on first divergence
-/atom/proc/thermal_properties()               // from materials and type properties: heat capacity, conductance, emissivity
-// a native heat watch: /datum/native_watch/heat on src, HEAT_WATCH_ABOVE at KELVIN(373)
-```
+The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/modules/heat/heat.dm](../../code/modules/heat/heat.dm).
 
 - **Replaces** the ad-hoc `return_temperature()` procs on `/turf` (which returns the solid's temperature), gas mixtures, tanks, canisters and mecha. There is one meaning everywhere.
 - **Generated constants.** Units, thresholds and material defaults come from Rust. There are no hardcoded body temperatures and no duplicate ignition points.

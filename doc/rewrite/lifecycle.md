@@ -149,16 +149,7 @@ the transaction uses it.
 A scratch object made and dropped on a hot path (the damage packet, one per hit) is pooled
 (`code/datums/lifecycle/pool.dm`):
 
-```dm
-POOL_DECLARE(/datum/damage_packet)
-POOL_RESET(/datum/damage_packet, source)
-POOL_RESET(/datum/damage_packet, attacker)
-...
-
-var/datum/damage_packet/packet = pool_take(/datum/damage_packet)
-...
-packet.release()   // or pool_release(packet)
-```
+The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/engine/state/pool.dm](../../code/engine/state/pool.dm) and [code/engine/refs/damage_packet.dm](../../code/engine/refs/damage_packet.dm).
 
 - `pool_take(type)` hands out a free object or makes one; `pool_release(obj)` resets
   the `POOL_RESET` fields and returns it to the per-type free list.
