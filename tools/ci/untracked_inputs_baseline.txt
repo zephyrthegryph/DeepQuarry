@@ -323,13 +323,6 @@ draw_untracked	code/modules/food/food/snacks.dm	look.identity(desc = "A box suit
 draw_untracked	code/modules/food/food/snacks.dm	look.overlay(look_overlay_image(pizza.icon, pizza.icon_state, pixel_y = -3))
 draw_untracked	code/modules/food/kitchen/cooking_machines/_cooker.dm	look.overlay(look_overlay_image(icon, light, pixel_x = light_x, pixel_y = light_y))
 draw_untracked	code/modules/games/cards.dm	look.overlay(look_overlay_image(icon, P.face_state(concealed), pixel_x = jitter_x, pixel_y = jitter_y))
-draw_untracked	code/modules/heat/heat.dm	HEAT_BODY_RESOLVE(src)
-draw_untracked	code/modules/heat/heat.dm	var/temperature = vg_heat_body_temperature(heat_body)
-draw_untracked	code/modules/heat/heat.dm	return holder.get_interior_temperature()
-draw_untracked	code/modules/heat/heat_bind_batch.dm	var/list/pending = GLOB.dq_heat_bind_pending
-draw_untracked	code/modules/heat/heat_bind_batch.dm	GLOB.dq_heat_bind_flushes++
-draw_untracked	code/modules/heat/heat_bind_batch.dm	GLOB.dq_heat_bind_configured += vg_heat_body_configure_list(configure_args)
-draw_untracked	code/modules/heat/heat_bind_batch.dm	GLOB.dq_heat_bind_configured += vg_heat_body_configure_list(configure_args)
 draw_untracked	code/modules/holodeck/HolodeckObjects.dm	return sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 draw_untracked	code/modules/holodeck/HolodeckObjects.dm	return sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 draw_untracked	code/modules/holodeck/HolodeckObjects.dm	return sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]

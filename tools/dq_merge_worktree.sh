@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # One long-lived worktree for merge batches: E:/projects/dq-wt/merge-base on branch rewrite/integ-current.
 #
-#   bash tools/dq_merge_worktree.sh                # create it once, or move it to origin/master; stdout is its path
+#   bash tools/dq_merge_worktree.sh --lanes "a b"  # take the merge lock (waits, printing who holds it), create the worktree once,
+#                                                  # or move it to origin/master; stdout is its path
+#   bash tools/dq_merge_worktree.sh --join "c"     # the lock holder adds lanes to its batch (no switch, prints the path)
+#   bash tools/dq_merge_worktree.sh --release      # end an abandoned batch and free the lock (--release --force: someone else's)
 #   bash tools/dq_merge_worktree.sh --print-path   # just the path (no fetch, no changes)
 #   bash tools/dq_merge_worktree.sh --warm         # also run `build.sh gen` there (analyzer + generated files)
 #   bash tools/dq_merge_worktree.sh --discard-previous   # the last batch never reached master: keep its tip as a
@@ -19,6 +22,11 @@
 #   - a merge, rebase, cherry-pick or revert is in progress there,
 #   - rewrite/integ-current holds commits that origin/master does not (the previous batch was never pushed; or another
 #     agent's batch is running in it right now). Push it, or pass --discard-previous.
+# The merge lock (tools/dq_machine_slots.sh, class merge_base, one slot) makes "only one batch" true: a call takes it before the
+# clear check, so two agents cannot both pass the check and merge into the same index. It is held by a detached holder process with a
+# heartbeat, across dq_merge_gates.sh, until dq_push_master.sh lands the batch (or the tree is level with origin/master), or --release.
+# dq_merge_gates.sh and dq_push_master.sh refuse to run in the merge worktree without it. A crashed holder is reclaimed like a dead
+# machine slot. The caller's identity is DQ_MERGE_SESSION, which must be set (the lane branch name); it is never inferred, and the merge tools refuse without it.
 # Only one merge batch uses the worktree at a time. Run the batch inside the printed path:
 #   cd "$(bash tools/dq_merge_worktree.sh)" && git merge --no-ff <branch> ... && bash tools/dq_merge_gates.sh
 # Nothing here runs checkout, reset, restore, stash or cherry-pick, or deletes any lock file.
@@ -27,21 +35,50 @@ set -uo pipefail
 WT="${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}"
 BRANCH="rewrite/integ-current"
 
-die() { echo "dq_merge_worktree: ABORT: $*" >&2; exit 1; }
+got_lock=0
+die() {
+	echo "dq_merge_worktree: ABORT: $*" >&2
+	# A batch that never got the worktree must not keep the lock.
+	if [ "$got_lock" -eq 1 ]; then merge_lock_release >&2; fi
+	exit 1
+}
 
 warm=0
 discard=0
+lanes=""
+mode="take"
+force=""
+mode_next=""
 for arg in "$@"; do
+	if [ -n "$mode_next" ]; then lanes="$arg"; mode_next=""; continue; fi
 	case "$arg" in
 		--print-path) echo "$WT"; exit 0 ;;
 		--warm) warm=1 ;;
 		--discard-previous) discard=1 ;;
-		-h|--help) sed -n '2,26p' "$0"; exit 0 ;;
+		--lanes) mode_next=lanes ;;
+		--join) mode="join"; mode_next=lanes ;;
+		--release) mode="release" ;;
+		--force) force="--force" ;;
+		-h|--help) sed -n '2,36p' "$0"; exit 0 ;;
 		*) die "unknown argument: $arg" ;;
 	esac
 done
 
+[ -z "$mode_next" ] || die "--lanes / --join need a value (the lane branch names, one quoted string)"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
+# shellcheck source=dq_machine_slots.sh
+. "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
+case "$mode" in
+	release) merge_lock_release $force; exit $? ;;
+	join) [ -n "$lanes" ] || die "--join needs the lanes to add"; merge_lock_join $lanes || exit 1; echo "$WT"; exit 0 ;;
+esac
+[ -n "$lanes" ] || lanes="unnamed batch"
+
 here="$(git rev-parse --show-toplevel 2>/dev/null)" || die "run this inside a DeepQuarry checkout"
+merge_lock_acquire $lanes || { rc=$?; [ "$rc" -eq 3 ] && exit 1; die "could not take the merge lock"; }
+got_lock=1
+
+# The lock first: the fetch, the target and the clear check below must all be seen by the batch that owns the worktree.
 git -C "$here" fetch -q origin || die "git fetch failed"
 git -C "$here" rev-parse -q --verify origin/master >/dev/null || die "no origin/master"
 target="$(git -C "$here" rev-parse origin/master)"

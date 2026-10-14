@@ -314,12 +314,15 @@ TRACKED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, target_
 	if(on)
 		if(OutputBeaker && OutputBeaker.reagents.total_volume < OutputBeaker.reagents.maximum_volume)
 			look.overlay("[base_state]-dump")
-		else if(abs(get_temperature() - target_temp) <= 0.5)
-			look.overlay("[base_state]-good")
-		else if(get_temperature() < target_temp)
-			look.overlay("[base_state]-heat")
 		else
-			look.overlay("[base_state]-cool")
+			// Its temperature is the heat body's (Rust-owned): read as a band around the target, so a crossing redraws it.
+			switch(watched(src, WATCH_HEAT, list(target_temp - 0.5, target_temp + 0.5)))
+				if(0)
+					look.overlay("[base_state]-heat")
+				if(1)
+					look.overlay("[base_state]-good")
+				else
+					look.overlay("[base_state]-cool")
 	else
 		look.overlay("[base_state]-bad")
 
