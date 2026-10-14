@@ -501,7 +501,6 @@
 #include "interim_food_consumption.dm"
 #include "interim_hud_actor.dm"
 #include "interim_mindbinder_actor.dm"
-#include "interim_mecha_extinguisher_actor.dm"
 #include "interim_pneumatic_pressure_capture.dm"
 #include "interim_power_reagents.dm"
 #include "interim_pull_actor.dm"

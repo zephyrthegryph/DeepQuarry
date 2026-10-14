@@ -204,7 +204,7 @@ GLOBAL_REAL_VAR(list/param_given)
 			var/list/checked = schema_check(S, value, FALSE, holder)
 			if(checked[1] == SCHEMA_REJECT)
 				declare_report("[C.origin]: [holder.type].[var_name] = [value] refused by its schema: [checked[2]]")
-				holder.vars[E.args["var"]] = initial(holder.vars[E.args["var"]]) // ALLOW(api): a refused param falls back to the compiled default
+				holder.vars[E.args["var"]] = initial(holder.vars[E.args["var"]])
 			else
 				holder.vars[var_name] = checked[1] // ALLOW(api): a param's schema-normalised value, before init
 

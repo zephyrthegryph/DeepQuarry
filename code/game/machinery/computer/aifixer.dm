@@ -142,4 +142,4 @@ CAPABILITIES(/obj/machinery/computer/aifixer)
 
 /// occupier (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/aifixer/proc/occupier() as /mob/living/silicon/ai
-	return occupier // ALLOW(reads): the loaded AI is asked when it is needed, never cached
+	return occupier

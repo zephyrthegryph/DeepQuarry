@@ -38,7 +38,7 @@ MSG_DEF_SELF(petrifier/beeps, "The device beeps but does nothing.")
 
 /// Relation view: target (reads null once it is gone).
 /obj/item/petrifier/proc/target_ref() as /mob/living/carbon/human
-	return target // ALLOW(reads): the one it aims at is read when the device is used, never from a cached menu
+	return target
 
 /// Relation view: linked (reads null once it is gone).
 /obj/item/petrifier/proc/linked() as /obj/machinery/petrification

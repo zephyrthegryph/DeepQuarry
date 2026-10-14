@@ -108,4 +108,4 @@ CAPABILITIES(/obj/machinery/computer/telecomms/server)
 
 /// SelectedServer (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/server/proc/SelectedServer() as /obj/machinery/telecomms/server
-	return SelectedServer // ALLOW(reads): the server shown is asked when it is needed, never cached
+	return SelectedServer
