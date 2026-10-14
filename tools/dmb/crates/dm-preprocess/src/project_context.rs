@@ -191,6 +191,68 @@ impl<P: SourceProvider> Context<'_, P> {
         });
     }
 
+    /// Emits already expanded active text (one or more lines) with origins.
+    fn emit_active_text(
+        &mut self,
+        path: &Path,
+        origin_path: &Arc<PathBuf>,
+        expanded: &str,
+        source_line: usize,
+    ) {
+        for (offset, segment) in expanded.split('\n').enumerate() {
+            if offset > 0 && segment.is_empty() && expanded.ends_with('\n') {
+                break;
+            }
+            // DreamMaker parses manifest DM after all ordinary includes,
+            // in manifest encounter order. Directives still act here.
+            if path
+                .extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("dme"))
+            {
+                self.manifest_lines.push((
+                    segment.to_owned(),
+                    origin_path.clone(),
+                    source_line + offset,
+                ));
+                continue;
+            }
+            self.output.text.push_str(segment);
+            self.output.text.push('\n');
+            self.output.origins.push(Origin {
+                output_line: self.output_line,
+                path: origin_path.clone(),
+                source_line: source_line + offset,
+            });
+            self.output_line += 1;
+        }
+    }
+
+    /// Lines held for a macro call that nothing closed: expanded one by one, each
+    /// with its own diagnostic, as before calls could span directives.
+    fn flush_open_calls(
+        &mut self,
+        held: &mut Vec<(String, usize)>,
+        path: &Path,
+        file_name: &str,
+        origin_path: &Arc<PathBuf>,
+    ) {
+        for (text, line) in std::mem::take(held) {
+            let expanded = match expand(
+                &text,
+                &self.output.final_macros,
+                0,
+                ExpandLocation { file_name, line },
+            ) {
+                Ok(s) => s,
+                Err(e) => {
+                    self.error_as(path, line, DiagnosticKind::Macro, e);
+                    text.clone()
+                }
+            };
+            self.emit_active_text(path, origin_path, &expanded, line);
+        }
+    }
+
     // Preserve original UTF-8 boundary checks before hashing frozen source slices.
     #[allow(clippy::sliced_string_as_bytes)]
     pub(super) fn visit(&mut self, path: PathBuf) {
@@ -381,6 +443,7 @@ impl<P: SourceProvider> Context<'_, P> {
             .replace('\\', "/");
         let mut conditionals: Vec<Conditional> = Vec::new();
         let mut line_number = 0;
+        let mut held: Vec<(String, usize)> = Vec::new();
         let uncommented = strip_source_comments(&source);
         for logical in logical_lines(&uncommented) {
             let source_line = line_number + 1;
@@ -391,6 +454,9 @@ impl<P: SourceProvider> Context<'_, P> {
             let active = conditionals.last().is_none_or(|c| c.active);
             if let Some(d) = directive {
                 let (word, rest) = split_word(d);
+                if active && matches!(word, "define" | "undef" | "include") {
+                    self.flush_open_calls(&mut held, &path, &file_name, &origin_path);
+                }
                 match word {
                     "ifdef" | "ifndef" | "if" => {
                         let yes = if !active {
@@ -594,49 +660,50 @@ impl<P: SourceProvider> Context<'_, P> {
             } else if active {
                 // Manifests can contain ordinary DM, including startup procedures.
                 // Their extension does not change the language of active lines.
-                let expanded = match expand(
-                    raw.trim_end_matches(['\r', '\n']),
+                // A macro call still open at the end of the line may be closed by a
+                // later active line, with preprocessor directives in between.
+                let single = raw.trim_end_matches(['\r', '\n']);
+                let joined;
+                let (text, first_line) = if held.is_empty() {
+                    (single, source_line)
+                } else {
+                    let mut text = String::new();
+                    for (earlier, _) in &held {
+                        text.push_str(earlier);
+                        text.push('\n');
+                    }
+                    text.push_str(single);
+                    joined = text;
+                    (joined.as_str(), held[0].1)
+                };
+                match expand(
+                    text,
                     &self.output.final_macros,
                     0,
                     ExpandLocation {
                         file_name: &file_name,
-                        line: source_line,
+                        line: first_line,
                     },
                 ) {
-                    Ok(s) => s,
+                    Ok(expanded) => {
+                        held.clear();
+                        self.emit_active_text(&path, &origin_path, &expanded, first_line);
+                    }
+                    Err(e) if e == MISSING_CALL_CLOSE && held.len() < MAX_OPEN_CALL_LINES => {
+                        held.push((single.to_owned(), source_line));
+                    }
+                    Err(_) if !held.is_empty() => {
+                        held.push((single.to_owned(), source_line));
+                        self.flush_open_calls(&mut held, &path, &file_name, &origin_path);
+                    }
                     Err(e) => {
                         self.error_as(&path, source_line, DiagnosticKind::Macro, e);
-                        raw.trim_end_matches(['\r', '\n']).to_owned()
+                        self.emit_active_text(&path, &origin_path, single, source_line);
                     }
-                };
-                for (offset, segment) in expanded.split('\n').enumerate() {
-                    if offset > 0 && segment.is_empty() && expanded.ends_with('\n') {
-                        break;
-                    }
-                    // DreamMaker parses manifest DM after all ordinary includes,
-                    // in manifest encounter order. Directives still act here.
-                    if path
-                        .extension()
-                        .is_some_and(|extension| extension.eq_ignore_ascii_case("dme"))
-                    {
-                        self.manifest_lines.push((
-                            segment.to_owned(),
-                            origin_path.clone(),
-                            source_line + offset,
-                        ));
-                        continue;
-                    }
-                    self.output.text.push_str(segment);
-                    self.output.text.push('\n');
-                    self.output.origins.push(Origin {
-                        output_line: self.output_line,
-                        path: origin_path.clone(),
-                        source_line: source_line + offset,
-                    });
-                    self.output_line += 1;
                 }
             }
         }
+        self.flush_open_calls(&mut held, &path, &file_name, &origin_path);
         if !conditionals.is_empty() {
             self.error_as(
                 &path,

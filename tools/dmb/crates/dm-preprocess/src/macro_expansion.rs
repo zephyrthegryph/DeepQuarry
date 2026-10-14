@@ -41,6 +41,13 @@ fn expand_mode(
 
 type MacroTrace<'a> = dyn FnMut(&str, Span, &[&str]) + 'a;
 
+/// The diagnostic for a macro call whose closing parenthesis is not on the logical line.
+/// A preprocessor directive can sit inside the argument list (valid DM), so callers hold
+/// such a line and join it with the active lines that follow.
+pub(crate) const MISSING_CALL_CLOSE: &str = "missing ) in macro call";
+/// Bound on the lines joined into one open macro call before it is reported as unclosed.
+pub(crate) const MAX_OPEN_CALL_LINES: usize = 256;
+
 pub(crate) fn expand_traced(
     source: &str,
     macros: &dyn MacroLookup,
@@ -606,5 +613,5 @@ fn parse_arguments(
             _ => value.push_str(token.text(source)),
         }
     }
-    Err("missing ) in macro call".into())
+    Err(MISSING_CALL_CLOSE.into())
 }

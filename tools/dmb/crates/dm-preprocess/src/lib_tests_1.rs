@@ -664,3 +664,48 @@ fn cached_macro_delta_replays_define_and_undef() {
     assert_eq!(restored.hits, 2);
     std::fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn directive_inside_open_macro_call_is_applied_in_order() {
+    for (define, expect_b) in [("#define ON
+", true), ("", false)] {
+        let text = format!(
+            "#define EVENT(kind, payload) emit(kind, payload)
+{define}/proc/test()
+	EVENT(1, list(
+		\"a\" = 1,
+#ifdef ON
+		\"b\" = 2,
+#endif
+	))
+	return 1
+"
+        );
+        let files = fixture(&[("game.dme", "#include \"leaf.dm\"
+"), ("leaf.dm", text.as_str())]);
+        let output = preprocess_project(Path::new("game.dme"), &files, &BTreeMap::new());
+        assert!(output.diagnostics.is_empty(), "{:?}", output.diagnostics);
+        assert!(output.text.contains("emit(1, list("), "{}", output.text);
+        assert_eq!(output.text.contains("\"b\" = 2"), expect_b, "{}", output.text);
+        assert!(output.text.contains("return 1"), "{}", output.text);
+    }
+}
+
+#[test]
+fn open_macro_call_never_closed_still_reports_per_line() {
+    let files = fixture(&[
+        ("game.dme", "#include \"leaf.dm\"
+"),
+        ("leaf.dm", "#define EVENT(a) emit(a)
+/proc/test()
+	EVENT(1,
+#ifdef NOPE
+#endif
+	return 2
+"),
+    ]);
+    let output = preprocess_project(Path::new("game.dme"), &files, &BTreeMap::new());
+    assert_eq!(output.diagnostics.len(), 1, "{:?}", output.diagnostics);
+    assert!(output.diagnostics[0].message.contains("missing )"));
+    assert!(output.text.contains("return 2"), "{}", output.text);
+}

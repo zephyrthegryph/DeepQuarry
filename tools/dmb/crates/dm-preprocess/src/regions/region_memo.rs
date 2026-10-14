@@ -19,7 +19,7 @@ use std::{
     sync::Arc,
 };
 use xxhash_rust::xxh3::Xxh3;
-pub const EXPANSION_VERSION: u32 = 3;
+pub const EXPANSION_VERSION: u32 = 4;
 pub const FRAGMENT_VERSION: u32 = 1;
 #[cfg(test)]
 mod fragment_tests {

@@ -17,7 +17,7 @@ pub struct CatalogField {
 }
 /// Mirrors the pinned native bootstrap inventory. It is not a claim that all
 /// BYOND versions expose exactly this catalog or that source defaults are known.
-pub const CATALOG_SCHEMA: &str = "dm-bootstrap-builtin-fields-v8-native-list-field-knowledge";
+pub const CATALOG_SCHEMA: &str = "dm-bootstrap-builtin-fields-v9-native-callee-src-usr";
 pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::SymbolCollision> {
     let mut fields = Vec::new();
     for owner in [
@@ -69,7 +69,7 @@ pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::Sym
                     (owner, *name),
                     ("/world", "sleep_offline" | "visibility")
                         | ("/client", "fps" | "mouse_pointer_icon")
-                        | ("/callee", "proc" | "name")
+                        | ("/callee", "proc" | "name" | "src" | "usr")
                         | ("/image", "override")
                         | ("/list", "type" | "parent_type" | "len")
                         | ("/alist", "type" | "len")
@@ -106,7 +106,7 @@ pub fn names(path: &str) -> &'static [&'static str] {
         // defaults. Header emission is a separate ABI policy, not a field slot.
         // https://www.byond.com/docs/ref/info.html#savefile/var/byond_version
         "/savefile" => &["byond_version", "byond_build", "cd", "dir", "eof", "name"],
-        "/callee" => &["proc", "name", "caller"],
+        "/callee" => &["proc", "name", "caller", "src", "usr"],
         "/datum" => &["type", "parent_type", "vars", "tag"],
         "/atom" | "/image" | "/mutable_appearance" => &[
             "name",

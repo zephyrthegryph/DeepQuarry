@@ -217,6 +217,15 @@ pub(super) fn expand_region(
     let mut input = 0;
     let mut trace_arena = super::trace_arena::TraceArena::default();
     for (segment_index, segment) in region.segments.iter().enumerate() {
+        // A macro call whose arguments continue past a preprocessor directive
+        // (`#ifdef` inside the argument list) reaches this segment as separate
+        // logical lines: the plan already applied the directives, so the active
+        // lines either side of them are adjacent here. Lines whose macro call is
+        // still open are held and joined with the following active lines
+        // (DreamMaker accepts this); a call never closed by the end of the segment
+        // (or within MAX_OPEN_CALL_LINES) is expanded line by line, diagnostics
+        // included, exactly as before.
+        let mut held: Vec<&RegionLine> = Vec::new();
         for line in &segment.lines {
             let mut macro_expansions = Vec::new();
             let mut trace = |name: &str, invocation_span: Span, chain: &[&str]| {
@@ -238,11 +247,59 @@ pub(super) fn expand_region(
                 .as_ref()
                 .map_or(&segment.macros as &dyn crate::MacroLookup, |lookup| lookup);
             let source = line.text.trim_end_matches(['\r', '\n']);
+            let mut joined = false;
             // Empty indentation cannot contain a macro, interpolation, lexical
             // error or traced invocation. Keep the original source slice instead
             // of lexing and copying it; recorder input ordinals still advance.
-            let text = if source.bytes().all(|byte| matches!(byte, b' ' | b'\t')) {
-                Cow::Borrowed(source)
+            let (text, meta): (Cow<str>, &RegionLine) = if held.is_empty()
+                && source.bytes().all(|byte| matches!(byte, b' ' | b'\t'))
+            {
+                (Cow::Borrowed(source), line)
+            } else if !held.is_empty() {
+                let mut text = String::new();
+                for earlier in &held {
+                    text.push_str(earlier.text.trim_end_matches(['\r', '\n']));
+                    text.push('\n');
+                }
+                text.push_str(source);
+                match expand_traced(
+                    &text,
+                    lookup,
+                    ExpandLocation {
+                        file_name: &file_name,
+                        line: held[0].source_line,
+                    },
+                    &mut trace,
+                ) {
+                    Ok(text) => {
+                        joined = true;
+                        (Cow::Owned(text), held[0])
+                    }
+                    Err(message)
+                        if message == crate::MISSING_CALL_CLOSE
+                            && held.len() < crate::MAX_OPEN_CALL_LINES =>
+                    {
+                        held.push(line);
+                        continue;
+                    }
+                    Err(_) => {
+                        // Not a call later lines close: the held lines stand
+                        // alone, and so does this one.
+                        held.push(line);
+                        flush_held(
+                            &mut held,
+                            &segment.macros,
+                            &file_name,
+                            plan,
+                            region.occurrence,
+                            &mut trace_arena,
+                            &mut text_buffer,
+                            &mut lines,
+                            &mut diagnostics,
+                        );
+                        continue;
+                    }
+                }
             } else {
                 match expand_traced(
                     source,
@@ -253,7 +310,11 @@ pub(super) fn expand_region(
                     },
                     &mut trace,
                 ) {
-                    Ok(text) => Cow::Owned(text),
+                    Ok(text) => (Cow::Owned(text), line),
+                    Err(message) if message == crate::MISSING_CALL_CLOSE => {
+                        held.push(line);
+                        continue;
+                    }
                     Err(message) => {
                         diagnostics.push(Diagnostic {
                             path: plan.occurrences[region.occurrence].path.as_ref().clone(),
@@ -261,10 +322,13 @@ pub(super) fn expand_region(
                             kind: DiagnosticKind::Macro,
                             message,
                         });
-                        Cow::Borrowed(source)
+                        (Cow::Borrowed(source), line)
                     }
                 }
             };
+            if joined {
+                held.clear();
+            }
             // Traces survive through analysis and lowering. Release growth
             // slack before publishing immutable backing shared by emitted lines.
             let macro_expansions = trace_arena.freeze_expansions(macro_expansions);
@@ -276,18 +340,89 @@ pub(super) fn expand_region(
                 text_buffer.push('\n');
                 lines.push((
                     Span::new(start, text_buffer.len()),
-                    line.source_line,
-                    line.source_span,
+                    meta.source_line,
+                    meta.source_span,
                     macro_expansions.clone(),
                 ));
             }
         }
+        flush_held(
+            &mut held,
+            &segment.macros,
+            &file_name,
+            plan,
+            region.occurrence,
+            &mut trace_arena,
+            &mut text_buffer,
+            &mut lines,
+            &mut diagnostics,
+        );
     }
     RegionOutput {
         text: text_buffer.into(),
         receipt: None,
         lines: lines.finish(),
         diagnostics,
+    }
+}
+
+/// Expands lines held for an open macro call that nothing closed, one line at a
+/// time with its own diagnostic: the behaviour before calls could span directives.
+#[allow(clippy::too_many_arguments)]
+fn flush_held(
+    held: &mut Vec<&RegionLine>,
+    macros: &MacroEnvironment,
+    file_name: &str,
+    plan: &DirectivePlan,
+    occurrence: usize,
+    trace_arena: &mut super::trace_arena::TraceArena,
+    text_buffer: &mut String,
+    lines: &mut output_lines::OutputLineBuilder,
+    diagnostics: &mut Vec<Diagnostic>,
+) {
+    for line in held.drain(..) {
+        let source = line.text.trim_end_matches(['\r', '\n']);
+        let mut macro_expansions = Vec::new();
+        let mut trace = |name: &str, invocation_span: Span, chain: &[&str]| {
+            macro_expansions.push(MacroExpansion {
+                name: trace_arena.name(name),
+                invocation_span,
+                replacement_chain: trace_arena.chain(chain),
+                definition: macros.definition_origin(name).cloned(),
+            });
+        };
+        let text = match expand_traced(
+            source,
+            macros,
+            ExpandLocation {
+                file_name,
+                line: line.source_line,
+            },
+            &mut trace,
+        ) {
+            Ok(text) => Cow::Owned(text),
+            Err(message) => {
+                diagnostics.push(Diagnostic {
+                    path: plan.occurrences[occurrence].path.as_ref().clone(),
+                    line: line.source_line,
+                    kind: DiagnosticKind::Macro,
+                    message,
+                });
+                Cow::Borrowed(source)
+            }
+        };
+        let macro_expansions = trace_arena.freeze_expansions(macro_expansions);
+        for part in text.strip_suffix('\n').unwrap_or(&text).split('\n') {
+            let start = text_buffer.len();
+            text_buffer.push_str(part);
+            text_buffer.push('\n');
+            lines.push((
+                Span::new(start, text_buffer.len()),
+                line.source_line,
+                line.source_span,
+                macro_expansions.clone(),
+            ));
+        }
     }
 }
 

@@ -617,3 +617,46 @@ fn guarded_repeatable_recursion_keeps_current_macro_effects() {
         "/datum/recursive_leaf\n"
     );
 }
+
+#[test]
+fn directive_inside_open_macro_call_joins_the_call_in_regions() {
+    for (define, expect_b) in [("#define ON
+", true), ("", false)] {
+        let text = format!(
+            "#define EVENT(kind, payload) emit(kind, payload)
+{define}/proc/test()
+	EVENT(1, list(
+		\"a\" = 1,
+#ifdef ON
+		\"b\" = 2,
+#endif
+	))
+	return 1
+"
+        );
+        let plan = fixture(&[("project.dme", text.as_str())]);
+        let expanded = expand_regions_text(&plan, 2);
+        assert!(expanded.diagnostics.is_empty(), "{:?}", expanded.diagnostics);
+        let joined: String = expanded.text.to_string();
+        assert!(joined.contains("emit(1, list("), "{joined}");
+        assert_eq!(joined.contains("\"b\" = 2"), expect_b, "{joined}");
+        assert!(joined.contains("return 1"), "{joined}");
+    }
+}
+
+#[test]
+fn open_macro_call_never_closed_still_reports_per_line_in_regions() {
+    let plan = fixture(&[(
+        "project.dme",
+        "#define EVENT(a) emit(a)
+/proc/test()
+	EVENT(1,
+#ifdef NOPE
+#endif
+	return 2
+",
+    )]);
+    let expanded = expand_regions_text(&plan, 2);
+    assert_eq!(expanded.diagnostics.len(), 1, "{:?}", expanded.diagnostics);
+    assert!(expanded.diagnostics[0].message.contains("missing )"));
+}

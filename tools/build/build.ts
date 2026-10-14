@@ -849,6 +849,26 @@ export const DmbcTarget = new Juke.Target({
   ],
   outputs: [DMBC_EXE],
   executes: async () => {
+    // Windows will not let cargo replace an executable a resident dmbc daemon is still running ("failed to remove file ...
+    // dmbc.exe: Access is denied"), but it does let the running file be renamed. Move the old one aside, and sweep the aside
+    // copies of earlier builds that no daemon holds any more.
+    const exeDir = path.dirname(DMBC_EXE);
+    const exeName = path.basename(DMBC_EXE);
+    for (const entry of fs.existsSync(exeDir) ? fs.readdirSync(exeDir) : []) {
+      if (!entry.startsWith(`${exeName}.old-`)) continue;
+      try {
+        fs.rmSync(`${exeDir}/${entry}`);
+      } catch {
+        // still running under a daemon; try again on the next build
+      }
+    }
+    if (fs.existsSync(DMBC_EXE)) {
+      try {
+        fs.renameSync(DMBC_EXE, `${DMBC_EXE}.old-${Date.now()}`);
+      } catch (error) {
+        Juke.logger.warn(`dmbc: could not move the previous ${DMBC_EXE} aside (${error}); cargo may fail to replace it`);
+      }
+    }
     // One cargo build at a time machine-wide; the slot script queues and reclaims crashed holders.
     const slots = 'tools/dq_machine_slots.sh';
     const cargo = ['cargo', 'build', '--release', '-p', 'dmbc', '--manifest-path', 'tools/dmb/Cargo.toml'];

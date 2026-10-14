@@ -33,7 +33,7 @@ pub(super) struct CachedUnit {
     pub(super) file_dir_changes: Vec<FileDirChange>,
 }
 
-pub(super) const CACHE_FORMAT_VERSION: u32 = 9;
+pub(super) const CACHE_FORMAT_VERSION: u32 = 10;
 pub(super) const MAX_CACHED_LEAF_BYTES: usize = 512 * 1024;
 pub(super) const MAX_CACHED_ORIGINS: usize = 8192;
 pub(super) const MAX_CACHED_PATHS: usize = 8192;
