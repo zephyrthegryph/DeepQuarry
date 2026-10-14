@@ -49,3 +49,7 @@ Numbers below are source identity estimates, not analyzer results.
 - window5: mapped/constructor anchoring, state and initial direction remain. Later controls/tile publication moved.
 
 No builds, tests, generators, analyzer jobs, baseline edits, commits, merge or push performed by this agent. git diff --check, new-block cross-tree uniqueness and new-proc duplicate audits are clean. Root owns one serialized validation batch and final handoff.
+
+## Exact retained site identities
+
+[Committed residual inventory](codex_A3_residual_sites.txt) lists every retained source identity from this lane’s post-edit audit, including repeated normalized rows. The per-file reasons above classify those identities; this is a source audit snapshot, not a fresh analyzer verdict after rebasing. Master’s subsequently removed declarations and rewritten setters must remain authoritative, and the root verification will establish the final baseline counts.
