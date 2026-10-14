@@ -4,6 +4,9 @@
 
 	var/tmp/obj/structure/blob/core/Blob
 
+CAPABILITIES(/datum/event/blob)
+	ref_one(nameof(Blob), /obj/structure/blob/core)
+
 
 /datum/event/blob/start()
 	var/turf/T = pick(GLOB.blobstart)

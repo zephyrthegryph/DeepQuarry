@@ -19,8 +19,6 @@
 	var/list/floors
 	/// The mission bound to this site (may be null for a raw debug site).
 	var/datum/expedition_mission/mission
-	/// The biome this site was generated as.
-	var/datum/expedition_biome/biome
 	/// Reproducible planner input and realized station geometry for this site.
 	var/generation_seed
 	var/datum/generated_station_spec/station_spec
@@ -65,6 +63,8 @@ CAPABILITIES(/datum/expedition_site)
 	owns_one(nameof(station_utilities), /datum/generated_station_utility_topology)
 	owns_many(nameof(station_controls))
 	ref_many(nameof(participants), /mob/living)
+	ref_one(nameof(assigned_shuttle), /datum/shuttle/autodock/overmap)
+	ref_one(nameof(assigned_flight_vessel), /datum/flight_vessel)
 
 /datum/expedition_site/New(_z_level, _difficulty = EXP_DIFF_LOW, turf/_landing)
 	z_level = _z_level

@@ -20,6 +20,7 @@
 	spent(src, user)
 
 CAPABILITIES(/datum/nobody_wants_to_learn_matrix_math)
+	ref_one(nameof(target), /atom)
 	interface("MatrixMathTester", rights = R_VAREDIT)
 	op("change_var", ui_act("change_var", arg("var_name", schema_text(4096)), arg("var_value", num())), then(PROC_REF(ui_act_change_var)))
 	op("scale", ui_act("scale", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_scale)))

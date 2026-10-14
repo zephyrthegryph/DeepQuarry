@@ -80,6 +80,7 @@ TRACKED(/obj/item/integrated_electronics/wirer, mode)
 	return
 
 CAPABILITIES(/obj/item/integrated_electronics/wirer)
+	ref_one(nameof(selected_io), /datum/integrated_io)
 	op("mode", in_hand(), label("Switch wiring mode"), then(PROC_REF(wiring_mode_changed)))
 
 /obj/item/integrated_electronics/wirer/proc/wiring_mode_changed(datum/act/op/A)

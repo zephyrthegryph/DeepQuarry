@@ -72,8 +72,9 @@
 	var/tmp/datum/event_meta/event_meta
 	var/list/affecting_z	= null // List of z-levels to affect, null lets the event choose (usally station_levels)
 	var/has_skybox_image	= FALSE // True if the skybox service should query this event for an image to put in the skybox.
-	/// Relation view: the ship this event is acting upon, if due to overmap travel.
-	var/tmp/obj/effect/overmap/visitable/ship/victim	// Ship this event is acting upon (If this is event is due to overmap travel).nt etc.
+
+CAPABILITIES(/datum/event)
+	ref_one(nameof(event_meta), /datum/event_meta)
 
 /datum/event/nothing
 
@@ -201,15 +202,9 @@ TRACKED(/datum/event, event_active)
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 
 /datum/event/proc/location_name()
-	if(victim())
-		return victim().name
 	return station_name()
 
 /// The event_meta this event was started from (a relation view).
 /datum/event/proc/event_meta() as /datum/event_meta
 	return event_meta
-
-/// The ship this event acts upon (a relation view: null once it is destroyed).
-/datum/event/proc/victim() as /obj/effect/overmap/visitable/ship
-	return victim
 

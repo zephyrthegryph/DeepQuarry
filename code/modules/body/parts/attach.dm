@@ -34,7 +34,8 @@
 GLOBAL_VAR_INIT(dq_part_trace, FALSE)
 /// The part place_into() is moving between two places in the same body, for
 /// the length of that one move, or null. Its detach half is then a reparent.
-GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
+/// The handle of the organ moving inside its own body right now (set and cleared around one commit in place_into()); a handle holds no reference.
+GLOBAL_VAR(dq_part_reparenting)
 
 /obj/item/organ
 
@@ -241,7 +242,7 @@ SETTER(/obj/item/organ, organ_tag)
 /datum/body/proc/release_subtree(obj/item/organ/root, destroying = FALSE)
 	// Moving within this body: the attach half re-adopts it at once, so this
 	// half neither reacts (left_body) nor counts a loss.
-	var/reparent = (root == GLOB.dq_part_reparenting)
+	var/reparent = entity_handle_is(GLOB.dq_part_reparenting, root)
 	var/list/tree = dq_part_subtree(root)
 	var/list/vital_lost
 	for(var/i in length(tree) to 1 step -1)

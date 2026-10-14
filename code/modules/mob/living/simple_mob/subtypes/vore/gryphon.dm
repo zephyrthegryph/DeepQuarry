@@ -138,6 +138,7 @@
 		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 CAPABILITIES(/mob/living/simple_mob/vore/gryphon)
+	ref_one(nameof(dq_maybe_eating), /mob/living)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

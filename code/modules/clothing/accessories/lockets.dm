@@ -10,6 +10,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/accessory/locket)
+	owns_one(nameof(held), /obj/item)
 	configure(item_worn(slots = SLOT_MASK | SLOT_TIE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("locket_flip_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Flip open"), then(PROC_REF(locket_flip_self)))
@@ -32,9 +33,9 @@ MSG_DEF_SELF(locket/no_open, "you have to open it first")
 	if(open)
 		set_icon_state("[base_icon]_open")
 		if(held())
-			to_chat(user, "\The [held()] falls out!")
-			held().forceMove(get_turf(user))
-			rel_clear(src, nameof(held))
+			var/obj/item/fallen = rel_take(src, nameof(held))
+			to_chat(user, "\The [fallen] falls out!")
+			fallen.forceMove(get_turf(user))
 	else
 		set_icon_state("[base_icon]")
 

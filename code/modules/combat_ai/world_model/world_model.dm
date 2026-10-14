@@ -122,4 +122,7 @@
 
 
 CAPABILITIES(/datum/world_model)
+	ref_one(nameof(owner), /mob/living)
+	ref_one(nameof(last_attacker), /atom)
+	ref_one(nameof(last_known_threat_turf), /atom)
 	ref_many(nameof(hazard_atoms))

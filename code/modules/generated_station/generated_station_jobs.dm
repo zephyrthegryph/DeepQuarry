@@ -35,6 +35,9 @@
 
 CAPABILITIES(/datum/generated_station_materialization_job)
 	ref_one(nameof(then_owner))
+	ref_one(nameof(materializer), /datum/generated_station_materializer)
+	ref_one(nameof(flight_plan), /datum/flight_plan)
+	ref_one(nameof(materialization), /datum/generated_station_materialization)
 
 /datum/generated_station_materialization_job/New(datum/generated_station_materializer/new_materializer, datum/flight_plan/new_flight_plan, fast_mode = FALSE)
 	..()

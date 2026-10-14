@@ -217,6 +217,7 @@ TRACKED(/mob, incorporeal_move)
 CAPABILITIES(/mob)
 	ref_one(nameof(LAssailant), /mob/living/carbon) // the last carbon to push, drag or grab this mob
 	ref_one(nameof(click_intercept), /datum)
+	ref_one(nameof(hovered_atom_view), /atom)
 	ref_one(nameof(focus), /datum) // what receives the mob's keyboard input (itself by default)
 	ref_one(nameof(mind), /datum/mind)
 	// Who the character says they are (profile_records.dm).

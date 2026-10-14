@@ -18,6 +18,7 @@ CAPABILITIES(/datum/system/events)
 	owns_one(nameof(new_event), /datum/event_meta)
 	owns_one(nameof(tgui_event_manager_panel), /datum/event_manager_panel)
 	owns_many(nameof(finished_events), /datum/event)
+	ref_one(nameof(selected_event_container), /datum/event_container)
 
 /datum/system/events/initialize()
 	if(initialized)

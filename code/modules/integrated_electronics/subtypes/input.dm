@@ -482,6 +482,7 @@
 	var/datum/radio_frequency/radio_connection
 
 CAPABILITIES(/obj/item/integrated_circuit/input/signaler)
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	after_init(4 SECONDS, then(PROC_REF(retune_after_init)))
 
 /obj/item/integrated_circuit/input/signaler/Initialize(mapload)
@@ -573,6 +574,7 @@ CAPABILITIES(/obj/item/integrated_circuit/input/signaler)
 	return 0
 
 CAPABILITIES(/obj/item/integrated_circuit/input/EPv2)
+	ref_one(nameof(node), /obj/machinery/exonet_node)
 	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
 
 /obj/item/integrated_circuit/input/EPv2/Initialize(mapload)

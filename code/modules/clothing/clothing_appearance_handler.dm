@@ -18,6 +18,8 @@
  *   onto the base icon before returning the image.
  */
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/clothing_appearance_handler)
+
 /datum/clothing_appearance_handler
 
 /*

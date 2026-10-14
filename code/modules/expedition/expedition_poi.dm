@@ -48,7 +48,7 @@
 // Biome-appropriate set-dressing near the centre, layered with the site's
 // faction theming (resin for xenos, wreckage/oil for synths, camp grime for mercs).
 /datum/expedition_poi/proc/decorate(turf/center, datum/expedition_site/site, radius = 4, count = 0)
-	expedition_decorate(center, radius, site ? site.biome : null, count || rand(4, 9))
+	expedition_decorate(center, radius, count || rand(4, 9))
 	if(site && site.faction != EXP_FACTION_FAUNA)
 		expedition_faction_decorate(center, radius, site.faction, rand(2, 5))
 
@@ -237,7 +237,6 @@
 	var/datum/expedition_building/B = new()
 	B.loot_difficulty = site ? site.difficulty : EXP_DIFF_LOW
 	B.loot_size = size
-	rel_set(B, nameof(B.loot_biome), site?.biome)
 	if(!B.build(center, rand(dim - 2, dim + 4), rand(dim - 2, dim + 4)))
 		spent(B)
 		return null

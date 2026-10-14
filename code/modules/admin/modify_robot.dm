@@ -40,6 +40,8 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	owns_many(nameof(law_list), /datum/ai_laws)
 	owns_one(nameof(source), /mob/living/silicon/robot)
 	ref_one(nameof(editing_law), /datum/ai_law)
+	ref_one(nameof(target), /mob/living/silicon/robot)
+	ref_one(nameof(multibelt_holder), /obj/item/robotic_multibelt)
 	interface("ModifyRobot", title = "Modify Robot", rights = R_ADMIN|R_EVENT|R_DEBUG)
 
 	section(modules, "The Modify Robot panel's name, target, module, upgrades, modkits and tools")

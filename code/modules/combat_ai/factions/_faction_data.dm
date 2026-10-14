@@ -14,6 +14,7 @@
 GLOBAL_LIST_EMPTY(dq_faction_data)
 GLOBAL_DATUM_INIT(dq_faction_data_default, /datum/faction_data, new())
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/faction_data)
 /datum/faction_data
 	/// The mob.faction string this data is keyed by. Subclasses set this; if null, the subtype is abstract and isn't registered.
 	var/faction_key = null

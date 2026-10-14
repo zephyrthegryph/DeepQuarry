@@ -16,6 +16,8 @@
 	return GLOB.tgui_default_state
 
 CAPABILITIES(/datum/flight_operations_ui)
+	ref_one(nameof(host), /datum)
+	ref_one(nameof(forced_vessel), /datum/flight_vessel)
 	interface("FlightOperations", title = "Flight Operations")
 	op("jump", ui_act("jump", arg("destination_id", schema_text(4096))), then(PROC_REF(ui_act_jump)))
 	op("select_destination", ui_act("select_destination", arg("destination_id")), then(PROC_REF(ui_act_select_destination)))

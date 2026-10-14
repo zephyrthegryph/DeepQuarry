@@ -48,9 +48,12 @@ CAPABILITIES(/obj/item/electronic_assembly/clothing)
 	var/obj/item/integrated_circuit/built_in/action_button/action_circuit = null
 
 CAPABILITIES(/obj/item/clothing)
+	ref_one(nameof(wearer), /mob)
+	ref_one(nameof(master_rig), /obj/item/rig)
 	configure(item_protection(siemens = 0.9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 	owns_one(nameof(IC), /obj/item/electronic_assembly/clothing)
+	ref_one(nameof(action_circuit), /obj/item/integrated_circuit/built_in/action_button)
 	owns_many(nameof(accessories))
 	verb_entry(/obj/item/clothing/proc/change_color, when = nameof(polychromic))
 	drag_onto(PROC_REF(mousedrop_input))

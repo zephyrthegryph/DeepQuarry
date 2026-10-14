@@ -27,6 +27,7 @@
 
 CAPABILITIES(/atom/movable)
 	ref_many(nameof(swarm_members))
+	ref_one(nameof(heat_fire_turf), /turf)
 	owns_one(nameof(em_block), /atom/movable/emissive_blocker)
 	owns_one(nameof(experiment_handler), /datum/experiment_handler)
 	owns_one(nameof(overlay_light), /datum/overlay_lighting)

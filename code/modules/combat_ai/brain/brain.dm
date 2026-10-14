@@ -74,6 +74,11 @@
 	var/datum/op_result/waiting_op = null
 
 CAPABILITIES(/datum/ai_brain)
+	ref_one(nameof(holder), /mob/living)
+	ref_one(nameof(primary_threat), /mob/living)
+	ref_one(nameof(active_target), /atom)
+	ref_one(nameof(active_source), /atom)
+	ref_one(nameof(leader), /mob)
 	ref_many(nameof(behavior_sources))
 	owns_one(nameof(model), /datum/world_model)
 	ref_one(nameof(lord))

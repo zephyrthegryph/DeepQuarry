@@ -26,6 +26,7 @@
 	return 0
 
 CAPABILITIES(/obj/item/integrated_circuit/illegal/EPv2_Discoverer)
+	ref_one(nameof(node), /obj/machinery/exonet_node)
 	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
 
 /obj/item/integrated_circuit/illegal/EPv2_Discoverer/Initialize(mapload)

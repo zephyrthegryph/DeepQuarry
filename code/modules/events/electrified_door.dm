@@ -5,6 +5,9 @@
 		/area/crew_quarters
 	)
 
+CAPABILITIES(/datum/event/electrified_door)
+	ref_one(nameof(chosen_door), /obj/machinery/door/airlock)
+
 /datum/event/electrified_door/setup()
 	var/list/area/grand_list_of_areas = get_station_areas(excluded)
 	//try 10 times

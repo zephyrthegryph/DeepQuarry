@@ -29,13 +29,12 @@
 	/// Optional time limit (0 = none); failure if the deadline passes.
 	var/time_limit = 0
 	var/deadline = 0
-	/// Optional: pin the site biome (a /datum/expedition_biome subtype). Null = random.
-	var/biome_type = null
 	/// Optional: pin the enemy faction (EXP_FACTION_*). 0/null = roll one for the site.
 	var/faction_type = null
 
 CAPABILITIES(/datum/expedition_mission)
 	owns_many(nameof(objectives))
+	ref_one(nameof(site), /datum/expedition_site)
 
 /datum/expedition_mission/New(_difficulty = EXP_DIFF_LOW)
 	difficulty = _difficulty

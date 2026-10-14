@@ -49,6 +49,9 @@ CAPABILITIES(/datum/generated_station_department_definition)
 	var/desired_area = 1
 	var/layout_node_id
 
+CAPABILITIES(/datum/generated_station_department_instance)
+	ref_one(nameof(definition_static), /datum/generated_station_department_definition)
+
 /// Abstract layout vertex. Geometry generation consumes this graph later.
 /datum/generated_station_layout_node
 	var/id

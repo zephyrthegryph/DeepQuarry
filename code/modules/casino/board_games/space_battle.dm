@@ -41,6 +41,8 @@
 	var/ships_have_been_placed = NONE
 
 CAPABILITIES(/datum/board_game/space_battle)
+	ref_one(nameof(player_one), /mob)
+	ref_one(nameof(player_two), /mob)
 	interface("SpaceBattle", state = nameof(GLOB.tgui_board_game_state))
 	op("be_player_one", ui_act("be_player_one"), then(PROC_REF(ui_act_be_player_one)))
 	op("be_player_two", ui_act("be_player_two"), then(PROC_REF(ui_act_be_player_two)))

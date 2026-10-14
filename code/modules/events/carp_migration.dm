@@ -37,7 +37,7 @@ CAPABILITIES(/datum/event/carp_migration)
 
 /datum/event/carp_migration/proc/spawn_fish(num_groups, group_size_min, group_size_max, dir)
 	if(isnull(dir))
-		dir = (victim() && prob(80)) ? victim().fore_dir : pick(GLOB.cardinal)
+		dir = pick(GLOB.cardinal)
 
 	// Check if any landmarks exist!
 	var/list/spawn_locations = list()

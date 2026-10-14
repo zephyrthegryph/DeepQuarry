@@ -15,6 +15,7 @@
 // The admin holder owns this panel (tgui_player_panel); owner_admin is a plain relation back.
 
 CAPABILITIES(/datum/player_panel)
+	ref_one(nameof(owner_admin))
 	interface("PlayerPanel", title = "Player Panel", rights = R_HOLDER)
 	op("admin_opts", ui_act("admin_opts", arg("ref", schema_ref(/mob))), then(PROC_REF(ui_act_admin_opts)))
 	op("private_message", ui_act("private_message", arg("ref", schema_ref(/mob))), then(PROC_REF(ui_act_private_message)))

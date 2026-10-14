@@ -18,7 +18,7 @@ TRACKED(/obj/item/organ, parent_organ)
 	var/list/transplant_data			// Transplant match data.
 	var/list/autopsy_data		// Trauma data for forensics.
 	var/list/trace_chemicals	// Traces of chemicals in the organ.
-	var/datum/organ_data/data = new()	// Stores data for appearance and investigation
+	var/datum/organ_data/data = /datum/organ_data	// Stores data for appearance and investigation (built at init)
 
 	// Damage vars.
 	var/min_bruised_damage = 10			// Damage before considered bruised
@@ -544,7 +544,7 @@ TRACKED(/obj/item/organ, max_damage)
 		return FALSE
 	var/reparent = owner && dq_part_destination_owner(holder, slot_id) == owner
 	if(reparent)
-		GLOB.dq_part_reparenting = src
+		GLOB.dq_part_reparenting = entity_handle(src)
 	. = dq_ledger_commit(src, holder, slot_id)
 	if(reparent)
 		GLOB.dq_part_reparenting = null
@@ -577,6 +577,8 @@ MSG_DEF(organ/butcher_begin, span_danger("You are preparing to butcher %T%!"), s
 // An organ in hand: bitten (outside combat, aiming at the mouth); an organ on the table: butchered with a blade (a screwdriver for a robotic
 // one) or revived with peridaxon.
 CAPABILITIES(/obj/item/organ)
+	ref_one(nameof(owner), /mob/living)
+	owns_one(nameof(data), /datum/organ_data, starts = nameof(data))
 	derives(nameof(w_class), PROC_REF(birth_size))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))
 	reagents(5)

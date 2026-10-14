@@ -319,6 +319,7 @@ GLOBAL_DATUM(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all)
 	var/obj/effect/statclick/SDQL2_action/action_click
 
 CAPABILITIES(/datum/SDQL2_query)
+	ref_one(nameof(requester), /mob)
 	owns_one(nameof(action_click), /obj/effect/statclick/SDQL2_action)
 	owns_one(nameof(delete_click), /obj/effect/statclick/SDQL2_delete)
 
@@ -1148,6 +1149,7 @@ CAPABILITIES(/obj/effect/statclick/SDQL2_action)
 	Q.action_click(A.actor)
 	return TRUE
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/obj/effect/statclick/SDQL2_VV_all)
 /obj/effect/statclick/SDQL2_VV_all
 	name = "VIEW VARIABLES"
 

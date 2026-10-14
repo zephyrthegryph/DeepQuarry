@@ -29,6 +29,9 @@ handles linking back and forth.
 	var/datum/material_container/local_container
 
 CAPABILITIES(/datum/remote_materials)
+	ref_one(nameof(silo), /obj/machinery/ore_silo)
+	ref_one(nameof(mat_container), /datum/material_container)
+	ref_one(nameof(owner), /atom)
 	owns_one(nameof(local_container), /datum/material_container)
 
 
