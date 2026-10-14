@@ -52,3 +52,7 @@ Run `/datum/unit_test/dq_a11_initialization` (turbine_ports, message_server, cha
 Pipe renderer jobs intentionally keep compile-time map icons and hidden alpha hints while applying runtime resets at setup, exactly as old Initialize did. A base default alone would leave child/map values unchanged. The new constructor test asserts hidden alpha 128 becomes runtime 255 and checks real vent volume.
 
 Root preflight: generated trackedcheck clean; analyzer init baseline4115 ->4012 (103removed), decl47unchanged. Manual techweb-node callbacks remain unchanged. Native-roll causes are recorded in intended_changes.md. Runtime gate pending.
+
+## Exact retained site identities
+
+[Committed residual inventory](codex_A11_residual_sites.txt) lists every retained source identity from this lane’s post-edit audit, including repeated normalized rows. The per-file reasons above classify those identities; this is a source audit snapshot, not a fresh analyzer verdict after rebasing. Master’s subsequently removed declarations and rewritten setters must remain authoritative, and the root verification will establish the final baseline counts.

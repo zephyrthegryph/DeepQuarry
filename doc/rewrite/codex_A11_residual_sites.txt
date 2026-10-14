@@ -1,0 +1,246 @@
+Source-only estimate; root must certify.
+init_lines 229 -> 131
+world_reads 9 -> 4
+init_lines	code/ATMOSPHERICS/atmospherics.dm	@/obj/machinery/atmospherics/pipe::Initialize::ensure_pump_materials count=1
+init_lines	code/ATMOSPHERICS/atmospherics.dm	@/obj/machinery/atmospherics/pipe::Initialize::if count=1
+init_lines	code/ATMOSPHERICS/atmospherics.dm	@/obj/machinery/atmospherics::Initialize::color count=1
+init_lines	code/ATMOSPHERICS/atmospherics.dm	@/obj/machinery/atmospherics::Initialize::if count=2
+init_lines	code/ATMOSPHERICS/atmospherics.dm	@/obj/machinery/atmospherics::Initialize::init_dir count=1
+init_lines	code/ATMOSPHERICS/atmospherics.dm	@/obj/machinery/atmospherics::Initialize::pipe_color count=2
+init_lines	code/ATMOSPHERICS/components/omni_devices/mixer.dm	@/obj/machinery/atmospherics/omni/mixer::Initialize::P.concentration count=4
+init_lines	code/ATMOSPHERICS/components/omni_devices/mixer.dm	@/obj/machinery/atmospherics/omni/mixer::Initialize::con count=5
+init_lines	code/ATMOSPHERICS/components/omni_devices/mixer.dm	@/obj/machinery/atmospherics/omni/mixer::Initialize::for count=1
+init_lines	code/ATMOSPHERICS/components/omni_devices/mixer.dm	@/obj/machinery/atmospherics/omni/mixer::Initialize::if count=9
+init_lines	code/ATMOSPHERICS/components/omni_devices/mixer.dm	@/obj/machinery/atmospherics/omni/mixer::Initialize::switch count=1
+init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::build_icons count=1
+init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::for count=1
+init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::if count=5
+init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::initialize_directions count=1
+init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::new_port count=1
+init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::new_port.mode count=4
+init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::rel_add count=1
+init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::switch count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::COOLDOWN_START count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::air_update_turf count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::cold_fire count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::else if count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::enemy_spot count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::enemy_spot.our_hot_group.add_to_group count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::expr count=2
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::for count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::if count=11
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::our_hot_group.add_to_group count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::our_hot_group.merge_hot_groups count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::our_turf count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::rel_set count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::return count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::setDir count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::temperature count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::update_color count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::volume count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/turf/open::Initialize::register_open_air count=1
+init_lines	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/turf/open::Initialize::setup_open_air count=1
+init_lines	code/ATMOSPHERICS/pipes/pipe_base.dm	@/obj/machinery/atmospherics/pipe::Initialize::if count=1
+init_lines	code/ATMOSPHERICS/pipes/pipe_base.dm	@/obj/machinery/atmospherics/pipe::Initialize::level count=1
+init_lines	code/game/gamemodes/changeling/state/powers/fabricate_clothing.dm	@/obj/item/card/id/syndicate/changeling::Initialize::access count=1
+init_lines	code/game/gamemodes/changeling/state/powers/fabricate_clothing.dm	@/obj/item/card/id/syndicate/changeling::Initialize::if count=1
+init_lines	code/game/gamemodes/changeling/state/powers/fabricate_clothing.dm	@/obj/item/card/id/syndicate/changeling::Initialize::rel_set count=1
+init_lines	code/game/gamemodes/cult/construct_spells.dm	@/obj/item/spell/construct::Initialize::if count=1
+init_lines	code/game/gamemodes/cult/construct_spells.dm	@/obj/item/spell/construct::Initialize::return count=1
+init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Initialize::if count=3
+init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Initialize::rel_set count=2
+init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Initialize::return count=1
+init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Initialize::to_chat count=1
+init_lines	code/game/gamemodes/technomancer/spells/aura/aura.dm	@/obj/item/spell/aura::Initialize::log_and_message_admins count=1
+init_lines	code/game/gamemodes/technomancer/spells/control.dm	@/obj/item/spell/control::Initialize::control_overlay count=1
+init_lines	code/game/gamemodes/technomancer/spells/flame_tongue.dm	@/obj/item/spell/flame_tongue::Initialize::visible_message count=1
+init_lines	code/game/gamemodes/technomancer/spells/flame_tongue.dm	@/obj/item/spell/flame_tongue::Initialize::welder.setWelding count=1
+init_lines	code/game/gamemodes/technomancer/spells/radiance.dm	@/obj/item/spell/radiance::Initialize::log_and_message_admins count=1
+init_lines	code/game/gamemodes/technomancer/spells/reflect.dm	@/obj/item/spell/reflect::Initialize::expire count=1
+init_lines	code/game/gamemodes/technomancer/spells/reflect.dm	@/obj/item/spell/reflect::Initialize::to_chat count=1
+init_lines	code/modules/research/message_server.dm	@/obj/machinery/blackbox_recorder::Initialize::GLOB.blackbox count=1
+init_lines	code/modules/research/message_server.dm	@/obj/machinery/blackbox_recorder::Initialize::if count=1
+init_lines	code/modules/research/message_server.dm	@/obj/machinery/blackbox_recorder::Initialize::return count=1
+init_lines	code/modules/research/tg/disks.dm	@/obj/item/disk/tech_disk/debug::Initialize::proto_set count=1
+init_lines	code/modules/research/tg/disks.dm	@/obj/item/disk/tech_disk::Initialize::if count=1
+init_lines	code/modules/research/tg/disks.dm	@/obj/item/disk/tech_disk::Initialize::proto_set count=1
+init_lines	code/modules/research/tg/machinery/_production.dm	@/obj/machinery/rnd/production::Initialize::available_designs count=1
+init_lines	code/modules/research/tg/machinery/_production.dm	@/obj/machinery/rnd/production::Initialize::rel_set count=1
+init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::allowed_experiments count=1
+init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::config_flags count=1
+init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::config_mode count=1
+init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::destructive_events count=1
+init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::experiment_events count=1
+init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::expr count=4
+init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::available_designs count=1
+init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::illegal_local_designs count=1
+init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::rel_set count=1
+init_lines	code/modules/research/tg/rdmachines.dm	@/obj/machinery/rnd::Initialize::CONNECT_TO_RND_SERVER_ROUNDSTART count=1
+init_lines	code/modules/research/tg/rdmachines.dm	@/obj/machinery/rnd::Initialize::if count=2
+init_lines	code/modules/research/tg/rdmachines.dm	@/obj/machinery/rnd::Initialize::on_connected_techweb count=1
+init_lines	code/modules/research/tg/server.dm	@/obj/machinery/rnd/server::Initialize::connect_techweb count=1
+init_lines	code/modules/research/tg/server.dm	@/obj/machinery/rnd/server::Initialize::if count=1
+init_lines	code/modules/research/tg/server.dm	@/obj/machinery/rnd/server::Initialize::name count=1
+init_lines	code/modules/research/tg/server.dm	@/obj/machinery/rnd/server::Initialize::refresh_working count=1
+init_lines	code/modules/research/tg/server.dm	@/obj/machinery/rnd/server::Initialize::rel_add count=1
+init_lines	code/modules/research/tg/server.dm	@/obj/machinery/rnd/server::Initialize::science_web count=1
+
+init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::for count=3
+init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::LAZYSET count=2
+init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::unlock_ids[id] count=1
+Raw remaining initializer bodies:
+code/ATMOSPHERICS/atmospherics.dm /obj/machinery/atmospherics/pipe
+102 @/obj/machinery/atmospherics/pipe::Initialize::if if(power_rating > 0)
+103 @/obj/machinery/atmospherics/pipe::Initialize::ensure_pump_materials ensure_pump_materials()
+code/ATMOSPHERICS/atmospherics.dm /obj/machinery/atmospherics
+115 @/obj/machinery/atmospherics::Initialize::if if(!pipe_color)
+116 @/obj/machinery/atmospherics::Initialize::pipe_color set_pipe_color(color)
+117 @/obj/machinery/atmospherics::Initialize::color color = null
+119 @/obj/machinery/atmospherics::Initialize::if if(!pipe_color_check(pipe_color))
+120 @/obj/machinery/atmospherics::Initialize::pipe_color set_pipe_color(null)
+121 @/obj/machinery/atmospherics::Initialize::init_dir init_dir()
+code/ATMOSPHERICS/components/omni_devices/mixer.dm /obj/machinery/atmospherics/omni/mixer
+34 @/obj/machinery/atmospherics/omni/mixer::Initialize::if if(mapper_set())
+35 @/obj/machinery/atmospherics/omni/mixer::Initialize::con var/con = 0
+36 @/obj/machinery/atmospherics/omni/mixer::Initialize::for for(var/datum/omni_port/P in ports)
+37 @/obj/machinery/atmospherics/omni/mixer::Initialize::switch switch(P.dir)
+38 @/obj/machinery/atmospherics/omni/mixer::Initialize::if if(NORTH)
+39 @/obj/machinery/atmospherics/omni/mixer::Initialize::if if(tag_north_con && tag_north == 1)
+40 @/obj/machinery/atmospherics/omni/mixer::Initialize::P.concentration P.concentration = tag_north_con
+41 @/obj/machinery/atmospherics/omni/mixer::Initialize::con con += max(0, tag_north_con)
+42 @/obj/machinery/atmospherics/omni/mixer::Initialize::if if(SOUTH)
+43 @/obj/machinery/atmospherics/omni/mixer::Initialize::if if(tag_south_con && tag_south == 1)
+44 @/obj/machinery/atmospherics/omni/mixer::Initialize::P.concentration P.concentration = tag_south_con
+45 @/obj/machinery/atmospherics/omni/mixer::Initialize::con con += max(0, tag_south_con)
+46 @/obj/machinery/atmospherics/omni/mixer::Initialize::if if(EAST)
+47 @/obj/machinery/atmospherics/omni/mixer::Initialize::if if(tag_east_con && tag_east == 1)
+48 @/obj/machinery/atmospherics/omni/mixer::Initialize::P.concentration P.concentration = tag_east_con
+49 @/obj/machinery/atmospherics/omni/mixer::Initialize::con con += max(0, tag_east_con)
+50 @/obj/machinery/atmospherics/omni/mixer::Initialize::if if(WEST)
+51 @/obj/machinery/atmospherics/omni/mixer::Initialize::if if(tag_west_con && tag_west == 1)
+52 @/obj/machinery/atmospherics/omni/mixer::Initialize::P.concentration P.concentration = tag_west_con
+53 @/obj/machinery/atmospherics/omni/mixer::Initialize::con con += max(0, tag_west_con)
+code/ATMOSPHERICS/components/omni_devices/omni_base.dm /obj/machinery/atmospherics/omni
+40 @/obj/machinery/atmospherics/omni::Initialize::for for(var/d in GLOB.cardinal)
+41 @/obj/machinery/atmospherics/omni::Initialize::new_port var/datum/omni_port/new_port = new(src, d)
+42 @/obj/machinery/atmospherics/omni::Initialize::switch switch(d)
+43 @/obj/machinery/atmospherics/omni::Initialize::if if(NORTH)
+44 @/obj/machinery/atmospherics/omni::Initialize::new_port.mode new_port.mode = tag_north
+45 @/obj/machinery/atmospherics/omni::Initialize::if if(SOUTH)
+46 @/obj/machinery/atmospherics/omni::Initialize::new_port.mode new_port.mode = tag_south
+47 @/obj/machinery/atmospherics/omni::Initialize::if if(EAST)
+48 @/obj/machinery/atmospherics/omni::Initialize::new_port.mode new_port.mode = tag_east
+49 @/obj/machinery/atmospherics/omni::Initialize::if if(WEST)
+50 @/obj/machinery/atmospherics/omni::Initialize::new_port.mode new_port.mode = tag_west
+51 @/obj/machinery/atmospherics/omni::Initialize::if if(new_port.mode > 0)
+52 @/obj/machinery/atmospherics/omni::Initialize::initialize_directions initialize_directions |= d
+53 @/obj/machinery/atmospherics/omni::Initialize::rel_add rel_add(src, nameof(ports), new_port)
+55 @/obj/machinery/atmospherics/omni::Initialize::build_icons build_icons()
+code/ATMOSPHERICS/environmental/LINDA_fire.dm /obj/effect/hotspot
+109 @/obj/effect/hotspot::Initialize::if if(!isnull(starting_volume))
+110 @/obj/effect/hotspot::Initialize::volume volume = starting_volume
+111 @/obj/effect/hotspot::Initialize::if if(!isnull(starting_temperature))
+112 @/obj/effect/hotspot::Initialize::temperature temperature = starting_temperature
+113 @/obj/effect/hotspot::Initialize::if if(temperature <= FREON_MAXIMUM_BURN_TEMPERATURE)
+114 @/obj/effect/hotspot::Initialize::cold_fire cold_fire = TRUE
+116 @/obj/effect/hotspot::Initialize::our_turf var/turf/open/our_turf = loc
+118 @/obj/effect/hotspot::Initialize::for for(var/turf/open/to_check in vg_atmos_adjacent_turfs(our_turf))
+119 @/obj/effect/hotspot::Initialize::if if(!to_check.active_hotspot)
+120 @/obj/effect/hotspot::Initialize::expr continue
+121 @/obj/effect/hotspot::Initialize::enemy_spot var/obj/effect/hotspot/enemy_spot = to_check.active_hotspot
+123 @/obj/effect/hotspot::Initialize::if if(!enemy_spot.our_hot_group)
+124 @/obj/effect/hotspot::Initialize::expr continue
+125 @/obj/effect/hotspot::Initialize::if if(!our_hot_group)
+126 @/obj/effect/hotspot::Initialize::enemy_spot.our_hot_group.add_to_group enemy_spot.our_hot_group.add_to_group(src)
+127 @/obj/effect/hotspot::Initialize::else if else if(our_hot_group != enemy_spot.our_hot_group)
+128 @/obj/effect/hotspot::Initialize::our_hot_group.merge_hot_groups our_hot_group.merge_hot_groups(enemy_spot.our_hot_group)
+130 @/obj/effect/hotspot::Initialize::if if(QDELETED(our_hot_group))
+131 @/obj/effect/hotspot::Initialize::rel_set rel_set(src, nameof(our_hot_group), new /datum/hot_group)
+132 @/obj/effect/hotspot::Initialize::our_hot_group.add_to_group our_hot_group.add_to_group(src)
+135 @/obj/effect/hotspot::Initialize::if if(!perform_exposure())
+136 @/obj/effect/hotspot::Initialize::if if (QDELETED(src))
+138 @/obj/effect/hotspot::Initialize::return return INITIALIZE_HINT_QDEL
+140 @/obj/effect/hotspot::Initialize::if if(QDELETED(src))
+143 @/obj/effect/hotspot::Initialize::setDir setDir(pick(GLOB.cardinals))
+144 @/obj/effect/hotspot::Initialize::air_update_turf air_update_turf(FALSE, FALSE)
+147 @/obj/effect/hotspot::Initialize::if if(COOLDOWN_FINISHED(our_turf, fire_puff_cooldown))
+148 @/obj/effect/hotspot::Initialize::COOLDOWN_START COOLDOWN_START(our_turf, fire_puff_cooldown, 5 SECONDS)
+150 @/obj/effect/hotspot::Initialize::update_color update_color()
+code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm /turf/open
+52 @/turf/open::Initialize::setup_open_air setup_open_air()
+54 @/turf/open::Initialize::register_open_air register_open_air()
+code/ATMOSPHERICS/pipes/pipe_base.dm /obj/machinery/atmospherics/pipe
+53 @/obj/machinery/atmospherics/pipe::Initialize::if if(istype(get_turf(src), /turf/simulated/wall) || istype(get_turf(src), /turf/simulated/shuttle/wall) || istype(get_turf(src), /turf/unsimulated/wall))
+54 @/obj/machinery/atmospherics/pipe::Initialize::level level = 1
+code/game/gamemodes/changeling/state/powers/fabricate_clothing.dm /obj/item/card/id/syndicate/changeling
+254 @/obj/item/card/id/syndicate/changeling::Initialize::if if(ismob(loc))
+255 @/obj/item/card/id/syndicate/changeling::Initialize::rel_set rel_set(src, nameof(registered_user), loc)
+256 @/obj/item/card/id/syndicate/changeling::Initialize::access access = null
+code/game/gamemodes/cult/construct_spells.dm /obj/item/spell/construct
+446 @/obj/item/spell/construct::Initialize::if if(!owner_ref())
+447 @/obj/item/spell/construct::Initialize::return return INITIALIZE_HINT_QDEL
+code/game/gamemodes/technomancer/spell_objs.dm /obj/item/spell
+126 @/obj/item/spell::Initialize::if if(isliving(loc))
+127 @/obj/item/spell::Initialize::rel_set rel_set(src, nameof(owner), loc)
+128 @/obj/item/spell::Initialize::if if(owner_ref() && !coreless)
+129 @/obj/item/spell::Initialize::rel_set rel_set(src, nameof(core), owner_ref().get_technomancer_core())
+130 @/obj/item/spell::Initialize::if if(!core)
+131 @/obj/item/spell::Initialize::to_chat to_chat(owner_ref(), span_warning("You need a Core to do that."))
+132 @/obj/item/spell::Initialize::return return INITIALIZE_HINT_QDEL
+code/game/gamemodes/technomancer/spells/aura/aura.dm /obj/item/spell/aura
+21 @/obj/item/spell/aura::Initialize::log_and_message_admins log_and_message_admins("has started casting [src].")
+code/game/gamemodes/technomancer/spells/control.dm /obj/item/spell/control
+82 @/obj/item/spell/control::Initialize::control_overlay control_overlay = image('icons/obj/spells.dmi',"controlled")
+code/game/gamemodes/technomancer/spells/flame_tongue.dm /obj/item/spell/flame_tongue
+23 @/obj/item/spell/flame_tongue::Initialize::visible_message visible_message(span_warning("\The [loc]'s hand begins to emit a flame."))
+24 @/obj/item/spell/flame_tongue::Initialize::welder.setWelding welder.setWelding(1)
+code/game/gamemodes/technomancer/spells/radiance.dm /obj/item/spell/radiance
+30 @/obj/item/spell/radiance::Initialize::log_and_message_admins log_and_message_admins("has casted [src].")
+code/game/gamemodes/technomancer/spells/reflect.dm /obj/item/spell/reflect
+23 @/obj/item/spell/reflect::Initialize::to_chat to_chat(owner_ref(), span_notice("Your shield will expire in 5 seconds!"))
+24 @/obj/item/spell/reflect::Initialize::expire expire(5 SECONDS)
+code/modules/research/message_server.dm /obj/machinery/blackbox_recorder
+287 @/obj/machinery/blackbox_recorder::Initialize::if if(istype(GLOB.blackbox, /obj/machinery/blackbox_recorder))
+288 @/obj/machinery/blackbox_recorder::Initialize::return return INITIALIZE_HINT_QDEL
+289 @/obj/machinery/blackbox_recorder::Initialize::GLOB.blackbox GLOB.blackbox = src
+code/modules/research/tg/disks.dm /obj/item/disk/tech_disk
+15 @/obj/item/disk/tech_disk::Initialize::if if(!stored_research())
+16 @/obj/item/disk/tech_disk::Initialize::proto_set proto_set(src, nameof(stored_research_static), new /datum/techweb/disk)
+code/modules/research/tg/disks.dm /obj/item/disk/tech_disk/debug
+23 @/obj/item/disk/tech_disk/debug::Initialize::proto_set proto_set(src, nameof(stored_research_static), locate_in_list(SSresearch.techwebs, /datum/techweb/admin))
+code/modules/research/tg/machinery/_production.dm /obj/machinery/rnd/production
+52 @/obj/machinery/rnd/production::Initialize::rel_set rel_set(src, nameof(materials), new /datum/remote_materials(src, mapload, mat_container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/rnd/production, local_material_insert))))
+53 @/obj/machinery/rnd/production::Initialize::available_designs available_designs = list()
+code/modules/research/tg/machinery/destructive_analyzer.dm /obj/machinery/rnd/destructive_analyzer
+49 @/obj/machinery/rnd/destructive_analyzer::Initialize::destructive_events var/static/list/destructive_events = list(
+50 @/obj/machinery/rnd/destructive_analyzer::Initialize::expr /datum/notice/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
+51 @/obj/machinery/rnd/destructive_analyzer::Initialize::expr )
+53 @/obj/machinery/rnd/destructive_analyzer::Initialize::expr new /datum/experiment_handler(src, \
+54 @/obj/machinery/rnd/destructive_analyzer::Initialize::config_mode config_mode = EXPERIMENT_CONFIG_ALTCLICK, \
+55 @/obj/machinery/rnd/destructive_analyzer::Initialize::allowed_experiments allowed_experiments = list(/datum/experiment/scanning),\
+56 @/obj/machinery/rnd/destructive_analyzer::Initialize::config_flags config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE|EXPERIMENT_CONFIG_SILENT_FAIL,\
+57 @/obj/machinery/rnd/destructive_analyzer::Initialize::experiment_events experiment_events = destructive_events, \
+58 @/obj/machinery/rnd/destructive_analyzer::Initialize::expr )
+code/modules/research/tg/machinery/mech_fabricator.dm /obj/machinery/mecha_part_fabricator_tg
+94 @/obj/machinery/mecha_part_fabricator_tg::Initialize::rel_set rel_set(src, nameof(rmat), new /datum/remote_materials(src, mapload, mat_container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert))))
+95 @/obj/machinery/mecha_part_fabricator_tg::Initialize::available_designs available_designs = list()
+96 @/obj/machinery/mecha_part_fabricator_tg::Initialize::illegal_local_designs illegal_local_designs = list()
+code/modules/research/tg/rdmachines.dm /obj/machinery/rnd
+46 @/obj/machinery/rnd::Initialize::if if(!stored_research)
+47 @/obj/machinery/rnd::Initialize::CONNECT_TO_RND_SERVER_ROUNDSTART CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
+48 @/obj/machinery/rnd::Initialize::if if(stored_research)
+49 @/obj/machinery/rnd::Initialize::on_connected_techweb on_connected_techweb()
+code/modules/research/tg/server.dm /obj/machinery/rnd/server
+28 @/obj/machinery/rnd/server::Initialize::if if(!stored_research)
+29 @/obj/machinery/rnd/server::Initialize::science_web var/datum/techweb/science_web = locate_in_list(SSresearch.techwebs, /datum/techweb/science)
+30 @/obj/machinery/rnd/server::Initialize::connect_techweb connect_techweb(science_web)
+31 @/obj/machinery/rnd/server::Initialize::rel_add rel_add(stored_research, nameof(stored_research.techweb_servers), src)
+32 @/obj/machinery/rnd/server::Initialize::name name += " [num2hex(rand(1,65535), -1)]"
+33 @/obj/machinery/rnd/server::Initialize::refresh_working refresh_working()
+code/modules/research/tg/techwebs/_techweb_node.dm /datum/techweb_node
+56 @/datum/techweb_node::Initialize::for for(var/id in prereq_ids)
+57 @/datum/techweb_node::Initialize::LAZYSET LAZYSET(prereq_ids, id, TRUE)
+58 @/datum/techweb_node::Initialize::for for(var/id in design_ids)
+59 @/datum/techweb_node::Initialize::LAZYSET LAZYSET(design_ids, id, TRUE)
+60 @/datum/techweb_node::Initialize::for for(var/id in unlock_ids)
+61 @/datum/techweb_node::Initialize::unlock_ids[id] unlock_ids[id] = TRUE
