@@ -47,4 +47,12 @@ The gargoyle regression also exposed transient constructor arguments being disca
 
 ## Verification
 
-Initial lane-ready: production and test builds had zero errors; DreamChecker had zero diagnostics; ratchets passed. The focused batch passed 59 tests and failed the two destruction regressions above plus `dq_conversion_pin`. The latter reports master-side internal-storage and cloning initialization runtimes and stale mecha operation keys. Repairs and final verification are pending; no failed proof is stamped or recovered.
+Initial lane-ready: production and test builds had zero errors; DreamChecker had zero diagnostics; ratchets passed. The focused batch passed 59 tests and failed the two destruction regressions above plus `dq_conversion_pin`. The latter exposed master-side internal-storage and cloning initialization runtimes and stale mecha operation keys.
+
+The previously approved constructor repairs were carried as reviewed source hunks: internal storage validates its owner before linking it, and a missing cloning scanner is null rather than zero. Their constructor goldens were preserved. Only the two mecha key rows were refreshed for master's removal of `ai_use_equipment` in `f13b84652d`; the cause is recorded in `intended_changes.md`.
+
+The repair lane-ready passed on `e083eb304e44`: 59 tests passed, zero failed, zero boot runtimes or warnings, zero compile errors, zero DreamChecker diagnostics, and passing ratchets. It stamped `985d9e0dca` after recording probed look keys. Production/test compilers still emitted 87/107 warnings; unrelated smoke fixtures reported state-leak warnings. The new cleanup fixtures had no staleness or state-leak failures.
+
+The first batch covered `dq_look_pin`, its new type-default fixture, and all nine real-qdel consequence fixtures. The repair list reran the failed statue/gargoyle and conversion-pin checks, added the transient setup-argument test and existing constructor/reference tests, and included the mandatory requirement pin plus lane-ready's smoke, gameplay and incremental look checks. No full suite ran. Final baseline counts: markers 36 → 0, doc snippets 50 → 0, init visuals 23 → 21, destroy drop 6 → 5, destroy effects 5 → 5.
+
+The final documentation-only commit carries this stamp under the workflow's documented carry-over rule. Nothing was merged or pushed.
