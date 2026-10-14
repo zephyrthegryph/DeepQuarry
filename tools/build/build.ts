@@ -17,6 +17,7 @@ import { pruneStaleRunCopies, runCopyBase } from './lib/run_copies';
 import Juke from './juke/index.js';
 import { assertBuildRoot } from './lib/build_root';
 import { bun, bunRoot } from './lib/bun';
+import { runAnalyzeTests } from './lib/analyze_test_cache';
 import { computeCompileHash } from './lib/compile_hash';
 import { pairIsByondOutput } from './lib/compiler_stamp';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
@@ -826,6 +827,18 @@ export const GenTarget = new Juke.Target({
 
 // `tools/build/build.sh analyze` runs every engine lint (what tools/ci/check_ratchets.sh and
 // tools/ci/check_grep.sh wrap); extra arguments go to `analyze check` (e.g. --lint scheduler).
+// Only compiled Rust harnesses are cached; every gate runs every harness again.
+export const AnalyzeTestTarget = new Juke.Target({
+  executes: async ({ args }) => {
+    await runAnalyzeTests({
+      root: process.cwd(),
+      testArgs: args || [],
+      buildSlot: (action) => withSlot('cargo', 'analyze tests compile', action, (message) => Juke.logger.info(message)),
+      log: (message) => Juke.logger.info(message),
+    });
+  },
+});
+
 export const AnalyzeTarget = new Juke.Target({
   dependsOn: [GenTarget], // some lints read the generated DM (sem/reads)
   executes: async ({ args }) => {

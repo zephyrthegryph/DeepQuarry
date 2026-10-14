@@ -231,7 +231,7 @@ job_ratchets() {
 }
 job_tgui() { tools/build/build.sh tgui-lint; }
 job_analyze_tests() { # the analyzer's own cargo tests: a change under tools/analyze must leave them green (all targets, every failure listed)
-	bash tools/dq_machine_slots.sh run cargo --label analyze-tests -- bash -c 'cd tools/analyze && cargo test --no-fail-fast'
+	tools/build/build.sh analyze-test
 }
 
 names=()
