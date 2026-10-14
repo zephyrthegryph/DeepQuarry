@@ -112,6 +112,11 @@
 		return
 	TEST_ASSERT_EQUAL(diffs, 0, "scenarios whose click or menu order changed (the DXDIFF lines of the log)")
 	TEST_ASSERT_EQUAL(length(seen), length(golden), "the same scenarios resolve to a non-empty order as when the table was captured")
+	// Temporary explosion visuals can drift off T while the scenarios tear down.
+	// Track those fixture effects across the block, so their cleanup follows them.
+	for(var/turf/B as anything in block_turfs(test_block))
+		for(var/obj/effect/expl_particles/particle in contents_of(B))
+			own(particle)
 
 // ---- every type, statically ----
 
