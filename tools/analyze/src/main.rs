@@ -17,8 +17,9 @@ USAGE
   analyze check [--lint NAME...] [--changed-only] [--no-cache] [--rehash] [--raw] [--ci] [--root DIR]
       Run lints (default: all). Exit 1 if any fails. --raw ignores baselines (every site is new);
       --changed-only judges only files changed against origin/master and the working tree.
-  analyze baseline --update|--seed [--lint NAME...]
-      Rewrite ratchet baselines: --update only ever drops fixed sites; --seed records every site.
+  analyze baseline --update|--seed|--migrate [--lint NAME...]
+      Rewrite ratchet baselines: --update only ever drops fixed sites; --seed records every site;
+      --migrate rewrites line-text rows as identity rows (@owner::...) without adding or dropping one.
   analyze parity [NAME... | --all] [--bless] [--fixtures-only]
       Run the legacy Python lint and the engine port on this tree (and on tools/analyze/fixtures/)
       and diff the findings. --bless writes expected.txt from a clean fixture comparison.
@@ -235,8 +236,10 @@ fn main() -> ExitCode {
                 Mode::Seed
             } else if has("--update") {
                 Mode::Update
+            } else if has("--migrate") {
+                Mode::Migrate
             } else {
-                eprintln!("analyze baseline: pass --update or --seed");
+                eprintln!("analyze baseline: pass --update, --seed or --migrate");
                 return ExitCode::from(2);
             };
             let o = options(&args, &root);

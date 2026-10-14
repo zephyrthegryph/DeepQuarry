@@ -51,7 +51,7 @@ static META: Meta = Meta {
         baseline: BASELINE,
         header: &[
             "Initialize() ratchet sites (the init lint, tools/analyze/src/lints/init.rs; doc/rewrite/final_api.html sections 6 and 17).",
-            "rule<TAB>file<TAB>normalized line. Shrink-only: fix sites, then `analyze baseline --update --lint init`.",
+            "rule<TAB>file<TAB>text; an init_lines row is an identity (@owner::Initialize::target). Shrink-only: fix sites, then `analyze baseline --update --lint init`.",
         ],
         banned: &["late_initialize", "turf_on_materialize", "table_init_overrides"],
     },
@@ -154,7 +154,7 @@ impl Lint for Init {
         });
         match typed {
             Some(defs) => {
-                let mut by_rel: HashMap<&str, Vec<(u32, Def)>> = HashMap::new();
+                let mut by_rel: HashMap<&str, Vec<(u32, Def, String)>> = HashMap::new();
                 for (rel, header, owner, name) in &defs {
                     let kind = match name.as_str() {
                         "Initialize" => Def::Init,
@@ -162,7 +162,7 @@ impl Lint for Init {
                         _ if owner == "/turf" || owner.starts_with("/turf/") => Def::TurfMaterialize,
                         _ => continue,
                     };
-                    by_rel.entry(rel.as_str()).or_default().push((*header, kind));
+                    by_rel.entry(rel.as_str()).or_default().push((*header, kind, owner.clone()));
                 }
                 for f in &files {
                     out.cur = f.rel.clone();
@@ -171,14 +171,15 @@ impl Lint for Init {
                     let lines: Vec<&str> = (1..=raw.num_lines()).map(|n| raw.line(n).trim_end_matches('\r')).collect();
                     // The model's definitions, and the text headers too: a file the model does not compile (a map's code outside
                     // the test .dme, a branch of an #if) still counts as it did.
-                    let mut defs: std::collections::BTreeMap<u32, Def> = by_rel.get(f.rel.as_str()).map(|d| d.iter().copied().collect()).unwrap_or_default();
+                    let mut defs: std::collections::BTreeMap<u32, (Def, String)> =
+                        by_rel.get(f.rel.as_str()).map(|d| d.iter().map(|(h, k, o)| (*h, (*k, o.clone()))).collect()).unwrap_or_default();
                     for (i, line) in lines.iter().enumerate() {
                         if let Some(kind) = text_header(line) {
-                            defs.entry(i as u32 + 1).or_insert(kind);
+                            defs.entry(i as u32 + 1).or_insert((kind, text_owner(line)));
                         }
                     }
-                    for (header, kind) in defs {
-                        self.judge_def(f, &lines, header as usize, kind, out);
+                    for (header, (kind, owner)) in defs {
+                        self.judge_def(f, &lines, header as usize, kind, &owner, out);
                     }
                 }
             }
@@ -234,7 +235,7 @@ impl Init {
     }
 
     /// One definition's sites: the header (its ALLOW(init/CODE) keep) and, for an Initialize(), its body's world reads.
-    fn judge_def(&self, f: &SourceFile, lines: &[&str], number: usize, kind: Def, out: &mut Sink) {
+    fn judge_def(&self, f: &SourceFile, lines: &[&str], number: usize, kind: Def, owner: &str, out: &mut Sink) {
         match kind {
             Def::TurfMaterialize => out.site("turf_on_materialize", number),
             Def::Late => out.site("late_initialize", number),
@@ -259,7 +260,8 @@ impl Init {
                     let stmt = code.trim();
                     let super_call = matches!(stmt.replace(' ', "").as_str(), ".=..()" | "..()" | "return..()" | "return" | "return.");
                     if !stmt.is_empty() && !super_call {
-                        out.site("init_lines", n);
+                        // Identified by the type, the proc and the target the line writes or calls, not by its text: see [`init_line_target`].
+                        out.site_decl("init_lines", &f.rel, n, String::new(), format!("{}::Initialize::{}", owner, init_line_target(stmt)));
                     }
                     if world_read.is_match(code) && !allowed_in(out, f, lines, n, "init") {
                         out.site("world_reads", n);
@@ -275,10 +277,59 @@ impl Init {
         let lines = py_splitlines(f.text());
         for (i, line) in lines.iter().enumerate() {
             if let Some(kind) = text_header(line) {
-                self.judge_def(f, &lines, i + 1, kind, out);
+                self.judge_def(f, &lines, i + 1, kind, &text_owner(line), out);
             }
         }
     }
+}
+
+/// The owner a header line names (`/obj/x/Initialize(` is `/obj/x`); empty when the line writes none.
+fn text_owner(line: &str) -> String {
+    let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
+    init_header.captures(line).map(|c| c.s(1).to_string()).unwrap_or_default()
+}
+
+/// What an `init_lines` statement is about, for its identity (`owner::Initialize::target`):
+///
+/// * a write `x = v`, `src.x += v`, `var/T/x = v` or the call of its setter `set_x(v)`: the var `x` (so converting a write to its setter,
+///   which the `tracked` lint asks for, is the same site; `a.b = v` is `a.b`);
+/// * a call `proc(args)`, `src.proc(args)`, `obj.proc(args)`, `PROC_REF` macros included: the callee;
+/// * control flow (`if`, `else`, `for`, `while`, `switch`, ...): the keyword, so editing a condition keeps the site;
+/// * `return v`: `return`;
+/// * anything else (the argument lines of a multi-line call, a bare expression): `expr`.
+///
+/// Sites that share a target share an identity; the ratchet counts them per identity, so a fix still shrinks the count and a new
+/// line of the same target still fails once the count is exceeded.
+pub fn init_line_target(stmt: &str) -> String {
+    let t = stmt.trim();
+    let control = pat_match!(r"^(else\s+if|if|else|for|while|switch|do|try|catch|spawn)\b");
+    if let Some(c) = control.captures(t) {
+        return c.s(1).split_whitespace().collect::<Vec<_>>().join(" ");
+    }
+    if pat_match!(r"^return\b").is_match(t) {
+        return "return".to_string();
+    }
+    let t = t.strip_prefix("src.").unwrap_or(t);
+    // `var/list/x = ...` / `var/x`: the declared name.
+    let decl = pat_match!(r"^var/(?:[\w/]*/)?(\w+)\s*(?:=|$|\[)");
+    if let Some(c) = decl.captures(t) {
+        return c.s(1).to_string();
+    }
+    let assign = pat_match!(r"^(\.|[A-Za-z_][\w.\[\]]*)\s*(?:\|\||&&|<<|>>|[-+*/%|&^])?=(?:[^=]|$)");
+    if let Some(c) = assign.captures(t) {
+        return c.s(1).to_string();
+    }
+    let call = pat_match!(r"^([A-Za-z_][\w.:]*)\s*\(");
+    if let Some(c) = call.captures(t) {
+        let callee = c.s(1);
+        if let Some(var) = callee.strip_prefix("set_") {
+            if !var.is_empty() && !var.contains('.') {
+                return var.to_string();
+            }
+        }
+        return callee.to_string();
+    }
+    "expr".to_string()
 }
 
 /// A definition header as the text rule reads one (`/type/Initialize(` at column 0; a commented-out line is not one).
@@ -309,4 +360,143 @@ enum Def {
 
 pub fn register(reg: &mut Registry) {
     reg.add(Init);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::baseline::{check_sites, write_sites, Mode};
+    use crate::lint::Site;
+    use crate::tree::Tree;
+
+    const BASE: &str = "/obj/machinery/mineral/console/Initialize()
+	. = ..()
+	linked = locate(/obj/machinery/mineral/processing_unit) in range(src, 2)
+	set_power(5)
+	if(!pipe_color)
+		pipe_color = \"#fff\"
+	ensure_pump_materials()
+";
+
+    fn scan(text: &str) -> (Tree, Vec<Site>) {
+        let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", text)]);
+        let f = tree.get("code/a.dm").unwrap();
+        let mut out = Sink::new();
+        out.cur = f.rel.clone();
+        Init.scan_text(f, &mut out);
+        let sites = out.sites.into_iter().filter(|s| s.rule == "init_lines").collect();
+        (tree, sites)
+    }
+
+    fn judge(base: &std::path::Path, text: &str) -> (bool, String) {
+        let (tree, sites) = scan(text);
+        let by_rule = vec![("init_lines", sites.iter().collect::<Vec<_>>())];
+        let mut out = String::new();
+        let failed = check_sites("init", &tree, &by_rule, &|_| String::new(), base, &[], &mut out);
+        (failed, out)
+    }
+
+    fn seeded() -> (tempfile::TempDir, std::path::PathBuf) {
+        let (tree, sites) = scan(BASE);
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("b.txt");
+        let by_rule = vec![("init_lines", sites.iter().collect::<Vec<_>>())];
+        let n = write_sites(&path, &["h"], &tree, &by_rule, &["init_lines"], Mode::Seed).unwrap();
+        assert_eq!(n, 5);
+        (dir, path)
+    }
+
+    #[test]
+    fn targets_are_the_var_written_or_the_callee() {
+        let t = init_line_target;
+        assert_eq!(t("linked = locate(/obj/a)"), "linked");
+        assert_eq!(t("src.linked = x"), "linked");
+        assert_eq!(t("set_linked(x)"), "linked");
+        assert_eq!(t("src.set_linked(x)"), "linked");
+        assert_eq!(t("linked += 2"), "linked");
+        assert_eq!(t("a.b = 1"), "a.b");
+        assert_eq!(t("var/list/l = list()"), "l");
+        assert_eq!(t("ensure_pump_materials()"), "ensure_pump_materials");
+        assert_eq!(t("if(!pipe_color)"), "if");
+        assert_eq!(t("else if(x == 2)"), "else if");
+        assert_eq!(t("if(a == b) x = 1"), "if");
+        assert_eq!(t("return x"), "return");
+        assert_eq!(t("a == b"), "expr");
+        assert_eq!(t("\"just a string\","), "expr");
+    }
+
+    #[test]
+    fn the_same_sites_after_a_text_edit_a_move_and_a_reorder_stay_baselined() {
+        let (_dir, path) = seeded();
+        assert!(!judge(&path, BASE).0);
+        // A line's text edited.
+        let edited = BASE.replace("in range(src, 2)", "in range(src, 3)").replace("set_power(5)", "set_power(9)").replace("if(!pipe_color)", "if(isnull(pipe_color))");
+        let (failed, out) = judge(&path, &edited);
+        assert!(!failed, "{out}");
+        // Two lines moved within the proc, and the whole body reordered.
+        let reordered = "/obj/machinery/mineral/console/Initialize()
+	. = ..()
+	ensure_pump_materials()
+	if(!pipe_color)
+		pipe_color = \"#fff\"
+	set_power(5)
+	linked = locate(/obj/machinery/mineral/processing_unit) in range(src, 2)
+";
+        let (failed, out) = judge(&path, reordered);
+        assert!(!failed, "{out}");
+        // A write converted to its setter is the same site.
+        let (failed, out) = judge(&path, &BASE.replace("\t\tpipe_color = \"#fff\"", "\t\tset_pipe_color(\"#fff\")"));
+        assert!(!failed, "{out}");
+    }
+
+    #[test]
+    fn a_new_write_or_call_fails_and_a_second_line_of_a_known_target_fails_too() {
+        let (_dir, path) = seeded();
+        let (failed, out) = judge(&path, &format!("{BASE}\textra = 1\n"));
+        assert!(failed, "{out}");
+        assert!(out.contains("code/a.dm:8:"), "{out}");
+        let (failed, _) = judge(&path, &format!("{BASE}\tother_setup()\n"));
+        assert!(failed);
+        let (failed, _) = judge(&path, &format!("{BASE}\tlinked = null\n"));
+        assert!(failed, "a second write of a baselined target is a new site");
+        // The same var under another owner is another site.
+        let (failed, _) = judge(&path, &BASE.replace("/obj/machinery/mineral/console/", "/obj/machinery/mineral/other/"));
+        assert!(failed);
+    }
+
+    #[test]
+    fn a_fixed_line_shrinks_the_count_and_update_drops_exactly_it() {
+        let (_dir, path) = seeded();
+        let fixed = BASE.replace("\tlinked = locate(/obj/machinery/mineral/processing_unit) in range(src, 2)\n", "");
+        let (failed, out) = judge(&path, &fixed);
+        assert!(!failed, "{out}");
+        assert!(out.contains("1 baselined site gone"), "{out}");
+        let (tree, sites) = scan(&fixed);
+        let by_rule = vec![("init_lines", sites.iter().collect::<Vec<_>>())];
+        assert_eq!(write_sites(&path, &["h"], &tree, &by_rule, &["init_lines"], Mode::Update).unwrap(), 4);
+    }
+
+    #[test]
+    fn migrate_turns_line_text_rows_into_identity_rows_without_changing_the_count() {
+        let (tree, sites) = scan(BASE);
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("b.txt");
+        // The old format, including a setter spelled as its write, plus a row no site claims.
+        std::fs::write(
+            &path,
+            "# h\ninit_lines\tcode/a.dm\tlinked = locate(/obj/machinery/mineral/processing_unit) in range(src, 2)\ninit_lines\tcode/a.dm\tpower = 5\ninit_lines\tcode/a.dm\tif(!pipe_color)\ninit_lines\tcode/a.dm\tpipe_color = \"#fff\"\ninit_lines\tcode/a.dm\tensure_pump_materials()\ninit_lines\tcode/gone.dm\tx = 1\n",
+        )
+        .unwrap();
+        let by_rule = vec![("init_lines", sites.iter().collect::<Vec<_>>())];
+        let n = write_sites(&path, &["h"], &tree, &by_rule, &["init_lines"], Mode::Migrate).unwrap();
+        assert_eq!(n, 6);
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert!(text.contains("@/obj/machinery/mineral/console::Initialize::linked"), "{text}");
+        assert!(text.contains("@/obj/machinery/mineral/console::Initialize::power"), "{text}");
+        assert!(text.contains("init_lines\tcode/gone.dm\tx = 1"), "{text}");
+        // Re-running it changes nothing.
+        assert_eq!(write_sites(&path, &["h"], &tree, &by_rule, &["init_lines"], Mode::Migrate).unwrap(), 6);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+        assert!(!judge(&path, BASE).0);
+    }
 }

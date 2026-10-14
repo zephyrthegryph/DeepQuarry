@@ -16,6 +16,10 @@ pub enum Mode {
     Update,
     /// `--seed`: record every current site (create a baseline).
     Seed,
+    /// `--migrate`: rewrite each row that matches a current site (by line text, or already by identity) as that site's identity row.
+    /// Never adds or drops a row: a row no site claims is written back as it was, so the counts of a migration are exact and the
+    /// command can be re-run after a merge brought the baseline back to the line-text form.
+    Migrate,
 }
 
 pub type Counter = HashMap<(String, String), i64>;
@@ -116,7 +120,7 @@ pub fn write_sites(
             fingerprints(tree, found).into_iter().map(|f| (f.site.rel.clone(), f.site.line, f.text, f.fp)).collect();
         fps.sort();
         for (rel, _n, text, fp) in fps {
-            if mode == Mode::Update {
+            if mode == Mode::Update || mode == Mode::Migrate {
                 // A row still in the line-text form (written before declaration identities) is claimed by its line text, so the
                 // first `--update` after the change rewrites it as an identity row without adding or dropping one.
                 let ident_key = (rel.clone(), fp.clone());
@@ -129,6 +133,16 @@ pub fn write_sites(
                 *b -= 1;
             }
             rows.push(format!("{}	{}	{}", rule, rel, if fp.starts_with(IDENT_MARK) { &fp } else { &text }));
+        }
+        if mode == Mode::Migrate {
+            // Rows no current site claims stay as they were (a migration changes the form of a row, never the number of rows).
+            let mut rest: Vec<(&(String, String), &i64)> = budget.iter().filter(|(_, n)| **n > 0).collect();
+            rest.sort();
+            for ((rel, txt), n) in rest {
+                for _ in 0..*n {
+                    rows.push(format!("{}	{}	{}", rule, rel, txt));
+                }
+            }
         }
     }
     let mut out = String::new();
@@ -414,5 +428,87 @@ var	code/a.dm	@/obj/x::b
         let more = vec![decl("var", "code/a.dm", 2, "/obj/x::a"), decl("var", "code/a.dm", 3, "/obj/x::b"), decl("var", "code/a.dm", 3, "/obj/x::new")];
         let by_rule = vec![("var", more.iter().collect::<Vec<_>>())];
         assert_eq!(write_sites(&path, &["h"], &tree, &by_rule, &["var"], Mode::Update).unwrap(), 2);
+    }
+
+    const READ_ROW: &str = "# h
+unknown_read	code/a.dm	@/obj/machinery/mineral/console::refresh reads /datum/sector::map_sectors
+unknown_read	code/a.dm	@/obj/machinery/mineral/console::refresh reads /datum/sector::map_sectors
+";
+
+    fn read_site(line: u32, ident: &str) -> Site {
+        decl("unknown_read", "code/a.dm", line, ident)
+    }
+
+    fn check_reads(tree: &Tree, sites: &[Site]) -> (bool, String) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("b.txt");
+        std::fs::write(&path, READ_ROW).unwrap();
+        let by_rule = vec![("unknown_read", sites.iter().collect::<Vec<_>>())];
+        let mut out = String::new();
+        let failed = check_sites("reads", tree, &by_rule, &|_| String::new(), &path, &[], &mut out);
+        (failed, out)
+    }
+
+    const READER: &str = "/obj/machinery/mineral/console::refresh reads /datum/sector::map_sectors";
+
+    #[test]
+    fn read_sites_survive_a_text_edit_a_move_and_a_reorder() {
+        let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", "/obj/x
+	a = map_sectors[1]
+	b = edited(map_sectors)
+	c = 3
+")]);
+        // Text edited, moved to other lines, and swapped: same identities.
+        let (failed, out) = check_reads(&tree, &[read_site(3, READER), read_site(2, READER)]);
+        assert!(!failed, "{out}");
+    }
+
+    #[test]
+    fn a_new_read_or_a_third_read_of_a_known_key_fails_and_a_fixed_one_shrinks() {
+        let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", "/obj/x
+	a = map_sectors[1]
+	b = map_sectors[2]
+	c = map_sectors[3]
+")]);
+        let (failed, out) = check_reads(&tree, &[read_site(2, READER), read_site(3, READER), read_site(4, READER)]);
+        assert!(failed, "{out}");
+        assert!(out.contains("code/a.dm:4:"), "{out}");
+        // Another var, or another reader proc, is another site.
+        let (failed, _) = check_reads(&tree, &[read_site(2, READER), read_site(3, "/obj/machinery/mineral/console::refresh reads /datum/sector::other")]);
+        assert!(failed);
+        let (failed, _) = check_reads(&tree, &[read_site(2, READER), read_site(3, "/obj/machinery/mineral/console::other reads /datum/sector::map_sectors")]);
+        assert!(failed);
+        // One of the two fixed: not a failure, and `--update` drops exactly that row.
+        let (failed, out) = check_reads(&tree, &[read_site(2, READER)]);
+        assert!(!failed && out.contains("1 baselined site gone"), "{out}");
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("b.txt");
+        std::fs::write(&path, READ_ROW).unwrap();
+        let left = [read_site(2, READER)];
+        let by_rule = vec![("unknown_read", left.iter().collect::<Vec<_>>())];
+        assert_eq!(write_sites(&path, &["h"], &tree, &by_rule, &["unknown_read"], Mode::Update).unwrap(), 1);
+    }
+
+    #[test]
+    fn migrate_matches_rows_by_text_keeps_unmatched_rows_and_is_rerunnable() {
+        let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", "/obj/x
+	a = map_sectors[1]
+	b = other
+")]);
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("b.txt");
+        std::fs::write(&path, "# h
+unknown_read	code/a.dm	a = map_sectors[1]
+unknown_read	code/a.dm	b = old text
+").unwrap();
+        let s = vec![read_site(2, READER)];
+        let by_rule = vec![("unknown_read", s.iter().collect::<Vec<_>>())];
+        let n = write_sites(&path, &["h"], &tree, &by_rule, &["unknown_read"], Mode::Migrate).unwrap();
+        assert_eq!(n, 2);
+        let once = std::fs::read_to_string(&path).unwrap();
+        assert!(once.contains(&format!("unknown_read	code/a.dm	@{READER}")), "{once}");
+        assert!(once.contains("b = old text"), "{once}");
+        assert_eq!(write_sites(&path, &["h"], &tree, &by_rule, &["unknown_read"], Mode::Migrate).unwrap(), 2);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), once);
     }
 }

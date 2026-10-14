@@ -449,6 +449,7 @@ impl Engine {
                 let new = match mode {
                     Mode::Update => ceiling.min(count),
                     Mode::Seed => count,
+                    Mode::Migrate => ceiling,
                 };
                 if new != ceiling {
                     crate::scopes::write_ceiling(&scopes_path, meta.name, rule, new)?;
@@ -475,6 +476,7 @@ impl Engine {
                 let path = self.baseline_path(baseline);
                 let n = match mode {
                     Mode::Update => baseline::update_ceilings(&path, header, &run.sites)?,
+                    Mode::Migrate => baseline::read_ceilings(&path).len(),
                     Mode::Seed => {
                         let counts = baseline::key_counts(&run.sites);
                         baseline::write_ceilings(&path, header, &counts)?;

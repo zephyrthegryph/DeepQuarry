@@ -1,111 +1,111 @@
-# sem/reads: what the closed read walk cannot cover in a handler, an output, a condition or a contribution. rule<TAB>file<TAB>normalized line.
+# sem/reads: what the closed read walk cannot cover in a handler, an output, a condition or a contribution. rule<TAB>file<TAB>identity (@reader reads owner::var).
 # Shrink-only: `analyze baseline --update --lint sem/reads` drops fixed sites and never adds one.
-unknown_read	code/_helpers/icons.dm	if(!appearance || appearance.alpha <= 0)
-unknown_read	code/_helpers/icons.dm	defblend = appearance.blend_mode
-unknown_read	code/_helpers/icons.dm	if(appearance.overlays.len || appearance.underlays.len)
-unknown_read	code/_helpers/icons.dm	if(appearance.overlays.len || appearance.underlays.len)
-unknown_read	code/_helpers/icons.dm	if(appearance.overlays.len || appearance.underlays.len)
-unknown_read	code/_helpers/icons.dm	if(appearance.overlays.len || appearance.underlays.len)
-unknown_read	code/_helpers/icons.dm	copy = image(icon=curicon, icon_state=curstate, layer=appearance.layer, dir=base_icon_dir)
-unknown_read	code/_helpers/icons.dm	copy.color = appearance.color
-unknown_read	code/_helpers/icons.dm	PROCESS_OVERLAYS_OR_UNDERLAYS(flat, appearance.underlays, 0)
-unknown_read	code/_helpers/icons.dm	PROCESS_OVERLAYS_OR_UNDERLAYS(flat, appearance.underlays, 0)
-unknown_read	code/_helpers/icons.dm	PROCESS_OVERLAYS_OR_UNDERLAYS(flat, appearance.underlays, 0)
-unknown_read	code/_helpers/icons.dm	PROCESS_OVERLAYS_OR_UNDERLAYS(flat, appearance.overlays, 1)
-unknown_read	code/_helpers/icons.dm	PROCESS_OVERLAYS_OR_UNDERLAYS(flat, appearance.overlays, 1)
-unknown_read	code/_helpers/unsorted.dm	if(thing.datum_flags & DF_USE_TAG)
-unknown_read	code/_helpers/unsorted.dm	if(!thing.tag)
-unknown_read	code/_onclick/hud/alert.dm	else if(!severity || severity == alert.severity)
-unknown_read	code/_onclick/hud/alert.dm	if(alert.timeout)
-unknown_read	code/_onclick/hud/alert.dm	if(!hud_shown)
-unknown_read	code/_onclick/hud/alert.dm	if(icon_exists(ui_style, alert.icon_state))
-unknown_read	code/_onclick/hud/alert.dm	I.color = ui_color
-unknown_read	code/_onclick/hud/alert.dm	I.alpha = ui_alpha
-unknown_read	code/controllers/subsystems/overlays.dm	var/key = "[overlay.icon]-[overlay.icon_state]-[overlay.dir]"
-unknown_read	code/controllers/subsystems/overlays.dm	var/key = "[overlay.icon]-[overlay.icon_state]-[overlay.dir]"
-unknown_read	code/controllers/subsystems/overlays.dm	var/key = "[overlay.icon]-[overlay.icon_state]-[overlay.dir]"
-unknown_read	code/controllers/subsystems/overlays.dm	if(islist(priority_overlays))
-unknown_read	code/datums/chat_message.dm	return maptext_height
-unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
-unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
-unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
-unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
-unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
-unknown_read	code/game/objects/items/devices/radio/radio.dm	if(!on)
-unknown_read	code/modules/body/body.dm	var/gained = domains & ~dirty
-unknown_read	code/modules/body/body.dm	if(gained && owner)
-unknown_read	code/modules/clothing/under/miscellaneous.dm	if(!H.vore_prefs.resizable)
-unknown_read	code/modules/mob/inventory.dm	if (src.client)
-unknown_read	code/modules/mob/living/carbon/human/human_helpers.dm	return identifying_gender ? identifying_gender : gender
-unknown_read	code/modules/mob/living/carbon/human/human_helpers.dm	return identifying_gender ? identifying_gender : gender
-unknown_read	code/modules/mob/living/carbon/human/update_icons.dm	appearance_flags |= PIXEL_SCALE
-unknown_read	code/modules/mob/living/carbon/human/update_icons.dm	if(isnull(rest_dir))
-unknown_read	code/modules/mob/living/silicon/ai/life.dm	if(APU_power)
-unknown_read	code/modules/power/port_gen.dm	return overheating > 0 || temperature > cooling_temperature() + 0.1
-unknown_read	code/modules/tgui/modules/law_manager.dm	if(user.mind && user.mind.special_role)
-unknown_read	code/modules/tgui/states.dm	if(check_rights_for(user.client, R_ADMIN|R_EVENT|R_DEBUG))
-unknown_read	code/modules/tgui/states.dm	if(!cell || cell.charge <= 0 || lockcharge)
-unknown_read	code/modules/vore/resizing/resize.dm	effective_size += species.micro_size_mod
-unknown_read	code/modules/vore/resizing/resize.dm	if((z in using_map.station_levels) && CONFIG_GET(flag/pixel_size_limit))
-unknown_read	code/modules/vore/resizing/resize.dm	special_x = S.icon_scale_x
-unknown_read	code/modules/vore/resizing/resize.dm	special_y = S.icon_scale_y
-unknown_read	code/modules/vore/resizing/resize.dm	if(fuzzy || offset_override)
-unknown_read	code/modules/vore/resizing/resize.dm	center_offset = S.center_offset
-unknown_read	code/modules/vore/resizing/resize.dm	resize.Scale(new_size * icon_scale_x * special_x, new_size * icon_scale_y * special_y) //Change the size of the matrix
-unknown_read	code/modules/vore/resizing/resize.dm	resize.Scale(new_size * icon_scale_x * special_x, new_size * icon_scale_y * special_y) //Change the size of the matrix
-unknown_read	code/modules/vore/resizing/resize.dm	resize.Translate(center_offset * size_multiplier * icon_scale_x * special_x, (vis_height/2) * (new_size - 1)) //Move the player up in the tile so their feet align with the bottom
-unknown_read	code/modules/vore/resizing/resize.dm	resize.Translate(center_offset * size_multiplier * icon_scale_x * special_x, (vis_height/2) * (new_size - 1)) //Move the player up in the tile so their feet align with the bottom
-unknown_read	code/modules/vore/resizing/resize.dm	if(vore_prefs.size_strip_preference == SIZESTRIP_ITEMS)
-unknown_read	code/modules/vore/resizing/resize.dm	for(var/index = 1 to hud_list.len)
-untracked_global	code/_helpers/game.dm	return level in using_map.player_levels
-untracked_global	code/datums/containment/latency_policy.dm	GLOB.latency_sweep_holders[holder] = TRUE
-untracked_global	code/datums/operations/req.dm	var/datum/req/known = GLOB.reqs_interned[signature]
-untracked_global	code/datums/operations/req.dm	GLOB.reqs_interned[signature] = R
-untracked_global	code/game/gamemodes/technomancer/catalog.dm	if(T && (T.z in using_map.player_levels))
-untracked_global	code/game/jobs/whitelist.dm	if(!GLOB.whitelist)
-untracked_global	code/game/jobs/whitelist.dm	return ("[M.ckey]" in GLOB.whitelist)
-untracked_global	code/game/machinery/computer/arcade.dm	if(gamepaid == 0 && GLOB.vendor_account && !GLOB.vendor_account.suspended)
-untracked_global	code/game/machinery/computer/arcade.dm	if(gamepaid == 0 && GLOB.vendor_account && !GLOB.vendor_account.suspended)
-untracked_global	code/game/machinery/computer/law.dm	if(using_map && !(read_once(user.z) in using_map.contact_levels))
-untracked_global	code/game/machinery/computer/skills.dm	if(!using_map || (read_once(z) in using_map.contact_levels))
-untracked_global	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
-untracked_global	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
-untracked_global	code/game/objects/items/devices/holowarrant.dm	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
-untracked_global	code/game/objects/items/weapons/scrolls.dm	return !user.mind || GLOB.wizards.is_antagonist(user.mind)
-untracked_global	code/modules/admin/banjob.dm	for(var/s in GLOB.jobban_keylist)
-untracked_global	code/modules/admin/topic/admin_topic_panels.dm	if(SSemergency_shuttle.shuttle.has_arrive_time())
-untracked_global	code/modules/admin/topic/admin_topic_panels.dm	return (GLOB.master_mode == "secret") ? null : MSG(admin_topic/not_secret)
-untracked_global	code/modules/economy/Accounts.dm	if(department?.name in GLOB.department_accounts)
-untracked_global	code/modules/economy/vending.dm	if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
-untracked_global	code/modules/economy/vending.dm	if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
-untracked_global	code/modules/mob/living/carbon/human/inventory.dm	for(var/datum/category_group/underwear/UWC in GLOB.global_underwear.categories)
-untracked_global	code/modules/mob/living/silicon/pai/api.dm	return (check_ckey in GLOB.paikeys)
-untracked_global	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	return GLOB.ntnet_global && !GLOB.ntnet_global.setting_disabled
-untracked_global	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	return GLOB.ntnet_global && !GLOB.ntnet_global.setting_disabled
-untracked_global	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	return (!!GLOB.ntnet_global) ? null : /datum/msg/req_silent
-untracked_global	code/modules/overmap/helpers.dm	return GLOB.map_sectors["[z]"]
-untracked_global	code/modules/paperwork/faxmachine.dm	return (!GLOB.last_fax_role_request || ELAPSED_SINCE(src, GLOB.last_fax_role_request, CLOCK_WORLD) >= 5 MINUTES) ? null : MSG(fax/relays_recalibrating)
-untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	if(!shuttle)
-untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	return shuttle.location
-untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	return shuttle.location
-untracked_global	code/modules/shuttles/shuttle.dm	return (moving_status == SHUTTLE_INTRANSIT)
-untracked_global	code/modules/tgui/modules/communications.dm	return (!using_map || (get_z(A.actor) in using_map.contact_levels)) ? null : MSG(communications/out_of_range)
-untracked_global	code/modules/tgui/modules/crew_monitor.dm	return (T && (T.z in using_map.player_levels)) ? null : MSG(crew_monitor/out_of_range)
-untracked_global	code/modules/tickets/tickets_ui.dm	for(var/client/C in GLOB.clients)
-untracked_global	code/modules/vore/resizing/resize.dm	if((z in using_map.station_levels) && CONFIG_GET(flag/pixel_size_limit))
-untracked_global	maps/~map_system/maps.dm	if (long_range && (srcz in contact_levels))
-untracked_global	maps/~map_system/maps.dm	return contact_levels.Copy()
-untracked_global	maps/~map_system/maps.dm	else if (srcz in station_levels)
-untracked_global	maps/~map_system/maps.dm	return station_levels.Copy()
-dynamic_read	code/engine/lifeforms/forms.dm	if(!(E.args["var"] in D.vars))
-dynamic_read	code/engine/lifeforms/forms.dm	if(!(var_name in D.vars))
-hop_not_relation	code/game/atom/_atom.dm	return L.AllowDrop() ? L : L.drop_location()
-hop_not_relation	code/game/atom/_atom.dm	return L.AllowDrop() ? L : L.drop_location()
-hop_not_relation	code/modules/body/body.dm	if(gained && owner)
-hop_not_relation	code/modules/body/body.dm	PUBLISH_CHANGE(owner, MOB_KEY_HEALTH)
-hop_not_relation	code/modules/body/limb_state.dm	var/mob/living/carbon/human/H = owner
-hop_not_relation	code/modules/body/plans/humanoid.dm	var/mob/living/carbon/human/H = owner
-unknown_field	code/_onclick/hud/alert.dm	WARNING("[src] threw alert [category] with new_master [new_master] while already having that alert with master [master]")
-unknown_field	code/game/objects/structures/low_wall.dm	switch(G.material.name)
-unknown_field	code/game/objects/structures/low_wall.dm	switch(G.material.name)
-unknown_field	code/game/objects/structures/under_wardrobe.dm	if(!istype(H) || !H.species || !(H.species.appearance_flags & HAS_UNDERWEAR))
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /atom::@actor:alpha
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /atom::@actor:blend_mode
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /atom::@actor:overlays
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /atom::@actor:underlays
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /list::@actor:overlays.len
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /list::@actor:underlays.len
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /atom::@actor:layer
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /atom::@actor:color
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /atom::@actor:plane
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /image::@actor:underlays[].layer
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /image::@actor:underlays[].plane
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /image::@actor:overlays[].layer
+unknown_read	code/_helpers/icons.dm	@/::getFlatIcon reads /image::@actor:overlays[].plane
+unknown_read	code/_helpers/unsorted.dm	@/::REF reads /datum::@actor:datum_flags
+unknown_read	code/_helpers/unsorted.dm	@/::REF reads /datum::@actor:tag
+unknown_read	code/_onclick/hud/alert.dm	@/mob::throw_alert reads /atom/movable/screen/alert::@actor:alerts[].severity
+unknown_read	code/_onclick/hud/alert.dm	@/mob::throw_alert reads /atom/movable/screen/alert::@actor:alerts[].timeout
+unknown_read	code/_onclick/hud/alert.dm	@/datum/hud::reorganize_alerts reads /datum/hud::@actor:hud_used.hud_shown
+unknown_read	code/_onclick/hud/alert.dm	@/datum/hud::reorganize_alerts reads /datum/hud::@actor:hud_used.ui_style
+unknown_read	code/_onclick/hud/alert.dm	@/datum/hud::reorganize_alerts reads /datum/hud::@actor:hud_used.ui_color
+unknown_read	code/_onclick/hud/alert.dm	@/datum/hud::reorganize_alerts reads /datum/hud::@actor:hud_used.ui_alpha
+unknown_read	code/controllers/subsystems/overlays.dm	@/::overlays2text reads /image::@actor:overlays[].dir
+unknown_read	code/controllers/subsystems/overlays.dm	@/::overlays2text reads /image::@actor:overlays[].icon
+unknown_read	code/controllers/subsystems/overlays.dm	@/::overlays2text reads /image::@actor:overlays[].icon_state
+unknown_read	code/controllers/subsystems/overlays.dm	@/atom::cut_overlay reads /atom::@actor:priority_overlays
+unknown_read	code/datums/chat_message.dm	@/atom::runechat_y_offset reads /atom::@actor:maptext_height
+unknown_read	code/datums/containment/latency_policy.dm	@/::dq_latency_sweep_register reads /atom::@actor:flags
+unknown_read	code/datums/containment/latency_policy.dm	@/::dq_latency_sweep_register reads /atom::@target:flags
+unknown_read	code/datums/containment/latency_policy.dm	@/::dq_latency_sweep_register reads /atom::flags
+unknown_read	code/game/atom/_atom.dm	@/atom::get_oversized_icon_offsets reads /atom::@actor:pixel_x
+unknown_read	code/game/atom/_atom.dm	@/atom::get_oversized_icon_offsets reads /atom::@actor:pixel_y
+unknown_read	code/game/objects/items/devices/radio/radio.dm	@/obj/item/radio::CanUseTopic reads /obj/item/radio::on
+unknown_read	code/modules/body/body.dm	@/datum/body::invalidate reads /datum/body::@actor:body.dirty
+unknown_read	code/modules/body/body.dm	@/datum/body::invalidate reads /datum/body::@actor:body.owner
+unknown_read	code/modules/clothing/under/miscellaneous.dm	@/obj/item/clothing/gloves/bluespace::mob_can_unequip reads /datum/record/vore_prefs::@actor:vore_prefs.resizable
+unknown_read	code/modules/mob/inventory.dm	@/mob::remove_from_mob reads /mob::@actor:client
+unknown_read	code/modules/mob/living/carbon/human/human_helpers.dm	@/mob/living/carbon/human::get_gender reads /atom::@actor:gender
+unknown_read	code/modules/mob/living/carbon/human/human_helpers.dm	@/mob/living/carbon/human::get_gender reads /mob/living/carbon/human::@actor:identifying_gender
+unknown_read	code/modules/mob/living/carbon/human/update_icons.dm	@/mob/living/carbon/human::update_transform reads /atom::@actor:appearance_flags
+unknown_read	code/modules/mob/living/carbon/human/update_icons.dm	@/mob/living/carbon/human::update_transform reads /mob/living/carbon/human::@actor:rest_dir
+unknown_read	code/modules/mob/living/silicon/ai/life.dm	@/mob/living/silicon/ai::lacks_power reads /mob/living/silicon/ai::@actor:APU_power
+unknown_read	code/modules/power/port_gen.dm	@/obj/machinery/power/port_gen/pacman::cooling_needed reads /obj/machinery/power/port_gen/pacman::temperature
+unknown_read	code/modules/tgui/modules/law_manager.dm	@/datum/tgui_module/law_manager::is_special_role reads /datum/mind::@actor:mind.special_role
+unknown_read	code/modules/tgui/states.dm	@/datum::tgui_status reads /mob::@actor:client
+unknown_read	code/modules/tgui/states.dm	@/mob/living/silicon/robot::shared_tgui_interaction reads /mob/living/silicon/robot::@actor:lockcharge
+unknown_read	code/modules/vore/resizing/resize.dm	@/mob/living/carbon/human::get_effective_size reads /datum/species::@actor:species.micro_size_mod
+unknown_read	code/modules/vore/resizing/resize.dm	@/mob/living::resize reads /atom::@actor:z
+unknown_read	code/modules/vore/resizing/resize.dm	@/mob/living::resize reads /datum/species::@actor:species.icon_scale_x
+unknown_read	code/modules/vore/resizing/resize.dm	@/mob/living::resize reads /datum/species::@actor:species.icon_scale_y
+unknown_read	code/modules/vore/resizing/resize.dm	@/mob/living::resize reads /mob::@actor:offset_override
+unknown_read	code/modules/vore/resizing/resize.dm	@/mob/living::resize reads /datum/species::@actor:species.center_offset
+unknown_read	code/modules/vore/resizing/resize.dm	@/mob/living::resize reads /atom/movable::@actor:icon_scale_x
+unknown_read	code/modules/vore/resizing/resize.dm	@/mob/living::resize reads /atom/movable::@actor:icon_scale_y
+unknown_read	code/modules/vore/resizing/resize.dm	@/mob/living::resize reads /mob/living::@actor:vis_height
+unknown_read	code/modules/vore/resizing/resize.dm	@/mob/living::resize reads /mob::@actor:center_offset
+unknown_read	code/modules/vore/resizing/resize.dm	@/mob/living/carbon/human::resize reads /datum/record/vore_prefs::@actor:vore_prefs.size_strip_preference
+unknown_read	code/modules/vore/resizing/resize.dm	@/mob/living/carbon/human::resize reads /list::@actor:hud_list.len
+untracked_global	code/_helpers/game.dm	@/::isPlayerLevel reads using_map.player_levels
+untracked_global	code/datums/containment/latency_policy.dm	@/::dq_latency_sweep_register reads GLOB.latency_sweep_holders
+untracked_global	code/datums/operations/req.dm	@/::req_intern reads GLOB.reqs_interned
+untracked_global	code/datums/operations/req.dm	@/::req_intern reads GLOB.reqs_interned
+untracked_global	code/game/gamemodes/technomancer/catalog.dm	@/obj/item/technomancer_catalog::can_refund reads using_map.player_levels
+untracked_global	code/game/jobs/whitelist.dm	@/::check_whitelist reads GLOB.whitelist
+untracked_global	code/game/jobs/whitelist.dm	@/::check_whitelist reads GLOB.whitelist
+untracked_global	code/game/machinery/computer/arcade.dm	@/obj/machinery/computer/arcade/clawmachine::wants_payment reads GLOB.vendor_account
+untracked_global	code/game/machinery/computer/arcade.dm	@/obj/machinery/computer/arcade/clawmachine::wants_payment reads GLOB.vendor_account.suspended
+untracked_global	code/game/machinery/computer/law.dm	@/obj/machinery/computer/aiupload::can_connect reads using_map.contact_levels
+untracked_global	code/game/machinery/computer/skills.dm	@/obj/machinery/computer/skills::within_contact_range reads using_map.contact_levels
+untracked_global	code/game/objects/items/devices/holowarrant.dm	@/::warrants_on_file reads GLOB.data_core
+untracked_global	code/game/objects/items/devices/holowarrant.dm	@/::warrants_on_file reads GLOB.data_core.general
+untracked_global	code/game/objects/items/devices/holowarrant.dm	@/::warrants_on_file reads GLOB.data_core
+untracked_global	code/game/objects/items/weapons/scrolls.dm	@/::reads_wizard_markings reads GLOB.wizards
+untracked_global	code/modules/admin/banjob.dm	@/::ckey_is_jobbanned reads GLOB.jobban_keylist
+untracked_global	code/modules/admin/topic/admin_topic_panels.dm	@/datum/admins::shuttle_countdown_kind reads SSemergency_shuttle.shuttle
+untracked_global	code/modules/admin/topic/admin_topic_panels.dm	@/datum/admins::round_is_secret reads GLOB.master_mode
+untracked_global	code/modules/economy/Accounts.dm	@/::department_for_mob reads GLOB.department_accounts
+untracked_global	code/modules/economy/vending.dm	@/obj/machinery/vending::vend_payment_refusal reads GLOB.vendor_account
+untracked_global	code/modules/economy/vending.dm	@/obj/machinery/vending::vend_payment_refusal reads GLOB.vendor_account.suspended
+untracked_global	code/modules/mob/living/carbon/human/inventory.dm	@/mob/living/carbon/human::drop_all_clothing reads GLOB.global_underwear.categories
+untracked_global	code/modules/mob/living/silicon/pai/api.dm	@/datum/system/pai::check_is_already_pai reads GLOB.paikeys
+untracked_global	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	@/datum/computer_file/program/ntnetmonitor::wireless_enabled reads GLOB.ntnet_global
+untracked_global	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	@/datum/computer_file/program/ntnetmonitor::wireless_enabled reads GLOB.ntnet_global.setting_disabled
+untracked_global	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	@/datum/computer_file/program/ntnetmonitor::ntnet_present reads GLOB.ntnet_global
+untracked_global	code/modules/overmap/helpers.dm	@/::get_overmap_sector reads GLOB.map_sectors
+untracked_global	code/modules/paperwork/faxmachine.dm	@/obj/machinery/photocopier/faxmachine::role_request_ready reads GLOB.last_fax_role_request
+untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	@/datum/system/emergency_shuttle::location reads SSemergency_shuttle.shuttle
+untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	@/datum/system/emergency_shuttle::location reads SSemergency_shuttle.shuttle
+untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	@/datum/system/emergency_shuttle::location reads SSemergency_shuttle.shuttle.location
+untracked_global	code/modules/shuttles/shuttle.dm	@/datum/shuttle::has_arrive_time reads SSemergency_shuttle.shuttle.moving_status
+untracked_global	code/modules/tgui/modules/communications.dm	@/datum/tgui_module/communications::ui_in_contact reads using_map.contact_levels
+untracked_global	code/modules/tgui/modules/crew_monitor.dm	@/datum/tgui_module/crew_monitor::ui_in_range reads using_map.player_levels
+untracked_global	code/modules/tickets/tickets_ui.dm	@/datum/tickets::ticket_player_has_ticket reads GLOB.clients
+untracked_global	code/modules/vore/resizing/resize.dm	@/mob/living::resize reads using_map.station_levels
+untracked_global	maps/~map_system/maps.dm	@/datum/map::get_map_levels reads using_map.contact_levels
+untracked_global	maps/~map_system/maps.dm	@/datum/map::get_map_levels reads using_map.contact_levels
+untracked_global	maps/~map_system/maps.dm	@/datum/map::get_map_levels reads using_map.station_levels
+untracked_global	maps/~map_system/maps.dm	@/datum/map::get_map_levels reads using_map.station_levels
+dynamic_read	code/engine/lifeforms/forms.dm	@/::lifeform_plan_finish reads vars[] reads are not allowed in a handler
+dynamic_read	code/engine/lifeforms/forms.dm	@/::lifeform_plan_finish reads vars[] reads are not allowed in a handler
+hop_not_relation	code/game/atom/_atom.dm	@/atom::drop_location reads `AllowDrop()` is called on a container of unbounded type (/atom)
+hop_not_relation	code/game/atom/_atom.dm	@/atom::drop_location reads `drop_location()` is called on a container of unbounded type (/atom)
+hop_not_relation	code/modules/body/body.dm	@/datum/body::invalidate reads hop through `owner` (/datum/body) which is not a declared relation or another hop kind
+hop_not_relation	code/modules/body/body.dm	@/datum/body::invalidate reads hop through `owner` (/datum/body) which is not a declared relation or another hop kind
+hop_not_relation	code/modules/body/limb_state.dm	@/datum/body/humanoid::invalidate reads hop through `owner` (/datum/body) which is not a declared relation or another hop kind
+hop_not_relation	code/modules/body/plans/humanoid.dm	@/datum/body/humanoid::biology_of reads hop through `owner` (/datum/body) which is not a declared relation or another hop kind
+unknown_field	code/_onclick/hud/alert.dm	@/mob::throw_alert reads /mob/living/carbon/human has no var `usr`
+unknown_field	code/game/objects/structures/low_wall.dm	@/obj/structure/low_wall/bay::get_window_build_type reads /obj/item has no var `material`
+unknown_field	code/game/objects/structures/low_wall.dm	@/obj/structure/low_wall/eris::get_window_build_type reads /obj/item has no var `material`
+unknown_field	code/game/objects/structures/under_wardrobe.dm	@/obj/structure/undies_wardrobe::human_who_can_use_underwear reads /mob has no var `species`

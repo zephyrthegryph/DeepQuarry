@@ -7,7 +7,7 @@ parity harness proves); only the cost changes.
 
 ```
 analyze check [--lint NAME...] [--changed-only] [--no-cache] [--raw] [--ci]
-analyze baseline --update|--seed [--lint NAME...]
+analyze baseline --update|--seed|--migrate [--lint NAME...]
 analyze parity NAME... | --all [--bless] [--fixtures-only]
 analyze timing | selftest | list | frontend-diff
 analyze codemod list | NAME [--check|--apply|--revert] [--path PREFIX...] [--write-residue]
@@ -57,6 +57,15 @@ Copy `src/lints/dcs.rs` (a hard-ban lint) or `src/lints/sys_emag.rs` (a sys modu
   exemptions (sorted by path); `cx.all_files()` includes exempt ones; `cx.list("key")` reads a named
   list from `lint_scopes.toml`; `cx.tree.get(rel)`, `cx.tree.memo(key, || ...)` for a value several
   lints share (see `DxIndex::get`).
+* Site identity (`Site::ident`, a `Sites` ratchet): a site with an identity is fingerprinted by it (baseline row `@<identity>`), not by its
+  line text, so editing, moving or reordering the line keeps its row; rows sharing an identity are counted per identity, so a fix shrinks
+  the count and a new site fails. Declarations: `owner::var` (`base_vars`, `stored_refs`). `init_lines`: `owner::Initialize::target`, the
+  target the var written (`x = v`, `src.x += v`, `set_x(v)` are all `x`), the callee, or the control keyword (`if`, `for`, ...); a line
+  that is none of those (an argument line of a multi-line call) is `expr` (`lints/init.rs`, `init_line_target`). `sem/reads`:
+  `<reader owner>::<reader proc> reads <var owner>::<key>`; `untracked_inputs`: the same, `leaf_untracked` is `owner::var`. The reader is
+  the definition the read's line sits in (`Sem::reader_ident`). `analyze baseline --migrate` rewrites line-text rows as identity rows by
+  claiming each with the site whose line text matches; it never adds or drops a row (an unmatched row is kept) and is idempotent, so redo
+  it on a baseline a merge brought back to the line-text form.
 * `policy`: `Sites{baseline, header, banned}` = `check_sites`/`write_sites` (fingerprint ratchet);
   `Ceilings{...}` = `name count` baselines keyed by `Site::key` (`system_boundary`); `Hard` = any site
   fails; `Custom` = override `finish()` / `update_baseline()`.
