@@ -14,12 +14,12 @@
 	var/tmp/datum/planet/chosen_planet_static
 
 /datum/event2/event/sudden_weather_shift/set_up()
-	if(!LAZYLEN(SSplanets.planets))
+	if(!SSplanets.planet_count())
 		log_game("Weather shift event was ran when no planets exist. Aborting.")
 		abort()
 		return
 
-	chosen_planet_static = pick(planets_planets())
+	chosen_planet_static = SSplanets.pick_planet()
 
 /datum/event2/event/sudden_weather_shift/announce()
 	if(!chosen_planet())

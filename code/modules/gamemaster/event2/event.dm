@@ -75,7 +75,7 @@ This allows for events that have their announcement happen after the end itself.
 
 
 /datum/event2/event/proc/is_planet_z_level(z_level)
-	var/datum/planet/P = LAZYACCESS(SSplanets.z_to_planet, z_level)
+	var/datum/planet/P = SSplanets.planet_at_z(z_level)
 	if(!istype(P))
 		return FALSE
 	return TRUE

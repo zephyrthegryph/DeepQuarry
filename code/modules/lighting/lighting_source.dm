@@ -64,7 +64,7 @@ CAPABILITIES(/datum/light_source)
 // back one when update_corners() deletes it) and removes its light from the corners it lit.
 /datum/light_source/on_destroy(force)
 	if(needs_update != LIGHTING_NO_UPDATE)
-		SSlighting.sources_queue -= src
+		SSlighting.unqueue_source(src)
 	remove_lum()
 	..()
 
@@ -73,7 +73,7 @@ CAPABILITIES(/datum/light_source)
 // Actually that'd be great if you could!
 #define EFFECT_UPDATE(level)				\
 	if (needs_update == LIGHTING_NO_UPDATE) \
-		SSlighting.sources_queue += src; 	\
+		SSlighting.queue_source(src); 	\
 	if (needs_update < level)				\
 		needs_update = level;				\
 

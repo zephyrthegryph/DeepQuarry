@@ -1214,7 +1214,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(!T || !A)
 		return null
 	if(T.is_outdoors()) // check weather
-		var/datum/planet/P = LAZYACCESS(SSplanets.z_to_planet, T.z)
+		var/datum/planet/P = SSplanets.planet_at_z(T.z)
 		var/weather_tint = P?.weather_holder.current_weather.get_color_tint()
 		if(weather_tint) // But not if the weather has no blending!
 			return weather_tint

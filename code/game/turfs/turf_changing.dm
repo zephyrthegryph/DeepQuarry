@@ -112,7 +112,7 @@
 	else
 		if(old_shandler) // the new turf can't hold one
 			ended_with(old_shandler, src)
-		if(istype(W_sim) && (SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) && has_dynamic_lighting())
+		if(istype(W_sim) && (SSplanets.is_initialized() && SSplanets.planet_at_z(z)) && has_dynamic_lighting())
 			rel_set(W_sim, nameof(W_sim.shandler), new /datum/sunlight_handler(src))
 			W_sim.shandler.manualInit()
 	// old_fire was ZAS-only; no-op under LINDA (no old fire to remove).
@@ -151,7 +151,7 @@
 
 	dynamic_lumcount = old_dynamic_lumcount
 
-	if(SSlighting.initialized)
+	if(SSlighting.is_initialized())
 		rel_set(src, nameof(lighting_object), old_lighting_object)
 
 		directional_opacity = old_directional_opacity
@@ -206,7 +206,7 @@
 /turf/proc/finalize_explosion_deferred_change(update_appearance = TRUE)
 	levelupdate()
 	post_change()
-	if(SSlighting.initialized)
+	if(SSlighting.is_initialized())
 		recalculate_directional_opacity()
 		if(lighting_object && !lighting_object.needs_update)
 			lighting_object.update()

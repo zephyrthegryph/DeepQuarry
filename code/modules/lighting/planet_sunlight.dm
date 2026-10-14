@@ -50,7 +50,7 @@ CAPABILITIES(/datum/planet_sunlight_handler)
 
 /datum/planet_sunlight_handler/proc/update_sun()
 	sun().update()
-	var/brightness = sun().brightness * SSlighting.sun_mult
+	var/brightness = sun().brightness * SSlighting.sunlight_scale()
 	var/list/color = hex2rgb(sun().color)
 	red = brightness * (color[1] / 255.0)
 	green = brightness * (color[2] / 255.0)

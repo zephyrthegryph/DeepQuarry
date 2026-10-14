@@ -124,9 +124,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fake_sun, fake_sun_light_setups, list( \
 	Ssun.brightness = CLAMP01(choice["brightness"])
 	Ssun.color = choice["color"]
 	var/datum/planet_sunlight_handler/pshandler = new(Ssun)
-	if(z > SSlighting.z_to_pshandler.len)
-		SSlighting.z_to_pshandler.len = z
-	SSlighting.z_to_pshandler[z] = pshandler
+	SSlighting.register_sunlight_z(z, pshandler)
 	SSlighting.update_sunlight(pshandler) //Queue an update for when it starts running
 
 /// Lights the levels it is connected to, once they exist (a dark choice lights nothing).

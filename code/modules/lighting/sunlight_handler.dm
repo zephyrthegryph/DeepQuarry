@@ -19,10 +19,10 @@ CAPABILITIES(/turf/simulated)
 
 /// The after-init pass of a simulated turf: planet sunlight. Subtypes add their own work after ..().
 /turf/simulated/proc/sim_after_init(datum/act/timer/A)
-	if(((SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && has_dynamic_lighting()) //Only for planet turfs or fakesuns that specify they want to use this system
+	if(((SSplanets.is_initialized() && SSplanets.planet_at_z(z)) || SSlighting.get_pshandler_z(z)) && has_dynamic_lighting()) //Only for planet turfs or fakesuns that specify they want to use this system
 		if(is_outdoors())
 			var/turf/T = GetAbove(src)
-			if(T && !isopenturf(T) && (SSplanets.z_to_planet.len >= T.z && SSplanets.z_to_planet[T.z]))
+			if(T && !isopenturf(T) && (SSplanets.planet_at_z(T.z)))
 				make_indoors()
 		if(!shandler_noinit)
 			rel_set(src, nameof(shandler), new /datum/sunlight_handler(src))
@@ -220,9 +220,9 @@ CAPABILITIES(/datum/sunlight_handler)
 	if(cur_sunlight != sunlight)
 		sunlight_update()
 		if(!sunlight)
-			SSlighting.sunlight_queue -= src
+			SSlighting.unqueue_sunlight(src)
 		else
-			SSlighting.sunlight_queue += src
+			SSlighting.queue_sunlight(src)
 
 /datum/sunlight_handler/proc/sunlight_update()
 	var/list/corners = list(holder.lighting_corner_NE,holder.lighting_corner_NW,holder.lighting_corner_SE,holder.lighting_corner_SW)
@@ -332,7 +332,7 @@ CAPABILITIES(/datum/sunlight_handler)
 			sunlight_mult = 0.6
 		if(SUNLIGHT_OVERHEAD)
 			sunlight_mult = 1.0
-	var/brightness = sun().brightness * sunlight_mult * SSlighting.sun_mult
+	var/brightness = sun().brightness * sunlight_mult * SSlighting.sunlight_scale()
 	var/list/color = hex2rgb(sun().color)
 	var/red = brightness * (color[1] / 255.0)
 	var/green = brightness * (color[2] / 255.0)
@@ -385,11 +385,11 @@ CAPABILITIES(/datum/sunlight_handler)
 	if(val)
 		if(pshandler)
 			rel_remove(pshandler, nameof(pshandler.shandlers), src)
-		SSlighting.sunlight_queue -= src
+		SSlighting.unqueue_sunlight(src)
 	else
 		if(pshandler)
 			rel_add(pshandler, nameof(pshandler.shandlers), src)
-		SSlighting.sunlight_queue |= src //Just in case somehow gets set to false twice use |=
+		SSlighting.queue_sunlight(src, unique = TRUE) //Just in case somehow gets set to false twice use |=
 
 /datum/sunlight_handler/proc/wake_sleepers(val)
 	var/list/corners = list(holder.lighting_corner_NE,holder.lighting_corner_NW,holder.lighting_corner_SE,holder.lighting_corner_SW)

@@ -744,7 +744,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	// If we are not on a planet don't bother checking again. We physically cannot be outdoors. Except shuttles...
 	var/area/our_area = get_area(src)
 	var/turf/our_turf = get_turf(src)
-	if(!our_turf || (!istype(our_area, /area/shuttle) && (our_turf.z > length(SSplanets.z_to_planet) || !SSplanets.z_to_planet[our_turf.z])))
+	if(!our_turf || (!istype(our_area, /area/shuttle) && (!SSplanets.planet_at_z(our_turf.z))))
 		return
 	if(operating)
 		return

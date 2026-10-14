@@ -565,6 +565,7 @@
 #include "code\controllers\subsystems\internal_wiki.dm"
 #include "code\controllers\subsystems\job.dm"
 #include "code\controllers\subsystems\lighting.dm"
+#include "code\controllers\subsystems\lighting_api.dm"
 #include "code\modules\mob\new_player\lobby_monitor_service.dm"
 #include "code\controllers\subsystems\mapping.dm"
 #include "code\controllers\subsystems\media_tracks.dm"

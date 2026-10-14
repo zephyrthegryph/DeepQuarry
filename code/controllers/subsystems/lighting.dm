@@ -163,8 +163,8 @@ SYSTEM_DEF(lighting)
 	var/datum/planet_sunlight_handler/pshandler = z_to_pshandler[z]
 	if(istype(pshandler))
 		return pshandler
-	else if(SSplanets.initialized && length(planets_z_to_planet()) >= z && SSplanets.z_to_planet[z])
-		var/datum/planet/P = planets_z_to_planet()[z]
+	else if(SSplanets.is_initialized() && SSplanets.planet_at_z(z))
+		var/datum/planet/P = SSplanets.planet_at_z(z)
 		if(istype(P))
 			pshandler = get_pshandler_planet(P)
 			z_to_pshandler[z] = pshandler

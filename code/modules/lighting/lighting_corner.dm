@@ -73,7 +73,7 @@
 		master_SE = process_next // ALLOW(ownership): lighting engine master turf, set once per corner; the corner dies with its turfs, and a turf index entry per corner would cost the whole map
 		process_next.lighting_corner_NW = src
 
-	if(((SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && dynamic) sunlight = SUNLIGHT_POSSIBLE
+	if(((SSplanets.is_initialized() && SSplanets.planet_at_z(z)) || SSlighting.get_pshandler_z(z)) && dynamic) sunlight = SUNLIGHT_POSSIBLE
 
 /datum/lighting_corner/proc/save_master(turf/master, dir)
 	switch (dir)
@@ -123,7 +123,7 @@
 
 	if (!needs_update)
 		needs_update = TRUE
-		SSlighting.corners_queue += src
+		SSlighting.queue_corner(src)
 
 /datum/lighting_corner/proc/update_objects()
 	// Cache these values ahead of time so 4 individual lighting objects don't all calculate them individually.
@@ -153,22 +153,22 @@
 	var/datum/lighting_object/lighting_object = master_NE?.lighting_object
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
-		SSlighting.objects_queue += lighting_object
+		SSlighting.queue_object(lighting_object)
 
 	lighting_object = master_SE?.lighting_object
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
-		SSlighting.objects_queue += lighting_object
+		SSlighting.queue_object(lighting_object)
 
 	lighting_object = master_SW?.lighting_object
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
-		SSlighting.objects_queue += lighting_object
+		SSlighting.queue_object(lighting_object)
 
 	lighting_object = master_NW?.lighting_object
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
-		SSlighting.objects_queue += lighting_object
+		SSlighting.queue_object(lighting_object)
 
 	self_destruct_if_idle()
 
@@ -181,7 +181,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_corner)
 // Corners leave SSlighting's queue (while queued), their sources and turfs.
 /datum/lighting_corner/on_destroy(force)
 	if(needs_update)
-		SSlighting.corners_queue -= src
+		SSlighting.unqueue_corner(src)
 
 	for (var/datum/light_source/light_source as anything in affecting)
 		LAZYREMOVE(light_source.effect_str, src) // ALLOW(ownership): lighting engine corner<->source links, kept symmetric by hand
@@ -223,22 +223,22 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_corner)
 	var/datum/lighting_object/lighting_object = master_NE?.lighting_object
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
-		SSlighting.objects_queue += lighting_object
+		SSlighting.queue_object(lighting_object)
 
 	lighting_object = master_SE?.lighting_object
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
-		SSlighting.objects_queue += lighting_object
+		SSlighting.queue_object(lighting_object)
 
 	lighting_object = master_SW?.lighting_object
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
-		SSlighting.objects_queue += lighting_object
+		SSlighting.queue_object(lighting_object)
 
 	lighting_object = master_NW?.lighting_object
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
-		SSlighting.objects_queue += lighting_object
+		SSlighting.queue_object(lighting_object)
 
 /datum/lighting_corner/proc/change_sun()
 	lum_r = 0
