@@ -74,6 +74,9 @@ pub(crate) fn materialize_members_with_roster(
         fn tag(&self, path: SymbolId) -> Result<u8, ProjectionError> {
             self.underlying.tag(path)
         }
+        fn world_name_default(&self) -> Option<Arc<[u8]>> {
+            self.underlying.world_name_default()
+        }
         fn resource_index(&self, path: SymbolId) -> Result<u32, ProjectionError> {
             let key = self.underlying.resource_key(path)?;
             if !matches!(key, Key::Resource(_)) {
@@ -138,8 +141,27 @@ pub(crate) fn materialize_members_with_roster(
             )),
         })
         .collect::<Result<Vec<_>, ProjectionError>>()?;
-    let directives = crate::world_projection::project(world_values)
+    let mut directives = crate::world_projection::project(world_values)
         .map_err(|error| ProjectionError::Unsupported(format!("world policy {error:?}")))?;
+    if !directives.iter().any(|directive| {
+        matches!(
+            directive,
+            crate::world_projection::Directive::Text {
+                field: crate::world_projection::TextField::Name,
+                ..
+            }
+        )
+    }) {
+        if let Some(name) = value_types.world_name_default() {
+            directives.insert(
+                0,
+                crate::world_projection::Directive::Text {
+                    field: crate::world_projection::TextField::Name,
+                    bytes: Some(name),
+                },
+            );
+        }
+    }
     let client_order = routing::client_configuration_order(projection, tables)?;
     let client_owners: HashSet<_> = client_order.iter().copied().collect();
     let client_directives = client_header_directives(&projection.fields, &client_order, symbols)?;
@@ -587,7 +609,12 @@ pub(crate) fn materialize_members_with_roster(
                             "intrinsic text default has wrong value kind".into(),
                         ));
                     }
-                    let id = if kind == 0 { NONE } else { value };
+                    let mut id = if kind == 0 { NONE } else { value };
+                    // An authored `icon_state = ""` is stored as null by DreamMaker (name, desc and suffix keep the
+                    // empty string).
+                    if name == "icon_state" && id != NONE && dmb.string(id) == Some(b"".as_slice()) {
+                        id = NONE;
+                    }
                     let record = &mut dmb.classes[class as usize];
                     match name {
                         "name" => record.initial_ids[2] = id,

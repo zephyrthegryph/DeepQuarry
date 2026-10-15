@@ -100,21 +100,22 @@ fn image_defaults_and_authored_headers_follow_semantic_parent_family() {
     materialize_types(&mut dmb, &projection, &tables, &symbols).unwrap();
     materialize_members(&mut dmb, &projection, &tables, &symbols, &NoTypes).unwrap();
     headers::finalize_headers(&mut dmb, bytes, &projection, &tables, &symbols).unwrap();
+    // None is the null DreamMaker 516.1687 writes for source subclasses of /image (not an empty string).
     for (path, name, text) in [
-        ("/image/empty_child", b"".as_slice(), b"".as_slice()),
-        ("/image/empty_child/grandchild", b"", b""),
-        ("/datum/image_parent", b"", b""),
-        ("/image/authored", b"authored name", b"X"),
-        ("/image/authored/child", b"authored name", b"X"),
-        ("/atom/atom_probe", b"atom probe", b"a"),
-        ("/image/atom_parent", b"atom parent", b"a"),
+        ("/image/empty_child", None, None),
+        ("/image/empty_child/grandchild", None, None),
+        ("/datum/image_parent", None, None),
+        ("/image/authored", Some(b"authored name".as_slice()), Some(b"X".as_slice())),
+        ("/image/authored/child", Some(b"authored name".as_slice()), Some(b"X".as_slice())),
+        ("/atom/atom_probe", Some(b"atom probe".as_slice()), Some(b"a".as_slice())),
+        ("/image/atom_parent", Some(b"atom parent".as_slice()), Some(b"a".as_slice())),
     ] {
         let record = &dmb.classes[ids[path] as usize];
         assert_eq!(
             dmb.string(record.name_string_id()),
-            Some(name),
+            name,
             "{path} name"
         );
-        assert_eq!(dmb.string(record.text), Some(text), "{path} text");
+        assert_eq!(dmb.string(record.text), text, "{path} text");
     }
 }

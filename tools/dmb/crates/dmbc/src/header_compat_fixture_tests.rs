@@ -91,3 +91,66 @@ fn native_header_line_matches_dreammaker_for_each_probe() {
     assert!(checked >= 8, "probe set shrank to {checked}");
     assert!(failures.is_empty(), "{}", failures.join("\n"));
 }
+
+/// `world.name` defaults to the project file stem (DreamMaker 516.1687, `fixtures/native_compiler/world_name`).
+#[test]
+fn world_name_defaults_to_the_project_name() {
+    let root = scratch();
+    let project = root.join("project");
+    std::fs::create_dir_all(&project).unwrap();
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/native_compiler/world_name");
+    for extension in ["dm", "dme"] {
+        std::fs::copy(
+            dir.join(format!("world_name_probe.{extension}")),
+            project.join(format!("world_name_probe.{extension}")),
+        )
+        .unwrap();
+    }
+    let manifest = std::fs::canonicalize(project.join("world_name_probe.dme")).unwrap();
+    let outcome = crate::request_runner::run_build(request(&root, &manifest)).unwrap();
+    let BuildOutcome::Published { output_project, .. } = outcome else {
+        panic!("executable publication expected")
+    };
+    let native = byond_dmb::dmb::Dmb::from_bytes(&std::fs::read(output_project.with_extension("dmb")).unwrap()).unwrap();
+    let reference = byond_dmb::dmb::Dmb::from_bytes(&std::fs::read(dir.join("world_name_probe.native.bin")).unwrap()).unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert_eq!(native.string(native.world.ids[6]), Some(b"world_name_probe".as_slice()));
+    assert_eq!(native.string(native.world.ids[6]), reference.string(reference.world.ids[6]));
+}
+
+/// Source subclasses of /image get a null name and text, and an authored `icon_state = ""` is null, while an authored
+/// `name = ""` stays empty (DreamMaker 516.1687, `fixtures/native_compiler/null_defaults`).
+#[test]
+fn null_and_empty_text_defaults_match_dreammaker() {
+    let root = scratch();
+    let project = root.join("project");
+    std::fs::create_dir_all(&project).unwrap();
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/native_compiler/null_defaults");
+    for extension in ["dm", "dme"] {
+        std::fs::copy(
+            dir.join(format!("null_defaults_probe.{extension}")),
+            project.join(format!("null_defaults_probe.{extension}")),
+        )
+        .unwrap();
+    }
+    let manifest = std::fs::canonicalize(project.join("null_defaults_probe.dme")).unwrap();
+    let outcome = crate::request_runner::run_build(request(&root, &manifest)).unwrap();
+    let BuildOutcome::Published { output_project, .. } = outcome else {
+        panic!("executable publication expected")
+    };
+    let native = std::fs::read(output_project.with_extension("dmb")).unwrap();
+    let reference = std::fs::read(dir.join("null_defaults_probe.native.bin")).unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    let report = dmb_equiv::compare_bytes(
+        &reference,
+        None,
+        &native,
+        None,
+        &dmb_equiv::Options {
+            ignore_debug: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    assert!(report.equivalent(), "{}", report.render_text());
+}

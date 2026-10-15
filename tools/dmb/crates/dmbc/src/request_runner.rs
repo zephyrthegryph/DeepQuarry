@@ -916,10 +916,10 @@ fn run_build_attempt(
                 dmbc::daemon_eprintln!("native resolver memo: {:?}", compilation_resolver.stats());
             }
             let explanations = runner_report::explanations(&frontend, procedure_memo.as_ref());
-            let owned_values = Arc::new(dmbc::resource_values::PreparedResourceValues::capture(
-                &values,
-                &prepared.domains(),
-            ));
+            let owned_values = Arc::new(
+                dmbc::resource_values::PreparedResourceValues::capture(&values, &prepared.domains())
+                    .with_project_name(&project),
+            );
             // Opt-in live request boundary: the memo is not a retained host
             // owner. Shared declaration payloads deduplicate against frontend;
             // private memo table backing remains explicitly unknown.

@@ -510,14 +510,11 @@ pub(crate) fn materialize_types_with_roster(
                 .map_err(|e| ProjectionError::Unsupported(format!("type path {e:?}")))?;
             record.initial_ids[1] = parent;
             if image_family.contains(&parent) {
-                // Native image roots may use the absent sentinel, but BYOND
-                // materializes source image subclasses with explicit empty
-                // strings. Authored assignments are applied by common writers.
-                let empty = strings
-                    .intern(dmb, b"")
-                    .map_err(|e| ProjectionError::Unsupported(format!("image default {e:?}")))?;
-                record.initial_ids[2] = empty;
-                record.text = empty;
+                // DreamMaker 516.1687 gives source subclasses of /image and /mutable_appearance a null
+                // name and text (production build: 59 records; fixtures/native_compiler/image_defaults).
+                // Authored assignments are applied by common writers.
+                record.initial_ids[2] = NONE;
+                record.text = NONE;
                 image_family.insert(index);
             } else {
                 record.initial_ids[2] = strings
@@ -587,6 +584,10 @@ pub trait TypeValuePolicy {
         ))
     }
     fn tag(&self, path: SymbolId) -> Result<u8, ProjectionError>;
+    /// `world.name` when the source does not set it: DreamMaker names the world after the project file.
+    fn world_name_default(&self) -> Option<Arc<[u8]>> {
+        None
+    }
 }
 
 fn client_header_directives(

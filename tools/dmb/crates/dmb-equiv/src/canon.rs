@@ -432,49 +432,14 @@ impl<'a> Ctx<'a> {
                 }
             }
         };
-        let mut inits: Vec<(String, u32)> = dmb
-            .classes
-            .iter()
-            .filter(|c| c.initializer_proc_id() != NONE)
-            .map(|c| {
-                (
-                    format!("{}/<init>", self.t(c.path_string_id())),
-                    c.initializer_proc_id(),
-                )
-            })
-            .collect();
-        inits.sort();
-        for (key, p) in inits {
-            set(&mut self.proc_keys, p, key);
-        }
+        // Class `<init>` bodies and argument `in <expression>` sources are keyed by content, not by the type or
+        // procedure that refers to them: DreamMaker shares one body between types whose defaults are identical
+        // (2,855 per-type bodies in the production build), this compiler emits one per type. A body whose content
+        // differs still shows up as a missing/extra anonymous procedure and as a different `initializer` field.
+        let _ = &set;
         let g = dmb.world.global_initializer_proc_id();
         if g != NONE && self.proc_keys.get(g as usize).is_some_and(|k| k.is_empty()) {
             self.proc_keys[g as usize] = "<global-init>".into();
-        }
-        // Argument `in <expression>` sources, from keyed owners in key order.
-        let mut owners: Vec<(String, usize)> = self
-            .proc_keys
-            .iter()
-            .enumerate()
-            .filter(|(_, k)| !k.is_empty())
-            .map(|(p, k)| (k.clone(), p))
-            .collect();
-        owners.sort();
-        for (key, p) in owners {
-            let Some(args) = dmb.proc_arguments_iter(p) else {
-                continue;
-            };
-            for (i, arg) in args.enumerate() {
-                if let Some(src) = dmb.argument_source_proc_id(&arg) {
-                    if self
-                        .proc_keys
-                        .get(src as usize)
-                        .is_some_and(|k| k.is_empty())
-                    {
-                        self.proc_keys[src as usize] = format!("{key}/<arg{i} in>");
-                    }
-                }
-            }
         }
     }
 
