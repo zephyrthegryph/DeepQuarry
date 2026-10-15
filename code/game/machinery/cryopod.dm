@@ -306,6 +306,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(self_entry_allowed), silent = TRUE), req(PROC_REF(can_enter))), starts(PROC_REF(self_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_enter)))
 	op("cryopod_drag_in", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put in pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(loading_drag_adjacent), silent = TRUE), req(PROC_REF(loading_passenger_allowed), silent = TRUE), req(PROC_REF(can_take_occupant))), asks(/datum/prompt/yes_no, list("title" = "Cryopod", "question" = "Would you like to enter long-term storage?"), answerer = PROC_REF(loading_passenger), when = PROC_REF(loading_needs_consent), ends_on_no = TRUE), begins(PROC_REF(loading_message)), wait(2 SECONDS), then(PROC_REF(loading_done)))
 	ref_one(nameof(control_computer), /obj/machinery/computer/cryopod)
+	owns_one(nameof(announce), starts = /obj/item/radio/intercom, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/cryopod/proc/work_step(datum/act/timer/A)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
@@ -401,12 +402,12 @@ CAPABILITIES(/obj/machinery/cryopod)
 		// ition Start
 		if(istype(W, /obj/item/pda))
 			var/obj/item/pda/found_pda = W
-			found_pda.delete_id = TRUE
+			found_pda.set_delete_id(TRUE)
 		else
 			var/list/pdas_found = W.search_contents_for(/obj/item/pda)
 			if(pdas_found.len)
 				for(var/obj/item/pda/found_pda in pdas_found)
-					found_pda.delete_id = TRUE
+					found_pda.set_delete_id(TRUE)
 		// ition End
 
 		var/preserve = 0
@@ -786,9 +787,6 @@ CAPABILITIES(/obj/machinery/cryopod)
 	desc = "A secured airlock you might've come in from. You could leave easily using this."
 	quiet = TRUE
 
-/obj/machinery/cryopod/ownership()
-	. = ..()
-	. += owns(nameof(announce), policy = OWN_CONTAINED, starts = /obj/item/radio/intercom)
 
 /// control computer (a relation view: it reads null once the target is deleted).
 /obj/machinery/cryopod/proc/control_computer() as /obj/machinery/computer/cryopod

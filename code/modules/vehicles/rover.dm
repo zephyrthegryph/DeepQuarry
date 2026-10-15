@@ -88,6 +88,8 @@ CAPABILITIES(/obj/vehicle/train/rover/engine)
 	op("rover_engine_start_engine", menu(), label("Start engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), FALSE, because = MSG(vehicle/already_running))), then(PROC_REF(rover_engine_start_engine)))
 	op("rover_engine_stop_engine", menu(), label("Stop engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), TRUE, because = MSG(vehicle/already_stopped))), then(PROC_REF(rover_engine_stop_engine)))
 	op("rover_engine_remove_key", menu(), label("Remove key"), needs(req_on_holder_turf(), req_capable(), req(PROC_REF(pred_rover_engine_has_key_holds))), then(PROC_REF(rover_engine_remove_key)))
+	owns_one(nameof(key), starts = /obj/item/key/rover, on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(cell), starts = /obj/item/cell/high, on_destroy = ON_DESTROY_CONTAINED)
 
 /// Requirement (was REQ pred_rover_engine_has_key): the legacy check answers TRUE to pass.
 /obj/vehicle/train/rover/engine/proc/pred_rover_engine_has_key_holds(datum/act/op/A)
@@ -383,10 +385,6 @@ CAPABILITIES(/obj/vehicle/train/rover/engine)
 	else
 		set_anchored(TRUE)
 
-/obj/vehicle/train/rover/engine/ownership()
-	. = ..()
-	. += owns(nameof(key), policy = OWN_CONTAINED, starts = /obj/item/key/rover)
-	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
 /obj/vehicle/train/rover/engine/proc/pred_rover_engine_has_key(mob/actor, atom/target, obj/item/held)

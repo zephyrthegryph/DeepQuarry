@@ -48,6 +48,7 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	op("hand", hand(), ungated(), label("Spin"), needs(req(PROC_REF(can_spin_holds))), then(PROC_REF(interaction_hand)))
 	op("insert_ball", item(/obj/item/roulette_ball), label("Insert a roulette ball"), then(PROC_REF(interaction_insert_ball)))
 	op("roulette_table_remove_ball_effect", menu(), label("Remove Roulette Ball"), needs(req_adjacent(), req_capable()), then(PROC_REF(roulette_table_remove_ball_effect)))
+	owns_one(nameof(ball), starts = /obj/item/roulette_ball, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/structure/casino_table/roulette_table/examine(mob/user)
 	.=..()
@@ -1100,9 +1101,6 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 	flick("[icon_state]-winning",src)
 	set_icon_state("wheel_of_fortune")
 
-/obj/structure/casino_table/roulette_table/ownership()
-	. = ..()
-	. += owns(nameof(ball), policy = OWN_CONTAINED, starts = /obj/item/roulette_ball)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_use_answered(datum/act/request/A)
 	if(!A.answer)

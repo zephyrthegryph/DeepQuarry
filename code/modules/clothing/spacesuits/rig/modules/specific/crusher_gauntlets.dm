@@ -52,6 +52,5 @@
 	for(var/obj/item/kinetic_crusher/machete/gauntlets/gaming in contents_of(M))
 		M.drop_from_inventory(gaming, src)
 
-/obj/item/rig_module/gauntlets/ownership()
-	. = ..()
-	. += owns(nameof(stored_gauntlets), policy = OWN_CONTAINED, starts = /obj/item/kinetic_crusher/machete/gauntlets/rig)
+CAPABILITIES(/obj/item/rig_module/gauntlets)
+	owns_one(nameof(stored_gauntlets), starts = /obj/item/kinetic_crusher/machete/gauntlets/rig, on_destroy = ON_DESTROY_CONTAINED)

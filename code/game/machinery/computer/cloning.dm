@@ -53,11 +53,9 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	ref_one(nameof(scanner), /obj/machinery/dna_scannernew)
 	ref_one(nameof(active_BR), /datum/transhuman/body_record)
 	ref_one(nameof(selected_pod), /obj/machinery/clonepod)
+	owns_one(nameof(diskette), on_destroy = ON_DESTROY_CONTAINED)
 
 // Linked pods (two-sided with each pod's connected; a pod leaves when either end dies).
-/obj/machinery/computer/cloning/ownership()
-	. = ..()
-	. += owns(nameof(diskette), policy = OWN_CONTAINED)
 
 
 /obj/machinery/computer/cloning/Initialize(mapload)

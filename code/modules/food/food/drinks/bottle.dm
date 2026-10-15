@@ -23,9 +23,6 @@
 		set_drop_sound(SFX_ITEMS_DROP_BOTTLE)
 		set_pickup_sound(SFX_ITEMS_PICKUP_BOTTLE)
 
-/obj/item/reagent_containers/food/drinks/bottle/ownership()
-	. = ..()
-	. += owns(nameof(rag), policy = OWN_SPILL)
 
 //when thrown on impact, bottles smash and spill their contents
 /obj/item/reagent_containers/food/drinks/bottle/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, then = null, datum/then_owner = null, list/then_with = null)
@@ -118,6 +115,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 		asks(/datum/prompt/choice, fields = list("question" = "Select what you want to smash the bottle on.", "title" = "SMASH!", "choices" = computed(PROC_REF(smash_choices)), "timeout" = 0), step = "target"),
 		then(PROC_REF(smash_bottle_effect)))
 	op("spin", menu(), label("Spin The Bottle"), then(PROC_REF(spin_bottle_effect)))
+	owns_one(nameof(rag), on_destroy = ON_DESTROY_SPILL)
 
 /// Old attackby. A decline falls to the drinks handling, as the old ..() did.
 /obj/item/reagent_containers/food/drinks/bottle/proc/bottle_item(datum/act/op/A)

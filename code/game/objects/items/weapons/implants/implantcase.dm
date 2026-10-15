@@ -36,6 +36,7 @@ CAPABILITIES(/obj/item/implantcase)
 	op("label", item(/obj/item/pen), passes(), label("Label"), then(PROC_REF(label_asked)))
 	op("fill_from_syringe", item(/obj/item/reagent_containers/syringe), passes(), label("Fill"), then(PROC_REF(syringe_used)))
 	op("swap_implant", item(/obj/item/implanter), passes(), label("Swap implant"), then(PROC_REF(implanter_used)))
+	owns_one(nameof(imp), on_destroy = ON_DESTROY_CONTAINED)
 
 /// A pen labels the case.
 /obj/item/implantcase/proc/label_asked(datum/act/op/A)
@@ -81,9 +82,8 @@ CAPABILITIES(/obj/item/implantcase)
 	desc = "A case containing a tracking implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/tracking/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/tracking)
+CAPABILITIES(/obj/item/implantcase/tracking)
+	owns_one(nameof(imp), starts = /obj/item/implant/tracking, on_destroy = ON_DESTROY_CONTAINED)
 
 
 /obj/item/implantcase/explosive
@@ -91,9 +91,8 @@ CAPABILITIES(/obj/item/implantcase)
 	desc = "A case containing an explosive implant."
 	icon_state = "implantcase-r"
 
-/obj/item/implantcase/explosive/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/explosive)
+CAPABILITIES(/obj/item/implantcase/explosive)
+	owns_one(nameof(imp), starts = /obj/item/implant/explosive, on_destroy = ON_DESTROY_CONTAINED)
 
 
 /obj/item/implantcase/chem
@@ -101,9 +100,8 @@ CAPABILITIES(/obj/item/implantcase)
 	desc = "A case containing a chemical implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/chem/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/chem)
+CAPABILITIES(/obj/item/implantcase/chem)
+	owns_one(nameof(imp), starts = /obj/item/implant/chem, on_destroy = ON_DESTROY_CONTAINED)
 
 
 /obj/item/implantcase/loyalty
@@ -111,9 +109,8 @@ CAPABILITIES(/obj/item/implantcase)
 	desc = "A case containing a loyalty implant."
 	icon_state = "implantcase-r"
 
-/obj/item/implantcase/loyalty/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/loyalty)
+CAPABILITIES(/obj/item/implantcase/loyalty)
+	owns_one(nameof(imp), starts = /obj/item/implant/loyalty, on_destroy = ON_DESTROY_CONTAINED)
 
 
 /obj/item/implantcase/death_alarm
@@ -121,9 +118,8 @@ CAPABILITIES(/obj/item/implantcase)
 	desc = "A case containing a death alarm implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/death_alarm/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/death_alarm)
+CAPABILITIES(/obj/item/implantcase/death_alarm)
+	owns_one(nameof(imp), starts = /obj/item/implant/death_alarm, on_destroy = ON_DESTROY_CONTAINED)
 
 
 /obj/item/implantcase/freedom
@@ -131,9 +127,8 @@ CAPABILITIES(/obj/item/implantcase)
 	desc = "A case containing a freedom implant."
 	icon_state = "implantcase-r"
 
-/obj/item/implantcase/freedom/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/freedom)
+CAPABILITIES(/obj/item/implantcase/freedom)
+	owns_one(nameof(imp), starts = /obj/item/implant/freedom, on_destroy = ON_DESTROY_CONTAINED)
 
 
 /obj/item/implantcase/adrenalin
@@ -141,9 +136,8 @@ CAPABILITIES(/obj/item/implantcase)
 	desc = "A case containing an adrenalin implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/adrenalin/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/adrenalin)
+CAPABILITIES(/obj/item/implantcase/adrenalin)
+	owns_one(nameof(imp), starts = /obj/item/implant/adrenalin, on_destroy = ON_DESTROY_CONTAINED)
 
 
 /obj/item/implantcase/dexplosive
@@ -151,9 +145,8 @@ CAPABILITIES(/obj/item/implantcase)
 	desc = "A case containing an explosive."
 	icon_state = "implantcase-r"
 
-/obj/item/implantcase/dexplosive/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/dexplosive)
+CAPABILITIES(/obj/item/implantcase/dexplosive)
+	owns_one(nameof(imp), starts = /obj/item/implant/dexplosive, on_destroy = ON_DESTROY_CONTAINED)
 
 
 /obj/item/implantcase/health
@@ -161,153 +154,136 @@ CAPABILITIES(/obj/item/implantcase)
 	desc = "A case containing a health tracking implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/health/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/health)
+CAPABILITIES(/obj/item/implantcase/health)
+	owns_one(nameof(imp), starts = /obj/item/implant/health, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/language
 	name = "glass case - 'GalCom'"
 	desc = "A case containing a GalCom language implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/language/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/language)
+CAPABILITIES(/obj/item/implantcase/language)
+	owns_one(nameof(imp), starts = /obj/item/implant/language, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/language/eal
 	name = "glass case - 'EAL'"
 	desc = "A case containing an Encoded Audio Language implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/language/eal/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/language/eal)
+CAPABILITIES(/obj/item/implantcase/language/eal)
+	owns_one(nameof(imp), starts = /obj/item/implant/language/eal, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/shades
 	name = "glass case - 'Integrated Shades'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/shades/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ)
+CAPABILITIES(/obj/item/implantcase/shades)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/taser
 	name = "glass case - 'Taser'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/taser/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment)
+CAPABILITIES(/obj/item/implantcase/taser)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ/limbaugment, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/laser
 	name = "glass case - 'Laser'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/laser/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/laser)
+CAPABILITIES(/obj/item/implantcase/laser)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ/limbaugment/laser, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/dart
 	name = "glass case - 'Dart'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/dart/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/dart)
+CAPABILITIES(/obj/item/implantcase/dart)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ/limbaugment/dart, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/toolkit
 	name = "glass case - 'Toolkit'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/toolkit/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/upperarm)
+CAPABILITIES(/obj/item/implantcase/toolkit)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ/limbaugment/upperarm, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/medkit
 	name = "glass case - 'Toolkit'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/medkit/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/upperarm/medkit)
+CAPABILITIES(/obj/item/implantcase/medkit)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ/limbaugment/upperarm/medkit, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/surge
 	name = "glass case - 'Muscle Overclocker'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/surge/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/upperarm/surge)
+CAPABILITIES(/obj/item/implantcase/surge)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ/limbaugment/upperarm/surge, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/analyzer
 	name = "glass case - 'Scanner'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/analyzer/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/wrist)
+CAPABILITIES(/obj/item/implantcase/analyzer)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ/limbaugment/wrist, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/sword
 	name = "glass case - 'Scanner'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/sword/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/wrist/sword)
+CAPABILITIES(/obj/item/implantcase/sword)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ/limbaugment/wrist/sword, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/sprinter
 	name = "glass case - 'Sprinter'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/sprinter/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/pelvic/sprint)
+CAPABILITIES(/obj/item/implantcase/sprinter)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ/pelvic/sprint, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/med_scanner
 	name = "glass case - 'Scanner'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/med_scanner/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/pelvic/scanner)
+CAPABILITIES(/obj/item/implantcase/med_scanner)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ/pelvic/scanner, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/armblade
 	name = "glass case - 'Armblade'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/armblade/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/upperarm/blade)
+CAPABILITIES(/obj/item/implantcase/armblade)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ/limbaugment/upperarm/blade, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/handblade
 	name = "glass case - 'Handblade'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/handblade/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/organ/limbaugment/wrist/blade)
+CAPABILITIES(/obj/item/implantcase/handblade)
+	owns_one(nameof(imp), starts = /obj/item/implant/organ/limbaugment/wrist/blade, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/restrainingbolt
 	name = "glass case - 'Restraining Bolt'"
 	desc = "A case containing a restraining bolt."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/restrainingbolt/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/restrainingbolt)
+CAPABILITIES(/obj/item/implantcase/restrainingbolt)
+	owns_one(nameof(imp), starts = /obj/item/implant/restrainingbolt, on_destroy = ON_DESTROY_CONTAINED)
 
 
 /obj/item/implantcase/vrlanguage
@@ -315,9 +291,8 @@ CAPABILITIES(/obj/item/implantcase)
 	desc = "A case containing a language implant."
 	icon_state = "implantcase-r"
 
-/obj/item/implantcase/vrlanguage/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/vrlanguage)
+CAPABILITIES(/obj/item/implantcase/vrlanguage)
+	owns_one(nameof(imp), starts = /obj/item/implant/vrlanguage, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/proc/inject_from(obj/item/reagent_containers/syringe/I, mob/user)
 	if(QDELETED(I))
@@ -325,6 +300,3 @@ CAPABILITIES(/obj/item/implantcase)
 	I.reagents.trans_to_obj(imp, 5)
 	to_chat(user, span_notice("You inject 5 units of the solution. The syringe now contains [I.reagents.total_volume] units."))
 
-/obj/item/implantcase/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED)

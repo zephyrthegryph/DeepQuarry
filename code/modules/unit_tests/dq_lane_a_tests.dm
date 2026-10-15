@@ -200,17 +200,14 @@ CAPABILITIES(/obj/lanea_fixture)
 CAPABILITIES(/obj/lanea_owner)
 	owns_many(nameof(eager))
 	owns_many(nameof(lazy))
+	owns_one(nameof(part), starts = /datum/lanea_part)
 
-/obj/lanea_owner/ownership()
-	. = ..()
-	. += owns(nameof(part), starts = /datum/lanea_part)
 
 /// A subtype that starts without the occupant its ancestor makes.
 /obj/lanea_owner/bare
 
-/obj/lanea_owner/bare/ownership()
-	. = ..()
-	. += no_starts(nameof(part))
+CAPABILITIES(/obj/lanea_owner/bare)
+	owns_one(nameof(part), starts = STARTS_NONE)
 
 /datum/unit_test/dq_lane_a_own
 	abstract_type = /datum/unit_test/dq_lane_a_own

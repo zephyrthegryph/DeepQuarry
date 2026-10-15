@@ -46,6 +46,7 @@
 		look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
 
 CAPABILITIES(/obj/machinery/feeder)
+	owns_one(nameof(beaker), on_destroy = ON_DESTROY_CONTAINED)
 	ref_one(nameof(attached), /mob/living/carbon/human)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(attached), nameof(beaker)), wakes_on = list(nameof(attached), nameof(beaker)))
 	drag_onto(PROC_REF(drop_input))
@@ -149,9 +150,6 @@ MSG_DEF_SELF(feeder/beaker, "There is already a reagent container inserted.")
 		return 1
 	return ..()
 
-/obj/machinery/feeder/ownership()
-	. = ..()
-	. += owns(nameof(beaker), policy = OWN_CONTAINED)
 
 /// attached (a relation view: it reads null once the target is deleted).
 /obj/machinery/feeder/proc/attached() as /mob/living/carbon/human

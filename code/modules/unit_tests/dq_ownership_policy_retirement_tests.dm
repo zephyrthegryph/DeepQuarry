@@ -56,7 +56,7 @@
 	var/obj/item/mmi/mmi = allocate(/obj/item/mmi, robot)
 	rel_clear(robot, nameof(robot.mmi), OWN_DELETE)
 	rel_set(robot, nameof(robot.mmi), mmi)
-	robot.mmi_ejects = TRUE
+	robot.set_mmi_ejects(TRUE)
 	rel_take(robot, nameof(robot.mmi))
 	var/obj/item/mmi/released = allocate(/obj/item/mmi, robot)
 	rel_set(robot, nameof(robot.mmi), released)

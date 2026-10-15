@@ -18,10 +18,8 @@ CAPABILITIES(/datum/own_test_holder)
 	owns_one(nameof(child))
 	owns_many(nameof(children))
 	owns_many(nameof(values))
+	owns_one(nameof(species), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)
 
-/datum/own_test_holder/ownership()
-	. = ..()
-	. += rel_one(nameof(species), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 
 /datum/own_test_holder/on_owned_release(var_name, datum/child)
@@ -351,24 +349,16 @@ CAPABILITIES(/datum/own_test_child)
 	var/datum/own_test_child/A = new
 	after(A, 10 MINUTES, TYPE_PROC_REF(/datum/own_test_child, test_label))
 
-// ---- ownership() / relations() entries: policies, rel_link pairs, hooks, watch ----
+// ---- declared entries: policies, rel_link pairs, hooks ----
 
 /datum/own_test_policy_holder
 	var/obj/spilled
 	var/obj/conditional
-	var/datum/own_test_child/by_proc
-	var/datum/own_test_child/plain
 	var/keep_it = FALSE
 
-/datum/own_test_policy_holder/ownership()
-	. = ..()
-	. += owns(nameof(spilled), policy = OWN_SPILL)
-	. += owns(nameof(conditional), policy = OWN_SPILL, if_var = nameof(keep_it), else_policy = OWN_DELETE)
-	. += owns(nameof(by_proc), policy_proc = TYPE_PROC_REF(/datum/own_test_policy_holder, by_proc_policy))
-	. += owns(nameof(plain), policy = OWN_NONE, keep_after_destroy = TRUE)
-
-/datum/own_test_policy_holder/proc/by_proc_policy()
-	return keep_it ? OWN_CONTAINED : OWN_DELETE
+CAPABILITIES(/datum/own_test_policy_holder)
+	owns_one(nameof(spilled), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(conditional), on_destroy = ON_DESTROY_SPILL, only_if = nameof(keep_it), otherwise = ON_DESTROY_DELETE)
 
 /datum/unit_test/ownership_declared_policies
 
@@ -376,51 +366,9 @@ CAPABILITIES(/datum/own_test_child)
 	var/datum/own_test_policy_holder/H = new
 	var/datum/own_table/table = own_table_of(H)
 	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.spilled), table.entries[nameof(H.spilled)]), OWN_SPILL, "policy = sets the policy")
-	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.conditional), table.entries[nameof(H.conditional)]), OWN_DELETE, "else_policy applies while if_var is false")
-	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.by_proc), table.entries[nameof(H.by_proc)]), OWN_DELETE, "policy_proc is asked")
-	H.keep_it = TRUE
-	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.conditional), table.entries[nameof(H.conditional)]), OWN_SPILL, "policy applies while if_var is true")
-	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.by_proc), table.entries[nameof(H.by_proc)]), OWN_CONTAINED, "policy_proc answers from state")
-	TEST_ASSERT(isnull(table.entries[nameof(H.plain)]), "an annotation-only owns(policy = OWN_NONE) declares no kind")
-	TEST_ASSERT(nameof(H.plain) in table.keep_vars, "keep_after_destroy is recorded")
-	qdel(H)
-
-/datum/own_test_watch_target
-	var/power_level = 0
-	var/label = "x"
-
-/datum/own_test_watch_holder
-	var/datum/own_test_watch_target/watched
-	var/datum/own_test_watch_target/unwatched
-
-/// A watched relation (rel_one(watch =)) has no CAPABILITIES spelling: read-driven tracking replaced it, and the table form is what this test pins.
-/datum/own_test_watch_holder/ownership()
-	. = ..()
-	. += rel_one(nameof(watched), watch = list(nameof(/datum/own_test_watch_target::power_level)))
-	. += rel_one(nameof(unwatched))
-
-/datum/unit_test/ownership_watched_relation
-
-/datum/unit_test/ownership_watched_relation/Run()
-	var/datum/own_test_watch_holder/H = new
-	var/datum/own_test_watch_target/T = new
-	var/datum/own_test_watch_target/U = new
-	rel_link(H, nameof(H.watched), T)
-	rel_link(H, nameof(H.unwatched), U)
-	refresh_flush()
-	TEST_ASSERT(!H.refresh_queued, "nothing queued after the flush")
-	U.set_power_level(3)
-	TEST_ASSERT(!H.refresh_queued, "a change on an unwatched relation does not mark the holder")
-	refresh_flush()
-	T.set_power_level(5)
-	TEST_ASSERT(H.refresh_queued, "a setter on the watched target marks the holder changed")
-	refresh_flush()
-	rel_unlink(H, nameof(H.watched), T)
-	T.set_power_level(7)
-	TEST_ASSERT(!H.refresh_queued, "an unlinked target no longer marks the holder")
-	refresh_flush()
-	qdel(T)
-	qdel(U)
+	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.conditional), table.entries[nameof(H.conditional)]), OWN_DELETE, "otherwise applies while only_if is false")
+	H.set_keep_it(TRUE)
+	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.conditional), table.entries[nameof(H.conditional)]), OWN_SPILL, "on_destroy applies while only_if is true")
 	qdel(H)
 
 /datum/unit_test/ownership_rel_link_pairs
@@ -481,26 +429,7 @@ CAPABILITIES(/datum/own_test_child)
 	TEST_ASSERT(QDELETED(H), "other_deleted = DELETE_ME deletes the holder with the other end")
 	qdel(T1)
 
-/datum/own_test_keep_holder
-	var/datum/own_test_child/kept
-
-/datum/own_test_keep_holder/ownership()
-	. = ..()
-	. += owns(nameof(kept), policy = OWN_KEEP)
-
-/datum/unit_test/ownership_keep_policy
-
-/datum/unit_test/ownership_keep_policy/Run()
-	var/datum/own_test_keep_holder/H = new
-	var/datum/own_test_child/C = new
-	rel_set(H, nameof(H.kept), C)
-	TEST_ASSERT_EQUAL(owner_of(C), H, "an OWN_KEEP value is owned while its holder lives")
-	qdel(H)
-	TEST_ASSERT(!QDELETED(C), "OWN_KEEP: the value outlives its holder")
-	TEST_ASSERT(isnull(owner_of(C)), "OWN_KEEP: the value is released at teardown")
-	qdel(C)
-
-/// A capability owns its var: the type declares nothing in ownership().
+/// A capability owns its var: the type declares nothing.
 /obj/cap_fixture/own_slot_holder
 	var/datum/gas_mixture/air_contents
 

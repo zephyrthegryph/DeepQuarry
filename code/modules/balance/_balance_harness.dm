@@ -43,9 +43,8 @@
 	var/list/spawned
 
 /// Not in the main .dme, so it cannot carry a generated CAPABILITIES declaration: the table proc declares what it spawned.
-/datum/balance_scenario/ownership()
-	. = ..()
-	. += owns(nameof(spawned), is_list = TRUE)
+CAPABILITIES(/datum/balance_scenario)
+	owns_many(nameof(spawned))
 
 /datum/balance_scenario/on_destroy(force) // the scenario owns what it spawned; cleanup() removes it.
 	cleanup()

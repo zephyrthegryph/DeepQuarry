@@ -27,14 +27,12 @@
 
 	var/outdoors_speed_mod = 0.7 //The general 'outdoors' speed. I.E., the general difference you'll be at when driving outside.
 
-/obj/vehicle/train/engine/quadbike/ownership()
-	. = ..()
-	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
-	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = when(cond_not(nameof(built_from_assembly)), /obj/item/cell/high)) // a bike built from an assembly brings no cell
 
 CAPABILITIES(/obj/vehicle/train/engine/quadbike)
 	param(nameof(built_from_assembly), pos = 1)
 	op("vehicle_paint", tool(TOOL_MULTITOOL), when(req_is(nameof(open), TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Paint"), wait(0), asks(/datum/prompt/color/vehicle_paint, fields = list("default" = nameof(paint_color)), step = "colour"), then(PROC_REF(vehicle_paint_picked)))
+	owns_one(nameof(key), starts = nameof(key_type), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(cell), starts = when(cond_not(nameof(built_from_assembly)), /obj/item/cell/high), on_destroy = ON_DESTROY_CONTAINED) // a bike built from an assembly brings no cell
 
 /// Whether the bike was built from an assembly (its constructor param): it then brings no cell of its own.
 /obj/vehicle/train/engine/quadbike/var/built_from_assembly = FALSE

@@ -57,6 +57,7 @@ CAPABILITIES(/obj/item/material/fishing_rod)
 	op("fishing_rod_string", stack(/obj/item/stack/cable_coil, 5), priority(OP_PRIORITY_DEFAULT), label("Use"), when(req_is(nameof(strung), FALSE)), wait(PROC_REF(string_time)), then(PROC_REF(string_done)))
 	op("fishing_rod_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(fishing_rod_item)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	owns_one(nameof(Bait), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attackby: swap the rod's bait; anything else falls through as its ..() did.
 /obj/item/material/fishing_rod/proc/fishing_rod_item(datum/act/op/A)
@@ -143,6 +144,3 @@ CAPABILITIES(/obj/item/material/fishing_rod/modern/strong)
 
 
 // The bait sits in the rod's contents.
-/obj/item/material/fishing_rod/ownership()
-	. = ..()
-	. += owns(nameof(Bait), policy = OWN_CONTAINED)

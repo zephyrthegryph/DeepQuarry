@@ -26,6 +26,7 @@ CAPABILITIES(/obj/structure/bigDelivery)
 		then(PROC_REF(parcel_label)))
 	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
 	op("robot_unwrap", remote(), when(req_actor_kind(/mob/living/silicon/robot)), label("Unwrap"), then(PROC_REF(big_delivery_robot_unwrap)))
+	owns_one(nameof(wrapped), on_destroy = ON_DESTROY_SPILL)
 
 /// Old attack_hand.
 /obj/structure/bigDelivery/proc/interaction_hand(datum/act/op/A)
@@ -134,9 +135,6 @@ CAPABILITIES(/obj/structure/bigDelivery)
 		if(examtext)
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
 
-/obj/structure/bigDelivery/ownership()
-	. = ..()
-	. += owns(nameof(wrapped), policy = OWN_SPILL)
 
 // the wrapped thing is unwrapped onto the floor.
 DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop_contents = TRUE))
@@ -171,6 +169,7 @@ CAPABILITIES(/obj/item/smallDelivery)
 		then(PROC_REF(parcel_label)))
 	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
 	op("robot_unwrap", remote(), when(req_actor_kind(/mob/living/silicon/robot)), label("Unwrap"), then(PROC_REF(small_delivery_robot_unwrap)))
+	owns_one(nameof(wrapped), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attack_self.
 /obj/item/smallDelivery/proc/interaction_self(datum/act/op/A)
@@ -278,9 +277,6 @@ CAPABILITIES(/obj/item/smallDelivery)
 		if(examtext)
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
 
-/obj/item/smallDelivery/ownership()
-	. = ..()
-	. += owns(nameof(wrapped), policy = OWN_CONTAINED)
 
 /// the wrapped this refers to (a relation view: it reads null once the target is deleted).
 /obj/structure/bigDelivery/proc/wrapped() as /obj
