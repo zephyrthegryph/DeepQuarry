@@ -43,7 +43,7 @@ Numbers below are source identity estimates, not analyzer results.
 - props/machines12: NTpod's visual mask/layers must exist before mapload gathering immediately invokes abduction/change_state; setup would be too late without retaining a duplicate mapload flag. Constant state moved; no mask ownership/declaration edits.
 - railing2: per-instance constructor constructed/anchored state remains; rotation registration moved.
 - reflectors1: cold canister gas temperature follows parent gas creation (A4 deliberately retained that initialization ordering). Reflector presentation moved, cold child remains.
-- salvageable1: unowned reinforced-table peer creation. spawns_many would require an owned list and change disposal behavior; no extra stored refs/ownership state introduced.
+- salvageable: its independent table factory is now a setup job, preserving the unowned peer policy; see the 2026-10-15 follow-up.
 - watercloset3: biowaste crusher link precedes parent creating/using its owned muffinmonster; follow-up creature configuration preserves that constructor sequence. Toilet plumbing moved.
 - windoor_assembly7: constructed/start_dir binding remains while subsequent controls/tile refresh are setup.
 - window5: mapped/constructor anchoring, state and initial direction remain. Later controls/tile publication moved.
@@ -53,3 +53,10 @@ No builds, tests, generators, analyzer jobs, baseline edits, commits, merge or p
 ## Exact retained site identities
 
 [Committed residual inventory](codex_A3_residual_sites.txt) lists every retained source identity from this lane’s post-edit audit, including repeated normalized rows. The per-file reasons above classify those identities; this is a source audit snapshot, not a fresh analyzer verdict after rebasing. Master’s subsequently removed declarations and rewritten setters must remain authoritative, and the root verification will establish the final baseline counts.
+
+
+## Residual follow-up, 2026-10-15
+
+The personal salvage terminal now declares its existing reinforced-table factory through setup(PROC_REF(prepare_terminal_table)). Its complete post-parent body is unchanged, there are no descendant Initialize consumers, and the job reads only the durable location. No ownership or reference declaration is required or changed: the supporting table remains an independent peer and survives deleting the terminal. The previous report unnecessarily limited the replacement to spawns_many().
+
+New focused selector /datum/unit_test/dq_a3_initialization/salvage_table checks actual constructor output, exactly one newly created table, its location and independent lifetime. No generation/analyzer/build/test was run; shrink-only baseline update and the lane-ready proof are pending.

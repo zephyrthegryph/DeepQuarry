@@ -62,3 +62,19 @@
 	var/obj/effect/anomaly/I = allocate(/obj/effect/anomaly/dq_a3_immortal, test_floor())
 	TEST_ASSERT_NOTNULL(I.countdown, "An immortal anomaly still owns its display")
 	TEST_ASSERT(!I.countdown.started, "The immortal variant does not start the countdown")
+
+/datum/unit_test/dq_a3_initialization/salvage_table/Run()
+	scope_setup()
+	var/turf/T = test_floor()
+	var/list/before = contents_of(T, /obj/structure/table/reinforced)
+	var/obj/structure/salvageable/personal/S = allocate(/obj/structure/salvageable/personal, T)
+	var/list/created = list()
+	for(var/obj/structure/table/reinforced/table in contents_of(T, /obj/structure/table/reinforced))
+		if(!(table in before))
+			own(table)
+			created += table
+	TEST_ASSERT_EQUAL(length(created), 1, "The real terminal constructs exactly one independent reinforced table")
+	var/obj/structure/table/reinforced/support = created[1]
+	TEST_ASSERT_EQUAL(support.loc, T, "Its supporting table is a peer on the actual constructor turf")
+	qdel(S)
+	TEST_ASSERT(!QDELETED(support), "Deleting the terminal preserves its independent supporting table")
