@@ -64,5 +64,13 @@ parameter-completion contract fixtures are new-code tests and were excluded from
 old-production capture. The temporary `statue_legacy_stasis` selector was capture-only and has
 been removed from the final source; `statue_releases_stasis` is its corrected regression.
 
-Final exact selectors, Rust filters, gate results and stamp are pending coordinated
-verification. Do not interpret this source handoff as a passing gate or completed landing.
+The analyzer confirms 47 baseline rows reduced to 4, with 43 deletions and no
+additions. All ratchets pass. Three focused Rust regressions pass: manual datum
+Initialize classification, initialization-only registry conditions, and quoted
+registry text preserving reactive conditions. The constructor-completion fixture
+uses published list mutations and declared references for its fault observation.
+
+The focused lane gate and stamp are pending. Its list includes the constructor,
+visual, cleanup and reference tests above, both mandatory requirement/conversion
+pins, the look pin, and AI/combat-AI regressions for living-body initialization.
+Do not interpret the source checks as a passing runtime gate or completed landing.
