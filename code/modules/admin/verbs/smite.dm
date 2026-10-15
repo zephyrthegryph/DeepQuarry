@@ -83,7 +83,7 @@
 			shadekin.ability_flags |= 0x1
 			shadekin.phase_out(get_turf(shadekin))
 			shadekin.ai_brain?.give_target(target, TRUE)
-			shadekin.ai_brain?.set_hostile(FALSE)
+			shadekin.ai_brain?.set_attack_on_sight(FALSE)
 			if(shadekin.ai_brain)
 				shadekin.ai_brain.mauling = TRUE
 			seq_run_frame_now(shadekin, /datum/sequence/life)

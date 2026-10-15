@@ -49,6 +49,7 @@
 
 /datum/shuttle/autodock/proc/set_docking_codes(code)
 	docking_codes = code
+	tracked_changed(src, nameof(docking_codes))
 	if(shuttle_docking_controller)
 		shuttle_docking_controller.docking_codes = code
 

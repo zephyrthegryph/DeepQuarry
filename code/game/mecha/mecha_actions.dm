@@ -431,6 +431,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
 		return
 	weapons_only_cycle = !weapons_only_cycle
+	tracked_changed(src, nameof(weapons_only_cycle))
 	if(weapons_only_cycle)
 		src.occupant_message(span_blue("Enabled weapons only cycling."))
 	else

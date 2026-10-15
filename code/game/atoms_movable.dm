@@ -91,10 +91,10 @@
 		RAD_SHIELDING_CHANGED(loc)
 	if(light_system == STATIC_LIGHT)
 		update_light()
-	// Unchanged from Initialize(): set_listening() is a no-op when the var is
+	// Unchanged from Initialize(): set_recursive_listening() is a no-op when the var is
 	// already set, so this never registered anything. Destroy() clears it.
 	if (listening_recursive)
-		set_listening(listening_recursive)
+		set_recursive_listening(listening_recursive)
 	// R10 bind (doc/rewrite/rust_bindings.md Â§4): one call creates the Rust
 	// entity and every component this type declares (vg_gas, and future
 	// vg_power/vg_heat/...), from the init_* values and the current inputs.
@@ -170,7 +170,7 @@
 	stop_orbit()
 	rel_clear(src, nameof(throw_source))
 	rel_clear(src, nameof(riding_datum))
-	set_listening(NON_LISTENING_ATOM)
+	set_recursive_listening(NON_LISTENING_ATOM)
 
 ////////////////////////////////////////
 /atom/movable/Move(atom/newloc, direct = 0, movetime)
@@ -846,7 +846,7 @@ CAPABILITIES(/atom/movable/overlay)
 /atom/movable/proc/exit_belly(obj/belly/B)
 	return
 
-/atom/movable/proc/set_listening(set_to)
+/atom/movable/proc/set_recursive_listening(set_to)
 	if (listening_recursive && !set_to)
 		dq_recursive_listeners_remove(src, src)
 		if (!dq_recursive_listeners_len(src))

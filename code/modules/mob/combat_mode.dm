@@ -47,11 +47,13 @@
 	if(combat_mode == new_mode)
 		return
 	combat_mode = new_mode
+	tracked_changed(src, nameof(combat_mode))
 	update_combat_mode_hud()
 
 /// Sets the attack variant (an ATTACK_VARIANT_* or null).
 /mob/proc/set_attack_variant(variant)
 	attack_variant = variant
+	tracked_changed(src, nameof(attack_variant))
 
 /**
  * Sets combat mode and the variant from one of the four outcomes. For AI brains,

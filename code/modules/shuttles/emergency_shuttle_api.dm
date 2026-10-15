@@ -194,3 +194,4 @@
 
 /datum/system/emergency_shuttle/proc/set_autopilot(enabled)
 	autopilot = enabled
+	tracked_changed(src, nameof(autopilot))

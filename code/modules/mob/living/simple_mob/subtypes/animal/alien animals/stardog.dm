@@ -614,7 +614,7 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 		var/mob/living/simple_mob/s = new ourmob(get_turf(src))
 		visible_message(span_danger("\The [s] tumbles out of \the [src]!"))
 		//legacy ai_holder.hostile/retaliate replaced with brain API.
-		s.ai_brain?.set_hostile(FALSE)
+		s.ai_brain?.set_attack_on_sight(FALSE)
 		s.set_ghostjoin(TRUE)
 
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)

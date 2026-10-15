@@ -46,6 +46,7 @@
 	if (intent != I_WALK && intent != I_RUN)
 		return 0
 	m_intent = intent
+	tracked_changed(src, nameof(m_intent))
 	if(hud_used)
 		if (hud_used.move_intent)
 			hud_used.move_intent.icon_state = intent == I_WALK ? "walking" : "running"

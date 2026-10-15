@@ -114,6 +114,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	if(hacked == newhacked)
 		return
 	hacked = newhacked
+	tracked_changed(src, nameof(hacked))
 
 /obj/machinery/media/jukebox/proc/wirecutter_used(datum/act/op/A)
 	var/mob/user = A.actor

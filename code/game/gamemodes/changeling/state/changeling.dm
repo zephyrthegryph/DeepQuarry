@@ -93,6 +93,7 @@ CAPABILITIES(/datum/changeling)
 
 /datum/changeling/proc/set_sting_cooldown()
 	COOLDOWN_START(src, sting_cooldown, cooldown_time)
+	tracked_changed(src, nameof(sting_cooldown))
 
 /datum/changeling/proc/get_cooldown(id)
 	return changeling_cooldowns[id]

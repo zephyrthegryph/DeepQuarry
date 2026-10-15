@@ -48,7 +48,7 @@ pub fn set_calls(tree: &Tree) -> Arc<BTreeSet<String>> {
         let files = tree.select(&CODE_DM);
         let facts: Vec<Vec<String>> = crate::incr::facts("auto-tracked-set-calls", &files, |f| {
             let mut out: Vec<String> = Vec::new();
-            if f.rel == AUTO_REL || !f.text().contains("set_") {
+            if f.rel == AUTO_REL || !SETTER_PREFIXES.iter().any(|p| f.text().contains(p)) {
                 return out;
             }
             let call = crate::pat!(r"(?:^|[^\w/])set_(\w+)\s*\(");
@@ -93,7 +93,8 @@ fn declared_reactive(eng: &ReadsEngine, owner: &str, var: &str) -> bool {
 /// The var names some proc writes, not counting a setter's write of its own var (`set_v` writing `v`: the TRACKED() macro's body, and the one line of
 /// every hand-written setter): a var written only there is written by nobody who could be asked to publish.
 pub fn writes_outside_setters(sem: &crate::sem::Sem) -> HashSet<String> {
-    let procs: Vec<dreammaker::objtree::ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin()).collect();
+    // The generated setters and list mutators write the vars they are generated for: counting them would keep a var tracked because it was tracked.
+    let procs: Vec<dreammaker::objtree::ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin() && !matches!(sem.file_of(p.get().location), Some(AUTO_REL) | Some(TRACKED_LISTS_REL))).collect();
     let sets: Vec<HashSet<String>> = crate::sem::par_map(&procs, |p| {
         let mut w = crate::sem::reads::proc_writes(*p);
         if let Some(v) = p.name().strip_prefix("set_") {
@@ -145,6 +146,7 @@ pub fn called_candidates(tree: &Tree, sem: &crate::sem::Sem, eng: &ReadsEngine, 
             }
             if let Ok(want) = std::env::var("DQ_AUTO_DEBUG") {
                 if *name == want {
+                    eprintln!("auto_tracked debug typed: {:?} calls: {} {}", typed_set_calls(tree).get(&format!("remove_{want}")).or(typed_set_calls(tree).get(&format!("add_{want}"))), calls.contains(want.as_str()), calls.contains(&format!("{want}[]")));
                     eprintln!("auto_tracked debug: {}.{} called_here={} candidate={} declared_reactive={}", path, name, called_here(tree, sem, &defs, calls, &path, name), candidate(eng, written, calls, &path, name), declared_reactive(eng, &path, name));
                 }
             }

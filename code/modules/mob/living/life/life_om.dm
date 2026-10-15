@@ -107,6 +107,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 
 /mob/proc/set_low_priority(value)
 	low_priority = value
+	tracked_changed(src, nameof(low_priority))
 
 /mob/living/set_low_priority(value)
 	..()

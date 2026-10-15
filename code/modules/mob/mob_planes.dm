@@ -123,6 +123,7 @@ CAPABILITIES(/datum/plane_holder)
 /atom/movable/screen/plane_master/proc/set_desired_alpha(new_alpha)
 	if(new_alpha != alpha && new_alpha > 0 && new_alpha <= 255)
 		desired_alpha = new_alpha
+		tracked_changed(src, nameof(desired_alpha))
 		if(alpha) //If we're already visible, update it now.
 			alpha = new_alpha
 

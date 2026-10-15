@@ -1599,6 +1599,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	if(syndicate == state)
 		return
 	syndicate = state
+	tracked_changed(src, nameof(syndicate))
 	log_game("CYBORG: [key_name(src)] syndicate state set to [state].")
 	if(syndicate)
 		apply_syndicate_state()

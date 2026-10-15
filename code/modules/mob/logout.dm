@@ -18,7 +18,7 @@
 	if(is_admin && is_admin.check_for_rights(R_HOLDER))
 		message_admins("Staff logout: [key_name(src)]") // Staff logout notice displays no matter what
 
-	set_listening(NON_LISTENING_ATOM) //maybe remove this, even if it will cause a teensy bit more lag
+	set_recursive_listening(NON_LISTENING_ATOM) //maybe remove this, even if it will cause a teensy bit more lag
 	..()
 
 	return TRUE

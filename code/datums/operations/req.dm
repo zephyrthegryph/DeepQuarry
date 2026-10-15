@@ -97,7 +97,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 /proc/legacy_req(type, of = OP_HELD)
 	RETURN_TYPE(/datum/req)
 	var/datum/req/of_type/R = new
-	R.types = type
+	R.set_types(type)
 	R.of = of
 	return req_intern(R)
 

@@ -220,7 +220,7 @@
 			if (!value || !resetee)
 				log_config_error("Warning: invalid $reset directive: [value]")
 				continue
-			resetee.set_default()
+			resetee.reset_to_default()
 			log_config("Reset configured value for [value] to original defaults")
 			continue
 

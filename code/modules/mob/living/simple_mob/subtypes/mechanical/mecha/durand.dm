@@ -37,6 +37,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/combat/durand/proc/set_defense_mode(new_mode)
 	defense_mode = new_mode
+	tracked_changed(src, nameof(defense_mode))
 	deflect_chance = defense_mode ? defense_deflect : initial(deflect_chance)
 	projectile_accuracy = defense_mode ? -10 : initial(projectile_accuracy)
 	to_chat(src, span_notice("You [defense_mode ? "en" : "dis"]able defense mode."))

@@ -200,6 +200,7 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control)
 	if(shuttle_tag == new_shuttle_tag)
 		return FALSE
 	shuttle_tag = new_shuttle_tag
+	tracked_changed(src, nameof(shuttle_tag))
 	return TRUE
 
 /obj/machinery/computer/shuttle_control/proc/on_emag(datum/act/op/A)

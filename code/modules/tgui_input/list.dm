@@ -144,6 +144,7 @@ CAPABILITIES(/datum/tgui_list_input)
 
 /datum/tgui_list_input/proc/set_choice(choice)
 	src.choice = choice
+	tracked_changed(src, nameof(choice))
 
 /// A shared (registered) definition/flyweight: never cleared.
 /datum/tgui_list_input/proc/state() as /datum/tgui_state
