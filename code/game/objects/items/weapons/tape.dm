@@ -81,7 +81,6 @@ CAPABILITIES(/obj/item/tape_roll)
 		return OP_FAILED
 	act_message(user, H, others = span_danger("%U% has taped up %T%'s eyes!"))
 	H.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses/blindfold/tape(H), SLOT_ID_EYES, ignore_obstructions = FALSE)
-	changed(src)
 	play_sfx(src, SFX_EFFECTS_TAPE)
 	return OP_OK
 
@@ -92,7 +91,6 @@ CAPABILITIES(/obj/item/tape_roll)
 		return OP_FAILED
 	act_message(user, H, others = span_danger("%U% has taped up %T%'s mouth!"))
 	H.equip_to_slot_or_del(new /obj/item/clothing/mask/muzzle/tape(H), SLOT_ID_MASK, ignore_obstructions = FALSE)
-	changed(src)
 	play_sfx(src, SFX_EFFECTS_TAPE)
 	return OP_OK
 

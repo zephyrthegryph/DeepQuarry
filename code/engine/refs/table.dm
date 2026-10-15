@@ -1,5 +1,5 @@
-// Ownership tables (doc/rewrite/ownership.md): one per type, built from the type's ownership() and
-// relations() lists the first time an instance asks, cached in the `own_table` shared cache.
+// Ownership tables (doc/rewrite/ownership.md): one per type, built from the type's ownership() list and the relation entries of its
+// CAPABILITIES the first time an instance asks, cached in the `own_table` shared cache.
 
 // ---------------------------------------------------------------- declaring
 
@@ -14,21 +14,6 @@
  * Built once per type (type_list()): the body must not read instance vars.
  */
 /datum/proc/ownership()
-	SHOULD_NOT_SLEEP(TRUE)
-	RETURN_TYPE(/list)
-	return list()
-
-/**
- * The type's relation declarations: non-owning links the framework keeps consistent and clears
- * when either end dies (rel_one(), rel_many(), rel_key()).
- *
- *	/obj/machinery/sleeper/relations()
- *		. = ..()
- *		. += rel_one(nameof(console), back = nameof(/obj/machinery/sleep_console::sleeper))
- *
- * Built once per type (type_list()): the body must not read instance vars.
- */
-/datum/proc/relations()
 	SHOULD_NOT_SLEEP(TRUE)
 	RETURN_TYPE(/list)
 	return list()
@@ -56,7 +41,7 @@
 	/// owns(on_lost = PROC_REF(x)): the holder's x(thing) when an occupant leaves the var. An entry with one is never interned.
 	var/on_lost
 
-/// Interned: an identical declaration made anywhere in the tree (an ancestor's relations() that every
+/// Interned: an identical declaration made anywhere in the tree (an ancestor's declaration that every
 /// subtype's per-type list repeats, such as /atom's light_sources and heat_watches) is ONE datum and one
 /// entry list, not one per type. Entries are read-only after they are returned, so sharing them is safe.
 /proc/_own_entry(var_name, list/entry, keep_after_destroy, pool_reset, forward, starts)
@@ -229,7 +214,7 @@
 	var/list/entry = list(OWNK_REL, shape, back, extra, !!is_list, length(watch) ? watch.Copy() : null, other_deleted || CLEAR, on_unlink, type)
 	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward)
 
-/// The declarations collected from one type's ownership() and relations() lists.
+/// The declarations collected from one type's ownership() list and CAPABILITIES relation entries.
 /datum/own_decls
 	/// var name -> entry list(kind, arg, partner, extra, is_list, watch, other_deleted, on_unlink)
 	var/list/entries = list() // ALLOW(instance_list): one per declaring type, always filled by the collector and handed to the table
@@ -342,8 +327,6 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		decl.add(E)
 		if(E.on_lost)
 			LAZYSET(legacy_lost, E.var_name, E.on_lost)
-	for(var/datum/own_entry/E as anything in type_list(D, TYPE_PROC_REF(/datum, relations)))
-		decl.add(E)
 	// The engine's declarations: the relation entries of the type's CAPABILITIES lists (code/engine/declare/relations.dm).
 	for(var/datum/own_entry/E as anything in table_own_entries(table_of(D)))
 		decl.add(E)

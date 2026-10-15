@@ -56,23 +56,23 @@
 	//Timer and progress bar
 	if(!user.client && prey.has_status(STAT_WEAKENED)) // stop crwaling instantly break swallow attempt for mobvore
 		prey.status_at_least(STAT_STUNNED, min(prey.status_units(STAT_WEAKENED), 2)) // stop crawling instantly break swallow attempt for mobvore
-	// If it completes, nom successful! Announce it and move the prey (devour_timed_done()).
-	var/started = task_launch(/datum/task/timed/proc_devour, user, prey, list(receiver = user, duration = swallow_time, pred = pred, belly = belly, message_range = message_range, hidden = TRUE), null)
-	return !istext(started)
+	// If it completes, nom successful! Announce it and move the prey (devour_done()). The op is on /mob/living (modules/combat_ai/integration/mob_living.dm).
+	var/datum/op_result/started = perform_op(user, prey, "devour", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("pred" = pred, "belly" = belly, "duration" = swallow_time, "message_range" = message_range))
+	if(!started || started.outcome == ACT_REFUSED)
+		log_game("VORE: [key_name(user)] could not begin devouring [key_name(prey)] into [belly] (refused)")
+		return FALSE
+	return TRUE
 
-/datum/task/timed/proc_devour
-	complete_proc = /proc/devour_timed_done
-	var/mob/living/pred
-	var/obj/belly/belly
-	var/message_range
+/mob/living/proc/devour_duration(datum/act/op/A)
+	return A.arg("duration")
 
 /// A timed devour completed: eat the prey and let go of any grab the user had on it.
-/proc/devour_timed_done(datum/task/timed/proc_devour/task)
-	var/mob/living/user = task.actor
-	var/mob/living/prey = task.target
-	var/mob/living/pred = task.pred
-	var/obj/belly/belly = task.belly
-	var/message_range = task.message_range
+/mob/living/proc/devour_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/prey = A.target
+	var/mob/living/pred = A.arg("pred")
+	var/obj/belly/belly = A.arg("belly")
+	var/message_range = A.arg("message_range")
 	for(var/obj/item/grab/G in prey?.grabbed_by_list())
 		if(G?.grab_assailant() == user)
 			consumed(G)

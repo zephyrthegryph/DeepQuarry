@@ -378,7 +378,6 @@ CAPABILITIES(/obj/item/vac_attachment)
 	var/datum/prompt/R = A.answer
 	if(!R?.value)
 		return OP_OK
-	var/mob/user = A.actor
 	switch(R.value)
 		if("Show Pack")
 			set_item_state("sucker")
@@ -386,7 +385,6 @@ CAPABILITIES(/obj/item/vac_attachment)
 			set_item_state("sucker_nobag")
 		if("Hidden")
 			set_item_state(null)
-	changed(src)
 	return OP_OK
 
 /obj/item/storage/Entered(atom/movable/thing, atom/OldLoc) //Holder the mob so they don't get stuck in trashbags etc.

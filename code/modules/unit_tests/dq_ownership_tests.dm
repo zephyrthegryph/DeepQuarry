@@ -12,6 +12,9 @@
 	var/released = 0
 
 CAPABILITIES(/datum/own_test_holder)
+	links(/datum/own_test_holder::partner, /datum/own_test_partner::holder)
+	links(/datum/own_test_holder::members, /datum/own_test_member::group, a_many = TRUE)
+	links(/datum/own_test_holder::peers, /datum/own_test_holder::peers, a_many = TRUE, b_many = TRUE)
 	owns_one(nameof(child))
 	owns_many(nameof(children))
 	owns_many(nameof(values))
@@ -20,17 +23,6 @@ CAPABILITIES(/datum/own_test_holder)
 	. = ..()
 	. += rel_one(nameof(species), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
-/datum/own_test_holder/relations()
-	. = ..()
-	. += rel_one(nameof(partner), back = nameof(/datum/own_test_partner::holder))
-	. += rel_many(nameof(members), back = nameof(/datum/own_test_member::group))
-	. += rel_many(nameof(peers), back = nameof(/datum/own_test_holder::peers))
-/datum/own_test_partner/relations()
-	. = ..()
-	. += rel_one(nameof(holder), back = nameof(/datum/own_test_holder::partner))
-/datum/own_test_member/relations()
-	. = ..()
-	. += rel_one(nameof(group), back = nameof(/datum/own_test_holder::members))
 
 /datum/own_test_holder/on_owned_release(var_name, datum/child)
 	. = ..()
@@ -53,16 +45,10 @@ CAPABILITIES(/datum/own_test_child)
 	var/key = "k1"
 	var/obj/own_test_keyed_target/target
 
-/obj/own_test_keyed_source/relations()
-	. = ..()
-	. += rel_one(nameof(target), keyed = nameof(key), keyed_target = /obj/own_test_keyed_target)
 
 /obj/own_test_keyed_target
 	var/id = "k1"
 
-/obj/own_test_keyed_target/relations()
-	. = ..()
-	. += rel_key(nameof(id))
 
 /datum/unit_test/ownership_own_accessors
 
@@ -407,7 +393,8 @@ CAPABILITIES(/datum/own_test_child)
 	var/datum/own_test_watch_target/watched
 	var/datum/own_test_watch_target/unwatched
 
-/datum/own_test_watch_holder/relations()
+/// A watched relation (rel_one(watch =)) has no CAPABILITIES spelling: read-driven tracking replaced it, and the table form is what this test pins.
+/datum/own_test_watch_holder/ownership()
 	. = ..()
 	. += rel_one(nameof(watched), watch = list(nameof(/datum/own_test_watch_target::power_level)))
 	. += rel_one(nameof(unwatched))
@@ -468,10 +455,6 @@ CAPABILITIES(/datum/own_test_child)
 	var/datum/own_test_child/tracked
 	var/list/unlinked
 
-/datum/own_test_hook_holder/relations()
-	. = ..()
-	. += rel_one(nameof(subject), other_deleted = DELETE_ME)
-	. += rel_one(nameof(tracked), on_unlink = PROC_REF(tracked_gone))
 
 /datum/own_test_hook_holder/proc/tracked_gone(datum/other)
 	LAZYADD(unlinked, other)
@@ -551,3 +534,10 @@ CAPABILITY(/obj/cap_fixture/own_slot_holder, gas_store(nameof(air_contents), 70,
 	TEST_ASSERT(QDELETED(holder), "the reagent holder ended with the system")
 	test_time(400) // the clouds fade and expire
 	test_driver_end()
+
+CAPABILITIES(/obj/own_test_keyed_source)
+	ref_one(nameof(target), /obj/own_test_keyed_target, by = nameof(key), target_key = nameof(/obj/own_test_keyed_target::id))
+
+CAPABILITIES(/datum/own_test_hook_holder)
+	ref_one(nameof(subject), on_other_deleted = OTHER_DELETE_ME)
+	ref_one(nameof(tracked), on_unlink = PROC_REF(tracked_gone))

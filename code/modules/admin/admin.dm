@@ -763,7 +763,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 		return
 
 	if(istype(H))
-		changed(H) // draws the mob again from its state
+		draw_now(H) // draws the mob again from its state
 
 /proc/get_options_bar(whom, detail = 2, name = 0, link = 1, highlight_special = 1)
 	if(!whom)

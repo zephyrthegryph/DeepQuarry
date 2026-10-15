@@ -1096,7 +1096,6 @@ MSG_DEF_SELF(sink/washing_hands, span_notice("You start washing your hands."))
 		var/mob/living/carbon/human/H = user
 		if(H.get_equipped_item(SLOT_ID_GLOVES))
 			H.get_equipped_item(SLOT_ID_GLOVES).wash(CLEAN_SCRUB)
-			changed(src)
 			H.get_equipped_item(SLOT_ID_GLOVES).germ_level = 0
 		else
 			if(H.get_equipped_item(SLOT_ID_HAND_R))
@@ -1107,7 +1106,6 @@ MSG_DEF_SELF(sink/washing_hands, span_notice("You start washing your hands."))
 			H.germ_level = 0
 			H.set_hand_blood_color(null)
 			H.forensic_data?.wash(CLEAN_SCRUB)
-		changed(src)
 	else
 		user.wash(CLEAN_SCRUB)
 	for(var/mob/V in viewers(src, null))

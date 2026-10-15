@@ -63,6 +63,3 @@ GLOBAL_LIST_EMPTY(op_watchers)
 			var/datum/every_hop_watch/hop_watch = ctx // a parked every() following a relation hop (code/engine/actions/every.dm)
 			hop_watch.reads_changed()
 			continue
-		if(istype(ctx, /datum/task))
-			var/datum/task/task = ctx // a running task (code/engine/kernel/tasks.dm)
-			task.reads_changed()

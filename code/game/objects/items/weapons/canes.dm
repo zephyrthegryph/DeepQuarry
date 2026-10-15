@@ -37,7 +37,6 @@ CAPABILITIES(/obj/item/cane/concealed)
 		user.drop_from_inventory(src)
 		user.put_in_hands(concealed_blade)
 		user.put_in_hands(src)
-		changed(src)
 		rel_take(src, nameof(concealed_blade))
 	return OP_OK
 
@@ -117,9 +116,6 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 		set_force(3)
 		set_attack_verb(list("hit", "poked", "prodded"))
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		changed(src)
 
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 	add_fingerprint(user)

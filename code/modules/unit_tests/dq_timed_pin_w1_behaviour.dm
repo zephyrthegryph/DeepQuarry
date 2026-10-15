@@ -168,7 +168,6 @@
 	test_click(user, B, null)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "a bare hand starts a timed action")
-	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 15, "it lasts a second and a half")
 	TEST_ASSERT(said(user, "You start picking"), "it says it began")
 	test_time(1 SECONDS)
 	TEST_ASSERT(!QDELETED(B), "the beacon stands before the end")

@@ -216,10 +216,8 @@
 	/// Which schedule a status display shows (shuttle_schedule_source()).
 	#define SHUTTLE_SCHEDULE_EVAC 1
 	#define SHUTTLE_SCHEDULE_SUPPLY 2
-// ---- Task steps (object_model_core.md §4.11): what a step proc returns. ----
 /// om_guarded_call(): the callee slept (it finishes on its own; its result is lost).
 #define OM_CALLEE_SLEPT "__om_callee_slept"
-// STEP_NEXT, STEP_DONE, STEP_REPEAT() and STEP_FAIL() are code/__defines/engine/tasks.dm's.
 
 // ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
 

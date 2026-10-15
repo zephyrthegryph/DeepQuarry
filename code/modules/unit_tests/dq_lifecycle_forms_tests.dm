@@ -22,10 +22,6 @@ REGISTRY_DECLARE_CONDITIONAL(dq_forms_cond, REGISTRY_DQ_FORMS_COND)
 	var/part_type = /obj/item/dq_forms_part
 	var/list/spares
 
-/obj/item/dq_forms_holder/relations()
-	. = ..()
-	. += rel_one(nameof(part), /obj/item/dq_forms_part, kind = RELK_OWNED, policy = OWN_SPILL, starts = nameof(part_type))
-	. += rel_many(nameof(spares), /obj/item/dq_forms_part, kind = RELK_OWNED, starts = list(/obj/item/dq_forms_part = 2))
 
 /// A subtype (or a map edit) of the type var picks the occupant.
 /obj/item/dq_forms_holder/better
@@ -502,3 +498,7 @@ CAPABILITIES(/obj/item/dq_forms_setup)
 	var/obj/item/dq_forms_setup/S = allocate(/obj/item/dq_forms_setup, dq_containment_floor())
 	TEST_ASSERT_EQUAL(jointext(S.order, ","), "init,first,second", "the hooks run after Initialize(), in order")
 	TEST_ASSERT_EQUAL(S.name, "empty probe", "name_prefix() prefixes the name")
+
+CAPABILITIES(/obj/item/dq_forms_holder)
+	owns_one(nameof(part), /obj/item/dq_forms_part, on_destroy = ON_DESTROY_SPILL, starts = nameof(part_type))
+	owns_many(nameof(spares), /obj/item/dq_forms_part, count = 2)

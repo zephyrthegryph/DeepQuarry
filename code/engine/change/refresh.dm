@@ -533,13 +533,13 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 				look_published(A, engine)
 		// A draw that shows nothing yet may still have read other entities (look.watch()): their changes are what bring its layers in.
 		if(apply && (L.watched || L.watched_looks || capability_data(A)?[/datum/cap_engine_state]))
-			look_watch_sync(A, L.watched, L.neighbour_types, L.watched_looks)
+			look_watch_sync(A, L.watched, L.neighbour_types, L.watched_looks, L.watched_worn)
 		return null
 	var/key = L.change_key()
 	if(apply)
 		// What the draw read of other entities: a change on any of them redraws A (kept in line with every draw, applied or not).
 		if(L.watched || L.watched_looks || capability_data(A)?[/datum/cap_engine_state])
-			look_watch_sync(A, L.watched, L.neighbour_types, L.watched_looks)
+			look_watch_sync(A, L.watched, L.neighbour_types, L.watched_looks, L.watched_worn)
 		if(key != A.rx?.look_key)
 			var/atom/outer = GLOB.refresh_applying
 			GLOB.refresh_applying = A
@@ -766,7 +766,7 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 
 /// Brings `A`'s subscriptions to other entities in line with what its draw reads now (`keys`: own keys, null for none). The record is kept
 /// in the atom's engine state, which only an atom that has watched something (or kept a cooldown or a flash) owns.
-/proc/look_watch_sync(atom/A, list/keys, list/neighbour_types, list/look_keys)
+/proc/look_watch_sync(atom/A, list/keys, list/neighbour_types, list/look_keys, list/worn_keys)
 	var/datum/cap_engine_state/engine = (keys || look_keys) ? cap_engine_state_make(A) : cap_engine_state_of(A)
 	if(!engine)
 		return
@@ -783,6 +783,19 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 				rel_observe(seen, A)
 	engine.look_watching = keys
 	engine.look_neighbour_types = neighbour_types
+	// look.watch_worn(): what the draw shows worn or held is read whole while it does (rx_readers()).
+	var/list/worn_was = engine.look_watching_worn
+	for(var/key in worn_was)
+		if(!(key in worn_keys))
+			var/datum/worn_gone = own_locate(key)
+			if(worn_gone?.rx?.worn_watched)
+				worn_gone.rx.worn_watched--
+	for(var/key in worn_keys)
+		if(!(key in worn_was))
+			var/datum/worn_seen = own_locate(key)
+			if(worn_seen)
+				rx_of(worn_seen).worn_watched++
+	engine.look_watching_worn = worn_keys
 	// look.watch_look(): the atoms whose look this draw composes. Only their look_published() reaches A, never their other changes.
 	var/list/was_looks = engine.look_watching_looks
 	for(var/key in was_looks)
@@ -796,6 +809,17 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 			if(isatom(seen_look))
 				look_subscribe(seen_look, A)
 	engine.look_watching_looks = look_keys
+
+/// The atom's look is gone (it is being deleted): what it showed worn or held is no longer read whole on its account.
+/proc/look_worn_release(atom/A)
+	var/list/shown = cap_engine_state_of(A)?.look_watching_worn
+	if(!length(shown))
+		return
+	for(var/key in shown)
+		var/datum/worn_gone = own_locate(key)
+		if(worn_gone?.rx?.worn_watched)
+			worn_gone.rx.worn_watched--
+	cap_engine_state_of(A).look_watching_worn = null
 
 /// `watcher`'s draw composes `target`'s look: look_published(target) marks it. One call, one count; look_unsubscribe() takes it back.
 /proc/look_subscribe(atom/target, atom/watcher)

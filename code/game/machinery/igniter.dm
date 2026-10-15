@@ -124,21 +124,13 @@ CAPABILITIES(/obj/machinery/sparker)
 	desc = "A remote control switch for a mounted igniter."
 
 CAPABILITIES(/obj/machinery/button/ignition)
+	ref_many(nameof(controlled_sparkers), /obj/machinery/sparker, by = nameof(id))
+	ref_many(nameof(controlled_igniters), /obj/machinery/igniter, by = nameof(id))
 	op("trigger", hand(), priority(OP_PRIORITY_DEFAULT), label("Trigger"), then(PROC_REF(interaction_trigger)))
 
 /// Sparkers and igniters sharing our id (keyed).
 /obj/machinery/button/ignition/var/list/obj/machinery/sparker/controlled_sparkers
 /obj/machinery/button/ignition/var/list/obj/machinery/igniter/controlled_igniters
-/obj/machinery/button/ignition/relations()
-	. = ..()
-	. += rel_many(nameof(controlled_sparkers), keyed = nameof(id), keyed_target = /obj/machinery/sparker)
-	. += rel_many(nameof(controlled_igniters), keyed = nameof(id), keyed_target = /obj/machinery/igniter)
-/obj/machinery/sparker/relations()
-	. = ..()
-	. += rel_key(nameof(id))
-/obj/machinery/igniter/relations()
-	. = ..()
-	. += rel_key(nameof(id))
 
 /obj/machinery/button/ignition/proc/interaction_trigger(datum/act/op/A)
 	use_power(5)

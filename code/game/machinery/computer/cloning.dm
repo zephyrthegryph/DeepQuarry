@@ -59,9 +59,6 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	. = ..()
 	. += owns(nameof(diskette), policy = OWN_CONTAINED)
 
-/obj/machinery/computer/cloning/relations()
-	. = ..()
-	. += rel_many(nameof(pods), back = nameof(/obj/machinery/clonepod::connected))
 
 /obj/machinery/computer/cloning/Initialize(mapload)
 	. = ..()

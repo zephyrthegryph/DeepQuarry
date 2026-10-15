@@ -62,10 +62,6 @@
 
 // its containers drop out and the growing clone is ejected.
 
-/obj/machinery/clonepod/relations()
-	. = ..()
-	// Linked console: the pod is one of its pods (two-sided; clears when either dies).
-	. += rel_one(nameof(connected), back = nameof(/obj/machinery/computer/cloning::pods))
 
 // The occupant slot already spilled the clone in phase 3; go_out() is kept for its mess
 // branch (a failed clone leaves gibs).
@@ -111,6 +107,8 @@
 	return occupant_mob
 
 CAPABILITIES(/obj/machinery/clonepod)
+	// Linked console: the pod is one of its pods (two-sided; clears when either dies).
+	links(/obj/machinery/clonepod::connected, /obj/machinery/computer/cloning::pods, b_many = TRUE)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(clonepod_occupied), wakes_on = list(nameof(occupant_mob)))
 	blast_contents()
 	owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL)

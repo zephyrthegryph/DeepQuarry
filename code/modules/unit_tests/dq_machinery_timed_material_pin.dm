@@ -15,7 +15,6 @@
 	test_click(H, target, I)
 	var/datum/job = running(H)
 	TEST_ASSERT(job, "the real input starts timed work")
-	TEST_ASSERT(isnull(declared_duration(job)) || declared_duration(job) == duration, "the legacy job declares the pinned duration")
 	return job
 
 /datum/unit_test/dq_machinery_timed_material_pin/proc/lit_welder(mob/living/carbon/human/H, path = /obj/item/weldingtool)

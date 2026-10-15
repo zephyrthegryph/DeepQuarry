@@ -12,9 +12,6 @@
 		id_tag = R.id_tag
 
 // The controller owns its program (embedded_controller.program); the program names it back.
-/datum/embedded_program/relations()
-	. = ..()
-	. += rel_one(nameof(master))
 
 // Return TRUE if was a command for us, otherwise return FALSE (so controllers with multiple programs can try each in turn until one accepts)
 /datum/embedded_program/proc/receive_user_command(command)
@@ -32,3 +29,6 @@
 		master.post_signal(signal, comm_line)
 	else
 		spent(signal)
+
+CAPABILITIES(/datum/embedded_program)
+	ref_one(nameof(master))
