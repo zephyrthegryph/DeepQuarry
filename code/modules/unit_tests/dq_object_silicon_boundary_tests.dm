@@ -106,7 +106,7 @@
 	var/obj/item/storage/bag/trash/module_bag = allocate(/obj/item/storage/bag/trash, R.module)
 	R.module.add_item(module_bag, R)
 	TEST_ASSERT(module_bag in R.module.modules, "The added bag joins the real module catalog")
-	TEST_ASSERT_EQUAL(R.vac_module_trash_output(), first_bag || module_bag, "Appending a bag preserves the first actual module match")
+	TEST_ASSERT_EQUAL(R.vac_module_trash_output(), first_bag ? first_bag : module_bag, "Appending a bag preserves the first actual module match")
 	var/obj/item/dogborg/sleeper/first_sleeper
 	for(var/obj/item/dogborg/sleeper/existing_sleeper in R.module.modules)
 		first_sleeper = existing_sleeper
