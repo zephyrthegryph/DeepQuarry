@@ -8,7 +8,7 @@
  */
 /datum/priority_queue
 	/// comparaison function
-	var/procpath/comparison
+	var/comparison
 	/// internal array
 	var/list/array
 

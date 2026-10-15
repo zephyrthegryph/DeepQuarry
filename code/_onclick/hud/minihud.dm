@@ -4,6 +4,7 @@
 	var/list/screenobjs
 
 CAPABILITIES(/datum/mini_hud)
+	ref_one(nameof(main_hud))
 	owns_many(nameof(screenobjs))
 
 /// Subtypes that update every second set this: hud_step() runs every second while it is (hud_tick(), a plain datum has no type-level every()).

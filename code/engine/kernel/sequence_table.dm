@@ -55,7 +55,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/seq_step)
 	/// SEQ_TARGET_*.
 	var/target_kind = SEQ_TARGET_ENTITY
 	/// SEQ_TARGET_STATIC: the shared contributor (a capability).
-	var/datum/contributor
+	var/datum/capability/contributor
 	/// SEQ_TARGET_EXTRA: its contributor's index in the state's extras.
 	var/extra_slot = 0
 	/// Its position in the table (runnable steps only).

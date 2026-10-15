@@ -23,6 +23,9 @@
 	/// The answer: the turfs of the path, in order.
 	var/list/path
 
+CAPABILITIES(/datum/io/path)
+	ref_one(nameof(mover), /atom/movable)
+
 /datum/io/path/begin()
 	if(!istype(start) || !istype(goal) || start.z != goal.z)
 		fail_transport("no path between those places")

@@ -21,6 +21,10 @@
 	/// The icon state
 	var/cogiconstate
 
+CAPABILITIES(/datum/cogbar)
+	ref_one(nameof(user))
+	ref_one(nameof(cog))
+
 /datum/cogbar/New(mob/user, cogicon, cogiconstate)
 	rel_set(src, nameof(user), user)
 	rel_set(src, nameof(user_client), user.client)

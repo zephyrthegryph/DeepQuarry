@@ -23,6 +23,7 @@
 	var/datum/ledger/containment_ledger
 
 CAPABILITIES(/datum/rx_state)
+	ref_one(nameof(claimed_by), /datum/pending_op) // the waiting claiming op that holds this entity; it clears when the op is deleted
 	owns_one(nameof(containment_ledger), /datum/ledger)
 	owns_one(nameof(lookup_scope), /datum/lookup_read_scope)
 

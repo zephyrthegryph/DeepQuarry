@@ -118,6 +118,8 @@
 // The omni device owns its ports (rel_add in omni/Initialize()); a port names its device back.
 
 CAPABILITIES(/datum/omni_port)
+	ref_one(nameof(node))
+	ref_one(nameof(network))
 	owns_one(nameof(air), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	ref_one(nameof(master))
 

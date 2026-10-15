@@ -1,5 +1,6 @@
 //I AM THE LOREMASTER, ARE YOU THE GATEKEEPER?
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lore/loremaster)
 /datum/lore/loremaster
 	var/list/organizations
 

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Engine, controller, datum and HUD references are declared relations; unit-test builds fail an unforced delete of a type marked never-deleted"

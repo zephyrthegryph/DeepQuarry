@@ -2,6 +2,9 @@
 /datum/mini_hud/mapper
 	var/obj/item/mapping_unit/owner
 
+CAPABILITIES(/datum/mini_hud/mapper)
+	ref_one(nameof(owner))
+
 /datum/mini_hud/mapper/New(datum/hud/other, owner)
 	rel_set(src, nameof(owner), owner)
 	rel_add(src, nameof(screenobjs), new /atom/movable/screen/movable/mapper_holder(null, owner))

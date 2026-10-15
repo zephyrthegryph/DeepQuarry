@@ -1,5 +1,6 @@
 // Shared input adapter registry and the downstream topic and drag hooks.
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/input_adapter)
 /datum/input_adapter
 	var/name = "abstract"
 

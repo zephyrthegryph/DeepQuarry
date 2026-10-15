@@ -270,6 +270,7 @@
 // 5. GLOB.gas_data — XGM-shaped per-gas metadata lookup
 // =====================================================================
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xgm_gas_data)
 /datum/xgm_gas_data
 	var/list/name = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
 	var/list/specific_heat = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init

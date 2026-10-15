@@ -14,6 +14,7 @@
 	var/static/restart_count = 0
 
 CAPABILITIES(/datum/controller/kernel)
+	ref_one(nameof(sched))
 	owns_one(nameof(stack_end_detector), /datum/stack_end_detector)
 	interface("ControllerOverview")
 	op("toggle_fast_update", ui_act("toggle_fast_update"), then(PROC_REF(ui_act_toggle_fast_update)))

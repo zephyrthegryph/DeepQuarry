@@ -119,10 +119,13 @@
 	/// Worst lateness (ds) any of its OM slots started with.
 	var/late_max = 0
 
+CAPABILITIES(/datum/system_stats)
+	owns_one(nameof(hist), /datum/km_hist)
+
 /datum/system_stats/New(key, kind)
 	src.key = key
 	src.kind = kind
-	hist = new
+	rel_set(src, nameof(hist), new /datum/km_hist)
 
 /// Folds one tick's charge in.
 /datum/system_stats/proc/record(ms, overrun, late)
@@ -139,7 +142,3 @@
 
 /datum/system_stats/proc/ms_total()
 	return ms_hi + ms_lo
-
-/datum/system_stats/on_destroy(force)
-	QDEL_NULL(hist)
-	..()

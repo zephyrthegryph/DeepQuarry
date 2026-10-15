@@ -139,6 +139,7 @@
 	return data
 
 CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter)
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
 	pipe_device_window("AtmosFilter")

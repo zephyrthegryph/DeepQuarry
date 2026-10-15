@@ -19,3 +19,6 @@
 
 /datum/proc/lifecycle_unbind()
 	return
+
+// The world's one early-init record (code/__defines/_init.dm, built before this file's macros exist) is never deleted.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/super_early_init)

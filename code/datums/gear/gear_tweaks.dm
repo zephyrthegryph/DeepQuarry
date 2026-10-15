@@ -15,6 +15,9 @@
 	var/datum/requester
 	var/on_changed
 
+CAPABILITIES(/datum/ask_sequence/gear_tweak)
+	ref_one(nameof(requester))
+
 /// The questions a change of this tweak asks: a list of ask_sequence() steps (question_step() specs, see gear_ask_*()), or null when there is
 /// nothing to ask. `gear` is the gear datum, when known. ask_metadata() runs them and hands the answers to metadata_answered().
 /datum/gear_tweak/proc/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
@@ -35,7 +38,7 @@
 		return FALSE
 	var/datum/ask_sequence/gear_tweak/seq = sequence || new /datum/ask_sequence/gear_tweak
 	seq.metadata = metadata
-	seq.requester = requester // ALLOW(ownership): a plain reference: the sequence lives only while one of its questions is open
+	rel_set(seq, nameof(seq.requester), requester)
 	seq.on_changed = on_changed
 	var/result = ask_sequence_begin(src, seq, user, isatom(requester) ? requester : null, steps, PROC_REF(metadata_sequence_done), null, common_fields, null)
 	return !istext(result)

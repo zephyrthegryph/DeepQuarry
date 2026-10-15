@@ -6,6 +6,9 @@
 	var/atom/movable/owner
 	var/turf/our_old_turf
 
+CAPABILITIES(/datum/topturfcrossed)
+	ref_one(nameof(owner))
+
 /datum/topturfcrossed/New(atom/movable/new_owner)
 	..()
 	if(!ismovable(new_owner))

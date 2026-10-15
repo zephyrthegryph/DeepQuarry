@@ -60,6 +60,8 @@
 	var/blocked = FALSE
 
 CAPABILITIES(/datum/thrownthing)
+	ref_one(nameof(initial_target))
+	ref_one(nameof(thrower))
 	ref_one(nameof(subject), /atom/movable, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(then_owner))
 

@@ -1,3 +1,4 @@
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/getrev)
 /datum/getrev
 	var/commit  // git rev-parse HEAD
 	var/date

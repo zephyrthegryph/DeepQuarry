@@ -1,3 +1,4 @@
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/alarm_handler/fire)
 /datum/alarm_handler/fire
 	category = "Fire Alarms"
 

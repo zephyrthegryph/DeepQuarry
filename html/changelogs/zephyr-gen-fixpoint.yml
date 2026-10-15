@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "A test pins that analyze gen writes the same files from a fresh, a stale-seeded and a second run"

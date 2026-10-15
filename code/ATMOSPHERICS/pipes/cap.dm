@@ -18,6 +18,9 @@
 
 	var/obj/machinery/atmospherics/node
 
+CAPABILITIES(/obj/machinery/atmospherics/pipe/cap)
+	ref_one(nameof(node))
+
 /obj/machinery/atmospherics/pipe/cap/init_dir()
 	initialize_directions = dir
 

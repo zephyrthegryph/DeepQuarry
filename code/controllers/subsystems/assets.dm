@@ -11,6 +11,9 @@ SYSTEM_DEF(assets)
 	var/list/preload = list()
 	var/datum/asset_transport/transport = new()
 
+CAPABILITIES(/datum/system/assets)
+	owns_one(nameof(transport), /datum/asset_transport)
+
 /datum/system/assets/OnConfigLoad()
 	var/newtransporttype = /datum/asset_transport
 	switch (CONFIG_GET(string/asset_transport))
@@ -22,7 +25,7 @@ SYSTEM_DEF(assets)
 
 	var/datum/asset_transport/newtransport = new newtransporttype ()
 	if (newtransport.validate_config())
-		transport = newtransport
+		rel_set(src, nameof(transport), newtransport)
 	transport.Load()
 
 /datum/system/assets/initialize()

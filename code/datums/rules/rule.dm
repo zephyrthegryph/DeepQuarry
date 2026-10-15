@@ -465,4 +465,6 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 	return null
 
 CAPABILITIES(/datum/rule_trigger)
+	ref_one(nameof(provider))
+	ref_one(nameof(provider_b))
 	ref_one(nameof(registry_static), /datum/property_registry)

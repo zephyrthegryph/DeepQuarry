@@ -26,6 +26,8 @@
 	level = 1
 
 CAPABILITIES(/obj/machinery/atmospherics/portables_connector)
+	ref_one(nameof(node))
+	ref_one(nameof(network))
 	ref_one(nameof(connected_device))
 	pipe_device_unwrench()
 

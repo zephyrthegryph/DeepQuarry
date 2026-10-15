@@ -9,6 +9,7 @@
 
 GLOBAL_DATUM_INIT(km_synthetic, /datum/km_synthetic, new)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/km_synthetic)
 /// The target of synthetic verbs.
 /datum/km_synthetic
 	/// Synthetic verbs that have run.

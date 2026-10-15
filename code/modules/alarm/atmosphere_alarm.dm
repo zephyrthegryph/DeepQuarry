@@ -1,3 +1,4 @@
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/alarm_handler/atmosphere)
 /datum/alarm_handler/atmosphere
 	category = "Atmosphere Alarms"
 

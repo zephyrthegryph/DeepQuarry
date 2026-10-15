@@ -249,4 +249,5 @@
 	rel_remove(src, nameof(output_atoms), thing)
 
 CAPABILITIES(/datum/looping_sound)
+	ref_one(nameof(parent))
 	ref_many(nameof(output_atoms))

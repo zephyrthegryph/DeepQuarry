@@ -34,6 +34,8 @@ MSG_DEF_SELF(turbine/secured, "You secure the bolts holding it to the floor.")
 MSG_DEF_SELF(turbine/unsecured, "You unsecure the bolts holding it to the floor.")
 
 CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
+	ref_one(nameof(network1))
+	ref_one(nameof(network2))
 	gas_port(nameof(air_in), volume = 200)
 	gas_port(nameof(air_out), volume = 800)
 	rotatable()
@@ -253,6 +255,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 
 
 CAPABILITIES(/obj/machinery/power/turbinemotor)
+	ref_one(nameof(turbine))
 	rotatable()
 	climb()
 	after_init(0, then(PROC_REF(reconsider)))

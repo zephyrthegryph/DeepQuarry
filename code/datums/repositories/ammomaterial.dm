@@ -1,5 +1,6 @@
 GLOBAL_DATUM_INIT(ammo_repository, /datum/repository/ammomaterial, new)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/repository/ammomaterial)
 /datum/repository/ammomaterial
 	var/list/ammotypes
 

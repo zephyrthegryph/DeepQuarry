@@ -1,5 +1,6 @@
 GLOBAL_DATUM(operation_compatibility, /datum/operation_compatibility)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/operation_compatibility)
 /// Library hooks the engine's op resolution asks (item ranking); input ordering remains owned by the operation engine.
 /datum/operation_compatibility
 /proc/operation_compatibility()

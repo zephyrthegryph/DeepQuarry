@@ -17,6 +17,8 @@
 	var/beam_type = /obj/effect/ebeam //must be subtype
 
 CAPABILITIES(/datum/beam)
+	ref_one(nameof(origin))
+	ref_one(nameof(target))
 	owns_many(nameof(elements))
 
 /datum/beam/New(beam_origin,beam_target,beam_icon='icons/effects/beam.dmi',beam_icon_state="b_beam",time=5 SECONDS,maxdistance=10,btype = /obj/effect/ebeam,beam_sleep_time=0.3 SECONDS,new_beam_color = null)
@@ -143,6 +145,9 @@ CAPABILITIES(/datum/beam)
 	mouse_opacity = 0
 	anchored = TRUE
 	var/datum/beam/owner
+
+CAPABILITIES(/obj/effect/ebeam)
+	ref_one(nameof(owner))
 
 /obj/effect/ebeam/singularity_pull()
 	return

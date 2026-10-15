@@ -14,6 +14,9 @@
 	/// If above 0, how long it takes while standing still to remove the effect.
 	var/time_to_remove = 0 SECONDS
 
+CAPABILITIES(/datum/effect_remover)
+	ref_one(nameof(owner))
+
 /datum/effect_remover/New(obj/item/new_owner, success_forcesay, success_feedback, on_clear, effects_we_clear, time_to_remove)
 	..()
 	if(!isitem(new_owner))

@@ -307,14 +307,14 @@ SYSTEM_DEF(ticker)
 			to_chat(world, span_filter_system(span_bold("Unable to choose playable game mode.") + " Reverting to pregame lobby."))
 			return 0
 		if(GLOB.secret_force_mode != "secret")
-			src.mode = config.pick_mode(GLOB.secret_force_mode)
+			rel_set(src, nameof(mode), config.pick_mode(GLOB.secret_force_mode))
 		if(!src.mode)
 			var/list/weighted_modes = list()
 			for(var/datum/game_mode/GM in runnable_modes)
 				weighted_modes[GM.config_tag] = CONFIG_GET(keyed_list/probabilities)[GM.config_tag]
-			src.mode = config.gamemode_cache[pickweight(weighted_modes)]
+			rel_set(src, nameof(mode), config.gamemode_cache[pickweight(weighted_modes)])
 	else
-		src.mode = config.pick_mode(GLOB.master_mode)
+		rel_set(src, nameof(mode), config.pick_mode(GLOB.master_mode))
 
 	if(!src.mode)
 		to_chat(world, span_boldannounce("Serious error in mode setup! Reverting to pregame lobby.")) //Uses setup instead of set up due to computational context.
@@ -328,7 +328,7 @@ SYSTEM_DEF(ticker)
 	if(!src.mode.can_start())
 		to_chat(world, span_filter_system(span_bold("Unable to start [mode.name].") + " Not enough players readied, [CONFIG_GET(keyed_list/player_requirements)[mode.config_tag]] players needed. Reverting to pregame lobby."))
 		mode.fail_setup()
-		mode = null
+		rel_clear(src, nameof(mode))
 		SSjob.reset_occupations()
 		return 0
 
@@ -527,4 +527,5 @@ SYSTEM_DEF(ticker)
 		Reboot("World reboot after administrative delay.")
 
 CAPABILITIES(/datum/system/ticker)
+	ref_one(nameof(mode))
 	ref_many(nameof(minds), /datum/mind)

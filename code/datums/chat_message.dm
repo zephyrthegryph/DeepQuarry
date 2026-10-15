@@ -56,6 +56,9 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	/// The row finish_image_generation() has on the runechat queue (SSrunechat.enqueue()), or null.
 	var/list/finish_queued
 
+CAPABILITIES(/datum/chatmessage)
+	ref_one(nameof(message_loc))
+
 /**
  * Constructs a chat message overlay
  *

@@ -18,7 +18,6 @@ stat_input_untracked	code/game/machinery/computer/arcade.dm	@/obj/machinery/comp
 stat_input_untracked	code/game/machinery/computer/arcade.dm	@/obj/machinery/computer/arcade/clawmachine::wants_payment reads GLOB.vendor_account.suspended
 stat_input_untracked	code/game/machinery/computer/cloning.dm	@/obj/machinery/computer/cloning::has_active_record reads /datum::active_BR.gc_destroyed
 stat_input_untracked	code/game/machinery/computer/law.dm	@/obj/machinery/computer/aiupload::can_connect reads using_map.contact_levels
-stat_input_untracked	code/game/machinery/computer/robot.dm	@/obj/machinery/computer/robotics::can_hack_any reads ?hop_not_relation
 stat_input_untracked	code/game/machinery/computer/skills.dm	@/obj/machinery/computer/skills::within_contact_range reads using_map.contact_levels
 stat_input_untracked	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::alarmed reads /area::areas_added[].firedoors_closed
 stat_input_untracked	code/game/machinery/telecomms/machine_interactions.dm	@/obj/machinery/telecomms/relay::can_change_level reads /atom::z
@@ -118,9 +117,6 @@ draw_untracked	code/_helpers/time.dm	@/::update_midnight_rollover reads GLOB.rol
 draw_untracked	code/_helpers/time.dm	@/::update_midnight_rollover reads GLOB.rollover_safety_date
 draw_untracked	code/_helpers/time.dm	@/::update_midnight_rollover reads GLOB.midnight_rollovers
 draw_untracked	code/_helpers/time.dm	@/::update_midnight_rollover reads GLOB.midnight_rollovers
-draw_untracked	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/inventory/hand::draw reads ?hop_not_relation
-draw_untracked	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/inventory/hand::draw reads /datum/hud::hud.l_hand_hud_object
-draw_untracked	code/_onclick/telekinesis.dm	@/obj/item/tk_grab::focus reads ?hop_not_relation
 draw_untracked	code/controllers/kernel/system.dm	@/datum/system::ready reads GLOB.midnight_rollovers
 draw_untracked	code/controllers/kernel/system.dm	@/datum/system::ready reads GLOB.rollovercheck_last_timeofday
 draw_untracked	code/controllers/kernel/system.dm	@/datum/system::ready reads GLOB.midnight_rollovers

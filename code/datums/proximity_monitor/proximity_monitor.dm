@@ -19,6 +19,8 @@
 	var/datum/connect_range/range_connector
 
 CAPABILITIES(/datum/proximity_monitor)
+	ref_one(nameof(host))
+	ref_one(nameof(hasprox_receiver))
 	owns_one(nameof(containers_connector), /datum/connect_containers)
 	owns_one(nameof(range_connector), /datum/connect_range)
 

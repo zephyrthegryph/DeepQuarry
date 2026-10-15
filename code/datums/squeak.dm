@@ -29,6 +29,10 @@
 	/// The squeaky shoes.
 	var/obj/item/clothing/shoes/owner
 
+CAPABILITIES(/datum/squeak)
+	ref_one(nameof(holder))
+	ref_one(nameof(owner))
+
 /// Not saved: make_squeaky() in Initialize() rebuilds it.
 /obj/item/clothing/shoes/var/tmp/datum/squeak/squeak
 
