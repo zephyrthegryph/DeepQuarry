@@ -4931,3 +4931,16 @@ remote reach, cuff grip or storage-drop behavior is intended.
 Master commit `5b0a2f09d0` (2026-10-13) declared typed references for internal storage's item owner and the cloning console's scanner without changing their older producer paths. Internal storage attempted to link its turf before rejecting a non-item owner, and cloning's scanner lookup returned numeric zero when absent. Both now raised typed-reference errors instead of producing the existing conversion goldens.
 
 Internal storage now declares an item-owner `keeps_if()` and a setup hook which links and names only accepted storage. Its `/obj/item` and `/obj/item/storage` ancestor initialization does not read `master_item`, and its only production subtype (gripper pockets) adds no initializer; the link and copied name are complete before `new` returns, so the gripper creator's subsequent `Pocket N` name override retains its ordering. The setup does not run for a rejected floor spawn. Cloning's scanner lookup returns null on a miss, preserving its adjacent-first then same-area lookup and its empty-reference behavior. These fixes restore the previous golden behavior; constructor runtime rows must not be blessed. Tests `dq_pin_constructor_repairs/internal_storage` and `/cloning_scanner` exercise the real constructors, the actual subtype, identity/name, independent owner lifetime, scanner attachment and deletion.
+
+## Look-fixture telecube disposal (2026-10-15)
+
+Deleting a captured mated telecube on the test floor invokes its real ending hook,
+which queues an explosion at its peer. That queued work can outlive the look sweep's
+floor cleanup and damage later fixtures. Look capture and probe teardown now move
+only the observed telecube pair to nullspace after collecting the appearance rows,
+then run normal deletion. The production hook still clears the reverse pair link;
+production explosion behavior and captured appearance are unchanged. The focused
+`dq_look_telecube_cleanup` regression checks the actual pair, unchanged look rows,
+and unchanged explosion pending/epoch counters. This is test isolation, authorizes
+no pin re-records, and adds no tracked declarations or production state writes.
+Verification of this copied cleanup remains pending the coordinating lane's gate.
