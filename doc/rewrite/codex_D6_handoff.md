@@ -14,3 +14,5 @@ Root analyzer preflight: usr_content ceiling130 ->85, with generated trackedchec
 
 
 Source-only fixture repair (2026-10-15): scoped_callback inherits current_actor_for_test and push_then_read from /datum/unit_test/dq_d6_actor_inputs. Its two new callback references now use TYPE_PROC_REF at that defining ancestor; production actor bindings and fixture behavior are unchanged. No generation, analyzer, build or test was run; the A coordinator retains exclusive verification.
+
+Fresh verification repaired four inherited mousedrop declarations to overrides and removed a fixture override of final add_fingerprint(). Locked headless behavior and real unlocked storage selection remain checked; real-client fingerprint evidence is explicitly untested here. First gate compiled no test world; original focused list remains pending.

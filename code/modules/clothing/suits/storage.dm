@@ -15,7 +15,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage)
 		return OP_DECLINE
 	return OP_OK
 
-/obj/item/clothing/suit/storage/proc/mousedrop_input(datum/act/input/A)
+/obj/item/clothing/suit/storage/mousedrop_input(datum/act/input/A)
 	if(pockets.handle_mousedrop(A.actor, A.over))
 		return ..(A)
 

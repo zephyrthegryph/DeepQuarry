@@ -110,7 +110,7 @@ CAPABILITIES(/obj/item/storage/secure)
 		user.show_message(span_warning("Unable to reset internal memory."), 1)
 	return OP_OK
 
-/obj/item/storage/secure/proc/mousedrop_input(datum/act/input/A)
+/obj/item/storage/secure/mousedrop_input(datum/act/input/A)
 	if(locked)
 		add_fingerprint(A.actor)
 		return

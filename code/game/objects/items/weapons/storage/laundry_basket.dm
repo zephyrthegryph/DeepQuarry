@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/storage/laundry_basket)
 	look.state(held_count() ? "laundry-full" : "laundry-empty")
 
 
-/obj/item/storage/laundry_basket/proc/mousedrop_input(datum/act/input/A)
+/obj/item/storage/laundry_basket/mousedrop_input(datum/act/input/A)
 	if(A.over == A.actor)
 		return
 	return ..(A)

@@ -36,7 +36,7 @@ CAPABILITIES(/obj/item/clothing/accessory/storage)
 		return OP_DECLINE
 	return OP_OK
 
-/obj/item/clothing/accessory/storage/proc/mousedrop_input(datum/act/input/A)
+/obj/item/clothing/accessory/storage/mousedrop_input(datum/act/input/A)
 	if(has_suit())
 		return
 	if(hold.handle_mousedrop(A.actor, A.over))

@@ -42,16 +42,11 @@
 	TEST_ASSERT_EQUAL(B.close_actor_id, REF(actor), "The actual close HUD forwards its explicit click actor to storage")
 
 /obj/item/storage/secure/dq_d6_secure_probe
-	var/fingerprint_actor_id
 	var/inventory_actor_id
-
-/obj/item/storage/secure/dq_d6_secure_probe/add_fingerprint(mob/user)
-	fingerprint_actor_id = REF(user)
-	return ..(user)
 
 /obj/item/storage/secure/dq_d6_secure_probe/handle_inventory_drop(mob/user, obj/over_object)
 	inventory_actor_id = REF(user)
-	return TRUE
+	return ..(user, over_object)
 
 /datum/unit_test/dq_d6_actor_inputs/secure_drag/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
@@ -59,12 +54,16 @@
 	var/mob/living/carbon/human/ambient = allocate(/mob/living/carbon/human, test_floor())
 	var/obj/item/storage/secure/dq_d6_secure_probe/S = allocate(/obj/item/storage/secure/dq_d6_secure_probe, test_floor())
 	TEST_ASSERT(S.locked, "The real secure storage starts locked")
-	with_actor(ambient, GLOBAL_PROC, GLOBAL_PROC_REF(input_dispatch), S, actor, INPUT_DRAG_ONTO, null, test_floor())
-	TEST_ASSERT_EQUAL(S.fingerprint_actor_id, REF(actor), "A locked drag fingerprints its actual actor")
+	with_actor(ambient, GLOBAL_PROC, GLOBAL_PROC_REF(input_dispatch), S, actor, INPUT_DRAG_ONTO, null, actor)
+	TEST_ASSERT(S.locked, "The locked drag preserves the real storage lock")
+	TEST_ASSERT_NULL(S.forensic_data, "A genuine headless actor creates no fabricated forensic record")
+	TEST_ASSERT_NULL(actor.s_active, "The locked drag opens no storage window")
 	TEST_ASSERT_NULL(S.inventory_actor_id, "The locked drag never delegates inventory handling")
 	S.set_locked(FALSE)
-	with_actor(ambient, GLOBAL_PROC, GLOBAL_PROC_REF(input_dispatch), S, actor, INPUT_DRAG_ONTO, null, test_floor())
+	with_actor(ambient, GLOBAL_PROC, GLOBAL_PROC_REF(input_dispatch), S, actor, INPUT_DRAG_ONTO, null, actor)
 	TEST_ASSERT_EQUAL(S.inventory_actor_id, REF(actor), "The unlocked native override preserves the inherited storage callback and actor")
+	TEST_ASSERT_EQUAL(actor.s_active, S, "The unlocked real storage window is selected for the explicit actor")
+	TEST_ASSERT_NULL(ambient.s_active, "The ambient actor does not acquire the window")
 
 /obj/item/gun/dq_d6_firemode_probe
 	var/firemode_actor_id
