@@ -138,7 +138,7 @@ CAPABILITIES(/turf/simulated/wall/fancy_shuttle)
 	look.effect(PROC_REF(apply_underlay))
 
 	if(damage_step)
-		look.overlay(damage_overlays[damage_step])
+		look.overlay(damage_overlay_of(damage_step))
 
 /turf/simulated/wall/fancy_shuttle/update_connections()
 	return

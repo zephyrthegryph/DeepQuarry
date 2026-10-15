@@ -64,7 +64,7 @@ CAPABILITIES(/obj/machinery/pump)
 	look.watch(reagents)
 	var/base = initial(icon_state)
 	look.overlay("[base]-tank")
-	look.overlay("[base]-lowpower", !(cell?.charge >= power_of(src).active)) // a pure read of the charge: check_charge() also settles the cell's material discharge credit
+	look.overlay("[base]-lowpower", !(cell?.charge_reaches(power_of(src).active))) // a pure read of the charge: check_charge() also settles the cell's material discharge credit
 	if(reagents.total_volume >= 1)
 		look.overlay(look_overlay_image(icon, "[base]-volume", color = reagents.get_color()))
 	look.overlay("[base]-glass")

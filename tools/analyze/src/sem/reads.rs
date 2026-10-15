@@ -607,6 +607,10 @@ impl<'a> ReadsEngine<'a> {
         if matches!(var, "type" | "parent_type" | "gc_destroyed") {
             return VarClass::Constant;
         }
+        // A flyweight is built once and shared: what it holds is constant (a lazy memo on one, like a material's cache id, is a pure function of it).
+        if crate::dm::ownership_index::FLYWEIGHT_TYPES.iter().any(|f| self.sem.is_subtype(owner, f)) {
+            return VarClass::Constant;
+        }
         // a `var/const` never changes, whatever other types name a var the same
         if !written.is_written(var) || self.sem.var_decl(owner, var).map(|v| v.is_const).unwrap_or(false) {
             return VarClass::Constant;
@@ -1019,6 +1023,10 @@ impl<'a, 'e> Walk<'a, 'e> {
             };
             if let Some(d) = &declared {
                 if v.ty.is_none() || v.root == Root::Local {
+                    v.ty = Some(d.clone());
+                } else if v.ty.as_ref().map(|cur| cur != d && self.eng.sem.is_subtype(d, cur)).unwrap_or(false) {
+                    // The proc declares a narrower type than the argument was known as (`obj/item/stack/material/glass/G` handed a held `/obj/item`):
+                    // the declaration is what the body is written against.
                     v.ty = Some(d.clone());
                 }
                 if self.eng.sem.is_subtype(d, "/datum/act") && (first_is_ctx || bind.get(i).is_some()) && !no_act && (v.root == Root::Local) {
@@ -1980,7 +1988,7 @@ pub fn prefab_path(e: &Expression) -> Option<String> {
 
 /// Builtin vars/procs that an object may have without the objtree declaring them on the static type.
 fn is_builtin_name(name: &str) -> bool {
-    matches!(name, "type" | "parent_type" | "vars" | "tag" | "Cross" | "Uncross" | "Entered" | "Exited" | "New" | "Del" | "Topic" | "Move" | "Crossed" | "Uncrossed" | "contents" | "loc" | "x" | "y" | "z")
+    matches!(name, "type" | "parent_type" | "vars" | "tag" | "Cross" | "Uncross" | "Entered" | "Exited" | "New" | "Del" | "Topic" | "Move" | "Crossed" | "Uncrossed" | "contents" | "loc" | "x" | "y" | "z" | "usr")
 }
 
 /// A one-line summary of a read set, for logs and explain output.
@@ -2359,6 +2367,68 @@ TRACKED(/obj/lamp, charge)
         assert!(unbounded.diags.iter().any(|d| d.rule == "hop_not_relation"), "a call on /atom could run any override: {:?}", unbounded.diags);
         assert!(!unbounded.keys().contains("loc.lit"), "and it is not followed");
         // The legacy walk still calls the container a hop that is not a relation only when it is not a kind: it is one now.
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_hop_through_a_non_relation_var_is_a_finding_where_something_is_read_through_it() {
+        let content = "/obj/cell
+	var/charge = 0
+TRACKED(/obj/cell, charge)
+/obj/lamp
+	var/obj/cell/cell
+/obj/lamp/proc/bare()
+	return !!cell
+/obj/lamp/proc/through()
+	return cell.charge
+/obj/lamp/proc/sampled()
+	return read_once(cell.charge)
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &ann).closed();
+        let bare = eng.analyze("/obj/lamp", "bare");
+        assert!(bare.diags.iter().all(|d| d.rule != "hop_not_relation"), "testing the var is not a hop: {:?}", bare.diags);
+        let through = eng.analyze("/obj/lamp", "through");
+        assert!(through.diags.iter().any(|d| d.rule == "hop_not_relation"), "a read through the var is: {:?}", through.diags);
+        let sampled = eng.analyze("/obj/lamp", "sampled");
+        assert!(sampled.diags.iter().all(|d| d.rule != "hop_not_relation"), "read_once samples it: {:?}", sampled.diags);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_flyweight_a_list_length_and_a_turfs_own_coordinates_are_not_inputs() {
+        let content = "/datum/material
+	var/icon_colour
+/turf/wall
+	var/datum/material/material
+	var/list/pieces
+	var/damage = 0
+TRACKED(/turf/wall, material)
+TRACKED(/turf/wall, pieces)
+TRACKED(/turf/wall, damage)
+/turf/wall/proc/look()
+	return material.icon_colour
+/turf/wall/proc/count()
+	return pieces.len
+/turf/wall/proc/where()
+	return x + y + z
+/datum/material/proc/paint()
+	icon_colour = \"red\"
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &ann).closed();
+        let written = WriteIndex::build(&sem);
+        let look = eng.analyze("/turf/wall", "look");
+        assert_eq!(look.keys(), BTreeSet::from(["material".to_string()]), "the var that names a flyweight is read, what is read off it is not followed: {:?}", look.keys());
+        assert_eq!(eng.classify("/datum/material", "icon_colour", &written), VarClass::Constant, "what a flyweight holds is constant");
+        let count = eng.analyze("/turf/wall", "count");
+        assert_eq!(count.keys(), BTreeSet::from(["pieces".to_string()]), "the length is the list's own read: {:?}", count.keys());
+        let wherever = eng.analyze("/turf/wall", "where");
+        assert!(wherever.keys().is_empty(), "a turf never moves: {:?}", wherever.keys());
         std::fs::remove_dir_all(root).unwrap();
     }
 

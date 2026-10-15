@@ -11,6 +11,8 @@
 /// Never a ref: a recycled ref could hand a new material another one's facts.
 PROC_SUMMARY(/proc/material_cache_id) // a never-reused id for a material, memoized on it: nothing that reads it can see it change
 /proc/material_cache_id(datum/material/M)
+	if(M.shared_cache_uid)
+		return M.shared_cache_uid
 	if(M.name && GLOB.name_to_material[M.name] == M)
 		M.shared_cache_uid = "m:[M.name]"
 		return M.shared_cache_uid

@@ -440,7 +440,8 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 		GLOB.staleness_served[ref] = names
 	names |= var_name
 
-/// The look-cache check of one entity: stats, draw, derive().
+/// The look-cache check of one entity: stats, draw, derive(), and in a strict (test) build the REFRESH DRIFT audit of its other outputs
+/// (hidden verbs, granted verbs, the periodic gate: refresh.dm), which is always on there.
 /proc/staleness_check_entity(datum/D, trigger)
 	if(!D || QDELETED(D))
 		return
@@ -449,6 +450,20 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 	if(isatom(D) && D.rx?.refresh_swept)
 		staleness_check_draw(D, trigger, forced = TRUE)
 		staleness_check_derive(D, trigger)
+		if(GLOB.staleness_strict)
+			staleness_check_drift(D)
+
+/// The strict build's always-on REFRESH DRIFT audit of A (the look itself was just checked by staleness_check_draw(), with the culprit named).
+/proc/staleness_check_drift(atom/A)
+	if(QDELETED(A) || A.refresh_queued)
+		return
+	if(GLOB.derived_evaluating || GLOB.refresh_running || GLOB.refresh_applying || GLOB.staleness_depth)
+		return // a derived proc is running: the shared builders are in use
+	if(ismovable(A) && !(A.flags & ATOM_MATERIALIZED))
+		return
+	GLOB.staleness_depth++
+	refresh_check_drift(A, check_draw = FALSE)
+	GLOB.staleness_depth--
 
 // ---------------------------------------------------------------- keyed images
 

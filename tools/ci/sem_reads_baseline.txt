@@ -1,6 +1,0 @@
-# sem/reads: what the closed read walk cannot cover in a handler, an output, a condition or a contribution. rule<TAB>file<TAB>identity (@reader reads owner::var).
-# Shrink-only: `analyze baseline --update --lint sem/reads` drops fixed sites and never adds one.
-unknown_field	code/_onclick/hud/alert.dm	@/mob::throw_alert reads /mob/living/carbon/human has no var `usr`
-unknown_field	code/game/objects/structures/low_wall.dm	@/obj/structure/low_wall/bay::get_window_build_type reads /obj/item has no var `material`
-unknown_field	code/game/objects/structures/low_wall.dm	@/obj/structure/low_wall/eris::get_window_build_type reads /obj/item has no var `material`
-unknown_field	code/game/objects/structures/under_wardrobe.dm	@/obj/structure/undies_wardrobe::human_who_can_use_underwear reads /mob has no var `species`
