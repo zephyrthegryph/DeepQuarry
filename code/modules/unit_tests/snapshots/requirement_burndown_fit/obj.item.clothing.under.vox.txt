@@ -1,0 +1,9 @@
+Human: it only fits Vox
+Teshari: it only fits Vox
+Vox: ALLOW
+Werebeast: it only fits Vox
+Skrell: it only fits Vox
+Altevian: it only fits Vox
+Monkey: it only fits Vox
+no wearer: ALLOW
+

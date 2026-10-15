@@ -1,0 +1,9 @@
+Human: it only fits Teshari
+Teshari: ALLOW
+Vox: it only fits Teshari
+Werebeast: it only fits Teshari
+Skrell: it only fits Teshari
+Altevian: it only fits Teshari
+Monkey: it only fits Teshari
+no wearer: ALLOW
+
