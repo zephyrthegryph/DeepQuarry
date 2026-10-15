@@ -17,7 +17,7 @@
 			stack_trace("Opportunity rule [rule.id] targets missing contract definition [rule.definition_id].")
 			spent(rule)
 			continue
-		opportunity_rules[rule.id] = rule // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
+		opportunity_rules[rule.id] = rule
 		for(var/datum/contract_opportunity_signal/signal in rule.signals)
 			LAZYINITLIST(opportunity_rules_by_event[signal.event_type])
 			opportunity_rules_by_event[signal.event_type] |= rule
@@ -40,7 +40,7 @@
 		var/datum/contract_opportunity_window/window = opportunity_windows[window_key]
 		if(!window)
 			window = new(window_key, bucket, rule)
-			opportunity_windows[window_key] = window // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
+			opportunity_windows[window_key] = window
 		// A batch (damage_batch.dm) prunes each window once and evaluates it
 		// once, when the batch ends, with its last event.
 		var/batching = contract_batch_depth > 0

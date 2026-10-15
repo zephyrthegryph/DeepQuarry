@@ -171,8 +171,7 @@
 	if(!definition || (candidate.expires_at && !BEFORE(src, candidate.expires_at, CLOCK_WORLD)) || !definition.is_available(candidate.context))
 		withdraw_candidate(candidate, "Eligibility ended before publication.")
 		return null
-	// ALLOW(cooldown): per-offer-key cooldown table; keys are data-defined
-	if((offer_cooldowns[candidate.offer_key] || 0) > world.time || !make_priority_capacity(candidate, definition))
+	if(BEFORE(src, offer_cooldowns[candidate.offer_key] || 0, CLOCK_WORLD) || !make_priority_capacity(candidate, definition))
 		return null
 	var/list/materialization_context = deepCopyList(candidate.context)
 	materialization_context["offer_key"] = candidate.offer_key

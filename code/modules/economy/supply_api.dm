@@ -20,10 +20,25 @@
 
 /// Resolve a UI reference against the live owner collection, just as the console did.
 /datum/system/supply/proc/order_from_ref(reference)
-	return ui_ref(reference, order_history, /datum/supply_order)
+	return order_for_ui(ui_ref(reference, type = /datum/supply_order))
 
 /datum/system/supply/proc/export_from_ref(reference)
-	return ui_ref(reference, exported_crates, /datum/exported_crate)
+	return export_for_ui(ui_ref(reference, type = /datum/exported_crate))
+
+/// Admit a typed UI selection against the live owner collection. A null collection
+/// retains ui_ref's historical global lookup; an allocated empty collection rejects it.
+/datum/system/supply/proc/order_for_ui(datum/supply_order/order)
+	return order && (!order_history || (order in order_history)) ? order : null
+
+/datum/system/supply/proc/export_for_ui(datum/exported_crate/receipt)
+	return receipt && (!exported_crates || (receipt in exported_crates)) ? receipt : null
+
+/// Resolve the market routing attached to the selected cargo record.
+/datum/system/supply/proc/order_counterparty(datum/supply_order/order)
+	return market_counterparties?[order.market_counterparty_id]
+
+/datum/system/supply/proc/export_counterparty(datum/exported_crate/receipt)
+	return market_counterparties?[receipt.market_counterparty_id]
 
 /datum/system/supply/proc/market_counterparty(id)
 	return market_counterparties?[id]

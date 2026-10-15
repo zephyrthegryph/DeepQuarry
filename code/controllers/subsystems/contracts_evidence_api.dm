@@ -13,11 +13,11 @@
 		identity = subject_identities[body_key]
 		if(identity)
 			subject_identities -= body_key
-			subject_identities[key] = identity // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
+			subject_identities[key] = identity
 	if(!identity)
 		identity = new("DQ-SUB-[next_subject_id++]", subject)
-		subject_identities[key] = identity // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
-		subject_identities[identity.id] = identity // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
+		subject_identities[key] = identity
+		subject_identities[identity.id] = identity
 	else
 		identity.update(subject)
 	return identity

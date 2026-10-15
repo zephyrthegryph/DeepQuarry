@@ -136,7 +136,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	for(var/datum/supply_order/S in SSsupply.order_history_snapshot())
 		var/can_fund = S.personal_order ? (authorization & SUP_ACCEPT_ORDERS) : can_manage_budget(user, S.funding_department)
 		var/funding_label = S.market_contract_funded ? "Principal contract allowance" : (S.personal_order ? "Personal: [S.ordered_by]" : S.funding_department)
-		var/datum/cargo_market_counterparty/market_seller = SSsupply.market_counterparty(S.market_counterparty_id)
+		var/datum/cargo_market_counterparty/market_seller = SSsupply.order_counterparty(S)
 		orders.Add(list(list(
 			"ref" = "\ref[S]",
 			"status" = S.status,
@@ -160,7 +160,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	// Compile exported crates
 	var/list/receipts = list()
 	for(var/datum/exported_crate/E in SSsupply.export_history_snapshot())
-		var/datum/cargo_market_counterparty/market_buyer = SSsupply.market_counterparty(E.market_counterparty_id)
+		var/datum/cargo_market_counterparty/market_buyer = SSsupply.export_counterparty(E)
 		receipts.Add(list(list(
 			"ref" = "\ref[E]",
 			"contents" = E.contents,
@@ -372,7 +372,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return FALSE
 
 /obj/machinery/computer/supplycomp/proc/act_edit_order_value(mob/user, default, edit, ref)
-	var/datum/supply_order/O = SSsupply.order_from_ref(ref)
+	var/datum/supply_order/O = SSsupply.order_for_ui(ui_ref(ref, type = /datum/supply_order))
 	var/field = ui_choice(edit, list("Supply Pack", "Cost", "Index", "Reason", "Ordered by", "Ordered at", "Approved by", "Approved at"))
 	if(!O || !field || !accepts_orders(user))
 		return UI_REFUSED
@@ -399,7 +399,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_approve_order(mob/user, ref)
-	var/datum/supply_order/O = SSsupply.order_from_ref(ref)
+	var/datum/supply_order/O = SSsupply.order_for_ui(ui_ref(ref, type = /datum/supply_order))
 	if(!O)
 		return refuse(user, null)
 	if(O.personal_order ? !(authorization & SUP_ACCEPT_ORDERS) : !can_manage_budget(user, O.funding_department))
@@ -408,14 +408,14 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_deny_order(mob/user, ref)
-	var/datum/supply_order/O = SSsupply.order_from_ref(ref)
+	var/datum/supply_order/O = SSsupply.order_for_ui(ui_ref(ref, type = /datum/supply_order))
 	if(!O || !accepts_orders(user))
 		return UI_REFUSED
 	SSsupply.deny_order(O, user)
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_delete_order(mob/user, ref)
-	var/datum/supply_order/O = SSsupply.order_from_ref(ref)
+	var/datum/supply_order/O = SSsupply.order_for_ui(ui_ref(ref, type = /datum/supply_order))
 	if(!O || !accepts_orders(user))
 		return UI_REFUSED
 	SSsupply.delete_order(O, user)
@@ -429,7 +429,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 
 /// The exported crate `ref` names, if this console may edit exports.
 /obj/machinery/computer/supplycomp/proc/editable_export(mob/user, ref)
-	var/datum/exported_crate/E = SSsupply.export_from_ref(ref)
+	var/datum/exported_crate/E = SSsupply.export_for_ui(ui_ref(ref, type = /datum/exported_crate))
 	if(!E)
 		refuse(user, null)
 		return null
