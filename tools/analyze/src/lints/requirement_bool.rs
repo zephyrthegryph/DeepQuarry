@@ -87,7 +87,7 @@ impl RequirementBool {
         }
         for file in files {
             for (line, code) in file.code().numbered() {
-                if self.call.is_match(code) && !self.declaration.is_match(code) {
+                if self.call.is_match(code) || self.declaration.is_match(code) {
                     sites.insert((file.rel.clone(), line));
                 }
             }
@@ -99,7 +99,7 @@ impl RequirementBool {
     #[cfg(test)]
     fn scan_text(&self, file: &SourceFile, out: &mut Sink) {
         for (line, code) in file.code().numbered() {
-            if self.call.is_match(code) && !self.declaration.is_match(code) {
+            if self.call.is_match(code) || self.declaration.is_match(code) {
                 out.site("boolean_callback", line);
             }
         }
@@ -109,7 +109,7 @@ impl RequirementBool {
 pub fn register(registry: &mut Registry) {
     registry.add(RequirementBool {
         call: Pat::new(r"(?<![\w./])req_bool\s*\("),
-        declaration: Pat::new(r"^\s*/proc/req_bool\s*\("),
+        declaration: Pat::new(r"^\s*/(?:\w+/)*req_bool\s*\("),
     });
 }
 
@@ -119,7 +119,7 @@ mod tests {
     use crate::tree::Tree;
 
     #[test]
-    fn requirement_bool_counts_calls_without_comment_string_or_declaration_noise() {
+    fn requirement_bool_counts_calls_and_definitions_without_comment_or_string_noise() {
         let tree = Tree::from_files(vec![]);
         let scope = crate::scopes::LintScope::default();
         let context = Cx { tree: &tree, meta: &META, scope: &scope };
@@ -136,12 +136,28 @@ mod tests {
             "\treq(PROC_REF(final))\n",
         ));
         let _ = &context;
-        let lint = RequirementBool { call: Pat::new(r"(?<![\w./])req_bool\s*\("), declaration: Pat::new(r"^\s*/proc/req_bool\s*\(") };
+        let lint = RequirementBool { call: Pat::new(r"(?<![\w./])req_bool\s*\("), declaration: Pat::new(r"^\s*/(?:\w+/)*req_bool\s*\(") };
         let mut sink = Sink::new();
         sink.cur = source.rel.clone();
         lint.scan_text(&source, &mut sink);
-        assert_eq!(sink.sites.iter().map(|site| site.line).collect::<Vec<_>>(), vec![5, 6]);
+        assert_eq!(sink.sites.iter().map(|site| site.line).collect::<Vec<_>>(), vec![1, 5, 6]);
         assert!(sink.allow_used.is_empty());
+    }
+
+    #[test]
+    fn req_bool_definitions_cannot_reintroduce_the_retired_protocol() {
+        let source = SourceFile::from_text("code/engine/probe.dm", concat!(
+            "/proc/req_bool(value)\n",
+            "/datum/probe/proc/req_bool(value)\n",
+            "/datum/probe/req_bool(value)\n",
+            "/proc/my_req_bool(value)\n",
+            "// /proc/req_bool(value)\n",
+            "var/message = \"/proc/req_bool(value)\"\n",
+            "object.req_bool(value)\n",
+        ));
+        let lint = RequirementBool { call: Pat::new(r"(?<![\w./])req_bool\s*\("), declaration: Pat::new(r"^\s*/(?:\w+/)*req_bool\s*\(") };
+        let sites = lint.collect_sites(&[&source], Some(vec![]));
+        assert_eq!(sites.iter().map(|(_, line)| *line).collect::<Vec<_>>(), vec![1, 2, 3]);
     }
 
     #[test]
@@ -181,18 +197,24 @@ mod tests {
             "\tother_req_bool(old)\n",
             "\tobject.req_bool(old)\n",
         ));
-        let lint = RequirementBool { call: Pat::new(r"(?<![\w./])req_bool\s*\("), declaration: Pat::new(r"^\s*/proc/req_bool\s*\(") };
+        let lint = RequirementBool { call: Pat::new(r"(?<![\w./])req_bool\s*\("), declaration: Pat::new(r"^\s*/(?:\w+/)*req_bool\s*\(") };
         let files = [&source];
         let empty_typed = lint.collect_sites(&files, Some(vec![]));
         let fallback = lint.collect_sites(&files, None);
         assert_eq!(empty_typed, fallback);
-        assert_eq!(empty_typed.iter().map(|(_, line)| *line).collect::<Vec<_>>(), vec![3, 5, 6]);
+        assert_eq!(empty_typed.iter().map(|(_, line)| *line).collect::<Vec<_>>(), vec![1, 3, 5, 6]);
         let overlapping = lint.collect_sites(&files, Some(vec![("code/probe.dm".into(), 5, "req_bool".into()), ("code/engine/_generated/probe.dm".into(), 50, "req_bool".into())]));
         assert_eq!(overlapping, empty_typed);
     }
 
     #[test]
     fn retired_macro_names_are_exact_and_code_only() {
+        for name in ["CONSTRAINT", "PREDICATE", "PREDICATE_PASSES", "PREDICATE_REASON"] {
+            assert!(retired_name_in(&format!("#define {name}(x) x"), name));
+            assert!(retired_name_in(&format!("value = {name}(x)"), name));
+            assert!(!retired_name_in(&format!("{name}_LIVE(x)"), name));
+        }
+        assert!(!retired_name_in("acceptance(CONSTRAINT_HOLD)", "CONSTRAINT"));
         assert!(retired_name_in("#define REQ_TAG(subject, tag) list(tag)", "REQ_TAG"));
         assert!(retired_name_in("needs(REQ_TAG(thing, TAG_SHARP))", "REQ_TAG"));
         assert!(!retired_name_in("request_end(src, REQ_CANCELLED, null)", "REQ_TAG"));

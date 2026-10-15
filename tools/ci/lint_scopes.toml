@@ -1450,6 +1450,10 @@ exempt_prefixes = ["code/engine/_generated/"]
 exempt_prefixes = ["code/engine/_generated/"]
 [lint.requirement_bool.lists]
 retired_macros = [
+  "CONSTRAINT",
+  "PREDICATE",
+  "PREDICATE_PASSES",
+  "PREDICATE_REASON",
   "HOLD_MAX_SIZE",
   "HOLD_NOT",
   "HOLD_ONLY",

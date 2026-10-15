@@ -9,7 +9,7 @@ The old-code captures are committed in `d99315344b`: 29 fit snapshots (232 rows)
 - All 173 remaining acceptance table declarations: 149 mechanical declarations and 24 semantic declarations. Shared owner-key and taur-shape requirements replace repeated callbacks. Requirements return null or an ordered reason and preserve separate wearer/mover/slot context.
 - Slot admission, item overrides, native equipment and vore-consent consumers now use native acceptance plans. Existing boolean effect-facing consent checks remain a view of a native refusal result, not a second requirement protocol.
 - Removed the legacy predicate compiler, system-requirement compiler, their macros, source includes, adapters and zero-caller stance helpers. Numeric unit wrappers and legitimate request-result `REQ_*` enums remain.
-- The requirement lint hard-bans the exact 77 retired requirement/holder/predicate macro names, including under engine paths. Its source matcher ignores comments, strings and larger identifiers. The existing boolean-callback ban remains enabled.
+- The requirement lint hard-bans the exact 81 retired requirement/holder/predicate macro names, including under engine paths. Its source matcher ignores comments, strings and larger identifiers. The existing boolean-callback ban remains enabled and rejects reintroduced definitions as well as calls.
 - Native tests retain actual admission, field/list/access/stage requirements, hand context, numeric boundaries, reason ordering, subtype dispatch, override/adoption and consumer behavior. Grammar-only compiler tests are replaced by native validation and existing simulation-condition coverage.
 
 ## Intentional behavior corrections
