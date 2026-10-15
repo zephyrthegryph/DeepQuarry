@@ -413,6 +413,7 @@
 #include "dq_module_silicon_boundary_tests.dm"
 #include "dq_object_silicon_boundary_tests.dm"
 #include "dq_silicon_physical_tests.dm"
+#include "dq_pin_constructor_repairs.dm"
 #include "dq_silicon_device_tests.dm"
 #include "dq_silicon_residual_tests.dm"
 #include "dq_legacy_owns_conditional_starts.dm"

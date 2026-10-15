@@ -112,7 +112,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 		for(var/obj/machinery/dna_scannernew/S in get_area(src))
 			return S
 
-	return 0
+	return null
 
 /obj/machinery/computer/cloning/proc/releasecloner()
 	for(var/obj/machinery/clonepod/P in pods)

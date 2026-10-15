@@ -4925,3 +4925,9 @@ so its menu reports that same refusal before the effect runs. Existing refusal s
 and their physical-check order are retained. Pin changes are limited to these declared
 rotation rows and the existing flip-refusal presentation; no different permitted movement,
 remote reach, cuff grip or storage-drop behavior is intended.
+
+## Constructor absence cases after typed reference declarations (2026-10-15)
+
+Master commit `5b0a2f09d0` (2026-10-13) declared typed references for internal storage's item owner and the cloning console's scanner without changing their older producer paths. Internal storage attempted to link its turf before rejecting a non-item owner, and cloning's scanner lookup returned numeric zero when absent. Both now raised typed-reference errors instead of producing the existing conversion goldens.
+
+Internal storage now declares an item-owner `keeps_if()` and a setup hook which links and names only accepted storage. Its `/obj/item` and `/obj/item/storage` ancestor initialization does not read `master_item`, and its only production subtype (gripper pockets) adds no initializer; the link and copied name are complete before `new` returns, so the gripper creator's subsequent `Pocket N` name override retains its ordering. The setup does not run for a rejected floor spawn. Cloning's scanner lookup returns null on a miss, preserving its adjacent-first then same-area lookup and its empty-reference behavior. These fixes restore the previous golden behavior; constructor runtime rows must not be blessed. Tests `dq_pin_constructor_repairs/internal_storage` and `/cloning_scanner` exercise the real constructors, the actual subtype, identity/name, independent owner lifetime, scanner attachment and deletion.

@@ -7,13 +7,17 @@
 CAPABILITIES(/obj/item/storage/internal)
 	configure(item_worn(flags = ABSTRACT))
 	ref_one(nameof(master_item), /obj/item)
+	keeps_if(PROC_REF(has_item_owner))
+	setup(PROC_REF(link_item_owner))
 
-/obj/item/storage/internal/Initialize(mapload)
-	. = ..()
+/// Admission precedes the typed link: map-spawned internal storage has no item
+/// owner and is discarded without ever linking its turf as an item.
+/obj/item/storage/internal/proc/has_item_owner()
+	return istype(loc, /obj/item)
+
+/obj/item/storage/internal/proc/link_item_owner()
 	rel_set(src, nameof(master_item), loc)
-	if(!istype(master_item(), /obj/item))
-		return INITIALIZE_HINT_QDEL
-	name = master_item().name
+	set_name(master_item().name)
 
 /// Internal storage is part of its owner and is never worn on its own.
 TYPE_TABLE(/obj/item/storage/internal, equip_spec, list(REQ_BECAUSE(REQ_TYPE(PRED_TARGET, list()), "it can't be worn")))
