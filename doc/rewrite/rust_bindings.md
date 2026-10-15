@@ -108,7 +108,13 @@ The generator writes procs and defines into
 `code/__defines/verdigris/_bindings.dm`, and type-level declarations into
 `_bindings_types.dm`. Nothing in them is written by hand.
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/ATMOSPHERICS/components/binary_devices/pump.dm](../../code/ATMOSPHERICS/components/binary_devices/pump.dm) and [code/__defines/verdigris/_bindings_types.dm](../../code/__defines/verdigris/_bindings_types.dm).
+Current implementation excerpt ([code/ATMOSPHERICS/components/binary_devices/pump.dm](../../code/ATMOSPHERICS/components/binary_devices/pump.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/obj/machinery/atmospherics/binary/pump/proc/set_target_pressure(value)
+	. = native_write(src, NATIVE_PUMP_TARGET_PRESSURE, value)
+	rust_device_dirty()
+```
 
 - **Initial values** (`init_*`) are constructor arguments, not state. A lint
   forbids any reference to them inside a proc body, so they can't be mistaken
@@ -328,7 +334,21 @@ Before (`pump.dm` today):
 
 After (the whole binding-related part of the file):
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/ATMOSPHERICS/components/binary_devices/pump.dm](../../code/ATMOSPHERICS/components/binary_devices/pump.dm) and [code/__defines/verdigris/_bindings_types.dm](../../code/__defines/verdigris/_bindings_types.dm).
+Current implementation excerpt ([code/ATMOSPHERICS/components/binary_devices/pump.dm](../../code/ATMOSPHERICS/components/binary_devices/pump.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/obj/machinery/atmospherics/binary/pump/high_power
+	icon = 'icons/atmos/volume_pump.dmi'
+	icon_state = "map_off"
+	construction_type = /obj/item/pipe/directional
+	pipe_state = "volumepump"
+	level = 1
+
+	name = "high power gas pump"
+	desc = "A pump that moves gas from one place to another. Has double the power rating of the standard gas pump."
+
+	init_power_rating = 15000	//15000 W ~ 20 HP
+```
 
 No `process()`, no sync calls, no ids, no port numbers, no per-tick callbacks.
 `operable` comes from construction and integrity (classes 3 and 4) through

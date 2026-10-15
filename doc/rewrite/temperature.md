@@ -34,7 +34,42 @@ Energy is conserved everywhere, in SI units.
 
 ### 2.1 The DM API
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/modules/heat/heat.dm](../../code/modules/heat/heat.dm).
+Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/heat/heat.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/atom/proc/get_temperature()
+	if(!isnull(heat_body))
+		HEAT_BODY_RESOLVE(src)
+		var/temperature = vg_heat_body_temperature(heat_body)
+		if(!isnull(temperature))
+			return temperature
+		set_heat_body(null)
+	return get_ambient_temperature()
+```
+
+Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/heat/heat.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/atom/proc/add_heat(joules)
+	if(!joules || !isnum(joules))
+		return 0
+	if(!isnull(heat_body))
+		if(vg_heat_body_add(heat_body, joules))
+			return joules
+		set_heat_body(null)
+	if(!create_heat_body())
+		return 0
+	return vg_heat_body_add(heat_body, joules) ? joules : 0
+
+/// list(heat capacity J/K, conductance to the surroundings W/K, emissivity).
+```
+
+Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/heat/heat.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/atom/proc/thermal_properties()
+	return GLOB.default_thermal_properties
+```
 
 - **Replaces** the ad-hoc `return_temperature()` procs on `/turf` (which returns the solid's temperature), gas mixtures, tanks, canisters and mecha. There is one meaning everywhere.
 - **Generated constants.** Units, thresholds and material defaults come from Rust. There are no hardcoded body temperatures and no duplicate ignition points.

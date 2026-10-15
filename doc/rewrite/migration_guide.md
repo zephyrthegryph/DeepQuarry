@@ -315,7 +315,13 @@ Every entry a library capability builds is a real op [built: a2-ops, G16]: it ha
 
 > Foundation: `layer =` is replaced by the naming convention (`look.variant`/`part`/`glow`), F1 and [look.md](look.md).
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [conversion_guide.md](conversion_guide.md).
+Current implementation excerpt ([code/game/machinery/floodlight.dm](../../code/game/machinery/floodlight.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/obj/machinery/floodlight/draw(datum/look/look)
+	..()
+	look.state("flood[open ? "o" : ""][appearance_battery() ? "b" : ""]0[on]")
+```
 
 [built] Things the framework handles for you:
 - A property the look stops setting reverts to the type default.
@@ -348,7 +354,13 @@ python tools/dq_icons/rename_states.py icons/obj/power.dmi.toml --standard --ref
 
 > Foundation: periodic work becomes `every(...)` (F1); verbs are unchanged.
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [conversion_guide.md](conversion_guide.md).
+Current implementation excerpt ([code/game/machinery/machine_service.dm](../../code/game/machinery/machine_service.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/system/machines/reactions()
+	. = ..()
+	. += every(MACHINE_SERVICE_INTERVAL, PROC_REF(machine_step), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+```
 
 Side effects of a change (a Rust device sync, a network rebuild): override `on_state_changed(bits)` [built]. The refresh engine calls it at most once per frame after a change, with the channels raised since the last refresh. Never call it by hand; it must not write the state it reacts to (test builds report a self-mark).
 
@@ -363,7 +375,18 @@ Verbs:
 
 ## A7. UI
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [conversion_guide.md](conversion_guide.md).
+Current implementation excerpt ([code/ATMOSPHERICS/components/binary_devices/pump.dm](../../code/ATMOSPHERICS/components/binary_devices/pump.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/obj/machinery/atmospherics/binary/pump/ui_data(datum/act/eval/A)
+	// this is the data which will be sent to the ui
+	var/list/data = list()
+
+	data = list(
+		"on" = use_power,
+		"pressure_set" = round(get_target_pressure()*100),	//Nano UI can't handle rounded non-integers, apparently.
+		"max_pressure" = max_pressure_setting,
+```
 
 [built]:
 - The dispatcher finds `act_<key>` on the host or on one of its capabilities. Only procs named `act_*` are client-reachable.
@@ -388,7 +411,13 @@ The former implementation sketch is obsolete and has been removed. For the curre
 
 ## A8. Prompts
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [conversion_guide.md](conversion_guide.md).
+Prompts use declared asks steps, not synchronous ask_text calls ([code/game/machinery/atmo_control.dm](../../code/game/machinery/atmo_control.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+	op("configure", tool(TOOL_MULTITOOL), wait(0), label("Configure"),
+		asks(/datum/prompt/choice, fields = list("title" = "Options!", "question" = computed(PROC_REF(options_question)), "choices" = computed(PROC_REF(option_names)), "timeout" = 0), step = "option"),
+		asks(/datum/prompt/text, fields = list("title" = "Set ID Tag", "question" = computed(PROC_REF(tag_question)), "default" = computed(PROC_REF(tag_default)), "max_len" = MAX_NAME_LEN, "timeout" = 0), step = "tag", when = PROC_REF(saving_to_buffer)),
+```
 
 [built]:
 - `ask_text`, `ask_number(min, max)`, `ask_list`, `ask_yes_no`, `ask_color`, `ask_mob`.
@@ -623,9 +652,27 @@ the megaphone, the medical records console and the desk bell, is [operations_and
 
 ## B2. Tool acts → `cap_tool` or the library
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/game/objects/items/devices/laserpointer.dm](../../code/game/objects/items/devices/laserpointer.dm).
+Current implementation excerpt ([code/game/objects/items/devices/laserpointer.dm](../../code/game/objects/items/devices/laserpointer.dm)); kept lines are verbatim, with surrounding code omitted.
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/modules/power/apc.dm](../../code/modules/power/apc.dm).
+```dm fragment
+/obj/item/laser_pointer/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!diode)
+		return OP_OK
+	to_chat(user, span_notice("You remove the [diode.name] from the [src]."))
+	diode.forceMove(get_turf(loc))
+	rel_take(src, nameof(diode))
+	return OP_OK
+```
+
+Current implementation excerpt ([code/modules/power/apc.dm](../../code/modules/power/apc.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+	maintenance_hatch(
+		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), then(PROC_REF(cover_replaced))), broken = PROC_REF(stat_is_broken)),
+		// The panel opens only with the cover shut, but the cover can open over an open panel: `reach` keeps the wires out of reach then.
+		wires = wires(name = "APC", count = 4, by_hand = TRUE, emp = FALSE, reach = cond_not(COVER_OPEN), status_lines = PROC_REF(wire_lights)),
+```
 
 **Traps:**
 - `cap_tool` entries work while broken or unpowered by default (tools act on the hardware); hand entries don't.
@@ -633,7 +680,14 @@ The former implementation sketch is obsolete and has been removed. For the curre
 
 ## B3. Emag → `cap_emag`
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/modules/power/apc.dm](../../code/modules/power/apc.dm).
+Current implementation excerpt ([code/modules/power/apc.dm](../../code/modules/power/apc.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+		emag = list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)),
+		emag_say = MSG(apc/emagged),
+		panel_needs_cover_closed = TRUE,
+		starts_locked = nameof(lock_at_start))
+```
 
 **Traps:**
 - Delete the `emagged` var and every `if(emagged)`; use `is_emagged(src)`.
@@ -758,7 +812,19 @@ UI_ACT_PROC(/datum/round_status_panel, ui_act_call_shuttle)
 	return TRUE
 ```
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/modules/admin/round_status_panel.dm](../../code/modules/admin/round_status_panel.dm) and [code/modules/shuttles/emergency_shuttle_api.dm](../../code/modules/shuttles/emergency_shuttle_api.dm).
+Current implementation excerpt ([code/modules/admin/round_status_panel.dm](../../code/modules/admin/round_status_panel.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/round_status_panel/proc/act_call_shuttle(mob/user)
+	if(!admin_require(user.client, R_ADMIN|R_EVENT, "round_status_panel:call_shuttle"))
+		return FALSE
+	if(ticker_mode()?.name == "blob")
+		return refuse(user, "You can't call the shuttle during blob!")
+	if(!SSticker || !SSemergency_shuttle.location())
+		return FALSE
+	if(SSemergency_shuttle.can_call())
+		SSemergency_shuttle.call_evac()
+```
 
 | Old | New |
 |---|---|
@@ -793,7 +859,14 @@ The re-run machinery (`om_ask`, `act_ask`/`rerun_ask`, `prompt_flow`/`flow_execu
 
 ## B9. Expiry → `COOLDOWN_*`, `timed_set` or a grant
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/game/objects/items/devices/laserpointer.dm](../../code/game/objects/items/devices/laserpointer.dm).
+Current implementation excerpt ([code/game/objects/items/devices/laserpointer.dm](../../code/game/objects/items/devices/laserpointer.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+	if(!(ELAPSED(src, last_used_time, CLOCK_WORLD) >= cooldown))
+		return
+	if (!diode)
+		to_chat(user, span_notice("You point [src] at [target], but nothing happens!"))
+```
 
 | Old | Means | New |
 |---|---|---|
@@ -813,7 +886,11 @@ The former implementation sketch is obsolete and has been removed. For the curre
 
 ## B10. Fields → a plain var or `TRACKED`
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/game/objects/items/devices/laserpointer.dm](../../code/game/objects/items/devices/laserpointer.dm).
+The existing TRACKED form supplies a setter that publishes a changed value ([code/__defines/capabilities.dm](../../code/__defines/capabilities.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+#define TRACKED(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SETTER(T, V)
+```
 
 **Trap:** `OM_DERIVE_FIELD`'s `inputs = list(...)` goes away. A derived value is a proc, and the refresh re-reads it.
 
@@ -848,7 +925,11 @@ DECLARE_VERB(/obj/item/healthanalyzer/scroll, /obj/item/healthanalyzer/proc/togg
 
 ## B12. Periodic → a cadence
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/game/machinery/atmo_control.dm](../../code/game/machinery/atmo_control.dm).
+Current implementation excerpt ([code/game/machinery/atmo_control.dm](../../code/game/machinery/atmo_control.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(automation), wakes_on = list(nameof(automation)))
+```
 
 | Old | New |
 |---|---|
@@ -883,9 +964,18 @@ The former implementation sketch is obsolete and has been removed. For the curre
 | `om_task_periodic` | 74 | a cadence (B12) |
 | `om_task_slices` | 11 | a system `periodic_step` returning `STEP_YIELD` [planned]; keep until the kernel lands |
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/game/objects/items/devices/laserpointer.dm](../../code/game/objects/items/devices/laserpointer.dm).
+Current implementation excerpt ([code/game/objects/items/devices/laserpointer.dm](../../code/game/objects/items/devices/laserpointer.dm)); kept lines are verbatim, with surrounding code omitted.
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/game/objects/items/devices/geiger.dm](../../code/game/objects/items/devices/geiger.dm).
+```dm fragment
+/obj/item/laser_pointer/proc/reset_laser_icon()
+	set_icon_state(initial(icon_state))
+```
+
+Another observation replaces the same keyed geiger-reset timer ([code/game/objects/items/devices/geiger.dm](../../code/game/objects/items/devices/geiger.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+	after(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger), key = "geiger_perceived_danger_reset")
+```
 
 See the temporary-state table in B9 before choosing between a timer, `timed_set` and a grant.
 
@@ -893,7 +983,11 @@ See the temporary-state table in B9 before choosing between a timer, `timed_set`
 
 Any var or field that exists only to hold a temporary condition with behaviour becomes a capability held for a time by a source. Examples: `failure_until`, `emp_until`, `jammed_until`, `shocked_until`, `overloaded`, `on_fire_until`.
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/modules/power/apc.dm](../../code/modules/power/apc.dm).
+Temporary inability to operate is a timed stat contribution ([code/modules/power/apc.dm](../../code/modules/power/apc.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+	hold(src, STAT_OPERABLE, FALSE, SRC_POWER_FAILURE, lasts, reason = /datum/msg/apc/power_failure)
+```
 
 - **Keep:** `timed_set` for pure value reverts that have no behaviour.
 - **Mobs:** keep afflictions and modifiers for body effects (they already follow this model).
@@ -917,7 +1011,13 @@ About 3,270 direct calls remain: 725 `qdel(src)` and about 2,500 `qdel(local)`. 
 
 ## B17. Relations → `relations()` [built; typed relations planned]
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/engine/refs/containment/ledger.dm](../../code/engine/refs/containment/ledger.dm).
+Current implementation excerpt ([code/engine/refs/containment/ledger.dm](../../code/engine/refs/containment/ledger.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/atom/proc/containment_ledger()
+	RETURN_TYPE(/datum/ledger)
+	return rx?.containment_ledger
+```
 
 `relations()` and the REL* migration are built (doc/rewrite/archive/ownership.md §4.1); the typed
 `/datum/om/relation` types are not converted yet (`python tools/dx/convert_relations.py --dry-run`
@@ -979,7 +1079,20 @@ After the kernel: `SUBSYSTEM_DEF(x)` becomes `/datum/system/x`, `Initialize()` b
 
 ## B24. Cross-system field access → `api.dm`
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/modules/expedition/expedition_controller.dm](../../code/modules/expedition/expedition_controller.dm) and [code/modules/flight_operations/api.dm](../../code/modules/flight_operations/api.dm).
+Current implementation excerpt ([code/modules/expedition/api.dm](../../code/modules/expedition/api.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/system/expedition/proc/abandon_assignment(mob/user, datum/flight_vessel/vessel)
+	var/datum/expedition_site/site = vessel?.active_expedition()
+	if(!site || QDELETED(site))
+		return FALSE
+	var/datum/flight_destination/destination = SSflight?.destinations[site.flight_destination_id]
+	if(LAZYLEN(destination?.active_plans))
+		to_chat(user, span_warning("The assignment cannot be abandoned while a flight plan is using it."))
+		return FALSE
+	if(site.z_level > 0 && players_on_z(site.z_level))
+		to_chat(user, span_warning("The assignment cannot be abandoned while crew remain at the site."))
+```
 
 - **Reads:** a query proc in the owner's `api.dm`.
 - **Writes:** a command proc in the owner's `api.dm`, or an event the owner handles.

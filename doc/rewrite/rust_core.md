@@ -257,7 +257,14 @@ These pieces live on the main thread, in Rust structures that only the main thre
 - **One bind macro.** Every bind is panic-safe (as today), decodes typed arguments, adds error context, and counts its own calls and time.
 - **Generated `code/__defines/verdigris/_bindings.dm`:**
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/__defines/verdigris/_bindings.dm](../../code/__defines/verdigris/_bindings.dm).
+The generated binding is vg_read_mixtures rather than the removed scalar vg_gas_read sketch ([code/__defines/verdigris/_bindings.dm](../../code/__defines/verdigris/_bindings.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/proc/vg_read_mixtures(mixtures)
+	var/static/__f = load_ext(VERDIGRIS, "byond:read_mixtures_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(mixtures)
+```
 
   It also holds the numeric defines (gas IDs, channels, event kinds, units) and doc comments. Today no call caches its `load_ext` handle, and `VERDIGRIS_CALL` rebuilds its name string on every call.
 - **CI** regenerates the file and fails if it differs from the committed copy. The existing `generate_binds` test is the starting point.

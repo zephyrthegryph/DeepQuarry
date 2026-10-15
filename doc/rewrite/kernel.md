@@ -676,7 +676,19 @@ are abridged with `...`, but the kept lines are unchanged. The "after" blocks ar
 
 **After** (`code/controllers/kernel/kernel.dm`):
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/controllers/kernel/kernel.dm](../../code/controllers/kernel/kernel.dm) and [code/controllers/kernel/loop.dm](../../code/controllers/kernel/loop.dm).
+Current implementation excerpt ([code/controllers/kernel/kernel.dm](../../code/controllers/kernel/kernel.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/controller/kernel/proc/tick(tick_limit, init_stage = INITSTAGE_MAX, light = FALSE)
+	var/tick_start = TICK_USAGE
+	var/saved_limit = Kernel.current_ticklimit
+```
+
+Phase G now dispatches registered garbage work through the same phase runner:
+
+```dm fragment
+			work_run_phase(KERNEL_PHASE_G, g_limit)
+```
 
 **What goes away:**
 - `CheckQueue`, the priority fractions in `RunQueue`, `SoftReset`'s runlevel lists, and
@@ -705,7 +717,7 @@ Performance ring-buffer telemetry and `AttemptProfileDump` move over unchanged. 
 	machine_first_wakes_flush()
 ```
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/controllers/kernel/host.dm](../../code/controllers/kernel/host.dm) and [code/controllers/kernel/system.dm](../../code/controllers/kernel/system.dm).
+Manual boot_world_service calls are gone. The host collects systems and resolves their declared dependencies as one boot graph. See [code/controllers/kernel/host.dm](../../code/controllers/kernel/host.dm).
 
 ```dm before
 // ATMOSPHERICS/SSair.dm:1-8, 124-128 — a dependency that is really on a side effect, plus a hand boot
@@ -726,7 +738,22 @@ SUBSYSTEM_DEF(air)
 
 **After:**
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/controllers/kernel/host.dm](../../code/controllers/kernel/host.dm) and [code/controllers/kernel/system.dm](../../code/controllers/kernel/system.dm).
+Current implementation excerpt ([code/controllers/kernel/host.dm](../../code/controllers/kernel/host.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+	var/list/boot_systems = kernel_boot_systems()
+	var/list/type_to_node = list()
+	for(var/datum/system/boot_system as anything in boot_systems)
+		type_to_node[boot_system.type] = boot_system
+	boot_errors = list()
+	var/list/deps_by_node = kernel_system_deps(boot_systems, type_to_node, boot_errors)
+	for(var/boot_error in boot_errors)
+		stack_trace("ERROR: kernel: boot: [boot_error]")
+		log_world("ERROR: kernel: boot: [boot_error]")
+
+	var/datum/graph_check/boot_graph = graph_validate(boot_systems, deps_by_node)
+	var/list/cycle = boot_graph.cycle
+```
 
 **What changes:**
 - `boot_world_service()`, `boot_after`, `order_after`, `init_stage` and the three hand boots go.
@@ -803,7 +830,18 @@ The former implementation sketch is obsolete and has been removed. For the curre
 **After** (four folders: `code/modules/native/`, `code/ATMOSPHERICS/gas/`,
 `code/ATMOSPHERICS/pipes/`, `code/modules/heat/`):
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/controllers/kernel/native.dm](../../code/controllers/kernel/native.dm) and [code/datums/native/system.dm](../../code/datums/native/system.dm).
+Current implementation excerpt ([code/datums/native/system.dm](../../code/datums/native/system.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/system/native/proc/run_frame(elapsed, budget = NATIVE_WAKE_BUDGET)
+	var/start = TICK_USAGE_REAL
+	frames++
+	read_cache = null
+	var/list/box = vg_frame(elapsed, budget)
+	deliver(box)
+	last_frame_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
+	return TRUE
+```
 
 ```dm
 // code/ATMOSPHERICS/gas/_gas_reactions.dm
@@ -826,7 +864,13 @@ The former implementation sketch is obsolete and has been removed. For the curre
 	return alist("reactions" = reactions_last)
 ```
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/ATMOSPHERICS/rust_pipenets.dm](../../code/ATMOSPHERICS/rust_pipenets.dm).
+There is no separate atmos_pipes system: SSair owns the native pipe-port wrappers ([code/ATMOSPHERICS/rust_pipenets.dm](../../code/ATMOSPHERICS/rust_pipenets.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/proc/rust_pipe_port_of(handle)
+	var/datum/pipe_port/port = SSvg.entity_lookup(handle)
+	return (istype(port) && port.handle == handle) ? port : null
+```
 
 **What changes:**
 - `spacewind` becomes its own system that handles `native/spacewind` and drains its delta list on
@@ -853,7 +897,14 @@ The former implementation sketch is obsolete and has been removed. For the curre
 
 **Before:**
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/game/machinery/machine_service.dm](../../code/game/machinery/machine_service.dm) and [code/ATMOSPHERICS/atmospherics.dm](../../code/ATMOSPHERICS/atmospherics.dm).
+Current implementation excerpt ([code/game/machinery/machine_service.dm](../../code/game/machinery/machine_service.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/system/machines/proc/machine_step(dt)
+	var/done = step_machines(machines_resuming)
+	machines_resuming = !done
+	return done ? STEP_DONE : STEP_YIELD
+```
 
 ```dm
 // game/machinery/machine_pipeline.dm:14-30, 160-168 — a hand roster of ~150 types + its own vocabulary
@@ -887,9 +938,22 @@ every(2 SECONDS, then(PROC_REF(floodlight_step)), when = nameof(on))
 
 **After:**
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/game/machinery/floodlight.dm](../../code/game/machinery/floodlight.dm).
+Current implementation excerpt ([code/game/machinery/floodlight.dm](../../code/game/machinery/floodlight.dm)); kept lines are verbatim, with surrounding code omitted.
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/game/machinery/machine_service.dm](../../code/game/machinery/machine_service.dm) and [code/ATMOSPHERICS/atmospherics.dm](../../code/ATMOSPHERICS/atmospherics.dm).
+```dm fragment
+CAPABILITIES(/obj/machinery/floodlight)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
+	climb()
+```
+
+Current implementation excerpt ([code/game/machinery/machine_service.dm](../../code/game/machinery/machine_service.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/system/machines/proc/process_power()
+	process_power_begin()
+	poll_power_storage(FALSE)
+	process_power_finish()
+```
 
 **What changes:**
 - **The machine pipeline shrinks to two jobs:**
@@ -963,9 +1027,22 @@ every(2 MINUTES, then(PROC_REF(dump_profile)), when = nameof(profiling))
 
 **After:**
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/modules/mob/living/life/life_sequence.dm](../../code/modules/mob/living/life/life_sequence.dm).
+Current implementation excerpt ([code/modules/mob/living/life/life_sequence.dm](../../code/modules/mob/living/life/life_sequence.dm)); kept lines are verbatim, with surrounding code omitted.
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/modules/mob/living/life/life_sequence.dm](../../code/modules/mob/living/life/life_sequence.dm).
+```dm fragment
+/datum/sequence/life
+	name = "life"
+	interval = LIFE_CYCLE
+	step = LIFE_CYCLE_SECONDS
+	max_catchup = LIFE_MAX_CATCHUP
+	clock = CLOCK_WORLD
+	lane = LANE_SIMULATION
+	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
+	park_after = LIFE_PARK_AFTER
+	min_relevance = RELEVANCE_NEAR
+```
+
+The proposed life_present and death_stats systems were not implemented under those names. Living work uses the Life sequence and state reactions; these proposed wrappers have no direct rename. See [code/modules/mob/living/life/life_sequence.dm](../../code/modules/mob/living/life/life_sequence.dm).
 
 **What changes:**
 - `/datum/om/decl/living` and `/datum/system/mobs` are deleted.
@@ -1007,7 +1084,20 @@ The former implementation sketch is obsolete and has been removed. For the curre
 
 **After:**
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/modules/expedition/expedition_controller.dm](../../code/modules/expedition/expedition_controller.dm) and [code/modules/flight_operations/api.dm](../../code/modules/flight_operations/api.dm).
+Current implementation excerpt ([code/modules/expedition/api.dm](../../code/modules/expedition/api.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/system/expedition/proc/abandon_assignment(mob/user, datum/flight_vessel/vessel)
+	var/datum/expedition_site/site = vessel?.active_expedition()
+	if(!site || QDELETED(site))
+		return FALSE
+	var/datum/flight_destination/destination = SSflight?.destinations[site.flight_destination_id]
+	if(LAZYLEN(destination?.active_plans))
+		to_chat(user, span_warning("The assignment cannot be abandoned while a flight plan is using it."))
+		return FALSE
+	if(site.z_level > 0 && players_on_z(site.z_level))
+		to_chat(user, span_warning("The assignment cannot be abandoned while crew remain at the site."))
+```
 
 **What changes:**
 - The cycle becomes flight→expedition (queries) plus expedition events that flight handles.

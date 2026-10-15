@@ -147,14 +147,26 @@ the transaction uses it.
 ### 4.1 Pools
 
 A scratch object made and dropped on a hot path (the damage packet, one per hit) is pooled
-(`code/datums/lifecycle/pool.dm`):
+(`code/engine/state/pool.dm`):
 
-The former implementation sketch is obsolete and has been removed. For the current forms and call signatures, see [code/engine/state/pool.dm](../../code/engine/state/pool.dm) and [code/engine/refs/damage_packet.dm](../../code/engine/refs/damage_packet.dm).
+Current implementation excerpt ([code/engine/refs/damage_packet.dm](../../code/engine/refs/damage_packet.dm)); kept lines are verbatim, with surrounding code omitted.
 
-- `pool_take(type)` hands out a free object or makes one; `pool_release(obj)` resets
-  the `POOL_RESET` fields and returns it to the per-type free list.
+```dm fragment
+/datum/damage_packet
+	parent_type = /datum/pooled
+```
+
+Pooled fields reset automatically; obsolete POOL_RESET declarations are removed ([code/engine/state/pool.dm](../../code/engine/state/pool.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/pooled/proc/release()
+	pool_release(src)
+```
+
+- `take(type)` hands out a free object or makes one; `release()` resets every pooled
+  field to its initial value, clears retained lists and returns it to the per-type free list.
 - Releasing an object that isn't taken crashes (double-release detection).
-- Pooled objects refuse a normal `qdel()` (`POOL_DECLARE` overrides `Destroy()`).
+- Pooled objects refuse a normal `qdel()` through `/datum/pooled/lifecycle_keep(force)`.
 - Poisoning, `pool_set_poison(TRUE)` (tests and debugging): a released object is
   marked `POOL_STATE_POISONED` and never handed out again, and `POOL_ASSERT_LIVE(src)`
   at the top of the type's procs crashes on it, catching use after release.
