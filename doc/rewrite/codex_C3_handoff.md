@@ -44,3 +44,15 @@ Existing coverage: dq_climb/a_crate_takes_three_and_a_half_seconds and dq_climb/
 No build/test jobs were started by this worker. git diff --check passes. Protected source-line multiset comparison against HEAD reports zero losses for existing setter calls, relation/ownership calls and TRACKED/OWN/REL declarations. The unreachable flash block was restored byte-for-byte from HEAD as requested.
 
 Root preflight: generated trackedcheck and silicon check clean; silicon_entry baseline103 ->98 (five removed). Testmanifest wired. Runtime gate pending.
+
+## Existing access bug found during verification
+
+`/obj/mecha/check_access()` is unchanged from `origin/master` 4ab2e15fe1.
+Its internals-access branch returns true for a matching access, then falls through
+to a final true even when a present ID has no matching entries. This is an existing
+security-access bug, not a new intended behavior. This migration preserves it;
+the fixture checks the real card provider, present-card parity, and real refusal
+after the human drops the credential. Fixing the access policy is a separate task.
+The first gate passed 46 tests; its missing fixture capability context caused six
+failures. The repair passed 51 with one incorrect old-access expectation. The final
+failure-only mecha gate is pending; these earlier results are not a stamp.
