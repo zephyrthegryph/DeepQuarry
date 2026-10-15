@@ -135,3 +135,59 @@
 	TEST_ASSERT_EQUAL(R.antagonist_override_rank(), 1, "Cyborg's actual tracked emag state supplies the original subversion rank")
 	TEST_ASSERT_EQUAL(H.antagonist_override_rank(), 0, "Human does not acquire another actor's subversion rank")
 
+
+/obj/machinery/appliance/cooker/oven/c2_route_probe
+	var/touch_effects = 0
+	var/no_touch_effects = 0
+
+/obj/machinery/appliance/cooker/oven/c2_route_probe/oven_interaction_toggle_door(datum/act/op/A)
+	touch_effects++
+	return ..()
+
+/obj/machinery/appliance/cooker/oven/c2_route_probe/oven_interaction_no_touch(datum/act/op/A)
+	no_touch_effects++
+	return ..()
+
+/datum/unit_test/dq_silicon/c2_oven_exclusive_routes/run_gate()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = make_human(T)
+	var/mob/living/silicon/ai/AI = make_ai(T)
+	var/mob/observer/dead/G = allocate(/mob/observer/dead, T)
+	var/obj/machinery/appliance/cooker/oven/c2_route_probe/O = allocate(/obj/machinery/appliance/cooker/oven/c2_route_probe, T)
+	for(var/mob/actor in list(H, AI, G))
+		var/expected = actor == H ? "toggle_door_alt" : "toggle_door_alt_no_touch"
+		var/allowed = 0
+		for(var/key in list("toggle_door_alt", "toggle_door_alt_no_touch"))
+			var/datum/op_plan/P = op_plan_for(O, key)
+			TEST_ASSERT_NOTNULL(P, "The real oven declares each complementary route")
+			var/datum/act/op/A = take(/datum/act/op)
+			A.holder = O
+			A.target = O
+			A.actor = actor
+			A.oplan = P
+			var/accepts = TRUE
+			for(var/condition in P.conds)
+				if(!op_cond(A, condition))
+					accepts = FALSE
+					break
+			A.release()
+			if(accepts)
+				allowed++
+				TEST_ASSERT_EQUAL(key, expected, "The declared actor conditions select the correct oven route")
+		TEST_ASSERT_EQUAL(allowed, 1, "Exactly one oven route accepts each living, AI and nonliving actor")
+	var/was_open = O.open
+	var/datum/op_result/result = test_click(H, O, null, GESTURE_ALT)
+	TEST_ASSERT_EQUAL(result?.key, "toggle_door_alt", "A real human alt click selects the physical oven route")
+	TEST_ASSERT_EQUAL(!!O.open, !was_open, "The real selected human operation toggles the door once")
+	TEST_ASSERT_EQUAL(O.touch_effects, 1, "Human input runs one physical effect")
+	TEST_ASSERT_EQUAL(O.no_touch_effects, 0, "Human input does not also run its complementary effect")
+	// These direct effect checks are separate from the condition audit above:
+	// an AI/ghost has no physical hand provider, but the legacy no-touch effect
+	// must still retain its cooldown and leave the door alone when invoked.
+	for(var/mob/actor in list(AI, G))
+		was_open = O.open
+		test_op_handler(O, TYPE_PROC_REF(/obj/machinery/appliance/cooker/oven, oven_interaction_no_touch), actor)
+		TEST_ASSERT_EQUAL(O.open, was_open, "The no-touch effect leaves the physical door unchanged")
+		TEST_ASSERT(cooldown_left(actor, next_click) > 0, "The no-touch effect retains the original click cooldown")
+	TEST_ASSERT_EQUAL(O.touch_effects, 1, "No-touch effects never invoke the physical door operation")
+	TEST_ASSERT_EQUAL(O.no_touch_effects, 2, "AI and nonliving direct effects each run exactly once")

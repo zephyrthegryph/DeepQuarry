@@ -35,3 +35,6 @@ The tests exercise actual human, AI and robot paths, module and hat relations, b
 No protected declarations or existing setters were changed. No hidden actor predicates, debt annotations or baseline increases were introduced.
 
 Root preflight: generated tracked and silicon checks clean; silicon_entry baseline103 ->62 (41fingerprints removed). Production/test manifests wired. Runtime gate pending. Original protected setters and declarations checked with zero unmatched removed lines.
+
+
+Verification preflight found that the ordering lint does not prove the oven routes' compound complementary conditions. A canonical click_order names exactly those two hand bindings, preserving their conditions, effects and numeric priorities. A new real-oven fixture checks living/AI/nonliving condition exclusivity, one actual human alt-click effect, and the no-touch effects' unchanged door/cooldown behavior. No analyzer exception or baseline increase. First compile and focused gate remain pending.

@@ -41,6 +41,7 @@
 		)
 
 CAPABILITIES(/obj/machinery/appliance/cooker/oven)
+	click_order(BIND_HAND, "toggle_door_alt", "toggle_door_alt_no_touch")
 	configure(uses_power(active = 6 KILOWATTS, idle = 2 KILOWATTS))
 	on_change(nameof(open), ANY, then(PROC_REF(loop_sync)))
 	owns_one(nameof(oven_loop), /datum/looping_sound/oven, starts = /datum/looping_sound/oven)
