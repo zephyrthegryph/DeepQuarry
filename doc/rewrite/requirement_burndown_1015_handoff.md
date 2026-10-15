@@ -33,4 +33,4 @@ Three real formatting helpers used outside the retired compiler remain implement
 
 ## Verification plan
 
-The exact selectors are in ignored `data/codex-req-burndown/native-focused-selectors.txt` (JSON counterpart records coverage), including mandatory `dq_requirement_protocol_pin` and `dq_conversion_pin`. The focused Rust filter is `requirement_bool` in package `dq-analyze`. No analyzer, generation, Rust, compilation, runtime test, baseline update or stamp is claimed for this production cohort yet.
+The exact selectors are in ignored `data/codex-req-burndown/native-focused-selectors.txt` (JSON counterpart records coverage), including mandatory `dq_requirement_protocol_pin` and `dq_conversion_pin`. The focused Rust filter is `requirement_bool` in package `dq-analyze`. Generation and all ratchets pass, with `requirement_bool` at zero for both callback and legacy-macro rules. The five focused Rust enforcement tests pass. Production compilation, DreamChecker, native runtime tests and the lane-ready stamp remain pending; no completed runtime verification is claimed.
