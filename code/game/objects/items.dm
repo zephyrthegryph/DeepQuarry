@@ -481,19 +481,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	return
 
 /obj/item/proc/mob_can_unequip(mob/M, slot, disable_warning = 0)
-	if(!M) return 0
-
-	if(!canremove)
-		return 0
-
-	if(!slot)
-		if(issilicon(M))
-			return 1 // for stuff in grippers
-		return 0
-
-	if(!M.slot_is_accessible(slot, src, disable_warning? null : M))
-		return 0
-	return 1
+	return M ? M.can_unequip_item(src, slot, disable_warning) : 0
 
 //This proc is executed when someone clicks the on-screen UI button.
 //The default action is attack_self().

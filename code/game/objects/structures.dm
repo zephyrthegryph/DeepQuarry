@@ -42,21 +42,6 @@
 	if(!QDELETED(src))
 		destroyed(src)
 
-/obj/structure/proc/can_touch(mob/user)
-	if (!user)
-		return 0
-	if(!Adjacent(user))
-		return 0
-	if (user.restrained() || user?.buckled_to())
-		to_chat(user, span_notice("You need your hands and legs free for this."))
-		return 0
-	if (user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_SLEEPING) || user.lying || user.has_status(STAT_WEAKENED))
-		return 0
-	if (isAI(user))
-		to_chat(user, span_notice("You need hands for this."))
-		return 0
-	return 1
-
 /obj/structure/attack_generic(mob/user, damage, attack_verb)
 	if(!breakable || damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)
 		return 0

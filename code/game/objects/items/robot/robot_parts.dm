@@ -89,7 +89,7 @@
 
 CAPABILITIES(/obj/item/robot_parts/robot_suit)
 	// the old attackby: limbs, chest, head, then the MMI that finishes it; steel arms a bare frame (the hit goes on after)
-	op("build", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("build", item(/obj/item), label("Use"), needs(req(PROC_REF(assembly_hardware))), then(PROC_REF(interaction_item)))
 	// a pen names the robot it will become
 	op("name", item(/obj/item/pen), label("Name"), priority(OP_PRIORITY_PART + 1),
 		asks(/datum/prompt/text, fields = list("title" = "name", "question" = "Enter new robot name", "default" = computed(PROC_REF(current_name)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
@@ -103,6 +103,10 @@ CAPABILITIES(/obj/item/robot_parts/robot_suit)
 	if(R?.value)
 		src.created_name = R.value
 	return OP_PASS
+
+/// The actor supplies its assembly credential; a shell cannot duplicate its remote brain.
+/obj/item/robot_parts/robot_suit/proc/assembly_hardware(datum/act/op/A)
+	return A.actor.robot_assembly_refusal(A.held)
 
 /// Old attackby.
 /obj/item/robot_parts/robot_suit/proc/interaction_item(datum/act/op/A)
@@ -160,9 +164,6 @@ CAPABILITIES(/obj/item/robot_parts/robot_suit)
 
 	if(istype(W, /obj/item/mmi))
 		var/obj/item/mmi/M = W
-		if (isshell(user) && istype(W, /obj/item/mmi/inert/ai_remote))
-			to_chat(user, span_warning("Your hardware prohibits you from self-replicating."))
-			return OP_PASS
 		if(check_completion())
 			if(!istype(loc,/turf))
 				to_chat(user, span_warning("You can't put \the [W] in, the frame has to be standing on the ground to be perfectly precise."))

@@ -185,9 +185,9 @@ CAPABILITIES(/obj/effect/mine)
 	return OP_OK
 
 /obj/effect/mine/interact(mob/living/user as mob)
-	if(!panel_open || isAI(user))
+	if(!panel_open)
 		return
-	wires_open(src, user)
+	user.open_exposed_wiring(src)
 
 /obj/effect/mine/camo
 	camo_net = TRUE

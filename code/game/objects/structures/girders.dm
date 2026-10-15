@@ -231,7 +231,7 @@ MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
 
 /// How long adding the plating takes: robots get a speed boost.
 /obj/structure/girder/proc/wall_wait(datum/act/op/A)
-	return istype(A.actor, /mob/living/silicon/robot) ? 1.5 SECONDS : 4 SECONDS
+	return A.actor.wall_plating_duration()
 
 /obj/structure/girder/proc/construct_wall_timed_done(datum/act/op/A)
 	var/obj/item/stack/material/S = A.held

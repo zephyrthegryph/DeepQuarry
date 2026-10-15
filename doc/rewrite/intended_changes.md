@@ -4894,3 +4894,34 @@ Affected requirement-pin classes:
 * **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
+## Silicon entry declarations (codex/silicon-remote, 2026-10-15)
+
+The camera's `ai_wire_tools` and airlock's `signaler_robot` operation keys split
+previous actor-dependent branches into explicit routes. The AI camera route still
+refreshes coverage without opening physical wires; a borg's signaler still does
+not toggle the airlock. Recording these keys is declaration metadata, not a new
+permission or click-priority policy. AI control remains supplied by its remote
+interface and borg control remains limited by the existing interface reach.
+
+Viewer-profile facts preserve the old, deliberately different UI values: the
+photocopier includes all silicons, disposal exposes AI-only controls, and the fax
+distinguishes AI and robot login. These presentation facts grant no authority.
+Device providers preserve actual tools, internal versus worn ID cards, stored
+camera selection and bylines; they do not substitute a silicon predicate for a
+remote requirement. In particular, airlock programming still reads a robot's
+internal ID when its restraining bolt masks the ordinary ID provider.
+
+
+## Railing native physical operations (2026-10-15)
+
+The silicon-entry physical consumer migration replaces the railing's three granted
+rotation verbs with native `rotatable` menu operations. The same physical actor,
+adjacency, free-limb/posture, size and anchoring rules still control the same direction
+changes; AI remote authority does not grant physical rotation. The old clockwise,
+counterclockwise and turn-around choices now appear as declared menu rows.
+
+The existing Flip Railing fastened-floor refusal is now an explicit requirement,
+so its menu reports that same refusal before the effect runs. Existing refusal strings
+and their physical-check order are retained. Pin changes are limited to these declared
+rotation rows and the existing flip-refusal presentation; no different permitted movement,
+remote reach, cuff grip or storage-drop behavior is intended.

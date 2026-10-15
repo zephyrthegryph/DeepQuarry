@@ -144,8 +144,10 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 	if(!SSticker)
 		to_chat(user, span_warning("You can't buckle anyone in before the game starts."))
 		return FALSE // Is this really needed?
-	if(!user.Adjacent(M) || user.restrained() || user.stat || ispAI(user))
-		return FALSE
+	return user.secure_buckle_mob(src, M, forced, silent)
+
+/// The actor's physical buckle transaction has admitted this attempt.
+/atom/movable/proc/finish_user_buckle(mob/living/M, mob/user, forced = FALSE, silent = FALSE)
 	if(M in src?.buckled_mob_list())
 		to_chat(user, span_warning("\The [M] is already buckled to \the [src]."))
 		return FALSE

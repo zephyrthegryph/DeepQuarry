@@ -7,14 +7,7 @@
 
 
 /obj/item/tape_roll/proc/can_place(mob/living/carbon/human/H, mob/user)
-	if(isrobot(user) || user == H)
-		return TRUE
-
-	for (var/obj/item/grab/G in H?.grabbed_by_list())
-		if (G.loc == user && G.state >= GRAB_AGGRESSIVE)
-			return TRUE
-
-	return FALSE
+	return !!user.restraint_evidence(H)
 
 MSG_DEF_SELF(tape/no_grip, span_danger("You need to have a firm grip on %T% before you can use %I%!"))
 MSG_DEF_SELF(tape/no_head, span_warning("%T% doesn't have a head."))

@@ -34,13 +34,19 @@
 	// TODO - "constructed" is not passed to us. We need to find a way to do this safely.
 	if (constructed) // player-constructed railings
 		set_anchored(FALSE)
-	make_rotatable()
 
 CAPABILITIES(/obj/structure/railing)
+	rotatable(while_anchored = TRUE)
+	extend(CAP_ROTATABLE, needs(req(PROC_REF(physical_contact), silent = TRUE), req(PROC_REF(free_limbs)), req(PROC_REF(awake_upright), silent = TRUE),
+		req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = span_notice("You need hands for this.")),
+		req(PROC_REF(rotation_body_ready), silent = TRUE), req(PROC_REF(rotation_size)), req(PROC_REF(rotation_unfastened))))
 	climb(delay = 3.4 SECONDS, vaulting = TRUE, climbed = PROC_REF(climbed_over))
 	op("slam", item(/obj/item), stance(I_HURT), label("Slam"), then(PROC_REF(interaction_slam)))
 	op("item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_item)))
-	op("flip", menu(), label("Flip Railing"), then(PROC_REF(railing_flip_effect)))
+	op("flip", menu(), label("Flip Railing"),
+		needs(req(PROC_REF(rotation_body_ready), silent = TRUE), req(PROC_REF(physical_contact), silent = TRUE), req(PROC_REF(free_limbs)), req(PROC_REF(awake_upright), silent = TRUE),
+			req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = span_notice("You need hands for this.")),
+			req(PROC_REF(flip_size), silent = TRUE), req(PROC_REF(flip_unfastened)), req(PROC_REF(flip_space))), then(PROC_REF(railing_flip_effect)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(2 SECONDS), needs(req(PROC_REF(loose), silent = TRUE)), then(PROC_REF(wrench_act_done)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(1 SECOND), begins(PROC_REF(screwdriver_begins)), then(PROC_REF(screwdriver_act_done)))
 	op("use_welder", lit_welder(fuel = 0), needs(req(PROC_REF(damaged), silent = TRUE)), starts(PROC_REF(welder_sound)), wait(2 SECONDS), then(PROC_REF(welder_act_timed_done)))
@@ -122,30 +128,40 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 				if (WEST)
 					look.overlay(look_overlay_image(icon, "[icon_modifier]mcorneroverlay", pixel_y = 32))
 
-/obj/structure/railing/handle_rotation_verbs(angle, mob/user)
-	if(!can_touch(user))
-		return FALSE
-	return ..()
+/// These are physical requirements, in the original touch/refusal order.
+/obj/structure/railing/proc/physical_contact(datum/act/op/A)
+	return read_once(Adjacent(A.actor)) ? null : /datum/msg/req_failed
 
-/// The old Flip Railing verb: this will help push railing to remote places, such as open space turfs.
-/obj/structure/railing/proc/railing_flip_effect(datum/act/op/A)
+/obj/structure/railing/proc/free_limbs(datum/act/op/A)
 	var/mob/user = A.actor
-	if(user.incapacitated())
-		return OP_OK
+	return read_once(user.restrained() || user.buckled_to()) ? span_notice("You need your hands and legs free for this.") : null
 
-	if (!can_touch(user) || has_trait(user, TRAIT_AMBIENT_PEST_MOB))
-		return OP_OK
+/obj/structure/railing/proc/awake_upright(datum/act/op/A)
+	var/mob/user = A.actor
+	return read_once(user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_SLEEPING) || user.lying || user.has_status(STAT_WEAKENED)) ? /datum/msg/req_failed : null
 
-	if(anchored)
-		to_chat(user, "It is fastened to the floor therefore you can't flip it!")
-		return OP_OK
+/obj/structure/railing/proc/rotation_body_ready(datum/act/op/A)
+	return read_once(A.actor.incapacitated()) ? /datum/msg/req_failed : null
 
-	var/obj/occupied = can_climb_neighbor_turf(src)
-	if(occupied)
-		to_chat(user, "You can't flip \the [src] because there's \a [occupied] in the way.")
-		return OP_OK
+/obj/structure/railing/proc/rotation_size(datum/act/op/A)
+	return read_once(has_trait(A.actor, TRAIT_AMBIENT_PEST_MOB)) ? span_notice("You are too tiny to do that!") : null
 
-	src.forceMove(get_step(src, src.dir))
+/obj/structure/railing/proc/flip_size(datum/act/op/A)
+	return read_once(has_trait(A.actor, TRAIT_AMBIENT_PEST_MOB)) ? /datum/msg/req_failed : null
+
+/obj/structure/railing/proc/rotation_unfastened(datum/act/op/A)
+	return anchored ? span_notice("It is fastened to the floor!") : null
+
+/obj/structure/railing/proc/flip_unfastened(datum/act/op/A)
+	return anchored ? "It is fastened to the floor therefore you can't flip it!" : null
+
+/obj/structure/railing/proc/flip_space(datum/act/op/A)
+	var/obj/occupied = read_once(can_climb_neighbor_turf(src))
+	return occupied ? "You can't flip \the [src] because there's \a [occupied] in the way." : null
+
+/// The admitted flip moves the railing forward and reverses it.
+/obj/structure/railing/proc/railing_flip_effect(datum/act/op/A)
+	forceMove(get_step(src, dir))
 	set_dir(turn(dir, 180))
 	return OP_OK
 
