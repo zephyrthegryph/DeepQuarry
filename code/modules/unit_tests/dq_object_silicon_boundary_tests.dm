@@ -98,9 +98,23 @@
 	var/obj/item/storage/bag/trash/carried = allocate(/obj/item/storage/bag/trash, T)
 	H.put_in_active_hand(carried)
 	TEST_ASSERT_EQUAL(H.vac_trash_output(), carried, "The human provider returns the actual carried bag")
+	var/obj/item/storage/bag/trash/first_bag
+	for(var/obj/item/storage/bag/trash/existing_bag in R.module.modules)
+		first_bag = existing_bag
+		break
+	TEST_ASSERT_EQUAL(R.vac_module_trash_output(), first_bag, "The initial trash provider follows the actual catalog first match")
 	var/obj/item/storage/bag/trash/module_bag = allocate(/obj/item/storage/bag/trash, R.module)
-	R.module.add_item(module_bag)
-	TEST_ASSERT_EQUAL(R.vac_module_trash_output(), module_bag, "The borg provider chooses the actual module bag")
+	R.module.add_item(module_bag, R)
+	TEST_ASSERT(module_bag in R.module.modules, "The added bag joins the real module catalog")
+	TEST_ASSERT_EQUAL(R.vac_module_trash_output(), first_bag || module_bag, "Appending a bag preserves the first actual module match")
+	var/obj/item/dogborg/sleeper/first_sleeper
+	for(var/obj/item/dogborg/sleeper/existing_sleeper in R.module.modules)
+		first_sleeper = existing_sleeper
+		break
+	TEST_ASSERT_NOTNULL(first_sleeper, "The real standard module already supplies a sleeper")
+	TEST_ASSERT(first_sleeper in R.module.modules, "The expected first sleeper belongs to the real catalog")
+	TEST_ASSERT_EQUAL(R.vac_borg_output(), first_sleeper, "The sleeper provider selects the actual initial first match")
 	var/obj/item/dogborg/sleeper/sleeper = allocate(/obj/item/dogborg/sleeper, R.module)
-	R.module.add_item(sleeper)
-	TEST_ASSERT_EQUAL(R.vac_borg_output(), sleeper, "The borg provider returns its actual sleeper")
+	R.module.add_item(sleeper, R)
+	TEST_ASSERT(sleeper in R.module.modules, "The added sleeper joins the real module catalog")
+	TEST_ASSERT_EQUAL(R.vac_borg_output(), first_sleeper, "Appending a sleeper does not replace the earlier standard module match")
