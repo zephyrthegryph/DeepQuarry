@@ -54,7 +54,7 @@ CAPABILITIES(/obj/singularity/narsie/large)
 			SetUniversalState(/datum/universal_state/hell)
 		GLOB.narsie_cometh = 1
 
-		calls_evac = TRUE // the first Nar-Sie calls the evacuation ten seconds on (after_init())
+		set_calls_evac(TRUE) // the first Nar-Sie calls the evacuation ten seconds on (after_init())
 
 /// Nar-Sie's step (the singularity's every()): it eats, hunts a cultist and moves.
 /obj/singularity/narsie/singularity_frame(datum/act/timer/A)
