@@ -1023,6 +1023,11 @@ pub(crate) fn render_instruction(
         }
         return;
     }
+    // Reading the `null` variable pushes null, exactly what `PushVal null` pushes; DreamMaker uses either form.
+    if ins.name == "GetVar" && ins.operands.len() == 1 && matches!(ins.typed_operands().as_deref(), Ok([Operand::Variable(Variable::Null)])) {
+        out.push_str("PushVal null");
+        return;
+    }
     out.push_str(ins.name);
     let ops = match ins.typed_operands() {
         Ok(ops) => ops,
@@ -1416,5 +1421,20 @@ mod tests {
         assert_eq!(wrapped, inner);
         // An unknown Cache never matches an explicit receiver.
         assert_ne!(ctx.var_chain(&Variable::Field(field), &None).0, explicit.0);
+    }
+    #[test]
+    fn reading_the_null_variable_renders_as_push_null() {
+        let dmb = Dmb::from_bytes(include_bytes!("../tests/fixtures/order_probe.dmb")).unwrap();
+        let ctx = Ctx::new(&dmb, None);
+        let render = |words: &[u32]| -> Vec<String> {
+            render_code_lines_pub(&ctx, words)
+                .unwrap()
+                .into_iter()
+                .map(|(_, line)| line)
+                .collect()
+        };
+        let mut get_null = vec![0x33u32];
+        get_null.extend(Variable::Null.encode());
+        assert_eq!(render(&get_null), vec!["PushVal null".to_string()]);
     }
 }

@@ -13,6 +13,15 @@ fn compare(a: &Dmb, b: &Dmb) -> Report {
     compare_dmbs(a, None, b, None, &Options::default()).unwrap()
 }
 
+/// Order differences gate only with `--strict-order`.
+fn compare_strict(a: &Dmb, b: &Dmb) -> Report {
+    let options = Options {
+        strict_order: true,
+        ..Options::default()
+    };
+    compare_dmbs(a, None, b, None, &options).unwrap()
+}
+
 fn round_trip(d: &Dmb) -> Dmb {
     Dmb::from_bytes(&d.to_bytes().unwrap()).unwrap()
 }
@@ -84,7 +93,15 @@ fn observable_orders_are_reported() {
         ("procs", "order.proc_table"),
     ] {
         let p = permute(&d, &PermuteOptions::parse(1, tables).unwrap()).unwrap();
-        let r = compare(&d, &round_trip(&p));
+        // Ordering is reported but does not gate by default (decision of 2026-10-14).
+        let default = compare(&d, &round_trip(&p));
+        assert!(default.equivalent(), "{tables}
+{}", default.render_text());
+        assert!(
+            default.ordering.values().sum::<usize>() > 0,
+            "{tables}: ordering must still be reported"
+        );
+        let r = compare_strict(&d, &round_trip(&p));
         assert!(
             r.categories.contains_key(category),
             "{tables}: {:?}",
@@ -99,7 +116,7 @@ fn observable_orders_are_reported() {
     }
     let mut o = PermuteOptions::parse(1, "strings").unwrap();
     o.keep_strings = string_id(&d, b"BLEND_INSET_OVERLAY") as usize + 1;
-    let r = compare(&d, &round_trip(&permute(&d, &o).unwrap()));
+    let r = compare_strict(&d, &round_trip(&permute(&d, &o).unwrap()));
     assert_eq!(
         categories(&r)
             .iter()
@@ -188,7 +205,7 @@ fn renumbered_world_with_an_edit_reports_only_the_edit() {
 fn json_summary_has_counts() {
     let d = fixture();
     let p = permute(&d, &PermuteOptions::parse(1, "classes").unwrap()).unwrap();
-    let j = compare(&d, &p).to_json();
+    let j = compare_strict(&d, &p).to_json();
     assert_eq!(j["equivalent"], false);
     assert!(
         j["categories"]["order.type_table"]["count"]

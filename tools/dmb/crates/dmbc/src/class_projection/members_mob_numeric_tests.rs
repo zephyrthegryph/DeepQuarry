@@ -115,6 +115,7 @@ fn fractional_mob_settings_and_bounds_match_captured_byond_records() {
             .unwrap();
         assert_eq!(record.extended_sight, expected.extended_sight, "{path:?}");
         assert_eq!(record.sight_bits(), expected.sight_bits(), "{path:?}");
+        assert_eq!(record.sight, expected.sight, "{path:?}: compact sight byte");
         assert_eq!(
             record.see_in_dark_setting(),
             expected.see_in_dark_setting(),

@@ -462,6 +462,7 @@ impl Encoded<'_> {
         let features = BytecodeFeatures {
             external: instruction_facts.external(),
             debug: instruction_facts.debug(),
+            compat: instruction_facts.compat(),
             source_features: self.source_features,
         };
         let recipe = crate::composition::ProcedureMetadataRecipe::capture(

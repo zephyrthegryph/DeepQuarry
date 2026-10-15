@@ -35,6 +35,45 @@ fn shifts_fold_native_unsigned_24_bit_values_and_leave_unsafe_cases_to_runtime()
     }
 }
 
+/// Value tags of builtin-family type paths, measured on the DeepQuarry production build with DreamMaker 516.1687
+/// (`dmb-equiv dump-proc ... | grep path`): `/atom` and `/turf/...` are 10, `/atom/movable/...` and `/obj/...` 9,
+/// `/area/...` 11, `/datum/...` 32. This compiler used to tag `/atom` itself as 9 (317 sites in the production tree).
+#[test]
+fn type_path_literals_carry_the_native_family_tag() {
+    for (source, tag) in [
+        ("/atom", 10u8),
+        ("/atom/movable", 9),
+        ("/obj", 9),
+        ("/obj/item", 9),
+        ("/mob", 8),
+        ("/turf", 10),
+        ("/turf/simulated", 10),
+        ("/area", 11),
+        ("/datum", 32),
+    ] {
+        let ast = dm_syntax::parse(&format!("/proc/probe()
+    return {source}
+"));
+        assert!(ast.diagnostics.is_empty(), "{source}: {:?}", ast.diagnostics);
+        let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
+        let tags: Vec<_> = compiled
+            .code
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                crate::Item::Instruction(instruction) => Some(&instruction.operands),
+                _ => None,
+            })
+            .flatten()
+            .filter_map(|word| match word {
+                crate::Word::Value(crate::ValueWord::ClassPath { tag, .. }) => Some(*tag),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(tags, vec![tag], "{source}");
+    }
+}
+
 #[test]
 fn runtime_power_matches_native_fixture() {
     let ast = dm_syntax::parse(include_str!(

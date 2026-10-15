@@ -93,3 +93,23 @@ this branch. Items marked OPEN are not.
     hand onto master's version (E0 tier and `want_e0` kept).
 14. **Removed.** The old `dmb-check` target and `DQ_DMB_PRECHECK` (crate `dm-compile` no longer exists in `tools/dmb`) and
     `tools/dmb/precheck_known.txt`.
+
+## Status 2026-10-14 (tools/native-fix)
+
+- **Item 5 header and sight: fixed.** Mob sight: DreamMaker keeps the low seven sight bits in the compact byte beside the `0x80`
+  extension marker (SEE_MOBS with see_in_dark is `0x84`); `mob_writer::apply_settings` wrote a bare `0x80` and the fixture tests
+  compared only the decoded bits. They now compare the raw byte. Header: dmbc never computed `min compatibility`; it kept the
+  engine template's `v514 468` plus two world-setting cases, so DeepQuarry came out `v515 468` against DreamMaker's `v516 516`.
+  `dm_ir::header_compat` now prices opcodes (alist, sin/cos/tan, trunc, ...) and built-in variables per procedure and per class
+  default; a unit tied to its own version (`a.pixel_z`) makes the build equal the version. Production now prints `v516 516`.
+  Of 776 captured fixtures with a DreamMaker header, 625 match and 10 differ (141 do not compile natively); the remaining
+  differences are pair interactions among 500-511 features and `src.x` spelling, not modelled. The `/atom` type path literal was
+  tagged 9 (317 sites); DreamMaker tags it 10. `dmb-equiv` reports ordering separately (not counted without `--strict-order`),
+  masks the debug header bit with `--ignore-debug` and treats `GetVar null` as `PushVal null`. Production residual against a
+  same-source DreamMaker build: 218,558 -> 15,091 (bytecode 9,141: constant folding and dead constant branches DreamMaker
+  removes, `Jz` against `GetFlag`, fused range iterators, receiver caching; `<init>` sharing 2,855 + 2,800; map objects 91;
+  extra temporaries 86; image subtype `name`/`text` and authored `icon_state = ""` null against empty string 59; argument
+  value-source owner names 50; anonymous procs 6; verb order 3). Open: the null/empty string defaults and `world.name`
+  (DreamMaker uses the project name, native keeps the template's).
+- **Item 8 cross-compiler staleness: fixed.** `build.sh dm` records the compiler that wrote the pair in `<project>.dmb.compiler`;
+  the byond target only treats the pair as up to date when the stamp says byond.
