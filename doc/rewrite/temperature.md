@@ -34,7 +34,7 @@ Energy is conserved everywhere, in SI units.
 
 ### 2.1 The DM API
 
-Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/heat/heat.dm)); kept lines are verbatim, with surrounding code omitted.
+Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/heat/heat.dm)); kept lines are verbatim prefixes. The remaining fallback and stale-handle cleanup branches are omitted here.
 
 ```dm fragment
 /atom/proc/get_temperature()
@@ -43,11 +43,9 @@ Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/h
 		var/temperature = vg_heat_body_temperature(heat_body)
 		if(!isnull(temperature))
 			return temperature
-		set_heat_body(null)
-	return get_ambient_temperature()
 ```
 
-Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/heat/heat.dm)); kept lines are verbatim, with surrounding code omitted.
+Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/heat/heat.dm)); kept lines are verbatim prefixes. The remaining fallback and stale-handle cleanup branches are omitted here.
 
 ```dm fragment
 /atom/proc/add_heat(joules)
@@ -56,12 +54,6 @@ Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/h
 	if(!isnull(heat_body))
 		if(vg_heat_body_add(heat_body, joules))
 			return joules
-		set_heat_body(null)
-	if(!create_heat_body())
-		return 0
-	return vg_heat_body_add(heat_body, joules) ? joules : 0
-
-/// list(heat capacity J/K, conductance to the surroundings W/K, emissivity).
 ```
 
 Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/heat/heat.dm)); kept lines are verbatim, with surrounding code omitted.

@@ -5,3 +5,5 @@ The original 50 baseline rows are covered across seven rewrite documents. Surviv
 Removed examples are limited to absent manual boot_world_service calls and proposed life_present/death_stats wrapper systems with no direct counterpart. Obsolete POOL_RESET declarations are replaced by the actual pooled base/reset contract. Archive, production code and generated files are unchanged.
 
 Earlier source validation reached 0 unknown names and 0 legacy blocks before the excerpt-quality repair; that is not proof of the current edited documents. Fresh doc_snippets check, shrink-only baseline update if needed and the final local lane-ready docs gate are pending. No build, generator or analyzer was run for this source repair. No push or merge.
+
+Final preflight excerpt repair: temperature excerpts retain the actual read/add prefixes and omit fallback/stale-handle cleanup; current source calls an undeclared `set_heat_body()` there. No production API was invented or changed. Fresh doc check and lane gate remain pending.
