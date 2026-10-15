@@ -121,9 +121,9 @@
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/carbon/human/ambient = allocate(/mob/living/carbon/human, test_floor())
-	var/datum/callback/CB = new(src, PROC_REF(current_actor_for_test))
+	var/datum/callback/CB = new(src, TYPE_PROC_REF(/datum/unit_test/dq_d6_actor_inputs, current_actor_for_test))
 	own(CB)
-	var/list/observed = with_actor(ambient, src, PROC_REF(push_then_read), actor, CB)
+	var/list/observed = with_actor(ambient, src, TYPE_PROC_REF(/datum/unit_test/dq_d6_actor_inputs, push_then_read), actor, CB)
 	TEST_ASSERT_EQUAL(observed[1], actor, "The existing callback API runs under its requested explicit actor")
 	TEST_ASSERT_EQUAL(observed[2], ambient, "The native binding restores the caller's distinct context afterward")
 

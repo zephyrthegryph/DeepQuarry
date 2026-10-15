@@ -11,3 +11,6 @@ Important unresolved global duplicate: anomaly_container.dm declares /atom/Mouse
 Changed helper callers audited tree-wide: 19 description overrides, all 33 panel-image calls, recursive VV formatters and each vv_get_var override/caller; all 14 smokable light calls use existing actor. Other light APIs unchanged. Debug helpers have no static production callers; dynamic CallProc/VV must supply the explicit new actor argument. No setter/declaration edits, no logging removed, no builds/gen/tests/baseline/manifest/commit/push by subagent.
 
 Root analyzer preflight: usr_content ceiling130 ->85, with generated trackedcheck clean. Existing callback compatibility now uses the real engine with_actor scoped invocation (restores outeractor), not a renamed helper. Native securityshims and unsupportedentry cases remain explicitlylisted. Runtime verification pending.
+
+
+Source-only fixture repair (2026-10-15): scoped_callback inherits current_actor_for_test and push_then_read from /datum/unit_test/dq_d6_actor_inputs. Its two new callback references now use TYPE_PROC_REF at that defining ancestor; production actor bindings and fixture behavior are unchanged. No generation, analyzer, build or test was run; the A coordinator retains exclusive verification.
