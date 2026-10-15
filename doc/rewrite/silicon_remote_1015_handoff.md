@@ -1,0 +1,36 @@
+# Silicon remote-entry retirement — 2026-10-15
+
+Branch: `codex/silicon-remote`, based on `origin/master` `4ab2e15fe1`.
+
+## Counts and remaining contracts
+
+`silicon_entry` shrank from 103 to 8 rows (95 removed), regenerated with
+`analyze baseline --update --lint silicon_entry`. No rows were added. The eight
+remaining rows are six casino intermediate prompt-effect stages, hoist detach's
+refusal-and-success input fallthrough, and legacy machine refresh's nested-input
+suppression. Exact reasons and needed contracts are in
+[silicon_remote_module_gaps.md](silicon_remote_module_gaps.md). None is hidden behind
+an annotation, renamed predicate, relaxed ceiling or path exemption.
+
+## Converted behavior and proof
+
+Native operations retain AI control authority, remote-access admission and borg
+reach. Content providers supply actual credentials, device transactions, inventory
+operations, body admission and immutable viewer facts; viewer classification grants
+no control authority. Actor-local HUD questions retain their clicked-screen lifetime
+and do not require wireless control. Recharge station scripts retain their original
+ordered admission and actual transfer behavior. The physical cohort is documented in
+[silicon_physical_1015_handoff.md](silicon_physical_1015_handoff.md).
+
+Old-code captures passed before conversion for 35 device types plus three physical
+roots, with both AI and borg rows per type. Five original viewer/UI tests also passed.
+The only planned physical pin presentation change is native railing rotation menu
+operations replacing the old granted verbs; its existing anchored refusal is visible
+in the menu. Additional key presentation causes are recorded per class in
+`intended_changes.md`; unrelated pin changes must be investigated.
+
+The admin-holder lint now uses a proven receiver type and declared field to exclude
+non-client `.holder` references; unknown, mixed and client-compatible receivers remain
+checked. Its focused Rust regression passed (1 test). All ratchets passed with the
+95-row baseline reduction. Native production compilation and the combined runtime
+lane-ready verification are pending; this document does not claim a stamp yet.
