@@ -48,3 +48,10 @@ The pipe painter now declares choose_initial_mode setup with the original set_mo
 Final scoped follow-up certification on master a75de08d85: init baseline 4106 ->4009 globally (97 removed), including the pipe painter's final row. The init lint passes. Full gate remains pending because master has missing generated setter methods and base_vars findings outside this task.
 
 Read-tracking master's generated recipe setter exposed one moved raw write in sandbag setup. It now calls the existing registered set_recipes setter, retaining the exact shared list identity and slowdown order. No declaration, pre-existing setter call, annotation or baseline was changed.
+
+
+## Current verification barrier, 2026-10-15
+
+Generation and the supported init/decl baseline updates completed on master 4ab2e15fe1, with no further baseline edits. All tracking/ref checks pass, but sys/dx_raw_overlays rejects the moved add_overlay(I) in prepare_lighter_overlay at cigs_lighters.dm:724 (one new site). No production/test compile or world was started for this blocked branch.
+
+This needs a sampled/frozen presentation-layer contract: preserve the two original world-RNG picks (casing style and colour), retain the per-instance result, draw it reactively, and let Zippo construction consume both picks before discarding that layer. Native rolls() runs seeded before init and changes global RNG consumption; a pure draw cannot sample or retain it; the cached image key does not freeze a per-instance selection. Hiding add_overlay behind another helper or borrowing base_state as shadow storage would not solve the contract. No ALLOW, baseline raise, alias or new state was introduced. This genuine form gap remains for the framework owner.
