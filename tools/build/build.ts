@@ -89,6 +89,7 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
+import { dmbcCacheDir, dmbcCacheKey, restoreDmbc, storeDmbc } from './lib/dmbc_cache';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -839,8 +840,45 @@ export const AnalyzeTarget = new Juke.Target({
 
 /** Release build of the native DM compiler (tools/dmb), the default DQ_COMPILER=native executable. */
 const DMBC_EXE = `tools/dmb/target/release/${process.platform === 'win32' ? 'dmbc.exe' : 'dmbc'}`;
+const DMBD_EXE = DMBC_EXE.replace(/dmbc(\.exe)?$/, 'dmbd$1');
+// A fresh worktree copies the compiler from the shared content-addressed cache (lib/dmbc_cache.ts) instead of
+// running cargo; a build with inputs that differ from HEAD bypasses it and stores nothing.
+let dmbcPendingStore: { cache: string; key: string; commit: string } | null = null;
+const dmbcCacheHit = (): boolean => {
+  dmbcPendingStore = null;
+  const cache = dmbcCacheDir();
+  if (!cache) return false;
+  const k = dmbcCacheKey(process.cwd());
+  if ('bypass' in k) {
+    Juke.logger.info(`dmbc cache: bypassed (${k.bypass})`);
+    return false;
+  }
+  try {
+    if (restoreDmbc(cache, k.key, DMBC_EXE, DMBD_EXE)) {
+      Juke.logger.info(`dmbc cache: hit ${k.key} (${cache})`);
+      return true;
+    }
+  } catch (error) {
+    Juke.logger.warn(`dmbc cache: restore failed (${error instanceof Error ? error.message : error}); building`);
+  }
+  Juke.logger.info(`dmbc cache: miss ${k.key}; building and storing`);
+  dmbcPendingStore = { cache, key: k.key, commit: k.commit };
+  return false;
+};
+const storeDmbcBuild = (): void => {
+  const pending = dmbcPendingStore;
+  if (!pending) return;
+  dmbcPendingStore = null;
+  try {
+    storeDmbc(pending.cache, pending.key, pending.commit, DMBC_EXE, DMBD_EXE);
+    Juke.logger.info(`dmbc cache: stored ${pending.key}`);
+  } catch (error) {
+    Juke.logger.warn(`dmbc cache: store failed: ${error instanceof Error ? error.message : error}`);
+  }
+};
 export const DmbcTarget = new Juke.Target({
-  onlyWhen: () => !process.env.DQ_NATIVE_COMPILER, // an explicit compiler is never rebuilt here
+  // An explicit compiler is never rebuilt here; a shared-cache hit needs no cargo.
+  onlyWhen: () => !process.env.DQ_NATIVE_COMPILER && !dmbcCacheHit(),
   inputs: [
     'tools/dmb/Cargo.toml',
     'tools/dmb/Cargo.lock',
@@ -879,6 +917,7 @@ export const DmbcTarget = new Juke.Target({
     } else {
       await Juke.exec(cargo[0], cargo.slice(1));
     }
+    storeDmbcBuild();
   },
 });
 

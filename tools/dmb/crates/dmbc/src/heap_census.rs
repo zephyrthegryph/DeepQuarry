@@ -975,6 +975,13 @@ pub fn emit_if_enabled(stage: &str, observe: impl FnOnce(&mut HeapCensus)) -> io
     else {
         return Ok(());
     };
+    #[cfg(feature = "allocation-sites")]
+    if let Some(sites) = std::env::var_os("DMB_ALLOC_SITES_PATH").filter(|path| !path.is_empty()) {
+        let text = format!("######## {stage}\n{}", dm_profile::allocation_sites::report(1500));
+        if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(sites) {
+            let _ = file.write_all(text.as_bytes());
+        }
+    }
     let mut census = HeapCensus::new(stage);
     observe(&mut census);
     let mut bytes = serde_json::to_vec(&census.finish()).map_err(io::Error::other)?;
