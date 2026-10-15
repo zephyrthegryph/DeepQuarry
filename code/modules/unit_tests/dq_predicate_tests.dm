@@ -4,6 +4,9 @@
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 1000)
 
+// This requirement is built dynamically by the fixture, outside declaration discovery.
+TRACKED(/obj/item/dq_pred_test, name)
+
 /obj/item/dq_pred_test/heavy
 	w_class = ITEMSIZE_LARGE
 	MATERIAL_BULK(MAT_STEEL, 12000)
