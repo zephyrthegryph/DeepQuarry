@@ -230,4 +230,4 @@ CAPABILITIES(/obj/item/remote_scene_tool)
 	return worn_mob
 
 CAPABILITIES(/obj/item/storage/box/remote_scene_tools)
-	setup(PROC_REF(calibrate_size))
+	setup(TYPE_PROC_REF(/obj/item/storage, calibrate_size))
