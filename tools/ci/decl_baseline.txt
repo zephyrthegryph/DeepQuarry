@@ -1,6 +1,8 @@
 # Declarative-lifecycle backlog (tools/ci/decl_lint.py, doc/rewrite/declarative_lifecycle.md).
 # rule<TAB>file<TAB>normalized line. Shrink-only: convert sites, then `python tools/ci/decl_lint.py --update`.
 init_visuals	code/modules/overmap/sectors.dm	icon_state = unknown_state
+init_visuals	code/modules/pda/pda.dm	add_overlay("pda-pen")
+init_new_child	code/modules/body/body.dm	rel_set(src, nameof(body), new body_type(src))
 destroy_drop	code/game/machinery/machinery.dm	for(var/mob/living/carbon/human/H in contents)
 destroy_drop	code/game/objects/objs.dm	for(var/thing in contents_of(src))
 destroy_drop	code/modules/ventcrawl/ventcrawl_atmospherics.dm	for(var/mob/living/M in contents_of(src)) //ventcrawling is serious business // ALLOW(latent): mobs are never latent
