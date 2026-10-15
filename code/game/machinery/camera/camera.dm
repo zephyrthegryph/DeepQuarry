@@ -68,7 +68,8 @@ CAPABILITIES(/obj/machinery/camera)
 	on_wire(WIRE_CAM_ALARM, cut = PROC_REF(alarm_wire_cut), pulse = PROC_REF(alarm_wire_pulsed))
 	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(weld_available)), claims(), begins(PROC_REF(weld_start_message)), starts(PROC_REF(weld_started)), wait(PROC_REF(weld_duration)), then(PROC_REF(welder_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(wire_tool_used)))
+	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), when(req_actor_kind(/mob/living/silicon/ai, not = TRUE)), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(wire_tool_used)))
+	op("ai_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), when(req_actor_kind(/mob/living/silicon/ai)), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(ai_wire_tool_used)))
 
 TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_emp_proof, FALSE)
 TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_xray, FALSE)
@@ -271,8 +272,17 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 /// The wirecutters or a multitool: the coverage is refreshed, and behind the open panel the wires' window opens.
 /obj/machinery/camera/proc/wire_tool_used(datum/act/op/A)
 	update_coverage()
-	if(panel_open)
-		interact(A.actor)
+	if(!panel_open)
+		return OP_OK
+	if(broken_now())
+		to_chat(A.actor, span_warning("\The [src] is broken."))
+		return OP_OK
+	wires_open(src, A.actor)
+	return OP_OK
+
+/// An AI's virtual tool refreshes coverage, but never opens the physical wires panel.
+/obj/machinery/camera/proc/ai_wire_tool_used(datum/act/op/A)
+	update_coverage()
 	return OP_OK
 
 /obj/machinery/camera/proc/weld_available(datum/act/op/A)
@@ -515,16 +525,6 @@ SETTER(/obj/machinery/camera, status)
 			return C
 
 	return null
-
-/obj/machinery/camera/interact(mob/living/user as mob)
-	if(!panel_open || isAI(user))
-		return
-
-	if(broken_now())
-		to_chat(user, span_warning("\The [src] is broken."))
-		return
-
-	wires_open(src, user)
 
 /obj/machinery/camera/proc/add_network(network_name)
 	add_networks(list(network_name))

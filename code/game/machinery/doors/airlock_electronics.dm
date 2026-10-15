@@ -32,16 +32,12 @@ CAPABILITIES(/obj/item/airlock_electronics)
 	op("one_access", ui_act("one_access"), needs(req(PROC_REF(logged_in))), then(PROC_REF(ui_one_access)))
 	op("access_all", ui_act("access_all"), needs(req(PROC_REF(logged_in))), then(PROC_REF(ui_access_all)))
 	op("access", ui_act("access", arg("access", int(0, 999))), needs(req(PROC_REF(logged_in))), then(PROC_REF(ui_access)))
-	extend(TAG_UI, needs(req(PROC_REF(ui_user_ok))))
-	extend("ui_open", when(PROC_REF(user_may_open)))
-
-/// Only a person or a cyborg takes the device in hand to program it.
-/obj/item/airlock_electronics/proc/user_may_open(datum/act/op/A)
-	return ishuman(A.actor) || istype(A.actor, /mob/living/silicon/robot)
+	extend(TAG_UI, needs(req(PROC_REF(ui_user_ok)), any_of(req_actor_kind(/mob/living/carbon/human, because = MSG(airlock_electronics/cant_use)), req_actor_kind(/mob/living/silicon, because = MSG(airlock_electronics/cant_use)))))
+	extend("ui_open", when(cond_any(req_actor_kind(/mob/living/carbon/human), req_actor_kind(/mob/living/silicon/robot))))
 
 /obj/item/airlock_electronics/proc/ui_user_ok(datum/act/op/A)
 	var/mob/user = A.actor
-	return (!user.stat && !user.restrained() && (ishuman(user) || istype(user, /mob/living/silicon))) ? null : MSG(airlock_electronics/cant_use)
+	return (!user.stat && !user.restrained()) ? null : MSG(airlock_electronics/cant_use)
 
 /obj/item/airlock_electronics/proc/logged_in(datum/act/A)
 	return (!locked) ? null : MSG(airlock_electronics/logged_out)
@@ -128,13 +124,7 @@ CAPABILITIES(/obj/item/airlock_electronics)
 	set_conf_access(access)
 
 /obj/item/airlock_electronics/proc/get_available_accesses(mob/user)
-	var/obj/item/card/id/id
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		id = H.get_idcard()
-	else if(issilicon(user))
-		var/mob/living/silicon/R = user
-		id = R.idcard
+	var/obj/item/card/id/id = user?.airlock_programming_card()
 
 	// Nothing
 	if(!id || !id.GetAccess())

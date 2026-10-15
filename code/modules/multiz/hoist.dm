@@ -189,8 +189,6 @@ CAPABILITIES(/obj/structure/hoist)
 
 /// Requirement: TRUE, or why this user can't work the hoist. Non-humanoids are turned away silently by the effect.
 /obj/structure/hoist/proc/can_work_hoist(mob/living/user, atom/target, obj/item/held)
-	if(!(ishuman(user) || issilicon(user)))
-		return TRUE
 	if(user.incapacitated())
 		return "you can't do that while incapacitated"
 	if(!user.IsAdvancedToolUser())
@@ -201,7 +199,7 @@ CAPABILITIES(/obj/structure/hoist)
 
 /// Requirement: TRUE, or why the hoist can't be collapsed now.
 /obj/structure/hoist/proc/can_collapse(mob/user, atom/target, obj/item/held)
-	if(!(ishuman(user) || issilicon(user)) || isobserver(user) || user.incapacitated())
+	if(isobserver(user) || user.incapacitated())
 		return TRUE
 	if(!user.IsAdvancedToolUser())
 		return "you stare cluelessly at it"

@@ -178,7 +178,8 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("tear", hand(), label("Tear"), when(PROC_REF(claws_tear)), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(tear_wait)),
 		needs(req(PROC_REF(hand_refusal))), then(PROC_REF(tear_done)))
 	op("tape", item(/obj/item/taperoll), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(touched_by_held)))
-	op("signaler", item(/obj/item/assembly/signaler), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(signaler_touch)))
+	op("signaler", item(/obj/item/assembly/signaler), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(signaler_touch)))
+	op("signaler_robot", item(/obj/item/assembly/signaler), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(signaler_robot_touch)))
 	op("pai_cable", item(/obj/item/pai_cable), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pai_cable_plugin)))
 	op("pry_weapon", item(/obj/item), when(PROC_REF(prying_weapon)), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pry_weapon_forced)))
 	op("break_in", ai(), wait(10 SECONDS), then(PROC_REF(break_in_done)))
@@ -608,10 +609,16 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	toggle_by(A.actor)
 	return OP_OK
 
+/// A cyborg's physical signaler still touches and fingerprints the door, but never toggles it.
+/obj/machinery/door/airlock/proc/signaler_robot_touch(datum/act/op/A)
+	touched_early(A)
+	add_fingerprint(A.actor)
+	return OP_OK
+
 /// A hand's use of the door: it opens for whoever may, and shuts again.
 /obj/machinery/door/airlock/proc/toggle_by(mob/user)
 	add_fingerprint(user)
-	if(operating || isrobot(user))
+	if(operating)
 		return FALSE
 	if(allowed(user) && operable())
 		if(density)

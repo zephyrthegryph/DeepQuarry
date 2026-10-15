@@ -44,10 +44,10 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 	return list(
 		examine_line(MSG(climb/examine)),
 		op("climb", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(CAP_PROC(is_self_drag)), label("Climb"), \
-			needs(req(CAP_PROC(can_climb))), \
+			needs(req(CAP_PROC(climber_ready)), req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(climb/no_hands)), req(CAP_PROC(climb_path_ready))), \
 			begins(MSG(climb/start)), wait(CAP_PROC(climb_time)), on_interrupt(CAP_PROC(climb_interrupted)), then(CAP_PROC(climb_over)), says(CAP_PROC(done_message)), logs(LOG_GAME)),
 		op("climb_menu", menu(), label("Climb"), \
-			needs(req(CAP_PROC(can_climb))), \
+			needs(req(CAP_PROC(climber_ready)), req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(climb/no_hands)), req(CAP_PROC(climb_path_ready))), \
 			begins(MSG(climb/start)), wait(CAP_PROC(climb_time)), on_interrupt(CAP_PROC(climb_interrupted)), then(CAP_PROC(climb_over)), says(CAP_PROC(done_message)), logs(LOG_GAME)))
 
 /// The holder is climbable while it has the capability: the trait the old behaviour added.
@@ -64,7 +64,9 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 // ---- the rules ----
 
 /// Why `climber` can't climb `holder` now: text (what to tell the climber) or a message type, or null when it can. Reads only.
-/datum/capability/lib/climb/proc/refusal(atom/movable/holder, mob/living/climber)
+/datum/capability/lib/climb/proc/climber_ready(datum/act/op/A)
+	var/atom/movable/holder = A.holder
+	var/mob/living/climber = A.actor
 	if(!istype(climber))
 		return /datum/msg/climb/cant_now
 	if(gate)
@@ -73,8 +75,12 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 			return why
 	if(climber.is_incorporeal())
 		return /datum/msg/climb/phased
-	if(isAI(climber))
-		return /datum/msg/climb/no_hands
+	return null
+
+/// Actor-kind refusal sits between the gate/solidity checks and the remaining physical checks.
+/datum/capability/lib/climb/proc/climb_path_ready(datum/act/op/A)
+	var/atom/movable/holder = A.holder
+	var/mob/living/climber = A.actor
 	if(climber.restrained() || climber.buckled_to())
 		return /datum/msg/climb/hands_needed
 	if(climber.stat || climber.lying || climber.has_status(STAT_PARALYZED) || climber.has_status(STAT_SLEEPING) || climber.has_status(STAT_WEAKENED))
@@ -89,10 +95,6 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 		if(occupied)
 			return "You can't climb there, there's \a [occupied] in the way."
 	return null
-
-/datum/capability/lib/climb/proc/can_climb(datum/act/op/A)
-	var/why = refusal(A.holder, A.actor)
-	return isnull(why) ? null : (why || /datum/msg/op/not_available)
 
 /// A small mob climbs in 60% of the time.
 /datum/capability/lib/climb/proc/climb_time(datum/act/op/A)

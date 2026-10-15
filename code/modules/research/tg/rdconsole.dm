@@ -118,11 +118,7 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 					"design_count" = length(TN.design_ids),
 					"detail" = "Unlocked the [TN.display_name] research node.",
 				), "research-node:[REF(stored_research)]:[TN.id]", src, researcher)
-			var/logname = "Unknown"
-			if(isAI(user))
-				logname = "AI [user.name]"
-			if(isrobot(user))
-				logname = "CYBORG [user.name]"
+			var/logname = user?.research_audit_identity() || "Unknown"
 			if(iscarbon(user))
 				var/obj/item/card/id/idcard = user.get_active_hand()
 				if(istype(idcard))

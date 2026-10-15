@@ -40,7 +40,7 @@ CAPABILITIES(/obj/item/healthanalyzer)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	held_verb(/obj/item/healthanalyzer/proc/toggle_guidance, SLOT_ANY_CARRIED)
 	op("scan_patient", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Scan vitals"),
-		needs(req_adjacent(), req(PROC_REF(scanner_dexterity))), then(PROC_REF(patient_scanned)))
+		needs(req_adjacent(), any_of(req_actor_kind(/mob/living/silicon, because = span_warning("You don't have the dexterity to do this!")), req(PROC_REF(scanner_dexterity)))), then(PROC_REF(patient_scanned)))
 	op("toggle_advanced", menu(), label("Toggle Advanced Scan"), when(PROC_REF(advanced_profile)), needs(carried()), then(PROC_REF(advanced_toggled)))
 	op("toggle_guidance", menu(), label("Toggle Guidance"), needs(carried()), then(PROC_REF(guidance_toggled)))
 
@@ -50,8 +50,6 @@ CAPABILITIES(/obj/item/healthanalyzer)
 		var/mob/living/carbon/human/H = A.actor
 		var/datum/xenochimera/state = H.xenochimera
 		return (!state?.feral && H.species?.has_fine_manipulation) ? null : span_warning("You don't have the dexterity to do this!")
-	if(istype(A.actor, /mob/living/silicon))
-		return null
 	if(istype(A.actor, /mob/living/simple_mob))
 		var/mob/living/simple_mob/S = A.actor
 		return (S.has_hands) ? null : span_warning("You don't have the dexterity to do this!")

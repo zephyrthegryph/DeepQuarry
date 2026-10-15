@@ -485,3 +485,7 @@ CAPABILITIES(/datum/silicon_alarm_queue)
 //		if ("Disable")
 //			//Disable Medical planes
 //			plane_holder?.set_vis(VIS_CH_BACKUP,FALSE)
+
+/// Silicon bodies draw no shock energy and trigger no grid warning or damage calculation.
+/mob/living/silicon/receive_power_shock(power_source, obj/source, siemens_coeff = 1.0)
+	return 0

@@ -713,15 +713,13 @@ CAPABILITIES(/datum/news_photo)
 	if(photo_data)
 		if(!photo_data.is_synth)
 			photo_data.photo().forceMove(src.loc)
-			if(!issilicon(user))
-				user.put_in_inactive_hand(photo_data.photo())
+			user.receive_news_photo(photo_data.photo())
 		rel_clear(src, nameof(photo_data))
 
 	if(incoming)
 		rel_set(src, nameof(photo_data), new /datum/news_photo(incoming, 0))
-	else if(istype(user,/mob/living/silicon))
-		var/mob/living/silicon/tempAI = user
-		var/obj/item/photo/selection = tempAI.GetPicture()
+	else
+		var/obj/item/photo/selection = user.GetPicture()
 		if(!selection)
 			return
 
@@ -729,17 +727,7 @@ CAPABILITIES(/datum/news_photo)
 
 ////////////////////////////////////helper procs
 /obj/machinery/newscaster/proc/tgui_user_name(mob/user)
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		var/obj/item/card/id/I = H.GetIdCard()
-		if(I)
-			return GetNameAndAssignmentFromId(I)
-
-	if(issilicon(user))
-		var/mob/living/silicon/S = user
-		return "[S.name] ([S.job])"
-
-	return "Unknown"
+	return user.news_byline()
 
 /obj/machinery/newscaster/proc/scan_user(mob/living/user)
 	if(ishuman(user))                       //User is a human

@@ -67,9 +67,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 		if(vac_owner && user != vac_owner)
 			to_chat(user, span_warning("Only designated owner can change this setting."))
 			return
-		var/vac_options = list("Vore Belly", "Trash Bag") //Dont show option for borg belly if the user isnt even a borg. QOL!
-		if(isrobot(user))
-			vac_options = list("Vore Belly", "Borg Belly", "Trash Bag")
+		var/list/vac_options = user.vac_output_choices()
 		open_request(src, /datum/prompt/choice, PROC_REF(output_chosen), answerer = user, title = "Vac Settings", question = "Set your [suckverb] attachment's connection port", choices = vac_options, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 		return
 	vac_power = TYPE_TABLE_GET(src, vac_attachment_settings)[set_input]
@@ -81,26 +79,20 @@ CAPABILITIES(/obj/item/vac_attachment)
 	var/mob/user = A.request.answerer
 	switch(A.answer.value)
 		if("Borg Belly")
-			if(istype(user, /mob/living/silicon/robot))
-				var/mob/living/silicon/robot/R = user
-				var/obj/item/robot_module/M = R.module
-				for(var/obj/item/dogborg/sleeper/S in M.modules)
-					if(istype(S))
-						rel_set(src, nameof(output_dest), S)
-						return
+			var/obj/item/dogborg/sleeper/S = user.vac_borg_output()
+			if(S)
+				rel_set(src, nameof(output_dest), S)
+				return
 			to_chat(user, span_warning("Borg belly not found."))
 		if("Trash Bag")
-			if(istype(user, /mob/living/silicon/robot))
-				var/mob/living/silicon/robot/R = user
-				var/obj/item/robot_module/M = R.module
-				for(var/obj/item/storage/bag/trash/T in M.modules)
-					if(istype(T))
-						rel_set(src, nameof(output_dest), T)
-						return
-			for(var/obj/item/storage/bag/trash/T in contents_of(user))
-				if(istype(T))
-					rel_set(src, nameof(output_dest), T)
-					return
+			var/obj/item/storage/bag/trash/T = user.vac_module_trash_output()
+			if(T)
+				rel_set(src, nameof(output_dest), T)
+				return
+			T = user.vac_trash_output()
+			if(T)
+				rel_set(src, nameof(output_dest), T)
+				return
 			to_chat(user, span_warning("Trash bag not found."))
 		if("Vore Belly")
 			if(vore_selected_of(user))
@@ -436,3 +428,31 @@ TYPE_TABLE(/obj/item/vac_attachment/scoop, vac_attachment_settings, list( \
 	expire(effect_time)
 
 // The swoopie owns its built-in attachment through Vac; vac_owner points back.
+
+/// The attachment asks its wearer for the connection ports that wearer provides.
+TYPE_TABLE_DECLARE(/mob, vac_output_ports, list("Vore Belly", "Trash Bag"))
+TYPE_TABLE(/mob/living/silicon/robot, vac_output_ports, list("Vore Belly", "Borg Belly", "Trash Bag"))
+
+/mob/proc/vac_output_choices()
+	return TYPE_TABLE_GET(src, vac_output_ports)
+
+/mob/proc/vac_borg_output()
+	return null
+
+/mob/living/silicon/robot/vac_borg_output()
+	for(var/obj/item/dogborg/sleeper/S in module.modules)
+		return S
+	return null
+
+/mob/proc/vac_trash_output()
+	for(var/obj/item/storage/bag/trash/T in contents_of(src))
+		return T
+	return null
+
+/mob/proc/vac_module_trash_output()
+	return null
+
+/mob/living/silicon/robot/vac_module_trash_output()
+	for(var/obj/item/storage/bag/trash/T in module.modules)
+		return T
+	return null

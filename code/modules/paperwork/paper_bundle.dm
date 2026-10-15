@@ -153,7 +153,7 @@ CAPABILITIES(/obj/item/paper_bundle)
 		if(istype(W, /obj/item/paper))
 			var/obj/item/paper/P = W
 			data["page_kind"] = "paper"
-			var/info = (ishuman(user) || isobserver(user) || issilicon(user)) ? P.info : stars(P.info)
+			var/info = user ? user.written_text_view(P.info) : stars(P.info)
 			data["page_info"] = "[info][P.stamps]"
 		else if(istype(W, /obj/item/photo))
 			var/obj/item/photo/P = W

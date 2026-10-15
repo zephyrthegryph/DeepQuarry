@@ -68,25 +68,7 @@ CAPABILITIES(/obj/item/stack/material/supermatter)
 	if(!istype(M))
 		return
 
-	var/burn_user = TRUE
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = user
-		var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
-		if(istype(G) && ((G.flags & THICKMATERIAL && prob(70)) || istype(G, /obj/item/clothing/gloves/gauntlets)))
-			burn_user = FALSE
-
-		if(burn_user)
-			act_message(src, H, others = span_danger("%U% flashes as it scorches %T%'s hands!"))
-			H.injure(INJURY_BURN, amount / 2 + 5, BP_R_HAND, src)
-			H.injure(INJURY_BURN, amount / 2 + 5, BP_L_HAND, src)
-			H.drop_from_inventory(src, get_turf(H))
-			return
-
-	if(isrobot(user))
-		burn_user = FALSE
-
-	if(burn_user)
-		M.injure(INJURY_BURN, amount, null, src)
+	M.receive_supermatter_contact(src)
 
 /// An incredibly hard to manufacture material, SM chunks are unstable by their 'stabilized' nature: a blast can set the stack off.
 /obj/item/stack/material/supermatter/proc/supermatter_blast_detonate(datum/act/hit/explosion/A)
