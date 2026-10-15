@@ -129,6 +129,12 @@ CAPABILITIES(/turf/simulated/shuttle/wall/alien)
 	update_light()
 
 
+CAPABILITIES(/turf/simulated/shuttle/wall)
+	derives(nameof(icon_state), PROC_REF(initial_shuttle_wall_state))
+
+/turf/simulated/shuttle/wall/proc/initial_shuttle_wall_state(target)
+	return join_group ? icon_state : base_state
+
 /turf/simulated/shuttle/wall/Initialize(mapload)
 	. = ..()
 
@@ -137,8 +143,6 @@ CAPABILITIES(/turf/simulated/shuttle/wall/alien)
 
 	if(join_group)
 		auto_join()
-	else
-		icon_state = base_state
 
 	if(takes_underlays)
 		underlay_update()

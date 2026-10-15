@@ -29,10 +29,10 @@
 /obj/structure/gargoyle/var/mob/living/carbon/human/WR_gargoyle
 
 CAPABILITIES(/obj/structure/gargoyle)
+	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	ref_one(nameof(WR_gargoyle))
-	setup(PROC_REF(petrify_human))
 	every(1 SECOND, then(PROC_REF(gargoyle_step)), when = nameof(WR_gargoyle))
-	param(nameof(petrified), pos = 1, keep = FALSE)
+	param(nameof(petrified), pos = 1, apply = PROC_REF(petrify_human), keep = FALSE)
 	param(nameof(ident_ovr), pos = 2)
 	param(nameof(mat_ovr), pos = 3)
 	param(nameof(adj_ovr), pos = 4)
@@ -51,9 +51,8 @@ CAPABILITIES(/obj/structure/gargoyle)
 /obj/structure/gargoyle/var/tmp/tint_ovr
 /obj/structure/gargoyle/var/tmp/discard_clothes = FALSE
 
-/// A gargoyle statue takes in the human it petrifies, with their look, tint and state (setup() of its CAPABILITIES block).
-/obj/structure/gargoyle/proc/petrify_human()
-	var/mob/living/carbon/human/H = petrified
+/// Applying the constructor subject petrifies it before that transient parameter is dropped.
+/obj/structure/gargoyle/proc/petrify_human(mob/living/carbon/human/H)
 	if(isspace(loc) || isopenspace(loc))
 		set_anchored(FALSE)
 	if(!istype(H) || !isturf(H.loc))
@@ -157,7 +156,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	H.set_canmove(0)
 
 // the petrified gargoyle reverts, or crumbles.
-/obj/structure/gargoyle/on_destroy(force)
+/obj/structure/gargoyle/ending_consequences(cause, datum/by)
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
 	if(!gargoyle)
 		..()

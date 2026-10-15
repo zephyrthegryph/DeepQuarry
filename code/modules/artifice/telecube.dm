@@ -49,25 +49,19 @@
 
 	var/omniteleport = FALSE // Will this teleport anchored things too?
 
-// ALLOW(init/INSTANCE_STATE): rolls its colours and makes its paired cube where it is placed
-/obj/item/telecube/Initialize(mapload)
-	. = ..()
-
+/// One declared post-chain setup preserves the correlated world-RNG rolls and peer constructor order.
+/obj/item/telecube/proc/create_initial_pair()
 	set_on_floor(isturf(loc))
-
 	if(randomize_colors)
-		set_glow_color(rgb(rand(0, 255),rand(0, 255),rand(0, 255)))
-		color = rgb(rand(30, 255),rand(30, 255),rand(30, 255))
-
-	if(start_paired)
-		rel_set(src, nameof(mate), new /obj/item/telecube(src.loc))
-		if(mirror_colors)
-			mate().set_glow_color(color)
-			mate().color = glow_color
-		else
-			mate().set_glow_color(glow_color)
-			mate().color = color
-		mate().pair_cube(src)
+		set_glow_color(rgb(rand(0, 255), rand(0, 255), rand(0, 255)))
+		set_color(rgb(rand(30, 255), rand(30, 255), rand(30, 255)))
+	if(!start_paired)
+		return null
+	var/obj/item/telecube/peer = new /obj/item/telecube(loc)
+	rel_set(src, nameof(mate), peer)
+	peer.set_glow_color(mirror_colors ? color : glow_color)
+	peer.set_color(mirror_colors ? glow_color : color)
+	peer.pair_cube(src)
 
 
 /obj/item/telecube/draw(datum/look/look)
@@ -79,7 +73,7 @@
 	set_on_floor(isturf(loc))
 
 // its mate collapses into an explosion.
-/obj/item/telecube/on_destroy(force)
+/obj/item/telecube/ending_consequences(cause, datum/by)
 	if(mate())
 		var/turf/T = get_turf(mate())
 		mate().visible_message(span_critical("\The [mate()] collapses into itself!"))
@@ -221,7 +215,9 @@
 	. = ..()
 
 CAPABILITIES(/obj/item/telecube)
+	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	ref_one(nameof(mate), /obj/item/telecube)
+	setup(PROC_REF(create_initial_pair))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 

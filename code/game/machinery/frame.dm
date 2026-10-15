@@ -313,6 +313,7 @@ GLOBAL_LIST(construction_frame_floor)
 	var/list/req_component_names = null
 
 CAPABILITIES(/obj/structure/frame)
+	setup(PROC_REF(prepare_placed_frame))
 	rotatable()
 	construction(native_frame_graph())
 	owns_many(nameof(components))
@@ -366,9 +367,8 @@ CAPABILITIES(/obj/structure/frame)
 /obj/structure/frame/var/building = FALSE
 /obj/structure/frame/var/datum/frame/frame_types/type_at_make
 
-// ALLOW(init/INSTANCE_STATE): a placed frame takes its frame type's offsets and circuit, and a machine or computer frame is dense
-/obj/structure/frame/Initialize(mapload)
-	. = ..()
+/// Placed-frame construction is one ordered job: copy, offsets, circuit, then graph seed.
+/obj/structure/frame/proc/prepare_placed_frame()
 	if(building)
 		rel_set(src, nameof(frame_type), frame_type_copy(type_at_make))
 		set_state(FRAME_PLACED)

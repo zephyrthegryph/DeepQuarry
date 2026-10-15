@@ -7,6 +7,7 @@
 	name 		= "Vix"
 
 CAPABILITIES(/obj/item/paicard/flipper)
+	ref_one(nameof(pai), /mob/living/silicon/pai, starts = PROC_REF(start_flipper_pai), early = TRUE)
 	derives(nameof(desc), PROC_REF(named_desc))
 
 /// Its blurb names it (derives(), at init).
@@ -14,10 +15,13 @@ CAPABILITIES(/obj/item/paicard/flipper)
 	return "The [name] is a versatile security device designed to protect and empower users in a variety of contexts. With features such as wireless hacking, radio analysis, signal jamming, and physical lock picking, the [name] is the ultimate tool for security professionals, hobbyists, and anyone seeking to better understand and defend against modern threats. Whether you're investigating a security breach, testing your own defenses, or simply curious about the workings of wireless technology, the [name] has you covered."
 
 /obj/item/paicard/flipper/Initialize(mapload)
-	emag_target(src)
-	rel_set(src, nameof(pai), new /mob/living/silicon/pai/flipper(src))
 	. = ..()
 	setEmotion(4)
+
+/// Preserve the original pre-passenger emag attempt (which declines while pai is null).
+/obj/item/paicard/flipper/proc/start_flipper_pai(current, mapload)
+	emag_target(src)
+	return /mob/living/silicon/pai/flipper
 
 // Mob
 /mob/living/silicon/pai/flipper

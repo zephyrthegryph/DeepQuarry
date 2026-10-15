@@ -377,13 +377,17 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	T.pool_reset_vars = decl.pool_reset
 	T.forward_vars = decl.forward
 	T.keyed_key = decl.keyed_key
+	var/list/reference_starts
+	for(var/datum/entry/E as anything in table_start_entries(table_of(D)))
+		if(E.kind == ENTRY_REF_ONE && !isnull(E.args["starts"]))
+			LAZYOR(reference_starts, E.args["var"])
 	for(var/var_name in decl.starts)
 		if(!(var_name in D.vars))
 			OWN_REPORT("[D.type] declares a starting occupant for var '[var_name]', which it doesn't have")
 			continue
 		var/list/start_entry = T.entries[var_name]
-		if(start_entry && start_entry[OWNE_KIND] != OWNK_OWN)
-			OWN_REPORT("[D.type].[var_name]: a starting occupant is owned, but the var is declared [own_kind_name(start_entry[OWNE_KIND])]")
+		if(start_entry && start_entry[OWNE_KIND] != OWNK_OWN && !(start_entry[OWNE_KIND] == OWNK_REL && var_name in reference_starts))
+			OWN_REPORT("[D.type].[var_name]: a starting occupant needs ownership or a reference, but the var is declared [own_kind_name(start_entry[OWNE_KIND])]")
 			continue
 		if(decl.starts[var_name] == STARTS_NONE)
 			continue // a subtype cancelled the occupant an ancestor declared
@@ -392,7 +396,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		LAZYSET(T.lost_handlers, var_name, legacy_lost[var_name])
 	// owns_*(starts_set =, on_lost =, starts_after =) of the type's CAPABILITIES lists.
 	var/list/start_after = null
-	for(var/datum/entry/E as anything in table_owns_entries(table_of(D)))
+	for(var/datum/entry/E as anything in table_start_entries(table_of(D)))
 		if(E.args["early"])
 			LAZYSET(T.early_vars, E.args["var"], TRUE)
 		if(E.args["starts_set"])

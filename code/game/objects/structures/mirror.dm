@@ -14,6 +14,8 @@
 
 
 CAPABILITIES(/obj/structure/mirror)
+	derives(nameof(glass), PROC_REF(initial_mirror_glass))
+	derives(nameof(icon_state), PROC_REF(initial_mirror_state))
 	owns_one(nameof(M), /datum/tgui_module/appearance_changer/mirror, starts = /datum/tgui_module/appearance_changer/mirror, starts_args = list(null))
 	op("remove_frame", tool(TOOL_WRENCH), label("Unfasten the frame"), when(cond_not(nameof(glass))), starts(PROC_REF(frame_started)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done)))
 	op("use_wrench", tool(TOOL_WRENCH), when(nameof(glass)), wait(0), then(PROC_REF(wrench_used)))
@@ -28,13 +30,11 @@ CAPABILITIES(/obj/structure/mirror)
 /// A mirror built on a wall (its constructor param).
 /obj/structure/mirror/var/building = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a mirror makes its appearance changer, and a built one is an empty frame on its wall
-/obj/structure/mirror/Initialize(mapload)
-	. = ..()
-	if(building)
-		set_glass(0)
-		icon_state = "mirror_frame"
-
+/// Constructor-built mirrors are empty frames; mapped glass and broken variants keep their defaults.
+/obj/structure/mirror/proc/initial_mirror_glass(target)
+	return building ? FALSE : glass
+/obj/structure/mirror/proc/initial_mirror_state(target)
+	return building ? "mirror_frame" : icon_state
 
 /// A hand, or a silicon beside it: the appearance changer, while the glass is whole.
 /obj/structure/mirror/proc/mirror_open_ui(datum/act/op/A)

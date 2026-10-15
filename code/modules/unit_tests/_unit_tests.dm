@@ -188,6 +188,7 @@
 #include "dq_init_codemod_tests.dm"
 #include "dq_leftovers_behaviour.dm"
 #include "dq_decl_starts_tests.dm"
+#include "dq_decl_lifecycle_tests.dm"
 #include "dq_lifecycle_forms_tests.dm"
 #include "dq_lifeform_adjacency_tests.dm"
 #include "dq_lifeform_contents_tests.dm"
@@ -1314,10 +1315,14 @@
 #include "gameplay\hands_and_menus.dm"
 #include "gameplay\machines.dm"
 #include "dq_tanning_rack_wetness_tests.dm"
+#include "dq_decl_cleanup_tests.dm"
+#include "dq_decl_remaining_starts_tests.dm"
+#include "dq_decl_reference_starts_tests.dm"
+#include "dq_decl_archaeological_find_tests.dm"
+#include "dq_decl_landmark_registration_tests.dm"
+#include "dq_decl_visual_state_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
 //#undef TEST_FOCUS - This define is used by vscode unit test extension to pick specific unit tests to run and appended later so needs to be used out of scope here
-#include "dq_decl_cleanup_tests.dm"
-#include "dq_decl_remaining_starts_tests.dm"
 #endif

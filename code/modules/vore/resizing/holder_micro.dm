@@ -9,21 +9,6 @@
 	item_icons = null // No in-hand sprites (for now, anyway, we could totally add some)
 	pixel_y = 0		  // Override value from parent.
 
-/obj/item/holder/micro/Initialize(mapload)
-	. = ..()
-	var/mob/living/carbon/human/H = held_mob
-	if(istype(H) && H.species.is_micro_carry(H))
-		item_icons = list(
-					slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
-					slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
-					slot_back_str = 'icons/mob/toy_worn.dmi',
-					slot_head_str = 'icons/mob/toy_worn.dmi')
-
-		// Leaving the following two set makes the sprite not visible
-		icon_override = null
-		icon_state = "teshariplushie_white"
-		item_state = "teshariplushie_white"
-
 /obj/item/holder/micro/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null)
 	var/mob/living/carbon/human/H = held_mob
 	// Only proceed if dealing with a tesh (or something shaped like a tesh)
@@ -98,7 +83,18 @@ CAPABILITIES(/obj/item/holder/micro)
 		E.hatch(held)
 		return
 
+/// The held mob is already moved in by its constructor param; configure its complete worn presentation together.
 /obj/item/holder/micro/proc/configure_micro_sheets()
 	var/mob/living/carbon/human/H = held_mob
 	if(istype(H) && H.species.is_micro_carry(H))
+		item_icons = list(
+					slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
+					slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
+					slot_back_str = 'icons/mob/toy_worn.dmi',
+					slot_head_str = 'icons/mob/toy_worn.dmi')
+
+		// Leaving the following two set makes the sprite not visible
+		icon_override = null
+		set_icon_state("teshariplushie_white")
+		set_item_state("teshariplushie_white")
 		set_sprite_sheets(null)

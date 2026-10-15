@@ -40,6 +40,7 @@
 	butcherable = FALSE
 
 CAPABILITIES(/obj/item/organ/internal/mmi_holder)
+	setup(PROC_REF(install_initial_mmi), with_params = TRUE)
 	after_init(0, then(PROC_REF(mmi_after_init)))
 	owns_one(nameof(stored_mmi), /obj/item/mmi)
 	ref_one(nameof(installed_mmi), /obj/item/mmi)
@@ -49,9 +50,8 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 /// The MMI the holder is installed with (its constructor param, dropped after init).
 /obj/item/organ/internal/mmi_holder/var/tmp/obj/item/mmi/installed_mmi
 
-// ALLOW(init/INSTANCE_STATE): a body's MMI holder holds the MMI it is installed with, or a new brain
-/obj/item/organ/internal/mmi_holder/Initialize(mapload)
-	. = ..()
+/// Parent organ attachment must settle before the constructor-only MMI is adopted.
+/obj/item/organ/internal/mmi_holder/proc/install_initial_mmi()
 	if(!ishuman(owner) || ismannequin(owner))
 		return
 	if(installed_mmi)

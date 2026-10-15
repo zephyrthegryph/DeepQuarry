@@ -38,6 +38,16 @@
 		result = INITIALIZE_HINT_NORMAL
 	else
 		result = A.Initialize(arglist(arguments))
+	// Opt-in constructor completion needs the settled parent state and transient params.
+	// Never run it for an Initialize/keeps_if rejection; the ordinary setup phase stays below.
+	if(setup_pending?[A] == SETUP_PENDING_WITH_PARAMS && result == INITIALIZE_HINT_NORMAL && !init_discard_pending?[A])
+		try
+			setup_run(A, with_params = TRUE)
+		catch(var/exception/e)
+			if(param_drop_pending?[A])
+				params_drop(A)
+			setup_pending -= A
+			throw e
 	// param(keep = FALSE) values were for Initialize() alone (code/engine/lifeforms/params.dm)
 	if(param_drop_pending?[A])
 		params_drop(A)

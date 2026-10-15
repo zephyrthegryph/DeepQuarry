@@ -108,3 +108,7 @@
 #define NEAR_AROUND "around"
 /// What the holder is inside (its loc).
 #define NEAR_LOC "loc"
+
+/// Constructor setup phase recorded by setup_note().
+#define SETUP_PENDING_REGULAR 1
+#define SETUP_PENDING_WITH_PARAMS 2

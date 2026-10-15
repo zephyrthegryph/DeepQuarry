@@ -4894,3 +4894,28 @@ Affected requirement-pin classes:
 * **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
+
+
+## Declarative lifecycle burn-down (2026-10-15)
+
+* Petrification statues now release their own mute and injury-stasis consequences before
+  the destruction transaction spills the occupant. Previously `on_destroy()` ran after
+  contents resolution; its `dump_contents()` saw an empty statue, leaving those effects
+  on the released human. The old-code capture explicitly records that defect; the native
+  ending regression asserts the repaired state. Ordinary occupant survival and placement
+  remain unchanged.
+* Gargoyle construction applies the transient human argument when the parameter is bound.
+  The former ordinary setup read it after `keep = FALSE` had dropped it, so the real
+  constructor could not petrify its supplied subject. The regression uses the actual
+  constructor rather than invoking the setup callback by hand.
+* Lattice and NT-pod fixed icon states are type defaults. Their constructed appearance is
+  unchanged; editor previews now show the same fixed state without requiring Initialize.
+* Reflector overlays use native draw composition over the actual displayed angle instead
+  of retaining a mutable image. Locked reflectors retain their previous visible angle.
+* PDA pen, ID and notification layers use native draw dependencies; moving a pen through
+  the real containment ledger now invalidates its layer. Privacy switches likewise redraw
+  when the protected area's flags change outside the switch action.
+
+These entries do not authorize unrelated snapshot re-records. Correlated archaeological,
+telecube and hotspot construction jobs retain their world-RNG and child-constructor order.
+The flipper's pre-passenger emag attempt still declines and does not subvert the card.

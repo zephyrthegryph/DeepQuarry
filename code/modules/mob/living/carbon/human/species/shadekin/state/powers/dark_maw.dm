@@ -82,6 +82,7 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 	ref_one(nameof(owner), /mob/living)
 	ref_one(nameof(target), /obj/belly)
 	ref_one(nameof(maw_user), /mob)
+	setup(PROC_REF(place_dark_maw), with_params = TRUE)
 	setup(PROC_REF(aim_at_owner_belly))
 	every(2 SECONDS, then(PROC_REF(dark_maw_step)), when = nameof(armed))
 	param(nameof(maw_user), pos = 1, keep = FALSE)
@@ -91,12 +92,12 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 /obj/effect/abstract/dark_maw/var/tmp/mob/maw_user
 /obj/effect/abstract/dark_maw/var/trigger_now = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a maw binds to its shadekin, fizzles in light, snaps shut on whoever stands on it, or arms itself
-/obj/effect/abstract/dark_maw/Initialize(mapload)
+/// One constructor-completion job preserves binding, light refusal and the immediate target decision.
+/obj/effect/abstract/dark_maw/proc/place_dark_maw()
 	var/mob/user = maw_user
-	. = ..()
 	if(!isturf(loc))
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	var/datum/shadekin/SK
 	if(user && isliving(user))
 		rel_set(src, nameof(owner), user)
@@ -107,8 +108,9 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 	var/turf/T = loc
 	if(T.get_lumcount() >= 0.5)
 		visible_message(span_notice("A set of shadowy lines flickers away in the light."))
-		icon_state = "dark_maw_used"
-		return INITIALIZE_HINT_QDEL
+		set_icon_state("dark_maw_used")
+		spent(src)
+		return
 
 	var/mob/living/target_user = null
 	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
@@ -120,7 +122,7 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 		triggered_by(target_user, 1)
 		// to trigger rebuild
 	else if(trigger_now)
-		icon_state = "dark_maw_used"
+		set_icon_state("dark_maw_used")
 		flick("dark_maw_tr", src)
 		visible_message(span_warning("A set of crystals suddenly springs from the ground and shadowy tendrils wrap around nothing before vanishing."))
 		expire(3 SECONDS)

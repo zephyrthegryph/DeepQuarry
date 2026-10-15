@@ -114,6 +114,18 @@
 	qdel(S)
 	TEST_ASSERT(!QDELETED(H), "statue destruction preserves its subject")
 	TEST_ASSERT_EQUAL(H.loc, T, "statue destruction releases its subject")
+// Legacy destruction spills the subject before its late callback can release
+// mute/stasis. This separate regression covers the native ending-phase repair.
+
+/datum/unit_test/dq_decl_cleanup_destroy/statue_releases_stasis
+/datum/unit_test/dq_decl_cleanup_destroy/statue_releases_stasis/Run()
+	scope_fixture()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/structure/closet/statue/S = allocate(/obj/structure/closet/statue, T, H)
+	TEST_ASSERT(H.sdisabilities & MUTE, "the real constructor installs petrification mute")
+	TEST_ASSERT(act_wanted(H, /datum/act/injure), "the real constructor installs injury stasis")
+	qdel(S)
 	TEST_ASSERT(!(H.sdisabilities & MUTE), "statue destruction removes petrification mute")
 	TEST_ASSERT(!act_wanted(H, /datum/act/injure), "statue destruction removes actual injury stasis")
 
@@ -200,3 +212,21 @@
 	TEST_ASSERT(phoron_shards > 0, "real crystal destruction produces phoron shards")
 	TEST_ASSERT(shards > phoron_shards, "real crystal destruction also produces ordinary shards")
 
+
+/obj/dq_decl_cleanup_micro_holder/veto/lifecycle_keep(force)
+	return !force
+
+/datum/unit_test/dq_decl_cleanup_destroy/force_and_veto
+/datum/unit_test/dq_decl_cleanup_destroy/force_and_veto/Run()
+	scope_fixture()
+	var/turf/T = test_floor()
+	var/obj/dq_decl_cleanup_micro_holder/O = allocate(/obj/dq_decl_cleanup_micro_holder/veto, T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.forceMove(O)
+	qdel(O)
+	TEST_ASSERT(!QDELETED(O), "the real lifecycle veto still preserves the holder")
+	TEST_ASSERT_EQUAL(H.loc, O, "a vetoed ending cannot release occupants")
+	qdel(O, TRUE)
+	TEST_ASSERT(QDELETED(O), "forced deletion bypasses the native keep veto")
+	TEST_ASSERT_EQUAL(H.loc, T, "the forced ending runs the same declared occupant release")
+	TEST_ASSERT(!QDELETED(H), "forced release preserves the occupant")

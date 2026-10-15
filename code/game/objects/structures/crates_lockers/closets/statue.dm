@@ -85,7 +85,7 @@
 		M.reset_perspective() // Fixes a blackscreen flicker
 
 // the statue's mob is released unmuted and unregistered.
-/obj/structure/closet/statue/on_destroy(force)
+/obj/structure/closet/statue/ending_consequences(cause, datum/by)
 	// Release the mob properly (unmuted, unregistered) before the base
 	// Destroy() spills the interior.
 	dump_contents()
@@ -121,6 +121,7 @@
 
 // A statue is a closet that never opens: nothing goes into it, the hand does nothing, and anything held strikes it (it takes weapon hits instead of storing items).
 CAPABILITIES(/obj/structure/closet/statue)
+	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	when(nameof(release_delay), after_init(nameof(release_delay), then(PROC_REF(release))))
 	configure(blast_contents(shield = 0)) // stone holds nothing back from the one petrified inside
 	without("door")

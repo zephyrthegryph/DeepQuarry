@@ -46,6 +46,8 @@
 				var/by = E.args["by"]
 				var/on_deleted = E.args["on_other_deleted"] == OTHER_DELETE_ME ? DELETE_ME : CLEAR
 				. += _rel_decl(E.args["var"], E.kind == ENTRY_REF_MANY, E.args["type"], null, on_deleted, E.args["on_unlink"], by, by ? E.args["type"] : null, null, FALSE, FALSE, FALSE)
+				if(E.kind == ENTRY_REF_ONE && !isnull(E.args["starts"]))
+					. += _own_entry(E.args["var"], null, FALSE, FALSE, FALSE, relation_starts(E))
 				if(by)
 					keyed_target_register(E.args["type"], E.args["target_key"] || by)
 			if(ENTRY_OWNS_ONE, ENTRY_OWNS_MANY)
@@ -67,6 +69,15 @@
 			found += E
 	T.owns_scan = found
 	return found
+
+/// Starting-reference metadata stays separate from ownership: no owner stamp or policy
+/// is introduced, only the existing creation/resolution phase and dependency ordering.
+/proc/table_start_entries(datum/type_table/T)
+	. = table_owns_entries(T).Copy()
+	for(var/datum/centry/C as anything in T.items)
+		var/datum/entry/E = C.item
+		if(istype(E) && E.kind == ENTRY_REF_ONE && !isnull(E.args["starts"]))
+			. += E
 
 /// table_hook_flags(T), kept on the table once the stat definitions exist: before that stat_table_needs_init() answers from an unbuilt
 /// GLOB.stat_defs, so an early answer is recomputed each time and never kept.

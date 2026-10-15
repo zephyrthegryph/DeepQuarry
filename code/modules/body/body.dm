@@ -22,12 +22,15 @@
 	/// mobs, bots). Humanoids resolve biology per organ instead.
 	var/biology = BIOLOGY_ORGANIC
 
-/mob/living/Initialize(mapload)
-	// A human builds its body in set_species(), before this, so its organs
-	// have part slots to attach into.
-	if(!body)
-		rel_set(src, nameof(body), new body_type(src))
-	return ..()
+/// Phase-zero starts keep non-human bodies available to parent initialization.
+/// Humans create their species-selected body before their living parent runs;
+/// do not eagerly create a temporary simple body ahead of set_species().
+/mob/living/proc/initial_body(current, mapload)
+	if(current)
+		return current
+	if(ishuman(src))
+		return null
+	return body_type
 
 
 /// Systemic biology (BIOLOGY_* flags). Non-living mobs have no body: organic.

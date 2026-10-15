@@ -579,7 +579,7 @@
 /obj/structure/prop/machine/nt_pod
 	icon = 'icons/obj/props/decor.dmi'
 	icon = 'icons/obj/props/decor32x64.dmi'
-	icon_state = "nt_pod_mappreview"
+	icon_state = "nt_pod"
 	bound_height = 64
 
 	var/obj/effect/overlay/vis/outside
@@ -592,9 +592,6 @@
 
 /obj/structure/prop/machine/nt_pod/Initialize(mapload)
 	. = ..()
-	// Our non-map-preview state
-	icon_state = "nt_pod"
-
 	// Alpha mask to make sure things don't sneak out
 	var/obj/effect/overlay/vis/mask = new
 	mask.set_icon(icon)
