@@ -15,12 +15,11 @@ use std::fmt::Write;
 use std::io;
 use xxhash_rust::xxh3::xxh3_64;
 
-/// Which table/list orders are observable at runtime. This is evidence, not the gate: a run counts an order
-/// difference as a difference only with `strict_order` (`--strict-order`). Without it, order differences are
-/// reported under `ordering` and do not make two worlds non-equivalent. The user decided on 2026-10-14 that
-/// semantic equivalence, not byte identity, is the bar for the native compiler; `typesof()` and `vars` iteration
-/// order are the runtime-visible cases, recorded here so the gate can be tightened for code that depends on them.
-/// Evidence for each entry is recorded in EQUIVALENCE.md.
+/// Which table/list orders are observable at runtime. `true` entries (`typesof()` and `vars` iteration order)
+/// always gate: a difference there is a difference. `false` entries are invisible to the program and are only
+/// reported under `ordering`, unless `strict_order` (`--strict-order`) asks for them too. The user decided on
+/// 2026-10-14 that semantic equivalence, not byte identity, is the bar. Evidence for each entry is recorded in
+/// EQUIVALENCE.md.
 pub const ORDER_POLICY: &[(&str, bool)] = &[
     // typesof(/datum) lists types in class-table order (DD probe: permuting
     // classes reorders the output).
@@ -535,8 +534,8 @@ pub struct Report {
     /// Per category, abstracted first-differing instruction pairs
     /// ("GetVar .F vs GetVar src->.F"), for triage.
     pub signatures: BTreeMap<String, BTreeMap<String, usize>>,
-    /// Elements whose position differs, per table. Not counted in `total` unless `strict_order` is set; the
-    /// observable ones are listed in `ORDER_POLICY`.
+    /// Elements whose position differs in tables that are invisible to the program (`ORDER_POLICY` false). Not
+    /// counted in `total` unless `strict_order` is set.
     pub ordering: BTreeMap<String, usize>,
     max_examples: usize,
 }
@@ -601,12 +600,7 @@ impl Report {
             let _ = writeln!(out, "
 ordering (not counted; --strict-order counts it):");
             for (name, moved) in &self.ordering {
-                let observable = if order_is_semantic(name) {
-                    " (observable through typesof()/vars)"
-                } else {
-                    ""
-                };
-                let _ = writeln!(out, "  {moved:>9}  {name}{observable}");
+                let _ = writeln!(out, "  {moved:>9}  {name}");
             }
         }
         for n in &self.notes {
@@ -1089,7 +1083,7 @@ pub fn compare_canon(a: &Canon<'_>, b: &Canon<'_>, opts: &Options) -> Report {
         if moved.is_empty() {
             continue;
         }
-        if opts.strict_order {
+        if opts.strict_order || order_is_semantic(name) {
             for (element, detail) in moved {
                 report.add(format!("order.{name}"), element, detail);
             }

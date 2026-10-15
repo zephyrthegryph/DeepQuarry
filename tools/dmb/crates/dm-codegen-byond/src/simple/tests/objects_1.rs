@@ -16,7 +16,14 @@ fn nameof_fields_and_variables_match_native_without_evaluating_receivers() {
         .find(|item| item.header == "proc/reference_names()")
         .unwrap()
         .children;
-    let compiled = compile_simple_proc(body).unwrap();
+    // `vv_VAS` is read as a bare name, so the owner's variables must be bound: a bare name resolves against the
+    // current type's fields (the body is lowered with the type context the compiler supplies in production).
+    let bindings = LowerBindings {
+        current_type_path: Some("/datum/nameof_member".into()),
+        fields: ["name", "vv_VAS"].into_iter().map(String::from).collect(),
+        ..LowerBindings::default()
+    };
+    let compiled = compile_simple_proc_with_bindings(body, &bindings).unwrap();
     let mut ledger = Ledger::default();
     for key in &compiled.strings {
         let id = native

@@ -11,10 +11,12 @@ fn folded_nameof_preserves_typed_source_errors_and_opaque_proofs() {
     }
     let frontend = frontend("/datum/receiver\n    var/known = 1\n");
     for source in [
-        "nameof(/datum/actually_absent)",
+        // A bare source tree can prove a type absent only below a type the source declares; an absent child of a built-in
+        // type needs the engine host (EngineResolverHost) that production always wraps around it.
+        "nameof(/datum/receiver/actually_absent)",
         "nameof(/datum/receiver/proc/actually_absent)",
         "nameof(/datum/receiver::missing)",
-        "0 && nameof(/datum/actually_absent)",
+        "0 && nameof(/datum/receiver/actually_absent)",
     ] {
         let mut symbols = frontend.snapshot.tree.symbols().clone();
         let expression = expression(source, &mut symbols);
@@ -40,7 +42,7 @@ fn folded_nameof_preserves_typed_source_errors_and_opaque_proofs() {
         };
         let (evaluation, _) = evaluator
             .evaluate_prepared_write(&write, &expression)
-            .unwrap();
+            .unwrap_or_else(|error| panic!("{source}: {error}"));
         assert!(
             matches!(evaluation, Evaluation::InvalidNameof(_, _)),
             "{source}"
@@ -68,13 +70,22 @@ impl dm_preprocess::SourceProvider for Source<'_> {
 }
 
 fn frontend(source: &str) -> ColdFrontend {
+    // Type-hierarchy answers (and so type absence) need the captured engine hierarchy; production always seeds it.
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../fixtures/native_template.bin"),
+        1,
+    )
+    .unwrap()
+    .with_bootstrap_catalog()
+    .unwrap();
+    let seed = engine.frontend_seed();
     dm_tree::frontend::build_with_config(
         Path::new("probe.dme"),
         &Source(source),
         &Default::default(),
         dm_tree::frontend::FrontendConfig {
             workers: 1,
-            engine: None,
+            engine: Some(&seed),
             observer: None,
         },
     )

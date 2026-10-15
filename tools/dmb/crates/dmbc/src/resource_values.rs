@@ -1,6 +1,7 @@
 //! Resource scalar binding uses the same captured search domain as codegen.
 //! Dense IDs are supplied exclusively by the frozen linker inventory.
 use crate::class_projection::ProjectionError;
+use std::sync::Arc;
 use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver, SymbolId};
 
 pub fn key(
@@ -62,8 +63,16 @@ pub struct PreparedResourceValues {
     types: crate::type_values::PreparedTypeValues,
     resources: std::collections::BTreeMap<SymbolId, Result<dm_link::Key, ProjectionError>>,
     indices: std::collections::BTreeMap<SymbolId, Result<u32, ProjectionError>>,
+    project_name: Option<Arc<[u8]>>,
 }
 impl PreparedResourceValues {
+    /// The project file stem, used as the default `world.name`.
+    pub fn with_project_name(mut self, project: &std::path::Path) -> Self {
+        self.project_name = project
+            .file_stem()
+            .map(|stem| Arc::from(stem.to_string_lossy().as_bytes()));
+        self
+    }
     pub fn capture(
         policy: &dyn crate::class_projection::TypeValuePolicy,
         domains: &crate::type_values::PreparedValueDomains,
@@ -78,10 +87,14 @@ impl PreparedResourceValues {
                 .resources()
                 .map(|path| (path, policy.resource_key(path)))
                 .collect(),
+            project_name: None,
         }
     }
 }
 impl crate::class_projection::TypeValuePolicy for PreparedResourceValues {
+    fn world_name_default(&self) -> Option<Arc<[u8]>> {
+        self.project_name.clone()
+    }
     fn mob_index(&self, path: SymbolId) -> Result<u32, ProjectionError> {
         crate::class_projection::TypeValuePolicy::mob_index(&self.types, path)
     }

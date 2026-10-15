@@ -65,7 +65,10 @@ fn selected_coordinates_are_body_relative_and_invalid_context_is_an_explicit_gap
 }
 #[test]
 fn property_and_call_facts_record_runtime_dispatch_without_receiver_type_guesses() {
-    let source = dm_syntax::parse("/proc/read(holder,value)\n    holder.foo = value\n    holder.method(value)\n    holder?.method(value)\n    call(holder,\"method\")(value)\n    return holder.foo\n");
+    // DreamMaker 516.1687 rejects `holder.method(value)`, `holder:method(value)` and `holder?.method(value)` on an
+    // untyped formal when no proc `method` exists ("holder.method: undefined proc"), so the only valid runtime
+    // dispatch on an untyped receiver is a property access and `call(holder, "method")`.
+    let source = dm_syntax::parse("/proc/read(holder,value)\n    holder.foo = value\n    call(holder,\"method\")(value)\n    return holder.foo\n");
     let body = dm_syntax::parse_body_items(&source.items[0].children);
     assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
     let inputs = crate::ProcedureInputs {
@@ -83,21 +86,13 @@ fn property_and_call_facts_record_runtime_dispatch_without_receiver_type_guesses
     .unwrap();
     assert_eq!(ordinary.procedure, captured.procedure);
     assert!(facts.references.iter().any(|reference| matches!(reference.meaning,M::RuntimeProperty{name,static_property:false,safe:false} if name==SymbolId::of("foo"))));
-    assert!(facts
-        .references
-        .iter()
-        .any(|reference| matches!(reference.meaning, M::DynamicProcedure { safe: false, .. })));
-    assert!(facts
-        .references
-        .iter()
-        .any(|reference| matches!(reference.meaning, M::DynamicProcedure { safe: true, .. })));
     assert!(facts.references.iter().any(|reference| matches!(reference.meaning,M::DynamicCall{dispatcher,target_count:2} if dispatcher==SymbolId::of("call"))));
     assert!(!facts.complete);
 }
 #[test]
 fn selected_local_and_argument_facts_preserve_emission_and_current_coordinates() {
     let source = dm_syntax::parse(
-        "/proc/read(x)\n    var/y = x\n    if(x)\n        var/x = y\n        y = x\n    return x\n",
+        "/proc/read(x)\n    var/y = x\n    if(x)\n        var/z = y\n        y = z\n    return x\n",
     );
     let body = dm_syntax::parse_body_items(&source.items[0].children);
     assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
@@ -116,10 +111,12 @@ fn selected_local_and_argument_facts_preserve_emission_and_current_coordinates()
     .unwrap();
     assert_eq!(ordinary.procedure, captured.procedure);
     assert!(!facts.complete);
+    // DreamMaker rejects a nested `var/x` that shadows the formal `x` ("x: duplicate definition"), so the
+    // local in this fixture is `y`.
     let x: Vec<_> = facts
         .references
         .iter()
-        .filter(|reference| reference.name == SymbolId::of("x"))
+        .filter(|reference| reference.name == SymbolId::of("x") || reference.name == SymbolId::of("y"))
         .collect();
     assert!(
         x.iter()

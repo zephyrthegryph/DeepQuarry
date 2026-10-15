@@ -131,7 +131,7 @@ fn failed_expression_uses_exact_old_initializer_occurrence() {
     let value = dm_syntax::parse_expression("world << \"message\"")
         .expr
         .unwrap();
-    let occurrence = Span::new(11, 11);
+    let occurrence = Span::new(11, 33);
     let old = match legacy(&value, occurrence, &symbols, procedure) {
         Ok(_) => panic!("expected old lowering failure"),
         Err(errors) => errors,

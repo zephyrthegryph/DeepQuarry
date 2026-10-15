@@ -74,15 +74,21 @@ fn callable_owner_certificate_declines_engine_fallback_and_qualifies_provider() 
     let mut positive =
         EngineResolverHost::new(Arc::new(Source(true)), constants.clone(), runtime.clone());
     positive.callable_absence = Some(Arc::new(HashSet::from([name])));
+    positive.domain_memo = Default::default();
     positive.callable_issuer = Some(11);
+    positive.domain_memo = Default::default();
     assert_eq!(positive.domain_version(domain), Some((7u128 << 64) | 11));
     positive.callable_issuer = Some(12);
+    positive.domain_memo = Default::default();
     assert_eq!(positive.domain_version(domain), Some((7u128 << 64) | 12));
     positive.callable_issuer = None;
+    positive.domain_memo = Default::default();
     assert_eq!(positive.domain_version(domain), None);
     let mut fallback = EngineResolverHost::new(Arc::new(Source(false)), constants, runtime);
     fallback.callable_absence = Some(Arc::new(HashSet::from([name])));
+    fallback.domain_memo = Default::default();
     fallback.callable_issuer = Some(11);
+    fallback.domain_memo = Default::default();
     assert_eq!(fallback.resolve(query), M::Missing);
     assert_eq!(fallback.domain_version(domain), None);
 }
@@ -142,6 +148,7 @@ fn variable_owner_certificate_requires_current_source_and_provider_issuer() {
         &frontend, &providers, &constants,
     );
     assert!(payload.names.contains(&name));
+    // The provider half is issuer * 4 + branch tag (variable_negative::qualified): issuer 11 is 44, 12 is 48.
     // This fixture still isolates wrapper issuer qualification with a synthetic
     // delegated domain, but its source-neutral payload uses the actual producer.
     host.variable_absence = Some(Arc::new(VariableAbsence {
@@ -150,16 +157,19 @@ fn variable_owner_certificate_requires_current_source_and_provider_issuer() {
         identity: 1,
         source: Arc::clone(&frontend.snapshot.tree),
     }));
+    host.domain_memo = Default::default();
     assert_eq!(
         host.domain_version(query.domain()),
-        Some((9u128 << 64) | 22)
+        Some((9u128 << 64) | 44)
     );
     Arc::make_mut(host.variable_absence.as_mut().unwrap()).issuer = Some(12);
+    host.domain_memo = Default::default();
     assert_eq!(
         host.domain_version(query.domain()),
-        Some((9u128 << 64) | 24)
+        Some((9u128 << 64) | 48)
     );
     Arc::make_mut(host.variable_absence.as_mut().unwrap()).issuer = None;
+    host.domain_memo = Default::default();
     assert_eq!(host.domain_version(query.domain()), None);
     let fallback = EngineResolverHost::new(Arc::new(Source(false)), constants, runtime);
     assert_eq!(fallback.domain_version(query.domain()), None);

@@ -19,6 +19,36 @@ fn main() -> ExitCode {
     match args.first().map(String::as_str) {
         Some("permute") => permute_cmd(&args[1..]),
         Some("dump-proc") => dump_proc(&args[1..]),
+        Some("dump-types") => {
+            let Some(path) = args.get(1) else {
+                return fail("dump-types FILE.dmb");
+            };
+            match std::fs::read(path).and_then(|b| Dmb::from_bytes(&b)) {
+                Ok(d) => {
+                    for (i, c) in d.classes.iter().enumerate() {
+                        let name = d.string(c.path_string_id()).unwrap_or_default();
+                        println!("{i}	{}", dmb_equiv::canon::esc_pub(name));
+                    }
+                    ExitCode::SUCCESS
+                }
+                Err(e) => fail(e),
+            }
+        }
+        Some("dump-procs") => {
+            let Some(path) = args.get(1) else {
+                return fail("dump-procs FILE.dmb");
+            };
+            match std::fs::read(path).and_then(|b| Dmb::from_bytes(&b)) {
+                Ok(d) => {
+                    for (i, p) in d.procs.iter().enumerate() {
+                        let name = d.string(p.strings[0]).unwrap_or_default();
+                        println!("{i}	{}", dmb_equiv::canon::esc_pub(name));
+                    }
+                    ExitCode::SUCCESS
+                }
+                Err(e) => fail(e),
+            }
+        }
         Some("dump-strings") => {
             let Some(path) = args.get(1) else {
                 return fail("dump-strings FILE.dmb");
