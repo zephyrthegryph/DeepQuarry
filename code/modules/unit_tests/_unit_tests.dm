@@ -408,6 +408,7 @@
 #include "dq_chem_math_pins.dm"
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
+#include "dq_silicon_remote_pins.dm"
 #include "dq_legacy_owns_conditional_starts.dm"
 #include "dq_draw_framework.dm"
 #include "dq_hop_kinds.dm"
