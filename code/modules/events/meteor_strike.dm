@@ -86,7 +86,6 @@ CAPABILITIES(/obj/structure/meteorite)
 	climb()
 	op("item", item(/obj/item/pickaxe), label("Use"), begins(PROC_REF(break_apart_text)), wait(PROC_REF(break_apart_time)), then(PROC_REF(break_apart_done)))
 
-// ALLOW(init/INSTANCE_STATE): rolls the ore or artifact this meteorite holds
 /obj/structure/meteorite/proc/rotate_initial_meteorite()
 	set_icon(turn(icon, 90))
 

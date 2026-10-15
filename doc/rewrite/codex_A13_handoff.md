@@ -114,3 +114,5 @@ Nested loot teardown repair (2026-10-15): generated first-aid kits can contain l
 
 
 Defining-proc audit refinement (2026-10-15): zpipe has an init_dir override but inherits the actual /proc declaration from /obj/machinery/atmospherics. The new setup hook now uses TYPE_PROC_REF at that declaring ancestor. Dynamic dispatch still invokes the existing zpipe override; no method, state, setter or behavior changed. No generation, analyzer, compile or test was run for this source-only reference repair.
+
+Read-tracking preflight otherwise passed; it removed21 fixed init baseline rows and flagged one stale meteorite init annotation attached to the migrated setup proc. The unused annotation is now removed. No baseline raises or new annotations. First compile and focused world remain pending.
