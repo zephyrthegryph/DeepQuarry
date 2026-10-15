@@ -300,9 +300,7 @@
 #include "dq_predicate_tests.dm"
 #include "dq_constraint_tests.dm"
 #include "dq_containment_tests.dm"
-#include "dq_destroy_transaction_tests.dm"
-#include "dq_decl_lifecycle_tests.dm"
-#include "dq_lifecycle_diag_tests.dm"
+#include "dq_destroy_transaction_tests.dm"#include "dq_lifecycle_diag_tests.dm"
 #include "dq_inventory_tests.dm"
 #include "dq_mob_memlist_tests.dm"
 #include "dq_latent_tests.dm"
@@ -1320,8 +1318,6 @@
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
 //#undef TEST_FOCUS - This define is used by vscode unit test extension to pick specific unit tests to run and appended later so needs to be used out of scope here
-#endif
-
 #include "dq_decl_cleanup_tests.dm"
-
-#include "dq_decl_lifecycle_tests.dm"
+#include "dq_decl_remaining_starts_tests.dm"
+#endif
