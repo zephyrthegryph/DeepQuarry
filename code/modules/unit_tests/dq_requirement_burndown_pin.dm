@@ -321,3 +321,31 @@
 	for(var/atom/movable/child as anything in contents_of(holder))
 		own(child)
 		own_constructed_contents(child)
+
+// Capture the existing dynamic holder override, including its current refusal text.
+/datum/unit_test/dq_requirement_burndown_pin/hold_override/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/obj/item/storage/wallet/holder = allocate(/obj/item/storage/wallet, null)
+	var/obj/item/pen/exact = allocate(/obj/item/pen, null)
+	var/obj/item/pen/oversize = allocate(/obj/item/pen, null)
+	var/obj/item/tool/wrench/wrong_type = allocate(/obj/item/tool/wrench, null)
+	exact.set_w_class(ITEMSIZE_TINY)
+	oversize.set_w_class(ITEMSIZE_SMALL)
+	wrong_type.set_w_class(ITEMSIZE_TINY)
+	TEST_ASSERT_NOTNULL(acceptance_plan_for(holder, CONSTRAINT_HOLD), "A real native holder exercises its native override path")
+	holder.restrict_hold(list(/obj/item/pen), ITEMSIZE_TINY)
+	TEST_ASSERT_NULL(dq_constraint_refusal(holder, CONSTRAINT_HOLD, exact, null), "The exact numeric boundary allows the actual pen")
+	TEST_ASSERT_NOTNULL(dq_constraint_refusal(holder, CONSTRAINT_HOLD, oversize, null), "The actual above-boundary pen is refused")
+	TEST_ASSERT_EQUAL(dq_constraint_refusal(holder, CONSTRAINT_HOLD, wrong_type, null), "it doesn't take that", "The first type requirement still wins")
+	var/list/rows = list(
+		"exact boundary: [dq_constraint_refusal(holder, CONSTRAINT_HOLD, exact, null) || "ALLOW"]",
+		"above boundary: [dq_constraint_refusal(holder, CONSTRAINT_HOLD, oversize, null)]",
+		"wrong type: [dq_constraint_refusal(holder, CONSTRAINT_HOLD, wrong_type, null)]",
+	)
+	holder.restrict_hold(list(/obj/item/pen), ITEMSIZE_SMALL)
+	TEST_ASSERT_NULL(dq_constraint_refusal(holder, CONSTRAINT_HOLD, oversize, null), "The actual native override recovers admission at its new boundary")
+	rows += "raised boundary: [dq_constraint_refusal(holder, CONSTRAINT_HOLD, oversize, null) || "ALLOW"]"
+	var/dir = "[DQ_SNAPSHOT_ROOT]requirement_burndown_override/"
+	var/list/bad = list()
+	var/report = dq_snapshot_compare(dir, "requirement_burndown_override", list(/obj/item/storage/wallet = rows), dq_snapshot_read_dir(dir, bad), bad)
+	TEST_ASSERT_NULL(report, report)
