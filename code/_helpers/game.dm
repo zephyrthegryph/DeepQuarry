@@ -63,18 +63,23 @@
 	return heard
 
 
+/// The map's z-level classes change only when a level is registered (a sector loads); a question about them is asked of the map as it is now
+/// (read_once: the asker samples it, and a menu that asked is rebuilt on each read).
 /proc/isStationLevel(level)
-	return level in using_map.station_levels
+	return read_once(level in using_map.station_levels)
+
+/proc/isContactLevel(level)
+	return read_once(level in using_map.contact_levels)
 
 /proc/isNotStationLevel(level)
 	return !isStationLevel(level)
 
 /proc/isPlayerLevel(level)
 	READS_FROM() // the map's level list, no entity state
-	return level in using_map.player_levels
+	return read_once(level in using_map.player_levels)
 
 /proc/isAdminLevel(level)
-	return level in using_map.admin_levels
+	return read_once(level in using_map.admin_levels)
 
 /proc/isNotAdminLevel(level)
 	return !isAdminLevel(level)

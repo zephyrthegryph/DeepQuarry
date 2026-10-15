@@ -24,11 +24,13 @@ CAPABILITIES(/obj/stale_probe)
 /obj/stale_probe/proc/raw_gauge(value)
 	vars["gauge"] = value
 
-/// A draw fixture: an exact type whose draw reads `glow` and, by a route the read walker does not follow, `noise`.
+/// A draw fixture: an exact type whose draw reads `glow` and, by a route the read walker does not follow, `noise` and `quiet`. `quiet` is never given a
+/// setter and nothing declares it a read: it is the deliberately untracked input of a draw.
 /obj/stale_lamp
 	name = "stale lamp"
 	var/glow = 0
 	var/noise = 0
+	var/quiet = 0
 
 /obj/stale_lamp/proc/set_glow(value)
 	if(TRACKED_UNCHANGED(glow, value))
@@ -44,10 +46,14 @@ SETTER(/obj/stale_lamp, glow)
 
 /obj/stale_lamp/draw(datum/look/look)
 	. = ..()
-	look.state("lamp-[glow]-[vars["noise"]]")
+	look.state("lamp-[glow]-[vars["noise"]]-[vars["quiet"]]")
 
 /obj/stale_lamp/proc/raw_glow(value)
 	vars["glow"] = value
+
+/// A write of the untracked var, with no setter: nothing publishes.
+/obj/stale_lamp/proc/raw_quiet(value)
+	vars["quiet"] = value
 
 /// The reports filed after index `since` (the length of GLOB.staleness_reports before the step under test).
 /proc/staleness_test_reports_since(since)
@@ -195,3 +201,44 @@ SETTER(/obj/stale_lamp, glow)
 	TEST_ASSERT_EQUAL(/datum/config_entry/number/staleness_sample::default, 0, "STALENESS_SAMPLE defaults to 0")
 	TEST_ASSERT_EQUAL(GLOB.staleness_sample, 0, "so no one-in-N sampling runs in a test world")
 	TEST_ASSERT(GLOB.staleness_strict, "test builds check everything")
+
+/// A draw that reads a var nothing tracks (and the build cannot see) is caught by the strict checker the moment the var moves: the applied look is drawn dry and
+/// differs, so the thing shows a stale look and the report names it. This is the net under every read the generated graph does not cover.
+/datum/unit_test/dq_staleness_catches_an_untracked_draw_read
+	boot_needs = list()
+
+/datum/unit_test/dq_staleness_catches_an_untracked_draw_read/Run()
+	GLOB.staleness_expected = TRUE
+	var/obj/stale_lamp/L = allocate(/obj/stale_lamp)
+	refresh_flush()
+	var/since = length(GLOB.staleness_reports)
+	staleness_check_entity(L, "test")
+	TEST_ASSERT_EQUAL(length(staleness_test_reports_since(since)), 0, "an untouched lamp is not reported: [json_encode(staleness_test_reports_since(since))]")
+	L.raw_quiet(4)
+	staleness_check_entity(L, "test")
+	var/list/found = staleness_test_reports_since(since)
+	TEST_ASSERT(length(found) >= 1, "the checker found the lamp showing a look its untracked input no longer gives")
+	TEST_ASSERT(findtext(found[1], "STALE draw: /obj/stale_lamp"), "the report names the draw and the type: [found[1]]")
+	TEST_ASSERT(findtext(found[1], "lamp-0-0-4"), "and what the draw gives now: [found[1]]")
+	var/obj/stale_lamp/M = allocate(/obj/stale_lamp)
+	refresh_flush()
+	since = length(GLOB.staleness_reports)
+	staleness_check_entity(M, "test")
+	TEST_ASSERT_EQUAL(length(staleness_test_reports_since(since)), 0, "a second, untouched lamp stays clean: [json_encode(staleness_test_reports_since(since))]")
+
+/// The REFRESH DRIFT audit rides every strict check: hidden verbs that follow state nothing published are reported without a sweep step picking the atom.
+/datum/unit_test/dq_staleness_runs_the_drift_audit_on_every_check
+	boot_needs = list()
+
+/datum/unit_test/dq_staleness_runs_the_drift_audit_on_every_check/Run()
+	GLOB.staleness_expected = TRUE
+	var/obj/cap_fixture/dx_core/F = allocate(/obj/cap_fixture/dx_core)
+	F.set_power_level(5) // its secret verb is hidden above zero
+	refresh_flush()
+	var/before = length(GLOB.refresh_drift)
+	staleness_check_entity(F, "test")
+	TEST_ASSERT_EQUAL(length(GLOB.refresh_drift) - before, 0, "no drift right after a refresh: [json_encode(GLOB.refresh_drift)]")
+	F.vars["power_level"] = 0 // raw: the hidden verb should come back and nothing marked it
+	staleness_check_entity(F, "test")
+	TEST_ASSERT_EQUAL(length(GLOB.refresh_drift) - before, 1, "the audit reported the unmarked write: [json_encode(GLOB.refresh_drift)]")
+	TEST_ASSERT(findtext(GLOB.refresh_drift[length(GLOB.refresh_drift)], "hidden_verbs()"), "and names the output: [GLOB.refresh_drift[length(GLOB.refresh_drift)]]")

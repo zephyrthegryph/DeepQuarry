@@ -136,7 +136,7 @@
 
 /datum/system/pai/proc/check_is_already_pai(check_ckey)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return (check_ckey in GLOB.paikeys)
+	return read_once(check_ckey in GLOB.paikeys)
 
 /datum/system/pai/proc/block_pai_invites(ghost_ref)
 	SHOULD_NOT_OVERRIDE(TRUE)

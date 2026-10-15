@@ -230,13 +230,13 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	look.state("new_scanner_off")
 	var/working = operable()
 	// First, the occupant, laid along the bed and masked to its glass
-	look.overlay(look_overlay_image(layer = layer + 0.1, plane = plane, dir = SOUTH, transform = turn(matrix(), dir == EAST ? 90 : -90), of = occupant, filters = list(
+	look.overlay(look_overlay_image(layer = initial(layer) + 0.1, plane = initial(plane), dir = SOUTH, transform = turn(matrix(), dir == EAST ? 90 : -90), of = occupant, filters = list(
 		filter("type" = "alpha", "icon" = icon(icon, "alpha_mask", dir = dir == EAST ? EAST : WEST)),
 		filter("type" = "color", "color" = "#000000"))))
 	// Second, the scan beam, then the tint over everything
 	if(working)
-		look.overlay(look_overlay_image(icon, "scan_beam", layer = layer + 0.2, plane = plane))
-	look.overlay(look_overlay_image(icon, working ? body_scan_gradient(scan_ratio) : "gradient_gray", layer = layer + 0.3, plane = plane))
+		look.overlay(look_overlay_image(icon, "scan_beam", layer = initial(layer) + 0.2, plane = initial(plane)))
+	look.overlay(look_overlay_image(icon, working ? body_scan_gradient(scan_ratio) : "gradient_gray", layer = initial(layer) + 0.3, plane = initial(plane)))
 	if(working)
 		look.glow(BODY_SCAN_LIGHT_RANGE, BODY_SCAN_LIGHT_POWER, body_scan_color(scan_ratio))
 

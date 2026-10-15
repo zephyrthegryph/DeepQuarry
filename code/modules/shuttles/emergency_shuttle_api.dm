@@ -112,9 +112,9 @@
 
 //so we don't have SSemergency_shuttle.shuttle.location everywhere
 /datum/system/emergency_shuttle/proc/location()
-	if(!shuttle)
+	if(!read_once(shuttle))
 		return 1 	//if we dont have a shuttle datum, just act like it's at centcom
-	return shuttle.location
+	return read_once(shuttle.location) // where the shuttle is, sampled when asked
 
 //returns 1 if the shuttle has gone to the station and come back at least once,
 //used for game completion checking purposes

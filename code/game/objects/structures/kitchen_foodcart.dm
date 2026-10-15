@@ -49,6 +49,6 @@ CAPABILITIES(/obj/structure/foodcart)
 /obj/structure/foodcart/draw(datum/look/look)
 	..()
 	if(contents_count(src) < 5)
-		look.state("foodcart-[contents.len]")
+		look.state("foodcart-[contents_count(src)]")
 	else
 		look.state("foodcart-5")

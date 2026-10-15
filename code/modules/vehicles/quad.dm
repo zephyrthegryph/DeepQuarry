@@ -98,9 +98,9 @@ CAPABILITIES(/obj/vehicle/train/engine/quadbike/random)
 /obj/vehicle/train/engine/quadbike/draw(datum/look/look)
 	..()
 	var/paint_icon = custom_frame ? 'icons/obj/custom_items_vehicle.dmi' : paint_base
-	look.overlay(look_overlay_image(paint_icon, "[frame_state]_a", layer = layer, color = paint_color))
-	look.overlay(look_overlay_image(paint_icon, "[frame_state]_overlay", layer = layer + 0.2, plane = MOB_PLANE))
-	look.overlay(look_overlay_image(paint_icon, "[frame_state]_overlay_a", layer = layer + 0.2, plane = MOB_PLANE, color = paint_color))
+	look.overlay(look_overlay_image(paint_icon, "[frame_state]_a", layer = initial(layer), color = paint_color))
+	look.overlay(look_overlay_image(paint_icon, "[frame_state]_overlay", layer = initial(layer) + 0.2, plane = MOB_PLANE))
+	look.overlay(look_overlay_image(paint_icon, "[frame_state]_overlay_a", layer = initial(layer) + 0.2, plane = MOB_PLANE, color = paint_color))
 
 /obj/vehicle/train/engine/quadbike/Bump(atom/Obstacle)
 	if(!istype(Obstacle, /atom/movable))
@@ -243,7 +243,7 @@ CAPABILITIES(/obj/vehicle/train/trolley/trailer/random)
 /obj/vehicle/train/trolley/trailer/draw(datum/look/look)
 	..()
 
-	look.overlay(look_overlay_image('icons/obj/vehicles_64x64.dmi', "[initial(icon_state)]_a", layer = layer, color = paint_color))
+	look.overlay(look_overlay_image('icons/obj/vehicles_64x64.dmi', "[initial(icon_state)]_a", layer = initial(layer), color = paint_color))
 
 CAPABILITIES(/obj/vehicle/train/trolley/trailer)
 	op("vehicle_paint", tool(TOOL_MULTITOOL), when(req_is(nameof(open), TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Paint"), wait(0), asks(/datum/prompt/color/vehicle_paint, fields = list("default" = nameof(paint_color)), step = "colour"), then(PROC_REF(vehicle_paint_picked)))

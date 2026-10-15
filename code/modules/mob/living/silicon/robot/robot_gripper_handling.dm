@@ -388,7 +388,7 @@
 		return
 	look.watch(wrapped)
 	// the held item as a mini-image in the gripper itself
-	look.overlay(look_overlay_image(of = wrapped, plane = plane, layer = layer + 0.01, transform = matrix(0.75, 0, 0, 0, 0.75, -8)))
+	look.overlay(look_overlay_image(of = wrapped, plane = read_once(plane), layer = read_once(layer) + 0.01, transform = matrix(0.75, 0, 0, 0, 0.75, -8)))
 
 //HELPER PROCS
 ///Use this to get what the current pocket is. Returns NULL if no

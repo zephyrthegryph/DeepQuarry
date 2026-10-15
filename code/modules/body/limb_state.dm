@@ -32,7 +32,7 @@ STAT(/mob/living/carbon/human, limb_trouble, ANY)
 /mob/living/carbon/human/proc/limb_refresh()
 	if(QDELETED(src))
 		return
-	stance_damage = stance_from_limbs()
+	set_stance_damage(stance_from_limbs())
 	body_hold_flag(STAT_LIMB_TROUBLE, is_alive() && limb_trouble_now())
 
 /mob/living/carbon/human/proc/limb_trouble_now()
@@ -64,7 +64,7 @@ STAT(/mob/living/carbon/human, limb_trouble, ANY)
 		. -= 2
 	// Jetpacks in zero gravity hold you up.
 	var/obj/item/tank/jetpack/thrust = get_jetpack()
-	if(lastarea?.get_gravity() == FALSE && thrust?.stabilization_on)
+	if(read_once(lastarea?.get_gravity() == FALSE) && thrust?.stabilization_on)
 		. -= 4
 
 /mob/living/carbon/human/proc/limb_step(datum/act/timer/A)
@@ -90,7 +90,7 @@ STAT(/mob/living/carbon/human, limb_trouble, ANY)
 				fx_sparks(src, 5, FALSE)
 		if(E && (!E.is_usable() || E.is_broken() || E.is_dislocated()))
 			limb_pain = E.organ_can_feel_pain()
-	stance_damage = stance
+	set_stance_damage(stance)
 	if(stance_damage >= 4 || (stance_damage >= 2 && prob(5)))
 		if(!(lying || resting) && !isbelly(loc))
 			if(limb_pain)

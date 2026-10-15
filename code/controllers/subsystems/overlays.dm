@@ -22,6 +22,7 @@ SYSTEM_DEF(overlays)
 /// Of note: overlays aren't actually mutable appearances, they're just appearances
 /// Don't have access to that type tho, so this is the best you're gonna get
 /proc/overlays2text(list/overlays)
+	READS_FROM() // debug text of the appearances it is handed, sampled when printed
 	var/list/unique_overlays = list()
 	// As anything because we're basically doing type coerrsion, rather then actually filtering for mutable apperances
 	for(var/mutable_appearance/overlay as anything in overlays)

@@ -147,7 +147,6 @@
 	TEST_ASSERT_EQUAL(look.life_state(H, "live", null, "dead"), initial(H.icon_state), "with no resting sprite it keeps its own")
 	H.set_stat(DEAD)
 	TEST_ASSERT_EQUAL(look.life_state(H, "live", "rest", "dead"), "dead", "a dead one shows the dead state")
-	H.set_stat(CONSCIOUS)
 
 // ---- dir: a draw that reads dir redraws when set_dir() changes it; look.offset() ----
 

@@ -132,7 +132,7 @@ SETTER(/turf/simulated/wall, construction_stage)
 /// shared by every wall in that state. Read-only: callers pass it to add_overlay(), which copies.
 /turf/simulated/wall/proc/wall_overlay_images()
 	var/list/connections = get_wall_connections() // interned (string_list), so usable as a key
-	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
+	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlay_of(damage_step) : null)
 
 DECLARE_SHARED_CACHE_EX(wall_overlay_sets, GLOBAL_PROC_REF(build_wall_overlay_sets), SC_ON_NOTICE(/datum/notice/material_facts_changed), 4096, 0)
 
@@ -167,6 +167,14 @@ DECLARE_SHARED_CACHE_EX(wall_overlay_sets, GLOBAL_PROC_REF(build_wall_overlay_se
 	if(damage_image)
 		images += damage_image
 	return images
+
+/// The damage overlay of a damage step (1 is the faintest): the sixteen are built once, on the first ask, and shared by every wall
+/// (PROC_SUMMARY: a built overlay is never replaced, so a look that reads one has nothing to subscribe to).
+PROC_SUMMARY(/turf/simulated/wall/proc/damage_overlay_of)
+/turf/simulated/wall/proc/damage_overlay_of(step)
+	if(!damage_overlays[1])
+		generate_overlays()
+	return damage_overlays[step]
 
 /// The damage overlays, fainter to stronger, built once (the first wall made).
 /turf/simulated/wall/proc/generate_overlays()

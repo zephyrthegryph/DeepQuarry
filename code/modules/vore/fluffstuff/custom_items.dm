@@ -449,7 +449,7 @@ CAPABILITIES(/obj/item/card/id/centcom/station/fluff/aronai)
 
 	user.set_id_info(src)
 	if(user.mind && user.mind.initial_account())
-		associated_account_number = user.mind.initial_account().account_number
+		set_associated_account_number(user.mind.initial_account().account_number)
 	configured = TRUE
 	to_chat(user, span_notice("Card settings set."))
 

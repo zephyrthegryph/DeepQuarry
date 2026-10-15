@@ -106,6 +106,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	return materia_list
 
 // Safety proc to make sure the material list exists before trying to grab from it.
+PROC_SUMMARY(/proc/get_material_by_name) // a registry lookup: a name maps to its material for good once registered, and a material's definition does not change
 /proc/get_material_by_name(name) as /datum/material
 	READS_FROM()
 	return GLOB.name_to_material[name]

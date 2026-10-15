@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/sample)
 	return (forensic_sample_same_type(src, A.held)) ? null : MSG(req_failed)
 
 /obj/item/sample/proc/sample_releasable(datum/act/op/A)
-	var/why = A.held.loc?.release_refusal(A.held, A.actor) // ALLOW(reads): current donor custody is queried without caching immediately before its checked release
+	var/why = read_once(A.held.loc?.release_refusal(A.held, A.actor)) // current donor custody is sampled immediately before its checked release
 	return isnull(why) ? null : (why || MSG(op/not_available))
 
 /obj/item/sample/proc/sample_merged(datum/act/op/A)

@@ -101,6 +101,7 @@
 // Creates a single icon from a given /atom or /image.  Only the first argument is required.
 // appearance_flags indicates whether appearance_flags should be respected (at the cost of about 10-20% perf)
 /proc/getFlatIcon(image/appearance, defdir, deficon, defstate, defblend, start = TRUE, no_anim = FALSE, force_south = FALSE, appearance_flags = FALSE)
+	READS_FROM() // sampled: a flat icon is a picture of the appearance it is handed at this moment, never a value that follows it
 	// Loop through the underlays, then overlays, sorting them into the layers list
 	#define PROCESS_OVERLAYS_OR_UNDERLAYS(flat, process, base_layer) \
 		for (var/i in 1 to process.len) { \

@@ -246,7 +246,6 @@ dx_raw_overlays	code/modules/clothing/accessories/accessory.dm	old_suit.cut_over
 dx_raw_overlays	code/modules/clothing/clothing.dm	standing.add_overlay(I)
 dx_raw_overlays	code/modules/clothing/clothing_icons.dm	standing.add_overlay(A.get_mob_overlay())
 dx_raw_overlays	code/modules/clothing/clothing_icons.dm	standing.add_overlay(bloodsies)
-dx_raw_overlays	code/modules/clothing/clothing_icons.dm	standing.add_overlay(GLOB.light_overlay_cache[cache_key])
 dx_raw_overlays	code/modules/clothing/clothing_icons.dm	standing.add_overlay(bloodsies)
 dx_raw_overlays	code/modules/clothing/clothing_icons.dm	standing.add_overlay(bloodsies)
 dx_raw_overlays	code/modules/clothing/spacesuits/void/void.dm	standing.add_overlay(glass_overlay)

@@ -570,8 +570,8 @@ CAPABILITIES(/obj/structure/closet)
 /// Each devourable one shut in with `user`, other than `user`, by the name the choice shows (two with one name are told apart with a number). Names to mobs.
 /obj/structure/closet/proc/prey_by_name(mob/living/user)
 	var/list/by_name = list()
-	for(var/mob/living/L in contents) // ALLOW(latent,reads): mobs are never latent; who is shut in is read when the entry is offered and when it is picked
-		if(L == user || !L.vore_prefs.devourable) //no eating yourself. 1984.
+	for(var/mob/living/L in contents_of(src, /mob/living)) // mobs are never latent
+		if(L == user || !read_once(L.vore_prefs.devourable)) //no eating yourself. 1984.
 			continue
 		var/label = "[L]"
 		var/n = 2

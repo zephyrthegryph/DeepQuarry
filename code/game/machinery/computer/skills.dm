@@ -226,7 +226,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/skills, skills_field_choices, list(
 //Someone needs to break down the dat += into chunks instead of long ass lines.
 /// Requirement clause: no message (like the old check) beyond the reason text.
 /obj/machinery/computer/skills/proc/within_contact_range(datum/act/op/A)
-	if(!using_map || (read_once(z) in using_map.contact_levels))
+	if(!using_map || isContactLevel(read_once(z)))
 		return null
 	return "you're too far away from the station!"
 

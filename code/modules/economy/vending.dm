@@ -506,7 +506,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		return null
 	if(issilicon(A.actor)) // ALLOW(silicon_entry): a law-bound unit may not buy: the rule is about what the buyer is, not how the button was pressed
 		return /datum/msg/vending/lawed
-	if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
+	if(!read_once(GLOB.vendor_account) || read_once(GLOB.vendor_account.suspended))
 		return /datum/msg/vending/no_account
 	if(!credits_source(A.actor))
 		return /datum/msg/vending/no_payment

@@ -1,8 +1,6 @@
 // What the human's look is made of lives in human_look.dm (draw(look)). This file keeps what is not the overlays: the transform (size,
 // lying, centring), the tail's animation state and the wing and belly animations, which set tracked state the draw reads.
 
-GLOBAL_LIST_EMPTY(light_overlay_cache) //see make_worn_icon() on helmets // ALLOW(cache): written with mixed keys from clothing.dm and read-only-if-present in clothing_icons.dm
-
 /mob/living/carbon/human
 	/// The species tail's animation state (an icon_state of the tail's animation sheet: "<tail>_idle3", "<tail>_loop1", "<tail>_once"),
 	/// or null for the still sprite. A dead human's tail is drawn still whatever this holds.
@@ -18,9 +16,9 @@ GLOBAL_LIST_EMPTY(light_overlay_cache) //see make_worn_icon() on helmets // ALLO
 	if(fuzzy || offset_override || dir == EAST || dir == WEST)
 		cent_offset = 0
 	set_vis_height(species.icon_height)
-	appearance_flags |= PIXEL_SCALE
+	appearance_flags = read_once(appearance_flags) | PIXEL_SCALE
 	if(fuzzy)
-		appearance_flags &= ~PIXEL_SCALE
+		appearance_flags = read_once(appearance_flags) & ~PIXEL_SCALE
 		set_center_offset(0)
 
 	// Regular stuff again.

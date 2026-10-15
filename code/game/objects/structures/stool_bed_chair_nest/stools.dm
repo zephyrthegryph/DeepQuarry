@@ -127,7 +127,7 @@ CAPABILITIES(/obj/item/stool)
 	param(nameof(padding_key), pos = 2, apply = PROC_REF(make_of))
 
 /obj/item/stool/proc/can_be_padded(datum/act/op/A)
-	return (!padding_material && !isnull(padding_type_of(A.held))) ? null : padding_material ? /datum/msg/bed/already_padded : /datum/msg/bed/not_padding // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
+	return (!padding_material && !isnull(padding_type_of(A.held))) ? null : padding_material ? /datum/msg/bed/already_padded : /datum/msg/bed/not_padding
 
 /// A stack of padding goes on: the sheet is spent by the op.
 /obj/item/stool/proc/padded_with(datum/act/op/A)
@@ -138,7 +138,7 @@ CAPABILITIES(/obj/item/stool)
 	return OP_OK
 
 /obj/item/stool/proc/has_padding(datum/act/A)
-	return (!!padding_material) ? null : MSG(bed/no_padding) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
+	return (!!padding_material) ? null : MSG(bed/no_padding)
 
 /obj/item/stool/proc/unpadded(datum/act/op/A)
 	playsound(src, sounds_of(A.held).use, 50, 1)

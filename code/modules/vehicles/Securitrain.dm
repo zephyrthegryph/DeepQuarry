@@ -362,4 +362,4 @@ CAPABILITIES(/obj/vehicle/train/security/engine)
 
 /obj/vehicle/train/security/engine/draw(datum/look/look)
 	..()
-	look.overlay(look_overlay_image('icons/obj/vehicles.dmi', "cargo_engine_overlay", layer = layer + 0.2)) // over mobs
+	look.overlay(look_overlay_image('icons/obj/vehicles.dmi', "cargo_engine_overlay", layer = initial(layer) + 0.2)) // over mobs

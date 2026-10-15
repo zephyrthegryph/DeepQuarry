@@ -16,9 +16,10 @@
 //! counted once however many consumers reach it. The baseline was re-seeded when the lint moved to this walk (a change of measurement:
 //! `doc/rewrite/reads_closure_newly_visible.md` compares the two).
 //!
-//! Shrink-only over `tools/ci/untracked_inputs_baseline.txt`, which holds the sites that existed when the closed walk was adopted: make the var
-//! TRACKED and write it through its setter, declare the relation, or publish a READS_AS key where it changes. A read that cannot be tracked is
-//! recorded with `// ALLOW(untracked_inputs): <reason>`, and the runtime still treats its consumer as untracked.
+//! A hard ban: any site fails, there is no baseline. Make the var TRACKED and write it through its setter, declare the relation, or publish a
+//! READS_AS key where it changes. A read that genuinely cannot be tracked (global config a requirement asks, a clock, a profile record) is
+//! sampled with `read_once(...)` (code/engine/parts/cond.dm), which the walk mutes and which rebuilds a menu that asked; the runtime treats
+//! any consumer with an untracked read as untracked.
 
 use crate::gens::deps;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
@@ -35,14 +36,7 @@ static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: "tools/ci/untracked_inputs_baseline.txt",
-        header: &[
-            "untracked_inputs: reads of untracked state by stat inputs, requirements, outputs and draws (analyze gen deps). rule<TAB>file<TAB>identity (@reader reads owner::var).",
-            "Shrink-only: `analyze baseline --update --lint untracked_inputs` drops fixed sites and never adds one.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta { name: "stat_input_untracked", hint: H_STAT },
         RuleMeta { name: "draw_untracked", hint: H_DRAW },
