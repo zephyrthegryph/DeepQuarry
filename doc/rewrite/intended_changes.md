@@ -4912,9 +4912,9 @@ Affected requirement-pin classes:
   unchanged; editor previews now show the same fixed state without requiring Initialize.
 * Reflector overlays use native draw composition over the actual displayed angle instead
   of retaining a mutable image. Locked reflectors retain their previous visible angle.
-* PDA pen, ID and notification layers use native draw dependencies; moving a pen through
-  the real containment ledger now invalidates its layer. Privacy switches likewise redraw
-  when the protected area's flags change outside the switch action.
+* Privacy switches redraw when the protected area's flags change outside the switch
+  action. PDA pen/ID/notification changes were withdrawn: their existing raw physical
+  contents have no simulator-neutral native draw dependency, so their source is unchanged.
 
 These entries do not authorize unrelated snapshot re-records. Correlated archaeological,
 telecube and hotspot construction jobs retain their world-RNG and child-constructor order.

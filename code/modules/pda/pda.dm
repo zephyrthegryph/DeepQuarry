@@ -63,7 +63,6 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/pda)
-	ref_many(nameof(notifying_programs), /datum/data/pda)
 	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
 	setup(PROC_REF(configure_wrist_slots))
 	// Ten seconds of threatening to make it disappear in front of its owner (obj/item/proc/threat_eaten, code/game/objects/trash_eating.dm).
@@ -212,17 +211,8 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 		else
 			icon = 'icons/obj/pda_old.dmi'
 			log_runtime("Invalid switch for PDA, defaulting to old PDA icons. [pdachoice] chosen.")
+	add_overlay("pda-pen")
 	start_program(find_program(/datum/data/pda/app/main_menu))
-
-/// The pen layer follows actual containment, including direct admin moves.
-/obj/item/pda/draw(datum/look/look)
-	..()
-	if(length(look.contents_of(src, null, /obj/item/pen)))
-		look.overlay("pda-pen")
-	if(id)
-		look.overlay("pda-id")
-	if(length(notifying_programs))
-		look.overlay("pda-r")
 
 /obj/item/pda/proc/can_use(mob/user)
 	return (tgui_status(user, GLOB.tgui_inventory_state) == STATUS_INTERACTIVE)
@@ -352,6 +342,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
 		else
 			id.forceMove(get_turf(src))
+		cut_overlay("pda-id")
 		rel_take(src, nameof(id))
 
 /obj/item/pda/proc/remove_pen(mob/user)
@@ -362,6 +353,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			if(M.get_active_hand() == null)
 				M.put_in_hands(O)
 				to_chat(user, span_notice("You remove \the [O] from \the [src]."))
+				cut_overlay("pda-pen")
 				return
 		O.forceMove(get_turf(src))
 	else
@@ -373,6 +365,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	if(can_use(user))
 		start_program(find_program(/datum/data/pda/app/main_menu))
 		rel_clear(src, nameof(notifying_programs))
+		cut_overlay("pda-r")
 		to_chat(user, span_notice("You press the reset button on \the [src]."))
 	else
 		to_chat(user, span_notice("You cannot do this while restrained."))
@@ -476,6 +469,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			if(((src?.loc == user) && (C?.loc == user)) || (istype(loc, /turf) && in_range(src, user) && (C?.loc == user)) )
 				if(id_check(user, 2))
 					to_chat(user, span_notice("You put the ID into \the [src]'s slot."))
+					add_overlay("pda-id")
 			return OP_PASS
 	else if(istype(C, /obj/item/paicard) && !src.pai)
 		if(!move_into(src, nameof(src.pai), C, user))
@@ -490,6 +484,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			if(!own_bring_in(src, nameof(contents), C, null, user, TRUE, null, FALSE))
 				return OP_PASS
 			to_chat(user, span_notice("You slot \the [C] into \the [src]."))
+			add_overlay("pda-pen")
 	return OP_PASS
 
 /obj/item/pda/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

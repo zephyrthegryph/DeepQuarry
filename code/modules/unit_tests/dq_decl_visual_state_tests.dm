@@ -104,28 +104,11 @@
 	TEST_ASSERT_EQUAL(A.icon_num, 7, "the constructor preserves a predefined artifact number")
 	TEST_ASSERT_EQUAL(A.icon_state, "ano7[A.appearance_active()]", "the existing native draw owns the artifact activation sprite")
 
-// New native dependency regression, deliberately excluded from the old-code capture.
+// Native privacy dependency regression, deliberately excluded from the old-code capture.
+// PDA physical-contents invalidation remains unsupported without a native read contract.
 /datum/unit_test/dq_decl_visual/live_redraws
 /datum/unit_test/dq_decl_visual/live_redraws/Run()
 	scope_fixture()
-	var/obj/item/pda/P = allocate(/obj/item/pda, test_floor())
-	refresh_flush()
-	TEST_ASSERT(layer_of(P, "pda-pen"), "the starting pen is visible")
-	var/obj/item/pen/pen = locate_within(P, /obj/item/pen)
-	TEST_ASSERT(pen, "the starting pen is a real object")
-	pen.forceMove(test_floor())
-	own(pen)
-	refresh_flush()
-	TEST_ASSERT(!layer_of(P, "pda-pen"), "a direct admin move invalidates the pen layer through occupancy")
-	var/obj/item/card/id/I = allocate(/obj/item/card/id, test_floor())
-	rel_set(P, nameof(P.id), I)
-	I.forceMove(P)
-	refresh_flush()
-	TEST_ASSERT(layer_of(P, "pda-id"), "adopting a card invalidates the ID layer")
-	rel_take(P, nameof(P.id))
-	I.forceMove(test_floor())
-	refresh_flush()
-	TEST_ASSERT(!layer_of(P, "pda-id"), "releasing the card invalidates the ID layer")
 	var/area/A = get_area(test_floor())
 	set_var(A, nameof(A.flags), A.flags & ~AREA_BLOCK_GHOST_SIGHT)
 	var/obj/structure/privacyswitch/S = allocate(/obj/structure/privacyswitch, test_floor())

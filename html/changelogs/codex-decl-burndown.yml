@@ -3,4 +3,4 @@ delete-after: true
 changes:
   - bugfix: "Petrification statues release petrification mute when destroyed."
   - bugfix: "Gargoyle statues accept their supplied human during construction."
-  - bugfix: "PDA and privacy-switch appearance follows changes to their contents and protected area."
+  - bugfix: "Privacy-switch appearance follows changes to its protected area."

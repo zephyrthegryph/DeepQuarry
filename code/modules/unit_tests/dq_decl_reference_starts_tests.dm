@@ -30,7 +30,9 @@ CAPABILITIES(/obj/dq_decl_reference_holder)
 
 /obj/dq_decl_reference_rejected
 CAPABILITIES(/obj/dq_decl_reference_rejected)
-	keeps_if(FALSE)
+	keeps_if(PROC_REF(rejected_creation))
+/obj/dq_decl_reference_rejected/proc/rejected_creation()
+	return FALSE
 
 /datum/unit_test/dq_decl_reference_starts
 /datum/unit_test/dq_decl_reference_starts/Run()

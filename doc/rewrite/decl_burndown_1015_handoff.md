@@ -6,8 +6,9 @@ Branch: `codex/decl-burndown`, based on `4ab2e15fe1`.
 
 The original baseline contains 47 actual rows: 23 visuals, 10 starting children,
 6 destruction drops, 5 destruction effects, and one each of reagent initialization,
-registry membership and scheduling. The supported source draft targets 43 removals;
-the expected residual is four. These are source-audit counts, not an analyzer result.
+registry membership and scheduling. The supported source draft now targets 41 removals;
+the expected residual is six, pending the final engine baseline update. The earlier
+47-to-4 draft passed baseline checking but exposed two additional runtime contract gaps.
 No baseline has been raised or manually rewritten. No verification stamp exists yet.
 
 A shared old-production capture ran 55 selected tests: 50 passed. The three lifecycle
@@ -38,7 +39,7 @@ validation; operation and periodic conditions remain reactive. The declaration l
 recognizes atom lifecycle semantically rather than treating explicitly called datum
 business methods named Initialize as InitAtom lifecycle hooks.
 
-## Four deliberately retained rows
+## Six deliberately retained rows
 
 * `/obj/on_destroy`: generic micro-target spill remains at its existing LINKS phase.
 * `/obj/machinery/on_destroy`: generic human/camera cleanup remains at LINKS.
@@ -53,6 +54,19 @@ ending declarations; there is no global `/obj` ending binding.
   registration tail. Root-time concealment changes earlier registration, while completion
   setup exposes the real sector name to flight vessel identity. No broad phase-weaving
   contract was invented for this single row.
+
+* Living body construction remains at the original living.Initialize boundary. Robot
+  Initialize constructs its components before calling its living parent; on_part_changed
+  deliberately returns while body is absent. Phase-zero starts made body present during
+  the partial component list and caused null.idle_draw runtimes. Replacing that guard
+  with optional calls would conceal the broader early power/movement side effects.
+  Original body source and ownership declaration are restored byte-for-byte.
+* PDA pen presentation remains original. A native look.contents_of query needs a physical
+  ledger slot, while the PDA uses raw contents plus independent named ownership. Adding
+  a slot would change propagation, reach and destruction contracts; a pure physical-
+  contents dependency without imposing ledger topology is the actual missing form.
+  Both pda.dm and app.dm are restored byte-for-byte. Existing old constructor appearance
+  assertions remain; the new live-redraw test covers supported privacy invalidation only.
 
 ## Coverage
 
@@ -74,3 +88,15 @@ The focused lane gate and stamp are pending. Its list includes the constructor,
 visual, cleanup and reference tests above, both mandatory requirement/conversion
 pins, the look pin, and AI/combat-AI regressions for living-body initialization.
 Do not interpret the source checks as a passing runtime gate or completed landing.
+
+## First final-code gate and repair
+
+Root ran the first coordinated gate at ce0f0c2652: production compile and DreamChecker
+had zero errors/diagnostics and ratchets passed; runtime batch had 180 passing and 14
+failing selectors. Concrete scoped causes were phase-zero body creation (four robot
+constructor pins), unsupported PDA slot reads (two visual tests), and a fixture passing
+FALSE to keeps_if instead of the required pure callback. The body/PDA conversions are
+withdrawn, not papered over; the rejection fixture now uses a genuine FALSE-returning
+callback. Other AI and stale-density failures are under separate baseline investigation.
+Look-pin differences must be reconsidered after those reversals, not blessed blindly.
+The final baseline update, failure-only repair, stamp and push remain pending root.
