@@ -283,6 +283,7 @@
 	for(var/path in candidate_types)
 		candidates += allocate(path, null)
 	var/list/holders = list()
+	var/mob/living/silicon/robot/gripper_owner
 	var/list/actual = list()
 	var/queries = 0
 	for(var/list/declaration as anything in declarations)
@@ -297,6 +298,10 @@
 				var/obj/item/storage/internal/pockets = jacket.pockets
 				holder = pockets
 				TEST_ASSERT_EQUAL(pockets?.master_item(), jacket, "Actual pocket ownership links its real jacket")
+			else if(ispath(path, /obj/item/gripper))
+				if(!gripper_owner)
+					gripper_owner = allocate(/mob/living/silicon/robot, wearer.loc)
+				holder = allocate(path, gripper_owner)
 			else
 				holder = allocate(path, wearer)
 			TEST_ASSERT_NOTNULL(holder, "[path] has a real holder")
@@ -343,8 +348,18 @@ CAPABILITIES(/obj/item/storage/wallet/dq_native_override_pin)
 	exact.set_w_class(ITEMSIZE_TINY)
 	oversize.set_w_class(ITEMSIZE_SMALL)
 	wrong_type.set_w_class(ITEMSIZE_TINY)
+	TEST_ASSERT_EQUAL(dq_property(exact, PROP_SIZE_CLASS), ITEMSIZE_TINY, "Exact candidate has its actual tiny numeric property")
+	TEST_ASSERT_EQUAL(dq_property(oversize, PROP_SIZE_CLASS), ITEMSIZE_SMALL, "Above-boundary candidate has its actual larger numeric property")
 	TEST_ASSERT_NOTNULL(acceptance_plan_for(holder, CONSTRAINT_HOLD), "A real native holder exercises its native override path")
 	holder.restrict_hold(list(/obj/item/pen), ITEMSIZE_TINY)
+	var/datum/entry/part/acceptance_plan/overridden = acceptance_plan_for(holder, CONSTRAINT_HOLD)
+	TEST_ASSERT_NOTNULL(overridden, "Actual override resolves to a native plan")
+	var/size_leaves = 0
+	for(var/datum/entry/part/req/R as anything in overridden.children)
+		if(istype(R, /datum/entry/part/req/acceptance_leaf/max_size))
+			size_leaves++
+			TEST_ASSERT_EQUAL(R.args["max_size"], ITEMSIZE_TINY, "Real resolved override carries the requested tiny boundary")
+	TEST_ASSERT_EQUAL(size_leaves, 1, "Actual override replaces, rather than duplicates, the size requirement")
 	TEST_ASSERT_NULL(dq_constraint_refusal(holder, CONSTRAINT_HOLD, exact, null), "The exact numeric boundary allows the actual pen")
 	TEST_ASSERT_NOTNULL(dq_constraint_refusal(holder, CONSTRAINT_HOLD, oversize, null), "The actual above-boundary pen is refused")
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(holder, CONSTRAINT_HOLD, wrong_type, null), "it doesn't take that", "The first type requirement still wins")
