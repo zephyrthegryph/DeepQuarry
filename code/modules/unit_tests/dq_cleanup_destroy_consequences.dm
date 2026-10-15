@@ -32,6 +32,7 @@
 	return ..()
 
 /obj/structure/gargoyle/dq_cleanup_capture
+	color = "#123456"
 	var/list/captured_messages
 /obj/structure/gargoyle/dq_cleanup_capture/visible_message(message, blind_message, list/exclude_mobs, range = world.view, runemessage = "<span style='font-size: 1.5em'>👁</span>")
 	LAZYADD(captured_messages, message)
@@ -135,11 +136,26 @@
 	scope_fixture()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/structure/gargoyle/dq_cleanup_capture/S = allocate(/obj/structure/gargoyle/dq_cleanup_capture, T, H)
+	H.set_dir(EAST)
+	var/expected_integrity = H.vitality() * H.get_endurance() + 100
+	var/obj/structure/gargoyle/dq_cleanup_capture/S = allocate(/obj/structure/gargoyle/dq_cleanup_capture, T, H, "canary", "granite", "solidifies", "#00FF00", FALSE, TRUE)
 	var/list/messages = list()
 	S.captured_messages = messages
-	set_var(S, nameof(S.can_revert), FALSE)
-	TEST_ASSERT_EQUAL(S.WR_gargoyle, H, "the real gargoyle setup binds its subject")
+	TEST_ASSERT_EQUAL(S.WR_gargoyle, H, "the real gargoyle constructor binds its subject")
+	TEST_ASSERT(isnull(S.petrified), "constructor-only petrification input is dropped after initialization")
+	TEST_ASSERT_EQUAL(H.loc, S, "the living subject occupies its statue before materialization returns")
+	TEST_ASSERT_EQUAL(S.identifier, "canary", "the first param callback sees later constructor arguments")
+	TEST_ASSERT_EQUAL(S.name, "canary of [H.name]", "the constructor builds the subject-specific appearance name")
+	TEST_ASSERT_EQUAL(S.desc, "A very lifelike canary made of granite.", "the material override survives parent initialization")
+	TEST_ASSERT_EQUAL(S.adjective, "solidifies", "the adjective override is bound before the subject is applied")
+	TEST_ASSERT(!S.can_revert && S.discard_clothes, "the callback sees both later boolean constructor arguments")
+	TEST_ASSERT_EQUAL(S.original_int, expected_integrity, "the subject-derived integrity survives the parent tail")
+	TEST_ASSERT_EQUAL(S.max_integrity, H.get_endurance() + 100, "the base integrity initialization does not overwrite petrification")
+	TEST_ASSERT(S.density, "an ordinary-sized subject produces a solid statue")
+	TEST_ASSERT_EQUAL(S.dir, EAST, "the statue copies its subject orientation")
+	TEST_ASSERT_EQUAL(S.layer, H.layer, "the statue copies its subject appearance layer")
+	TEST_ASSERT_EQUAL(S.color, "#123456", "atom initialization preserves the statue fixture color")
+	TEST_ASSERT(length(S.overlays), "petrification builds real human appearance overlays")
 	qdel(S)
 	TEST_ASSERT(findtext(jointext(messages, "\n"), "loses shape and crumbles"), "non-reverting gargoyle destruction emits the real crumble effect")
 

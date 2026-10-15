@@ -30,9 +30,8 @@
 
 CAPABILITIES(/obj/structure/gargoyle)
 	ref_one(nameof(WR_gargoyle))
-	setup(PROC_REF(petrify_human))
 	every(1 SECOND, then(PROC_REF(gargoyle_step)), when = nameof(WR_gargoyle))
-	param(nameof(petrified), pos = 1, keep = FALSE)
+	param(nameof(petrified), pos = 1, apply = PROC_REF(petrify_human), keep = FALSE)
 	param(nameof(ident_ovr), pos = 2)
 	param(nameof(mat_ovr), pos = 3)
 	param(nameof(adj_ovr), pos = 4)
@@ -51,9 +50,8 @@ CAPABILITIES(/obj/structure/gargoyle)
 /obj/structure/gargoyle/var/tmp/tint_ovr
 /obj/structure/gargoyle/var/tmp/discard_clothes = FALSE
 
-/// A gargoyle statue takes in the human it petrifies, with their look, tint and state (setup() of its CAPABILITIES block).
-/obj/structure/gargoyle/proc/petrify_human()
-	var/mob/living/carbon/human/H = petrified
+/// A gargoyle statue applies its constructor subject with their look, tint and state.
+/obj/structure/gargoyle/proc/petrify_human(mob/living/carbon/human/H)
 	if(isspace(loc) || isopenspace(loc))
 		set_anchored(FALSE)
 	if(!istype(H) || !isturf(H.loc))
