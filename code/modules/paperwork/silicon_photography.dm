@@ -213,7 +213,7 @@ CAPABILITIES(/obj/item/camera/siliconcam)
 		Cinfo = src
 	return Cinfo
 
-/mob/living/silicon/proc/GetPicture()
+/mob/living/silicon/GetPicture()
 	if(!aiCamera)
 		return
 	return aiCamera.selectpicture(src)
