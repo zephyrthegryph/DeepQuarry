@@ -93,8 +93,7 @@
 	scope_setup()
 	for(var/safe_type in list(/obj/structure/closet/crate/secure/lootsafe/numberlock/weak, /obj/structure/closet/crate/secure/lootsafe/devillock))
 		var/obj/structure/closet/crate/secure/lootsafe/S = allocate(safe_type, test_floor())
-		for(var/atom/movable/item in contents_of(S))
-			own(item)
+		own_generated_contents(S)
 		TEST_ASSERT_EQUAL(length(S.code), S.codelen, "The actual safe constructor generates its subtype's full code")
 		var/list/alphabet = TYPE_TABLE_GET(S, code_alphabet)
 		var/list/seen = list()
@@ -104,3 +103,16 @@
 			seen += character
 		TEST_ASSERT(contents_count(S) > 0, "The constructor generates actual loot after its code")
 		TEST_ASSERT(cap_key_get(S, LOCK_LOCKED), "Generating the initial code and loot leaves the real safe locked")
+
+/// Capture real generated descendants before spill-on-delete containers materialize them.
+/datum/unit_test/dq_a13_initialization/proc/own_generated_contents(atom/holder)
+	if(istype(holder, /obj/item/storage))
+		var/list/materialized = holder.latent_materialize_all()
+		var/list/real_contents = contents_of(holder)
+		TEST_ASSERT(!holder.has_latent(), "Native storage materialization consumes every latent entry")
+		TEST_ASSERT(length(materialized) <= length(real_contents), "Every newly materialized item is represented in the real native contents")
+		for(var/atom/movable/created in materialized)
+			TEST_ASSERT(created in real_contents, "Native materialization returns the exact object held by its actual storage")
+	for(var/atom/movable/child in contents_of(holder))
+		own(child)
+		own_generated_contents(child)
