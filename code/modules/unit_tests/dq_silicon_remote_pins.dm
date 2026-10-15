@@ -1,6 +1,8 @@
 // Record the old user-visible result for both silicon providers before the
 // entry-point migration. Metadata keys are covered by the ordinary conversion
 // pins; these rows compare the actual menu/refusal and plain-click result.
+/datum/unit_test/dq_conversion_pin/silicon_remote
+
 /datum/unit_test/dq_conversion_pin/silicon_remote/snapshot_name()
 	return "silicon_remote"
 
@@ -23,6 +25,8 @@
 
 // These are viewer facts, rather than grants of remote authority. In particular,
 // the old photocopier field named isAI includes a borg, unlike the fax field.
+/datum/unit_test/dq_silicon/remote_viewer_facts
+
 /datum/unit_test/dq_silicon/remote_viewer_facts/run_gate()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = make_human(T)
