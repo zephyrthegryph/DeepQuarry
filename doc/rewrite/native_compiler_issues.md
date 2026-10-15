@@ -124,7 +124,7 @@ this branch. Items marked OPEN are not.
 `tools/dmb`, so a fresh worktree copies the executables instead of running a 3-5 minute cargo build and keeping its own `target/`.
 
 **Equivalence against DreamMaker** (production dme, same source, `dmb-equiv --ignore-debug`, A = DreamMaker, B = native). Residual
-133,256 differences; 132,000 of them order-only and not semantic (proc table 70,694, type table 37,396, var-name strings 15,747, per
+133,256 differences; 123,837 of them order-only and not semantic (proc table 70,694, type table 37,396, var-name strings 15,747, per
 the 2026-10-14 decision). The rest: bytecode 9,075, `<init>` sharing 99 + 79 + 70 (anonymous procedures), locals 86, map objects 6,
 verb order 3, argument flags 1. Triage:
 - **Fixed: `mob/T = null as mob in list` argument flags.** DreamMaker adds the `null` input bit (0x80) when an annotated formal with an
@@ -145,7 +145,7 @@ assemblies; `dmbd artifact release tier=2`) because its private memory sits abov
 about 11 s to re-prepare every source plus the map and link rebuilds. The release returned no memory (private bytes before and after
 differ by under 0.1%), so it was pure cost and fired after every build. Soft pressure now releases nothing (the hard ceiling and the
 one-hour idle release are unchanged), which removes the 25-65 s spikes: a body edit after a pressure release went from 54.8 s to 17.8 s
-on the first measurement and a steady patch edit stays at 8-10 s.
+in the same measurement sequence, and a steady patch edit stays at 8-10 s.
 
 **Compile time per edit kind** (production dme, resident daemon, `dmbc compile` wall time, a machine shared with other lanes so single
 runs vary by up to 2x; the table is the best of the runs that were not disturbed):
