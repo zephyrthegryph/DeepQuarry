@@ -11,7 +11,7 @@ the expected residual is four. These are source-audit counts, not an analyzer re
 No baseline has been raised or manually rewritten. No verification stamp exists yet.
 
 A shared old-production capture ran 55 selected tests: 50 passed. The three lifecycle
-fixture failures were diagnosed before repair: real legacy statue mute/stasis leakage,
+fixture failures were diagnosed before repair: real legacy statue mute leakage (source-scoped stasis already ends automatically),
 a flipper emag attempt correctly declining without a passenger, and hexadecimal color
 case normalization. The other two failures belong to the requirements lane. A bounded
 failure-only old-code repair capture is being coordinated by the root agent.

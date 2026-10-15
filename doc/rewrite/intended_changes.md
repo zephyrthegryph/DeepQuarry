@@ -4898,10 +4898,10 @@ Affected requirement-pin classes:
 
 ## Declarative lifecycle burn-down (2026-10-15)
 
-* Petrification statues now release their own mute and injury-stasis consequences before
+* Petrification statues now release their own mute consequence before
   the destruction transaction spills the occupant. Previously `on_destroy()` ran after
-  contents resolution; its `dump_contents()` saw an empty statue, leaving those effects
-  on the released human. The old-code capture explicitly records that defect; the native
+  contents resolution; its `dump_contents()` saw an empty statue, leaving mute
+  on the released human. Source-scoped injury stasis already ended automatically. The old-code capture explicitly records that defect; the native
   ending regression asserts the repaired state. Ordinary occupant survival and placement
   remain unchanged.
 * Gargoyle construction applies the transient human argument when the parameter is bound.

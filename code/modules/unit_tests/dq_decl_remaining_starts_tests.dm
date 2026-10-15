@@ -108,7 +108,7 @@
 	TEST_ASSERT_EQUAL(F.pai.card, F, "the child binds the supplied card instead of making another")
 	TEST_ASSERT(!F.emagged, "the pre-passenger emag attempt declines without subverting the card")
 	TEST_ASSERT(!is_emagged(F), "the declined attempt does not publish native emag state")
-	TEST_ASSERT_EQUAL(F.current_emotion, 4, "the card starts with the specified emotion")
+	TEST_ASSERT_EQUAL(F.current_emotion, 16, "the inherited zero-delay card policy settles after the flipper initialization emotion")
 
 /datum/unit_test/dq_decl_remaining/telecube
 /datum/unit_test/dq_decl_remaining/telecube/Run()
