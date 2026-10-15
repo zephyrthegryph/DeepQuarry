@@ -6,16 +6,14 @@ Branch: `codex/decl-burndown`, based on `4ab2e15fe1`.
 
 The original baseline contains 47 actual rows: 23 visuals, 10 starting children,
 6 destruction drops, 5 destruction effects, and one each of reagent initialization,
-registry membership and scheduling. The supported source draft now targets 41 removals;
-the expected residual is six, pending the final engine baseline update. The earlier
+registry membership and scheduling. The engine baseline update confirms 41 removals and six retained rows. The earlier
 47-to-4 draft passed baseline checking but exposed two additional runtime contract gaps.
 No baseline has been raised or manually rewritten. No verification stamp exists yet.
 
 A shared old-production capture ran 55 selected tests: 50 passed. The three lifecycle
 fixture failures were diagnosed before repair: real legacy statue mute leakage (source-scoped stasis already ends automatically),
 a flipper emag attempt correctly declining without a passenger, and hexadecimal color
-case normalization. The other two failures belong to the requirements lane. A bounded
-failure-only old-code repair capture is being coordinated by the root agent.
+case normalization. The other two failures belong to the requirements lane. The bounded old-code repairs passed before production conversion; the capture-only statue assertion records the old defect rather than blessing it.
 
 ## Native contract extensions
 
