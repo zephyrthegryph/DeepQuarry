@@ -148,6 +148,8 @@
 	no_touch_effects++
 	return ..()
 
+/datum/unit_test/dq_silicon/c2_oven_exclusive_routes
+
 /datum/unit_test/dq_silicon/c2_oven_exclusive_routes/run_gate()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = make_human(T)
