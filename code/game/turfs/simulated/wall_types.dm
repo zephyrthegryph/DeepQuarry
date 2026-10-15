@@ -390,7 +390,7 @@ CAPABILITIES(/obj/structure/hull_corner)
 	else
 		look.state("[wall_base_state][wall_connections]")
 	if(damage_step)
-		look.overlay(damage_overlays[damage_step])
+		look.overlay(damage_overlay_of(damage_step))
 
 /turf/simulated/wall/tgmc/update_connections(propagate)
 	if(!material)

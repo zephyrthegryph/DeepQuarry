@@ -147,9 +147,9 @@ MSG_DEF_SELF(floor_light/unanchored, "it must be screwed down first")
 	if(!use_power || broken())
 		return
 	if(isnull(damaged))
-		look.overlay(CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, layer+0.001))
+		look.overlay(CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, initial(layer)+0.001))
 	else
-		look.overlay(CACHED_KEY(floor_light_overlays, "floorlight-broken[damaged]-[default_light_colour]", "flicker[damaged]", default_light_colour, layer+0.001))
+		look.overlay(CACHED_KEY(floor_light_overlays, "floorlight-broken[damaged]-[default_light_colour]", "flicker[damaged]", default_light_colour, initial(layer)+0.001))
 	if(lit())
 		look.glow(GLOW(default_light_range, default_light_power, default_light_colour))
 

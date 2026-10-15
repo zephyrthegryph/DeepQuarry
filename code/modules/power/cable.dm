@@ -277,7 +277,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /obj/structure/cable/draw(datum/look/look)
 	..()
 	// We rely on the icon state for the wire Initialize(), prevent any updates to the icon before init passed
-	if(!(flags & ATOM_INITIALIZED))
+	if(!atom_initialized(src))
 		return
 	look.state("[d1]-[d2]")
 	look.set_alpha(invisibility ? 127 : 255)

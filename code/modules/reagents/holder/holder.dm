@@ -296,7 +296,7 @@ CAPABILITIES(/datum/reagents)
 /datum/reagents/proc/has_reagent(id, amount = 0)
 	var/datum/reagent/current = reagent_by_id[id]
 	if(current)
-		return current.volume >= amount ? 1 : 0
+		return read_once(current.volume) >= amount ? 1 : 0 // a reagent's volume moves with every transfer: sampled where it is asked
 	return 0
 
 /datum/reagents/proc/has_any_reagent(list/check_reagents)
@@ -323,7 +323,7 @@ CAPABILITIES(/datum/reagents)
 /datum/reagents/proc/get_reagent_amount(id)
 	var/datum/reagent/current = reagent_by_id[id]
 	if(current)
-		return current.volume
+		return read_once(current.volume)
 	return 0
 
 /datum/reagents/proc/get_data(id)

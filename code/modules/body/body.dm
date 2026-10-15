@@ -248,7 +248,7 @@
 
 /// Biology of a part (or of the whole body when `location` is null).
 /datum/body/proc/biology_of(location)
-	return owner.biology // ALLOW(reads): biology is fixed when the body is made; a reader asks it, nothing caches it
+	return owner.biology
 
 // --- Injury / treatment entry points (overridden per plan) ----------------------
 

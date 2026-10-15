@@ -143,7 +143,7 @@ CAPABILITIES(/obj/structure/bed)
 	return null
 
 /obj/structure/bed/proc/can_be_padded(datum/act/op/A)
-	if(can_pad && !padding_material && !isnull(padding_type_of(A.held))) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
+	if(can_pad && !padding_material && !isnull(padding_type_of(A.held)))
 		return null
 	if(!can_pad)
 		return /datum/msg/bed/cant_pad
@@ -170,7 +170,7 @@ CAPABILITIES(/obj/structure/bed)
 	return OP_OK
 
 /obj/structure/bed/proc/has_padding(datum/act/A)
-	return (!!padding_material) ? null : MSG(bed/no_padding) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
+	return (!!padding_material) ? null : MSG(bed/no_padding)
 
 /obj/structure/bed/proc/unpad_allowed(datum/act/A)
 	return (can_unpad) ? null : MSG(bed/cant_unpad)

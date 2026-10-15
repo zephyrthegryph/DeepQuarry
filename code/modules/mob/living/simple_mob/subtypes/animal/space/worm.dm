@@ -235,7 +235,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
 	look.state(state)
 	if(next)
 		look.watch(next)
-		look.set_color(next.color)
+		look.set_color(read_once(next.color))
 
 /// Recomputes the link direction from where the neighbours stand (they move; this segment's sprite follows).
 /mob/living/simple_mob/animal/space/space_worm/proc/refresh_links()

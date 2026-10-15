@@ -20,6 +20,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	configure(uses_power(idle = 50, active = 750))
 	started_work(step = PROC_REF(work_step))
 	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
+	ref_one(nameof(inserted_battery), /obj/item/anobattery)
 	ref_one(nameof(cur_artifact), /obj)
 	interface("XenoarchArtifactHarvester")
 	op("harvest", ui_act("harvest"), then(PROC_REF(ui_act_harvest)))
@@ -143,7 +144,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 
 /// The drain question is asked only of a battery with an effect and charge in it.
 /obj/machinery/artifact_harvester/proc/battery_has_charge(datum/act/op/A)
-	var/obj/item/anobattery/B = QDELETED(inserted_battery) ? null : inserted_battery // ALLOW(reads): the battery is read when the button is pressed, never cached
+	var/obj/item/anobattery/B = inserted_battery
 	return B?.battery_effect && B.stored_charge > 0
 
 /obj/machinery/artifact_harvester/proc/ui_act_drainbattery(datum/act/op/A)

@@ -95,7 +95,7 @@
 	return sum
 
 /mob/living/carbon/human/get_gender()
-	return identifying_gender ? identifying_gender : gender
+	return identifying_gender ? identifying_gender : read_once(gender)
 
 /mob/living/carbon/human/name_gender() /// Returns proper names for gender identites
 	if(identifying_gender == "plural")

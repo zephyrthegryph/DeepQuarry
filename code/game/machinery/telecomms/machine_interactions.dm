@@ -239,7 +239,7 @@ CAPABILITIES(/obj/machinery/telecomms/relay)
 
 /// needs: the relay listens to the station now (it can go back to its own level), or stands on the satellite (it can lock onto the station).
 /obj/machinery/telecomms/relay/proc/can_change_level(datum/act/op/A)
-	return (listening_level == TCOMMS_STATION_Z || z == TCOMMS_SATELLITE_Z) ? null : MSG(tcomms/cannot_lock) // ALLOW(reads): the relay's level is asked when the button is pressed
+	return (listening_level == TCOMMS_STATION_Z || read_once(z) == TCOMMS_SATELLITE_Z) ? null : MSG(tcomms/cannot_lock)
 
 /// Locks the relay's signal onto the station, or back onto its own level.
 /obj/machinery/telecomms/relay/proc/ui_act_change_listening(datum/act/op/A)

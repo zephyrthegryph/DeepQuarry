@@ -127,6 +127,7 @@
 
 /// A lazy system (boots_in_dag() FALSE) initializes on first use: `SSx.ready()` returns the system, initializing it when
 /// it is not yet. initialize() sets `initialized` first, so a re-entrant call does not recurse.
+PROC_SUMMARY(/datum/system/proc/ready) // a lazy system initializes once, on first use (the timing in its log is not an input); what a draw reads off it is its built data
 /datum/system/proc/ready()
 	RETURN_TYPE(/datum/system)
 	if(!initialized)
