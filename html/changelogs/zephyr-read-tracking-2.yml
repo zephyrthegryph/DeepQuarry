@@ -2,3 +2,4 @@ author: "zephyr"
 delete-after: true
 changes:
   - code_imp: "Hand-written setters of tracked vars must publish (setter_publishes lint); the setters that did not now do"
+  - code_imp: "List mutator calls in files without set_ now keep their list tracked"
