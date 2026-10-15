@@ -406,7 +406,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		eyes.place_into(torso, SLOT_ID_PART_ORGANS)
 	for(var/obj/item/organ/external/head/ex_organ in unfortunate_soul.organs)
 		ex_organ.cannot_break = TRUE
-		ex_organ.dislocated = -1
+		ex_organ.set_dislocated(-1)
 		ex_organ.nonsolid = TRUE
 		ex_organ.spread_dam = TRUE
 		ex_organ.set_max_damage(5) //VERY fragile, now.

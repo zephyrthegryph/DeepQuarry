@@ -23,6 +23,11 @@ cap_keys(CAP_MOB_STATE, PLAYED = MSG(mob_state/no_player), KNOWS_LANGUAGE = MSG(
 /mob/proc/ckey_changed()
 	if(GLOB.stat_input_keys?[nameof(ckey)] || GLOB.derived_read_vars?[nameof(ckey)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(ckey))))
 		own_field_changed(src, nameof(ckey))
+	// `client` and `key` arrive and leave with the key, at the same two places.
+	if(GLOB.stat_input_keys?[nameof(client)] || GLOB.derived_read_vars?[nameof(client)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(client))))
+		own_field_changed(src, nameof(client))
+	if(GLOB.stat_input_keys?[nameof(key)] || GLOB.derived_read_vars?[nameof(key)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(key))))
+		own_field_changed(src, nameof(key))
 
 /// Sets MOB_STATE_PLAYED (nothing is made for a mob that never had a player and still has none).
 /mob/proc/mob_state_set_played(played)

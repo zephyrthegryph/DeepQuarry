@@ -151,9 +151,9 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 	READS_FROM() // the whitelist is an admin record, not round state
 	if(!CONFIG_GET(flag/usewhitelist)) //I guess this is an override for the blanket whitelist system.
 		return 1
-	if(!GLOB.whitelist)
+	if(!read_once(GLOB.whitelist))
 		return 0
-	return ("[M.ckey]" in GLOB.whitelist)
+	return read_once("[M.ckey]" in GLOB.whitelist) ? 1 : 0
 
 /// Loads the alien whitelists: from the database (io_job; the lists are replaced when the rows
 /// arrive) or from the config file.

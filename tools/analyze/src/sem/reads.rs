@@ -67,7 +67,7 @@ pub fn effect_call(name: &str) -> bool {
         || name.starts_with("rel_")
         || name.starts_with("set_")
         || name.starts_with("log_")
-        || matches!(name, "stack_trace" | "crash_with" | "WARNING" | "warning" | "notice" | "testing" | "message_admins" | "to_world" | "admin_notice" | "fx_sparks" | "after" | "every" | "world_next_tick")
+        || matches!(name, "stack_trace" | "crash_with" | "WARNING" | "warning" | "notice" | "testing" | "message_admins" | "to_world" | "admin_notice" | "fx_sparks" | "after" | "every" | "world_next_tick" | "add_overlay" | "cut_overlay" | "cut_overlays")
 }
 
 /// A supported numeric lookup argument, kept in the actual caller's coordinate system.
@@ -391,6 +391,9 @@ struct Val {
     hop_ok: bool,
     /// A list of entities (a list relation): iterating it hops `name[]`.
     list: bool,
+    /// The message of the `hop_not_relation` finding this value carries: it came through a var that is not a declared relation. The finding is
+    /// recorded when something is read or called through the value (a bare read of the var, `if(cell)`, is the var's own tracked read).
+    blame: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -412,7 +415,7 @@ enum Root {
 
 impl Val {
     fn local(ty: Option<String>) -> Val {
-        Val { ty, root: Root::Local, hops: Vec::new(), hop_ok: true, list: false }
+        Val { ty, root: Root::Local, hops: Vec::new(), hop_ok: true, list: false, blame: None }
     }
     fn tracked(&self) -> bool {
         matches!(self.root, Root::Holder | Root::Ctx(_) | Root::Lookup(_))
@@ -565,7 +568,7 @@ impl<'a> ReadsEngine<'a> {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
         let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new() };
-        let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
+        let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false, blame: None };
         w.run_proc(p, this, &[], true);
         w.finish();
         out
@@ -578,7 +581,7 @@ impl<'a> ReadsEngine<'a> {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
         let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new() };
-        let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
+        let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false, blame: None };
         w.run_proc(p, this, &[], true);
         w.finish();
         out
@@ -599,7 +602,9 @@ impl<'a> ReadsEngine<'a> {
             return VarClass::Reactive;
         }
         // `type` and `parent_type` are fixed for the life of the thing (BYOND does not let a running world change them)
-        if matches!(var, "type" | "parent_type") {
+        // `gc_destroyed` is the thing's own deletion mark: what holds a thing through a relation hears its deletion as the relation clearing, and
+        // the holder itself is gone with it, so a `QDELETED(x)` is not an input that changes under a live consumer.
+        if matches!(var, "type" | "parent_type" | "gc_destroyed") {
             return VarClass::Constant;
         }
         // a `var/const` never changes, whatever other types name a var the same
@@ -629,7 +634,7 @@ impl<'a> ReadsEngine<'a> {
     /// A BYOND built-in var the engine publishes from its own choke point, so a read of it is reactive without being a TRACKED var:
     /// `loc` from `doMove()` / `Moved()` (the container hop's publisher).
     pub fn is_published_builtin(&self, owner: &str, var: &str) -> bool {
-        (matches!(var, "loc" | HOP_TURF | HOP_AREA) && self.sem.is_subtype(owner, "/atom")) || (var == "ckey" && self.sem.is_subtype(owner, "/mob"))
+        (matches!(var, "loc" | HOP_TURF | HOP_AREA) && self.sem.is_subtype(owner, "/atom")) || (matches!(var, "ckey" | "client" | "key") && self.sem.is_subtype(owner, "/mob"))
     }
 
     /// A relation declared with a macro or in a `relations()` body, on the type or an ancestor.
@@ -831,7 +836,7 @@ impl<'a, 'e> Walk<'a, 'e> {
         if !framework_file(rel) {
             return false;
         }
-        if r.var == "contents" {
+        if matches!(r.var.as_str(), "contents" | "overlays" | "underlays") {
             return true;
         }
         match self.eng.sem.var_decl(&r.owner, &r.var) {
@@ -1126,7 +1131,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                             last.push_str("[]");
                         }
                     }
-                    Val { ty: declared.clone(), root: it.root.clone(), hops, hop_ok: it.hop_ok, list: false }
+                    Val { ty: declared.clone(), root: it.root.clone(), hops, hop_ok: it.hop_ok, list: false, blame: None }
                 } else {
                     Val::local(declared.clone())
                 };
@@ -1197,7 +1202,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                             self.index(v)
                         }
                         Follow::Unary(dreammaker::ast::UnaryOp::Neg) => match &v.root {
-                            Root::Scalar(LookupArgument::Literal(n)) if n != "null" => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(format!("-{n}"))), hops: Vec::new(), hop_ok: true, list: false },
+                            Root::Scalar(LookupArgument::Literal(n)) if n != "null" => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(format!("-{n}"))), hops: Vec::new(), hop_ok: true, list: false, blame: None },
                             _ => Val::local(None),
                         },
                         Follow::Unary(_) => Val::local(None),
@@ -1290,9 +1295,9 @@ impl<'a, 'e> Walk<'a, 'e> {
 
     fn term(&mut self, fr: &mut Frame<'a>, t: &Term, line: u32) -> Val {
         match t {
-            Term::Int(n) => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(n.to_string())), hops: Vec::new(), hop_ok: true, list: false },
-            Term::Float(n) => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(n.to_string())), hops: Vec::new(), hop_ok: true, list: false },
-            Term::Null => Val { ty: None, root: Root::Scalar(LookupArgument::Literal("null".to_string())), hops: Vec::new(), hop_ok: true, list: false },
+            Term::Int(n) => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(n.to_string())), hops: Vec::new(), hop_ok: true, list: false, blame: None },
+            Term::Float(n) => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(n.to_string())), hops: Vec::new(), hop_ok: true, list: false, blame: None },
+            Term::Null => Val { ty: None, root: Root::Scalar(LookupArgument::Literal("null".to_string())), hops: Vec::new(), hop_ok: true, list: false, blame: None },
             Term::Ident(name) => self.ident(fr, name, line),
             Term::Expr(e) => self.eval(fr, e),
             Term::Call(name, args) => self.call(fr, name.as_str(), args, line),
@@ -1448,7 +1453,7 @@ impl<'a, 'e> Walk<'a, 'e> {
         }
         let ty = (!sig.declared.is_empty()).then(|| sig.declared.clone());
         if sig.is_object() {
-            Some(Val { ty, root: Root::Global(name.to_string()), hops: Vec::new(), hop_ok: true, list: false })
+            Some(Val { ty, root: Root::Global(name.to_string()), hops: Vec::new(), hop_ok: true, list: false, blame: None })
         } else {
             Some(Val::local(ty))
         }
@@ -1480,7 +1485,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             }
         }
         if sig.is_object() && child.matches('.').count() < MAX_HOPS {
-            Val { ty: (!sig.declared.is_empty()).then(|| sig.declared.clone()), root: Root::Global(child), hops: Vec::new(), hop_ok: true, list: false }
+            Val { ty: (!sig.declared.is_empty()).then(|| sig.declared.clone()), root: Root::Global(child), hops: Vec::new(), hop_ok: true, list: false, blame: None }
         } else {
             Val::local((!sig.declared.is_empty()).then(|| sig.declared))
         }
@@ -1499,16 +1504,20 @@ impl<'a, 'e> Walk<'a, 'e> {
             return Val::local(None);
         }
         let Some(ty) = v.ty.clone() else { return Val::local(None) };
+        // `L.len` on a list var: the length is the list's own state, so the read of the list var (recorded when it was reached) already stands for it.
+        if name == "len" && v.list {
+            return Val::local(None);
+        }
         if v.root == Root::Act {
             // Context field.
             self.out.ctx_fields.entry(name.to_string()).or_insert((rel.clone(), line));
             let sig = sem.var_decl(&ty, name);
             return match sig {
                 Some(s) if name == "holder" => {
-                    Val { ty: (!s.declared.is_empty()).then(|| s.declared), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false }
+                    Val { ty: (!s.declared.is_empty()).then(|| s.declared), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false, blame: None }
                 }
-                Some(s) if s.is_object() => Val { ty: Some(s.declared), root: Root::Ctx(name.to_string()), hops: Vec::new(), hop_ok: true, list: false },
-                Some(s) => Val { ty: (!s.declared.is_empty()).then(|| s.declared), root: Root::Scalar(LookupArgument::Path { root: "context".to_string(), path: vec![name.to_string()] }), hops: Vec::new(), hop_ok: true, list: false },
+                Some(s) if s.is_object() => Val { ty: Some(s.declared), root: Root::Ctx(name.to_string()), hops: Vec::new(), hop_ok: true, list: false, blame: None },
+                Some(s) => Val { ty: (!s.declared.is_empty()).then(|| s.declared), root: Root::Scalar(LookupArgument::Path { root: "context".to_string(), path: vec![name.to_string()] }), hops: Vec::new(), hop_ok: true, list: false, blame: None },
                 None => Val::local(None),
             };
         }
@@ -1543,6 +1552,10 @@ impl<'a, 'e> Walk<'a, 'e> {
         if !v.tracked() {
             return Val::local((!sig.declared.is_empty()).then(|| sig.declared));
         }
+        // A turf never moves (BYOND does not let one), so its own coordinates are constants of its type and map position.
+        if matches!(name, "x" | "y" | "z") && v.hops.is_empty() && v.root == Root::Holder && sem.is_subtype(&ty_used, "/turf") {
+            return Val::local((!sig.declared.is_empty()).then(|| sig.declared));
+        }
         let mut owner = sem.var_owner(&ty_used, name).unwrap_or_else(|| ty_used.clone());
         // A subtype may track a var an ancestor declares (`TRACKED(/area, flags)` for `/atom/var/flags`): the read is of that subtype's tracked var.
         if owner != ty_used && owner != "/" && !self.eng.is_tracked(&owner, name) && self.eng.is_tracked(&ty_used, name) {
@@ -1560,30 +1573,47 @@ impl<'a, 'e> Walk<'a, 'e> {
         let _ = is_const;
         if !v.hop_ok || v.hops.len() >= MAX_HOPS {
             // A read beyond a non-relation hop is kept (the reads stay complete) but never extended.
+            if let Some(msg) = v.blame.clone() {
+                // (A thing's type never changes; the framework's own bodies asking what a thing is are not content reading through a hop.)
+                if !matches!(name, "type" | "parent_type") && !framework_file(&rel) && self.mute == 0 {
+                    self.diag("hop_not_relation", &rel, line, msg);
+                }
+            }
             return Val::local((!sig.declared.is_empty()).then(|| sig.declared));
+        }
+        if sig.is_object() && !is_rel && !sig.declared.is_empty() && self.is_flyweight_type(&sig.declared) {
+            // A flyweight is a shared value built once and never written after (doc/rewrite/final_api.html section 6): the var that names it is
+            // read (and tracked) like any other, and what is read off the flyweight is a constant, so the walk does not follow it.
+            return Val::local(Some(sig.declared));
         }
         if sig.is_object() || sig.is_list() {
             let mut hops = v.hops.clone();
             hops.push(name.to_string());
-            if !is_rel && sig.is_object() && self.mute == 0 {
+            let mut blame = v.blame.clone();
+            if !is_rel && sig.is_object() && self.mute == 0 && blame.is_none() {
                 // (Inside read_once() nothing is subscribed, so a hop that does not subscribe is not a finding.)
-                // Followed anyway (the reads stay complete); flagged so classification can say why a hop does not subscribe.
+                // Followed anyway (the reads stay complete); flagged so classification can say why a hop does not subscribe. The finding is
+                // recorded where something is read or called through the value, not where the var is merely read (`if(cell)`, `return tank`).
                 let engine_hop = self.eng.virtual_dispatch && self.internal_read(&rel, &Read { root: String::new(), hops: Vec::new(), var: name.to_string(), owner: owner.clone(), kind: ReadKind::Var, hop_ok: true });
                 if !engine_hop {
-                    let msg = format!("hop through `{}` ({}) which is not a declared relation or another hop kind", name, owner);
-                    self.diag("hop_not_relation", &rel, line, msg);
+                    blame = Some(format!("hop through `{}` ({}) which is not a declared relation or another hop kind", name, owner));
                 }
             }
-            return Val { ty: (!sig.declared.is_empty()).then(|| sig.declared.clone()), root: v.root.clone(), hops, hop_ok: v.hop_ok && is_rel, list: sig.is_list() };
+            return Val { ty: (!sig.declared.is_empty()).then(|| sig.declared.clone()), root: v.root.clone(), hops, hop_ok: v.hop_ok && is_rel, list: sig.is_list(), blame };
         }
         let mut path = v.hops.clone();
         path.push(name.to_string());
         // Runtime lookup paths dereference real datum vars. Virtual stats, computed
         // aliases and accessor-only fields need a typed hop form, not raw name lookup.
         if matches!(v.root, Root::Holder | Root::Ctx(_)) && v.hop_ok && self.eng.sem.var_decl(&owner, name).is_some() && (self.eng.is_tracked(&owner, name) || sig.is_const) {
-            return Val { ty: (!sig.declared.is_empty()).then(|| sig.declared), root: Root::Scalar(LookupArgument::Path { root: v.root_name(), path }), hops: Vec::new(), hop_ok: true, list: false };
+            return Val { ty: (!sig.declared.is_empty()).then(|| sig.declared), root: Root::Scalar(LookupArgument::Path { root: v.root_name(), path }), hops: Vec::new(), hop_ok: true, list: false, blame: None };
         }
         Val::local((!sig.declared.is_empty()).then(|| sig.declared))
+    }
+
+    /// A type that is a flyweight (`FLYWEIGHT_TYPES`) or a subtype of one.
+    fn is_flyweight_type(&self, ty: &str) -> bool {
+        crate::dm::ownership_index::FLYWEIGHT_TYPES.iter().any(|f| self.eng.sem.is_subtype(ty, f))
     }
 
     fn index(&mut self, v: Val) -> Val {
@@ -1594,7 +1624,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                     l.push_str("[]");
                 }
             }
-            return Val { ty: None, root: v.root, hops, hop_ok: v.hop_ok, list: false };
+            return Val { ty: None, root: v.root, hops, hop_ok: v.hop_ok, list: false, blame: None };
         }
         Val::local(None)
     }
@@ -1649,6 +1679,9 @@ impl<'a, 'e> Walk<'a, 'e> {
             return Val::local(None);
         }
         if p.is_builtin() || !v.tracked() || !v.hop_ok {
+            if let (Some(msg), false, true, false, true) = (v.blame.clone(), p.is_builtin(), v.tracked(), framework_file(&rel), self.mute == 0) {
+                self.diag("hop_not_relation", &rel, line, msg);
+            }
             return Val::local(None);
         }
         let owner = {
@@ -1683,7 +1716,7 @@ impl<'a, 'e> Walk<'a, 'e> {
         let r = Read { root: v.root_name(), hops: hops.clone(), var: kind.to_string(), owner: "/atom".to_string(), kind: ReadKind::Var, hop_ok: v.hop_ok };
         self.add_read(r, rel, line);
         hops.push(kind.to_string());
-        Val { ty: Some(base.to_string()), root: v.root.clone(), hops, hop_ok: v.hop_ok, list: false }
+        Val { ty: Some(base.to_string()), root: v.root.clone(), hops, hop_ok: v.hop_ok, list: false, blame: None }
     }
 
     fn reads_as_for(&self, ty: &str, name: &str) -> Option<&'e (String, Option<String>)> {
@@ -1753,7 +1786,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 }
             }
             let bound = LookupBound { registry: decl.registry.clone(), identity_key: decl.identity_key.clone(), lookup: name.to_string(), argument };
-            return Val { ty: Some(decl.result.clone()), root: Root::Lookup(Box::new(bound)), hops: Vec::new(), hop_ok: true, list: false };
+            return Val { ty: Some(decl.result.clone()), root: Root::Lookup(Box::new(bound)), hops: Vec::new(), hop_ok: true, list: false, blame: None };
         }
         // The turf and area hops (doc/rewrite/final_api.html section 7, "Hop kinds"): `get_turf(x)` (`get_step(x, 0)`) and `get_area(x)` keep x's
         // root. The pseudo segment is published by the movement choke point (`loc_changed()`), and walked by `hop_step()` / `hop_sources()`

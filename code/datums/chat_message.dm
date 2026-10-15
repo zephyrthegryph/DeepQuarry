@@ -447,7 +447,7 @@ CAPABILITIES(/datum/chatmessage)
 	return (width - world.icon_size) * -0.5
 
 /atom/proc/runechat_y_offset()
-	return maptext_height
+	return initial(maptext_height)
 
 /atom/movable/runechat_x_offset(width, height)
 	return (width - bound_width) * -0.5 + get_oversized_icon_offsets()["x"]

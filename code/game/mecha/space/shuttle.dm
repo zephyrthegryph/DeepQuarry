@@ -40,13 +40,13 @@
 	..()
 	var/base = mecha_base_state()
 	if(base_paint)
-		look.overlay(look_appearance(icon, "[base]-mask+base", color = base_paint, layer = layer + 1))
+		look.overlay(look_appearance(icon, "[base]-mask+base", color = base_paint, layer = initial(layer) + 1))
 	if(front_paint)
-		look.overlay(look_appearance(icon, "[base]-mask+front", color = front_paint, layer = layer + 1))
+		look.overlay(look_appearance(icon, "[base]-mask+front", color = front_paint, layer = initial(layer) + 1))
 	if(engine_paint)
-		look.overlay(look_appearance(icon, "[base]-mask+engine", color = engine_paint, layer = layer + 1))
+		look.overlay(look_appearance(icon, "[base]-mask+engine", color = engine_paint, layer = initial(layer) + 1))
 	if(central_paint)
-		look.overlay(look_appearance(icon, "[base]-mask+central", color = central_paint, layer = layer + 2))
+		look.overlay(look_appearance(icon, "[base]-mask+central", color = central_paint, layer = initial(layer) + 2))
 
 
 CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)

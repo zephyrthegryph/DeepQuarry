@@ -98,7 +98,7 @@
 
 /client/p_they(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "she"
@@ -113,7 +113,7 @@
 
 /client/p_their(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "her"
@@ -128,7 +128,7 @@
 
 /client/p_theirs(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "hers"
@@ -143,7 +143,7 @@
 
 /client/p_them(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "her"
@@ -158,47 +158,47 @@
 
 /client/p_have(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "have"
 	return "has"
 
 /client/p_are(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "are"
 	return "is"
 
 /client/p_were(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "were"
 	return "was"
 
 /client/p_do(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "do"
 	return "does"
 
 /client/p_s(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender != PLURAL)
 		return "s"
 
 /client/p_es(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender != PLURAL && temp_gender != NEUTER)
 		return "es"
 
 /client/p_themselves(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "herself"
@@ -215,7 +215,7 @@
 
 /mob/p_they(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender) // a pronoun is the gender the mob has when it is said
 	switch(temp_gender)
 		if(FEMALE)
 			return "she"
@@ -230,7 +230,7 @@
 
 /mob/p_their(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "her"
@@ -245,7 +245,7 @@
 
 /mob/p_theirs(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "hers"
@@ -260,7 +260,7 @@
 
 /mob/p_them(capitalized, temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "her"
@@ -275,47 +275,47 @@
 
 /mob/p_have(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "have"
 	return "has"
 
 /mob/p_are(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "are"
 	return "is"
 
 /mob/p_were(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "were"
 	return "was"
 
 /mob/p_do(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "do"
 	return "does"
 
 /mob/p_s(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender != PLURAL)
 		return "s"
 
 /mob/p_es(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender != PLURAL)
 		return "es"
 
 /mob/p_themselves(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "herself"
@@ -332,7 +332,7 @@
 
 /atom/p_they(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "she"
@@ -347,7 +347,7 @@
 
 /atom/p_their(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "her"
@@ -362,7 +362,7 @@
 
 /atom/p_theirs(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "hers"
@@ -377,7 +377,7 @@
 
 /atom/p_them(capitalized, temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "her"
@@ -392,47 +392,47 @@
 
 /atom/p_have(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "have"
 	return "has"
 
 /atom/p_are(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "are"
 	return "is"
 
 /atom/p_were(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "were"
 	return "was"
 
 /atom/p_do(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "do"
 	return "does"
 
 /atom/p_s(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender != PLURAL)
 		return "s"
 
 /atom/p_es(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender != PLURAL)
 		return "es"
 
 /atom/p_themselves(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "herself"
@@ -503,75 +503,75 @@
 
 /obj/item/clothing/p_they(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "they"
 	return "it"
 
 /obj/item/clothing/p_their(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "their"
 	return "its"
 
 /obj/item/clothing/p_theirs(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "theirs"
 	return "its"
 
 /obj/item/clothing/p_them(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "them"
 	return "it"
 
 /obj/item/clothing/p_have(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "have"
 	return "has"
 
 /obj/item/clothing/p_are(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "are"
 	return "is"
 
 /obj/item/clothing/p_were(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "were"
 	return "was"
 
 /obj/item/clothing/p_do(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "do"
 	return "does"
 
 /obj/item/clothing/p_s(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender != PLURAL)
 		return "s"
 
 /obj/item/clothing/p_es(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	if(temp_gender != PLURAL)
 		return "es"
 
 /obj/item/clothing/p_themselves(temp_gender)
 	if(!temp_gender)
-		temp_gender = gender
+		temp_gender = read_once(gender)
 	switch(temp_gender)
 		if(FEMALE)
 			return "herself"

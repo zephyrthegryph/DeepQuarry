@@ -89,9 +89,10 @@
 /// for(var/obj/item/I in contents_of(src))
 /// var/list/obj/item/cell/cells = contents_of(holder, /obj/item/cell)
 /// ```
+READS_AS(/proc/contents_of, SLOT_OCCUPANCY_KEY)
 /proc/contents_of(atom/A, type)
 	RETURN_TYPE(/list)
-	READS_FROM() // what a thing holds is asked when a choice is made, never cached
+	READS_FROM(A) // what a thing holds follows its occupancy: the ledger publishes SLOT_OCCUPANCY_KEY when anything enters or leaves
 	if(!A)
 		return list()
 	if(!type)
@@ -110,8 +111,9 @@
 	return locate(type) in A.contents
 
 /// How many things `A` directly contains. Equivalent to `A.contents.len`.
+READS_AS(/proc/contents_count, SLOT_OCCUPANCY_KEY)
 /proc/contents_count(atom/A)
-	READS_FROM(A) // the count follows this holder's direct contents
+	READS_FROM(A) // the count follows this holder's direct contents (the ledger publishes SLOT_OCCUPANCY_KEY when anything enters or leaves)
 	return A ? length(A.contents) : 0
 
 /// `locate(what) in L` over a plain list (a registry, a view() result, a

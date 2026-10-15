@@ -18,7 +18,7 @@ CAPABILITIES(/obj/item/binoculars)
 		needs(req(PROC_REF(view_available), because = MSG(binoculars/distracted))), then(PROC_REF(zoomed)))
 
 /obj/item/binoculars/proc/view_available(datum/act/op/A)
-	var/client/C = A.actor?.client // ALLOW(reads): native client view is queried immediately before instant zoom with no wait or prompt
+	var/client/C = A.actor?.client
 	if(!C || !C.mob || !C.eye)
 		return null
 	if(isturf(C.mob.loc) && get_turf(C.eye) == get_turf(C.mob))

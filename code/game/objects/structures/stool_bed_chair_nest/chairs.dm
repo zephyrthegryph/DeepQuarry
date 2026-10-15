@@ -30,7 +30,7 @@ CAPABILITIES(/obj/structure/bed/chair)
 	return (!!SK.status) ? null : MSG(chair/kit_unready)
 
 /obj/structure/bed/chair/proc/unpadded_chair(datum/act/A)
-	return (!padding_material) ? null : MSG(chair/padded) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
+	return (!padding_material) ? null : MSG(chair/padded)
 
 /// A secured shock kit turns the chair into an electric chair, with the kit inside.
 /obj/structure/bed/chair/proc/electrified(datum/act/op/A)

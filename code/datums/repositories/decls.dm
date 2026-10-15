@@ -26,6 +26,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/repository/decls)
 	fetched_decl_types = list()
 	fetched_decl_subtypes = list()
 
+/// A memoized lookup: a decl is built once from its type and never replaced, so a read of one has nothing to subscribe to.
+PROC_SUMMARY(/datum/repository/decls/proc/get_decl)
 /datum/repository/decls/proc/get_decl(decl_type)
 	ASSERT(ispath(decl_type))
 	. = fetched_decls[decl_type]
@@ -53,6 +55,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/repository/decls)
 		. = get_decls(typesof(decl_prototype))
 		fetched_decl_types[decl_prototype] = .
 
+/// The same memoization over a prototype's subtypes.
+PROC_SUMMARY(/datum/repository/decls/proc/get_decls_of_subtype)
 /datum/repository/decls/proc/get_decls_of_subtype(decl_prototype)
 	. = fetched_decl_subtypes[decl_prototype]
 	if(!.)

@@ -212,7 +212,7 @@ CAPABILITIES(/obj/item/organ/external)
 /// What can be pulled out of this limb and the limbs attached to it: anything but organs.
 /obj/item/organ/external/proc/embedded_objects()
 	. = list()
-	for(var/obj/item/organ/external/E in (contents + src)) // ALLOW(reads): what is stuck in the limb is read when the limb is used, never from a cached menu
+	for(var/obj/item/organ/external/E in (contents_of(src) + src))
 		for(var/obj/item/I in contents_of(E))
 			if(istype(I,/obj/item/organ))
 				continue
@@ -261,7 +261,7 @@ CAPABILITIES(/obj/item/organ/external)
 	set_stage(stage - 1)
 
 /obj/item/organ/external/proc/has_contents(datum/act/op/A)
-	return LAZYLEN(contents) > 0 // ALLOW(reads): the extraction question is asked from what the limb holds when the hemostat goes in
+	return contents_count(src) > 0
 
 /// The things in the limb, by a name each (a repeated name gets its place in the list).
 /obj/item/organ/external/proc/extraction_choices()
@@ -377,7 +377,7 @@ CAPABILITIES(/obj/item/organ/external)
 			N.body.remove_affliction(N)
 		if(!rel_remove(src, nameof(detached_afflictions), N))
 			spent(N)
-	integrity_dirty = TRUE
+	set_integrity_dirty(TRUE)
 
 /obj/item/organ/external/proc/is_dislocated()
 	if(dislocated > 0)
@@ -388,10 +388,11 @@ CAPABILITIES(/obj/item/organ/external)
 
 /obj/item/organ/external/proc/is_parent_dislocated()
 	var/obj/item/organ/external/O = parent
-	while(O && O.dislocated != -1)
-		if(O.dislocated == 1)
+	// sampled: the chain of parents is walked when asked (a parent's dislocation reaches here through is_dislocated())
+	while(O && read_once(O.dislocated != -1))
+		if(read_once(O.dislocated == 1))
 			return 1
-		O = O.parent
+		O = read_once(O.parent)
 	return 0
 
 //new function to check for markings
@@ -407,7 +408,7 @@ CAPABILITIES(/obj/item/organ/external)
 	if(dislocated == -1)
 		return
 
-	dislocated = 1
+	set_dislocated(1)
 	if(istype(owner))
 		grant(owner, granted_verb(/mob/living/carbon/human/proc/relocate), src)
 		owner.body?.invalidate(BODY_DIRTY_ORGANS)
@@ -416,7 +417,7 @@ CAPABILITIES(/obj/item/organ/external)
 	if(dislocated == -1)
 		return
 
-	dislocated = 0
+	set_dislocated(0)
 	if(istype(owner))
 		if(!organ_can_feel_pain())
 			owner.adjust_shock(20, "dislocation reset")
@@ -1388,9 +1389,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 				name = "robotic [initial(name)]"
 			desc = "[R.desc] It looks like it was produced by [R.company]."
 
-	dislocated = -1
+	set_dislocated(-1)
 	cannot_break = 1
-	min_broken_damage = ROBOLIMB_REPAIR_CAP // ition - Makes robotic limb damage scalable
+	set_min_broken_damage(ROBOLIMB_REPAIR_CAP) // ition - Makes robotic limb damage scalable
 	remove_splint()
 	get_icon()
 	unmutate()
@@ -1414,7 +1415,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		set_robotic(original_robotic)
 		encased = o_encased
 		set_max_damage(o_max_damage)
-		min_broken_damage = o_min_broken_damage
+		set_min_broken_damage(o_min_broken_damage)
 
 	shed_mismatched_afflictions()
 	return 1

@@ -139,26 +139,30 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 /// The fruit of its seed: the shape in the colour of the product, and the leaves in the colour of the plant.
 /obj/item/reagent_containers/food/snacks/grown/draw(datum/look/look)
 	..()
-	if(!seed() || !SSplants?.plant_icon_cache)
+	if(!seed())
 		return
 	look.overlay(fruit_icon())
 
 /// The drawn fruit of its seed, shared by every fruit of the same product and colours.
 /obj/item/reagent_containers/food/snacks/grown/proc/fruit_icon()
-	var/image/plant_icon
-	var/icon_key = "fruit-[seed().get_trait(TRAIT_PRODUCT_ICON)]-[seed().get_trait(TRAIT_PRODUCT_COLOUR)]-[seed().get_trait(TRAIT_PLANT_COLOUR)]"
-	if(SSplants.plant_icon_cache[icon_key])
-		plant_icon = SSplants.plant_icon_cache[icon_key]
-	else
-		plant_icon = image('icons/obj/hydroponics_products.dmi',"blank")
-		var/image/fruit_base = image('icons/obj/hydroponics_products.dmi',"[seed().get_trait(TRAIT_PRODUCT_ICON)]-product")
-		fruit_base.color = "[seed().get_trait(TRAIT_PRODUCT_COLOUR)]"
-		plant_icon.add_overlay(fruit_base)
-		if(icon_exists('icons/obj/hydroponics_products.dmi', "[seed().get_trait(TRAIT_PRODUCT_ICON)]-leaf"))
-			var/image/fruit_leaves = image('icons/obj/hydroponics_products.dmi',"[seed().get_trait(TRAIT_PRODUCT_ICON)]-leaf")
-			fruit_leaves.color = "[seed().get_trait(TRAIT_PLANT_COLOUR)]"
-			plant_icon.add_overlay(fruit_leaves)
-		SSplants.plant_icon_cache[icon_key] = plant_icon
+	var/datum/seed/S = seed()
+	var/product_icon = S.get_trait(TRAIT_PRODUCT_ICON)
+	var/product_colour = S.get_trait(TRAIT_PRODUCT_COLOUR)
+	var/plant_colour = S.get_trait(TRAIT_PLANT_COLOUR)
+	return CACHED_KEY(fruit_icons, "fruit-[product_icon]-[product_colour]-[plant_colour]", product_icon, product_colour, plant_colour)
+
+DECLARE_SHARED_CACHE(fruit_icons, GLOBAL_PROC_REF(build_fruit_composite), SC_NEVER)
+
+/// Builder for fruit_icons: the shape in the colour of the product, and the leaves in the colour of the plant.
+/proc/build_fruit_composite(product_icon, product_colour, plant_colour)
+	var/image/plant_icon = image('icons/obj/hydroponics_products.dmi', "blank")
+	var/image/fruit_base = image('icons/obj/hydroponics_products.dmi', "[product_icon]-product")
+	fruit_base.color = "[product_colour]"
+	plant_icon.add_overlay(fruit_base)
+	if(icon_exists('icons/obj/hydroponics_products.dmi', "[product_icon]-leaf"))
+		var/image/fruit_leaves = image('icons/obj/hydroponics_products.dmi', "[product_icon]-leaf")
+		fruit_leaves.color = "[plant_colour]"
+		plant_icon.add_overlay(fruit_leaves)
 	return plant_icon
 
 /obj/item/reagent_containers/food/snacks/grown/Crossed(mob/living/M)

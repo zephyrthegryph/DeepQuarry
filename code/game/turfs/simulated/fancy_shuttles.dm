@@ -9,6 +9,12 @@
  */
 
 GLOBAL_LIST_EMPTY(fancy_shuttles)
+
+/// What a wall or window of tag `tag` needs of its helper, as data: list(icon, x, y), or null. The helper registers it while the map loads, before any wall
+/// can draw (it initializes immediately), and it is never replaced, so a look that reads it has nothing to subscribe to (PROC_SUMMARY: no entity state).
+PROC_SUMMARY(/proc/fancy_shuttle_helper)
+/proc/fancy_shuttle_helper(tag)
+	return GLOB.fancy_shuttles[tag]
 /**
  * Generic shuttle
  * North facing: W:5, H:9
@@ -117,13 +123,13 @@ CAPABILITIES(/turf/simulated/wall/fancy_shuttle)
 
 /// Reports a tagged wall whose helper is not there (the helper is made very early, so every wall of the load can find it).
 /turf/simulated/wall/fancy_shuttle/proc/helper_check(datum/act/timer/A)
-	if(fancy_shuttle_tag && !GLOB.fancy_shuttles[fancy_shuttle_tag])
+	if(fancy_shuttle_tag && !fancy_shuttle_helper(fancy_shuttle_tag))
 		WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
 
 // Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
 /turf/simulated/wall/fancy_shuttle/look_parts(datum/look/look)
 	if(fancy_shuttle_tag) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state
-		var/list/helper = GLOB.fancy_shuttles[fancy_shuttle_tag]
+		var/list/helper = fancy_shuttle_helper(fancy_shuttle_tag)
 		if(!helper)
 			return
 		look.set_icon(helper[1])
@@ -185,15 +191,30 @@ CAPABILITIES(/obj/effect/floor_decal/fancy_shuttle)
 	force_threshold = 7
 	var/fancy_shuttle_tag
 
+/// The sprite of this window out of its helper's sheet, set once the helper is looked up after init (a shuttle jump sets the icon and state itself).
+/obj/structure/window/fancy_shuttle/var/fancy_walls_icon
+/obj/structure/window/fancy_shuttle/var/fancy_walls_state
+
+CAPABILITIES(/obj/structure/window/fancy_shuttle)
+	after_init(0, then(PROC_REF(settle_fancy_state)))
+
+/// Takes this window's place on the helper's sheet: the sheet and the state named by where the window stands from the helper.
+/obj/structure/window/fancy_shuttle/proc/settle_fancy_state(datum/act/timer/A)
+	if(!fancy_shuttle_tag)
+		return
+	var/list/helper = fancy_shuttle_helper(fancy_shuttle_tag)
+	var/turf/T = get_turf(src)
+	if(!helper || !T)
+		WARNING("Fancy shuttle window at [T?.x],[T?.y],[T?.z] couldn't locate a helper with tag [fancy_shuttle_tag]")
+		return
+	set_fancy_walls_icon(helper[1])
+	set_fancy_walls_state("walls [T.x - helper[2]],[T.y - helper[3]]")
+
 // Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
 /obj/structure/window/fancy_shuttle/look_parts(datum/look/look)
-	if(fancy_shuttle_tag) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state
-		var/list/helper = GLOB.fancy_shuttles[fancy_shuttle_tag]
-		if(!helper)
-			WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
-			return
-		look.set_icon(helper[1])
-		look.state("walls [x - helper[2]],[y - helper[3]]")
+	if(fancy_shuttle_tag && fancy_walls_state) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state
+		look.set_icon(fancy_walls_icon)
+		look.state(fancy_walls_state)
 
 /**
  * Invisible ship equipment (otherwise the same as normal)

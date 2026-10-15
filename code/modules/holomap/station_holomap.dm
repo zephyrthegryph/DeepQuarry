@@ -25,6 +25,9 @@
 
 	var/original_zLevel = 1	// zLevel on which the station map was initialized.
 	var/offsets_settled_flag = FALSE
+	/// The pixel offset the machine settled on (a machine built from a frame sets it a moment after init): the floor marking cancels it.
+	var/decal_offset_x = 0
+	var/decal_offset_y = 0
 	var/bogus = TRUE		// set to 0 when you initialize the station map on a zLevel that has its own icon formatted for use by station holomaps.
 	var/datum/station_holomap/holomap_datum
 
@@ -68,6 +71,8 @@ CAPABILITIES(/obj/machinery/station_map)
 
 /// The pixel offset of a machine built from a frame is set a moment after init: the floor markings (which cancel it) draw once it has settled.
 /obj/machinery/station_map/proc/offsets_settled()
+	set_decal_offset_x(pixel_x)
+	set_decal_offset_y(pixel_y)
 	set_offsets_settled_flag(TRUE)
 
 MSG_DEF_SELF(station_map/watched, "someone else is currently watching the holomap")
@@ -189,7 +194,7 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 
 	// Put the little "map" overlay down where it looks nice
 	if(!bogus && offsets_settled_flag)
-		look.overlay(look_overlay_image('icons/obj/machines/stationmap.dmi', "decal_station_map", pixel_x = -pixel_x, pixel_y = -pixel_y, dir = dir))
+		look.overlay(look_overlay_image('icons/obj/machines/stationmap.dmi', "decal_station_map", pixel_x = -decal_offset_x, pixel_y = -decal_offset_y, dir = dir))
 
 	look.overlay("station_map-panel", when = panel_open)
 

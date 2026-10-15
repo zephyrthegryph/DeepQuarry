@@ -220,7 +220,7 @@ CAPABILITIES(/obj/machinery/door_timer)
 	var/disp2 = "[add_leading(num2text((shown_seconds / 60) % 60), 2, "0")]:[add_leading(num2text(shown_seconds % 60), 2, "0")]"
 	if(length(disp2) > CHARS_PER_LINE)
 		disp2 = "Error"
-	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, maptext_width, maptext_height))
+	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, initial(maptext_width), initial(maptext_height)))
 
 /obj/machinery/door_timer/cell_1
 	name = "Cell 1"

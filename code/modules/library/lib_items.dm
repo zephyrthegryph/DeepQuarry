@@ -79,7 +79,7 @@ CAPABILITIES(/obj/structure/bookcase)
 
 /// The question is asked only while there are books on the shelf.
 /obj/structure/bookcase/proc/has_books(datum/act/op/A)
-	return length(contents) > 0 // ALLOW(reads, spatial): the shelf's books are read when it is reached into, never cached; a plain count of its own contents
+	return contents_count(src) > 0
 
 /obj/structure/bookcase/proc/shelved_books(datum/act/op/A)
 	return contents_of(src)

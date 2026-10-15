@@ -122,7 +122,7 @@ CAPABILITIES(/datum/tickets)
 /// The duplicate question opens only when the chosen player already has an open ticket.
 /datum/tickets/proc/ticket_player_has_ticket(datum/act/op/A)
 	var/ckey = lowertext(A.step_value("ckey"))
-	for(var/client/C in GLOB.clients)
+	for(var/client/C in read_once(GLOB.clients))
 		if(C.ckey == ckey)
 			return !!C.current_ticket()
 	return FALSE

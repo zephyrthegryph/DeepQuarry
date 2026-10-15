@@ -32,7 +32,7 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 
 /proc/ckey_is_jobbanned(check_key, rank)
 	READS_FROM() // the job ban list is an admin record, not round state
-	for(var/s in GLOB.jobban_keylist)
+	for(var/s in read_once(GLOB.jobban_keylist))
 		if(findtext(s,"[check_key] - [rank]") == 1 )
 			var/startpos = findtext(s, "## ")+3
 			if(startpos && startpos<length(s))
