@@ -1,0 +1,2 @@
+equip wearer=Human: you need a wolf-taur half to wear this
+

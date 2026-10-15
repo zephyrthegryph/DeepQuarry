@@ -1,0 +1,2 @@
+equip wearer=Human: wrapping vines around yourself is an odd idea
+

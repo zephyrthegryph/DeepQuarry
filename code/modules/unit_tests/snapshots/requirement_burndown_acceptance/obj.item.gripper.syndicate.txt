@@ -1,0 +1,2 @@
+hold declaration ERROR: predicate /obj/item/gripper/syndicate hold: REQ_TYPE lists , which is not a type; predicate /obj/item/gripper/syndicate hold: has an empty ALL
+

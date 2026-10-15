@@ -1,0 +1,5 @@
+exact boundary: ALLOW
+above boundary: size
+wrong type: it doesn't take that
+raised boundary: ALLOW
+

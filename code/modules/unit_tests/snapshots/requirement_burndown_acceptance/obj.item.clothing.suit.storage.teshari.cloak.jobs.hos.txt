@@ -1,0 +1,8 @@
+suit_storage candidate=/obj/item/pen: ALLOW
+suit_storage candidate=/obj/item/tool/wrench: it doesn't take that
+suit_storage candidate=/obj/item/tank/emergency/oxygen: it doesn't take that
+suit_storage candidate=/obj/item/paper: ALLOW
+suit_storage candidate=/obj/item/photo: it doesn't take that
+suit_storage candidate=/obj/item/paper_bundle: ALLOW
+suit_storage candidate=/obj/item/stack/material/steel: it doesn't take that
+

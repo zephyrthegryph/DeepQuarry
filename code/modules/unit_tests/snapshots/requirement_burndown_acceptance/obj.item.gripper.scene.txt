@@ -1,0 +1,8 @@
+hold candidate=/obj/item/pen: ALLOW
+hold candidate=/obj/item/tool/wrench: it doesn't take that
+hold candidate=/obj/item/tank/emergency/oxygen: it doesn't take that
+hold candidate=/obj/item/paper: ALLOW
+hold candidate=/obj/item/photo: it doesn't take that
+hold candidate=/obj/item/paper_bundle: it doesn't take that
+hold candidate=/obj/item/stack/material/steel: it doesn't take that
+

@@ -1,0 +1,8 @@
+hold candidate=/obj/item/pen: ALLOW
+hold candidate=/obj/item/tool/wrench: ALLOW
+hold candidate=/obj/item/tank/emergency/oxygen: ALLOW
+hold candidate=/obj/item/paper: ALLOW
+hold candidate=/obj/item/photo: ALLOW
+hold candidate=/obj/item/paper_bundle: ALLOW
+hold candidate=/obj/item/stack/material/steel: ALLOW
+

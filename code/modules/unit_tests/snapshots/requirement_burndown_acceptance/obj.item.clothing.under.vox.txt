@@ -1,0 +1,2 @@
+fit wearer=Human: it only fits Vox
+
