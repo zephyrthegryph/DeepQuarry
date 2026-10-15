@@ -60,3 +60,6 @@ No builds, tests, generators, analyzer jobs, baseline edits, commits, merge or p
 The personal salvage terminal now declares its existing reinforced-table factory through setup(PROC_REF(prepare_terminal_table)). Its complete post-parent body is unchanged, there are no descendant Initialize consumers, and the job reads only the durable location. No ownership or reference declaration is required or changed: the supporting table remains an independent peer and survives deleting the terminal. The previous report unnecessarily limited the replacement to spawns_many().
 
 New focused selector /datum/unit_test/dq_a3_initialization/salvage_table checks actual constructor output, exactly one newly created table, its location and independent lifetime. No generation/analyzer/build/test was run; shrink-only baseline update and the lane-ready proof are pending.
+
+
+Read-tracking preflight on master 4ab2e15fe1 found one newly moved weather write: telegraph_delay must publish through its existing generated setter. The setup job now calls set_telegraph_delay(lifespan / telegraph_percent) in the same position. No declaration or preexisting setter call was altered. A new preflight and lane-ready proof remain pending.

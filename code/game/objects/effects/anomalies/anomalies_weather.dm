@@ -22,7 +22,7 @@ CAPABILITIES(/obj/effect/anomaly/weather)
 /obj/effect/anomaly/weather/proc/prepare_weather_footprint()
 	LAZYADD(affected_areas, impact_area())
 
-	telegraph_delay = lifespan / telegraph_percent // the weather starts once telegraphed (after_init())
+	set_telegraph_delay(lifespan / telegraph_percent) // the weather starts once telegraphed (after_init())
 
 	for(var/spread_dir in GLOB.alldirs)
 		var/area/nearby = find_adjacent_impacted_area(spread_dir)
