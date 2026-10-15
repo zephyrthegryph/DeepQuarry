@@ -430,11 +430,11 @@ TYPE_TABLE(/obj/item/vac_attachment/scoop, vac_attachment_settings, list( \
 // The swoopie owns its built-in attachment through Vac; vac_owner points back.
 
 /// The attachment asks its wearer for the connection ports that wearer provides.
-/mob/proc/vac_output_choices()
-	return list("Vore Belly", "Trash Bag")
+TYPE_TABLE_DECLARE(/mob, vac_output_ports, list("Vore Belly", "Trash Bag"))
+TYPE_TABLE(/mob/living/silicon/robot, vac_output_ports, list("Vore Belly", "Borg Belly", "Trash Bag"))
 
-/mob/living/silicon/robot/vac_output_choices()
-	return list("Vore Belly", "Borg Belly", "Trash Bag")
+/mob/proc/vac_output_choices()
+	return TYPE_TABLE_GET(src, vac_output_ports)
 
 /mob/proc/vac_borg_output()
 	return null
