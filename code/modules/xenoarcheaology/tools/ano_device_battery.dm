@@ -46,7 +46,7 @@ CAPABILITIES(/obj/item/anobattery)
 	set_icon_state("anobattery[round(p,25)]")
 
 /obj/item/anobattery/proc/use_power(amount)
-	stored_charge = max(0, stored_charge - amount)
+	set_stored_charge(max(0, stored_charge - amount))
 
 /obj/item/anodevice
 	name = "Anomaly power utilizer"

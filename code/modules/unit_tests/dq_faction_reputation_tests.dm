@@ -71,7 +71,7 @@
 /datum/unit_test/dq_faction_reputation_stable_identity/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/account = new
-	account.account_number = 9654321
+	account.set_account_number(9654321)
 	account.owner_name = "Stable Reputation Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("stable_reputation_tester")
@@ -108,7 +108,7 @@
 /datum/unit_test/dq_faction_agent_earned_eligibility/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/account = new
-	account.account_number = 9654330
+	account.set_account_number(9654330)
 	account.owner_name = "Agency Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("agency_tester")
@@ -224,7 +224,7 @@
 /datum/unit_test/dq_agent_approach_and_discovery_tradeoffs/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/account = new
-	account.account_number = 9654360
+	account.set_account_number(9654360)
 	account.owner_name = "Operation Terms Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("operation_terms_tester")

@@ -73,7 +73,7 @@
 /datum/admins/proc/shuttle_countdown_kind()
 	if(emergency_shuttle_wait_for_launch())
 		return "launch"
-	if(SSemergency_shuttle.shuttle.has_arrive_time())
+	if(read_once(SSemergency_shuttle.shuttle.has_arrive_time()))
 		return "arrive"
 	return null
 
@@ -127,7 +127,7 @@ MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")
 	return (!(SSticker && ticker_mode())) ? null : MSG(admin_topic/round_started)
 
 /datum/admins/proc/round_is_secret(datum/act/op/A)
-	return (GLOB.master_mode == "secret") ? null : MSG(admin_topic/not_secret)
+	return (read_once(GLOB.master_mode) == "secret") ? null : MSG(admin_topic/not_secret)
 
 /// The game modes an admin can pick before the round starts: label -> mode.
 /datum/admins/proc/c_mode_choices()

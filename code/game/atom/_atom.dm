@@ -124,7 +124,7 @@
 	var/datum/capability/lib/reagent_container/C = cap_of(src, CAP_REAGENT_CONTAINER)
 	if(C)
 		return !C.sealed && (!C.lid || reagent_container_lid_open(src))
-	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
+	return !!read_once(flags & OPENCONTAINER) // a container without the capability is open by its flag, sampled when asked
 
 /*//Convenience proc to see whether a container can be accessed in a certain way.
 
@@ -524,7 +524,7 @@ SETTER(/atom, invisibility)
 	var/atom/L = loc
 	if(!L)
 		return null
-	return L.AllowDrop() ? L : L.drop_location()
+	return read_once(L.AllowDrop() ? L : L.drop_location()) // where a thing may be dropped is asked of the containers when it is dropped
 
 /atom/proc/AllowDrop()
 	return FALSE
@@ -663,6 +663,7 @@ SETTER(/atom, invisibility)
 /// get_oversized_icon_offsets() for an unshifted atom (shared; callers only read it).
 GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 
+PROC_SUMMARY(/atom/proc/get_oversized_icon_offsets) // sampled: where a message is placed over a shifted atom when it is placed, not a value that follows the atom's pixel offset
 /atom/proc/get_oversized_icon_offsets()
 	if (pixel_x == 0 && pixel_y == 0)
 		return GLOB.zero_icon_offsets

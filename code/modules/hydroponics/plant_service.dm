@@ -7,7 +7,6 @@ SYSTEM_DEF(plants)
 	var/list/product_descs = list()					// Stores generated fruit descs.
 	var/list/seeds = list()							// All seed data stored here.
 	var/list/gene_tag_masks = list()				// Gene obfuscation for delicious trial and error goodness.
-	var/list/plant_icon_cache = list()				// Stores images of growth, fruits and seeds.
 	var/list/plant_sprites = list()					// List of all growth sprites plus number of growth stages.
 	var/list/accessible_plant_sprites = list()		// List of all plant sprites allowed to appear in random generation.
 	var/list/plant_product_sprites = list()			// List of all harvested product sprites.
@@ -24,7 +23,7 @@ SYSTEM_DEF(plants)
 /datum/system/plants/initialize()
 	if(initialized)
 		return
-	setup()
+	build_plant_tables()
 	initialized = TRUE
 	log_world("Plant system initialized: [length(seeds)] seeds, [length(gene_tag_masks)] gene masks.")
 
@@ -32,7 +31,7 @@ SYSTEM_DEF(plants)
 // easier to grab the new variety when mutating. Post-roundstart
 // and mutant varieties use their uid converted to a string instead.
 // Looks like shit but it's sort of necessary.
-/datum/system/plants/proc/setup()
+/datum/system/plants/proc/build_plant_tables()
 	// Build the icon lists.
 	for(var/icostate in icon_states_fast('icons/obj/hydroponics_growing.dmi'))
 		var/split = findtext(icostate,"-")

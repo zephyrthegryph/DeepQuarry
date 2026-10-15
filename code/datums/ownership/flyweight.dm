@@ -18,6 +18,7 @@ GLOBAL_LIST_INIT(flyweight_types, typecacheof(list(
 	/datum/stack_recipe_list,
 	/datum/own_entry,
 	/datum/derived_entry,
+	/datum/material,
 )))
 
 /// TRUE when `D` is a flyweight: shared by type, never owned, skipped by the destroy leak check.

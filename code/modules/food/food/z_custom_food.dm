@@ -33,7 +33,7 @@ MSG_DEF_SELF(custom/unique, "As uniquely original as that idea is, you can't fig
 MSG_DEF_SELF(custom/recursive, "Sorry, no recursive food.")
 
 /obj/item/reagent_containers/food/snacks/customizable/proc/has_room_for(datum/act/op/A)
-	return (length(contents) < ingMax && length(contents) < INGREDIENT_LIMIT) ? null : /datum/msg/custom/stuffed // ALLOW(spatial,reads): what is in it is counted when a food is added; the click asks again
+	return (contents_count(src) < ingMax && contents_count(src) < INGREDIENT_LIMIT) ? null : /datum/msg/custom/stuffed
 
 
 /obj/item/reagent_containers/food/snacks/customizable/proc/not_custom_itself(datum/act/op/A)

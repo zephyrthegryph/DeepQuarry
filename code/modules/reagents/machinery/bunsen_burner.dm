@@ -157,7 +157,7 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 		look.watch(held_container.reagents)
 		look.overlay(image("icon" = held_container))
 	if(heating)
-		look.overlay(image(icon, icon_state = "bunsen1", layer = layer + 0.1))
+		look.overlay(image(icon, icon_state = "bunsen1", layer = initial(layer) + 0.1))
 
 /obj/machinery/bunsen_burner/examine(mob/user, infix, suffix)
 	. = ..()

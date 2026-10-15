@@ -125,6 +125,11 @@ CAPABILITIES(/obj/item/cell)
 /obj/item/cell/proc/fully_charged()
 	return (charge == maxcharge)
 
+/// Whether the stored charge alone reaches `amount`: a pure read for an indicator (a look). A use asks check_charge(), which also settles the
+/// material delivery losses and the discharge credit.
+/obj/item/cell/proc/charge_reaches(amount)
+	return amount >= 0 && charge >= amount
+
 // checks if the power cell is able to provide the specified amount of charge
 /obj/item/cell/proc/check_charge(amount)
 	refresh_material_discharge()

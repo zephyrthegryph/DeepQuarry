@@ -133,7 +133,7 @@
  */
 /mob/living/proc/resize(new_size, animate = TRUE, uncapped = FALSE, ignore_prefs = FALSE, aura_animation = FALSE, allow_stripping = FALSE) // Disable aura_animation. Too expensive for something you can't even see.
 	if(!uncapped)
-		if((z in using_map.station_levels) && CONFIG_GET(flag/pixel_size_limit))
+		if(isStationLevel(read_once(z)) && CONFIG_GET(flag/pixel_size_limit))
 			var/size_diff = ((runechat_y_offset() / size_multiplier) * new_size) // This returns 32 multiplied with the new size
 			var/size_cap = world.icon_size * RESIZE_MAXIMUM //Grace for non-humanoids so they don't get forcibly shrunk.
 			if(size_diff - size_cap  > 0)
@@ -185,15 +185,16 @@
 		update_transform() //Lame way
 
 /mob/living/carbon/human/resize(new_size, animate = TRUE, uncapped = FALSE, ignore_prefs = FALSE, aura_animation = FALSE, allow_stripping = FALSE) // Disable aura_animation. Too expensive for something you can't even see.
-	if(!vore_prefs.resizable && !ignore_prefs)
+	if(!read_once(vore_prefs.resizable) && !ignore_prefs)
 		return 1
 	var/previous_scale = size_multiplier
 	. = ..()
 	var/size_difference = previous_scale - size_multiplier
 	if((allow_stripping == TRUE) && ((size_difference >= 0.3) || (size_difference <= -0.3)))
-		if(vore_prefs.size_strip_preference == SIZESTRIP_ITEMS)
+		var/size_strip = read_once(vore_prefs.size_strip_preference) // a profile record holds data only: sampled
+		if(size_strip == SIZESTRIP_ITEMS)
 			drop_all_clothing(FALSE)
-		else if(vore_prefs.size_strip_preference == SIZESTRIP_ALL)
+		else if(size_strip == SIZESTRIP_ALL)
 			drop_all_clothing(TRUE)
 	if(LAZYLEN(hud_list) && has_huds)
 		var/new_y_offset = vis_height * (size_multiplier - 1)

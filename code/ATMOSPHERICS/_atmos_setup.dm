@@ -34,6 +34,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/pipe_icon_manager)
 /datum/pipe_icon_manager/New()
 	check_icons()
 
+/// A memoized pure function of its arguments: the icon tables are built once, on first use, from the icon files, and an entry never changes after.
+/// A draw that reads an icon here has nothing to subscribe to (PROC_SUMMARY: no entity state is read).
+PROC_SUMMARY(/datum/pipe_icon_manager/proc/get_atmos_icon)
 /datum/pipe_icon_manager/proc/get_atmos_icon(device, dir, color, state)
 	check_icons()
 

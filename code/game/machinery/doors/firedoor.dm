@@ -79,13 +79,22 @@
 	ASSERT(istype(A))
 
 	LAZYADD(A.all_doors, src)
-	areas_added = list(A)
 
 	for(var/direction in GLOB.cardinal)
 		A = get_area(get_step(src,direction))
-		if(istype(A) && !(A in areas_added))
+		if(istype(A) && !(src in A.all_doors))
 			LAZYADD(A.all_doors, src)
-			areas_added += A
+
+/// The areas it guards, as the relation its alarm question reads through (made after init, once the neighbours are all there).
+/obj/machinery/door/firedoor/proc/guard_areas(datum/act/timer/A)
+	var/area/here = get_area(src)
+	if(!istype(here))
+		return
+	rel_add(src, nameof(areas_added), here)
+	for(var/direction in GLOB.cardinal)
+		var/area/neighbour = get_area(get_step(src, direction))
+		if(istype(neighbour) && !(neighbour in areas_added))
+			rel_add(src, nameof(areas_added), neighbour)
 
 /// Phase 2: leaves the door lists of every area it guards.
 /obj/machinery/door/firedoor/lifecycle_dematerialize()
@@ -159,6 +168,8 @@ MSG_DEF_SELF(firedoor/need_wield, "You need to be wielding that to do that.")
 MSG_DEF_SELF(firedoor/busy_prying, "Someone's busy prying at it!")
 
 CAPABILITIES(/obj/machinery/door/firedoor)
+	ref_many(nameof(areas_added), /area)
+	after_init(0, then(PROC_REF(guard_areas)))
 	configure(uses_power(channel = ENVIRON, idle = 5))
 	owns_many(nameof(air_watches), /datum/native_watch/gas)
 	ref_one(nameof(dependency_air_0), /datum/gas_mixture)

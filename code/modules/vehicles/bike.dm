@@ -209,7 +209,7 @@ CAPABILITIES(/obj/vehicle/bike/random)
 	..()
 	var/paint_icon = custom_icon ? 'icons/obj/custom_items_vehicle.dmi' : 'icons/obj/bike.dmi'
 	var/power_state = on ? "on" : "off"
-	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_a", layer = layer, color = paint_color))
+	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_a", layer = initial(layer), color = paint_color))
 	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_overlay", layer = MOB_LAYER + 1, plane = MOB_PLANE))
 	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_overlay_a", layer = MOB_LAYER + 1, plane = MOB_PLANE, color = paint_color))
 	look.state("[bike_icon]_[power_state][open ? "-open" : ""]")

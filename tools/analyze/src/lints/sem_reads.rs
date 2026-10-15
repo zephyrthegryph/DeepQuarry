@@ -35,14 +35,7 @@ static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: "tools/ci/sem_reads_baseline.txt",
-        header: &[
-            "sem/reads: what the closed read walk cannot cover in a handler, an output, a condition or a contribution. rule<TAB>file<TAB>identity (@reader reads owner::var).",
-            "Shrink-only: `analyze baseline --update --lint sem/reads` drops fixed sites and never adds one.",
-        ],
-        banned: &[],
-    },
+    policy: Policy::Hard,
     rules: &[
         RuleMeta { name: "unknown_read", hint: H_UNKNOWN },
         RuleMeta { name: "untracked_global", hint: H_GLOBAL },

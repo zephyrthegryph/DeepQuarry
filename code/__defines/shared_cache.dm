@@ -52,7 +52,7 @@
 #define SHARED_CACHE_UID(D) (D.shared_cache_uid || shared_cache_assign_uid(D))
 
 /// A material's stable cache id (material_cache_id(): registry id, else a never-reused uid).
-#define MATERIAL_CACHE_ID(M) (M.shared_cache_uid || material_cache_id(M))
+#define MATERIAL_CACHE_ID(M) material_cache_id(M)
 
 /// Drops every entry of cache N (a version bump).
 #define INVALIDATE_SHARED_CACHE(N) _sc_##N.invalidate()

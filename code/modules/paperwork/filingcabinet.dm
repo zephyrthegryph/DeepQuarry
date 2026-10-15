@@ -86,7 +86,7 @@ MSG_DEF_SELF(filingcabinet/empty, "It's empty.")
 
 /// Requirement: the cabinet holds something to browse.
 /obj/structure/filingcabinet/proc/has_files(datum/act/op/A)
-	return (length(contents) > 0) ? null : MSG(filingcabinet/empty) // ALLOW(reads, spatial): what the cabinet holds is read when it is opened, never cached; a plain count of its own contents
+	return (contents_count(src) > 0) ? null : MSG(filingcabinet/empty)
 
 /// Old attack_hand.
 /obj/structure/filingcabinet/proc/interaction_hand(datum/act/op/A)

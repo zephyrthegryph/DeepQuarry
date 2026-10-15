@@ -262,11 +262,11 @@ GLOBAL_LIST_EMPTY(all_maps)
 	//Traditional behavior, if not in an overmap sector
 	else
 		//If long range, and they're at least in contact levels, return contact levels.
-		if (long_range && (srcz in contact_levels))
-			return contact_levels.Copy()
+		if (long_range && read_once(srcz in contact_levels))
+			return read_once(contact_levels.Copy())
 		//If in station levels, return station levels
-		else if (srcz in station_levels)
-			return station_levels.Copy()
+		else if (read_once(srcz in station_levels))
+			return read_once(station_levels.Copy())
 		//Just give them back their zlevel
 		else
 			return list(srcz)

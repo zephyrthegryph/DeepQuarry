@@ -350,18 +350,18 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		return
 
 	if(!isliving(M))
-		M.lastarea = src
+		M.set_lastarea(src)
 		return
 
 	var/mob/living/L = M
 	if(!L.lastarea)
-		L.lastarea = src
+		L.set_lastarea(src)
 	var/area/oldarea = L.lastarea
 	if((oldarea.get_gravity() == 0) && (get_gravity() == 1) && (L.m_intent == I_RUN)) // Being ready when you change areas gives you a chance to avoid falling all together.
 		thunk(L)
 		L.update_floating( L.Check_Dense_Object() )
 
-	L.lastarea = src
+	L.set_lastarea(src)
 	EXPIRY_STAMP(L, lastareachange, CLOCK_WORLD)
 	play_ambience(L, initial = TRUE)
 	if(flag_check(AREA_NO_SPOILERS))

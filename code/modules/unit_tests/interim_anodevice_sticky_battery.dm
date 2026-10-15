@@ -5,7 +5,7 @@
 	var/obj/item/anodevice/device = allocate(/obj/item/anodevice, T)
 	var/obj/item/anobattery/battery = allocate(/obj/item/anobattery, T)
 	TEST_ASSERT(battery.capacity > 0, "the actual anomaly battery has positive declared capacity")
-	battery.stored_charge = battery.capacity / 2
+	battery.set_stored_charge(battery.capacity / 2)
 	battery.UpdateSprite()
 	var/original_charge = battery.stored_charge
 	var/original_capacity = battery.capacity

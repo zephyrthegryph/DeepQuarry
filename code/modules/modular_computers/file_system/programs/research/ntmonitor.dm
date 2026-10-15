@@ -61,7 +61,7 @@ CAPABILITIES(/datum/computer_file/program/ntnetmonitor)
 
 /// Disabling the network is confirmed; enabling it is not.
 /datum/computer_file/program/ntnetmonitor/proc/wireless_enabled(datum/act/op/A)
-	return GLOB.ntnet_global && !GLOB.ntnet_global.setting_disabled
+	return read_once(GLOB.ntnet_global) && !read_once(GLOB.ntnet_global.setting_disabled)
 
 /datum/computer_file/program/ntnetmonitor/proc/ui_act_togglewireless(datum/act/op/A)
 	if(!GLOB.ntnet_global)
@@ -95,7 +95,7 @@ CAPABILITIES(/datum/computer_file/program/ntnetmonitor)
 	return TRUE
 
 /datum/computer_file/program/ntnetmonitor/proc/ntnet_present(datum/act/op/A)
-	return (!!GLOB.ntnet_global) ? null : /datum/msg/req_silent
+	return (!!read_once(GLOB.ntnet_global)) ? null : /datum/msg/req_silent
 
 /datum/computer_file/program/ntnetmonitor/proc/ui_act_ban_nid(datum/act/op/A)
 	if(!GLOB.ntnet_global)

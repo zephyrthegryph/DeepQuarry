@@ -205,3 +205,9 @@
 		update_light()
 	*/
 	return INITIALIZE_HINT_NORMAL
+
+/// Whether `A` has begun its Initialize(): the lifecycle bit the initializer sets once. A draw that must not run before it asks here (PROC_SUMMARY: the
+/// bit is set once and never cleared, and the first refresh is queued as the initializer finishes, so nothing needs to subscribe).
+PROC_SUMMARY(/proc/atom_initialized)
+/proc/atom_initialized(atom/A)
+	return !!(A.flags & ATOM_INITIALIZED)
