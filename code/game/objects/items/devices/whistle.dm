@@ -10,7 +10,6 @@
 	var/insults
 
 
-TRACKED(/obj/item/hailer, use_message)
 
 CAPABILITIES(/obj/item/hailer)
 	configure(item_worn(slots = SLOT_EARS))

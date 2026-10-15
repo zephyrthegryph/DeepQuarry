@@ -16,7 +16,6 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 
 /// Burns (flame_step) every 2 s while lit.
 /obj/item/flame/var/lit = 0
-TRACKED(/obj/item/flame, lit)
 
 CAPABILITIES(/obj/item/flame)
 	every(2 SECONDS, then(PROC_REF(flame_step)), when = nameof(lit))
@@ -706,7 +705,6 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 
 /// Var used for detonator zippos
 /obj/item/flame/lighter/var/detonator_mode = 0
-TRACKED(/obj/item/flame/lighter, detonator_mode)
 
 CAPABILITIES(/obj/item/flame/lighter)
 	configure(item_worn(slots = SLOT_BELT))

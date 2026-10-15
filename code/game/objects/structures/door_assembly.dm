@@ -148,7 +148,6 @@ CAPABILITIES(/obj/structure/door_assembly/multi_tile)
 	. = ..()
 	fit_bounds()
 
-TRACKED(/obj/structure/door_assembly, glass)
 
 // ---- what an airlock assembly is, declared ----
 //

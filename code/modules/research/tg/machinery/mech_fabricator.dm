@@ -64,7 +64,6 @@ MSG_DEF_SELF(exofab/processing, "It is currently processing! Please wait until c
 	/// How long the part being made takes in all (its timer is "exofab_part").
 	var/part_time = 0
 
-TRACKED(/obj/machinery/mecha_part_fabricator_tg, process_queue)
 
 CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	machine_basics(repair = NONE, frame = board_machine())
@@ -132,7 +131,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 
 	//resources adjustment coefficient (1 -> 0.85 -> 0.7 -> 0.55)
 	T = 1.15 - get_part_rating(/obj/item/stock_parts/micro_laser) * 0.15
-	component_coeff = T
+	set_component_coeff(T)
 
 	//building time adjustment coefficient (1 -> 0.8 -> 0.6)
 	T = get_part_rating(/obj/item/stock_parts/manipulator) - 1

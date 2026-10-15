@@ -42,7 +42,7 @@ MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
 /// The dispenser answers someone next to it who can move and act, and only while it is bolted down.
 /obj/machinery/pipedispenser/proc/dispenser_usable(datum/act/op/A)
 	var/mob/user = A.actor
-	return (!unwrenched && user.canmove && !user.stat && !user.restrained() && get_dist(loc, user) <= 1) ? null : MSG(pipedispenser/cannot_use) // ALLOW(reads): the bolts and the person are read when a button is pressed, never from a cached menu
+	return (!unwrenched && user.canmove && !user.stat && !user.restrained() && get_dist(loc, user) <= 1) ? null : MSG(pipedispenser/cannot_use)
 
 /obj/machinery/pipedispenser/ui_data(datum/act/eval/A)
 	var/list/data = list(
@@ -158,7 +158,7 @@ CAPABILITIES(/obj/machinery/pipedispenser/disposal)
 /obj/machinery/pipedispenser/disposal/proc/loose_and_near(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/structure/disposalconstruct/pipe = A.held
-	return (istype(pipe) && !pipe.anchored && user.canmove && !user.stat && !user.restrained() && get_dist(user, src) <= 1 && get_dist(src, pipe) <= 1) ? null : MSG(op/not_available) // ALLOW(reads): read when the pipe is dragged, never from a cached menu
+	return (istype(pipe) && !pipe.anchored && user.canmove && !user.stat && !user.restrained() && get_dist(user, src) <= 1 && get_dist(src, pipe) <= 1) ? null : MSG(op/not_available)
 
 /obj/machinery/pipedispenser/disposal/proc/shoved_back(datum/act/op/A)
 	consume(A.held, A.actor)

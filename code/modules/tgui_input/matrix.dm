@@ -221,6 +221,7 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 
 /datum/tgui_input_colormatrix/proc/set_entry(entry)
 	src.entry = entry
+	tracked_changed(src, nameof(entry))
 
 /datum/tgui_input_colormatrix/proc/do_paint(mob/user, apply)
 	var/color_to_use

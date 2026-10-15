@@ -198,9 +198,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 /obj/machinery/newscaster/proc/connect_exonet(datum/act/timer/A)
 	rel_set(src, nameof(node), get_exonet_node())
 
-TRACKED(/obj/machinery/newscaster, ispowered)
-TRACKED(/obj/machinery/newscaster, alert)
-TRACKED(/obj/machinery/newscaster, hitstaken)
 
 /// TRUE while the network circulates a wanted issue: every caster shows it (set by the network, wanted_changed()).
 /obj/machinery/newscaster/var/wanted_up = FALSE
@@ -280,6 +277,7 @@ TRACKED(/obj/machinery/newscaster, hitstaken)
  */
 /obj/machinery/newscaster/proc/set_temp(text = "", style = "info", update_now = FALSE)
 	temp = list(text = text, style = style)
+	tracked_changed(src, nameof(temp))
 	if(update_now)
 		SStgui.update_uis(src)
 

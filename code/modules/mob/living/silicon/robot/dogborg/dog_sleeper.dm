@@ -53,7 +53,6 @@
 	flags = NOBLUDGEON
 
 /// The sleeper has something to look after (a patient, a clean cycle or a last look for one): its step runs every two seconds while it holds.
-TRACKED(/obj/item/dogborg/sleeper, working)
 
 MSG_DEF_SELF(sleeper/full, "Your sleeper is full. Eject or process contents to continue.")
 MSG_DEF_SELF(sleeper/blacklisted, "You are hard-wired to not ingest this item.")

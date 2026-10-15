@@ -86,7 +86,6 @@ CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 
 /// Start closed just so people don't try to preheat with it open, lol.
 /obj/machinery/appliance/cooker/oven/var/open = FALSE
-TRACKED(/obj/machinery/appliance/cooker/oven, open)
 
 /// With the door open it doesn't step at all (the door's heat loss is the body's coupling).
 /obj/machinery/appliance/cooker/oven/cooker_needs_step()

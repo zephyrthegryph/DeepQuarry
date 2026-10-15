@@ -44,9 +44,6 @@ MSG_DEF_SELF(batteryrack/full, "It has no empty slot for that.")
 	var/shown_overlays = ""
 	circuit = /obj/item/circuitboard/batteryrack
 
-TRACKED(/obj/machinery/power/smes/batteryrack, max_transfer_rate)
-TRACKED(/obj/machinery/power/smes/batteryrack, equalise)
-TRACKED(/obj/machinery/power/smes/batteryrack, ui_tick)
 
 CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 	default_parts()

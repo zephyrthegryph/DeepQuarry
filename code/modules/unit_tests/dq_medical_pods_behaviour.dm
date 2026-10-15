@@ -336,7 +336,7 @@
 	medpod_ui(P, S, "auto_eject_dead_on")
 	test_time(1)
 	TEST_ASSERT(!S.auto_eject_dead, "an occupant without controls inside works nothing")
-	S.controls_inside = TRUE
+	S.set_controls_inside(TRUE)
 	medpod_ui(P, S, "auto_eject_dead_on")
 	test_time(1)
 	TEST_ASSERT(S.auto_eject_dead, "with controls inside the occupant works the window")

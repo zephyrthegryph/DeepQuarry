@@ -32,7 +32,7 @@
 	var/old_type = T.type
 	var/turf/simulated/wall/W = T.ChangeTurf(/turf/simulated/wall)
 	TEST_ASSERT(istype(W), "ChangeTurf should make a wall")
-	W.set_material(get_material_by_name(MAT_PLASTEEL))
+	rel_set(W, nameof(W.material), get_material_by_name(MAT_PLASTEEL))
 	W.set_reinf_material(get_material_by_name(MAT_PLASTEEL))
 	W.update_material()
 	var/cap = W.material.integrity + W.reinf_material.integrity

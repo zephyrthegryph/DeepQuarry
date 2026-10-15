@@ -392,7 +392,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		name = character.name
 		bio.nickname = character.bio.nickname
 	gender = character.gender
-	identifying_gender = character.identifying_gender
+	set_identifying_gender(character.identifying_gender)
 
 	record_copy(looks, character.looks)
 	if(options.apply_bloodtype)
@@ -485,7 +485,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	weight_gain		= character.weight_gain
 	weight_loss		= character.weight_loss
 	set_fuzzy(character.fuzzy)
-	offset_override	= character.offset_override
+	set_offset_override(character.offset_override)
 	voice_freq		= character.voice_freq
 	if (species && character.species)
 		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species

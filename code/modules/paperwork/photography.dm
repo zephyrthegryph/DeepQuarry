@@ -37,7 +37,6 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	var/photo_size = 3
 	resistance_flags = FLAMMABLE
 
-TRACKED(/obj/item/photo, tiny)
 
 /obj/item/photo/proc/assign_photo_id(datum/act/timer/A)
 	id = GLOB.photo_count++

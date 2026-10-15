@@ -44,9 +44,6 @@ CAPABILITIES(/obj/item/taperecorder)
 	mytape = null
 
 /obj/item/taperecorder/var/recording = 0
-TRACKED(/obj/item/taperecorder, emagged)
-TRACKED(/obj/item/taperecorder, playing)
-TRACKED(/obj/item/rectape, ruined)
 // The requirements as op parts: each old check is TRUE or why not.
 
 /obj/item/taperecorder/proc/has_no_tape(datum/act/op/A)

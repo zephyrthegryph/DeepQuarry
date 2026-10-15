@@ -191,7 +191,6 @@ CAPABILITIES(/obj/structure/closet/body_bag)
 	var/stasis_level = /datum/body_effect/stasis/deep
 	var/obj/item/reagent_containers/syringe/syringe
 
-TRACKED(/obj/structure/closet/body_bag/cryobag, used)
 
 MSG_DEF_SELF(cryobag/has_injector, "It already has an injector! Remove it first.")
 MSG_DEF_SELF(cryobag/no_injector, "It has no injector in it.")

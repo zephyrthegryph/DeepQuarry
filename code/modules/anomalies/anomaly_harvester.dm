@@ -43,12 +43,12 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 		set_use_power(USE_POWER_IDLE)
 		harvest_anomaly()
 		if(points && points >= points_to_create)
-			points -= points_to_create
+			set_points(points - points_to_create)
 			generate_sample()
 
 /obj/machinery/anomaly_harvester/proc/add_points(add_points)
 	add_points *= efficiency
-	points += add_points
+	set_points(points + add_points)
 	return
 
 /obj/machinery/anomaly_harvester/proc/harvest_anomaly()

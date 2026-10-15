@@ -35,22 +35,22 @@
 	var/obj/machinery/syndicate_beacon/topic_gate_probe/B = allocate(/obj/machinery/syndicate_beacon/topic_gate_probe, get_turf(user))
 	B.set_grid_power(TRUE)
 	B.set_broken_condition(FALSE)
-	user.permits_topics = FALSE
+	user.set_permits_topics(FALSE)
 	test_menu(user, B, "beacon_talk")
 	TEST_ASSERT_NULL(SSrequests.open_for(user), "Denied topic access prevents the real beacon question from opening")
 	TEST_ASSERT(user.access_denials > 0, "The actual CanUseObjTopic gate reports the denial")
 	TEST_ASSERT_EQUAL(B.offers_accepted, 0, "Denied admission executes no offer effect")
-	user.permits_topics = TRUE
+	user.set_permits_topics(TRUE)
 	test_menu(user, B, "beacon_talk")
 	var/datum/prompt/choice/offer = SSrequests.open_for(user)
 	TEST_ASSERT(istype(offer), "Allowed topic access opens the real beacon choice request")
 	var/accept = offer.choices[1]
 	TEST_ASSERT(accept != "Hang up", "The real human receives an actual recruitment offer")
-	user.permits_topics = FALSE
+	user.set_permits_topics(FALSE)
 	test_answer(user, accept)
 	TEST_ASSERT_EQUAL(B.offers_accepted, 0, "Losing topic access after the question prevents its completion effect")
 	TEST_ASSERT_NULL(SSrequests.open_for(user), "Refused request resumption closes the native request")
-	user.permits_topics = TRUE
+	user.set_permits_topics(TRUE)
 	test_menu(user, B, "beacon_talk")
 	offer = SSrequests.open_for(user)
 	TEST_ASSERT(istype(offer), "Restored access can open the actual question again")
@@ -64,10 +64,10 @@
 	var/obj/machinery/syndicate_beacon/virgo/topic_gate_probe/B = allocate(/obj/machinery/syndicate_beacon/virgo/topic_gate_probe, get_turf(user))
 	B.set_grid_power(TRUE)
 	B.set_broken_condition(FALSE)
-	user.permits_topics = FALSE
+	user.set_permits_topics(FALSE)
 	test_ui(user, B, "transfer_supplies", list("mob_ref" = REF(user)))
 	TEST_ASSERT_EQUAL(B.transfers_attempted, 0, "Inherited UI topic admission blocks the real transfer op")
 	TEST_ASSERT(user.access_denials > 0, "The UI op really checked CanUseObjTopic")
-	user.permits_topics = TRUE
+	user.set_permits_topics(TRUE)
 	test_ui(user, B, "transfer_supplies", list("mob_ref" = REF(user)))
 	TEST_ASSERT_EQUAL(B.transfers_attempted, 1, "Allowed inherited UI admission reaches its actual op handler")

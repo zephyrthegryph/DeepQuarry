@@ -19,7 +19,6 @@
 
 /// TRUE while its material needs processing (radioactive or similar); set by set_material().
 /obj/structure/girder/var/material_processing = FALSE
-TRACKED(/obj/structure/girder, material_processing)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
 /obj/structure/girder/proc/build_of(material_key)

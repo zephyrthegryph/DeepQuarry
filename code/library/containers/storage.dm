@@ -335,7 +335,3 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 	S.toggle_gathering(A.actor)
 	return OP_OK
 
-TRACKED(/datum/cap_data/storage, accepts)
-TRACKED(/datum/cap_data/storage, has_accepts)
-TRACKED(/datum/cap_data/storage, max_size)
-TRACKED(/datum/cap_data/storage, has_max_size)

@@ -145,13 +145,13 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 /obj/structure/disposalconstruct/proc/do_a_flip()
 	switch(ptype)
 		if(DISPOSAL_PIPE_JUNCTION)
-			ptype = DISPOSAL_PIPE_JUNCTION_FLIPPED
+			set_ptype(DISPOSAL_PIPE_JUNCTION_FLIPPED)
 		if(DISPOSAL_PIPE_JUNCTION_FLIPPED)
-			ptype = DISPOSAL_PIPE_JUNCTION
+			set_ptype(DISPOSAL_PIPE_JUNCTION)
 		if(DISPOSAL_PIPE_SORTER)
-			ptype = DISPOSAL_PIPE_SORTER_FLIPPED
+			set_ptype(DISPOSAL_PIPE_SORTER_FLIPPED)
 		if(DISPOSAL_PIPE_SORTER_FLIPPED)
-			ptype = DISPOSAL_PIPE_SORTER
+			set_ptype(DISPOSAL_PIPE_SORTER)
 
 	update()
 
@@ -301,7 +301,7 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 		transfer_fingerprints_to(P)
 		P.set_base_icon_state(base_state)
 		P.set_dir(dir)
-		P.dpdir = dpdir
+		P.set_dpdir(dpdir)
 		if(ptype == DISPOSAL_PIPE_SORTER || ptype == DISPOSAL_PIPE_SORTER_FLIPPED)
 			var/obj/structure/disposalpipe/sortjunction/SortP = P
 			SortP.sortType = sortType

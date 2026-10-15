@@ -565,7 +565,7 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 					if(pa.Find("alt"))
 						if(L.ai_brain)
 							var/datum/ai_brain/AI = L.ai_brain
-							AI.set_hostile(!AI.get_hostile())
+							AI.set_attack_on_sight(!AI.get_hostile())
 							L.datum_flags |= DF_VAR_EDITED
 							to_chat(user, span_notice("\The [L] is now [AI.get_hostile() ? "hostile" : "passive"]."))
 							log_admin("[key_name(user)] made [L]'s AI hostile.")

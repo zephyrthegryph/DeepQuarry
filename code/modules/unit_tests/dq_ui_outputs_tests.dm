@@ -7,8 +7,6 @@
 	var/shown = 0
 	var/other = 0
 
-TRACKED(/datum/dq_ui_out_host, shown)
-TRACKED(/datum/dq_ui_out_host, other)
 
 /datum/dq_ui_out_host/ui_data(datum/act/eval/A)
 	return list("shown" = shown)

@@ -35,7 +35,7 @@
 	TEST_ASSERT_EQUAL(T.heard_replaced, 0, "the listener for replaced strikes did not")
 	TEST_ASSERT_EQUAL(T.heard_any, 1, "the ACT_ANY listener heard it")
 	// Shield up: the instead hook takes the strike over. ACT_TRY returns null, the notice is marked replaced.
-	T.shield = TRUE
+	T.set_shield(TRUE)
 	var/datum/act/e4_strike/taken = ACT_TRY(T, e4_strike, 10)
 	TEST_ASSERT_NULL(taken, "a takeover returns null")
 	if(taken)
@@ -46,7 +46,7 @@
 	TEST_ASSERT_EQUAL(T.last_outcome, ACT_REPLACED, "with outcome ACT_REPLACED")
 	TEST_ASSERT_EQUAL(T.heard_any, 2, "the ACT_ANY listener heard it too")
 	// A path that decides not to finish.
-	T.shield = FALSE
+	T.set_shield(FALSE)
 	var/datum/act/e4_strike/dropped = ACT_TRY(T, e4_strike, 10)
 	TEST_ASSERT_NOTNULL(dropped, "the shield is down again")
 	act_cancel(dropped)

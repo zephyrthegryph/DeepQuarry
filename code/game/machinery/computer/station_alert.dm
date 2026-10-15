@@ -10,7 +10,6 @@
 	/// TRUE while a major alarm it watches is up: its screen shows the alert (screen_state()).
 	var/alerting = FALSE
 
-TRACKED(/obj/machinery/computer/station_alert, alerting)
 
 CAPABILITIES(/obj/machinery/computer/station_alert)
 	configure(light_glow(color = "#e6ffff"))

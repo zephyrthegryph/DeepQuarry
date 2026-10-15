@@ -129,6 +129,7 @@ CAPABILITIES(/datum/tgui_alert)
 
 /datum/tgui_alert/proc/set_choice(choice)
 	src.choice = choice
+	tracked_changed(src, nameof(choice))
 
 /**
  * Creates an asynchronous TGUI alert window with an associated callback.

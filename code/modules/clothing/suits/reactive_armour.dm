@@ -63,7 +63,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/reactive_armor_shell)
 	..()
 	look.state("reactive[active ? "" : "off"]")
 
-TRACKED(/obj/item/clothing/suit/armor/reactive, active)
 
 CAPABILITIES(/obj/item/clothing/suit/armor/reactive)
 	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(reactive_toggled)))

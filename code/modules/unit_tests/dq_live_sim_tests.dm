@@ -129,14 +129,13 @@
 	var/crowded = FALSE
 	var/crossings = 0
 
-TRACKED(/obj/test_gas_holder, crowded)
 
 CAPABILITIES(/obj/test_gas_holder)
 	gas_level(into = nameof(crowded), reading = CH_GAS_PRESSURE, above = 600, hysteresis = 50, air = nameof(test_air))
 	on_change(nameof(crowded), ENTER, then(PROC_REF(on_cross)))
 
 /obj/test_gas_holder/proc/set_air(datum/gas_mixture/mixture)
-	test_air = mixture
+	set_test_air(mixture)
 
 /obj/test_gas_holder/proc/on_cross(datum/act/A)
 	crossings++

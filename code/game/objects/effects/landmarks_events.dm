@@ -269,7 +269,7 @@ CAPABILITIES(/obj/effect/landmark/event_trigger/auto_narrate)
 	else
 		isPersonal_orVis_orAud = setup["audible"] ? 2 : 1
 		if(setup["range"] <= 10)
-			message_range = setup["range"]
+			set_message_range(setup["range"])
 
 /obj/effect/landmark/event_trigger/auto_narrate/Crossed(atom/movable/AM)
 	. = ..()	//Checks if AM is mob/living and notifies admin(s)

@@ -169,7 +169,7 @@
 /// Rebuild this object to another blueprint: template, total and chosen materials.
 /obj/proc/set_material_blueprint(template_path, total, list/materials_by_role)
 	set_material_template(template_path)
-	material_total = total
+	set_material_total(total)
 	var/datum/material_template/template = get_material_template()
 	var/list/overrides = list()
 	for(var/role in materials_by_role)
@@ -182,7 +182,7 @@
 /obj/proc/set_bulk_material(material_id, total)
 	set_material_template(material_id ? /datum/material_template/bulk : null)
 	set_material_bulk_material(material_id)
-	material_total = material_id ? total : 0
+	set_material_total(material_id ? total : 0)
 	material_overrides_set(src, null)
 
 /obj/proc/primary_construction_material() as /datum/material
@@ -216,7 +216,7 @@
 	if(source.material_template == /datum/material_template/mix)
 		var/datum/material_template/mix/mix = source.declared_material_mix()
 		set_material_template(null)
-		material_total = 0
+		set_material_total(0)
 		if(mix)
 			// A mix is per type; carry the dominant material as plain bulk.
 			var/dominant
@@ -226,7 +226,7 @@
 			set_bulk_material(dominant, mix.total)
 	else
 		set_material_template(source.material_template)
-		material_total = source.material_total
+		set_material_total(source.material_total)
 		set_material_bulk_material(source.material_bulk_material)
 		material_overrides_set(src, material_build_view(source).overrides)
 	if(material_assembly_of(source) || material_assembly_of(src))
@@ -326,7 +326,7 @@
 			scaled[material_id] = CEILING(scaled[material_id] * factor, 1)
 		set_material_mix(scaled)
 		return
-	material_total = CEILING(material_total * factor, 1)
+	set_material_total(CEILING(material_total * factor, 1))
 
 /// A type's material totals (material id -> units) from its declared blueprint,
 /// read without an instance. Null if the type has no composition.
@@ -365,6 +365,6 @@
 	if(build)
 		build.mix = null
 	if(has_functional_construction())
-		material_total = amount
+		set_material_total(amount)
 		return
 	set_bulk_material(material_id, amount)

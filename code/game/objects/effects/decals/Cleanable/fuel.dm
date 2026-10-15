@@ -28,7 +28,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 	//Be absorbed by any other liquid fuel in the tile.
 	for(var/obj/effect/decal/cleanable/liquid_fuel/other in contents_of(loc))
 		if(other != src)
-			other.amount += src.amount
+			other.set_amount(other.amount + src.amount)
 			other.Spread()
 			has_spread = 1
 			break
@@ -48,13 +48,13 @@ CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 		if(origin.CanPass(src, target) && target.CanPass(src, origin))
 			var/obj/effect/decal/cleanable/liquid_fuel/other_fuel = locate_on(target, /obj/effect/decal/cleanable/liquid_fuel)
 			if(other_fuel)
-				other_fuel.amount += amount*0.25
+				other_fuel.set_amount(other_fuel.amount + (amount*0.25))
 				if(!(other_fuel in exclude))
 					exclude += src
 					other_fuel.Spread(exclude)
 			else
 				new/obj/effect/decal/cleanable/liquid_fuel(target, amount*0.25,1)
-			amount *= 0.75
+			set_amount(amount * 0.75)
 
 /obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel
 	icon_state = "mustard"
@@ -92,4 +92,4 @@ CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel)
 					return
 			O.hotspot_expose((T20C*2) + 380,500) //Light flamethrower fuel on fire immediately.
 
-	amount *= 0.25
+	set_amount(amount * 0.25)

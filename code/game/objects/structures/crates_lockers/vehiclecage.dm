@@ -8,7 +8,6 @@
 	var/my_vehicle_type
 	var/paint_color = "#666666"
 
-TRACKED(/obj/structure/vehiclecage, paint_color)
 
 // C11: one slot for the caged vehicle. No custom Destroy() overrides the
 // base /atom/movable one, so the default spill policy (not SLOT_DROP_HOLDER)

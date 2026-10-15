@@ -80,7 +80,6 @@ CAPABILITIES(/obj/item/perfect_tele)
 			rel_add(src, nameof(beacons), nb)
 	loc_network = null //Consumed
 
-TRACKED(/obj/item/perfect_tele, ready)
 
 /obj/item/perfect_tele/draw(datum/look/look)
 	look.watch(power_source)
@@ -570,7 +569,6 @@ CAPABILITIES(/obj/item/perfect_tele/frontier)
 /obj/item/perfect_tele/frontier/proc/pump_done(datum/act/op/A)
 	set_recharging(FALSE)
 
-TRACKED(/obj/item/perfect_tele/frontier, recharging)
 
 /obj/item/perfect_tele/frontier/draw(datum/look/look)
 	if(recharging)

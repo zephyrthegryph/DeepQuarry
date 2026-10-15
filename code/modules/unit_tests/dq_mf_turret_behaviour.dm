@@ -161,7 +161,7 @@
 /datum/unit_test/dq_hc_struct/mft/admin_ghost_and_a_locked_turret/run_gate()
 	var/obj/machinery/porta_turret/T = turret()
 	var/mob/observer/dead/G = allocate(/mob/observer/dead, tile(2, 2))
-	G.admin_ghosted = TRUE
+	G.set_admin_ghosted(TRUE)
 	var/weapons = T.check_weapons
 	press(G, T, "authweapon")
 	TEST_ASSERT_EQUAL(T.check_weapons, weapons, "a ghost the test cannot give admin rights (no client) changes nothing; with them, req_window_usable() lets it in")
@@ -282,7 +282,7 @@
 	var/mob/living/carbon/human/H = person()
 	mft_set_enabled(T, FALSE)
 	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, tile(2, 2))
-	card.uses = 3
+	card.set_uses(3)
 	hci_click(H, T, card)
 	test_time(1 SECOND)
 	TEST_ASSERT(mft_emagged(T), "the card subverts it")

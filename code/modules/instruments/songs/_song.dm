@@ -108,7 +108,6 @@
 
 /// Are we currently playing? song_step() plays the song while set (the every() below).
 /datum/song/var/playing = FALSE
-TRACKED(/datum/song, playing)
 
 /datum/song/reactions()
 	. = ..()
@@ -349,6 +348,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
  */
 /datum/song/proc/set_volume(volume)
 	src.volume = clamp(round(volume, 1), max(0, min_volume), min(100, max_volume))
+	tracked_changed(src, nameof(volume))
 
 /**
  * Setter for setting how low the volume has to get before a note is considered "dead" and dropped

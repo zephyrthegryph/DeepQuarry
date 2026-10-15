@@ -26,8 +26,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 
 /obj/item/clothing/shoes/magboots/proc/set_slowdown()
 	slowdown = shoes? max(SHOES_SLOWDOWN, shoes.slowdown): SHOES_SLOWDOWN	//So you can't put on magboots to make you walk faster.
+	tracked_changed(src, nameof(slowdown))
 	if (magpulse)
 		slowdown += 3
+		tracked_changed(src, nameof(slowdown))
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
 	acceptance("equip", req_acceptance_overshoe_clearance(), mode = ACCEPTANCE_APPEND)

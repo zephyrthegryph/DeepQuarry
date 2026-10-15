@@ -15,7 +15,6 @@
 /obj/machinery/computer/pod/var/list/obj/machinery/mass_driver/pod_drivers
 
 /obj/machinery/computer/pod/var/timing = FALSE
-TRACKED(/obj/machinery/computer/pod, timing)
 // Keyed by id: linked when either end materializes (replaces the LateInitialize and per-use scans).
 /obj/machinery/computer/pod/relations()
 	. = ..()

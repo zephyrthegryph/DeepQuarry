@@ -60,7 +60,6 @@
 
 /// The pending plan_async() job's state; plan_poll() polls it every tick while set (every()).
 /datum/generated_station_planner/var/tmp/list/poll_state
-TRACKED(/datum/generated_station_planner, poll_state)
 
 CAPABILITIES(/datum/generated_station_planner)
 	every(PROC_REF(poll_delay), then(PROC_REF(plan_poll)), when = nameof(poll_state))

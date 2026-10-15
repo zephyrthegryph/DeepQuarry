@@ -19,7 +19,6 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	var/list/temp = null // the status line: list("color", "text")
 
-TRACKED(/obj/machinery/telecomms, temp)
 
 /// req_tcomms_multitool(): the actor has a multitool for the machine (in hand; an AI's own; a cyborg's at the machine).
 /proc/req_tcomms_multitool()
@@ -121,7 +120,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 	var/datum/prompt/P = A.answer
 	var/newid = copytext(reject_bad_text(P?.value), 1, MAX_MESSAGE_LEN)
 	if(newid)
-		id = newid
+		set_id(newid)
 		report("-% New ID assigned: \"[id]\" %-")
 	return OP_OK
 
@@ -132,7 +131,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 	if(!newnet)
 		return OP_OK
 	rel_clear(src, nameof(links))
-	network = newnet
+	set_network(newnet)
 	report("-% New network tag assigned: \"[network]\" %-")
 	return OP_OK
 
@@ -273,11 +272,13 @@ CAPABILITIES(/obj/machinery/telecomms/bus)
 /obj/machinery/telecomms/bus/proc/set_change_frequency(newfreq)
 	if(!newfreq)
 		change_frequency = ZERO_FREQ
+		tracked_changed(src, nameof(change_frequency))
 		report("-% Frequency changing deactivated %-")
 		return
 	newfreq = tcomms_tenths(newfreq)
 	if(newfreq < TCOMMS_FREQ_LIMIT)
 		change_frequency = newfreq
+		tracked_changed(src, nameof(change_frequency))
 		report("-% New frequency to change to assigned: \"[newfreq] GHz\" %-")
 
 // ---- ranged machines: the receiver and the broadcaster ----

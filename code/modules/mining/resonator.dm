@@ -78,9 +78,6 @@
 		set_fieldsactive(fieldsactive + 1)
 		after(src, burst_time, PROC_REF(field_burst))
 
-TRACKED(/obj/item/resonator, burst_time)
-TRACKED(/obj/item/resonator, spreadmode)
-TRACKED(/obj/item/resonator, fieldlimit)
 
 CAPABILITIES(/obj/item/resonator)
 	configure(item_thrown(force = 10))

@@ -237,4 +237,3 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital)
 
 
 
-TRACKED(/obj/machinery/atmospherics/tvalve, state)

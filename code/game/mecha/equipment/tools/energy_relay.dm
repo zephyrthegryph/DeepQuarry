@@ -10,7 +10,6 @@
 	equip_type = EQUIP_UTILITY
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/var/relaying = FALSE
-TRACKED(/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay, relaying)
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay)
 	every(0.2 SECONDS, then(PROC_REF(relay_step)), when = nameof(relaying))

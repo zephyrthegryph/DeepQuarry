@@ -65,7 +65,6 @@ CAPABILITIES(/datum/spell)
 
 /// TRUE while recharging: recharge_tick() adds a second's worth every second (the every() below).
 /datum/spell/var/recharging = FALSE
-TRACKED(/datum/spell, recharging)
 
 /datum/spell/reactions()
 	. = ..()

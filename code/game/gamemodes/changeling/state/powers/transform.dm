@@ -50,7 +50,7 @@
 	rel_set(src, nameof(dna), chosen_dna.dna.Clone())
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		H.identifying_gender = chosen_dna.identifying_gender
+		H.set_identifying_gender(chosen_dna.identifying_gender)
 		H.bio.flavor_texts = chosen_dna.flavour_texts ? chosen_dna.flavour_texts.Copy() : null
 	set_real_name(chosen_dna.name)
 	UpdateAppearance()

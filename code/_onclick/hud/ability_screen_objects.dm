@@ -152,7 +152,6 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 	var/atom/movable/screen/movable/ability_master/ability_master
 
 
-TRACKED(/atom/movable/screen/ability, background_base_state)
 
 /atom/movable/screen/ability/draw(datum/look/look)
 	..()

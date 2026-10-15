@@ -7,7 +7,6 @@
 	build_path = /obj/machinery/computer/supplycomp
 	var/contraband_enabled = 0
 
-TRACKED(/obj/item/circuitboard/supplycomp, contraband_enabled)
 
 /obj/item/circuitboard/supplycomp/control
 	name = T_BOARD("supply ordering console")

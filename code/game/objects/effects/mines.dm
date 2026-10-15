@@ -163,7 +163,7 @@ CAPABILITIES(/obj/effect/mine)
 /obj/effect/mine/proc/screwdriver_used(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/tool = A.held
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	act_message(user, null, MSG_SELF(span_notice("You very carefully screw the mine's panel [panel_open ? "open" : "closed"].")), \
 		MSG_OTHERS(span_warning("%U% very carefully screws the mine's panel [panel_open ? "open" : "closed"].")))
 	playsound(src, sounds_of(tool).use, 50, 1)

@@ -18,7 +18,6 @@
 	var/can_genesis = TRUE	// Can the core chunk be used to grow a new blob?
 
 
-TRACKED(/obj/item/blobcore_chunk, should_tick)
 
 CAPABILITIES(/obj/item/blobcore_chunk)
 	configure(item_sounds(drop = SFX_EFFECTS_SLIME_SQUISH))

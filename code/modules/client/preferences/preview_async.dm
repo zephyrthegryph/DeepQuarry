@@ -347,7 +347,6 @@
 
 /// Jobs still outstanding: poll_step() runs once a tick while set.
 /datum/dq_preview_poll/var/polling = FALSE
-TRACKED(/datum/dq_preview_poll, polling)
 
 /datum/dq_preview_poll/reactions()
 	. = ..()

@@ -298,7 +298,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holographic)
 // Pass TRUE to make safe. Pass FALSE to make unsafe.
 /mob/living/simple_mob/animal/space/carp/holographic/proc/set_safety(safe)
 	if(ai_brain)
-		ai_brain.set_hostile(!safe) // safe=TRUE means hostility=FALSE.
+		ai_brain.set_attack_on_sight(!safe) // safe=TRUE means hostility=FALSE.
 		ai_brain.forget_everything()
 
 // Called on death.

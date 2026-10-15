@@ -33,8 +33,6 @@
 	scan_mob(M, user) //default surgery behaviour is just to scan as usual
 	return 1
 
-TRACKED(/obj/item/healthanalyzer, showadvscan)
-TRACKED(/obj/item/healthanalyzer, guide)
 
 CAPABILITIES(/obj/item/healthanalyzer)
 	configure(item_worn(slots = SLOT_BELT))

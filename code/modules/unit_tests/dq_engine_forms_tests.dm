@@ -19,7 +19,6 @@ GLOBAL_VAR_INIT(forms_ticks, 0)
 	var/charge_seen = 0
 	var/cap_runs = 0
 
-TRACKED(/obj/forms_listener, charge)
 
 CAPABILITIES(/obj/forms_listener)
 	on_notice(/datum/notice/forms_pinged, coalesce(2 SECONDS), then(PROC_REF(coalesced_ping)))
@@ -59,8 +58,6 @@ CAPABILITY_TYPE(forms_listening, CAP_FORMS_LISTENING, /datum/capability/forms_li
 	var/charge_runs = 0
 	var/list/heard
 
-TRACKED(/obj/forms_machine, mode)
-TRACKED(/obj/forms_machine, charge)
 
 CAPABILITIES(/obj/forms_machine)
 	modes(nameof(mode))
@@ -121,7 +118,6 @@ CAPABILITY_TYPE(forms_plain_state, CAP_FORMS_PLAIN_STATE, /datum/capability/form
 /datum/forms_plain_machine
 	var/mode = /datum/capability/forms_plain_state
 
-TRACKED(/datum/forms_plain_machine, mode)
 
 CAPABILITIES(/datum/forms_plain_machine)
 	modes(nameof(mode))

@@ -68,6 +68,7 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 	if(client())
 		client().persistent_client = null
 	client = new_client
+	tracked_changed(src, nameof(client))
 	if(client())
 		client().persistent_client = src
 		byond_build = client().byond_build

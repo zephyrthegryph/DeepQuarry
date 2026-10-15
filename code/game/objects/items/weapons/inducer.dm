@@ -17,7 +17,6 @@
 	var/recharging = FALSE
 	var/opened = FALSE
 
-TRACKED(/obj/item/inducer, opened)
 
 /obj/item/inducer/unloaded
 	cell_type = null

@@ -154,7 +154,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	H.forceMove(src)
 	H.status_set(STAT_BLINDED, 0)
 	H.status_set(STAT_SLEEPING, 0)
-	H.canmove = 0
+	H.set_canmove(0)
 
 // the petrified gargoyle reverts, or crumbles.
 /obj/structure/gargoyle/on_destroy(force)
@@ -177,7 +177,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		unpetrify(deal_damage = TRUE, deleting = TRUE)
 		return
 	if(gargoyle.loc != src)
-		can_revert = TRUE //something's gone wrong, they escaped, lets not qdel them
+		set_can_revert(TRUE) //something's gone wrong, they escaped, lets not qdel them
 		unpetrify(deal_damage = FALSE, deleting = TRUE)
 
 /// Overheating (above 1600 C): the stone cracks.

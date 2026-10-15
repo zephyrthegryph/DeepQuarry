@@ -170,7 +170,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		stop_pulling()
 
 		// change
-		canmove = FALSE
+		set_canmove(FALSE)
 		SK.set_in_phase(FALSE)
 		SK.set_doing_phase(TRUE)
 		throwpass = FALSE
@@ -198,7 +198,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 
 /mob/living/proc/shadekin_complete_phase_in(original_canmove, datum/shadekin/SK)
-	canmove = original_canmove
+	set_canmove(original_canmove)
 	alpha = initial(alpha)
 	remove_body_effect(/datum/body_effect/shadekin_phase_vision)
 	remove_body_effect(/datum/body_effect/phased_out)
@@ -278,7 +278,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		set_can_pull_size(0)
 		set_can_pull_mobs(MOB_PULL_NONE)
 		dq_set_hovering(src, TRUE)
-		canmove = FALSE
+		set_canmove(FALSE)
 
 		// change
 		SK.set_in_phase(TRUE)
@@ -312,7 +312,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 	set_see_invisible_default(INVISIBILITY_SHADEKIN) // Allow seeing phased entities while phased.
 	alpha = 127
 
-	canmove = original_canmove
+	set_canmove(original_canmove)
 	set_incorporeal_move(TRUE)
 	set_density(FALSE)
 	if(SK)

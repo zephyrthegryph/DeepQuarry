@@ -19,7 +19,7 @@
 	var/vv_VAS = TRUE
 	/// Controls if error is thrown when duplicate configuration values for this entry type are encountered
 	var/dupes_allowed = FALSE
-	/// Stores the original protection configuration, used for set_default()
+	/// Stores the original protection configuration, used for reset_to_default()
 	var/default_protection
 
 /datum/config_entry/New()
@@ -27,7 +27,7 @@
 		CRASH("Abstract config entry [type] instatiated!")
 	name = lowertext(type2top(type))
 	default_protection = protection
-	set_default()
+	reset_to_default()
 
 // engine: leaves the config's entry table.
 /datum/config_entry/lifecycle_dematerialize()
@@ -37,7 +37,7 @@
 /**
  * Returns the value of the configuration datum to its default, used for resetting a config value. Note this also sets the protection back to default.
  */
-/datum/config_entry/proc/set_default()
+/datum/config_entry/proc/reset_to_default()
 	if ((protection & CONFIG_ENTRY_LOCKED) && IsAdminAdvancedProcCall())
 		log_admin("[key_name(usr)] attempted to reset locked config entry [type] to its default")
 		return

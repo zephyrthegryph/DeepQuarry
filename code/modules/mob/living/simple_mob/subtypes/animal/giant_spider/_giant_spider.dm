@@ -151,9 +151,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
 
 /mob/living/simple_mob/animal/giant_spider/proc/make_spiderling()
 	adjust_scale(icon_scale_x * 0.7, icon_scale_y * 0.7)
-	endurance = round(endurance * 0.5)
-	melee_damage_lower *= 0.7
-	melee_damage_upper *= 0.7
+	set_endurance(round(endurance * 0.5))
+	set_melee_damage_lower(melee_damage_lower * 0.7)
+	set_melee_damage_upper(melee_damage_upper * 0.7)
 
 	response_harm = "kicks"
 

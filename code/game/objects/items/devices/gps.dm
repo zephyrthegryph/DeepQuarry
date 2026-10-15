@@ -24,7 +24,6 @@
 REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 /// Will not show other signals or emit its own signal if false.
 /obj/item/gps/var/tracking = FALSE
-TRACKED(/obj/item/gps, tracking)
 /// The mob carrying it (a relation view).
 /obj/item/gps/var/mob/holder
 

@@ -352,19 +352,19 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	TEST_ASSERT(/mob/living/proc/dq_use_combat_move in S.verbs, "on_holder_login didn't add the dispatcher verb")
 
 
-// --- runtime: set_hostile flips ai_attack_on_sight -------------------
+// --- runtime: set_attack_on_sight flips ai_attack_on_sight -------------------
 // Legacy callers (technomancer control, xenoarch effects, vore mobs)
-// write set_hostile(FALSE) to suppress aggression.
+// write set_attack_on_sight(FALSE) to suppress aggression.
 
 /datum/unit_test/dq_combat_ai_set_hostile_flips_attack_on_sight
 
 /datum/unit_test/dq_combat_ai_set_hostile_flips_attack_on_sight/Run()
 	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	S.ai_attack_on_sight = TRUE
-	S.ai_brain.set_hostile(FALSE)
-	TEST_ASSERT_EQUAL(S.ai_attack_on_sight, FALSE, "set_hostile(FALSE) didn't flip ai_attack_on_sight")
-	S.ai_brain.set_hostile(TRUE)
-	TEST_ASSERT_EQUAL(S.ai_attack_on_sight, TRUE, "set_hostile(TRUE) didn't flip ai_attack_on_sight")
+	S.ai_brain.set_attack_on_sight(FALSE)
+	TEST_ASSERT_EQUAL(S.ai_attack_on_sight, FALSE, "set_attack_on_sight(FALSE) didn't flip ai_attack_on_sight")
+	S.ai_brain.set_attack_on_sight(TRUE)
+	TEST_ASSERT_EQUAL(S.ai_attack_on_sight, TRUE, "set_attack_on_sight(TRUE) didn't flip ai_attack_on_sight")
 
 
 // --- runtime: fast processing is combat-scoped ---------------------------

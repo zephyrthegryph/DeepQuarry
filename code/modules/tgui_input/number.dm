@@ -150,6 +150,7 @@ CAPABILITIES(/datum/tgui_input_number)
 
 /datum/tgui_input_number/proc/set_entry(entry)
 	src.entry = entry
+	tracked_changed(src, nameof(entry))
 
 /// A shared (registered) definition/flyweight: never cleared.
 /datum/tgui_input_number/proc/state() as /datum/tgui_state

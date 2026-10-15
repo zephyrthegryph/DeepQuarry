@@ -61,7 +61,7 @@
 	// code continues to set its exact HUD dirty bits.
 	if(!BEFORE(src, hud_full_refresh_at, CLOCK_WORLD))
 		EXPIRY_SET(src, hud_full_refresh_at, 1 MINUTES, CLOCK_WORLD)
-		hud_updateflag = (1 << TOTAL_HUDS) - 1
+		set_hud_updateflag((1 << TOTAL_HUDS) - 1)
 		PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
 
 /// Deep stasis (BF_STASIS above STASIS_SLEEP_THRESHOLD) puts the body to sleep.
@@ -2068,7 +2068,7 @@
 		life_hud_backup()
 	if (BITTEST(flags, VANTAG_HUD))
 		life_hud_vantag()
-	src.hud_updateflag = 0
+	set_hud_updateflag(0)
 
 /// Health bar: vitality band, or dead.
 /mob/living/carbon/human/proc/life_hud_health()

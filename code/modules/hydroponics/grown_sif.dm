@@ -16,7 +16,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown/sif)
 	var/obj/item/W = A.held
 	if(seed() && combat_of(W).sharp && seeds > 0)
 		var/take_seeds = min(seeds, rand(1,2))
-		seeds -= take_seeds
+		set_seeds(seeds - take_seeds)
 		to_chat(user, span_notice("You stick \the [W] into \the [src] and lever out [take_seeds] seed\s."))
 		for(var/i = 1 to take_seeds)
 			new /obj/item/seeds(get_turf(src), seed().name)

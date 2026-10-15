@@ -139,7 +139,6 @@ CAPABILITIES(/obj/item/pickaxe/plasmacutter)
 	var/digspeed = 40
 	var/grave_mode = FALSE
 
-TRACKED(/obj/item/shovel, grave_mode)
 
 CAPABILITIES(/obj/item/shovel)
 	configure(item_worn(slots = SLOT_BELT))

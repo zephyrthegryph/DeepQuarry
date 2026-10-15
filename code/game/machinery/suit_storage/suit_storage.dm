@@ -24,10 +24,6 @@
 	var/panelopen = 0
 	var/safetieson = 1
 	var/cycletime_left = 0
-TRACKED(/obj/machinery/suit_storage_unit, ispowered)
-TRACKED(/obj/machinery/suit_storage_unit, isbroken)
-TRACKED(/obj/machinery/suit_storage_unit, panelopen)
-TRACKED(/obj/machinery/suit_storage_unit, safetieson)
 
 CAPABILITIES(/obj/machinery/suit_storage_unit)
 	owns_one(nameof(HELMET), /obj/item/clothing/head/helmet/space, starts = nameof(helmet_type))

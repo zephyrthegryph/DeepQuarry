@@ -18,7 +18,6 @@
 	/// It is firing its rod into the field (its console's switch).
 	var/injecting = FALSE
 
-TRACKED(/obj/machinery/fusion_fuel_injector, injecting)
 
 MSG_DEF_SELF(fuel_injector/running, "Shut it off before playing with the fuel rod.")
 MSG_DEF_SELF(fuel_injector/no_rod, "There is no fuel rod in it.")
@@ -27,7 +26,6 @@ MSG_DEF(fuel_injector/rod_in, "You insert %I% into %T%.", "%U% inserts %I% into 
 // The fuel injector (doc/rewrite/final_api.html section 16): a fuel rod in, switched on by its console, it fires one particle per fuel in
 // the rod every machine service interval (inject_step()) and burns fuel_usage of each. Its rod is its own; the rod and its parts are worked
 // only while it is off. A blitz rod asks first, and shakes it apart.
-TRACKED(/obj/machinery/fusion_fuel_injector, id_tag)
 
 CAPABILITIES(/obj/machinery/fusion_fuel_injector)
 	configure(uses_power(idle = 10, active = 500))

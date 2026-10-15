@@ -32,7 +32,7 @@
 
 /// A toggle button: `var_name` flips for a silicon, flips for anyone when the bot is unlocked, and stays for an ordinary person when it is locked.
 /datum/unit_test/dq_hc_bots/proc/check_locked_toggle(mob/living/bot/bot, window, action, var_name)
-	bot.locked = TRUE
+	bot.set_locked(TRUE)
 	var/start = bot.vars[var_name]
 	hc_bot_press(crew, bot, window, action)
 	TEST_ASSERT_EQUAL(bot.vars[var_name], start, "[action]: a locked panel keeps an ordinary person out of [var_name]")
@@ -40,7 +40,7 @@
 	TEST_ASSERT_NOTEQUAL(bot.vars[var_name], start, "[action]: a silicon works [var_name] through the lock")
 	hc_bot_press(borg, bot, window, action)
 	TEST_ASSERT_EQUAL(bot.vars[var_name], start, "[action]: pressing again puts [var_name] back")
-	bot.locked = FALSE
+	bot.set_locked(FALSE)
 	hc_bot_press(crew, bot, window, action)
 	TEST_ASSERT_NOTEQUAL(bot.vars[var_name], start, "[action]: an unlocked panel is open to anyone")
 	return null
@@ -77,7 +77,7 @@
 	failure = check_locked_toggle(F, "Floorbot", "make", "maketiles")
 	if(failure)
 		return failure
-	F.locked = TRUE
+	F.set_locked(TRUE)
 	hc_bot_press(crew, F, "Floorbot", "bridgemode", list("dir" = "NORTH"))
 	TEST_ASSERT_NULL(F.targetdirection, "a locked panel keeps an ordinary person out of the bridge mode")
 	hc_bot_press(borg, F, "Floorbot", "bridgemode", list("dir" = "NORTH"))
@@ -87,7 +87,7 @@
 /datum/unit_test/dq_hc_bots/floorbot_window_data/Run()
 	set_up_actors()
 	var/mob/living/bot/floorbot/F = allocate(/mob/living/bot/floorbot, test_floor())
-	F.locked = TRUE
+	F.set_locked(TRUE)
 	F.improvefloors = TRUE
 	var/list/hidden = hc_bot_data(crew, F)
 	TEST_ASSERT_NULL(hidden["improvefloors"], "a locked panel hides the settings from an ordinary person")
@@ -96,7 +96,7 @@
 	TEST_ASSERT(islist(hidden["possible_bmode"]), "the bridge directions are listed")
 	var/list/shown = hc_bot_data(borg, F)
 	TEST_ASSERT_EQUAL(shown["improvefloors"], F.improvefloors, "a silicon sees the settings")
-	F.locked = FALSE
+	F.set_locked(FALSE)
 	TEST_ASSERT_EQUAL(hc_bot_data(crew, F)["improvefloors"], F.improvefloors, "an unlocked panel shows them to anyone")
 
 /datum/unit_test/dq_hc_bots/cleanbot_buttons
@@ -138,12 +138,12 @@
 	TEST_ASSERT_EQUAL(B.on, was_on, "a person with no access cannot switch it")
 	hc_bot_press(borg, B, "Farmbot", "power")
 	TEST_ASSERT_NOTEQUAL(B.on, was_on, "a silicon can")
-	B.locked = TRUE
+	B.set_locked(TRUE)
 	for(var/list/row in list(list("water", "waters_trays"), list("refill", "refills_water"), list("weed", "uproots_weeds"), list("replacenutri", "replaces_nutriment")))
 		var/start = B.vars[row[2]]
 		hc_bot_press(borg, B, "Farmbot", row[1])
 		TEST_ASSERT_EQUAL(B.vars[row[2]], start, "[row[1]]: a locked panel keeps even a silicon out")
-	B.locked = FALSE
+	B.set_locked(FALSE)
 	for(var/list/row in list(list("water", "waters_trays"), list("refill", "refills_water"), list("weed", "uproots_weeds"), list("replacenutri", "replaces_nutriment")))
 		var/start = B.vars[row[2]]
 		hc_bot_press(crew, B, "Farmbot", row[1])
@@ -152,7 +152,7 @@
 	TEST_ASSERT(data["tank"], "the window says there is a tank")
 	TEST_ASSERT_EQUAL(data["tankMaxVolume"], B.tank.reagents.maximum_volume, "and how big it is")
 	TEST_ASSERT_EQUAL(data["waters_trays"], B.waters_trays, "an unlocked panel shows the settings")
-	B.locked = TRUE
+	B.set_locked(TRUE)
 	TEST_ASSERT_NULL(hc_bot_data(crew, B)["waters_trays"], "a locked one hides them")
 
 /// The medbot limits (code/__defines/medbot.dm: urgency 1 to 4, injection up to 15) are written out as numbers.
@@ -174,7 +174,7 @@
 	failure = check_locked_toggle(M, "Medbot", "declaretreatment", "declare_treatment")
 	if(failure)
 		return failure
-	M.locked = TRUE
+	M.set_locked(TRUE)
 	var/urgency = M.min_urgency
 	hc_bot_press(crew, M, "Medbot", "adj_urgency", list("val" = 4))
 	TEST_ASSERT_EQUAL(M.min_urgency, urgency, "a locked panel keeps an ordinary person out of the urgency")
@@ -217,7 +217,7 @@
 	failure = check_locked_toggle(S, "Secbot", "declarearrests", "declare_arrests")
 	if(failure)
 		return failure
-	S.locked = TRUE
+	S.set_locked(TRUE)
 	TEST_ASSERT_NULL(hc_bot_data(crew, S)["idcheck"], "a locked panel hides the settings from an ordinary person")
 	TEST_ASSERT_EQUAL(hc_bot_data(borg, S)["idcheck"], S.idcheck, "a silicon sees them")
 

@@ -155,7 +155,7 @@
 	test_driver_begin()
 	var/obj/item/glass_jar/jar = allocate(/obj/item/glass_jar)
 	var/obj/effect/spider/spiderling/S = allocate(/obj/effect/spider/spiderling)
-	S.amount_grown = 10
+	S.set_amount_grown(10)
 	S.forceMove(jar)
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(S.amount_grown, 10, "a spiderling grew inside the jar")

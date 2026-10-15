@@ -25,7 +25,6 @@ SETTER(/obj/item/nailpolish, colour)
 	tracked_changed(src, nameof(colour))
 	return TRUE
 
-TRACKED(/obj/item/nailpolish, open)
 
 CAPABILITIES(/obj/item/nailpolish)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
@@ -124,7 +123,6 @@ MSG_DEF_SELF(nailpolish/no_nails, "You can't find any nails on that limb to pain
 	icon_state = "nailpolishremover"
 	var/open = FALSE
 
-TRACKED(/obj/item/nailpolish_remover, open)
 
 CAPABILITIES(/obj/item/nailpolish_remover)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))

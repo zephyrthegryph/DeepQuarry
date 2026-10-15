@@ -52,7 +52,7 @@
 	var/list/room = heat_bt_room(283)
 	TEST_ASSERT_NOTNULL(room, "no room for the space heater")
 	var/obj/machinery/space_heater/heater = allocate(/obj/machinery/space_heater, room[1])
-	heater.set_temperature = 303
+	heater.set_set_temperature(303)
 	heater.set_state(1)
 	work_start(heater)
 	var/charge0 = heater.cell.charge
@@ -75,7 +75,7 @@
 	var/list/room = heat_bt_room(313)
 	TEST_ASSERT_NOTNULL(room, "no room for the space heater")
 	var/obj/machinery/space_heater/heater = allocate(/obj/machinery/space_heater, room[1])
-	heater.set_temperature = 293
+	heater.set_set_temperature(293)
 	heater.set_state(1)
 	work_start(heater)
 	var/charge0 = heater.cell.charge

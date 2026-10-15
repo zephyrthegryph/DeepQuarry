@@ -204,7 +204,7 @@
 // --- Vitals ------------------------------------------------------------------------------
 
 /datum/body/humanoid/recompute_vitals()
-	dirty &= ~BODY_DIRTY_VITALS
+	set_dirty(dirty & (~BODY_DIRTY_VITALS))
 	var/mob/living/carbon/human/H = owner
 	var/worst_part = worst_vital_part_fraction()
 	pain = compute_pain()

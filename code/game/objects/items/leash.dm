@@ -34,7 +34,6 @@
 	/// Is the leash on a pet? The every() below runs while it is.
 	var/leashed = FALSE
 
-TRACKED(/obj/item/leash, leashed)
 
 /// Was LEASH_PET().
 /obj/item/leash/proc/leash_pet() as /mob/living

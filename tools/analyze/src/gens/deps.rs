@@ -38,7 +38,9 @@ pub const OPAQUE_SEEN: &[&str] = &["/::stat_value", "/::cap_key_get", "/::condit
 /// The `(declaring type, var)` pairs a read set reads off the holder.
 fn note_reads(set: &ReadSet, reads: &mut BTreeSet<(String, String)>) {
     for r in &set.reads {
-        if r.kind == ReadKind::Var && r.root == "holder" && r.hop_ok && !r.owner.is_empty() {
+        // Every var read, off the holder, a context hop (actor, held, target) or an object a hop crosses without a declared relation: reactive code
+        // reads it, so it publishes (whether the reader hears it is the dependency graph's question, `hop_not_relation`).
+        if r.kind == ReadKind::Var && !r.owner.is_empty() {
             reads.insert((r.owner.clone(), r.var.clone()));
         }
     }
@@ -199,6 +201,40 @@ pub fn marker_leaves(m: &Marker) -> Vec<Leaf> {
     out
 }
 
+/// The var names a CAPABILITIES block names with `nameof(v)` (a `when` condition, a stat input, an `every(when =)` gate, a toggle): the block declares
+/// that it reads or drives them, so they are read by reactive code whether or not a proc body does.
+pub fn marker_named_vars(m: &Marker) -> Vec<String> {
+    let body = &m.body;
+    let mut out = Vec::new();
+    let mut from = 0;
+    while let Some(at) = body[from..].find("nameof(") {
+        let start = from + at;
+        from = start + 7;
+        if start > 0 && is_word(body.as_bytes()[start - 1]) {
+            continue;
+        }
+        let Some(close) = matching_paren(body, start + 6) else { continue };
+        let name = body[start + 7..close].trim();
+        if !name.is_empty() && name.bytes().all(is_word) {
+            out.push(name.to_string());
+        }
+    }
+    out
+}
+
+/// The vars a CAPABILITIES block hands to the engine to WRITE (`gas_level(into = nameof(v))`, `toggles(nameof(v))`): the engine calls their setters at run
+/// time, so no text write names them.
+pub fn marker_driven_vars(m: &Marker) -> Vec<String> {
+    let mut out = Vec::new();
+    for c in crate::pat!(r"\binto\s*=\s*nameof\(\s*(\w+)\s*\)").captures_iter(&m.body) {
+        out.push(c.s(1).to_string());
+    }
+    for c in crate::pat!(r"\btoggles\(\s*nameof\(\s*(\w+)\s*\)").captures_iter(&m.body) {
+        out.push(c.s(1).to_string());
+    }
+    out
+}
+
 /// Every consumer of a stat or a draw and its untracked reads, computed once per tree (the generator and the lint share it).
 pub struct DepsAnalysis {
     /// "<type>::<proc>" -> its untracked reads.
@@ -243,7 +279,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let eng = if closed { ReadsEngine::new(&sem, &decls, &ann).closed() } else { ReadsEngine::new(&sem, &decls, &ann).with_opaque(handlers::OPAQUE_DIRS) };
     let written = WriteIndex::build(&sem);
     let set_calls = super::auto_tracked::set_calls(tree);
-    let outside_setters = super::auto_tracked::writes_outside_setters(&sem);
+    let outside_setters = super::auto_tracked::writes_outside_setters_of(tree, &sem);
     let mut reads: BTreeSet<(String, String)> = BTreeSet::new();
     let mut consumers: BTreeMap<String, Vec<Untracked>> = BTreeMap::new();
     if let Some(an) = handlers::analyzed(tree) {
@@ -293,6 +329,15 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             consumers.entry(format!("{}::{}", owner, name)).or_insert_with(|| untracked_of(&set, &eng, &written, false));
         }
     }
+    // The presentation reactions (Life steps, HUD, sight, canmove) read holder vars too: reactive code the handler roles do not cover.
+    {
+        let files = tree.select(&crate::tree::CODE_DM);
+        for (owner, var) in crate::lints::derived_reads::reaction_read_pairs(tree, &files) {
+            if let Some(declaring) = sem.var_owner(&owner, &var) {
+                reads.insert((declaring, var));
+            }
+        }
+    }
     let mut draws = BTreeSet::new();
     let mut draw_reads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut draw_keys: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
@@ -329,8 +374,27 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         draws.insert(id);
     }
     let mut leaves = Vec::new();
+    let mut named: BTreeSet<(String, String)> = BTreeSet::new();
     for m in decls.markers_named("CAPABILITIES") {
+        if let Some(owner) = m.args.first().filter(|o| o.starts_with('/')) {
+            for name in marker_named_vars(m) {
+                if let Some(declaring) = sem.var_owner(owner, &name) {
+                    reads.insert((declaring, name));
+                }
+            }
+        }
+        if let Some(owner) = m.args.first().filter(|o| o.starts_with('/')) {
+            for name in marker_driven_vars(m) {
+                if let Some(declaring) = sem.var_owner(owner, &name) {
+                    named.insert((declaring, name));
+                }
+            }
+        }
         for leaf in marker_leaves(m) {
+            // A stat's input named by nameof() is read by the stat whatever its class.
+            if let Some(declaring) = sem.var_owner(&leaf.owner, &leaf.var) {
+                reads.insert((declaring, leaf.var.clone()));
+            }
             if eng.classify(&leaf.owner, &leaf.var, &written) == VarClass::Unknown {
                 leaves.push(leaf);
             }
@@ -341,7 +405,13 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     if trace {
         eprintln!("analyze: gen/deps ({}) {} consumers in {:.1?}", if closed { "closed" } else { "legacy" }, consumers.len(), started.elapsed());
     }
-    let candidates = reads.iter().filter(|(owner, var)| super::auto_tracked::candidate(&eng, &outside_setters, &set_calls, owner, var)).cloned().collect();
+    let mut candidates: BTreeSet<(String, String)> = reads.iter().filter(|(owner, var)| super::auto_tracked::candidate(&eng, &outside_setters, &set_calls, owner, var)).cloned().collect();
+    // A var written through a generated setter stays tracked after its last reader goes (the calls `analyze fix` wrote must keep compiling), and
+    // so does a var whose `TRACKED()` line was dropped while nothing walked reads it: the transition set (see `auto_tracked::called_candidates`).
+    // A var a CAPABILITIES block names with nameof() is driven by the engine (`gas_level(into = nameof(v))` writes it through its setter at run time, a
+    // `toggles()` gate flips it): it needs the setter whether or not a text write exists.
+    candidates.extend(named.iter().filter(|(o, v)| super::auto_tracked::named_candidate(&eng, o, v)).cloned());
+    candidates.extend(super::auto_tracked::called_candidates(tree, &sem, &eng, &outside_setters, &set_calls));
     Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, draw_hops, reads, candidates })
 }
 

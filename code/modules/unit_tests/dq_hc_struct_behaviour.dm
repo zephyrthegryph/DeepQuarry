@@ -172,22 +172,22 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/safe/S = allocate(/obj/structure/safe, tile(3, 2))
 	S.dial = 10
-	S.tumbler_1_pos = 8
-	S.tumbler_1_open = 40
-	S.tumbler_2_pos = 20
-	S.tumbler_2_open = 50
+	S.set_tumbler_1_pos(8)
+	S.set_tumbler_1_open(40)
+	S.set_tumbler_2_pos(20)
+	S.set_tumbler_2_open(50)
 	press(H, S, "decrement")
 	TEST_ASSERT_EQUAL(S.dial, 9, "decrement turns the dial down")
 	TEST_ASSERT_EQUAL(S.tumbler_1_pos, 7, "and drags the first tumbler with it")
 	S.dial = 9
-	S.tumbler_1_pos = 11
+	S.set_tumbler_1_pos(11)
 	press(H, S, "increment")
 	TEST_ASSERT_EQUAL(S.dial, 10, "increment turns the dial up")
 	TEST_ASSERT_EQUAL(S.tumbler_1_pos, 12, "and drags the first tumbler with it")
 	press(H, S, "open")
 	TEST_ASSERT(!S.open, "a locked safe stays shut")
-	S.tumbler_1_pos = S.tumbler_1_open
-	S.tumbler_2_pos = S.tumbler_2_open
+	S.set_tumbler_1_pos(S.tumbler_1_open)
+	S.set_tumbler_2_pos(S.tumbler_2_open)
 	press(H, S, "open")
 	TEST_ASSERT(S.open, "an unlocked one opens")
 	var/list/data = hc_data(S, H)
@@ -363,7 +363,7 @@
 	var/obj/structure/reflector/R = allocate(/obj/structure/reflector, tile(3, 2))
 	R.set_finished(TRUE)
 	var/angle = R.rotation_angle
-	R.can_rotate = FALSE
+	R.set_can_rotate(FALSE)
 	R.rotate(H)
 	TEST_ASSERT(!asked(H), "a locked reflector asks nothing")
 	TEST_ASSERT_EQUAL(R.rotation_angle, angle, "and keeps its angle")
@@ -444,7 +444,7 @@
 	hci_answer(H, FALSE)
 	TEST_ASSERT(!asked(H), "a no asks for no bearing")
 	TEST_ASSERT_EQUAL(P.degrees_from_north, 90, "and leaves it")
-	P.rotation_lock = 1
+	P.set_rotation_lock(1)
 	hci_click(H, P, null)
 	TEST_ASSERT(!asked(H), "a locked prism asks nothing")
 
@@ -529,7 +529,7 @@
 	settle()
 	TEST_ASSERT_EQUAL(R.rotation_angle, 90, "the answered angle is set")
 	R.rotate(H)
-	R.can_rotate = FALSE
+	R.set_can_rotate(FALSE)
 	hci_answer(H, 180)
 	settle()
 	TEST_ASSERT_EQUAL(R.rotation_angle, 90, "an answer that arrives after the rotation was locked is dropped")

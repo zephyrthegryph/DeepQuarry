@@ -205,7 +205,7 @@
 	// due to subtle equip ordering bugs. Equipping the job first and then the loadout means
 	// the loadout layer is unambiguously "on top" and the player's customisations always win.
 	if(_preview_job && previewJob)
-		mannequin.job = previewJob.title
+		mannequin.set_job(previewJob.title)
 		var/list/alt_titles = read_preference(/datum/preference/player_alt_titles)
 		previewJob.equip_preview(mannequin, islist(alt_titles) ? alt_titles[previewJob.title] : null)
 

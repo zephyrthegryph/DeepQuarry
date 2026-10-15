@@ -40,12 +40,6 @@
 	/// The volume of its pipe-side air, L (a bigger vent moves more: its flow is fifty times this a second).
 	var/vent_volume = ATMOS_DEFAULT_VOLUME_PUMP
 
-TRACKED(/obj/machinery/atmospherics/unary/vent_pump, id_tag)
-TRACKED(/obj/machinery/atmospherics/unary/vent_pump, frequency)
-TRACKED(/obj/machinery/atmospherics/unary/vent_pump, pump_direction)
-TRACKED(/obj/machinery/atmospherics/unary/vent_pump, external_pressure_bound)
-TRACKED(/obj/machinery/atmospherics/unary/vent_pump, internal_pressure_bound)
-TRACKED(/obj/machinery/atmospherics/unary/vent_pump, pressure_checks)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
 	configure(uses_power(idle = 150))

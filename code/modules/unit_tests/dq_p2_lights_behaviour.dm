@@ -1698,7 +1698,7 @@
 /datum/unit_test/dq_p2_lights/replacer_replaces_a_broken_tube/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/lightreplacer/R = replacer(10)
-	R.selected_color = "#ff00ff"
+	R.set_selected_color("#ff00ff")
 	var/obj/machinery/light/L = light()
 	L.broken()
 	settle()

@@ -114,7 +114,6 @@ CAPABILITIES(/obj/item/decompression_needle)
 		needs(req(PROC_REF(unused)), req(PROC_REF(aimed_at_chest))),
 		begins(MSG(decompression_needle/lining_up)), wait(3 SECONDS), then(PROC_REF(needle_done)))
 
-TRACKED(/obj/item/decompression_needle, used)
 
 /// Requirement: the needle has not been used.
 /obj/item/decompression_needle/proc/unused(datum/act/op/A)

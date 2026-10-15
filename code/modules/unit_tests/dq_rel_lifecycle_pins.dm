@@ -9,8 +9,8 @@
 /datum/unit_test/dq_rel_pin_bluespace_tx/Run()
 	var/obj/machinery/telecomms/receiver/first = allocate(/obj/machinery/telecomms/receiver)
 	var/obj/machinery/telecomms/receiver/second = allocate(/obj/machinery/telecomms/receiver)
-	first.id = "pin_tx_first"
-	second.id = "pin_tx_second"
+	first.set_id("pin_tx_first")
+	second.set_id("pin_tx_second")
 	var/obj/item/radio/R = allocate(/obj/item/radio)
 	R.bluespace_radio = TRUE
 	R.bs_tx_preload_id = "pin_tx_first"
@@ -36,8 +36,8 @@
 /datum/unit_test/dq_rel_pin_bluespace_rx/Run()
 	var/obj/machinery/telecomms/broadcaster/first = allocate(/obj/machinery/telecomms/broadcaster)
 	var/obj/machinery/telecomms/broadcaster/second = allocate(/obj/machinery/telecomms/broadcaster)
-	first.id = "pin_rx_first"
-	second.id = "pin_rx_second"
+	first.set_id("pin_rx_first")
+	second.set_id("pin_rx_second")
 	var/obj/item/radio/R = allocate(/obj/item/radio)
 	R.bluespace_radio = TRUE
 	R.bs_rx_preload_id = "pin_rx_first"

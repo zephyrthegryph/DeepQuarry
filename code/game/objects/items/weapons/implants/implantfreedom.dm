@@ -17,7 +17,7 @@ CAPABILITIES(/obj/item/implant/freedom)
 		return 0
 
 	if (emote == src.activation_emote)
-		src.uses--
+		set_uses(src.uses - 1)
 		to_chat(source, "You feel a faint click.")
 		source.drop_from_inventory(source.get_equipped_item(SLOT_ID_HANDCUFFED), source.loc)
 		source.drop_from_inventory(source.get_equipped_item(SLOT_ID_LEGCUFFED), source.loc)

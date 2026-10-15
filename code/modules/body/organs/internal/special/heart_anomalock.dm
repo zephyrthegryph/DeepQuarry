@@ -57,7 +57,7 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 	if(lightning_overlay)
 		after(src, time_to_last, PROC_REF(clear_lightning_overlay), key = "lightning_timer", with = list(owner), keeps_dead = TRUE)
 		return
-	lightning_overlay = mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning")
+	set_lightning_overlay(mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning"))
 	owner.add_overlay(lightning_overlay)
 	after(src, time_to_last, PROC_REF(clear_lightning_overlay), key = "lightning_timer", with = list(owner), keeps_dead = TRUE)
 
@@ -65,7 +65,7 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 	organ_owner?.cut_overlay(lightning_overlay)
 	if(after_pending(src, "lightning_timer"))
 		cancel_after(src, "lightning_timer")
-	lightning_overlay = null
+	set_lightning_overlay(null)
 
 /// Event wrapper: the owner gained a trait; only critical condition triggers survival mode.
 /obj/item/organ/internal/heart/machine/anomalock/proc/on_owner_trait_gained(datum/act/notice/A)

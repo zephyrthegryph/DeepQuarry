@@ -58,7 +58,7 @@ CAPABILITIES(/obj/machinery/floorlayer)
 	var/selected_mode = A.answer?.value
 	if(!(selected_mode in work_modes))
 		return OP_OK
-	work_modes[selected_mode] = !work_modes[selected_mode]
+	set_work_modes_at(selected_mode, !work_modes[selected_mode])
 	act_message(user, src, MSG_SELF(span_notice("You set %T% [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"].")), \
 		MSG_OTHERS(span_notice("%U% has set %T% [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"].")))
 	return OP_OK

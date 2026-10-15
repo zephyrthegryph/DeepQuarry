@@ -19,7 +19,6 @@
 	resistance_flags = FIRE_PROOF
 
 /obj/structure/bonfire/var/burning = FALSE
-TRACKED(/obj/structure/bonfire, burning)
 CAPABILITIES(/obj/structure/bonfire)
 	slot(CONTAINER_SLOT_FUEL)
 	every(2 SECONDS, then(PROC_REF(bonfire_step)), when = nameof(burning))
@@ -307,7 +306,6 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 	resistance_flags = FIRE_PROOF
 
 /obj/structure/fireplace/var/burning = FALSE
-TRACKED(/obj/structure/fireplace, burning)
 CAPABILITIES(/obj/structure/fireplace)
 	slot(CONTAINER_SLOT_FUEL)
 	every(2 SECONDS, then(PROC_REF(fireplace_step)), when = nameof(burning))

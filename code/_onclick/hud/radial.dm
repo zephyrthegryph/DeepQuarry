@@ -301,6 +301,7 @@ CAPABILITIES(/datum/radial_menu)
 
 			if (istype(new_choices[E], /datum/radial_menu_choice))
 				LAZYSET(choice_datums, id, new_choices[E])
+	tracked_changed(src, nameof(choices))
 	setup_menu(use_tooltips, set_page, click_on_hover)
 
 /datum/radial_menu/proc/extract_image(to_extract_from)

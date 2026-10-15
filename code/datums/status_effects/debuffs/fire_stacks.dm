@@ -98,6 +98,7 @@
 
 /datum/status_effect/fire_handler/proc/set_stacks(new_stacks)
 	stacks = max(0, min(stack_limit, new_stacks))
+	tracked_changed(src, nameof(stacks))
 	cache_stacks()
 
 /datum/status_effect/fire_handler/proc/adjust_stacks(new_stacks)

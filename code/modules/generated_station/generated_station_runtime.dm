@@ -42,7 +42,6 @@ CAPABILITIES(/obj/machinery/generated_station_department_control)
 
 MSG_DEF(generated_station_department_control/overriding, span_notice("You begin overriding %T%."), span_notice("%U% begins overriding %T%."))
 
-TRACKED(/obj/machinery/generated_station_department_control, captured)
 
 /// The control is not wrecked.
 /obj/machinery/generated_station_department_control/proc/has_integrity(datum/act/op/A)

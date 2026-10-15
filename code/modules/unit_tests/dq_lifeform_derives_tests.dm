@@ -27,8 +27,6 @@ CAPABILITIES(/obj/item/dq_starts_probe/lit_start)
 	var/summary = null
 	var/computes = 0
 
-TRACKED(/obj/item/dq_derives_probe, pressure)
-TRACKED(/obj/item/dq_derives_probe, volume)
 
 CAPABILITIES(/obj/item/dq_derives_probe)
 	derives(nameof(summary), PROC_REF(describe), from = list(nameof(pressure), nameof(volume)))

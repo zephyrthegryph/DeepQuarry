@@ -10,7 +10,6 @@
 	var/finished = FALSE
 	var/datum/gas_mixture/pod_air/air
 
-TRACKED(/obj/structure/drop_pod, finished)
 
 CAPABILITIES(/obj/structure/drop_pod)
 	owns_one(nameof(air), /datum/gas_mixture/pod_air, starts = /datum/gas_mixture/pod_air, starts_args = NO_LOC)

@@ -34,14 +34,14 @@
 		if(ishuman(new_mob))
 			var/mob/living/carbon/human/N = new_mob
 			N.gender = H.gender
-			N.identifying_gender = H.identifying_gender
+			N.set_identifying_gender(H.identifying_gender)
 		else
 			new_mob.gender = H.gender
 	else
 		new_mob.gender = src.gender
 		if(ishuman(new_mob))
 			var/mob/living/carbon/human/N = new_mob
-			N.identifying_gender = src.gender
+			N.set_identifying_gender(src.gender)
 
 	new_mob.mob_belly_transfer(src)
 	new_mob.set_nutrition(nutrition_of(src))

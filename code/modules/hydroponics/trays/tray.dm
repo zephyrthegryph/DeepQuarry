@@ -222,8 +222,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 
 /// Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
 /obj/machinery/portable_atmospherics/hydroponics/var/frozen = 0
-TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
-TRACKED(/obj/machinery/portable_atmospherics/hydroponics, health)
 
 /// Everything but cryogenically frozen (frozen == 1) grows.
 /obj/machinery/portable_atmospherics/hydroponics/proc/not_frozen()

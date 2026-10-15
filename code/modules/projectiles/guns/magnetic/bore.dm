@@ -190,7 +190,6 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed/phoronbore)
 
 /// Generator stage (GEN_OFF/STARTING/IDLE/ACTIVE).
 /obj/item/gun/magnetic/matfed/phoronbore/var/generator_state = GEN_OFF
-TRACKED(/obj/item/gun/magnetic/matfed/phoronbore, generator_state)
 
 /obj/item/gun/magnetic/matfed/phoronbore/consume_next_projectile()
 	if(!check_ammo() || !capacitor || capacitor.charge < power_cost)

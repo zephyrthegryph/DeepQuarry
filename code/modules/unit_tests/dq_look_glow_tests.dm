@@ -7,8 +7,6 @@
 	var/shade = "#ff0000"
 	var/lit = TRUE
 
-TRACKED(/obj/structure/dq_glow_probe, shade)
-TRACKED(/obj/structure/dq_glow_probe, lit)
 
 CAPABILITIES(/obj/structure/dq_glow_probe)
 	look_glow(PROC_REF(probe_glow), when = nameof(lit))
@@ -21,7 +19,6 @@ CAPABILITIES(/obj/structure/dq_glow_probe)
 	name = "drawn glow probe"
 	var/strength = 0
 
-TRACKED(/obj/structure/dq_glow_drawn, strength)
 
 /obj/structure/dq_glow_drawn/draw(datum/look/look)
 	..()

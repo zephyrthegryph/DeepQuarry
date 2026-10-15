@@ -82,6 +82,7 @@ SYSTEM_DEF(ticker)
 /// Sets the time left and arms (or, at zero, cancels) the countdown's next announcement.
 /datum/system/ticker/proc/set_reboot_countdown_left(value)
 	reboot_countdown_left = value
+	tracked_changed(src, nameof(reboot_countdown_left))
 	if(value > 0)
 		after(src, reboot_countdown_delay(), PROC_REF(announce_countdown), key = "reboot_countdown")
 	else

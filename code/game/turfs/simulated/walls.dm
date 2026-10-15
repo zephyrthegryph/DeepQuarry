@@ -65,9 +65,9 @@ CAPABILITIES(/turf/simulated/wall)
 /turf/simulated/wall/proc/wall_take_materials()
 	var/list/forced_materials = TYPE_TABLE_GET(src, wall_forced_materials)
 	if(forced_materials)
-		wall_material_key = forced_materials[1]
-		reinf_material_key = length(forced_materials) >= 2 ? forced_materials[2] : null
-		girder_material_key = length(forced_materials) >= 3 ? forced_materials[3] : null
+		set_wall_material_key(forced_materials[1])
+		set_reinf_material_key(length(forced_materials) >= 2 ? forced_materials[2] : null)
+		set_girder_material_key(length(forced_materials) >= 3 ? forced_materials[3] : null)
 	if(!damage_overlays[1]) //list hasn't been populated
 		generate_overlays()
 	rel_set(src, nameof(material), get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL))
@@ -79,7 +79,6 @@ CAPABILITIES(/turf/simulated/wall)
 
 /// TRUE while one of its materials is radioactive.
 /turf/simulated/wall/var/radioactive = FALSE
-TRACKED(/turf/simulated/wall, radioactive)
 /// TRUE while the wall carries a thermite coating (draws it; lighting it melts the wall).
 /turf/simulated/wall/var/thermite = FALSE
 

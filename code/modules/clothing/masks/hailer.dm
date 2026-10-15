@@ -55,7 +55,6 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer/swat)
 /obj/item/clothing/mask/gas/sechailer/ui_action_click(mob/user, actiontype)
 	sechailer_halt_verb(user)
 
-TRACKED(/obj/item/clothing/mask/gas/sechailer, aggressiveness)
 
 CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 	owns_one(nameof(hailer), /obj/item/hailer)

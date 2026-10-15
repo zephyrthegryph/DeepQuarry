@@ -14,7 +14,6 @@
 	var/icon_closed = "lockbox"
 	var/icon_broken = "lockbox+b"
 
-TRACKED(/obj/item/storage/lockbox, broken)
 
 MSG_DEF_SELF(lockbox/broken, "It appears to be broken.")
 MSG_DEF_SELF(lockbox/locked, "It's locked!")

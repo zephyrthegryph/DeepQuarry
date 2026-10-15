@@ -299,9 +299,6 @@
 	var/static/image/radial_image_service = image(icon = 'icons/mob/radial_ch.dmi', icon_state = "bar")
 	var/static/image/radial_image_security = image(icon = 'icons/mob/radial_ch.dmi', icon_state = "armory")
 
-TRACKED(/obj/item/taskmanager, mode)
-TRACKED(/obj/item/taskmanager, scancount)
-TRACKED(/obj/item/taskmanager, scanreq)
 
 CAPABILITIES(/obj/item/taskmanager)
 	configure(item_thrown(force = 7))

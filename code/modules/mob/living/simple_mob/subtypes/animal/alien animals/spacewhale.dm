@@ -119,7 +119,6 @@
 		if(ai_brain)
 			ai_brain.wander = TRUE
 
-TRACKED(/mob/living/simple_mob/vore/overmap/spacewhale, restless)
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/spacewhale)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

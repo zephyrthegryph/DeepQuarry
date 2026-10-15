@@ -13,7 +13,6 @@
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask)
 	rolls(nameof(lid_color), pick_one(list("black", "red", "blue")))
-TRACKED(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask, lid_color)
 
 /// The shaker is drawn with the lid it rolled.
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/draw_contents(datum/look/look)

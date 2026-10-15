@@ -174,4 +174,4 @@ CAPABILITIES(/obj/machinery/power/grid_checker)
 
 /// After the base screwdriver: the checker's own flag follows the panel.
 /obj/machinery/power/grid_checker/proc/panel_synced(datum/act/op/A)
-	opened = panel_open
+	set_opened(panel_open)

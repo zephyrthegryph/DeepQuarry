@@ -55,7 +55,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/organ/internal/heart/machine/anomalock/heart = allocate(/obj/item/organ/internal/heart/machine/anomalock, T)
-	heart.lightning_overlay = mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning")
+	heart.set_lightning_overlay(mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning"))
 	after(heart, 1 SECONDS, TYPE_PROC_REF(/obj/item/organ/internal/heart/machine/anomalock, clear_lightning_overlay), key = "lightning_timer", with = list(H), keeps_dead = TRUE)
 	qdel(H)
 	scheduler_advance(2)
@@ -388,7 +388,7 @@
 	var/obj/effect/dummy/spell_jaunt/holder = allocate(/obj/effect/dummy/spell_jaunt, T)
 	var/atom/movable/overlay/animation = allocate(/atom/movable/overlay, T)
 	target.forceMove(holder)
-	target.canmove = 0
+	target.set_canmove(0)
 	after(spell, 1 SECONDS, TYPE_PROC_REF(/datum/spell/targeted/ethereal_jaunt, jaunt_resurface), with = list(target, holder, animation), keeps_dead = TRUE)
 	qdel(animation)
 	scheduler_advance(2)
@@ -405,7 +405,7 @@
 	var/obj/effect/dummy/spell_jaunt/holder = allocate(/obj/effect/dummy/spell_jaunt, T)
 	var/atom/movable/overlay/animation = allocate(/atom/movable/overlay, T)
 	target.forceMove(holder)
-	target.canmove = 0
+	target.set_canmove(0)
 	after(spell, 1 SECONDS, TYPE_PROC_REF(/datum/spell/targeted/ethereal_jaunt, jaunt_reform), with = list(target, holder, animation), keeps_dead = TRUE)
 	qdel(animation)
 	scheduler_advance(2)
@@ -422,7 +422,7 @@
 	var/obj/effect/dummy/spell_jaunt/holder = allocate(/obj/effect/dummy/spell_jaunt, T)
 	var/atom/movable/overlay/animation = allocate(/atom/movable/overlay, T)
 	target.forceMove(holder)
-	target.canmove = 0
+	target.set_canmove(0)
 	after(spell, 1 SECONDS, TYPE_PROC_REF(/datum/spell/targeted/ethereal_jaunt, jaunt_finish), with = list(target, holder, animation), keeps_dead = TRUE)
 	qdel(animation)
 	scheduler_advance(2)

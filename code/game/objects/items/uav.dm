@@ -230,7 +230,6 @@ CAPABILITIES(/obj/item/uav)
 // "2" is UAV_PAIRING.
 
 /obj/item/uav/var/state = UAV_OFF
-TRACKED(/obj/item/uav, state)
 
 /// Whether it flies (the every() gate, polled).
 /obj/item/uav/proc/is_flying(datum/act/A)

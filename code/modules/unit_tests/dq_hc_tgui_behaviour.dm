@@ -363,7 +363,7 @@
 /datum/unit_test/dq_hc_tgui/camera_switch/run_gate()
 	var/obj/machinery/camera/C = allocate(/obj/machinery/camera, hct_spot())
 	C.network = list("hct_net")
-	C.c_tag = "hct cam"
+	C.set_c_tag("hct cam")
 	var/datum/tgui_module/camera/M = hct_track(new /datum/tgui_module/camera(hct_host(), list("hct_net")))
 	var/mob/living/carbon/human/H = hct_actor()
 	TEST_ASSERT_NULL(M.active_camera(), "no camera is active at first")
@@ -510,7 +510,7 @@
 	var/mob/living/carbon/human/H = hct_actor()
 	TEST_ASSERT(!M.routing_scrambled(), "(the routing starts whole)")
 	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, hct_spot())
-	E.uses = 3
+	E.set_uses(3)
 	H.put_in_active_hand(E)
 	hci_click(H, C, E)
 	test_time(1 SECOND)

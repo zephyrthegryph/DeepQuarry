@@ -10,9 +10,6 @@
 	var/locked = 1
 	var/emagged = 0
 
-TRACKED(/obj/item/circuitboard/security, network)
-TRACKED(/obj/item/circuitboard/security, locked)
-TRACKED(/obj/item/circuitboard/security, emagged)
 
 MSG_DEF_SELF(camera_board/broken, "Circuit lock does not respond.")
 MSG_DEF_SELF(camera_board/denied, "Access denied.")

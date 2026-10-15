@@ -76,7 +76,7 @@ CAPABILITIES(/obj)
 /datum/capability/burning/on_activate(datum/activation/A)
 	var/obj/O = A.holder
 	O.burning_start_heat()
-	O.resistance_flags |= ON_FIRE
+	O.set_resistance_flags(O.resistance_flags | ON_FIRE)
 	if(O.burn_overlay)
 		O.add_overlay(O.burn_overlay)
 
@@ -87,7 +87,7 @@ CAPABILITIES(/obj)
 		O.remove_shared_particles("[O.burn_particle_type]_[isitem(O)]")
 		O.burn_particle_type = null
 	if(!QDELETED(O))
-		O.resistance_flags &= ~ON_FIRE
+		O.set_resistance_flags(O.resistance_flags & (~ON_FIRE))
 		if(O.burn_overlay)
 			O.cut_overlay(O.burn_overlay)
 	O.burn_overlay = null

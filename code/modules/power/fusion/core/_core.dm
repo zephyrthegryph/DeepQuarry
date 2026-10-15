@@ -39,7 +39,6 @@ MSG_DEF(fusion_core/sample_loaded, "You secure %I% in %T%'s shielded treatment c
 // machine service interval (core_step(): the field's strength, the material cradle, then the field's own reaction a decisecond later,
 // core_tick()). The field, the material sample in its cradle and its ident are its own; with the field down the cradle opens, a part
 // replacer works and a multitool sets its ident.
-TRACKED(/obj/machinery/power/fusion_core, id_tag)
 
 CAPABILITIES(/obj/machinery/power/fusion_core)
 	configure(uses_power(idle = 50, active = 500))

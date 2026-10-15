@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/assembly/shock_kit)
 /obj/item/assembly/shock_kit/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	status = !status
+	set_status(!status)
 	to_chat(user, span_notice("[src] is now [status ? "secured" : "unsecured"]!"))
 	playsound(src, sounds_of(tool).use, 50, 1)
 	add_fingerprint(user)

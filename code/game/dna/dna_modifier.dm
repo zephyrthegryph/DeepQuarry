@@ -350,7 +350,6 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	use_power = USE_POWER_IDLE
 
 /// Old attackby.
-TRACKED(/obj/machinery/computer/scan_consolenew, irradiating)
 
 MSG_DEF_SELF(dna_console/no_scanner, "The console has no DNA modifier connected.")
 MSG_DEF_SELF(dna_console/busy, "The console is busy irradiating its subject.")

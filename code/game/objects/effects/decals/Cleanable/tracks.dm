@@ -8,7 +8,6 @@
 	var/basecolor="#A10808"
 	var/wet=0
 
-TRACKED(/datum/fluidtrack, basecolor)
 
 /datum/fluidtrack/New(_direction,_color,_wet)
 	src.direction=_direction

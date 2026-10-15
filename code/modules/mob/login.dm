@@ -105,7 +105,7 @@
 	PUBLISH_LEGACY(src, /datum/notice/mob_client_login, client)
 	client.init_verbs()
 
-	set_listening(LISTENING_PLAYER)
+	set_recursive_listening(LISTENING_PLAYER)
 	GLOB.tickets.ClientLogin(client, TRUE)
 
 	if(GLOB.custom_event_msg && GLOB.custom_event_msg != "")

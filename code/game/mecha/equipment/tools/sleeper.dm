@@ -14,7 +14,6 @@
 
 /// Life support is engaged on a loaded occupant.
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/var/sustaining = FALSE
-TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, sustaining)
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/relation_definition/slot/occupant/mecha_sleeper

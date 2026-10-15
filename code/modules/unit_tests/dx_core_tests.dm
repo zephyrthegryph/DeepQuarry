@@ -26,7 +26,6 @@
 /datum/dx_core_child
 	var/level = 0
 
-TRACKED(/datum/dx_core_child, level)
 
 /obj/cap_fixture
 	name = "capability fixture"
@@ -44,7 +43,6 @@ TRACKED(/datum/dx_core_child, level)
 	. = ..()
 	. += owns(nameof(child), policy = OWN_DELETE)
 
-TRACKED(/obj/cap_fixture/dx_core, power_level)
 
 /obj/cap_fixture/dx_core/declared_capabilities(list/into)
 	..()
@@ -121,7 +119,6 @@ TRACKED(/obj/cap_fixture/dx_core, power_level)
 	periodic_cadence = PERIODIC_SLOW
 	var/gating = FALSE
 
-TRACKED(/obj/cap_fixture/dx_periodic, gating)
 
 /obj/cap_fixture/dx_periodic/should_run()
 	return gating

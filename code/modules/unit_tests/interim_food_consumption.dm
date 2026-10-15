@@ -3,7 +3,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/eater = allocate(/mob/living/carbon/human, T)
 	var/obj/item/reagent_containers/food/snacks/snack = allocate(/obj/item/reagent_containers/food/snacks, T)
-	snack.trash = /obj/item/trash/plate
+	snack.set_trash(/obj/item/trash/plate)
 	snack.reagents.add_reagent(REAGENT_ID_NUTRIMENT, 1)
 	TEST_ASSERT(eater.put_in_active_hand(snack), "the eater holds the snack")
 	snack.On_Consume(eater, eater)

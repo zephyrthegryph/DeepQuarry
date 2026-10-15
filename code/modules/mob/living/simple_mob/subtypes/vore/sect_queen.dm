@@ -84,7 +84,13 @@
 	say_list_type = /datum/say_list/sect_queen
 
 
-TRACKED(/mob/living/simple_mob/vore/sect_queen, custom_eye_color)
+/mob/living/simple_mob/vore/sect_queen/proc/set_custom_eye_color(value)
+	if(TRACKED_UNCHANGED(custom_eye_color, value))
+		return FALSE
+	custom_eye_color = value
+	tracked_changed(src, nameof(custom_eye_color))
+	return TRUE
+SETTER(/mob/living/simple_mob/vore/sect_queen, custom_eye_color)
 
 CAPABILITIES(/mob/living/simple_mob/vore/sect_queen)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))

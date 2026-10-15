@@ -113,7 +113,7 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 	if(!A.answer)
 		return
 	if(A.answer.value)
-		id = A.answer.value
+		set_id(A.answer.value)
 	return TRUE
 
 //////

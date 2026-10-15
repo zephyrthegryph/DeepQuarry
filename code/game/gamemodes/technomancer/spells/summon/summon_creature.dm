@@ -42,9 +42,9 @@
 		rel_add(summoned, nameof(summoned.friends), owner_ref())
 
 	// Makes their new pal big and strong, if they have spell power.
-	summoned.endurance = calculate_spell_power(summoned.endurance)
-	summoned.melee_damage_lower = calculate_spell_power(summoned.melee_damage_lower)
-	summoned.melee_damage_upper = calculate_spell_power(summoned.melee_damage_upper)
+	summoned.set_endurance(calculate_spell_power(summoned.endurance))
+	summoned.set_melee_damage_lower(calculate_spell_power(summoned.melee_damage_lower))
+	summoned.set_melee_damage_upper(calculate_spell_power(summoned.melee_damage_upper))
 	// This makes the summon slower, so the crew has a chance to flee from massive monsters.
 	summoned.movement_cooldown = calculate_spell_power(round(summoned.movement_cooldown))
 

@@ -10,7 +10,6 @@
 	var/inactive_force = 10
 
 /obj/item/chainsaw/var/on = FALSE
-TRACKED(/obj/item/chainsaw, on)
 
 
 /obj/item/chainsaw/proc/turnOff(mob/user as mob)

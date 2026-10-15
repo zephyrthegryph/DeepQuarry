@@ -32,4 +32,5 @@ CAPABILITIES(/datum/computer_file/data/email_message)
 
 /datum/computer_file/data/email_message/proc/set_timestamp()
 	timestamp = stationtime2text()
+	tracked_changed(src, nameof(timestamp))
 

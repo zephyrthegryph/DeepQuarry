@@ -279,7 +279,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 	if(!input)
 		to_chat(A.actor, "No input found. Please hang up and try your call again.")
 		return OP_OK
-	department = input
+	set_department(input)
 	announcement.title = "[department] announcement"
 	announcement.newscast = TRUE
 	name = "[department] Requests Console"

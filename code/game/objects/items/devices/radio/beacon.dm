@@ -22,9 +22,9 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 	if(loc != user)
 		return
 	if ((user.canmove && !( user.restrained() )))
-		src.code = t
+		set_code(t)
 	if (!( src.code ))
-		src.code = "beacon"
+		set_code("beacon")
 	src.add_fingerprint(user)
 
 // SINGULO BEACON SPAWNER

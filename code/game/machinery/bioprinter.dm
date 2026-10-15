@@ -93,10 +93,6 @@
 	if(printing == 1)
 		look.overlay("bioprinter_working")
 
-TRACKED(/obj/machinery/organ_printer, printing)
-TRACKED(/obj/machinery/organ_printer, complex_organs)
-TRACKED(/obj/machinery/organ_printer, anomalous_organs)
-TRACKED(/obj/machinery/organ_printer, engineered_organs)
 
 CAPABILITIES(/obj/machinery/organ_printer)
 	configure(uses_power(idle = 40, active = 300))

@@ -55,7 +55,6 @@
 		if(!charges)
 			. += "There seems to be no more room for any more edits!"
 
-TRACKED(/obj/item/areaeditor, charges)
 
 CAPABILITIES(/obj/item/areaeditor)
 	configure(item_combat(attack_verbs = list("attacked", "bapped", "hit")))
@@ -835,7 +834,6 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 	var/created_area = 0
 	var/area_cooldown = 0
 
-TRACKED(/obj/item/paper, created_area)
 
 MSG_DEF_SELF(paper/area_made, "This paper has already been used to create an area.")
 

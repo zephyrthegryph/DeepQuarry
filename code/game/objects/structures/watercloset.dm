@@ -37,10 +37,8 @@
 	var/list/currently_held_objects //List of objects currently in the toilet, used for flushing.
 	COOLDOWN_DECLARE(panic_flush)
 
-TRACKED(/obj/structure/toilet, open)
 
 
-TRACKED(/obj/structure/toilet, refilling)
 
 /// The bluespace model describes itself (derives(), at init).
 /obj/structure/toilet/proc/model_desc()

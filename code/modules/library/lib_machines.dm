@@ -522,7 +522,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	B.name = "Book: [book_title]"
 	B.title = book_title
 	B.author = row[2]
-	B.dat = row[4]
+	B.set_dat(row[4])
 	B.set_icon_state("book[rand(1,16)]")
 	B.set_item_state(B.icon_state)
 	visible_message("[src]'s printer hums as it produces a completely bound book. How did it do that?")
@@ -652,7 +652,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 		return
 	src.visible_message("[src] whirs as it prints and binds a new book.")
 	var/obj/item/book/b = new(src.loc)
-	b.dat = source_paper.info
+	b.set_dat(source_paper.info)
 	b.name = "Print Job #" + "[rand(100, 999)]"
 	b.set_icon_state("book[rand(1,7)]")
 	consumed(source_paper, src)

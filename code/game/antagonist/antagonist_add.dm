@@ -6,7 +6,7 @@
 	//do this again, just in case
 	if(flags & ANTAG_OVERRIDE_JOB)
 		player.assigned_role = role_text
-	player.special_role = role_text
+	player.set_special_role(role_text)
 
 	if(isobserver(player.current))
 		create_default(player.current)
@@ -43,7 +43,7 @@
 	if(nonstandard_role_type)
 		rel_add(src, nameof(faction_members), player)
 		to_chat(player.current, span_danger(span_large("You are \a [nonstandard_role_type]!")))
-		player.special_role = nonstandard_role_type
+		player.set_special_role(nonstandard_role_type)
 		if(nonstandard_role_msg)
 			to_chat(player.current, span_notice("[nonstandard_role_msg]"))
 		update_icons_added(player)
@@ -56,7 +56,7 @@
 		to_chat(player.current, span_danger(span_large("You are no longer a [role_text]!")))
 		rel_remove(src, nameof(current_antagonists), player)
 		rel_remove(src, nameof(faction_members), player)
-		player.special_role = null
+		player.set_special_role(null)
 		update_icons_removed(player)
 		player.current.flag_hud_update(SPECIALROLE_HUD)
 		if(!is_special_character(player))

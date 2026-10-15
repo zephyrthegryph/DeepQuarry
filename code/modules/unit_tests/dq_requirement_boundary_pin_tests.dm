@@ -158,7 +158,7 @@
 	wired.set_login(H, 2)
 	cbp(wired, H, "MessageSyndicate", "ui_captain_emagged", /datum/msg/req_silent)
 	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, hct_spot())
-	E.uses = 3
+	E.set_uses(3)
 	H.put_in_active_hand(E)
 	hci_click(H, C, E)
 	test_time(1 SECOND)

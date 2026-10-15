@@ -212,7 +212,6 @@
 	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 
 	var/is_slipping = FALSE
-TRACKED(/mob, incorporeal_move)
 
 CAPABILITIES(/mob)
 	ref_one(nameof(LAssailant), /mob/living/carbon) // the last carbon to push, drag or grab this mob
@@ -332,10 +331,13 @@ CAPABILITIES(/mob)
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 /// A mob's stat: set_stat() is its setter (always use it, never write the var) and publishes the stat key on a real change.
-TRACKED(/mob, stat)
-TRACKED(/mob, seedarkness)
-TRACKED(/mob, transforming)
-TRACKED(/mob, real_name)
+/mob/proc/set_stat(value)
+	if(TRACKED_UNCHANGED(stat, value))
+		return FALSE
+	stat = value
+	tracked_changed(src, nameof(stat))
+	return TRUE
+SETTER(/mob, stat)
 
 
 /mob/proc/set_mob_size(value)

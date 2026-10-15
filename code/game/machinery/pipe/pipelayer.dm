@@ -22,7 +22,6 @@
 		"heat exchange pipes" = /obj/machinery/atmospherics/pipe/simple/heat_exchanging
 	)
 
-TRACKED(/obj/machinery/pipelayer, a_dis)
 
 MSG_DEF_SELF(pipelayer/no_metal, "It doesn't work without metal.")
 MSG_DEF_SELF(pipelayer/empty, "It is empty.")
@@ -103,7 +102,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 /// A pipe is worth its steel (a free dispenser pipe is not: no infinite steel).
 /obj/machinery/pipelayer/proc/pipe_has_steel(datum/act/op/A)
 	var/obj/item/pipe/P = A.held
-	return (istype(P) && P.material_total >= pipe_cost * SHEET_MATERIAL_AMOUNT) ? null : MSG(pipelayer/thin_pipe) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+	return (istype(P) && P.material_total >= pipe_cost * SHEET_MATERIAL_AMOUNT) ? null : MSG(pipelayer/thin_pipe)
 
 /obj/machinery/pipelayer/proc/room_for_pipe(datum/act/A)
 	return (metal + pipe_cost <= max_metal) ? null : MSG(pipelayer/full)
@@ -198,7 +197,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	var/obj/item/pipe/P = new pi_type(w_turf, p_type, p_dir)
 	P.setPipingLayer(p_layer)
 	// We used metal to make these, so should be reclaimable!
-	P.material_total = pipe_cost * SHEET_MATERIAL_AMOUNT
+	P.set_material_total(pipe_cost * SHEET_MATERIAL_AMOUNT)
 	P.fasten(null)
 
 	return 1

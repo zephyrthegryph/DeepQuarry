@@ -63,8 +63,6 @@ GLOBAL_LIST_INIT(spacecash_note_layouts, build_spacecash_note_layouts())
 		consume(src, user)
 	return OP_PASS
 
-TRACKED(/obj/item/spacecash, worth)
-TRACKED(/obj/item/spacecash, note_seed)
 
 /obj/item/spacecash/draw(datum/look/look)
 	..()

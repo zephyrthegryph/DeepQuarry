@@ -185,7 +185,7 @@
 
 /mob/living/silicon/robot/proc/setup_laws()
 	rel_set(src, nameof(laws), new using_map.default_law_type) //use map's default
-	additional_law_channels["Binary"] = "#b"
+	set_additional_law_channels_at("Binary", "#b")
 	if(!lawupdate || scrambledcodes)
 		return
 	var/new_ai = select_active_ai_with_fewest_borgs()
@@ -1251,9 +1251,9 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/proc/UnlinkSelf()
 	disconnect_from_ai()
 	lawupdate = FALSE
-	lockcharge = 0
+	set_lockcharge(0)
 	set_lockdown(0)
-	canmove = 1
+	set_canmove(1)
 	scrambledcodes = TRUE
 	//Disconnect it's camera so it's not so easily tracked.
 	if(src.camera)
@@ -1276,7 +1276,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	else
 		clear_alert("locked")
 	set_lockdown(state)
-	lockcharge = state
+	set_lockcharge(state)
 	update_canmove()
 
 /mob/living/silicon/robot/mode()
@@ -1599,6 +1599,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	if(syndicate == state)
 		return
 	syndicate = state
+	tracked_changed(src, nameof(syndicate))
 	log_game("CYBORG: [key_name(src)] syndicate state set to [state].")
 	if(syndicate)
 		apply_syndicate_state()
@@ -1683,9 +1684,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	// A registered robot sprite, or the robot's private fallback default (copy-on-write).
 	. += rel_one(nameof(sprite_datum), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
-TRACKED(/mob/living/silicon/robot, sight_mode)
-TRACKED(/mob/living/silicon/robot, emagged)
-TRACKED(/mob/living/silicon/robot, lockdown)
 
 // ---- the wires (declared with the cyborg's capabilities, code/library/mob/hands.dm) ----
 

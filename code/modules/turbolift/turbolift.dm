@@ -19,9 +19,6 @@
 
 /// Used for controller processing: lift_step() drives the lift while set (every()).
 /datum/turbolift/var/tmp/busy_state
-TRACKED(/datum/turbolift, busy_state)
-TRACKED(/datum/turbolift, priority_mode)
-TRACKED(/datum/turbolift, fire_mode)
 
 CAPABILITIES(/datum/turbolift)
 	owns_one(nameof(control_panel_interior), /obj/structure/lift/panel)

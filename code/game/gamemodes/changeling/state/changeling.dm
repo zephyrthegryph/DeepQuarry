@@ -93,6 +93,7 @@ CAPABILITIES(/datum/changeling)
 
 /datum/changeling/proc/set_sting_cooldown()
 	COOLDOWN_START(src, sting_cooldown, cooldown_time)
+	tracked_changed(src, nameof(sting_cooldown))
 
 /datum/changeling/proc/get_cooldown(id)
 	return changeling_cooldowns[id]
@@ -106,10 +107,8 @@ CAPABILITIES(/datum/changeling)
 
 /// The voice we mimic, or "". Costs a chemical every 4 seconds while set (mimic_voice.dm, every()).
 /datum/changeling/var/mimicing = ""
-TRACKED(/datum/changeling, mimicing)
 /// Digital camouflage we turned on. Costs a chemical every 4 seconds while set (digital_camo.dm, every()).
 /datum/changeling/var/camo_draining = FALSE
-TRACKED(/datum/changeling, camo_draining)
 
 /datum/changeling/New(mob/living/new_owner)
 	..()

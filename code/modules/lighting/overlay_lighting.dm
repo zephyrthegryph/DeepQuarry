@@ -363,6 +363,7 @@ CAPABILITIES(/datum/overlay_lighting)
 	if(range == 0)
 		turn_off()
 	range = clamp(CEILING(new_range, 0.5), 1, 6)
+	tracked_changed(src, nameof(range))
 	var/pixel_bounds = ((range - 1) * 64) + 32
 	lumcount_range = CEILING(range, 1)
 	visible_mask.icon = light_overlays["[pixel_bounds]"]
@@ -461,6 +462,7 @@ CAPABILITIES(/datum/overlay_lighting)
 		return
 	. = lum_power
 	lum_power = new_lum_power
+	tracked_changed(src, nameof(lum_power))
 	var/difference = . - lum_power
 	for(var/turf/lit_turf as anything in affected_turfs)
 		lit_turf.dynamic_lumcount -= difference

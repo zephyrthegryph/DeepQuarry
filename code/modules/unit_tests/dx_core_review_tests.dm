@@ -26,7 +26,6 @@
 	var/tracked_value = 0
 	var/timed_flag = FALSE
 
-TRACKED(/obj/cap_fixture/dx_review, tracked_value)
 
 /obj/cap_fixture/dx_review/declared_capabilities(list/into)
 	..()

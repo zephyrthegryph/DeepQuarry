@@ -8,7 +8,6 @@
 
 /// TRUE while it assists a brain and watches for it being ripped out; a meltdown ends it.
 /obj/item/implant/neural/var/monitoring_brain = FALSE
-TRACKED(/obj/item/implant/neural, monitoring_brain)
 CAPABILITIES(/obj/item/implant/neural)
 	every(2 SECONDS, then(PROC_REF(neural_step)), when = nameof(monitoring_brain))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(neural_implant_emp))))

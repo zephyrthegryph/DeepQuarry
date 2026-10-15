@@ -50,7 +50,7 @@ cap_keys(CAP_EMAG, EMAGGED = MSG(emag/already))
 		act_message_t(A.actor, istype(A.holder, /atom) ? A.holder : null, spoken, A.held)
 	var/obj/item/card/emag/card = A.held
 	if(istype(card))
-		card.uses--
+		card.set_uses(card.uses - 1)
 		if(card.uses < 1)
 			card.spent(A.actor)
 	return OP_OK

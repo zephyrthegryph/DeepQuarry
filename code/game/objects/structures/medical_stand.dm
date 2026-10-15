@@ -45,7 +45,6 @@ MSG_DEF_SELF(medical_stand/cannot, "You can't do that.")
 
 /obj/structure/medical_stand/var/mob/living/carbon/human/breather
 /obj/structure/medical_stand/var/valve_opened = FALSE
-TRACKED(/obj/structure/medical_stand, valve_opened)
 /obj/structure/medical_stand/var/mob/living/carbon/attached
 
 /// The tank and the beaker on the stand, drawn from what they are: a change of either (the beaker's level or colour) redraws the stand.

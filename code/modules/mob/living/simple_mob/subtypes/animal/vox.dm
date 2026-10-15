@@ -170,7 +170,7 @@ CAPABILITIES(/mob/living/simple_mob/vox/armalis)
 		user.drop_item(O)
 		armour = O
 		movement_cooldown = 4
-		endurance += 200
+		set_endurance(endurance + 200)
 		act_message(src, O, MSG_SELF(span_notice("You quickly outfit %U% in %T%.")), MSG_OTHERS(span_notice("%U% is quickly outfitted in %T% by [user].")))
 		regenerate_icons()
 		return

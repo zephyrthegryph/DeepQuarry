@@ -27,7 +27,7 @@ CAPABILITIES(/obj/structure/bed/chair)
 
 /obj/structure/bed/chair/proc/kit_ready(datum/act/op/A)
 	var/obj/item/assembly/shock_kit/SK = A.held
-	return (!!SK.status) ? null : MSG(chair/kit_unready) // ALLOW(reads): a kit's secured switch is read when it is clicked on; the click asks again
+	return (!!SK.status) ? null : MSG(chair/kit_unready)
 
 /obj/structure/bed/chair/proc/unpadded_chair(datum/act/A)
 	return (!padding_material) ? null : MSG(chair/padded) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
@@ -54,7 +54,6 @@ CAPABILITIES(/obj/structure/bed/chair)
 	return TRUE
 
 /// Tracked, set from post_buckle_mob() on every buckle and unbuckle: the armrests are drawn over the rider.
-TRACKED(/obj/structure/bed/chair, occupied)
 
 /obj/structure/bed/chair/post_buckle_mob()
 	set_occupied(has_buckled_mobs())

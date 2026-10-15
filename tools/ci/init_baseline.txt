@@ -728,7 +728,7 @@ init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::has_spread
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::for
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::other.amount
+init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::other.set_amount
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::other.Spread
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::has_spread
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::expr

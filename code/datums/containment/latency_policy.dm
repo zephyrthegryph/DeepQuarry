@@ -34,7 +34,6 @@ GLOBAL_LIST_EMPTY(latency_sweep_holders)
 	var/cursor = 0
 	/// A holder has registered: the every() below runs (it parks until the first one, never at global init).
 	var/sweeping = FALSE
-TRACKED(/datum/latency_sweep, sweeping)
 CAPABILITIES(/datum/latency_sweep)
 	every(2 SECONDS, then(PROC_REF(sweep_step)), when = nameof(sweeping))
 

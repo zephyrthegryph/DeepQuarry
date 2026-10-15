@@ -26,7 +26,6 @@
 
 /// Secured (ready to act); unsecured it can be attached to other assemblies.
 /obj/item/assembly/var/secured = TRUE
-TRACKED(/obj/item/assembly, secured)
 
 /// The overlay states this part adds to itself and, as "<state>_l" / "<state>_r", to the holder it sits in.
 /obj/item/assembly/proc/holder_layers()

@@ -8,7 +8,6 @@ GLOBAL_LIST_EMPTY(rx_fx_g_seen)
 /datum/rx_fx_g
 	var/watched = 0
 
-TRACKED(/datum/rx_fx_g, watched)
 
 /datum/rx_fx_g/reactions()
 	. = ..()
@@ -50,8 +49,6 @@ TRACKED(/datum/rx_fx_g, watched)
 	var/loop_runs = 0
 	var/calm_runs = 0
 
-TRACKED(/datum/rx_fx_loop, loop)
-TRACKED(/datum/rx_fx_loop, calm)
 
 /datum/rx_fx_loop/reactions()
 	. = ..()
@@ -87,8 +84,6 @@ TRACKED(/datum/rx_fx_loop, calm)
 	var/runs = 0
 	var/list/last_keys
 
-TRACKED(/datum/rx_fx_gate, gate)
-TRACKED(/datum/rx_fx_gate, fact)
 
 /datum/rx_fx_gate/reactions()
 	. = ..()

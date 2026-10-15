@@ -9,7 +9,6 @@
 	var/obj/item/cell/device/cell
 
 /obj/item/shield_diffuser/var/enabled = FALSE
-TRACKED(/obj/item/shield_diffuser, enabled)
 CAPABILITIES(/obj/item/shield_diffuser)
 	owns_one(nameof(cell), starts = /obj/item/cell/device)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))

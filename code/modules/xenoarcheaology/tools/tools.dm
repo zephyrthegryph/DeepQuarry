@@ -232,7 +232,6 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 
 /// Points at its target (or counts a reset) every 2 s while tracking; idle, it sleeps.
 /obj/item/beacon_locator/var/scan_ticks = 0
-TRACKED(/obj/item/beacon_locator, scan_ticks)
 /obj/item/beacon_locator/var/tmp/obj/item/radio/target_radio
 /// Scanning for a beacon or tracking one: derived from scan_ticks and target_radio.
 /obj/item/beacon_locator/proc/locating()
@@ -346,7 +345,6 @@ CAPABILITIES(/obj/item/xenoarch_multi_tool)
 	op("swap_functionality", menu(), label("Swap Functionality"), needs(carried(), req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))), then(PROC_REF(functionality_swapped)))
 	op("scan_anomalies", menu(), label("Scan for Anomalies"), needs(carried(), req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))), then(PROC_REF(anomalies_requested)))
 
-TRACKED(/obj/item/xenoarch_multi_tool, mode)
 
 /obj/item/xenoarch_multi_tool/proc/swap_functionality()
 	set name = "Swap Functionality"

@@ -79,8 +79,8 @@ MSG_DEF_SELF(implantpad/unconscious, "You can't do that right now.")
 	if(!istype(case?.imp, /obj/item/implant/tracking))
 		return OP_OK
 	var/obj/item/implant/tracking/T = case.imp
-	T.id += delta
-	T.id = clamp(T.id, 1, 1000)
+	T.set_id(T.id + delta)
+	T.set_id(clamp(T.id, 1, 1000))
 	return OP_OK
 
 /obj/item/implantpad/ownership()

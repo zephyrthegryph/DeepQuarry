@@ -19,7 +19,6 @@
 /obj/item/gps/emergency_beacon
 	gps_tag = "EMERGENCY BEACON"
 
-TRACKED(/obj/item/emergency_beacon, beacon_active)
 
 CAPABILITIES(/obj/item/emergency_beacon)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

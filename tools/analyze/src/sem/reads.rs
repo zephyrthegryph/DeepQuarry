@@ -731,6 +731,10 @@ pub fn proc_writes(p: ProcRef) -> HashSet<String> {
     s
 }
 
+pub fn collect_writes_pub(code: &Block, out: &mut HashSet<String>) {
+    collect_writes(code, false, out)
+}
+
 fn collect_writes(code: &Block, ctor: bool, out: &mut HashSet<String>) {
     super::ast::walk_block(code, &mut |e, _| {
         if let Expression::AssignOp { lhs, .. } = e {

@@ -1,4 +1,3 @@
-TRACKED(/obj/item/camera_assembly, state)
 MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 /obj/item/camera_assembly
 	name = "camera assembly"
@@ -157,7 +156,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 	rel_set(C, nameof(C.assembly), src)
 	C.auto_turn()
 	C.replace_networks(uniqueList(networks))
-	C.c_tag = sanitizeSafe(camera_tag, MAX_NAME_LEN)
+	C.set_c_tag(sanitizeSafe(camera_tag, MAX_NAME_LEN))
 	ask_camera_direction(user, C, 5)
 	return OP_OK
 

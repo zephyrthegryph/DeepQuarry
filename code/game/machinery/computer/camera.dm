@@ -51,6 +51,7 @@ CAPABILITIES(/obj/machinery/computer/security)
 
 /obj/machinery/computer/security/proc/set_network(list/new_network)
 	network = new_network
+	tracked_changed(src, nameof(network))
 	camera.network = network
 	camera.access_based = FALSE
 

@@ -10,7 +10,6 @@
 	var/list/frames	// List of frames inside.
 	var/maxFrames = 5
 
-TRACKED(/obj/machinery/beehive, closed)
 
 /// Percent.
 /obj/machinery/beehive/var/bee_count = 0
@@ -226,9 +225,7 @@ MSG_DEF_SELF(beehive/bees_angry, span_notice("The bees won't let you take the ho
 	var/processing = 0
 	var/honey = 0
 
-TRACKED(/obj/machinery/honey_extractor, honey)
 
-TRACKED(/obj/machinery/honey_extractor, processing)
 
 /obj/machinery/honey_extractor/examine(mob/user)
 	. = ..()
@@ -308,7 +305,6 @@ MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
 
 	var/honey = 0
 
-TRACKED(/obj/item/honey_frame, honey)
 
 /obj/item/honey_frame/proc/appearance_has_honey()
 	return honey > 0

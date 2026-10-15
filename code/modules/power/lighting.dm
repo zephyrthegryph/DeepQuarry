@@ -90,9 +90,6 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	/// The area's lights power state the fixture last acted on (so a channel change that changes nothing here does nothing).
 	var/tmp/last_area_power = null
 
-TRACKED(/obj/machinery/light, status)
-TRACKED(/obj/machinery/light, nightshift_allowed)
-TRACKED(/obj/machinery/light, flickering)
 
 CAPABILITIES(/obj/machinery/light)
 	configure(uses_power(idle = 2, active = 10, channel = LIGHT))
@@ -997,7 +994,6 @@ CAPABILITIES(/obj/machinery/light)
 	item_state = "egg4"
 	MATERIAL_BULK(MAT_GLASS, 100)
 
-TRACKED(/obj/item/light, status)
 
 CAPABILITIES(/obj/item/light)
 	configure(item_thrown(force = 5))

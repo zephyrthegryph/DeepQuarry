@@ -484,7 +484,6 @@ DECLARE_SHARED_CACHE(flesh_side_overlays, GLOBAL_PROC_REF(build_flesh_side_overl
 
 /// The cardinal sides of this wall that are open (a neighbour that is not dense), written by the adjacency index (code/game/turfs/turf_edges.dm).
 /turf/simulated/flesh/var/open_mask = 0
-TRACKED(/turf/simulated/flesh, open_mask)
 
 /turf/simulated/flesh/edges_changed(mask)
 	..()

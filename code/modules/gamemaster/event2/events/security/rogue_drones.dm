@@ -57,7 +57,7 @@
 		for(var/mob/living/simple_mob/mechanical/combat_drone/D in spawned_mobs)
 			fx_sparks(D.loc, 3, FALSE)
 			D.z = using_map.admin_levels[1]
-			D.loot_list = list()
+			D.set_loot_list(list())
 
 			spent(D)
 			number_recovered++

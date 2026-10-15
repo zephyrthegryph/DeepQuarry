@@ -50,7 +50,6 @@ MSG_DEF(fieldgen/activated, "You turn on %T%.", "%U% turns on %T%.")
 	/// Warm-up stage 0-3 (turn_on(), warm_up_step()); the fields go up at 3.
 	var/warming_up = 0
 
-TRACKED(/obj/machinery/field_generator, power)
 
 CAPABILITIES(/obj/machinery/field_generator)
 	configure(light_glow(color = "#5BA8FF"))
@@ -270,7 +269,6 @@ CAPABILITIES(/obj/machinery/field_generator)
 #undef FIELD_GEN_MAX_POWER
 #undef FIELD_GEN_WARMUP_STAGE
 
-TRACKED(/obj/machinery/field_generator, state)
 
 /obj/machinery/field_generator/floor_weld_state()
 	return state

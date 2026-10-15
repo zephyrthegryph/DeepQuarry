@@ -10,8 +10,6 @@ CAPABILITIES(/datum/dq_native_transfer_query_probe)
 	ref_one(nameof(candidate), /atom/movable)
 	ref_one(nameof(mover), /mob)
 
-TRACKED(/datum/dq_native_transfer_query_probe, allowed)
-TRACKED(/datum/dq_native_transfer_query_probe, refusal_text)
 
 /datum/dq_native_transfer_query_probe/proc/admission(datum/act/op/A)
 	if(A.holder != src || A.destination != destination || A.target != candidate || A.actor != mover || A.mover != mover || A.slot_id != "s1_picky")
@@ -133,7 +131,6 @@ TRACKED(/datum/dq_native_transfer_query_probe, refusal_text)
 /datum/dq_budget_weight
 	var/units = 1
 
-TRACKED(/datum/dq_budget_weight, units)
 
 /obj/item/dq_budget_refs
 	var/list/sources
@@ -202,7 +199,6 @@ CAPABILITIES(/obj/item/dq_budget_refs)
 /obj/item/dq_live_budget_box/unbounded
 	var/forbid_cost = FALSE
 
-TRACKED(/obj/item/dq_live_budget_box/unbounded, forbid_cost)
 
 /datum/relation_definition/slot/dq_live_budget/unbounded
 	holder = /obj/item/dq_live_budget_box/unbounded
@@ -293,7 +289,6 @@ TRACKED(/obj/item/dq_live_budget_box/unbounded, forbid_cost)
 /datum/dq_transfer_guard_gate
 	var/enabled = FALSE
 
-TRACKED(/datum/dq_transfer_guard_gate, enabled)
 
 /obj/s1_fixture/picky/query_guard
 	var/datum/dq_transfer_guard_gate/gate

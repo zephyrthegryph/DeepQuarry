@@ -8,7 +8,6 @@
 
 	special_handling = TRUE
 
-TRACKED(/obj/item/assembly/electronic_assembly, opened)
 
 CAPABILITIES(/obj/item/assembly/electronic_assembly)
 	// the device answers an item itself (circuits when opened, the assembly attach when closed): the parent's attach op would clash at the same tier

@@ -1,5 +1,3 @@
-TRACKED(/obj/item/robot_module/robot/platform, eye_color)
-TRACKED(/obj/item/robot_module/robot/platform, decals)
 
 /obj/item/robot_module/robot/platform
 

@@ -160,7 +160,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 // Close all firedoors in the area
 /area/proc/firedoors_close()
 	if(!firedoors_closed)
-		firedoors_closed = TRUE
+		set_firedoors_closed(TRUE)
 		if(!all_doors)
 			return
 		for(var/obj/machinery/door/firedoor/E in all_doors)
@@ -173,7 +173,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 // Open all firedoors in the area
 /area/proc/firedoors_open()
 	if(firedoors_closed)
-		firedoors_closed = FALSE
+		set_firedoors_closed(FALSE)
 		if(!all_doors)
 			return
 		for(var/obj/machinery/door/firedoor/E in all_doors)
@@ -534,7 +534,13 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 	else
 		cut_overlay(GLOB.spoiler_obfuscation_image)
 
-TRACKED(/area, flags)
+/area/proc/set_flags(value)
+	if(TRACKED_UNCHANGED(flags, value))
+		return FALSE
+	flags = value
+	tracked_changed(src, nameof(flags))
+	return TRUE
+SETTER(/area, flags)
 
 /area/proc/flag_check(flag, match_all = FALSE)
 	if(match_all)

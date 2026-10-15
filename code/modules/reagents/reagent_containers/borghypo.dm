@@ -114,7 +114,6 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 
 /// TRUE while a reagent is short (a dose sets it): the slow step recharges from the cyborg; full, it parks.
 /obj/item/reagent_containers/borghypo/var/tmp/refilling = FALSE
-TRACKED(/obj/item/reagent_containers/borghypo, refilling)
 
 /// Every [recharge_time] steps, recharges some reagents from its cyborg while any is short.
 /obj/item/reagent_containers/borghypo/proc/refill_step(datum/act/A)
@@ -294,7 +293,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/proc/ui_act_set_amount(datum/act/op/A, amount)
-	amount_per_transfer_from_this = clamp(round(amount, 1), min_transfer_amount, max_transfer_amount) // Round to nearest 1, clamp between min and max transfer amount
+	set_amount_per_transfer_from_this(clamp(round(amount, 1), min_transfer_amount, max_transfer_amount)) // Round to nearest 1, clamp between min and max transfer amount
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/proc/ui_act_import_config(datum/act/op/A, config)

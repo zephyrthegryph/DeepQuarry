@@ -179,7 +179,7 @@
 
 
 /turf/simulated/proc/toggle_climbability() //Again, b
-	climbable = !climbable
+	set_climbable(!climbable)
 	verb_store_refresh(src, /turf/simulated/proc/climb_wall)
 
 /turf/simulated/proc/snow_dries()

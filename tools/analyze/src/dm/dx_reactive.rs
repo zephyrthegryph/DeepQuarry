@@ -531,6 +531,19 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
             }
         }
     }
+    // A var no proc ever writes (a per-type default overridden in subtypes, read across objects) is constant: nothing could publish its change, so
+    // reading it needs no tracking (the dependency analysis classes it Constant the same way).
+    if let Some(sem) = crate::sem::sem_for(tree).filter(|_| tree.get(crate::gens::auto_tracked::AUTO_REL).is_some()) {
+        let written = crate::gens::auto_tracked::writes_outside_setters_of(tree, &sem);
+        let calls = crate::gens::auto_tracked::set_calls(tree);
+        for t in sem.objtree.iter_types() {
+            for (name, v) in &t.get().vars {
+                if v.declaration.is_some() && !written.contains(name.as_str()) && !calls.contains(name.as_str()) {
+                    ctx.tracked.insert(name.clone());
+                }
+            }
+        }
+    }
     // `dir` is a tracked read of every drawn atom: /atom/set_dir() publishes its change (code/game/atom/_atom.dm), so a draw
     // reading `dir` (its own or a watched neighbour's) redraws.
     ctx.tracked.insert("dir".to_string());

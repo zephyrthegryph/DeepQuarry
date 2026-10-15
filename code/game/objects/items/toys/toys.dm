@@ -191,8 +191,6 @@ CAPABILITIES(/obj/item/toy/sword)
 	add_fingerprint(user)
 	return OP_OK
 
-TRACKED(/obj/item/toy/sword, active)
-TRACKED(/obj/item/toy/sword, lcolor)
 
 /// The look: the plastic blade over the hilt, in the blade's colour.
 /obj/item/toy/sword/draw(datum/look/look)
@@ -2629,7 +2627,7 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 /obj/item/toy/snake_popper/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
 	if(real != 2)
-		real = 2
+		set_real(2)
 		to_chat(user, span_notice("You short out the bluespace refill system of [src]."))
 	return OP_OK
 
@@ -2743,7 +2741,6 @@ CAPABILITIES(/obj/item/storage/box/timecap)
 	var/on = FALSE
 	var/activation_sound = SFX_MACHINES_CLICK
 
-TRACKED(/obj/item/toy/desk, on)
 
 /// The look (the draw sweep: from its template).
 /obj/item/toy/desk/draw(datum/look/look)

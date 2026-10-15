@@ -93,17 +93,6 @@ MSG_DEF(smes/terminal_cut, "You cut the cables and dismantle the power terminal.
 	var/noisy = FALSE
 
 // What Rust is told (push_to_rust() reads these), and what the look and the window read.
-TRACKED(/obj/machinery/power/smes, initial_charge)
-TRACKED(/obj/machinery/power/smes, capacity)
-TRACKED(/obj/machinery/power/smes, input_level)
-TRACKED(/obj/machinery/power/smes, input_level_max)
-TRACKED(/obj/machinery/power/smes, output_level)
-TRACKED(/obj/machinery/power/smes, output_level_max)
-TRACKED(/obj/machinery/power/smes, input_available)
-TRACKED(/obj/machinery/power/smes, output_used)
-TRACKED(/obj/machinery/power/smes, input_cut)
-TRACKED(/obj/machinery/power/smes, output_cut)
-TRACKED(/obj/machinery/power/smes, grid_check)
 
 /// The unit moves power now: it works (not broken, wired) and no grid check holds it. What push_to_rust() sends as the switches' gate.
 STAT(/obj/machinery/power/smes, working, ALL)

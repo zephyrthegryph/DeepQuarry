@@ -26,7 +26,7 @@ MSG_DEF_SELF(locket/no_open, "you have to open it first")
 
 	// The locket opens whether or not its sheet has an open picture (the repo has none for the default locket): only the picture is optional.
 	var/has_open_picture = icon_exists(icon, "[base_icon]_open")
-	open = !open
+	set_open(!open)
 	to_chat(user, "You flip \the [src] [open?"open":"closed"].")
 	if(open)
 		if(has_open_picture)

@@ -343,7 +343,6 @@ CAPABILITIES(/obj/structure/frame)
 		D = "Requires [english_list(component_list)]."
 	desc = D
 
-TRACKED(/obj/structure/frame, state)
 
 /// What the frame shows: its frame type's sprite (from the type's own icon when it has one) at the build state it has reached.
 /obj/structure/frame/draw(datum/look/look)

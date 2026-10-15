@@ -97,7 +97,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
 	if(O.reagents)
 		O.reagents.trans_to_mob(src, O.bitesize, CHEM_INGEST)
 		adjust_nutrition(O.bitesize * 20)
-	O.bitecount ++
+	O.set_bitecount(O.bitecount + 1)
 	O.On_Consume(src)
 	if(O)
 		to_chat(user, span_notice("\The [src] takes a bite of \the [O]."))

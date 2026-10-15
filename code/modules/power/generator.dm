@@ -34,7 +34,6 @@
 	/// The watches it sleeps on: its circulators' four mixtures.
 	var/list/datum/native_watch/gas/loop_watches
 
-TRACKED(/obj/machinery/power/generator, generating)
 
 MSG_DEF(teg/secured, "You secure the bolts holding %T% to the floor.", "%U% secures the bolts holding %T% to the floor.")
 MSG_DEF(teg/unsecured, "You unsecure the bolts holding %T% to the floor.", "%U% unsecures the bolts holding %T% to the floor.")

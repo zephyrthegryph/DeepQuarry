@@ -208,33 +208,33 @@ CAPABILITIES(/obj/structure/disposalpipe)
 	var/obj/structure/disposalconstruct/C = new (get_turf(src))
 	switch(base_icon_state)
 		if("pipe-s")
-			C.ptype = 0
+			C.set_ptype(0)
 		if("pipe-c")
-			C.ptype = 1
+			C.set_ptype(1)
 		if("pipe-j1")
-			C.ptype = 2
+			C.set_ptype(2)
 		if("pipe-j2")
-			C.ptype = 3
+			C.set_ptype(3)
 		if("pipe-y")
-			C.ptype = 4
+			C.set_ptype(4)
 		if("pipe-t")
-			C.ptype = 5
+			C.set_ptype(5)
 		if("pipe-j1s")
-			C.ptype = 9
+			C.set_ptype(9)
 			C.sortType = sortType
 		if("pipe-j2s")
-			C.ptype = 10
+			C.set_ptype(10)
 			C.sortType = sortType
 ///// Z-Level stuff
 		if("pipe-u")
-			C.ptype = 11
+			C.set_ptype(11)
 		if("pipe-d")
-			C.ptype = 12
+			C.set_ptype(12)
 ///// Z-Level stuff
 		if("pipe-tagger")
-			C.ptype = 13
+			C.set_ptype(13)
 		if("pipe-tagger-partial")
-			C.ptype = 14
+			C.set_ptype(14)
 	C.subtype = subtype
 	transfer_fingerprints_to(C)
 	C.set_dir(dir)

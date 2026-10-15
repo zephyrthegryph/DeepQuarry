@@ -11,8 +11,6 @@
 	var/translation_enabled = 0
 	var/datum/language/langset_static
 
-TRACKED(/obj/item/universal_translator, translation_enabled)
-TRACKED(/obj/item/universal_translator, langset_static)
 
 CAPABILITIES(/obj/item/universal_translator)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

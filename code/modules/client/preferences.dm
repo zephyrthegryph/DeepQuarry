@@ -467,9 +467,9 @@ CAPABILITIES(/datum/preferences)
 	if(character.species)
 		// species is PROTO: mutate the mob's private copy, never the shared prototype
 		var/datum/species/own_species = rel_private(character, nameof(character.species))
-		own_species.micro_size_mod = 0
-		own_species.icon_scale_x = 1
-		own_species.icon_scale_y = 1
+		own_species.set_micro_size_mod(0)
+		own_species.set_icon_scale_x(1)
+		own_species.set_icon_scale_y(1)
 		for(var/trait in read_preference(/datum/preference/typed_list/traits/neu_traits)) // typed_list pref base
 			if(trait in traits_to_copy)
 				var/datum/trait/instance = GLOB.all_traits[trait]

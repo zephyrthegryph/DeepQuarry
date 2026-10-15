@@ -135,8 +135,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 
 	if(isobj(target))
 		set_size_multiplier(1)
-		icon_scale_x = target.icon_scale_x
-		icon_scale_y = target.icon_scale_y
+		set_icon_scale_x(target.icon_scale_x)
+		set_icon_scale_y(target.icon_scale_y)
 		update_transform()
 
 	else if(ismob(target))
@@ -144,8 +144,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 		resize(M.size_multiplier, ignore_prefs = TRUE)
 
 	//Morphed is weaker
-	melee_damage_lower = melee_damage_disguised
-	melee_damage_upper = melee_damage_disguised
+	set_melee_damage_lower(melee_damage_disguised)
+	set_melee_damage_upper(melee_damage_disguised)
 	movement_cooldown = 1
 
 	COOLDOWN_START(src, morph_time, MORPH_COOLDOWN)
@@ -178,8 +178,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 
 	pixel_x = initial(pixel_x)
 	pixel_y = initial(pixel_y)
-	icon_scale_x = initial(icon_scale_x)
-	icon_scale_y = initial(icon_scale_y)
+	set_icon_scale_x(initial(icon_scale_x))
+	set_icon_scale_y(initial(icon_scale_y))
 
 	set_density(initial(density))
 
@@ -191,8 +191,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	resize(size_multiplier, ignore_prefs = TRUE)
 
 	//Baseline stats
-	melee_damage_lower = initial(melee_damage_lower)
-	melee_damage_upper = initial(melee_damage_upper)
+	set_melee_damage_lower(initial(melee_damage_lower))
+	set_melee_damage_upper(initial(melee_damage_upper))
 	movement_cooldown = initial(movement_cooldown)
 
 	COOLDOWN_START(src, morph_time, MORPH_COOLDOWN)

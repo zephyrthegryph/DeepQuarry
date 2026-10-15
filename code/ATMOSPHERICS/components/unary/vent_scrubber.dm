@@ -27,10 +27,6 @@
 	/// Siphoning the room in a panic.
 	var/panic = 0
 
-TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, id_tag)
-TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, frequency)
-TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, panic)
-TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, scrubbing_gas)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
 	configure(uses_power(idle = 150))
@@ -213,3 +209,19 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
 	var/gas = filter_gas(key)
 	if(gas)
 		set_scrubbing_gas(scrubbing_gas ^ list(gas))
+
+/obj/machinery/atmospherics/unary/vent_scrubber/proc/set_id_tag(value)
+	if(TRACKED_UNCHANGED(id_tag, value))
+		return FALSE
+	id_tag = value
+	tracked_changed(src, nameof(id_tag))
+	return TRUE
+SETTER(/obj/machinery/atmospherics/unary/vent_scrubber, id_tag)
+
+/obj/machinery/atmospherics/unary/vent_scrubber/proc/set_frequency(value)
+	if(TRACKED_UNCHANGED(frequency, value))
+		return FALSE
+	frequency = value
+	tracked_changed(src, nameof(frequency))
+	return TRUE
+SETTER(/obj/machinery/atmospherics/unary/vent_scrubber, frequency)

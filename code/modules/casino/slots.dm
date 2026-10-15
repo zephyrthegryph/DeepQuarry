@@ -34,9 +34,6 @@ CAPABILITIES(/obj/machinery/slot_machine)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert chip"), needs(req(PROC_REF(not_running_holds)), req_is(nameof(anchored), TRUE, because = MSG(slot_machine/unanchored))), then(PROC_REF(interaction_attackby)))
 
-TRACKED(/obj/machinery/slot_machine, ispowered)
-TRACKED(/obj/machinery/slot_machine, isbroken)
-TRACKED(/obj/machinery/slot_machine, slot_phase)
 
 /obj/machinery/slot_machine/draw(datum/look/look)
 	..()
@@ -177,9 +174,6 @@ CAPABILITIES(/obj/machinery/station_slot_machine)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert cash"), needs(req(PROC_REF(not_running_holds)), req_is(nameof(anchored), TRUE, because = MSG(station_slot_machine/unanchored))), then(PROC_REF(interaction_attackby)))
 
-TRACKED(/obj/machinery/station_slot_machine, ispowered)
-TRACKED(/obj/machinery/station_slot_machine, isbroken)
-TRACKED(/obj/machinery/station_slot_machine, slot_phase)
 
 /obj/machinery/station_slot_machine/draw(datum/look/look)
 	..()

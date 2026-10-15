@@ -91,8 +91,8 @@ CAPABILITIES(/obj/effect/decal/writing)
 
 	var/_message = A.step_value("k49")
 	act_message(user, null, others = span_danger("%U% carves some graffiti into \the [loc]."))
-	message = "[message] [_message]"
-	author = user.ckey
+	set_message("[message] [_message]")
+	set_author(user.ckey)
 	if(lowertext(message) == "elbereth")
 		to_chat(user, span_notice("You feel much safer."))
 	return OP_PASS

@@ -24,7 +24,6 @@
 
 /// 0 = off, 1 = clamped (off), 2 = operating
 /obj/item/powersink/var/mode = 0
-TRACKED(/obj/item/powersink, mode)
 
 /// Whether the sink drains (its every() gate, polled).
 /obj/item/powersink/proc/operating(datum/act/A)

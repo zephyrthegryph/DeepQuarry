@@ -594,4 +594,10 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 			stack_text = "  stacks [stacks[1]]: [A.runs ? "winning" : "shadowed"]"
 	return "[activation_def_text(A.def)]  source [source_text]  scope [scope_text][stack_text][A.dead ? "  (dead)" : ""][cap && A.applied ? "  contributes [length(A.applied)]" : ""]"
 
-TRACKED(/datum/rx_state, capability_generation)
+/datum/rx_state/proc/set_capability_generation(value)
+	if(TRACKED_UNCHANGED(capability_generation, value))
+		return FALSE
+	capability_generation = value
+	tracked_changed(src, nameof(capability_generation))
+	return TRUE
+SETTER(/datum/rx_state, capability_generation)

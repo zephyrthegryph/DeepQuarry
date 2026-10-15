@@ -147,8 +147,8 @@ CAPABILITIES(/obj/item/digestion_remains/synth)
 	pred_ckey = pred?.ckey
 	pred_name = pred?.name
 	if(prey && isliving(prey) && prey.size_multiplier != 1)
-		icon_scale_x = prey.size_multiplier
-		icon_scale_y = prey.size_multiplier
+		set_icon_scale_x(prey.size_multiplier)
+		set_icon_scale_y(prey.size_multiplier)
 		update_transform()
 
 CAPABILITIES(/obj/item/digestion_remains)

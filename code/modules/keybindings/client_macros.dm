@@ -65,6 +65,7 @@
 
 /client/proc/set_hover_tracking(enabled)
 	hover_tracking = !!enabled
+	tracked_changed(src, nameof(hover_tracking))
 	if(!hover_tracking)
 		if(mob)
 			rel_clear(mob, nameof(/mob::hovered_atom_view))

@@ -241,7 +241,7 @@
 	var/mob/living/silicon/pai/P = make_pai(H)
 	var/datum/pai_software/target = GLOB.pai_software_by_key["med_records"]
 	TEST_ASSERT(target, "the medical records software exists")
-	P.software -= target.id
+	P.remove_software(target.id)
 	P.ram = 100
 	P.touch_window(target.name)
 	hci_answer(P, TRUE)
@@ -255,7 +255,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/silicon/pai/P = make_pai(H)
 	var/datum/pai_software/target = GLOB.pai_software_by_key["med_records"]
-	P.software -= target.id
+	P.remove_software(target.id)
 	P.ram = 100
 	P.touch_window(target.name)
 	P.ram = 0

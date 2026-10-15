@@ -73,7 +73,6 @@
 	var/edges = 0
 	var/ticks = 0
 
-TRACKED(/obj/dq_lookup_grid_fixture, grid_id)
 
 CAPABILITIES(/obj/dq_lookup_grid_fixture)
 	op("lookup_grid", menu(button = "Use grid"), needs(req(PROC_REF(grid_ready))), then(PROC_REF(use_grid)))
@@ -254,7 +253,6 @@ CAPABILITIES(/obj/dq_lookup_grid_fixture)
 /mob/living/carbon/human/dq_lookup_actor
 	var/grid_id = 0
 
-TRACKED(/mob/living/carbon/human/dq_lookup_actor, grid_id)
 
 /obj/dq_lookup_grid_fixture/contextual
 
@@ -355,7 +353,6 @@ CAPABILITIES(/obj/dq_lookup_grid_fixture/contextual)
 /obj/item/dq_lookup_probe
 	var/grid_id = 0
 
-TRACKED(/obj/item/dq_lookup_probe, grid_id)
 
 CAPABILITIES(/obj/item/dq_lookup_probe)
 	op("target_grid", at_target(/obj/dq_lookup_grid_fixture), label("Use target grid"), needs(req(PROC_REF(target_ready))), then(PROC_REF(used)))

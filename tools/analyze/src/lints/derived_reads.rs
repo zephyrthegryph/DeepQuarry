@@ -1082,6 +1082,20 @@ fn boot_text(model: &Model) -> Vec<String> {
     out
 }
 
+/// The `(type, var)` pairs the presentation reactions (Life steps, HUD, sight, canmove: `REACTION_OUTPUTS`) read off the holder, whatever declares the var.
+/// A reaction is reactive code: read-driven tracking (`gens::auto_tracked`) tracks what it reads.
+pub(crate) fn reaction_read_pairs(tree: &Tree, files: &[&SourceFile]) -> BTreeSet<(String, String)> {
+    let model = Model::get(tree, files);
+    let mut out = BTreeSet::new();
+    for r in reaction_reads(&model) {
+        let owner = &model.procs[r.proc].owner;
+        for (name, _) in &r.reads {
+            out.insert((owner.clone(), name.clone()));
+        }
+    }
+    out
+}
+
 /// The text of `code/_generated/reads.dm` for these files (the `derived_reads` generator, `analyze gen derived_reads`, writes it).
 pub(crate) fn generated_for(tree: &Tree, files: &[&SourceFile]) -> String {
     generated_text(&Model::get(tree, files), &crate::sem::gen::test_only_types(tree))

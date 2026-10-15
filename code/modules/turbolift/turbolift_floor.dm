@@ -23,6 +23,7 @@ CAPABILITIES(/datum/turbolift_floor)
 		return
 
 	area_ref = ref
+	tracked_changed(src, nameof(area_ref))
 	label = A.lift_floor_label
 	name = A.lift_floor_name ? A.lift_floor_name : A.name
 	announce_str = A.lift_announce_str

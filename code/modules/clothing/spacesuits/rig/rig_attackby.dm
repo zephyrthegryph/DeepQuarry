@@ -106,7 +106,7 @@
 	if(!open && locked)
 		to_chat(user, "The access panel is locked shut.")
 		return OP_OK
-	open = !open
+	set_open(!open)
 	to_chat(user, "You [open ? "open" : "close"] the access panel.")
 	return OP_OK
 

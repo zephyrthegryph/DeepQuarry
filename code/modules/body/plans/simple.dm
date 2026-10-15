@@ -80,7 +80,7 @@
 	return null
 
 /datum/body/simple/recompute_vitals()
-	dirty &= ~BODY_DIRTY_VITALS
+	set_dirty(dirty & (~BODY_DIRTY_VITALS))
 	total_load = 0
 	for(var/datum/affliction/load/L in afflictions)
 		total_load += L.load

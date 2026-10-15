@@ -38,7 +38,7 @@
 /// machine?" (P2-S1). Simple plans answer from the `biology` var; the humanoid
 /// plan answers from the torso.
 /mob/living/biology()
-	return body ? body.biology_of(null) : biology // ALLOW(reads): biology is fixed when the body is made; a reader asks it, nothing caches it
+	return body ? body.biology_of(null) : biology
 
 /// Any reagent holder owned by this mob changed: the treatment snapshot and
 /// the chem-caused afflictions are stale. The factors are NOT dirtied here
@@ -123,7 +123,7 @@
 	if(domains & (BODY_DIRTY_FACTORS | BODY_DIRTY_ORGANS))
 		domains |= BODY_DIRTY_PHYSIOLOGY
 	var/gained = domains & ~dirty
-	dirty |= domains
+	set_dirty(dirty | domains)
 	// Only a newly dirtied domain wakes the owner: bits already dirty have woken it and are
 	// still waiting to be consumed.
 	if(gained && owner)
@@ -344,7 +344,7 @@
 	return isnull(factor) ? 1.0 : factor
 
 /datum/body/proc/build_treatment_snapshot()
-	dirty &= ~BODY_DIRTY_TREATMENT
+	set_dirty(dirty & (~BODY_DIRTY_TREATMENT))
 	treatment_snapshot = null
 	reagent_interference = null
 	reagent_volumes = collect_reagent_volumes(reagent_volumes)
@@ -447,7 +447,7 @@
 		recompute_vitals()
 
 /datum/body/proc/recompute_vitals()
-	dirty &= ~BODY_DIRTY_VITALS
+	set_dirty(dirty & (~BODY_DIRTY_VITALS))
 	pain = 0
 	consciousness = 100
 	vitality = 1

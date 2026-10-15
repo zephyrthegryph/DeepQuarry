@@ -32,7 +32,7 @@
 		return FALSE
 
 	var/datum/ai_brain/brain = L.ai_brain
-	brain.set_hostile(FALSE)
+	brain.set_attack_on_sight(FALSE)
 	brain.wander = FALSE
 	brain.forget_everything()
 
@@ -52,7 +52,7 @@
 	if(L.ai_brain)
 		var/datum/ai_brain/brain = L.ai_brain
 		// Restore defaults so the mob resumes normal behaviour after release.
-		brain.set_hostile(initial(brain.hostile))
+		brain.set_attack_on_sight(initial(brain.hostile))
 		brain.wander = initial(brain.wander)
 		brain.forget_everything()
 

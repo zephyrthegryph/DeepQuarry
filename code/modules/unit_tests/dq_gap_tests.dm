@@ -492,7 +492,7 @@
 	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "the ghost's click opens the view (refused: [reason_text(R?.reason)])")
 	R = test_menu(H, target, "ui_observe")
 	TEST_ASSERT(!test_op_committed(R), "a living actor cannot pick the ghost's view")
-	target.blocked = TRUE
+	target.set_blocked(TRUE)
 	R = test_click(ghost, target, null)
 	TEST_ASSERT_NOTEQUAL(R?.outcome, ACT_COMMITTED, "the window's requirement (extend on ui_observe) stops the view too")
 
@@ -545,8 +545,8 @@
 	var/obj/item/pen/k1 = new(with_heir)
 	rel_set(with_heir, nameof(with_heir.part), p1)
 	rel_set(with_heir, nameof(with_heir.kept), k1)
-	with_heir.heir = heir
-	with_heir.going_out = TRUE
+	with_heir.set_heir(heir)
+	with_heir.set_going_out(TRUE)
 	qdel(with_heir)
 	TEST_ASSERT(!QDELETED(p1), "the handed-over part survives its holder")
 	TEST_ASSERT_EQUAL(p1.loc, heir, "it moved into the successor")

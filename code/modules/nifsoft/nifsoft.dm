@@ -246,7 +246,6 @@ CAPABILITIES(/obj/item/disk/nifsoft)
 	stored_synthetic = /datum/nifsoft/compliance
 	var/laws
 
-TRACKED(/obj/item/disk/nifsoft/compliance, laws)
 
 /// A compliance disk with no laws set uploads nothing.
 /obj/item/disk/nifsoft/compliance/upload_ready(datum/act/op/A)

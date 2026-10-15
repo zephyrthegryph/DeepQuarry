@@ -585,7 +585,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 /// Whether anything is inside, kept for the look.
 /obj/machinery/disposal/var/occupied = FALSE
-TRACKED(/obj/machinery/disposal, occupied)
 
 /// Whether anything is inside, as the look reads it: refreshed wherever the contents change.
 /obj/machinery/disposal/proc/sync_occupied()
@@ -798,7 +797,7 @@ TRACKED(/obj/machinery/disposal, occupied)
 	//This is temporary until the above gets used. Or it's permanant if you're reading this 5 years from now.
 	var/obj/structure/disposalconstruct/C = new (src.loc/*null, SOUTH, FALSE, src*/)
 	transfer_fingerprints_to(C)
-	C.ptype = 6 // 6 = disposal unit
+	C.set_ptype(6) // 6 = disposal unit
 	C.set_anchored(TRUE)
 	C.set_density(TRUE)
 	//End of "temporary" code

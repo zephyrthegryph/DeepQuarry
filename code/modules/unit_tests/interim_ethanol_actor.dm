@@ -33,7 +33,7 @@
 	var/obj/item/book/book = allocate(/obj/item/book, T)
 	var/obj/item/book/tome/tome = allocate(/obj/item/book/tome, T)
 	book.dat = "Ordinary book ink"
-	tome.dat = "Protected tome ink"
+	tome.set_dat("Protected tome ink")
 	source.reagents.add_reagent(REAGENT_ID_ETHANOL, 2)
 	source.reagents.touch_obj(book, 2, user)
 	TEST_ASSERT_EQUAL(book.dat, "Ordinary book ink", "too little ethanol preserves book ink")

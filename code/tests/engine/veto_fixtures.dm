@@ -23,7 +23,6 @@ ACTION(veto_strike, amount, protection, notice = /datum/notice/veto_struck)
 	var/flag = 0
 
 /// A gate: pure, answers whether the veto applies.
-TRACKED(/datum/veto_listener, blocking)
 
 /datum/veto_listener/proc/blocks(datum/act/A)
 	return blocking

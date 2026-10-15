@@ -10,8 +10,6 @@
 	var/working = TRUE
 	var/rate = 0.5
 
-TRACKED(/obj/machinery/dq_pod_fixture, working)
-TRACKED(/obj/machinery/dq_pod_fixture, rate)
 
 CAPABILITIES(/obj/machinery/dq_pod_fixture)
 	occupant_pod(OCCUPANT_SLOT_TEST_FIXTURE)

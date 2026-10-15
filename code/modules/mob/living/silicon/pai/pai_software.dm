@@ -116,7 +116,7 @@
 	var/datum/prompt/yes_no/pai_download/download = A.request
 	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[download.software_key]
 	ram -= our_soft.ram_cost
-	software[our_soft.id] = TRUE
+	set_software_at(our_soft.id, TRUE)
 	to_chat(src, span_notice("You downloaded [our_soft.name]. ([ram] RAM remaining.)"))
 	refresh_software_status()
 

@@ -6,9 +6,6 @@
 	var/text
 	var/flag
 
-TRACKED(/datum/tracked_null_fixture, count)
-TRACKED(/datum/tracked_null_fixture, text)
-TRACKED(/datum/tracked_null_fixture, flag)
 
 /datum/unit_test/dq_tracked_null_setter
 

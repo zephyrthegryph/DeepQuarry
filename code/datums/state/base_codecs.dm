@@ -33,7 +33,7 @@
 	..()
 	if(!("variant" in vars) || vars["variant"] == variant)
 		return
-	variant = vars["variant"]
+	set_variant(vars["variant"])
 	apply_variant()
 
 // Generated in Initialize(), so a sampled pristine instance can't stand in for another's.

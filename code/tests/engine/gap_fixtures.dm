@@ -41,7 +41,6 @@ CAPABILITIES(/obj/gap_decline_alone)
 	var/active = FALSE
 	var/ticks = 0
 
-TRACKED(/obj/gap_every, active)
 
 CAPABILITIES(/obj/gap_every)
 	every(1 SECOND, then(PROC_REF(tick)), when = nameof(active))
@@ -59,7 +58,6 @@ CAPABILITIES(/obj/gap_every)
 	var/gated_ticks = 0
 	var/active = FALSE
 
-TRACKED(/datum/gap_every_datum, active)
 
 CAPABILITIES(/datum/gap_every_datum)
 	every(1 SECOND, then(PROC_REF(tick)))
@@ -77,7 +75,6 @@ CAPABILITIES(/datum/gap_every_datum)
 	var/on = FALSE
 	var/ticks = 0
 
-TRACKED(/obj/gap_every_proc, on)
 
 CAPABILITIES(/obj/gap_every_proc)
 	every(1 SECOND, then(PROC_REF(tick)), when = PROC_REF(is_on))
@@ -93,7 +90,6 @@ CAPABILITIES(/obj/gap_every_proc)
 	name = "gap verb mob"
 	var/flag = FALSE
 
-TRACKED(/mob/gap_verb_mob, flag)
 
 CAPABILITIES(/mob/gap_verb_mob)
 	verb_entry(/mob/gap_verb_mob/proc/gv_always)

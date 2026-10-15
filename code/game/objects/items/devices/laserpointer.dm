@@ -241,7 +241,6 @@ CAPABILITIES(/obj/item/laser_pointer)
 	. += owns(nameof(diode), policy = OWN_CONTAINED)
 
 /obj/item/laser_pointer/var/recharging = 0
-TRACKED(/obj/item/laser_pointer, recharging)
 
 /// Relation view: pointer loc (reads null once it is gone).
 /obj/item/laser_pointer/proc/pointer_loc() as /turf

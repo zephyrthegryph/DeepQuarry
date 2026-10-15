@@ -170,7 +170,7 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 			if(isliving(M))
 				var/mob/living/L = M
 				if(isnum(spawn_max_health) && spawn_max_health > 0)
-					L.endurance = spawn_max_health
+					L.set_endurance(spawn_max_health)
 				if(isnum(spawn_health))
 					var/starting_injury = L.get_endurance() - spawn_health
 					if(starting_injury > 0)
@@ -178,9 +178,9 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 				if(isanimal(M))
 					var/mob/living/simple_mob/S = L
 					if(isnum(spawn_melee_damage_lower))
-						S.melee_damage_lower = spawn_melee_damage_lower
+						S.set_melee_damage_lower(spawn_melee_damage_lower)
 					if(isnum(spawn_melee_damage_upper))
-						S.melee_damage_upper = spawn_melee_damage_upper
+						S.set_melee_damage_upper(spawn_melee_damage_upper)
 				if(use_custom_ai)
 					L.faction = faction
 					L.set_use_stance(intent)

@@ -318,8 +318,8 @@ CAPABILITIES(/obj/dq_combat_probe)
 	var/turf/base = _swing_arena()
 	var/mob/living/simple_mob/animal/passive/mouse/mouse = allocate(/mob/living/simple_mob/animal/passive/mouse, get_step(base, NORTH))
 	var/mob/living/simple_mob/animal/passive/cow/cow = allocate(/mob/living/simple_mob/animal/passive/cow, base)
-	cow.melee_damage_lower = 5
-	cow.melee_damage_upper = 5
+	cow.set_melee_damage_lower(5)
+	cow.set_melee_damage_upper(5)
 	dq_give_zone_sel(cow)
 	cow.set_dir(NORTH)
 	cooldown_set_end(cow, next_click, 0)

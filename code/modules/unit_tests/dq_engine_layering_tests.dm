@@ -96,7 +96,6 @@ CAPABILITIES(/obj/engine_layering_bay)
 	var/atom/movable/payload
 	var/notices = 0
 
-TRACKED(/obj/engine_layering_unowned_bay, payload)
 
 CAPABILITIES(/obj/engine_layering_unowned_bay)
 	on_change(nameof(payload), ANY, then(PROC_REF(payload_changed)))

@@ -35,7 +35,6 @@
 	circuit = /obj/item/circuitboard/space_heater
 
 // The cell comes from cell_type (null: none).
-TRACKED(/obj/machinery/space_heater, pumping)
 
 MSG_DEF(space_heater/cell_in, span_notice("You insert the power cell into %T%."), span_notice("%U% inserts a power cell into %T%."))
 MSG_DEF_SELF(space_heater/hatch_closed, "the hatch must be open to insert a power cell")
@@ -64,10 +63,10 @@ CAPABILITIES(/obj/machinery/space_heater)
 /obj/machinery/space_heater/RefreshParts(limited = 0)
 	min_temperature = DEFAULT_MIN_TEMP
 	max_temperature = DEFAULT_MAX_TEMP
-	heating_power = DEFAULT_HEATING_POWER
+	set_heating_power(DEFAULT_HEATING_POWER)
 	power_efficiency = 1
 	var/laser_over = get_part_rating(/obj/item/stock_parts/micro_laser) - get_part_count(/obj/item/stock_parts/micro_laser)
-	heating_power += laser_over * 25000 // Increases the maximum heating/cooling possible. Doesn't affect the heat it pumps out/sucks in. That depends on the difference between the thermostat and the environment. This just clamps that temp change.
+	set_heating_power(heating_power + (laser_over * 25000)) // Increases the maximum heating/cooling possible. Doesn't affect the heat it pumps out/sucks in. That depends on the difference between the thermostat and the environment. This just clamps that temp change.
 	var/manip_over = get_part_rating(/obj/item/stock_parts/manipulator) - get_part_count(/obj/item/stock_parts/manipulator)
 	min_temperature -= manip_over * 23	//min_temperature starts at 273. A level 5 (omni) will decrease it by 92. -92 x 3 = 276, which we clamp to 0. It still sucks cooling down normal temp areas, but whatever it's a heater. Get a temp pump if you want to cool.
 	max_temperature += manip_over * 121	//max_temperature starts at 363. A level 5 (omni) will increase it by 484. 484 x 3 = 1936. Giving us a total of 2299K/2026C.
@@ -175,7 +174,7 @@ CAPABILITIES(/obj/machinery/space_heater)
 
 /obj/machinery/space_heater/proc/ui_act_temp(datum/act/op/A, newtemp)
 	// limit to 0-90 degC
-	set_temperature = clamp(newtemp, min_temperature, max_temperature)
+	set_set_temperature(clamp(newtemp, min_temperature, max_temperature))
 	heat_entries_refresh(src)
 	. = TRUE
 
@@ -235,4 +234,3 @@ CAPABILITIES(/obj/machinery/space_heater)
 #undef DEFAULT_MAX_TEMP
 #undef DEFAULT_HEATING_POWER
 
-TRACKED(/obj/machinery/space_heater, state)
