@@ -223,7 +223,7 @@ CAPABILITIES(/turf/simulated/shuttle)
 	block_tele = TRUE
 
 CAPABILITIES(/turf/simulated/shuttle/floor/alien)
-	setup(PROC_REF(update_light))
+	setup(TYPE_PROC_REF(/atom, update_light))
 	configure(light_glow(range = 3, power = 0.6, color = "#66ffff"))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
 
