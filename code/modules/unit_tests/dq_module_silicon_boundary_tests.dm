@@ -60,7 +60,7 @@
 	var/mob/living/silicon/robot/R = make_borg(T)
 	var/mob/observer/dead/observer = allocate(/mob/observer/dead, T)
 	var/mob/living/simple_mob/animal/passive/mouse/mouse = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
-	var/text = "A readable page."
+	var/text = "A readable page with enough written characters to verify ordinary readers receive obscured content."
 	TEST_ASSERT_EQUAL(H.written_text_view(text), text, "Human reads the original page text")
 	TEST_ASSERT_EQUAL(R.written_text_view(text), text, "Cyborg's written-content provider retains the page text")
 	TEST_ASSERT_EQUAL(observer.written_text_view(text), text, "Observer's original readable page view is preserved")
