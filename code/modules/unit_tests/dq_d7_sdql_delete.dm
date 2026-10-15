@@ -30,3 +30,32 @@ CAPABILITIES(/obj/item/pen/dq_d7_delete_probe)
 
 /datum/unit_test/dq_d7_sdql_delete/proc/query_finished(datum/SDQL2_query/query)
 	return !QDELETED(query) && query.finished
+
+/// Real input/menu projection of the static table's formerly interleaved bindings.
+/datum/unit_test/dq_silicon/d7_vending_input_order
+
+/datum/unit_test/dq_silicon/d7_vending_input_order/run_gate()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = make_human(T)
+	var/mob/living/silicon/robot/R = make_borg(T)
+	var/mob/living/silicon/ai/AI = make_ai(T)
+	AI.forceMove(T)
+	var/obj/machinery/vending/nifsoft_shop/V = allocate(/obj/machinery/vending/nifsoft_shop, T)
+	TEST_ASSERT(V.has_logs, "The actual NIF vendor really offers its log route")
+	for(var/mob/actor in list(H, R, AI))
+		var/datum/op_resolution/resolution = op_resolve(actor, V, null, ORIGIN_CLICK, actor_authority(actor), GESTURE_CLICK)
+		var/list/click_keys = list()
+		for(var/datum/op_cand/C as anything in op_resolution_matches(resolution))
+			click_keys += C.oplan.key
+		TEST_ASSERT(!("drag_buckle" in click_keys), "A plain click never includes the drag binding")
+		if("check_logs" in click_keys)
+			TEST_ASSERT(click_keys.Find("ui_open") && click_keys.Find("ui_open") < click_keys.Find("check_logs"), "A matching log click remains below opening the window")
+		var/list/menu_keys = list()
+		for(var/list/row as anything in op_menu(actor, V, null))
+			menu_keys += row["key"]
+		TEST_ASSERT("ui_open" in menu_keys, "Each real actor retains the vendor window menu row")
+		if("check_logs" in menu_keys)
+			TEST_ASSERT(menu_keys.Find("ui_open") < menu_keys.Find("check_logs"), "The real log menu row remains below opening the window")
+		if(actor == H)
+			TEST_ASSERT("check_logs" in click_keys, "The human's actual plain click includes the log fallback")
+			TEST_ASSERT("check_logs" in menu_keys, "The real human menu includes the existing log row")
