@@ -66,7 +66,7 @@
 	if(nuke_spawn)
 		var/obj/machinery/nuclearbomb/nuke = new(get_turf(nuke_spawn))
 		code = "[rand(10000, 99999)]"
-		nuke.r_code = code
+		nuke.set_r_code(code)
 
 	if(code)
 		if(!paper_spawn_loc)
