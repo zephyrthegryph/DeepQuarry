@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/fuel_assembly)
 		name = "[material.use_name] fuel rod assembly"
 		desc = "A fuel rod for a fusion reactor. This one is made from [material.use_name]."
 		set_fuel_colour(material.icon_colour)
-		fuel_type = material.use_name
+		set_fuel_type(material.use_name)
 		// radioactivity / luminescence moved to components on /datum/material.
 		var/mat_rad = dq_material_radioactivity(material)
 		var/mat_lum = dq_material_luminescence(material)
@@ -91,7 +91,7 @@ CAPABILITIES(/obj/item/fuel_assembly)
 	name = "unshielded blitz rod"
 	desc = "An extremely unstable, raw rod of compressed supermatter and phoron. This seems like a terrible idea."
 	set_fuel_colour("#FCE300")
-	fuel_type = "blitzu"
+	set_fuel_type("blitzu")
 	set_rod_glows(TRUE)
 	rod_quantities[fuel_type] = initial_amount
 	radiation_pulse(
@@ -177,7 +177,7 @@ CAPABILITIES(/obj/item/fuel_assembly/blitz/unshielded)
 	name = "blitz rod"
 	desc = "A highly unstable, and highly explosive supermatter and phoron fuel rod with a lead shell, created by someone of questionable sanity. This thing has to violate at least a few intergalactic regulations."
 	set_fuel_colour("#76888F")
-	fuel_type = "blitz"
+	set_fuel_type("blitz")
 	set_rod_glows(TRUE)
 	rod_quantities[fuel_type] = initial_amount
 	set_glow(src, GLOW(2, 2, "#FCE300"))

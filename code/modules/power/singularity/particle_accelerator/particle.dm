@@ -42,7 +42,6 @@ CAPABILITIES(/obj/effect/accelerated_particle)
 	movement_range = 25
 	energy = 50
 
-// ALLOW(init/INSTANCE_STATE): a particle starts moving the way it faces
 /obj/effect/accelerated_particle/Bump(atom/A)
 	if (A)
 		if(ismob(A))

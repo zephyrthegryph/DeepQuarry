@@ -35,3 +35,6 @@ All selected jobs checked for source definitions and inheritance. Monitor childr
 Possible newly exposed tracked site: solar max_integrity *=2 moves from Initialize to setup. Existing update_integrity call unchanged; parent was notified to review any required existing setter substitution. No raw assignment or setter declaration has been altered preemptively.
 
 Moved raw fuel_colour, rod_glows and reinforced max_integrity writes now use existing registered setters. No pre-existing setter call or declaration changed. Tracked check passes after generation.
+
+
+Read-tracking preflight on master 4ab2e15fe1 requires the three newly moved fuel_type writes to use their existing generated set_fuel_type setter. Those calls now publish in the exact previous positions, without editing any protected declaration or preexisting setter line. The now-unused particle initializer annotation was removed from above Bump. All other preflight checks passed; a repaired preflight and lane-ready proof remain pending. No compilation or runtime test has yet been run on this branch.
