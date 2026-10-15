@@ -359,11 +359,6 @@ init_lines	code/game/machinery/gear_dispenser.dm	@/obj/machinery/gear_dispenser:
 init_lines	code/game/machinery/gear_dispenser.dm	@/obj/machinery/gear_dispenser::Initialize::real_gear_list[S.name]
 init_lines	code/game/machinery/gear_dispenser.dm	@/obj/machinery/gear_dispenser::Initialize::dispenses
 init_lines	code/game/machinery/gear_dispenser.dm	@/obj/machinery/gear_dispenser/custom::Initialize::dispenses
-init_lines	code/game/machinery/holoposter.dm	@/obj/machinery/holoposter::Initialize::if
-init_lines	code/game/machinery/holoposter.dm	@/obj/machinery/holoposter::Initialize::poster
-init_lines	code/game/machinery/holoposter.dm	@/obj/machinery/holoposter::Initialize::security_changed
-init_lines	code/game/machinery/holoposter.dm	@/obj/machinery/holoposter::Initialize::rand_sprite
-init_lines	code/game/machinery/holoposter.dm	@/obj/machinery/holoposter::Initialize::schedule_rotation
 init_lines	code/game/machinery/machinery.dm	@/obj/machinery::Initialize::if
 init_lines	code/game/machinery/machinery.dm	@/obj/machinery::Initialize::switched_on
 init_lines	code/game/machinery/machinery.dm	@/obj/machinery::Initialize::if
