@@ -294,8 +294,9 @@
 			// a declaration of internal storage ownership.
 			if(path == /obj/item/storage/internal)
 				var/obj/item/clothing/suit/storage/jacket = allocate(/obj/item/clothing/suit/storage, wearer.loc)
-				holder = jacket.pockets
-				TEST_ASSERT_EQUAL(holder?.master_item(), jacket, "Actual pocket ownership links its real jacket")
+				var/obj/item/storage/internal/pockets = jacket.pockets
+				holder = pockets
+				TEST_ASSERT_EQUAL(pockets?.master_item(), jacket, "Actual pocket ownership links its real jacket")
 			else
 				holder = allocate(path, wearer)
 			TEST_ASSERT_NOTNULL(holder, "[path] has a real holder")
