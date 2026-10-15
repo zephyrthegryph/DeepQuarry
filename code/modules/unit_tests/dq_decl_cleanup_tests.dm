@@ -126,7 +126,7 @@
 	qdel(S)
 	TEST_ASSERT_EQUAL(H.loc, T, "legacy destruction releases the subject")
 	TEST_ASSERT(H.sdisabilities & MUTE, "legacy late destruction leaves mute behind")
-	TEST_ASSERT(act_wanted(H, /datum/act/injure), "legacy late destruction leaves stasis behind")
+	TEST_ASSERT(!act_wanted(H, /datum/act/injure), "source-scoped injury stasis ends automatically with the legacy statue")
 
 // Legacy destruction spills the subject before its late callback can release
 // mute/stasis. This separate regression covers the native ending-phase repair.

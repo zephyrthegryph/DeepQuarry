@@ -1,0 +1,4 @@
+@obj.structure robot|none
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
+@obj.structure ai|none

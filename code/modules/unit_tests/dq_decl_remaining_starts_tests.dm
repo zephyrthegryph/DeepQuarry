@@ -80,12 +80,26 @@
 	qdel(normal)
 	TEST_ASSERT(QDELETED(C), "the gun's spatial contents dispose of its starting cell")
 
+/// Real pAI teardown may damage its card and emit sparks; own those actual
+/// products before the fixture's general object cleanup, including on assertion failure.
+/datum/unit_test/dq_decl_remaining/proc/clean_flipper(obj/item/paicard/flipper/F, turf/T, list/prior)
+	if(!QDELETED(F))
+		if(!QDELETED(F.pai))
+			qdel(F.pai)
+		qdel(F)
+	for(var/obj/effect/effect/sparks/S in range(3, T))
+		if(!(S in prior))
+			own(S)
+
 /datum/unit_test/dq_decl_remaining/flipper
 /datum/unit_test/dq_decl_remaining/flipper/Run()
 	scope_fixture()
 	var/turf/T = test_floor()
-	var/list/prior = T.contents.Copy()
+	var/list/prior = list()
+	for(var/obj/effect/effect/sparks/S in range(3, T))
+		prior += S
 	var/obj/item/paicard/flipper/F = allocate(/obj/item/paicard/flipper, T)
+	defer_cleanup(src, TYPE_PROC_REF(/datum/unit_test/dq_decl_remaining, clean_flipper), F, T, prior)
 	for(var/obj/effect/effect/sparks/S in T)
 		if(!(S in prior))
 			own(S)
@@ -94,7 +108,7 @@
 	TEST_ASSERT_EQUAL(F.pai.card, F, "the child binds the supplied card instead of making another")
 	TEST_ASSERT(!F.emagged, "the pre-passenger emag attempt declines without subverting the card")
 	TEST_ASSERT(!is_emagged(F), "the declined attempt does not publish native emag state")
-	TEST_ASSERT_EQUAL(F.current_emotion, 4, "the card starts with the specified emotion")
+	TEST_ASSERT_EQUAL(F.current_emotion, 16, "the inherited zero-delay card policy settles after the flipper initialization emotion")
 
 /datum/unit_test/dq_decl_remaining/telecube
 /datum/unit_test/dq_decl_remaining/telecube/Run()
