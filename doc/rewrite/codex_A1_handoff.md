@@ -6,7 +6,7 @@ Remaining by rule: {'init_lines': 37}
 
 ## Residual reasons
 - artifact.dm: master creation, primary effect trigger selection, appearance and activation happen before machinery parent init. Existing setup is phase 3 after the whole chain; moving this work would reorder it relative to gas-level initialization/power setup. Map predefined_icon_num is per-instance. Preserve all 33 rows until a proven early setup contract exists.
-- fossils.dm: breq = rand(6)+3 and derived desc overwrite mapper breq. Native rolls skips mapper override values, so preserve these two genuinely per-instance lines rather than silently change map behavior.
+- fossils.dm: the complete post-parent random-count/description job now uses setup, preserving the original mapper overwrite and world RNG. See the 2026-10-15 follow-up.
 - misc.dm: crystal randomize_color() overwrites map-set state/color before machinery parent init; native rolls preserves map overrides and phase timing differs. Keep the one genuinely per-instance call.
 - special.dm: loc_last_process = src.loc remembers the actual constructor/map placement for animated blood; genuine per-instance state. Keep one row.
 
@@ -59,3 +59,10 @@ Existing focused coverage: interim_strangerock_mining_release, interim_strangero
 
 Source equivalence: no production subclasses of archaeological_find, strangerock, anomaly_container or artifact_harvester override Initialize. Source algorithm bodies unchanged, including RNG/child constructor interleaving, setter/relation calls and diagnostics. All three find INITIALIZE_HINT_QDEL paths now explicitly spent(src) (same END_SPENT path as InitAtom). The setup entry checks discarded/deleted holder before running; a fixture asserts rejected holder creates no child.
 No spawns_many declaration fits a proxy replaced by independently placed and decorated subtype-selected objects: it instead constructs owned children with fixed offsets. No finds declaration preserves harvester facing-first then orange-order fallback. Named setup hooks preserve these jobs without inventing APIs.
+
+
+## Residual follow-up, 2026-10-15
+
+The skeleton's complete post-parent bone-count/description job now uses setup(PROC_REF(prepare_missing_bones)) in its existing block. No descendant Initialize or transient constructor input exists. The exact rand(6)+3 expression and its ordering before the derived description are preserved, including overwriting a mapper/subtype breq. rolls() would have changed that override policy; setup() does not. No field, setter, ownership or reference declaration was changed. The now-unused initializer annotation was removed.
+
+New real-constructor selector /datum/unit_test/dq_a1_archaeology_init/skeleton_roll checks the original range, overwrite of a preconfigured count, preserved existing bones and matching description. This source addition is unverified; analyzer baseline shrink and lane-ready remain pending. No generation/build/test was run.

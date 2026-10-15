@@ -52,13 +52,12 @@ CAPABILITIES(/obj/item/fossil/skull)
 	var/bstate = 0
 	var/plaque_contents = "Unnamed alien creature"
 
-// ALLOW(init/INSTANCE_STATE): rolls how many bones it still needs
-/obj/skeleton/Initialize(mapload)
-	. = ..()
+/obj/skeleton/proc/prepare_missing_bones()
 	breq = rand(6)+3
 	desc = "An incomplete skeleton, looks like it could use [breq-bnum] more bones."
 
 CAPABILITIES(/obj/skeleton)
+	setup(PROC_REF(prepare_missing_bones))
 	op("skeleton_bone", item(/obj/item/fossil/bone), label("Use"), then(PROC_REF(skeleton_bone)))
 	op("skeleton_plaque", item(/obj/item/pen), label("Use"),
 		asks(/datum/prompt/text, fields = list("question" = "What would you like to write on the plaque:", "title" = "Skeleton plaque", "timeout" = 0), step = "plaque"),

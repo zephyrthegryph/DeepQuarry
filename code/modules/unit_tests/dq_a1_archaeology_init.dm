@@ -105,3 +105,16 @@ CAPABILITIES(/obj/item/archaeological_find/dq_a1_rejected)
 	container.release()
 	TEST_ASSERT_EQUAL(artifact.loc, T, "The initialized container can release its real occupant again")
 	TEST_ASSERT_NULL(container.contained(), "Release clears the captured reference")
+
+/obj/skeleton/dq_a1_preconfigured
+	breq = 99
+	bnum = 2
+
+/datum/unit_test/dq_a1_archaeology_init/skeleton_roll/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
+	var/obj/skeleton/S = allocate(/obj/skeleton/dq_a1_preconfigured, test_floor())
+	TEST_ASSERT(S.breq >= 4 && S.breq <= 9, "The actual constructor retains its original one-to-six plus three bone roll")
+	TEST_ASSERT(S.breq != 99, "Construction retains its original overwrite of a preconfigured bone count")
+	TEST_ASSERT_EQUAL(S.bnum, 2, "Rolling the missing bones preserves the actual existing bone count")
+	TEST_ASSERT_EQUAL(S.desc, "An incomplete skeleton, looks like it could use [S.breq-S.bnum] more bones.", "The completed constructor description uses the same rolled count")
