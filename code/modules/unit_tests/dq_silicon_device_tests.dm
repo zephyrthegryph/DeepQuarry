@@ -22,6 +22,8 @@
 	TEST_ASSERT_EQUAL(AI.airlock_programming_card(), AI.idcard, "AI programming uses its actual internal credential")
 	TEST_ASSERT_NULL(H.GetPicture(), "Humans do not acquire the silicon stored-camera selector")
 	TEST_ASSERT_EQUAL(R.news_byline(), "[R.name] ([R.job])", "The actual chassis identity supplies the news byline")
+	var/obj/machinery/newscaster/news = allocate(/obj/machinery/newscaster, T)
+	TEST_ASSERT_EQUAL(news.tgui_user_name(null), "Unknown", "An absent viewer retains the original fallback byline")
 
 /datum/unit_test/dq_silicon/device_multitool
 /datum/unit_test/dq_silicon/device_multitool/run_gate()

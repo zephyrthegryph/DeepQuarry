@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - refactor: "Moved silicon device controls and physical interactions to declared operations and actor-owned device inputs."
+  - qol: "Railing rotation commands are available in the operation menu with their existing physical restrictions."

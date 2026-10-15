@@ -727,7 +727,7 @@ CAPABILITIES(/datum/news_photo)
 
 ////////////////////////////////////helper procs
 /obj/machinery/newscaster/proc/tgui_user_name(mob/user)
-	return user.news_byline()
+	return user ? user.news_byline() : "Unknown"
 
 /obj/machinery/newscaster/proc/scan_user(mob/living/user)
 	if(ishuman(user))                       //User is a human
