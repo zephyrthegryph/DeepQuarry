@@ -59,12 +59,15 @@ CAPABILITIES(/obj/dq_decl_reference_rejected)
 /obj/dq_decl_parameter_setup
 	var/payload
 	var/list/trace
+	var/datum/unit_test/dq_decl_parameter_setup/recorder
 	var/parent_ready = FALSE
 	var/refuse_creation = FALSE
 	var/fail_setup = FALSE
 CAPABILITIES(/obj/dq_decl_parameter_setup)
 	param(nameof(payload), pos = 1, keep = FALSE)
 	param(nameof(trace), pos = 2)
+	param(nameof(recorder), pos = 3, keep = FALSE)
+	ref_one(nameof(recorder), /datum/unit_test/dq_decl_parameter_setup)
 	keeps_if(PROC_REF(creation_allowed))
 	setup(PROC_REF(complete_constructor), with_params = TRUE)
 	setup(PROC_REF(ordinary_setup))
@@ -74,43 +77,51 @@ CAPABILITIES(/obj/dq_decl_parameter_setup)
 /obj/dq_decl_parameter_setup/proc/creation_allowed()
 	return !refuse_creation
 /obj/dq_decl_parameter_setup/proc/complete_constructor()
-	trace["holder"] = src
-	trace += "constructor:[payload]:[parent_ready]"
+	recorder?.capture_holder(src)
+	add_trace("constructor:[payload]:[parent_ready]")
 	if(fail_setup)
 		CRASH("expected constructor-completion fixture fault")
 /obj/dq_decl_parameter_setup/proc/ordinary_setup()
-	trace += "ordinary:[isnull(payload)]"
+	add_trace("ordinary:[isnull(payload)]")
 /obj/dq_decl_parameter_setup/rejected
 	refuse_creation = TRUE
 /obj/dq_decl_parameter_setup/fault
 	fail_setup = TRUE
 
 /datum/unit_test/dq_decl_parameter_setup
+	var/obj/dq_decl_parameter_setup/captured_holder
+CAPABILITIES(/datum/unit_test/dq_decl_parameter_setup)
+	ref_one(nameof(captured_holder), /obj/dq_decl_parameter_setup)
+/datum/unit_test/dq_decl_parameter_setup/proc/capture_holder(obj/dq_decl_parameter_setup/H)
+	rel_set(src, nameof(captured_holder), H)
+
 /datum/unit_test/dq_decl_parameter_setup/Run()
 	var/list/trace = list()
-	var/obj/dq_decl_parameter_setup/H = allocate(/obj/dq_decl_parameter_setup, test_floor(), 17, trace)
-	TEST_ASSERT_EQUAL(trace[2], "constructor:17:1", "completion sees the transient input and the fully returned parent chain")
-	TEST_ASSERT_EQUAL(trace[3], "ordinary:1", "ordinary setup still runs after the transient input is dropped")
-	TEST_ASSERT_EQUAL(trace.len, 3, "each declared phase runs exactly once")
+	var/obj/dq_decl_parameter_setup/H = allocate(/obj/dq_decl_parameter_setup, test_floor(), 17, trace, src)
+	TEST_ASSERT_EQUAL(H.trace[1], "constructor:17:1", "completion sees the transient input and the fully returned parent chain")
+	TEST_ASSERT_EQUAL(H.trace[2], "ordinary:1", "ordinary setup still runs after the transient input is dropped")
+	TEST_ASSERT_EQUAL(H.trace.len, 2, "each declared phase runs exactly once")
 	TEST_ASSERT_NULL(H.payload, "constructor-only input is not retained")
 	TEST_ASSERT(!(H in setup_pending), "completed setup leaves no pending holder")
 	TEST_ASSERT(!(H in param_drop_pending), "completed params leave no pending holder")
+	rel_clear(src, nameof(captured_holder))
 	var/list/rejected = list()
-	var/obj/dq_decl_parameter_setup/R = new /obj/dq_decl_parameter_setup/rejected(test_floor(), 23, rejected)
+	var/obj/dq_decl_parameter_setup/R = new /obj/dq_decl_parameter_setup/rejected(test_floor(), 23, rejected, src)
 	if(R)
 		own(R)
 	TEST_ASSERT(QDELETED(R), "keeps_if still rejects construction")
+	TEST_ASSERT_NULL(captured_holder, "rejected construction never enters completion setup")
 	TEST_ASSERT(!rejected.len, "rejected construction runs neither setup phase")
 	var/list/faulted = list()
 	var/caught = FALSE
 	try
-		new /obj/dq_decl_parameter_setup/fault(test_floor(), 31, faulted)
+		new /obj/dq_decl_parameter_setup/fault(test_floor(), 31, faulted, src)
 	catch(var/exception/e)
 		caught = TRUE
-	var/obj/dq_decl_parameter_setup/F = faulted["holder"]
+	var/obj/dq_decl_parameter_setup/F = captured_holder
 	if(F)
 		own(F)
 	TEST_ASSERT(caught && F, "the real completion fault reaches its caller")
 	TEST_ASSERT_NULL(F.payload, "a failed completion still releases transient inputs")
 	TEST_ASSERT(!(F in setup_pending) && !(F in param_drop_pending), "a failed completion removes both pending indexes")
-	TEST_ASSERT_EQUAL(faulted.len, 2, "ordinary setup cannot run after failed completion")
+	TEST_ASSERT_EQUAL(F.trace.len, 1, "ordinary setup cannot run after failed completion")

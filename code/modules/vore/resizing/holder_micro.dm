@@ -87,14 +87,14 @@ CAPABILITIES(/obj/item/holder/micro)
 /obj/item/holder/micro/proc/configure_micro_sheets()
 	var/mob/living/carbon/human/H = held_mob
 	if(istype(H) && H.species.is_micro_carry(H))
-		item_icons = list(
+		set_item_icons(list(
 					slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
 					slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
 					slot_back_str = 'icons/mob/toy_worn.dmi',
-					slot_head_str = 'icons/mob/toy_worn.dmi')
+					slot_head_str = 'icons/mob/toy_worn.dmi'))
 
 		// Leaving the following two set makes the sprite not visible
-		icon_override = null
+		set_icon_override(null)
 		set_icon_state("teshariplushie_white")
 		set_item_state("teshariplushie_white")
 		set_sprite_sheets(null)
