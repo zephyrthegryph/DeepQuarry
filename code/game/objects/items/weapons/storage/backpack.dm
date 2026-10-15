@@ -732,8 +732,9 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag_common)
 	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(taur_fit)), mode = ACCEPTANCE_APPEND)
 
 
-/obj/item/storage/backpack/saddlebag_common/proc/apply_equipped_taur(datum/notice/item_equipped/A)
-	var/mob/living/carbon/human/H = A.equipper
+/obj/item/storage/backpack/saddlebag_common/proc/apply_equipped_taur(datum/act/notice/A)
+	var/datum/notice/item_equipped/event = A
+	var/mob/living/carbon/human/H = event.equipper
 	var/datum/sprite_accessory/tail/taur/TT = istype(H) ? H.tail_style : null
 	if(istype(TT))
 		set_item_state("[icon_base]_[TT.icon_sprite_tag]")
