@@ -46,3 +46,5 @@ Read-only checks: git diff --check passes. No builds/tests/gen/manifest/baseline
 
 
 Source audit repair (2026-10-15): the newly added setup declarations referenced inherited procs with PROC_REF, which checks a current-type proc path. Changed only these new hook references to TYPE_PROC_REF at the actual defining ancestor: `/obj/structure/fans` → `/atom/movable::update_nearby_tiles`. Hook names and dynamic dispatch remain unchanged; no wrappers, declarations, setters or behavior changed. No generation, analyzer, compile or test was run for this source-only repair. Verification remains with the A coordinator.
+
+First runtime gate:53 passed; mapped_supplies constructor assertions passed but a latent stocked steel sheet materialized when the fridge was deleted, beyond the original collapsed item's fixture ownership. The fixture now retrieves and owns the real product, asserting steel type, amount and an emptied record. Production remains unchanged. Other scoped leaves and look passed; failure-only lane-ready pending.

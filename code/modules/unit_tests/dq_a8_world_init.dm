@@ -78,3 +78,9 @@
 	TEST_ASSERT_NOTNULL(R, "The real survival-pod constructor stocks the item already on its tile")
 	TEST_ASSERT_EQUAL(R.get_amount(), 1, "The mapped supply is stocked exactly once")
 	TEST_ASSERT(I.loc != T, "Stocking removes the actual supply from its map tile")
+	// Latent stock materializes on removal; own the real product rather than leaking a teardown spill.
+	var/obj/item/stack/material/steel/returned = R.get_product(T)
+	own(returned)
+	TEST_ASSERT(istype(returned), "The stocked supply materializes as real steel")
+	TEST_ASSERT_EQUAL(returned.get_amount(), 1, "Retrieval preserves the stocked sheet count")
+	TEST_ASSERT_EQUAL(R.get_amount(), 0, "Retrieval empties the fixture stock before teardown")
