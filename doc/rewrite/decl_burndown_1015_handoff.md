@@ -100,3 +100,7 @@ withdrawn, not papered over; the rejection fixture now uses a genuine FALSE-retu
 callback. Other AI and stale-density failures are under separate baseline investigation.
 Look-pin differences must be reconsidered after those reversals, not blessed blindly.
 The final baseline update, failure-only repair, stamp and push remain pending root.
+
+### Look-fixture explosion cleanup
+
+The first combined run reported two explosion particles during `dx_menu_order`, which runs after the look sweep. Look captures delete real mated telecubes; their ending hook submits blast work at the independent mate’s turf, beyond an immediate floor sweep. All manual look-capture/probe/drain deletions now use one test-only disposal helper that moves only the actual telecube pair to nullspace after observation and before real deletion. It neither clears queues nor changes production behavior. `dq_look_telecube_cleanup` asserts real reciprocal pairing on the floor, unchanged capture rows, actual unlinking, the independent mate’s survival, and unchanged pending/submission counts. This repair has not yet been executed; root owns verification.
