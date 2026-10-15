@@ -310,6 +310,26 @@
 			own_constructed_contents(holder)
 			actual[path] = list()
 		var/list/rows = actual[path]
+		// Validate the actual old table directly: its normal cached consumer
+		// logs a runtime on a malformed declaration before it can return a reason.
+		var/list/spec = holder.constraint_spec(channel)
+		if(length(spec))
+			var/datum/predicate/compiled = allocate(/datum/predicate)
+			compiled.name = "[path] [channel]"
+			compiled.spec = spec
+			compiled.test_only = TRUE
+			var/valid = compiled.compile()
+			if(path == /obj/item/gripper/syndicate && channel == CONSTRAINT_HOLD)
+				TEST_ASSERT(!valid, "Actual old syndicate union contains a middle empty argument")
+				TEST_ASSERT_EQUAL(length(compiled.errors), 2, "Only the known type-list and resulting empty-ALL errors occur")
+				TEST_ASSERT_EQUAL(compiled.errors[1], "predicate [path] [channel]: REQ_TYPE lists , which is not a type", "Exact real malformed-type error")
+				TEST_ASSERT_EQUAL(compiled.errors[2], "predicate [path] [channel]: has an empty ALL", "Exact resulting old group error")
+				rows += "[channel] declaration ERROR: [jointext(compiled.errors, "; ")]"
+				queries++
+				qdel(compiled)
+				continue
+			TEST_ASSERT(valid, "[path] [channel] compiles: [jointext(compiled.errors || list(), "; ")]")
+			qdel(compiled)
 		if(channel == CONSTRAINT_FIT || channel == CONSTRAINT_EQUIP)
 			var/reason = dq_constraint_refusal(holder, channel, holder, wearer)
 			rows += "[channel] wearer=Human: [isnull(reason) ? "ALLOW" : reason]"
