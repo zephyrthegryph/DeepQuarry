@@ -623,4 +623,4 @@ MATERIAL_MIX(/obj/item/ammo_casing/a12g/silver, list(DEFAULT_WALL_MATERIAL = 360
 	icon_state = "bullet_alt"
 
 CAPABILITIES(/obj/item/ammo_casing/a145/spent)
-	setup(PROC_REF(expend))
+	setup(TYPE_PROC_REF(/obj/item/ammo_casing, expend))
