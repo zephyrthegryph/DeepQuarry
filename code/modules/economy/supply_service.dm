@@ -376,6 +376,7 @@ CAPABILITIES(/datum/system/supply)
 	if(!(policy in list(ALLOCATION_POLICY_EQUAL, ALLOCATION_POLICY_STAFFING, ALLOCATION_POLICY_PAYROLL)))
 		return FALSE
 	allocation_policy = policy
+	tracked_changed(src, nameof(allocation_policy))
 	if(clear_overrides)
 		for(var/department in GLOB.department_accounts)
 			var/datum/money_account/budget = GLOB.department_accounts[department]

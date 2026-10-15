@@ -75,7 +75,7 @@
 // writes ai_holder fields can be ported with one find-and-replace.
 // ---------------------------------------------------------------------------
 
-/datum/ai_brain/proc/set_hostile(value)
+/datum/ai_brain/proc/set_attack_on_sight(value)
 	if(istype(holder, /mob/living/simple_mob))
 		var/mob/living/simple_mob/SM = holder
 		SM.ai_attack_on_sight = value ? TRUE : FALSE
@@ -127,7 +127,7 @@
 // the modern API (`primary_threat`, `personal[]`, etc).
 /datum/ai_brain
 	/// Writes propagate to /mob/living/simple_mob.ai_attack_on_sight; reads
-	/// return that flag directly via vv_edit_var + set_hostile/get_hostile.
+	/// return that flag directly via vv_edit_var + set_attack_on_sight/get_hostile.
 	var/hostile = TRUE
 	/// Adds /datum/ai_behavior/maul_unconscious to effective behaviors when TRUE.
 	var/mauling = TRUE
@@ -165,7 +165,7 @@
 	. = ..()
 	switch(var_name)
 		if("hostile")
-			set_hostile(var_value)
+			set_attack_on_sight(var_value)
 		if("returns_home", "mauling")
 			invalidate_selection()
 

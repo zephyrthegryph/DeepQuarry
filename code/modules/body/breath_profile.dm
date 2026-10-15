@@ -65,6 +65,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/breath_profile)
 	if(does_not_breathe == value)
 		return
 	does_not_breathe = value
+	tracked_changed(src, nameof(does_not_breathe))
 	body?.invalidate(BODY_DIRTY_PHYSIOLOGY)
 
 // --- Shared breath chemistry (lungs and skin) ---------------------------------------------

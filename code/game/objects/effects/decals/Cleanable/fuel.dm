@@ -12,7 +12,6 @@
 CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 	param(nameof(amount), pos = 1, overrides = TRUE)
 	param(nameof(quiet_spill), pos = 2)
-	after_init(0, then(PROC_REF(settle)))
 
 /// A spill that tells no admins (its constructor param).
 /obj/effect/decal/cleanable/liquid_fuel/var/quiet_spill = TRUE
@@ -25,16 +24,18 @@ CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 		message_admins("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z]) (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z])")
 
-	return ..()
-
-/// Spilled fuel is absorbed by any other liquid fuel in the tile; alone, it spreads.
-/obj/effect/decal/cleanable/liquid_fuel/proc/settle(datum/act/A)
+	var/has_spread = 0
+	//Be absorbed by any other liquid fuel in the tile.
 	for(var/obj/effect/decal/cleanable/liquid_fuel/other in contents_of(loc))
 		if(other != src)
 			other.set_amount(other.amount + src.amount)
 			other.Spread()
-			return
-	Spread()
+			has_spread = 1
+			break
+
+	. = ..()
+	if(!has_spread)
+		Spread()
 
 /obj/effect/decal/cleanable/liquid_fuel/proc/Spread(exclude=list())
 	//Allows liquid fuels to sometimes flow into other tiles.

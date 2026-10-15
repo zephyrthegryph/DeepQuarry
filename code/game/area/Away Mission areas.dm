@@ -80,11 +80,11 @@
 		if("default")
 			return
 		if("hostile")
-			brain.set_hostile(TRUE)
+			brain.set_attack_on_sight(TRUE)
 		if("retaliate")
-			brain.set_hostile(FALSE)  // brain auto-retaliates on damage
+			brain.set_attack_on_sight(FALSE)  // brain auto-retaliates on damage
 		if("passive")
-			brain.set_hostile(FALSE)
+			brain.set_attack_on_sight(FALSE)
 /area/proc/spawn_flora_on_turf()
 	if(!length(valid_flora))
 		log_mapping("[src] does not have a set valid flora list!")

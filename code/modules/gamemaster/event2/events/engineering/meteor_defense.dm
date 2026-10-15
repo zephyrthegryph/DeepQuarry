@@ -38,6 +38,7 @@
 
 /datum/event2/event/meteor_defense/proc/set_meteor_types()
 	meteor_types = GLOB.meteors_threatening.Copy()
+	tracked_changed(src, nameof(meteor_types))
 
 /datum/event2/event/meteor_defense/set_up()
 	direction = pick(GLOB.cardinal) // GLOB.alldirs doesn't work with current meteor code unfortunately.

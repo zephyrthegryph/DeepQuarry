@@ -169,9 +169,11 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 	if(on == heating && (!on || !isnull(heat_body)))
 		return
 	heating = on
+	tracked_changed(src, nameof(heating))
 	if(on)
 		if(!create_heat_body(TRUE))
 			heating = FALSE
+			tracked_changed(src, nameof(heating))
 			return
 		vg_heat_body_keep(heat_body, TRUE)
 		vg_heat_body_power(heat_body, heating_power)

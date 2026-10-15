@@ -278,6 +278,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
  */
 /obj/machinery/newscaster/proc/set_temp(text = "", style = "info", update_now = FALSE)
 	temp = list(text = text, style = style)
+	tracked_changed(src, nameof(temp))
 	if(update_now)
 		SStgui.update_uis(src)
 

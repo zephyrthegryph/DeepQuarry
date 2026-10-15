@@ -314,7 +314,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
 					var/datum/ai_brain/AI = ai_brain
 					AI.lose_target()  // sleep-style state — drop current target
 					if(prob(tame_chance))
-						AI.set_hostile(FALSE)
+						AI.set_attack_on_sight(FALSE)
 						rel_set(src, nameof(friend), M)
 						AI.set_follow(friend)
 						if(tamed != 1)

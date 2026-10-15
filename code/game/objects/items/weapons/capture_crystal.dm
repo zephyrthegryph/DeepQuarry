@@ -83,7 +83,7 @@ CAPABILITIES(/obj/item/capture_crystal)
 	else if(isanimal(bound_mob) && !bound_mob.client)
 		if(bound_mob.ai_brain)
 			var/datum/ai_brain/AI = bound_mob.ai_brain
-			AI.set_hostile(!AI.get_hostile())
+			AI.set_attack_on_sight(!AI.get_hostile())
 			to_chat(M, span_notice("\The [bound_mob] is now [AI.get_hostile() ? "hostile" : "passive"]."))
 			log_admin("[key_name_admin(M)] set [bound_mob] to [AI.get_hostile()].")
 	else if(bound_mob.client)

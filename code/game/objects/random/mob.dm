@@ -60,7 +60,7 @@ CAPABILITIES(/obj/random/mob)
 		AI.wander = MAP_VAR(P, varedits, mob_wander)
 		AI.max_home_distance = MAP_VAR(P, varedits, mob_wander_distance)
 		if(MAP_VAR(P, varedits, overwrite_hostility))
-			AI.set_hostile(MAP_VAR(P, varedits, mob_hostile))
+			AI.set_attack_on_sight(MAP_VAR(P, varedits, mob_hostile))
 		AI.go_wake() //Now you can kill eachother if your faction didn't override.
 	if(ispath(path, /obj/random/mob/multiple))
 		return

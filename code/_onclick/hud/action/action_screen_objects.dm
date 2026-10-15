@@ -375,6 +375,7 @@ CAPABILITIES(/atom/movable/screen/button_palette)
 		return
 
 	expanded = new_expanded
+	tracked_changed(src, nameof(expanded))
 	our_group.refresh_actions()
 	update_name()
 

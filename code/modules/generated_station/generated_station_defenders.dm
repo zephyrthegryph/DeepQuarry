@@ -151,7 +151,7 @@ CAPABILITIES(/datum/generated_station_defense_runtime)
 	suppress_sensor_events = FALSE
 	defender.faction = GENERATED_STATION_DEFENDER_FACTION
 	defender.ai_attack_on_sight = FALSE
-	defender.ai_brain?.set_hostile(FALSE)
+	defender.ai_brain?.set_attack_on_sight(FALSE)
 	defender.ai_brain?.go_sleep()
 	var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
 	rel_add(src, nameof(agents), agent)

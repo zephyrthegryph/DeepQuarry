@@ -166,6 +166,7 @@ MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
 		var/value = matters[key]
 		tempcost += value * production_modifier
 	production_cost = tempcost
+	tracked_changed(src, nameof(production_cost))
 
 // Scans a magazine or ammo casing and tells the smart mag to start making those, if it can
 /obj/item/ammo_magazine/smart/proc/scan_ammo(atom/target, mob/user)

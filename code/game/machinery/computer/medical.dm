@@ -612,6 +612,7 @@ MSG_DEF_SELF(records/not_authenticated, "You must log in first.")
  */
 /obj/machinery/computer/med_data/proc/set_temp(text = "", style = "info", update_now = FALSE)
 	temp = list(text = text, style = style)
+	tracked_changed(src, nameof(temp))
 	if(update_now)
 		SStgui.update_uis(src)
 

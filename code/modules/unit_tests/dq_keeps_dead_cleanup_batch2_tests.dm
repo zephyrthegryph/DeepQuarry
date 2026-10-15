@@ -55,7 +55,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/organ/internal/heart/machine/anomalock/heart = allocate(/obj/item/organ/internal/heart/machine/anomalock, T)
-	heart.lightning_overlay = mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning")
+	heart.set_lightning_overlay(mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning"))
 	after(heart, 1 SECONDS, TYPE_PROC_REF(/obj/item/organ/internal/heart/machine/anomalock, clear_lightning_overlay), key = "lightning_timer", with = list(H), keeps_dead = TRUE)
 	qdel(H)
 	scheduler_advance(2)

@@ -74,6 +74,7 @@ SETTER(/atom, rad_insulation)
 	if(rad_insulation == new_insulation)
 		return
 	rad_insulation = new_insulation
+	tracked_changed(src, nameof(rad_insulation))
 	RAD_SHIELDING_CHANGED(isturf(src) ? src : loc)
 
 /// Radiation transmission of `material_id` (a MAT_* name) at `thickness_mm`,

@@ -146,7 +146,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 
 	if(src.host && !src.stat && !src.host.stat)
 		if(src.ai_brain)
-			src.ai_brain.set_hostile(FALSE)
+			src.ai_brain.set_attack_on_sight(FALSE)
 			src.ai_brain.lose_target()
 		src.alpha = 5
 		if(src.host.reagents.has_reagent(REAGENT_ID_CORDRADAXON) && !src.docile)	// Overwhelms the leech with food.
@@ -298,7 +298,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 		rel_set(src, nameof(host), M)
 		src.forceMove(M)
 		if(ai_brain)
-			ai_brain.set_hostile(FALSE)
+			ai_brain.set_attack_on_sight(FALSE)
 			ai_brain.lose_target()
 
 		if(ishuman(M))

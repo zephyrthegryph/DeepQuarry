@@ -163,6 +163,7 @@ CAPABILITIES(/datum/tgui_input_text)
 		if(max_length && max_length <= MAX_NAME_LEN)
 			converted_entry = strip_name_tokens(converted_entry)
 		src.entry = trim(converted_entry, PREVENT_CHARACTER_TRIM_LOSS(max_length))
+		tracked_changed(src, nameof(entry))
 
 /// A shared (registered) definition/flyweight: never cleared.
 /datum/tgui_input_text/proc/state() as /datum/tgui_state

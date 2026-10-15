@@ -195,6 +195,7 @@
 	if(body_effect_factors && (path in body_effect_factors) && body_effect_factors[path] == new_factors)
 		return
 	LAZYSET(body_effect_factors, path, new_factors)
+	tracked_changed(src, nameof(body_effect_factors))
 	invalidate_factors()
 
 /// Goes back to the definition's `factors` for `path`.

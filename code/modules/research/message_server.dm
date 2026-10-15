@@ -233,6 +233,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 /datum/feedback_variable/proc/set_details(text)
 	if(istext(text))
 		details = text
+		tracked_changed(src, nameof(details))
 
 /datum/feedback_variable/proc/add_details(text)
 	if(istext(text))
