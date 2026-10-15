@@ -78,7 +78,7 @@
 	var/mob/living/carbon/human/ambient = allocate(/mob/living/carbon/human, test_floor())
 	var/obj/item/gun/dq_d6_firemode_probe/G = allocate(/obj/item/gun/dq_d6_firemode_probe, test_floor())
 	var/atom/movable/screen/ammo/S = allocate(/atom/movable/screen/ammo)
-	S.our_gun = G
+	rel_set(S, nameof(S.our_gun), G)
 	TEST_ASSERT(actor.checkClickCooldown(), "The actual actor is ready for the HUD click")
 	with_actor(ambient, GLOBAL_PROC, GLOBAL_PROC_REF(input_dispatch), S, actor, INPUT_CLICK_ON)
 	TEST_ASSERT_EQUAL(G.firemode_actor_id, REF(actor), "The actual ammo HUD forwards its explicit click actor to the gun")
