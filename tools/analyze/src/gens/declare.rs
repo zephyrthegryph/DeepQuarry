@@ -550,7 +550,9 @@ fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
                     let named = |name: &str| args.iter().filter_map(|x| split_opt(x)).find(|(k, _)| k == name).map(|(_, v)| v);
                     let by = named("target_key").or_else(|| named("by"));
                     if let (Some(ty), Some(by)) = (ty, by) {
-                        let var = by.trim().strip_prefix("nameof(").and_then(|s| s.strip_suffix(')')).unwrap_or(by.trim()).trim().to_string();
+                        let var = by.trim().strip_prefix("nameof(").and_then(|s| s.strip_suffix(')')).unwrap_or(by.trim()).trim();
+                        // nameof(/type::var): the target's var, when the holder type has none of that name.
+                        let var = var.rsplit("::").next().unwrap_or(var).to_string();
                         rows.borrow_mut().insert(ty.trim().to_string(), (var, test_only));
                     }
                     String::new()

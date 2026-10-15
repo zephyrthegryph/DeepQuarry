@@ -541,7 +541,6 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes)
 			set_icon_state("[initial(icon_state)]")
 			unbuttoned = FALSE
 			to_chat(user, "You button up the coat.")
-	changed(src)
 
 /obj/item/clothing/head/fluff/pink_tiara
 	name = "pink tourmaline tiara"
@@ -740,8 +739,8 @@ CAPABILITIES(/obj/item/cane/fluff)
 	desc = "A custom-made set of saddlebags, tailored to Chakat Tempest's exact dimensions, and taste in color! One one side, there's small print stitched in: ...to carry the weight of any responsibility, burden or task."
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_override = 'icons/vore/custom_items_vr.dmi'
-	item_state = "tempestsaddlebag"
-	icon_state = "tempestbag"
+	set_item_state("tempestsaddlebag")
+	set_icon_state("tempestbag")
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE //Since they play a macro character, no reason to put custom slowdown code on here.
 	slowdown = 0
 	taurtype = /datum/sprite_accessory/tail/taur/feline/tempest
@@ -763,20 +762,14 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
 /obj/item/storage/backpack/saddlebag/tempest/ui_action_click(mob/user, actiontype)
 	set_ambulance(!ambulance)
 	if(ambulance)
-		item_state = "tempestsaddlebag-amb"
-		icon_state = "tempestbag-amb"
-		if (ismob(loc))
-			var/mob/M = loc
-			changed(src)
+		set_item_state("tempestsaddlebag-amb")
+		set_icon_state("tempestbag-amb")
 		ambulance_state = FALSE
 		set_glow(src, GLOW(2, 1, "#FF0000"))
 		soundloop.start()
 	else
-		item_state = "tempestsaddlebag"
-		icon_state = "tempestbag"
-		if (ismob(loc))
-			var/mob/M = loc
-			changed(src)
+		set_item_state("tempestsaddlebag")
+		set_icon_state("tempestbag")
 		set_glow(src, GLOW(0, null, null))
 		soundloop.stop()
 
@@ -786,9 +779,6 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
 		var/newlight = "#FF0000"
 		if(ambulance_state)
 			newlight = "#0000FF"
-		if (ismob(loc))
-			var/mob/M = loc
-			changed(src)
 		set_glow(src, GLOW(2, 1, newlight))
 		EXPIRY_STAMP(src, ambulance_last_switch, CLOCK_WORLD)
 */ //ChompREMOVE End
@@ -1136,9 +1126,6 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 	else
 		activate(user)
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		changed(src)
 
 	add_fingerprint(user)
 	return

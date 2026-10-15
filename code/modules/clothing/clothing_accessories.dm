@@ -108,7 +108,6 @@
 	A.on_attached(src, user)
 	grant(src, granted_verb(/obj/item/clothing/proc/removetie_verb), src)
 	update_accessory_slowdown()
-	update_clothing_icon()
 	worn_protection_changed()
 
 /obj/item/clothing/proc/remove_accessory(mob/user, obj/item/clothing/accessory/A)
@@ -118,7 +117,6 @@
 	A.on_removed(user)
 	own_take_member(src, nameof(accessories), A)
 	update_accessory_slowdown()
-	update_clothing_icon()
 	worn_protection_changed()
 
 /obj/item/clothing/proc/update_accessory_slowdown()

@@ -289,6 +289,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 //
 
 CAPABILITIES(/obj/structure/cable)
+	links(/obj/structure/cable::material_overlay, /datum/material_power_overlay::cables, b_many = TRUE)
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
@@ -964,12 +965,6 @@ CAPABILITIES(/obj/item/stack/cable_coil/alien)
 #undef MAXCOIL
 
 /// A cable is a member of its material overlay's cables (two-sided); deleting it leaves the list.
-/obj/structure/cable/relations()
-	. = ..()
-	. += rel_one(nameof(material_overlay), back = nameof(/datum/material_power_overlay::cables))
-/datum/material_power_overlay/relations()
-	. = ..()
-	. += rel_many(nameof(cables), back = nameof(/obj/structure/cable::material_overlay))
 
 /// The breaker box this cable belongs to: a relation view, null once that box is deleted.
 /obj/structure/cable/proc/breaker_box() as /obj/machinery/power/breakerbox

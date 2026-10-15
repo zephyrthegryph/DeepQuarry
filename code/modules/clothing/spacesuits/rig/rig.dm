@@ -311,7 +311,6 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		piece.set_icon_state("[suit_state]")
 		if(airtight)
 			update_airtight(piece, 0) // Unseal
-	refresh_worn_pieces()
 
 /obj/item/rig/proc/cut_suit()
 	set_offline(2)
@@ -320,7 +319,6 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	toggle_piece("gauntlets", loc, ONLY_RETRACT, TRUE)
 	toggle_piece("boots", loc, ONLY_RETRACT, TRUE)
 	toggle_piece("chest", loc, ONLY_RETRACT, TRUE)
-	refresh_worn_pieces()
 
 /// Seals or unseals the suit: a sequence of timed actions (the overall check, then one per
 /// piece), each continuing in seal_piece() and ending in seal_finish().
@@ -465,16 +463,12 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	switch(msg_type)
 		if("boots")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "seal around your feet" : "relax their grip on your legs"]."))
-			changed(src)
 		if("gloves")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "tighten around your fingers and wrists" : "become loose around your fingers"]."))
-			changed(src)
 		if("chest")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "cinches tight again your chest" : "releases your chest"]."))
-			changed(src)
 		if("helmet")
 			to_chat(M, span_notice("\The [piece] hisses [!seal_target ? "closed" : "open"]."))
-			changed(src)
 			if(helmet?.light_system == STATIC_LIGHT)
 				helmet.update_light(wearer())
 
@@ -504,7 +498,6 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		set_canremove(!seal_target)
 		if(airtight)
 			update_component_sealed()
-		refresh_worn_pieces()
 		return 0
 
 	// Success!
@@ -526,7 +519,6 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 			module.deactivate()
 	if(airtight)
 		update_component_sealed()
-	refresh_worn_pieces()
 
 /obj/item/rig/proc/update_component_sealed()
 	for(var/obj/item/piece in list(helmet,boots,gloves,chest))
@@ -675,14 +667,6 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		return 0
 	return cell.give(joules * CELLRATE) / CELLRATE
 
-/// The wearer redraws every slot a piece of the suit sits in: the sealed or retracted state of a piece is its own icon_state, which the
-/// pieces get from the rig directly, so the slots that wear them are redrawn after the rig changed them.
-/obj/item/rig/proc/refresh_worn_pieces()
-	var/mob/living/carbon/human/H = wearer()
-	if(!H)
-		return
-	changed(src)
-
 /obj/item/rig/proc/check_suit_access(mob/living/carbon/human/user, do_message = TRUE)
 
 	if(!security_check_enabled)
@@ -748,7 +732,6 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		act_message(M, src, MSG_SELF(span_boldnotice("You struggle into %T%.")), MSG_OTHERS(span_boldnotice("%U% struggles into %T%.")))
 		rel_set(src, nameof(wearer), M)
 		rel_set(wearer(), nameof(/mob/living/carbon/human::wearing_rig), src)
-		refresh_worn_pieces()
 
 /obj/item/rig/proc/toggle_piece(piece, mob/living/carbon/human/H, deploy_mode, forced = FALSE)
 

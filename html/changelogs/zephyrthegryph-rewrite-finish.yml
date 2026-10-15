@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Hand changed() marks, update_clothing_icon(), relations() table procs and the task engine are gone; devouring prey waits as an op"
+  - bugfix: "Worn items now redraw their wearer when their state changes; the cloning console no longer logs a runtime when no scanner is near"

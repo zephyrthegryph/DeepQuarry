@@ -1,4 +1,4 @@
-// Busy work: the replacement of task_hold_busy() / task_release_busy() / task_busy() for a thing that is occupied for a while and is not an op's actor
+// Busy work: a thing that is occupied for a while and is not an op's actor
 // (a slot machine spinning, a cataloguer flashing, a bot at its job, a brain holding its next decision). Being busy is a timed hold of STAT_BUSY_WORK by
 // SRC_BUSY_WORK; the end of the work (the hold running out, or release_busy()) calls the optional `on_end` proc of the holder once.
 //

@@ -973,7 +973,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if (!(status & ORGAN_DEAD))
 			set_status(status | ORGAN_DEAD)
 			to_chat(owner, span_notice("You can't feel your [name] anymore..."))
-			changed(src)
 			for (var/obj/item/organ/external/child in children)
 				child.germ_level += 110 //Burst of infection from a parent organ becoming necrotic
 
@@ -1499,7 +1498,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 		// droplimb() keeps using this limb after removed() returns; delete it once that unwinds.
 		expire(0.1 SECONDS)
 
-	changed(src)
 	return TRUE
 
 /// Drops what `victim` wears on this limb, which is about to be severed.

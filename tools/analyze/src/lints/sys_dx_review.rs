@@ -100,13 +100,13 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
         let owner = ctx.as_ref().map(|c| c.type_path.clone()).or_else(|| block_type.clone());
 
         // nameof(/type::var) of a type unrelated to the holder: an accessor on src, or an entry of the type's own block (a relation's
-        // other end, back = ..., names the other type's var and is fine)
+        // other end, back = ..., names the other type's var and is fine; so does target_key =, the id var of the keyed targets)
         if let Some(owner) = owner {
             if code.contains("nameof(/") {
                 let found = if ctx.is_some() {
                     pat!(r"\w+\(\s*src\s*,\s*nameof\((/[\w/]+)::\w+\)").captures_iter(code)
                 } else {
-                    pat!(r"(?<!back = )nameof\((/[\w/]+)::\w+\)").captures_iter(code)
+                    pat!(r"(?<!back = )(?<!target_key = )nameof\((/[\w/]+)::\w+\)").captures_iter(code)
                 };
                 for c in found {
                     let named = c.s(1);

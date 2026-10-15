@@ -10,9 +10,9 @@
 //	/obj/machinery/sleeper/ownership()
 //		. = ..()
 //		. += owns(nameof(beaker), policy = OWN_SPILL)
-//	/obj/machinery/sleeper/relations()
-//		. = ..()
-//		. += rel_one(nameof(console), back = nameof(/obj/machinery/sleep_console::sleeper))
+//
+//	CAPABILITIES(/obj/machinery/sleeper)
+//		links(/obj/machinery/sleeper::console, /obj/machinery/sleep_console::sleeper)
 //
 // Bodies are pure: no instance reads. Var names are always nameof(): nameof(var) for the type's own
 // var, nameof(/type::var) for a partner's, so the compiler checks every name.

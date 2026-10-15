@@ -20,12 +20,10 @@
 	var/healthAlarm = 50
 	var/spo2 = 1 //SpO2 beeping toggle
 
-/obj/machinery/computer/operating/relations()
-	. = ..()
-	. += rel_one(nameof(table), back = nameof(/obj/machinery/optable::computer))
 
 
 CAPABILITIES(/obj/machinery/computer/operating)
+	links(/obj/machinery/computer/operating::table, /obj/machinery/optable::computer)
 	finds(nameof(table), /obj/machinery/optable) // the paired rel_one writes the table's computer
 	started_work(step = PROC_REF(work_step))
 	interface("OperatingComputer", title = "Patient Monitor")

@@ -20,6 +20,8 @@
 	var/containment_policy_disabled = FALSE
 	/// Cache of the last applied appearance and derived verb decisions.
 	var/look_key
+	/// How many looks show this atom worn or held (look.watch_worn()): while any does, every write of it is read (rx_readers()).
+	var/worn_watched = 0
 	/// The dir last published to a drawn mover's look (Moved() compares it, because Move() turns a mover natively).
 	var/look_seen_dir
 	var/list/look_overlays
@@ -47,8 +49,6 @@
 	var/list/cross_pending
 	/// after(key = ...): key -> list(timer id, token, clock) of the pending keyed timer.
 	var/list/timer_ids
-	/// Tasks (code/engine/kernel/tasks.dm) that name this datum as actor, target, busy worker or state: its deletion ends them.
-	var/list/tasks_on
 	/// on_change(at_most =): reaction sig -> when it was last delivered (the scheduler's clock).
 	var/list/at_most_last
 	/// on_change(at_most =): reaction sig -> the keys held until its window ends.
@@ -71,7 +71,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 
 // ---------------------------------------------------------------- READERS
 
-/// TRUE when a static reaction of E's type, a generated / derived() read, or a dynamic observer reads `key`.
+/// TRUE when a static reaction of E's type, a generated / derived() read, a dynamic observer or a draw that shows E worn or held reads `key`.
 /proc/rx_readers(datum/E, key)
 	var/datum/rx_table/T = GLOB.rx_tables?[E.type]
 	if(isnull(T))
@@ -80,6 +80,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		return TRUE
 	if(E.rx?.observed?[key])
 		return TRUE
+	if(E.rx?.worn_watched)
+		return TRUE // a human's draw shows E worn or held (look.watch_worn()): it composes whatever E shows, so every write of E reaches it
 	if(lifeform_watch_keys?[key] && lifeform_watching(E, key))
 		return TRUE // a lifecycle form follows the var: a registry key, a radio frequency, a derives() input (code/engine/lifeforms/forms.dm)
 	return hooks_watching(E, key) // an on_change() hook of the engine (code/engine/actions/change.dm)
@@ -372,8 +374,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	var/datum/rx_state/S = D.rx
 	if(!S)
 		return
-	for(var/datum/task/T as anything in S.tasks_on?.Copy())
-		T.datum_gone(D)
+	if(S.look_key && isatom(D))
+		look_worn_release(D) // a look that dies shows nothing worn or held any more
 	if(S.every_hop_on)
 		every_hop_forget(D)
 	for(var/datum/rx_listener/L as anything in S.listeners?.Copy())
