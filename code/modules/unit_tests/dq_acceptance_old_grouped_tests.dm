@@ -140,7 +140,7 @@
 	R.set_sprite_sheets(list(SPECIES_TESHARI = 'icons/inventory/eyes/mob_teshari.dmi'))
 	TEST_ASSERT_NULL(dq_constraint_refusal(R, CONSTRAINT_FIT, R, special), "Actual matching sprite allows unlisted special-shape fallback")
 
-// IGNORED mixed-phase runtime integration tests; no legacy REQ macros added.
+// Native instance-plan snapshots remain independent after the source changes.
 /datum/unit_test/dq_acceptance_mixed_snapshots/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
