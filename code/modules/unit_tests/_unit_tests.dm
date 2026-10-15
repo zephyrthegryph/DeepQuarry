@@ -1317,6 +1317,7 @@
 #include "gameplay\machines.dm"
 #include "dq_tanning_rack_wetness_tests.dm"
 #include "dq_decl_cleanup_tests.dm"
+#include "dq_pin_constructor_repairs.dm"
 #include "dq_decl_remaining_starts_tests.dm"
 #include "dq_decl_reference_starts_tests.dm"
 #include "dq_decl_archaeological_find_tests.dm"

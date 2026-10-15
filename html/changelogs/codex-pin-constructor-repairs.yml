@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Cloning consoles can initialize without a scanner, and internal storage safely rejects placement outside an item."
