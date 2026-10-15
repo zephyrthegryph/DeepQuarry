@@ -866,7 +866,7 @@ CAPABILITIES(/obj/machinery/smartfridge/survival_pod)
 	replace_with(src, buildstacktype, buildstackamount)
 
 CAPABILITIES(/obj/structure/fans)
-	setup(PROC_REF(update_nearby_tiles))
+	setup(TYPE_PROC_REF(/atom/movable, update_nearby_tiles))
 	op("disassemble", tool(TOOL_WRENCH), label("Disassemble"), begins(PROC_REF(disassemble_begins)), wait(4 SECONDS), then(PROC_REF(disassemble_done)))
 
 /obj/structure/fans/proc/disassemble_begins(datum/act/op/A)
