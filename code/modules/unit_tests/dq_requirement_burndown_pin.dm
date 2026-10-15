@@ -338,15 +338,19 @@
 CAPABILITIES(/obj/item/storage/wallet/dq_native_override_pin)
 	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(/obj/item/pen), because = "it doesn't take that"), req_acceptance_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS))
 
+// Give the actual size provider a distinct declared type baseline, independent
+// of whether a live field is part of this type's saved-state schema.
+/obj/item/pen/dq_larger_override_pin
+	w_class = ITEMSIZE_SMALL
+
 // Capture the existing dynamic holder override, including its current refusal text.
 /datum/unit_test/dq_requirement_burndown_pin/hold_override/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/obj/item/storage/wallet/dq_native_override_pin/holder = allocate(/obj/item/storage/wallet/dq_native_override_pin, null)
 	var/obj/item/pen/exact = allocate(/obj/item/pen, null)
-	var/obj/item/pen/oversize = allocate(/obj/item/pen, null)
+	var/obj/item/pen/dq_larger_override_pin/oversize = allocate(/obj/item/pen/dq_larger_override_pin, null)
 	var/obj/item/tool/wrench/wrong_type = allocate(/obj/item/tool/wrench, null)
 	exact.set_w_class(ITEMSIZE_TINY)
-	oversize.set_w_class(ITEMSIZE_SMALL)
 	wrong_type.set_w_class(ITEMSIZE_TINY)
 	TEST_ASSERT_EQUAL(dq_property(exact, PROP_SIZE_CLASS), ITEMSIZE_TINY, "Exact candidate has its actual tiny numeric property")
 	TEST_ASSERT_EQUAL(dq_property(oversize, PROP_SIZE_CLASS), ITEMSIZE_SMALL, "Above-boundary candidate has its actual larger numeric property")
