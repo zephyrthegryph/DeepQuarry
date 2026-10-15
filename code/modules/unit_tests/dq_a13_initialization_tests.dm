@@ -71,6 +71,10 @@
 /datum/unit_test/dq_a13_initialization/meteorite_rotation/Run()
 	scope_setup()
 	var/obj/structure/meteorite/M = allocate(/obj/structure/meteorite, test_floor())
+	var/list/rolled_contents = contents_of(M)
+	TEST_ASSERT(length(rolled_contents) > 0, "The real meteorite constructor generates its actual ore or artifact contents")
+	for(var/atom/movable/child in rolled_contents)
+		own(child)
 	TEST_ASSERT(isicon(M.icon), "The real meteorite realizes its rotated icon at construction")
 	TEST_ASSERT(M.icon != initial(M.icon), "The constructor does not leave the original unrotated resource")
 
