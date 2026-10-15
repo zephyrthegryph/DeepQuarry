@@ -96,8 +96,10 @@ CAPABILITIES(/datum/sun_holder)
 	var/turfs_providing_spreads
 	var/spreads
 
-/atom/movable/sun_visuals/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/atom/movable/sun_visuals)
+	setup(PROC_REF(prepare_sun_spreads))
+
+/atom/movable/sun_visuals/proc/prepare_sun_spreads()
 	LAZYINITLIST(spreads)
 	spreads["1"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTH, icon_state = "white_gradient")
 	spreads["2"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTH, icon_state = "white_gradient")
