@@ -17,9 +17,21 @@ Baseline counts and verification are pending. No new annotation or baseline rais
 Generation and the owned `decl` check pass (47 to 46 findings), but full ratchets
 reject the new `registry(..., when = is_latejoin_landmark)` predicate: its read of
 inherited `name` adds one `untracked_inputs/stat_input_untracked` site (86 to 87).
-The original imperative join was a boot-time snapshot; native conditional membership
-needs reactive publication of that name, or a declared boot-snapshot membership form.
-Neither can be introduced here without changing protected tracking declarations or
-adding debt. No read is hidden, no annotation or baseline is raised, and no compile
-or test world was run for this refreshed branch. D5 is blocked and is not stamped;
-the other scoped retained sites remain described above.
+
+This is an analyzer lifecycle-condition classification gap, not a missing runtime
+publisher or membership contract. The runtime already snapshots the `when` condition
+only in `registry_init()` (`code/engine/lifeforms/registry.dm:84–91`). Registry entries
+watch only their `key` variable (`code/engine/lifeforms/forms.dm:152–154`);
+`registry_rekey()` and `registry_moved()` do not reevaluate `when`. The name therefore
+needs no reactive publication for this existing init-only membership behavior.
+There is no separate boot-only flag in the registry signature.
+
+Moving the join into `setup()` is not a proven equivalent: setup runs after the
+complete Initialize chain, whereas the original landmark join ran before subtype
+post-parent initialization tails. Such a move could snapshot a different name or
+change when parent/subtype work observes membership. No workaround is applied:
+no read_once, helper rename, protected declaration edit, analyzer change, annotation
+or baseline raise. No compile or test world was run for this refreshed branch.
+D5 is clean but blocked and unstamped; the other retained sites remain described
+above. This documentation correction was source-only; verification ownership stays
+with the coordinator.
