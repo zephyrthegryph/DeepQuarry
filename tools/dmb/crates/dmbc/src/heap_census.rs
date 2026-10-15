@@ -977,7 +977,7 @@ pub fn emit_if_enabled(stage: &str, observe: impl FnOnce(&mut HeapCensus)) -> io
     };
     #[cfg(feature = "allocation-sites")]
     if let Some(sites) = std::env::var_os("DMB_ALLOC_SITES_PATH").filter(|path| !path.is_empty()) {
-        let text = format!("######## {stage}\n{}", dm_profile::allocation_sites::report(1500));
+        let text = format!("######## {stage}\n{}", dm_profile::allocation_sites::report(400));
         if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(sites) {
             let _ = file.write_all(text.as_bytes());
         }

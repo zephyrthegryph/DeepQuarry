@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The native DM compiler (tools/dmb) is now the default; DQ_COMPILER=dreammaker falls back, CI keeps DreamMaker as the cross-check"
+  - code_imp: "The native compiler daemon no longer drops its prepared sources under soft memory pressure, which cost every later edit 25-65 s"
+  - code_imp: "dmbc is restored from a shared content-addressed cache instead of being built in every worktree"
+  - bugfix: "Native compiler: an annotated verb argument with an in-list source that defaults to null now carries the null input bit like DreamMaker"

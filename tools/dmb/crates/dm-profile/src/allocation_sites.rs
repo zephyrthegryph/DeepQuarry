@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 
-const SAMPLE_BYTES: i64 = 256 * 1024;
+const SAMPLE_BYTES: i64 = 2 * 1024 * 1024;
 const FILTER_BITS: usize = 1 << 26;
 
 thread_local! {

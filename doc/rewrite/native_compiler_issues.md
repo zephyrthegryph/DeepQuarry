@@ -113,3 +113,74 @@ this branch. Items marked OPEN are not.
   (DreamMaker uses the project name, native keeps the template's).
 - **Item 8 cross-compiler staleness: fixed.** `build.sh dm` records the compiler that wrote the pair in `<project>.dmb.compiler`;
   the byond target only treats the pair as up to date when the stamp says byond.
+
+## Status 2026-10-15 (tools/native-default: native is the default)
+
+**Default.** `DQ_COMPILER` unset now means native (when a `dmbc` binary exists or cargo can build one, else DreamMaker). `dreammaker`
+(alias `byond`) is the fallback, `shadow` compares the two. `build.sh dm`, `dm-test`, `dq_focused_test.sh`, `dq_merge_gates.sh`,
+`dq_lane_ready.sh` and `dq_push_master.sh` all go through that selection, so they compile natively. CI's production compile check
+(`tools/ci/compile_and_run.sh`) and the benchmark workflow pin `DQ_COMPILER=dreammaker` as the cross-check. `DmbcTarget` now restores
+`dmbc`/`dmbd` from a shared content-addressed cache (`E:/dq-cache/dmbc`, `DQ_DMBC_CACHE`, `lib/dmbc_cache.ts`) keyed by the git ids of
+`tools/dmb`, so a fresh worktree copies the executables instead of running a 3-5 minute cargo build and keeping its own `target/`.
+
+**Equivalence against DreamMaker** (production dme, same source, `dmb-equiv --ignore-debug`, A = DreamMaker, B = native). Residual
+133,256 differences; 132,000 of them order-only and not semantic (proc table 70,694, type table 37,396, var-name strings 15,747, per
+the 2026-10-14 decision). The rest: bytecode 9,075, `<init>` sharing 99 + 79 + 70 (anonymous procedures), locals 86, map objects 6,
+verb order 3, argument flags 1. Triage:
+- **Fixed: `mob/T = null as mob in list` argument flags.** DreamMaker adds the `null` input bit (0x80) when an annotated formal with an
+  `in` source defaults to null (`/datum/game_mode/malfunction/verb/unlock_cyborg`: 0x81 against native 0x1). Native now matches
+  (`procedure_abi.rs`). Without it the verb prompt would not offer the null choice.
+- **Fixed in the checker: verb list order.** Three types (`caught_soul`, `silicon`, `pai`) list the same verbs in another order; the
+  client verb panel sorts them, so `dmb-equiv` compares the verb list as a set. Lengths and members still must match.
+- **Not behavioural (inspected, left):** bytecode where native does not fold constants or remove dead constant branches (for example
+  `(CONST ? expiry_clock_now(...) : world.time)` keeps a `PushVal 0; Test; Jz` where DreamMaker emits one branch), `Jz` against
+  `GetFlag`, the `IterLoad` type-filter operand (native emits 0 and keeps the explicit `IsType` test on every iteration, so the loop
+  body sees the same values), receiver caching, extra temporaries, and per-type `<init>` procedures where DreamMaker shares one.
+Boot gate and smoke set under `DQ_COMPILER=native DQ_COMPILER_STRICT=1`: `FOCUSED RESULT: 47 passed, 0 failed` (smoke set, the
+gameplay scenarios, keybinding, admin.txt and client-verb tests; log `E:/dq-cache/nd/smoke-nat.log`), no runtime before the first test.
+
+**Why edits were slow, and the fix.** Instrumenting the input stage (`native input preparation ... prepared inputs: hits= misses=`) showed
+that after every build the daemon released its "rich buffers" (prepared sources for 5,800 files, maps, link bindings, initializer
+assemblies; `dmbd artifact release tier=2`) because its private memory sits above the 8 GB soft limit, and the next edit then paid
+about 11 s to re-prepare every source plus the map and link rebuilds. The release returned no memory (private bytes before and after
+differ by under 0.1%), so it was pure cost and fired after every build. Soft pressure now releases nothing (the hard ceiling and the
+one-hour idle release are unchanged), which removes the 25-65 s spikes: a body edit after a pressure release went from 54.8 s to 17.8 s
+on the first measurement and a steady patch edit stays at 8-10 s.
+
+**Compile time per edit kind** (production dme, resident daemon, `dmbc compile` wall time, a machine shared with other lanes so single
+runs vary by up to 2x; the table is the best of the runs that were not disturbed):
+
+| Edit | Master (default limits) | This branch |
+|---|---|---|
+| unchanged rebuild | 2.3-5.0 s | 1.9-2.1 s |
+| body edit (patch path) | 8.8 s steady, 54.8-65.6 s after a pressure release | 8.1-9.8 s |
+| numeric default edit (patch path) | 10.3-11.2 s steady, 22-25 s after a release | 9.6-11.8 s |
+| new var | 21.3 s | 19.2 s |
+| new proc | 34.6 s | 20.2 s |
+| new type | 47.4 s | 35.9 s |
+| new `#define` | 37.7 s | 30.1 s |
+| cold build (empty daemon) | 98 s | 70-88 s |
+
+The target of at most 2.5 s for a structural edit is **not met**. Where a structural edit spends its 19 s (new var, no pressure): about
+1.3 s session validation, 0.2 s input preparation, 3.5 s frontend (directive plan 0.7, tree resolution 0.8), 1.5 s resources and maps,
+0.4-0.7 s patch attempt, then the whole-program stages that each re-walk 81,749 procedures with memo hits: startup 0.5, ABI 1.2,
+initializers 2.8, lowering 2.5, required types 0.6, link 2.1, composition 2.4, and 1.8 s publication (a third and fourth 9,735-file
+validation). Those stages are the design's consumers 3 and 4-7 (`tools/dmb/doc/structural_change_set.md`); until a structural edit can
+skip them, 2.5 s is out of reach. A new type that carries members and a `#define` still decline the tree splice (tree resolution 4.9 s
+instead of 0.8 s), and a changed `#define` line in a file shifts later declaration rows. Cheap items left: reuse the session
+validation's directory proofs for the resource and publication admissions (about 1.5 s per request).
+
+**Memory is not within the approved 8 GB.** Working set of the daemon: cold build peak 10.4 GB, retained after a build 8.7-9.5 GB.
+The Rust live heap (counting allocator, `--features allocation-counting`) is 2.7 GB after the frontend, 3.9 GB after startup/ABI,
+5.0 GB after initializers, 7.2 GB after lowering and 8.0 GB at publication; the heap census sees about 1 GB of it. A sampled call-site
+profile (`--features allocation-sites`, `DMB_ALLOC_SITES_PATH`, new in `dm-profile`) shows a flat distribution with no single
+dominant owner: the session artifact stores (incidence index, receipts, leases) hold about 1.2 GB, the directive/region memos 0.7-0.9
+GB, declaration parsing and the adapter 0.45 GB, owner shapes and normalization 0.2 GB, classification stores 0.2 GB. Setting
+`MIMALLOC_PURGE_DELAY=0` and `MIMALLOC_ABANDONED_PAGE_PURGE=1` changed nothing (the memory is live, not fragmentation). Getting under
+8 GB therefore needs the Incidence index interned (its leaves clone every read domain) and the receipt groups compacted, not tuning.
+Until then the daemon stays above its soft limit; with soft pressure no longer shedding state, the limit only defers a second
+concurrent build.
+
+Rust tests: `cargo test -p dmbc --lib -- service_housekeeping daemon::service::tests` 31 passed, 1 failed
+(`pressure::soft_pressure_defers_another_build_but_preserves_single_build_progress`, an admission timing assertion this branch does not
+touch).
