@@ -23,13 +23,13 @@
 	light_overlay = "helmet_light"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space)
+	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
 	configure(light_glow(range = 4))
 	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD, hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_protection(permeability = 0, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 2 * ONE_ATMOSPHERE, siemens = 0.9))
 	owns_one(nameof(camera), /obj/machinery/camera)
 	verb_entry(/obj/item/clothing/head/helmet/space/proc/toggle_camera, when = nameof(camera_networks))
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA))))
 
 /obj/item/clothing/head/helmet/space/Initialize(mapload)
 	. = ..()
@@ -79,9 +79,8 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYP
 
 // start - use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
 
-TYPE_TABLE(/obj/item/clothing/suit/space, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA))))
 
-TYPE_TABLE(/obj/item/clothing/suit/space, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))))
+
 /obj/item/clothing/suit/space/Initialize(mapload)
 	. = ..()
 	if(type == /obj/item/clothing/suit/space)

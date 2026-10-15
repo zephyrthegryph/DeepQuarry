@@ -20,10 +20,10 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/fire)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = 0))
 	configure(item_protection(gas_transfer = 0.90, permeability = 0.50, heat_parts = CHEST|LEGS|FEET|ARMS|HANDS, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE, cold_parts = CHEST|LEGS|FEET|ARMS|HANDS, min_pressure = 0.2 * ONE_ATMOSPHERE, max_pressure = 20  * ONE_ATMOSPHERE))
 
-TYPE_TABLE(/obj/item/clothing/suit/fire, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher))))
 
 /obj/item/clothing/suit/fire/firefighter
 	name = "firesuit"
@@ -78,13 +78,14 @@ CAPABILITIES(/obj/item/clothing/head/bomb_hood/security)
 	icon_state = "bombsuitsec"
 
 CAPABILITIES(/obj/item/clothing/suit/bomb_suit/security)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
 
 /*
  * Radiation protection
  */
 
-TYPE_TABLE(/obj/item/clothing/suit/bomb_suit/security, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SECURITY))))
+
 /obj/item/clothing/head/radiation
 	name = "Radiation hood"
 	icon_state = "rad"
@@ -103,9 +104,9 @@ CAPABILITIES(/obj/item/clothing/head/radiation)
 	slowdown = 1.5
 	armor_spec = "bio=60;rad=100"
 
-TYPE_TABLE(/obj/item/clothing/suit/radiation, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation))))
 
 CAPABILITIES(/obj/item/clothing/suit/radiation)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|LEGS|ARMS|HANDS|FEET, hides = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = THICKMATERIAL))
 	configure(item_protection(gas_transfer = 0.90, permeability = 0.50))
 	trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = RADIATION_CLOTHING_EXAMINE)
@@ -118,7 +119,6 @@ CAPABILITIES(/obj/item/clothing/suit/radiation)
 	icon_state = "rad_fitted"
 	slowdown = 0.5
 
-TYPE_TABLE(/obj/item/clothing/suit/radiation/teshari, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
 /obj/item/clothing/head/radiation/teshari
 	name = "Small radiation hood"
@@ -126,8 +126,6 @@ TYPE_TABLE(/obj/item/clothing/suit/radiation/teshari, fit_spec, list(REQ_FITS_BO
 	icon = 'icons/inventory/head/item_teshari.dmi'
 	icon_override = 'icons/inventory/head/mob_teshari.dmi'
 	icon_state = "rad_fitted"
-
-TYPE_TABLE(/obj/item/clothing/head/radiation/teshari, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
 
 /obj/item/clothing/head/bomb_hood/security
@@ -143,9 +141,9 @@ TYPE_TABLE(/obj/item/clothing/head/radiation/teshari, fit_spec, list(REQ_FITS_BO
 	armor_spec = "bio=50"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/paramedic)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO, hides = HIDEHOLSTER))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/paramedic, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL))))
 
 /obj/item/clothing/head/radiation
 	sprite_sheets = list(
@@ -160,3 +158,11 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/paramedic, suit_storage_spec, 
 		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/suit/mob_werebeast.dmi'
 		)
+
+
+CAPABILITIES(/obj/item/clothing/suit/radiation/teshari)
+	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/head/radiation/teshari)
+	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)

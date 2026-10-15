@@ -4,23 +4,23 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/armor)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST, flags = THICKMATERIAL))
 	configure(item_protection(cold_parts = CHEST, min_cold = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = CHEST, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.6))
 
-TYPE_TABLE(/obj/item/clothing/suit/armor, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 
 /// Suits can't go on over gloves or shoes that cover the same limbs.
-TYPE_TABLE(/obj/item/clothing/suit, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/proc/limb_clearance, null))))
 
-/obj/item/clothing/suit/proc/limb_clearance(mob/living/carbon/human/H)
+/obj/item/clothing/suit/proc/limb_clearance(datum/act/op/query)
+	var/mob/living/carbon/human/H = query.wearer
 	if(!istype(H))
-		return TRUE
+		return null
 	for(var/obj/item/clothing/I in list(H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES)))
 		if(I && (worn_of(src).covers & ARMS && worn_of(I).covers & ARMS))
 			return "\the [I] [I.gender == PLURAL ? "are" : "is"] in the way"
 		if(I && (worn_of(src).covers & LEGS && worn_of(I).covers & LEGS))
 			return "\the [I] [I.gender == PLURAL ? "are" : "is"] in the way"
-	return TRUE
+	return null
 
 /obj/item/clothing/suit/armor/vest
 	name = "armor"
@@ -140,10 +140,10 @@ CAPABILITIES(/obj/item/clothing/suit/armor/tactical)
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=100;rad=100"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/swat)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = THICKMATERIAL, covers = CHEST|LEGS|FEET|ARMS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 20* ONE_ATMOSPHERE, siemens = 0.6))
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/swat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/armor/swat/officer
 	name = "officer jacket"
@@ -250,7 +250,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/vest/ert)
 
 
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/vest, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/storage/vest/officer
 	name = "officer armor vest"
@@ -375,7 +374,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy/flexitac)
 	desc = "A simple kevlar plate carrier. This one has the word 'Press' embroidered on patches on the back and front."
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/vest/press, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/camera,/obj/item/clothing/head/helmet))))
 
 /obj/item/clothing/suit/storage/vest/heavy
 	name = "heavy armor vest"
@@ -436,10 +434,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/vest/press, suit_storage_spec, list(H
 	w_class = ITEMSIZE_LARGE//bulky item
 
 CAPABILITIES(/obj/item/clothing/suit/armor/centcomm)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0))
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/centcomm, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/armor/heavy
 	name = "heavy armor"
@@ -503,11 +501,11 @@ CAPABILITIES(/obj/item/clothing/suit/armor/tdome/green)
 		|ACCESSORY_SLOT_ARMBAND) // let pcarriers have fashion
 	blood_overlay_type = "armor"
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/pcarrier, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/armor/pcarrier/proc/plate_clearance, null))))
 
-/obj/item/clothing/suit/armor/pcarrier/proc/plate_clearance(mob/living/carbon/human/H)
+/obj/item/clothing/suit/armor/pcarrier/proc/plate_clearance(datum/act/op/query)
+	var/mob/living/carbon/human/H = query.wearer
 	if(!istype(H))
-		return TRUE
+		return null
 	if(H.get_equipped_item(SLOT_ID_GLOVES) && (worn_of(H.get_equipped_item(SLOT_ID_GLOVES)).covers & ARMS))
 		for(var/obj/item/clothing/accessory/A in contents_of(src))
 			if(worn_of(A).covers & ARMS)
@@ -516,7 +514,7 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/pcarrier, equip_spec, dq_spec_join(..()
 		for(var/obj/item/clothing/accessory/A in contents_of(src))
 			if(worn_of(A).covers & LEGS)
 				return "\the [A] and \the [H.get_equipped_item(SLOT_ID_SHOES)] are in each other's way"
-	return TRUE
+	return null
 
 /obj/item/clothing/suit/armor/pcarrier/explorer
 	name = "explorer plate carrier" // Clarity for vendors.
@@ -628,12 +626,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/explorer)
 	icon_state = "wolf_item"
 	item_state = "heavy_wolf_armor"
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur, fit_spec, null)
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/armor/vest/wolftaur/proc/taur_fit, "you need a wolf-taur half to wear this"))))
 
-/obj/item/clothing/suit/armor/vest/wolftaur/proc/taur_fit(mob/living/carbon/human/H)
-	return istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/wolf)
+
 
 // HoS armor improved by to be slightly better than normal security stuff.
 /obj/item/clothing/suit/storage/vest/hoscoat
@@ -769,10 +764,10 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_costume/bedevere)
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35" // Inferior to sec vests in bullet/laser but better for environmental protection.
 
 CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_explo)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS, POCKET_MINING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|LEGS|ARMS))
 	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, cold_parts = CHEST|LEGS|ARMS, siemens = 0.9))
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/combat/crusader_explo, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS, POCKET_MINING))))
 
 /obj/item/clothing/suit/armor/combat/crusader_explo/FM
 	name = "field medic low tech suit"
@@ -896,3 +891,16 @@ CAPABILITIES(/obj/item/clothing/suit/armor/yw/blueshieldcoat)
 	icon_override = 'icons/mob/suit_yw.dmi'
 	item_state = "paramedic-vest_s"
 	armor_spec = "bomb=15;bio=50;rad=50"
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/vest/press)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/camera,/obj/item/clothing/head/helmet), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/armor/vest/wolftaur)
+	acceptance(CONSTRAINT_EQUIP, req_taur_shape(/datum/sprite_accessory/tail/taur/wolf, because = "you need a wolf-taur half to wear this"), mode = ACCEPTANCE_APPEND)
+	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+
+
+CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier)
+	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(plate_clearance)), mode = ACCEPTANCE_APPEND)

@@ -23,15 +23,28 @@ static META: Meta = Meta {
             "Transitional boolean requirement callbacks. rule<TAB>file<TAB>normalized line.",
             "Convert callbacks to null-or-reason req(); analyze baseline --update --lint requirement_bool only shrinks this list.",
         ],
-        banned: &["boolean_callback"],
+        banned: &["boolean_callback", "legacy_macro"],
     },
     rules: &[RuleMeta {
         name: "boolean_callback",
         hint: "merge the callback and refusal into req(PROC_REF(x)): return null to allow or a reason to refuse",
+    }, RuleMeta {
+        name: "legacy_macro",
+        hint: "the requirement macro compiler was retired: use native null-or-reason requirements in acceptance() or needs()",
     }],
     allow: &[],
-    lists: &[],
+    lists: &["retired_macros"],
 };
+
+/// Match a complete retired identifier, not a request outcome or a longer live name.
+fn retired_name_in(code: &str, name: &str) -> bool {
+    let word = |b: u8| b.is_ascii_alphanumeric() || b == b'_';
+    code.match_indices(name).any(|(at, _)| {
+        let end = at + name.len();
+        (at == 0 || !word(code.as_bytes()[at - 1]))
+            && (end == code.len() || !word(code.as_bytes()[end]))
+    })
+}
 
 struct RequirementBool {
     call: Pat,
@@ -48,6 +61,15 @@ impl Lint for RequirementBool {
             crate::incr::cached("requirement-bool-calls-v2", key, || cx.sem().map(|sem| crate::sem::procs::call_sites(&sem, &["req_bool"])));
         for (rel, line) in self.collect_sites(&files, typed) {
             out.site_in("boolean_callback", &rel, line);
+        }
+        // This lint has no engine exemption: retired requirements cannot return
+        // as definitions or calls there while content stays clean.
+        for file in &files {
+            for (line, code) in file.code().numbered() {
+                if cx.list("retired_macros").iter().any(|name| retired_name_in(code, name)) {
+                    out.site_in("legacy_macro", &file.rel, line);
+                }
+            }
         }
     }
 }
@@ -167,6 +189,18 @@ mod tests {
         assert_eq!(empty_typed.iter().map(|(_, line)| *line).collect::<Vec<_>>(), vec![3, 5, 6]);
         let overlapping = lint.collect_sites(&files, Some(vec![("code/probe.dm".into(), 5, "req_bool".into()), ("code/engine/_generated/probe.dm".into(), 50, "req_bool".into())]));
         assert_eq!(overlapping, empty_typed);
+    }
+
+    #[test]
+    fn retired_macro_names_are_exact_and_code_only() {
+        assert!(retired_name_in("#define REQ_TAG(subject, tag) list(tag)", "REQ_TAG"));
+        assert!(retired_name_in("needs(REQ_TAG(thing, TAG_SHARP))", "REQ_TAG"));
+        assert!(!retired_name_in("request_end(src, REQ_CANCELLED, null)", "REQ_TAG"));
+        assert!(!retired_name_in("REQ_TAG_EXTRA(x)", "REQ_TAG"));
+        assert!(!retired_name_in("LIVE_REQ_TAG(x)", "REQ_TAG"));
+        let file = SourceFile::from_text("code/engine/probe.dm", "// REQ_TAG(x)\nvar/message = \"REQ_TAG(x)\"\nREQ_TAG(x)\n");
+        let lines: Vec<usize> = file.code().numbered().filter_map(|(line, code)| retired_name_in(code, "REQ_TAG").then_some(line)).collect();
+        assert_eq!(lines, vec![3]);
     }
 
 }

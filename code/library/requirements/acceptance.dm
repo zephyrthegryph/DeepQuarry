@@ -15,6 +15,9 @@
 	var/list/paths = ispath(types) ? list(types) : types
 	if(!islist(paths))
 		CRASH("acceptance type must be a path or list of paths")
+	for(var/path in paths)
+		if(!ispath(path))
+			CRASH("acceptance type list contains a non-type path")
 	return part_make(/datum/entry/part/req/acceptance_leaf/type, list("types" = paths.Copy(), "exclude" = exclude, "because" = because))
 
 /datum/entry/part/req/acceptance_leaf/type/acceptance_reason(datum/act/op/A)
@@ -324,4 +327,23 @@
 		return FALSE
 	return TRUE
 
+// Named requirements shared by the remaining custom-fit declarations.
+/proc/req_wearer_ckey(required_key, because)
+	return part_make(/datum/entry/part/req/acceptance_leaf/wearer_ckey, list("required_key" = required_key, "because" = because))
 
+/datum/entry/part/req/acceptance_leaf/wearer_ckey/acceptance_reason(datum/act/op/A)
+	return A?.wearer?.ckey == src.args["required_key"] ? null : src.args["because"]
+
+/datum/entry/part/req/acceptance_leaf/wearer_ckey/read_keys(datum/act/op/A)
+	return A?.wearer ? list(list(A.wearer, MOB_KEY_CLIENT)) : null
+
+/proc/req_taur_shape(shape, because)
+	return part_make(/datum/entry/part/req/acceptance_leaf/taur_shape, list("shape" = shape, "because" = because))
+
+/datum/entry/part/req/acceptance_leaf/taur_shape/acceptance_reason(datum/act/op/A)
+	var/mob/living/carbon/human/H = A?.wearer
+	return istype(H) && istype(H.tail_style, src.args["shape"]) ? null : src.args["because"]
+
+/datum/entry/part/req/acceptance_leaf/taur_shape/read_keys(datum/act/op/A)
+	var/mob/living/carbon/human/H = A?.wearer
+	return istype(H) ? list(list(H, nameof(H.tail_style))) : null

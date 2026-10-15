@@ -134,8 +134,8 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 		src.affinity = 9999
 		src.set_nutrition(9999)
 	if(src.vore_prefs.devourable)	//This will cause problems probably so please do not eat the dog
-		src.vore_prefs.devourable = FALSE
-		src.vore_prefs.digestable = FALSE
+		src.vore_prefs.set_devourable(FALSE)
+		src.vore_prefs.set_digestable(FALSE)
 	if(src.ckey && src.control_node)
 		if(nutrition_of(src) <= 200)
 			src.adjust_affinity(-10)

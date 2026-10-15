@@ -629,6 +629,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
+	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = FEET, slots = SLOT_FEET))
 	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.9, heat_parts = FEET, cold_parts = FEET, permeability = 0.50))
@@ -651,7 +652,6 @@ CAPABILITIES(/obj/item/clothing/shoes)
 	return holding ? null : "there is no knife in it"
 
 
-TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
 /obj/item/clothing/shoes/Initialize(mapload)
 	. = ..()
@@ -928,13 +928,14 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 
 
 CAPABILITIES(/obj/item/clothing/suit)
+	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(limb_clearance)), mode = ACCEPTANCE_APPEND)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
 	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
 	owns_one(nameof(hood), /obj/item/clothing/head)
 
 
-TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/Initialize(mapload)
 	MakeHood()

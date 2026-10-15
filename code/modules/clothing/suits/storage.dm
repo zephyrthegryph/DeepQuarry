@@ -99,6 +99,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
 	var/icon_nobadge
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST, flags = THICKMATERIAL))
 	configure(item_protection(cold_parts = CHEST, min_cold = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = CHEST, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.6))
 	op("vest_toggle_verb", menu(), label("Adjust Badge"), needs(carried()), then(PROC_REF(vest_toggle_verb)))

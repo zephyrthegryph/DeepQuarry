@@ -34,10 +34,8 @@
 	set_force(force_wielded)
 	name = "[initial(name)] (Wielded)"
 
-TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/oldtwohanded/proc/not_wielded, "unwield it first"))))
 
-/obj/item/oldtwohanded/proc/not_wielded()
-	return !wielded
+
 
 /obj/item/oldtwohanded/dropped(mob/user, equipping, slot)
 	//handles unwielding a twohanded weapon when dropped as well as clearing up the offhand
@@ -58,6 +56,7 @@ TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PR
 	unwield()
 
 CAPABILITIES(/obj/item/oldtwohanded)
+	acceptance(CONSTRAINT_EQUIP, req_is(nameof(wielded), FALSE, because = "unwield it first"), mode = ACCEPTANCE_APPEND)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

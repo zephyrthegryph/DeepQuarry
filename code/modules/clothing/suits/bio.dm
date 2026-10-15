@@ -25,12 +25,13 @@ CAPABILITIES(/obj/item/clothing/head/bio_hood)
 	resistance_flags = UNACIDABLE
 
 CAPABILITIES(/obj/item/clothing/suit/bio_suit)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|LEGS|ARMS|HANDS|FEET, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = THICKMATERIAL))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.9))
 
 //Standard biosuit, orange stripe
 
-TYPE_TABLE(/obj/item/clothing/suit/bio_suit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
+
 /obj/item/clothing/head/bio_hood/general
 	icon_state = "bio_general"
 	item_state_slots = list(slot_r_hand_str = "bio", slot_l_hand_str = "bio")

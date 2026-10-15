@@ -2883,7 +2883,7 @@ GLOBAL_LIST_INIT(area_or_turf_fail_types, typecacheof(list(
 	/obj/item/nif, \
 	/obj/item/stack/material/phoron, \
 	/obj/item/tank/anesthetic, \
-	/obj/item/disk/body_record, \
+	/obj/item/disk/body_record
 
 #define RESEARCH_GRIPPER \
 	/obj/item/cell, \

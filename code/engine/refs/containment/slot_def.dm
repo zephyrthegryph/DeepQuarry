@@ -11,8 +11,8 @@
 // declaring `holder` (a holder type, or list of them) instead of overriding
 // /atom/proc/slot_def_types(). The registry (registry.dm) builds each holder
 // type's slot list once, from every decl whose `holder` matches. It says what
-// the slot accepts (a P2 predicate, evaluated with the inserted thing as
-// PRED_TARGET and the mover as PRED_ACTOR), how much it holds, and what the
+// the slot accepts (native requirements with the inserted thing as the
+// candidate and the mover as actor), how much it holds, and what the
 // base Destroy() does with its contents. The ledger (ledger.dm) keeps each
 // holder's per-instance state.
 
@@ -40,10 +40,8 @@
 	var/capacity_model = SLOT_CAPACITY_NONE
 	/// Limit in the capacity model's units. See capacity_for().
 	var/capacity = 0
-	/// /datum/predicate subtype the inserted thing must pass, or null for anything.
-	var/accepts
 	/// CONSTRAINT_* kind the holder declares for this slot (P3), such as
-	/// CONSTRAINT_HOLD for storage: checked after `accepts`, for holders whose
+	/// CONSTRAINT_HOLD for storage: checked after slot requirements, for holders whose
 	/// acceptance varies by type. Null for none.
 	var/holder_constraint
 	/// SLOT_DROP_*.
@@ -223,11 +221,9 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 
 /// Why `thing` can't go in this slot on `holder`, not counting capacity, or null.
 /datum/relation_definition/slot/proc/refusal(atom/holder, atom/movable/thing, mob/actor)
-	if(accepts)
-		var/datum/predicate/P = dq_predicate(accepts)
-		. = P.why_not(actor, thing, null)
-		if(.)
-			return .
+	. = acceptance_reason(holder, slot_id, holder, thing, mover = actor, slot_id = slot_id)
+	if(.)
+		return .
 	if(holder_constraint)
 		return holder.containment_constraint_refusal(holder_constraint, thing, actor)
 	return null

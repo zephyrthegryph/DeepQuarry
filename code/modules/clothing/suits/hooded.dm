@@ -46,10 +46,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/costume/carp)
 	hoodtype = /obj/item/clothing/head/hood/winter
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS|LEGS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = CHEST|ARMS|LEGS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/captain
 	name = "site manager's winter coat"
@@ -59,7 +59,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat, suit_storage_spec,
 	armor_spec = "melee=20;bullet=15;laser=20;energy=10;bomb=15;cold=40"
 	hoodtype = /obj/item/clothing/head/hood/winter/captain
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/captain, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/hop
 	name = "head of personnel's winter coat"
@@ -68,7 +67,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/captain, suit_stora
 	armor_spec = "melee=5;bomb=5;bio=5;cold=40"
 	hoodtype = /obj/item/clothing/head/hood/winter/hop
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/hop, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/security
 	name = "security winter coat"
@@ -78,7 +76,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/hop, suit_storage_s
 	armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"
 	hoodtype = /obj/item/clothing/head/hood/winter/security
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/security, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/security/hos
 	name = "head of security's winter coat"
@@ -87,7 +84,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/security, suit_stor
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;cold=40"
 	hoodtype = /obj/item/clothing/head/hood/winter/security/hos
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/security/hos, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/medical
 	name = "medical winter coat"
@@ -97,7 +93,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/security/hos, suit_
 	armor_spec = "bio=50;cold=40"
 	hoodtype = /obj/item/clothing/head/hood/winter/medical
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/medical, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MEDICAL))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/medical/alt
 	name = "medical winter coat, alt"
@@ -141,7 +136,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/medical, suit_stora
 	armor_spec = "melee=15;bio=50;rad=5;cold=40"
 	hoodtype = /obj/item/clothing/head/hood/winter/medical/sar // sar winter hood
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/medical/sar, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MEDICAL))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/science
 	name = "science winter coat"
@@ -151,7 +145,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/medical/sar, suit_s
 	armor_spec = "bomb=10;cold=40"
 	hoodtype = /obj/item/clothing/head/hood/winter/science
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/science, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MEDICAL))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/science/robotics
 	name = "robotics winter coat"
@@ -175,7 +168,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/science, suit_stora
 	armor_spec = "rad=20;cold=40"
 	hoodtype = /obj/item/clothing/head/hood/winter/engineering
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/engineering, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/engineering/atmos
 	name = "atmospherics winter coat"
@@ -199,7 +191,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/engineering, suit_s
 	item_state_slots = list(slot_r_hand_str = "coathydro", slot_l_hand_str = "coathydro")
 	hoodtype = /obj/item/clothing/head/hood/winter/hydro
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/hydro, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_HYDROPONICS))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/cargo
 	name = "cargo winter coat"
@@ -223,7 +214,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/hydro, suit_storage
 	armor_spec = "melee=10;cold=40"
 	hoodtype = /obj/item/clothing/head/hood/winter/cargo/miner
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/miner, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_MINING))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/bar
 	name = "bartender winter coat"
@@ -293,10 +283,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/cosmic)
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35" // Inferior to sec vests in bullet/laser but better for environmental protection.
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/explorer)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_MINING, POCKET_EXPLO), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|LEGS|ARMS))
 	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, cold_parts = CHEST|LEGS|ARMS, siemens = 0.9))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/explorer, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_MINING, POCKET_EXPLO))))
 
 /obj/item/clothing/suit/storage/hooded/techpriest
 	name = "techpriest robes"
@@ -311,12 +301,13 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/explorer, suit_storage_spec, l
 	hoodtype = /obj/item/clothing/head/hood/raincoat
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/raincoat)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS|LEGS, hides = HIDEHOLSTER))
 
 
 //hooded cloaks
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/raincoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))))
+
 /obj/item/clothing/suit/storage/hooded/cloak
 	name = "hooded maroon cloak"
 	desc = "A simple maroon colored cloak."
@@ -503,7 +494,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/foodcostume)
 
 // CC Winter Coat
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/hoodie, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))))
+
 /obj/item/clothing/suit/storage/hooded/wintercoat/centcom
 	name = "centcom winter coat"
 	desc = "A cozy winter coat, covered in green fur and the colors of CentCom. Armored for extra protection."
@@ -547,7 +538,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/hoodie, suit_storage_spec, lis
 	icon_override = 'icons/obj/clothing/suits_yw.dmi'
 	hoodtype =	/obj/item/clothing/head/hood/winter/snowsuit
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes, /obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/command
 	name = "command snowsuit"
@@ -555,7 +545,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit, suit_stor
 	hoodtype = /obj/item/clothing/head/hood/winter/snowsuit/command
 	armor_spec = "melee=20;bullet=15;laser=20;energy=10;bomb=15;cold=40"
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/command, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/gun/energy,	/obj/item/reagent_containers/spray/pepper,/obj/item/gun/projectile,/obj/item/ammo_magazine,/obj/item/ammo_casing,/obj/item/melee/baton, /obj/item/handcuffs,/obj/item/clothing/head/helmet))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/security
 	name = "security snowsuit"
@@ -563,7 +552,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/command, s
 	hoodtype = /obj/item/clothing/head/hood/winter/snowsuit/security
 	armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/security, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes, /obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/gun/energy,	/obj/item/reagent_containers/spray/pepper,/obj/item/gun/projectile,/obj/item/ammo_magazine,/obj/item/ammo_casing,/obj/item/melee/baton,	/obj/item/handcuffs,/obj/item/clothing/head/helmet))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/medical
 	name = "medical snowsuit"
@@ -571,7 +559,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/security, 
 	hoodtype = /obj/item/clothing/head/hood/winter/snowsuit/medical
 	armor_spec = "bio=50;cold=40"
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/medical, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/analyzer,/obj/item/stack/medical,	/obj/item/dnainjector,/obj/item/reagent_containers/dropper,/obj/item/reagent_containers/syringe,/obj/item/reagent_containers/hypospray,	/obj/item/healthanalyzer,/obj/item/reagent_containers/glass/bottle,/obj/item/reagent_containers/glass/beaker,	/obj/item/reagent_containers/pill,/obj/item/storage/pill_bottle))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/engineering
 	name = "engineering snowsuit"
@@ -579,7 +566,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/medical, s
 	hoodtype = /obj/item/clothing/head/hood/winter/snowsuit/engineering
 	armor_spec = "rad=20;cold=40"
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/engineering, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/analyzer, /obj/item/flashlight,	/obj/item/multitool, /obj/item/pipe_painter, /obj/item/radio, /obj/item/t_scanner, /obj/item/tool/crowbar, /obj/item/tool/screwdriver,	/obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tank/emergency/oxygen, /obj/item/clothing/mask/gas, /obj/item/taperoll/engineering))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/cargo
 	name = "cargo snowsuit"
@@ -587,7 +573,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/engineerin
 	hoodtype = /obj/item/clothing/head/hood/winter/snowsuit/cargo
 	armor_spec = "melee=10;cold=40"
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/cargo, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight, /obj/item/storage/fancy/cigarettes, /obj/item/storage/box/matches,	/obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/tank, /obj/item/radio, /obj/item/pickaxe, /obj/item/ore_bag))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/science
 	name = "science snowsuit"
@@ -595,4 +580,71 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/cargo, sui
 	hoodtype = /obj/item/clothing/head/hood/winter/snowsuit/science
 	armor_spec = "bomb=10;cold=40"
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/science, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/analyzer,/obj/item/stack/medical,	/obj/item/dnainjector,/obj/item/reagent_containers/dropper,/obj/item/reagent_containers/syringe,/obj/item/reagent_containers/hypospray,	/obj/item/healthanalyzer,/obj/item/reagent_containers/glass/bottle,/obj/item/reagent_containers/glass/beaker,	/obj/item/reagent_containers/pill,/obj/item/storage/pill_bottle))))
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/captain)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/hop)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/security)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/security/hos)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/medical)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/medical/sar)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/science)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/engineering)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/hydro)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_HYDROPONICS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/miner)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_MINING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes, /obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/command)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/gun/energy,	/obj/item/reagent_containers/spray/pepper,/obj/item/gun/projectile,/obj/item/ammo_magazine,/obj/item/ammo_casing,/obj/item/melee/baton, /obj/item/handcuffs,/obj/item/clothing/head/helmet), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/security)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes, /obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/gun/energy,	/obj/item/reagent_containers/spray/pepper,/obj/item/gun/projectile,/obj/item/ammo_magazine,/obj/item/ammo_casing,/obj/item/melee/baton,	/obj/item/handcuffs,/obj/item/clothing/head/helmet), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/medical)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/analyzer,/obj/item/stack/medical,	/obj/item/dnainjector,/obj/item/reagent_containers/dropper,/obj/item/reagent_containers/syringe,/obj/item/reagent_containers/hypospray,	/obj/item/healthanalyzer,/obj/item/reagent_containers/glass/bottle,/obj/item/reagent_containers/glass/beaker,	/obj/item/reagent_containers/pill,/obj/item/storage/pill_bottle), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/engineering)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/analyzer, /obj/item/flashlight,	/obj/item/multitool, /obj/item/pipe_painter, /obj/item/radio, /obj/item/t_scanner, /obj/item/tool/crowbar, /obj/item/tool/screwdriver,	/obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tank/emergency/oxygen, /obj/item/clothing/mask/gas, /obj/item/taperoll/engineering), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/cargo)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight, /obj/item/storage/fancy/cigarettes, /obj/item/storage/box/matches,	/obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/tank, /obj/item/radio, /obj/item/pickaxe, /obj/item/ore_bag), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/science)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/analyzer,/obj/item/stack/medical,	/obj/item/dnainjector,/obj/item/reagent_containers/dropper,/obj/item/reagent_containers/syringe,/obj/item/reagent_containers/hypospray,	/obj/item/healthanalyzer,/obj/item/reagent_containers/glass/bottle,/obj/item/reagent_containers/glass/beaker,	/obj/item/reagent_containers/pill,/obj/item/storage/pill_bottle), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

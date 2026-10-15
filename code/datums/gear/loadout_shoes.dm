@@ -318,7 +318,6 @@
 	icon = 'icons/effects/effects.dmi' //This is to make the unit test happy. These are invisible which are... Less than ideal. This should probably be moved to a trait or sound selector, but I digress. Outside scope of this PR.
 	icon_state = "nothing" // Horribly illegal and shouldn't be a thing, but whatever.
 
-TYPE_TABLE(/obj/item/clothing/shoes/none, fit_spec, null)
 
 /obj/item/clothing/shoes/none/Initialize(mapload)
 	. = ..()
@@ -333,3 +332,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/none, fit_spec, null)
 
 /obj/item/clothing/shoes/none/make_worn_icon(body_type, slot_name, inhands, default_icon, default_layer, icon/clip_mask) // override this to ensure that no worn icon is generated
 	return
+
+
+CAPABILITIES(/obj/item/clothing/shoes/none)
+	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)

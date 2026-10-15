@@ -7,9 +7,9 @@
 	armor_spec = "bio=50"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/labcoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL))))
 
 /obj/item/clothing/suit/storage/toggle/labcoat/red
 	name = "red labcoat"

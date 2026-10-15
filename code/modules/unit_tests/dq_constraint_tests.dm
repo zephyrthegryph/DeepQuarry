@@ -373,7 +373,7 @@
 	TEST_ASSERT_NOTNULL(dq_constraint_refusal(refit, CONSTRAINT_FIT, refit, H), "suit refitted for a Teshari refuses a human")
 	TEST_ASSERT_NULL(LAZYACCESS(stock.constraint_overrides, CONSTRAINT_FIT), "the stock suit keeps its type's fit")
 	refit.restrict_fit(null)
-	TEST_ASSERT_NULL(dq_constraint(refit, CONSTRAINT_FIT), "restrict_fit(null) fits anyone")
+	TEST_ASSERT(!dq_constraint_present(refit, CONSTRAINT_FIT), "restrict_fit(null) fits anyone")
 
 /// Every constraint declaration compiles (no unknown types, units or tags).
 /datum/unit_test/dq_constraint_declarations_compile
@@ -381,7 +381,7 @@
 	tier = TEST_TIER_EXHAUSTIVE
 
 /// Normal tier: the item constraints of a fixed set of holders and wearables
-/// (every declared equip_slot predicate is still checked in full). The whole
+/// (every native equipment-slot plan is still checked in full). The whole
 /// fixture runs in CI and nightly.
 /datum/unit_test/dq_constraint_declarations_compile/representative
 	is_sweep_test = FALSE
@@ -422,21 +422,19 @@
 		if(!I)
 			continue
 		for(var/kind in kinds)
-			var/datum/predicate/P = dq_constraint(I, kind)
-			if(P && P.errors)
-				TEST_FAIL("[path] [kind]: [jointext(P.errors, "; ")]")
+			var/datum/entry/part/acceptance_plan/P = acceptance_plan_for(I, kind)
+			if(dq_constraint_present(I, kind))
+				TEST_ASSERT(istype(P), "[path] [kind] resolves an actual native plan")
 			checked++
 		for(var/atom/movable/A in I)
 			qdel(A)
 		qdel(I)
 		CHECK_TICK
-	for(var/path in subtypesof(/datum/predicate/equip_slot))
-		var/datum/predicate/equip_slot/declared = path
-		if(!initial(declared.slot))
-			continue
-		var/datum/predicate/P = dq_predicate(path)
-		if(P.errors)
-			TEST_FAIL("[path]: [jointext(P.errors, "; ")]")
+	var/list/plans = table_of(GLOB.native_equipment_acceptance).acceptance_channels
+	TEST_ASSERT(length(plans) > 0, "Actual native equipment catalogue has compiled slot plans")
+	for(var/slot_id in plans)
+		var/datum/entry/part/acceptance_plan/P = plans[slot_id]
+		TEST_ASSERT(istype(P), "[slot_id] has an actual native acceptance plan")
 	TEST_NOTICE(src, "[checked] item constraints compiled")
 
 #undef DQ_PARITY_FIXTURE

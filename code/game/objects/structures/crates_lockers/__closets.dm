@@ -63,6 +63,7 @@ MSG_DEF(closet/break_begin, "You lean on the back of %T% and start pushing the d
 // lands on its tile; an open one is cut apart with a welder; somebody shut in a sealed one breaks out after breakout_time minutes (a player-facing wait,
 // started by the Resist verb through container_resist()).
 CAPABILITIES(/obj/structure/closet)
+	acceptance(CONTAINER_SLOT_INTERIOR, req(PROC_REF(admits_loose_thing)))
 	silicon_hand(adjacent = TRUE)
 	ref_many(nameof(bluespace_exit_points))
 	blast_contents(shield = 1) // a closet shields its contents a step
@@ -131,7 +132,6 @@ CAPABILITIES(/obj/structure/closet)
 	slot_id = CONTAINER_SLOT_INTERIOR
 	name = "interior"
 	capacity_model = SLOT_CAPACITY_UNITS
-	accepts = /datum/predicate/slot_closet_interior
 	drop_policy = SLOT_DROP_SPILL
 	exposure = SLOT_EXPOSURE_INTERNAL
 	damage_transmission = list(0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0, 0, 0)
@@ -141,10 +141,6 @@ CAPABILITIES(/obj/structure/closet)
 
 /datum/relation_definition/slot/closet_interior/cost(obj/structure/closet/holder, atom/movable/thing)
 	return holder.storage_cost_of(thing)
-
-/datum/predicate/slot_closet_interior
-	name = "closet interior"
-	spec = list(REQ_BECAUSE(REQ_ON(PRED_TARGET, /atom/movable/proc/slot_loose, null), "it is fastened down"))
 
 /obj/structure/closet/latent_generator()
 	return starts_with
@@ -659,3 +655,8 @@ SETTER(/obj/structure/closet, storage_cost)
 	else if(istype(thing, /obj/structure/closet))
 		var/obj/structure/closet/C = thing
 		. += list(list(C, nameof(C.storage_cost)))
+
+/// Loose admission keeps each candidate's native virtual policy, including living pins and chameleon exceptions.
+/obj/structure/closet/proc/admits_loose_thing(datum/act/op/A)
+	var/atom/movable/thing = A.target
+	return istype(thing) && thing.slot_loose(A.mover, thing, null) ? null : "it is fastened down"

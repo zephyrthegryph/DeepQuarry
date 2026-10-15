@@ -4894,3 +4894,11 @@ Affected requirement-pin classes:
 * **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
+
+
+## Requirement retirement: pure admission previews
+
+- `/obj/item/gripper/syndicate`: the medical-gripper type union no longer contributes a middle null list element. `MEDICAL_GRIPPER` ended with a comma, and this table added another delimiter before the next macro, causing the old predicate compiler to error instead of answer any candidate. Removing that terminal comma preserves every declared allowed type and makes the intended union usable. The old requirement pin records the exact two compiler diagnostics; only this class changes from declaration ERROR to its real native candidate admissions. The table originated in `0dfa07f646` (2026-09-23).
+- Native `restrict_hold()` overrides: an oversized candidate now reports its real numeric size refusal instead of the bare text `size`. The old call supplied the size-class unit twice, accidentally binding the second unit as `because`. Removing that duplicate argument preserves the same inclusive threshold and ordered type rejection; only that defective refusal row is intentionally changed.
+- `/obj/item/storage/backpack/saddlebag_common`: checking whether a wearer can use the saddlebag no longer changes its worn sprite. The existing synchronous `item_equipped` notice selects the actual taur sprite through the existing setter when equipment commits. Refusal text, permitted taur shapes and real equip/unequip behavior remain unchanged.
+- `/obj/item/clothing/head/fluff/avida`: admission preview no longer switches the ear-dependent worn sprite. The always-allow legacy clause becomes a declared empty acceptance contribution, and the existing synchronous equip notice applies the same primary/secondary-ear selection on real equip. This is the intentional preview-purity change; it does not authorize unrelated pin changes.

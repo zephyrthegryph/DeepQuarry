@@ -15,7 +15,6 @@
 	var/no_cycle = FALSE	//stop this item from being put in a cycler
 
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID))))
 
 /obj/item/clothing/suit/space/void
 	name = "voidsuit"
@@ -49,9 +48,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void, fit_spec, list(REQ_FITS_BO
 //Does it spawn with any Inbuilt devices?
 
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID))))
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS))))
 
 // A path in boots/hood/tank is created in the suit; null deploys nothing.
 MSG_DEF_SELF(void/worn, "You cannot modify that while it is being worn.")
@@ -59,6 +56,8 @@ MSG_DEF_SELF(void/nothing_to_eject, "There is no tank or cooling unit inserted."
 MSG_DEF_SELF(void/no_helmet, "There is no helmet installed.")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE))
 	owns_one(nameof(hood), /obj/item/clothing/head, starts = nameof(hood))
 	op("voidsuit_eject_tank_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Eject tank"), needs(any_of(req_is(nameof(tank), TRUE, because = MSG(void/nothing_to_eject)), req_is(nameof(cooler), TRUE, because = MSG(void/nothing_to_eject)))), then(PROC_REF(voidsuit_eject_tank_alt)))

@@ -98,7 +98,7 @@
 	var/mob/living/carbon/human/pred = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/prey = allocate(/mob/living/carbon/human)
 	var/obj/belly/B = allocate(/obj/belly, pred)
-	prey.vore_prefs.digestable = TRUE
+	prey.vore_prefs.set_digestable(TRUE)
 	prey.forceMove(B)
 	B.digest_mode = DM_HOLD
 	B.digest_oxy = BELLY_AIR_STALE_AT
@@ -114,7 +114,7 @@
 	physiology_test_run(prey, 5)
 	TEST_ASSERT(prey.oxygen_debt() > 0, "breathing stale belly air should build oxygen debt")
 
-	prey.vore_prefs.digestable = FALSE
+	prey.vore_prefs.set_digestable(FALSE)
 	TEST_ASSERT_EQUAL(B.breath_quality_for(prey), 1, "prey that refuse digestion breathe normally")
 
 /// After circulation is restored, the debt is repaid faster and grows no new

@@ -9,6 +9,7 @@ GLOBAL_LIST_INIT(dq_variants_suit_storage_hooded_hoodie, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/hoodie)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS|LEGS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = CHEST|ARMS|LEGS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 	variants(nameof(variant), PROC_REF(variant_table))

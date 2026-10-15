@@ -17,10 +17,10 @@
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/solgov/service)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(siemens = 0.9))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/solgov/service, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret))))
 
 /obj/item/clothing/suit/storage/solgov/service/sifguard
 	name = "\improper NDF jacket"
@@ -190,10 +190,11 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/solgov/service, suit_storage_spec, li
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/solgov/dress)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 	configure(item_protection(siemens = 0.9))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/solgov/dress, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))))
+
 /obj/item/clothing/suit/storage/solgov/dress/sifguard/chief
 	name = "\improper NDF chief's dress coat"
 	icon_state = "ecdress_cxpl"
@@ -248,10 +249,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/solgov/dress, suit_storage_spec, list
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 
 CAPABILITIES(/obj/item/clothing/suit/dress/solgov)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 	configure(item_protection(siemens = 0.9))
 
-TYPE_TABLE(/obj/item/clothing/suit/dress/solgov, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))))
 
 /obj/item/clothing/suit/dress/solgov/fleet/sailor
 	name = "fleet dress overwear"
@@ -362,10 +363,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/eio_jacket)
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 
 CAPABILITIES(/obj/item/clothing/suit/dress/saare)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 	configure(item_protection(siemens = 0.9))
 
-TYPE_TABLE(/obj/item/clothing/suit/dress/saare, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))))
 
 /obj/item/clothing/suit/dress/terran/navy
 	name = "Ares dress cloak"

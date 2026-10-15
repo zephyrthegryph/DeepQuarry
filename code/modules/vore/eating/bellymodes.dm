@@ -236,14 +236,14 @@
 						H.bloodstr.add_reagent(REAGENT_ID_NUMBENZYME,4)
 
 				//Worn items flag
-				if((mode_flags & DM_FLAG_AFFECTWORN) && vore_consents(/datum/predicate/vore_affect_worn, owner, H))
+				if((mode_flags & DM_FLAG_AFFECTWORN) && vore_consents(VORE_CONSENT_AFFECT_WORN, owner, H))
 					for(var/slot in slots)
 						var/obj/item/I = H.get_equipped_item(slot)
 						if(I && I.canremove)
 							touchable_atoms |= I
 
 				//Stripping flag
-				if((mode_flags & DM_FLAG_STRIPPING) && vore_consents(/datum/predicate/vore_strip, owner, H)) //Stripping pref check
+				if((mode_flags & DM_FLAG_STRIPPING) && vore_consents(VORE_CONSENT_STRIP, owner, H)) //Stripping pref check
 					for(var/slot in slots)
 						var/obj/item/I = H.get_equipped_item(slot)
 						if(!I || I.flags & NOSTRIP)

@@ -86,16 +86,16 @@
 	var/list/pair = vore_test_pair()
 	var/mob/living/carbon/human/predator = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
-	prey.vore_prefs.permit_healbelly = FALSE
-	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_heal, predator, prey), "they don't allow healing bellies", "The actual healing preference supplies its exact refusal")
-	prey.vore_prefs.permit_healbelly = TRUE
-	TEST_ASSERT_NULL(vore_consent_refusal(/datum/predicate/vore_heal, predator, prey), "A live consenting prey allows healing")
-	prey.vore_prefs.strip_pref = FALSE
-	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_strip, predator, prey), "they don't allow stripping", "The actual stripping preference supplies its exact refusal")
-	TEST_ASSERT(!vore_consents(/datum/predicate/vore_strip, predator, prey), "The effect's boolean consumer agrees with the refusal")
-	prey.vore_prefs.strip_pref = TRUE
-	TEST_ASSERT_NULL(vore_consent_refusal(/datum/predicate/vore_strip, predator, prey), "The actual preference recovers stripping permission")
-	TEST_ASSERT(vore_consents(/datum/predicate/vore_strip, predator, prey), "The effect's boolean consumer agrees with recovery")
+	prey.vore_prefs.set_permit_healbelly(FALSE)
+	TEST_ASSERT_EQUAL(vore_consent_refusal(VORE_CONSENT_HEAL, predator, prey), "they don't allow healing bellies", "The actual healing preference supplies its exact refusal")
+	prey.vore_prefs.set_permit_healbelly(TRUE)
+	TEST_ASSERT_NULL(vore_consent_refusal(VORE_CONSENT_HEAL, predator, prey), "A live consenting prey allows healing")
+	prey.vore_prefs.set_strip_pref(FALSE)
+	TEST_ASSERT_EQUAL(vore_consent_refusal(VORE_CONSENT_STRIP, predator, prey), "they don't allow stripping", "The actual stripping preference supplies its exact refusal")
+	TEST_ASSERT(!vore_consents(VORE_CONSENT_STRIP, predator, prey), "The effect's boolean consumer agrees with the refusal")
+	prey.vore_prefs.set_strip_pref(TRUE)
+	TEST_ASSERT_NULL(vore_consent_refusal(VORE_CONSENT_STRIP, predator, prey), "The actual preference recovers stripping permission")
+	TEST_ASSERT(vore_consents(VORE_CONSENT_STRIP, predator, prey), "The effect's boolean consumer agrees with recovery")
 
 // Include every legacy table, including explicit null overrides and holder shorthands.
 /datum/unit_test/dq_requirement_burndown_pin/acceptance/Run()
@@ -310,26 +310,7 @@
 			own_constructed_contents(holder)
 			actual[path] = list()
 		var/list/rows = actual[path]
-		// Validate the actual old table directly: its normal cached consumer
-		// logs a runtime on a malformed declaration before it can return a reason.
-		var/list/spec = holder.constraint_spec(channel)
-		if(length(spec))
-			var/datum/predicate/compiled = allocate(/datum/predicate)
-			compiled.name = "[path] [channel]"
-			compiled.spec = spec
-			compiled.test_only = TRUE
-			var/valid = compiled.compile()
-			if(path == /obj/item/gripper/syndicate && channel == CONSTRAINT_HOLD)
-				TEST_ASSERT(!valid, "Actual old syndicate union contains a middle empty argument")
-				TEST_ASSERT_EQUAL(length(compiled.errors), 2, "Only the known type-list and resulting empty-ALL errors occur")
-				TEST_ASSERT_EQUAL(compiled.errors[1], "predicate [path] [channel]: REQ_TYPE lists , which is not a type", "Exact real malformed-type error")
-				TEST_ASSERT_EQUAL(compiled.errors[2], "predicate [path] [channel]: has an empty ALL", "Exact resulting old group error")
-				rows += "[channel] declaration ERROR: [jointext(compiled.errors, "; ")]"
-				queries++
-				qdel(compiled)
-				continue
-			TEST_ASSERT(valid, "[path] [channel] compiles: [jointext(compiled.errors || list(), "; ")]")
-			qdel(compiled)
+		TEST_ASSERT_NOTNULL(acceptance_plan_for(holder, channel), "[path] [channel] has its real compiled native declaration")
 		if(channel == CONSTRAINT_FIT || channel == CONSTRAINT_EQUIP)
 			var/reason = dq_constraint_refusal(holder, channel, holder, wearer)
 			rows += "[channel] wearer=Human: [isnull(reason) ? "ALLOW" : reason]"
