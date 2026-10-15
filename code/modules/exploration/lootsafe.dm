@@ -186,6 +186,7 @@ TYPE_TABLE(/obj/structure/closet/crate/secure/lootsafe/devillock, code_alphabet,
 	desc = "A huge chunk of metal with a keypad embedded in it. Fine print above the keypad reads, Guaranteed thermite resistant, explosion resistant, and assistant resistant.\""
 
 CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/numberlock)
+	setup(PROC_REF(prepare_code_and_loot))
 	without("lock.toggle")
 	without("lock.toggle_worn")
 	without("lock_with_item")
@@ -200,11 +201,6 @@ CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/numberlock)
 	hackguard = 5
 	codelen = 3
 
-// ALLOW(init/INSTANCE_STATE): rolls its code and its loot per safe
-/obj/structure/closet/crate/secure/lootsafe/numberlock/Initialize(mapload)
-	. = ..()
-	make_code()
-	generate_loot()
 
 //Currently Admeme things but due to chatter I have ideas on how to expand this later
 //Concept is you either A) go and get the keycard, or B) brute force.
@@ -216,6 +212,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/numberlock)
 	codelen = 10
 
 CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/devillock)
+	setup(PROC_REF(prepare_code_and_loot))
 	without("lock.toggle")
 	without("lock.toggle_worn")
 	without("lock_with_item")
@@ -230,8 +227,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/devillock)
 	item_state = "gold_id"
 	access = list(150)
 
-// ALLOW(init/INSTANCE_STATE): rolls its code and its loot per safe
-/obj/structure/closet/crate/secure/lootsafe/devillock/Initialize(mapload)
-	. = ..()
+
+/obj/structure/closet/crate/secure/lootsafe/proc/prepare_code_and_loot()
 	make_code()
 	generate_loot()
