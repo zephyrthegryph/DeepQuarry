@@ -14,7 +14,7 @@
 
 /datum/tgui_module/crew_monitor/proc/ui_in_range(datum/act/op/A)
 	var/turf/T = get_turf(A.actor)
-	return (T && (T.z in using_map.player_levels)) ? null : MSG(crew_monitor/out_of_range)
+	return (T && isPlayerLevel(T.z)) ? null : MSG(crew_monitor/out_of_range)
 
 MSG_DEF_SELF(crew_monitor/out_of_range, "Unable to establish a connection: You're too far away from the station!")
 

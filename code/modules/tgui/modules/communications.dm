@@ -66,7 +66,7 @@ CAPABILITIES(/datum/tgui_module/communications)
 
 /// The console reaches the person: they are on a level the station's contact range covers.
 /datum/tgui_module/communications/proc/ui_in_contact(datum/act/op/A)
-	return (!using_map || (get_z(A.actor) in using_map.contact_levels)) ? null : MSG(communications/out_of_range)
+	return (!using_map || isContactLevel(get_z(A.actor))) ? null : MSG(communications/out_of_range)
 
 MSG_DEF_SELF(communications/out_of_range, "Unable to establish a connection: You're too far away from the station!")
 MSG_DEF_SELF(communications/access_denied, "Access denied.")

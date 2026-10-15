@@ -26,8 +26,8 @@
 /proc/warrants_on_file()
 	READS_FROM() // the records are read when the projector asks
 	. = list()
-	if(!isnull(GLOB.data_core.general))
-		for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
+	if(!isnull(read_once(GLOB.data_core.general)))
+		for(var/datum/data/record/warrant/W in read_once(GLOB.data_core.warrants))
 			. += W.fields["namewarrant"]
 
 /obj/item/holowarrant/proc/warrants_exist(datum/act/op/A)

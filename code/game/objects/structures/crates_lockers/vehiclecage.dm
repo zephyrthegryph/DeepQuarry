@@ -58,7 +58,7 @@ CAPABILITIES(/obj/structure/vehiclecage)
 	..()
 	look.overlay(look_overlay_image('icons/obj/storage.dmi', "[initial(icon_state)]_a", layer = MOB_LAYER + 1.1, plane = MOB_PLANE, color = paint_color))
 	for(var/obj/vehicle/V as anything in look.things_in(src, CONTAINER_SLOT_VEHICLE_CAGE, /obj/vehicle))
-		look.show_copy_of(V, layer = layer - 0.1)
+		look.show_copy_of(V, layer = initial(layer) - 0.1)
 
 /obj/structure/vehiclecage/proc/interaction_drag(datum/act/op/A)
 	var/mob/user = A.actor

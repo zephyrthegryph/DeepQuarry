@@ -80,7 +80,8 @@ MSG_DEF_SELF(fax/relays_recalibrating, "The global automated relays are still re
 
 /// The staff request is open: the global relays are not recalibrating after the last request.
 /obj/machinery/photocopier/faxmachine/proc/role_request_ready(datum/act/op/A)
-	return (!GLOB.last_fax_role_request || ELAPSED_SINCE(src, GLOB.last_fax_role_request, CLOCK_WORLD) >= 5 MINUTES) ? null : MSG(fax/relays_recalibrating)
+	var/last_request = read_once(GLOB.last_fax_role_request)
+	return (!last_request || ELAPSED_SINCE(src, last_request, CLOCK_WORLD) >= 5 MINUTES) ? null : MSG(fax/relays_recalibrating)
 
 /// The jobs a fax may request (the talon's offmap crew on its own fax).
 /obj/machinery/photocopier/faxmachine/proc/requestable_jobs(datum/act/A)
@@ -362,12 +363,12 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		return FALSE
 	if(istype(copyitem, /obj/item/paper_bundle))
 		var/obj/item/paper_bundle/B = copyitem
-		if(B.name != initial(B.name)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+		if(read_once(B.name) != initial(B.name))
 			var/atom/page1 = B.pages[1]
 			var/atom/page2 = B.pages[2]
-			return (istype(page1) && B.name == page1.name) || (istype(page2) && B.name == page2.name) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+			return (istype(page1) && read_once(B.name == page1.name)) || (istype(page2) && read_once(B.name == page2.name))
 		return TRUE
-	return copyitem.name == initial(copyitem.name)
+	return read_once(copyitem.name) == initial(copyitem.name)
 
 /obj/machinery/photocopier/faxmachine/proc/default_title_question(datum/act/op/A)
 	var/question_text = "Your fax is set to its default name. It's advisable to rename it to something self-explanatory to"

@@ -177,7 +177,8 @@ MSG_DEF_SELF(low_wall/assembling_window, span_notice("Assembling window..."))
 	return (!window_facing(A.actor)) ? null : MSG(low_wall/window_here)
 
 /obj/structure/low_wall/proc/window_built(datum/act/op/A)
-	var/window_type = get_window_build_type(A.actor, A.held)
+	var/obj/item/stack/material/glass/glass_sheet = A.held
+	var/window_type = get_window_build_type(A.actor, glass_sheet)
 	if(window_type)
 		new window_type(loc, null, TRUE)
 
@@ -379,9 +380,9 @@ CAPABILITIES(/obj/structure/window/bay)
 	for(var/i = 1 to 4)
 		img_dir = 1<<(i-1)
 		if(other_connections[i] != "0")
-			look.overlay(look_overlay_image(icon, "[basestate]_other_onframe[other_connections[i]]", dir = img_dir, color = color))
+			look.overlay(look_overlay_image(icon, "[basestate]_other_onframe[other_connections[i]]", dir = img_dir, color = read_once(color)))
 		else
-			look.overlay(look_overlay_image(icon, "[basestate]_onframe[connections[i]]", dir = img_dir, color = color))
+			look.overlay(look_overlay_image(icon, "[basestate]_onframe[connections[i]]", dir = img_dir, color = read_once(color)))
 
 	if(damage_alpha)
 		look.overlay(look_overlay_image(icon, "window0_damage", dir = img_dir, alpha = damage_alpha, blend_mode = BLEND_MULTIPLY))

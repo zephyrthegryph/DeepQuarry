@@ -260,7 +260,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 	var/mob/living/carbon/human/H = user
 	H.set_machine(src)
 	var/turf/T = get_turf(H)
-	if(T && (T.z in using_map.player_levels))
+	if(T && isPlayerLevel(T.z))
 		to_chat(H, span_danger("You can only refund at your base, it's too late now!"))
 		return TRUE
 	var/obj/item/technomancer_core/core = null
@@ -278,7 +278,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 /// Requirement: refunds only happen at the base.
 /obj/item/technomancer_catalog/proc/can_refund(mob/user, atom/target, obj/item/held)
 	var/turf/T = get_turf(user)
-	if(T && (T.z in using_map.player_levels))
+	if(T && isPlayerLevel(T.z))
 		return "you can only refund at your base, it's too late now"
 	return TRUE
 

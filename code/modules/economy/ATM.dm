@@ -331,10 +331,10 @@ CAPABILITIES(/obj/machinery/atm)
 
 /// The PIN is asked when the level goes down and the account's own card is not in the machine.
 /obj/machinery/atm/proc/lowering_needs_pin(datum/act/op/A)
-	var/datum/money_account/account = QDELETED(authenticated_account) ? null : authenticated_account // ALLOW(reads): the account is read when the button is pressed, never cached
+	var/datum/money_account/account = authenticated_account
 	if(!account || !isnum(A.args["new_security_level"]) || A.args["new_security_level"] >= account.security_level)
 		return FALSE
-	var/obj/item/card/card = QDELETED(held_card) ? null : held_card // ALLOW(reads): the card is read when the button is pressed, never cached
+	var/obj/item/card/card = held_card
 	return !(card && card.associated_account_number == account.account_number)
 
 /obj/machinery/atm/proc/ui_act_change_security_level(datum/act/op/A, new_security_level)
@@ -360,7 +360,7 @@ CAPABILITIES(/obj/machinery/atm)
 				if(reauth != authenticated_account())
 					to_chat(user, "[icon2html(src, user.client)]" + span_warning("Incorrect PIN; security level unchanged."))
 					return
-		authenticated_account().security_level = new_sec_level
+		authenticated_account().set_security_level(new_sec_level)
 	. = TRUE
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)

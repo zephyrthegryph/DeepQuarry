@@ -197,7 +197,6 @@ var	code/modules/assembly/signaler.dm	@/obj/item/assembly/signaler::radio_connec
 var	code/modules/blob2/core_chunk.dm	@/obj/item/blobcore_chunk::parent_blob_type
 var	code/modules/body/affliction.dm	@/datum/affliction::owner
 var	code/modules/body/affliction.dm	@/datum/affliction::location
-var	code/modules/body/body.dm	@/datum/body::owner
 var	code/modules/body/organs/organ_external.dm	@/obj/item/organ/external::applied_pressure
 var	code/modules/body/organs/organ_external.dm	@/obj/item/organ/external::parent
 var	code/modules/body/organs/organ_external.dm	@/obj/item/organ/external::splinted
@@ -260,7 +259,6 @@ var	code/modules/mob/living/simple_mob/overmap_mob.dm	@/obj/effect/overmap/visit
 var	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/water/digestive_enzymes::linked_mob
 var	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	@/mob/living/simple_mob/vore/aggressive/rat/tame::food
 var	code/modules/modular_computers/NTNet/NTNRC/conversation.dm	@/datum/ntnet_conversation::operator
-var	code/modules/modular_computers/computers/modular_computer/variables.dm	@/obj/item/modular_computer::active_program
 var	code/modules/modular_computers/computers/modular_computer/variables.dm	@/obj/item/modular_computer::ai_slot
 var	code/modules/modular_computers/computers/modular_computer/variables.dm	@/obj/item/modular_computer::stored_pen
 var	code/modules/modular_computers/file_system/computer_file.dm	@/datum/computer_file::holder
@@ -362,7 +360,6 @@ var	code/modules/reagents/hose/connector.dm	@/datum/hose_connector::carrier
 var	code/modules/reagents/hose/datum.dm	@/datum/hose::node1
 var	code/modules/reagents/hose/datum.dm	@/datum/hose::node2
 var	code/modules/reagents/hose/item.dm	@/obj/item/stack/hose::remembered
-var	code/modules/reagents/machinery/pump.dm	@/obj/machinery/pump::cell
 var	code/modules/reagents/reagents/_reagents.dm	@/datum/reagent::holder
 var	code/modules/recycling/disposal_connection.dm	@/datum/disposal_system_connection::connected_trunk
 var	code/modules/recycling/disposal_connection.dm	@/datum/disposal_system_connection::owner
@@ -530,7 +527,6 @@ var	code/modules/xenoarcheaology/effects/animate_anomaly.dm	@/datum/artifact_eff
 var	code/modules/xenoarcheaology/finds/talking.dm	@/datum/talking_atom::holder_atom
 var	code/modules/xenoarcheaology/tools/ano_device_battery.dm	@/obj/item/anodevice::inserted_battery
 var	code/modules/xenoarcheaology/tools/ano_device_battery.dm	@/obj/item/anodevice::last_user_touched
-var	code/modules/xenoarcheaology/tools/artifact_harvester.dm	@/obj/machinery/artifact_harvester::inserted_battery
 var	code/modules/xenoarcheaology/tools/geosample_scanner.dm	@/obj/machinery/radiocarbon_spectrometer::scanned_item
 var	code/modules/xenoarcheaology/tools/suspension_generator.dm	@/obj/machinery/suspension_gen::auth_card
 var	code/modules/xenoarcheaology/tools/tools.dm	@/obj/item/depth_scanner::current

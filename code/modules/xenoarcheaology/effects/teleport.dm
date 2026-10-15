@@ -24,7 +24,7 @@
 	var/atom/holder = get_master_holder()
 	if(istype(holder, /obj/item/anobattery))
 		var/obj/item/anobattery/battery = holder
-		battery.stored_charge = max(0, battery.stored_charge-250) //Slow your roll. This takes a LOT of energy.
+		battery.set_stored_charge(max(0, battery.stored_charge-250)) //Slow your roll. This takes a LOT of energy.
 	if(holder)
 		var/turf/T = get_turf(holder)
 		for (var/mob/living/M in range(src.effectrange,T))
@@ -44,7 +44,7 @@
 	var/atom/holder = get_master_holder()
 	if(istype(holder, /obj/item/anobattery))
 		var/obj/item/anobattery/battery = holder
-		battery.stored_charge = max(0, battery.stored_charge-500) //Slow your roll. This takes a LOT of energy.
+		battery.set_stored_charge(max(0, battery.stored_charge-500)) //Slow your roll. This takes a LOT of energy.
 	if(holder)
 		var/turf/T = get_turf(holder)
 		for (var/mob/living/M in range(src.effectrange, T))

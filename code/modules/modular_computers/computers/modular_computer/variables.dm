@@ -84,6 +84,7 @@ CAPABILITIES(/obj/item/modular_computer)
 		asks(/datum/prompt/choice, fields = list("question" = "Which component do you want to uninstall?", "title" = "Computer maintenance", "choices" = computed(PROC_REF(component_names))), step = "component", when = PROC_REF(has_components)),
 		then(PROC_REF(screwdriver_used)))
 	ref_many(nameof(paired_uavs))
+	ref_one(nameof(active_program), /datum/computer_file/program)
 	owns_one(nameof(processor_unit), /obj/item/computer_hardware/processor_unit)
 	owns_one(nameof(network_card), /obj/item/computer_hardware/network_card)
 	owns_one(nameof(hard_drive), /obj/item/computer_hardware/hard_drive)

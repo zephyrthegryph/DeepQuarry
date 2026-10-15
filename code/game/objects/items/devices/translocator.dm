@@ -85,7 +85,7 @@ CAPABILITIES(/obj/item/perfect_tele)
 	look.watch(power_source)
 	if(!power_source)
 		look.state("[initial(icon_state)]_o")
-	else if(ready && (power_source.check_charge(charge_cost) || power_source.fully_charged()))
+	else if(ready && (power_source.charge_reaches(charge_cost) || power_source.fully_charged()))
 		look.state("[initial(icon_state)]")
 	else
 		look.state("[initial(icon_state)]_w")

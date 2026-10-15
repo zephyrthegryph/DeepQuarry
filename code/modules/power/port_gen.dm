@@ -237,7 +237,7 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	return cooling_temperature
 
 /obj/machinery/power/port_gen/pacman/cooling_needed()
-	return overheating > 0 || temperature > cooling_temperature() + 0.1
+	return overheating > 0 || read_once(temperature > cooling_temperature() + 0.1) // the generator's heat changes every tick: the question is sampled when asked
 
 /obj/machinery/power/port_gen/pacman/handleInactive()
 	var/cooling_temperature = 20

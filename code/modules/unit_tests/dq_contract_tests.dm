@@ -294,7 +294,7 @@
 	qdel(completed_contract)
 	var/datum/money_account/contributor = new
 	contributor.owner_name = "Suspended contributor"
-	contributor.account_number = 880041
+	contributor.set_account_number(880041)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, contributor)
 	var/datum/contract/deferred_contract = new
 	deferred_contract.title = "Deferred escrow payout test"
@@ -379,7 +379,7 @@
 /datum/unit_test/dq_contract_economy_result/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/contributor_account = new
-	contributor_account.account_number = 876543
+	contributor_account.set_account_number(876543)
 	contributor_account.owner_name = "Contract Contributor"
 	contributor_account.money = 50
 	registry_join(REGISTRY_MONEY_ACCOUNTS, contributor_account)
@@ -810,7 +810,7 @@
 /datum/unit_test/dq_medical_trial_side_contracts/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/owner = new
-	owner.account_number = 987654
+	owner.set_account_number(987654)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, owner)
 	var/datum/contract/medical_trial/trial = new
 	trial.department = DEPARTMENT_MEDICAL
@@ -919,7 +919,7 @@
 	// A missing/offline original clinician must fall through to another live
 	// Medical account instead of permanently consuming the one-shot offer.
 	var/datum/money_account/fallback_account = new
-	fallback_account.account_number = 987655
+	fallback_account.set_account_number(987655)
 	fallback_account.owner_name = "Fallback Clinician"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, fallback_account)
 	var/mob/living/carbon/human/fallback_clinician = new(test_turf)
@@ -1285,7 +1285,7 @@
 /datum/unit_test/dq_linked_personal_outcome/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/owner_account = new
-	owner_account.account_number = 830001
+	owner_account.set_account_number(830001)
 	owner_account.owner_name = "Internal Sales Tester"
 	owner_account.money = 0
 	registry_join(REGISTRY_MONEY_ACCOUNTS, owner_account)
@@ -1334,7 +1334,7 @@
 /datum/unit_test/dq_contract_authoritative_producers/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/actor_account = new
-	actor_account.account_number = 850001
+	actor_account.set_account_number(850001)
 	actor_account.owner_name = "Contract Producer Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, actor_account)
 	var/mob/living/carbon/human/actor = new(test_turf)
@@ -1460,7 +1460,7 @@
 	var/refunds_before = SSsupply.currency_refunded
 	var/internal_refunds_before = SSsupply.currency_internal_refunded
 	var/datum/money_account/customer = new
-	customer.account_number = 860001
+	customer.set_account_number(860001)
 	customer.owner_name = "Refund Customer"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	var/old_provider_money = provider.money
@@ -1471,7 +1471,7 @@
 	TEST_ASSERT(SSsupply.refund_service_invoice(invoice, provider, "Unit test checkout", refund_operator), "test invoice refund failed")
 	SSsupply.create_service_invoice(customer, provider, "Unit test checkout", list("Imaginary banquet" = 1), list("Imaginary banquet" = 1000000), list("total" = 1000000, "subsidy" = 0, "personal" = 1000000, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
 	var/datum/money_account/subsidized_customer = new
-	subsidized_customer.account_number = 860002
+	subsidized_customer.set_account_number(860002)
 	subsidized_customer.owner_name = "Subsidized Customer"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, subsidized_customer)
 	var/datum/service_invoice/subsidized_invoice = SSsupply.create_service_invoice(subsidized_customer, provider, "Unit test checkout", list("Subsidized meal" = 1), list("Subsidized meal" = 200), list("total" = 200, "subsidy" = 200, "personal" = 0, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
@@ -1636,7 +1636,7 @@
 	var/list/accounts = list()
 	for(var/index in 1 to 2)
 		var/datum/money_account/account = new
-		account.account_number = 870000 + index
+		account.set_account_number(870000 + index)
 		account.owner_name = "Reassignment Tester [index]"
 		registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 		accounts += account
@@ -2060,7 +2060,7 @@
 	var/list/accounts = list()
 	for(var/index in 1 to 4)
 		var/datum/money_account/account = new
-		account.account_number = 920000 + index
+		account.set_account_number(920000 + index)
 		account.owner_name = "Social Tester [index]"
 		account.department_id = index == 1 ? DEPARTMENT_CARGO : (index <= 3 ? DEPARTMENT_RESEARCH : DEPARTMENT_MEDICAL)
 		registry_join(REGISTRY_MONEY_ACCOUNTS, account)
@@ -2136,7 +2136,7 @@
 	var/list/accounts = list()
 	for(var/index in 1 to 3)
 		var/datum/money_account/account = new
-		account.account_number = 930000 + index
+		account.set_account_number(930000 + index)
 		account.owner_name = "Scaling Tester [index]"
 		account.department_id = index == 1 ? DEPARTMENT_ENGINEERING : DEPARTMENT_CIVILIAN
 		accounts += account

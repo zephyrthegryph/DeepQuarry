@@ -367,7 +367,7 @@ CAPABILITIES(/obj/structure/window)
 /obj/structure/window/proc/window_overlay_images(list/connections)
 	var/ratio = CEILING(((max_integrity - get_integrity_damage()) / max_integrity) * 4, 1) * 25
 	var/step = ratio > 75 ? 100 : ratio
-	return CACHED_KEY(window_overlay_sets, "[icon]|[basestate]|[connections.Join(",")]|[step]|[layer]", icon, basestate, connections, step, layer)
+	return CACHED_KEY(window_overlay_sets, "[icon]|[basestate]|[connections.Join(",")]|[step]|[initial(layer)]", icon, basestate, connections, step, initial(layer))
 
 DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_sets), SC_NEVER)
 

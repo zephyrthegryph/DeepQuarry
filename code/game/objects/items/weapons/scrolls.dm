@@ -28,7 +28,7 @@ CAPABILITIES(/obj/item/teleportation_scroll)
 /// Can `user` read a wizard's markings?
 /proc/reads_wizard_markings(mob/user)
 	READS_FROM() // a mind's antagonist roles are not round state an op could watch
-	return !user.mind || GLOB.wizards.is_antagonist(user.mind)
+	return !user.mind || read_once(GLOB.wizards.is_antagonist(user.mind))
 
 MSG_DEF_SELF(teleportation_scroll/unreadable, "You stare at the scroll but cannot make sense of the markings.")
 

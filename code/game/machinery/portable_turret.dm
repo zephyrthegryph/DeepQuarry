@@ -355,7 +355,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 /obj/machinery/porta_turret/draw(datum/look/look)
 	..()
 	look.state("[appearance_prefix()][turret_type]")
-	look.overlay(turret_opening_image(icon, turret_type, layer))
+	look.overlay(turret_opening_image(icon, turret_type, initial(layer)))
 
 /// The opening the turret sits in, drawn under it: one shared image per icon, turret type and layer.
 /proc/turret_opening_image(icon_file, turret_type, base_layer)

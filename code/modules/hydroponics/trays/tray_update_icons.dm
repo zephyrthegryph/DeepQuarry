@@ -65,29 +65,12 @@
 
 /// The plant of `key` ("[icon]-[stage]" or "[icon]-dead"), in the colour of its seed (frozen or dead plants in theirs), shared by every tray that grows it.
 /obj/machinery/portable_atmospherics/hydroponics/proc/plant_look(key, frozen_look = FALSE, colour)
-	var/image/plant_overlay = SSplants.plant_icon_cache["[key]-[colour]"]
 	if(dead)
-		plant_overlay = SSplants.plant_icon_cache[key]
-		if(!plant_overlay)
-			plant_overlay = image('icons/obj/hydroponics_growing.dmi', "[key]")
-			plant_overlay.color = DEAD_PLANT_COLOUR
-			SSplants.plant_icon_cache[key] = plant_overlay
-		return plant_overlay
+		return look_cached_image("plant-[key]-dead", 'icons/obj/hydroponics_growing.dmi', key, DEAD_PLANT_COLOUR)
 	if(frozen_look)
-		plant_overlay = image('icons/obj/hydroponics_growing.dmi', "[key]")
-		plant_overlay.color = FROZEN_PLANT_COLOUR
-		return plant_overlay
-	if(!plant_overlay)
-		plant_overlay = image('icons/obj/hydroponics_growing.dmi', "[key]")
-		plant_overlay.color = colour
-		SSplants.plant_icon_cache["[key]-[colour]"] = plant_overlay
-	return plant_overlay
+		return look_cached_image("plant-[key]-frozen", 'icons/obj/hydroponics_growing.dmi', key, FROZEN_PLANT_COLOUR)
+	return look_cached_image("plant-[key]-[colour]", 'icons/obj/hydroponics_growing.dmi', key, colour)
 
 /// The ripe product on a grown plant, shared by every tray that grows it.
 /obj/machinery/portable_atmospherics/hydroponics/proc/product_look(product_icon, product_colour, plant_colour)
-	var/image/harvest_overlay = SSplants.plant_icon_cache["product-[product_icon]-[plant_colour]"]
-	if(!harvest_overlay)
-		harvest_overlay = image('icons/obj/hydroponics_products.dmi', "[product_icon]")
-		harvest_overlay.color = product_colour
-		SSplants.plant_icon_cache["product-[product_icon]-[plant_colour]"] = harvest_overlay
-	return harvest_overlay
+	return look_cached_image("product-[product_icon]-[product_colour]", 'icons/obj/hydroponics_products.dmi', product_icon, product_colour)

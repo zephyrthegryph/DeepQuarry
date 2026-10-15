@@ -28,7 +28,7 @@
 	var/atom/holder = get_master_holder()
 	if(istype(holder, /obj/item/anobattery))
 		var/obj/item/anobattery/battery = holder
-		battery.stored_charge = max(0, battery.stored_charge-50) //This artifact uses charge at an accelrated rate. It makes you nigh invincvible while it's up OR kills you extremely quickly while it's up.
+		battery.set_stored_charge(max(0, battery.stored_charge-50)) //This artifact uses charge at an accelrated rate. It makes you nigh invincvible while it's up OR kills you extremely quickly while it's up.
 	if(toucher && iscarbon(toucher))
 		var/weakness = GetAnomalySusceptibility(toucher)
 		if(prob(weakness * 100))

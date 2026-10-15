@@ -612,7 +612,7 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 
 /// The eye overlay: tinted with the eye colour, glowing above the lighting unless hidden or switched off.
 /mob/living/silicon/pai/proc/pai_eyes_image(eyes_icon, eyes_state)
-	return look_overlay_image(eyes_icon, eyes_state, plane = (eye_glow && !hide_glow) ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = eye_color, appearance_flags = appearance_flags)
+	return look_overlay_image(eyes_icon, eyes_state, plane = (eye_glow && !hide_glow) ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = eye_color, appearance_flags = read_once(appearance_flags))
 
 /// A projection wider or taller than one tile moves the mob and its height to fit it (once, when the projection changes).
 /mob/living/silicon/pai/proc/fit_holo_projection()

@@ -278,7 +278,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 
 /// Its beam shows while it is on, fed and on a live network.
 /obj/machinery/power/emitter/proc/beam_shown()
-	return powered && power_region && avail(power_of(src).active) && active
+	return !power_lost() && power_region && avail(power_of(src).active) && active
 
 /obj/machinery/power/emitter/draw(datum/look/look)
 	..()

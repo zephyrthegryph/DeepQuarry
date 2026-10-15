@@ -1173,7 +1173,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 		if(VISIBLE_GENDER_FORCE_IDENTIFYING)
 			return get_gender()
 		if(VISIBLE_GENDER_FORCE_BIOLOGICAL)
-			return gender
+			return read_once(gender)
 		else
 			if(((worn_of(get_equipped_item(SLOT_ID_MASK)).hides & HIDEFACE) || (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEMASK) || (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEFACE)) && (worn_of(get_equipped_item(SLOT_ID_SUIT)).hides & HIDEJUMPSUIT))
 				return PLURAL

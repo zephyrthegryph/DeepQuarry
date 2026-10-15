@@ -35,7 +35,7 @@ CAPABILITIES(/obj/machinery/computer/aiupload)
 /// Requirement: the console only reaches the station's contact levels.
 /obj/machinery/computer/aiupload/proc/can_connect(datum/act/op/A)
 	var/mob/user = A.actor
-	if(using_map && !(read_once(user.z) in using_map.contact_levels))
+	if(using_map && !isContactLevel(read_once(user.z)))
 		return "unable to establish a connection, you're too far away from the station"
 	return null
 

@@ -12,7 +12,10 @@
 //
 // A background sweep re-checks entities with derived procs on a per-tick budget: production corrects
 // a missed mark within seconds, test builds fail the run and name the type and, when it can, the
-// likely undeclared read (REFRESH DRIFT).
+// likely undeclared read (REFRESH DRIFT). In a test build the audit is always on: the strict staleness
+// checker (staleness.dm) runs it on every entity it checks (everything that appeared during a test, every
+// served draw and a rotating slice of the rest), so a test that makes a thing whose hidden verbs, granted
+// verbs, periodic gate or derive() values follow state nothing published fails at its end.
 
 /datum
 	/// The outputs queued for a refresh this frame (DEP_* bits), 0 when not queued.
@@ -666,11 +669,14 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 			return TRUE
 	return FALSE
 
-/proc/refresh_check_drift(atom/A)
+/// Whether A's applied outputs still match what its derived procs give now. `check_draw` FALSE leaves the look to the caller (the strict staleness
+/// checker draws it dry and compares it itself, with the culprit var named).
+/proc/refresh_check_drift(atom/A, check_draw = TRUE)
 	var/list/drift = list()
-	var/key = refresh_look(A, apply = FALSE)
-	if(key != A.rx?.look_key)
-		drift += "draw() [refresh_key_difference(A.rx?.look_key, key)]"
+	if(check_draw)
+		var/key = refresh_look(A, apply = FALSE)
+		if(key != A.rx?.look_key)
+			drift += "draw() [refresh_key_difference(A.rx?.look_key, key)]"
 	var/eval_depth_hidden_verbs = GLOB.derived_evaluating
 	DERIVED_EVAL_BEGIN
 	var/list/hidden
@@ -718,7 +724,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	var/msg = "REFRESH DRIFT: [A.type] [jointext(drift, ", ")] changed with no state_changed() mark[derived_drift_hint(A)]"
 	GLOB.refresh_drift += msg
 #if defined(UNIT_TESTS)
-	if(!GLOB.refresh_drift_expected)
+	if(!GLOB.refresh_drift_expected && !GLOB.staleness_expected)
 		stack_trace(msg)
 #endif
 	refresh_one(A, 0)
