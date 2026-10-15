@@ -4894,3 +4894,17 @@ Affected requirement-pin classes:
 * **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
+
+### D7: static all-binding vending inventory order
+
+`click_order(BIND_HAND, "ui_open", "check_logs")` replaces vending's legacy
+`priority(below("ui_open"))`. The artificial `dx_menu_order_static` producer
+creates one target-side candidate for every binding with no actor or real input;
+it has no production callers. For `/obj/machinery/vending/nifsoft_shop` only,
+its recorded segment changes from `drag_buckle,ui_open,check_logs,ui_open` to
+`ui_open,ui_open,check_logs,drag_buckle`: canonical order moves window candidates
+above the log anchor, whereas the legacy rule moved the log below the first
+window anchor. The hand input pair remains window then logs. The static row is
+updated narrowly; no dynamic click/menu golden changes. Actual human, robot and
+AI input/menu projection is checked by `dq_silicon/d7_vending_input_order` in the
+same gate; approval of this static capture is conditional on that test passing.
