@@ -33,6 +33,8 @@ CAPABILITIES(/mob/living)
 	op("hit_disarm", item(/obj/item), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 10), label("Shove with"), then(PROC_REF(hit_disarm)))
 	op("hit_grab", item(/obj/item), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 10), label("Hold with"), then(PROC_REF(hit_grab)))
 	op("hit_hurt", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 10), label("Hit"), then(PROC_REF(hit_hurt)))
+	// A pred (or whoever feeds the prey to it) waits out the swallow time; the prey moving or the actor leaving ends it (vore_procs.dm). The wait is silent: a devour is not announced by a cog.
+	op("devour", ai(), takes("pred", "belly", "duration", "message_range"), silent_wait(), wait(PROC_REF(devour_duration)), then(PROC_REF(devour_done)))
 	living_action_status_contributions()
 	living_abilities()
 	ref_one(nameof(cameraFollow))

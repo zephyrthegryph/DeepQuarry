@@ -16,9 +16,6 @@
 	var/drive_range = 50 //this is mostly irrelevant since current mass drivers throw into space, but you could make a lower-range mass driver for interstation transport or something I guess.
 
 // Buttons and pod consoles find their drivers by id (REL_KEYED sources).
-/obj/machinery/mass_driver/relations()
-	. = ..()
-	. += rel_key(nameof(id))
 
 /obj/machinery/mass_driver/proc/id_title(datum/act/A)
 	return "[src] ID]"

@@ -41,7 +41,6 @@ CAPABILITIES(/obj/item/clothing/ears/earmuffs/headphones)
 		headphones_on = 1
 		to_chat(user, span_notice("You turn the music on."))
 
-	update_clothing_icon()
 
 /*
 	Skrell tentacle wear

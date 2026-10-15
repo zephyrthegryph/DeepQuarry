@@ -400,6 +400,3 @@ CAPABILITIES(/obj/machinery/access_button)
 	return radio_connection
 
 // Remote door buttons find airlocks by id_tag (REL_KEYED sources).
-/obj/machinery/door/airlock/relations()
-	. = ..()
-	. += rel_key(nameof(id_tag))

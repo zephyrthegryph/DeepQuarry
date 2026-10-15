@@ -1110,7 +1110,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/flannel)
 	if(buttoned)
 		flannel_state += "b"
 	look.state(flannel_state)
-	look.effect(PROC_REF(update_clothing_icon))
 
 /obj/item/clothing/suit/storage/flannel/red
 	desc = "A comfy, red flannel shirt.  Unleash your inner hipster."
@@ -1195,7 +1194,6 @@ CAPABILITIES(/obj/item/clothing/suit/caution)
 		set_icon_state("caution")
 		set_item_state("caution")
 		user.show_message("You turn the wet floor sign off.")
-	update_clothing_icon()
 
 //Ruin Marine (Doom Marine)
 /obj/item/clothing/suit/marine

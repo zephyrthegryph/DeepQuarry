@@ -86,7 +86,6 @@ CAPABILITIES(/obj/item/storage/backpack/holding/duffle)
 		set_icon_state("[icon_state]_tilted")
 		to_chat(user, "You adjust the angle of \the [src] to rest diagonally across your back.")
 		set_tilted(1)
-	changed(src)
 	return OP_OK
 
 CAPABILITIES(/obj/item/storage/backpack/holding)
@@ -206,7 +205,6 @@ CAPABILITIES(/obj/item/storage/backpack/dufflebag)
 		set_icon_state("[icon_state]_tilted")
 		to_chat(user, "You adjust the angle of \the [src] to rest diagonally across your back.")
 		set_tilted(1)
-	changed(src)
 	return OP_OK
 
 /obj/item/storage/backpack/dufflebag/syndie

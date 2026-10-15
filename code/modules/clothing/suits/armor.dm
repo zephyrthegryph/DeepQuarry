@@ -859,7 +859,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/yw/secjacket)
 	else //in case some goofy admin switches icon states around without switching the icon_open or icon_closed
 		to_chat(user, "You attempt to button-up the velcro on your [src], before promptly realising how silly you are.")
 		return
-	update_clothing_icon()	//so our overlays update
 
 /obj/item/clothing/suit/armor/yw/blueshieldcoat
 	name = "Blue Shield Security Coat"

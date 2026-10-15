@@ -52,8 +52,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Engineer's Guild Shroud helmet"
 				hood.desc = "A Shroud helmet designed for good visibility in low-light environments."
-				hood.icon_state = "zaddat_engie"
-				hood.item_state = "zaddat_engie"
+				hood.set_icon_state("zaddat_engie")
+				hood.set_item_state("zaddat_engie")
 		if("Spacer")
 			name = "\improper Spacer's Guild Shroud"
 			base_name = "\improper Spacer's Guild Shroud"
@@ -63,8 +63,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Spacer's Guild Shroud helmet"
 				hood.desc = "A cool plastic-and-glass helmet designed after popular adventure fiction."
-				hood.icon_state = "zaddat_spacer"
-				hood.item_state = "zaddat_spacer"
+				hood.set_icon_state("zaddat_spacer")
+				hood.set_item_state("zaddat_spacer")
 		if("Knight")
 			name = "\improper Knight's Shroud"
 			base_name = "\improper Knight's Shroud"
@@ -74,8 +74,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Knight's Shroud helm"
 				hood.desc = "This spaceworthy helmet was patterned after the knight's helmets used by Zaddat before their discovery by the Unathi."
-				hood.icon_state = "zaddat_knight"
-				hood.item_state = "zaddat_knight"
+				hood.set_icon_state("zaddat_knight")
+				hood.set_item_state("zaddat_knight")
 		if("Fashion")
 			name = "\improper Avazi House Shroud"
 			base_name = "\improper Avazi House Shroud"
@@ -85,8 +85,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Avazi House Shroud helmet"
 				hood.desc = "The Avazi Fashion House recently designed this popular Shroud helmet, designed to pleasingly frame a Zaddat's face."
-				hood.icon_state = "zaddat_fashion"
-				hood.item_state = "zaddat_fashion"
+				hood.set_icon_state("zaddat_fashion")
+				hood.set_item_state("zaddat_fashion")
 		if("Bishop")
 			name = "\improper Bishop-patterned Shroud"
 			base_name = "\improper Bishop-patterned Shroud"
@@ -96,8 +96,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Bishop-patterned Shroud helmet"
 				hood.desc = "The Shroud helmet that inspired a dozen lawsuits."
-				hood.icon_state = "zaddat_bishop"
-				hood.item_state = "zaddat_bishop"
+				hood.set_icon_state("zaddat_bishop")
+				hood.set_item_state("zaddat_bishop")
 		if("Rugged")
 			name = "rugged Shroud"
 			base_name = "rugged Shroud"
@@ -107,8 +107,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "rugged Shroud helmet"
 				hood.desc = "Supposedly, this helmet should make humans more comfortable and familiar with the Zaddat."
-				hood.icon_state = "zaddat_rugged"
-				hood.item_state = "zaddat_rugged"
+				hood.set_icon_state("zaddat_rugged")
+				hood.set_item_state("zaddat_rugged")
 		if("Soft")
 			name = "\improper soft Shroud"
 			base_name = "\improper soft Shroud"
@@ -118,14 +118,11 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper soft Shroud hood"
 				hood.desc = "Not as solid as a proper helmet, but works nonetheless."
-				hood.icon_state = "zaddat_soft"
-				hood.item_state = "zaddat_soft"
+				hood.set_icon_state("zaddat_soft")
+				hood.set_item_state("zaddat_soft")
 
 	to_chat(M, "You finish customizing your Shroud. Looking good!")
 	set_has_been_customized(TRUE)
-	changed(src) // the sprites are plain vars: the wearer, who watches the suit and helmet, draws the new style
-	if(hood)
-		changed(hood)
 	return TRUE
 
 //Zaddat subtypes
@@ -180,8 +177,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Security Spacer's Guild Shroud helmet"
 				hood.desc = "A cool plastic-and-glass helmet designed after popular adventure fiction. This one has a layer of armor"
-				hood.icon_state = "zaddat_spacer"
-				hood.item_state = "zaddat_spacer"
+				hood.set_icon_state("zaddat_spacer")
+				hood.set_item_state("zaddat_spacer")
 		if("Knight")
 			name = "\improper Security Knight's Shroud"
 			base_name = "\improper Knight's Shroud"
@@ -191,8 +188,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Security Knight's Shroud helm"
 				hood.desc = "This spaceworthy helmet was patterned after the knight's helmets used by Zaddat before their discovery by the Unathi. This one has a layer of armor"
-				hood.icon_state = "zaddat_knight"
-				hood.item_state = "zaddat_knight"
+				hood.set_icon_state("zaddat_knight")
+				hood.set_item_state("zaddat_knight")
 		if("Fashion")
 			name = "\improper Security Avazi House Shroud"
 			base_name = "\improper Security Avazi House Shroud"
@@ -202,8 +199,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Security Avazi House Shroud helmet"
 				hood.desc = "The Avazi Fashion House recently designed this popular Shroud helmet, designed to pleasingly frame a Zaddat's face. This one has a layer of armor"
-				hood.icon_state = "zaddat_fashion"
-				hood.item_state = "zaddat_fashion"
+				hood.set_icon_state("zaddat_fashion")
+				hood.set_item_state("zaddat_fashion")
 		if("Bishop")
 			name = "\improper Security Bishop-patterned Shroud"
 			base_name = "\improper Bishop-patterned Shroud"
@@ -213,8 +210,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Security Bishop-patterned Shroud helmet"
 				hood.desc = "The Shroud helmet that inspired a dozen lawsuits. This one has a layer of armor"
-				hood.icon_state = "zaddat_bishop"
-				hood.item_state = "zaddat_bishop"
+				hood.set_icon_state("zaddat_bishop")
+				hood.set_item_state("zaddat_bishop")
 		if("Rugged")
 			name = "Security rugged Shroud"
 			base_name = "rugged Shroud"
@@ -224,14 +221,11 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "Security rugged Shroud helmet"
 				hood.desc = "Supposedly, this helmet should make humans more comfortable and familiar with the Zaddat. This one has a layer of armor"
-				hood.icon_state = "zaddat_rugged"
-				hood.item_state = "zaddat_rugged"
+				hood.set_icon_state("zaddat_rugged")
+				hood.set_item_state("zaddat_rugged")
 
 	to_chat(M, "You finish customizing your Shroud. Looking good!")
 	set_has_been_customized(TRUE)
-	changed(src) // the sprites are plain vars: the wearer, who watches the suit and helmet, draws the new style
-	if(hood)
-		changed(hood)
 	return TRUE
 
 
@@ -250,8 +244,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Rad-Plated Engineer's Guild Shroud helmet"
 				hood.desc = "A Shroud helmet designed for good visibility in low-light environments. It has extra radiation shielding"
-				hood.icon_state = "zaddat_engie"
-				hood.item_state = "zaddat_engie"
+				hood.set_icon_state("zaddat_engie")
+				hood.set_item_state("zaddat_engie")
 		if("Spacer")
 			name = "\improper Rad-Plated Spacer's Guild Shroud"
 			base_name = "\improper Spacer's Guild Shroud"
@@ -261,8 +255,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Rad-Plated Spacer's Guild Shroud helmet"
 				hood.desc = "A cool plastic-and-glass helmet designed after popular adventure fiction. It has extra radiation shielding"
-				hood.icon_state = "zaddat_spacer"
-				hood.item_state = "zaddat_spacer"
+				hood.set_icon_state("zaddat_spacer")
+				hood.set_item_state("zaddat_spacer")
 		if("Knight")
 			name = "\improper Rad-Plated Knight's Shroud"
 			base_name = "\improper Knight's Shroud"
@@ -272,8 +266,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Rad-Plated Knight's Shroud helm"
 				hood.desc = "This spaceworthy helmet was patterned after the knight's helmets used by Zaddat before their discovery by the Unathi. It has extra radiation shielding"
-				hood.icon_state = "zaddat_knight"
-				hood.item_state = "zaddat_knight"
+				hood.set_icon_state("zaddat_knight")
+				hood.set_item_state("zaddat_knight")
 		if("Fashion")
 			name = "\improper Rad-Plated Avazi House Shroud"
 			base_name = "\improper Avazi House Shroud"
@@ -283,8 +277,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Rad-Plated Avazi House Shroud helmet"
 				hood.desc = "The Avazi Fashion House recently designed this popular Shroud helmet, designed to pleasingly frame a Zaddat's face. It has extra radiation shielding"
-				hood.icon_state = "zaddat_fashion"
-				hood.item_state = "zaddat_fashion"
+				hood.set_icon_state("zaddat_fashion")
+				hood.set_item_state("zaddat_fashion")
 		if("Bishop")
 			name = "\improper Rad-Plated Bishop-patterned Shroud"
 			base_name = "\improper Bishop-patterned Shroud"
@@ -294,8 +288,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Rad-Plated Bishop-patterned Shroud helmet"
 				hood.desc = "The Shroud helmet that inspired a dozen lawsuits. It has extra radiation shielding"
-				hood.icon_state = "zaddat_bishop"
-				hood.item_state = "zaddat_bishop"
+				hood.set_icon_state("zaddat_bishop")
+				hood.set_item_state("zaddat_bishop")
 		if("Rugged")
 			name = "rugged Rad-Plated Shroud"
 			base_name = "rugged Shroud"
@@ -305,8 +299,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "rugged Rad-Plated Shroud helmet"
 				hood.desc = "Supposedly, this helmet should make humans more comfortable and familiar with the Zaddat. It has extra radiation shielding"
-				hood.icon_state = "zaddat_rugged"
-				hood.item_state = "zaddat_rugged"
+				hood.set_icon_state("zaddat_rugged")
+				hood.set_item_state("zaddat_rugged")
 		if("Soft")
 			name = "\improper Rad-Plated soft Shroud"
 			base_name = "\improper soft Shroud"
@@ -316,14 +310,11 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 			if(hood)
 				hood.name = "\improper Rad-Plated soft Shroud hood"
 				hood.desc = "Not as solid as a proper helmet, but works nonetheless. It has extra radiation shielding"
-				hood.icon_state = "zaddat_soft"
-				hood.item_state = "zaddat_soft"
+				hood.set_icon_state("zaddat_soft")
+				hood.set_item_state("zaddat_soft")
 
 	to_chat(M, "You finish customizing your Shroud. Looking good!")
 	set_has_been_customized(TRUE)
-	changed(src) // the sprites are plain vars: the wearer, who watches the suit and helmet, draws the new style
-	if(hood)
-		changed(hood)
 	return TRUE
 
 /obj/item/clothing/suit/space/void/zaddat/proc/open_style_request(mob/user, prompt_title)

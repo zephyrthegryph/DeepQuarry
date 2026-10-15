@@ -55,7 +55,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle)
 	else //in case some goofy admin switches icon states around without switching the icon_open or icon_closed
 		to_chat(user, "You attempt to button-up the velcro on your [src], before promptly realising how silly you are.")
 		return
-	update_clothing_icon()	//so our overlays update
 
 /obj/item/clothing/suit/storage/hooded/toggle
 	name = DEVELOPER_WARNING_NAME
@@ -86,8 +85,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
 	if(istype(hood,/obj/item/clothing/head/hood/toggleable)) //checks if a hood (which you should use) is attached
 		var/obj/item/clothing/head/hood/toggleable/T = hood
 		T.set_open(open) //copy the jacket's open state to the hood
-		T.update_clothing_icon()
-	update_clothing_icon() //so our overlays update
 
 /obj/item/clothing/suit/storage/hooded/toggle/look_parts(datum/look/look)
 	..()
@@ -119,7 +116,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest)
 	else
 		to_chat(user, "\The [src] does not have a badge.")
 		return
-	update_clothing_icon()
 
 /obj/item/clothing/suit/storage/tailcoat
 	name = "victorian tailcoat"

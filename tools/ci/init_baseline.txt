@@ -1010,10 +1010,6 @@ init_lines	code/game/objects/items/weapons/storage/fancy.dm	@/obj/item/storage/f
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	@/obj/item/storage/fancy/cigarettes::Initialize::for
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	@/obj/item/storage/fancy/cigarettes::Initialize::C.brand
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	@/obj/item/storage/fancy/cigarettes::Initialize::C.desc
-init_lines	code/game/objects/items/weapons/storage/internal.dm	@/obj/item/storage/internal::Initialize::rel_set
-init_lines	code/game/objects/items/weapons/storage/internal.dm	@/obj/item/storage/internal::Initialize::if
-init_lines	code/game/objects/items/weapons/storage/internal.dm	@/obj/item/storage/internal::Initialize::return
-init_lines	code/game/objects/items/weapons/storage/internal.dm	@/obj/item/storage/internal::Initialize::name
 init_lines	code/game/objects/items/weapons/storage/mre.dm	@/obj/item/storage/box/tgmc_mre::Initialize::pickflavor
 init_lines	code/game/objects/items/weapons/storage/mre.dm	@/obj/item/reagent_containers/food/snacks/tgmc_mre_component::Initialize::if
 init_lines	code/game/objects/items/weapons/storage/mre.dm	@/obj/item/reagent_containers/food/snacks/tgmc_mre_component::Initialize::reagents.add_reagent
@@ -1475,7 +1471,6 @@ init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::if
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::for
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::tie
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::attach_accessory
-init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::clothing_index
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::if
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::O
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::name
