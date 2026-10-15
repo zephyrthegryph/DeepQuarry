@@ -1,6 +1,6 @@
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
-	setup(PROC_REF(default_apply_parts))
+	setup(TYPE_PROC_REF(/obj/machinery, default_apply_parts))
 	configure(uses_power(idle = 5))
 	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
 	silicon_ui()
