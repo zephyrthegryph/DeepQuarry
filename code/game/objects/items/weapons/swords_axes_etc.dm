@@ -79,9 +79,6 @@ CAPABILITIES(/obj/item/melee/telebaton)
 		set_force(3)//not so robust now
 		set_attack_verb(list("hit", "punched"))
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		changed(src)
 
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 	add_fingerprint(user)

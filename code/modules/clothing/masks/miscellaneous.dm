@@ -52,7 +52,6 @@ CAPABILITIES(/obj/item/clothing/mask/muzzle)
 			set_icon_state(initial(icon_state))
 			set_armor(null)
 			to_chat(user, "You pull the mask up to cover your face.")
-		update_clothing_icon()
 		worn_protection_changed()
 
 CAPABILITIES(/obj/item/clothing/mask/surgical)
@@ -401,7 +400,6 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 	if(!istype(user) || !choice || !options[choice] || user.incapacitated() || !in_range(user, src))
 		return
 	set_icon_state(options[choice])
-	changed(src)
 	user.update_mob_action_buttons()
 	to_chat(user, span_notice("Your paper mask now is now [choice]."))
 
@@ -445,7 +443,6 @@ CAPABILITIES(/obj/item/clothing/mask/emotions)
 	var/static/list/options = list("Joy" = "joy", "Flushed" = "flushed", "Pensive" = "pensive","Angry" ="angry")
 	if(istype(user) && choice && options[choice] && !user.incapacitated() && in_range(user, src))
 		set_icon_state(options[choice])
-		changed(src)
 		user.update_mob_action_buttons()
 		to_chat(user, span_notice("Your [src] now displays a [choice] emotion."))
 

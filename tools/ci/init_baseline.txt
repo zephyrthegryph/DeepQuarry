@@ -1477,7 +1477,6 @@ init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::if
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::for
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::tie
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::attach_accessory
-init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::clothing_index
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::if
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::O
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::name

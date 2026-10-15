@@ -107,9 +107,6 @@ var	code/engine/kernel/requests.dm	@/datum/request::waiting
 var	code/engine/kernel/requests.dm	@/datum/request::payer
 var	code/engine/kernel/sequence.dm	@/datum/work_item/sequence::frame
 var	code/engine/kernel/sequence_state.dm	@/datum/seq_frame::entity
-var	code/engine/kernel/tasks.dm	@/datum/task::actor
-var	code/engine/kernel/tasks.dm	@/datum/task::target
-var	code/engine/kernel/tasks.dm	@/datum/task::receiver
 var	code/engine/lifeforms/forms.dm	@/datum/lifeform_plan::tooltip
 var	code/engine/lifeforms/input.dm	@/datum/act/input::over
 var	code/engine/lifeforms/lifetimes.dm	@/datum/notice/ended::by
@@ -514,8 +511,6 @@ var	code/modules/vore/eating/soulcatcher.dm	@/obj/soulgem::linked_belly
 var	code/modules/vore/eating/soulcatcher.dm	@/obj/soulgem::selected_soul
 var	code/modules/vore/eating/special_bellies.dm	@/obj/belly/special/teleporter::target
 var	code/modules/vore/eating/vore.dm	@/client::prefs_vr
-var	code/modules/vore/eating/vore_procs.dm	@/datum/task/timed/proc_devour::pred
-var	code/modules/vore/eating/vore_procs.dm	@/datum/task/timed/proc_devour::belly
 var	code/modules/vore/eating/vorepanel.dm	@/datum/vore_look::host
 var	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/clothing/accessory/collar/khcrystal::owner
 var	code/modules/vore/resizing/sizegun_slow.dm	@/obj/item/slow_sizegun::current_target
@@ -641,10 +636,6 @@ list	code/engine/declare/table.dm	@/datum/type_table::items
 list	code/engine/io/db.dm	@/datum/io/sql::rows
 list	code/engine/io/jobs.dm	@/datum/io_lane::jobs
 list	code/engine/kernel/jobs.dm	@/datum/system/kernel_jobs::jobs
-list	code/engine/kernel/tasks.dm	@/datum/controller/global_vars::task_specs
-list	code/engine/kernel/tasks.dm	@/datum/controller/global_vars::task_target_claims
-list	code/engine/kernel/tasks.dm	@/datum/controller/global_vars::task_busy_claims
-list	code/engine/kernel/tasks.dm	@/datum/task::ends
 list	code/engine/lifeforms/adjacency.dm	@/datum/controller/global_vars::adjacency_members
 list	code/engine/lifeforms/derives.dm	@/datum/controller/global_vars::derives_running
 list	code/engine/lifeforms/forms.dm	@/datum/lifeform_plan::param_applies

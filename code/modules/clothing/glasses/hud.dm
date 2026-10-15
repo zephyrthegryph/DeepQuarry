@@ -198,7 +198,6 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 			to_chat(user, "It doesn't seem possible to do that with \the [src].")
 	else if(!can_shade)
 		to_chat(user, "It doesn't seem possible to do that with \the [src].")
-	update_clothing_icon()
 
 /// Old verb "Toggle AR Heads-Up Display".
 /obj/item/clothing/glasses/omnihud/proc/omnihud_toggle_ar_planes_verb(datum/act/op/A)
@@ -315,13 +314,11 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud/eng/meson)
 			active = 0
 			set_icon_state(off_state)
 			set_item_state("[initial(item_state)]-off")
-			changed(src)
 			to_chat(user, "You deactivate the retinal projector on the [src].")
 		else
 			active = 1
 			set_icon_state(initial(icon_state))
 			set_item_state(initial(item_state))
-			changed(src)
 			to_chat(user, "You activate the retinal projector on the [src].")
 		user.update_mob_action_buttons()
 
@@ -371,7 +368,6 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
 		set_icon_state("[icon_state]_1")
 	else
 		set_icon_state(initial(icon_state))
-	update_clothing_icon()
 	return OP_OK
 
 /obj/item/clothing/glasses/hud/security/eyepatch2
@@ -404,7 +400,6 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
 		set_icon_state("[icon_state]_1")
 	else
 		set_icon_state(initial(icon_state))
-	update_clothing_icon()
 	return OP_OK
 
 /obj/item/clothing/glasses/hud/health/eyepatch
@@ -437,7 +432,6 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch)
 		set_icon_state("[icon_state]_1")
 	else
 		set_icon_state(initial(icon_state))
-	update_clothing_icon()
 	return OP_OK
 
 //Rx Variants

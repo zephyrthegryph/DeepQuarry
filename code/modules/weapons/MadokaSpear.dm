@@ -88,10 +88,6 @@ CAPABILITIES(/obj/item/oldtwohanded)
 		O.desc = "Your second grip on the [initial(name)]"
 		user.put_in_inactive_hand(O)
 
-	if(istype(user,/mob/living/carbon/human))
-		var/mob/living/carbon/human/H = user
-		changed(src)
-
 	return TRUE
 
 ///////////OFFHAND///////////////

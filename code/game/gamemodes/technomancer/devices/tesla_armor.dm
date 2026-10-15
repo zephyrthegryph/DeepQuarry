@@ -56,7 +56,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/tesla)
 	var/mob/user = A.actor
 	set_active(!active)
 	to_chat(user, span_notice("You [active ? "" : "de"]activate \the [src]."))
-	changed(src)
 	user.update_mob_action_buttons()
 
 
@@ -75,7 +74,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/tesla)
 /obj/item/clothing/suit/armor/tesla/proc/look_effect_wearer_buttons()
 	var/mob/living/carbon/human/H = loc
 	if(istype(H))
-		changed(src)
 		H.update_mob_action_buttons()
 
 /obj/item/clothing/suit/armor/tesla/proc/recharge_ready(mob/user)

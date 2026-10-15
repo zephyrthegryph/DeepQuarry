@@ -189,9 +189,6 @@ CAPABILITIES(/obj/item/shield/energy)
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		to_chat(user, span_notice("\The [src] can now be concealed."))
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		changed(src)
 
 	add_fingerprint(user)
 	return OP_OK
@@ -266,9 +263,6 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 		set_slot_flags(null)
 		to_chat(user, span_notice("[src] can now be concealed."))
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		changed(src)
 
 	add_fingerprint(user)
 	return OP_OK
@@ -326,9 +320,6 @@ CAPABILITIES(/obj/item/shield/fluff/wolfgirlshield)
 		to_chat(user, "You [on ? "enable" : "disable"] the shield light.")
 		update_flashlight(user)
 
-		if(ishuman(user))
-			var/mob/living/carbon/human/H = user
-			changed(src)
 	return TRUE
 
 /obj/item/shield/riot/explorer/proc/update_flashlight(mob/user = null)

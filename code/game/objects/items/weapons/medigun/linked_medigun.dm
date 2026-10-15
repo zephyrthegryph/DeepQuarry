@@ -10,9 +10,6 @@
 		if(medigun == src)
 			medigun = null
 			medigun_base_unit().replace_icon()
-			if(ismob(loc))
-				var/mob/user = loc
-				changed(src)
 
 /obj/item/bork_medigun/linked/forceMove(atom/destination, direction, movetime) //Forcemove override, ugh
 	if(destination == medigun_base_unit() || destination == medigun_base_unit().loc || isturf(destination))

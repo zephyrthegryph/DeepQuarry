@@ -29,7 +29,6 @@ CAPABILITIES(/obj/item/clothing/head/soft)
 	else
 		set_icon_state(initial(icon_state))
 		to_chat(user, "You flip the hat back in normal position.")
-	update_clothing_icon()	//so our mob-overlays update
 	return OP_OK
 
 

@@ -224,9 +224,10 @@
 
 	return FALSE
 
-/// The item's held sprite changed (state nothing publishes): the holder, which watches what it holds, draws it again.
+/// The item's hands changed (wielded, swapped, picked up): a type that derives state from how it is held (wielded, force, hand sprite) overrides this
+/// and writes it through its tracked setters; the holder watches the item and draws the result. Nothing to do here.
 /obj/item/proc/update_held_icon()
-	changed(src)
+	return
 
 /obj/item/proc/move_to_top_effect(datum/act/op/A)
 	var/mob/user = A.actor

@@ -74,7 +74,6 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 	// Apply our eye colour to the target.
 	if(istype(target) && eye_colour)
 		target.looks.set_eyes_color(rgb(eye_colour[1], eye_colour[2], eye_colour[3]))
-		changed(src)
 	..()
 
 /// The eye colour as a hex string.

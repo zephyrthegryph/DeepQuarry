@@ -178,7 +178,6 @@ CAPABILITIES(/obj/item/clothing/head/pilot/alt)
 	else
 		set_icon_state(initial(icon_state))
 		to_chat(user, "You lower the visor on the pilot helmet.")
-	update_clothing_icon() //so our mob-overlays update
 
 //Pilot helmets
 /obj/item/clothing/head/pilot_vr
@@ -205,7 +204,6 @@ CAPABILITIES(/obj/item/clothing/head/pilot_vr)
 	else
 		set_icon_state(initial(icon_state))
 		to_chat(user, "You lower the visor on the pilot helmet.")
-	update_clothing_icon() //so our mob-overlays update
 
 /obj/item/clothing/head/pilot_vr/alt
 	name = "colored pilot helmet"
