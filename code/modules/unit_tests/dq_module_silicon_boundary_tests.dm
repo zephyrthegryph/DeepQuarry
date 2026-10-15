@@ -186,7 +186,7 @@
 	// must still retain its cooldown and leave the door alone when invoked.
 	for(var/mob/actor in list(AI, G))
 		was_open = O.open
-		test_op_handler(O, TYPE_PROC_REF(/obj/machinery/appliance/cooker/oven, oven_interaction_no_touch), actor)
+		test_op_handler(O, TYPE_PROC_REF(/obj/machinery/appliance/cooker/oven/c2_route_probe, oven_interaction_no_touch), actor)
 		TEST_ASSERT_EQUAL(O.open, was_open, "The no-touch effect leaves the physical door unchanged")
 		TEST_ASSERT(cooldown_left(actor, next_click) > 0, "The no-touch effect retains the original click cooldown")
 	TEST_ASSERT_EQUAL(O.touch_effects, 1, "No-touch effects never invoke the physical door operation")
