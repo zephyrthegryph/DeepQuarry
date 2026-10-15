@@ -1316,6 +1316,13 @@
 #include "gameplay\hands_and_menus.dm"
 #include "gameplay\machines.dm"
 #include "dq_tanning_rack_wetness_tests.dm"
+#include "dq_requirement_burndown_pin.dm"
+#include "dq_decl_cleanup_tests.dm"
+#include "dq_decl_remaining_starts_tests.dm"
+#include "dq_decl_archaeological_find_tests.dm"
+#include "dq_decl_visual_state_tests.dm"
+#include "dq_silicon_remote_pins.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
