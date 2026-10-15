@@ -26,7 +26,7 @@ Order checks:
 - Space suit: two same-type Initialize definitions in spacesuits.dm and breaches.dm; remembers map/loadout name before future breach modification. Retained until chain semantics and subclass naming snapshots can be migrated together; no second CAPABILITIES block.
 - RIG module base: conditional overlay setter plus construction of charge datums and charge selection; descendants use those objects. Kept protected setter and construction order.
 - Stat module base/activate/deactivate/engage: constructor-location typed link and invalid-parent deletion guards; only display naming moved.
-- RIG vision: per-instance owned mode creation and selection involves protected relation mutation declarations; no declaration changes here.
+- RIG vision: migrated in the 2026-10-15 residual follow-up below; its existing ownership and reference declarations remain unchanged.
 - `/turf`: shared prototype-table initialization fast path; keep constructor/map semantics and existing framework initializer unchanged.
 - `/turf/simulated`: area holiness, level update, outdoor membership require canonical declaration block outside A7 (sunlight_handler.dm). Do not add a duplicate block.
 - Seasonal/grass/sif/rocks: pre-parent density-gated peer spawn order and seasonal branching affects next density check and parent spawning; winter can chill into a different turf. Cannot delay into post-chain setup safely or roll independent fields without changing RNG coupling. The remaining world-read rows are mapped in the exact inventory below.
@@ -58,3 +58,10 @@ Two constructor regressions were added: `dq_a7_initialization/fishing_slogan` ch
 
 Final analyzer update on master a75de08d85: init baseline 4106 ->4011 (95 rows removed). The four extra identities from the fishing/glow follow-up were removed with the supported shrink-only update, and init lint passes. Production/focused lane proof remains blocked by unchanged master missing setter methods and base_vars failures.
 
+
+
+## Residual follow-up, 2026-10-15
+
+The RIG vision module's complete post-parent mode-construction job now runs through setup(PROC_REF(prepare_vision_modes)) in its existing block. No descendant Initialize exists, and the job takes no constructor/mapload input. The former claim that this required editing ownership declarations was too restrictive: every existing ref/ownership declaration and rel_clear/rel_add/rel_set call is preserved. Child construction, type order, first-mode selection and per-instance identity are unchanged.
+
+New focused selector: /datum/unit_test/dq_a7_initialization/vision_modes. It constructs two actual base modules and a single-mode subtype, checking real child count/type/order, first selection, glasses creation and independent state. No generation, analyzer or runtime verification was performed for this follow-up; baseline shrink and the lane-ready gate remain pending.
