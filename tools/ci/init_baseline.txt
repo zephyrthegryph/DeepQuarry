@@ -1481,14 +1481,6 @@ init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movabl
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/deactivate::Initialize::return
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/engage::Initialize::if
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/atom/movable/stat_rig_module/engage::Initialize::return
-init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::if
-init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::vision_index
-init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::mode_types
-init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::rel_clear
-init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::for
-init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::vision_datum
-init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::if
-init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	@/obj/item/rig_module/vision::Initialize::rel_set
 init_lines	code/modules/clothing/spacesuits/spacesuits.dm	@/obj/item/clothing/suit/space::Initialize::if
 init_lines	code/modules/clothing/spacesuits/spacesuits.dm	@/obj/item/clothing/suit/space::Initialize::LAZYSET
 init_lines	code/modules/clothing/under/xenos/vox.dm	@/obj/item/clothing/accessory/storage/vox::Initialize::hold.max_storage_space
