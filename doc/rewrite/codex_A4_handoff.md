@@ -30,7 +30,7 @@ Removed only unused existing init annotations from deleted initializers; no anno
 - exonet (3): mapload-only description; sound startup moved into setup.
 - frame (15): left untouched for root D5; constructor building/type and ownership site.
 - gear_dispenser (6): dynamic datum dictionary content and custom subtype's pre-parent type list. Converting starting dictionary contents requires ownership declaration changes and a keyed/table starting-content contract; common task rules reserve those declarations. Distribution registry and display-door setup moved.
-- holoposter (5): mapped forced advert, security-dependent RNG, randomized rotation deadline preserve the existing correlated runtime contract. No persistent shadow roll state introduced.
+- holoposter: its complete ordered post-parent mapped-advert/security/random/deadline job now uses setup; see residual follow-up below.
 - machinery base (8), machinery_power (6): constructor dir/mapload and enclosing-location recursive movement setup, whose order precedes specialized Initialize consumers. Common rules forbid rewriting those existing setter/relation declarations.
 - navbeacon patrol (1): codes embed the map's next_patrol; retain it before parent. Base turf hiding is setup.
 - pipe construction (6): constructor make_from parsing and blueprint effects precede parent initialization; native params currently require a larger consumer migration, not arbitrary setup phase shift.
@@ -68,3 +68,10 @@ Tracking follow-up after the read-driven master merge: two moved writes in camer
 Rebased cleanly onto origin/master 4ab2e15fe1, preserving master's tracking, setter and ownership changes. The narrowly authorized antagonist consumer now writes the nuclear code through nuke.set_r_code(code); no other antagonist or out-of-scope production code was changed. This resolves the previously documented raw-code-write dependency without an annotation or baseline increase. The setter is generated from the native rolls declaration for r_code.
 
 No generation, analyzer, compile or test has been run on this rebased tip during this continuation. Verification is pending the exclusive B-lane verification queue. Earlier stamps are historical and do not certify this source tip.
+
+
+## Final residual follow-up, 2026-10-15
+
+The holoposter's complete post-parent initialization now uses setup(PROC_REF(prepare_initial_poster)) in its existing block. No descendant Initialize consumer or transient constructor argument exists. Forced-advert capture, security reaction, original RNG draw and scheduling retain their exact order and bodies; no setter, timer call, declared state or ownership/reference policy was changed.
+
+New selector /datum/unit_test/dq_a4_initialization/holoposter constructs real forced/random/alert posters, checks mapped forcing and security recovery, checks the original thirty-to-thirty-five minute interval, then dispatches the unchanged real rotation callbacks with bounded native timers on the injected test clock. It verifies random re-arming and forced non-rearming without simulating thirty minutes of unrelated station work. Source only: generation, analyzer baseline shrink and the lane-ready proof remain pending.
