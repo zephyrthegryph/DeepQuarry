@@ -293,8 +293,6 @@ CAPABILITIES(/obj/item/clothing/ears)
 
 CAPABILITIES(/obj/item/clothing/ears/offear)
 	configure(item_worn(slots = SLOT_EARS | SLOT_TWOEARS))
-
-CAPABILITIES(/obj/item/clothing/ears/offear)
 	derives(nameof(name), PROC_REF(containing_item_field))
 	derives(nameof(desc), PROC_REF(containing_item_field))
 	derives(nameof(icon), PROC_REF(containing_item_field))
