@@ -3250,8 +3250,6 @@ init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/ar
 init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::desc
 init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::my_effect.trigger
 init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::artifact_master.do_large_randomization
-init_lines	code/modules/xenoarcheaology/finds/fossils.dm	@/obj/skeleton::Initialize::breq
-init_lines	code/modules/xenoarcheaology/finds/fossils.dm	@/obj/skeleton::Initialize::desc
 init_lines	code/modules/xenoarcheaology/finds/misc.dm	@/obj/machinery/crystal::Initialize::randomize_color
 init_lines	code/modules/xenoarcheaology/finds/special.dm	@/obj/effect/decal/cleanable/blood/splatter/animated::Initialize::loc_last_process
 init_lines	maps/common/common_shuttles_crew.dm	@/obj/machinery/status_display/shuttle_display::Initialize::GLOB.shuttdisp_list
