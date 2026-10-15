@@ -331,11 +331,11 @@
 		own(child)
 		own_constructed_contents(child)
 
-// A genuine native item declaration reaches the native override branch, which
-// production storage(accepts=...) does not itself declare as an item channel.
-/obj/item/storage/wallet/dq_native_override_pin
+// A genuine native plain-item declaration reaches the item override branch.
+// Storage has a different restrict_hold() override for its own capability.
+/obj/item/dq_native_override_pin
 
-CAPABILITIES(/obj/item/storage/wallet/dq_native_override_pin)
+CAPABILITIES(/obj/item/dq_native_override_pin)
 	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(/obj/item/pen), because = "it doesn't take that"), req_acceptance_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS))
 
 // Give the actual size provider a distinct declared type baseline, independent
@@ -346,7 +346,7 @@ CAPABILITIES(/obj/item/storage/wallet/dq_native_override_pin)
 // Capture the existing dynamic holder override, including its current refusal text.
 /datum/unit_test/dq_requirement_burndown_pin/hold_override/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	var/obj/item/storage/wallet/dq_native_override_pin/holder = allocate(/obj/item/storage/wallet/dq_native_override_pin, null)
+	var/obj/item/dq_native_override_pin/holder = allocate(/obj/item/dq_native_override_pin, null)
 	var/obj/item/pen/exact = allocate(/obj/item/pen, null)
 	var/obj/item/pen/dq_larger_override_pin/oversize = allocate(/obj/item/pen/dq_larger_override_pin, null)
 	var/obj/item/tool/wrench/wrong_type = allocate(/obj/item/tool/wrench, null)
@@ -377,5 +377,5 @@ CAPABILITIES(/obj/item/storage/wallet/dq_native_override_pin)
 	rows += "raised boundary: [dq_constraint_refusal(holder, CONSTRAINT_HOLD, oversize, null) || "ALLOW"]"
 	var/dir = "[DQ_SNAPSHOT_ROOT]requirement_burndown_override/"
 	var/list/bad = list()
-	var/report = dq_snapshot_compare(dir, "requirement_burndown_override", list(/obj/item/storage/wallet = rows), dq_snapshot_read_dir(dir, bad), bad)
+	var/report = dq_snapshot_compare(dir, "requirement_burndown_override", list(/obj/item/dq_native_override_pin = rows), dq_snapshot_read_dir(dir, bad), bad)
 	TEST_ASSERT_NULL(report, report)
