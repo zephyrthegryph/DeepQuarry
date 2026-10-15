@@ -11,3 +11,15 @@ The archaeological reagent row is interleaved with constructing and decorating a
 The transport `Initialize(list/assets)` is a manually invoked configuration callback, not an atom's creation lifecycle. `after_init()` would run at transport creation rather than after its current asset list is supplied, changing captured preloads and configuration reload behavior. The existing `after()` stays; the callback is not renamed to evade the lint.
 
 Baseline counts and verification are pending. No new annotation or baseline raise; no merge or push.
+
+## Current verification barrier (2026-10-15)
+
+Generation and the owned `decl` check pass (47 to 46 findings), but full ratchets
+reject the new `registry(..., when = is_latejoin_landmark)` predicate: its read of
+inherited `name` adds one `untracked_inputs/stat_input_untracked` site (86 to 87).
+The original imperative join was a boot-time snapshot; native conditional membership
+needs reactive publication of that name, or a declared boot-snapshot membership form.
+Neither can be introduced here without changing protected tracking declarations or
+adding debt. No read is hidden, no annotation or baseline is raised, and no compile
+or test world was run for this refreshed branch. D5 is blocked and is not stamped;
+the other scoped retained sites remain described above.
