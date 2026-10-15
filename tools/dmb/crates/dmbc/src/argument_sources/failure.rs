@@ -312,7 +312,22 @@ mod tests {
                         LowerErrorKind::Internal => DiagnosticKind::Internal,
                     }
                 );
-                assert_eq!(diagnostics[0].message, "issued failure");
+                // A source error keeps DreamMaker's wording; a model limitation is reported as the native
+                // compiler's own gap, with the offending subject (lowering/wording.rs).
+                let expected = match kind {
+                    LowerErrorKind::UnsupportedModel => String::new(),
+                    _ => "issued failure".to_string(),
+                };
+                if expected.is_empty() {
+                    let message = &diagnostics[0].message;
+                    assert!(
+                        message.starts_with("/proc/probe(x in list(")
+                            && message.ends_with("): native compiler does not support this yet (issued failure)"),
+                        "{message}"
+                    );
+                } else {
+                    assert_eq!(diagnostics[0].message, expected, "{kind:?}");
+                }
             }
             let error = LowerError {
                 reason: "nested expression failure".into(),

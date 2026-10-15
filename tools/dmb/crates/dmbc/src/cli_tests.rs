@@ -169,7 +169,7 @@ fn first_argument_error_and_existing_messages_are_preserved() {
             "invalid define name \"9INVALID\"",
         ),
         (vec!["compile"], "a project manifest is required"),
-        (vec!["unknown"], "expected analyze or compile"),
+        (vec!["unknown"], "expected analyze, compile or prepare-query"),
     ] {
         assert_eq!(parse_args(&arguments).unwrap_err().to_string(), expected);
     }

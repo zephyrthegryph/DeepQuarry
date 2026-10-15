@@ -90,7 +90,10 @@ fn finite_variable_negative_resident_and_disk_replay_tracks_inheritance_and_dele
         owner,
         name: SymbolId::of("unknown_native_variable_name"),
     };
-    assert!(host.domain_version(unknown.domain()).is_none());
+    // A name that no source declares and that is outside the reviewed native names is certified absent for any
+    // receiver (ordinary-name absence, commit 887b0cc7f2); `nameof_native_tests` relies on the same rule to report
+    // `/datum/base::actually_absent` as a source error.
+    assert!(host.domain_version(unknown.domain()).is_some());
     struct Opaque;
     impl Resolver for Opaque {
         fn resolve(&self, query: Q) -> M {
@@ -184,8 +187,14 @@ fn finite_variable_negative_resident_and_disk_replay_tracks_inheritance_and_dele
     ] {
         let current = build(text);
         let (current_host, _) = prepare_retained(&current, &engine, Some(&facts)).unwrap();
-        assert!(resident.values.lookup(key, &current_host).is_none());
-        assert!(disk.lookup_anonymous(key, &current_host, 0).code.is_none());
+        // Once no declaration of the name remains anywhere, the absence is the ordinary-name rule (commit
+        // 887b0cc7f2): the issued token no longer depends on the source and reuse is sound, because the fresh
+        // answers compared below are identical. While a declaration of the name remains, any move that can change
+        // inheritance must invalidate the entry.
+        if text.contains("finite_value") {
+            assert!(resident.values.lookup(key, &current_host).is_none(), "stale resident reuse for {text}");
+            assert!(disk.lookup_anonymous(key, &current_host, 0).code.is_none());
+        }
         let fresh = crate::request_runner::runner_facts::prepare(&current, &engine.snapshot).unwrap().0;
         for query in queries { assert_eq!(current_host.resolve(query).canonical_bytes(), fresh.resolve(query).canonical_bytes()); }
     }
@@ -322,12 +331,12 @@ fn ordinary_global_negative_tracks_new_body_names_shadowing_and_provider_scope()
         .covers(lexical_storage));
     assert_eq!(current.resolve(lexical_storage), M::Missing);
     assert!(current.domain_version(lexical_storage.domain()).is_some());
-    // Neither ordinary receiver fields nor unissued providers borrow this rule.
+    // A receiver query for a name nothing declares is covered by the same ordinary-name rule.
     let receiver = Q::Var {
         owner: SymbolId::of("/datum"),
         name,
     };
-    assert!(!current
+    assert!(current
         .variable_absence
         .as_ref()
         .unwrap()

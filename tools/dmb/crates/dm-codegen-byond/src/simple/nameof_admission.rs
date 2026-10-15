@@ -338,9 +338,12 @@ mod tests {
             assert_eq!(error.span, errors[0].span);
             assert!(error.span.unwrap().start >= source.find("return nameof").unwrap());
         }
-        let opaque = compile(2).err().expect("unissued method namespace");
-        assert_eq!(opaque.len(), 1);
-        assert_eq!(opaque[0].kind, LowerErrorKind::UnsupportedModel);
+        // `/proc/probe` has no current type, so no method namespace is consulted (`reflective_procedure_query`
+        // needs a receiver type): an unissued method answer is irrelevant and the relative path is absent.
+        // The opaque-method case with a receiver type is the `mode == 2` assertion above.
+        let opaque = compile(2).err().expect("no receiver type");
+        assert_eq!(opaque.len(), 3, "{opaque:?}");
+        assert!(opaque.iter().all(|error| error.kind == LowerErrorKind::SourceError));
     }
     #[test]
     fn nameof_recovery_category_uses_reference_role_not_error_text() {

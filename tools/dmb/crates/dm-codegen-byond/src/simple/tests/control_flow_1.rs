@@ -294,13 +294,11 @@ fn labeled_loops_and_comparison_flags_match_native() {
             continue;
         }
         if id == 10 {
+            // Constant-case switch: one `Switch` table (as DreamMaker emits), not a Teq/Pop comparison chain.
+            let ours = byond_dmb::bytecode::decode(&linked.words).unwrap();
             assert_eq!(
-                linked
-                    .words
-                    .windows(2)
-                    .filter(|pair| pair == &[opcode::TEQ, opcode::POP])
-                    .count(),
-                2
+                ours.iter().filter(|instruction| instruction.name == "Switch").count(),
+                1
             );
             continue;
         }
@@ -467,15 +465,24 @@ fn c_style_for_with_continue_and_break_has_valid_branches() {
 fn switch_cases_compare_a_single_evaluated_selector() {
     let ast = dm_syntax::parse("/proc/test(x)\n  switch(x)\n    if(1)\n      return 10\n    if(2)\n      return 20\n    else\n      return 30\n");
     let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["x".into()]).unwrap();
-    assert_eq!(compiled.local_count, 1);
+    // DreamMaker 516.1687 lowers constant-case switches to one `Switch` table over the selector, with no
+    // temporary local and no per-case comparison (`GetVar arg0; Switch {1=>..;2=>..;else=>..}`).
+    assert_eq!(compiled.local_count, 0);
     let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
     let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
     assert_eq!(
         decoded
             .iter()
+            .filter(|instruction| instruction.name == "Switch")
+            .count(),
+        1
+    );
+    assert_eq!(
+        decoded
+            .iter()
             .filter(|instruction| instruction.opcode == opcode::TEQ)
             .count(),
-        2
+        0
     );
     let starts: BTreeSet<_> = decoded
         .iter()
@@ -900,7 +907,7 @@ fn authenticated_var_block_commas_reject_at_current_comma() {
         include_str!("../../../../../fixtures/native/local_declaration_group_diagnostics/group_duplicate_name.dm"),
     ] {
         let parsed = dm_syntax::parse(source);
-        let errors = compile_simple_proc(&parsed.items[0].children).unwrap_err();
+        let errors = compile_simple_proc(&parsed.items.iter().find(|item| item.header.contains("probe")).expect("probe proc").children).unwrap_err();
         assert_eq!(errors.len(), 1);
         assert_eq!(errors[0].kind, LowerErrorKind::SourceError);
         assert_eq!(errors[0].reason, ",: expected }");

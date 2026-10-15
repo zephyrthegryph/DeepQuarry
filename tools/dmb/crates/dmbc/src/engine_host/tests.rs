@@ -181,14 +181,19 @@ fn pinned_receiver_methods_lower_dynamically_without_fabricated_abi() {
             name: copy,
             verb: false,
         },
-        Q::Proc {
+    ] {
+        assert_eq!(host.resolve(query), M::Unsupported(query), "{query:?}");
+    }
+    // The /list namespace is closed: a name it does not have is absent, as in DreamMaker 516.1687
+    // ("L.never_authored: undefined proc").
+    assert_eq!(
+        host.resolve(Q::Proc {
             owner: list,
             name: SymbolId::of("never_authored"),
             verb: false,
-        },
-    ] {
-        assert_eq!(host.resolve(query), M::Unsupported(query));
-    }
+        }),
+        M::Missing
+    );
     let body = frontend.body(&frontend.bodies[0]).unwrap();
     let inputs = dm_codegen_byond::ProcedureInputs {
         parameters: vec!["items".into()],
@@ -291,10 +296,13 @@ fn pinned_global_callable_absence_keeps_source_and_intrinsic_domains_distinct() 
         }),
         M::Member { .. }
     ));
-    for name in ["sin", "never_authored_name"] {
-        let query = Q::GlobalProc(SymbolId::of(name));
-        assert_eq!(host.resolve(query), M::Unsupported(query));
-    }
+    let sin = Q::GlobalProc(SymbolId::of("sin"));
+    assert_eq!(host.resolve(sin), M::Unsupported(sin));
+    // A global name that is neither authored nor a built-in is absent ("never_authored_name: undefined proc").
+    assert_eq!(
+        host.resolve(Q::GlobalProc(SymbolId::of("never_authored_name"))),
+        M::Missing
+    );
 }
 #[test]
 fn source_membership_changes_do_not_change_compiler_policy_identity() {

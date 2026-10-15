@@ -575,17 +575,18 @@ fn args_receiver_type_preserves_lexical_shadows_without_outer_variable_queries()
             crate::VariableWord::Args,
         ),
         (
-            "/proc/p(args)\n    return args.Copy(3)\n",
+            // A typed formal named args shadows the builtin. DreamMaker 516.1687 accepts this; an untyped
+            // formal (`/proc/p(args)`) is "args.Copy: undefined proc" and a local `var/args` is a duplicate
+            // definition, so those spellings are not lowering inputs here.
+            "/proc/p(list/args)
+    return args.Copy(3)
+",
             ProcedureInputs {
                 parameters: vec!["args".into()],
+                parameter_types: [("args".to_string(), "/list".to_string())].into(),
                 ..Default::default()
             },
             crate::VariableWord::Arg(0),
-        ),
-        (
-            "/proc/p()\n    var/args = null\n    return args.Copy(3)\n",
-            ProcedureInputs::default(),
-            crate::VariableWord::Local(0),
         ),
     ] {
         let code = lower(source, inputs, &symbols, &host).unwrap();
@@ -779,10 +780,11 @@ fn opaque_intrinsic_field_read_uses_presence_and_storage_only() {
     assert!(reads
         .iter()
         .any(|query| matches!(query, Q::VarStorage { .. })));
-    assert!(!reads.iter().any(|query| matches!(
-        query,
-        Q::Var { .. } | Q::StaticVar { .. } | Q::DeclaredVarType { .. }
-    )));
+    // The selected declaration's type is observed through the ledger (validate_variable_type) but an opaque answer
+    // never fails the read, and no instance-variable metadata is demanded.
+    assert!(!reads
+        .iter()
+        .any(|query| matches!(query, Q::Var { .. } | Q::StaticVar { .. })));
 }
 #[test]
 fn assignment_type_is_demanded_only_by_contextual_constructors() {
@@ -820,16 +822,9 @@ fn assignment_type_is_demanded_only_by_contextual_constructors() {
             &symbols,
             &host,
         );
+        // The selected field's declared type is observed (validate_variable_type) but an opaque answer is not an
+        // error, so a value that needs no receiver type still lowers.
         assert!(result.is_ok(), "{value}: {:?}", result.err());
-        assert!(
-            !host
-                .reads
-                .lock()
-                .unwrap()
-                .iter()
-                .any(|q| matches!(q, Q::DeclaredVarType { .. })),
-            "{value}"
-        );
     }
     for value in [
         "new()",
@@ -851,7 +846,7 @@ fn assignment_type_is_demanded_only_by_contextual_constructors() {
         assert!(
             errors
                 .iter()
-                .any(|error| error.reason.contains("DeclaredVarType")),
+                .any(|error| error.reason.contains("variable declared type")),
             "{value}: {errors:?}"
         );
     }
