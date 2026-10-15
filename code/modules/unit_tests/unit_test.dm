@@ -600,9 +600,6 @@ GLOBAL_VAR(dq_test_select_names)
 /// Everything allocate() made is the test's to delete when it ends. `allocated` is a relation
 /// list, never ownership: production code adopts allocated things freely, and whatever is still
 /// alive here when the test is torn down is deleted (deleted entries have left the view).
-/datum/unit_test/relations()
-	. = ..()
-	. += rel_many(nameof(allocated))
 
 /datum/unit_test/on_destroy(force)
 	end_test_world() // already done unless Run() timed out
@@ -1505,3 +1502,6 @@ GLOBAL_VAR(boot_unclean)
 	if(!world.params?["test-focus"])
 		return // the full suite: nothing to check
 	TEST_FAIL("the test-focus file named no known /datum/unit_test type")
+
+CAPABILITIES(/datum/unit_test)
+	ref_many(nameof(allocated))

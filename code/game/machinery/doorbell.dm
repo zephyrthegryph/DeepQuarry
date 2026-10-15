@@ -84,6 +84,7 @@ CAPABILITIES(/obj/machinery/doorbell_chime)
 	flags = WALL_ITEM
 
 CAPABILITIES(/obj/machinery/button/doorbell)
+	ref_many(nameof(chimes), /obj/machinery/doorbell_chime, by = nameof(id), target_key = nameof(/obj/machinery/doorbell_chime::id_tag))
 	// The subtype handles item touches; multitool and wrench actions keep their higher priority.
 	extend("button_press_item", priority(OP_PRIORITY_DEFAULT - 2))
 	extend("button_press", priority(OP_PRIORITY_DEFAULT - 3))
@@ -116,12 +117,6 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 
 /// Chimes whose id_tag matches our id (keyed).
 /obj/machinery/button/doorbell/var/list/obj/machinery/doorbell_chime/chimes
-/obj/machinery/button/doorbell/relations()
-	. = ..()
-	. += rel_many(nameof(chimes), keyed = nameof(id), keyed_target = /obj/machinery/doorbell_chime)
-/obj/machinery/doorbell_chime/relations()
-	. = ..()
-	. += rel_key(nameof(id_tag))
 
 /obj/machinery/button/doorbell/proc/interaction_press_impl(datum/act/op/A)
 	var/mob/user = A.actor

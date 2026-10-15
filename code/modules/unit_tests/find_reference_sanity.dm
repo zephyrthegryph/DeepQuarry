@@ -7,9 +7,6 @@
 	var/list/test_list = list()
 	var/list/test_assoc_list = list()
 
-/atom/movable/ref_holder/relations()
-	. = ..()
-	. += rel_one(nameof(test))
 
 /atom/movable/ref_holder/on_destroy(force)
 	// A static var outlives the instance: clear it by hand.
@@ -21,9 +18,6 @@
 	references_to_clear = INFINITY
 	var/atom/movable/ref_test/self_ref
 
-/atom/movable/ref_test/relations()
-	. = ..()
-	. += rel_one(nameof(self_ref))
 
 /datum/unit_test/find_reference_sanity/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)
@@ -161,3 +155,9 @@
 
 	TEST_ASSERT(LAZYACCESS(victim.found_refs, global_vars), "The ref-tracking tool failed to find a natively global variable")
 	SSgarbage.should_save_refs = FALSE
+
+CAPABILITIES(/atom/movable/ref_holder)
+	ref_one(nameof(test))
+
+CAPABILITIES(/atom/movable/ref_test)
+	ref_one(nameof(self_ref))

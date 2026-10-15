@@ -140,6 +140,3 @@ CAPABILITIES(/obj/machinery/optable)
 		return 0
 	return 1
 
-/obj/machinery/optable/relations()
-	. = ..()
-	. += rel_one(nameof(computer), back = nameof(/obj/machinery/computer/operating::table))

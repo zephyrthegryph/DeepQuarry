@@ -60,11 +60,6 @@
 	var/list/others
 	var/datum/kept
 
-/datum/rxw_typed/relations()
-	. = ..()
-	. += rel_one(nameof(partner), /datum/rxw_typed)
-	. += rel_many(nameof(others), /datum/rxw_typed)
-	. += rel_one(nameof(kept), /datum/rxw_typed, kind = RELK_OWNED)
 
 /datum/rxw_stranger
 
@@ -343,3 +338,8 @@
 	TEST_ASSERT(B in A.others, "as a member")
 	rel_link(A, nameof(A.partner), null)
 	TEST_ASSERT_NULL(A.partner, "null clears a typed view")
+
+CAPABILITIES(/datum/rxw_typed)
+	ref_one(nameof(partner), /datum/rxw_typed)
+	ref_many(nameof(others), /datum/rxw_typed)
+	owns_one(nameof(kept), /datum/rxw_typed)
