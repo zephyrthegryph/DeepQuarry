@@ -207,7 +207,7 @@
 	var/obj/item/pen/P = allocate(/obj/item/pen, T)
 	var/obj/item/clothing/under/color/grey/wrong = allocate(/obj/item/clothing/under/color/grey, T)
 	TEST_ASSERT(acceptance_declared(S, CONSTRAINT_SUIT_STORAGE), "Fixture has a native restrictive suit channel")
-	TEST_ASSERT(!dq_constraint_has_legacy_override(S, CONSTRAINT_SUIT_STORAGE), "Fixture selects actual native channel rather than a legacy override")
+	TEST_ASSERT_EQUAL(acceptance_plan_for(S, CONSTRAINT_SUIT_STORAGE), table_of(S).acceptance_channels[CONSTRAINT_SUIT_STORAGE], "Fixture initially selects its actual declared native plan without an instance override")
 	TEST_ASSERT_EQUAL(dq_native_equip_slot_reason(H, SLOT_ID_SUIT_STORAGE, P, H), "you need a suit first", "Missing actual worn holder refuses before exemption")
 	TEST_ASSERT(H.equip_to_slot(S, SLOT_ID_SUIT), "Actual native suit occupies wearer slot")
 	TEST_ASSERT_NULL(dq_native_equip_slot_reason(H, SLOT_ID_SUIT_STORAGE, P, H), "Legacy callback allows pen on genuine native suit")

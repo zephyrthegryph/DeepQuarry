@@ -90,3 +90,19 @@
 			to_chat(actor, span_warning("You need [amount] of \the [src] for this."))
 		return FALSE
 	return TRUE
+
+/// Human-readable article and quality names used by actual tool refusals.
+/proc/dq_pred_article(noun)
+	return "[(copytext(noun, 1, 2) in list("a", "e", "i", "o", "u")) ? "an" : "a"] [noun]"
+
+/proc/dq_pred_tool_name(quality)
+	switch(quality)
+		if(TOOL_CABLE_COIL)
+			return "cable coil"
+		if(TOOL_BLOODFILTER)
+			return "blood filter"
+		if(TOOL_ROLLINGPIN)
+			return "rolling pin"
+		if(TOOL_MINING)
+			return "mining tool"
+	return quality
