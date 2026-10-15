@@ -228,8 +228,8 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 /obj/machinery/photocopier/faxmachine/proc/ui_data_obj_machinery_photocopier_faxmachine(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["scan"] = scan ? scan.name : null
-	data["isAI"] = isAI(user)
-	data["isRobot"] = isrobot(user)
+	data["isAI"] = ui_viewer_fact(user, "ai")
+	data["isRobot"] = ui_viewer_fact(user, "robot")
 	data["adminDepartments"] = GLOB.admin_departments
 
 	data["bossName"] = using_map.boss_name
@@ -260,13 +260,9 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		if(check_access(scan))
 			set_authenticated(scan.registered_name)
 			rank = scan.assignment
-	else if(login_type == LOGIN_TYPE_AI && isAI(user))
+	else if(login_type != LOGIN_TYPE_NORMAL && login_type == user.records_login_kind())
 		set_authenticated(user.name)
-		rank = JOB_AI
-	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(user))
-		set_authenticated(user.name)
-		var/mob/living/silicon/robot/R = user
-		rank = "[R.modtype] [R.braintype]"
+		rank = user.records_login_rank()
 
 /obj/machinery/photocopier/faxmachine/proc/ui_act_logout(datum/act/op/A)
 	var/mob/user = A.actor

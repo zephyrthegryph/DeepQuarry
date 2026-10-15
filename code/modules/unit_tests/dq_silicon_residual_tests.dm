@@ -1,0 +1,175 @@
+/// Local HUD questions belong to the AI and clicked screen, not its wireless provider.
+/datum/unit_test/om/silicon_hud_local_cancellation
+
+/datum/unit_test/om/silicon_hud_local_cancellation/run_om(list/made)
+	test_prompts_reset()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/silicon/ai/actor = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
+	var/mob/living/silicon/ai/other = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
+	actor.control_disabled = TRUE
+	TEST_ASSERT(!actor.remote_link_up(null), "the real wireless interface is disabled before local HUD input")
+	var/mob/observer/eye/eye = actor.active_eye()
+	TEST_ASSERT_NOTNULL(eye, "the actual AI has its initialized camera eye")
+	eye.setLoc(T)
+	var/atom/movable/screen/button = allocate(/atom/movable/screen)
+	button.name = "Show Camera List"
+	button.click_with_actor(actor, null, null, null)
+	var/datum/pending_op/pending = op_pending_for(actor, "hud_camera_list")
+	TEST_ASSERT_NOTNULL(pending, "camera list still opens through the actual local HUD with wireless disabled")
+	TEST_ASSERT_EQUAL(pending.actor, actor, "the native question keeps the explicit HUD actor")
+	TEST_ASSERT_EQUAL(pending.holder, actor, "the native question belongs to that AI")
+	TEST_ASSERT_EQUAL(pending.held, button, "the exact clicked screen bounds the continuation lifetime")
+	TEST_ASSERT_NULL(op_pending_for(other, "hud_camera_list"), "another actual AI does not inherit this question")
+	for(var/list/row as anything in op_menu(other, actor, null))
+		TEST_ASSERT(!(row["key"] in list("hud_camera_list", "hud_camera_track")), "private HUD questions are absent from another actor's ordinary target menu")
+	var/datum/prompt/choice/ask = pending.request
+	made += ask
+	var/datum/op_result/result = pending.result
+	TEST_ASSERT_EQUAL(ask.answerer, actor, "the question is addressed to the actual local actor")
+	test_prompt_answer(ask, null)
+	TEST_ASSERT(result.outcome != ACT_COMMITTED, "canceling the camera question cannot commit a selection")
+	TEST_ASSERT_NULL(op_pending_for(actor, "hud_camera_list"), "canceling releases the native continuation")
+	TEST_ASSERT_EQUAL(eye.loc, T, "canceling never moves the actual camera eye")
+	button.name = "Track With Camera"
+	button.click_with_actor(actor, null, null, null)
+	pending = op_pending_for(actor, "hud_camera_track")
+	TEST_ASSERT_NOTNULL(pending, "the second local HUD control also opens without wireless authority")
+	TEST_ASSERT_EQUAL(pending.held, button, "tracking also retains the actual clicked screen")
+	ask = pending.request
+	made += ask
+	result = pending.result
+	qdel(button)
+	TEST_ASSERT_NULL(op_pending_for(actor, "hud_camera_track"), "deleting the source screen cancels its native question")
+	TEST_ASSERT(result.outcome != ACT_COMMITTED, "a deleted HUD source cannot commit tracking")
+	TEST_ASSERT(QDELETED(ask) || !ask.is_open(), "source deletion closes or destroys the actual outstanding request")
+	TEST_ASSERT_NULL(actor.cameraFollow, "neither canceled control starts camera following")
+	TEST_ASSERT_EQUAL(eye.loc, T, "source cancellation also preserves the real eye location")
+
+/// The presentation profile intentionally differs from control authority and physiology.
+/datum/unit_test/dq_silicon/viewer_profile_roles
+
+/datum/unit_test/dq_silicon/viewer_profile_roles/run_gate()
+	var/turf/T = test_floor()
+	var/mob/living/silicon/ai/AI = make_ai(T)
+	var/mob/living/silicon/robot/R = make_borg(T)
+	var/mob/living/carbon/human/H = make_human(T)
+	AI.control_disabled = TRUE
+	TEST_ASSERT(ui_viewer_fact(AI, "ai") && ui_viewer_fact(AI, "silicon"), "a wireless-disabled AI keeps the AI-only and broad-silicon display flags")
+	TEST_ASSERT(ui_viewer_fact(AI, "person_console"), "AI alarm text remains readable despite disabled control")
+	TEST_ASSERT(!ui_viewer_fact(R, "ai") && ui_viewer_fact(R, "robot") && ui_viewer_fact(R, "silicon"), "a real borg keeps its separate robot flag without acquiring the AI-only flag")
+	TEST_ASSERT(!ui_viewer_fact(R, "person_console"), "the old human-or-AI alarm policy still excludes borgs")
+	TEST_ASSERT(ui_viewer_fact(H, "person_console") && ui_viewer_fact(H, "paper_readable"), "a human retains both ordinary reader flags")
+	TEST_ASSERT(!ui_viewer_fact(H, "silicon") && !ui_viewer_fact(H, "ai") && !ui_viewer_fact(H, "robot"), "a human never acquires a silicon payload flag")
+	TEST_ASSERT(ui_viewer_fact(R, "paper_readable"), "borg paperwork remains readable independently of AI-only camera controls")
+	var/mob/living/silicon/pai/P = allocate(/mob/living/silicon/pai, T)
+	TEST_ASSERT(ui_viewer_fact(P, "silicon") && ui_viewer_fact(P, "paper_readable"), "a real pAI inherits broad-silicon presentation and reading")
+	TEST_ASSERT(!ui_viewer_fact(P, "ai") && !ui_viewer_fact(P, "robot") && !ui_viewer_fact(P, "person_console"), "a pAI acquires neither AI-only nor borg-only nor human-or-AI flags")
+	TEST_ASSERT(!ui_viewer_fact(null, "person_console") && !ui_viewer_fact(null, "silicon"), "a missing viewer has no presentation facts")
+
+/datum/unit_test/dq_silicon/communications_state_transaction
+
+/datum/unit_test/dq_silicon/communications_state_transaction/run_gate()
+	var/turf/T = test_floor()
+	var/mob/living/silicon/ai/AI = make_ai(T)
+	var/mob/living/silicon/robot/R = make_borg(T)
+	var/mob/living/carbon/human/H = make_human(T)
+	var/datum/tgui_module/communications/C = allocate(/datum/tgui_module/communications)
+	C.setMenuState(H, 2)
+	TEST_ASSERT_EQUAL(C.menu_state, 2, "the actual human changes the ordinary communications state")
+	TEST_ASSERT_EQUAL(C.ai_menu_state, 1, "human navigation preserves the independent silicon state")
+	AI.control_disabled = TRUE
+	C.setMenuState(AI, 3)
+	TEST_ASSERT_EQUAL(C.ai_menu_state, 3, "AI navigation selects the actual silicon state even with wireless disabled")
+	TEST_ASSERT_EQUAL(C.menu_state, 2, "AI navigation preserves ordinary console state")
+	C.setMenuState(R, 2)
+	TEST_ASSERT_EQUAL(C.ai_menu_state, 2, "borg navigation uses the same silicon channel")
+	var/mob/living/silicon/pai/P = allocate(/mob/living/silicon/pai, T)
+	C.setMenuState(P, 3)
+	TEST_ASSERT_EQUAL(C.menu_state, 3, "pAI navigation retains the ordinary channel despite its silicon presentation profile")
+	TEST_ASSERT_EQUAL(C.ai_menu_state, 2, "pAI navigation cannot change the AI/borg channel")
+	C.setMenuState(null, 1)
+	TEST_ASSERT_EQUAL(C.menu_state, 1, "the old null-controller path still selects ordinary state")
+	TEST_ASSERT_EQUAL(C.ai_menu_state, 2, "null-controller navigation cannot change the silicon channel")
+
+/datum/unit_test/dq_silicon/disposal_hand_drag_transaction
+
+/datum/unit_test/dq_silicon/disposal_hand_drag_transaction/run_gate()
+	var/turf/T = test_floor()
+	var/mob/living/silicon/robot/R = make_borg(T)
+	var/obj/machinery/disposal/bin = allocate(/obj/machinery/disposal, T)
+	var/obj/item/pen/P = allocate(/obj/item/pen, T)
+	TEST_ASSERT(!bin.broken_now(), "the actual disposal is intact before testing its insertion transaction")
+	bin.disposal_insert(R, P, FALSE)
+	TEST_ASSERT_EQUAL(P.loc, T, "a borg's ordinary hand insertion still refuses a loose item")
+	bin.disposal_insert(R, P, TRUE)
+	TEST_ASSERT_EQUAL(P.loc, bin, "the same borg can drag that actual item into the disposal")
+	var/obj/item/storage/bag/trash/bag = allocate(/obj/item/storage/bag/trash, T)
+	var/obj/item/pen/bagged = allocate(/obj/item/pen, T)
+	TEST_ASSERT(move_into(bag, CONTAINER_SLOT_STORAGE, bagged, R), "the real trash bag owns its actual test item")
+	bin.disposal_insert(R, bag, FALSE)
+	TEST_ASSERT_EQUAL(bagged.loc, bin, "bag emptying occurs before the borg ordinary-hand refusal")
+	TEST_ASSERT_EQUAL(bag.loc, T, "emptying never inserts the trash bag itself")
+	TEST_ASSERT(!(bagged in bag.slot_contents()), "the emptied item really leaves the bag's slot ledger")
+
+/// Forced/bump admission belongs to the passenger's body, not a wireless controller.
+/datum/unit_test/dq_silicon/recharge_body_admission
+
+/datum/unit_test/dq_silicon/recharge_body_admission/run_gate()
+	var/turf/T = test_floor()
+	var/obj/machinery/recharge_station/station = allocate(/obj/machinery/recharge_station, T)
+	var/mob/living/silicon/robot/R = make_borg(T)
+	TEST_ASSERT_NOTNULL(R.cell, "the real robot starts with its actual power cell")
+	R.set_stat(UNCONSCIOUS)
+	TEST_ASSERT_NULL(station.go_in(R), "an unconscious robot cannot enter through the world transaction")
+	TEST_ASSERT_NULL(station.slot_item(OCCUPANT_SLOT_RECHARGE_STATION), "the refused passenger never occupies the station")
+	R.set_stat(CONSCIOUS)
+	TEST_ASSERT_EQUAL(station.go_in(R), 1, "the recovered robot enters through the actual body transaction")
+	TEST_ASSERT_EQUAL(station.slot_item(OCCUPANT_SLOT_RECHARGE_STATION), R, "the slot ledger contains the admitted real passenger")
+	var/mob/living/carbon/human/H = make_human(T)
+	TEST_ASSERT_NULL(station.go_in(H), "an occupied station does not replace its passenger")
+	TEST_ASSERT_EQUAL(station.slot_item(OCCUPANT_SLOT_RECHARGE_STATION), R, "occupied admission leaves the original passenger intact")
+	station.go_out()
+	TEST_ASSERT_NULL(station.go_in(H), "an ordinary organic human remains ineligible")
+	var/obj/item/rig/suit = allocate(/obj/item/rig, T)
+	rel_set(H, nameof(H.wearing_rig), suit)
+	H.set_stat(UNCONSCIOUS)
+	TEST_ASSERT_EQUAL(station.go_in(H), 1, "forced entry preserves the old unconscious rig-wearer exception")
+	TEST_ASSERT_EQUAL(station.slot_item(OCCUPANT_SLOT_RECHARGE_STATION), H, "the actual unconscious rig wearer occupies the station")
+	station.go_out()
+	H.set_stat(CONSCIOUS)
+	rel_take(H, nameof(H.wearing_rig))
+	var/mob/living/silicon/robot/platform/platform = allocate(/mob/living/silicon/robot/platform, T)
+	platform.enable_godmode()
+	TEST_ASSERT_NOTNULL(platform.cell, "the real platform has its initialized cell before admission checks")
+	platform.set_stat(UNCONSCIOUS)
+	TEST_ASSERT_EQUAL(platform.recharge_station_admission(station), /datum/msg/req_silent, "incapacity precedes the platform size warning")
+	platform.set_stat(CONSCIOUS)
+	var/obj/item/cell/old_cell = platform.cell
+	platform.set_cell(null)
+	TEST_ASSERT_EQUAL(platform.recharge_station_admission(station), /datum/msg/req_silent, "a missing cell also precedes the platform size warning")
+	platform.set_cell(old_cell)
+	var/datum/op_result/refused = perform_op(platform, station, "recharge_station_admit", origin = ORIGIN_SYSTEM)
+	TEST_ASSERT_EQUAL(refused.outcome, ACT_REFUSED, "an otherwise healthy platform is refused by the actual native body admission")
+	TEST_ASSERT_EQUAL(refused.reason, "You are too large to fit into \the [station].", "the native refusal retains the exact original platform warning text")
+	TEST_ASSERT_NULL(station.slot_item(OCCUPANT_SLOT_RECHARGE_STATION), "refusing the platform leaves the actual slot empty")
+	for(var/list/row as anything in op_menu(R, station, null))
+		TEST_ASSERT(row["key"] != "recharge_station_admit", "the script-only physiological transaction is not a player menu action")
+
+/datum/unit_test/dq_silicon/rig_controller_power_transaction
+
+/datum/unit_test/dq_silicon/rig_controller_power_transaction/run_gate()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = make_human(T)
+	var/mob/living/silicon/ai/AI = make_ai(T)
+	var/mob/living/silicon/robot/R = make_borg(T)
+	var/obj/item/rig/suit = allocate(/obj/item/rig, T)
+	TEST_ASSERT_NOTNULL(suit.cell, "the initialized real rig supplies its actual cell")
+	var/initial_charge = suit.cell.charge
+	TEST_ASSERT(initial_charge >= 20, "the initialized cell has enough power to observe both accepted transactions")
+	TEST_ASSERT(!H.use_rig_module_power(suit, null, 1), "an unworn rig refuses ordinary human control")
+	TEST_ASSERT_EQUAL(suit.cell.charge, initial_charge, "refused human control cannot spend stored power")
+	AI.control_disabled = TRUE
+	TEST_ASSERT(AI.use_rig_module_power(suit, null, 1), "the silicon rig-control exemption is local and survives wireless disable")
+	TEST_ASSERT_EQUAL(suit.cell.charge, initial_charge - 10, "the actual AI transaction spends the unchanged rig cost")
+	TEST_ASSERT(R.use_rig_module_power(suit, null, 1), "a real borg retains the same controller exemption")
+	TEST_ASSERT_EQUAL(suit.cell.charge, initial_charge - 20, "the borg transaction spends exactly the same real cell units")

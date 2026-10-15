@@ -55,7 +55,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	var/list/data = list()
 
 	data["has_item"] = copyitem || has_buckled_mobs() // Ass copying
-	data["isAI"] = issilicon(user)
+	data["isAI"] = ui_viewer_fact(user, "silicon")
 	data["can_AI_print"] = (toner >= 5)
 	data["has_toner"] =	!!toner
 	data["max_toner"] = 40

@@ -183,12 +183,7 @@
 
 	//Final distance check. Time has passed, menus have come and gone. Can't use do_after adjacent because doesn't behave for held micros
 	var/user_to_pred = get_dist(get_turf(user),get_turf(pred))
-	var/user_to_prey = get_dist(get_turf(user),get_turf(prey))
-
-	if(user == pred && isAI(user))
-		var/mob/living/silicon/ai/AI = user
-		if(AI.holo && LAZYACCESS(AI.holo.masters, AI))
-			user_to_prey = get_dist(get_turf(LAZYACCESS(AI.holo.masters, AI)), get_turf(prey))
+	var/user_to_prey = user.vore_feed_distance(prey, pred)
 
 	if(user_to_pred > 1 || user_to_prey > 1)
 		return FALSE
@@ -215,3 +210,12 @@
 		to_chat(user, span_vnotice("The prey prefers not to be eaten while AFK"))
 		return FALSE
 	return TRUE
+
+/// Distance from the actual feeding control source to the prey.
+/mob/proc/vore_feed_distance(mob/prey, mob/predator)
+	return get_dist(get_turf(src), get_turf(prey))
+
+/mob/living/silicon/ai/vore_feed_distance(mob/prey, mob/predator)
+	if(src == predator && holo && LAZYACCESS(holo.masters, src))
+		return get_dist(get_turf(LAZYACCESS(holo.masters, src)), get_turf(prey))
+	return ..(prey, predator)

@@ -55,7 +55,7 @@ CAPABILITIES(/datum/tgui_module/crew_monitor)
 	var/mob/user = A.actor
 	var/list/data = list()
 
-	data["isAI"] = istype(user, /mob/living/silicon/ai)
+	data["isAI"] = ui_viewer_fact(user, "ai")
 
 	var/z = get_z(user)
 	var/list/map_levels = uniqueList(using_map.get_visible_map_levels(z, TRUE))

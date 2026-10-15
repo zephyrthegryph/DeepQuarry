@@ -263,8 +263,8 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 			current_viewing_message = m
 
 /datum/tgui_module/communications/proc/setMenuState(mob/user, value)
-	if(isAI(user) || isrobot(user))
-		ai_menu_state = value
+	if(user)
+		user.select_communications_menu(src, value)
 	else
 		menu_state = value
 
@@ -590,3 +590,13 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 #undef COMM_CCMSGLEN_MINIMUM
 #undef SHUTTLE_CALL_GRACE
 #undef SHIFT_CHANGE_GRACE
+
+/// The actor writes the state channel its communications interface historically owns.
+/mob/proc/select_communications_menu(datum/tgui_module/communications/console, value)
+	console.menu_state = value
+
+/mob/living/silicon/ai/select_communications_menu(datum/tgui_module/communications/console, value)
+	console.ai_menu_state = value
+
+/mob/living/silicon/robot/select_communications_menu(datum/tgui_module/communications/console, value)
+	console.ai_menu_state = value

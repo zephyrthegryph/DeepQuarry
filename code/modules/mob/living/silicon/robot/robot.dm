@@ -1178,16 +1178,10 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	//check if it doesn't require any access at all
 	if(check_access(null))
 		return 1
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		//if they are holding or wearing a card that has access, that works
-		if(check_access(H.get_active_hand()) || check_access(H.get_equipped_item(SLOT_ID_ID)))
-			return 1
-	else if(isrobot(M))
-		var/mob/living/silicon/robot/R = M
-		if(check_access(R.get_active_hand()) || istype(R.get_active_hand(), /obj/item/card/robot))
+	for(var/obj/item/credential in M?.robot_control_credentials())
+		if(check_access(credential))
 			return TRUE
-	return 0
+	return !!M?.robot_control_override_card()
 
 /mob/living/silicon/robot/proc/check_access(obj/item/I)
 	if(!istype(req_access, /list)) //something's very wrong
@@ -1767,3 +1761,23 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 /mob/living/silicon/robot/starting_nutrition()
 	return 0
+
+/// Actual credentials supplied to a robot's control lock. This is intentionally
+/// distinct from GetIdCard(): a robot's built-in card is not the held control card.
+/mob/proc/robot_control_credentials()
+	return null
+
+/mob/living/carbon/human/robot_control_credentials()
+	return list(get_active_hand(), get_equipped_item(SLOT_ID_ID))
+
+/mob/living/silicon/robot/robot_control_credentials()
+	return list(get_active_hand())
+
+/// A robot's held override card bypasses the control lock's normal access list.
+/// Humans holding the same card retain the normal check_access policy.
+/mob/proc/robot_control_override_card()
+	return null
+
+/mob/living/silicon/robot/robot_control_override_card()
+	var/obj/item/card/robot/card = get_active_hand()
+	return istype(card) ? card : null

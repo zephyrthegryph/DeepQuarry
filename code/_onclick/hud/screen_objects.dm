@@ -266,6 +266,8 @@ CAPABILITIES(/atom/movable/screen)
 /// The named HUD controls act on the mob supplied by their native click boundary.
 /atom/movable/screen/proc/click_with_actor(mob/user, location, control, params)
 	if(!user)	return 1
+	if(user.operate_hud_control(src, location, control, params))
+		return 1
 	switch(name)
 		if("toggle")
 			if(user.hud_used.inventory_shown)
@@ -288,19 +290,6 @@ CAPABILITIES(/atom/movable/screen)
 			if(isliving(user))
 				var/mob/living/L = user
 				L.resist()
-
-		if("control_vtec")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				if(R.speed == 0 && R.vtec_active)
-					R.speed = -0.5
-					R.hud_used.control_vtec.icon_state = "speed_1"
-				else if(R.speed == -0.5 && R.vtec_active)
-					R.speed = -1
-					R.hud_used.control_vtec.icon_state = "speed_2"
-				else
-					R.speed = 0
-					R.hud_used.control_vtec.icon_state = "speed_0"
 
 		if("mov_intent")
 			if(isliving(user))
@@ -482,9 +471,6 @@ CAPABILITIES(/atom/movable/screen)
 			if(ishuman(user))
 				var/mob/living/carbon/human/u = user
 				u.pose()
-			else if (issilicon(user))
-				var/mob/living/silicon/u = user
-				u.pose()
 
 		if("move upwards")
 			user.up()
@@ -505,134 +491,6 @@ CAPABILITIES(/atom/movable/screen)
 					s.can_use(u,i)
 				else
 					to_chat(user, span_notice("You're not holding anything to use. You need to have something in your active hand to use it."))
-
-		if("module")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				R.pick_module()
-
-		if("inventory")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				if(R.module)
-					R.hud_used.toggle_show_robot_modules()
-					return 1
-				else
-					to_chat(R, "You haven't selected a module yet.")
-
-		if("radio")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				R.radio_menu()
-		if("panel")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				R.installed_modules()
-
-		if("store")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				if(R.module)
-					R.uneq_active()
-				else
-					to_chat(R, "You haven't selected a module yet.")
-
-		if("module1")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				R.toggle_module(1)
-
-		if("module2")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				R.toggle_module(2)
-
-		if("module3")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				R.toggle_module(3)
-
-		if("AI Core")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.view_core()
-
-		if("Show Camera List")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				var/camera = rerun_ask(ai_user, "k545", PROC_REF(click_with_actor), args, /datum/prompt/choice, question = "Pick Camera:", title = "Camera Choice", choices = ai_user.get_camera_list())
-				if(isnull(camera))
-					return
-				ai_user.ai_camera_list(camera)
-
-		if("Track With Camera")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				var/target_name = rerun_ask(ai_user, "k551", PROC_REF(click_with_actor), args, /datum/prompt/choice, question = "Pick Mob:", title = "Mob Choice", choices = ai_user.trackable_mobs())
-				if(isnull(target_name))
-					return
-				ai_user.ai_camera_track(target_name)
-
-		if("Toggle Camera Light")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.toggle_camera_light()
-
-		if("Crew Monitoring")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.subsystem_crew_monitor()
-
-		if("Show Crew Manifest")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.subsystem_crew_manifest()
-
-		if("Show Alerts")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.subsystem_alarm_monitor()
-
-		if("Announcement")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.ai_announcement()
-
-		if("Call Emergency Shuttle")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.ai_call_shuttle()
-
-		if("State Laws")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.ai_checklaws()
-
-		if("PDA - Messenger")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.aiPDA.start_program(ai_user.aiPDA.find_program(/datum/data/pda/app/messenger))
-				ai_user.aiPDA.cmd_pda_open_ui(user)
-
-		if("Take Image")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.take_image()
-
-		if("View Images")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.view_images()
-
-		if("Multicamera Mode")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.toggle_multicam()
-
-		if("New Camera")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.drop_new_multicam()
 
 		if("shadekin status")
 			var/turf/T = get_turf(user)

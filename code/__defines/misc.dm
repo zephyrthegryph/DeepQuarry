@@ -262,7 +262,6 @@
 #define USE_ALLOW_INCAPACITATED 8
 #define USE_ALLOW_NON_ADJACENT 16
 #define USE_FORCE_SRC_IN_USER 32
-#define USE_DISALLOW_SILICONS 64
 
 #define USE_SUCCESS 0
 #define USE_FAIL_NON_ADJACENT 1
@@ -271,7 +270,6 @@
 #define USE_FAIL_DEAD 4
 #define USE_FAIL_INCAPACITATED 5
 #define USE_FAIL_NOT_IN_USER 6
-#define USE_FAIL_IS_SILICON 7
 
 // This creates a consistant definition for creating global lists, automatically inserting objects into it when they are created, and removing them when deleted.
 // It is very good for removing the 'in world' junk that exists in the codebase painlessly.

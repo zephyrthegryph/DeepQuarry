@@ -1281,11 +1281,6 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 			to_chat(user, span_notice("You don't know how to operate [src]."))
 		return USE_FAIL_NON_ADV_TOOL_USR
 
-	if (HAS_FLAG(USE_DISALLOW_SILICONS) && issilicon(user))
-		if (show_messages)
-			to_chat(user, span_notice("You need hands for that."))
-		return USE_FAIL_IS_SILICON
-
 	if (HAS_FLAG(USE_FORCE_SRC_IN_USER) && !(src in user))
 		if (show_messages)
 			to_chat(user, span_notice("You need to be holding [src] to do that."))

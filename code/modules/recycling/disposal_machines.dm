@@ -243,8 +243,18 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(istype(I, /obj/item/grab)) // a grabbed mob is put in by the "disposal_dunk" op
 		return
 
-	if(isrobot(user) && !drag_dropped) //Borgs are allowed to drag-drop items into the disposal unit.
-		return
+	user.feed_disposal(src, I, drag_dropped)
+
+/// After bags, ashtrays and grabs have had their original effects, the controller
+/// performs ordinary-item insertion through its own hand/drag protocol.
+/mob/proc/feed_disposal(obj/machinery/disposal/bin, obj/item/item, drag_dropped)
+	bin.insert_ordinary_item(src, item, drag_dropped)
+
+/mob/living/silicon/robot/feed_disposal(obj/machinery/disposal/bin, obj/item/item, drag_dropped)
+	if(drag_dropped)
+		return ..(bin, item, drag_dropped)
+
+/obj/machinery/disposal/proc/insert_ordinary_item(mob/user, obj/item/I, drag_dropped)
 	if(!I || I.anchored || !I.canremove)
 		return
 
@@ -512,7 +522,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /obj/machinery/disposal/proc/ui_data_obj_machinery_disposal(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["isAI"] = isAI(user)
+	data["isAI"] = ui_viewer_fact(user, "ai")
 	data["mode"] = mode
 	data["pressure"] = round(clamp(100* air_contents.return_pressure() / (SEND_PRESSURE), 0, 100),1)
 

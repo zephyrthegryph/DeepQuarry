@@ -92,16 +92,11 @@
 /// Observation chains the real helper and typed prompt instead of replacing either.
 /atom/movable/screen/interim_camera_rerun
 	var/helper_calls = 0
-	var/last_callback
 	var/list/last_args
 
 /atom/movable/screen/interim_camera_rerun/click_with_actor(mob/user, location, control, params)
 	helper_calls++
 	last_args = args.Copy()
-	return ..()
-
-/atom/movable/screen/interim_camera_rerun/rerun_ask_proc(mob/user, key, proc_name, list/proc_args, prompt, list/fields)
-	last_callback = proc_name
 	return ..()
 
 /obj/machinery/camera/interim_screen_prompt_camera
@@ -131,16 +126,24 @@
 	TEST_ASSERT_EQUAL(ask.answerer, actor, "the real camera prompt belongs to its explicit AI actor")
 	TEST_ASSERT(camera.c_tag in ask.choices, "the actual camera list offers the initialized camera")
 	TEST_ASSERT_EQUAL(actor.track.cameras[camera.c_tag], camera, "the real camera list stores the exact initialized camera")
-	TEST_ASSERT_EQUAL(button.last_callback, TYPE_PROC_REF(/atom/movable/screen, click_with_actor), "the typed answer resumes the actor helper by its actual proc name")
+	var/datum/pending_op/pending = op_pending_for(actor, "hud_camera_list")
+	TEST_ASSERT_NOTNULL(pending, "the actual camera question belongs to its native local HUD operation")
+	TEST_ASSERT_EQUAL(pending.actor, actor, "the native continuation preserves the actual clicking AI")
+	TEST_ASSERT_EQUAL(pending.holder, actor, "the local question is owned by the AI, not a wireless machine interface")
+	TEST_ASSERT_EQUAL(pending.held, button, "the exact clicked screen remains the continuation's source lifetime context")
+	TEST_ASSERT_EQUAL(pending.request, ask, "the native pending operation owns this exact typed question")
+	var/datum/op_result/native_result = pending.result
 	TEST_ASSERT_EQUAL(eye.loc, T, "opening the real choice does not move the AI eye")
 	TEST_ASSERT_NULL(test_prompt_answer(ask, camera.c_tag), "the real typed camera answer resumes successfully")
-	TEST_ASSERT_EQUAL(button.helper_calls, 2, "the actual answer reenters the actor helper exactly once")
-	TEST_ASSERT_EQUAL(length(button.last_args), 4, "the resumed helper keeps exactly its four original arguments")
-	TEST_ASSERT_EQUAL(button.last_args[1], actor, "the actual rerun preserves the explicit actor argument")
-	TEST_ASSERT_EQUAL(button.last_args[2], T, "the actual rerun preserves the location argument")
-	TEST_ASSERT_EQUAL(button.last_args[3], control, "the actual rerun preserves the control argument")
-	TEST_ASSERT_EQUAL(button.last_args[4], params, "the actual rerun preserves the parameter argument")
+	TEST_ASSERT_EQUAL(button.helper_calls, 1, "the typed answer continues the native op without replaying the HUD helper")
+	TEST_ASSERT_EQUAL(length(button.last_args), 4, "the native HUD boundary keeps exactly its four original arguments")
+	TEST_ASSERT_EQUAL(button.last_args[1], actor, "the native HUD boundary preserves the explicit actor argument")
+	TEST_ASSERT_EQUAL(button.last_args[2], T, "the native HUD boundary preserves the location argument")
+	TEST_ASSERT_EQUAL(button.last_args[3], control, "the native HUD boundary preserves the control argument")
+	TEST_ASSERT_EQUAL(button.last_args[4], params, "the native HUD boundary preserves the parameter argument")
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "the consumed camera answer does not reopen its prompt")
 	TEST_ASSERT_EQUAL(eye.loc, camera_turf, "the actual selected camera moves the AI eye to its real turf")
+	TEST_ASSERT_EQUAL(native_result.outcome, ACT_COMMITTED, "the answered native HUD operation really commits")
+	TEST_ASSERT_NULL(op_pending_for(actor, "hud_camera_list"), "the completed native continuation releases its actual pending record")
 	var/cache_key = "[REF(button)]:[TYPE_PROC_REF(/atom/movable/screen, click_with_actor)]"
-	TEST_ASSERT_NULL(GLOB.rerun_answers[cache_key], "the completed real rerun releases its answer cache")
+	TEST_ASSERT_NULL(GLOB.rerun_answers[cache_key], "the native continuation creates no legacy rerun answer cache")

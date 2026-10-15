@@ -117,7 +117,7 @@ CAPABILITIES(/datum/tgui_module/alarm_monitor)
 			var/cameras[0]
 			var/lost_sources[0]
 
-			if(istype(user, /mob/living/silicon/ai))
+			if(ui_viewer_fact(user, "ai"))
 				for(var/obj/machinery/camera/C in A2.cameras())
 					cameras[++cameras.len] = C.tgui_structure()
 			for(var/datum/alarm_source/AS in A2.sources)
