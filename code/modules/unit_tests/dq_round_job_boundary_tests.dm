@@ -62,6 +62,7 @@
 	TEST_ASSERT_EQUAL(jobs.department_by_name("boundary-department"), department, "Access defaults must use the registered department datum")
 
 /datum/unit_test/dq_emergency_boundary/Run()
+	set_global("coalesce_runs", GLOB.coalesce_runs)
 	var/datum/system/emergency_shuttle/original_owner = SSemergency_shuttle
 	var/datum/system/emergency_shuttle/original_registered = system_table()[/datum/system/emergency_shuttle]
 	defer_cleanup(src, PROC_REF(restore_boundary_owner), original_owner, original_registered)
@@ -85,6 +86,22 @@
 	TEST_ASSERT_EQUAL(emergency.launch_time, 0, "The end-round path must preserve its zero launch deadline")
 	TEST_ASSERT(!emergency.has_arrival_countdown(), "A controller without a ferry must not advertise an arrival countdown")
 	TEST_ASSERT(!emergency.is_moving_or_warming_up(), "A controller without a ferry must not block late antagonist spawning")
+	// Use the real emergency-ferry constructor against the isolated owner. With no
+	// landmark it skips world registration; its normal radio/link cleanup still runs.
+	SSemergency_shuttle = emergency
+	var/datum/shuttle/autodock/ferry/emergency/boundary/ferry = allocate(/datum/shuttle/autodock/ferry/emergency/boundary)
+	restore_boundary_owner(original_owner, original_registered)
+	set_var(ferry, "moving_status", SHUTTLE_IDLE)
+	TEST_ASSERT(!emergency.has_arrival_countdown(), "An idle ferry must not advertise arrival")
+	set_var(ferry, "moving_status", SHUTTLE_INTRANSIT)
+	TEST_ASSERT(emergency.has_arrival_countdown(), "An in-transit ferry must advertise arrival")
+	set_var(ferry, "moving_status", SHUTTLE_WARMUP)
+	TEST_ASSERT(!emergency.has_arrival_countdown(), "Warmup must not count as an arrival countdown")
+
+/datum/shuttle/autodock/ferry/emergency/boundary
+	shuttle_area = /area
+	defer_initialisation = TRUE
+
 
 
 /// A local SYSTEM_DEF clone must not replace the running world owner, even if construction fails.

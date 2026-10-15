@@ -201,6 +201,7 @@
 
 /datum/system/emergency_shuttle/proc/set_auto_recall(enabled)
 	auto_recall = enabled
+	tracked_changed(src, nameof(auto_recall))
 
 /datum/system/emergency_shuttle/proc/toggle_calls_denied()
 	deny_shuttle = !deny_shuttle
