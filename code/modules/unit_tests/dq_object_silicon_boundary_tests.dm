@@ -18,6 +18,7 @@
 	A.holder = S
 	A.target = H
 	A.oplan = P
+	A.cap = P.owner_def
 	A.actor = R
 	TEST_ASSERT(op_req_holds(A, dexterity), "A real borg retains scanner dexterity")
 	A.actor = AI
@@ -37,6 +38,7 @@
 	A.holder = toilet
 	A.target = toilet
 	A.oplan = P
+	A.cap = P.owner_def
 	A.actor = R
 	TEST_ASSERT(!op_req_holds(A, body_gate), "A real borg without a client remains refused")
 	A.actor = AI
@@ -52,6 +54,7 @@
 	A.target = rail
 	A.actor = AI
 	A.oplan = P
+	A.cap = P.owner_def
 	var/why
 	for(var/datum/entry/part/req/Q as anything in P.needs)
 		if(!op_req_holds(A, Q))
@@ -76,7 +79,8 @@
 	I.set_access(list())
 	TEST_ASSERT(!M.internals_access_allowed(H), "Removing the human card's access really refuses")
 	TEST_ASSERT_NOTNULL(R.idcard, "The real robot has its internal card")
-	var/list/old_access = R.idcard.GetAccess().Copy()
+	var/list/current_access = R.idcard.GetAccess()
+	var/list/old_access = current_access.Copy()
 	R.idcard.set_access(list(ACCESS_ROBOTICS))
 	TEST_ASSERT(M.internals_access_allowed(R), "The robot's built-in card grants internal access")
 	R.idcard.set_access(list())
