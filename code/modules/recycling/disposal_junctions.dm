@@ -6,7 +6,7 @@
 	icon_state = "pipe-j1"
 
 CAPABILITIES(/obj/structure/disposalpipe/junction)
-	setup(PROC_REF(update))
+	setup(TYPE_PROC_REF(/obj/structure/disposalpipe, update))
 	derives(nameof(dpdir), PROC_REF(junction_ends)) // at init: the pipe's ends follow how it was placed
 
 // next direction to move
