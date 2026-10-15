@@ -17,6 +17,7 @@ pub struct OperandSite {
 pub struct RestoredInstructionFacts {
     external: bool,
     debug: bool,
+    compat: dm_ir::header_compat::HeaderCompat,
     referenced_argument_prefix: u32,
 }
 impl RestoredInstructionFacts {
@@ -25,6 +26,10 @@ impl RestoredInstructionFacts {
     }
     pub fn debug(&self) -> bool {
         self.debug
+    }
+    /// Minimum-client requirement implied by the decoded opcodes and built-in field names.
+    pub fn compat(&self) -> dm_ir::header_compat::HeaderCompat {
+        self.compat
     }
 }
 pub struct FrozenProc {

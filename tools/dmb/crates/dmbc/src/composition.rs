@@ -840,7 +840,7 @@ fn compose_records_access(
     drop(phase);
     let phase = dm_profile::detail_timer("compose.final_validation");
     let final_validation = dm_profile::stage("composition.final_instruction_validation");
-    let (external, debug) = final_instructions::validate(&dmb, &feature_images, executor)?;
+    let (external, debug, compat) = final_instructions::validate(&dmb, &feature_images, executor)?;
     let mut source_features = final_instructions::source_features(&dmb, &feature_images)?;
     if let Some((projection, _)) = projection {
         source_features.union(projection.source_features);
@@ -862,6 +862,7 @@ fn compose_records_access(
     if debug {
         dmb.header.flags |= 0x0002_0000;
     }
+    crate::header_compat::apply(&mut dmb, compat);
     // Choose the wide table ABI explicitly for the composed model. No instruction
     // operand is guessed/rebased; shared symbolic linking already fixed those.
     dmb.header.flags |= 0x4000_0000;

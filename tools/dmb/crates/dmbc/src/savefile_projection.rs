@@ -23,16 +23,13 @@ pub fn project(value: &SemanticValue) -> Result<u32, String> {
 /// the incoming engine value. Compatibility framing follows the pinned writer.
 pub fn apply(dmb: &mut byond_dmb::dmb::Dmb, values: &[u32]) -> Result<(), String> {
     for &value in values {
-        let compatibility = std::str::from_utf8(&dmb.header.compatibility_line)
-            .ok()
-            .and_then(|line| line.strip_prefix("min compatibility v"))
-            .and_then(|tail| tail.split_whitespace().next())
-            .and_then(|version| version.parse::<u16>().ok())
+        // The line must be readable before an authored version is accepted.
+        dm_ir::header_compat::HeaderCompat::parse(&dmb.header.compatibility_line)
             .ok_or("invalid compatibility header")?;
         dmb.world.savefile_byond_version = value;
-        if value != 0 && compatibility <= 514 {
-            dmb.header.compatibility_line = b"min compatibility v515 468\n".to_vec();
-        }
+        // DreamMaker prices any authored /savefile/byond_version, including 0, at 515
+        // (fixtures/translation/savefile_0).
+        crate::header_compat::raise(dmb, 515, 468);
     }
     Ok(())
 }

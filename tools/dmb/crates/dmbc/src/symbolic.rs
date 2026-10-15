@@ -87,6 +87,8 @@ impl FrozenHelper {
 pub(crate) struct BytecodeFeatures {
     pub external: bool,
     pub debug: bool,
+    /// Minimum-client requirement implied by this image's opcodes and built-in field names.
+    pub compat: dm_ir::header_compat::HeaderCompat,
     pub source_features: dm_codegen_byond::SourceFeatures,
 }
 impl BytecodeFeatures {
@@ -99,13 +101,45 @@ impl BytecodeFeatures {
     fn of(code: &dm_codegen_byond::SymbolicProc) -> Self {
         use byond_dmb::bytecode::opcode;
         let mut value = Self::default();
+        let mut unit = dm_ir::header_compat::UnitCompat::default();
         for item in &code.items {
             if let dm_codegen_byond::Item::Instruction(instruction) = item {
                 value.external |= matches!(instruction.opcode, opcode::LOAD_EXT | opcode::CALL_EXT);
                 value.debug |= matches!(instruction.opcode, opcode::DBG_FILE | opcode::DBG_LINE);
+                unit.note_instruction(
+                    instruction.opcode,
+                    match instruction.operands.first() {
+                        Some(dm_codegen_byond::Word::Immediate(word)) => Some(*word),
+                        _ => None,
+                    },
+                );
+                for word in &instruction.operands {
+                    if let dm_codegen_byond::Word::Variable(variable) = word {
+                        note_variable_fields(&mut unit, variable, false);
+                    }
+                }
             }
         }
+        value.compat = unit.seal();
         value
+    }
+}
+/// Built-in field names reached through a variable operand. A field behind a `src->` or bare receiver is the
+/// implicit form; any other receiver is explicit (`a.pixel_z`).
+fn note_variable_fields(
+    compat: &mut dm_ir::header_compat::UnitCompat,
+    variable: &dm_codegen_byond::VariableWord,
+    explicit: bool,
+) {
+    use dm_codegen_byond::VariableWord::*;
+    match variable {
+        Field(name) => compat.note_field(*name, explicit),
+        Initial(inner) | IsSaved(inner) => note_variable_fields(compat, inner, explicit),
+        SetCache(receiver, field) => {
+            note_variable_fields(compat, receiver, explicit);
+            note_variable_fields(compat, field, !matches!(**receiver, Src | Cache));
+        }
+        _ => {}
     }
 }
 /// Request-local certificate. Neither dense words nor table bindings enter memo storage.

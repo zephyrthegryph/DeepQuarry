@@ -70,13 +70,13 @@ pub(crate) fn apply(
                 dmb.world.icon_dimensions_format[0] = *value;
                 dmb.world.icon_dimensions_format[1] = *value;
                 if dmb.world.savefile_byond_version == 0 {
-                    dmb.header.compatibility_line = b"min compatibility v514 507\n".to_vec();
+                    crate::header_compat::raise(dmb, 514, 507);
                 }
             }
             Directive::MapFormat(value) => {
                 dmb.world.icon_dimensions_format[2] = *value;
                 if dmb.world.savefile_byond_version == 0 {
-                    dmb.header.compatibility_line = b"min compatibility v514 507\n".to_vec();
+                    crate::header_compat::raise(dmb, 514, 507);
                 }
             }
             Directive::Flag { mask, enabled } => {

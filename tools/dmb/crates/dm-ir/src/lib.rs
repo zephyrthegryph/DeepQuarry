@@ -9,6 +9,7 @@ mod portable_answer;
 pub use portable_answer::PortableResolvedAnswer;
 mod warnings;
 pub mod builtin_names;
+pub mod header_compat;
 pub use warnings::WarningCode;
 
 mod symbols;

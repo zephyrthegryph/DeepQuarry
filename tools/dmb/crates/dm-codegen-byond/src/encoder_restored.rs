@@ -39,12 +39,17 @@ pub(super) fn validate(
     let mut facts = RestoredInstructionFacts {
         external: false,
         debug: false,
+        compat: dm_ir::header_compat::HeaderCompat::default(),
         referenced_argument_prefix: 0,
     };
+    let mut unit = dm_ir::header_compat::UnitCompat::default();
+    // Offsets of built-in-field-name operands and whether the receiver is explicit (not `src`).
+    let mut fields = BTreeMap::<u32, bool>::new();
     for instruction in &decoded {
         use byond_dmb::bytecode::opcode;
         facts.external |= matches!(instruction.opcode, opcode::LOAD_EXT | opcode::CALL_EXT);
         facts.debug |= matches!(instruction.opcode, opcode::DBG_FILE | opcode::DBG_LINE);
+        unit.note_instruction(instruction.opcode, instruction.operands.first().copied());
         if instruction
             .branch_targets()
             .map_err(|e| format!("{e:?}"))?
@@ -79,7 +84,7 @@ pub(super) fn validate(
                     facts.referenced_argument_prefix = facts
                         .referenced_argument_prefix
                         .max(argument_prefix(&value)?);
-                    at += variable_sites(&value, at, &mut sites);
+                    at += variable_sites(&value, at, &mut sites, &mut fields, false);
                 }
                 Operand::Switch { cases, .. } => {
                     at += 1;
@@ -106,6 +111,11 @@ pub(super) fn validate(
         }
     }
     for relocation in code.relocations() {
+        if let (Some(&explicit), SymRef::String(name)) =
+            (fields.get(&relocation.offset), &relocation.reference)
+        {
+            unit.note_field(*name, explicit);
+        }
         match sites.remove(&relocation.offset) {
             Some(Site::Typed(kind, encoding) | Site::Primitive(kind, encoding))
                 if kind == relocation.reference.kind() && encoding == relocation.encoding =>
@@ -119,6 +129,7 @@ pub(super) fn validate(
     if sites.values().any(|site| matches!(site, Site::Typed(..))) {
         return Err("restored semantic operand has no relocation".into());
     }
+    facts.compat = unit.seal();
     Ok(facts)
 }
 
@@ -280,22 +291,41 @@ fn value_site(value: &Value, at: usize, sites: &mut BTreeMap<u32, Site>) -> usiz
     }
     value.encode().len()
 }
-fn variable_sites(value: &Variable, at: usize, sites: &mut BTreeMap<u32, Site>) -> usize {
+fn variable_sites(
+    value: &Variable,
+    at: usize,
+    sites: &mut BTreeMap<u32, Site>,
+    fields: &mut BTreeMap<u32, bool>,
+    explicit: bool,
+) -> usize {
     use Variable::*;
     let direct = |sites: &mut BTreeMap<u32, Site>, offset, kind| {
         sites.insert(offset as u32, Site::Typed(kind, OperandEncoding::Direct));
     };
     match value {
-        Field(_) => direct(sites, at, RelocationKind::String),
+        Field(_) => {
+            direct(sites, at, RelocationKind::String);
+            fields.insert(at as u32, explicit);
+        }
         DynamicProc(_) | DynamicVerb(_) => direct(sites, at + 1, RelocationKind::String),
         Global(_) => direct(sites, at + 1, RelocationKind::Variable),
         StaticProc(_) | StaticVerb(_) => direct(sites, at + 1, RelocationKind::Procedure),
         Initial(v) | IsSaved(v) => {
-            variable_sites(v, at + 1, sites);
+            variable_sites(v, at + 1, sites, fields, explicit);
         }
         SetCache(a, b) => {
-            variable_sites(a, at + 1, sites);
-            variable_sites(b, at + 1 + a.encode().len(), sites);
+            variable_sites(a, at + 1, sites, fields, explicit);
+            // The field belongs to the receiver `a`. This compiler lowers both a bare `x` and `src.x` to
+            // `src->.x`, and DreamMaker prices them differently (507 against 514/514 for pixel_z); the bare
+            // spelling is far commoner, so `src->` is the implicit form.
+            let receiver_is_explicit = !matches!(**a, Src | Cache);
+            variable_sites(
+                b,
+                at + 1 + a.encode().len(),
+                sites,
+                fields,
+                receiver_is_explicit,
+            );
         }
         _ => (),
     }

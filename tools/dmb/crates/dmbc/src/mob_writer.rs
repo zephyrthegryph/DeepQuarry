@@ -217,7 +217,9 @@ pub(crate) fn apply_settings(
                         _ => return Err("invalid mob setting selector".into()),
                     }
                     if record.extended_sight.is_some() || setting != 0 || flags > 0x7f {
-                        record.sight = 0x80;
+                        // DreamMaker keeps the low seven sight bits in the compact byte
+                        // beside the 0x80 extension marker (SEE_MOBS => 0x84).
+                        record.sight = 0x80 | (flags & 0x7f) as u8;
                         record.extended_sight = Some((flags | 0x80, dark, invisible));
                     } else {
                         record.sight = flags as u8;
