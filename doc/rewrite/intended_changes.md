@@ -4919,3 +4919,25 @@ Affected requirement-pin classes:
 These entries do not authorize unrelated snapshot re-records. Correlated archaeological,
 telecube and hotspot construction jobs retain their world-RNG and child-constructor order.
 The flipper's pre-passenger emag attempt still declines and does not subvert the card.
+
+## Living posture density and assailant references (2026-10-15)
+
+Master's human grab path records the actual living attacker in `LAssailant`, but
+both its variable and borrowed relation were restricted to carbon mobs. The real
+sakimm AI grab therefore raised an incompatible-reference runtime. Both types now
+accept `/mob/living`; attribution and the relation's deletion cleanup are unchanged.
+
+Master's knockdown/recovery path wrote the composed density stat through the base
+atom setter. In a longer run its cached prone value could survive standing up,
+although a fresh stat computation returned the dense type default. Living posture
+now contributes nonblocking density only while tracked `lying` is true. Standing
+removes that contribution and retains type defaults and independent sources' holds.
+The focused regressions warm the prone cache, recover, preserve an independent
+nonblocking hold, release that hold when its source dies, and cover a naturally
+nonblocking living subtype. No snapshot re-record is authorized by this correction.
+
+The two healer smoke fixtures failed on pristine master because their actual
+patient's consent had devourable/digestable disabled. The fixture now explicitly
+grants devouring, digestion and healing consent through the test setter before
+asking the real healer AI to select a patient. Production consent gates are unchanged;
+no patient predicate is bypassed. All new verification remains pending.

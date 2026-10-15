@@ -4,3 +4,5 @@ changes:
   - bugfix: "Petrification statues release petrification mute when destroyed."
   - bugfix: "Gargoyle statues accept their supplied human during construction."
   - bugfix: "Privacy-switch appearance follows changes to its protected area."
+  - bugfix: "Living attackers outside the carbon hierarchy retain grab attribution without a reference-type runtime."
+  - bugfix: "Recovering from knockdown refreshes collision density while preserving other sources of nonblocking movement."

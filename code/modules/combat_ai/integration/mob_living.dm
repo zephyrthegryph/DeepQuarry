@@ -34,6 +34,8 @@ CAPABILITIES(/mob/living)
 	op("hit_grab", item(/obj/item), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 10), label("Hold with"), then(PROC_REF(hit_grab)))
 	op("hit_hurt", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 10), label("Hit"), then(PROC_REF(hit_hurt)))
 	living_action_status_contributions()
+	// Prone posture composes density rather than overwriting the stat's served value.
+	when(nameof(lying), contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE))
 	living_abilities()
 	ref_one(nameof(cameraFollow))
 	every(PROC_REF(autofire_interval), then(PROC_REF(autofire_tick)), when = nameof(autofire_on))
