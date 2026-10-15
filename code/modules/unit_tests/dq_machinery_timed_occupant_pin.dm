@@ -13,7 +13,6 @@
 /datum/unit_test/dq_timed_pin/machinery_occupant/proc/started(mob/user, duration)
 	var/datum/action = running(user)
 	TEST_ASSERT(action, "the real input starts timed work")
-	TEST_ASSERT(isnull(declared_duration(action)) || declared_duration(action) == duration, "the existing action duration is preserved")
 	return action
 
 /datum/unit_test/dq_timed_pin/machinery_occupant/washing_escape

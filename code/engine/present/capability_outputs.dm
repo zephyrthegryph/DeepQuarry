@@ -22,6 +22,8 @@
 	var/list/look_flash_tokens
 	/// Own keys of the entities the atom's draw reads (look.watch()): state_changed() on any of them marks the atom. Lazy.
 	var/list/look_watching
+	/// The subset of look_watching the draw shows worn or held (look.watch_worn()): each counts in its rx_state.worn_watched. Lazy.
+	var/list/look_watching_worn
 	/// The types look.neighbours() asked for: a turf the atom watches tells it only of a mover of one of these (null: every change). Lazy.
 	var/list/look_neighbour_types
 	/// Own keys of the atoms whose look the atom's draw composes (look.watch_look()): look_published() on any of them marks the atom. Lazy.

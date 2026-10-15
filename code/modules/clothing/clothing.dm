@@ -29,17 +29,12 @@
 	var/fit_for_digi = FALSE // flag for if clothing has already been reskinned to digitigrade
 	var/mob/wearer	//Who the person currently wearing us is.
 
-//Updates the icons of the mob wearing the clothing item, if any.
-/obj/item/clothing/proc/update_clothing_icon()
-	return
-
 /obj/item/clothing/Initialize(mapload)
 	. = ..()
 	if(starting_accessories)
 		for(var/T in starting_accessories)
 			var/obj/item/clothing/accessory/tie = new T(src)
 			src.attach_accessory(null, tie)
-	set_clothing_index()
 
 
 /// A clothing item shows its own blood as a layer of its look: drawn from the tracked blood colour and the forensics record, not added by add_blood().
@@ -212,7 +207,6 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 		return
 	if(A.answer.value && (A.answer.value != color))
 		color = A.answer.value
-	update_clothing_icon()
 // end
 
 ///////////////////////////////////////////////////////////////////////
@@ -264,11 +258,6 @@ CAPABILITIES(/obj/item/clothing/ears)
 	if(istype(src,/obj/item/clothing/ears/offear))
 		consume(src, user)
 	return TRUE
-
-/obj/item/clothing/ears/update_clothing_icon()
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
 
 /obj/item/clothing/ears/drop_with_actor(mob/user, obj/over_object)
 	if(ishuman(user))
@@ -362,14 +351,6 @@ CAPABILITIES(/obj/item/clothing/gloves)
 	. = ..()
 	. += owns(nameof(contents), policy = OWN_SPILL)
 	. += owns(nameof(cell), policy = OWN_CONTAINED)
-
-/obj/item/clothing/proc/set_clothing_index()
-	return
-
-/obj/item/clothing/gloves/update_clothing_icon()
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
 
 // Called just before an attack_hand(), in mob/UnarmedAttack()
 /obj/item/clothing/gloves/proc/Touch(atom/A, proximity, stance = I_HURT, mob/user)
@@ -546,11 +527,6 @@ CAPABILITIES(/obj/item/clothing/head)
 		look.overlay(look_cached_image("[light_overlay]-item", 'icons/obj/light_overlays.dmi', light_overlay))
 
 
-/obj/item/clothing/head/update_clothing_icon()
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
-
 ///////////////////////////////////////////////////////////////////////
 //Mask
 /obj/item/clothing/mask
@@ -588,11 +564,6 @@ CAPABILITIES(/obj/item/clothing/mask)
 	configure(item_protection(heat_parts = FALSE, cold_parts = FALSE))
 	configure(item_sounds(drop = SFX_GENERIC_DROP, pickup = SFX_GENERIC_PICKUP))
 
-
-/obj/item/clothing/mask/update_clothing_icon()
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
 
 /obj/item/clothing/mask/proc/filter_air(datum/gas_mixture/air)
 	return
@@ -831,11 +802,6 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 
 	return
 
-/obj/item/clothing/shoes/update_clothing_icon()
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
-
 /// Old attack_self: shake micros out. Runs the clothing circuit first, as the old ..() did.
 /obj/item/clothing/shoes/proc/shoes_shake_out_self(datum/act/op/A)
 	var/mob/user = A.actor
@@ -985,7 +951,6 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 		if(ishuman(hood.loc))
 			var/mob/living/carbon/H = hood.loc
 			H.unEquip(hood, 1)
-			changed(src)
 		hood.forceMove(src)
 
 /obj/item/clothing/suit/proc/ToggleHood()
@@ -1008,13 +973,7 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 			H.equip_to_slot_if_possible(hood,SLOT_ID_HEAD,0,0,1)
 			set_hood_up(TRUE)
 			hood.set_canremove(FALSE)
-			changed(src)
 ///Hood stuff end.
-
-/obj/item/clothing/suit/update_clothing_icon()
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
 
 /obj/item/clothing/suit/proc/taurize(mob/living/carbon/human/taur, has_taur_tail = FALSE)
 	if(has_taur_tail)
@@ -1206,7 +1165,6 @@ CAPABILITIES(/obj/item/clothing/under)
 			set_rolled_down(0)
 	else
 		set_rolled_down(-1)
-	if(H) update_clothing_icon()
 
 /obj/item/clothing/under/proc/update_rollsleeves_status()
 	var/mob/living/carbon/human/H
@@ -1231,14 +1189,6 @@ CAPABILITIES(/obj/item/clothing/under)
 			set_rolled_sleeves(0)
 	else
 		set_rolled_sleeves(-1)
-	if(H) update_clothing_icon()
-
-/obj/item/clothing/under/update_clothing_icon()
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
-
-	set_clothing_index()
 
 /obj/item/clothing/under/examine(mob/user)
 	. = ..()
@@ -1363,7 +1313,6 @@ CAPABILITIES(/obj/item/clothing/under)
 			set_icon_override(initial(icon_override))
 		set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		to_chat(user, span_notice("You roll up your [src]."))
-	update_clothing_icon()
 	worn_protection_changed()
 
 /// Old verb "Roll Up Sleeves".
@@ -1399,7 +1348,6 @@ CAPABILITIES(/obj/item/clothing/under)
 			set_icon_override(initial(icon_override))
 		set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		to_chat(user, span_notice("You roll down your [src]'s sleeves."))
-	update_clothing_icon()
 	worn_protection_changed()
 
 CAPABILITIES(/obj/item/clothing/under/rank)

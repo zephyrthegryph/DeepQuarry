@@ -63,9 +63,6 @@ SETTER(/obj/cap_fixture/dx_deps_source, glow)
 	var/obj/cap_fixture/dx_deps_source/source
 	var/draw_calls = 0
 
-/obj/cap_fixture/dx_deps_watcher/relations()
-	. = ..()
-	. += rel_one(nameof(source))
 
 /obj/cap_fixture/dx_deps_watcher/derived()
 	. = ..()
@@ -80,9 +77,6 @@ SETTER(/obj/cap_fixture/dx_deps_source, glow)
 /datum/dx_deps_panel
 	var/list/members
 
-/datum/dx_deps_panel/relations()
-	. = ..()
-	. += rel_many(nameof(members))
 
 /datum/dx_deps_panel/New()
 	..()
@@ -105,9 +99,6 @@ SETTER(/obj/cap_fixture/dx_deps_source, glow)
 	var/derive_calls = 0
 	var/draw_calls = 0
 
-/obj/cap_fixture/dx_deps_derive/relations()
-	. = ..()
-	. += rel_one(nameof(feed))
 
 /obj/cap_fixture/dx_deps_derive/derived()
 	. = ..()
@@ -462,3 +453,12 @@ SETTER(/obj/cap_fixture/dx_deps_writer, tier)
 	tracked_changed(src, nameof(other))
 	return TRUE
 SETTER(/obj/cap_fixture/dx_deps_sloppy, other)
+
+CAPABILITIES(/obj/cap_fixture/dx_deps_watcher)
+	ref_one(nameof(source))
+
+CAPABILITIES(/datum/dx_deps_panel)
+	ref_many(nameof(members))
+
+CAPABILITIES(/obj/cap_fixture/dx_deps_derive)
+	ref_one(nameof(feed))

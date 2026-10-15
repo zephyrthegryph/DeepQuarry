@@ -49,7 +49,7 @@
 				if(E.kind == ENTRY_REF_ONE && !isnull(E.args["starts"]))
 					. += _own_entry(E.args["var"], null, FALSE, FALSE, FALSE, relation_starts(E))
 				if(by)
-					keyed_target_register(E.args["type"], E.args["target_key"] || by)
+					keyed_target_register(E.args["type"], keyed_var_name(E.args["target_key"]) || by)
 			if(ENTRY_OWNS_ONE, ENTRY_OWNS_MANY)
 				var/policy = relation_policy(E.args["on_destroy"])
 				var/starts = relation_starts(E)
@@ -302,6 +302,13 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 		T.entries[var_name] = entry
 		LAZYADD(T.ref_vars, var_name)
 		T.empty = FALSE
+
+/// The var name a target_key names: the plain name, or the var of nameof(/type::var) (the holder type has no such var of its own).
+/proc/keyed_var_name(key)
+	if(!istext(key))
+		return key
+	var/at = findtext(key, "::")
+	return at ? copytext(key, at + 2) : key
 
 /// Remembers that instances of `type` are found by keyed relations through var `id_var` (ref_one(by =)).
 /proc/keyed_target_register(type, id_var)

@@ -1,7 +1,6 @@
 /// Production pen/body entry and native request delivery, not connected UI presentation.
 /datum/unit_test/round2_body_writing_native/Run()
 	test_driver_begin()
-	set_global("timed_actions_instant", FALSE)
 	exercise_body_writing()
 	test_driver_end()
 

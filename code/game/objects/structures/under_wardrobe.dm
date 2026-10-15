@@ -116,7 +116,6 @@ MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 	H.set_all_underwear_at(category, selected_underwear)
 	H.set_hide_underwear_at(category, FALSE)
 	H.underwear_edited()
-	changed(src)
 
 /obj/structure/undies_wardrobe/proc/ui_act_remove_underwear(datum/act/op/A, category)
 	var/mob/living/carbon/human/H = A.actor
@@ -169,5 +168,4 @@ CAPABILITIES(/datum/ask_sequence/gear_tweak/underwear)
 	set_metadata(H, underwear, gt, new_metadata)
 	H.set_hide_underwear_at(underwear, FALSE)
 	H.underwear_edited()
-	changed(src)
 	SStgui.update_uis(src)

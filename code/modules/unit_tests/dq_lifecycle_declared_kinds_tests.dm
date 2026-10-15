@@ -22,21 +22,6 @@
 /datum/dq_decl_kinds_inner
 	var/list/owners
 
-/datum/dq_decl_kinds_owner/relations()
-	. = ..()
-	. += rel_many(nameof(members), back = nameof(/datum/dq_decl_kinds_member::leader))
-	. += rel_one(nameof(hub))
-/datum/dq_decl_kinds_member/relations()
-	. = ..()
-	. += rel_one(nameof(leader), back = nameof(/datum/dq_decl_kinds_owner::members))
-	. += rel_many(nameof(names))
-/datum/dq_decl_kinds_hub/relations()
-	. = ..()
-	. += rel_one(nameof(slot))
-	. += rel_one(nameof(inner))
-/datum/dq_decl_kinds_inner/relations()
-	. = ..()
-	. += rel_many(nameof(owners))
 
 /datum/unit_test/dq_lifecycle_declared_kinds
 
@@ -77,3 +62,17 @@
 	qdel(hub)
 	qdel(inner)
 	qdel(other)
+
+CAPABILITIES(/datum/dq_decl_kinds_owner)
+	links(/datum/dq_decl_kinds_owner::members, /datum/dq_decl_kinds_member::leader, a_many = TRUE)
+	ref_one(nameof(hub))
+
+CAPABILITIES(/datum/dq_decl_kinds_member)
+	ref_many(nameof(names))
+
+CAPABILITIES(/datum/dq_decl_kinds_hub)
+	ref_one(nameof(slot))
+	ref_one(nameof(inner))
+
+CAPABILITIES(/datum/dq_decl_kinds_inner)
+	ref_many(nameof(owners))

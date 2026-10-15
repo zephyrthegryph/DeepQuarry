@@ -133,9 +133,6 @@ CAPABILITIES(/obj/item/melee/energy)
 	else
 		activate(user)
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		changed(src)
 
 	add_fingerprint(user)
 	return OP_OK

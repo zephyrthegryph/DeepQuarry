@@ -53,9 +53,8 @@ CAPABILITIES(/obj/item/tank/jetpack)
 		set_icon_state(initial(icon_state))
 		ion_trail.stop()
 
-	if (ismob(user))
+	if(ismob(user))
 		var/mob/M = user
-		changed(src)
 		M.update_mob_action_buttons()
 
 	to_chat(user, "You toggle the thrusters [on? "on":"off"].")

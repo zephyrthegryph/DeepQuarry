@@ -66,7 +66,6 @@
 					if(tail_type.len > 3)
 						color_rgb_list = hex2rgb(tail_type[4])
 						M.looks.set_tail_color3(rgb(color_rgb_list[1], color_rgb_list[2], color_rgb_list[3]))
-			changed(src)
 	if(ear_type && ear_type.len)
 		if(ear_type[1] in GLOB.ear_styles_list)
 			rel_set(M, nameof(M.ear_style), GLOB.ear_styles_list[ear_type[1]])
@@ -79,10 +78,8 @@
 					if(ear_type.len > 3)
 						color_rgb_list = hex2rgb(ear_type[4])
 						M.looks.set_ears_color3(rgb(color_rgb_list[1], color_rgb_list[2], color_rgb_list[3]))
-			changed(src)
 	if(hair)
 		M.looks.set_hair_style(hair)
-		changed(src)
 	// handle secondary ears
 	if(length(ear_secondary_type) && (ear_secondary_type[1] in GLOB.ear_styles_list))
 		rel_set(M, nameof(M.ear_secondary_style), GLOB.ear_styles_list[ear_secondary_type[1]])
@@ -101,7 +98,6 @@
 					if(wing_type.len > 3)
 						color_rgb_list = hex2rgb(wing_type[4])
 						M.looks.set_wing_color3(rgb(color_rgb_list[1], color_rgb_list[2], color_rgb_list[3]))
-			changed(src)
 	M.set_real_name(generateCorpseName())
 	M.set_stat(DEAD) //Kills the new mob
 	M.vore_prefs.digest_leave_remains = TRUE

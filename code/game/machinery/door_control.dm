@@ -143,9 +143,6 @@ CAPABILITIES(/obj/machinery/button/remote)
 
 /// Airlocks whose id_tag matches our id (keyed: linked when either end materializes).
 /obj/machinery/button/remote/airlock/var/list/obj/machinery/door/airlock/controlled_airlocks
-/obj/machinery/button/remote/airlock/relations()
-	. = ..()
-	. += rel_many(nameof(controlled_airlocks), keyed = nameof(id), keyed_target = /obj/machinery/door/airlock)
 
 /obj/machinery/button/remote/airlock/trigger()
 	for(var/obj/machinery/door/airlock/D as anything in controlled_airlocks)
@@ -307,9 +304,6 @@ CAPABILITIES(/obj/machinery/button/remote/driver)
 
 /// Shield generators whose id matches ours (keyed).
 /obj/machinery/button/remote/shields/var/list/obj/machinery/shield_gen/controlled_shields
-/obj/machinery/button/remote/shields/relations()
-	. = ..()
-	. += rel_many(nameof(controlled_shields), keyed = nameof(id), keyed_target = /obj/machinery/shield_gen)
 
 /obj/machinery/button/remote/shields/trigger(mob/user)
 	for(var/obj/machinery/shield_gen/SG as anything in controlled_shields)
@@ -388,3 +382,9 @@ CAPABILITIES(/obj/machinery/button/remote/airlock/release)
 	name = "Button Slab 4"
 	icon_state = "slab4-off"
 	pressed_state = "slab4"
+
+CAPABILITIES(/obj/machinery/button/remote/airlock)
+	ref_many(nameof(controlled_airlocks), /obj/machinery/door/airlock, by = nameof(id), target_key = nameof(/obj/machinery/door/airlock::id_tag))
+
+CAPABILITIES(/obj/machinery/button/remote/shields)
+	ref_many(nameof(controlled_shields), /obj/machinery/shield_gen, by = nameof(id))

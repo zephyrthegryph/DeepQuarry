@@ -30,7 +30,6 @@ CAPABILITIES(/obj/item/instrument/piano_synth/headphones)
 	SHOULD_NOT_SLEEP(TRUE)
 
 	set_icon_state("[initial(icon_state)]_on")
-	changed(src) // the wearer watches its headphones
 
 /**
  * Called by a component signal when our song stops playing.
@@ -39,7 +38,6 @@ CAPABILITIES(/obj/item/instrument/piano_synth/headphones)
 	SHOULD_NOT_SLEEP(TRUE)
 
 	set_icon_state("[initial(icon_state)]")
-	changed(src) // the wearer watches its headphones
 
 
 /obj/item/instrument/piano_synth/headphones/spacepods
