@@ -1323,3 +1323,5 @@
 #endif
 
 #include "dq_decl_cleanup_tests.dm"
+
+#include "dq_decl_lifecycle_tests.dm"
