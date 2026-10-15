@@ -45,6 +45,7 @@ pub mod cold;
 pub mod composition;
 pub mod driver_facts;
 pub mod engine;
+pub(crate) mod header_compat;
 pub mod engine_abi_coverage;
 pub mod engine_host;
 pub mod engine_link;

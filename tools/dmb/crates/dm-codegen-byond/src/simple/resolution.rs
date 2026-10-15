@@ -29,7 +29,12 @@ impl Compiler<'_> {
                     if name.trim_start_matches('/').contains('/') {
                         continue;
                     }
-                    if let Some(tag) = class_tag(&name) {
+                    // `/atom` itself is tagged as the non-movable atom family (10, like `/turf`);
+                    // its descendants (`/atom/movable`, `/obj`) inherit the movable tag.
+                    if ancestor == runtime_type && name.trim_start_matches('/') == "atom" {
+                        return Ok(Some(ATOM_ROOT_TAG));
+                    }
+                    if let Some(tag) = family_tag(&name) {
                         return Ok(Some(tag));
                     }
                 }

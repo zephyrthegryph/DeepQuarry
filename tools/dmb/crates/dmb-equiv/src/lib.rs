@@ -15,8 +15,11 @@ use std::fmt::Write;
 use std::io;
 use xxhash_rust::xxh3::xxh3_64;
 
-/// Which table/list orders are compared. `true` = observable at runtime and
-/// therefore part of equivalence; `false` = compared only with `strict_order`.
+/// Which table/list orders are observable at runtime. This is evidence, not the gate: a run counts an order
+/// difference as a difference only with `strict_order` (`--strict-order`). Without it, order differences are
+/// reported under `ordering` and do not make two worlds non-equivalent. The user decided on 2026-10-14 that
+/// semantic equivalence, not byte identity, is the bar for the native compiler; `typesof()` and `vars` iteration
+/// order are the runtime-visible cases, recorded here so the gate can be tightened for code that depends on them.
 /// Evidence for each entry is recorded in EQUIVALENCE.md.
 pub const ORDER_POLICY: &[(&str, bool)] = &[
     // typesof(/datum) lists types in class-table order (DD probe: permuting
@@ -532,6 +535,9 @@ pub struct Report {
     /// Per category, abstracted first-differing instruction pairs
     /// ("GetVar .F vs GetVar src->.F"), for triage.
     pub signatures: BTreeMap<String, BTreeMap<String, usize>>,
+    /// Elements whose position differs, per table. Not counted in `total` unless `strict_order` is set; the
+    /// observable ones are listed in `ORDER_POLICY`.
+    pub ordering: BTreeMap<String, usize>,
     max_examples: usize,
 }
 
@@ -591,6 +597,18 @@ impl Report {
                 let _ = writeln!(out, "  {n:>7}  {}", clip(sig));
             }
         }
+        if !self.ordering.is_empty() {
+            let _ = writeln!(out, "
+ordering (not counted; --strict-order counts it):");
+            for (name, moved) in &self.ordering {
+                let observable = if order_is_semantic(name) {
+                    " (observable through typesof()/vars)"
+                } else {
+                    ""
+                };
+                let _ = writeln!(out, "  {moved:>9}  {name}{observable}");
+            }
+        }
         for n in &self.notes {
             let _ = writeln!(out, "note: {n}");
         }
@@ -616,9 +634,21 @@ impl Report {
             "total": self.total,
             "categories": cats,
             "notes": self.notes,
+            "ordering": self.ordering,
             "signatures": self.signatures,
             "order_policy": ORDER_POLICY.iter().map(|(n, s)| serde_json::json!({"order": n, "semantic": s})).collect::<Vec<_>>(),
         })
+    }
+}
+
+/// `0x21e2050d` without the debug-symbols bit (`0x20000`), in the same `{:#x}` spelling.
+fn mask_debug_flag(value: &str) -> String {
+    match value
+        .strip_prefix("0x")
+        .and_then(|hex| u32::from_str_radix(hex, 16).ok())
+    {
+        Some(flags) => format!("{:#x}", flags & !0x0002_0000),
+        None => value.to_string(),
     }
 }
 
@@ -949,6 +979,23 @@ pub fn compare_canon(a: &Canon<'_>, b: &Canon<'_>, opts: &Options) -> Report {
     };
     for ((kind, key), fa) in &a.records {
         match b.records.get(&(*kind, key.clone())) {
+            Some(fb) if opts.ignore_debug && *kind == "header" => {
+                // Debug markers (DbgFile/DbgLine) are ignored in code, so the header bit announcing them is too.
+                let mask = |fields: &[Field]| -> Vec<Field> {
+                    fields
+                        .iter()
+                        .map(|f| match (f.family, f.label.as_str()) {
+                            ("header_flags", "flags") => Field {
+                                family: f.family,
+                                label: f.label.clone(),
+                                value: mask_debug_flag(&f.value),
+                            },
+                            _ => f.clone(),
+                        })
+                        .collect()
+                };
+                compare_fields(&mut report, kind, key, &mask(fa), &mask(fb))
+            }
             Some(fb) => compare_fields(&mut report, kind, key, fa, fb),
             None => report.add(format!("{kind}.missing"), key, "present in A only"),
         }
@@ -1042,15 +1089,12 @@ pub fn compare_canon(a: &Canon<'_>, b: &Canon<'_>, opts: &Options) -> Report {
         if moved.is_empty() {
             continue;
         }
-        if order_is_semantic(name) || opts.strict_order {
+        if opts.strict_order {
             for (element, detail) in moved {
                 report.add(format!("order.{name}"), element, detail);
             }
         } else {
-            report.notes.push(format!(
-                "non-semantic order {name}: {} elements moved",
-                moved.len()
-            ));
+            *report.ordering.entry(name.clone()).or_insert(0) += moved.len();
         }
     }
     report

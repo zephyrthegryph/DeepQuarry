@@ -4,20 +4,71 @@ use crate::symbolic::BytecodeFeatures;
 
 pub(super) type Certificates = HashMap<u32, (std::sync::Arc<Vec<u32>>, BytecodeFeatures)>;
 
+/// External-call use, debug markers and the minimum-client requirement of one image.
+type Found = (bool, bool, dm_ir::header_compat::HeaderCompat);
+
+/// Compatibility requirement of an image that carries no issued certificate, read from the decoded
+/// instructions and the installed string table.
+fn compat_of_words(dmb: &Dmb, words: &[u32]) -> dm_ir::header_compat::HeaderCompat {
+    use byond_dmb::{bytecode::Operand, operands::Variable};
+    fn fields(
+        dmb: &Dmb,
+        compat: &mut dm_ir::header_compat::UnitCompat,
+        variable: &Variable,
+        explicit: bool,
+    ) {
+        match variable {
+            Variable::Field(id) => {
+                if let Some(name) = dmb.string(*id) {
+                    compat.note_field(SymbolId::of_bytes(name), explicit);
+                }
+            }
+            Variable::Initial(inner) | Variable::IsSaved(inner) => {
+                fields(dmb, compat, inner, explicit)
+            }
+            Variable::SetCache(receiver, field) => {
+                fields(dmb, compat, receiver, explicit);
+                fields(
+                    dmb,
+                    compat,
+                    field,
+                    !matches!(**receiver, Variable::Src | Variable::Cache),
+                );
+            }
+            _ => {}
+        }
+    }
+    let mut compat = dm_ir::header_compat::UnitCompat::default();
+    // The caller already validated the image; a decode failure here adds no requirement.
+    if let Ok(decoded) = byond_dmb::bytecode::decode(words) {
+        for instruction in &decoded {
+            compat.note_instruction(instruction.opcode, instruction.operands.first().copied());
+            if let Ok(operands) = instruction.typed_operands() {
+                for operand in operands {
+                    if let Operand::Variable(variable) = operand {
+                        fields(dmb, &mut compat, &variable, false);
+                    }
+                }
+            }
+        }
+    }
+    compat.seal()
+}
+
 fn procedure(
     dmb: &Dmb,
     certificates: &Certificates,
     index: usize,
-) -> Result<(bool, bool), CompositionError> {
+) -> Result<Found, CompositionError> {
     if dmb.is_reserved_proc_slot(index) {
-        return Ok((false, false));
+        return Ok((false, false, Default::default()));
     }
     let words = dmb
         .proc_code_words(index)
         .ok_or_else(|| unsupported("missing procedure code"))?;
     if let Some((certified_words, features)) = certificates.get(&(index as u32)) {
         if certified_words.as_slice() == words {
-            return Ok((features.external, features.debug));
+            return Ok((features.external, features.debug, features.compat));
         }
     }
     let mut external = false;
@@ -33,21 +84,22 @@ fn procedure(
         let end = e.offset.saturating_add(8).min(words.len());
         unsupported(format!("invalid composed bytecode: proc={index}, path={path:?}, name={name:?}, error={e:?}, words[{start}..{end}]={:?}", &words[start..end]))
     })?;
-    Ok((external, debug))
+    Ok((external, debug, compat_of_words(dmb, words)))
 }
 
 pub(super) fn validate(
     dmb: &Dmb,
     certificates: &Certificates,
     executor: Option<&dm_exec::BuildExecutor>,
-) -> Result<(bool, bool), CompositionError> {
+) -> Result<Found, CompositionError> {
     let Some(executor) = executor.filter(|executor| executor.workers() > 1 && dmb.procs.len() > 1)
     else {
-        let mut features = (false, false);
+        let mut features = Found::default();
         for index in 0..dmb.procs.len() {
             let found = procedure(dmb, certificates, index)?;
             features.0 |= found.0;
             features.1 |= found.1;
+            features.2.union(found.2);
         }
         return Ok(features);
     };
@@ -74,12 +126,13 @@ pub(super) fn validate(
     .map_err(|_| unsupported("final instruction validation worker panicked"))?;
     // All workers finish even when a later job fails first. Only this ordered
     // reduction selects the diagnostic visible to the caller.
-    let mut features = (false, false);
+    let mut features = Found::default();
     for output in outputs {
         let found =
             output.ok_or_else(|| unsupported("final instruction worker omitted procedure"))??;
         features.0 |= found.0;
         features.1 |= found.1;
+        features.2.union(found.2);
     }
     Ok(features)
 }
@@ -94,6 +147,9 @@ fn weighted_ranges(dmb: &Dmb, workers: usize) -> Vec<std::ops::Range<usize>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn plain(found: Found) -> (bool, bool) {
+        (found.0, found.1)
+    }
     #[test]
     fn semantic_feature_certificate_rejects_equal_length_installed_image_mutation() {
         use byond_dmb::bytecode::opcode;
@@ -128,7 +184,7 @@ mod tests {
         .collect();
         assert_eq!(source_features(&dmb, &certificates).unwrap(), issued);
         assert_eq!(
-            procedure(&dmb, &certificates, index).unwrap(),
+            plain(procedure(&dmb, &certificates, index).unwrap()),
             (false, false)
         );
         // Equal size and a valid independent instruction are insufficient to
@@ -136,7 +192,7 @@ mod tests {
         dmb.lists[list] = vec![opcode::POP as u32];
         assert_eq!(dmb.proc_code_words(index).unwrap().len(), words.len());
         assert_eq!(
-            procedure(&dmb, &certificates, index).unwrap(),
+            plain(procedure(&dmb, &certificates, index).unwrap()),
             (false, false)
         );
         assert!(source_features(&dmb, &certificates).is_err());
@@ -172,11 +228,12 @@ mod tests {
                 BytecodeFeatures {
                     external: true,
                     debug: true,
+                    compat: Default::default(),
                     source_features: Default::default(),
                 },
             ),
         );
-        assert_eq!(procedure(&dmb, &certificates, index).unwrap(), (true, true));
+        assert_eq!(plain(procedure(&dmb, &certificates, index).unwrap()), (true, true));
         // An arbitrary output stage changes the image after the Mob patch.
         // Even the same numeric slot must now use the independent decoder.
         dmb.lists[list] = vec![u32::MAX];
@@ -188,7 +245,7 @@ mod tests {
         certificates.clear();
         dmb.lists[list] = installed.as_ref().clone();
         assert_eq!(
-            procedure(&dmb, &certificates, index).unwrap(),
+            plain(procedure(&dmb, &certificates, index).unwrap()),
             (false, false)
         );
     }

@@ -10,6 +10,8 @@ use std::collections::HashMap;
 pub(super) struct HeaderFeatures {
     flags: u32,
     extended: u32,
+    /// Built-in variable defaults priced by the minimum-client line, one unit per authored class.
+    compat_units: HashMap<usize, dm_ir::header_compat::UnitCompat>,
 }
 impl HeaderFeatures {
     pub(super) fn recognizes(name: SymbolId) -> bool {
@@ -54,7 +56,41 @@ impl HeaderFeatures {
         }
         Ok(())
     }
+    /// An authored default for a built-in variable (`/obj/plane = 5`). `class` is the owner's class index.
+    pub(super) fn observe_default(
+        &mut self,
+        name: SymbolId,
+        class: usize,
+        parents: &[u32],
+        classes: &HashMap<SymbolId, usize>,
+    ) -> Result<(), ProjectionError> {
+        use dm_ir::header_compat::Family;
+        let family = if inherits("/client", class, parents, classes)? {
+            Family::Client
+        } else if inherits("/world", class, parents, classes)? {
+            Family::World
+        } else if ["/atom", "/image", "/mutable_appearance"]
+            .into_iter()
+            .try_fold(false, |found, root| {
+                Ok::<_, ProjectionError>(found || inherits(root, class, parents, classes)?)
+            })?
+        {
+            Family::Atom
+        } else {
+            return Ok(());
+        };
+        self.compat_units
+            .entry(class)
+            .or_default()
+            .note_default(family, name);
+        Ok(())
+    }
     pub(super) fn apply(self, dmb: &mut Dmb) {
+        let mut compat = dm_ir::header_compat::HeaderCompat::default();
+        for unit in self.compat_units.values() {
+            compat.union(unit.seal());
+        }
+        crate::header_compat::apply(dmb, compat);
         // Captured engine bits remain authoritative; only current authored
         // definitions add negotiation requirements. No old generation is read.
         dmb.header.flags |= self.flags & !0x40;

@@ -3,6 +3,7 @@
 #Ignore compiled files and other files generated during compilation.
 *.dmb
 *.rsc
+*.dmb.compiler
 *.m.dme
 *.test.dme
 *.bench.dme

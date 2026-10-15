@@ -9,7 +9,19 @@ pub(super) fn member_proc_selector(path: SymRef) -> VariableWord {
     }
 }
 
+/// Value tag of the type path `/atom` itself. DreamMaker 516.1687 tags it like `/turf`; every other `/atom/...`
+/// path is 9 (movable family).
+pub(super) const ATOM_ROOT_TAG: u8 = 10;
+
 pub(super) fn class_tag(path: &str) -> Option<u8> {
+    if path.trim_start_matches('/') == "atom" {
+        return Some(ATOM_ROOT_TAG);
+    }
+    family_tag(path)
+}
+
+/// Tag of the builtin family a path descends from (the first path segment).
+pub(super) fn family_tag(path: &str) -> Option<u8> {
     let root = path.trim_start_matches('/').split('/').next()?;
     Some(match root {
         "datum" | "regex" | "icon" | "sound" | "matrix" | "particles" | "database"

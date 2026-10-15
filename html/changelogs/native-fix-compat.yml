@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Native compiler: mob sight byte, min compatibility header line and /atom path tag now match DreamMaker"
+  - bugfix: "build.sh dm no longer treats a native-compiled pair as up to date"
+  - code_imp: "dmb-equiv reports ordering separately and ignores the debug header bit with --ignore-debug"

@@ -14,6 +14,7 @@ import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, Nati
 import { copyWritableRuntimePair } from './runtime_pair_copy';
 import { observeRuntimeLibrary, stageRuntimeLibrary, verifyObservedRuntimeLibrary, type HostedLibraryIdentity } from './runtime_library';
 import { withSlot } from './machine_slots';
+import { writeCompilerStamp } from './compiler_stamp';
 
 /** Cached path to DM compiler */
 let dmPath: string;
@@ -241,6 +242,7 @@ export async function DreamMaker(
   // same owned project. Until that issuer exists, selection passes no override.
   const output = await selectedCompiler(dmeFile, options, (capturedProject, prepared, bound) => withSlot('dm_compile', `DreamMaker ${dmeFile}`, () => compileByond(capturedProject ?? dmeFile, options, prepared, bound), (m) => Juke.logger.info(m)), Juke.exec, () => prepareDreamMaker(options), invocation);
   rememberCompiledOutput(dmeFile, output);
+  writeCompilerStamp(dmeFile.replace(/\.dme$/i, '.dmb'), output.kind === 'conventional' ? 'byond' : 'native');
   return output;
 }
 

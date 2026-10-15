@@ -79,6 +79,12 @@ pub fn materialize_callback_flags(
             header.observe_graphics(class, &parents, &classes)?;
         }
     }
+    // Authored defaults of built-in variables (`plane = 5`) are priced by the minimum-client line.
+    for field in projection.fields.iter().filter(|field| field.intrinsic) {
+        if let Some(&class) = classes.get(&field.owner) {
+            header.observe_default(field.name, class, &parents, &classes)?;
+        }
+    }
     let mut direct: Vec<_> = dmb.classes.iter().map(|c| c.flags & CALLBACKS).collect();
     for chain in projection.chains.iter().filter(|c| !c.verb) {
         let bits = callback_bits(chain.name);

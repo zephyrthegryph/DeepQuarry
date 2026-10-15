@@ -18,6 +18,7 @@ import Juke from './juke/index.js';
 import { assertBuildRoot } from './lib/build_root';
 import { bun, bunRoot } from './lib/bun';
 import { computeCompileHash } from './lib/compile_hash';
+import { pairIsByondOutput } from './lib/compiler_stamp';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { claimFreePort, shouldRetryBoot } from './lib/free_port';
 import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, withSlot } from './lib/machine_slots';
@@ -924,6 +925,8 @@ export const DmTarget = new Juke.Target({
     if (get(DmVersionParameter)) {
       return []; // Always rebuild when dm version is provided
     }
+    // A native build publishes the same file names; only a pair stamped as DreamMaker output counts as up to date.
+    if (!pairIsByondOutput(`${DME_NAME}.dmb`)) return [];
     return [`${DME_NAME}.dmb`, `${DME_NAME}.rsc`];
   },
   executes: async ({ get }) => {
