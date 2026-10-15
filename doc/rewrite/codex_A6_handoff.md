@@ -38,3 +38,5 @@ Moved raw fuel_colour, rod_glows and reinforced max_integrity writes now use exi
 
 
 Read-tracking preflight on master 4ab2e15fe1 requires the three newly moved fuel_type writes to use their existing generated set_fuel_type setter. Those calls now publish in the exact previous positions, without editing any protected declaration or preexisting setter line. The now-unused particle initializer annotation was removed from above Bump. All other preflight checks passed; a repaired preflight and lane-ready proof remain pending. No compilation or runtime test has yet been run on this branch.
+
+First focused gate: production and test compile clean, DreamChecker zero diagnostics and ratchets pass. 55 tests passed; broken_lights assertions passed but its actual constructor sparks leaked. The fixture now owns those sparks, as the existing A4 turret fixture does; production is unchanged. Failure-only lane-ready repair remains pending.

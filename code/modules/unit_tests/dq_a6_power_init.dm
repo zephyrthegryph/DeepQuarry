@@ -85,6 +85,9 @@
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/obj/machinery/light/broken/tube = allocate(/obj/machinery/light/broken, test_floor())
 	var/obj/machinery/light/broken/small/bulb = allocate(/obj/machinery/light/broken/small, test_floor())
+	// Breaking the real lights emits sparks; the fixture owns those transient effects.
+	for(var/obj/effect/effect/sparks/S in test_floor())
+		own(S)
 	TEST_ASSERT_EQUAL(tube.status, LIGHT_BROKEN, "The real mapped broken tube is broken after parent initialization")
 	TEST_ASSERT_EQUAL(bulb.status, LIGHT_BROKEN, "The real small broken subtype is broken after both inherited jobs")
 	TEST_ASSERT(!tube.on && !bulb.on, "Neither broken fixture produces operational light")
