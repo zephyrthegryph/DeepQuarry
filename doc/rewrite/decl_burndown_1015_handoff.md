@@ -78,7 +78,7 @@ parameter-completion contract fixtures are new-code tests and were excluded from
 old-production capture. The temporary `statue_legacy_stasis` selector was capture-only and has
 been removed from the final source; `statue_releases_stasis` is its corrected regression.
 
-The analyzer confirms 47 baseline rows reduced to 4, with 43 deletions and no
+The analyzer confirms 47 baseline rows reduced to 6, with 41 deletions and no
 additions. All ratchets pass. Three focused Rust regressions pass: manual datum
 Initialize classification, initialization-only registry conditions, and quoted
 registry text preserving reactive conditions. The constructor-completion fixture
@@ -97,7 +97,7 @@ failing selectors. Concrete scoped causes were phase-zero body creation (four ro
 constructor pins), unsupported PDA slot reads (two visual tests), and a fixture passing
 FALSE to keeps_if instead of the required pure callback. The body/PDA conversions are
 withdrawn, not papered over; the rejection fixture now uses a genuine FALSE-returning
-callback. Other AI and stale-density failures are under separate baseline investigation.
+callback. The unchanged-master diagnostic batch reproduced both healer-fixture consent failures and the incompatible living attacker reference. Those concrete causes are repaired, and prone density now composes through its native stat contribution; both new density regressions await the final repair batch.
 Look-pin differences must be reconsidered after those reversals, not blessed blindly.
 The final baseline update, failure-only repair, stamp and push remain pending root.
 
