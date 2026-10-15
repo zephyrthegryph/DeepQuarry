@@ -349,7 +349,7 @@ CAPABILITIES(/obj/item/beehive_assembly)
 	strict_color_stacking = TRUE
 
 /obj/item/stack/material/wax/proc/prepare_wax_recipes()
-	recipes = GLOB.wax_recipes
+	set_recipes(GLOB.wax_recipes)
 
 /datum/material/wax
 	name = MAT_WAX
