@@ -1,5 +1,5 @@
 exact boundary: ALLOW
-above boundary: size
+above boundary: too big: size 2 > size 1
 wrong type: it doesn't take that
 raised boundary: ALLOW
 

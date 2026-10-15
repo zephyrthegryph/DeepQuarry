@@ -104,3 +104,11 @@
 
 /datum/property_provider/type_var/tag/paperwork/read_initial(path)
 	return ispath(path, /obj/item/paper) || ispath(path, /obj/item/photo) || ispath(path, /obj/item/paper_bundle)
+
+/datum/property_provider/type_var/size_class/read_keys(datum/D)
+	var/obj/O = D
+	return istype(O) ? list(list(O, nameof(O.w_class))) : list()
+
+/// This tag reads only the immutable candidate type, never instance state.
+/datum/property_provider/type_var/tag/paperwork/read_keys(datum/D)
+	return list()

@@ -95,3 +95,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/property_environment)
 	if(!GLOB.property_environment)
 		GLOB.property_environment = new /datum/property_environment
 	return GLOB.property_environment
+
+/// Mutable dependencies of this provider's instance value. Null means unknown;
+/// an explicit empty list declares a type-only value with no mutable inputs.
+/// Each applicable contributor is collected independently from its base.
+/datum/property_provider/proc/read_keys(datum/D)
+	return null

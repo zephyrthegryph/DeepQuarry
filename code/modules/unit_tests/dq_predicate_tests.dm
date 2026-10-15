@@ -2,10 +2,8 @@
 /obj/item/dq_pred_test
 	name = "predicate test item"
 	w_class = ITEMSIZE_SMALL
+	var/ready = FALSE
 	MATERIAL_BULK(MAT_STEEL, 1000)
-
-// This requirement is built dynamically by the fixture, outside declaration discovery.
-TRACKED(/obj/item/dq_pred_test, name)
 
 /obj/item/dq_pred_test/heavy
 	w_class = ITEMSIZE_LARGE
@@ -23,7 +21,7 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 	tool_qualities = list(TOOL_WELDER = 2)
 
 /obj/item/dq_pred_test/proc/dq_is_ready(datum/act/op/A)
-	return name == "ready" ? null : "it isn't ready"
+	return ready ? null : "it isn't ready"
 
 /obj/item/dq_pred_test/override_ready
 
@@ -100,9 +98,10 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 /datum/unit_test/dq_predicate_subject_override/Run()
 	var/obj/item/dq_pred_test/base = allocate(/obj/item/dq_pred_test)
 	var/obj/item/dq_pred_test/override_ready/child = allocate(/obj/item/dq_pred_test/override_ready)
-	base.set_name("ready")
-	child.set_name("ready")
 	var/datum/entry/part/req/R = req(TYPE_PROC_REF(/obj/item/dq_pred_test, dq_is_ready))
+	TEST_ASSERT_EQUAL(dq_native_requirement_reason(R, base, null, base), "it isn't ready", "The real initial fixture state refuses before its setter changes it")
+	base.set_ready(TRUE)
+	child.set_ready(TRUE)
 	TEST_ASSERT_NULL(dq_native_requirement_reason(R, base, null, base), "Declared base callback permits actual ready holder")
 	TEST_ASSERT_EQUAL(dq_native_requirement_reason(R, child, null, child), "subtype refuses readiness", "Native virtual dispatch preserves real subtype refusal")
 
@@ -182,3 +181,72 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 	var/obj/item/pen/P = allocate(/obj/item/pen)
 	var/datum/entry/part/req/empty = req_acceptance_type(list(), because = "it can't be worn")
 	TEST_ASSERT_EQUAL(dq_native_requirement_reason(empty, P, null, P), "it can't be worn", "Intentional empty type lists remain valid always-refusing requirements")
+
+// A real mutable contributor must not be hidden by its static base provider.
+/obj/item/dq_property_dependency_fixture
+	var/extra_paperwork = FALSE
+
+/datum/property_provider/dq_paperwork_contributor
+	property = TAG_PAPERWORK
+	source = PROP_SOURCE_BEHAVIOUR
+	applies_to = /obj/item/dq_property_dependency_fixture
+	test_only = TRUE
+/datum/property_provider/dq_paperwork_contributor/contribute(datum/D)
+	var/obj/item/dq_property_dependency_fixture/I = D
+	return I.extra_paperwork
+/datum/property_provider/dq_paperwork_contributor/read_keys(datum/D)
+	var/obj/item/dq_property_dependency_fixture/I = D
+	return list(list(I, nameof(I.extra_paperwork)))
+
+/datum/property_provider/type_var/dq_unknown_dependencies
+	property = TAG_PAPERWORK
+	applies_to = /obj/item
+	test_only = TRUE
+/datum/property_provider/type_var/dq_unknown_dependencies/read_initial(path)
+	return FALSE
+
+/datum/property_provider/dq_unknown_contributor
+	property = TAG_PAPERWORK
+	source = PROP_SOURCE_BEHAVIOUR
+	applies_to = /obj/item/dq_property_dependency_fixture
+	test_only = TRUE
+/datum/property_provider/dq_unknown_contributor/contribute(datum/D)
+	return FALSE
+
+/datum/unit_test/dq_native_property_dependencies/Run()
+	var/obj/item/paper/P = allocate(/obj/item/paper)
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench)
+	TEST_ASSERT(dq_has_tag(P, TAG_PAPERWORK), "Actual paper supplies its type-only tag")
+	TEST_ASSERT(!dq_has_tag(W, TAG_PAPERWORK), "Actual wrench does not supply paperwork")
+	TEST_ASSERT_EQUAL(length(acceptance_property_read_keys(P, TAG_PAPERWORK)), 0, "Paperwork explicitly proves no mutable base dependencies")
+	TEST_ASSERT_EQUAL(length(acceptance_property_read_keys(W, TAG_PAPERWORK)), 0, "Nonpaper uses the same explicit immutable contract")
+	var/obj/item/dq_property_dependency_fixture/I = allocate(/obj/item/dq_property_dependency_fixture)
+	var/datum/property_def/tag/paperwork/definition = allocate(/datum/property_def/tag/paperwork)
+	var/datum/property_provider/type_var/tag/paperwork/base = allocate(/datum/property_provider/type_var/tag/paperwork)
+	var/datum/property_provider/dq_paperwork_contributor/contributor = allocate(/datum/property_provider/dq_paperwork_contributor)
+	var/datum/property_registry/R = allocate(/datum/property_registry, list(definition), list(base, contributor))
+	TEST_ASSERT(!length(R.errors), "Real isolated property registry validates")
+	var/list/keys = R.read_keys(I, TAG_PAPERWORK)
+	TEST_ASSERT_EQUAL(length(keys), 1, "Static base does not erase mutable contributor reads")
+	var/list/key = keys[1]
+	TEST_ASSERT_EQUAL(key[1], I, "The real contributor receiver is retained")
+	TEST_ASSERT_EQUAL(key[2], nameof(I.extra_paperwork), "The actual field is the dependency")
+	TEST_ASSERT(!R.read_value(I, TAG_PAPERWORK), "Actual base and false contribution initially refuse the tag")
+	I.set_extra_paperwork(TRUE)
+	TEST_ASSERT(R.read_value(I, TAG_PAPERWORK), "Real setter changes the composed property value")
+	var/datum/property_provider/type_var/dq_unknown_dependencies/unknown_base = allocate(/datum/property_provider/type_var/dq_unknown_dependencies)
+	var/datum/property_registry/U = allocate(/datum/property_registry, list(definition), list(unknown_base))
+	var/caught_base = FALSE
+	try
+		U.read_keys(I, TAG_PAPERWORK)
+	catch(var/exception/base_fault)
+		caught_base = findtext(base_fault.name, "property base") && findtext(base_fault.name, "needs native dependency metadata")
+	TEST_ASSERT(caught_base, "An unknown base is refused rather than treated as static")
+	var/datum/property_provider/dq_unknown_contributor/unknown_contributor = allocate(/datum/property_provider/dq_unknown_contributor)
+	var/datum/property_registry/C = allocate(/datum/property_registry, list(definition), list(base, unknown_contributor))
+	var/caught_contributor = FALSE
+	try
+		C.read_keys(I, TAG_PAPERWORK)
+	catch(var/exception/contributor_fault)
+		caught_contributor = findtext(contributor_fault.name, "property contributor") && findtext(contributor_fault.name, "needs native dependency metadata")
+	TEST_ASSERT(caught_contributor, "A static base never masks an unknown contributor")

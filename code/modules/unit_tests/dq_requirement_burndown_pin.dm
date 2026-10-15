@@ -380,3 +380,37 @@ CAPABILITIES(/obj/item/dq_native_override_pin)
 	var/list/bad = list()
 	var/report = dq_snapshot_compare(dir, "requirement_burndown_override", list(/obj/item/dq_native_override_pin = rows), dq_snapshot_read_dir(dir, bad), bad)
 	TEST_ASSERT_NULL(report, report)
+
+// Drive the actual pilot callback through the native timer, with a real helm
+// whose nullspace location is deliberately included in the configured levels.
+/datum/unit_test/dq_pilotslug_helm_destination
+	parent_type = /datum/unit_test/dq_requirement_burndown_pin
+
+/datum/unit_test/dq_pilotslug_helm_destination/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	test_driver_begin()
+	var/turf/start = test_floor()
+	var/turf/destination = get_step(start, EAST)
+	TEST_ASSERT(istype(destination), "Real neighboring turf exists")
+	// Scope the map setting through the normal test override helper; no live
+	// gameplay requirement depends on this static map configuration.
+	set_var(using_map, nameof(using_map.player_levels), list(0))
+	var/obj/machinery/computer/ship/helm/invalid = allocate(/obj/machinery/computer/ship/helm, start)
+	invalid.moveToNullspace()
+	TEST_ASSERT_NULL(get_turf(invalid), "The actual invalid candidate has no destination turf")
+	TEST_ASSERT(invalid.z in using_map.player_levels, "The old z-only predicate would include this actual helm")
+	var/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug/P = allocate(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug, start)
+	P.set_takes_a_helm(TRUE)
+	P.set_ghostjoin(FALSE)
+	after(P, 0, then(TYPE_PROC_REF(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug, take_a_helm)))
+	test_time(0)
+	TEST_ASSERT_EQUAL(P.loc, start, "No valid destination leaves the real pilot in place")
+	TEST_ASSERT(!P.ghostjoin, "Failed relocation does not open the pilot to ghosts")
+	var/obj/machinery/computer/ship/helm/valid = allocate(/obj/machinery/computer/ship/helm, destination)
+	TEST_ASSERT_EQUAL(get_turf(valid), destination, "The actual eligible helm has a real turf")
+	using_map.player_levels += start.z
+	after(P, 0, then(TYPE_PROC_REF(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug, take_a_helm)))
+	test_time(0)
+	TEST_ASSERT_EQUAL(P.loc, destination, "The native timer relocates the pilot to the real valid helm")
+	TEST_ASSERT(P.ghostjoin, "Successful actual relocation keeps the original ghost-admission behavior")
+	test_driver_end()

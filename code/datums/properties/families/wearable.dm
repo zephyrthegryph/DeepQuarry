@@ -172,3 +172,7 @@
 
 /datum/property_provider/type_var/tag/wear_over/read_initial(path)
 	return ispath(path, /obj/item/clothing/gloves) || ispath(path, /obj/item/clothing/shoes/magboots) || ispath(path, /obj/item/clothing/shoes/leg_guard)
+
+/datum/property_provider/type_var/tag/slot_flag/read_keys(datum/D)
+	var/obj/item/I = D
+	return istype(I) ? list(list(I, ITEM_WORN_KEY)) : list()

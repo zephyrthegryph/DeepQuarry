@@ -177,28 +177,9 @@
 /proc/req_acceptance_suit_storage_takes(because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/suit_storage_takes, list("because" = because))
 
-// Resolve only actual registered property dependency providers.
+// Resolve only actual registered provider contracts, including contributors.
 /proc/acceptance_property_read_keys(datum/thing, property)
-	. = list()
-	if(!thing)
-		return
-	var/datum/property_registry/R = dq_property_registry()
-	for(var/datum/property_provider/P as anything in R.contributors[property])
-		if(istype(thing, P.applies_to))
-			CRASH("acceptance property contributor [P.type] needs native dependency metadata")
-	var/datum/property_provider/base = R.base_provider(thing.type, property)
-	if(istype(base, /datum/property_provider/type_var/tag/slot_flag))
-		var/obj/item/I = thing
-		if(istype(I))
-			. += list(list(I, ITEM_WORN_KEY))
-		return
-	if(property == PROP_SIZE_CLASS && base?.state_var == "w_class")
-		var/obj/O = thing
-		if(istype(O))
-			. += list(list(O, nameof(O.w_class)))
-		return
-	if(base)
-		CRASH("acceptance property base [base.type] needs native dependency metadata")
+	return dq_property_registry().read_keys(thing, property)
 
 /datum/entry/part/req/acceptance_leaf/type/read_keys(datum/act/op/A)
 	return null
