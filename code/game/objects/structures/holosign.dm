@@ -96,4 +96,4 @@ CAPABILITIES(/obj/structure/holosign/barrier/medical)
 	return TRUE
 
 CAPABILITIES(/obj/structure/holosign/barrier/combifan)
-	setup(PROC_REF(update_nearby_tiles))
+	setup(TYPE_PROC_REF(/atom/movable, update_nearby_tiles))

@@ -63,3 +63,5 @@ New focused selector /datum/unit_test/dq_a3_initialization/salvage_table checks 
 
 
 Read-tracking preflight on master 4ab2e15fe1 found one newly moved weather write: telegraph_delay must publish through its existing generated setter. The setup job now calls set_telegraph_delay(lifespan / telegraph_percent) in the same position. No declaration or preexisting setter call was altered. A new preflight and lane-ready proof remain pending.
+
+Verification compile repair: the new railing and combifan setup entries now reference their existing /atom/movable hook definitions through TYPE_PROC_REF. The initial compile stopped before any world ran; no generated output was edited. Original focused tests remain required.

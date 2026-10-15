@@ -36,7 +36,7 @@
 		set_anchored(FALSE)
 
 CAPABILITIES(/obj/structure/railing)
-	setup(PROC_REF(make_rotatable))
+	setup(TYPE_PROC_REF(/atom/movable, make_rotatable))
 	climb(delay = 3.4 SECONDS, vaulting = TRUE, climbed = PROC_REF(climbed_over))
 	op("slam", item(/obj/item), stance(I_HURT), label("Slam"), then(PROC_REF(interaction_slam)))
 	op("item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_item)))
