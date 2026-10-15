@@ -14,6 +14,9 @@
 	var/index
 	var/handle = 0
 
+CAPABILITIES(/datum/pipe_port)
+	ref_one(nameof(machine))
+
 /datum/pipe_port/New(obj/machinery/atmospherics/machine, index)
 	..()
 	rel_set(src, nameof(machine), machine)

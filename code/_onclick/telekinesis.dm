@@ -48,6 +48,8 @@
 	return
 
 CAPABILITIES(/obj/item/tk_grab)
+	ref_one(nameof(focus))
+	ref_one(nameof(host))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 

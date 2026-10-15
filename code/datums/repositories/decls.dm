@@ -14,6 +14,7 @@
 //     III. Thou shalt not write a decl that relies on arguments supplied to New().
 //     IV.  Thou shalt not call Initialize() on a /datum/decl.
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/repository/decls)
 /datum/repository/decls
 	var/list/fetched_decls
 	var/list/fetched_decl_types

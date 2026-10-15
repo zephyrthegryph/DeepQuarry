@@ -2,6 +2,7 @@
 //
 // The datum containing all the chunks.
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/visualnet/camera)
 /datum/visualnet/camera
 	chunk_type = /datum/chunk/camera
 

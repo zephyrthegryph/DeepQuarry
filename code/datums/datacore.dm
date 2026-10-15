@@ -3,6 +3,7 @@
 	GLOB.data_core = new /datum/datacore()
 	return 1
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/datacore)
 /datum/datacore
 	var/name = "datacore"
 	//For general station crew

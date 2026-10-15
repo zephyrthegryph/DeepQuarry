@@ -98,6 +98,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_item)
 	/// owner()'s system singleton, kept (re-resolved if it is ever deleted).
 	var/datum/owner_cache
 
+CAPABILITIES(/datum/work_item)
+	ref_one(nameof(owner_cache))
+
 /datum/work_item/New(handler, interval = WORK_EVERY_TICK, when = null, members = null, phase = KERNEL_PHASE_P, list/after = null, budget = 0, lane = LANE_SIMULATION, urgent = FALSE, clock = CLOCK_WORLD)
 	..()
 	src.handler = handler
@@ -131,7 +134,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_item)
 /datum/work_item/proc/owner()
 	if(owner_cache && !QDELETED(owner_cache))
 		return owner_cache
-	owner_cache = system(owner_type)
+	rel_set(src, nameof(owner_cache), system(owner_type))
 	return owner_cache
 
 /// The latency class of this item's lane.

@@ -201,6 +201,7 @@
 
 
 CAPABILITIES(/datum/reactive_icon_update)
+	ref_one(nameof(owner))
 	ref_many(nameof(watched_containers))
 
 /obj/item/tool/screwdriver/test_driver/draw(datum/look/look)

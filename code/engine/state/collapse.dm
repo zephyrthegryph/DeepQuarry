@@ -277,6 +277,7 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 #undef STATE_REFS_PER_CONTENT
 
 GLOBAL_DATUM(state_reference_environment, /datum/state_reference_environment)
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_reference_environment)
 /datum/state_reference_environment
 /datum/state_reference_environment/proc/hook_blockers(list/nodes, list/internal)
 	return list()

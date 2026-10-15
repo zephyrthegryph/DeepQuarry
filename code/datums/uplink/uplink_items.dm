@@ -1,5 +1,6 @@
 GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/uplink)
 /datum/uplink
 	var/list/datum/uplink_item/items_assoc
 	var/list/items // owned (untyped: the lint reads a registry-typed list as SHARED)

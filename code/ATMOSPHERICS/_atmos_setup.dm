@@ -23,6 +23,7 @@
 // Icon cache generation
 //--------------------------------------------
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/pipe_icon_manager)
 /datum/pipe_icon_manager
 	var/list/pipe_icons[]
 	var/list/manifold_icons[]

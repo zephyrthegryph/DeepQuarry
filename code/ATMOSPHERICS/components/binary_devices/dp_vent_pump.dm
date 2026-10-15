@@ -197,6 +197,7 @@
 	return 1
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
 	examine_line(PROC_REF(gauge_text))

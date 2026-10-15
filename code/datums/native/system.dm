@@ -334,11 +334,14 @@ GLOBAL_LIST_EMPTY(native_key_names)
 /// Holds the cadence holds for the gas step, created on first use.
 /datum/system/native/var/datum/step_cadence/native/step_cadence
 
+CAPABILITIES(/datum/system/native)
+	owns_one(nameof(step_cadence), /datum/step_cadence/native)
+
 /// The cadence datum to hold cadence holds on.
 /datum/system/native/proc/get_step_cadence()
 	RETURN_TYPE(/datum/step_cadence)
 	if(!step_cadence)
-		step_cadence = new // ALLOW(ownership): the native system makes its grant holder lazily and keeps it for the whole run; it is a helper the system never hands out
+		rel_set(src, nameof(step_cadence), new /datum/step_cadence/native)
 	return step_cadence
 
 /// Runs the world at the shortest step any cadence grant names.

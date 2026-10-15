@@ -34,6 +34,9 @@
 	/// world.time the character's last body died (0 = alive).
 	var/time_of_death = 0
 
+CAPABILITIES(/datum/character_identity)
+	ref_one(nameof(dna))
+
 /// The identity's DNA, or null if the datum was replaced and deleted.
 /datum/character_identity/proc/get_dna()
 	RETURN_TYPE(/datum/dna)

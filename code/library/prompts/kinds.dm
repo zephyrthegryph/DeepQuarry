@@ -46,6 +46,9 @@
 	/// The key GLOB.radial_menus holds the ring under (default: the answerer and the anchor); asking again with the same key closes the open ring.
 	var/uniqueid
 
+CAPABILITIES(/datum/prompt/choice)
+	ref_one(nameof(anchor), /atom)
+
 /datum/prompt/choice/inline_type()
 	if(radial)
 		return null

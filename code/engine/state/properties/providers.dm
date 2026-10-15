@@ -77,6 +77,7 @@
 
 
 GLOBAL_DATUM(property_environment, /datum/property_environment)
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/property_environment)
 /datum/property_environment
 /datum/property_environment/proc/variant_values(path, variant)
 	return null

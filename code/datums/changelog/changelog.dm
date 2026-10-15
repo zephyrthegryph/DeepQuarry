@@ -1,3 +1,4 @@
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/changelog)
 /datum/changelog
 	var/static/list/changelog_items = list()
 	var/static/list/dates

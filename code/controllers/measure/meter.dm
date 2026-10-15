@@ -31,9 +31,12 @@
 	/// The OM per-behaviour counters rolled up per system when the set opened; reports subtract it (km_rollup()).
 	var/list/rollup_base
 
+CAPABILITIES(/datum/km_stats_set)
+	owns_one(nameof(input), /datum/input_stats)
+
 /datum/km_stats_set/New()
 	systems = new /list(KM_MAX_SYSTEMS)
-	input = new
+	rel_set(src, nameof(input), new /datum/input_stats)
 
 /// Stamps the moment the set started recording.
 /datum/km_stats_set/proc/mark_start()
@@ -50,7 +53,6 @@
 	for(var/datum/system_stats/S as anything in systems)
 		ended_with(S, src)
 	systems = null
-	QDEL_NULL(input)
 	rollup_base = null
 	..()
 
@@ -93,18 +95,17 @@
 	var/verbs_run = 0
 	var/queue_hwm = 0
 
-/datum/input_stats/New()
-	wait = new
-	click_wait = new
-	verb_wait = new
-	depth = new
+CAPABILITIES(/datum/input_stats)
+	owns_one(nameof(wait), /datum/km_hist)
+	owns_one(nameof(click_wait), /datum/km_hist)
+	owns_one(nameof(verb_wait), /datum/km_hist)
+	owns_one(nameof(depth), /datum/km_depth_hist)
 
-/datum/input_stats/on_destroy(force)
-	QDEL_NULL(wait)
-	QDEL_NULL(click_wait)
-	QDEL_NULL(verb_wait)
-	QDEL_NULL(depth)
-	..()
+/datum/input_stats/New()
+	rel_set(src, nameof(wait), new /datum/km_hist)
+	rel_set(src, nameof(click_wait), new /datum/km_hist)
+	rel_set(src, nameof(verb_wait), new /datum/km_hist)
+	rel_set(src, nameof(depth), new /datum/km_depth_hist)
 
 /datum/input_stats/proc/reset()
 	wait.reset()
@@ -180,6 +181,7 @@
 	var/last_overrun_usage = 0
 
 CAPABILITIES(/datum/tick_meter)
+	ref_one(nameof(live))
 	ref_many(nameof(sets), /datum/km_stats_set)
 
 /datum/tick_meter/New(ring_len = KM_RING_LEN)
@@ -198,13 +200,12 @@ CAPABILITIES(/datum/tick_meter)
 	fr_streak = new /list(ring_len)
 	fr_top_sys = new /list(ring_len * KM_TOP_N)
 	fr_top_ms = new /list(ring_len * KM_TOP_N)
-	live = new
+	rel_set(src, nameof(live), new /datum/km_stats_set)
 	rel_add(src, nameof(sets), live)
 
 /datum/tick_meter/on_destroy(force)
 	for(var/datum/km_stats_set/S as anything in sets)
 		ended_with(S, src)
-	live = null
 	..()
 
 /// Opens a stats set that records alongside the live one until close_set().

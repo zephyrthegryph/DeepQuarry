@@ -10,6 +10,7 @@
 /datum/geiger_sound/var/datum/looping_sound/geiger/sound
 
 CAPABILITIES(/datum/geiger_sound)
+	ref_one(nameof(owner))
 	owns_one(nameof(sound), /datum/looping_sound/geiger)
 
 
@@ -94,6 +95,9 @@ CAPABILITIES(/datum/geiger_sound)
 	var/tmp/datum/radiation_pulse_information/last_radiation_pulse_ref
 	var/last_insulation_to_target
 	var/wall_mounted = FALSE
+
+CAPABILITIES(/datum/looping_sound/geiger)
+	ref_one(nameof(last_radiation_pulse_ref))
 
 /datum/looping_sound/geiger/get_sound(starttime, _mid_sounds, danger)
 	if(wall_mounted) //Child does all the work.

@@ -92,7 +92,7 @@ MSG_DEF_SELF(robotics/silicon_denied, "Access Denied (silicon detected)")
 			return TRUE
 	if(!isAI(user))
 		return FALSE
-	var/mob/living/original = user.mind.original_character // ALLOW(reads): who may hack is asked when the question opens and again when it is answered, never cached
+	var/mob/living/original = user.mind.original_character
 	return (user.mind.special_role && (original && original == user))
 
 /**

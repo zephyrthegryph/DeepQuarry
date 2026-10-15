@@ -19,6 +19,9 @@
 
 	level = 1
 
+CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold)
+	ref_one(nameof(node3))
+
 /obj/machinery/atmospherics/pipe/manifold/Initialize(mapload)
 	. = ..()
 	alpha = 255

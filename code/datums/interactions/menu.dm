@@ -76,6 +76,7 @@
 	return ..()
 
 CAPABILITIES(/datum/interaction_menu)
+	ref_one(nameof(target))
 	owns_one(nameof(menu_window), /datum/tgui_window)
 	interface("InteractionMenu", state = nameof(GLOB.tgui_always_state), pinned = TRUE)
 	op("run", ui_act("run", arg("id", schema_text(4096))), then(PROC_REF(ui_act_run)))

@@ -26,6 +26,7 @@
 // parts are built directly and never need this composer.
 GLOBAL_DATUM(requirement_composer, /datum/requirement_composer)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/requirement_composer)
 /datum/requirement_composer
 
 /datum/requirement_composer/proc/all(list/parts)

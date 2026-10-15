@@ -8,6 +8,7 @@
 // Called by master controller.
 
 // Default shit.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/universal_state)
 /datum/universal_state
 	// Just for reference, for now.
 	// Might eventually add an observatory job.

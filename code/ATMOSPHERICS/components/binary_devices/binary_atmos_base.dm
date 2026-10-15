@@ -94,6 +94,8 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/binary)
+	ref_one(nameof(network1))
+	ref_one(nameof(network2))
 	gas_port(nameof(air1), volume = nameof(air1_volume))
 	gas_port(nameof(air2), volume = nameof(air2_volume))
 	owns_one(nameof(air1), on_destroy = ON_DESTROY_PRIVATE_COPY)

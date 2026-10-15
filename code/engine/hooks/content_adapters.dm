@@ -26,6 +26,7 @@
 /datum/native_watch/proc/unbind_native(handle)
 	return
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/native_watch_provider)
 /datum/native_watch_provider
 
 GLOBAL_DATUM(native_watch_provider, /datum/native_watch_provider)
@@ -42,6 +43,7 @@ GLOBAL_DATUM(native_watch_provider, /datum/native_watch_provider)
 /atom/movable/proc/place_starting_occupant(atom/holder)
 	return FALSE
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/transfer_feedback_provider)
 /datum/transfer_feedback_provider
 
 GLOBAL_DATUM(transfer_feedback_provider, /datum/transfer_feedback_provider)

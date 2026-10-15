@@ -1,5 +1,6 @@
 GLOBAL_DATUM_INIT(uniqueness_repository, /datum/repository/unique, new)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/repository/unique)
 /datum/repository/unique
 	var/list/generators
 

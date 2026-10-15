@@ -359,6 +359,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 /// The concrete registries publish singleton identity through this engine-owned interface.
 GLOBAL_DATUM(state_registry_adapter, /datum/state_registry_adapter)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_registry_adapter)
 /datum/state_registry_adapter
 
 /datum/state_registry_adapter/proc/identity(datum/D)

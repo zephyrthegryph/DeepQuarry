@@ -1,5 +1,6 @@
 GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/repository/crew)
 /datum/repository/crew
 	var/list/cache_data
 

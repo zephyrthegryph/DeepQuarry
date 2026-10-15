@@ -14,6 +14,9 @@
 	/// The mob whose spells these are (a relation view; the mob owns us in spell_masters).
 	var/mob/spell_holder
 
+CAPABILITIES(/atom/movable/screen/movable/spell_master)
+	ref_one(nameof(spell_holder))
+
 /// The buttons listed on this spell master.
 /atom/movable/screen/movable/spell_master/proc/spell_buttons() as /list
 	return button_list
@@ -218,6 +221,7 @@
 		overlays += "silence"
 
 CAPABILITIES(/atom/movable/screen/spell)
+	ref_one(nameof(spell))
 	links(/atom/movable/screen/spell::listed_on, /atom/movable/screen/movable/spell_master::button_list, b_many = TRUE)
 	click_on(PROC_REF(click_input))
 

@@ -28,6 +28,9 @@
 	var/list/common_fields
 	var/done = FALSE
 
+CAPABILITIES(/datum/ask_sequence)
+	ref_one(nameof(owner))
+
 /// The default answerer, or null when they are gone.
 /datum/ask_sequence/proc/actor()
 	return rerun_unwrap(answerer_w)
@@ -140,7 +143,7 @@
 		if(!(key in S.vars))
 			CRASH("ask_sequence: [S.type] has no var [key]")
 		S.vars[key] = params[key] // ALLOW(api): ask_sequence() named arguments set the sequence's own state
-	S.owner = owner // ALLOW(ownership): a plain reference: the sequence lives only while one of its questions is open
+	rel_set(S, nameof(S.owner), owner)
 	S.steps = steps
 	S.on_done = on_done
 	S.on_stop = on_stop

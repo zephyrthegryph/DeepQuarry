@@ -10,6 +10,7 @@
 
 //Galaxy
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/locations/milky_way)
 /datum/locations/milky_way
 	name = "Milky Way Galaxy"
 	desc = "The galaxy we all live in."

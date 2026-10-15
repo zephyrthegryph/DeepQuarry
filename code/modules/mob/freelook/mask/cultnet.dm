@@ -2,6 +2,7 @@
 //
 // The datum containing all the chunks.
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/visualnet/cult)
 /datum/visualnet/cult
 	chunk_type = /datum/chunk/cult
 

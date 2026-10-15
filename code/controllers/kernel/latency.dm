@@ -9,6 +9,7 @@
 /// A tick "overruns" when its usage passes 100. After KERNEL_SHED_STREAK overruns in a row the kernel
 /// sheds L3 until KERNEL_SHED_RECOVER ticks pass without one.
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/kernel_latency)
 /datum/kernel_latency
 	/// Shedding only acts when enabled (unit-test builds leave it off so a slow test boot cannot change lane behaviour).
 	var/enabled = TRUE

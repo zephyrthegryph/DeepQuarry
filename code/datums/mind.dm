@@ -68,6 +68,9 @@
 	var/datum/religion/my_religion
 
 CAPABILITIES(/datum/mind)
+	ref_one(nameof(current))
+	ref_one(nameof(original_character))
+	ref_one(nameof(initial_account))
 	ref_many(nameof(shared_objectives))
 	owns_one(nameof(antag_holder), /datum/antag_holder)
 	owns_one(nameof(identity), /datum/character_identity)

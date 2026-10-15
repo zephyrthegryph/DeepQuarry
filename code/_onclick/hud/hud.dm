@@ -169,7 +169,6 @@ CAPABILITIES(/datum/global_hud)
 	var/show_intent_icons = 0
 	var/hotkey_ui_hidden = 0	//This is to hide the buttons that can be used via hotkeys. (hotkeybuttons list of buttons)
 
-	var/atom/movable/screen/lingchemdisplay
 	var/atom/movable/screen/wizard/instability/wiz_instability_display
 	var/atom/movable/screen/wizard/energy/wiz_energy_display
 	// The mob's own screen elements (moved off /mob, base_vars lane B): built by the mob's create_mob_hud(), gone with the hud.
@@ -198,8 +197,6 @@ CAPABILITIES(/datum/global_hud)
 	var/list/planes_visible
 	/// The darksight overlay (a client image) that eases the mob's eyes into the dark; made by /mob/living/Login().
 	var/image/dsoverlay
-	var/atom/movable/screen/blobpwrdisplay
-	var/atom/movable/screen/blobhealthdisplay
 	var/atom/movable/screen/r_hand_hud_object
 	var/atom/movable/screen/l_hand_hud_object
 	/// The combat mode toggle (code/modules/mob/combat_mode.dm).
@@ -236,6 +233,10 @@ CAPABILITIES(/datum/global_hud)
 	var/list/minihuds
 
 CAPABILITIES(/datum/hud)
+	ref_one(nameof(r_hand_hud_object))
+	ref_one(nameof(l_hand_hud_object))
+	ref_one(nameof(combat_mode_button))
+	ref_one(nameof(move_intent))
 	ref_one(nameof(mymob), /mob)
 	hud_element(nameof(hands), /atom/movable/screen)
 	hud_element(nameof(pullin), /atom/movable/screen, owned = FALSE) // also in a hud screen list, which owns it

@@ -16,6 +16,7 @@
 		watchdog.running = FALSE
 	watchdog = new /datum/kernel_watchdog
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/kernel_watchdog)
 /datum/kernel_watchdog // This thing pretty much just keeps poking the kernel
 	var/name = "Watchdog"
 

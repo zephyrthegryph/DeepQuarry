@@ -15,6 +15,10 @@
 	var/mob/living/soul_sharer
 	var/id // Optional ID, for tagging and finding specific instances.
 
+CAPABILITIES(/datum/soul_link)
+	ref_one(nameof(soul_owner))
+	ref_one(nameof(soul_sharer))
+
 // The owner mob owns the link (owned_soul_links); soul_owner is the one-sided back view. Sharers
 // are plain relations both ways (a multi-sharer link names several), kept in step by the procs below.
 CAPABILITIES(/datum/soul_link/multi_sharer)

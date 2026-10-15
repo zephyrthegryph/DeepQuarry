@@ -81,6 +81,9 @@
 	return 1
 
 CAPABILITIES(/obj/machinery/atmospherics/tvalve)
+	ref_one(nameof(network_node1))
+	ref_one(nameof(network_node2))
+	ref_one(nameof(network_node3))
 	ref_one(nameof(node3))
 	without("silicon_hand") // a manual valve: silicons can't turn it (digital valves declare their own)
 	op("toggle", hand(), label("Toggle"), wait(0), then(PROC_REF(wheel_turned)))
@@ -185,6 +188,7 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve)
 
 /// A digital three-way valve turns for someone its access lets in, while it has power.
 CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital)
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	silicon_hand()
 	extend("toggle", needs(req(PROC_REF(actor_allowed)), req(PROC_REF(has_power))))

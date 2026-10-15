@@ -13,6 +13,13 @@
 
 	needs_processing = TRUE
 
+CAPABILITIES(/datum/mini_hud/rig)
+	ref_one(nameof(owner_rig))
+	ref_one(nameof(power))
+	ref_one(nameof(health))
+	ref_one(nameof(air))
+	ref_one(nameof(airtoggle))
+
 /datum/mini_hud/rig/New(datum/hud/other, obj/item/rig/owner)
 	rel_set(src, nameof(owner_rig), owner)
 	// screenobjs owns every element; power/health/air/airtoggle are views into it.
@@ -54,6 +61,13 @@
 	var/atom/movable/screen/mech/airtoggle/airtoggle
 
 	needs_processing = TRUE
+
+CAPABILITIES(/datum/mini_hud/mech)
+	ref_one(nameof(owner_mech))
+	ref_one(nameof(power))
+	ref_one(nameof(health))
+	ref_one(nameof(air))
+	ref_one(nameof(airtoggle))
 
 /datum/mini_hud/mech/New(datum/hud/other, obj/mecha/owner)
 	rel_set(src, nameof(owner_mech), owner)
