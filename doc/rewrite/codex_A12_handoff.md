@@ -48,3 +48,5 @@ Fixture review: New warms dview/status policies; each run scopes coalesce_runs. 
 No source declaration/old setter line removals: read-only multiset check passed. No new setters, refs, ownership declarations, base vars or ALLOWs. No logging removal. Whitespace check passes. No builds/tests/cargo/gen/manifest/baseline/commits/pushes by subagent.
 
 Root analyzer preflight: baseline4115 ->4046 (69 rows removed), decl47unchanged; generated tracked check clean. Runtime verification pending.
+
+Compile repair: signaler_pins referenced IC_INPUT after the electronics module undefines it. The fixture now uses its own scoped input-selector constant with the existing get_pin_data API, matching interim_ic_signal_recipient and round2 circuit tests; no production code changed. The initial gate stopped before any world; original focused execution remains pending.

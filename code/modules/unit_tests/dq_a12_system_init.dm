@@ -1,3 +1,5 @@
+#define A12_IC_INPUT_SELECTOR "input"
+
 // A12 declared lifecycle jobs: actual bodies, circuits and economy constructors.
 /datum/unit_test/dq_a12_system_init
 	abstract_type = /datum/unit_test/dq_a12_system_init
@@ -25,8 +27,8 @@
 /datum/unit_test/dq_a12_system_init/signaler_pins/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/obj/item/integrated_circuit/input/signaler/S = allocate(/obj/item/integrated_circuit/input/signaler, test_floor())
-	TEST_ASSERT_EQUAL(S.get_pin_data(IC_INPUT, 1), S.frequency, "The inherited synchronous pin builder precedes signaler setup")
-	TEST_ASSERT_EQUAL(S.get_pin_data(IC_INPUT, 2), S.code, "The real signaler populates its actual code input")
+	TEST_ASSERT_EQUAL(S.get_pin_data(A12_IC_INPUT_SELECTOR, 1), S.frequency, "The inherited synchronous pin builder precedes signaler setup")
+	TEST_ASSERT_EQUAL(S.get_pin_data(A12_IC_INPUT_SELECTOR, 2), S.code, "The real signaler populates its actual code input")
 
 /datum/unit_test/dq_a12_system_init/device_links/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
@@ -82,3 +84,5 @@
 			parcels++
 	TEST_ASSERT_EQUAL(manuals, 1, "Setup leaves one actual user manual on the construction tile")
 	TEST_ASSERT_EQUAL(parcels, 1, "Setup leaves one actual wrapped access-code reference on the construction tile")
+
+#undef A12_IC_INPUT_SELECTOR
