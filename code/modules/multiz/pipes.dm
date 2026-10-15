@@ -256,4 +256,4 @@
 	color = PIPE_COLOR_CYAN
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/zpipe)
-	setup(PROC_REF(init_dir))
+	setup(TYPE_PROC_REF(/obj/machinery/atmospherics, init_dir))

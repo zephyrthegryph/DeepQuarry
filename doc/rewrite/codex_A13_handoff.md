@@ -111,3 +111,6 @@ Fixture teardown audit (2026-10-15): meteorite_rotation now owns every actual ch
 
 
 Nested loot teardown repair (2026-10-15): generated first-aid kits can contain latent stock that would materialize and spill only during deletion. The lootsafe fixture now uses the native latent_materialize_all API on its actual generated storage and recursively owns real descendants. Assertions verify all latent entries were consumed and each returned object is the exact object in native contents, without assuming which random kit or count was rolled. No stock is cleared, no RNG suppressed, and no production behavior changed. Source-only; verification remains with the A coordinator.
+
+
+Defining-proc audit refinement (2026-10-15): zpipe has an init_dir override but inherits the actual /proc declaration from /obj/machinery/atmospherics. The new setup hook now uses TYPE_PROC_REF at that declaring ancestor. Dynamic dispatch still invokes the existing zpipe override; no method, state, setter or behavior changed. No generation, analyzer, compile or test was run for this source-only reference repair.
