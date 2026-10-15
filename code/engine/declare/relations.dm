@@ -73,7 +73,8 @@
 /// Starting-reference metadata stays separate from ownership: no owner stamp or policy
 /// is introduced, only the existing creation/resolution phase and dependency ordering.
 /proc/table_start_entries(datum/type_table/T)
-	. = table_owns_entries(T).Copy()
+	var/list/owned_entries = table_owns_entries(T)
+	. = owned_entries.Copy()
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/E = C.item
 		if(istype(E) && E.kind == ENTRY_REF_ONE && !isnull(E.args["starts"]))

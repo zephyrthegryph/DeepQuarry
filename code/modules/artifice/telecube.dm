@@ -54,13 +54,13 @@
 	set_on_floor(isturf(loc))
 	if(randomize_colors)
 		set_glow_color(rgb(rand(0, 255), rand(0, 255), rand(0, 255)))
-		set_color(rgb(rand(30, 255), rand(30, 255), rand(30, 255)))
+		set_base_color(rgb(rand(30, 255), rand(30, 255), rand(30, 255)))
 	if(!start_paired)
 		return null
 	var/obj/item/telecube/peer = new /obj/item/telecube(loc)
 	rel_set(src, nameof(mate), peer)
 	peer.set_glow_color(mirror_colors ? color : glow_color)
-	peer.set_color(mirror_colors ? glow_color : color)
+	peer.set_base_color(mirror_colors ? glow_color : color)
 	peer.pair_cube(src)
 
 

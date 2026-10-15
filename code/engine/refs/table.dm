@@ -386,7 +386,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 			OWN_REPORT("[D.type] declares a starting occupant for var '[var_name]', which it doesn't have")
 			continue
 		var/list/start_entry = T.entries[var_name]
-		if(start_entry && start_entry[OWNE_KIND] != OWNK_OWN && !(start_entry[OWNE_KIND] == OWNK_REL && var_name in reference_starts))
+		if(start_entry && start_entry[OWNE_KIND] != OWNK_OWN && !(start_entry[OWNE_KIND] == OWNK_REL && (var_name in reference_starts)))
 			OWN_REPORT("[D.type].[var_name]: a starting occupant needs ownership or a reference, but the var is declared [own_kind_name(start_entry[OWNE_KIND])]")
 			continue
 		if(decl.starts[var_name] == STARTS_NONE)
