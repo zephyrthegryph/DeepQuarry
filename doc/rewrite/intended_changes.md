@@ -4900,11 +4900,11 @@ Affected requirement-pin classes:
 `click_order(BIND_HAND, "ui_open", "check_logs")` replaces vending's legacy
 `priority(below("ui_open"))`. The artificial `dx_menu_order_static` producer
 creates one target-side candidate for every binding with no actor or real input;
-it has no production callers. For `/obj/machinery/vending/nifsoft_shop` only,
+it has no production callers. For `/obj/machinery/vending` and `/obj/machinery/vending/nifsoft_shop` only,
 its recorded segment changes from `drag_buckle,ui_open,check_logs,ui_open` to
 `ui_open,ui_open,check_logs,drag_buckle`: canonical order moves window candidates
 above the log anchor, whereas the legacy rule moved the log below the first
-window anchor. The hand input pair remains window then logs. The static row is
+window anchor. The hand input pair remains window then logs. The two static rows are
 updated narrowly; no dynamic click/menu golden changes. Actual human, robot and
 AI input/menu projection is checked by `dq_silicon/d7_vending_input_order` in the
 same gate; approval of this static capture is conditional on that test passing.
