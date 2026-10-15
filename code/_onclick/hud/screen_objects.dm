@@ -1033,6 +1033,7 @@ CAPABILITIES(/atom/movable/screen/mapper/mapbutton)
 
 CAPABILITIES(/atom/movable/screen/ammo)
 	ref_one(nameof(our_gun))
+	click_on(PROC_REF(firemode_clicked))
 
 /atom/movable/screen/ammo/proc/firemode_clicked(datum/act/input/A)
 	var/mob/user = A.actor
@@ -1186,5 +1187,3 @@ CAPABILITIES(/atom/movable/screen/ammo)
 CAPABILITIES(/atom/movable/screen/close)
 	click_on(PROC_REF(storage_closed))
 
-CAPABILITIES(/atom/movable/screen/ammo)
-	click_on(PROC_REF(firemode_clicked))
