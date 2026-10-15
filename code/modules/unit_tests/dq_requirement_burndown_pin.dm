@@ -310,6 +310,26 @@
 			own_constructed_contents(holder)
 			actual[path] = list()
 		var/list/rows = actual[path]
+		// Validate the actual old table directly: its normal cached consumer
+		// logs a runtime on a malformed declaration before it can return a reason.
+		var/list/spec = holder.constraint_spec(channel)
+		if(length(spec))
+			var/datum/predicate/compiled = allocate(/datum/predicate)
+			compiled.name = "[path] [channel]"
+			compiled.spec = spec
+			compiled.test_only = TRUE
+			var/valid = compiled.compile()
+			if(path == /obj/item/gripper/syndicate && channel == CONSTRAINT_HOLD)
+				TEST_ASSERT(!valid, "Actual old syndicate union contains a middle empty argument")
+				TEST_ASSERT_EQUAL(length(compiled.errors), 2, "Only the known type-list and resulting empty-ALL errors occur")
+				TEST_ASSERT_EQUAL(compiled.errors[1], "predicate [path] [channel]: REQ_TYPE lists , which is not a type", "Exact real malformed-type error")
+				TEST_ASSERT_EQUAL(compiled.errors[2], "predicate [path] [channel]: has an empty ALL", "Exact resulting old group error")
+				rows += "[channel] declaration ERROR: [jointext(compiled.errors, "; ")]"
+				queries++
+				qdel(compiled)
+				continue
+			TEST_ASSERT(valid, "[path] [channel] compiles: [jointext(compiled.errors || list(), "; ")]")
+			qdel(compiled)
 		if(channel == CONSTRAINT_FIT || channel == CONSTRAINT_EQUIP)
 			var/reason = dq_constraint_refusal(holder, channel, holder, wearer)
 			rows += "[channel] wearer=Human: [isnull(reason) ? "ALLOW" : reason]"
@@ -331,11 +351,11 @@
 		own(child)
 		own_constructed_contents(child)
 
-// A genuine native item declaration reaches the native override branch, which
-// production storage(accepts=...) does not itself declare as an item channel.
-/obj/item/storage/wallet/dq_native_override_pin
+// A genuine native plain-item declaration reaches the item override branch.
+// Storage has a different restrict_hold() override for its own capability.
+/obj/item/dq_native_override_pin
 
-CAPABILITIES(/obj/item/storage/wallet/dq_native_override_pin)
+CAPABILITIES(/obj/item/dq_native_override_pin)
 	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(/obj/item/pen), because = "it doesn't take that"), req_acceptance_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS))
 
 // Give the actual size provider a distinct declared type baseline, independent
@@ -346,7 +366,7 @@ CAPABILITIES(/obj/item/storage/wallet/dq_native_override_pin)
 // Capture the existing dynamic holder override, including its current refusal text.
 /datum/unit_test/dq_requirement_burndown_pin/hold_override/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	var/obj/item/storage/wallet/dq_native_override_pin/holder = allocate(/obj/item/storage/wallet/dq_native_override_pin, null)
+	var/obj/item/dq_native_override_pin/holder = allocate(/obj/item/dq_native_override_pin, null)
 	var/obj/item/pen/exact = allocate(/obj/item/pen, null)
 	var/obj/item/pen/dq_larger_override_pin/oversize = allocate(/obj/item/pen/dq_larger_override_pin, null)
 	var/obj/item/tool/wrench/wrong_type = allocate(/obj/item/tool/wrench, null)
@@ -377,5 +397,5 @@ CAPABILITIES(/obj/item/storage/wallet/dq_native_override_pin)
 	rows += "raised boundary: [dq_constraint_refusal(holder, CONSTRAINT_HOLD, oversize, null) || "ALLOW"]"
 	var/dir = "[DQ_SNAPSHOT_ROOT]requirement_burndown_override/"
 	var/list/bad = list()
-	var/report = dq_snapshot_compare(dir, "requirement_burndown_override", list(/obj/item/storage/wallet = rows), dq_snapshot_read_dir(dir, bad), bad)
+	var/report = dq_snapshot_compare(dir, "requirement_burndown_override", list(/obj/item/dq_native_override_pin = rows), dq_snapshot_read_dir(dir, bad), bad)
 	TEST_ASSERT_NULL(report, report)
