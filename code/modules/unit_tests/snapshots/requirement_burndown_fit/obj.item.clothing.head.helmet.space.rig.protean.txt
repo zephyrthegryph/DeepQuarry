@@ -1,0 +1,9 @@
+Human: ALLOW
+Teshari: ALLOW
+Vox: ALLOW
+Werebeast: it isn't made for a Werebeast
+Skrell: ALLOW
+Altevian: it isn't made for a Altevian
+Monkey: it isn't made for a Monkey
+no wearer: ALLOW
+

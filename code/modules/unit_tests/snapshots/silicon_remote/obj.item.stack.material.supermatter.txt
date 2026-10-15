@@ -1,0 +1,2 @@
+@obj.item.stack robot|none
+@obj ai|none

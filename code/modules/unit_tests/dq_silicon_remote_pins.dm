@@ -9,6 +9,11 @@
 /datum/unit_test/dq_conversion_pin/silicon_remote/snapshot_directory()
 	return "code/modules/unit_tests/snapshots/silicon_remote/"
 
+// Record the additional physical consumers before their common silicon checks
+// move into declared requirements and actual actor-provided equipment contracts.
+/datum/unit_test/dq_conversion_pin/silicon_remote/physical_roots
+	capture_roots = list(/obj/structure/railing, /obj/item/handcuffs, /obj/item/storage)
+
 /datum/unit_test/dq_conversion_pin/silicon_remote/dq_pin_lines(atom/target, turf/T, list/actors)
 	var/list/all_rows = ..()
 	. = list()

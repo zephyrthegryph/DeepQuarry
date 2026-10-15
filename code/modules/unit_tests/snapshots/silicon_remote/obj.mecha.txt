@@ -1,0 +1,22 @@
+robot|none menu: Activate Smoke (refused: Only the pilot can do that.)
+robot|none menu: Change melee damage type (refused: Only the pilot can do that.)
+robot|none menu: Connect to port (refused: Only the pilot can do that.)
+robot|none menu: Disconnect from port (refused: Only the pilot can do that.)
+robot|none menu: Eject (refused: Only the pilot can do that.)
+robot|none menu: Enter Exosuit
+robot|none menu: Enter Passenger Compartment
+robot|none menu: Toggle cloaking (refused: Only the pilot can do that.)
+robot|none menu: Toggle defence mode (refused: Only the pilot can do that.)
+robot|none menu: Toggle internal airtank usage (refused: Only the pilot can do that.)
+robot|none menu: Toggle leg actuators overload (refused: Only the pilot can do that.)
+robot|none menu: Toggle Lights (refused: Only the pilot can do that.)
+robot|none menu: Toggle phasing (refused: Only the pilot can do that.)
+robot|none menu: Toggle strafing
+robot|none menu: Toggle thrusters (refused: Only the pilot can do that.)
+robot|none menu: Toggle weapons only cycling (refused: Only the pilot can do that.)
+robot|none menu: Use
+robot|none menu: View Stats (refused: Only the pilot can do that.)
+robot|none menu: Zoom (refused: Only the pilot can do that.)
+robot|none click: Click: Use
+@obj ai|none
+-menu: Equip (refused: not possible right now)

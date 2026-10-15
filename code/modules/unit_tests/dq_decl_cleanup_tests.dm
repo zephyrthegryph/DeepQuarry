@@ -114,6 +114,32 @@
 	qdel(S)
 	TEST_ASSERT(!QDELETED(H), "statue destruction preserves its subject")
 	TEST_ASSERT_EQUAL(H.loc, T, "statue destruction releases its subject")
+// Baseline-only selector: run on old production, never in the converted gate.
+/datum/unit_test/dq_decl_cleanup_destroy/statue_legacy_stasis
+/datum/unit_test/dq_decl_cleanup_destroy/statue_legacy_stasis/Run()
+	scope_fixture()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/structure/closet/statue/S = allocate(/obj/structure/closet/statue, T, H)
+	TEST_ASSERT(H.sdisabilities & MUTE, "legacy petrification installs mute")
+	TEST_ASSERT(act_wanted(H, /datum/act/injure), "legacy petrification installs stasis")
+	qdel(S)
+	TEST_ASSERT_EQUAL(H.loc, T, "legacy destruction releases the subject")
+	TEST_ASSERT(H.sdisabilities & MUTE, "legacy late destruction leaves mute behind")
+	TEST_ASSERT(act_wanted(H, /datum/act/injure), "legacy late destruction leaves stasis behind")
+
+// Legacy destruction spills the subject before its late callback can release
+// mute/stasis. This separate regression covers the native ending-phase repair.
+
+/datum/unit_test/dq_decl_cleanup_destroy/statue_releases_stasis
+/datum/unit_test/dq_decl_cleanup_destroy/statue_releases_stasis/Run()
+	scope_fixture()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/structure/closet/statue/S = allocate(/obj/structure/closet/statue, T, H)
+	TEST_ASSERT(H.sdisabilities & MUTE, "the real constructor installs petrification mute")
+	TEST_ASSERT(act_wanted(H, /datum/act/injure), "the real constructor installs injury stasis")
+	qdel(S)
 	TEST_ASSERT(!(H.sdisabilities & MUTE), "statue destruction removes petrification mute")
 	TEST_ASSERT(!act_wanted(H, /datum/act/injure), "statue destruction removes actual injury stasis")
 

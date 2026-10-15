@@ -1,0 +1,6 @@
+@obj.machinery robot|none
++1 menu: Eject Recharger
++2 menu: Enter Recharger
++3 menu: Put in recharger (refused: needs a grab)
++4 menu: Replace parts (refused: needs a rapid part exchange device)
+@obj.machinery ai|none

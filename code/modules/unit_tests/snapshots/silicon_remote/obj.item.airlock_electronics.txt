@@ -1,0 +1,5 @@
+@obj robot|none
+-click: Click: Pick up
++2 menu: Open controls
++5 click: Click: Open controls
+@obj ai|none
