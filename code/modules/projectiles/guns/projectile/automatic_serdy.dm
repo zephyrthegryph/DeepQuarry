@@ -1487,7 +1487,7 @@ MSG_DEF_SELF(doublebarrel/saw_begins, span_notice("You begin to shorten the barr
 MSG_DEF(doublebarrel/saw_misfire, span_danger("The shotgun goes off in your face!"), span_danger("The shotgun goes off!"))
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
-	setup(PROC_REF(update_transform))
+	setup(TYPE_PROC_REF(/atom/movable, update_transform))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 	// A saw, an energy blade or a plasma cutter shortens the barrel: a loaded gun goes off instead, an empty one takes three seconds (stealthy).
@@ -1617,8 +1617,8 @@ CAPABILITIES(/obj/item/gun/projectile/revolvershotgun)
 	sound_chamber = SFX_WEAPONS_BALLISTICS_RIFLE_CHAMBER
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy)
-	setup(PROC_REF(update_transform))
+	setup(TYPE_PROC_REF(/atom/movable, update_transform))
 
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/mini_uzi)
-	setup(PROC_REF(update_transform))
+	setup(TYPE_PROC_REF(/atom/movable, update_transform))

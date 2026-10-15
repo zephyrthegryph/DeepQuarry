@@ -57,3 +57,5 @@ Focused selector: `/datum/unit_test/dq_a9_initialization` (component_damage, mac
 
 
 Source audit repair (2026-10-15): the newly added setup declarations referenced inherited procs with PROC_REF, which checks a current-type proc path. Changed only these new hook references to TYPE_PROC_REF at the actual defining ancestor: `/obj/item/ammo_casing/a145/spent` → `/obj/item/ammo_casing::expend`. Hook names and dynamic dispatch remain unchanged; no wrappers, declarations, setters or behavior changed. No generation, analyzer, compile or test was run for this source-only repair. Verification remains with the A coordinator.
+
+Verification compile repair: four new setup hooks used PROC_REF on local update_transform overrides, while the proc is declared on /atom/movable. They now use that defining ancestor's TYPE_PROC_REF, preserving dynamic subtype dispatch. No generated files or transform implementations were edited. The first gate stopped before any world, so the original selected fixtures and look still require first execution.
