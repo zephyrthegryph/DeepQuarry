@@ -48,7 +48,7 @@ pub fn set_calls(tree: &Tree) -> Arc<BTreeSet<String>> {
         let files = tree.select(&CODE_DM);
         let facts: Vec<Vec<String>> = crate::incr::facts("auto-tracked-set-calls", &files, |f| {
             let mut out: Vec<String> = Vec::new();
-            if f.rel == AUTO_REL || !f.text().contains("set_") {
+            if f.rel == AUTO_REL || !SETTER_PREFIXES.iter().any(|p| f.text().contains(p)) {
                 return out;
             }
             let call = crate::pat!(r"(?:^|[^\w/])set_(\w+)\s*\(");
@@ -146,6 +146,7 @@ pub fn called_candidates(tree: &Tree, sem: &crate::sem::Sem, eng: &ReadsEngine, 
             }
             if let Ok(want) = std::env::var("DQ_AUTO_DEBUG") {
                 if *name == want {
+                    eprintln!("auto_tracked debug typed: {:?} calls: {} {}", typed_set_calls(tree).get(&format!("remove_{want}")).or(typed_set_calls(tree).get(&format!("add_{want}"))), calls.contains(want.as_str()), calls.contains(&format!("{want}[]")));
                     eprintln!("auto_tracked debug: {}.{} called_here={} candidate={} declared_reactive={}", path, name, called_here(tree, sem, &defs, calls, &path, name), candidate(eng, written, calls, &path, name), declared_reactive(eng, &path, name));
                 }
             }
