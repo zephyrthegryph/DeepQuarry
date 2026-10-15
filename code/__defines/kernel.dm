@@ -9,7 +9,8 @@
 #define LATENCY_L3 3
 
 // ---- the step protocol: what periodic_step(dt) and a world service step return. None equals PROCESS_KILL.
-// STEP_DONE (om.dm): the step is finished; stay on the cadence.
+/// The step is finished; stay on the cadence.
+#define STEP_DONE 2
 /// The step ran out of budget: the kernel resumes it on the next tick, ahead of the next cadence frame.
 #define STEP_YIELD 27
 /// Leave the cadence until wake_periodic() (or a change that makes should_run() true) puts it back.

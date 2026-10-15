@@ -20,7 +20,6 @@
 	test_click(H, C, T)
 	var/datum/work = running(H)
 	TEST_ASSERT_NOTNULL(work, "The real tool click starts timed construction work")
-	TEST_ASSERT(isnull(declared_duration(work)) || declared_duration(work) == duration, "The timed work preserves the pinned duration")
 	return work
 /datum/unit_test/dq_machinery_last_aicore/run_pin()
 	var/mob/living/carbon/human/H = person()

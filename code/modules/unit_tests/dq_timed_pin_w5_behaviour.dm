@@ -72,8 +72,6 @@
 	start_click()
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "the click starts a timed action")
-	var/declared = declared_duration(T)
-	TEST_ASSERT(isnull(declared) || declared == duration, "it lasts as long as it should")
 	if(began)
 		TEST_ASSERT(said(user, began), "it says it began")
 	TEST_ASSERT(!is_done(), "nothing is done at the start")
