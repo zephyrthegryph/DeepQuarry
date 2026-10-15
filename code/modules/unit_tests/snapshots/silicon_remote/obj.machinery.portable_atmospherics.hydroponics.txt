@@ -1,0 +1,6 @@
+@obj.machinery robot|none
++1 menu: Remove Label
++2 menu: Set Light
++3 menu: Toggle lid
++4 menu: Toggle Tray Lid
+@obj.machinery ai|none

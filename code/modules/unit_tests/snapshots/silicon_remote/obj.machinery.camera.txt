@@ -1,0 +1,11 @@
+@obj.machinery robot|none
+-click: Click: Use
++0 menu: Attack (refused: needs an item)
++2 menu: Bug camera (refused: needs a camera bug)
++3 menu: Look through
++4 menu: Slash (refused: not possible right now)
++6 click: Click: Look through
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Look through
++2 click: Click: Look through

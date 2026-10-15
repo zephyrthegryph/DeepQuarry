@@ -1,0 +1,6 @@
+@obj.machinery robot|none
++1 menu: Open controls
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls

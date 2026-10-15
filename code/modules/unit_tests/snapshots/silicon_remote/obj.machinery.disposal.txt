@@ -1,0 +1,4 @@
+@obj.machinery robot|none
++1 menu: Force Eject
++2 menu: Toggle flush
+@obj.machinery ai|none

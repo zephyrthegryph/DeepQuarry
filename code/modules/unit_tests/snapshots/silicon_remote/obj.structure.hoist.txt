@@ -1,0 +1,4 @@
+robot|none menu: Collapse Hoist
+robot|none menu: Use
+robot|none click: Click: Use
+@obj.structure ai|none
