@@ -68,3 +68,5 @@ New focused selector: /datum/unit_test/dq_a7_initialization/vision_modes. It con
 
 
 The first current-base gate found a producer error before runtime: PROC_REF(update_light) in the alien-floor setup cannot resolve that inherited proc as a local path. The declaration now uses TYPE_PROC_REF(/atom, update_light), naming the actual existing proc in lighting_atom.dm. This changes no implementation or initialization ordering and adds no alias; generated output was not edited. Both production and test compiles must be repeated for this repaired source; no tests ran in the failed compile attempt.
+
+First runtime gate:55 passed; material_identity alone used a case-sensitive hex colour comparison, but BYOND normalizes #EDD12F to #edd12f. Both material-colour assertions now compare normalized hex strings, still asserting the real material identity. Production remains unchanged. All other scoped leaves (including fishing, dark glow and RIG vision) plus look passed; failure-only lane-ready repair pending.

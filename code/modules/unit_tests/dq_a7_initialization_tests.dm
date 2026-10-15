@@ -25,10 +25,10 @@
 	var/obj/item/clothing/accessory/ring/material/R = allocate(/obj/item/clothing/accessory/ring/material/gold, test_floor())
 	TEST_ASSERT_NOTNULL(B.material, "The actual bracelet constructor resolves its forced material")
 	TEST_ASSERT_EQUAL(B.name, "[B.material.display_name] bracelet", "Bracelet setup follows material resolution")
-	TEST_ASSERT_EQUAL(B.color, B.material.icon_colour, "The bracelet has its material colour when returned")
+	TEST_ASSERT_EQUAL(lowertext(B.color), lowertext(B.material.icon_colour), "The bracelet has its material colour when returned")
 	TEST_ASSERT_NOTNULL(R.material, "The actual ring constructor resolves its forced material")
 	TEST_ASSERT_EQUAL(R.name, "[R.material.display_name] ring", "Ring setup follows material resolution")
-	TEST_ASSERT_EQUAL(R.color, R.material.icon_colour, "The ring has its material colour when returned")
+	TEST_ASSERT_EQUAL(lowertext(R.color), lowertext(R.material.icon_colour), "The ring has its material colour when returned")
 
 /datum/unit_test/dq_a7_initialization/datajack_storage/Run()
 	scope_setup()
