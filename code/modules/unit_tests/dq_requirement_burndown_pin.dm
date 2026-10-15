@@ -290,13 +290,16 @@
 		var/channel = declaration[2]
 		var/obj/item/holder = holders[path]
 		if(!holder)
-			// Internal storage deliberately deletes itself without a real item owner.
-			var/atom/location
-			if(ispath(path, /obj/item/storage/internal))
-				location = allocate(/obj/item/pen, null)
-			holder = allocate(path, location)
-			TEST_ASSERT_NOTNULL(holder, "Each inventoried declaration has a real holder")
-			TEST_ASSERT(!QDELETED(holder), "A validly owned holder survives its real constructor")
+			// Use the actual production-owned pockets: a free-standing item is not
+			// a declaration of internal storage ownership.
+			if(path == /obj/item/storage/internal)
+				var/obj/item/clothing/suit/storage/jacket = allocate(/obj/item/clothing/suit/storage, wearer.loc)
+				holder = jacket.pockets
+				TEST_ASSERT_EQUAL(holder?.master_item(), jacket, "Actual pocket ownership links its real jacket")
+			else
+				holder = allocate(path, wearer)
+			TEST_ASSERT_NOTNULL(holder, "[path] has a real holder")
+			TEST_ASSERT(!QDELETED(holder), "[path] survives its actual valid-owner constructor")
 			holders[path] = holder
 			own_constructed_contents(holder)
 			actual[path] = list()
@@ -322,10 +325,17 @@
 		own(child)
 		own_constructed_contents(child)
 
+// A genuine native item declaration reaches the native override branch, which
+// production storage(accepts=...) does not itself declare as an item channel.
+/obj/item/storage/wallet/dq_native_override_pin
+
+CAPABILITIES(/obj/item/storage/wallet/dq_native_override_pin)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(/obj/item/pen), because = "it doesn't take that"), req_acceptance_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS))
+
 // Capture the existing dynamic holder override, including its current refusal text.
 /datum/unit_test/dq_requirement_burndown_pin/hold_override/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	var/obj/item/storage/wallet/holder = allocate(/obj/item/storage/wallet, null)
+	var/obj/item/storage/wallet/dq_native_override_pin/holder = allocate(/obj/item/storage/wallet/dq_native_override_pin, null)
 	var/obj/item/pen/exact = allocate(/obj/item/pen, null)
 	var/obj/item/pen/oversize = allocate(/obj/item/pen, null)
 	var/obj/item/tool/wrench/wrong_type = allocate(/obj/item/tool/wrench, null)
