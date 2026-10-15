@@ -1973,7 +1973,7 @@ CAPABILITIES(/obj/item/clothing/under/fluff/slime_skeleton)
 /// Promethean species, not body type: other species share the slime body type.
 /obj/item/clothing/under/fluff/slime_skeleton/proc/slime_fit(datum/act/op/query)
 	var/mob/living/carbon/human/H = query.wearer
-	return !ishuman(H) || H.get_species() == SPECIES_PROMETHEAN ? null : "only slimes can wear this"
+	return !ishuman(H) || H.species?.name == SPECIES_PROMETHEAN ? null : "only slimes can wear this"
 
 /obj/item/clothing/under/fluff/slime_skeleton/digest_act(atom/movable/item_storage = null)
 	return FALSE	//Indigestible
@@ -2492,8 +2492,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie)
 	acceptance(CONSTRAINT_EQUIP, req_taur_shape(/datum/sprite_accessory/tail/taur/wolf, because = "you need a wolf-taur half to wear this"), mode = ACCEPTANCE_APPEND)
 
 
-/obj/item/clothing/head/fluff/avida/proc/apply_equipped_ears(datum/notice/item_equipped/A)
-	var/mob/living/carbon/human/H = A.equipper
+/obj/item/clothing/head/fluff/avida/proc/apply_equipped_ears(datum/act/notice/A)
+	var/datum/notice/item_equipped/event = A
+	var/mob/living/carbon/human/H = event.equipper
 	var/static/list/allowed_ear_names = list("Bnnuy Ears", "Bnnuy Ears 2")
 	if(istype(H) && ((H.ear_style?.name in allowed_ear_names) || (H.ear_secondary_style?.name in allowed_ear_names)))
 		set_item_state(initial(src.item_state))
