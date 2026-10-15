@@ -102,6 +102,7 @@
 /obj/machinery/camera/interim_screen_prompt_camera
 	c_tag = "Interim HUD camera rerun"
 
+/datum/unit_test/om/interim_screen_camera_rerun_actor
 /datum/unit_test/om/interim_screen_camera_rerun_actor/run_om(list/made)
 	test_prompts_reset()
 	var/turf/T = run_loc_floor_bottom_left
