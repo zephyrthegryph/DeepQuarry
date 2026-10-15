@@ -1034,7 +1034,6 @@ init_lines	code/game/objects/structures/props/machines.dm	@/obj/structure/prop/m
 init_lines	code/game/objects/structures/railing.dm	@/obj/structure/railing::Initialize::if
 init_lines	code/game/objects/structures/railing.dm	@/obj/structure/railing::Initialize::anchored
 init_lines	code/game/objects/structures/reflectors.dm	@/obj/machinery/portable_atmospherics/canister/phoron/cold::Initialize::heat_set
-init_lines	code/game/objects/structures/salvageable.dm	@/obj/structure/salvageable/personal::Initialize::expr
 init_lines	code/game/objects/structures/trash_pile.dm	@/obj/structure/mob_spawner/mouse_nest::Initialize::COOLDOWN_START
 init_lines	code/game/objects/structures/watercloset.dm	@/obj/structure/biowaste_tank::Initialize::rel_set
 init_lines	code/game/objects/structures/watercloset.dm	@/obj/structure/biowaste_tank::Initialize::muffinmonster
