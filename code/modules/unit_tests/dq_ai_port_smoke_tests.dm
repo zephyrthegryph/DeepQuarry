@@ -82,9 +82,17 @@
 		H = allocate(/mob/living/carbon/human/dq_ai_test_wounded, ai_floor(1))
 		B.admin_standing(H, DQ_DISPOSITION_FRIENDLY)
 		var/list/started_heal = drive_port_creature(S, H, 20, FALSE)
+		// Read-only failure evidence: never call dq_confirm_patient here; it can bark and start a cooldown.
+		var/heal_diagnostic
+		if(!started_heal[/datum/ai_behavior/healbelly_heal_ally])
+			heal_diagnostic = "model=[B.perceives()] target=[B.primary_target()] friendly=[H in B.known_friendlies()] will_eat=[S.will_eat(H)]"
+			heal_diagnostic += " patient(stat=[H.stat],suiciding=[H.suiciding],incorporeal=[H.is_incorporeal()],vitality=[H.vitality()],size=[H.size_multiplier])"
+			heal_diagnostic += " consent(mob=[H.vore_prefs.allowmobvore],devour=[H.vore_prefs.devourable],digest=[H.vore_prefs.digestable])"
+			heal_diagnostic += " predator(client=[!!S.client],exclude=[!!LAZYFIND(S.prey_excludes, H)],ignore_undigestable=[S.vore_ignores_undigestable],min=[S.vore_min_size],max=[S.vore_max_size],fullness=[S.vore_fullness],capacity=[S.vore_capacity])"
+			heal_diagnostic += " body_owners(predator=[S.body?.owner == S],patient=[H.body?.owner == H])"
 		clean_port_arena()
 		TEST_ASSERT(length(started_heal), "[mob_type] never started a tactic with a wounded ally beside it")
-		TEST_ASSERT(started_heal[/datum/ai_behavior/healbelly_heal_ally], "[mob_type] did not go to heal a wounded ally (started: [jointext(started_heal, ", ")])")
+		TEST_ASSERT(started_heal[/datum/ai_behavior/healbelly_heal_ally], "[mob_type] did not go to heal a wounded ally (started: [jointext(started_heal, ", ")]); [heal_diagnostic]")
 		return
 	H = allocate(/mob/living/carbon/human, ai_floor(1))
 	if(scenario == SMOKE_ANCHORED)
