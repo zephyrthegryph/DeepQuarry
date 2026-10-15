@@ -17,7 +17,7 @@ CAPABILITIES(/obj/item/storage/internal)
 
 /obj/item/storage/internal/proc/link_item_owner()
 	rel_set(src, nameof(master_item), loc)
-	set_name(master_item().name)
+	name = master_item().name
 
 /// Internal storage is part of its owner and is never worn on its own.
 TYPE_TABLE(/obj/item/storage/internal, equip_spec, list(REQ_BECAUSE(REQ_TYPE(PRED_TARGET, list()), "it can't be worn")))
