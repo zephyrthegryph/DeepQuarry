@@ -4894,3 +4894,8 @@ Affected requirement-pin classes:
 * **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
+
+
+## C1 camera actor route (2026-10-15)
+
+`/obj/machinery/camera`, `dq_machinery_timed_conversion_pin`: the sole refreshed row is the operation-key inventory, adding `ai_wire_tools`. The former `interact()` AI guard is now a declared AI-only tool route that refreshes coverage without opening physical wires; the existing non-AI `use_wire_tools` route preserves panel/broken checks and wire opening. This records the explicit route split, not a click/menu priority or permission change. All click, menu and wire-name rows were retained unchanged; no other class was re-recorded.

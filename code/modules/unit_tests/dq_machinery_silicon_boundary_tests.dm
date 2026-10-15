@@ -49,21 +49,21 @@
 	var/mob/living/silicon/ai/AI = placed_ai()
 	var/mob/living/silicon/robot/R = make_borg(list(), tile(3, 3))
 	R.set_master_ai(null)
-	var/initial_lock = R.lockcharge
+	var/initial_lock = !!R.lockcharge
 	var/datum/op_result/denied = test_ui(AI, C, "stopbot", list("ref" = REF(R)))
 	TEST_ASSERT_EQUAL(denied?.outcome, ACT_REFUSED, "Remote AI may not control an unlinked cyborg")
 	TEST_ASSERT_EQUAL(reason_text(denied?.reason), "AIs can only control cyborgs which are linked to them.", "AI link refusal wording remains unchanged")
-	TEST_ASSERT_EQUAL(R.lockcharge, initial_lock, "Refused remote AI action does not change actual lockdown")
+	TEST_ASSERT_EQUAL(!!R.lockcharge, initial_lock, "Refused remote AI action does not change actual lockdown")
 	R.set_master_ai(AI)
 	var/datum/op_result/linked = test_ui(AI, C, "stopbot", list("ref" = REF(R)))
 	TEST_ASSERT_EQUAL(linked?.outcome, ACT_COMMITTED, "Linked AI may control its cyborg remotely")
-	TEST_ASSERT_EQUAL(R.lockcharge, !initial_lock, "Linked remote command changes actual lockdown")
+	TEST_ASSERT_EQUAL(!!R.lockcharge, !initial_lock, "Linked remote command changes actual lockdown")
 	var/datum/op_result/human = test_ui(H, C, "stopbot", list("ref" = REF(R)))
 	TEST_ASSERT_EQUAL(human?.outcome, ACT_COMMITTED, "Authorized physical human control remains available")
-	TEST_ASSERT_EQUAL(R.lockcharge, initial_lock, "Physical human command toggles the same actual lockdown")
+	TEST_ASSERT_EQUAL(!!R.lockcharge, initial_lock, "Physical human command toggles the same actual lockdown")
 	var/datum/op_result/borg = test_ui(R, C, "stopbot", list("ref" = REF(R)))
 	TEST_ASSERT(!borg || borg.outcome != ACT_COMMITTED, "Cyborg's original stopbot access restriction remains intact")
-	TEST_ASSERT_EQUAL(R.lockcharge, initial_lock, "Refused cyborg command leaves lockdown unchanged")
+	TEST_ASSERT_EQUAL(!!R.lockcharge, initial_lock, "Refused cyborg command leaves lockdown unchanged")
 
 /datum/unit_test/dq_p2_door/silicon/c1_slipper_swipe
 /datum/unit_test/dq_p2_door/silicon/c1_slipper_swipe/run_gate()
