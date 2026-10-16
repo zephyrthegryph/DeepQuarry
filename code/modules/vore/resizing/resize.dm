@@ -22,7 +22,6 @@
 	var/offset_override = TRUE			// Pref toggle for center offset.
 
 /mob/living
-	var/holder_default
 	var/pickup_active = TRUE			// Toggle whether your help (combat mode off) touch picks up micros or pets them
 
 // Define holder_type on types we want to be scoop-able
@@ -248,8 +247,6 @@
 	if(stance != I_HELP)
 		return FALSE
 	var/size_diff = M.get_effective_size(FALSE) - get_effective_size(TRUE)
-	if(!holder_default && holder_type)
-		holder_default = holder_type
 	if(!istype(M))
 		return FALSE
 	if(isanimal(M))
