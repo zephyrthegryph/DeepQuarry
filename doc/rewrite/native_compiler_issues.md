@@ -210,9 +210,10 @@ other lanes, so single runs vary by up to 1.5x; the ranges are the three runs of
 | new type, removed var or proc, `#define` used outside a body | 21-43 s | unchanged | full compile |
 
 Where a body edit spends its time (quiet runs, seconds; the stage names are the `request_mark` timeline of `DMB_TIMINGS_DETAIL=1`,
-which lands in `E:/dq-cache/dmb-daemon/lifecycle.log`):
+which lands in `E:/dq-cache/dmb-daemon/lifecycle.log`). "Before" is the build immediately before that stage's change (master for the
+frontend, the later rows were measured one change at a time as the lane proceeded), so the rows do not add up to the table above:
 
-| Stage | Master | This branch | Change |
+| Stage | Before | This branch | Change |
 |---|---|---|---|
 | session validation | 0.69-1.0 | 0.38-0.45 | record decode moved to a background thread; `filter_generated` no longer canonicalizes every listing name |
 | input preparation | 0.30 | 0.24 | none |
