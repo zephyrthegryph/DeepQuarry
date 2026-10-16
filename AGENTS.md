@@ -244,6 +244,12 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   and build caches only under `E:/dq-cache/`; never on `D:` or `C:`. When E: runs low, prune
   merged worktrees: unlink their junctions first (e.g. `node_modules`), then
   `git worktree remove`, then `git worktree prune`.
+- **Disk hygiene.** Nothing a build, compile or probe writes may live in `.git`: compiler caches go to `E:/dq-cache/` (the native
+  compiler's `DM_COMPILER_CACHE_ROOT`; never `<git-common-dir>/dm-compiled-cache`), and `tools/dq_push_stamp.sh` runs its
+  `git merge-tree --write-tree` probes in a throwaway object dir so they leave no loose trees. Create lane worktrees with
+  `bash tools/dq_worktree.sh new <name>`: it refuses past 8 worktrees or under 60 GB free on E:. `tools/dq_push_master.sh` runs
+  `bash tools/dq_worktree.sh gc` after a successful push (removes clean worktrees merged into origin/master, build targets deleted
+  first, `DQ_WT_KEEP="a b"` protects names); run it by hand any time. Remove your own worktree when your lane is merged.
 - **Git safety.** Never delete `.git/index.lock` or any other lock file; another process holds
   it. Never run `git checkout` (any form), `git stash`, `git reset`, `git restore` or
   `git cherry-pick`; they discard or move other agents' work.
