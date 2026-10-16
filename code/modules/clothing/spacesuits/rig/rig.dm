@@ -18,7 +18,6 @@
 	// These values are passed on to all component pieces.
 	armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20"
 	unacidable = TRUE
-	preserve_item = 1
 
 	var/default_mob_icon = 'icons/mob/rig_back.dmi'
 
@@ -101,6 +100,7 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/rig)
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(slots = SLOT_BACK, flags = PHORONGUARD))
 	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.2, permeability = 0))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)

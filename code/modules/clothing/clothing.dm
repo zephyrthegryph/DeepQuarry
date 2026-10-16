@@ -877,7 +877,6 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 
 	var/taurized = FALSE
 	w_class = ITEMSIZE_NORMAL
-	preserve_item = 1
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
@@ -891,6 +890,7 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 
 
 CAPABILITIES(/obj/item/clothing/suit)
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
 	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))

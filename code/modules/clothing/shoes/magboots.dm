@@ -8,7 +8,6 @@
 	center_of_mass_y = 12
 	overshoes = 1
 	shoes_under_pants = -1	//These things are huge
-	preserve_item = 1
 	var/magpulse = 0
 	var/icon_base = "magboots"
 	///The message that gets shown when we enable the magboots.
@@ -32,6 +31,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 		tracked_changed(src, nameof(slowdown))
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
+	configure(item_persistence(preserve = 1))
 	acceptance("equip", req_acceptance_overshoe_clearance(), mode = ACCEPTANCE_APPEND)
 	configure(item_combat(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))

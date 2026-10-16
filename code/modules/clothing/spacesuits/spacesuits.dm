@@ -11,7 +11,6 @@
 	center_of_mass_y = 0
 	flags = PHORONGUARD
 	armor_spec = "bio=100;rad=50;cold=60"
-	preserve_item = 1
 	flash_protection = FLASH_PROTECTION_MAJOR
 	valid_accessory_slots = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
@@ -23,6 +22,7 @@
 	light_overlay = "helmet_light"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space)
+	configure(item_persistence(preserve = 1))
 	configure(light_glow(range = 4))
 	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD, hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_protection(permeability = 0, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 2 * ONE_ATMOSPHERE, siemens = 0.9))
@@ -71,7 +71,6 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYP
 	flags = PHORONGUARD
 	slowdown = 1 // 1.5 to 1. More sane movespeed delay. Voidsuits are still faster.
 	armor_spec = "bio=100;rad=50;cold=60"
-	preserve_item = 1
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND | ACCESSORY_SLOT_DECOR)
 	var/supports_limbs = FALSE //If TRUE, automatically splints breaks. Checked when removing the suit.
 	var/list/supporting_limbs //The limbs it is splinting now (a relation list: a deleted limb leaves it).
