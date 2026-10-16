@@ -251,3 +251,51 @@ body); the base just advances. Test `comment_inside_a_body_patches_without_relow
 
 Next-largest costs (body edit, quiet run): frontend 2.1 s, resources and maps 0.9 s, early admission
 snapshot merge 0.44 s, publication 0.7 s, ABI scheduler 0.5 s, startup facts 0.4 s.
+
+## Frontend revision: concrete design (lane `tools/dmb-redesign-3`)
+
+Inventory (from reading `dm-preprocess` and `dm-tree`; see also the pass table above). The frontend
+already retains content-addressed chunk facts, region expansion records and the semantic state, and
+a request still visits everything: planning 0.6 s, expansion 0.3 s, source indexing 0.1 s,
+declaration parsing 0.7 s, origins 0.19 s, tree 0.08 s, bodies 0.14 s. State holding absolute
+offsets into the joined expanded text: `receipts[].output`, the origin rows (`output_start/end`; the
+row index is the `output_line`), `BodyOccurrence.expanded_span`, `issued_body_codes.termination`,
+the grammar descriptors. Position independent: chunk contributions (rebound by offset), the tree and
+occurrence table when the skeleton is unchanged, `plan` regions (source spans are per file),
+`files`. Tokens are not retained (`expand_regions_text`). Identity binding: `ColdFrontend` is a
+fresh `Arc` per request and startup facts, body inputs, the callable roster and the source export
+mapping are bound to it by pointer (`issuance`, `ptr_eq`), so reuse across requests means
+re-issuing against the new instance, not mutating one in place.
+
+Decision: every request still builds a new `ColdFrontend` value; what changes is how its parts are
+made. The flag is `DMB_FRONTEND_REVISION`: `0` (today), `verify` (build both, compare, use the full
+result), `1` (use the incremental result; fall back to the full build on any unmet precondition).
+The default flips to `1` only after `verify` shows no difference over the whole production tree and
+the full edit matrix.
+
+Change set: the files whose prepared source differs from the previous frontend's `plan.source_texts`
+(`Arc` pointer compare, 5.9k entries). The previous frontend is held by the host (the same `Arc`
+the query state already retains).
+
+Steps, each landing alone with `verify` proof:
+
+* **F1, plan and expansion for a directive-free leaf file.** Precondition for every changed file:
+  one non-suppressed occurrence, a `.dm` leaf (no child occurrences), one region with one segment and
+  no effects, no line starting with `#` (after whitespace) in the old or the new text, no planner or
+  expansion diagnostics. Then the new plan is the previous plan with that file's text, line starts,
+  region lines and span, and `eof_cursor_line` replaced. The new lines come from the real planner run on
+  a one-file synthetic project (so the line splitting is the planner's own); the macro environment
+  is the previous segment's. The new expansion is the previous one with the file's region
+  re-expanded through the region memo, the joined text spliced, the origin rows after it shifted by
+  the byte and line delta (compact records, one copy), receipts rebased. Every provider read the
+  full planner would make is still issued so the input capture records the same files.
+  Verify compares plan and expansion structurally and by hash with the full pass.
+* **F2, declaration parsing.** Reuse of the grammar scan and ordered merge for chunks outside the
+  changed range: chunk contributions are position independent, so the merge splices the changed
+  chunks into the retained ordered list and rebinds offsets by a prefix sum.
+* **F3, origins, body indexing, tree.** Same splice for provenance, `collect_bodies` and tree
+  resolution (skeleton unchanged: reuse the tree; changed: the metadata splice).
+* **F4, issuance.** Startup facts, ABI units and the callable roster re-issued against the new
+  instance for unchanged units instead of recomputed (the structural change set decides which units
+  are dirty).
+* **F5, directive-bearing files and include structure** (a `#define` edit, an added include).
