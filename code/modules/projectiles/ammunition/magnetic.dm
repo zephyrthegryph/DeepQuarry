@@ -6,7 +6,6 @@
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 1800)
 	var/remaining = 9
-	preserve_item = 1
 
 /obj/item/magnetic_ammo/examine(mob/user)
 	. = ..()
@@ -16,3 +15,6 @@
 	name = "flechette magazine (small)"
 	desc = "A magazine containing smaller steel flechettes, intended for a pistol."
 	icon_state = "caseless-mag-short"
+
+CAPABILITIES(/obj/item/magnetic_ammo)
+	configure(item_persistence(preserve = 1))

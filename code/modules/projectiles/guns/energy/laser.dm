@@ -490,7 +490,6 @@ CAPABILITIES(/obj/item/gun/energy/laser/vepr)
 	maxcharge = 7200
 	charge = 7200
 	charge_amount = 20
-	preserve_item = 1
 
 /obj/item/gun/energy/tommylaser
 	name = "M-2421 'Tommy-Laser'"
@@ -681,3 +680,6 @@ CAPABILITIES(/obj/item/gun/energy/soapenergy/gaussrifle)
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	configure(item_combat(force = 8))
 ///END OF GAUSS WEAPONRY///
+
+CAPABILITIES(/obj/item/cell/vepr)
+	configure(item_persistence(preserve = 1))

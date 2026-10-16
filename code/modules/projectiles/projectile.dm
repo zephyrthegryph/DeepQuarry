@@ -802,7 +802,7 @@ CAPABILITIES(/obj/item/projectile)
 			MSG_OTHERS(span_danger("%U% was hit in the [impacted_organ] by %T%!")))
 
 	//admin logs
-	if(!no_attack_log)
+	if(!combat_of(src).no_attack_log)
 		if(istype(firer, /mob) && istype(target_mob))
 			add_attack_logs(firer,target_mob,"Shot with \a [src.type] projectile")
 

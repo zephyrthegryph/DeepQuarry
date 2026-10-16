@@ -5,7 +5,6 @@
 	icon_state = "s-casing"
 	randpixel = 10
 	w_class = ITEMSIZE_TINY
-	preserve_item = 1
 
 	var/leaves_residue = 1
 	var/caliber = ""					//Which kind of guns it can be loaded into
@@ -14,6 +13,7 @@
 	var/caseless = null					//Caseless ammo deletes its self once the projectile is fired.
 
 CAPABILITIES(/obj/item/ammo_casing)
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
 	configure(item_thrown(force = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
@@ -143,7 +143,6 @@ CAPABILITIES(/obj/item/ammo_casing)
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 4
 	throw_range = 10
-	preserve_item = 1
 
 	var/list/stored_ammo = list() // ALLOW(instance_list): d: magazines are filled with rounds on creation
 	var/mag_type = SPEEDLOADER //ammo_magazines can only be used with compatible guns. This is not a bitflag, the load_method var on guns is.
@@ -166,6 +165,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 
 
 CAPABILITIES(/obj/item/ammo_magazine)
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5))
 	owns_many(nameof(stored_ammo), starts = PROC_REF(make_stored_ammo))
@@ -368,10 +368,10 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 	MATERIAL_NONE
 	throw_speed = 5
 	throw_range = 12
-	preserve_item = 1
 	caliber = ".357"
 
 CAPABILITIES(/obj/item/ammo_magazine/ammo_box)
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(slots = TRAIT_NONE))
 	configure(item_thrown(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_MATCHBOX, pickup = SFX_ITEMS_PICKUP_MATCHBOX))

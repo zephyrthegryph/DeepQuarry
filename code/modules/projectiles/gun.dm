@@ -46,8 +46,6 @@
 	w_class = ITEMSIZE_NORMAL
 	throw_speed = 4
 	throw_range = 5
-	preserve_item = 1
-	zoomdevicename = "scope"
 
 	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled
 						//at fire_delay cadence until released. Each pull respects the
@@ -111,6 +109,8 @@
 	var/datum/gun_firemode_selector/firemode_selector = null
 
 CAPABILITIES(/obj/item/gun)
+	configure(optical_view(device_name = "scope"))
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5, attack_verbs = list("struck", "hit", "bashed")))
@@ -464,7 +464,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 				if(one_handed_penalty >= 20)
 					to_chat(user, span_warning("You struggle to keep \the [src] pointed at the correct position with just one hand!"))
 
-			if(!zoom) //If we're not zoomed, reset our accuracy to our initial accuracy.
+			if(!item_zoom_active(src)) //If we're not zoomed, reset our accuracy to our initial accuracy.
 				accuracy = initial(accuracy) //Reset our accuracy
 			note_shot()
 			user.hud_used?.update_ammo_hud(user, src)
@@ -797,7 +797,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 	var/scoped_accuracy_mod = zoom_offset
 
 	zoom(user, zoom_offset, view_size)
-	if(zoom)
+	if(item_zoom_active(src))
 		accuracy = scoped_accuracy + scoped_accuracy_mod
 		if(recoil)
 			recoil = round(recoil*zoom_amount+1) //recoil is worse when looking through a scope
@@ -805,7 +805,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 //make sure accuracy and recoil are reset regardless of how the item is unzoomed.
 /obj/item/gun/zoom(mob/living/M, tileoffset = 14, viewsize = 9)
 	..()
-	if(!zoom)
+	if(!item_zoom_active(src))
 		accuracy = initial(accuracy)
 		recoil = initial(recoil)
 

@@ -64,10 +64,10 @@
 	spread_step = 20
 
 	silenced = 1 //embedding messages are still produced so it's kind of weird when enabled.
-	no_attack_log = 1
 	muzzle_type = null
 
 CAPABILITIES(/obj/item/projectile/bullet/pellet/fragment)
+	configure(item_combat(no_attack_log = 1))
 	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/bullet/pellet/fragment/strong
@@ -93,11 +93,11 @@ CAPABILITIES(/obj/item/projectile/bullet/pellet/fragment/weak)
 
 
 	silenced = 1
-	no_attack_log = 1
 	muzzle_type = null
 	pellets = 3
 
 CAPABILITIES(/obj/item/projectile/bullet/pellet/fragment/tank)
+	configure(item_combat(no_attack_log = 1))
 	configure(item_combat(armor_penetration = 20))
 
 /obj/item/projectile/bullet/pellet/fragment/tank/small
