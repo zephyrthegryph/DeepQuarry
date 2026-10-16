@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Re-run questions (rerun_ask) are asks() steps on ops; the macros are gone and hard-banned"
+  - refactor: "Entity reactions() table procs moved into CAPABILITIES blocks; reactions() is banned outside systems"
+  - code_imp: "Tracked supply console reads; coalesce() gains a leading-edge option"

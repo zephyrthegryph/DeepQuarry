@@ -266,7 +266,10 @@ CAPABILITIES(/obj/machinery/computer/ship)
 
 CAPABILITIES(/obj/machinery/computer/shuttle_control/explore)
 	owns_one(nameof(flight_operations_ui), /datum/flight_operations_ui)
-	op("plot_expedition", ui_act("plot_expedition"), then(PROC_REF(ui_act_plot_expedition)))
+	op("plot_expedition", ui_act("plot_expedition"), needs(req(PROC_REF(plot_refusal)), req(PROC_REF(plot_can_interact), silent = TRUE)),
+		asks(/datum/prompt/choice, fields = list("question" = "Select an expedition contract", "title" = "Flight Operations", "choices" = computed(PROC_REF(plot_contract_choices)), "timeout" = 0), step = "k105"),
+		asks(/datum/prompt/choice, fields = list("question" = "Select a threat band", "title" = "Flight Operations", "choices" = computed(PROC_REF(plot_band_choices)), "timeout" = 0), step = "k109"),
+		then(PROC_REF(ui_act_plot_expedition)))
 	op("pick", ui_act("pick"), then(PROC_REF(ui_act_pick)))
 
 /obj/machinery/computer/shuttle_control/explore/ui_redirect(mob/user)

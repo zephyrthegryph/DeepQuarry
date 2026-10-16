@@ -206,13 +206,19 @@
 	var/list/stock_prices
 	var/list/stock_suggested_prices
 	var/list/stock_stocker_accounts
+	/// The department account the revenue goes to (linked when the economy is set up, as the registers do).
+	var/datum/money_account/linked_account
 
+
+REGISTRY_MEMBERSHIP(/obj/machinery/department_storefront, REGISTRY_TRANSACTION_DEVICES)
 
 /obj/machinery/department_storefront/proc/set_up_storefront(datum/act/timer/A)
 	machine_id = "[station_name()] STOREFRONT #[GLOB.num_financial_terminals++]"
 	set_stock_prices(list())
 	set_stock_suggested_prices(list())
 	stock_stocker_accounts = list()
+	if(GLOB.economy_init)
+		rel_set(src, nameof(linked_account), GLOB.department_accounts[department_id])
 
 /obj/machinery/department_storefront/examine(mob/user)
 	. = ..()
@@ -263,11 +269,14 @@
 	return max(5, round(item.w_class * 5))
 
 CAPABILITIES(/obj/machinery/department_storefront)
+	ref_one(nameof(linked_account), /datum/money_account)
 	configure(uses_power(idle = 10, active = 100))
 	after_init(0, then(PROC_REF(set_up_storefront)))
 	interface("DepartmentStorefront")
 	without("ui_open")
-	op("buy", ui_act("buy", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_buy)))
+	op("buy", ui_act("buy", arg("ref", schema_ref(/obj/item))), needs(req_adjacent()),
+		asks(/datum/prompt/number/storefront_pin, fields = list("question" = "Enter your account PIN", "title" = "Storefront purchase", "price" = computed(PROC_REF(buy_price)), "timeout" = 0), step = "pin", when = PROC_REF(buy_needs_pin)),
+		then(PROC_REF(ui_act_buy)))
 	op("withdraw", ui_act("withdraw", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_withdraw)))
 	op("set_price", ui_act("set_price", arg("price", num()), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_set_price)))
 	op("set_markup", ui_act("set_markup", arg("markup", num())), then(PROC_REF(ui_act_set_markup)))
@@ -310,6 +319,34 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	latent_materialize_all() // a walk needs real things (C5)
 	return TRUE
 
+/// The PIN is asked only when the purchase would get as far as charging an account that is PIN-protected.
+/obj/machinery/department_storefront/proc/buy_needs_pin(datum/act/op/A)
+	var/obj/item/item = A.args["ref"]
+	var/mob/living/user = A.actor
+	if(!istype(item) || !istype(user))
+		return FALSE
+	var/obj/item/card/id/id_card = user.GetIdCard()
+	var/datum/money_account/customer = get_account(id_card?.associated_account_number)
+	var/datum/money_account/provider = storefront_provider()
+	var/price = stock_prices[REF(item)]
+	if(!customer || !provider || !isnum(price) || price <= 0 || customer == provider)
+		return FALSE
+	return customer.security_level
+
+/// The department account the storefront pays into.
+/obj/machinery/department_storefront/proc/storefront_provider()
+	return linked_account
+
+/// The price the buyer sees when the PIN is asked, kept with the question.
+/obj/machinery/department_storefront/proc/buy_price(datum/act/op/A)
+	var/obj/item/item = A.args["ref"]
+	return istype(item) ? stock_prices[REF(item)] : null
+
+/// The PIN question of a purchase: the price it was asked at.
+/datum/prompt/number/storefront_pin
+	timeout = 0
+	var/price
+
 /obj/machinery/department_storefront/proc/ui_act_buy(datum/act/op/A, ref)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
@@ -319,7 +356,8 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	if(isnull(ref))
 		return FALSE
 	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
-	return storefront_purchase(item, user)
+	var/datum/prompt/number/storefront_pin/asked = A.step_answer("pin")
+	return storefront_purchase(item, user, A.step_value("pin"), asked?.price)
 
 /obj/machinery/department_storefront/proc/ui_act_withdraw(datum/act/op/A, ref)
 	var/mob/user = A.actor
@@ -372,20 +410,23 @@ CAPABILITIES(/obj/machinery/department_storefront)
 		set_stock_prices_at(stock_ref, max(1, round(stock_suggested_prices[stock_ref] * (100 + markup_percent) / 100)))
 	return TRUE
 
-/obj/machinery/department_storefront/proc/storefront_purchase(obj/item/item, mob/living/user)
+/// `pin`: the answer of the buy op's PIN question (null when the account is not protected); `agreed_price`: the price shown with it.
+/obj/machinery/department_storefront/proc/storefront_purchase(obj/item/item, mob/living/user, pin, agreed_price)
 	if(!item || !user || get_dist(src, user) > 1 || src.z != user.z)
 		return FALSE
 	var/obj/item/card/id/id_card = user.GetIdCard()
 	var/datum/money_account/customer = get_account(id_card?.associated_account_number)
-	var/datum/money_account/provider = GLOB.department_accounts[department_id]
+	var/datum/money_account/provider = storefront_provider()
 	var/item_ref = REF(item)
 	var/price = stock_prices[item_ref]
 	if(!customer || !provider || !isnum(price) || price <= 0 || customer == provider)
 		to_chat(user, span_warning("The sale could not be authorized."))
 		return FALSE
+	if(!isnull(agreed_price) && agreed_price != price)
+		to_chat(user, span_warning("The price changed while you were entering your PIN. Nothing was charged."))
+		return FALSE
 	if(customer.security_level)
-		// Keyed by the price, so a price change asks again.
-		var/attempt_pin = rerun_ask(user, "pin[item_ref]:[price]", PROC_REF(storefront_purchase), args, /datum/prompt/number, question = "Enter your account PIN", title = "Storefront purchase")
+		var/attempt_pin = pin
 		if(isnull(attempt_pin))
 			return FALSE
 		if(QDELETED(item) || item.loc != src || stock_prices[item_ref] != price || get_dist(src, user) > 1 || src.z != user.z)

@@ -43,6 +43,8 @@ use xxhash_rust::xxh3::Xxh3;
 
 #[path = "body_patch_append.rs"]
 mod append;
+#[path = "body_patch_lines.rs"]
+mod align;
 
 /// At most this many relowered bodies are patched; more fall back.
 const PATCH_LIMIT: usize = 4096;
@@ -57,6 +59,8 @@ struct BodyShape {
     /// Declares a proc-static or global var: startup facts depend on it.
     guarded: bool,
     path: Arc<str>,
+    /// The file the body's source lives in (its text is retained beside the shape).
+    file: Arc<std::path::PathBuf>,
     line: usize,
     /// Newlines inside the body's expanded text.
     lines: usize,
@@ -65,6 +69,11 @@ struct BodyShape {
 /// Declaration skeleton plus one shape per body, in `frontend.bodies` order.
 pub struct SourceShape {
     skeleton: u128,
+    /// The file roster and include structure, without any text.
+    roster: u128,
+    /// The text of every captured file as this build read it. Shared with the frontend's owners
+    /// (no copy), it lets a later edit that only moves code be aligned against the old text.
+    texts: HashMap<Arc<std::path::PathBuf>, dm_preprocess::SourceText>,
     bodies: Vec<BodyShape>,
     /// Semantic tree identity of the build this shape describes; default
     /// edits are admitted only from exactly this tree.
@@ -164,6 +173,7 @@ fn body_shape(body: &dm_tree::frontend::BodyOccurrence, text: &[u8]) -> BodyShap
         text: xxhash_rust::xxh3::xxh3_128(body_text),
         guarded: declares_static(body_text),
         path: Arc::clone(&source.semantic_path),
+        file: Arc::clone(&source.path),
         line: source.line,
         lines: body_text.iter().filter(|&&byte| byte == b'\n').count(),
     }
@@ -212,8 +222,27 @@ impl SourceShape {
                 .map(|body| body_shape(body, text))
                 .collect()
         });
+        let mut roster = Xxh3::new();
+        roster.update(b"dmb-body-patch-roster-v1\0");
+        for file in frontend.files.iter() {
+            roster.update(file.path.to_string_lossy().as_bytes());
+            roster.update(&[0, u8::from(file.captured)]);
+        }
+        for occurrence in frontend.plan.occurrences.iter() {
+            roster.update(occurrence.path.to_string_lossy().as_bytes());
+            roster.update(b"\0");
+            roster.update(occurrence.semantic_path.as_bytes());
+            roster.update(&occurrence.parent.map_or(u64::MAX, |parent| parent as u64).to_le_bytes());
+        }
         Self {
             skeleton: skeleton.digest128(),
+            roster: roster.digest128(),
+            texts: frontend
+                .files
+                .iter()
+                .filter(|file| file.captured)
+                .map(|file| (Arc::clone(&file.path), file.text.clone()))
+                .collect(),
             bodies: shapes,
             tree_identity: frontend.snapshot.tree.identity(),
         }
@@ -245,6 +274,64 @@ impl LineMap {
             }
         }
         Self { files: deltas }
+    }
+    /// The map of an edit that only moved code: for every file whose text changed, the old and new
+    /// text must agree on every token outside the bodies (see `body_patch_lines`), and the bodies
+    /// pair up in order. Files whose text is unchanged do not move.
+    fn aligned(
+        frontend: &dm_tree::frontend::ColdFrontend,
+        old: &SourceShape,
+        new: &SourceShape,
+        directives: align::Directives,
+    ) -> Result<Self, String> {
+        let mut semantic: HashMap<&std::path::Path, Vec<Arc<str>>> = HashMap::new();
+        for occurrence in frontend.plan.occurrences.iter() {
+            let paths = semantic.entry(occurrence.path.as_path()).or_default();
+            if !paths.iter().any(|path| *path == occurrence.semantic_path) {
+                paths.push(Arc::clone(&occurrence.semantic_path));
+            }
+        }
+        let mut files: HashMap<Arc<str>, Vec<(usize, isize)>> = HashMap::new();
+        for file in frontend.files.iter().filter(|file| file.captured) {
+            let Some(before) = old.texts.get(&file.path) else {
+                return Err(format!("{} is new", file.path.display()));
+            };
+            let (before, after) = (before.as_str(), file.text.as_str());
+            if std::ptr::eq(before.as_ptr(), after.as_ptr()) && before.len() == after.len()
+                || before == after
+            {
+                continue;
+            }
+            let mut old_ranges = Vec::new();
+            let mut new_ranges = Vec::new();
+            let mut pairs = Vec::new();
+            for (before, after) in old.bodies.iter().zip(&new.bodies) {
+                if *after.file != *file.path && *before.file != *file.path {
+                    continue;
+                }
+                if before.file != after.file {
+                    return Err("a body moved between files".into());
+                }
+                old_ranges.push((before.line as u32, (before.line + before.lines) as u32));
+                new_ranges.push((after.line as u32, (after.line + after.lines) as u32));
+                pairs.push((before.line as u32, after.line as u32));
+            }
+            old_ranges.sort();
+            new_ranges.sort();
+            pairs.extend(
+                align::gap_pairs(before, &old_ranges, after, &new_ranges, directives)
+                    .map_err(|reason| format!("{}: {reason}", file.path.display()))?,
+            );
+            let steps = align::steps(pairs)
+                .ok_or_else(|| format!("{}: lines do not move in order", file.path.display()))?;
+            if steps.is_empty() {
+                continue;
+            }
+            for path in semantic.get(file.path.as_path()).into_iter().flatten() {
+                files.insert(Arc::clone(path), steps.clone());
+            }
+        }
+        Ok(Self { files })
     }
     fn is_identity(&self) -> bool {
         self.files.is_empty()
@@ -322,6 +409,10 @@ impl BodyPatchBase {
             warnings: Arc::new(warnings),
             dmb_hash,
         })
+    }
+    /// Hash of the image this base describes.
+    pub(crate) fn dmb_hash(&self) -> u128 {
+        self.dmb_hash
     }
     pub(crate) fn with_output_hash(mut self, hash: u128) -> Self {
         self.dmb_hash = hash;
@@ -405,30 +496,66 @@ pub(crate) fn try_patch<R: dm_ir::Resolver>(request: PatchRequest<'_, R>) -> Res
         return Err("retained output differs from the patch base".into());
     }
     let shape = request.shape;
+    let frontend: &dm_tree::frontend::ColdFrontend = request.frontend;
+    // An edit that only moves code (comment and blank lines, a new directive) leaves the tree and
+    // the file roster alone; its line map comes from the changed files' old and new text.
+    let same_structure =
+        base.shape.tree_identity == shape.tree_identity && base.shape.roster == shape.roster;
+    let mut moved = None;
     if shape.bodies.len() != base.shape.bodies.len() || shape.skeleton != base.shape.skeleton {
-        let tree = &request.frontend.snapshot.tree;
+        let tree = &frontend.snapshot.tree;
         if tree.appended_callables().is_some() {
             return append::try_append_patch(request, &base, &link, &image)
                 .map_err(|reason| format!("declaration skeleton changed; append patch: {reason}"));
         }
         if shape.bodies.len() != base.shape.bodies.len() {
-            return Err("declaration skeleton changed".into());
+            return Err(format!(
+                "declaration skeleton changed (bodies {} -> {})",
+                base.shape.bodies.len(),
+                shape.bodies.len()
+            ));
         }
-        return try_default_patch(request, &base, &image)
-            .map_err(|reason| format!("declaration skeleton changed; default patch: {reason}"));
+        let motion = if same_structure {
+            LineMap::aligned(frontend, &base.shape, shape, align::Directives::Compared)
+        } else {
+            Err("the tree or the file roster changed".to_string())
+        };
+        match motion {
+            Ok(map) => moved = Some(map),
+            Err(motion) => {
+                let (old_hash, new_hash) = (base.shape.skeleton, shape.skeleton);
+                return try_default_patch(request, &base, &image).map_err(|reason| {
+                    format!(
+                        "declaration skeleton changed (hash {old_hash:032x} -> {new_hash:032x}, tree identity {}); default patch: {reason}; code motion: {motion}",
+                        if same_structure { "same" } else { "changed" }
+                    )
+                });
+            }
+        }
     }
-    let lines = LineMap::between(&base.shape.bodies, &shape.bodies);
-    if let Some((old, new)) = base
-        .shape
-        .bodies
-        .iter()
-        .zip(&shape.bodies)
-        .find(|(old, new)| old.path != new.path || lines.map(&old.path, old.line) != new.line)
-    {
-        return Err(format!(
-            "line map does not explain {}:{} -> {}:{}",
-            old.path, old.line, new.path, new.line
-        ));
+    let mut lines = moved.unwrap_or_else(|| LineMap::between(&base.shape.bodies, &shape.bodies));
+    let unexplained = |lines: &LineMap| {
+        base.shape
+            .bodies
+            .iter()
+            .zip(&shape.bodies)
+            .find(|(old, new)| old.path != new.path || lines.map(&old.path, old.line) != new.line)
+            .map(|(old, new)| (Arc::clone(&old.path), old.line, Arc::clone(&new.path), new.line))
+    };
+    if let Some((old_path, old_line, new_path, new_line)) = unexplained(&lines) {
+        // Directive lines add no expanded text, so when that text is unchanged they only move code.
+        let inert = (same_structure && shape.skeleton == base.shape.skeleton)
+            .then(|| LineMap::aligned(frontend, &base.shape, shape, align::Directives::Inert))
+            .and_then(Result::ok)
+            .filter(|map| unexplained(map).is_none());
+        match inert {
+            Some(map) => lines = map,
+            None => {
+                return Err(format!(
+                    "line map does not explain {old_path}:{old_line} -> {new_path}:{new_line}"
+                ))
+            }
+        }
     }
     if let Some(difference) = request.inputs.non_text_difference(&base.inputs) {
         return Err(format!("non-text input changed: {difference}"));
@@ -466,7 +593,6 @@ pub(crate) fn try_patch<R: dm_ir::Resolver>(request: PatchRequest<'_, R>) -> Res
     if changed.len() > PATCH_LIMIT {
         return Err(format!("{} bodies changed (limit {PATCH_LIMIT})", changed.len()));
     }
-    let frontend: &dm_tree::frontend::ColdFrontend = request.frontend;
     for &index in &changed {
         // A moved body keeps its statics; their initializer code is relinked
         // with shifted lines like every other initializer below.
@@ -771,6 +897,7 @@ mod tests {
             text: 0,
             guarded: false,
             path: Arc::from(path),
+            file: Arc::new(std::path::PathBuf::from(path)),
             line,
             lines,
         }

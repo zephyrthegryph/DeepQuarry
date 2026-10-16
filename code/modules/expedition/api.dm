@@ -1,31 +1,37 @@
 // The expedition system's API (code/modules/expedition/expedition_controller.dm declares the system).
 //
-//   SSexpedition.plot_for_vessel(user, vessel, payout_source) / abandon_assignment(user, vessel)   a vessel's assignment
+//   SSexpedition.plot_for_vessel(user, vessel, payout_source, contract, threat_band) / abandon_assignment(user, vessel)   a vessel's assignment
 //   SSexpedition.create_site_descriptor(mission, difficulty, ...)    survey a site that is not generated yet
 //   SSexpedition.generate_site(mission, ...) / materialize_site(site, plan) / release_site(site, reason)
 //   SSexpedition.generate_debug_station(seed, ...)                   admin: a generated station on an expedition z-level
 
-/datum/system/expedition/proc/plot_for_vessel(mob/user, datum/flight_vessel/vessel, atom/payout_source)
+/// Why a vessel cannot be given an expedition assignment (a message for its pilot), or null when it can.
+/datum/system/expedition/proc/plot_refusal(datum/flight_vessel/vessel)
 	if(!vessel?.shuttle() || !vessel.has_capabilities(FLIGHT_CAP_EXPEDITION | FLIGHT_CAP_LAND))
-		to_chat(user, span_warning("This vessel cannot perform surface expeditions."))
-		return null
+		return span_warning("This vessel cannot perform surface expeditions.")
 	if(vessel.active_expedition() && !QDELETED(vessel.active_expedition()) && vessel.active_expedition().status != EXP_STATUS_EXPIRED)
-		to_chat(user, span_warning("This vessel already has an active expedition assignment."))
-		return null
+		return span_warning("This vessel already has an active expedition assignment.")
+	return null
+
+/// The contracts a pilot may pick from: contract name -> mission type.
+/datum/system/expedition/proc/contract_choices(mob/user)
 	var/list/choices = list()
 	for(var/mission_type in GLOB.expedition_mission_types)
 		var/datum/expedition_mission/preview = new mission_type()
 		choices[preview.name] = mission_type
 		spent(preview, user)
-	var/choice = rerun_ask(user, "k105", PROC_REF(plot_for_vessel), args, /datum/prompt/choice, question = "Select an expedition contract", title = "Flight Operations", choices = choices)
-	if(isnull(choice))
-		return
+	return choices
+
+/// `choice` is the contract picked (a name of contract_choices()), `threat_band` the band picked (a name of GLOB.expedition_threat_bands).
+/datum/system/expedition/proc/plot_for_vessel(mob/user, datum/flight_vessel/vessel, atom/payout_source, choice, threat_band)
+	var/refusal = plot_refusal(vessel)
+	if(refusal)
+		to_chat(user, refusal)
+		return null
+	var/list/choices = contract_choices(user)
 	if(!choice || !CanInteract(user, GLOB.tgui_default_state))
 		return null
 	var/list/threat_bands = GLOB.expedition_threat_bands
-	var/threat_band = rerun_ask(user, "k109", PROC_REF(plot_for_vessel), args, /datum/prompt/choice, question = "Select a threat band", title = "Flight Operations", choices = threat_bands)
-	if(isnull(threat_band))
-		return
 	if(!threat_band || !CanInteract(user, GLOB.tgui_default_state))
 		return null
 	var/difficulty = threat_bands[threat_band]

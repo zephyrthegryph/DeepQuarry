@@ -92,6 +92,9 @@
 
 CAPABILITIES(/obj/effect/hotspot)
 	configure(light_glow(range = LIGHT_RANGE_FIRE, power = 1, color = LIGHT_COLOR_FIRE))
+	// A hotspot burns as kernel work instead of SSair's hotspot pass: one step every SSair tick (the cadence the pass had) for as long as it
+	// exists, in the game and post-game run levels. It never idles -- a hotspot that has nothing left to burn deletes itself.
+	every(0.5 SECONDS, then(PROC_REF(burn_tick)), when = PROC_REF(burn_ready), lane = LANE_SIMULATION)
 	links(/obj/effect/hotspot::our_hot_group, /datum/hot_group::spot_list, b_many = TRUE)
 	param(nameof(starting_volume), pos = 1)
 	param(nameof(starting_temperature), pos = 2)
@@ -494,18 +497,11 @@ CAPABILITIES(/datum/hot_group)
 
 // ---------------------------------------------------------------- the hotspot pipeline
 
-/// A hotspot burns as kernel work instead of SSair's hotspot pass: one step every SSair tick (the cadence the pass
-/// had) for as long as it exists, in the game and post-game run levels. It never idles -- a hotspot that has nothing
-/// left to burn deletes itself, which takes it out of the kernel's membership.
-/obj/effect/hotspot/reactions()
-	. = ..()
-	. += every(0.5 SECONDS, PROC_REF(burn_tick), when = PROC_REF(burn_ready), lane = LANE_SIMULATION)
+/// The run levels the burn steps in (the every() gate in CAPABILITIES(/obj/effect/hotspot)): the kernel's run level is a clock, sampled.
+/obj/effect/hotspot/proc/burn_ready(datum/act/A)
+	return !!read_once((RUNLEVEL_GAME | RUNLEVEL_POSTGAME) & (1 << (Kernel.current_runlevel - 1)))
 
-/// The run levels the burn steps in.
-/obj/effect/hotspot/proc/burn_ready()
-	return !!((RUNLEVEL_GAME | RUNLEVEL_POSTGAME) & (1 << (Kernel.current_runlevel - 1)))
-
-/// The kernel work item's handler: one burn step.
-/obj/effect/hotspot/proc/burn_tick(dt)
+/// The every() handler: one burn step.
+/obj/effect/hotspot/proc/burn_tick(datum/act/timer/tick)
 	burn_step()
 

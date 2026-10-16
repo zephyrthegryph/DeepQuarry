@@ -13,6 +13,35 @@
 /mob/living/can_emote(emote_type)
 	return (..() && !(has_status(STAT_MUTED) && emote_type == AUDIBLE_MESSAGE))
 
+/// The question for the text of a custom emote: what emote() was called with.
+/datum/prompt/text/emote_message
+	timeout = 0
+	var/act
+	var/m_type
+
+/// The question whether a custom emote is audible: what emote() was called with.
+/datum/prompt/choice/emote_audible
+	timeout = 0
+	var/act
+	var/message
+
+/// The text typed for a custom emote: emote() runs again with it (its checks are made again), reflecting too long messages.
+/mob/proc/emote_message_answered(datum/act/request/A)
+	var/datum/prompt/text/emote_message/asked = A.answer
+	if(!asked || isnull(asked.value))
+		return
+	var/message = sanitize_or_reflect(asked.value, src) // Reflect too long messages, within reason
+	if(!message)
+		return
+	emote(asked.act, asked.m_type, message)
+
+/// Whether the custom emote is audible: emote() runs again with the type (its checks are made again).
+/mob/proc/emote_audible_answered(datum/act/request/A)
+	var/datum/prompt/choice/emote_audible/asked = A.answer
+	if(!asked || isnull(asked.value))
+		return
+	emote(asked.act, asked.value == "Yes" ? AUDIBLE_MESSAGE : VISIBLE_MESSAGE, asked.message)
+
 /mob/proc/emote(act, m_type, message)
 	set waitfor = FALSE // ALLOW(scheduler): waits on a prompt (custom emote tgui_input_text/tgui_alert)
 	// s-s-snowflake
@@ -56,20 +85,11 @@
 
 		if(act == "custom")
 			if(!message)
-				var/_answer_k59 = rerun_ask(src, "k59", PROC_REF(emote), args, /datum/prompt/text, question = "Choose an emote to display.", encode = FALSE)
-				if(isnull(_answer_k59))
-					return
-				message = sanitize_or_reflect(_answer_k59, src) // Reflect too long messages, within reason
-			if(!message)
+				open_request(src, /datum/prompt/text/emote_message, PROC_REF(emote_message_answered), answerer = src, question = "Choose an emote to display.", encode = FALSE, act = act, m_type = m_type)
 				return
 			if (!m_type)
-				var/_answer_k63 = rerun_ask(src, "k63", PROC_REF(emote), args, /datum/prompt/choice, question = "Is this an audible emote?", title = "Emote", choices = list("Yes", "No"), buttons = TRUE)
-				if(isnull(_answer_k63))
-					return
-				if(_answer_k63 != "Yes")
-					m_type = VISIBLE_MESSAGE
-				else
-					m_type = AUDIBLE_MESSAGE
+				open_request(src, /datum/prompt/choice/emote_audible, PROC_REF(emote_audible_answered), answerer = src, question = "Is this an audible emote?", title = "Emote", choices = list("Yes", "No"), buttons = TRUE, act = act, message = message)
+				return
 			return custom_emote(m_type, message)
 
 	var/full_act = act

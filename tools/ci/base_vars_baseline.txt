@@ -155,7 +155,6 @@ base_var	code/game/objects/items.dm	@/obj/item::digestable
 base_var	code/game/objects/items.dm	@/obj/item::item_tf_spawn_allowed
 base_var	code/game/objects/items.dm	@/obj/item::ckeys_allowed_itemspawn
 base_var	code/game/objects/items.dm	@/obj/item::preserve_item
-base_var	code/game/objects/items.dm	@/obj/item::persist_storable
 base_var	code/game/objects/items.dm	@/obj/item::possessed_voice
 base_var	code/game/objects/items.dm	@/obj/item::warned_of_possession
 base_var	code/game/objects/items.dm	@/obj/item::cleaving
@@ -317,7 +316,6 @@ base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carb
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::tail_style
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::wing_style
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::custom_species
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::redgate_restricted
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::ability_flags
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::sensorpref
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::markings_len

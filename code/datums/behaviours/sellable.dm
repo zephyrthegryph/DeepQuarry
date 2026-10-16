@@ -62,24 +62,23 @@
 /datum/sellable/proc/sell(obj/source, datum/exported_crate/EC, in_crate)
 
 	if(needs_crate && !in_crate)
-		EC.contents = list("error" = "Error: Product was improperly packaged. Payment rendered null under terms of agreement.")
+		EC.set_rows(list("error" = "Error: Product was improperly packaged. Payment rendered null under terms of agreement."))
 		return FALSE
 
 	var/sell_error = sell_error(source)
 	if(sell_error)
-		EC.contents = list("error" = sell_error)
+		EC.set_rows(list("error" = sell_error))
 		return FALSE
 
-	// The export's rows list (a plain list var on the export datum, not atom contents).
-	var/list/rows = EC.contents
-	rows[++rows.len] = list(
+	// The export's rows list (a tracked list var on the export datum).
+	var/list/export_row = list(
 		"object" = "\proper[source.name]",
 		"value" = calculate_sell_value(source),
 		"quantity" = calculate_sell_quantity(source)
 	)
-	var/list/export_row = rows[rows.len]
+	EC.add_rows(list(export_row))
 	SSsupply.apply_market_demand(source, EC, export_row)
-	EC.value += export_row["value"]
+	EC.set_value(EC.value + export_row["value"])
 	if(EC.sales_ledger_valid && source.economic_department == EC.sales_department)
 		EC.sales_eligible_value += export_row["value"]
 	else if(source.economic_department)

@@ -8,13 +8,12 @@
 // the answer runs the proc again with the same arguments, and this time the same helper call returns the answer (the request's
 // `value`). The re-run re-checks everything the proc checks. Ask everything before doing anything: the proc runs once per answer.
 //
-//	var/amount = rerun_ask(user, "amount", PROC_REF(insert), args, /datum/prompt/number, question = "How many?", max_value = 10)
+//	var/amount = verb_ask(user, "amount", args, /datum/prompt/number, question = "How many?", max_value = 10)
 //	if(isnull(amount))
 //		return
 //
 //   verb_ask(user, key, args, prompt, ...)                           an ADMIN_VERB body (the verb's rights are re-checked)
 //   client_ask(key, PROC_REF(this proc), args, rights, prompt, ...)  a /client proc (`rights`: R_* re-checked)
-//   rerun_ask(user, key, PROC_REF(this proc), args, prompt, ...)     any datum proc
 //   flow_ask(user, key, prompt, ...)                                 a question deep inside a prompt_flow()
 //
 // `prompt` is a /datum/prompt kind; the named arguments are its fields (question, title, choices, default, ...), as open_request()

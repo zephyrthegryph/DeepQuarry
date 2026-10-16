@@ -49,6 +49,8 @@ GLOBAL_VAR_INIT(economy_init, 0)
 	for(var/obj/machinery/cash_register/CR in REGISTRY_MEMBERS(REGISTRY_TRANSACTION_DEVICES))
 		if(CR.account_to_connect)
 			rel_set(CR, nameof(CR.linked_account), GLOB.department_accounts[CR.account_to_connect])
+	for(var/obj/machinery/department_storefront/store in REGISTRY_MEMBERS(REGISTRY_TRANSACTION_DEVICES))
+		rel_set(store, nameof(store.linked_account), GLOB.department_accounts[store.department_id])
 
 	GLOB.current_date_string = "[num2text(rand(1,31))] [pick("January","February","March","April","May","June","July","August","September","October","November","December")], [GLOB.game_year]"
 
@@ -63,7 +65,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 		GLOB.station_account.owner_name = "[station_name()] Station Account"
 		GLOB.station_account.account_number = rand(111111, 999999)
 		GLOB.station_account.remote_access_pin = rand(1111, 111111)
-		GLOB.station_account.money = 75000
+		GLOB.station_account.set_money(75000)
 		GLOB.station_account.department_id = "Station"
 		GLOB.station_account.is_budget_account = TRUE
 
@@ -87,7 +89,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 	department_account.set_owner_name("[department] Account")
 	department_account.set_account_number(rand(111111, 999999))
 	department_account.remote_access_pin = rand(1111, 111111)
-	department_account.money = 5000
+	department_account.set_money(5000)
 	department_account.set_department_id(department)
 	department_account.set_is_budget_account(TRUE)
 

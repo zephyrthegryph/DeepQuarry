@@ -1,13 +1,29 @@
 #ifdef REFERENCE_TRACKING
 #define REFSEARCH_RECURSE_LIMIT 64
 
-/datum/proc/find_references(references_to_clear = INFINITY)
-	if(usr?.client)
-		if(rerun_ask(usr, "sure", PROC_REF(find_references), args, /datum/prompt/choice, question = "Running this will lock everything up for about 5 minutes.  Would you like to begin the search?", title = "Find References", choices = list("Yes", "No"), buttons = TRUE) != "Yes")
-			return
+/// The admin's confirmation of a search; it carries the search's limit to the answer.
+/datum/prompt/choice/find_references_confirm
+	/// The reference limit the search runs with.
+	var/search_limit = INFINITY
 
+/// `asker`: the admin to confirm the search with (null searches at once, as the garbage collector's calls do).
+/datum/proc/find_references(references_to_clear = INFINITY, mob/asker = null)
+	if(asker?.client)
+		open_request(src, /datum/prompt/choice/find_references_confirm, PROC_REF(find_references_confirmed), answerer = asker, question = "Running this will lock everything up for about 5 minutes.  Would you like to begin the search?", title = "Find References", choices = list("Yes", "No"), buttons = TRUE, timeout = 60 SECONDS, search_limit = references_to_clear)
+		return
+	find_references_run(references_to_clear)
+
+/// The admin answered the confirmation: "Yes" starts the search.
+/datum/proc/find_references_confirmed(datum/act/request/A)
+	var/datum/prompt/choice/find_references_confirm/asked = A.answer
+	if(!asked || asked.value != "Yes")
+		return
+	find_references_run(asked.search_limit)
+
+/// The search itself.
+/datum/proc/find_references_run(references_to_clear = INFINITY)
 #ifdef UNIT_TESTS
-	if(!usr?.client && !dq_refsearch_allowed(src))
+	if(!dq_refsearch_allowed(src))
 		return
 	var/search_started = REALTIMEOFDAY
 #endif

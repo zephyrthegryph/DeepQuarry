@@ -55,6 +55,7 @@
 
 CAPABILITIES(/datum/spell)
 	owns_one(nameof(connected_button), /atom/movable/screen)
+	every(1 SECOND, then(PROC_REF(recharge_tick)), when = nameof(recharging))
 	// The cast delay: no bar, the held item may change, and a spell that works unconscious or as a ghost does not need the caster up.
 	op("cast_delay", ai(), takes("skipcharge"), wait(PROC_REF(cast_time), keeps = TARGET_PRESENT | STAY | ALIVE), silent_wait(), then(PROC_REF(cast_delayed)))
 	op("cast_delay_statallowed", ai(), takes("skipcharge"), wait(PROC_REF(cast_time), keeps = TARGET_PRESENT | STAY), silent_wait(), then(PROC_REF(cast_delayed)))
@@ -63,12 +64,8 @@ CAPABILITIES(/datum/spell)
 ///SETUP AND PROCESS///
 ///////////////////////
 
-/// TRUE while recharging: recharge_tick() adds a second's worth every second (the every() below).
+/// TRUE while recharging: recharge_tick() adds a second's worth every second (its every() in CAPABILITIES(/datum/spell)).
 /datum/spell/var/recharging = FALSE
-
-/datum/spell/reactions()
-	. = ..()
-	. += every(1 SECOND, PROC_REF(recharge_tick), when = nameof(recharging))
 
 /datum/spell/New()
 	..()
@@ -82,7 +79,7 @@ CAPABILITIES(/datum/spell)
 	if(charge_counter < charge_max)
 		set_recharging(TRUE)
 
-/datum/spell/proc/recharge_tick(dt)
+/datum/spell/proc/recharge_tick(datum/act/timer/tick)
 	charge_counter = min(charge_counter + 10, charge_max)
 	if(charge_counter >= charge_max)
 		set_recharging(FALSE)

@@ -13,7 +13,7 @@
 	var/datum/money_account/account = allocate(/datum/money_account)
 	rel_set(terminal, nameof(terminal.detailed_account_view), account)
 	TEST_ASSERT_EQUAL(terminal.detailed_account_view(), account, "terminal selects the exact real borrowed account")
-	account.money = terminal.fund_cap - 2.5
+	account.set_money(terminal.fund_cap - 2.5)
 	TEST_ASSERT(terminal.apply_ui_add_funds(user, 20), "real positive add effect has its original truthy result")
 	TEST_ASSERT_EQUAL(account.money, terminal.fund_cap, "positive add is capped at the actual terminal fund limit")
 	TEST_ASSERT_EQUAL(length(account.transaction_log), 1, "capped add records exactly one real transaction")

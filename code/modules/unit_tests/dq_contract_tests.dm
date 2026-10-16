@@ -259,7 +259,7 @@
 	var/currency_destroyed_before = SSsupply.currency_destroyed
 	var/datum/money_account/funder = new
 	funder.set_owner_name("Test issuer")
-	funder.money = 500
+	funder.set_money(500)
 	var/datum/contract/contract = new
 	contract.title = "Escrow test"
 	contract.funding_mode = CONTRACT_FUNDING_INTERNAL
@@ -381,7 +381,7 @@
 	var/datum/money_account/contributor_account = new
 	contributor_account.set_account_number(876543)
 	contributor_account.set_owner_name("Contract Contributor")
-	contributor_account.money = 50
+	contributor_account.set_money(50)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, contributor_account)
 	var/mob/living/carbon/human/contributor = new(test_turf)
 	var/datum/mind/contributor_mind = new("contract_economy_test")
@@ -422,8 +422,8 @@
 	TEST_ASSERT_EQUAL(get_department_faction_reputation(DEPARTMENT_MEDICAL, REPUTATION_FACTION_VEYMED) - department_rep_before, 3, "negotiated department reputation reward was incorrect")
 	TEST_ASSERT_EQUAL(contributor.get_faction_reputation(REPUTATION_FACTION_VEYMED) - personal_rep_before, 8, "negotiated personal reputation reward was incorrect")
 	GLOB.station_account.money = station_before
-	medical_account.money = medical_before
-	contributor_account.money = personal_before
+	medical_account.set_money(medical_before)
+	contributor_account.set_money(personal_before)
 	GLOB.station_faction_relations.set_reputation(REPUTATION_FACTION_VEYMED, station_rep_before)
 	var/datum/faction_reputation_ledger/medical_reputation = GLOB.station_faction_relations.get_department_ledger(DEPARTMENT_MEDICAL)
 	medical_reputation.set_reputation(REPUTATION_FACTION_VEYMED, department_rep_before)
@@ -1031,11 +1031,11 @@
 	TEST_ASSERT(found_initial_bottle, "console acceptance did not materialize coded trial supplies")
 	var/datum/money_account/medical_account = GLOB.department_accounts[DEPARTMENT_MEDICAL]
 	var/original_balance = medical_account.money
-	medical_account.money = MEDICAL_TRIAL_RESUPPLY_COST + 100
+	medical_account.set_money(MEDICAL_TRIAL_RESUPPLY_COST + 100)
 	TEST_ASSERT(trial.request_resupply(get_turf(management)), "funded replacement-dose request failed")
 	TEST_ASSERT_EQUAL(trial.resupplies_used, 1, "replacement-dose use was not recorded")
 	TEST_ASSERT_EQUAL(medical_account.money, 100, "replacement dose did not debit Medical's budget")
-	medical_account.money = original_balance
+	medical_account.set_money(original_balance)
 	qdel(trial)
 	qdel(management)
 	qdel(doctor)
@@ -1287,7 +1287,7 @@
 	var/datum/money_account/owner_account = new
 	owner_account.set_account_number(830001)
 	owner_account.set_owner_name("Internal Sales Tester")
-	owner_account.money = 0
+	owner_account.set_money(0)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	var/mob/living/carbon/human/owner = new(test_turf)
 	var/datum/mind/owner_mind = new("linked_personal_contract_test")
@@ -1464,7 +1464,7 @@
 	customer.set_owner_name("Refund Customer")
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	var/old_provider_money = provider.money
-	provider.money = max(provider.money, 500)
+	provider.set_money(max(provider.money, 500))
 	var/period = SSsupply.service_accounting_period
 	var/datum/service_invoice/invoice = SSsupply.create_service_invoice(customer, provider, "Unit test checkout", list("Meal" = 1), list("Meal" = 200), list("total" = 200, "subsidy" = 0, "personal" = 200, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
 	TEST_ASSERT(invoice, "refund settlement test invoice was not created")
@@ -1479,7 +1479,7 @@
 	TEST_ASSERT_EQUAL(service.state, CONTRACT_ACTIVE, "a refunded invoice or one fabricated high-price customer completed the settled Service contract")
 	TEST_ASSERT(subsidized_invoice.settled, "closed-period invoice was not finalized")
 	TEST_ASSERT(!SSsupply.refund_service_invoice(subsidized_invoice, provider, "Unit test checkout", refund_operator), "a finalized accounting-period invoice was refunded after contract settlement")
-	provider.money = old_provider_money
+	provider.set_money(old_provider_money)
 	provider.monthly_expenses = provider_expenses_before
 	provider.total_expenses = provider_total_expenses_before
 	SSsupply.currency_refunded = refunds_before

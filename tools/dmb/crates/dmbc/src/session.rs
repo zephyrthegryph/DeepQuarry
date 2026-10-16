@@ -329,32 +329,56 @@ impl SessionRecords {
     pub fn prior(&self, id: u128) -> io::Result<Option<Record>> {
         // Records are immutable and named by their content hash: a decoded
         // record stays valid while its file exists, so the daemon decodes each
-        // recent record once instead of on every request.
-        type Decoded = std::sync::Mutex<Vec<(u128, Vec<u8>, Record)>>;
-        static DECODED: std::sync::OnceLock<Decoded> = std::sync::OnceLock::new();
+        // recent record once instead of on every request. The decode runs in a
+        // shared cell, so a request that arrives while the background decode of
+        // the record the previous request stored is still running waits for it
+        // instead of decoding the same bytes again.
+        type Decoded = Result<Option<Record>, (io::ErrorKind, String)>;
+        type Cell = Arc<std::sync::OnceLock<Decoded>>;
+        static DECODED: std::sync::OnceLock<std::sync::Mutex<Vec<(u128, Vec<u8>, Cell)>>> =
+            std::sync::OnceLock::new();
         let decoded = DECODED.get_or_init(Default::default);
         let path = self.directory.join(format!("{id:032x}.bin"));
+        if !path.is_file() {
+            return self.prior_uncached(&path, id);
+        }
         let configuration = dm_wire::encode(SCHEMA, &self.configuration).unwrap_or_default();
-        if path.is_file() {
-            if let Some(record) = decoded
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
+        let cell = {
+            let mut entries = decoded.lock().unwrap_or_else(|e| e.into_inner());
+            match entries
                 .iter()
                 .find(|(cached, config, _)| *cached == id && *config == configuration)
-                .map(|(_, _, record)| record.clone())
             {
-                return Ok(Some(record));
+                Some((_, _, cell)) => Arc::clone(cell),
+                None => {
+                    if entries.len() >= 8 {
+                        entries.remove(0);
+                    }
+                    let cell = Cell::default();
+                    entries.push((id, configuration, Arc::clone(&cell)));
+                    cell
+                }
+            }
+        };
+        let result = cell.get_or_init(|| {
+            self.prior_uncached(&path, id)
+                .map_err(|error| (error.kind(), error.to_string()))
+        });
+        match result {
+            Ok(Some(record)) => Ok(Some(record.clone())),
+            other => {
+                // Absence and failure are never cached: a later record file or a
+                // transient error must be decoded afresh.
+                decoded
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .retain(|(_, _, held)| !Arc::ptr_eq(held, &cell));
+                match other {
+                    Ok(_) => Ok(None),
+                    Err((kind, message)) => Err(io::Error::new(*kind, message.clone())),
+                }
             }
         }
-        let record = self.prior_uncached(&path, id)?;
-        if let Some(record) = &record {
-            let mut decoded = decoded.lock().unwrap_or_else(|e| e.into_inner());
-            if decoded.len() >= 8 {
-                decoded.remove(0);
-            }
-            decoded.push((id, configuration, record.clone()));
-        }
-        Ok(record)
     }
     fn prior_uncached(&self, path: &std::path::Path, id: u128) -> io::Result<Option<Record>> {
         let path = path.to_path_buf();
@@ -617,9 +641,25 @@ mod tests {
             .validate(id, &changed, true, 20_000_000_000)
             .unwrap()
             .is_none());
-        fs::write(session.directory.join(format!("{id:032x}.bin")), b"broken").unwrap();
+        // A decoded record is cached by its content ID for the daemon's lifetime, so corruption is
+        // proven on a record that has not been decoded yet.
+        let mut inputs = InputSnapshot::new(10_000_000_000);
+        inputs
+            .record_file(&manifest, host.stamp(&manifest).unwrap(), &host.bytes)
+            .unwrap();
+        let fresh = session
+            .store(Record {
+                warnings: Vec::new(),
+                inputs,
+                pair: 8,
+                outputs: None,
+                resource_manifest: None,
+            })
+            .unwrap();
+        assert_ne!(fresh, id);
+        fs::write(session.directory.join(format!("{fresh:032x}.bin")), b"broken").unwrap();
         assert!(session
-            .validate(id, &host, true, 20_000_000_000)
+            .validate(fresh, &host, true, 20_000_000_000)
             .unwrap()
             .is_none());
         drop(session);

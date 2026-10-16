@@ -36,6 +36,11 @@
 		return "there's nothing on the glass to remove"
 	return TRUE
 
+/// The removal question is asked only of the holder of the glass in the other hand while something is on it.
+/obj/item/reagent_containers/food/drinks/glass2/proc/asks_extra_removal(datum/act/op/A)
+	var/mob/user = A.actor
+	return src == user.get_inactive_hand() && length(extras)
+
 /// Old attack_hand.
 /obj/item/reagent_containers/food/drinks/glass2/proc/interaction_hand(datum/act/op/A)
 	var/refusal = can_remove_extra(A.actor, src, A.held)
@@ -47,9 +52,7 @@
 	if(src != user.get_inactive_hand())
 		return OP_DECLINE
 
-	var/choice = rerun_ask(user, "k37", PROC_REF(interaction_hand), args, /datum/prompt/choice, question = "What would you like to remove from the glass?", title = "Removal Choice", choices = extras)
-	if(isnull(choice))
-		return OP_OK
+	var/choice = A.step_value("k37")
 	if(!choice || !(choice in extras))
 		return OP_OK
 

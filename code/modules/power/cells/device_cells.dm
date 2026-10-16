@@ -156,7 +156,7 @@ CAPABILITIES(/obj/item/cell/device/weapon/recharge/alien)
 	var/obj/item/cell/newcell = new replacement_type(null)
 	user.put_in_active_hand(newcell)
 	newcell.set_charge(newcell.maxcharge * percentage)
-	newcell.persist_storable = original_persist_storable
+	newcell.set_persist_storable(original_persist_storable)
 	return TRUE
 
 // Bloo friendlier hybrid tech

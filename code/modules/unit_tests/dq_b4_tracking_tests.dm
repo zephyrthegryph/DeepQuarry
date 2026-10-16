@@ -63,26 +63,21 @@
 	TEST_ASSERT_EQUAL(draw.hits, 1, "set_use_power() publishes the draw mode")
 
 /// The generated reads reach the HUD reaction: every var key the human HUD pass reads (code/_generated/reads.dm,
-/// reaction_reads()) runs the same on_change reaction as its declared keys.
+/// reaction_reads()) runs the same on_change hook as its declared keys.
 /datum/unit_test/dq_b4_hud_generated_reads_merged
 
 /datum/unit_test/dq_b4_hud_generated_reads_merged/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/rx_table/T = GLOB.rx_tables[H.type] || rx_table_build(H)
-	TEST_ASSERT(T, "a human has a reactions table")
-	for(var/key in list(MOB_KEY_NUTRITION, MOB_KEY_STATUS, "stat:[STAT_ON_FIRE]", "block_hud", "absorbed", "status_flags", \
-		MOB_KEY_HUD_FLAGS, MOB_KEY_VIEW, "species", "mind"))
-		var/found = FALSE
-		for(var/datum/reaction/R in T.by_key[key])
-			if(R.handler == TYPE_PROC_REF(/mob/living, life_hud_changed))
-				found = TRUE
-		TEST_ASSERT(found, "the human HUD reaction reads [key]")
+	var/list/index = change_index_of(H)
+	TEST_ASSERT(islist(index), "a human has an on_change index")
+	var/datum/hook/hud = life_test_hook(H, TYPE_PROC_REF(/mob/living, life_hud_changed))
+	var/datum/hook/vision = life_test_hook(H, TYPE_PROC_REF(/mob/living, life_vision_changed))
+	TEST_ASSERT_NOTNULL(hud, "the HUD hook is declared")
+	TEST_ASSERT_NOTNULL(vision, "the sight hook is declared")
+	for(var/key in list(MOB_KEY_NUTRITION, MOB_KEY_STATUS, "stat:[STAT_ON_FIRE]", "block_hud", "absorbed", "status_flags", MOB_KEY_HUD_FLAGS, MOB_KEY_VIEW, "species", "mind"))
+		TEST_ASSERT(hud in index[key], "the human HUD hook reads [key]")
 	for(var/key in list("see_invisible_default", "seedarkness", MOB_KEY_VIEW))
-		var/found = FALSE
-		for(var/datum/reaction/R in T.by_key[key])
-			if(R.handler == TYPE_PROC_REF(/mob/living, life_vision_changed))
-				found = TRUE
-		TEST_ASSERT(found, "the human sight reaction reads [key]")
+		TEST_ASSERT(vision in index[key], "the human sight hook reads [key]")
 
 /// Each HUD input changed through its setter (or its producer) runs the HUD pass with no manual call, once per drain.
 /datum/unit_test/life_om/dq_b4_hud_follows_each_input
@@ -115,36 +110,36 @@
 			hold(H, STAT_ON_FIRE, TRUE, SRC_FIRE_STACKS)
 		else
 			call(H, "set_[name]")(changes[name])
-		TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "changing [name] queues the HUD pass")
-		rx_drain()
+		TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "changing [name] marks the HUD hook")
+		life_test_drain()
 		TEST_ASSERT_EQUAL(H.hud_runs, 1, "changing [name] draws the HUD once, with no refresh call")
 	// Producers that publish a key.
 	dq_b4_settle(H)
 	H.hud_runs = 0
 	H.flag_hud_update(WANTED_HUD)
-	rx_drain()
+	life_test_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "flag_hud_update() draws the HUD")
 	dq_b4_settle(H)
 	H.hud_runs = 0
 	H.recalculate_vis()
-	rx_drain()
+	life_test_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "a view change (MOB_KEY_VIEW) draws the HUD")
 	H.pretend_client = FALSE
 
-/// Waits out the HUD's at_most window and drains (twice: a pass held by the window runs in the first), so the next
+/// Waits out the HUD's coalesce window and drains (twice: a trailing pass whose window ends in the wait runs in it), so the next
 /// change draws at once.
 /// For the HUD probe it waits until a whole window passes with no pass (Life frames drain fear and tiredness).
 /datum/unit_test/life_om/proc/dq_b4_settle(mob/living/L)
 	var/mob/living/carbon/human/dq_test_hud_probe/P = istype(L, /mob/living/carbon/human/dq_test_hud_probe) ? L : null
 	for(var/i in 1 to 8)
-		rx_drain()
+		life_test_drain()
 		var/runs = P?.hud_runs
 		scheduler_advance(LIFE_PRESENT_MIN_INTERVAL / 10 + 0.1)
-		rx_drain()
+		life_test_drain()
 		if(!P || P.hud_runs == runs)
 			break
 
-/// Coalescing holds for generated reads: many inputs changed inside the at_most window draw once when it ends.
+/// Coalescing holds for generated reads: many inputs changed inside the coalesce window draw once when it ends.
 /datum/unit_test/life_om/dq_b4_hud_generated_reads_coalesce
 
 /datum/unit_test/life_om/dq_b4_hud_generated_reads_coalesce/run_life()
@@ -154,17 +149,17 @@
 	dq_b4_settle(H)
 	H.hud_runs = 0
 	H.status_set(STAT_FEAR, 10)
-	rx_drain()
+	life_test_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "the first change draws at the drain")
 	for(var/i in 1 to 5)
 		H.status_set(STAT_FEAR, 10 + i)
 		H.status_set(STAT_TIREDNESS, i)
 		H.adjust_nutrition(-1)
 		H.flag_hud_update(HEALTH_HUD)
-		rx_drain()
+		life_test_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "changes inside the window are held")
 	scheduler_advance(LIFE_PRESENT_MIN_INTERVAL / 10 + 0.1)
-	rx_drain()
+	life_test_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 2, "and drawn once when it ends")
 	H.pretend_client = FALSE
 
@@ -197,8 +192,8 @@
 	TEST_ASSERT(!H.lying, "standing to begin with")
 	H.set_resting(TRUE)
 	TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_canmove_changed)), "resting queues the canmove derivation")
-	rx_drain()
+	life_test_drain()
 	TEST_ASSERT(H.lying, "resting lays the mob down without an update_canmove() call")
 	H.set_resting(FALSE)
-	rx_drain()
+	life_test_drain()
 	TEST_ASSERT(!H.lying, "and standing up raises it")

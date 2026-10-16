@@ -44,31 +44,36 @@
 MSG_DEF_SELF(radiocarbon_spectrometer/scanning, "you can't do that while it's scanning")
 
 /obj/machinery/radiocarbon_spectrometer/proc/interaction_use_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/I = A.held
-	if(istype(I, /obj/item/reagent_containers/glass))
-		var/obj/item/reagent_containers/glass/G = I
-		if(!G.is_open_container())
-			return OP_OK
-		var/choice = rerun_ask(user, "k74", PROC_REF(interaction_use_item), args, /datum/prompt/choice, question = "What do you want to do with the container?", title = "Radiometric Scanner", choices = list("Add water","Empty water","Scan container"), buttons = TRUE)
-		if(isnull(choice))
-			return OP_DECLINE
-		if(!choice)
-			return OP_OK
-		if(choice == "Add water")
-			if(!G.reagents.has_reagent(REAGENT_ID_WATER))
-				to_chat(user, span_danger("No water found in beaker."))
-				return OP_OK
-			var/trans = G.reagents.trans_id_to(src, REAGENT_ID_WATER, reagent_transfer_amount(G))
-			to_chat(user, span_info("You transfer [trans ? trans : 0]u of water into [src]."))
-			return OP_OK
-		else if(choice == "Empty water")
-			var/amount_transferred = min(G.reagents.maximum_volume - G.reagents.total_volume, reagents.total_volume)
-			var/trans = reagents.trans_to(G, amount_transferred)
-			to_chat(user, span_info("You remove [trans ? trans : 0]u of water from [src]."))
-			return OP_OK
-		// fall through
+	return insert_scan_item(A.actor, A.held)
 
+/// An open container is asked what to do with.
+/obj/machinery/radiocarbon_spectrometer/proc/container_is_open(datum/act/op/A)
+	var/obj/item/reagent_containers/glass/G = A.held
+	return G.is_open_container()
+
+/// A container: water goes in or out of the machine as answered; "Scan container" (and a container with no question to ask) is put inside like any item.
+/obj/machinery/radiocarbon_spectrometer/proc/interaction_use_container(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/glass/G = A.held
+	if(!G.is_open_container())
+		return OP_OK
+	var/choice = A.step_value("k74")
+	if(choice == "Add water")
+		if(!G.reagents.has_reagent(REAGENT_ID_WATER))
+			to_chat(user, span_danger("No water found in beaker."))
+			return OP_OK
+		var/trans = G.reagents.trans_id_to(src, REAGENT_ID_WATER, reagent_transfer_amount(G))
+		to_chat(user, span_info("You transfer [trans ? trans : 0]u of water into [src]."))
+		return OP_OK
+	else if(choice == "Empty water")
+		var/amount_transferred = min(G.reagents.maximum_volume - G.reagents.total_volume, reagents.total_volume)
+		var/trans = reagents.trans_to(G, amount_transferred)
+		to_chat(user, span_info("You remove [trans ? trans : 0]u of water from [src]."))
+		return OP_OK
+	return insert_scan_item(user, G)
+
+/// `I` is put inside to be scanned.
+/obj/machinery/radiocarbon_spectrometer/proc/insert_scan_item(mob/user, obj/item/I)
 	if(scanned_item())
 		to_chat(user, span_warning("[src] already has \a [scanned_item()] inside!"))
 		return OP_OK
@@ -79,6 +84,7 @@ MSG_DEF_SELF(radiocarbon_spectrometer/scanning, "you can't do that while it's sc
 	rel_set(src, nameof(scanned_item), I)
 	to_chat(user, span_notice("You put [I] into [src]."))
 	return OP_OK
+
 
 /obj/machinery/radiocarbon_spectrometer/proc/interaction_use(datum/act/op/A)
 	var/mob/user = A.actor
@@ -95,6 +101,9 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 	op("set_scanner_rpm_delta", ui_act("set_scanner_rpm_delta", arg("delta", num())), then(PROC_REF(ui_act_set_scanner_rpm_delta)))
 	op("inject_radiation", ui_act("inject_radiation"), then(PROC_REF(ui_act_inject_radiation)))
 	op("use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(scanning), FALSE, because = MSG(radiocarbon_spectrometer/scanning))), then(PROC_REF(interaction_use_item)))
+	op("use_container", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(scanning), FALSE, because = MSG(radiocarbon_spectrometer/scanning))),
+		asks(/datum/prompt/choice, fields = list("question" = "What do you want to do with the container?", "title" = "Radiometric Scanner", "choices" = list("Add water","Empty water","Scan container"), "buttons" = TRUE, "timeout" = 0), step = "k74", when = PROC_REF(container_is_open)),
+		then(PROC_REF(interaction_use_container)))
 	op("use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/radiocarbon_spectrometer/ui_data(datum/act/eval/A)

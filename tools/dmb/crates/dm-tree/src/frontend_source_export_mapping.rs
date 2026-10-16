@@ -185,7 +185,10 @@ impl SourceExportMapping {
     /// the first origin of the occurrence's source offset, as `location` picks.
     pub fn location_of(&self, ordinal: OccurrenceId) -> Option<SourceLocation> {
         if let Some(all) = self.locations.get() {
-            return all.get(ordinal.0 as usize).and_then(Option::as_ref).cloned();
+            return all
+                .get(ordinal.0 as usize)
+                .and_then(Option::as_ref)
+                .cloned();
         }
         let provenance = &self.occurrences.get(ordinal)?.provenance;
         let offset = self
@@ -286,7 +289,7 @@ mod tests;
 fn source_revision(frontend: &ColdFrontend) -> u128 {
     use xxhash_rust::xxh3::Xxh3;
     let mut hash = Xxh3::new();
-    hash.update(b"dm-analysis-source-revision-v2\0");
+    hash.update(b"dm-analysis-source-revision-v3\0");
     if let Some(mapping) = frontend.source_export_mapping() {
         hash.update(&mapping.coordinate_fingerprint().to_le_bytes());
     }
@@ -312,52 +315,86 @@ fn source_revision(frontend: &ColdFrontend) -> u128 {
             .expect("whole expanded range")
             .to_le_bytes(),
     );
-    let mut traces = HashMap::new();
-    for origin in frontend.expanded.origins.iter() {
-        let trace = traces
-            .entry(std::sync::Arc::as_ptr(origin.macro_expansions) as usize)
-            .or_insert_with(|| {
-                let mut trace = Xxh3::new();
-                for expansion in origin.macro_expansions.iter() {
-                    let update = |hash: &mut Xxh3, value: &[u8]| {
-                        hash.update(&(value.len() as u64).to_le_bytes());
-                        hash.update(value);
-                    };
-                    update(&mut trace, expansion.name.as_bytes());
-                    trace.update(&(expansion.invocation_span.start as u64).to_le_bytes());
-                    trace.update(&(expansion.invocation_span.end as u64).to_le_bytes());
-                    trace.update(&(expansion.replacement_chain.len() as u64).to_le_bytes());
-                    for name in expansion.replacement_chain.iter() {
-                        update(&mut trace, name.as_bytes());
-                    }
-                    trace.update(&[u8::from(expansion.definition.is_some())]);
-                    if let Some(definition) = &expansion.definition {
-                        update(&mut trace, definition.path.to_string_lossy().as_bytes());
-                        for value in [
-                            definition.source_span.start,
-                            definition.source_span.end,
-                            definition.source_line,
-                        ] {
-                            trace.update(&(value as u64).to_le_bytes());
+    // The origin rows dominate the cost (hundreds of thousands of them, each with a path string). Fixed
+    // chunks are digested independently and combined in order, so the value does not depend on how many
+    // threads run them.
+    let origins = &frontend.expanded.origins;
+    let chunk_digest = |range: std::ops::Range<usize>| -> u128 {
+        let mut hash = Xxh3::new();
+        let mut traces = HashMap::new();
+        for index in range {
+            let Some(origin) = origins.get(index) else {
+                break;
+            };
+            let trace = traces
+                .entry(std::sync::Arc::as_ptr(origin.macro_expansions) as usize)
+                .or_insert_with(|| {
+                    let mut trace = Xxh3::new();
+                    for expansion in origin.macro_expansions.iter() {
+                        let update = |hash: &mut Xxh3, value: &[u8]| {
+                            hash.update(&(value.len() as u64).to_le_bytes());
+                            hash.update(value);
+                        };
+                        update(&mut trace, expansion.name.as_bytes());
+                        trace.update(&(expansion.invocation_span.start as u64).to_le_bytes());
+                        trace.update(&(expansion.invocation_span.end as u64).to_le_bytes());
+                        trace.update(&(expansion.replacement_chain.len() as u64).to_le_bytes());
+                        for name in expansion.replacement_chain.iter() {
+                            update(&mut trace, name.as_bytes());
+                        }
+                        trace.update(&[u8::from(expansion.definition.is_some())]);
+                        if let Some(definition) = &expansion.definition {
+                            update(&mut trace, definition.path.to_string_lossy().as_bytes());
+                            for value in [
+                                definition.source_span.start,
+                                definition.source_span.end,
+                                definition.source_line,
+                            ] {
+                                trace.update(&(value as u64).to_le_bytes());
+                            }
                         }
                     }
-                }
-                trace.digest128()
-            });
-        hash.update(&trace.to_le_bytes());
-        let path = origin.origin.path.to_string_lossy();
-        hash.update(&(path.len() as u64).to_le_bytes());
-        hash.update(path.as_bytes());
-        for value in [
-            origin.output_span.start,
-            origin.output_span.end,
-            origin.source_span.start,
-            origin.source_span.end,
-            origin.region,
-            origin.origin.source_line,
-        ] {
-            hash.update(&(value as u64).to_le_bytes());
+                    trace.digest128()
+                });
+            hash.update(&trace.to_le_bytes());
+            let path = origin.origin.path.to_string_lossy();
+            hash.update(&(path.len() as u64).to_le_bytes());
+            hash.update(path.as_bytes());
+            for value in [
+                origin.output_span.start,
+                origin.output_span.end,
+                origin.source_span.start,
+                origin.source_span.end,
+                origin.region,
+                origin.origin.source_line,
+            ] {
+                hash.update(&(value as u64).to_le_bytes());
+            }
         }
+        hash.digest128()
+    };
+    const CHUNK: usize = 16 * 1024;
+    let chunks = origins.len().div_ceil(CHUNK);
+    let threads = std::thread::available_parallelism()
+        .map_or(1, |n| n.get())
+        .min(8)
+        .min(chunks.max(1));
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let digests = std::sync::Mutex::new(vec![0u128; chunks]);
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            scope.spawn(|| loop {
+                let chunk = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                if chunk >= chunks {
+                    break;
+                }
+                let digest = chunk_digest(chunk * CHUNK..((chunk + 1) * CHUNK).min(origins.len()));
+                digests.lock().unwrap_or_else(|e| e.into_inner())[chunk] = digest;
+            });
+        }
+    });
+    for digest in digests.into_inner().unwrap_or_else(|e| e.into_inner()) {
+        hash.update(&digest.to_le_bytes());
     }
     hash.digest128()
 }

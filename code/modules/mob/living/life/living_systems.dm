@@ -341,12 +341,11 @@
 // --- Output -----------------------------------------------------------------------------------
 
 // --- Reactive output: canmove, HUD and sight (doc/rewrite/life_sequences.md S2) -------------------
-// Three on_change() reactions on /mob/living, not Life steps: each runs when one of its keys is published
-// (the mob's tracked stat, or a MOB_KEY_* fact its producer publishes: PUBLISH_CHANGE), coalesced per drain.
-// HUD and sight run at most every
-// LIFE_PRESENT_MIN_INTERVAL (a walking player raises a location change most ticks and the HUD needs only
-// the latest state). The HUD reaction's `when` is life_hud_wanted(): a mob without a client queues
-// nothing. Rewakes (darksight re-adapting, a fading overlay, a remote-view listener) are keyed after()
+// Three on_change(cond_published(...)) entries in CAPABILITIES(/mob/living) (combat_ai/integration/mob_living.dm), not Life steps:
+// each runs when one of its keys is published (the mob's tracked stat, or a MOB_KEY_* fact its producer publishes:
+// PUBLISH_CHANGE), once per drain. HUD and sight are coalesce(leading = TRUE): the first change runs at once, the rest
+// inside one LIFE_PRESENT_MIN_INTERVAL are held for one trailing run (a walking player raises a location change most ticks and the HUD needs only
+// the latest state). The HUD entry's `when` is life_hud_wanted(): a mob without a client opens no window. Rewakes (darksight re-adapting, a fading overlay, a remote-view listener) are keyed after()
 // timers. There is no manual refresh: each reaction declares the facts below by hand (published keys), and
 // tools/ci/derived_reads_lint.py generates the rest from what its procs and their helpers read
 // (reaction_reads() in code/_generated/reads.dm: every such var is tracked, a relation, or PUBLISHED_BY a key).
@@ -361,32 +360,22 @@
 #define LIFE_HUD_REWAKE "life_hud"
 #define LIFE_VISION_REWAKE "life_vision"
 
-/mob/living/reactions()
-	. = ..()
-	. += on_change(list(MOB_KEY_STATUS, nameof(stat)), PROC_REF(life_canmove_changed), when = PROC_REF(life_canmove_wanted))
-	. += on_change(list(MOB_KEY_HEALTH, MOB_KEY_STATUS, MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_CLIENT, MOB_KEY_VIEW, \
-		MOB_KEY_HUD_FLAGS, MOB_KEY_NUTRITION, "stat:[STAT_ON_FIRE]", nameof(stat), nameof(sdisabilities), nameof(ear_damage)), \
-		PROC_REF(life_hud_changed), at_most = LIFE_PRESENT_MIN_INTERVAL, when = PROC_REF(life_hud_wanted))
-	. += on_change(list(MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_HEALTH, MOB_KEY_CLIENT, MOB_KEY_VIEW, nameof(stat), \
-		nameof(sdisabilities), nameof(cameraFollow), nameof(tf_mob_holder), nameof(virtual_reality_mob)), \
-		PROC_REF(life_vision_changed), at_most = LIFE_PRESENT_MIN_INTERVAL, when = PROC_REF(life_vision_wanted))
-
 /// Not transforming and somewhere (the Life frame's "placed").
 /mob/living/proc/life_placed()
 	return loc && !transforming
 
-/mob/living/proc/life_canmove_wanted()
+/mob/living/proc/life_canmove_wanted(datum/act/A)
 	return life_set & LIFE_CANMOVE_SETS
 
 /// The HUD reaction's gate: only a mob with a client draws one.
-/mob/living/proc/life_hud_wanted()
+/mob/living/proc/life_hud_wanted(datum/act/A)
 	return client && (life_set & LIFE_PRESENT_SETS)
 
 /// Sight flags matter for every living mob, client or not.
-/mob/living/proc/life_vision_wanted()
+/mob/living/proc/life_vision_wanted(datum/act/A)
 	return life_set & LIFE_PRESENT_SETS
 
-/mob/living/proc/life_canmove_changed(list/keys)
+/mob/living/proc/life_canmove_changed(datum/act/A)
 	if(QDELETED(src) || !life_canmove_wanted())
 		return
 	life_canmove()
@@ -397,7 +386,7 @@
 	if(life_placed())
 		update_canmove()
 
-/mob/living/proc/life_hud_changed(list/keys)
+/mob/living/proc/life_hud_changed(datum/act/A)
 	if(QDELETED(src) || !life_hud_wanted())
 		return
 	life_hud_pass()
@@ -417,7 +406,7 @@
 		return
 	life_hud_pass()
 
-/mob/living/proc/life_vision_changed(list/keys)
+/mob/living/proc/life_vision_changed(datum/act/A)
 	if(QDELETED(src) || !life_vision_wanted())
 		return
 	life_vision_pass()

@@ -373,13 +373,6 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	if(!ui_gate(A))
 		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
-	if(WS.autopilot)
-		to_chat(user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
-		return
-
-	if(COOLDOWN_TIMELEFT(WS, drive_cooldown) > 0)
-		to_chat(user, span_red("The ship's drive is inoperable while the engines are charging."))
-		return
 
 	var/index = traverse
 	var/datum/shuttle_route/new_route = LAZYACCESS(WS.web_master.current_destination().routes, index)
@@ -387,7 +380,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 		message_admins("ERROR: Shuttle computer was asked to traverse a nonexistant route.")
 		return
 
-	if(!check_docking(user, WS))
+	if(A.step_value("k398") == "Cancel" || A.step_value("k402") == "Cancel")
 		return TRUE
 
 	var/datum/shuttle_destination/target_destination = new_route.get_other_side(WS.web_master.current_destination())
@@ -410,25 +403,25 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	else
 		WS.short_jump(target_destination.my_landmark())
 
-//check if we're undocked, give option to force launch
-/obj/machinery/computer/shuttle_control/web/proc/check_docking(mob/user, datum/shuttle/autodock/MS)
-	if(MS.skip_docking_checks() || MS.check_undocked())
-		return 1
+/// The vessel cannot be driven by hand while the autopilot flies it or the engines charge (the questions of the traverse button are not asked of a refused one).
+/obj/machinery/computer/shuttle_control/web/proc/traverse_ready(datum/act/op/A)
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[read_once(shuttle_tag)]
+	if(!istype(WS))
+		return null // the button's gate says the link is missing
+	if(WS.autopilot)
+		return span_warning("The autopilot must be disabled before you can control the vessel manually.")
+	if(COOLDOWN_TIMELEFT(WS, drive_cooldown) > 0)
+		return span_red("The ship's drive is inoperable while the engines are charging.")
+	return null
 
-	var/choice = rerun_ask(user, "k398", PROC_REF(check_docking), args, /datum/prompt/choice, question = "The shuttle is currently docked! Please undock before continuing.", title = "Error", choices = list("Cancel","Force Launch"), buttons = TRUE)
-	if(isnull(choice))
-		return
-	if(!choice || choice == "Cancel")
-		return 0
+/// The shuttle is docked: the pilot is told so and may force the launch.
+/obj/machinery/computer/shuttle_control/web/proc/traverse_docked(datum/act/op/A)
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[read_once(shuttle_tag)]
+	return istype(WS) && !(WS.skip_docking_checks() || WS.check_undocked())
 
-	var/_answer_k402 = rerun_ask(user, "k402", PROC_REF(check_docking), args, /datum/prompt/choice, question = "Forcing a shuttle launch while docked may result in severe injury, death and/or damage to property. Are you sure you wish to continue?", title = "Force Launch", choices = list("Force Launch", "Cancel"), buttons = TRUE)
-	if(isnull(_answer_k402))
-		return
-	choice = _answer_k402
-	if(!choice || choice == "Cancel")
-		return 0
-
-	return 1
+/// A forced launch is asked to be sure about.
+/obj/machinery/computer/shuttle_control/web/proc/traverse_force_asked(datum/act/op/A)
+	return A.step_value("k398") == "Force Launch"
 
 // Props, for now.
 /obj/structure/flight_left
@@ -536,7 +529,10 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control/web)
 	op("undock_command", ui_act("undock_command"), then(PROC_REF(ui_act_undock_command)))
 	op("toggle_cloaking", ui_act("toggle_cloaking"), then(PROC_REF(ui_act_toggle_cloaking)))
 	op("toggle_autopilot", ui_act("toggle_autopilot"), then(PROC_REF(ui_act_toggle_autopilot)))
-	op("traverse", ui_act("traverse", arg("traverse", num())), then(PROC_REF(ui_act_traverse)))
+	op("traverse", ui_act("traverse", arg("traverse", num())), needs(req(PROC_REF(traverse_ready))),
+		asks(/datum/prompt/choice, fields = list("question" = "The shuttle is currently docked! Please undock before continuing.", "title" = "Error", "choices" = list("Cancel","Force Launch"), "buttons" = TRUE, "timeout" = 0), step = "k398", when = PROC_REF(traverse_docked)),
+		asks(/datum/prompt/choice, fields = list("question" = "Forcing a shuttle launch while docked may result in severe injury, death and/or damage to property. Are you sure you wish to continue?", "title" = "Force Launch", "choices" = list("Force Launch", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "k402", when = PROC_REF(traverse_force_asked)),
+		then(PROC_REF(ui_act_traverse)))
 	op("register_helmet", item(/obj/item/clothing/head/pilot), priority(OP_PRIORITY_DEFAULT - 1), label("Register helmet"), when(req(PROC_REF(has_shuttle_holds))), then(PROC_REF(interaction_register_helmet)))
 
 /datum/prompt/text/web_shuttle_name

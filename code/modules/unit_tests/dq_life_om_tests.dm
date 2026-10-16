@@ -127,7 +127,7 @@
 	while(left > 0)
 		var/step = min(left, 1)
 		test_time(step * 10)
-		rx_drain()
+		life_test_drain()
 		left -= step
 
 // --- Test-only contributed steps (added per mob with seq_extra_add(); never in a table otherwise) ---------------------
@@ -214,22 +214,49 @@
 /// The handlers (as text) of `L`'s on_change() reactions.
 /proc/life_test_reaction_handlers(mob/living/L)
 	. = list()
-	var/datum/rx_table/T = rx_table_of(L)
-	for(var/key in T?.by_key)
-		for(var/datum/reaction/R as anything in T.by_key[key])
-			. |= "[R.handler]"
+	for(var/datum/hook/H as anything in hook_table_of(table_of(L)))
+		if(H.kind == HOOK_CHANGE)
+			. |= life_test_hook_handler(H)
+
+/// The name of the handler a published on_change hook runs (its then()), as text.
+/proc/life_test_hook_handler(datum/hook/H)
+	for(var/datum/entry/part in H.entry.children)
+		if(part.kind == ENTRY_THEN)
+			return "[part.args["handler"]]"
+	return null
+
+/// A handler ref (a PROC_REF name or a TYPE_PROC_REF path) as the bare proc name a hook stores.
+/proc/life_test_handler_name(handler)
+	var/name = "[handler]"
+	return copytext(name, findlasttext(name, "/") + 1)
+
+/// The on_change hook of `L`'s type that runs `handler`, or null.
+/proc/life_test_hook(mob/living/L, handler)
+	RETURN_TYPE(/datum/hook)
+	var/name = life_test_handler_name(handler)
+	for(var/datum/hook/H as anything in hook_table_of(table_of(L)))
+		if(H.kind == HOOK_CHANGE && life_test_hook_handler(H) == name)
+			return H
+	return null
+
+/// Drains what a Life reaction is owed: the legacy change queue, then the marked on_change hooks.
+/proc/life_test_drain()
+	rx_drain()
+	act_drain_point()
 
 /// Raises a mob change the way its producer does: publishes the change key Life's steps and the presentation reactions read.
 /proc/life_test_raise(mob/living/L, key)
 	PUBLISH_CHANGE(L, key)
 
-/// TRUE when `L`'s reaction with `handler` is queued for the next drain.
+/// TRUE when `L`'s on_change hook with `handler` is marked for the next drain (its `when` gate is asked at the drain, not here).
 /proc/life_test_rx_queued(mob/living/L, handler)
-	var/list/per = GLOB.rx_pending[L]
-	for(var/datum/reaction/R in per)
-		if(R.handler == handler)
-			return TRUE
-	return FALSE
+	var/datum/hook/H = life_test_hook(L, handler)
+	return !!H && !!GLOB.hook_change_pending[L]?[H]
+
+/// TRUE while `L`'s coalesce window of the hook running `handler` is open (a trigger passed the hook's gates and its run is waiting).
+/proc/life_test_window_open(mob/living/L, handler)
+	var/datum/hook/H = life_test_hook(L, handler)
+	return !!H && coalesce_pending(L, H)
 
 // --- Content: tables, overrides, conditions ----------------------------------------------------------------------------
 
@@ -291,7 +318,7 @@
 	TEST_ASSERT(life_test_in_order(keys, expected), "human steps are missing or out of order: [jointext(keys, ", ")]")
 	TEST_ASSERT(!("life_robot_power" in keys), "a human must not get robot steps")
 	var/list/handlers = life_test_reaction_handlers(H)
-	TEST_ASSERT(("[TYPE_PROC_REF(/mob/living, life_canmove_changed)]" in handlers) && ("[TYPE_PROC_REF(/mob/living, life_hud_changed)]" in handlers) && ("[TYPE_PROC_REF(/mob/living, life_vision_changed)]" in handlers), "canmove, HUD and sight are reactions on the mob: [jointext(handlers, ", ")]")
+	TEST_ASSERT(("life_canmove_changed" in handlers) && ("life_hud_changed" in handlers) && ("life_vision_changed" in handlers), "canmove, HUD and sight are on_change entries of the mob: [jointext(handlers, ", ")]")
 	TEST_ASSERT(H.life_canmove_wanted() && H.life_vision_wanted(), "a human derives canmove and sight, client or not")
 	TEST_ASSERT(!H.life_hud_wanted(), "but draws no HUD without a client")
 
@@ -681,7 +708,7 @@
 	TEST_ASSERT(!H.has_status(STAT_PARALYZED), "status_set(0) ends it")
 
 /// canmove is a reaction: a status change derives it at the drain, with no Life frame. A clientless mob's HUD
-/// reaction queues nothing (its `when` gate).
+/// reaction opens no window (its `when` gate).
 /datum/unit_test/life_om/derive_and_present
 
 /datum/unit_test/life_om/derive_and_present/run_life()
@@ -691,9 +718,9 @@
 	H.status_set(STAT_SLEEPING, 2)
 	H.set_canmove(TRUE)
 	life_test_raise(H, MOB_KEY_STATUS)
-	TEST_ASSERT(!life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "a clientless mob queues no HUD pass")
-	TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_canmove_changed)), "the canmove reaction is queued")
-	rx_drain()
+	TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_canmove_changed)), "the canmove reaction is marked")
+	life_test_drain()
+	TEST_ASSERT(!life_test_window_open(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "a clientless mob opens no HUD window: the when gate stops the trigger")
 	TEST_ASSERT(!H.canmove, "a status change ran the canmove derivation without a frame")
 	TEST_ASSERT_EQUAL(life_test_frames(H), frames, "no life frame ran for it")
 	H.status_set(STAT_SLEEPING, 0)
@@ -703,34 +730,32 @@
 	var/pretend_client = FALSE
 	var/hud_runs = 0
 
-/mob/living/carbon/human/dq_test_hud_probe/life_hud_wanted()
+/mob/living/carbon/human/dq_test_hud_probe/life_hud_wanted(datum/act/A)
 	return pretend_client
 
 /mob/living/carbon/human/dq_test_hud_probe/life_hud()
 	hud_runs++
 	return ..()
 
-/// The HUD reaction's `when` is the has_client gate: without one a HUD channel queues nothing and nothing runs; with
-/// one the next drain draws it.
+/// The HUD reaction's `when` is the has_client gate: without one a HUD key runs nothing; with one the next drain draws it.
 /datum/unit_test/life_om/hud_gate_has_client
 
 /datum/unit_test/life_om/hud_gate_has_client/run_life()
 	var/mob/living/carbon/human/dq_test_hud_probe/H = allocate(/mob/living/carbon/human/dq_test_hud_probe)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
-	rx_drain()
+	life_test_drain()
 	H.hud_runs = 0
 	for(var/key in list(MOB_KEY_LOC, MOB_KEY_HEALTH, MOB_KEY_EQUIPMENT, MOB_KEY_STATUS))
 		life_test_raise(H, key)
-	TEST_ASSERT(!life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "no client: nothing is queued")
-	rx_drain()
+	life_test_drain()
+	TEST_ASSERT(!life_test_window_open(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "no client: no window opens")
 	TEST_ASSERT_EQUAL(H.hud_runs, 0, "and no HUD pass runs")
 	H.pretend_client = TRUE
 	life_test_raise(H, MOB_KEY_CLIENT)
-	TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "a client logging in queues the HUD")
-	rx_drain()
-	TEST_ASSERT_EQUAL(H.hud_runs, 1, "which draws once")
+	life_test_drain()
+	TEST_ASSERT_EQUAL(H.hud_runs, 1, "a client logging in draws the HUD once")
 
-/// on_change(at_most = LIFE_PRESENT_MIN_INTERVAL): a walking player raises a location change most ticks; the HUD draws
+/// coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE): a walking player raises a location change most ticks; the HUD draws
 /// once, then the changes inside the window are held and drawn once when it ends.
 /datum/unit_test/life_om/hud_at_most_coalesces
 
@@ -738,23 +763,23 @@
 	var/mob/living/carbon/human/dq_test_hud_probe/H = allocate(/mob/living/carbon/human/dq_test_hud_probe)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.pretend_client = TRUE
-	rx_drain()
+	life_test_drain()
 	life_test_advance(LIFE_PRESENT_MIN_INTERVAL / 10 + 0.1)
-	rx_drain()
+	life_test_drain()
 	H.hud_runs = 0
 	life_test_raise(H, MOB_KEY_LOC)
-	rx_drain()
+	life_test_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "the first change draws at the drain")
 	for(var/i in 1 to 4)
 		life_test_raise(H, MOB_KEY_LOC)
 		life_test_raise(H, MOB_KEY_HEALTH)
-		rx_drain()
+		life_test_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "changes inside the window are held")
 	life_test_advance(LIFE_PRESENT_MIN_INTERVAL / 10 + 0.1)
-	rx_drain()
+	life_test_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 2, "and drawn once when it ends")
 	life_test_advance(LIFE_PRESENT_MIN_INTERVAL / 10 + 0.1)
-	rx_drain()
+	life_test_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 2, "nothing more was held")
 
 /// The step profiler samples by a sequence-wide frame counter, so every mob is sampled at the same rate (Codex bug:
@@ -997,11 +1022,10 @@
 /mob/living/carbon/human/dq_test_status_probe
 	var/status_deliveries = 0
 
-/mob/living/carbon/human/dq_test_status_probe/reactions()
-	. = ..()
-	. += on_change(list(MOB_KEY_STATUS), PROC_REF(probe_status))
+CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
+	on_change(cond_published(MOB_KEY_STATUS), ANY, then(PROC_REF(probe_status)))
 
-/mob/living/carbon/human/dq_test_status_probe/proc/probe_status(list/keys)
+/mob/living/carbon/human/dq_test_status_probe/proc/probe_status(datum/act/A)
 	status_deliveries++
 
 /// A status change publishes MOB_KEY_STATUS, and a change that doesn't change the value publishes nothing.
@@ -1011,22 +1035,22 @@
 	var/mob/living/carbon/human/dq_test_status_probe/H = allocate(/mob/living/carbon/human/dq_test_status_probe)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	hold(H, STAT_SUSPENDED, TRUE, H) // no frames
-	rx_drain()
+	life_test_drain()
 	H.status_deliveries = 0
 	H.status_at_least(STAT_STUNNED, 2)
-	rx_drain()
+	life_test_drain()
 	TEST_ASSERT_EQUAL(H.status_deliveries, 1, "starting a stun publishes the status key once")
 	H.status_at_least(STAT_SLURRING, 3)
-	rx_drain()
+	life_test_drain()
 	H.status_deliveries = 0
 	H.status_at_least(STAT_STUNNED, 4)
 	H.status_adjust(STAT_STUNNED, -1)
 	H.status_at_least(STAT_SLURRING, 5)
 	H.status_at_least(STAT_STUNNED, 1)
-	rx_drain()
+	life_test_drain()
 	TEST_ASSERT_EQUAL(H.status_deliveries, 0, "extending or shortening an active status publishes nothing")
 	H.status_set(STAT_STUNNED, 0)
-	rx_drain()
+	life_test_drain()
 	TEST_ASSERT_EQUAL(H.status_deliveries, 1, "ending it publishes once")
 
 /// Life never wakes itself: a frame on a mob with running statuses raises no status change, so a sleeping mouse

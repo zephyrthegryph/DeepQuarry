@@ -52,12 +52,14 @@
 	F.refuse = TRUE
 	TEST_ASSERT_EQUAL(guard(F, GUARD_STUMBLED_INTO, F), "refused", "a reason refuses")
 	TEST_ASSERT_NULL(guard(F, GUARD_FALL, F), "an unguarded key is never refused")
-	// Every living mob guards its stumbles, falls, thrown hits and crossings (spontaneous vore).
+	// Every living mob takes over its stumbles, falls, thrown hits and crossings (spontaneous vore): world actions with an instead() hook.
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	for(var/key in list(GUARD_STUMBLED_INTO, GUARD_FALL, GUARD_THROWN_HIT, GUARD_CROSS))
-		TEST_ASSERT(guarded(H, key), "a living mob guards [key]")
+	for(var/act_type in list(/datum/act/stumbled_into, /datum/act/fall, /datum/act/thrown_hit, /datum/act/cross))
+		TEST_ASSERT(act_wanted(H, act_type), "a living mob hooks [act_type]")
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human)
-	TEST_ASSERT_NULL(guard(H, GUARD_STUMBLED_INTO, other), "with vore preferences off nobody is eaten: the stumble proceeds")
+	var/datum/act/stumbled_into/stumble = ACT_TRY(H, stumbled_into, other)
+	TEST_ASSERT(stumble, "with vore preferences off nobody is eaten: the stumble proceeds")
+	act_done(stumble)
 
 /// on_change(when =): a holder the gate excludes queues nothing when the key is published.
 /datum/unit_test/dq_a1_on_change_when/Run()

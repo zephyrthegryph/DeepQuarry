@@ -44,17 +44,28 @@
 		to_chat(user,span_danger("You couldn't connect the hose, as the connection stopped existing! Ohno!"))
 		return FALSE
 
-	// Check for destinations
+	// Choose destination
+	var/datum/op_result/asked = perform_op(user, src, "inflation_choose", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("other" = other, "origin" = origin, "target" = target, "distancetonode" = distancetonode, "tubing" = tubing))
+	return asked.outcome != ACT_REFUSED
+
+/// The places the hose can connect into the owner.
+/datum/hose_connector/inflation/proc/inflation_options(datum/act/op/A)
 	var/list/options = list("Mouth")
 	if(vore_selected_of(human_owner()))
 		options.Add("Belly ([sanitize(vore_selected_of(human_owner()).name)])")
 	if(!HAS_SYNTHETIC_BIOLOGY(human_owner())) // Results in a lot of bad behaviors...
 		options.Add("Bloodstream")
+	return options
 
-	// Choose destination
-	var/choice = rerun_ask(user, "a1", PROC_REF(inflation_setup), args, /datum/prompt/choice, question = "Select where this hose connects.", title = "Hose Connection", choices = options, buttons = TRUE)
-	if(isnull(choice))
-		return
+/// The destination was chosen (what inflation_setup did after its question): the connection is set up and the timed connecting starts.
+/datum/hose_connector/inflation/proc/inflation_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/hose_connector/other = A.arg("other")
+	var/datum/hose_connector/origin = A.arg("origin")
+	var/datum/hose_connector/target = A.arg("target")
+	var/distancetonode = A.arg("distancetonode")
+	var/obj/item/stack/tubing = A.arg("tubing")
+	var/choice = A.step_value("a1")
 	if(!user.Adjacent(human_owner()) || !choice)
 		to_chat(user,span_notice("You decide not to connect \the [human_owner()] to the hose."))
 		return FALSE
@@ -76,11 +87,14 @@
 	// Display action
 	name = "[human_owner()]'s [feedback]"
 	act_message(user, null, others = "%U% starts to connect the hose to \the [human_owner()]'s [feedback]...")
-	var/datum/op_result/started = perform_op(user, src, "inflation_connect", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("other" = other, "origin" = origin, "target" = target, "distancetonode" = distancetonode, "tubing" = tubing, "feedback" = feedback))
-	return started.outcome != ACT_REFUSED
+	perform_op(user, src, "inflation_connect", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("other" = other, "origin" = origin, "target" = target, "distancetonode" = distancetonode, "tubing" = tubing, "feedback" = feedback))
+	return OP_OK
 
 // Connecting the hose to the owner: seven seconds.
 CAPABILITIES(/datum/hose_connector/inflation)
+	op("inflation_choose", ai(), takes("other", "origin", "target", "distancetonode", "tubing"),
+		asks(/datum/prompt/choice, fields = list("question" = "Select where this hose connects.", "title" = "Hose Connection", "choices" = computed(PROC_REF(inflation_options)), "buttons" = TRUE, "timeout" = 0), step = "a1"),
+		then(PROC_REF(inflation_chosen)))
 	op("inflation_connect", ai(), takes("other", "origin", "target", "distancetonode", "tubing", "feedback"), wait(7 SECONDS), on_interrupt(PROC_REF(inflation_failed)), then(PROC_REF(inflation_connected)))
 
 /datum/hose_connector/inflation/proc/inflation_failed(datum/act/op/A)

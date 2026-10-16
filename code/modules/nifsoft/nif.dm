@@ -273,7 +273,7 @@ MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that need
 /obj/item/nif/proc/handle_install()
 	if(human.stat || !human.mind) //No stuff while KO or not sleeved
 		return FALSE
-	persist_storable = FALSE // I am not sure if polaris has nifs, but just in case.
+	set_persist_storable(FALSE) // I am not sure if polaris has nifs, but just in case.
 	//Firsties
 	if(!install_done)
 		if(human.mind.name == owner)

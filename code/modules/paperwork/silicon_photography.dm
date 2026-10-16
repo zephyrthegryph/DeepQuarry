@@ -35,26 +35,26 @@ CAPABILITIES(/obj/item/camera/siliconcam)
 	// Always save locally
 	injectaialbum(p)
 
-/obj/item/camera/siliconcam/proc/selectpicture(mob/user, obj/item/camera/siliconcam/cam)
+/// The names of the saved pictures `user` can pick from (the question's choices).
+/obj/item/camera/siliconcam/proc/picture_names(mob/user)
+	var/obj/item/camera/siliconcam/cam = getsource(user)
+	var/list/names = list()
+	for(var/obj/item/photo/t in cam.aipictures)
+		names += t.name
+	return names
+
+/// The saved picture named `picked_name` (the answer to the question picture_names() offered), or null.
+/obj/item/camera/siliconcam/proc/selectpicture(mob/user, picked_name, obj/item/camera/siliconcam/cam)
 	if(!cam)
 		cam = getsource(user)
 
-	var/list/nametemp = list()
-	var/find
 	if(length(cam.aipictures) == 0)
 		to_chat(user, span_userdanger("No images saved"))
 		return
-	for(var/obj/item/photo/t in cam.aipictures)
-		nametemp += t.name
-	var/_answer_k50 = rerun_ask(user, "k50", PROC_REF(selectpicture), args, /datum/prompt/choice, question = "Select image (numbered in order taken)", title = "Picture Choice", choices = nametemp)
-	if(isnull(_answer_k50))
+	if(!picked_name)
 		return
-	find = _answer_k50
-	if(!find)
-		return
-
 	for(var/obj/item/photo/q in cam.aipictures)
-		if(q.name == find)
+		if(q.name == picked_name)
 			return q
 
 /obj/item/camera/siliconcam/proc/viewpictures(mob/user)
@@ -213,7 +213,14 @@ CAPABILITIES(/obj/item/camera/siliconcam)
 		Cinfo = src
 	return Cinfo
 
-/mob/living/silicon/proc/GetPicture()
+/// The pictures a silicon can attach, by name (the choices of the op question that asks which one).
+/mob/living/silicon/proc/picture_choices()
+	if(!aiCamera)
+		return list()
+	return aiCamera.picture_names(src)
+
+/// The picture named `picked_name`, which the caller's op asked for (asks() step with picture_choices()).
+/mob/living/silicon/proc/GetPicture(picked_name)
 	if(!aiCamera)
 		return
-	return aiCamera.selectpicture(src)
+	return aiCamera.selectpicture(src, picked_name)

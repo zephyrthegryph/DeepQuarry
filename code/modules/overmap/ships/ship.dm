@@ -86,7 +86,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_OVERMAP_SHIPS)
 CAPABILITIES(/obj/effect/overmap/visitable/ship)
 	configure(light_glow(power = 4))
 	every(1 SECOND, then(PROC_REF(ship_step)), when = nameof(under_way))
-	drag_onto(PROC_REF(drop_input))
+	op("offer_ingestion", at_target(/mob/living), gesture(GESTURE_DRAG), label("Eat the ship"), needs(req(PROC_REF(ingestion_possible), silent = TRUE)),
+		asks(/datum/prompt/choice, fields = list("question" = "You COULD eat this spaceship...", "title" = "Eat spaceship?", "choices" = list("Eat it!", "No, thanks."), "buttons" = TRUE, "timeout" = 0), step = "k285", answerer = PROC_REF(ingestion_eater)),
+		asks(/datum/prompt/choice, fields = list("question" = "Which belly?", "title" = "Select A Belly", "choices" = computed(PROC_REF(ingestion_bellies)), "timeout" = 0), step = "k287", answerer = PROC_REF(ingestion_eater), when = PROC_REF(ingestion_accepted)),
+		then(PROC_REF(offer_ingestion)))
 	op("eat_ship", ai(), reach(REACH_ADJACENT), takes("belly"), wait(5 SECONDS), then(PROC_REF(eaten_by)))
 
 /obj/effect/overmap/visitable/ship/proc/is_moving()
@@ -297,30 +300,37 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 #undef SANITIZE_SPEED
 #undef CHANGE_SPEED_BY
 
-/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
-/obj/effect/overmap/visitable/ship/proc/drop_input(datum/act/input/A)
-	offer_ingestion_with_actor(A.over, A.actor)
-	return TRUE
-
-/obj/effect/overmap/visitable/ship/proc/offer_ingestion_with_actor(atom/over, mob/user)
-	if(!isliving(over) || !Adjacent(over) || !Adjacent(user))
-		return
+/// A ship is only offered to a living thing next to both it and the one dragging (a ship-eating mob must be one that eats ships).
+/obj/effect/overmap/visitable/ship/proc/ingestion_possible(datum/act/op/A)
+	var/mob/living/over = A.target
+	if(!isliving(over) || !Adjacent(over) || !Adjacent(A.actor))
+		return MSG(req_silent)
 	if(istype(over, /mob/living/simple_mob/vore/overmap))
 		var/mob/living/simple_mob/vore/overmap/sdog = over
 		if(!sdog.shipvore)
-			return
-	var/mob/living/L = over
-	var/confirm = rerun_ask(L, "k285", PROC_REF(offer_ingestion_with_actor), args, /datum/prompt/choice, question = "You COULD eat this spaceship...", title = "Eat spaceship?", choices = list("Eat it!", "No, thanks."), buttons = TRUE)
-	if(isnull(confirm))
-		return
-	if(confirm == "Eat it!")
-		var/obj/belly/bellychoice = rerun_ask(L, "k287", PROC_REF(offer_ingestion_with_actor), args, /datum/prompt/choice, question = "Which belly?", title = "Select A Belly", choices = L.vore_organs)
-		if(isnull(bellychoice))
-			return
-		if(bellychoice)
-			act_message(L, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice]!")), \
-				MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [L.gender == MALE ? "his" : L.gender == FEMALE ? "her" : "their"] [bellychoice]!")))
-			perform_op(L, src, "eat_ship", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("belly" = bellychoice))
+			return MSG(req_silent)
+	return null
+
+/// The one the ship is offered to answers the questions.
+/obj/effect/overmap/visitable/ship/proc/ingestion_eater(datum/act/op/A)
+	return A.target
+
+/obj/effect/overmap/visitable/ship/proc/ingestion_bellies(datum/act/op/A)
+	var/mob/living/L = A.target
+	return L.vore_organs
+
+/obj/effect/overmap/visitable/ship/proc/ingestion_accepted(datum/act/op/A)
+	return A.step_value("k285") == "Eat it!"
+
+/// Both questions are answered: the eater starts putting the ship into the chosen belly.
+/obj/effect/overmap/visitable/ship/proc/offer_ingestion(datum/act/op/A)
+	var/mob/living/L = A.target
+	var/obj/belly/bellychoice = A.step_value("k287")
+	if(A.step_value("k285") == "Eat it!" && bellychoice)
+		act_message(L, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice]!")), \
+			MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [L.gender == MALE ? "his" : L.gender == FEMALE ? "her" : "their"] [bellychoice]!")))
+		perform_op(L, src, "eat_ship", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("belly" = bellychoice))
+	return OP_OK
 
 /obj/effect/overmap/visitable/ship/proc/eaten_by(datum/act/op/A)
 	var/mob/living/L = A.actor

@@ -21,7 +21,7 @@
 	F.post_signal(src, S)
 
 	//it would be cool to play a sound here
-	moving_status = SHUTTLE_WARMUP
+	set_moving_status(SHUTTLE_WARMUP)
 	publish_schedule()
 	after(src, warmup_time*10, PROC_REF(supply_warmed_up), with = list(destination))
 
@@ -36,7 +36,7 @@
 
 	if (at_station() && forbidden_atoms_check())
 		//cancel the launch because of forbidden atoms. announce over supply channel?
-		moving_status = SHUTTLE_IDLE
+		set_moving_status(SHUTTLE_IDLE)
 		make_sounds(HYPERSPACE_END)
 		return
 
@@ -46,7 +46,7 @@
 
 	//We pretend it's a long_jump by making the shuttle stay at centcom for the "in-transit" period.
 	var/obj/effect/shuttle_landmark/away_waypoint = get_location_waypoint(away_location)
-	moving_status = SHUTTLE_INTRANSIT
+	set_moving_status(SHUTTLE_INTRANSIT)
 
 	//If we are at the away_landmark then we are just pretending to move, otherwise actually do the move
 	if (next_location() == away_waypoint)
@@ -63,7 +63,7 @@
 	if (next_location() != away_waypoint)
 		attempt_move(destination)
 
-	moving_status = SHUTTLE_IDLE
+	set_moving_status(SHUTTLE_IDLE)
 	make_sounds(HYPERSPACE_END)
 
 	if (!at_station())	//at centcom

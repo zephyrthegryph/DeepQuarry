@@ -24,13 +24,8 @@
 		rel_clear(src, nameof(remembered))
 	return
 
-/obj/item/stack/hose/afterattack(atom/target, mob/living/user, proximity, params)
-	if(!proximity)
-		return
-	if(in_use)
-		to_chat(user, span_danger("You must choose which connector this hose will connect to before you can attach the hose to something else."))
-		return
-
+/// The sockets of `target` this hose could connect to: the free ones, and when one end is fixed, the ones of another direction.
+/obj/item/stack/hose/proc/hose_available_sockets(atom/target)
 	var/datum/hose_connector/REMB = remembered
 	var/list/available_sockets = list()
 	var/atom/movable/target_movable = target
@@ -42,6 +37,69 @@
 					available_sockets[HC.get_id()] = HC
 			else
 				available_sockets[HC.get_id()] = HC
+	return available_sockets
+
+/// The question of which socket of a target the hose goes to: the target.
+/datum/prompt/choice/hose_socket
+	timeout = 0
+	var/atom/target
+
+CAPABILITIES(/datum/prompt/choice/hose_socket)
+	ref_one(nameof(target), /atom)
+
+/datum/prompt/choice/hose_socket/prepare(datum/act/A)
+	..()
+	var/atom/captured_target = target
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(target), captured_target)
+
+/// The socket was chosen (what afterattack did after its question). The question ends the wait whatever the answer was.
+/obj/item/stack/hose/proc/socket_chosen(datum/act/request/A)
+	set_in_use(FALSE)
+	var/datum/prompt/choice/hose_socket/asked = A.answer
+	if(!asked)
+		return
+	var/mob/living/user = asked.answerer
+	var/atom/target = asked.target
+	var/choice = asked.value
+	var/datum/hose_connector/REMB = remembered
+	var/list/available_sockets = hose_available_sockets(target)
+	if(choice && user.Adjacent(target))
+		var/datum/hose_connector/CC = available_sockets[choice]
+		if(!CC)
+			return
+		if(REMB)
+			if(REMB.get_carrier() == CC.get_carrier())
+				to_chat(user, span_notice("Connecting \the [REMB.get_carrier()] to itself seems like a bad idea. You wind \the [src] back up."))
+				rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
+
+			else if(REMB.valid_connection(CC))
+				var/distancetonode = get_dist(REMB.get_carrier(), CC.get_carrier())
+				if(distancetonode > HOSE_MAX_DISTANCE)
+					to_chat(user, span_notice("\The [src] would probably burst if it were this long. You wind \the [src] back up."))
+					rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
+
+				else if(distancetonode <= amount)
+					REMB.setup_hoses(CC,distancetonode,user,src)
+					rel_clear(src, nameof(remembered))
+
+				else
+					to_chat(user, span_notice("You do not have enough tubing to connect the sockets. You wind \the [src] back up."))
+					rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
+
+		else
+			rel_set(src, nameof(remembered), CC)
+			to_chat(user, span_notice("You connect one end of tubing to \the [CC]."))
+
+/obj/item/stack/hose/afterattack(atom/target, mob/living/user, proximity, params)
+	if(!proximity)
+		return
+	if(in_use)
+		to_chat(user, span_danger("You must choose which connector this hose will connect to before you can attach the hose to something else."))
+		return
+
+	var/datum/hose_connector/REMB = remembered
+	var/list/available_sockets = hose_available_sockets(target)
 
 	if(LAZYLEN(available_sockets))
 		if(available_sockets.len == 1)
@@ -71,35 +129,7 @@
 
 		else
 			set_in_use(TRUE) // Prevent opening a million uis
-			var/choice = rerun_ask(user, "a1", PROC_REF(afterattack), args, /datum/prompt/choice, question = "Select a target hose connector.", title = "Socket Selection", choices = available_sockets)
-			if(isnull(choice))
-				return TRUE
-			set_in_use(FALSE)
-
-			if(choice && user.Adjacent(target))
-				var/datum/hose_connector/CC = available_sockets[choice]
-				if(REMB)
-					if(REMB.get_carrier() == CC.get_carrier())
-						to_chat(user, span_notice("Connecting \the [REMB.get_carrier()] to itself seems like a bad idea. You wind \the [src] back up."))
-						rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
-
-					else if(REMB.valid_connection(CC))
-						var/distancetonode = get_dist(REMB.get_carrier(), CC.get_carrier())
-						if(distancetonode > HOSE_MAX_DISTANCE)
-							to_chat(user, span_notice("\The [src] would probably burst if it were this long. You wind \the [src] back up."))
-							rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
-
-						else if(distancetonode <= amount)
-							REMB.setup_hoses(CC,distancetonode,user,src)
-							rel_clear(src, nameof(remembered))
-
-						else
-							to_chat(user, span_notice("You do not have enough tubing to connect the sockets. You wind \the [src] back up."))
-							rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
-
-				else
-					rel_set(src, nameof(remembered), CC)
-					to_chat(user, span_notice("You connect one end of tubing to \the [CC]."))
+			open_request(src, /datum/prompt/choice/hose_socket, PROC_REF(socket_chosen), answerer = user, question = "Select a target hose connector.", title = "Socket Selection", choices = available_sockets, timeout = 0, target = target)
 
 		return
 

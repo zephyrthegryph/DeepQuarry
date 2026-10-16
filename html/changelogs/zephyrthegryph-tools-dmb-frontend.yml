@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Native compiler: a body edit now rebuilds in about 6.5 s (was 12.5 s) and a new var or proc on an existing type in about 9 s (was 15 s); the disk memo is no longer opened for a few resident misses."
+  - code_imp: "Native compiler: comment lines, blank lines, documentation blocks and #define lines between declarations patch the retained output (about 7 s) instead of falling back to a full compile (about 22 s)."
+  - code_imp: "Native compiler: session records decode in the background, the source revision digest is computed in parallel, the ABI batch recipe is built only when replay is enabled, and resource admission reuses the session's directory proofs."
+  - bugfix: "Fixed three stale dm-tree unit tests and the dmbc lib test build."

@@ -70,7 +70,7 @@
 	var/turf/epicenter = pick(shuttle_turfs)
 	var/boomsize = shuttle_turfs.len / 10 // Bigger shuttle = bigger boom
 	explosion(epicenter, 0, boomsize, boomsize*2, boomsize*3)
-	moving_status = SHUTTLE_CRASHED
+	set_moving_status(SHUTTLE_CRASHED)
 	GLOB.command_announcement.Announce("[crash_message]", "Shuttle Alert", ANNOUNCER_MSG_SHUTTLE_CRASHED)
 
 	// Put people back

@@ -106,12 +106,8 @@
 	/// Exponential sustain dropoff rate per decisecond
 	var/sustain_exponential_dropoff = 1.4
 
-/// Are we currently playing? song_step() plays the song while set (the every() below).
+/// Are we currently playing? song_step() plays the song while set (its every() in CAPABILITIES(/datum/song)).
 /datum/song/var/playing = FALSE
-
-/datum/song/reactions()
-	. = ..()
-	. += every(WORK_EVERY_TICK, PROC_REF(song_step), when = nameof(playing))
 
 /datum/song/New(atom/parent, list/instrument_ids, new_range)
 	..()
@@ -333,7 +329,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/set_bpm(bpm)
 	set_tempo(sanitize_tempo(600 / bpm))
 
-/datum/song/proc/song_step(dt)
+/datum/song/proc/song_step(datum/act/timer/tick)
 	// it's expected this ticks at every world.tick_lag. if it lags, do not attempt to catch up.
 	process_song(world.tick_lag)
 	process_decay(world.tick_lag)
@@ -431,6 +427,7 @@ SETTER(/datum/song, volume)
 
 CAPABILITIES(/datum/song)
 	ref_one(nameof(parent), /atom)
+	every(1 TICK, then(PROC_REF(song_step)), when = nameof(playing))
 	ref_one(nameof(music_player), /atom)
 	op("start_new_song", ui_act(), then(PROC_REF(ui_act_start_new_song)))
 	op("toggle_sustain_hold_indefinitely", ui_act(), then(PROC_REF(ui_act_toggle_sustain_hold_indefinitely)))

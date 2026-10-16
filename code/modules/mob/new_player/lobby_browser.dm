@@ -164,7 +164,7 @@
 		var/mob/observer/dead/observer = new(mannequin)
 		observer.moveToNullspace() //Let's not stay in our doomed mannequin
 
-		spawning = 1
+		set_spawning(1)
 		if(client.media)
 			client.media.stop_music() // MAD JAMS cant last forever yo
 

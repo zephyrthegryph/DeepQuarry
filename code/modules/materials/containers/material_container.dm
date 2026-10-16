@@ -257,9 +257,15 @@ CAPABILITIES(/datum/material_container)
  * * user - the mob inserting this item
  * * context - the atom performing the operation, this is the last argument sent in /datum/definition_event/matcontainer_item_consumed and is used mostly for silo logging
  */
-/datum/material_container/proc/user_insert(obj/item/held_item, mob/living/user, atom/context = owner)
+/datum/material_container/proc/user_insert(obj/item/held_item, mob/living/user, atom/context = owner, requested_amount)
 	set waitfor = FALSE // ALLOW(scheduler): waits on a prompt (tgui_input_number)
 	. = 0
+
+	//a stack to insert by a precise amount asks first; the answer runs this proc again with `requested_amount`
+	if(isnull(requested_amount) && precise_insertion && istype(held_item, /obj/item/stack) && !held_item.abstract && (!allowed_item_typecache || is_type_in_typecache(held_item, allowed_item_typecache)))
+		var/obj/item/stack/asked_stack = held_item
+		open_request(src, /datum/prompt/number/material_insert, PROC_REF(insert_amount_answered), answerer = user, question = "How much do you want to insert?", title = "Inserting [asked_stack.singular_name]s", default = asked_stack.amount, max_value = asked_stack.amount, timeout = 0, held_item = held_item, context = context)
+		return
 
 	//All items that do not have any contents
 	var/list/obj/item/items = list(held_item)
@@ -321,12 +327,9 @@ CAPABILITIES(/datum/material_container)
 
 		//if stack, check if we want to read precise amount of sheets to insert
 		var/obj/item/stack/item_stack = null
-		if(istype(target_item, /obj/item/stack) && precise_insertion)
+		if(istype(target_item, /obj/item/stack) && target_item == held_item && !isnull(requested_amount))
 			var/atom/current_parent = owner
 			item_stack = target_item
-			var/requested_amount = rerun_ask(user, "a1", PROC_REF(user_insert), args, /datum/prompt/number, question = "How much do you want to insert?", title = "Inserting [item_stack.singular_name]s", default = item_stack.amount, max_value = item_stack.amount)
-			if(isnull(requested_amount))
-				return
 			if(!requested_amount || QDELETED(target_item) || QDELETED(user) || QDELETED(src))
 				continue
 			if(owner != current_parent || user.get_active_hand() != active_held)
@@ -454,6 +457,35 @@ CAPABILITIES(/datum/material_container)
 	for(var/obj/item/deleting as anything in to_delete)
 		if(!QDELETED(deleting)) //deleting parents also delete their children so we check
 			consumed(deleting, src)
+
+/// The question of how much of a stack to insert: the stack and the atom doing the inserting.
+/datum/prompt/number/material_insert
+	timeout = 0
+	var/obj/item/held_item
+	var/atom/context
+
+CAPABILITIES(/datum/prompt/number/material_insert)
+	ref_one(nameof(held_item), /obj/item)
+	ref_one(nameof(context), /atom)
+
+/datum/prompt/number/material_insert/prepare(datum/act/A)
+	..()
+	var/obj/item/captured_item = held_item
+	var/atom/captured_context = context
+	rel_clear(src, nameof(held_item))
+	rel_clear(src, nameof(context))
+	rel_set(src, nameof(held_item), captured_item)
+	rel_set(src, nameof(context), captured_context)
+
+/// The amount to insert was typed: the insertion goes on with it.
+/datum/material_container/proc/insert_amount_answered(datum/act/request/A)
+	var/datum/prompt/number/material_insert/asked = A.answer
+	if(!asked || isnull(asked.value))
+		return
+	var/mob/living/user = asked.answerer
+	if(QDELETED(user) || QDELETED(asked.held_item))
+		return
+	user_insert(asked.held_item, user, asked.context, asked.value)
 
 /datum/material_container/proc/on_attackby(datum/act/attackby/use)
 	SHOULD_NOT_SLEEP(TRUE)

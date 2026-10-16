@@ -134,5 +134,7 @@
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2)
 	configure(reagent_container(splash = TRUE, ingest_hostile = FALSE))
 	ref_many(nameof(extras), /obj/item)
-	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"),
+		asks(/datum/prompt/choice, fields = list("question" = "What would you like to remove from the glass?", "title" = "Removal Choice", "choices" = nameof(extras), "timeout" = 0), step = "k37", when = PROC_REF(asks_extra_removal)),
+		then(PROC_REF(interaction_hand)))
 	op("glass2_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Glass2 item"), then(PROC_REF(glass2_item)))

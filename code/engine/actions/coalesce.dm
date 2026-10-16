@@ -8,6 +8,9 @@
 // the window is absorbed by that timer, and when it fires the parts after coalesce() run once. A trigger after the run arms the next window, so
 // sustained triggers give one run per interval. Nothing is scheduled while nothing triggers.
 //
+// coalesce(interval, leading = TRUE) is the leading-edge form (what on_change(at_most =) was): the first trigger of a quiet period runs the parts at once and opens
+// the window; triggers inside it are absorbed and held; when it closes, one trailing run delivers them (none when nothing was held).
+//
 // `interval` is deciseconds of the holder's clock, or a PROC_REF of a holder proc x(datum/act/A) answering them, asked when the window opens.
 // The window is cancelled with the holder (the timer's owner) and with the hook's activation: a revoked capability's pending run never happens.
 //
@@ -15,11 +18,11 @@
 // its typed fields are not available: read the state the trigger changed, not the trigger).
 
 /// coalesce(interval): the part. The interval is a positive number of deciseconds or a PROC_REF.
-/proc/coalesce(interval)
+/proc/coalesce(interval, leading = FALSE)
 	if(!(istext(interval) && length(interval)) && (!isnum(interval) || interval <= 0))
 		declare_report("coalesce(): the interval must be a positive number of deciseconds or a PROC_REF, got [isnull(interval) ? "null" : "[interval]"]")
 		return null
-	return entry_make(ENTRY_COALESCE, null, list("interval" = interval))
+	return entry_make(ENTRY_COALESCE, null, list("interval" = interval, "leading" = !!leading))
 
 /datum/hook
 	/// TRUE once the activation that brought the hook ended (hooks_detach / the on_change remove): a coalesced run still pending for it never happens.
@@ -48,10 +51,14 @@ GLOBAL_VAR_INIT(forms_trace, FALSE)
 		return
 	if(coalesce_pending(holder, H))
 		GLOB.coalesce_absorbed++
+		if(part.args["leading"])
+			LAZYSET(rx_of(holder).coalesce_held, "[H.serial]", TRUE)
 		forms_trace("coalesce", "trigger on [holder.type] absorbed by the open window of hook [H.serial]")
 		return
 	var/interval = every_interval(holder, part, H.activation)
 	after_unique(holder, interval, TYPE_PROC_REF(/datum, coalesce_window_fire), list(H))
+	if(part.args["leading"])
+		coalesce_fire(holder, H) // the leading edge: this trigger runs now, the window only holds what follows
 	GLOB.coalesce_windows++
 	forms_trace("coalesce", "window opened on [holder.type] for hook [H.serial]: [interval] ds")
 
@@ -62,6 +69,7 @@ GLOBAL_VAR_INIT(forms_trace, FALSE)
 /// The window of hook H on holder is cancelled (its activation ended): the pending run never happens.
 /proc/coalesce_cancel(datum/holder, datum/hook/H)
 	H.detached = TRUE
+	holder?.rx?.coalesce_held?.Remove("[H.serial]")
 	if(holder && cancel_after_unique(holder, TYPE_PROC_REF(/datum, coalesce_window_fire), list(H)))
 		forms_trace("coalesce", "window of hook [H.serial] on [holder.type] cancelled with its activation")
 
@@ -77,7 +85,25 @@ GLOBAL_VAR_INIT(forms_trace, FALSE)
 
 /// The window closed: one run of the parts after coalesce().
 /datum/proc/coalesce_window_fire(datum/hook/H)
+	if(coalesce_is_leading(H))
+		// A leading window closes into a trailing run only when something was held inside it.
+		if(!src.rx?.coalesce_held?["[H.serial]"])
+			return
+		src.rx.coalesce_held -= "[H.serial]"
+		if(!length(src.rx.coalesce_held))
+			src.rx.coalesce_held = null
 	coalesce_fire(src, H)
+
+/// TRUE when hook H's coalesce() part is the leading-edge form.
+/proc/coalesce_is_leading(datum/hook/H)
+	for(var/datum/entry/part in H.entry.children)
+		if(part.kind == ENTRY_COALESCE)
+			return !!part.args["leading"]
+	return FALSE
+
+/datum/rx_state
+	/// hook serial -> TRUE: triggers a leading coalesce() window absorbed since its immediate run; its trailing run delivers them.
+	var/list/coalesce_held
 
 /proc/coalesce_fire(datum/holder, datum/hook/H)
 	if(!holder || QDELETED(holder) || !H || H.detached)

@@ -56,7 +56,9 @@ CAPABILITIES(/obj/machinery/appliance)
 	op("toggle_safety", ui_act("toggle_safety"), then(PROC_REF(ui_act_toggle_safety)))
 	op("change_output", ui_act("change_output", arg("value")), then(PROC_REF(ui_act_change_output)))
 	op("slot", ui_act("slot", arg("slot", num())), then(PROC_REF(ui_act_slot)))
-	op("remove_menu", ui_act("remove_menu"), then(PROC_REF(ui_act_remove_menu)))
+	op("remove_menu", ui_act("remove_menu"),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(removal_question)), "title" = "Remove ingredients", "choices" = computed(PROC_REF(removal_options)), "timeout" = 0), step = "selection", when = PROC_REF(removal_asks)),
+		then(PROC_REF(ui_act_remove_menu)))
 	op("appliance_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_take_item_holds))), then(PROC_REF(appliance_interaction_item)))
 	op("appliance_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(appliance_interaction_hand)))
 	op("appliance_toggle_power_effect", menu(), label("Toggle Power"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_toggle_power_verb_holds))), then(PROC_REF(appliance_toggle_power_effect)))
@@ -747,20 +749,30 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	return TRUE
 
 /obj/machinery/appliance/proc/ui_act_remove_menu(datum/act/op/A)
-	var/mob/user = A.actor
-	removal_menu(user)
+	removal_menu(A)
 	return TRUE
 
-/obj/machinery/appliance/proc/removal_menu(mob/user)
-	if (can_remove_items(user))
-		var/list/menuoptions = list()
-		for(var/datum/cooking_item/CI as anything in cooking_objs)
-			if (CI.container())
-				menuoptions[CI.container().label(menuoptions.len)] = CI
+/// The removal question is asked only of someone who can remove items (the warning itself is given by the effect).
+/obj/machinery/appliance/proc/removal_asks(datum/act/op/A)
+	var/mob/user = A.actor
+	return can_remove_items(user, FALSE)
 
-		var/selection = rerun_ask(user, "k713", PROC_REF(removal_menu), args, /datum/prompt/choice, question = "Which item would you like to remove?", title = "Remove ingredients", choices = menuoptions)
-		if(isnull(selection))
-			return
+/obj/machinery/appliance/proc/removal_question(datum/act/op/A)
+	return "Which item would you like to remove?"
+
+/// The removal question's choices: the label of each container's item, to the cooking item.
+/obj/machinery/appliance/proc/removal_options(datum/act/op/A)
+	var/list/menuoptions = list()
+	for(var/datum/cooking_item/CI as anything in cooking_objs)
+		if (CI.container())
+			menuoptions[CI.container().label(menuoptions.len)] = CI
+	return menuoptions
+
+/obj/machinery/appliance/proc/removal_menu(datum/act/op/A)
+	var/mob/user = A.actor
+	if (can_remove_items(user))
+		var/list/menuoptions = removal_options(A)
+		var/selection = A.step_value("selection")
 		if (selection)
 			var/datum/cooking_item/CI = menuoptions[selection]
 			eject(CI, user)

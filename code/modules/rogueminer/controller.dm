@@ -101,16 +101,13 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	)
 
 CAPABILITIES(/datum/controller/rogue)
+	every(RM_DIFF_DECAY_TIME, then(PROC_REF(decay)), when = nameof(decaying))
 	owns_many(nameof(all_zones), /datum/rogue/zonemaster)
 	owns_many(nameof(clean_zones), /datum/rogue/zonemaster)
 	owns_many(nameof(ready_zones), /datum/rogue/zonemaster)
 
-/// Difficulty decays every RM_DIFF_DECAY_TIME while set (the every() below).
+/// Difficulty decays every RM_DIFF_DECAY_TIME while set (its every() in CAPABILITIES(/datum/controller/rogue)).
 /datum/controller/rogue/var/decaying = FALSE
-
-/datum/controller/rogue/reactions()
-	. = ..()
-	. += every(RM_DIFF_DECAY_TIME, PROC_REF(decay), when = nameof(decaying))
 
 /datum/controller/rogue/New()
 	..()
@@ -121,7 +118,7 @@ CAPABILITIES(/datum/controller/rogue)
 	//set_decaying(TRUE) //Decay removed for now, since people aren't getting high scores as it is.
 
 /// One difficulty decay (the every() while decaying; may also be called by hand).
-/datum/controller/rogue/proc/decay(dt)
+/datum/controller/rogue/proc/decay(datum/act/timer/tick)
 	log_world("RM(stats): DECAY on controller from [difficulty] to [difficulty+(RM_DIFF_DECAY_AMT)] min 100.") //DEBUG code for playtest stats gathering.
 	adjust_difficulty(RM_DIFF_DECAY_AMT)
 

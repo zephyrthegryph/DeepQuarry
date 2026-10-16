@@ -380,8 +380,10 @@
 // Make sure you know what you're doing if you call this, this is intended to only be called by byond directly.
 // You probably want CanPass()
 /atom/movable/Cross(atom/movable/AM)
-	if(guard(src, GUARD_CROSS, AM))
+	var/datum/act/cross/crossing = ACT_TRY(src, cross, AM)
+	if(!crossing)
 		return FALSE
+	act_done(crossing)
 	return CanPass(AM, loc)
 
 /atom/movable/CanPass(atom/movable/mover, turf/target)

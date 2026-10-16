@@ -42,7 +42,7 @@
 	return src
 
 /mob/new_player/AIize(move = TRUE)
-	spawning = 1
+	set_spawning(1)
 	return ..()
 
 /mob/living/carbon/human/AIize(move = TRUE) // 'move' argument needs defining here too because BYOND is dumb

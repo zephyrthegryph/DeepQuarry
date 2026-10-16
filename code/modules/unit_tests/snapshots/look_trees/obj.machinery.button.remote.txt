@@ -14,6 +14,10 @@
 /obj/machinery/button/remote/airlock/release state: doorctrl0
 /obj/machinery/button/remote/airlock/release dir: 2
 /obj/machinery/button/remote/airlock/release overlay: icons/obj/door_release.dmi:doorctrl0:8:#000000
+/obj/machinery/button/remote/airlock/dq_keyed icon: icons/obj/stationobjs.dmi
+/obj/machinery/button/remote/airlock/dq_keyed state: doorctrl0
+/obj/machinery/button/remote/airlock/dq_keyed dir: 2
+/obj/machinery/button/remote/airlock/dq_keyed overlay: icons/obj/stationobjs.dmi:doorctrl0:8:#000000
 /obj/machinery/button/remote/airlock/p2_test icon: icons/obj/stationobjs.dmi
 /obj/machinery/button/remote/airlock/p2_test state: doorctrl0
 /obj/machinery/button/remote/airlock/p2_test dir: 2
@@ -86,4 +90,8 @@
 /obj/machinery/button/remote/shields state: doorctrl0
 /obj/machinery/button/remote/shields dir: 2
 /obj/machinery/button/remote/shields overlay: icons/obj/stationobjs.dmi:doorctrl0:8:#000000
+/obj/machinery/button/remote/shields/dq_keyed icon: icons/obj/stationobjs.dmi
+/obj/machinery/button/remote/shields/dq_keyed state: doorctrl0
+/obj/machinery/button/remote/shields/dq_keyed dir: 2
+/obj/machinery/button/remote/shields/dq_keyed overlay: icons/obj/stationobjs.dmi:doorctrl0:8:#000000
 

@@ -66,7 +66,7 @@ SETTER(/datum/money_account, security_level)
 /datum/money_account/proc/credit(amount, source_name, purpose, terminal_id = "Station budget ledger", external = TRUE, allow_suspended = FALSE)
 	if(!isnum(amount) || amount <= 0 || (suspended && !allow_suspended))
 		return FALSE
-	money += amount
+	set_money(money + amount)
 	record_transaction(source_name, purpose, amount, terminal_id)
 	total_revenue += amount
 	if(tracks_budget_period())
@@ -84,7 +84,7 @@ SETTER(/datum/money_account, security_level)
 	if(available < amount)
 		return FALSE
 	var/operating_spend = min(money, amount)
-	money -= operating_spend
+	set_money(money - operating_spend)
 	if(operating_spend < amount)
 		savings -= amount - operating_spend
 	record_transaction(target_name, purpose, -amount, terminal_id)
@@ -122,7 +122,7 @@ SETTER(/datum/money_account, security_level)
 	if(money > 0)
 		savings += money
 		record_transaction(owner_name, "Unused operating funds moved to savings", 0, "Automated budget cycle")
-		money = 0
+		set_money(0)
 	return TRUE
 
 /proc/department_for_mob(mob/living/user)
@@ -223,7 +223,7 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 	M.offmap = offmap
 	M.set_owner_name(new_owner_name)
 	M.remote_access_pin = rand(1111, 111111)
-	M.money = starting_funds
+	M.set_money(starting_funds)
 
 	//create an entry in the account transaction log for when it was created
 	var/datum/transaction/T = new()

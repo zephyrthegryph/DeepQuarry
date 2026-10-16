@@ -353,7 +353,7 @@ CAPABILITIES(/obj/item/capture_crystal)
 	if(!bound_mob)
 		rel_set(src, nameof(bound_mob), M)
 		bound_mob.capture_caught = TRUE
-		persist_storable = FALSE
+		set_persist_storable(FALSE)
 	desc = "A glowing crystal in what appears to be some kind of steel housing."
 
 //Determines the capture chance! So you can't capture AI mobs if they're perfectly healthy and all that
@@ -488,7 +488,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	rel_clear(src, nameof(bound_mob))
 	rel_clear(src, nameof(owner))
 	active = FALSE
-	persist_storable = TRUE
+	set_persist_storable(TRUE)
 
 /obj/item/capture_crystal/proc/owner_was_deleted(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -1041,7 +1041,7 @@ CAPABILITIES(/obj/item/capture_crystal/random)
 	if(!bound_mob)
 		rel_set(src, nameof(bound_mob), M)
 		bound_mob.capture_caught = TRUE
-		persist_storable = FALSE
+		set_persist_storable(FALSE)
 	desc = "A silent, unassuming crystal in what appears to be some kind of steel housing. This one seems to be cheaply made and can only handle a willing mind."
 
 /obj/item/capture_crystal/cheap/activate(mob/living/user, target)

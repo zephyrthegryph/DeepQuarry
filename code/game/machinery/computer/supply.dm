@@ -163,8 +163,8 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 		var/datum/cargo_market_counterparty/market_buyer = SSsupply.market_counterparties?[E.market_counterparty_id]
 		receipts.Add(list(list(
 			"ref" = "\ref[E]",
-			"contents" = E.contents,
-			"error" = E.contents["error"],
+			"contents" = E.rows,
+			"error" = E.rows["error"],
 			"title" = list(
 				list("field" = "Name", "entry" = E.name),
 				list("field" = "Value", "entry" = E.value),
@@ -387,15 +387,15 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 		if("Index")
 			O.index = ui_number(new_val, 0, round_to = 1) || O.index
 		if("Reason")
-			O.comment = new_val
+			O.set_comment(new_val)
 		if("Ordered by")
-			O.ordered_by = new_val
+			O.set_ordered_by(new_val)
 		if("Ordered at")
-			O.ordered_at = new_val
+			O.set_ordered_at(new_val)
 		if("Approved by")
-			O.approved_by = new_val
+			O.set_approved_by(new_val)
 		if("Approved at")
-			O.approved_at = new_val
+			O.set_approved_at(new_val)
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_approve_order(mob/user, ref)
@@ -437,19 +437,19 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 
 /obj/machinery/computer/supplycomp/proc/act_export_edit_field(mob/user, index, ref)
 	var/datum/exported_crate/E = editable_export(user, ref)
-	index = E && ui_number(index, 1, length(E.contents), round_to = 1)
+	index = E && ui_number(index, 1, length(E.rows), round_to = 1)
 	if(!index)
 		return UI_REFUSED
 	var/field = ask_list(user, "Select which field to edit", list("Name", "Quantity", "Value"), "Field Choice")
 	if(!field)
 		return
-	var/list/row = E.contents[index]
+	var/list/row = E.rows[index]
 	if(!islist(row))
 		return
 	var/new_val = ask_text(user, field, "Enter the new value for this field:", row[lowertext(field)])
-	if(!new_val || QDELETED(E) || length(E.contents) < index || !islist(E.contents[index]))
+	if(!new_val || QDELETED(E) || length(E.rows) < index || !islist(E.rows[index]))
 		return
-	row = E.contents[index]
+	row = E.rows[index]
 	switch(field)
 		if("Name")
 			row["object"] = new_val
@@ -461,10 +461,10 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 
 /obj/machinery/computer/supplycomp/proc/act_export_delete_field(mob/user, index, ref)
 	var/datum/exported_crate/E = editable_export(user, ref)
-	index = E && ui_number(index, 1, length(E.contents), round_to = 1)
+	index = E && ui_number(index, 1, length(E.rows), round_to = 1)
 	if(!index)
 		return UI_REFUSED
-	E.contents.Cut(index, index + 1) // ALLOW(containment): datum field list named contents, not atom contents
+	E.cut_rows(index, index + 1)
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_export_add_field(mob/user, ref)
@@ -486,7 +486,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 		if("Name")
 			E.name = new_val
 		if("Value")
-			E.value = ui_number(new_val, 0) || E.value
+			E.set_value(ui_number(new_val, 0) || E.value)
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_export_delete(mob/user, ref)

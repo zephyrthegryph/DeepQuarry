@@ -153,8 +153,11 @@ pub(super) fn snapshot_captured<P: SnapshotProvider>(
     capture: &crate::input_snapshot::RecordingInputs<P>,
     retained: Option<&InputSnapshot>,
 ) -> Result<InputSnapshot, Box<dyn Error>> {
+    let timer = dm_profile::detail_timer("snapshot_captured.clone");
     let mut inputs = capture.snapshot()?;
+    drop(timer);
     if let Some(retained) = retained {
+        let _timer = dm_profile::detail_timer("snapshot_captured.merge");
         inputs.merge(retained)?;
     }
     Ok(inputs)

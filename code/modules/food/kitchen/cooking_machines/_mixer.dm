@@ -65,21 +65,36 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 		return 0
 
 //Container is not removable
-/obj/machinery/appliance/mixer/removal_menu(mob/user)
+/obj/machinery/appliance/mixer/removal_asks(datum/act/op/A)
+	if(!..())
+		return FALSE
+	for(var/datum/cooking_item/CI as anything in cooking_objs)
+		if(CI.container() && !CI.container().check_contents())
+			return FALSE
+	return TRUE
+
+/obj/machinery/appliance/mixer/removal_question(datum/act/op/A)
+	return "Which item would you like to remove? If you want to remove chemicals, use an empty beaker."
+
+/obj/machinery/appliance/mixer/removal_options(datum/act/op/A)
+	var/list/menuoptions = list()
+	for(var/datum/cooking_item/CI as anything in cooking_objs)
+		if(CI.container())
+			for (var/obj/item/I in CI.container())
+				menuoptions[I.name] = I
+	return menuoptions
+
+/obj/machinery/appliance/mixer/removal_menu(datum/act/op/A)
+	var/mob/user = A.actor
 	if (can_remove_items(user))
-		var/list/menuoptions = list()
 		for(var/datum/cooking_item/CI as anything in cooking_objs)
 			if (CI.container())
 				if (!CI.container().check_contents())
 					to_chat(user, span_filter_notice("There's nothing in [src] you can remove!"))
 					return
 
-				for (var/obj/item/I in CI.container())
-					menuoptions[I.name] = I
-
-		var/selection = rerun_ask(user, "k86", PROC_REF(removal_menu), args, /datum/prompt/choice, question = "Which item would you like to remove? If you want to remove chemicals, use an empty beaker.", title = "Remove ingredients", choices = menuoptions)
-		if(isnull(selection))
-			return
+		var/list/menuoptions = removal_options(A)
+		var/selection = A.step_value("selection")
 		if (selection)
 			var/obj/item/I = menuoptions[selection]
 			if (!user || !user.put_in_hands(I))

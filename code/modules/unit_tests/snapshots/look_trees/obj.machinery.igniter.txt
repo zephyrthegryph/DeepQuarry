@@ -2,4 +2,8 @@
 /obj/machinery/igniter state: igniter1
 /obj/machinery/igniter dir: 2
 /obj/machinery/igniter overlay: icons/obj/stationobjs.dmi:igniter1:8:#000000
+/obj/machinery/igniter/dq_keyed icon: icons/obj/stationobjs.dmi
+/obj/machinery/igniter/dq_keyed state: igniter1
+/obj/machinery/igniter/dq_keyed dir: 2
+/obj/machinery/igniter/dq_keyed overlay: icons/obj/stationobjs.dmi:igniter1:8:#000000
 

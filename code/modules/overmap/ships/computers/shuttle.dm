@@ -46,8 +46,32 @@
 	if(!ui_gate(A))
 		return FALSE
 	var/datum/shuttle/autodock/overmap/shuttle = shuttles_shuttles()[shuttle_tag]
-	plot_expedition(user, shuttle)
+	plot_expedition(user, shuttle, A.step_value("k105"), A.step_value("k109"))
 	return TRUE
+
+/// The ship's flight vessel, or null when the console is not linked to a shuttle.
+/obj/machinery/computer/shuttle_control/explore/proc/plot_vessel()
+	var/datum/shuttle/autodock/overmap/shuttle = shuttles_shuttles()[read_once(shuttle_tag)]
+	if(!istype(shuttle))
+		return null
+	return read_once(SSflight?.vessel_for_ship(shuttle.myship()))
+
+/// A vessel that cannot take an assignment refuses before the pilot is asked anything (an unlinked console is left to the button's gate).
+/obj/machinery/computer/shuttle_control/explore/proc/plot_refusal(datum/act/op/A)
+	var/datum/flight_vessel/vessel = plot_vessel()
+	if(!vessel)
+		return null
+	return SSexpedition.plot_refusal(vessel)
+
+/// The pilot must still be able to use the console when each answer arrives.
+/obj/machinery/computer/shuttle_control/explore/proc/plot_can_interact(datum/act/op/A)
+	return CanInteract(A.actor, GLOB.tgui_default_state) ? null : MSG(req_silent)
+
+/obj/machinery/computer/shuttle_control/explore/proc/plot_contract_choices(datum/act/op/A)
+	return SSexpedition.contract_choices(A.actor)
+
+/obj/machinery/computer/shuttle_control/explore/proc/plot_band_choices(datum/act/op/A)
+	return GLOB.expedition_threat_bands
 
 /obj/machinery/computer/shuttle_control/explore/proc/ui_act_pick(datum/act/op/A)
 	var/mob/user = A.actor

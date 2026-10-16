@@ -550,3 +550,57 @@ fn body_patch_edits_match_fresh_bytes_through_line_shifts_chains_and_revert() {
         }
     }
 }
+
+#[test]
+fn code_motion_edits_patch_and_match_fresh_bytes() {
+    // Comment lines, blank lines, a documentation block and a new directive between declarations
+    // move code without changing it. The retained patch path takes each of them (the later
+    // procedure is relowered at its new line, the list initializer below is relinked with
+    // shifted debug lines) and every step must equal a fresh compile, including debug lines.
+    let tree = "/proc/anchor()
+    return 0
+/proc/first(a)\n    return a + 1\n/proc/second(b)\n    if(b)\n        return b * 2\n    return 0\n/datum/holder\n    var/list/items = list(1, 2)\n    proc/count()\n        return items.len\n";
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    for index in 0..6 {
+        roots.edit(index, tree);
+    }
+    let initial = compare_revision(&shared, &roots);
+    let patched = |roots: &Roots| -> Vec<u64> {
+        (0..6)
+            .map(|index| crate::body_patch::applied(&roots.manifest(index)))
+            .collect()
+    };
+    let comment = tree.replace("/proc/second(b)", "// a note\n/proc/second(b)");
+    let blank_lines = comment.replace("// a note\n", "// a note\n\n\n");
+    let documented = tree.replace("/datum/holder", "/**\n * Holds things.\n * More words.\n */\n/datum/holder");
+    let plain = tree.replace("return a + 1", "return a + 7");
+    let directive = plain.replace("/datum/holder", "#define PROBE_VALUE 1\n/datum/holder");
+    let both = directive.replace("return a + 7", "return a + 3");
+    let removed_directive = both.replace("#define PROBE_VALUE 1\n", "");
+    let mut before = patched(&roots);
+    for (label, source) in [
+        ("comment line", comment.as_str()),
+        ("blank lines after a comment", blank_lines.as_str()),
+        ("documentation block", documented.as_str()),
+        ("documentation block removed with a body edit", plain.as_str()),
+        ("new directive", directive.as_str()),
+        ("directive plus body edit", both.as_str()),
+        ("directive removed", removed_directive.as_str()),
+    ] {
+        for index in 0..6 {
+            roots.edit(index, source);
+        }
+        compare_revision(&shared, &roots);
+        let after = patched(&roots);
+        for index in 0..6 {
+            assert_eq!(after[index], before[index] + 1, "root {index}: {label} did not patch");
+        }
+        before = after;
+    }
+    for index in 0..6 {
+        roots.edit(index, tree);
+    }
+    assert_eq!(compare_revision(&shared, &roots), initial, "the revert must reproduce the initial bytes");
+}

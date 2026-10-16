@@ -170,7 +170,7 @@ SETTER(/datum/shuttle, process_state)
 
 	var/obj/effect/shuttle_landmark/start_location = current_location()
 	// TODO - Figure out exactly when to play sounds. Before warmup_time delay? Should there be a sleep for waiting for sounds? or no?
-	moving_status = SHUTTLE_WARMUP
+	set_moving_status(SHUTTLE_WARMUP)
 	publish_schedule()
 	after(src, warmup_time*10, PROC_REF(short_jump_warmed_up), with = list(start_location, destination))
 
@@ -190,12 +190,12 @@ SETTER(/datum/shuttle, process_state)
 		make_sounds(HYPERSPACE_END)
 		return	//someone cancelled the launch
 
-	moving_status = SHUTTLE_INTRANSIT //shouldn't matter but just to be safe
+	set_moving_status(SHUTTLE_INTRANSIT) //shouldn't matter but just to be safe
 	on_shuttle_departure(start_location, destination)
 
 	attempt_move(destination)
 
-	moving_status = SHUTTLE_IDLE
+	set_moving_status(SHUTTLE_IDLE)
 	on_shuttle_arrival(start_location, destination)
 
 	make_sounds(HYPERSPACE_END)
@@ -213,7 +213,7 @@ SETTER(/datum/shuttle, process_state)
 
 	var/obj/effect/shuttle_landmark/start_location = current_location()
 	// TODO - Figure out exactly when to play sounds. Before warmup_time delay? Should there be a sleep for waiting for sounds? or no?
-	moving_status = SHUTTLE_WARMUP
+	set_moving_status(SHUTTLE_WARMUP)
 	publish_schedule()
 	after(src, warmup_time*10, PROC_REF(long_jump_warmed_up), with = list(start_location, destination, interim, travel_time))
 
@@ -233,7 +233,7 @@ SETTER(/datum/shuttle, process_state)
 	EXPIRY_SET(src, arrive_time, travel_time*10, CLOCK_WORLD)
 	EXPIRY_STAMP(src, depart_time, CLOCK_WORLD)
 
-	moving_status = SHUTTLE_INTRANSIT
+	set_moving_status(SHUTTLE_INTRANSIT)
 	on_shuttle_departure(start_location, destination)
 
 	if(!attempt_move(interim, TRUE))
@@ -273,7 +273,7 @@ SETTER(/datum/shuttle, process_state)
 		create_warning_effect(destination)
 
 /datum/shuttle/proc/long_jump_arrived(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination)
-	moving_status = SHUTTLE_IDLE
+	set_moving_status(SHUTTLE_IDLE)
 	on_shuttle_arrival(start_location, destination)
 	make_sounds(HYPERSPACE_END)
 
@@ -286,7 +286,7 @@ SETTER(/datum/shuttle, process_state)
 /datum/shuttle/proc/cancel_launch(user, mob/actor)
 	// If we are past warming up its too late to cancel.
 	if (moving_status == SHUTTLE_WARMUP)
-		moving_status = SHUTTLE_IDLE
+		set_moving_status(SHUTTLE_IDLE)
 /*
 	Docking stuff
 */

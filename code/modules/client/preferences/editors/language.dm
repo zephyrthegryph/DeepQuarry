@@ -68,19 +68,49 @@
 	if(idx < 1 || idx > 3)
 		return PREF_UPDATE_REJECTED
 	var/current = prefixes.len >= idx ? prefixes[idx] : ""
-	// The answer re-runs this action.
-	var/typed = rerun_ask(user, "prefix", PROC_REF(handle_action), args, /datum/prompt/text, question = "Prefix character for slot [idx] (single character)", title = "Language Prefix", default = current, max_len = 1, name_text = ((1) <= MAX_NAME_LEN))
+	open_request(src, /datum/prompt/text/language, PROC_REF(prefix_answered), answerer = user, question = "Prefix character for slot [idx] (single character)", title = "Language Prefix", default = current, max_len = 1, name_text = TRUE, preferences = preferences, slot = idx)
+	return PREF_UPDATE_UNCHANGED
+
+/// The character typed for a prefix slot (what ui_act_set_prefix did after its question).
+/datum/preference_editor/language/proc/prefix_answered(datum/act/request/A)
+	var/datum/prompt/text/language/asked = A.answer
+	if(!asked)
+		return
+	var/mob/user = asked.answerer
+	var/datum/preferences/preferences = asked.preferences
+	var/typed = asked.value
 	if(!typed)
-		return PREF_UPDATE_UNCHANGED
+		return
 	if(!user?.client?.prefs || user.client.prefs != preferences)
-		return PREF_UPDATE_UNCHANGED
+		return
 	if(length(typed) != 1)
-		return PREF_UPDATE_REJECTED
+		return
+	var/list/prefixes = preferences.read_preference(/datum/preference/language_prefixes) || list()
+	var/idx = asked.slot
 	prefixes.len = max(prefixes.len, 3)
 	prefixes[idx] = typed
 	preferences.update_preference_by_type(/datum/preference/language_prefixes, prefixes)
 	SStgui.update_uis(preferences)
-	return PREF_UPDATE_ACCEPTED
+
+/// A single character typed in the language editor: the prefs it is for and the slot or language it names. Dropped when the
+/// answerer's character setup is no longer those prefs.
+/datum/prompt/text/language
+	timeout = 0
+	var/datum/preferences/preferences
+	var/slot
+	var/language
+
+CAPABILITIES(/datum/prompt/text/language)
+	ref_one(nameof(preferences), /datum/preferences)
+
+/datum/prompt/text/language/prepare(datum/act/A)
+	..()
+	var/datum/preferences/captured_preferences = preferences
+	rel_clear(src, nameof(preferences))
+	rel_set(src, nameof(preferences), captured_preferences)
+
+/datum/prompt/text/language/recheck_extra()
+	return (!QDELETED(preferences) && answerer.client?.prefs && answerer.client.prefs == preferences) ? null : "prefs changed"
 
 /datum/preference_editor/language/proc/ui_act_reset_prefixes(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/defaults = CONFIG_GET(str_list/language_prefixes)
@@ -89,23 +119,33 @@
 
 /datum/preference_editor/language/proc/ui_act_set_custom_key(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// prompt for the key. Replaces any prior binding for that key.
-	var/list/keys = preferences.read_preference(/datum/preference/language_custom_keys) || list()
 	var/lang = params["language"]
-	var/typed = rerun_ask(user, "key", PROC_REF(handle_action), args, /datum/prompt/text, question = "Bind language '[lang]' to which single character?", title = "Language Key", max_len = 1, name_text = ((1) <= MAX_NAME_LEN))
+	open_request(src, /datum/prompt/text/language, PROC_REF(key_answered), answerer = user, question = "Bind language '[lang]' to which single character?", title = "Language Key", max_len = 1, name_text = TRUE, preferences = preferences, language = lang)
+	return PREF_UPDATE_UNCHANGED
+
+/// The character typed for a language key (what ui_act_set_custom_key did after its question).
+/datum/preference_editor/language/proc/key_answered(datum/act/request/A)
+	var/datum/prompt/text/language/asked = A.answer
+	if(!asked)
+		return
+	var/mob/user = asked.answerer
+	var/datum/preferences/preferences = asked.preferences
+	var/typed = asked.value
 	if(!typed)
-		return PREF_UPDATE_UNCHANGED
+		return
 	if(!user?.client?.prefs || user.client.prefs != preferences)
-		return PREF_UPDATE_UNCHANGED
+		return
 	if(length(typed) != 1)
-		return PREF_UPDATE_REJECTED
+		return
+	var/lang = asked.language
+	var/list/keys = preferences.read_preference(/datum/preference/language_custom_keys) || list()
 	// Strip any previous binding for the same language (one key per language).
-	for(var/k in keys.Copy()) // mutation during iteration → iterate copy
+	for(var/k in keys.Copy()) // mutation during iteration -> iterate copy
 		if(keys[k] == lang)
 			keys -= k
 	keys[typed] = lang
 	preferences.update_preference_by_type(/datum/preference/language_custom_keys, keys)
 	SStgui.update_uis(preferences)
-	return PREF_UPDATE_ACCEPTED
 
 /datum/preference_editor/language/proc/ui_act_clear_custom_key(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/keys = preferences.read_preference(/datum/preference/language_custom_keys) || list()
