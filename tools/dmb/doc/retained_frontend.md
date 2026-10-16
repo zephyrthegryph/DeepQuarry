@@ -180,3 +180,51 @@ new dmbc / dm-tree test failures.
 | 7 | new types, removed members, defines used outside bodies | |
 
 Results and timings per stage are appended below as each stage lands.
+
+## Results
+
+Production tree, resident daemon (private namespace), machine shared with other lanes. Seconds,
+wall time of the client call.
+
+| Edit | Before this lane | After stage 1 and 2 | Path |
+|---|---|---|---|
+| unchanged rebuild | 1.6-2.0 | 1.6-2.0 | session hit (not touched) |
+| body edit, no string change | 8.2-9.1 | 8.2-9.1 | patch (not touched: stages 3-6 do that) |
+| body edit changing a string literal | 22.8-25.1 (full compile) | 6.5-8.4 | patch, string append |
+| body edit with line shift and a changed literal | full compile | 6.5-7.2 | patch, string append |
+| body edit after a resource listing changed (icon repack) | full compile (reported by daemon-ns lane) | 8.2-10.6 | patch |
+| new proc / new var | 9.7-10.8 | unchanged | append patch |
+| removed member, new type, `#define` outside a body | 20-30 | unchanged | full compile |
+
+Equivalence: `dmb-equiv --ignore-debug --strict-order` (and with debug lines) of the patched output
+against a fresh native one-shot compile (`DMB_BODY_PATCH=0 --no-cache --no-daemon`) is EQUIVALENT
+for: a string edit, a string plus body edit with and without a line shift, and a body edit after
+an unreferenced file was added to and removed from `icons/gen`. `six_session_contract_tests`
+gained `string_literal_edits_patch_and_match_fresh_bytes`; all 17 six-session tests pass, and
+`cargo test -p dmbc --lib` has the same 24 failures as master (994 passed).
+
+### Stage 1: string literals
+
+`PatchRecord::footprint` split the old `inventory` part into `inventory` (entry key, slot aliases)
+and `strings` (the unit's own literals). A unit whose footprint differs only in `strings` or
+`value_strings` no longer declines: its string entries extend the retained `LinkTables` append-only
+(`LinkTables::extended`), the changed code rows and the new strings go through `patch_model`
+(model edit, list-row reuse encode), the base's unit record is replaced, and old strings stay
+unreferenced (counted for compaction by a later stage). `DMB_STRING_PATCH=0` restores the decline.
+
+### Stage 2: resource listing churn
+
+`InputSnapshot::non_text_difference_with(other, listings)`: the folder listings and negative
+lookups are compared only when the resource archive identity changed. A listing records every name
+in a folder, so an icon repack that adds, removes or rewrites an unreferenced file changed it on
+nearly every real build. A listing matters only through what it resolved; resolution results are in
+the archive identity, the search context is the search paths alone, and consumed files are still
+compared by content.
+
+### Not done
+
+Stages 3-7 of the table above (watcher, per-region resource demand, startup/ABI reuse, in-place
+frontend revision, incremental publication, new types and removed members). The body-edit
+timeline above (frontend 2.1-2.3 s, resources 1.0 s, startup+ABI 1.5 s, validation 0.5-1.1 s,
+publication 0.8 s) is unchanged, so the 2.5 s and 5 s targets are not met. Memory was not
+re-measured (no change to retained state beyond one extended link table per string patch).
