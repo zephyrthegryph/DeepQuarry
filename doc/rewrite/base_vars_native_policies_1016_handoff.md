@@ -13,3 +13,7 @@ The canonical preceding lane is being verified separately and is unchanged by th
 ## Subsequent source proof
 
 The continuation now removes seventeen further baseline rows: 386 to 369, with zero additions. Generation and all ratchets pass. The added venom cooldown, surgical admission, examine text and item injury profiles retain real native ownership, published setters, historical map/VV aliases, mutable activation behavior and independent unarmed/blob/event fields. Their tests are wired under UNIT_TESTS. Compile/runtime verification and a lane-ready stamp are still pending; no result from the separate queued lane is reused as proof for this source.
+
+## Final source checkpoint
+
+The continuation now removes thirty-one rows, 386 to 355, with zero additions. Final generation and ratchets pass. This includes the six object/machine policies, four living fire policies, two pressure/force policies and two imperative animation slots. Actual map/VV contracts are retained for the policies; the animation slots have no named map/save/dependency consumers and use the documented native sparse debugging home. Their numeric values and animation timings are unchanged. Atmosphere-pass mode is retained because its shield setter has synchronous turf invalidation that ordinary trait reflection cannot preserve. The focused selector list was expanded without compiling, and runtime verification remains pending.
