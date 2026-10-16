@@ -1,7 +1,32 @@
-/obj
-	/// A telekinetic reach can grab or poke this (the telekinesis adapter's default). Structures refuse
-	/// unless they declare an INTERACT_TK of their own.
-	var/tk_reach = TRUE
+STATIC_ENTRY(telekinetic_reach)
+/// Whether the default telekinetic adapter can grab or poke this object.
+/proc/telekinetic_reach(allowed = null)
+	return entry_make(ENTRY_TELEKINETIC_REACH, null, list("allowed" = allowed))
+
+/datum/type_trait/telekinetic_reach
+	var/allowed = TRUE
+
+/datum/type_trait/telekinetic_reach/copy_values(datum/type_trait/telekinetic_reach/into)
+	into.allowed = allowed
+
+/datum/entry_engine/type_trait/telekinetic_reach
+	kind = ENTRY_TELEKINETIC_REACH
+	trait_type = /datum/type_trait/telekinetic_reach
+	publish_key = TELEKINETIC_REACH_KEY
+	base_type = /obj
+	var_names = list("tk_reach" = "allowed")
+
+READS_AS(/proc/telekinetic_reach_of, TELEKINETIC_REACH_KEY)
+/proc/telekinetic_reach_of(obj/holder) as /datum/type_trait/telekinetic_reach
+	READS_FROM(holder)
+	return type_trait_of(holder, ENTRY_TELEKINETIC_REACH)
+
+/proc/telekinetic_reach_of_type(type) as /datum/type_trait/telekinetic_reach
+	READS_FROM()
+	return type_trait_of_type(type, ENTRY_TELEKINETIC_REACH)
+
+/obj/proc/set_telekinetic_reach(value)
+	return set_trait(src, ENTRY_TELEKINETIC_REACH, "allowed", value)
 
 /*
 	This is similar to item attack_self, but applies to anything

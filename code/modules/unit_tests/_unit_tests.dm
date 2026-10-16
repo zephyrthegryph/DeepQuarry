@@ -400,6 +400,7 @@
 #include "dq_power_plants_behaviour.dm"
 #include "dq_om_wake_tests.dm"
 #include "dq_actor_adapter_tests.dm"
+#include "dq_telekinetic_reach_policy_tests.dm"
 #include "dq_combat_mode_tests.dm"
 #include "dq_interact_cleanup_tests.dm"
 #include "dq_input_tests.dm"

@@ -42,3 +42,8 @@ The continuation's current source result is 386 to 349: 37 rows removed, zero ad
 
 Current source count: 386 to 348, 38 removals and zero additions. Generation and all ratchets pass. Tesla's rare reentrancy flag uses native sparse boolean state; the existing owner-bound one-second/coil cooldown timers and candidate ordering are unchanged. Real base-entry, selected-coil and deleted-owner tests are wired. The throwpass proposal is held because publishing from Adjacent would violate pure requirement evaluation; a pure per-call reach alternative is under design review. Final compilation/runtime verification remains pending.
 
+
+## Telekinetic reach admission
+
+The continuation now removes 39 rows, 386 to 347, with generation and all ratchets passing. The default telekinesis adapter reads a specialized native admission policy instead of a base object field. Ordinary-object and structure defaults, real grab/poke behavior, historical map/VV aliases and per-instance overrides are preserved. A real human/adapter regression covers refusal and recovery; final DreamChecker/runtime verification is pending.
+

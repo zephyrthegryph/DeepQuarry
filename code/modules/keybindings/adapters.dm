@@ -301,14 +301,14 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 /**
  * A telekinetic Use no op answered: grab a loose object (an item on the floor,
  * or anything unanchored) with a telekinetic grab; otherwise poke it as an unarmed hand
- * would. Mobs, carried items and objects with `tk_reach = FALSE` are left alone.
+ * would. Mobs, carried items and objects whose telekinetic reach policy refuses are left alone.
  */
 /datum/input_adapter/telekinesis/default_use(mob/user, atom/target)
 	if(user.stat || ismob(target))
 		return FALSE
 	var/obj/O = target
 	if(istype(O))
-		if(!O.tk_reach)
+		if(!telekinetic_reach_of(O).allowed)
 			return FALSE
 		if(isitem(O) && !isturf(O.loc))
 			return FALSE

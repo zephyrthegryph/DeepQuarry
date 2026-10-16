@@ -1,0 +1,48 @@
+// The actual adapter's default path: admission, real grab and real anchored poke.
+/obj/dq_tk_policy_probe
+	var/touches = 0
+
+/obj/dq_tk_policy_probe/hand_gate(mob/user)
+	touches++
+	return ..()
+
+/datum/unit_test/dq_telekinetic_reach_policy
+/datum/unit_test/dq_telekinetic_reach_policy/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.coalesce_absorbed), GLOB.coalesce_absorbed)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/datum/input_adapter/telekinesis/adapter = INPUT_ADAPTER(telekinesis)
+	var/obj/dq_tk_policy_probe/loose = allocate(/obj/dq_tk_policy_probe, T)
+	var/obj/structure/refused = allocate(/obj/structure, T)
+	TEST_ASSERT(telekinetic_reach_of_type(/obj).allowed, "ordinary objects retain their actual TRUE type policy")
+	TEST_ASSERT(!telekinetic_reach_of_type(/obj/structure).allowed, "structures retain their actual FALSE override")
+	TEST_ASSERT(adapter.default_use(H, loose), "the real default adapter accepts a loose ordinary object")
+	var/obj/item/tk_grab/G = H.get_active_hand()
+	TEST_ASSERT(istype(G), "the actual adapter created a real telekinetic grab in the active hand")
+	own(G)
+	TEST_ASSERT_EQUAL(G.focus(), loose, "the real grab focuses the actual loose object")
+	TEST_ASSERT_EQUAL(G.host(), H, "the real grab retains the actual actor")
+	qdel(G)
+	TEST_ASSERT(!adapter.default_use(H, refused), "the actual structure policy refuses the default grab")
+	TEST_ASSERT_NULL(H.get_active_hand(), "a refused reach creates no phantom grab")
+	var/obj/item/carried = allocate(/obj/item, H)
+	TEST_ASSERT(!adapter.default_use(H, carried), "even an allowed policy preserves the carried-item exclusion")
+	TEST_ASSERT(!adapter.default_use(H, H), "the actual adapter still excludes mobs")
+	loose.set_anchored(TRUE)
+	TEST_ASSERT(adapter.default_use(H, loose), "an allowed anchored non-item follows the original poke path")
+	TEST_ASSERT_EQUAL(loose.touches, 1, "the real human unarmed attack reaches the actual target hand gate")
+	TEST_ASSERT_NULL(H.get_active_hand(), "an anchored poke does not create a grab")
+	TEST_ASSERT(vars_write(loose, "tk_reach", FALSE), "the actual historical map/VV name writes the native policy")
+	TEST_ASSERT(!adapter.default_use(H, loose), "map-style refusal blocks the real anchored poke")
+	TEST_ASSERT_EQUAL(loose.touches, 1, "refusal leaves the real target un-touched")
+	var/obj/dq_tk_policy_probe/peer = allocate(/obj/dq_tk_policy_probe, T)
+	TEST_ASSERT(telekinetic_reach_of(peer).allowed && telekinetic_reach_of_type(loose.type).allowed, "the actual instance edit preserves peer and shared type admission")
+	loose.set_telekinetic_reach(TRUE)
+	TEST_ASSERT(adapter.default_use(H, loose), "the real native setter restores admission")
+	TEST_ASSERT_EQUAL(loose.touches, 2, "recovery dispatches the actual anchored poke again")
+	TEST_ASSERT_EQUAL(telekinetic_reach_of_type(/obj/structure).allowed, FALSE, "recovery never changes the structure override")
+	test_time(1 SECOND) // allow the actual grab-focus overlay expiry to clean up

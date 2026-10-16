@@ -8,7 +8,6 @@ base_var	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/atom/movable::last
 base_var	code/_helpers/icons.dm	@/atom::examine_icon_snapshot
 base_var	code/_onclick/hud/alert.dm	@/mob::alerts
 base_var	code/_onclick/hud/fullscreen.dm	@/mob::screens
-base_var	code/_onclick/telekinesis.dm	@/obj::tk_reach
 base_var	code/controllers/subsystems/overlays.dm	@/atom::realized_overlays
 base_var	code/controllers/subsystems/overlays.dm	@/atom::realized_underlays
 base_var	code/datums/behaviours/burning.dm	@/obj::burn_overlay
