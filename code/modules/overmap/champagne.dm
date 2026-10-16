@@ -16,45 +16,51 @@
 
 CAPABILITIES(/obj/item/champagne)
 	configure(item_combat(attack_verbs = list("attacked", "bonked", "hit")))
+	op("christen", at_target(/obj/machinery/computer/shuttle_control/explore), label("Christen a shuttle"),
+		needs(req_adjacent(), req(PROC_REF(christen_unlinked))),
+		starts(PROC_REF(christen_started)),
+		asks(/datum/prompt/text, fields = list("question" = "Choose a name for the shuttle", "title" = "New Shuttle Name", "timeout" = 0), step = "k30"),
+		then(PROC_REF(christen)))
 
-/obj/item/champagne/afterattack(atom/A, mob/user, proximity)
-	if(!proximity)
-		return
-	var/obj/machinery/computer/shuttle_control/explore/comp = A
-	if(!istype(comp))
-		return
+/// The bottle is only lifted over a console no shuttle is linked to.
+/obj/item/champagne/proc/christen_unlinked(datum/act/op/A)
+	var/obj/machinery/computer/shuttle_control/explore/comp = A.target
+	var/linked_tag = read_once(comp.shuttle_tag)
+	if(linked_tag)
+		return span_warning("[comp] is already configured to link with [linked_tag]")
+	return null
 
-	if(comp.shuttle_tag)
-		to_chat(user, span_warning("[comp] is already configured to link with [comp.shuttle_tag]"))
-		return
+/obj/item/champagne/proc/christen_started(datum/act/op/A)
+	act_message(A.actor, src, others = span_notice("%U% lifts %T% bottle over [A.target]!"))
 
-	act_message(user, src, others = span_notice("%U% lifts %T% bottle over [comp]!"))
-	var/shuttle_name = rerun_ask(user, "k30", PROC_REF(afterattack), args, /datum/prompt/text, question = "Choose a name for the shuttle", title = "New Shuttle Name")
-	if(isnull(shuttle_name))
-		return TRUE
+/// The shuttle's name is answered: the bottle goes over the console.
+/obj/item/champagne/proc/christen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/machinery/computer/shuttle_control/explore/comp = A.target
+	var/shuttle_name = A.step_value("k30")
 	if(!shuttle_name || QDELETED(src) || QDELETED(comp) || comp.shuttle_tag || user.incapacitated())
-		return // After input() safety re-checks
+		return OP_OK // After input() safety re-checks
 
 	// Tons of safety checks here.  Make sure they don't destroy everything.
 	if(length(shuttle_name) < min_name_len || length(shuttle_name) > max_name_len)
 		to_chat(user, span_warning("Name length must be between [min_name_len] and [max_name_len]."))
-		return
+		return OP_OK
 	if(shuttle_name in shuttles_shuttles())
 		to_chat(user, span_warning("Invalid name: Already in use."))
-		return
+		return OP_OK
 
 	var/area/my_area = get_area(comp)
 	if(!my_area || istype(my_area, /area/space))
 		to_chat(user, span_warning("[comp] must be in a valid area to become a shuttle."))
-		return
+		return OP_OK
 	if(my_area in shuttles_shuttle_areas())
 		to_chat(user, span_warning("[comp] is already in a shuttle."))
-		return
+		return OP_OK
 	// Count turfs in the area
 	var/list/turfs = get_current_area_turfs(my_area)
 	if(turfs.len > max_area_turfs)
 		to_chat(user, span_warning("The new shuttle area is too large."))
-		return
+		return OP_OK
 
 	var/turf/comp_turf = get_turf(comp)
 	var/datum/shuttle/autodock/S = create_landable_shuttle(shuttle_name, comp_turf, my_area)
@@ -66,7 +72,7 @@ CAPABILITIES(/obj/item/champagne)
 	after(comp_turf, 1 SECOND, GLOBAL_PROC_REF(playsound), with = list(comp_turf, 'sound/voice/Serithi/shuttlehere.ogg', 75, 0))
 	consume(src, user)
 
-	return TRUE
+	return OP_OK
 
 /obj/item/champagne/proc/create_landable_shuttle(shuttle_name, turf/start_loc, area/shuttle_area)
 	// First things first, create the starting location landmark.

@@ -2,6 +2,7 @@
 //
 //	on_change(PROC_REF(is_powered), ENTER | EXIT, then(PROC_REF(power_flipped)))   // replaces a power_change() override
 //	on_change(nameof(charge), ANY, then(PROC_REF(charge_changed)))                 // a key: fires when its value changed
+//	on_change(cond_published(MOB_KEY_STATUS, nameof(stat)), ANY, then(PROC_REF(x))) // an event: fires each time one of its keys is published
 //
 // The condition or key is evaluated at the drain (act_drain_point(): the start of the kernel's D, P and R phases), and the parts run there, once
 // per drain however many of its reads changed. A condition's edge is ENTER (became true) or EXIT (became false); ANY (= ENTER | EXIT) on a key
@@ -10,6 +11,10 @@
 // var itself (rewriting it re-reads the far end) AND the far var's own changes: a hop path registers its last segment in GLOB.change_hop_keys, so a
 // write of that var on any entity is published, and hooks_change_hop_published() walks the relations back along the path to the entities that read
 // it (the same reverse walk the stat layer's hops use) and marks their hooks.
+//
+// A published-key condition (cond_published(), relations.dm) is for the keys that are not one var's value: a producer's PUBLISH_CHANGE(E, key)
+// (a mob's MOB_KEY_* facts), and the vars that stand beside them. There is no value to compare, so ANY is its only edge and the parts run once per
+// drain after any of its keys was published. The reads the generator found for the hook's handler (reaction_reads(), derived_reads_lint) join its keys.
 //
 // A type's own on_change entries watch through the compiled table (rx_readers() asks hooks_watching()); an activation's watch its holder as dynamic
 // readers (rx_watch_adjust()) and end with the activation. The baseline (the value before the first change) is taken when the holder initializes
@@ -28,12 +33,25 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 /proc/on_change(cond, edge, ENTRY_SLOTS, at_most = 0, when = null)
 	if(!isnum(edge))
 		return reaction_on_change(cond, edge, at_most, when)
+	if(change_is_published(cond) && edge != ANY)
+		declare_report("on_change(cond_published(...)): a published key has no value to compare, so its edge is ANY")
+		return null
 	return entry_make(ENTRY_ON_CHANGE, null, list("cond" = cond, "edge" = edge), entry_flatten(ENTRY_SLOT_LIST))
+
+/// TRUE for a cond_published() condition: the hook runs when one of its keys is published, with no value to compare.
+/proc/change_is_published(cond)
+	return islist(cond) && length(cond) && cond[1] == COND_PUBLISHED
 
 /// The keys whose publication means `cond` may have changed, for holder E.
 PROC_SUMMARY(/proc/change_read_keys) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/change_read_keys(datum/E, cond, datum/act/A = null, datum/lookup_read_scope/scope = null)
 	. = list()
+	if(change_is_published(cond))
+		var/list/keys = cond
+		for(var/i in 2 to length(keys))
+			if(istext(keys[i]))
+				. |= list(keys[i])
+		return
 	if(islist(cond))
 		var/list/tree = cond
 		for(var/i in 2 to length(tree))
@@ -62,6 +80,8 @@ PROC_SUMMARY(/proc/change_read_keys) // vars[] / call() dispatcher: the walk can
 /proc/change_value(datum/E, datum/hook/H)
 	var/cond = H.entry.args["cond"]
 	var/edge = H.entry.args["edge"]
+	if(change_is_published(cond))
+		return TRUE // an event has no value: every drain that reaches it runs it (hook_change_eval)
 	if(edge != ANY)
 		return !!change_condition(E, cond)
 	if(islist(cond))
@@ -119,9 +139,44 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 		H.reads = change_read_keys(E, H.entry.args["cond"])
 		for(var/key in H.reads)
 			LAZYADD(index[key], H)
+		if(change_is_published(H.entry.args["cond"]))
+			// What the generator found its handler reads (a var, a relation, a published key) wakes it too, for this type only: the index is the type's, H.reads stays the declared keys.
+			for(var/key in change_generated_reads(E, H))
+				LAZYINITLIST(index[key])
+				index[key] |= H
 		change_hop_register(H.entry.args["cond"])
 	GLOB.change_index_by_type[E.type] = length(index) ? index : FALSE
 	return GLOB.change_index_by_type[E.type]
+
+/// The reads the generator recorded for the handler of published hook H on E's type (reaction_reads() entries of generated_reads()): keys.
+/proc/change_generated_reads(datum/E, datum/hook/H)
+	. = list()
+	var/list/handlers = list()
+	for(var/datum/entry/part in H.entry.children)
+		if(part.kind == ENTRY_THEN)
+			handlers += part.args["handler"]
+	if(!length(handlers))
+		return
+	for(var/datum/derived_entry/D in type_list(E, TYPE_PROC_REF(/datum, generated_reads)))
+		if(D.kind != DKIND_REACTION || !(D.name in handlers))
+			continue
+		for(var/read in D.reads)
+			if(istext(read))
+				. |= list(read)
+
+/// TRUE when a published on_change hook of E's type has `handler` as its then() (the reads the generator found for it feed that hook, not the legacy
+/// reaction table).
+/proc/change_handler_declared(datum/E, handler)
+	var/datum/type_table/T = table_of(E)
+	if(T == table_empty())
+		return TRUE // the declarations are still being built: nothing can be said yet
+	for(var/datum/hook/H as anything in hook_table_of(T))
+		if(H.kind != HOOK_CHANGE || !change_is_published(H.entry.args["cond"]))
+			continue
+		for(var/datum/entry/part in H.entry.children)
+			if(part.kind == ENTRY_THEN && part.args["handler"] == handler)
+				return TRUE
+	return FALSE
 
 /// A hook reads `cond`: when it is a hop path ("terminal.charge"), its last segment becomes a key whose writes are published everywhere.
 /proc/change_hop_register(cond, delta = 1)
@@ -267,7 +322,9 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 	LAZYSET(rx.change_last, id, now)
 	var/edge = H.entry.args["edge"]
 	var/fire = FALSE
-	if(edge == ANY)
+	if(change_is_published(H.entry.args["cond"]))
+		fire = TRUE
+	else if(edge == ANY)
 		fire = !had || last != now
 	else if(edge & ENTER)
 		fire = now && (!had || !last)

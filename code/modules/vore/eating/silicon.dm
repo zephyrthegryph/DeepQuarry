@@ -43,11 +43,28 @@
 		to_chat(src, span_vwarning("There's no one in range to eat."))
 		return
 
-	var/mob/living/prey = rerun_ask(src, "a1", VERB_REF(holo_nom), args, /datum/prompt/choice, question = "Select a mob to eat", title = "Holonoms", choices = possible_prey)
-	if(isnull(prey))
+	open_request(src, /datum/prompt/choice, PROC_REF(holo_nom_answered), answerer = src, question = "Select a mob to eat", title = "Holonoms", choices = possible_prey, timeout = 0)
+
+/// The AI picked a mob for its hologram to eat: the checks that follow the question, then the op.
+/mob/living/silicon/ai/proc/holo_nom_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/mob/living/prey = A.answer.value
 	if(!prey)
 		return //Probably cancelled
+
+	var/mob/observer/eye/eyeobj = src?.active_eye()
+	if(!eyeobj || !holo)
+		to_chat(src, span_vwarning("You can only use this when holo-projecting!"))
+		return
+
+	if(isbelly(loc))
+		to_chat(src, span_vwarning("For safety reasons, you cannot consume people with holograms while you are inside someone else."))
+		return
+
+	var/obj/effect/overlay/aiholo/hologram = LAZYACCESS(holo.masters, src)
+	if(!hologram)
+		return
 
 	if(!istype(prey))
 		to_chat(src, span_vwarning("Invalid mob choice!"))

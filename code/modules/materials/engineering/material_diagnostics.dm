@@ -121,8 +121,31 @@
 	var/list/roles = list()
 	for(var/role in owner().material_roles())
 		roles += role
-	var/role = rerun_ask(user, "k105", PROC_REF(fit_stock), args, /datum/prompt/choice, question = "Which component should be replaced?", title = "Service assembly", choices = roles)
-	if(isnull(role))
+	open_request(src, /datum/prompt/choice/service_role, PROC_REF(fit_stock_role_answered), answerer = user, question = "Which component should be replaced?", title = "Service assembly", choices = roles, timeout = 0, stock = stock)
+
+/// The question of which component a stack of sheets replaces: the stack.
+/datum/prompt/choice/service_role
+	timeout = 0
+	var/obj/item/stack/material/stock
+
+CAPABILITIES(/datum/prompt/choice/service_role)
+	ref_one(nameof(stock), /obj/item/stack/material)
+
+/datum/prompt/choice/service_role/prepare(datum/act/A)
+	..()
+	var/obj/item/stack/material/captured_stock = stock
+	rel_clear(src, nameof(stock))
+	rel_set(src, nameof(stock), captured_stock)
+
+/// The component was chosen: fit_stock()'s checks are made again, then the fitting starts.
+/datum/material_service/proc/fit_stock_role_answered(datum/act/request/A)
+	var/datum/prompt/choice/service_role/asked = A.answer
+	if(!asked)
+		return
+	var/mob/user = asked.answerer
+	var/obj/item/stack/material/stock = asked.stock
+	var/role = asked.value
+	if(!can_service(user) || !stock || stock.loc != user)
 		return
 	if(!role || !can_service(user) || !maintenance_open || QDELETED(stock) || stock.loc != user || !(role in owner().material_roles()))
 		return
