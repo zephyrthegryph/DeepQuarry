@@ -143,7 +143,7 @@
 /datum/trait/negative/hollow/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
 	for(var/obj/item/organ/external/O in H.organs)
-		O.min_broken_damage *= 0.5
+		O.set_min_broken_damage(O.min_broken_damage * 0.5)
 		O.min_bruised_damage *= 0.5
 
 /datum/trait/negative/lightweight
@@ -661,7 +661,7 @@
 	..()
 	for(var/obj/item/organ/external/ex_organ in H.organs)
 		ex_organ.cannot_break = TRUE
-		ex_organ.dislocated = -1
+		ex_organ.set_dislocated(-1)
 		ex_organ.nonsolid = TRUE //ESSENTIAL for boneless. Otherwise it acts like a normal limb.
 		ex_organ.spread_dam = TRUE
 		ex_organ.set_max_damage(floor(ex_organ.max_damage * limb_health))

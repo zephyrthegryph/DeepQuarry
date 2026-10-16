@@ -148,16 +148,11 @@ CAPABILITIES(/obj/machinery/flasher)
 	desc = "A remote control switch for a mounted flasher."
 
 CAPABILITIES(/obj/machinery/button/flasher)
+	ref_many(nameof(controlled_flashers), /obj/machinery/flasher, by = nameof(id))
 	op("trigger", hand(), priority(OP_PRIORITY_DEFAULT), label("Press"), then(PROC_REF(interaction_trigger)))
 
 /// Flashers sharing our id (keyed: linked when either end materializes).
 /obj/machinery/button/flasher/var/list/obj/machinery/flasher/controlled_flashers
-/obj/machinery/button/flasher/relations()
-	. = ..()
-	. += rel_many(nameof(controlled_flashers), keyed = nameof(id), keyed_target = /obj/machinery/flasher)
-/obj/machinery/flasher/relations()
-	. = ..()
-	. += rel_key(nameof(id))
 
 /obj/machinery/button/flasher/proc/interaction_trigger(datum/act/op/A)
 	use_power(5)

@@ -71,7 +71,7 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 
 /// There is a solid thing in it to take out.
 /obj/item/reagent_containers/cooking_container/proc/holds_solids(datum/act/op/A)
-	return (length(contents) > 0) ? null : MSG(cooking_container/nothing_in_it) // ALLOW(spatial,reads): a count of what is inside, read when it is emptied; the click asks again
+	return (contents_count(src) > 0) ? null : MSG(cooking_container/nothing_in_it)
 
 /// Everything solid comes out.
 /obj/item/reagent_containers/cooking_container/proc/emptied(datum/act/op/A)
@@ -157,8 +157,8 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 
 /obj/item/reagent_containers/cooking_container/proc/can_fit(obj/item/I)
 	var/total = 0
-	for (var/obj/item/J in contents) // ALLOW(reads): the sizes of what is inside are read when a thing is put in; the click asks again
-		total += J.w_class
+	for (var/obj/item/J in contents_of(src, /obj/item))
+		total += read_once(J.w_class)
 
 	if((max_space - total) >= I.w_class)
 		return 1

@@ -40,6 +40,8 @@
 	var/list/effects
 	/// look.watch(): own keys of the other entities this draw read (a hat's sprite, a container's contents): a change on any of them redraws the holder.
 	var/list/watched
+	/// look.watch_worn(): the subset of `watched` this draw shows worn or held.
+	var/list/watched_worn
 	/// look.neighbours(): the types of the neighbours this draw looked for (the watched turfs tell the holder only of those).
 	var/list/neighbour_types
 	/// look.watch_look(): own key -> look serial (cap_engine_state.look_serial) of the atoms whose whole look this draw composes: only a change of THEIR LOOK
@@ -75,6 +77,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	identity_desc = null
 	effects = null
 	watched = null
+	watched_worn = null
 	watched_looks = null
 	neighbour_types = null
 	touched = FALSE
@@ -221,6 +224,18 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	if(!isdatum(thing) || QDELETED(thing))
 		return
 	LAZYOR(watched, OWN_KEY(thing))
+
+/**
+ * watch() for a thing this draw shows worn or held (a human's clothes, what is in its hands): the draw reads whatever the thing shows (its sprite
+ * vars, its colour, its accessories), so every write of the thing reaches the holder, tracked by a reader of that var or not. A thing that is only
+ * read for a fact or two (an organ's damage, a belly) is watch() and publishes what something reads.
+ */
+/datum/look/proc/watch_worn(datum/thing)
+	if(!isdatum(thing) || QDELETED(thing))
+		return
+	var/key = OWN_KEY(thing)
+	LAZYOR(watched, key)
+	LAZYOR(watched_worn, key)
 
 /**
  * This draw composes `thing`'s whole look (a voodoo doll that wears the look of its necklace's wearer, a remote scene tool): the holder redraws when THAT

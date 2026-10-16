@@ -219,14 +219,10 @@ CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier)
 /obj/item/clothing/accessory/holster/machete/rapier/holster(obj/item/I, mob/living/user)
 	..()
 	occupied()
-	if(has_suit())
-		has_suit().update_clothing_icon()
 
 /obj/item/clothing/accessory/holster/machete/rapier/unholster(mob/user, stance = I_HELP)
 	..()
 	occupied()
-	if(has_suit())
-		has_suit().update_clothing_icon()
 
 
 /obj/item/clothing/accessory/holster/leg/left

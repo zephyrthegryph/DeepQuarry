@@ -207,7 +207,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 			log_shuttle("[my_area] shuttle computer couldn't find [lost] sensor!")
 
 /obj/machinery/computer/shuttle_control/web/proc/has_shuttle(mob/actor, atom/target, obj/item/held)
-	return shuttles_shuttles()[shuttle_tag] // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	return read_once(shuttles_shuttles()[shuttle_tag])
 
 /// Requirement (was REQ_* has_shuttle): the legacy check answers TRUE to pass.
 /obj/machinery/computer/shuttle_control/web/proc/has_shuttle_holds(datum/act/op/A)

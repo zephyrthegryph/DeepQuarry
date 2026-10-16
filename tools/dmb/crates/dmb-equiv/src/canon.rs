@@ -1225,7 +1225,15 @@ pub(crate) fn class_fields(ctx: &Ctx<'_>, ci: usize) -> Vec<Field> {
             })
             .unwrap_or_default()
     };
-    push("type_verbs", "verbs".into(), list(c.verb_list_id()));
+    // The verb list order only changes the order a client lists verbs in (the verb panel sorts them),
+    // so compare it as a set; the length and members still must match.
+    let verbs = {
+        let text = list(c.verb_list_id());
+        let mut keys: Vec<&str> = text.split(", ").collect();
+        keys.sort_unstable();
+        keys.join(", ")
+    };
+    push("type_verbs", "verbs".into(), verbs);
     // Proc lists: dispatch is by name, so only the order among same-named
     // entries (precedence) is observable (DD probe: regrouping by name leaves
     // calls and typesof unchanged). Compare per name, in list order.

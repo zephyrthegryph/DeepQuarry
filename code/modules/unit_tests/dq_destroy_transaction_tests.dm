@@ -96,9 +96,6 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 /datum/dq_destroy_transaction_pair_fixture
 	var/datum/dq_destroy_transaction_pair_fixture/partner
 
-/datum/dq_destroy_transaction_pair_fixture/relations()
-	. = ..()
-	. += rel_one(nameof(partner), back = nameof(/datum/dq_destroy_transaction_pair_fixture::partner))
 
 // ---- Tests: phase ordering ----
 
@@ -297,9 +294,6 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	var/datum/dq_destroy_transaction_reentrant_pair/partner
 	var/qdel_partner_on_signal = FALSE
 
-/datum/dq_destroy_transaction_reentrant_pair/relations()
-	. = ..()
-	. += rel_one(nameof(partner), back = nameof(/datum/dq_destroy_transaction_reentrant_pair::partner))
 
 /datum/dq_destroy_transaction_reentrant_pair/proc/watch()
 	observe(src, /datum/notice/qdeleting, src, then(PROC_REF(on_qdeleting)))
@@ -330,9 +324,6 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	var/datum/dq_destroy_transaction_pair_fixture/partner
 	var/reset_after_links = FALSE
 
-/datum/dq_destroy_transaction_scrub_fixture/relations()
-	. = ..()
-	. += rel_one(nameof(partner), back = nameof(/datum/dq_destroy_transaction_pair_fixture::partner))
 
 /// Re-sets the fixture's declared pair var from phase 6 (effects), after phase 4
 /// cleared it: only phase 8's scrub can null it again.
@@ -584,3 +575,12 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	TEST_ASSERT(QDELETED(probe), "late-aborted holder reaches deletion")
 	TEST_ASSERT_EQUAL(hook_count, 1, "completed declared destroy hook is not repeated after a later phase faults")
 	TEST_ASSERT_NULL(probe.rx, "late abort retains completed runtime teardown")
+
+CAPABILITIES(/datum/dq_destroy_transaction_pair_fixture)
+	links(/datum/dq_destroy_transaction_pair_fixture::partner, /datum/dq_destroy_transaction_pair_fixture::partner)
+
+CAPABILITIES(/datum/dq_destroy_transaction_reentrant_pair)
+	links(/datum/dq_destroy_transaction_reentrant_pair::partner, /datum/dq_destroy_transaction_reentrant_pair::partner)
+
+CAPABILITIES(/datum/dq_destroy_transaction_scrub_fixture)
+	ref_one(nameof(partner), /datum/dq_destroy_transaction_pair_fixture)

@@ -399,12 +399,10 @@ init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::
 init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::A
 init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::ASSERT
 init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::LAZYADD
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::areas_added
 init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::for
 init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::A
 init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::if
 init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::LAZYADD
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::areas_added
 init_lines	code/game/machinery/doors/multi_tile.dm	@/obj/machinery/door/airlock/multi_tile::Initialize::SetBounds
 init_lines	code/game/machinery/doors/multi_tile.dm	@/obj/machinery/door/airlock/multi_tile::Initialize::apply_opacity_to_my_turfs
 init_lines	code/game/machinery/doors/windowdoor.dm	@/obj/machinery/door/window::Initialize::update_nearby_tiles
@@ -1477,7 +1475,6 @@ init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::if
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::for
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::tie
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::attach_accessory
-init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing::Initialize::clothing_index
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::if
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::O
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/ears/offear::Initialize::name

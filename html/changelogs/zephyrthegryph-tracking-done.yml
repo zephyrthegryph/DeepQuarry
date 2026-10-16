@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Reactive tracking: flyweight materials, typed hops, published contents/client/key reads, sampled global registries through read_once, relations declared for stored refs"
+  - code_imp: "The reads walk reports a hop through a non-relation var where something is read through it, not where the var is only read"
+  - code_imp: "REFRESH DRIFT (hidden verbs, granted verbs, periodic gate) runs on every strict staleness check in test builds; untracked_inputs and sem/reads are hard bans with no baseline"
+  - code_imp: "Tests prove the staleness checker catches an untracked draw read and the always-on drift audit"

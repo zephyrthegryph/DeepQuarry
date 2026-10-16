@@ -56,16 +56,11 @@ CAPABILITIES(/obj/machinery/neonsign)
 	icon_state = "crema_switch"
 
 CAPABILITIES(/obj/machinery/button/neonsign)
+	ref_many(nameof(controlled_signs), /obj/machinery/neonsign, by = nameof(id))
 	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
 /// Neon signs sharing our id (keyed).
 /obj/machinery/button/neonsign/var/list/obj/machinery/neonsign/controlled_signs
-/obj/machinery/button/neonsign/relations()
-	. = ..()
-	. += rel_many(nameof(controlled_signs), keyed = nameof(id), keyed_target = /obj/machinery/neonsign)
-/obj/machinery/neonsign/relations()
-	. = ..()
-	. += rel_key(nameof(id))
 
 /obj/machinery/button/neonsign/proc/interaction_toggle(datum/act/op/A)
 	var/mob/user = A.actor

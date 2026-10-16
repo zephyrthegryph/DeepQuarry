@@ -43,10 +43,10 @@
 
 /// Rebuild the integrity caches from the wound afflictions on this limb.
 /obj/item/organ/external/recalc_integrity()
-	integrity_dirty = FALSE
-	trauma_cache = 0
-	burn_cache = 0
-	number_wounds = 0
+	set_integrity_dirty(FALSE)
+	set_trauma_cache(0)
+	set_burn_cache(0)
+	set_number_wounds(0)
 	var/list/view = list()
 	var/list/source = owner?.body ? owner.body.afflictions_by_location?[src] : detached_afflictions
 	for(var/datum/affliction/wound/W in source)
@@ -54,13 +54,13 @@
 			view += W
 	wound_view = view
 	for(var/datum/affliction/wound/W as anything in view)
-		number_wounds += W.amount
+		set_number_wounds(number_wounds + W.amount)
 		if(W.internal)
 			continue // arterial bleeds don't count toward limb integrity
 		if(W.damage_type == BURN)
-			burn_cache += W.damage
+			set_burn_cache(burn_cache + W.damage)
 		else
-			trauma_cache += W.damage
+			set_trauma_cache(trauma_cache + W.damage)
 	set_damage(min(max_damage, trauma_cache + burn_cache))
 
 /// Wound afflictions located on this limb, attached or detached. D24: a cached
@@ -79,13 +79,13 @@
 		rel_set(W, nameof(W.location), src)
 		rel_add(src, nameof(detached_afflictions), W)
 	W.sync()
-	integrity_dirty = TRUE
+	set_integrity_dirty(TRUE)
 
 /// Take a wound affliction off this limb and delete it.
 /obj/item/organ/external/proc/remove_wound(datum/affliction/wound/W)
 	if(W.body)
 		W.body.remove_affliction(W)
-	integrity_dirty = TRUE
+	set_integrity_dirty(TRUE)
 	if(!rel_remove(src, nameof(detached_afflictions), W))
 		spent(W)
 

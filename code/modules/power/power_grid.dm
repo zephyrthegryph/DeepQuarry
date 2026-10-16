@@ -138,6 +138,8 @@ CAPABILITIES(/datum/power_grid_registry)
 
 // ---- reads ------------------------------------------------------------------
 
+/// The fallback below reads Rust's numbers for a region that has no datum yet: a sampled read (the grid datum mirrors them and is what a look hears).
+PROC_SUMMARY(/proc/vg_power_region_read)
 /proc/power_avail(id)
 	var/datum/power_grid/grid = power_grid_lookup(id)
 	if(grid)

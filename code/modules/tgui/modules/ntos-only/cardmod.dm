@@ -240,7 +240,7 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 		id_card = computer.card_slot.stored_card()
 	if(computer && program.can_run(user, 1) && id_card)
 		var/account_num = account
-		id_card.associated_account_number = account_num
+		id_card.set_associated_account_number(account_num)
 	. = TRUE
 	if(id_card)
 		id_card.name = text("[id_card.registered_name]'s ID Card ([id_card.assignment])")

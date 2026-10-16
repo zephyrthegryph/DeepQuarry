@@ -875,7 +875,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /mob/living/carbon/human/proc/worn_item(datum/look/look, slot)
 	var/obj/item/I = get_equipped_item(slot)
 	if(I && look)
-		look.watch(I)
+		look.watch_worn(I)
 		look.watch_look_unless_composing(I, src)
 	return I
 

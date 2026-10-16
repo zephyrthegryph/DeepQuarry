@@ -57,6 +57,7 @@
 GLOBAL_LIST_EMPTY(reqs_interned)
 
 /// The shared requirement equal to R (same type and settings), registering R if new.
+PROC_SUMMARY(/proc/req_intern) // the interning table only grows, and an equal requirement always resolves to the same shared one
 /proc/req_intern(datum/req/R)
 	var/signature = datum_signature(R)
 	var/datum/req/known = GLOB.reqs_interned[signature]

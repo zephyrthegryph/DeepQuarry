@@ -103,7 +103,7 @@
 	employee.set_job(JOB_ENGINEER)
 	var/datum/mind/employee_mind = new("budget_plan_employee")
 	var/datum/money_account/employee_account = new
-	employee_account.account_number = 812345
+	employee_account.set_account_number(812345)
 	rel_set(employee_mind, nameof(employee_mind.initial_account), employee_account)
 	employee_mind.transfer_to(employee)
 	registry_join(REGISTRY_PLAYERS, employee)
@@ -150,7 +150,7 @@
 		var/datum/mind/employee_mind = own(new /datum/mind("payroll_test_[index]")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 		var/datum/money_account/account = new
 		account.owner_name = "Employee [index]"
-		account.account_number = 810000 + index
+		account.set_account_number(810000 + index)
 		rel_set(employee_mind, nameof(employee_mind.initial_account), account)
 		employee_mind.transfer_to(employee)
 		registry_join(REGISTRY_PLAYERS, employee)
@@ -276,7 +276,7 @@
 	var/datum/mind/requester_mind = own(new /datum/mind("personal_supply_test")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 	var/datum/money_account/account = new
 	account.owner_name = "Personal Supply Tester"
-	account.account_number = 812345
+	account.set_account_number(812345)
 	account.money = SSsupply.pack_price(pack) + 10
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	rel_set(requester_mind, nameof(requester_mind.initial_account), account)
@@ -317,7 +317,7 @@
 	set_var(SSsupply, "currency_internal_refunded", SSsupply.currency_internal_refunded)
 	var/datum/money_account/customer = new
 	customer.owner_name = "Hungry Tester"
-	customer.account_number = 823456
+	customer.set_account_number(823456)
 	customer.money = 120
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	service.service_subsidy = 0.25
@@ -362,11 +362,11 @@
 	var/internal_refunds_before = SSsupply.currency_internal_refunded
 	var/datum/money_account/customer = new
 	customer.owner_name = "Adversarial Customer"
-	customer.account_number = 834567
+	customer.set_account_number(834567)
 	customer.money = 500
 	var/datum/money_account/staff = new
 	staff.owner_name = "Service Worker"
-	staff.account_number = 834568
+	staff.set_account_number(834568)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, staff)
 	service.service_subsidy = 0
@@ -377,7 +377,7 @@
 	TEST_ASSERT_EQUAL(staff.money, 10, "staff did not receive their gratuity")
 	TEST_ASSERT_EQUAL(length(SSsupply.service_invoice_rows(customer.account_number)), 1, "customer receipt lookup did not use the global ledger")
 	var/datum/money_account/impostor = new
-	impostor.account_number = 834569
+	impostor.set_account_number(834569)
 
 	var/obj/item/retail_scanner/civilian/terminal = new(test_turf)
 	var/mob/living/carbon/human/user = new(test_turf)
@@ -493,16 +493,16 @@
 	TEST_ASSERT_EQUAL(scanner.service_staff_account_number, staff_before_invalid, "rejected scanner input changed staff attribution")
 	var/datum/money_account/first_provider = new
 	first_provider.owner_name = "First provider"
-	first_provider.account_number = 884001
+	first_provider.set_account_number(884001)
 	first_provider.remote_access_pin = 1111
-	first_provider.security_level = 1
+	first_provider.set_security_level(1)
 	first_provider.is_budget_account = TRUE
 	first_provider.department_id = DEPARTMENT_CIVILIAN
 	var/datum/money_account/second_provider = new
 	second_provider.owner_name = "Second provider"
-	second_provider.account_number = 884002
+	second_provider.set_account_number(884002)
 	second_provider.remote_access_pin = 2222
-	second_provider.security_level = 1
+	second_provider.set_security_level(1)
 	second_provider.is_budget_account = TRUE
 	second_provider.department_id = DEPARTMENT_CARGO
 	registry_join(REGISTRY_MONEY_ACCOUNTS, first_provider)
@@ -553,7 +553,7 @@
 
 	var/datum/money_account/customer_account = new
 	customer_account.owner_name = "Lifecycle Customer"
-	customer_account.account_number = 845670
+	customer_account.set_account_number(845670)
 	customer_account.money = 200
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer_account)
 	var/mob/living/carbon/human/customer = new(test_turf)
@@ -562,7 +562,7 @@
 	customer_mind.transfer_to(customer)
 	var/obj/item/card/id/customer_id = own(new /obj/item/card/id(customer)) // the PDA spills its ID when deleted
 	customer_id.set_registered_name(customer_account.owner_name)
-	customer_id.associated_account_number = customer_account.account_number
+	customer_id.set_associated_account_number(customer_account.account_number)
 	var/obj/item/pda/customer_pda = new(customer)
 	rel_set(customer_pda, nameof(customer_pda.id), customer_id)
 
@@ -674,7 +674,7 @@
 	var/cargo_income_before = cargo.monthly_income
 	var/datum/money_account/producer = new
 	producer.owner_name = "Research Producer"
-	producer.account_number = 918273
+	producer.set_account_number(918273)
 	producer.money = 1000
 	producer.department_id = DEPARTMENT_ENGINEERING
 	registry_join(REGISTRY_MONEY_ACCOUNTS, producer)
@@ -727,7 +727,7 @@
 	rel_set(scanner, nameof(scanner.linked_account), research)
 	var/mob/living/carbon/human/customer = new(test_turf)
 	var/obj/item/card/id/customer_id = new(customer)
-	customer_id.associated_account_number = producer.account_number
+	customer_id.set_associated_account_number(producer.account_number)
 	dq_test_wear_id(customer, customer_id)
 	scanner.scan_item_price(prototype, customer)
 	TEST_ASSERT_EQUAL(scanner.transaction_amount, 500, "R&D prototype did not receive a crew-facing Thaler price")
@@ -833,7 +833,7 @@
 			break
 	TEST_ASSERT_NOTNULL(test_listing, "generated market had no visible seller listing")
 	var/datum/money_account/account = new
-	account.account_number = 9654331
+	account.set_account_number(9654331)
 	account.owner_name = "Market Order Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("market_order_tester")
@@ -876,7 +876,7 @@
 	TEST_ASSERT_NOTNULL(syndicate_broker, "Syndicate market counterparty was not registered")
 
 	var/datum/money_account/owner_account = new
-	owner_account.account_number = 9654340
+	owner_account.set_account_number(9654340)
 	owner_account.owner_name = "Covert Principal Tester"
 	owner_account.money = 10000
 	registry_join(REGISTRY_MONEY_ACCOUNTS, owner_account)
@@ -886,7 +886,7 @@
 	owner_mind.transfer_to(owner)
 
 	var/datum/money_account/collaborator_account = new
-	collaborator_account.account_number = 9654341
+	collaborator_account.set_account_number(9654341)
 	collaborator_account.owner_name = "Covert Cargo Tester"
 	collaborator_account.department_id = DEPARTMENT_CARGO
 	registry_join(REGISTRY_MONEY_ACCOUNTS, collaborator_account)
@@ -895,7 +895,7 @@
 	var/mob/living/carbon/human/collaborator = new(test_turf)
 	collaborator_mind.transfer_to(collaborator)
 	var/obj/item/card/id/collaborator_id = new(collaborator)
-	collaborator_id.associated_account_number = collaborator_account.account_number
+	collaborator_id.set_associated_account_number(collaborator_account.account_number)
 	collaborator_id.set_access(list(ACCESS_CARGO))
 	dq_test_wear_id(collaborator, collaborator_id)
 
@@ -984,7 +984,7 @@
 	TEST_ASSERT_EQUAL(visible_transaction["counterparty"], transaction.cover_name, "ordinary market history leaked the covert principal name")
 
 	var/datum/money_account/auditor_account = new
-	auditor_account.account_number = 9654342
+	auditor_account.set_account_number(9654342)
 	auditor_account.owner_name = "Market Auditor"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, auditor_account)
 	var/datum/mind/auditor_mind = new("market_auditor")
@@ -992,7 +992,7 @@
 	var/mob/living/carbon/human/auditor = new(test_turf)
 	auditor_mind.transfer_to(auditor)
 	var/obj/item/card/id/auditor_id = new(auditor)
-	auditor_id.associated_account_number = auditor_account.account_number
+	auditor_id.set_associated_account_number(auditor_account.account_number)
 	auditor_id.set_access(list(ACCESS_SECURITY))
 	dq_test_wear_id(auditor, auditor_id)
 	TEST_ASSERT(SSsupply.market_security_auditor(auditor), "test Security ID did not authorize market forensics")
@@ -1036,11 +1036,11 @@
 /datum/unit_test/dq_agent_physical_freight_and_evidence/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/principal_account = new
-	principal_account.account_number = 9654350
+	principal_account.set_account_number(9654350)
 	principal_account.owner_name = "Physical Principal Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, principal_account)
 	var/datum/money_account/contact_account = new
-	contact_account.account_number = 9654351
+	contact_account.set_account_number(9654351)
 	contact_account.owner_name = "Physical Cargo Tester"
 	contact_account.department_id = DEPARTMENT_CARGO
 	registry_join(REGISTRY_MONEY_ACCOUNTS, contact_account)
@@ -1049,7 +1049,7 @@
 	var/mob/living/carbon/human/contact = new(test_turf)
 	contact_mind.transfer_to(contact)
 	var/obj/item/card/id/contact_id = new(contact)
-	contact_id.associated_account_number = contact_account.account_number
+	contact_id.set_associated_account_number(contact_account.account_number)
 	contact_id.set_access(list(ACCESS_CARGO))
 	dq_test_wear_id(contact, contact_id)
 
@@ -1102,7 +1102,7 @@
 	TEST_ASSERT(!process_agent_contract_export(crate), "withdrawn agreement remained a valid physical routing credential")
 
 	var/datum/money_account/auditor_account = new
-	auditor_account.account_number = 9654352
+	auditor_account.set_account_number(9654352)
 	auditor_account.owner_name = "Physical Evidence Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, auditor_account)
 	var/datum/mind/auditor_mind = new("physical_evidence_tester")
@@ -1110,7 +1110,7 @@
 	var/mob/living/carbon/human/auditor = new(test_turf)
 	auditor_mind.transfer_to(auditor)
 	var/obj/item/card/id/auditor_id = new(auditor)
-	auditor_id.associated_account_number = auditor_account.account_number
+	auditor_id.set_associated_account_number(auditor_account.account_number)
 	auditor_id.set_access(list(ACCESS_SECURITY))
 	dq_test_wear_id(auditor, auditor_id)
 	contract.record_contribution(auditor_account.account_number, 10, "Authenticated third-department work", auditor_account.owner_name)
@@ -1176,7 +1176,7 @@
 	TEST_ASSERT(findtext(ledger.name, "VOID"), "voided freight paper did not visibly identify itself")
 
 	var/datum/money_account/customer = new
-	customer.account_number = 9876101
+	customer.set_account_number(9876101)
 	customer.owner_name = "Storefront Unit Customer"
 	customer.department_id = DEPARTMENT_ENGINEERING
 	customer.money = 500
@@ -1188,7 +1188,7 @@
 	customer_mind.transfer_to(customer_mob)
 	customer_mob.forceMove(customer_turf)
 	var/obj/item/card/id/customer_id = new(customer_mob)
-	customer_id.associated_account_number = customer.account_number
+	customer_id.set_associated_account_number(customer.account_number)
 	dq_test_wear_id(customer_mob, customer_id)
 	var/obj/machinery/department_storefront/research/store = new(test_turf)
 	var/obj/item/store_item = new(store)

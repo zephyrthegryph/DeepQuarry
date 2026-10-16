@@ -79,7 +79,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/riot)
 	else
 		set_icon_state(initial(icon_state))
 		to_chat(user, "You lower the visor on the [name_descriptor].") // Visor toggle messages
-	update_clothing_icon()	//so our mob-overlays update
 
 /obj/item/clothing/head/helmet/laserproof
 	name = "ablative helmet"
@@ -325,10 +324,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere)
 			tint = TINT_NONE
 			to_chat(user, "You push the [src] up out of your face, ineffectively clearing your vision.")
 			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
-		update_clothing_icon()	//so our mob-overlays
-		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
-			var/mob/M = src.loc
-			changed(src)
 		user.update_mob_action_buttons()
 
 // Costume Versions Here
@@ -389,8 +384,4 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere_costume)
 			tint = TINT_NONE
 			to_chat(user, "You push the [src] up out of your face, ineffectively clearing your vision.")
 			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
-		update_clothing_icon()	//so our mob-overlays
-		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
-			var/mob/M = src.loc
-			changed(src)
 		user.update_mob_action_buttons()

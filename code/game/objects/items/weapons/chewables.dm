@@ -94,9 +94,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco)
 				to_chat(M, span_notice("The [name] runs out of flavor."))
 			if(M.get_equipped_item(SLOT_ID_MASK))
 				M.remove_from_mob(src) //un-equip it so the overlays can update
-				changed(src)
 				if(!M.equip_to_slot_if_possible(butt, SLOT_ID_MASK))
-					changed(src)
 					M.put_in_hands(butt)
 	consume(src)
 

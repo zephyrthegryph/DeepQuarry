@@ -15,14 +15,6 @@
 	var/number = 0
 	var/wiresexposed = FALSE
 
-/obj/item/radio/intercom/proc/set_on(value)
-	if(TRACKED_UNCHANGED(on, value))
-		return FALSE
-	on = value
-	tracked_changed(src, nameof(on))
-	return TRUE
-SETTER(/obj/item/radio/intercom, on)
-
 /obj/item/radio/intercom/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)

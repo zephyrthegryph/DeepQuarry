@@ -107,9 +107,6 @@ CAPABILITIES(/obj/item/cell/device/weapon/gunsword)
 		activate(user)
 		update_held_icon()
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		changed(src)
 
 	add_fingerprint(user)
 	return TRUE

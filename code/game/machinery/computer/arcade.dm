@@ -1089,7 +1089,7 @@ CAPABILITIES(/obj/item/orion_ship)
 /// machine or unavailable vendor account from swallowing the inherited interaction.
 /// Whether the claw machine still needs payment and can take it right now.
 /obj/machinery/computer/arcade/clawmachine/proc/wants_payment(datum/act/op/A)
-	if(gamepaid == 0 && GLOB.vendor_account && !GLOB.vendor_account.suspended)
+	if(gamepaid == 0 && read_once(GLOB.vendor_account) && !read_once(GLOB.vendor_account.suspended))
 		return null
 	return /datum/msg/req_failed
 

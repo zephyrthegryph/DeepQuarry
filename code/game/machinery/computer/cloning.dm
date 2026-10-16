@@ -59,9 +59,6 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	. = ..()
 	. += owns(nameof(diskette), policy = OWN_CONTAINED)
 
-/obj/machinery/computer/cloning/relations()
-	. = ..()
-	. += rel_many(nameof(pods), back = nameof(/obj/machinery/clonepod::connected))
 
 /obj/machinery/computer/cloning/Initialize(mapload)
 	. = ..()
@@ -112,7 +109,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 		for(var/obj/machinery/dna_scannernew/S in get_area(src))
 			return S
 
-	return 0
+	return null
 
 /obj/machinery/computer/cloning/proc/releasecloner()
 	for(var/obj/machinery/clonepod/P in pods)
@@ -287,7 +284,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	add_fingerprint(A.actor)
 
 /obj/machinery/computer/cloning/proc/has_active_record(datum/act/op/A)
-	return (!QDELETED(active_BR)) ? null : MSG(req_failed) // ALLOW(reads): the selected record is read when the button is pressed and again when it is answered, never cached
+	return active_BR ? null : MSG(req_failed)
 
 /// The record is deleted when the confirmation is answered with Delete by someone holding an ID with access.
 /obj/machinery/computer/cloning/proc/ui_act_del_rec(datum/act/op/A)

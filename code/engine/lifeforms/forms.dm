@@ -114,13 +114,18 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 	lifeform_plan_finish(P, D)
 	return P
 
+/// Whether `D` has a var named `name`: the declared vars of a type, which no run changes.
+/proc/datum_has_var(datum/D, name)
+	READS_FROM() // the vars a type declares are fixed when the world compiles
+	return name in D.vars
+
 /// Works out what runs when, the watched vars and the positional params; validates against the first instance.
 /proc/lifeform_plan_finish(datum/lifeform_plan/P, datum/D)
 	P.pre = !!(P.rolls || P.params || P.per_types || P.built_from || P.variants)
 	P.destroy = !!(P.registries || P.radios || P.adjacencies || P.on_ending || P.lives_while || P.derives)
 	for(var/datum/centry/C as anything in P.params)
 		var/datum/entry/E = C.item
-		if(!(E.args["var"] in D.vars))
+		if(!datum_has_var(D, E.args["var"]))
 			declare_report("[C.origin]: param(\"[E.args["var"]]\") on [D.type]: no such var")
 		if(isnum(E.args["pos"]))
 			LAZYSET(P.param_pos, "[E.args["pos"]]", E.args["var"])
@@ -136,7 +141,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 		for(var/datum/centry/C as anything in kind_list)
 			var/datum/entry/E = C.item
 			for(var/var_name in lifeform_watched_vars(E))
-				if(!(var_name in D.vars))
+				if(!datum_has_var(D, var_name))
 					declare_report("[C.origin]: [E.kind]() on [D.type] watches '[var_name]', which it doesn't have")
 					continue
 				LAZYINITLIST(P.watch)

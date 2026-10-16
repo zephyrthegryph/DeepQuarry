@@ -65,16 +65,11 @@ CAPABILITIES(/obj/machinery/holosign)
 	icon_state = "crema_switch"
 
 CAPABILITIES(/obj/machinery/button/holosign)
+	ref_many(nameof(controlled_signs), /obj/machinery/holosign, by = nameof(id))
 	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
 /// Holosigns sharing our id (keyed).
 /obj/machinery/button/holosign/var/list/obj/machinery/holosign/controlled_signs
-/obj/machinery/button/holosign/relations()
-	. = ..()
-	. += rel_many(nameof(controlled_signs), keyed = nameof(id), keyed_target = /obj/machinery/holosign)
-/obj/machinery/holosign/relations()
-	. = ..()
-	. += rel_key(nameof(id))
 
 /obj/machinery/button/holosign/proc/interaction_toggle(datum/act/op/A)
 	var/mob/user = A.actor

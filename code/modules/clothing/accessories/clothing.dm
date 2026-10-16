@@ -205,7 +205,6 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho)
 			set_icon_override('icons/inventory/suit/mob_teshari.dmi')
 		else
 			set_icon_override('icons/inventory/accessory/mob.dmi')
-		update_clothing_icon()
 
 /obj/item/clothing/accessory/poncho/dropped(mob/user, equipping, slot) //Resets the override to prevent the wrong .dmi from being used because equipped only triggers when wearing ponchos as suits.
 	..()

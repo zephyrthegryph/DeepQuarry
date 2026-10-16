@@ -503,7 +503,7 @@ CAPABILITIES(/datum/system/tgui)
 		return null
 	for(var/datum/tgui/ui in src_object.open_tguis)
 		// Make sure we have the right user
-		if(ui.user == user)
+		if(read_once(ui.user) == user)
 			return ui
 	return null
 

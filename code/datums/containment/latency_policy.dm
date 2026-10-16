@@ -18,6 +18,7 @@
 /// candidates on its turn, rather than being torn out of the list.
 GLOBAL_LIST_EMPTY(latency_sweep_holders)
 
+PROC_SUMMARY(/proc/dq_latency_sweep_register) // bookkeeping for the sweep's work list, not an input of any value
 /proc/dq_latency_sweep_register(atom/holder)
 	// A sandboxed (unmaterialized) holder isn't in the live world yet: materialize()
 	// registers it, so Initialize() never touches this global (lifecycle sandbox).

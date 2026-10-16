@@ -224,9 +224,10 @@
 
 	return FALSE
 
-/// The item's held sprite changed (state nothing publishes): the holder, which watches what it holds, draws it again.
+/// The item's hands changed (wielded, swapped, picked up): a type that derives state from how it is held (wielded, force, hand sprite) overrides this
+/// and writes it through its tracked setters; the holder watches the item and draws the result. Nothing to do here.
 /obj/item/proc/update_held_icon()
-	changed(src)
+	return
 
 /obj/item/proc/move_to_top_effect(datum/act/op/A)
 	var/mob/user = A.actor
@@ -747,8 +748,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		standing = image(worn_addblend_icon(icon2use, state2use, addblends))
 	else
 		standing = image(icon = icon2use, icon_state = state2use)
-	standing.alpha = alpha
-	standing.color = color
+	standing.alpha = read_once(alpha) // the worn picture is made from the item's tint when it is made: a sampled read
+	standing.color = read_once(color)
 	standing.layer = layer2use
 
 	if(istype(clip_mask)) //For taur bodies/tails clipping off parts of uniforms and suits.

@@ -164,4 +164,4 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 
 /// Relation view: owner (reads null once it is gone).
 /obj/structure/closet/secure_closet/mind/proc/owner_ref() as /datum/mind
-	return owner // ALLOW(reads): the owner is set once when the locker is made
+	return owner

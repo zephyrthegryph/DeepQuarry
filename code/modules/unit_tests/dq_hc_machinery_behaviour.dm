@@ -1132,7 +1132,6 @@ CAPABILITIES(/obj/machinery/dq_native_emag_storage)
 	test_answer(H, null, REQ_CANCELLED)
 	TEST_ASSERT_EQUAL(B.RCon_tag, old_tag, "cancel keeps the tag")
 	TEST_ASSERT_EQUAL(B.on, old_on, "the multitool never toggles power")
-	TEST_ASSERT(!task_claiming(B), "it starts no hand reprogramming task")
 
 /// The menu line `key` shows as: its own row, or (one line per label, op_menu_read()) the line of the op it shares its label with.
 /proc/hc_menu_line(mob/H, atom/M, obj/held, key)

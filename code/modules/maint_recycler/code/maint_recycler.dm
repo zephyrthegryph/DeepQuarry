@@ -348,7 +348,7 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 /// The underlay the item sits on, and the item inside shrunk and offset between the underlay and the machine (the mouse shows the creature's end).
 /obj/machinery/maint_recycler/draw(datum/look/look)
 	..()
-	look.underlay(look_overlay_image(icon, "underlay", layer = layer - 0.2)) //we need the underlay as a kind of inbetween, we sandwich the item between it and us
+	look.underlay(look_overlay_image(icon, "underlay", layer = initial(layer) - 0.2)) //we need the underlay as a kind of inbetween, we sandwich the item between it and us
 	//so even the big boy chunky items don't clip.
 	//at least for 32x32 stuff!
 	if(!inserted_item)
@@ -357,9 +357,9 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 	var/matrix/scaled = matrix()
 	scaled.Scale(item_overlay_scale, item_overlay_scale)
 	if(istype(inserted_item, /mob/living/simple_mob/animal/passive/mouse))
-		look.overlay(look_overlay_image(icon, "hepme", layer = layer - 0.1, plane = plane, pixel_x = item_offset_x, pixel_y = item_offset_y, transform = scaled, appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE)) //the creature deserves its horrible end
+		look.overlay(look_overlay_image(icon, "hepme", layer = initial(layer) - 0.1, plane = initial(plane), pixel_x = item_offset_x, pixel_y = item_offset_y, transform = scaled, appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE)) //the creature deserves its horrible end
 	else
-		look.overlay(look_overlay_image(layer = layer - 0.1, plane = plane, pixel_x = item_offset_x, pixel_y = item_offset_y, transform = scaled, of = inserted_item, appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE))
+		look.overlay(look_overlay_image(layer = initial(layer) - 0.1, plane = initial(plane), pixel_x = item_offset_x, pixel_y = item_offset_y, transform = scaled, of = inserted_item, appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE))
 
 /obj/machinery/maint_recycler/proc/interaction_use(datum/act/op/A)
 	var/mob/user = A.actor

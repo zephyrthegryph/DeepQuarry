@@ -20,7 +20,7 @@ CAPABILITIES(/obj/item/bodybag)
 
 /// Unfolding must leave a refused folded bag and its owned injector intact: where it is carried must let it go.
 /obj/item/bodybag/proc/can_unfold(datum/act/op/A)
-	var/reason = loc?.release_refusal(src, A.actor) // ALLOW(reads): where the bag is carried and whether that lets it go are read when it is unfolded
+	var/reason = read_once(loc?.release_refusal(src, A.actor)) // where the bag is carried and whether that lets it go are sampled when it is unfolded
 	return isnull(reason) ? null : (reason || /datum/msg/op/not_available)
 
 /// The floor structure this folded bag makes.
@@ -282,7 +282,7 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
 /obj/structure/closet/body_bag/cryobag/proc/can_insert_injector(datum/act/op/A)
 	if(syringe)
 		return /datum/msg/cryobag/has_injector
-	var/reason = A.held.loc?.release_refusal(A.held, A.actor) // ALLOW(reads): where the injector is carried and whether that lets it go are read when it is put in
+	var/reason = read_once(A.held.loc?.release_refusal(A.held, A.actor)) // where the injector is carried and whether that lets it go are sampled when it is put in
 	return isnull(reason) ? null : (reason || /datum/msg/op/not_available)
 
 /// A shut stasis bag is scanned through its skin: every one inside is read by the analyzer.

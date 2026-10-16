@@ -70,9 +70,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/clothing_appearance_handler)
 	// Adjust icon state for rolled/unrolled jumpsuit sleeves
 	if(H && istype(acc.loc, /obj/item/clothing/under))
 		var/obj/item/clothing/under/C = acc.loc
-		if(LAZYACCESS(acc.on_rolled, "down") && C.rolled_down > 0)
+		if(LAZYACCESS(acc.on_rolled, "down") && read_once(C.rolled_down) > 0)
 			tmp_icon_state = acc.on_rolled["down"]
-		else if(LAZYACCESS(acc.on_rolled, "rolled") && C.rolled_sleeves > 0)
+		else if(LAZYACCESS(acc.on_rolled, "rolled") && read_once(C.rolled_sleeves) > 0)
 			tmp_icon_state = acc.on_rolled["rolled"]
 
 	var/image/result
@@ -88,14 +88,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/clothing_appearance_handler)
 	if(acc.addblends)
 		var/icon/base = new/icon(icon = result.icon, icon_state = result.icon_state)
 		var/icon/addblend_icon = new/icon(icon = result.icon, icon_state = acc.addblends)
-		if(acc.color)
-			base.Blend(acc.color, ICON_MULTIPLY)
+		if(read_once(acc.color))
+			base.Blend(read_once(acc.color), ICON_MULTIPLY)
 		base.Blend(addblend_icon, ICON_ADD)
 		result = image(base)
 	else
-		result.color = acc.color
+		result.color = read_once(acc.color)
 
-	result.appearance_flags = acc.appearance_flags
+	result.appearance_flags = read_once(acc.appearance_flags)
 	return result
 
 /*
