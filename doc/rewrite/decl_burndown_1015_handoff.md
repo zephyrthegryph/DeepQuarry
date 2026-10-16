@@ -8,7 +8,7 @@ The original baseline contains 47 actual rows: 23 visuals, 10 starting children,
 6 destruction drops, 5 destruction effects, and one each of reagent initialization,
 registry membership and scheduling. The engine baseline update confirms 41 removals and six retained rows. The earlier
 47-to-4 draft passed baseline checking but exposed two additional runtime contract gaps.
-No baseline has been raised or manually rewritten. No verification stamp exists yet.
+No baseline has been raised or manually rewritten. The final lane-ready receipt and focused-run JSON are the authoritative completion and stamp evidence; source is merged through master `dbf38d2b20`.
 
 A shared old-production capture ran 55 selected tests: 50 passed. The three lifecycle
 fixture failures were diagnosed before repair: real legacy statue mute leakage (source-scoped stasis already ends automatically),
@@ -102,3 +102,8 @@ The final baseline update, failure-only repair, stamp and push remain pending ro
 ### Look-fixture explosion cleanup
 
 The first combined run reported two explosion particles during `dx_menu_order`, which runs after the look sweep. Look captures delete real mated telecubes; their ending hook submits blast work at the independent mate’s turf, beyond an immediate floor sweep. All manual look-capture/probe/drain deletions now use one test-only disposal helper that moves only the actual telecube pair to nullspace after observation and before real deletion. It neither clears queues nor changes production behavior. `dq_look_telecube_cleanup` asserts real reciprocal pairing on the floor, unchanged capture rows, actual unlinking, the independent mate’s survival, and unchanged pending/submission counts. This repair has not yet been executed; root owns verification.
+
+
+## Final repair scope
+
+The final focused repair list includes the 14 diagnosed failures from the first native runtime gate, two actual prone-density regressions, telecube teardown, and both typed-constructor regressions (19 selectors, including both mandatory pins). Earlier compilation had zero errors and DreamChecker diagnostics. Root runs the final lane-ready gate and reports its exact receipt and pushed commit; this document does not substitute evidence from earlier passing tests for that gate. No full suite is run, and runtime failures are not re-blessed. The native `devour` key added by master `2136172edc` is the only inherited inventory refresh in this repair cohort.
