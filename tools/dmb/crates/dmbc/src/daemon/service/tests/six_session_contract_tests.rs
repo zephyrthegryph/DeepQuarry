@@ -112,7 +112,26 @@ fn assert_equivalent_outputs(
     context: &str,
 ) {
     if retained.0 != fresh.0 {
-        dmb_equiv::assert_equivalent_bytes(&retained.1, Some(&retained.2), &fresh.1, Some(&fresh.2), context);
+        // An append patch gives a new proc or var the next free table index and
+        // string, so only its own position in the two order-gated tables
+        // (`typesof(/T/proc)`, `vars` name-string order) may differ from a fresh
+        // build (documented in body_patch_append.rs). Anything else is a failure.
+        let report = dmb_equiv::compare_bytes(&retained.1, Some(&retained.2), &fresh.1, Some(&fresh.2), &dmb_equiv::Options::default())
+            .unwrap_or_else(|error| panic!("{context}: decode failed: {error}"));
+        if report.equivalent() {
+            return;
+        }
+        let text = report.render_text();
+        let appended_only = report.categories.keys().all(|name| name == "order.proc_table" || name == "order.var_name_strings")
+            && text
+                .lines()
+                .filter(|line| line.contains(": relative order differs"))
+                .all(|line| {
+                    let name = line.rsplit('/').next().unwrap_or(line);
+                    ["added_", "early_", "used_", "extra"].iter().any(|prefix| name.starts_with(prefix))
+                });
+        assert!(appended_only, "{context}: outputs are not semantically equivalent
+{text}");
     }
 }
 

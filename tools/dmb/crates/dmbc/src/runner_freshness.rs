@@ -160,6 +160,34 @@ pub(super) fn snapshot_captured<P: SnapshotProvider>(
     Ok(inputs)
 }
 
+/// The merged capture, issued once per set of recorded inputs: each issue clones
+/// and merges every recorded file and folder (about 0.4 s on DeepQuarry), and a
+/// request needs it at early admission, at the patch gate and at publication.
+#[derive(Default)]
+pub(super) struct SnapshotMemo {
+    cached: std::sync::Mutex<Option<(((usize, usize, usize), Option<(usize, usize, usize)>), InputSnapshot)>>,
+}
+impl SnapshotMemo {
+    pub(super) fn get<P: SnapshotProvider>(
+        &self,
+        capture: &crate::input_snapshot::RecordingInputs<P>,
+        retained: Option<&InputSnapshot>,
+    ) -> Result<InputSnapshot, Box<dyn Error>> {
+        let key = (capture.shape()?, retained.map(InputSnapshot::shape));
+        let mut cached = self.cached.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some((held, snapshot)) = cached.as_ref() {
+            if *held == key {
+                return Ok(snapshot.clone());
+            }
+        }
+        let snapshot = snapshot_captured(capture, retained)?;
+        // A capture that grew between the key and the snapshot is keyed by its
+        // earlier shape and simply misses next time.
+        *cached = Some((key, snapshot.clone()));
+        Ok(snapshot)
+    }
+}
+
 pub(super) fn admit_captured<P: SnapshotProvider>(
     capture: &crate::input_snapshot::RecordingInputs<P>,
     retained: Option<&InputSnapshot>,

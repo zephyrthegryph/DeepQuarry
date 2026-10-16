@@ -1119,12 +1119,24 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
   if (native) fs.rmSync(cacheFile, { force: true });
   let output: CompiledOutput;
   try {
-    output = await DreamMaker(dme, {
-      defines: allDefines,
-      warningsAsErrors: get(WarningParameter).includes('error'),
-      ignoreWarningCodes: get(NoWarningParameter),
-      namedDmVersion: dmVersion,
-    });
+    const compile = () =>
+      DreamMaker(dme, {
+        defines: allDefines,
+        warningsAsErrors: get(WarningParameter).includes('error'),
+        ignoreWarningCodes: get(NoWarningParameter),
+        namedDmVersion: dmVersion,
+      });
+    // Concurrent worlds (look-pin shards) compile one manifest. The daemon lets a newer request for a project
+    // supersede an older one ("build superseded before publication", exit 75), so overlapping native compiles of the
+    // same manifest cancel each other. Serialize them per manifest; the later one is an unchanged-session hit.
+    output = native
+      ? await withSlot(
+          `native_${createHash('sha1').update(path.resolve(dme).toLowerCase()).digest('hex').slice(0, 12)}`,
+          `native compile ${dme}`,
+          compile,
+          (m) => Juke.logger.info(m),
+        )
+      : await compile();
   } catch (error) {
     // Don't leave a half-built derived dme/rsc lying around after a failed compile.
     // A failed native build leaves the previous published generation and its

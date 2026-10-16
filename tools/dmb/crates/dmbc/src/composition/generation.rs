@@ -279,6 +279,20 @@ impl RetainedGeneration {
         let slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
         slot.fields.as_ref()?.0.get(&(owner, name)).copied()
     }
+    /// Record the Variables-table records of vars a structural patch added, so
+    /// the next default patch can find them.
+    pub(crate) fn extend_field_records(&self, added: &[(dm_ir::SymbolId, dm_ir::SymbolId, u32)]) {
+        if added.is_empty() {
+            return;
+        }
+        let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(fields) = slot.fields.as_mut() {
+            let map = Arc::make_mut(&mut fields.0);
+            for &(owner, name, record) in added {
+                map.insert((owner, name), record);
+            }
+        }
+    }
     /// Default-edit patch: replace Variables-table values in the retained
     /// image (see `crate::body_patch::try_default_patch`). The base advances
     /// exactly as `patch_rows` advances it.

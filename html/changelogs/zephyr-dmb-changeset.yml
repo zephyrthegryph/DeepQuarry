@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Native compiler: new vars and procs patch the retained output instead of recompiling (about 12 s instead of 20-35 s); sharded look-pin worlds no longer supersede each other's native compile"
