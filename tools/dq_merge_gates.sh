@@ -107,6 +107,9 @@ if [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/u
 	unverified_n="${unverified_line%% *}"
 	echo "== look pins: $unverified_line"
 	if [ "${unverified_n:-0}" -gt 0 ]; then
+		# The look pins write no tests.log lines while probing a large unverified set; the 12 min stall detector (DQ_DD_STALL_MINUTES) killed
+		# them as hung. Raise it to the pin run timeout unless the caller set it (the hard timeout still applies).
+		export DQ_DD_STALL_MINUTES="${DQ_DD_STALL_MINUTES:-${DQ_FOCUS_TIMEOUT_MINUTES:-150}}"
 		bash tools/dq_focused_test.sh dq_look_state_pin dq_look_tree_pin || { echo "dq_merge_gates: FAILED: the look pins over the unverified types; fix them (or bless explicitly), recommit, rerun" >&2; exit 1; }
 		if ! git diff --quiet -- code/modules/unit_tests/snapshots/look_keys.txt; then
 			git add -- code/modules/unit_tests/snapshots/look_keys.txt

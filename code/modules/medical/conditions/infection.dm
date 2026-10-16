@@ -35,7 +35,7 @@
 	// fudge temp readings if we want a discrepancy between actual and
 	// reading — leave readings linked to truth.
 	// C16: fever raises the thermoregulation set point (up to +2 K at severity 100).
-	factors = alist(BF_SLOWDOWN = 0.3, BF_TEMPERATURE = 2.0)
+	factors = alist(STAT_SLOWDOWN = 0.3, STAT_TEMPERATURE = 2.0)
 	spontaneous_emotes = list("wince", "shudder")
 	spontaneous_emote_prob = 3
 
@@ -59,7 +59,7 @@
 	max_symptoms = 4
 	// Pulse derives from elevated body temp; BP drop from vasodilation
 	// is real and the only thing not modelled elsewhere.
-	factors = alist(BF_SLOWDOWN = 0.6, BF_ACCURACY = -10, BF_BP_SYSTOLIC = -15, BF_TEMPERATURE = 3.5)
+	factors = alist(STAT_SLOWDOWN = 0.6, STAT_ACCURACY = -10, STAT_BP_SYSTOLIC = -15, STAT_TEMPERATURE = 3.5)
 	spontaneous_emotes = list("shudder", "cough", "groan")
 	spontaneous_emote_prob = 4
 	// Sepsis is multi-organ inflammation; the kidneys take the first hit.
@@ -87,7 +87,7 @@
 	max_symptoms = 4
 	// Temp pushed by actual bodytemperature mutation; BP collapse from
 	// septic vasodilation is real and not otherwise modelled.
-	factors = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -25, BF_MOTOR_CONTROL = 0.96, BF_BP_SYSTOLIC = -45, BF_BP_DIASTOLIC = -25, BF_O2_SAT = -10)
+	factors = alist(STAT_SLOWDOWN = 1.5, STAT_ACCURACY = -25, STAT_MOTOR_CONTROL = 0.96, STAT_BP_SYSTOLIC = -45, STAT_BP_DIASTOLIC = -25, STAT_O2_SAT = -10)
 	spontaneous_emotes = list("collapse", "shudder", "groan")
 	spontaneous_emote_prob = 6
 	// Septic shock: multi-organ failure. Liver and kidneys go first;

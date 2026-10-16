@@ -7,7 +7,7 @@
 	cost = 0
 	can_take = ORGANICS|SYNTHETICS
 	var_changes = list("hunger_factor" = 0.2, "metabolism" = 0.06)
-	factors = alist(BF_METABOLISM = 1.2) // +20% rate and 4x hunger (Teshari level)
+	factors = alist(STAT_METABOLISM_MULT = 1.2) // +20% rate and 4x hunger (Teshari level)
 	excludes = list(/datum/trait/neutral/metabolism_down, /datum/trait/neutral/metabolism_apex, /datum/trait/neutral/singularity_metabolism)
 	custom_only = FALSE
 
@@ -17,7 +17,7 @@
 	cost = 0
 	can_take = ORGANICS|SYNTHETICS
 	var_changes = list("hunger_factor" = 0.04, "metabolism" = 0.0012)
-	factors = alist(BF_METABOLISM = 0.8) // -20% of default.
+	factors = alist(STAT_METABOLISM_MULT = 0.8) // -20% of default.
 	excludes = list(/datum/trait/neutral/metabolism_up, /datum/trait/neutral/metabolism_apex, /datum/trait/neutral/singularity_metabolism)
 	custom_only = FALSE
 
@@ -27,7 +27,7 @@
 	cost = 0
 	can_take = ORGANICS|SYNTHETICS
 	var_changes = list("hunger_factor" = 0.4, "metabolism" = 0.012)
-	factors = alist(BF_METABOLISM = 1.4) // +40% rate and 8x hunger (Double Teshari)
+	factors = alist(STAT_METABOLISM_MULT = 1.4) // +40% rate and 8x hunger (Double Teshari)
 	excludes = list(/datum/trait/neutral/metabolism_up, /datum/trait/neutral/metabolism_down, /datum/trait/neutral/singularity_metabolism)
 	custom_only = FALSE
 
@@ -36,7 +36,7 @@
 	desc = "You are insanely hungry. You can seemingly never get enough to eat. Perhaps you had a singularity as an ancestor, or maybe one is currently living inside of your gut."
 	cost = 0
 	var_changes = list("hunger_factor" = 1.6, "metabolism" = 0.012)
-	factors = alist(BF_METABOLISM = 2)	//2x metabolism speed, 32x hunger speed
+	factors = alist(STAT_METABOLISM_MULT = 2)	//2x metabolism speed, 32x hunger speed
 	custom_only = FALSE
 	excludes = list(/datum/trait/neutral/metabolism_up, /datum/trait/neutral/metabolism_down, /datum/trait/neutral/metabolism_apex)
 
@@ -1989,7 +1989,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 	custom_only = FALSE
 	special_env = TRUE
 	excludes = list(/datum/trait/negative/speed_slow_plus, /datum/trait/negative/speed_slow, /datum/trait/neutral/hotadapt, /datum/trait/neutral/coldadapt)
-	factors = alist(BF_SLOWDOWN = 1, BF_INCOMING_THERMAL = 0.7)
+	factors = alist(STAT_SLOWDOWN = 1, STAT_INCOMING_THERMAL = 0.7)
 	var_changes = list("unarmed_types" = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/punch/chimera, /datum/unarmed_attack/bite/sharp), "heat_level_1" = 420, "heat_level_2" = 480, "heat_level_3" = 1100, "breath_heat_level_1" = 450, "breath_heat_level_2" = 530, "breath_heat_level_3" = 1500, "heat_discomfort_level" = 390) //xenochim are already tank
 
 /datum/trait/neutral/xenochimera_YR3/environment_effects(mob/living/carbon/human/H)

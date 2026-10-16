@@ -7,7 +7,7 @@
 		/datum/affliction_symptom/confusion = 50,
 		/datum/affliction_symptom/internal_pressure = 40
 	)
-	factors = alist(BF_TEMPERATURE = 2)
+	factors = alist(STAT_TEMPERATURE = 2)
 	name = "Vastantes Carnes"
 	medical_name = "Idiopathic Cellular Infestation"
 	form = "Unknown Disease"

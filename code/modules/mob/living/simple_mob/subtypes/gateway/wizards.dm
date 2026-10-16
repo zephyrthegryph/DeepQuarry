@@ -142,7 +142,7 @@ CAPABILITIES(/mob/living/simple_mob/vr)
 	on_expired_text = span_notice("You feel better.")
 	stacks = MODIFIER_STACK_ALLOWED // Multiple instances will hurt a lot.
 	var/damage_per_tick = 1.5
-	factors = alist(BF_BLEEDING = 0.7)
+	factors = alist(STAT_BLEEDING = 0.7)
 
 /datum/body_effect/wizfire/on_tick(mob/living/L)
 	L.inflict_heat_damage(damage_per_tick * L.body_effect_stacks(type)) // each stack burns
@@ -156,7 +156,7 @@ CAPABILITIES(/mob/living/simple_mob/vr)
 	on_expired_text = span_notice("You feel better.")
 	stacks = MODIFIER_STACK_ALLOWED // Multiple instances will hurt a lot.
 	damage_per_tick = 1.0
-	factors = alist(BF_BLEEDING = 0.7, BF_INCOMING_THERMAL = 1.1)
+	factors = alist(STAT_BLEEDING = 0.7, STAT_INCOMING_THERMAL = 1.1)
 
 /datum/body_effect/wizpoison
 	tick_interval = 2 SECONDS
@@ -184,7 +184,7 @@ CAPABILITIES(/mob/living/simple_mob/vr)
 	on_expired_text = span_notice("You feel better.")
 	stacks = MODIFIER_STACK_ALLOWED // Multiple instances will hurt a lot.
 	damage_per_tick = 1
-	factors = alist(BF_SLOWDOWN = 0.5)
+	factors = alist(STAT_SLOWDOWN = 0.5)
 
 /datum/body_effect/digitizing
 	name = "digital"
@@ -194,7 +194,7 @@ CAPABILITIES(/mob/living/simple_mob/vr)
 	on_created_text = span_warning("You feel less real.")
 	on_expired_text = span_notice("You feel real again.")
 	stacks = MODIFIER_STACK_ALLOWED //How does this stack?
-	factors = alist(BF_ENDURANCE_MULT = 0.7)
+	factors = alist(STAT_ENDURANCE_MULT = 0.7)
 
 /datum/body_effect/aura/crumbling
 	name = "crumbling"
@@ -204,7 +204,7 @@ CAPABILITIES(/mob/living/simple_mob/vr)
 	on_created_text = span_warning("You feel like the end is nigh.")
 	on_expired_text = span_notice("You feel safe for now.")
 	aura_max_distance = 4
-	factors = alist(BF_INCOMING_ALL = 1.2, BF_DEMAND = 2, BF_INCOMING_PAIN = 2, BF_DISABLE_DURATION = 1.2, BF_HEALING_RECEIVED = 0.8, BF_ENDURANCE_MULT = 0.9)
+	factors = alist(STAT_INCOMING_ALL = 1.2, STAT_DEMAND = 2, STAT_INCOMING_PAIN = 2, STAT_DISABLE_DURATION = 1.2, STAT_HEALING_RECEIVED = 0.8, STAT_ENDURANCE_MULT = 0.9)
 
 /datum/body_effect/aura/crumbling/superboss
 	aura_max_distance = 16

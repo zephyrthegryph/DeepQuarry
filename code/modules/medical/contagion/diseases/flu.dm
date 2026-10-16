@@ -7,7 +7,7 @@
 		/datum/affliction_symptom/nausea = 30
 	)
 	max_symptoms = 3
-	factors = alist(BF_TEMPERATURE = 1.5, BF_HEART_RATE = 10, BF_SLOWDOWN = 0.3)
+	factors = alist(STAT_TEMPERATURE = 1.5, STAT_HEART_RATE = 10, STAT_SLOWDOWN = 0.3)
 	name = "The Flu"
 	medical_name = "Influenza"
 	max_stages = 3

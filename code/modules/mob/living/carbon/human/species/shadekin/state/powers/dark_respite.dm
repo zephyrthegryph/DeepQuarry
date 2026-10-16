@@ -89,8 +89,8 @@ MSG_DEF_SELF(shadekin_ability/respite_forced, "you cannot manually end a Dark Re
 /// The Dark numbs pain and fights infection; a fed body rebuilds blood.
 /// Swaps between static tables, so the factors only recompute on a change.
 /datum/body_effect/dark_respite/proc/update_respite_factors(mob/living/L, in_dark, fed)
-	var/static/alist/dark_fed = alist(BF_PAIN_IMMUNITY = 1, BF_ANTIMICROBIAL = ANTIBIO_SUPER, BF_BLOOD_REGEN = 5)
-	var/static/alist/dark_hungry = alist(BF_PAIN_IMMUNITY = 1, BF_ANTIMICROBIAL = ANTIBIO_SUPER)
-	var/static/alist/light_fed = alist(BF_BLOOD_REGEN = 5)
+	var/static/alist/dark_fed = alist(STAT_PAIN_IMMUNITY = 1, STAT_ANTIMICROBIAL = ANTIBIO_SUPER, STAT_BLOOD_REGEN = 5)
+	var/static/alist/dark_hungry = alist(STAT_PAIN_IMMUNITY = 1, STAT_ANTIMICROBIAL = ANTIBIO_SUPER)
+	var/static/alist/light_fed = alist(STAT_BLOOD_REGEN = 5)
 	var/alist/wanted = in_dark ? (fed ? dark_fed : dark_hungry) : (fed ? light_fed : null)
 	L.set_body_effect_factors(type, wanted)

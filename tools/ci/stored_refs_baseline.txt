@@ -173,7 +173,6 @@ var	code/game/objects/effects/spiders.dm	@/obj/effect/spider/eggcluster::laid_by
 var	code/game/objects/effects/spiders.dm	@/obj/effect/spider/spiderling::laid_by
 var	code/game/objects/effects/temporary_visuals/miscellaneous.dm	@/obj/effect/temp_visual/decoy::mimiced_atom
 var	code/game/objects/effects/temporary_visuals/miscellaneous.dm	@/obj/effect/temp_visual/impact_effect/monochrome_laser::hit_by
-var	code/game/objects/items.dm	@/obj/item::my_augment
 var	code/game/objects/items/devices/radio/radio_service.dm	@/datum/signal::source
 var	code/game/objects/items/devices/scanners/sleevemate.dm	@/datum/controller/global_vars::sleevemate_mob
 var	code/game/objects/items/weapons/cigs_lighters.dm	@/obj/item/reagent_containers/rollingpaper::crafted_type

@@ -111,7 +111,7 @@ GLOBAL_VAR_INIT(standing_cache_drops, 0)
 		row[H_REASON] = reason || row[H_REASON]
 	else
 		row = list(HOLD_STANDING, source, value, expires, priority, 0, HOLD_CLOCK_WORLD, reason, ++GLOB.stat_hold_serial, key, null)
-		rec.holds += list(row)
+		stat_rows_add(rec, row)
 		if(isdatum(source))
 			var/datum/stat_record/src_rec = stat_record_of(source)
 			LAZYOR(src_rec.held_on, E)

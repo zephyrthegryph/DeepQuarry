@@ -107,7 +107,7 @@
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/impact_response)
 
 /// Multiplier on `kind` (DAMAGE_*): what gets through.
-/datum/impact_response/proc/factor(kind)
+/datum/impact_response/proc/damage_factor(kind)
 	if(kind < 1 || kind > DAMAGE_KIND_COUNT)
 		return 1
 	return factors[kind]
@@ -122,7 +122,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/impact_response)
 	if(!kind)
 		return 1
 	var/datum/impact_response/response = impact_response()
-	return response ? response.factor(kind) : 1
+	return response ? response.damage_factor(kind) : 1
 
 /// This object's material response, or null for none.
 /obj/proc/impact_response()

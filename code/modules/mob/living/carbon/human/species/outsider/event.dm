@@ -29,7 +29,7 @@ Variables you may want to make use of are:
 
 	total_health					How much damage can they take before entering crit? Default 100.
 
-	factor_baseline					Injury multipliers are body factors: alist(BF_INCOMING_PHYSICAL = x, BF_INCOMING_THERMAL = x, BF_INCOMING_TOXIC = x, ...).
+	factor_baseline					Injury multipliers are body factors: alist(STAT_INCOMING_PHYSICAL = x, STAT_INCOMING_THERMAL = x, STAT_INCOMING_TOXIC = x, ...).
 	radiation_mod					Multiplier on radiation's effects.
 	flash_mod						Stun from blindness modifier.
 	sound_mod						Stun from sounds, I.E. flashbangs.
@@ -48,7 +48,7 @@ Variables you may want to make use of are:
 
 	speech_bubble_appearance		Part of icon_state to use for speech bubbles when talking.	See talk.dmi for available icons.
 
-	factor_baseline				Body factors, e.g. BF_SLOWDOWN (movement malus, or boost if negative)
+	factor_baseline				Body factors, e.g. STAT_SLOWDOWN (movement malus, or boost if negative)
 	move_trail						What effect marks are left when walking
 	has_floating_eyes				Whether the eyes can be shown above other icons
 	has_glowing_eyes				Whether the eyes are shown above all lighting
@@ -80,7 +80,7 @@ Variables you may want to make use of are:
 	vision_flags = SEE_SELF
 	darksight = 7
 
-	factor_baseline = alist(BF_INCOMING_PHYSICAL = 0.9, BF_INCOMING_THERMAL = 0.9, BF_INCOMING_TOXIC = 0.9, BF_DEMAND = 0.9)
+	factor_baseline = alist(STAT_INCOMING_PHYSICAL = 0.9, STAT_INCOMING_THERMAL = 0.9, STAT_INCOMING_TOXIC = 0.9, STAT_DEMAND = 0.9)
 	radiation_mod = 0.9
 	flash_mod = 0.9
 	sound_mod = 0.9
@@ -204,7 +204,7 @@ Variables you may want to make use of are:
 
 /datum/species/event1/proc/toggle_pain()
 	set_flags(flags ^ NO_PAIN)
-	// The flag feeds BF_PAIN_IMMUNITY: refresh the factors of every body wearing this species.
+	// The flag feeds STAT_PAIN_IMMUNITY: refresh the factors of every body wearing this species.
 	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 		if(H.species == src)
 			H.body?.invalidate(BODY_DIRTY_FACTORS)

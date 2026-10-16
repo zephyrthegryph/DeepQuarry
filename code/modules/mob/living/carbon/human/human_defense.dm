@@ -125,7 +125,7 @@ emp_act
 	if (!def_zone)
 		return 1.0
 	// What covers the part: the body's worn protection cache (code/modules/body/worn_protection.dm).
-	return max(species.siemens_coefficient, 0) * body.worn_siemens(def_zone.body_part) * factor(BF_SIEMENS)
+	return max(species.siemens_coefficient, 0) * body.worn_siemens(def_zone.body_part) * src.siemens
 
 // Similar to above but is for the mob's overall protection, being the average of all slots.
 /mob/living/carbon/human/proc/get_siemens_coefficient_average()

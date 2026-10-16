@@ -62,7 +62,7 @@ the artifact triggers the rage.
 	// Aiming requires focus.
 	// Ditto.
 	// Too angry to dodge.
-	factors = alist(BF_SLOWDOWN = -1, BF_ACCURACY = -75, BF_DISPERSION = 3, BF_EVASION = -45, BF_ATTACK_SPEED = 0.66, BF_MELEE_DAMAGE = 1.5, BF_DISABLE_DURATION = 0.25, BF_ENDURANCE_MULT = 1.5, BF_ICON_SCALE_X = 1.2, BF_ICON_SCALE_Y = 1.2, BF_PAIN_IMMUNITY = 1)
+	factors = alist(STAT_SLOWDOWN = -1, STAT_ACCURACY = -75, STAT_DISPERSION = 3, STAT_EVASION = -45, STAT_ATTACK_SPEED = 0.66, STAT_MELEE_DAMAGE = 1.5, STAT_DISABLE_DURATION = 0.25, STAT_ENDURANCE_MULT = 1.5, STAT_SCALE_MULT_X = 1.2, STAT_SCALE_MULT_Y = 1.2, STAT_PAIN_IMMUNITY = 1)
 
 	// The less good stuff.
 
@@ -156,7 +156,7 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("You feel less exhausted now.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_SLOWDOWN = 2, BF_EVASION = -30, BF_ATTACK_SPEED = 1.5, BF_MELEE_DAMAGE = 0.6, BF_DISABLE_DURATION = 1.5)
+	factors = alist(STAT_SLOWDOWN = 2, STAT_EVASION = -30, STAT_ATTACK_SPEED = 1.5, STAT_MELEE_DAMAGE = 0.6, STAT_DISABLE_DURATION = 1.5)
 
 /datum/body_effect/berserk_exhaustion/on_start(mob/living/L)
 	act_message(L, null, others = span_warning("%U% looks exhausted."))
@@ -179,7 +179,7 @@ the artifact triggers the rage.
 	// Aiming requires focus.
 	// Ditto.
 	// Too angry to dodge.
-	factors = alist(BF_ACCURACY = -75, BF_DISPERSION = 3, BF_EVASION = -45)
+	factors = alist(STAT_ACCURACY = -75, STAT_DISPERSION = 3, STAT_EVASION = -45)
 
 // Speedy, but not hasted.
 /datum/body_effect/sprinting
@@ -190,7 +190,7 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("The energy high dies out.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_SLOWDOWN = -1, BF_DISABLE_DURATION = 0.8)
+	factors = alist(STAT_SLOWDOWN = -1, STAT_DISABLE_DURATION = 0.8)
 
 // Speedy, but not berserked.
 /datum/body_effect/melee_surge
@@ -201,7 +201,7 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("The energy high dies out.")
 	stacks = MODIFIER_STACK_ALLOWED
 
-	factors = alist(BF_ATTACK_SPEED = 0.8, BF_MELEE_DAMAGE = 1.1, BF_DISABLE_DURATION = 0.8)
+	factors = alist(STAT_ATTACK_SPEED = 0.8, STAT_MELEE_DAMAGE = 1.1, STAT_DISABLE_DURATION = 0.8)
 
 // Non-cult version of deep wounds.
 // Surprisingly, more dangerous.
@@ -218,7 +218,7 @@ the artifact triggers the rage.
 	// 22% longer disables.
 	// 20% more bleeding.
 	// A combination of fear and immense pain or damage reults in a twitching firing arm. Flee.
-	factors = alist(BF_BLEEDING = 1.20, BF_DISPERSION = 2, BF_DISABLE_DURATION = 1.22, BF_HEALING_RECEIVED = 0.50)
+	factors = alist(STAT_BLEEDING = 1.20, STAT_DISPERSION = 2, STAT_DISABLE_DURATION = 1.22, STAT_HEALING_RECEIVED = 0.50)
 
 
 // Applied when near something very cold.
@@ -232,7 +232,7 @@ the artifact triggers the rage.
 	on_expired_text = span_warning("You feel somewhat warmer and more mobile now.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_SLOWDOWN = 2, BF_EVASION = -40, BF_ATTACK_SPEED = 1.4, BF_DISABLE_DURATION = 1.2)
+	factors = alist(STAT_SLOWDOWN = 2, STAT_EVASION = -40, STAT_ATTACK_SPEED = 1.4, STAT_DISABLE_DURATION = 1.2)
 
 
 // Similar to being on fire, except poison tends to be more long term.
@@ -247,7 +247,7 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("You feel.. different.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_PULSE_SET = PULSE_NORM)
+	factors = alist(STAT_PULSE_SET = PULSE_NORM)
 
 /datum/body_effect/slow_pulse
 	name = "slow pulse"
@@ -257,7 +257,7 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("You feel energized.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_BLEEDING = 0.8, BF_PULSE_SHIFT = -1)
+	factors = alist(STAT_BLEEDING = 0.8, STAT_PULSE_SHIFT = -1)
 
 
 // Temperature Normalizer.
@@ -312,7 +312,7 @@ the artifact triggers the rage.
 	on_expired_text = span_warning("You feel a longing for the flow of energy.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_EMP_SHIFT = 5)
+	factors = alist(STAT_EMP_SHIFT = 5)
 
 // Nullifies explosions.
 /datum/body_effect/blastshield
@@ -324,7 +324,7 @@ the artifact triggers the rage.
 	on_expired_text = span_warning("You feel a longing for the flow of energy.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_EXPLOSION_SHIFT = 3)
+	factors = alist(STAT_EXPLOSION_SHIFT = 3)
 
 // Kills on expiration.
 /datum/body_effect/doomed
@@ -361,7 +361,7 @@ the artifact triggers the rage.
 	desc = "You are almost immune to harm, for a little while at least."
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_INCOMING_ALL = 0, BF_DISABLE_DURATION = 0, BF_PAIN_IMMUNITY = 1, BF_ARMOR(INJURY_BLUNT) = 2000, BF_ARMOR(INJURY_CUT) = 2000, BF_ARMOR(INJURY_PIERCE) = 2000, BF_ARMOR(INJURY_BURN) = 2000, BF_ARMOR(INJURY_CORROSIVE) = 2000, BF_ARMOR(INJURY_ELECTRIC) = 2000, BF_ARMOR(INJURY_TOXIN) = 2000, BF_ARMOR(INJURY_RADIATION) = 2000, BF_ARMOR(INJURY_PAIN) = 2000, BF_ARMOR(ARMOR_BLAST) = 2000, BF_HEAT_EXPOSURE = 0, BF_COLD_EXPOSURE = 0, BF_SIEMENS = 0.0)
+	factors = alist(STAT_INCOMING_ALL = 0, STAT_DISABLE_DURATION = 0, STAT_PAIN_IMMUNITY = 1, STAT_ARMOR_BLUNT = 2000, STAT_ARMOR_CUT = 2000, STAT_ARMOR_PIERCE = 2000, STAT_ARMOR_BURN = 2000, STAT_ARMOR_CORROSIVE = 2000, STAT_ARMOR_ELECTRIC = 2000, STAT_ARMOR_TOXIN = 2000, STAT_ARMOR_RADIATION = 2000, STAT_ARMOR_PAIN = 2000, STAT_ARMOR_BLAST = 2000, STAT_HEAT_EXPOSURE = 0, STAT_COLD_EXPOSURE = 0, STAT_SIEMENS = 0.0)
 
 // Reduces resistance to "elements".
 // Note that most things that do give resistance gives 100% protection,
@@ -371,7 +371,7 @@ the artifact triggers the rage.
 	desc = "You're more vulnerable to extreme temperatures and electricity."
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_HEAT_EXPOSURE = 1.5, BF_COLD_EXPOSURE = 1.5, BF_SIEMENS = 1.5)
+	factors = alist(STAT_HEAT_EXPOSURE = 1.5, STAT_COLD_EXPOSURE = 1.5, STAT_SIEMENS = 1.5)
 
 /datum/body_effect/entangled
 	name = "entangled"
@@ -381,7 +381,7 @@ the artifact triggers the rage.
 	on_expired_text = span_warning("Your movement is freed.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_SLOWDOWN = 2)
+	factors = alist(STAT_SLOWDOWN = 2)
 
 /datum/body_effect/trait/thickdigits
 	name = "Thick Digits"
@@ -406,4 +406,4 @@ the artifact triggers the rage.
 /datum/body_effect/rednet //Not used here currently, but used downstream. Todo: Port it.
 	stacks = MODIFIER_STACK_FORBID
 	mob_overlay_state = "red_electricity_constant"
-	factors = alist(BF_SLOWDOWN = 1)
+	factors = alist(STAT_SLOWDOWN = 1)

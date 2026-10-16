@@ -31,7 +31,7 @@
 	max_symptoms = 3
 	// No heart-rate or blood-pressure factors: pulse and BP are derived from actual blood
 	// volume; the bleed itself drives them through vitals.dm.
-	factors = alist(BF_SLOWDOWN = 0.5, BF_MOTOR_CONTROL = 0.98)
+	factors = alist(STAT_SLOWDOWN = 0.5, STAT_MOTOR_CONTROL = 0.98)
 	spontaneous_emotes = list("wince", "groan")
 	spontaneous_emote_prob = 3
 
@@ -102,9 +102,9 @@
 	var/obj/item/organ/O = location
 	if(!istype(O))
 		return
-	var/static/alist/left_hand = alist(BF_ACTION_BLOCKS = ACTION_BLOCK_HOLD_LEFT)
-	var/static/alist/right_hand = alist(BF_ACTION_BLOCKS = ACTION_BLOCK_HOLD_RIGHT)
-	var/static/alist/leg = alist(BF_SLOWDOWN = 4)
+	var/static/alist/left_hand = alist(STAT_ACTION_BLOCKS = ACTION_BLOCK_HOLD_LEFT)
+	var/static/alist/right_hand = alist(STAT_ACTION_BLOCKS = ACTION_BLOCK_HOLD_RIGHT)
+	var/static/alist/leg = alist(STAT_SLOWDOWN = 4)
 	switch(O.organ_tag)
 		if(BP_L_ARM, BP_L_HAND)
 			set_factors(left_hand)
@@ -131,7 +131,7 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	factors = alist(BF_ACCURACY = -10, BF_MOTOR_CONTROL = 0.99)
+	factors = alist(STAT_ACCURACY = -10, STAT_MOTOR_CONTROL = 0.99)
 
 /datum/affliction/nerve_damage
 	initial_severity = 60
@@ -165,7 +165,7 @@
 	)
 	min_symptoms = 2
 	max_symptoms = 3
-	factors = alist(BF_SLOWDOWN = 1, BF_ACCURACY = -15, BF_MOTOR_CONTROL = 0.97)
+	factors = alist(STAT_SLOWDOWN = 1, STAT_ACCURACY = -15, STAT_MOTOR_CONTROL = 0.97)
 	spontaneous_emotes = list("clutch at their limb", "groan in agony")
 	spontaneous_emote_prob = 5
 
@@ -185,7 +185,7 @@
 	)
 	min_symptoms = 2
 	max_symptoms = 3
-	factors = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -20)
+	factors = alist(STAT_SLOWDOWN = 1.5, STAT_ACCURACY = -20)
 	spontaneous_emotes = list("smells faintly of decay")
 	spontaneous_emote_prob = 2
 

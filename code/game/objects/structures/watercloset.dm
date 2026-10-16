@@ -257,7 +257,7 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 			MSG_OTHERS(span_danger("%U% gives %T% a swirlie!")), \
 			MSG_BLIND("You hear a toilet flushing."))
 		if(!GM.internal)
-			GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
+			GM.body?.add_restriction(src, STAT_AIRWAY, 0, 5 SECONDS) // a faceful of water
 		if(GM.size_multiplier <= 0.75)
 			act_message(GM, src, MSG_SELF(span_userdanger("You get sucked into %T%!")), \
 				MSG_OTHERS(span_danger("%U% gets sucked into %T% due to their small size!")))

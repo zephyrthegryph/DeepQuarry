@@ -222,7 +222,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 	return amount
 
 /// injure()'s armour stage: `amount` of injury kind `kind` against this
-/// armour, `penetration` points ignored, `bonus` points added (BF_ARMOR).
+/// armour, `penetration` points ignored, `bonus` points added (STAT_ARMOR).
 /// Returns list(amount left, kind that lands, effective protection) indexed by
 /// ARMOR_SOAK_*. The list is reused by the next call: read it at once.
 /datum/armor/proc/soak(kind, amount, penetration = 0, bonus = 0)
