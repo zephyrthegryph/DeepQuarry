@@ -134,6 +134,9 @@
 	TEST_ASSERT_EQUAL(station.go_in(R), 1, "the real partially buckled robot retains its historical forced admission")
 	TEST_ASSERT_EQUAL(station.slot_item(OCCUPANT_SLOT_RECHARGE_STATION), R, "the admitted partial-buckle passenger occupies the actual station")
 	TEST_ASSERT_EQUAL(R.loc, station, "admission moves the actual robot from the neighboring bed into the station")
+	// holds_while rechecks after movement settles, through its native 0.1-second timer.
+	test_time(1 SECONDS)
+	TEST_ASSERT_EQUAL(station.slot_item(OCCUPANT_SLOT_RECHARGE_STATION), R, "the admitted passenger remains in its actual slot while the native link recheck runs")
 	TEST_ASSERT_NULL(R.buckled_to(), "moving beyond the bed tile releases the real buckle link")
 	TEST_ASSERT(!bed.has_buckled_mobs(), "the bed's actual reverse link is released by movement")
 	station.go_out()
