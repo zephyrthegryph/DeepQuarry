@@ -111,8 +111,8 @@
 				set_meat_type(H?.species?.meat_type)
 
 			if(!meat_type)
-				if(owner.meat_type)
-					set_meat_type(owner.meat_type)
+				if(butchery_config_of(owner).meat_type)
+					set_meat_type(butchery_config_of(owner).meat_type)
 				else
 					set_meat_type(/obj/item/reagent_containers/food/snacks/meat)
 
