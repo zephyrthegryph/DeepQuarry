@@ -42,7 +42,8 @@ echo "seconds per type (world-time, 1 world per shard): big $(awk -v s="$bsec" -
 # A pin FAILURE (a committed snapshot row that no longer matches the render) is a finding about the tree, not about the incremental path; the rows
 # are still comparable. Only a run that dumped nothing (a crash, a watchdog kill) is an error.
 for n in big small; do [ -d "$dir/$n/merged" ] || { echo "dq_look_prove: the $n run dumped nothing; see $dir/$n.log" >&2; exit 1; }; done
-echo "snapshot rows that differ from the committed pins (a finding about the tree): big $(grep -h 'snapshot rows differ' "$dir/big.log" | sed -n 's/.*Assertion failed: \([0-9]*\) snapshot rows differ.*//p' | paste -sd+ | bc 2>/dev/null || echo ?), small $(grep -h 'snapshot rows differ' "$dir/small.log" | sed -n 's/.*Assertion failed: \([0-9]*\) snapshot rows differ.*//p' | paste -sd+ | bc 2>/dev/null || echo ?)"
+cnt() { grep -ho 'Assertion failed: [0-9]* snapshot rows differ' "$1" | awk '{s += $3} END {print s + 0}'; }
+echo "snapshot rows that differ from the committed pins (a finding about the tree): big $(cnt "$dir/big.log"), small $(cnt "$dir/small.log")"
 fail=0; checked=0
 for f in "$dir"/small/merged/*/*.txt; do
 	[ -f "$f" ] || continue
