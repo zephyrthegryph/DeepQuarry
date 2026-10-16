@@ -39,6 +39,7 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	var/burn_ended_by
 
 CAPABILITIES(/obj)
+	object_break_config()
 	sale_profile()
 	extend(TAG_TOPIC, needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate), id = "topic_usable")))
 	extend(TAG_TOPIC, then(PROC_REF(topic_touched), early = TRUE))
