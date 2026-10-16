@@ -260,6 +260,11 @@ GLOBAL_LIST_EMPTY(occupant_pod_slots)
 
 READS_AS(/proc/occupant_of, OCCUPANT_KEY)
 
+/// A pod's requirements read its occupant (is it alive, is it viable): the occupant's pending refreshes settle first.
+/atom/settle_for_reads()
+	. = ..()
+	occupant_of(src)?.settle_for_reads()
+
 /// Puts `M` into `holder`'s pod from code (a spawn, a bump, a test): the pod's own rules, no wait. TRUE when they are inside.
 /proc/occupant_enter(atom/movable/holder, mob/living/M, mob/actor = null)
 	var/datum/capability/lib/occupant_pod/pod = occupant_pod_of(holder)

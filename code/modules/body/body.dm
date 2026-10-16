@@ -451,6 +451,10 @@
 	if(dirty & BODY_DIRTY_VITALS)
 		recompute_vitals()
 
+/// Brings every cache a question reads up to date (the owner's settle_for_reads()).
+/datum/body/proc/settle()
+	ensure_vitals()
+
 /datum/body/proc/recompute_vitals()
 	set_dirty(dirty & (~BODY_DIRTY_VITALS))
 	set_pain(0)

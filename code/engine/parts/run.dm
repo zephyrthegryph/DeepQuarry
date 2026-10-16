@@ -304,6 +304,10 @@
 /// and the pre-checks of the actions the effects start. Nothing is reserved and nothing is written.
 /proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
 	lookup_reads_prepare(A.holder, A)
+	// Lazy caches the requirements read are refreshed here, outside the purity guard, so a requirement never writes one.
+	A.holder?.settle_for_reads()
+	A.actor?.settle_for_reads()
+	A.target?.settle_for_reads()
 	var/previous_pure_depth = GLOB.op_pure_depth
 	op_pure_begin()
 	try

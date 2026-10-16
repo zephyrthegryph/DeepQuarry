@@ -306,13 +306,9 @@
 	var/mob/living/carbon/human/H = person(floor_at(0, 1))
 	var/mob/living/carbon/human/P = patient(floor_at(1, 0))
 	medpod_put_in(S, P)
-	// The sleeper asks the occupant's vitality while it checks the button: a body that has just been dirtied (placed, dosed) settles on its
-	// Life cycle, as a patient's does between presses, so the question reads settled caches instead of refreshing them inside a requirement.
-	test_time(LIFE_CYCLE)
 	medpod_ui(H, S, "chemical", list("chemid" = REAGENT_ID_INAPROVALINE, "amount" = 5))
 	test_time(1)
 	TEST_ASSERT_EQUAL(P.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 5, "the occupant got five units")
-	test_time(LIFE_CYCLE)
 	medpod_ui(H, S, "chemical", list("chemid" = REAGENT_ID_TOXIN, "amount" = 5))
 	test_time(1)
 	TEST_ASSERT_EQUAL(P.reagents.get_reagent_amount(REAGENT_ID_TOXIN), 0, "an unlisted chemical is never injected")
