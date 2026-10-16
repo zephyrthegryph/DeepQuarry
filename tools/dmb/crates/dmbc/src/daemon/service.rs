@@ -346,6 +346,10 @@ impl Shared {
             BUILDS_RECLAIMED.store(finished, Ordering::Release);
             bytes = self.reclaim_allocator(bytes);
         }
+        // A retiring daemon holds session memory for nobody: free every idle session now, then return the pages.
+        if self.retiring.load(Ordering::Acquire) && self.release_for_retire() {
+            bytes = self.reclaim_allocator(transport::private_bytes());
+        }
         let hard = bytes.is_some_and(|bytes| self.over_hard_ceiling(bytes));
         // A running build's transient peak is not retained state: only the
         // hard ceiling may act during one.
@@ -426,15 +430,21 @@ pub(super) fn serve() -> io::Result<()> {
             })?;
     }
     let mut beat = Instant::now();
+    let mut retiring_since: Option<Instant> = None;
+    let mut beat_retiring = false;
     loop {
         let retiring = shared.retiring.load(Ordering::Acquire);
         let incoming = listeners.poll(retiring, Instant::now())?;
-        if beat.elapsed() >= Duration::from_secs(5) {
+        if retiring && retiring_since.is_none() {
+            retiring_since = Some(Instant::now());
+        }
+        if beat.elapsed() >= Duration::from_secs(5) || retiring != beat_retiring {
+            beat_retiring = retiring;
             beat = Instant::now();
             let busy = *shared.running.lock().unwrap_or_else(|e| e.into_inner()) > 0
                 || shared.connections.load(Ordering::Acquire) > 0;
             if let Some(registration) = registration.as_mut() {
-                if registration.beat(busy) && !retiring {
+                if registration.beat(busy, retiring) && !retiring {
                     super::emit_stderr(format_args!(
                         "dmbd retiring: a newer daemon asked for it (machine-wide resident cap); draining running builds"
                     ));
@@ -446,6 +456,22 @@ pub(super) fn serve() -> io::Result<()> {
             super::emit_stderr(format_args!(
                 "dmbd exiting: every retained project root no longer exists pid={}",
                 std::process::id()
+            ));
+            return Ok(());
+        }
+        if incoming.is_none()
+            && retiring_since.is_some_and(|since| {
+                super::resident::retire_exit_due(
+                    since.elapsed(),
+                    *shared.running.lock().unwrap_or_else(|e| e.into_inner()),
+                )
+            })
+        {
+            super::emit_stderr(format_args!(
+                "dmbd exiting pid={}: retiring with no running build for {}s (open connections: {})",
+                std::process::id(),
+                super::resident::RETIRE_GRACE.as_secs(),
+                shared.connections.load(Ordering::Acquire)
             ));
             return Ok(());
         }

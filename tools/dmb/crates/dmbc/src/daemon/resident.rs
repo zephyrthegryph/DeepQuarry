@@ -84,6 +84,9 @@ struct Record {
     active_ms: u64,
     beat_ms: u64,
     busy: bool,
+    /// True once this daemon drains for exit: new clients wait for it instead of starting a second daemon.
+    #[serde(default)]
+    retiring: bool,
 }
 
 fn live_dir(dir: &Path) -> PathBuf {
@@ -114,13 +117,14 @@ impl Registration {
         }
     }
     /// Refresh the heartbeat; true when a newer daemon asked this one to retire.
-    pub(super) fn beat(&mut self, busy: bool) -> bool {
+    pub(super) fn beat(&mut self, busy: bool, retiring: bool) -> bool {
         let now = now_ms();
         if busy {
             touch();
         }
         self.record.beat_ms = now;
         self.record.busy = busy;
+        self.record.retiring = retiring;
         self.record.active_ms = ACTIVITY_MS.load(Ordering::Acquire).max(self.record.started_ms);
         self.write();
         retire_flag(&self.dir, self.record.pid).exists()
@@ -153,6 +157,7 @@ pub(super) fn register_and_enforce() -> Option<Registration> {
             active_ms: started,
             beat_ms: started,
             busy: false,
+            retiring: false,
         },
     };
     // Registered before counting so a daemon starting concurrently sees this one as young, never as unknown.
@@ -161,6 +166,28 @@ pub(super) fn register_and_enforce() -> Option<Registration> {
         super::emit_stderr(format_args!("dmbd resident cap not enforced: {error}"));
     }
     Some(registration)
+}
+
+/// A draining daemon of this very executable is still alive and recently heartbeating. A client that finds the endpoint
+/// absent must wait for it to exit rather than start a second daemon beside it.
+pub fn same_binary_draining() -> bool {
+    let Ok(own) = std::env::current_exe() else { return false };
+    let own = own.display().to_string();
+    let now = now_ms();
+    read_records(&state_dir()).iter().any(|record| {
+        record.retiring
+            && record.pid != std::process::id()
+            && same_exe(&record.exe, &own)
+            && now.saturating_sub(record.beat_ms) < BEAT_FRESH.as_millis() as u64
+            && !wait_exit(record.pid, Duration::ZERO)
+    })
+}
+
+/// A retiring daemon with no running build for this long exits even if clients still hold connections (queued or hung
+/// ones get an error and start again). Without a running build there is nothing to drain.
+pub(super) const RETIRE_GRACE: Duration = Duration::from_secs(30);
+pub(super) fn retire_exit_due(retiring_for: Duration, running: usize) -> bool {
+    running == 0 && retiring_for >= RETIRE_GRACE
 }
 
 fn read_records(dir: &Path) -> Vec<Record> {
@@ -483,7 +510,7 @@ mod tests {
     use super::*;
 
     fn record(pid: u32, active: u64, beat: u64, busy: bool) -> Record {
-        Record { pid, exe: String::new(), namespace: None, started_ms: 0, active_ms: active, beat_ms: beat, busy }
+        Record { pid, exe: String::new(), namespace: None, started_ms: 0, active_ms: active, beat_ms: beat, busy, retiring: false }
     }
 
     #[test]
@@ -531,6 +558,13 @@ mod tests {
         let now = 1_000 + BEAT_FRESH.as_millis() as u64 + 5;
         let records = [record(1, 0, 1_000, true)];
         assert_eq!(choose(&[peer(1, OWN, false)], OWN, &records, 1, now), vec![Action::Drain(1)]);
+    }
+
+    #[test]
+    fn retiring_daemon_without_builds_exits_after_the_grace_never_during_a_build() {
+        assert!(!retire_exit_due(RETIRE_GRACE - Duration::from_secs(1), 0));
+        assert!(retire_exit_due(RETIRE_GRACE, 0));
+        assert!(!retire_exit_due(Duration::from_secs(3600), 1));
     }
 
     #[test]

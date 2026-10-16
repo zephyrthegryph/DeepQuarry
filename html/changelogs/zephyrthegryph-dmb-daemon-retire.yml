@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A retiring native compiler daemon frees every idle session at once, exits 30 seconds after its last build even with connections open, and a client waits for a draining daemon of the same binary instead of starting a second one"
