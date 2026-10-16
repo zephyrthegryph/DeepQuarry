@@ -35,5 +35,5 @@ Generation and all ratchets pass at 350 remaining rows: 36 removed from this con
 
 ## Surgical surface policy
 
-The continuation's current source result is 386 to 349: 37 rows removed, zero additions, with generation and all ratchets passing. Surgery cleanliness is a native immutable surface policy with real map/VV COW overrides; the three existing bed/table values and the unchanged maximum/floor/blood algorithm have focused tests. Both production and guarded test includes are wired. This extends the earlier zero-diagnostic preflight; the final surgical addition is being checked separately, and no runtime pass or stamp is claimed.
+The continuation's current source result is 386 to 349: 37 rows removed, zero additions, with generation and all ratchets passing. Surgery cleanliness is a native immutable surface policy with real map/VV COW overrides; the four existing table/bed values and the unchanged maximum/floor/blood algorithm have focused tests. Both production and guarded test includes are wired. DreamChecker identified the fourth default on ordinary tables; that default and its real competing-surface assertion are now included. The final surgical addition is being checked separately, and no runtime pass or stamp is claimed.
 
