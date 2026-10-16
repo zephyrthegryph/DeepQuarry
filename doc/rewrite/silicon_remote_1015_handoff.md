@@ -100,4 +100,4 @@ timeout before completion. That run produced no final result JSON or lane-ready
 stamp. The repair list retains both failing fixtures, the changed SPASM fixture,
 both mandatory pins, incomplete look coverage and all selectors after the cutoff;
 previously passing targeted fixtures are not requested again. Final verification
-remains pending the coordinator's 60-minute repair gate.
+remains pending the coordinator's longer focused repair gate.
