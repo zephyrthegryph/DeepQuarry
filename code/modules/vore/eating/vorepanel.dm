@@ -170,8 +170,18 @@ CAPABILITIES(/datum/vore_look)
 	op(SC_TRANSFERE_MESSAGE, ui_act(SC_TRANSFERE_MESSAGE, arg("val")), then(PROC_REF(ui_act_sc_transfere_message)))
 	op(SC_DELETE_MESSAGE, ui_act(SC_DELETE_MESSAGE, arg("val")), then(PROC_REF(ui_act_sc_delete_message)))
 	op("preset", ui_act("preset", arg("color", schema_text(4096)), arg("index", num())), then(PROC_REF(ui_act_preset)))
-	op("pick_from_inside", ui_act("pick_from_inside", arg("pick", schema_ref(/atom/movable)), arg("belly", schema_ref(/obj/belly)), arg("option", schema_text(64))), then(PROC_REF(ui_act_pick_from_inside)))
-	op("pick_from_outside", ui_act("pick_from_outside", arg("pickall", bool()), arg("intent", schema_text(64)), arg("val", schema_ref(/obj/belly)), arg("pick", schema_ref(/atom/movable)), arg("option", schema_text(64)), arg("targetBelly", schema_ref(/obj/belly))), then(PROC_REF(ui_act_pick_from_outside)))
+	op("pick_from_inside", ui_act("pick_from_inside", arg("pick", schema_ref(/atom/movable)), arg("belly", schema_ref(/obj/belly)), arg("option", schema_text(64))),
+		asks(/datum/prompt/choice, fields = list("question" = "What do you want to do to them?", "title" = "Query", "choices" = list("Examine","Help Out","Devour"), "buttons" = TRUE, "timeout" = 0), step = "a1", when = PROC_REF(asks_inside_mob)),
+		asks(/datum/prompt/choice, fields = list("question" = "What do you want to do to that?", "title" = "Query", "choices" = list("Examine","Use Hand"), "buttons" = TRUE, "timeout" = 0), step = "a2", when = PROC_REF(asks_inside_item)),
+		then(PROC_REF(ui_act_pick_from_inside)))
+	op("pick_from_outside", ui_act("pick_from_outside", arg("pickall", bool()), arg("intent", schema_text(64)), arg("val", schema_ref(/obj/belly)), arg("pick", schema_ref(/atom/movable)), arg("option", schema_text(64)), arg("targetBelly", schema_ref(/obj/belly))),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(pick_question)), "title" = "Vore Pick", "choices" = computed(PROC_REF(pick_choices)), "timeout" = 0), step = "a1", when = PROC_REF(asks_pick)),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(move_question)), "title" = "Select Belly", "choices" = computed(PROC_REF(move_choices)), "timeout" = 0), step = "a2", when = PROC_REF(asks_move)),
+		asks(/datum/prompt/choice, fields = list("question" = "Who do you want to receive the target?", "title" = "Select Predator", "choices" = computed(PROC_REF(transfer_candidates_of)), "timeout" = 0), step = "a3", when = PROC_REF(asks_transfer_who)),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(move_question)), "title" = "Select Belly", "choices" = computed(PROC_REF(transfer_belly_choices)), "timeout" = 0), step = "a4", when = PROC_REF(asks_transfer_belly)),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(transfer_offer_question)), "title" = "Feeding Offer", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "a5", when = PROC_REF(asks_transfer_offer), answerer = PROC_REF(transfer_receiver)),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(process_question)), "title" = "Instant Process", "choices" = computed(PROC_REF(process_choices)), "timeout" = 0), step = "a8", when = PROC_REF(asks_process)),
+		then(PROC_REF(ui_act_pick_from_outside)))
 	op("prey_ability", ui_act("prey_ability", arg("belly", schema_ref(/obj/belly)), arg("ability", schema_text(64))), then(PROC_REF(perform_prey_ability)))
 	op("set_spont_belly", ui_act("set_spont_belly", arg("attribute", schema_text(64)), arg("val", schema_text(MAX_NAME_LEN))), then(PROC_REF(set_spont_belly)))
 
@@ -1113,7 +1123,28 @@ CAPABILITIES(/datum/vore_look)
 		return FALSE
 	if(isnull(belly))
 		return FALSE
+	var/answered = A.step_value("a1") || A.step_value("a2") // asked when the window's option was none of the choices
+	if(answered)
+		option = answered
 	return pick_from_inside(user, list("pick" = pick, "belly" = belly, "option" = option))
+
+/// The pick inside someone else is a mob and the window gave no valid option: ask what to do to them.
+/datum/vore_look/proc/asks_inside_mob(datum/act/op/A)
+	var/atom/movable/target = A.arg("pick")
+	var/obj/belly/OB = A.arg("belly")
+	var/mob/user = A.actor
+	if(!(target in OB) || !(user in OB) || !isliving(target))
+		return FALSE
+	return !(A.arg("option") in list("Examine","Help Out","Devour"))
+
+/// The pick inside someone else is an item and the window gave no valid option: ask what to do to it.
+/datum/vore_look/proc/asks_inside_item(datum/act/op/A)
+	var/atom/movable/target = A.arg("pick")
+	var/obj/belly/OB = A.arg("belly")
+	var/mob/user = A.actor
+	if(!(target in OB) || !(user in OB) || isliving(target) || !isitem(target))
+		return FALSE
+	return !(A.arg("option") in list("Examine","Use Hand"))
 
 /// Host is inside someone else, and is trying to interact with something else inside that person.
 /datum/vore_look/proc/pick_from_inside(mob/user, list/params)
@@ -1129,20 +1160,10 @@ CAPABILITIES(/datum/vore_look)
 		if(isliving(target))
 			if(params["option"] in list("Examine","Help Out","Devour"))
 				intent = params["option"]
-			else
-				var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(pick_from_inside), args, /datum/prompt/choice, question = "What do you want to do to them?", title = "Query", choices = list("Examine","Help Out","Devour"), buttons = TRUE)
-				if(isnull(_answer_a1))
-					return
-				intent = _answer_a1
 
 		else if(isitem(target))
 			if(params["option"] in list("Examine","Use Hand"))
 				intent = params["option"]
-			else
-				var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(pick_from_inside), args, /datum/prompt/choice, question = "What do you want to do to that?", title = "Query", choices = list("Examine","Use Hand"), buttons = TRUE)
-				if(isnull(_answer_a2))
-					return
-				intent = _answer_a2
 	//End of indirect vorefx changes
 
 	switch(intent)
@@ -1230,18 +1251,10 @@ CAPABILITIES(/datum/vore_look)
 		return FALSE
 	if(isnull(targetBelly))
 		return FALSE
-	return pick_from_outside(user, list("pickall" = pickall, "intent" = intent, "val" = val, "pick" = pick, "option" = option, "targetBelly" = targetBelly))
+	return pick_from_outside(A, user, list("pickall" = pickall, "intent" = intent, "val" = val, "pick" = pick, "option" = option, "targetBelly" = targetBelly))
 
-/// Host is trying to interact with something in host's belly (its answers re-run it with rerun_ask()).
-/datum/vore_look/proc/pick_from_outside(mob/user, list/params)
-	var/intent
-
-	if(params["pickall"])
-		return pick_all_from_outside(user, params)
-
-	var/atom/movable/target = params["pick"]
-	if(!(target in vore_selected_of(host())))
-		return TRUE // Not in our X anymore, update UI
+/// What the host can do with `target` in the selected belly.
+/datum/vore_look/proc/pick_options_for(atom/movable/target)
 	var/list/available_options = list("Examine", "Eject", "Launch", "Move", "Transfer")
 	if(ishuman(target))
 		available_options += "Transform"
@@ -1254,13 +1267,135 @@ CAPABILITIES(/datum/vore_look)
 		if(datarget.client)
 			available_options += "Process"
 		available_options += "Health"
+	return available_options
+
+/// The single pick (not an [All] choice) is still in the selected belly: the pick reaches the intent switch.
+/datum/vore_look/proc/pick_is_open(datum/act/op/A)
+	if(A.arg("pickall"))
+		return FALSE
+	var/atom/movable/target = A.arg("pick")
+	return (target in vore_selected_of(host()))
+
+/// The intent: the window's option when it is one of the choices, else the answer to the question.
+/datum/vore_look/proc/pick_intent(datum/act/op/A)
+	var/option = A.arg("option")
+	if(option in pick_options_for(A.arg("pick")))
+		return option
+	return A.step_value("a1")
+
+/datum/vore_look/proc/asks_pick(datum/act/op/A)
+	return pick_is_open(A) && !(A.arg("option") in pick_options_for(A.arg("pick")))
+
+/datum/vore_look/proc/pick_question(datum/act/op/A)
+	var/atom/movable/target = A.arg("pick")
+	return "What would you like to do with [target]?"
+
+/datum/vore_look/proc/pick_choices(datum/act/op/A)
+	return pick_options_for(A.arg("pick"))
+
+/datum/vore_look/proc/asks_move(datum/act/op/A)
+	if(!pick_is_open(A) || pick_intent(A) != "Move" || host().stat)
+		return FALSE
+	return !(A.arg("targetBelly") in host().vore_organs)
+
+/datum/vore_look/proc/move_question(datum/act/op/A)
+	var/atom/movable/target = A.arg("pick")
+	return "Move [target] where?"
+
+/datum/vore_look/proc/move_choices(datum/act/op/A)
+	return host().vore_organs
+
+/// The adjacent mobs that take feeding and have bellies.
+/datum/vore_look/proc/transfer_candidates()
+	var/list/viable_candidates = list()
+	for(var/mob/living/candidate in range(1, host()))
+		if(istype(candidate) && !(candidate == host()))
+			if(length(candidate.vore_organs) && candidate.vore_prefs.feeding && !candidate.no_vore)
+				viable_candidates += candidate
+	return viable_candidates
+
+/datum/vore_look/proc/transfer_candidates_of(datum/act/op/A)
+	return transfer_candidates()
+
+/datum/vore_look/proc/asks_transfer_who(datum/act/op/A)
+	if(!pick_is_open(A) || pick_intent(A) != "Transfer" || host().stat)
+		return FALSE
+	return length(transfer_candidates()) > 0
+
+/// The predator picked to receive the target, when still in reach: the one asked to accept.
+/datum/vore_look/proc/transfer_receiver(datum/act/op/A)
+	var/mob/living/belly_owner = A.step_value("a3")
+	if(!belly_owner || !(belly_owner in range(1, host())))
+		return null
+	return belly_owner
+
+/datum/vore_look/proc/asks_transfer_belly(datum/act/op/A)
+	if(!asks_transfer_who(A))
+		return FALSE
+	var/mob/living/belly_owner = A.step_value("a3")
+	return belly_owner && (belly_owner in range(1, host()))
+
+/datum/vore_look/proc/transfer_belly_choices(datum/act/op/A)
+	var/mob/living/belly_owner = A.step_value("a3")
+	return belly_owner.vore_organs
+
+/datum/vore_look/proc/asks_transfer_offer(datum/act/op/A)
+	if(!asks_transfer_belly(A))
+		return FALSE
+	var/atom/movable/target = A.arg("pick")
+	var/mob/living/belly_owner = A.step_value("a3")
+	return A.step_value("a4") && (target in vore_selected_of(host())) && belly_owner != host()
+
+/datum/vore_look/proc/transfer_offer_question(datum/act/op/A)
+	var/atom/movable/target = A.arg("pick")
+	var/obj/belly/choice = A.step_value("a4")
+	return "[host()] is trying to transfer [target] from their [lowertext(vore_selected_of(host()).name)] into your [lowertext(choice.name)]. Do you accept?"
+
+/// How the host can process `ourtarget` instantly (Cancel last), empty when it cannot.
+/datum/vore_look/proc/process_options_of(mob/living/ourtarget)
+	var/list/process_options = list()
+
+	if(ourtarget.vore_prefs.digestable)
+		process_options += "Digest"
+		process_options += "Break Bone"
+
+	if(ourtarget.vore_prefs.absorbable)
+		process_options += "Absorb"
+
+	process_options += "Knockout" //Can't think of any mechanical prefs that would restrict this. Even if they are already asleep, you may want to make it permanent.
+
+	if(process_options.len)
+		process_options += "Cancel"
+	return process_options
+
+/datum/vore_look/proc/asks_process(datum/act/op/A)
+	if(!pick_is_open(A) || pick_intent(A) != "Process")
+		return FALSE
+	var/mob/living/ourtarget = A.arg("pick")
+	return isliving(ourtarget) && length(process_options_of(ourtarget)) > 0
+
+/datum/vore_look/proc/process_question(datum/act/op/A)
+	var/atom/movable/target = A.arg("pick")
+	return "How would you prefer to process \the [target]? This will perform the given action instantly if the prey accepts."
+
+/datum/vore_look/proc/process_choices(datum/act/op/A)
+	return process_options_of(A.arg("pick"))
+
+/// Host is trying to interact with something in host's belly (its questions are the op's steps).
+/datum/vore_look/proc/pick_from_outside(datum/act/op/A, mob/user, list/params)
+	var/intent
+
+	if(params["pickall"])
+		return pick_all_from_outside(user, params)
+
+	var/atom/movable/target = params["pick"]
+	if(!(target in vore_selected_of(host())))
+		return TRUE // Not in our X anymore, update UI
+	var/list/available_options = pick_options_for(target)
 	if((params["option"] in available_options))
 		intent = params["option"]
 	else
-		var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(pick_from_outside), args, /datum/prompt/choice, question = "What would you like to do with [target]?", title = "Vore Pick", choices = available_options)
-		if(isnull(_answer_a1))
-			return
-		intent = _answer_a1
+		intent = A.step_value("a1")
 	switch(intent)
 		if("Examine")
 			return pick_examine(user, target, params)
@@ -1269,9 +1404,9 @@ CAPABILITIES(/datum/vore_look)
 		if("Launch")
 			return pick_launch(user, target, params)
 		if("Move")
-			return pick_move(user, target, params)
+			return pick_move(A, user, target, params)
 		if("Transfer")
-			return pick_transfer(user, target, params)
+			return pick_transfer(A, user, target, params)
 		if("Transform")
 			return pick_transform(user, target, params)
 		if("Reform")
@@ -1279,7 +1414,7 @@ CAPABILITIES(/datum/vore_look)
 		if("Health")
 			return pick_health(user, target, params)
 		if("Process")
-			return pick_process(user, target, params)
+			return pick_process(A, user, target, params)
 		if("Health Check")
 			return pick_health_check(user, target, params)
 
@@ -1343,17 +1478,14 @@ CAPABILITIES(/datum/vore_look)
 	host().visible_message(span_danger("[host()] launches [target]!"))
 	return TRUE
 
-/// "Move": Move the prey to another of our bellies. Prompts re-run pick_from_outside.
-/datum/vore_look/proc/pick_move(mob/user, atom/movable/target, params)
+/// "Move": Move the prey to another of our bellies.
+/datum/vore_look/proc/pick_move(datum/act/op/A, mob/user, atom/movable/target, params)
 	if(host().stat)
 		to_chat(user,span_warning("You can't do that in your state!"))
 		return TRUE
 	var/obj/belly/choice = params["targetBelly"]
 	if(!(choice in host().vore_organs))
-		var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "Move [target] where?", title = "Select Belly", choices = host().vore_organs)
-		if(isnull(_answer_a2))
-			return
-		choice = _answer_a2
+		choice = A.step_value("a2")
 	if(!choice || !(target in vore_selected_of(host())))
 		return TRUE
 	to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(vore_selected_of(host()).name)] to their [lowertext(choice.name)]!"))
@@ -1361,41 +1493,30 @@ CAPABILITIES(/datum/vore_look)
 	to_chat(vore_selected_of(host()).get_belly_surrounding(target.contents),span_warning("You're squished along with [target] from [host()]'s [lowertext(vore_selected_of(host()))] to their [lowertext(choice.name)]!"))
 	vore_selected_of(host()).transfer_contents(target, choice)
 
-/// "Transfer": Offer the prey to an adjacent predator's belly. Prompts re-run pick_from_outside.
-/datum/vore_look/proc/pick_transfer(mob/user, atom/movable/target, params)
+/// "Transfer": Offer the prey to an adjacent predator's belly.
+/datum/vore_look/proc/pick_transfer(datum/act/op/A, mob/user, atom/movable/target, params)
 	if(host().stat)
 		to_chat(user,span_warning("You can't do that in your state!"))
 		return TRUE
 
 	var/mob/living/belly_owner = host()
 
-	var/list/viable_candidates = list()
-	for(var/mob/living/candidate in range(1, host()))
-		if(istype(candidate) && !(candidate == host()))
-			if(length(candidate.vore_organs) && candidate.vore_prefs.feeding && !candidate.no_vore)
-				viable_candidates += candidate
+	var/list/viable_candidates = transfer_candidates()
 	if(!viable_candidates.len)
 		to_chat(user, span_notice("There are no viable candidates around you!"))
 		return TRUE
-	var/_answer_a3 = rerun_ask(user, "a3", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "Who do you want to receive the target?", title = "Select Predator", choices = viable_candidates)
-	if(isnull(_answer_a3))
-		return
-	belly_owner = _answer_a3
+	belly_owner = A.step_value("a3")
 
 	if(!belly_owner || !(belly_owner in range(1, host())))
 		return TRUE
 
-	var/obj/belly/choice = rerun_ask(user, "a4", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "Move [target] where?", title = "Select Belly", choices = belly_owner.vore_organs)
-	if(isnull(choice))
-		return
+	var/obj/belly/choice = A.step_value("a4")
 	if(!choice || !(target in vore_selected_of(host())) || !belly_owner || !(belly_owner in range(1, host())))
 		return TRUE
 
 	if(belly_owner != host())
 		to_chat(user, span_vnotice("Transfer offer sent. Await their response."))
-		var/accepted = rerun_ask(belly_owner, "a5", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "[host()] is trying to transfer [target] from their [lowertext(vore_selected_of(host()).name)] into your [lowertext(choice.name)]. Do you accept?", title = "Feeding Offer", choices = list("Yes", "No"), buttons = TRUE)
-		if(isnull(accepted))
-			return
+		var/accepted = A.step_value("a5")
 		if(accepted != "Yes")
 			to_chat(user, span_vwarning("[belly_owner] refused the transfer!!"))
 			return TRUE
@@ -1427,7 +1548,7 @@ CAPABILITIES(/datum/vore_look)
 	V.tgui_interact(user)
 	return TRUE
 
-/// "Reform": Reform a ghost or MMI prey into its backed-up body. Prompts re-run pick_from_outside.
+/// "Reform": Reform a ghost or MMI prey into its backed-up body. The prey is asked by a request (a ghost is not conscious, which an op's question to a third party requires).
 /datum/vore_look/proc/pick_reform(mob/user, atom/movable/target, params)
 	if(host().stat)
 		to_chat(user,span_warning("You can't do that in your state!"))
@@ -1440,15 +1561,15 @@ CAPABILITIES(/datum/vore_look)
 	return TRUE
 
 /// Reform a ghost prey into its body backup, inside the selected belly.
-/datum/vore_look/proc/reform_ghost_prey(mob/user, mob/observer/target, params)
+/datum/vore_look/proc/reform_ghost_prey(mob/user, mob/observer/target, params, accepted)
 	var/mob/observer/T = target
 	if(!ismob(T.body_backup) || GLOB.prevent_respawns.Find(T.mind.name) || ispAI(T.body_backup))
 		to_chat(user,span_warning("They don't seem to be reformable!"))
 		return TRUE
 
-	var/accepted = rerun_ask(T, "a6", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(vore_selected_of(host()).name)]?", title = "Reforming Attempt", choices = list("Yes", "No"), buttons = TRUE)
 	if(isnull(accepted))
-		return
+		open_request(src, /datum/prompt/choice, PROC_REF(reform_ghost_answered), answerer = T, asker = user, question = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(vore_selected_of(host()).name)]?", title = "Reforming Attempt", choices = list("Yes", "No"), buttons = TRUE, timeout = 0)
+		return TRUE
 	if(accepted != "Yes")
 		to_chat(user,span_warning("[T] refused to be reformed!"))
 		return TRUE
@@ -1479,17 +1600,27 @@ CAPABILITIES(/datum/vore_look)
 				sm.set_icon_state(sm.icon_living)
 		announce_ghost_joinleave(T.mind, 0, "They now occupy their body again.")
 
+/// The ghost prey answered the reforming offer: the reform goes on with the answer.
+/datum/vore_look/proc/reform_ghost_answered(datum/act/request/A)
+	var/mob/user = A.request.asker
+	var/mob/observer/T = A.request.answerer
+	if(!A.answer || QDELETED(user) || QDELETED(T))
+		return
+	if(host().stat || !(T in vore_selected_of(host())))
+		return // the pick is gone: the panel shows it
+	reform_ghost_prey(user, T, null, A.answer.value)
+
 /// Reform an MMI prey: its body backup is revived around it.
-/datum/vore_look/proc/reform_mmi_prey(mob/user, obj/item/mmi/target, params)
+/datum/vore_look/proc/reform_mmi_prey(mob/user, obj/item/mmi/target, params, accepted)
 	var/obj/item/mmi/MMI = target
 	var/mob/living/carbon/brain/mmi_occupant = MMI.get_occupant()
 	var/datum/mind_host/mmi_host = get_mind_host(MMI)
 	if(!ismob(MMI.body_backup) || !mmi_occupant?.mind || GLOB.prevent_respawns.Find(mmi_occupant.mind.name))
 		to_chat(user,span_warning("They don't seem to be reformable!"))
 		return TRUE
-	var/accepted = rerun_ask(mmi_occupant, "a7", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(vore_selected_of(host()).name)]?", title = "Reforming Attempt", choices = list("Yes", "No"), buttons = TRUE)
 	if(isnull(accepted))
-		return
+		open_request(src, /datum/prompt/choice, PROC_REF(reform_mmi_answered), answerer = mmi_occupant, asker = user, subject = MMI, question = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(vore_selected_of(host()).name)]?", title = "Reforming Attempt", choices = list("Yes", "No"), buttons = TRUE, timeout = 0)
+		return TRUE
 	if(accepted != "Yes")
 		to_chat(user,span_warning("[MMI] refused to be reformed!"))
 		return TRUE
@@ -1516,35 +1647,32 @@ CAPABILITIES(/datum/vore_look)
 			H.reform_restore("reformed around [MMI] in [host()]", host())
 		rel_take(MMI, nameof(MMI.body_backup))
 
+/// The MMI's occupant answered the reforming offer: the reform goes on with the answer.
+/datum/vore_look/proc/reform_mmi_answered(datum/act/request/A)
+	var/mob/user = A.request.asker
+	var/obj/item/mmi/MMI = A.request.subject
+	if(!A.answer || QDELETED(user) || QDELETED(MMI))
+		return
+	if(host().stat || !(MMI in vore_selected_of(host())))
+		return // the pick is gone: the panel shows it
+	reform_mmi_prey(user, MMI, null, A.answer.value)
+
 /// "Health": Report the prey's vitality.
 /datum/vore_look/proc/pick_health(mob/user, atom/movable/target, params)
 	var/mob/living/ourtarget = target
 	to_chat(user, span_notice("Current health reading for \The [ourtarget]: [round(ourtarget.vitality() * 100)]%"))
 	return TRUE
 
-/// "Process": Instantly digest, absorb, break or knock out a consenting prey. Prompts re-run pick_from_outside.
-/datum/vore_look/proc/pick_process(mob/user, atom/movable/target, params)
+/// "Process": Instantly digest, absorb, break or knock out a consenting prey.
+/datum/vore_look/proc/pick_process(datum/act/op/A, mob/user, atom/movable/target, params)
 	var/mob/living/ourtarget = target
-	var/list/process_options = list()
+	var/list/process_options = process_options_of(ourtarget)
 
-	if(ourtarget.vore_prefs.digestable)
-		process_options += "Digest"
-		process_options += "Break Bone"
-
-	if(ourtarget.vore_prefs.absorbable)
-		process_options += "Absorb"
-
-	process_options += "Knockout" //Can't think of any mechanical prefs that would restrict this. Even if they are already asleep, you may want to make it permanent.
-
-	if(process_options.len)
-		process_options += "Cancel"
-	else
+	if(!process_options.len)
 		to_chat(user, span_vwarning("You cannot instantly process [ourtarget]."))
 		return FALSE
 
-	var/ourchoice = rerun_ask(user, "a8", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "How would you prefer to process \the [target]? This will perform the given action instantly if the prey accepts.", title = "Instant Process", choices = process_options)
-	if(isnull(ourchoice))
-		return
+	var/ourchoice = A.step_value("a8")
 	if(!ourchoice)
 		return FALSE
 	if(!ourtarget.client)

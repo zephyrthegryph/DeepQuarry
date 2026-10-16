@@ -123,7 +123,7 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
 	op("open", ui_act("open"), then(PROC_REF(ui_act_open)))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
-	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req_is(nameof(door_open), TRUE, because = MSG(maint_recycler/door_open)), req_is(nameof(inserted_item), FALSE, because = /datum/msg/req_failed)), then(PROC_REF(interaction_attackby)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req_is(nameof(door_open), TRUE, because = MSG(maint_recycler/door_open)), req_is(nameof(inserted_item), FALSE, because = /datum/msg/req_failed)), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(consent_question)), "title" = "Welcome to the Hydralulic Press Prompt", "choices" = list("OSHA is for chumps", "what the fuck? get me outta here!"), "buttons" = TRUE, "timeout" = 0), step = "consent", when = PROC_REF(holder_needs_consent), answerer = PROC_REF(holder_victim)), then(PROC_REF(interaction_attackby)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/maint_recycler/dismantle()
@@ -192,11 +192,9 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 	if(istype(O,/obj/item/holder))
 		var/obj/item/holder/h = O
 		var/mob/m = h.held_mob
-		// The held mob is asked; their answer re-runs this interaction.
-		var/consent = mob_consent_check(m, PROC_REF(interaction_attackby), args)
-		if(isnull(consent))
+		var/consent = recycler_consent(m, A)
+		if(!isnull(A.step_value("consent")))
 			to_chat(user, span_notice("You hold \the [O] over \the [src]'s processing compartment..."))
-			return OP_OK
 		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
 		if(consent)
 			if(user in range(1,src))
@@ -211,6 +209,30 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 		move_into(src, nameof(src.inserted_item), O, user)
 
 	return OP_DECLINE
+
+/obj/machinery/maint_recycler/proc/consent_question(datum/act/op/A)
+	return "Do you want to be put in \The [src]? Industrial machinery is pretty damn deadly, you'll probably die. to death. A fine paste."
+
+/// A held mob with a player in it is asked (the op's "consent" step); a logged-out player refuses, a mindless mob never minds.
+/obj/machinery/maint_recycler/proc/recycler_consent(mob/probable_victim, datum/act/op/A)
+	if(probable_victim.key)
+		if(probable_victim.client)
+			return A.step_value("consent") == "OSHA is for chumps"
+		return FALSE //no logged out users
+	return TRUE //mindless mobs that've never felt the gentle touch of a client are fine
+
+/// The held item is a mob holder the recycler accepts, with a logged-in player inside: that player is asked.
+/obj/machinery/maint_recycler/proc/holder_needs_consent(datum/act/op/A)
+	var/obj/item/holder/h = A.held
+	if(!istype(h) || get_item_whitelist(h) != RECYCLER_ALLOWED)
+		return FALSE
+	var/mob/m = h.held_mob
+	return m && m.key && m.client
+
+/// The player inside the held holder is the one asked: sanity check to make sure they are alright with getting squished to death.
+/obj/machinery/maint_recycler/proc/holder_victim(datum/act/op/A)
+	var/obj/item/holder/h = A.held
+	return h.held_mob
 
 /obj/machinery/maint_recycler/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	. = ..()
@@ -449,15 +471,6 @@ UTILITY PROCS
 	if(!user.key) return FALSE
 	if(LAZYACCESS(granted_points, user.key)+potentialValue > point_cap) return FALSE
 	return TRUE
-
-/// TRUE or FALSE, or null while the mob is being asked (their answer re-runs `proc_name` with `proc_args`).
-/obj/machinery/maint_recycler/proc/mob_consent_check(mob/probable_victim, proc_name, list/proc_args)
-	if(probable_victim.key)
-		if(probable_victim.client) //sanity check to make sure they are alright with getting squished to death
-			var/answer = rerun_ask(probable_victim, "consent", proc_name, proc_args, /datum/prompt/choice, question = "Do you want to be put in \The [src]? Industrial machinery is pretty damn deadly, you'll probably die. to death. A fine paste.", title = "Welcome to the Hydralulic Press Prompt", choices = list("OSHA is for chumps", "what the fuck? get me outta here!"), cancel_answer = "what the fuck? get me outta here!", buttons = TRUE)
-			return isnull(answer) ? null : (answer == "OSHA is for chumps")
-		else return FALSE //no logged out users
-	else return TRUE //mindless mobs that've never felt the gentle touch of a client are fine
 
 /obj/machinery/maint_recycler/proc/is_user_hostile(mob/user) //negative points modifier for getting more.
 	return (user.key in hostile_towards)

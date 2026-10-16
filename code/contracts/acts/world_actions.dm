@@ -15,9 +15,9 @@ ACTION(uncross, atom/movable/crosser)
 // bump is published on the BUMPED atom (the door, the pod, the wall): `bumper` walked into it heading `direction`. One emitter,
 // /atom/movable/proc/bump_into() (atoms_movable.dm), which the movement path's Bump() and a mech's push both call.
 ACTION(bump, atom/movable/bumper, atom/bumped, direction)
-ACTION(stumbled_into, atom/movable/stumbled)
+ACTION(stumbled_into, mob/living/stumbled)
 ACTION(fall, turf/landing, mob/living/landed_on)
-ACTION(thrown_hit, atom/movable/thrown)
+ACTION(thrown_hit, atom/movable/thrown, mob/living/thrower, speed)
 ACTION(hit, datum/damage_packet/packet)
 ACTION(hit/projectile)
 ACTION(hit/melee)

@@ -101,8 +101,12 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	op("del_c", ui_act("del_c", arg("del_c", num())), then(PROC_REF(ui_act_del_c)))
 	op("search", ui_act("search", arg("t1", schema_text(4096))), then(PROC_REF(ui_act_search)))
 	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
-	op("photo_front", ui_act("photo_front"), then(PROC_REF(ui_act_photo_front)))
-	op("photo_side", ui_act("photo_side"), then(PROC_REF(ui_act_photo_side)))
+	op("photo_front", ui_act("photo_front"),
+		asks(/datum/prompt/choice, fields = list("question" = "Select image (numbered in order taken)", "title" = "Picture Choice", "choices" = computed(PROC_REF(photo_choices)), "timeout" = 0), step = "photo", when = PROC_REF(asks_photo)),
+		then(PROC_REF(ui_act_photo_front)))
+	op("photo_side", ui_act("photo_side"),
+		asks(/datum/prompt/choice, fields = list("question" = "Select image (numbered in order taken)", "title" = "Picture Choice", "choices" = computed(PROC_REF(photo_choices)), "timeout" = 0), step = "photo", when = PROC_REF(asks_photo)),
+		then(PROC_REF(ui_act_photo_side)))
 	extend(TAG_UI, then(PROC_REF(ui_records_fresh), early = TRUE))
 	// The record modals (the old ui_modal_opened()/ui_modal_answered()): a field is edited by a pick or by typing, as the field's kind says.
 	op("edit", ui_act("modal:edit", arg("arguments")), needs(req(PROC_REF(edit_field_known), silent = TRUE)),
@@ -420,12 +424,21 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		SStgui.update_uis(src)
 		after(src, 5 SECONDS, PROC_REF(print_finish))
 
+/// The picture is asked of a silicon that holds no photo and has pictures saved.
+/obj/machinery/computer/secure_data/proc/asks_photo(datum/act/op/A)
+	var/mob/living/silicon/S = A.actor
+	return istype(S) && !istype(S.get_active_hand(), /obj/item/photo) && length(S.aiCamera?.aipictures)
+
+/obj/machinery/computer/secure_data/proc/photo_choices(datum/act/op/A)
+	var/mob/living/silicon/S = A.actor
+	return S.picture_choices()
+
 /obj/machinery/computer/secure_data/proc/ui_act_photo_front(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/icon/photo = get_photo(A.actor)
+	var/icon/photo = get_photo(A.actor, A.step_value("photo"))
 	if(photo && active1())
 		active1().fields["photo_front"] = photo
 		active1().fields["photo-south"] = "'data:image/png;base64,[icon2base64(photo)]'"
@@ -435,7 +448,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/icon/photo = get_photo(A.actor)
+	var/icon/photo = get_photo(A.actor, A.step_value("photo"))
 	if(photo && active1())
 		active1().fields["photo_side"] = photo
 		active1().fields["photo-west"] = "'data:image/png;base64,[icon2base64(photo)]'"
@@ -624,13 +637,13 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 /obj/machinery/computer/secure_data/proc/is_not_allowed(mob/user)
 	return !src.authenticated || user.stat || user.restrained() || (!in_range(src, user) && (!istype(user, /mob/living/silicon)))
 
-/obj/machinery/computer/secure_data/proc/get_photo(mob/user)
+/obj/machinery/computer/secure_data/proc/get_photo(mob/user, picked_name)
 	if(istype(user.get_active_hand(), /obj/item/photo))
 		var/obj/item/photo/photo = user.get_active_hand()
 		return photo.img
 	if(istype(user, /mob/living/silicon))
 		var/mob/living/silicon/tempAI = user
-		var/obj/item/photo/selection = tempAI.GetPicture()
+		var/obj/item/photo/selection = tempAI.GetPicture(picked_name)
 		if (selection)
 			return selection.img
 
