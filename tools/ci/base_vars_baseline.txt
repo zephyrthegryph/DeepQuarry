@@ -168,8 +168,6 @@ base_var	code/modules/lighting/lighting_atom.dm	@/atom/movable::em_block
 base_var	code/modules/lighting/overlay_lighting.dm	@/atom/movable::overlay_light
 base_var	code/modules/materials/containers/machine_shim.dm	@/mob::machine_shim
 base_var	code/modules/medical/stabilisation/stasis.dm	@/mob/living::stasis_sources
-base_var	code/modules/mob/animations.dm	@/mob::is_floating
-base_var	code/modules/mob/animations.dm	@/mob::floatiness
 base_var	code/modules/mob/combat_mode.dm	@/mob::combat_mode
 base_var	code/modules/mob/combat_mode.dm	@/mob::attack_variant
 base_var	code/modules/mob/freelook/mask/update_triggers.dm	@/mob/living::updating_cult_vision
