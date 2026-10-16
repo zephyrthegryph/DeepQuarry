@@ -1,32 +1,32 @@
-STATIC_ENTRY(telekinetic_reach)
+STATIC_ENTRY(telekinetic_target)
 /// Whether the default telekinetic adapter can grab or poke this object.
-/proc/telekinetic_reach(allowed = null)
-	return entry_make(ENTRY_TELEKINETIC_REACH, null, list("allowed" = allowed))
+/proc/telekinetic_target(allowed = null)
+	return entry_make(ENTRY_TELEKINETIC_TARGET, null, list("allowed" = allowed))
 
-/datum/type_trait/telekinetic_reach
+/datum/type_trait/telekinetic_target
 	var/allowed = TRUE
 
-/datum/type_trait/telekinetic_reach/copy_values(datum/type_trait/telekinetic_reach/into)
+/datum/type_trait/telekinetic_target/copy_values(datum/type_trait/telekinetic_target/into)
 	into.allowed = allowed
 
-/datum/entry_engine/type_trait/telekinetic_reach
-	kind = ENTRY_TELEKINETIC_REACH
-	trait_type = /datum/type_trait/telekinetic_reach
-	publish_key = TELEKINETIC_REACH_KEY
+/datum/entry_engine/type_trait/telekinetic_target
+	kind = ENTRY_TELEKINETIC_TARGET
+	trait_type = /datum/type_trait/telekinetic_target
+	publish_key = TELEKINETIC_TARGET_KEY
 	base_type = /obj
 	var_names = list("tk_reach" = "allowed")
 
-READS_AS(/proc/telekinetic_reach_of, TELEKINETIC_REACH_KEY)
-/proc/telekinetic_reach_of(obj/holder) as /datum/type_trait/telekinetic_reach
+READS_AS(/proc/telekinetic_target_of, TELEKINETIC_TARGET_KEY)
+/proc/telekinetic_target_of(obj/holder) as /datum/type_trait/telekinetic_target
 	READS_FROM(holder)
-	return type_trait_of(holder, ENTRY_TELEKINETIC_REACH)
+	return type_trait_of(holder, ENTRY_TELEKINETIC_TARGET)
 
-/proc/telekinetic_reach_of_type(type) as /datum/type_trait/telekinetic_reach
+/proc/telekinetic_target_of_type(type) as /datum/type_trait/telekinetic_target
 	READS_FROM()
-	return type_trait_of_type(type, ENTRY_TELEKINETIC_REACH)
+	return type_trait_of_type(type, ENTRY_TELEKINETIC_TARGET)
 
-/obj/proc/set_telekinetic_reach(value)
-	return set_trait(src, ENTRY_TELEKINETIC_REACH, "allowed", value)
+/obj/proc/set_telekinetic_target(value)
+	return set_trait(src, ENTRY_TELEKINETIC_TARGET, "allowed", value)
 
 /*
 	This is similar to item attack_self, but applies to anything

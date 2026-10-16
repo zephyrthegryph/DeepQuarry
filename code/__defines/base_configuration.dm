@@ -26,8 +26,8 @@
 #define ENTRY_SURGERY_SURFACE "surgery_surface"
 #define SURGERY_SURFACE_KEY "surgery_surface"
 
-#define ENTRY_TELEKINETIC_REACH "telekinetic_reach"
-#define TELEKINETIC_REACH_KEY "telekinetic_reach"
+#define ENTRY_TELEKINETIC_TARGET "telekinetic_target"
+#define TELEKINETIC_TARGET_KEY "telekinetic_target"
 
 #define ENTRY_SEAT_POLICY "seat_policy"
 #define SEAT_POLICY_KEY "seat_policy"

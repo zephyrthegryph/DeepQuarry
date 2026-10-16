@@ -129,5 +129,5 @@
 	return TRUE
 
 CAPABILITIES(/obj/structure)
-	configure(telekinetic_reach(allowed = FALSE))
+	configure(telekinetic_target(allowed = FALSE))
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))

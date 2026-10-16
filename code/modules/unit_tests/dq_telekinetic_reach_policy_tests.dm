@@ -6,8 +6,8 @@
 	touches++
 	return ..()
 
-/datum/unit_test/dq_telekinetic_reach_policy
-/datum/unit_test/dq_telekinetic_reach_policy/Run()
+/datum/unit_test/dq_telekinetic_target_policy
+/datum/unit_test/dq_telekinetic_target_policy/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	set_global(nameof(GLOB.coalesce_absorbed), GLOB.coalesce_absorbed)
 	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
@@ -18,8 +18,8 @@
 	var/datum/input_adapter/telekinesis/adapter = INPUT_ADAPTER(telekinesis)
 	var/obj/dq_tk_policy_probe/loose = allocate(/obj/dq_tk_policy_probe, T)
 	var/obj/structure/refused = allocate(/obj/structure, T)
-	TEST_ASSERT(telekinetic_reach_of_type(/obj).allowed, "ordinary objects retain their actual TRUE type policy")
-	TEST_ASSERT(!telekinetic_reach_of_type(/obj/structure).allowed, "structures retain their actual FALSE override")
+	TEST_ASSERT(telekinetic_target_of_type(/obj).allowed, "ordinary objects retain their actual TRUE type policy")
+	TEST_ASSERT(!telekinetic_target_of_type(/obj/structure).allowed, "structures retain their actual FALSE override")
 	TEST_ASSERT(adapter.default_use(H, loose), "the real default adapter accepts a loose ordinary object")
 	var/obj/item/tk_grab/G = H.get_active_hand()
 	TEST_ASSERT(istype(G), "the actual adapter created a real telekinetic grab in the active hand")
@@ -40,9 +40,9 @@
 	TEST_ASSERT(!adapter.default_use(H, loose), "map-style refusal blocks the real anchored poke")
 	TEST_ASSERT_EQUAL(loose.touches, 1, "refusal leaves the real target un-touched")
 	var/obj/dq_tk_policy_probe/peer = allocate(/obj/dq_tk_policy_probe, T)
-	TEST_ASSERT(telekinetic_reach_of(peer).allowed && telekinetic_reach_of_type(loose.type).allowed, "the actual instance edit preserves peer and shared type admission")
-	loose.set_telekinetic_reach(TRUE)
+	TEST_ASSERT(telekinetic_target_of(peer).allowed && telekinetic_target_of_type(loose.type).allowed, "the actual instance edit preserves peer and shared type admission")
+	loose.set_telekinetic_target(TRUE)
 	TEST_ASSERT(adapter.default_use(H, loose), "the real native setter restores admission")
 	TEST_ASSERT_EQUAL(loose.touches, 2, "recovery dispatches the actual anchored poke again")
-	TEST_ASSERT_EQUAL(telekinetic_reach_of_type(/obj/structure).allowed, FALSE, "recovery never changes the structure override")
+	TEST_ASSERT_EQUAL(telekinetic_target_of_type(/obj/structure).allowed, FALSE, "recovery never changes the structure override")
 	test_time(1 SECOND) // allow the actual grab-focus overlay expiry to clean up

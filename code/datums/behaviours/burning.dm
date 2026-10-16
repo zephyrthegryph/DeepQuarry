@@ -39,7 +39,7 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	var/burn_ended_by
 
 CAPABILITIES(/obj)
-	telekinetic_reach()
+	telekinetic_target()
 	surgery_surface()
 	micro_entry_policy()
 	object_fire_config()
