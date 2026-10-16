@@ -140,59 +140,59 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 	var/obj/belly/B = new /obj/belly(src)
 	set_vore_selected(src, B)
 	B.immutable = 1
-	B.affects_vore_sprites = TRUE
+	B.set_affects_vore_sprites(TRUE)
 	B.name = vore_stomach_name ? vore_stomach_name : "stomach"
 	B.desc = vore_stomach_flavor ? vore_stomach_flavor : "Your surroundings are warm, soft, and slimy. Makes sense, considering you're inside \the [name]."
-	B.digest_mode = vore_default_mode
-	B.escapable = vore_escape_chance > 0 ? B_ESCAPABLE_DEFAULT : B_ESCAPABLE_NONE
-	B.escapechance = vore_escape_chance
-	B.digestchance = vore_digest_chance
-	B.absorbchance = vore_absorb_chance
+	B.set_digest_mode(vore_default_mode)
+	B.set_escapable(vore_escape_chance > 0 ? B_ESCAPABLE_DEFAULT : B_ESCAPABLE_NONE)
+	B.set_escapechance(vore_escape_chance)
+	B.set_digestchance(vore_digest_chance)
+	B.set_absorbchance(vore_absorb_chance)
 	B.human_prey_swallow_time = swallowTime
 	B.nonhuman_prey_swallow_time = swallowTime
-	B.vore_verb = "swallow"
+	B.set_vore_verb("swallow")
 	// TODO - Customizable per mob
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
+	B.set_emote_lists_at(DM_HOLD, list(
 		"The walls gently squeeze against you. The wet sounds of shifting flesh against your form fill the air.",
 		"The hot, humid air rushes around you for a moment as the creature urps. The walls clench in around you for a moment, before relaxing again.",
 		"Your body is soaked in the fluids that cling to the churning walls. They squeeze across your form gently, conforming to your shape.",
 		"You can feel the world around you shift and sway as the creature moves! The flesh is stretchy, doughy. You can sink into it a little ways before it bounces back, curling you into a small shape."
-		)
+		))
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"The walls slop thick slime across your body! It tingles briefly before the sting and ache sets in!",
 		"The sound of your body slipping and sliding against the powerfully churning stomach fills the air!",
 		"The grip of that stomach is harsh. Eagerly mushing and rubbing that slime into your body in attempts to break you down!",
 		"The intense churning and grinding jostles your around within the thick slime as you're slowly broken down!"
-		)
+		))
 	B.own_emote_lists()
-	B.emote_lists[DM_ABSORB] = list(
+	B.set_emote_lists_at(DM_ABSORB, list(
 		"The walls cling to you awfully close... It's almost like you're sinking into them.",
 		"You can feel the walls press in tightly against you, clinging to you possessively!",
 		"It almost feels like you're sinking into the soft, doughy flesh!",
 		"You can feel the walls press in around you. Almost molten, so squishy!!"
-		)
+		))
 	B.own_emote_lists()
-	B.emote_lists[DM_DRAIN] = list(
+	B.set_emote_lists_at(DM_DRAIN, list(
 		"The walls churn down on you heavily!! It's hard to move!",
 		"You can feel yourself getting weaker with every moment! The doughy walls sap your strength!",
 		"You're practically smothered in the oppressive heat of the creature's stomach!",
 		"It's hot, wet and tight!"
-		)
+		))
 	B.own_emote_lists()
-	B.emote_lists[DM_HEAL] = list(
+	B.set_emote_lists_at(DM_HEAL, list(
 		"The walls pulse against you almost rhythmically. It feels nice, almost like a massage.",
 		"You're gently squeezed in pleasant warmth, softly churned.",
 		"The doughy feel of the heavy flesh clinging to you makes you feel a little stronger with every passing moment.",
 		"The flesh caresses across your body gently as you're held."
-		)
-	B.digest_messages_prey = list(
+		))
+	B.set_digest_messages_prey(list(
 		"Your body is steadily softened more and more over time! Eventually you pass out. The creature's stomach rumbles powerfully as you are reduced to paste, processed for energy!",
 		"The creature's slimy gut lets out a heavy groan as you're slowly melted away. Gushing deeper through the creature.",
 		"The stinging and aching gives way to numbness as you're slowly smothered out. Your body is steadily reduced to nutrients and energy for the creature to continue on its way.",
 		"The chaos of being digested fades as you're snuffed out by a harsh clench! You're steadily broken down into a thick paste, processed and absorbed by the predator!"
-		)
+		))
 
 /mob/living/simple_mob/shadekin/life_type_post_due()
 	return TRUE

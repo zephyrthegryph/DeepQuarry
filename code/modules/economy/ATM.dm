@@ -48,7 +48,7 @@ log transactions
 		if(ticks_left_timeout <= 0)
 			rel_clear(src, nameof(authenticated_account))
 	if(ticks_left_locked_down > 0)
-		ticks_left_locked_down--
+		set_ticks_left_locked_down(ticks_left_locked_down - 1)
 		if(ticks_left_locked_down <= 0)
 			number_incorrect_tries = 0
 
@@ -265,7 +265,7 @@ CAPABILITIES(/obj/machinery/atm)
 		R.stamped = new
 	R.stamped += /obj/item/stamp
 	R.add_overlay(stampoverlay)
-	R.stamps += "<HR>" + span_italics("This paper has been stamped by the Automatic Teller Machine.")
+	R.set_stamps(R.stamps + ("<HR>" + span_italics("This paper has been stamped by the Automatic Teller Machine.")))
 
 	if(prob(50))
 		play_sfx(src, SFX_ITEMS_POLAROID1)
@@ -317,7 +317,7 @@ CAPABILITIES(/obj/machinery/atm)
 		R.stamped = new
 	R.stamped += /obj/item/stamp
 	R.add_overlay(stampoverlay)
-	R.stamps += "<HR>" + span_italics("This paper has been stamped by the Automatic Teller Machine.")
+	R.set_stamps(R.stamps + ("<HR>" + span_italics("This paper has been stamped by the Automatic Teller Machine.")))
 
 	if(prob(50))
 		play_sfx(src, SFX_ITEMS_POLAROID1)
@@ -385,7 +385,7 @@ CAPABILITIES(/obj/machinery/atm)
 		if(previous_account_number == tried_account_num)
 			if(number_incorrect_tries > max_pin_attempts)
 				//lock down the atm
-				ticks_left_locked_down = 30
+				set_ticks_left_locked_down(30)
 				play_sfx(src, SFX_MACHINES_BUZZ_TWO, vary = TRUE)
 
 				//create an entry in the account transaction log

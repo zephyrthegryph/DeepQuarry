@@ -53,7 +53,7 @@ GLOBAL_VAR(bomb_set)
 /obj/machinery/nuclearbomb/proc/work_step(datum/act/timer/A)
 	if(timing)
 		GLOB.bomb_set = 1 //So long as there is one nuke timing, it means one nuke is armed.
-		timeleft--
+		set_timeleft(timeleft - 1)
 		play_sfx(src, SFX_ITEMS_TIMER)
 		if(timeleft <= 0)
 			explode()
@@ -151,7 +151,7 @@ GLOBAL_VAR(bomb_set)
 			to_chat(user, span_warning("You don't have the dexterity to do this!"))
 			return TRUE
 		user.set_machine(src)
-		wire_view = FALSE
+		set_wire_view(FALSE)
 		tgui_interact(user)
 	else if(deployable)
 		if(removal_stage < 5)
@@ -259,7 +259,7 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 	var/mob/user = A.actor
 	if(auth())
 		auth().forceMove(src.loc)
-		yes_code = 0
+		set_yes_code(0)
 		rel_clear(src, nameof(/obj/machinery/nuclearbomb::auth))
 	else
 		var/obj/item/I = user.get_active_hand()
@@ -273,25 +273,25 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 	var/key = raw_key
 	if(key == "E")
 		if(code == r_code)
-			yes_code = 1
-			code = null
+			set_yes_code(1)
+			set_code(null)
 		else
-			code = "ERROR"
+			set_code("ERROR")
 	else if(key == "R")
-		yes_code = 0
-		code = null
+		set_yes_code(0)
+		set_code(null)
 	else
-		code = "[code][key]"
+		set_code("[code][key]")
 		if(length(code) > 5)
-			code = "ERROR"
+			set_code("ERROR")
 	return TRUE
 
 /obj/machinery/nuclearbomb/proc/ui_act_time(datum/act/op/A, raw_delta)
 	if(!auth() || !yes_code)
 		return TRUE
 	var/delta = raw_delta
-	timeleft += delta
-	timeleft = min(max(round(timeleft), 60), 600)
+	set_timeleft(timeleft + delta)
+	set_timeleft(min(max(round(timeleft), 60), 600))
 	return TRUE
 
 /obj/machinery/nuclearbomb/proc/ui_act_timer(datum/act/op/A)
@@ -301,7 +301,7 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 	if(safety)
 		to_chat(user, span_warning("The safety is still on."))
 		return TRUE
-	timing = !timing
+	set_timing(!timing)
 	if(timing)
 		if(!lighthack)
 			set_icon_state("nuclearbomb2")
@@ -321,9 +321,9 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 /obj/machinery/nuclearbomb/proc/ui_act_safety(datum/act/op/A)
 	if(!auth() || !yes_code)
 		return TRUE
-	safety = !safety
+	set_safety(!safety)
 	if(safety)
-		timing = 0
+		set_timing(0)
 		GLOB.bomb_set = 0
 		set_security_level("red")
 	return TRUE
@@ -351,17 +351,17 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 	if(!I?.has_tool_quality(TOOL_WIRECUTTER))
 		to_chat(user, "You need wirecutters!")
 		return TRUE
-	LAZYSET(wires_list, wire, !LAZYACCESS(wires_list, wire))
+	set_wires_list_at(wire, !LAZYACCESS(wires_list, wire))
 	if(safety_wire == wire && timing)
 		explode()
 	if(timing_wire == wire)
 		if(!lighthack && icon_state == "nuclearbomb2")
 			set_icon_state("nuclearbomb1")
-		timing = 0
+		set_timing(0)
 		GLOB.bomb_set = 0
 		set_security_level("red")
 	if(light_wire == wire)
-		lighthack = !lighthack
+		set_lighthack(!lighthack)
 	return TRUE
 
 /obj/machinery/nuclearbomb/proc/ui_act_pulse(datum/act/op/A, raw_wire)
@@ -395,7 +395,7 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 /obj/machinery/nuclearbomb/proc/nukehack_win(mob/user as mob)
 	// wire-defusion view of the same TGUI window. Setting wire_view
 	// before re-opening swaps the React-side view.
-	wire_view = TRUE
+	set_wire_view(TRUE)
 	tgui_interact(user)
 
 /// Requirement: only something with hands can adjust the panels.
@@ -422,11 +422,11 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 #define NUKERANGE 80
 /obj/machinery/nuclearbomb/proc/explode()
 	if(safety)
-		timing = 0
+		set_timing(0)
 		return
-	timing = -1.0
-	yes_code = 0
-	safety = 1
+	set_timing(-1.0)
+	set_yes_code(0)
+	set_safety(1)
 	if(!lighthack)
 		set_icon_state("nuclearbomb3")
 	world << sound('sound/machines/Alarm.ogg') // The nuclear alarm is audible world-wide.
@@ -518,10 +518,10 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 	return timing
 
 /obj/machinery/nuclearbomb/proc/toggle_lighthack()
-	lighthack = !lighthack
+	set_lighthack(!lighthack)
 
 /obj/machinery/nuclearbomb/proc/toggle_safety()
-	safety = !safety
+	set_safety(!safety)
 
 /// auth (a relation view: it reads null once the target is deleted).
 /obj/machinery/nuclearbomb/proc/auth() as /obj/item/disk/nuclear

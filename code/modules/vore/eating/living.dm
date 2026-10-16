@@ -63,7 +63,7 @@
 		B.immutable = TRUE
 		B.name = "Stomach"
 		B.desc = "It appears to be rather warm and wet. Makes sense, considering it's inside \the [name]."
-		B.can_taste = TRUE
+		B.set_can_taste(TRUE)
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
 			if(istype(H.species,/datum/species/monkey))
@@ -387,7 +387,7 @@
 			B.immutable = TRUE
 			B.name = "Stomach"
 			B.desc = "It appears to be rather warm and wet. Makes sense, considering it's inside \the [name]."
-			B.can_taste = TRUE
+			B.set_can_taste(TRUE)
 		else
 			set_vore_selected(src, vore_organs[1])
 

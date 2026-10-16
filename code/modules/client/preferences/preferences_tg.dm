@@ -27,6 +27,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/preferences)
 		if(preference.savefile_identifier != PREFERENCE_PLAYER)
 			continue
 
-		LAZYREMOVE(value_cache, preference.type)
+		remove_value_cache(preference.type)
 		preference.apply_to_client(client(), read_preference(preference.type))
 

@@ -88,7 +88,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		set_scanning(FALSE)
 	else
 		if(bloodsamp())
-			scanner_progress = 0
+			set_scanner_progress(0)
 			set_scanning(TRUE)
 			EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
 			to_chat(user, span_notice("Scan initiated."))
@@ -116,7 +116,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 	else
 		//calculate time difference
 		var/deltaT = (world.time - last_process_worldtime) * 0.1
-		scanner_progress = min(100, scanner_progress + scanner_rate * deltaT)
+		set_scanner_progress(min(100, scanner_progress + scanner_rate * deltaT))
 	EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
 
 /obj/machinery/dnaforensics/proc/complete_scan()

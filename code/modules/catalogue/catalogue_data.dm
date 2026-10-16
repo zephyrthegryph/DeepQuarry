@@ -62,8 +62,8 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 		return
 
 	. = list(src)
-	visible = TRUE
-	cataloguers = new_cataloguers
+	set_visible(TRUE)
+	set_cataloguers(new_cataloguers)
 	display_in_chatlog(user)
 	. += attempt_chain_discoveries(user, new_cataloguers, type)
 

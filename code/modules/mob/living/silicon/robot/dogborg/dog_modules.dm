@@ -288,11 +288,11 @@ CAPABILITIES(/obj/item/pupscrubber)
 	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = user
 	if(!enabled)
-		R.scrubbing = TRUE
+		R.set_scrubbing(TRUE)
 		enabled = TRUE
 		set_icon_state("scrub1")
 	else
-		R.scrubbing = FALSE
+		R.set_scrubbing(FALSE)
 		enabled = FALSE
 		set_icon_state("scrub0")
 	return TRUE

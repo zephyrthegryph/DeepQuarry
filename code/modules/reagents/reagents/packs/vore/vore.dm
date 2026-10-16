@@ -157,7 +157,7 @@
 	for(var/obj/belly/B as anything in M.vore_organs)
 
 		if(B.digest_mode == DM_ABSORB) //Turn off absorbing on bellies
-			B.digest_mode = DM_HOLD
+			B.set_digest_mode(DM_HOLD)
 
 		for(var/mob/living/P in B)
 			if(!P.absorbed)

@@ -181,7 +181,7 @@ PROC_SUMMARY(/datum/system/proc/ready) // a lazy system initializes once, on fir
 	var/datum/work_item/W = kernel().work_by_key["[type]:[handler]"]
 	if(!W || W.interval == interval)
 		return
-	W.interval = interval
+	W.set_interval(interval)
 	W.next_run = min(W.next_run, world.time + interval)
 	kernel().work_due_reset()
 
@@ -199,7 +199,7 @@ PROC_SUMMARY(/datum/system/proc/ready) // a lazy system initializes once, on fir
 	run_ms = ms
 	if(yielded)
 		return
-	times_fired++
+	set_times_fired(times_fired + 1)
 	// ALLOW(sys_world_time_write): the kernel clock: a per-run timestamp of the scheduler itself, not a per-entity expiry
 	last_fire = world.time
 	fire_cost = fire_cost ? KERNEL_AVERAGE_FAST(fire_cost, ms) : ms

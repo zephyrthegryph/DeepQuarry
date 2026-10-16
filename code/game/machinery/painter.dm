@@ -158,12 +158,12 @@ CAPABILITIES(/obj/machinery/gear_painter)
 /obj/machinery/gear_painter/proc/ui_act_switch_modes(datum/act/op/A, mode)
 	if(!(inserted))
 		return
-	active_mode = mode
+	set_active_mode(mode)
 	return TRUE
 
 /obj/machinery/gear_painter/proc/ui_act_choose_color(datum/act/op/A)
 	if(A.answer?.value)
-		activecolor = A.answer.value
+		set_activecolor(A.answer.value)
 		SStgui.update_uis(src)
 	return OP_OK
 
@@ -173,14 +173,14 @@ CAPABILITIES(/obj/machinery/gear_painter)
 		return
 	if(!do_paint(user))
 		return TRUE
-	temp = "Painted Successfully!"
+	set_temp("Painted Successfully!")
 	return TRUE
 
 /obj/machinery/gear_painter/proc/ui_act_drop(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!(inserted))
 		return
-	temp = ""
+	set_temp("")
 	drop_item(user)
 	return TRUE
 
@@ -189,13 +189,13 @@ CAPABILITIES(/obj/machinery/gear_painter)
 		return
 	inserted.remove_atom_colour(FIXED_COLOUR_PRIORITY)
 	play_sfx(src, SFX_EFFECTS_SPRAY3)
-	temp = "Cleared Successfully!"
+	set_temp("Cleared Successfully!")
 	return TRUE
 
 /obj/machinery/gear_painter/proc/ui_act_set_matrix_color(datum/act/op/A, raw_color, value)
 	if(!(inserted))
 		return
-	color_matrix_last[raw_color] = value
+	set_color_matrix_last_at(raw_color, value)
 	return TRUE
 
 /obj/machinery/gear_painter/proc/ui_act_set_matrix_string(datum/act/op/A, value)
@@ -208,25 +208,25 @@ CAPABILITIES(/obj/machinery/gear_painter)
 		for(var/i = 1, i <= colours.len, i++)
 			var/number = text2num(colours[i])
 			if(isnum(number))
-				color_matrix_last[i] = clamp(number, -10, 10)
+				set_color_matrix_last_at(i, clamp(number, -10, 10))
 	return TRUE
 
 /obj/machinery/gear_painter/proc/ui_act_set_hue(datum/act/op/A, buildhue)
 	if(!(inserted))
 		return
-	build_hue = buildhue
+	set_build_hue(buildhue)
 	return TRUE
 
 /obj/machinery/gear_painter/proc/ui_act_set_sat(datum/act/op/A, buildsat)
 	if(!(inserted))
 		return
-	build_sat = buildsat
+	set_build_sat(buildsat)
 	return TRUE
 
 /obj/machinery/gear_painter/proc/ui_act_set_val(datum/act/op/A, buildval)
 	if(!(inserted))
 		return
-	build_val = buildval
+	set_build_val(buildval)
 	return TRUE
 
 /obj/machinery/gear_painter/proc/do_paint(mob/user)
@@ -251,9 +251,9 @@ CAPABILITIES(/obj/machinery/gear_painter)
 			)
 		if(COLORMATE_HSV)
 			color_to_use = color_matrix_hsv(build_hue, build_sat, build_val)
-			color_matrix_last = color_to_use
+			set_color_matrix_last(color_to_use)
 	if(!color_to_use || !check_valid_color(color_to_use, user))
-		temp = "Invalid color!"
+		set_temp("Invalid color!")
 		return FALSE
 	inserted.add_atom_colour(color_to_use, FIXED_COLOUR_PRIORITY)
 	play_sfx(src, SFX_EFFECTS_SPRAY3)
@@ -288,7 +288,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 
 			if(COLORMATE_HSV)
 				cm = color_matrix_hsv(build_hue, build_sat, build_val)
-				color_matrix_last = cm
+				set_color_matrix_last(cm)
 				if(!check_valid_color(cm, user))
 					return get_flat_icon(inserted, dir=SOUTH, no_anim=TRUE)
 
@@ -297,7 +297,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 		inserted.color = (active_mode == COLORMATE_TINT ? activecolor : cm)
 		var/icon/preview = get_flat_icon(inserted, dir=SOUTH, no_anim=TRUE)
 		inserted.color = cur_color
-		temp = ""
+		set_temp("")
 
 		. = preview
 
@@ -305,7 +305,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	if(!islist(cm))		// normal
 		var/list/HSV = ReadHSV(RGBtoHSV(cm))
 		if(HSV[3] < minimum_normal_lightness)
-			temp = "[cm] is too dark (Minimum lightness: [minimum_normal_lightness])"
+			set_temp("[cm] is too dark (Minimum lightness: [minimum_normal_lightness])")
 			return FALSE
 		return TRUE
 	else	// matrix

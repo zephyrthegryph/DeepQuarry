@@ -53,15 +53,15 @@ CAPABILITIES(/mob/living/simple_mob/vore/vampire)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Having been rapidly gulped up by the vampire, you find yourself tightly contained with a set of groaning, wrinkled walls. It seems that the beast has decided against draining your lifeforce through you blood, and instead taking a more direct approach as it saps your strength from all around you. Your attacker seems content to just take that essence for now, but it is a gut afterall and struggling may set it off."
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.belly_fullscreen = "VBO_fleshs"
-	B.digest_brute = 3
-	B.digest_burn = 0
-	B.digest_oxy = 1
-	B.digestchance = 25
-	B.absorbchance = 0
-	B.escapechance = 10
-	B.selective_preference = DM_DRAIN
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_belly_fullscreen("VBO_fleshs")
+	B.set_digest_brute(3)
+	B.set_digest_burn(0)
+	B.set_digest_oxy(1)
+	B.set_digestchance(25)
+	B.set_absorbchance(0)
+	B.set_escapechance(10)
+	B.set_selective_preference(DM_DRAIN)
 	B.escape_stun = 5
 
 /mob/living/simple_mob/vore/vampire/count

@@ -90,8 +90,8 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/miasma)
 	..()
 	if(src.idle <= 0 && src.silenced == 0)
 		play_sfx(src, SFX_H_SOUNDS_BREATHING)
-		src.idle = 4
-	src.idle--
+		set_idle(4)
+	set_idle(src.idle - 1)
 
 //Dies with a variety of messages, a disgusting sound, then drops the control module, bones, blood, gibs, and a cloud of miasma.
 // the possessed suit collapses into remains and miasma.

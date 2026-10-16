@@ -78,7 +78,7 @@ CAPABILITIES(/datum/tgui_module/teleport_control)
 	if(!L[desc])
 		return
 	rel_set(src, nameof(src.locked), L[desc])
-	locked_name = desc
+	set_locked_name(desc)
 
 /datum/tgui_module/teleport_control/proc/ui_act_test_fire(datum/act/op/A)
 	station()?.testfire()

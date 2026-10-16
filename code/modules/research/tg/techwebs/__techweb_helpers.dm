@@ -32,7 +32,7 @@
 	//If it has a point value and we haven't deconstructed it OR we've deconstructed it but it's a repeatable.
 	if(point_value && (!LAZYACCESS(target_techweb.deconstructed_items, thing.type) || (LAZYACCESS(target_techweb.deconstructed_items, thing.type) && (thing.type in SSresearch.techweb_repeatable_items))))
 		if(SSresearch.techweb_point_items[thing.type]) //Don't add things with per-object research values
-			LAZYSET(target_techweb.deconstructed_items, thing.type, TRUE)
+			target_techweb.set_deconstructed_items_at(thing.type, TRUE)
 		target_techweb.add_point_list(point_value)
 
 /proc/techweb_point_display_generic(pointlist)

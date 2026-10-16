@@ -392,7 +392,7 @@ GLOBAL_LIST_INIT(canister_label_colors, list(
 	return OP_OK
 
 /obj/machinery/portable_atmospherics/canister/proc/ui_set_release_pressure(datum/act/op/A, pressure)
-	release_pressure = clamp(round(pressure), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
+	set_release_pressure(clamp(round(pressure), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE))
 	add_fingerprint(A.actor)
 	return OP_OK
 

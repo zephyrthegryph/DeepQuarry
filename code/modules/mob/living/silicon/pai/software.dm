@@ -61,7 +61,7 @@
 	var/soft = purchase
 	var/datum/pai_software/S = GLOB.pai_software_by_key[soft]
 	if(S && (ram >= S.ram_cost))
-		ram -= S.ram_cost
+		set_ram(ram - S.ram_cost)
 		set_software_at(S.id, TRUE)
 	return TRUE
 

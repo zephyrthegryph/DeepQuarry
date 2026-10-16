@@ -73,16 +73,16 @@ CAPABILITIES(/obj/item/locator)
 /obj/item/locator/proc/ui_act_freq(datum/act/op/A, delta)
 	if(!ui_gate(A))
 		return FALSE
-	frequency += delta
-	frequency = sanitize_frequency(frequency)
+	set_frequency(frequency + delta)
+	set_frequency(sanitize_frequency(frequency))
 	return TRUE
 
 /obj/item/locator/proc/ui_act_clear(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	last_beacons = null
-	last_implants = null
-	last_location = null
+	set_last_beacons(null)
+	set_last_implants(null)
+	set_last_location(null)
 	return TRUE
 
 /obj/item/locator/proc/ui_act_refresh(datum/act/op/A)
@@ -119,9 +119,9 @@ CAPABILITIES(/obj/item/locator)
 			"direction" = dir2text(get_dir(sr, tr)),
 			"strength" = strength_label(distance),
 		))
-	last_beacons = b
-	last_implants = i
-	last_location = "[sr.x], [sr.y], [sr.z]"
+	set_last_beacons(b)
+	set_last_implants(i)
+	set_last_location("[sr.x], [sr.y], [sr.z]")
 	return TRUE
 
 

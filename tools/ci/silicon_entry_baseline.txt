@@ -93,7 +93,7 @@ helper_actor_check	code/modules/paperwork/faxmachine.dm	data["isAI"] = isAI(user
 helper_actor_check	code/modules/paperwork/faxmachine.dm	data["isRobot"] = isrobot(user)
 helper_actor_check	code/modules/paperwork/faxmachine.dm	else if(login_type == LOGIN_TYPE_AI && isAI(user))
 helper_actor_check	code/modules/paperwork/faxmachine.dm	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(user))
-helper_actor_check	code/modules/paperwork/paper.dm	can_read_view = (forceshow || ishuman(user) || isobserver(user) || issilicon(user) || (istype(user) && user.universal_understand))
+helper_actor_check	code/modules/paperwork/paper.dm	set_can_read_view((forceshow || ishuman(user) || isobserver(user) || issilicon(user) || (istype(user) && user.universal_understand)))
 helper_actor_check	code/modules/paperwork/paper_bundle.dm	var/info = (ishuman(user) || isobserver(user) || issilicon(user)) ? P.info : stars(P.info)
 helper_actor_check	code/modules/paperwork/photocopier.dm	data["isAI"] = issilicon(user)
 helper_actor_check	code/modules/power/power.dm	if(issilicon(M)) return 0 //No more robot shocks from machinery

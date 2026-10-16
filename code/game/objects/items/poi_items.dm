@@ -246,7 +246,7 @@ MSG_DEF_SELF(drone_circuit/fried, "It's covered in black marks, you feel there's
 			user.electrocute_act(10,def_zone = used_hand)
 		else if(wirecutted)	//The security circuit is accessible outside the special panel, so we don't care for screwdrivers
 			to_chat(user, span_notice("You modify the security settings."))
-			unlocked = TRUE
+			set_unlocked(TRUE)
 
 	if(istype(I, /obj/item/robotanalyzer))
 		if(!unscrewed)

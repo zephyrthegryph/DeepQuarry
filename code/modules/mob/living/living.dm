@@ -1500,7 +1500,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	var/mob/user = A.request.answerer
 	var/new_metadata = A.answer.value
 	if(new_metadata && CanUseTopic(src))
-		private_notes = new_metadata
+		set_private_notes(new_metadata)
 		client.prefs.update_preference_by_type(/datum/preference/text/living/private_notes, new_metadata)
 		to_chat(src, span_filter_notice("Private notes updated. Don't forget to save!"))
 		private_notes_window(user)

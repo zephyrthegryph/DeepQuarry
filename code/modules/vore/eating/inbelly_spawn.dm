@@ -244,7 +244,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 		if(_prey_lang_custom[key])
 			var/datum/language/keylang = GLOB.all_languages[_prey_lang_custom[key]]
 			if(keylang)
-				new_character.language_keys[key] = keylang
+				new_character.set_language_keys_at(key, keylang)
 	// migrated preferred_language
 	var/_preferred_language = prey.prefs.read_preference(/datum/preference/text/human/preferred_language)
 	if(_preferred_language) // Do we have a preferred language?

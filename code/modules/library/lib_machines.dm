@@ -87,7 +87,7 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 
 /obj/machinery/librarypubliccomp/proc/ui_act_search(datum/act/op/A)
 	var/mob/user = A.actor
-	last_results = list()
+	set_last_results(list())
 	if(SSdbcore.IsConnected())
 		// category == "Any" means no category filter; both branches use
 		// LIKE parameters so user-supplied title/author cannot inject SQL.
@@ -104,25 +104,25 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 				list("author_pat" = "%[author]%", "title_pat" = "%[title]%", "category" = category),
 				PROC_REF(sql_rows_arrived)
 			)
-	SQLquery = null // cleared after search — no longer holds interpolated SQL
-	screenstate = 1
+	set_SQLquery(null) // cleared after search — no longer holds interpolated SQL
+	set_screenstate(1)
 	add_fingerprint(user)
 	return OP_OK
 
 /obj/machinery/librarypubliccomp/proc/ui_act_back(datum/act/op/A)
-	screenstate = 0
+	set_screenstate(0)
 	return OP_OK
 
 /obj/machinery/librarypubliccomp/proc/sql_rows_arrived(list/result, error, key)
 	var/list/rows = sql_view_rows(result, error, key, src)
-	last_results = list()
+	set_last_results(list())
 	for(var/list/row as anything in rows)
-		last_results += list(list(
+		add_last_results(list(list(
 			"author" = row[1],
 			"title" = row[2],
 			"category" = row[3],
 			"id" = "[row[4]]",
-		))
+		)))
 	SStgui.update_uis(src)
 
 /*
@@ -241,7 +241,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 /obj/machinery/librarycomp/proc/interaction_open_ui_impl(datum/act/op/A)
 	var/mob/user = A.actor
 	user.set_machine(src)
-	is_admin_view = FALSE
+	set_is_admin_view(FALSE)
 	tgui_interact(user)
 	return OP_OK
 
@@ -260,7 +260,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 
 /obj/machinery/librarycomp/proc/sql_rows_arrived(list/result, error, key)
 	var/list/rows = sql_view_rows(result, error, key, src)
-	external_rows = rows
+	set_external_rows(rows)
 	SStgui.update_uis(src)
 
 /// Maps the stored sortby value to a fixed, known-safe SQL column literal.
@@ -345,7 +345,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	return data
 
 /obj/machinery/librarycomp/proc/ui_act_switchscreen(datum/act/op/A, screen)
-	screenstate = screen
+	set_screenstate(screen)
 	if(screenstate == 8)
 		refresh_external()
 	return TRUE
@@ -369,17 +369,17 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 			act_message(user, null, MSG_SELF(2), \
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " stares at the blank screen for a few moments, %THEIR% expression frozen in fear. When %THEY% finally awaken from it, %THEY% look a lot older.")))
 			arcanecheckout = 0
-	screenstate = 0
+	set_screenstate(0)
 	return OP_OK
 
 /obj/machinery/librarycomp/proc/ui_act_increasetime(datum/act/op/A)
-	checkoutperiod += 1
+	set_checkoutperiod(checkoutperiod + 1)
 	return OP_OK
 
 /obj/machinery/librarycomp/proc/ui_act_decreasetime(datum/act/op/A)
-	checkoutperiod -= 1
+	set_checkoutperiod(checkoutperiod - 1)
 	if(checkoutperiod < 1)
-		checkoutperiod = 1
+		set_checkoutperiod(1)
 	return OP_OK
 
 /obj/machinery/librarycomp/proc/ui_act_editbook(datum/act/op/A)
@@ -392,8 +392,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 
 /obj/machinery/librarycomp/proc/ui_act_checkout(datum/act/op/A)
 	var/datum/borrowbook/b = new
-	b.bookname = sanitizeSafe(buffer_book)
-	b.mobname = sanitize(buffer_mob)
+	b.set_bookname(sanitizeSafe(buffer_book))
+	b.set_mobname(sanitize(buffer_mob))
 	EXPIRY_STAMP(b, getdate, CLOCK_WORLD)
 	EXPIRY_SET(b, duedate, (checkoutperiod * 600), CLOCK_WORLD)
 	rel_add(src, nameof(/obj/machinery/librarycomp::checkouts), b)
@@ -488,7 +488,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 /obj/machinery/librarycomp/proc/ui_act_sort(datum/act/op/A, field_arg)
 	var/field = field_arg
 	if(field in list("author", "title", "category"))
-		sortby = field
+		set_sortby(field)
 		refresh_external()
 	return TRUE
 
@@ -520,8 +520,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	var/book_title = row[3]
 	var/obj/item/book/B = new(src.loc)
 	B.name = "Book: [book_title]"
-	B.title = book_title
-	B.author = row[2]
+	B.set_title(book_title)
+	B.set_author(row[2])
 	B.set_dat(row[4])
 	B.set_icon_state("book[rand(1,16)]")
 	B.set_item_state(B.icon_state)
@@ -535,8 +535,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	if(!admin_require(user.client, R_ADMIN, "librarycomp_ghost_admin_view", FALSE))
 		return OP_DECLINE
 	user.set_machine(src)
-	is_admin_view = TRUE
-	screenstate = 8
+	set_is_admin_view(TRUE)
+	set_screenstate(8)
 	refresh_external()
 	tgui_interact(user)
 	return OP_OK
@@ -662,7 +662,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 		return
 	src.visible_message("[src] whirs as it prints and binds a new book.")
 	var/obj/item/book/bundle/b = new(src.loc)
-	b.pages = source_bundle.pages
+	b.set_pages(source_bundle.pages)
 	for(var/obj/item/paper/P in contents_of(source_bundle))
 		P.forceMove(b)
 	for(var/obj/item/photo/P in contents_of(source_bundle))
@@ -682,15 +682,15 @@ CAPABILITIES(/obj/machinery/bookbinder)
 /obj/machinery/librarycomp/proc/apply_catalogue_answer(selected_action, value)
 	switch(selected_action)
 		if("editbook")
-			buffer_book = sanitizeSafe(value)
+			set_buffer_book(sanitizeSafe(value))
 		if("editmob")
-			buffer_mob = value
+			set_buffer_mob(value)
 		if("setauthor")
 			if(value && scanner()?.cache())
 				scanner().cache().author = value
 		if("setcategory")
 			if(value)
-				upload_category = value
+				set_upload_category(value)
 
 /datum/prompt/text/library_catalogue
 	timeout = 0
@@ -718,12 +718,12 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	switch(selected_action)
 		if("settitle")
 			if(value)
-				title = value
+				set_title(value)
 		if("setauthor")
 			if(value)
-				author = value
+				set_author(value)
 		if("setcategory")
-			category = value || "Any"
+			set_category(value || "Any")
 
 /datum/prompt/text/library_search_text
 	timeout = 0

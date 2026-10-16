@@ -41,12 +41,12 @@
 		min_seen = value
 	if(value > max_seen)
 		max_seen = value
-	count++
+	set_count(count + 1)
 
 /datum/km_hist/proc/reset()
 	for(var/i in 1 to KM_HIST_BINS)
 		bins[i] = 0
-	count = 0
+	set_count(0)
 	min_seen = 0
 	max_seen = 0
 
@@ -82,12 +82,12 @@
 /datum/km_depth_hist/proc/add(usage_percent)
 	var/bin = clamp(floor(usage_percent / KM_DEPTH_BIN_WIDTH), 0, KM_DEPTH_BINS - 1) + 1
 	bins[bin] = bins[bin] + 1
-	count++
+	set_count(count + 1)
 
 /datum/km_depth_hist/proc/reset()
 	for(var/i in 1 to KM_DEPTH_BINS)
 		bins[i] = 0
-	count = 0
+	set_count(0)
 
 /// The upper edge, in percent of a tick, of the bin holding fraction `p` of the samples.
 /datum/km_depth_hist/proc/percentile(p)

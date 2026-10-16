@@ -716,7 +716,9 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/bell)
 /obj/item/clothing/accessory/collar/shock/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
+	tracked_changed(src, nameof(frequency))
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
+SETTER(/obj/item/clothing/accessory/collar/shock, frequency)
 
 CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
@@ -758,11 +760,11 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
 	. = TRUE
 
 /obj/item/clothing/accessory/collar/shock/proc/ui_act_code(datum/act/op/A, code_arg)
-	code = CLAMP(code_arg, 1, 100)
+	set_code(CLAMP(code_arg, 1, 100))
 	. = TRUE
 
 /obj/item/clothing/accessory/collar/shock/proc/ui_act_power(datum/act/op/A)
-	on = !on
+	set_on(!on)
 	if(!istype(src, /obj/item/clothing/accessory/collar/shock/bluespace))
 		set_icon_state("collar_shk[on]")
 	. = TRUE
@@ -1060,7 +1062,7 @@ CAPABILITIES(/datum/prompt/text/collar_tag)
 
 /obj/item/clothing/accessory/collar/shock/bluespace/proc/ui_act_size(datum/act/op/A, size)
 	var/mob/user = A.actor
-	target_size = clamp((size/100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
+	set_target_size(clamp((size/100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS))
 	to_chat(user, span_notice("You set the size to [target_size * 100]%"))
 	if(target_size < RESIZE_MINIMUM || target_size > RESIZE_MAXIMUM)
 		to_chat(user, span_notice("Note: Resizing limited to 25-200% automatically while outside dormatory areas.")) //hint that we clamp it in resize
@@ -1182,7 +1184,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/modified)
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/receive_signal(datum/signal/signal)
 	if(!signal)
 		return
-	target_size = (signal.encryption * 2)/100
+	set_target_size((signal.encryption * 2)/100)
 	if(on)
 		var/mob/M = null
 		if(ismob(loc))
@@ -1263,7 +1265,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning)
 /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/receive_signal(datum/signal/signal)
 	if(!signal)
 		return
-	target_size =  (rand(25,200)) /100
+	set_target_size((rand(25,200)) /100)
 	if(on)
 		var/mob/M = null
 		if(ismob(loc))

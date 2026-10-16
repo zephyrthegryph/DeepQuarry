@@ -185,7 +185,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 		if(dq_latent_eligible(path) && latent_spawn_ok(path, generator[path]))
 			total_storage_space += dq_type_storage_cost(path) * dq_latent_spawn_count(generator[path])
 	if(total_storage_space)
-		max_storage_space = max(total_storage_space, max_storage_space)
+		set_max_storage_space(max(total_storage_space, max_storage_space))
 
 // ---- Insertion ----
 
@@ -892,11 +892,11 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 
 	var/list/types = list()
 	var/max_size = 0
-	max_storage_space = 0
+	set_max_storage_space(0)
 	for(var/obj/item/I as anything in items)
 		types |= I.type
 		max_size = max(I.w_class, max_size)
-		max_storage_space += I.get_storage_cost()
+		set_max_storage_space(max_storage_space + (I.get_storage_cost()))
 	restrict_hold(types, max_size)
 
 /// Narrows what this one storage takes: `types` replaces the types it accepts, `max_size` the largest w_class (null keeps what the type says).

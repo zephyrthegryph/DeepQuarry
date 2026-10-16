@@ -121,7 +121,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fake_sun, fake_sun_light_setups, list( \
 	//Copied code end
 
 	var/datum/simple_sun/Ssun = new()
-	Ssun.brightness = CLAMP01(choice["brightness"])
+	Ssun.set_brightness(CLAMP01(choice["brightness"]))
 	Ssun.color = choice["color"]
 	var/datum/planet_sunlight_handler/pshandler = new(Ssun)
 	if(z > SSlighting.z_to_pshandler.len)

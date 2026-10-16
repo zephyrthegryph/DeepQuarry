@@ -206,19 +206,19 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 	LAZYSET(air_device_serials, kind, number)
 	var/name = "[src.name] [area_air_kind_label(kind)] #[number]"
 	if(kind == AREA_AIR_SCRUBBER)
-		LAZYSET(air_scrub_names, tag, name)
+		set_air_scrub_names_at(tag, name)
 	else
-		LAZYSET(air_vent_names, tag, name)
+		set_air_vent_names_at(tag, name)
 	return name
 
 /// Forgets the device `tag` of `kind`.
 /area/proc/air_device_unregister(kind, tag)
 	if(kind == AREA_AIR_SCRUBBER)
-		LAZYREMOVE(air_scrub_names, tag)
-		LAZYREMOVE(air_scrub_info, tag)
+		remove_air_scrub_names(tag)
+		remove_air_scrub_info(tag)
 	else
-		LAZYREMOVE(air_vent_names, tag)
-		LAZYREMOVE(air_vent_info, tag)
+		remove_air_vent_names(tag)
+		remove_air_vent_info(tag)
 
 /// The device `old_tag` of `kind` is now `new_tag`: its name moves with it; its status waits for its next report.
 /area/proc/air_device_rekey(kind, old_tag, new_tag)
@@ -228,22 +228,22 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 		air_device_register(kind, new_tag)
 		return
 	if(kind == AREA_AIR_SCRUBBER)
-		LAZYSET(air_scrub_names, new_tag, name)
+		set_air_scrub_names_at(new_tag, name)
 	else
-		LAZYSET(air_vent_names, new_tag, name)
+		set_air_vent_names_at(new_tag, name)
 
 /// Keeps the status the device `tag` of `kind` reported.
 /area/proc/air_device_report(kind, tag, list/fields)
 	if(!LAZYACCESS(air_device_names(kind), tag))
 		return
 	if(kind == AREA_AIR_SCRUBBER)
-		LAZYSET(air_scrub_info, tag, fields)
+		set_air_scrub_info_at(tag, fields)
 	else
-		LAZYSET(air_vent_info, tag, fields)
+		set_air_vent_info_at(tag, fields)
 
 /// The area was renamed from `oldtitle` to `title` (the blueprints): the names it keeps for its devices follow.
 /area/proc/air_devices_retitled(oldtitle, title)
 	for(var/tag in air_vent_names)
-		air_vent_names[tag] = replacetext(air_vent_names[tag], oldtitle, title)
+		set_air_vent_names_at(tag, replacetext(air_vent_names[tag], oldtitle, title))
 	for(var/tag in air_scrub_names)
-		air_scrub_names[tag] = replacetext(air_scrub_names[tag], oldtitle, title)
+		set_air_scrub_names_at(tag, replacetext(air_scrub_names[tag], oldtitle, title))

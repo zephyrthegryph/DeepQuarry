@@ -72,7 +72,7 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/account = new
 	account.set_account_number(9654321)
-	account.owner_name = "Stable Reputation Tester"
+	account.set_owner_name("Stable Reputation Tester")
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("stable_reputation_tester")
 	rel_set(test_mind, nameof(test_mind.initial_account), account)
@@ -109,7 +109,7 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/account = new
 	account.set_account_number(9654330)
-	account.owner_name = "Agency Tester"
+	account.set_owner_name("Agency Tester")
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("agency_tester")
 	rel_set(test_mind, nameof(test_mind.initial_account), account)
@@ -213,7 +213,7 @@
 		qdel(red_contract)
 	TEST_ASSERT(length(red_signatures) >= 6, "nine faction red mandates collapsed into fewer than six mechanically distinct event profiles")
 	var/datum/faction_agent_record/test_record = new
-	test_record.tier = FACTION_AGENT_TIER_ACCREDITED
+	test_record.set_tier(FACTION_AGENT_TIER_ACCREDITED)
 	var/list/live_pool = SScontracts.agent_contract_definition_ids(test_record)
 	for(var/legacy_id in list("agent_export_diversion", "agent_preferred_supplier", "agent_targeted_acquisition", "agent_principal_directive"))
 		TEST_ASSERT(!(legacy_id in live_pool), "repetitive legacy shipment contract [legacy_id] remained in the live agent offer pool")
@@ -225,7 +225,7 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/account = new
 	account.set_account_number(9654360)
-	account.owner_name = "Operation Terms Tester"
+	account.set_owner_name("Operation Terms Tester")
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("operation_terms_tester")
 	rel_set(test_mind, nameof(test_mind.initial_account), account)

@@ -460,7 +460,7 @@ SYSTEM_DEF(air)
 	vg_set_z_links(links)
 
 /datum/system/air/proc/setup_allturfs()
-	times_fired++
+	set_times_fired(times_fired + 1)
 
 	// Round-start turf init: register every eligible turf's air in the Rust arena
 	// together with its air-block mask. Rust builds the whole adjacency graph
@@ -632,11 +632,11 @@ CAPABILITIES(/datum/system/air)
 	return OP_OK
 
 /datum/system/air/proc/ui_toggle_freeze(datum/act/op/A)
-	can_fire = !can_fire
+	set_can_fire(!can_fire)
 	return OP_OK
 
 /datum/system/air/proc/ui_toggle_show_all(datum/act/op/A)
-	display_all_groups = !display_all_groups
+	set_display_all_groups(!display_all_groups)
 	return OP_OK
 
 /datum/system/air/proc/ui_toggle_user_display(datum/act/op/A)

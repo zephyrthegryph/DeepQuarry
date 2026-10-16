@@ -67,38 +67,38 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	. = ..()
 	var/obj/belly/B = vore_selected_of(src)
 	B.desc	= "You leaned a little too close to the pitcher plant, stumbling over the lip and splashing into a puddle of liquid filling the bottom of the cramped pitcher. You squirm madly, righting yourself and scrabbling at the walls in vain as the slick surface offers no purchase. The dim light grows dark as the pitcher's cap lowers, silently sealing the exit. With a sinking feeling, you realize you won't be able to push the exit open even if you could somehow climb that high, leaving you helplessly trapped in the slick, tingling fluid. The ONLY POSSIBLE WAY OUT is if someone either kills this thing or lowers a lifeline down to help. Maybe some string, a wire, or a good rope would do the trick..."
-	B.digest_burn = 0.1 // Sloowwwwww churns
-	B.digest_brute = 0.1 // Okay so I know there's no physical churning because it's a plant just trust me on this you want both of these
-	B.vore_verb = "trip"
+	B.set_digest_burn(0.1) // Sloowwwwww churns
+	B.set_digest_brute(0.1) // Okay so I know there's no physical churning because it's a plant just trust me on this you want both of these
+	B.set_vore_verb("trip")
 	B.name = "pitcher"
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.wet_loop = 0 // As nice as the fancy internal sounds are, this is a plant.
-	B.digestchance = 0
-	B.escapechance = 0
-	B.fancy_vore = 1
-	B.vore_sound = "Squish2"
-	B.release_sound = "Pred Escape"
-	B.contamination_color = "purple"
-	B.contamination_flavor = "Wet"
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_wet_loop(0) // As nice as the fancy internal sounds are, this is a plant.
+	B.set_digestchance(0)
+	B.set_escapechance(0)
+	B.set_fancy_vore(1)
+	B.set_vore_sound("Squish2")
+	B.set_release_sound("Pred Escape")
+	B.set_contamination_color("purple")
+	B.set_contamination_flavor("Wet")
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
+	B.set_emote_lists_at(DM_HOLD, list(
 		"Slick fluid trickles over you, carrying threads of sweetness.",
 		"Everything is still, dark, and quiet. Your breaths echo quietly.",
-		"The surrounding air feels thick and humid.")
+		"The surrounding air feels thick and humid."))
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"The slimy puddle stings faintly. It seems the plant has no need to quickly break down victims.",
 		"The humid air settles in your lungs, keeping each breath more labored than the last.",
 		"Fluid drips onto you, burning faintly as your body heat warms it.",
 		"Digestive enzymes itch at your flesh as you are slowly dissolved into soupy nutrients."
-		)
+		))
 	B.own_emote_lists()
-	B.emote_lists[DM_DRAIN] = list(
+	B.set_emote_lists_at(DM_DRAIN, list(
 		"Each bead of slick fluid running down your body leaves you feeling weaker.",
 		"It's cramped and dark, the air thick and heavy. Your limbs feel like lead.",
-		"Strength drains from your frame. The cramped chamber feels easier to settle into with each passing moment.")
-	B.struggle_messages_inside = list(
+		"Strength drains from your frame. The cramped chamber feels easier to settle into with each passing moment."))
+	B.set_struggle_messages_inside(list(
 		"The narrow shape of the pitcher plant's stomach make it impossible to get any leverage. You can't escape.",
 		"You struggle and push against the slick and slimy plant flesh surrounding you, but it's no use. There's no way out by yourself.",
 		"Other predators would probably be getting queasy by now with all that fussing. Unfortunately, this thing just doesn't care. You're plant food.",
@@ -109,12 +109,12 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 		"You can't reach the lid of the pitcher plant to pry yourself out. Even if you could, the walls are too slippery. If only someone could lower a string or a wire or a rope for you to grab on!",
 		"The waxy walls are far too slippery for you to climb your way out, and trying to do so only drenches you in even more stinging slime.",
 		"Although you try your best to claw your way to freedom, the pitcher's gut is too smooth and too tough for you to get any progress."
-	)
-	B.struggle_messages_outside = list(
+	))
+	B.set_struggle_messages_outside(list(
 		"Struggles from inside %pred cause its bulbous form to slosh from side-to-side. They might need some help to escape.",
 		"You notice someone moving inside that pitcher plant! However, they clearly can't get out on their own.",
 		"%pred's stomach shifts and slushes as someone inside of it tries in vain to escape. It doesn't look like they can, though.",
-		"%pred seems unpertubed by the stubborn movement of its prey. They clearly aren't getting out on their own.")
+		"%pred seems unpertubed by the stubborn movement of its prey. They clearly aren't getting out on their own."))
 
 /mob/living/simple_mob/vore/pitcher_plant/life_type_post_due()
 	return TRUE

@@ -378,7 +378,7 @@ MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that need
 /obj/item/nif/proc/notify(message,alert = 0)
 	if(!human || stat == NIF_TEMPFAIL) return
 
-	last_notification = message // TGUI Hook
+	set_last_notification(message) // TGUI Hook
 
 	to_chat(human,span_filter_nif(span_bold("\[[icon2html(src.big_icon, human.client)]NIF\]") + " displays, " + (alert ? span_danger(message) : span_notice(message))))
 	if(prob(1)) act_message(human, null, others = span_notice("%U% [pick(GLOB.nif_look_messages)]."))

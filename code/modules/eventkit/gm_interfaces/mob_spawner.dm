@@ -69,10 +69,10 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 
 					//legacy ai_holder_type removed; modern brain has no
 					// equivalent of swapping AI subtype at runtime.
-					ai_type = null
-					faction = (L.faction ? L.faction : "neutral")
-					intent  = L.combat_mode ? I_HURT : I_HELP // the prototype's default posture (state; a fresh mob holds no variant)
-					new_path = FALSE
+					set_ai_type(null)
+					set_faction((L.faction ? L.faction : "neutral"))
+					set_intent(L.combat_mode ? I_HURT : I_HELP) // the prototype's default posture (state; a fresh mob holds no variant)
+					set_new_path(FALSE)
 
 					// "max_health" is the mob's endurance; "health" is how
 					// much of it the spawned mob starts with.
@@ -103,7 +103,7 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 /datum/eventkit/mob_spawner/proc/ui_act_toggle_custom_ai(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	use_custom_ai = !use_custom_ai
+	set_use_custom_ai(!use_custom_ai)
 	return TRUE
 
 /datum/eventkit/mob_spawner/proc/ui_act_set_faction(datum/act/op/A)
@@ -130,7 +130,7 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 /datum/eventkit/mob_spawner/proc/ui_act_loc_lock(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	loc_lock = !loc_lock
+	set_loc_lock(!loc_lock)
 	return TRUE
 
 /datum/eventkit/mob_spawner/proc/ui_act_start_spawn(datum/act/op/A, amount, desc, flavor_text, health, max_health, melee_damage_lower, melee_damage_upper, name, size_multiplier, x, y, z)
@@ -226,12 +226,12 @@ ADMIN_VERB(eventkit_open_mob_spawner, R_SPAWN, "Open Mob Spawner", "Opens an adv
 /datum/eventkit/mob_spawner/proc/apply_spawner_setting(setting_action, value)
 	switch(setting_action)
 		if("select_path")
-			path = value
-			new_path = TRUE
+			set_path(value)
+			set_new_path(TRUE)
 		if("set_faction")
-			faction = value
+			set_faction(value)
 		if("set_intent")
-			intent = value
+			set_intent(value)
 
 /datum/prompt/choice/mob_spawner_setting
 	timeout = 0

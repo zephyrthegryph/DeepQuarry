@@ -32,9 +32,9 @@
 	var/y_loc = validated_data[3]
 
 	if(game_state == GAME_PLAYER_ONE)
-		LAZYSET(placed_chips_pone, key, TRUE)
+		set_placed_chips_pone_at(key, TRUE)
 	else
-		LAZYSET(placed_chips_ptwo, key, TRUE)
+		set_placed_chips_ptwo_at(key, TRUE)
 
 	validate_victory(x_loc, y_loc, user.name)
 	return TRUE

@@ -250,10 +250,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 			if(P.mode != ATM_N2)
 				continue
 			if(coolant == "PH")
-				P.mode = ATM_P
+				P.set_mode(ATM_P)
 				break
 			else if(coolant == "CO2")
-				P.mode = ATM_CO2
+				P.set_mode(ATM_CO2)
 				break
 			else
 				log_and_message_admins("## WARNING: Inapropriate filter coolant type set at [x] [y] [z]!")

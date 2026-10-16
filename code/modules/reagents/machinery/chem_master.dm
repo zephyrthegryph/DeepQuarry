@@ -378,7 +378,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 	var/new_style = CLAMP(choices.Find(A.step_value("style")), 0, MAX_PILL_SPRITE)
 	if(!new_style)
 		return
-	pillsprite = new_style
+	set_pillsprite(new_style)
 	return TRUE
 
 /obj/machinery/chem_master/proc/modal_create_patch(datum/act/op/A, list/arguments)
@@ -434,7 +434,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 	var/new_style = CLAMP(choices.Find(A.step_value("style")), 0, MAX_BOTTLE_SPRITE)
 	if(!new_style)
 		return
-	bottlesprite = new_style
+	set_bottlesprite(new_style)
 	return TRUE
 
 // ---- the buttons ----
@@ -466,7 +466,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 
 	var/datum/reagent/R = reagent_list[idx]
 
-	printing = TRUE
+	set_printing(TRUE)
 	visible_message(span_notice("[src] rattles and prints out a sheet of paper."))
 
 	var/obj/item/paper/P = new /obj/item/paper(loc)
@@ -541,5 +541,5 @@ CAPABILITIES(/obj/machinery/chem_master)
 	condi = 1
 
 /obj/machinery/chem_master/proc/printing_done()
-	printing = FALSE
+	set_printing(FALSE)
 

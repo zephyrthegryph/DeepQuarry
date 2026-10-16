@@ -143,15 +143,15 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	. = TRUE
 
 /mob/living/bot/mulebot/proc/ui_act_autoret(datum/act/op/A)
-	auto_return = !auto_return
+	set_auto_return(!auto_return)
 	. = TRUE
 
 /mob/living/bot/mulebot/proc/ui_act_cargotypes(datum/act/op/A)
-	crates_only = !crates_only
+	set_crates_only(!crates_only)
 	. = TRUE
 
 /mob/living/bot/mulebot/proc/ui_act_safety(datum/act/op/A)
-	safety = !safety
+	set_safety(!safety)
 	. = TRUE
 
 /// The title of a beacon question: the bot's own.

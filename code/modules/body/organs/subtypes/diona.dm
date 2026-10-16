@@ -219,7 +219,7 @@ CAPABILITIES(/obj/item/organ/internal/brain/cephalon)
 
 /obj/item/organ/internal/brain/cephalon/proc/cephalon_vital_ready(datum/act/timer/A)
 	if(!owner || !HAS_SYNTHETIC_BIOLOGY(owner))
-		vital = FALSE
+		set_vital(FALSE)
 
 /obj/item/organ/internal/brain/cephalon/robotize()
 	return

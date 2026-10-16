@@ -419,12 +419,12 @@
 //For the UI related things we're going to assume the user is a mob rather than typesetting it to an atom as the UI isn't generated if the parent is an atom
 
 /datum/personal_crafting/ui_opening(mob/user, datum/tgui/ui)
-	cur_category = categories[1]
+	set_cur_category(categories[1])
 	if(islist(categories[cur_category]))
 		var/list/subcats = categories[cur_category]
-		cur_subcategory = subcats[1]
+		set_cur_subcategory(subcats[1])
 	else
-		cur_subcategory = CAT_NONE
+		set_cur_subcategory(CAT_NONE)
 
 /datum/personal_crafting/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -444,13 +444,13 @@
 	// until we crunch all the resources in tgui_static_data. So it just sets a hint and we
 	// consume it and set the category on the first UI open
 	if(tgui_category_hint)
-		cur_category = tgui_category_hint
-		tgui_category_hint = null
+		set_cur_category(tgui_category_hint)
+		set_tgui_category_hint(null)
 		if(islist(categories[cur_category]))
 			var/list/subcats = categories[cur_category]
-			cur_subcategory = subcats[1]
+			set_cur_subcategory(subcats[1])
 		else
-			cur_subcategory = CAT_NONE
+			set_cur_subcategory(CAT_NONE)
 
 	var/list/data = list()
 	data["busy"] = op_claimed(src)
@@ -516,7 +516,7 @@
 			crafting_recipes[R.category][R.subcategory] += list(build_recipe_data(R))
 
 	if(crafting_recipes.len)
-		tgui_category_hint = crafting_recipes[1]
+		set_tgui_category_hint(crafting_recipes[1])
 
 	data["crafting_recipes"] = crafting_recipes
 	return data
@@ -531,16 +531,16 @@ CAPABILITIES(/datum/personal_crafting)
 	op("set_category", ui_act("set_category", arg("category", schema_text(4096)), arg("subcategory", schema_text(4096))), then(PROC_REF(ui_act_set_category)))
 
 /datum/personal_crafting/proc/ui_act_toggle_recipes(datum/act/op/A)
-	display_craftable_only = !display_craftable_only
+	set_display_craftable_only(!display_craftable_only)
 	return OP_OK
 
 /datum/personal_crafting/proc/ui_act_toggle_compact(datum/act/op/A)
-	display_compact = !display_compact
+	set_display_compact(!display_compact)
 	return OP_OK
 
 /datum/personal_crafting/proc/ui_act_set_category(datum/act/op/A, category, subcategory)
-	cur_category = category
-	cur_subcategory = subcategory || ""
+	set_cur_category(category)
+	set_cur_subcategory(subcategory || "")
 	. = TRUE
 
 /// The recipe the window sent, or null when it is not one of the known recipes.
@@ -635,8 +635,8 @@ CAPABILITIES(/datum/personal_crafting)
 
 /datum/mind/proc/teach_crafting_recipe(R)
 	if(!learned_recipes)
-		learned_recipes = list()
-	learned_recipes |= R
+		set_learned_recipes(list())
+	include_learned_recipes(R)
 
 // Screen objects
 /atom/movable/screen/craft

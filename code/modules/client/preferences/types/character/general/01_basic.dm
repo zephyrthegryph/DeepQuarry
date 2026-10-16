@@ -185,7 +185,7 @@
 	can_randomize = FALSE
 
 /datum/preference/text/living/private_notes/apply_to_living(mob/living/target, value)
-	target.private_notes = value
+	target.set_private_notes(value)
 	return
 
 /datum/preference/choiced/living/emote_sound_mode

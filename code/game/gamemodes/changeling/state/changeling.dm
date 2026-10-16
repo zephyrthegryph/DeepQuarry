@@ -257,9 +257,9 @@ CAPABILITIES(/datum/changeling)
 
 //Used to dump the languages from the changeling datum into the actual mob.
 /mob/proc/changeling_update_languages(updated_languages)
-	languages = list()
+	set_languages(list())
 	for(var/language in updated_languages)
-		languages += language
+		add_languages(language)
 	sync_language_state()
 
 	//This isn't strictly necessary but just to be safe...

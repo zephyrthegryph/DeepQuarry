@@ -71,7 +71,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 /obj/machinery/artifact_analyser/proc/ui_act_scan(datum/act/op/A)
 	add_fingerprint(A.actor)
 	if(scan_in_progress)
-		scan_in_progress = FALSE
+		set_scan_in_progress(FALSE)
 		atom_say("Scanning halted.")
 		return TRUE
 	if(!owned_scanner())
@@ -90,7 +90,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 					artifact_in_use = 1
 				else
 					A2.set_anchored(TRUE)
-					A2.in_use = 1
+					A2.set_in_use(1)
 
 			if(artifact_in_use)
 				atom_say("Cannot scan. Too much interference.")
@@ -108,7 +108,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 		if(!scanned_object())
 			atom_say("Unable to isolate scan target.")
 		else
-			scan_in_progress = 1
+			set_scan_in_progress(1)
 			EXPIRY_SET(src, scan_completion_time, scan_duration, CLOCK_WORLD)
 			after(src, scan_duration + 0.1 SECONDS, PROC_REF(scan_timer_fired))
 			atom_say("Scanning begun.")
@@ -123,7 +123,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 	return PROCESS_KILL
 
 /obj/machinery/artifact_analyser/proc/finish_scan()
-	scan_in_progress = 0
+	set_scan_in_progress(0)
 	var/results = ""
 	if(!owned_scanner())
 		reconnect_scanner()
@@ -146,7 +146,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 	if(scanned_object() && istype(scanned_object(), /obj/machinery/artifact))
 		var/obj/machinery/artifact/A = scanned_object()
 		A.set_anchored(FALSE)
-		A.in_use = 0
+		A.set_in_use(0)
 	rel_clear(src, nameof(scanned_object))
 
 //hardcoded responses, oh well

@@ -124,7 +124,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 	ASSERT(istype(M))
 
 	//Person OOCly doesn't want people impersonating them
-	locked = ckeylock
+	set_locked(ckeylock)
 
 	//The mob is a changeling, don't allow anyone to possess them. Not using locked as locked gives OOC notices.
 	if(is_changeling(M))
@@ -134,12 +134,12 @@ CAPABILITIES(/datum/transhuman/body_record)
 	if(S)
 		// Force ckey locking if species is whitelisted
 		if((S.spawn_flags & SPECIES_IS_WHITELISTED) || (S.spawn_flags & SPECIES_IS_RESTRICTED))
-			locked = TRUE
+			set_locked(TRUE)
 
 	//General stuff about them
-	synthetic = HAS_SYNTHETIC_BIOLOGY(M)
-	speciesname = M.custom_species ? M.custom_species : null
-	bodygender = M.gender
+	set_synthetic(HAS_SYNTHETIC_BIOLOGY(M))
+	set_speciesname(M.custom_species ? M.custom_species : null)
+	set_bodygender(M.gender)
 	sizemult = M.size_multiplier
 	weight = M.weight
 	aflags = M.appearance_flags

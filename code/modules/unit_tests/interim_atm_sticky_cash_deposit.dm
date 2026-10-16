@@ -5,7 +5,7 @@
 	var/obj/machinery/atm/machine = allocate(/obj/machinery/atm, T)
 	var/datum/money_account/account = allocate(/datum/money_account)
 	account.money = 200
-	account.owner_name = "Interim cash depositor"
+	account.set_owner_name("Interim cash depositor")
 	rel_set(machine, nameof(machine.authenticated_account), account)
 	TEST_ASSERT_EQUAL(machine.authenticated_account(), account, "the actual ATM references the real account fixture")
 	var/currency_before = SSsupply.currency_created

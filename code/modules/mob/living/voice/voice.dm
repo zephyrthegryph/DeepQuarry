@@ -16,7 +16,7 @@
 		set_icon(speaker.icon)
 		set_icon_state(speaker.icon_state)
 		overlays = speaker.overlays
-		timeofdeath = speaker.timeofdeath
+		set_timeofdeath(speaker.timeofdeath)
 
 		set_alpha(127) //Maybe we'll have hologram calls later.
 		if(speaker.client && speaker.client.prefs)

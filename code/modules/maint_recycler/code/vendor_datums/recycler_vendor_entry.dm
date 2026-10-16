@@ -22,9 +22,9 @@
 
 /datum/maint_recycler_vendor_entry/proc/initialize()
 	if(!icon_state)
-		icon_state = "generic[rand(1,10)]"
+		set_icon_state("generic[rand(1,10)]")
 	if(islist(icon_state))
-		icon_state = pick(icon_state)
+		set_icon_state(pick(icon_state))
 
 
 /datum/maint_recycler_vendor_entry/proc/spawn_at(loc)

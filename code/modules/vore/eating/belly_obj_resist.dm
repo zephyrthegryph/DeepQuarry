@@ -192,8 +192,8 @@
 
 	if(!dest_belly)
 		to_chat(owner, span_vwarning("Something went wrong with your belly transfer settings. Your <b>[lowertext(name)]</b> has had it's transfer chance and transfer location cleared as a precaution."))
-		transferchance = 0
-		transferlocation = null
+		set_transferchance(0)
+		set_transferlocation(null)
 		return TRUE
 
 	var/primary_transfer_owner_message = span_vwarning(belly_format_string(primary_transfer_messages_owner, living_prey, dest = transferlocation))
@@ -220,8 +220,8 @@
 
 	if(!dest_belly)
 		to_chat(owner, span_vwarning("Something went wrong with your belly transfer settings. Your <b>[lowertext(name)]</b> has had it's transfer chance and transfer location cleared as a precaution."))
-		transferchance_secondary = 0
-		transferlocation_secondary = null
+		set_transferchance_secondary(0)
+		set_transferlocation_secondary(null)
 		return TRUE
 
 	var/secondary_transfer_owner_message = span_vwarning(belly_format_string(secondary_transfer_messages_owner, living_prey, dest = transferlocation_secondary))
@@ -244,7 +244,7 @@
 
 	to_chat(living_prey, absorb_chance_prey_message)
 	to_chat(owner, absorb_chance_owner_message)
-	digest_mode = DM_ABSORB
+	set_digest_mode(DM_ABSORB)
 	return TRUE
 
 /obj/belly/proc/resist_check_digestchance(mob/living/living_prey)
@@ -255,7 +255,7 @@
 
 	to_chat(living_prey, digest_chance_prey_message)
 	to_chat(owner, digest_chance_owner_message)
-	digest_mode = DM_DIGEST
+	set_digest_mode(DM_DIGEST)
 	return TRUE
 
 /obj/belly/proc/resist_check_selectchance(mob/living/living_prey)
@@ -266,7 +266,7 @@
 
 	to_chat(living_prey, select_chance_prey_message)
 	to_chat(owner, select_chance_owner_message)
-	digest_mode = DM_SELECT
+	set_digest_mode(DM_SELECT)
 	return TRUE
 
 // Absorbed resist handling

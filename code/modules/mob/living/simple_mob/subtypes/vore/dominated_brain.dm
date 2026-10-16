@@ -152,8 +152,8 @@ CAPABILITIES(/mob/living/dominated_brain)
 
 		prey_goes_here = ndb
 		prey_goes_here.set_real_name(src.prey_name)
-		src.languages -= src.temp_languages
-		prey_goes_here.languages |= src.prey_langs
+		remove_languages(src.temp_languages)
+		prey_goes_here.include_languages(src.prey_langs)
 
 	else		//The prey body does not exist, let's put them in the back seat instead!
 		var/mob/living/dominated_brain/ndb = new /mob/living/dominated_brain(pred_body, pred_body, prey_name)
@@ -162,8 +162,8 @@ CAPABILITIES(/mob/living/dominated_brain)
 		rel_set(ndb, nameof(ndb.pred_mind), pred_mind)
 
 		prey_goes_here = ndb
-		src.languages -= src.temp_languages
-		prey_goes_here.languages |= src.prey_langs
+		remove_languages(src.temp_languages)
+		prey_goes_here.include_languages(src.prey_langs)
 		prey_goes_here.set_real_name(src.prey_name)
 
 	///////////////////
@@ -186,7 +186,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 /mob/living/proc/absorb_langs()		//This should be called on the predator in the exchange
 	var/list/langlist = list()
 
-	languages -= temp_languages
+	remove_languages(temp_languages)
 	LAZYCLEARLIST(src.temp_languages)
 	for(var/mob/living/L in contents)
 		if(istype(L,/mob/living/dominated_brain))
@@ -203,7 +203,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 			if(L.flags & HIVEMIND)
 				grant(src, granted_verb(/mob/proc/adjust_hive_range), src)
 		LAZYOR(temp_languages, langlist)
-		languages |= langlist
+		include_languages(langlist)
 
 //Welcome to the adapted borer code.
 /mob/proc/dominate_predator()
@@ -725,8 +725,8 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 	rel_set(db, nameof(db.prey_mind), M.ensure_mind())
 	rel_set(db, nameof(db.pred_mind), mind)
 
-	M.languages -= M.temp_languages
-	db.languages |= M.languages
+	M.remove_languages(M.temp_languages)
+	db.include_languages(M.languages)
 
 	absorb_langs()
 

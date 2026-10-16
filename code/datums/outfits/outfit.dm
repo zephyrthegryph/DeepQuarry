@@ -174,9 +174,9 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	if(id_desc)
 		W.desc = id_desc
 	if(rank)
-		W.rank = rank
+		W.set_rank(rank)
 	if(assignment)
-		W.assignment = assignment
+		W.set_assignment(assignment)
 	assign_access(W, rank)
 	if(H.equip_to_slot_or_del(W, id_slot))
 		return W
@@ -187,7 +187,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	var/obj/item/pda/pda = new pda_type(H)
 	if(H.equip_to_slot_or_del(pda, pda_slot))
 		pda.set_owner(H.real_name)
-		pda.ownjob = assignment
+		pda.set_ownjob(assignment)
 		pda.ownrank = rank
 		pda.name = "PDA-[H.real_name] ([assignment])"
 		var/_ringtone = H.client?.prefs?.read_preference(/datum/preference/text/human/ringtone) // migrated pref
@@ -225,7 +225,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	C.set_icon_state("lifetime")
 	C.set_access(SSaccess.get_all_station_access())
 	C.add_access(SSaccess.get_all_centcom_access())
-	C.assignment = "USDF"
+	C.set_assignment("USDF")
 	C.set_registered_name(H.real_name)
 	return C
 
@@ -251,7 +251,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	C.set_icon_state("lifetime")
 	C.set_access(SSaccess.get_all_station_access())
 	C.add_access(SSaccess.get_all_centcom_access())
-	C.assignment = "USDF"
+	C.set_assignment("USDF")
 	C.set_registered_name(H.real_name)
 	return C
 
@@ -275,7 +275,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	C.set_icon_state("lifetime")
 	C.set_access(SSaccess.get_all_station_access())
 	C.add_access(SSaccess.get_all_centcom_access())
-	C.assignment = "SolGov Representative" // SolGov
+	C.set_assignment("SolGov Representative") // SolGov
 	C.set_registered_name(H.real_name)
 	return C
 

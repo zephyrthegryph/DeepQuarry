@@ -82,11 +82,11 @@
 	return calresult
 
 /obj/machinery/computer/ship/disperser/proc/reset_calibration()
-	calexpected = new /list(caldigit)
-	calibration = new /list(caldigit)
+	set_calexpected(new /list(caldigit))
+	set_calibration(new /list(caldigit))
 	for(var/i = 1 to caldigit)
-		calexpected[i] = rand(0,9)
-		calibration[i] = 0
+		set_calexpected_at(i, rand(0,9))
+		set_calibration_at(i, 0)
 
 /obj/machinery/computer/ship/disperser/proc/cal_accuracy()
 	var/top = 0
@@ -177,7 +177,7 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 /obj/machinery/computer/ship/disperser/proc/ui_act_choose(datum/act/op/A, dir)
 	if(!ui_gate(A))
 		return FALSE
-	overmapdir = sanitize_integer(dir, 0, 9, 0)
+	set_overmapdir(sanitize_integer(dir, 0, 9, 0))
 	reset_calibration()
 	terminal_typed(A.actor)
 	return TRUE
@@ -186,7 +186,7 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 	if(!ui_gate(A))
 		return FALSE
 	var/calnum = sanitize_integer(calibration_index, 0, caldigit)
-	calibration[calnum + 1] = sanitize_integer(A.step_value("value"), 0, 9, 0)
+	set_calibration_at(calnum + 1, sanitize_integer(A.step_value("value"), 0, 9, 0))
 	terminal_typed(A.actor)
 	return TRUE
 
@@ -194,7 +194,7 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 	if(!ui_gate(A))
 		return FALSE
 	for(var/i = 1 to 2)
-		calibration[i] = calexpected[i]
+		set_calibration_at(i, calexpected[i])
 	terminal_typed(A.actor)
 	return TRUE
 
@@ -203,7 +203,7 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 		return FALSE
 	var/value = A.step_value("value")
 	if(value)
-		strength = sanitize_integer(value, 1, 5, 1)
+		set_strength(sanitize_integer(value, 1, 5, 1))
 		middle().update_idle_power_usage(strength * range * 100)
 	terminal_typed(A.actor)
 	return TRUE
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 		return FALSE
 	var/value = A.step_value("value")
 	if(value)
-		range = sanitize_integer(value, 1, 5, 1)
+		set_range(sanitize_integer(value, 1, 5, 1))
 		middle().update_idle_power_usage(strength * range * 100)
 	terminal_typed(A.actor)
 	return TRUE

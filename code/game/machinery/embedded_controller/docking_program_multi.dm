@@ -38,7 +38,7 @@
 
 		//track children status
 		if (signal.data["override_status"])
-			children_override[receive_tag] = signal.data["override_status"]
+			set_children_override_at(receive_tag, signal.data["override_status"])
 
 		if (recipient == id_tag)
 			switch (command)
@@ -47,9 +47,9 @@
 				if ("ready_for_undocking")
 					children_ready[receive_tag] = 1
 				if ("status_override_enabled")
-					children_override[receive_tag] = 1
+					set_children_override_at(receive_tag, 1)
 				if ("status_override_disabled")
-					children_override[receive_tag] = 0
+					set_children_override_at(receive_tag, 0)
 
 	..(signal, receive_method, receive_param)
 
@@ -125,10 +125,10 @@
 /datum/embedded_program/airlock/multi_docking/receive_user_command(command)
 	if (command == "toggle_override")
 		if (override_enabled)
-			override_enabled = 0
+			set_override_enabled(0)
 			broadcast_override_status()
 		else
-			override_enabled = 1
+			set_override_enabled(1)
 			broadcast_override_status()
 		return
 
@@ -147,14 +147,14 @@
 
 	//track master's status
 	if (signal.data["dock_status"])
-		master_status = signal.data["dock_status"]
+		set_master_status(signal.data["dock_status"])
 
 	if (recipient != id_tag)
 		return	//this signal is not for us
 
 	switch (command)
 		if ("prepare_for_docking")
-			docking_enabled = 1
+			set_docking_enabled(1)
 			docking_mode = 0
 			response_sent = 0
 
@@ -176,7 +176,7 @@
 				open_doors()
 
 		if ("finish_undocking")
-			docking_enabled = 0
+			set_docking_enabled(0)
 
 /datum/embedded_program/airlock/multi_docking/periodic_step()
 	..()

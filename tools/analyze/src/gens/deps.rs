@@ -389,6 +389,24 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         consumers.insert(id.clone(), untracked_of(&set, &eng, &written, true));
         draws.insert(id);
     }
+    // A window host's ui_data(A) is an output whether or not a CAPABILITIES block names an interface() for it (an inherited or implicit window):
+    // every var it reads must publish, or the window never hears a write. The reads count here; nothing is added to the consumer table.
+    {
+        let mut seen_ui = BTreeSet::new();
+        for d in crate::sem::procs::proc_defs(&sem, &["ui_data", "tgui_data"]) {
+            if d.owner == "/" || d.owner == "/datum" || d.rel.starts_with("code/engine/") || !seen_ui.insert(format!("{}::{}", d.owner, d.name)) {
+                continue;
+            }
+            let set = eng.analyze_handler(&d.owner, &d.name, "/datum/act/eval");
+            // The base /datum's own vars (open_tguis, rx, the weakref, ...) are the framework's bookkeeping, reached from a window's data only through
+            // a helper such as update_static_data_for_all_viewers(): a host's window data is its own type's vars, never these.
+            for r in &set.reads {
+                if r.kind == ReadKind::Var && !r.owner.is_empty() && r.owner != "/datum" {
+                    reads.insert((r.owner.clone(), r.var.clone()));
+                }
+            }
+        }
+    }
     let mut leaves = Vec::new();
     let mut named: BTreeSet<(String, String)> = BTreeSet::new();
     for m in decls.markers_named("CAPABILITIES") {

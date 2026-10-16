@@ -82,11 +82,11 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 
 		category_map[category.category] = category_data
 
-	LAZYCLEARLIST(data_cache)
+	clear_data_cache()
 	EXPIRY_STAMP(src, last_data_update, CLOCK_WORLD)
 
-	LAZYSET(data_cache, "categories", category_map)
-	LAZYSET(data_cache, "last_data_update", last_data_update)
+	set_data_cache_at("categories", category_map)
+	set_data_cache_at("last_data_update", last_data_update)
 
 CAPABILITIES(/datum/log_holder)
 	op("refresh", ui_act(), then(PROC_REF(ui_act_log_refresh)))
@@ -105,7 +105,7 @@ CAPABILITIES(/datum/log_holder)
 
 	round_id = GLOB.round_id
 	logging_start_timestamp = rustg_unix_timestamp()
-	log_categories = list()
+	set_log_categories(list())
 	disabled_categories = list()
 
 	human_readable_enabled = CONFIG_GET(flag/log_as_human_readable)
@@ -232,7 +232,7 @@ GLOBAL_TABLE(log_category_tree, GLOBAL_PROC_REF(build_log_category_tree))
 		sub_category = new sub_category
 		var/sub_category_actual = sub_category.category
 		sub_category.master_static = category_instance
-		log_categories[sub_category_actual] = sub_category
+		set_log_categories_at(sub_category_actual, sub_category)
 
 		if(!semver_to_list(sub_category.schema_version))
 			stack_trace("log category [sub_category_actual] has an invalid schema version '[sub_category.schema_version]'")
@@ -240,7 +240,7 @@ GLOBAL_TABLE(log_category_tree, GLOBAL_PROC_REF(build_log_category_tree))
 
 		contained_categories += sub_category_actual
 
-	log_categories[category_instance.category] = category_instance
+	set_log_categories_at(category_instance.category, category_instance)
 
 	if(!semver_to_list(category_instance.schema_version))
 		stack_trace("log category [category_instance.category] has an invalid schema version '[category_instance.schema_version]'")

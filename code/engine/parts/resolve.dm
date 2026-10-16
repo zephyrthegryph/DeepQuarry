@@ -615,7 +615,7 @@
 /proc/op_act_for(datum/op_cand/C, mob/actor, datum/target, obj/held, origin, authority)
 	RETURN_TYPE(/datum/act/op)
 	var/datum/act/op/A = take(/datum/act/op)
-	A.key = C.oplan.key
+	A.set_key(C.oplan.key)
 	A.holder = C.holder // ALLOW(ownership): a pooled transient: reset on release
 	A.cap = C.cap
 	A.activation = C.activation // ALLOW(ownership): a pooled transient: reset on release

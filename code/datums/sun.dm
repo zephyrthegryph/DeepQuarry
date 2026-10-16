@@ -26,9 +26,9 @@
 
 	if( abs(s) < abs(c))
 
-		dx = s / abs(c)
-		dy = c / abs(c)
+		set_dx(s / abs(c))
+		set_dy(c / abs(c))
 
 	else
-		dx = s/abs(s)
-		dy = c / abs(s)
+		set_dx(s/abs(s))
+		set_dy(c / abs(s))

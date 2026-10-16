@@ -46,16 +46,16 @@ CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "trap"
 	B.desc = "As you step onto the large leaves of the mantrap, they suddenly shoot up and snap shut around you, encasing you in a fleshy-feeling gut. The saw-toothed spikes around the edge of the leaves interlock with one another and exerts a tremendous pressure on your body. Copious volumes of fluids begin to seep in from the walls themselves, rapidly coating your body and pooling around you, all of your movements only seem to speed up this process.."
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.belly_fullscreen = "VBO_maw26"
-	B.belly_fullscreen_color = "#02a802"
-	B.digest_brute = 2
-	B.digest_burn = 2
-	B.digest_oxy = 1
-	B.digestchance = 100
-	B.absorbchance = 0
-	B.escapechance = 10
-	B.selective_preference = DM_SELECT
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_belly_fullscreen("VBO_maw26")
+	B.set_belly_fullscreen_color("#02a802")
+	B.set_digest_brute(2)
+	B.set_digest_burn(2)
+	B.set_digest_oxy(1)
+	B.set_digestchance(100)
+	B.set_absorbchance(0)
+	B.set_escapechance(10)
+	B.set_selective_preference(DM_SELECT)
 	B.escape_stun = 10
 
 /datum/category_item/catalogue/fauna/mantrap
@@ -132,16 +132,16 @@ CAPABILITIES(/mob/living/simple_mob/vore/pitcher)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Walking a little too close to the pitcher plant, you trigger its trap mechanism and a tendril shoots out towards you. Wrapping around your body, you are rapidly dragged into the open mouth of the plant, stuffing your entire body into a fleshy, green stomach filled with a pool of some sort of tingling liquid. The lid of the plant slams down over the mouth, making it far more difficult to escape, all whilst that pool steadily seems to be filling up."
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.belly_fullscreen = "VBOanim_belly3"
-	B.belly_fullscreen_color = "#02a802"
-	B.digest_brute = 1
-	B.digest_burn = 1
-	B.digest_oxy = 0
-	B.digestchance = 100
-	B.absorbchance = 0
-	B.escapechance = 10
-	B.selective_preference = DM_SELECT
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_belly_fullscreen("VBOanim_belly3")
+	B.set_belly_fullscreen_color("#02a802")
+	B.set_digest_brute(1)
+	B.set_digest_burn(1)
+	B.set_digest_oxy(0)
+	B.set_digestchance(100)
+	B.set_absorbchance(0)
+	B.set_escapechance(10)
+	B.set_selective_preference(DM_SELECT)
 	B.escape_stun = 10
 
 /datum/category_item/catalogue/fauna/pitcher

@@ -60,7 +60,7 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 		var/stacktype = LAZYACCESS(machine().stack_paths, stack)
 		new stacktype(get_turf(machine().output_marker()), LAZYACCESS(machine().stack_storage, stack))
 		var/obj/machinery/mineral/stacking_machine/stacker = machine()
-		LAZYSET(stacker.stack_storage, stack, 0)
+		stacker.set_stack_storage_at(stack, 0)
 	. = TRUE
 	add_fingerprint(user)
 
@@ -139,7 +139,7 @@ CAPABILITIES(/obj/machinery/mineral/stacking_machine)
 			did_work = TRUE
 			var/stacktype = LAZYACCESS(stack_paths, sheet)
 			new stacktype (get_turf(output_marker()), stack_amt)
-			stack_storage[sheet] -= stack_amt
+			set_stack_storage_at(sheet, stack_storage[sheet] - (stack_amt))
 	if(!did_work)
 		return PROCESS_KILL
 

@@ -105,15 +105,15 @@ MSG_DEF_SELF(digitalwarrant/no_id, "Authentication error: Unable to locate ID wi
 		return
 	var/datum/data/record/warrant/W = new()
 	if(temp == "Arrest")
-		W.fields["namewarrant"] = "Unknown"
-		W.fields["charges"] = "No charges present"
-		W.fields["auth"] = "Unauthorized"
-		W.fields["arrestsearch"] = "arrest"
+		W.set_fields_at("namewarrant", "Unknown")
+		W.set_fields_at("charges", "No charges present")
+		W.set_fields_at("auth", "Unauthorized")
+		W.set_fields_at("arrestsearch", "arrest")
 	if(temp == "Search")
-		W.fields["namewarrant"] = "No suspect/location given"
-		W.fields["charges"] = "No reason given"
-		W.fields["auth"] = "Unauthorized"
-		W.fields["arrestsearch"] = "search"
+		W.set_fields_at("namewarrant", "No suspect/location given")
+		W.set_fields_at("charges", "No reason given")
+		W.set_fields_at("auth", "Unauthorized")
+		W.set_fields_at("arrestsearch", "search")
 	rel_set(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref), W)
 
 /datum/computer_file/program/digitalwarrant/proc/ui_act_savewarrant(datum/act/op/A)

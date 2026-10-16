@@ -64,7 +64,7 @@ CAPABILITIES(/datum/SDQL_parser)
 	query = query_list
 
 /datum/SDQL_parser/proc/parse_error(error_message)
-	error = 1
+	set_error(1)
 	to_chat(requester, span_warning("SQDL2 Parsing Error: [error_message]"))
 	return query.len + 1
 

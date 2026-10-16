@@ -50,16 +50,16 @@ CAPABILITIES(/obj/machinery/implantchair)
 	if(get_dist(src, user) > 1 && !isAI(user))
 		return
 	if(src?.slot_item(OCCUPANT_SLOT_IMPLANT_CHAIR))
-		injecting = 1
+		set_injecting(1)
 		go_out()
-		ready = 0
-		after(src, injection_cooldown, PROC_REF(set_ready))
+		set_ready(0)
+		after(src, injection_cooldown, PROC_REF(mark_ready))
 	add_fingerprint(user)
 
 /obj/machinery/implantchair/proc/start_replenish(mob/user)
 	if(get_dist(src, user) > 1 && !isAI(user))
 		return
-	ready = 0
+	set_ready(0)
 	after(src, replenish_cooldown, PROC_REF(replenished))
 	add_fingerprint(user)
 
@@ -92,7 +92,7 @@ CAPABILITIES(/obj/machinery/implantchair)
 	slot_remove(leaving, get_turf(src))
 	if(injecting)
 		implant(leaving)
-		injecting = 0
+		set_injecting(0)
 	set_icon_state("implantchair")
 	return
 
@@ -152,8 +152,8 @@ CAPABILITIES(/obj/machinery/implantchair)
 
 /obj/machinery/implantchair/proc/replenished()
 	add_implants()
-	ready = 1
+	set_ready(1)
 
-/obj/machinery/implantchair/proc/set_ready()
-	ready = 1
+/obj/machinery/implantchair/proc/mark_ready()
+	set_ready(1)
 

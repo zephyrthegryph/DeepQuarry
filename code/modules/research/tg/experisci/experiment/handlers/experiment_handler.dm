@@ -307,7 +307,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 		return
 	selected_experiment()?.on_unselected(src)
 	rel_clear(src, nameof(selected_experiment))
-	linked_web_static = new_web
+	set_linked_web_static(new_web)
 
 /**
  * Unlinks this handler from the selected techweb
@@ -315,7 +315,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /datum/experiment_handler/proc/unlink_techweb()
 	selected_experiment()?.on_unselected(src)
 	rel_clear(src, nameof(selected_experiment))
-	linked_web_static = null
+	set_linked_web_static(null)
 
 /**
  * Attempts to link this experiment_handler to a provided experiment

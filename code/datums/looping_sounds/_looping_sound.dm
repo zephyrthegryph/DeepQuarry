@@ -85,13 +85,13 @@
 	if(running)
 		return
 	if(skip_start_sound && (!exclusive && !started)) // Skip start sounds optionally, check if we're exclusive AND started already
-		running = TRUE
+		set_running(TRUE)
 		started = TRUE
 		sound_loop()
 		return
 	if(exclusive && started) // Prevents a sound from starting multiple times
 		return // Don't start this loop.
-	running = TRUE
+	set_running(TRUE)
 	on_start()
 	started = TRUE
 
@@ -105,7 +105,7 @@
 	if(!skip_stop_sound)
 		on_stop()
 	cancel_loop_timer()
-	running = FALSE
+	set_running(FALSE)
 	started = FALSE
 	loop_started_at = null
 

@@ -39,7 +39,7 @@
 		shifted_out = FALSE
 		name = real_name
 		for(var/obj/belly/B as anything in vore_organs)
-			B.escapable = initial(B.escapable)
+			B.set_escapable(initial(B.escapable))
 
 		cut_overlays()
 		set_alpha(initial(alpha))
@@ -65,7 +65,7 @@
 		fully_heal()
 
 		for(var/obj/belly/B as anything in vore_organs)
-			B.escapable = B_ESCAPABLE_NONE
+			B.set_escapable(B_ESCAPABLE_NONE)
 
 		cut_overlays()
 		flick("phaseout",src)
@@ -112,7 +112,7 @@
 	name = "Something"
 
 	for(var/obj/belly/B as anything in vore_organs)
-		B.escapable = B_ESCAPABLE_NONE
+		B.set_escapable(B_ESCAPABLE_NONE)
 
 	cut_overlays()
 	flick("phaseout",src)
@@ -124,7 +124,7 @@
 	shifted_out = FALSE
 	name = real_name
 	for(var/obj/belly/B as anything in vore_organs)
-		B.escapable = initial(B.escapable)
+		B.set_escapable(initial(B.escapable))
 
 	cut_overlays()
 	set_alpha(initial(alpha))
@@ -311,7 +311,7 @@
 	shifted_out = FALSE
 	name = real_name
 	for(var/obj/belly/B as anything in vore_organs)
-		B.escapable = initial(B.escapable)
+		B.set_escapable(initial(B.escapable))
 
 	cut_overlays()
 	set_alpha(initial(alpha))

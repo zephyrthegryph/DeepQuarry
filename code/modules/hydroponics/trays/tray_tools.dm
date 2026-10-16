@@ -77,7 +77,7 @@ CAPABILITIES(/obj/item/analyzer/plant_analyzer)
 
 /obj/item/analyzer/plant_analyzer/proc/ui_act_close(datum/act/op/A)
 	proto_set(src, nameof(/obj/item/analyzer/plant_analyzer::last_seed), null)
-	last_reagents = null
+	set_last_reagents(null)
 	return OP_OK
 
 /obj/item/analyzer/plant_analyzer/afterattack(obj/target, mob/user, flag)
@@ -123,10 +123,10 @@ CAPABILITIES(/obj/item/analyzer/plant_analyzer)
 
 	act_message(user, target, others = span_notice("%U% runs the scanner over %T%."))
 
-	last_reagents = list()
+	set_last_reagents(list())
 	if(grown_reagents && grown_reagents.reagent_list && grown_reagents.reagent_list.len)
 		for(var/datum/reagent/R in grown_reagents.reagent_list)
-			last_reagents.Add(list(list(
+			add_last_reagents(list(list(
 				"name" = R.name,
 				"volume" = grown_reagents.get_reagent_amount(R.id),
 			)))

@@ -334,8 +334,8 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 				break
 
 	if(foundrecord)
-		foundrecord.fields["rank"] = assignment
-		foundrecord.fields["real_rank"] = real_title
+		foundrecord.set_fields_at("rank", assignment)
+		foundrecord.set_fields_at("real_rank", real_title)
 
 /datum/datacore/proc/manifest_inject(mob/living/carbon/human/H)
 	if(H.mind && !SSantag.player_is_antag(H.mind, only_offstation_roles = 1))
@@ -349,98 +349,98 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		var/id = generate_record_id()
 		//General Record
 		var/datum/data/record/G = CreateGeneralRecord(H, id, hidden)
-		G.fields["name"]		= H.real_name
-		G.fields["real_rank"]	= H.mind.assigned_role
-		G.fields["rank"]		= assignment
-		G.fields["age"]			= H.bio.age
-		G.fields["languages"] = list2text(H.languages,", ")
+		G.set_fields_at("name", H.real_name)
+		G.set_fields_at("real_rank", H.mind.assigned_role)
+		G.set_fields_at("rank", assignment)
+		G.set_fields_at("age", H.bio.age)
+		G.set_fields_at("languages", list2text(H.languages,", "))
 		if(H.get_FBP_type())
-			G.fields["brain_type"] = H.get_FBP_type()
+			G.set_fields_at("brain_type", H.get_FBP_type())
 		else
-			G.fields["brain_type"] = "Organic"
-		G.fields["fingerprint"]	= md5(H.dna.GetUniIdentity())
-		G.fields["p_stat"]		= "Active"
-		G.fields["m_stat"]		= "Stable"
-		G.fields["sex"]			= gender2text(H.gender)
+			G.set_fields_at("brain_type", "Organic")
+		G.set_fields_at("fingerprint", md5(H.dna.GetUniIdentity()))
+		G.set_fields_at("p_stat", "Active")
+		G.set_fields_at("m_stat", "Stable")
+		G.set_fields_at("sex", gender2text(H.gender))
 		if(H.species.name == SPECIES_HANNER)
-			G.fields["species"] = "[H.custom_species ? "[H.custom_species]" : H.species.name]"
+			G.set_fields_at("species", "[H.custom_species ? "[H.custom_species]" : H.species.name]")
 		else
-			G.fields["species"]		= "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]"
-		G.fields["home_system"]	= H.bio.home_system
-		G.fields["birthplace"]	= H.bio.birthplace
-		G.fields["citizenship"]	= H.bio.citizenship
-		G.fields["faction"]		= H.bio.personal_faction
-		G.fields["religion"]	= H.bio.religion
+			G.set_fields_at("species", "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]")
+		G.set_fields_at("home_system", H.bio.home_system)
+		G.set_fields_at("birthplace", H.bio.birthplace)
+		G.set_fields_at("citizenship", H.bio.citizenship)
+		G.set_fields_at("faction", H.bio.personal_faction)
+		G.set_fields_at("religion", H.bio.religion)
 		if(H.bio.gen_record && !jobban_isbanned(H, "Records"))
-			G.fields["notes"] = H.bio.gen_record
+			G.set_fields_at("notes", H.bio.gen_record)
 
 		//Medical Record
 		var/datum/data/record/M = CreateMedicalRecord(H.real_name, id, hidden)
 		if(H.species.name == SPECIES_HANNER)
-			M.fields["species"] = "[H.custom_species ? "[H.custom_species]" : H.species.name]"
+			M.set_fields_at("species", "[H.custom_species ? "[H.custom_species]" : H.species.name]")
 		else
-			M.fields["species"]		= "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]"
-		M.fields["b_type"]		= H.dna ? H.dna.b_type : DEFAULT_BLOOD_TYPE
-		M.fields["blood_reagent"]	= H.dna.blood_reagents
-		M.fields["blood_color"]	= H.dna.blood_color
-		M.fields["b_dna"]		= H.dna.unique_enzymes
-		M.fields["id_gender"]	= gender2text(H.identifying_gender)
+			M.set_fields_at("species", "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]")
+		M.set_fields_at("b_type", H.dna ? H.dna.b_type : DEFAULT_BLOOD_TYPE)
+		M.set_fields_at("blood_reagent", H.dna.blood_reagents)
+		M.set_fields_at("blood_color", H.dna.blood_color)
+		M.set_fields_at("b_dna", H.dna.unique_enzymes)
+		M.set_fields_at("id_gender", gender2text(H.identifying_gender))
 		if(H.get_FBP_type())
-			M.fields["brain_type"] = H.get_FBP_type()
+			M.set_fields_at("brain_type", H.get_FBP_type())
 		else
-			M.fields["brain_type"] = "Organic"
+			M.set_fields_at("brain_type", "Organic")
 		if(H.bio.med_record && !jobban_isbanned(H, "Records"))
-			M.fields["notes"] = H.bio.med_record
+			M.set_fields_at("notes", H.bio.med_record)
 
 		//Security Record
 		var/datum/data/record/S = CreateSecurityRecord(H.real_name, id, hidden)
 		if(H.species.name == SPECIES_HANNER)
-			S.fields["species"] = "[H.custom_species ? "[H.custom_species]" : H.species.name]"
+			S.set_fields_at("species", "[H.custom_species ? "[H.custom_species]" : H.species.name]")
 		else
-			S.fields["species"]		= "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]"
+			S.set_fields_at("species", "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]")
 		if(H.get_FBP_type())
-			S.fields["brain_type"] = H.get_FBP_type()
+			S.set_fields_at("brain_type", H.get_FBP_type())
 		else
-			S.fields["brain_type"] = "Organic"
+			S.set_fields_at("brain_type", "Organic")
 		if(H.bio.sec_record && !jobban_isbanned(H, "Records"))
-			S.fields["notes"] = H.bio.sec_record
+			S.set_fields_at("notes", H.bio.sec_record)
 
 		//Locked Record
 		var/datum/data/record/L = new()
-		L.fields["id"]			= md5("[H.real_name][H.mind.assigned_role]")
-		L.fields["name"]		= H.real_name
-		L.fields["rank"] 		= H.mind.assigned_role
-		L.fields["age"]			= H.bio.age
-		L.fields["languages"] = list2text(H.languages,", ")
-		L.fields["fingerprint"]	= md5(H.dna.GetUniIdentity())
-		L.fields["sex"]			= gender2text(H.gender)
-		L.fields["id_gender"]	= gender2text(H.identifying_gender)
+		L.set_fields_at("id", md5("[H.real_name][H.mind.assigned_role]"))
+		L.set_fields_at("name", H.real_name)
+		L.set_fields_at("rank", H.mind.assigned_role)
+		L.set_fields_at("age", H.bio.age)
+		L.set_fields_at("languages", list2text(H.languages,", "))
+		L.set_fields_at("fingerprint", md5(H.dna.GetUniIdentity()))
+		L.set_fields_at("sex", gender2text(H.gender))
+		L.set_fields_at("id_gender", gender2text(H.identifying_gender))
 		if(H.get_FBP_type())
-			L.fields["brain_type"] = H.get_FBP_type()
+			L.set_fields_at("brain_type", H.get_FBP_type())
 		else
-			L.fields["brain_type"] = "Organic"
-		L.fields["b_type"]		= H.dna ? H.dna.b_type : DEFAULT_BLOOD_TYPE
-		L.fields["b_dna"]		= H.dna.unique_enzymes
-		L.fields["enzymes"]		= H.dna.SE // Used in respawning
-		L.fields["identity"]	= H.dna.UI // "
+			L.set_fields_at("brain_type", "Organic")
+		L.set_fields_at("b_type", H.dna ? H.dna.b_type : DEFAULT_BLOOD_TYPE)
+		L.set_fields_at("b_dna", H.dna.unique_enzymes)
+		L.set_fields_at("enzymes", H.dna.SE) // Used in respawning
+		L.set_fields_at("identity", H.dna.UI) // "
 		if(H.species.name == SPECIES_HANNER)
-			L.fields["species"] = "[H.custom_species ? "[H.custom_species]" : H.species.name]"
+			L.set_fields_at("species", "[H.custom_species ? "[H.custom_species]" : H.species.name]")
 		else
-			L.fields["species"]		= "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]"
-		L.fields["home_system"]	= H.bio.home_system
-		L.fields["birthplace"]	= H.bio.birthplace
-		L.fields["citizenship"]	= H.bio.citizenship
-		L.fields["faction"]		= H.bio.personal_faction
-		L.fields["religion"]	= H.bio.religion
+			L.set_fields_at("species", "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]")
+		L.set_fields_at("home_system", H.bio.home_system)
+		L.set_fields_at("birthplace", H.bio.birthplace)
+		L.set_fields_at("citizenship", H.bio.citizenship)
+		L.set_fields_at("faction", H.bio.personal_faction)
+		L.set_fields_at("religion", H.bio.religion)
 		var/icon/record_image = icon(cached_character_icon(H), dir = SOUTH)
-		L.fields["image"]		= record_image
-		L.fields["antagfac"]	= H.bio.antag_faction
-		L.fields["antagvis"]	= H.bio.antag_vis
-		L.fields["offmap"]      = hidden
+		L.set_fields_at("image", record_image)
+		L.set_fields_at("antagfac", H.bio.antag_faction)
+		L.set_fields_at("antagvis", H.bio.antag_vis)
+		L.set_fields_at("offmap", hidden)
 		if(H.bio.exploit_record && !jobban_isbanned(H, "Records"))
-			L.fields["exploit_record"] = H.bio.exploit_record
+			L.set_fields_at("exploit_record", H.bio.exploit_record)
 		else
-			L.fields["exploit_record"] = "No additional information acquired."
+			L.set_fields_at("exploit_record", "No additional information acquired.")
 		rel_add(src, nameof(locked), L) // the data core made this record and holds it
 	return
 
@@ -462,29 +462,29 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	if(!id)
 		id = text("[]", add_zero(num2hex(rand(1, 65536), 5), 4))
 	var/datum/data/record/G = new /datum/data/record()
-	G.name = "Employee Record #[id]"
-	G.fields["name"] = "New Record"
-	G.fields["id"] = id
-	G.fields["rank"] = "Unassigned"
-	G.fields["real_rank"] = "Unassigned"
-	G.fields["sex"] = "Unknown"
-	G.fields["age"] = "Unknown"
-	G.fields["languages"] = "Unknown"
-	G.fields["brain_type"] = "Unknown"
-	G.fields["fingerprint"] = "Unknown"
-	G.fields["p_stat"] = "Active"
-	G.fields["m_stat"] = "Stable"
-	G.fields["species"] = SPECIES_HUMAN
-	G.fields["home_system"]	= "Unknown"
-	G.fields["birthplace"]	= "Unknown"
-	G.fields["citizenship"]	= "Unknown"
-	G.fields["faction"]		= "Unknown"
-	G.fields["religion"]	= "Unknown"
-	G.fields["photo_front"]	= front
-	G.fields["photo_side"]	= side
-	G.fields["photo-south"] = "'data:image/png;base64,[icon2base64(front)]'"
-	G.fields["photo-west"] = "'data:image/png;base64,[icon2base64(side)]'"
-	G.fields["notes"] = "No notes found."
+	G.set_name("Employee Record #[id]")
+	G.set_fields_at("name", "New Record")
+	G.set_fields_at("id", id)
+	G.set_fields_at("rank", "Unassigned")
+	G.set_fields_at("real_rank", "Unassigned")
+	G.set_fields_at("sex", "Unknown")
+	G.set_fields_at("age", "Unknown")
+	G.set_fields_at("languages", "Unknown")
+	G.set_fields_at("brain_type", "Unknown")
+	G.set_fields_at("fingerprint", "Unknown")
+	G.set_fields_at("p_stat", "Active")
+	G.set_fields_at("m_stat", "Stable")
+	G.set_fields_at("species", SPECIES_HUMAN)
+	G.set_fields_at("home_system", "Unknown")
+	G.set_fields_at("birthplace", "Unknown")
+	G.set_fields_at("citizenship", "Unknown")
+	G.set_fields_at("faction", "Unknown")
+	G.set_fields_at("religion", "Unknown")
+	G.set_fields_at("photo_front", front)
+	G.set_fields_at("photo_side", side)
+	G.set_fields_at("photo-south", "'data:image/png;base64,[icon2base64(front)]'")
+	G.set_fields_at("photo-west", "'data:image/png;base64,[icon2base64(side)]'")
+	G.set_fields_at("notes", "No notes found.")
 	if(hidden)
 		rel_add(src, nameof(hidden_general), G)
 	else
@@ -496,17 +496,17 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 /datum/datacore/proc/CreateSecurityRecord(name, id, hidden)
 	ResetPDAManifest()
 	var/datum/data/record/R = new /datum/data/record()
-	R.name = "Security Record #[id]"
-	R.fields["name"] = name
-	R.fields["species"] = SPECIES_HUMAN
-	R.fields["id"] = id
-	R.fields["brain_type"] = "Unknown"
-	R.fields["criminal"]	= "None"
-	R.fields["mi_crim"]		= "None"
-	R.fields["mi_crim_d"]	= "No minor crime convictions."
-	R.fields["ma_crim"]		= "None"
-	R.fields["ma_crim_d"]	= "No major crime convictions."
-	R.fields["notes"]		= "No notes."
+	R.set_name("Security Record #[id]")
+	R.set_fields_at("name", name)
+	R.set_fields_at("species", SPECIES_HUMAN)
+	R.set_fields_at("id", id)
+	R.set_fields_at("brain_type", "Unknown")
+	R.set_fields_at("criminal", "None")
+	R.set_fields_at("mi_crim", "None")
+	R.set_fields_at("mi_crim_d", "No minor crime convictions.")
+	R.set_fields_at("ma_crim", "None")
+	R.set_fields_at("ma_crim_d", "No major crime convictions.")
+	R.set_fields_at("notes", "No notes.")
 	if(hidden)
 		rel_add(src, nameof(hidden_security), R)
 	else
@@ -517,23 +517,23 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 /datum/datacore/proc/CreateMedicalRecord(name, id, hidden)
 	ResetPDAManifest()
 	var/datum/data/record/M = new()
-	M.name = "Medical Record #[id]"
-	M.fields["id"]			= id
-	M.fields["name"]		= name
-	M.fields["species"]		= SPECIES_HUMAN
-	M.fields["b_type"]		= "AB+"
-	M.fields["b_dna"]		= md5(name)
-	M.fields["id_gender"]	= "Unknown"
-	M.fields["brain_type"]	= "Unknown"
-	M.fields["mi_dis"]		= "None"
-	M.fields["mi_dis_d"]	= "No minor disabilities have been declared."
-	M.fields["ma_dis"]		= "None"
-	M.fields["ma_dis_d"]	= "No major disabilities have been diagnosed."
-	M.fields["alg"]			= "None"
-	M.fields["alg_d"]		= "No allergies have been detected in this patient."
-	M.fields["cdi"]			= "None"
-	M.fields["cdi_d"]		= "No diseases have been diagnosed at the moment."
-	M.fields["notes"] = "No notes found."
+	M.set_name("Medical Record #[id]")
+	M.set_fields_at("id", id)
+	M.set_fields_at("name", name)
+	M.set_fields_at("species", SPECIES_HUMAN)
+	M.set_fields_at("b_type", "AB+")
+	M.set_fields_at("b_dna", md5(name))
+	M.set_fields_at("id_gender", "Unknown")
+	M.set_fields_at("brain_type", "Unknown")
+	M.set_fields_at("mi_dis", "None")
+	M.set_fields_at("mi_dis_d", "No minor disabilities have been declared.")
+	M.set_fields_at("ma_dis", "None")
+	M.set_fields_at("ma_dis_d", "No major disabilities have been diagnosed.")
+	M.set_fields_at("alg", "None")
+	M.set_fields_at("alg_d", "No allergies have been detected in this patient.")
+	M.set_fields_at("cdi", "None")
+	M.set_fields_at("cdi_d", "No diseases have been diagnosed at the moment.")
+	M.set_fields_at("notes", "No notes found.")
 	if(hidden)
 		rel_add(src, nameof(hidden_medical), M)
 	else

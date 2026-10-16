@@ -148,8 +148,8 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	event = event_arg
-	screen = 2
+	set_event(event_arg)
+	set_screen(2)
 	add_fingerprint(user)
 	return TRUE
 
@@ -163,8 +163,8 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 
 /obj/machinery/keycard_auth/proc/reset()
 	set_active(0)
-	event = ""
-	screen = 1
+	set_event("")
+	set_screen(1)
 	confirmed = 0
 	rel_clear(src, nameof(event_source))
 	set_icon_state("auth_off")

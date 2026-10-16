@@ -14,7 +14,7 @@
 	test_time(2 SECONDS + 1)
 	TEST_ASSERT(!B.refilling, "a full hypospray kept refilling")
 	var/id = REAGENT_ID_TRICORDRAZINE
-	B.reagent_volumes[id] = 0
+	B.set_reagent_volumes_at(id, 0)
 	B.set_refilling(TRUE)
 	test_time(2 SECONDS + 1)
 	TEST_ASSERT(B.refilling, "a short hypospray with no cyborg to draw from stopped refilling")

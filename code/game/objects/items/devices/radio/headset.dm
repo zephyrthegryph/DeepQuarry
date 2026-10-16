@@ -135,7 +135,7 @@ CAPABILITIES(/obj/item/radio/headset)
 	set_channels(list())
 	src.translate_binary = FALSE
 	src.translate_hive = FALSE
-	src.syndie = FALSE
+	set_syndie(FALSE)
 
 	if(keyslot1)
 		for(var/ch_name in keyslot1.channels)
@@ -151,7 +151,7 @@ CAPABILITIES(/obj/item/radio/headset)
 			src.translate_hive = TRUE
 
 		if(keyslot1.syndie)
-			src.syndie = TRUE
+			set_syndie(TRUE)
 
 	if(keyslot2)
 		for(var/ch_name in keyslot2.channels)
@@ -167,7 +167,7 @@ CAPABILITIES(/obj/item/radio/headset)
 			src.translate_hive = TRUE
 
 		if(keyslot2.syndie)
-			src.syndie = TRUE
+			set_syndie(TRUE)
 
 	handle_finalize_recalculatechannels(setDescription, register)
 

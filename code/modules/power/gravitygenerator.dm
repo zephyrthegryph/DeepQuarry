@@ -268,8 +268,8 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 		if(!M.broken_now())
 			M.atom_break(damage_flag)
 	set_charge_overlay(null)
-	charge_count = 0
-	breaker = FALSE
+	set_charge_count(0)
+	set_breaker(FALSE)
 	set_power()
 	set_gravity_state(0)
 	investigate_log("has broken down.", "gravity")
@@ -298,7 +298,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 
 /obj/machinery/gravity_generator/main/proc/ui_act_gentoggle(datum/act/op/A)
 	var/mob/user = A.actor
-	breaker = !breaker
+	set_breaker(!breaker)
 	investigate_log("was toggled [breaker ? span_green("ON") : span_red("OFF")] by [key_name(user)].", "gravity")
 	set_power()
 	return TOPIC_REFRESH
@@ -375,9 +375,9 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 			set_gravity_state(0)
 		else
 			if(charging_state == GRAVGEN_UP)
-				charge_count += 2
+				set_charge_count(charge_count + 2)
 			else if(charging_state == GRAVGEN_DOWN)
-				charge_count -= 2
+				set_charge_count(charge_count - 2)
 
 			if(charge_count % 4 == 0 && prob(75)) // Let them know it is charging/discharging.
 				play_sfx(src, SFX_EFFECTS_EMPULSE)

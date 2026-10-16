@@ -353,7 +353,8 @@ pub fn decide(tree: &Tree, sem: &crate::sem::Sem, candidates: &BTreeSet<(String,
             if sig.file == AUTO_REL {
                 return why("declared in the generated file");
             }
-            if crate::sem::reads::ENGINE_DIRS.iter().any(|d| sig.file.starts_with(d)) {
+            // code/modules/tgui/modules/ holds window hosts (content); the rest of code/modules/tgui/ is the engine's own.
+            if crate::sem::reads::ENGINE_DIRS.iter().any(|d| sig.file.starts_with(d)) && !sig.file.starts_with("code/modules/tgui/modules/") {
                 return why("engine-internal state: the framework's own bookkeeping publishes itself");
             }
             if sig.file.contains("benchmarks/") {

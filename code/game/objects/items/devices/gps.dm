@@ -139,8 +139,8 @@ CAPABILITIES(/obj/item/gps)
 	for(var/thing in tracking_devices)
 		var/obj/item/gps/gps = locate(thing)
 		if(!istype(gps) || QDELETED(gps))
-			LAZYREMOVE(tracking_devices, thing)
-			LAZYREMOVE(showing_tracked_names, thing)
+			remove_tracking_devices(thing)
+			remove_showing_tracked_names(thing)
 			continue
 		var/turf/gps_turf = get_turf(gps)
 		var/gps_tag = LAZYACCESS(showing_tracked_names, thing) ? gps.gps_tag : null
@@ -279,18 +279,18 @@ CAPABILITIES(/obj/item/gps)
 	var/new_name = sanitize(value, 11)
 	if(!new_name)
 		return FALSE
-	gps_tag = uppertext(new_name)
+	set_gps_tag(uppertext(new_name))
 	name = "global positioning system ([gps_tag])"
 	return TRUE
 
 /obj/item/gps/proc/ui_act_localmode(datum/act/op/A)
-	local_mode = !local_mode
+	set_local_mode(!local_mode)
 	return OP_OK
 
 /obj/item/gps/proc/ui_act_hidesignal(datum/act/op/A)
 	if(!can_hide_signal)
 		return FALSE
-	hide_signal = !hide_signal
+	set_hide_signal(!hide_signal)
 	return TRUE
 
 /obj/item/gps/proc/ui_act_tracklabel(datum/act/op/A, ref)
@@ -299,9 +299,9 @@ CAPABILITIES(/obj/item/gps)
 		return FALSE
 	// Only a tracked device's label can be shown.
 	if(LAZYACCESS(tracking_devices, gps_ref) && !LAZYACCESS(showing_tracked_names, gps_ref))
-		LAZYSET(showing_tracked_names, gps_ref, TRUE)
+		set_showing_tracked_names_at(gps_ref, TRUE)
 	else
-		LAZYREMOVE(showing_tracked_names, gps_ref)
+		remove_showing_tracked_names(gps_ref)
 	return TRUE
 
 /obj/item/gps/proc/ui_act_stoptrack(datum/act/op/A, ref)
@@ -309,8 +309,8 @@ CAPABILITIES(/obj/item/gps)
 	if(!gps_ref)
 		return FALSE
 	compass.clear_waypoint(gps_ref)
-	LAZYREMOVE(tracking_devices, gps_ref)
-	LAZYREMOVE(showing_tracked_names, gps_ref)
+	remove_tracking_devices(gps_ref)
+	remove_showing_tracked_names(gps_ref)
 	update_compass(src)
 	return TRUE
 
@@ -319,8 +319,8 @@ CAPABILITIES(/obj/item/gps)
 	if(!gps)
 		return FALSE
 	var/gps_ref = REF(gps)
-	LAZYSET(tracking_devices, gps_ref, "#00ffff")
-	LAZYSET(showing_tracked_names, gps_ref, TRUE)
+	set_tracking_devices_at(gps_ref, "#00ffff")
+	set_showing_tracked_names_at(gps_ref, TRUE)
 	update_compass(src)
 	return TRUE
 
@@ -332,7 +332,7 @@ CAPABILITIES(/obj/item/gps)
 	var/new_colour = sanitize_hexcolor(color)
 	if(!new_colour)
 		return FALSE
-	LAZYSET(tracking_devices, gps_ref, new_colour)
+	set_tracking_devices_at(gps_ref, new_colour)
 	update_compass(src)
 	return TRUE
 

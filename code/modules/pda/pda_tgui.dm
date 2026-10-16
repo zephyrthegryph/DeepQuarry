@@ -19,8 +19,8 @@
 
 	// update list of shortcuts, only if they changed
 	if(!length(shortcut_cache))
-		shortcut_cache = list()
-		shortcut_cat_order = list()
+		set_shortcut_cache(list())
+		set_shortcut_cat_order(list())
 		var/prog_list = programs.Copy()
 		if(cartridge)
 			if(length(cartridge.programs)) prog_list |= cartridge.programs
@@ -34,14 +34,14 @@
 				cat = LAZYACCESS(shortcut_cache, P.category)
 			else
 				cat = list()
-				LAZYSET(shortcut_cache, P.category, cat)
-				LAZYADD(shortcut_cat_order, P.category)
+				set_shortcut_cache_at(P.category, cat)
+				add_shortcut_cat_order(P.category)
 			cat |= list(list(name = P.name, icon = P.icon, notify_icon = P.notify_icon, ref = "\ref[P]"))
 
 		// force the order of a few core categories
-		shortcut_cat_order = list("General") \
+		set_shortcut_cat_order(list("General") \
 			+ sortList((shortcut_cat_order || list()) - list("General", "Scanners", "Utilities")) \
-			+ list("Scanners", "Utilities")
+			+ list("Scanners", "Utilities"))
 
 	data["idInserted"] = (id ? 1 : 0)
 	data["idLink"] = (id ? text("[id.registered_name], [id.assignment]") : "--------")
@@ -109,11 +109,11 @@
 
 /obj/item/pda/proc/ui_act_retro(datum/act/op/A)
 	. = TRUE
-	retro_mode = !retro_mode
+	set_retro_mode(!retro_mode)
 
 /obj/item/pda/proc/ui_act_touchsounds(datum/act/op/A)
 	. = TRUE
-	touch_silent = !touch_silent
+	set_touch_silent(!touch_silent)
 
 /obj/item/pda/proc/ui_act_ringtone(datum/act/op/A)
 	var/mob/user = A.actor

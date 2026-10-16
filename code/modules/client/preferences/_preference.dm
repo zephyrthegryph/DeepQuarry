@@ -314,7 +314,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 			return stored
 		else
 			CRASH("Couldn't write the default value for [preference_type] (received [value])")
-	LAZYSET(value_cache, preference_type, value)
+	set_value_cache_at(preference_type, value)
 	if(islist(value))
 		var/list/L = value
 		return L.Copy()
@@ -346,7 +346,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	var/new_value = preference.pref_deserialize(preference_value, src)
 	var/success = preference.write(save_data, new_value)
 	if(success)
-		LAZYSET(value_cache, preference.type, new_value)
+		set_value_cache_at(preference.type, new_value)
 	return success
 
 /// Writes a value and saves to disk immediately
@@ -413,7 +413,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		var/old_value = LAZYACCESS(value_cache, preference.type)
 
 		LAZYOR(recently_updated_keys, preference.type)
-		LAZYSET(value_cache, preference.type, new_value)
+		set_value_cache_at(preference.type, new_value)
 		save_batch_dirty = TRUE
 
 		// invalidate ONLY the editor static_data cache entries that

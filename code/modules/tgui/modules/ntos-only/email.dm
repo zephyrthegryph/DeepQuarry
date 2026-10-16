@@ -59,14 +59,14 @@ CAPABILITIES(/datum/tgui_module/email_client)
 		if(account.login == stored_login)
 			if(account.password == stored_password)
 				if(account.suspended)
-					error = "This account has been suspended. Please contact the system administrator for assistance."
+					set_error("This account has been suspended. Please contact the system administrator for assistance.")
 					return 0
 				rel_set(src, nameof(current_account), account)
 				return 1
 			else
-				error = "Invalid Password"
+				set_error("Invalid Password")
 				return 0
-	error = "Invalid Login"
+	set_error("Invalid Login")
 	return 0
 
 // Returns 0 if no new messages were received, 1 if there is an unread message but notification has already been sent.
@@ -91,7 +91,7 @@ CAPABILITIES(/datum/tgui_module/email_client)
 /datum/tgui_module/email_client/proc/log_out()
 	rel_clear(src, nameof(current_account))
 	rel_take(src, nameof(downloading))
-	download_progress = 0
+	set_download_progress(0)
 	last_message_count = 0
 	read_message_count = 0
 
@@ -102,11 +102,11 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	if(current_account())
 		if(current_account().password != stored_password)
 			log_out()
-			error = "Invalid Password"
+			set_error("Invalid Password")
 		// Banned.
 		if(current_account().suspended)
 			log_out()
-			error = "This account has been suspended. Please contact the system administrator for assistance."
+			set_error("This account has been suspended. Please contact the system administrator for assistance.")
 
 	// So, TGUI has a bug/feature where it just conveniently doesn't bother to clear out old data if it only gets
 	// a partial data update; as such, we have to make sure to null all of these out ourselves so the UI works properly.
@@ -227,32 +227,32 @@ CAPABILITIES(/datum/tgui_module/email_client)
 			return message
 
 /datum/tgui_module/email_client/proc/clear_message()
-	new_message = FALSE
-	msg_title = ""
-	msg_body = ""
-	msg_recipient = ""
+	set_new_message(FALSE)
+	set_msg_title("")
+	set_msg_body("")
+	set_msg_recipient("")
 	rel_take(src, nameof(msg_attachment))
 	rel_clear(src, nameof(current_message))
 
 /datum/tgui_module/email_client/proc/relayed_process(netspeed)
-	download_speed = netspeed
+	set_download_speed(netspeed)
 	if(!downloading)
 		return
-	download_progress = min(download_progress + netspeed, downloading.size)
+	set_download_progress(min(download_progress + netspeed, downloading.size))
 	if(download_progress >= downloading.size)
 		var/obj/item/modular_computer/MC = tgui_host()
 		if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
-			error = "Error uploading file. Are you using a functional and NTOSv2-compliant device?"
+			set_error("Error uploading file. Are you using a functional and NTOSv2-compliant device?")
 			rel_take(src, nameof(downloading))
-			download_progress = 0
+			set_download_progress(0)
 			return 1
 
 		if(MC.hard_drive.store_file(downloading))
-			error = "File successfully downloaded to local device."
+			set_error("File successfully downloaded to local device.")
 		else
-			error = "Error saving file: I/O Error: The hard drive may be full or nonfunctional."
+			set_error("Error saving file: I/O Error: The hard drive may be full or nonfunctional.")
 		rel_take(src, nameof(downloading))
-		download_progress = 0
+		set_download_progress(0)
 	return 1
 
 /// Any actual interaction (button pressing) is considered as acknowledging received message, for the purpose of notification icons.
@@ -293,36 +293,36 @@ CAPABILITIES(/datum/tgui_module/email_client)
 
 /datum/tgui_module/email_client/proc/ui_act_reset(datum/act/op/A)
 	check_for_new_messages(1)
-	error = ""
+	set_error("")
 	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_new_message(datum/act/op/A)
 	check_for_new_messages(1)
-	new_message = TRUE
+	set_new_message(TRUE)
 	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_cancel(datum/act/op/A)
 	check_for_new_messages(1)
 	if(addressbook)
-		addressbook = FALSE
+		set_addressbook(FALSE)
 	else
 		clear_message()
 	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_addressbook(datum/act/op/A)
 	check_for_new_messages(1)
-	addressbook = TRUE
+	set_addressbook(TRUE)
 	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_set_recipient(datum/act/op/A, set_recipient)
-	msg_recipient = sanitize(set_recipient)
-	addressbook = FALSE
+	set_msg_recipient(sanitize(set_recipient))
+	set_addressbook(FALSE)
 	return 1
 
 /datum/tgui_module/email_client/proc/ui_act_edit_title(datum/act/op/A, val)
 	var/newtitle = sanitize(val, 100)
 	if(newtitle)
-		msg_title = newtitle
+		set_msg_title(newtitle)
 	return 1
 
 // This uses similar editing mechanism as the FileManager program, therefore it supports various paper tags and remembers formatting.
@@ -331,25 +331,25 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	var/datum/prompt/P = A.answer
 	var/newtext = replacetext(P?.value, "\n", "\[editorbr\]")
 	if(newtext)
-		msg_body = newtext
+		set_msg_body(newtext)
 	return 1
 
 /datum/tgui_module/email_client/proc/ui_act_edit_recipient(datum/act/op/A, val)
 	var/newrecipient = sanitize(val, 100)
 	if(newrecipient)
-		msg_recipient = newrecipient
+		set_msg_recipient(newrecipient)
 	return 1
 
 /datum/tgui_module/email_client/proc/ui_act_edit_login(datum/act/op/A, val)
 	var/newlogin = sanitize(val, 100)
 	if(newlogin)
-		stored_login = newlogin
+		set_stored_login(newlogin)
 	return 1
 
 /datum/tgui_module/email_client/proc/ui_act_edit_password(datum/act/op/A, val)
 	var/newpass = sanitize(val, 100)
 	if(newpass)
-		stored_password = newpass
+		set_stored_password(newpass)
 	return 1
 
 /datum/tgui_module/email_client/proc/ui_act_delete(datum/act/op/A, delete)
@@ -375,24 +375,24 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	if(!current_account())
 		return 1
 	if((msg_title == "") || (msg_body == "") || (msg_recipient == ""))
-		error = "Error sending mail: Title or message body is empty!"
+		set_error("Error sending mail: Title or message body is empty!")
 		return 1
 
 	var/datum/computer_file/data/email_message/message = new()
 	message.title = msg_title
-	message.stored_data = msg_body
+	message.set_stored_data(msg_body)
 	message.source = current_account().login
 	rel_set(message, nameof(/datum/computer_file/data/email_message::attachment), msg_attachment)
 	if(!current_account().send_mail(msg_recipient, message, FALSE, user))
-		error = "Error sending email: this address doesn't exist."
+		set_error("Error sending email: this address doesn't exist.")
 		return 1
 	else
-		error = "Email successfully sent."
+		set_error("Email successfully sent.")
 		clear_message()
 		return 1
 
 /datum/tgui_module/email_client/proc/ui_act_set_folder(datum/act/op/A, set_folder)
-	folder = set_folder
+	set_folder(set_folder)
 	return 1
 
 /datum/tgui_module/email_client/proc/ui_act_reply(datum/act/op/A, reply)
@@ -400,11 +400,11 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	if(!istype(M))
 		return 1
 
-	new_message = TRUE
-	msg_recipient = M.source
-	msg_title = "Re: [M.title]"
-	msg_body = "\[editorbr\]\[editorbr\]\[editorbr\]\[br\]==============================\[br\]\[editorbr\]"
-	msg_body += "Received by [current_account().login] at [M.timestamp]\[br\]\[editorbr\][M.stored_data]"
+	set_new_message(TRUE)
+	set_msg_recipient(M.source)
+	set_msg_title("Re: [M.title]")
+	set_msg_body("\[editorbr\]\[editorbr\]\[editorbr\]\[br\]==============================\[br\]\[editorbr\]")
+	set_msg_body(msg_body + ("Received by [current_account().login] at [M.timestamp]\[br\]\[editorbr\][M.stored_data]"))
 	return 1
 
 /datum/tgui_module/email_client/proc/ui_act_view(datum/act/op/A, view)
@@ -424,20 +424,20 @@ CAPABILITIES(/datum/tgui_module/email_client)
 		return 1
 
 	if(!istype(current_account(), /datum/computer_file/data/email_account))
-		error = "Please log in before proceeding."
+		set_error("Please log in before proceeding.")
 		return 1
 
 	if(current_account().password != oldpassword)
-		error = "Incorrect original password"
+		set_error("Incorrect original password")
 		return 1
 
 	if(newpassword1 != newpassword2)
-		error = "The entered passwords do not match."
+		set_error("The entered passwords do not match.")
 		return 1
 
 	current_account().password = newpassword1
-	stored_password = newpassword1
-	error = "Your password has been successfully changed!"
+	set_stored_password(newpassword1)
+	set_error("Your password has been successfully changed!")
 	return 1
 
 // The following entries are Modular Computer framework only, and therefore won't do anything in other cases (like AI View)
@@ -447,7 +447,7 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	var/obj/item/modular_computer/MC = tgui_host()
 
 	if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
-		error = "Error exporting file. Are you using a functional and NTOS-compliant device?"
+		set_error("Error exporting file. Are you using a functional and NTOS-compliant device?")
 		return 1
 
 	var/datum/prompt/P = A.answer
@@ -459,11 +459,11 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	var/datum/computer_file/data/mail = istype(M) ? M.export() : null
 	if(!istype(mail))
 		return 1
-	mail.filename = filename
+	mail.set_filename(filename)
 	if(!MC.hard_drive || !MC.hard_drive.store_file(mail))
-		error = "Internal I/O error when writing file, the hard drive may be full."
+		set_error("Internal I/O error when writing file, the hard drive may be full.")
 	else
-		error = "Email exported successfully"
+		set_error("Email exported successfully")
 	return 1
 
 /datum/tgui_module/email_client/proc/ui_act_addattachment(datum/act/op/A)
@@ -471,7 +471,7 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	rel_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
 
 	if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
-		error = "Error uploading file. Are you using a functional and NTOSv2-compliant device?"
+		set_error("Error uploading file. Are you using a functional and NTOSv2-compliant device?")
 		return 1
 
 	var/datum/prompt/P = A.answer
@@ -480,7 +480,7 @@ CAPABILITIES(/datum/tgui_module/email_client)
 		return 1
 
 	if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
-		error = "Error uploading file. Are you using a functional and NTOSv2-compliant device?"
+		set_error("Error uploading file. Are you using a functional and NTOSv2-compliant device?")
 		return 1
 
 	for(var/datum/computer_file/CF in MC.hard_drive.stored_files)
@@ -491,14 +491,14 @@ CAPABILITIES(/datum/tgui_module/email_client)
 			break
 	if(!istype(msg_attachment))
 		rel_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
-		error = "Unknown error when uploading attachment."
+		set_error("Unknown error when uploading attachment.")
 		return 1
 
 	if(msg_attachment.size > 32)
-		error = "Error uploading attachment: File exceeds maximal permitted file size of 32GQ."
+		set_error("Error uploading attachment: File exceeds maximal permitted file size of 32GQ.")
 		rel_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
 	else
-		error = "File [msg_attachment.filename].[msg_attachment.filetype] has been successfully uploaded."
+		set_error("File [msg_attachment.filename].[msg_attachment.filetype] has been successfully uploaded.")
 	return 1
 
 /datum/tgui_module/email_client/proc/ui_act_downloadattachment(datum/act/op/A)
@@ -506,17 +506,17 @@ CAPABILITIES(/datum/tgui_module/email_client)
 		return 1
 	var/obj/item/modular_computer/MC = tgui_host()
 	if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
-		error = "Error downloading file. Are you using a functional and NTOSv2-compliant device?"
+		set_error("Error downloading file. Are you using a functional and NTOSv2-compliant device?")
 		return 1
 
 	rel_set(src, nameof(/datum/tgui_module/email_client::downloading), current_message().attachment.clone())
-	download_progress = 0
+	set_download_progress(0)
 	return 1
 
 /datum/tgui_module/email_client/proc/ui_act_canceldownload(datum/act/op/A)
 	check_for_new_messages(1)
 	rel_take(src, nameof(/datum/tgui_module/email_client::downloading))
-	download_progress = 0
+	set_download_progress(0)
 	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_remove_attachment(datum/act/op/A)

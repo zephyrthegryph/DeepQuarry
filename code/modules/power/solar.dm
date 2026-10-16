@@ -315,7 +315,7 @@ CAPABILITIES(/obj/item/solar_assembly)
 /obj/machinery/power/solar_control/proc/auto_start(forced = FALSE)
 	// Automatically sets the solars, if allowed.
 	if(forced || auto_start == SOLAR_AUTO_START_YES || (auto_start == SOLAR_AUTO_START_CONFIG && CONFIG_GET(flag/autostart_solars)) )
-		track = 2 // Auto tracking mode.
+		set_track(2) // Auto tracking mode.
 		search_for_connected()
 		if(connected_tracker())
 			connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
@@ -324,14 +324,14 @@ CAPABILITIES(/obj/item/solar_assembly)
 /obj/machinery/power/solar_control/proc/add_panel(obj/machinery/power/solar/P)
 	var/sgen = P.get_power_supplied()
 	if(P in connected_panels) // Just in case it was already in there
-		connected_power -= P.controller_supply
+		set_connected_power(connected_power - P.controller_supply)
 	P.controller_supply = sgen
 	rel_add(src, nameof(connected_panels), P)
-	connected_power += sgen
+	set_connected_power(connected_power + sgen)
 
 /obj/machinery/power/solar_control/proc/remove_panel(obj/machinery/power/solar/P)
 	if(P in connected_panels)
-		connected_power -= P.controller_supply
+		set_connected_power(connected_power - P.controller_supply)
 		P.controller_supply = 0
 	rel_remove(src, nameof(connected_panels), P)
 	rel_remove(src, nameof(solar_pending), P) // leave the solar service's current pass
@@ -505,7 +505,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 	if(adjust)
 		value = trackrate + adjust
 	if(value != null)
-		trackrate = round(clamp(value, -7200, 7200), 0.01)
+		set_trackrate(round(clamp(value, -7200, 7200), 0.01))
 		if(trackrate)
 			EXPIRY_SET(src, nexttime, 36000 / abs(trackrate), CLOCK_WORLD)
 		return TRUE
@@ -513,7 +513,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 
 /obj/machinery/power/solar_control/proc/ui_act_tracking(datum/act/op/A, mode_arg)
 	var/mode = mode_arg
-	track = mode
+	set_track(mode)
 	if(track == 2)
 		if(connected_tracker())
 			connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
@@ -534,7 +534,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 	var/sum = 0
 	for(var/obj/machinery/power/solar/S in connected_panels)
 		sum += S.update_power_generation(src)
-	connected_power = sum
+	set_connected_power(sum)
 	set_power_supply(connected_power)
 
 //

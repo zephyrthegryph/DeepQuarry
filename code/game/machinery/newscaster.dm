@@ -36,11 +36,11 @@ CAPABILITIES(/datum/feed_channel)
 	owns_many(nameof(messages))
 
 /datum/feed_message/proc/clear()
-	src.author = ""
-	src.body = ""
+	set_author("")
+	set_body("")
 	src.caption = ""
-	src.img = null
-	src.time_stamp = ""
+	set_img(null)
+	set_time_stamp("")
 	src.backup_body = ""
 	src.backup_author = ""
 	src.backup_caption = ""
@@ -51,17 +51,20 @@ CAPABILITIES(/datum/feed_channel)
 	EXPIRY_STAMP(src, updated, CLOCK_WORLD)
 
 /datum/feed_channel/proc/clear()
-	src.channel_name = ""
+	set_channel_name("")
 	rel_set(src, nameof(messages), list())
 	src.locked = 0
-	src.author = ""
+	set_author("")
 	src.backup_author = ""
-	src.censored = 0
+	set_censored(0)
 	src.is_admin_channel = 0
 	src.announcement = ""
 	update()
 
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/feed_network)
+// Built after the refresh queue (code/engine/change/refresh.dm): its constructor writes tracked vars, which queue a refresh.
+GLOBAL_DATUM_INIT(news_network, /datum/feed_network, new) //The global news-network, which is coincidentally a global list.
+
 /datum/feed_network
 	var/list/datum/feed_channel/network_channels
 	var/datum/feed_message/wanted_issue_owned
@@ -72,8 +75,8 @@ CAPABILITIES(/datum/feed_network)
 
 /datum/feed_network/proc/CreateFeedChannel(channel_name, author, locked, adminChannel = 0, announcement_message)
 	var/datum/feed_channel/newChannel = new /datum/feed_channel
-	newChannel.channel_name = channel_name
-	newChannel.author = author
+	newChannel.set_channel_name(channel_name)
+	newChannel.set_author(author)
 	newChannel.locked = locked
 	newChannel.is_admin_channel = adminChannel
 	if(announcement_message)
@@ -84,19 +87,19 @@ CAPABILITIES(/datum/feed_network)
 
 /datum/feed_network/proc/SubmitArticle(msg, author, channel_name, obj/item/photo/photo, adminMessage = 0, message_type = "", title)
 	var/datum/feed_message/newMsg = new /datum/feed_message
-	newMsg.author = author
-	newMsg.body = msg
-	newMsg.time_stamp = "[stationtime2text()]"
+	newMsg.set_author(author)
+	newMsg.set_body(msg)
+	newMsg.set_time_stamp("[stationtime2text()]")
 	newMsg.is_admin_message = adminMessage
 	if(title)
-		newMsg.title = title
+		newMsg.set_title(title)
 	else
-		newMsg.title = "News Update"
+		newMsg.set_title("News Update")
 	newMsg.post_time = round_duration_in_ds // Should be almost universally unique
 	if(message_type)
-		newMsg.message_type = message_type
+		newMsg.set_message_type(message_type)
 	if(photo)
-		newMsg.img = photo.img
+		newMsg.set_img(photo.img)
 		newMsg.caption = photo.scribble
 	for(var/datum/feed_channel/FC in network_channels)
 		if(FC.channel_name == channel_name)
@@ -276,9 +279,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
  * * text - Text to display, null/empty to clear the message from the UI
  * * style - The style of the message: (color name), info, success, warning, danger, virus
  */
-/obj/machinery/newscaster/proc/set_temp(text = "", style = "info", update_now = FALSE)
-	temp = list(text = text, style = style)
-	tracked_changed(src, nameof(temp))
+/obj/machinery/newscaster/proc/show_temp(text = "", style = "info", update_now = FALSE)
+	set_temp(list(text = text, style = style))
 	if(update_now)
 		SStgui.update_uis(src)
 
@@ -380,15 +382,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	return data
 
 /obj/machinery/newscaster/proc/ui_act_cleartemp(datum/act/op/A)
-	temp = null
+	set_temp(null)
 	return OP_OK
 
 /obj/machinery/newscaster/proc/ui_act_set_channel_name(datum/act/op/A, val)
-	channel_name = sanitizeSafe(val, MAX_LNAME_LEN)
+	set_channel_name(sanitizeSafe(val, MAX_LNAME_LEN))
 	return TRUE
 
 /obj/machinery/newscaster/proc/ui_act_set_channel_lock(datum/act/op/A)
-	c_locked = !c_locked
+	set_c_locked(!c_locked)
 	return OP_OK
 
 /obj/machinery/newscaster/proc/ui_act_submit_new_channel(datum/act/op/A)
@@ -409,16 +411,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 			break
 	var/our_user = tgui_user_name(user)
 	if(channel_name == "" || channel_name == "\[REDACTED\]")
-		set_temp("Error: Could not submit feed channel to network: Invalid Channel Name.", "danger", FALSE)
+		show_temp("Error: Could not submit feed channel to network: Invalid Channel Name.", "danger", FALSE)
 		return TRUE
 	if(our_user == "Unknown")
-		set_temp("Error: Could not submit feed channel to network: Channel author unverified.", "danger", FALSE)
+		show_temp("Error: Could not submit feed channel to network: Channel author unverified.", "danger", FALSE)
 		return TRUE
 	if(check)
-		set_temp("Error: Could not submit feed channel to network: Channel name already in use.", "danger", FALSE)
+		show_temp("Error: Could not submit feed channel to network: Channel name already in use.", "danger", FALSE)
 		return TRUE
 	if(our_user in existing_authors)
-		set_temp("Error: Could not submit feed channel to network: A feed channel already exists under your name.", "danger", FALSE)
+		show_temp("Error: Could not submit feed channel to network: A feed channel already exists under your name.", "danger", FALSE)
 		return TRUE
 
 	channel_creation_confirmed(A)
@@ -444,35 +446,35 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	var/mob/user = A.actor
 	var/our_user = tgui_user_name(user)
 	if(msg == "" || msg == "\[REDACTED\]")
-		set_temp("Error: Could not submit feed message to network: Invalid Message.", "danger", FALSE)
+		show_temp("Error: Could not submit feed message to network: Invalid Message.", "danger", FALSE)
 		return TRUE
 	if(our_user == "Unknown")
-		set_temp("Error: Could not submit feed message to network: Channel author unverified.", "danger", FALSE)
+		show_temp("Error: Could not submit feed message to network: Channel author unverified.", "danger", FALSE)
 		return TRUE
 	if(channel_name == "")
-		set_temp("Error: Could not submit feed message to network: No feed channel selected.", "danger", FALSE)
+		show_temp("Error: Could not submit feed message to network: No feed channel selected.", "danger", FALSE)
 		return TRUE
 	if(title == "")
-		set_temp("Error: Invalid Title.", "danger", FALSE)
+		show_temp("Error: Invalid Title.", "danger", FALSE)
 		return TRUE
 
 	var/image = photo_data ? photo_data.photo() : null
 	feedback_inc("newscaster_stories",1)
 	GLOB.news_network.SubmitArticle(msg, our_user, channel_name, image, 0, "", title)
-	set_temp("Feed message created successfully.", "success", FALSE)
+	show_temp("Feed message created successfully.", "success", FALSE)
 	return TRUE
 
 /obj/machinery/newscaster/proc/ui_act_print_paper(datum/act/op/A)
 	if(!paper_remaining)
-		set_temp("Unable to print newspaper. Insufficient paper. Please notify maintenance personnel to refill machine storage.", "danger", FALSE)
+		show_temp("Unable to print newspaper. Insufficient paper. Please notify maintenance personnel to refill machine storage.", "danger", FALSE)
 		return TRUE
 
 	print_paper()
-	set_temp("Printing successful. Please receive your newspaper from the bottom of the machine.", "success", FALSE)
+	show_temp("Printing successful. Please receive your newspaper from the bottom of the machine.", "success", FALSE)
 	return TRUE
 
 /obj/machinery/newscaster/proc/ui_act_set_wanted_desc(datum/act/op/A, val)
-	msg = sanitize(val)
+	set_msg(sanitize(val))
 	return TRUE
 
 /obj/machinery/newscaster/proc/ui_act_submit_wanted(datum/act/op/A)
@@ -484,13 +486,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		return FALSE
 	var/our_user = tgui_user_name(user)
 	if(channel_name == "")
-		set_temp("Error: Could not submit wanted issue to network: Invalid Criminal Name.", "danger", FALSE)
+		show_temp("Error: Could not submit wanted issue to network: Invalid Criminal Name.", "danger", FALSE)
 		return TRUE
 	if(msg == "")
-		set_temp("Error: Could not submit wanted issue to network: Invalid Description.", "danger", FALSE)
+		show_temp("Error: Could not submit wanted issue to network: Invalid Description.", "danger", FALSE)
 		return TRUE
 	if(our_user == "Unknown")
-		set_temp("Error: Could not submit wanted issue to network: Author unverified.", "danger", FALSE)
+		show_temp("Error: Could not submit wanted issue to network: Author unverified.", "danger", FALSE)
 		return TRUE
 
 	wanted_change_confirmed(A)
@@ -521,9 +523,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		return
 	if(FC.author != "\[REDACTED\]")
 		FC.backup_author = FC.author
-		FC.author = "\[REDACTED\]"
+		FC.set_author("\[REDACTED\]")
 	else
-		FC.author = FC.backup_author
+		FC.set_author(FC.backup_author)
 	FC.update()
 	return TRUE
 
@@ -539,9 +541,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		return
 	if(MSG.author != "\[REDACTED\]")
 		MSG.backup_author = MSG.author
-		MSG.author = "\[REDACTED\]"
+		MSG.set_author("\[REDACTED\]")
 	else
-		MSG.author = MSG.backup_author
+		MSG.set_author(MSG.backup_author)
 	MSG.parent_channel().update()
 	return TRUE
 
@@ -559,13 +561,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		MSG.backup_body = MSG.body
 		MSG.backup_caption = MSG.caption
 		MSG.backup_img = MSG.img
-		MSG.body = "\[REDACTED\]"
+		MSG.set_body("\[REDACTED\]")
 		MSG.caption = "\[REDACTED\]"
-		MSG.img = null
+		MSG.set_img(null)
 	else
-		MSG.body = MSG.backup_body
+		MSG.set_body(MSG.backup_body)
 		MSG.caption = MSG.caption
-		MSG.img = MSG.backup_img
+		MSG.set_img(MSG.backup_img)
 
 	MSG.parent_channel().update()
 	return TRUE
@@ -580,7 +582,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	if(FC.is_admin_channel)
 		tgui_alert_async(user, "This channel was created by a [using_map.company_name] Officer. You cannot place a D-Notice upon it.")
 		return
-	FC.censored = !FC.censored
+	FC.set_censored(!FC.censored)
 	FC.update()
 	return TRUE
 
@@ -634,26 +636,26 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		return
 	var/datum/prompt/yes_no/news_channel_create/R = A.answer
 	GLOB.news_network.CreateFeedChannel(R.channel, R.author, R.locked)
-	set_temp("Feed channel [R.channel] created successfully.", "success", FALSE)
+	show_temp("Feed channel [R.channel] created successfully.", "success", FALSE)
 	SStgui.update_uis(src)
 
 /obj/machinery/newscaster/proc/receiving_channel_chosen(datum/act/op/A)
 	if(!A.answer)
 		return
 	var/new_channel_name = A.answer.value
-	channel_name = new_channel_name
+	set_channel_name(new_channel_name)
 	SStgui.update_uis(src)
 
 /obj/machinery/newscaster/proc/story_written(datum/act/op/A)
 	if(!A.answer)
 		return
-	msg = sanitize(A.answer.value, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+	set_msg(sanitize(A.answer.value, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE))
 	SStgui.update_uis(src)
 
 /obj/machinery/newscaster/proc/title_written(datum/act/op/A)
 	if(!A.answer)
 		return
-	title = A.answer.value
+	set_title(A.answer.value)
 	SStgui.update_uis(src)
 
 /obj/machinery/newscaster/proc/wanted_change_confirmed(datum/act/op/A)
@@ -669,19 +671,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		GLOB.news_network.wanted_issue().backup_author = scanned_user
 		if(photo_data)
 			GLOB.news_network.wanted_issue().img = photo_data.photo().img
-		set_temp("Wanted issue for [channel_name] successfully edited.", "success", FALSE)
+		show_temp("Wanted issue for [channel_name] successfully edited.", "success", FALSE)
 		SStgui.update_uis(src)
 		return
 
 	var/datum/feed_message/WANTED = new /datum/feed_message
-	WANTED.author = channel_name
-	WANTED.body = msg
+	WANTED.set_author(channel_name)
+	WANTED.set_body(msg)
 	WANTED.backup_author = scanned_user //I know, a bit wacky
 	if(photo_data)
-		WANTED.img = photo_data.photo().img
+		WANTED.set_img(photo_data.photo().img)
 	rel_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), WANTED)
 	GLOB.news_network.alert_readers()
-	set_temp("Wanted issue for [channel_name] is now in Network Circulation.", "success", FALSE)
+	show_temp("Wanted issue for [channel_name] is now in Network Circulation.", "success", FALSE)
 	SStgui.update_uis(src)
 
 /obj/machinery/newscaster/proc/wanted_removal_confirmed(datum/act/op/A)
@@ -690,7 +692,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	if(GLOB.news_network.wanted_issue() && !GLOB.news_network.wanted_issue().is_admin_message)
 		own_clear(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), OWN_DELETE)
 		GLOB.news_network.wanted_changed()
-		set_temp("Wanted issue taken down.", "success", FALSE)
+		show_temp("Wanted issue taken down.", "success", FALSE)
 		SStgui.update_uis(src)
 
 /datum/news_photo
@@ -761,7 +763,7 @@ CAPABILITIES(/datum/news_photo)
 	if(GLOB.news_network.wanted_issue())
 		rel_set(NEWSPAPER, nameof(NEWSPAPER.important_message), GLOB.news_network.wanted_issue())
 	NEWSPAPER.forceMove(get_turf(src))
-	paper_remaining--
+	set_paper_remaining(paper_remaining - 1)
 	return
 
 /obj/machinery/newscaster/proc/newsAlert(news_call)

@@ -630,7 +630,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/item/rig_module/M = allocate(/obj/item/rig_module, run_loc_floor_bottom_left)
 	var/obj/item/stack/nanopaste/N = allocate(/obj/item/stack/nanopaste, run_loc_floor_bottom_left, 3)
-	M.damage = 2
+	M.set_damage(2)
 	user.put_in_active_hand(N)
 	test_chat_clear()
 	test_click(user, M, N)
@@ -650,7 +650,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/item/rig_module/M = allocate(/obj/item/rig_module, run_loc_floor_bottom_left)
 	var/obj/item/stack/nanopaste/N = allocate(/obj/item/stack/nanopaste, run_loc_floor_bottom_left, 3)
-	M.damage = 2
+	M.set_damage(2)
 	user.put_in_active_hand(N)
 	test_click(user, M, N)
 	var/datum/T = running(user)

@@ -21,7 +21,7 @@
 	vore_selected_of(host()).name = new_name
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_display_name(mob/user, list/params, extra)
 	var/new_name = html_encode(params["val"])
@@ -30,25 +30,25 @@
 	vore_selected_of(host()).display_name = new_name
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_message_mode(mob/user, list/params, extra)
 	vore_selected_of(host()).message_mode = !vore_selected_of(host()).message_mode
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_wetness(mob/user, list/params, extra)
 	vore_selected_of(host()).is_wet = !vore_selected_of(host()).is_wet
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_wetloop(mob/user, list/params, extra)
 	vore_selected_of(host()).wet_loop = !vore_selected_of(host()).wet_loop
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_mode(mob/user, list/params, extra)
 	var/new_mode = params["val"]
@@ -59,7 +59,7 @@
 	vore_selected_of(host()).updateVRPanels()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_addons(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
@@ -79,7 +79,7 @@
 			to_chat(user, span_warning("TURBO MODE deactivated. Belly processing returned to normal speed."))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_item_mode(mob/user, list/params, extra)
 	var/new_mode = params["val"]
@@ -90,13 +90,13 @@
 	vore_selected_of(host()).items_preserved = null //Re-evaltuate all items in belly on belly-mode change
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_contaminates(mob/user, list/params, extra)
 	vore_selected_of(host()).contaminates = !vore_selected_of(host()).contaminates
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_contamination_flavor(mob/user, list/params, extra)
 	var/new_flavor = params["val"]
@@ -105,7 +105,7 @@
 	vore_selected_of(host()).contamination_flavor = new_flavor
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_contamination_color(mob/user, list/params, extra)
 	var/new_color = params["val"]
@@ -115,7 +115,7 @@
 	vore_selected_of(host()).items_preserved = null //To re-contaminate for new color
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_egg_type(mob/user, list/params, extra)
 	var/new_egg_type = params["val"]
@@ -124,7 +124,7 @@
 	vore_selected_of(host()).egg_type = new_egg_type
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_egg_name(mob/user, list/params, extra)
 	var/new_egg_name = sanitize(params["val"], BELLIES_NAME_MAX, FALSE, TRUE, FALSE)
@@ -134,7 +134,7 @@
 		vore_selected_of(host()).egg_name = new_egg_name
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_egg_size(mob/user, list/params, extra)
 	var/new_egg_size = params["val"]
@@ -148,19 +148,19 @@
 		vore_selected_of(host()).egg_size = (new_egg_size/100)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_recycling(mob/user, list/params, extra)
 	vore_selected_of(host()).recycling = !vore_selected_of(host()).recycling
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_storing_nutrition(mob/user, list/params, extra)
 	vore_selected_of(host()).storing_nutrition = !vore_selected_of(host()).storing_nutrition
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_belly_description_message(mob/user, list/params, extra)
 	var/new_desc = html_encode(params["val"])
@@ -173,7 +173,7 @@
 		vore_selected_of(host()).desc = new_desc
 		. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_belly_description_message_absroed(mob/user, list/params, extra)
 	var/new_desc = html_encode(params["val"])
@@ -186,7 +186,7 @@
 		vore_selected_of(host()).absorbed_desc = new_desc
 		. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_msgs(mob/user, list/params, extra)
 	var/datum/tgui/ui = extra // the window the button was pressed in
@@ -379,7 +379,7 @@
 			return
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_verb(mob/user, list/params, extra)
 	var/new_verb = html_encode(params["val"])
@@ -391,7 +391,7 @@
 	vore_selected_of(host()).vore_verb = new_verb
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_release_verb(mob/user, list/params, extra)
 	var/new_release_verb = html_encode(params["val"])
@@ -403,7 +403,7 @@
 	vore_selected_of(host()).release_verb = new_release_verb
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_eating_privacy(mob/user, list/params, extra)
 	var/privacy_choice = params["val"]
@@ -412,7 +412,7 @@
 	vore_selected_of(host()).eating_privacy_local = privacy_choice
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_silicon_belly(mob/user, list/params, extra)
 	var/belly_choice = params["val"]
@@ -423,7 +423,7 @@
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_belly_mob_mult(mob/user, list/params, extra)
 	var/datum/tgui/ui = extra // the window the button was pressed in
@@ -444,7 +444,7 @@
 	// defaults as to avoid potential bugs
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_release(mob/user, list/params, extra)
 	var/choice = params["val"]
@@ -456,7 +456,7 @@
 	vore_selected_of(host()).release_sound = choice
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_releasesoundtest(mob/user, list/params, extra)
 	var/sound/releasetest
@@ -472,7 +472,7 @@
 		SEND_SOUND(user, releasetest)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_sound(mob/user, list/params, extra)
 	var/choice = params["val"]
@@ -484,7 +484,7 @@
 	vore_selected_of(host()).vore_sound = choice
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_soundtest(mob/user, list/params, extra)
 	var/sound/voretest
@@ -499,7 +499,7 @@
 		SEND_SOUND(user, voretest)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_sound_volume(mob/user, list/params, extra)
 	var/sound_volume_input = params["val"]
@@ -508,7 +508,7 @@
 	vore_selected_of(host()).sound_volume = sanitize_integer(sound_volume_input, 0, 100, initial(vore_selected_of(host()).sound_volume))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_noise_freq(mob/user, list/params, extra)
 	var/choice = params["val"]
@@ -519,31 +519,31 @@
 	vore_selected_of(host()).noise_freq = CLAMP(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_tastes(mob/user, list/params, extra)
 	vore_selected_of(host()).can_taste = !vore_selected_of(host()).can_taste
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_feedable(mob/user, list/params, extra)
 	vore_selected_of(host()).is_feedable = !vore_selected_of(host()).is_feedable
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_entrance_logs(mob/user, list/params, extra)
 	vore_selected_of(host()).entrance_logs = !vore_selected_of(host()).entrance_logs
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_item_digest_logs(mob/user, list/params, extra)
 	vore_selected_of(host()).item_digest_logs = !vore_selected_of(host()).item_digest_logs
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_bulge_size(mob/user, list/params, extra)
 	var/new_bulge = params["val"]
@@ -557,25 +557,25 @@
 		vore_selected_of(host()).bulge_size = (new_bulge/100)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_display_absorbed_examine(mob/user, list/params, extra)
 	vore_selected_of(host()).display_absorbed_examine = !vore_selected_of(host()).display_absorbed_examine
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_display_outside_struggle(mob/user, list/params, extra)
 	vore_selected_of(host()).toggle_displayed_message_flags(MS_FLAG_STRUGGLE_OUTSIDE)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_display_absorbed_outside_struggle(mob/user, list/params, extra)
 	vore_selected_of(host()).toggle_displayed_message_flags(MS_FLAG_STRUGGLE_ABSORBED_OUTSIDE)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_grow_shrink(mob/user, list/params, extra)
 	var/new_grow = params["val"]
@@ -584,7 +584,7 @@
 	vore_selected_of(host()).shrink_grow_size = CLAMP(new_grow, 25, 200) * 0.01
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_nutritionpercent(mob/user, list/params, extra)
 	var/new_nutrition = params["val"]
@@ -594,7 +594,7 @@
 	. = TRUE
 	// modified these to be flexible rather than maxing at 6/6/12/6/6
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_burn_dmg(mob/user, list/params, extra)
 	var/new_damage = params["val"]
@@ -604,7 +604,7 @@
 	vore_selected_of(host()).items_preserved = null
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_brute_dmg(mob/user, list/params, extra)
 	var/new_damage = params["val"]
@@ -614,7 +614,7 @@
 	vore_selected_of(host()).items_preserved = null
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_oxy_dmg(mob/user, list/params, extra)
 	var/new_damage = params["val"]
@@ -623,7 +623,7 @@
 	vore_selected_of(host()).digest_oxy = CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_oxy)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_tox_dmg(mob/user, list/params, extra)
 	var/new_damage = params["val"]
@@ -632,7 +632,7 @@
 	vore_selected_of(host()).digest_tox = CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_tox)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_clone_dmg(mob/user, list/params, extra)
 	var/new_damage = params["val"]
@@ -641,7 +641,7 @@
 	vore_selected_of(host()).digest_clone = CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_clone)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_bellytemperature(mob/user, list/params, extra)
 	var/new_temp = params["val"]
@@ -651,13 +651,13 @@
 	vore_selected_of(host()).bellytemperature = CLAMP(new_temp, T0C, 473.15)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_temperature_damage(mob/user, list/params, extra)
 	vore_selected_of(host()).temperature_damage = !vore_selected_of(host()).temperature_damage
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_drainmode(mob/user, list/params, extra)
 	var/new_drainmode = params["val"]
@@ -666,13 +666,13 @@
 	vore_selected_of(host()).drainmode = new_drainmode
 	vore_selected_of(host()).updateVRPanels()
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_emoteactive(mob/user, list/params, extra)
 	vore_selected_of(host()).emote_active = !vore_selected_of(host()).emote_active
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_selective_mode_pref_toggle(mob/user, list/params, extra)
 	var/new_mode = params["val"]
@@ -683,7 +683,7 @@
 			vore_selected_of(host()).selective_preference = DM_ABSORB
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_emotetime(mob/user, list/params, extra)
 	var/new_time = params["val"]
@@ -692,7 +692,7 @@
 	vore_selected_of(host()).emote_time = CLAMP(new_time, 60, 600)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_escapable(mob/user, list/params, extra)
 	var/new_mode = params["val"]
@@ -708,7 +708,7 @@
 			to_chat(user,span_warning("Prey now have special interactions with your [lowertext(vore_selected_of(host()).name)] depending on your settings and their intent."))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_escapechance(mob/user, list/params, extra)
 	var/escape_chance_input = params["val"]
@@ -717,7 +717,7 @@
 	vore_selected_of(host()).escapechance = sanitize_integer(escape_chance_input, 0, 100, initial(vore_selected_of(host()).escapechance))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_belchchance(mob/user, list/params, extra)
 	var/belch_chance_input = params["val"]
@@ -726,7 +726,7 @@
 	vore_selected_of(host()).belchchance = sanitize_integer(belch_chance_input, 0, 100, initial(vore_selected_of(host()).belchchance))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_escapechance_absorbed(mob/user, list/params, extra)
 	var/escape_absorbed_chance_input = params["val"]
@@ -735,7 +735,7 @@
 	vore_selected_of(host()).escapechance_absorbed = sanitize_integer(escape_absorbed_chance_input, 0, 100, initial(vore_selected_of(host()).escapechance_absorbed))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_escapetime(mob/user, list/params, extra)
 	var/escape_time_input = params["val"]
@@ -744,7 +744,7 @@
 	vore_selected_of(host()).escapetime = sanitize_integer(escape_time_input*10, 10, 600, initial(vore_selected_of(host()).escapetime))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_transferchance(mob/user, list/params, extra)
 	var/transfer_chance_input = params["val"]
@@ -753,7 +753,7 @@
 	vore_selected_of(host()).transferchance = sanitize_integer(transfer_chance_input, 0, 100, initial(vore_selected_of(host()).transferchance))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_transferlocation(mob/user, list/params, extra)
 	var/obj/belly/choice = params["val"]
@@ -764,7 +764,7 @@
 		vore_selected_of(host()).transferlocation = choice.name
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_transferchance_secondary(mob/user, list/params, extra)
 	var/transfer_secondary_chance_input = params["val"]
@@ -773,7 +773,7 @@
 	vore_selected_of(host()).transferchance_secondary = sanitize_integer(transfer_secondary_chance_input, 0, 100, initial(vore_selected_of(host()).transferchance_secondary))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_transferlocation_secondary(mob/user, list/params, extra)
 	var/obj/belly/choice_secondary = params["val"]
@@ -784,7 +784,7 @@
 		vore_selected_of(host()).transferlocation_secondary = choice_secondary.name
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_absorbchance(mob/user, list/params, extra)
 	var/absorb_chance_input = params["val"]
@@ -793,7 +793,7 @@
 	vore_selected_of(host()).absorbchance = sanitize_integer(absorb_chance_input, 0, 100, initial(vore_selected_of(host()).absorbchance))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_digestchance(mob/user, list/params, extra)
 	var/digest_chance_input = params["val"]
@@ -802,7 +802,7 @@
 	vore_selected_of(host()).digestchance = sanitize_integer(digest_chance_input, 0, 100, initial(vore_selected_of(host()).digestchance))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransferchance_primary(mob/user, list/params, extra)
 	var/autotransferchance_input = params["val"]
@@ -811,7 +811,7 @@
 	vore_selected_of(host()).autotransferchance = sanitize_integer(autotransferchance_input, 0, 100, initial(vore_selected_of(host()).autotransferchance))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransferwait(mob/user, list/params, extra)
 	var/autotransferwait_input = params["val"]
@@ -820,7 +820,7 @@
 	vore_selected_of(host()).autotransferwait = sanitize_integer(autotransferwait_input*10, 10, 18000, initial(vore_selected_of(host()).autotransferwait))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransferlocation_primary(mob/user, list/params, extra)
 	var/obj/belly/choice = params["val"]
@@ -831,7 +831,7 @@
 		vore_selected_of(host()).autotransferlocation = choice.name
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransferextralocation_primary(mob/user, list/params, extra)
 	var/obj/belly/choice = params["val"]
@@ -843,7 +843,7 @@
 		vore_selected_of(host()).autotransferextralocation = vore_selected_of(host()).autotransferextralocation + choice.name
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransferchance_secondary(mob/user, list/params, extra)
 	var/autotransferchance_secondary_input = params["val"]
@@ -852,7 +852,7 @@
 	vore_selected_of(host()).autotransferchance_secondary = sanitize_integer(autotransferchance_secondary_input, 0, 100, initial(vore_selected_of(host()).autotransferchance_secondary))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransferlocation_secondary(mob/user, list/params, extra)
 	var/obj/belly/choice = params["val"]
@@ -863,7 +863,7 @@
 		vore_selected_of(host()).autotransferlocation_secondary = choice.name
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransferextralocation_secondary(mob/user, list/params, extra)
 	var/obj/belly/choice = params["val"]
@@ -875,7 +875,7 @@
 		vore_selected_of(host()).autotransferextralocation_secondary = vore_selected_of(host()).autotransferextralocation_secondary + choice.name
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_whitelist_primary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
@@ -884,7 +884,7 @@
 	vore_selected_of(host()).autotransfer_whitelist ^= vore_selected_of(host()).autotransfer_flags_list[toggle_addon]
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_blacklist_primary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
@@ -893,7 +893,7 @@
 	vore_selected_of(host()).autotransfer_blacklist ^= vore_selected_of(host()).autotransfer_flags_list[toggle_addon]
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_whitelist_secondary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
@@ -902,7 +902,7 @@
 	vore_selected_of(host()).autotransfer_secondary_whitelist ^= vore_selected_of(host()).autotransfer_flags_list[toggle_addon]
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_blacklist_secondary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
@@ -912,7 +912,7 @@
 	. = TRUE
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_whitelist_items_primary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
@@ -921,7 +921,7 @@
 	vore_selected_of(host()).autotransfer_whitelist_items ^= vore_selected_of(host()).autotransfer_flags_list_items[toggle_addon]
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_blacklist_items_primary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
@@ -930,7 +930,7 @@
 	vore_selected_of(host()).autotransfer_blacklist_items ^= vore_selected_of(host()).autotransfer_flags_list_items[toggle_addon]
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_whitelist_items_secondary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
@@ -939,7 +939,7 @@
 	vore_selected_of(host()).autotransfer_secondary_whitelist_items ^= vore_selected_of(host()).autotransfer_flags_list_items[toggle_addon]
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_blacklist_items_secondary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
@@ -948,7 +948,7 @@
 	vore_selected_of(host()).autotransfer_secondary_blacklist_items ^= vore_selected_of(host()).autotransfer_flags_list_items[toggle_addon]
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_min_amount(mob/user, list/params, extra)
 	var/autotransfer_min_amount_input = params["val"]
@@ -957,7 +957,7 @@
 	vore_selected_of(host()).autotransfer_min_amount = sanitize_integer(autotransfer_min_amount_input, 0, 100, initial(vore_selected_of(host()).autotransfer_min_amount))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_max_amount(mob/user, list/params, extra)
 	var/autotransfer_max_amount_input = params["val"]
@@ -966,45 +966,45 @@
 	vore_selected_of(host()).autotransfer_max_amount = sanitize_integer(autotransfer_max_amount_input, 0, 100, initial(vore_selected_of(host()).autotransfer_max_amount))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_enabled(mob/user, list/params, extra)
 	vore_selected_of(host()).autotransfer_enabled = !vore_selected_of(host()).autotransfer_enabled
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_fullscreen(mob/user, list/params, extra)
 	vore_selected_of(host()).belly_fullscreen = params["val"]
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_disable_hud(mob/user, list/params, extra)
 	vore_selected_of(host()).disable_hud = !vore_selected_of(host()).disable_hud
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_colorization_enabled(mob/user, list/params, extra)
 	vore_selected_of(host()).colorization_enabled = !vore_selected_of(host()).colorization_enabled
 	vore_selected_of(host()).belly_fullscreen = "dark" //This prevents you from selecting a belly that is not meant to be colored and then turning colorization on.
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_preview_belly(mob/user, list/params, extra)
 	vore_selected_of(host()).vore_preview(host()) //Gives them the stomach overlay. It fades away after ~2 seconds as human/life.dm removes the overlay if not in a gut.
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_clear_preview(mob/user, list/params, extra)
 	vore_selected_of(host()).clear_preview(host()) //Clears the stomach overlay. This is a failsafe but shouldn't occur.
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_fullscreen_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
@@ -1013,7 +1013,7 @@
 		vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_fullscreen_color2(mob/user, list/params, extra)
 	var/newcolor2 = sanitize_hexcolor(lowertext(params["val"]))
@@ -1022,7 +1022,7 @@
 		vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_fullscreen_color3(mob/user, list/params, extra)
 	var/newcolor3 = sanitize_hexcolor(lowertext(params["val"]))
@@ -1031,7 +1031,7 @@
 		vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_fullscreen_color4(mob/user, list/params, extra)
 	var/newcolor4 = sanitize_hexcolor(lowertext(params["val"]))
@@ -1040,7 +1040,7 @@
 		vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_fullscreen_alpha(mob/user, list/params, extra)
 	var/newalpha = params["val"]
@@ -1050,13 +1050,13 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_save_digest_mode(mob/user, list/params, extra)
 	vore_selected_of(host()).save_digest_mode = !vore_selected_of(host()).save_digest_mode
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_del(mob/user, list/params, extra)
 	var/datum/tgui/ui = extra // the window the button was pressed in
@@ -1066,13 +1066,13 @@
 	vore_selected_of(host()).private_struggle = !vore_selected_of(host()).private_struggle
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_absorbedrename_enabled(mob/user, list/params, extra)
 	vore_selected_of(host()).absorbedrename_enabled = !vore_selected_of(host()).absorbedrename_enabled
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_absorbedrename_name(mob/user, list/params, extra)
 	var/new_absorbedrename_name = sanitize(params["val"], MAX_MESSAGE_LEN, FALSE, TRUE, FALSE)
@@ -1080,13 +1080,13 @@
 		vore_selected_of(host()).absorbedrename_name = new_absorbedrename_name
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_vorespawn_blacklist(mob/user, list/params, extra)
 	vore_selected_of(host()).vorespawn_blacklist = !vore_selected_of(host()).vorespawn_blacklist
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_vorespawn_whitelist(mob/user, list/params, extra)
 	var/new_vorespawn_whitelist = sanitize(params["val"], MAX_MESSAGE_LEN, FALSE, TRUE, FALSE)
@@ -1096,7 +1096,7 @@
 		vore_selected_of(host()).vorespawn_whitelist = list()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_vorespawn_absorbed(mob/user, list/params, extra)
 	var/current_number = params["val"]
@@ -1110,7 +1110,7 @@
 			vore_selected_of(host()).vorespawn_absorbed &= ~(VS_FLAG_ABSORB_PREY)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_belly_sprite_to_affect(mob/user, list/params, extra)
 	var/belly_choice = params["val"]
@@ -1120,21 +1120,21 @@
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_affects_vore_sprites(mob/user, list/params, extra)
 	vore_selected_of(host()).affects_vore_sprites = !vore_selected_of(host()).affects_vore_sprites
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_count_absorbed_prey_for_sprites(mob/user, list/params, extra)
 	vore_selected_of(host()).count_absorbed_prey_for_sprite = !vore_selected_of(host()).count_absorbed_prey_for_sprite
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_absorbed_multiplier(mob/user, list/params, extra)
 	var/absorbed_multiplier_input = params["val"]
@@ -1144,14 +1144,14 @@
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_count_items_for_sprites(mob/user, list/params, extra)
 	vore_selected_of(host()).count_items_for_sprite = !vore_selected_of(host()).count_items_for_sprite
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_item_multiplier(mob/user, list/params, extra)
 	var/item_multiplier_input = params["val"]
@@ -1161,20 +1161,20 @@
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_health_impacts_size(mob/user, list/params, extra)
 	vore_selected_of(host()).health_impacts_size = !vore_selected_of(host()).health_impacts_size
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_resist_animation(mob/user, list/params, extra)
 	vore_selected_of(host()).resist_triggers_animation = !vore_selected_of(host()).resist_triggers_animation
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_size_factor_sprites(mob/user, list/params, extra)
 	var/size_factor_input = params["val"]
@@ -1184,7 +1184,7 @@
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_vore_sprite_flags(mob/user, list/params, extra)
 	var/toggle_vs_flag = params["val"]
@@ -1193,14 +1193,14 @@
 	vore_selected_of(host()).vore_sprite_flags ^= vore_selected_of(host()).vore_sprite_flag_list[toggle_vs_flag]
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_count_liquid_for_sprites(mob/user, list/params, extra)
 	vore_selected_of(host()).count_liquid_for_sprite = !vore_selected_of(host()).count_liquid_for_sprite
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_liquid_multiplier(mob/user, list/params, extra)
 	var/liquid_multiplier_input = params["val"]
@@ -1210,7 +1210,7 @@
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_undergarment_choice(mob/user, list/params, extra)
 	var/new_undergarment = params["val"]
@@ -1220,7 +1220,7 @@
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_undergarment_if_none(mob/user, list/params, extra)
 	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[vore_selected_of(host()).undergarment_chosen]
@@ -1232,7 +1232,7 @@
 	PUBLISH(host(), belly_change)
 	host().updateVRPanel()
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_undergarment_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
@@ -1241,7 +1241,7 @@
 		PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_tail_to_change_to(mob/user, list/params, extra)
 	var/tail_choice = params["val"]
@@ -1250,7 +1250,7 @@
 	vore_selected_of(host()).tail_to_change_to_static = tail_choice
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_tail_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
@@ -1258,7 +1258,7 @@
 		vore_selected_of(host()).tail_colouration = newcolor
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_tail_color2(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
@@ -1266,7 +1266,7 @@
 		vore_selected_of(host()).tail_extra_overlay = newcolor
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_tail_color3(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
@@ -1274,7 +1274,7 @@
 		vore_selected_of(host()).tail_extra_overlay2 = newcolor
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_show_liq_fullness(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).show_fullness_messages)
@@ -1285,37 +1285,37 @@
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] no longer has liquid examination options."))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_liq_msg_toggle1(mob/user, list/params, extra)
 	vore_selected_of(host()).liquid_fullness1_messages = !vore_selected_of(host()).liquid_fullness1_messages
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_liq_msg_toggle2(mob/user, list/params, extra)
 	vore_selected_of(host()).liquid_fullness2_messages = !vore_selected_of(host()).liquid_fullness2_messages
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_liq_msg_toggle3(mob/user, list/params, extra)
 	vore_selected_of(host()).liquid_fullness3_messages = !vore_selected_of(host()).liquid_fullness3_messages
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_liq_msg_toggle4(mob/user, list/params, extra)
 	vore_selected_of(host()).liquid_fullness4_messages = !vore_selected_of(host()).liquid_fullness4_messages
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_liq_msg_toggle5(mob/user, list/params, extra)
 	vore_selected_of(host()).liquid_fullness5_messages = !vore_selected_of(host()).liquid_fullness5_messages
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /// A nested attribute replay retains its original UI, but rereads the current selected belly.
 /datum/prompt/number/vore_size_multiplier
@@ -1357,7 +1357,7 @@
 		if(VORE_SIZE_MULT_OVERALL)
 			vore_selected_of(panel.host()).belly_overall_mult = CLAMP(request.value, 0, 5)
 	PUBLISH(panel.host(), belly_change)
-	panel.unsaved_changes = TRUE
+	panel.set_unsaved_changes(TRUE)
 
 #undef VORE_SIZE_MULT_MOB
 #undef VORE_SIZE_MULT_ITEM
@@ -1433,7 +1433,7 @@
 		vore_selected_of(panel.host()).liquid_fullness3_messages = vore_selected_of(panel.host()).belly_shared_list("fullness3_messages")
 		vore_selected_of(panel.host()).liquid_fullness4_messages = vore_selected_of(panel.host()).belly_shared_list("fullness4_messages")
 		vore_selected_of(panel.host()).liquid_fullness5_messages = vore_selected_of(panel.host()).belly_shared_list("fullness5_messages")
-		panel.unsaved_changes = TRUE
+		panel.set_unsaved_changes(TRUE)
 
 /datum/prompt/choice/vore_delete_belly
 	parent_type = /datum/prompt/choice/vore_reset_messages
@@ -1479,7 +1479,7 @@
 		return
 	if(A.answer.value == "Delete")
 		panel.vore_delete_belly_apply()
-		panel.unsaved_changes = TRUE
+		panel.set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/vore_delete_belly_apply()
 	if(host().soulgem?.linked_belly() == vore_selected_of(host()))

@@ -99,14 +99,14 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	var/datum/notice/wire_cut/N = A
 	if(N.mended)
 		return
-	hacked = FALSE
+	set_hacked(FALSE)
 	if(check_flag(MODEFLAG_BYPASS))
 		toggle_flag(MODEFLAG_BYPASS)
 	if(check_flag(MODEFLAG_OVERCHARGE))
 		toggle_flag(MODEFLAG_OVERCHARGE)
 
 /obj/machinery/power/shield_generator/proc/contraband_wire_pulsed(datum/act/A)
-	hacked = TRUE
+	set_hacked(TRUE)
 
 /obj/machinery/power/shield_generator/proc/control_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A
@@ -136,20 +136,20 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	..()
 
 /obj/machinery/power/shield_generator/RefreshParts()
-	max_energy = 0
-	full_shield_strength = 0
+	set_max_energy(0)
+	set_full_shield_strength(0)
 	for(var/obj/item/smes_coil/S in slot_contents(CONTAINER_SLOT_INTERNALS))
-		full_shield_strength += S.ChargeCapacity * 5
+		set_full_shield_strength(full_shield_strength + (S.ChargeCapacity * 5))
 	for(var/datum/latent_entry/entry as anything in latent_entries(CONTAINER_SLOT_INTERNALS))
 		if(ispath(entry.path, /obj/item/smes_coil))
-			full_shield_strength += dq_type_var(entry.path, "ChargeCapacity") * entry.count * 5
-	max_energy = full_shield_strength * 20
-	current_energy = between(0, current_energy, max_energy)
+			set_full_shield_strength(full_shield_strength + (dq_type_var(entry.path, "ChargeCapacity") * entry.count * 5))
+	set_max_energy(full_shield_strength * 20)
+	set_current_energy(between(0, current_energy, max_energy))
 
-	mitigation_max = MAX_MITIGATION_BASE + MAX_MITIGATION_RESEARCH * total_component_rating_of_type(/obj/item/stock_parts/capacitor)
-	mitigation_em = between(0, mitigation_em, mitigation_max)
-	mitigation_physical = between(0, mitigation_physical, mitigation_max)
-	mitigation_heat = between(0, mitigation_heat, mitigation_max)
+	set_mitigation_max(MAX_MITIGATION_BASE + MAX_MITIGATION_RESEARCH * total_component_rating_of_type(/obj/item/stock_parts/capacitor))
+	set_mitigation_em(between(0, mitigation_em, mitigation_max))
+	set_mitigation_physical(between(0, mitigation_physical, mitigation_max))
+	set_mitigation_heat(between(0, mitigation_heat, mitigation_max))
 	..()
 
 // Shuts down the shield, removing all shield segments and unlocking generator settings.
@@ -157,10 +157,10 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	rel_clear(src, nameof(field_segments))
 
 	set_running(SHIELD_OFF)
-	current_energy = 0
-	mitigation_em = 0
-	mitigation_physical = 0
-	mitigation_heat = 0
+	set_current_energy(0)
+	set_mitigation_em(0)
+	set_mitigation_physical(0)
+	set_mitigation_heat(0)
 
 // Generates the field objects. Deletes existing field, if applicable.
 /obj/machinery/power/shield_generator/proc/regenerate_field()
@@ -352,8 +352,8 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	upkeep_multiplier = new_upkeep * power_coefficient
 
 /obj/machinery/power/shield_generator/proc/work_step(datum/act/timer/A)
-	upkeep_power_usage = 0
-	power_usage = 0
+	set_upkeep_power_usage(0)
+	set_power_usage(0)
 
 	if(offline_for)
 		set_offline_for(max(0, offline_for - 1))
@@ -369,29 +369,29 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 
 	// We are shutting down, therefore our stored energy disperses faster than usual.
 	else if(running == SHIELD_DISCHARGING)
-		current_energy -= SHIELD_SHUTDOWN_DISPERSION_RATE
+		set_current_energy(current_energy - SHIELD_SHUTDOWN_DISPERSION_RATE)
 	else if(running == SHIELD_SPINNING_UP)
-		spinup_counter--
+		set_spinup_counter(spinup_counter - 1)
 		if(spinup_counter <= 0)
 			set_running(SHIELD_RUNNING)
 			regenerate_field()
 
-	mitigation_em = between(0, mitigation_em - MITIGATION_LOSS_PASSIVE, mitigation_max)
-	mitigation_heat = between(0, mitigation_heat - MITIGATION_LOSS_PASSIVE, mitigation_max)
-	mitigation_physical = between(0, mitigation_physical - MITIGATION_LOSS_PASSIVE, mitigation_max)
+	set_mitigation_em(between(0, mitigation_em - MITIGATION_LOSS_PASSIVE, mitigation_max))
+	set_mitigation_heat(between(0, mitigation_heat - MITIGATION_LOSS_PASSIVE, mitigation_max))
+	set_mitigation_physical(between(0, mitigation_physical - MITIGATION_LOSS_PASSIVE, mitigation_max))
 
 	if(running == SHIELD_RUNNING)
-		upkeep_power_usage = round((length(field_segments) - length(damaged_segments)) * ENERGY_UPKEEP_PER_TILE * upkeep_multiplier)
+		set_upkeep_power_usage(round((length(field_segments) - length(damaged_segments)) * ENERGY_UPKEEP_PER_TILE * upkeep_multiplier))
 	else if(running > SHIELD_RUNNING)
-		upkeep_power_usage = round(ENERGY_UPKEEP_IDLE * idle_multiplier * (field_radius * 8) * upkeep_multiplier) // Approximates number of turfs.
+		set_upkeep_power_usage(round(ENERGY_UPKEEP_IDLE * idle_multiplier * (field_radius * 8) * upkeep_multiplier)) // Approximates number of turfs.
 
 	if(power_region && (running >= SHIELD_RUNNING) && !input_cut)
 		var/energy_buffer = 0
 		energy_buffer = draw_power(min(upkeep_power_usage, input_cap))
-		power_usage += round(energy_buffer)
+		set_power_usage(power_usage + (round(energy_buffer)))
 
 		if(energy_buffer < upkeep_power_usage)
-			current_energy -= round(upkeep_power_usage - energy_buffer)	// If we don't have enough energy from the grid, take it from the internal battery instead.
+			set_current_energy(current_energy - (round(upkeep_power_usage - energy_buffer)))	// If we don't have enough energy from the grid, take it from the internal battery instead.
 
 		// Now try to recharge our internal energy.
 		var/energy_to_demand
@@ -400,10 +400,10 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 		else
 			energy_to_demand = max(0, max_energy - current_energy)
 		energy_buffer = draw_power(energy_to_demand)
-		power_usage += energy_buffer
-		current_energy += round(energy_buffer)
+		set_power_usage(power_usage + energy_buffer)
+		set_current_energy(current_energy + (round(energy_buffer)))
 	else
-		current_energy -= round(upkeep_power_usage)	// We are shutting down, or we lack external power connection. Use energy from internal source instead.
+		set_current_energy(current_energy - (round(upkeep_power_usage)))	// We are shutting down, or we lack external power connection. Use energy from internal source instead.
 
 	if(current_energy <= 0)
 		energy_failure()
@@ -412,7 +412,7 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 		for(var/obj/effect/shield/S in damaged_segments)
 			S.regenerate()
 	else if (field_integrity() > 25)
-		overloaded = 0
+		set_overloaded(0)
 
 /// Requirement (was REQ_* can_replace_parts): the legacy check answers TRUE to pass.
 /obj/machinery/power/shield_generator/proc/can_replace_parts_holds(datum/act/op/A)
@@ -463,8 +463,8 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 	if(running == SHIELD_DISCHARGING)
 		shutdown_field()
 	else
-		current_energy = 0
-		overloaded = 1
+		set_current_energy(0)
+		set_overloaded(1)
 		for(var/obj/effect/shield/S in field_segments)
 			S.fail(1)
 
@@ -478,7 +478,7 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 		if(running != SHIELD_IDLE)
 			return
 		set_running(SHIELD_SPINNING_UP)
-		spinup_counter = round(spinup_delay / idle_multiplier)
+		set_spinup_counter(round(spinup_delay / idle_multiplier))
 	work_start(src)
 
 /// The window's data.
@@ -605,7 +605,7 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 	var/new_range = A.step_value("k550")
 	if(!new_range)
 		return TRUE
-	target_radius = between(1, new_range, world.maxx)
+	set_target_radius(between(1, new_range, world.maxx))
 	return TRUE
 
 /obj/machinery/power/shield_generator/proc/ui_act_set_input_cap(datum/act/op/A)
@@ -615,9 +615,9 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 	var/_answer_k557 = A.step_value("k557")
 	var/new_cap = round(_answer_k557)
 	if(!new_cap)
-		input_cap = 0
+		set_input_cap(0)
 		return
-	input_cap = max(0, new_cap) * 1000
+	set_input_cap(max(0, new_cap) * 1000)
 	return TRUE
 
 /obj/machinery/power/shield_generator/proc/ui_act_toggle_mode(datum/act/op/A, toggle_mode)
@@ -637,7 +637,7 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 		return TRUE
 	var/new_idle = switch_idle
 	if(new_idle in idle_valid_values)
-		idle_multiplier = new_idle
+		set_idle_multiplier(new_idle)
 	return TRUE
 
 /obj/machinery/power/shield_generator/proc/field_integrity()
@@ -649,26 +649,26 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 /obj/machinery/power/shield_generator/proc/deal_shield_damage(damage, shield_damtype)
 	var/energy_to_use = damage * ENERGY_PER_HP
 	if(check_flag(MODEFLAG_MODULATE))
-		mitigation_em -= MITIGATION_HIT_LOSS
-		mitigation_heat -= MITIGATION_HIT_LOSS
-		mitigation_physical -= MITIGATION_HIT_LOSS
+		set_mitigation_em(mitigation_em - MITIGATION_HIT_LOSS)
+		set_mitigation_heat(mitigation_heat - MITIGATION_HIT_LOSS)
+		set_mitigation_physical(mitigation_physical - MITIGATION_HIT_LOSS)
 
 		switch(shield_damtype)
 			if(SHIELD_DAMTYPE_PHYSICAL)
-				mitigation_physical += MITIGATION_HIT_LOSS + MITIGATION_HIT_GAIN
+				set_mitigation_physical(mitigation_physical + (MITIGATION_HIT_LOSS + MITIGATION_HIT_GAIN))
 				energy_to_use *= 1 - (mitigation_physical / 100)
 			if(SHIELD_DAMTYPE_EM)
-				mitigation_em += MITIGATION_HIT_LOSS + MITIGATION_HIT_GAIN
+				set_mitigation_em(mitigation_em + (MITIGATION_HIT_LOSS + MITIGATION_HIT_GAIN))
 				energy_to_use *= 1 - (mitigation_em / 100)
 			if(SHIELD_DAMTYPE_HEAT)
-				mitigation_heat += MITIGATION_HIT_LOSS + MITIGATION_HIT_GAIN
+				set_mitigation_heat(mitigation_heat + (MITIGATION_HIT_LOSS + MITIGATION_HIT_GAIN))
 				energy_to_use *= 1 - (mitigation_heat / 100)
 
-		mitigation_em = between(0, mitigation_em, mitigation_max)
-		mitigation_heat = between(0, mitigation_heat, mitigation_max)
-		mitigation_physical = between(0, mitigation_physical, mitigation_max)
+		set_mitigation_em(between(0, mitigation_em, mitigation_max))
+		set_mitigation_heat(between(0, mitigation_heat, mitigation_max))
+		set_mitigation_physical(between(0, mitigation_physical, mitigation_max))
 
-	current_energy -= energy_to_use
+	set_current_energy(current_energy - energy_to_use)
 
 	// Overload the shield, which will shut it down until we recharge above 25% again
 	if(current_energy < 0)
@@ -688,7 +688,7 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 	return (shield_modes & flag)
 
 /obj/machinery/power/shield_generator/proc/toggle_flag(flag)
-	shield_modes ^= flag
+	set_shield_modes(shield_modes ^ flag)
 	update_upkeep_multiplier()
 	for(var/obj/effect/shield/S in field_segments)
 		S.flags_updated()
@@ -697,9 +697,9 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 		regenerate_field()
 
 	if(flag & MODEFLAG_MODULATE)
-		mitigation_em = 0
-		mitigation_physical = 0
-		mitigation_heat = 0
+		set_mitigation_em(0)
+		set_mitigation_physical(0)
+		set_mitigation_heat(0)
 
 /obj/machinery/power/shield_generator/proc/get_flag_descriptions()
 	var/list/all_flags = list()

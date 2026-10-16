@@ -221,7 +221,7 @@
 
 	dq_asm_step(H, assembly, allocate(/obj/item/robot_parts/l_arm, T), STAGE_SECBOT_ARMED, "the robot arm")
 
-	assembly.created_name = "Test Securitron"
+	assembly.set_created_name("Test Securitron")
 	dq_asm_click(H, assembly, allocate(/obj/item/melee/baton, T))
 	TEST_ASSERT(QDELETED(assembly), "the assembly is gone")
 	var/mob/living/bot/secbot/bot = own(locate_on(T, /mob/living/bot/secbot))
@@ -253,7 +253,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/secbot_assembly/ed209_assembly/assembly = allocate(/obj/item/secbot_assembly/ed209_assembly, T)
-	assembly.created_name = "Test ED-209"
+	assembly.set_created_name("Test ED-209")
 
 	dq_asm_step(H, assembly, allocate(/obj/item/robot_parts/l_leg, T), STAGE_BOT_FRAME_ONE_LEG, "the first leg")
 	TEST_ASSERT_EQUAL(assembly.icon_state, "ed209_leg", "one leg on")
@@ -288,7 +288,7 @@
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/secbot_assembly/ed209_assembly/assembly = allocate(/obj/item/secbot_assembly/ed209_assembly, T)
 	graph_place(assembly, STAGE_ED209_WIRED)
-	assembly.created_name = "Test SL-ED-209"
+	assembly.set_created_name("Test SL-ED-209")
 
 	dq_asm_click(H, assembly, allocate(/obj/item/gun/energy/taser/xeno, T))
 	TEST_ASSERT(QDELETED(assembly), "the ED-209 assembly is gone")
@@ -308,7 +308,7 @@
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/secbot_assembly/ed209_assembly/slime/assembly = allocate(/obj/item/secbot_assembly/ed209_assembly/slime, T)
 	graph_place(assembly, STAGE_ED209_SENSING)
-	assembly.created_name = "Test Standalone SL-ED-209"
+	assembly.set_created_name("Test Standalone SL-ED-209")
 
 	dq_asm_step(H, assembly, allocate(/obj/item/stack/cable_coil, T, 1), STAGE_ED209_WIRED, "wire")
 
@@ -335,7 +335,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = dq_asm_person(T)
 	var/obj/item/secbot_assembly/edCLN_assembly/assembly = allocate(/obj/item/secbot_assembly/edCLN_assembly, T)
-	assembly.created_name = "Test ED-CLN"
+	assembly.set_created_name("Test ED-CLN")
 
 	dq_asm_step(H, assembly, allocate(/obj/item/robot_parts/l_leg, T), STAGE_BOT_FRAME_ONE_LEG, "the first leg")
 	dq_asm_step(H, assembly, allocate(/obj/item/robot_parts/r_leg, T), STAGE_BOT_FRAME_TWO_LEGS, "the second leg")

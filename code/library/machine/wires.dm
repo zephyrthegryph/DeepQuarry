@@ -400,14 +400,14 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name 
 	var/record_type = def.record
 	W = new record_type
 	rel_set(W, nameof(W.owner), holder)
-	W.def = def
+	W.set_def(def)
 	W.bringers = bringers
-	W.colors = wires_layout_for(def.name, wires_with_duds(real, count), randomize)
+	W.set_colors(wires_layout_for(def.name, wires_with_duds(real, count), randomize))
 	act.data = W // ALLOW(ownership): the capability's typed data, owned by the activation and dropped with it
 	if(def.starts_cut)
 		for(var/wire in call(holder, def.starts_cut)())
 			if(!W.is_cut(wire))
-				LAZYADD(W.cut, wire)
+				W.add_cut(wire)
 				W.wire_effects(wire, "cut", null)
 	return W
 
@@ -475,7 +475,7 @@ CAPABILITIES(/datum/cap_data/wires)
 /datum/cap_data/wires/proc/cut_wire(wire, mob/user)
 	if(isnull(wire) || is_cut(wire))
 		return FALSE
-	LAZYADD(cut, wire)
+	add_cut(wire)
 	wire_effects(wire, "cut", user)
 	wires_publish(owner, /datum/notice/wire_cut, wire, FALSE, user)
 	changed_wires()
@@ -485,7 +485,7 @@ CAPABILITIES(/datum/cap_data/wires)
 /datum/cap_data/wires/proc/mend_wire(wire, mob/user)
 	if(isnull(wire) || !is_cut(wire))
 		return FALSE
-	LAZYREMOVE(cut, wire)
+	remove_cut(wire)
 	wire_effects(wire, "mend", user)
 	wires_publish(owner, /datum/notice/wire_cut, wire, TRUE, user)
 	changed_wires()
@@ -787,7 +787,7 @@ CAPABILITIES(/datum/cap_data/wires)
 	if(!W)
 		return
 	var/list/was_cut = W.cut
-	W.cut = null
+	W.set_cut(null)
 	for(var/wire in was_cut)
 		W.wire_effects(wire, "mend", null)
 	W.changed_wires()

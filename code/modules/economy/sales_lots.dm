@@ -210,8 +210,8 @@
 
 /obj/machinery/department_storefront/proc/set_up_storefront(datum/act/timer/A)
 	machine_id = "[station_name()] STOREFRONT #[GLOB.num_financial_terminals++]"
-	stock_prices = list()
-	stock_suggested_prices = list()
+	set_stock_prices(list())
+	set_stock_suggested_prices(list())
 	stock_stocker_accounts = list()
 
 /obj/machinery/department_storefront/examine(mob/user)
@@ -247,8 +247,8 @@
 		return OP_OK
 	item.forceMove(src)
 	var/item_ref = REF(item)
-	stock_suggested_prices[item_ref] = suggested
-	stock_prices[item_ref] = price
+	set_stock_suggested_prices_at(item_ref, suggested)
+	set_stock_prices_at(item_ref, price)
 	stock_stocker_accounts[item_ref] = user.mind?.initial_account()?.account_number || 0
 	to_chat(user, span_notice("You stock [item] at [price] Thalers (suggested [suggested])."))
 	SStgui.update_uis(src)
@@ -353,7 +353,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	for(var/obj/item/matching_item as anything in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		var/matching_ref = REF(matching_item)
 		if(matching_item.type == item.type && stock_prices[matching_ref] == old_price)
-			stock_prices[matching_ref] = round(new_price)
+			set_stock_prices_at(matching_ref, round(new_price))
 	return TRUE
 
 /obj/machinery/department_storefront/proc/ui_act_set_markup(datum/act/op/A, markup)
@@ -365,11 +365,11 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	var/new_markup = markup
 	if(!isnum(new_markup) || new_markup < -90 || new_markup > 500)
 		return FALSE
-	markup_percent = round(new_markup)
+	set_markup_percent(round(new_markup))
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/stock_item as anything in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		var/stock_ref = REF(stock_item)
-		stock_prices[stock_ref] = max(1, round(stock_suggested_prices[stock_ref] * (100 + markup_percent) / 100))
+		set_stock_prices_at(stock_ref, max(1, round(stock_suggested_prices[stock_ref] * (100 + markup_percent) / 100)))
 	return TRUE
 
 /obj/machinery/department_storefront/proc/storefront_purchase(obj/item/item, mob/living/user)
@@ -420,8 +420,8 @@ CAPABILITIES(/obj/machinery/department_storefront)
 
 /obj/machinery/department_storefront/proc/storefront_forget_item(obj/item/item)
 	var/item_ref = REF(item)
-	stock_prices -= item_ref
-	stock_suggested_prices -= item_ref
+	remove_stock_prices(item_ref)
+	remove_stock_suggested_prices(item_ref)
 	stock_stocker_accounts -= item_ref
 
 /obj/machinery/department_storefront/research

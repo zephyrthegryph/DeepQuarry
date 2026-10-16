@@ -151,7 +151,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 
 /// One interval of cooling: coolant and parts set the pump's share of Carnot, it pays its work and uses up coolant (the heat moves in Rust).
 /obj/machinery/atmospherics/unary/freezer/proc/service(datum/act/A)
-	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
+	set_reagent_cooling(1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume))
 	var/coolant_fraction = clamp(FREEZER_CARNOT_FRACTION * get_part_bonus() * CLAMP(reagent_cooling, REAGENT_COOLING_MINMOD, REAGENT_COOLING_MAXMOD), 0.05, 1)
 	if(abs(coolant_fraction - carnot_fraction) > 0.01)
 		set_carnot_fraction(coolant_fraction)
@@ -184,7 +184,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	set_power_level(power_setting)
 
 /obj/machinery/atmospherics/unary/freezer/proc/set_power_level(new_power_setting)
-	power_setting = new_power_setting
+	set_power_setting(new_power_setting)
 	power_rating = max_power_rating * (power_setting/100)
 	heat_entries_refresh(src)
 

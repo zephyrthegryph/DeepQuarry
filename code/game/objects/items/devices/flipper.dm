@@ -28,35 +28,35 @@ CAPABILITIES(/obj/item/paicard/flipper)
 // Vore
 /mob/living/silicon/pai/flipper/init_vore(force)
 	var/obj/belly/B = new /obj/belly/flipper/maw(src)
-	B.affects_vore_sprites = FALSE
+	B.set_affects_vore_sprites(FALSE)
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
+	B.set_emote_lists_at(DM_HOLD, list(
 	"The wet, plush lining of [name]'s maw surrounds you, enveloping you in a soft and slightly sticky embrace. The walls pulse and undulate gently, as if alive, creating a soothing rhythm that lulls you into a sense of calm.",
 	"You're encased in the warm and humid space of [name]'s maw, the slick surfaces glistening around you. The soft movements of the walls feel almost like the caress of a living creature.",
 	"The wet, fleshy walls of [name]'s maw seem to pulse and throb in time with your heartbeat, as if they're alive and responding to your presence. The soft and yielding surface wraps around you like a protective cocoon.",
 	"You feel the gentle pressure of [name]'s maw all around you, the slick and wet surfaces pulsating softly. The sensation is oddly comforting, as if you're being cradled in the embrace of a nurturing being.",
-	"The warm, moist environment of [name]'s maw surrounds you completely, the walls of flesh glistening and undulating gently. The soft, plush surface seems to mold itself to your form, creating a snug and comfortable space for you to rest in.")
+	"The warm, moist environment of [name]'s maw surrounds you completely, the walls of flesh glistening and undulating gently. The soft, plush surface seems to mold itself to your form, creating a snug and comfortable space for you to rest in."))
 	set_vore_selected(src, B)
 
 	B = new /obj/belly/flipper/throat(src)
-	B.affects_vore_sprites = FALSE
+	B.set_affects_vore_sprites(FALSE)
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
+	B.set_emote_lists_at(DM_HOLD, list(
 		"The narrow passage of [name]'s throat envelops you in its warm embrace, the smooth metallic walls pressing snugly against your body.",
 		"You feel the intricate machinery of [name]'s throat pulse and undulate around you.",
 		"As you navigate the cramped yet reassuring space of [name]'s throat, you feel a sense of comfort and safety.",
 		"[name]'s throat closes tightly around you, cocooning you in its silken embrace as it works to keep you safe and secure.",
-		"The warm, inviting space of [name]'s throat wraps snugly around you, providing a sense of comfort and reassurance.")
+		"The warm, inviting space of [name]'s throat wraps snugly around you, providing a sense of comfort and reassurance."))
 
 	B = new /obj/belly/flipper/stomach(src)
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"The cavernous stomach of the [name] rumbles and churns,.",
 		"The walls of [name]'s stomach squish and squelch around you, the sophisticated machinery working in perfect harmony.",
 		"The rhythmic kneading and massaging of [name]'s stomach is both comforting and reassuring.",
 		"The warm and inviting embrace of [name]'s stomach envelops you in its comforting embrace.",
 		"[name]'s stomach compresses tightly around you, its powerful systems working aroud you.",
-		"[name]'s stomach hums and churns around you.")
+		"[name]'s stomach hums and churns around you."))
 	. = ..()
 
 //Belly stuff

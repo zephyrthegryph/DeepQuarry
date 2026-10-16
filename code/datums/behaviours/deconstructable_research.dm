@@ -9,6 +9,6 @@
 
 /obj/proc/make_deconstructable_research(techweb_points, techweb_point_type)
 	if(!isnull(techweb_points))
-		src.techweb_points = techweb_points
+		set_techweb_points(techweb_points)
 	if(!isnull(techweb_point_type))
-		src.techweb_point_type = techweb_point_type
+		set_techweb_point_type(techweb_point_type)

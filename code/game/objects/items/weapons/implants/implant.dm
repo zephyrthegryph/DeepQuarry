@@ -890,7 +890,7 @@ CAPABILITIES(/datum/prompt/text/compliance_laws)
 	var/newlaws = sanitize(ask.value, 2048)
 	if(newlaws)
 		to_chat(user,"You set the laws to: <br>" + span_notice("[newlaws]"))
-		implant.laws = newlaws //Organic
+		implant.set_laws(newlaws) //Organic
 
 CAPABILITIES(/obj/item/implanter/compliance)
 	without("toggle")

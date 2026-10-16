@@ -20,11 +20,11 @@
 	if(istype(TMA) && TMA.has_major_alarms())
 		if(!has_alert)
 			set_program_icon_state("alert-red")
-			ui_header = "alarm_red.gif"
+			set_ui_header("alarm_red.gif")
 			has_alert = 1
 	else
 		if(has_alert)
 			set_program_icon_state("alert-green")
-			ui_header = "alarm_green.gif"
+			set_ui_header("alarm_green.gif")
 			has_alert = 0
 	return 1

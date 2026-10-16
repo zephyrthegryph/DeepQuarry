@@ -332,7 +332,7 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 	bottle.name = "[disease.name] vaccine"
 	bottle.reagents.add_reagent(REAGENT_ID_VACCINE, 15, list(get_by_index("resistances", id)))
 	beaker.reagents.remove_reagent(REAGENT_ID_BLOOD, 5)
-	wait = TRUE
+	set_wait(TRUE)
 	after(src, 20 SECONDS, PROC_REF(reset_replicator_cooldown))
 	return TRUE
 
@@ -352,11 +352,11 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 
 	use_power(power_of(src).active)
 	adv_disease = adv_disease.Copy()
-	adv_disease.name = old_name
+	adv_disease.set_name(old_name)
 	var/list/cures = get_beaker_cures(id)
 	if(cures.len)
 		adv_disease.cures = cures[1]
-		adv_disease.cure_text = cures[2]
+		adv_disease.set_cure_text(cures[2])
 	var/list/data = list("viruses" = list(adv_disease))
 
 	var/obj/item/reagent_containers/glass/beaker/vial/bottle = new(drop_location())
@@ -364,7 +364,7 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 	bottle.desc = "A small vial containing [adv_disease.agent] culture in synthblood."
 	bottle.reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 	beaker.reagents.remove_reagent(REAGENT_ID_BLOOD, 10)
-	wait = TRUE
+	set_wait(TRUE)
 	after(src, 5 SECONDS, PROC_REF(reset_replicator_cooldown))
 	return TRUE
 
@@ -401,7 +401,7 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 	return FALSE
 
 /obj/machinery/computer/pandemic/proc/reset_replicator_cooldown()
-	wait = FALSE
+	set_wait(FALSE)
 	SStgui.update_uis(src)
 	play_sfx(src, SFX_MACHINES_PING, 0.6, vary = TRUE)
 	return TRUE

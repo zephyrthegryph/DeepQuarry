@@ -104,7 +104,7 @@
 		if(MATERIAL_APPLICATION_MACHINE_PART, MATERIAL_APPLICATION_CAPACITOR, MATERIAL_APPLICATION_MANIPULATOR, MATERIAL_APPLICATION_MATTER_BIN, MATERIAL_APPLICATION_SCANNER, MATERIAL_APPLICATION_LASER)
 			if(istype(src, /obj/item/stock_parts))
 				var/obj/item/stock_parts/part = src
-				part.material_id = primary.name
+				part.set_material_id(primary.name)
 				part.rating = part.get_rating()
 		if(MATERIAL_APPLICATION_FIREARM)
 			if(istype(src, /obj/item/gun))

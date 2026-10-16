@@ -38,8 +38,8 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 			// Transfer speed is limited by device which uses slower connectivity.
 			// We can have multiple clients downloading at same time, but let's assume we use some sort of multicast transfer
 			// so they can all run on same speed.
-			C.actual_netspeed = min(C.ntnet_speed, ntnet_speed)
-			C.download_completion += C.actual_netspeed
+			C.set_actual_netspeed(min(C.ntnet_speed, ntnet_speed))
+			C.set_download_completion(C.download_completion + C.actual_netspeed)
 			if(C.download_completion >= provided_file().size)
 				C.finish_download()
 	else if(downloaded_file) // Client mode
@@ -61,12 +61,12 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 // Finishes download and attempts to store the file on HDD
 /datum/computer_file/program/nttransfer/proc/finish_download()
 	if(!computer() || !computer().hard_drive || !computer().hard_drive.store_file(downloaded_file))
-		error = "I/O Error:  Unable to save file. Check your hard drive and try again."
+		set_error("I/O Error:  Unable to save file. Check your hard drive and try again.")
 	finalize_download()
 
 //  Crashes the download and displays specific error message
 /datum/computer_file/program/nttransfer/proc/crash_download(message)
-	error = message ? message : "An unknown error has occurred during download"
+	set_error(message ? message : "An unknown error has occurred during download")
 	finalize_download()
 
 // Cleans up variables for next use
@@ -75,7 +75,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 		rel_remove(remote(), nameof(/datum/computer_file/data/email_account::connected_clients), src)
 	own_clear(src, nameof(downloaded_file), OWN_DELETE) // null when finish_download() stored it
 	rel_clear(src, nameof(remote))
-	download_completion = 0
+	set_download_completion(0)
 
 CAPABILITIES(/datum/computer_file/program/nttransfer)
 	interface("NtosNetTransfer")
@@ -152,7 +152,7 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 	if(!A.answer || isnull(A.answer.value) || !remote() || !remote().provided_file())
 		return
 	if(A.answer.value != remote().server_password)
-		error = "Incorrect Password"
+		set_error("Incorrect Password")
 		SStgui.update_uis(src)
 		return
 	start_download()
@@ -162,8 +162,8 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 	rel_add(remote(), nameof(/datum/computer_file/data/email_account::connected_clients), src)
 
 /datum/computer_file/program/nttransfer/proc/ui_act_prg_reset(datum/act/op/A)
-	error = ""
-	upload_menu = 0
+	set_error("")
+	set_upload_menu(0)
 	finalize_download()
 	if(src in GLOB.ntnet_global.fileservers)
 		rel_remove(GLOB.ntnet_global, nameof(/datum/ntnet::fileservers), src)
@@ -186,25 +186,25 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 	if(!pass)
 		return
 	if(pass == "none")
-		server_password = ""
+		set_server_password("")
 		return
-	server_password = pass
+	set_server_password(pass)
 	return TRUE
 
 /datum/computer_file/program/nttransfer/proc/ui_act_prg_uploadfile(datum/act/op/A, uid)
 	for(var/datum/computer_file/F in computer().hard_drive.stored_files)
 		if(F.uid == uid)
 			if(F.unsendable)
-				error = "I/O Error: File locked."
+				set_error("I/O Error: File locked.")
 				return
 			rel_set(src, nameof(/datum/computer_file/program/nttransfer::provided_file), F)
 			rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::fileservers), src)
 			return
-	error = "I/O Error: Unable to locate file on hard drive."
+	set_error("I/O Error: Unable to locate file on hard drive.")
 	return TRUE
 
 /datum/computer_file/program/nttransfer/proc/ui_act_prg_uploadmenu(datum/act/op/A)
-	upload_menu = 1
+	set_upload_menu(1)
 	return TRUE
 
 /// File which is provided to clients. (a relation view: null once that is deleted).

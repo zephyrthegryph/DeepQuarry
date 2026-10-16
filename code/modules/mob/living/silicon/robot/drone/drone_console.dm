@@ -81,7 +81,7 @@ CAPABILITIES(/obj/machinery/computer/drone_control)
 	if(!t_area || !(t_area in GLOB.tagger_locations))
 		return
 
-	drone_call_area = t_area
+	set_drone_call_area(t_area)
 	to_chat(user, span_notice("You set the area selector to [drone_call_area]."))
 
 /obj/machinery/computer/drone_control/proc/ui_act_ping(datum/act/op/A)

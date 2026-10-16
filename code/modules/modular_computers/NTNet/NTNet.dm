@@ -2,6 +2,9 @@
 
 
 // This is the NTNet datum. There can be only one NTNet datum in game at once. Modular computers read data from this.
+// Built after the refresh queue (code/engine/change/refresh.dm): its constructor writes tracked vars, which queue a refresh.
+GLOBAL_DATUM_INIT(ntnet_global, /datum/ntnet, new)
+
 /datum/ntnet
 	var/list/relays
 	var/list/logs

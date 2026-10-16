@@ -47,15 +47,15 @@
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The lithe creature spends only minimal time with you pinned beneath it, before it's jaws stretch wide ahead of your face. The slightly blue hued interior squelches tightly over your head as the stalker's teeth prod against you, threatening to become much more of a danger if you put up too much of a fight. However, the process is quick, your body is efficiently squeezed through that tight gullet, contractions dragging you effortlessly towards the creature's gut. The stomach swells and hangs beneath the animal, swaying like a hammock under the newfound weight. The walls wrap incredibly tightly around you, compressing you tightly into a small ball as it grinds caustic juices over you."
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.belly_fullscreen = "VBO_fleshs"
-	B.digest_brute = 2
-	B.digest_burn = 2
-	B.digest_oxy = 1
-	B.digestchance = 100
-	B.absorbchance = 0
-	B.escapechance = 5
-	B.selective_preference = DM_DIGEST
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_belly_fullscreen("VBO_fleshs")
+	B.set_digest_brute(2)
+	B.set_digest_burn(2)
+	B.set_digest_oxy(1)
+	B.set_digestchance(100)
+	B.set_absorbchance(0)
+	B.set_escapechance(5)
+	B.set_selective_preference(DM_DIGEST)
 	B.escape_stun = 5
 
 /datum/say_list/stalker

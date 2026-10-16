@@ -124,7 +124,7 @@
 		return null
 	if(!istext(key) || !op_known_anywhere(actor, target, held, key))
 		var/datum/op_result/unknown = new
-		unknown.key = key
+		unknown.set_key(key)
 		unknown.origin = origin
 		unknown.outcome = ACT_REFUSED
 		unknown.reason = /datum/msg/op/unknown
@@ -154,7 +154,7 @@
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	if(!winner)
 		var/datum/op_result/refused = new
-		refused.key = key
+		refused.set_key(key)
 		refused.origin = origin
 		refused.outcome = ACT_REFUSED
 		refused.reason = op_resolution_refusal(R)
@@ -227,7 +227,7 @@
 	RETURN_TYPE(/datum/op_result)
 	var/mob/actor = R.actor
 	var/datum/op_result/result = new
-	result.key = C.oplan.key
+	result.set_key(C.oplan.key)
 	result.origin = R.origin
 	// An actor has any number of pending ops: a question never keeps another input out. What conflicts is claims: the pending ops of the actor that
 	// hold hands or body while they wait (CLAIM_*) against what this op needs. The actor's policy decides: a player's input stops the older op

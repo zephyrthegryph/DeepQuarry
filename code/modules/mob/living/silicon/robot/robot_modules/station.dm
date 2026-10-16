@@ -115,7 +115,7 @@ CAPABILITIES(/obj/item/robot_module)
 		robot.radio.recalculateChannels()
 	robot.set_default_module_icon()
 
-	robot.scrubbing = FALSE
+	robot.set_scrubbing(FALSE)
 
 	modules -= robot.idcard // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
 	if(robot.idcard.loc != robot)
@@ -295,7 +295,7 @@ CAPABILITIES(/obj/item/robot_module)
 	var/datum/matter_synth/water = new /datum/matter_synth(500)
 	water.name = "Water reserves"
 	water.recharge_rate = 10
-	water.max_energy = 1000
+	water.set_max_energy(1000)
 	rel_set(robot, nameof(robot.water_res), water)
 	rel_add(src, nameof(synths), water)
 	var/obj/item/robot_tongue/T = new /obj/item/robot_tongue(src)
@@ -592,12 +592,12 @@ CAPABILITIES(/obj/item/robot_module)
 	var/datum/matter_synth/metal = new /datum/matter_synth/metal()
 	metal.name = "Steel reserves"
 	metal.recharge_rate = 0
-	metal.max_energy = 50000
+	metal.set_max_energy(50000)
 	metal.set_energy(0)
 	var/datum/matter_synth/glass = new /datum/matter_synth/glass()
 	glass.name = "Glass reserves"
 	glass.recharge_rate = 0
-	glass.max_energy = 50000
+	glass.set_max_energy(50000)
 	glass.set_energy(0)
 
 	rel_add(src, nameof(synths), metal)

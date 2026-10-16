@@ -269,7 +269,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		for(var/list/L in list(GLOB.data_core.general, GLOB.data_core.medical, GLOB.data_core.security, GLOB.data_core.locked))
 			for(var/datum/data/record/R in L)
 				if(R.fields["name"] == oldname)
-					R.fields["name"] = newname
+					R.set_fields_at("name", newname)
 					break
 
 		//update our pda and id if we have them on our person

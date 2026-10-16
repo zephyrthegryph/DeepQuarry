@@ -156,7 +156,7 @@ CAPABILITIES(/datum/pin_value_review/list_edit)
 /datum/integrated_io/list/write_data_to_pin(new_data)
 	if(islist(new_data))
 		var/list/new_list = new_data
-		data = new_list.Copy()
+		set_data(new_list.Copy())
 		holder().on_data_written()
 
 /datum/integrated_io/list/display_pin_type()

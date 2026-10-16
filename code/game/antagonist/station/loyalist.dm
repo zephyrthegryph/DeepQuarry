@@ -44,5 +44,5 @@ GLOBAL_DATUM(loyalists, /datum/antagonist/loyalists)
 			continue
 		var/datum/objective/protect/loyal_obj = new
 		rel_set(loyal_obj, nameof(loyal_obj.target), player.mind)
-		loyal_obj.explanation_text = "Protect [player.real_name], the [player.mind.assigned_role]."
+		loyal_obj.set_explanation_text("Protect [player.real_name], the [player.mind.assigned_role].")
 		rel_add(src, nameof(global_objectives), loyal_obj)

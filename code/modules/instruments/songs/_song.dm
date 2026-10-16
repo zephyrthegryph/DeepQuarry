@@ -164,12 +164,12 @@
 	if(using_instrument())
 		rel_remove(using_instrument(), nameof(/datum/instrument::songs_using), src)
 		old_legacy = (using_instrument().instrument_flags & INSTRUMENT_LEGACY)
-	using_instrument_static = null
+	set_using_instrument_static(null)
 	legacy = null
 	if(istext(I) || ispath(I))
 		I = SSinstruments.ready().instrument_data[I]
 	if(istype(I))
-		using_instrument_static = I
+		set_using_instrument_static(I)
 		rel_add(I, nameof(I.songs_using), src)
 		var/instrument_legacy = (I.instrument_flags & INSTRUMENT_LEGACY)
 		if(instrument_legacy)
@@ -222,7 +222,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 		// copies the main song info to target songs
 		other_instrument.set_lines(lines.Copy())
 		other_instrument.max_repeats = max_repeats
-		other_instrument.tempo = tempo
+		other_instrument.set_tempo(tempo)
 		other_instrument.start_playing(other_player)
 
 /**
@@ -271,7 +271,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	if(!repeat)
 		stop_playing(TRUE)
 		return
-	repeat--
+	set_repeat(repeat - 1)
 	current_chord = 1
 
 /**
@@ -308,11 +308,11 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/set_repeats(new_repeats_value)
 	if(playing)
 		return //So that people cant keep adding to repeat. If the do it intentionally, it could result in the server crashing.
-	repeat = round(new_repeats_value)
+	set_repeat(round(new_repeats_value))
 	if(repeat < 0)
-		repeat = 0
+		set_repeat(0)
 	if(repeat > max_repeats)
-		repeat = max_repeats
+		set_repeat(max_repeats)
 
 /**
  * Sanitizes tempo to a value that makes sense and fits the current world.tick_lag.
@@ -331,7 +331,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
  * Sets our tempo from a beats-per-minute, sanitizing it to a valid number first.
  */
 /datum/song/proc/set_bpm(bpm)
-	tempo = sanitize_tempo(600 / bpm)
+	set_tempo(sanitize_tempo(600 / bpm))
 
 /datum/song/proc/song_step(dt)
 	// it's expected this ticks at every world.tick_lag. if it lags, do not attempt to catch up.
@@ -349,24 +349,25 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/set_volume(volume)
 	src.volume = clamp(round(volume, 1), max(0, min_volume), min(100, max_volume))
 	tracked_changed(src, nameof(volume))
+SETTER(/datum/song, volume)
 
 /**
  * Setter for setting how low the volume has to get before a note is considered "dead" and dropped
  */
 /datum/song/proc/set_dropoff_volume(volume)
-	sustain_dropoff_volume = clamp(round(volume, 0.01), INSTRUMENT_MIN_SUSTAIN_DROPOFF, 100)
+	set_sustain_dropoff_volume(clamp(round(volume, 0.01), INSTRUMENT_MIN_SUSTAIN_DROPOFF, 100))
 
 /**
  * Setter for setting exponential falloff factor.
  */
 /datum/song/proc/set_exponential_drop_rate(drop)
-	sustain_exponential_dropoff = clamp(round(drop, 0.00001), INSTRUMENT_EXP_FALLOFF_MIN, INSTRUMENT_EXP_FALLOFF_MAX)
+	set_sustain_exponential_dropoff(clamp(round(drop, 0.00001), INSTRUMENT_EXP_FALLOFF_MIN, INSTRUMENT_EXP_FALLOFF_MAX))
 
 /**
  * Setter for setting linear falloff duration.
  */
 /datum/song/proc/set_linear_falloff_duration(duration)
-	sustain_linear_duration = clamp(round(duration * 10, world.tick_lag), world.tick_lag, INSTRUMENT_MAX_TOTAL_SUSTAIN)
+	set_sustain_linear_duration(clamp(round(duration * 10, world.tick_lag), world.tick_lag, INSTRUMENT_MAX_TOTAL_SUSTAIN))
 
 /datum/song/vv_edit_var(var_name, var_value)
 	. = ..()

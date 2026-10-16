@@ -72,7 +72,7 @@ CAPABILITIES(/datum/ai_laws)
 
 	var/index = 1
 	for(var/datum/ai_law/inherent_law in inherent_laws)
-		inherent_law.index = index++
+		inherent_law.set_index(index++)
 		if(length(supplied_laws) < inherent_law.index || !istype(supplied_laws[inherent_law.index], /datum/ai_law))
 			rel_add(src, nameof(sorted_laws), inherent_law)
 

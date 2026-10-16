@@ -42,7 +42,7 @@
 		R.stamped = new
 	R.add_stamp_mark("paper_stamp-cent", 0, 0)
 	R.stamped += /obj/item/stamp
-	R.stamps += "<HR><i>This paper has been stamped by the EFTPOS device.</i>"
+	R.set_stamps(R.stamps + ("<HR><i>This paper has been stamped by the EFTPOS device.</i>"))
 
 /obj/item/eftpos/proc/print_reference()
 	var/obj/item/paper/R = new(src.loc)
@@ -58,7 +58,7 @@
 		R.stamped = new
 	R.stamped += /obj/item/stamp
 	R.add_overlay(stampoverlay)
-	R.stamps += "<HR><i>This paper has been stamped by the EFTPOS device.</i>"
+	R.set_stamps(R.stamps + ("<HR><i>This paper has been stamped by the EFTPOS device.</i>"))
 	var/obj/item/smallDelivery/D = new(R.loc)
 	move_into(D, nameof(D.wrapped), R)
 	D.name = "small parcel - 'EFTPOS access code'"
@@ -134,7 +134,7 @@ CAPABILITIES(/obj/item/eftpos)
 					else if(transaction_amount <= E.worth)
 						play_sfx(src, SFX_MACHINES_CHIME)
 						src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
-						transaction_paid = 1
+						set_transaction_paid(1)
 
 						E.set_worth(E.worth - transaction_amount)
 						linked_account().credit(transaction_amount, E.owner_name, transaction_purpose || "None supplied.", machine_id)
@@ -197,7 +197,7 @@ CAPABILITIES(/obj/item/eftpos)
 		var/_answer_k161 = eftpos_answers["k161"]
 		if(isnull(_answer_k161))
 			return
-		eftpos_name = _answer_k161 + " EFTPOS scanner"
+		set_eftpos_name(_answer_k161 + " EFTPOS scanner")
 		print_reference()
 	else
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("Incorrect code entered."))
@@ -243,7 +243,7 @@ CAPABILITIES(/obj/item/eftpos)
 	if(isnull(choice))
 		return
 	if(choice)
-		transaction_purpose = choice
+		set_transaction_purpose(choice)
 	return TRUE
 
 /obj/item/eftpos/proc/ui_act_trans_value(datum/act/op/A)
@@ -261,7 +261,7 @@ CAPABILITIES(/obj/item/eftpos)
 	if(!isnum(try_num) || try_num <= 0 || try_num > EFTPOS_MAX_TRANSACTION)
 		tgui_alert_async(user, "That is not a valid amount!")
 	else
-		transaction_amount = round(try_num)
+		set_transaction_amount(round(try_num))
 	return TRUE
 
 /obj/item/eftpos/proc/ui_act_toggle_lock(datum/act/op/A)
@@ -272,8 +272,8 @@ CAPABILITIES(/obj/item/eftpos)
 /obj/item/eftpos/proc/eftpos_toggle_lock_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
 	if(transaction_locked)
 		if(transaction_paid)
-			transaction_locked = 0
-			transaction_paid = 0
+			set_transaction_locked(0)
+			set_transaction_paid(0)
 		else
 			if(!("k195" in eftpos_answers))
 				open_request(src, /datum/prompt/number/eftpos_settings, PROC_REF(eftpos_settings_number_answered), answerer = user, eftpos_ui = ui, eftpos_answers = eftpos_answers, eftpos_action = "toggle_lock", eftpos_key = "k195", eftpos_stage = PROC_REF(eftpos_toggle_lock_stage), question = "Enter EFTPOS access code", title = "Reset Transaction")
@@ -282,10 +282,10 @@ CAPABILITIES(/obj/item/eftpos)
 			if(isnull(attempt_code))
 				return
 			if(attempt_code == access_code)
-				transaction_locked = 0
-				transaction_paid = 0
+				set_transaction_locked(0)
+				set_transaction_paid(0)
 	else if(linked_account())
-		transaction_locked = 1
+		set_transaction_locked(1)
 	else
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("No account connected to send transactions to."))
 	return TRUE
@@ -355,10 +355,10 @@ CAPABILITIES(/obj/item/eftpos)
 							if(charge_amount <= D.money)
 								play_sfx(src, SFX_MACHINES_CHIME)
 								src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
-								transaction_paid = 1
+								set_transaction_paid(1)
 
 								if(!transfer_account_funds(D, linked_account(), charge_amount, transaction_purpose, machine_id))
-									transaction_paid = 0
+									set_transaction_paid(0)
 									return
 							else
 								to_chat(user, "[icon2html(src, user.client)]" + span_warning("You don't have that much money!"))
@@ -374,13 +374,13 @@ CAPABILITIES(/obj/item/eftpos)
 		if(transaction_locked)
 			if(transaction_paid)
 				to_chat(user, "[icon2html(src, user.client)]" + span_info("You stealthily swipe \the [I] through \the [src]."))
-				transaction_locked = 0
-				transaction_paid = 0
+				set_transaction_locked(0)
+				set_transaction_paid(0)
 			else
 				act_message(user, src, others = span_info("%U% swipes a card through %T%."))
 				play_sfx(src, SFX_MACHINES_CHIME)
 				src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
-				transaction_paid = 1
+				set_transaction_paid(1)
 
 	//emag?
 

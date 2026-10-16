@@ -307,8 +307,8 @@
 	var/list/stagps = list() // Gps net status, location, whether it's on, if it's got long range
 	var/obj/item/gps/cumulative = new(src)
 	cumulative.set_tracking(FALSE)
-	cumulative.local_mode = TRUE // Won't detect long-range signals automatically
-	cumulative.long_range = FALSE
+	cumulative.set_local_mode(TRUE) // Won't detect long-range signals automatically
+	cumulative.set_long_range(FALSE)
 	var/list/toggled_gps = list() // List of GPS units that are turned off before display_list() is called
 
 	for(var/obj/item/gps/G in internal_devices)
@@ -316,9 +316,9 @@
 		if(G.tracking && !emp_disabled(G))
 			cumulative.set_tracking(TRUE) // Turn it on
 			if(G.long_range)
-				cumulative.long_range = TRUE // It can detect long-range
+				cumulative.set_long_range(TRUE) // It can detect long-range
 				if(!G.local_mode)
-					cumulative.local_mode = FALSE // It is detecting long-range
+					cumulative.set_local_mode(FALSE) // It is detecting long-range
 
 		gpsdata["ref"] = "\ref[G]"
 		gpsdata["tag"] = G.gps_tag

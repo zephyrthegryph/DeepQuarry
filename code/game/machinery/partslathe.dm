@@ -55,7 +55,7 @@
 	storage_capacity[MAT_STEEL] = mb_rating  * 16000
 	storage_capacity[MAT_GLASS] = mb_rating  * 8000
 	var/T = get_part_rating(/obj/item/stock_parts/manipulator)
-	mat_efficiency = 6 / T // Ranges from 3.0 to 1.0
+	set_mat_efficiency(6 / T) // Ranges from 3.0 to 1.0
 	speed = T / 2 // Ranges from 1.0 to 3.0
 
 /obj/machinery/partslathe/dismantle()
@@ -121,7 +121,7 @@
 	if(materials[S.material.name] + S.perunit <= max_res_amount)
 		var/count = 0
 		while(materials[S.material.name] + S.perunit <= max_res_amount && S.get_amount() >= 1)
-			materials[S.material.name] += S.perunit
+			set_materials_at(S.material.name, materials[S.material.name] + (S.perunit))
 			S.use(1)
 			count++
 		act_message(user, src, MSG_SELF(span_notice("You insert [count] [S.name] into %T%.")), MSG_OTHERS("%U% inserts [S.name] into %T%."))
@@ -142,10 +142,10 @@
 	if(canBuild(D))
 		set_busy(1)
 		set_use_power(USE_POWER_ACTIVE)
-		progress += speed
+		set_progress(progress + speed)
 		if(progress >= D.time)
 			build(D, queue_producer_accounts[1])
-			progress = 0
+			set_progress(0)
 			removeFromQueue(1)
 	else if(busy)
 		visible_message(span_notice("[icon2html(src,viewers(src))] flashes: insufficient materials: [getLackingMaterials(D)]."))
@@ -154,13 +154,13 @@
 		play_sfx(src, SFX_MACHINES_CHIME, vary = FALSE)
 
 /obj/machinery/partslathe/proc/addToQueue(datum/category_item/partslathe/D, producer_account = 0)
-	queue += D
+	add_queue(D)
 	queue_producer_accounts += producer_account
 	return
 
 /obj/machinery/partslathe/proc/removeFromQueue(index)
 	if(queue.len >= index)
-		queue.Cut(index, index + 1)
+		cut_queue(index, index + 1)
 		queue_producer_accounts.Cut(index, index + 1)
 		return
 
@@ -181,7 +181,7 @@
 
 /obj/machinery/partslathe/proc/build(datum/category_item/partslathe/D, producer_account = 0)
 	for(var/M in D.resources)
-		materials[M] = max(0, materials[M] - CEILING((D.resources[M] * mat_efficiency), 1))
+		set_materials_at(M, max(0, materials[M] - CEILING((D.resources[M] * mat_efficiency), 1)))
 	var/obj/item/new_item = D.build(loc);
 	if(new_item)
 		new_item.set_economic_provenance(DEPARTMENT_RESEARCH, 15, producer_account)
@@ -208,7 +208,7 @@
 	var/ejected = min(round(materials[material] / S.perunit), amount)
 	if(!S.set_amount(min(ejected, amount)))
 		return
-	materials[material] -= ejected * S.perunit
+	set_materials_at(material, materials[material] - (ejected * S.perunit))
 	if(recursive && materials[material] >= S.perunit)
 		eject_materials(material, -1)
 
@@ -356,11 +356,11 @@ CAPABILITIES(/obj/machinery/partslathe)
 				continue // Ignore parts we can't build
 
 			var/datum/category_item/partslathe/recipie = new()
-			recipie.name = I.name
+			recipie.set_name(I.name)
 			recipie.path = type
-			recipie.resources = list()
+			recipie.set_resources(list())
 			for(var/material in part_matter)
-				recipie.resources[material] = part_matter[material]*1.25 // More expensive to produce than they are to recycle.
+				recipie.set_resources_at(material, part_matter[material]*1.25) // More expensive to produce than they are to recycle.
 			partslathe_recipies[type] = recipie
 			spent(I)
 

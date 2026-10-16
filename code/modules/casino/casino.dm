@@ -596,7 +596,7 @@ MSG_DEF_SELF(casino/lottery_disabled, "lottery sales are currently disabled")
 		if(!isnum(new_interval) || new_interval < 1 || new_interval > 1000)
 			to_chat(user, span_notice("Invalid interval."))
 			return
-		interval = new_interval
+		set_interval(new_interval)
 		to_chat(user, span_notice("You set the interval to [interval]"))
 	return
 

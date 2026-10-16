@@ -163,7 +163,7 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	return (is_authenticated(A.actor)) ? null : MSG(robotics/access_denied)
 
 /obj/machinery/computer/robotics/proc/ui_act_arm(datum/act/op/A)
-	safety = !safety
+	set_safety(!safety)
 	to_chat(A.actor, span_notice("You [safety ? "disarm" : "arm"] the emergency self destruct."))
 	. = TRUE
 

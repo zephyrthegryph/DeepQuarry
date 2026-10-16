@@ -4756,7 +4756,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 		if (istype(R, /datum/reagent/nutriment/coating))
 			var/datum/reagent/nutriment/coating/C = R
 			C.data["cooked"] = 1
-			C.name = C.cooked_name
+			C.set_name(C.cooked_name)
 
 /obj/item/reagent_containers/food/snacks/proc/on_consume(mob/eater, mob/feeder = null)
 	if(!reagents.total_volume)

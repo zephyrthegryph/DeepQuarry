@@ -84,12 +84,12 @@ GLOBAL_VAR_INIT(economy_init, 0)
 	GLOB.next_account_number = rand(111111, 999999)
 
 	var/datum/money_account/department_account = new()
-	department_account.owner_name = "[department] Account"
+	department_account.set_owner_name("[department] Account")
 	department_account.set_account_number(rand(111111, 999999))
 	department_account.remote_access_pin = rand(1111, 111111)
 	department_account.money = 5000
-	department_account.department_id = department
-	department_account.is_budget_account = TRUE
+	department_account.set_department_id(department)
+	department_account.set_is_budget_account(TRUE)
 
 	//create an entry in the account transaction log for when it was created
 	var/datum/transaction/T = new()

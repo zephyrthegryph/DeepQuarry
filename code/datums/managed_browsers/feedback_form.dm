@@ -93,9 +93,9 @@ CAPABILITIES(/datum/managed_browser/feedback_form)
 	if(!ui_gate(A))
 		return FALSE
 	if(!can_be_private())
-		feedback_hide_author = FALSE
+		set_feedback_hide_author(FALSE)
 	else
-		feedback_hide_author = !!hide
+		set_feedback_hide_author(!!hide)
 	return TRUE
 
 /datum/managed_browser/feedback_form/proc/ui_act_choose_topic(datum/act/op/A)
@@ -153,7 +153,7 @@ CAPABILITIES(/datum/managed_browser/feedback_form)
 
 /datum/managed_browser/feedback_form/proc/apply_feedback_topic(value)
 	if(value)
-		feedback_topic = value
+		set_feedback_topic(value)
 
 /datum/prompt/text/feedback_body
 	question = "Please write your feedback here."

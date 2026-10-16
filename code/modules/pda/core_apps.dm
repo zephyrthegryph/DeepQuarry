@@ -8,7 +8,7 @@ CAPABILITIES(/datum/data/pda/app/main_menu)
 	op("pai", ui_act("pai", arg("option", num())), then(PROC_REF(ui_act_pai)))
 
 /datum/data/pda/app/main_menu/update_ui(mob/user, list/data)
-	title = pda().name
+	set_title(pda().name)
 
 	data["app"]["is_home"] = 1
 

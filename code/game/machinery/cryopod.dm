@@ -496,7 +496,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 
 		//Make an announcement and log the person entering storage.
 		var/obj/machinery/computer/cryopod/log_console = control_computer()
-		LAZYADD(log_console.frozen_crew, "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]") // strings
+		log_console.add_frozen_crew("[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]") // strings
 		LAZYADD(log_console._admin_logs, "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]")
 		log_and_message_admins("([to_despawn.mind.role_alt_title]) entered cryostorage.", to_despawn)
 
@@ -775,7 +775,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 
 	if(control_computer() && control_computer().allow_items)
 		var/obj/machinery/computer/cryopod/log_console = control_computer()
-		LAZYADD(log_console.frozen_items, "[item_name] ([char_name])") // strings
+		log_console.add_frozen_items("[item_name] ([char_name])") // strings
 
 /obj/machinery/cryopod/robot/door/gateway/quiet
 	name = "departure teleporter"

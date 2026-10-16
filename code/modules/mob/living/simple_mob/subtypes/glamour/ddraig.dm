@@ -103,29 +103,29 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Despite the jaws of the dragon not being particular visible, once they begin to part it reveals a rather vast maw. More than wide enough to engulf your head and upper body, the ddraig lifts you effortlessly from the ground, standing up to full height with only your legs dangling from the beast's mouth. Inside you are engulfed in the wet, slimy and hot slobber of the creature. A massive tongue beneath your body curls over you to taste and lather every inch on offer. Soon enough, the dragon tosses its head backwards, sending your body beyond the throat, wrapped in the rippled lining of the creatures gullet for a slow, dark descent into the abyss below. It is a long journey through that seemingly endless neck, but eventually you are deposited in the creature's stomach. Little sound from the outside makes it inside, all drowned out by the cacophony of bodily functions groaning, burbling and beating around you. Despite the size of the beast, the gut is not massive, the walls clench down tight around your helplessly trapped body. The stomach lining grinds roughly over your body, smearing you in a slurry of slimy fluids."
-	B.vore_sound = "Tauric Swallow"
-	B.release_sound = "Pred Escape"
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.fancy_vore = 1
-	B.selective_preference = DM_DIGEST
-	B.vore_verb = "devour"
-	B.digest_brute = 3
-	B.digest_burn = 2
-	B.digest_oxy = 0
+	B.set_vore_sound("Tauric Swallow")
+	B.set_release_sound("Pred Escape")
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_fancy_vore(1)
+	B.set_selective_preference(DM_DIGEST)
+	B.set_vore_verb("devour")
+	B.set_digest_brute(3)
+	B.set_digest_burn(2)
+	B.set_digest_oxy(0)
 	B.selectchance = 50
-	B.absorbchance = 0
-	B.escapechance = 3
+	B.set_absorbchance(0)
+	B.set_escapechance(3)
 	B.escape_stun = 5
-	B.contamination_color = "grey"
-	B.contamination_flavor = "Wet"
+	B.set_contamination_color("grey")
+	B.set_contamination_flavor("Wet")
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"The ddraig coos contentedly as the walls crush and squeeze over your body!",
 		"As the ddraig moves about, it becomes more difficult to keep yourself upright, being forced to turn and slip of the slime slickened stomach lining.",
 		"You can't make out any sound from the outside as the gut grumbled and reverberates over your body.",
 		"As the thinning air begins to make you feel dizzy, menacing bworps and grumbles fill that dark, constantly shifting organ!",
 		"The constant, rhythmic kneading and massaging starts to take its toll along with the muggy heat, making you feel weaker and weaker!",
-		"The slender creature has no issue showing off the weak movements of you inside, even the churning of the gut itself tosses you about, all bumps so very visible on its flesh.")
+		"The slender creature has no issue showing off the weak movements of you inside, even the churning of the gut itself tosses you about, all bumps so very visible on its flesh."))
 
 /datum/category_item/catalogue/fauna/ddraig
 	name = "Extra-Realspace Fauna - Ddraig"

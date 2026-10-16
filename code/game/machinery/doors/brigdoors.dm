@@ -151,7 +151,7 @@ CAPABILITIES(/obj/machinery/door_timer)
 /obj/machinery/door_timer/proc/set_timer(value)
 	var/new_time = clamp(value, 0, MAX_TIMER)
 	. = new_time == timer_duration //return 1 on no change
-	timer_duration = new_time
+	set_timer_duration(new_time)
 	if(timer_duration && timing) // Setting it while active starts the time over
 		arm_end()
 

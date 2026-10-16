@@ -670,25 +670,25 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	var/obj/belly/B = new /obj/belly(src)
 	set_vore_selected(src, B)
 	B.immutable = 1
-	B.affects_vore_sprites = TRUE
+	B.set_affects_vore_sprites(TRUE)
 	B.name = vore_stomach_name ? vore_stomach_name : "stomach"
 	B.desc = vore_stomach_flavor ? vore_stomach_flavor : "Your surroundings are warm, soft, and slimy. Makes sense, considering you're inside \the [name]."
-	B.digest_mode = vore_default_mode
-	B.mode_flags = vore_default_flags
-	B.item_digest_mode = vore_default_item_mode
-	B.contaminates = vore_default_contaminates
-	B.contamination_flavor = vore_default_contamination_flavor
-	B.contamination_color = vore_default_contamination_color
-	B.escapable = vore_escape_chance > 0 ? B_ESCAPABLE_DEFAULT : B_ESCAPABLE_NONE
-	B.escapechance = vore_escape_chance
-	B.escapechance_absorbed = vore_escape_chance_absorbed
-	B.digestchance = vore_digest_chance
-	B.absorbchance = vore_absorb_chance
+	B.set_digest_mode(vore_default_mode)
+	B.set_mode_flags(vore_default_flags)
+	B.set_item_digest_mode(vore_default_item_mode)
+	B.set_contaminates(vore_default_contaminates)
+	B.set_contamination_flavor(vore_default_contamination_flavor)
+	B.set_contamination_color(vore_default_contamination_color)
+	B.set_escapable(vore_escape_chance > 0 ? B_ESCAPABLE_DEFAULT : B_ESCAPABLE_NONE)
+	B.set_escapechance(vore_escape_chance)
+	B.set_escapechance_absorbed(vore_escape_chance_absorbed)
+	B.set_digestchance(vore_digest_chance)
+	B.set_absorbchance(vore_absorb_chance)
 	B.human_prey_swallow_time = swallowTime
 	B.nonhuman_prey_swallow_time = swallowTime
-	B.vore_verb = "swallow"
+	B.set_vore_verb("swallow")
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list( // We need more that aren't repetitive. I suck at endo. -Ace
+	B.set_emote_lists_at(DM_HOLD, list( // We need more that aren't repetitive. I suck at endo. -Ace
 		"The insides knead at you gently for a moment.",
 		"The guts glorp wetly around you as some air shifts.",
 		"The predator takes a deep breath and sighs, shifting you somewhat.",
@@ -697,9 +697,9 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		"The warm walls kneads harmlessly against you.",
 		"The liquids churn around you, though there doesn't seem to be much effect.",
 		"The sound of bodily movements drown out everything for a moment.",
-		"The predator's movements gently force you into a different position.")
+		"The predator's movements gently force you into a different position."))
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"The burning acids eat away at your form.",
 		"The muscular stomach flesh grinds harshly against you.",
 		"The caustic air stings your chest when you try to breathe.",
@@ -708,11 +708,11 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		"The predator's body ripples and crushes against you as digestive enzymes pull you apart.",
 		"The juices pooling beneath you sizzle against your sore skin.",
 		"The churning walls slowly pulverize you into meaty nutrients.",
-		"The stomach glorps and gurgles as it tries to work you into slop.")
+		"The stomach glorps and gurgles as it tries to work you into slop."))
 	vore_prefs.can_be_drop_pred = TRUE// Mobs will eat anyone that decides to drop/slip into them by default.
-	B.belly_fullscreen = "a_tumby"
-	B.belly_fullscreen_color = "#823232"
-	B.belly_fullscreen_color2 = "#823232"
+	B.set_belly_fullscreen("a_tumby")
+	B.set_belly_fullscreen_color("#823232")
+	B.set_belly_fullscreen_color2("#823232")
 
 /mob/living/simple_mob/Bumped(atom/movable/AM, yes)
 	if(tryBumpNom(AM))

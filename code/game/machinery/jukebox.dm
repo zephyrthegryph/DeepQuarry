@@ -105,7 +105,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 		audible_message(span_notice("\The [src] begins to play [current_track().display()]."), runemessage = "[current_track().display()]")
 	else
 		media_url = ""
-		media_start_time = 0
+		set_media_start_time(0)
 	update_music()
 	for(var/obj/item/juke_remote/remote as anything in remotes)
 		remote.update_music()
@@ -220,12 +220,12 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 
 /obj/machinery/media/jukebox/proc/ui_act_loopmode(datum/act/op/A, loopmode)
 	var/newval = loopmode
-	loop_mode = sanitize_inlist(newval, list(JUKEMODE_NEXT, JUKEMODE_RANDOM, JUKEMODE_REPEAT_SONG, JUKEMODE_PLAY_ONCE), loop_mode)
+	set_loop_mode(sanitize_inlist(newval, list(JUKEMODE_NEXT, JUKEMODE_RANDOM, JUKEMODE_REPEAT_SONG, JUKEMODE_PLAY_ONCE), loop_mode))
 	return TRUE
 
 /obj/machinery/media/jukebox/proc/ui_act_volume(datum/act/op/A, val)
 	var/newval = val
-	volume = clamp(newval, 0, 1)
+	set_volume(clamp(newval, 0, 1))
 	update_music() // To broadcast volume change without restarting song
 	return TRUE
 

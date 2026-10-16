@@ -88,7 +88,7 @@ CAPABILITIES(/datum/system/contracts)
 		report = new(source)
 		rel_add(src, nameof(pending_damage_reports), report, key)
 	report.total_amount += amount
-	report.integrity = source.get_integrity()
+	report.set_integrity(source.get_integrity())
 
 /datum/system/contracts/proc/flush_damage_reports()
 	// rel_take_all() empties the owned list in place and hands back its values (the reports),

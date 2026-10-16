@@ -40,8 +40,8 @@
 	for(var/list/schedule in list(list(3, 6), list(9, 2), list(18, 1)))
 		var/list/pair = vore_test_pair()
 		var/obj/belly/B = vore_rate_belly(pair, DM_DIGEST)
-		B.digest_brute = 1
-		B.digest_burn = 1
+		B.set_digest_brute(1)
+		B.set_digest_burn(1)
 		var/mob/living/prey = pair[2]
 		vore_test_cycles(B, schedule[1], schedule[2])
 		totals += harm_test_total_load(prey)

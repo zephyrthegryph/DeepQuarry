@@ -228,7 +228,7 @@
 	fully_heal()
 	for(var/datum/robot_component/C as anything in components)
 		if(C.internal)
-			C.installed = ROBOT_PART_INSTALLED
+			C.set_installed(ROBOT_PART_INSTALLED)
 			continue
 		if(C.installed == ROBOT_PART_DESTROYED)
 			spent(C.uninstall())
@@ -386,7 +386,7 @@
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	if(mount?.wrapped == source)
 		rel_take(mount, nameof(mount.wrapped))
-		mount.installed = ROBOT_PART_MISSING
+		mount.set_installed(ROBOT_PART_MISSING)
 	set_cell(null)
 
 /// Recompute the cached demand. Called on toggle, install, equip and lights
@@ -446,7 +446,7 @@
 	var/datum/robot_component/C = get_component(slot)
 	if(!C)
 		return FALSE
-	C.toggled = !C.toggled
+	C.set_toggled(!C.toggled)
 	on_part_changed(C)
 	return TRUE
 
@@ -561,7 +561,7 @@
 			sprite_datum.do_equipment_glamour(module)
 			return
 	if(mind)
-		sprite_name = mind.name
+		set_sprite_name(mind.name)
 	if(!selecting_module)
 		var/datum/tgui_module/robot_ui_module/menu = new(src)
 		menu.tgui_interact(src)
@@ -618,7 +618,7 @@
 		identity().ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
 		identity().ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
 		identity().ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
-		private_notes = client.prefs.read_preference(/datum/preference/text/living/private_notes)
+		set_private_notes(client.prefs.read_preference(/datum/preference/text/living/private_notes))
 		custom_link = client.prefs.read_preference(/datum/preference/text/human/custom_link) // migrated pref
 
 ///Essentially, a Activate Held Object mode for borgs that acts just like pressing Z in hotkey mode but also works well with multibelts.
@@ -1657,7 +1657,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 /mob/living/silicon/robot/proc/scramble_hardware(chance)
 	if(prob(chance))  //Small chance to spawn with a scrambled
-		emag_items = TRUE
+		set_emag_items(TRUE)
 
 // Module items found by type: used by upgrade detection (is_installed()).
 /mob/living/silicon/robot/proc/has_upgrade_module(given_type)

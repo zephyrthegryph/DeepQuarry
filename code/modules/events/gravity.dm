@@ -31,9 +31,9 @@
 	if(length(generators))
 		for(var/obj/machinery/gravity_generator/main/GG in generators)
 			if((GG.z in zLevels) && GG.on)
-				GG.breaker = FALSE
+				GG.set_breaker(FALSE)
 				GG.set_power()
-				GG.charge_count = 10
+				GG.set_charge_count(10)
 	else
 		for(var/area/A in world)
 			if(A.flags & AREA_ALWAYS_HAS_GRAVITY)
@@ -50,9 +50,9 @@
 		if(length(generators))
 			for(var/obj/machinery/gravity_generator/main/GG in generators)
 				if(!GG.on)
-					GG.breaker = TRUE
+					GG.set_breaker(TRUE)
 					GG.set_power()
-					GG.charge_count = 90
+					GG.set_charge_count(90)
 					did_anything = TRUE
 		else
 			for(var/area/A in world)

@@ -405,7 +405,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 		. = TRUE
 
 /obj/machinery/suit_cycler/proc/ui_act_radlevel(datum/act/op/A, radlevel)
-	radiation_level = clamp(radlevel, 1, emagged() ? 5 : 3)
+	set_radiation_level(clamp(radlevel, 1, emagged() ? 5 : 3))
 	. = TRUE
 
 /obj/machinery/suit_cycler/proc/ui_act_repair_suit(datum/act/op/A)

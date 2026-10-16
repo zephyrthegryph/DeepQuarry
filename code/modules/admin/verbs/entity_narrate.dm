@@ -109,7 +109,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 			if("duplicate")
 				to_chat(user, span_notice("[unique_name] is not unique! Pick another!"))
 		return
-	LAZYADD(holder.entity_names, unique_name)
+	holder.add_entity_names(unique_name)
 	holder.track(unique_name, target)
 	log_and_message_admins("added [target.name] for their personal list to narrate", user) //Logging here to avoid spam, while still safeguarding abuse
 
@@ -148,7 +148,7 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 		open_request(src, /datum/prompt/choice/admin_narrate_clear, PROC_REF(clear_selected), answerer = user.mob)
 	else if(removekey)
 		holder.untrack(removekey)
-		LAZYREMOVE(holder.entity_names, removekey)
+		holder.remove_entity_names(removekey)
 
 /datum/admin_verb/remove_mob_for_narration/proc/clear_selected(datum/act/request/context)
 	if(!context.answer)
@@ -159,7 +159,7 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 	var/datum/entity_narrate/holder = current_holder(context.request.answerer.client)
 	if(!holder || context.request.value != "Yes")
 		return
-	holder.entity_names = list()
+	holder.set_entity_names(list())
 	own_clear(holder, nameof(/datum/entity_narrate::entity_refs), OWN_DELETE)
 
 //Planned to have TGUI functionality
@@ -327,25 +327,25 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 /datum/entity_narrate/proc/ui_act_change_mode_multi(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	tgui_selection_mode = !tgui_selection_mode
+	set_tgui_selection_mode(!tgui_selection_mode)
 	//Clearing selections after switching mode
-	tgui_selected_id_multi = list()
-	tgui_selected_id = ""
-	tgui_selected_type = ""
-	tgui_selected_name = ""
+	set_tgui_selected_id_multi(list())
+	set_tgui_selected_id("")
+	set_tgui_selected_type("")
+	set_tgui_selected_name("")
 	rel_clear(src, nameof(/datum/entity_narrate::tgui_selected_refs))
 	return TRUE
 
 /datum/entity_narrate/proc/ui_act_change_mode_privacy(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	tgui_narrate_privacy = !tgui_narrate_privacy
+	set_tgui_narrate_privacy(!tgui_narrate_privacy)
 	return TRUE
 
 /datum/entity_narrate/proc/ui_act_change_mode_narration(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	tgui_narrate_mode = !tgui_narrate_mode
+	set_tgui_narrate_mode(!tgui_narrate_mode)
 	return TRUE
 
 /datum/entity_narrate/proc/ui_act_select_entity(datum/act/op/A, id_selected)
@@ -354,20 +354,20 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 		return FALSE
 	if(tgui_selection_mode)
 		if(id_selected in tgui_selected_id_multi)
-			LAZYREMOVE(tgui_selected_id_multi, id_selected)
+			remove_tgui_selected_id_multi(id_selected)
 		else
-			LAZYADD(tgui_selected_id_multi, id_selected)
+			add_tgui_selected_id_multi(id_selected)
 	else
 		if(id_selected in tgui_selected_id_multi)
-			LAZYREMOVE(tgui_selected_id_multi, id_selected)
-			tgui_selected_id = ""
-			tgui_selected_type = ""
-			tgui_selected_name = ""
+			remove_tgui_selected_id_multi(id_selected)
+			set_tgui_selected_id("")
+			set_tgui_selected_type("")
+			set_tgui_selected_name("")
 			rel_clear(src, nameof(/datum/entity_narrate::tgui_selected_refs))
 		else
-			tgui_selected_id_multi = list() //Using the same var for ease of implementation. Thus, we must reset to empty each time.
-			LAZYADD(tgui_selected_id_multi, id_selected)
-			tgui_selected_id = id_selected
+			set_tgui_selected_id_multi(list()) //Using the same var for ease of implementation. Thus, we must reset to empty each time.
+			add_tgui_selected_id_multi(id_selected)
+			set_tgui_selected_id(id_selected)
 			var/atom/picked = tracked(tgui_selected_id)
 			if(picked)
 				rel_set(src, nameof(/datum/entity_narrate::tgui_selected_refs), picked)
@@ -375,24 +375,24 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 				rel_clear(src, nameof(/datum/entity_narrate::tgui_selected_refs))
 			if(!tgui_selected_refs)
 				to_chat(user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
-				LAZYREMOVE(entity_names, tgui_selected_id)
+				remove_entity_names(tgui_selected_id)
 				untrack(tgui_selected_id)
-				tgui_selected_id = ""
-				tgui_selected_type = ""
-				tgui_selected_name = ""
+				set_tgui_selected_id("")
+				set_tgui_selected_type("")
+				set_tgui_selected_name("")
 				rel_clear(src, nameof(/datum/entity_narrate::tgui_selected_refs))
 			if(isliving(tgui_selected_refs))
 				var/mob/living/L = tgui_selected_refs
 				if(L.client)
-					tgui_selected_type = "!!!!PLAYER!!!!"
-					tgui_selected_name = L.name
+					set_tgui_selected_type("!!!!PLAYER!!!!")
+					set_tgui_selected_name(L.name)
 				else
-					tgui_selected_type = L.type
-					tgui_selected_name = L.name
+					set_tgui_selected_type(L.type)
+					set_tgui_selected_name(L.name)
 			else if(istype(tgui_selected_refs, /atom))
 				var/atom/A2 = tgui_selected_refs
-				tgui_selected_type = A2.type
-				tgui_selected_name = A2.name
+				set_tgui_selected_type(A2.type)
+				set_tgui_selected_name(A2.name)
 	return TRUE
 
 /datum/entity_narrate/proc/ui_act_narrate(datum/act/op/A, message_arg)
@@ -410,9 +410,9 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 				var/ref = tracked(entity)
 				if(!ref)
 					to_chat(user, span_notice("[entity] has invalid reference, deleting"))
-					LAZYREMOVE(entity_names, entity)
+					remove_entity_names(entity)
 					untrack(entity)
-					LAZYREMOVE(tgui_selected_id_multi, entity)
+					remove_tgui_selected_id_multi(entity)
 					continue
 				if(isliving(ref))
 					var/mob/living/L = ref
@@ -426,11 +426,11 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 			var/ref = tracked(tgui_selected_id)
 			if(!ref)
 				to_chat(user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
-				LAZYREMOVE(entity_names, tgui_selected_id)
+				remove_entity_names(tgui_selected_id)
 				untrack(tgui_selected_id)
-				tgui_selected_id = ""
-				tgui_selected_type = ""
-				tgui_selected_name = ""
+				set_tgui_selected_id("")
+				set_tgui_selected_type("")
+				set_tgui_selected_name("")
 				rel_clear(src, nameof(/datum/entity_narrate::tgui_selected_refs))
 				return TRUE
 			if(isliving(ref))
