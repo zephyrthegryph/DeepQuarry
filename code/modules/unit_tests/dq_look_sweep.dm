@@ -442,6 +442,9 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			var/datum/created = .
 			if(!QDELETED(created))
 				entity_handle(created)
+				// Normalize the same stable identity the shared-cache API lazily assigns.
+				if(!created.shared_cache_uid)
+					shared_cache_assign_uid(created)
 	catch(var/exception/e)
 		failure = e
 	GLOB.roll_creators.Cut(creator_depth + 1)
