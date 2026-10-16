@@ -248,6 +248,13 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   worktree by hand and do not delete pool worktrees. The merge worktree (`merge-base`) is separate and permanent.
   Worktrees and caches live on E: only: worktrees under `E:/projects/dq-wt/`, build caches under `E:/dq-cache/`; never on `D:` or `C:`.
   Details and the gate flow: `doc/rewrite/agent_workflow.md` sections 19-23.
+- **Disk hygiene.** Nothing a build, compile or probe writes may live in `.git`: compiler caches go to `E:/dq-cache/` (the native
+  compiler's `DM_COMPILER_CACHE_ROOT`; never `<git-common-dir>/dm-compiled-cache`), and `tools/dq_push_stamp.sh` runs its
+  `git merge-tree --write-tree` probes in a throwaway object dir so they leave no loose trees. Lane worktrees come from the pool:
+  `bash tools/dq_worktree.sh lease <branch>` / `release <branch>` (the entry point of `tools/dq_lane_pool.sh`, at most 3 lanes at once);
+  `dq_worktree.sh new` is only for non-lane worktrees and refuses past 8 worktrees or under 60 GB free on E:. `tools/dq_push_master.sh` runs
+  `bash tools/dq_worktree.sh gc` after a successful push (removes clean non-pool worktrees merged into origin/master (`pool-N` slots are never removed), build targets deleted
+  first, `DQ_WT_KEEP="a b"` protects names); run it by hand any time. Remove your own worktree when your lane is merged.
 - **Git safety.** Never delete `.git/index.lock` or any other lock file; another process holds
   it. Never run `git checkout` (any form), `git stash`, `git reset`, `git restore` or
   `git cherry-pick`; they discard or move other agents' work.

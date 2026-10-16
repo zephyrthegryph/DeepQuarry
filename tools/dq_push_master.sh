@@ -186,6 +186,8 @@ for round in 1 2 3; do
 	echo "== pushing ${sha:0:12} to origin/master"
 	if DQ_PUSH_VERIFIED="$sha" git push origin "$sha:refs/heads/master"; then
 		verify_landed "$sha"
+		# Reclaim disk: every other worktree that is now clean and merged goes (build targets deleted first). Best effort.
+		bash tools/dq_worktree.sh gc || echo "dq_push_master: worktree cleanup failed (non-fatal); run tools/dq_worktree.sh gc"
 		release_batch
 		echo "dq_push_master: pushed ${sha:0:12} (checked: dm, DreamChecker, ratchets, analyze); origin/master contains it${expected_tips[*]:+ and ${#expected_tips[@]} expected lane tip(s)}"
 		exit 0
