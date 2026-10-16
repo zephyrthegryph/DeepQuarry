@@ -113,7 +113,6 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_spells.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_spells.dmi',
 		)
-	show_examine = FALSE
 	core = null
 	cast_methods = null			// Controls how the spell is casted.
 	aspect = ASPECT_UNHOLY		// Not used for everything we do
@@ -123,6 +122,7 @@
 	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
 
 CAPABILITIES(/obj/item/spell/unrestricted)
+	configure(object_communication(shown = FALSE))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 

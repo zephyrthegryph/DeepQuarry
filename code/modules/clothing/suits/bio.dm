@@ -4,13 +4,12 @@
 	icon_state = "bio"
 	desc = "A hood that protects the head and face from biological comtaminants."
 	randpixel = 0
-	center_of_mass_x = 0
-	center_of_mass_y = 0
 	armor_spec = "bio=100;rad=20;acid=60"
 	flags = PHORONGUARD
 	resistance_flags = UNACIDABLE
 
 CAPABILITIES(/obj/item/clothing/head/bio_hood)
+	configure(item_placement(center_x = 0, center_y = 0))
 	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|BLOCKHAIR, covers = HEAD|FACE|EYES, flags = THICKMATERIAL | ALLOW_SURVIVALFOOD))
 	configure(item_protection(permeability = 0.01, siemens = 0.9))
 

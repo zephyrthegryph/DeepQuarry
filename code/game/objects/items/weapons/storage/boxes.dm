@@ -25,8 +25,6 @@
 	icon = 'icons/obj/boxes.dmi'
 	icon_state = "box"
 	item_state = "syringe_kit"
-	center_of_mass_x = 13
-	center_of_mass_y = 10
 	var/foldable = /obj/item/stack/material/cardboard	// BubbleWrap - if set, can be folded (when empty) into a sheet of cardboard
 	var/trash = null  // if set, can be crushed into a trash item when empty
 	max_storage_space = INVENTORY_BOX_SPACE
@@ -37,6 +35,7 @@
 
 
 CAPABILITIES(/obj/item/storage/box)
+	configure(item_placement(center_x = 13, center_y = 10))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	op("fold", in_hand(), when(cond_all(PROC_REF(folds), req_storage_empty())), label("Fold"), then(PROC_REF(fold_up)))
 	op("crush", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), when(cond_all(PROC_REF(crumples), cond_not(req_storage_empty()))), label("Crush"), then(PROC_REF(crush_it)))

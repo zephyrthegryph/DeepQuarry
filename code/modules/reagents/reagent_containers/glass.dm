@@ -172,13 +172,12 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "beaker"
 	item_state = "beaker"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	material_template = /datum/material_template/container
 	material_total = 500
 	var/rating = 1
 
 CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
+	configure(item_placement(center_x = 15, center_y = 11))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/reagent_containers/glass/beaker/get_rating()
@@ -197,8 +196,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
 	name = "large beaker"
 	desc = "A large beaker."
 	icon_state = "beakerlarge"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	material_template = /datum/material_template/container
 	material_total = 5000
 	volume = 120
@@ -211,8 +208,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
 	name = "cryostasis beaker"
 	desc = "A cryostasis beaker that allows for chemical storage without reactions."
 	icon_state = "beakernoreact"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	material_template = /datum/material_template/container
 	material_total = 500
 	volume = 60
@@ -223,8 +218,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
 	name = "bluespace beaker"
 	desc = "A bluespace beaker, powered by experimental bluespace technology."
 	icon_state = "beakerbluespace"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	material_template = /datum/material_template/container
 	material_total = 5000
 	volume = 300
@@ -237,8 +230,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
 	name = "vial"
 	desc = "A small glass vial."
 	icon_state = "vial"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	material_template = /datum/material_template/container
 	material_total = 250
 	volume = 30
@@ -258,8 +249,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
 	name = "stoppered bottle"
 	desc = "A stoppered bottle for keeping beverages fresh."
 	icon_state = "stopperedbottle"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	volume = 120
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 120
@@ -271,8 +260,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "bucket"
 	item_state = "bucket"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	MATERIAL_BULK(MAT_STEEL, 200)
 	w_class = ITEMSIZE_NORMAL
 	amount_per_transfer_from_this = 20
@@ -288,6 +275,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
 
 // A bucket is wetted into a mop, a bar of soap, made into a bucket sensor with a proximity sensor, armed with a sheet of steel, and cut into a helmet.
 CAPABILITIES(/obj/item/reagent_containers/glass/bucket)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 	op("sensor", item(/obj/item/assembly/prox_sensor), priority(OP_PRIORITY_PART), label("Add the sensor"), then(PROC_REF(sensor_added)))
 	op("robot_frame", stack(/obj/item/stack/material/steel, 1), priority(OP_PRIORITY_PART), label("Arm the robot frame"), then(PROC_REF(frame_armed)))
@@ -340,8 +328,6 @@ MSG_DEF_SELF(glass/no_electronics, "This wooden bucket doesn't play well with el
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "woodbucket"
 	item_state = "woodbucket"
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	MATERIAL_BULK(MAT_WOOD, 50)
 	w_class = ITEMSIZE_LARGE
 	amount_per_transfer_from_this = 20
@@ -352,6 +338,7 @@ MSG_DEF_SELF(glass/no_electronics, "This wooden bucket doesn't play well with el
 
 // A wooden bucket takes no electronics, and a hatchet cuts it into a helmet.
 CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood)
+	configure(item_placement(center_x = 16, center_y = 8))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 	op("hatchet_helmet", item(/obj/item/material/knife/machete/hatchet), priority(OP_PRIORITY_PART), label("Cut a hole in it"), then(PROC_REF(cut_into_wood_helmet)))
 	extend("sensor", needs(req(PROC_REF(electronics_welcome))))
@@ -507,3 +494,18 @@ CAPABILITIES(/obj/item/reagent_containers/glass/kettle)
 
 /obj/item/reagent_containers/glass/beaker/zombiepowder
 	prefill = list(REAGENT_ID_ZOMBIEPOWDER = 50)
+
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/large)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/noreact)
+	configure(item_placement(center_x = 16, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/bluespace)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/vial)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/stopperedbottle)
+	configure(item_placement(center_x = 16, center_y = 13))

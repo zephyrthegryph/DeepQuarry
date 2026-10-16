@@ -165,6 +165,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob)
+	configure(throwing_config(spin = FALSE))
 	configure(butchery_config(gib_on_butchery = TRUE, butchery_drops_organs = FALSE))
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(footstep_settings(sound_type = FOOTSTEP_MOB_SHOE, volume = 1, e_range = -6))
@@ -517,7 +518,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	var/mount_offset_y = 8				// Vertical riding offset
 
 	var/obj/item/radio/headset/mob_radio		//Adminbus headset for simplemob shenanigans.
-	does_spin = FALSE
 	var/damage_threshold  = 0 //For some mobs, they have a damage threshold required to deal damage to them.
 
 	var/nom_mob = FALSE //If a mob is meant to be hostile for vore purposes but is otherwise not hostile, if true makes certain AI ignore the mob

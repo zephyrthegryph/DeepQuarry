@@ -10,6 +10,7 @@
 	var/atom/movable/screen/skybox/local_skybox
 
 CAPABILITIES(/obj/item/communicator)
+	configure(object_communication(hears = 1))
 	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_many(nameof(communicating))

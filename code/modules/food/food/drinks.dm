@@ -228,10 +228,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/golden_cup)
 	description_fluff = "A product of NanoPastures. Who would have thought that cows would thrive in zero-G?"
 	icon_state = "milk"
 	item_state = "carton"
-	center_of_mass_x = 16
-	center_of_mass_y = 9
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/milk)
+	configure(item_placement(center_x = 16, center_y = 9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	configure(reagents(add = list(REAGENT_ID_MILK = 50)))
 
@@ -241,10 +240,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/milk)
 	description_fluff = "A product of NanoPastures. For those skeptical that cows can thrive in zero-G."
 	icon_state = "soymilk"
 	item_state = "carton"
-	center_of_mass_x = 16
-	center_of_mass_y = 9
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/soymilk)
+	configure(item_placement(center_x = 16, center_y = 9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	configure(reagents(add = list(REAGENT_ID_SOYMILK = 50)))
 
@@ -255,10 +253,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/soymilk)
 	volume = 30
 	icon_state = "mini-milk"
 	item_state = "carton"
-	center_of_mass_x = 16
-	center_of_mass_y = 9
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallmilk)
+	configure(item_placement(center_x = 16, center_y = 9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	configure(reagents(add = list(REAGENT_ID_MILK = 30)))
 
@@ -269,10 +266,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallmilk)
 	volume = 30
 	icon_state = "mini-milk_choco"
 	item_state = "carton"
-	center_of_mass_x = 16
-	center_of_mass_y = 9
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallchocmilk)
+	configure(item_placement(center_x = 16, center_y = 9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	configure(reagents(add = list(REAGENT_ID_CHOCOLATEMILK = 30)))
 
@@ -282,10 +278,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallchocmilk)
 	description_fluff = "Fresh coffee is almost unheard of outside of planets and stations where it is grown. Robust Coffee proudly advertises the six separate times it is freeze-dried during the production process of every cup of instant."
 	icon_state = "coffee"
 	trash = /obj/item/trash/coffee
-	center_of_mass_x = 15
-	center_of_mass_y = 10
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/coffee)
+	configure(item_placement(center_x = 15, center_y = 10))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_COFFEE = 30)))
 
@@ -296,10 +291,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/coffee)
 	icon_state = "chai_vended"
 	item_state = "coffee"
 	trash = /obj/item/trash/coffee
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/tea)
+	configure(item_placement(center_x = 16, center_y = 14))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_TEA = 30)))
 
@@ -310,10 +304,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/tea)
 	icon_state = "chai_vended"
 	item_state = "coffee"
 	trash = /obj/item/trash/coffee
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf_tea)
+	configure(item_placement(center_x = 16, center_y = 14))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_TEADECAF = 30)))
 
@@ -321,9 +314,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf_tea)
 	name = "cup of ice"
 	desc = "Careful, cold ice, do not chew."
 	icon_state = "ice"
-	center_of_mass_x = 15
-	center_of_mass_y = 10
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/ice)
+	configure(item_placement(center_x = 15, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_ICE = 30)))
 
 /obj/item/reagent_containers/food/drinks/h_chocolate
@@ -333,10 +325,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/ice)
 	icon_state = "coffee"
 	item_state = "hot_choc"
 	trash = /obj/item/trash/coffee
-	center_of_mass_x = 15
-	center_of_mass_y = 13
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/h_chocolate)
+	configure(item_placement(center_x = 15, center_y = 13))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_HOTCOCO = 30)))
 
@@ -347,10 +338,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/h_chocolate)
 	icon_state = "greentea_vended"
 	item_state = "coffee"
 	trash = /obj/item/trash/coffee
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/greentea)
+	configure(item_placement(center_x = 16, center_y = 14))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_GREENTEA = 30)))
 
@@ -361,10 +351,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/greentea)
 	icon_state = "chai_vended"
 	item_state = "coffee"
 	trash = /obj/item/trash/coffee
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/chaitea)
+	configure(item_placement(center_x = 16, center_y = 14))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_CHAITEA = 30)))
 
@@ -375,10 +364,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/chaitea)
 	icon_state = "coffee"
 	item_state = "coffee"
 	trash = /obj/item/trash/coffee
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf)
+	configure(item_placement(center_x = 16, center_y = 14))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_DECAF = 30)))
 
@@ -388,10 +376,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf)
 	description_fluff = "Konohagakure Brand Ramen has been an instant meal staple for centuries. Cheap, quick and available in over two hundred varieties - though most taste like artifical chicken."
 	icon_state = "ramen"
 	trash = /obj/item/trash/ramen
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/dry_ramen)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_DRYRAMEN = 30)))
 
@@ -401,8 +388,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/dry_ramen)
 	icon_state = "water_cup_e"
 	max_transfer_amount = null
 	volume = 10
-	center_of_mass_x = 16
-	center_of_mass_y = 12
 
 /obj/item/reagent_containers/food/drinks/sillycup/on_reagent_change()
 	..()
@@ -412,6 +397,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/dry_ramen)
 		set_icon_state("water_cup_e")
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/sillycup)
+	configure(item_placement(center_x = 16, center_y = 12))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	drag_onto(PROC_REF(drop_input))
 
@@ -446,8 +432,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/sillycup)
 	icon_state = "shaker"
 	amount_per_transfer_from_this = 10
 	volume = 120
-	center_of_mass_x = 17
-	center_of_mass_y = 10
 
 /obj/item/reagent_containers/food/drinks/shaker/on_reagent_change()
 	..()
@@ -459,8 +443,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/sillycup)
 	item_state = "teapot"
 	amount_per_transfer_from_this = 10
 	volume = 120
-	center_of_mass_x = 17
-	center_of_mass_y = 7
 
 /obj/item/reagent_containers/food/drinks/teapot/on_reagent_change()
 	..()
@@ -471,8 +453,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/sillycup)
 
 	icon_state = "flask"
 	volume = 60
-	center_of_mass_x = 17
-	center_of_mass_y = 7
 
 /obj/item/reagent_containers/food/drinks/flask/on_reagent_change()
 	..()
@@ -492,21 +472,33 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/sillycup)
 	desc = "A metal flask with a leather band and golden badge belonging to the detective."
 	icon_state = "detflask"
 	volume = 60
-	center_of_mass_x = 17
-	center_of_mass_y = 8
 
 /obj/item/reagent_containers/food/drinks/flask/barflask
 	name = "flask"
 	desc = "For those who can't be bothered to hang out at the bar to drink."
 	icon_state = "barflask"
 	volume = 60
-	center_of_mass_x = 17
-	center_of_mass_y = 7
 
 /obj/item/reagent_containers/food/drinks/flask/vacuumflask
 	name = "vacuum flask"
 	desc = "Keeping your drinks at the perfect temperature since 1892."
 	icon_state = "vacuumflask"
 	volume = 60
-	center_of_mass_x = 15
-	center_of_mass_y = 4
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/shaker)
+	configure(item_placement(center_x = 17, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/teapot)
+	configure(item_placement(center_x = 17, center_y = 7))
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/flask)
+	configure(item_placement(center_x = 17, center_y = 7))
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/flask/detflask)
+	configure(item_placement(center_x = 17, center_y = 8))
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/flask/barflask)
+	configure(item_placement(center_x = 17, center_y = 7))
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/flask/vacuumflask)
+	configure(item_placement(center_x = 15, center_y = 4))

@@ -55,13 +55,12 @@ CAPABILITIES(/obj/item/storage/fancy)
 	icon_state = "eggbox"
 	icon_type = REAGENT_ID_EGG
 	name = "egg box"
-	center_of_mass_x = 16
-	center_of_mass_y = 7
 	storage_slots = 12
 	starts_with = list(/obj/item/reagent_containers/food/snacks/egg = 12)
 
 
 CAPABILITIES(/obj/item/storage/fancy/egg_box)
+	configure(item_placement(center_x = 16, center_y = 7))
 	configure(storage(accepts = list(
 		/obj/item/reagent_containers/food/snacks/egg,
 		/obj/item/reagent_containers/food/snacks/boiledegg)))

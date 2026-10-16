@@ -5,7 +5,6 @@
 	icon_state = "aicard" // aicard-full
 	item_state = "aicard"
 	w_class = ITEMSIZE_NORMAL
-	show_messages = 0
 
 	var/flush = null
 
@@ -21,6 +20,7 @@
 		return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/aicard)
+	configure(object_communication(hears = 0))
 	configure(item_persistence(preserve = 1))
 	configure(item_worn(slots = SLOT_BELT))
 	op("view_ai", in_hand(), opens_ui())

@@ -7,7 +7,6 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_spells.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_spells.dmi',
 		)
-	show_examine = FALSE
 	var/mob/living/owner
 	var/obj/item/technomancer_core/core = null
 	var/cast_methods = null			// Controls how the spell is casted.
@@ -105,6 +104,7 @@
 	return null
 
 CAPABILITIES(/obj/item/spell)
+	configure(object_communication(shown = FALSE))
 	ref_one(nameof(owner))
 	ref_one(nameof(core))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))

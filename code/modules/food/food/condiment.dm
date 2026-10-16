@@ -13,8 +13,6 @@
 	min_transfer_amount = 1
 	amount_per_transfer_from_this = 2
 	max_transfer_amount = 10
-	center_of_mass_x = 16
-	center_of_mass_y = 6
 	volume = 50
 	/// The bottle is named, described and drawn for the reagent it holds most of (a small shaker, a packet, the spice bottle and a carton keep their own looks).
 	var/looks_like_contents = TRUE
@@ -22,6 +20,7 @@
 // A condiment is a holder of its volume that is always open: sipped by yourself and fed to others in three seconds (in any stance), poured into an open container,
 // filled from a tank, and added to a solid food (which is not open) by the amount set.
 CAPABILITIES(/obj/item/reagent_containers/food/condiment)
+	configure(item_placement(center_x = 16, center_y = 6))
 	reagent_container(
 		volume = nameof(volume),
 		taps = list(/obj/structure/reagent_dispensers),
@@ -164,38 +163,33 @@ CAPABILITIES(/obj/item/reagent_containers/food/condiment/barbeque)
 	min_transfer_amount = 1
 	amount_per_transfer_from_this = 1
 	volume = 20
-	center_of_mass_x = 0
-	center_of_mass_y = 0
 	looks_like_contents = FALSE
 
 /obj/item/reagent_containers/food/condiment/small/saltshaker	//Seperate from above since it's a small shaker rather then
 	name = "salt shaker"											//	a large one.
 	desc = "Salt. From space oceans, presumably."
 	icon_state = "saltshakersmall"
-	center_of_mass_x = 17
-	center_of_mass_y = 11
 
 CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/saltshaker)
+	configure(item_placement(center_x = 17, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 20)))
 
 /obj/item/reagent_containers/food/condiment/small/peppermill //Keeping name here to save map based headaches
 	name = "pepper shaker"
 	desc = "Often used to flavor food or make people sneeze."
 	icon_state = "peppershakersmall"
-	center_of_mass_x = 17
-	center_of_mass_y = 11
 
 CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/peppermill)
+	configure(item_placement(center_x = 17, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_BLACKPEPPER = 20)))
 
 /obj/item/reagent_containers/food/condiment/small/peppergrinder
 	name = "pepper mill"
 	desc = "Fancy way to season a dish or make people sneeze."
 	icon_state = "peppermill"
-	center_of_mass_x = 17
-	center_of_mass_y = 11
 
 CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/peppergrinder)
+	configure(item_placement(center_x = 17, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_BLACKPEPPER = 30)))
 
 /obj/item/reagent_containers/food/condiment/small/sugar
@@ -389,12 +383,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/crayon/bro
 	icon = 'icons/obj/food.dmi'
 	icon_state = "flour"
 	volume = 220
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	amount_per_transfer_from_this = 5
 
 
 CAPABILITIES(/obj/item/reagent_containers/food/condiment/carton/flour)
+	configure(item_placement(center_x = 16, center_y = 8))
 	configure(reagents(add = list(REAGENT_ID_FLOUR = 200)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
@@ -408,11 +401,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/condiment/carton/flour)
 	desc = "A big carton of sugar. Sweet!"
 	icon_state = REAGENT_ID_SUGAR
 	volume = 120
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	amount_per_transfer_from_this = 5
 
 CAPABILITIES(/obj/item/reagent_containers/food/condiment/carton/sugar)
+	configure(item_placement(center_x = 16, center_y = 8))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 100)))
 
 /obj/item/reagent_containers/food/condiment/carton/sugar/rustic
@@ -471,3 +463,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/protein_po
 
 CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/strawberry)
 	configure(reagents(add = list(REAGENT_ID_STRAWBERRYPROTEINPOWDER = 5)))
+
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small)
+	configure(item_placement(center_x = 0, center_y = 0))

@@ -44,6 +44,8 @@
 		. += M.examine(user)
 
 CAPABILITIES(/obj/item/holder)
+	configure(item_placement(center_x = 0, center_y = 0))
+	configure(object_communication(hears = 1))
 	ref_one(nameof(held_at_make), /mob)
 	ref_one(nameof(held_mob), /mob/living)
 	configure(item_worn(slots = SLOT_HEAD | SLOT_HOLSTER))

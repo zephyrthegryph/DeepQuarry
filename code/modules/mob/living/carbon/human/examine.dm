@@ -135,9 +135,9 @@
 	var/list/accessory_descs = list()
 	for(var/obj/item/clothing/accessory/A in accessories)
 		if(skip_holsters)
-			if(A.show_examine && !istype(A, /obj/item/clothing/accessory/holster)) // If we're supposed to skip holsters, actually skip them
+			if(communication_of(A).shown && !istype(A, /obj/item/clothing/accessory/holster)) // If we're supposed to skip holsters, actually skip them
 				accessory_descs += "\a [A]"
-		else if(!linked || (A.concealed_holster == 0 && A.show_examine))
+		else if(!linked || (A.concealed_holster == 0 && communication_of(A).shown))
 			accessory_descs += "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[A]'>\a [A]</a>"
 	return ". Attached to it is [lowertext(english_list(accessory_descs))]."
 
@@ -147,7 +147,7 @@
 	var/obj/item/I
 
 	I = get_equipped_item(SLOT_ID_UNIFORM)
-	if(I && !(skip_gear & EXAMINE_SKIPJUMPSUIT) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPJUMPSUIT) && communication_of(I).shown)
 		var/tie_msg
 		if(istype(I, /obj/item/clothing/under) && !(skip_gear & EXAMINE_SKIPTIE))
 			var/obj/item/clothing/under/U = I
@@ -155,7 +155,7 @@
 		. += examine_worn_line(I, user, "[p_Theyre()] wearing", "", tie_msg)
 
 	I = get_equipped_item(SLOT_ID_HEAD)
-	if(I && !(skip_gear & EXAMINE_SKIPHELMET) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPHELMET) && communication_of(I).shown)
 		. += examine_worn_line(I, user, "[p_Theyre()] wearing", " on [p_their()] head")
 
 	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
@@ -166,23 +166,23 @@
 			tie_msg = examine_accessory_text(S.accessories, linked = FALSE)
 		. += examine_worn_line(suit, user, "[p_Theyre()] wearing", "", tie_msg)
 		I = get_equipped_item(SLOT_ID_SUIT_STORAGE)
-		if(I && !(skip_gear & EXAMINE_SKIPSUITSTORAGE) && I.show_examine)
+		if(I && !(skip_gear & EXAMINE_SKIPSUITSTORAGE) && communication_of(I).shown)
 			. += examine_worn_line(I, user, "[p_Theyre()] carrying", " on [p_their()] [suit.name]")
 
 	I = get_equipped_item(SLOT_ID_BACK)
-	if(I && !(skip_gear & EXAMINE_SKIPBACKPACK) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPBACKPACK) && communication_of(I).shown)
 		. += examine_worn_line(I, user, "[p_They()] [p_have()]", " on [p_their()] back")
 
 	I = get_equipped_item(SLOT_ID_HAND_L)
-	if(I && I.show_examine)
+	if(I && communication_of(I).shown)
 		. += examine_worn_line(I, user, "[p_Theyre()] holding", " in [p_their()] left hand")
 
 	I = get_equipped_item(SLOT_ID_HAND_R)
-	if(I && I.show_examine)
+	if(I && communication_of(I).shown)
 		. += examine_worn_line(I, user, "[p_Theyre()] holding", " in [p_their()] right hand")
 
 	I = get_equipped_item(SLOT_ID_GLOVES)
-	if(I && !(skip_gear & EXAMINE_SKIPGLOVES) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPGLOVES) && communication_of(I).shown)
 		var/gloves_acc_msg
 		if(istype(I, /obj/item/clothing/gloves))
 			var/obj/item/clothing/gloves/G = I
@@ -192,7 +192,7 @@
 		. += span_warning("[p_They()] [p_have()] [(hand_blood_color != SYNTH_BLOOD_COLOUR) ? "blood" : "oil"]-stained hands!")
 
 	I = get_equipped_item(SLOT_ID_HANDCUFFED)
-	if(I && I.show_examine)
+	if(I && communication_of(I).shown)
 		if(istype(I, /obj/item/handcuffs/cable))
 			. += span_warning("[p_Theyre()] [icon2html(I, user.client)] restrained with cable!")
 		else
@@ -203,36 +203,36 @@
 		. += span_warning("[p_Theyre()] [icon2html(buckled_thing, user.client)] buckled to [buckled_thing]!")
 
 	I = get_equipped_item(SLOT_ID_BELT)
-	if(I && !(skip_gear & EXAMINE_SKIPBELT) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPBELT) && communication_of(I).shown)
 		. += examine_worn_line(I, user, "[p_They()] [p_have()]", " about [p_their()] waist")
 
 	I = get_equipped_item(SLOT_ID_SHOES)
-	if(I && !(skip_gear & EXAMINE_SKIPSHOES) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPSHOES) && communication_of(I).shown)
 		. += examine_worn_line(I, user, "[p_Theyre()] wearing", " on [p_their()] feet")
 	else if(feet_blood_DNA && !(skip_body & EXAMINE_SKIPHANDS))
 		. += span_warning("[p_They()] [p_have()] [(feet_blood_color != SYNTH_BLOOD_COLOUR) ? "blood" : "oil"]-stained feet!")
 
 	I = get_equipped_item(SLOT_ID_MASK)
-	if(I && !(skip_gear & EXAMINE_SKIPMASK) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPMASK) && communication_of(I).shown)
 		var/descriptor = " on [p_their()] face"
 		if(istype(I, /obj/item/grenade) && check_has_mouth())
 			descriptor = " in [p_their()] mouth"
 		. += examine_worn_line(I, user, "[p_They()] [p_have()]", descriptor)
 
 	I = get_equipped_item(SLOT_ID_EYES)
-	if(I && !(skip_gear & EXAMINE_SKIPEYEWEAR) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPEYEWEAR) && communication_of(I).shown)
 		. += examine_worn_line(I, user, "[p_They()] [p_have()]", " covering [p_their()] eyes")
 
 	I = get_equipped_item(SLOT_ID_EAR_L)
-	if(I && !(skip_gear & EXAMINE_SKIPEARS) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPEARS) && communication_of(I).shown)
 		. += "[p_They()] [p_have()] [icon2html(I, user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>\a [I]</a> on [p_their()] left ear."
 
 	I = get_equipped_item(SLOT_ID_EAR_R)
-	if(I && !(skip_gear & EXAMINE_SKIPEARS) && I.show_examine)
+	if(I && !(skip_gear & EXAMINE_SKIPEARS) && communication_of(I).shown)
 		. += "[p_They()] [p_have()] [icon2html(I, user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>\a [I]</a> on [p_their()] right ear."
 
 	I = get_equipped_item(SLOT_ID_ID)
-	if(I && I.show_examine)
+	if(I && communication_of(I).shown)
 		. += "[p_Theyre()] wearing [icon2html(I, user.client)]<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>\a [I]</a>."
 
 /// Jitters, splints, vore and size lines, responsiveness, fire and SSD.

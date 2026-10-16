@@ -43,7 +43,7 @@
 		return
 
 	for(var/obj/O in contents_of(M))
-		if(O.redgate_allowed == FALSE)
+		if(transfer_policy_of(O).redgate == FALSE)
 			to_chat(M, span_warning("The redgate refuses to allow you to pass whilst you possess \the [O]."))
 			return
 
@@ -234,7 +234,6 @@ CAPABILITIES(/obj/structure/redgate/away)
 	icon_state = "flag"
 	var/laser_team = "neutral"
 	w_class = ITEMSIZE_NO_CONTAINER //no stashing the flag in a bag for you, bucko!
-	redgate_allowed = FALSE //no running off the map with the flags either
 	var/start_pos
 	var/flag_return_delay = 3 SECONDS	//how long you have to hold onto your team's flag before it returns home
 
@@ -259,6 +258,7 @@ CAPABILITIES(/obj/structure/redgate/away)
 	return OP_OK
 
 CAPABILITIES(/obj/item/laserdome_flag)
+	configure(object_transfer(redgate = FALSE))
 	op("pick_up", hand(), label("Pick up"), then(PROC_REF(flag_pick_up)))
 	// The owning team channels a return with the flag in hand; moving, dropping it or being tagged drops it where they stand.
 	op("return_flag", ai(), wait(PROC_REF(flag_return_wait), keeps = HELD | STAY | ALIVE), on_interrupt(PROC_REF(flag_return_failed)), then(PROC_REF(flag_returned)))
@@ -379,7 +379,6 @@ CAPABILITIES(/obj/structure/flag_base)
 			)
 	item_state = "hyperball"
 	w_class = ITEMSIZE_NO_CONTAINER	//no shoving it in your backpack to hide it
-	redgate_allowed = FALSE	//you can't take your ball and go home
 	var/start_pos
 	var/last_holder
 	var/last_team
@@ -391,7 +390,6 @@ CAPABILITIES(/obj/structure/flag_base)
 	icon = 'icons/obj/flags.dmi'
 	icon_state = "hyperball"
 	w_class = ITEMSIZE_NO_CONTAINER
-	redgate_allowed = FALSE //you can't take the demonstration balls and go home either
 
 // ALLOW(init/INSTANCE_STATE): remembers where it was placed so it can return there
 /obj/item/laserdome_hyperball/Initialize(mapload)
@@ -399,6 +397,7 @@ CAPABILITIES(/obj/structure/flag_base)
 	start_pos = src.loc	//save our starting location for later
 
 CAPABILITIES(/obj/item/laserdome_hyperball)
+	configure(object_transfer(redgate = FALSE))
 	op("pick_up", hand(), label("Pick up"), then(PROC_REF(hyperball_pick_up)))
 
 /// Picking the ball up: the teams are told who has it.
@@ -601,3 +600,6 @@ CAPABILITIES(/obj/structure/redgate)
 	op("hand", hand(), label("Use"), ungated(), asks(/datum/prompt/choice, fields = list("question" = "Who do you wish to give access through the redgate?", "title" = "Nearby Redgate Inhabitants", "choices" = computed(PROC_REF(redgate_restricted_choices)), "timeout" = 0), step = "k121", when = PROC_REF(redgate_asks_who)), then(PROC_REF(interaction_hand)))
 	op("redgate_ghost_travel", observer(), label("Travel"), then(PROC_REF(redgate_ghost_travel)))
 	links(/obj/structure/redgate::target, /obj/structure/redgate::target)
+
+CAPABILITIES(/obj/item/laserdome_hyperball_prop)
+	configure(object_transfer(redgate = FALSE))

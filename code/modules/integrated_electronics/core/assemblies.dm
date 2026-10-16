@@ -9,7 +9,6 @@
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/integrated_electronics/electronic_setups.dmi'
 	icon_state = "setup_small"
-	show_messages = TRUE
 	var/max_components = IC_COMPONENTS_BASE
 	var/max_complexity = IC_COMPLEXITY_BASE
 	var/opened = FALSE
@@ -23,6 +22,7 @@
 	var/list/component_positions // Stores circuit positions as list of lists: list("ref" = ref, "x" = x, "y" = y)
 
 CAPABILITIES(/obj/item/electronic_assembly)
+	configure(object_communication(hears = TRUE))
 	ref_one(nameof(access_card), /obj/item/card/id)
 	ref_one(nameof(locked_by), /obj/item/card/id)
 	owns_one(nameof(export_view), /datum/ic_export_view)

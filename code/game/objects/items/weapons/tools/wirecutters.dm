@@ -7,8 +7,6 @@
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "cutters"
 	item_state = "cutters"
-	center_of_mass_x = 18
-	center_of_mass_y = 10
 	throw_speed = 2
 	throw_range = 9
 	w_class = ITEMSIZE_SMALL
@@ -18,6 +16,7 @@
 	var/random_color = TRUE
 
 CAPABILITIES(/obj/item/tool/wirecutters)
+	configure(item_placement(center_x = 18, center_y = 10))
 	configure(item_tooling(speed = 1))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 6, attack_verbs = list("pinched", "nipped"), sharp = TRUE, edge = TRUE))

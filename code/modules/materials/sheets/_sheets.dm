@@ -4,8 +4,6 @@
 	w_class = ITEMSIZE_NORMAL
 	throw_speed = 3
 	throw_range = 3
-	center_of_mass_x = 0
-	center_of_mass_y = 0
 	max_amount = 50
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_material.dmi',
@@ -23,6 +21,7 @@
 	var/apply_colour //temp pending icon rewrite
 
 CAPABILITIES(/obj/item/stack/material)
+	configure(item_placement(center_x = 0, center_y = 0))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))

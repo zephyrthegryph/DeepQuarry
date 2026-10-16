@@ -33,7 +33,6 @@ Possible to do for anyone motivated enough:
 	name = "\improper AI holopad"
 	desc = "It's a floor-mounted device for projecting holographic images. It is activated remotely."
 	icon_state = "holopad0"
-	show_messages = 1
 	circuit = /obj/item/circuitboard/holopad
 	plane = TURF_PLANE
 	layer = ABOVE_TURF_LAYER
@@ -46,6 +45,7 @@ Possible to do for anyone motivated enough:
 	var/holo_range = 5 // Change to change how far the AI can move away from the holopad before deactivating.
 
 CAPABILITIES(/obj/machinery/hologram/holopad)
+	configure(object_communication(hears = 1))
 	configure(uses_power(idle = 5))
 	op("holopad_request_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Request AI presence"), asks(/datum/prompt/yes_no, fields = list("title" = "Request AI", "question" = "Would you like to request an AI's presence?", "timeout" = 0), when = PROC_REF(holopad_human_actor)), then(PROC_REF(ai_request_answered)))
 	op("holopad_request_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Request AI presence"), asks(/datum/prompt/yes_no, fields = list("title" = "Request AI", "question" = "Would you like to request an AI's presence?", "timeout" = 0), when = PROC_REF(holopad_human_actor)), then(PROC_REF(ai_request_answered)))

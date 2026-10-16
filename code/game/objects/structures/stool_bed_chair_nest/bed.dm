@@ -288,13 +288,12 @@ CAPABILITIES(/obj/structure/bed/roller)
 	desc = "A collapsed roller bed that can be carried around."
 	icon = 'icons/obj/rollerbed.dmi'
 	icon_state = "folded_rollerbed"
-	center_of_mass_x = 17
-	center_of_mass_y = 7
 	w_class = ITEMSIZE_LARGE
 	var/rollertype = /obj/item/roller
 	var/bedtype = /obj/structure/bed/roller
 
 CAPABILITIES(/obj/item/roller)
+	configure(item_placement(center_x = 17, center_y = 7))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 	op("unfold", in_hand(), label("Unfold"), then(PROC_REF(unfolded)))

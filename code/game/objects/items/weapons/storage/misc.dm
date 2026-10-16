@@ -33,14 +33,13 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 	icon_state = "donutbox"
 	name = "donut box"
 	desc = "A box that holds tasty donuts, if you're lucky."
-	center_of_mass_x = 16
-	center_of_mass_y = 9
 	max_storage_space = ITEMSIZE_COST_SMALL * 6
 	foldable = /obj/item/stack/material/cardboard
 	//starts_with = list(/obj/item/reagent_containers/food/snacks/donut/normal = 6)
 
 
 CAPABILITIES(/obj/item/storage/box/donut)
+	configure(item_placement(center_x = 16, center_y = 9))
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/donut)))
 	initial_contents(PROC_REF(roll_donuts), when = cond_not(nameof(empty)))
 

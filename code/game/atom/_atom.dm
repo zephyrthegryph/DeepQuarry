@@ -27,7 +27,6 @@
 
 	// Overlays
 	///Our local copy of (non-priority) overlays without byond magic. Use procs in SSoverlays to manipulate
-	var/tmp/list/our_overlays
 	///Overlays that should remain on top and not normally removed when using cut_overlay functions, like c4.
 	/// A list, or a single overlay when there is only one (see add_overlay()).
 	var/tmp/priority_overlays
@@ -80,8 +79,6 @@
 	// Checking length(overlays) before cutting has significant speed benefits
 	if (length(overlays))
 		overlays.Cut()
-	if (length(our_overlays))
-		our_overlays.Cut()
 	if (islist(priority_overlays))
 		var/list/prio = priority_overlays
 		prio.Cut()

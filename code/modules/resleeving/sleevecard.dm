@@ -3,11 +3,11 @@ MATERIAL_MIX(/obj/item/paicard/sleevecard, list(MAT_STEEL = 4000, MAT_GLASS = 40
 	name = "sleevecard"
 	desc = "This upgraded pAI module has enough capacity to run a whole mind of human-level intelligence."
 	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
-	show_messages = 0
 	has_emag_toolkit = FALSE // sleevecards don't have multitools or signalers,  you can just change their laws
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/paicard/sleevecard)
+	configure(object_communication(hears = 0))
 	// a ghost can't load into a sleevecard; the card's own item handling never reached it
 	without("inhabit")
 	without("item")

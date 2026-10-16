@@ -4,8 +4,6 @@
 	icon_state = "magboots0"
 	flags = PHORONGUARD
 	item_state_slots = list(slot_r_hand_str = "magboots", slot_l_hand_str = "magboots")
-	center_of_mass_x = 17
-	center_of_mass_y = 12
 	overshoes = 1
 	shoes_under_pants = -1	//These things are huge
 	var/magpulse = 0
@@ -31,6 +29,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 		tracked_changed(src, nameof(slowdown))
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
+	configure(item_placement(center_x = 17, center_y = 12))
 	configure(item_persistence(preserve = 1))
 	acceptance("equip", req_acceptance_overshoe_clearance(), mode = ACCEPTANCE_APPEND)
 	configure(item_combat(force = 3))

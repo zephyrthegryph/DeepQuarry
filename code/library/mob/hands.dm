@@ -117,6 +117,7 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("joint_dislocate", ai(), begins(PROC_REF(joint_dislocate_text)), wait(10 SECONDS), then(PROC_REF(grab_joint_human_done)))
 
 CAPABILITIES(/mob/living/silicon/robot)
+	configure(throwing_config(spin = FALSE))
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_UNIQUE))
 	ref_one(nameof(inv1), /atom/movable/screen)
 	ref_one(nameof(inv2), /atom/movable/screen)

@@ -10,8 +10,6 @@
 	desc = "You can be totally screwwy with this."
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "screwdriver"
-	center_of_mass_x = 13
-	center_of_mass_y = 7
 	w_class = ITEMSIZE_TINY
 	throw_speed = 3
 	throw_range = 5
@@ -21,6 +19,7 @@
 	var/random_color = TRUE
 
 CAPABILITIES(/obj/item/tool/screwdriver)
+	configure(item_placement(center_x = 13, center_y = 7))
 	configure(item_tooling(speed = 1))
 	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
 	configure(item_thrown(force = 5))

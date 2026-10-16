@@ -188,7 +188,7 @@
 
 		else if(istype(I,/obj/))
 			var/obj/check_obj = I
-			if(ignore_show_messages || check_obj.show_messages)
+			if(ignore_show_messages || communication_of(check_obj).hears)
 				if(!sight_check || isInSight(I, O))
 					L |= recursive_content_check(I, L, recursion_limit - 1, client_check, sight_check, include_mobs, include_objects, ignore_show_messages)
 					if(include_objects)
@@ -218,7 +218,7 @@
 		else if(istype(I,/obj/))
 			hear |= recursive_content_check(I, hear, 3, 1, 0, include_mobs, include_objects)
 			var/obj/O = I
-			if(O.show_messages && include_objects)
+			if(communication_of(O).hears && include_objects)
 				hear += I
 
 	return hear

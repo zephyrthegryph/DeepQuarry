@@ -134,7 +134,6 @@ CAPABILITIES(/obj/effect/map_effect/portal)
 // This is the base type. Use `/side_a` or `/side_b` with matching IDs for actual portals.
 /obj/effect/map_effect/portal/master
 	name = "portal master"
-	show_messages = TRUE // So portals can hear and see, and relay to the other side.
 	var/portal_id = "test" // For a portal to be made, both the A and B sides need to share the same ID value.
 	var/list/portal_lines
 
@@ -145,6 +144,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 	. = ..()
 
 CAPABILITIES(/obj/effect/map_effect/portal/master)
+	configure(object_communication(hears = TRUE))
 	after_init(0, then(PROC_REF(pair_up)))
 
 /// Finds its counterparts and draws, once every portal of the map exists.

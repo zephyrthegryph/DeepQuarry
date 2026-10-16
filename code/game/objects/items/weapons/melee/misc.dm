@@ -67,10 +67,10 @@ CAPABILITIES(/obj/item/melee/umbrella/random)
 	icon_state = "soulblade"
 	w_class = ITEMSIZE_NORMAL
 	injury_kind = INJURY_CUT
-	can_speak = 1
 	var/list/voice_mobs //The curse of the sword is that it has someone trapped inside.
 
 CAPABILITIES(/obj/item/melee/cursedblade)
+	configure(object_communication(speaks = 1))
 	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 30, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))

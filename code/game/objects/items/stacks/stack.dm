@@ -13,8 +13,6 @@
 	gender = PLURAL
 	icon = 'icons/obj/stacks_ch.dmi' // materials update
 	randpixel = 7
-	center_of_mass_x = 0
-	center_of_mass_y = 0
 	/// A shared recipe table of /datum/stack_recipe (GLOB or the registered material holds it; never owned or cleared by the stack).
 	var/tmp/list/datum/stack_recipe/recipes
 	var/singular_name
@@ -37,6 +35,7 @@
 SETTER(/obj/item/stack, amount)
 
 CAPABILITIES(/obj/item/stack)
+	configure(item_placement(center_x = 0, center_y = 0))
 	ref_many(nameof(synths), /datum/matter_synth, on_unlink = PROC_REF(synth_unlinked))
 	on_change(nameof(synths), ANY, then(PROC_REF(synth_cost_changed)))
 	interface("MaterialStack", state = nameof(GLOB.tgui_hands_state), input = in_hand())

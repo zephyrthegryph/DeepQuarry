@@ -6,7 +6,6 @@
 	icon = 'icons/obj/grenade.dmi'
 	icon_state = "missile"
 	damage = 30	//Meaty whack. *Chuckles*
-	does_spin = 0
 	hud_state = "rocket_he"
 	hud_state_empty = "rocket_empty"
 
@@ -36,3 +35,6 @@
 	explosion(target, 0, 0, 2, 4)//No need to have a question.
 	spent(src)
 
+
+CAPABILITIES(/obj/item/projectile/bullet/srmrocket)
+	configure(throwing_config(spin = 0))

@@ -376,6 +376,8 @@ CAPABILITIES(/datum/carried_afflictions)
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 
 CAPABILITIES(/obj/item)
+	item_placement()
+	item_admission()
 	optical_view()
 	links(LINK_END(/obj/item, LK_ITEM_AUGMENT), LINK_END(/obj/item/organ, LK_AUGMENT_ITEMS), sparse = TRUE, b_many = TRUE)
 	item_persistence(preserve = FALSE)

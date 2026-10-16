@@ -1007,7 +1007,6 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 	name = "under"
 	armor_spec = ""
 	w_class = ITEMSIZE_NORMAL
-	show_messages = 1
 	blood_sprite_state = "uniformblood"
 
 	var/has_sensor = 1 //For the crew computer 2 = unable to change mode
@@ -1063,6 +1062,7 @@ MSG_DEF_SELF(under/no_roll_down, "It can't be rolled down.")
 MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")
 
 CAPABILITIES(/obj/item/clothing/under)
+	configure(object_communication(hears = 1))
 	configure(item_worn(covers = ARMS|LEGS|ARMS, slots = SLOT_ICLOTHING))
 	configure(item_protection(permeability = 0.90, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))

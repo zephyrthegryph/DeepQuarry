@@ -5,8 +5,6 @@
 	amount_per_transfer_from_this = 5
 	volume = 30
 	unacidable = TRUE //glass
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	material_template = /datum/material_template/container
 	material_total = 500
 	icon = 'icons/obj/drinks.dmi'
@@ -1069,3 +1067,6 @@ Drinks Data
 /datum/reagent/ethanol/manager_summoner
 	glass_icon_state = REAGENT_ID_MANAGERSUMMONER
 	glass_icon_file = 'icons/obj/drinks.dmi'
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/metaglass)
+	configure(item_placement(center_x = 16, center_y = 10))

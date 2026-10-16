@@ -69,8 +69,6 @@ CAPABILITIES(/obj/structure/flora/tyr/flowers)
 	name = "ant meat"
 	desc = "A slice from a strange beast"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 4)
 	bitesize = 2

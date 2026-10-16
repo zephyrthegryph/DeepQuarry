@@ -5,9 +5,6 @@
 	desc = "You shouldn't ever see this."
 	icon = 'icons/obj/objects.dmi'
 	randpixel = 0
-	center_of_mass_x = 0
-	center_of_mass_y = 0
-	show_messages = 1
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',

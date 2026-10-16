@@ -9,8 +9,6 @@
 	min_transfer_amount = 1
 	volume = 30
 	unacidable = TRUE //glass
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	material_template = /datum/material_template/container
 	material_total = 500
 
@@ -57,8 +55,6 @@
 	icon_state = "cup_empty"
 	amount_per_transfer_from_this = 5
 	volume = 30
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 
 /obj/item/reagent_containers/food/drinks/cup/on_reagent_change()
 	..()
@@ -182,8 +178,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 	icon_state = "tall_cup_empty"
 	amount_per_transfer_from_this = 5
 	volume = 40
-	center_of_mass_x = 16
-	center_of_mass_y =  16
 
 /obj/item/reagent_containers/food/drinks/tall/on_reagent_change()
 	if (!length(reagents?.reagent_list))
@@ -233,8 +227,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 	icon_state = "grande_cup_empty"
 	amount_per_transfer_from_this = 5
 	volume = 50
-	center_of_mass_x = 16
-	center_of_mass_y =  16
 
 /obj/item/reagent_containers/food/drinks/grande/on_reagent_change()
 	if (!length(reagents?.reagent_list))
@@ -284,8 +276,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 	icon_state = "venti_cup_empty"
 	amount_per_transfer_from_this = 5
 	volume = 60
-	center_of_mass_x = 16
-	center_of_mass_y =  16
 
 /obj/item/reagent_containers/food/drinks/venti/on_reagent_change()
 	if (!length(reagents?.reagent_list))
@@ -328,3 +318,18 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 		price_tag = R.price_tag
 	else
 		price_tag = null
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cup)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/tall)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/grande)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/venti)
+	configure(item_placement(center_x = 16, center_y = 16))

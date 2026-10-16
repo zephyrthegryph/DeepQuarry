@@ -8,8 +8,6 @@
 	icon = 'icons/goonstation/objects/syringe_vr.dmi'
 	item_state = "syringe_0"
 	icon_state = "0"
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	material_template = /datum/material_template/container
 	material_total = 150
 	amount_per_transfer_from_this = 5
@@ -45,6 +43,7 @@
 // (needle(), code/library/reagents/needle.dm). Its mode (capped, draw, inject, broken) is the `mode` var, changed in hand. The giant syringe and the
 // lethal injection syringe ask for more time and refuse blood and the stab.
 CAPABILITIES(/obj/item/reagent_containers/syringe)
+	configure(item_placement(center_x = 16, center_y = 14))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_combat(sharp = TRUE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))

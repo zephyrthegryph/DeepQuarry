@@ -4,8 +4,6 @@
 	desc = "yummy"
 	icon = 'icons/obj/food.dmi'
 	icon_state = null
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	w_class = ITEMSIZE_SMALL
 	volume = 80
 
@@ -147,6 +145,7 @@
 // off a table) may be hidden in it; a fork or spoon scoops it up; held to an open container of batter it is coated; and an egg or a fruit with `opens_into`
 // is emptied into an open container. Whatever is stuffed inside it drops out when it is destroyed.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(item_combat(force = 0))
 	configure(reagents(last = list(REAGENT_ID_NUTRIMENT = PROC_REF(nutriment_units)), data = list(REAGENT_ID_NUTRIMENT = nameof(nutriment_desc))))
 	edible( 
@@ -370,13 +369,12 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 	icon_state = "aesirsalad"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#468C00"
-	center_of_mass_x = 17
-	center_of_mass_y = 11
 	nutriment_amt = 8
 	nutriment_desc = list("apples" = 3,"salad" = 5)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/aesirsalad)
+	configure(item_placement(center_x = 17, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_DOCTORSDELIGHT = 8, REAGENT_ID_TRICORDRAZINE = 8)))
 
 /obj/item/reagent_containers/food/snacks/candy/donor
@@ -396,13 +394,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy/donor)
 	description_fluff = "Nobody knows why Nanotrasen keeps making these waxy pieces of sugar and bone glue, but a handful of people swear by them. Purportedly popular with Skrell children, dubiously enough."
 	icon_state = "candy_corn"
 	filling_color = "#FFFCB0"
-	center_of_mass_x = 14
-	center_of_mass_y = 10
 	nutriment_amt = 4
 	nutriment_desc = list("candy corn" = 4)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy_corn)
+	configure(item_placement(center_x = 14, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
 
 /obj/item/reagent_containers/food/snacks/chocolatebar //not a vending item
@@ -410,13 +407,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy_corn)
 	desc = "Such sweet, fattening food."
 	icon_state = "chocolatebar"
 	filling_color = "#7D5F46"
-	center_of_mass_x = 15
-	center_of_mass_y = 15
 	nutriment_amt = 2
 	nutriment_desc = list(REAGENT_ID_CHOCOLATE = 5)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocolatebar)
+	configure(item_placement(center_x = 15, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2, REAGENT_ID_COCO = 2)))
 
 /obj/item/reagent_containers/food/snacks/chocolatepiece
@@ -424,8 +420,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocolatebar)
 	desc = "A luscious milk chocolate piece filled with gooey caramel."
 	icon_state =  "chocolatepiece"
 	filling_color = "#7D5F46"
-	center_of_mass_x = 15
-	center_of_mass_y = 15
 	nutriment_amt = 1
 	nutriment_desc = list(REAGENT_ID_CHOCOLATE = 3, "caramel" = 2, "lusciousness" = 1)
 	bitesize = 2
@@ -448,13 +442,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocolatebar)
 	desc = "Such sweet, fattening food."
 	icon_state = "chocolateegg"
 	filling_color = "#7D5F46"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_CHOCOLATE = 5)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocolateegg)
+	configure(item_placement(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2, REAGENT_ID_COCO = 2)))
 
 /obj/item/reagent_containers/food/snacks/donut
@@ -748,8 +741,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/plain/jelly/cherryje
 	icon_state = "egg"
 	filling_color = "#FDFFD1"
 	volume = 10
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	opens_into = /datum/msg/snack/crack
 
 
@@ -761,6 +752,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/plain/jelly/cherryje
 
 // A crayon of the colours an egg takes colours it.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/egg)
+	configure(item_placement(center_x = 16, center_y = 13))
 	every(2 SECONDS, then(PROC_REF(grow_step)), when = nameof(growing))
 	configure(reagents(add = list(REAGENT_ID_EGG = 3)))
 	op("colour", item(/obj/item/pen/crayon), priority(OP_PRIORITY_PART), label("Colour it"),
@@ -810,11 +802,10 @@ MSG_DEF_SELF(snack/egg_refuses, "The egg refuses to take on this color!")
 	desc = "A fried egg, with a touch of salt and pepper."
 	icon_state = "friedegg"
 	filling_color = "#FFDF78"
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/friedegg)
+	configure(item_placement(center_x = 16, center_y = 14))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_BLACKPEPPER = 1)))
 
 /obj/item/reagent_containers/food/snacks/boiledegg
@@ -832,8 +823,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledegg)
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "appendix"
 	filling_color = "#E00D34"
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	bitesize = 3
 
 /obj/item/reagent_containers/food/snacks/organ
@@ -842,6 +831,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledegg)
 	var/organ_toxin = 0
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/organ)
+	configure(item_placement(center_x = 16, center_y = 16))
 	rolls(nameof(organ_protein), range_of(3, 5))
 	rolls(nameof(organ_toxin), range_of(1, 3))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = nameof(organ_protein), REAGENT_ID_TOXIN = nameof(organ_toxin))))
@@ -851,8 +841,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/organ)
 	icon_state = REAGENT_ID_TOFU
 	desc = "We all love tofu."
 	filling_color = "#FFFEE0"
-	center_of_mass_x = 17
-	center_of_mass_y = 10
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_TOFU = 3, "goeyness" = 3)
 	bitesize = 3
@@ -862,8 +850,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/organ)
 	desc = "A fake turkey made from tofu."
 	icon_state = "tofurkey"
 	filling_color = "#FFFEE0"
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	nutriment_amt = 12
 	nutriment_desc = list("turkey" = 3, REAGENT_ID_TOFU = 5, "goeyness" = 4)
 	bitesize = 3
@@ -873,8 +859,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/organ)
 	desc = "Moist, peppery breadcrumbs for filling the body cavities of dead birds. Dig in!"
 	icon_state = "stuffing"
 	filling_color = "#C9AC83"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_amt = 3
 	nutriment_desc = list("dryness" = 2, "bread" = 2)
 	bitesize = 1
@@ -884,14 +868,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/organ)
 	desc = "A fillet of carp meat"
 	icon_state = "fishfillet"
 	filling_color = "#FFDEFE"
-	center_of_mass_x = 17
-	center_of_mass_y = 13
 	bitesize = 6
 
 	var/toxin_type = REAGENT_ID_CARPOTOXIN
 	var/toxin_amount = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/carpmeat)
+	configure(item_placement(center_x = 17, center_y = 13))
 	configure(reagents(contents_from = PROC_REF(toxin_contents)))
 	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 3)))
 
@@ -936,11 +919,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/crab_legs)
 	desc = "A finger of fish."
 	icon_state = "fishfingers"
 	filling_color = "#FFDEFE"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishfingers)
+	configure(item_placement(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 4)))
 
 /obj/item/reagent_containers/food/snacks/zestfish
@@ -948,11 +930,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishfingers)
 	desc = "Lightly seasoned fish fillets."
 	icon_state = "zestfish"
 	filling_color = "#FFDEFE"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/zestfish)
+	configure(item_placement(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 4)))
 
 /obj/item/reagent_containers/food/snacks/mushroomslice
@@ -960,13 +941,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/zestfish)
 	desc = "A slice of mushroom."
 	icon_state = "hugemushroomslice"
 	filling_color = "#E0D7C5"
-	center_of_mass_x = 17
-	center_of_mass_y = 16
 	nutriment_amt = 3
 	nutriment_desc = list("raw" = 2, PLANT_MUSHROOMS = 2)
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomslice)
+	configure(item_placement(center_x = 17, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PSILOCYBIN = 3, REAGENT_ID_FUNGI = 1)))
 
 /obj/item/reagent_containers/food/snacks/tomatomeat
@@ -974,8 +954,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomslice)
 	desc = "A slice from a huge tomato"
 	icon_state = "tomatomeat"
 	filling_color = "#DB0000"
-	center_of_mass_x = 17
-	center_of_mass_y = 16
 	nutriment_amt = 3
 	nutriment_desc = list("raw" = 2, PLANT_TOMATO = 3)
 	bitesize = 6
@@ -985,8 +963,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomslice)
 	desc = "A very manly slab of meat."
 	icon_state = "bearmeat"
 	filling_color = "#DB0000"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	bitesize = 3
 
 
@@ -995,8 +971,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomslice)
 	desc = "A slab of green meat. Smells like acid."
 	icon_state = "xenomeat"
 	filling_color = "#43DE18"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	bitesize = 6
 
 
@@ -1005,8 +979,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomslice)
 	desc = "A slab of green meat."
 	icon_state = "xenomeat"
 	filling_color = "#43DE18"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	bitesize = 6
 
 
@@ -1019,11 +991,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomslice)
 	desc = "A great meal all round."
 	icon_state = "meatball"
 	filling_color = "#DB0000"
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatball)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/sausage
@@ -1031,11 +1002,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatball)
 	desc = "A piece of mixed, long meat."
 	icon_state = "sausage"
 	filling_color = "#DB0000"
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sausage)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/donkpocket
@@ -1044,8 +1014,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sausage)
 	description_fluff = "DONKpockets were originally a Nanotrasen product, an attempt to break into the food market controlled by Centauri Provisions. Somehow, Centauri wound up with the rights to the DONK brand, ending Nanotrasen's ambitions. They taste pretty okay."
 	icon_state = "donkpocket"
 	filling_color = "#DEDEAB"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_amt = 2
 	nutriment_desc = list("heartiness" = 1, "dough" = 2)
 	var/warm = FALSE
@@ -1053,6 +1021,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sausage)
 TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/donkpocket, donkpocket_heated_reagents, list(REAGENT_ID_TRICORDRAZINE = 5))
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/donkpocket)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/donkpocket/proc/heat()
@@ -1150,11 +1119,10 @@ MSG_DEF_SELF(snack/heat_spent, "The heating chemicals have already been spent.")
 	desc = "A strange looking burger. It looks almost sentient."
 	icon_state = "brainburger"
 	filling_color = "#F2B6EA"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/brainburger)
+	configure(item_placement(center_x = 15, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_ALKYSINE = 6)))
 
 /obj/item/reagent_containers/food/snacks/ghostburger
@@ -1162,8 +1130,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/brainburger)
 	desc = "Spooky! It doesn't look very filling."
 	icon_state = "ghostburger"
 	filling_color = "#FFF2FF"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_desc = list("buns" = 3, "spookiness" = 3)
 	nutriment_amt = 2
 	bitesize = 2
@@ -1177,8 +1143,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/brainburger)
 	name = "-burger"
 	desc = "A bloody burger."
 	icon_state = "hburger"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 2
 
 
@@ -1186,12 +1150,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/brainburger)
 	name = "cheeseburger"
 	desc = "The cheese adds a good flavor."
 	icon_state = "cheeseburger"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 2
 	nutriment_desc = list(REAGENT_ID_CHEESE = 2, "bun" = 2)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheeseburger)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/monkeyburger
@@ -1199,8 +1162,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheeseburger)
 	desc = "The cornerstone of every nutritious breakfast."
 	icon_state = "hburger"
 	filling_color = "#D63C3C"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 3
 	nutriment_desc = list("bun" = 2)
 	bitesize = 2
@@ -1211,11 +1172,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheeseburger)
 	desc = "Almost like a carp is yelling somewhere... Give me back that fillet -o- carp, give me that carp."
 	icon_state = "fishburger"
 	filling_color = "#FFDEFE"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishburger)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/tofuburger
@@ -1223,8 +1183,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishburger)
 	desc = "What.. is that meat?"
 	icon_state = "tofuburger"
 	filling_color = "#FFFEE0"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_amt = 6
 	nutriment_desc = list("bun" = 2, "pseudo-soy meat" = 3)
 	bitesize = 2
@@ -1234,8 +1192,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishburger)
 	desc = "The lettuce is the only organic component. Beep."
 	icon_state = "roburger"
 	filling_color = "#CCCCCC"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 2
 	nutriment_desc = list("bun" = 2, "metal" = 3)
 	bitesize = 2
@@ -1246,8 +1202,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishburger)
 	icon_state = "roburger"
 	filling_color = "#CCCCCC"
 	volume = 100
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 0.1
 
 /obj/item/reagent_containers/food/snacks/xenoburger
@@ -1255,11 +1209,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishburger)
 	desc = "Smells caustic. Tastes like heresy."
 	icon_state = "xburger"
 	filling_color = "#43DE18"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/xenoburger)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/clownburger
@@ -1267,14 +1220,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/xenoburger)
 	desc = "This tastes funny..."
 	icon_state = "clownburger"
 	filling_color = "#FF00FF"
-	center_of_mass_x = 17
-	center_of_mass_y = 12
 	nutriment_amt = 6
 	nutriment_desc = list("bun" = 2, "clown shoe" = 3)
 	bitesize = 2
 
 // begin - honkwork infection
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/clownburger)
+	configure(item_placement(center_x = 17, center_y = 12))
 	configure(reagents(add = list("protein" = 2)))
 
 /obj/item/reagent_containers/food/snacks/clownburger/On_Consume(mob/living/user)
@@ -1289,8 +1241,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/clownburger)
 	desc = "Its taste defies language."
 	icon_state = "mimeburger"
 	filling_color = "#FFFFFF"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 12
 	nutriment_desc = list("bun" = 2, "face paint" = 3)
 	bitesize = 2
@@ -1301,11 +1251,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/clownburger)
 	icon_state = "omelette"
 	trash = /obj/item/trash/plate
 	filling_color = "#FFF9A8"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/omelette)
+	configure(item_placement(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/muffin
@@ -1313,8 +1262,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/omelette)
 	desc = "A delicious and spongy little cake"
 	icon_state = "muffin"
 	filling_color = "#E0CF9B"
-	center_of_mass_x = 17
-	center_of_mass_y = 4
 	nutriment_amt = 6
 	nutriment_desc = list("sweetness" = 3, "muffin" = 3)
 	bitesize = 2
@@ -1326,13 +1273,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/omelette)
 	icon_state = "pie"
 	trash = /obj/item/trash/plate
 	filling_color = "#FBFFB8"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	nutriment_amt = 4
 	nutriment_desc = list("pie" = 3, REAGENT_ID_CREAM = 2)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/pie)
+	configure(item_placement(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_BANANA = 5)))
 
 /obj/item/reagent_containers/food/snacks/pie/throw_impact(atom/hit_atom)
@@ -1345,8 +1291,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/pie)
 	desc = "No black birds, this is a good sign."
 	icon_state = "berryclafoutis"
 	trash = /obj/item/trash/plate
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	nutriment_amt = 4
 	nutriment_desc = list("sweetness" = 2, "pie" = 3)
 	bitesize = 3
@@ -1363,8 +1307,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/berryclafoutis/poison)
 	icon_state = "waffles"
 	trash = /obj/item/trash/waffles
 	filling_color = "#E6DEB5"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	nutriment_amt = 8
 	nutriment_desc = list("waffle" = 8)
 	bitesize = 2
@@ -1375,8 +1317,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/berryclafoutis/poison)
 	icon_state = "eggplantparm"
 	trash = /obj/item/trash/plate
 	filling_color = "#4D2F5E"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 6
 	nutriment_desc = list(REAGENT_ID_CHEESE = 3, PLANT_EGGPLANT = 3)
 	bitesize = 2
@@ -1387,11 +1327,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/berryclafoutis/poison)
 	icon_state = "soylent_green"
 	trash = /obj/item/trash/waffles
 	filling_color = "#B8E6B5"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/soylentgreen)
+	configure(item_placement(center_x = 15, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/soylenviridians
@@ -1400,8 +1339,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/soylentgreen)
 	icon_state = "soylent_yellow"
 	trash = /obj/item/trash/waffles
 	filling_color = "#E6FA61"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	nutriment_amt = 10
 	nutriment_desc = list("some sort of protein" = 10)  //seasoned VERY well.
 	bitesize = 2
@@ -1412,11 +1349,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/soylentgreen)
 	desc = "An old barber recipe, very delicious!"
 	trash = /obj/item/trash/plate
 	filling_color = "#948051"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatpie)
+	configure(item_placement(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/tofupie
@@ -1425,8 +1361,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatpie)
 	desc = "A delicious tofu pie."
 	trash = /obj/item/trash/plate
 	filling_color = "#FFFEE0"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	nutriment_amt = 10
 	nutriment_desc = list(REAGENT_ID_TOFU = 2, "pie" = 8)
 	bitesize = 2
@@ -1436,13 +1370,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatpie)
 	desc = "Sweet and tasty poison pie."
 	icon_state = "amanita_pie"
 	filling_color = "#FFCCCC"
-	center_of_mass_x = 17
-	center_of_mass_y = 9
 	nutriment_amt = 5
 	nutriment_desc = list("sweetness" = 3, PLANT_MUSHROOMS = 3, "pie" = 2)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanita_pie)
+	configure(item_placement(center_x = 17, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_AMATOXIN = 3, REAGENT_ID_PSILOCYBIN = 1, REAGENT_ID_FUNGI = 2)))
 
 /obj/item/reagent_containers/food/snacks/plump_pie
@@ -1450,13 +1383,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanita_pie)
 	desc = "I bet you love stuff made out of plump helmets!"
 	icon_state = "plump_pie"
 	filling_color = "#B8279B"
-	center_of_mass_x = 17
-	center_of_mass_y = 9
 	nutriment_amt = 8
 	nutriment_desc = list("heartiness" = 2, PLANT_MUSHROOMS = 3, "pie" = 3)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/plump_pie)
+	configure(item_placement(center_x = 17, center_y = 9))
 	rolls(nameof(name), pick_one(list("exceptional plump pie")), when = nameof(exceptional), from = list(nameof(exceptional)))
 	rolls(nameof(desc), pick_one(list("Microwave is taken by a fey mood! It has cooked an exceptional plump pie!")), when = nameof(exceptional), from = list(nameof(exceptional)))
 	rolls(nameof(exceptional), chance(10))
@@ -1476,11 +1408,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/plump_pie)
 	desc = "A delicious meatpie. Probably heretical."
 	trash = /obj/item/trash/plate
 	filling_color = "#43DE18"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/xemeatpie)
+	configure(item_placement(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/wingfangchu
@@ -1489,11 +1420,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/xemeatpie)
 	icon_state = "wingfangchu"
 	trash = /obj/item/trash/small_bowl
 	filling_color = "#43DE18"
-	center_of_mass_x = 17
-	center_of_mass_y = 9
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/wingfangchu)
+	configure(item_placement(center_x = 17, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/human/kabob
@@ -1502,11 +1432,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/wingfangchu)
 	desc = "A human meat, on a stick."
 	trash = /obj/item/stack/rods
 	filling_color = "#A85340"
-	center_of_mass_x = 17
-	center_of_mass_y = 15
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/human/kabob)
+	configure(item_placement(center_x = 17, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/monkeykabob
@@ -1515,11 +1444,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/human/kabob)
 	desc = "Delicious meat, on a stick."
 	trash = /obj/item/stack/rods
 	filling_color = "#A85340"
-	center_of_mass_x = 17
-	center_of_mass_y = 15
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeykabob)
+	configure(item_placement(center_x = 17, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/tofukabob
@@ -1529,8 +1457,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeykabob)
 	trash = /obj/item/stack/rods
 	filling_color = "#FFFEE0"
 	bitesize = 2
-	center_of_mass_x = 17
-	center_of_mass_y = 15
 	nutriment_amt = 8
 	nutriment_desc = list(REAGENT_ID_TOFU = 3, "metal" = 1)
 
@@ -1540,13 +1466,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeykabob)
 	icon_state = "cubancarp"
 	trash = /obj/item/trash/plate
 	filling_color = "#E9ADFF"
-	center_of_mass_x = 12
-	center_of_mass_y = 5
 	nutriment_amt = 3
 	nutriment_desc = list("toasted bread" = 3)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cubancarp)
+	configure(item_placement(center_x = 12, center_y = 5))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/popcorn
@@ -1557,13 +1482,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cubancarp)
 	trash = /obj/item/trash/popcorn
 	var/unpopped = 0
 	filling_color = "#FFFAD4"
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	nutriment_amt = 2
 	nutriment_desc = list("popcorn" = 3)
 	bitesize = 0.1 //This snack is supposed to be eaten for a long time.
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/popcorn)
+	configure(item_placement(center_x = 16, center_y = 8))
 	rolls(nameof(unpopped), range_of(1, 10))
 
 /obj/item/reagent_containers/food/snacks/popcorn/On_Consume(mob/living/M)
@@ -1578,13 +1502,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/popcorn)
 	icon_state = "fries"
 	trash = /obj/item/trash/plate
 	filling_color = "#EDDD00"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list("fries" = 4)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/fries)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_OIL = 1.2)))
 
 /obj/item/reagent_containers/food/snacks/onionrings
@@ -1593,8 +1516,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fries)
 	icon_state = "onionrings"
 	trash = /obj/item/trash/plate
 	filling_color = "#eddd00"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_desc = list("fried onions" = 5)
 	nutriment_amt = 5
 	bitesize = 2
@@ -1607,8 +1528,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fries)
 	filling_color = "#EDDD00"
 	nutriment_amt = 4
 	nutriment_desc = list("soggy fries" = 4)
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 2
 
 /obj/item/reagent_containers/food/snacks/ovenfries
@@ -1618,8 +1537,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fries)
 	filling_color = "#EDDD00"
 	nutriment_amt = 4
 	nutriment_desc = list("crisp, dry fries" = 4)
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 2
 
 /obj/item/reagent_containers/food/snacks/carrotfries
@@ -1628,13 +1545,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fries)
 	icon_state = "carrotfries"
 	trash = /obj/item/trash/plate
 	filling_color = "#FAA005"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 3
 	nutriment_desc = list(PLANT_CARROT = 3, "salt" = 1)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/carrotfries)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_IMIDAZOLINE = 3, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/cheesyfries
@@ -1643,13 +1559,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/carrotfries)
 	icon_state = "cheesyfries"
 	trash = /obj/item/trash/plate
 	filling_color = "#EDDD00"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list("fresh fries" = 3, REAGENT_ID_CHEESE = 3)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesyfries)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/chilicheesefries
@@ -1661,11 +1576,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesyfries)
 	filling_color = "#EDDD00"
 	nutriment_amt = 8
 	nutriment_desc = list("hearty, cheesy fries" = 8)
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 4
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chilicheesefries)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_CAPSAICIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/blackpudding
@@ -1673,11 +1587,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chilicheesefries)
 	desc = "This doesn't seem like a pudding at all."
 	icon_state = "blackpudding"
 	filling_color = "#FF0000"
-	center_of_mass_x = 16
-	center_of_mass_y = 7
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/blackpudding)
+	configure(item_placement(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_BLOOD = 5)))
 
 /obj/item/reagent_containers/food/snacks/soydope
@@ -1686,8 +1599,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/blackpudding)
 	icon_state = "soydope"
 	trash = /obj/item/trash/plate
 	filling_color = "#C4BF76"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_amt = 2
 	nutriment_desc = list("slime" = 2, "soy" = 2)
 	bitesize = 2
@@ -1697,8 +1608,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/blackpudding)
 	desc = "A bundle of raw spaghetti."
 	icon_state = "spagetti"
 	filling_color = "#EDDD00"
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_amt = 1
 	nutriment_desc = list("noodles" = 2)
 	bitesize = 1
@@ -1708,11 +1617,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/blackpudding)
 	desc = "Someone should be demoted from chef for this."
 	icon_state = "badrecipe"
 	filling_color = "#211F02"
-	center_of_mass_x = 16
-	center_of_mass_y = 12
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/badrecipe)
+	configure(item_placement(center_x = 16, center_y = 12))
 	configure(reagents(add = list(REAGENT_ID_SALMONELLA = 1, REAGENT_ID_CARBON = 3)))
 
 /obj/item/reagent_containers/food/snacks/meatsteak
@@ -1721,11 +1629,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/badrecipe)
 	icon_state = "meatstake"
 	trash = /obj/item/trash/plate
 	filling_color = "#7A3D11"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatsteak)
+	configure(item_placement(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_BLACKPEPPER = 1)))
 
 /obj/item/reagent_containers/food/snacks/spacylibertyduff
@@ -1734,13 +1641,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatsteak)
 	icon_state = "spacylibertyduff"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#42B873"
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	nutriment_amt = 6
 	nutriment_desc = list(PLANT_MUSHROOMS = 6)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/spacylibertyduff)
+	configure(item_placement(center_x = 16, center_y = 8))
 	configure(reagents(add = list(REAGENT_ID_PSILOCYBIN = 6, REAGENT_ID_FUNGI = 1)))
 
 /obj/item/reagent_containers/food/snacks/amanitajelly
@@ -1749,13 +1655,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/spacylibertyduff)
 	icon_state = "amanitajelly"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#ED0758"
-	center_of_mass_x = 16
-	center_of_mass_y = 5
 	nutriment_amt = 6
 	nutriment_desc = list("jelly" = 3, PLANT_MUSHROOMS = 3)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanitajelly)
+	configure(item_placement(center_x = 16, center_y = 5))
 	configure(reagents(add = list(REAGENT_ID_AMATOXIN = 6, REAGENT_ID_PSILOCYBIN = 3, REAGENT_ID_FUNGI = 2)))
 
 /obj/item/reagent_containers/food/snacks/poppypretzel
@@ -1763,8 +1668,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanitajelly)
 	desc = "It's all twisted up!"
 	icon_state = "poppypretzel"
 	filling_color = "#916E36"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_amt = 5
 	nutriment_desc = list("poppy seeds" = 2, "pretzel" = 3)
 	bitesize = 2
@@ -1776,8 +1679,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanitajelly)
 	icon_state = "monkeycube"
 	bitesize = 12
 	filling_color = "#ADAC7F"
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 
 	var/wrapped = 0
 	var/monkey_type = "Monkey"
@@ -1786,6 +1687,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanitajelly)
 
 // A wrapped cube is unwrapped by using it in hand.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
+	configure(item_placement(center_x = 16, center_y = 14))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 	op("unwrap_cube", in_hand(), priority(OP_PRIORITY_PART), when(PROC_REF(cube_is_wrapped)), label("Unwrap it"), then(PROC_REF(cube_unwrapped)))
 
@@ -1903,13 +1805,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 	desc = "Forget the Big Mac. THIS is the future!"
 	icon_state = "bigbiteburger"
 	filling_color = "#E3D681"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list("buns" = 4)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bigbiteburger)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/enchiladas
@@ -1918,13 +1819,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bigbiteburger)
 	icon_state = "enchiladas"
 	trash = /obj/item/trash/tray
 	filling_color = "#A36A1F"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	nutriment_amt = 2
 	nutriment_desc = list("tortilla" = 3, PLANT_CORN = 3)
 	bitesize = 4
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/enchiladas)
+	configure(item_placement(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_CAPSAICIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/monkeysdelight
@@ -1933,11 +1833,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/enchiladas)
 	icon_state = "monkeysdelight"
 	trash = /obj/item/trash/tray
 	filling_color = "#5C3C11"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeysdelight)
+	configure(item_placement(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10, REAGENT_ID_BANANA = 5, REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/baguette
@@ -1945,13 +1844,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeysdelight)
 	desc = "Bon appetit!"
 	icon_state = "baguette"
 	filling_color = "#E3D796"
-	center_of_mass_x = 18
-	center_of_mass_y = 12
 	nutriment_amt = 6
 	nutriment_desc = list("french bread" = 6)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/baguette)
+	configure(item_placement(center_x = 18, center_y = 12))
 	configure(reagents(add = list(REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/fishandchips
@@ -1959,13 +1857,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/baguette)
 	desc = "I do say so myself chap."
 	icon_state = "fishandchips"
 	filling_color = "#E3D796"
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_amt = 3
 	nutriment_desc = list("salt" = 1, "chips" = 3)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishandchips)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/rofflewaffles
@@ -1974,13 +1871,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishandchips)
 	icon_state = "rofflewaffles"
 	trash = /obj/item/trash/waffles
 	filling_color = "#FF00F7"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	nutriment_amt = 8
 	nutriment_desc = list("waffle" = 7, "sweetness" = 1)
 	bitesize = 4
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/rofflewaffles)
+	configure(item_placement(center_x = 15, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PSILOCYBIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/jelliedtoast
@@ -1988,8 +1884,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/rofflewaffles)
 	desc = "A slice of bread covered with delicious jam."
 	icon_state = "jellytoast"
 	filling_color = "#B572AB"
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	nutriment_amt = 1
 	nutriment_desc = list("toasted bread" = 2)
 	bitesize = 3
@@ -2013,8 +1907,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/jelliedtoast/slime)
 	filling_color = "#FFC02D"
 	nutriment_amt = 1
 	nutriment_desc = list("sweet, crunchy bread" = 1)
-	center_of_mass_x = 16
-	center_of_mass_y = 9
 	bitesize = 3
 
 /obj/item/reagent_containers/food/snacks/cheesetoast
@@ -2024,8 +1916,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/jelliedtoast/slime)
 	filling_color = "#F9A617"
 	nutriment_amt = 1
 	nutriment_desc = list("cheese toast" = 8)
-	center_of_mass_x = 16
-	center_of_mass_y = 9
 	bitesize = 3
 
 /obj/item/reagent_containers/food/snacks/jellyburger
@@ -2033,8 +1923,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/jelliedtoast/slime)
 	desc = "Culinary delight..?"
 	icon_state = "jellyburger"
 	filling_color = "#B572AB"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 5
 	nutriment_desc = list("buns" = 5)
 	bitesize = 2
@@ -2056,8 +1944,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyburger/cherry)
 	desc = "Even non-vegetarians will LOVE this!"
 	icon_state = "stewedsoymeat"
 	trash = /obj/item/trash/plate
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_amt = 8
 	nutriment_desc = list("soy" = 4, PLANT_TOMATO = 4)
 	bitesize = 2
@@ -2068,8 +1954,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyburger/cherry)
 	icon_state = "spagettiboiled"
 	trash = /obj/item/trash/plate
 	filling_color = "#FCEE81"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_amt = 2
 	nutriment_desc = list("noodles" = 2)
 	bitesize = 2
@@ -2080,8 +1964,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyburger/cherry)
 	icon_state = "boiledrice"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#FFFBDB"
-	center_of_mass_x = 17
-	center_of_mass_y = 11
 	nutriment_amt = 2
 	nutriment_desc = list(REAGENT_ID_RICE = 2)
 	bitesize = 2
@@ -2092,8 +1974,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyburger/cherry)
 	icon_state = "rpudding"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#FFFBDB"
-	center_of_mass_x = 17
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list(REAGENT_ID_RICE = 2)
 	bitesize = 2
@@ -2104,13 +1984,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyburger/cherry)
 	icon_state = "kudzudonburi"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#FFFBDB"
-	center_of_mass_x = 17
-	center_of_mass_y = 11
 	nutriment_amt = 16
 	nutriment_desc = list(REAGENT_ID_RICE = 2, "gauze" = 4, "fish" = 10)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/kudzudonburi)
+	configure(item_placement(center_x = 17, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/pastatomato
@@ -2119,13 +1998,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/kudzudonburi)
 	icon_state = "pastatomato"
 	trash = /obj/item/trash/plate
 	filling_color = "#DE4545"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_amt = 6
 	nutriment_desc = list(PLANT_TOMATO = 3, "noodles" = 3)
 	bitesize = 4
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/pastatomato)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_TOMATOJUICE = 10)))
 
 /obj/item/reagent_containers/food/snacks/meatballspagetti
@@ -2134,13 +2012,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/pastatomato)
 	icon_state = "meatballspagetti"
 	trash = /obj/item/trash/plate
 	filling_color = "#DE4545"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_amt = 4
 	nutriment_desc = list("noodles" = 4)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatballspagetti)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/spesslaw
@@ -2148,13 +2025,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatballspagetti)
 	desc = "A lawyer's favourite"
 	icon_state = "spesslaw"
 	filling_color = "#DE4545"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_amt = 4
 	nutriment_desc = list("noodles" = 4)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/spesslaw)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/superbiteburger
@@ -2162,13 +2038,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/spesslaw)
 	desc = "This is a mountain of a burger. FOOD!"
 	icon_state = "superbiteburger"
 	filling_color = "#CCA26A"
-	center_of_mass_x = 16
-	center_of_mass_y = 3
 	nutriment_amt = 25
 	nutriment_desc = list("buns" = 25)
 	bitesize = 10
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/superbiteburger)
+	configure(item_placement(center_x = 16, center_y = 3))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 25)))
 
 /obj/item/reagent_containers/food/snacks/caramelapple
@@ -2177,8 +2052,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/superbiteburger)
 	icon_state = "candiedapple1"
 	trash = /obj/item/trash/stick
 	filling_color = "#F21873"
-	center_of_mass_x = 15
-	center_of_mass_y = 13
 	nutriment_amt = 3
 	nutriment_desc = list(PLANT_APPLE = 3, "caramel" = 3, "sweetness" = 2)
 	bitesize = 3
@@ -2189,8 +2062,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/superbiteburger)
 	icon_state = "candiedapple2"
 	trash = /obj/item/trash/stick
 	filling_color = "#F21873"
-	center_of_mass_x = 15
-	center_of_mass_y = 13
 	nutriment_amt = 3
 	nutriment_desc = list(PLANT_APPLE = 3, "sweetness" = 2)
 	bitesize = 3
@@ -2200,8 +2071,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/superbiteburger)
 	desc = "A pie containing sweet sweet love... or apple."
 	icon_state = "applepie"
 	filling_color = "#E0EDC5"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	nutriment_amt = 4
 	nutriment_desc = list("sweetness" = 2, PLANT_APPLE = 2, "pie" = 2)
 	bitesize = 3
@@ -2211,8 +2080,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/superbiteburger)
 	desc = "Taste so good, make a grown man cry."
 	icon_state = "cherrypie"
 	filling_color = "#FF525A"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list("sweetness" = 2, PLANT_CHERRY = 2, "pie" = 2)
 	bitesize = 3
@@ -2223,8 +2090,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/superbiteburger)
 	description_fluff = "The most popular recipe from the Morpheus Cyberkinetics cookbook 'Calories for Organics'"
 	icon_state = "twobread"
 	filling_color = "#DBCC9A"
-	center_of_mass_x = 15
-	center_of_mass_y = 12
 	nutriment_amt = 2
 	nutriment_desc = list("sourness" = 2, "bread" = 2)
 	bitesize = 3
@@ -2236,13 +2101,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/superbiteburger)
 	desc = "A grand creation of meat, cheese, bread, and several leaves of lettuce! Arthur Dent would be proud."
 	icon_state = "sandwich"
 	filling_color = "#D9BE29"
-	center_of_mass_x = 16
-	center_of_mass_y = 4
 	nutriment_amt = 3
 	nutriment_desc = list("bread" = 3, REAGENT_ID_CHEESE = 3)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sandwich)
+	configure(item_placement(center_x = 16, center_y = 4))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/clubsandwich
@@ -2259,13 +2123,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sandwich)
 	desc = "Now if you only had a pepper bar."
 	icon_state = "toastedsandwich"
 	filling_color = "#D9BE29"
-	center_of_mass_x = 16
-	center_of_mass_y = 4
 	nutriment_amt = 3
 	nutriment_desc = list("toasted bread" = 3, REAGENT_ID_CHEESE = 3)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/toastedsandwich)
+	configure(item_placement(center_x = 16, center_y = 4))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CARBON = 2)))
 
 /obj/item/reagent_containers/food/snacks/grilledcheese
@@ -2285,8 +2148,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grilledcheese)
 	desc = "You wish you had some peanut butter to go with this..."
 	icon_state = "jellysandwich"
 	filling_color = "#9E3A78"
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	nutriment_amt = 2
 	nutriment_desc = list("bread" = 2)
 	bitesize = 3
@@ -2326,13 +2187,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledslimecore)
 	desc = "This is a finely-prepared plump helmet biscuit. The ingredients are exceptionally minced plump helmet, and well-minced dwarven wheat flour."
 	icon_state = "phelmbiscuit"
 	filling_color = "#CFB4C4"
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	nutriment_amt = 5
 	nutriment_desc = list(PLANT_MUSHROOMS = 4)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit)
+	configure(item_placement(center_x = 16, center_y = 13))
 	rolls(nameof(name), pick_one(list("exceptional plump helmet biscuit")), when = nameof(exceptional), from = list(nameof(exceptional)))
 	rolls(nameof(desc), pick_one(list("Microwave is taken by a fey mood! It has cooked an exceptional plump helmet biscuit!")), when = nameof(exceptional), from = list(nameof(exceptional)))
 	rolls(nameof(exceptional), chance(10))
@@ -2352,11 +2212,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit)
 	icon_state = "chawanmushi"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#F0F2E4"
-	center_of_mass_x = 17
-	center_of_mass_y = 10
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chawanmushi)
+	configure(item_placement(center_x = 17, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/tossedsalad
@@ -2365,8 +2224,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chawanmushi)
 	icon_state = "herbsalad"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#76B87F"
-	center_of_mass_x = 17
-	center_of_mass_y = 11
 	nutriment_amt = 8
 	nutriment_desc = list("salad" = 2, PLANT_TOMATO = 2, PLANT_CARROT = 2, PLANT_APPLE = 2)
 	bitesize = 3
@@ -2377,13 +2234,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chawanmushi)
 	icon_state = "validsalad"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#76B87F"
-	center_of_mass_x = 17
-	center_of_mass_y = 11
 	nutriment_amt = 6
 	nutriment_desc = list("100% real salad")
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/validsalad)
+	configure(item_placement(center_x = 17, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/appletart
@@ -2392,13 +2248,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/validsalad)
 	icon_state = "gappletart"
 	trash = /obj/item/trash/plate
 	filling_color = "#FFFF00"
-	center_of_mass_x = 16
-	center_of_mass_y = 18
 	nutriment_amt = 8
 	nutriment_desc = list(PLANT_APPLE = 8)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/appletart)
+	configure(item_placement(center_x = 16, center_y = 18))
 	configure(reagents(add = list(REAGENT_ID_GOLD = 5)))
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2411,12 +2266,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/appletart)
 	icon_state = "meatballsoup"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#785210"
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatballsoup)
+	configure(item_placement(center_x = 16, center_y = 8))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_WATER = 5)))
 
 /obj/item/reagent_containers/food/snacks/slimesoup
@@ -2435,12 +2289,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/slimesoup)
 	desc = "Smells like copper."
 	icon_state = "tomatosoup"
 	filling_color = "#FF0000"
-	center_of_mass_x = 16
-	center_of_mass_y = 7
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bloodsoup)
+	configure(item_placement(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_BLOOD = 10, REAGENT_ID_WATER = 5)))
 
 /obj/item/reagent_containers/food/snacks/clownstears
@@ -2448,14 +2301,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bloodsoup)
 	desc = "Not very funny."
 	icon_state = "clownstears"
 	filling_color = "#C4FBFF"
-	center_of_mass_x = 16
-	center_of_mass_y = 7
 	nutriment_amt = 4
 	nutriment_desc = list("salt" = 1, "the worst joke" = 3)
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/clownstears)
+	configure(item_placement(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_BANANA = 5, REAGENT_ID_WATER = 10, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/vegetablesoup
@@ -2464,13 +2316,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/clownstears)
 	icon_state = "vegetablesoup"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#AFC4B5"
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	nutriment_desc = list(PLANT_CARROT = 2, PLANT_CORN = 2, PLANT_EGGPLANT = 2, PLANT_POTATO = 2)
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/vegetablesoup)
+	configure(item_placement(center_x = 16, center_y = 8))
 	configure(reagents(add = list(REAGENT_ID_VEGETABLESOUP = 10)))
 
 /obj/item/reagent_containers/food/snacks/nettlesoup
@@ -2479,14 +2330,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/vegetablesoup)
 	icon_state = "nettlesoup"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#AFC4B5"
-	center_of_mass_x = 16
-	center_of_mass_y = 7
 	nutriment_amt = 8
 	nutriment_desc = list("salad" = 4, REAGENT_ID_EGG = 2, PLANT_POTATO = 2)
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/nettlesoup)
+	configure(item_placement(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_WATER = 5, REAGENT_ID_TRICORDRAZINE = 5)))
 
 /obj/item/reagent_containers/food/snacks/mysterysoup
@@ -2495,8 +2345,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/nettlesoup)
 	icon_state = "mysterysoup"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#F082FF"
-	center_of_mass_x = 16
-	center_of_mass_y = 6
 	nutriment_amt = 1
 	nutriment_desc = list("backwash" = 1)
 	bitesize = 5
@@ -2507,6 +2355,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/nettlesoup)
 	var/mystery_recipe = 0
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/mysterysoup)
+	configure(item_placement(center_x = 16, center_y = 6))
 	rolls(nameof(mystery_recipe), range_of(1, 10))
 	configure(reagents(contents_from = PROC_REF(mystery_contents)))
 
@@ -2532,12 +2381,11 @@ TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/mysterysoup, mystery
 	icon_state = "wishsoup"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#D1F4FF"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/wishsoup)
+	configure(item_placement(center_x = 16, center_y = 11))
 	rolls(nameof(wished), chance(25))
 	rolls(nameof(desc), PROC_REF(roll_wish_desc), from = list(nameof(wished)))
 	configure(reagents(add = list(REAGENT_ID_WATER = 10, REAGENT_ID_NUTRIMENT = PROC_REF(wish_nutriment)), data = list(REAGENT_ID_NUTRIMENT = list("something good" = 8))))
@@ -2558,12 +2406,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/wishsoup)
 	icon_state = "tomatosoup"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#D92929"
-	center_of_mass_x = 16
-	center_of_mass_y = 7
 	bitesize = 3
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/tomatosoup)
+	configure(item_placement(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_TOMATOSOUP = 10)))
 
 /obj/item/reagent_containers/food/snacks/mushroomsoup
@@ -2572,12 +2419,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/tomatosoup)
 	icon_state = "mushroomsoup"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#E386BF"
-	center_of_mass_x = 17
-	center_of_mass_y = 10
 	bitesize = 3
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomsoup)
+	configure(item_placement(center_x = 17, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_MUSHROOMSOUP = 10)))
 
 /obj/item/reagent_containers/food/snacks/beetsoup
@@ -2586,13 +2432,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomsoup)
 	icon_state = "beetsoup"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#FAC9FF"
-	center_of_mass_x = 15
-	center_of_mass_y = 8
 	bitesize = 3
 	eating_sound = SFX_ITEMS_DRINK
 
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/beetsoup)
+	configure(item_placement(center_x = 15, center_y = 8))
 	configure(reagents(add = list(REAGENT_ID_BEETSOUP = 10)))
 	rolls(nameof(name), pick_one(list("borsch","bortsch","borstch","borsh","borshch","borscht")))
 
@@ -2602,12 +2447,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/beetsoup)
 	icon_state = "onionsoup"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#E0C367"
-	center_of_mass_x = 16
-	center_of_mass_y = 7
 	bitesize = 3
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/soup/onion)
+	configure(item_placement(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_ONIONSOUP = 10)))
 
 /obj/item/reagent_containers/food/snacks/chickennoodlesoup
@@ -2626,14 +2470,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickennoodlesoup)
 	desc = "A nice and warm stew. Healthy and strong."
 	icon_state = "stew"
 	filling_color = "#9E673A"
-	center_of_mass_x = 16
-	center_of_mass_y = 5
 	nutriment_amt = 6
 	nutriment_desc = list(PLANT_TOMATO = 2, PLANT_POTATO = 2, PLANT_CARROT = 2, PLANT_EGGPLANT = 2, PLANT_MUSHROOMS = 2)
 	bitesize = 10
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/stew)
+	configure(item_placement(center_x = 16, center_y = 5))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOVEL, pickup = SFX_ITEMS_PICKUP_SHOVEL))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5, REAGENT_ID_WATER = 5, REAGENT_ID_FUNGI = 1)))
 
@@ -2645,12 +2488,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/stew)
 	filling_color = "#9E673A"
 	nutriment_amt = 6
 	nutriment_desc = list("hearty stew" = 6)
-	center_of_mass_x = 16
-	center_of_mass_y = 5
 	bitesize = 6
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearstew)
+	configure(item_placement(center_x = 16, center_y = 5))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_HYPERZINE = 5, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5, REAGENT_ID_WATER = 5)))
 
 /obj/item/reagent_containers/food/snacks/hotchili
@@ -2659,14 +2501,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearstew)
 	icon_state = "hotchili"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#FF3C00"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_amt = 3
 	nutriment_desc = list("chilli peppers" = 3)
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotchili)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2)))
 
 /obj/item/reagent_containers/food/snacks/coldchili
@@ -2674,8 +2515,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotchili)
 	desc = "This slush is barely a liquid!"
 	icon_state = "coldchili"
 	filling_color = "#2B00FF"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	trash = /obj/item/trash/snack_bowl
 	nutriment_amt = 3
 	nutriment_desc = list("ice peppers" = 3)
@@ -2683,6 +2522,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotchili)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/coldchili)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_FROSTOIL = 3, REAGENT_ID_TOMATOJUICE = 2)))
 
 /obj/item/reagent_containers/food/snacks/bearchili
@@ -2694,12 +2534,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/coldchili)
 	filling_color = "#702708"
 	nutriment_amt = 3
 	nutriment_desc = list("dark, hearty chili" = 3)
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 6
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearchili)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2, REAGENT_ID_HYPERZINE = 5)))
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2749,13 +2588,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearchili)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/meatbread
 	slices_num = 5
 	filling_color = "#FF7575"
-	center_of_mass_x = 19
-	center_of_mass_y = 9
 	nutriment_desc = list("bread" = 10)
 	nutriment_amt = 10
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/meatbread)
+	configure(item_placement(center_x = 19, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 20)))
 
 /obj/item/reagent_containers/food/snacks/slice/meatbread
@@ -2765,8 +2603,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/meatbread)
 	trash = /obj/item/trash/plate
 	filling_color = "#FF7575"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/meatbread
 
 /obj/item/reagent_containers/food/snacks/slice/meatbread/filled
@@ -2779,13 +2615,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/meatbread)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/xenomeatbread
 	slices_num = 5
 	filling_color = "#8AFF75"
-	center_of_mass_x = 16
-	center_of_mass_y = 9
 	nutriment_desc = list("bread" = 10)
 	nutriment_amt = 10
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/xenomeatbread)
+	configure(item_placement(center_x = 16, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 20)))
 
 /obj/item/reagent_containers/food/snacks/slice/xenomeatbread
@@ -2794,8 +2629,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/xenomeatbread)
 	icon_state = "xenobreadslice"
 	filling_color = "#8AFF75"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/xenomeatbread
 
 /obj/item/reagent_containers/food/snacks/slice/xenomeatbread/filled
@@ -2808,13 +2641,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/xenomeatbread)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/bananabread
 	slices_num = 5
 	filling_color = "#EDE5AD"
-	center_of_mass_x = 16
-	center_of_mass_y = 9
 	nutriment_desc = list("bread" = 10)
 	nutriment_amt = 10
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/bananabread)
+	configure(item_placement(center_x = 16, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_BANANA = 20)))
 
 /obj/item/reagent_containers/food/snacks/slice/bananabread
@@ -2823,8 +2655,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/bananabread)
 	icon_state = "bananabreadslice"
 	filling_color = "#EDE5AD"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/bananabread
 
 /obj/item/reagent_containers/food/snacks/slice/bananabread/filled
@@ -2836,8 +2666,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/bananabread)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/tofubread
 	slices_num = 5
 	filling_color = "#F7FFE0"
-	center_of_mass_x = 16
-	center_of_mass_y = 9
 	nutriment_desc = list(REAGENT_ID_TOFU = 10)
 	nutriment_amt = 10
 	bitesize = 2
@@ -2848,8 +2676,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/bananabread)
 	icon_state = "tofubreadslice"
 	filling_color = "#F7FFE0"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/tofubread
 
 /obj/item/reagent_containers/food/snacks/slice/tofubread/filled
@@ -2861,8 +2687,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/bananabread)
 	icon_state = "breadslice"
 	filling_color = "#D27332"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 4
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/bread
 
 /obj/item/reagent_containers/food/snacks/slice/bread/filled
@@ -2875,13 +2699,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/bananabread)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/creamcheesebread
 	slices_num = 5
 	filling_color = "#FFF896"
-	center_of_mass_x = 16
-	center_of_mass_y = 9
 	nutriment_desc = list("bread" = 6, REAGENT_ID_CREAM = 3, REAGENT_ID_CHEESE = 3)
 	nutriment_amt = 5
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/creamcheesebread)
+	configure(item_placement(center_x = 16, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 15)))
 
 /obj/item/reagent_containers/food/snacks/slice/creamcheesebread
@@ -2890,8 +2713,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/creamcheesebread
 	icon_state = "creamcheesebreadslice"
 	filling_color = "#FFF896"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/creamcheesebread
 
 /obj/item/reagent_containers/food/snacks/slice/creamcheesebread/filled
@@ -2904,13 +2725,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/creamcheesebread
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/carrotcake
 	slices_num = 5
 	filling_color = "#FFD675"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("cake" = 10, "sweetness" = 10, PLANT_CARROT = 15)
 	nutriment_amt = 25
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/carrotcake)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_IMIDAZOLINE = 10)))
 
 /obj/item/reagent_containers/food/snacks/slice/carrotcake
@@ -2920,8 +2740,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/carrotcake)
 	trash = /obj/item/trash/plate
 	filling_color = "#FFD675"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/carrotcake
 
 /obj/item/reagent_containers/food/snacks/slice/carrotcake/filled
@@ -2934,13 +2752,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/carrotcake)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/braincake
 	slices_num = 5
 	filling_color = "#E6AEDB"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("cake" = 10, "sweetness" = 10, "slime" = 15)
 	nutriment_amt = 5
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/braincake)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 25, REAGENT_ID_ALKYSINE = 10)))
 
 /obj/item/reagent_containers/food/snacks/slice/braincake
@@ -2950,8 +2767,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/braincake)
 	trash = /obj/item/trash/plate
 	filling_color = "#E6AEDB"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 12
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/braincake
 
 /obj/item/reagent_containers/food/snacks/slice/braincake/filled
@@ -2964,13 +2779,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/braincake)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/cheesecake
 	slices_num = 5
 	filling_color = "#FAF7AF"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("cake" = 10, REAGENT_ID_CREAM = 10, REAGENT_ID_CHEESE = 15)
 	nutriment_amt = 10
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/cheesecake)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 15)))
 
 /obj/item/reagent_containers/food/snacks/slice/cheesecake
@@ -2980,8 +2794,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/cheesecake)
 	trash = /obj/item/trash/plate
 	filling_color = "#FAF7AF"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/cheesecake
 
 /obj/item/reagent_containers/food/snacks/slice/cheesecake/filled
@@ -2994,13 +2806,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/cheesecake)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/peanutcake
 	slices_num = 5
 	filling_color = "#4F3500"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("cake" = 10, "peanuts" = 15)
 	nutriment_amt = 10
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/slice/peanutcake
@@ -3010,8 +2821,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
 	trash = /obj/item/trash/plate
 	filling_color = "#4F3500"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/peanutcake
 
 /obj/item/reagent_containers/food/snacks/slice/peanutcake/filled
@@ -3024,8 +2833,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/plaincake
 	slices_num = 5
 	filling_color = "#F7EDD5"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("cake" = 10, "sweetness" = 10, REAGENT_ID_VANILLA = 15)
 	nutriment_amt = 20
 
@@ -3036,8 +2843,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
 	trash = /obj/item/trash/plate
 	filling_color = "#F7EDD5"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/plaincake
 
 /obj/item/reagent_containers/food/snacks/slice/plaincake/filled
@@ -3050,8 +2855,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/orangecake
 	slices_num = 5
 	filling_color = "#FADA8E"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("cake" = 10, "sweetness" = 10, PLANT_ORANGE = 15)
 	nutriment_amt = 20
 
@@ -3062,8 +2865,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
 	trash = /obj/item/trash/plate
 	filling_color = "#FADA8E"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/orangecake
 
 /obj/item/reagent_containers/food/snacks/slice/orangecake/filled
@@ -3076,8 +2877,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/limecake
 	slices_num = 5
 	filling_color = "#CBFA8E"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("cake" = 10, "sweetness" = 10, PLANT_LIME = 15)
 	nutriment_amt = 20
 
@@ -3088,8 +2887,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
 	trash = /obj/item/trash/plate
 	filling_color = "#CBFA8E"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/limecake
 
 /obj/item/reagent_containers/food/snacks/slice/limecake/filled
@@ -3102,8 +2899,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/lemoncake
 	slices_num = 5
 	filling_color = "#FAFA8E"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("cake" = 10, "sweetness" = 10, PLANT_LEMON = 15)
 	nutriment_amt = 20
 
@@ -3114,8 +2909,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
 	trash = /obj/item/trash/plate
 	filling_color = "#FAFA8E"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/lemoncake
 
 /obj/item/reagent_containers/food/snacks/slice/lemoncake/filled
@@ -3128,8 +2921,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/chocolatecake
 	slices_num = 5
 	filling_color = "#805930"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("cake" = 10, "sweetness" = 10, REAGENT_ID_CHOCOLATE = 15)
 	nutriment_amt = 20
 
@@ -3140,8 +2931,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
 	trash = /obj/item/trash/plate
 	filling_color = "#805930"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/chocolatecake
 
 /obj/item/reagent_containers/food/snacks/slice/chocolatecake/filled
@@ -3154,13 +2943,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
 	slice_path = /obj/item/reagent_containers/food/snacks/cheesewedge
 	slices_num = 8
 	filling_color = "#FFF700"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list(REAGENT_ID_CHEESE = 10)
 	nutriment_amt = 10
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/cheesewheel)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/cheesewedge
@@ -3169,8 +2957,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/cheesewheel)
 	icon_state = "cheesewedge"
 	filling_color = "#FFF700"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 
 /obj/item/reagent_containers/food/snacks/sliceable/birthdaycake
 	name = "Birthday Cake"
@@ -3179,13 +2965,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/cheesewheel)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/birthdaycake
 	slices_num = 5
 	filling_color = "#FFD6D6"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("cake" = 10, "sweetness" = 10)
 	nutriment_amt = 20
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_SPRINKLES = 10)))
 
 /obj/item/reagent_containers/food/snacks/slice/birthdaycake
@@ -3195,8 +2980,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake)
 	trash = /obj/item/trash/plate
 	filling_color = "#FFD6D6"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/birthdaycake
 
 /obj/item/reagent_containers/food/snacks/slice/birthdaycake/filled
@@ -3208,8 +2991,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/bread
 	slices_num = 5
 	filling_color = "#FFE396"
-	center_of_mass_x = 16
-	center_of_mass_y = 9
 	nutriment_desc = list("bread" = 6)
 	nutriment_amt = 6
 	bitesize = 2
@@ -3220,8 +3001,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake)
 	icon_state = "watermelonslice"
 	filling_color = "#FF3867"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 
 /obj/item/reagent_containers/food/snacks/sliceable/applecake
 	name = "Apple Cake"
@@ -3230,8 +3009,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/applecake
 	slices_num = 5
 	filling_color = "#EBF5B8"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("cake" = 10, "sweetness" = 10, PLANT_APPLE = 15)
 	nutriment_amt = 15
 
@@ -3242,8 +3019,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake)
 	trash = /obj/item/trash/plate
 	filling_color = "#EBF5B8"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/applecake
 
 /obj/item/reagent_containers/food/snacks/slice/applecake/filled
@@ -3256,8 +3031,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake)
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/pumpkinpie
 	slices_num = 5
 	filling_color = "#F5B951"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("pie" = 5, REAGENT_ID_CREAM = 5, PLANT_PUMPKIN = 5)
 	nutriment_amt = 15
 
@@ -3268,8 +3041,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake)
 	trash = /obj/item/trash/plate
 	filling_color = "#F5B951"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 12
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/pumpkinpie
 
 /obj/item/reagent_containers/food/snacks/slice/pumpkinpie/filled
@@ -3280,13 +3051,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake)
 	desc = "It's a salted cracker."
 	icon_state = "cracker"
 	filling_color = "#F5DEB8"
-	center_of_mass_x = 16
-	center_of_mass_y = 6
 	nutriment_desc = list("salt" = 1, "cracker" = 2)
 	w_class = ITEMSIZE_TINY
 	nutriment_amt = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cracker)
+	configure(item_placement(center_x = 16, center_y = 6))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/sliceable/grilled_carp
@@ -3315,10 +3085,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/grilled_carp)
 	filling_color = "#F5B951"
 	nutriment_amt = 16
 	nutriment_desc = list(PLANT_LIME = 12, "graham crackers" = 4)
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/keylimepie)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/keylimepieslice
@@ -3329,8 +3098,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/keylimepie)
 	filling_color = "#F5B951"
 	bitesize = 3
 	nutriment_desc = list(PLANT_LIME = 1)
-	center_of_mass_x = 16
-	center_of_mass_y = 12
 
 /obj/item/reagent_containers/food/snacks/keylimepieslice/filled
 	nutriment_amt = 1
@@ -3344,10 +3111,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/keylimepie)
 	filling_color = "#F5B951"
 	nutriment_amt = 10
 	nutriment_desc = list(REAGENT_ID_CHEESE = 5, REAGENT_ID_EGG = 5)
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/quiche)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/quicheslice
@@ -3358,8 +3124,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/quiche)
 	filling_color = "#F5B951"
 	bitesize = 3
 	nutriment_desc = list("cheesy eggs" = 1)
-	center_of_mass_x = 16
-	center_of_mass_y = 12
 
 /obj/item/reagent_containers/food/snacks/quicheslice/filled
 	nutriment_amt = 1
@@ -3378,11 +3142,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/quicheslice/filled)
 	filling_color = "#301301"
 	nutriment_amt = 8
 	nutriment_desc = list("fudge" = 8)
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/brownies)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/browniesslice
@@ -3393,8 +3156,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/brownies)
 	filling_color = "#F5B951"
 	bitesize = 2
 	nutriment_desc = list("fudge" = 1)
-	center_of_mass_x = 16
-	center_of_mass_y = 12
 
 /obj/item/reagent_containers/food/snacks/browniesslice/filled
 	nutriment_amt = 1
@@ -3413,11 +3174,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/browniesslice/filled)
 	filling_color = "#301301"
 	nutriment_amt = 8
 	nutriment_desc = list("fudge" = 8)
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/cosmicbrownies)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_AMBROSIAEXTRACT = 2, REAGENT_ID_BICARIDINE = 1, REAGENT_ID_KELOTANE = 1, REAGENT_ID_TOXIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/cosmicbrowniesslice
@@ -3428,8 +3188,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/cosmicbrownies)
 	filling_color = "#F5B951"
 	bitesize = 3
 	nutriment_desc = list("fudge" = 1)
-	center_of_mass_x = 16
-	center_of_mass_y = 12
 
 /obj/item/reagent_containers/food/snacks/cosmicbrowniesslice/filled
 	nutriment_amt = 1
@@ -3635,8 +3393,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/excitingsuppermattershard)
 	icon_state = "pizzamargherita"
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/margherita
 	slices_num = 6
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_desc = list("pizza crust" = 10, PLANT_TOMATO = 10, REAGENT_ID_CHEESE = 15)
 	nutriment_amt = 35
 	// 70 nutriment + 5 protein + 6 tomato juice: the default 80 overflowed by one and logged a WARNING whenever a random MRE meal rolled this pizza.
@@ -3644,6 +3400,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/excitingsuppermattershard)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_TOMATOJUICE = 6)))
 
 /obj/item/reagent_containers/food/snacks/slice/margherita
@@ -3652,8 +3409,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita
 	icon_state = "pizzamargheritaslice"
 	filling_color = "#BAA14C"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita
 
 /obj/item/reagent_containers/food/snacks/slice/margherita/filled
@@ -3665,13 +3420,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita
 	icon_state = "pineapple_pizza"
 	slice_path = /obj/item/reagent_containers/food/snacks/pineappleslice
 	slices_num = 6
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_desc = list("pizza crust" = 10, PLANT_TOMATO = 10, "ham" = 10)
 	nutriment_amt = 30
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_CHEESE = 5, REAGENT_ID_TOMATOJUICE = 6)))
 
 /obj/item/reagent_containers/food/snacks/pineappleslice
@@ -3680,8 +3434,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple)
 	icon_state = "pineapple_pizza_slice"
 	filling_color = "#BAA14C"
 	bitesize = 2
-	center_of_mass_x = 18
-	center_of_mass_y = 13
 
 /obj/item/reagent_containers/food/snacks/pineappleslice/filled
 	nutriment_desc = list("pizza crust" = 5, PLANT_TOMATO = 5)
@@ -3693,13 +3445,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple)
 	icon_state = "meatpizza"
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/meatpizza
 	slices_num = 6
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_desc = list("pizza crust" = 10, PLANT_TOMATO = 10, REAGENT_ID_CHEESE = 15, "meat" = 10)
 	nutriment_amt = 10
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 34, REAGENT_ID_TOMATOJUICE = 6)))
 
 /obj/item/reagent_containers/food/snacks/slice/meatpizza
@@ -3708,8 +3459,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza)
 	icon_state = "meatpizzaslice"
 	filling_color = "#BAA14C"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza
 
 /obj/item/reagent_containers/food/snacks/slice/meatpizza/filled
@@ -3721,13 +3470,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza)
 	icon_state = "mushroompizza"
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/mushroompizza
 	slices_num = 6
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_desc = list("pizza crust" = 10, PLANT_TOMATO = 10, REAGENT_ID_CHEESE = 5, PLANT_MUSHROOMS = 10)
 	nutriment_amt = 35
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_FUNGI = 5)))
 
 /obj/item/reagent_containers/food/snacks/slice/mushroompizza
@@ -3736,8 +3484,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompi
 	icon_state = "mushroompizzaslice"
 	filling_color = "#BAA14C"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza
 
 /obj/item/reagent_containers/food/snacks/slice/mushroompizza/filled
@@ -3749,13 +3495,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompi
 	icon_state = "vegetablepizza"
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/vegetablepizza
 	slices_num = 6
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_desc = list("pizza crust" = 10, PLANT_TOMATO = 10, REAGENT_ID_CHEESE = 5, PLANT_EGGPLANT = 5, PLANT_CARROT = 5, PLANT_CORN = 5)
 	nutriment_amt = 25
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_TOMATOJUICE = 6, REAGENT_ID_IMIDAZOLINE = 12)))
 
 /obj/item/reagent_containers/food/snacks/slice/vegetablepizza
@@ -3764,8 +3509,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablep
 	icon_state = "vegetablepizzaslice"
 	filling_color = "#BAA14C"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza
 
 /obj/item/reagent_containers/food/snacks/slice/vegetablepizza/filled
@@ -3779,8 +3522,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablep
 	slices_num = 6
 	nutriment_amt = 25
 	nutriment_desc = list("fried pizza" = 25)
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 2
 
 /obj/item/reagent_containers/food/snacks/pizzacrunchslice
@@ -3789,8 +3530,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablep
 	icon_state = "pizzacrunchslice"
 	filling_color = "#BAA14C"
 	bitesize = 2
-	center_of_mass_x = 18
-	center_of_mass_y = 13
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza
 	name = "moldy pizza"
@@ -3798,13 +3537,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablep
 	icon_state = "oldpizza"
 	slice_path = /obj/item/reagent_containers/food/snacks/slice/oldpizza
 	slices_num = 6
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_desc = list("stale pizza crust" = 10, "moldy tomato" = 10, "moldy cheese" = 5)
 	nutriment_amt = 10
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_TOMATOJUICE = 6, REAGENT_ID_MOLD = 8)))
 
 /obj/item/reagent_containers/food/snacks/slice/oldpizza
@@ -3813,8 +3551,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza)
 	icon_state = "oldpizzaslice"
 	filling_color = "#BAA14C"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza
 
 /obj/item/pizzabox
@@ -3822,8 +3558,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza)
 	desc = "A box suited for pizzas."
 	icon = 'icons/obj/food.dmi'
 	icon_state = "pizzabox1"
-	center_of_mass_x = 16
-	center_of_mass_y = 6
 
 	var/open = 0 // Is the box open?
 	var/ismessy = 0 // Fancy mess on the lid
@@ -3836,6 +3570,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza)
 // A pizza box: using it opens and shuts it (a stack stays shut); an empty hand takes the pizza out of an open one, or the top box off a stack held in the
 // other hand; a box goes on a shut box up to five high, a pizza into an open one, and a pen writes on the tag of a shut one.
 CAPABILITIES(/obj/item/pizzabox)
+	configure(item_placement(center_x = 16, center_y = 6))
 	owns_one(nameof(pizza), /obj/item/reagent_containers/food/snacks/sliceable/pizza, starts = nameof(pizza_type))
 	ref_many(nameof(boxes), /obj/item/pizzabox)
 	op("toggle", in_hand(), label("Open or close it"), needs(req(PROC_REF(not_stacked))), then(PROC_REF(toggled)))
@@ -4009,13 +3744,12 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	icon_state = "dionaroast"
 	trash = /obj/item/trash/plate
 	filling_color = "#75754B"
-	center_of_mass_x = 16
-	center_of_mass_y = 7
 	nutriment_amt = 6
 	nutriment_desc = list("a chorus of flavor" = 6)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/dionaroast)
+	configure(item_placement(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_RADIUM = 2)))
 
 /obj/item/reagent_containers/food/snacks/dough
@@ -4024,14 +3758,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/dionaroast)
 	icon = 'icons/obj/food_ingredients.dmi'
 	icon_state = "dough"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	nutriment_amt = 3
 	nutriment_desc = list("uncooked dough" = 3)
 
 
 // Dough + rolling pin = flat dough
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/dough)
+	configure(item_placement(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 	op("flatten", item(/obj/item/material/kitchen/rollingpin), priority(OP_PRIORITY_PART + 1), label("Flatten it"), then(PROC_REF(flattened)))
 
@@ -4048,8 +3781,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/dough)
 	slices_num = 3
 	nutriment_amt = 3
 	nutriment_desc = list("raw dough" = 3)
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 
 
 /obj/item/reagent_containers/food/snacks/doughslice
@@ -4060,8 +3791,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/dough)
 	slice_path = /obj/item/reagent_containers/food/snacks/spagetti
 	slices_num = 1
 	bitesize = 2
-	center_of_mass_x = 17
-	center_of_mass_y = 19
 	nutriment_amt = 1
 	nutriment_desc = list("uncooked dough" = 1)
 
@@ -4071,13 +3800,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/dough)
 	icon = 'icons/obj/food_ingredients.dmi'
 	icon_state = "bun"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 12
 	nutriment_amt = 4
 	nutriment_desc = list("bun" = 4)
 
 // Burger + cheese wedge = cheeseburger
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeyburger)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 	op("add_cheese", item(/obj/item/reagent_containers/food/snacks/cheesewedge), priority(OP_PRIORITY_PART + 1), label("Add the cheese"), then(PROC_REF(cheese_added)))
 
@@ -4086,6 +3814,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeyburger)
 
 // Human Burger + cheese wedge = cheeseburger
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/human/burger)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 	op("add_cheese", item(/obj/item/reagent_containers/food/snacks/cheesewedge), priority(OP_PRIORITY_PART + 1), label("Add the cheese"), then(PROC_REF(cheese_added)))
 
@@ -4097,8 +3826,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/human/burger)
 	desc = "A small bread monkey fashioned from two burger buns."
 	icon_state = "bunbun"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	nutriment_amt = 8
 	nutriment_desc = list("bun" = 8)
 
@@ -4107,12 +3834,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/human/burger)
 	desc = "Take a bite!"
 	icon_state = "taco"
 	bitesize = 3
-	center_of_mass_x = 21
-	center_of_mass_y = 12
 	nutriment_amt = 4
 	nutriment_desc = list(REAGENT_ID_CHEESE = 2,"taco shell" = 2)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/taco)
+	configure(item_placement(center_x = 21, center_y = 12))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/rawcutlet
@@ -4121,8 +3847,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/taco)
 	icon = 'icons/obj/food_ingredients.dmi'
 	icon_state = "rawcutlet"
 	bitesize = 1
-	center_of_mass_x = 17
-	center_of_mass_y = 20
 
 
 /obj/item/reagent_containers/food/snacks/cutlet
@@ -4131,10 +3855,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/taco)
 	icon = 'icons/obj/food_ingredients.dmi'
 	icon_state = "cutlet"
 	bitesize = 2
-	center_of_mass_x = 17
-	center_of_mass_y = 20
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cutlet)
+	configure(item_placement(center_x = 17, center_y = 20))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/burgerpatty
@@ -4143,10 +3866,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cutlet)
 	icon = 'icons/obj/food.dmi'
 	icon_state = "burgerpatty"
 	bitesize = 3
-	center_of_mass_x = 17
-	center_of_mass_y = 20
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/burgerpatty)
+	configure(item_placement(center_x = 17, center_y = 20))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/rawmeatball
@@ -4155,10 +3877,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/burgerpatty)
 	icon = 'icons/obj/food_ingredients.dmi'
 	icon_state = "rawmeatball"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 15
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawmeatball)
+	configure(item_placement(center_x = 16, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/hotdog
@@ -4166,10 +3887,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawmeatball)
 	desc = "Unrelated to dogs, maybe."
 	icon_state = "hotdog"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 17
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotdog)
+	configure(item_placement(center_x = 16, center_y = 17))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/flatbread
@@ -4178,8 +3898,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotdog)
 	icon = 'icons/obj/food_ingredients.dmi'
 	icon_state = "flatbread"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_amt = 3
 	nutriment_desc = list("bread" = 3)
 
@@ -4189,8 +3907,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotdog)
 	icon = 'icons/obj/food_ingredients.dmi'
 	icon_state = "rawsticks"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 12
 	nutriment_amt = 3
 	nutriment_desc = list("raw potato" = 3)
 
@@ -4200,8 +3916,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotdog)
 	icon = 'icons/obj/food_ingredients.dmi'
 	icon_state = "sunflowerseed"
 	bitesize = 1
-	center_of_mass_x = 17
-	center_of_mass_y = 18
 	nutriment_amt = 1
 	nutriment_desc = list("starch" = 3)
 
@@ -4228,12 +3942,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/frostbelle)
 	desc = "Frostbelles, prepared traditionally."
 	icon_state = "bellefritter"
 	filling_color = "#5dadcf"
-	center_of_mass_x = 16
-	center_of_mass_y = 12
 	do_coating_prefix = 0
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bellefritter)
+	configure(item_placement(center_x = 16, center_y = 12))
 	configure(reagents(add = list(REAGENT_ID_BATTER = 10, REAGENT_ID_SUGAR = 5)))
 
 /obj/item/reagent_containers/food/snacks/roastedsunflower
@@ -4242,12 +3955,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bellefritter)
 	icon = 'icons/obj/food.dmi'
 	icon_state = "sunflowerseed"
 	bitesize = 1
-	center_of_mass_x = 15
-	center_of_mass_y = 17
 	nutriment_amt = 2
 	nutriment_desc = list("salt" = 3)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/roastedsunflower)
+	configure(item_placement(center_x = 15, center_y = 17))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/roastedpeanuts
@@ -4256,12 +3968,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/roastedsunflower)
 	icon = 'icons/obj/food.dmi'
 	icon_state = "roastnuts"
 	bitesize = 1
-	center_of_mass_x = 15
-	center_of_mass_y = 17
 	nutriment_amt = 2
 	nutriment_desc = list("salt" = 3)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/roastedpeanuts)
+	configure(item_placement(center_x = 15, center_y = 17))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/liquidfood
@@ -4272,14 +3983,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/roastedpeanuts)
 	trash = /obj/item/trash/liquidfood
 	filling_color = "#A8A8A8"
 	survivalfood = TRUE
-	center_of_mass_x = 16
-	center_of_mass_y = 15
 	nutriment_amt = 20
 	nutriment_desc = list("chalk" = 6)
 	bitesize = 4
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/liquidfood)
+	configure(item_placement(center_x = 16, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_IRON = 3)))
 
 /obj/item/reagent_containers/food/snacks/liquidprotein
@@ -4289,12 +3999,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/liquidfood)
 	trash = /obj/item/trash/liquidprotein
 	filling_color = "#A8A8A8"
 	survivalfood = TRUE
-	center_of_mass_x = 16
-	center_of_mass_y = 15
 	bitesize = 4
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/liquidprotein)
+	configure(item_placement(center_x = 16, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 30, REAGENT_ID_IRON = 3)))
 
 /obj/item/reagent_containers/food/snacks/liquidvitamin
@@ -4304,12 +4013,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/liquidprotein)
 	trash = /obj/item/trash/liquidvitamin
 	filling_color = "#A8A8A8"
 	survivalfood = TRUE
-	center_of_mass_x = 16
-	center_of_mass_y = 15
 	bitesize = 4
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/liquidvitamin)
+	configure(item_placement(center_x = 16, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_FLOUR = 20, REAGENT_ID_TRICORDRAZINE = 5, REAGENT_ID_PARACETAMOL = 5, REAGENT_ID_ENZYME = 1, REAGENT_ID_IRON = 3)))
 
 /obj/item/reagent_containers/food/snacks/meatcube
@@ -4317,11 +4025,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/liquidvitamin)
 	desc = "Fried, salted lean meat compressed into a cube. Not very appetizing."
 	icon_state = "meatcube"
 	filling_color = "#7a3d11"
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatcube)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 15)))
 
 /obj/item/reagent_containers/food/snacks/skrellsnacks
@@ -4332,13 +4039,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatcube)
 	icon_state = "skrellsnacks"
 	trash = /obj/item/trash/skrellsnax
 	filling_color = "#A66829"
-	center_of_mass_x = 15
-	center_of_mass_y = 12
 	nutriment_amt = 10
 	nutriment_desc = list(PLANT_MUSHROOMS = 5, "salt" = 5)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/skrellsnacks)
+	configure(item_placement(center_x = 15, center_y = 12))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_FUNGI = 1)))
 
 /obj/item/reagent_containers/food/snacks/sashimi
@@ -4397,8 +4103,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/beans)
 	desc = "A true prophecy in each cookie!"
 	icon_state = "fortune_cookie"
 	filling_color = "#E8E79E"
-	center_of_mass_x = 15
-	center_of_mass_y = 14
 	nutriment_amt = 3
 	nutriment_desc = list("fortune cookie" = 2)
 	bitesize = 2
@@ -4408,8 +4112,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/beans)
 	desc = "A delicious and spongy little cake, with berries."
 	icon_state = "berrymuffin"
 	filling_color = "#E0CF9B"
-	center_of_mass_x = 17
-	center_of_mass_y = 4
 	nutriment_amt = 6
 	nutriment_desc = list("sweetness" = 2, "muffin" = 2, PLANT_BERRIES = 2)
 	bitesize = 2
@@ -4425,8 +4127,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/berrymuffin/poison)
 	desc = "My stomach is a graveyard! No living being can quench my bloodthirst!"
 	icon_state = "berrymuffin"
 	filling_color = "#799ACE"
-	center_of_mass_x = 17
-	center_of_mass_y = 4
 	nutriment_amt = 6
 	nutriment_desc = list("spookiness" = 4, "muffin" = 1, PLANT_BERRIES = 1)
 	bitesize = 2
@@ -4442,13 +4142,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ghostmuffin/poison)
 	desc = "Spicy homestyle favorite."
 	icon_state = "devilledegg"
 	filling_color = "#799ACE"
-	center_of_mass_x = 17
-	center_of_mass_y = 16
 	nutriment_amt = 8
 	nutriment_desc = list(REAGENT_ID_EGG = 4, PLANT_CHILI = 4)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/devilledegg)
+	configure(item_placement(center_x = 17, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/fruitsalad
@@ -4645,8 +4344,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 	icon = 'icons/obj/food.dmi'
 	icon_state = "macncheese"
 	trash = /obj/item/trash/snack_bowl
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_amt = 9
 	nutriment_desc = list("Cheese" = 5, "pasta" = 4, "happiness" = 1)
 	bitesize = 3
@@ -4800,12 +4497,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 	desc = "A piece of mixed, long meat, battered and then deepfried."
 	icon_state = "batteredsausage"
 	filling_color = "#DB0000"
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	do_coating_prefix = 0
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sausage/battered)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_BATTER = 1.7, REAGENT_ID_OIL = 1.5)))
 
 /obj/item/reagent_containers/food/snacks/jalapeno_poppers
@@ -4813,25 +4509,23 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sausage/battered)
 	desc = "A battered, deep-fried chilli pepper."
 	icon_state = "popper"
 	filling_color = "#00AA00"
-	center_of_mass_x = 10
-	center_of_mass_y = 6
 	do_coating_prefix = 0
 	nutriment_amt = 2
 	nutriment_desc = list("chilli pepper" = 2)
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/jalapeno_poppers)
+	configure(item_placement(center_x = 10, center_y = 6))
 	configure(reagents(add = list(REAGENT_ID_BATTER = 2, REAGENT_ID_OIL = 2)))
 
 /obj/item/reagent_containers/food/snacks/mouseburger
 	name = "mouse burger"
 	desc = "Squeaky and a little furry."
 	icon_state = "ratburger"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/mouseburger)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/chickenkatsu
@@ -4840,15 +4534,15 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mouseburger)
 	icon_state = "katsu"
 	trash = /obj/item/trash/plate
 	filling_color = "#E9ADFF"
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	do_coating_prefix = 0
 	bitesize = 1.5
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickenkatsu)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_BEERBATTER = 2, REAGENT_ID_OIL = 1)))
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_BATTER = 6.5)))
 	configure(reagents(add = list(REAGENT_ID_OIL = 4)))
 
@@ -4861,12 +4555,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch)
 	desc = "A taste of the carnival. You can feel your blood pressure rising."
 	icon_state = "funnelcake"
 	filling_color = "#Ef1479"
-	center_of_mass_x = 16
-	center_of_mass_y = 12
 	do_coating_prefix = 0
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/funnelcake)
+	configure(item_placement(center_x = 16, center_y = 12))
 	configure(reagents(add = list(REAGENT_ID_BATTER = 10, REAGENT_ID_SUGAR = 5)))
 
 /obj/item/reagent_containers/food/snacks/spreads
@@ -4874,8 +4567,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/funnelcake)
 	desc = "A stick of plant-based nutriments in a semi-solid form. I can't believe it's not margarine!"
 	icon_state = "marge"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("margarine" = 1)
 	nutriment_amt = 20
 
@@ -4883,15 +4574,15 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/funnelcake)
 	name = "butter"
 	icon_state = "butter"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("butter" = 1)
 	nutriment_amt = 0
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/spreads)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_TRIGLYCERIDE = 20, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawcutlet)
+	configure(item_placement(center_x = 17, center_y = 20))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 	op("slice_bacon", item(/obj/item/material/knife), priority(OP_PRIORITY_PART + 1), label("Slice it into bacon"), then(PROC_REF(sliced_into_bacon)))
 
@@ -4903,10 +4594,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawcutlet)
 	desc = "A very thin piece of raw meat, cut from beef."
 	icon_state = "rawbacon"
 	bitesize = 1
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawbacon)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 0.33)))
 
 /obj/item/reagent_containers/food/snacks/bacon
@@ -4914,26 +4604,21 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawbacon)
 	desc = "A tasty meat slice. You don't see any pigs on this station, do you?"
 	icon_state = "bacon"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 
 /obj/item/reagent_containers/food/snacks/bacon/microwave
 	name = "microwaved bacon"
 	desc = "A tasty meat slice. You don't see any pigs on this station, do you?"
 	icon_state = "bacon"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 
 /obj/item/reagent_containers/food/snacks/bacon/oven
 	name = "oven-cooked bacon"
 	desc = "A tasty meat slice. You don't see any pigs on this station, do you?"
 	icon_state = "bacon"
 	bitesize = 2
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bacon)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 0.33, REAGENT_ID_TRIGLYCERIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/bacon_stick
@@ -5065,13 +4750,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/pineapple_ring)
 	desc = "The cornerstone of every nutritious breakfast, now with bacon!"
 	icon_state = "baconburger"
 	filling_color = "#D63C3C"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_desc = list("bun" = 2)
 	nutriment_amt = 3
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/burger/bacon)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/blt
@@ -5079,13 +4763,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/burger/bacon)
 	desc = "Bacon, lettuce, tomatoes. The perfect lunch."
 	icon_state = "blt"
 	filling_color = "#D63C3C"
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("bread" = 4)
 	nutriment_amt = 4
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/blt)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/porkbowl
@@ -5105,8 +4788,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/porkbowl)
 	icon_state = "mashedpotato"
 	trash = /obj/item/trash/plate
 	filling_color = "#EDDD00"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list("mashed potatoes" = 4)
 	bitesize = 2
@@ -5116,13 +4797,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/porkbowl)
 	desc = "Totally baked."
 	icon_state = "loadedbakedpotato"
 	filling_color = "#9C7A68"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_amt = 3
 	nutriment_desc = list("baked potato" = 3)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/loadedbakedpotato)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/bangersandmash
@@ -5131,13 +4811,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/loadedbakedpotato)
 	icon_state = "bangersandmash"
 	trash = /obj/item/trash/plate
 	filling_color = "#EDDD00"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list("fluffy potato" = 3, "sausage" = 2)
 	bitesize = 4
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bangersandmash)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/cheesymash
@@ -5146,13 +4825,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bangersandmash)
 	icon_state = "cheesymash"
 	trash = /obj/item/trash/plate
 	filling_color = "#EDDD00"
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list("cheesy potato" = 4)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesymash)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/croissant
@@ -5169,8 +4847,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesymash)
 	desc = "Pancakes, delicious."
 	icon_state = "pancakes"
 	trash = /obj/item/trash/plate
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	nutriment_desc = list("pancake" = 8)
 	nutriment_amt = 8
 	bitesize = 2
@@ -5180,8 +4856,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesymash)
 	desc = "Pancakes with berries, delicious."
 	icon_state = "pancake_berry"
 	trash = /obj/item/trash/plate
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	nutriment_desc = list("pancake" = 4, "berry" = 4)
 	nutriment_amt = 10
 	bitesize = 2
@@ -5206,8 +4880,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/nugget)
 	desc = "Portable ice cream in its own packaging."
 	icon_state = "icecreamsandwich"
 	filling_color = "#343834"
-	center_of_mass_x = 15
-	center_of_mass_y = 4
 	nutriment_desc = list("ice cream" = 4)
 	nutriment_amt = 4
 
@@ -5220,8 +4892,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/honeybun)
 	icon_state = "tortilla"
 	bitesize = 3
 	nutriment_desc = list("tortilla" = 1)
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_amt = 6
 
 //Old_Chips Guide//////////////////////////////////////
@@ -5243,8 +4913,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/honeybun)
 	icon_state = "chip"
 
 	bitesize = 1
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("chips" = 1)
 	nutriment_amt = 2
 	flags = OPENCONTAINER
@@ -5254,8 +4922,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/honeybun)
 	desc = "A portion sized chip good for dipping."
 	icon_state = "chip"
 	bitesize = 1
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("nacho" = 1)
 	nutriment_amt = 2
 	flags = OPENCONTAINER
@@ -5356,12 +5022,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chipplate)
 	trash = /obj/item/trash/small_bowl
 	bitesize = 1
 	nutriment_desc = list("queso" = 20)
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_amt = 20
 
 // A chip held to a dip is dipped.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/dip)
+	configure(item_placement(center_x = 16, center_y = 16))
 	op("dip_chip", item(/obj/item/reagent_containers/food/snacks/chip), priority(OP_PRIORITY_PART + 1), when(PROC_REF(is_dippable)), label("Dip it"), then(PROC_REF(chip_dipped)))
 
 /// What a chip dipped here becomes, or null when it is not one that can be.
@@ -5468,13 +5133,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheeseburrito)
 	desc = "Free with orders over 10 thalers."
 	icon_state = "eggroll"
 	filling_color = "#799ACE"
-	center_of_mass_x = 17
-	center_of_mass_y = 4
 	nutriment_amt = 4
 	nutriment_desc = list(REAGENT_ID_EGG = 4)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/eggroll)
+	configure(item_placement(center_x = 17, center_y = 4))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/burrito
@@ -5482,12 +5146,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/eggroll)
 	desc = "Minced meat wrapped in a flour tortilla. It's a burrito by definition."
 	icon_state = "burrito"
 	bitesize = 4
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("tortilla" = 6)
 	nutriment_amt = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/burrito_spicy
@@ -5495,12 +5158,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito)
 	desc = "Spicy meat wrapped in a flour tortilla."
 	icon_state = "spicyburrito"
 	bitesize = 4
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("tortilla" = 6)
 	nutriment_amt = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_spicy)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/burrito_cheese
@@ -5508,12 +5170,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_spicy)
 	desc = "Meat and melted cheese wrapped in a flour tortilla."
 	icon_state = "cheesemeatburrito"
 	bitesize = 4
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("tortilla" = 6)
 	nutriment_amt = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_cheese)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/burrito_cheese_spicy
@@ -5521,12 +5182,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_cheese)
 	desc = "Melted cheese, beans and chillis wrapped in a flour tortilla."
 	icon_state = "spicycheesemeatburrito"
 	bitesize = 4
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("tortilla" = 6)
 	nutriment_amt = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_cheese_spicy)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/burrito_vegan
@@ -5534,12 +5194,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_cheese_spicy)
 	desc = "Tofu wrapped in a flour tortilla."
 	icon_state = "veganburrito"
 	bitesize = 4
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("tortilla" = 6)
 	nutriment_amt = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_vegan)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_TOFU = 6)))
 
 /obj/item/reagent_containers/food/snacks/breakfast_wrap
@@ -5547,8 +5206,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_vegan)
 	desc = "Bacon, eggs, cheese, and tortilla grilled to perfection."
 	icon_state = "breakfastwrap"
 	bitesize = 4
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("tortilla" = 6)
 	nutriment_amt = 6
 
@@ -5557,8 +5214,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_vegan)
 	desc = "The mystery is, why aren't you BSAing it?"
 	icon_state = "mysteryburrito"
 	bitesize = 5
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("regret" = 6)
 	nutriment_amt = 6
 
@@ -5567,12 +5222,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_vegan)
 	desc = "Meat and an insane amount of chillis packed in a flour tortilla. The " + JOB_CHAPLAIN + " will see you now."
 	icon_state = "hellfireburrito"
 	bitesize = 4
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	nutriment_desc = list("hellfire" = 6)
 	nutriment_amt = 24// 10 Chilis is a lot.
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_hell)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 9, REAGENT_ID_CONDENSEDCAPSAICIN = 10)))
 
 //End Burritos///////////////////////////////////
@@ -5640,11 +5294,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/egg_pancake)
 	filling_color = "#f73333"
 	nutriment_amt = 8
 	nutriment_desc = list("savory meat and rice" = 8)
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/redcurry)
+	configure(item_placement(center_x = 16, center_y = 8))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 7)))
 
 /obj/item/reagent_containers/food/snacks/greencurry
@@ -5656,11 +5309,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/redcurry)
 	filling_color = "#58b76c"
 	nutriment_amt = 12
 	nutriment_desc = list("tofu and rice" = 12)
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/greencurry)
+	configure(item_placement(center_x = 16, center_y = 8))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_CAPSAICIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/yellowcurry
@@ -5672,11 +5324,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/greencurry)
 	filling_color = "#bc9509"
 	nutriment_amt = 13
 	nutriment_desc = list("rice and potatoes" = 13)
-	center_of_mass_x = 16
-	center_of_mass_y = 8
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/yellowcurry)
+	configure(item_placement(center_x = 16, center_y = 8))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/bearburger
@@ -5684,11 +5335,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/yellowcurry)
 	desc = "The solution to your unbearable hunger."
 	icon_state = "bearburger"
 	filling_color = "#5d5260"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	bitesize = 5
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearburger)
+	configure(item_placement(center_x = 15, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/bibimbap
@@ -5699,11 +5349,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearburger)
 	filling_color = "#4f2100"
 	nutriment_amt = 10
 	nutriment_desc = list(REAGENT_ID_EGG = 5, "vegetables" = 5)
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 4
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bibimbap)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/lomein
@@ -5715,11 +5364,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bibimbap)
 	filling_color = "#FCEE81"
 	nutriment_amt = 8
 	nutriment_desc = list("noodles" = 6, "sesame sauce" = 2)
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/lomein)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/friedrice
@@ -5731,8 +5379,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/lomein)
 	filling_color = "#FFFBDB"
 	nutriment_amt = 7
 	nutriment_desc = list(REAGENT_ID_RICE = 7)
-	center_of_mass_x = 17
-	center_of_mass_y = 11
 	bitesize = 2
 
 /obj/item/reagent_containers/food/snacks/chickenfillet
@@ -5742,11 +5388,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/lomein)
 	filling_color = "#E9ADFF"
 	nutriment_amt = 4
 	nutriment_desc = list("breading" = 4)
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickenfillet)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/friedmushroom
@@ -5756,11 +5401,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickenfillet)
 	filling_color = "#EDDD00"
 	nutriment_amt = 4
 	nutriment_desc = list("alcoholic mushrooms" = 4)
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 5
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/friedmushroom)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/pisanggoreng
@@ -5772,11 +5416,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/friedmushroom)
 	filling_color = "#301301"
 	nutriment_amt = 8
 	nutriment_desc = list("sweet bananas" = 8)
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/pisanggoreng)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/meatbun
@@ -5786,11 +5429,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/pisanggoreng)
 	icon_state = "meatbun"
 	nutriment_amt = 5
 	nutriment_desc = list("fried meat" = 5)
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatbun)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/spicedmeatbun
@@ -5800,11 +5442,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatbun)
 	icon_state = "meatbun"
 	nutriment_amt = 5
 	nutriment_desc = list("char sui" = 5)
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 5
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/spicedmeatbun)
+	configure(item_placement(center_x = 16, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/custardbun
@@ -5814,8 +5455,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/spicedmeatbun)
 	icon_state = "meatbun"
 	nutriment_amt = 6
 	nutriment_desc = list("egg custard" = 6)
-	center_of_mass_x = 16
-	center_of_mass_y = 11
 	bitesize = 6
 
 /obj/item/reagent_containers/food/snacks/chickenmomo
@@ -5827,11 +5466,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/spicedmeatbun)
 	filling_color = "#edd7d7"
 	nutriment_amt = 9
 	nutriment_desc = list("spiced chicken" = 9)
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickenmomo)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/veggiemomo
@@ -5843,11 +5481,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickenmomo)
 	filling_color = "#edd7d7"
 	nutriment_amt = 13
 	nutriment_desc = list("spiced vegetables" = 13)
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/veggiemomo)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/risotto
@@ -5859,11 +5496,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/veggiemomo)
 	filling_color = "#edd7d7"
 	nutriment_amt = 9
 	nutriment_desc = list("savory rice" = 6, REAGENT_ID_CREAM = 3)
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/risotto)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/risottoballs
@@ -5875,8 +5511,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/risotto)
 	filling_color = "#edd7d7"
 	nutriment_amt = 1
 	nutriment_desc = list(REAGENT_ID_BATTER = 1)
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 3
 
 /obj/item/reagent_containers/food/snacks/poachedegg
@@ -5887,11 +5521,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/risotto)
 	filling_color = "#FFDF78"
 	nutriment_amt = 1
 	nutriment_desc = list(REAGENT_ID_EGG = 1)
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/poachedegg)
+	configure(item_placement(center_x = 16, center_y = 14))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_BLACKPEPPER = 1)))
 
 /obj/item/reagent_containers/food/snacks/ribplate
@@ -5902,11 +5535,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/poachedegg)
 	filling_color = "#7A3D11"
 	nutriment_amt = 6
 	nutriment_desc = list(REAGENT_ID_BARBECUE = 6)
-	center_of_mass_x = 16
-	center_of_mass_y = 13
 	bitesize = 4
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/ribplate)
+	configure(item_placement(center_x = 16, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_TRIGLYCERIDE = 2, REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_HONEY = 5)))
 
 /obj/item/reagent_containers/food/snacks/omurice
@@ -5948,11 +5580,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ribplate)
 	desc = "it is only wafer thin."
 	icon_state = "mint"
 	filling_color = "#F2F2F2"
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/mint)
+	configure(item_placement(center_x = 16, center_y = 14))
 	configure(reagents(add = list(REAGENT_ID_MINT = 1)))
 
 /obj/item/reagent_containers/food/snacks/mint/admints
@@ -5988,13 +5619,12 @@ CAPABILITIES(/obj/item/storage/box/admints)
 	icon_state = "candy"
 	trash = /obj/item/trash/candy
 	filling_color = "#7D5F46"
-	center_of_mass_x = 15
-	center_of_mass_y = 15
 	nutriment_amt = 1
 	nutriment_desc = list("candy" = 1)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy)
+	configure(item_placement(center_x = 15, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 3)))
 
 /obj/item/reagent_containers/food/snacks/namagashi
@@ -6004,13 +5634,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy)
 	icon_state = "namagashi"
 	trash = /obj/item/trash/namagashi
 	filling_color = "#7D5F46"
-	center_of_mass_x = 15
-	center_of_mass_y = 15
 	nutriment_amt = 1
 	nutriment_desc = list("candy" = 2, "sweetness" = 2)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/namagashi)
+	configure(item_placement(center_x = 15, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
 
 /obj/item/reagent_containers/food/snacks/candy/proteinbar
@@ -6241,13 +5870,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb10)
 	icon_state = "chips"
 	trash = /obj/item/trash/chips
 	filling_color = "#E8C31E"
-	center_of_mass_x = 15
-	center_of_mass_y = 15
 	nutriment_amt = 3
 	nutriment_desc = list("salt" = 1, "chips" = 2)
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chips)
+	configure(item_placement(center_x = 15, center_y = 15))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/chips/bbq
@@ -6278,8 +5906,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chips)
 	icon_state = "tastybread"
 	trash = /obj/item/trash/tastybread
 	filling_color = "#A66829"
-	center_of_mass_x = 17
-	center_of_mass_y = 16
 	nutriment_amt = 6
 	nutriment_desc = list("bread" = 2, "sweetness" = 3)
 	bitesize = 2
@@ -6292,11 +5918,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chips)
 	description_fluff = "Raising cows in low-gravity environments has the natural result of particularly tender meat. The jerking process largely undoes this apparent benefit, but it's just too damn efficient to ship not to."
 	trash = /obj/item/trash/sosjerky
 	filling_color = "#631212"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sosjerky)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/unajerky
@@ -6307,11 +5932,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sosjerky)
 	description_fluff = "The exact meat and spices used in the curing of Sissalik Jerky are a well-kept secret, and thought to not exist at all outside of Hegemony space. Many have tried to replicate the flavour, but none have come close, so the brand remains a highly prized import. "
 	trash = /obj/item/trash/unajerky
 	filling_color = "#631212"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/unajerky)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_CAPSAICIN = 2)))
 
@@ -6323,13 +5947,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/unajerky)
 	description_fluff = "Launched by Centuari Provisions to target the Tajaran immigrant market, Tuna Snax also found a surprising niche among Vir's sizable Scandinavian population. Elsewhere, the dried fish flakes are widely considered disgusting."
 	trash = /obj/item/trash/tuna
 	filling_color = "#FFDEFE"
-	center_of_mass_x = 17
-	center_of_mass_y = 13
 	nutriment_amt = 3
 	nutriment_desc = list("smoked fish" = 5)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/tuna)
+	configure(item_placement(center_x = 17, center_y = 13))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/pistachios
@@ -6339,8 +5962,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/tuna)
 	desc = "Pistachios. There is absolutely nothing remarkable about these."
 	trash = /obj/item/trash/pistachios
 	filling_color = "#825D26"
-	center_of_mass_x = 17
-	center_of_mass_y = 13
 	nutriment_desc = list("nuts" = 1)
 	nutriment_amt = 3
 	bitesize = 1
@@ -6352,8 +5973,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/tuna)
 	desc = "Sunflower seeds. A favorite among both birds and gopniks."
 	trash = /obj/item/trash/semki
 	filling_color = "#68645D"
-	center_of_mass_x = 17
-	center_of_mass_y = 13
 	nutriment_desc = list("sunflower seeds" = 1)
 	nutriment_amt = 6
 	bitesize = 1
@@ -6365,8 +5984,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/tuna)
 	desc = "Space squid tentacles, Carefully removed (from the squid) then dried into strips of delicious rubbery goodness!"
 	trash = /obj/item/trash/squid
 	filling_color = "#c0a9d7"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("fish" = 1, "salt" = 1)
 	nutriment_amt = 2
 	bitesize = 1
@@ -6381,8 +5998,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/squid/true)
 	desc = "Fried bread cubes. Popular in some Solar territories."
 	trash = /obj/item/trash/croutons
 	filling_color = "#c6b17f"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("bread" = 1, "salt" = 1)
 	nutriment_amt = 3
 	bitesize = 1
@@ -6394,8 +6009,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/squid/true)
 	desc = "Pig fat. Salted. Just as good as it sounds."
 	trash = /obj/item/trash/salo
 	filling_color = "#e0bcbc"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("fat" = 1, "salt" = 1)
 	nutriment_amt = 2
 	bitesize = 2
@@ -6410,13 +6023,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/salo/true)
 	desc = "Dried salted beer snack fish."
 	trash = /obj/item/trash/driedfish
 	filling_color = "#c8a5bb"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("fish" = 1, "salt" = 1)
 	nutriment_amt = 2
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/no_raisin
@@ -6427,8 +6039,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
 	description_fluff = "Originally Raisin Blend no. 4, 4noraisins obtained their current name in the Skadi Positronic Exclusion Crisis of 2442, where they were rebranded as part of the protests. The exclusion crisis, so the story goes, involved positronic immigration being banned for no raisin."
 	trash = /obj/item/trash/raisins
 	filling_color = "#343834"
-	center_of_mass_x = 15
-	center_of_mass_y = 4
 	nutriment_desc = list("dried raisins" = 6)
 	nutriment_amt = 6
 
@@ -6440,8 +6050,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
 	description_fluff = "The origins of the flourescent orange dust produced by Cheesie Honkers is considered a trade secret, despite having been leaked on the exonet decades ago. It's the cheese."
 	trash = /obj/item/trash/cheesie
 	filling_color = "#FFA305"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_amt = 4
 	nutriment_desc = list(REAGENT_ID_CHEESE = 5, "chips" = 2)
 	bitesize = 2
@@ -6454,13 +6062,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
 	description_fluff = "Spacer Snack Cakes' meaner, tastier cousin. The Syndi-Cakes brand was at risk of dissolution in 2429 when it was revealed that the entire production chain was a Nos Amis joint. The brand was quickly aquired by Centauri Provisions and some mild hallucinogenic 'add-ins' were axed from the recipe."
 	trash = /obj/item/trash/syndi_cakes
 	filling_color = "#FF5D05"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	nutriment_desc = list("sweetness" = 3, "cake" = 1)
 	nutriment_amt = 4
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/syndicake)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_DOCTORSDELIGHT = 5)))
 
 ////////////////////sol_vend (Mars Mart)////////////////////////////////////////////////////
@@ -6472,13 +6079,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/syndicake)
 	desc = "Contains over 9000% of your daily recommended intake of salt."
 	trash = /obj/item/trash/tidegobs
 	filling_color = "#2556b0"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("salt" = 4, "seagull?" = 1)
 	nutriment_amt = 5
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/triton)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 10)))
 
 /obj/item/reagent_containers/food/snacks/saturn
@@ -6488,13 +6094,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/triton)
 	desc = "A peanut flavored snack that looks like the rings of Saturn!"
 	trash = /obj/item/trash/saturno
 	filling_color = "#dca319"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("salt" = 4, PLANT_PEANUT = 2,  "wood?" = 1)
 	nutriment_amt = 5
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/saturn)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/jupiter
@@ -6504,8 +6109,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/saturn)
 	desc = "By Joove! It's some kind of gel."
 	trash = /obj/item/trash/jupiter
 	filling_color = "#dc1919"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("sweetness" = 4, REAGENT_ID_VANILLA = 1)
 	nutriment_amt = 5
 	bitesize = 2
@@ -6517,8 +6120,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/saturn)
 	desc = "Baseless tasteless nutrithick rods to get you through the day. Now even less rash inducing!"
 	trash = /obj/item/trash/pluto
 	filling_color = "#ffffff"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("chalk" = 4, "sadness" = 1)
 	nutriment_amt = 5
 	bitesize = 2
@@ -6530,8 +6131,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/saturn)
 	desc = "A steaming self-heated bowl of sweet eggs and taters!"
 	trash = /obj/item/trash/mars
 	filling_color = "#d2c63f"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("eggs" = 4, PLANT_POTATO = 4, REAGENT_ID_MUSTARD = 2)
 	nutriment_amt = 8
 	bitesize = 2
@@ -6543,13 +6142,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/saturn)
 	desc = "Hot takes on hot cakes, a timeless classic now finally fit for human consumption!"
 	trash = /obj/item/trash/venus
 	filling_color = "#d2c63f"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("heat" = 4, "burning!" = 1)
 	nutriment_amt = 5
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/venus)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/sun_snax
@@ -6559,13 +6157,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/venus)
 	desc = "A Sol favorite, Sun Snax! Sun dried corn chips coated in a super spicy seasoning!"
 	trash = /obj/item/trash/sun_snax
 	filling_color = "#d2c63f"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("heat" = 3, "burning!" = 2)
 	nutriment_amt = 3
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sun_snax)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/oort
@@ -6575,13 +6172,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sun_snax)
 	desc = "Pop rocks themed on the outermost reaches of the Sol system, new formula guarantees fewer shrapnel induced oral injuries."
 	trash = /obj/item/trash/oort
 	filling_color = "#3f7dd2"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("fizz" = 4, "sweetness" = 1)
 	nutriment_amt = 5
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/oort)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_FROSTOIL = 5)))
 
 /obj/item/reagent_containers/food/snacks/pretzels
@@ -6591,8 +6187,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/oort)
 	trash = /obj/item/trash/pretzel
 	desc = "A tasty bread like snack that is seasoned with what tastes like salt... but you're not so sure it's actually salt."
 	filling_color = "#916E36"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("salt" = 2, "pretzel" = 3)
 	nutriment_amt = 3
 	bitesize = 1
@@ -6605,13 +6199,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/oort)
 	desc = "Fermented space shark, like chewing a urine soaked mattress."
 	description_fluff = "A form of fermented shark that originated on Earth as far back as the 17th century. Modern Hakarl is made from vat-made fermented shark and is distributed across the galaxy as a delicacy. However, few are able to stand the smell or taste of the meat."
 	filling_color = "#916E36"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("fish" = 2, "salt" = 2, REAGENT_ID_AMMONIA = 1)
 	nutriment_amt = 4
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/hakarl)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 ////////////////////weeb_vend (Nippon-tan!)////////////////////////////////////////////////////
@@ -6708,8 +6301,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocobanana)
 /obj/item/reagent_containers/food/snacks/old
 	name = "master old-food"
 	desc = "they're all inedible and potentially dangerous items"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("rot" = 5, REAGENT_ID_MOLD = 5)
 	nutriment_amt = 10
 	bitesize = 3
@@ -6719,6 +6310,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocobanana)
 	var/old_taint
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/old)
+	configure(item_placement(center_x = 15, center_y = 9))
 	rolls(nameof(old_taint), pick_one(list(REAGENT_ID_FUEL, REAGENT_ID_AMATOXIN, REAGENT_ID_CARPOTOXIN, REAGENT_ID_ZOMBIEPOWDER, REAGENT_ID_CRYPTOBIOLIN, REAGENT_ID_PSILOCYBIN)))
 	configure(reagents(contents_from = PROC_REF(old_contents)))
 
@@ -6771,12 +6363,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/old)
 	trash = /obj/item/trash/beef
 	canned_open_state = "beef-open"
 	filling_color = "#663300"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("beef" = 1)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/beef)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 2)))
 
 /obj/item/reagent_containers/food/snacks/canned/beans
@@ -6786,12 +6377,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/beef)
 	trash = /obj/item/trash/beans
 	canned_open_state = "beans-open"
 	filling_color = "#ff6633"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list(REAGENT_BEANPROTEIN = 1, "tomato sauce" = 1)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/beans)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_BEANPROTEIN = 5, REAGENT_ID_TOMATOJUICE = 5)))
 
 /obj/item/reagent_containers/food/snacks/canned/tomato
@@ -6801,11 +6391,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/beans)
 	trash = /obj/item/trash/tomato
 	canned_open_state = "tomato-open"
 	filling_color = "#ae0000"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/tomato)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_TOMATOSOUP = 12)))
 
 /obj/item/reagent_containers/food/snacks/canned/spinach
@@ -6815,12 +6404,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/tomato)
 	trash = /obj/item/trash/spinach
 	canned_open_state = "spinach-open"
 	filling_color = "#003300"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("soggy" = 1, "vegetable" = 1)
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/spinach)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_ADRENALINE = 4, REAGENT_ID_HYPERZINE = 4, REAGENT_ID_IRON = 4)))
 
 //////////////////////////////Advanced Canned Food//////////////////////////////
@@ -6832,12 +6420,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/spinach)
 	trash = /obj/item/trash/fishegg
 	canned_open_state = "fisheggs-open"
 	filling_color = "#000000"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("salt" = 1)
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/caviar)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 5, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/canned/caviar/true
@@ -6847,12 +6434,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/caviar)
 	trash = /obj/item/trash/carpegg
 	canned_open_state = "carpeggs-open"
 	filling_color = "#330066"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list("salt" = 1, "a numbing sensation" = 1)
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/caviar/true)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 4, REAGENT_ID_CARPOTOXIN = 1, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/canned/maps
@@ -6862,11 +6448,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/caviar/true)
 	trash = /obj/item/trash/maps
 	canned_open_state = "maps-open"
 	filling_color = "#330066"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/maps)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_SODIUMCHLORIDE = 2)))
 
 /obj/item/reagent_containers/food/snacks/canned/appleberry
@@ -6876,12 +6461,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/maps)
 	trash = /obj/item/trash/appleberry
 	canned_open_state = "appleberry-open"
 	filling_color = "#FFFFFF"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_desc = list(PLANT_APPLE = 1, "sweetness" = 1)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/appleberry)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_MILK = 8, REAGENT_ID_SUGAR = 5)))
 
 /obj/item/reagent_containers/food/snacks/canned/ntbeans
@@ -6891,11 +6475,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/appleberry)
 	trash = /obj/item/trash/ntbeans
 	canned_open_state = "ntbeans-open"
 	filling_color = "#FC6F28"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/ntbeans)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_BEANPROTEIN = 6, REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/canned/brainzsnax
@@ -6908,8 +6491,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/ntbeans)
 	trash = /obj/item/trash/brainzsnax
 	canned_open_state = "brainzsnax-open"
 	filling_color = "#caa3c9"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 2
 	var/brainmeat = REAGENT_ID_BRAINPROTEIN
 
@@ -6918,6 +6499,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/ntbeans)
 	return brainmeat ? list("[brainmeat]" = 10) : null
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(contents_from = PROC_REF(brain_contents)))
 
 /obj/item/reagent_containers/food/snacks/canned/brainzsnax/red
@@ -6930,8 +6512,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax)
 	trash = /obj/item/trash/brainzsnaxred
 	canned_open_state = "brainzsnaxred-open"
 	filling_color = "#a6898d"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	bitesize = 2
 	brainmeat = REAGENT_ID_REDBRAINPROTEIN
 
@@ -6951,8 +6531,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax)
 	package_trash = /obj/item/trash/lunacakewrap
 	package_open_state = "lunacake_open"
 	filling_color = "#ffffff"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_amt = 6
 	nutriment_desc = list("sweetness" = 4, REAGENT_ID_VANILLA = 1)
 	bitesize = 2
@@ -6964,8 +6542,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax)
 	package_trash = /obj/item/trash/mooncakewrap
 	package_open_state = "lunacake_open"
 	filling_color = "#ffffff"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_amt = 6
 	nutriment_desc = list("sweetness" = 4, REAGENT_ID_CHOCOLATE = 1)
 	bitesize = 2
@@ -6979,8 +6555,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax)
 	package_trash = /obj/item/trash/mochicakewrap
 	package_open_state = "lunacake_open"
 	filling_color = "#ffffff"
-	center_of_mass_x = 15
-	center_of_mass_y = 9
 	nutriment_amt = 6
 	nutriment_desc = list("sweetness" = 4, REAGENT_ID_RICE = 1)
 	bitesize = 2
@@ -6997,13 +6571,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax)
 	package_trash = /obj/item/trash/spacer_cake_wrap
 	package_open_state = "spacercake_open"
 	filling_color = "#FFE591"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list("sweetness" = 4, "cake" = 2)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/spacetwinkie)
+	configure(item_placement(center_x = 15, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 4)))
 
 /obj/item/reagent_containers/food/snacks/packaged/genration
@@ -7013,8 +6586,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/spacetwinkie)
 	trash = /obj/item/trash/genration
 	package_open_state = "genration_open"
 	filling_color = "#FFFFFF"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list("chalk" = 6)
 	bitesize = 2
@@ -7026,13 +6597,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/spacetwinkie)
 	trash = /obj/item/trash/meatration
 	package_open_state = "meatration_open"
 	filling_color = "#FFFFFF"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list("chalk" = 3, "meat" = 3)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/meatration)
+	configure(item_placement(center_x = 15, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/packaged/vegration
@@ -7042,8 +6612,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/meatration)
 	trash = /obj/item/trash/vegration
 	package_open_state = "vegration_open"
 	filling_color = "#FFFFFF"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list("sadness" = 3, "veggie" = 3)
 	bitesize = 2
@@ -7055,13 +6623,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/meatration)
 	trash = /obj/item/trash/sweetration
 	package_open_state = "baseration_open"
 	filling_color = "#FFFFFF"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 	nutriment_amt = 4
 	nutriment_desc = list("sweetness" = 5, "cake" = 1)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/sweetration)
+	configure(item_placement(center_x = 15, center_y = 11))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 6)))
 
 /obj/item/reagent_containers/food/snacks/packaged/vendburger
@@ -7291,8 +6858,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/greentealeaf)
 	slices_num = 6
 	nutriment_amt = 12
 	nutriment_desc = list("a warm, buttery sweetness that reminds you of home" = 5)
-	center_of_mass_x = 16
-	center_of_mass_y= 9
 	bitesize = 2
 
 /obj/item/reagent_containers/food/snacks/slice/buttspie
@@ -7366,11 +6931,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/greentealeaf)
 	filling_color = "#E39C29"
 	nutriment_amt = 8
 	nutriment_desc = list(REAGENT_ID_VANILLA = 8)
-	center_of_mass_x = 15
-	center_of_mass_y= 9
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/blondies)
+	configure(item_placement(center_x = 15, center_y = 9))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/blondiesslice
@@ -7382,8 +6946,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/blondies)
 	filling_color = "#F5B951"
 	bitesize = 2
 	nutriment_desc = list(REAGENT_ID_VANILLA = 1)
-	center_of_mass_x = 16
-	center_of_mass_y= 12
 
 /obj/item/reagent_containers/food/snacks/blondiesslice/filled
 	nutriment_amt = 1
@@ -7802,8 +7364,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sharkmeatcubes)
 	flags = OPENCONTAINER
 	bitesize = 12
 	filling_color = "#ADAC7F"
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 
 	var/food_type = "/obj/item/reagent_containers/food/snacks/proteinslab"
 
@@ -7919,14 +7479,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesenachos)
 	desc = "The universes best soup! Yum!!!"
 	icon_state = "milosoup"
 	trash = /obj/item/trash/snack_bowl
-	center_of_mass_x = 16
-	center_of_mass_y = 7
 	nutriment_amt = 8
 	nutriment_desc = list("soy" = 8)
 	bitesize = 4
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/milosoup)
+	configure(item_placement(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_WATER = 5)))
 
 /obj/item/reagent_containers/food/snacks/onionsoup
@@ -7935,12 +7494,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/milosoup)
 	icon_state = "onionsoup"
 	trash = /obj/item/trash/snack_bowl
 	filling_color = "#E0C367"
-	center_of_mass_x = 16
-	center_of_mass_y = 7
 	bitesize = 3
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/onionsoup)
+	configure(item_placement(center_x = 16, center_y = 7))
 	configure(reagents(add = list(REAGENT_ID_ONIONSOUP = 10)))
 
 //Fennec foods
@@ -8032,6 +7590,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/scorpion_cooked)
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/ant)
+	configure(item_placement(center_x = 17, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_HONEY = 2, REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/antball
@@ -8615,3 +8174,363 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/acorn)
 /// the coating this refers to (a relation view: null once it is deleted).
 /obj/item/reagent_containers/food/snacks/proc/coating() as /datum/reagent/nutriment/coating
 	return coating
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocolatepiece)
+	configure(item_placement(center_x = 15, center_y = 15))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tofu)
+	configure(item_placement(center_x = 17, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tofurkey)
+	configure(item_placement(center_x = 16, center_y = 8))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/stuffing)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ghostburger)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tofuburger)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/roburger)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/roburgerbig)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/mimeburger)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/muffin)
+	configure(item_placement(center_x = 17, center_y = 4))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/berryclafoutis)
+	configure(item_placement(center_x = 16, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/waffles)
+	configure(item_placement(center_x = 15, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/eggplantparm)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/soylenviridians)
+	configure(item_placement(center_x = 15, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tofupie)
+	configure(item_placement(center_x = 16, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tofukabob)
+	configure(item_placement(center_x = 17, center_y = 15))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/onionrings)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/microfries)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ovenfries)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/soydope)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/poppypretzel)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jelliedtoast)
+	configure(item_placement(center_x = 16, center_y = 8))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/honeytoast)
+	configure(item_placement(center_x = 16, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesetoast)
+	configure(item_placement(center_x = 16, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyburger)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/stewedsoymeat)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledspagetti)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledrice)
+	configure(item_placement(center_x = 17, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ricepudding)
+	configure(item_placement(center_x = 17, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/caramelapple)
+	configure(item_placement(center_x = 15, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/candiedapple)
+	configure(item_placement(center_x = 15, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/applepie)
+	configure(item_placement(center_x = 16, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cherrypie)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/twobread)
+	configure(item_placement(center_x = 15, center_y = 12))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellysandwich)
+	configure(item_placement(center_x = 16, center_y = 8))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tossedsalad)
+	configure(item_placement(center_x = 17, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/meatbread)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/xenomeatbread)
+	configure(item_placement(center_x = 16, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/bananabread)
+	configure(item_placement(center_x = 16, center_y = 8))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/tofubread)
+	configure(item_placement(center_x = 16, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/tofubread)
+	configure(item_placement(center_x = 16, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/creamcheesebread)
+	configure(item_placement(center_x = 16, center_y = 14))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/carrotcake)
+	configure(item_placement(center_x = 16, center_y = 14))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/braincake)
+	configure(item_placement(center_x = 16, center_y = 12))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/cheesecake)
+	configure(item_placement(center_x = 16, center_y = 14))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/peanutcake)
+	configure(item_placement(center_x = 16, center_y = 14))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/plaincake)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/plaincake)
+	configure(item_placement(center_x = 16, center_y = 14))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/orangecake)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/orangecake)
+	configure(item_placement(center_x = 16, center_y = 14))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/limecake)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/limecake)
+	configure(item_placement(center_x = 16, center_y = 14))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/lemoncake)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/lemoncake)
+	configure(item_placement(center_x = 16, center_y = 14))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/chocolatecake)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/chocolatecake)
+	configure(item_placement(center_x = 16, center_y = 14))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesewedge)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/birthdaycake)
+	configure(item_placement(center_x = 16, center_y = 14))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/bread)
+	configure(item_placement(center_x = 16, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/watermelonslice)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/applecake)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/applecake)
+	configure(item_placement(center_x = 16, center_y = 14))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pumpkinpie)
+	configure(item_placement(center_x = 16, center_y = 10))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/pumpkinpie)
+	configure(item_placement(center_x = 16, center_y = 12))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/keylimepieslice)
+	configure(item_placement(center_x = 16, center_y = 12))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/quicheslice)
+	configure(item_placement(center_x = 16, center_y = 12))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/browniesslice)
+	configure(item_placement(center_x = 16, center_y = 12))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cosmicbrowniesslice)
+	configure(item_placement(center_x = 16, center_y = 12))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/margherita)
+	configure(item_placement(center_x = 16, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pineappleslice)
+	configure(item_placement(center_x = 18, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/meatpizza)
+	configure(item_placement(center_x = 16, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/mushroompizza)
+	configure(item_placement(center_x = 16, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/vegetablepizza)
+	configure(item_placement(center_x = 16, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pizzacrunchslice)
+	configure(item_placement(center_x = 18, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/oldpizza)
+	configure(item_placement(center_x = 16, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/doughslice)
+	configure(item_placement(center_x = 17, center_y = 19))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bunbun)
+	configure(item_placement(center_x = 16, center_y = 8))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/flatbread)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawsticks)
+	configure(item_placement(center_x = 16, center_y = 12))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawsunflower)
+	configure(item_placement(center_x = 17, center_y = 18))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/fortunecookie)
+	configure(item_placement(center_x = 15, center_y = 14))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/berrymuffin)
+	configure(item_placement(center_x = 17, center_y = 4))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ghostmuffin)
+	configure(item_placement(center_x = 17, center_y = 4))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/macncheese)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/spreads/butter)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bacon/microwave)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bacon/oven)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/mashedpotato)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pancakes)
+	configure(item_placement(center_x = 15, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pancakes/berry)
+	configure(item_placement(center_x = 15, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/icecreamsandwich)
+	configure(item_placement(center_x = 15, center_y = 4))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tortilla)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chip)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/nacho)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/breakfast_wrap)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_mystery)
+	configure(item_placement(center_x = 16, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/friedrice)
+	configure(item_placement(center_x = 17, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/custardbun)
+	configure(item_placement(center_x = 16, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/risottoballs)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tastybread)
+	configure(item_placement(center_x = 17, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pistachios)
+	configure(item_placement(center_x = 17, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/semki)
+	configure(item_placement(center_x = 17, center_y = 13))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/squid)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/croutons)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/salo)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/no_raisin)
+	configure(item_placement(center_x = 15, center_y = 4))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesiehonkers)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jupiter)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pluto)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/mars)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pretzels)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax/red)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/lunacake)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/darklunacake)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/mochicake)
+	configure(item_placement(center_x = 15, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/genration)
+	configure(item_placement(center_x = 15, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/vegration)
+	configure(item_placement(center_x = 15, center_y = 11))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slicable/buttspie)
+	configure(item_placement(center_x = 16, center_y = 9))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/blondiesslice)
+	configure(item_placement(center_x = 16, center_y = 12))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cube)
+	configure(item_placement(center_x = 16, center_y = 14))

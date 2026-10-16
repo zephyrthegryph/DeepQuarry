@@ -4,8 +4,6 @@
 	desc = "A jar. You're not sure what it's supposed to hold."
 	icon_state = "jar"
 	item_state = "beaker"
-	center_of_mass_x = 15
-	center_of_mass_y = 8
 	unacidable = TRUE
 
 /obj/item/reagent_containers/food/drinks/jar/on_reagent_change()
@@ -24,3 +22,6 @@
 		name = "empty jar"
 		desc = "A jar. You're not sure what it's supposed to hold."
 		return
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/jar)
+	configure(item_placement(center_x = 15, center_y = 8))

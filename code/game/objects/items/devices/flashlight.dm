@@ -376,8 +376,6 @@ CAPABILITIES(/obj/item/flashlight/drone)
 	name = "desk lamp"
 	desc = "A desk lamp with an adjustable mount."
 	icon_state = "lamp"
-	center_of_mass_x = 13
-	center_of_mass_y = 11
 	w_class = ITEMSIZE_LARGE
 	power_use = 0
 	cell_type = null
@@ -393,18 +391,15 @@ CAPABILITIES(/obj/item/flashlight/drone)
 /obj/item/flashlight/lamp/green
 	desc = "A classic green-shaded desk lamp."
 	icon_state = "lampgreen"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 
 CAPABILITIES(/obj/item/flashlight/lamp/green)
+	configure(item_placement(center_x = 15, center_y = 11))
 	configure(light_glow(color = "#FFC58F"))
 
 // clown lamp
 /obj/item/flashlight/lamp/clown
 	desc = "A whacky banana peel shaped lamp."
 	icon_state = "bananalamp"
-	center_of_mass_x = 15
-	center_of_mass_y = 11
 
 /*
  * Flares
@@ -578,7 +573,11 @@ CAPABILITIES(/obj/item/flashlight/glowstick/radioisotope)
 
 /// Old object verbs.
 CAPABILITIES(/obj/item/flashlight/lamp)
+	configure(item_placement(center_x = 13, center_y = 11))
 	configure(lighting_config(system = STATIC_LIGHT))
 	configure(light_glow(range = 5))
 	configure(item_combat(force = 10))
 	op("lamp_toggle_light_effect", menu(), label("Toggle light"), then(PROC_REF(lamp_toggle_light_effect)))
+
+CAPABILITIES(/obj/item/flashlight/lamp/clown)
+	configure(item_placement(center_x = 15, center_y = 11))

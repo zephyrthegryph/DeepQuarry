@@ -7,8 +7,6 @@
 	icon_state = "space"
 	desc = "A special helmet designed for work in a hazardous, low-pressure environment."
 	randpixel = 0
-	center_of_mass_x = 0
-	center_of_mass_y = 0
 	flags = PHORONGUARD
 	armor_spec = "bio=100;rad=50;cold=60"
 	flash_protection = FLASH_PROTECTION_MAJOR
@@ -22,6 +20,7 @@
 	light_overlay = "helmet_light"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space)
+	configure(item_placement(center_x = 0, center_y = 0))
 	configure(item_persistence(preserve = 1))
 	configure(light_glow(range = 4))
 	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD, hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))

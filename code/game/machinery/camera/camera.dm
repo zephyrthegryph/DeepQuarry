@@ -9,7 +9,6 @@
 	layer = BELOW_MOB_LAYER
 	max_integrity = 80
 	integrity_failure = 0.5
-	damage_deflection = 5
 
 	var/list/network = list(NETWORK_DEFAULT) // ALLOW(instance_list): d: replaced per instance at runtime (26 assignments)
 	var/c_tag = null
@@ -46,6 +45,7 @@ MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
 MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
+	configure(damage_profile(deflection = 5))
 	rolls(nameof(c_tag), PROC_REF(roll_c_tag))
 	ref_many(nameof(motionTargets), /mob)
 	on_notice(/datum/notice/machinery_power_lost, then(PROC_REF(on_power_signal)))

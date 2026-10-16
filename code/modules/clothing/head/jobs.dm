@@ -158,9 +158,9 @@ CAPABILITIES(/obj/item/clothing/head/beret)
 	icon_state = "dermal"
 	item_state_slots = list(slot_r_hand_str = "", slot_l_hand_str = "")
 	valid_accessory_slots = null
-	show_examine = FALSE
 
 CAPABILITIES(/obj/item/clothing/head/helmet/dermal)
+	configure(object_communication(shown = FALSE))
 	configure(item_worn(hides = TRAIT_NONE))
 
 /obj/item/clothing/head/det
@@ -170,9 +170,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/dermal)
 	item_state_slots = list(slot_r_hand_str = "detective", slot_l_hand_str = "detective")
 	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
 	valid_accessory_slots = null
-	show_examine = FALSE
 
 CAPABILITIES(/obj/item/clothing/head/det)
+	configure(object_communication(shown = FALSE))
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_SLEUTH), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.9))
 

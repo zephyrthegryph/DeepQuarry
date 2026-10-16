@@ -5,8 +5,6 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "cleaner"
 	item_state = "cleaner"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	flags = NOBLUDGEON
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
@@ -22,6 +20,7 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 // the one who sprays), after a click cooldown. A closed tank fills it by the tank's own amount. It leaves alone what it is put on or in: a table, a
 // closet, a sink, a janitor's cart, storage and other containers. The Empty verb pours it out over the floor. Its amount is fixed.
 CAPABILITIES(/obj/item/reagent_containers/spray)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 3))
 	reagent_container(
@@ -103,14 +102,13 @@ CAPABILITIES(/obj/item/reagent_containers/spray/sterilizine)
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "pepperspray"
 	item_state = "pepperspray"
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	max_transfer_amount = null
 	volume = 40
 	var/safety = TRUE
 
 // The pepper spray has a safety, worked in hand: while it is on nothing comes out. It is loaded with 40 units of condensed capsaicin.
 CAPABILITIES(/obj/item/reagent_containers/spray/pepper)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagent_container(starts = list(REAGENT_ID_CONDENSEDCAPSAICIN = 40)))
 	op("safety", in_hand(), label("Toggle safety"), toggles(nameof(safety)), then(PROC_REF(safety_toggled)))
 	examine_line(PROC_REF(safety_text))
@@ -147,13 +145,12 @@ CAPABILITIES(/obj/item/reagent_containers/spray/waterflower)
 	icon_state = "chemsprayer"
 	item_state = "chemsprayer"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi', slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
-	center_of_mass_x = 16
-	center_of_mass_y = 16
 	w_class = ITEMSIZE_NORMAL
 	max_transfer_amount = null
 	volume = 600
 
 CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(item_thrown(force = 3))
 
 /// Three puffs in a click: at the target and to each side of it.
@@ -193,8 +190,6 @@ CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone)
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "cleaner-industrial"
 	item_state = "cleaner"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 
 	max_transfer_amount = 20
 
@@ -218,6 +213,7 @@ CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone)
 
 // The dial is turned by an alt-click (1, 2, 3 streams of a heavy spray), and a control-click, held, switches between the light spray and the heavy one.
 CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed)
+	configure(item_placement(center_x = 16, center_y = 10))
 	owns_one(nameof(recursive_move), /datum/recursive_move, starts = /datum/recursive_move) // it hears its holders move
 	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(update_hose)))
 	hose_sockets(list(/datum/hose_connector/input))

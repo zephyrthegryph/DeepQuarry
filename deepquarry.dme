@@ -4756,6 +4756,8 @@
 #include "code\tests\_tests.dm"
 #include "code\game\machinery\machine_interaction_config.dm"
 #include "code\game\objects\object_break_config.dm"
+#include "code\game\objects\object_item_policies.dm"
+#include "code\game\objects\object_item_policies.dm"
 #include "code\game\atom\shielding_config.dm"
 #include "code\game\atom\speech_presentation.dm"
 #include "code\modules\unit_tests\_unit_tests.dm"

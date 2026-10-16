@@ -60,7 +60,6 @@
 
 	var/addblends // Icon overlay for ADD highlights when applicable.
 
-	var/worn_layer				//Default on-mob layer
 
 	// Pickup/Drop/Equip/Throw Sounds
 
@@ -82,7 +81,6 @@
 	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
 
 	//Vorestuff
-	var/trash_eatable = TRUE
 	var/digest_stage = null
 	var/d_mult_old = 1 //digest stage descriptions
 	var/d_mult = 1 //digest stage descriptions
@@ -849,8 +847,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 /obj/item/proc/get_worn_layer(default_layer = 0)
 
 	//1: worn_layer variable
-	if(!isnull(worn_layer)) //Can be zero, so...
-		return BODY_LAYER+worn_layer
+	if(!isnull(worn_of(src).layer)) //Can be zero, so...
+		return BODY_LAYER+worn_of(src).layer
 
 	//2: your default
 	return BODY_LAYER+default_layer
@@ -933,11 +931,9 @@ closest to where the cursor has clicked on.
 Note: This proc can be overwritten to allow for different types of auto-alignment.
 */
 
-/obj/item/var/center_of_mass_x = 16
-/obj/item/var/center_of_mass_y = 16
 
 /proc/auto_align(obj/item/W, click_parameters, animate = FALSE)
-	if(!W.center_of_mass_x && !W.center_of_mass_y)
+	if(!placement_of(W).center_x && !placement_of(W).center_y)
 		W.randpixel_xy()
 		return
 
@@ -953,8 +949,8 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 		var/cell_x = max(0, min(CELLS-1, round(mouse_x/CELLSIZE)))
 		var/cell_y = max(0, min(CELLS-1, round(mouse_y/CELLSIZE)))
 
-		var/target_x = (CELLSIZE * (0.5 + cell_x)) - W.center_of_mass_x
-		var/target_y = (CELLSIZE * (0.5 + cell_y)) - W.center_of_mass_y
+		var/target_x = (CELLSIZE * (0.5 + cell_x)) - placement_of(W).center_x
+		var/target_y = (CELLSIZE * (0.5 + cell_y)) - placement_of(W).center_y
 		if(animate)
 			var/dist_x = abs(W.pixel_x - target_x)
 			var/dist_y = abs(W.pixel_y - target_y)

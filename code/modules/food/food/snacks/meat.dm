@@ -4,8 +4,6 @@
 	desc = "A slab of meat."
 	icon_state = "meat"
 	filling_color = "#FF1C1C"
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 
 
 
@@ -20,6 +18,7 @@
 		name = "cooked [name]"
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat)
+	configure(item_placement(center_x = 16, center_y = 14))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_TRIGLYCERIDE = 2)))
 	op("cut_strips", item(/obj/item/material/knife), priority(OP_PRIORITY_PART + 1), label("Cut it into strips"), then(PROC_REF(cut_into_strips)))
 
@@ -66,13 +65,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/crabmeat)
 	desc = "A slice from a huge mushroom."
 	icon_state = "hugemushroomslice"
 	filling_color = "#E0D7C5"
-	center_of_mass_x = 17
-	center_of_mass_y = 16
 	nutriment_amt = 3
 	nutriment_desc = list("raw" = 2, PLANT_MUSHROOMS = 2)
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/hugemushroomslice)
+	configure(item_placement(center_x = 17, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PSILOCYBIN = 3, REAGENT_ID_FUNGI = 1)))
 
 /obj/item/reagent_containers/food/snacks/tomatomeat
@@ -80,8 +78,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/hugemushroomslice)
 	desc = "A slice from a huge tomato"
 	icon_state = "tomatomeat"
 	filling_color = "#DB0000"
-	center_of_mass_x = 17
-	center_of_mass_y = 16
 	nutriment_amt = 3
 	nutriment_desc = list("raw" = 2, PLANT_TOMATO = 3)
 	bitesize = 6
@@ -91,11 +87,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/hugemushroomslice)
 	desc = "A very manly slab of meat."
 	icon_state = "bearmeat"
 	filling_color = "#DB0000"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	bitesize = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearmeat)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 24, REAGENT_ID_HYPERZINE = 10)))
 
 /obj/item/reagent_containers/food/snacks/xenomeat
@@ -103,11 +98,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearmeat)
 	desc = "A slab of green meat. Smells like acid."
 	icon_state = "xenomeat"
 	filling_color = "#43DE18"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/xenomeat)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 12, REAGENT_ID_PACID = 12)))
 
 /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat // Substitute for recipes requiring xeno meat.
@@ -115,11 +109,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/xenomeat)
 	desc = "A slab of green meat."
 	icon_state = "xenomeat"
 	filling_color = "#43DE18"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_SPIDERTOXIN = 12)))
 
 /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat/Initialize(mapload)
@@ -145,10 +138,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawturkey)
 	desc = "A slab of grub meat, it gives a gentle shock if you touch it"
 	icon = 'icons/obj/food.dmi'
 	icon_state = "grubmeat"
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat/grubmeat)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_SHOCKCHEM = 6)))
 
 
@@ -174,13 +166,12 @@ GLOBAL_LIST_INIT(worm_meat_spawns, list (
 	desc = "A chunk of pulsating meat."
 	icon_state = "wormmeat"
 	filling_color = "#551A8B"
-	center_of_mass_x = 16
-	center_of_mass_y = 14
 
 
 
 // A knife on it also frees what is inside, and then cuts it as any meat is cut.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat/worm)
+	configure(item_placement(center_x = 16, center_y = 14))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_PHORON = 3, REAGENT_ID_MYELAMINE = 3)))
 	op("free_chunks", item(/obj/item/material/knife), priority(OP_PRIORITY_PART + 2), label("Cut the tissue"), then(PROC_REF(chunks_freed)), passes())
 
@@ -197,60 +188,54 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat/worm)
 	name = "Death claw Meat"
 	desc = "A slice from a deathclaw"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_DEATHBLOOD = 6)
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/deathclawmeat)
+	configure(item_placement(center_x = 17, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_DEATHBLOOD = 6)))
 
 /obj/item/reagent_containers/food/snacks/dragonmeat
 	name = "Dragon Meat"
 	desc = "A slice from a mighty dragon"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_LIQUIDFIRE = 6)
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/dragonmeat)
+	configure(item_placement(center_x = 17, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_LIQUIDFIRE = 6)))
 
 /obj/item/reagent_containers/food/snacks/phorondragonmeat
 	name = "Phoron Dragon Meat"
 	desc = "A slice from a mighty dragon"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_NEOLIQUIDFIRE = 6, REAGENT_ID_PHORON = 3)
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/phorondragonmeat)
+	configure(item_placement(center_x = 17, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_NEOLIQUIDFIRE = 6, REAGENT_ID_PHORON = 3)))
 
 /obj/item/reagent_containers/food/snacks/metroidmeat
 	name = "Metroid Slice"
 	desc = "A slice from a metroid"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_LIQUIDLIFE = 3)
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/metroidmeat)
+	configure(item_placement(center_x = 17, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_LIQUIDLIFE = 3)))
 
 /obj/item/reagent_containers/food/snacks/meat/raymeat
 	name = "Solar Ray Meat"
 	desc = "You aren't sure how ediable this is"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 8, REAGENT_ID_CONDENSEDCAPSAICIN = 8)
 
@@ -259,8 +244,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/metroidmeat)
 	name = "Eel Meat"
 	desc = "A slice from an eel"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_SHOCKCHEM = 1)
 
@@ -269,8 +252,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/metroidmeat)
 	name = "Gravity Shell Meat"
 	desc = "A slice from a gravity shell"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 24)
 
@@ -280,8 +261,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/metroidmeat)
 	name = "Shocking Ant Slice"
 	desc = "A slice from a ant"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_SHOCKCHEM = 5)
 	bitesize = 1
@@ -293,8 +272,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/copperant)
 	name = "Painite Ant Slice"
 	desc = "A slice from a ant"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_NEOLIQUIDFIRE = 5)
 	bitesize = 1
@@ -307,37 +284,52 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/painiteant)
 	name = "Bronze Ant Slice"
 	desc = "A slice from a ant"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_LIQUIDFIRE = 5)
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/tyrant_burn)
+	configure(item_placement(center_x = 17, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_LIQUIDFIRE = 5)))
 
 /obj/item/reagent_containers/food/snacks/tyrant_radiation
 	name = "Quartz Ant Slice"
 	desc = "A slice from a ant"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_DEATHBLOOD = 5)
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/tyrant_radiation)
+	configure(item_placement(center_x = 17, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_DEATHBLOOD = 5)))
 
 /obj/item/reagent_containers/food/snacks/tyrant_bonus
 	name = "Agate Ant Slice"
 	desc = "A slice from a ant"
 	icon_state = "meat"
-	center_of_mass_x = 17
-	center_of_mass_y= 16
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_LIQUIDLIFE = 5)
 	bitesize = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/tyrant_bonus)
+	configure(item_placement(center_x = 17, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_LIQUIDLIFE = 5)))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tomatomeat)
+	configure(item_placement(center_x = 17, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat/raymeat)
+	configure(item_placement(center_x = 17, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat/eelmeat)
+	configure(item_placement(center_x = 17, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat/gravityshell)
+	configure(item_placement(center_x = 17, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tyrant_shock)
+	configure(item_placement(center_x = 17, center_y = 16))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tyrant_neoburn)
+	configure(item_placement(center_x = 17, center_y = 16))

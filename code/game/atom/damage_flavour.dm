@@ -5,25 +5,27 @@
 // Shared damage presentation and ionic susceptibility; overrides allocate only on write.
 STATIC_ENTRY(damage_profile)
 
-/proc/damage_profile(wear = null, announce = null, ionic = null)
-	return entry_make(ENTRY_DAMAGE_PROFILE, null, list("wear" = wear, "announce" = announce, "ionic" = ionic))
+/proc/damage_profile(wear = null, announce = null, ionic = null, deflection = null)
+	return entry_make(ENTRY_DAMAGE_PROFILE, null, list("wear" = wear, "announce" = announce, "ionic" = ionic, "deflection" = deflection))
 
 /datum/type_trait/damage_profile
 	var/wear = "scrapes and dents"
 	var/announce = FALSE
+	var/deflection = 0
 	var/ionic = 0
 
 /datum/type_trait/damage_profile/copy_values(datum/type_trait/damage_profile/into)
 	into.wear = wear
 	into.announce = announce
 	into.ionic = ionic
+	into.deflection = deflection
 
 /datum/entry_engine/type_trait/damage_profile
 	kind = ENTRY_DAMAGE_PROFILE
 	trait_type = /datum/type_trait/damage_profile
 	publish_key = DAMAGE_PROFILE_KEY
 	base_type = /atom
-	var_names = list("damage_wear" = "wear", "announce_damage_bands" = "announce", "emp_integrity_factor" = "ionic")
+	var_names = list("damage_wear" = "wear", "announce_damage_bands" = "announce", "emp_integrity_factor" = "ionic", "damage_deflection" = "deflection")
 
 READS_AS(/proc/damage_profile_of, DAMAGE_PROFILE_KEY)
 /proc/damage_profile_of(atom/A) as /datum/type_trait/damage_profile
@@ -96,3 +98,6 @@ GLOBAL_TABLE(damage_flavour_rules, GLOBAL_PROC_REF(build_damage_flavour_rules))
 		if(rules[path])
 			found += rules[path]
 	return found
+
+/atom/proc/set_damage_deflection(value)
+	return set_trait(src, ENTRY_DAMAGE_PROFILE, "deflection", value)

@@ -3,7 +3,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "implant"
 	w_class = ITEMSIZE_TINY
-	show_messages = TRUE
 
 	var/implanted = null
 	var/mob/imp_in
@@ -78,6 +77,7 @@
 		post_implant(H)
 
 CAPABILITIES(/obj/item/implant)
+	configure(object_communication(hears = TRUE))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("load_implanter", item(/obj/item/implanter), passes(), label("Load implanter"), then(PROC_REF(load_implanter)))
 	ref_one(nameof(imp_in), /mob)

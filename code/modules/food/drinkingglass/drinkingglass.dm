@@ -13,8 +13,6 @@
 
 	var/rim_pos
 
-	center_of_mass_x = 16
-	center_of_mass_y = 10
 
 	amount_per_transfer_from_this = 5
 	max_transfer_amount = 30
@@ -132,6 +130,7 @@
 
 // A glass is splashed in combat mode, and is not fed to anyone then.
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2)
+	configure(item_placement(center_x = 16, center_y = 10))
 	configure(reagent_container(splash = TRUE, ingest_hostile = FALSE))
 	ref_many(nameof(extras), /obj/item)
 	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"),

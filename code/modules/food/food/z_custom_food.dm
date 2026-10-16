@@ -199,6 +199,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/customizable/sandwich)
 
 // Bread + a food = a sandwich, bread + a shard = a sandwich with a shard in it.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/bread)
+	configure(item_placement(center_x = 16, center_y = 4))
 	op("start_sandwich", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req(PROC_REF(holds_plain_food))), label("Make a sandwich"), then(PROC_REF(sandwich_started)))
 	op("shard_sandwich", item(/obj/item/material/shard), priority(OP_PRIORITY_PART), label("Make a sandwich"), then(PROC_REF(shard_sandwich_made)))
 
@@ -214,6 +215,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/bread)
 
 // A bun + a meatball or a cutlet = a burger, + a sausage = a hot dog, + any other food = a custom burger.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/bun)
+	configure(item_placement(center_x = 16, center_y = 12))
 	op("add_meatball", item(/obj/item/reagent_containers/food/snacks/meatball), priority(OP_PRIORITY_PART + 1), label("Make a burger"), then(PROC_REF(burger_made)))
 	op("add_cutlet", item(/obj/item/reagent_containers/food/snacks/cutlet), priority(OP_PRIORITY_PART + 1), label("Make a burger"), then(PROC_REF(burger_made)))
 	op("add_sausage", item(/obj/item/reagent_containers/food/snacks/sausage), priority(OP_PRIORITY_PART + 1), label("Make a hot dog"), then(PROC_REF(hotdog_made)))
@@ -230,6 +232,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bun)
 
 // A flat dough + a food = a pizza.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/flatdough)
+	configure(item_placement(center_x = 16, center_y = 16))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 	op("start_pizza", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req(PROC_REF(holds_plain_food))), label("Make a pizza"), then(PROC_REF(pizza_started)))
 
@@ -238,6 +241,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/flatdough)
 
 // A spaghetti + a food = a pasta dish.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/spagetti)
+	configure(item_placement(center_x = 16, center_y = 16))
 	op("start_pasta", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req(PROC_REF(holds_plain_food))), label("Make a pasta dish"), then(PROC_REF(pasta_started)))
 
 /obj/item/reagent_containers/food/snacks/spagetti/proc/pasta_started(datum/act/op/A)

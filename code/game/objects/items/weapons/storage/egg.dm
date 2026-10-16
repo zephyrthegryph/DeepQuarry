@@ -10,13 +10,13 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_storage.dmi',
 		)
 	w_class = ITEMSIZE_SMALL
-	show_messages = 0
 	allow_quick_empty = TRUE
 	use_sound = SFX_ITEMS_DROP_FLESH
 	var/egg_name = null
 
 
 CAPABILITIES(/obj/item/storage/vore_egg)
+	configure(object_communication(hears = 0))
 	configure(storage(max_size = 0))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 	// Whoever is inside pushes out for five seconds (hatch() starts it).

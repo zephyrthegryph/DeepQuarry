@@ -30,10 +30,10 @@
 	desc = "This finger appears to be an organic datajack."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "electric_hand"
-	show_examine = FALSE
 	w_class = ITEMSIZE_NO_CONTAINER
 
 CAPABILITIES(/obj/item/finger_lockpick)
+	configure(object_communication(shown = FALSE))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 
 /obj/item/finger_lockpick/Initialize(mapload)

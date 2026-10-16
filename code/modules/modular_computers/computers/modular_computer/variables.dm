@@ -25,8 +25,6 @@
 	icon = null												// This thing isn't meant to be used on it's own. Subtypes should supply their own icon.
 	var/overlay_icon = null									// Icon file used for overlays
 	icon_state = null
-	center_of_mass_x = 0
-	center_of_mass_y = 0									// No pixelshifting by placing on tables, etc.
 	randpixel = 0											// And no random pixelshifting on-creation either.
 	var/icon_state_unpowered = null							// Icon state when the computer is turned off
 	var/icon_state_menu = "menu"							// Icon state overlay when the computer is turned on, but no program is loaded that would override the screen.
@@ -79,6 +77,7 @@
 MSG_DEF_SELF(modular_computer/already_on, "it is already on")
 
 CAPABILITIES(/obj/item/modular_computer)
+	configure(item_placement(center_x = 0, center_y = 0))
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0),
 		asks(/datum/prompt/choice, fields = list("question" = "Which component do you want to uninstall?", "title" = "Computer maintenance", "choices" = computed(PROC_REF(component_names))), step = "component", when = PROC_REF(has_components)),

@@ -23,7 +23,6 @@
 	var/old_x = 0
 	var/old_y = 0
 	var/datum/riding/riding_datum = null
-	var/does_spin = TRUE // Does the atom spin when thrown (of course it does :P)
 	var/movement_type = NONE
 
 	// dq_get_cloaked(src) lives in code/datums/sparse_vars/movable_misc.dm
@@ -619,7 +618,7 @@ SETTER(/atom/movable, anchored)
 	rel_set(src, nameof(throwing), TT)
 
 	set_pixel_z(0)
-	if(spin && does_spin)
+	if(spin && throwing_config_of(src).spin)
 		SpinAnimation(4,1)
 
 	SSthrow_steps.kernel_join(TT) // code/datums/thrownthing.dm

@@ -4,7 +4,6 @@
 	icon = 'icons/obj/assemblies.dmi'
 	icon_state = "mmi_empty"
 	w_class = ITEMSIZE_NORMAL
-	can_speak = 1
 
 	req_access = list(ACCESS_ROBOTICS)
 
@@ -22,6 +21,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/mmi)
+	configure(object_communication(speaks = 1))
 	ref_one(nameof(mecha)) // the mech we are installed in
 	owns_one(nameof(body_backup), /mob/living)
 	owns_one(nameof(radio), starts = /obj/item/radio/headset/mmi_radio)

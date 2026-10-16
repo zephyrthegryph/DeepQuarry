@@ -13,8 +13,6 @@
 	icon_state = "beartrap0"
 	desc = "A mechanically activated leg trap. Low-tech, but reliable. Looks like it could really hurt if you set it off."
 	randpixel = 0
-	center_of_mass_x = 0
-	center_of_mass_y = 0
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_STEEL, 18750)
 	var/deployed = FALSE
@@ -34,6 +32,7 @@ MSG_DEF(beartrap/disarming, "You begin disarming %T%!", "%U% starts to disarm %T
 MSG_DEF(beartrap/disarmed, "You have disarmed %T%!", "%U% has disarmed %T%.")
 
 CAPABILITIES(/obj/item/beartrap)
+	configure(item_placement(center_x = 0, center_y = 0))
 	configure(item_worn(slots = SLOT_MASK))
 	configure(item_thrown(force = 0))
 	op("deploy", in_hand(), label("Deploy trap"), needs(req(PROC_REF(can_deploy), silent = TRUE)),

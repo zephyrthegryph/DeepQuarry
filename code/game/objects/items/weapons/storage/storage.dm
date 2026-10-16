@@ -27,7 +27,6 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_storage.dmi',
 		)
 	w_class = ITEMSIZE_NORMAL
-	show_messages = 1
 	MATERIAL_BULK(MAT_FIBERS, 50)
 
 	/// Mobs looking into this storage.
@@ -54,6 +53,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/storage)
+	configure(object_communication(hears = 1))
 	storage(
 		space = nameof(/obj/item/storage::max_storage_space),
 		slots = nameof(/obj/item/storage::storage_slots),

@@ -3,7 +3,6 @@
 	desc = "Used to hold things when you don't have enough hands."
 	icon_state = "webbing"
 	slot = ACCESSORY_SLOT_UTILITY
-	show_messages = 1
 
 	var/slots = 5
 	var/obj/item/storage/internal/hold // owned: the internal storage object that holds the webbing's contents
@@ -13,6 +12,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/accessory/storage)
+	configure(object_communication(hears = 1))
 	owns_one(nameof(hold), starts = /obj/item/storage/internal)
 	op("storage_accessory_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Storage accessory hand"), then(PROC_REF(storage_accessory_hand)))
 	op("storage_accessory_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Storage accessory item"), then(PROC_REF(storage_accessory_item)))
