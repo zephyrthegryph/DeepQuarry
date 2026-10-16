@@ -823,8 +823,6 @@ init_lines	code/game/objects/items/trash_material.dm	@/obj/item/trash/material::
 init_lines	code/game/objects/items/trash_material.dm	@/obj/item/trash/material::Initialize::added[L[1]]
 init_lines	code/game/objects/items/trash_material.dm	@/obj/item/trash/material::Initialize::add_materials
 init_lines	code/game/objects/items/weapons/AI_modules.dm	@/obj/item/aiModule/reset::Initialize::rel_set
-init_lines	code/game/objects/items/weapons/candle.dm	@/obj/item/flame/candle/everburn::Initialize::light
-init_lines	code/game/objects/items/weapons/candle.dm	@/obj/item/flame/candle/candelabra/everburn::Initialize::light
 init_lines	code/game/objects/items/weapons/chewables.dm	@/obj/item/storage/chewables::Initialize::make_exact_fit
 init_lines	code/game/objects/items/weapons/cigs_lighters.dm	@/obj/item/flame/lighter::Initialize::I
 init_lines	code/game/objects/items/weapons/cigs_lighters.dm	@/obj/item/flame/lighter::Initialize::I.color
@@ -843,7 +841,6 @@ init_lines	code/game/objects/items/weapons/id cards/cards.dm	@/obj/item/card/id/
 init_lines	code/game/objects/items/weapons/id cards/cards.dm	@/obj/item/card/id/synthetic/borg::Initialize::registered_name
 init_lines	code/game/objects/items/weapons/id cards/cards.dm	@/obj/item/card/id/synthetic/borg::Initialize::observe
 init_lines	code/game/objects/items/weapons/implants/implantchair.dm	@/obj/machinery/implantchair::Initialize::add_implants
-init_lines	code/game/objects/items/weapons/implants/implantcircuits.dm	@/obj/item/implant/integrated_circuit::Initialize::rel_set
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::if
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::material
 init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::material

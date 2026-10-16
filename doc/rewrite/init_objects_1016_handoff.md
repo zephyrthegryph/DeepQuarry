@@ -2,8 +2,8 @@
 
 Branch: `codex/init-burndown-objects`.
 
-The analyzer has reduced the init baseline from 4,111 to 3,844 rows,
-including `code/game/objects` from 571 to 304. Exactly 267 rows were
+The analyzer has reduced the init baseline from 4,111 to 3,841 rows,
+including `code/game/objects` from 571 to 301. Exactly 270 rows were
 removed and none added. Source declarations and regression fixtures are
 committed; compilation, DreamChecker and focused lane-ready proof are pending.
 
