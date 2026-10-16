@@ -29,7 +29,6 @@
 	endurance = 25
 
 	meat_amount = 2
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	movement_cooldown = -1
 
@@ -56,6 +55,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/diyaab)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	configure(mob_kind(attack_cooldown = 1 SECOND))
 
 /datum/say_list/diyaab

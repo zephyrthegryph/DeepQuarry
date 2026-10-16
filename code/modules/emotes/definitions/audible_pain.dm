@@ -9,8 +9,8 @@
 		return "You [pick(H.species.pain_verb_1p)] in pain!"
 	else
 		var/mob/living/M = user
-		if(M.pain_emote_1p) // Sanity
-			return "You [pick(M.pain_emote_1p)]!"
+		if(voice_config_of(M).pain_emote_1p) // Sanity
+			return "You [pick(voice_config_of(M).pain_emote_1p)]!"
 	. = ..()
 
 /datum/decl/emote/audible/pain/get_emote_message_3p(atom/user, atom/target, extra_params)
@@ -19,8 +19,8 @@
 		return "[pick(H.species.pain_verb_3p)] in pain!"
 	else
 		var/mob/living/M = user
-		if(M.pain_emote_3p) // Sanity
-			return "[pick(M.pain_emote_3p)]!"
+		if(voice_config_of(M).pain_emote_3p) // Sanity
+			return "[pick(voice_config_of(M).pain_emote_3p)]!"
 	. = ..()
 
 /datum/decl/emote/audible/pain/get_emote_sound(atom/user)

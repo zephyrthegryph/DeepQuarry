@@ -26,7 +26,6 @@
 	response_harm = "hits"
 
 	meat_amount = 2
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 
 	harm_intent_damage = 3
 	melee_damage_lower = 4
@@ -50,6 +49,7 @@
 	emote_see = list("pecks at the ground","looks around hungrily")
 
 CAPABILITIES(/mob/living/simple_mob/vore/seagull)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken))
 	on_change(nameof(vore_fullness), ANY, then(PROC_REF(fullness_changed)))
 
 /// A full gull is slow: past two fullness steps it drags its feet, and speeds up again when it empties.

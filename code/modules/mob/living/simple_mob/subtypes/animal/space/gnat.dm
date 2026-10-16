@@ -43,12 +43,12 @@
 	organ_names = /datum/decl/mob_organ_names/fish
 
 	meat_amount = 1
-	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/gnat
 
 
 	organ_names = /datum/decl/mob_organ_names/space_gnat
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/gnat)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/gnat))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 10))
 	configure(mob_movement(bump = 0))

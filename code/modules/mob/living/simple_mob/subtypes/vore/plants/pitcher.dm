@@ -37,7 +37,6 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	min_n2 = 0
 	max_n2 = 0
 	minbodytemp = 0
-	meat_type = /obj/item/reagent_containers/food/snacks/pitcher_fruit // Allows pitcher plants to be chopped up and replanted. Probably.
 	meat_amount = 1 // And allows you to replant them should you so please.
 
 	melee_damage_upper = 0 //This shouldn't attack people but if it does (admemes) no damage can be dealt.
@@ -174,6 +173,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 				adjust_nutrition(-NUTRITION_PITCHER)
 
 CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/pitcher_fruit))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	op("pitcher_interaction_hand", hand(), ungated(), stance(I_HELP), label("Pick fruit"), then(PROC_REF(pitcher_interaction_hand)))
 	op("pitcher_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(pitcher_interaction_item)))

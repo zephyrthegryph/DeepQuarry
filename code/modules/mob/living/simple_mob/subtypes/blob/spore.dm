@@ -28,9 +28,9 @@
 	var/can_infest = FALSE
 	var/is_infesting = FALSE
 
-	can_pain_emote = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/blob/spore)
+	configure(voice_config(can_pain_emote = FALSE))
 	ref_one(nameof(infested), /mob/living/carbon/human)
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(death_message = "bursts!"))

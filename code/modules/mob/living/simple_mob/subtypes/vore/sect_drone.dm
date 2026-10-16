@@ -49,7 +49,6 @@
 	vore_icons = SA_ICON_LIVING
 
 	meat_amount = 4
-	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat
 
 	//Beeg bug don't give a fuck about atmos. Something something, phoron mutation.
 	min_oxy = 0
@@ -84,6 +83,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/sect_drone)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/vore/sect_drone/proc/set_abdomen_color, login = TRUE)
 

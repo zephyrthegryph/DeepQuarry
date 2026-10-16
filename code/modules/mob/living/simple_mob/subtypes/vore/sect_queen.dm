@@ -41,7 +41,6 @@
 	see_in_dark = 8
 
 	meat_amount = 8
-	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat
 
 	melee_damage_lower = 8
 	melee_damage_upper = 16
@@ -85,6 +84,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/sect_queen)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color, login = TRUE)
 

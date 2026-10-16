@@ -36,12 +36,12 @@
 	organ_names = /datum/decl/mob_organ_names/fish
 
 	meat_amount = 10
-	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/shark
 
 
 	var/knockdown_chance = 10	//slightly reduced their knockdown prob compared to carp given their greater power
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/shark)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/shark))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 22))
 

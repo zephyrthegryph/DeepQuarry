@@ -42,7 +42,6 @@
 	melee_damage_upper = 30
 
 	meat_amount = 8
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	old_x = -16
 	old_y = 0
@@ -70,6 +69,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/deathclawmeat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
@@ -118,20 +118,26 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
 // sets, so every override stays after its base definition (resolution preserved). ===
 //I don't know how to add more material currently so uhhh, that will be for late, did have some halffinished un commented code but that seemed to be causing issues?
 /mob/living/simple_mob/vore/bigdragon
-	meat_type = /obj/item/reagent_containers/food/snacks/dragonmeat
 
 /mob/living/simple_mob/vore/aggressive/dragon/virgo3b //phoron dragon
-	meat_type = /obj/item/reagent_containers/food/snacks/phorondragonmeat
 
 /mob/living/simple_mob/vore/aggressive/deathclaw
-	meat_type = /obj/item/reagent_containers/food/snacks/deathclawmeat
 
 /mob/living/simple_mob/metroid
 	meat_amount = 6
-	meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat
 
 /mob/living/simple_mob/metroid/can_butcher(mob/user, obj/item/I)	// Override for special butchering checks.
 	. = ..()
 
 	if(. && (!is_sharp(I) || !has_edge(I)))
 		return FALSE
+
+CAPABILITIES(/mob/living/simple_mob/metroid)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat))
+	configure(voice_config(can_pain_emote = TRUE, species_sounds = "Metroid", pain_emote_1p = list("skree"), pain_emote_3p = list("skrees")))
+
+CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/dragonmeat))
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/virgo3b)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/phorondragonmeat))

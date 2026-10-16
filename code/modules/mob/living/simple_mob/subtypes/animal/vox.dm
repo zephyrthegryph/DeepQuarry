@@ -8,9 +8,6 @@
 	min_n2 = 0 //breathe N2
 	max_n2 = 0
 
-	species_sounds = "Vox"
-	pain_emote_1p = list("shriek")
-	pain_emote_3p = list("shrieks")
 
 /mob/living/simple_mob/vox/armalis
 	name = "serpentine alien"
@@ -234,3 +231,6 @@ CAPABILITIES(/mob/living/simple_mob/vox/armalis)
 	quills++
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
+
+CAPABILITIES(/mob/living/simple_mob/vox)
+	configure(voice_config(species_sounds = "Vox", pain_emote_1p = list("shriek"), pain_emote_3p = list("shrieks")))

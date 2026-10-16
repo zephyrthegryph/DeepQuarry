@@ -10,7 +10,6 @@
 	icon_rest = "leopardmander-rest"
 	faction = FACTION_NEUTRAL
 	meat_amount = 40 //I mean...
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	old_x = -48
 	old_y = 0
 	vis_height = 92
@@ -47,9 +46,6 @@
 
 	nom_mob = TRUE
 
-	species_sounds = "Canine" // Argue about whether it should have canine or feline later
-	pain_emote_1p = list("yelp", "whine", "bark", "growl")
-	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
 /datum/category_item/catalogue/fauna/leopardmander
 	name = "Sivian Fauna - Va'aen Drake"
@@ -64,6 +60,8 @@
 	value = CATALOGUER_REWARD_HARD
 
 CAPABILITIES(/mob/living/simple_mob/vore/leopardmander)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
+	configure(voice_config(species_sounds = "Canine", pain_emote_1p = list("yelp", "whine", "bark", "growl"), pain_emote_3p = list("yelps", "whines", "barks", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

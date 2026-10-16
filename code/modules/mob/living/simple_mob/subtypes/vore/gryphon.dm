@@ -16,7 +16,6 @@
 	melee_damage_upper = 30
 
 	meat_amount = 15
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help = "pats"
 	response_disarm = "tries to shove"
@@ -138,6 +137,7 @@
 		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 CAPABILITIES(/mob/living/simple_mob/vore/gryphon)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	ref_one(nameof(dq_maybe_eating), /mob/living)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)

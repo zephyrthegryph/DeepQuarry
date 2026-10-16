@@ -18,7 +18,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/crab
 
-	meat_type = /obj/item/reagent_containers/food/snacks/crabmeat
 	meat_amount = 3
 
 	say_list_type = /datum/say_list/crab
@@ -54,3 +53,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/crab/sif)
 
 /datum/decl/mob_organ_names/crab
 TYPE_TABLE(/datum/decl/mob_organ_names/crab, mob_organ_hit_zones, list("cephalothorax", "abdomen", "left walking legs", "right walking legs", "left swimming legs", "right swimming legs", "left pincer", "right pincer"))
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/crab)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/crabmeat))

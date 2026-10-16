@@ -29,7 +29,6 @@
 	movement_cooldown = 2
 
 	meat_amount = 5
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	vore_active = 1
 	vore_icons = SA_ICON_LIVING
@@ -89,6 +88,7 @@
 		ai_brain.go_wake()
 
 CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = 1, "allow_mind_transfer" = TRUE))
 	configure(mob_kind(attack_cooldown = 5 SECONDS))
 	op("pakkun_interaction_hand", hand(), ungated(), stance(I_HELP), label("Shake awake"), then(PROC_REF(pakkun_interaction_hand)))

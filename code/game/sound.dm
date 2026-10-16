@@ -283,4 +283,4 @@ GLOBAL_LIST_INIT(species_sound_map, list(
 		else
 			return H.species.species_sounds
 	else
-		return user.species_sounds
+		return voice_config_of(user).species_sounds

@@ -42,9 +42,7 @@
 	var/target_patience = 5
 	var/frustration = 0
 	var/max_frustration = 0
-	can_pain_emote = FALSE // Sanity/safety, if bots ever get emotes later, undo this
 
-	can_pain_emote = FALSE // Sanity/safety, if bots ever get emotes later, undo this
 
 /// Whoever presses a button of the bot's window leaves their prints on it.
 /mob/living/bot/proc/ui_fingerprint(datum/act/op/A)
@@ -694,6 +692,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	no_vore = TRUE
 
 CAPABILITIES(/mob/living/bot)
+	configure(voice_config(can_pain_emote = FALSE))
 	ref_one(nameof(target), /atom)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "devourable" = FALSE, "feeding" = FALSE, "can_be_drop_pred" = FALSE))
 	configure(mob_movement(makes_dirt = FALSE))

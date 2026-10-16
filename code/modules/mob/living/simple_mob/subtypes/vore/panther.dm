@@ -17,7 +17,6 @@
 	see_in_dark = 8
 
 	meat_amount = 8
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	melee_damage_lower = 5
 	melee_damage_upper = 15
@@ -41,9 +40,6 @@
 
 	say_list_type = /datum/say_list/panther
 
-	species_sounds = "Feline"
-	pain_emote_1p = list("yowl", "growl")
-	pain_emote_3p = list("yowls", "growls")
 // Activate Noms!
 /mob/living/simple_mob/vore/aggressive/panther
 	vore_active = 1
@@ -52,6 +48,8 @@
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
+	configure(voice_config(species_sounds = "Feline", pain_emote_1p = list("yowl", "growl"), pain_emote_3p = list("yowls", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

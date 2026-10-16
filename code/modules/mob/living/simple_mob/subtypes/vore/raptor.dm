@@ -9,7 +9,6 @@
 	icon_rest = "raptorpurple"
 	faction = FACTION_RAPTOR
 	meat_amount = 40 //Big dog, lots of meat
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	old_x = -48
 	old_y = 0
 	vis_height = 92
@@ -64,6 +63,7 @@
 	vore_bump_emote = "tries to snap up"
 
 CAPABILITIES(/mob/living/simple_mob/vore/raptor)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

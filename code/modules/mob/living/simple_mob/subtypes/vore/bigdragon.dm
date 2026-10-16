@@ -60,7 +60,6 @@ I think I covered everything.
 	icon_living = "dragon_maneNone"
 	player_msg = "You can perform a charge attack by disarm intent clicking somewhere. Grab intent clicking will perform a tail sweep and fling any nearby mobs. You can fire breath with harm intent. Your attacks have cooldowns associated with them. You can heal slowly by resting. Check your abilities tab for other functions!"
 	meat_amount = 40
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	pixel_x = -48
 	default_pixel_x = -48
 	old_x = -48

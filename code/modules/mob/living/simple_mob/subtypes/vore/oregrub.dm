@@ -30,7 +30,6 @@
 
 	movement_cooldown = 3.5
 
-	meat_type = /obj/item/ore/coal
 
 	response_help = "pokes"
 	response_disarm = "pushes"
@@ -70,6 +69,7 @@
 	glow_override = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
+	configure(butchery_config(meat_type = /obj/item/ore/coal))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 /mob/living/simple_mob/vore/oregrub/lava

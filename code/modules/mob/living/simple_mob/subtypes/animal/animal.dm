@@ -1,5 +1,4 @@
 /mob/living/simple_mob/animal
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help  = "pets"
 	response_disarm = "shoos"
@@ -40,3 +39,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/quadruped, mob_organ_hit_zones, list("hea
 	if(length(new_flavour_text))
 		bio.flavor_text = new_flavour_text
 		to_chat(src, span_notice("Your flavour text has been updated."))
+
+CAPABILITIES(/mob/living/simple_mob/animal)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))

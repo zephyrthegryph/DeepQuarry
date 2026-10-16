@@ -38,7 +38,6 @@
 
 	loot_list = list(/obj/item/nif/glitch = 100)
 
-	can_pain_emote = FALSE
 
 /obj/item/projectile/energy/slow_orb
 	name = "TROJAN"
@@ -280,7 +279,6 @@ CAPABILITIES(/obj/item/projectile/energy/slow_orb)
 	var/prob_respawn = 15
 
 
-	can_pain_emote = FALSE
 
 /mob/living/simple_mob/glitch_boss_fake/strong
 	endurance = 100
@@ -327,3 +325,9 @@ CAPABILITIES(/obj/item/projectile/energy/slow_orb_fake)
 
 /mob/living/simple_mob/glitch_boss/proc/end_speed_boost()
 	set_base_attack_cooldown(kind_of_type(type).attack_cooldown)
+
+CAPABILITIES(/mob/living/simple_mob/glitch_boss)
+	configure(voice_config(can_pain_emote = FALSE))
+
+CAPABILITIES(/mob/living/simple_mob/glitch_boss_fake)
+	configure(voice_config(can_pain_emote = FALSE))

@@ -53,13 +53,8 @@
 	var/evo_point = 0
 	var/evo_limit = 0
 	var/next
-	meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat
 
 
-	can_pain_emote = TRUE
-	species_sounds = "Metroid"
-	pain_emote_1p = list("skree")
-	pain_emote_3p = list("skrees")
 
 /// The screech it gives as it appears (after_init()), or null for a quiet kind.
 /mob/living/simple_mob/metroid/var/arrival_sound = null

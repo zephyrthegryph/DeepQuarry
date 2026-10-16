@@ -28,8 +28,8 @@
 /mob/living/play_death_sound(gibbed)
 	if(gibbed || isbelly(loc))
 		return
-	if(death_sound_override) // A few specific mobs override their species death sound.
-		playsound(src, death_sound_override, 50, 1, 20, volume_channel = VOLUME_CHANNEL_DEATH_SOUNDS)
+	if(voice_config_of(src).death_sound_override) // A few specific mobs override their species death sound.
+		playsound(src, voice_config_of(src).death_sound_override, 50, 1, 20, volume_channel = VOLUME_CHANNEL_DEATH_SOUNDS)
 		return
 	playsound(src, pick(get_species_sound(get_gendered_sound(src))["death"]), death_sound_volume(), 1, 20, volume_channel = VOLUME_CHANNEL_DEATH_SOUNDS)
 

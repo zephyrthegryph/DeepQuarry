@@ -22,7 +22,6 @@
 	has_langs = list(LANGUAGE_GALCOM , LANGUAGE_ANIMAL)
 
 	meat_amount = 100
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 
 
 	say_list_type = /datum/say_list/turkey
@@ -73,6 +72,7 @@
 	look.state(state)
 
 CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken))
 	op("turkeygirl_item", item(/obj/item), then(PROC_REF(turkeygirl_interaction_item)))
 
 /// Old attackby: feeding.

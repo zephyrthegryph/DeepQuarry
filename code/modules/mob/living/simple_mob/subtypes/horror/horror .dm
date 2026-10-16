@@ -4,9 +4,9 @@
 	icon = 'icons/mob/horror_show/GHPS.dmi'
 	icon_gib = "generic_gib"
 
-	can_pain_emote = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/horror)
+	configure(voice_config(can_pain_emote = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 /mob/living/simple_mob/horror

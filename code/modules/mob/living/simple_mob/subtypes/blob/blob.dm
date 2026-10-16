@@ -28,7 +28,6 @@
 	var/datum/blob_type/blob_type = null	// Used for the blob core items, as they have no overmind mob.
 
 
-	can_pain_emote = FALSE
 
 /mob/living/simple_mob/blob/speech_bubble_appearance()
 	return "slime"
@@ -43,6 +42,7 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/blob)
+	configure(voice_config(can_pain_emote = FALSE))
 	ref_one(nameof(blob_type), /datum/blob_type)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_SLIME))

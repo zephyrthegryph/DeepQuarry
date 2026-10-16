@@ -34,11 +34,11 @@
 	say_got_target = list("Purge!","Cleanse!","Burn!") */
 
 	meat_amount = 0
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	var/turns_since_scan = 0
 
 CAPABILITIES(/mob/living/simple_mob/clockwork)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 /mob/living/simple_mob/clockwork/life_special(datum/seq_frame/life/F)

@@ -44,12 +44,10 @@
 
 	var/list/datum/affliction/contagion/rat_diseases
 
-	species_sounds = "Mouse"
 
-	pain_emote_1p = list("squeak", "squik")
-	pain_emote_3p = list("squeaks", "squiks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
+	configure(voice_config(species_sounds = "Mouse", pain_emote_1p = list("squeak", "squik"), pain_emote_3p = list("squeaks", "squiks")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "cheese"))
 	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	verb_entry(/mob/living/proc/ventcrawl)

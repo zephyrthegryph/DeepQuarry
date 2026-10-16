@@ -22,7 +22,6 @@
 	melee_damage_upper = 20
 	grab_resist = 100
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	meat_amount = 5
 
 	response_help = "pets"
@@ -110,6 +109,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_sex, login = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)
 	verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/pick_mane_color, login = TRUE)

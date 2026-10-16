@@ -760,7 +760,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	melee_damage_lower = 0 //Holos do no damage
 	melee_damage_upper = 0
 	meat_amount = 0
-	meat_type = null
 	//Vore Section
 	vore_default_mode = DM_HEAL
 	vore_capacity = 2
@@ -1001,3 +1000,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx)
 
 /mob/living/simple_mob/animal/synx/starting_nutrition()
 	return MAX_NUTRITION // spawns fed (its max_nutrition)
+
+CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/holo)
+	configure(butchery_config(meat_type = TRAIT_NONE))

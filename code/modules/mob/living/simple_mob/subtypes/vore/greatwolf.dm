@@ -12,7 +12,6 @@
 	faction = FACTION_SIF
 	has_eye_glow = TRUE
 	meat_amount = 40 //Big dog, lots of meat
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	old_x = -48
 	old_y = 0
 	vis_height = 92
@@ -53,9 +52,6 @@
 	vore_default_mode = DM_HEAL
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to snap up"
-	species_sounds = "Canine"
-	pain_emote_1p = list("yelp", "whine", "bark", "growl")
-	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
 /mob/living/simple_mob/vore/greatwolf/black
 	name = "great black wolf"
@@ -96,6 +92,8 @@
 	movement_cooldown = -1.5 // 1.5 Downstream
 
 CAPABILITIES(/mob/living/simple_mob/vore/greatwolf)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
+	configure(voice_config(species_sounds = "Canine", pain_emote_1p = list("yelp", "whine", "bark", "growl"), pain_emote_3p = list("yelps", "whines", "barks", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
 	op("greatwolf_interaction_feed", item(/obj/item/reagent_containers/food), label("Feed"), then(PROC_REF(greatwolf_interaction_feed)))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)

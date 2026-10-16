@@ -32,7 +32,6 @@
 	movement_cooldown = -1
 
 	meat_amount = 4
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 
 	melee_damage_lower = 2
 	melee_damage_upper = 10
@@ -48,6 +47,7 @@
 	say_list_type = /datum/say_list/duck
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/duck)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken))
 	configure(mob_kind(attack_cooldown = 1 SECOND))
 
 /datum/say_list/duck

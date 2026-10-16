@@ -31,7 +31,6 @@
 	endurance = 50
 	movement_cooldown = -1
 	meat_amount = 2
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	holder_type = /obj/item/holder/catslug
 
 	response_help = "hugs"
@@ -105,6 +104,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/catslug, ventcrawl_get_item_
 		))
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_movement(can_climb = TRUE))
 	verb_entry(/mob/living/proc/ventcrawl)

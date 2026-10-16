@@ -16,7 +16,6 @@
 	organ_names = /datum/decl/mob_organ_names/penguin
 
 	meat_amount = 3
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 
 	harm_intent_damage = 5
 	melee_damage_lower = 10
@@ -32,3 +31,6 @@
 
 /datum/decl/mob_organ_names/penguin
 TYPE_TABLE(/datum/decl/mob_organ_names/penguin, mob_organ_hit_zones, list("chest", "left leg", "right leg", "left flipper", "right flipper", "head"))
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/penguin)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken))

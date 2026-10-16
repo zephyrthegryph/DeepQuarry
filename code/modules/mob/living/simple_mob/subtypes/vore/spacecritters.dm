@@ -330,7 +330,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 
 
 /mob/living/simple_mob/vore/spacecritter/solarray
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/raymeat
 	meat_amount = 8
 
 	tame_items = list(
@@ -351,7 +350,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 		)
 
 /mob/living/simple_mob/vore/spacecritter/livingice
-	meat_type = /obj/item/stack/material/snow
 	meat_amount = 18
 
 	tame_items = list(
@@ -372,7 +370,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 		)
 
 /mob/living/simple_mob/vore/spacecritter/radcrab
-	meat_type = /obj/item/reagent_containers/food/snacks/crabmeat
 	meat_amount = 8
 
 	tame_items = list(
@@ -393,7 +390,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 		)
 
 /mob/living/simple_mob/vore/spacecritter/dreameel
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/eelmeat
 	meat_amount = 2
 
 	tame_items = list(
@@ -414,7 +410,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 		)
 
 /mob/living/simple_mob/vore/spacecritter/gravityshell
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/gravityshell
 	meat_amount = 8
 
 	tame_items = list(
@@ -433,3 +428,18 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 	harvest_results = list(
 		/obj/item/stack/material/shellchitin = 1
 		)
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/raymeat))
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/livingice)
+	configure(butchery_config(meat_type = /obj/item/stack/material/snow))
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/radcrab)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/crabmeat))
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/dreameel)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/eelmeat))
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/gravityshell))

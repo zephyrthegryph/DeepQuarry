@@ -100,7 +100,7 @@ CAPABILITIES(/datum/hose_connector/inflation)
 		return
 	if(connection_mode == CHEM_BLOOD) //OWCH!
 		human_owner().injure(INJURY_PIERCE, 10, BP_TORSO, src)
-		if(human_owner().can_pain_emote) // Doing this probably doesn't feel too good
+		if(voice_config_of(human_owner()).can_pain_emote) // Doing this probably doesn't feel too good
 			human_owner().emote("pain")
 	to_chat(user, span_notice("You connect the hose to \the [human_owner()]'s [feedback]..."))
 	origin.setup_hoses_finish(target, distancetonode, user, tubing)

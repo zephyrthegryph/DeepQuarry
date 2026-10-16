@@ -26,11 +26,11 @@
 	maxbodytemp = 323		//Above 50 Degrees Celcius
 
 	meat_amount = 1
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	say_list_type = /datum/say_list/fluffy_vr
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/fluffy)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	configure(mob_movement(makes_dirt = FALSE, bump = 0))
 
 /datum/say_list/fluffy_vr

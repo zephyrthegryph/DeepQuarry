@@ -55,7 +55,6 @@
 	organ_names = /datum/decl/mob_organ_names/fish
 
 	meat_amount = 5
-	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat
 
 
 	var/knockdown_chance = 15
@@ -84,6 +83,7 @@
 	)
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 15))
@@ -287,10 +287,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	light_on = TRUE
 	icon_gib = null
 	meat_amount = 0
-	meat_type = null
 	vore_icons = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holographic)
+	configure(butchery_config(meat_type = TRAIT_NONE))
 	configure(mob_kind(mob_class = MOB_CLASS_PHOTONIC))
 	configure(light_glow(range = 2))
 

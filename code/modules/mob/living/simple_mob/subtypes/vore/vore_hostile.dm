@@ -30,7 +30,6 @@
 	melee_damage_upper = 1
 
 	meat_amount = 5
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	catalogue_data = list(/datum/category_item/catalogue/fauna/abyss_lurker)
 
 	see_in_dark = 8
@@ -78,6 +77,7 @@
 	B.escape_stun = 5
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
 	op("abyss_lurker_interaction_hand", hand(), then(PROC_REF(abyss_lurker_interaction_hand)))
 
@@ -118,7 +118,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 
 	movement_cooldown = 1
 	meat_amount = 5
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	catalogue_data = list(/datum/category_item/catalogue/fauna/leaper)
 
 	see_in_dark = 8
@@ -161,6 +160,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "throw_vore" = TRUE))
 	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
 
@@ -245,7 +245,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 
 	movement_cooldown = 50
 	meat_amount = 0
-	meat_type = null
 	catalogue_data = list(/datum/category_item/catalogue/fauna/gelatinous_cube)
 
 	see_in_dark = 8
@@ -298,6 +297,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 	B.escape_stun = 3
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube)
+	configure(butchery_config(meat_type = TRAIT_NONE))
 	configure(mob_movement(bump = HUMAN, swap = HEAVY, push = HEAVY))
 	rolls(nameof(color), PROC_REF(roll_color))
 

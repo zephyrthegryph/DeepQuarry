@@ -19,6 +19,8 @@
 	var/use_modern_ai = FALSE
 
 CAPABILITIES(/mob/living)
+	configure(voice_config())
+	configure(butchery_config())
 	footstep_settings()
 	ref_one(nameof(identity))
 	cooldowns(last_special, resist_cooldown, fear_sound_cooldown, spit_cooldown, next_sonar_ping)

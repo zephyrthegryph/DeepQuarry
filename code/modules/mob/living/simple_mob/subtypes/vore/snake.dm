@@ -38,7 +38,6 @@
 	melee_damage_upper = 12
 
 	meat_amount = 6
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help = "pats"
 	response_disarm = "tries to shove"
@@ -52,6 +51,7 @@
 	pixel_y = -16
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/giant_snake)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
 

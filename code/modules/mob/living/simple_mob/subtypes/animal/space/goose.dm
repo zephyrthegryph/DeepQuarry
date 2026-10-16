@@ -24,10 +24,10 @@
 
 	has_langs = list(LANGUAGE_ANIMAL)
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 	meat_amount = 3
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/goose)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 

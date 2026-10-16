@@ -13,7 +13,6 @@
 	endurance = 30
 
 	meat_amount = 2
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help = "pats"
 	response_disarm = "gently pushes aside"
@@ -27,6 +26,7 @@
 	say_list_type = /datum/say_list/redpanda
 
 CAPABILITIES(/mob/living/simple_mob/vore/redpanda)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 

@@ -23,7 +23,6 @@
 	var/atom/movable/copying = null // The thing we're trying to look like.
 	var/realistic = FALSE // If true, things like bullets and weapons will hit it, to be a bit more convincing from a distance.
 
-	can_pain_emote = FALSE
 
 /mob/living/simple_mob/illusion/proc/copy_appearance(atom/movable/thing_to_copy)
 	if(!thing_to_copy)
@@ -54,6 +53,7 @@
 	return PROJECTILE_FORCE_MISS
 
 CAPABILITIES(/mob/living/simple_mob/illusion)
+	configure(voice_config(can_pain_emote = FALSE))
 	ref_one(nameof(copying), /atom/movable)
 	configure(mob_kind(mob_class = MOB_CLASS_ILLUSION))
 	configure(mob_movement(bump = 0))

@@ -16,7 +16,6 @@
 	attack_injury_kind = INJURY_CUT
 
 	meat_amount = 7
-	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_shock
 
 	faction = FACTION_TYR_ANT
 
@@ -85,7 +84,6 @@
 		/obj/item/stack/material/copper = 10
 		)
 	meat_amount = 3
-	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_burn
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/copper/bullet_act(obj/item/projectile/P)
 	if(istype(P, /obj/item/projectile/energy) || istype(P, /obj/item/projectile/beam))
@@ -105,7 +103,6 @@
 		/obj/item/stack/material/weathered_agate = 10
 		)
 	meat_amount = 3
-	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_bonus
 
 	special_attack_min_range = 0
 	special_attack_max_range = 4
@@ -148,7 +145,6 @@
 		/obj/item/stack/material/quartz = 10
 		)
 	meat_amount = 3
-	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/diamond //slower, tankier, more damage
 	name = "diamond metal ant"
@@ -158,7 +154,6 @@
 	melee_damage_lower = 24
 	melee_damage_upper = 24
 	movement_cooldown = 3
-	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_neoburn
 	butchery_loot = list(\
 		/obj/item/stack/material/diamond = 18\
 		)
@@ -171,7 +166,6 @@
 	evasion = 50
 	icon_state = "verdantium_ant"
 	icon_living = "verdantium_ant"
-	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation
 	butchery_loot = list(\
 		/obj/item/stack/material/verdantium = 18\
 		)
@@ -183,7 +177,6 @@
 	name = "glowing metal ant"
 	icon_state = "rad_ant"
 	icon_living = "rad_ant"
-	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation
 	butchery_loot = list(\
 		/obj/item/stack/material/uranium = 18\
 		)
@@ -213,7 +206,6 @@
 	name = "mhydro ant"
 	icon_state = "mhydro_ant"
 	icon_living = "mhydro_ant"
-	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation
 	butchery_loot = list(\
 		/obj/item/stack/material/mhydrogen = 12\
 		)
@@ -239,7 +231,6 @@
 		/obj/item/stack/material/painite = 10
 		)
 	meat_amount = 3
-	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_neoburn
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/painite/apply_melee_effects(atom/A)
 	..()
@@ -273,7 +264,6 @@
 	name = "graphite ant"
 	icon_state = "graphite_ant"
 	icon_living = "graphite_ant"
-	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_neoburn
 	butchery_loot = list(\
 		/obj/item/stack/material/graphite = 18\
 		)
@@ -305,7 +295,6 @@
 	name = "silver ant"
 	icon_state = "silver_ant"
 	icon_living = "silver_ant"
-	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_neoburn
 	butchery_loot = list(\
 		/obj/item/stack/material/silver = 18\
 		)
@@ -318,7 +307,6 @@
 	icon_state = "gold_ant"
 	icon_living = "gold_ant"
 	desc = "A large ant with a metallic golden rear end. Is crackling with lightning."
-	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_burn
 	butchery_loot = list(\
 		/obj/item/stack/material/gold = 18\
 		)
@@ -560,6 +548,7 @@ TYPE_TABLE(/obj/effect/spider/spiderling/antling, spiderling_grow_as, list(/mob/
 MSG_DEF(ant/building, null, span_notice("%U% begins to secrete a sticky substance."))
 
 CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_shock))
 	op("build", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(ant/building)), wait(5 SECONDS, keeps = WAIT_KEEPS_DEFAULT & ~STAY), then(PROC_REF(build_done)), on_interrupt(PROC_REF(build_interrupted)))
 
 /// The build op, started on `T` when the ant is hungry enough, the turf is free of ant work and the ant is idle.
@@ -586,3 +575,36 @@ CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/starting_nutrition()
 	return 630
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/copper)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_burn))
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/agate)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_bonus))
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/quartz)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation))
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/diamond)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_neoburn))
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/verdantium)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation))
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/uranium)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation))
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/mhydro)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation))
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/painite)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_neoburn))
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/graphite)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_neoburn))
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/silver)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_neoburn))
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/gold)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_burn))

@@ -15,7 +15,6 @@
 	see_in_dark = 2
 
 	meat_amount = 5
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help  = "pets"
 	response_disarm = "gently pushes aside"
@@ -42,6 +41,7 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/sheep)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 

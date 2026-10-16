@@ -24,7 +24,6 @@
 	maxbodytemp = 323		//Above 50 Degrees Celcius
 
 	meat_amount = 2
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/fox
 
 	say_list_type = /datum/say_list/fox
 	holder_type = /obj/item/holder/fox
@@ -240,3 +239,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fox/renault)
 /mob/living/simple_mob/animal/passive/fox/beastmode
 	movement_cooldown = 1
 
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fox)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/fox))

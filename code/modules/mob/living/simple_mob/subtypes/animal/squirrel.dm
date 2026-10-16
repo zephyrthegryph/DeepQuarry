@@ -23,7 +23,6 @@
 	endurance = 40
 	movement_cooldown = -1
 	meat_amount = 1
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help = "pets"
 	response_disarm = "slaps"
@@ -151,6 +150,7 @@
 // A wild squirrel follows the season: plumped up for winter (always in winter, half the time in autumn, rarely in spring) and, in autumn,
 // keener to pounce.
 CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_movement(softfall = TRUE))
 	rolls(nameof(winter_coat), PROC_REF(roll_season), when = nameof(do_seasons))

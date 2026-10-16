@@ -38,7 +38,6 @@
 	response_harm   = "kicks"
 
 	meat_amount = 2
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	melee_damage_lower = 2
 	melee_damage_upper = 3
@@ -58,6 +57,7 @@
 	vore_bump_emote = "coils around and unhinges its jaws at"
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/snake)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 

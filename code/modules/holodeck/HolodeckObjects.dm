@@ -513,9 +513,9 @@ CAPABILITIES(/obj/machinery/readybutton)
 	alpha = 127
 	icon_gib = null
 	meat_amount = 0
-	meat_type = null
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holodeck)
+	configure(butchery_config(meat_type = TRAIT_NONE))
 	after_init(0, then(PROC_REF(init_hologram_light)))
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/init_hologram_light(datum/act/timer/A)

@@ -174,10 +174,10 @@ GLOBAL_LIST_EMPTY(grab_drain_test_stages)
 /datum/unit_test/dq_living_ability/harvest_cuts_every_piece_then_butchers/exercise()
 	var/mob/living/carbon/human/H = person()
 	var/mob/living/simple_mob/e0_fixture/carcass = allocate(/mob/living/simple_mob/e0_fixture, get_step(get_turf(H), NORTH))
-	carcass.meat_type = /obj/item/reagent_containers/food/snacks/meat
+	set_trait(carcass, ENTRY_BUTCHERY_CONFIG, "meat_type", /obj/item/reagent_containers/food/snacks/meat)
 	carcass.meat_amount = 2
-	carcass.name_the_meat = FALSE
-	carcass.gib_on_butchery = FALSE
+	set_trait(carcass, ENTRY_BUTCHERY_CONFIG, "name_the_meat", FALSE)
+	set_trait(carcass, ENTRY_BUTCHERY_CONFIG, "gib_on_butchery", FALSE)
 	carcass.set_mob_size(MOB_SMALL) // a cut takes half a second per ten of size
 	carcass.set_stat(DEAD)
 	carcass.harvest(H, null)

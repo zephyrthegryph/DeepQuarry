@@ -31,7 +31,6 @@
 	movement_cooldown = 0.5 //fast as fucc boie.
 
 	meat_amount = 4
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	harm_intent_damage = 5
 	melee_damage_lower = 5
@@ -44,6 +43,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/frog)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = 1, "can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	rolls(nameof(rare), PROC_REF(roll_rare))
 	rolls(nameof(name), PROC_REF(roll_rare_name), from = list(nameof(rare)))

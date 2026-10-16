@@ -45,7 +45,6 @@
 	//Simple mob merc so it stops, says something, then charges.
 	say_list_type = /datum/say_list/possessed //Set to Null on silenced.
 
-	can_pain_emote = FALSE
 
 //	corpse = /obj/effect/landmark/mobcorpse/possessed
 // Will eventually leave a full corpse with an activated RIG on it. But not yet.
@@ -160,3 +159,6 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/miasma)
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/possessed/merc/feral)
 	configure(mob_kind(attack_cooldown = 3))
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/possessed)
+	configure(voice_config(can_pain_emote = FALSE))

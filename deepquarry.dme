@@ -38,6 +38,7 @@
 #include "code\_macros.dm"
 #include "code\world.dm"
 #include "code\__defines\__globals.dm"
+#include "code\__defines\mob_configuration.dm"
 #include "code\__defines\_access_defs.dm"
 #include "code\__defines\_ast.dm"
 #include "code\__defines\_atoms.dm"

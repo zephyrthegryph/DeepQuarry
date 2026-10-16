@@ -41,7 +41,6 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 
 	movement_cooldown = 3
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/grubmeat
 	meat_amount = 6
 
 	response_help = "pokes"
@@ -62,6 +61,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	glow_override = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/solargrub)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/grubmeat))
 	ref_one(nameof(attached), /obj/structure/cable)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 

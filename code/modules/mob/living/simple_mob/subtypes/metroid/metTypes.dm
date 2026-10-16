@@ -441,9 +441,9 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 	evo_limit = 2000
 	next = "/mob/living/simple_mob/metroid/juvenile/queen"
 
-	death_sound_override = SFX_METROID_METROIDOMEGADEATH // We override the death sound to play our custom here
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
+	configure(voice_config(death_sound_override = SFX_METROID_METROIDOMEGADEATH))
 	configure(mob_movement(makes_dirt = TRUE))
 
 /mob/living/simple_mob/metroid/juvenile/omega
@@ -528,9 +528,9 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
 	next = null
 	is_queen = TRUE
 
-	death_sound_override = SFX_METROID_METROIDQUEENDEATH // We override the death sound to play our custom here
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
+	configure(voice_config(death_sound_override = SFX_METROID_METROIDQUEENDEATH))
 	configure(mob_movement(makes_dirt = TRUE))
 	after_init(0, then(PROC_REF(queen_metroid_ready)))
 

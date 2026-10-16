@@ -20,7 +20,6 @@
 	melee_damage_upper = 20
 	grab_resist = 100
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	meat_amount = 5
 
 	response_help = "pets"
@@ -52,3 +51,6 @@
 	icon_living = "reindeerfes"
 	icon_dead = "reindeerfes-dead"
 	icon_rest = "reindeerfes_rest"
+
+CAPABILITIES(/mob/living/simple_mob/vore/reindeer)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))

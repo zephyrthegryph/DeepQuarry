@@ -61,7 +61,6 @@
 	EXPIRY_DECLARE(blood_spawn)
 	var/is_shifting = FALSE
 
-	can_pain_emote = FALSE
 	injury_enrages = TRUE
 
 /mob/living/simple_mob/vore/demonAI/load_default_bellies()
@@ -157,6 +156,7 @@
 
 // Force uncloaking if attacked.
 CAPABILITIES(/mob/living/simple_mob/vore/demonAI)
+	configure(voice_config(can_pain_emote = FALSE))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(laugh_at_hit)))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
 

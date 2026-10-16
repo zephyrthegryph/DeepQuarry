@@ -77,9 +77,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	var/mood = ":3" // Icon to use to display 'mood', as an overlay.
 
 
-	species_sounds = "Slime"
-	pain_emote_1p = list("squish", "squelch")
-	pain_emote_3p = list("squishes", "squelches")
 
 /mob/living/simple_mob/slime/get_available_emotes()
 	return GLOB.slime_default_emotes.Copy()
@@ -90,6 +87,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_hear = list("squishes")
 
 CAPABILITIES(/mob/living/simple_mob/slime)
+	configure(voice_config(species_sounds = "Slime", pain_emote_1p = list("squish", "squelch"), pain_emote_3p = list("squishes", "squelches")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 2 SECONDS))
 	configure(mob_movement(makes_dirt = FALSE))

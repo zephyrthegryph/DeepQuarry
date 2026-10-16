@@ -53,7 +53,6 @@
 	attack_injury_kind = INJURY_CUT
 	melee_attack_delay = 1 SECOND
 
-	meat_type = /obj/item/reagent_containers/food/snacks/crabmeat
 	meat_amount = 6
 
 	response_help  = "pets"
@@ -85,3 +84,6 @@
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% crushes %T%!")))
 
 // The AI for hooligan crabs. Follows people for awhile.
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/hooligan_crab)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/crabmeat))

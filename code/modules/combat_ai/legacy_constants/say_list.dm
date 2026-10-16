@@ -8,12 +8,7 @@
 /mob/living
 	var/datum/say_list/say_list = null
 	var/say_list_type = /datum/say_list	// Type to give us on initialization. Default has empty lists, so the mob will be silent.
-	var/can_pain_emote = TRUE
 	var/datum/looping_sound/mob/deafened/deaf_loop //NYI
-	var/pain_emote_1p = null
-	var/pain_emote_3p = null
-	var/species_sounds = "None" // By default, we have nothing.
-	var/death_sound_override = null
 	var/datum/looping_sound/mob/on_fire/firesoundloop
 
 // say_list creation lives in code/modules/combat_ai/integration/mob_living.dm
@@ -221,3 +216,36 @@
 	say_stand_down = list("Good.", "That's right run you lilly livers.")
 	say_escalate = list("Yarr! The booty is mine!", "Going to gut you landlubber.")
 
+
+/proc/voice_config(can_pain_emote = null, pain_emote_1p = null, pain_emote_3p = null, species_sounds = null, death_sound_override = null)
+	return entry_make(ENTRY_VOICE_CONFIG, null, list("can_pain_emote" = can_pain_emote, "pain_emote_1p" = pain_emote_1p, "pain_emote_3p" = pain_emote_3p, "species_sounds" = species_sounds, "death_sound_override" = death_sound_override))
+
+/datum/type_trait/voice_config
+	var/can_pain_emote = TRUE
+	var/pain_emote_1p = null
+	var/pain_emote_3p = null
+	var/species_sounds = "None"
+	var/death_sound_override = null
+
+/datum/type_trait/voice_config/copy_values(datum/type_trait/voice_config/into)
+	into.can_pain_emote = can_pain_emote
+	into.pain_emote_1p = pain_emote_1p
+	into.pain_emote_3p = pain_emote_3p
+	into.species_sounds = species_sounds
+	into.death_sound_override = death_sound_override
+
+/datum/entry_engine/type_trait/voice_config
+	kind = ENTRY_VOICE_CONFIG
+	trait_type = /datum/type_trait/voice_config
+	publish_key = VOICE_CONFIG_KEY
+	base_type = /mob/living
+	var_names = list("can_pain_emote" = "can_pain_emote", "pain_emote_1p" = "pain_emote_1p", "pain_emote_3p" = "pain_emote_3p", "species_sounds" = "species_sounds", "death_sound_override" = "death_sound_override")
+
+READS_AS(/proc/voice_config_of, VOICE_CONFIG_KEY)
+/proc/voice_config_of(mob/living/M) as /datum/type_trait/voice_config
+	READS_FROM(M)
+	return type_trait_of(M, ENTRY_VOICE_CONFIG)
+
+/proc/voice_config_of_type(path) as /datum/type_trait/voice_config
+	READS_FROM()
+	return type_trait_of_type(path, ENTRY_VOICE_CONFIG)

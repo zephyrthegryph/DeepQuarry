@@ -46,9 +46,6 @@
 	var/tame_chance = 50 //It's a fiddy-fiddy default you may get a buddy pal or you may get mauled and ate. Win-win!
 
 
-	species_sounds = "Canine"
-	pain_emote_1p = list("yelp", "whine", "bark", "growl")
-	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
 // Activate Noms!
 
@@ -236,6 +233,7 @@
 	icon_rest = "hotiesc_rest"
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie)
+	configure(voice_config(species_sounds = "Canine", pain_emote_1p = list("yelp", "whine", "bark", "growl"), pain_emote_3p = list("yelps", "whines", "barks", "growls")))
 	ref_one(nameof(friend), /mob/living/carbon/human)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_kind(death_message = "dies!"))

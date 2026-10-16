@@ -31,7 +31,6 @@
 	say_list_type = /datum/say_list/rabbit
 
 	meat_amount = 3
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	// Vore vars
 	vore_active = 1
@@ -49,6 +48,7 @@
 	var/grump_decay = 5 SECONDS // This is how quickly our grumpiness decays.
 
 CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = cond_not(nameof(body_color)))
 	look_from(nameof(body_color), state = "rabbit_*", item = "rabbit_*", living = "rabbit_*", dead = "rabbit_*_dead", rest = "rabbit_*_rest")
 

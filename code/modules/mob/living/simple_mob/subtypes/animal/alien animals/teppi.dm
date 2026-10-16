@@ -63,7 +63,6 @@ GLOBAL_VAR_CONST(max_teppi, 50)	// How many teppi CAN we have?
 	endurance = 600
 	movement_cooldown = -1
 	meat_amount = 12
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help = "pets"
 	response_disarm = "rudely paps"
@@ -419,6 +418,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 	/////HIGHEST LAYER/////
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	ref_one(nameof(parent_one), /mob/living/simple_mob/vore/alienanimals/teppi)
 	ref_one(nameof(parent_two), /mob/living/simple_mob/vore/alienanimals/teppi)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

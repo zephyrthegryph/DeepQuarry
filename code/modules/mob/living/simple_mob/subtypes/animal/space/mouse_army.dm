@@ -43,18 +43,16 @@
 	has_langs = list("Mouse")
 
 	holder_type = /obj/item/holder/mouse
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	say_list_type = /datum/say_list/mouse
 
 
 	var/rank //pyro, operative, ammo, stealth. more to come. Do not leave blank.
 
-	species_sounds = "Mouse"
-	pain_emote_1p = list("squeak", "squik")
-	pain_emote_1p = list("squeaks", "squiks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
+	configure(voice_config(species_sounds = "Mouse", pain_emote_1p = list("squeaks", "squiks")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)

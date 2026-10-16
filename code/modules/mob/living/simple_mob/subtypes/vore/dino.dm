@@ -25,7 +25,6 @@
 	unsuitable_atoms_damage = 10
 
 	meat_amount = 5
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	//Phoron dragons aren't affected by atmos.
 	min_oxy = 0
@@ -39,6 +38,7 @@
 	minbodytemp = 0
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dino)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
 
