@@ -23,7 +23,7 @@
 	var/invulnerable = FALSE
 	var/electric = FALSE
 
-CAPABILITY_TYPE(initial_fence_shape, CAP_INITIAL_FENCE_SHAPE, /datum/capability/initial_fence_shape, door = FALSE)
+CAPABILITY_TYPE(initial_fence_shape, CAP_INITIAL_FENCE_SHAPE, /datum/capability/initial_fence_shape, key = NONE, door = FALSE)
 
 /datum/capability/initial_fence_shape
 	holder_hooks = HOLDER_HOOK_PREINIT
