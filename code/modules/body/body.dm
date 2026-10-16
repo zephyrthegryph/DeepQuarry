@@ -536,3 +536,16 @@
 /datum/body/proc/get_consciousness()
 	ensure_vitals()
 	return consciousness
+
+// Physical writing and per-organ marking order belong to this body, not its character profile.
+/datum/body
+	var/list/body_writing
+	var/markings_len = 0
+
+// Life caches and revival eligibility are state of this biological body.
+/datum/body
+	var/heartbeat = 0
+	var/chemical_darksight = 0
+	var/environment_steady = FALSE
+	var/nutrition_drained_at = 0
+	var/can_defib = TRUE

@@ -107,8 +107,8 @@
 /mob/living/carbon/human/proc/examine_name_ender(skip_gear, skip_body, looks_synth)
 	if((skip_gear & EXAMINE_SKIPJUMPSUIT) && (skip_body & EXAMINE_SKIPFACE))
 		return ""
-	if(custom_species)
-		return ", a " + span_bold("[src.custom_species]")
+	if(bio.custom_species)
+		return ", a " + span_bold("[src.bio.custom_species]")
 	if(looks_synth)
 		var/use_gender = "a synthetic"
 		if(gender == MALE)
@@ -474,7 +474,7 @@
 /mob/living/carbon/human/proc/examine_nutrition()
 	if(!show_pudge() || !vore_prefs.nutrition_message_visible) //Some clothing or equipment can hide this.
 		return ""
-	if(nutrition_hidden) // Chomp Edit
+	if(bio.nutrition_hidden) // Chomp Edit
 		return ""
 	var/message = ""
 	var/nutrition_examine = round(nutrition_of(src))
@@ -592,11 +592,11 @@
 		if(is_hidden)
 			continue
 
-		var/writing = LAZYACCESS(body_writing, bodypart)
+		var/writing = LAZYACCESS(body.body_writing, bodypart)
 		if(writing)
 			var/obj/item/organ/external/affecting = get_organ(bodypart)
 			if(!affecting || affecting.is_stump())
-				LAZYREMOVE(body_writing, bodypart)
+				body.remove_body_writing(bodypart)
 				continue
 
 			. += span_notice("[p_They()] [p_have()] \"[writing]\" written on [p_their()] [parse_zone(bodypart)].")

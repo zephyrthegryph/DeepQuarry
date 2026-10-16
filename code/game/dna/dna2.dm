@@ -162,7 +162,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 			break
 
 	// Technically custom_species is not part of the UI, but this place avoids merge problems.
-	src.custom_species = character.custom_species
+	src.custom_species = character.bio.custom_species
 	src.base_species = character.species.base_species
 	src.blood_color = character.species.blood_color
 	src.blood_reagents = character.species.blood_reagents
@@ -360,7 +360,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Custom species and other cosmetic vars
-	H.custom_species = custom_species
+	H.bio.set_custom_species(custom_species)
 	H.bio.custom_say = custom_say
 	H.bio.custom_ask = custom_ask
 	H.bio.custom_whisper = custom_whisper

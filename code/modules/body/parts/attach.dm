@@ -275,7 +275,7 @@ SETTER(/obj/item/organ, organ_tag)
 		log_game("PARTS: [key_name(owner)] lost vital part [first] ([first.type]); dying")
 		if(ishuman(owner))
 			var/mob/living/carbon/human/H = owner
-			H.can_defib = FALSE
+			H.body.set_can_defib(FALSE)
 		owner.death()
 
 /// One part leaves: afflictions travel with it, caches, its own reaction

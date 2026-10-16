@@ -274,7 +274,7 @@ CAPABILITIES(/obj/item/defib_kit/compact)
 	else if(H.has_mutation(HUSK)) //Husked! Need to fix their husk status first.
 		return "buzzes, \"Resuscitation failed - Anatomical structure malformation detected. 'De-Husk' surgery required.\""
 
-	else if(!H.can_defib) //We can frankensurgery them! Let's tell the user.
+	else if(!H.body.can_defib)  //We can frankensurgery them! Let's tell the user.
 		return "buzzes, \"Resuscitation failed - Severe neurological deformation detected. Brain-stem reattachment surgery required.\""
 
 	var/bad_vital_organ = H.check_vital_organs() //CONTRARY to what you may think, your HEART AND LUNGS ARE NOT VITAL. Only the brain is. This is here in case a species has a special vital organ they need to survive in addiition to their brain.

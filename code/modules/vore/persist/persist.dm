@@ -156,7 +156,7 @@
 	prefs.update_preference_by_type(/datum/preference/color/human/wing_color3, character.looks.wing_color3)
 	prefs.update_preference_by_type(/datum/preference/numeric/human/wing_alpha, character.looks.wing_alpha)
 
-	prefs.update_preference_by_type(/datum/preference/text/human/custom_species, character.custom_species) // migrated pref
+	prefs.update_preference_by_type(/datum/preference/text/human/custom_species, character.bio.custom_species) // migrated pref
 	prefs.update_preference_by_type(/datum/preference/toggle/human/digitigrade, character.looks.digitigrade) // migrated pref
 
 // Saves mob's current organ state to prefs.

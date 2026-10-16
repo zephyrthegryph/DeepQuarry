@@ -307,7 +307,7 @@
 	..()
 
 /mob/living/carbon/human/air_changed_here()
-	src.environment_steady = FALSE
+	src.body.set_environment_steady(FALSE)
 	..()
 
 // ---------------------------------------------------------------- simple mobs
@@ -373,7 +373,7 @@
 		S.heat_discomfort_level, S.heat_level_1, S.heat_level_2, S.heat_level_3, normal - DQ_COLD_EXPOSURE_KELVIN, normal + DQ_HEAT_EXPOSURE_KELVIN)
 
 /mob/living/carbon/human/body_heat_changed()
-	src.environment_steady = FALSE
+	src.body.set_environment_steady(FALSE)
 	src.body?.invalidate(BODY_DIRTY_METRICS) // the medical metric triggers read the body temperature
 	..()
 

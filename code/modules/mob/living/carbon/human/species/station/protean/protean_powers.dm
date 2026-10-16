@@ -357,9 +357,9 @@ CAPABILITIES(/datum/prompt/yes_no/protean_power)
 	if(!refactory || !refactory.use_stored_material(MAT_STEEL, PER_LIMB_STEEL_COST))
 		return
 	F.set_form(/datum/form/protean_blob)
-	H.active_regen = TRUE
+	sparse_set_or(H, active_regen, TRUE, FALSE)
 	perform_op(H, src, "regrow_limb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("refactory" = refactory, "choice" = choice))
-	H.active_regen = FALSE
+	sparse_set_or(H, active_regen, FALSE, FALSE)
 
 CAPABILITIES(/datum/protean_power/reform_limb)
 	op("regrow_limb", ai(), needs(req_capable()), takes("refactory", "choice"), wait(5 SECONDS), on_interrupt(PROC_REF(regrow_limb_reform_limb_failed)), then(PROC_REF(regrow_limb_reform_limb_done)))

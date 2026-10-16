@@ -71,4 +71,4 @@
 	return null
 
 /datum/preference/text/human/custom_species/apply_to_human(mob/living/carbon/human/target, value)
-	target.custom_species = value
+	target.bio.set_custom_species(value)

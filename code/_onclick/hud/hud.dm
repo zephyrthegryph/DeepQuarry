@@ -659,3 +659,7 @@ CAPABILITIES(/datum/hud)
 /datum/hud/proc/mymob() as /mob
 	return mymob
 
+
+/// Cached by-limb health presentation belongs to this HUD instance.
+/datum/hud
+	var/tmp/health_doll_key

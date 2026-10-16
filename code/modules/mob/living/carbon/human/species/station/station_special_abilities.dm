@@ -449,7 +449,32 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 
 
 //Test to see if we can shred a mob. Some child override needs to pass us a target. We'll return it if you can.
-/mob/living/var/vore_shred_time = 45 SECONDS
+#define ENTRY_SHRED_SETTINGS "shred_settings"
+#define SHRED_SETTINGS_KEY "shred_settings"
+
+STATIC_ENTRY(shred_settings)
+/proc/shred_settings(vore_shred_time = null)
+	RETURN_TYPE(/datum/entry)
+	return entry_make(ENTRY_SHRED_SETTINGS, null, list("vore_shred_time" = vore_shred_time))
+
+/datum/type_trait/shred_settings
+	var/vore_shred_time = 45 SECONDS
+
+/datum/type_trait/shred_settings/copy_values(datum/type_trait/shred_settings/into)
+	into.vore_shred_time = vore_shred_time
+
+/datum/entry_engine/type_trait/shred_settings
+	kind = ENTRY_SHRED_SETTINGS
+	trait_type = /datum/type_trait/shred_settings
+	publish_key = SHRED_SETTINGS_KEY
+	base_type = /mob/living
+	var_names = list("vore_shred_time" = "vore_shred_time")
+
+READS_AS(/proc/shred_settings_of, SHRED_SETTINGS_KEY)
+/proc/shred_settings_of(mob/living/holder) as /datum/type_trait/shred_settings
+	READS_FROM(holder)
+	return type_trait_of(holder, ENTRY_SHRED_SETTINGS)
+
 /mob/living/proc/can_shred(mob/living/carbon/human/target)
 	if(isnull(target) && shred_picks_target())
 		shred_pick_target()
@@ -474,7 +499,6 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 	return target
 
 //Human test for shreddability, returns the mob if they can be shredded.
-/mob/living/carbon/human/vore_shred_time = 10 SECONDS
 /mob/living/carbon/human/can_shred()
 	//Humans need a grab
 	var/obj/item/grab/G = get_active_hand()
@@ -684,14 +708,14 @@ CAPABILITIES(/datum/shred_limb_review)
 		to_chat(src,span_warning("Looks like you lost your chance..."))
 		return
 
-	cooldown_start(src, last_special, vore_shred_time)
+	cooldown_start(src, last_special, shred_settings_of(src).vore_shred_time)
 	act_message(src, T, others = span_danger("%U% appears to be preparing to do something to %T%!")) //Let everyone know that bad times are ahead
 
 	perform_op(src, src, "shred_limb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = T, "external" = T_ext, "internal" = T_int, "belly" = B))
 
 /// How long the shredding takes: the preparing mob's own pace.
 /mob/living/proc/shred_limb_time(datum/act/op/A)
-	return vore_shred_time
+	return shred_settings_of(src).vore_shred_time
 
 /mob/living/proc/shred_limb_living_done(datum/act/op/A)
 	var/mob/living/carbon/human/T = A.arg("victim")
@@ -769,15 +793,14 @@ CAPABILITIES(/datum/shred_limb_review)
 	to_chat(C, span_notice("You have [stat_value(C, STAT_FLYING)?"started":"stopped"] stat_value(src, STAT_FLYING)."))
 
 /mob/living/
-	var/flight_vore = FALSE
 
 /mob/living/proc/flying_vore_toggle()
 	set name = "Toggle Flight Vore"
 	set desc = "Allows you to engage in voracious misadventures while flying."
 	set category = VERB_CAT_ABILITIES_VORE
 
-	flight_vore = !flight_vore
-	if(flight_vore)
+	vore_options.set_flight_vore(!vore_options.flight_vore)
+	if(vore_options.flight_vore)
 		to_chat(src, "You have allowed for flight vore! Bumping into characters while flying will now trigger dropnoms! Unless prefs don't match.. then you will take a tumble!")
 	else
 		to_chat(src, "Flight vore disabled! You will no longer engage dropnoms while in flight.")

@@ -48,11 +48,11 @@
 /obj/machinery/bodyscanner/proc/dq_emit_identity(mob/living/carbon/human/H, list/out)
 	out["name"] = H.name
 	var/species_text = H.species.name
-	if(H.custom_species)
+	if(H.bio.custom_species)
 		if(H.species.name == SPECIES_CUSTOM || H.species.name == SPECIES_HANNER)
-			species_text = "[H.custom_species]"
+			species_text = "[H.bio.custom_species]"
 		else
-			species_text = "[H.custom_species] \[Similar biology to [H.species.name]\]"
+			species_text = "[H.bio.custom_species] \[Similar biology to [H.species.name]\]"
 	out["species"] = species_text
 
 

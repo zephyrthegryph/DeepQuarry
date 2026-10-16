@@ -139,7 +139,7 @@
 		var/mob/living/carbon/human/dummy/mannequin/Dummy = get_mannequin(client.ckey)
 		client.prefs.copy_to(Dummy)
 		//Important, since some sprites only work for specific species
-		custom_species = Dummy.custom_species
+		bio.set_custom_species(Dummy.bio.custom_species)
 		var/list/traits = LAZYCOPY(dna.species_traits)
 		rel_set(src, nameof(dna), Dummy.dna.Clone())
 		LAZYCLEARLIST(dna.species_traits)

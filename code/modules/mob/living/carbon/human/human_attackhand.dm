@@ -407,8 +407,8 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 			real_damage *= physical_resistance
 			rand_damage *= physical_resistance
 
-	real_damage *= damage_multiplier
-	rand_damage *= damage_multiplier
+	real_damage *= human_abilities_of(src).damage_multiplier
+	rand_damage *= human_abilities_of(src).damage_multiplier
 	if(H.has_mutation(HULK))
 		real_damage *= 2 // Hulks do twice the damage
 		rand_damage *= 2
@@ -606,7 +606,7 @@ MSG_DEF_SELF(human/pressure_taken, span_warning("Someone is already applying pre
 			act_message(src, null, others = span_danger("%U%'s body crunches and snaps."))
 			to_chat(reviver, span_danger("You get the feeling [src] is going to need surgical intervention to be revived."))
 			return // Handle husked, cure it before you can revive
-		if(!can_defib)
+		if(!src.body.can_defib)
 			act_message(src, null, others = span_danger("%U%'s neck shifts and cracks!"))
 			to_chat(reviver, span_danger("You get the feeling [src] is going to need surgical intervention to be revived."))
 			return // Handle broken neck/no attached brain

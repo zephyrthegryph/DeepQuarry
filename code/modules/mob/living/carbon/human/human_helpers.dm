@@ -256,7 +256,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 			O.remove_markings(mark_datum.name)
 			successful = TRUE
 	if (successful)
-		markings_len -= 1
+		body.set_markings_len(body.markings_len - 1)
 		update_dna()
 		return TRUE
 	return FALSE
@@ -269,9 +269,9 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		var/obj/item/organ/external/O = organs_by_name[BP]
 		if(O)
 			success = TRUE
-			O.set_markings_at(mark_datum.name, list("color" = mark_color, "datum" = mark_datum, "priority" = markings_len + 1, "on" = TRUE))
+			O.set_markings_at(mark_datum.name, list("color" = mark_color, "datum" = mark_datum, "priority" = body.markings_len + 1, "on" = TRUE))
 	if (success)
-		markings_len += 1
+		body.set_markings_len(body.markings_len + 1)
 		update_dna()
 	return success
 
@@ -287,12 +287,12 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 			if (!index)
 				continue
 			var/change_from = O.markings[mark_datum.name]["priority"]
-			if (change_from == clamp(change_from + change, 1, markings_len))
+			if (change_from == clamp(change_from + change, 1, body.markings_len))
 				continue
 			if (!success)
 				success = TRUE
 				change_priority_marking_to_priority(change_from + change, change_from)
-			O.markings[mark_datum.name]["priority"] = clamp(change_from + change, 1, markings_len)
+			O.markings[mark_datum.name]["priority"] = clamp(change_from + change, 1, body.markings_len)
 			tracked_changed(O, nameof(O.markings))
 			if ((move_down && index == O.markings.len) || (!move_down && index == 1))
 				continue
@@ -359,7 +359,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 			last_color = sorted[marking][bp]["color"]
 		if (should_add_color)
 			sorted[marking]["color"] = last_color||"#000000"
-	markings_len = sorted.len
+	body.set_markings_len(sorted.len)
 	//todo - add an autofixing thing for having markings with the same priorities as another, and for having markings that should have the same priorities across bodyparts, but don't
 	//does not really need to happen, that kinda thing will only happen when putting another person's limb onto your own body
 	return sorted
@@ -407,7 +407,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		var/obj/item/organ/external/O = organs_by_name[N]
 		var/obj/item/organ/external/I = character.organs_by_name[N]
 		O.set_markings(I.markings?.Copy())
-	markings_len = character.markings_len
+	body.set_markings_len(character.body.markings_len)
 
 	if(options.copy_flavour)
 		bio.flavor_texts = character.bio.flavor_texts?.Copy()
@@ -423,7 +423,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	if(istype(species, /datum/species/shapeshifter))
 		set_wrapped_bodytype(bodytype)
 
-	custom_species	= character.custom_species
+	bio.set_custom_species(character.bio.custom_species)
 	bio.custom_say = character.bio.custom_say
 	bio.custom_ask = character.bio.custom_ask
 	bio.custom_whisper = character.bio.custom_whisper

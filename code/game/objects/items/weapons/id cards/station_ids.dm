@@ -76,9 +76,9 @@ CAPABILITIES(/obj/item/card/id)
 	..()
 	id_card.set_age(bio.age)
 	if(species.name == SPECIES_HANNER)
-		id_card.set_species("[custom_species ? "[custom_species]" : species.name]")
+		id_card.set_species("[bio.custom_species ? "[bio.custom_species]" : species.name]")
 	else
-		id_card.set_species("[custom_species ? "[custom_species] ([species.name])" : species.name]")
+		id_card.set_species("[bio.custom_species ? "[bio.custom_species] ([species.name])" : species.name]")
 	id_card.set_sex(capitalize(name_gender()))
 
 	// Save time by reusing our ID card photo instead of generating it for the char directory specifically

@@ -363,9 +363,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		G.set_fields_at("m_stat", "Stable")
 		G.set_fields_at("sex", gender2text(H.gender))
 		if(H.species.name == SPECIES_HANNER)
-			G.set_fields_at("species", "[H.custom_species ? "[H.custom_species]" : H.species.name]")
+			G.set_fields_at("species", "[H.bio.custom_species ? "[H.bio.custom_species]" : H.species.name]")
 		else
-			G.set_fields_at("species", "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]")
+			G.set_fields_at("species", "[H.bio.custom_species ? "[H.bio.custom_species] ([H.species.name])" : H.species.name]")
 		G.set_fields_at("home_system", H.bio.home_system)
 		G.set_fields_at("birthplace", H.bio.birthplace)
 		G.set_fields_at("citizenship", H.bio.citizenship)
@@ -377,9 +377,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		//Medical Record
 		var/datum/data/record/M = CreateMedicalRecord(H.real_name, id, hidden)
 		if(H.species.name == SPECIES_HANNER)
-			M.set_fields_at("species", "[H.custom_species ? "[H.custom_species]" : H.species.name]")
+			M.set_fields_at("species", "[H.bio.custom_species ? "[H.bio.custom_species]" : H.species.name]")
 		else
-			M.set_fields_at("species", "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]")
+			M.set_fields_at("species", "[H.bio.custom_species ? "[H.bio.custom_species] ([H.species.name])" : H.species.name]")
 		M.set_fields_at("b_type", H.dna ? H.dna.b_type : DEFAULT_BLOOD_TYPE)
 		M.set_fields_at("blood_reagent", H.dna.blood_reagents)
 		M.set_fields_at("blood_color", H.dna.blood_color)
@@ -395,9 +395,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		//Security Record
 		var/datum/data/record/S = CreateSecurityRecord(H.real_name, id, hidden)
 		if(H.species.name == SPECIES_HANNER)
-			S.set_fields_at("species", "[H.custom_species ? "[H.custom_species]" : H.species.name]")
+			S.set_fields_at("species", "[H.bio.custom_species ? "[H.bio.custom_species]" : H.species.name]")
 		else
-			S.set_fields_at("species", "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]")
+			S.set_fields_at("species", "[H.bio.custom_species ? "[H.bio.custom_species] ([H.species.name])" : H.species.name]")
 		if(H.get_FBP_type())
 			S.set_fields_at("brain_type", H.get_FBP_type())
 		else
@@ -424,9 +424,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		L.set_fields_at("enzymes", H.dna.SE) // Used in respawning
 		L.set_fields_at("identity", H.dna.UI) // "
 		if(H.species.name == SPECIES_HANNER)
-			L.set_fields_at("species", "[H.custom_species ? "[H.custom_species]" : H.species.name]")
+			L.set_fields_at("species", "[H.bio.custom_species ? "[H.bio.custom_species]" : H.species.name]")
 		else
-			L.set_fields_at("species", "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]")
+			L.set_fields_at("species", "[H.bio.custom_species ? "[H.bio.custom_species] ([H.species.name])" : H.species.name]")
 		L.set_fields_at("home_system", H.bio.home_system)
 		L.set_fields_at("birthplace", H.bio.birthplace)
 		L.set_fields_at("citizenship", H.bio.citizenship)

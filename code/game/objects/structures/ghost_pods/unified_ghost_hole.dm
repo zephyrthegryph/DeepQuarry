@@ -142,7 +142,7 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/unified_hole)
 
 	new_character.update_transform()
 	if(redgate_restricted)
-		new_character.redgate_restricted = TRUE
+		sparse_set(new_character, redgate_restricted, TRUE)
 		to_chat(new_character, span_notice("You are an inhabitant of this redgate location, you have no special advantages compared to the rest of the crew, so be cautious! You have spawned with an ID that will allow you free access to basic doors, and should possess all of your chosen loadout items that are not role restricted, and can make use of anything you can find in the redgate map."))
 	else
 		to_chat(new_character, span_notice("You are a " + span_bold(JOB_MAINT_LURKER) + ", a loose end, stowaway, drifter, or somesuch. You have no special advantages compared to the rest of the crew, so be cautious! You have spawned with an ID that will allow you free access to maintenance areas, and should possess all of your chosen loadout items that are not role restricted. You also have a PDA which you can use for messaging purposes, and are free to make use of anything you can find in maintenance."))

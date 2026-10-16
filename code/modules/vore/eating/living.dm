@@ -280,7 +280,7 @@ sparse(/mob/living, drain_finalized, type = bool)
 		return
 	add_attack_logs(attacker, canvas_user, "wrote \"[message]\"")
 
-	LAZYSET(canvas_user.body_writing, affecting.organ_tag, message)
+	canvas_user.body.set_body_writing_at(affecting.organ_tag, message)
 
 	act_message(attacker, canvas_user, MSG_SELF(span_notice("You finish writing on %T%'s [affecting.name].")), \
 		MSG_OTHERS(span_notice("%U% finishes writing on %T%'s [affecting.name].")))
@@ -579,7 +579,7 @@ sparse(/mob/living, drain_finalized, type = bool)
 	else
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
-			taste_message += "a normal [H.custom_species ? H.custom_species : H.species.name]"
+			taste_message += "a normal [H.bio.custom_species ? H.bio.custom_species : H.species.name]"
 		else
 			taste_message += "a plain old normal [src]"
 
@@ -628,7 +628,7 @@ sparse(/mob/living, drain_finalized, type = bool)
 	else
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
-			smell_message += "a normal [H.custom_species ? H.custom_species : H.species.name]"
+			smell_message += "a normal [H.bio.custom_species ? H.bio.custom_species : H.species.name]"
 		else
 			smell_message += "a plain old normal [src]"
 

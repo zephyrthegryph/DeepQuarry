@@ -6,7 +6,6 @@
 	// Hair, eye, skin and synth colours, styles, skin tone, digitigrade and lips: the looks profile record
 	// (/datum/record/appearance, profile_records.dm).
 
-	var/damage_multiplier = 1 //multiplies melee combat damage
 
 
 	var/datum/robolimb/synthetic		//If they are a synthetic (aka synthetic torso). Also holds the datum for the type of robolimb.
@@ -28,7 +27,6 @@
 
 	var/identifying_gender // In case the human identifies as another gender than it's biological
 
-	var/step_count = 0 // Track how many footsteps have been taken to know when to play footstep sounds
 
 
 	// Used by mobs in virtual reality to point back to the "real" mob the client belongs to.
@@ -57,33 +55,24 @@
 	var/flapping = 0
 
 	// Custom Species Name
-	var/custom_species
 
 	var/block_hud
 
 	var/phobias		//For holding a list of phobias
 
-	var/redgate_restricted = FALSE
 	var/hide_headset = FALSE
 	var/hide_glasses = FALSE
 
 
 /mob/living/carbon/human
 	var/vantag_pref = VANTAG_NONE //What's my status?
-	var/ability_flags = 0	//Shadekin abilities/potentially other species-based?
-	var/sensorpref = 5		//Suit sensor loadout pref
 	var/wings_hidden = FALSE
 	var/tail_hidden = FALSE
-	var/markings_len = 0 //mostly an arbitrary number
-	var/low_sorting_priority = FALSE
 
-	var/list/body_writing // assoc list by BP_ key
 
 
 /mob/living/carbon/human
-	var/gender_change_cooldown = 0 // A cooldown for gender and gender indentify changing procs to make it easy to avoid spam of gender change
-	var/speech_sound_enabled = TRUE
-	var/nutrition_hidden = FALSE
+
 
 /mob/living/carbon/human/ai_controlled
 	low_priority = TRUE
@@ -93,3 +82,8 @@
 PUBLISHED_BY(/mob/living/carbon/human, organs, MOB_KEY_HEALTH)
 
 /// The phobias step reads them.
+
+sparse(/mob/living/carbon/human, gender_change_cooldown, type = num)
+
+sparse(/mob/living/carbon/human, redgate_restricted, type = num)
+sparse(/mob/living/carbon/human, ability_flags, type = num)

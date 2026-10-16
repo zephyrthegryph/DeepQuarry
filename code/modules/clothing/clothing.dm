@@ -644,7 +644,7 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	// begin
 	if(istype(user, /mob/living/carbon/human))
 		var/mob/living/carbon/human/H = user
-		if(H.ability_flags & 0x1)
+		if(sparse_get_or(H, ability_flags, 0) & 0x1)
 			to_chat(user, span_warning("You cannot do that while phase shifted."))
 			return
 	// end
@@ -1121,7 +1121,7 @@ CAPABILITIES(/obj/item/clothing/under)
 		return
 
 	var/mob/living/carbon/human/H = loc
-	sensorpref = isnull(H) ? 1 : (ishuman(H) ? H.sensorpref : 1)
+	sensorpref = isnull(H) ? 1 : (ishuman(H) ? H.bio.sensorpref : 1)
 	switch(sensorpref)
 		if(1) sensor_mode = SUIT_SENSOR_OFF			//Sensors off
 		if(2) sensor_mode = SUIT_SENSOR_BINARY		//Sensors on binary
@@ -1561,4 +1561,3 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 	if(!istype(suit) || QDELETED(suit) || QDELETED(answerer))
 		return "gone"
 	return suit.sensor_mode_refusal(answerer, !isnull(value))
-

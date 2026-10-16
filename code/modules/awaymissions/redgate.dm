@@ -35,7 +35,7 @@
 			return
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(H.redgate_restricted)
+		if(sparse_get_or(H, redgate_restricted, FALSE))
 			to_chat(M, span_warning("You can not walk through the redgate without another character giving you permission (by clicking on the redgate with you nearby)."))
 			return
 
@@ -121,7 +121,7 @@
 			var/list/nearby_restricted = list()
 			for(var/obj/structure/redgate/g in world)
 				for(var/mob/living/carbon/human/H in oview(7,g))
-					if(H.redgate_restricted && !O.redgate_restricted) //For every restricted human near the redgate, if you aren't restricted yourself, put them in a list.
+					if(sparse_get_or(H, redgate_restricted, FALSE) && !sparse_get_or(O, redgate_restricted, FALSE)) //For every restricted human near the redgate, if you aren't restricted yourself, put them in a list.
 						nearby_restricted |= H
 			if(!nearby_restricted.len)
 				teleport(M) //teleport functionality remains if no restricted people are nearby.
@@ -131,7 +131,7 @@
 					return
 				if(!restricted_human)
 					return
-				restricted_human.redgate_restricted = FALSE
+				sparse_set(restricted_human, redgate_restricted, null)
 				to_chat(M, span_notice("You have given [restricted_human] permission to use the redgate."))
 				to_chat(restricted_human, span_notice("[M] has given you permission to use the redgate."))
 				log_and_message_admins("[M] has given [restricted_human] permission to use the redgate.")

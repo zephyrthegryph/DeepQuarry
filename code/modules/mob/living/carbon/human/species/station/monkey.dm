@@ -201,28 +201,24 @@
 //Also, M was added to the end of the spawn names to signify that it's a monkey, since some names were conflicting.
 
 /mob/living/carbon/human/sharkm
-	low_sorting_priority = TRUE
 
 /mob/living/carbon/human/sharkm
 	species_at_make = SPECIES_MONKEY_AKULA
 TYPE_TABLE(/mob/living/carbon/human/sharkm, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/sergallingm
-	low_sorting_priority = TRUE
 
 /mob/living/carbon/human/sergallingm
 	species_at_make = SPECIES_MONKEY_SERGAL
 TYPE_TABLE(/mob/living/carbon/human/sergallingm, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/sparram
-	low_sorting_priority = TRUE
 
 /mob/living/carbon/human/sparram
 	species_at_make = SPECIES_MONKEY_NEVREAN
 TYPE_TABLE(/mob/living/carbon/human/sparram, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/wolpin
-	low_sorting_priority = TRUE
 
 /mob/living/carbon/human/wolpin
 	species_at_make = SPECIES_MONKEY_VULPKANIN

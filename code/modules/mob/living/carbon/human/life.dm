@@ -14,10 +14,8 @@
 #define HUMAN_COMBUSTION_TEMP 524 //524k is the sustained combustion temperature of human fat
 
 /mob/living/carbon/human
-	var/heartbeat = 0
-	var/chemical_darksight = 0
+
 	/// world.time of the next periodic full HUD refresh (hud refresh system).
-	EXPIRY_DECLARE(hud_full_refresh_at)
 
 // Human Life (doc/rewrite/life_sequences.md; declared in life_steps.dm). The living core runs first; the human-only
 // steps that followed ..() in the old Life() run in the LIFE_TAIL band below, in their old order (the HUD and its
@@ -49,7 +47,7 @@
 		return
 	life_hud_full_refresh()
 	if(client)
-		after(src, max(1 SECONDS, hud_full_refresh_at - world.time), PROC_REF(life_hud_full_refresh_rewake), key = LIFE_HUD_FULL_REFRESH_REWAKE, clock = CLOCK_WORLD)
+		after(src, max(1 SECONDS, cooldown_left(src, hud_full_refresh_at)), PROC_REF(life_hud_full_refresh_rewake), key = LIFE_HUD_FULL_REFRESH_REWAKE, clock = CLOCK_WORLD)
 
 /mob/living/carbon/human/proc/life_hud_full_refresh_rewake()
 	if(QDELETED(src) || !life_hud_wanted())
@@ -59,8 +57,8 @@
 /mob/living/carbon/human/proc/life_hud_full_refresh()
 	// The periodic safety refresh is intentionally rare (once a minute); state-changing
 	// code continues to set its exact HUD dirty bits.
-	if(!BEFORE(src, hud_full_refresh_at, CLOCK_WORLD))
-		EXPIRY_SET(src, hud_full_refresh_at, 1 MINUTES, CLOCK_WORLD)
+	if(cooldown_ready(src, hud_full_refresh_at))
+		cooldown_start(src, hud_full_refresh_at, 1 MINUTES)
 		set_hud_updateflag((1 << TOTAL_HUDS) - 1)
 		PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
 
@@ -819,7 +817,7 @@
 
 /mob/living/carbon/human
 	/// TRUE when the last environment exchange found comfortable air (its idle rule).
-	var/environment_steady = FALSE
+
 
 /// Idle after an exchange that found comfortable air on a turf (the pressure inside the warning
 /// band, the air within 20 K of the body, the body inside its comfort band). Its air watch wakes it
@@ -834,7 +832,7 @@
 		/datum/species/xenomorph_hybrid,
 		/datum/species/xenos,
 	))
-	if(!src.environment_steady || !src.air_watched() || src.alerts?["pressure"])
+	if(!src.body.environment_steady || !src.air_watched() || src.alerts?["pressure"])
 		return TRUE
 	if(LAZYLEN(src.species.env_traits) || is_type_in_typecache(src.species, active_environment_species))
 		return TRUE
@@ -845,7 +843,7 @@
 
 /// P2-F1: body vs environment, split into heat exchange, temperature harm and pressure harm.
 /mob/living/carbon/human/life_environment_exchange(datum/gas_mixture/environment)
-	src.environment_steady = FALSE
+	src.body.set_environment_steady(FALSE)
 	if(!environment)
 		return
 
@@ -865,7 +863,7 @@
 		var/loc_temp = life_environment_location_temperature(environment)
 		if(adjusted_pressure < src.species.warning_high_pressure && adjusted_pressure > src.species.warning_low_pressure && abs(loc_temp - src.body_temperature()) < 20 && src.body_temperature() < src.species.heat_level_1 && src.body_temperature() > src.species.cold_level_1 && (!isbelly(src.loc) || !src.vore_prefs.allowtemp))
 			src.clear_alert("pressure")
-			src.environment_steady = TRUE
+			src.body.set_environment_steady(TRUE)
 			src.set_surroundings(0, 0) // inside its comfort range the body trades no heat with the room (intended_changes.md)
 			return // Temperatures are within normal ranges, fuck all this processing. ~Ccomp
 		life_environment_convect(loc_temp, environment)
@@ -1161,8 +1159,8 @@
 	// nutrition decrease, for the biological time since the last one (the stage idles between
 	// reagents and comes back on its rewake to catch up). Species controls hunger rate for humans.
 	var/bio_now = clock_now(src, CLOCK_BIO)
-	var/hunger_cycles = src.nutrition_drained_at ? clamp((bio_now - src.nutrition_drained_at) / LIFE_CYCLE, 0, NUTRITION_CATCHUP_CYCLES) : 1
-	src.nutrition_drained_at = bio_now
+	var/hunger_cycles = src.body.nutrition_drained_at ? clamp((bio_now - src.body.nutrition_drained_at) / LIFE_CYCLE, 0, NUTRITION_CATCHUP_CYCLES) : 1
+	src.body.set_nutrition_drained_at(bio_now)
 	if(nutrition_of(src) > 0 && src.stat != DEAD)
 		var/nutrition_reduction = src.species.hunger_factor * hunger_cycles
 		// Metabolism above or below the species' own (hunger_factor already
@@ -1185,12 +1183,12 @@
 			belch_prob = ((nutrition_of(src)-500)/3575)*5 //Scale belch prob with fullness if not already at max. If editing make sure the multiplier matches the max prob above.
 		if(prob(belch_prob))
 			src.emote("belch")
-	if(src.factor(BF_DARKSIGHT) && src.chemical_darksight == 0)
+	if(src.factor(BF_DARKSIGHT) && src.body.chemical_darksight == 0)
 		src.recalculate_vis()
-		src.chemical_darksight = 1
-	if(!src.factor(BF_DARKSIGHT) && src.chemical_darksight == 1)
+		src.body.set_chemical_darksight(1)
+	if(!src.factor(BF_DARKSIGHT) && src.body.chemical_darksight == 1)
 		src.recalculate_vis()
-		src.chemical_darksight = 0
+		src.body.set_chemical_darksight(0)
 
 	// TODO: stomach and bloodstream organ.
 	if(!HAS_SYNTHETIC_BIOLOGY(src))
@@ -1200,14 +1198,14 @@
 
 /mob/living/carbon/human
 	/// Biological time (clock_now(CLOCK_BIO), ds) of the last nutrition drain.
-	var/nutrition_drained_at = 0
+
 
 /// Idle with nothing to metabolise and no digestion noises due; reagent changes invalidate the
 /// body (MOB_KEY_HEALTH). Hunger is integrated over the idle time on the rewake.
 /mob/living/carbon/human/life_chemicals_due()
 	if(src.touching?.total_volume || src.ingested?.total_volume || src.bloodstr?.total_volume)
 		return TRUE
-	if(!src.factor(BF_DARKSIGHT) != !src.chemical_darksight)
+	if(!src.factor(BF_DARKSIGHT) != !src.body.chemical_darksight)
 		return TRUE
 	if((src.vore_prefs.noisy && nutrition_of(src) < 250) || (src.vore_prefs.noisy_full && nutrition_of(src) > 500))
 		return TRUE
@@ -1607,7 +1605,7 @@
 
 	if(src.stat == DEAD || (src.status_flags & FAKEDEATH)) //Dead
 		hud_used?.healths?.icon_state = "health7"	//DEAD healthmeter
-		src.health_doll_key = null
+		hud_used.set_health_doll_key(null)
 		return
 
 	if(src.is_critical()) //Crit
@@ -1615,7 +1613,7 @@
 
 	if(src.factor(BF_ANALGESIA) > 100)
 		hud_used?.healths?.icon_state = "health_numb"
-		src.health_doll_key = null
+		hud_used.set_health_doll_key(null)
 		return
 
 	// A by-limb health display. The doll is only rebuilt when what it shows changes: each limb's
@@ -1638,9 +1636,9 @@
 		key += "|\ref[limb_image][limb_image.color]"
 	var/show_pain = trauma_val && src.can_feel_pain()
 	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
-	if(key == src.health_doll_key)
+	if(key == hud_used.health_doll_key)
 		return
-	src.health_doll_key = key
+	hud_used.set_health_doll_key(key)
 
 	var/mutable_appearance/healths_ma = new(hud_used?.healths)
 	healths_ma.icon_state = "blank"
@@ -1663,7 +1661,6 @@
 	hud_used?.healths?.appearance = healths_ma
 
 /// The last by-limb health doll this human's HUD built (see health_icons); null forces a rebuild.
-/mob/living/carbon/human/var/tmp/health_doll_key
 
 
 /mob/living/carbon/human/life_vision()
@@ -2036,11 +2033,11 @@
 		//Divided by 2, otherwise it is too slow.
 		var/rate = (PULSE_THREADY - src.pulse)/2
 
-		if(src.heartbeat >= rate)
-			src.heartbeat = 0
+		if(src.body.heartbeat >= rate)
+			src.body.set_heartbeat(0)
 			src << sound('sound/effects/singlebeat.ogg',0,0,0,50)
 		else
-			src.heartbeat++
+			src.body.set_heartbeat(src.body.heartbeat + 1)
 
 /*
 	Called by life(), instead of having the individual hud items update icons each tick and check for status changes

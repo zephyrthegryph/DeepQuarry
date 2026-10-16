@@ -18,12 +18,8 @@
 	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
 
 	var/spitting = 0 					//Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
-	var/spit_projectile = null			//Projectile type.
-	var/spit_name = null 				//String
 
-	var/can_defib = 1					//Horrible damage (like beheadings) will prevent defibbing organics.
-	var/active_regen = FALSE //Used for the regenerate proc in human_powers.dm
-	var/active_regen_delay = 300
+
 	// ALLOW(instance_list): d: per-mob teleporters, filled at runtime; mobs are few
 	var/list/teleporters = list() //Used for lleill abilities
 
@@ -1293,7 +1289,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 /mob/living/carbon/human/wash(clean_types)
 	. = ..()
 
-	LAZYCLEARLIST(body_writing)
+	body.clear_body_writing()
 
 	//Always do hands (or whatever's on our hands)
 	if(get_equipped_item(SLOT_ID_GLOVES))
@@ -1986,8 +1982,8 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /mob/living/carbon/human/proc/get_display_species()
 	//Shows species in tooltip
-	if(src.custom_species)
-		return custom_species
+	if(src.bio.custom_species)
+		return bio.custom_species
 	//Beepboops get special text if obviously beepboop
 	if(looksSynthetic())
 		if(gender == MALE)
@@ -2239,3 +2235,38 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /// The status step reads it (embedded objects roll damage on movement).
 
+
+sparse(/mob/living/carbon/human, active_regen, type = num)
+
+
+#define ENTRY_HUMAN_ABILITIES "human_abilities"
+#define HUMAN_ABILITIES_KEY "human_abilities"
+
+STATIC_ENTRY(human_abilities)
+/proc/human_abilities(spit_projectile = null, spit_name = null, active_regen_delay = null, damage_multiplier = null)
+	RETURN_TYPE(/datum/entry)
+	return entry_make(ENTRY_HUMAN_ABILITIES, null, list("spit_projectile" = spit_projectile, "spit_name" = spit_name, "active_regen_delay" = active_regen_delay, "damage_multiplier" = damage_multiplier))
+
+/datum/type_trait/human_abilities
+	var/spit_projectile
+	var/spit_name
+	var/active_regen_delay = 30 SECONDS
+	var/damage_multiplier = 1
+
+/datum/type_trait/human_abilities/copy_values(datum/type_trait/human_abilities/into)
+	into.spit_projectile = spit_projectile
+	into.spit_name = spit_name
+	into.active_regen_delay = active_regen_delay
+	into.damage_multiplier = damage_multiplier
+
+/datum/entry_engine/type_trait/human_abilities
+	kind = ENTRY_HUMAN_ABILITIES
+	trait_type = /datum/type_trait/human_abilities
+	publish_key = HUMAN_ABILITIES_KEY
+	base_type = /mob/living/carbon/human
+	var_names = list("spit_projectile" = "spit_projectile", "spit_name" = "spit_name", "active_regen_delay" = "active_regen_delay", "damage_multiplier" = "damage_multiplier")
+
+READS_AS(/proc/human_abilities_of, HUMAN_ABILITIES_KEY)
+/proc/human_abilities_of(mob/living/carbon/human/holder) as /datum/type_trait/human_abilities
+	READS_FROM(holder)
+	return type_trait_of(holder, ENTRY_HUMAN_ABILITIES)

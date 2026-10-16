@@ -52,7 +52,7 @@
 				return
 			else if(istype(C, /mob/living/carbon/human))
 				var/mob/living/carbon/human/H = C
-				if(H.ability_flags & 0x1)
+				if(sparse_get_or(H, ability_flags, 0) & 0x1)
 					to_chat(H, span_warning("You cannot draw \the [holstered] while phase shifted!"))
 					return
 		// end

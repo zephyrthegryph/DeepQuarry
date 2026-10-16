@@ -2205,9 +2205,9 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
 
 /datum/reagent/change_drug/affect_blood(mob/living/carbon/human/M, alien, removed)
-	if (!(M.gender == gender_change || M.gender_change_cooldown == 1) && M.vore_prefs.allow_spontaneous_tf)
+	if (!(M.gender == gender_change || sparse_get_or(M, gender_change_cooldown, 0) == 1) && M.vore_prefs.allow_spontaneous_tf)
 		//set not to bug them because the chem is activating
-		M.gender_change_cooldown = 1
+		sparse_set_or(M, gender_change_cooldown, 1, 0)
 		act_message(M, null, MSG_SELF(span_notice("You lose focus as warmth spreads throughout your chest and abdomen.")), \
 			MSG_OTHERS(span_notice("%U% suddenly twitches as some of their features seem to contort and reshape.")))
 		//wait 30 seconds, growth takes time yo
@@ -2218,7 +2218,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	if(QDELETED(M))
 		return
 	//allow it to bug them again now that we've waited
-	M.gender_change_cooldown = 0
+	sparse_set_or(M, gender_change_cooldown, 0, 0)
 	open_request(M, /datum/prompt/yes_no/gender_change_drug, TYPE_PROC_REF(/mob/living/carbon/human, gender_change_drug_answered), answerer = M, gender_change = gender_change, timeout = 0)
 
 /datum/prompt/yes_no/gender_change_drug

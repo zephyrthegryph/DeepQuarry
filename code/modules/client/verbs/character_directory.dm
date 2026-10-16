@@ -120,7 +120,7 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 					if(!find_record("name", H.real_name, GLOB.data_core.hidden_general))
 						strangername = "unknown"
 			name = strangername
-			species = "[H.custom_species ? H.custom_species : H.species.name]"
+			species = "[H.bio.custom_species ? H.bio.custom_species : H.species.name]"
 			ooc_notes = H.identity().ooc_notes
 			if(H.identity().ooc_notes_style && (H.identity().ooc_notes_favs || H.identity().ooc_notes_likes || H.identity().ooc_notes_maybes || H.identity().ooc_notes_dislikes))
 				ooc_notes = H.identity().ooc_notes + "\n\n"

@@ -138,7 +138,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 
 	//General stuff about them
 	set_synthetic(HAS_SYNTHETIC_BIOLOGY(M))
-	set_speciesname(M.custom_species ? M.custom_species : null)
+	set_speciesname(M.bio.custom_species ? M.bio.custom_species : null)
 	set_bodygender(M.gender)
 	sizemult = M.size_multiplier
 	weight = M.weight
@@ -339,7 +339,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 	H.set_appearance_flags(aflags)
 	H.weight = weight
 	if(speciesname)
-		H.custom_species = speciesname
+		H.bio.set_custom_species(speciesname)
 
 /**
  * Specialty revival procs. Uses the BR for data, but needs to handle some weird logic for xenochi/slimes

@@ -35,3 +35,15 @@
 /mob
 	/// Who the character says they are (a profile record, built before init).
 	var/datum/record/identity/bio
+
+// Human identity/display choices belong to the character profile, not the mob type.
+/datum/record/identity
+	var/custom_species = null
+	var/sensorpref = 5
+	var/speech_sound_enabled = TRUE
+	var/nutrition_hidden = FALSE
+
+TRACKED_DATA(/datum/record/identity, custom_species)
+TRACKED_DATA(/datum/record/identity, sensorpref)
+TRACKED_DATA(/datum/record/identity, speech_sound_enabled)
+TRACKED_DATA(/datum/record/identity, nutrition_hidden)

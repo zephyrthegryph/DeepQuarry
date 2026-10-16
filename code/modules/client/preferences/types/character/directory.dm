@@ -108,7 +108,7 @@ TYPE_TABLE(/datum/preference/choiced/human/directory_erptag, pref_choices, GLOB.
 	return 5
 
 /datum/preference/numeric/human/sensorpref/apply_to_human(mob/living/carbon/human/target, value)
-	target.sensorpref = value
+	target.bio.set_sensorpref(value)
 
 
 // --- capture_crystal -------------------------------------------------------
