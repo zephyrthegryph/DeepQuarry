@@ -1,0 +1,16 @@
+// A fallback default is not a declaration that configure() can inherit.
+/datum/unit_test/dq_base_configuration_static_contract
+/datum/unit_test/dq_base_configuration_static_contract/Run()
+	var/datum/type_table/atom_table = static_table_of(/atom)
+	TEST_ASSERT(static_find(atom_table, ENTRY_LIGHTING_CONFIG), "Lighting declares a real root static entry")
+	TEST_ASSERT(static_find(atom_table, ENTRY_DAMAGE_PROFILE), "Damage presentation declares a real root static entry")
+	var/datum/type_table/living_table = static_table_of(/mob/living)
+	TEST_ASSERT(static_find(living_table, ENTRY_VOICE_CONFIG), "Voice configuration is compiled as an actual static entry")
+	TEST_ASSERT(static_find(living_table, ENTRY_BUTCHERY_CONFIG), "Butchery configuration is compiled as an actual static entry")
+	TEST_ASSERT(static_find(living_table, ENTRY_SHRED_SETTINGS), "Shredding configuration declares an inherited root entry")
+	var/datum/type_trait/shred_settings/human_shred = type_trait_of_type(/mob/living/carbon/human, ENTRY_SHRED_SETTINGS)
+	TEST_ASSERT_EQUAL(human_shred.vore_shred_time, 10 SECONDS, "Actual human shredding configuration overrides the inherited duration")
+	TEST_ASSERT_EQUAL(lighting_of_type(/obj/item).emissive, EMISSIVE_BLOCK_GENERIC, "The actual item inherits and configures atom lighting")
+	TEST_ASSERT_EQUAL(lighting_of_type(/mob/living/simple_mob).emissive, EMISSIVE_BLOCK_UNIQUE, "The actual simple-mob lighting configure is applied")
+	TEST_ASSERT_EQUAL(voice_config_of_type(/mob/living/voice).can_pain_emote, FALSE, "The actual voice subtype configures the static voice trait")
+	TEST_ASSERT_EQUAL(voice_config_of_type(/mob/living/simple_mob/vore/wolf).species_sounds, "Canine", "Actual subtype voice inheritance remains applied")

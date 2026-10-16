@@ -217,6 +217,8 @@
 	say_escalate = list("Yarr! The booty is mine!", "Going to gut you landlubber.")
 
 
+STATIC_ENTRY(voice_config)
+
 /proc/voice_config(can_pain_emote = null, pain_emote_1p = null, pain_emote_3p = null, species_sounds = null, death_sound_override = null)
 	return entry_make(ENTRY_VOICE_CONFIG, null, list("can_pain_emote" = can_pain_emote, "pain_emote_1p" = pain_emote_1p, "pain_emote_3p" = pain_emote_3p, "species_sounds" = species_sounds, "death_sound_override" = death_sound_override))
 

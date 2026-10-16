@@ -123,7 +123,6 @@ base_var	code/game/objects/items.dm	@/obj/item::digestable
 base_var	code/game/objects/items.dm	@/obj/item::item_tf_spawn_allowed
 base_var	code/game/objects/items.dm	@/obj/item::ckeys_allowed_itemspawn
 base_var	code/game/objects/items.dm	@/obj/item::preserve_item
-base_var	code/game/objects/items.dm	@/obj/item::persist_storable
 base_var	code/game/objects/items.dm	@/obj/item::possessed_voice
 base_var	code/game/objects/items.dm	@/obj/item::warned_of_possession
 base_var	code/game/objects/items.dm	@/obj/item::cleaving

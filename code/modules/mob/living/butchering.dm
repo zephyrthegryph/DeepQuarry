@@ -99,6 +99,8 @@
 
 // A meat type path or a shared definition, never a per-mob instance.
 
+STATIC_ENTRY(butchery_config)
+
 /proc/butchery_config(meat_type = null, name_the_meat = null, gib_on_butchery = null, butchery_drops_organs = null)
 	return entry_make(ENTRY_BUTCHERY_CONFIG, null, list("meat_type" = meat_type, "name_the_meat" = name_the_meat, "gib_on_butchery" = gib_on_butchery, "butchery_drops_organs" = butchery_drops_organs))
 
