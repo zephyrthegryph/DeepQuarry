@@ -175,8 +175,13 @@ why aren't these accessories?
 	var/secondary = /obj/item/remote_scene_tool
 	description_fluff = "A long since discarded prototype of a bag of holding - turns out it's hard to store things securely when the other end's open. too bad NOBODY has EVER found a practical use for them!"
 
-/obj/item/storage/box/remote_scene_tools/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/storage/box/remote_scene_tools)
+	// Old storage/tail initialization preceded the item's post-chain action setup.
+	setup(PROC_REF(seed_linked_scene_tools))
+	setup(TYPE_PROC_REF(/obj/item, intern_tool_qualities))
+	setup(TYPE_PROC_REF(/obj/item, setup_declared_item_actions))
+
+/obj/item/storage/box/remote_scene_tools/proc/seed_linked_scene_tools()
 	//set the contents to be a few remote scene tools
 	var/obj/item/remote_scene_tool/RST = new primary(loc = src)
 	var/obj/item/remote_scene_tool/RST2 = new secondary(loc = src)

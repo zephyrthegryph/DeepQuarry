@@ -704,11 +704,6 @@ init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguish
 init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguisher::Initialize::add_overlay
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::if
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::material
-init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::if
-init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::dq_latent_declare
-init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::else
-init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::starts_with
-init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::calibrate_size
 init_lines	code/game/objects/micro_structures.dm	@/obj::Initialize::obj_instance_setup
 init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::if
 init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::return
@@ -1462,11 +1457,6 @@ init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/main
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::vis_contents
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::shuffle_inplace
 init_lines	code/modules/maint_recycler/code/util.dm	@/obj/effect/recycler_vendor_beacon::Initialize::GLOB.recycler_vendor_locations
-init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST
-init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST2
-init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST.link_to
-init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST2.link_to
-init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::calibrate_size
 init_lines	code/modules/makeup/nailpolish.dm	@/obj/item/nailpolish::Initialize::desc
 init_lines	code/modules/maps/merge_conflicts.dm	@/obj/merge_conflict_marker::Initialize::msg
 init_lines	code/modules/maps/merge_conflicts.dm	@/obj/merge_conflict_marker::Initialize::to_chat
@@ -2710,13 +2700,6 @@ init_lines	code/modules/vore/eating/soulcatcher.dm	@/obj/soulgem::Initialize::re
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::storage_slots
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::for
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
 init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/clothing/accessory/collar/khcrystal::Initialize::update_state
 init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/backpack/saddlebag/tempest::Initialize::soundloop
 init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/fancy/fluff/charlotte::Initialize::if

@@ -867,10 +867,13 @@ CAPABILITIES(/obj/item/clothing/head/helmet/hos/fluff/lethe)
 	storage_slots = 9
 
 CAPABILITIES(/obj/item/storage/belt/utility/fluff/vulpine)
+	// Old storage/tail initialization preceded the item's post-chain action setup.
+	setup(PROC_REF(seed_vulpine_tools))
+	setup(TYPE_PROC_REF(/obj/item, intern_tool_qualities))
+	setup(TYPE_PROC_REF(/obj/item, setup_declared_item_actions))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
-/obj/item/storage/belt/utility/fluff/vulpine/Initialize(mapload)
-	. = ..()
+/obj/item/storage/belt/utility/fluff/vulpine/proc/seed_vulpine_tools()
 	new /obj/item/tool/screwdriver(src)
 	new /obj/item/tool/wrench(src)
 	new /obj/item/weldingtool(src)

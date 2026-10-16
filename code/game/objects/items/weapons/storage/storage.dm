@@ -54,6 +54,10 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/storage)
+	// Old storage/tail initialization preceded the item's post-chain action setup.
+	setup(PROC_REF(prepare_starting_storage))
+	setup(TYPE_PROC_REF(/obj/item, intern_tool_qualities))
+	setup(TYPE_PROC_REF(/obj/item, setup_declared_item_actions))
 	storage(
 		space = nameof(/obj/item/storage::max_storage_space),
 		slots = nameof(/obj/item/storage::storage_slots),
@@ -136,16 +140,15 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 // ---- Lifecycle ----
 
-/obj/item/storage/Initialize(mapload)
-	. = ..()
-
+/// Population/calibration is ordered before item actions and descendant post-parent setup.
+/obj/item/storage/proc/prepare_starting_storage()
 	if(LAZYLEN(starts_with) && !empty)
 		// starts_with values are list(count, variant). See code/datums/variants/spawn_with_variant.dm.
 		// Latent-safe types without a variant stay declared until the storage
 		// is used (C5); the rest are made now.
 		dq_latent_declare(src)
 	else
-		starts_with = null
+		set_starts_with(null)
 
 	calibrate_size()
 
