@@ -93,7 +93,7 @@ CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
 	// Thermal injuries.
 	// Toxic injuries.
 	// Asphyxiation.
-	factors = alist(BF_INCOMING_ALL = 2, BF_INCOMING_PHYSICAL = 2, BF_INCOMING_THERMAL = 2, BF_INCOMING_TOXIC = 2, BF_DEMAND = 2)
+	factors = alist(STAT_INCOMING_ALL = 2, STAT_INCOMING_PHYSICAL = 2, STAT_INCOMING_THERMAL = 2, STAT_INCOMING_TOXIC = 2, STAT_DEMAND = 2)
 
 //Trying to learn from the AADG's ai and make my own
 

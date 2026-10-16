@@ -127,6 +127,11 @@
 #include "disease_tests.dm"
 #include "dx_cap_b2_library_tests.dm"
 #include "dx_cap_checks_tests.dm"
+#include "dq_factor_oracle.dm"
+#include "dq_factor_hot_reads_tests.dm"
+#include "dq_factor_oracle_tests.dm"
+#include "dq_factor_pins.dm"
+#include "dq_physiology_pins.dm"
 #include "dq_items_emag_ops.dm"
 #include "dq_retired_behaviour_pins.dm"
 #include "dq_test_overrides_tests.dm"
@@ -432,6 +437,7 @@
 #include "dq_look_glow_tests.dm"
 #include "dq_look_pins.dm"
 #include "dq_look_sweep.dm"
+#include "dq_look_cleanup_epoch_tests.dm"
 #include "dq_hit_pins.dm"
 #include "dq_loot_pins.dm"
 #include "dq_loot_search_tests.dm"
@@ -549,6 +555,7 @@
 #include "dq_e1_declare_tests.dm"
 #include "dq_table_cache_tests.dm"
 #include "dq_e3_stats_tests.dm"
+#include "dq_stat_layer_tests.dm"
 #include "dq_hop_tests.dm"
 #include "dq_life_wake_tests.dm"
 #include "dq_e4_actions_tests.dm"
@@ -1386,6 +1393,10 @@
 #include "dq_roll_trait_alias_tests.dm"
 #include "dq_spont_belly_profile_tests.dm"
 #include "dq_voice_recipe_native_tests.dm"
+#include "dq_look_shared_cache_identity_tests.dm"
+#include "dq_look_culture_lifetime_tests.dm"
+#include "dq_block_default_air_source_tests.dm"
+#include "dq_look_native_item_alias_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

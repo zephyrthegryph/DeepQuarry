@@ -267,7 +267,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 		// et al) and never got to restore them because it errored out early.
 		T.ChangeTurf(/turf/simulated/floor/tiled/steel)
 
-/// The default air mix a block's open turfs start with -- standard station air.
+/// Borrowed read-only copy source for standard station air. Callers copy INTO their own mix; never mutate this template.
 /proc/dq_unit_test_block_default_air()
 	RETURN_TYPE(/datum/gas_mixture)
 	var/static/datum/gas_mixture/default_air
@@ -276,7 +276,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 		heat_set(default_air, T20C, HEAT_SOURCE_OTHER)
 		default_air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
 		default_air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
-	return default_air.copy()
+	return default_air
 
 /// Every turf in a block's rectangle (inclusive), by walking its bottom-left
 /// to top-right corners -- the block is always one z-level.
@@ -558,6 +558,9 @@ GLOBAL_VAR(dq_test_select_names)
 		for(var/entry in curated)
 			if(!LAZYACCESS(curated_matched, "[entry]"))
 				Fail("curated entry [entry] was not in the sweep (renamed or removed? update curated_types())", __FILE__, __LINE__)
+	// The old fold of body factors must still give what every mob the test left reads (dq_factor_oracle.dm).
+	if(succeeded)
+		factor_oracle_audit(src)
 	// End the test's world in the tick Run() returns. RunUnitTest() only notices run_finished
 	// on its next poll and then restores atmos before deleting the test, and OM work still
 	// pending on the test's entities (a mob's telegraphed strike is an after() on its clock)
@@ -930,6 +933,11 @@ GLOBAL_VAR(dq_test_select_names)
 	GLOB.unit_test_runtime_events = null
 	GLOB.unit_test_runtime_events_truncated = FALSE
 	GLOB.unit_test_runtime_capture = TRUE
+	// dview is a process-owned lazy singleton: ordinary qdel is refused and forced
+	// destruction replaces it. Establish its real owner before test state capture;
+	// restoring a null global after first use would orphan the shared helper.
+	if(!GLOB.dview_mob)
+		GLOB.dview_mob = new /mob/dview
 	var/datum/unit_test/test = new test_path
 
 	GLOB.current_test = test

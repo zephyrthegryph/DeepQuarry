@@ -45,6 +45,7 @@
 
 /// Revoking an API grant must not remove an independent type-declared capability.
 /datum/unit_test/dq_retired_footstep_static_source/Run()
+	scope_strain_archive()
 	var/turf/start = run_loc_floor_bottom_left
 	var/turf/next = locate(start.x + 1, start.y, start.z)
 	var/mob/living/simple_mob/animal/passive/mouse/walker = allocate(/mob/living/simple_mob/animal/passive/mouse, start)

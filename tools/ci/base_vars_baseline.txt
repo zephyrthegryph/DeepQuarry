@@ -196,7 +196,6 @@ base_var	code/modules/mob/living/living_defines.dm	@/mob/living::max_nutrition
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::now_pushing
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::tod
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::failed_last_breath
-base_var	code/modules/mob/living/living_defines.dm	@/mob/living::evasion
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::hud_list
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::inventory_panel
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::touch_reaction_flags

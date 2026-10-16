@@ -113,7 +113,7 @@
 	if (. & EMP_PROTECT_SELF || is_incorporeal()) // Can't emp shadekin in phase
 		return
 
-	var/emp_shift = factor(BF_EMP_SHIFT)
+	var/emp_shift = src.emp_shift
 	if(emp_shift)
 		severity = CLAMP(severity + emp_shift, 1, 5)
 
@@ -358,7 +358,7 @@
 
 // Returns a number to determine if something is harder or easier to hit than normal.
 /mob/living/proc/get_evasion()
-	return evasion + factor(BF_EVASION) // The 'base' evasion (generally zero) plus body factors.
+	return evasion // The stat: the type's own base evasion (generally zero) plus body factors.
 
 /mob/living/proc/get_accuracy_penalty()
 	// Certain statuses make it harder to score a hit.

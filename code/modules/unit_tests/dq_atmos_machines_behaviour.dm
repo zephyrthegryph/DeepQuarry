@@ -197,6 +197,7 @@
 
 /datum/unit_test/dq_atmos_m/Run()
 	test_driver_begin()
+	set_global(nameof(GLOB.test_prompts), GLOB.test_prompts)
 	p2cl_capture_prompts()
 	var/area/room = get_area(run_loc_floor_bottom_left)
 	area_saved = list(
@@ -1016,6 +1017,7 @@
 /// The welder takes a drained canister apart into ten sheets of steel; a pressurized one is refused.
 /datum/unit_test/dq_atmos_m/canister_welder
 /datum/unit_test/dq_atmos_m/canister_welder/run_gate()
+	set_global(nameof(GLOB.test_prompts), list())
 	var/turf/T = tile(3, 1)
 	var/obj/machinery/portable_atmospherics/canister/oxygen/full = allocate(/obj/machinery/portable_atmospherics/canister/oxygen, T)
 	var/mob/living/carbon/human/H = person()

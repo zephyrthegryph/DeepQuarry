@@ -655,9 +655,9 @@
 /obj/item/reagent_containers/food/drinks/glass2/pitcher dir: 2
 /obj/item/reagent_containers/food/drinks/glass2/pitcher overlay: icons/obj/drinks.dmi:pitcher:8:#000000
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask icon: icons/pdrink.dmi
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask state: fitness-cup_black
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask state: fitness-cup_red
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask dir: 2
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask overlay: icons/pdrink.dmi:fitness-cup_black:8:#000000
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask overlay: icons/pdrink.dmi:fitness-cup_red:8:#000000
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake icon: icons/obj/drinks.dmi
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake state: protein_shake
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake dir: 2

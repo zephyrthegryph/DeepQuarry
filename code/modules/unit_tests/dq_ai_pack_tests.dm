@@ -54,6 +54,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject)
 /datum/unit_test/dq_ai_pack_of_one
 
 /datum/unit_test/dq_ai_pack_of_one/Run()
+	set_global(nameof(GLOB.ai_pack_perceptions), GLOB.ai_pack_perceptions)
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/combat_ai_tactics_subject, ai_floor(0))
 	var/datum/ai_brain/B = S.ai_brain
 	TEST_ASSERT_NOTNULL(B.pack, "a new brain has no pack")

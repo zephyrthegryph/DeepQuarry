@@ -116,7 +116,7 @@ TYPE_TABLE(/datum/affliction/heart_damage, affliction_stages, list( \
 		), \
 		"min_symptoms" = 2, \
 		"max_symptoms" = 4, \
-		"factors" = alist(BF_BP_SYSTOLIC = -20, BF_BP_DIASTOLIC = -10, BF_O2_SAT = -8), \
+		"factors" = alist(STAT_BP_SYSTOLIC = -20, STAT_BP_DIASTOLIC = -10, STAT_O2_SAT = -8), \
 	), \
 	"Critical" = list( \
 		"name" = "decompensated heart failure", \
@@ -130,7 +130,7 @@ TYPE_TABLE(/datum/affliction/heart_damage, affliction_stages, list( \
 		), \
 		"min_symptoms" = 2, \
 		"max_symptoms" = 4, \
-		"factors" = alist(BF_HEART_RATE = -30, BF_BP_SYSTOLIC = -50, BF_O2_SAT = -10), \
+		"factors" = alist(STAT_HEART_RATE = -30, STAT_BP_SYSTOLIC = -50, STAT_O2_SAT = -10), \
 	), \
 ))
 
@@ -172,7 +172,7 @@ TYPE_TABLE(/datum/affliction/brain_damage, affliction_stages, list( \
 		), \
 		"min_symptoms" = 2, \
 		"max_symptoms" = 4, \
-		"factors" = alist(BF_SLOWDOWN = 2.5, BF_ACCURACY = -60, BF_MOTOR_CONTROL = 0.9, BF_ACTION_BLOCKS = ACTION_BLOCK_SPEECH | ACTION_BLOCK_SURGERY, BF_HEART_RATE = -20, BF_BP_SYSTOLIC = -30, BF_O2_SAT = -10), \
+		"factors" = alist(STAT_SLOWDOWN = 2.5, STAT_ACCURACY = -60, STAT_MOTOR_CONTROL = 0.9, STAT_ACTION_BLOCKS = ACTION_BLOCK_SPEECH | ACTION_BLOCK_SURGERY, STAT_HEART_RATE = -20, STAT_BP_SYSTOLIC = -30, STAT_O2_SAT = -10), \
 		"spontaneous_emotes" = list("collapse", "groan"), \
 		"spontaneous_emote_prob" = 8, \
 	), \

@@ -16,9 +16,9 @@
 	TEST_ASSERT_EQUAL(A.maintenance_wrench_wait(null), 3 SECONDS, "The actual wait reader sees the map override")
 	TEST_ASSERT_EQUAL(B.maintenance_wrench_wait(null), 0, "Map edits preserve the other actual machine")
 	A.set_broken_condition(TRUE)
-	TEST_ASSERT_EQUAL(A.tgui_status(H), STATUS_CLOSE, "The actual offline UI closes before override")
+	TEST_ASSERT_EQUAL(A.tgui_status(H, GLOB.tgui_always_state), STATUS_CLOSE, "The actual offline UI closes before override")
 	TEST_ASSERT(A.vv_edit_var("@machine_interaction_config.interact_offline", TRUE), "Admin editing reaches the actual policy")
-	TEST_ASSERT(A.tgui_status(H) > STATUS_CLOSE, "The actual UI reevaluates the changed offline policy")
+	TEST_ASSERT(A.tgui_status(H, GLOB.tgui_always_state) > STATUS_CLOSE, "The actual UI reevaluates the changed offline policy")
 	TEST_ASSERT(!machine_interaction_config_of(B).interact_offline, "Admin policy edits do not alter peers")
 
 /datum/unit_test/dq_object_break_configuration

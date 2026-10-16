@@ -23,7 +23,7 @@ sparse(/mob/living, revival_in_progress, type = bool)
 
 	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.
 
-	var/evasion = 0 // Makes attacks harder to land. Negative numbers increase hit chance.
+	var/evasion = 0 // Makes attacks harder to land. Negative numbers increase hit chance. The evasion stat (code/contracts/ids/body_stats.dm): the type's own value here, plus body factors.
 
 
 	// Edge-detection cache for status alerts so throw_alert/clear_alert only fire on state transition.

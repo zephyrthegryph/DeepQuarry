@@ -37,7 +37,7 @@
 	aura_max_distance = 4
 	mob_overlay_state = "signal_blue"
 
-	factors = alist(BF_SLOWDOWN = -1, BF_ACCURACY = 30, BF_EVASION = 30, BF_ATTACK_SPEED = 0.7, BF_MELEE_DAMAGE = 1.3, BF_DISABLE_DURATION = 0.7)
+	factors = alist(STAT_SLOWDOWN = -1, STAT_ACCURACY = 30, STAT_EVASION = 30, STAT_ATTACK_SPEED = 0.7, STAT_MELEE_DAMAGE = 1.3, STAT_DISABLE_DURATION = 0.7)
 
 // Variant that automatically commands nearby allies to follow it when created.
 // Useful to avoid having to manually set follow to a lot of hivebots that are gonna die in the next minute anyways.

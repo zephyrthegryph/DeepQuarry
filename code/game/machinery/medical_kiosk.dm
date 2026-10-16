@@ -183,9 +183,9 @@ CAPABILITIES(/obj/machinery/medical_kiosk)
 		var/mob/living/carbon/human/our_user = user
 		if(our_user.has_known_contagion())
 			problems |= VIRUS
-		if(our_user.factor(BF_HEPATOTOXICITY))
+		if(our_user.hepatotoxicity)
 			problems |= ALCOHOL_POISONING
-		if(our_user.factor(BF_INTOXICATION))
+		if(our_user.intoxication)
 			is_drunk = TRUE
 		if(our_user.vessel.total_volume < (our_user.vessel.maximum_volume*0.95)) //Bloodloss. Only happens at below 95% blood.
 			problems |= BLOODLOSS

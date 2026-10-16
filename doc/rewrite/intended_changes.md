@@ -4950,3 +4950,24 @@ Internal temporary bump timestamps and last-pressure-cycle stamps now use typed 
 ## 2026-10-16: pure door reach preserves firedoor configuration
 
 The approved base-variable traversal migration replaces door Adjacent's temporary border-firedoor throwpass write and unconditional zero reset with a per-call obstacle exemption. Reach answers retain the existing border, diagonal, corner and unrelated-obstacle rules. A map/admin-configured firedoor throwpass value now survives the query, and requirements publish no state changes while checking reach. Other throw and portal reads retain the same configured policy. This intentional reset bug fix has dedicated real requirement, map, publication and throw regressions; no appearance golden changes are requested for it.
+### Master prompt-op projection changes (201c0431de)
+
+Master commit `201c0431de48a3569167d8199653abcac3222db9` converted disposal and radiocarbon scanner rerun prompts to declared asks. Disposal and deliveryChute no longer offer the inert Use multitool menu row while their default charging mode silently refuses reconfiguration. The radiocarbon scanner now declares the glass-specific use_container op, changing its glass-held menu projection (Open controls and Use), plain-click label (Open controls), and op key inventory. These six diagnostic classes span three type files; neither production file differs from master. Refresh only those exact expanded row deltas, retaining existing inherited base blocks and all unrelated pins. No appearance pins or runtime failures are blessed.
+
+### Native-roll appearance pin follow-up (29f5247cd9)
+
+The isolated look creator stream changes sampled fixture realizations, while production constructor distributions remain unchanged. Refresh only the reviewed synx/shadekin/lamia state colors and variants, vehicle state colors, native robot/passive-creature appearances, sampled clothing/candy/ecig palettes, EMF/stamps/container/stationery colors, blob direction, frostbelle/Sif trees, toilet position and vehicle tree colors. These affect four state and fifteen tree files. Preserve all uncovered type rows and inherited bases. Hydroponics, pressure-sensor and terrain differences are excluded: they require clean fixture restoration, not new goldens. The existing native-roll allocation/order/reuse regressions remain required.
+## Body factors on the stat store (rewrite/stat-layer, doc/rewrite/proposals/stat_layer.md)
+
+The body's factors are stats on `/mob/living` now, composed by the stat engine; the body's private fold (`body.factors`, `recompute_factors()`) is gone.
+The oracle (`dq_factor_oracle.dm`, the old fold kept as test code) and the pins of every factor table (`snapshots/factors/`, recorded from the old fold)
+prove the composition equal within a relative 1e-5. What is different on purpose:
+
+* **When a factor settles.** The old cache rebuilt at the first factor read after an invalidation; the stat is settled before the writer's next line.
+  A reagent that crosses a dose band, appears or leaves refreshes the factors at `on_reagent_change()` (the band logic is unchanged), not at the next read.
+* **`tissue_hypoxia` follows its severity.** Its cardiac irritability is computed from the oxygen debt past a threshold, but the affliction never
+  declared `continuous_factors`, so the value refreshed only when something else dirtied the factors. It now refreshes on every severity change
+  (`continuous_factors = TRUE`), as the comment on the override always said it did.
+* **Evasion.** `evasion` is the stat: the mob's own base evasion is its type-level constant and the factor contributions add to it; `get_evasion()` reads the one var.
+* **Float order.** PRODUCT stats multiply in row-creation order, not afflictions-effects-stasis-reagents-species order; the last bit can differ.
+* **Dead factors deleted.** `BF_ARRHYTHMIA_RISK`, `BF_VISION` and `BF_HEARING` had no source and no reader; `BF_SEDATION` and `BF_INCOMING_NEURAL` stay.

@@ -22,6 +22,7 @@
 /datum/unit_test/dq_gameplay/walk_through_door
 
 /datum/unit_test/dq_gameplay/walk_through_door/play()
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	var/obj/machinery/door/airlock/D = allocate(/obj/machinery/door/airlock, tile(2, 2))
 	p2_door_set_autoclose(D, FALSE)
 	var/mob/living/carbon/human/H = spawn_player(tile(2, 0))
