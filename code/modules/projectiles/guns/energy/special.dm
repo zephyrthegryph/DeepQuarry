@@ -109,6 +109,7 @@ CAPABILITIES(/obj/item/gun/energy/ionrifle/pistol)
 CAPABILITIES(/obj/item/gun/energy/floragun)
 	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
 	op("floragun_verb_select_gene", menu(), label("Select Gene"), asks(/datum/prompt/choice, fields = list("question" = "Choose a gene to modify.", "title" = "Gene Choice", "choices" = computed(PROC_REF(floragun_verb_select_gene_k108_choices)), "timeout" = 0), step = "k108"), then(PROC_REF(floragun_verb_select_gene)))
+	owns_one(nameof(emitter), starts = /obj/item/stock_parts/micro_laser, on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old Select Gene verb.
 /obj/item/gun/energy/floragun/proc/floragun_verb_select_gene_k108_choices(datum/act/op/A)
@@ -614,9 +615,6 @@ CAPABILITIES(/obj/item/gun/energy/supercannon)
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	configure(item_combat(force = 15))
 
-/obj/item/gun/energy/floragun/ownership()
-	. = ..()
-	. += owns(nameof(emitter), policy = OWN_CONTAINED, starts = /obj/item/stock_parts/micro_laser)
 
 /// A shared definition/flyweight (never cleared).
 /obj/item/gun/energy/floragun/proc/gene() as /datum/decl/plantgene

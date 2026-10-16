@@ -1,34 +1,6 @@
 ///Used to test the completeness of the reference finder proc.
 /datum/unit_test/find_reference_sanity
 
-/atom/movable/ref_holder
-	var/static/atom/movable/ref_test/static_test
-	var/atom/movable/ref_test/test
-	var/list/test_list = list()
-	var/list/test_assoc_list = list()
-
-
-/// This file is only compiled with REFERENCE_TRACKING_DEBUG, which the declaration generator cannot see: a CAPABILITIES block here would be generated for
-/// a type the build may not define. The relation stays in the ownership() table.
-/atom/movable/ref_holder/ownership()
-	. = ..()
-	. += rel_one(nameof(test))
-
-/atom/movable/ref_holder/on_destroy(force)
-	// A static var outlives the instance: clear it by hand.
-	rel_clear(src, nameof(static_test))
-	..()
-
-/atom/movable/ref_test
-	// Gotta make sure we do a full check
-	references_to_clear = INFINITY
-	var/atom/movable/ref_test/self_ref
-
-/atom/movable/ref_test/ownership()
-	. = ..()
-	. += rel_one(nameof(self_ref))
-
-
 /datum/unit_test/find_reference_sanity/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)
 	var/atom/movable/ref_holder/testbed = allocate(/atom/movable/ref_holder)

@@ -103,6 +103,7 @@ TYPE_TABLE(/obj/mecha/combat/gygax/serenity, mecha_starting_components, list( \
 
 CAPABILITIES(/obj/mecha/combat/gygax/serenity)
 	owns_one(nameof(hud), starts = /obj/item/clothing/glasses/hud/health/mech)
+	owns_one(nameof(hud), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/mecha/combat/gygax/serenity/moved_inside(mob/living/carbon/human/H as mob)
 	if(..())
@@ -135,9 +136,6 @@ CAPABILITIES(/obj/mecha/combat/gygax/serenity)
 	update_integrity(25)
 	cell.set_charge(rand(0, (cell.charge/2)))
 
-/obj/mecha/combat/gygax/serenity/ownership()
-	. = ..()
-	. += owns(nameof(hud), policy = OWN_CONTAINED)
 
 TYPE_TABLE(/obj/mecha/combat/gygax/dark, mecha_starting_equipment, list( \
 		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/scattershot, \

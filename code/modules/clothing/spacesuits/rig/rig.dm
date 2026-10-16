@@ -159,6 +159,10 @@ CAPABILITIES(/obj/item/rig)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wiring_used)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(wiring_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	owns_one(nameof(air_supply))
+	owns_one(nameof(cell))
+	owns_many(nameof(installed_modules))
+	owns_one(nameof(rig_storage), on_destroy = ON_DESTROY_CONTAINED)
 
 MSG_DEF_SELF(rig/not_worn, "The hardsuit is not being worn.")
 MSG_DEF_SELF(rig/not_active, "The suit is not active.")
@@ -1098,12 +1102,6 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	M.client?.screen -= booting_R
 	consume(booting_R, M)
 
-/obj/item/rig/ownership()
-	. = ..()
-	. += owns(nameof(air_supply), policy = OWN_DELETE)
-	. += owns(nameof(cell), policy = OWN_DELETE)
-	. += owns(nameof(installed_modules), policy = OWN_DELETE, is_list = TRUE)
-	. += owns(nameof(rig_storage), policy = OWN_CONTAINED)
 
 /// The person currently wearing the rig. (a relation view: null once it is deleted).
 /obj/item/rig/proc/wearer() as /mob/living/carbon/human

@@ -45,6 +45,8 @@ CAPABILITIES(/obj/machinery/bomb_tester)
 	op("load_tank", item(/obj/item/tank), priority(OP_PRIORITY_DEFAULT - 1), label("Connect tank"), when(req(PROC_REF(tank_slot_available))), then(PROC_REF(interaction_load_tank)))
 	op("open", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open)))
 	ref_one(nameof(test_canister), /obj/machinery/portable_atmospherics/canister)
+	owns_one(nameof(tank1), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(tank2), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Selection follows the two real occupied tank variables, including one empty slot.
 /obj/machinery/bomb_tester/proc/tank_slot_available(datum/act/op/A)
@@ -374,10 +376,6 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 /obj/machinery/bomb_tester/step_start_condition()
 	return simulating
 
-/obj/machinery/bomb_tester/ownership()
-	. = ..()
-	. += owns(nameof(tank1), policy = OWN_CONTAINED)
-	. += owns(nameof(tank2), policy = OWN_CONTAINED)
 
 /// test canister (a relation view: it reads null once the target is deleted).
 /obj/machinery/bomb_tester/proc/test_canister() as /obj/machinery/portable_atmospherics/canister

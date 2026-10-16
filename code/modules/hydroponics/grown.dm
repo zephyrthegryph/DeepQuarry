@@ -21,6 +21,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 	op("grown_squash", in_hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Squash"), then(PROC_REF(grown_squash)))
 	op("grown_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Grown self"), then(PROC_REF(grown_self)))
 	op("grown_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Grown item"), then(PROC_REF(grown_item)))
+	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)
 
 // ALLOW(init/INSTANCE_STATE): produce takes its seed's name, trash, look and chemicals
 /obj/item/reagent_containers/food/snacks/grown/Initialize(mapload)
@@ -440,6 +441,3 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
 /obj/item/reagent_containers/food/snacks/grown/proc/seed() as /datum/seed
 	return seed_static
 
-/obj/item/reagent_containers/food/snacks/grown/ownership()
-	. = ..()
-	. += rel_one(nameof(seed_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

@@ -49,6 +49,7 @@
 CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/parrot)
 	op("parrot_item", item(/obj/item), then(PROC_REF(parrot_interaction_item)))
 	op("parrot_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take headset"), then(PROC_REF(parrot_interaction_hand_grab)))
+	owns_one(nameof(my_headset), starts = nameof(my_headset), on_destroy = ON_DESTROY_CONTAINED)
 
 /// The grab-stance input of parrot_interaction_hand: the shared handler with its stance.
 /mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_hand_grab(datum/act/op/A)
@@ -259,6 +260,3 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/parrot/eclectus)
 // AI
 
 // The worn headset sits in the parrot's contents.
-/mob/living/simple_mob/animal/passive/bird/parrot/ownership()
-	. = ..()
-	. += owns(nameof(my_headset), policy = OWN_CONTAINED, starts = nameof(my_headset))

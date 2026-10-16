@@ -30,6 +30,7 @@ CAPABILITIES(/obj/item/mmi)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("mmi_self", in_hand(), label("Upend"), then(PROC_REF(mmi_self)))
 	op("mmi_verb_toggle_radio", menu(), label("Toggle Brain Radio"), needs(carried()), then(PROC_REF(mmi_verb_toggle_radio)))
+	owns_one(nameof(brainobj), on_destroy = ON_DESTROY_CONTAINED)
 
 /// An inert MMI hosts no mind (no mind host is made for it).
 /obj/item/mmi/var/hosts_no_mind = FALSE
@@ -397,6 +398,3 @@ CAPABILITIES(/obj/item/mmi/digital)
 	w_class = ITEMSIZE_NORMAL
 
 // The brain stays until Destroy(): the occupant's view is discarded before its tissue goes.
-/obj/item/mmi/ownership()
-	. = ..()
-	. += owns(nameof(brainobj), policy = OWN_CONTAINED)

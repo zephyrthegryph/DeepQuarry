@@ -86,6 +86,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	op("autoret", ui_act("autoret"), then(PROC_REF(ui_act_autoret)))
 	op("cargotypes", ui_act("cargotypes"), then(PROC_REF(ui_act_cargotypes)))
 	op("safety", ui_act("safety"), then(PROC_REF(ui_act_safety)))
+	owns_one(nameof(load), on_destroy = ON_DESTROY_CONTAINED)
 
 /mob/living/bot/mulebot/ui_title(mob/user)
 	return "Mulebot [suffix ? "([suffix])" : ""]"
@@ -405,6 +406,3 @@ CAPABILITIES(/mob/living/bot/mulebot)
 /mob/living/bot/mulebot/handle_micro_bump_other() // Can't drive over micros or macros regardless of intent.
 	return 0
 
-/mob/living/bot/mulebot/ownership()
-	. = ..()
-	. += owns(nameof(load), policy = OWN_CONTAINED)
