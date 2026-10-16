@@ -213,6 +213,12 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   (`tools/ci/compile_and_run.sh`, the benchmark workflow) stays on DreamMaker as the cross-check** until the two are proven equivalent;
   a local green native build is not a substitute for it. Without cargo or a `dmbc` binary the default falls back to DreamMaker. See
   `doc/testing.md` "Native compiler (incremental)" and `doc/rewrite/native_compiler_issues.md`.
+- **One dmbc daemon per worktree.** Native compiles default `DMB_DAEMON_NAMESPACE` to `wt-<hash of the checkout root>`
+  (`tools/build/lib/dmbc_daemons.ts`), so concurrent worktrees keep their own patch bases and a different compiler build in another
+  worktree can no longer retire your daemon; a `DMB_DAEMON_NAMESPACE` you set wins. A daemon is about 8 GB, so at most
+  `DQ_DMBC_MAX_DAEMONS` (default 2, `0` = off) stay resident machine-wide: starting a compile evicts the least recently used idle
+  namespaces (`dmbc --daemon-retire`, which drains builds first), never one with a running compile (the cap is soft then). Never kill
+  a daemon process by hand; an evicted lane just pays one full compile.
 - **Icon repack** (`tools/dq_icons/`): `png` + `dmi.toml` into `icons/gen/`, dirty-checked.
   A fresh worktree seeds `icons/gen/` from the main checkout's copy (or `DQ_ICON_SEED`), so only
   changed icons repack. The repack pool is 4 workers (`DQ_ICON_WORKERS`), and the repack exits with

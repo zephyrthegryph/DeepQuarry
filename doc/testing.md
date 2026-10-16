@@ -572,7 +572,15 @@ profile are in `doc/rewrite/native_compiler_issues.md` (status 2026-10-15).
 The daemon starts on the first native build, is reused by later builds and other worktrees using the
 same `dmbc` binary (identity is a hash of the executable), outlives the build that started it, and is
 replaced automatically when the binary changes or a daemon crashes. Its log is
-`E:/dq-cache/dmb-daemon/lifecycle.log`. Set `DMB_DAEMON_NAMESPACE` to isolate a private daemon.
+`E:/dq-cache/dmb-daemon/lifecycle.log`.
+
+Daemons are per worktree: the build sets `DMB_DAEMON_NAMESPACE` to `wt-<16 hex of the checkout root>` unless you set it yourself, so
+a compiler build in another worktree never retires yours. Each daemon is about 8 GB, so `DQ_DMBC_MAX_DAEMONS` (default 2, matching
+the DM compile slots; `0` disables) bounds how many stay resident. Registry: `E:/dq-cache/dmb-daemon/ns` (`DQ_DMBC_DAEMON_DIR`), one
+`<ns>.json` with the last-use time and one `<ns>.lease.<pid>` per running compile. Before a compile, namespaces beyond the cap are
+retired least-recently-used first with `dmbc --daemon-retire` (needs `DMB_DAEMON_NAMESPACE`; it drains running builds and never
+touches the shared default daemon). A namespace with a live lease is skipped, so when every daemon is busy the cap is soft. An
+evicted worktree's next compile is a full one ("no patch base retained"); that is the cost of the memory bound.
 
 ### Working tree with someone else's unfinished work
 

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Native compiles use one dmbc daemon per worktree and keep at most DQ_DMBC_MAX_DAEMONS resident"
