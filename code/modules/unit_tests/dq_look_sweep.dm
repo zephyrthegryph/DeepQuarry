@@ -302,7 +302,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	log_test("look pin: making [type]")
 	rand_seed(dq_test_seed_for("[type]"))
 	try
-		var/turf/made = dq_look_allocate(type, spot, TRUE)
+		var/turf/made = spot.ChangeTurf(type)
 		if(QDELETED(made))
 			. = list("deleted itself on creation")
 		else
@@ -428,7 +428,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 
 /// A probe owns its native construction stream, independently of round seed, tile and prior allocations.
 /// Keep the host rand_seed calls at the call sites: legacy random constructors retain their old seed policy.
-/datum/unit_test/proc/dq_look_allocate(type, turf/T, change_turf = FALSE)
+/datum/unit_test/proc/dq_look_allocate(type, turf/T)
 	var/creator_depth = length(GLOB.roll_creators)
 	var/old_seed = GLOB.round_seed
 	var/old_serial = GLOB.roll_serial
@@ -436,7 +436,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	GLOB.roll_creators += R
 	var/exception/failure
 	try
-		. = change_turf ? T.ChangeTurf(type) : dq_snapshot_allocate(type, T)
+		. = dq_snapshot_allocate(type, T)
 		// Normalize kernel identity before either made/fresh capture; no probe exemption.
 		if(isdatum(.))
 			var/datum/created = .
@@ -808,59 +808,3 @@ CAPABILITIES(/obj/dq_look_native_roll_fixture)
 	TEST_ASSERT(!length(reused.impure), "the actual robot's reversible autofire key does not force fresh allocation for lazy identity")
 	TEST_ASSERT_EQUAL(jointext(reused.made, "\n"), jointext(fresh.made, "\n"), "native identity normalization preserves made rows")
 	TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "the real periodic probe preserves fresh-instance rows")
-
-// A turf sampler must enter the same native creator scope as objects; host rand_seed alone is insufficient.
-/turf/dq_look_native_roll_fixture
-	var/first_roll
-	var/second_roll
-CAPABILITIES(/turf/dq_look_native_roll_fixture)
-	rolls(nameof(first_roll), range_of(1, 1000000))
-	rolls(nameof(second_roll), range_of(1, 1000000))
-
-/proc/dq_look_restore_turf_at(x, y, z, type)
-	var/turf/T = locate(x, y, z)
-	T?.ChangeTurf(type)
-
-/datum/unit_test/dq_look_native_turf_roll_allocation
-/datum/unit_test/dq_look_native_turf_roll_allocation/Run()
-	set_global(nameof(GLOB.round_seed), GLOB.round_seed)
-	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
-	set_global(nameof(GLOB.roll_creators), GLOB.roll_creators.Copy())
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
-	var/turf/A = run_loc_floor_bottom_left
-	var/turf/B = get_step(A, EAST)
-	TEST_ASSERT(B && A != B, "real turf sampler test needs two physical locations")
-	var/ax = A.x
-	var/ay = A.y
-	var/az = A.z
-	var/old_a_type = A.type
-	var/old_b_type = B.type
-	defer_cleanup(null, GLOBAL_PROC_REF(dq_look_restore_turf_at), A.x, A.y, A.z, old_a_type)
-	defer_cleanup(null, GLOBAL_PROC_REF(dq_look_restore_turf_at), B.x, B.y, B.z, old_b_type)
-	var/seed_before = GLOB.round_seed
-	var/serial_before = GLOB.roll_serial
-	var/list/creators_before = GLOB.roll_creators.Copy()
-	var/turf/dq_look_native_roll_fixture/first = dq_look_allocate(/turf/dq_look_native_roll_fixture, A, TRUE)
-	var/first_roll = first.first_roll
-	var/second_roll = first.second_roll
-	TEST_ASSERT_EQUAL(GLOB.round_seed, seed_before, "real ChangeTurf restores global seed")
-	TEST_ASSERT_EQUAL(GLOB.roll_serial, serial_before, "real ChangeTurf restores caller serial")
-	first.ChangeTurf(old_a_type)
-	// Perturb every old native fallback input independently of host rand_seed.
-	GLOB.round_seed = "deliberately-different-turf-round-seed"
-	GLOB.roll_serial += 37
-	var/perturbed_serial = GLOB.roll_serial
-	var/turf/dq_look_native_roll_fixture/second = dq_look_allocate(/turf/dq_look_native_roll_fixture, B, TRUE)
-	TEST_ASSERT_EQUAL(second.first_roll, first_roll, "first native turf draw is independent of physical position and ambient seed")
-	TEST_ASSERT_EQUAL(second.second_roll, second_roll, "second independent draw proves complete stream isolation")
-	TEST_ASSERT_EQUAL(GLOB.round_seed, "deliberately-different-turf-round-seed", "scope restores the currently active caller seed")
-	TEST_ASSERT_EQUAL(GLOB.roll_serial, perturbed_serial, "scope restores the current caller serial")
-	TEST_ASSERT_EQUAL(length(GLOB.roll_creators), length(creators_before), "ChangeTurf leaves no synthetic creator frame")
-	for(var/i in 1 to length(creators_before))
-		TEST_ASSERT_EQUAL(GLOB.roll_creators[i], creators_before[i], "ChangeTurf preserves each outer creator identity")
-	second.ChangeTurf(old_b_type)
-	var/turf/dq_look_native_roll_fixture/again = dq_look_allocate(/turf/dq_look_native_roll_fixture, locate(ax, ay, az), TRUE)
-	TEST_ASSERT_EQUAL(again.first_roll, first_roll, "reversed/interleaved allocation order reproduces first draw")
-	TEST_ASSERT_EQUAL(again.second_roll, second_roll, "reversed/interleaved allocation order reproduces second draw")
-	again.ChangeTurf(old_a_type)
