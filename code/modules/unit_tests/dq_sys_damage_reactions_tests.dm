@@ -45,7 +45,7 @@ CAPABILITY(/obj/structure/dq_reflect_probe/burn_only, reflects(list(BURN), PROC_
 
 /datum/unit_test/sys_damage_reactions/proc/projectile(injury_kind, damage)
 	var/obj/item/projectile/P = allocate(/obj/item/projectile, run_loc_floor_bottom_left)
-	P.injury_kind = injury_kind
+	P.set_injury_kind(injury_kind)
 	P.damage = damage
 	P.nodamage = !damage
 	rel_set(P, nameof(P.starting), run_loc_floor_bottom_left)

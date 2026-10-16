@@ -296,7 +296,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	set_last_attacker(M, user)
 
 	if(!combat_of(src).no_attack_log)
-		add_attack_logs(user,M,"attacked with [name] (STANCE: [uppertext(stance)]) (KIND: [injury_kind_name(injury_kind)])")
+		add_attack_logs(user,M,"attacked with [name] (STANCE: [uppertext(stance)]) (KIND: [injury_kind_name(combat_of(src).injury_kind)])")
 	/////////////////////////
 
 	// A phased melee swing (melee_swing.dm) resolves its hits THROUGH this proc so

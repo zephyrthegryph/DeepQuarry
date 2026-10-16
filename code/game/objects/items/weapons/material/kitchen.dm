@@ -7,7 +7,6 @@
 /obj/item/material/kitchen/utensil
 	w_class = ITEMSIZE_TINY
 	thrown_force_divisor = 1
-	injury_kind = INJURY_CUT
 	force_divisor = 0.1 // 6 when wielded with hardness 60 (steel)
 	thrown_force_divisor = 0.25 // 5 when thrown with weight 20 (steel)
 	var/scoop_volume = 5
@@ -18,6 +17,7 @@
 
 
 CAPABILITIES(/obj/item/material/kitchen/utensil)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(attack_verbs = list("attacked", "stabbed", "poked"), sharp = TRUE, edge = TRUE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_KNIFE, pickup = SFX_ITEMS_PICKUP_KNIFE))
 	reagents(nameof(scoop_volume))
@@ -139,9 +139,9 @@ CAPABILITIES(/obj/item/material/kitchen/utensil)
 	name = "fork"
 	desc = "It's a fork. Sure is pointy."
 	icon_state = "fork"
-	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/material/kitchen/utensil/fork)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_combat(sharp = TRUE, edge = FALSE))
 
 /obj/item/material/kitchen/utensil/fork/plastic
@@ -151,9 +151,9 @@ CAPABILITIES(/obj/item/material/kitchen/utensil/fork)
 	name = "foon"
 	desc = "It's a foon. The forgotten cousin of the spork."
 	icon_state = "foon"
-	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/material/kitchen/utensil/foon)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_combat(sharp = TRUE, edge = FALSE))
 
 /obj/item/material/kitchen/utensil/foon/plastic
@@ -163,9 +163,9 @@ CAPABILITIES(/obj/item/material/kitchen/utensil/foon)
 	name = "spork"
 	desc = "It's a spork. The (un)holy merger of a spoon and fork."
 	icon_state = "spork"
-	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/material/kitchen/utensil/spork)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_combat(sharp = TRUE, edge = FALSE))
 
 /obj/item/material/kitchen/utensil/spork/plastic
@@ -175,10 +175,10 @@ CAPABILITIES(/obj/item/material/kitchen/utensil/spork)
 	name = "spoon"
 	desc = "It's a spoon. You can see your own upside-down face in it."
 	icon_state = "spoon"
-	injury_kind = INJURY_BLUNT
 	force_divisor = 0.1 //2 when wielded with weight 20 (steel)
 
 CAPABILITIES(/obj/item/material/kitchen/utensil/spoon)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(attack_verbs = list("attacked", "poked"), edge = FALSE, sharp = FALSE))
 
 /obj/item/material/kitchen/utensil/spoon/plastic

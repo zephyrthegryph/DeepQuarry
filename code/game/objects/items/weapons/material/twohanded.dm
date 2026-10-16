@@ -90,12 +90,12 @@ CAPABILITIES(/obj/item/material/twohanded)
 	unwielded_force_divisor = 0.25
 	force_divisor = 0.7 // 10/42 with hardness 60 (steel) and 0.25 unwielded divisor
 	dulled_divisor = 0.75	//Still metal on a stick
-	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_LARGE
 	force_wielded = 30
 	applies_material_colour = 0
 
 CAPABILITIES(/obj/item/material/twohanded/fireaxe)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "chopped", "cleaved", "torn", "cut"), can_cleave = TRUE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
@@ -151,12 +151,12 @@ CAPABILITIES(/obj/item/material/twohanded/fireaxe/scythe)
 	unwielded_force_divisor = 0.375
 	thrown_force_divisor = 1.5 		// 22.5 when thrown with weight 15 (glass)
 	throw_speed = 3
-	injury_kind = INJURY_PIERCE
 	default_material = MAT_GLASS
 	applies_material_colour = 0
 	fragile = 1	//It's a haphazard thing of glass, wire, and steel
 
 CAPABILITIES(/obj/item/material/twohanded/spear)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10, edge = FALSE, sharp = TRUE, attack_verbs = list("attacked", "poked", "jabbed", "torn", "gored"), reach = 2, attack_speed = 14))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, throw_hit = SFX_WEAPONS_PIERCE))
@@ -318,9 +318,9 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer/mjollnir)
 	item_state = "saber"
 	unwielded_force_divisor = 0.1
 	force_divisor = 0.3
-	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/material/twohanded/longsword)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
 
 /obj/item/material/twohanded/saber/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")

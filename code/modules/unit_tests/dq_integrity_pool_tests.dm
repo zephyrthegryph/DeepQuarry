@@ -48,8 +48,8 @@
 	TEST_ASSERT_EQUAL(W.get_integrity(), cap, "welder repair restores the wall")
 
 	var/obj/item/projectile/P = allocate(/obj/item/projectile)
-	P.injury_kind = INJURY_BLUNT
-	P.injury_kinds = null
+	P.set_injury_kind(INJURY_BLUNT)
+	P.set_injury_kinds(null)
 	P.damage = 300
 	P.nodamage = FALSE
 	P.emp_on_hit = FALSE

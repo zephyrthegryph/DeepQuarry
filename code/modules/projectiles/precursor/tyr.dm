@@ -93,8 +93,6 @@ CAPABILITIES(/obj/item/gun/energy/tyr_rifle)
 /obj/item/projectile/energy/eclipse_boss/tyrjavelin //Five hits ought to end you
 	name = "energy javelin"
 	icon_state = "javelin"
-	injury_kind = INJURY_BLUNT
-	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 	damage = 20 //16 with intended armor
 	speed = 10
 	color = "#FF6600"
@@ -102,6 +100,7 @@ CAPABILITIES(/obj/item/gun/energy/tyr_rifle)
 	modifier_duration = 1 MINUTE
 
 CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/tyrjavelin)
+	configure(item_combat(injury_kind = INJURY_BLUNT, injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)))
 	configure(item_combat(armor_penetration = 20))
 
 /obj/item/projectile/energy/eclipse_boss/tyrjavelin/speed
@@ -135,13 +134,13 @@ CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/tyrjavelin)
 
 /obj/item/projectile/energy/agate_lighting
 	damage = 15
-	injury_kind = INJURY_ELECTRIC
 	icon_state = "tesla_projectile"
 	speed = 15
 	penetrating = 5
 	crawl_destroy = TRUE
 
 CAPABILITIES(/obj/item/projectile/energy/agate_lighting)
+	configure(item_combat(injury_kind = INJURY_ELECTRIC))
 	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/energy/agate_lighting/fast

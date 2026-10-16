@@ -4,7 +4,6 @@
 	fire_sound = SFX_WEAPONS_LASER
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 40
-	injury_kind = INJURY_BURN
 	eyeblur = 4
 	var/frequency = 1
 	hitscan = 1
@@ -20,6 +19,7 @@
 	hud_state_empty = "battery_empty"
 
 CAPABILITIES(/obj/item/projectile/beam)
+	configure(item_combat(injury_kind = INJURY_BURN))
 	configure(light_glow(range = 2, power = 0.5, color = "#FF0D00"))
 	configure(item_sounds(hit = SFX_WEAPONS_SEAR))
 
@@ -49,13 +49,13 @@ CAPABILITIES(/obj/item/projectile/beam/weaklaser/blue)
 	configure(light_glow(color = "#0066FF"))
 
 /obj/item/projectile/beam/weaklaser/ion
-	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
 	impact_type = /obj/effect/projectile/impact/laser_em
 
 CAPABILITIES(/obj/item/projectile/beam/weaklaser/ion)
+	configure(item_combat(injury_kind = INJURY_ELECTRIC))
 	configure(light_glow(color = "#00CCFF"))
 
 /obj/item/projectile/beam/smalllaser
@@ -63,13 +63,13 @@ CAPABILITIES(/obj/item/projectile/beam/weaklaser/ion)
 	hud_state = "laser"
 
 /obj/item/projectile/beam/smalllaser/ion
-	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
 	impact_type = /obj/effect/projectile/impact/laser_em
 
 CAPABILITIES(/obj/item/projectile/beam/smalllaser/ion)
+	configure(item_combat(injury_kind = INJURY_ELECTRIC))
 	configure(light_glow(color = "#00CCFF"))
 
 /obj/item/projectile/beam/burstlaser
@@ -80,13 +80,13 @@ CAPABILITIES(/obj/item/projectile/beam/burstlaser)
 	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/beam/burstlaser/ion
-	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
 	impact_type = /obj/effect/projectile/impact/laser_em
 
 CAPABILITIES(/obj/item/projectile/beam/burstlaser/ion)
+	configure(item_combat(injury_kind = INJURY_ELECTRIC))
 	configure(light_glow(color = "#00CCFF"))
 
 /obj/item/projectile/beam/midlaser
@@ -97,13 +97,13 @@ CAPABILITIES(/obj/item/projectile/beam/midlaser)
 	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/beam/midlaser/ion
-	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
 	impact_type = /obj/effect/projectile/impact/laser_em
 
 CAPABILITIES(/obj/item/projectile/beam/midlaser/ion)
+	configure(item_combat(injury_kind = INJURY_ELECTRIC))
 	configure(light_glow(color = "#00CCFF"))
 
 /obj/item/projectile/beam/mininglaser
@@ -150,13 +150,13 @@ CAPABILITIES(/obj/item/projectile/beam/heavylaser/fakeemitter)
 	configure(light_glow(color = "#00CC33"))
 
 /obj/item/projectile/beam/heavylaser/ion
-	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
 	impact_type = /obj/effect/projectile/impact/laser_em
 
 CAPABILITIES(/obj/item/projectile/beam/heavylaser/ion)
+	configure(item_combat(injury_kind = INJURY_ELECTRIC))
 	configure(light_glow(color = "#00CCFF"))
 
 /obj/item/projectile/beam/heavylaser/cannon
@@ -319,7 +319,6 @@ CAPABILITIES(/obj/item/projectile/beam/sniper)
 	nodamage = 1
 	taser_effect = 1
 	agony = 35
-	injury_kind = INJURY_PAIN
 
 
 
@@ -332,6 +331,7 @@ CAPABILITIES(/obj/item/projectile/beam/sniper)
 	hud_state = "taser" // TGMC Ammo HUD port
 
 CAPABILITIES(/obj/item/projectile/beam/stun)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(light_glow(color = "#FFFFFF"))
 	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
@@ -389,7 +389,6 @@ CAPABILITIES(/obj/item/projectile/beam/stun/blue)
 	nodamage = 1
 	taser_effect = 1
 	agony = 100 //One shot stuns for the time being until adjustments are fully made.
-	injury_kind = INJURY_PAIN
 	hud_state = "laser_disabler"
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_omni
@@ -397,12 +396,12 @@ CAPABILITIES(/obj/item/projectile/beam/stun/blue)
 	impact_type = /obj/effect/projectile/impact/laser_omni
 
 CAPABILITIES(/obj/item/projectile/beam/disable)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(light_glow(color = "#00CECE"))
 
 /obj/item/projectile/beam/shock
 	name = "shock beam"
 	icon_state = "lightning"
-	injury_kind = INJURY_ELECTRIC
 
 	muzzle_type = /obj/effect/projectile/muzzle/lightning
 	tracer_type = /obj/effect/projectile/tracer/lightning
@@ -414,6 +413,7 @@ CAPABILITIES(/obj/item/projectile/beam/disable)
 	hud_state = "taser"
 
 CAPABILITIES(/obj/item/projectile/beam/shock)
+	configure(item_combat(injury_kind = INJURY_ELECTRIC))
 	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/beam/shock/weak
@@ -429,7 +429,6 @@ CAPABILITIES(/obj/item/projectile/beam/shock)
 	name = "point defense salvo"
 	icon_state = "laser"
 	damage = 15
-	injury_kind = INJURY_ELECTRIC //You should be safe inside a voidsuit
 
 	excavation_amount = 200 // Good at shooting rocks
 
@@ -438,6 +437,7 @@ CAPABILITIES(/obj/item/projectile/beam/shock)
 	impact_type = /obj/effect/projectile/impact/pointdefense
 
 CAPABILITIES(/obj/item/projectile/beam/pointdefense)
+	configure(item_combat(injury_kind = INJURY_ELECTRIC))
 	configure(light_glow(color = COLOR_GOLD))
 	configure(item_combat(sharp = FALSE))
 
@@ -446,7 +446,6 @@ CAPABILITIES(/obj/item/projectile/beam/pointdefense)
 	name = "defense coil salvo"
 	icon_state = "coil"
 	damage = 15
-	injury_kind = INJURY_ELECTRIC //You should be safe inside a voidsuit
 
 	excavation_amount = 200 // Good at shooting rocks
 
@@ -455,6 +454,7 @@ CAPABILITIES(/obj/item/projectile/beam/pointdefense)
 	impact_type = /obj/effect/projectile/impact/coildefense
 
 CAPABILITIES(/obj/item/projectile/beam/coildefense)
+	configure(item_combat(injury_kind = INJURY_ELECTRIC))
 	configure(light_glow(color = "#FFFFFF"))
 	configure(item_combat(sharp = FALSE))
 
@@ -513,7 +513,6 @@ CAPABILITIES(/obj/item/projectile/beam/rainbow)
 /obj/item/projectile/beam/rainbow/non_lethal
 	damage = 0
 	agony = 50
-	injury_kind = INJURY_PAIN
 
 /obj/item/projectile/beam/sparkledog
 	name = "rainbow"
@@ -546,7 +545,6 @@ CAPABILITIES(/obj/item/projectile/beam/sparkledog)
 	name = "point defense salvo"
 	icon_state = "laser"
 	damage = 15
-	injury_kind = INJURY_ELECTRIC
 	hud_state = "monkey"
 	excavation_amount = 200 // Good at shooting rocks
 
@@ -558,7 +556,6 @@ CAPABILITIES(/obj/item/projectile/beam/sparkledog)
 	name = "defense coil salvo"
 	icon_state = "coil"
 	damage = 15
-	injury_kind = INJURY_ELECTRIC
 
 	excavation_amount = 200 // Good at shooting rocks
 
@@ -574,7 +571,6 @@ CAPABILITIES(/obj/item/projectile/beam/sparkledog)
 	icon_state = "xray"
 	nodamage = 1
 	agony = 5
-	injury_kind = INJURY_PAIN
 	hud_state = "flame_green"
 	hud_state_empty = "flame_empty"
 
@@ -585,6 +581,7 @@ CAPABILITIES(/obj/item/projectile/beam/sparkledog)
 	impact_type = /obj/effect/projectile/impact/xray
 
 CAPABILITIES(/obj/item/projectile/beam/energy_net)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(light_glow(color = "#00CC33"))
 
 /obj/item/projectile/beam/energy_net/on_hit(atom/netted)
@@ -754,3 +751,6 @@ CAPABILITIES(/obj/effect/projectile/muzzle/vepr)
 
 CAPABILITIES(/obj/item/projectile/beam/lasertag)
 	configure(item_combat(no_attack_log = 1))
+
+CAPABILITIES(/obj/item/projectile/beam/rainbow/non_lethal)
+	configure(item_combat(injury_kind = INJURY_PAIN))

@@ -472,12 +472,12 @@ CAPABILITIES(/obj/item/projectile/beam/stun/weak/BFG)
 	icon_state = "minitesla"
 	speed=5
 	damage = 100
-	injury_kind = INJURY_PAIN
 	embed_chance = 0
 	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
 	var/zaptype = /obj/item/projectile/beam/stun/weak/BFG
 
 CAPABILITIES(/obj/item/projectile/bullet/BFGtaser)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/bullet/BFGtaser/projectile_step()

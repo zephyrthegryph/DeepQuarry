@@ -1308,7 +1308,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		rel_add(Test, nameof(Test.hit), occupant) // Register a hit on the occupant, for things like turrets, or in simple-mob cases stopping friendly fire in firing line mode.
 		return
 
-	src.mecha_log_message("Hit by projectile. Type: [Proj.name]([armor_kind_name(Proj.injury_kind)]).",1)
+	src.mecha_log_message("Hit by projectile. Type: [Proj.name]([armor_kind_name(combat_of(Proj).injury_kind)]).",1)
 	if(!negate_projectile(Proj))
 		mech_body_plan().receive_projectile(src, Proj)
 	..()

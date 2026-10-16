@@ -36,4 +36,5 @@ CAPABILITIES(/obj/item/projectile/beam/phaser/heavy)
 	damage = 10 //Old 5?
 
 CAPABILITIES(/obj/item/projectile/beam/prismatic)
+	configure(item_combat(injury_kind = INJURY_BURN))
 	configure(light_glow(color = "#00C6FF"))

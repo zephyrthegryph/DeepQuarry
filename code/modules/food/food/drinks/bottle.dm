@@ -217,10 +217,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	throw_range = 5
 	item_state = "beer"
 	flags = NOCONDUCT
-	injury_kind = INJURY_PIERCE
 	var/icon/broken_outline = icon('icons/obj/drinks.dmi', "broken")
 
 CAPABILITIES(/obj/item/broken_bottle)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 10, attack_verbs = list("stabbed", "slashed", "attacked"), sharp = TRUE, edge = FALSE))
 

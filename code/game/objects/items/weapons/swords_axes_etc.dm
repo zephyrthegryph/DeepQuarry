@@ -33,9 +33,9 @@ CAPABILITIES(/obj/item/melee/classic_baton)
 		user.status_at_least(STAT_WEAKENED, 3 * combat_of(src).force)
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
-			H.injure(injury_kind, 2*combat_of(src).force, BP_HEAD, src)
+			H.injure(combat_of(src).injury_kind, 2*combat_of(src).force, BP_HEAD, src)
 		else
-			user.injure(injury_kind, 2*combat_of(src).force, source = src)
+			user.injure(combat_of(src).injury_kind, 2*combat_of(src).force, source = src)
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
@@ -102,8 +102,8 @@ CAPABILITIES(/obj/item/melee/telebaton)
 			user.status_at_least(STAT_WEAKENED, 3 * combat_of(src).force)
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
-				H.injure(injury_kind, 2*combat_of(src).force, BP_HEAD, src)
+				H.injure(combat_of(src).injury_kind, 2*combat_of(src).force, BP_HEAD, src)
 			else
-				user.injure(injury_kind, 2*combat_of(src).force, source = src)
+				user.injure(combat_of(src).injury_kind, 2*combat_of(src).force, source = src)
 			return ITEM_INTERACT_SUCCESS
 	return ..()

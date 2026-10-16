@@ -96,7 +96,6 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/frost)
 	name = "lighting spark"
 	icon_state = "spark"
 	nodamage = 1
-	injury_kind = INJURY_PAIN
 	speed = 2
 	var/power = 20				//How hard it will hit for with electrocute_act(), decreases with each bounce.
 
@@ -129,21 +128,20 @@ CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/chillingwind)
 /obj/item/projectile/energy/eclipse_boss/metalsphere
 	name = "metal sphere"
 	icon_state = "metal_sphere"
-	injury_kind = INJURY_BLUNT
 	damage = 20
 	agony = 10
 
 CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/metalsphere)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(armor_penetration = 50))
 
 /obj/item/projectile/energy/eclipse_boss/energyjavelin
 	name = "searing javelin"
 	icon_state = "javelin"
-	injury_kind = INJURY_BLUNT
-	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 	damage = 40
 
 CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/energyjavelin)
+	configure(item_combat(injury_kind = INJURY_BLUNT, injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)))
 	configure(item_combat(armor_penetration = 30))
 
 //projectiles
@@ -155,8 +153,6 @@ CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/energyjavelin)
 	icon_state = "laser"
 
 /obj/item/projectile/energy/astral_collective/basic
-	injury_kind = INJURY_BLUNT
-	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 
 /obj/item/projectile/energy/astral_collective/spear
 	icon_state = "spear"
@@ -177,3 +173,9 @@ CAPABILITIES(/obj/item/projectile/energy/astral_collective/spear)
 
 CAPABILITIES(/obj/item/projectile/energy/astral_collective/dagger)
 	configure(item_combat(armor_penetration = 60))
+
+CAPABILITIES(/obj/item/projectile/energy/lightingspark)
+	configure(item_combat(injury_kind = INJURY_PAIN))
+
+CAPABILITIES(/obj/item/projectile/energy/astral_collective/basic)
+	configure(item_combat(injury_kind = INJURY_BLUNT, injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)))

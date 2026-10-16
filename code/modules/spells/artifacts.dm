@@ -7,9 +7,9 @@
 	icon_state = "bluespace"
 	throw_speed = 3
 	throw_range = 7
-	injury_kind = INJURY_BURN
 
 CAPABILITIES(/obj/item/scrying)
+	configure(item_combat(injury_kind = INJURY_BURN))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))
 	configure(item_sounds(hit = SFX_ITEMS_WELDER2))

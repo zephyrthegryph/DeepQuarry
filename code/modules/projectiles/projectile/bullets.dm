@@ -6,7 +6,6 @@
 	damage = 60
 	nodamage = 0
 	embed_chance = 20	//Modified in the actual embed process, but this should keep embed chance about the same
-	injury_kind = INJURY_PIERCE
 	hitsound_wall = SFX_RICOCHET
 	impact_effect_type = /obj/effect/temp_visual/impact_effect
 	var/mob_passthrough_check = 0
@@ -147,11 +146,11 @@ CAPABILITIES(/obj/item/projectile/bullet/pistol/rubber/strong)
 	damage = 5
 	agony = 40
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 	hud_state = "pistol_special"
 	fire_sound =SFX_WEAPONS_GUNSHOT_PATHETIC // Rubber shots have less powder in the casing.
 
 CAPABILITIES(/obj/item/projectile/bullet/pistol/rubber)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(sharp = FALSE))
 
 /* shotgun projectiles */
@@ -172,10 +171,10 @@ CAPABILITIES(/obj/item/projectile/bullet/shotgun)
 	damage = 20
 	agony = 60
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 	hud_state = "shotgun_beanbag"
 
 CAPABILITIES(/obj/item/projectile/bullet/shotgun/beanbag)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(sharp = FALSE))
 
 //Should do about 80 damage at 1 tile distance (adjacent), and 50 damage at 3 tiles distance.
@@ -204,12 +203,12 @@ CAPABILITIES(/obj/item/projectile/bullet/pellet/shotgun/flak)
 	fire_sound = SFX_WEAPONS_LASER // Really? We got nothing better than this?
 	damage = 15
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 	hud_state = "shotgun_ion"
 
 	combustion = FALSE
 
 CAPABILITIES(/obj/item/projectile/bullet/shotgun/ion)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(sharp = FALSE))
 
 /obj/item/projectile/bullet/shotgun/ion/on_hit(atom/target, blocked = 0)
@@ -317,7 +316,6 @@ CAPABILITIES(/obj/item/projectile/bullet/rifle/a145/highvel)
 /obj/item/projectile/bullet/suffocationbullet//How does this even work?
 	name = "co bullet"
 	damage = 5
-	injury_kind = INJURY_PIERCE
 	hud_state = "pistol_tranq"
 
 /// Carbon monoxide: binds the blood's haemoglobin, so it carries little oxygen
@@ -331,7 +329,6 @@ CAPABILITIES(/obj/item/projectile/bullet/rifle/a145/highvel)
 /obj/item/projectile/bullet/cyanideround
 	name = "poison bullet"
 	damage = 40
-	injury_kind = INJURY_TOXIN
 	hud_state = "pistol_tranq"
 
 /obj/item/projectile/bullet/burstbullet
@@ -339,10 +336,10 @@ CAPABILITIES(/obj/item/projectile/bullet/rifle/a145/highvel)
 	fire_sound = SFX_EFFECTS_EXPLOSION1
 	damage = 20
 	embed_chance = 0
-	injury_kind = INJURY_CUT
 	hud_state = "pistol_fire"
 
 CAPABILITIES(/obj/item/projectile/bullet/burstbullet)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(edge = TRUE))
 
 /obj/item/projectile/bullet/burstbullet/on_hit(atom/target, blocked = 0)
@@ -356,7 +353,6 @@ CAPABILITIES(/obj/item/projectile/bullet/burstbullet)
 	name = "incendiary bullet"
 	icon_state = "bullet_alt"
 	damage = 15
-	injury_kind = INJURY_BURN
 	incendiary = 0.5
 	flammability = 2
 	hud_state = "pistol_fire"
@@ -407,7 +403,6 @@ CAPABILITIES(/obj/item/projectile/bullet/burstbullet)
 
 /obj/item/projectile/bullet/pistol/cap // Just the primer, such as a cap gun.
 	name = "cap"
-	injury_kind = INJURY_PAIN
 	fire_sound = SFX_EFFECTS_SNAP
 	damage = 0
 	nodamage = 1
@@ -417,6 +412,7 @@ CAPABILITIES(/obj/item/projectile/bullet/burstbullet)
 	combustion = FALSE
 
 CAPABILITIES(/obj/item/projectile/bullet/pistol/cap)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(item_combat(sharp = FALSE))
 
 /obj/item/projectile/bullet/pistol/cap/projectile_step()
@@ -425,7 +421,6 @@ CAPABILITIES(/obj/item/projectile/bullet/pistol/cap)
 
 /obj/item/projectile/bullet/blank
 	name = "blank"
-	injury_kind = INJURY_PAIN
 	fire_sound = SFX_WEAPONS_GUNSHOT_GENERIC_RIFLE // Blanks still make loud noises.
 	damage = 0
 	nodamage = 1
@@ -433,6 +428,7 @@ CAPABILITIES(/obj/item/projectile/bullet/pistol/cap)
 	hud_state = "smg_light"
 
 CAPABILITIES(/obj/item/projectile/bullet/blank)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(item_combat(sharp = FALSE))
 
 /* BB Rounds */
@@ -441,11 +437,11 @@ CAPABILITIES(/obj/item/projectile/bullet/blank)
 	damage = 0
 	agony = 0
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 	silenced = TRUE
 	hud_state = "pistol_light"
 
 CAPABILITIES(/obj/item/projectile/bullet/bb)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(sharp = FALSE))
 
 /obj/item/projectile/bullet/pellet/shotgun/bb // Shotgun
@@ -453,7 +449,6 @@ CAPABILITIES(/obj/item/projectile/bullet/bb)
 	damage = 0
 	agony = 0
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 	pellets = 6
 	range_step = 1
 	spread_step = 10
@@ -461,6 +456,7 @@ CAPABILITIES(/obj/item/projectile/bullet/bb)
 	hud_state = "pistol_light"
 
 CAPABILITIES(/obj/item/projectile/bullet/pellet/shotgun/bb)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(sharp = FALSE))
 
 /* toy projectiles */
@@ -470,13 +466,13 @@ CAPABILITIES(/obj/item/projectile/bullet/pellet/shotgun/bb)
 	damage = 0 // It's a damn toy.
 	embed_chance = 0
 	nodamage = TRUE
-	injury_kind = INJURY_PAIN
 	impact_effect_type = null
 	fire_sound = SFX_EFFECTS_SNAP
 	combustion = FALSE
 	hud_state = "pistol_light"
 
 CAPABILITIES(/obj/item/projectile/bullet/cap)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(item_combat(sharp = FALSE))
 
 /obj/item/projectile/bullet/cap/projectile_step()
@@ -489,7 +485,6 @@ CAPABILITIES(/obj/item/projectile/bullet/cap)
 	damage = 0 // It's a damn toy.
 	embed_chance = 0
 	nodamage = TRUE
-	injury_kind = INJURY_PAIN
 	impact_effect_type = null
 	fire_sound = SFX_ITEMS_SYRINGEPROJ
 	combustion = FALSE
@@ -499,6 +494,7 @@ CAPABILITIES(/obj/item/projectile/bullet/cap)
 	hud_state = "grenade_dummy"
 
 CAPABILITIES(/obj/item/projectile/bullet/foam_dart)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(item_combat(sharp = FALSE))
 
 /obj/item/projectile/bullet/foam_dart/on_impact(atom/A)
@@ -524,7 +520,6 @@ CAPABILITIES(/obj/item/projectile/bullet/foam_dart)
 	embed_chance = 0
 	agony = 20 // The riot part of the riot dart // nerf this >:3 old 50
 	nodamage = TRUE
-	injury_kind = INJURY_PAIN
 	impact_effect_type = null
 	fire_sound = SFX_ITEMS_SYRINGEPROJ
 	combustion = FALSE
@@ -534,6 +529,7 @@ CAPABILITIES(/obj/item/projectile/bullet/foam_dart)
 	hud_state = "grenade_he"
 
 CAPABILITIES(/obj/item/projectile/bullet/foam_dart_riot)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(item_combat(sharp = FALSE))
 
 /obj/item/projectile/bullet/foam_dart_riot/on_impact(atom/A)
@@ -633,9 +629,9 @@ CAPABILITIES(/obj/item/projectile/bullet/a38/hp)
 	damage = 10
 	agony = 40
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 
 CAPABILITIES(/obj/item/projectile/bullet/a9x18/rubber)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(armor_penetration = -10, sharp = FALSE))
 
 /obj/item/projectile/bullet/a10mm
@@ -659,9 +655,9 @@ CAPABILITIES(/obj/item/projectile/bullet/a10mm/hp)
 	damage = 10
 	agony = 50
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 
 CAPABILITIES(/obj/item/projectile/bullet/a10mm/rubber)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(armor_penetration = -10, sharp = FALSE))
 
 /obj/item/projectile/bullet/a380
@@ -728,9 +724,9 @@ CAPABILITIES(/obj/item/projectile/bullet/shotgun/buckshot)
 	damage = 25 //this still hurts like a motherfucker
 	agony = 100
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 
 CAPABILITIES(/obj/item/projectile/bullet/rifle/a762/rubber)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(armor_penetration = -10, sharp = FALSE))
 
 /obj/item/projectile/bullet/rifle/a762x39 //7.62x39 Soviet
@@ -753,9 +749,9 @@ CAPABILITIES(/obj/item/projectile/bullet/rifle/a762x39/hp)
 	damage = 15 //this still hurts like a motherfucker
 	agony = 70
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 
 CAPABILITIES(/obj/item/projectile/bullet/rifle/a762x39/rubber)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(armor_penetration = -10, sharp = FALSE))
 
 /obj/item/projectile/bullet/rifle/a545
@@ -767,9 +763,9 @@ CAPABILITIES(/obj/item/projectile/bullet/rifle/a762x39/rubber)
 	damage = 15
 	agony = 60
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 
 CAPABILITIES(/obj/item/projectile/bullet/rifle/a545/rubber)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(armor_penetration = -10, sharp = FALSE))
 
 /obj/item/projectile/bullet/rifle/a545/hp
@@ -796,9 +792,9 @@ CAPABILITIES(/obj/item/projectile/bullet/rifle/a556/hp)
 	damage = 15
 	agony = 60
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 
 CAPABILITIES(/obj/item/projectile/bullet/rifle/a556/rubber)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(armor_penetration = -10, sharp = FALSE))
 
 /obj/item/projectile/bullet/rifle/a145 // 14.5×114mm
@@ -824,9 +820,9 @@ CAPABILITIES(/obj/item/projectile/bullet/rifle/a9x39/ap)
 	damage = 20
 	agony = 70
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 
 CAPABILITIES(/obj/item/projectile/bullet/rifle/a9x39/rubber)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(armor_penetration = -10, sharp = FALSE))
 
 /obj/item/projectile/bullet/rifle/a10x24 //10x24mm Caseless
@@ -837,9 +833,9 @@ CAPABILITIES(/obj/item/projectile/bullet/rifle/a9x39/rubber)
 	damage = 20
 	agony = 80
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 
 CAPABILITIES(/obj/item/projectile/bullet/rifle/a10x24/rubber)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(armor_penetration = -10, sharp = FALSE))
 
 /obj/item/projectile/bullet/rifle/a762x54
@@ -896,7 +892,16 @@ CAPABILITIES(/obj/item/projectile/bullet/rifle/a45lc)
 	damage = 20
 	agony = 70
 	embed_chance = 0
-	injury_kind = INJURY_BLUNT
 
 CAPABILITIES(/obj/item/projectile/bullet/rifle/a45lc/rubber)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(armor_penetration = -10, sharp = FALSE))
+
+CAPABILITIES(/obj/item/projectile/bullet/suffocationbullet)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
+
+CAPABILITIES(/obj/item/projectile/bullet/cyanideround)
+	configure(item_combat(injury_kind = INJURY_TOXIN))
+
+CAPABILITIES(/obj/item/projectile/bullet/incendiary)
+	configure(item_combat(injury_kind = INJURY_BURN))

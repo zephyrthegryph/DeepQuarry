@@ -153,7 +153,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 /mob/living/silicon/bullet_act(obj/item/projectile/Proj)
 
 	// Hardware takes located harm (impacts, burns, current); the synthetic body decides what each kind does.
-	if(!Proj.nodamage && injury_is_located(Proj.injury_kind))
+	if(!Proj.nodamage && injury_is_located(combat_of(Proj).injury_kind))
 		Proj.inflict_injury(src, null)
 
 	Proj.on_hit(src,2)

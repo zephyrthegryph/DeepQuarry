@@ -222,11 +222,11 @@ CAPABILITIES(/obj/item/pickaxe/diamonddrill/alien)
 	active_throwforce = 40
 	icon_state = "dualsaber"
 	item_state = "dualsaber"
-	injury_kind = INJURY_CUT
 	colorable = TRUE
 	defend_chance = 65
 
 CAPABILITIES(/obj/item/melee/energy/sword/dualsaber)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(sharp = TRUE, edge = TRUE, can_cleave = TRUE))
 
 

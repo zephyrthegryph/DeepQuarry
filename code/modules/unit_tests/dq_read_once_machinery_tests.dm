@@ -96,8 +96,8 @@
 	var/obj/machinery/camera/C = mach(/obj/machinery/camera, tile(3, 2))
 	var/obj/item/weapon = allocate(/obj/item, H.loc)
 	weapon.set_force(20)
-	weapon.injury_kinds = null
-	weapon.injury_kind = INJURY_PAIN
+	weapon.set_injury_kinds(null)
+	weapon.set_injury_kind(INJURY_PAIN)
 	TEST_ASSERT(H.put_in_active_hand(weapon), "The real damaging item is held")
 	TEST_ASSERT_NULL(weapon.obj_damage_type(), "The initial injury kind genuinely cannot harm an object")
 	var/time_before = op_now()
@@ -107,7 +107,7 @@
 	var/actor_gen = rx_of(H).act_gen
 	var/machine_gen = rx_of(C).act_gen
 	var/item_gen = rx_of(weapon).act_gen
-	weapon.injury_kind = INJURY_BLUNT
+	weapon.set_injury_kind(INJURY_BLUNT)
 	TEST_ASSERT_EQUAL(weapon.obj_damage_type(), BRUTE, "The new injury kind genuinely harms objects")
 	var/list/bash = find_row(op_menu(H, C, weapon), "camera_bash")
 	TEST_ASSERT(bash && bash["enabled"], "Changing the same held item's injury kind exposes the actual attack row")
@@ -115,7 +115,7 @@
 	TEST_ASSERT_EQUAL(rx_of(H).act_gen, actor_gen, "The actor generation is unchanged")
 	TEST_ASSERT_EQUAL(rx_of(C).act_gen, machine_gen, "The camera generation is unchanged")
 	TEST_ASSERT_EQUAL(rx_of(weapon).act_gen, item_gen, "The injury-kind input has no generated setter publication")
-	weapon.injury_kind = INJURY_PAIN
+	weapon.set_injury_kind(INJURY_PAIN)
 	harmless = find_row(op_menu(H, C, weapon), "camera_bash")
 	TEST_ASSERT(harmless && !harmless["enabled"], "The attack row becomes disabled when the same item stops harming objects")
 	TEST_ASSERT_EQUAL(harmless["reason"], "not possible right now", "Current harmless admission retains the exact refusal")
@@ -123,7 +123,7 @@
 	var/datum/op_result/rejected = test_menu(H, C, "camera_bash")
 	TEST_ASSERT_EQUAL(rejected?.outcome, ACT_REFUSED, "The public attack pick rejects the current harmless injury kind")
 	TEST_ASSERT_EQUAL(C.get_integrity(), integrity_before, "Rejected admission cannot damage the actual camera")
-	weapon.injury_kind = INJURY_BLUNT
+	weapon.set_injury_kind(INJURY_BLUNT)
 	var/datum/op_result/attacked = test_menu(H, C, "camera_bash")
 	TEST_ASSERT_EQUAL(attacked?.outcome, ACT_COMMITTED, "The public menu pick runs the admitted camera attack")
 	TEST_ASSERT(C.get_integrity() < integrity_before, "The admitted attack actually damages the camera")

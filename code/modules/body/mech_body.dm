@@ -140,7 +140,7 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 		host.visible_message("The [host.name] armor deflects the projectile")
 		host.log_append_to_last("Armor saved.")
 		return 0
-	if(P.injury_kind == INJURY_PAIN)
+	if(combat_of(P).injury_kind == INJURY_PAIN)
 		host.use_power(P.agony * 5)
 	. = 0
 	if(!P.nodamage)
@@ -154,7 +154,7 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 		pass_damage *= factor
 		if(prob(25))
 			fx_sparks(host, 2, FALSE)
-		. = injure(host, pass_damage, injury_armor_key(P.injury_kind))
+		. = injure(host, pass_damage, injury_armor_key(combat_of(P).injury_kind))
 		if(QDELETED(host))
 			return
 		var/list/possible = list(MECHA_INT_FIRE, MECHA_INT_TEMP_CONTROL, MECHA_INT_TANK_BREACH, MECHA_INT_CONTROL_LOST, MECHA_INT_SHORT_CIRCUIT)

@@ -24,7 +24,6 @@
 	name = "lightning"
 	icon_state = "lightning"
 	nodamage = 1
-	injury_kind = INJURY_PAIN
 
 	muzzle_type = /obj/effect/projectile/muzzle/lightning
 	tracer_type = /obj/effect/projectile/tracer/lightning
@@ -40,3 +39,6 @@
 	else
 		target_mob.electrocute_act(power, src, 0.75, BP_TORSO)
 	return 1
+
+CAPABILITIES(/obj/item/projectile/beam/lightning)
+	configure(item_combat(injury_kind = INJURY_PAIN))

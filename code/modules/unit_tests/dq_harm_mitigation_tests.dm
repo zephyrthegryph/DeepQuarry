@@ -23,7 +23,7 @@
 
 /datum/unit_test/dq_harm_kind_declarations/Run()
 	var/obj/item/material/knife/knife = allocate(/obj/item/material/knife)
-	TEST_ASSERT_EQUAL(knife.injury_kind, INJURY_CUT, "a knife should cut")
+	TEST_ASSERT_EQUAL(combat_of(knife).injury_kind, INJURY_CUT, "a knife should cut")
 	var/obj/item/projectile/bullet/bullet = allocate(/obj/item/projectile/bullet)
 	TEST_ASSERT_EQUAL(bullet.injury_kind, INJURY_PIERCE, "a bullet should pierce")
 	var/obj/item/projectile/beam/laser = allocate(/obj/item/projectile/beam)
@@ -38,14 +38,14 @@
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human)
 	var/obj/item/melee/energy/axe/axe = allocate(/obj/item/melee/energy/axe)
 	axe.activate(victim)
-	TEST_ASSERT_NOTNULL(axe.injury_kinds, "a lit energy axe should sear (burn plus cut)")
+	TEST_ASSERT_NOTNULL(combat_of(axe).injury_kinds, "a lit energy axe should sear (burn plus cut)")
 	var/share = 0
-	for(var/kind in axe.injury_kinds)
-		share += axe.injury_kinds[kind]
+	for(var/kind in combat_of(axe).injury_kinds)
+		share += combat_of(axe).injury_kinds[kind]
 	TEST_ASSERT(dq_near(share, 1), "mixed-hit shares should sum to 1, got [share]")
 	axe.deactivate(victim)
-	TEST_ASSERT_NULL(axe.injury_kinds, "an unlit axe is a plain axe")
-	TEST_ASSERT_EQUAL(axe.injury_kind, INJURY_CUT, "an unlit axe still cuts")
+	TEST_ASSERT_NULL(combat_of(axe).injury_kinds, "an unlit axe is a plain axe")
+	TEST_ASSERT_EQUAL(combat_of(axe).injury_kind, INJURY_CUT, "an unlit axe still cuts")
 
 	// A split hit sends each kind its share into injure(). Read what enters the
 	// pipeline, not what lands: how much lands depends on the body's prior state.
@@ -70,7 +70,7 @@
 	// Every projectile declares a real kind.
 	for(var/path in typesof(/obj/item/projectile))
 		var/obj/item/projectile/P = path
-		var/kind = initial(P.injury_kind)
+		var/kind = combat_of_type(path).injury_kind
 		TEST_ASSERT(isnum(kind) && kind >= 1 && kind <= INJURY_KIND_COUNT, "[path] should declare an INJURY_* kind, has [kind]")
 
 

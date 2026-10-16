@@ -13,9 +13,9 @@
 
 STATIC_ENTRY(item_combat)
 
-/proc/item_combat(force = null, sharp = null, edge = null, armor_penetration = null, windup = null, recovery = null, sweep = null, can_cleave = null, attack_speed = null, reach = null, attack_verbs = null, no_attack_log = null, no_random_knockdown = null)
+/proc/item_combat(force = null, sharp = null, edge = null, armor_penetration = null, windup = null, recovery = null, sweep = null, can_cleave = null, attack_speed = null, reach = null, attack_verbs = null, no_attack_log = null, no_random_knockdown = null, injury_kind = null, injury_kinds = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_ITEM_COMBAT, null, list("force" = force, "sharp" = sharp, "edge" = edge, "armor_penetration" = armor_penetration, "windup" = windup, "recovery" = recovery, "sweep" = sweep, "can_cleave" = can_cleave, "attack_speed" = attack_speed, "reach" = reach, "attack_verbs" = attack_verbs, "no_attack_log" = no_attack_log, "no_random_knockdown" = no_random_knockdown))
+	return entry_make(ENTRY_ITEM_COMBAT, null, list("force" = force, "sharp" = sharp, "edge" = edge, "armor_penetration" = armor_penetration, "windup" = windup, "recovery" = recovery, "sweep" = sweep, "can_cleave" = can_cleave, "attack_speed" = attack_speed, "reach" = reach, "attack_verbs" = attack_verbs, "no_attack_log" = no_attack_log, "no_random_knockdown" = no_random_knockdown, "injury_kind" = injury_kind, "injury_kinds" = injury_kinds))
 
 /datum/type_trait/item_combat
 	var/force = 0
@@ -31,6 +31,8 @@ STATIC_ENTRY(item_combat)
 	var/list/attack_verbs
 	var/no_attack_log = FALSE
 	var/no_random_knockdown = FALSE
+	var/injury_kind = INJURY_BLUNT
+	var/alist/injury_kinds
 
 /datum/type_trait/item_combat/copy_values(datum/type_trait/item_combat/into)
 	into.force = force
@@ -46,13 +48,15 @@ STATIC_ENTRY(item_combat)
 	into.attack_verbs = attack_verbs
 	into.no_attack_log = no_attack_log
 	into.no_random_knockdown = no_random_knockdown
+	into.injury_kind = injury_kind
+	into.injury_kinds = injury_kinds
 
 /datum/entry_engine/type_trait/item_combat
 	kind = ENTRY_ITEM_COMBAT
 	trait_type = /datum/type_trait/item_combat
 	publish_key = ITEM_COMBAT_KEY
 	base_type = /obj/item
-	var_names = list("force" = "force", "sharp" = "sharp", "edge" = "edge", "armor_penetration" = "armor_penetration", "melee_windup" = "windup", "melee_recovery" = "recovery", "melee_sweep" = "sweep", "can_cleave" = "can_cleave", "attackspeed" = "attack_speed", "reach" = "reach", "attack_verb" = "attack_verbs", "no_attack_log" = "no_attack_log", "no_random_knockdown" = "no_random_knockdown")
+	var_names = list("force" = "force", "sharp" = "sharp", "edge" = "edge", "armor_penetration" = "armor_penetration", "melee_windup" = "windup", "melee_recovery" = "recovery", "melee_sweep" = "sweep", "can_cleave" = "can_cleave", "attackspeed" = "attack_speed", "reach" = "reach", "attack_verb" = "attack_verbs", "no_attack_log" = "no_attack_log", "no_random_knockdown" = "no_random_knockdown", "injury_kind" = "injury_kind", "injury_kinds" = "injury_kinds")
 
 /// How `I` fights (its own values once one was set at run time). Read only.
 READS_AS(/proc/combat_of, ITEM_COMBAT_KEY)
@@ -103,3 +107,9 @@ READS_AS(/proc/combat_of, ITEM_COMBAT_KEY)
 
 /obj/item/proc/set_no_random_knockdown(value)
 	return set_trait(src, ENTRY_ITEM_COMBAT, "no_random_knockdown", value)
+
+/obj/item/proc/set_injury_kind(value)
+	return set_trait(src, ENTRY_ITEM_COMBAT, "injury_kind", value)
+
+/obj/item/proc/set_injury_kinds(alist/value)
+	return set_trait(src, ENTRY_ITEM_COMBAT, "injury_kinds", value)

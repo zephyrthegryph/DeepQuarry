@@ -182,9 +182,9 @@ CAPABILITIES(/mob/living/simple_mob/vox/armalis)
 	if(combat_of(O).force)
 		if(combat_of(O).force >= 25)
 			var/damage = combat_of(O).force
-			if (O.injury_kind == INJURY_PAIN)
+			if (combat_of(O).injury_kind == INJURY_PAIN)
 				damage = 0
-			injure(O.injury_kind, damage, null, O)
+			injure(combat_of(O).injury_kind, damage, null, O)
 			for(var/mob/M in viewers(src, null))
 				if ((M.client && !( M.blinded )))
 					M.show_message(span_danger("[src] has been attacked with the [O] by [user]. "))

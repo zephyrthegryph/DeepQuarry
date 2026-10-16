@@ -46,7 +46,7 @@ CAPABILITIES(/obj/item/projectile/energy/hook)
 				set_sharp(TRUE)
 				agony = 20
 			if(I_GRAB)
-				injury_kind = INJURY_PAIN
+				src.set_injury_kind(INJURY_PAIN)
 			if(I_DISARM)
 				if(prob(30))	// A chance for a successful hit to either knock someone down, or cause minor disorientation.
 					weaken = 1
@@ -55,7 +55,7 @@ CAPABILITIES(/obj/item/projectile/energy/hook)
 					eyeblur = 3
 			if(I_HELP)
 				silenced = 1
-				injury_kind = INJURY_PAIN
+				src.set_injury_kind(INJURY_PAIN)
 
 	..() // Does the regular launching stuff.
 

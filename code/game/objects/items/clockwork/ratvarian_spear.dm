@@ -6,10 +6,10 @@
 	icon_state = "ratvarian_spear"
 	item_state = "ratvarian_spear"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/clockwork_lefthand.dmi', slot_r_hand_str = 'icons/mob/items/clockwork_righthand.dmi')
-	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_HUGE
 
 CAPABILITIES(/obj/item/ratvarian_spear)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_thrown(force = 30))
 	configure(item_combat(force = 20, armor_penetration = 10, sharp = TRUE, edge = TRUE, attack_verbs = list("stabbed", "poked", "slashed")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))

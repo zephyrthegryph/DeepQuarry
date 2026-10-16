@@ -227,8 +227,8 @@ CAPABILITIES(/obj/item/pen/blade)
 	set_edge(TRUE)
 	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SABERON, 0.3)
-	injury_kind = INJURY_CUT
-	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
+	src.set_injury_kind(INJURY_CUT)
+	src.set_injury_kinds(alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3))
 	set_catchable(FALSE)
 
 	set_attack_verb(combat_of(src).attack_verbs | list("slashed", "cut", "shredded", "stabbed"))
@@ -245,8 +245,8 @@ CAPABILITIES(/obj/item/pen/blade)
 	set_sharp(combat_of_type(type).sharp)
 	set_edge(combat_of_type(type).edge)
 	set_w_class(initial(w_class))
-	injury_kind = initial(injury_kind)
-	injury_kinds = null
+	src.set_injury_kind(combat_of_type(type).injury_kind)
+	src.set_injury_kinds(null)
 	set_catchable(TRUE)
 
 /obj/item/pen/blade/blue

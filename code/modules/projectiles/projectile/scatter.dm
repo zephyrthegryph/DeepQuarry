@@ -45,7 +45,6 @@
 	name = "prismatic beam"
 	icon_state = "omnilaser"
 	damage = 10
-	injury_kind = INJURY_BURN
 
 	stutter = 2
 

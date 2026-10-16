@@ -148,11 +148,11 @@ CAPABILITIES(/obj/item/clothing/head/cakehat)
 	set_onfire(!onfire)
 	if (onfire)
 		set_force(3)
-		injury_kind = INJURY_BURN
+		src.set_injury_kind(INJURY_BURN)
 		set_icon_state("cake1")
 	else
 		set_force(null)
-		injury_kind = INJURY_BLUNT
+		src.set_injury_kind(INJURY_BLUNT)
 		set_icon_state("cake0")
 	return
 

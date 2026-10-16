@@ -2,13 +2,13 @@
 	name = "spore"
 	icon_state = "declone"
 	damage = 3
-	injury_kind = INJURY_BLUNT
 	pass_flags = PASSTABLE | PASSBLOB
 	fire_sound = SFX_EFFECTS_SLIME_SQUISH
 	var/splatter = FALSE			// Will this make a cloud of reagents?
 	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.
 
 CAPABILITIES(/obj/item/projectile/energy/blob)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(armor_penetration = 40))
 
 TYPE_TABLE_DECLARE(/obj/item/projectile/energy/blob, blob_projectile_chems, list(REAGENT_ID_MOLD))
@@ -41,7 +41,6 @@ CAPABILITIES(/obj/item/projectile/energy/blob/splattering)
 			reagents.add_reagent(reagent, reagent_vol)
 
 /obj/item/projectile/energy/blob/toxic
-	injury_kind = INJURY_TOXIN
 
 TYPE_TABLE(/obj/item/projectile/energy/blob/toxic, blob_projectile_chems, list(REAGENT_ID_AMATOXIN))
 
@@ -49,7 +48,6 @@ TYPE_TABLE(/obj/item/projectile/energy/blob/toxic, blob_projectile_chems, list(R
 	splatter = TRUE
 
 /obj/item/projectile/energy/blob/acid
-	injury_kind = INJURY_BURN
 
 TYPE_TABLE(/obj/item/projectile/energy/blob/acid, blob_projectile_chems, list(REAGENT_ID_SACID, REAGENT_ID_MOLD))
 
@@ -75,9 +73,15 @@ TYPE_TABLE(/obj/item/projectile/energy/blob/freezing, blob_projectile_chems, lis
 	name = "spike"
 	icon_state = "SpearFlight"
 	damage = 20
-	injury_kind = INJURY_CORROSIVE
 	penetrating = 3
 	fire_sound = SFX_EFFECTS_SLIME_SQUISH
 
 CAPABILITIES(/obj/item/projectile/bullet/thorn)
+	configure(item_combat(injury_kind = INJURY_CORROSIVE))
 	configure(item_combat(armor_penetration = 20))
+
+CAPABILITIES(/obj/item/projectile/energy/blob/toxic)
+	configure(item_combat(injury_kind = INJURY_TOXIN))
+
+CAPABILITIES(/obj/item/projectile/energy/blob/acid)
+	configure(item_combat(injury_kind = INJURY_BURN))

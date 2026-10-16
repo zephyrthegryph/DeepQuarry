@@ -63,7 +63,7 @@
 
 	// Armour on the struck part scales the secondary effects; the harm itself
 	// is armoured inside injure().
-	var/absorb = armor_against(P.injury_kind, def_zone, combat_of(P).armor_penetration)
+	var/absorb = armor_against(combat_of(P).injury_kind, def_zone, combat_of(P).armor_penetration)
 
 	//Stun Beams
 	if(P.taser_effect)
@@ -175,11 +175,11 @@
 	if(ai_brain)
 		ai_brain.react_to_attack(user)
 
-	var/blocked = armor_against(I.injury_kind, hit_zone, combat_of(I).armor_penetration)
+	var/blocked = armor_against(combat_of(I).injury_kind, hit_zone, combat_of(I).armor_penetration)
 
 	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone, stance)
 
-	if(injury_category(I.injury_kind) == INJURY_CATEGORY_PHYSICAL && prob(33)) // Added blood for whacking non-humans too
+	if(injury_category(combat_of(I).injury_kind) == INJURY_CATEGORY_PHYSICAL && prob(33)) // Added blood for whacking non-humans too
 		var/turf/simulated/location = get_turf(src)
 		if(istype(location)) location.add_blood_floor(src)
 

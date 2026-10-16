@@ -116,9 +116,9 @@ CAPABILITIES(/obj/item/oldtwohanded)
 	w_class = 4.0
 	force_wielded = 22 // Was 13, Buffed - RR
 	throw_speed = 3
-	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/oldtwohanded/spear)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 20))
 	configure(item_combat(force = 14, edge = 0, sharp = 1, attack_verbs = list("attacked", "poked", "jabbed", "torn", "gored")))

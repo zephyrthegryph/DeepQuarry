@@ -1,12 +1,12 @@
 /obj/item/material/harpoon
 	name = "harpoon"
-	injury_kind = INJURY_PIERCE
 	desc = "Tharr she blows!"
 	icon_state = "harpoon"
 	item_state = "harpoon"
 	force_divisor = 0.3 // 18 with hardness 60 (steel)
 
 CAPABILITIES(/obj/item/material/harpoon)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_combat(sharp = TRUE, edge = FALSE, attack_verbs = list("jabbed","stabbed","ripped")))
 
 /obj/item/material/knife/machete/hatchet
@@ -233,11 +233,11 @@ CAPABILITIES(/obj/item/material/whip)
 	item_state = "cleaving_saw"
 	active = 0
 	w_class = ITEMSIZE_LARGE
-	injury_kind = INJURY_CUT
 	force_divisor = 0.7 //42 When Wielded in line with a sword
 	thrown_force_divisor = 0.1 // 2 when thrown with weight 20 (steel) since frankly its too bulk to throw
 
 CAPABILITIES(/obj/item/material/butterfly/saw)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = 1, sharp = 1))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 

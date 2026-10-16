@@ -2,7 +2,6 @@
 	name = "bolt of change"
 	icon_state = "ice_1"
 	damage = 0
-	injury_kind = INJURY_BURN
 	nodamage = 1
 
 	combustion = FALSE
@@ -93,3 +92,6 @@
 		else
 			to_chat(M, span_warning("Your form morphs into that of \a [lowertext(randomize)]."))
 			return
+
+CAPABILITIES(/obj/item/projectile/change)
+	configure(item_combat(injury_kind = INJURY_BURN))

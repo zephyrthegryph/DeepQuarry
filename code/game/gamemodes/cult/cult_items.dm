@@ -3,9 +3,9 @@
 	desc = "An arcane weapon wielded by the followers of Nar-Sie."
 	icon_state = "cultblade"
 	w_class = ITEMSIZE_LARGE
-	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/melee/cultblade)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(examine_text(antag = "This sword is a powerful weapon, capable of severing limbs easily, if they are targeted.  Nonbelievers are unable to use this weapon."))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 30, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))

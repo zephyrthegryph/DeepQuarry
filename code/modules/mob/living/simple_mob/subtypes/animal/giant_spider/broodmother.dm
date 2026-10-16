@@ -65,12 +65,12 @@
 	name = "concentrated spidertoxin"
 	icon_state = "neurotoxin"
 	damage = 35
-	injury_kind = INJURY_CORROSIVE
 	agony = 15
 
 	combustion = FALSE
 
 CAPABILITIES(/obj/item/projectile/energy/spidertoxin)
+	configure(item_combat(injury_kind = INJURY_CORROSIVE))
 	configure(item_combat(armor_penetration = 40))
 
 /mob/living/simple_mob/animal/giant_spider/broodmother

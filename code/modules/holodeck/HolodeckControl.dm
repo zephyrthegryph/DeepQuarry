@@ -163,11 +163,11 @@
 	if (safety_disabled)
 		item_power_usage = 2500
 		for(var/obj/item/holo/esword/H in linkedholodeck())
-			H.injury_kind = H.active ? INJURY_CUT : INJURY_BLUNT
+			H.set_injury_kind(H.active ? INJURY_CUT : INJURY_BLUNT)
 	else
 		item_power_usage = initial(item_power_usage)
 		for(var/obj/item/holo/esword/H in linkedholodeck())
-			H.injury_kind = initial(H.injury_kind)
+			H.set_injury_kind(combat_of_type(H.type).injury_kind)
 
 	for(var/mob/living/simple_mob/animal/space/carp/holodeck/C in holographic_mobs)
 		C.set_safety(!safety_disabled)

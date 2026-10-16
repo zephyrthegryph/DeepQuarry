@@ -136,7 +136,7 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 
 	if(damage > 0)
 		var/datum/damage_packet/packet = damage_packet(Proj, Proj.firer, null, null, DAMAGE_PACKET_PROJECTILE, combat_of(Proj).armor_penetration, Proj.dir)
-		receive_split(packet, Proj.injury_kind, Proj.injury_kinds, damage * 0.2)
+		receive_split(packet, combat_of(Proj).injury_kind, combat_of(Proj).injury_kinds, damage * 0.2)
 
 /obj/structure/grille/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor

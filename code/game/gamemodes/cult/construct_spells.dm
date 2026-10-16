@@ -862,13 +862,13 @@ CAPABILITIES(/obj/item/projectile/beam/banishment)
 	icon_state = "invert"
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 5
-	injury_kind = INJURY_BLUNT
 
 	muzzle_type = /obj/effect/projectile/muzzle/tungsten
 	tracer_type = /obj/effect/projectile/tracer/tungsten
 	impact_type = /obj/effect/projectile/impact/tungsten
 
 CAPABILITIES(/obj/item/projectile/beam/force_beam)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
 	configure(item_combat(armor_penetration = 60))
 

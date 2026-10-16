@@ -5,11 +5,11 @@
 	icon_state = "sliver1"
 	randpixel = 8
 	w_class = ITEMSIZE_TINY
-	injury_kind = INJURY_PIERCE
 	/// The sliver's own geosample (a private copy of the sampled one; owned).
 	var/tmp/datum/geosample/geological_data_static
 
 CAPABILITIES(/obj/item/rocksliver)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_combat(sharp = TRUE))
 	owns_one(nameof(geological_data_static), /datum/geosample)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))

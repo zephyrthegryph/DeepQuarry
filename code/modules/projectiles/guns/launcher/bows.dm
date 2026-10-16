@@ -13,10 +13,10 @@
 	icon_state = "hardlight"
 	item_state = "bolt"
 	w_class = ITEMSIZE_NORMAL
-	injury_kind = INJURY_CUT
 	embed_chance = 0 // it fizzles!
 
 CAPABILITIES(/obj/item/arrow/energy)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_thrown(force = 10, catchable = FALSE))
 	configure(item_combat(sharp = TRUE, edge = TRUE))
 
@@ -185,7 +185,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow/hardlight)
 	name = "glamour arrow"
 	icon = 'icons/obj/guns/projectile/bows.dmi'
 	icon_state = "garrow"
-	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/arrow/standard/glamour)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(edge = TRUE))

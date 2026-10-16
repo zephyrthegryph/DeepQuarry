@@ -14,11 +14,11 @@
 	throw_speed = 3
 	throw_range = 5
 	material_total = 75
-	injury_kind = INJURY_PIERCE
 	tool_qualities = list(TOOL_SCREWDRIVER)
 	var/random_color = TRUE
 
 CAPABILITIES(/obj/item/tool/screwdriver)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_placement(center_x = 13, center_y = 7))
 	configure(item_tooling(speed = 1))
 	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))

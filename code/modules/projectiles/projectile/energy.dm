@@ -2,7 +2,6 @@
 	name = "energy"
 	icon_state = "spark"
 	damage = 0
-	injury_kind = INJURY_BURN
 
 	impact_effect_type = /obj/effect/temp_visual/impact_effect
 	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
@@ -12,6 +11,7 @@
 	var/flash_strength = 10
 
 CAPABILITIES(/obj/item/projectile/energy)
+	configure(item_combat(injury_kind = INJURY_BURN))
 	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 //releases a burst of light on impact or after travelling a distance
@@ -106,7 +106,6 @@ CAPABILITIES(/obj/item/projectile/energy/electrode)
 	icon_state = "declone"
 	fire_sound = SFX_WEAPONS_PULSE3
 	nodamage = 1
-	injury_kind = INJURY_CELLULAR
 	irradiate = 40
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 
@@ -114,13 +113,13 @@ CAPABILITIES(/obj/item/projectile/energy/electrode)
 	hud_state = "plasma_pistol"
 
 CAPABILITIES(/obj/item/projectile/energy/declone)
+	configure(item_combat(injury_kind = INJURY_CELLULAR))
 	configure(light_glow(range = 2, power = 0.5, color = "#33CC00"))
 
 /obj/item/projectile/energy/excavate
 	name = "kinetic blast"
 	icon_state = "kinetic_blast"
 	fire_sound = SFX_WEAPONS_PULSE3
-	injury_kind = INJURY_BLUNT
 	damage = 30
 	excavation_amount = 200
 
@@ -129,6 +128,7 @@ CAPABILITIES(/obj/item/projectile/energy/declone)
 	hud_state = "plasma_blast"
 
 CAPABILITIES(/obj/item/projectile/energy/excavate)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(armor_penetration = 60))
 
 /obj/item/projectile/energy/excavate/weak
@@ -139,7 +139,6 @@ CAPABILITIES(/obj/item/projectile/energy/excavate)
 	name = "dart"
 	icon_state = "toxin"
 	damage = 5
-	injury_kind = INJURY_TOXIN
 	agony = 120
 	hud_state = "pistol_tranq"
 
@@ -149,7 +148,6 @@ CAPABILITIES(/obj/item/projectile/energy/excavate)
 	name = "bolt"
 	icon_state = "cbbolt"
 	damage = 10
-	injury_kind = INJURY_TOXIN
 	agony = 40
 	stutter = 10
 	hud_state = "electrothermal"
@@ -193,7 +191,6 @@ CAPABILITIES(/obj/item/projectile/energy/acid)
 	name = "neurotoxic spit"
 	icon_state = "neurotoxin"
 	damage = 0
-	injury_kind = INJURY_CORROSIVE
 	agony = 60 // lowered agony damage
 	hitsound_wall = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL
 	hud_state = "electrothermal"
@@ -201,6 +198,7 @@ CAPABILITIES(/obj/item/projectile/energy/acid)
 	combustion = FALSE
 
 CAPABILITIES(/obj/item/projectile/energy/neurotoxin)
+	configure(item_combat(injury_kind = INJURY_CORROSIVE))
 	configure(item_combat(armor_penetration = 25))
 	configure(item_sounds(hit = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL))
 
@@ -219,7 +217,6 @@ CAPABILITIES(/obj/item/projectile/energy/neurotoxin/toxic)
 	icon_state = "energy"
 	fire_sound = SFX_EFFECTS_STEALTHOFF
 	damage = 20
-	injury_kind = INJURY_TOXIN
 	irradiate = 20
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 	hud_state = "plasma_rifle"
@@ -227,6 +224,7 @@ CAPABILITIES(/obj/item/projectile/energy/neurotoxin/toxic)
 	combustion = FALSE
 
 CAPABILITIES(/obj/item/projectile/energy/phoron)
+	configure(item_combat(injury_kind = INJURY_TOXIN))
 	configure(light_glow(range = 2, power = 0.5, color = "#33CC00"))
 
 /obj/item/projectile/energy/plasmastun
@@ -414,3 +412,9 @@ CAPABILITIES(/obj/item/projectile/energy/plasma/vepr)
 	damage = 15
 	mob_bonus_damage = 60
 	hud_state = "laser_heat"
+
+CAPABILITIES(/obj/item/projectile/energy/dart)
+	configure(item_combat(injury_kind = INJURY_TOXIN))
+
+CAPABILITIES(/obj/item/projectile/energy/bolt)
+	configure(item_combat(injury_kind = INJURY_TOXIN))

@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/drill)
 	return 1
 
 /obj/item/mecha_parts/mecha_equipment/tool/drill/proc/drill_mob(mob/living/target, mob/user, stance = I_HURT)
-	add_attack_logs(user, target, "attacked", "[name]", "(STANCE: [uppertext(stance)]) (KIND: [injury_kind_name(injury_kind)])")
+	add_attack_logs(user, target, "attacked", "[name]", "(STANCE: [uppertext(stance)]) (KIND: [injury_kind_name(combat_of(src).injury_kind)])")
 	var/drill_force = combat_of(src).force	//Couldn't manage it otherwise.
 	if(ishuman(target))
 		target.injure(INJURY_PIERCE, drill_force, null, src)

@@ -70,11 +70,11 @@ CAPABILITIES(/obj/item/material/butterfly)
 	icon_state = "knife"
 	desc = "A general purpose " + JOB_CHEF + "'s Knife made by SpaceCook Incorporated. Guaranteed to stay sharp for years to come."
 	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave.
-	injury_kind = INJURY_CUT
 	force_divisor = 0.15 // 9 when wielded with hardness 60 (steel)
 	MATERIAL_BULK(MAT_STEEL, 12000)
 
 CAPABILITIES(/obj/item/material/knife)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_KNIFE))
@@ -132,10 +132,10 @@ CAPABILITIES(/obj/item/material/knife/tacknife/combatknife)
 	name = "table knife"
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "knife_table"
-	injury_kind = INJURY_BLUNT
 	force_divisor = 0.1
 
 CAPABILITIES(/obj/item/material/knife/table)
+	configure(item_combat(injury_kind = INJURY_BLUNT))
 	configure(item_combat(sharp = FALSE))
 
 /obj/item/material/knife/table/plastic

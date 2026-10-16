@@ -66,10 +66,10 @@ CAPABILITIES(/obj/item/melee/umbrella/random)
 	desc = "The red crystal blade's polished surface glints in the light, giving off a faint glow."
 	icon_state = "soulblade"
 	w_class = ITEMSIZE_NORMAL
-	injury_kind = INJURY_CUT
 	var/list/voice_mobs //The curse of the sword is that it has someone trapped inside.
 
 CAPABILITIES(/obj/item/melee/cursedblade)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(object_communication(speaks = 1))
 	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
 	configure(item_thrown(force = 10))
@@ -110,9 +110,9 @@ CAPABILITIES(/obj/item/melee/cursedblade)
 		slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi',
 		)
 	w_class = ITEMSIZE_NORMAL
-	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/melee/rapier)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 15, sharp = TRUE, edge = FALSE, attack_verbs = list("stabbed", "lunged at", "dextrously struck", "sliced", "lacerated", "impaled", "diced", "charioted")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))

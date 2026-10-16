@@ -53,13 +53,12 @@ CAPABILITIES(/obj/item/projectile/bullet/magnetic/flechette/small)
 	weaken = 0
 	stun = 0
 	damage = 30
-	injury_kind = INJURY_BLUNT
-	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 	embed_chance = 0
 	penetrating = 1
 	hud_state = "alloy_spike"
 
 CAPABILITIES(/obj/item/projectile/bullet/magnetic/heated)
+	configure(item_combat(injury_kind = INJURY_BLUNT, injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)))
 	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/bullet/magnetic/heated/weak

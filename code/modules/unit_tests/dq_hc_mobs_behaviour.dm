@@ -129,7 +129,7 @@
 	TEST_ASSERT(dq_get_cloaked(spider), "the lurker starts cloaked")
 	var/obj/item/projectile/P = allocate(/obj/item/projectile, test_floor())
 	P.damage = 5
-	P.injury_kind = INJURY_BLUNT
+	P.set_injury_kind(INJURY_BLUNT)
 	rel_set(P, nameof(P.starting), test_floor())
 	spider.bullet_act(P, BP_TORSO)
 	TEST_ASSERT(!dq_get_cloaked(spider), "a hit breaks the cloak")

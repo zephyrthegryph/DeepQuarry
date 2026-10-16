@@ -61,8 +61,8 @@
 	set_armor_penetration(active_armourpen)
 	set_sharp(TRUE)
 	set_edge(TRUE)
-	injury_kind = active_injury_kind
-	injury_kinds = active_injury_kinds
+	src.set_injury_kind(active_injury_kind)
+	src.set_injury_kinds(active_injury_kinds)
 	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SABERON)
 	set_glow(src, GLOW(lrange, lpower, lcolor))
@@ -79,8 +79,8 @@
 	set_armor_penetration(combat_of_type(type).armor_penetration)
 	set_sharp(combat_of_type(type).sharp)
 	set_edge(combat_of_type(type).edge)
-	injury_kind = initial(injury_kind)
-	injury_kinds = null
+	src.set_injury_kind(combat_of_type(type).injury_kind)
+	src.set_injury_kinds(null)
 	set_w_class(initial(w_class))
 	set_glow(src, GLOW(0, 0, null))
 
@@ -226,10 +226,10 @@ CAPABILITIES(/obj/item/melee/energy)
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
-	injury_kind = INJURY_CUT
 	active_injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
 
 CAPABILITIES(/obj/item/melee/energy/axe)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 20, armor_penetration = 20, attack_verbs = list("attacked", "chopped", "cleaved", "torn", "cut"), sharp = TRUE, edge = TRUE, can_cleave = TRUE))
 
@@ -349,7 +349,6 @@ CAPABILITIES(/obj/item/melee/energy/sword)
 	active_armourpen = 80
 	active_throwforce = 3
 	active_embed_chance = 0
-	injury_kind = INJURY_CUT
 	flags = NOBLOODY
 	lrange = 2
 	lpower = 2
@@ -357,6 +356,7 @@ CAPABILITIES(/obj/item/melee/energy/sword)
 	projectile_parry_chance = 30	// It's not specifically designed for cutting and slashing, but it can still, maybe, save your life.
 
 CAPABILITIES(/obj/item/melee/energy/sword/ionic_rapier)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(sharp = TRUE, edge = TRUE, armor_penetration = 0))
 
 /obj/item/melee/energy/sword/ionic_rapier/afterattack(atom/movable/AM, mob/living/user, proximity)
@@ -417,7 +417,6 @@ CAPABILITIES(/obj/item/melee/energy/sword/charge/loaded)
 	desc = "A concentrated beam of energy in the shape of a blade. Very stylish... and lethal."
 	icon_state = "blade"
 	item_state = "blade"
-	injury_kind = INJURY_CUT
 	anchored = TRUE    // Never spawned outside of inventory, should be fine.
 	throw_speed = 1
 	throw_range = 1
@@ -434,6 +433,7 @@ CAPABILITIES(/obj/item/melee/energy/sword/charge/loaded)
 	set_glow(src, GLOW(lrange, lpower, lcolor))
 
 CAPABILITIES(/obj/item/melee/energy/blade)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	configure(item_thrown(force = 1))
 	configure(item_combat(force = 40, armor_penetration = 100, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
@@ -497,7 +497,6 @@ CAPABILITIES(/obj/item/melee/energy/blade)
 	name = "energy spear"
 	desc = "Concentrated energy forming a sharp tip at the end of a long rod."
 	icon_state = "espear"
-	injury_kind = INJURY_CUT
 	throw_speed = 7
 	throw_range = 11
 	w_class = ITEMSIZE_LARGE
@@ -510,6 +509,7 @@ CAPABILITIES(/obj/item/melee/energy/blade)
 	lcolor = "#800080"
 
 CAPABILITIES(/obj/item/melee/energy/spear)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_thrown(force = 10))
 	configure(item_combat(armor_penetration = 0, sharp = TRUE, edge = TRUE, force = 5, reach = 2))
 

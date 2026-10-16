@@ -172,9 +172,9 @@
 	icon_state = "joanaria"
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "joanariamob"
-	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/sword/fluff/joanaria)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(force = 15, sharp = TRUE, edge = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 
@@ -393,9 +393,9 @@ CAPABILITIES(/obj/item/radio/headset/fluff/zodiacshadow)
 
 	flags = NOBLOODY
 	w_class = ITEMSIZE_NORMAL
-	injury_kind = INJURY_PAIN
 
 CAPABILITIES(/obj/item/melee/fluff/holochain)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 3))
 	configure(item_combat(force = 10, attack_verbs = list("flogged", "whipped", "lashed", "disciplined", "chastised", "flayed")))
@@ -1143,9 +1143,9 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 	w_class = ITEMSIZE_SMALL
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi', slot_back_str = 'icons/vore/custom_items_vr.dmi', slot_wear_suit_str = 'icons/vore/custom_items_vr.dmi')
 	var/active_state = "wolfgirlsword"
-	injury_kind = INJURY_PAIN
 
 CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
 	configure(item_thrown(force = 1))
 	configure(item_combat(force = 1))
@@ -1166,7 +1166,7 @@ TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOL
 	set_sharp(TRUE)
 	set_edge(TRUE)
 	set_icon_state("[active_state]_sharp")
-	injury_kind = INJURY_CUT
+	src.set_injury_kind(INJURY_CUT)
 
 /obj/item/melee/fluffstuff/wolfgirlsword/deactivate(mob/living/user)
 	if(active)
@@ -1174,7 +1174,7 @@ TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOL
 	..()
 	set_attack_verb(list("bapped", "thwapped", "bonked", "whacked"))
 	set_icon_state(initial(icon_state))
-	injury_kind = initial(injury_kind)
+	src.set_injury_kind(combat_of_type(type).injury_kind)
 
 //SilencedMP5A5 - Serdykov Antoz
 /obj/item/modkit_conversion/hasd
@@ -1499,9 +1499,9 @@ CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
 	icon_state = "revclaymore"
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "revclaymoremob"
-	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/sword/fluff/revolver)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(force = 1, sharp = TRUE, edge = TRUE))
 
 //YeCrowbarMan - Lemon Yellow

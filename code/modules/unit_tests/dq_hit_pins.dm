@@ -112,8 +112,8 @@
 			target.ex_act(3)
 		if("projectile")
 			var/obj/item/projectile/P = allocate(/obj/item/projectile)
-			P.injury_kind = INJURY_PIERCE
-			P.injury_kinds = null
+			P.set_injury_kind(INJURY_PIERCE)
+			P.set_injury_kinds(null)
 			P.damage = 20
 			P.nodamage = FALSE
 			P.emp_on_hit = FALSE

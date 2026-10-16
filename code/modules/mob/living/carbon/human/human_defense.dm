@@ -37,12 +37,12 @@ emp_act
 
 	//Shrapnel
 	if(P.can_embed())
-		var/armor = injury_armor(P.injury_kind, organ)
+		var/armor = injury_armor(combat_of(P).injury_kind, organ)
 		if(!prob(armor/2))		//Even if the armor doesn't stop the bullet from hurting you, it might stop it from embedding.
 			var/hit_embed_chance = P.embed_chance + (P.damage - armor)	//More damage equals more chance to embed
 
 			// Injury resistance makes bullets less likely to embed.
-			hit_embed_chance *= incoming_injury_factor(injury_category(P.injury_kind))
+			hit_embed_chance *= incoming_injury_factor(injury_category(combat_of(P).injury_kind))
 
 			if(prob(max(hit_embed_chance, 0)))
 				var/obj/item/material/shard/shrapnel/SP = new()
@@ -222,7 +222,7 @@ emp_act
 
 	visible_message(span_danger("[src] has been [LAZYLEN(combat_of(I).attack_verbs) ? pick(combat_of(I).attack_verbs) : "attacked"] in the [affecting.name] with [I.name] by [user]!"))
 
-	var/blocked = armor_against(I.injury_kind, hit_zone, combat_of(I).armor_penetration)
+	var/blocked = armor_against(combat_of(I).injury_kind, hit_zone, combat_of(I).armor_penetration)
 
 	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone, stance)
 
@@ -255,7 +255,7 @@ emp_act
 		forcesay(GLOB.hit_appends)	//forcesay checks stat already
 
 	if(prob(25 + (effective_force * 2)))
-		if(!(I.obj_damage_type() == BRUTE || I.injury_kind == INJURY_PAIN))
+		if(!(I.obj_damage_type() == BRUTE || combat_of(I).injury_kind == INJURY_PAIN))
 			return
 
 		if(!(I.flags & NOBLOODY))
@@ -386,7 +386,7 @@ emp_act
 		if(ismob(thrower))
 			add_attack_logs(thrower,src,"Hit with thrown [thrown_object.name]")
 
-		var/armor = armor_against(thrown_object.injury_kind, affecting, combat_of(thrown_object).armor_penetration)
+		var/armor = armor_against(combat_of(thrown_object).injury_kind, affecting, combat_of(thrown_object).armor_penetration)
 		if(armor < 100)
 			receive_thrown(thrown_object, throwingdatum, zone = zone)
 

@@ -16,7 +16,6 @@
 	desc = "A mysterious blade that emanates terrifying power"
 	icon_state = "cultblade"
 	w_class = ITEMSIZE_LARGE
-	injury_kind = INJURY_CUT
 	embed_chance = 0
 	var/stored_blood = 0 //How much energy we have!
 	COOLDOWN_DECLARE(special_cooldown) //When our powers may next be used. Can be admin-set to a high number to keep the mode from being changed.
@@ -30,6 +29,7 @@
 /obj/item/melee/artifact_blade/var/tmp/mob/living/carbon/human/last_touched
 
 CAPABILITIES(/obj/item/melee/artifact_blade)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_tooling(speed = 5))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 30, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))

@@ -448,7 +448,7 @@ CAPABILITIES(/obj/item/flashlight/flare)
 /obj/item/flashlight/flare/proc/turn_off()
 	set_on(0)
 	src.set_force(combat_of_type(src.type).force)
-	src.injury_kind = initial(src.injury_kind)
+	src.set_injury_kind(combat_of_type(type).injury_kind)
 	update_brightness()
 
 /obj/item/flashlight/flare/switch_light(mob/user)
@@ -463,13 +463,13 @@ CAPABILITIES(/obj/item/flashlight/flare)
 	if(. == CAN_USE)
 		act_message(user, null, MSG_SELF(span_notice("You pull the cord on the flare, activating it!")), MSG_OTHERS(span_notice("%U% activates the flare.")))
 		set_force(on_damage)
-		injury_kind = INJURY_BURN
+		src.set_injury_kind(INJURY_BURN)
 
 /obj/item/flashlight/flare/proc/ignite() //Used for flare launchers.
 	set_on(!on)
 	update_brightness()
 	set_force(on_damage)
-	injury_kind = INJURY_BURN
+	src.set_injury_kind(INJURY_BURN)
 	return 1
 
 /*

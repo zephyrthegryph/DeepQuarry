@@ -117,11 +117,11 @@ CAPABILITIES(/obj/item/melee/changeling)
 	name = "arm blade"
 	desc = "A grotesque blade made out of bone and flesh that cleaves through people as a hot knife through butter."
 	icon_state = "arm_blade"
-	injury_kind = INJURY_CUT
 	defend_chance = 60
 	projectile_parry_chance = 25
 
 CAPABILITIES(/obj/item/melee/changeling/arm_blade)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_tooling(pry = 1))
 	configure(item_combat(force = 40, armor_penetration = 15, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
 
@@ -138,11 +138,11 @@ CAPABILITIES(/obj/item/melee/changeling/arm_blade/greater)
 	name = "hand claw"
 	desc = "A grotesque claw made out of bone and flesh that cleaves through people as a hot knife through butter."
 	icon_state = "ling_claw"
-	injury_kind = INJURY_CUT
 	defend_chance = 50
 	projectile_parry_chance = 15
 
 CAPABILITIES(/obj/item/melee/changeling/claw)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(force = 15, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
 
 /obj/item/melee/changeling/claw/greater

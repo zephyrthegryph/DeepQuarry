@@ -267,7 +267,6 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 	can_dismantle = FALSE
 
 /obj/item/holo
-	injury_kind = INJURY_PAIN
 
 /obj/item/holo/esword
 	name = "holographic energy sword"
@@ -547,4 +546,5 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holodeck)
 	return currentarea
 
 CAPABILITIES(/obj/item/holo)
+	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(item_combat(no_attack_log = 1, no_random_knockdown = TRUE))

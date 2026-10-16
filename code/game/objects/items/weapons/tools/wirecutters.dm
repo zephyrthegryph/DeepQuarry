@@ -11,11 +11,11 @@
 	throw_range = 9
 	w_class = ITEMSIZE_SMALL
 	material_total = 80
-	injury_kind = INJURY_CUT
 	tool_qualities = list(TOOL_WIRECUTTER)
 	var/random_color = TRUE
 
 CAPABILITIES(/obj/item/tool/wirecutters)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_placement(center_x = 18, center_y = 10))
 	configure(item_tooling(speed = 1))
 	configure(item_worn(slots = SLOT_BELT))

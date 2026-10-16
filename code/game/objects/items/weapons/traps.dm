@@ -173,7 +173,6 @@ CAPABILITIES(/obj/item/beartrap)
 	force_divisor = 0.20
 	thrown_force_divisor = 0.25
 
-	injury_kind = INJURY_PIERCE
 
 /obj/item/material/barbedwire/set_material(new_material)
 	..()
@@ -192,6 +191,7 @@ MSG_DEF(barbedwire/collecting, "You begin collecting %T%!", "%U% starts to colle
 MSG_DEF(barbedwire/collected, "You have collected %T%!", "%U% has collected %T%.")
 
 CAPABILITIES(/obj/item/material/barbedwire)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_combat(sharp = TRUE))
 	op("deploy", in_hand(), label("Deploy trap"), needs(req(PROC_REF(can_deploy), silent = TRUE)),
 		begins(MSG(barbedwire/deploying), blind = "You hear the rustling of wire."), wait(6 SECONDS),
@@ -337,7 +337,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 		target_zone = pick(BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG)
 
 	//armour
-	var/blocked = L.armor_against(injury_kind, target_zone)
+	var/blocked = L.armor_against(combat_of(src).injury_kind, target_zone)
 
 	if(blocked >= 100)
 		return
@@ -349,7 +349,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 
 	L.apply_body_effect(/datum/body_effect/entangled, 3 SECONDS)
 
-	if(!L.injure(injury_kind, combat_of(src).force * (issilicon(L) ? 0.25 : 1), target_zone, src, flags = INJURE_ARMORED))
+	if(!L.injure(combat_of(src).injury_kind, combat_of(src).force * (issilicon(L) ? 0.25 : 1), target_zone, src, flags = INJURE_ARMORED))
 		return
 
 	play_sfx(src, SFX_EFFECTS_GLASS_STEP) // not sure how to handle metal shards with sounds

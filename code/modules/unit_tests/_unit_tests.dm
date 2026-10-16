@@ -322,6 +322,7 @@
 #include "dq_stock_tests.dm"
 #include "dq_breakpoint_tests.dm"
 #include "dq_damage_packet_tests.dm"
+#include "dq_item_injury_trait_tests.dm"
 #include "dq_explosion_batch_tests.dm"
 #include "dq_materialize_batch_tests.dm"
 #include "dq_map_load_job_tests.dm"

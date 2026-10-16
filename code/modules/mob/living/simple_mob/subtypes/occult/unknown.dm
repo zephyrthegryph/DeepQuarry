@@ -44,13 +44,13 @@
 	icon_state = "glitch"
 	damage = 50
 	speed = 6
-	injury_kind = INJURY_ELECTRIC
 	agony = 15
 
 	fire_sound = SFX_EFFECTS_UNCLOAK
 	combustion = TRUE
 
 CAPABILITIES(/obj/item/projectile/energy/slow_orb)
+	configure(item_combat(injury_kind = INJURY_ELECTRIC))
 	configure(item_combat(armor_penetration = 40))
 
 /mob/living/simple_mob/glitch_boss
@@ -299,13 +299,13 @@ CAPABILITIES(/obj/item/projectile/energy/slow_orb)
 	icon_state = "glitch"
 	damage = 0
 	speed = 6
-	injury_kind = INJURY_ELECTRIC
 	agony = 0
 
 	fire_sound = SFX_EFFECTS_UNCLOAK
 	combustion = TRUE
 
 CAPABILITIES(/obj/item/projectile/energy/slow_orb_fake)
+	configure(item_combat(injury_kind = INJURY_ELECTRIC))
 	configure(item_combat(armor_penetration = 0))
 
 #undef GA_ADS

@@ -138,7 +138,7 @@
 		return 0
 	if(isnull(armor_pen))
 		armor_pen = combat_of(weapon).armor_penetration
-	return injure_split(weapon.injury_kind, weapon.injury_kinds, amount, zone, weapon, armor_pen, flags | INJURE_ARMORED)
+	return injure_split(combat_of(weapon).injury_kind, combat_of(weapon).injury_kinds, amount, zone, weapon, armor_pen, flags | INJURE_ARMORED)
 
 /// `amount` as `kind`, or shared out over `kinds` (INJURY_* -> share) for a
 /// mixed hit. Returns the amount applied.
@@ -326,10 +326,8 @@
 /obj/item
 	/// INJURY_* this item inflicts as a weapon (or projectile, or thrown).
 	/// Its object damage (obj_integrity) is derived from it (injury_kind_obj_damage_type()).
-	var/injury_kind = INJURY_BLUNT
 	/// Mixed hits: INJURY_* -> share of the damage, e.g. a searing blade
 	/// alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3). Null = all `injury_kind`.
-	var/alist/injury_kinds
 
 /// The obj_integrity damage type (BRUTE / BURN) an injury kind does to
 /// objects and structures, or null when it can't harm them (pain, toxins,
@@ -345,4 +343,4 @@
 
 /// The obj_integrity damage type this item does to objects (see injury_kind_obj_damage_type()).
 /obj/item/proc/obj_damage_type()
-	return injury_kind_obj_damage_type(injury_kind)
+	return injury_kind_obj_damage_type(combat_of(src).injury_kind)

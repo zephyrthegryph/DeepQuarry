@@ -596,7 +596,7 @@ CAPABILITIES(/obj/item/borg/upgrade/modkit)
 			var/kill_modifier = 1
 			if(K.pressure_decrease_active)
 				kill_modifier *= K.pressure_decrease
-			L.receive_split(damage_packet(K, K.firer, null, K.def_zone, DAMAGE_PACKET_PROJECTILE, combat_of(K).armor_penetration), K.injury_kind, K.injury_kinds, bounties_reaped[L.type] * kill_modifier)
+			L.receive_split(damage_packet(K, K.firer, null, K.def_zone, DAMAGE_PACKET_PROJECTILE, combat_of(K).armor_penetration), combat_of(K).injury_kind, combat_of(K).injury_kinds, bounties_reaped[L.type] * kill_modifier)
 /obj/item/borg/upgrade/modkit/bounty/proc/get_kill(mob/living/L)
 	var/bonus_mod = 1
 	if(ismegafauna(L)) //megafauna reward

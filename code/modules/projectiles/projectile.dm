@@ -701,7 +701,7 @@ CAPABILITIES(/obj/item/projectile)
 		return 0
 	if(emp_on_hit)
 		target.react_to_entry(DAMAGE_ENTRY_PROJECTILE, 0, src, firer)
-		target.receive_ionic(damage * (100 - target.armor_against(injury_kind, def_zone, combat_of(src).armor_penetration)) / 100)
+		target.receive_ionic(damage * (100 - target.armor_against(combat_of(src).injury_kind, def_zone, combat_of(src).armor_penetration)) / 100)
 		return 0
 	return target.receive_projectile(src, def_zone)
 
@@ -724,7 +724,7 @@ CAPABILITIES(/obj/item/projectile)
 //Checks if the projectile is eligible for embedding. Not that it necessarily will.
 /obj/item/projectile/proc/can_embed()
 	//embed must be enabled and the round must do physical harm
-	if(embed_chance == 0 || injury_category(injury_kind) != INJURY_CATEGORY_PHYSICAL)
+	if(embed_chance == 0 || injury_category(combat_of(src).injury_kind) != INJURY_CATEGORY_PHYSICAL)
 		return 0
 	return 1
 

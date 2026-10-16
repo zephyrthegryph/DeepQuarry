@@ -187,7 +187,6 @@ CAPABILITIES(/obj/item/kinetic_crusher/glaive)
 	item_state = "c-machete"
 	w_class = ITEMSIZE_NORMAL
 	requires_wield = FALSE
-	injury_kind = INJURY_CUT
 	// yeah yeah buff but polaris mobs are meatwalls.
 	detonation_damage = 36 // 60
 	backstab_bonus = 80 // 140
@@ -195,6 +194,7 @@ CAPABILITIES(/obj/item/kinetic_crusher/glaive)
 	update_item_state = FALSE
 
 CAPABILITIES(/obj/item/kinetic_crusher/machete)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(attack_verbs = list("cleaved", "chopped", "pulped", "stabbed", "skewered"), can_cleave = TRUE, sharp = TRUE, edge = TRUE, force = 24))
 

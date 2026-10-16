@@ -136,7 +136,7 @@
 	var/datum/damage_packet/packet = damage_packet(P, P.firer, null, def_zone, DAMAGE_PACKET_PROJECTILE, combat_of(P).armor_penetration, P.dir, null, DAMAGE_ENTRY_PROJECTILE)
 	if(combat_of(P).edge)
 		packet.flags |= DAMAGE_PACKET_EDGE
-	return receive_split(packet, P.injury_kind, P.injury_kinds, P.damage * multiplier)
+	return receive_split(packet, combat_of(P).injury_kind, combat_of(P).injury_kinds, P.damage * multiplier)
 
 /// Weapon hit. `amount` and `injury_kind` let a type react to the tool (a
 /// welder burns a barricade; a blast door shrugs off most of a blow).
@@ -151,7 +151,7 @@
 		packet.flags |= DAMAGE_PACKET_EDGE
 	if(injury_kind)
 		return receive_split(packet, injury_kind, null, amount)
-	return receive_split(packet, W.injury_kind, W.injury_kinds, amount)
+	return receive_split(packet, combat_of(W).injury_kind, combat_of(W).injury_kinds, amount)
 
 /// Force of a thrown atom on impact: the one formula (damage.md §3).
 /// Items hit with their throwforce, mobs with their size, other objects with their weight class.
@@ -188,7 +188,7 @@
 	packet.penetration = combat_of(I).armor_penetration
 	if(combat_of(I).edge)
 		packet.flags |= DAMAGE_PACKET_EDGE
-	return receive_split(packet, I.injury_kind, I.injury_kinds, amount)
+	return receive_split(packet, combat_of(I).injury_kind, combat_of(I).injury_kinds, amount)
 
 /// The kind of wound a generic (usually animal) attack from `user` leaves:
 /// simple mobs declare their melee kind; anything else is a blunt blow.

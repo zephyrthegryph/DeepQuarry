@@ -372,7 +372,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/cat_cyber_horror)
 	name = "energy missle"
 	icon_state = "force_missile"
 	damage = 12
-	injury_kind = INJURY_BURN
 
 
 // === merged from cyber_horror_chomp.dm during hard-fork de-suffix (verified no override-order change) ===

@@ -69,7 +69,7 @@ CAPABILITIES(/obj/item/flame/match)
 /obj/item/flame/match/proc/light(mob/user)
 	play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_MATCHSTICK_LIT)
 	set_lit(1)
-	injury_kind = INJURY_BURN
+	src.set_injury_kind(INJURY_BURN)
 	set_icon_state("match_lit")
 	name = "burning match"
 	desc = "A match. This one is presently on fire."
@@ -77,7 +77,7 @@ CAPABILITIES(/obj/item/flame/match)
 /obj/item/flame/match/proc/burn_out()
 	set_lit(0)
 	burnt = 1
-	injury_kind = INJURY_BLUNT
+	src.set_injury_kind(INJURY_BLUNT)
 	set_icon_state("match_burnt")
 	set_item_state("cigoff")
 	name = "burnt match"
@@ -215,7 +215,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 	if(!src.lit)
 		set_lit(1)
 		play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_LIGHT)
-		injury_kind = INJURY_BURN
+		src.set_injury_kind(INJURY_BURN)
 		if(ignite_smoke_reagents(src))
 			return
 		var/turf/T = get_turf(src)

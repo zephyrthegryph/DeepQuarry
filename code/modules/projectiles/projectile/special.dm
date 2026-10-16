@@ -3,7 +3,6 @@
 	icon_state = "ion"
 	fire_sound = SFX_WEAPONS_LASER
 	damage = 0
-	injury_kind = INJURY_BURN
 	nodamage = 1
 	hud_state = "plasma_blast"
 	hud_state_empty = "battery_empty"
@@ -18,6 +17,7 @@
 	var/sev4_range = 1
 
 CAPABILITIES(/obj/item/projectile/ion)
+	configure(item_combat(injury_kind = INJURY_BURN))
 	configure(light_glow(range = 2, power = 0.5, color = "#55AAFF"))
 	configure(item_sounds(hit = SFX_WEAPONS_IONRIFLE))
 
@@ -41,10 +41,10 @@ CAPABILITIES(/obj/item/projectile/ion)
 	name ="explosive bolt"
 	icon_state= "bolter"
 	damage = 50
-	injury_kind = INJURY_CUT
 	hud_state = "rocket_fire"
 
 CAPABILITIES(/obj/item/projectile/bullet/gyro)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(sharp = TRUE, edge = TRUE))
 
 /obj/item/projectile/bullet/gyro/on_hit(atom/target, blocked = 0)
@@ -56,7 +56,6 @@ CAPABILITIES(/obj/item/projectile/bullet/gyro)
 	icon_state = "ice_2"
 	fire_sound = SFX_WEAPONS_PULSE3
 	damage = 0
-	injury_kind = INJURY_BURN
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	nodamage = 1
 	var/target_temperature = 50
@@ -66,6 +65,7 @@ CAPABILITIES(/obj/item/projectile/bullet/gyro)
 	combustion = FALSE
 
 CAPABILITIES(/obj/item/projectile/temp)
+	configure(item_combat(injury_kind = INJURY_BURN))
 	configure(light_glow(range = 2, power = 0.5, color = "#55AAFF"))
 
 /obj/item/projectile/temp/on_hit(atom/target, blocked = FALSE)
@@ -138,7 +138,6 @@ CAPABILITIES(/obj/item/projectile/temp)
 	icon_state = "energy"
 	fire_sound = SFX_EFFECTS_STEALTHOFF
 	damage = 0
-	injury_kind = INJURY_TOXIN
 	nodamage = 1
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 	var/lasermod = 0
@@ -146,6 +145,7 @@ CAPABILITIES(/obj/item/projectile/temp)
 	hud_state = "electrothermal"
 
 CAPABILITIES(/obj/item/projectile/energy/floramut)
+	configure(item_combat(injury_kind = INJURY_TOXIN))
 	configure(light_glow(range = 2, power = 0.5, color = "#33CC00"))
 
 /obj/item/projectile/energy/floramut/on_hit(atom/target, blocked = 0)
@@ -179,7 +179,6 @@ CAPABILITIES(/obj/item/projectile/energy/floramut)
 	icon_state = "energy2"
 	fire_sound = SFX_EFFECTS_STEALTHOFF
 	damage = 0
-	injury_kind = INJURY_TOXIN
 	nodamage = 1
 	var/tmp/datum/decl/plantgene/gene_static
 	hud_state = "electrothermal"
@@ -189,13 +188,13 @@ CAPABILITIES(/obj/item/projectile/energy/floramut)
 	icon_state = "energy2"
 	fire_sound = SFX_EFFECTS_STEALTHOFF
 	damage = 0
-	injury_kind = INJURY_TOXIN
 	nodamage = 1
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 	var/lasermod = 0
 	hud_state = "electrothermal"
 
 CAPABILITIES(/obj/item/projectile/energy/florayield)
+	configure(item_combat(injury_kind = INJURY_TOXIN))
 	configure(light_glow(range = 2, power = 0.5, color = "#FFFFFF"))
 
 /obj/item/projectile/energy/florayield/on_hit(atom/target, blocked = 0)
@@ -214,13 +213,13 @@ CAPABILITIES(/obj/item/projectile/energy/florayield)
 	icon_state = "energy2"
 	fire_sound = SFX_EFFECTS_STEALTHOFF
 	damage = 0
-	injury_kind = INJURY_TOXIN
 	nodamage = 1
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 	var/lasermod = 0
 	hud_state = "electrothermal"
 
 CAPABILITIES(/obj/item/projectile/energy/floraprune)
+	configure(item_combat(injury_kind = INJURY_TOXIN))
 	configure(light_glow(range = 2, power = 0.5, color = "#FFFFFF"))
 
 /obj/item/projectile/energy/floraprune/on_hit(atom/target, blocked = 0)
@@ -253,7 +252,6 @@ CAPABILITIES(/obj/item/projectile/energy/floraprune)
 	damage = 1 // stop trying to murderbone with a fake gun dumbass!!!
 	embed_chance = 0 // nope
 	nodamage = 1
-	injury_kind = INJURY_PAIN
 	muzzle_type = /obj/effect/projectile/muzzle/bullet
 	hud_state = "monkey"
 
@@ -262,7 +260,6 @@ CAPABILITIES(/obj/item/projectile/energy/floraprune)
 	icon_state = "bola"
 	damage = 5
 	embed_chance = 0 //Nada.
-	injury_kind = INJURY_PAIN
 	muzzle_type = null
 	hud_state = "monkey"
 
@@ -325,7 +322,7 @@ CAPABILITIES(/obj/item/projectile/beam/tungsten)
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
 
-			var/target_armor = H.injury_armor(injury_kind, def_zone)
+			var/target_armor = H.injury_armor(combat_of(src).injury_kind, def_zone)
 			var/obj/item/organ/external/target_limb = H.get_organ(def_zone)
 
 			var/armor_special = 0
@@ -387,3 +384,12 @@ CAPABILITIES(/obj/item/projectile/beam/tungsten)
 /// A shared definition/flyweight (never cleared).
 /obj/item/projectile/energy/floramut/gene/proc/gene() as /datum/decl/plantgene
 	return gene_static
+
+CAPABILITIES(/obj/item/projectile/energy/floramut/gene)
+	configure(item_combat(injury_kind = INJURY_TOXIN))
+
+CAPABILITIES(/obj/item/projectile/chameleon)
+	configure(item_combat(injury_kind = INJURY_PAIN))
+
+CAPABILITIES(/obj/item/projectile/bola)
+	configure(item_combat(injury_kind = INJURY_PAIN))

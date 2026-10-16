@@ -119,7 +119,6 @@ CAPABILITIES(/obj/item/projectile/arc)
 	name = "energy missile"
 	icon_state = "force_missile"
 	damage = 15
-	injury_kind = INJURY_BURN
 
 /obj/item/projectile/arc/blue_energy/on_impact(turf/T)
 	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
@@ -177,11 +176,11 @@ CAPABILITIES(/obj/item/projectile/arc)
 	name = "spore"
 	icon_state = "declone"
 	damage = 20
-	injury_kind = INJURY_CORROSIVE
 	fire_sound = SFX_EFFECTS_SLIME_SQUISH
 	arc_height_multiplier = 0.5
 
 CAPABILITIES(/obj/item/projectile/arc/spore)
+	configure(item_combat(injury_kind = INJURY_CORROSIVE))
 	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/arc/spore/on_impact(turf/T)
@@ -202,3 +201,6 @@ CAPABILITIES(/obj/item/projectile/arc/spore)
 		if(!istype(acid))
 			acid = new(T)
 			acid.reagents.add_reagent(REAGENT_ID_STOMACID, 5)
+
+CAPABILITIES(/obj/item/projectile/arc/blue_energy)
+	configure(item_combat(injury_kind = INJURY_BURN))

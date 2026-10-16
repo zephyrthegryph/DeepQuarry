@@ -219,11 +219,11 @@ MSG_DEF_SELF(quantumpad/panel_open, "the panel must be closed before operating t
 	icon = 'icons/obj/device.dmi'
 	name = "quantum pad particle booster"
 	desc = "A deceptively simple interface for increasing the mass of objects a quantum pad is capable of teleporting, at the cost of increased power draw."
-	injury_kind = INJURY_PIERCE
 	item_state = "analyzer"
 	icon_state = "hacktool"
 
 CAPABILITIES(/obj/item/quantum_pad_booster)
+	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_combat(force = 9, sharp = TRUE))
 
 /obj/machinery/power/quantumpad/proc/finish_teleport(mob/user)

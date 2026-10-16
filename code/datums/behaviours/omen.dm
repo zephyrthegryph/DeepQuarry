@@ -408,14 +408,14 @@ sparse(/mob/living, omen_vorish, type = num)
 			var/obj/item/material/knife = item
 
 			injury_verb = "cuts"
-			injury_kind = knife.injury_kind
+			injury_kind = combat_of(knife).injury_kind
 			damage_to_inflict = combat_of(knife).force
 
 		else if(istype(item, /obj/item/material/shard))
 			var/obj/item/material/shard/shard = item
 
 			injury_verb = "cuts"
-			injury_kind = shard.injury_kind
+			injury_kind = combat_of(shard).injury_kind
 			damage_to_inflict = combat_of(shard).force
 
 		else if(istype(item, /obj/item/flame/lighter))
@@ -431,21 +431,21 @@ sparse(/mob/living, omen_vorish, type = num)
 			var/obj/item/tool/transforming/jawsoflife/jaws = item
 
 			injury_verb = "clamps"
-			injury_kind = jaws.injury_kind
+			injury_kind = combat_of(jaws).injury_kind
 			damage_to_inflict = combat_of(jaws).force
 
 		else if(istype(item, /obj/item/tool/screwdriver))
 			var/obj/item/tool/screwdriver/screwdriver = item
 
 			injury_verb = "stabs"
-			injury_kind = screwdriver.injury_kind
+			injury_kind = combat_of(screwdriver).injury_kind
 			damage_to_inflict = combat_of(screwdriver).force
 
 		else if(istype(item, /obj/item/tool/wirecutters))
 			var/obj/item/tool/wirecutters/wirecutters = item
 
 			injury_verb = "nips"
-			injury_kind = wirecutters.injury_kind
+			injury_kind = combat_of(wirecutters).injury_kind
 			damage_to_inflict = combat_of(wirecutters).force
 
 		if(!damage_to_inflict)

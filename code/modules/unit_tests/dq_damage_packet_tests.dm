@@ -87,8 +87,8 @@ CAPABILITIES(/mob/living/simple_mob/dq_damage_probe)
 
 /datum/unit_test/dq_damage_packet/proc/make_projectile(kind, damage, pen = 0)
 	var/obj/item/projectile/P = allocate(/obj/item/projectile)
-	P.injury_kind = kind
-	P.injury_kinds = null
+	P.set_injury_kind(kind)
+	P.set_injury_kinds(null)
 	P.damage = damage
 	P.set_armor_penetration(pen)
 	P.nodamage = FALSE
@@ -97,8 +97,8 @@ CAPABILITIES(/mob/living/simple_mob/dq_damage_probe)
 
 /datum/unit_test/dq_damage_packet/proc/make_item(kind, force, throwforce = 0)
 	var/obj/item/I = allocate(/obj/item)
-	I.injury_kind = kind
-	I.injury_kinds = null
+	I.set_injury_kind(kind)
+	I.set_injury_kinds(null)
 	I.set_force(force)
 	I.set_throwforce(throwforce)
 	I.set_armor_penetration(5)
@@ -198,7 +198,7 @@ CAPABILITIES(/mob/living/simple_mob/dq_damage_probe)
 	TEST_ASSERT_EQUAL(probe.last.source, P, "the round is the packet's source")
 
 	var/obj/item/projectile/split = make_projectile(INJURY_BURN, 30)
-	split.injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
+	split.set_injury_kinds(alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3))
 	probe.bullet_act(split)
 	TEST_ASSERT(dq_near(probe.last.amounts[DAMAGE_THERMAL], 10, 0.01) && dq_near(probe.last.amounts[DAMAGE_SHARP], 20, 0.01), "a searing round should split: [probe.last.describe()]")
 
@@ -221,7 +221,7 @@ CAPABILITIES(/mob/living/simple_mob/dq_damage_probe)
 /datum/unit_test/dq_damage_packet/projectile_shape/Run()
 	var/obj/machinery/portable_atmospherics/canister/C = allocate(/obj/machinery/portable_atmospherics/canister)
 	var/obj/item/projectile/P = allocate(/obj/item/projectile)
-	P.injury_kind = INJURY_BLUNT
+	P.set_injury_kind(INJURY_BLUNT)
 	P.damage = 40
 	var/start = C.get_integrity()
 	C.bullet_act(P)

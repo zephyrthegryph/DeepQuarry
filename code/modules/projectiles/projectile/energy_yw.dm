@@ -44,7 +44,6 @@
 	damage = 35
 	taser_effect = 1
 	agony = 65
-	injury_kind = INJURY_PAIN
 	stutter = 10
 	hud_state = "taser"
 
@@ -56,3 +55,6 @@
 	damage = 25
 	pass_flags = PASSGRILLE
 	hud_state = "plasma_rifle_blast"
+
+CAPABILITIES(/obj/item/projectile/energy/electrode/x01stunshot)
+	configure(item_combat(injury_kind = INJURY_PAIN))

@@ -6,7 +6,6 @@
 	desc = "Made of nothing. How does this even exist?" // set based on material, if this desc is visible it's a bug (shards default to being made of glass)
 	icon_state = "large"
 	randpixel = 8
-	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_SMALL
 	force_divisor = 0.25 // 7.5 with hardness 30 (glass)
 	thrown_force_divisor = 0.5
@@ -38,6 +37,7 @@
 		spent(src)
 
 CAPABILITIES(/obj/item/material/shard)
+	configure(item_combat(injury_kind = INJURY_CUT))
 	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("stabbed", "slashed", "sliced", "cut")))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
@@ -89,11 +89,11 @@ CAPABILITIES(/obj/item/material/shard)
 
 	if(user.get_equipped_item(SLOT_ID_GLOVES) && !protected_hands)
 		to_chat(user, span_warning("\The [src] partially cuts into your hand through your gloves as you hit \the [target]!"))
-		user.injure(injury_kind, light_glove_d + (will_break ? break_damage : 0), active_hand, src) // Ternary to include break damage
+		user.injure(combat_of(src).injury_kind, light_glove_d + (will_break ? break_damage : 0), active_hand, src) // Ternary to include break damage
 
 	else if(!user.get_equipped_item(SLOT_ID_GLOVES))
 		to_chat(user, span_warning("\The [src] cuts into your hand as you hit \the [target]!"))
-		user.injure(injury_kind, no_glove_d + (will_break ? break_damage : 0), active_hand, src)
+		user.injure(combat_of(src).injury_kind, no_glove_d + (will_break ? break_damage : 0), active_hand, src)
 
 	if(will_break && src.loc == user) // If it's not in our hand anymore
 		act_message(user, src, MSG_SELF(span_warning("You shatter %T% in your hand!")), MSG_OTHERS(span_danger("%U% hit \the [target] with %T%, shattering it!")))
