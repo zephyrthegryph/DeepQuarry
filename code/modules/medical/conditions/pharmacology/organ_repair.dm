@@ -112,12 +112,12 @@
 		list(list(
 			/datum/affliction_symptom/labored_breathing = 75,
 			/datum/affliction_symptom/wet_cough         = 60,
-		), 1, 2, list("factors" = alist(BF_O2_SAT = -6))),
+		), 1, 2, list("factors" = alist(STAT_O2_SAT = -6))),
 		list(list(
 			/datum/affliction_symptom/labored_breathing = 95,
 			/datum/affliction_symptom/wet_cough         = 80,
 			/datum/affliction_symptom/cyanosis          = 60,
-		), 2, 3, list("factors" = alist(BF_O2_SAT = -14, BF_RESP_RATE = -4), "always_spawns" = list(/datum/affliction/respiratory_failure))),
+		), 2, 3, list("factors" = alist(STAT_O2_SAT = -14, STAT_RESP_RATE = -4), "always_spawns" = list(/datum/affliction/respiratory_failure))),
 	)
 
 /datum/affliction/overdose/cordradaxon
@@ -135,16 +135,16 @@
 
 /datum/affliction/overdose/cordradaxon
 	overdose_stage_data = list(
-		list(list(/datum/affliction_symptom/palpitations = 60), 0, 1, list("factors" = alist(BF_HEART_RATE = 10))),
+		list(list(/datum/affliction_symptom/palpitations = 60), 0, 1, list("factors" = alist(STAT_HEART_RATE = 10))),
 		list(list(
 			/datum/affliction_symptom/palpitations     = 85,
 			/datum/affliction_symptom/sharp_chest_pain = 50,
-		), 1, 2, list("factors" = alist(BF_HEART_RATE = 20))),
+		), 1, 2, list("factors" = alist(STAT_HEART_RATE = 20))),
 		list(list(
 			/datum/affliction_symptom/palpitations        = 100,
 			/datum/affliction_symptom/sharp_chest_pain    = 80,
 			/datum/affliction_symptom/chest_pain_crushing = 50,
-		), 2, 3, list("factors" = alist(BF_HEART_RATE = 35), "always_spawns" = list(/datum/affliction/chem_interaction/tachycardia_chem))),
+		), 2, 3, list("factors" = alist(STAT_HEART_RATE = 35), "always_spawns" = list(/datum/affliction/chem_interaction/tachycardia_chem))),
 	)
 
 /datum/affliction/overdose/hepanephrodaxon

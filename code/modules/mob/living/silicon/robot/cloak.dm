@@ -119,7 +119,7 @@ CAPABILITIES(/obj/item/borg/cloak)
 	var/cloak_strength = cloak ? cloak.cloak_strength : 0.5
 	var/datum/robot_cloak_state/state = new
 	state.visibility = 255 * (1 - cloak_strength)
-	state.cloaked_factors = alist(BF_EVASION = 60 * cloak_strength) //60 at full strength, 30 at half strength.
+	state.cloaked_factors = alist(STAT_EVASION = 60 * cloak_strength) //60 at full strength, 30 at half strength.
 	L.set_body_effect_state(type, state)
 	L.set_body_effect_factors(type, state.cloaked_factors)
 	L.set_alpha_source(SRC_ALPHA_ROBOT_CLOAK, state.visibility/255, animate_time = 1 SECOND)

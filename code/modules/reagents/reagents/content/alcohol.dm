@@ -2857,7 +2857,7 @@
 	taste_description = "flavourless energy"
 
 /datum/reagent/drink/coffee/nukie/mega/sight
-	factors = alist(BF_DARKSIGHT = 1)
+	factors = alist(STAT_DARKSIGHT = 1)
 	name = REAGENT_NUKIEMEGASIGHT
 	id = REAGENT_ID_NUKIEMEGASIGHT
 	color = "#f4fc03"
@@ -2929,7 +2929,7 @@
 
 
 /datum/reagent/drink/coffee/nukie/mega/fast //Like hyperzine, but instead of overdosing, it occassionally burns you
-	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
+	factors = alist(STAT_SLOWDOWN = -1, STAT_PENALTY_SCALE = 0.5)
 	name = REAGENT_NUKIEMEGAFAST
 	id = REAGENT_ID_NUKIEMEGAFAST
 	color = "#000000"
@@ -3012,7 +3012,7 @@
 
 /datum/reagent/drink/coffee/nukie/mega/one //Basically macrocillin but for ingesting
 	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.3, TREAT_BURN_CARE = 0.3)
-	factors = alist(BF_DARKSIGHT = 1, BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
+	factors = alist(STAT_DARKSIGHT = 1, STAT_SLOWDOWN = -1, STAT_PENALTY_SCALE = 0.5)
 	name = REAGENT_NUKIEONE
 	id = REAGENT_ID_NUKIEONE
 	color = "#90ed87"
@@ -3176,7 +3176,7 @@
 // Low Power's mild antitoxin action is its treatment_tags profile.
 
 /datum/reagent/drink/highpower
-	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
+	factors = alist(STAT_SLOWDOWN = -1, STAT_PENALTY_SCALE = 0.5)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_HIGHPOWER
 	id = REAGENT_ID_HIGHPOWER
@@ -3198,7 +3198,7 @@
 		M.status_at_least(STAT_STUNNED, 3)
 
 /datum/reagent/ethanol/coffee/jackbrew
-	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
+	factors = alist(STAT_SLOWDOWN = -1, STAT_PENALTY_SCALE = 0.5)
 	name = REAGENT_JACKBREW
 	id = REAGENT_ID_JACKBREW
 	description = "Irish coffee, and hyperzine. A common mix for panicked drinkers, EMTS, Paramedics, and CMOs alone on the job."
@@ -3552,7 +3552,7 @@
 		TREAT_OXYGENATION = 0.3,
 		TREAT_ANTITOXIN = 0.3,
 	)
-	factors = alist(BF_ANALGESIA = 80, BF_PENALTY_SCALE = 0.5)
+	factors = alist(STAT_ANALGESIA = 80, STAT_PENALTY_SCALE = 0.5)
 	name = REAGENT_ENRAGEDARACHNIDSLAMMER
 	id = REAGENT_ID_ENRAGEDARACHNIDSLAMMER
 	description = "The best term to scientifically describe this concortion is that the compounds of the Arachnid Slammer are going into a raging frenzy from spider toxin. Its now functioning like a form of potent chemical-based white blood cells that aims to break down harmful compounds and repair the body."

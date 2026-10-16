@@ -1,5 +1,6 @@
 //! Banned legacy names: a hard ban, no baseline. Each entry of `[lint.legacy_forms.lists] banned` in tools/ci/lint_scopes.toml is
-//! `name = hint`; any mention of the name in code (a call, a definition, a member) fails with that hint. When a legacy form is deleted,
+//! `name = hint`; any mention of the name in code (a call, a definition, a member) fails with that hint; a name ending in `*` bans every word
+//! that starts with it. When a legacy form is deleted,
 //! its names go on the list so it cannot come back.
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
@@ -38,11 +39,16 @@ impl Lint for LegacyForms {
         for (number, line) in f.code().numbered() {
             let b = line.as_bytes();
             for (name, hint) in &banned {
+                // A name ending in `*` is a prefix: `BF_*` bans every word that starts with `BF_`.
+                let (needle, prefix) = match name.strip_suffix('*') {
+                    Some(p) => (p, true),
+                    None => (*name, false),
+                };
                 let mut from = 0;
-                while let Some(p) = line[from..].find(name) {
+                while let Some(p) = line[from..].find(needle) {
                     let at = from + p;
-                    let end = at + name.len();
-                    if (at == 0 || !is_word(b[at - 1])) && (end >= b.len() || !is_word(b[end])) {
+                    let end = at + needle.len();
+                    if (at == 0 || !is_word(b[at - 1])) && (prefix || end >= b.len() || !is_word(b[end])) {
                         out.site_msg("banned_name", number, format!("{} is gone: {}", name, hint));
                         break;
                     }

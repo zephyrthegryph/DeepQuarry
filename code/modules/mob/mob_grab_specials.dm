@@ -132,7 +132,7 @@
 		H.custom_pain("Your [E.name] hurts where it's poked.", bad_organs*20)
 
 	if(appendicitis)
-		var/pain_check = (H.stat && (H.can_feel_pain() || H.synth_cosmetic_pain) && H.factor(BF_ANALGESIA) < 60)
+		var/pain_check = (H.stat && (H.can_feel_pain() || H.synth_cosmetic_pain) && H.analgesia < 60)
 		if(pain_check) //They can feel pain.
 			to_chat(user, span_danger("[H] jolts when you let go of their [E.name], indicating appendicitis!"))
 			H.custom_pain("You feel pure agony as [user] pushes down on your [E.name]!", 200)

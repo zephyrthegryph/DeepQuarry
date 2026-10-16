@@ -7,7 +7,7 @@
 		/datum/affliction_symptom/short_breath = 40
 	)
 	max_symptoms = 3
-	factors = alist(BF_SLOWDOWN = 1, BF_MOTOR_CONTROL = 0.95, BF_HEART_RATE = 20)
+	factors = alist(STAT_SLOWDOWN = 1, STAT_MOTOR_CONTROL = 0.95, STAT_HEART_RATE = 20)
 	name = "GBS"
 	medical_name = "Guillain-Barré Syndrome"
 	desc = "If left untreated death will occur."

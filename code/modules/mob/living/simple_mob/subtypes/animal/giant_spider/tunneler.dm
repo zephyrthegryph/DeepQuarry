@@ -225,7 +225,7 @@
 	on_expired_text = span_notice("You feel better.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_EVASION = -100, BF_INCOMING_ALL = 2)
+	factors = alist(STAT_EVASION = -100, STAT_INCOMING_ALL = 2)
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/cave
 	name = "cave spider"

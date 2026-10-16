@@ -80,7 +80,7 @@ CAPABILITIES(/obj/item/projectile/beam/medical_cell)
 	mob_overlay_state = "cyan_sparkles"
 	stacks = MODIFIER_STACK_EXTEND
 	// only a little
-	factors = alist(BF_BLEEDING = 0.1, BF_DEMAND = 0, BF_PAIN_IMMUNITY = 1)
+	factors = alist(STAT_BLEEDING = 0.1, STAT_DEMAND = 0, STAT_PAIN_IMMUNITY = 1)
 
 /obj/item/ammo_casing/microbattery/medical/toxin
 	name = "\'NERD\' nanite cell - TOXIN"
@@ -226,7 +226,7 @@ CAPABILITIES(/obj/item/projectile/beam/medical_cell)
 	stacks = MODIFIER_STACK_EXTEND
 	// a little faster!
 	// and a little harder to hit!
-	factors = alist(BF_SLOWDOWN = -0.5, BF_EVASION = 1.15)
+	factors = alist(STAT_SLOWDOWN = -0.5, STAT_EVASION = 1.15)
 
 /obj/item/ammo_casing/microbattery/medical/resist
 	name = "\'NERD\' nanite cell - RESIST"
@@ -246,7 +246,7 @@ CAPABILITIES(/obj/item/projectile/beam/medical_cell)
 	desc = "You resist 15% of all incoming damage and stuns!"
 	mob_overlay_state = "repel_missiles"
 	stacks = MODIFIER_STACK_EXTEND
-	factors = alist(BF_INCOMING_ALL = 0.85, BF_DISABLE_DURATION = 0.85)
+	factors = alist(STAT_INCOMING_ALL = 0.85, STAT_DISABLE_DURATION = 0.85)
 
 /obj/item/ammo_casing/microbattery/medical/corpse_mend
 	name = "\'NERD\' nanite cell - CORPSE MEND"

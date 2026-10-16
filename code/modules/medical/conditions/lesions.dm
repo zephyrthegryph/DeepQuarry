@@ -308,7 +308,7 @@ TYPE_TABLE_DECLARE(/datum/affliction/lesion, lesion_symptom_table, null)
 		rate = BRAIN_EDEMA_RATE
 		if(body.treatment_levels()?[TREAT_NEURAL_REPAIR])
 			rate *= BRAIN_EDEMA_TREATED_MULT
-		rate -= owner?.factor(BF_NEURAL_REPAIR)
+		rate -= owner?.neural_repair
 	if(rate > 0)
 		var/room = max(0, B.max_damage - B.damage)
 		if(room > 0)
