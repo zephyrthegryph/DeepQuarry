@@ -63,6 +63,36 @@ fn target(age: Duration, pressured: bool, hard: bool, previous: usize) -> usize 
 }
 
 impl Shared {
+    /// Drop the retained session of every idle slot (a daemon that is exiting serves no further edit). A slot whose host is
+    /// building is left to finish; it is released on a later pass. True when anything was released.
+    pub(super) fn release_for_retire(&self) -> bool {
+        let slots: Vec<(PathBuf, Arc<Slot>)> = self
+            .slots
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .map(|(key, slot)| (key.manifest.clone(), Arc::clone(slot)))
+            .collect();
+        let mut released = false;
+        for (manifest, slot) in slots {
+            if slot.idle_tier.load(Ordering::Acquire) == SESSION_RELEASE {
+                continue;
+            }
+            // Never under the roster lock: a host drop joins pools and can take seconds.
+            let Ok(mut host) = slot.host.try_lock() else { continue };
+            let before = transport::private_bytes();
+            self.reset_host(&mut host);
+            slot.idle_tier.store(SESSION_RELEASE, Ordering::Release);
+            released = true;
+            super::super::emit_stderr(format_args!(
+                "dmbd retire release project={} private-before={before:?} private-after={:?}",
+                manifest.display(),
+                transport::private_bytes()
+            ));
+        }
+        released
+    }
+
     pub(super) fn housekeep(&self, now: Instant, pressured: bool, hard: bool) {
         let candidates = {
             let slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
