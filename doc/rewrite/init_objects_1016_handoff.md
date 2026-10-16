@@ -28,3 +28,13 @@ unlit control. `dq_init_objects_circuit_implant` checks actual child identity,
 location, reverse link and destruction ownership. Both are in the already-wired
 `dq_init_objects_weapons_tests.dm`. No compile, generation, baseline update or
 test was run for this supplemental cohort.
+
+## Consolidated follow-up (verification pending)
+
+The first native gate compiled with zero errors and zero DreamChecker diagnostics and passed ratchets, but reported 81 passing and six failing tests. The two constructor fixture assumptions have been corrected (forced deletion for a component-owned light; deterministic real-human starting nutrition). Master-only operation key changes are documented separately. The look failures exposed independent fixture sampling/isolation defects; these have explicit regressions and are not hidden with blanket snapshot updates.
+
+Additional source migrations use existing native setup, owned factories, `param(apply=...)`, and a real mapload-aware persistence capability. They cover material weapons, tanks, communicator presentation, starting item actions, temporary constructor inputs, persistence eligibility and ghost addresses. Qualifying remaining initializers are retained without new ALLOW annotations. Exact final counts and test results await the consolidated verification.
+
+## Current verified source result
+
+The final source pass shrank init from **4,111 to 3,712** rows globally; all 399 removals are in code/game/objects, which fell from **571 to 172** rows. Counter comparison against origin/master proves zero added baseline identities (including duplicate-row multiplicity). Full ratchets pass with no unused annotations. Three focused semantic-holder Rust regressions and four native draw-contract proof regressions pass. The previous initial gate had clean production compilation and DreamChecker, but the expanded final cohort has not yet had its DM verification; the serialized base-vars gate runs first. No stamp or push is claimed.

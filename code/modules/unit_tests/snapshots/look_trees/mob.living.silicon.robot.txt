@@ -64,11 +64,11 @@
 /mob/living/silicon/robot/drone/sec overlay: icons/misc/win32.dmi::-100
 /mob/living/silicon/robot/drone/sec overlay: icons/mob/robots.dmi:maintbot-eyes-blue:-32767
 /mob/living/silicon/robot/drone/min icon: icons/mob/robots.dmi
-/mob/living/silicon/robot/drone/min state: repairbot
+/mob/living/silicon/robot/drone/min state: maintbot
+/mob/living/silicon/robot/drone/min overlay: icons/mob/robots.dmi:maintbot-eyes-blue:-32767
 /mob/living/silicon/robot/drone/min dir: 2
 /mob/living/silicon/robot/drone/min overlay: ::8:#000000
 /mob/living/silicon/robot/drone/min overlay: icons/misc/win32.dmi::-100
-/mob/living/silicon/robot/drone/min overlay: icons/mob/robots.dmi:repairbot-eyes-blue:-32767
 /mob/living/silicon/robot/drone/construction icon: icons/mob/robots.dmi
 /mob/living/silicon/robot/drone/construction state: constructiondrone
 /mob/living/silicon/robot/drone/construction dir: 2

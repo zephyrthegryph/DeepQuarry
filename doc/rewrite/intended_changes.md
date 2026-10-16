@@ -4906,3 +4906,13 @@ The user-approved probe repair keeps plan filtering before the existing 24/200 l
 ## Look fixture native-roll stream isolation (2026-10-16)
 
 The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.
+
+### Object initializer verification: inherited operation keys
+
+The object-init lane refreshes only the `keys` rows in 51 inherited mob pins for master `2136172edc4` (2026-10-15), which made devour a waiting op, and in two mecha pins for master `f13b84652d`, which removed the dead `ai_use_equipment` surface. Every menu and click row is unchanged; these are master changes, not initializer behavior changes.
+
+### Look-sampler isolation and native random realizations
+
+The object-init verification uses a type-local native roller (`f3d40a5365`), in addition to the existing host RNG seed. Re-recorded rows are limited to the constructor realizations this changes: drone shell; simple-mob coat, clothing style, colors and experiment effects; cigarette/gum/lollipop color or flavor; blob direction; and toilet lid/open state. State-probe changes are the corresponding synx, shadekin, lamia and raptor appearances. Pilot catslug is specifically the native 25% helm roll: the type-local MD5 stream yields 51.8255%, so it does not take a helm and remains closed to ghosts; no pilot production code changed.
+
+The six slime-eye differences are NOT blessed: sorted `consuming` probes normalize a hidden text cache before `has_eye_glow`. Reuse now checks immutable scalar state as well as the visible look, falling back to fresh instances when restoration leaves hidden changes. A real slime test compares reused/fallback and forced-fresh results. The sampler also drains its queued explosion work before resetting its block, with a real queued-blast regression, so that deferred blast products do not leak into the following test.

@@ -1,0 +1,7 @@
+# Ghost communicator address initialization
+
+Four init fingerprints physically in communicator.dm move to native setup in the existing canonical ghost capability block (exonet_log_panel.dm). Global anchored search finds only the two existing /mob/observer/dead Initialize definitions and no descendant Initialize. The observer.dm body keeps its pre-parent body appearance/name/location handling and post-parent visualnet binding; /mob/Initialize keeps transform/chunk/log work. None reads the communicator Exonet address. Native setup follows the complete same constructor chain before New returns, so final real_name/key/client inputs and owned protocol availability are preserved. No initialization of the ghost's visual network or appearance is moved.
+
+The test supplies a real human body and a protocol subtype that records the actual make_address input while performing the genuine parent transaction. It checks final identity input, registry resolution, body-derived placement, actual ghost visibility network, protocol ownership and address removal on deletion. It is headless; the real-client preferences branch is preserved byte-for-byte but not simulated or claimed tested.
+
+No generation/build/tests have run. Root must wire dq_init_objects_ghost_address_tests.dm. Apply after the communicator/particle and camera-HUD patches if using their patched source; hunks target only the separate ghost initializer and append its new handler.
