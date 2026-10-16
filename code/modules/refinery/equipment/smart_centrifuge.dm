@@ -7,7 +7,6 @@
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/smart_centrifuge
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	maintenance_wrench_time = 2 SECONDS
 
 	/// Delay before the next separation step: the spin-up, then one bottle a second.
 	var/separate_delay = 10 SECONDS
@@ -16,6 +15,7 @@
 	var/separate_force_canister = FALSE
 
 CAPABILITIES(/obj/machinery/smart_centrifuge)
+	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS))
 	after_init(0, then(PROC_REF(finish_setup)))
 	reagents(CARGOTANKER_VOLUME)
 	op("centrifuge_attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), when(nameof(working)), then(PROC_REF(interaction_attackby)))
