@@ -1,4 +1,7 @@
 ///////////////////// Mob Living /////////////////////
+// Only actors actively using a drain carry these runtime flags.
+sparse(/mob/living, absorbing_prey, type = bool)
+sparse(/mob/living, drain_finalized, type = bool)
 /mob/living
 	var/list/temp_languages		// Absorbs add languages to the pred. Lazy.
 	var/prey_controlled = FALSE			// If the mob is currently controlled by their prey.
@@ -7,8 +10,6 @@
 	var/metabolism = 0.0015
 	var/no_vore = FALSE					// If the character/mob can vore.
 	var/restrict_vore_ventcrawl = FALSE // Self explanatory
-	var/absorbing_prey = 0 				// Determines if the person is using the succubus drain or not. See station_special_abilities_vr.
-	var/drain_finalized = 0				// Determines if the succubus drain will be KO'd/absorbed. Can be toggled on at any time.
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
 	var/vis_height = 32					// Sprite height used for resize features.
 	var/digestion_in_progress = FALSE	// Gradual corpse gurgles

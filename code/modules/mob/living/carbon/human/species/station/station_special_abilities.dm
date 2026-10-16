@@ -214,7 +214,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 
 /mob/living/carbon/human/proc/grab_drain_interrupted(datum/act/op/A)
 	to_chat(src, span_warning("Your [A.arg("what")] of [A.arg("victim")] has been interrupted!"))
-	absorbing_prey = FALSE
+	sparse_set_or(src, absorbing_prey, FALSE, 0)
 
 //Welcome to the adapted changeling absorb code.
 /mob/living/carbon/human/proc/succubus_drain()
@@ -238,11 +238,11 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		to_chat(C, span_warning("You must have a tighter grip to drain this creature."))
 		return
 
-	if(C.absorbing_prey)
+	if(sparse_get_or(C, absorbing_prey, 0))
 		to_chat(C, span_warning("You are already draining someone!"))
 		return
 
-	C.absorbing_prey = 1
+	sparse_set_or(C, absorbing_prey, 1, 0)
 	grab_drain_step(T, G, 1, PROC_REF(succubus_drain_stage), GRAB_NECK, "draining")
 
 /// Runs stage `stage`; returns the stage to continue from, or 0 when done.
@@ -264,16 +264,16 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 			C.set_nutrition((nutrition_of(C) + (nutrition_of(T)*0.1))) //Just keep draining them.
 			T.set_nutrition(nutrition_of(T)*0.9)
 			T.status_adjust(STAT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
-			if(nutrition_of(T) < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
+			if(nutrition_of(T) < 100 && stage < 99 && sparse_get_or(C, drain_finalized, 0) == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
-			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
+			if(sparse_get_or(C, drain_finalized, 0) != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
 				stage = 3
 		if(100)
 			C.set_nutrition((nutrition_of(C) + nutrition_of(T)))
 			T.set_nutrition(0) //Completely drained of everything.
 			var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
 			T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
-			C.absorbing_prey = FALSE
+			sparse_set_or(C, absorbing_prey, FALSE, 0)
 			to_chat(C, span_notice("You have completely drained [T], causing them to pass out."))
 			to_chat(T, span_danger("You feel weak, as if you have no control over your body whatsoever as [C] finishes draining you.!"))
 			add_attack_logs(C,T,"Succubus drained")
@@ -301,11 +301,11 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		to_chat(src, span_warning("You must have a tighter grip to drain this creature."))
 		return
 
-	if(absorbing_prey)
+	if(sparse_get_or(src, absorbing_prey, 0))
 		to_chat(src, span_warning("You are already draining someone!"))
 		return
 
-	absorbing_prey = 1
+	sparse_set_or(src, absorbing_prey, 1, 0)
 	grab_drain_step(T, G, 1, PROC_REF(succubus_drain_lethal_stage), GRAB_NECK, "draining")
 
 /// Runs stage `stage`; returns the stage to continue from, or 0 when done.
@@ -342,7 +342,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 				T.set_nutrition(0) //Completely drained of everything.
 				var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
 				T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
-				absorbing_prey = 0 //Clean this up before we return
+				sparse_set_or(src, absorbing_prey, 0, 0) //Clean this up before we return
 				return 0
 			to_chat(src, span_notice("You begin to drain [T] completely..."))
 			to_chat(T, span_danger("An odd sensation flows through your body as you as [src] begins to drain you to dangerous levels!"))
@@ -351,17 +351,17 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 				if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
 					soulgem.catch_mob(T)
 				T.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, src) //Bit of fluff.
-				absorbing_prey = 0
+				sparse_set_or(src, absorbing_prey, 0, 0)
 				to_chat(src, span_notice("You have completely drained [T], killing them."))
 				to_chat(T, span_danger(span_giant("You feel... So... Weak...")))
 				add_attack_logs(src,T,"Succubus drained (almost lethal)")
 				return 0
-			if(drain_finalized == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
+			if(sparse_get_or(src, drain_finalized, 0) == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
 				T.injure(INJURY_NEURAL, 5, null, src) //Will kill them after a short bit!
 			T.status_adjust(STAT_BLURRY, 20) //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
 			set_nutrition((nutrition_of(src) + 25)) //Assuming brain damage kills at 60, this gives 300 nutrition_of(src).
 		if(99)
-			if(drain_finalized != 1)
+			if(sparse_get_or(src, drain_finalized, 0) != 1)
 				stage = 51
 		if(100) //They shouldn't  survive long enough to get here, but just in case.
 			if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
@@ -369,7 +369,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 			T.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, src) //Kill them.
 			if(T.stat != DEAD)
 				T.death()
-			absorbing_prey = FALSE
+			sparse_set_or(src, absorbing_prey, FALSE, 0)
 			to_chat(src, span_notice("You have completely drained [T], killing them in the process."))
 			to_chat(T, span_danger(span_massive("You... Feel... So... Weak...")))
 			act_message(src, T, others = span_danger("%U% seems to finish whatever they were doing to %T%."))
@@ -397,11 +397,11 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 	if(!G.state) //This should never occur. But alright
 		return
 
-	if(C.absorbing_prey)
+	if(sparse_get_or(C, absorbing_prey, 0))
 		to_chat(C, span_warning("You are already feeding someone!"))
 		return
 
-	C.absorbing_prey = 1
+	sparse_set_or(C, absorbing_prey, 1, 0)
 	grab_drain_step(T, G, 1, PROC_REF(slime_feed_stage), 0, "feeding")
 
 /// Runs stage `stage`; returns the stage to continue from, or 0 when done.
@@ -423,14 +423,14 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 			T.set_nutrition((nutrition_of(T) + (nutrition_of(C)*0.1))) //Just keep draining them.
 			C.set_nutrition(nutrition_of(C)*0.9)
 			T.status_adjust(STAT_BLURRY, 1) //Eating a slime's body is odd and will make your vision a bit blurry!
-			if(nutrition_of(C) < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
+			if(nutrition_of(C) < 100 && stage < 99 && sparse_get_or(C, drain_finalized, 0) == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
-			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
+			if(sparse_get_or(C, drain_finalized, 0) != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
 				stage = 3
 		if(100)
 			T.set_nutrition((nutrition_of(T) + nutrition_of(C)))
 			C.set_nutrition(0) //Completely drained of everything.
-			C.absorbing_prey = FALSE
+			sparse_set_or(C, absorbing_prey, FALSE, 0)
 			to_chat(C, span_danger("You have completely fed [T] every part of your body!"))
 			to_chat(T, span_notice("You feel quite strong and well fed, as [C] finishes feeding \himself to you!"))
 			add_attack_logs(C,T,"Slime fed")
@@ -444,8 +444,8 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 	set category = VERB_CAT_ABILITIES_SUCCUBUS
 
 	var/mob/living/carbon/human/C = src
-	C.drain_finalized = !C.drain_finalized
-	to_chat(C, span_notice("You will [C.drain_finalized?"now":"not"] finalize draining/feeding."))
+	sparse_set_or(C, drain_finalized, !sparse_get_or(C, drain_finalized, 0), 0)
+	to_chat(C, span_notice("You will [sparse_get_or(C, drain_finalized, 0)?"now":"not"] finalize draining/feeding."))
 
 
 //Test to see if we can shred a mob. Some child override needs to pass us a target. We'll return it if you can.
