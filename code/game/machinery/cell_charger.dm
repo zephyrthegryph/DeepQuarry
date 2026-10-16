@@ -30,6 +30,7 @@ MSG_DEF_SELF(charger/no_area_power, "It blinks red as you try to insert the cell
 
 
 CAPABILITIES(/obj/machinery/cell_charger)
+	setup(PROC_REF(settle_power))
 	configure(uses_power(idle = 5, active = 60000, channel = EQUIP))
 	default_parts()
 	machine_basics(repair = NONE)
@@ -46,10 +47,6 @@ CAPABILITIES(/obj/machinery/cell_charger)
 	on_change(nameof(anchored), ANY, then(PROC_REF(condition_changed)))
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(condition_changed)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(charge_frame)), when = nameof(charging))
-
-/obj/machinery/cell_charger/Initialize(mapload)
-	. = ..()
-	settle_power()
 
 /// Its charge rate follows its capacitors (the machine core calls this when parts change).
 /obj/machinery/cell_charger/RefreshParts()

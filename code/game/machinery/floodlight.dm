@@ -151,12 +151,10 @@ CAPABILITIES(/obj/machinery/floodlight)
 /obj/machinery/floodlight/starts_on
 	icon_state = "flood01"
 
-/obj/machinery/floodlight/starts_on/Initialize(mapload)
-	. = ..()
-	turn_on()
-
-
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/floodlight/step_start_condition()
 	return on
 
+
+CAPABILITIES(/obj/machinery/floodlight/starts_on)
+	setup(TYPE_PROC_REF(/obj/machinery/floodlight, turn_on))
