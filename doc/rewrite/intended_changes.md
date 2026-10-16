@@ -4965,3 +4965,7 @@ Verification of this copied cleanup remains pending the coordinating lane's gate
 ### Master devour operation key (2026-10-15)
 
 Master `2136172edc` (October 15, 17:13:57 -0500; “Delete the task engine; a devour waits as an op”) adds the native AI `devour` operation. The 51 inherited mob conversion-pin inventories gain only that key. The expanded menu, click and wire rows are unchanged, as confirmed by the fresh requirements-lane capture on the same master. These records add only `devour` to each existing key line, preserving other lane-specific entries and factoring.
+
+### Pilot helm lookup: reject nullspace destinations
+
+The original pilot callback admitted helms by z alone, including a nullspace helm when level zero was configured. It now chooses only actual, non-deleted helm turfs, retaining one lottery entry per helm. Invalid-only lookup leaves location and ghost access unchanged; a real destination preserves normal relocation and ghost access. Existing look goldens are retained. The focused regression uses real helms and native keyed timers with strict queue-delivery and destination assertions.
