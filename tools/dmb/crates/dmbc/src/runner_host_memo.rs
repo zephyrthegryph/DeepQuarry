@@ -229,23 +229,48 @@ impl ResidentMemo {
         MemoView {
             resident: Some(self),
             disk,
+            skipped: Default::default(),
+            resident_only: RESIDENT_ONLY_MISSES,
         }
     }
 }
 pub(crate) struct MemoView<'a> {
     resident: Option<&'a ResidentMemo>,
     disk: Option<&'a dyn ExpansionMemo>,
+    /// Resident misses that skipped the disk store in this request.
+    skipped: std::sync::atomic::AtomicUsize,
+    resident_only: usize,
 }
+/// A resident daemon holds every record it has computed or accepted, so a handful of misses in one
+/// request is an edit: the changed files' keys cannot be on disk. Opening the disk snapshot to
+/// confirm that costs about 2 s, so up to this many misses recompute without consulting it. A request
+/// with more misses (a cold daemon, another branch) reaches the disk store as before.
+const RESIDENT_ONLY_MISSES: usize = 64;
 impl<'a> MemoView<'a> {
     pub(super) fn disk_only(disk: &'a dyn ExpansionMemo) -> Self {
         Self {
             resident: None,
             disk: Some(disk),
+            skipped: Default::default(),
+            resident_only: 0,
         }
     }
     fn records(&self, kind: usize, key: u128) -> Vec<Record> {
         self.resident
             .map_or_else(Vec::new, |r| r.records(kind, key))
+    }
+    /// Whether a resident miss may consult the disk store.
+    fn disk_allowed(&self) -> bool {
+        self.resident.is_none()
+            || self
+                .skipped
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+                >= self.resident_only
+    }
+    #[cfg(test)]
+    fn with_resident_only(mut self, misses: usize) -> Self {
+        self.resident_only = misses;
+        self
     }
     fn retain(&self, record: Record) {
         if let Some(resident) = self.resident {
@@ -302,7 +327,7 @@ impl ExpansionMemo for MemoView<'_> {
         self.records(0, key).iter().rev().any(|r| match r {
             Record::Expansion(r) => accept(r),
             _ => false,
-        }) || self.disk.is_some_and(|d| {
+        }) || self.disk.filter(|_| self.disk_allowed()).is_some_and(|d| {
             d.visit_candidates(key, &mut |record| {
                 if !accept(record) {
                     return false;
@@ -323,7 +348,7 @@ impl ExpansionMemo for MemoView<'_> {
             _ => false,
         });
         DIRECTIVE_LOOKUPS.record(resident, started.elapsed());
-        resident || self.disk.is_some_and(|d| {
+        resident || self.disk.filter(|_| self.disk_allowed()).is_some_and(|d| {
             let started = std::time::Instant::now();
             let result = d.visit_directive_candidates(key, &mut |record| {
                 if !accept(record) {
@@ -344,7 +369,7 @@ impl ExpansionMemo for MemoView<'_> {
         self.records(2, key).iter().rev().any(|r| match r {
             Record::Fragment(r) => accept(r),
             _ => false,
-        }) || self.disk.is_some_and(|d| {
+        }) || self.disk.filter(|_| self.disk_allowed()).is_some_and(|d| {
             d.visit_fragment_candidates(key, &mut |record| {
                 if !accept(record) {
                     return false;
@@ -418,7 +443,7 @@ mod tests {
             record: fragment(b"accepted parser payload"),
             reads: AtomicUsize::new(0),
         };
-        let view = resident.with_disk(Some(&disk));
+        let view = resident.with_disk(Some(&disk)).with_resident_only(0);
         let mut accepted = None;
         assert!(view.visit_fragment_candidates(bad.key(), &mut |record| {
             let valid =
@@ -435,6 +460,22 @@ mod tests {
             view.visit_fragment_candidates(bad.key(), &mut |record| record.payload()
                 == b"accepted parser payload")
         );
+        assert_eq!(disk.reads.load(Ordering::Relaxed), 1);
+    }
+    #[test]
+    fn few_resident_misses_skip_the_disk_and_many_reach_it() {
+        let resident = ResidentMemo::default();
+        let disk = Disk {
+            record: fragment(b"on disk"),
+            reads: AtomicUsize::new(0),
+        };
+        let view = resident.with_disk(Some(&disk)).with_resident_only(2);
+        let key = disk.record.key();
+        for _ in 0..2 {
+            assert!(!view.visit_fragment_candidates(key, &mut |_| true));
+        }
+        assert_eq!(disk.reads.load(Ordering::Relaxed), 0);
+        assert!(view.visit_fragment_candidates(key, &mut |_| true));
         assert_eq!(disk.reads.load(Ordering::Relaxed), 1);
     }
     #[test]

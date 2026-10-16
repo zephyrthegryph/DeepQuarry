@@ -67,6 +67,17 @@ fn inspect(project: PathBuf, target: Option<&str>) -> Result<(), Box<dyn std::er
     );
     Ok(())
 }
+/// Progress line for one prior session record's validation attempt.
+struct RecordTimer(u128, Instant);
+impl Drop for RecordTimer {
+    fn drop(&mut self) {
+        dmbc::daemon_eprintln!(
+            "native session record {:032x}: {:.3}s",
+            self.0,
+            self.1.elapsed().as_secs_f64()
+        );
+    }
+}
 pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     run_build_with_host(request, &mut crate::runner_host::BuildHost::one_shot())
 }
@@ -269,6 +280,7 @@ fn run_build_attempt(
                 .unwrap_or_else(|| dmbc::publish::default_store_path(&project))?,
         )?;
         for id in configured.latest(if verification_capture { 0 } else { 4 })? {
+            let _record_timer = progress_enabled.then(|| RecordTimer(id, Instant::now()));
             if let Some(mut validated) = configured
                 .validate_filesystem_shared(
                     id,
