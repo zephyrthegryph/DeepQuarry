@@ -651,7 +651,6 @@ sparse(/mob/living, vomiting, type = bool)
 		set_canmove(FALSE)
 
 	if(lying)
-		set_density(FALSE)
 		stop_pulling()
 
 		if(!passtable_crawl_checked)
@@ -663,7 +662,6 @@ sparse(/mob/living, vomiting, type = bool)
 				pass_flags |= PASSTABLE
 
 	else
-		set_density(initial(density))
 		if(passtable_reset)
 			passtable_reset = FALSE
 			pass_flags &= ~PASSTABLE

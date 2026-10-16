@@ -36,6 +36,8 @@ CAPABILITIES(/mob/living)
 	// A pred (or whoever feeds the prey to it) waits out the swallow time; the prey moving or the actor leaving ends it (vore_procs.dm). The wait is silent: a devour is not announced by a cog.
 	op("devour", ai(), takes("pred", "belly", "duration", "message_range"), silent_wait(), wait(PROC_REF(devour_duration)), then(PROC_REF(devour_done)))
 	living_action_status_contributions()
+	// Prone posture composes density rather than overwriting the stat served value.
+	when(nameof(lying), contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE))
 	living_abilities()
 	ref_one(nameof(cameraFollow))
 	every(PROC_REF(autofire_interval), then(PROC_REF(autofire_tick)), when = nameof(autofire_on))

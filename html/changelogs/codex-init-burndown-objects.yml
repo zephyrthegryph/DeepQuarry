@@ -3,3 +3,4 @@ delete-after: true
 changes:
   - bugfix: 'Reject internal storage without an item owner before binding its owner reference.'
   - code_imp: 'Declare object startup state and child setup through native initialization forms.'
+  - bugfix: "Standing after knockdown restores the correct density without discarding other nonblocking effects."

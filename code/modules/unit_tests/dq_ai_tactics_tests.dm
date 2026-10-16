@@ -156,6 +156,45 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_tactics_subject)
 
 // --- approach_threat --------------------------------------------------------------------------
 
+/// A naturally nonblocking living subtype must stay nonblocking after posture recovery.
+/mob/living/carbon/human/dq_ai_nondense_posture
+	density = FALSE
+
+/datum/unit_test/dq_ai_prone_density_composition
+
+/datum/unit_test/dq_ai_prone_density_composition/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, ai_floor(0))
+	TEST_ASSERT(stat_value(H, STAT_DENSITY), "the actual standing human starts with its dense type constant")
+	TEST_ASSERT(H.status_set(STAT_WEAKENED, 2), "the real knockdown status admits a dose")
+	TEST_ASSERT(H.lying, "actual knockdown puts the human prone")
+	TEST_ASSERT(!stat_value(H, STAT_DENSITY) && !H.density, "prone posture serves and caches nonblocking density")
+	H.status_end(STAT_WEAKENED)
+	TEST_ASSERT(!H.lying, "ending the actual status recovers posture")
+	TEST_ASSERT(stat_value(H, STAT_DENSITY) && H.density, "recovery immediately replaces the cached prone result with the type's dense state")
+	var/datum/independent_source = allocate(/datum)
+	hold(H, STAT_DENSITY, FALSE, independent_source, priority = PRIORITY_FORCE)
+	TEST_ASSERT(!stat_value(H, STAT_DENSITY), "an actual independent hold makes the standing human nonblocking")
+	TEST_ASSERT(H.status_set(STAT_WEAKENED, 2), "a second actual knockdown succeeds while the separate hold exists")
+	H.status_end(STAT_WEAKENED)
+	TEST_ASSERT(!H.lying && !stat_value(H, STAT_DENSITY), "posture recovery does not discard another source's nonblocking hold")
+	qdel(independent_source)
+	TEST_ASSERT(stat_value(H, STAT_DENSITY) && H.density, "deleting the independent source releases only its hold and restores dense posture")
+
+/datum/unit_test/dq_ai_prone_nondense_type
+
+/datum/unit_test/dq_ai_prone_nondense_type/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/mob/living/carbon/human/dq_ai_nondense_posture/H = allocate(/mob/living/carbon/human/dq_ai_nondense_posture, ai_floor(0))
+	TEST_ASSERT(!stat_value(H, STAT_DENSITY), "the actual subtype's nonblocking constant is effective before any status")
+	TEST_ASSERT(H.status_set(STAT_WEAKENED, 2), "the nonblocking living subtype can really be knocked down")
+	TEST_ASSERT(H.lying && !stat_value(H, STAT_DENSITY), "the actual subtype remains nonblocking while prone")
+	H.status_end(STAT_WEAKENED)
+	TEST_ASSERT(!H.lying, "the subtype actually recovers from its status")
+	TEST_ASSERT(!stat_value(H, STAT_DENSITY) && !H.density, "standing restores the subtype's own nonblocking default, never a hard-coded dense value")
+
 /datum/unit_test/dq_ai_tactic_approach_threat
 
 /datum/unit_test/dq_ai_tactic_approach_threat/Run()
