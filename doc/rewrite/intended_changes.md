@@ -4960,3 +4960,8 @@ production explosion behavior and captured appearance are unchanged. The focused
 and unchanged explosion pending/epoch counters. This is test isolation, authorizes
 no pin re-records, and adds no tracked declarations or production state writes.
 Verification of this copied cleanup remains pending the coordinating lane's gate.
+
+
+### Master devour operation key (2026-10-15)
+
+Master `2136172edc` (October 15, 17:13:57 -0500; “Delete the task engine; a devour waits as an op”) adds the native AI `devour` operation. The 51 inherited mob conversion-pin inventories gain only that key. The expanded menu, click and wire rows are unchanged, as confirmed by the fresh requirements-lane capture on the same master. These records add only `devour` to each existing key line, preserving other lane-specific entries and factoring.
