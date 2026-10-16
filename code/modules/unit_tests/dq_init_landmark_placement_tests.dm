@@ -5,7 +5,7 @@
 
 /obj/effect/landmark/dq_coordinate_probe/Initialize(mapload)
 	. = ..()
-	registered_seen_by_child = loc in GLOB.tdome1
+	registered_seen_by_child = (loc in GLOB.tdome1)
 	tag_seen_by_child = tag
 
 /obj/effect/landmark/dq_coordinate_start
@@ -18,7 +18,7 @@
 
 /obj/effect/landmark/dq_latejoin_probe/Initialize(mapload)
 	. = ..()
-	registered_seen_by_child = src in REGISTRY_MEMBERS(REGISTRY_LATEJOIN)
+	registered_seen_by_child = (src in REGISTRY_MEMBERS(REGISTRY_LATEJOIN))
 	simulated_seen_by_child = simulated
 
 /datum/unit_test/dq_init_landmark_placement
