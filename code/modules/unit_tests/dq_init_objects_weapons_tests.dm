@@ -78,3 +78,31 @@
 	TEST_ASSERT(!J.on, "Attaching the trail does not turn the jetpack on")
 	qdel(J)
 	TEST_ASSERT(QDELETED(trail), "The jetpack still owns and deletes its declared trail")
+
+/datum/unit_test/dq_init_objects_permanent_candles
+/datum/unit_test/dq_init_objects_permanent_candles/Run()
+	dq_init_objects_fixture_scope()
+	var/obj/item/flame/candle/ordinary = allocate(/obj/item/flame/candle, test_floor())
+	TEST_ASSERT(!ordinary.lit, "Ordinary candles still start unlit")
+	for(var/path in list(/obj/item/flame/candle/everburn, /obj/item/flame/candle/candelabra/everburn))
+		var/obj/item/flame/candle/C = allocate(path, test_floor())
+		TEST_ASSERT(C.lit, "Each permanent candle is lit before construction returns")
+		TEST_ASSERT_EQUAL(C.wax, 99999, "Permanent candles retain their declared fuel")
+		TEST_ASSERT(findtext(C.look_state(), "_lit"), "The real look state reflects the initial flame")
+		C.flame_step(null)
+		TEST_ASSERT_EQUAL(C.wax, 99999, "Permanent flame steps do not consume wax")
+		C.snuffed(null)
+		TEST_ASSERT(!C.lit, "Permanent candles can still be snuffed")
+		C.light()
+		TEST_ASSERT(C.lit, "A snuffed permanent candle can still be relit")
+
+/datum/unit_test/dq_init_objects_circuit_implant
+/datum/unit_test/dq_init_objects_circuit_implant/Run()
+	dq_init_objects_fixture_scope()
+	var/obj/item/implant/integrated_circuit/I = allocate(/obj/item/implant/integrated_circuit, test_floor())
+	var/obj/item/electronic_assembly/implant/A = I.IC
+	TEST_ASSERT(istype(A), "The implant starts with its real declared assembly")
+	TEST_ASSERT_EQUAL(A.loc, I, "The assembly remains contained in its owning implant")
+	TEST_ASSERT_EQUAL(A.implant(), I, "The assembly links back to its exact implant before construction returns")
+	qdel(I)
+	TEST_ASSERT(QDELETED(A), "Moving link setup preserves the implant's assembly ownership")

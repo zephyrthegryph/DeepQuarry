@@ -133,15 +133,17 @@ CAPABILITIES(/obj/item/flame/candle)
 /obj/item/flame/candle/everburn
 	wax = 99999
 
-/obj/item/flame/candle/everburn/Initialize(mapload)
-	. = ..()
-	light(span_notice("\The [src] mysteriously lights itself!."))
+CAPABILITIES(/obj/item/flame/candle/everburn)
+	setup(TYPE_PROC_REF(/obj/item/flame/candle, light_permanent_candle))
 
 /obj/item/flame/candle/candelabra/everburn
 	wax = 99999
 
-/obj/item/flame/candle/candelabra/everburn/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/flame/candle/candelabra/everburn)
+	setup(TYPE_PROC_REF(/obj/item/flame/candle, light_permanent_candle))
+
+/// Permanent candles start lit after their inherited construction has completed.
+/obj/item/flame/candle/proc/light_permanent_candle()
 	light(span_notice("\The [src] mysteriously lights itself!."))
 
 /obj/item/flame/candle/everburn/flame_step(datum/act/timer/A)

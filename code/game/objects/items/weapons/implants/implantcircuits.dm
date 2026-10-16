@@ -8,11 +8,8 @@
 /obj/item/implant/integrated_circuit/islegal()
 	return TRUE
 
-/obj/item/implant/integrated_circuit/Initialize(mapload)
-	. = ..()
-	rel_set(IC, nameof(IC.implant), src)
-
 CAPABILITIES(/obj/item/implant/integrated_circuit)
+	setup(PROC_REF(link_assembly_to_implant))
 	owns_one(nameof(IC), starts = /obj/item/electronic_assembly/implant)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(circuit_implant_emp))))
 	op("use", in_hand(), label("Use"), then(PROC_REF(circuit_use)))
@@ -59,3 +56,7 @@ CAPABILITIES(/obj/item/implant/integrated_circuit)
 /obj/item/implant/integrated_circuit/proc/circuit_use(datum/act/op/A)
 	IC.attack_self(A.actor)
 	return OP_OK
+
+/// Link the declared assembly once its construction and inherited initialization are complete.
+/obj/item/implant/integrated_circuit/proc/link_assembly_to_implant()
+	rel_set(IC, nameof(IC.implant), src)
