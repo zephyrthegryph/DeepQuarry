@@ -13,7 +13,7 @@ GLOBAL_LIST_INIT(pipe_colors, list("grey" = PIPE_COLOR_GREY, "red" = PIPE_COLOR_
 // resolve GLOB.icon_manager.get_atmos_icon at compile time.
 GLOBAL_DATUM_INIT(icon_manager, /datum/pipe_icon_manager, new)
 
-GLOBAL_DATUM_INIT(global_message_listener, /datum/comm_message_listener, new) //May be used by admins
+GLOBAL_DATUM_INIT(global_message_listener, /datum/comm_message_listener/station_wide, new) //May be used by admins
 GLOBAL_DATUM_INIT(ntnet_global, /datum/ntnet, new)
 GLOBAL_VAR_INIT(last_message_id, 0)
 

@@ -175,6 +175,10 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 CAPABILITIES(/datum/parsed_map)
 	owns_many(nameof(gridSets))
 
+/// A parsed map kept in GLOB.cached_maps for the whole round: nothing deletes one (loads copy it). A parser made for one load is a plain /datum/parsed_map.
+/datum/parsed_map/cached
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/parsed_map/cached)
+
 /datum/parsed_map/proc/copy()
 	// Avoids duped work just in case
 	build_cache()
@@ -235,7 +239,7 @@ CAPABILITIES(/datum/parsed_map)
 	new_z = FALSE,
 )
 	if(!(dmm_file in GLOB.cached_maps))
-		GLOB.cached_maps[dmm_file] = new /datum/parsed_map(dmm_file)
+		GLOB.cached_maps[dmm_file] = new /datum/parsed_map/cached(dmm_file)
 
 	var/datum/parsed_map/parsed_map = GLOB.cached_maps[dmm_file]
 	parsed_map = parsed_map.copy()

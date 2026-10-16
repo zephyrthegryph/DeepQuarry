@@ -48,6 +48,11 @@ General message handling stuff
 /datum/comm_message_listener
 	var/list/messages
 
+/// The station-wide listener (GLOB.global_message_listener): one for the round, never deleted. A program's own listener is a plain
+/// /datum/comm_message_listener and goes with the program.
+/datum/comm_message_listener/station_wide
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/comm_message_listener/station_wide)
+
 /datum/comm_message_listener/New()
 	..()
 	messages = list()

@@ -237,7 +237,7 @@ CAPABILITIES(/datum/map_load)
 	T.on_map_preload(new_z)
 	cache_key = file(T.mappath)
 	if(!(cache_key in GLOB.cached_maps))
-		var/datum/parsed_map/P = new /datum/parsed_map()
+		var/datum/parsed_map/P = new /datum/parsed_map/cached()
 		source = P
 		parsed = P
 		phase = MAP_LOAD_PARSE
