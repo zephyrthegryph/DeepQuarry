@@ -15,10 +15,8 @@ CAPABILITIES(/datum/guard_test_holder)
 	owns_one(nameof(child))
 	owns_many(nameof(kids))
 	owns_many(nameof(values))
+	owns_one(nameof(species), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)
 
-/datum/guard_test_holder/ownership()
-	. = ..()
-	. += rel_one(nameof(species), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /datum/guard_test_holder/proc/on_tick()
 	fired++

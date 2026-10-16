@@ -283,6 +283,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(skills_emp)))
+	owns_one(nameof(scan), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/computer/skills/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -974,9 +975,6 @@ CAPABILITIES(/obj/machinery/computer/skills)
 
 #undef FIELD
 
-/obj/machinery/computer/skills/ownership()
-	. = ..()
-	. += owns(nameof(scan), policy = OWN_CONTAINED)
 
 /// The selected record (a relation view).
 /obj/machinery/computer/skills/proc/active1() as /datum/data/record

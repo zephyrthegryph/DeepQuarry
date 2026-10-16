@@ -127,6 +127,9 @@ CAPABILITIES(/obj/machinery/protean_reconstitutor)
 	extend("machine_panel", needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy))))
 	extend("machine_panel_close", needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy))))
 	extend("machine_deconstruct", needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy))))
+	owns_one(nameof(protean_brain), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(protean_orchestrator), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(protean_refactory), on_destroy = ON_DESTROY_CONTAINED)
 
 MSG_DEF_SELF(protean_reconstitutor/processing_revive, "reconstitution cycle currently in progress, please wait")
 
@@ -378,8 +381,3 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 	set_nanomass_reserve(min(nanotank_max, nanomass_reserve + nanomass_required))
 	set_processing_revive(FALSE)
 
-/obj/machinery/protean_reconstitutor/ownership()
-	. = ..()
-	. += owns(nameof(protean_brain), policy = OWN_CONTAINED)
-	. += owns(nameof(protean_orchestrator), policy = OWN_CONTAINED)
-	. += owns(nameof(protean_refactory), policy = OWN_CONTAINED)

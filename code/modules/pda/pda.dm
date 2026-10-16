@@ -87,6 +87,7 @@ CAPABILITIES(/obj/item/pda)
 	op("pda_verb_remove_id", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove id"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried()), then(PROC_REF(pda_verb_remove_id)))
 	op("pda_verb_remove_pen", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove pen"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried()), then(PROC_REF(pda_verb_remove_pen)))
 	op("pda_verb_remove_cartridge", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove cartridge"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried(), req(PROC_REF(can_remove_cartridge_holds))), then(PROC_REF(pda_verb_remove_cartridge)))
+	owns_one(nameof(id), on_destroy = ON_DESTROY_DELETE, only_if = nameof(delete_id), otherwise = ON_DESTROY_SPILL)
 
 /obj/item/pda/examine(mob/user)
 	. = ..()
@@ -554,9 +555,6 @@ CAPABILITIES(/obj/item/storage/box/PDAs)
 	icon_state = "pda-pilot"		//New sprites, but still no ROM cartridge or anything
 
 // Its ID drops out when it is destroyed, unless flagged (delete_id) to go with it.
-/obj/item/pda/ownership()
-	. = ..()
-	. += owns(nameof(id), policy = OWN_DELETE, if_var = nameof(delete_id), else_policy = OWN_SPILL)
 
 /// The scanmode this refers to (a relation view: null once that is deleted).
 /obj/item/pda/proc/scanmode() as /datum/data/pda/utility/scanmode

@@ -140,6 +140,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	owns_one(nameof(beaker), starts = /obj/item/reagent_containers/glass/bottle, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/biogenerator/proc/ui_act_activate(datum/act/op/A)
 	var/mob/user = A.actor
@@ -307,6 +308,3 @@ CAPABILITIES(/obj/machinery/biogenerator)
 #undef BIOGEN_ITEM
 #undef BIOGEN_REAGENT
 
-/obj/machinery/biogenerator/ownership()
-	. = ..()
-	. += owns(nameof(beaker), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/bottle)

@@ -263,7 +263,7 @@
 			var/datum/mind_host/host = get_mind_host(mmi)
 			if(T)
 				mmi.forceMove(T)
-				mmi_ejects = TRUE // the MMI's policy is OWN_SPILL from here: it lives on, on the turf
+				set_mmi_ejects(TRUE) // the MMI's policy is OWN_SPILL from here: it lives on, on the turf
 			if(T && host)
 				var/mob/living/carbon/brain/view = host.receive_mind(mind, "cyborg [src] destroyed")
 				view.remove_language(LANGUAGE_ROBOT_TALK)
@@ -1674,15 +1674,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/proc/supports_upgrade(given_type)
 	return (given_type in module.supported_upgrades)
 
-/mob/living/silicon/robot/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
-	// on_destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks.
-	// The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
-	// A borg with a mind gives its MMI to the turf (mmi_ejects, set in on_destroy()); a mindless one's goes with it.
-	. += owns(nameof(mmi), policy = OWN_SPILL, if_var = nameof(mmi_ejects), else_policy = OWN_CONTAINED)
-	// A registered robot sprite, or the robot's private fallback default (copy-on-write).
-	. += rel_one(nameof(sprite_datum), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 
 // ---- the wires (declared with the cyborg's capabilities, code/library/mob/hands.dm) ----

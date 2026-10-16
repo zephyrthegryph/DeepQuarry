@@ -30,12 +30,16 @@ const OPTIONAL_IMAGES: usize = 4;
 const COMPACT_SYMBOLIC: usize = 5;
 const REMAINING_OPTIONAL: usize = 6;
 const SESSION_RELEASE: usize = 7;
-// Soft pressure only sheds rich/transient buffers (tier 2). The symbolic memo,
-// generation, link bindings and frontend host that make the next edit resident
-// are released (tiers 3..7) only above the hard ceiling or after SESSION_IDLE.
+// Soft pressure sheds nothing. Measured on DeepQuarry (2026-10-15): the tier-2 release of rich
+// buffers (prepared sources, maps, link bindings, initializer assemblies) returned no private
+// memory (private bytes before and after differ by under 0.1%: the freed pages are scattered among
+// live blocks), yet it cost the next edit about 11 s of re-preparing 5,800 sources plus the map and
+// link rebuilds, and because the daemon stays above the soft limit it fired after every build. The
+// symbolic memo, generation, link bindings and frontend host that make the next edit resident are
+// released (tiers 3..7) only above the hard ceiling or after SESSION_IDLE.
 fn target(age: Duration, pressured: bool, hard: bool, previous: usize) -> usize {
     if pressured && !hard {
-        return if age >= SESSION_IDLE { SESSION_RELEASE } else { 2 };
+        return if age >= SESSION_IDLE { SESSION_RELEASE } else { previous };
     }
     if age >= SESSION_IDLE || pressured && previous >= REMAINING_OPTIONAL {
         SESSION_RELEASE
@@ -193,9 +197,9 @@ mod tests {
         assert!(!deadline.due(now + Duration::from_secs(40)));
     }
     #[test]
-    fn soft_pressure_never_reaches_symbolic_core_tiers() {
+    fn soft_pressure_never_releases_anything_before_session_idle() {
         for previous in 0..=SESSION_RELEASE {
-            assert_eq!(target(Duration::ZERO, true, false, previous), 2);
+            assert_eq!(target(Duration::ZERO, true, false, previous), previous);
         }
         assert_eq!(target(SESSION_IDLE, true, false, 2), SESSION_RELEASE);
     }

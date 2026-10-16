@@ -830,9 +830,8 @@ CAPABILITIES(/obj/item/implant/sizecontrol)
 	name = "size control implant"
 	desc = "Implant which allows to control host size via voice commands."
 
-/obj/item/implanter/sizecontrol/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/sizecontrol)
+CAPABILITIES(/obj/item/implanter/sizecontrol)
+	owns_one(nameof(imp), starts = /obj/item/implant/sizecontrol, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implanter/sizecontrol
 	icon_state = "implanter1_1" // loaded: what update() would show
@@ -852,9 +851,6 @@ CAPABILITIES(/obj/item/implant/sizecontrol)
 	with the shape of a star on it, the letters 'KE' in black text on it."
 	special_handling = TRUE
 
-/obj/item/implanter/compliance/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/compliance)
 
 /obj/item/implanter/compliance
 	icon_state = "implanter1_1" // loaded: what update() would show
@@ -899,6 +895,7 @@ CAPABILITIES(/datum/prompt/text/compliance_laws)
 CAPABILITIES(/obj/item/implanter/compliance)
 	without("toggle")
 	op("compliance_implanter_self", in_hand(), label("Set laws"), then(PROC_REF(compliance_implanter_self)))
+	owns_one(nameof(imp), starts = /obj/item/implant/compliance, on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attack_self.
 /obj/item/implanter/compliance/proc/compliance_implanter_self(datum/act/op/A)

@@ -29,6 +29,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	rotatable()
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	owns_one(nameof(cell), starts = /obj/item/cell/high, on_destroy = ON_DESTROY_CONTAINED)
 
 /// Holds its field (draining its cell); runs while it has one (declared).
 /obj/machinery/suspension_gen/proc/work_step(datum/act/timer/A)
@@ -244,9 +245,6 @@ CAPABILITIES(/obj/effect/suspension_field)
 	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
 
 
-/obj/machinery/suspension_gen/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 
 /// Accessor for the auth_card var.
 /obj/machinery/suspension_gen/proc/auth_card() as /obj/item/card/id

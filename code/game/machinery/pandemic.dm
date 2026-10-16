@@ -105,6 +105,7 @@ CAPABILITIES(/obj/machinery/computer/pandemic)
 		asks(/datum/prompt/text/pandemic_release_reason, step = "reason", fields = list("title" = "Write", "question" = "Enter a reason for the release", "multiline" = TRUE, "affliction" = computed(PROC_REF(release_strain)), "timeout" = 0)),
 		asks(/datum/prompt/yes_no/pandemic_release_sign, step = "signature", fields = list("title" = "Signature", "question" = "Would you like to add your signature?", "disease" = computed(PROC_REF(release_reason_disease)), "reason" = computed(PROC_REF(release_reason_text)), "timeout" = 0), when = PROC_REF(release_has_reason)), then(PROC_REF(ui_act_print_release_form)))
 	extend(TAG_UI, needs(req(PROC_REF(console_works))))
+	owns_one(nameof(beaker), on_destroy = ON_DESTROY_CONTAINED)
 
 CAPABILITIES(/datum/prompt/text/pandemic_release_reason)
 	ref_one(nameof(affliction), /datum/affliction/contagion/engineered)
@@ -406,9 +407,6 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 	play_sfx(src, SFX_MACHINES_PING, 0.6, vary = TRUE)
 	return TRUE
 
-/obj/machinery/computer/pandemic/ownership()
-	. = ..()
-	. += owns(nameof(beaker), policy = OWN_CONTAINED)
 
 /obj/machinery/computer/pandemic/proc/empty_slot_holds(datum/act/op/A)
 	return (!beaker) ? null : MSG(pandemic/beaker_loaded)

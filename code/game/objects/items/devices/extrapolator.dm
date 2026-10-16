@@ -46,6 +46,7 @@ CAPABILITIES(/obj/item/extrapolator)
 	// The isolations, started by isolate_symptom() / isolate_disease() once the user chose what to take from the subject.
 	op("isolate_symptom", ai(), takes("subject", "disease"), wait(PROC_REF(extract_wait)), then(PROC_REF(isolate_symptom_timed_done)))
 	op("isolate_disease", ai(), takes("subject", "disease"), wait(PROC_REF(isolate_wait)), then(PROC_REF(isolate_disease_timed_done)))
+	owns_one(nameof(scanner), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/extrapolator/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -383,6 +384,3 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 /obj/item/extrapolator/tier5
 	default_scanning_module = /obj/item/stock_parts/scanning_module
 
-/obj/item/extrapolator/ownership()
-	. = ..()
-	. += owns(nameof(scanner), policy = OWN_CONTAINED)

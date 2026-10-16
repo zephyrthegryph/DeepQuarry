@@ -44,6 +44,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 	op("weed", ui_act("weed"), then(PROC_REF(ui_act_weed)))
 	op("replacenutri", ui_act("replacenutri"), then(PROC_REF(ui_act_replacenutri)))
 	param(nameof(tank_at_make), pos = 1, apply = PROC_REF(take_tank), keep = FALSE)
+	owns_one(nameof(tank), on_destroy = ON_DESTROY_CONTAINED)
 
 /// The window's data: the bot's state, its tank, and the settings while the panel is unlocked.
 /mob/living/bot/farmbot/ui_data(datum/act/eval/A)
@@ -357,6 +358,7 @@ CAPABILITIES(/obj/item/farmbot_arm_assembly)
 	param(nameof(tank_at_make), pos = 1, apply = PROC_REF(take_tank), keep = FALSE)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	owns_one(nameof(tank), on_destroy = ON_DESTROY_CONTAINED)
 
 /// The water tank the assembly is built around (its constructor param), or null for a new one (an admin spawn).
 /obj/item/farmbot_arm_assembly/var/tmp/obj/tank_at_make
@@ -442,9 +444,3 @@ CAPABILITIES(/obj/item/farmbot_arm_assembly)
 	act_message(src, null, others = span_warning("%U% buzzes oddly."))
 	emagged = 1
 
-/obj/item/farmbot_arm_assembly/ownership()
-	. = ..()
-	. += owns(nameof(tank), policy = OWN_CONTAINED)
-/mob/living/bot/farmbot/ownership()
-	. = ..()
-	. += owns(nameof(tank), policy = OWN_CONTAINED)

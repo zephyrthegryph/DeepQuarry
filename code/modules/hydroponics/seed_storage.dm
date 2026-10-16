@@ -8,11 +8,9 @@
 
 CAPABILITIES(/datum/seed_pile)
 	owns_one(nameof(seed_type_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	owns_one(nameof(seeds), on_destroy = ON_DESTROY_SPILL)
 
 // The seed objects sit in the storage machine's contents; the pile only indexes them.
-/datum/seed_pile/ownership()
-	. = ..()
-	. += owns(nameof(seeds), policy = OWN_SPILL)
 
 /datum/seed_pile/New(obj/item/seeds/O, ID)
 	name = O.name

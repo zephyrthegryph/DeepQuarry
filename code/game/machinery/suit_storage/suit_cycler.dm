@@ -322,6 +322,8 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	emag(then(PROC_REF(on_emag)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_hacking_tools", any_of_tools(TOOL_MULTITOOL, TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(hacking_tool_used)))
+	owns_one(nameof(suit), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(helmet), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/suit_cycler/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -563,10 +565,6 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	apply_paintjob()
 	finished_job(user)
 
-/obj/machinery/suit_cycler/ownership()
-	. = ..()
-	. += owns(nameof(suit), policy = OWN_CONTAINED)
-	. += owns(nameof(helmet), policy = OWN_CONTAINED)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/suit_cycler/proc/target_department() as /datum/suit_cycler_choice/department

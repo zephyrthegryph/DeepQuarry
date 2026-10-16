@@ -234,11 +234,6 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	// entry per service (about 1,400 at boot, one per power cell and admitted pipe).
 
 // unregisters diagnostics and its service timer; its owner forgets it.
-/datum/material_service/ownership()
-	. = ..()
-	. += rel_one(nameof(monitor_tool))
-	. += rel_one(nameof(monitor_user))
-	. += rel_one(nameof(watched_turf))
 
 /datum/material_service/on_destroy(force)
 	drop_heat_links()

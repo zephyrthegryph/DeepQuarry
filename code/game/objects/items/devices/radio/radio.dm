@@ -745,6 +745,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 CAPABILITIES(/obj/item/radio/borg)
 	op("insert_key", item(/obj/item/encryptionkey), label("Insert key"), then(PROC_REF(interaction_item)))
+	owns_one(nameof(keyslot), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/radio/borg
 	// owned: installed encryption key, kept in the radio's contents
@@ -986,9 +987,6 @@ CAPABILITIES(/obj/item/radio/subspace)
 	bs_rx_preload_id = "cryogaia_tx" //Recveive from a transmitter
 
 DECLARE_REGISTRY(/obj/item/radio, REGISTRY_LISTENING_OBJECTS)
-/obj/item/radio/borg/ownership()
-	. = ..()
-	. += owns(nameof(keyslot), policy = OWN_CONTAINED)
 
 /// Relation view: radio connection (reads null once it is gone).
 /obj/item/radio/proc/radio_connection() as /datum/radio_frequency

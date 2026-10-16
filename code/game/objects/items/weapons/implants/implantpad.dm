@@ -26,6 +26,7 @@ CAPABILITIES(/obj/item/implantpad)
 	op("insert_case", item(/obj/item/implantcase), passes(), when(req(PROC_REF(has_no_case))), then(PROC_REF(case_inserted)))
 	op("tracking_id", ui_act("tracking_id", arg("delta", num())), then(PROC_REF(ui_act_tracking_id)))
 	extend(TAG_UI, needs(req(PROC_REF(user_conscious), because = MSG(implantpad/unconscious))))
+	owns_one(nameof(case), on_destroy = ON_DESTROY_CONTAINED)
 
 /// An empty hand takes the case out of a pad it carries; a pad that is not carried, or holds none, is picked up as any item.
 /obj/item/implantpad/proc/has_case(datum/act/A)
@@ -83,6 +84,3 @@ MSG_DEF_SELF(implantpad/unconscious, "You can't do that right now.")
 	T.set_id(clamp(T.id, 1, 1000))
 	return OP_OK
 
-/obj/item/implantpad/ownership()
-	. = ..()
-	. += owns(nameof(case), policy = OWN_CONTAINED)

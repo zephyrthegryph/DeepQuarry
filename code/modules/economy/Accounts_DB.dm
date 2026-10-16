@@ -60,6 +60,7 @@ CAPABILITIES(/obj/machinery/account_database)
 	op("interaction_insert_card", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_card)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 	display_disconnect_op()
+	owns_one(nameof(held_card), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/account_database/proc/assign_machine_id(datum/act/timer/A)
 	set_machine_id("[station_name()] Acc. DB #[GLOB.num_financial_terminals++]")
@@ -337,9 +338,6 @@ CAPABILITIES(/obj/machinery/account_database)
 	P.set_info(text)
 	state("The terminal prints out a report.")
 
-/obj/machinery/account_database/ownership()
-	. = ..()
-	. += owns(nameof(held_card), policy = OWN_CONTAINED)
 
 /// the detailed_account_view this refers to (a relation view: null once it is deleted).
 /obj/machinery/account_database/proc/detailed_account_view() as /datum/money_account

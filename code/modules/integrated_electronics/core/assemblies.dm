@@ -46,6 +46,7 @@ CAPABILITIES(/obj/item/electronic_assembly)
 	op("remove_circuit", ui_act("remove_circuit", arg("ref", schema_ref(/obj/item/integrated_circuit))), then(PROC_REF(ui_act_remove_circuit)))
 	op("update_component_position", ui_act("update_component_position", arg("ref", schema_ref(/obj/item/integrated_circuit)), arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_update_component_position)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	owns_one(nameof(battery), starts = /obj/item/cell/device, on_destroy = ON_DESTROY_CONTAINED)
 
 /// Cached flag: TRUE when this assembly has at least one circuit that draws or makes power (so
 /// handle_idle_power() actually has work to do). Recomputed on circuit/cell add/remove via
@@ -631,9 +632,6 @@ CAPABILITIES(/datum/ic_export_view)
 /obj/item/electronic_assembly/proc/is_valid_tool(obj/item/I)
 	return I.has_tool_quality(TOOL_CROWBAR) || I.has_tool_quality(TOOL_SCREWDRIVER) || istype(I, /obj/item/integrated_circuit) || istype(I, /obj/item/cell/device) || istype(I, /obj/item/integrated_electronics)
 
-/obj/item/electronic_assembly/ownership()
-	. = ..()
-	. += owns(nameof(battery), policy = OWN_CONTAINED, starts = /obj/item/cell/device)
 
 /// ID card for door access (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/proc/access_card() as /obj/item/card/id

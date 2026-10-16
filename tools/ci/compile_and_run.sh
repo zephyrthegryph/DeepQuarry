@@ -5,6 +5,9 @@ NC='\033[0m'
 
 source $HOME/BYOND/byond/bin/byondsetup
 
+# CI keeps DreamMaker as the cross-check for the native compiler (the local default), until the two are proven equivalent.
+export DQ_COMPILER=dreammaker
+
 # Clean up between steps so Juke doesn't refuse to recompile with different -D options
 rm -f deepquarry.dmb
 

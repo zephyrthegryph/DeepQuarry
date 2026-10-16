@@ -63,6 +63,8 @@ unsafe impl GlobalAlloc for CountingAllocator {
         let pointer = unsafe { BACKEND.alloc(layout) };
         if !pointer.is_null() {
             allocated(layout.size());
+            #[cfg(feature = "allocation-sites")]
+            crate::allocation_sites::on_alloc(pointer, layout.size());
         }
         pointer
     }
@@ -70,18 +72,26 @@ unsafe impl GlobalAlloc for CountingAllocator {
         let pointer = unsafe { BACKEND.alloc_zeroed(layout) };
         if !pointer.is_null() {
             allocated(layout.size());
+            #[cfg(feature = "allocation-sites")]
+            crate::allocation_sites::on_alloc(pointer, layout.size());
         }
         pointer
     }
     unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
         LIVE.fetch_sub(layout.size() as u64, Ordering::Relaxed);
+        #[cfg(feature = "allocation-sites")]
+        crate::allocation_sites::on_free(pointer);
         unsafe { BACKEND.dealloc(pointer, layout) };
     }
     unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
+        #[cfg(feature = "allocation-sites")]
+        crate::allocation_sites::on_free(pointer);
         let result = unsafe { BACKEND.realloc(pointer, layout, size) };
         if !result.is_null() {
             let live = replace_live(&LIVE, layout.size(), size);
             allocation_event(size, live);
+            #[cfg(feature = "allocation-sites")]
+            crate::allocation_sites::on_alloc(result, size);
         }
         result
     }

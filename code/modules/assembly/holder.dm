@@ -100,6 +100,8 @@ CAPABILITIES(/obj/item/assembly_holder)
 		asks(/datum/prompt/choice, fields = list("question" = "Which side would you like to use?", "title" = "Side", "choices" = list("Left", "Right"), "buttons" = TRUE, "timeout" = 0), step = "side", when = PROC_REF(asks_side)),
 		then(PROC_REF(interaction_self)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	owns_one(nameof(a_left), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(a_right), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attack_hand: notify the parts before falling through (never handled the click itself).
 /obj/item/assembly_holder/proc/interaction_hand(datum/act/op/A)//Perhapse this should be a holder_pickup proc instead, can add if needbe I guess
@@ -266,8 +268,4 @@ CAPABILITIES(/obj/item/assembly_holder)
 /datum/prompt/number/grenade_timer_configuration/normalize(given)
 	return isnum(given) ? given : null
 
-/obj/item/assembly_holder/ownership()
-	. = ..()
-	. += owns(nameof(a_left), policy = OWN_CONTAINED)
-	. += owns(nameof(a_right), policy = OWN_CONTAINED)
 

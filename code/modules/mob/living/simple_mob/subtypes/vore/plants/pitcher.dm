@@ -337,6 +337,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/pitcher_fruit)
 	configure(reagents(add = list(REAGENT_ID_PITCHERNECTAR = 5, REAGENT_ID_PARALYZE_FLUID = 5)))
 	op("pitcher_fruit_self", in_hand(), label("Plant"), then(PROC_REF(pitcher_fruit_self)))
 	derives(nameof(seed), PROC_REF(seed_of_pit))
+	owns_one(nameof(pit), starts = /obj/item/seeds/pitcherseed, on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attack_self: plant the fruit.
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/proc/pitcher_fruit_self(datum/act/op/A)
@@ -353,6 +354,3 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/pitcher_fruit)
 #undef PITCHER_SATED
 #undef PITCHER_HUNGRY
 
-/obj/item/reagent_containers/food/snacks/pitcher_fruit/ownership()
-	. = ..()
-	. += owns(nameof(pit), policy = OWN_CONTAINED, starts = /obj/item/seeds/pitcherseed)

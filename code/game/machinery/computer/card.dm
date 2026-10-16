@@ -60,6 +60,8 @@ CAPABILITIES(/obj/machinery/computer/card)
 	op("mode", ui_act("mode", arg("mode_target", num())), then(PROC_REF(ui_act_mode)))
 	op("print", ui_act("print"), when(cond_not(nameof(printing))), then(PROC_REF(ui_act_print)))
 	op("terminate", ui_act("terminate"), needs(req(PROC_REF(assign_possible))), then(PROC_REF(ui_act_terminate)))
+	owns_one(nameof(scan), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(modify), on_destroy = ON_DESTROY_CONTAINED)
 
 /// needs: a slot is free for the card (the operator's slot for a card with the access, else the subject's).
 /obj/machinery/computer/card/proc/has_free_slot(datum/act/op/A)
@@ -292,7 +294,3 @@ CAPABILITIES(/obj/machinery/computer/card)
 		for(var/A in modify.access)
 			P.set_info(P.info + ("  [SSaccess.get_access_desc(A)]"))
 
-/obj/machinery/computer/card/ownership()
-	. = ..()
-	. += owns(nameof(scan), policy = OWN_CONTAINED)
-	. += owns(nameof(modify), policy = OWN_CONTAINED)

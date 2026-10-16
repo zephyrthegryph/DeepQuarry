@@ -47,6 +47,7 @@
 CAPABILITIES(/obj/item/integrated_circuit/manipulation/weapon_firing)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	owns_one(nameof(installed_gun), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attack_self.
 /obj/item/integrated_circuit/manipulation/weapon_firing/proc/interaction_self(datum/act/op/A)
@@ -275,6 +276,3 @@ CAPABILITIES(/obj/item/integrated_circuit/manipulation/grenade)
 		target.resize(size/100)
 	activate_pin(2)
 
-/obj/item/integrated_circuit/manipulation/weapon_firing/ownership()
-	. = ..()
-	. += owns(nameof(installed_gun), policy = OWN_CONTAINED)

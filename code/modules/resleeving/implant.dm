@@ -147,9 +147,8 @@ MSG_DEF(backup_implanter/implanting, null, "%U% is injecting a backup implant in
 	desc = "A case containing a backup implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/backup/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/backup)
+CAPABILITIES(/obj/item/implantcase/backup)
+	owns_one(nameof(imp), starts = /obj/item/implant/backup, on_destroy = ON_DESTROY_CONTAINED)
 
 //The box of backup implants
 /obj/item/storage/box/backup_kit

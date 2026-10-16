@@ -25,6 +25,7 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 	op("unwrench", tool(TOOL_WRENCH), label("Unwrench"), wait(1.5 SECONDS), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(cond_not(nameof(has_extinguisher))),
 		begins(MSG(extinguisher_cabinet/unwrenching)), says(MSG(extinguisher_cabinet/unwrenched)), then(PROC_REF(unwrenched)))
 	rolls(ROLL_PIXEL, WALL_OFFSET(27, 27), when = nameof(building))
+	owns_one(nameof(has_extinguisher), starts = when(cond_not(nameof(building)), /obj/item/extinguisher), on_lost = PROC_REF(extinguisher_lost), on_destroy = ON_DESTROY_CONTAINED)
 
 /// A cabinet built on a wall (its constructor param).
 /obj/structure/extinguisher_cabinet/var/building = FALSE
@@ -111,6 +112,3 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 	icon = 'icons/obj/closet.dmi'
 	icon_state = "oldextinguisher" // map preview sprite
 
-/obj/structure/extinguisher_cabinet/ownership()
-	. = ..()
-	. += owns(nameof(has_extinguisher), policy = OWN_CONTAINED, starts = when(cond_not(nameof(building)), /obj/item/extinguisher), on_lost = PROC_REF(extinguisher_lost))

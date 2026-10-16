@@ -229,6 +229,7 @@ CAPABILITIES(/obj/machinery/partslathe)
 	op("remove_mat", ui_act("remove_mat", arg("amount", num()), arg("id", schema_text(4096))), then(PROC_REF(ui_act_remove_mat)))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use item"), needs(req(PROC_REF(can_load_item))), then(PROC_REF(interaction_attackby)))
+	owns_one(nameof(copy_board), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Whoever presses a button leaves their prints on the lathe.
 /obj/machinery/partslathe/proc/ui_fingerprint(datum/act/op/A)
@@ -382,6 +383,3 @@ CAPABILITIES(/obj/machinery/partslathe)
 /obj/machinery/partslathe/step_start_condition()
 	return busy
 
-/obj/machinery/partslathe/ownership()
-	. = ..()
-	. += owns(nameof(copy_board), policy = OWN_CONTAINED)

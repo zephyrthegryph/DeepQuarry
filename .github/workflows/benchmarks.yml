@@ -85,7 +85,7 @@ jobs:
           if [ -n "${{ inputs.scenarios }}" ]; then
             args="$args --scenario=${{ inputs.scenarios }}"
           fi
-          tools/build/build.sh --ci bench $args --label=ci-${{ github.run_number }}
+          DQ_COMPILER=dreammaker tools/build/build.sh --ci bench $args --label=ci-${{ github.run_number }}
       - name: Compare with master
         if: always() && steps.bench.outcome != 'skipped'
         run: |

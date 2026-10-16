@@ -254,9 +254,8 @@ CAPABILITIES(/obj/item/melee/energy/axe)
 CAPABILITIES(/obj/item/melee/energy/axe/charge)
 	configure(item_combat(force = 15))
 
-/obj/item/melee/energy/axe/charge/loaded/ownership()
-	. = ..()
-	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon)
+CAPABILITIES(/obj/item/melee/energy/axe/charge/loaded)
+	owns_one(nameof(bcell), starts = /obj/item/cell/device/weapon, on_destroy = ON_DESTROY_CONTAINED)
 
 /*
  * Energy Sword
@@ -404,9 +403,8 @@ CAPABILITIES(/obj/item/melee/energy/sword/ionic_rapier/lance)
 
 	hitcost = 75
 
-/obj/item/melee/energy/sword/charge/loaded/ownership()
-	. = ..()
-	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon)
+CAPABILITIES(/obj/item/melee/energy/sword/charge/loaded)
+	owns_one(nameof(bcell), starts = /obj/item/cell/device/weapon, on_destroy = ON_DESTROY_CONTAINED)
 
 //Energy Blade (ninja uses this)
 

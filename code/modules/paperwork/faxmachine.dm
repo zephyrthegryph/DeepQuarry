@@ -201,6 +201,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	op("faxmachine_open_ui_silicon", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon)), label("Use"), then(PROC_REF(silicon_open_ui)))
 	op("faxmachine_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 	op("faxmachine_remove_card", menu(), label("Remove ID card"), needs(req_adjacent(), req_capable(), req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon), because = /datum/msg/req_failed), req_is(nameof(scan), TRUE, because = MSG(faxmachine/no_scan))), then(PROC_REF(interaction_remove_card)))
+	owns_one(nameof(scan), on_destroy = ON_DESTROY_CONTAINED)
 
 /// The window data.
 /obj/machinery/photocopier/faxmachine/ui_data(datum/act/eval/A)
@@ -707,9 +708,6 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 /obj/machinery/photocopier/faxmachine/proc/cooldown_over()
 	set_sendcooldown(0)
 
-/obj/machinery/photocopier/faxmachine/ownership()
-	. = ..()
-	. += owns(nameof(scan), policy = OWN_CONTAINED)
 
 /datum/prompt/text/fax_paper_title
 	question = "Enter new paper title"

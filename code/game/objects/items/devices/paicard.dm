@@ -969,7 +969,4 @@ CAPABILITIES(/obj/random/paicard)
 	if(pai.vore_prefs.digestable)
 		return ..()
 
-/obj/machinery/ownership()
-	. = ..()
-	. += owns(nameof(paicard), policy = OWN_CONTAINED)
 

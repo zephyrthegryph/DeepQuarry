@@ -105,9 +105,6 @@ CAPABILITIES(/obj/item/syringe_cartridge)
 	special_handling = TRUE
 
 // Loaded cartridges sit in the gun's contents; next is a view of the one on the bolt.
-/obj/item/gun/launcher/syringe/ownership()
-	. = ..()
-	. += owns(nameof(darts), policy = OWN_CONTAINED, is_list = TRUE)
 
 /obj/item/gun/launcher/syringe/consume_next_projectile()
 	if(next())
@@ -141,6 +138,7 @@ CAPABILITIES(/obj/item/gun/launcher/syringe)
 	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
 	configure(item_combat(force = 7))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	owns_many(nameof(darts), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attack_hand.
 /obj/item/gun/launcher/syringe/proc/interaction_hand(datum/act/op/A)

@@ -60,6 +60,8 @@ CAPABILITIES(/obj/item/medigun_backpack)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(medigun_backpack_emp)))
 	drag_onto(PROC_REF(drop_input))
+	owns_one(nameof(ccell), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(sbin), starts = nameof(sbin), on_destroy = ON_DESTROY_CONTAINED)
 
 //backpack item
 /obj/item/medigun_backpack/cmo
@@ -557,7 +559,3 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 /obj/item/medigun_backpack/proc/checked_use(charge_amt)
 	return (bcell && bcell.checked_use(charge_amt))
 
-/obj/item/medigun_backpack/ownership()
-	. = ..()
-	. += owns(nameof(ccell), policy = OWN_CONTAINED)
-	. += owns(nameof(sbin), policy = OWN_CONTAINED, starts = nameof(sbin))

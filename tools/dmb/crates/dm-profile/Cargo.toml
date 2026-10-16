@@ -6,6 +6,8 @@ edition = "2021"
 [features]
 default = []
 allocation-counting = []
+# Sampled live-allocation attribution by call site (implies counting); see allocation_sites.rs.
+allocation-sites = ["allocation-counting"]
 
 [dependencies]
 mimalloc = "0.1.52"

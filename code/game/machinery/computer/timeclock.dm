@@ -21,10 +21,6 @@
 	var/obj/item/card/id/card // Inserted Id card
 	var/obj/item/radio/intercom/announce	// Integreated announcer
 
-/obj/machinery/computer/timeclock/ownership()
-	. = ..()
-	. += owns(nameof(card), policy = OWN_SPILL)
-	. += owns(nameof(announce), policy = OWN_CONTAINED, starts = /obj/item/radio/intercom)
 
 /obj/machinery/computer/timeclock/draw(datum/look/look)
 	..()
@@ -61,6 +57,8 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 	op("switch-to-offduty", ui_act("switch-to-offduty"), then(PROC_REF(ui_act_switch_to_offduty)))
 	extend(TAG_UI, then(PROC_REF(ui_touched), early = TRUE))
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
+	owns_one(nameof(card), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(announce), starts = /obj/item/radio/intercom, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/computer/timeclock/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

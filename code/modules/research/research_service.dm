@@ -399,7 +399,6 @@ SYSTEM_DEF(research)
  */
 // Shared techwebs, scipaper partners and the two error placeholders live for the round.
 
-/datum/system/research/ownership()
-	. = ..()
-	. += rel_one(nameof(error_design), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
-	. += rel_one(nameof(error_node), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+CAPABILITIES(/datum/system/research)
+	owns_one(nameof(error_design), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)
+	owns_one(nameof(error_node), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)

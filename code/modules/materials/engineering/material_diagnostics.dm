@@ -176,6 +176,9 @@ CAPABILITIES(/datum/material_service)
 	// Fitting a new component from a stack of sheets (fit_stock() asks which one): the user stays for two seconds.
 	op("fit_stock", ai(), takes("role", "quantity", "material_id"), wait(2 SECONDS), then(PROC_REF(fit_stock_done)))
 	op("emitter_setting", ui_act("emitter_setting", arg("setting"), arg("value", num(0.25, 3))), then(PROC_REF(ui_act_emitter_setting)))
+	ref_one(nameof(monitor_tool))
+	ref_one(nameof(monitor_user))
+	ref_one(nameof(watched_turf))
 
 /datum/material_service/ui_title(mob/user)
 	return "[owner().name] — diagnostics"

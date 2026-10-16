@@ -94,6 +94,12 @@ CAPABILITIES(/obj/item/robot_parts/robot_suit)
 	op("name", item(/obj/item/pen), label("Name"), priority(OP_PRIORITY_PART + 1),
 		asks(/datum/prompt/text, fields = list("title" = "name", "question" = "Enter new robot name", "default" = computed(PROC_REF(current_name)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
 		then(PROC_REF(robot_named)))
+	owns_one(nameof(l_arm), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(r_arm), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(l_leg), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(r_leg), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(chest), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(head), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/robot_parts/robot_suit/proc/current_name(datum/act/op/A)
 	return created_name
@@ -224,6 +230,7 @@ CAPABILITIES(/obj/item/robot_parts/robot_suit)
 
 CAPABILITIES(/obj/item/robot_parts/chest)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	owns_one(nameof(cell), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attackby.
 /obj/item/robot_parts/chest/proc/interaction_item(datum/act/op/A)
@@ -253,6 +260,8 @@ CAPABILITIES(/obj/item/robot_parts/head)
 	op("tv_sensor", item(/obj/item/assembly/infra), label("Add sensor"), then(PROC_REF(interaction_item)))
 	op("insert_flash", item(/obj/item/flash), label("Insert flash"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(head_insert_flash)))
 	op("insert_own_flash", item(/obj/item/flash), label("Insert flash"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(own_flash_refused)))
+	owns_one(nameof(flash1), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(flash2), on_destroy = ON_DESTROY_CONTAINED)
 
 /// A cyborg's flash is its own module.
 /obj/item/robot_parts/head/proc/own_flash_refused(datum/act/op/A)
@@ -292,18 +301,3 @@ CAPABILITIES(/obj/item/robot_parts)
 		return OP_OK
 	return OP_DECLINE
 
-/obj/item/robot_parts/chest/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
-/obj/item/robot_parts/head/ownership()
-	. = ..()
-	. += owns(nameof(flash1), policy = OWN_CONTAINED)
-	. += owns(nameof(flash2), policy = OWN_CONTAINED)
-/obj/item/robot_parts/robot_suit/ownership()
-	. = ..()
-	. += owns(nameof(l_arm), policy = OWN_CONTAINED)
-	. += owns(nameof(r_arm), policy = OWN_CONTAINED)
-	. += owns(nameof(l_leg), policy = OWN_CONTAINED)
-	. += owns(nameof(r_leg), policy = OWN_CONTAINED)
-	. += owns(nameof(chest), policy = OWN_CONTAINED)
-	. += owns(nameof(head), policy = OWN_CONTAINED)

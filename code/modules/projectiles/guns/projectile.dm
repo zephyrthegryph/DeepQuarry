@@ -50,6 +50,7 @@ CAPABILITIES(/obj/item/gun/projectile)
 	op("feed_rounds", ai(), wait(PROC_REF(feed_time), repeats = PROC_REF(feed_more), after_step = PROC_REF(feed_round)), on_interrupt(PROC_REF(feed_ended)), then(PROC_REF(feed_ended)))
 	// A round slid into the chamber by hand.
 	op("chamber_round", ai(), takes("duration", "message"), wait(PROC_REF(chamber_time)), then(PROC_REF(chamber_round)))
+	owns_one(nameof(ammo_magazine), starts = PROC_REF(make_magazine), on_destroy = ON_DESTROY_CONTAINED)
 
 TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE)
 
@@ -744,6 +745,3 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 #undef BOLT_CASING_EJECTED
 #undef BOLT_CASING_CHAMBERED
 
-/obj/item/gun/projectile/ownership()
-	. = ..()
-	. += owns(nameof(ammo_magazine), policy = OWN_CONTAINED, starts = PROC_REF(make_magazine))

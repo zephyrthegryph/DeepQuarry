@@ -88,6 +88,9 @@ CAPABILITIES(/obj/item/transfer_valve)
 	op("attach", inputs(item(/obj/item/tank), item(/obj/item/assembly)), label("Attach"), then(PROC_REF(interaction_item)))
 	op("view", in_hand(), then(PROC_REF(interaction_self)))
 	ref_one(nameof(attacher), /mob)
+	owns_one(nameof(tank_one), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(tank_two), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(attached_device), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/transfer_valve/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -250,11 +253,6 @@ CAPABILITIES(/obj/item/transfer_valve)
 /obj/item/transfer_valve/proc/c_state()
 	return
 
-/obj/item/transfer_valve/ownership()
-	. = ..()
-	. += owns(nameof(tank_one), policy = OWN_CONTAINED)
-	. += owns(nameof(tank_two), policy = OWN_CONTAINED)
-	. += owns(nameof(attached_device), policy = OWN_CONTAINED)
 
 /// Relation view: attacher (reads null once it is gone).
 /obj/item/transfer_valve/proc/attacher() as /mob
