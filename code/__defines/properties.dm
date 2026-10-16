@@ -4,11 +4,10 @@
 #define PROP_KIND_MEASURE 1
 #define PROP_KIND_TAG 2
 
-// Aggregators: how several values of one property combine into one. The
-// values shared with the body factor rules (BF_RULE_* in body_factors.dm) are
-// the same numbers on purpose, and dq_property_aggregators checks it:
-// PRODUCT = BF_RULE_MULT, SUM = BF_RULE_ADD, MAX = BF_RULE_MAX,
-// MIN = BF_RULE_MIN, OR = BF_RULE_FLAGS.
+// Aggregators: how several values of one property combine into one. They
+// are the stat rules of the same names (code/engine/stats/rules.dm); the OR
+// aggregator is MASK_OR. dq_property_aggregators checks that the fold of a
+// factor table agrees with the property combine.
 #define PROP_AGG_NONE 0
 #define PROP_AGG_PRODUCT 1
 #define PROP_AGG_SUM 2

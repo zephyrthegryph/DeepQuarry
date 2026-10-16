@@ -392,21 +392,21 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	desc = "You feel somewhat gooey."
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 5
-	factors = alist(BF_MELEE_DAMAGE = 1.5)
+	factors = alist(STAT_MELEE_DAMAGE = 1.5)
 
 /datum/body_effect/aura/candy_yellow //speed
 	name = "candy yellow"
 	desc = "You feel somewhat gooey."
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 5
-	factors = alist(BF_SLOWDOWN = -1)
+	factors = alist(STAT_SLOWDOWN = -1)
 
 /datum/body_effect/aura/candy_blue //defense
 	name = "candy blue"
 	desc = "You feel somewhat gooey."
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 5
-	factors = alist(BF_INCOMING_ALL = 0.9)
+	factors = alist(STAT_INCOMING_ALL = 0.9)
 
 //Boss Fight
 /mob/living/simple_mob/vore/candy/ouroboros

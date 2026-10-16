@@ -1,5 +1,5 @@
 /datum/reagent/blood
-	species_factors = alist(IS_SLIME = alist(BF_BLOOD_REGEN = 0.8))
+	species_factors = alist(IS_SLIME = alist(STAT_BLOOD_REGEN = 0.8))
 	data = new/list("donor" = null, "viruses" = null, "species" = SPECIES_HUMAN, "blood_DNA" = null, "blood_type" = null, "blood_colour" = "#A10808", "resistances" = null, "trace_chem" = null, REAGENT_ID_ANTIBODIES = list(), "changeling" = FALSE)
 	name = REAGENT_BLOOD
 	id = REAGENT_ID_BLOOD

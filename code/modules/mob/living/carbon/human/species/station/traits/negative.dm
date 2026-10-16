@@ -5,7 +5,7 @@
 	name = "Slowdown"
 	desc = "Allows you to move slower on average than baseline."
 	cost = -3
-	factors = alist(BF_SLOWDOWN = 0.5)
+	factors = alist(STAT_SLOWDOWN = 0.5)
 	banned_species = list(SPECIES_ALRAUNE, SPECIES_SHADEKIN_CREW, SPECIES_DIONA, SPECIES_UNATHI) //These are already this slow.
 	custom_only = FALSE
 
@@ -13,7 +13,7 @@
 	name = "Slowdown, Major"
 	desc = "Allows you to move MUCH slower on average than baseline."
 	cost = -5
-	factors = alist(BF_SLOWDOWN = 1.0)
+	factors = alist(STAT_SLOWDOWN = 1.0)
 	custom_only = FALSE
 	banned_species = list(SPECIES_DIONA) //Diona are even slower than this
 
@@ -68,7 +68,7 @@
 	desc = "Increases damage from brute damage sources by 15%"
 	cost = -1
 	custom_only = FALSE
-	factors = alist(BF_INCOMING_PHYSICAL = 1.15)
+	factors = alist(STAT_INCOMING_PHYSICAL = 1.15)
 	banned_species = list(SPECIES_TESHARI, SPECIES_TAJARAN, SPECIES_ZADDAT, SPECIES_SHADEKIN_CREW) //These are already this weak.
 
 /datum/trait/negative/brute_weak
@@ -76,7 +76,7 @@
 	desc = "Increases damage from brute damage sources by 20%"
 	cost = -2
 	custom_only = FALSE
-	factors = alist(BF_INCOMING_PHYSICAL = 1.2) // 25% --> 20%
+	factors = alist(STAT_INCOMING_PHYSICAL = 1.2) // 25% --> 20%
 	banned_species = list(SPECIES_TESHARI, SPECIES_SHADEKIN_CREW) //These are already this weak.
 
 /datum/trait/negative/brute_weak_plus
@@ -84,25 +84,25 @@
 	desc = "Increases damage from brute damage sources by 50%"
 	cost = -3
 	custom_only = FALSE
-	factors = alist(BF_INCOMING_PHYSICAL = 1.5)
+	factors = alist(STAT_INCOMING_PHYSICAL = 1.5)
 
 /datum/trait/negative/minor_burn_weak
 	name = "Burn Weakness, Minor"
 	desc = "Increases damage from burn damage sources by 15%"
 	cost = -1
-	factors = alist(BF_INCOMING_THERMAL = 1.15)
+	factors = alist(STAT_INCOMING_THERMAL = 1.15)
 
 /datum/trait/negative/burn_weak
 	name = "Burn Weakness"
 	desc = "Increases damage from burn damage sources by 20%"
 	cost = -2
-	factors = alist(BF_INCOMING_THERMAL = 1.2)
+	factors = alist(STAT_INCOMING_THERMAL = 1.2)
 
 /datum/trait/negative/burn_weak_plus
 	name = "Burn Weakness, Major"
 	desc = "Increases damage from burn damage sources by 50%"
 	cost = -3
-	factors = alist(BF_INCOMING_THERMAL = 1.5)
+	factors = alist(STAT_INCOMING_THERMAL = 1.5)
 
 /datum/trait/negative/conductive
 	name = "Conductive"
@@ -270,7 +270,7 @@
 	name = "Slowdown, Extreme"
 	desc = "You move EXTREMELY slower than baseline"
 	cost = -8
-	factors = alist(BF_SLOWDOWN = 4.0)
+	factors = alist(STAT_SLOWDOWN = 4.0)
 
 	//Traitgenes
 	is_genetrait = TRUE
@@ -417,13 +417,13 @@
 	name = "Pain Intolerance"
 	desc = "You are frail and sensitive to pain. You experience 25% more pain from all sources."
 	cost = -2
-	factors = alist(BF_INCOMING_PAIN = 1.2)
+	factors = alist(STAT_INCOMING_PAIN = 1.2)
 
 /datum/trait/negative/pain_intolerance_advanced
 	name = "Pain Intolerance, Major"
 	desc = "You are highly sensitive to all sources of pain, and experience 50% more pain."
 	cost = -3
-	factors = alist(BF_INCOMING_PAIN = 1.5) //this makes you extremely vulnerable to most sources of pain, a stunbaton bop or shotgun beanbag will do around 90 agony, almost enough to drop you in one hit.
+	factors = alist(STAT_INCOMING_PAIN = 1.5) //this makes you extremely vulnerable to most sources of pain, a stunbaton bop or shotgun beanbag will do around 90 agony, almost enough to drop you in one hit.
 
 	//Traitgenes
 	is_genetrait = TRUE

@@ -321,7 +321,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 /datum/body_effect/shadekin_phase_vision
 	stacks = MODIFIER_STACK_FORBID
 	name = "Shadekin Phase Vision"
-	factors = alist(BF_SIGHT_FLAGS = SEE_THRU)
+	factors = alist(STAT_SIGHT_FLAGS = SEE_THRU)
 
 /datum/body_effect/phased_out
 	stacks = MODIFIER_STACK_FORBID

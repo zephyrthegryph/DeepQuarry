@@ -130,13 +130,16 @@ SETTER(/obj/cap_fixture/dx_deps_source, glow)
 	. = ..()
 	. += drawn_from(rel(nameof(plain), nameof(/obj/cap_fixture/dx_deps_source::glow)))
 
-/// A factor read.
+/// A stat read: the stat's var publishes like a tracked var (a body factor is read this way).
 /obj/cap_fixture/dx_deps_factor
 	periodic_cadence = PERIODIC_SLOW
 
+STAT(/obj/cap_fixture/dx_deps_factor, dx_level, SUM)
+STAT(/obj/cap_fixture/dx_deps_factor, dx_other, SUM)
+
 /obj/cap_fixture/dx_deps_factor/derived()
 	. = ..()
-	. += runs_while(factor_dep(BF_SLOWDOWN))
+	. += runs_while(nameof(dx_level))
 
 /obj/cap_fixture/dx_deps_factor/should_run()
 	return TRUE
@@ -361,26 +364,18 @@ SETTER(/obj/cap_fixture/dx_deps_source, glow)
 	TEST_ASSERT(findtext(GLOB.derived_errors[1], "not a declared relation"), "and says why: [GLOB.derived_errors[1]]")
 	GLOB.derived_errors.Cut()
 
-/// factor_dep(): a recomputed body factor that changed re-checks the reader; one it doesn't read doesn't.
+/// A stat var it reads: a hold that moves it re-checks the reader; one on a stat it doesn't read doesn't, and neither does a hold that changes nothing.
 /datum/unit_test/dx_deps_factor_dep/Run()
 	var/obj/cap_fixture/dx_deps_factor/F = allocate(/obj/cap_fixture/dx_deps_factor)
+	var/obj/e3_source/source = allocate(/obj/e3_source)
 	refresh_flush()
-	var/list/same = new /list(BF_COUNT)
-	for(var/id in 1 to BF_COUNT)
-		same[id] = body_factor_baseline(id)
-	derived_factors_recomputed(F, null, same)
-	TEST_ASSERT_EQUAL(F.refresh_queued, 0, "baseline to baseline changes nothing")
-	var/list/other = same.Copy()
-	other[BF_VISION] = 0.5
-	derived_factors_recomputed(F, null, other)
-	TEST_ASSERT_EQUAL(F.refresh_queued, 0, "a factor it does not read")
-	var/list/slowed = same.Copy()
-	slowed[BF_SLOWDOWN] = 2
-	derived_factors_recomputed(F, null, slowed)
-	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_RUN, "the factor it reads re-checks should_run()")
+	hold(F, STAT_DX_OTHER, 3, source)
+	TEST_ASSERT_EQUAL(F.refresh_queued, 0, "a stat it does not read")
+	hold(F, STAT_DX_LEVEL, 2, source)
+	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_RUN, "the stat it reads re-checks should_run()")
 	refresh_flush()
-	derived_factors_recomputed(F, slowed, slowed)
-	TEST_ASSERT_EQUAL(F.refresh_queued, 0, "an unchanged factor")
+	hold(F, STAT_DX_LEVEL, 2, source)
+	TEST_ASSERT_EQUAL(F.refresh_queued, 0, "an unchanged stat")
 
 /// push_to_rust() runs once per frame however many of its reads changed, and not for other changes.
 /datum/unit_test/dx_deps_rust_push/Run()

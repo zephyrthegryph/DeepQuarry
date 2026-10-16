@@ -4,12 +4,12 @@
 /datum/body_effect/dq_test_stack
 	name = "test stack"
 	stacks = MODIFIER_STACK_ALLOWED
-	factors = alist(BF_SLOWDOWN = 1)
+	factors = alist(STAT_SLOWDOWN = 1)
 
 /datum/body_effect/dq_test_forbid
 	name = "test forbid"
 	stacks = MODIFIER_STACK_FORBID
-	factors = alist(BF_SLOWDOWN = 1)
+	factors = alist(STAT_SLOWDOWN = 1)
 
 /// A timed body effect applies its factors, expires on time, and a stasis hold stops the countdown.
 /datum/unit_test/dq_body_effect_expires_on_body_clock
@@ -17,10 +17,10 @@
 /datum/unit_test/dq_body_effect_expires_on_body_clock/Run()
 	scheduler_test_begin()
 	var/mob/living/carbon/human/H = new(null)
-	var/base = H.factor(BF_SLOWDOWN)
+	var/base = H.slowdown
 	TEST_ASSERT(H.apply_body_effect(/datum/body_effect/entangled, 4 SECONDS), "entangled should take hold")
 	TEST_ASSERT(H.has_body_effect(/datum/body_effect/entangled), "entangled should be on the mob")
-	TEST_ASSERT(dq_near(H.factor(BF_SLOWDOWN), base + 2), "entangled adds 2 slowdown, got [H.factor(BF_SLOWDOWN)] over [base]")
+	TEST_ASSERT(dq_near(H.slowdown, base + 2), "entangled adds 2 slowdown, got [H.slowdown] over [base]")
 	TEST_ASSERT(H.has_body_effect(/datum/body_effect/entangled), "the modifier compatibility query must see body effects")
 
 	var/datum/stasis_source = new
@@ -31,7 +31,7 @@
 	release(H, STAT_CLOCK_RATE_BIO, stasis_source)
 	scheduler_advance(5)
 	TEST_ASSERT(!H.has_body_effect(/datum/body_effect/entangled), "entangled should expire once body time passes its duration")
-	TEST_ASSERT(dq_near(H.factor(BF_SLOWDOWN), base), "the factor should return to baseline, got [H.factor(BF_SLOWDOWN)]")
+	TEST_ASSERT(dq_near(H.slowdown, base), "the factor should return to baseline, got [H.slowdown]")
 	qdel(stasis_source)
 	qdel(H)
 	scheduler_test_end()
@@ -42,7 +42,7 @@
 /datum/unit_test/dq_body_effect_stacking_rules/Run()
 	scheduler_test_begin()
 	var/mob/living/carbon/human/H = new(null)
-	var/base = H.factor(BF_SLOWDOWN)
+	var/base = H.slowdown
 
 	H.apply_body_effect(/datum/body_effect/entangled, 2 SECONDS)
 	H.apply_body_effect(/datum/body_effect/entangled, 6 SECONDS)
@@ -54,7 +54,7 @@
 	H.apply_body_effect(/datum/body_effect/dq_test_stack, 2 SECONDS)
 	H.apply_body_effect(/datum/body_effect/dq_test_stack, 6 SECONDS)
 	TEST_ASSERT_EQUAL(H.body_effect_stacks(/datum/body_effect/dq_test_stack), 2, "ALLOWED stacks per application")
-	TEST_ASSERT(dq_near(H.factor(BF_SLOWDOWN), base + 2), "two stacks apply the table twice, got [H.factor(BF_SLOWDOWN)]")
+	TEST_ASSERT(dq_near(H.slowdown, base + 2), "two stacks apply the table twice, got [H.slowdown]")
 	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(H.body_effect_stacks(/datum/body_effect/dq_test_stack), 1, "the shorter stack expires on its own")
 	scheduler_advance(4)
@@ -101,8 +101,7 @@
 	H.weight_loss = 0
 	H.set_bodytemperature(H.species.body_temperature || H.body_temperature())
 	// A fresh body starts with every domain dirty; its first medical pass settles them
-	// (factors recomputed, dirty condition domains processed), as the first Life() would.
-	H.factor(BF_ALLERGY)
+	// (dirty condition domains processed), as the first Life() would.
 	H.dq_process_dirty_medical_conditions()
 	var/list/steps = list(
 		"life_medical",
