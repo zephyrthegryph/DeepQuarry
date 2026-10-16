@@ -412,10 +412,23 @@ pub(crate) fn try_patch<R: dm_ir::Resolver>(request: PatchRequest<'_, R>) -> Res
                 .map_err(|reason| format!("declaration skeleton changed; append patch: {reason}"));
         }
         if shape.bodies.len() != base.shape.bodies.len() {
-            return Err("declaration skeleton changed".into());
+            return Err(format!(
+                "declaration skeleton changed (bodies {} -> {})",
+                base.shape.bodies.len(),
+                shape.bodies.len()
+            ));
         }
-        return try_default_patch(request, &base, &image)
-            .map_err(|reason| format!("declaration skeleton changed; default patch: {reason}"));
+        let (old_hash, new_hash, same_tree) = (
+            base.shape.skeleton,
+            shape.skeleton,
+            base.shape.tree_identity == shape.tree_identity,
+        );
+        return try_default_patch(request, &base, &image).map_err(|reason| {
+            format!(
+                "declaration skeleton changed (hash {old_hash:032x} -> {new_hash:032x}, tree identity {}); default patch: {reason}",
+                if same_tree { "same" } else { "changed" }
+            )
+        });
     }
     let lines = LineMap::between(&base.shape.bodies, &shape.bodies);
     if let Some((old, new)) = base

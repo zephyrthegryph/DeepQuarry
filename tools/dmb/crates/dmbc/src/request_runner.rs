@@ -390,7 +390,7 @@ fn run_build_attempt(
         session = Some(configured);
         pair_store = Some(store);
     }
-    stamped_provider.adopt(shared_proofs.take());
+    stamped_provider.adopt(shared_proofs.clone());
     drop(session_profile);
     dm_profile::detail_mark("session_validation", total);
     let engine_profile = dm_profile::stage("engine_capture");
@@ -698,8 +698,17 @@ fn run_build_attempt(
             };
             let proof_started = std::time::Instant::now();
             let proof_profile = dm_profile::stage("resources.filesystem_proofs");
-            let raw_proofs = manifest.filesystem_proofs().map_err(|error| error.to_string())?;
-            let proofs = dmbc::input_snapshot::GeneratedOutputInputs::new(&raw_proofs, generated_paths.iter().cloned());
+            // The directory proofs session validation captured at the start of this request already
+            // cover the previous build's inputs, resource files included (paths outside them fall back
+            // to live handling inside the proofs). Publication restats every captured input live, so
+            // a file that moves between that capture and now still rebuilds.
+            let raw_proofs = match &shared_proofs {
+                Some(shared) => std::sync::Arc::clone(shared),
+                None => std::sync::Arc::new(
+                    manifest.filesystem_proofs().map_err(|error| error.to_string())?,
+                ),
+            };
+            let proofs = dmbc::input_snapshot::GeneratedOutputInputs::new(&*raw_proofs, generated_paths.iter().cloned());
             drop(proof_profile);
             dmbc::daemon_eprintln!(
                 "native resource FilesystemProofCapture: {:.3}s",
@@ -1194,8 +1203,18 @@ fn run_build_attempt(
                 if let Some(engine) = &engine_capture { query_attempt.bind_publication_proof(&inputs, &engine.bytes); }
                 dm_profile::request_mark("publication.resource_manifest");
                 if let Some(session) = &session {
-                    session.store(dmbc::session::Record { inputs, pair: pair.id,
+                    let stored = session.store(dmbc::session::Record { inputs, pair: pair.id,
                         outputs: Some(outputs), warnings: dmbc::initializer_policy::warnings::render(&output.warnings)?, resource_manifest: Some((*resource_manifest).clone()) })?;
+                    // The next request validates this record first. A resident daemon decodes it now,
+                    // beside the reply, so the request that follows finds it decoded.
+                    if retains_query_owners {
+                        let records = session.records();
+                        let _ = std::thread::Builder::new()
+                            .name("dmbc-session-decode".into())
+                            .spawn(move || {
+                                let _ = records.prior(stored);
+                            });
+                    }
                 }
             } else {
                 dmbc::daemon_eprintln!("native session not saved: inputs changed during compilation");

@@ -153,3 +153,43 @@ fn current_body_code_boundary_distinguishes_eof_and_following_declaration() {
         }
     }
 }
+struct Files(&'static str, &'static str);
+impl dm_preprocess::SourceProvider for Files {
+    fn read(&self, path: &Path) -> Result<String, String> {
+        match path.file_name().and_then(|name| name.to_str()) {
+            Some("a.dm") => Ok(self.0.into()),
+            Some("b.dm") => Ok(self.1.into()),
+            _ => Ok("#include \"a.dm\"
+#include \"b.dm\"
+".into()),
+        }
+    }
+}
+#[test]
+fn tmp_expand_probe() {
+    let run = |a: &'static str, b: &'static str| {
+        let plan = dm_preprocess::regions::plan_regions(Path::new("p.dme"), &Files(a, b), &BTreeMap::new());
+        let expanded = dm_preprocess::regions::expand_regions_text(&plan, 1);
+        format!("{:?}", expanded.text.as_ref())
+    };
+    eprintln!("PROBE1 {}", run("/proc/a()
+    return 1
+
+#define X 1
+", "/proc/b()
+    return 2
+"));
+    eprintln!("PROBE2 {}", run("/proc/a()
+    return 1
+", "/proc/b()
+    return 2
+"));
+    eprintln!("PROBE3 {}", run("/proc/a()
+    return 1
+
+#define X 1
+#define Y 2
+", "/proc/b()
+    return 2
+"));
+}
