@@ -45,3 +45,7 @@
 
 #define LK_VR_HOLDER "vr_holder"
 #define LK_VR_AVATAR "vr_avatar"
+
+/// A tool returns to its organ on drop; this borrowed link never owns either endpoint.
+#define LK_ITEM_AUGMENT "item_augment"
+#define LK_AUGMENT_ITEMS "augment_items"
