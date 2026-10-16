@@ -66,12 +66,12 @@
 
 /// Deep stasis (BF_STASIS above STASIS_SLEEP_THRESHOLD) puts the body to sleep.
 /mob/living/carbon/human/proc/life_stasis_sleep(datum/seq_frame/life/F)
-	if(src.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD)
+	if(src.stasis > STASIS_SLEEP_THRESHOLD)
 		src.status_at_least(STAT_SLEEPING, 20)
 
 /// Factor changes (body invalidate, MOB_KEY_HEALTH) wake it.
 /mob/living/carbon/human/proc/life_stasis_sleep_due()
-	return src.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD
+	return src.stasis > STASIS_SLEEP_THRESHOLD
 
 /// Falling (prevents people from floating).
 /mob/living/carbon/human/proc/life_fall(datum/seq_frame/life/F)
@@ -1056,7 +1056,7 @@
 /// plus BF_TEMPERATURE (fevers and chills are factors on afflictions, not
 /// per-tick temperature writes).
 /mob/living/carbon/human/proc/thermal_setpoint()
-	return species.body_temperature + factor(BF_TEMPERATURE)
+	return species.body_temperature + src.temperature
 
 /// Body temperature lives in Rust and is changed by the environment, reagents and afflictions: the body heat watch
 /// wakes this step when it leaves the comfort band around the set point (MOB_KEY_BODY_HEAT). This is the fallback.
@@ -1944,9 +1944,9 @@
 
 	var/brain_modifier = 1
 
-	var/modifier_shift = round(src.factor(BF_PULSE_SHIFT))
+	var/modifier_shift = round(src.pulse_shift)
 	// BF_PULSE_SET's baseline is -1: nothing forces the pulse.
-	var/modifier_set = src.factor(BF_PULSE_SET)
+	var/modifier_set = src.pulse_set
 	modifier_set = modifier_set < 0 ? null : round(modifier_set)
 
 	if(!src.organ_in(O_HEART))

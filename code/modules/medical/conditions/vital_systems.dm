@@ -439,7 +439,7 @@ TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
 /datum/affliction/cardiac_arrhythmia/tick()
 	// An unstable rhythm degenerates faster in an irritable (hypoxic) heart.
 	if(rhythm == CARDIAC_RHYTHM_TACHY && body)
-		progression_rate = CARDIAC_TACHY_PROGRESSION * body.owner.factor(BF_CARDIAC_IRRITABILITY)
+		progression_rate = CARDIAC_TACHY_PROGRESSION * body.owner.cardiac_irritability
 	if(!is_perfusing())
 		arrest_tick()
 		if(QDELETED(src) || !body)
@@ -457,7 +457,7 @@ TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
 	var/compressed = is_receiving_compressions()
 	switch(rhythm)
 		if(CARDIAC_RHYTHM_VF)
-			var/decay = (compressed ? ARREST_VF_DECAY_CHANCE / 2 : ARREST_VF_DECAY_CHANCE) * (body ? body.owner.factor(BF_CARDIAC_IRRITABILITY) : 1)
+			var/decay = (compressed ? ARREST_VF_DECAY_CHANCE / 2 : ARREST_VF_DECAY_CHANCE) * (body ? body.owner.cardiac_irritability : 1)
 			if(prob(decay))
 				set_rhythm(CARDIAC_RHYTHM_ASYSTOLE)
 		if(CARDIAC_RHYTHM_ASYSTOLE)

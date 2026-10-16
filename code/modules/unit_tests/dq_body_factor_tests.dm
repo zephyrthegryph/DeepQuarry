@@ -86,8 +86,8 @@
 
 /datum/unit_test/dq_body_factor_lazy_storage/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	TEST_ASSERT_EQUAL(H.factor(BF_AIRWAY), 1, "an untouched multiplier reads its baseline")
-	TEST_ASSERT_EQUAL(H.factor(BF_PULSE_SET), -1, "an untouched max factor reads its baseline")
+	TEST_ASSERT_EQUAL(H.airway, 1, "an untouched multiplier reads its baseline")
+	TEST_ASSERT_EQUAL(H.pulse_set, -1, "an untouched max factor reads its baseline")
 	var/rows_before = length(H.rx?.stats?.by_stat?["[STAT_SLOWDOWN]"])
 
 	TEST_ASSERT(H.apply_body_effect(/datum/body_effect/dq_test_slowdown), "the effect should apply")
@@ -138,17 +138,17 @@
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/dq_test_banded)
 	TEST_ASSERT_NOTNULL(A, "the test affliction should afflict")
 	A.set_severity(100)
-	TEST_ASSERT(dq_near(H.factor(BF_HEART_RATE), 20), "edema at full severity should raise the heart rate by 20, got [H.factor(BF_HEART_RATE)]")
-	TEST_ASSERT(dq_near(H.factor(BF_BP_SYSTOLIC), -15), "edema at full severity should drop systolic pressure by 15")
+	TEST_ASSERT(dq_near(H.heart_rate, 20), "edema at full severity should raise the heart rate by 20, got [H.heart_rate]")
+	TEST_ASSERT(dq_near(H.bp_systolic, -15), "edema at full severity should drop systolic pressure by 15")
 
 	A.set_severity(50)
-	TEST_ASSERT(dq_near(H.factor(BF_HEART_RATE), 10), "crossing a severity band refreshes the factors: edema at half severity gives half the heart rate, got [H.factor(BF_HEART_RATE)]")
+	TEST_ASSERT(dq_near(H.heart_rate, 10), "crossing a severity band refreshes the factors: edema at half severity gives half the heart rate, got [H.heart_rate]")
 
 	A.set_severity(52)
-	TEST_ASSERT(dq_near(H.factor(BF_HEART_RATE), 10), "a change inside the same band does not refresh: the factors stay at the band's last value, got [H.factor(BF_HEART_RATE)]")
+	TEST_ASSERT(dq_near(H.heart_rate, 10), "a change inside the same band does not refresh: the factors stay at the band's last value, got [H.heart_rate]")
 
 	A.cure()
-	TEST_ASSERT_EQUAL(H.factor(BF_HEART_RATE), 0, "curing should remove the contribution")
+	TEST_ASSERT_EQUAL(H.heart_rate, 0, "curing should remove the contribution")
 
 
 /// Staged afflictions use the stage's table at full value.

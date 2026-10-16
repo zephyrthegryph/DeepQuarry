@@ -119,7 +119,7 @@
 /datum/unit_test/dq_med7_b25_withdrawal_pulse_factor/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.apply_body_effect(/datum/body_effect/withdrawal_tachycardia, 10 SECONDS)
-	TEST_ASSERT_EQUAL(H.factor(BF_PULSE_SET), PULSE_2FAST, "withdrawal forces a racing pulse")
+	TEST_ASSERT_EQUAL(H.pulse_set, PULSE_2FAST, "withdrawal forces a racing pulse")
 
 /// D18a: the internal-bleed arrest reads mechanisms; myelamine is a strong hemostatic.
 /datum/unit_test/dq_med7_d18a_ib_reads_tags

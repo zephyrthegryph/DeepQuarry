@@ -159,8 +159,8 @@ GLOBAL_LIST_EMPTY(stat_pass_before)
 	return TRUE
 
 /// Closes the pass: every table row of E no call of the pass placed is released, and each stat the pass changed settles once, in rank order.
-/// Returns how many stats ended with a different value than the pass found.
-/proc/hold_tables_end(datum/E)
+/// Returns how many stats ended with a different value than the pass found; `moved`, when given, receives their ids.
+/proc/hold_tables_end(datum/E, list/moved = null)
 	if(GLOB.stat_pass_entity != E)
 		return 0
 	var/list/touched = GLOB.stat_pass_touched
@@ -189,6 +189,7 @@ GLOBAL_LIST_EMPTY(stat_pass_before)
 		var/datum/stat_def/def = touched[skey]
 		if(!stat_values_equal(before[skey], stat_value_now(E, def, null)))
 			.++
+			moved?.Add(def.id)
 
 /// Settles the stats a table call changed, once each, in rank order.
 /proc/stat_table_settle(datum/E, list/touched)

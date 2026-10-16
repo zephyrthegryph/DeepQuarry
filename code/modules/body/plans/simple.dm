@@ -178,7 +178,7 @@
 	if(amount <= 0 || !(owner.biology & BIOLOGY_ORGANIC))
 		return 0
 	var/datum/affliction/load/L = afflict(/datum/affliction/load/hypoxia)
-	return L ? L.receive_injury(amount * owner.factor(BF_DEMAND), null, source) : 0
+	return L ? L.receive_injury(amount * owner.demand, null, source) : 0
 
 /datum/body/simple/oxygen_debt()
 	if(!(owner.biology & BIOLOGY_ORGANIC))

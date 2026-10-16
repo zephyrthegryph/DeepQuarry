@@ -175,7 +175,7 @@ CAPABILITIES(/datum/body)
 	ensure_physiology()
 	if(isnull(physiology?.oxygenation))
 		return null
-	return clamp(round(physiology.oxygenation * 100 + owner.factor(BF_O2_SAT)), 0, 100)
+	return clamp(round(physiology.oxygenation * 100 + owner.o2_sat), 0, 100)
 
 /// Fraction of normal tissue perfusion (0..1).
 /datum/body/proc/perfusion()
@@ -410,7 +410,7 @@ CAPABILITIES(/datum/body)
 	var/mob/living/carbon/human/H = body.owner
 	if(!istype(H) || !H.species)
 		return FALSE
-	set_demand(body.owner.factor(BF_DEMAND))
+	set_demand(body.owner.demand)
 	var/datum/breath_profile/profile = body.breath_profile()
 	set_breathes(!!profile)
 	var/skin = profile && !profile.uses_lungs
@@ -428,7 +428,7 @@ CAPABILITIES(/datum/body)
 
 	var/flow = 1
 	if(circulates)
-		set_output(clamp(body.supported_factor(BF_PUMP, body.owner.factor(BF_PUMP) * heart_condition(H)), 0, 2))
+		set_output(clamp(body.supported_factor(BF_PUMP, body.owner.pump * heart_condition(H)), 0, 2))
 		set_perfusion(clamp(output * volume_factor(H) * body.supported_factor(BF_CIRCULATION), 0, 2))
 		flow = perfusion
 	else
@@ -508,14 +508,14 @@ CAPABILITIES(/datum/body)
 /datum/physiology/humanoid/heart_rate()
 	if(!circulates)
 		return null
-	if(output <= 0 || body.owner.factor(BF_PUMP) <= 0)
+	if(output <= 0 || body.owner.pump <= 0)
 		return 0
 	var/mob/living/carbon/human/H = body.owner
 	var/rate = 75
 	// Compensation: the heart speeds up as volume and oxygen fall.
 	rate += round((1 - clamp(blood_fraction, 0, 1)) * 80)
 	rate += round(min(oxygen_debt, 60) / 2)
-	rate += body.owner.factor(BF_HEART_RATE)
+	rate += body.owner.heart_rate
 	if(H.is_dead())
 		return 0
 	return max(0, round(rate))
@@ -546,12 +546,12 @@ CAPABILITIES(/datum/body)
 /datum/physiology/humanoid/blood_pressure()
 	if(!circulates)
 		return null
-	if(output <= 0 || body.owner.factor(BF_PUMP) <= 0)
+	if(output <= 0 || body.owner.pump <= 0)
 		return list(0, 0)
 	var/mob/living/carbon/human/H = body.owner
-	var/pressure = clamp(output, 0, 1.5) * (0.3 + 0.7 * volume_factor(H)) * body.owner.factor(BF_CIRCULATION)
-	var/systolic = 120 * pressure + body.owner.factor(BF_BP_SYSTOLIC)
-	var/diastolic = 80 * pressure + body.owner.factor(BF_BP_DIASTOLIC)
+	var/pressure = clamp(output, 0, 1.5) * (0.3 + 0.7 * volume_factor(H)) * body.owner.circulation
+	var/systolic = 120 * pressure + body.owner.bp_systolic
+	var/diastolic = 80 * pressure + body.owner.bp_diastolic
 	return list(max(0, round(systolic)), max(0, round(diastolic)))
 
 /datum/physiology/humanoid/respiratory_rate()
@@ -560,9 +560,9 @@ CAPABILITIES(/datum/body)
 	if(ventilation < PHYSIOLOGY_APNEA_VENTILATION)
 		return 0
 	// A bagged patient breathes at the rescuer's rate.
-	if(body.is_supported(BF_RESP_DRIVE) && body.owner.factor(BF_RESP_DRIVE) < SUPPORT_BVM_DRIVE)
+	if(body.is_supported(BF_RESP_DRIVE) && body.owner.resp_drive < SUPPORT_BVM_DRIVE)
 		return 12
-	var/rate = 14 + round(min(oxygen_debt, 60) / 4) + body.owner.factor(BF_RESP_RATE)
+	var/rate = 14 + round(min(oxygen_debt, 60) / 4) + body.owner.resp_rate
 	return max(0, round(rate))
 
 // --- Life system -------------------------------------------------------------------------------

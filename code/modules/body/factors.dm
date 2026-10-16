@@ -172,6 +172,8 @@ GLOBAL_TABLE(body_factor_defs, GLOBAL_PROC_REF(build_body_factor_defs))
 	/// Above 0 while refresh_factors() runs: a trigger meanwhile asks for one more pass instead of starting a nested one.
 	var/tmp/factor_refresh_depth = 0
 	var/tmp/factor_refresh_again = FALSE
+	/// TRUE once the first refresh_factors() pass has run.
+	var/tmp/factors_primed = FALSE
 
 PROC_SUMMARY(/datum/body/proc/refresh_factors) // writes the factor stats from the body's sources: a caller reads the stats it publishes, never the afflictions, effects and reagents this reads
 /// The body's factor sources changed: re-read every one of them into the stat store. Each source holds its table as rows of its own
@@ -195,14 +197,28 @@ PROC_SUMMARY(/datum/body/proc/refresh_factors) // writes the factor stats from t
 			owner.hold_stasis_factors()
 			hold_reagent_factors()
 			hold_plan_factors()
-			// Pain and consciousness read analgesia, pain and sedation; the physiology reads the oxygen-transport factors.
-			if(hold_tables_end(owner))
-				invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_PHYSIOLOGY)
+			// Only a factor the cached vitals or the physiology read dirties them; the first pass, which fills the factors in for the first time,
+			// dirties them whichever factor moved (they were cached against the baselines).
+			var/list/moved = list()
+			hold_tables_end(owner, moved)
+			var/everything = !factors_primed
+			factors_primed = TRUE
+			for(var/stat_id in moved)
+				if(everything || (stat_id in factor_vitals_stats()))
+					invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_PHYSIOLOGY)
+					break
 		if(passes >= FACTOR_REFRESH_PASSES && factor_refresh_again)
 			stack_trace("refresh_factors() of [owner.type] is still being asked to run again after [passes] passes")
 			break
 	while(factor_refresh_again)
 	factor_refresh_depth--
+
+/// The factor stats the cached vitals and the physiology read: pain and consciousness read analgesia, pain, sedation and pain immunity; the physiology reads
+/// the oxygen-transport chain (airway, drive, lungs, exchange, pump, circulation, demand, carriage, uptake, stabilisation) and the readouts it writes
+/// (heart rate, pressures, saturation, breathing rate). A change of any other factor leaves them as they are.
+/proc/factor_vitals_stats()
+	var/static/list/stats = list(STAT_AIRWAY, STAT_RESP_DRIVE, STAT_LUNG_MECHANICS, STAT_GAS_EXCHANGE, STAT_PUMP, STAT_CIRCULATION, STAT_DEMAND, STAT_O2_CARRIAGE, STAT_TISSUE_UPTAKE, STAT_STABILIZATION, STAT_HEART_RATE, STAT_BP_SYSTOLIC, STAT_BP_DIASTOLIC, STAT_O2_SAT, STAT_RESP_RATE, STAT_ANALGESIA, STAT_PAIN, STAT_SEDATION, STAT_PAIN_IMMUNITY)
+	return stats
 
 /// Resolves a pending reagent change now (C12): the volumes are read again and the dose bands compared, so the factors follow a reagent the moment
 /// its holder changes. The treatment snapshot stays stale; it rebuilds when something asks for it.
