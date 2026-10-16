@@ -18,7 +18,9 @@ CAPABILITIES(/atom/movable/ref_holder)
 
 /atom/movable/ref_test
 	// Gotta make sure we do a full check
+	#ifdef REFERENCE_TRACKING
 	references_to_clear = INFINITY
+	#endif
 	var/atom/movable/ref_test/self_ref
 
 CAPABILITIES(/atom/movable/ref_test)
