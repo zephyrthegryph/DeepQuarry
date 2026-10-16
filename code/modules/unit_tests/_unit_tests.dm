@@ -1326,6 +1326,7 @@
 #include "dq_refinery_cache_home_tests.dm"
 #include "dq_organ_species_cache_home_tests.dm"
 #include "dq_targeting_cache_home_tests.dm"
+#include "dq_medical_metric_home_tests.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

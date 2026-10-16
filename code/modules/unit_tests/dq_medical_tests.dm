@@ -24,7 +24,7 @@
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_CHEMS, "bloodstream mutation did not invalidate chem conditions")
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_TREATMENT, "bloodstream mutation did not invalidate the treatment snapshot")
 	H.body.dirty &= ~BODY_DIRTY_CONDITIONS
-	H.dq_last_bodytemperature = -1
+	H.body.dq_last_bodytemperature = -1
 	H.dq_refresh_metric_dirty_state()
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_METRICS, "metric signature change did not invalidate metric conditions")
 	H.dq_process_dirty_medical_conditions()

@@ -14,7 +14,9 @@
 // integrity changes mark them, Life() consumes them once per cycle. Everything
 // lands in owner.body.
 
-/mob/living/carbon/human
+// The cursor belongs to the body whose condition domains it invalidates, not
+// to every human's base instance state.
+/datum/body
 	var/dq_last_neural_load
 	var/dq_last_radiation
 	var/dq_last_bodytemperature
@@ -23,12 +25,14 @@
 /// setter. Comparing this small fixed signature is cheaper and safer than
 /// walking every condition/cause when nothing changed.
 /mob/living/carbon/human/proc/dq_refresh_metric_dirty_state()
-	var/current_neural = injury_load(INJURY_CATEGORY_NEURAL)
-	if(current_neural == dq_last_neural_load && radiation == dq_last_radiation && body_temperature() == dq_last_bodytemperature)
+	if(!body)
 		return
-	dq_last_neural_load = current_neural
-	dq_last_radiation = radiation
-	dq_last_bodytemperature = body_temperature()
+	var/current_neural = injury_load(INJURY_CATEGORY_NEURAL)
+	if(current_neural == body.dq_last_neural_load && radiation == body.dq_last_radiation && body_temperature() == body.dq_last_bodytemperature)
+		return
+	body.dq_last_neural_load = current_neural
+	body.dq_last_radiation = radiation
+	body.dq_last_bodytemperature = body_temperature()
 	body?.invalidate(BODY_DIRTY_METRICS)
 
 /// Run the trigger domains the body has invalidated since last time.
