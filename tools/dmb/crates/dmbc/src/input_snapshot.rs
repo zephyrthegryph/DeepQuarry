@@ -200,6 +200,13 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         self.exact_reuse = exact;
         self
     }
+    pub(crate) fn shape(&self) -> io::Result<(usize, usize, usize)> {
+        Ok(self
+            .snapshot
+            .lock()
+            .map_err(|_| invalid("input capture mutex poisoned"))?
+            .shape())
+    }
     pub fn snapshot(&self) -> io::Result<InputSnapshot> {
         Ok(self
             .snapshot
@@ -353,6 +360,11 @@ impl Validation {
 }
 
 impl InputSnapshot {
+    /// Entry counts of the three recorded sets. Records only grow (a repeated
+    /// read that differs is rejected), so equal counts mean an equal capture.
+    pub(crate) fn shape(&self) -> (usize, usize, usize) {
+        (self.files.len(), self.folders.len(), self.negative_files.len())
+    }
     /// Exact captured facts, independent of validation's refreshed scan time.
     /// Stamps and issued generated-output policy remain part of this proof.
     pub(crate) fn same_recorded_facts(&self, other: &Self) -> bool {
