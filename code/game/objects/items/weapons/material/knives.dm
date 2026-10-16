@@ -75,6 +75,7 @@ CAPABILITIES(/obj/item/material/butterfly)
 	MATERIAL_BULK(MAT_STEEL, 12000)
 
 CAPABILITIES(/obj/item/material/knife)
+	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_KNIFE))
 

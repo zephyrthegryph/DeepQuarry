@@ -557,6 +557,7 @@ CAPABILITIES(/obj/item/defib_kit/compact)
 		return OP_OK
 
 CAPABILITIES(/obj/item/shockpaddles)
+	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_worn(flags = NOSTRIP))
 	configure(item_thrown(force = 6))
 	configure(item_combat(force = 2))

@@ -348,6 +348,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/joint/blunt)
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2))) // 4 total
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
+	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_EARS | SLOT_MASK))
 	configure(item_combat(attack_verbs = list("burnt", "singed")))
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2)))
@@ -699,6 +700,7 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 /obj/item/flame/lighter/var/detonator_mode = 0
 
 CAPABILITIES(/obj/item/flame/lighter)
+	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 4))
 	configure(item_combat(attack_verbs = list("burnt", "singed")))

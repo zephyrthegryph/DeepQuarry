@@ -132,18 +132,16 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	if(!reagent || !amount)
 		A.reason = /datum/msg/glass/no_venom
 		return OP_REFUSED
-	if(!COOLDOWN_FINISHED(target, venom_milking_cd))
+	if(!cooldown_ready(target, venom_milking_cd))
 		act_message(user, target, MSG_SELF(span_warning("%T% had their venom expressed too recently, try again later.")), \
 			MSG_OTHERS(span_warning("%U% attempts to express venom from %T%, but nothing happens.")))
 		A.reason = /datum/msg/glass/venom_recently
 		return OP_REFUSED
-	COOLDOWN_START(target, venom_milking_cd, 30 SECONDS)
+	cooldown_start(target, venom_milking_cd, 30 SECONDS)
 	act_message(user, target, others = span_notice("%U% expresses venom from %T%."))
 	reagents.add_reagent(reagent, amount)
 	return OP_OK
 
-/// Venom was expressed from this mob recently (a COOLDOWN; venom_milked()).
-/mob/living/var/tmp/venom_milking_cd = 0
 
 /// The look of a glass container: the filling (by how full it is, in the colour of what is in it), the lid while it is on, and a label.
 /obj/item/reagent_containers/glass/proc/draw_glass(datum/look/look, base, filled, labelled)

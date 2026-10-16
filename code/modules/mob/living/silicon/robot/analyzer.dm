@@ -18,6 +18,7 @@ MATERIAL_MIX(/obj/item/robotanalyzer, list(MAT_STEEL = 500, MAT_GLASS = 200))
 	return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/robotanalyzer)
+	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 3))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

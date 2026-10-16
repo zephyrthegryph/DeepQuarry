@@ -23,6 +23,7 @@ MSG_DEF(bvm/sealing, span_notice("You seal %I% over %T%'s face and start squeezi
 MSG_DEF_SELF(bvm/no_seal, span_warning("You can't get a seal over %T%'s face."))
 
 CAPABILITIES(/obj/item/bag_valve_mask)
+	configure(item_surgery(cavity_implantable = FALSE))
 	op("squeeze", at_target(/mob/living/carbon/human), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Ventilate"),
 		needs(req_adjacent(), req(PROC_REF(sealable), because = MSG(bvm/no_seal))), begins(MSG(bvm/sealing)), wait(2 SECONDS), then(PROC_REF(squeeze_done)))
 
@@ -67,6 +68,7 @@ MSG_DEF_SELF(airway_kit/aim, span_warning("Aim for %T%'s mouth."))
 MSG_DEF_SELF(airway_kit/no_mouth, span_warning("You can't get into %T%'s mouth."))
 
 CAPABILITIES(/obj/item/airway_kit)
+	configure(item_surgery(cavity_implantable = FALSE))
 	op("clear_airway", at_target(/mob/living/carbon/human), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Clear the airway"),
 		needs(req_adjacent(), req(PROC_REF(aimed_at_mouth), because = MSG(airway_kit/aim)), req(PROC_REF(mouth_open), because = MSG(airway_kit/no_mouth))),
 		begins(MSG(airway_kit/working)), wait(4 SECONDS), then(PROC_REF(airway_done)))
@@ -110,6 +112,7 @@ CAPABILITIES(/obj/item/airway_kit)
 MSG_DEF(decompression_needle/lining_up, span_notice("You line %I% up between %T%'s ribs."), span_warning("%U% lines %I% up between %T%'s ribs."))
 
 CAPABILITIES(/obj/item/decompression_needle)
+	configure(item_surgery(cavity_implantable = FALSE))
 	op("decompress", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE),
 		needs(req(PROC_REF(unused)), req(PROC_REF(aimed_at_chest))),
 		begins(MSG(decompression_needle/lining_up)), wait(3 SECONDS), then(PROC_REF(needle_done)))

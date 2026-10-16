@@ -35,6 +35,7 @@
 
 
 CAPABILITIES(/obj/item/healthanalyzer)
+	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 3))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

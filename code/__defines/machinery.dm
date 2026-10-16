@@ -276,3 +276,6 @@ if (!(Datum.datum_flags & DF_ISPROCESSING)) {\
 
 #define ENTRY_ITEM_PERSISTENCE "item_persistence"
 #define ITEM_PERSISTENCE_KEY "item_persistence"
+
+#define ENTRY_ITEM_SURGERY "item_surgery"
+#define ITEM_SURGERY_KEY "item_surgery"

@@ -13,6 +13,7 @@ MATERIAL_MIX(/obj/item/reagent_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	var/recent_fail = 0
 
 CAPABILITIES(/obj/item/reagent_scanner)
+	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

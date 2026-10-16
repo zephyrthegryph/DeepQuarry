@@ -7,6 +7,7 @@
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/gene_scanner)
+	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
 	op("scan_genes", inputs(at_target(/mob), at_target(/obj/item/organ), at_target(/obj/item/dnainjector)), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Scan genetic traits"),
 		needs(req_adjacent()), then(PROC_REF(scan_started), early = TRUE), wait(6 SECONDS), then(PROC_REF(genes_scanned)))

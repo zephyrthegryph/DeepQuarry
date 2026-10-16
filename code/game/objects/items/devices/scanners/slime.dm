@@ -9,6 +9,7 @@ MATERIAL_MIX(/obj/item/slime_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	throw_range = 7
 
 CAPABILITIES(/obj/item/slime_scanner)
+	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_thrown(force = 0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("scan_slime", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Scan slime"),

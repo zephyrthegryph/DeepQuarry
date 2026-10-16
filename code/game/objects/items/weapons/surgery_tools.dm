@@ -20,6 +20,7 @@
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/surgical)
+	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WELDINGTOOL, pickup = SFX_ITEMS_PICKUP_WELDINGTOOL))
 
 /obj/item/surgical/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)

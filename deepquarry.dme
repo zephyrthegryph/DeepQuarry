@@ -1676,6 +1676,7 @@
 #include "code\game\objects\items\item_thrown.dm"
 #include "code\game\objects\items\item_tooling.dm"
 #include "code\game\objects\items\item_persistence.dm"
+#include "code\game\objects\items\item_surgery.dm"
 #include "code\modules\heat\heat_spawn.dm"
 #include "code\game\objects\items\optical_view.dm"
 #include "code\game\objects\items\item_worn.dm"

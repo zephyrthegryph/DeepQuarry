@@ -573,6 +573,7 @@ MSG_DEF(organ/butcher_begin, span_danger("You are preparing to butcher %T%!"), s
 // An organ in hand: bitten (outside combat, aiming at the mouth); an organ on the table: butchered with a blade (a screwdriver for a robotic
 // one) or revived with peridaxon.
 CAPABILITIES(/obj/item/organ)
+	configure(item_surgery(cavity_implantable = FALSE))
 	ref_one(nameof(owner), /mob/living)
 	owns_one(nameof(data), /datum/organ_data, starts = /datum/organ_data)
 	derives(nameof(w_class), PROC_REF(birth_size))

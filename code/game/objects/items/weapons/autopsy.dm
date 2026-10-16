@@ -15,6 +15,7 @@
 	var/timeofdeath = null
 
 CAPABILITIES(/obj/item/autopsy_scanner)
+	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 	owns_many(nameof(chemtraces))
 	owns_many(nameof(wdata))

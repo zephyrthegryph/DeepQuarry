@@ -1360,3 +1360,5 @@
 #undef TEST_ASSERT_NOTEQUAL
 //#undef TEST_FOCUS - This define is used by vscode unit test extension to pick specific unit tests to run and appended later so needs to be used out of scope here
 #endif
+
+#include "dq_surgical_policy_home_tests.dm"

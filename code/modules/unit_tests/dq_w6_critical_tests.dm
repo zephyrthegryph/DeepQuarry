@@ -43,10 +43,10 @@
 	var/datum/surgical_step/S = surgical_step(/datum/surgical_step/place_item)
 	for(var/path in list(/obj/item/reagent_containers/syringe, /obj/item/healthanalyzer, /obj/item/decompression_needle, /obj/item/airway_kit, /obj/item/bag_valve_mask, /obj/item/tourniquet, /obj/item/surgical/scalpel, /obj/item/tool/screwdriver))
 		var/obj/item/I = allocate(path)
-		TEST_ASSERT(!I.cavity_implantable, "[path] must not be cavity implantable")
+		TEST_ASSERT(!surgery_of(I).cavity_implantable, "[path] must not be cavity implantable")
 		TEST_ASSERT_EQUAL(S.tool_quality(I), 0, "[path] must not be a cavity implant tool")
 	var/obj/item/coin/C = allocate(/obj/item/coin)
-	TEST_ASSERT(C.cavity_implantable, "a coin is a generic small item")
+	TEST_ASSERT(surgery_of(C).cavity_implantable, "a coin is a generic small item")
 	TEST_ASSERT(S.tool_quality(C) > 0, "a coin can be placed in a cavity")
 
 /// A dormant protean with no control cluster is repaired on its body; a

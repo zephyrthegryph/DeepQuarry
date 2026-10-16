@@ -22,6 +22,7 @@
 
 CAPABILITIES(/obj/item/mmi)
 	configure(object_communication(speaks = 1))
+	configure(item_surgery(cavity_implantable = FALSE))
 	ref_one(nameof(mecha)) // the mech we are installed in
 	owns_one(nameof(body_backup), /mob/living)
 	owns_one(nameof(radio), starts = /obj/item/radio/headset/mmi_radio)

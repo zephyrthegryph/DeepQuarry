@@ -52,7 +52,7 @@
 
 /// The mob's venom was expressed long ago (its cooldown has run out).
 /proc/rc_milk_cooldown_over(mob/living/L)
-	L.venom_milking_cd = 0
+	cooldown_reset(L, venom_milking_cd)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Fixtures
@@ -803,3 +803,28 @@
 	TEST_ASSERT(rc_open(bottle), "using it takes it off")
 	rc_click(H, target, bottle)
 	TEST_ASSERT_EQUAL(target.reagents.total_volume, 10, "and it pours")
+
+/datum/unit_test/dq_p2_reagents/venom_native_clock
+/datum/unit_test/dq_p2_reagents/venom_native_clock/run_gate()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/mob/living/carbon/human/H = rc_actor()
+	var/mob/living/carbon/human/snake = rc_actor()
+	snake.vore_options.set_trait_injection_selected(REAGENT_ID_TOXIN)
+	snake.vore_options.set_trait_injection_amount(7)
+	var/obj/item/reagent_containers/C = rc_filled(/obj/item/reagent_containers/glass/beaker, 0)
+	rc_use(H, C)
+	TEST_ASSERT(!("venom_milking_cd" in snake.vars), "no physical cooldown shadows the native table")
+	TEST_ASSERT_EQUAL(cooldown_end(snake, venom_milking_cd), 0, "fresh native deadline keeps old zero default")
+	rc_click(H, snake, C, settle = FALSE)
+	TEST_ASSERT_EQUAL(C.reagents.get_reagent_amount(REAGENT_ID_TOXIN), 7, "the real click expresses venom")
+	TEST_ASSERT_EQUAL(cooldown_end(snake, venom_milking_cd), world.time + (30 SECONDS), "the actual action uses the old WORLD deadline")
+	cooldown_set_end(snake, venom_milking_cd, world.time)
+	rc_click(H, snake, C, settle = FALSE)
+	TEST_ASSERT_EQUAL(C.reagents.get_reagent_amount(REAGENT_ID_TOXIN), 7, "exactly at the deadline remains refused, preserving strict comparison")
+	cooldown_set_end(snake, venom_milking_cd, world.time - (1 DECISECONDS))
+	rc_click(H, snake, C, settle = FALSE)
+	TEST_ASSERT_EQUAL(C.reagents.get_reagent_amount(REAGENT_ID_TOXIN), 14, "strictly past the WORLD deadline the actual click succeeds")
+	cooldown_reset(snake, venom_milking_cd)
+	TEST_ASSERT_EQUAL(cooldown_end(snake, venom_milking_cd), 0, "native reset preserves the old explicit zero reset")
+	TEST_ASSERT(!cooldown_started(H, venom_milking_cd), "another actual human has no borrowed cooldown")

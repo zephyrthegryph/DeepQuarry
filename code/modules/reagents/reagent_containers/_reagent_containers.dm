@@ -16,6 +16,7 @@
 // Every container gets a holder of its (possibly mapped) volume; subtypes declare what starts in it
 // (doc/rewrite/declarative_lifecycle.md).
 CAPABILITIES(/obj/item/reagent_containers)
+	configure(item_surgery(cavity_implantable = FALSE))
 	reagents(nameof(volume))
 
 /obj/item/reagent_containers/afterattack(obj/target, mob/user, flag)

@@ -36,6 +36,7 @@ SETTER(/obj/item/stack, amount)
 
 CAPABILITIES(/obj/item/stack)
 	configure(item_placement(center_x = 0, center_y = 0))
+	configure(item_surgery(cavity_implantable = FALSE))
 	ref_many(nameof(synths), /datum/matter_synth, on_unlink = PROC_REF(synth_unlinked))
 	on_change(nameof(synths), ANY, then(PROC_REF(synth_cost_changed)))
 	interface("MaterialStack", state = nameof(GLOB.tgui_hands_state), input = in_hand())
