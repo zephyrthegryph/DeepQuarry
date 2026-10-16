@@ -376,6 +376,7 @@ CAPABILITIES(/datum/carried_afflictions)
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 
 CAPABILITIES(/obj/item)
+	configure(pressure_response(pressure = 5))
 	item_placement()
 	item_admission()
 	item_surgery(cavity_implantable = TRUE)

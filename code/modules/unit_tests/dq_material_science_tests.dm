@@ -208,7 +208,7 @@
 	strong.apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = MAT_DIAMOND), slots.type, slots_total)
 	weak.apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = MAT_WOOD), slots.type, slots_total)
 	TEST_ASSERT(strong.effective_maximum_pressure() > weak.effective_maximum_pressure(), "Canister shell material must change the actual internal rupture rating")
-	TEST_ASSERT_EQUAL(strong.pressure_resistance, weak.pressure_resistance, "Internal vessel strength must not misuse decompression movement resistance")
+	TEST_ASSERT_EQUAL(pressure_response_of(strong).pressure, pressure_response_of(weak).pressure, "Internal vessel strength must not misuse decompression movement resistance")
 	qdel(strong)
 	qdel(weak)
 

@@ -6,7 +6,6 @@
 	layer = TABLE_LAYER
 	density = TRUE
 	anchored = FALSE
-	pressure_resistance = 2*ONE_ATMOSPHERE
 
 	var/has_sockets = TRUE
 
@@ -55,6 +54,7 @@
 	return "[src]"
 
 CAPABILITIES(/obj/structure/reagent_dispensers)
+	configure(pressure_response(pressure = 2*ONE_ATMOSPHERE))
 	reagents(5000)
 	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_item)))
 	extend("melee_hit", when(cond_not(req(/obj/item/reagent_containers)))) // a container click on a tank taps it, hostile or not, instead of hitting it

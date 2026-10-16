@@ -5925,7 +5925,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// and a heavy move_resist should keep the canister from moving under spacewind.
 	var/obj/machinery/portable_atmospherics/canister/C = new(A)
 	C.set_anchored(TRUE)
-	C.move_resist = INFINITY
+	C.set_move_resist(INFINITY)
 	var/turf/initial_loc = C.loc
 
 	// Wait for at least one real SSair tick to open the cycle gate.

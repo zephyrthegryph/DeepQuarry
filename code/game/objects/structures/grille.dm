@@ -5,7 +5,6 @@
 	icon_state = "grille"
 	density = TRUE
 	anchored = TRUE
-	pressure_resistance = 5*ONE_ATMOSPHERE
 	layer = TABLE_LAYER
 	explosion_resistance = 1
 	// 16 integrity with a 6-point "broken" buffer: 10 damage to break it into a passable
@@ -20,6 +19,7 @@
 	look.state("[initial(icon_state)][destroyed ? "-b" : ""]")
 
 CAPABILITIES(/obj/structure/grille)
+	configure(pressure_response(pressure = 5*ONE_ATMOSPHERE))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_destroys))))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))

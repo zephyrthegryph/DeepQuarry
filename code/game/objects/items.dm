@@ -13,7 +13,6 @@
 	var/burning = null
 	var/storage_cost = null
 	pass_flags = PASSTABLE
-	pressure_resistance = 5
 //	causeerrorheresoifixthis
 	// --- Phased player melee (windup -> swing -> recovery). See code/modules/mob/living/melee_swing.dm ---
 

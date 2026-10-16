@@ -8,10 +8,10 @@
 	throw_speed = 7
 	throw_range = 15
 	MATERIAL_BULK(MAT_STEEL, 60)
-	pressure_resistance = 2
 	var/stamptext = null
 
 CAPABILITIES(/obj/item/stamp)
+	configure(pressure_response(pressure = 2))
 	configure(item_worn(slots = SLOT_HOLSTER))
 	configure(item_thrown(force = 0))
 	configure(item_combat(attack_verbs = list("stamped")))

@@ -23,6 +23,7 @@ sparse(/atom/movable, lighting_luminosity, type = num)
 	var/tmp/atom/movable/emissive_blocker/em_block
 
 CAPABILITIES(/atom/movable)
+	pressure_response()
 	throwing_config()
 	links(LINK_END(/atom/movable, LK_SWARM_MEMBERS), LINK_END(/atom/movable, LK_SWARM_MEMBERS), sparse = TRUE, a_many = TRUE, b_many = TRUE)
 	ref_one(nameof(heat_fire_turf), /turf)

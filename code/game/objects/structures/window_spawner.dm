@@ -10,11 +10,11 @@
 	layer = 1.9 // more visible for mappers
 	density = TRUE
 	anchored = TRUE
-	pressure_resistance = 4*ONE_ATMOSPHERE
 	can_atmos_pass = ATMOS_PASS_NO
 	var/win_path = /obj/structure/window/basic
 
 CAPABILITIES(/obj/effect/wingrille_spawn)
+	configure(pressure_response(pressure = 4*ONE_ATMOSPHERE))
 	map_resolver(GLOBAL_PROC_REF(resolve_wingrille), vars = list("id", "win_path"))
 
 /// The map resolver of window spawners: records the cell, then (once the load is in place, so every

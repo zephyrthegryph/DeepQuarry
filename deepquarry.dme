@@ -41,6 +41,7 @@
 #include "code\__defines\mob_configuration.dm"
 #include "code\__defines\base_configuration.dm"
 #include "code\__defines\heat_spawn.dm"
+#include "code\__defines\pressure_response.dm"
 #include "code\__defines\optics.dm"
 #include "code\__defines\_access_defs.dm"
 #include "code\__defines\_ast.dm"
@@ -5509,6 +5510,7 @@
 #include "code\ATMOSPHERICS\environmental\LINDA_fire.dm"
 #include "code\ATMOSPHERICS\environmental\LINDA_system.dm"
 #include "code\ATMOSPHERICS\environmental\LINDA_turf_tile.dm"
+#include "code\ATMOSPHERICS\pressure_response.dm"
 #include "code\ATMOSPHERICS\SSair.dm"
 // DQ strategy: CHOMP atmospherics MACHINERY (vents, scrubbers, pipes, canisters,
 // etc.) lives in code/ATMOSPHERICS/ and code/game/machinery/atmoalter/. /tg/'s

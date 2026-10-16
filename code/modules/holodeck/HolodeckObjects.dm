@@ -147,7 +147,6 @@ CAPABILITIES(/turf/simulated/floor/holofloor/desert)
 	icon_state = "stool_padded_preview"
 	anchored = TRUE
 	unacidable = TRUE
-	pressure_resistance = 15
 
 /obj/item/clothing/gloves/boxing/hologlove
 	name = "boxing gloves"
@@ -548,3 +547,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holodeck)
 CAPABILITIES(/obj/item/holo)
 	configure(item_combat(injury_kind = INJURY_PAIN))
 	configure(item_combat(no_attack_log = 1, no_random_knockdown = TRUE))
+
+CAPABILITIES(/obj/structure/holostool)
+	configure(pressure_response(pressure = 15))

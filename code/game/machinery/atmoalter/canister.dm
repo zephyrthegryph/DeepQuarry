@@ -21,7 +21,6 @@
 
 	var/canister_color = "yellow"
 	start_pressure = 45 * ONE_ATMOSPHERE
-	pressure_resistance = 7 * ONE_ATMOSPHERE
 	var/temperature_resistance = 1000 + T0C
 	/// Integrity of the material which actually touches the stored gas.
 	var/material_liner_integrity = 100
@@ -53,6 +52,7 @@ MSG_DEF(canister/deconstructed, "You deconstruct %T%.", "%U% deconstructs %T%.")
 MSG_DEF(canister/jetpack, "You pulse-pressurize your jetpack from the tank.", "%U% pulse-pressurizes a jetpack from %T%.")
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
+	configure(pressure_response(pressure = 7 * ONE_ATMOSPHERE))
 	configure(examine_text(antag = "Canisters can be damaged, spilling their contents into the air, or you can just leave the release valve open."))
 	configure(machine_interaction_config(interact_offline = 1))
 	climb()

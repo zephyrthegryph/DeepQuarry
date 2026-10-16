@@ -327,18 +327,18 @@ CAPABILITIES(/turf/open)
 
 /atom/movable
 	///How much delta pressure is needed for us to move
-	var/pressure_resistance = 10
 	var/tmp/last_high_pressure_movement_air_cycle = 0
 
 /atom/movable/proc/experience_pressure_difference(pressure_difference, direction, pressure_resistance_prob_delta = 0)
 	var/const/PROBABILITY_OFFSET = 25
 	var/const/PROBABILITY_BASE_PRECENT = 75
+	var/datum/type_trait/pressure_response/response = pressure_response_of(src)
 	var/max_force = sqrt(pressure_difference) * (MOVE_FORCE_DEFAULT / 5)
 	var/move_prob = 100
-	if (pressure_resistance > 0)
-		move_prob = (pressure_difference / pressure_resistance * PROBABILITY_BASE_PRECENT) - PROBABILITY_OFFSET
+	if (response.pressure > 0)
+		move_prob = (pressure_difference / response.pressure * PROBABILITY_BASE_PRECENT) - PROBABILITY_OFFSET
 	move_prob += pressure_resistance_prob_delta
-	if (move_prob > PROBABILITY_OFFSET && prob(move_prob) && (move_resist != INFINITY) && (!anchored && (max_force >= (move_resist * MOVE_FORCE_PUSH_RATIO))) || (anchored && (max_force >= (move_resist * MOVE_FORCE_FORCEPUSH_RATIO))))
+	if (move_prob > PROBABILITY_OFFSET && prob(move_prob) && (response.force != INFINITY) && (!anchored && (max_force >= (response.force * MOVE_FORCE_PUSH_RATIO))) || (anchored && (max_force >= (response.force * MOVE_FORCE_FORCEPUSH_RATIO))))
 		step(src, direction)
 		last_high_pressure_movement_air_cycle = SSair.times_fired
 

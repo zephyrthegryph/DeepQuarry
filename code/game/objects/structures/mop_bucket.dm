@@ -5,7 +5,6 @@
 	icon_state = "mopbucket"
 	density = TRUE
 	w_class = ITEMSIZE_NORMAL
-	pressure_resistance = 5
 	flags = OPENCONTAINER
 	var/amount_per_transfer_from_this = 5	//shit I dunno, adding this so syringes stop runtime erroring. --NeoFite
 
@@ -13,6 +12,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/mopbucket, REGISTRY_MOP_BUCKETS)
 
 
 CAPABILITIES(/obj/structure/mopbucket)
+	configure(pressure_response(pressure = 5))
 	reagents(300)
 	climb()
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

@@ -12,7 +12,6 @@
 	desc = "This is used to lie in, sleep in or strap on."
 	icon = 'icons/obj/furniture.dmi'
 	icon_state = "bed"
-	pressure_resistance = 15
 	anchored = TRUE
 	can_buckle = TRUE
 	buckle_dir = SOUTH
@@ -110,6 +109,7 @@ MSG_DEF(bed/padded, "You add padding to %T%.", "%U% adds padding to %T%.")
 MSG_DEF(bed/unpadded, "You remove the padding from %T%.", "%U% removes the padding from %T%.")
 
 CAPABILITIES(/obj/structure/bed)
+	configure(pressure_response(pressure = 15))
 	buckle()
 	op("pad", stack(/obj/item/stack, 1), wait(0), label("Pad"),
 		needs(req(PROC_REF(can_be_padded))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
@@ -419,7 +419,6 @@ CAPABILITIES(/obj/item/roller_holder)
 	desc = "A stained matress. Guess it's better than sleeping on the floor."
 	icon = 'icons/obj/furniture.dmi'
 	icon_state = "dirtybed"
-	pressure_resistance = 15
 	anchored = TRUE
 	can_buckle = TRUE
 	buckle_dir = SOUTH
@@ -428,6 +427,7 @@ CAPABILITIES(/obj/item/roller_holder)
 MSG_DEF_SELF(dirtybed/loose, "The bed isn't secured.")
 
 CAPABILITIES(/obj/structure/dirtybed)
+	configure(pressure_response(pressure = 15))
 	buckle()
 	anchor()
 	extend("anchor.toggle", wait(2 SECONDS))

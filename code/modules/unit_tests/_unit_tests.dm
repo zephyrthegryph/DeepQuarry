@@ -181,6 +181,7 @@
 // the bottom of this file.
 #include "dq_c6_machine_parts_tests.dm"
 #include "dq_atmos_tests.dm"
+#include "dq_pressure_response_home_tests.dm"
 #include "dq_after_init_tests.dm"
 #include "dq_init_settle_tests.dm"
 #include "dq_init_forms_behaviour_tests.dm"

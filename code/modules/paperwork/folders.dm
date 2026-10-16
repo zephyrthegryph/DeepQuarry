@@ -4,7 +4,6 @@
 	icon = 'icons/obj/bureaucracy.dmi' // Continues using new folder sprite, contrary to YW
 	icon_state = "folder"
 	w_class = ITEMSIZE_SMALL
-	pressure_resistance = 2
 	/// Card stock: barely slows a fire (containment paths, C2).
 	insulation = 0.1
 
@@ -116,6 +115,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/folder)
+	configure(pressure_response(pressure = 2))
 	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	op("folder_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))

@@ -9,7 +9,6 @@
 	throw_speed = 1
 	plane = MOB_PLANE
 	layer = MOB_LAYER
-	pressure_resistance = 1
 	var/page = 1    // current page
 	// ALLOW(instance_list): d: a bundle holds pages
 	var/list/pages = list()  // Ordered list of pages as they are to be displayed. Can be different order than src.contents.
@@ -120,6 +119,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/paper_bundle)
+	configure(pressure_response(pressure = 1))
 	ref_many(nameof(pages), /obj/item)
 	configure(item_thrown(force = 0))
 	configure(item_combat(attack_verbs = list("bapped")))

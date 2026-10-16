@@ -210,7 +210,6 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 
 // === /atom/movable move_resist + force defines ===
 /atom/movable
-	var/move_resist = 100
 
 #define MOVE_FORCE_DEFAULT 50
 #define MOVE_FORCE_PUSH_RATIO 1

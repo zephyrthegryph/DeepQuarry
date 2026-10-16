@@ -11,7 +11,6 @@
 	w_class = ITEMSIZE_NORMAL
 	throw_speed = 3
 	throw_range = 7
-	pressure_resistance = 10
 	layer = OBJ_LAYER - 0.1
 	var/amount = 30					//How much paper is in the bin.
 	var/list/papers	//List of papers put in the bin for reference.
@@ -40,6 +39,7 @@
 	return
 
 CAPABILITIES(/obj/item/paper_bin)
+	configure(pressure_response(pressure = 10))
 	configure(item_thrown(force = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	// a hand that cannot move takes nothing; with no custom paper in the bin it asks which paper

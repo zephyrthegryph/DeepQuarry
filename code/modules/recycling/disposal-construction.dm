@@ -9,7 +9,6 @@
 	icon_state = "conpipe-s"
 	anchored = FALSE
 	density = FALSE
-	pressure_resistance = 5*ONE_ATMOSPHERE
 	level = 2
 	var/sortType = ""
 	var/ptype = 0
@@ -18,6 +17,7 @@
 	var/base_state = "pipe-s"
 
 CAPABILITIES(/obj/structure/disposalconstruct)
+	configure(pressure_response(pressure = 5*ONE_ATMOSPHERE))
 	rotatable()
 	param(nameof(ptype), pos = 1)
 	param(nameof(dir), pos = 2)

@@ -26,13 +26,13 @@
 	throw_range = 15
 	MATERIAL_BULK(MAT_STEEL, 10)
 	var/colour = "black"	//what colour the ink is!
-	pressure_resistance = 2
 	var/can_click = TRUE
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/pen)
+	configure(pressure_response(pressure = 2))
 	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
 	configure(item_thrown(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
