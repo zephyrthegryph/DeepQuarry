@@ -28,3 +28,6 @@
 
 #define ENTRY_TELEKINETIC_REACH "telekinetic_reach"
 #define TELEKINETIC_REACH_KEY "telekinetic_reach"
+
+#define ENTRY_SEAT_POLICY "seat_policy"
+#define SEAT_POLICY_KEY "seat_policy"

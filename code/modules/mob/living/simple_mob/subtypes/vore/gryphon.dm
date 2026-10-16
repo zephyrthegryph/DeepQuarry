@@ -32,10 +32,7 @@
 	pixel_y = 0
 	mount_offset_y = 15
 	mount_offset_x = -12
-	max_buckled_mobs = 1
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 
 	var/random_skin = TRUE
 	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
@@ -137,6 +134,7 @@
 		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 CAPABILITIES(/mob/living/simple_mob/vore/gryphon)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	ref_one(nameof(dq_maybe_eating), /mob/living)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "can_be_drop_prey" = FALSE))

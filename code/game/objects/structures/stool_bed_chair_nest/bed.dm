@@ -14,8 +14,6 @@
 	icon_state = "bed"
 	anchored = TRUE
 	can_buckle = TRUE
-	buckle_dir = SOUTH
-	buckle_lying = 1
 	var/datum/material/material
 	var/datum/material/padding_material
 	var/base_icon = "bed"
@@ -109,6 +107,7 @@ MSG_DEF(bed/padded, "You add padding to %T%.", "%U% adds padding to %T%.")
 MSG_DEF(bed/unpadded, "You remove the padding from %T%.", "%U% removes the padding from %T%.")
 
 CAPABILITIES(/obj/structure/bed)
+	configure(seat_policy(direction = SOUTH, lying = 1))
 	configure(pressure_response(pressure = 15))
 	buckle()
 	op("pad", stack(/obj/item/stack, 1), wait(0), label("Pad"),
@@ -423,12 +422,11 @@ CAPABILITIES(/obj/item/roller_holder)
 	icon_state = "dirtybed"
 	anchored = TRUE
 	can_buckle = TRUE
-	buckle_dir = SOUTH
-	buckle_lying = 1
 
 MSG_DEF_SELF(dirtybed/loose, "The bed isn't secured.")
 
 CAPABILITIES(/obj/structure/dirtybed)
+	configure(seat_policy(direction = SOUTH, lying = 1))
 	configure(pressure_response(pressure = 15))
 	buckle()
 	anchor()

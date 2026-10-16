@@ -28,9 +28,9 @@ CAPABILITIES(/datum/robot_belly)
 		return
 	rel_set(src, nameof(owner), R)
 	R.set_can_buckle(TRUE)
-	R.buckle_movable = TRUE
-	R.buckle_lying = FALSE
-	R.max_buckled_mobs = 1
+	set_trait(R, ENTRY_SEAT_POLICY, "movable", TRUE)
+	set_trait(R, ENTRY_SEAT_POLICY, "lying", FALSE)
+	set_trait(R, ENTRY_SEAT_POLICY, "capacity", 1)
 	if(!R.riding_datum)
 		rel_set(R, nameof(R.riding_datum), new /datum/riding/dogborg(R))
 	observe(R, /datum/notice/mob_death, src, then(PROC_REF(on_death)))

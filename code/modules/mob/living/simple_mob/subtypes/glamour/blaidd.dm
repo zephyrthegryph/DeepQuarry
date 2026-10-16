@@ -22,12 +22,9 @@
 
 	minbodytemp = 0
 
-	max_buckled_mobs = 1
 	mount_offset_y = 14
 	mount_offset_x = 2
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	var/blaidd_invisibility
 
 	vore_bump_chance = 25
@@ -45,6 +42,7 @@
 	vore_bump_emote = "tries to devour"
 
 CAPABILITIES(/mob/living/simple_mob/vore/blaidd)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 	verb_entry(/mob/living/simple_mob/vore/blaidd/proc/blaidd_invis, login = TRUE)

@@ -27,12 +27,9 @@
 	attacktext = list("chomped")
 	see_in_dark = 8
 	minbodytemp = 0
-	max_buckled_mobs = 1
 	mount_offset_y = 32
 	mount_offset_x = -16
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	var/initial_icon = "raptorpurple"
 	var/wg_state = 0
 
@@ -63,6 +60,7 @@
 	vore_bump_emote = "tries to snap up"
 
 CAPABILITIES(/mob/living/simple_mob/vore/raptor)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)

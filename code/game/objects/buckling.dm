@@ -2,11 +2,6 @@
 
 /atom/movable
 	var/can_buckle = FALSE
-	var/buckle_movable = 0
-	var/buckle_dir = 0
-	var/buckle_lying = -1 //bed-like behavior, forces mob.lying = buckle_lying if != -1
-	var/buckle_require_restraints = 0 //require people to be handcuffed before being able to buckle. eg: pipes
-	var/max_buckled_mobs = 1
 
 
 /// Re-checked on the answer: still next to it, and the pick is still buckled to it.
@@ -81,7 +76,7 @@
 	if(!link_make(M, LK_BUCKLED_TO, src))
 		return FALSE
 	M.facing_dir = null
-	M.set_dir(buckle_dir ? buckle_dir : dir)
+	M.set_dir(seat_policy_of(src).direction ? seat_policy_of(src).direction : dir)
 	M.update_canmove()
 	M.update_floating(M.Check_Dense_Object())
 	if(riding_datum)
@@ -153,7 +148,7 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 		return FALSE
 
 	var/list/buckled_here = src?.buckled_mob_list()
-	if(has_buckled_mobs() && buckled_here.len >= max_buckled_mobs)
+	if(has_buckled_mobs() && buckled_here.len >= seat_policy_of(src).capacity)
 		for(var/mob/living/L in buckled_here)
 			if(istype(L) && can_stumble_vore(prey = L, pred = M))
 				unbuckle_mob(L, TRUE)
@@ -215,23 +210,23 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 			L.last_move = last_move
 			L.inertia_dir = last_move
 
-		if(!buckle_dir)
+		if(!seat_policy_of(src).direction)
 			L.set_dir(dir)
 		else
-			L.set_dir(buckle_dir)
+			L.set_dir(seat_policy_of(src).direction)
 
 /atom/movable/proc/can_buckle_check(mob/living/M, forced = FALSE, can_do_spont_vore = FALSE)
 	if(!istype(M))
 		return FALSE
 
-	if((!can_buckle && !forced) || M?.buckled_to() || LAZYLEN(M.pinned) || (max_buckled_mobs == 0) || (buckle_require_restraints && !M.restrained()))
+	if((!can_buckle && !forced) || M?.buckled_to() || LAZYLEN(M.pinned) || (seat_policy_of(src).capacity == 0) || (seat_policy_of(src).require_restraints && !M.restrained()))
 		return FALSE
 	if(LAZYLEN(M?.grabbed_by_list()) && !forced)
 		to_chat(M, span_boldwarning("You can not buckle while grabbed!"))
 		return FALSE
 
 	var/list/buckled_here2 = src?.buckled_mob_list()
-	if(has_buckled_mobs() && buckled_here2.len >= max_buckled_mobs) //Handles trying to buckle yourself to the chair when someone is on it
+	if(has_buckled_mobs() && buckled_here2.len >= seat_policy_of(src).capacity) //Handles trying to buckle yourself to the chair when someone is on it
 		if(can_do_spont_vore && is_vore_predator(M) && vore_selected_of(M))
 			for(var/mob/living/buckled in buckled_here2)
 				if(can_stumble_vore(prey = buckled, pred = M))

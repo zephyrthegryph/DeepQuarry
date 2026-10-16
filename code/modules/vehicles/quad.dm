@@ -161,7 +161,6 @@ CAPABILITIES(/obj/vehicle/train/engine/quadbike/random)
 	icon_state = "quadtrailer"
 	anchored = FALSE
 	passenger_allowed = 1
-	buckle_lying = 1
 	locked = 0
 
 	load_item_visible = 1
@@ -244,4 +243,5 @@ CAPABILITIES(/obj/vehicle/train/trolley/trailer/random)
 	look.overlay(look_overlay_image('icons/obj/vehicles_64x64.dmi', "[initial(icon_state)]_a", layer = initial(layer), color = paint_color))
 
 CAPABILITIES(/obj/vehicle/train/trolley/trailer)
+	configure(seat_policy(lying = 1))
 	op("vehicle_paint", tool(TOOL_MULTITOOL), when(req_is(nameof(open), TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Paint"), wait(0), asks(/datum/prompt/color/vehicle_paint, fields = list("default" = nameof(paint_color)), step = "colour"), then(PROC_REF(vehicle_paint_picked)))

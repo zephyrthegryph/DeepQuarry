@@ -33,10 +33,7 @@
 	pixel_x = -16
 	pixel_y = 0
 	melee_miss_chance = 0
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_y = 10
 	say_list_type = /datum/say_list/otie
 	tame_chance = 0
@@ -745,6 +742,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
 	resize(1) // Scale them back down
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/blackhole)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	rolls(nameof(size_multiplier), range_of(1, 1.8, 0.01))
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/sniper/blackhole)

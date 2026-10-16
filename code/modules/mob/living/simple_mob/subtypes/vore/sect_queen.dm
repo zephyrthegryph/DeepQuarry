@@ -74,16 +74,14 @@
 	pixel_x = -16
 	pixel_y = 0
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_y = 26
 
 	say_list_type = /datum/say_list/sect_queen
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/sect_queen)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color, login = TRUE)

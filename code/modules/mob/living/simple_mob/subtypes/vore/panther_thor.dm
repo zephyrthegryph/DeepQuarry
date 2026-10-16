@@ -28,10 +28,7 @@
 	pixel_x = -16
 	pixel_y = 0
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_y = 12
 
 	say_list_type = /datum/say_list/panther
@@ -96,6 +93,7 @@
 
 // Force uncloaking if attacked.
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther/thor)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
 
 /mob/living/simple_mob/vore/aggressive/panther/thor/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)

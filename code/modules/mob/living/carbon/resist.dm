@@ -58,7 +58,7 @@
 	drop_from_inventory(I)
 
 	var/obj/buckled = src?.buckled_to()
-	if(buckled && buckled.buckle_require_restraints)
+	if(buckled && seat_policy_of(buckled).require_restraints)
 		buckled.unbuckle_mob()
 
 	spent(I)

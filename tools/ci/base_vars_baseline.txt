@@ -81,11 +81,6 @@ base_var	code/game/machinery/machinery.dm	@/obj/machinery::material_component_ma
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::material_emp_resistance
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::gas_dependency_wake_count
 base_var	code/game/machinery/machinery_power.dm	@/obj/machinery::recursive_set
-base_var	code/game/objects/buckling.dm	@/atom/movable::buckle_movable
-base_var	code/game/objects/buckling.dm	@/atom/movable::buckle_dir
-base_var	code/game/objects/buckling.dm	@/atom/movable::buckle_lying
-base_var	code/game/objects/buckling.dm	@/atom/movable::buckle_require_restraints
-base_var	code/game/objects/buckling.dm	@/atom/movable::max_buckled_mobs
 base_var	code/game/objects/items.dm	@/obj/item::blood_overlay
 base_var	code/game/objects/items.dm	@/obj/item::randpixel
 base_var	code/game/objects/items.dm	@/obj/item::abstract

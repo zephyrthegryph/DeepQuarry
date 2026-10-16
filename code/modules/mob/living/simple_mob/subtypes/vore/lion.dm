@@ -38,10 +38,7 @@
 
 	minbodytemp = 200
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 
 	vore_active = TRUE
 	vore_pounce_chance = 80 //hongry
@@ -109,6 +106,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_sex, login = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)

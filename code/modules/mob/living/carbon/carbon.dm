@@ -353,7 +353,7 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 	if(slot_id == SLOT_ID_HANDCUFFED)
 		update_handcuffed()
 		var/obj/buckled = src?.buckled_to()
-		if(buckled && buckled.buckle_require_restraints)
+		if(buckled && seat_policy_of(buckled).require_restraints)
 			buckled.unbuckle_mob()
 
 //generates realistic-ish pulse output based on preset levels

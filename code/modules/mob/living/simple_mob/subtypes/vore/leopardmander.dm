@@ -27,12 +27,9 @@
 	attacktext = list("chomped")
 	see_in_dark = 8
 	minbodytemp = 0
-	max_buckled_mobs = 1
 	mount_offset_y = 32
 	mount_offset_x = -16
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	vore_bump_chance = 50
 	vore_pounce_chance = 100
 	vore_active = 1
@@ -60,6 +57,7 @@
 	value = CATALOGUER_REWARD_HARD
 
 CAPABILITIES(/mob/living/simple_mob/vore/leopardmander)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	configure(voice_config(species_sounds = "Canine", pain_emote_1p = list("yelp", "whine", "bark", "growl"), pain_emote_3p = list("yelps", "whines", "barks", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))

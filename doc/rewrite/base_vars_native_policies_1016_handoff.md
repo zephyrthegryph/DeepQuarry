@@ -47,3 +47,8 @@ Current source count: 386 to 348, 38 removals and zero additions. Generation and
 
 The continuation now removes 39 rows, 386 to 347, with generation and all ratchets passing. The default telekinesis adapter reads a specialized native admission policy instead of a base object field. Ordinary-object and structure defaults, real grab/poke behavior, historical map/VV aliases and per-instance overrides are preserved. A real human/adapter regression covers refusal and recovery; final DreamChecker/runtime verification is pending.
 
+
+## Seat admission and transport policy
+
+The continuation removes 44 rows, 386 to 342, with generation and all ratchets passing and zero additions. Five cross-cutting buckling fields now live in the native seat policy. All 122 concrete defaults, teleport's type-default reset, bonfire stake mutation and robot-belly setup remain at their original use sites. Historical map/VV field names route to copy-on-write policy values; native buckle slots remain independent. Six real consumer fixtures are included. Final DreamChecker and runtime verification are pending.
+

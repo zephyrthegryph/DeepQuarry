@@ -29,10 +29,7 @@
 	pixel_x = -16
 	pixel_y = 0
 	melee_miss_chance = 0
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_y = 10
 	say_list_type = /datum/say_list/otie
 	tame_chance = 0
@@ -146,12 +143,9 @@
 	melee_attack_delay = 1
 	minbodytemp = 0
 
-	max_buckled_mobs = 1
 	mount_offset_y = 14
 	mount_offset_x = 2
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 	armor_spec = "melee=40;bullet=20;laser=20;energy=15;bio=100;rad=100" // Values read by injury_armor()
 
@@ -317,3 +311,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/awp)
 	. = list()
 	for(var/i = 1 to steps)
 		. += (i % 2 == 0) ? "#FFFFFF" : "#FF7777"
+
+CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/syndicate)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))

@@ -86,10 +86,7 @@
 //Human overrides for taur riding
 /mob/living/carbon/human
 	drag_buckle = FALSE
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 
 /mob/living/carbon/human/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
 	if(forced)

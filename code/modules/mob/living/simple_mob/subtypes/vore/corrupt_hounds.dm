@@ -60,10 +60,7 @@
 
 	has_langs = list(LANGUAGE_GALCOM, LANGUAGE_EAL) //Robots speak in beep, yes?
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 
 	vore_active = TRUE
 	vore_capacity = 1
@@ -112,6 +109,7 @@
 	set_icon_state(icon_dead)
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	configure(mob_kind(death_message = "shudders and collapses!"))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
@@ -300,10 +298,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	maxbodytemp = 900
 
 	say_list_type = /datum/say_list/corrupthound/janihound
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 
 	vore_active = TRUE
 	vore_capacity = 2
@@ -356,6 +351,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	set_icon_state(icon_dead)
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(mob_kind(death_message = "shudders and collapses!"))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

@@ -5,6 +5,7 @@
 // refuses a target out of arm's reach.
 
 CAPABILITIES(/mob/living/carbon/human)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	human_abilities()
 	configure(shred_settings(vore_shred_time = 10 SECONDS))
 	owns_one(nameof(wearing_rig), on_destroy = ON_DESTROY_CONTAINED)

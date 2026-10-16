@@ -530,7 +530,6 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 
 	// You can buckle someone to RTG, then open its panel. Fun stuff.
 	can_buckle = TRUE
-	buckle_lying = FALSE
 
 	var/power_gen = 1000 // Enough to power a single APC. 4000 output with T4 capacitor.
 	var/irradiate = TRUE // RTGs irradiate surroundings, but only when panel is open.
@@ -538,6 +537,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 // The RTG (doc/rewrite/final_api.html section 16): bolted down, it supplies power_gen W to its cable network every machine service interval
 // (rtg_step()), and irradiates its surroundings while its panel is open.
 CAPABILITIES(/obj/machinery/power/rtg)
+	configure(seat_policy(lying = FALSE))
 	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	after_init(0, then(PROC_REF(mapped_upgrades_after_init)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(rtg_step)), when = nameof(anchored))
@@ -804,7 +804,6 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 	pixel_x = -32
 	plane = ABOVE_MOB_PLANE
 	layer = ABOVE_MOB_LAYER
-	buckle_dir = EAST
 	density = FALSE
 
 /obj/machinery/power/rtg/reg/user_buckle_mob(mob/living/M, mob/user, forced = FALSE, silent = TRUE)
@@ -1034,4 +1033,5 @@ CAPABILITIES(/obj/machinery/power/rtg/antimatter_core)
 
 
 CAPABILITIES(/obj/machinery/power/rtg/reg)
+	configure(seat_policy(direction = EAST))
 	configure(machine_interaction_config(interact_offline = TRUE))

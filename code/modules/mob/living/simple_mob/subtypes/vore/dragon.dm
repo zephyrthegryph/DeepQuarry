@@ -41,10 +41,7 @@
 	pixel_y = 0
 	mount_offset_y = 15
 	mount_offset_x = -12
-	max_buckled_mobs = 1
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 
 	say_list_type = /datum/say_list/dragonboss
 
@@ -112,6 +109,7 @@
 	vore_eyes = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)

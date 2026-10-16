@@ -102,15 +102,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf)
 
 	minbodytemp = 0
 
-	max_buckled_mobs = 1
 	mount_offset_y = 14
 	mount_offset_x = 2
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)

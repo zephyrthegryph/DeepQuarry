@@ -133,7 +133,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/slug)
 	anchored = 1
 	density = 0
 	can_buckle = 1
-	buckle_lying = TRUE
 
 	lifecycle_lifetime = 5 MINUTES //How long until we cease existing.
 	var/mob/living/simple_mob/vore/slug/owner_slug = null
@@ -207,6 +206,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/slug)
 		my_slug.ai_brain.lose_target() // Instant loss of target — sim mob giving up if prey escapes.
 
 CAPABILITIES(/obj/effect/slug_glue)
+	configure(seat_policy(lying = TRUE))
 	ref_one(nameof(owner_slug), /mob/living/simple_mob/vore/slug)
 	keeps_if(PROC_REF(not_in_water))
 	// Struggling out of the glue (user_unbuckle_mob()): whoever tugs stays next to it for as long as the size of the stuck one says, stunned or not.

@@ -25,10 +25,7 @@
 	attacktext = list("kicked")
 	attack_sound = SFX_VOICE_BAA
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_x = 0
 
 	say_list_type = /datum/say_list/sheep
@@ -41,6 +38,7 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/sheep)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

@@ -8,7 +8,6 @@
 	circuit = /obj/item/circuitboard/industrial_reagent_vat
 	// Chemical bath funtimes!
 	can_buckle = TRUE
-	buckle_lying = TRUE
 	default_max_vol = REAGENT_VAT_VOLUME
 
 /obj/machinery/reagent_refinery/vat/refinery_step()
@@ -88,6 +87,7 @@
 	return length(src?.buckled_mob_list()) && reagents.total_volume > 0
 
 CAPABILITIES(/obj/machinery/reagent_refinery/vat)
+	configure(seat_policy(lying = TRUE))
 	configure(uses_power(idle = 0, active = 50))
 	default_parts()
 	without("reagent_refinery_set_transfer_amount")

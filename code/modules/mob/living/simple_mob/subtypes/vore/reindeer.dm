@@ -36,10 +36,7 @@
 
 	minbodytemp = 200
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 
 	vore_active = TRUE
 	vore_icons = SA_ICON_LIVING
@@ -53,4 +50,5 @@
 	icon_rest = "reindeerfes_rest"
 
 CAPABILITIES(/mob/living/simple_mob/vore/reindeer)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))

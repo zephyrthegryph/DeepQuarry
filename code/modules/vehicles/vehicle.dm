@@ -13,8 +13,6 @@
 	animate_movement=1
 
 	can_buckle = TRUE
-	buckle_movable = 1
-	buckle_lying = 0
 
 	var/mechanical = TRUE // If false, doesn't care for things like cells, engines, EMP, keys, etc.
 	var/attack_log = null
@@ -51,6 +49,7 @@
 STAT(/obj/vehicle, operable, ALL, virtual = TRUE)
 
 CAPABILITIES(/obj/vehicle)
+	configure(seat_policy(movable = 1, lying = 0))
 	configure(light_glow(range = 3))
 	owns_one(nameof(soundloop), /datum/looping_sound/idle_carengine, starts = /datum/looping_sound/idle_carengine)
 	op("vehicle_item", item(/obj/item), then(PROC_REF(interaction_vehicle_item)))

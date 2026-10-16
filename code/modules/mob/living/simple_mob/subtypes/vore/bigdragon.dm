@@ -81,12 +81,9 @@ I think I covered everything.
 	maxbodytemp = 99999
 	min_oxy = 0
 	heat_resist = 1
-	max_buckled_mobs = 1
 	mount_offset_y = 32
 	mount_offset_x = -16
 	can_buckle = 1
-	buckle_movable = 1
-	buckle_lying = 0
 	vore_bump_chance = 50
 	vore_pounce_chance = 100
 	vore_active = 1
@@ -931,6 +928,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
+	configure(seat_policy(capacity = 1, movable = 1, lying = 0))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/dragonmeat))
 	knows(LANGUAGE_DRUDAKAR)
 	knows(LANGUAGE_UNATHI)

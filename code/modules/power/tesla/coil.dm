@@ -11,7 +11,6 @@
 
 	// Executing a traitor caught releasing tesla was never this fun!
 	can_buckle = TRUE
-	buckle_lying = FALSE
 
 	circuit = /obj/item/circuitboard/tesla_coil
 
@@ -52,6 +51,7 @@
 // recast or only collect it. A multitool behind the open panel turns a coil into another kind, keeping its parts; a grab buckles someone to it.
 // The curves are pinned in code/modules/unit_tests/dq_power_plants_behaviour.dm (tesla_coil_curves).
 CAPABILITIES(/obj/machinery/power/tesla_coil)
+	configure(seat_policy(lying = FALSE))
 	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD_MOVABLE))
 	space(SPACE_PANEL, door = nameof(panel_open))
 	wires(name = "Tesla coil", count = 1, tools = FALSE)
@@ -316,10 +316,10 @@ CAPABILITIES(/obj/machinery/power/tesla_coil)
 	density = TRUE
 
 	can_buckle = TRUE
-	buckle_lying = FALSE
 	circuit = /obj/item/circuitboard/grounding_rod
 
 CAPABILITIES(/obj/machinery/power/grounding_rod)
+	configure(seat_policy(lying = FALSE))
 	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD_MOVABLE))
 	climb()
 	part_replacement()

@@ -32,10 +32,7 @@
 	pixel_x = -16
 	pixel_y = 0
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_y = 12
 
 	say_list_type = /datum/say_list/panther
@@ -48,6 +45,7 @@
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	configure(voice_config(species_sounds = "Feline", pain_emote_1p = list("yowl", "growl"), pain_emote_3p = list("yowls", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))

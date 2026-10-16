@@ -25,10 +25,7 @@
 
 	meat_amount = 6
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_x = 0
 
 	say_list_type = /datum/say_list/horse
@@ -65,6 +62,7 @@
 	vore_capacity = 2
 
 CAPABILITIES(/mob/living/simple_mob/vore/horse)
+	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
