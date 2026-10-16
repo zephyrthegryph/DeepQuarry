@@ -19,7 +19,6 @@
 	resistance_flags = INDESTRUCTIBLE
 
 	use_power = USE_POWER_IDLE
-	clicksound = SFX_RECYCLER_TYPING
 
 
 	var/door_open = FALSE
@@ -110,6 +109,7 @@
 	/// filter curve EQ w/ telephone preset
 
 CAPABILITIES(/obj/machinery/maint_recycler)
+	configure(machine_interaction_config(clicksound = SFX_RECYCLER_TYPING))
 	configure(light_glow(color = "#0f8f0f"))
 	configure(uses_power(idle = 300, active = 300))
 	after_init(0, then(PROC_REF(move_after_init)))
