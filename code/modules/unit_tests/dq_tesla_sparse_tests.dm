@@ -9,6 +9,7 @@
 /datum/unit_test/dq_tesla_sparse_cooldown
 /datum/unit_test/dq_tesla_sparse_cooldown/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.coalesce_absorbed), GLOB.coalesce_absorbed)
 	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -36,6 +37,7 @@
 /datum/unit_test/dq_tesla_sparse_candidate
 /datum/unit_test/dq_tesla_sparse_candidate/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.coalesce_absorbed), GLOB.coalesce_absorbed)
 	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
