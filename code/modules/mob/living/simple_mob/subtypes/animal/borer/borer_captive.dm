@@ -3,7 +3,6 @@
 /mob/living/captive_brain
 	name = "host brain"
 	real_name = "host brain"
-	universal_understand = 1
 
 /mob/living/captive_brain/say(message, datum/language/speaking = null, whispering = 0)
 
@@ -59,3 +58,6 @@
 	to_chat(host, span_danger("You feel control of the host brain ripped from your grasp, and retract your probosci before the wild neural impulses can damage you."))
 	host?.injure(INJURY_NEURAL, rand(0.1,0.5), source = B)
 	B.detatch()
+
+CAPABILITIES(/mob/living/captive_brain)
+	configure(mob_kind(understands_all = 1))

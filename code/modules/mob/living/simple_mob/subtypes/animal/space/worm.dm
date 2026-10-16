@@ -17,7 +17,6 @@
 
 	status_flags = 0
 	universal_speak = 0
-	universal_understand = 1
 	animate_movement = SYNC_STEPS
 
 	response_help  = "touches"
@@ -469,7 +468,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm)
 	ref_one(nameof(next), /mob/living/simple_mob/animal/space/space_worm)
 	ref_one(nameof(currentlyEating), /atom)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
-	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION, understands_all = 1))
 	immune_to_incapacitation()
 	// The maw's jobs (AttemptToEat()): each frees the worm's AI again however it ends.
 	op("eat_wall", ai(), takes("wall"), wait(PROC_REF(eat_wall_time)), on_interrupt(PROC_REF(eat_interrupted)), then(PROC_REF(eat_wall_done)))

@@ -36,7 +36,6 @@
 	minbodytemp = 175
 	endurance = 200
 
-	universal_understand = 1
 
 	movement_cooldown = -1
 
@@ -93,7 +92,7 @@
 	instinct = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
-	configure(mob_kind(attack_cooldown = 2 SECONDS))
+	configure(mob_kind(attack_cooldown = 2 SECONDS, understands_all = 1))
 	rolls(nameof(instinct), PROC_REF(roll_instinct))
 	// Digging into a mech's hatch (its melee strike): a second of clawing, beside the mech, then the pilot is dragged out.
 	op("rend_hatch", ai(), takes("mech"), wait(1 SECOND), then(PROC_REF(rending_strike_kururak_done)))

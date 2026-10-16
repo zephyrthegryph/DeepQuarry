@@ -12,7 +12,6 @@
 	faction = FACTION_MOUSE_ARMY
 
 	endurance = 50
-	universal_understand = 1
 
 	taser_kill = 0
 
@@ -51,6 +50,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
+	configure(mob_kind(understands_all = 1))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	configure(voice_config(species_sounds = "Mouse", pain_emote_1p = list("squeaks", "squiks")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

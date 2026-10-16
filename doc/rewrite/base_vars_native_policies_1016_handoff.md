@@ -68,3 +68,11 @@ Four additional focused tests assert actual movement, registered digestion, pure
 ## Native alias negative appearance coverage
 
 The runtime sampler historically exercised five item settings through the forced full-scan robotic-baton family even though those probes produced no golden rows. Their new native homes are no longer physical vars. A dedicated real-baton regression now preserves the demonstrated 0/1/2 no-appearance-change checks, exact native values, COW peer isolation and original-value restoration. Four aliases share the preceding lane's test; this continuation adds trash admission in a separate strict subtype. No historical owner metadata, physical shadow or broader sampler exclusion is invented. These added test leaves will run in this lane's final runtime batch.
+
+## Language permission and pure traversal
+
+Generation and all ratchets pass at 320 remaining rows: 66 removals from the continuation's starting 386, zero additions. DreamChecker reports zero diagnostics. Universal understanding extends the existing mob-kind policy, retaining all sixteen subtype defaults and map/VV/runtime aliases. Paper literacy is an explicit native permission on exactly the former human, silicon and dead-observer roots; other observers receive no accidental permission. The real paper entry retains independent universal-understanding and force overrides.
+
+The user-approved traversal migration removes the atom throwpass field into an actual atom-root policy, preserving turf inheritance, fourteen type defaults and mapped nullable/arbitrary values. Door reach passes the selected border firedoor as a per-call exemption rather than publishing temporary state and resetting the configured value. The historical fourth ClickCross argument remains a mover, not an exemption; the exemption has a separate fifth argument. Tests cover actual requirements, orthogonal and diagonal paths, unrelated blockers, corner borders, real throw impact selection/finalization, mapper/admin retention and absence of query publications.
+
+These added tests remain unexecuted. This source checkpoint is not a runtime or lane-ready stamp. The continuation must inherit the canonical branch's final fixture repairs before its serialized runtime gate. No optional turf-sampling change is included.

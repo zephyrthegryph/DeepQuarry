@@ -4,12 +4,14 @@
 
 STATIC_ENTRY(mob_kind)
 
-/proc/mob_kind(mob_class = null, attack_cooldown = null, self_surgery = null, inventory_panel = null, can_be_antagged = null, use_me = null, emote_type = null, death_message = null, attack_icon = null, attack_icon_state = null, has_huds = null)
+/proc/mob_kind(mob_class = null, attack_cooldown = null, self_surgery = null, inventory_panel = null, can_be_antagged = null, use_me = null, emote_type = null, death_message = null, attack_icon = null, attack_icon_state = null, has_huds = null, understands_all = null, reads_paper = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_MOB_KIND, null, list("mob_class" = mob_class, "attack_cooldown" = attack_cooldown, "self_surgery" = self_surgery, "inventory_panel" = inventory_panel, "can_be_antagged" = can_be_antagged, "use_me" = use_me, "emote_type" = emote_type, "death_message" = death_message, "attack_icon" = attack_icon, "attack_icon_state" = attack_icon_state, "has_huds" = has_huds))
+	return entry_make(ENTRY_MOB_KIND, null, list("mob_class" = mob_class, "attack_cooldown" = attack_cooldown, "self_surgery" = self_surgery, "inventory_panel" = inventory_panel, "can_be_antagged" = can_be_antagged, "use_me" = use_me, "emote_type" = emote_type, "death_message" = death_message, "attack_icon" = attack_icon, "attack_icon_state" = attack_icon_state, "has_huds" = has_huds, "understands_all" = understands_all, "reads_paper" = reads_paper))
 
 /datum/type_trait/mob_kind
 	var/has_huds = FALSE
+	var/understands_all = 0
+	var/reads_paper = FALSE
 	var/mob_class	// MOB_CLASS_*: human, mechanical, animal, ... (projectile effects)
 	var/attack_cooldown = DEFAULT_ATTACK_COOLDOWN	// its unarmed click delay
 	var/self_surgery = FALSE	// can operate on itself
@@ -23,6 +25,8 @@ STATIC_ENTRY(mob_kind)
 
 /datum/type_trait/mob_kind/copy_values(datum/type_trait/mob_kind/into)
 	into.has_huds = has_huds
+	into.understands_all = understands_all
+	into.reads_paper = reads_paper
 	into.mob_class = mob_class
 	into.attack_cooldown = attack_cooldown
 	into.self_surgery = self_surgery
@@ -39,7 +43,7 @@ STATIC_ENTRY(mob_kind)
 	trait_type = /datum/type_trait/mob_kind
 	publish_key = MOB_KIND_KEY
 	base_type = /mob
-	var_names = list("mob_class" = "mob_class", "base_attack_cooldown" = "attack_cooldown", "allow_self_surgery" = "self_surgery", "inventory_panel_type" = "inventory_panel", "can_be_antagged" = "can_be_antagged", "use_me" = "use_me", "emote_type" = "emote_type", "death_message" = "death_message", "attack_icon" = "attack_icon", "attack_icon_state" = "attack_icon_state", "has_huds" = "has_huds")
+	var_names = list("mob_class" = "mob_class", "base_attack_cooldown" = "attack_cooldown", "allow_self_surgery" = "self_surgery", "inventory_panel_type" = "inventory_panel", "can_be_antagged" = "can_be_antagged", "use_me" = "use_me", "emote_type" = "emote_type", "death_message" = "death_message", "attack_icon" = "attack_icon", "attack_icon_state" = "attack_icon_state", "has_huds" = "has_huds", "universal_understand" = "understands_all")
 
 /// The holder's mob_kind values (its own once one was set at run time). Read only.
 READS_AS(/proc/kind_of, MOB_KIND_KEY)
@@ -84,3 +88,9 @@ READS_AS(/proc/kind_of, MOB_KIND_KEY)
 
 /mob/proc/set_has_huds(value)
 	return set_trait(src, ENTRY_MOB_KIND, "has_huds", value)
+
+/mob/proc/set_universal_understand(value)
+	return set_trait(src, ENTRY_MOB_KIND, "understands_all", value)
+
+/mob/proc/set_reads_paper(value)
+	return set_trait(src, ENTRY_MOB_KIND, "reads_paper", value)

@@ -34,7 +34,6 @@ DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024,
 	cell_type = /obj/item/cell/high
 	photo_camera_type = /obj/item/camera/siliconcam/drone_camera
 	universal_speak = 0
-	universal_understand = 1
 	gender = NEUTER
 	pass_flags = PASSTABLE
 	braintype = "Drone"
@@ -225,7 +224,7 @@ CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 
 CAPABILITIES(/mob/living/silicon/robot/drone)
 	configure(examine_text(antag = "An Electromagnetic Sequencer can be used to subvert the drone to your cause."))
-	configure(mob_kind(can_be_antagged = FALSE))
+	configure(mob_kind(can_be_antagged = FALSE, understands_all = 1))
 	configure(mob_movement(pull_size = ITEMSIZE_NO_CONTAINER, pull_mobs = MOB_PULL_SMALLER, bump = SIMPLE_ANIMAL, swap = SIMPLE_ANIMAL, push = SIMPLE_ANIMAL, always_swap = 1))
 	rolls(nameof(serial_number), range_of(0, 999))
 	// a drone that may pick its shell starts in a random one, its eyes to match

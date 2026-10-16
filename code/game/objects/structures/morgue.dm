@@ -138,11 +138,11 @@ CAPABILITIES(/obj/structure/morgue)
 	plane = TURF_PLANE
 	var/obj/structure/morgue/connected = null
 	anchored = TRUE
-	throwpass = 1
 
 // The morgue owns its tray (implicit OWN, deleted with it); the tray names its morgue (one-sided REL).
 
 CAPABILITIES(/obj/structure/m_tray)
+	configure(traversal_policy(throwpass = 1))
 	ref_one(nameof(connected))
 	silicon_hand(adjacent = TRUE)
 	op("push_in", hand(), label("Push in"), then(PROC_REF(interaction_hand)))

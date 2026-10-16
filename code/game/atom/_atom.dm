@@ -11,7 +11,6 @@ sparse(/atom, last_bumped, type = num)
 	var/flags = NONE
 	// was_bloodied, blood_color, fluorescent are the forensic_* vars (code/datums/sparse_vars/forensics.dm)
 	var/pass_flags = 0
-	var/throwpass = 0
 	var/germ_level = GERM_LEVEL_AMBIENT // The higher the germ level, the more germ on the atom.
 	var/simulated = TRUE //filter for actions - used by lighting overlays
 	// atom_say_verb removed (no subtype ever overrode it; inlined to "says" in atom_say)

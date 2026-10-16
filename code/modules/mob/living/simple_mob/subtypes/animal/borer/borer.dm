@@ -23,7 +23,6 @@
 	movement_cooldown = 1.5
 	mob_size = MOB_TINY // no landmines for you
 
-	universal_understand = TRUE
 
 	holder_type = /obj/item/holder/borer
 

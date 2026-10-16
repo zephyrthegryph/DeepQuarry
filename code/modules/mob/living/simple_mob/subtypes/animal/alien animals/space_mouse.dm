@@ -28,7 +28,6 @@
 	response_harm   = "punches"
 
 	has_langs = list(LANGUAGE_MOUSE)
-	universal_understand = 1
 
 	melee_damage_lower = 1
 	melee_damage_upper = 2
@@ -90,3 +89,6 @@
 /mob/living/simple_mob/vore/alienanimals/dustjumper/begin_instant_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly)
 	. = ..()
 	movement_cooldown = 10
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/dustjumper)
+	configure(mob_kind(understands_all = 1))

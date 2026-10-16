@@ -23,11 +23,11 @@
 	var/ai_controlled = TRUE
 	var/auto_pilot = FALSE // If true, and if a client is attached, the AI routine will continue running.
 
-	universal_understand = TRUE
 
 	var/tmp/datum/language/default_language_static
 
 CAPABILITIES(/mob/observer/blob)
+	configure(mob_kind(understands_all = TRUE))
 	ref_one(nameof(blob_core), /obj/structure/blob/core)
 	owns_one(nameof(blob_type), /datum/blob_type, starts = PROC_REF(make_blob_type))
 	param(nameof(placed), pos = 1)

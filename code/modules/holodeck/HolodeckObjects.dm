@@ -366,9 +366,9 @@ CAPABILITIES(/obj/item/beach_ball/holoball)
 	anchored = TRUE
 	density = TRUE
 	unacidable = TRUE
-	throwpass = 1
 
 CAPABILITIES(/obj/structure/holohoop)
+	configure(traversal_policy(throwpass = 1))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.

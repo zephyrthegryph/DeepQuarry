@@ -3,3 +3,4 @@ delete-after: true
 changes:
   - code_imp: "Move shared object and mob state into declared traits, profiles, body state, relations and native cooldowns."
   - qol: "The appearance editor skips species-name questions when that edit is not permitted."
+  - bugfix: "Checking door reach no longer resets a neighboring firedoor setting for passing thrown items."

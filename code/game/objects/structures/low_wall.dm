@@ -11,7 +11,6 @@
 	//atom_flags = ATOM_FLAG_NO_TEMP_CHANGE | ATOM_FLAG_CLIMBABLE | ATOM_FLAG_CAN_BE_PAINTED | ATOM_FLAG_ADJACENT_EXCEPTION
 	anchored = TRUE
 	density = TRUE
-	throwpass = 1
 	layer = TABLE_LAYER
 
 	var/frame_masks = 'icons/obj/wall_frame_bay.dmi'
@@ -40,6 +39,7 @@
 	return material?.icon_colour
 
 CAPABILITIES(/obj/structure/low_wall)
+	configure(traversal_policy(throwpass = 1))
 	smoothing()
 	climb()
 	op("use_wrench", tool(TOOL_WRENCH), needs(req(PROC_REF(nothing_on_the_wall))), begins(MSG(low_wall/disassembling)),

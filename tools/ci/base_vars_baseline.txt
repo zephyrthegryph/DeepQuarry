@@ -25,7 +25,6 @@ base_var	code/engine/refs/containment/latency_policy.dm	@/atom/movable::latent_t
 base_var	code/engine/refs/containment/latency_policy.dm	@/atom/movable::latent_refused_until
 base_var	code/game/atom/_atom.dm	@/atom::flags
 base_var	code/game/atom/_atom.dm	@/atom::pass_flags
-base_var	code/game/atom/_atom.dm	@/atom::throwpass
 base_var	code/game/atom/_atom.dm	@/atom::germ_level
 base_var	code/game/atom/_atom.dm	@/atom::simulated
 base_var	code/game/atom/_atom.dm	@/atom::forensic_data
@@ -253,7 +252,6 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::spell_list
 base_var	code/modules/mob/mob_defines.dm	@/mob::lastareachange
 base_var	code/modules/mob/mob_defines.dm	@/mob::digitalcamo
 base_var	code/modules/mob/mob_defines.dm	@/mob::control_object
-base_var	code/modules/mob/mob_defines.dm	@/mob::universal_understand
 base_var	code/modules/mob/mob_defines.dm	@/mob::teleop
 base_var	code/modules/mob/mob_defines.dm	@/mob::active_genes
 base_var	code/modules/mob/mob_defines.dm	@/mob::forbid_seeing_deadchat

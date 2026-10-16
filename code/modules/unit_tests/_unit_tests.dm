@@ -341,6 +341,8 @@
 #include "dq_foundation_look_tests.dm"
 #include "dq_robot_machine_tests.dm"
 #include "dq_b4_tracking_tests.dm"
+#include "dq_traversal_policy_tests.dm"
+#include "dq_traversal_pure_reach_tests.dm"
 #include "dq_phase0_tests.dm"
 #include "dq_breath_hazard_tests.dm"
 #include "dq_life_om_tests.dm"
@@ -1379,6 +1381,8 @@
 #include "dq_nine_scalar_policy_tests.dm"
 #include "dq_look_native_item_alias_tests.dm"
 #include "dq_look_native_trash_alias_tests.dm"
+#include "dq_understanding_policy_tests.dm"
+#include "dq_paper_read_permission_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

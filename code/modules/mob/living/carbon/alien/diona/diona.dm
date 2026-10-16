@@ -36,7 +36,6 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 	language = LANGUAGE_ROOTLOCAL
 	species_language = LANGUAGE_ROOTLOCAL
 	only_species_language = 1
-	universal_understand = 0
 	universal_speak = 0      // Dionaea do not need to speak to people other than other dionaea.
 
 
@@ -71,7 +70,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 		D.emote(pick("scratch","jump","chirp","roll"))
 
 CAPABILITIES(/mob/living/carbon/alien/diona)
-	configure(mob_kind(death_message = "expires with a pitiful chirrup..."))
+	configure(mob_kind(death_message = "expires with a pitiful chirrup...", understands_all = 0))
 	configure(mob_movement(pull_size = ITEMSIZE_SMALL, pull_mobs = MOB_PULL_SMALLER))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 	knows(LANGUAGE_ROOTGLOBAL)

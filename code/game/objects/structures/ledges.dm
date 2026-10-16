@@ -3,7 +3,6 @@
 	desc = "An easily scaleable rocky ledge."
 	icon = 'icons/obj/ledges.dmi'
 	density = TRUE
-	throwpass = 1
 	anchored = TRUE
 	var/solidledge = 1
 	flags = ON_BORDER
@@ -11,6 +10,7 @@
 	icon_state = "ledge"
 
 CAPABILITIES(/obj/structure/ledge)
+	configure(traversal_policy(throwpass = 1))
 	climb(vaulting = TRUE)
 
 /obj/structure/ledge_corner
@@ -20,11 +20,11 @@ CAPABILITIES(/obj/structure/ledge)
 	desc = "An easily scaleable rocky ledge."
 	icon = 'icons/obj/ledges.dmi'
 	density = TRUE
-	throwpass = 1
 	anchored = TRUE
 	layer = STAIRS_LAYER
 
 CAPABILITIES(/obj/structure/ledge_corner)
+	configure(traversal_policy(throwpass = 1))
 	climb(vaulting = TRUE)
 
 /obj/structure/ledge/ledge_nub

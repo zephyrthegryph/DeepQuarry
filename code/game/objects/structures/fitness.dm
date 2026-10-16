@@ -94,12 +94,12 @@ CAPABILITIES(/obj/structure/fitness/weightlifter)
 	icon = 'icons/obj/fitness.dmi'
 	icon_state = "ropes"
 	density = TRUE
-	throwpass = TRUE
 	layer = WINDOW_LAYER
 	anchored = TRUE
 	flags = ON_BORDER
 
 CAPABILITIES(/obj/structure/fitness/boxing_ropes)
+	configure(traversal_policy(throwpass = TRUE))
 	climb(vaulting = TRUE)
 
 /obj/structure/fitness/boxing_ropes/CanPass(atom/movable/mover, turf/target)

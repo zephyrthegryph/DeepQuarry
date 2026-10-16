@@ -5,7 +5,6 @@
 
 	density = TRUE
 	anchored = TRUE
-	throwpass = 1
 
 	layer = ABOVE_JUNK_LAYER
 
@@ -18,6 +17,7 @@
 	var/datum/material/material
 
 CAPABILITIES(/obj/structure/gravemarker)
+	configure(traversal_policy(throwpass = 1))
 	climb()
 	op("carve", tool(TOOL_SCREWDRIVER), label("Carve"), wait(0),
 		asks(/datum/prompt/text, fields = list("title" = "Gravestone Naming", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "name"),

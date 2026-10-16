@@ -201,7 +201,7 @@ CAPABILITIES(/obj/item/paper/card)
 // handler is unchanged — byond:// hrefs embedded in info_links still
 // route back to it from inside the TGUI window's HTML container.
 /obj/item/paper/proc/show_content(mob/user, forceshow=0)
-	set_can_read_view((forceshow || ishuman(user) || isobserver(user) || issilicon(user) || (istype(user) && user.universal_understand)))
+	set_can_read_view((forceshow || (user && (kind_of(user).reads_paper || kind_of(user).understands_all))))
 	set_tgui_view("read")
 	tgui_interact(user)
 

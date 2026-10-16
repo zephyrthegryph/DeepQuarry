@@ -302,14 +302,13 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	var/parent_mob = FALSE		//If we've captured our owner
 	var/transient = FALSE		//Someone who ghosted into the NIF
 	var/client_missing = 0		//How long the client has been missing
-	universal_understand = TRUE
 
 	var/tmp/obj/item/nif/nif
 	var/tmp/datum/nifsoft/soulcatcher/soulcatcher
 	var/identifying_gender
 
 CAPABILITIES(/mob/living/carbon/brain/caught_soul)
-	configure(mob_kind(use_me = 1))
+	configure(mob_kind(use_me = 1, understands_all = TRUE))
 
 /mob/living/carbon/brain/caught_soul/Login()
 	..()

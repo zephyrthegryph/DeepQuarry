@@ -18,7 +18,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/weatherlily)
 	desc = "A boring rocky outcrop."
 	icon = 'icons/obj/tribal_gear.dmi'
 	density = TRUE
-	throwpass = 1
 	anchored = TRUE
 	icon_state = "outcrop"
 	mindrop = 3
@@ -433,3 +432,6 @@ CAPABILITIES(/obj/item/shield/tyr_shield)
 		var/obj/item/projectile/P = damage_source
 		P.damage = P.damage / 2
 		return 0
+
+CAPABILITIES(/obj/structure/outcrop/weathered_gate)
+	configure(traversal_policy(throwpass = 1))

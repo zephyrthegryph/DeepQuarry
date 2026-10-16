@@ -4,6 +4,7 @@
 	var/datum/exonet_log_panel/dq_exonet_log_panel_cache
 
 CAPABILITIES(/mob/observer/dead)
+	configure(mob_kind(reads_paper = TRUE))
 	// a ghost acts only as an observer: its clicks and menu picks reach the observer() ops of what it looks at, nothing else (no hands, no interface)
 	provides(AFF_OBSERVE)
 	owns_one(nameof(dq_exonet_log_panel_cache), /datum/exonet_log_panel)

@@ -2,6 +2,7 @@
 /datum/unit_test/dq_base_configuration_static_contract
 /datum/unit_test/dq_base_configuration_static_contract/Run()
 	var/datum/type_table/atom_table = static_table_of(/atom)
+	TEST_ASSERT(static_find(atom_table, ENTRY_TRAVERSAL_POLICY), "Traversal declares its actual atom root, including turfs")
 	TEST_ASSERT(static_find(atom_table, ENTRY_LIGHTING_CONFIG), "Lighting declares a real root static entry")
 	TEST_ASSERT(static_find(atom_table, ENTRY_DAMAGE_PROFILE), "Damage presentation declares a real root static entry")
 	TEST_ASSERT(static_find(atom_table, ENTRY_SHIELDING_CONFIG), "Radiation material configuration has an inherited root")

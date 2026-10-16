@@ -31,7 +31,6 @@
 	minbodytemp = 175
 	pass_flags = PASSTABLE
 
-	universal_understand = 1
 
 	movement_cooldown = -1
 
@@ -115,7 +114,7 @@
 CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
 	configure(voice_config(species_sounds = "Raccoon", pain_emote_1p = list("chitter"), pain_emote_3p = list("chitters")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
-	configure(mob_kind(attack_cooldown = 1 SECOND))
+	configure(mob_kind(attack_cooldown = 1 SECOND, understands_all = 1))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)

@@ -3,7 +3,6 @@
 	desc = "A boring rocky outcrop."
 	icon = 'icons/obj/outcrop.dmi'
 	density = TRUE
-	throwpass = 1
 	anchored = TRUE
 	icon_state = "outcrop"
 	var/mindrop = 5
@@ -11,6 +10,7 @@
 	var/outcropdrop = /obj/item/ore/glass
 
 CAPABILITIES(/obj/structure/outcrop)
+	configure(traversal_policy(throwpass = 1))
 	rolls(nameof(has_egg), chance(1))
 	climb()
 	op("pickaxe", item(/obj/item/pickaxe), label("Dig"), priority(OP_PRIORITY_PART), begins(MSG(outcrop/hacking)), wait(4 SECONDS), then(PROC_REF(dig_done)))

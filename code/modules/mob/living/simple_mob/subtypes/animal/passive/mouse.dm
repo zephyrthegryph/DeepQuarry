@@ -47,6 +47,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
+	configure(mob_kind(understands_all = 1))
 	configure(voice_config(species_sounds = "Mouse", pain_emote_1p = list("squeak", "squik"), pain_emote_3p = list("squeaks", "squiks")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "cheese"))
 	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
@@ -247,7 +248,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	desc = "A small rodent, often seen hiding in maintenance areas and making a nuisance of itself. And stealing cheese, or annoying the chef. SQUEAK! <3"
 
 	movement_cooldown = 5
-	universal_understand = 1
 
 //Jank grabber that uses the 'attack_hand' insead of 'MouseDrop'
 

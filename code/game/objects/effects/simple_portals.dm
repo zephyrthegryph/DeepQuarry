@@ -108,7 +108,7 @@ CAPABILITIES(/obj/effect/simple_portal)
 		else
 			if(!struct.density)
 				continue
-			if(struct.throwpass || struct.flags & ON_BORDER)
+			if(traversal_policy_of(struct).throwpass || struct.flags & ON_BORDER)
 				continue
 			else
 				return FALSE

@@ -8,7 +8,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/animal/borer)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
-	configure(mob_kind(can_be_antagged = TRUE))
+	configure(mob_kind(can_be_antagged = TRUE, understands_all = TRUE))
 	ref_one(nameof(borer_host_mob), /mob/living/carbon/human, on_unlink = PROC_REF(host_lost))
 	immune_to_incapacitation()
 	op("infest", ai(), reach(REACH_RANGE(1)), starts(PROC_REF(infest_started)), wait(PROC_REF(infest_wait)), then(PROC_REF(infest_done)), on_interrupt(PROC_REF(infest_dislodged)))

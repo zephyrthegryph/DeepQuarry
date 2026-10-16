@@ -173,7 +173,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		set_canmove(FALSE)
 		SK.set_in_phase(FALSE)
 		SK.set_doing_phase(TRUE)
-		throwpass = FALSE
+		set_throwpass(FALSE)
 		name = get_visible_name()
 		for(var/obj/belly/B as anything in vore_organs)
 			B.set_escapable(initial(B.escapable))
@@ -283,7 +283,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		// change
 		SK.set_in_phase(TRUE)
 		SK.set_doing_phase(TRUE)
-		throwpass = TRUE
+		set_throwpass(TRUE)
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
 
 		if(real_name) //If we a real name, perfect, let's just set our name to our newfound visible name.

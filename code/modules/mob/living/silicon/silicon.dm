@@ -56,7 +56,7 @@ CAPABILITIES(/mob/living/silicon)
 	per_type(nameof(silicon_subsystems), TYPE_PROC_REF(/datum, per_type_own))
 	footstep()
 	param(nameof(decoy), pos = 1)
-	configure(mob_kind(has_huds = TRUE))
+	configure(mob_kind(has_huds = TRUE, reads_paper = TRUE))
 
 /// A decoy silicon (its constructor param): no ID, language or subsystems.
 /mob/living/silicon/var/decoy = FALSE

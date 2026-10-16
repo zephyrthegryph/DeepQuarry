@@ -73,7 +73,7 @@
 		return TRUE
 
 	//Universal speak makes everything understandable, for obvious reasons.
-	else if(universal_speak || universal_understand)
+	else if(universal_speak || kind_of(src).understands_all)
 		return TRUE
 
 	if(isliving(src))
