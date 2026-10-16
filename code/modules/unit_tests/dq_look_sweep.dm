@@ -99,6 +99,15 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		return FALSE
 	return !is_abstract(type) && !(type in uncreatables)
 
+// ---- determinism ----
+
+/// Starts every draw a unit makes from the same place: the world RNG (rand, prob, pick) and the lifeform roll streams (rolls(): a
+/// random lamia kind, a vial colour, an astral modifier) are both seeded from `text`. rand_seed() alone leaves the round seed and
+/// the creation serial the rolls hash, so a random variant followed how many things had been made before it.
+/proc/dq_look_reseed(text)
+	rand_seed(dq_test_seed_for(text))
+	rolls_fix_seed(dq_test_seed_for("rolls/[text]"))
+
 // ---- world params ----
 
 /// The lines of the file a look-* world param names (CR dropped, blanks skipped); null when the param is absent or the file is.
@@ -259,7 +268,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 /datum/unit_test/proc/dq_look_capture_turf(type, turf/spot)
 	var/old_type = spot.type
 	log_test("look pin: making [type]")
-	rand_seed(dq_test_seed_for("[type]"))
+	dq_look_reseed("[type]")
 	try
 		var/turf/made = spot.ChangeTurf(type)
 		if(QDELETED(made))
@@ -280,7 +289,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 /datum/unit_test/proc/dq_look_unit(type, turf/T, list/base_vars, list/plan, datum/dq_look_result/res, need_tree, need_state, force_fresh = FALSE)
 	dq_look_reset(T)
 	log_test("look pin: making [type]") // a type that hangs names itself in the log
-	rand_seed(dq_test_seed_for("[type]"))
+	dq_look_reseed("[type]")
 	var/atom/subject
 	var/list/names = list()
 	var/runtime
@@ -366,7 +375,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 /// One probe on the made instance: write, capture, write the original back, check the look returned to `base`. Returns FALSE when
 /// the instance can no longer be trusted (a runtime, or the look did not come back); the rows it wrote stay.
 /datum/unit_test/proc/dq_look_probe_reuse(atom/subject, type, name, value, list/base, datum/dq_look_result/res)
-	rand_seed(dq_test_seed_for("[type]/[name]=[value]"))
+	dq_look_reseed("[type]/[name]=[value]")
 	var/original = subject.vars[name]
 	if(original == value)
 		return TRUE
@@ -392,7 +401,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 /// made look `base`; rows only for a difference.
 /datum/unit_test/proc/dq_look_state_probe(type, turf/T, name, value, list/base)
 	. = list()
-	rand_seed(dq_test_seed_for("[type]/[name]=[value]"))
+	dq_look_reseed("[type]/[name]=[value]")
 	try
 		var/atom/target = dq_snapshot_allocate(type, T)
 		if(QDELETED(target))
