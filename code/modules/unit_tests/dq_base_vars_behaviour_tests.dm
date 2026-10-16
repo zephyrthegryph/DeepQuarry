@@ -137,25 +137,19 @@
 
 
 
-/datum/unit_test/dq_base_vars_behaviours/burning_record_lifetime/Run()
-
+/datum/unit_test/dq_base_vars_behaviours/burning_watch_lifetime/Run()
 	var/obj/item/paper/P = allocate(/obj/item/paper)
-
-	TEST_ASSERT_NULL(P.burning_state(), "ordinary objects allocate no fire record")
-
-	var/datum/burning_state/state = P.burning_state(TRUE)
-
-	TEST_ASSERT_NOTNULL(state, "the first fire allocates one real record")
-
-	TEST_ASSERT_EQUAL(link_get(state, LK_BURNING_HOLDER), P, "the native reciprocal end identifies its holder")
-
-	TEST_ASSERT_EQUAL(P.burning_state(TRUE), state, "repeated access preserves the same retained record")
-
+	TEST_ASSERT(P.start_burning(fire_particles = null), "the actual flammable paper ignites")
+	var/datum/native_watch/heat/first_watch = P.burn_cool_watch
+	TEST_ASSERT(P.is_burning() && first_watch, "ignition installs the actual cooling watch")
+	P.extinguish()
+	TEST_ASSERT(!P.is_burning() && QDELETED(first_watch), "extinguishing revokes burning and deletes its actual cooling watch")
+	TEST_ASSERT_NULL(P.burn_cool_watch, "the owned watch slot is empty after extinguishing")
+	TEST_ASSERT(P.start_burning(fire_particles = null), "the same paper can ignite again")
+	var/datum/native_watch/heat/second_watch = P.burn_cool_watch
+	TEST_ASSERT_NOTNULL(second_watch, "reignition creates a fresh actual cooling watch")
 	qdel(P)
-
-	TEST_ASSERT(QDELETED(state), "destroying the holder deletes its linked fire record")
-
-
+	TEST_ASSERT(QDELETED(second_watch), "destroying the burning holder deletes its cooling watch")
 
 /datum/unit_test/dq_base_vars_behaviours/radiation_countdown/Run()
 

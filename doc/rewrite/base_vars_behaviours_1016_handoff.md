@@ -1,4 +1,4 @@
-# Behaviour state homes — source handoff
+# Behaviour state homes â€” source handoff
 
 The `code/datums/behaviours` cohort removes all 29 baselined base-type fields from ten files. This is a source count, pending analyzer shrink and verification. No baselines, generated files, builds or tests were run for this cohort.
 
@@ -49,3 +49,7 @@ Existing focused regressions to run: `dq_retired_omen_capability`, `dq_retired_f
 Source-only `git diff --check` passed. No affected map field overrides or raw production field consumers remained in the audited tree. Runtime and lint results are not yet available; no stamp claimed.
 
 The fire state is deliberately a domain runtime context, not a data-only `/datum/record`: it owns a live heat watch and therefore declares lifecycle ownership. No record-data-only exemption is needed.
+
+## Unlanded burning conversion withdrawn
+
+Five original master fields remain: burn_overlay, burn_particle_type, burn_fuel, burn_cool_watch and burn_ended_by. Granted capability draw providers are not consumed by the current presentation path, and native granted look layers cannot represent the arbitrary retained mutable appearance accepted by start_burning(). The conversion and its premature five-row baseline removal were backed out. This introduces no master baseline rows: the final baseline is a strict subset of origin/master. The lifetime regression now tests the retained real cooling-watch ownership.

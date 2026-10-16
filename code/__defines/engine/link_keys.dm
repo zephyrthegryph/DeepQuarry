@@ -38,8 +38,6 @@
 
 #define LK_SWARM_MEMBERS "swarm_members"
 
-#define LK_BURNING_STATE "burning_state"
-#define LK_BURNING_HOLDER "burning_holder"
 
 /// The live actor responsible for an atom's last recorded attack (non-owning).
 #define LK_LAST_ATTACKER "last_attacker"

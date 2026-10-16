@@ -14,6 +14,11 @@ base_var	code/_onclick/hud/fullscreen.dm	@/mob::screens
 base_var	code/_onclick/telekinesis.dm	@/obj::tk_reach
 base_var	code/controllers/subsystems/overlays.dm	@/atom::realized_overlays
 base_var	code/controllers/subsystems/overlays.dm	@/atom::realized_underlays
+base_var	code/datums/behaviours/burning.dm	@/obj::burn_overlay
+base_var	code/datums/behaviours/burning.dm	@/obj::burn_particle_type
+base_var	code/datums/behaviours/burning.dm	@/obj::burn_fuel
+base_var	code/datums/behaviours/burning.dm	@/obj::burn_cool_watch
+base_var	code/datums/behaviours/burning.dm	@/obj::burn_ended_by
 base_var	code/datums/character_identity.dm	@/mob/living::own_identity
 base_var	code/datums/character_identity.dm	@/mob/living::identity
 base_var	code/datums/lifecycle/verbs.dm	@/atom/movable::lifecycle_lifetime
