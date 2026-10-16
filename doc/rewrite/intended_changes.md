@@ -4902,3 +4902,7 @@ This lane preserves transform composition, strict cooldown boundaries, per-chara
 ## Appearance race-name prompt migration
 
 The species-name UI action now uses a native asks step and the identity-profile setter. Its existing silent race-edit permission is a requirement, checked before opening and on answering, so a forbidden edit no longer opens a question whose answer would be ignored. Prompt text, default, empty-answer behavior and accepted species name are unchanged. The existing UI-data pin now drives the real UI op with its declared interactive stand-in. No golden rows are re-blessed. The proposed burning context migration was withdrawn; production fire appearance and cooling-watch ownership remain unchanged.
+
+## Look fixture native-roll stream isolation (2026-10-16)
+
+The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.
