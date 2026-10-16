@@ -285,7 +285,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/list/names = list()
 	var/runtime
 	try
-		subject = dq_snapshot_allocate(type, T)
+		subject = dq_look_allocate(type, T)
 		if(QDELETED(subject))
 			res.made = list("deleted itself on creation")
 		else
@@ -385,6 +385,26 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	TEST_ASSERT_EQUAL(jointext(forward, ","), original_forward, "selection preserves forward candidates")
 	TEST_ASSERT_EQUAL(jointext(backward, ","), original_backward, "selection preserves backward candidates")
 
+/// A probe owns its native construction stream, independently of round seed, tile and prior allocations.
+/// Keep the host rand_seed calls at the call sites: legacy random constructors retain their old seed policy.
+/datum/unit_test/proc/dq_look_allocate(type, turf/T)
+	var/creator_depth = length(GLOB.roll_creators)
+	var/old_seed = GLOB.round_seed
+	var/old_serial = GLOB.roll_serial
+	var/datum/roller/R = new("look:[type]")
+	GLOB.roll_creators += R
+	var/exception/failure
+	try
+		. = dq_snapshot_allocate(type, T)
+	catch(var/exception/e)
+		failure = e
+	GLOB.roll_creators.Cut(creator_depth + 1)
+	GLOB.round_seed = old_seed
+	GLOB.roll_serial = old_serial
+	qdel(R)
+	if(failure)
+		throw failure
+
 /// Writes `value` to `target.vars[name]` the way a caller does (its tracked setter when it has one, else the raw var) and redraws.
 /datum/unit_test/proc/dq_look_write(atom/target, name, value)
 	var/setter = "set_[name]"
@@ -426,7 +446,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	. = list()
 	rand_seed(dq_test_seed_for("[type]/[name]=[value]"))
 	try
-		var/atom/target = dq_snapshot_allocate(type, T)
+		var/atom/target = dq_look_allocate(type, T)
 		if(QDELETED(target))
 			return
 		dq_look_settle()
@@ -598,3 +618,48 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		dq_look_unit(type, T, base_vars, null, fresh, TRUE, TRUE, TRUE)
 		TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "[type]: one instance for every probe gave other rows than a fresh one per probe")
 		TEST_ASSERT(!length(reused.impure), "[type]: a write-back did not return the look: [jointext(reused.impure, "; ")]")
+
+// Two independent native draws make accidental equality an ineffective substitute for stream isolation.
+/obj/dq_look_native_roll_fixture
+	var/first_roll
+	var/second_roll
+
+CAPABILITIES(/obj/dq_look_native_roll_fixture)
+	rolls(nameof(first_roll), range_of(1, 1000000))
+	rolls(nameof(second_roll), range_of(1, 1000000))
+
+/datum/unit_test/dq_look_native_roll_allocation
+
+/datum/unit_test/dq_look_native_roll_allocation/Run()
+	set_global(nameof(GLOB.round_seed), GLOB.round_seed)
+	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
+	set_global(nameof(GLOB.roll_creators), GLOB.roll_creators.Copy())
+	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
+	set_global(nameof(GLOB.round_seed), GLOB.round_seed)
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/turf/first_turf = run_loc_floor_bottom_left
+	var/turf/second_turf = get_step(first_turf, EAST)
+	TEST_ASSERT(second_turf && second_turf != first_turf, "the fixture uses two distinct actual turf positions")
+	var/seed_before = GLOB.round_seed
+	var/serial_before = GLOB.roll_serial
+	var/list/creators_before = GLOB.roll_creators.Copy()
+	var/obj/dq_look_native_roll_fixture/first = dq_look_allocate(/obj/dq_look_native_roll_fixture, first_turf)
+	TEST_ASSERT_EQUAL(GLOB.round_seed, seed_before, "allocation restores the global native seed")
+	TEST_ASSERT_EQUAL(GLOB.roll_serial, serial_before, "allocation restores unrelated serial history")
+	var/obj/dq_look_native_roll_fixture/unrelated = allocate(/obj/dq_look_native_roll_fixture)
+	// Deliberately perturb the fallback serial without changing the production RNG implementation.
+	GLOB.roll_serial += 37
+	var/perturbed_serial = GLOB.roll_serial
+	var/obj/dq_look_native_roll_fixture/second = dq_look_allocate(/obj/dq_look_native_roll_fixture, second_turf)
+	TEST_ASSERT_EQUAL(second.first_roll, first.first_roll, "native constructor rolls do not depend on turf or prior allocations")
+	TEST_ASSERT_EQUAL(second.second_roll, first.second_roll, "the full native stream is reproduced, not just its first draw")
+	TEST_ASSERT_EQUAL(GLOB.roll_serial, perturbed_serial, "allocation preserves its caller's current serial")
+	TEST_ASSERT_EQUAL(GLOB.round_seed, seed_before, "the second allocation preserves the global seed")
+	TEST_ASSERT_EQUAL(length(GLOB.roll_creators), length(creators_before), "allocation leaves no synthetic creator on the stack")
+	for(var/i in 1 to length(creators_before))
+		TEST_ASSERT_EQUAL(GLOB.roll_creators[i], creators_before[i], "allocation preserves every existing outer creator")
+	GLOB.roll_serial = serial_before
+	qdel(first)
+	qdel(second)
+	qdel(unrelated)
