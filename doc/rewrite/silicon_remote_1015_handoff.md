@@ -32,5 +32,4 @@ in the menu. Additional key presentation causes are recorded per class in
 The admin-holder lint now uses a proven receiver type and declared field to exclude
 non-client `.holder` references; unknown, mixed and client-compatible receivers remain
 checked. Its focused Rust regression passed (1 test). All ratchets passed with the
-95-row baseline reduction. Native production compilation and the combined runtime
-lane-ready verification are pending; this document does not claim a stamp yet.
+95-row baseline reduction. The final lane-ready receipt and focused-run JSON are the authoritative runtime and stamp evidence. The source is merged through master `dbf38d2b20`; the focused list includes both mandatory pins, actual AI/borg behavior, the two constructor regressions and telecube cleanup. No full suite is run. The constructor and look cleanup repairs restore the old runtime-free pins; the master `devour` key update is separately documented.
