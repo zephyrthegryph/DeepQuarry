@@ -99,9 +99,8 @@
 		src.add_fingerprint(user)
 	return TRUE
 
-/obj/item/melee/shock_maul/loaded/ownership()
-	. = ..()
-	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon)
+CAPABILITIES(/obj/item/melee/shock_maul/loaded)
+	owns_one(nameof(bcell), starts = /obj/item/cell/device/weapon, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/melee/shock_maul/proc/deductcharge()
 	if(status == 1)		//Only deducts charge when it's on
@@ -185,6 +184,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shock_maul_emp)))
 	drag_onto(PROC_REF(mousedrop_input))
+	owns_one(nameof(bcell), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attack_hand.
 /obj/item/melee/shock_maul/proc/interaction_hand(datum/act/op/A)
@@ -325,6 +325,3 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 	injury_kind = INJURY_PAIN
 	launch_force = 0
 
-/obj/item/melee/shock_maul/ownership()
-	. = ..()
-	. += owns(nameof(bcell), policy = OWN_CONTAINED)

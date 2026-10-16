@@ -1,8 +1,7 @@
 /// A real default-child implant exercises completion and ownership transfer.
 /obj/item/implanter/interim_sizecontrol_actor
-/obj/item/implanter/interim_sizecontrol_actor/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/sizecontrol)
+CAPABILITIES(/obj/item/implanter/interim_sizecontrol_actor)
+	owns_one(nameof(imp), starts = /obj/item/implant/sizecontrol, on_destroy = ON_DESTROY_CONTAINED)
 
 /datum/unit_test/interim_implant_installer_actor/Run()
 	test_driver_begin()

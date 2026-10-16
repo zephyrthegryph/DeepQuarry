@@ -16,6 +16,7 @@
 CAPABILITIES(/obj/item/gun/launcher/rocket)
 	configure(item_worn(slots = 0))
 	configure(item_combat(force = 5.0))
+	owns_many(nameof(rockets), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/gun/launcher/rocket/examine(mob/user)
 	. = ..()
@@ -23,9 +24,6 @@ CAPABILITIES(/obj/item/gun/launcher/rocket)
 		. += span_blue("[length(rockets)] / [max_rockets] rockets.")
 
 // Loaded rockets sit in the launcher's contents.
-/obj/item/gun/launcher/rocket/ownership()
-	. = ..()
-	. += owns(nameof(rockets), policy = OWN_CONTAINED, is_list = TRUE)
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
 /obj/item/gun/launcher/rocket/gun_item(datum/act/op/A)
