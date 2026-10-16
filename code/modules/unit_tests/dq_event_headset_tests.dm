@@ -4,7 +4,7 @@
 // mutated every human of that species while any single wearer had the
 // headset on, and a second wearer equipping/unequipping their own headset
 // would stomp the first wearer's saved restore value. It should have used
-// worn_factors (BF_SLOWDOWN), which the item already sets, and never touched
+// worn_factors (STAT_SLOWDOWN), which the item already sets, and never touched
 // the shared species datum at all.
 
 /datum/unit_test/dq_event_headset_does_not_mutate_shared_species_datum
@@ -25,13 +25,13 @@
 
 	// The intended effect (extra movement delay while worn) should still land,
 	// just via the wearer's own worn_factors instead of the shared species var.
-	TEST_ASSERT_EQUAL(headset.worn_factors[BF_SLOWDOWN], 0.5, "the headset should contribute its slowdown via worn_factors")
-	TEST_ASSERT_EQUAL(wearer.factor(BF_SLOWDOWN), 0.5, "the wearer's own BF_SLOWDOWN factor should reflect the headset")
-	TEST_ASSERT_EQUAL(bystander.factor(BF_SLOWDOWN), 0, "the bystander should be unaffected by the wearer's headset")
+	TEST_ASSERT_EQUAL(headset.worn_factors[STAT_SLOWDOWN], 0.5, "the headset should contribute its slowdown via worn_factors")
+	TEST_ASSERT_EQUAL(wearer.slowdown, 0.5, "the wearer's own STAT_SLOWDOWN factor should reflect the headset")
+	TEST_ASSERT_EQUAL(bystander.slowdown, 0, "the bystander should be unaffected by the wearer's headset")
 
 	wearer.drop_from_inventory(headset)
 	TEST_ASSERT_EQUAL(wearer.species.item_slowdown_mod, baseline_mod, "unequipping the event headset must not mutate the shared species datum either")
-	TEST_ASSERT_EQUAL(wearer.factor(BF_SLOWDOWN), 0, "taking the headset off should remove its slowdown")
+	TEST_ASSERT_EQUAL(wearer.slowdown, 0, "taking the headset off should remove its slowdown")
 
 /// The headset's spells list used to store spell paths as plain strings missing
 /// their /datum/ prefix ("/spell/targeted/unrestricted/mend" instead of

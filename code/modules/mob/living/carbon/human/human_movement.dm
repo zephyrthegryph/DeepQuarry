@@ -8,12 +8,12 @@
 		return HUMAN_LOWEST_SLOWDOWN
 
 	// Haste: ignore slowdown and move really fast. Calling ..() here adds slowdown.
-	if(factor(BF_HASTE))
+	if(src.haste)
 		return HUMAN_LOWEST_SLOWDOWN
 
 	// Every body factor source at once: species and traits, modifiers,
 	// afflictions, reagents (stimulants are negative), form and worn gear.
-	. += factor(BF_SLOWDOWN)
+	. += src.slowdown
 
 	if(istype(loc, /turf/space))
 		return ..() - 1
@@ -31,7 +31,7 @@
 		. += hungry/50
 
 	if(get_feralness() >= 10) //crazy feral animals give less and less of a shit about pain and hunger as they get crazier
-		var/species_slowdown = species.baseline_factor(BF_SLOWDOWN)
+		var/species_slowdown = species.baseline_factor(STAT_SLOWDOWN)
 		. = max(species_slowdown, species_slowdown+((.-species_slowdown)/(get_feralness()/10))) // As feral scales to damage, this amounts to an effective +1 slowdown cap
 		if(shock_stage >= 10)
 			. -= CLAMP((shock_stage / 40), 0.25, 1.5) //Feral creatures get halved shock penalty.
@@ -89,9 +89,9 @@
 
 	. += item_tally
 
-	// Sedatives add to penalties, stimulants cut them (BF_PENALTY_SCALE).
+	// Sedatives add to penalties, stimulants cut them (STAT_PENALTY_SCALE).
 	if(. > 0)
-		. *= factor(BF_PENALTY_SCALE)
+		. *= src.penalty_scale
 
 	//mRun means we don't get slowdown: axe every penalty, keep speed buffs.
 	if(has_mutation(mRun))

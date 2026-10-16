@@ -38,7 +38,7 @@
 /datum/affliction/nanite/progress()
 	var/drift = state_drift()
 	if(drift > 0)
-		drift *= body.get_factor(BF_PROGRESSION)
+		drift *= owner.progression
 	set_severity(severity + drift + pending_treatment)
 	pending_treatment = 0
 	if(severity <= 0)
@@ -55,7 +55,7 @@
 	clinical_description = "Trauma has torn the bonds between the swarm's nanites. The body moves sluggishly, holds tools poorly and tears more easily under further blows. The swarm reknits itself from refactory steel (regeneration) or with nanopaste; without steel it keeps unravelling."
 	injury_category = INJURY_CATEGORY_PHYSICAL
 	treated_by = list(TREAT_REGENERATION = 1, TREAT_PLATING_REPAIR = 0.5)
-	factors = alist(BF_SLOWDOWN = 2, BF_MOTOR_CONTROL = 0.9, BF_INCOMING_PHYSICAL = 1.3)
+	factors = alist(STAT_SLOWDOWN = 2, STAT_MOTOR_CONTROL = 0.9, STAT_INCOMING_PHYSICAL = 1.3)
 	symptom_pool = list(
 		/datum/affliction_symptom/nanite/sloughing = 90,
 		/datum/affliction_symptom/nanite/cohesion_warning = 80,
@@ -78,7 +78,7 @@
 	name = "refactory depletion"
 	clinical_description = "The refactory has run out of steel while the swarm needed repair. The nanites cannibalise one another to stay whole: regeneration slows and the body grows sluggish. Feed the refactory steel."
 	treated_by = list(TREAT_FEEDSTOCK = 1)
-	factors = alist(BF_HEALING = 0.5, BF_SLOWDOWN = 1)
+	factors = alist(STAT_HEALING = 0.5, STAT_SLOWDOWN = 1)
 	symptom_pool = list(
 		/datum/affliction_symptom/nanite/thinning = 90,
 		/datum/affliction_symptom/nanite/feedstock_warning = 85,
@@ -102,7 +102,7 @@
 	clinical_description = "The orchestrator module, which coordinates the swarm, is damaged. Movement and aim lose precision, form changes can fail outright, and at worst the swarm loses awareness. Recalibrate it with a multitool or reboot programmer and repair its wiring."
 	consciousness_at_max = 60
 	treated_by = list(TREAT_CALIBRATION = 2, TREAT_WIRING_REPAIR = 1)
-	factors = alist(BF_MOTOR_CONTROL = 0.85, BF_ACCURACY = -20, BF_ATTACK_SPEED = 1.3)
+	factors = alist(STAT_MOTOR_CONTROL = 0.85, STAT_ACCURACY = -20, STAT_ATTACK_SPEED = 1.3)
 	symptom_pool = list(
 		/datum/affliction_symptom/nanite/desync = 90,
 		/datum/affliction_symptom/nanite/control_errors = 85,
@@ -124,7 +124,7 @@
 	clinical_description = "Foreign reagents or materials have worked their way into the swarm and the refactory. The nanites misfire around the contaminant: healing slows and fine control suffers. Purge the reagents; the refactory filters the rest while the swarm regenerates."
 	injury_category = INJURY_CATEGORY_TOXIC
 	treated_by = list(TREAT_REGENERATION = 1)
-	factors = alist(BF_HEALING = 0.6, BF_ACCURACY = -10, BF_MOTOR_CONTROL = 0.95)
+	factors = alist(STAT_HEALING = 0.6, STAT_ACCURACY = -10, STAT_MOTOR_CONTROL = 0.95)
 	symptom_pool = list(
 		/datum/affliction_symptom/nanite/discoloured_swarm = 90,
 		/datum/affliction_symptom/nanite/contaminant_warning = 80,
@@ -147,7 +147,7 @@
 	name = "form strain"
 	clinical_description = "The swarm has been reshaped too quickly, or held in a shapeless form too long, and its structure is fatigued. Movement and attacks slow. It eases with rest in humanoid form, recalibration or regeneration."
 	treated_by = list(TREAT_CALIBRATION = 1, TREAT_REGENERATION = 0.5)
-	factors = alist(BF_SLOWDOWN = 1, BF_MOTOR_CONTROL = 0.9, BF_ATTACK_SPEED = 1.2)
+	factors = alist(STAT_SLOWDOWN = 1, STAT_MOTOR_CONTROL = 0.9, STAT_ATTACK_SPEED = 1.2)
 	symptom_pool = list(
 		/datum/affliction_symptom/nanite/wavering_shape = 90,
 		/datum/affliction_symptom/nanite/strain_warning = 80,

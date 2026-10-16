@@ -293,7 +293,7 @@ CAPABILITIES(/obj/item/leash)
 		act_message(leash_pet, null, MSG_SELF(span_warning("Your leash pops from your collar!")), \
 			MSG_OTHERS(span_warning("The leash snaps free from %U%'s collar!")))
 		leash_pet.apply_effect(5, STUN, 0)
-		leash_pet.body?.add_restriction(src, BF_AIRWAY, 0.2, 5 SECONDS) // the collar yanks the throat shut
+		leash_pet.body?.add_restriction(src, STAT_AIRWAY, 0.2, 5 SECONDS) // the collar yanks the throat shut
 		clear_leash()
 
 /obj/item/leash/proc/on_pet_move(datum/act/notice/A)
@@ -382,7 +382,7 @@ CAPABILITIES(/obj/item/leash)
 /datum/body_effect/leash
 	stacks = MODIFIER_STACK_FORBID
 	name = "Leash"
-	factors = alist(BF_SLOWDOWN = 5)
+	factors = alist(STAT_SLOWDOWN = 5)
 
 // Utility functions
 /obj/item/proc/apply_tug_mob_to_mob(mob/living/tug_pet, mob/living/tug_master, distance = 2)

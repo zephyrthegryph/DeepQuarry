@@ -499,7 +499,7 @@ sparse(/mob/living, vomiting, type = bool)
 
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		var/antiemetic = H.factor(BF_ANTIEMETIC)
+		var/antiemetic = H.antiemetic
 		if(antiemetic)
 			if(prob(min(90, antiemetic * 15)))
 				after(src, rand(30 SECONDS, 2 MINUTES), PROC_REF(puke_recovered))
@@ -714,10 +714,10 @@ sparse(/mob/living, vomiting, type = bool)
 	return TRUE
 
 /mob/living/get_icon_scale_x()
-	return ..() * factor(BF_ICON_SCALE_X)
+	return ..() * src.scale_mult_x
 
 /mob/living/get_icon_scale_y()
-	return ..() * factor(BF_ICON_SCALE_Y)
+	return ..() * src.scale_mult_y
 
 /mob/living/update_transform(instant = FALSE)
 	// First, get the correct size.

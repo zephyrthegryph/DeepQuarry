@@ -4,7 +4,7 @@
 	// The station's resuscitation stabiliser (and the AllergyPen's payload):
 	// a weaker vasopressor on top of circulatory support.
 	treatment_tags = list(TREAT_CIRCULATORY = 1.0, TREAT_VASOPRESSOR = 0.5)
-	factors = alist(BF_ANALGESIA = 10, BF_STABILIZATION = 15, BF_ALLERGY = -5)
+	factors = alist(STAT_ANALGESIA = 10, STAT_STABILIZATION = 15, STAT_ALLERGY = -5)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_INAPROVALINE
 	id = REAGENT_ID_INAPROVALINE
@@ -20,7 +20,7 @@
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
 /datum/reagent/inaprovaline/topical
-	factors = alist(BF_ANALGESIA = 12, BF_STABILIZATION = 20, BF_ALLERGY = -5)
+	factors = alist(STAT_ANALGESIA = 12, STAT_STABILIZATION = 20, STAT_ALLERGY = -5)
 	name = REAGENT_INAPROVALAZE
 	id = REAGENT_ID_INAPROVALAZE
 	description = REAGENT_INAPROVALAZE + " is a topical variant of Inaprovaline."
@@ -118,7 +118,7 @@
 	M.injure(INJURY_TOXIN, 2 * removed, source = src)
 
 /datum/reagent/calciumcarbonate
-	factors = alist(BF_ANTIEMETIC = 3)
+	factors = alist(STAT_ANTIEMETIC = 3)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_CALCIUMCARBONATE
 	id = REAGENT_ID_CALCIUMCARBONATE
@@ -260,8 +260,8 @@
 /datum/reagent/dexalin
 	treatment_tags = list(TREAT_OXYGENATION = 0.5)
 	// Loads the blood with oxygen: more carried per unit of saturation.
-	factors = alist(BF_O2_CARRIAGE = 1.25)
-	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 15))
+	factors = alist(STAT_O2_CARRIAGE = 1.25)
+	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 15))
 	name = REAGENT_DEXALIN
 	id = REAGENT_ID_DEXALIN
 	description = REAGENT_DEXALIN + " is used in the treatment of oxygen deprivation."
@@ -289,8 +289,8 @@
 
 /datum/reagent/dexalinp
 	treatment_tags = list(TREAT_OXYGENATION = 1.0)
-	factors = alist(BF_O2_CARRIAGE = 1.5)
-	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 25))
+	factors = alist(STAT_O2_CARRIAGE = 1.5)
+	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 25))
 	name = REAGENT_DEXALINP
 	id = REAGENT_ID_DEXALINP
 	description = REAGENT_DEXALINP + " is used in the treatment of oxygen deprivation. It is highly effective."
@@ -533,8 +533,8 @@
 
 /datum/reagent/paracetamol
 	treatment_tags = list(TREAT_ANALGESIC = 1.0)
-	factors = alist(BF_ANALGESIA = 25)
-	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 18.75))
+	factors = alist(STAT_ANALGESIA = 25)
+	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 18.75))
 	name = REAGENT_PARACETAMOL
 	id = REAGENT_ID_PARACETAMOL
 	description = "Most probably know this as Tylenol, but this chemical is a mild, simple painkiller."
@@ -555,8 +555,8 @@
 	M.status_at_least(STAT_HALLUCINATING, 2)
 
 /datum/reagent/tramadol
-	factors = alist(BF_ANALGESIA = 80)
-	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 64, BF_SLOWDOWN = 1, BF_PENALTY_SCALE = 1.25))
+	factors = alist(STAT_ANALGESIA = 80)
+	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 64, STAT_SLOWDOWN = 1, STAT_PENALTY_SCALE = 1.25))
 	name = REAGENT_TRAMADOL
 	id = REAGENT_ID_TRAMADOL
 	description = "A simple, yet effective painkiller."
@@ -577,8 +577,8 @@
 	M.status_at_least(STAT_HALLUCINATING, 2)
 
 /datum/reagent/oxycodone
-	factors = alist(BF_ANALGESIA = 200, BF_SLOWDOWN = 1, BF_PENALTY_SCALE = 1.25)
-	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 150, BF_SLOWDOWN = 1, BF_PENALTY_SCALE = 1.25))
+	factors = alist(STAT_ANALGESIA = 200, STAT_SLOWDOWN = 1, STAT_PENALTY_SCALE = 1.25)
+	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 150, STAT_SLOWDOWN = 1, STAT_PENALTY_SCALE = 1.25))
 	name = REAGENT_OXYCODONE
 	id = REAGENT_ID_OXYCODONE
 	description = "An effective and very addictive painkiller."
@@ -611,8 +611,8 @@
 
 /datum/reagent/synaptizine
 	treatment_tags = list(TREAT_NEURAL_REPAIR = 1.0)
-	factors = alist(BF_ANALGESIA = 20)
-	species_factors = alist(IS_DIONA = null, IS_SLIME = alist(BF_ANALGESIA = 10))
+	factors = alist(STAT_ANALGESIA = 20)
+	species_factors = alist(IS_DIONA = null, IS_SLIME = alist(STAT_ANALGESIA = 10))
 	name = REAGENT_SYNAPTIZINE
 	id = REAGENT_ID_SYNAPTIZINE
 	description = REAGENT_SYNAPTIZINE + " is used to treat various diseases."
@@ -650,7 +650,7 @@
 
 /datum/reagent/hyperzine
 	treatment_tags = list(TREAT_STIMULANT = 1.0)
-	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
+	factors = alist(STAT_SLOWDOWN = -1, STAT_PENALTY_SCALE = 0.5)
 	name = REAGENT_HYPERZINE
 	id = REAGENT_ID_HYPERZINE
 	description = REAGENT_HYPERZINE + " is a highly effective, long lasting, muscle stimulant."
@@ -687,8 +687,8 @@
 
 /datum/reagent/alkysine
 	treatment_tags = list(TREAT_NEURAL_REPAIR = 0.5)
-	factors = alist(BF_ANALGESIA = 10)
-	species_factors = alist(IS_DIONA = null, IS_SLIME = alist(BF_ANALGESIA = 2.5))
+	factors = alist(STAT_ANALGESIA = 10)
+	species_factors = alist(IS_DIONA = null, IS_SLIME = alist(STAT_ANALGESIA = 2.5))
 	name = REAGENT_ALKYSINE
 	id = REAGENT_ID_ALKYSINE
 	description = REAGENT_ALKYSINE + " is a drug used to lessen the damage to neurological tissue after a catastrophic injury. Can heal brain tissue."
@@ -750,7 +750,7 @@
 		TREAT_CARDIAC = 0.3,
 		TREAT_DIGESTIVE = 0.3,
 	)
-	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 20))
+	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 20))
 	name = REAGENT_PERIDAXON
 	id = REAGENT_ID_PERIDAXON
 	description = "Used to encourage recovery of internal organs and nervous systems. Medicate cautiously."
@@ -1235,7 +1235,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 /datum/reagent/spaceacillin
 	treatment_tags = list(TREAT_ANTIMICROBIAL = 1.0)
-	factors = alist(BF_ANTIMICROBIAL = ANTIBIO_NORM)
+	factors = alist(STAT_ANTIMICROBIAL = ANTIBIO_NORM)
 	name = REAGENT_SPACEACILLIN
 	id = REAGENT_ID_SPACEACILLIN
 	description = "An all-purpose antiviral agent."
@@ -1269,7 +1269,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 /datum/reagent/corophizine
 	treatment_tags = list(TREAT_ANTIMICROBIAL = 1.3)
-	factors = alist(BF_ANTIMICROBIAL = ANTIBIO_SUPER)
+	factors = alist(STAT_ANTIMICROBIAL = ANTIBIO_SUPER)
 	name = REAGENT_COROPHIZINE
 	id = REAGENT_ID_COROPHIZINE
 	description = "A wide-spectrum antibiotic drug. Powerful and uncomfortable in equal doses."
@@ -1342,7 +1342,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 /datum/reagent/spacomycaze
 	treatment_tags = list(TREAT_ANTIMICROBIAL = 0.8)
-	factors = alist(BF_ANALGESIA = 20, BF_ANTIMICROBIAL = ANTIBIO_NORM)
+	factors = alist(STAT_ANALGESIA = 20, STAT_ANTIMICROBIAL = ANTIBIO_NORM)
 	name = REAGENT_SPACOMYCAZE
 	id = REAGENT_ID_SPACOMYCAZE
 	description = "An all-purpose painkilling antibiotic gel."
@@ -1644,7 +1644,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 //////////////////////////////////
 /datum/reagent/claridyl
 	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.25)
-	factors = alist(BF_ANALGESIA = 40, BF_STABILIZATION = 30)
+	factors = alist(STAT_ANALGESIA = 40, STAT_STABILIZATION = 30)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_CLARIDYL
 	id = REAGENT_ID_CLARIDYL
@@ -1905,7 +1905,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	M.status_adjust(STAT_JITTERY, -25*removed)
 
 /datum/reagent/numbing_enzyme
-	factors = alist(BF_ANALGESIA = 200)
+	factors = alist(STAT_ANALGESIA = 200)
 	name = REAGENT_NUMBENZYME
 	id = REAGENT_ID_NUMBENZYME
 	description = "Some sort of organic painkiller."
@@ -2357,7 +2357,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	M.injure(INJURY_BLUNT, 1 * removed, source = src)
 
 /datum/reagent/bloodsealer
-	factors = alist(BF_STABILIZATION = 25)
+	factors = alist(STAT_STABILIZATION = 25)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_BLOODSEALER
 	id = REAGENT_ID_BLOODSEALER
@@ -2385,7 +2385,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		TREAT_OXYGENATION = 0.4,
 		TREAT_ANTITOXIN = 0.4,
 	)
-	factors = alist(BF_ANALGESIA = -20)
+	factors = alist(STAT_ANALGESIA = -20)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_LIVINGAGENT
 	id = REAGENT_ID_LIVINGAGENT
@@ -2405,7 +2405,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	M.status_at_least(STAT_CONFUSED, 5)
 
 /datum/reagent/performancepeaker
-	factors = alist(BF_ANALGESIA = 10, BF_SLOWDOWN = -0.5, BF_PENALTY_SCALE = 0.5)
+	factors = alist(STAT_ANALGESIA = 10, STAT_SLOWDOWN = -0.5, STAT_PENALTY_SCALE = 0.5)
 	name = REAGENT_PERFORMANCEPEAKER
 	id = REAGENT_ID_PERFORMANCEPEAKER
 	description = "A chemical created to bring a body to peak condition. Highly toxic"
@@ -2525,7 +2525,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	on_created_text = span_critical("You feel your body's natural healing quick into overdrive!")
 	on_expired_text = span_notice("Your body returns to normal.")
 
-	factors = alist(BF_HEALING_RECEIVED = 1.2)
+	factors = alist(STAT_HEALING_RECEIVED = 1.2)
 
 /datum/body_effect/liquidhealer/on_tick(mob/living/L)
 	if(L.stat == DEAD)

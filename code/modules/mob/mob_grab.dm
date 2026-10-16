@@ -157,7 +157,7 @@
 		if(isliving(affecting))
 			var/mob/living/L = affecting
 			// A chokehold squeezes the airway for as long as it's held.
-			L.body?.add_restriction(src, BF_AIRWAY, (state >= GRAB_KILL ? 0 : 0.3), 3 SECONDS)
+			L.body?.add_restriction(src, STAT_AIRWAY, (state >= GRAB_KILL ? 0 : 0.3), 3 SECONDS)
 
 	if(state >= GRAB_KILL)
 		//affecting.apply_effect(STUTTER, 5) //would do this, but affecting isn't declared as mob/living for some stupid reason.

@@ -166,7 +166,7 @@ TYPE_TABLE(/datum/affliction/acute_radiation, affliction_stages, list( \
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	factors = alist(BF_SLOWDOWN = 0.8, BF_ACCURACY = -10)
+	factors = alist(STAT_SLOWDOWN = 0.8, STAT_ACCURACY = -10)
 	spontaneous_emotes = list("shiver", "stamp their feet")
 	spontaneous_emote_prob = 5
 
@@ -190,7 +190,7 @@ TYPE_TABLE(/datum/affliction/acute_radiation, affliction_stages, list( \
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	factors = alist(BF_SLOWDOWN = 0.6, BF_ACCURACY = -8)
+	factors = alist(STAT_SLOWDOWN = 0.6, STAT_ACCURACY = -8)
 	spontaneous_emotes = list("wipe their brow", "pant")
 	spontaneous_emote_prob = 4
 

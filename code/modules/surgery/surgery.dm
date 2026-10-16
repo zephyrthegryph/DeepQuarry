@@ -232,7 +232,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/surgical_step)
 	. = 1
 	if(department_for_mob(user) != DEPARTMENT_MEDICAL)
 		. *= SURGERY_UNTRAINED_MULT
-	. *= clamp(user.factor(BF_MOTOR_CONTROL), 0, 1)
+	. *= clamp(user.motor_control, 0, 1)
 	if(user == target)
 		. *= SURGERY_SELF_MULT
 
@@ -242,7 +242,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/surgical_step)
 	return SURGERY_FLOOR_SURFACE_MULT + (1 - SURGERY_FLOOR_SURFACE_MULT) * clamp(cleanliness, 0, 100) / 100
 
 /// Patient multiplier: a conscious patient who feels the step flinches. Pain
-/// relief (BF_ANALGESIA) and sedation (BF_SEDATION) take the step's pain off;
+/// relief (STAT_ANALGESIA) and sedation (STAT_SEDATION) take the step's pain off;
 /// unconscious or pain-immune patients hold still. Only parts that feel pain
 /// count: a prosthetic panel doesn't hurt to open.
 /datum/surgical_step/proc/patient_mult(mob/living/carbon/human/target, obj/item/organ/external/part)
@@ -250,9 +250,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/surgical_step)
 		return 1
 	if(!(target.body.biology_of(part) & BIOLOGY_ORGANIC) || !target.dq_feels_pain())
 		return 1
-	if(target.factor(BF_PAIN_IMMUNITY))
+	if(target.pain_immunity)
 		return 1
-	var/felt = pain - target.factor(BF_ANALGESIA) - target.factor(BF_SEDATION)
+	var/felt = pain - target.analgesia - target.sedation
 	if(felt <= 0)
 		return 1
 	return 1 - SURGERY_PAIN_PENALTY * clamp(felt / pain, 0, 1)

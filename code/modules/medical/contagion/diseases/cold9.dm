@@ -6,7 +6,7 @@
 		/datum/affliction_symptom/limb_weakness = 40
 	)
 	max_symptoms = 3
-	factors = alist(BF_SLOWDOWN = 1.5, BF_TEMPERATURE = -1.5, BF_MOTOR_CONTROL = 0.97)
+	factors = alist(STAT_SLOWDOWN = 1.5, STAT_TEMPERATURE = -1.5, STAT_MOTOR_CONTROL = 0.97)
 	name = "The Cold"
 	medical_name = "ICE9 Cold"
 	max_stages = 3

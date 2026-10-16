@@ -166,13 +166,13 @@
 		else
 			damage_guess += 5
 
-		damage_guess *= factor(BF_MELEE_DAMAGE)
+		damage_guess *= src.melee_damage
 
 		threat_guess += damage_guess
 
 	else
 		var/weapon_attack_speed = get_attack_speed(I) / (1 SECOND)
-		var/weapon_damage = combat_of(I).force * factor(BF_MELEE_DAMAGE)
+		var/weapon_damage = combat_of(I).force * src.melee_damage
 
 		if(istype(I, /obj/item/gun))
 			will_point_blank = TRUE

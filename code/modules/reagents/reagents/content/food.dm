@@ -2,7 +2,7 @@
 
 /datum/reagent/nutriment
 	treatment_tags = list(TREAT_BLOOD_RESTORE = 0.25, TREAT_TISSUE_REPAIR = 0.1)
-	factors = alist(BF_BLOOD_REGEN = 0.8)
+	factors = alist(STAT_BLOOD_REGEN = 0.8)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_NUTRIMENT
 	id = REAGENT_ID_NUTRIMENT
@@ -140,7 +140,7 @@ TYPE_TABLE(/datum/reagent/nutriment/coating, get_data_schema, list("cooked"))
 	allergen_type = ALLERGEN_GRAINS | ALLERGEN_EGGS //Made with flour(grain), and eggs(eggs)
 
 /datum/reagent/nutriment/coating/beerbatter
-	factors = alist(BF_INTOXICATION = 0.02) //Very slightly alcoholic
+	factors = alist(STAT_INTOXICATION = 0.02) //Very slightly alcoholic
 	name = REAGENT_BEERBATTER
 	cooked_name = "beer batter"
 	id = REAGENT_ID_BEERBATTER

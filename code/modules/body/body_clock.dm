@@ -9,10 +9,10 @@
 // Rates, per Life cycle (LIFE_CYCLE) of body time:
 //   autoheal   WOUND_AUTOHEAL_PER_CYCLE x organ_regeneration_multiplier, shared by the limb's wounds (+1): a dressed or
 //              small old wound under WOUND_AUTOHEAL_MAX_DAMAGE closes on its own
-//   bleeding   wound damage / divisor (blood_loss_divisor(): 30.01 / species rate / BF_BLEEDING, +5 for limbs, +10 for
+//   bleeding   wound damage / divisor (blood_loss_divisor(): 30.01 / species rate / STAT_BLEEDING, +5 for limbs, +10 for
 //              hands and feet, -5 for punctures, +5 for bruises, +10 stabilised; pressure helps)
 //   arterial   damage / (divisor + 10), and the tear grows ARTERIAL_TEAR_PER_CYCLE until clotted or controlled
-//   refill     BLOOD_REGEN_PER_CYCLE + BF_BLOOD_REGEN while below the species volume
+//   refill     BLOOD_REGEN_PER_CYCLE + STAT_BLOOD_REGEN while below the species volume
 //   bleed clock  a small wound's bleed_timer runs down one per cycle of bleeding
 
 /// Integration step of the body clock. Rates are scaled by the time that actually passed, so the step length only
@@ -24,7 +24,7 @@
 #define WOUND_AUTOHEAL_MAX_DAMAGE 50
 /// A healed wound fades this long after it was made.
 #define WOUND_FADE_DELAY (10 MINUTES)
-/// Blood the body makes per Life cycle while below its volume, before BF_BLOOD_REGEN.
+/// Blood the body makes per Life cycle while below its volume, before STAT_BLOOD_REGEN.
 #define BLOOD_REGEN_PER_CYCLE 0.1
 /// How much further an untreated arterial tear rips per Life cycle.
 #define ARTERIAL_TEAR_PER_CYCLE 0.1
@@ -162,7 +162,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	if(blood_volume_raw < species.blood_volume)
 		var/datum/reagent/blood/B = own_blood()
 		if(B)
-			B.set_volume(B.volume + ((BLOOD_REGEN_PER_CYCLE + factor(BF_BLOOD_REGEN)) * cycles))
+			B.set_volume(B.volume + ((BLOOD_REGEN_PER_CYCLE + src.blood_regen) * cycles))
 
 	// DQ medical owns blood-loss presentation (internal_hemorrhage / hypovolemic_shock symptoms) and the physiology owns
 	// its consequence (low perfusion -> oxygen debt). Here: the pale sprite cue, and the fatal collapse below the
@@ -176,7 +176,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 		if(blood_volume_raw < species.blood_volume * species.blood_level_fatal)
 			status_at_least(STAT_PARALYZED, 3)
 			status_at_least(STAT_SLEEPING, 3)
-			injure(INJURY_TOXIN, (factor(BF_STABILIZATION) ? 1.5 : 3) * cycles, flags = INJURE_SILENT)
+			injure(INJURY_TOXIN, (src.stabilization ? 1.5 : 3) * cycles, flags = INJURE_SILENT)
 		// Without enough blood you slowly go hungry.
 		if(nutrition_of(src) >= 300)
 			adjust_nutrition(-10 * cycles)
@@ -231,7 +231,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 			temp_bld = max(temp_bld + 5, 1)
 		else if(E.organ_tag in list(BP_L_HAND, BP_R_HAND, BP_L_FOOT, BP_R_FOOT))
 			temp_bld = max(temp_bld + 10, 1)
-		if(factor(BF_STABILIZATION)) // inaprovaline slows blood loss
+		if(src.stabilization) // inaprovaline slows blood loss
 			temp_bld = max(temp_bld + 10, 1)
 		if(E.applied_pressure)
 			if(ishuman(E.applied_pressure))
@@ -246,7 +246,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 /// Blood per Life cycle an arterial tear bleeds inside.
 /mob/living/carbon/human/proc/internal_bleed_rate(datum/affliction/wound/internal_bleeding/W, applied_pressure = FALSE)
 	var/temp_bld = blood_loss_divisor() + 10 // slower than an open wound
-	if(factor(BF_STABILIZATION) || W.strongly_clotted())
+	if(src.stabilization || W.strongly_clotted())
 		temp_bld = max(temp_bld + 30, 1) // stabilisers are great on internal wounds
 	if(applied_pressure) // pressure on the wound helps stop arterial bleeding
 		temp_bld += 30
@@ -265,9 +265,9 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 			for(var/datum/affliction/wound/internal_bleeding/W in E.get_wounds())
 				. += internal_bleed_rate(W, E.applied_pressure)
 
-/// The divisor of every bleed: lower bleeds more. INFINITY when the body does not bleed (BF_BLEEDING 0).
+/// The divisor of every bleed: lower bleeds more. INFINITY when the body does not bleed (STAT_BLEEDING 0).
 /mob/living/carbon/human/proc/blood_loss_divisor()
-	var/bleeding = factor(BF_BLEEDING)
+	var/bleeding = src.bleeding
 	if(bleeding <= 0)
 		return INFINITY
 	return 30.01 / species.bloodloss_rate / bleeding

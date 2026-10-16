@@ -7,7 +7,7 @@
 	var/sort = TRAIT_SORT_NORMAL	// Sort order, 1 before 2 before 3 etc. Alphabetical is used for same-group traits.
 	var/category = TRAIT_TYPE_NEUTRAL	// What category this trait is. -1 is Negative, 0 is Neutral, 1 is Positive
 	var/list/var_changes			// A list to apply to the custom species vars.
-	var/alist/factors				// Body factors (BF_* -> value) this trait grants the species. See code/modules/body/factors.dm.
+	var/alist/factors				// Body factors (stat id -> value) this trait grants the species. See code/modules/body/factors.dm.
 	var/list/var_changes_pref		// A list to apply to the preference vars.
 	var/list/excludes				// Store a list of paths of traits to exclude, but done automatically if they change the same vars.
 	var/can_take = ORGANICS|SYNTHETICS	// Can freaking synths use those.

@@ -79,9 +79,9 @@
 	var/mob/living/carbon/human/hypoxic = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/control = allocate(/mob/living/carbon/human)
 	control.add_oxygen_debt(PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD / 2, "unit test")
-	TEST_ASSERT(dq_near(control.factor(BF_CARDIAC_IRRITABILITY), 1), "a shallow debt shouldn't irritate the heart ([control.factor(BF_CARDIAC_IRRITABILITY)])")
+	TEST_ASSERT(dq_near(control.cardiac_irritability, 1), "a shallow debt shouldn't irritate the heart ([control.cardiac_irritability])")
 	hypoxic.add_oxygen_debt(95, "unit test")
-	TEST_ASSERT(hypoxic.factor(BF_CARDIAC_IRRITABILITY) > 1.5, "a deep debt should irritate the heart ([hypoxic.factor(BF_CARDIAC_IRRITABILITY)])")
+	TEST_ASSERT(hypoxic.cardiac_irritability > 1.5, "a deep debt should irritate the heart ([hypoxic.cardiac_irritability])")
 
 	var/datum/affliction/cardiac_arrhythmia/hot = hypoxic.induce_arrhythmia(CARDIAC_RHYTHM_TACHY)
 	var/datum/affliction/cardiac_arrhythmia/calm = control.induce_arrhythmia(CARDIAC_RHYTHM_TACHY)

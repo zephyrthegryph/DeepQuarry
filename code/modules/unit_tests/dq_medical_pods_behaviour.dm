@@ -28,7 +28,7 @@
 
 /// How deep the stasis holding `M` is (0: none, 1: life stopped).
 /proc/medpod_stasis(mob/living/M)
-	return M.factor(BF_STASIS)
+	return M.stasis
 
 /// The context menu row of `pod` whose label starts with `prefix`, picked by `actor`. FALSE when there is none.
 /proc/medpod_menu(mob/actor, atom/pod, prefix)

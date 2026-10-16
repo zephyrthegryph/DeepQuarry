@@ -77,7 +77,7 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	factors = alist(BF_SLOWDOWN = 0.5, BF_ACCURACY = -15, BF_MOTOR_CONTROL = 0.97)
+	factors = alist(STAT_SLOWDOWN = 0.5, STAT_ACCURACY = -15, STAT_MOTOR_CONTROL = 0.97)
 
 // --- Processor corruption --------------------------------------------------------
 /datum/affliction/synthetic/processor_corruption
@@ -113,7 +113,7 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	factors = alist(BF_SLOWDOWN = 1)
+	factors = alist(STAT_SLOWDOWN = 1)
 
 
 // --- Symptoms ------------------------------------------------------------------------

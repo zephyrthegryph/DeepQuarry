@@ -26,7 +26,7 @@
 	siemens_coefficient = 1
 	darksight = 10
 
-	factor_baseline = alist(BF_SLOWDOWN = -0.5, BF_INCOMING_PHYSICAL = 0.7, BF_INCOMING_THERMAL = 1.2)
+	factor_baseline = alist(STAT_SLOWDOWN = -0.5, STAT_INCOMING_PHYSICAL = 0.7, STAT_INCOMING_THERMAL = 1.2)
 	item_slowdown_mod = 0.5
 
 	// Naturally sturdy. (brute)

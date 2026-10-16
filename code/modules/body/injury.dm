@@ -51,7 +51,7 @@
 ///      the edge of a cut or pierce, landing it as blunt trauma.
 ///   2. Energy shields (/datum/definition_event/living_shield_injury: shields drain a cell for
 ///      what they absorb).
-///   3. Resistance factors: BF_INCOMING_ALL x BF_INCOMING(category) (modifiers,
+///   3. Resistance factors: the overall incoming stat x the category's (modifiers,
 ///      forms, species baselines, traits, reagents).
 ///   4. The body's species / part multiplier (immunities, prosthetics).
 /// INJURE_IGNORE_RESISTANCE skips stages 2-4. Every stage is recorded when
@@ -177,7 +177,7 @@
 /// resists it (frostbite, cellular, neural, digestion).
 /// THE armour lookup: armour points against `kind` (INJURY_* or ARMOR_BLAST)
 /// at `zone` (a BP_* zone, a limb or an organ; null = averaged over the body).
-/// Worn / natural armour (injury_armor_set()) plus the BF_ARMOR(kind) factor.
+/// Worn / natural armour (injury_armor_set()) plus the armour stat of that kind.
 /mob/living/proc/injury_armor(kind, zone = null)
 	return armor_factor(kind) + injury_armor_set(zone).value(injury_armor_key(kind))
 
@@ -188,11 +188,38 @@
 	RETURN_TYPE(/datum/armor)
 	return get_armor()
 
-/// Armour points the body factors add against `kind`.
+/// Armour points the body factors add against `kind`: the armour stat of that kind.
 /mob/living/proc/armor_factor(kind)
-	if(kind < 1 || kind > ARMOR_KIND_COUNT)
-		return 0
-	return factor(BF_ARMOR(kind))
+	switch(kind)
+		if(INJURY_BLUNT)
+			return armor_blunt
+		if(INJURY_CUT)
+			return armor_cut
+		if(INJURY_PIERCE)
+			return armor_pierce
+		if(INJURY_BURN)
+			return armor_burn
+		if(INJURY_FROSTBITE)
+			return armor_frostbite
+		if(INJURY_CORROSIVE)
+			return armor_corrosive
+		if(INJURY_ELECTRIC)
+			return armor_electric
+		if(INJURY_TOXIN)
+			return armor_toxin
+		if(INJURY_RADIATION)
+			return armor_radiation
+		if(INJURY_CELLULAR)
+			return armor_cellular
+		if(INJURY_NEURAL)
+			return armor_neural
+		if(INJURY_PAIN)
+			return armor_pain
+		if(INJURY_DIGESTION)
+			return armor_digestion
+		if(ARMOR_BLAST)
+			return armor_blast
+	return 0
 
 /// Effective armour percent (0..100) against `kind` at `zone` after
 /// `armor_pen` points of penetration. Deterministic: the value callers use to
@@ -224,7 +251,7 @@
 /mob/living/proc/mend(tag, amount, target = null)
 	if(!body || amount <= 0)
 		return 0
-	amount *= factor(BF_HEALING_RECEIVED)
+	amount *= src.healing_received
 	. = body.mend(tag, amount, target)
 	if(.)
 		flag_hud_update(HEALTH_HUD)
@@ -298,7 +325,7 @@
 
 /// Toughness including body factors.
 /mob/living/proc/get_endurance()
-	return (endurance + factor(BF_ENDURANCE_FLAT)) * factor(BF_ENDURANCE_MULT)
+	return (endurance + src.endurance_flat) * src.endurance_mult
 
 /// Injury load in a category (INJURY_CATEGORY_*).
 /mob/living/proc/injury_load(category)

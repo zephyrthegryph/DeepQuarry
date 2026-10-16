@@ -97,7 +97,7 @@
 	lepo.affect_blood(H, null, REM)
 	TEST_ASSERT_EQUAL(H.body_temperature(), BODYTEMP_NORMAL - 20, "leporazine has no direct write on top of its tag")
 
-/// C16: a fever is a raised set point (BF_TEMPERATURE), not a per-tick temperature write.
+/// C16: a fever is a raised set point (STAT_TEMPERATURE), not a per-tick temperature write.
 /datum/unit_test/dq_med7_c16_fever_is_setpoint
 
 /datum/unit_test/dq_med7_c16_fever_is_setpoint/Run()
@@ -119,7 +119,7 @@
 /datum/unit_test/dq_med7_b25_withdrawal_pulse_factor/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.apply_body_effect(/datum/body_effect/withdrawal_tachycardia, 10 SECONDS)
-	TEST_ASSERT_EQUAL(H.factor(BF_PULSE_SET), PULSE_2FAST, "withdrawal forces a racing pulse")
+	TEST_ASSERT_EQUAL(H.pulse_set, PULSE_2FAST, "withdrawal forces a racing pulse")
 
 /// D18a: the internal-bleed arrest reads mechanisms; myelamine is a strong hemostatic.
 /datum/unit_test/dq_med7_d18a_ib_reads_tags

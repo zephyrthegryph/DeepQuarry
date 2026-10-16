@@ -374,8 +374,8 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 					H.apply_body_effect(/datum/body_effect/bloodpump, 6 SECONDS)
 					// A ventilator and circulatory pump: floors under the
 					// breathing drive and cardiac output while attached.
-					H.body?.add_support(src, BF_RESP_DRIVE, 1, 6 SECONDS)
-					H.body?.add_support(src, BF_PUMP, 1, 6 SECONDS)
+					H.body?.add_support(src, STAT_RESP_DRIVE, 1, 6 SECONDS)
+					H.body?.add_support(src, STAT_PUMP, 1, 6 SECONDS)
 
 /// breather (a relation view: it reads null once the target is deleted).
 /obj/machinery/oxygen_pump/proc/breather() as /mob/living/carbon

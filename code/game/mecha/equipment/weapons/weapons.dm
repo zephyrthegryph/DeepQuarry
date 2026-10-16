@@ -96,8 +96,8 @@ MATERIAL_MIX(/obj/item/mecha_parts/mecha_equipment/weapon, list(MAT_STEEL = 6000
 	P.accuracy -= user.get_accuracy_penalty()
 
 	// Body factors make it harder or easier to hit things.
-	P.accuracy += user.factor(BF_ACCURACY)
-	var/dispersion_shift = user.factor(BF_DISPERSION)
+	P.accuracy += user.accuracy
+	var/dispersion_shift = user.dispersion
 	if(dispersion_shift)
 		P.dispersion = max(P.dispersion + dispersion_shift, 0)
 

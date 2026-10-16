@@ -37,7 +37,7 @@
 	/// Body var_changes — assoc list mirroring /datum/trait.var_changes. Applied to
 	/// the synthesized species datum. Leave null for Mind perks and override grant().
 	var/list/var_changes = null
-	/// Body factors (BF_* -> value) granted to the species, like a trait's.
+	/// Body factors (stat id -> value) granted to the species, like a trait's.
 	var/alist/factors
 
 	/// Optional per-mob state (a /datum/trait_state path, see species_state_add()) to add on grant / remove on revoke.

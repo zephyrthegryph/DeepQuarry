@@ -759,7 +759,7 @@ CAPABILITIES(/obj/item/slime_extract)
 	on_expired_text = span_notice("The shield of goo has faded, and you feel vulnerable to temperature again.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_INCOMING_THERMAL = 0.5, BF_HEAT_EXPOSURE = 0, BF_COLD_EXPOSURE = 0)
+	factors = alist(STAT_INCOMING_THERMAL = 0.5, STAT_HEAT_EXPOSURE = 0, STAT_COLD_EXPOSURE = 0)
 
 /datum/decl/chemical_reaction/instant/slime/dark_blue_ice
 	name = "Slime Ice"
@@ -1343,7 +1343,7 @@ CAPABILITIES(/obj/item/slime_extract)
 	on_expired_text = span_notice("The spores of goo have faded, and you feel your strength returning to what it was before.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_MELEE_DAMAGE = 2, BF_INCOMING_ALL = 0.75, BF_DISABLE_DURATION = 0.5, BF_ENDURANCE_FLAT = 50)
+	factors = alist(STAT_MELEE_DAMAGE = 2, STAT_INCOMING_ALL = 0.75, STAT_DISABLE_DURATION = 0.5, STAT_ENDURANCE_FLAT = 50)
 
 /datum/decl/chemical_reaction/instant/slime/ruby_pull
 	name = "Slime Pull"
@@ -1427,7 +1427,7 @@ CAPABILITIES(/obj/item/slime_extract)
 	on_expired_text = span_notice("The spores of goo have faded, and you feel your agility returning to what it was before.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_EVASION = 45, BF_ATTACK_SPEED = 0.5, BF_DISABLE_DURATION = 0.5)
+	factors = alist(STAT_EVASION = 45, STAT_ATTACK_SPEED = 0.5, STAT_DISABLE_DURATION = 0.5)
 
 /datum/decl/chemical_reaction/instant/slime/emerald_speed
 	name = "Slime Speed"
@@ -1450,7 +1450,7 @@ CAPABILITIES(/obj/item/slime_extract)
 	on_expired_text = span_notice("The spores of goo have faded, and you feel your speed returning to what it was before.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_SLOWDOWN = -3)
+	factors = alist(STAT_SLOWDOWN = -3)
 
 /datum/decl/chemical_reaction/instant/slime/emerald_hyperzine
 	name = "Slime Hyperzine"

@@ -175,7 +175,7 @@
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/toxin/warningtoxin
-	factors = alist(BF_SLOWDOWN = 5, BF_PENALTY_SCALE = 1.25)
+	factors = alist(STAT_SLOWDOWN = 5, STAT_PENALTY_SCALE = 1.25)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_WARNINGTOXIN
 	id = REAGENT_ID_WARNINGTOXIN
@@ -252,7 +252,7 @@
 	metabolism = REM * 0.5
 	// Blocks cellular respiration: the blood arrives saturated and the tissues
 	// can't use it (normal SpO2, climbing oxygen debt).
-	factors = alist(BF_TISSUE_UPTAKE = 0.1)
+	factors = alist(STAT_TISSUE_UPTAKE = 0.1)
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
@@ -300,7 +300,7 @@
 	affect_blood(M, alien, removed * 0.66)
 
 /datum/reagent/toxin/stimm	//Homemade Hyperzine
-	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
+	factors = alist(STAT_SLOWDOWN = -1, STAT_PENALTY_SCALE = 0.5)
 	name = REAGENT_STIMM
 	id = REAGENT_ID_STIMM
 	description = "A homemade stimulant with some serious side-effects."
@@ -396,7 +396,7 @@
 	mrate_static = TRUE
 	scannable = SCANNABLE_SECRETIVE
 	// The death-like state: breathing all but stops.
-	factors = alist(BF_RESP_DRIVE = 0.2)
+	factors = alist(STAT_RESP_DRIVE = 0.2)
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
@@ -735,7 +735,7 @@
 	M.apply_effect(10 * removed, IRRADIATE, 0)
 
 /datum/reagent/slimejelly
-	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 45))
+	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 45))
 	name = REAGENT_SLIMEJELLY
 	id = REAGENT_ID_SLIMEJELLY
 	scannable = SCANNABLE_ADVANCED
@@ -1089,7 +1089,7 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_NO
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 	// They shred the alveoli too.
-	factors = alist(BF_GAS_EXCHANGE = 0.4)
+	factors = alist(STAT_GAS_EXCHANGE = 0.4)
 
 /datum/reagent/shredding_nanites/affect_blood(mob/living/carbon/M, alien, removed)
 	M.injure(INJURY_CUT, 4 * removed, source = src)

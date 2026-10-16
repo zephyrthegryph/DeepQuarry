@@ -21,9 +21,9 @@
 			owner.injure(INJURY_TOXIN, 0.3 * ORGAN_LEGACY_BURST * cycles, flags = INJURE_SILENT)
 
 	// General organ damage from withdraw, kidneys do a lot of the work
-	if(prob(70) && owner.factor(BF_WITHDRAWAL))
-		apply_lesion_damage(owner.factor(BF_WITHDRAWAL) * 0.05 * ORGAN_LEGACY_BURST * cycles, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
-		owner.injure(INJURY_TOXIN, owner.factor(BF_WITHDRAWAL) * 0.3 * ORGAN_LEGACY_BURST * cycles, flags = INJURE_SILENT)
+	if(prob(70) && owner.withdrawal)
+		apply_lesion_damage(owner.withdrawal * 0.05 * ORGAN_LEGACY_BURST * cycles, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
+		owner.injure(INJURY_TOXIN, owner.withdrawal * 0.3 * ORGAN_LEGACY_BURST * cycles, flags = INJURE_SILENT)
 
 /obj/item/organ/internal/kidneys/handle_organ_proc_special(cycles)
 	. = ..()
@@ -72,4 +72,4 @@ CAPABILITIES(/obj/item/organ/internal/kidneys/grey/colormatch)
 		return FALSE
 	if(!owner)
 		return TRUE
-	return !is_bruised() && !owner.injury_load(INJURY_CATEGORY_TOXIC) && !owner.factor(BF_WITHDRAWAL)
+	return !is_bruised() && !owner.injury_load(INJURY_CATEGORY_TOXIC) && !owner.withdrawal

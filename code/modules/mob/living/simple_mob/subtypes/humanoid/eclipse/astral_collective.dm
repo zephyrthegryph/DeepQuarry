@@ -122,7 +122,7 @@
 
 /datum/body_effect/astralcollect_swift
 	stacks = MODIFIER_STACK_FORBID
-	factors = alist(BF_SLOWDOWN = -0.5, BF_EVASION = 20)
+	factors = alist(STAT_SLOWDOWN = -0.5, STAT_EVASION = 20)
 
 /datum/body_effect/astralcollect_regen
 	stacks = MODIFIER_STACK_FORBID
@@ -140,26 +140,26 @@
 
 /datum/body_effect/astralcollect_titan
 	stacks = MODIFIER_STACK_FORBID
-	factors = alist(BF_SLOWDOWN = 3, BF_ENDURANCE_MULT = 1.5)
+	factors = alist(STAT_SLOWDOWN = 3, STAT_ENDURANCE_MULT = 1.5)
 
 /datum/body_effect/astralcollect_mistake
 	stacks = MODIFIER_STACK_FORBID
 	mob_overlay_state = "poisoned"
-	factors = alist(BF_SLOWDOWN = 1, BF_INCOMING_ALL = 1.35, BF_ENDURANCE_MULT = 0.75)
+	factors = alist(STAT_SLOWDOWN = 1, STAT_INCOMING_ALL = 1.35, STAT_ENDURANCE_MULT = 0.75)
 
 /datum/body_effect/astralcollect_solar
 	stacks = MODIFIER_STACK_FORBID
 	mob_overlay_state = "red_electricity_constant"
-	factors = alist(BF_INCOMING_THERMAL = 0.7)
+	factors = alist(STAT_INCOMING_THERMAL = 0.7)
 
 /datum/body_effect/astralcollect_lunar
 	stacks = MODIFIER_STACK_FORBID
 	mob_overlay_state = "blue_electricity_constant"
-	factors = alist(BF_INCOMING_PHYSICAL = 0.7)
+	factors = alist(STAT_INCOMING_PHYSICAL = 0.7)
 
 /datum/body_effect/aura/astralcollect_church
 	mob_overlay_state = "redspace_aura"
-	factors = alist(BF_INCOMING_PHYSICAL = 0.6, BF_INCOMING_THERMAL = 0.6)
+	factors = alist(STAT_INCOMING_PHYSICAL = 0.6, STAT_INCOMING_THERMAL = 0.6)
 
 /mob/living/simple_mob/humanoid/astral_collective/purity
 	name = "Astral Collective Purity"

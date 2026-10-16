@@ -287,7 +287,7 @@
 /// TRUE when life_tick() has nothing to do: no afflictions, no factor effects, nothing
 /// stale. Plans that evaluate every tick (humanoids) never settle.
 /datum/body/proc/life_settled()
-	return !always_evaluate && !LAZYLEN(afflictions) && !factors && !(dirty & BODY_DIRTY_VITALS) && !factors_stale()
+	return !always_evaluate && !LAZYLEN(afflictions) && !factor_effects_due() && !(dirty & BODY_DIRTY_VITALS)
 
 /// The simple plan's life_tick() ignores factors: it works only on afflictions and vitals.
 /datum/body/simple/life_settled()

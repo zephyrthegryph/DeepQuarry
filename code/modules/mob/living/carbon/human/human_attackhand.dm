@@ -577,7 +577,7 @@ MSG_DEF_SELF(human/pressure_taken, span_warning("Someone is already applying pre
 	apply_body_effect(/datum/body_effect/bloodpump_corpse/cpr, 2 SECONDS)
 	// Compressions: a floor under cardiac output for a stopped heart (and,
 	// with a vasopressor aboard, a chance to coarsen asystole into VF).
-	body?.add_support(reviver, BF_PUMP, SUPPORT_CPR_PUMP, CPR_COMPRESSION_WINDOW)
+	body?.add_support(reviver, STAT_PUMP, SUPPORT_CPR_PUMP, CPR_COMPRESSION_WINDOW)
 	mend(TREAT_CHEST_COMPRESSION, 1)
 
 	// Toggle for 'realistic' CPR. Use this if you want a more grim CPR approach that mimicks the damage that CPR can do to someone. This means more extensive internal damage, almost guaranteed rib breakage, etc.
@@ -646,7 +646,7 @@ MSG_DEF_SELF(human/pressure_taken, span_warning("Someone is already applying pre
 			to_chat(reviver, span_warning("Your rescue breaths won't go in - [src]'s airway is blocked!"))
 			return
 		// Rescue breaths: a floor under an apneic patient's breathing drive.
-		body?.add_support(reviver, BF_RESP_DRIVE, SUPPORT_RESCUE_BREATH_DRIVE, CPR_RESCUE_BREATH_SECONDS SECONDS)
+		body?.add_support(reviver, STAT_RESP_DRIVE, SUPPORT_RESCUE_BREATH_DRIVE, CPR_RESCUE_BREATH_SECONDS SECONDS)
 
 /// Abdominal thrusts to dislodge an airway obstruction.
 /mob/living/carbon/human/proc/perform_heimlich(mob/living/carbon/human/rescuer, datum/affliction/airway_obstruction/choke)

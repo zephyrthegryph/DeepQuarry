@@ -16,7 +16,7 @@
 	var/body_type = /datum/body/simple
 	/// Toughness: how much injury load this mob can carry (simple plan), or
 	/// the reference scale for its vitality readouts (other plans). Tuned per
-	/// subtype. Body factors adjust it (BF_ENDURANCE_FLAT / BF_ENDURANCE_MULT).
+	/// subtype. Body factors adjust it (STAT_ENDURANCE_FLAT / STAT_ENDURANCE_MULT).
 	var/endurance = DEFAULT_ENDURANCE
 	/// What the mob's body is made of when it has no per-part biology (simple
 	/// mobs, bots). Humanoids resolve biology per organ instead.
@@ -41,15 +41,17 @@
 	return body ? body.biology_of(null) : biology
 
 /// Any reagent holder owned by this mob changed: the treatment snapshot and
-/// the chem-caused afflictions are stale. The factors are NOT dirtied here
-/// (C12): the snapshot rebuild dirties them only when a factor reagent crosses
-/// a dose band, appears or leaves (update_reagent_factor_bands()).
+/// the chem-caused afflictions are stale. The factors are refreshed only when a
+/// factor reagent crosses a dose band, appears or leaves (C12,
+/// update_reagent_factor_bands()), which the snapshot rebuild finds.
 /mob/living/on_reagent_change(changetype)
 	. = ..()
 	if(!body)
 		return
 	body.reagent_bands_pending = TRUE
 	body.invalidate(BODY_DIRTY_TREATMENT | BODY_DIRTY_CHEMS)
+	// The factors follow a reagent the moment its holder changes: the snapshot is rebuilt and the dose bands compared now.
+	body.settle_reagent_factors()
 
 /datum/body
 	/// The mob this body belongs to.
@@ -70,7 +72,7 @@
 	/// 0..1 fraction of wellness left.
 	var/vitality = 1
 	/// BODY_DIRTY_* domains awaiting recomputation.
-	var/dirty = BODY_DIRTY_ALL
+	var/dirty = BODY_DIRTY_ALL & ~BODY_DIRTY_FACTORS
 	/// BODY_PLAN_* flag for this plan (see /datum/affliction/var/body_plans).
 	var/plan_flag = BODY_PLAN_SIMPLE
 	/// Re-evaluate every tick even with no afflictions (humanoids: limb and
@@ -117,10 +119,13 @@
 		destroyed(A)
 	..()
 
-/// Mark `domains` (BODY_DIRTY_*) stale.
+/// Mark `domains` (BODY_DIRTY_*) stale. BODY_DIRTY_FACTORS is not a stored bit: it asks the body to re-read its factor sources now
+/// (refresh_factors()), which dirties the vitals and the physiology when a factor moved.
 /datum/body/proc/invalidate(domains)
-	// The physiology reads factors and organs.
-	if(domains & (BODY_DIRTY_FACTORS | BODY_DIRTY_ORGANS))
+	var/refresh = domains & BODY_DIRTY_FACTORS
+	domains &= ~BODY_DIRTY_FACTORS
+	// The physiology reads organs (and, through refresh_factors(), the factors).
+	if(domains & BODY_DIRTY_ORGANS)
 		domains |= BODY_DIRTY_PHYSIOLOGY
 	var/gained = domains & ~dirty
 	set_dirty(dirty | domains)
@@ -128,6 +133,8 @@
 	// still waiting to be consumed.
 	if(gained && owner)
 		PUBLISH_CHANGE(owner, MOB_KEY_HEALTH)
+	if(refresh)
+		refresh_factors()
 
 // --- Affliction bookkeeping -------------------------------------------------
 
@@ -419,9 +426,7 @@
 
 /// Called once per Life tick. Healthy bodies return immediately.
 /datum/body/proc/life_tick()
-	if(factors_stale())
-		recompute_factors()
-	if(factors)
+	if(factor_effects_due())
 		tick_factor_effects()
 	if(!always_evaluate && !LAZYLEN(afflictions) && !(dirty & BODY_DIRTY_VITALS))
 		return

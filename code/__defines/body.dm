@@ -49,7 +49,7 @@
 
 // --- Armour kinds -------------------------------------------------------------
 // Armour is asked for by the INJURY_* kind it resists (injury_armor(kind, zone)),
-// plus ARMOR_BLAST for explosive shockwaves. Body factors add BF_ARMOR(kind).
+// plus ARMOR_BLAST for explosive shockwaves. Body factors add the armour stat of the kind (armor_factor()).
 #define ARMOR_BLAST       (INJURY_KIND_COUNT + 1)
 #define ARMOR_KIND_COUNT  (INJURY_KIND_COUNT + 1)
 
@@ -166,7 +166,7 @@
 /// The treatment snapshot (treatment_levels()) must be rebuilt.
 #define BODY_DIRTY_TREATMENT (1<<4)
 /// The trigger domains dq_process_dirty_medical_conditions() consumes.
-/// Body factors (code/modules/body/factors.dm) must be recomputed.
+/// A source of the body factors changed (code/modules/body/factors.dm): body.invalidate() re-reads them at once. Never a stored bit.
 #define BODY_DIRTY_FACTORS   (1<<5)
 /// The physiology (ventilation, oxygenation, perfusion, delivery) must be
 /// recomputed: a factor, support, organ, breath or blood volume changed.
@@ -282,7 +282,7 @@
 /// Oxygen debt is logged each time it crosses a multiple of this.
 #define PHYSIOLOGY_DEBT_LOG_BAND 25
 /// Tissue hypoxia severity (oxygen debt) past which the heart grows irritable:
-/// BF_CARDIAC_IRRITABILITY rises from 1 here to PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX at 100.
+/// STAT_CARDIAC_IRRITABILITY rises from 1 here to PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX at 100.
 #define PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD 40
 #define PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX 4
 /// Post-revival grace: how long after circulation is restored (defibrillation,

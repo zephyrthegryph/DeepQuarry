@@ -1,0 +1,29 @@
+/datum/trait/negative/brute_weak_plus|1|1 => incoming_physical=1.5
+/datum/trait/negative/brute_weak|1|1 => incoming_physical=1.2
+/datum/trait/negative/burn_weak_plus|1|1 => incoming_thermal=1.5
+/datum/trait/negative/burn_weak|1|1 => incoming_thermal=1.2
+/datum/trait/negative/extreme_slowdown|1|1 => slowdown=4
+/datum/trait/negative/minor_brute_weak|1|1 => incoming_physical=1.15
+/datum/trait/negative/minor_burn_weak|1|1 => incoming_thermal=1.15
+/datum/trait/negative/pain_intolerance_advanced|1|1 => incoming_pain=1.5
+/datum/trait/negative/pain_intolerance_basic|1|1 => incoming_pain=1.2
+/datum/trait/negative/speed_slow_plus|1|1 => slowdown=1
+/datum/trait/negative/speed_slow|1|1 => slowdown=0.5
+/datum/trait/neutral/metabolism_apex|1|1 => metabolism_mult=1.4
+/datum/trait/neutral/metabolism_down|1|1 => metabolism_mult=0.80000001
+/datum/trait/neutral/metabolism_up|1|1 => metabolism_mult=1.2
+/datum/trait/neutral/singularity_metabolism|1|1 => metabolism_mult=2
+/datum/trait/neutral/xenochimera_YR3|1|1 => incoming_thermal=0.69999999 slowdown=1
+/datum/trait/neutral/xenomorph_hunter|1|1 => slowdown=-0.5
+/datum/trait/neutral/xenomorph_praetorian|1|1 => incoming_physical=0.80000001 slowdown=0.1
+/datum/trait/positive/brute_resist_plus|1|1 => incoming_physical=0.60000002
+/datum/trait/positive/brute_resist|1|1 => incoming_physical=0.80000001
+/datum/trait/positive/burn_resist_plus|1|1 => incoming_thermal=0.60000002
+/datum/trait/positive/burn_resist|1|1 => incoming_thermal=0.80000001
+/datum/trait/positive/minor_brute_resist|1|1 => incoming_physical=0.89999998
+/datum/trait/positive/minor_burn_resist|1|1 => incoming_thermal=0.89999998
+/datum/trait/positive/pain_tolerance_advanced|1|1 => incoming_pain=0.60000002
+/datum/trait/positive/pain_tolerance_minor|1|1 => incoming_pain=0.89999998
+/datum/trait/positive/pain_tolerance|1|1 => incoming_pain=0.80000001
+/datum/trait/positive/speed_fast|1|1 => slowdown=-0.5
+

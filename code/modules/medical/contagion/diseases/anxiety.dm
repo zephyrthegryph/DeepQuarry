@@ -5,7 +5,7 @@
 		/datum/affliction_symptom/nausea = 50,
 		/datum/affliction_symptom/palpitations = 40
 	)
-	factors = alist(BF_HEART_RATE = 25)
+	factors = alist(STAT_HEART_RATE = 25)
 	name = "Severe Anxiety"
 	medical_name = "Lepidopteric Hyperemesis"
 	form = "Infection"

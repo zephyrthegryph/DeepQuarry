@@ -158,7 +158,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(!blinded)
 		flash_eyes()
 
-	var/explosion_shift = factor(BF_EXPLOSION_SHIFT)
+	var/explosion_shift = src.explosion_shift
 	if(explosion_shift)
 		severity = CLAMP(severity + explosion_shift, 1, 4)
 
@@ -1469,6 +1469,8 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		species.create_organs(src)
 
 	species.apply_components(src)
+	// The body exists now (the first species is set before the body does): its factor sources are read.
+	invalidate_factors()
 
 	set_endurance(species.total_health)
 	set_hunger_rate(src, species.hunger_factor)
@@ -1941,13 +1943,13 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		return 0
 	if(loc?.numbs_pain_of(src))
 		return FALSE
-	if(factor(BF_PAIN_IMMUNITY))
+	if(src.pain_immunity)
 		return 0
 	if(check_organ)
 		if(!istype(check_organ))
 			return 0
 		return check_organ.organ_can_feel_pain()
-	// NO_PAIN reaches here as BF_PAIN_IMMUNITY (species grant, humanoid factors).
+	// NO_PAIN reaches here as STAT_PAIN_IMMUNITY (species grant, humanoid factors).
 	return !(species?.flags & NO_PAIN)
 
 /mob/living/carbon/human/is_sentient()

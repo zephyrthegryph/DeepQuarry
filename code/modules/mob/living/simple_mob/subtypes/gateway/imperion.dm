@@ -466,7 +466,7 @@ TYPE_TABLE(/obj/item/grenade/shooter/laserpellet, shooter_grenade_projectiles, l
 	on_expired_text = span_notice("The blaze of rage inside you has ran out.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_DISABLE_DURATION = 0)
+	factors = alist(STAT_DISABLE_DURATION = 0)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/imperion)
 	body_effect(/datum/body_effect/bossbuff)

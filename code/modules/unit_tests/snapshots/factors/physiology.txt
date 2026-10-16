@@ -1,0 +1,24 @@
+arrhythmia@1 => vent=1 oxy=100 perf=0 debt=2.04 hr=0 bp=0/0 rr=14
+arrhythmia@10 => vent=1 oxy=100 perf=0 debt=20.4 hr=0 bp=0/0 rr=19
+arrhythmia@30 => vent=1 oxy=100 perf=0 debt=61.2 hr=0 bp=0/0 rr=29
+blood_loss@1 => vent=1 oxy=100 perf=0.1818 debt=1.4218 hr=123 bp=51/34 rr=14
+blood_loss@10 => vent=1 oxy=100 perf=0.1818 debt=14.2182 hr=130 bp=51/34 rr=17
+blood_loss@30 => vent=1 oxy=100 perf=0.1818 debt=42.6545 hr=144 bp=51/34 rr=24
+bvm@1 => vent=0 oxy=0 perf=1 debt=2.04 hr=86 bp=120/80 rr=0
+bvm@5 => vent=0 oxy=0 perf=1 debt=10.2 hr=90 bp=120/80 rr=0
+choking@1 => vent=0 oxy=0 perf=1 debt=2.04 hr=85 bp=120/80 rr=0
+choking@10 => vent=0 oxy=0 perf=1 debt=20.4 hr=94 bp=120/80 rr=0
+choking@30 => vent=0 oxy=0 perf=1 debt=61.2 hr=114 bp=120/80 rr=0
+cyanide@1 => vent=1 oxy=100 perf=1 debt=1.7 hr=75 bp=120/80 rr=14
+cyanide@10 => vent=1 oxy=100 perf=1 debt=17 hr=83 bp=120/80 rr=18
+cyanide@30 => vent=1 oxy=100 perf=1 debt=51 hr=100 bp=120/80 rr=26
+deep_debt@1 => vent=1 oxy=100 perf=1 debt=78 hr=105 bp=120/80 rr=29
+deep_debt@3 => vent=1 oxy=100 perf=1 debt=74 hr=105 bp=120/80 rr=29
+dexalin_debt@1 => vent=1 oxy=100 perf=1 debt=35.5 hr=92 bp=120/80 rr=22
+dexalin_debt@5 => vent=1 oxy=100 perf=1 debt=17.5 hr=83 bp=120/80 rr=18
+healthy@1 => vent=1 oxy=100 perf=1 debt=0 hr=75 bp=120/80 rr=14
+healthy@5 => vent=1 oxy=100 perf=1 debt=0 hr=75 bp=120/80 rr=14
+respiratory_arrest@1 => vent=0 oxy=0 perf=1 debt=2.04 hr=86 bp=120/80 rr=0
+respiratory_arrest@10 => vent=0 oxy=0 perf=1 debt=20.4 hr=95 bp=120/80 rr=0
+respiratory_arrest@30 => vent=0 oxy=0 perf=1 debt=61.2 hr=115 bp=120/80 rr=0
+

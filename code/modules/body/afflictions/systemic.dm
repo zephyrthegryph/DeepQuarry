@@ -28,6 +28,7 @@
 // set by the physiology every time the debt moves. It costs consciousness
 // (unconscious at 50); the physiology grows the brain lesions.
 /datum/affliction/tissue_hypoxia
+	continuous_factors = TRUE // the irritability follows the debt: hold_factors() reads severity past the threshold
 	restoration_rate = 1
 	consciousness_at_max = 200
 
@@ -43,14 +44,14 @@
 
 /// A starved heart is an irritable one: past
 /// PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD the debt raises
-/// BF_CARDIAC_IRRITABILITY, which speeds every rhythm's deterioration
+/// STAT_CARDIAC_IRRITABILITY, which speeds every rhythm's deterioration
 /// (cardiac_arrhythmia reads it). No special case in the rhythm itself.
-/datum/affliction/tissue_hypoxia/accumulate_factors(list/acc)
-	acc = ..()
+/datum/affliction/tissue_hypoxia/hold_factors(mob/living/L)
+	..()
 	if(severity <= PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD)
-		return acc
+		return
 	var/depth = clamp((severity - PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD) / (AFFLICTION_SEVERITY_TERMINAL - PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD), 0, 1)
-	return body_factor_accumulate(acc, alist(BF_CARDIAC_IRRITABILITY = 1 + depth * (PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX - 1)), 1)
+	hold_table(L, src, alist(STAT_CARDIAC_IRRITABILITY = 1 + depth * (PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX - 1)), 1, 1, "irritability")
 
 // --- Toxic poisoning (INJURY_TOXIN) ----------------------------------------------------
 /datum/affliction/toxic_poisoning

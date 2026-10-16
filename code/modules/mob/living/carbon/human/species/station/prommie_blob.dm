@@ -11,7 +11,7 @@ TYPE_TABLE(/datum/forms/promethean, get_form_types, list(/datum/form/human, /dat
 	form_flag = FORM_FLAG_PROMETHEAN_BLOB
 	ticks = TRUE
 	draws_body = FALSE
-	factors = alist(BF_INCOMING_PHYSICAL = 0.75, BF_INCOMING_THERMAL = 2)
+	factors = alist(STAT_INCOMING_PHYSICAL = 0.75, STAT_INCOMING_THERMAL = 2)
 	enter_message = "squishes into their true form!"
 	enter_sound = SFX_EFFECTS_SLIME_SQUISH
 	/// Spread out into an adult-sized puddle.

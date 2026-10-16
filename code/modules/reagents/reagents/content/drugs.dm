@@ -241,7 +241,7 @@
 		current_addiction  -= 1
 	// withdrawl mechanics
 	if(prob(2))
-		if(!M.factor(BF_STABILIZATION)) //Without stabilization effects
+		if(!M.stabilization) //Without stabilization effects
 			if(current_addiction < 90 && prob(10))
 				to_chat(M, span_warning("[pick("You feel miserable.","You feel nauseous.","You get a raging headache.")]"))
 				M.injure(INJURY_PAIN, 5, source = src)

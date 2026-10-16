@@ -85,7 +85,7 @@
 	var/obj/structure/closet/body_bag/cryobag/bag = allocate(/obj/structure/closet/body_bag/cryobag)
 	A.set_severity(10)
 	H.forceMove(bag)
-	TEST_ASSERT(dq_near(H.factor(BF_STASIS), 0.9), "a stasis bag should hold BF_STASIS at 0.9, got [H.factor(BF_STASIS)]")
+	TEST_ASSERT(dq_near(H.stasis, 0.9), "a stasis bag should hold STAT_STASIS at 0.9, got [H.stasis]")
 	var/paused = dq_stab_run_cycles(H, 10)
 	TEST_ASSERT(paused >= 8, "deep stasis should pause about 9 of 10 cycles, paused [paused]")
 	var/stasis_gain = A.severity - 10
@@ -95,7 +95,7 @@
 	TEST_ASSERT(paused >= 85 && paused <= 95, "deep stasis should pause about 90 of 100 cycles, paused [paused]")
 
 	H.forceMove(outside)
-	TEST_ASSERT_EQUAL(H.factor(BF_STASIS), 0, "leaving the stasis bag should end stasis")
+	TEST_ASSERT_EQUAL(H.stasis, 0, "leaving the stasis bag should end stasis")
 	TEST_ASSERT(!length(H.stasis_sources), "leaving the stasis bag should release its stasis")
 	A.set_severity(10)
 	TEST_ASSERT_EQUAL(dq_stab_run_cycles(H, 10), 0, "no cycle should pause after leaving stasis")
@@ -112,11 +112,11 @@
 	var/obj/item/source_b = allocate(/obj/item/tourniquet)
 	H.set_stasis(/datum/body_effect/stasis/light, source_a)
 	H.set_stasis(/datum/body_effect/stasis/total, source_b)
-	TEST_ASSERT_EQUAL(H.factor(BF_STASIS), 1, "the deepest stasis source should win")
+	TEST_ASSERT_EQUAL(H.stasis, 1, "the deepest stasis source should win")
 	H.set_stasis(null, source_b)
-	TEST_ASSERT(dq_near(H.factor(BF_STASIS), 0.5), "releasing one source should leave the other's stasis")
+	TEST_ASSERT(dq_near(H.stasis, 0.5), "releasing one source should leave the other's stasis")
 	H.set_stasis(null, source_a)
-	TEST_ASSERT_EQUAL(H.factor(BF_STASIS), 0, "releasing every source should end stasis")
+	TEST_ASSERT_EQUAL(H.stasis, 0, "releasing every source should end stasis")
 
 
 /// Hemostatic gauze runs down the bleed on the wound it's packed into.
@@ -144,18 +144,18 @@
 /datum/unit_test/dq_stab_splint_reduces_fracture_slowdown/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/leg = H.get_organ(BP_L_LEG)
-	var/baseline_slowdown = H.factor(BF_SLOWDOWN)
+	var/baseline_slowdown = H.slowdown
 	var/datum/affliction/untreated_fracture/F = H.body.afflict(/datum/affliction/untreated_fracture, leg)
 	TEST_ASSERT_NOTNULL(F, "the fracture could not be afflicted")
-	var/unset_slowdown = H.factor(BF_SLOWDOWN)
-	var/unset_pain = H.factor(BF_PAIN)
+	var/unset_slowdown = H.slowdown
+	var/unset_pain = H.pain
 	TEST_ASSERT(unset_slowdown > baseline_slowdown, "an unset broken leg should slow the patient ([baseline_slowdown] -> [unset_slowdown])")
 
 	var/obj/item/stack/medical/splint/S = allocate(/obj/item/stack/medical/splint)
 	TEST_ASSERT(leg.apply_splint(S), "the splint should go on")
-	var/splinted_slowdown = H.factor(BF_SLOWDOWN)
+	var/splinted_slowdown = H.slowdown
 	TEST_ASSERT(splinted_slowdown < unset_slowdown, "a splint should reduce fracture slowdown ([unset_slowdown] -> [splinted_slowdown])")
-	TEST_ASSERT(H.factor(BF_PAIN) < unset_pain, "a splint should reduce fracture pain")
+	TEST_ASSERT(H.pain < unset_pain, "a splint should reduce fracture pain")
 
 	TEST_ASSERT(leg.remove_splint(), "the splint should come off")
-	TEST_ASSERT(dq_near(H.factor(BF_SLOWDOWN), unset_slowdown), "removing the splint should restore the fracture's slowdown")
+	TEST_ASSERT(dq_near(H.slowdown, unset_slowdown), "removing the splint should restore the fracture's slowdown")

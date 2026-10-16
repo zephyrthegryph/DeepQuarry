@@ -31,12 +31,12 @@
 		list(list(
 			/datum/affliction_symptom/labored_breathing = 80,
 			/datum/affliction_symptom/confusion         = 40,
-		), 1, 2, list("factors" = alist(BF_O2_SAT = -8))),
+		), 1, 2, list("factors" = alist(STAT_O2_SAT = -8))),
 		list(list(
 			/datum/affliction_symptom/labored_breathing = 95,
 			/datum/affliction_symptom/cyanosis          = 70,
 			/datum/affliction_symptom/confusion         = 60,
-		), 2, 3, list("factors" = alist(BF_O2_SAT = -15, BF_RESP_RATE = -4), "always_spawns" = list(/datum/affliction/respiratory_failure))),
+		), 2, 3, list("factors" = alist(STAT_O2_SAT = -15, STAT_RESP_RATE = -4), "always_spawns" = list(/datum/affliction/respiratory_failure))),
 	)
 
 /datum/affliction/overdose/dexalinp
@@ -62,17 +62,17 @@
 			/datum/affliction_symptom/labored_breathing = 85,
 			/datum/affliction_symptom/confusion         = 60,
 			/datum/affliction_symptom/unsteady_gait     = 50,
-		), 2, 3, list("factors" = alist(BF_O2_SAT = -10))),
+		), 2, 3, list("factors" = alist(STAT_O2_SAT = -10))),
 		list(list(
 			/datum/affliction_symptom/labored_breathing = 100,
 			/datum/affliction_symptom/cyanosis          = 80,
 			/datum/affliction_symptom/confusion         = 80,
 			/datum/affliction_symptom/unsteady_gait     = 70,
-		), 3, 4, list("factors" = alist(BF_O2_SAT = -20, BF_RESP_RATE = -5), "always_spawns" = list(/datum/affliction/respiratory_failure))),
+		), 3, 4, list("factors" = alist(STAT_O2_SAT = -20, STAT_RESP_RATE = -5), "always_spawns" = list(/datum/affliction/respiratory_failure))),
 	)
 
 /datum/affliction/overdose/inaprovaline
-	factors = alist(BF_HEART_RATE = -15, BF_BP_SYSTOLIC = -20)
+	factors = alist(STAT_HEART_RATE = -15, STAT_BP_SYSTOLIC = -20)
 	name = "inaprovaline overdose"
 	clinical_description = "Excess inaprovaline depresses cardiac output. Hypotension, bradycardia, and reduced respiratory drive."
 	symptom_pool = list(
@@ -90,22 +90,22 @@
 		list(list(
 			/datum/affliction_symptom/drowsy = 60,
 			/datum/affliction_symptom/pallor = 50,
-		), 1, 2, list("factors" = alist(BF_HEART_RATE = -5, BF_BP_SYSTOLIC = -8))),
+		), 1, 2, list("factors" = alist(STAT_HEART_RATE = -5, STAT_BP_SYSTOLIC = -8))),
 		list(list(
 			/datum/affliction_symptom/pallor       = 75,
 			/datum/affliction_symptom/short_breath = 60,
 			/datum/affliction_symptom/drowsy       = 60,
-		), 2, 3, list("factors" = alist(BF_HEART_RATE = -12, BF_BP_SYSTOLIC = -15))),
+		), 2, 3, list("factors" = alist(STAT_HEART_RATE = -12, STAT_BP_SYSTOLIC = -15))),
 		list(list(
 			/datum/affliction_symptom/pallor            = 90,
 			/datum/affliction_symptom/labored_breathing = 80,
 			/datum/affliction_symptom/drowsy            = 80,
 			/datum/affliction_symptom/cold_mottled_skin = 50,
-		), 3, 4, list("factors" = alist(BF_HEART_RATE = -22, BF_BP_SYSTOLIC = -28, BF_RESP_RATE = -3), "always_spawns" = list(/datum/affliction/hypovolemic_shock))),
+		), 3, 4, list("factors" = alist(STAT_HEART_RATE = -22, STAT_BP_SYSTOLIC = -28, STAT_RESP_RATE = -3), "always_spawns" = list(/datum/affliction/hypovolemic_shock))),
 	)
 
 /datum/affliction/overdose/norepinephrine
-	factors = alist(BF_HEART_RATE = 30, BF_BP_SYSTOLIC = 35, BF_BP_DIASTOLIC = 20)
+	factors = alist(STAT_HEART_RATE = 30, STAT_BP_SYSTOLIC = 35, STAT_BP_DIASTOLIC = 20)
 	name = "norepinephrine overdose"
 	clinical_description = "Too much vasopressor clamps the vessels down hard: severe hypertension, a racing heart, cold pale extremities and a pounding headache. Stop the infusion; it clears as the drug metabolises."
 	symptom_pool = list(
@@ -124,18 +124,18 @@
 		list(list(
 			/datum/affliction_symptom/palpitations = 70,
 			/datum/affliction_symptom/headache     = 60,
-		), 1, 2, list("factors" = alist(BF_HEART_RATE = 10, BF_BP_SYSTOLIC = 12))),
+		), 1, 2, list("factors" = alist(STAT_HEART_RATE = 10, STAT_BP_SYSTOLIC = 12))),
 		list(list(
 			/datum/affliction_symptom/palpitations = 80,
 			/datum/affliction_symptom/headache     = 70,
 			/datum/affliction_symptom/pallor       = 50,
-		), 2, 3, list("factors" = alist(BF_HEART_RATE = 22, BF_BP_SYSTOLIC = 25, BF_BP_DIASTOLIC = 12))),
+		), 2, 3, list("factors" = alist(STAT_HEART_RATE = 22, STAT_BP_SYSTOLIC = 25, STAT_BP_DIASTOLIC = 12))),
 		list(list(
 			/datum/affliction_symptom/palpitations      = 90,
 			/datum/affliction_symptom/headache          = 80,
 			/datum/affliction_symptom/pallor            = 70,
 			/datum/affliction_symptom/cold_mottled_skin = 60,
-		), 3, 4, list("factors" = alist(BF_HEART_RATE = 35, BF_BP_SYSTOLIC = 40, BF_BP_DIASTOLIC = 22))),
+		), 3, 4, list("factors" = alist(STAT_HEART_RATE = 35, STAT_BP_SYSTOLIC = 40, STAT_BP_DIASTOLIC = 22))),
 	)
 
 /datum/affliction/overdose/leporazine

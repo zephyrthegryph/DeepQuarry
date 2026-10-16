@@ -15,7 +15,7 @@
 	stacks = MODIFIER_STACK_EXTEND
 	on_created_text = span_notice("We feel unstoppable!")
 	on_expired_text = span_warning("We feel our newfound energy fade...")
-	factors = alist(BF_DISABLE_DURATION = 0)
+	factors = alist(STAT_DISABLE_DURATION = 0)
 
 //Recover from stuns.
 /mob/proc/changeling_epinephrine_overdose()
@@ -45,7 +45,7 @@
 	return 1
 
 /datum/reagent/epinephrine
-	factors = alist(BF_ANALGESIA = 60, BF_SLOWDOWN = -3, BF_PENALTY_SCALE = 0.5)
+	factors = alist(STAT_ANALGESIA = 60, STAT_SLOWDOWN = -3, STAT_PENALTY_SCALE = 0.5)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_EPINEPHRINE
 	id = REAGENT_ID_EPINEPHRINE

@@ -272,7 +272,7 @@
 		germ_level = 0
 		return 0
 
-	var/antibiotics = owner ? owner.factor(BF_ANTIMICROBIAL) : 0
+	var/antibiotics = owner ? owner.antimicrobial : 0
 
 	// the germ_level toxin-damage path is replaced by the
 	// wound_infection condition (code/modules/medical/...).
@@ -372,7 +372,7 @@
 //Germs
 /obj/item/organ/proc/handle_antibiotics(cycles)
 	if(istype(owner))
-		var/antibiotics = owner.factor(BF_ANTIMICROBIAL)
+		var/antibiotics = owner.antimicrobial
 
 		if (!germ_level || antibiotics < ANTIBIO_NORM)
 			return

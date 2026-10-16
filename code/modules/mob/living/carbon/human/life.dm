@@ -64,14 +64,14 @@
 		set_hud_updateflag((1 << TOTAL_HUDS) - 1)
 		PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
 
-/// Deep stasis (BF_STASIS above STASIS_SLEEP_THRESHOLD) puts the body to sleep.
+/// Deep stasis (STAT_STASIS above STASIS_SLEEP_THRESHOLD) puts the body to sleep.
 /mob/living/carbon/human/proc/life_stasis_sleep(datum/seq_frame/life/F)
-	if(src.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD)
+	if(src.stasis > STASIS_SLEEP_THRESHOLD)
 		src.status_at_least(STAT_SLEEPING, 20)
 
 /// Factor changes (body invalidate, MOB_KEY_HEALTH) wake it.
 /mob/living/carbon/human/proc/life_stasis_sleep_due()
-	return src.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD
+	return src.stasis > STASIS_SLEEP_THRESHOLD
 
 /// Falling (prevents people from floating).
 /mob/living/carbon/human/proc/life_fall(datum/seq_frame/life/F)
@@ -92,11 +92,11 @@
 	var/datum/body/B = src.body
 	if(!B)
 		return FALSE
-	if((B.dirty & BODY_DIRTY_CONDITIONS) || B.factors_stale())
+	if(B.dirty & BODY_DIRTY_CONDITIONS)
 		return TRUE
 	if(LAZYLEN(src.side_effects))
 		return TRUE
-	if(B.factors?[BF_ALLERGY] > 0)
+	if(src.allergy > 0)
 		return TRUE
 	// A metric past its trigger: the affliction's severity follows the value continuously, so it is re-read every cycle.
 	if(src.radiation || src.accumulated_rads >= 100)
@@ -114,7 +114,7 @@
 
 /mob/living/carbon/human/proc/life_medical(datum/seq_frame/life/F)
 	if(src.has_allergies())
-		src.handle_allergic_reaction(src.factor(BF_ALLERGY))
+		src.handle_allergic_reaction(src.allergy)
 
 	life_medical_side_effects()
 	src.dq_check_ischemic_damage()
@@ -1038,7 +1038,7 @@
 	var/obj/item/helmet = src.get_equipped_item(SLOT_ID_HEAD)
 	if(protection_of(suit).min_pressure && protection_of(helmet).min_pressure)
 		exposure *= max(protection_of(suit).min_pressure, protection_of(helmet).min_pressure) / ONE_ATMOSPHERE
-	src.body?.add_restriction(src, BF_GAS_EXCHANGE, clamp(1 - exposure, 0.1, 1), 4 SECONDS)
+	src.body?.add_restriction(src, STAT_GAS_EXCHANGE, clamp(1 - exposure, 0.1, 1), 4 SECONDS)
 
 /// MED-6: at its set point, with no heat source of its own, the body has nothing to regulate.
 /mob/living/carbon/human/proc/life_thermoregulation_due()
@@ -1053,10 +1053,10 @@
 	return !stat_value(src, STAT_ON_FIRE) && abs(src.thermal_setpoint() - src.body_temperature()) >= 0.5
 
 /// C16 / P2-S10: the temperature this body regulates toward — the species norm
-/// plus BF_TEMPERATURE (fevers and chills are factors on afflictions, not
+/// plus STAT_TEMPERATURE (fevers and chills are factors on afflictions, not
 /// per-tick temperature writes).
 /mob/living/carbon/human/proc/thermal_setpoint()
-	return species.body_temperature + factor(BF_TEMPERATURE)
+	return species.body_temperature + src.temperature
 
 /// Body temperature lives in Rust and is changed by the environment, reagents and afflictions: the body heat watch
 /// wakes this step when it leaves the comfort band around the set point (MOB_KEY_BODY_HEAT). This is the fallback.
@@ -1127,10 +1127,10 @@
 	return body ? body.worn_cold_flags(temperature) : 0
 
 /// 0..1 protection from air at `temperature` (1 = immune): the surface share
-/// worn layers seal, then BF_HEAT_EXPOSURE, which stacks multiplicatively.
+/// worn layers seal, then STAT_HEAT_EXPOSURE, which stacks multiplicatively.
 /mob/living/carbon/human/get_heat_protection(temperature)
 	var/exposed = 1 - (body ? body.worn_thermal_protection(temperature, FALSE) : 0)
-	return min(1 - exposed * factor(BF_HEAT_EXPOSURE), 1)
+	return min(1 - exposed * src.heat_exposure, 1)
 
 /mob/living/carbon/human/get_cold_protection(temperature)
 	if(has_mutation(COLD_RESISTANCE))
@@ -1138,7 +1138,7 @@
 	// Space is 2.7 K; low-moles tiles occasionally report less, and cold-rated suits protect to 2 K.
 	temperature = max(temperature, 2.7)
 	var/exposed = 1 - (body ? body.worn_thermal_protection(temperature, TRUE) : 0)
-	return min(1 - exposed * factor(BF_COLD_EXPOSURE), 1)
+	return min(1 - exposed * src.cold_exposure, 1)
 
 /mob/living/carbon/human/life_chemicals(datum/seq_frame/life/F)
 	if(src.reagents)
@@ -1167,9 +1167,9 @@
 		var/nutrition_reduction = src.species.hunger_factor * hunger_cycles
 		// Metabolism above or below the species' own (hunger_factor already
 		// covers the species) raises or lowers nutrition cost.
-		var/species_metabolism = src.species.baseline_factor(BF_METABOLISM)
+		var/species_metabolism = src.species.baseline_factor(STAT_METABOLISM_MULT)
 		if(species_metabolism > 0)
-			nutrition_reduction *= src.factor(BF_METABOLISM) / species_metabolism
+			nutrition_reduction *= src.metabolism_mult / species_metabolism
 		var/datum/trait_state/nutrition_size_change/comp = src.get_trait_state(/datum/trait_state/nutrition_size_change)
 		if(comp)
 			nutrition_reduction *= comp.get_nutrition_multiplier()
@@ -1185,10 +1185,10 @@
 			belch_prob = ((nutrition_of(src)-500)/3575)*5 //Scale belch prob with fullness if not already at max. If editing make sure the multiplier matches the max prob above.
 		if(prob(belch_prob))
 			src.emote("belch")
-	if(src.factor(BF_DARKSIGHT) && src.chemical_darksight == 0)
+	if(src.darksight && src.chemical_darksight == 0)
 		src.recalculate_vis()
 		src.chemical_darksight = 1
-	if(!src.factor(BF_DARKSIGHT) && src.chemical_darksight == 1)
+	if(!src.darksight && src.chemical_darksight == 1)
 		src.recalculate_vis()
 		src.chemical_darksight = 0
 
@@ -1207,7 +1207,7 @@
 /mob/living/carbon/human/life_chemicals_due()
 	if(src.touching?.total_volume || src.ingested?.total_volume || src.bloodstr?.total_volume)
 		return TRUE
-	if(!src.factor(BF_DARKSIGHT) != !src.chemical_darksight)
+	if(!src.darksight != !src.chemical_darksight)
 		return TRUE
 	if((src.vore_prefs.noisy && nutrition_of(src) < 250) || (src.vore_prefs.noisy_full && nutrition_of(src) > 500))
 		return TRUE
@@ -1613,7 +1613,7 @@
 	if(src.is_critical()) //Crit
 		return
 
-	if(src.factor(BF_ANALGESIA) > 100)
+	if(src.analgesia > 100)
 		hud_used?.healths?.icon_state = "health_numb"
 		src.health_doll_key = null
 		return
@@ -1724,7 +1724,7 @@
 			if(!src.has_status(STAT_DRUGGED))
 				src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
-		src.sight |= src.factor(BF_SIGHT_FLAGS)
+		src.sight |= src.sight_flags
 
 		if(!glasses_processed && src.nif)
 			var/datum/nifsoft/vision_soft
@@ -1944,9 +1944,9 @@
 
 	var/brain_modifier = 1
 
-	var/modifier_shift = round(src.factor(BF_PULSE_SHIFT))
-	// BF_PULSE_SET's baseline is -1: nothing forces the pulse.
-	var/modifier_set = src.factor(BF_PULSE_SET)
+	var/modifier_shift = round(src.pulse_shift)
+	// STAT_PULSE_SET's baseline is -1: nothing forces the pulse.
+	var/modifier_set = src.pulse_set
 	modifier_set = modifier_set < 0 ? null : round(modifier_set)
 
 	if(!src.organ_in(O_HEART))

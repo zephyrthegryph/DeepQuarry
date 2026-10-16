@@ -14,7 +14,7 @@
 	on_expired_text = span_notice("You feel.. less alive.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_PULSE_SET = PULSE_NORM)
+	factors = alist(STAT_PULSE_SET = PULSE_NORM)
 
 /datum/body_effect/bloodpump/on_check(mob/living/L)
 	if(L.stat == DEAD)
@@ -30,7 +30,7 @@
 	on_expired_text = span_notice("You feel.. less alive.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_PULSE_SET = PULSE_SLOW)
+	factors = alist(STAT_PULSE_SET = PULSE_SLOW)
 
 //The meat and
 /datum/body_effect/bloodpump_corpse/proc/process_blood(mob/living/L)
@@ -56,7 +56,7 @@
 /datum/body_effect/bloodpump_corpse/cpr
 	desc = "Your blood flows thanks to the wonderful power of CPR."
 	// No pulse. You're acting as their pulse.
-	factors = alist(BF_PULSE_SET = PULSE_NONE)
+	factors = alist(STAT_PULSE_SET = PULSE_NONE)
 
 /datum/body_effect/bloodpump_corpse/cpr/on_tick(mob/living/L)
 	var/randomization = rand(4,7) //CPR isn't perfect. You get some randomization in there.
@@ -72,7 +72,7 @@
 	on_expired_text = span_warning("You feel somewhat warmer and more mobile now.")
 	stacks = MODIFIER_STACK_ALLOWED
 
-	factors = alist(BF_SLOWDOWN = 0.1, BF_EVASION = -5, BF_ATTACK_SPEED = 1.1, BF_DISABLE_DURATION = 1.05)
+	factors = alist(STAT_SLOWDOWN = 0.1, STAT_EVASION = -5, STAT_ATTACK_SPEED = 1.1, STAT_DISABLE_DURATION = 1.05)
 
 /datum/body_effect/clone_stabilizer
 	name = "clone stabilized"
@@ -82,7 +82,7 @@
 	on_expired_text = span_warning("You feel healthier.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_HEALING_RECEIVED = 0.1)
+	factors = alist(STAT_HEALING_RECEIVED = 0.1)
 
 
 // --- Transient body-factor sources ------------------------------------------------------
@@ -95,33 +95,33 @@
 	desc = "You can barely feel your body."
 	hidden = TRUE
 	stacks = MODIFIER_STACK_EXTEND
-	factors = alist(BF_ANALGESIA = 60)
+	factors = alist(STAT_ANALGESIA = 60)
 
 /datum/body_effect/numbness/mild
-	factors = alist(BF_ANALGESIA = 20)
+	factors = alist(STAT_ANALGESIA = 20)
 
 /datum/body_effect/numbness/deep
-	factors = alist(BF_ANALGESIA = 150)
+	factors = alist(STAT_ANALGESIA = 150)
 
 /// Synx venom: numbs and steadies the prey.
 /datum/body_effect/numbness/synx
-	factors = alist(BF_ANALGESIA = 50, BF_STABILIZATION = 15)
+	factors = alist(STAT_ANALGESIA = 50, STAT_STABILIZATION = 15)
 
 /// A withdrawal crisis strains the liver, kidneys and spleen.
 /datum/body_effect/withdrawal_strain
 	name = "withdrawal strain"
 	hidden = TRUE
 	stacks = MODIFIER_STACK_EXTEND
-	factors = alist(BF_WITHDRAWAL = 0.5)
+	factors = alist(STAT_WITHDRAWAL = 0.5)
 
 /datum/body_effect/withdrawal_strain/mild
-	factors = alist(BF_WITHDRAWAL = 0.5)
+	factors = alist(STAT_WITHDRAWAL = 0.5)
 
 /datum/body_effect/withdrawal_strain/moderate
-	factors = alist(BF_WITHDRAWAL = 1.4)
+	factors = alist(STAT_WITHDRAWAL = 1.4)
 
 /datum/body_effect/withdrawal_strain/severe
-	factors = alist(BF_WITHDRAWAL = 2.3)
+	factors = alist(STAT_WITHDRAWAL = 2.3)
 
 /// B25: alcohol withdrawal races the heart. A forced pulse level, so the
 /// heart system reads it instead of a raw `pulse` write it would overwrite.
@@ -129,21 +129,21 @@
 	name = "withdrawal tachycardia"
 	hidden = TRUE
 	stacks = MODIFIER_STACK_EXTEND
-	factors = alist(BF_PULSE_SET = PULSE_2FAST)
+	factors = alist(STAT_PULSE_SET = PULSE_2FAST)
 
 /datum/body_effect/withdrawal_tachycardia/mild
-	factors = alist(BF_PULSE_SET = PULSE_FAST)
+	factors = alist(STAT_PULSE_SET = PULSE_FAST)
 
 /// Airborne allergens (pollen) set off the mob's allergies.
 /datum/body_effect/allergic_flare
 	name = "allergic flare"
 	hidden = TRUE
 	stacks = MODIFIER_STACK_EXTEND
-	factors = alist(BF_ALLERGY = 2.5)
+	factors = alist(STAT_ALLERGY = 2.5)
 
 /// A disease symptom rebuilding blood.
 /datum/body_effect/blood_regeneration
 	name = "blood regeneration"
 	hidden = TRUE
 	stacks = MODIFIER_STACK_EXTEND
-	factors = alist(BF_BLOOD_REGEN = 1)
+	factors = alist(STAT_BLOOD_REGEN = 1)

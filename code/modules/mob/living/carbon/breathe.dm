@@ -58,7 +58,7 @@
 	var/datum/gas_mixture/breath = null
 
 	//First, check if we can breathe at all
-	if(src.is_critical() && !src.factor(BF_STABILIZATION)) //crit aka circulatory shock
+	if(src.is_critical() && !src.stabilization) //crit aka circulatory shock
 		src.AdjustLosebreath(1)
 
 	if(src.losebreath>0) //Suffocating so do not take a breath

@@ -114,7 +114,7 @@
 	var/list/unarmed_attacks = null							// For empty hand harm-intent attack
 	/// Multiplier on radiation's EFFECTS (mutation, sickness, radiation burns); the
 	/// dose absorbed is not scaled. Injury multipliers are body factors in
-	/// `factor_baseline` (BF_INCOMING_*).
+	/// `factor_baseline` (STAT_INCOMING_*).
 	var/radiation_mod = 1
 	var/flash_mod =     1								// Stun from blindness modifier (flashes and flashbangs)
 	var/flash_burn =    0								// how much damage to take from being flashed if light hypersensitive
@@ -206,7 +206,7 @@
 	var/minimum_breath_pressure = 16						// Minimum required pressure for breath, in kPa
 
 
-	/// Body factors every member of the species has (BF_* -> value), e.g.
+	/// Body factors every member of the species has (stat id -> value), e.g.
 	/// slowdown and metabolism. See code/modules/body/factors.dm.
 	var/alist/factor_baseline
 	/// Factor tables granted by traits and perks applied to this species

@@ -8,7 +8,7 @@
 //   chest seal         TREAT_OCCLUSIVE_SEAL on the chest (open chest wounds; the
 //                      breathing side belongs to the physiology model)
 //   splints            the fracture's factors drop while splinted (untreated_fracture stages)
-//   stabiliser pen     norepinephrine: BF_CIRCULATION / BF_PUMP support + TREAT_VASOPRESSOR
+//   stabiliser pen     norepinephrine: STAT_CIRCULATION / STAT_PUMP support + TREAT_VASOPRESSOR
 // Tourniquets live in tourniquet.dm, stasis in stasis.dm.
 
 /// A single-use field dressing: applying it delivers `treatments` to the
@@ -136,7 +136,7 @@ CAPABILITIES(/obj/item/stack/medical/field)
 	scannable = SCANNABLE_BENEFICIAL
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_DRUG
-	factors = alist(BF_CIRCULATION = 1.3, BF_PUMP = 1.1, BF_STABILIZATION = 10, BF_HEART_RATE = 20, BF_BP_SYSTOLIC = 20, BF_BP_DIASTOLIC = 10)
+	factors = alist(STAT_CIRCULATION = 1.3, STAT_PUMP = 1.1, STAT_STABILIZATION = 10, STAT_HEART_RATE = 20, STAT_BP_SYSTOLIC = 20, STAT_BP_DIASTOLIC = 10)
 	species_factors = alist(IS_DIONA = null)
 	treatment_tags = list(TREAT_VASOPRESSOR = 0.6, TREAT_CIRCULATORY = 0.4)
 

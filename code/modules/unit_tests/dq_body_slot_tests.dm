@@ -175,7 +175,7 @@
 	for(var/obj/item/clothing/C in list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM), H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES)))
 		if(worn_of(C).covers & E.body_part)
 			. *= protection_of(C).siemens
-	. *= H.factor(BF_SIEMENS)
+	. *= H.siemens
 
 /// The old per-tick heat or cold protection flags, restricted to the parts
 /// thermal protection counts.

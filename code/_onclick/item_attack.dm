@@ -273,7 +273,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	var/speed = kind_of(src).attack_cooldown
 	if(W && istype(W))
 		speed = combat_of(W).attack_speed
-	return speed * factor(BF_ATTACK_SPEED)
+	return speed * src.attack_speed
 
 // Proximity_flag is 1 if this afterattack was called on something adjacent, in your square, or on your person.
 // Click parameters is the params string from byond Click() code, see that documentation.
@@ -321,7 +321,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	if(sounds_of(src).hit)
 		playsound(src, sounds_of(src).hit, 50, 1, -1)
 
-	var/power = combat_of(src).force * user.factor(BF_MELEE_DAMAGE)
+	var/power = combat_of(src).force * user.melee_damage
 
 	if(user.has_mutation(HULK))
 		power *= 2

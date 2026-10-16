@@ -180,8 +180,8 @@
 /datum/unit_test/dq_p1_b19_species_factor_merge/Run()
 	var/datum/reagent/R = SSchemistry.chemical_reagents[REAGENT_ID_DEXALIN]
 	var/alist/merged = R.merged_species_factors(IS_SLIME)
-	TEST_ASSERT(merged?[BF_O2_CARRIAGE], "prometheans on dexalin keep its oxygen carriage")
-	TEST_ASSERT(merged?[BF_ANALGESIA], "and get their own analgesia")
+	TEST_ASSERT(merged?[STAT_O2_CARRIAGE], "prometheans on dexalin keep its oxygen carriage")
+	TEST_ASSERT(merged?[STAT_ANALGESIA], "and get their own analgesia")
 	var/datum/reagent/bloodburn = SSchemistry.chemical_reagents[REAGENT_ID_BLOODBURN]
 	TEST_ASSERT(!length(bloodburn.factors), "bloodburn does not inherit claridyl's factors")
 
@@ -247,8 +247,8 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/affliction/hypovolemic_shock/A = H.body.afflict(/datum/affliction/hypovolemic_shock, H.get_organ(BP_TORSO), 10)
 	TEST_ASSERT(A.band_factors, "the band table must be set when the shock takes hold")
-	var/list/acc = A.accumulate_factors(null)
-	TEST_ASSERT(acc && acc[BF_O2_SAT] < body_factor_baseline(BF_O2_SAT), "the declared O2 saturation factor is read")
+	TEST_ASSERT(H.o2_sat < 0, "the declared O2 saturation factor is held: [H.o2_sat]")
+	TEST_ASSERT(A.factor_band >= 0, "and the severity band it was held at is recorded")
 
 /// C8: wound infection severity goes through the setter.
 /datum/unit_test/dq_p1_c8_infection_uses_setter
@@ -311,10 +311,11 @@
 
 /datum/unit_test/dq_p1_c21_continuous_airway_factors/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/affliction/A = H.body.afflict(/datum/affliction/airway_obstruction, H.get_organ(BP_HEAD), 31)
-	H.factor(BF_AIRWAY) // rebuild
+	var/datum/affliction/airway/A = H.body.afflict(/datum/affliction/airway_obstruction, H.get_organ(BP_HEAD), 31)
+	var/before = H.airway
 	A.set_severity(32) // same 10-point band
-	TEST_ASSERT(H.body.dirty & BODY_DIRTY_FACTORS, "a one-point change must re-dirty airway patency")
+	TEST_ASSERT(H.airway != before, "a one-point change must refresh airway patency (still [before])")
+	TEST_ASSERT(dq_near(H.airway, A.patency(), 0.0001), "and the airway reads the new patency, got [H.airway]")
 
 /// C22: an explicit severity wins over the type's initial severity.
 /datum/unit_test/dq_p1_c22_initial_severity

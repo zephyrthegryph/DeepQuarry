@@ -6,27 +6,27 @@
 /datum/body_effect/dq_test_factors
 	stacks = MODIFIER_STACK_FORBID
 	name = "test factors"
-	factors = alist(BF_EVASION = 30, BF_ATTACK_SPEED = 0.5, BF_MELEE_DAMAGE = 1.5, BF_DISABLE_DURATION = 0.5, BF_INCOMING_PHYSICAL = 0.5, BF_ENDURANCE_FLAT = 10, BF_ARMOR(INJURY_BLUNT) = 25, BF_SIEMENS = 0.5, BF_ACCURACY = -40, BF_DISPERSION = 2)
+	factors = alist(STAT_EVASION = 30, STAT_ATTACK_SPEED = 0.5, STAT_MELEE_DAMAGE = 1.5, STAT_DISABLE_DURATION = 0.5, STAT_INCOMING_PHYSICAL = 0.5, STAT_ENDURANCE_FLAT = 10, STAT_ARMOR_BLUNT = 25, STAT_SIEMENS = 0.5, STAT_ACCURACY = -40, STAT_DISPERSION = 2)
 
 /datum/body_effect/dq_test_slowdown
 	name = "test slowdown"
 	stacks = MODIFIER_STACK_ALLOWED
-	factors = alist(BF_SLOWDOWN = 2)
+	factors = alist(STAT_SLOWDOWN = 2)
 
 /datum/body_effect/dq_test_haste
 	stacks = MODIFIER_STACK_FORBID
 	name = "test haste"
-	factors = alist(BF_HASTE = 1)
+	factors = alist(STAT_HASTE = 1)
 
 /datum/body_effect/dq_test_healing
 	stacks = MODIFIER_STACK_FORBID
 	name = "test healing"
-	factors = alist(BF_HEALING_RECEIVED = 2)
+	factors = alist(STAT_HEALING_RECEIVED = 2)
 
 /datum/body_effect/dq_test_pain_block
 	stacks = MODIFIER_STACK_FORBID
 	name = "test pain immunity"
-	factors = alist(BF_PAIN_IMMUNITY = 1, BF_ACTION_BLOCKS = ACTION_BLOCK_HOLD_LEFT)
+	factors = alist(STAT_PAIN_IMMUNITY = 1, STAT_ACTION_BLOCKS = ACTION_BLOCK_HOLD_LEFT)
 
 /datum/unit_test/proc/dq_near(a, b, epsilon = 0.001)
 	return abs(a - b) < epsilon
@@ -48,62 +48,54 @@
 
 /datum/unit_test/dq_body_factor_combine_math/Run()
 	// Multiplicative: f at scale s contributes 1 - (1 - f) * s.
-	var/list/acc = body_factor_accumulate(null, alist(BF_AIRWAY = 0.1), 0.5)
-	TEST_ASSERT(dq_near(acc[BF_AIRWAY], 0.55), "partial choking (0.1 at severity 50) should leave 0.55 airway, got [acc[BF_AIRWAY]]")
-	acc = body_factor_accumulate(acc, alist(BF_AIRWAY = 0.2), 0.6)
-	TEST_ASSERT(dq_near(acc[BF_AIRWAY], 0.55 * 0.52), "choking plus swelling should multiply to 0.286, got [acc[BF_AIRWAY]]")
+	TEST_ASSERT(dq_near(stat_fold_tables(STAT_AIRWAY, list(alist(STAT_AIRWAY = 0.1)), 0.5), 0.55), "partial choking (0.1 at severity 50) should leave 0.55 airway")
+	var/alist/swelling = alist(STAT_AIRWAY = 0.2)
+	var/value = stat_fold_tables(STAT_AIRWAY, list(alist(STAT_AIRWAY = 0.1), swelling), 0.6)
+	TEST_ASSERT(dq_near(value, 0.46 * 0.52), "two tables at one scale multiply, got [value]")
 
 	// Additive: f * s, summed.
-	acc = body_factor_accumulate(null, alist(BF_ANALGESIA = 60), 0.5)
-	acc = body_factor_accumulate(acc, alist(BF_ANALGESIA = 20), 1)
-	TEST_ASSERT(dq_near(acc[BF_ANALGESIA], 50), "analgesia should sum 30 + 20, got [acc[BF_ANALGESIA]]")
+	TEST_ASSERT(dq_near(stat_fold_tables(STAT_ANALGESIA, list(alist(STAT_ANALGESIA = 60))), 60), "analgesia at full scale")
+	TEST_ASSERT(dq_near(stat_fold_tables(STAT_ANALGESIA, list(alist(STAT_ANALGESIA = 60)), 0.5), 30), "analgesia scales")
+	TEST_ASSERT(dq_near(stat_fold_tables(STAT_ANALGESIA, list(alist(STAT_ANALGESIA = 60), alist(STAT_ANALGESIA = 20))), 80), "analgesia should sum")
 
 	// Max: the highest contribution and the baseline win (forced pulse starts at -1).
-	acc = body_factor_accumulate(null, alist(BF_PULSE_SET = 2), 1)
-	acc = body_factor_accumulate(acc, alist(BF_PULSE_SET = 1), 1)
-	TEST_ASSERT_EQUAL(acc[BF_PULSE_SET], 2, "max rule should keep the highest value")
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_PULSE_SET, list(alist(STAT_PULSE_SET = 2), alist(STAT_PULSE_SET = 1))), 2, "max rule should keep the highest value")
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_PULSE_SET, list()), -1, "with no contribution the baseline wins")
 
 	// Flags: OR of every contribution.
-	acc = body_factor_accumulate(null, alist(BF_ACTION_BLOCKS = ACTION_BLOCK_SPEECH), 0.1)
-	acc = body_factor_accumulate(acc, alist(BF_ACTION_BLOCKS = ACTION_BLOCK_SURGERY), 1)
-	TEST_ASSERT_EQUAL(acc[BF_ACTION_BLOCKS], ACTION_BLOCK_SPEECH | ACTION_BLOCK_SURGERY, "flags should OR together")
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_ACTION_BLOCKS, list(alist(STAT_ACTION_BLOCKS = ACTION_BLOCK_SPEECH), alist(STAT_ACTION_BLOCKS = ACTION_BLOCK_SURGERY))), ACTION_BLOCK_SPEECH | ACTION_BLOCK_SURGERY, "flags should OR together")
 
 	// A multiplier never goes negative, however large the dose.
-	acc = body_factor_accumulate(null, alist(BF_AIRWAY = 0.2), 4)
-	TEST_ASSERT_EQUAL(acc[BF_AIRWAY], 0, "an overscaled multiplier should floor at 0")
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_AIRWAY, list(alist(STAT_AIRWAY = 0.2)), 4), 0, "an overscaled multiplier should floor at 0")
 
-	// Bounds clamp at finalize; an all-baseline list becomes null.
-	acc = body_factor_accumulate(null, alist(BF_SLOWDOWN = 50), 1)
-	acc = body_factor_finalize(acc)
-	TEST_ASSERT_EQUAL(acc[BF_SLOWDOWN], 20, "slowdown should clamp to its upper bound")
-	acc = body_factor_accumulate(null, alist(BF_SLOWDOWN = 1), 1)
-	acc = body_factor_accumulate(acc, alist(BF_SLOWDOWN = -1), 1)
-	TEST_ASSERT_NULL(body_factor_finalize(acc), "contributions that cancel out should leave no list")
+	// Bounds clamp the composed value; contributions that cancel leave the baseline.
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_SLOWDOWN, list(alist(STAT_SLOWDOWN = 50))), 20, "slowdown should clamp to its upper bound")
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_SLOWDOWN, list(alist(STAT_SLOWDOWN = 1), alist(STAT_SLOWDOWN = -1))), 0, "contributions that cancel out should leave the baseline")
 
-	// Every factor is registered.
+	// Every factor is registered: a stat of its own, and the book's text.
 	var/list/defs = GLOBAL_TABLE_GET(body_factor_defs)
-	for(var/id in 1 to BF_COUNT)
-		TEST_ASSERT_NOTNULL(defs[id], "body factor [id] has no definition")
+	for(var/id in defs)
+		TEST_ASSERT_NOTNULL(stat_def_of(id), "body factor [id] has no stat")
+	for(var/id in oracle_ids())
+		TEST_ASSERT_NOTNULL(defs[id], "the stat [stat_label(id)] has no definition")
 
 
-/// Healthy bodies keep no factor list; a source allocates one, removing it frees it.
+/// Healthy bodies hold nothing and read the baselines; a source holds rows while it contributes and frees them when it ends.
 /datum/unit_test/dq_body_factor_lazy_storage
 
 /datum/unit_test/dq_body_factor_lazy_storage/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.body.recompute_factors()
-	TEST_ASSERT_NULL(H.body.factors, "a healthy human should keep no factor list")
-	TEST_ASSERT_EQUAL(H.factor(BF_AIRWAY), 1, "an untouched multiplier reads its baseline")
-	TEST_ASSERT_EQUAL(H.factor(BF_PULSE_SET), -1, "an untouched max factor reads its baseline")
+	TEST_ASSERT_EQUAL(H.airway, 1, "an untouched multiplier reads its baseline")
+	TEST_ASSERT_EQUAL(H.pulse_set, -1, "an untouched max factor reads its baseline")
+	var/rows_before = length(H.rx?.stats?.by_stat?["[STAT_SLOWDOWN]"])
 
 	TEST_ASSERT(H.apply_body_effect(/datum/body_effect/dq_test_slowdown), "the effect should apply")
-	TEST_ASSERT(H.body.dirty & BODY_DIRTY_FACTORS, "adding an effect with factors should mark the body dirty")
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 2, "the effect's slowdown should apply")
-	TEST_ASSERT_NOTNULL(H.body.factors, "a contributing source should allocate the list")
+	TEST_ASSERT_EQUAL(H.slowdown, 2, "the effect's slowdown applies at once, with no read to settle it")
+	TEST_ASSERT_EQUAL(length(H.rx.stats.by_stat["[STAT_SLOWDOWN]"]), rows_before + 1, "a contributing source holds a row")
 
 	H.remove_body_effect(/datum/body_effect/dq_test_slowdown, TRUE)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "removing the effect should restore the baseline")
-	TEST_ASSERT_NULL(H.body.factors, "back at baseline, the list should be freed")
+	TEST_ASSERT_EQUAL(H.slowdown, 0, "removing the effect should restore the baseline")
+	TEST_ASSERT_EQUAL(length(H.rx?.stats?.by_stat?["[STAT_SLOWDOWN]"]), rows_before, "back at baseline, its row is gone")
 
 
 /// Body effects stack at full value; reading does no work when nothing changed.
@@ -113,21 +105,20 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.apply_body_effect(/datum/body_effect/dq_test_slowdown)
 	H.apply_body_effect(/datum/body_effect/dq_test_slowdown)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 4, "two stacks should add")
-	TEST_ASSERT(!(H.body.dirty & BODY_DIRTY_FACTORS), "a read should leave the factors clean")
+	TEST_ASSERT_EQUAL(H.slowdown, 4, "two stacks should add")
 	H.remove_body_effect(/datum/body_effect/dq_test_slowdown, TRUE)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "removing both should restore the baseline")
+	TEST_ASSERT_EQUAL(H.slowdown, 0, "removing both should restore the baseline")
 
 	// set_body_effect_factors() swaps a running application's table.
 	H.apply_body_effect(/datum/body_effect/dq_test_healing)
-	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 2, "healing effect should apply")
-	var/static/alist/halved = alist(BF_HEALING_RECEIVED = 0.5)
+	TEST_ASSERT_EQUAL(H.healing_received, 2, "healing effect should apply")
+	var/static/alist/halved = alist(STAT_HEALING_RECEIVED = 0.5)
 	H.set_body_effect_factors(/datum/body_effect/dq_test_healing, halved)
-	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 0.5, "set_body_effect_factors should recompute the mob")
+	TEST_ASSERT_EQUAL(H.healing_received, 0.5, "set_body_effect_factors should recompute the mob")
 	H.reset_body_effect_factors(/datum/body_effect/dq_test_healing)
-	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 2, "reset_body_effect_factors should restore the definition's table")
+	TEST_ASSERT_EQUAL(H.healing_received, 2, "reset_body_effect_factors should restore the definition's table")
 	H.remove_body_effect(/datum/body_effect/dq_test_healing, TRUE)
-	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 1, "ending the effect drops its table")
+	TEST_ASSERT_EQUAL(H.healing_received, 1, "ending the effect drops its table")
 
 
 /// A plain severity-scaled affliction (no continuous factors, unlike the airway family,
@@ -136,7 +127,7 @@
 	name = "test banded affliction"
 	catalogued = FALSE
 	progression_rate = 0
-	factors = alist(BF_HEART_RATE = 20, BF_BP_SYSTOLIC = -15)
+	factors = alist(STAT_HEART_RATE = 20, STAT_BP_SYSTOLIC = -15)
 
 /// Afflictions scale by severity and recompute only on a band crossing.
 /datum/unit_test/dq_body_factor_affliction_bands
@@ -146,18 +137,17 @@
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/dq_test_banded)
 	TEST_ASSERT_NOTNULL(A, "the test affliction should afflict")
 	A.set_severity(100)
-	TEST_ASSERT(dq_near(H.factor(BF_HEART_RATE), 20), "edema at full severity should raise the heart rate by 20, got [H.factor(BF_HEART_RATE)]")
-	TEST_ASSERT(dq_near(H.factor(BF_BP_SYSTOLIC), -15), "edema at full severity should drop systolic pressure by 15")
+	TEST_ASSERT(dq_near(H.heart_rate, 20), "edema at full severity should raise the heart rate by 20, got [H.heart_rate]")
+	TEST_ASSERT(dq_near(H.bp_systolic, -15), "edema at full severity should drop systolic pressure by 15")
 
 	A.set_severity(50)
-	TEST_ASSERT(H.body.dirty & BODY_DIRTY_FACTORS, "crossing a severity band should mark the factors dirty")
-	TEST_ASSERT(dq_near(H.factor(BF_HEART_RATE), 10), "edema at half severity should give half the heart rate, got [H.factor(BF_HEART_RATE)]")
+	TEST_ASSERT(dq_near(H.heart_rate, 10), "crossing a severity band refreshes the factors: edema at half severity gives half the heart rate, got [H.heart_rate]")
 
 	A.set_severity(52)
-	TEST_ASSERT(!(H.body.dirty & BODY_DIRTY_FACTORS), "a change inside the same band should not recompute")
+	TEST_ASSERT(dq_near(H.heart_rate, 10), "a change inside the same band does not refresh: the factors stay at the band's last value, got [H.heart_rate]")
 
 	A.cure()
-	TEST_ASSERT_EQUAL(H.factor(BF_HEART_RATE), 0, "curing should remove the contribution")
+	TEST_ASSERT_EQUAL(H.heart_rate, 0, "curing should remove the contribution")
 
 
 /// Staged afflictions use the stage's table at full value.
@@ -173,7 +163,7 @@
 	od._apply_stage(last_stage)
 	var/list/table = stages[last_stage]["factors"]
 	TEST_ASSERT_NOTNULL(table, "the worst overdose stage should carry a factor table")
-	TEST_ASSERT(dq_near(H.factor(BF_ACCURACY), table[BF_ACCURACY]), "the stage table should apply unscaled ([H.factor(BF_ACCURACY)] vs [table[BF_ACCURACY]])")
+	TEST_ASSERT(dq_near(H.accuracy, table[STAT_ACCURACY]), "the stage table should apply unscaled ([H.accuracy] vs [table[STAT_ACCURACY]])")
 
 
 /// Reagents contribute at their dose scale and recompute when volumes change.
@@ -182,19 +172,19 @@
 /datum/unit_test/dq_body_factor_reagent_dose/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.bloodstr.add_reagent(REAGENT_ID_INAPROVALINE, DQ_CHEM_STANDARD_DOSE)
-	TEST_ASSERT(dq_near(H.factor(BF_STABILIZATION), 15), "a standard dose of inaprovaline should stabilise at 15, got [H.factor(BF_STABILIZATION)]")
-	TEST_ASSERT(dq_near(H.factor(BF_ANALGESIA), 10 * H.species.chem_strength_pain), "inaprovaline's analgesia should scale by the species")
+	TEST_ASSERT(dq_near(H.stabilization, 15), "a standard dose of inaprovaline should stabilise at 15, got [H.stabilization]")
+	TEST_ASSERT(dq_near(H.analgesia, 10 * H.species.chem_strength_pain), "inaprovaline's analgesia should scale by the species")
 
 	H.bloodstr.add_reagent(REAGENT_ID_INAPROVALINE, DQ_CHEM_STANDARD_DOSE)
-	TEST_ASSERT(dq_near(H.factor(BF_STABILIZATION), 30), "a double dose should double the contribution, got [H.factor(BF_STABILIZATION)]")
+	TEST_ASSERT(dq_near(H.stabilization, 30), "a double dose should double the contribution, got [H.stabilization]")
 
 	H.bloodstr.clear_reagents()
-	TEST_ASSERT_EQUAL(H.factor(BF_STABILIZATION), 0, "clearing the reagents should remove the contribution")
+	TEST_ASSERT_EQUAL(H.stabilization, 0, "clearing the reagents should remove the contribution")
 
 	// A stimulant speeds movement and cuts penalties.
 	H.bloodstr.add_reagent(REAGENT_ID_HYPERZINE, DQ_CHEM_STANDARD_DOSE)
-	TEST_ASSERT(dq_near(H.factor(BF_SLOWDOWN), -1), "hyperzine should give -1 slowdown, got [H.factor(BF_SLOWDOWN)]")
-	TEST_ASSERT(dq_near(H.factor(BF_PENALTY_SCALE), 0.5), "hyperzine should halve movement penalties")
+	TEST_ASSERT(dq_near(H.slowdown, -1), "hyperzine should give -1 slowdown, got [H.slowdown]")
+	TEST_ASSERT(dq_near(H.penalty_scale, 0.5), "hyperzine should halve movement penalties")
 
 
 /// Worn equipment contributes while equipped outside the hands.
@@ -203,17 +193,17 @@
 /datum/unit_test/dq_body_factor_worn_equipment/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/clothing/shoes/boots = allocate(/obj/item/clothing/shoes/black)
-	boots.worn_factors = alist(BF_SLOWDOWN = 1.5)
+	boots.worn_factors = alist(STAT_SLOWDOWN = 1.5)
 
 	H.put_in_hands(boots)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "gear held in the hands should not contribute")
+	TEST_ASSERT_EQUAL(H.slowdown, 0, "gear held in the hands should not contribute")
 
 	H.drop_from_inventory(boots)
 	TEST_ASSERT(H.equip_to_slot_if_possible(boots, SLOT_ID_SHOES, disable_warning = TRUE), "the boots should equip")
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 1.5, "worn boots should add their slowdown")
+	TEST_ASSERT_EQUAL(H.slowdown, 1.5, "worn boots should add their slowdown")
 
 	H.drop_from_inventory(boots)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "taking the boots off should remove it")
+	TEST_ASSERT_EQUAL(H.slowdown, 0, "taking the boots off should remove it")
 
 
 /// Species baselines and traits.
@@ -222,9 +212,9 @@
 /datum/unit_test/dq_body_factor_species_baseline/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.set_species(SPECIES_UNATHI)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0.5, "unathi should move with their species slowdown")
-	TEST_ASSERT(dq_near(H.factor(BF_METABOLISM), 0.85), "unathi should metabolise at their species rate")
-	TEST_ASSERT_EQUAL(H.species.baseline_factor(BF_SLOWDOWN), 0.5, "the species baseline should read on its own")
+	TEST_ASSERT_EQUAL(H.slowdown, 0.5, "unathi should move with their species slowdown")
+	TEST_ASSERT(dq_near(H.metabolism_mult, 0.85), "unathi should metabolise at their species rate")
+	TEST_ASSERT_EQUAL(H.species.baseline_factor(STAT_SLOWDOWN), 0.5, "the species baseline should read on its own")
 
 	// Traits that change the same factor conflict, like traits changing the same var.
 	var/datum/trait/slow = GLOB.all_traits[/datum/trait/negative/speed_slow]
@@ -247,28 +237,28 @@
 	var/base_blunt = H.injure(INJURY_BLUNT, 4, BP_TORSO, flags = INJURE_SILENT)
 
 	H.apply_body_effect(/datum/body_effect/dq_test_factors)
-	TEST_ASSERT_EQUAL(H.get_evasion(), base_evasion + 30, "evasion should read BF_EVASION")
-	TEST_ASSERT(dq_near(H.get_attack_speed(), base_attack * 0.5), "attack delay should read BF_ATTACK_SPEED")
-	TEST_ASSERT_EQUAL(H.get_endurance(), base_endurance + 10, "endurance should read BF_ENDURANCE_FLAT")
-	TEST_ASSERT_EQUAL(H.injury_armor(INJURY_BLUNT, chest), base_armor + 25, "armour should read BF_ARMOR(INJURY_BLUNT)")
-	TEST_ASSERT(dq_near(H.get_siemens_coefficient_organ(chest), base_siemens * 0.5), "conductivity should read BF_SIEMENS")
+	TEST_ASSERT_EQUAL(H.get_evasion(), base_evasion + 30, "evasion should read STAT_EVASION")
+	TEST_ASSERT(dq_near(H.get_attack_speed(), base_attack * 0.5), "attack delay should read STAT_ATTACK_SPEED")
+	TEST_ASSERT_EQUAL(H.get_endurance(), base_endurance + 10, "endurance should read STAT_ENDURANCE_FLAT")
+	TEST_ASSERT_EQUAL(H.injury_armor(INJURY_BLUNT, chest), base_armor + 25, "armour should read STAT_ARMOR_BLUNT")
+	TEST_ASSERT(dq_near(H.get_siemens_coefficient_organ(chest), base_siemens * 0.5), "conductivity should read STAT_SIEMENS")
 	var/blunt = H.injure(INJURY_BLUNT, 4, BP_TORSO, flags = INJURE_SILENT)
-	TEST_ASSERT(dq_near(blunt, base_blunt * 0.5), "physical injury should read BF_INCOMING_PHYSICAL ([base_blunt] -> [blunt])")
+	TEST_ASSERT(dq_near(blunt, base_blunt * 0.5), "physical injury should read STAT_INCOMING_PHYSICAL ([base_blunt] -> [blunt])")
 
 	H.status_set(STAT_STUNNED, 0)
 	H.status_at_least(STAT_STUNNED, 10)
-	TEST_ASSERT_EQUAL(H.status_units(STAT_STUNNED), 5, "stuns should read BF_DISABLE_DURATION")
+	TEST_ASSERT_EQUAL(H.status_units(STAT_STUNNED), 5, "stuns should read STAT_DISABLE_DURATION")
 
 	// Simple mobs read the same factors for ranged combat.
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	var/base_accuracy = S.calculate_accuracy()
 	var/base_dispersion = S.calculate_dispersion()
 	S.apply_body_effect(/datum/body_effect/dq_test_factors)
-	TEST_ASSERT_EQUAL(S.calculate_accuracy(), base_accuracy - 40, "simple mob accuracy should read BF_ACCURACY")
-	TEST_ASSERT_EQUAL(S.calculate_dispersion(), base_dispersion + 2, "simple mob dispersion should read BF_DISPERSION")
+	TEST_ASSERT_EQUAL(S.calculate_accuracy(), base_accuracy - 40, "simple mob accuracy should read STAT_ACCURACY")
+	TEST_ASSERT_EQUAL(S.calculate_dispersion(), base_dispersion + 2, "simple mob dispersion should read STAT_DISPERSION")
 
 
-/// Movement delay reads BF_SLOWDOWN, BF_PENALTY_SCALE and BF_HASTE.
+/// Movement delay reads STAT_SLOWDOWN, STAT_PENALTY_SCALE and STAT_HASTE.
 /datum/unit_test/dq_body_factor_movement
 
 /datum/unit_test/dq_body_factor_movement/Run()
@@ -282,7 +272,7 @@
 	TEST_ASSERT(H.movement_delay() < base, "haste should ignore slowdown")
 
 
-/// mend() reads BF_HEALING_RECEIVED; pain immunity and blocked hands work.
+/// mend() reads STAT_HEALING_RECEIVED; pain immunity and blocked hands work.
 /datum/unit_test/dq_body_factor_healing_and_blocks
 
 /datum/unit_test/dq_body_factor_healing_and_blocks/Run()
@@ -296,7 +286,7 @@
 
 	TEST_ASSERT(H.can_feel_pain(), "a human should feel pain")
 	H.apply_body_effect(/datum/body_effect/dq_test_pain_block)
-	TEST_ASSERT(!H.can_feel_pain(), "pain immunity should read BF_PAIN_IMMUNITY")
+	TEST_ASSERT(!H.can_feel_pain(), "pain immunity should read STAT_PAIN_IMMUNITY")
 
 	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench)
 	H.put_in_l_hand(W)
@@ -315,14 +305,14 @@
 	TEST_ASSERT(C.charge < C.maxcharge, "absorbing should drain the cell")
 	C.set_charge(0)
 	TEST_ASSERT(H.injure(INJURY_BLUNT, 5, BP_TORSO, flags = INJURE_SILENT) > 0, "an empty shield should let the hit through")
-	TEST_ASSERT(dq_near(H.factor(BF_SIEMENS), 2), "the shield's conductivity is an ordinary factor")
+	TEST_ASSERT(dq_near(H.siemens, 2), "the shield's conductivity is an ordinary factor")
 
 
 /// The reference book documents a source straight from its table.
 /datum/unit_test/dq_body_factor_book_text
 
 /datum/unit_test/dq_body_factor_book_text/Run()
-	var/list/lines = body_factor_describe(alist(BF_AIRWAY = 0.2, BF_HEART_RATE = 15), " at full severity")
+	var/list/lines = body_factor_describe(alist(STAT_AIRWAY = 0.2, STAT_HEART_RATE = 15), " at full severity")
 	TEST_ASSERT_EQUAL(length(lines), 2, "one line per factor")
 	TEST_ASSERT_EQUAL(lines[1], "Airway: -80% at full severity", "multipliers print as a percent change")
 	TEST_ASSERT_EQUAL(lines[2], "Heart rate: +15 bpm at full severity", "additive factors print with their unit")
@@ -330,4 +320,4 @@
 	for(var/id in SSchemistry.ready().chemical_reagents)
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 		for(var/factor_id in R.factors)
-			TEST_ASSERT(isnum(factor_id) && factor_id >= 1 && factor_id <= BF_COUNT, "[R.type] has an invalid factor id [factor_id]")
+			TEST_ASSERT(isnum(factor_id) && stat_def_of(factor_id), "[R.type] has an invalid factor id [factor_id]")

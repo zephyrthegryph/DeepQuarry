@@ -83,13 +83,13 @@
 
 /// The body's share of this cycle's uptake rates, the same for every reagent, indexed by CHEM_BODY_*: the factors applied in order to a
 /// reagent's own metabolism (REMOVED), the stomach's rate (INGEST_REMOVED) and the share absorbed (INGEST_ABSORBED). Species, traits,
-/// modifiers and afflictions (BF_METABOLISM), this holder's speed, the heart's pulse, the stomach and intestine, or a machine's pump and cycler.
+/// modifiers and afflictions (STAT_METABOLISM_MULT), this holder's speed, the heart's pulse, the stomach and intestine, or a machine's pump and cycler.
 /datum/reagents/metabolism/proc/cycle_body()
 	var/mob/living/carbon/M = parent
 	var/list/removed = list()
 	var/ingest_rem_mult = 1
 	var/ingest_abs_mult = 1
-	var/metabolism = M.factor(BF_METABOLISM)
+	var/metabolism = M.metabolism_mult
 	removed += metabolism
 	ingest_rem_mult *= metabolism
 	removed += metabolism_speed
