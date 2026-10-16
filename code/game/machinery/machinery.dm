@@ -131,12 +131,13 @@ Class Procs:
 	var/tmp/gas_dependency_wake_count = 0
 
 
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 SETTER(/obj/machinery, use_power)
 
 MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
 
 CAPABILITIES(/obj/machinery)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))
+	machine_heat()
 	uses_power(channel = EQUIP, idle = 0, active = 0) // what it draws: a type trait (machinery_power.dm); a subtype configure()s what it changes
 	silicon_hand(tier = OP_PRIORITY_DEFAULT - 100) // the AI's Use of a machine is the hand's
 	// Non-harm clicks reach matching machine interactions, never the inherited item strike.

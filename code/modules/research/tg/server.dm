@@ -9,8 +9,6 @@
 	circuit = /obj/item/circuitboard/machine/rdserver
 	req_access = list(ACCESS_RD)
 	/// Declared machine heat (heat_objects.dm): watts dumped into the room while working.
-	heat_output = 500
-	heat_dissipation = 150
 
 	/// if TRUE, we are currently operational and giving out research points.
 	var/working = TRUE
@@ -18,6 +16,7 @@
 	var/research_disabled = FALSE
 
 CAPABILITIES(/obj/machinery/rnd/server)
+	configure(machine_heat(output = 500, dissipation = 150))
 	emp_disable(60 SECONDS)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 

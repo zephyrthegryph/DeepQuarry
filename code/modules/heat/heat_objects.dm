@@ -182,46 +182,71 @@ CAPABILITY_TYPE(overheating, CAP_OVERHEATING, /datum/capability/overheating, key
 
 // ------------------------------------------------------ machine heat (H4)
 
-/obj/machinery
-	/// Declared heat output, watts, while the machine runs (current_heat_output()).
-	/// The power goes into the machine's heat body, which passes it to its
-	/// surroundings; above its heat limit the overheating rule damages it.
-	var/heat_output = 0
-	/// Declared heat dissipation: conductance to the surroundings, W/K. Null
-	/// keeps the default. Sets how far above ambient heat_output runs it.
-	var/heat_dissipation
-	/// Watts currently fed to the heat body by set_heat_output().
-	var/tmp/heat_output_now = 0
+// Type-declared thermal settings are shared until an instance is explicitly changed.
+STATIC_ENTRY(machine_heat)
+/proc/machine_heat(output = null, dissipation = null)
+	return entry_make(ENTRY_MACHINE_HEAT, null, list("output" = output, "dissipation" = dissipation))
+
+/datum/type_trait/machine_heat
+	var/output = 0
+	var/dissipation
+
+/datum/type_trait/machine_heat/copy_values(datum/type_trait/machine_heat/into)
+	into.output = output
+	into.dissipation = dissipation
+
+/datum/entry_engine/type_trait/machine_heat
+	kind = ENTRY_MACHINE_HEAT
+	trait_type = /datum/type_trait/machine_heat
+	publish_key = MACHINE_HEAT_KEY
+	base_type = /obj/machinery
+	var_names = list("heat_output" = "output", "heat_dissipation" = "dissipation")
+
+READS_AS(/proc/machine_heat_of, MACHINE_HEAT_KEY)
+/proc/machine_heat_of(obj/machinery/M) as /datum/type_trait/machine_heat
+	READS_FROM(M)
+	return type_trait_of(M, ENTRY_MACHINE_HEAT)
+
+/proc/machine_heat_of_type(path) as /datum/type_trait/machine_heat
+	READS_FROM()
+	return type_trait_of_type(path, ENTRY_MACHINE_HEAT)
+
+// Only machines currently emitting heat retain a power reading.
+sparse(/obj/machinery, heat_output_now, type = num)
+/proc/emitted_machine_heat(obj/machinery/M)
+	return sparse_get_or(M, heat_output_now, 0)
 
 /obj/machinery/thermal_properties()
 	. = ..()
-	if(heat_dissipation)
-		.[THERMAL_CONDUCTANCE] = heat_dissipation
+	var/dissipation = machine_heat_of(src).dissipation
+	if(dissipation)
+		.[THERMAL_CONDUCTANCE] = dissipation
 
 /// Watts the machine emits right now. Subtypes scale it by load.
 /obj/machinery/proc/current_heat_output()
-	if(!heat_output || !use_power || (!operable()))
+	var/output = machine_heat_of(src).output
+	if(!output || !use_power || (!operable()))
 		return 0
-	return heat_output
+	return output
 
 /// Re-reads current_heat_output(). power_change() calls it; call it when load changes.
 /obj/machinery/proc/update_heat_output()
-	if(!heat_output && !heat_output_now)
+	if(!machine_heat_of(src).output && !emitted_machine_heat(src))
 		return
 	set_heat_output(current_heat_output())
 
 /// Feeds `watts` into the heat body; the body is kept while it emits.
 /obj/machinery/proc/set_heat_output(watts)
 	watts = max(watts, 0)
-	if(watts == heat_output_now && (!watts || !isnull(heat_body)))
+	if(watts == emitted_machine_heat(src) && (!watts || !isnull(heat_body)))
 		return
 	if(watts)
 		if(!create_heat_body(TRUE))
-			heat_output_now = 0
+			sparse_set_or(src, heat_output_now, 0, 0)
 			return
 		vg_heat_body_keep(heat_body, TRUE)
 		vg_heat_body_power(heat_body, watts)
 	else if(!isnull(heat_body))
 		vg_heat_body_power(heat_body, 0)
 		vg_heat_body_keep(heat_body, FALSE)
-	heat_output_now = watts
+	sparse_set_or(src, heat_output_now, watts, 0)

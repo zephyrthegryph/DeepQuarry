@@ -115,3 +115,6 @@
 #define WATCH_LUM "lum"
 #define WATCH_CHARGE "charge"
 #define WATCHED_KEY "watched"
+
+#define ENTRY_MACHINE_HEAT "machine_heat"
+#define MACHINE_HEAT_KEY "machine_heat"
