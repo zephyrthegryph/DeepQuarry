@@ -232,7 +232,8 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 	if(!rec?.holds)
 		return FALSE
 	var/removed = FALSE
-	for(var/list/row as anything in rec.by_stat?[def.skey]?.Copy())
+	var/list/mine = rec.by_stat?[def.skey]
+	for(var/list/row as anything in mine?.Copy())
 		if(def.keyed ? (!isnull(key) && row[H_KEY] != key) : row[H_KEY])
 			continue
 		if(source == SRC_ALL || row[H_SOURCE] == source)
