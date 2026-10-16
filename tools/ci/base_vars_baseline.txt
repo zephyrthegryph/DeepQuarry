@@ -170,7 +170,6 @@ base_var	code/modules/materials/containers/machine_shim.dm	@/mob::machine_shim
 base_var	code/modules/medical/stabilisation/stasis.dm	@/mob/living::stasis_sources
 base_var	code/modules/mob/combat_mode.dm	@/mob::combat_mode
 base_var	code/modules/mob/combat_mode.dm	@/mob::attack_variant
-base_var	code/modules/mob/freelook/mask/update_triggers.dm	@/mob/living::updating_cult_vision
 base_var	code/modules/mob/inventory.dm	@/mob::s_active
 base_var	code/modules/mob/language/snowflake.dm	@/mob::hive_lang_range
 base_var	code/modules/mob/living/butchering.dm	@/mob/living::meat_amount
@@ -271,7 +270,6 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::away_from_keyboard
 base_var	code/modules/mob/mob_defines.dm	@/mob::manual_afk
 base_var	code/modules/mob/mob_defines.dm	@/mob::LAssailant
 base_var	code/modules/mob/mob_defines.dm	@/mob::spell_list
-base_var	code/modules/mob/mob_defines.dm	@/mob::update_icon
 base_var	code/modules/mob/mob_defines.dm	@/mob::lastareachange
 base_var	code/modules/mob/mob_defines.dm	@/mob::digitalcamo
 base_var	code/modules/mob/mob_defines.dm	@/mob::control_object

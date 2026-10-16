@@ -17,3 +17,8 @@ The continuation now removes seventeen further baseline rows: 386 to 369, with z
 ## Final source checkpoint
 
 The continuation now removes thirty-one rows, 386 to 355, with zero additions. Final generation and ratchets pass. This includes the six object/machine policies, four living fire policies, two pressure/force policies and two imperative animation slots. Actual map/VV contracts are retained for the policies; the animation slots have no named map/save/dependency consumers and use the documented native sparse debugging home. Their numeric values and animation timings are unchanged. Atmosphere-pass mode is retained because its shield setter has synchronous turf invalidation that ordinary trait reflection cannot preserve. The focused selector list was expanded without compiling, and runtime verification remains pending.
+
+## Timer and dead-state source proof
+
+The continuation now removes 33 rows, 386 to 353, with zero additions. Generation and all ratchets pass. Cult vision uses the native pending-timer key instead of a duplicated in-progress flag; deleting its old location no longer suppresses the needed refresh of the living actor's current location. The unused mob update_icon flag and its two DNA writes are removed: the production and map inventory has no reader, while gene activation and deactivation remain unchanged. The focused list includes the real DNA round-trip and state-toggle tests. Runtime verification and a lane-ready stamp remain pending.
+
