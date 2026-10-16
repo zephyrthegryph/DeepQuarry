@@ -4,10 +4,8 @@
 # Shrink-only: after a sweep, `python tools/ci/base_vars_lint.py --update`.
 base_var	code/ATMOSPHERICS/atom_flags_1.dm	@/atom::flags_1
 base_var	code/ATMOSPHERICS/environmental/LINDA_system.dm	@/atom::can_atmos_pass
-base_var	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/atom/movable::pressure_resistance
 base_var	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/atom/movable::last_high_pressure_movement_air_cycle
 base_var	code/ATMOSPHERICS/tg_infra_compat.dm	@/obj/machinery::rebuilding
-base_var	code/ATMOSPHERICS/tg_infra_compat.dm	@/atom/movable::move_resist
 base_var	code/_helpers/icons.dm	@/atom::examine_icon_snapshot
 base_var	code/_onclick/hud/alert.dm	@/mob::alerts
 base_var	code/_onclick/hud/fullscreen.dm	@/mob::screens
@@ -81,7 +79,6 @@ base_var	code/game/gamemodes/technomancer/spells/summon/summon.dm	@/mob/living::
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::power_init_complete
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::component_parts
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::circuit
-base_var	code/game/machinery/machinery.dm	@/obj/machinery::maintenance_flags
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::material_component_manifest
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::material_emp_resistance
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::gas_dependency_wake_count
@@ -122,16 +119,11 @@ base_var	code/game/objects/items/devices/paicard.dm	@/obj/machinery::paicard
 base_var	code/game/objects/items/weapons/capture_crystal.dm	@/mob/living::capture_crystal
 base_var	code/game/objects/items/weapons/capture_crystal.dm	@/mob/living::capture_caught
 base_var	code/game/objects/objs.dm	@/obj::being_shocked
-base_var	code/game/objects/objs.dm	@/obj::micro_accepted_scale
-base_var	code/game/objects/objs.dm	@/obj::micro_target
 base_var	code/game/objects/objs.dm	@/obj::explosion_resistance
 base_var	code/game/objects/objs.dm	@/obj::economic_department
 base_var	code/game/objects/objs.dm	@/obj::economic_export_value
 base_var	code/game/objects/objs.dm	@/obj::economic_producer_account
 base_var	code/game/objects/objs.dm	@/obj::economic_sale_invoice_id
-base_var	code/game/objects/objs.dm	@/obj::custom_fire_overlay
-base_var	code/game/objects/objs.dm	@/obj::burning_particles
-base_var	code/game/objects/objs.dm	@/obj::obj_flags
 base_var	code/game/skincmd.dm	@/mob::skincmds
 base_var	code/modules/belly_overlay/belly_overlay_tgui.dm	@/mob::belly_overlay_tgui
 base_var	code/modules/body/body.dm	@/mob/living::body
@@ -242,10 +234,6 @@ base_var	code/modules/mob/living/living_defines.dm	@/mob::autowhisper_mode
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::custom_link
 base_var	code/modules/mob/living/living_defines.dm	@/mob::climbing_delay
 base_var	code/modules/mob/living/living_defines.dm	@/mob::eggs
-base_var	code/modules/mob/living/living_fire.dm	@/mob/living::fire_reaction
-base_var	code/modules/mob/living/living_fire.dm	@/mob/living::fire_trigger_proc
-base_var	code/modules/mob/living/living_fire.dm	@/mob/living::fire_trigger_verb
-base_var	code/modules/mob/living/living_fire.dm	@/mob/living::fire_heats_body
 base_var	code/modules/mob/living/organs.dm	@/mob/living::organs
 base_var	code/modules/mob/living/silicon/robot/component.dm	@/obj/item::carried_afflictions
 base_var	code/modules/mob/living/status_indicators.dm	@/mob/living::status_indicators

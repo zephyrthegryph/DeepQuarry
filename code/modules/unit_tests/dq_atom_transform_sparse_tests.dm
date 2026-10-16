@@ -50,7 +50,7 @@
 	expected.Scale(0, 2)
 	matrix_matches(A.transform, expected)
 	// The unmigrated image implementation is the old nullable-var contract.
-	var/image/control = image()
+	var/image/control = image(null)
 	control.SetTransform(scale_x = 0, scale_y = 2, rotation = 0, offset_x = 0, offset_y = 0)
 	control.SetTransform(scale_x = null)
 	A.SetTransform(scale_x = null)
