@@ -33,19 +33,37 @@ green before applying the changes.
 
 ## Remaining exact contracts
 
-### Six casino stages
+### Three casino intermediate-effect flows; three convertible leaves
 
-`code/modules/casino/casino.dm` remains unchanged at `wheel_use_stage`,
-`wheel_management_stage`, `wheel_interval_stage`, `spasm_use`, `spasm_id` and
-`setprice/recheck`. These complete flows perform observable effects between
-questions: UI refresh while the next question is open, repeated access messages,
-stale-collar relation/key cleanup before confirmation, and custom invalid-price
-or interval feedback. The nested interval path also has different admission from
-the independent verb. Pure `asks(when/valid)` cannot perform those effects.
+Source review of `code/modules/casino/casino.dm` against master `dbf38d2b20`
+finds three genuinely blocked flows, retained unchanged:
+`wheel_management_stage` repeats its access message before questions and on
+resumption; `spasm_use` clears stale collar references/keys before its next
+question; `spasm_id` combines that cleanup with repeated staff messages and a
+selected-collar identity check around confirmation.
 
 A declared intermediate effect/commit step with cancellation and refresh semantics
 is needed. Moving cleanup to a final handler, writing from a computed prompt field,
 or wrapping the old predicate would change the flow instead of converting it.
+
+The other three flows now use existing forms: the former `wheel_use_stage` chains
+its choice and conditional interval question; the former `wheel_interval_stage`
+is a numeric question followed by a range requirement and assignment; `setprice`
+delegates its leaf transaction to a native script-bound operation. Neither machine declares an interface or
+`ui_data()`, so its existing `SStgui.update_uis()` calls have no open declared
+window to update. They are not evidence for an intermediate-effect framework gap.
+The standalone interval menu's initial adjacency/capability requirements must not
+be strengthened into resumed range checks; the nested interval branch never had
+that admission. The numeric input must preserve its UI bounds while allowing the
+real final range check to refuse invalid submitted answers without writing state.
+The coordinator ran all three old-production AI/borg flow tests successfully on
+production `4ab2e15fe1` (`20261016T005159_5b6663b70b.json`, three passes, zero
+failures), then authorized application. Their native adaptations exercise the
+actual menu/script operation and asks paths. Native verification remains pending;
+no new gate is claimed here. Source inventory predicts 98 of the original 103
+silicon-entry rows converted, with these three intermediate-effect flows, hoist,
+and the machine-refresh shim remaining (five). The coordinator will verify the
+actual ratchet count.
 
 ### Hoist detach propagation
 
@@ -61,9 +79,13 @@ A declared refusal-fallthrough contract or approved propagation change is needed
 `machine_shim.dm:updateUsrDialog` remains unchanged. The old `actor_use` route
 skips engine resolution when `GLOB.op_click_resolved` already marks the current
 input. Blindly submitting a new click during the operation effect can queue the
-same action repeatedly. The remaining callers need native linked-presentation
-refresh/nested-input suppression, or complete retirement as UI output updates.
-There are 23 call sites plus the definition in the current source search.
+same action repeatedly. Native linked-window refresh already exists:
+`code/engine/change/refresh.dm` delegates `refresh_ui` to
+`presentation_refresh_windows`, and `code/modules/tgui/ui_push.dm` coalesces
+declared-window output updates. The remaining 23 legacy browser callers must
+migrate to those existing UI forms before this shim can retire. This is a legacy
+browser migration dependency, not a missing generic refresh API. Retaining those
+callers would instead require an explicit nested-legacy-input refresh contract.
 
 ## New focused fixtures (not yet run)
 

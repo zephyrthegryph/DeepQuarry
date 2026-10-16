@@ -4949,3 +4949,32 @@ Verification of this copied cleanup remains pending the coordinating lane's gate
 ### Master devour operation key (2026-10-15)
 
 Master `2136172edc` (October 15, 17:13:57 -0500; “Delete the task engine; a devour waits as an op”) adds the native AI `devour` operation. The 51 inherited mob conversion-pin inventories gain only that key. The expanded menu, click and wire rows are unchanged, as confirmed by the fresh requirements-lane capture on the same master. These records add only `devour` to each existing key line, preserving other lane-specific entries and factoring.
+
+### Casino wheel questions and prize-price leaf (2026-10-15)
+
+The wheel's existing `wheel_use` and `wheel_setinterval` operations now own their
+questions as `asks()` steps. The first operation chains the optional interval
+question; the standalone menu retains its initial adjacency/capability admission
+without adding a range recheck after its answer. Both keep their original keys,
+labels, questions, 1–1000 numeric presentation, inclusive boundaries and final
+assignments. AI actors still open no casino operator questions; borg actors retain
+the actual question and its answers. Cancellation and disabled public spins do
+not change interval state or start wheel work.
+
+The legacy management flow's `setprice` leaf now invokes `casino_set_price`, an
+actual script-bound operation. This adds only that operation's key to the prize
+terminal declaration inventory; it is not a new player menu or remote-control
+binding. Invalid submitted numbers still close the question without assigning a
+price and display exactly `Invalid price.`. The old request-level context check
+returned `The prize price is invalid.` to its caller; the new numeric request
+accepts transport and the operation requirement supplies the same existing player
+notice as its refusal reason. Native tests check that operation outcome/reason,
+not an invented legacy request return. Invalid intervals similarly retain
+`Invalid interval.` and leave the prior interval unchanged. No menu/click re-bless
+is authorized by this cause; only the new prize-leaf key inventory is expected.
+
+The coordinator proved the three real old AI/borg flows before conversion (three
+passes, zero failures on production `4ab2e15fe1`). The adapted tests preserve valid,
+cancel and refusal state assertions. Native validation is pending the combined
+gate. The remaining management, registration and sale flows still perform real
+effects between questions and remain outside this conversion.

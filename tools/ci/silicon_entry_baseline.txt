@@ -3,8 +3,5 @@
 helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(user))
 helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(user))
 helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(user))
-helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(user))
-helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(user))
-helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(user))
 helper_actor_check	code/modules/materials/containers/machine_shim.dm	if (isAI(user) || isrobot(user))
 helper_actor_check	code/modules/multiz/hoist.dm	if (!(ishuman(user) || issilicon(user)))
