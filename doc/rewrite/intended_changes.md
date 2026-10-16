@@ -4906,3 +4906,7 @@ The species-name UI action now uses a native asks step and the identity-profile 
 ## Look fixture native-roll stream isolation (2026-10-16)
 
 The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.
+
+## Master operation-key pin catch-up (2026-10-16)
+
+51 mob conversion-pin files add only the devour key declared by master 2136172edc4 (code/modules/combat_ai/integration/mob_living.dm); two mecha files remove only ai_use_equipment retired by master f13b84652d. Expanded menu and click rows are byte-identical. These are stale key inventories on master, independent of the initializer/base-variable migrations; no behavior rows or refusal text are blessed.
