@@ -95,7 +95,7 @@
 	return sum
 
 /mob/living/carbon/human/get_gender()
-	return identifying_gender ? identifying_gender : read_once(gender)
+	return identifying_gender ? identifying_gender : gender
 
 /mob/living/carbon/human/name_gender() /// Returns proper names for gender identites
 	if(identifying_gender == "plural")
@@ -391,7 +391,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	if(options.copy_name)
 		name = character.name
 		bio.nickname = character.bio.nickname
-	gender = character.gender
+	set_gender(character.gender)
 	set_identifying_gender(character.identifying_gender)
 
 	record_copy(looks, character.looks)

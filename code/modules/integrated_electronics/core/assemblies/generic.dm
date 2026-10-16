@@ -221,17 +221,17 @@
 	on_anchored()
 	switch(ndir)
 		if(NORTH)
-			pixel_y = -31
+			set_pixel_y(-31)
 		if(SOUTH)
-			pixel_y = 31
+			set_pixel_y(31)
 		if(EAST)
-			pixel_x = -31
+			set_pixel_x(-31)
 		if(WEST)
-			pixel_x = 31
+			set_pixel_x(31)
 
 /obj/item/electronic_assembly/wallmount/on_unanchored()
-	pixel_x = 0
-	pixel_y = 0
+	set_pixel_x(0)
+	set_pixel_y(0)
 	..()
 
 /obj/item/electronic_assembly/wallmount/heavy

@@ -7,5 +7,5 @@
 	hud_used?.plane_holder?.set_vis(VIS_AI_EYE, TRUE)
 	hud_used?.plane_holder?.set_vis(VIS_AUGMENTED, TRUE) // GHOST VISION IS AUGMENTED
 	hud_used?.plane_holder?.set_vis(VIS_SOULCATCHER, TRUE) // Soulcatcher
-	plane = PLANE_GHOSTS
+	set_plane(PLANE_GHOSTS)
 	expire(null)

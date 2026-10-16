@@ -68,7 +68,7 @@ CAPABILITIES(/obj/item/organ/internal/lungs/grey/colormatch)
 /obj/item/organ/internal/lungs/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
-		color = H.species.blood_color
+		set_color(H.species.blood_color)
 
 
 // === merged from lungs_ch.dm during hard-fork de-suffix (verified no override-order change) ===

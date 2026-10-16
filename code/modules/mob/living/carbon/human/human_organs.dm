@@ -97,9 +97,9 @@
 	for(var/obj/item/organ/O in all_bits)
 		O.set_dna(dna)
 
-/mob/living/carbon/human/proc/set_gender(g)
-	if(g != gender)
-		gender = g
+/// A human's biological gender and the DNA that records it (set_gender() on its own changes only the var).
+/mob/living/carbon/human/proc/set_biological_gender(g)
+	set_gender(g)
 
 	if(dna.GetUIState(DNA_UI_GENDER) ^ gender == FEMALE) // XOR will catch both cases where they do not match
 		dna.SetUIState(DNA_UI_GENDER, gender == FEMALE)

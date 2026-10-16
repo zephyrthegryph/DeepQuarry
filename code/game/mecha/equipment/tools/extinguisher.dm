@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/extinguisher)
 			if(!W || !src)
 				continue
 			reagents.trans_to_obj(W, spray_amount, user = user)
-			W.set_color()
+			W.tint_from_reagents()
 			W.set_up(my_target, user = user)
 		return 1
 

@@ -133,7 +133,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
 
 		var/mob/living/carbon/human/H = new(src, newspecies)
 		H.set_stat(DEAD)
-		H.gender = gender
+		H.set_gender(gender)
 		for(var/obj/item/organ/external/EO in H.organs)
 			if(EO.organ_tag == BP_TORSO || EO.organ_tag == BP_GROIN)
 				continue //Roboticizing a torso does all the children and wastes time, do it later

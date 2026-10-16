@@ -116,7 +116,7 @@ TYPE_TABLE_DECLARE(/datum/dimension_theme, dimension_replace_objs, list( \
 	PROTECTED_PROC(TRUE)
 
 	if(istype(object, /obj/structure/window) && window_colour)
-		object.color = window_colour
+		object.set_color(window_colour)
 		return
 
 	if(istype(object, /obj/structure/table) && material)

@@ -992,13 +992,13 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			var/wall_offset = 24
 			switch(fixture.direction)
 				if(NORTH)
-					created.pixel_y = wall_offset
+					created.set_pixel_y(wall_offset)
 				if(SOUTH)
-					created.pixel_y = -wall_offset
+					created.set_pixel_y(-wall_offset)
 				if(EAST)
-					created.pixel_x = wall_offset
+					created.set_pixel_x(wall_offset)
 				if(WEST)
-					created.pixel_x = -wall_offset
+					created.set_pixel_x(-wall_offset)
 		result.register_furnishing(created)
 		var/datum/generated_room_solution/solution = solutions_by_native_id["[fixture.room_numeric_id]"]
 		if(solution)

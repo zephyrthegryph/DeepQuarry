@@ -29,7 +29,7 @@
 			if(T)
 				var/obj/effect/spider/spiderling/non_growing/horror/spider = new /obj/effect/spider/spiderling/non_growing/horror(get_turf(human_speaker))
 				spider.faction = human_speaker.faction
-				spider.color = "[human_speaker.species.blood_color]"
+				spider.set_color("[human_speaker.species.blood_color]")
 				spider.name = "writhing tendril mass"
 				spider.desc = "A small, writhing mass of flesh and tendrils."
 				var/obj/item/organ/external/head/head = human_speaker.get_organ(BP_HEAD)

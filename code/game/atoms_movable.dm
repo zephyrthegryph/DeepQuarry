@@ -616,7 +616,7 @@ SETTER(/atom/movable, anchored)
 	var/datum/thrownthing/TT = new(src, target, dir, range, speed, thrower, FALSE, real_force, FALSE, then, then_owner, then_with)
 	rel_set(src, nameof(throwing), TT)
 
-	pixel_z = 0
+	set_pixel_z(0)
 	if(spin && does_spin)
 		SpinAnimation(4,1)
 
@@ -743,7 +743,7 @@ CAPABILITIES(/atom/movable/overlay)
 /atom/movable/proc/cloak_finish()
 	//Needs to be last so people can actually see the effect before we become invisible
 	if(dq_get_cloaked(src)) // Ensure we are still dq_get_cloaked(src) after the animation delay
-		plane = CLOAKED_PLANE
+		set_plane(CLOAKED_PLANE)
 
 /atom/movable/proc/uncloak()
 	if(!dq_get_cloaked(src))
@@ -759,7 +759,7 @@ CAPABILITIES(/atom/movable/overlay)
 		dq_set_cloaked_selfimage(src, null)
 
 	//Needs to be first so people can actually see the effect, so become uninvisible first
-	plane = initial(plane)
+	set_plane(initial(plane))
 
 	//Oooooo
 	uncloak_animation(animation_time)
@@ -785,7 +785,7 @@ CAPABILITIES(/atom/movable/overlay)
 	filters -= filter(type="wave", x = 0, y = 16, size = 8, offset = 1, flags = WAVE_SIDEWAYS)
 
 	//Back to original alpha
-	alpha = initial_alpha
+	set_alpha(initial_alpha)
 	cloak_finish()
 
 /atom/movable/proc/uncloak_animation(length = 1 SECOND)
@@ -793,7 +793,7 @@ CAPABILITIES(/atom/movable/overlay)
 	var/initial_alpha = alpha
 
 	//Put us back to normal, but no alpha
-	alpha = 0
+	set_alpha(0)
 
 	//Animate alpha fade up
 	animate(src, alpha = initial_alpha, time = length)

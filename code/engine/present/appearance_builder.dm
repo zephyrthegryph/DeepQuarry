@@ -665,15 +665,15 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	if(ismovable(A) && (A.icon != old_icon || A.icon_state != old_state))
 		A.look_changed_sprite(old_icon, old_state)
 	if(!isnull(color))
-		A.color = color
+		A.look_set_color(color)
 		now |= LOOK_SET_COLOR
 	else if(was & LOOK_SET_COLOR)
-		A.color = initial(A.color)
+		A.look_set_color(initial(A.color))
 	if(!isnull(alpha))
-		A.alpha = alpha
+		A.look_set_alpha(alpha)
 		now |= LOOK_SET_ALPHA
 	else if(was & LOOK_SET_ALPHA)
-		A.alpha = initial(A.alpha)
+		A.look_set_alpha(initial(A.alpha))
 	if(!isnull(invisibility))
 		A.look_set_invisibility(invisibility)
 		now |= LOOK_SET_INVISIBILITY
@@ -690,22 +690,20 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	else if(was & LOOK_SET_DIR)
 		A.look_set_dir(initial(A.dir))
 	if(!isnull(plane))
-		A.plane = plane
+		A.look_set_plane(plane)
 		now |= LOOK_SET_PLANE
 	else if(was & LOOK_SET_PLANE)
-		A.plane = initial(A.plane)
+		A.look_set_plane(initial(A.plane))
 	if(!isnull(layer))
-		A.layer = layer
+		A.look_set_layer(layer)
 		now |= LOOK_SET_LAYER
 	else if(was & LOOK_SET_LAYER)
-		A.layer = initial(A.layer)
+		A.look_set_layer(initial(A.layer))
 	if(!isnull(offset_x))
-		A.pixel_x = offset_x
-		A.pixel_y = offset_y
+		A.look_set_pixel_offset(offset_x, offset_y)
 		now |= LOOK_SET_OFFSET
 	else if(was & LOOK_SET_OFFSET)
-		A.pixel_x = initial(A.pixel_x)
-		A.pixel_y = initial(A.pixel_y)
+		A.look_set_pixel_offset(initial(A.pixel_x), initial(A.pixel_y))
 	if(light_spec)
 		if(!light_spec[1])
 			A.look_apply_light(0) // GLOW_OFF: the range only, so the power and colour stay for the next light

@@ -18,12 +18,12 @@
 		overlays = speaker.overlays
 		timeofdeath = speaker.timeofdeath
 
-		alpha = 127 //Maybe we'll have hologram calls later.
+		set_alpha(127) //Maybe we'll have hologram calls later.
 		if(speaker.client && speaker.client.prefs)
 			var/datum/preferences/p = speaker.client.prefs
 			name = p.read_preference(/datum/preference/name/real_name)
 			set_real_name(name)
-			gender = p.read_preference(/datum/preference/choiced/gender/identifying)
+			set_gender(p.read_preference(/datum/preference/choiced/gender/identifying))
 
 			for(var/language in p.read_preference(/datum/preference/alternate_languages)) // migrated
 				add_language(language)

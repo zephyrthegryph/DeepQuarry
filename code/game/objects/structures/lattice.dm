@@ -80,7 +80,7 @@ CAPABILITIES(/obj/structure/lattice)
 /obj/structure/lattice/proc/upgrade(obj/item/stack/rods/R, mob/user)
 	to_chat(user, span_notice("You start connecting \the [R.name] to \the [src.name] ..."))
 	R.use(1)
-	src.alpha = 0 // Note: I don't know why this is set, Eris did it, just trusting for now. ~Leshana
+	set_alpha(0) // Note: I don't know why this is set, Eris did it, just trusting for now. ~Leshana
 	replace_with(src, /obj/structure/catwalk)
 
 /obj/structure/lattice/proc/update_overlays_now()

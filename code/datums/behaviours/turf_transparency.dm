@@ -12,8 +12,8 @@
 ///Sets up viscontents of the turf below. Handle plane and layer here too so that they don't cover other obs/turfs in Dream Maker
 /turf/proc/make_z_transparent(show_bottom_level = TRUE)
 	z_transparency = show_bottom_level ? Z_TRANSPARENCY_SHOW_BOTTOM : Z_TRANSPARENCY_ON
-	plane = OPENSPACE_PLANE
-	layer = OPENSPACE_LAYER
+	set_plane(OPENSPACE_PLANE)
+	set_layer(OPENSPACE_LAYER)
 	z_transparency_update(TRUE, TRUE)
 
 /turf/proc/unmake_z_transparent()

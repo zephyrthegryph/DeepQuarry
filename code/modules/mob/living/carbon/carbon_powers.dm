@@ -5,11 +5,11 @@
 	if(invisibility == INVISIBILITY_OBSERVER)
 		set_invisibility(initial(invisibility))
 		to_chat(src, span_notice("You are now visible."))
-		alpha = min(alpha + 100, 255)
+		set_alpha(min(alpha + 100, 255))
 	else
 		set_invisibility(INVISIBILITY_OBSERVER)
 		to_chat(src, span_notice("You are now invisible."))
-		alpha = max(alpha - 100, 0)
+		set_alpha(max(alpha - 100, 0))
 
 	fx_sparks(loc, 5, FALSE)
 	act_message(src, null, others = span_warning("Electrical sparks manifest around %U% as they suddenly appear!"))

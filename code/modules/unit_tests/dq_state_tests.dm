@@ -126,8 +126,8 @@ CAPABILITIES(/datum/dq_state_probe)
 /datum/unit_test/dq_state_canonical_delta/Run()
 	var/obj/item/paper/first = allocate(/obj/item/paper)
 	var/obj/item/paper/second = allocate(/obj/item/paper)
-	first.pixel_x = second.pixel_x
-	first.pixel_y = second.pixel_y
+	first.set_pixel_x(second.pixel_x)
+	first.set_pixel_y(second.pixel_y)
 	var/first_text = state_canonical(state_serialize(first))
 	var/second_text = state_canonical(state_serialize(second))
 	TEST_ASSERT_EQUAL(state_hash(state_serialize(first)), state_hash(state_serialize(second)), "two untouched papers should hash the same: [dq_state_first_difference(first_text, second_text)]")

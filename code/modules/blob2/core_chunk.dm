@@ -44,7 +44,7 @@ CAPABILITIES(/obj/item/blobcore_chunk)
 		name = "[blob_type.name] [initial(name)]"
 
 	if(blob_type)
-		color = blob_type.color
+		set_color(blob_type.color)
 
 		if(blob_type.chunk_active_type == BLOB_CHUNK_CONSTANT)
 			set_should_tick(TRUE)

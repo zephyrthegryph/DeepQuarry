@@ -105,7 +105,7 @@ CAPABILITIES(/obj/structure/smoletrack)
 		return
 	var/picked = A.step_value("colour")
 	if(picked)
-		color = picked
+		set_color(picked)
 
 /// A smole road or building's colour. Re-checked on the answer: the painter is still next to it.
 /datum/prompt/color/smole_paint
@@ -291,7 +291,7 @@ CAPABILITIES(/obj/structure/smoleruins)
 		return
 	var/picked = A.step_value("colour")
 	if(picked)
-		color = picked
+		set_color(picked)
 
 //probably a bit redundant but gives a more direct way to disassemble buildings without using intents
 /// Old Take Building Apart verb.

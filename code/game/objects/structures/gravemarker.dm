@@ -36,7 +36,7 @@ CAPABILITIES(/obj/structure/gravemarker)
 		stack_trace("Material of type: [material_name] does not exist.")
 		spent(src)
 		return
-	color = material.icon_colour
+	set_color(material.icon_colour)
 	make_rotatable()
 
 /obj/structure/gravemarker/examine(mob/user)

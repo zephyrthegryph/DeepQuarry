@@ -187,7 +187,7 @@ CAPABILITIES(/obj/item/flash)
 
 	if(isrobot(user))
 		var/atom/movable/overlay/animation = new(user.loc)
-		animation.layer = user.layer + 1
+		animation.set_layer(user.layer + 1)
 		animation.set_icon_state("blank")
 		animation.set_icon('icons/mob/mob.dmi')
 		rel_set(animation, nameof(animation.master), user)
@@ -277,7 +277,7 @@ CAPABILITIES(/obj/item/flash)
 	flick("flash2", src)
 	if(istype(user, /mob/living/silicon/robot))
 		var/atom/movable/overlay/animation = new(user.loc)
-		animation.layer = user.layer + 1
+		animation.set_layer(user.layer + 1)
 		animation.set_icon_state("blank")
 		animation.set_icon('icons/mob/mob.dmi')
 		rel_set(animation, nameof(animation.master), user)

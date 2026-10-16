@@ -24,7 +24,7 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 
 /proc/astar_wipe_colors_now(list/turf/turfs)
 	for(var/turf/T in turfs)
-		T.color = null
+		T.set_color(null)
 		T.maptext = null
 		T.overlays.len = 0
 

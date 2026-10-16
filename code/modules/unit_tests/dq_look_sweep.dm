@@ -37,6 +37,8 @@
 #define DQ_LOOK_TREE_DIR "code/modules/unit_tests/snapshots/look_trees/"
 #define DQ_LOOK_STATE_DIR "code/modules/unit_tests/snapshots/look_states/"
 #define DQ_LOOK_STATE_MAX_VARS 24
+/// The cap for a type whose plan is unknown ("*"): every numeric var it declares, up to this many.
+#define DQ_LOOK_STATE_MAX_VARS_UNPLANNED 200
 /// Deadline passes a settle runs: work that queues more zero-delay work (a timer that arms a timer) needs the next one.
 #define DQ_LOOK_SETTLE_PASSES 3
 
@@ -337,14 +339,19 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			continue
 		if(isnum(subject.vars[name]) && !findtext(name, "time") && !findtext(name, "cooldown") && !findtext(name, "last") && !findtext(name, "next"))
 			found += name
-	if(length(found) > DQ_LOOK_STATE_MAX_VARS)
-		found.Cut(DQ_LOOK_STATE_MAX_VARS + 1)
 	if(!islist(plan_entry))
+		// The plan does not know what the draw reads: scan more of them (a robot declares over a hundred numeric vars, and the cover is the 25th).
+		if(length(found) > DQ_LOOK_STATE_MAX_VARS_UNPLANNED)
+			found.Cut(DQ_LOOK_STATE_MAX_VARS_UNPLANNED + 1)
 		return found
-	. = list()
+	// Narrowed to what the plan says a draw reads first, then capped: the cap must not drop a var the draw reads.
+	var/list/read = list()
 	for(var/name in found)
 		if(name in plan_entry)
-			. += name
+			read += name
+	if(length(read) > DQ_LOOK_STATE_MAX_VARS)
+		read.Cut(DQ_LOOK_STATE_MAX_VARS + 1)
+	return read
 
 /// Writes `value` to `target.vars[name]` the way a caller does (its tracked setter when it has one, else the raw var) and redraws.
 /datum/unit_test/proc/dq_look_write(atom/target, name, value)

@@ -652,7 +652,7 @@ CAPABILITIES(/datum/system/job)
 			active_wheelchair.set_dir(human_mob.dir)
 			active_wheelchair.add_fingerprint(human_mob)
 			if(used_wheelchair)
-				active_wheelchair.color = used_wheelchair.color
+				active_wheelchair.set_color(used_wheelchair.color)
 				spent(used_wheelchair)
 
 	to_chat(human_mob, span_filter_notice(span_bold("You are [job.total_positions == 1 ? "the" : "a"] [alt_title ? alt_title : rank].")))

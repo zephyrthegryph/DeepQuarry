@@ -237,7 +237,7 @@ CAPABILITIES(/obj/item/organ/internal/brain/slime)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
 		var/list/skin = hex2rgb(H.looks.skin_color)
-		color = rgb(min(skin[1] + 40, 255), min(skin[2] + 40, 255), min(skin[3] + 40, 255))
+		set_color(rgb(min(skin[1] + 40, 255), min(skin[2] + 40, 255), min(skin[3] + 40, 255)))
 
 /obj/item/organ/internal/brain/slime/proc/reviveBody()
 	// The core hosts the promethean's mind; the new body is grown from the
@@ -320,7 +320,7 @@ CAPABILITIES(/obj/item/organ/internal/brain/grey/colormatch)
 /obj/item/organ/internal/brain/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
-		color = H.species.blood_color
+		set_color(H.species.blood_color)
 
 
 // --- The brain view reads its tissue ---------------------------------------------------

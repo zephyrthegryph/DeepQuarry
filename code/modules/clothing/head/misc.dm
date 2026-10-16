@@ -645,7 +645,7 @@ CAPABILITIES(/obj/item/clothing/head/bow)
 CAPABILITIES(/obj/item/clothing/head/wiggler)
 	configure(item_worn(covers = 0))
 
-/obj/item/clothing/head/wiggler/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null)
+/obj/item/clothing/head/wiggler/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null, mob/living/carbon/human/wearer = null)
 	var/image/so_far = ..()
 	so_far.pixel_y += 16
 	so_far.pixel_x += 0

@@ -873,9 +873,9 @@ CAPABILITIES(/datum/respawn_review)
 		return
 	var/initial_x = new_character.pixel_x
 	var/initial_y = new_character.pixel_y
-	new_character.plane = 1
-	new_character.pixel_x = rand(-150, 150)
-	new_character.pixel_y = 500 // When you think that pixel_z is height but you are wrong
+	new_character.set_plane(1)
+	new_character.set_pixel_x(rand(-150, 150))
+	new_character.set_pixel_y(500) // When you think that pixel_z is height but you are wrong
 	new_character.set_density(FALSE)
 	new_character.set_opacity(FALSE)
 	animate(new_character, pixel_y = initial_y, pixel_x = initial_x , time = 0.7 SECONDS)

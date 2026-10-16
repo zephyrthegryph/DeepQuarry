@@ -70,8 +70,8 @@ CAPABILITIES(/obj/item/sign)
 	if(!consume(src, user))
 		return OP_OK
 	var/obj/structure/sign/S = new target_type(user.loc)
-	S.pixel_x = offset_x
-	S.pixel_y = offset_y
+	S.set_pixel_x(offset_x)
+	S.set_pixel_y(offset_y)
 	S.name = restored_name
 	S.desc = restored_desc
 	S.set_icon_state(restored_state)
@@ -1590,13 +1590,13 @@ CAPABILITIES(/obj/structure/sign/warning)
 
 	switch(placement_dir)
 		if(NORTH)
-			P.pixel_y = 32
+			P.set_pixel_y(32)
 		if(SOUTH)
-			P.pixel_y = -32
+			P.set_pixel_y(-32)
 		if(EAST)
-			P.pixel_x = 32
+			P.set_pixel_x(32)
 		if(WEST)
-			P.pixel_x = -32
+			P.set_pixel_x(-32)
 
 	P.set_dir(placement_dir)
 	if(flag_size)
@@ -1607,17 +1607,17 @@ CAPABILITIES(/obj/structure/sign/warning)
 		P2.set_dir(P.dir)
 		switch(P2.dir)
 			if(NORTH)
-				P2.pixel_y = P.pixel_y
-				P2.pixel_x = 32
+				P2.set_pixel_y(P.pixel_y)
+				P2.set_pixel_x(32)
 			if(SOUTH)
-				P2.pixel_y = P.pixel_y
-				P2.pixel_x = 32
+				P2.set_pixel_y(P.pixel_y)
+				P2.set_pixel_x(32)
 			if(EAST)
-				P2.pixel_x = P.pixel_x
-				P2.pixel_y = -32
+				P2.set_pixel_x(P.pixel_x)
+				P2.set_pixel_y(-32)
 			if(WEST)
-				P2.pixel_x = P.pixel_x
-				P2.pixel_y = 32
+				P2.set_pixel_x(P.pixel_x)
+				P2.set_pixel_y(32)
 		P2.name = name
 		P2.desc = desc
 		P2.description_fluff = description_fluff

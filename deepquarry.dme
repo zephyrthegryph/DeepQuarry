@@ -1122,6 +1122,7 @@
 #include "code\game\area\Space Station 13 areas.dm"
 #include "code\game\area\ss13_deprecated_areas.dm"
 #include "code\game\atom\_atom.dm"
+#include "code\game\atom\atom_visual.dm"
 #include "code\game\atom\atom_defense.dm"
 #include "code\game\atom\armor.dm"
 #include "code\game\atom\impact_response.dm"

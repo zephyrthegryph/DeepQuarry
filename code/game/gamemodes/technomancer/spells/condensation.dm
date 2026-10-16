@@ -27,7 +27,7 @@
 					var/obj/effect/effect/water/W = new /obj/effect/effect/water(get_turf(T))
 					W.create_reagents(60)
 					W.reagents.add_reagent(id = REAGENT_ID_WATER, amount = 60, data = null, safety = 0)
-					W.set_color()
+					W.tint_from_reagents()
 					W.set_up(desired_turf)
 					flick(initial(icon_state),W) // Otherwise pooling causes the animation to stay stuck at the end.
 					if(check_for_scepter())

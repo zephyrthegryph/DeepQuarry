@@ -88,7 +88,7 @@
 		set_icon_state("grey_crystal2")
 
 	if(prob(30))
-		color = "#E03131"
+		set_color("#E03131")
 
 	set_glow(src, GLOW(3, 3, color))
 

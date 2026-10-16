@@ -207,8 +207,8 @@ CAPABILITIES(/obj/machinery/alarm)
 	alarms_hidden = TRUE
 
 /obj/machinery/alarm/angled/offset_airalarm()
-	pixel_x = (dir & 3) ? 0 : (dir == 4 ? -21 : 21)
-	pixel_y = (dir & 3) ? (dir == 1 ? -18 : 20) : 0
+	set_pixel_x((dir & 3) ? 0 : (dir == 4 ? -21 : 21))
+	set_pixel_y((dir & 3) ? (dir == 1 ? -18 : 20) : 0)
 
 /obj/machinery/alarm/server
 	req_access = list(ACCESS_RD, ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)
@@ -264,8 +264,8 @@ CAPABILITIES(/obj/machinery/alarm)
 	..()
 
 /obj/machinery/alarm/proc/offset_airalarm()
-	pixel_x = (dir & 3) ? 0 : (dir == 4 ? -26 : 26)
-	pixel_y = (dir & 3) ? (dir == 1 ? -26 : 26) : 0
+	set_pixel_x((dir & 3) ? 0 : (dir == 4 ? -26 : 26))
+	set_pixel_y((dir & 3) ? (dir == 1 ? -26 : 26) : 0)
 
 /// The thresholds a new alarm of this type starts with (a fresh table: each alarm keeps its own). Subtypes edit their parent's.
 /obj/machinery/alarm/proc/default_TLV()

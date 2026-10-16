@@ -218,7 +218,7 @@ CAPABILITIES(/datum/radial_menu)
 /datum/radial_menu/proc/HideElement(atom/movable/screen/radial/slice/E)
 	E.cut_overlays()
 	E.vis_contents.Cut()
-	E.alpha = 0
+	E.set_alpha(0)
 	E.name = "None"
 	E.maptext = null
 	E.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
@@ -237,11 +237,11 @@ CAPABILITIES(/datum/radial_menu)
 		var/matrix/TM = matrix()
 		animate(E,pixel_x = px,pixel_y = py, transform = TM, time = timing)
 	else
-		E.pixel_y = py
-		E.pixel_x = px
+		E.set_pixel_y(py)
+		E.set_pixel_x(px)
 
 	//Visuals
-	E.alpha = 255
+	E.set_alpha(255)
 	E.mouse_opacity = MOUSE_OPACITY_ICON
 	E.cut_overlays()
 	E.vis_contents.Cut()
@@ -270,8 +270,8 @@ CAPABILITIES(/datum/radial_menu)
 			E.add_overlay(LAZYACCESS(choices_icons, choice_id))
 		if (choice_datum?.info)
 			var/obj/effect/abstract/info/info_button = new(E, choice_datum.info)
-			info_button.plane = PLANE_PLAYER_HUD_ABOVE
-			info_button.layer = RADIAL_CONTENT_LAYER
+			info_button.set_plane(PLANE_PLAYER_HUD_ABOVE)
+			info_button.set_layer(RADIAL_CONTENT_LAYER)
 			E.vis_contents += info_button
 
 /datum/radial_menu/New()

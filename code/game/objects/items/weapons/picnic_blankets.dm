@@ -71,7 +71,7 @@ MSG_DEF_SELF(picnic_blanket/center, "Fold it up from the center.")
 	for(var/obj/O in get_turf(src)) //Center element determines behaviour
 		if(istype(O, /obj/structure/table))
 			isTableTop = TRUE
-			layer = TABLE_LAYER + 0.01 //We should be just a bit over tables!
+			set_layer(TABLE_LAYER + 0.01) //We should be just a bit over tables!
 
 	populate_blankets:
 		for(var/dir in dirs)
@@ -102,7 +102,7 @@ MSG_DEF_SELF(picnic_blanket/center, "Fold it up from the center.")
 			side.desc = desc
 			side.set_dir(dir)
 			if(isTableTop)
-				side.layer = TABLE_LAYER + 0.01 //We should be just above tables.
+				side.set_layer(TABLE_LAYER + 0.01) //We should be just above tables.
 
 // Keys are blanket_type: "1" is CENTER, "2" is SIDE (8 directional icon).
 /// The look (the draw sweep: from its layers).

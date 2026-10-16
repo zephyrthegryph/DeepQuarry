@@ -59,7 +59,7 @@ CAPABILITIES(/obj/item/target)
 		return OP_REFUSED
 	stake.set_density(TRUE)
 	set_density(FALSE)
-	layer = OBJ_LAYER
+	set_layer(OBJ_LAYER)
 
 	forceMove(user.loc)
 	if(ishuman(user))
@@ -101,8 +101,8 @@ CAPABILITIES(/obj/item/target)
 
 		// Create a temporary object to represent the damage
 		var/obj/bmark = new
-		bmark.pixel_x = p_x
-		bmark.pixel_y = p_y
+		bmark.set_pixel_x(p_x)
+		bmark.set_pixel_y(p_y)
 		bmark.set_icon('icons/effects/effects.dmi')
 		bmark.set_icon_state("scorch")
 
@@ -110,8 +110,8 @@ CAPABILITIES(/obj/item/target)
 			// Energy weapons are hot. they scorch!
 
 			// offset correction
-			bmark.pixel_x--
-			bmark.pixel_y--
+			bmark.set_pixel_x(bmark.pixel_x - 1)
+			bmark.set_pixel_y(bmark.pixel_y - 1)
 
 			if(Proj.damage >= 20 || istype(Proj, /obj/item/projectile/beam/practice))
 				bmark.set_icon_state("scorch")

@@ -29,5 +29,5 @@ jittery_shaking, and the shake runs as an every() on /mob while it holds.
 	var/jitteriness = status_units(STAT_JITTERY)
 	if(jitteriness > 100)
 		var/amplitude = min(4, jitteriness / 100)
-		pixel_x = old_x + rand(-amplitude, amplitude)
-		pixel_y = old_y + rand(-amplitude/3, amplitude/3)
+		set_pixel_x(old_x + rand(-amplitude, amplitude))
+		set_pixel_y(old_y + rand(-amplitude/3, amplitude/3))

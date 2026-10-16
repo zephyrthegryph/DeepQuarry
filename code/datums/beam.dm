@@ -98,7 +98,7 @@ CAPABILITIES(/datum/beam)
 		var/obj/effect/ebeam/X = new beam_type(origin_oldloc)
 
 		if(beam_color)
-			X.color = beam_color
+			X.set_color(beam_color)
 
 		rel_set(X, nameof(X.owner), src)
 		rel_add(src, nameof(elements), X)
@@ -136,8 +136,8 @@ CAPABILITIES(/datum/beam)
 			X.y += a
 			Pixel_y %= 32
 
-		X.pixel_x = Pixel_x
-		X.pixel_y = Pixel_y
+		X.set_pixel_x(Pixel_x)
+		X.set_pixel_y(Pixel_y)
 
 		X.on_drawn()
 

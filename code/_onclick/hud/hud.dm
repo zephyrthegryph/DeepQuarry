@@ -38,12 +38,12 @@ CAPABILITIES(/datum/global_hud)
 
 /datum/global_hud/proc/setup_overlay(icon_state)
 	var/atom/movable/screen/screen = new /atom/movable/screen()
-	screen.alpha = 30 // Adjut this if you want goggle overlays to be thinner or thicker. //
+	screen.set_alpha(30) // Adjut this if you want goggle overlays to be thinner or thicker. //
 	screen.screen_loc = "SOUTHWEST to NORTHEAST" // Will tile up to the whole screen, scaling beyond 15x15 if needed.
 	screen.set_icon('icons/obj/hud_tiled_vr.dmi')
 	screen.set_icon_state(icon_state)
-	screen.layer = SCREEN_LAYER
-	screen.plane = PLANE_FULLSCREEN
+	screen.set_layer(SCREEN_LAYER)
+	screen.set_plane(PLANE_FULLSCREEN)
 	screen.mouse_opacity = 0
 
 	return screen
@@ -108,16 +108,16 @@ CAPABILITIES(/datum/global_hud)
 	vimpaired = newlist(/atom/movable/screen,/atom/movable/screen,/atom/movable/screen,/atom/movable/screen)
 	O = vimpaired[1]
 	O.screen_loc = "1,1 to 5,15"
-	O.plane = PLANE_FULLSCREEN
+	O.set_plane(PLANE_FULLSCREEN)
 	O = vimpaired[2]
 	O.screen_loc = "5,1 to 10,5"
-	O.plane = PLANE_FULLSCREEN
+	O.set_plane(PLANE_FULLSCREEN)
 	O = vimpaired[3]
 	O.screen_loc = "6,11 to 10,15"
-	O.plane = PLANE_FULLSCREEN
+	O.set_plane(PLANE_FULLSCREEN)
 	O = vimpaired[4]
 	O.screen_loc = "11,1 to 15,15"
-	O.plane = PLANE_FULLSCREEN
+	O.set_plane(PLANE_FULLSCREEN)
 
 	//welding mask overlay black/dither
 	darkMask = newlist(/atom/movable/screen, /atom/movable/screen, /atom/movable/screen, /atom/movable/screen, /atom/movable/screen, /atom/movable/screen, /atom/movable/screen, /atom/movable/screen)
@@ -141,18 +141,18 @@ CAPABILITIES(/datum/global_hud)
 	for(i = 1, i <= 4, i++)
 		O = vimpaired[i]
 		O.set_icon_state("dither50")
-		O.plane = PLANE_FULLSCREEN
+		O.set_plane(PLANE_FULLSCREEN)
 		O.mouse_opacity = 0
 
 		O = darkMask[i]
 		O.set_icon_state("dither50")
-		O.plane = PLANE_FULLSCREEN
+		O.set_plane(PLANE_FULLSCREEN)
 		O.mouse_opacity = 0
 
 	for(i = 5, i <= 8, i++)
 		O = darkMask[i]
 		O.set_icon_state("black")
-		O.plane = PLANE_FULLSCREEN
+		O.set_plane(PLANE_FULLSCREEN)
 		O.mouse_opacity = 2
 
 /*
@@ -438,8 +438,8 @@ CAPABILITIES(/datum/hud)
 	for(var/atom/movable/screen/I in icons)
 		if(!(I.name in list("check known languages", "autowhisper", "autowhisper mode", "move downwards", "move upwards", "set pose")))
 			I.set_icon(ic)
-		I.color = UI_style_color_new
-		I.alpha = UI_style_alpha_new
+		I.set_color(UI_style_color_new)
+		I.set_alpha(UI_style_alpha_new)
 
 /datum/hud/proc/apply_minihud(datum/mini_hud/MH)
 	if(MH in minihuds)

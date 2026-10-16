@@ -204,7 +204,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/set_name, login = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/set_desc, login = TRUE)
-	verb_entry(/mob/living/simple_mob/proc/set_gender, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/choose_gender, login = TRUE)
 	// a ghost becomes a ghost-joinable mob after a yes (the old attack_ghost; a mob nobody may join is not offered)
 	op("ghost_join", observer(), label("Inhabit"), when(nameof(ghostjoin)), needs(req(PROC_REF(can_ghost_join))),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Become Mob", "question" = computed(PROC_REF(ghost_join_question)), "timeout" = 20 SECONDS), keeps = TARGET_PRESENT),
@@ -282,7 +282,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	if(!A.answer)
 		return
 	if(!picked_color)
-		color = A.answer.value
+		set_color(A.answer.value)
 	picked_color = TRUE
 
 /mob/living/simple_mob/SelfMove(turf/n, direct, movetime)
@@ -885,12 +885,12 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 	cooldown_start(src, last_special, 1 SECOND)
 	set_status_flags(status_flags | LEAPING)
-	pixel_y = pixel_y + 10
+	set_pixel_y(pixel_y + 10)
 
 	act_message(src, T, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	play_sfx(src, SFX_EFFECTS_BODYFALL1)
-	pixel_y = default_pixel_y
+	set_pixel_y(default_pixel_y)
 	after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T), keeps_dead = TRUE)
 
 /mob/living/simple_mob/proc/leap_land(mob/living/T)
@@ -984,11 +984,11 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 			M.Turn(90)
 		M.Scale(desired_scale_x, desired_scale_y)
 		M.Translate(1,-6)
-		layer = MOB_LAYER -0.01 // Fix for a byond bug where turf entry order no longer matters
+		set_layer(MOB_LAYER -0.01) // Fix for a byond bug where turf entry order no longer matters
 	else
 		M.Scale(desired_scale_x, desired_scale_y)
 		M.Translate(0, (vis_height/2)*(desired_scale_y-1))
-		layer = MOB_LAYER
+		set_layer(MOB_LAYER)
 
 	// Animate instead of set. Original set left commented out
 	// src.transform = M //

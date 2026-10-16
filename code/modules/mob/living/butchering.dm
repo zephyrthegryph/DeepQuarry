@@ -72,8 +72,8 @@
 				while(butchery_loot[path])
 					butchery_loot[path] -= 1
 					var/obj/item/loot = new path(get_turf(src))
-					loot.pixel_x = rand(-12, 12)
-					loot.pixel_y = rand(-12, 12)
+					loot.set_pixel_x(rand(-12, 12))
+					loot.set_pixel_y(rand(-12, 12))
 
 			butchery_loot.Cut()
 			butchery_loot = null

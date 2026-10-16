@@ -228,7 +228,7 @@ CAPABILITIES(/obj/item/grab)
 		return
 	var/shift = 0
 	var/adir = get_dir(assailant, affecting)
-	affecting.layer = MOB_LAYER
+	affecting.set_layer(MOB_LAYER)
 	switch(state)
 		if(GRAB_PASSIVE)
 			shift = 8
@@ -251,7 +251,7 @@ CAPABILITIES(/obj/item/grab)
 	switch(adir)
 		if(NORTH)
 			animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y =-shift, 5, 1, LINEAR_EASING)
-			affecting.layer = BELOW_MOB_LAYER
+			affecting.set_layer(BELOW_MOB_LAYER)
 		if(SOUTH)
 			animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y = shift, 5, 1, LINEAR_EASING)
 		if(WEST)

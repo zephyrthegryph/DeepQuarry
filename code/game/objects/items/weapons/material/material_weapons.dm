@@ -73,7 +73,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 		set_max_integrity(max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT)
 		update_integrity(max_integrity)
 		if(applies_material_colour)
-			color = material.icon_colour
+			set_color(material.icon_colour)
 		material.dq_apply_material_behaviors(src) // light + a self-processing rad/tox component.
 		update_force()
 

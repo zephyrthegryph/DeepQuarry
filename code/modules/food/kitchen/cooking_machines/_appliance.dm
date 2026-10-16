@@ -824,7 +824,7 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 
 /obj/machinery/appliance/proc/change_product_appearance(obj/item/reagent_containers/food/snacks/product, datum/cooking_item/CI)
 	if (!product.coating()) //Coatings change colour through a new sprite
-		product.color = food_color
+		product.set_color(food_color)
 	product.filling_color = food_color
 
 /mob/living/proc/calculate_composition() // moved from devour.dm on aurora's side
