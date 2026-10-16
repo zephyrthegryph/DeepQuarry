@@ -8,7 +8,7 @@
 	// In the future, transforming species need to be refactored to not need this, as it's the only thing holding it back from proper isolation.
 
 	// Species
-	VAR_PRIVATE/cached_species_vars = list()
+	VAR_PRIVATE/cached_species_vars
 
 	// Dna
 	var/unique_enzymes
@@ -51,9 +51,9 @@
 #define SETUP_SPECIES_CHECK(p, x) \
 	var/datum/species/SP = species; \
 	if (SP) { \
-		cached_species_vars[p] = x; \
+		LAZYSET(cached_species_vars, p, x); \
 	} \
-	return cached_species_vars[p];
+	return cached_species_vars?[p];
 
 /datum/organ_data/proc/get_species_name()
 	SHOULD_NOT_OVERRIDE(TRUE)
