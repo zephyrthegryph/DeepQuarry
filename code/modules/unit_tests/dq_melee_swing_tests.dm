@@ -152,6 +152,7 @@
 /datum/unit_test/dq_melee_swing_sets_recovery_cooldown
 
 /datum/unit_test/dq_melee_swing_sets_recovery_cooldown/Run()
+	set_global(nameof(GLOB.coalesce_absorbed), GLOB.coalesce_absorbed)
 	test_driver_begin()
 	exercise()
 	test_driver_end()

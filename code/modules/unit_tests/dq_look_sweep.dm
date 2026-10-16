@@ -152,6 +152,9 @@ GLOBAL_LIST_EMPTY(dq_look_results)
  * beside the other asks for both, so each type is made once). A later call for a result the first one skipped probes only that.
  */
 /datum/unit_test/proc/dq_look_sweep(datum/unit_test/owner, want_tree, want_state)
+	set_global(nameof(GLOB.queen_amount), GLOB.queen_amount)
+	set_global(nameof(GLOB.narsie_cometh), GLOB.narsie_cometh)
+	scope_strain_archive()
 	var/list/universe = dq_look_universe(want_tree, want_state)
 	var/list/plan = dq_look_read_plan()
 	var/list/only = dq_look_param_lines("look-types")
@@ -233,17 +236,48 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 /// presentation lane and the stat drain settled. A thing left from the last unit, a mob that wandered off the tile or air a probe
 /// heated would otherwise be in the next unit's look.
 /datum/unit_test/proc/dq_look_reset(turf/T)
-	// Probes can enqueue a real blast. The injected clock does not run the explosion periodic;
-	// finish that owed work before removing its products, rather than releasing it into the next test.
-	for(var/pass in 1 to 50)
-		if(!SSexplosions.has_work())
-			break
-		SSexplosions.explosion_step(0)
-	TEST_ASSERT(!SSexplosions.has_work(), "look cleanup must finish every explosion epoch it leaves queued")
-	for(var/turf/B as anything in block_turfs(test_block))
-		dq_look_drain_turf(B)
-		unit_test_block_reset_turf(B)
-	dq_look_settle()
+	// This fixture owns the entire template rectangle, including its one-tile wall border.
+	// A probe may destroy the walls or floor, or qdel may itself queue another real blast.
+	var/saved_ticklimit = Kernel.current_ticklimit
+	Kernel.current_ticklimit = INFINITY
+	try
+		var/settled = FALSE
+		for(var/cycle in 1 to 50)
+			// Finish real owed epochs without advancing unrelated periodic work. Keeping a
+			// spent host tick budget here made every call yield after one turf forever.
+			for(var/pass in 1 to 10000)
+				if(!SSexplosions.has_work())
+					break
+				SSexplosions.explosion_step(0)
+			if(SSexplosions.has_work())
+				CRASH("look cleanup explosion drain exhausted its bound: [json_encode(SSexplosions.performance_diagnostics())]")
+			for(var/x in (test_block.bottom_left.x - 1) to (test_block.top_right.x + 1))
+				for(var/y in (test_block.bottom_left.y - 1) to (test_block.top_right.y + 1))
+					var/turf/B = locate(x, y, test_block.z)
+					dq_look_drain_turf(B)
+			dq_look_settle()
+			if(!SSexplosions.has_work())
+				settled = TRUE
+				break
+		if(!settled)
+			CRASH("look cleanup qdel explosion cascade exhausted its bound: [json_encode(SSexplosions.performance_diagnostics())]")
+		// Restore the actual template only after every destroy consequence has finished.
+		for(var/x in (test_block.bottom_left.x - 1) to (test_block.top_right.x + 1))
+			for(var/y in (test_block.bottom_left.y - 1) to (test_block.top_right.y + 1))
+				var/turf/B = locate(x, y, test_block.z)
+				var/border = x < test_block.bottom_left.x || x > test_block.top_right.x || y < test_block.bottom_left.y || y > test_block.top_right.y
+				var/template_type = border ? /turf/simulated/wall : /turf/simulated/floor/tiled/steel
+				if(B.type != template_type)
+					B = B.ChangeTurf(template_type)
+				if(!border)
+					unit_test_block_reset_turf(B)
+		dq_look_settle()
+		if(SSexplosions.has_work())
+			CRASH("look cleanup template restoration queued unexpected explosion work")
+	catch(var/exception/fault)
+		Kernel.current_ticklimit = saved_ticklimit
+		throw fault
+	Kernel.current_ticklimit = saved_ticklimit
 
 /// The var names of the base type `base`: what a probe leaves alone.
 /datum/unit_test/proc/dq_look_state_base_vars(base, turf/T)

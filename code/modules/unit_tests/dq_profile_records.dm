@@ -216,3 +216,17 @@
 	TEST_ASSERT(!("looks" in mouse.vars), "but no human looks")
 
 #undef DQ_PROFILE_SAVES
+
+/// Isolate real strain generation, including persistent archive copies, for this fixture.
+/// Archive copies own native every() subscriptions: deleting only the mouse is insufficient.
+/datum/unit_test/proc/scope_strain_archive()
+	var/list/archive = list()
+	set_global(nameof(GLOB.archive_diseases), archive)
+	defer_cleanup(src, PROC_REF(cleanup_strain_archive), archive)
+
+/datum/unit_test/proc/cleanup_strain_archive(list/archive)
+	for(var/key in archive)
+		var/datum/affliction/contagion/engineered/strain = archive[key]
+		if(!QDELETED(strain))
+			qdel(strain)
+	archive.Cut()
