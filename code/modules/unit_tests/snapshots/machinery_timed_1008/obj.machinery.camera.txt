@@ -81,4 +81,4 @@ human|/obj/item/pda menu: Use
 human|/obj/item/pda click: Click: Use
 @obj human|/obj/item/camera_bug
 wires: Camera Alarm, Camera Light, Focus, Primary Power
-keys: camera_bash, camera_bug_toggle, camera_paper_show, camera_shred, camera_silicon_look, camera_update_coverage, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_screwdriver, use_welder, use_wire_tools
+keys: ai_wire_tools, camera_bash, camera_bug_toggle, camera_paper_show, camera_shred, camera_silicon_look, camera_update_coverage, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_screwdriver, use_welder, use_wire_tools

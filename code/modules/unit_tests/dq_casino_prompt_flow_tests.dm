@@ -54,6 +54,11 @@
 	TEST_ASSERT_EQUAL(W.interval, original, "cancel does not change interval state")
 	test_menu(R, W, "wheel_setinterval")
 	number = GLOB.test_prompts[3]
+	var/turf/far = locate(T.x + 3, T.y, T.z)
+	TEST_ASSERT_NOTNULL(far, "the real operator can move beyond initial admission range")
+	R.forceMove(far)
+	TEST_ASSERT(!R.Adjacent(W), "the actual borg is no longer adjacent while its question is open")
+	TEST_ASSERT(number.is_open(), "moving away preserves the old independent question's initial-only range admission")
 	TEST_ASSERT_NULL(test_prompt_answer(number, 1000), "the inclusive upper boundary is accepted")
 	TEST_ASSERT_EQUAL(W.interval, 1000, "the real independent callback commits its boundary answer")
 

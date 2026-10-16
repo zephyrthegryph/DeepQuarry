@@ -104,9 +104,9 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 CAPABILITIES(/mob/living/silicon/ai)
 	// Local HUD questions are operations on the AI itself, independent of its wireless link.
-	op("hud_camera_list", menu(), label("Show Camera List"), by(0), ungated(), when(req(/atom/movable/screen, of = ON_HELD)), needs(req_self()),
+	op("hud_camera_list", menu(), label("Show Camera List"), authority(AUTH_REMOTE_ACCESS), by(0), ungated(), when(req(/atom/movable/screen, of = ON_HELD)), needs(req_self()),
 		asks(/datum/prompt/choice, fields = list("question" = "Pick Camera:", "title" = "Camera Choice", "choices" = computed(PROC_REF(hud_camera_choices)), "timeout" = 0), ends_on_no = TRUE, keeps = 0), then(PROC_REF(hud_camera_chosen)))
-	op("hud_camera_track", menu(), label("Track With Camera"), by(0), ungated(), when(req(/atom/movable/screen, of = ON_HELD)), needs(req_self()),
+	op("hud_camera_track", menu(), label("Track With Camera"), authority(AUTH_REMOTE_ACCESS), by(0), ungated(), when(req(/atom/movable/screen, of = ON_HELD)), needs(req_self()),
 		asks(/datum/prompt/choice, fields = list("question" = "Pick Mob:", "title" = "Mob Choice", "choices" = computed(PROC_REF(hud_track_choices)), "timeout" = 0), ends_on_no = TRUE, keeps = 0), then(PROC_REF(hud_track_chosen)))
 	configure(mob_kind(can_be_antagged = TRUE))
 	configure(mob_kind(can_be_antagged = TRUE, death_message = "gives one shrill beep before falling lifeless."))

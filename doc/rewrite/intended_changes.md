@@ -4978,3 +4978,31 @@ passes, zero failures on production `4ab2e15fe1`). The adapted tests preserve va
 cancel and refusal state assertions. Native validation is pending the combined
 gate. The remaining management, registration and sale flows still perform real
 effects between questions and remain outside this conversion.
+
+### Silicon retirement: reviewed pin cause classes
+
+These classes record native operation declarations, existing physical refusals, or removal of an inert menu row. Expanded comparisons preserve every unrelated click, refusal and wire row. Related requirement/timed/silicon pin cohorts record the same cause, not a separate behavior change. Wheel interval and wooden-toilet differences are source regressions and are excluded from this refresh.
+
+| Type | Cause |
+|---|---|
+| `/obj/machinery/ai_slipper` | ai_slipper_silicon_swipe explicit silicon item route |
+| `/obj/machinery/appliance/cooker/oven` | toggle_door_alt_no_touch explicit no-touch route |
+| `/obj/machinery/camera` | ai_wire_tools route documented in Silicon entry declarations |
+| `/obj/machinery/casinosentientprize_handler` | casino_set_price script-bound op; documented casino flow |
+| `/obj/machinery/computer/aiupload` | remove inert borg Access Computer Internals menu; reviewed root cause |
+| `/obj/machinery/door/airlock/lift` | signaler_robot inherited typed chassis route; documented |
+| `/obj/machinery/door/airlock` | signaler_robot typed chassis route; documented |
+| `/obj/machinery/recharge_station` | recharge_station_admit script-bound admission route |
+| `/obj/mecha` | f13b84652d removes dead ai_use_equipment surface |
+| `/obj/mecha/working/ripley` | f13b84652d removes inherited dead ai_use_equipment surface |
+| `/obj/structure/railing` | documented Railing native physical operations; rotation menus + existing fastened flip refusal |
+
+For the upload computer, the old effect immediately returned for a silicon before toggling its internals; the native silent actor requirement removes that inert borg menu row. Railing rotations move from granted verbs to menu operations and show the existing fastened refusal. Mecha key removals originate on master f13b84652d.
+
+### Silent alternative requirements
+
+An any_of composed entirely of silent refusals now remains a non-null silent refusal. It still rejects direct invocation; mixed visible reasons remain visible, and an empty composition retains its default refusal. This restores the wooden toilet's existing clientless-borg menu behavior rather than re-blessing the generic refused row. Focused tests cover composition, actual menu/direct-op behavior, and the real toilet guard.
+
+### Pilot helm lookup: reject nullspace destinations
+
+The original pilot callback admitted helms by z alone, including a nullspace helm when level zero was configured. It now chooses only actual, non-deleted helm turfs, retaining one lottery entry per helm. Invalid-only lookup leaves location and ghost access unchanged; a real destination preserves normal relocation and ghost access. Existing look goldens are retained. The focused regression uses real helms and native keyed timers with strict queue-delivery and destination assertions.

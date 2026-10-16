@@ -640,11 +640,17 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/any/refusal(datum/act/op/A)
 	var/list/texts = list()
+	var/has_silent_refusal = FALSE
 	for(var/datum/entry/part/req/R as anything in children)
-		var/why = reason_text(R.refusal(A))
+		var/raw_reason = R.refusal(A)
+		var/why = reason_text(raw_reason)
+		if(!isnull(raw_reason) && istext(why) && !length(why))
+			has_silent_refusal = TRUE
 		if(why && !(why in texts))
 			texts += why
-	return length(texts) ? jointext(texts, " or ") : default_reason
+	if(length(texts))
+		return jointext(texts, " or ")
+	return has_silent_refusal ? /datum/msg/req_silent : default_reason
 
 /// Does the entity carry the tag (a TAG_X): TAG_UI and TAG_TOPIC are on every op, others are declared by tag().
 /proc/op_has_tag(datum/D, tag_id)

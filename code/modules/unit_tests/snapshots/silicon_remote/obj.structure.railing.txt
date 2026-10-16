@@ -1,4 +1,7 @@
 @obj.structure robot|none
 +0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
-+1 menu: Flip Railing
++1 menu: Flip Railing (refused: It is fastened to the floor therefore you can't flip it!)
++2 menu: Rotate Clockwise (refused: <span class='notice'>It is fastened to the floor!</span>)
++3 menu: Rotate Counter Clockwise (refused: <span class='notice'>It is fastened to the floor!</span>)
++4 menu: Turn Around (refused: <span class='notice'>It is fastened to the floor!</span>)
 @obj.structure ai|none

@@ -1,7 +1,6 @@
 @obj.machinery.computer robot|none
 -click: Click: Use
-+0 menu: Access Computer's Internals
-+3 menu: Install module (refused: needs an item)
-+4 menu: Select AI
-+6 click: Click: Select AI
++2 menu: Install module (refused: needs an item)
++3 menu: Select AI
++5 click: Click: Select AI
 @obj.machinery ai|none

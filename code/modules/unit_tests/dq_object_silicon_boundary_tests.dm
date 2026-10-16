@@ -128,3 +128,28 @@
 	R.module.add_item(sleeper, R)
 	TEST_ASSERT(sleeper in R.module.modules, "The added sleeper joins the real module catalog")
 	TEST_ASSERT_EQUAL(R.vac_borg_output(), first_sleeper, "Appending a sleeper does not replace the earlier standard module match")
+
+/datum/unit_test/dq_silicon/toilet_silent_menu
+/datum/unit_test/dq_silicon/toilet_silent_menu/run_gate()
+	var/turf/T = test_floor()
+	var/mob/living/silicon/robot/R = make_borg(T)
+	TEST_ASSERT_NULL(R.client, "the fixture exercises the actual clientless borg guard")
+	var/obj/structure/toilet/wooden/toilet = allocate(/obj/structure/toilet/wooden, T)
+	var/datum/op_plan/P = op_plan_for(toilet, "silicon_use")
+	var/datum/entry/part/req/any/body_gate
+	for(var/datum/entry/part/req/Q as anything in P.needs)
+		if(istype(Q, /datum/entry/part/req/any))
+			body_gate = Q
+	TEST_ASSERT_NOTNULL(body_gate, "the real toilet has its composed body admission requirement")
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = toilet
+	A.target = toilet
+	A.actor = R
+	A.oplan = P
+	A.cap = P.owner_def
+	var/reason = body_gate.check(A)
+	TEST_ASSERT(!isnull(reason), "the real clientless borg is still refused")
+	TEST_ASSERT_EQUAL(reason_text(reason), "", "both native alternatives preserve the existing silent refusal")
+	A.release()
+	for(var/list/row in action_options(R, toilet, null))
+		TEST_ASSERT(row["key"] != "silicon_use", "the no-client use is absent rather than generically refused in the actual menu")

@@ -55,3 +55,10 @@ CAPABILITIES(/obj/req_protocol_fixture)
 
 /datum/requirement/req_protocol_fixture/refusal(datum/act/op/A)
 	return "A compatibility reason."
+
+/obj/req_protocol_fixture/silent_composition
+
+CAPABILITIES(/obj/req_protocol_fixture/silent_composition)
+	op("silent_any", menu(), label("Silent composed requirement"),
+		needs(any_of(req(TYPE_PROC_REF(/obj/req_protocol_fixture, check_ready)), req(TYPE_PROC_REF(/obj/req_protocol_fixture, check_other), silent = TRUE))),
+		then(TYPE_PROC_REF(/obj/req_protocol_fixture, commit)))
