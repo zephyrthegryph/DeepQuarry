@@ -10,7 +10,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = TRUE
-	clicksound = SFX_BUTTON
 	circuit = /obj/item/circuitboard/chemical_analyzer
 	var/list/found_reagents
 
@@ -49,6 +48,7 @@ MSG_DEF_SELF(chemical_analyzer/analyzing, "Analyzing %I%, please stand by...")
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/chemical_analyzer)
+	configure(machine_interaction_config(clicksound = SFX_BUTTON))
 	configure(uses_power(idle = 20))
 	op("analyze", item(/obj/item/reagent_containers), label("Analyze"), begins(MSG(chemical_analyzer/analyzing)), wait(2 SECONDS), claims(),
 		on_interrupt(PROC_REF(scan_failed)), then(PROC_REF(scan_done)))

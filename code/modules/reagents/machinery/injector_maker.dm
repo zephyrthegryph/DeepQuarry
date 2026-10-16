@@ -14,8 +14,6 @@
 	layer = ABOVE_WINDOW_LAYER
 	vis_flags = VIS_HIDE
 	unacidable = TRUE
-	clicksound = SFX_BUTTON
-	clickvol = 60
 	circuit = /obj/item/circuitboard/injector_maker
 	var/obj/item/reagent_containers/beaker = null
 	var/list/beaker_reagents_list
@@ -37,6 +35,7 @@ MSG_DEF_SELF(injector_maker/rack_full, "Storage is full.")
 MSG_DEF_SELF(injector_maker/filled, "You cannot put a filled injector into the machine.")
 
 CAPABILITIES(/obj/machinery/injector_maker)
+	configure(machine_interaction_config(clicksound = SFX_BUTTON, clickvol = 60))
 	configure(uses_power(idle = 5, active = 100))
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
 	op("add_beaker", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker))),

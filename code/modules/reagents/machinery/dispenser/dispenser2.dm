@@ -1,11 +1,9 @@
 /obj/machinery/chemical_dispenser
 	maintenance_flags = MACHINE_MAINT_WRENCH
-	maintenance_wrench_time = 2 SECONDS
 	name = "chemical dispenser"
 	desc = "Automagically fabricates chemicals from electricity."
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "dispenser"
-	clicksound = SFX_SWITCH
 
 	var/list/spawn_cartridges = null // Set to a list of types to spawn one of each on New()
 
@@ -30,6 +28,7 @@
 	var/import_job = JOB_CHEMIST
 
 CAPABILITIES(/obj/machinery/chemical_dispenser)
+	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS, clicksound = SFX_SWITCH))
 	configure(uses_power(idle = 100))
 	rotatable()
 	owns_one(nameof(container), /obj/item/reagent_containers)

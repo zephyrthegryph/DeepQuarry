@@ -10,7 +10,6 @@
 // Recipes are stored as a list which alternates between chemical id's and volumes to add, e.g. 1 = 'Carbon', 2 = 20, 3 = 'Silicon', 4 = 20
 /obj/machinery/chemical_synthesizer
 	maintenance_flags = MACHINE_MAINT_WRENCH
-	maintenance_wrench_time = 4 SECONDS
 	name = "chemical synthesizer"
 	desc = "A programmable machine capable of automatically synthesizing medicine."
 	icon = 'icons/obj/chemical_ch.dmi'
@@ -83,6 +82,7 @@
 // The reagents datum acts as the machine's reaction vessel.
 
 CAPABILITIES(/obj/machinery/chemical_synthesizer)
+	configure(machine_interaction_config(maintenance_wrench_time = 4 SECONDS))
 	configure(uses_power(channel = EQUIP, idle = 100, active = 150))
 	owns_one(nameof(catalyst), /obj/item/reagent_containers/glass, starts = /obj/item/reagent_containers/glass/beaker)
 	reagents(600)

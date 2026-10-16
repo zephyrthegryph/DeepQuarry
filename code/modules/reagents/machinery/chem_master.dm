@@ -1,6 +1,5 @@
 /obj/machinery/chem_master
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	maintenance_wrench_time = 2 SECONDS
 	name = "ChemMaster 3000"
 	desc = "Used to separate and package chemicals in to patches, pills, or bottles. Warranty void if used to create Space Drugs."
 	density = TRUE
@@ -23,7 +22,6 @@
 	var/max_pill_count = 20
 	var/printing = FALSE
 	flags = OPENCONTAINER
-	clicksound = SFX_BUTTON
 
 
 /obj/machinery/chem_master/draw(datum/look/look)
@@ -71,6 +69,7 @@ MSG_DEF_SELF(chem_master/pill_bottle_loaded, "A pill bottle is already loaded in
 // The window: its buttons are ops, and every modal of the old ui_modal_opened()/ui_modal_answered() pair is an op bound to "modal:<id>" whose question
 // is asked inline (a modal of the window); a modal that chained to another (a count, then the name) is one op with two steps.
 CAPABILITIES(/obj/machinery/chem_master)
+	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS, clicksound = SFX_BUTTON))
 	configure(uses_power(idle = 20))
 	reagents(900) // the buffer: a huge number so it should (probably) never dump your reagents
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
