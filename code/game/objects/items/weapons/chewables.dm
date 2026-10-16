@@ -134,13 +134,10 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/nico)
 	starts_with = list(/obj/item/clothing/mask/chewable/tobacco = 6)
 
 CAPABILITIES(/obj/item/storage/chewables)
+	setup(TYPE_PROC_REF(/obj/item/storage, make_exact_fit))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 2))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOVEL))
-
-/obj/item/storage/chewables/Initialize(mapload)
-	. = ..()
-	make_exact_fit()
 
 //Tobacco Tins
 

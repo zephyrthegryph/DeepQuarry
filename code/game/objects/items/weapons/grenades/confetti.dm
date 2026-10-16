@@ -8,11 +8,8 @@
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 8
 
-/obj/item/grenade/confetti/Initialize(mapload)
-	. = ..()
-	confetti_spread.attach(src)
-
 CAPABILITIES(/obj/item/grenade/confetti)
+	setup(PROC_REF(attach_confetti))
 	configure(item_worn(slots = SLOT_BELT))
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system/confetti_spread, starts = /datum/effect/effect/system/confetti_spread)
 
@@ -32,3 +29,6 @@ CAPABILITIES(/obj/item/grenade/confetti/party_ball)
 
 /obj/item/grenade/confetti/party_ball/detonate() //Could condense this by making the sound a variable in the parent but I'm lazy.
 	start_effect_sprayer(confetti_spread, confetti_strength, 'sound/effects/confetti_ball.ogg')
+
+/obj/item/grenade/confetti/proc/attach_confetti()
+	confetti_spread.attach(src)

@@ -30,26 +30,6 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 /obj/item/material/proc/forced_material()
 	return TYPE_TABLE_GET(src, weapon_forced_material) || default_material
 
-// ALLOW(init/INSTANCE_STATE): a material weapon is made of its material (or the type's forced one), scaled by its force divisor
-/obj/item/material/Initialize(mapload)
-	. = ..()
-	set_material(default_material)
-	if(!material)
-		return INITIALIZE_HINT_QDEL
-
-	// A material weapon is made of its material, scaled by force_divisor.
-	var/list/new_matter = material.get_matter()
-	for(var/material_type in new_matter)
-		if(!isnull(new_matter[material_type]))
-			new_matter[material_type] *= force_divisor // May require a new var instead.
-	if(length(new_matter) == 1)
-		set_bulk_material(new_matter[1], new_matter[new_matter[1]])
-	else
-		set_material_mix(new_matter)
-
-	if(!(material.conductive))
-		src.flags |= NOCONDUCT
-
 /obj/item/material/get_material()
 	return material
 
@@ -94,6 +74,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 
 // EXTEND, not DECLARE: many subtypes DECLARE interactions of their own, which this must not replace.
 CAPABILITIES(/obj/item/material)
+	setup(PROC_REF(initialize_material))
 	configure(item_combat(sharp = FALSE, edge = FALSE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 	op("material_interaction_item", item(/obj/item), label("Repair"), then(PROC_REF(material_interaction_item)))
@@ -192,3 +173,22 @@ CAPABILITIES(/obj/item/material)
 	act_message(A.actor, src, MSG_SELF("You finish replacing parts of %T%."), MSG_OTHERS("%U% has finished replacing parts of %T%."))
 	src.set_material(A.arg("material"))
 	return OP_OK
+
+/// The material hierarchy has no descendant Initialize overrides; ancestor setup precedes child setup.
+/obj/item/material/proc/initialize_material()
+	set_material(default_material)
+	if(!material)
+		return
+
+	// A material weapon is made of its material, scaled by force_divisor.
+	var/list/new_matter = material.get_matter()
+	for(var/material_type in new_matter)
+		if(!isnull(new_matter[material_type]))
+			new_matter[material_type] *= force_divisor // May require a new var instead.
+	if(length(new_matter) == 1)
+		set_bulk_material(new_matter[1], new_matter[new_matter[1]])
+	else
+		set_material_mix(new_matter)
+
+	if(!(material.conductive))
+		src.flags |= NOCONDUCT

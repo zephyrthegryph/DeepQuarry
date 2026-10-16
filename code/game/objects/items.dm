@@ -106,17 +106,17 @@
 
 /obj/item/Initialize(mapload)
 	. = ..()
-	// Read-only per-type tables: share identical ones (writers assign a new list).
-	tool_qualities = intern_list(tool_qualities)
-
-	for(var/path in actions_types)
-		add_item_action(path)
 
 	if(embed_chance < 0)
 		if(combat_of(src).sharp)
 			embed_chance = max(5, round(combat_of(src).force/w_class))
 		else
 			embed_chance = max(5, round(combat_of(src).force/(w_class*3)))
+
+/// Create the declared actions once all inherited construction has completed.
+/obj/item/proc/setup_declared_item_actions()
+	for(var/path in actions_types)
+		add_item_action(path)
 
 // the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
 // Machine components are normally located inside their owner: a component
@@ -1276,3 +1276,7 @@ SETTER(/obj/item, sprite_sheets)
 	sprite_sheets = replacement
 	tracked_changed(src, nameof(sprite_sheets))
 	return TRUE
+
+/// Canonicalize immutable tool-quality lists after construction; no descendant initializer reads their identity.
+/obj/item/proc/intern_tool_qualities()
+	set_tool_qualities(intern_list(tool_qualities))

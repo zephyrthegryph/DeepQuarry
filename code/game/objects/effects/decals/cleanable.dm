@@ -22,6 +22,7 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 	var/clean_type = CLEAN_TYPE_LIGHT_DECAL
 
 CAPABILITIES(/obj/effect/decal/cleanable)
+	persistent_filth()
 	owns_many(nameof(viruses), /datum/affliction/contagion)
 	param(nameof(age), pos = 1, apply = PROC_REF(age_or_contagions))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = nameof(random_icon_states))
@@ -36,12 +37,6 @@ CAPABILITIES(/obj/effect/decal/cleanable)
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): one of the filth's looks.
 /obj/effect/decal/cleanable/proc/roll_icon_state(datum/roller/R)
 	return length(random_icon_states) ? R.choose(random_icon_states) : icon_state
-
-// ALLOW(init/INSTANCE_STATE): filth not loaded with the map is tracked for persistence
-/obj/effect/decal/cleanable/Initialize(mapload)
-	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
-		SSpersistence.track_value(src, /datum/persistent/filth)
-	return ..()
 
 /// Adopts `contagions` into viruses as private copies. copy = FALSE when they are fresh unowned
 /// copies (contagion_copies()); a contagion some other holder owns is always copied, so a splat

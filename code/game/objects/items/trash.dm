@@ -10,14 +10,9 @@
 	var/age = 0
 
 CAPABILITIES(/obj/item/trash)
+	persistent_filth(track_type = /datum/persistent/filth/trash)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	param(nameof(age), pos = 1)
-
-// ALLOW(init/INSTANCE_STATE): trash not loaded with the map is tracked for persistence
-/obj/item/trash/Initialize(mapload)
-	. = ..()
-	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
-		SSpersistence.track_value(src, /datum/persistent/filth/trash)
 
 // persistent trash forgets this item.
 /obj/item/trash/lifecycle_dematerialize()

@@ -82,14 +82,6 @@ MATERIAL_MIX(/obj/item/communicator, list(MAT_STEEL = 30,MAT_GLASS = 10))
 //				assign the device to the holder's name automatically in a spectacularly shitty way.
 REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 
-/obj/item/communicator/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(node), get_exonet_node())
-	camera.name = "[src] #[rand(100,999)]"
-	camera.c_tag = camera.name
-
-	setup_tgui_camera()
-
 /// The open connections (communicating is a relation list, voice_mobs an owned list): fields, so the
 /// accessors and the framework's auto-clears (a partner or voice destroyed) re-evaluate the watchdog.
 /// The connection watchdog runs while a connection is open (its every() gate, polled: the lists are relations).
@@ -342,12 +334,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 // Proc: New()
 // Parameters: None
 // Description: Gives ghosts an exonet address based on their key and ghost name.
-/mob/observer/dead/Initialize(mapload)
-	. = ..()
-	if(client)
-		exonet.make_address("communicator-[src.client]-[src.client.prefs.read_preference(/datum/preference/name/real_name)]")
-	else
-		exonet.make_address("communicator-[key]-[src.real_name]")
 
 // Proc: register_device()
 // Parameters: 1 (user - the person to use their name for)
@@ -399,10 +385,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 /obj/machinery/camera/communicator
 	network = list(NETWORK_COMMUNICATORS)
 
-/obj/machinery/camera/communicator/Initialize(mapload)
-	. = ..()
-	LAZYOR(client_huds, GLOB.global_hud.whitense)
-	LAZYOR(client_huds, GLOB.global_hud.darkMask)
 
 //It's the 26th century. We should have smart watches by now.
 /obj/item/communicator/watch
@@ -425,3 +407,23 @@ CAPABILITIES(/obj/item/communicator/watch)
 #undef WTHRTAB
 #undef MANITAB
 #undef SETTTAB
+
+/obj/item/communicator/proc/initialize_communicator()
+	rel_set(src, nameof(node), get_exonet_node())
+	camera.name = "[src] #[rand(100,999)]"
+	camera.c_tag = camera.name
+
+	setup_tgui_camera()
+
+CAPABILITIES(/obj/machinery/camera/communicator)
+	setup(PROC_REF(install_communicator_huds))
+
+/obj/machinery/camera/communicator/proc/install_communicator_huds()
+	LAZYOR(client_huds, GLOB.global_hud.whitense)
+	LAZYOR(client_huds, GLOB.global_hud.darkMask)
+
+/mob/observer/dead/proc/allocate_exonet_address()
+	if(client)
+		exonet.make_address("communicator-[src.client]-[src.client.prefs.read_preference(/datum/preference/name/real_name)]")
+	else
+		exonet.make_address("communicator-[key]-[src.real_name]")

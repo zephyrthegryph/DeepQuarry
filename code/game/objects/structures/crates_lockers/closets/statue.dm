@@ -25,34 +25,6 @@
 /// The mob turned to stone (its constructor param, dropped after init).
 /obj/structure/closet/statue/var/tmp/mob/living/statue_of
 
-// ALLOW(init/INSTANCE_STATE): a statue holds the mob it petrifies, shielded from harm, until it releases them
-/obj/structure/closet/statue/Initialize(mapload)
-	. = ..()
-	var/mob/living/L = statue_of
-	if(L && (ishuman(L) || L.isMonkey() || iscorgi(L)))
-		if(L?.buckled_to())
-			var/atom/movable/_tmp_buck_9 = L?.buckled_to()
-			_tmp_buck_9.unbuckle_mob(L, TRUE)
-			L.set_anchored(FALSE)
-		L.forceMove(src)
-		L.set_sdisabilities(L.sdisabilities | MUTE)
-		max_integrity = L.get_endurance() + 100
-		original_int = L.vitality() * L.get_endurance() + 100
-		update_integrity(original_int) //stoning damaged mobs will result in easier to shatter statues
-		observe(L, /datum/act/injure, src, instead(when(PROC_REF(stasis_holds))))
-		if(ishuman(L))
-			name = "statue of [L.name]"
-			if(L.gender == "female")
-				statue_shape = "human_female"
-		else if(L.isMonkey())
-			name = "statue of a monkey"
-			statue_shape = "monkey"
-		else if(iscorgi(L))
-			name = "statue of a corgi"
-			statue_shape = "corgi"
-			desc = "If it takes forever, I will wait for you..."
-
-
 /// A statue is made around a human, a monkey or a corgi (keeps_if()); without one it is discarded.
 /obj/structure/closet/statue/proc/has_subject()
 	var/mob/living/L = statue_of
@@ -130,7 +102,7 @@ CAPABILITIES(/obj/structure/closet/statue)
 	without("empty_basket")
 	without("melee_hit")
 	op("statue_strike", item(/obj/item), label("Strike"), priority(OP_PRIORITY_PART + 20), then(PROC_REF(statue_struck)))
-	param(nameof(statue_of), pos = 1, keep = FALSE)
+	param(nameof(statue_of), pos = 1, apply = PROC_REF(petrify_subject), keep = FALSE)
 	keeps_if(PROC_REF(has_subject))
 	derives(nameof(release_delay), PROC_REF(timer_delay))
 
@@ -154,3 +126,28 @@ CAPABILITIES(/obj/structure/closet/statue)
 	dump_contents()
 	visible_message(span_warning("[src] shatters!."))
 	consume(src)
+
+/// Put the supplied subject into effect after native capabilities and contents exist.
+/obj/structure/closet/statue/proc/petrify_subject(mob/living/L)
+	if(L && (ishuman(L) || L.isMonkey() || iscorgi(L)))
+		if(L?.buckled_to())
+			var/atom/movable/_tmp_buck_9 = L?.buckled_to()
+			_tmp_buck_9.unbuckle_mob(L, TRUE)
+			L.set_anchored(FALSE)
+		L.forceMove(src)
+		L.set_sdisabilities(L.sdisabilities | MUTE)
+		max_integrity = L.get_endurance() + 100
+		original_int = L.vitality() * L.get_endurance() + 100
+		update_integrity(original_int) //stoning damaged mobs will result in easier to shatter statues
+		observe(L, /datum/act/injure, src, instead(when(PROC_REF(stasis_holds))))
+		if(ishuman(L))
+			name = "statue of [L.name]"
+			if(L.gender == "female")
+				statue_shape = "human_female"
+		else if(L.isMonkey())
+			name = "statue of a monkey"
+			statue_shape = "monkey"
+		else if(iscorgi(L))
+			name = "statue of a corgi"
+			statue_shape = "corgi"
+			desc = "If it takes forever, I will wait for you..."

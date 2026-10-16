@@ -15,7 +15,7 @@ CAPABILITIES(/obj/structure/drop_pod)
 	owns_one(nameof(air), /datum/gas_mixture/pod_air, starts = /datum/gas_mixture/pod_air, starts_args = NO_LOC)
 	op("use_wrench", tool(TOOL_WRENCH), wait(10 SECONDS), needs(req(PROC_REF(is_finished))), begins(MSG(drop_pod/breaking_down)), then(PROC_REF(wrench_act_done)))
 	op("open", hand(), label("Open"), then(PROC_REF(interaction_open)))
-	param(nameof(cargo_at_make), pos = 1, keep = FALSE)
+	param(nameof(cargo_at_make), pos = 1, apply = PROC_REF(load_delivery), keep = FALSE)
 	param(nameof(auto_open), pos = 2)
 
 /obj/structure/drop_pod/polite
@@ -24,14 +24,6 @@ CAPABILITIES(/obj/structure/drop_pod)
 /// What the pod carries down, and whether it opens by itself (its constructor params).
 /obj/structure/drop_pod/var/tmp/atom/movable/cargo_at_make
 /obj/structure/drop_pod/var/auto_open = FALSE
-
-// ALLOW(init/INSTANCE_STATE): a pod with cargo falls, and every pod makes its air
-/obj/structure/drop_pod/Initialize(mapload)
-	. = ..()
-	if(cargo_at_make)
-		cargo_at_make.forceMove(src) // helo
-		podfall(auto_open)
-
 
 /obj/structure/drop_pod/proc/podfall(auto_open)
 	var/turf/T = get_turf(src)
@@ -156,3 +148,9 @@ MSG_DEF_SELF(drop_pod/breaking_down, span_notice("You start breaking down %T%.")
 	heat_set(src, T20C) // arena default is TCMB; set the intended initial temperature
 	adjust_gas(GAS_O2, 21) // literal "oxygen" doesn't match LINDA gas IDs; GAS_O2 is "o2"
 	adjust_gas(GAS_N2, 79)
+
+/// Consume the temporary cargo input in the native parameter-application phase.
+/obj/structure/drop_pod/proc/load_delivery(atom/movable/cargo)
+	if(cargo)
+		cargo.forceMove(src)
+		podfall(auto_open)

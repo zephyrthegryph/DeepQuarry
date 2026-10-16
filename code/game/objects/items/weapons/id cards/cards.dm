@@ -286,14 +286,8 @@ CAPABILITIES(/obj/item/card_fluff)
 	var/last_robot_loc
 
 CAPABILITIES(/obj/item/card/id/synthetic/borg)
+	setup(PROC_REF(bind_robot_card))
 	ref_one(nameof(robot_owner), /mob/living/silicon/robot)
-
-/obj/item/card/id/synthetic/borg/Initialize(mapload)
-	. = ..()
-	if(isrobot(loc))
-		rel_set(src, nameof(robot_owner), loc)
-		set_registered_name(robot_owner().braintype)
-		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 
 /obj/item/card/id/synthetic/borg/proc/check_loc(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -328,3 +322,9 @@ CAPABILITIES(/obj/item/card/emag/used)
 CAPABILITIES(/obj/item/card/data)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
 	op("data_label_effect", menu(), label("Label Card"), needs(carried()), asks(/datum/prompt/text, fields = list("question" = "Enter a label for the card.", "title" = "Label Card", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "data_card_label"), then(PROC_REF(data_label_effect)))
+
+/obj/item/card/id/synthetic/borg/proc/bind_robot_card()
+	if(isrobot(loc))
+		rel_set(src, nameof(robot_owner), loc)
+		set_registered_name(robot_owner().braintype)
+		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))

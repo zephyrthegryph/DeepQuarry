@@ -3,23 +3,12 @@
 	duration = 15
 
 CAPABILITIES(/obj/effect/temp_visual/decoy)
-	param(nameof(mimiced_atom), pos = 1, keep = FALSE)
-	param(nameof(customappearance), pos = 2, keep = FALSE)
+	param(nameof(mimiced_atom), pos = 1, apply = PROC_REF(imitate_subject), keep = FALSE)
+	param(nameof(customappearance), pos = 2, apply = PROC_REF(apply_custom_appearance), keep = FALSE)
 
 /// What the decoy mimics, or the look it is given (its constructor params, dropped after init).
 /obj/effect/temp_visual/decoy/var/tmp/atom/mimiced_atom
 /obj/effect/temp_visual/decoy/var/tmp/customappearance
-
-/obj/effect/temp_visual/decoy/Initialize(mapload)
-	. = ..()
-	alpha = initial(alpha)
-	if(mimiced_atom)
-		name = mimiced_atom.name
-		appearance = mimiced_atom.appearance
-		set_dir(mimiced_atom.dir)
-		mouse_opacity = 0
-	if(customappearance)
-		appearance = customappearance
 
 /obj/effect/temp_visual/decoy/fading/proc/setup_fade_animation()
 	animate(src, alpha = 0, time = duration)
@@ -182,3 +171,17 @@ CAPABILITIES(/obj/effect/temp_visual/heal)
 
 CAPABILITIES(/obj/effect/temp_visual/decoy/fading)
 	setup(PROC_REF(setup_fade_animation))
+
+/// Null is still applied: every decoy resets its alpha before copying either source.
+/obj/effect/temp_visual/decoy/proc/imitate_subject(atom/subject)
+	set_alpha(initial(alpha))
+	if(subject)
+		name = subject.name
+		appearance = subject.appearance
+		set_dir(subject.dir)
+		mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+
+/// Declared after imitation, so an explicit appearance has the original precedence.
+/obj/effect/temp_visual/decoy/proc/apply_custom_appearance(custom)
+	if(custom)
+		appearance = custom

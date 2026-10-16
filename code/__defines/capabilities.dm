@@ -131,3 +131,5 @@
 #define WALL_MOUNT_OFFSET 26
 /// Every minute.
 #define CADENCE_MINUTE /datum/cadence/minute
+
+#define CAP_PERSISTENT_FILTH "persistent_filth"

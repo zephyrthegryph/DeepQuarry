@@ -15,39 +15,13 @@
 	var/atom/parent
 
 CAPABILITIES(/obj/effect/abstract/particle_holder)
+	setup(PROC_REF(attach_particle_holder))
 	ref_one(nameof(parent))
 	param(nameof(particle_path), pos = 1)
 	param(nameof(particle_flags), pos = 2)
 
 /// The particles a holder shows (its constructor param).
 /obj/effect/abstract/particle_holder/var/particle_path = /particles/smoke
-
-// ALLOW(init/INSTANCE_STATE): a particle holder leaves the map for its parent's vis_contents and makes its particles
-/obj/effect/abstract/particle_holder/Initialize(mapload)
-	. = ..()
-	if(!loc)
-		stack_trace("particle holder was created with no loc!")
-		return INITIALIZE_HINT_QDEL
-
-	if(loc.plane == TURF_PLANE)
-		vis_flags &= ~VIS_INHERIT_PLANE // don't yoink the floor plane. we'll just sit on game plane, it's fine
-
-	// We nullspace ourselves because some objects use their contents (e.g. storage) and some items may drop everything in their contents on deconstruct.
-	rel_set(src, nameof(parent), loc)
-	moveToNullspace()
-
-	// Mouse opacity can get set to opaque by some objects when placed into the object's contents (storage containers).
-	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	particles = new particle_path()
-	// /atom doesn't have vis_contents, /turf and /atom/movable do
-	var/atom/movable/lie_about_areas = get_parent()
-	lie_about_areas.vis_contents += src
-	observe(get_parent(), /datum/notice/qdeleting, src, then(PROC_REF(parent_deleted)))
-
-	if(particle_flags & PARTICLE_ATTACH_MOB)
-		observe(get_parent(), /datum/notice/moved, src, then(PROC_REF(on_parent_moved)))
-	on_move(get_parent(), null, NORTH)
-
 
 /// Non movables don't delete contents on destroy, so we gotta do this
 /obj/effect/abstract/particle_holder/proc/parent_deleted(datum/act/notice/A)
@@ -86,3 +60,28 @@ CAPABILITIES(/obj/effect/abstract/particle_holder)
 /// Relation view: parent (reads null once it is gone).
 /obj/effect/abstract/particle_holder/proc/get_parent() as /atom
 	return parent
+
+/obj/effect/abstract/particle_holder/proc/attach_particle_holder()
+	if(!loc)
+		stack_trace("particle holder was created with no loc!")
+		spent(src)
+		return
+
+	if(loc.plane == TURF_PLANE)
+		vis_flags &= ~VIS_INHERIT_PLANE // don't yoink the floor plane. we'll just sit on game plane, it's fine
+
+	// We nullspace ourselves because some objects use their contents (e.g. storage) and some items may drop everything in their contents on deconstruct.
+	rel_set(src, nameof(parent), loc)
+	moveToNullspace()
+
+	// Mouse opacity can get set to opaque by some objects when placed into the object's contents (storage containers).
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	particles = new particle_path()
+	// /atom doesn't have vis_contents, /turf and /atom/movable do
+	var/atom/movable/lie_about_areas = get_parent()
+	lie_about_areas.vis_contents += src
+	observe(get_parent(), /datum/notice/qdeleting, src, then(PROC_REF(parent_deleted)))
+
+	if(particle_flags & PARTICLE_ATTACH_MOB)
+		observe(get_parent(), /datum/notice/moved, src, then(PROC_REF(on_parent_moved)))
+	on_move(get_parent(), null, NORTH)

@@ -7,19 +7,12 @@
 	var/scrap_variants = 0
 
 CAPABILITIES(/obj/item/trash/material)
+	setup(PROC_REF(roll_starting_materials))
 	rolls(nameof(icon_state), PROC_REF(roll_scrap_icon), when = nameof(scrap_icon))
 
 /// Rolled before init (rolls()): one of the family's sprites.
 /obj/item/trash/material/proc/roll_scrap_icon(datum/roller/R)
 	return "[scrap_icon][R.number(0, scrap_variants)]"
-
-/obj/item/trash/material/Initialize(mapload)
-	. = ..()
-	for(var/list/L in matter_chances)
-		if(prob(L[2]))
-			var/list/added = list()
-			added[L[1]] = max(0, L[3] + rand(-2,2))
-			add_materials(added)
 
 /obj/item/trash/material/metal
 	name = "scrap metal"
@@ -67,3 +60,10 @@ CAPABILITIES(/obj/item/trash/material)
 		list(MAT_DIAMOND, 5, 2),
 	)
 
+
+/obj/item/trash/material/proc/roll_starting_materials()
+	for(var/list/L in matter_chances)
+		if(prob(L[2]))
+			var/list/added = list()
+			added[L[1]] = max(0, L[3] + rand(-2,2))
+			add_materials(added)

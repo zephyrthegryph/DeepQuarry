@@ -466,10 +466,6 @@ CAPABILITIES(/obj/item/commcard/head/captain)
 	icon_state = "cart"
 	internal_data = list("shuttle_door_code" = "smindicate") // Copied from PDA code
 
-/obj/item/commcard/mercenary/Initialize(mapload)
-	. = ..()
-	internal_data["shuttle_doors"] = find_blast_doors()
-
 /obj/item/commcard/mercenary/get_data()
 	var/door_status[0]
 	for(var/obj/machinery/door/blast/B in internal_data["shuttle_doors"])
@@ -507,3 +503,9 @@ CAPABILITIES(/obj/item/commcard/explorer)
 			list("field" = "gps_signal", "value" = gps_lists[2]),
 			list("field" = "gps_status", "value" = gps_lists[3])
 		)
+
+CAPABILITIES(/obj/item/commcard/mercenary)
+	setup(PROC_REF(resolve_shuttle_doors))
+
+/obj/item/commcard/mercenary/proc/resolve_shuttle_doors()
+	internal_data["shuttle_doors"] = find_blast_doors()

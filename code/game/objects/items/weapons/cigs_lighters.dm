@@ -699,6 +699,8 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 /obj/item/flame/lighter/var/detonator_mode = 0
 
 CAPABILITIES(/obj/item/flame/lighter)
+	configure(lighter_shell())
+	setup(PROC_REF(sample_lighter_shell))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 4))
 	configure(item_combat(attack_verbs = list("burnt", "singed")))
@@ -708,11 +710,6 @@ CAPABILITIES(/obj/item/flame/lighter)
 /obj/item/flame/lighter/random
 
 // Randomizes Cheap Lighters on Spawn
-/obj/item/flame/lighter/Initialize(mapload)
-	. = ..()
-	var/image/I = image(icon, "lighter-[pick("trans","tall","matte")]")
-	I.color = pick(available_colors)
-	add_overlay(I) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 
 /// Using the lighter in the hand lights it or puts it out. Each kind of lighter overrides this; one that does not handle the use declines it, and the click goes on to the item's own use.
 /obj/item/flame/lighter/proc/toggled(datum/act/op/A)
@@ -1195,3 +1192,47 @@ CAPABILITIES(/obj/item/flame/lighter)
 	if(istype(location))
 		location.hotspot_expose(700, 5)
 	burn_out()
+
+// Immutable type policy plus a holder-local COW sample: the shell is appearance data, not an object reference.
+/proc/lighter_shell(shown = null, sampled_icon = null, sampled_state = null, sampled_color = null)
+	return entry_make(ENTRY_LIGHTER_SHELL, null, list("shown" = shown, "sampled_icon" = sampled_icon, "sampled_state" = sampled_state, "sampled_color" = sampled_color))
+
+/datum/type_trait/lighter_shell
+	var/shown = TRUE
+	var/sampled_icon
+	var/sampled_state
+	var/sampled_color
+
+/datum/type_trait/lighter_shell/copy_values(datum/type_trait/lighter_shell/into)
+	into.shown = shown
+	into.sampled_icon = sampled_icon
+	into.sampled_state = sampled_state
+	into.sampled_color = sampled_color
+
+/datum/entry_engine/type_trait/lighter_shell
+	kind = ENTRY_LIGHTER_SHELL
+	trait_type = /datum/type_trait/lighter_shell
+	publish_key = LIGHTER_SHELL_KEY
+	base_type = /obj/item/flame/lighter
+
+READS_AS(/proc/lighter_shell_of, LIGHTER_SHELL_KEY)
+/proc/lighter_shell_of(obj/item/flame/lighter/L) as /datum/type_trait/lighter_shell
+	READS_FROM(L)
+	return type_trait_of(L, ENTRY_LIGHTER_SHELL)
+
+/obj/item/flame/lighter/proc/sample_lighter_shell()
+	// Retain both original world-RNG draws even for zippos, whose inherited shell was discarded.
+	var/sampled_state = "lighter-[pick("trans","tall","matte")]"
+	var/sampled_color = pick(available_colors)
+	set_trait(src, ENTRY_LIGHTER_SHELL, "sampled_icon", icon)
+	set_trait(src, ENTRY_LIGHTER_SHELL, "sampled_state", sampled_state)
+	set_trait(src, ENTRY_LIGHTER_SHELL, "sampled_color", sampled_color)
+
+/obj/item/flame/lighter/draw(datum/look/look)
+	..()
+	var/datum/type_trait/lighter_shell/S = lighter_shell_of(src)
+	if(S.shown && S.sampled_state)
+		look.overlay(look_overlay_image(S.sampled_icon, S.sampled_state, color = S.sampled_color))
+
+CAPABILITIES(/obj/item/flame/lighter/zippo)
+	configure(lighter_shell(shown = FALSE))

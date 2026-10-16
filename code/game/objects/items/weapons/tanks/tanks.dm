@@ -46,6 +46,7 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	Relatively easy to make, the single tank bomb requries no tank transfer valve, and is still a fairly formidable weapon that can be manufactured from any tank."
 
 CAPABILITIES(/obj/item/tank)
+	setup(PROC_REF(initialize_tank))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 10.0))
 	configure(item_combat(force = 5.0))
@@ -69,13 +70,6 @@ CAPABILITIES(/obj/item/tank)
 	var/obj/item/tankassemblyproxy/proxy = new /obj/item/tankassemblyproxy(src)
 	rel_set(proxy, nameof(proxy.tank), src)
 	rel_set(src, nameof(proxyassembly), proxy)
-
-/obj/item/tank/Initialize(mapload)
-	. = ..()
-	apply_blueprint_effects()
-
-	src.init_proxy()
-	update_gauge()
 
 DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 
@@ -627,26 +621,18 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	add_overlay("bomb_assembly")
 
 CAPABILITIES(/obj/item/tank/phoron/onetankbomb)
+	setup(PROC_REF(fill_phoron_bomb))
 	param(nameof(bomb_fill), pos = 1)
 
 /// How full the bomb's tank is filled (its constructor param; a full or small bomb's own default).
 /obj/item/tank/phoron/onetankbomb/var/bomb_fill = 1
 
-// ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
-/obj/item/tank/phoron/onetankbomb/Initialize(mapload)
-	. = ..()
-	onetankbomb(bomb_fill)
-
 CAPABILITIES(/obj/item/tank/oxygen/onetankbomb)
+	setup(PROC_REF(fill_oxygen_bomb))
 	param(nameof(bomb_fill), pos = 1)
 
 /// How full the bomb's tank is filled (its constructor param; a full or small bomb's own default).
 /obj/item/tank/oxygen/onetankbomb/var/bomb_fill = 1
-
-// ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
-/obj/item/tank/oxygen/onetankbomb/Initialize(mapload)
-	. = ..()
-	onetankbomb(bomb_fill)
 
 /obj/item/tank/phoron/onetankbomb/full
 	bomb_fill = 2
@@ -737,3 +723,17 @@ CAPABILITIES(/obj/item/tankassemblyproxy)
 
 // The tank owns its proxy (implicit OWN); the proxy names the tank back (one-sided REL). The
 // assembly holder sits in the tank's contents, so the proxy only names it (REL view).
+
+/obj/item/tank/proc/initialize_tank()
+	apply_blueprint_effects()
+
+	src.init_proxy()
+	update_gauge()
+
+
+/obj/item/tank/phoron/onetankbomb/proc/fill_phoron_bomb()
+	onetankbomb(bomb_fill)
+
+
+/obj/item/tank/oxygen/onetankbomb/proc/fill_oxygen_bomb()
+	onetankbomb(bomb_fill)

@@ -502,10 +502,6 @@ CAPABILITIES(/obj/item/mail_scanner)
 
 // JUNK MAIL STUFF
 
-/obj/item/mail/junkmail/Initialize(mapload)
-	. = ..()
-	junk_mail()
-
 /obj/item/mail/proc/junk_mail()
 
 	var/obj/junk = /obj/item/paper/fluff/junkmail_generic
@@ -579,3 +575,6 @@ CAPABILITIES(/obj/item/paper/fluff/junkmail_redpill)
 	name = "important document"
 	icon_state = "paper_words"
 
+
+CAPABILITIES(/obj/item/mail/junkmail)
+	setup(TYPE_PROC_REF(/obj/item/mail, junk_mail))

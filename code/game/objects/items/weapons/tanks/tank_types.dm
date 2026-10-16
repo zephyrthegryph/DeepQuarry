@@ -95,10 +95,6 @@ DECLARE_GAS(/obj/item/tank/vox, "air_contents", "volume", T20C, list(GAS_PHORON 
 
 DECLARE_GAS(/obj/item/tank/phoron/pressurized, "air_contents", "volume", T20C, list(GAS_PHORON = 10*ONE_ATMOSPHERE))
 
-/obj/item/tank/phoron/pressurized/Initialize(mapload)
-	. = ..()
-	adjust_scale(0.8)
-
 /*
  * Emergency Oxygen
  */
@@ -341,3 +337,9 @@ DECLARE_GAS(/obj/item/tank/emergency/phoron/double, "air_contents", "volume", T2
 	gauge_icon = "indicator_double"
 	volume = 12
 	gauge_cap = 3
+
+CAPABILITIES(/obj/item/tank/phoron/pressurized)
+	setup(PROC_REF(scale_fuel_can))
+
+/obj/item/tank/phoron/pressurized/proc/scale_fuel_can()
+	adjust_scale(0.8)

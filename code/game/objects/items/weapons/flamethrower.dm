@@ -48,11 +48,8 @@ CAPABILITIES(/obj/item/flamethrower)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 CAPABILITIES(/obj/item/flamethrower/full)
+	setup(PROC_REF(secure_full_thrower))
 	owns_one(nameof(igniter), /obj/item/assembly/igniter, starts = /obj/item/assembly/igniter, starts_set = list("secured" = FALSE)) // for disassembly
-
-/obj/item/flamethrower/full/Initialize(mapload)
-	. = ..()
-	set_status(TRUE)
 
 /// On or off: while lit it heats its turf every 2 s.
 /obj/item/flamethrower/var/lit = FALSE
@@ -250,3 +247,6 @@ CAPABILITIES(/obj/item/flamethrower/full)
 /// Relation view: previousturf (reads null once it is gone).
 /obj/item/flamethrower/proc/previousturf() as /turf
 	return previousturf
+
+/obj/item/flamethrower/full/proc/secure_full_thrower()
+	set_status(TRUE)
