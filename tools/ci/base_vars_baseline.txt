@@ -5,7 +5,6 @@
 base_var	code/ATMOSPHERICS/atom_flags_1.dm	@/atom::flags_1
 base_var	code/ATMOSPHERICS/environmental/LINDA_system.dm	@/atom::can_atmos_pass
 base_var	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/atom/movable::last_high_pressure_movement_air_cycle
-base_var	code/ATMOSPHERICS/tg_infra_compat.dm	@/obj/machinery::rebuilding
 base_var	code/_helpers/icons.dm	@/atom::examine_icon_snapshot
 base_var	code/_onclick/hud/alert.dm	@/mob::alerts
 base_var	code/_onclick/hud/fullscreen.dm	@/mob::screens
@@ -347,7 +346,6 @@ base_var	code/modules/vore/eating/mob.dm	@/mob::soulgem
 base_var	code/modules/vore/eating/mob.dm	@/mob::died_in_vr
 base_var	code/modules/vore/eating/mob.dm	@/mob::last_move_time
 base_var	code/modules/vore/eating/vorepanel.dm	@/mob::vorePanel
-base_var	code/modules/vore/resizing/resize.dm	@/mob/living::holder_default
 base_var	code/modules/vore/resizing/resize.dm	@/mob/living::pickup_active
 base_var	code/modules/xenoarcheaology/effect_master.dm	@/atom::artifact_master
 base_var	code/modules/xenoarcheaology/finds/talking.dm	@/obj::talking_atom

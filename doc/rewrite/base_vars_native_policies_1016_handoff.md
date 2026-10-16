@@ -27,3 +27,8 @@ The continuation now removes 33 rows, 386 to 353, with zero additions. Generatio
 
 Source preflight now removes 34 rows, 386 to 352, with zero additions; generation and ratchets pass. DreamChecker exposed unqualified food placement writes omitted by the earlier source audit, four old projectile-field assertions and a duplicate include. The repair ports all 22 runtime XY pairs through the real placement setters in an existing publication batch, retains the exact reagent branches, updates assertions to the native injury profile, and removes the duplicate include. A real condiment/seven-container regression is included. The revival transaction guard uses its native sparse boolean home with a real human death/revival transition test. Possession name storage is deferred because a real connected-client fixture is unavailable; no wrapper-only substitute is claimed. DreamChecker is being rerun after these source repairs. Runtime verification and stamp are still pending.
 
+
+## Dead-state source completion
+
+Generation and all ratchets pass at 350 remaining rows: 36 removed from this continuation's starting 386, zero additions. The final two deletions remove machinery's rebuilding flag (no reader or writer) and holder_default (only its own unused cache guard/write). Live power-recursion latches are retained: converting their Initialize writes to sparse calls would create a new init statement identity, and moving those effects needs a phase-correct initializer conversion first. The preceding native-policy preflight has zero DreamChecker diagnostics; the two final deletions will also be covered by lane-ready. No runtime result or stamp is claimed.
+
