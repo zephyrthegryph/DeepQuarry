@@ -8,7 +8,6 @@
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4 //The sum of the w_classes of all the items in this storage item.
 	req_access = list(ACCESS_ARMORY)
-	preserve_item = 1
 	var/broken = 0
 	var/icon_locked = "lockbox+l"
 	var/icon_closed = "lockbox"
@@ -21,6 +20,7 @@ MSG_DEF_SELF(lockbox/locked, "It's locked!")
 // A lockbox starts locked. An ID with the access locks and unlocks it (locking shuts the window of whoever is looking into it); a broken lock
 // stays open for good; locked, it takes nothing and does not open; an energy blade slices the lock open, and an emag shorts it out.
 CAPABILITIES(/obj/item/storage/lockbox)
+	configure(item_persistence(preserve = 1))
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 	lock(id_types = list(/obj/item/card/id), starts_locked = TRUE, alt = FALSE)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)

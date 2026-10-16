@@ -138,9 +138,9 @@ CAPABILITIES(/obj/item/locator)
 	throw_speed = 3
 	throw_range = 5
 	MATERIAL_BULK(MAT_STEEL, 10000)
-	preserve_item = 1
 
 CAPABILITIES(/obj/item/hand_tele)
+	configure(item_persistence(preserve = 1))
 	configure(item_thrown(force = 5))
 	// the old attack_self: pick a locked-on teleporter (or a random spot nearby) and open a portal to it
 	op("lock_in", in_hand(), needs(req(PROC_REF(can_open_portal))),

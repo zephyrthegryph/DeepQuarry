@@ -176,7 +176,6 @@ CAPABILITIES(/obj/item/ghost_catcher)
 	icon = 'icons/obj/technomancer.dmi'
 	icon_state = "technomancer_core"
 	item_state = "proton_pack"
-	preserve_item = 1
 	w_class = ITEMSIZE_LARGE
 	unacidable = TRUE
 	var/who_ya_gunna_call = /obj/item/ghost_catcher
@@ -186,6 +185,7 @@ CAPABILITIES(/obj/item/ghost_catcher)
 	. = ..()
 
 CAPABILITIES(/obj/item/proton_pack)
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(worn_icon = 'icons/inventory/back/mob.dmi', slots = SLOT_BACK))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	drag_onto(PROC_REF(drop_input))

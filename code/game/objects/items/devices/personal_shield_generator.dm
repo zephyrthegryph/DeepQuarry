@@ -18,7 +18,6 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "shieldpack_basic"
 	item_state = "defibunit" //Placeholder
-	preserve_item = 1
 	w_class = ITEMSIZE_HUGE //It's a giant shield generator!!!
 	unacidable = TRUE
 	actions_types = list(/datum/action/item_action/toggle_shield)
@@ -35,6 +34,7 @@
 	var/effect_color = "#99FFFF"							// Allows for changing shield colors. Default cyan.
 
 CAPABILITIES(/obj/item/personal_shield_generator)
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))

@@ -5,7 +5,6 @@
 // Based on railing.dmi from https://github.com/Endless-Horizon/CEV-Eris
 /obj/structure/railing
 	name = "railing"
-	debris_type = /obj/item/stack/rods
 	desc = "A standard steel railing, painted orange.  Play stupid games, win stupid prizes."
 	icon = 'icons/obj/railing.dmi'
 	density = TRUE
@@ -37,6 +36,7 @@
 	make_rotatable()
 
 CAPABILITIES(/obj/structure/railing)
+	configure(object_break_config(debris_type = /obj/item/stack/rods))
 	climb(delay = 3.4 SECONDS, vaulting = TRUE, climbed = PROC_REF(climbed_over))
 	op("slam", item(/obj/item), stance(I_HURT), label("Slam"), then(PROC_REF(interaction_slam)))
 	op("item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_item)))

@@ -2,11 +2,8 @@
 	/// Debris created when the object is destroyed (not disassembled). Declared per
 	/// type; atom_destruction() spawns it before the slots' drop policies run.
 	/// Types with several kinds of debris override debris_entries().
-	var/debris_type
-	var/debris_amount = 1
 	/// Icon state shown while broken (integrity at or below integrity_failure).
 	/// atom_break() applies it and atom_fix() restores the initial icon_state.
-	var/broken_icon_state
 
 /// An explicit exposure to fire (lava, a flamethrower, a bonfire, a lighter):
 /// a pulse of heat into the object's heat node. Ignition, melting, overheating
@@ -41,12 +38,12 @@
 /// Declarative break look: types set broken_icon_state instead of overriding.
 /obj/atom_break(damage_flag)
 	. = ..()
-	if(broken_icon_state)
-		set_icon_state(broken_icon_state)
+	if(object_break_config_of(src).broken_icon_state)
+		set_icon_state(object_break_config_of(src).broken_icon_state)
 
 /obj/atom_fix()
 	. = ..()
-	if(broken_icon_state)
+	if(object_break_config_of(src).broken_icon_state)
 		set_icon_state(initial(icon_state))
 
 /// EMP adapter: an ionic packet from the shared ladder. Only types with an
@@ -138,9 +135,9 @@
 
 /// This type's debris: path -> amount, or null. A shared list; don't modify it.
 /obj/proc/debris_entries()
-	if(!debris_type)
+	if(!object_break_config_of(src).debris_type)
 		return null
-	return list((debris_type) = debris_amount)
+	return list((object_break_config_of(src).debris_type) = object_break_config_of(src).debris_amount)
 
 /// Create the debris entries on the turf. Stacks get their amount.
 /obj/proc/spawn_debris()

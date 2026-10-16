@@ -5,7 +5,6 @@
 	icon_state = "holopot"
 	anchored = TRUE
 	maintenance_flags = MACHINE_MAINT_WRENCH
-	maintenance_wrench_time = 1 SECOND
 	var/interference = FALSE
 	var/icon/plant = null
 
@@ -75,6 +74,7 @@
 	return getHologramIcon(plant_icon, 0)
 
 CAPABILITIES(/obj/machinery/holoplant)
+	configure(machine_interaction_config(maintenance_wrench_time = 1 SECOND))
 	configure(light_glow(color = "#3C94C5"))
 	configure(uses_power(idle = 0, active = 5))
 	after_init(0, then(PROC_REF(init_activate)))

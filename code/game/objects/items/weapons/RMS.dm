@@ -37,7 +37,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 5000)
-	preserve_item = FALSE
 
 	var/mode_index = RMS_STEEL //start at steel creation
 	var/static/list/modes = list(RMS_STEEL, RMS_GLASS, RMS_CLOTH, RMS_PLASTIC, RMS_STONE, RMS_RAND)
@@ -239,6 +238,7 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 
 
 CAPABILITIES(/obj/item/rms)
+	configure(item_persistence(preserve = FALSE))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 7))
 	op("choose_material", in_hand(), label("Choose material"), needs(req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))),

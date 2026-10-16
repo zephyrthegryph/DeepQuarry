@@ -151,7 +151,6 @@ CAPABILITIES(/obj/item/card/id)
 	desc = "A golden card which shows power and might."
 	icon_state = "gold-id"
 	item_state = "gold_id"
-	preserve_item = 1
 
 /obj/item/card/id/gold/captain
 	assignment = JOB_SITE_MANAGER
@@ -632,3 +631,6 @@ CAPABILITIES(/obj/item/card/id/event/polymorphic/itg)
 	identity_changed_on_holder()
 	return TRUE
 SETTER(/obj/item/card/id, registered_name)
+
+CAPABILITIES(/obj/item/card/id/gold)
+	configure(item_persistence(preserve = 1))

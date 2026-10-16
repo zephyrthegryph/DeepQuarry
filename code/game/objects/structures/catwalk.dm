@@ -1,6 +1,5 @@
 /obj/structure/catwalk
 	name = "catwalk"
-	debris_type = /obj/item/stack/rods
 	desc = "Cats really don't like these things."
 	icon = 'icons/turf/catwalks.dmi'
 	icon_state = "catwalk"
@@ -91,6 +90,7 @@
 MSG_DEF_SELF(catwalk/plate_begins, span_notice("Placing tile..."))
 
 CAPABILITIES(/obj/structure/catwalk)
+	configure(object_break_config(debris_type = /obj/item/stack/rods))
 	silicon_hand(adjacent = TRUE)
 	smoothing()
 	op("slice_keep", tool(TOOL_WELDER), stance(I_HELP), label("Slice apart, keeping the lattice"), wait(0), needs(req_welder_lit()), costs(RES_FUEL, 0), then(PROC_REF(interaction_slice_keep)))

@@ -26,7 +26,6 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "blueprints"
 	in_use = FALSE
-	preserve_item = 1
 	var/uses_charges = 0 					// If the area editor has limited uses.
 	var/initial_charges = 25
 	var/charges = 25 // The amount of uses the area editor has. //
@@ -57,6 +56,7 @@
 
 
 CAPABILITIES(/obj/item/areaeditor)
+	configure(item_persistence(preserve = 1))
 	configure(item_combat(attack_verbs = list("attacked", "bapped", "hit")))
 	// the old attack_self: read it
 	op("read", in_hand(), label("Read"), then(PROC_REF(read_editor)))
@@ -193,10 +193,10 @@ CAPABILITIES(/obj/item/areaeditor)
 	desc = "A blueprint detailing the various internal wiring of machinery around the station."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "blueprints"
-	preserve_item = 1
 	var/legend = 1
 
 CAPABILITIES(/obj/item/wire_reader)
+	configure(item_persistence(preserve = 1))
 	configure(item_combat(attack_verbs = list("attacked", "bapped", "hit")))
 	op("read_wires", in_hand(), label("Read"), then(PROC_REF(interaction_read_wires)))
 	op("view_wireset", topic("view_wireset", arg("view_wireset", schema_text(MAX_NAME_LEN), optional = TRUE)), then(PROC_REF(topic_view_wireset)))

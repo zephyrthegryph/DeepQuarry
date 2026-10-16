@@ -6,7 +6,6 @@
 	item_state = "aicard"
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 0
-	preserve_item = 1
 
 	var/flush = null
 
@@ -22,6 +21,7 @@
 		return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/aicard)
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(slots = SLOT_BELT))
 	op("view_ai", in_hand(), opens_ui())
 	interface("AICard", state = nameof(GLOB.tgui_inventory_state))

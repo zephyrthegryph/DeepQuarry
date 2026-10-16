@@ -9,11 +9,9 @@
 	var/randpixel = 6
 	var/abstract = 0
 	// r_speed removed (dead, 0 refs)
-	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
 	var/burning = null
 	var/storage_cost = null
-	var/no_attack_log = 0			//If it's an item we don't want to log attack_logs with, set this to 1
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
@@ -31,8 +29,6 @@
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
 	/// All items can have an uplink hidden inside, just remember to add the triggers.
-	var/zoomdevicename = null //name used for message when binoculars/scope is used
-	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 
 	var/embed_chance = -1	//0 won't embed, and 100 will always embed
 
@@ -69,13 +65,10 @@
 	// Pickup/Drop/Equip/Throw Sounds
 
 
-	var/no_random_knockdown = FALSE			//stops item from being able to randomly knock people down in combat
 
-	var/climbing_delay = 1 //If rock_climbing, lower better.
 	var/digestable = TRUE
 	var/item_tf_spawn_allowed = FALSE
 	var/list/ckeys_allowed_itemspawn = null
-	var/preserve_item = 0 //whether this object is preserved when its owner goes into cryo-storage, gateway, etc
 	var/persist_storable = TRUE		//If this is true, this item can be stored in the item bank.
 									//This is automatically set to false when an item is removed from storage
 
@@ -84,7 +77,6 @@
 	var/tmp/cleaving = FALSE // Used to avoid infinite cleaving.
 	var/list/tool_qualities
 	/// Used to reference the object's host organ.
-	var/tmp/obj/item/organ/internal/augment/my_augment
 	var/datum/identification/identity = null // owned: identification datum, refers back to its holder
 	var/identity_type = /datum/identification
 	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
@@ -666,23 +658,23 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		return FALSE
 
 	var/devicename
-	if(zoomdevicename)
-		devicename = zoomdevicename
+	if(optical_view_of(src).device_name)
+		devicename = optical_view_of(src).device_name
 	else
 		devicename = src.name
 
 	var/can_zoom = TRUE
-	if((M.stat && !zoom) || !(ishuman(M)))
+	if((M.stat && !item_zoom_active(src)) || !(ishuman(M)))
 		to_chat(M, span_filter_notice("You are unable to focus through the [devicename]."))
 		can_zoom = FALSE
-	else if(!zoom && (GLOB.global_hud.darkMask[1] in M.client.screen))
+	else if(!item_zoom_active(src) && (GLOB.global_hud.darkMask[1] in M.client.screen))
 		to_chat(M, span_filter_notice("Your visor gets in the way of looking through the [devicename]."))
 		can_zoom = FALSE
-	else if(!zoom && M.get_active_hand() != src)
+	else if(!item_zoom_active(src) && M.get_active_hand() != src)
 		to_chat(M, span_filter_notice("You are too distracted to look through the [devicename], perhaps if it was in your active hand this might work better."))
 		can_zoom = FALSE
 
-	if(!zoom && can_zoom)
+	if(!item_zoom_active(src) && can_zoom)
 		M.begin_remote_view(/datum/remote_view/item_zoom, M, viewsize, /datum/remote_view_config/zoomed_item, src, tileoffset, TRUE)
 		return
 	PUBLISH_LEGACY(src, /datum/notice/remote_view_clear)
@@ -1101,7 +1093,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 
 /// The host organ (the item side of the augment relation view); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ
-	return I?.my_augment
+	return link_get(I, LK_ITEM_AUGMENT)
 
 // An item's master is the thing holding it (an assembly's valve, a chair's kit): a sparse link (LK_ITEM_MASTER).
 /proc/item_master(obj/item/I) as /obj/item

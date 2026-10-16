@@ -5,7 +5,6 @@
 	icon_override = 'icons/inventory/back/mob.dmi'
 	icon_state = "radiopack"
 	item_state = "radiopack"
-	preserve_item = 1
 	w_class = ITEMSIZE_LARGE
 	var/handset_path = /obj/item/radio/bluespacehandset/linked
 
@@ -14,6 +13,7 @@
 	. = ..()
 
 CAPABILITIES(/obj/item/bluespaceradio)
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))

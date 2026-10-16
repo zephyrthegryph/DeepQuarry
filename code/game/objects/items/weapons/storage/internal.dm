@@ -1,10 +1,10 @@
 //A storage item intended to be used by other items to provide storage functionality.
 //Types that use this should consider overriding emp_act() and hear_talk(), unless they shield their contents somehow.
 /obj/item/storage/internal
-	preserve_item = 1
 	var/obj/item/master_item
 
 CAPABILITIES(/obj/item/storage/internal)
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(flags = ABSTRACT))
 	ref_one(nameof(master_item), /obj/item)
 	keeps_if(PROC_REF(has_item_owner))

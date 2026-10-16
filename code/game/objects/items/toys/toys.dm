@@ -824,7 +824,6 @@ CAPABILITIES(/obj/structure/plushie)
 	desc = "A plushie of a happy drone! It appears to be smiling."
 	icon_state = "droneplushie"
 	phrase = "Beep boop!"
-	bubble_icon = "machine"
 
 /obj/structure/plushie/carp
 	name = "plush carp"
@@ -837,7 +836,6 @@ CAPABILITIES(/obj/structure/plushie)
 	desc = "A plushie of a popular industrious cleaning robot! If it could feel emotions, it would love you."
 	icon_state = "beepskyplushie"
 	phrase = "Ping!"
-	bubble_icon = "security"
 
 //Small plushies.
 /obj/item/toy/plushie
@@ -1003,79 +1001,67 @@ CAPABILITIES(/obj/item/toy/plushie)
 	desc = "A plushie of an adorable diona nymph! While its level of self-awareness is still being debated, its level of cuteness is not."
 	icon_state = "nymphplushie"
 	pokephrase = "Chirp!"
-	bubble_icon = "plant"
 
 /obj/item/toy/plushie/teshari
 	name = "teshari plush"
 	desc = "This is a plush teshari. Very soft, with a pompom on the tail. The toy is made well, as if alive. Looks like she is sleeping. Shhh!"
 	icon_state = "teshariplushie"
 	pokephrase = "Rya!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/mouse
 	name = "mouse plush"
 	desc = "A plushie of a delightful mouse! What was once considered a vile rodent is now your very best friend."
 	icon_state = "mouseplushie"
 	pokephrase = "Squeak!"
-	bubble_icon = "maus"
 
 /obj/item/toy/plushie/kitten
 	name = "kitten plush"
 	desc = "A plushie of a cute kitten! Watch as it purrs its way right into your heart."
 	icon_state = "kittenplushie"
 	pokephrase = "Mrow!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/lizard
 	name = "lizard plush"
 	desc = "A plushie of a scaly lizard! Very controversial, after being accused as \"racist\" by some Unathi."
 	icon_state = "lizardplushie"
 	pokephrase = "Hiss!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/spider
 	name = "spider plush"
 	desc = "A plushie of a fuzzy spider! It has eight legs - all the better to hug you with."
 	icon_state = "spiderplushie"
 	pokephrase = "Sksksk!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/farwa
 	name = "farwa plush"
 	desc = "A farwa plush doll. It's soft and comforting!"
 	icon_state = "farwaplushie"
 	pokephrase = "Squaw!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/corgi
 	name = "corgi plushie"
 	icon_state = "corgi"
 	pokephrase = "Woof!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/girly_corgi
 	name = "corgi plushie"
 	icon_state = "girlycorgi"
 	pokephrase = "Arf!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/robo_corgi
 	name = "borgi plushie"
 	icon_state = "robotcorgi"
 	pokephrase = "Bark."
-	bubble_icon = "synthetic"
 
 /obj/item/toy/plushie/octopus
 	name = "octopus plushie"
 	icon_state = "loveable"
 	pokephrase = "Squish!"
-	bubble_icon = "tentacles"
 
 /obj/item/toy/plushie/face_hugger
 	name = "facehugger plushie"
 	icon_state = "huggable"
 	pokephrase = "Hug!"
-	bubble_icon = "science"
 
 //foxes are basically the best
 
@@ -1083,103 +1069,86 @@ CAPABILITIES(/obj/item/toy/plushie)
 	name = "red fox plushie"
 	icon_state = "redfox"
 	pokephrase = "Gecker!"
-	bubble_icon = "latte_fox"
 
 /obj/item/toy/plushie/black_fox
 	name = "black fox plushie"
 	icon_state = "blackfox"
 	pokephrase = "Ack!"
-	bubble_icon = "latte_fox"
 
 /obj/item/toy/plushie/marble_fox
 	name = "marble fox plushie"
 	icon_state = "marblefox"
 	pokephrase = "Awoo!"
-	bubble_icon = "latte_fox"
 
 /obj/item/toy/plushie/blue_fox
 	name = "blue fox plushie"
 	icon_state = "bluefox"
 	pokephrase = "Yoww!"
-	bubble_icon = "latte_fox"
 
 /obj/item/toy/plushie/orange_fox
 	name = "orange fox plushie"
 	icon_state = "orangefox"
 	pokephrase = "Yagh!"
-	bubble_icon = "latte_fox"
 
 /obj/item/toy/plushie/coffee_fox
 	name = "coffee fox plushie"
 	icon_state = "coffeefox"
 	pokephrase = "Gerr!"
-	bubble_icon = "latte_fox"
 
 /obj/item/toy/plushie/pink_fox
 	name = "pink fox plushie"
 	icon_state = "pinkfox"
 	pokephrase = "Yack!"
-	bubble_icon = "latte_fox"
 
 /obj/item/toy/plushie/purple_fox
 	name = "purple fox plushie"
 	icon_state = "purplefox"
 	pokephrase = "Whine!"
-	bubble_icon = "latte_fox"
 
 /obj/item/toy/plushie/crimson_fox
 	name = "crimson fox plushie"
 	icon_state = "crimsonfox"
 	pokephrase = "Auuu!"
-	bubble_icon = "latte_fox"
 
 /obj/item/toy/plushie/deer
 	name = "deer plushie"
 	icon_state = "deer"
 	pokephrase = "Bleat!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/black_cat
 	name = "black cat plushie"
 	icon_state = "blackcat"
 	pokephrase = "Mlem!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/grey_cat
 	name = "grey cat plushie"
 	icon_state = "greycat"
 	pokephrase = "Mraw!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/white_cat
 	name = "white cat plushie"
 	icon_state = "whitecat"
 	pokephrase = "Mew!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/orange_cat
 	name = "orange cat plushie"
 	icon_state = "orangecat"
 	pokephrase = "Meow!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/siamese_cat
 	name = "siamese cat plushie"
 	icon_state = "siamesecat"
 	pokephrase = "Mrew?"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/tabby_cat
 	name = "tabby cat plushie"
 	icon_state = "tabbycat"
 	pokephrase = "Purr!"
-	bubble_icon = "heart"
 
 /obj/item/toy/plushie/tuxedo_cat
 	name = "tuxedo cat plushie"
 	icon_state = "tuxedocat"
 	pokephrase = "Mrowww!!"
-	bubble_icon = "heart"
 
 // nah, squids are better than foxes :>
 
@@ -1187,6 +1156,7 @@ CAPABILITIES(/obj/item/toy/plushie)
 	name = DEVELOPER_WARNING_NAME
 
 CAPABILITIES(/obj/item/toy/plushie/squid)
+	configure(speech_presentation(bubble_icon = "tentacles"))
 	configure(item_worn(slots = SLOT_HEAD))
 
 /obj/item/toy/plushie/squid
@@ -1195,7 +1165,6 @@ CAPABILITIES(/obj/item/toy/plushie/squid)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "greensquid"
 	pokephrase = "Squrr!"
-	bubble_icon = "tentacles"
 
 /obj/item/toy/plushie/squid/mint
 	name = "mint squid plushie"
@@ -1233,7 +1202,6 @@ CAPABILITIES(/obj/item/toy/plushie/squid)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "therapyred"
 	item_state = "egg4" // It's the red egg in items_left/righthand
-	bubble_icon = "medical"
 
 /obj/item/toy/plushie/therapy/purple
 	name = "purple therapy doll"
@@ -1286,7 +1254,6 @@ CAPABILITIES(/obj/item/toy/plushie/squid)
 	desc = "Officer Tiny-Tin, now with rooty-tooty-shooty action! Press his belly to hear a sound!"
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "plushie_tinsec"
-	bubble_icon = "security"
 	pokephrase = "That means you fucked up!"
 	squeeze_sound = SFX_VOICE_TINYTIN_FUCKEDUP
 
@@ -1771,20 +1738,18 @@ CAPABILITIES(/obj/item/toy/plushie/box)
 	desc = "An adorable stuffed toy of a robot."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "securityk9"
-	bubble_icon = "security"
 
 CAPABILITIES(/obj/item/toy/plushie/borgplushie)
+	configure(speech_presentation(bubble_icon = "security"))
 	configure(item_combat(attack_verbs = list("beeped", "booped", "pinged")))
 
 /obj/item/toy/plushie/borgplushie/medihound
 	name = "medihound plushie"
 	icon_state = "medihound"
-	bubble_icon = "cardiogram"
 
 /obj/item/toy/plushie/borgplushie/scrubpuppy
 	name = "janihound plushie"
 	icon_state = "scrubpuppy"
-	bubble_icon = "synthetic"
 
 /obj/item/toy/plushie/borgplushie/drake
 	icon = 'icons/obj/drakietoy.dmi'
@@ -1815,37 +1780,30 @@ CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake)
 /obj/item/toy/plushie/borgplushie/drake/sec
 	name = "security drake plushie"
 	icon_state = "secdrake"
-	bubble_icon = "security"
 
 /obj/item/toy/plushie/borgplushie/drake/med
 	name = "medical drake plushie"
 	icon_state = "meddrake"
-	bubble_icon = "cardiogram"
 
 /obj/item/toy/plushie/borgplushie/drake/sci
 	name = "science drake plushie"
 	icon_state = "scidrake"
-	bubble_icon = "science"
 
 /obj/item/toy/plushie/borgplushie/drake/jani
 	name = "janitor drake plushie"
 	icon_state = "janidrake"
-	bubble_icon = "synthetic"
 
 /obj/item/toy/plushie/borgplushie/drake/eng
 	name = "engineering drake plushie"
 	icon_state = "engdrake"
-	bubble_icon = "engineering"
 
 /obj/item/toy/plushie/borgplushie/drake/mine
 	name = "mining drake plushie"
 	icon_state = "minedrake"
-	bubble_icon = "notepad"
 
 /obj/item/toy/plushie/borgplushie/drake/trauma
 	name = "trauma drake plushie"
 	icon_state = "traumadrake"
-	bubble_icon = "medical"
 
 /obj/item/toy/plushie/foxbear
 	name = "toy fox"
@@ -1859,9 +1817,9 @@ CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "plushie_nuke"
 	pokephrase = "Hey, has anyone seen the nuke disk?"
-	bubble_icon = "synthetic_evil"
 
 CAPABILITIES(/obj/item/toy/plushie/nukeplushie)
+	configure(speech_presentation(bubble_icon = "synthetic_evil"))
 	configure(item_combat(attack_verbs = list("shot", "nuked", "detonated")))
 
 /obj/item/toy/plushie/otter
@@ -1883,7 +1841,6 @@ CAPABILITIES(/obj/item/toy/plushie/nukeplushie)
 	desc = "A pleasing soft-toy of a monitor-headed robot. Toaster functionality included."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "plushie_ipc"
-	bubble_icon = "synthetic"
 	pokephrase = "Ping!"
 	squeeze_sound = SFX_MACHINES_PING
 
@@ -1910,6 +1867,7 @@ CAPABILITIES(/obj/item/toy/plushie/nukeplushie)
 		play_sfx(loc, SFX_MACHINES_DING)
 
 CAPABILITIES(/obj/item/toy/plushie/ipc)
+	configure(speech_presentation(bubble_icon = "synthetic"))
 	op("ipc_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT + 1), then(PROC_REF(ipc_interaction_item)))
 
 /// Old attackby.
@@ -1929,10 +1887,10 @@ CAPABILITIES(/obj/item/toy/plushie/ipc)
 	desc = "A stuffed toy of a pleasant art-deco toaster. It has a small tag on it reading 'Bricker Home Appliances! All rights reserved, copyright 2298.' It's a tad heavy on account of containing a heating coil. Want to make toast?"
 	icon_state = "marketable_tost"
 	pokephrase = "Ding!"
-	bubble_icon = "machine"
 	squeeze_sound = SFX_MACHINES_DING
 
 CAPABILITIES(/obj/item/toy/plushie/ipc/toaster)
+	configure(speech_presentation(bubble_icon = "machine"))
 	configure(item_combat(attack_verbs = list("toasted", "burnt")))
 
 /obj/item/toy/plushie/snakeplushie
@@ -1949,9 +1907,9 @@ CAPABILITIES(/obj/item/toy/plushie/snakeplushie)
 	desc = "An average-sized green cube. It isn't notable in any way."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "generic"
-	bubble_icon = "textbox"
 
 CAPABILITIES(/obj/item/toy/plushie/generic)
+	configure(speech_presentation(bubble_icon = "textbox"))
 	configure(item_combat(attack_verbs = list("existed near")))
 
 
@@ -2000,10 +1958,10 @@ CAPABILITIES(/obj/item/toy/plushie/goose)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "sus_red"
 	pokephrase = "Stab!"
-	bubble_icon = "security"
 	squeeze_sound = SFX_WEAPONS_SLICE
 
 CAPABILITIES(/obj/item/toy/plushie/sus)
+	configure(speech_presentation(bubble_icon = "security"))
 	configure(item_combat(attack_verbs = list("stabbed", "slashed")))
 
 /obj/item/toy/plushie/sus/blue
@@ -2363,7 +2321,6 @@ CAPABILITIES(/obj/item/toy/minigibber)
 	icon_state = "xeno"
 	name = "xenomorph action figure"
 	desc = "MEGA presents the new Xenos Isolated action figure! Comes complete with realistic sounds! Pull back string to use."
-	bubble_icon = "alien"
 	var/cooldown = 0
 
 /obj/item/toy/toy_xeno/proc/hiss()
@@ -2375,6 +2332,7 @@ CAPABILITIES(/obj/item/toy/minigibber)
 	set_icon_state("[initial(icon_state)]")
 
 CAPABILITIES(/obj/item/toy/toy_xeno)
+	configure(speech_presentation(bubble_icon = "alien"))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
@@ -3128,3 +3086,129 @@ CAPABILITIES(/obj/item/toy/plushie/teshari/y_yw)
 
 MSG_DEF_SELF(plushie/no_mind, "You can't think of a name.")
 
+
+CAPABILITIES(/obj/structure/plushie/drone)
+	configure(speech_presentation(bubble_icon = "machine"))
+
+CAPABILITIES(/obj/structure/plushie/beepsky)
+	configure(speech_presentation(bubble_icon = "security"))
+
+CAPABILITIES(/obj/item/toy/plushie/nymph)
+	configure(speech_presentation(bubble_icon = "plant"))
+
+CAPABILITIES(/obj/item/toy/plushie/teshari)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/mouse)
+	configure(speech_presentation(bubble_icon = "maus"))
+
+CAPABILITIES(/obj/item/toy/plushie/kitten)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/lizard)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/spider)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/farwa)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/corgi)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/girly_corgi)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/robo_corgi)
+	configure(speech_presentation(bubble_icon = "synthetic"))
+
+CAPABILITIES(/obj/item/toy/plushie/octopus)
+	configure(speech_presentation(bubble_icon = "tentacles"))
+
+CAPABILITIES(/obj/item/toy/plushie/face_hugger)
+	configure(speech_presentation(bubble_icon = "science"))
+
+CAPABILITIES(/obj/item/toy/plushie/red_fox)
+	configure(speech_presentation(bubble_icon = "latte_fox"))
+
+CAPABILITIES(/obj/item/toy/plushie/black_fox)
+	configure(speech_presentation(bubble_icon = "latte_fox"))
+
+CAPABILITIES(/obj/item/toy/plushie/marble_fox)
+	configure(speech_presentation(bubble_icon = "latte_fox"))
+
+CAPABILITIES(/obj/item/toy/plushie/blue_fox)
+	configure(speech_presentation(bubble_icon = "latte_fox"))
+
+CAPABILITIES(/obj/item/toy/plushie/orange_fox)
+	configure(speech_presentation(bubble_icon = "latte_fox"))
+
+CAPABILITIES(/obj/item/toy/plushie/coffee_fox)
+	configure(speech_presentation(bubble_icon = "latte_fox"))
+
+CAPABILITIES(/obj/item/toy/plushie/pink_fox)
+	configure(speech_presentation(bubble_icon = "latte_fox"))
+
+CAPABILITIES(/obj/item/toy/plushie/purple_fox)
+	configure(speech_presentation(bubble_icon = "latte_fox"))
+
+CAPABILITIES(/obj/item/toy/plushie/crimson_fox)
+	configure(speech_presentation(bubble_icon = "latte_fox"))
+
+CAPABILITIES(/obj/item/toy/plushie/deer)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/black_cat)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/grey_cat)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/white_cat)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/orange_cat)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/siamese_cat)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/tabby_cat)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/tuxedo_cat)
+	configure(speech_presentation(bubble_icon = "heart"))
+
+CAPABILITIES(/obj/item/toy/plushie/therapy)
+	configure(speech_presentation(bubble_icon = "medical"))
+
+CAPABILITIES(/obj/item/toy/plushie/tinytin_sec)
+	configure(speech_presentation(bubble_icon = "security"))
+
+CAPABILITIES(/obj/item/toy/plushie/borgplushie/medihound)
+	configure(speech_presentation(bubble_icon = "cardiogram"))
+
+CAPABILITIES(/obj/item/toy/plushie/borgplushie/scrubpuppy)
+	configure(speech_presentation(bubble_icon = "synthetic"))
+
+CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake/sec)
+	configure(speech_presentation(bubble_icon = "security"))
+
+CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake/med)
+	configure(speech_presentation(bubble_icon = "cardiogram"))
+
+CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake/sci)
+	configure(speech_presentation(bubble_icon = "science"))
+
+CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake/jani)
+	configure(speech_presentation(bubble_icon = "synthetic"))
+
+CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake/eng)
+	configure(speech_presentation(bubble_icon = "engineering"))
+
+CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake/mine)
+	configure(speech_presentation(bubble_icon = "notepad"))
+
+CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake/trauma)
+	configure(speech_presentation(bubble_icon = "medical"))

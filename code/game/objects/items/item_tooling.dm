@@ -3,26 +3,29 @@
 
 STATIC_ENTRY(item_tooling)
 
-/proc/item_tooling(speed = null, pry = null, climbing = null)
+/proc/item_tooling(speed = null, pry = null, climbing = null, climbing_delay = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_ITEM_TOOLING, null, list("speed" = speed, "pry" = pry, "climbing" = climbing))
+	return entry_make(ENTRY_ITEM_TOOLING, null, list("speed" = speed, "pry" = pry, "climbing" = climbing, "climbing_delay" = climbing_delay))
 
 /datum/type_trait/item_tooling
 	var/speed = 1	// multiplier on tool work time: 0.5 works twice as fast
 	var/pry = 0	// can pry doors open
+	/// Dimensionless multiplier of the five-second climb, not a decisecond duration.
+	var/climbing_delay = 1
 	var/climbing = FALSE	// lets its holder climb cliffs and walls
 
 /datum/type_trait/item_tooling/copy_values(datum/type_trait/item_tooling/into)
 	into.speed = speed
 	into.pry = pry
 	into.climbing = climbing
+	into.climbing_delay = climbing_delay
 
 /datum/entry_engine/type_trait/item_tooling
 	kind = ENTRY_ITEM_TOOLING
 	trait_type = /datum/type_trait/item_tooling
 	publish_key = ITEM_TOOLING_KEY
 	base_type = /obj/item
-	var_names = list("toolspeed" = "speed", "pry" = "pry", "rock_climbing" = "climbing")
+	var_names = list("toolspeed" = "speed", "pry" = "pry", "rock_climbing" = "climbing", "climbing_delay" = "climbing_delay")
 
 /// The holder's item_tooling values (its own once one was set at run time). Read only.
 READS_AS(/proc/tooling_of, ITEM_TOOLING_KEY)
@@ -43,3 +46,6 @@ READS_AS(/proc/tooling_of, ITEM_TOOLING_KEY)
 
 /obj/item/proc/set_rock_climbing(value)
 	return set_trait(src, ENTRY_ITEM_TOOLING, "climbing", value)
+
+/obj/item/proc/set_climbing_delay(value)
+	return set_trait(src, ENTRY_ITEM_TOOLING, "climbing_delay", value)

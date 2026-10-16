@@ -6,7 +6,6 @@
 	icon_override = 'icons/obj/borkmedigun.dmi'
 	icon_state = "mg-backpack"
 	item_state = "mg-backpack-onmob"
-	preserve_item = TRUE
 	w_class = ITEMSIZE_HUGE
 	unacidable = TRUE
 
@@ -36,6 +35,7 @@
 
 
 CAPABILITIES(/obj/item/medigun_backpack)
+	configure(item_persistence(preserve = TRUE))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))

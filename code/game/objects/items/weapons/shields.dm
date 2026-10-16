@@ -35,7 +35,6 @@
 /obj/item/shield
 	name = "shield"
 	var/base_block_chance = 50
-	preserve_item = 1
 	item_icons = list(
 				slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
 				slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
@@ -366,3 +365,6 @@ CAPABILITIES(/obj/item/shield/riot/explorer)
 	icon_state = "buckler"
 	w_class = ITEMSIZE_LARGE
 	base_block_chance = 30
+
+CAPABILITIES(/obj/item/shield)
+	configure(item_persistence(preserve = 1))

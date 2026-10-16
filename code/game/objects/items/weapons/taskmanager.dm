@@ -17,7 +17,6 @@
 	throw_speed = 1
 	throw_range = 3
 	w_class = ITEMSIZE_NORMAL
-	preserve_item = FALSE
 	var/scancount = 0
 	var/scanreq = 3
 	var/mode = TM_MODE_BRIDGE
@@ -301,6 +300,7 @@
 
 
 CAPABILITIES(/obj/item/taskmanager)
+	configure(item_persistence(preserve = FALSE))
 	configure(item_thrown(force = 7))
 	configure(item_combat(force = 0))
 	op("choose_department", in_hand(), label("Choose department"), needs(req_adjacent(), req_capable(), req(PROC_REF(living_operator))),

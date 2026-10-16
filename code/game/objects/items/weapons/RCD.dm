@@ -10,7 +10,6 @@
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 50000)
-	preserve_item = TRUE // RCDs are pretty important.
 	var/stored_matter = 0
 	var/max_stored_matter = RCD_MAX_CAPACITY
 	var/ranged = FALSE
@@ -316,6 +315,7 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	var/static/image/radial_image_floorwall = image(icon = 'icons/mob/radial.dmi', icon_state = "wallfloor")
 
 CAPABILITIES(/obj/item/rcd)
+	configure(item_persistence(preserve = TRUE))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GUN, pickup = SFX_ITEMS_PICKUP_GUN))

@@ -7,7 +7,6 @@
 	icon = 'icons/obj/defibrillator.dmi'
 	icon_state = "defibunit"
 	item_state = "defibunit"
-	preserve_item = 1
 	w_class = ITEMSIZE_LARGE
 	unacidable = TRUE
 
@@ -15,6 +14,7 @@
 	var/obj/item/cell/bcell = null
 
 CAPABILITIES(/obj/item/defib_kit)
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))

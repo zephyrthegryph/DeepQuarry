@@ -5,7 +5,6 @@
 	item_state = "electronic"
 	w_class = ITEMSIZE_SMALL
 	show_messages = 0
-	preserve_item = 1
 
 	var/obj/item/radio/borg/pai/radio
 	var/mob/living/silicon/pai/pai
@@ -41,6 +40,7 @@
 
 
 CAPABILITIES(/obj/item/paicard)
+	configure(item_persistence(preserve = 1))
 	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	after_init(0, then(PROC_REF(paicard_after_init)))
