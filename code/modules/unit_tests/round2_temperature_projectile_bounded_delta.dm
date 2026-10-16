@@ -44,8 +44,8 @@
 	// Real supported admin-grantable vulnerability; no synthetic factor writes.
 	var/mob/living/carbon/human/vulnerable = allocate(/mob/living/carbon/human, surface)
 	TEST_ASSERT(vulnerable.apply_body_effect(/datum/body_effect/elemental_vulnerability), "Actual elemental vulnerability applies through its public API")
-	TEST_ASSERT_EQUAL(vulnerable.factor(BF_COLD_EXPOSURE), 1.5, "Actual vulnerability amplifies cold exposure")
-	TEST_ASSERT_EQUAL(vulnerable.factor(BF_HEAT_EXPOSURE), 1.5, "Actual vulnerability amplifies heat exposure")
+	TEST_ASSERT_EQUAL(vulnerable.cold_exposure, 1.5, "Actual vulnerability amplifies cold exposure")
+	TEST_ASSERT_EQUAL(vulnerable.heat_exposure, 1.5, "Actual vulnerability amplifies heat exposure")
 	TEST_ASSERT_EQUAL(vulnerable.get_cold_protection(cold.target_temperature), -0.5, "Naked vulnerability produces genuine negative cold protection")
 	TEST_ASSERT_EQUAL(vulnerable.get_heat_protection(heat.target_temperature), -0.5, "Naked vulnerability produces genuine negative heat protection")
 	vulnerable.set_bodytemperature(fractional_temperature)

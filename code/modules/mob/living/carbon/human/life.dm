@@ -1130,7 +1130,7 @@
 /// worn layers seal, then BF_HEAT_EXPOSURE, which stacks multiplicatively.
 /mob/living/carbon/human/get_heat_protection(temperature)
 	var/exposed = 1 - (body ? body.worn_thermal_protection(temperature, FALSE) : 0)
-	return min(1 - exposed * factor(BF_HEAT_EXPOSURE), 1)
+	return min(1 - exposed * src.heat_exposure, 1)
 
 /mob/living/carbon/human/get_cold_protection(temperature)
 	if(has_mutation(COLD_RESISTANCE))
@@ -1138,7 +1138,7 @@
 	// Space is 2.7 K; low-moles tiles occasionally report less, and cold-rated suits protect to 2 K.
 	temperature = max(temperature, 2.7)
 	var/exposed = 1 - (body ? body.worn_thermal_protection(temperature, TRUE) : 0)
-	return min(1 - exposed * factor(BF_COLD_EXPOSURE), 1)
+	return min(1 - exposed * src.cold_exposure, 1)
 
 /mob/living/carbon/human/life_chemicals(datum/seq_frame/life/F)
 	if(src.reagents)

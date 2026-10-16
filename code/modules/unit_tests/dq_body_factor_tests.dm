@@ -112,14 +112,14 @@
 
 	// set_body_effect_factors() swaps a running application's table.
 	H.apply_body_effect(/datum/body_effect/dq_test_healing)
-	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 2, "healing effect should apply")
+	TEST_ASSERT_EQUAL(H.healing_received, 2, "healing effect should apply")
 	var/static/alist/halved = alist(BF_HEALING_RECEIVED = 0.5)
 	H.set_body_effect_factors(/datum/body_effect/dq_test_healing, halved)
-	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 0.5, "set_body_effect_factors should recompute the mob")
+	TEST_ASSERT_EQUAL(H.healing_received, 0.5, "set_body_effect_factors should recompute the mob")
 	H.reset_body_effect_factors(/datum/body_effect/dq_test_healing)
-	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 2, "reset_body_effect_factors should restore the definition's table")
+	TEST_ASSERT_EQUAL(H.healing_received, 2, "reset_body_effect_factors should restore the definition's table")
 	H.remove_body_effect(/datum/body_effect/dq_test_healing, TRUE)
-	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 1, "ending the effect drops its table")
+	TEST_ASSERT_EQUAL(H.healing_received, 1, "ending the effect drops its table")
 
 
 /// A plain severity-scaled affliction (no continuous factors, unlike the airway family,
@@ -306,7 +306,7 @@
 	TEST_ASSERT(C.charge < C.maxcharge, "absorbing should drain the cell")
 	C.set_charge(0)
 	TEST_ASSERT(H.injure(INJURY_BLUNT, 5, BP_TORSO, flags = INJURE_SILENT) > 0, "an empty shield should let the hit through")
-	TEST_ASSERT(dq_near(H.factor(BF_SIEMENS), 2), "the shield's conductivity is an ordinary factor")
+	TEST_ASSERT(dq_near(H.siemens, 2), "the shield's conductivity is an ordinary factor")
 
 
 /// The reference book documents a source straight from its table.

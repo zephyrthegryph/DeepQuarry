@@ -113,7 +113,7 @@
 	if (. & EMP_PROTECT_SELF || is_incorporeal()) // Can't emp shadekin in phase
 		return
 
-	var/emp_shift = factor(BF_EMP_SHIFT)
+	var/emp_shift = src.emp_shift
 	if(emp_shift)
 		severity = CLAMP(severity + emp_shift, 1, 5)
 

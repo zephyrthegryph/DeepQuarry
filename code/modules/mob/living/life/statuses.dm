@@ -90,7 +90,7 @@
 /// Scale a stun / weaken / paralysis / sleep / confusion / blindness duration
 /// by BF_DISABLE_DURATION (0 = immune).
 /mob/living/proc/scale_disable_duration(amount)
-	var/scale = factor(BF_DISABLE_DURATION)
+	var/scale = src.disable_duration
 	return scale == 1 ? amount : round(amount * scale)
 
 /// Carbons wake at their species' waking_speed.

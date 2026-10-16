@@ -143,8 +143,19 @@ GLOBAL_TABLE(body_factor_defs, GLOBAL_PROC_REF(build_body_factor_defs))
 /// per-category factor.
 /mob/living/proc/incoming_injury_factor(category)
 	. = incoming_all
-	if(category)
-		. *= stat_value(src, incoming_stat_id(category))
+	switch(category)
+		if(INJURY_CATEGORY_PHYSICAL)
+			. *= incoming_physical
+		if(INJURY_CATEGORY_THERMAL)
+			. *= incoming_thermal
+		if(INJURY_CATEGORY_TOXIC)
+			. *= incoming_toxic
+		if(INJURY_CATEGORY_GENETIC)
+			. *= incoming_genetic
+		if(INJURY_CATEGORY_NEURAL)
+			. *= incoming_neural
+		if(INJURY_CATEGORY_PAIN)
+			. *= incoming_pain
 
 // --- Body side ---------------------------------------------------------------------
 
