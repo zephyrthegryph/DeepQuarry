@@ -35,7 +35,6 @@
 	opacity = 0
 	var/list/item_list
 
-	clicksound = SFX_BUTTON
 	var/vending_sound = "machines/vending/vending_drop.ogg"
 
 	// Power
@@ -291,6 +290,7 @@
 	return data
 
 CAPABILITIES(/obj/machinery/casino_prize_dispenser)
+	configure(machine_interaction_config(clicksound = SFX_BUTTON))
 	ref_one(nameof(currently_vending), /datum/data/casino_prize)
 	per_type(nameof(item_list), PROC_REF(build_item_list))
 	setup(PROC_REF(power_change)) // the dispenser shows its powered or unpowered face from the start, map-loaded too
