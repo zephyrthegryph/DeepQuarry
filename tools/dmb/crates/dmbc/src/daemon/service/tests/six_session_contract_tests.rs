@@ -604,3 +604,50 @@ fn code_motion_edits_patch_and_match_fresh_bytes() {
     }
     assert_eq!(compare_revision(&shared, &roots), initial, "the revert must reproduce the initial bytes");
 }
+
+#[test]
+fn string_literal_edits_patch_and_match_fresh_bytes() {
+    // A body edit that changes the string literals a procedure owns appends the new strings to
+    // the string table and leaves the old ones unreferenced; it must still take the retained patch
+    // path and equal a fresh compile (dmb-equiv), also through line shifts and a revert.
+    let tree = "/proc/anchor()\n    return \"zero\"\n/proc/first(a)\n    return \"alpha\"\n/proc/second(b)\n    if(b)\n        return \"beta\"\n    return \"gamma\"\n/datum/holder\n    var/list/items = list(1, 2)\n    proc/count()\n        return items.len\n";
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    for index in 0..6 {
+        roots.edit(index, tree);
+    }
+    compare_revision(&shared, &roots);
+    let patched = |roots: &Roots| -> Vec<u64> {
+        (0..6)
+            .map(|index| crate::body_patch::applied(&roots.manifest(index)))
+            .collect()
+    };
+    let changed = tree.replace("\"alpha\"", "\"alpha two\"");
+    let second_literal = changed.replace("return \"alpha two\"", "if(a)\n        return \"alpha three\"\n    return \"alpha two\"");
+    // The literal "gamma" already exists in another body: no new table string for it.
+    let reused = second_literal.replace("\"alpha three\"", "\"gamma\"");
+    let removed = reused.replace("if(a)\n        return \"gamma\"\n    return \"alpha two\"", "return \"delta\"");
+    let mut before = patched(&roots);
+    for (label, source) in [
+        ("changed literal", changed.as_str()),
+        ("added literal and lines", second_literal.as_str()),
+        ("literal already in the table", reused.as_str()),
+        ("literals removed", removed.as_str()),
+        ("revert", tree),
+    ] {
+        for index in 0..6 {
+            roots.edit(index, source);
+        }
+        // Every step is compared with a fresh compile inside; after a revert the retained image still
+        // holds the orphaned strings, so only equivalence (not byte identity) with the initial holds.
+        compare_revision(&shared, &roots);
+        let after = patched(&roots);
+        for index in 0..6 {
+            if label != "revert" {
+                assert_eq!(after[index], before[index] + 1, "root {index}: {label} did not patch");
+            }
+        }
+        before = after;
+    }
+}

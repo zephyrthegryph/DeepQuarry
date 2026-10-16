@@ -92,7 +92,7 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
     if appended.from_identity != base.shape.tree_identity {
         return Err("appended callables are not relative to the patch base".into());
     }
-    if let Some(difference) = request.inputs.non_text_difference(&base.inputs) {
+    if let Some(difference) = request.inputs.non_text_difference_with(&base.inputs, request.archive != base.archive) {
         return Err(format!("non-text input changed: {difference}"));
     }
     if request.archive != base.archive {

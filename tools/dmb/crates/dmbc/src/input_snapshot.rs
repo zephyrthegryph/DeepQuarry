@@ -462,6 +462,13 @@ impl InputSnapshot {
     /// (`.dm`, `.dme`), by content: non-text files, folder listings, negative
     /// lookups and generated outputs. Used to admit body-edit patches.
     pub(crate) fn non_text_difference(&self, other: &Self) -> Option<String> {
+        self.non_text_difference_with(other, true)
+    }
+    /// As `non_text_difference`, but with `listings` false the folder listings and negative lookups
+    /// are not compared. A patch passes false when the resource archive and search context are
+    /// unchanged: a listing only matters through what it resolved, and an icon repack that rewrites
+    /// unreferenced files changes listings without changing any resolution.
+    pub(crate) fn non_text_difference_with(&self, other: &Self, listings: bool) -> Option<String> {
         let text = |path: &Path| {
             path.extension().is_some_and(|extension| {
                 extension.eq_ignore_ascii_case("dm") || extension.eq_ignore_ascii_case("dme")
@@ -485,10 +492,10 @@ impl InputSnapshot {
         if let Some((path, _)) = right.next() {
             return Some(format!("{} removed", path.display()));
         }
-        if self.folders != other.folders {
+        if listings && self.folders != other.folders {
             return Some("resource folder listing".into());
         }
-        if self.negative_files != other.negative_files {
+        if listings && self.negative_files != other.negative_files {
             return Some("negative file lookups".into());
         }
         if self.generated_outputs != other.generated_outputs {
