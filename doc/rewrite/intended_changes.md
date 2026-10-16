@@ -4932,3 +4932,7 @@ The existing living update_canmove wrote raw density FALSE while prone and reset
 The typed internal-storage owner link introduced upstream in 5b0a2f09d0 ran before rejecting non-item locations. Native keeps_if() now rejects turf/null owners before setup binds the same valid item and inherits its name. This reapplies the previously approved object-init repair; it fixes the actual constructor runtime rather than blessing its incomplete conversion capture.
 
 The HUD safety-refresh migration now permits refresh exactly at its saved world-time deadline, matching the original boundary. Its test stages the native deadline directly because injected kernel time does not advance world.time. No cooldown duration changes.
+
+## Optical zoom lifetime state (base-vars retirement)
+
+Active optical zoom is the real reciprocal remote-view association rather than a duplicate item boolean. Destroying an item view after its host reference was lost now clears zoom; retiring an older view cannot clear a replacement association for the same device. Previously lifecycle_unbind cleared the boolean only inside a host_mob && host_item guard. Labels become shared optical type configuration with per-item copy-on-write; null/empty fallback, gun scope text and connected-client pixel code are unchanged. Native lifecycle tests do not claim live-client rendering coverage.

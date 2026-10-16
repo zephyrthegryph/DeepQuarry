@@ -1,36 +1,25 @@
 # Base-variable burn-down
 
-Branch: `codex/base-vars-burndown`, based on master c3cb037784.
+Canonical branch: `codex/base-vars-burndown`. Repairs are prepared on `codex/base-vars-burndown-repair` in a separate worktree so the running 8a95eeaad4 gate keeps its original source.
 
-The starting baseline had 539 rows. The analyzer now reports 410: 129 removed, zero added. The source cohorts are committed separately
-by owning subsystem, with consumers updated together. Generation and the base_vars check pass, including records_data_only at zero.
-Compilation/runtime lane-ready proof remains pending.
+## Source result
 
-Per-cohort handoffs cover lighting, human state, behaviours, last-attacker
-links, voice choices and body-effect serials. Other cohorts cover transforms,
-emotes, caches, medical cursors, vore options, heat and melee timing.
+The initial baseline was 539 rows. Current master 3240597db6 has 537; this source has **386**. It removes **151 identities from current master**, with **zero additions**, including duplicate multiplicities. The total reduction from the original baseline is 153, including two upstream removals. No ALLOW or ceiling was added.
 
-Remaining reactive flags need sparse-slot key publication and generated read
-dependencies. They retain their old fields. Four lighting references need a
-phase-aware sparse ownership contract: a naive record would move disposal
-from OWNED to LINKS and change the original holder's disposal hook. Owned
-human references similarly retain replacement/clear and contained ownership
-semantics; no manual qdel glue substitutes for those contracts.
+The first cohorts move transforms, emotes, body/status snapshots, profile preferences, behaviour state, heat samples, borrowed references, material emission samples, lighting and voice/butchery configuration into their actual native owners. Per-cohort handoffs are historical checkpoints; these counts supersede them. Master's newly reactive redgate requirement retains its real tracked field and setters rather than this branch's earlier sparse version.
 
-No new ALLOW annotations or baseline additions are included.
+The next cohort removes another 23 fields: machinery interaction settings (5); object break configuration (3); radiation/speech configuration (3); item retention/tooling/combat configuration (4); augment return association (1); optical configuration/view association (2); unused mob scratch fields (3); the obsolete item health placeholder (1); and spawn-temperature configuration (1). The native heat body remains the runtime temperature authority. Trait defaults, inherited explicit-null overrides and public map/VV copy-on-write routes are preserved. Existing implant tool ownership remains separate from the borrowed return relation.
 
-The follow-up damage trait and uncached reciprocal VR link cohorts remove five additional rows. Six reactive borrowed human references remain because sparse links do not publish dependency keys; eight owned references retain replacement/clear/contained semantics.
+## Verification and repairs
 
-## Unlanded burning conversion withdrawn
+The original 8a95eeaad4 gate compiled production and tests without errors, passed DreamChecker and ratchets, but failed its boot/runtime checks. It is not a successful stamp. Its old 584 conversion-row differences are 23 aborted constructor dumps, not completed behavior captures; none was blessed.
 
-Five original master fields remain: burn_overlay, burn_particle_type, burn_fuel, burn_cool_watch and burn_ended_by. Granted capability draw providers are not consumed by the current presentation path, and native granted look layers cannot represent the arbitrary retained mutable appearance accepted by start_burning(). The conversion and its premature five-row baseline removal were backed out. This introduces no master baseline rows: the final baseline is a strict subset of origin/master. The lifetime regression now tests the retained real cooling-watch ownership.
+Prepared repairs add missing real static roots and static markers, restore the original HUD deadline boundary, correct clock and transform test assumptions against the actual native clocks/original image implementation, isolate fixture archive/counter state, compose prone density with independent sources, normalize native identities before look probes, and reapply the approved internal-storage admission-before-link fix. The hidden slime-state reuse guard remains strict.
 
-Final source verification: analyze baseline --update --lint base_vars and the full check_ratchets.sh pass at b27c25b5bd. Baseline 539 -> 410; 129 original rows removed, no rows added relative to master. Native compile, DreamChecker and focused lane-ready runtime proof remain pending.
+The repaired source and the 23-field cohort passed generation and all ratchets before the final equivalent time-define formatting. The focused repair list contains 42 explicit selectors: failed tests, newly affected regressions, and the mandatory requirement/conversion pins. No replacement runtime pass, final DreamChecker result, lane-ready stamp or push is claimed yet. Test worlds remain serialized.
 
-## Final additional cohort
+## Remaining contracts
 
-Nine configuration fields (five sound, four butchery) now use copy-on-write native traits, preserving old map/admin names. Three material emission samples and the last tasted text use numeric/text sparse slots; only imperative readers consume them. Native generator and all ratchets pass at 419a5b09bb. The baseline is 539 -> 410, 129 removed and zero added relative to master. say_list_type remains because the existing mecha roll requires a physical target field. Runtime verification is still pending; no stamp is claimed.
+386 baseline rows remain. Five burning fields are retained because granted capability draw providers cannot yet preserve the arbitrary retained appearance contract. Four lighting references retain disposal-phase ownership. Reactive borrowed references need published sparse relation dependencies; owned references must retain replacement/clear/contained semantics. No shadow record, unproved sparse association, or manual qdel glue substitutes for those contracts. Later cohorts are source proposals until their native ownership and phase proofs are complete.
 
-## First verification repair
-
-The first lane-ready attempt passed ratchets but failed compilation/DreamChecker before running a world. The complete diagnostic audit found missed consumers of removed vars: the emote cache after its cooldown, status-start snapshots, persistence weight rates, organ meat fallback, and body-writing/EMP test fixtures. These now use their native homes. `low_sorting_priority` was not dead: it remains a real sorting input and has moved to the existing human-abilities trait with all nine original subtype defaults, both runtime writers and map/VV aliases preserved. A real `sort_mobs()` regression checks defaults, per-holder changes and unchanged type defaults. No baseline row was added. Verification remains pending.
+Live-client optical rendering is not covered by the headless lifetime tests; connected-client offset code is unchanged. The documented optical cleanup fix prevents a lost viewer or old view teardown from leaving stale zoom state or clearing a replacement view.
