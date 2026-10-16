@@ -16,7 +16,7 @@ The original 8a95eeaad4 gate compiled production and tests without errors, passe
 
 Prepared repairs add missing real static roots and static markers, restore the original HUD deadline boundary, correct clock and transform test assumptions against the actual native clocks/original image implementation, isolate fixture archive/counter state, compose prone density with independent sources, normalize native identities before look probes, and reapply the approved internal-storage admission-before-link fix. The hidden slime-state reuse guard remains strict.
 
-The repaired source and the 23-field cohort passed generation and all ratchets before the final equivalent time-define formatting. The focused repair list contains 42 explicit selectors: failed tests, newly affected regressions, and the mandatory requirement/conversion pins. No replacement runtime pass, final DreamChecker result, lane-ready stamp or push is claimed yet. Test worlds remain serialized.
+The repaired source and the 23-field cohort passed generation and all ratchets before the final equivalent time-define formatting. Final code ef7208549d regenerated successfully and passed DreamChecker with zero diagnostics (data/dream-checker-native-homes-repair.log). The focused repair list contains 42 explicit selectors: failed tests, newly affected regressions, and the mandatory requirement/conversion pins. No replacement runtime pass, lane-ready stamp or push is claimed yet. Test worlds remain serialized.
 
 ## Remaining contracts
 
