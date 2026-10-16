@@ -7,7 +7,6 @@
 	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	icon_keyboard = "med_key"
 	icon_screen = "dna"
-	bubble_icon = "medical"
 	circuit = /obj/item/circuitboard/resleeving_control
 	req_access = list(ACCESS_HEADS) //Only used for record deletion right now.
 	var/list/pods //Linked grower pods (REL_LIST).
@@ -674,6 +673,7 @@ CAPABILITIES(/obj/item/disk/transcore)
 // Linked machines are independent: one-sided relation lists, each machine's `connected` a plain
 // back relation. Either end dying drops the link.
 CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
+	configure(speech_presentation(bubble_icon = "medical"))
 	configure(light_glow(color = "#315ab4"))
 	op("resleeving_console_interaction_item", item(/obj/item), then(PROC_REF(resleeving_console_interaction_item)))
 	op("resleeving_console_interaction_hand", hand(), ungated(), then(PROC_REF(resleeving_console_interaction_hand)))
