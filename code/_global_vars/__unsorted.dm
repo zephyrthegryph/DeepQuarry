@@ -1,3 +1,6 @@
+/// The datums queued for a refresh this frame (code/engine/change/refresh.dm). First here: a global initializer can write tracked state.
+GLOBAL_LIST_EMPTY(refresh_queue)
+
 // Items that ask to be called every cycle.
 GLOBAL_DATUM(data_core, /datum/datacore)
 

@@ -163,10 +163,6 @@
 /// Queues E for the outputs in `mask`, and its owner up the chain for its look when one of the owner's
 /// capabilities draws E. `channel` reaches on_state_changed() (refresh_bits) with a plain mark.
 /proc/refresh_mark(datum/E, mask, channel = 0)
-	// A write made while the global variables are still being built (a news network or ntnet constructor) happens before the queue exists:
-	// nothing can be waiting on the thing yet, and `null += D` would make the queue a datum.
-	if(!islist(GLOB.refresh_queue))
-		return
 	var/datum/D = E
 	for(var/depth in 1 to 8)
 		if(mask & DEP_LEGACY)
@@ -186,7 +182,8 @@
 		if(mask != DEP_ALL)
 			mask = DEP_DRAW
 
-GLOBAL_LIST_EMPTY(refresh_queue)
+// GLOB.refresh_queue is declared in code/_global_vars/__unsorted.dm: global initializers (the news network, ntnet) write tracked vars while the globals are
+// still being built, so the queue has to be built before them.
 /// Refreshes run so far (the dx_refresh benchmark reads it).
 GLOBAL_VAR_INIT(refresh_bench_drained, 0)
 /// The entity whose refresh is running now (the self-mark detector reads it).
