@@ -12565,13 +12565,13 @@
 /obj/item/clothing/mask/chewable/candy/gum icon: icons/inventory/face/item.dmi
 /obj/item/clothing/mask/chewable/candy/gum state: gum
 /obj/item/clothing/mask/chewable/candy/gum dir: 2
-/obj/item/clothing/mask/chewable/candy/gum color: #577852
+/obj/item/clothing/mask/chewable/candy/gum color: #bcbc2a
 /obj/item/clothing/mask/chewable/candy/gum overlay: icons/inventory/face/item.dmi:gum:8:#000000
 /obj/item/clothing/mask/chewable/candy/gum overlay: icons/inventory/face/item.dmi:gum_wrapper:-32767
 /obj/item/clothing/mask/chewable/candy/lolli icon: icons/inventory/face/item.dmi
 /obj/item/clothing/mask/chewable/candy/lolli state: lollipop
 /obj/item/clothing/mask/chewable/candy/lolli dir: 2
-/obj/item/clothing/mask/chewable/candy/lolli color: #a21773
+/obj/item/clothing/mask/chewable/candy/lolli color: #b6b617
 /obj/item/clothing/mask/chewable/candy/lolli overlay: icons/inventory/face/item.dmi:lollipop:8:#000000
 /obj/item/clothing/mask/chewable/candy/lolli overlay: icons/inventory/face/item.dmi:lollipop_wrapper:-32767
 /obj/item/clothing/mask/chewable/candy/pocky icon: icons/inventory/face/item.dmi

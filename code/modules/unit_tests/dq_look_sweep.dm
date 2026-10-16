@@ -233,6 +233,13 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 /// presentation lane and the stat drain settled. A thing left from the last unit, a mob that wandered off the tile or air a probe
 /// heated would otherwise be in the next unit's look.
 /datum/unit_test/proc/dq_look_reset(turf/T)
+	// Probes can enqueue a real blast. The injected clock does not run the explosion periodic;
+	// finish that owed work before removing its products, rather than releasing it into the next test.
+	for(var/pass in 1 to 50)
+		if(!SSexplosions.has_work())
+			break
+		SSexplosions.explosion_step(0)
+	TEST_ASSERT(!SSexplosions.has_work(), "look cleanup must finish every explosion epoch it leaves queued")
 	for(var/turf/B as anything in block_turfs(test_block))
 		dq_look_drain_turf(B)
 		unit_test_block_reset_turf(B)
@@ -415,6 +422,29 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	state_changed(target)
 	dq_look_settle()
 
+/// Snapshot immutable primitive values, not mutable object/list aliases. Parallel arrays retain null values.
+/// A publication may normalize an invisible text cache while the visible look returns unchanged.
+/datum/unit_test/proc/dq_look_primitive_state(atom/subject)
+	var/list/names = list()
+	for(var/name in subject.vars)
+		var/value = subject.vars[name]
+		if(isnull(value) || isnum(value) || istext(value) || ispath(value) || isfile(value))
+			names += name
+	var/list/values = new /list(length(names))
+	for(var/i in 1 to length(names))
+		values[i] = subject.vars[names[i]]
+	return list(names, values)
+
+/datum/unit_test/proc/dq_look_primitive_changes(atom/subject, list/before)
+	var/list/changed = list()
+	var/list/names = before[1]
+	var/list/values = before[2]
+	for(var/i in 1 to length(names))
+		// Include the probed value too: a clamping setter may not restore it exactly.
+		if(subject.vars[names[i]] != values[i])
+			changed += names[i]
+	return changed
+
 /// One probe on the made instance: write, capture, write the original back, check the look returned to `base`. Returns FALSE when
 /// the instance can no longer be trusted (a runtime, or the look did not come back); the rows it wrote stay.
 /datum/unit_test/proc/dq_look_probe_reuse(atom/subject, type, name, value, list/base, datum/dq_look_result/res)
@@ -422,6 +452,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/original = subject.vars[name]
 	if(original == value)
 		return TRUE
+	var/list/primitive_before = dq_look_primitive_state(subject)
 	try
 		dq_look_write(subject, name, value)
 		var/list/now = dq_look_pin_lines(subject)
@@ -434,6 +465,11 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		if(jointext(back, "\n") != jointext(base, "\n"))
 			res.impure += "[type] [name]=[value] (back to [original]): [length(back - base)] rows gained, [length(base - back)] lost"
 			log_test("look sweep IMPURE: [type] [name]=[value]: writing [original] back did not return the look to the made one; the rest of its probes use fresh instances")
+			return FALSE
+		var/list/hidden_changes = dq_look_primitive_changes(subject, primitive_before)
+		if(length(hidden_changes))
+			res.impure += "[type] [name]=[value] (back to [original]): scalar state changed: [jointext(hidden_changes, ", ")]"
+			log_test("look sweep IMPURE: [type] [name]=[value]: restored look retained changed scalar state ([jointext(hidden_changes, ", ")]); the rest of its probes use fresh instances")
 			return FALSE
 	catch(var/exception/e)
 		res.probe_rows += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"
@@ -663,3 +699,46 @@ CAPABILITIES(/obj/dq_look_native_roll_fixture)
 	qdel(first)
 	qdel(second)
 	qdel(unrelated)
+
+/// A look probe's pending blast belongs to that probe, not the test that follows it.
+/datum/unit_test/dq_look_cleanup_finishes_explosion
+/datum/unit_test/dq_look_cleanup_finishes_explosion/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	test_driver_begin()
+	var/turf/T = test_floor()
+	explosion(T, 0, 0, 1)
+	TEST_ASSERT(SSexplosions.has_work(), "the real blast is queued before the simulation periodic runs")
+	dq_look_reset(T)
+	TEST_ASSERT(!SSexplosions.has_work(), "cleanup drains the actual explosion epoch without advancing unrelated periodics")
+	for(var/turf/B as anything in block_turfs(test_block))
+		for(var/obj/effect/expl_particles/particle in B)
+			TEST_FAIL("look cleanup left a real explosion particle on the released block")
+
+/// Real consuming publications normalize hidden icon_living even when eyes-off appearance is unchanged.
+/datum/unit_test/dq_look_reuse_detects_hidden_slime_state
+/datum/unit_test/dq_look_reuse_detects_hidden_slime_state/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/turf/T = test_floor()
+	var/path = /mob/living/simple_mob/slime/xenobio/bluespace
+	var/mob/living/simple_mob/slime/xenobio/S = dq_look_allocate(path, T)
+	dq_look_settle()
+	TEST_ASSERT_EQUAL(S.icon_living, "slime baby", "The real constructor begins with its inherited generic cache")
+	var/list/base = dq_look_pin_lines(S)
+	var/datum/dq_look_result/probe = allocate(/datum/dq_look_result)
+	TEST_ASSERT(!dq_look_probe_reuse(S, path, "consuming", 1, base, probe), "The real sampler rejects hidden state changes after a visually restored probe")
+	TEST_ASSERT_EQUAL(S.icon_living, "bluespace slime baby", "The actual consuming publication normalized the hidden cache")
+	TEST_ASSERT_EQUAL(jointext(dq_look_pin_lines(S), "\n"), jointext(base, "\n"), "The visible eyes-off base alone cannot detect this mutation")
+	TEST_ASSERT(length(probe.impure), "The actual sampler records why reuse ended")
+	qdel(S)
+	dq_look_drain_turf(T)
+	var/list/base_vars = dq_look_state_base_vars(/mob, T)
+	var/list/plan = list("[path]" = list("consuming", "has_eye_glow"))
+	var/datum/dq_look_result/reused = allocate(/datum/dq_look_result)
+	var/datum/dq_look_result/fresh = allocate(/datum/dq_look_result)
+	dq_look_unit(path, T, base_vars, plan, reused, TRUE, TRUE)
+	dq_look_unit(path, T, base_vars, plan, fresh, TRUE, TRUE, TRUE)
+	TEST_ASSERT(length(reused.impure), "The complete production sampler actually switches from reuse to fresh allocation")
+	TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "Consuming-before-eye probes now match actual fresh-instance sampling")
+	TEST_ASSERT_EQUAL(jointext(reused.made, "\n"), jointext(fresh.made, "\n"), "The repair does not change initial tree capture")

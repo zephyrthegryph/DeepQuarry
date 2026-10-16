@@ -130,8 +130,8 @@
 /mob/living/simple_mob/slime/xenobio/silver consuming=2 -state: slime baby
 /mob/living/simple_mob/slime/xenobio/bluespace ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/bluespace ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
-/mob/living/simple_mob/slime/xenobio/bluespace has_eye_glow=1 +overlay: icons/mob/slime2.dmi:bluespace slime baby-eyes:7
-/mob/living/simple_mob/slime/xenobio/bluespace has_eye_glow=2 +overlay: icons/mob/slime2.dmi:bluespace slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/bluespace has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/bluespace has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/bluespace shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
 /mob/living/simple_mob/slime/xenobio/bluespace shiny=2 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
 /mob/living/simple_mob/slime/xenobio/bluespace is_adult=1 +state: bluespace slime adult
@@ -307,8 +307,8 @@
 /mob/living/simple_mob/slime/xenobio/light_pink consuming=2 -state: slime baby
 /mob/living/simple_mob/slime/xenobio/rainbow ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/rainbow ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
-/mob/living/simple_mob/slime/xenobio/rainbow has_eye_glow=1 +overlay: icons/mob/slime2.dmi:rainbow slime baby-eyes:7
-/mob/living/simple_mob/slime/xenobio/rainbow has_eye_glow=2 +overlay: icons/mob/slime2.dmi:rainbow slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/rainbow has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/rainbow has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/rainbow shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
 /mob/living/simple_mob/slime/xenobio/rainbow shiny=2 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
 /mob/living/simple_mob/slime/xenobio/rainbow is_adult=1 +state: rainbow slime adult
@@ -321,8 +321,8 @@
 /mob/living/simple_mob/slime/xenobio/rainbow consuming=2 -state: rainbow slime baby
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
-/mob/living/simple_mob/slime/xenobio/rainbow/kendrick has_eye_glow=1 +overlay: icons/mob/slime2.dmi:rainbow slime baby-eyes:7
-/mob/living/simple_mob/slime/xenobio/rainbow/kendrick has_eye_glow=2 +overlay: icons/mob/slime2.dmi:rainbow slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/rainbow/kendrick has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/rainbow/kendrick has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick shiny=2 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick is_adult=1 +state: rainbow slime adult

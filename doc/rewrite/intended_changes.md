@@ -4914,3 +4914,11 @@ The look sweep previously seeded only host rand(), while native rolls() also use
 ## Slime eye-state golden repair (2026-10-16)
 
 Master eee5bf967e restored six stale generic slime baby-eyes rows: the has_eye_glow probes for xenobio/bluespace, rainbow and rainbow/kendrick. Their unchanged draw logic derives eyes from each type's color-prefixed life state. Restore exactly those six color-prefixed eye states; no random realization or unrelated look row is promoted.
+
+### Correct the slime sampler diagnosis
+
+The six generic slime-eye rows remain unchanged after all. The earlier base-vars note attributed their change to master eee5bf967e, but the execution trace proves that sorted consuming probes normalize a hidden icon_living cache before eye probes. The sampler now detects scalar-state drift despite a restored visible look and uses fresh instances; a real slime regression compares the complete reuse/fallback output with forced-fresh sampling. The six provisional promotions have been removed. Native game appearance is unchanged. Queued explosion work is also finished before the sampler resets its block, preventing delayed products from reaching the next test.
+
+### Native random sampling in base-variable verification
+
+The shared type-local native roller repair (dcaf665db3, carried here with identical sampler code) changes only sampled constructor realizations: drone shell; simple-mob coat/style/tints/experiment effects; cigarette, gum and lollipop variants; blob direction; toilet lid/open state. State rows follow synx, shadekin, lamia and raptor variants. Pilot catslug's isolated 25% native roll specifically yields 51.8255%, so its callback does not open ghost joining. The bounded row replacements come from the completed object-init sweep using this same stream, retain uncaptured types and unchanged rows, and exclude the six slime cache-order rows. None changes production randomness or gameplay. The next gate verifies these against this branch's own code.

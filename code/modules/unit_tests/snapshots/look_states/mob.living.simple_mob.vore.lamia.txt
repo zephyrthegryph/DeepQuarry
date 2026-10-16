@@ -76,8 +76,8 @@
 /mob/living/simple_mob/vore/lamia/zebra/shirt has_eye_glow=2 +overlay: icons/mob/vore_lamia.dmi:zebra_shirt-eyes:7
 /mob/living/simple_mob/vore/lamia/random ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/lamia/random ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
-/mob/living/simple_mob/vore/lamia/random has_eye_glow=1 +overlay: icons/mob/vore_lamia.dmi:green_shirt-eyes:7
-/mob/living/simple_mob/vore/lamia/random has_eye_glow=2 +overlay: icons/mob/vore_lamia.dmi:green_shirt-eyes:7
+/mob/living/simple_mob/vore/lamia/random draws_life_state=0 -state: copper_shirt
+/mob/living/simple_mob/vore/lamia/random has_eye_glow=1 +overlay: icons/mob/vore_lamia.dmi:copper_shirt-eyes:7
+/mob/living/simple_mob/vore/lamia/random has_eye_glow=2 +overlay: icons/mob/vore_lamia.dmi:copper_shirt-eyes:7
 /mob/living/simple_mob/vore/lamia/random draws_life_state=0 +state: ffta
-/mob/living/simple_mob/vore/lamia/random draws_life_state=0 -state: green_shirt
 
