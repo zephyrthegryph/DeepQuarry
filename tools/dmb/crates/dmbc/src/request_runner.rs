@@ -795,13 +795,15 @@ fn run_build_attempt(
         // remains outside this optimization, including on memo hits.
         dmbc::daemon::control::checkpoint()?;
         // Every input is captured now; prove freshness while compilation runs.
-        let early_admission = match runner_freshness::snapshot_captured(&inputs_capture, nontext.retained_resource_inputs()) {
+        let snapshot_memo = runner_freshness::SnapshotMemo::default();
+        let early_admission = match snapshot_memo.get(&inputs_capture, nontext.retained_resource_inputs()) {
             Ok(inputs) => Some(runner_freshness::EarlyAdmission::start(inputs, &input_provider, generated_paths)),
             Err(error) => {
                 dmbc::daemon_eprintln!("native early admission skipped: {error}");
                 None
             }
         };
+        dm_profile::request_mark("patch.early_admission_started");
         // Body-edit fast path: relower only changed bodies and splice their code
         // into the retained output. Any unproven condition declines (logged) and
         // the full compilation below runs. DMB_BODY_PATCH=0 disables it.
@@ -811,11 +813,10 @@ fn run_build_attempt(
             {
                 let patch_started = Instant::now();
                 let attempt = (|| {
-                    let inputs = runner_freshness::snapshot_captured(
-                        &inputs_capture,
-                        nontext.retained_resource_inputs(),
-                    )
-                    .map_err(|error| format!("input admission: {error}"))?;
+                    let inputs = snapshot_memo
+                        .get(&inputs_capture, nontext.retained_resource_inputs())
+                        .map_err(|error| format!("input admission: {error}"))?;
+                    dm_profile::request_mark("patch.inputs_snapshot");
                     dmbc::body_patch::try_patch(dmbc::body_patch::PatchRequest {
                         generation,
                         shape,
@@ -1077,7 +1078,8 @@ fn run_build_attempt(
         // A live admission (early or here) already proved these exact inputs,
         // so the session record below needs no second freshness sweep.
         let early_inputs = early_admission.and_then(|early| {
-            runner_freshness::snapshot_captured(&inputs_capture, publication.retained_resource_inputs.as_ref())
+            snapshot_memo
+                .get(&inputs_capture, publication.retained_resource_inputs.as_ref())
                 .ok()
                 .and_then(|current| early.finish(&current))
         });

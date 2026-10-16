@@ -5,9 +5,15 @@
 //! new procedures are appended to the retained composed model with fresh
 //! indices (procedure, code list, frame variables, strings), existing bodies
 //! that moved or changed are relinked as body patches are, and each owner's
-//! proc/verb list is rebuilt in fresh-build order. Numbering differs from a
-//! fresh build; the program is semantically equivalent (checked by
-//! `dmb-inspect semantic-equal` until `dmb-equiv` lands).
+//! proc/verb list is rebuilt in fresh-build order. New procedures take the
+//! next free table index and no existing index moves (no whole-model remap);
+//! the global procedure table order therefore differs from a fresh build, and so
+//! does the string-id order of a new var's name. `dmb-equiv` gates both orders
+//! (`typesof(/T/proc)` follows the procedure table, `vars` iterates name string
+//! ids), so a new proc or var is listed last there instead of at its fresh
+//! position; the 2026-10-14 decision (order is not semantic) accepts that, and
+//! the six-session tests allow exactly those moved names. Class proc/verb and
+//! declaring-variable lists keep fresh order.
 //!
 //! Declines (full path) when: a name is a header callback or appears outside
 //! its own declaration; a new unit has warnings, helpers, modified instances,
@@ -67,9 +73,8 @@ impl InsertionLines {
 }
 
 fn mentions(text: &[u8], name: &[u8]) -> usize {
-    text.windows(name.len())
-        .enumerate()
-        .filter(|(at, window)| *window == name && word_at(text, *at, name))
+    memchr::memmem::find_iter(text, name)
+        .filter(|&at| word_at(text, at, name))
         .count()
 }
 
@@ -93,11 +98,15 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
     if request.archive != base.archive {
         return Err("resource archive changed".into());
     }
+    dm_profile::request_mark("append.inputs_compared");
     let symbols = tree.symbols();
     let text = frontend.expanded.text.as_str().as_bytes();
     let mut appended_names = std::collections::HashMap::<SymbolId, usize>::new();
     for &(_, name, _) in &appended.members {
         *appended_names.entry(name).or_default() += 1;
+    }
+    for field in &appended.fields {
+        *appended_names.entry(field.name).or_default() += 1;
     }
     for (&name, &count) in &appended_names {
         let spelling = symbols.text(name).ok_or("appended name has no spelling")?;
@@ -110,6 +119,7 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
             return Err(format!("{spelling} is referenced outside its declaration"));
         }
     }
+    dm_profile::request_mark("append.names_checked");
     // Split current bodies into aligned (existing) and inserted (appended).
     let shape = request.shape;
     let is_appended = |body: &dm_tree::frontend::BodyOccurrence| -> bool {
@@ -159,6 +169,33 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
             .or_default()
             .push(new.line);
     }
+    // Each added var shifts every later line of its file like an inserted body.
+    if !appended.fields.is_empty() {
+        let mapping = frontend
+            .source_export_mapping()
+            .ok_or("source mapping unavailable for an added var")?;
+        for field in &appended.fields {
+            let id = tree
+                .lookup_type(field.owner)
+                .and_then(|owner| tree.resolve(owner, field.name, dm_tree::MemberKind::Var))
+                .ok_or("added var is not resolvable")?;
+            let occurrences = frontend.snapshot.occurrences.for_target(dm_tree::Target::Member(id));
+            let [occurrence] = occurrences else {
+                return Err("added var has no unique declaration occurrence".into());
+            };
+            let location = mapping
+                .location_of(*occurrence)
+                .ok_or("added var has no source location")?;
+            lines
+                .inserted
+                .entry(Arc::clone(&location.semantic_path))
+                .or_default()
+                .push(location.line);
+        }
+        for starts in lines.inserted.values_mut() {
+            starts.sort_unstable();
+        }
+    }
     let changed: Vec<usize> = aligned
         .iter()
         .zip(&base.shape.bodies)
@@ -183,7 +220,15 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
     if changed.len() + inserted.len() > PATCH_LIMIT {
         return Err("too many bodies to patch".into());
     }
-    if first_root_body(frontend).is_some_and(|root| changed.contains(&root) || inserted.contains(&root)) {
+    // The first root procedure registers its literals first, so its text must
+    // be unchanged; moving it (a line shift) leaves the string order alone.
+    if first_root_body(frontend).is_some_and(|root| {
+        inserted.contains(&root)
+            || changed
+                .contains(&root)
+                .then(|| base_index.get(&root).is_none_or(|&old| shape.bodies[root].text != base.shape.bodies[old].text))
+                .unwrap_or(false)
+    }) {
         return Err("first root procedure changed".into());
     }
     dm_profile::request_mark("append.admitted");
@@ -387,31 +432,6 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
             .ok_or("owner type has no class index")?;
         list_updates.push((class as usize, verb, order(false), order(true)));
     }
-    // Fresh named-procedure order is authored encounter order and is
-    // runtime-observable (typesof(/T/proc)): each new procedure goes right
-    // after the procedure of the nearest earlier existing body.
-    let existing_index = |position: usize| -> Result<Option<u32>, String> {
-        let body = &frontend.bodies[position];
-        let identity = crate::lowering::source_unit_identity(frontend, body)?.identity;
-        Ok(tables.index(crate::symbolic::unit_key(identity)))
-    };
-    let mut predecessor_of = BTreeMap::new();
-    for &position in &inserted {
-        let before = (0..position).rev().find(|index| !inserted.contains(index));
-        let after = (position + 1..frontend.bodies.len()).find(|index| !inserted.contains(index));
-        let previous = match before {
-            Some(index) => existing_index(index)?.ok_or("predecessor body has no procedure")?,
-            None => return Err("appended procedure precedes every existing body".into()),
-        };
-        if let Some(index) = after {
-            let next = existing_index(index)?.ok_or("successor body has no procedure")?;
-            if next <= previous {
-                return Err("existing procedures are not in body encounter order".into());
-            }
-        }
-        let identity = crate::lowering::source_unit_identity(frontend, &frontend.bodies[position])?.identity;
-        predecessor_of.insert(identity, previous);
-    }
     // New procedure records in key order of their appended indexes.
     let mut procedures = Vec::new();
     for (unit, record) in fresh {
@@ -444,39 +464,64 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
         }));
     }
     procedures.sort_by_key(|(index, _, _)| *index);
-    let first_new = procedures.first().map(|(index, _, _)| *index);
-    let total = procedures.last().map(|(index, _, _)| *index as usize + 1);
-    let mut placement: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
-    for (index, record, _) in &procedures {
-        let previous = predecessor_of
-            .get(&record.record.identity())
-            .copied()
-            .ok_or("appended procedure has no placement")?;
-        placement.entry(previous).or_default().push(*index);
+    // Added plain vars: one Variables record and one pair in the owner's
+    // declaring-variable list each. The pair goes where a fresh build puts it:
+    // authored declaration order among the owner's declared vars.
+    #[derive(Clone, Copy)]
+    enum Declared {
+        /// Variables-table record of a var the base already declared.
+        Existing(u32),
+        /// Index into `appended.fields`.
+        Added(usize),
     }
-    let proc_map: Option<Vec<u32>> = match (first_new, total) {
-        (Some(first), Some(total)) => {
-            if total >= byond_dmb::ids::NONE as usize {
-                return Err("procedure table would reach the reserved index".into());
+    struct OwnerFields {
+        class: usize,
+        order: Vec<Declared>,
+    }
+    let mut owner_fields: Vec<OwnerFields> = Vec::new();
+    {
+        let mut owners: Vec<SymbolId> = Vec::new();
+        for field in &appended.fields {
+            if !owners.contains(&field.owner) {
+                owners.push(field.owner);
             }
-            let mut order = Vec::with_capacity(total);
-            for old in 0..first {
-                order.push(old);
-                if let Some(new) = placement.get(&old) {
-                    order.extend(new);
+        }
+        for owner in owners {
+            let owner_id = tree.lookup_type(owner).ok_or("added var owner is unknown")?;
+            let node = tree.type_node(owner_id).ok_or("added var owner has no node")?;
+            let mut order = Vec::new();
+            for &member_id in node.members.iter() {
+                let member = tree.member(member_id).ok_or("owner member is unknown")?;
+                if member.kind != dm_tree::MemberKind::Var
+                    || member.definition != dm_tree::DefinitionMode::Declare
+                {
+                    continue;
+                }
+                match appended
+                    .fields
+                    .iter()
+                    .position(|other| other.owner == owner && other.name == member.name)
+                {
+                    Some(index) => order.push(Declared::Added(index)),
+                    None => order.push(Declared::Existing(
+                        request
+                            .generation
+                            .field_record(owner, member.name)
+                            .ok_or("a declared var of the owner has no retained record")?,
+                    )),
                 }
             }
-            let mut map = vec![0u32; total];
-            for (position, &old) in order.iter().enumerate() {
-                map[old as usize] = position as u32;
+            let added = order.iter().filter(|entry| matches!(entry, Declared::Added(_))).count();
+            if added != appended.fields.iter().filter(|field| field.owner == owner).count() {
+                return Err("added vars are not all among their owner's declarations".into());
             }
-            if order.len() != total {
-                return Err("appended procedure placement is incomplete".into());
-            }
-            Some(map)
+            let class = tables
+                .index(dm_link::Key::Type(owner))
+                .ok_or("added var owner has no class index")?;
+            owner_fields.push(OwnerFields { class: class as usize, order });
         }
-        _ => None,
-    };
+    }
+    let mut new_field_records: Vec<(SymbolId, SymbolId, u32)> = Vec::new();
     let mut units = (*base.units).clone();
     let mut new_procedures = Vec::new();
     for (_, record, procedure) in procedures {
@@ -510,6 +555,61 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
                 symbols,
                 new_procedures,
             )?;
+            let mut records = Vec::with_capacity(appended.fields.len());
+            for field in &appended.fields {
+                let name = symbols.text(field.name).ok_or_else(|| {
+                    crate::composition::CompositionError::NonContiguous("added var name has no spelling".into())
+                })?;
+                let name_id = strings.intern(model, name.as_bytes())?;
+                let record = u32::try_from(model.variables.len()).map_err(|_| {
+                    crate::composition::CompositionError::NonContiguous("variable table overflow".into())
+                })?;
+                let (kind, value) = match field.default_bits {
+                    None => (0u8, 0u32),
+                    Some(bits) => (42u8, bits),
+                };
+                model.variables.push(byond_dmb::dmb::Variable { kind, value, name: name_id });
+                records.push(record);
+                new_field_records.push((field.owner, field.name, record));
+            }
+            for plan in &owner_fields {
+                let current = model.classes[plan.class].lists_and_procs[4];
+                let old_words = if current == byond_dmb::ids::NONE {
+                    Vec::new()
+                } else {
+                    model.lists.get(current as usize).cloned().ok_or_else(|| {
+                        crate::composition::CompositionError::NonContiguous("declaring list row".into())
+                    })?
+                };
+                let old_records: Vec<u32> = plan
+                    .order
+                    .iter()
+                    .filter_map(|entry| match entry {
+                        Declared::Existing(record) => Some(*record),
+                        Declared::Added(_) => None,
+                    })
+                    .collect();
+                let listed: Vec<u32> = old_words.chunks(2).map(|pair| pair[0]).collect();
+                if old_words.len() % 2 != 0 || listed != old_records {
+                    return Err(crate::composition::CompositionError::NonContiguous(
+                        "owner declaring-variable list does not follow authored order".into(),
+                    ));
+                }
+                let mut words = Vec::with_capacity(old_words.len() + 2 * appended.fields.len());
+                let mut old_pairs = old_words.chunks(2);
+                for entry in &plan.order {
+                    match entry {
+                        Declared::Existing(_) => {
+                            words.extend_from_slice(old_pairs.next().expect("validated length"))
+                        }
+                        Declared::Added(index) => {
+                            words.extend([records[*index], appended.fields[*index].flags])
+                        }
+                    }
+                }
+                let id = crate::composition::append_list(model, words)?;
+                model.classes[plan.class].lists_and_procs[4] = id;
+            }
             for (class, verb, old, new) in &list_updates {
                 let slot = usize::from(!*verb);
                 let current = model.classes[*class].lists_and_procs[slot];
@@ -524,34 +624,27 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
                 let id = crate::composition::append_list(model, replacement)?;
                 model.classes[*class].lists_and_procs[slot] = id;
             }
-            if let Some(map) = &proc_map {
-                let _timer = dm_profile::detail_timer("append.remap_procedures");
-                model.remap_procedures(map).map_err(|error| {
-                    crate::composition::CompositionError::NonContiguous(format!("procedure remap: {error}"))
-                })?;
-            }
             Ok(())
         },
         crate::composition::PatchLink {
-            tables: match &proc_map {
-                Some(map) => tables.renumbered(dm_link::Table::Procedure, map),
-                None => tables.clone(),
-            },
+            tables: tables.clone(),
             mobs: link.mobs.clone(),
             initializers,
         },
         next,
         request.executor,
     )?;
+    request.generation.extend_field_records(&new_field_records);
     dm_profile::request_mark("append.model_encoded");
     crate::daemon_eprintln!(
-        "native append patch: {appended_count} procedures appended, {patched_rows} rows relinked"
+        "native append patch: {appended_count} procedures and {} vars appended, {patched_rows} rows relinked",
+        appended.fields.len()
     );
     Ok(Patched {
         dmb,
         warnings: output_warnings,
         query: lowered.query,
-        changed_bodies: changed.len() + appended_count,
+        changed_bodies: changed.len() + appended_count + appended.fields.len(),
         shifted_initializers: 0,
         patched_rows,
     })
