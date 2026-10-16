@@ -25,6 +25,15 @@ strip() {
 		[ -L "$t" ] && rm -f "$t"
 	done
 }
+# E:/dq-cache/worktree-keep.txt (DQ_WT_KEEP_FILE): one worktree name per line, # comments
+keep_file_names() { sed 's/#.*//' "${DQ_WT_KEEP_FILE:-E:/dq-cache/worktree-keep.txt}" 2>/dev/null | tr -d '' | xargs; }
+in_use() { # <dir>: a process names the worktree on its command line (dd.exe, dmbc, bun, node, cargo, bash), or the worktree wrote anything
+	local w m   # in the last 20 minutes (a running world or build holds its cwd there without naming it: cwd is not visible from here)
+	[ -n "$(find "$1/data" "$1" -maxdepth 2 -type f -mmin -20 2>/dev/null | head -n 1)" ] && return 0
+	w="$(cygpath -m "$1" 2>/dev/null || echo "$1")"
+	m="${w//\//\\}"
+	powershell -NoProfile -Command "\$a='$w'; \$b='$m'; \$me=\$PID; \$n=Get-CimInstance Win32_Process | Where-Object { \$_.ProcessId -ne \$me -and \$_.CommandLine -and (\$_.CommandLine.IndexOf(\$a,[StringComparison]::OrdinalIgnoreCase) -ge 0 -or \$_.CommandLine.IndexOf(\$b,[StringComparison]::OrdinalIgnoreCase) -ge 0) } | Measure-Object; if (\$n.Count -gt 0) { exit 0 } else { exit 1 }" >/dev/null 2>&1
+}
 merged_clean() { # <dir>
 	local d="$1" sha
 	[ -z "$(git -C "$d" status --porcelain --untracked-files=normal 2>/dev/null)" ] || return 1
@@ -38,7 +47,11 @@ cmd_gc() {
 		n="$(basename "$d")"
 		[ "$(cd "$d" && pwd -P)" = "$(cd "$here" && pwd -P)" ] && continue
 		case "$n" in pool-[0-9]*) continue ;; esac  # pool slots are permanent: tools/dq_lane_pool.sh leases and releases them
-		case " ${DQ_WT_KEEP:-} " in *" $n "*) echo "keep  $n (DQ_WT_KEEP)"; continue ;; esac
+		# Never removed: the default keep list (the live game server and the merge worktree), DQ_WT_KEEP, the keep file, a detached HEAD
+		# (a server or a pool slot sits detached at a merged commit, which looks "merged and clean"), or a worktree a process is using.
+		case " play merge-base ${DQ_WT_KEEP:-} $(keep_file_names) " in *" $n "*) echo "keep  $n (keep list)"; continue ;; esac
+		git -C "$d" symbolic-ref -q HEAD >/dev/null 2>&1 || { echo "keep  $n (detached HEAD)"; continue; }
+		if in_use "$d"; then echo "keep  $n (a process uses it)"; continue; fi
 		if merged_clean "$d"; then
 			if [ "$dry" = 1 ]; then echo "would remove $n"; continue; fi
 			strip "$d"
