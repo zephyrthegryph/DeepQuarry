@@ -1334,6 +1334,8 @@
 
 #include "dq_vore_drain_state_home_tests.dm"
 
+#include "dq_skin_command_cache_home_tests.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
