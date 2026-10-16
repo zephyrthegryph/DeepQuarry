@@ -1451,9 +1451,24 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	else if(!keep_organs && body.type != body_type)
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
 		var/kept_nutrition = body.food_energy // the metabolism carries over to the new plan
+		// These moved from the human: changing its body plan must retain their holder lifetime.
+		var/list/kept_body_writing = body.body_writing
+		var/kept_markings_len = body.markings_len
+		var/kept_heartbeat = body.heartbeat
+		var/kept_chemical_darksight = body.chemical_darksight
+		var/kept_environment_steady = body.environment_steady
+		var/kept_nutrition_drained_at = body.nutrition_drained_at
+		var/kept_can_defib = body.can_defib
 		rel_clear(src, nameof(body))
 		rel_set(src, nameof(body), new body_type(src))
 		body.food_energy = kept_nutrition
+		body.set_body_writing(kept_body_writing)
+		body.set_markings_len(kept_markings_len)
+		body.set_heartbeat(kept_heartbeat)
+		body.set_chemical_darksight(kept_chemical_darksight)
+		body.set_environment_steady(kept_environment_steady)
+		body.set_nutrition_drained_at(kept_nutrition_drained_at)
+		body.set_can_defib(kept_can_defib)
 		// The slot set is keyed by body plan.
 		rebuild_slot_ledger()
 		// So is the Life plan (physiology applies by body plan).

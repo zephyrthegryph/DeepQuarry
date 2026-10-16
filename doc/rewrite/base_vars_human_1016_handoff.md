@@ -22,8 +22,10 @@ For the other eight, retain existing source until the ownership contract is expl
 
 ## Verification pending
 
-New include: `code/modules/unit_tests/dq_base_vars_human_home_tests.dm`, five leaves under `/datum/unit_test/dq_base_vars_human_homes`: `profile_preferences`, `body_writing`, `hud_refresh_clock`, `heartbeat_counter`, `flight_preference`. These exercise real preference application, the actual body, washing, Life heartbeat counting, the real HUD safety-refresh deadline and persisted trait-key apply/reset. Root owns the manifest and verification.
+New include: `code/modules/unit_tests/dq_base_vars_human_home_tests.dm`, six leaves under `/datum/unit_test/dq_base_vars_human_homes`: `profile_preferences`, `body_writing`, `hud_refresh_clock`, `heartbeat_counter`, `flight_preference`, `body_plan_replacement`. These exercise real preference application, the actual body, washing, Life heartbeat counting, the real HUD safety-refresh deadline and persisted trait-key apply/reset. Root owns the manifest and verification.
 
 Existing focused regressions: `round2_gender_change_drug_request`, `dq_mob_every` (gibbing disability), vital-system/defibrillator and human profile/DNA tests, plus mandatory requirement/conversion pins. Existing fixture raw field accesses were changed to their native homes without blessing golden rows.
 
 Source diff check passed. No runtime or stamp claimed.
+
+A real `set_species()` body-plan change retains all seven state values that previously lived on the human, including the original writing list identity and biological integration point. The new body-plan regression exercises a real Human-to-Protean/nanoform replacement. Generic physiology `body` writes are references to its owner body, not another mob body-replacement path. Runtime verification remains pending.

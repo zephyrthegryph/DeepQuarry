@@ -69,4 +69,30 @@
 	TEST_ASSERT(H.apply_vore_option_trait("flight_vore", null, reset = TRUE), "the same trait reset is supported")
 	TEST_ASSERT(!H.vore_options.flight_vore, "removing the trait restores its actual false default")
 
+
+/datum/unit_test/dq_base_vars_human_homes/body_plan_replacement/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/datum/body/previous = H.body
+	H.body.set_body_writing_at(BP_L_HAND, "writing stays with this human")
+	var/list/writing = H.body.body_writing
+	H.body.set_markings_len(7)
+	H.body.set_heartbeat(3)
+	H.body.set_chemical_darksight(1)
+	H.body.set_environment_steady(TRUE)
+	H.body.set_nutrition_drained_at(123 SECONDS)
+	H.body.set_can_defib(FALSE)
+	TEST_ASSERT(H.set_species(SPECIES_PROTEAN), "the real species change completes")
+	TEST_ASSERT(H.body != previous && QDELETED(previous), "a real body-plan change replaces and deletes the original body")
+	TEST_ASSERT(istype(H.body, /datum/body/humanoid/nanoform), "the actual protean body plan was constructed")
+	TEST_ASSERT_EQUAL(H.body.body_writing, writing, "the original writing list retains its identity across the plan change")
+	TEST_ASSERT_EQUAL(H.body.body_writing[BP_L_HAND], "writing stays with this human", "the physical writing survives")
+	TEST_ASSERT_EQUAL(H.body.markings_len, 7, "the original marking-order counter survives")
+	TEST_ASSERT_EQUAL(H.body.heartbeat, 3, "the original Life-cycle heartbeat count survives")
+	TEST_ASSERT_EQUAL(H.body.chemical_darksight, 1, "the original applied sight cache survives")
+	TEST_ASSERT(H.body.environment_steady, "the original environmental cache survives")
+	TEST_ASSERT_EQUAL(H.body.nutrition_drained_at, 123 SECONDS, "the original biological integration point survives")
+	TEST_ASSERT(!H.body.can_defib, "changing plans does not silently recover revival eligibility")
+
 #endif
