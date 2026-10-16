@@ -58,10 +58,10 @@ CAPABILITIES(/obj/structure/musician)
 	icon_state = "minimoog"
 	anchored = TRUE
 	density = TRUE
-	broken_icon_state = "pianobroken"
 	integrity_failure = 0.25
 
 CAPABILITIES(/obj/structure/musician/piano)
+	configure(object_break_config(broken_icon_state = "pianobroken"))
 	climb()
 
 /obj/structure/musician/piano/unanchored
@@ -71,7 +71,6 @@ CAPABILITIES(/obj/structure/musician/piano)
 	name = "space minimoog"
 	desc = "This is a minimoog, like a space piano, but more spacey!"
 	icon_state = "minimoog"
-	broken_icon_state = "minimoogbroken"
 
 /obj/structure/musician/proc/wrench_started(datum/act/op/A)
 	playsound(src, sounds_of(A.held).use, 100, TRUE)
@@ -84,3 +83,6 @@ CAPABILITIES(/obj/structure/musician/piano)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secured \the [src]!"))
 	set_anchored(!anchored)
 	return OP_OK
+
+CAPABILITIES(/obj/structure/musician/piano/minimoog)
+	configure(object_break_config(broken_icon_state = "minimoogbroken"))
