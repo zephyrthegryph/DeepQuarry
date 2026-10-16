@@ -9,7 +9,6 @@
 	unacidable = TRUE
 	req_access = list(ACCESS_KITCHEN,ACCESS_MORGUE)
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	maintenance_wrench_time = 4 SECONDS
 
 	var/operating = 0 //Is it on?
 	var/dirty = 0 // Does it need cleaning?
@@ -87,6 +86,7 @@ CAPABILITIES(/obj/machinery/gibber/autogibber)
 	return
 
 CAPABILITIES(/obj/machinery/gibber)
+	configure(machine_interaction_config(maintenance_wrench_time = 4 SECONDS))
 	configure(uses_power(idle = 2, active = 500))
 	op("gibber_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 2), ungated(), label("Start gibbing"), needs(req(PROC_REF(can_start_gibbing))), then(PROC_REF(gibber_interaction_hand)))
 	op("gibber_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_feed_grab))), starts(PROC_REF(stuff_started)), begins(PROC_REF(grab_stuff_begins)), wait(PROC_REF(grab_stuff_time)), then(PROC_REF(gibber_interaction_item)))
