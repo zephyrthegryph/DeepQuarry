@@ -89,7 +89,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/hivebotsupport, mob_organ_hit_zones, list
 	name = "Harry the hivelessbot"
 	desc = "A severely corroded hivebot, covered in barnacles and seaweed."
 	endurance = 5 // 1 health
-	say_list_type = /datum/say_list/hivebot/harry
 	melee_damage_lower = 0
 	melee_damage_upper = 0
 	faction = FACTION_STATION
@@ -120,4 +119,5 @@ TYPE_TABLE(/datum/decl/mob_organ_names/hivebotsupport, mob_organ_hit_zones, list
 	value = CATALOGUER_REWARD_HARD
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/support/harry)
+	configure(voice_config(say_list_type = /datum/say_list/hivebot/harry))
 	configure(death_policy(delete_on_death = TRUE))

@@ -60,9 +60,9 @@
 	pixel_x = -16
 	pixel_y = 0
 
-	say_list_type = /datum/say_list/xeno_defanged
 
 CAPABILITIES(/mob/living/simple_mob/vore/xeno_defanged)
+	configure(voice_config(say_list_type = /datum/say_list/xeno_defanged))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 

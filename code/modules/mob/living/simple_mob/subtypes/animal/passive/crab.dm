@@ -20,7 +20,6 @@
 
 	meat_amount = 3
 
-	say_list_type = /datum/say_list/crab
 
 //COFFEE! SQUEEEEEEEEE!
 /mob/living/simple_mob/animal/passive/crab/Coffee
@@ -55,4 +54,5 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/crab/sif)
 TYPE_TABLE(/datum/decl/mob_organ_names/crab, mob_organ_hit_zones, list("cephalothorax", "abdomen", "left walking legs", "right walking legs", "left swimming legs", "right swimming legs", "left pincer", "right pincer"))
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/crab)
+	configure(voice_config(say_list_type = /datum/say_list/crab))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/crabmeat))

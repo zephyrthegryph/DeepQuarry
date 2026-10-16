@@ -1383,6 +1383,9 @@
 #include "dq_look_native_trash_alias_tests.dm"
 #include "dq_understanding_policy_tests.dm"
 #include "dq_paper_read_permission_tests.dm"
+#include "dq_roll_trait_alias_tests.dm"
+#include "dq_spont_belly_profile_tests.dm"
+#include "dq_voice_recipe_native_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

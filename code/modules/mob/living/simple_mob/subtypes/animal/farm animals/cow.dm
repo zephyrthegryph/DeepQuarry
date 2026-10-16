@@ -16,13 +16,13 @@
 
 	organ_names = /datum/decl/mob_organ_names/cow
 
-	say_list_type = /datum/say_list/cow
 
 	meat_amount = 10
 
 	var/datum/reagents/udder = null
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cow)
+	configure(voice_config(say_list_type = /datum/say_list/cow))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	hose_sockets(list(/datum/hose_connector/output/cow))
 	owns_one(nameof(udder), /datum/reagents, starts = /datum/reagents, starts_args = list(NO_LOC, 50, OWNER)) // 50 units, held by the cow

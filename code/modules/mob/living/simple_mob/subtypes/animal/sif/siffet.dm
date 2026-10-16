@@ -36,9 +36,9 @@
 	attack_injury_kind = INJURY_PIERCE
 	attacktext = list("sliced", "snapped", "gnawed")
 
-	say_list_type = /datum/say_list/siffet
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/siffet)
+	configure(voice_config(say_list_type = /datum/say_list/siffet))
 	configure(mob_kind(attack_cooldown = 1 SECOND))
 
 /datum/say_list/siffet

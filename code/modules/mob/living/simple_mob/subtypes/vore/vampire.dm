@@ -16,7 +16,6 @@
 
 	attacktext = list("bites","sucks","drinks from")
 
-	say_list_type = /datum/say_list/count
 
 	var/random_skin = 1
 	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
@@ -29,6 +28,7 @@
 	faction = FACTION_VAMPIRE
 
 CAPABILITIES(/mob/living/simple_mob/vore/vampire)
+	configure(voice_config(say_list_type = /datum/say_list/count))
 	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
 	look_from(nameof(icon_living), rest = "*asleep", dead = "*-dead", only_if = nameof(random_skin))
 

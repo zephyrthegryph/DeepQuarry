@@ -26,13 +26,13 @@
 	friendly = list("nuzzles", "boops", "bumps against", "leans on")
 
 
-	say_list_type = /datum/say_list/Smiley
 
 /mob/living/simple_mob/horror/Smiley/on_death(gibbed)
 	play_sfx(src, SFX_H_SOUNDS_LYNX)
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/horror/Smiley)
+	configure(voice_config(say_list_type = /datum/say_list/Smiley))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(play_reaction_sound)))
 
 /datum/say_list/Smiley

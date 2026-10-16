@@ -19,11 +19,11 @@
 
 	attacktext = list("bites","scratches")
 
-	say_list_type = /datum/say_list/bat
 
 	faction = FACTION_VAMPIRE
 
 CAPABILITIES(/mob/living/simple_mob/vore/bat)
+	configure(voice_config(say_list_type = /datum/say_list/bat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 

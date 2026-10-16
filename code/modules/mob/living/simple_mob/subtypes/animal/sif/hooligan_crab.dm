@@ -64,7 +64,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/crab
 
-	say_list_type = /datum/say_list/crab
 
 	var/weaken_amount = 2 // Be careful with this number. High values will equal a permastun.
 
@@ -86,4 +85,5 @@
 // The AI for hooligan crabs. Follows people for awhile.
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/hooligan_crab)
+	configure(voice_config(say_list_type = /datum/say_list/crab))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/crabmeat))

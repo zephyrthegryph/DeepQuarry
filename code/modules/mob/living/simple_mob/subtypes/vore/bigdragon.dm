@@ -96,7 +96,6 @@ I think I covered everything.
 	glow_range = 7
 	glow_intensity = 3
 	glow_color = "#ED9200"
-	say_list_type = /datum/say_list/bigdragon
 	max_tox = 0 // for virgo3b survivability
 	max_co2 = 0 // Also needed for 3b Survivability otherwise it chokes to death
 
@@ -927,6 +926,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
+	configure(voice_config(say_list_type = /datum/say_list/bigdragon))
 	configure(mob_kind(understands_all = 1))
 	configure(seat_policy(capacity = 1, movable = 1, lying = 0))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/dragonmeat))

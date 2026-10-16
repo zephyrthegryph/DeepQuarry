@@ -31,7 +31,6 @@
 	melee_miss_chance = 0
 	can_buckle = TRUE
 	mount_offset_y = 10
-	say_list_type = /datum/say_list/otie
 	tame_chance = 0
 
 	armor_spec = "melee=20;bullet=10;laser=20;energy=5;bio=100;rad=100" // Values read by injury_armor()
@@ -203,11 +202,11 @@
 	projectile_accuracy = -15
 	reload_max = 30
 
-	say_list_type = /datum/say_list/merc
 
 	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate)
+	configure(voice_config(say_list_type = /datum/say_list/merc))
 	configure(mob_kind(attack_cooldown = 8))
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/on_death(gibbed)
@@ -313,6 +312,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/awp)
 		. += (i % 2 == 0) ? "#FFFFFF" : "#FF7777"
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate)
+	configure(voice_config(say_list_type = /datum/say_list/otie))
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/syndicate)

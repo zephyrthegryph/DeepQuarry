@@ -40,7 +40,9 @@ CAPABILITIES(/mob/living/simple_mob/horror/Master)
 // === merged from Master_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/horror/Master/aerostat
 
-	say_list_type = /datum/say_list/cyber_horror/master
 
 /datum/say_list/cyber_horror/master
 	threaten_sound = 'sound/mob/robots/mastersee.ogg'
+
+CAPABILITIES(/mob/living/simple_mob/horror/Master/aerostat)
+	configure(voice_config(say_list_type = /datum/say_list/cyber_horror/master))

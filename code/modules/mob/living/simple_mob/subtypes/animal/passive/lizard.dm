@@ -20,13 +20,13 @@
 
 	speak_emote = list("hisses")
 
-	say_list_type = /datum/say_list/lizard
 
 	meat_amount = 1
 
 	var/body_color			// Green, red, orange, yellow or cyan. Keep blank for random (including rare redblue)
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/lizard)
+	configure(voice_config(say_list_type = /datum/say_list/lizard))
 	rolls(nameof(body_color), pick_one(list("redblue" = 1, "green" = 200, "red" = 200, "orange" = 200, "yellow" = 200, "cyan" = 200)), when = cond_not(nameof(body_color)))
 	look_from(nameof(body_color), state = "lizard_*", item = "lizard_*", living = "lizard_*", dead = "lizard_*_dead")
 	rolls(nameof(desc), PROC_REF(roll_desc), from = list(nameof(body_color)))

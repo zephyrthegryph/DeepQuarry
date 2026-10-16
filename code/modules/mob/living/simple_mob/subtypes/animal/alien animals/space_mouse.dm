@@ -47,7 +47,6 @@
 
 	speak_emote = list("squeaks")
 
-	say_list_type = /datum/say_list/mouse
 
 	vore_active = 1
 	vore_capacity = 1
@@ -91,4 +90,5 @@
 	movement_cooldown = 10
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/dustjumper)
+	configure(voice_config(say_list_type = /datum/say_list/mouse))
 	configure(mob_kind(understands_all = 1))

@@ -73,7 +73,6 @@
 
 	armor_spec = "melee=10;bullet=15;laser=-10;bomb=10;bio=100;rad=100"
 
-	say_list_type = /datum/say_list/leech
 
 /mob/living/simple_mob/animal/sif/leech/IIsAlly(mob/living/L)
 	. = ..()
@@ -98,6 +97,7 @@
 	emote_hear = list("chitters", "clicks", "gurgles")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
+	configure(voice_config(say_list_type = /datum/say_list/leech))
 	configure(mob_kind(understands_all = 1))
 	ref_one(nameof(host_bodypart), /obj/item/organ/external)
 	ref_one(nameof(host), /mob/living/carbon)

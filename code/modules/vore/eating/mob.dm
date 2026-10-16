@@ -9,10 +9,6 @@
 /mob
 	var/list/vore_organs		// Lazy list of vore containers inside a mob
 	var/absorbed = FALSE				// If a mob is absorbed into another
-	var/obj/belly/spont_belly_front = null
-	var/obj/belly/spont_belly_rear = null
-	var/obj/belly/spont_belly_left = null
-	var/obj/belly/spont_belly_right = null
 
 	var/vore_capacity = 0				// Maximum capacity, -1 for unlimited
 	var/vore_capacity_ex = list("stomach" = 0) //expanded list of capacities

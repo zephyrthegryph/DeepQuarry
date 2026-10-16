@@ -313,10 +313,6 @@ sparse(/mob/living, drain_finalized, type = bool)
 	var/datum/vore_preferences/P = client.prefs_vr
 
 	record_export(vore_prefs, P)
-	P.spont_belly_rear = spont_belly_rear
-	P.spont_belly_left = spont_belly_left
-	P.spont_belly_front = spont_belly_front
-	P.spont_belly_right = spont_belly_right
 	P.autotransferable = autotransferable
 
 	var/list/serialized = list()
@@ -349,10 +345,6 @@ sparse(/mob/living, drain_finalized, type = bool)
 	var/datum/vore_preferences/P = client.prefs_vr
 
 	record_import(vore_prefs, P)
-	rel_set(src, nameof(spont_belly_rear), P.spont_belly_rear)
-	rel_set(src, nameof(spont_belly_left), P.spont_belly_left)
-	rel_set(src, nameof(spont_belly_front), P.spont_belly_front)
-	rel_set(src, nameof(spont_belly_right), P.spont_belly_right)
 	autotransferable = P.autotransferable
 
 	if(bellies)
@@ -932,17 +924,17 @@ sparse(/mob/living, drain_finalized, type = bool)
 	var/spont_belly_name
 	switch(direction_diff)
 		if(NORTH)
-			if(spont_belly_front)
-				spont_belly_name = spont_belly_front
+			if(vore_prefs.spont_belly_front)
+				spont_belly_name = vore_prefs.spont_belly_front
 		if(SOUTH)
-			if(spont_belly_rear)
-				spont_belly_name = spont_belly_rear
+			if(vore_prefs.spont_belly_rear)
+				spont_belly_name = vore_prefs.spont_belly_rear
 		if(EAST)
-			if(spont_belly_right)
-				spont_belly_name = spont_belly_right
+			if(vore_prefs.spont_belly_right)
+				spont_belly_name = vore_prefs.spont_belly_right
 		if(WEST)
-			if(spont_belly_left)
-				spont_belly_name = spont_belly_left
+			if(vore_prefs.spont_belly_left)
+				spont_belly_name = vore_prefs.spont_belly_left
 	for(var/obj/belly/lookup_belly in vore_organs)
 		if(lookup_belly.name == spont_belly_name)
 			return lookup_belly

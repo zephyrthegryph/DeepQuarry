@@ -16,13 +16,13 @@
 
 	meat_amount = 10
 
-	say_list_type = /datum/say_list/cookiegirl
 
 	faction = FACTION_COOKIEGIRL
 
 	// Activate Noms!
 
 CAPABILITIES(/mob/living/simple_mob/vore/cookiegirl)
+	configure(voice_config(say_list_type = /datum/say_list/cookiegirl))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/cookie))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 /mob/living/simple_mob/vore/cookiegirl

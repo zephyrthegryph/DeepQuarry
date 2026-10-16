@@ -56,7 +56,6 @@
 	minbodytemp = 0
 	maxbodytemp = 900
 
-	say_list_type = /datum/say_list/corrupthound
 
 	has_langs = list(LANGUAGE_GALCOM, LANGUAGE_EAL) //Robots speak in beep, yes?
 
@@ -84,7 +83,6 @@
 
 	attacktext = list("malsnuggled","scrunched","squeezed","assaulted","violated")
 
-	say_list_type = /datum/say_list/corrupthound_prettyboi
 
 /mob/living/simple_mob/vore/aggressive/corrupthound
 	biology = BIOLOGY_SYNTHETIC
@@ -109,6 +107,7 @@
 	set_icon_state(icon_dead)
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
+	configure(voice_config(say_list_type = /datum/say_list/corrupthound))
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	configure(mob_kind(death_message = "shudders and collapses!"))
@@ -297,7 +296,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	minbodytemp = 150
 	maxbodytemp = 900
 
-	say_list_type = /datum/say_list/corrupthound/janihound
 	can_buckle = TRUE
 
 	vore_active = TRUE
@@ -351,6 +349,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	set_icon_state(icon_dead)
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound)
+	configure(voice_config(say_list_type = /datum/say_list/corrupthound/janihound))
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(mob_kind(death_message = "shudders and collapses!"))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
@@ -400,3 +399,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound)
 	emote_see = list("stares ferociously.", "snarls.", "jitters and snaps.", "convulses.", "suddenly attacks something unseen.", "appears to howl unaudibly.", "shakes violently.", "dissociates for a moment.", "twitches.")
 	say_maybe_target = list("MEAT?", "N0w YOU DNE FcukED UP b0YO!", "WHAT!", "Not again. NOT AGAIN!")
 	say_got_target = list("D##FIN1Tly DNE FcukED UP nOW b0YO!", "YOU G1T D#V0VRED nOW!", "FUEL ME bOYO!", "I*M SO SORRY?!", "D1E Meat. DIG#ST!", "G1T DVNKED DWN The HaaTCH!", "Not again. NOT AGAIN!")
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi)
+	configure(voice_config(say_list_type = /datum/say_list/corrupthound_prettyboi))

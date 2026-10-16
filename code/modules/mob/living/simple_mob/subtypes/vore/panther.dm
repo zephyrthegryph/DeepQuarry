@@ -35,7 +35,6 @@
 	can_buckle = TRUE
 	mount_offset_y = 12
 
-	say_list_type = /datum/say_list/panther
 
 // Activate Noms!
 /mob/living/simple_mob/vore/aggressive/panther
@@ -47,7 +46,7 @@
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther)
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
-	configure(voice_config(species_sounds = "Feline", pain_emote_1p = list("yowl", "growl"), pain_emote_3p = list("yowls", "growls")))
+	configure(voice_config(species_sounds = "Feline", pain_emote_1p = list("yowl", "growl"), pain_emote_3p = list("yowls", "growls"), say_list_type = /datum/say_list/panther))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

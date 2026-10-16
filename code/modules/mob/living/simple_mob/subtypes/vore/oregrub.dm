@@ -35,7 +35,6 @@
 	response_disarm = "pushes"
 	response_harm = "roughly pushes"
 
-	say_list_type = /datum/say_list/oregrub
 
 	var/poison_per_bite = 2.5
 	var/poison_type = REAGENT_ID_THERMITEV //burn baby burn
@@ -69,6 +68,7 @@
 	glow_override = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
+	configure(voice_config(say_list_type = /datum/say_list/oregrub))
 	configure(butchery_config(meat_type = /obj/item/ore/coal))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 

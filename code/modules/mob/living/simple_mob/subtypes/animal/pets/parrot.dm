@@ -118,7 +118,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/parrot)
 	tt_desc = "E Ara macao"
 	attack_armor_pen = 20	//HE HAS THE B E A K
 	my_headset = /obj/item/radio/headset/headset_eng
-	say_list_type = /datum/say_list/bird/poly
 
 // Best Bird with best headset.
 /mob/living/simple_mob/animal/passive/bird/parrot/poly/ultimate
@@ -260,3 +259,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/parrot/eclectus)
 // AI
 
 // The worn headset sits in the parrot's contents.
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/parrot/poly)
+	configure(voice_config(say_list_type = /datum/say_list/bird/poly))

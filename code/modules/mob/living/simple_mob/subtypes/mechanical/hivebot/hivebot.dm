@@ -16,7 +16,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/hivebot
 
-	say_list_type = /datum/say_list/hivebot
 
 
 /mob/living/simple_mob/mechanical/hivebot
@@ -57,4 +56,5 @@ TYPE_TABLE(/datum/decl/mob_organ_names/hivebot, mob_organ_hit_zones, list("centr
 	value = CATALOGUER_REWARD_HARD
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot)
+	configure(voice_config(say_list_type = /datum/say_list/hivebot))
 	configure(death_policy(delete_on_death = TRUE))

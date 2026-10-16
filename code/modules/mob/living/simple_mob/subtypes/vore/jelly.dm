@@ -24,7 +24,6 @@
 	melee_damage_lower = 2
 	melee_damage_upper = 7
 
-	say_list_type = /datum/say_list/jelly
 
 
 	min_oxy = 0
@@ -45,6 +44,7 @@
 	swallowTime = 2 SECONDS // Hungry little bastards.
 
 CAPABILITIES(/mob/living/simple_mob/vore/jelly)
+	configure(voice_config(say_list_type = /datum/say_list/jelly))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
 /datum/say_list/jelly

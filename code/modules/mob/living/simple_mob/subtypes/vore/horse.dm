@@ -28,7 +28,6 @@
 	can_buckle = TRUE
 	mount_offset_x = 0
 
-	say_list_type = /datum/say_list/horse
 
 
 /mob/living/simple_mob/vore/horse/big
@@ -62,6 +61,7 @@
 	vore_capacity = 2
 
 CAPABILITIES(/mob/living/simple_mob/vore/horse)
+	configure(voice_config(say_list_type = /datum/say_list/horse))
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
@@ -124,7 +124,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/horse)
 	pixel_x = -16
 	pixel_y = 0
 	mount_offset_y = 22
-	say_list_type = /datum/say_list/horse/kelpie
 
 	vore_bump_chance = 75
 	vore_pounce_chance = 75
@@ -165,3 +164,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/horse)
 	speak = list("...","?")
 	emote_hear = list("whispers something","lets out a high pitched, distorted neigh")
 	emote_see = list("beckons you near", "watches", "swishes it's grass-like tail")
+
+CAPABILITIES(/mob/living/simple_mob/vore/horse/kelpie)
+	configure(voice_config(say_list_type = /datum/say_list/horse/kelpie))

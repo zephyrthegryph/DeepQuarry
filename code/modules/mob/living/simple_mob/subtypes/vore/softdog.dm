@@ -48,10 +48,10 @@
 	mob_size = MOB_SMALL
 
 	has_langs = list(LANGUAGE_ANIMAL, LANGUAGE_CANILUNZT, LANGUAGE_GALCOM)
-	say_list_type = /datum/say_list/softdog
 	swallowTime = 0.1 SECONDS
 
 CAPABILITIES(/mob/living/simple_mob/vore/woof)
+	configure(voice_config(say_list_type = /datum/say_list/softdog))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 

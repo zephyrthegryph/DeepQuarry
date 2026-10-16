@@ -22,9 +22,9 @@
 	melee_damage_upper = 3
 	attacktext = list("bit")
 
-	say_list_type = /datum/say_list/fennix
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennix)
+	configure(voice_config(say_list_type = /datum/say_list/fennix))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/fox))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 

@@ -1749,41 +1749,41 @@ CAPABILITIES(/datum/vore_look)
 		if("rear")
 			var/spont_target = html_encode(val)
 			if(spont_target == "Current Selected")
-				host().spont_belly_rear = null
+				host().vore_prefs.set_spont_belly_rear(null)
 			else
-				host().spont_belly_rear = spont_target
+				host().vore_prefs.set_spont_belly_rear(spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_rear = host().spont_belly_rear
+				host().client.prefs_vr.spont_belly_rear = host().vore_prefs.spont_belly_rear
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("front")
 			var/spont_target = html_encode(val)
 			if(spont_target == "Current Selected")
-				host().spont_belly_front = null
+				host().vore_prefs.set_spont_belly_front(null)
 			else
-				host().spont_belly_front = spont_target
+				host().vore_prefs.set_spont_belly_front(spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_front = host().spont_belly_front
+				host().client.prefs_vr.spont_belly_front = host().vore_prefs.spont_belly_front
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("left")
 			var/spont_target = html_encode(val)
 			if(spont_target == "Current Selected")
-				host().spont_belly_left = null
+				host().vore_prefs.set_spont_belly_left(null)
 			else
-				host().spont_belly_left = spont_target
+				host().vore_prefs.set_spont_belly_left(spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_left = host().spont_belly_left
+				host().client.prefs_vr.spont_belly_left = host().vore_prefs.spont_belly_left
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("right")
 			var/spont_target = html_encode(val)
 			if(spont_target == "Current Selected")
-				host().spont_belly_right = null
+				host().vore_prefs.set_spont_belly_right(null)
 			else
-				host().spont_belly_right = spont_target
+				host().vore_prefs.set_spont_belly_right(spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_right = host().spont_belly_right
+				host().client.prefs_vr.spont_belly_right = host().vore_prefs.spont_belly_right
 			set_unsaved_changes(TRUE)
 			return TRUE
 	return FALSE

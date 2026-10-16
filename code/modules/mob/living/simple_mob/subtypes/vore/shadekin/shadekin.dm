@@ -31,7 +31,6 @@
 	minbodytemp = 0
 	maxbodytemp = 900
 
-	say_list_type = /datum/say_list/shadekin
 
 	response_help = "pets"
 	response_disarm = "bops"
@@ -72,6 +71,7 @@
 	var/check_timer = 0
 
 CAPABILITIES(/mob/living/simple_mob/shadekin)
+	configure(voice_config(say_list_type = /datum/say_list/shadekin))
 	ref_one(nameof(henlo_human), /mob/living/carbon/human)
 	configure(mob_kind(mob_class = MOB_CLASS_HUMANOID, death_message = "phases to somewhere far away!"))
 	configure(mob_movement(bump = HUMAN))

@@ -50,7 +50,6 @@
 					/obj/item/ammo_magazine/clip/c762 = 30
 					)
 
-	say_list_type = /datum/say_list/merc/voxpirate
 
 /mob/living/simple_mob/humanoid/merc/voxpirate/pirate
 	name = "vox pirate"
@@ -221,3 +220,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder)
 
 	needs_reload = TRUE
 	reload_max = 15 //Other Vox should be carrying ammo.
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate)
+	configure(voice_config(say_list_type = /datum/say_list/merc/voxpirate))

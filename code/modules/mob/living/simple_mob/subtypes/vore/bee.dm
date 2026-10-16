@@ -19,7 +19,6 @@
 	melee_damage_upper = 4
 	attacktext = list("stung")
 
-	say_list_type = /datum/say_list/bee
 
 	meat_amount = 5
 
@@ -42,6 +41,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/bee)
+	configure(voice_config(say_list_type = /datum/say_list/bee))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	after_init(0, then(PROC_REF(bee_swarm_ready)))

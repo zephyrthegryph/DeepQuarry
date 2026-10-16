@@ -31,7 +31,6 @@ TODO: Make them light up and heat the air when exposed to oxygen.
 	endurance = 100
 	movement_cooldown = 4
 
-	say_list_type = /datum/say_list/gaslamp
 
 	//speed = 2 not sure what this is, guessing animation, but it conflicts with new system.
 
@@ -113,7 +112,6 @@ TODO: Make them light up and heat the air when exposed to oxygen.
 	endurance = 100
 	movement_cooldown = 12
 
-	say_list_type = /datum/say_list/gaslamp
 
 	melee_damage_lower = 5
 	melee_damage_upper = 10
@@ -135,3 +133,9 @@ TODO: Make them light up and heat the air when exposed to oxygen.
 	max_co2 = 0
 	min_n2 = 0
 	max_n2 = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/gaslamp)
+	configure(voice_config(say_list_type = /datum/say_list/gaslamp))
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/gaslamp/snow)
+	configure(voice_config(say_list_type = /datum/say_list/gaslamp))

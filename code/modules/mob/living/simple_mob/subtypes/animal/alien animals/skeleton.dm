@@ -60,7 +60,6 @@
 
 	speak_emote = list("rattles")
 
-	say_list_type = /datum/say_list/skeleton
 
 	vore_active = 1
 	vore_capacity = 1
@@ -74,6 +73,7 @@
 	vore_default_item_mode = IM_DIGEST
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/skeleton)
+	configure(voice_config(say_list_type = /datum/say_list/skeleton))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(death_message = "falls down and stops moving..."))
 

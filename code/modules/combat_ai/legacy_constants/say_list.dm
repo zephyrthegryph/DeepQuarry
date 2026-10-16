@@ -7,7 +7,6 @@
 
 /mob/living
 	var/datum/say_list/say_list = null
-	var/say_list_type = /datum/say_list	// Type to give us on initialization. Default has empty lists, so the mob will be silent.
 	var/datum/looping_sound/mob/deafened/deaf_loop //NYI
 	var/datum/looping_sound/mob/on_fire/firesoundloop
 
@@ -219,8 +218,8 @@
 
 STATIC_ENTRY(voice_config)
 
-/proc/voice_config(can_pain_emote = null, pain_emote_1p = null, pain_emote_3p = null, species_sounds = null, death_sound_override = null)
-	return entry_make(ENTRY_VOICE_CONFIG, null, list("can_pain_emote" = can_pain_emote, "pain_emote_1p" = pain_emote_1p, "pain_emote_3p" = pain_emote_3p, "species_sounds" = species_sounds, "death_sound_override" = death_sound_override))
+/proc/voice_config(can_pain_emote = null, pain_emote_1p = null, pain_emote_3p = null, species_sounds = null, death_sound_override = null, say_list_type = null)
+	return entry_make(ENTRY_VOICE_CONFIG, null, list("can_pain_emote" = can_pain_emote, "pain_emote_1p" = pain_emote_1p, "pain_emote_3p" = pain_emote_3p, "species_sounds" = species_sounds, "death_sound_override" = death_sound_override, "say_list_type" = say_list_type))
 
 /datum/type_trait/voice_config
 	var/can_pain_emote = TRUE
@@ -228,6 +227,7 @@ STATIC_ENTRY(voice_config)
 	var/pain_emote_3p = null
 	var/species_sounds = "None"
 	var/death_sound_override = null
+	var/say_list_type = /datum/say_list
 
 /datum/type_trait/voice_config/copy_values(datum/type_trait/voice_config/into)
 	into.can_pain_emote = can_pain_emote
@@ -235,13 +235,14 @@ STATIC_ENTRY(voice_config)
 	into.pain_emote_3p = pain_emote_3p
 	into.species_sounds = species_sounds
 	into.death_sound_override = death_sound_override
+	into.say_list_type = say_list_type
 
 /datum/entry_engine/type_trait/voice_config
 	kind = ENTRY_VOICE_CONFIG
 	trait_type = /datum/type_trait/voice_config
 	publish_key = VOICE_CONFIG_KEY
 	base_type = /mob/living
-	var_names = list("can_pain_emote" = "can_pain_emote", "pain_emote_1p" = "pain_emote_1p", "pain_emote_3p" = "pain_emote_3p", "species_sounds" = "species_sounds", "death_sound_override" = "death_sound_override")
+	var_names = list("can_pain_emote" = "can_pain_emote", "pain_emote_1p" = "pain_emote_1p", "pain_emote_3p" = "pain_emote_3p", "species_sounds" = "species_sounds", "death_sound_override" = "death_sound_override", "say_list_type" = "say_list_type")
 
 READS_AS(/proc/voice_config_of, VOICE_CONFIG_KEY)
 /proc/voice_config_of(mob/living/M) as /datum/type_trait/voice_config
@@ -251,3 +252,6 @@ READS_AS(/proc/voice_config_of, VOICE_CONFIG_KEY)
 /proc/voice_config_of_type(path) as /datum/type_trait/voice_config
 	READS_FROM()
 	return type_trait_of_type(path, ENTRY_VOICE_CONFIG)
+
+/mob/living/proc/set_say_list_type(value)
+	return set_trait(src, ENTRY_VOICE_CONFIG, "say_list_type", value)

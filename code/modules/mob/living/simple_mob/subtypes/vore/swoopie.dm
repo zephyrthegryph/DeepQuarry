@@ -38,7 +38,6 @@
 	vore_pounce_maxhealth = 200
 	has_hands = TRUE
 	faction = "neutral"
-	say_list_type = /datum/say_list/swoopie
 	player_msg = "You are a SWOOPIE XL cleaning bot! Use DISARM intent on yourself to change your integrated Vac-Pack settings, or GRAB intent to swoop stuff up! Turning off the Vac-Pack will make your grab clicks function as normal grab intent clicks."
 
 	var/obj/item/vac_attachment/swoopie/Vac
@@ -259,6 +258,7 @@
 	return FALSE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
+	configure(voice_config(say_list_type = /datum/say_list/swoopie))
 	profile(nameof(vore_options), /datum/record/vore_options, fields = list("adminbus_trash" = TRUE))
 	configure(mob_movement(bump = 0))
 	op("swoopie_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Toggle Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_disarm)))

@@ -45,12 +45,11 @@
 	melee_damage_upper = 3
 	attacktext = list("bapped")
 
-	say_list_type = /datum/say_list/fennec
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennec)
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/fox))
-	configure(voice_config(pain_emote_1p = list("yelp", "whine", "bark", "growl"), pain_emote_3p = list("yelps", "whines", "barks", "growls"), species_sounds = "Vulpine"))
+	configure(voice_config(pain_emote_1p = list("yelp", "whine", "bark", "growl"), pain_emote_3p = list("yelps", "whines", "barks", "growls"), species_sounds = "Vulpine", say_list_type = /datum/say_list/fennec))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 // Activate Noms!

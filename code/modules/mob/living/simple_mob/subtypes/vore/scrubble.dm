@@ -21,7 +21,6 @@
 	attacktext = list("bites")
 	see_in_dark = 8
 	minbodytemp = 0
-	say_list_type = /datum/say_list/scrubble
 
 	vore_bump_chance = 25
 	vore_digest_chance = 50
@@ -83,3 +82,6 @@
 		return //just leave them
 
 //AI
+
+CAPABILITIES(/mob/living/simple_mob/vore/scrubble)
+	configure(voice_config(say_list_type = /datum/say_list/scrubble))

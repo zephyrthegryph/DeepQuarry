@@ -20,7 +20,6 @@
 
 	attacktext = list("slammed into")
 	attack_sound = SFX_EFFECTS_SLIME_SQUISH
-	say_list_type = /datum/say_list/spore
 
 	organ_names = /datum/decl/mob_organ_names/spore
 
@@ -31,7 +30,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/blob/spore)
 	configure(death_policy(delete_on_death = TRUE))
-	configure(voice_config(can_pain_emote = FALSE))
+	configure(voice_config(can_pain_emote = FALSE, say_list_type = /datum/say_list/spore))
 	ref_one(nameof(infested), /mob/living/carbon/human)
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(death_message = "bursts!"))

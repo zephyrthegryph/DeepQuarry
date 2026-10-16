@@ -32,11 +32,11 @@
 
 	meat_amount = 2
 
-	say_list_type = /datum/say_list/mouse	// Close enough
 
 	var/scare_chance = 15
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/bats)
+	configure(voice_config(say_list_type = /datum/say_list/mouse))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 

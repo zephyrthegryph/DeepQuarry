@@ -39,8 +39,8 @@
 
 	speak_emote = list("rumbles", "chirr?", "churr")
 
-	say_list_type = /datum/say_list/armadillo
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/dog/stray)
+	configure(voice_config(say_list_type = /datum/say_list/armadillo))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "wet dog"))
 	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))

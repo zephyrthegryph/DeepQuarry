@@ -43,7 +43,6 @@
 	mount_offset_x = -12
 	can_buckle = TRUE
 
-	say_list_type = /datum/say_list/dragonboss
 
 
 /mob/living/simple_mob/vore/aggressive/dragon/Process_Spacemove(check_drift = 0)
@@ -108,6 +107,7 @@
 	has_eye_glow = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
+	configure(voice_config(say_list_type = /datum/say_list/dragonboss))
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))

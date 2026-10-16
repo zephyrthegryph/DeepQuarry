@@ -28,7 +28,6 @@
 	can_buckle = TRUE
 	mount_offset_x = 0
 
-	say_list_type = /datum/say_list/sheep
 
 
 
@@ -38,6 +37,7 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/sheep)
+	configure(voice_config(say_list_type = /datum/say_list/sheep))
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)

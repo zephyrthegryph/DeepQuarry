@@ -229,10 +229,18 @@ GLOBAL_LIST_EMPTY(roll_rollers)
 	if(target == ROLL_PIXEL)
 		var/atom/A = holder
 		return A.pixel_x == initial(A.pixel_x) && A.pixel_y == initial(A.pixel_y)
-	if(!(target in holder.vars))
-		return FALSE
-	var/current = holder.vars[target]
-	var/compiled = initial(holder.vars[target])
+	var/current
+	var/compiled
+	if(target in holder.vars)
+		current = holder.vars[target]
+		compiled = initial(holder.vars[target])
+	else
+		// A migrated field uses its registered map/VV alias; compare with the compiled trait, never the COW override.
+		var/list/field = type_trait_field_named(holder, target)
+		if(!field)
+			return FALSE
+		current = type_trait_of(holder, field[1]).vars[field[2]]
+		compiled = type_trait_of_type(holder.type, field[1]).vars[field[2]]
 	if(islist(current))
 		// A list default (var/list/x = list(...)) is made per instance at runtime and initial() cannot be compared with it: a list var counts
 		// as untouched (a list map edit or list param on a rolled var is not supported).
@@ -242,9 +250,12 @@ GLOBAL_LIST_EMPTY(roll_rollers)
 /proc/roll_one(datum/holder, datum/roller/R, datum/centry/C)
 	var/datum/entry/E = C.item
 	var/target = E.args["target"]
+	var/list/trait_field
 	if(target != ROLL_PIXEL && !(target in holder.vars))
-		declare_report("[C.origin]: rolls([target]) on [holder.type]: no such var")
-		return
+		trait_field = type_trait_field_named(holder, target)
+		if(!trait_field)
+			declare_report("[C.origin]: rolls([target]) on [holder.type]: no such var")
+			return
 	if(!roll_target_untouched(holder, target))
 		return
 	if(C.whens && !op_whens_hold(holder, C.whens))
@@ -256,6 +267,9 @@ GLOBAL_LIST_EMPTY(roll_rollers)
 		var/atom/A = holder
 		if(islist(value))
 			A.look_set_pixel_offset(value[1], value[2])
+		return
+	if(trait_field)
+		set_trait(holder, trait_field[1], trait_field[2], value)
 		return
 	holder.vars[target] = value // ALLOW(api): a roll writes its declared target before init, as a map edit would
 

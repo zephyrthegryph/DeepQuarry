@@ -56,7 +56,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 	meat_amount = 0
 
-	say_list_type = /datum/say_list/jellyfish
 
 	vore_active = 1
 	vore_capacity = 1
@@ -104,6 +103,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
+	configure(voice_config(say_list_type = /datum/say_list/jellyfish))
 	configure(death_policy(delete_on_death = TRUE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/jellyfishcore))
 	ref_one(nameof(budded_from), /mob/living/simple_mob/vore/alienanimals/space_jellyfish)

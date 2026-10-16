@@ -71,7 +71,6 @@ CAPABILITIES(/obj/item/animal_spawner)
 	universal_speak = FALSE
 	holder_type = /obj/item/holder/possum
 	mob_size = MOB_SMALL
-	say_list_type = /datum/say_list/possum
 	catalogue_data = list(/datum/category_item/catalogue/fauna/opossum)
 	meat_amount = 2
 
@@ -89,6 +88,7 @@ CAPABILITIES(/obj/item/animal_spawner)
 	return
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/opossum)
+	configure(voice_config(say_list_type = /datum/say_list/possum))
 	configure(mob_kind(understands_all = TRUE))
 	configure(mob_movement(pull_size = 2, pull_mobs = MOB_PULL_SMALLER))
 	verb_entry(/mob/living/proc/ventcrawl)

@@ -8,7 +8,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 /mob/living/simple_mob/metroid/jellybrig //Security's pet
 	name = "Jellybrig"
 	desc = "This one scree's happily at you."
-	say_list_type = /datum/say_list/metroid
 	faction = "notmetroid"
 	endurance = 400
 	melee_damage_lower = 0
@@ -71,7 +70,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "baby_dead"
 	icon_living = "baby"
 	icon_state = "baby"
-	say_list_type = /datum/say_list/metroid
 	endurance = 200
 	melee_damage_lower = 1
 	melee_damage_upper = 5
@@ -122,7 +120,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "metroid_dead"
 	icon_living = "metroid"
 	icon_state = "metroid"
-	say_list_type = /datum/say_list/metroid
 	endurance = 250
 	melee_damage_lower = 2
 	melee_damage_upper = 9
@@ -180,7 +177,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "alpha_dead"
 	icon_living = "alpha"
 	icon_state = "alpha"
-	say_list_type = /datum/say_list/metroid
 	endurance = 300
 	melee_damage_lower = 10
 	melee_damage_upper = 15
@@ -240,7 +236,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "gamma_dead"
 	icon_living = "gamma"
 	icon_state = "gamma"
-	say_list_type = /datum/say_list/metroid
 	movement_cooldown = 2
 	endurance = 400
 	melee_damage_lower = 10
@@ -318,7 +313,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_dead = "zeta_dead"
 	icon_living = "zeta"
 	icon_state = "zeta"
-	say_list_type = /datum/say_list/metroid/zeta
 	movement_cooldown = 2
 	endurance = 500
 	melee_damage_lower = 15
@@ -357,6 +351,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	next = "/mob/living/simple_mob/metroid/juvenile/omega"
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
+	configure(voice_config(say_list_type = /datum/say_list/metroid/zeta))
 	configure(mob_movement(makes_dirt = TRUE))
 
 /mob/living/simple_mob/metroid/juvenile/zeta
@@ -404,7 +399,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 	icon_dead = "omega_dead"
 	icon_living = "omega"
 	icon_state = "omega"
-	say_list_type = /datum/say_list/metroid/omega
 	movement_cooldown = 2.5
 	endurance = 600
 	melee_damage_lower = 25
@@ -443,7 +437,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
-	configure(voice_config(death_sound_override = SFX_METROID_METROIDOMEGADEATH))
+	configure(voice_config(death_sound_override = SFX_METROID_METROIDOMEGADEATH, say_list_type = /datum/say_list/metroid/omega))
 	configure(mob_movement(makes_dirt = TRUE))
 
 /mob/living/simple_mob/metroid/juvenile/omega
@@ -491,7 +485,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
 	icon_dead = "queen_dead"
 	icon_living = "queen"
 	icon_state = "queen"
-	say_list_type = /datum/say_list/metroid/queen
 	movement_cooldown = 3
 	endurance = 1000
 	melee_damage_lower = 30
@@ -530,7 +523,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
 
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
-	configure(voice_config(death_sound_override = SFX_METROID_METROIDQUEENDEATH))
+	configure(voice_config(death_sound_override = SFX_METROID_METROIDQUEENDEATH, say_list_type = /datum/say_list/metroid/queen))
 	configure(mob_movement(makes_dirt = TRUE))
 	after_init(0, then(PROC_REF(queen_metroid_ready)))
 
@@ -589,3 +582,18 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
 
 /mob/living/simple_mob/metroid/juvenile/queen/starting_nutrition()
 	return 0
+
+CAPABILITIES(/mob/living/simple_mob/metroid/jellybrig)
+	configure(voice_config(say_list_type = /datum/say_list/metroid))
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/baby)
+	configure(voice_config(say_list_type = /datum/say_list/metroid))
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/super)
+	configure(voice_config(say_list_type = /datum/say_list/metroid))
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/alpha)
+	configure(voice_config(say_list_type = /datum/say_list/metroid))
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/gamma)
+	configure(voice_config(say_list_type = /datum/say_list/metroid))

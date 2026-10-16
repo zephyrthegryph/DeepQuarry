@@ -44,7 +44,6 @@
 	special_attack_cooldown = 30 SECONDS
 
 
-	say_list_type = /datum/say_list/gryphon
 
 	var/leap_warmup = 2 SECOND // How long the leap telegraphing is.
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
@@ -134,6 +133,7 @@
 		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 CAPABILITIES(/mob/living/simple_mob/vore/gryphon)
+	configure(voice_config(say_list_type = /datum/say_list/gryphon))
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	ref_one(nameof(dq_maybe_eating), /mob/living)

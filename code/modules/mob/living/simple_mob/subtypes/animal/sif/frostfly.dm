@@ -57,7 +57,6 @@
 
 	var/datum/effect/effect/system/smoke_spread/frost/smoke_special
 
-	say_list_type = /datum/say_list/frostfly
 
 /mob/living/simple_mob/animal/sif/frostfly/get_cold_protection()
 	return 1	// It literally produces a cryogenic mist inside itself. Cold doesn't bother it.
@@ -117,6 +116,7 @@
 TYPE_TABLE(/datum/decl/mob_organ_names/frostfly, mob_organ_hit_zones, list("head", "thorax", "abdomen", "left vestigal wing", "right vestigal wing", "left legs", "right legs"))
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/frostfly)
+	configure(voice_config(say_list_type = /datum/say_list/frostfly))
 	configure(mob_kind(attack_cooldown = 1.5 SECONDS))
 	after_init(0, then(PROC_REF(frostfly_pest_ready)))
 	owns_one(nameof(smoke_special), starts = /datum/effect/effect/system/smoke_spread/frost)

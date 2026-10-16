@@ -1,9 +1,13 @@
 // A mob's vore preferences profile record (code/engine/declare/profiles.dm): the toggles and messages a player sets in the
 // vore panel and saves with the character (/datum/vore_preferences is the save format: record_export() and record_import()
 // move the fields across by name). Declared on /mob with profile(nameof(vore_prefs), /datum/record/vore_prefs) in mob_defines.dm.
-// The spontaneous-vore bellies (spont_belly_*) are references, not data, and stay on the mob.
+// Spontaneous-vore targets are saved, HTML-encoded belly names; null uses the selected belly.
 
 /datum/record/vore_prefs
+	var/spont_belly_front = null
+	var/spont_belly_rear = null
+	var/spont_belly_left = null
+	var/spont_belly_right = null
 	var/digestable = TRUE				// Can the mob be digested inside a belly?
 	var/devourable = TRUE				// Can the mob be devoured at all?
 	var/feeding = TRUE					// Can the mob be vorishly force fed or fed to others?
@@ -84,6 +88,10 @@
 	var/persistend_edit_mode = FALSE
 
 // The belly sprites' colours and multiply flags: a human's look reads them.
+TRACKED_DATA(/datum/record/vore_prefs, spont_belly_front)
+TRACKED_DATA(/datum/record/vore_prefs, spont_belly_rear)
+TRACKED_DATA(/datum/record/vore_prefs, spont_belly_left)
+TRACKED_DATA(/datum/record/vore_prefs, spont_belly_right)
 TRACKED_DATA(/datum/record/vore_prefs, vore_sprite_color)
 TRACKED_DATA(/datum/record/vore_prefs, vore_sprite_multiply)
 

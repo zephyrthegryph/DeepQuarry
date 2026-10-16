@@ -49,7 +49,6 @@
 
 	armor_spec = "melee=30;bullet=15;laser=5;bomb=10;bio=100;rad=100"
 
-	say_list_type = /datum/say_list/kururak
 
 	special_attack_min_range = 0
 	special_attack_max_range = 4
@@ -92,6 +91,7 @@
 	instinct = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
+	configure(voice_config(say_list_type = /datum/say_list/kururak))
 	configure(mob_kind(attack_cooldown = 2 SECONDS, understands_all = 1))
 	rolls(nameof(instinct), PROC_REF(roll_instinct))
 	// Digging into a mech's hatch (its melee strike): a second of clawing, beside the mech, then the pilot is dragged out.

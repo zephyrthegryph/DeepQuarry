@@ -51,9 +51,9 @@
 	var/vore_tail_absorb_chance = 0
 	var/vore_tail_transfer_chance = 50
 
-	say_list_type = /datum/say_list/lamia
 
 CAPABILITIES(/mob/living/simple_mob/vore/lamia)
+	configure(voice_config(say_list_type = /datum/say_list/lamia))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 

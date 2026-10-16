@@ -23,9 +23,9 @@
 	melee_damage_upper = 1
 	attacktext = list("bapped")
 
-	say_list_type = /datum/say_list/redpanda
 
 CAPABILITIES(/mob/living/simple_mob/vore/redpanda)
+	configure(voice_config(say_list_type = /datum/say_list/redpanda))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 

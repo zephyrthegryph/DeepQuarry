@@ -10,7 +10,6 @@
 	icon_dead = "raccoon_dead"
 	icon_rest = "raccoon_rest"
 
-	say_list_type = /datum/say_list/raccoon
 
 	see_in_dark = 6
 	movement_cooldown = 3
@@ -34,7 +33,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/raccoon)
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
-	configure(voice_config(species_sounds = "Raccoon", pain_emote_1p = list("chitter"), pain_emote_3p = list("chitters")))
+	configure(voice_config(species_sounds = "Raccoon", pain_emote_1p = list("chitter"), pain_emote_3p = list("chitters"), say_list_type = /datum/say_list/raccoon))
 	after_init(0, then(PROC_REF(raccoon_ghostjoin_ready)))
 
 /mob/living/simple_mob/animal/passive/raccoon/proc/raccoon_ghostjoin_ready(datum/act/timer/A)

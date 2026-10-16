@@ -63,7 +63,6 @@
 
 	var/life_since_foodscan = 0
 
-	say_list_type = /datum/say_list/rat
 
 
 /mob/living/simple_mob/vore/aggressive/rat/load_default_bellies()
@@ -220,6 +219,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
+	configure(voice_config(say_list_type = /datum/say_list/rat))
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))

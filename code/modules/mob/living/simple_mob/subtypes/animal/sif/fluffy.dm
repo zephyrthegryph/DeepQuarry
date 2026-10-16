@@ -27,9 +27,9 @@
 
 	meat_amount = 1
 
-	say_list_type = /datum/say_list/fluffy_vr
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/fluffy)
+	configure(voice_config(say_list_type = /datum/say_list/fluffy_vr))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	configure(mob_movement(makes_dirt = FALSE, bump = 0))
 

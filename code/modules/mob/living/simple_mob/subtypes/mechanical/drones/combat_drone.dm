@@ -53,12 +53,12 @@
 
 	organ_names = /datum/decl/mob_organ_names/combatdrone
 
-	say_list_type = /datum/say_list/malf_drone
 
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail = null
 	var/obj/item/shield_projector/shields = null
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
+	configure(voice_config(say_list_type = /datum/say_list/malf_drone))
 	configure(death_policy(delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 5, death_message = "suddenly breaks apart."))

@@ -43,7 +43,6 @@
 	movement_sound = SFX_EFFECTS_FOOTSTEP_FLOOR1
 
 	//Simple mob merc so it stops, says something, then charges.
-	say_list_type = /datum/say_list/possessed //Set to Null on silenced.
 
 
 //	corpse = /obj/effect/landmark/mobcorpse/possessed
@@ -161,4 +160,4 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/possessed/merc/feral)
 	configure(mob_kind(attack_cooldown = 3))
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/possessed)
-	configure(voice_config(can_pain_emote = FALSE))
+	configure(voice_config(can_pain_emote = FALSE, say_list_type = /datum/say_list/possessed))

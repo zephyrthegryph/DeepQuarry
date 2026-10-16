@@ -35,7 +35,6 @@
 	melee_miss_chance = 0
 	can_buckle = TRUE
 	mount_offset_y = 10
-	say_list_type = /datum/say_list/otie
 	tame_chance = 0
 	has_eye_glow = TRUE
 
@@ -152,7 +151,6 @@
 	var/explosion_delay_lower	= 1 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 3 SECONDS	// Upper bound.
 
-	say_list_type = /datum/say_list/merc/blackhole
 
 	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
@@ -193,7 +191,6 @@
 	harm_intent_damage = 5
 	melee_damage_lower = 10
 	melee_damage_upper = 15
-	say_list_type = /datum/say_list/merc/blackhole/grotesque
 	attack_sound = SFX_WEAPONS_SLICE
 
 /mob/living/simple_mob/vore/blackhole/grotesque/on_death(gibbed)
@@ -316,7 +313,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/lmg)
 	max_n2 = 0
 	minbodytemp = 0
 
-	say_list_type = /datum/say_list/merc/blackhole
 
 	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
@@ -408,7 +404,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	minbodytemp = 0
 	corpse = null
 	loot_list = null
-	say_list_type = /datum/say_list/merc/blackhole
 
 	var/exploded = FALSE
 	var/explosion_dev_range		= 0
@@ -495,7 +490,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	max_n2 = 0
 	minbodytemp = 0
 
-	say_list_type = /datum/say_list/merc/blackhole
 
 	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
@@ -732,9 +726,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole)
+	configure(voice_config(say_list_type = /datum/say_list/merc/blackhole))
 	rolls(nameof(size_multiplier), range_of(0.9, 1.5, 0.01))
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
+	configure(voice_config(say_list_type = /datum/say_list/merc/blackhole))
 	configure(mob_kind(attack_cooldown = 4))
 	after_init(0, then(PROC_REF(biker_rescale)))
 
@@ -742,10 +738,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
 	resize(1) // Scale them back down
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/blackhole)
+	configure(voice_config(say_list_type = /datum/say_list/otie))
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	rolls(nameof(size_multiplier), range_of(1, 1.8, 0.01))
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/sniper/blackhole)
+	configure(voice_config(say_list_type = /datum/say_list/merc/blackhole))
 	rolls(nameof(size_multiplier), range_of(1, 1.8, 0.01))
 
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
@@ -922,3 +920,9 @@ CAPABILITIES(/obj/item/projectile/explosive_rocket/blackhole)
 /obj/item/projectile/explosive_rocket/blackhole/on_impact(turf/T)
 	new /obj/effect/explosion(T) // Weak explosions don't produce this on their own, apparently.
 	explosion(T, 0, 0, 3, adminlog = FALSE)
+
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole/grotesque)
+	configure(voice_config(say_list_type = /datum/say_list/merc/blackhole/grotesque))
+
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur)
+	configure(voice_config(say_list_type = /datum/say_list/merc/blackhole))

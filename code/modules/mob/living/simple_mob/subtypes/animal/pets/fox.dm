@@ -25,7 +25,6 @@
 
 	meat_amount = 2
 
-	say_list_type = /datum/say_list/fox
 	holder_type = /obj/item/holder/fox
 
 	var/turns_since_scan = 0
@@ -241,4 +240,5 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fox/renault)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fox)
+	configure(voice_config(say_list_type = /datum/say_list/fox))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/fox))

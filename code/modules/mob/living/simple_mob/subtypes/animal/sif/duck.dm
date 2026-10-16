@@ -44,9 +44,9 @@
 	/obj/item/reagent_containers/food/snacks/slice/bread = 25
 	)
 
-	say_list_type = /datum/say_list/duck
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/duck)
+	configure(voice_config(say_list_type = /datum/say_list/duck))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken))
 	configure(mob_kind(attack_cooldown = 1 SECOND))
 

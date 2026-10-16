@@ -22,7 +22,6 @@ GLOBAL_VAR_CONST(MAX_CHICKENS, 50)	// How many chickens CAN we have?
 
 	has_langs = list(LANGUAGE_ANIMAL)
 
-	say_list_type = /datum/say_list/chicken
 
 	meat_amount = 4
 
@@ -33,6 +32,7 @@ GLOBAL_VAR_CONST(MAX_CHICKENS, 50)	// How many chickens CAN we have?
 REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/passive/chicken, REGISTRY_CHICKENS)
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/chicken)
+	configure(voice_config(say_list_type = /datum/say_list/chicken))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken))
 	op("chicken_item", item(/obj/item), then(PROC_REF(chicken_interaction_item)))
 	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = cond_not(nameof(body_color)))
@@ -112,13 +112,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/chicken)
 
 	has_langs = list(LANGUAGE_ANIMAL)
 
-	say_list_type = /datum/say_list/chick
 
 	meat_amount = 1
 
 	var/amount_grown = 0
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/chick)
+	configure(voice_config(say_list_type = /datum/say_list/chick))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken))
 	rolls(nameof(pixel_x), range_of(-6, 6))
 	rolls(nameof(pixel_y), range_of(0, 10))

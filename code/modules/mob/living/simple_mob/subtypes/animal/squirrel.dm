@@ -40,7 +40,6 @@
 
 
 	has_langs = list(LANGUAGE_ANIMAL)
-	say_list_type = /datum/say_list/squirrel
 
 	mob_size = MOB_SMALL
 
@@ -150,6 +149,7 @@
 // A wild squirrel follows the season: plumped up for winter (always in winter, half the time in autumn, rarely in spring) and, in autumn,
 // keener to pounce.
 CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
+	configure(voice_config(say_list_type = /datum/say_list/squirrel))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_movement(softfall = TRUE))

@@ -76,3 +76,11 @@ Generation and all ratchets pass at 320 remaining rows: 66 removals from the con
 The user-approved traversal migration removes the atom throwpass field into an actual atom-root policy, preserving turf inheritance, fourteen type defaults and mapped nullable/arbitrary values. Door reach passes the selected border firedoor as a per-call exemption rather than publishing temporary state and resetting the configured value. The historical fourth ClickCross argument remains a mover, not an exemption; the exemption has a separate fifth argument. Tests cover actual requirements, orthogonal and diagonal paths, unrelated blockers, corner borders, real throw impact selection/finalization, mapper/admin retention and absence of query publications.
 
 These added tests remain unexecuted. This source checkpoint is not a runtime or lane-ready stamp. The continuation must inherit the canonical branch's final fixture repairs before its serialized runtime gate. No optional turf-sampling change is included.
+
+## Voice recipes and spontaneous-ingestion preferences
+
+The continuation now removes 71 identities from its starting 386 (315 remaining, no additions). Four name-valued preferences live in the existing vore preference record; save keys, encoded names, null/empty distinctions, panel output and transformation copying remain unchanged. These are names rather than owned belly references. Client-only panel input remains source-audited, with no fake client coverage claimed.
+
+The speech recipe extends the existing voice configuration. All 166 original assignments were audited against their 165 effective owners, including duplicate defaults and the canonical clown root. The existing owned speech-table factory keeps its initialization phase and does not rebuild a child after a late recipe edit. Native roll targets can resolve existing registered trait aliases, preserving compiled-default comparisons, map precedence, conditions and stream order. No raw shadow variable or new declaration language was added.
+
+Focused tests cover real speech-table construction and deletion, pre-parent observations, all compiled recipes, profile copying and actual relative-direction name lookup. Source and runtime verification for this five-field extension are pending; the earlier 66-field source/DreamChecker result does not prove this extension.

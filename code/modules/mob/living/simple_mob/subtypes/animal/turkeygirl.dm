@@ -24,7 +24,6 @@
 	meat_amount = 100
 
 
-	say_list_type = /datum/say_list/turkey
 
 	vore_active = 1
 	vore_capacity = 2
@@ -72,6 +71,7 @@
 	look.state(state)
 
 CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
+	configure(voice_config(say_list_type = /datum/say_list/turkey))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken))
 	op("turkeygirl_item", item(/obj/item), then(PROC_REF(turkeygirl_interaction_item)))
 

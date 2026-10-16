@@ -36,7 +36,6 @@
 	can_buckle = TRUE
 	mount_offset_y = 10
 
-	say_list_type = /datum/say_list/otie
 
 	var/mob/living/carbon/human/friend
 	var/tamed = 0
@@ -231,7 +230,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie)
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
-	configure(voice_config(species_sounds = "Canine", pain_emote_1p = list("yelp", "whine", "bark", "growl"), pain_emote_3p = list("yelps", "whines", "barks", "growls")))
+	configure(voice_config(species_sounds = "Canine", pain_emote_1p = list("yelp", "whine", "bark", "growl"), pain_emote_3p = list("yelps", "whines", "barks", "growls"), say_list_type = /datum/say_list/otie))
 	ref_one(nameof(friend), /mob/living/carbon/human)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_kind(death_message = "dies!"))

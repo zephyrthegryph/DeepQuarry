@@ -32,7 +32,6 @@
 	melee_damage_upper = 6
 	attacktext = list("pecked", "pinched", "wingslapped")
 
-	say_list_type = /datum/say_list/seagull
 
 	vore_active = 1
 	vore_capacity = 5
@@ -48,6 +47,7 @@
 	emote_see = list("pecks at the ground","looks around hungrily")
 
 CAPABILITIES(/mob/living/simple_mob/vore/seagull)
+	configure(voice_config(say_list_type = /datum/say_list/seagull))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken))
 	on_change(nameof(vore_fullness), ANY, then(PROC_REF(fullness_changed)))
 	configure(vore_embodiment(belly_size_multiplier = 2.5))

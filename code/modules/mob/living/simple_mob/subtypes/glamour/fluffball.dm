@@ -20,7 +20,6 @@
 	attacktext = list("tail whips")
 	see_in_dark = 8
 	minbodytemp = 0
-	say_list_type = /datum/say_list/fluffball
 
 	faction = FACTION_GLAMOUR
 
@@ -129,6 +128,7 @@
 		return //just leave them
 
 CAPABILITIES(/mob/living/simple_mob/vore/fluffball)
+	configure(voice_config(say_list_type = /datum/say_list/fluffball))
 	op("fluffball_item", item(/obj/item), then(PROC_REF(fluffball_interaction_item)))
 
 /// Old attackby: the normal attack, then it steals food into its fluff.

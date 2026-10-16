@@ -40,12 +40,12 @@
 
 	speak_emote = list("rumbles", "chirr?", "churr")
 
-	say_list_type = /datum/say_list/armadillo
 
 	var/obj/item/clothing/head/hat = null // The hat the armadillo may be wearing.
 
 //Hat simulator stolen from slime code.
 CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo)
+	configure(voice_config(say_list_type = /datum/say_list/armadillo))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "sand"))
 	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)

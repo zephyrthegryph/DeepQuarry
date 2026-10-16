@@ -57,9 +57,9 @@
 	/obj/item/reagent_containers/food/snacks/meat = 5
 	)
 
-	say_list_type = /datum/say_list/glitterfly
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly)
+	configure(voice_config(say_list_type = /datum/say_list/glitterfly))
 	configure(examine_text(fluff = "Glitterflies tend to have a wingspan equivalent to the length of an average human head."))
 	configure(mob_movement(hovering = TRUE))
 	rolls(nameof(color), PROC_REF(roll_colour))

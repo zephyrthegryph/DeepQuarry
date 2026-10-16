@@ -44,9 +44,9 @@
 
 	meat_amount = 1
 
-	say_list_type = /datum/say_list/hare
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/hare)
+	configure(voice_config(say_list_type = /datum/say_list/hare))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 
 

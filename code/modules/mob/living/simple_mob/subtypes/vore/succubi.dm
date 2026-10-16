@@ -31,7 +31,6 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 
 	attacktext = list("swatted","bapped")
 
-	say_list_type = /datum/say_list/succubus
 
 	var/random_skin = 1
 	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
@@ -47,6 +46,7 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 	faction = FACTION_SUCCUBUS
 
 CAPABILITIES(/mob/living/simple_mob/vore/succubus)
+	configure(voice_config(say_list_type = /datum/say_list/succubus))
 	rolls(nameof(safeword), PROC_REF(roll_safeword))
 	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
 	look_from(nameof(icon_living), rest = "*asleep", dead = "*-dead", only_if = nameof(random_skin))

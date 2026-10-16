@@ -99,7 +99,6 @@
 
 	meat_amount = 5
 
-	say_list_type = /datum/say_list/spider
 
 	tame_items = list(
 	/obj/item/reagent_containers/food/snacks/xenomeat = 10,
@@ -123,7 +122,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat))
-	configure(voice_config(species_sounds = "Spider", pain_emote_1p = list("chitter", "click"), pain_emote_3p = list("chitters", "clicks")))
+	configure(voice_config(species_sounds = "Spider", pain_emote_1p = list("chitter", "click"), pain_emote_3p = list("chitters", "clicks"), say_list_type = /datum/say_list/spider))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_movement(no_pull_when_living = TRUE))
 	swarming()

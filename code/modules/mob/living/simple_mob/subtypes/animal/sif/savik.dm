@@ -51,7 +51,6 @@
 	/obj/item/reagent_containers/food/snacks/meat = 20
 	)
 
-	say_list_type = /datum/say_list/savik
 
 /datum/say_list/savik
 	speak = list("Hruuugh!","Hrunnph")
@@ -79,3 +78,6 @@
 
 /datum/decl/mob_organ_names/savik
 TYPE_TABLE(/datum/decl/mob_organ_names/savik, mob_organ_hit_zones, list("head", "torso", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "right bone plate", "left bone plate", "tail", "left claw", "right claw"))
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/savik)
+	configure(voice_config(say_list_type = /datum/say_list/savik))

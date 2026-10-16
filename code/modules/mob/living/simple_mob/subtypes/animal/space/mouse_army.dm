@@ -43,7 +43,6 @@
 
 	holder_type = /obj/item/holder/mouse
 
-	say_list_type = /datum/say_list/mouse
 
 
 	var/rank //pyro, operative, ammo, stealth. more to come. Do not leave blank.
@@ -52,7 +51,7 @@
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	configure(mob_kind(understands_all = 1))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
-	configure(voice_config(species_sounds = "Mouse", pain_emote_1p = list("squeaks", "squiks")))
+	configure(voice_config(species_sounds = "Mouse", pain_emote_1p = list("squeaks", "squiks"), say_list_type = /datum/say_list/mouse))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)

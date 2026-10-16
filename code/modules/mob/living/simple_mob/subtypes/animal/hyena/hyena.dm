@@ -75,7 +75,6 @@ They're also cool, and Rykka/Nyria wrote this uwu
 
 	speak_emote = list("yaps")
 
-	say_list_type = /datum/say_list/hyena
 
 
 	var/obj/item/clothing/head/hat = null // The hat the yeen is wearing when initialized, var will update with the chosen hat.
@@ -146,6 +145,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
 CAPABILITIES(/mob/living/simple_mob/animal/hyena)
+	configure(voice_config(say_list_type = /datum/say_list/hyena))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_kind(attack_cooldown = 2))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)

@@ -24,7 +24,6 @@
 	response_harm = "uselessly hits"
 	harm_intent_damage = 0
 
-	say_list_type = /datum/say_list/malf_drone
 
 	var/wreckage = /obj/effect/decal/mecha_wreckage/gygax/dark
 	var/pilot_type = null // Set to spawn a pilot when destroyed. Setting this also makes the mecha vulnerable to things that affect sentient minds.
@@ -93,13 +92,14 @@
 	after(src, 1 SECOND, TYPE_PROC_REF(/atom, cut_overlay), with = list(deflect_image))
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
+	configure(voice_config(say_list_type = /datum/say_list/malf_drone))
 	configure(death_policy(delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 	configure(mob_kind(death_message = "explodes!"))
 	op("mecha_item", item(/obj/item), then(PROC_REF(mecha_interaction_item)))
 	rolls(nameof(name), PROC_REF(crewed_as), when = cond_not(nameof(pilot_type)))
 	rolls(nameof(desc), PROC_REF(crewed_as), when = cond_not(nameof(pilot_type)))
-	rolls(nameof(say_list_type), PROC_REF(crewed_as), when = nameof(pilot_type))
+	rolls("say_list_type", PROC_REF(crewed_as), when = nameof(pilot_type))
 
 /// A mecha with no pilot is a drone's, and says so; a piloted one talks like a mercenary (rolls()).
 /mob/living/simple_mob/mechanical/mecha/proc/crewed_as(datum/roller/R, target)

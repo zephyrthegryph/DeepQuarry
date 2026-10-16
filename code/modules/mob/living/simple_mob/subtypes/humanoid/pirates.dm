@@ -45,7 +45,6 @@
 
 	corpse = /obj/effect/landmark/mobcorpse/pirate
 
-	say_list_type = /datum/say_list/pirate
 
 /// Every pirate's loot table also holds pirate salvage (its per_type() table, built once per type).
 /mob/living/simple_mob/humanoid/pirate/per_type_own(var_name)
@@ -503,3 +502,5 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/captain)
 	pilot_type = /mob/living/simple_mob/humanoid/possessed/merc/feral	//Possessed rig suit piloting a mech. Tremble in fear
 	movement_shake_radius = 5
 
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate)
+	configure(voice_config(say_list_type = /datum/say_list/pirate))

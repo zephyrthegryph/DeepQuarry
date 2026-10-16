@@ -124,7 +124,6 @@ base_var	code/modules/client/verbs/suicide.dm	@/mob::suiciding
 base_var	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::ai_brain
 base_var	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::use_modern_ai
 base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::say_list
-base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::say_list_type
 base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::deaf_loop
 base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::firesoundloop
 base_var	code/modules/contracts/medical_trial.dm	@/mob/living/carbon/human::contract_medical_indications
@@ -305,10 +304,6 @@ base_var	code/modules/vore/eating/living.dm	@/mob/living::passtable_reset
 base_var	code/modules/vore/eating/living.dm	@/mob/living::passtable_crawl_checked
 base_var	code/modules/vore/eating/living.dm	@/mob/living::vore_panel_button
 base_var	code/modules/vore/eating/mob.dm	@/mob::vore_organs
-base_var	code/modules/vore/eating/mob.dm	@/mob::spont_belly_front
-base_var	code/modules/vore/eating/mob.dm	@/mob::spont_belly_rear
-base_var	code/modules/vore/eating/mob.dm	@/mob::spont_belly_left
-base_var	code/modules/vore/eating/mob.dm	@/mob::spont_belly_right
 base_var	code/modules/vore/eating/mob.dm	@/mob::vore_capacity
 base_var	code/modules/vore/eating/mob.dm	@/mob::vore_capacity_ex
 base_var	code/modules/vore/eating/mob.dm	@/mob::vore_icon_bellies

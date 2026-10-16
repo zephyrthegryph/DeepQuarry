@@ -22,7 +22,6 @@
 	melee_damage_upper = 20
 	attacktext = list("mauled")
 
-	say_list_type = /datum/say_list/weretiger
 
 	pixel_x = -16
 	default_pixel_x = -16
@@ -30,6 +29,7 @@
 	has_hands = 1
 
 CAPABILITIES(/mob/living/simple_mob/vore/weretiger)
+	configure(voice_config(say_list_type = /datum/say_list/weretiger))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
 

@@ -47,7 +47,6 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	response_disarm = "pushes"
 	response_harm = "roughly pushes"
 
-	say_list_type = /datum/say_list/solargrub
 
 	var/poison_per_bite = 5 //grubs cause a shock when they bite someone
 	var/poison_type = REAGENT_ID_SHOCKCHEM
@@ -61,6 +60,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	glow_override = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/solargrub)
+	configure(voice_config(say_list_type = /datum/say_list/solargrub))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/grubmeat))
 	ref_one(nameof(attached), /obj/structure/cable)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))

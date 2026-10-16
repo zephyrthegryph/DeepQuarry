@@ -17,7 +17,6 @@
 	response_disarm = "gently pushes aside"
 	response_harm = "hits"
 
-	say_list_type = /datum/say_list/clown
 
 /datum/say_list/clown
 	speak = list("HONK", "Honk!", "Henk!")
@@ -33,3 +32,6 @@
 
 	new /obj/structure/ghost_pod/manual/clegg(get_turf(src))
 	flick("he_lay",src)
+
+CAPABILITIES(/mob/living/simple_mob/clowns/big/c_shift/honkelemental)
+	configure(voice_config(say_list_type = /datum/say_list/clown))

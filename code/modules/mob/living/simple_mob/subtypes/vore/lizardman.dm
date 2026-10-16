@@ -29,9 +29,9 @@
 	vore_pounce_chance = 20
 	vore_icons = SA_ICON_LIVING
 
-	say_list_type = /datum/say_list/lizardman
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/lizardman)
+	configure(voice_config(say_list_type = /datum/say_list/lizardman))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
 

@@ -17,7 +17,6 @@
 	pixel_x = -16
 	pixel_y = 0
 	mount_offset_y = 22
-	say_list_type = /datum/say_list/horse/unicorn
 	minbodytemp = 0
 	movement_cooldown = 1
 
@@ -73,3 +72,6 @@
 /mob/living/simple_mob/vore/horse/unicorn/beastmode //for hanner TF
 	projectiletype = null
 	endurance = 100
+
+CAPABILITIES(/mob/living/simple_mob/vore/horse/unicorn)
+	configure(voice_config(say_list_type = /datum/say_list/horse/unicorn))

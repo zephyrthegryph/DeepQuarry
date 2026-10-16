@@ -42,10 +42,10 @@
 		"throw_vore" = owner.vore_prefs.throw_vore,
 		"phase_vore" = owner.vore_prefs.phase_vore,
 		"food_vore" = owner.vore_prefs.food_vore,
-		"spont_belly_rear" = owner.spont_belly_rear,
-		"spont_belly_left" = owner.spont_belly_left,
-		"spont_belly_front" = owner.spont_belly_front,
-		"spont_belly_right" = owner.spont_belly_right,
+		"spont_belly_rear" = owner.vore_prefs.spont_belly_rear,
+		"spont_belly_left" = owner.vore_prefs.spont_belly_left,
+		"spont_belly_front" = owner.vore_prefs.spont_belly_front,
+		"spont_belly_right" = owner.vore_prefs.spont_belly_right,
 		"consume_liquid_belly" = owner.vore_prefs.consume_liquid_belly,
 		"digest_pain" = owner.vore_prefs.digest_pain,
 		"eating_privacy_global" = owner.vore_prefs.eating_privacy_global,
@@ -78,10 +78,10 @@
 		"vore_sprite_multiply" = owner.vore_prefs.vore_sprite_multiply,
 		"vore_icon_options" = owner.vore_icon_bellies,
 		// spont options
-		"spont_rear" = owner.spont_belly_rear,
-		"spont_front" = owner.spont_belly_front,
-		"spont_left" = owner.spont_belly_left,
-		"spont_right" = owner.spont_belly_right
+		"spont_rear" = owner.vore_prefs.spont_belly_rear,
+		"spont_front" = owner.vore_prefs.spont_belly_front,
+		"spont_left" = owner.vore_prefs.spont_belly_left,
+		"spont_right" = owner.vore_prefs.spont_belly_right
 	)
 
 /datum/vore_look/proc/compile_aesthetic_messages(mob/owner)

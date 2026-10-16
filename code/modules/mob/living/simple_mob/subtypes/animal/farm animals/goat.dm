@@ -18,13 +18,13 @@
 	melee_damage_upper = 5
 	attacktext = list("kicked")
 
-	say_list_type = /datum/say_list/goat
 
 	meat_amount = 6
 
 	var/datum/reagents/udder = null
 
 CAPABILITIES(/mob/living/simple_mob/animal/goat)
+	configure(voice_config(say_list_type = /datum/say_list/goat))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	owns_one(nameof(udder), /datum/reagents, starts = /datum/reagents, starts_args = list(NO_LOC, 50, OWNER)) // 50 units, held by the goat
 	op("goat_item", item(/obj/item), then(PROC_REF(goat_interaction_item)))

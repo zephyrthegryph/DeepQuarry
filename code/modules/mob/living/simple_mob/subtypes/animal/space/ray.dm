@@ -55,11 +55,11 @@
 	meat_amount = 5
 
 
-	say_list_type = /datum/say_list/space_ray
 
 	var/knockdown_chance = 66
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/ray)
+	configure(voice_config(say_list_type = /datum/say_list/space_ray))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/ray))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 18))

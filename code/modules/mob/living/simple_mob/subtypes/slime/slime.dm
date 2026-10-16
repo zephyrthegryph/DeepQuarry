@@ -65,7 +65,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	speak_emote = list("chirps")
 	friendly = list("pokes")
 
-	say_list_type = /datum/say_list/slime
 
 	var/cores = 1 // How many cores you get when placed in a Processor.
 	var/obj/item/clothing/head/hat = null // The hat the slime may be wearing.
@@ -87,7 +86,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_hear = list("squishes")
 
 CAPABILITIES(/mob/living/simple_mob/slime)
-	configure(voice_config(species_sounds = "Slime", pain_emote_1p = list("squish", "squelch"), pain_emote_3p = list("squishes", "squelches")))
+	configure(voice_config(species_sounds = "Slime", pain_emote_1p = list("squish", "squelch"), pain_emote_3p = list("squishes", "squelches"), say_list_type = /datum/say_list/slime))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 2 SECONDS))
 	configure(mob_movement(makes_dirt = FALSE))

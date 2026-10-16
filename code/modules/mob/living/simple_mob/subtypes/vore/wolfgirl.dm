@@ -20,10 +20,9 @@
 	melee_damage_upper = 7
 	attacktext = list("slashed")
 
-	say_list_type = /datum/say_list/wolfgirl
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolfgirl)
-	configure(voice_config(species_sounds = "Canine", pain_emote_1p = list("yelp", "whine", "bark", "growl"), pain_emote_3p = list("yelps", "whines", "barks", "growls")))
+	configure(voice_config(species_sounds = "Canine", pain_emote_1p = list("yelp", "whine", "bark", "growl"), pain_emote_3p = list("yelps", "whines", "barks", "growls"), say_list_type = /datum/say_list/wolfgirl))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 // Activate Noms!
 /mob/living/simple_mob/vore/wolfgirl

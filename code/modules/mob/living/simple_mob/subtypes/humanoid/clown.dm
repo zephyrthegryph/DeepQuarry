@@ -24,7 +24,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/clown
 
-	say_list_type = /datum/say_list/clown
 
 /datum/say_list/clown
 	speak = list("HONK", "Honk!", "Welcome to clown planet!")
@@ -32,3 +31,6 @@
 
 /datum/decl/mob_organ_names/clown
 TYPE_TABLE(/datum/decl/mob_organ_names/clown, mob_organ_hit_zones, list("head", "torso", "pie-hole", "honker", "left funny bone", "right funny bone", "left foot", "right foot", "unmentionables"))
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/clown)
+	configure(voice_config(say_list_type = /datum/say_list/clown))

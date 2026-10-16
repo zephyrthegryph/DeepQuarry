@@ -43,7 +43,6 @@
 	melee_damage_upper = 3
 	attacktext = list("bitten")
 
-	say_list_type = /datum/say_list/snake
 
 
 	vore_active = 1
@@ -56,6 +55,7 @@
 	vore_bump_emote = "coils around and unhinges its jaws at"
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/snake)
+	configure(voice_config(say_list_type = /datum/say_list/snake))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(vore_embodiment(faction_bump_vore = 1))

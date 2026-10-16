@@ -36,7 +36,6 @@
 	can_buckle = TRUE
 	mount_offset_y = 20
 
-	say_list_type = /datum/say_list/hippo
 
 
 // Activate Noms!
@@ -56,6 +55,7 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/hippo)
+	configure(voice_config(say_list_type = /datum/say_list/hippo))
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

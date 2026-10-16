@@ -46,9 +46,9 @@
 
 	organ_names = /datum/decl/mob_organ_names/shantak
 
-	say_list_type = /datum/say_list/shantak
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak)
+	configure(voice_config(say_list_type = /datum/say_list/shantak))
 	configure(mob_kind(attack_cooldown = 1 SECOND))
 
 /datum/say_list/shantak

@@ -75,10 +75,10 @@
 	can_buckle = TRUE
 	mount_offset_y = 7
 
-	say_list_type = /datum/say_list/sect_drone
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/sect_drone)
+	configure(voice_config(say_list_type = /datum/say_list/sect_drone))
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))

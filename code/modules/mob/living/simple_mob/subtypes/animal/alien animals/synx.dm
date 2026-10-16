@@ -961,7 +961,6 @@ This includes the sprites of the below Mob which are based upon SCP 939.
 	tt_desc = "Unknown Alien Lifeform"
 
 	poison_chance = 0 //no poison,
-	say_list_type = /datum/say_list/malf_drone
 
 	icon = 'icons/mob/synxmanyvoices.dmi'
 	icon_state = "939_living"
@@ -1003,3 +1002,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx)
 CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/holo)
 	configure(death_policy(delete_on_death = TRUE))
 	configure(butchery_config(meat_type = TRAIT_NONE))
+
+CAPABILITIES(/mob/living/simple_mob/animal/synx/scp)
+	configure(voice_config(say_list_type = /datum/say_list/malf_drone))

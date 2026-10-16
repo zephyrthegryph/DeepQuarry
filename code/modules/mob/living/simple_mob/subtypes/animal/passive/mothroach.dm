@@ -39,10 +39,10 @@
 	friendly = list("pats")
 	climbing_delay = 2.0
 
-	say_list_type = /datum/say_list/mothroach
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
+	configure(voice_config(say_list_type = /datum/say_list/mothroach))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_movement(can_climb = TRUE))

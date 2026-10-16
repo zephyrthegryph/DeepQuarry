@@ -37,7 +37,6 @@
 	attack_injury_kind = INJURY_PIERCE
 	attacktext = list("gouged")
 
-	say_list_type = /datum/say_list/diyaab
 
 	// What do you hit the mob with (on help) to get something from it?
 	harvest_tool = /obj/item/tool/wirecutters
@@ -55,6 +54,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/diyaab)
+	configure(voice_config(say_list_type = /datum/say_list/diyaab))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	configure(mob_kind(attack_cooldown = 1 SECOND))
 
