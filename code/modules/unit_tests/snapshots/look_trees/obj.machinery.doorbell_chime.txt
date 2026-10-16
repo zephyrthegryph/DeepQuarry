@@ -2,4 +2,8 @@
 /obj/machinery/doorbell_chime state: dbchime-red
 /obj/machinery/doorbell_chime dir: 2
 /obj/machinery/doorbell_chime overlay: icons/obj/machines/doorbell_vr.dmi:dbchime-red:8:#000000
+/obj/machinery/doorbell_chime/dq_keyed icon: icons/obj/machines/doorbell_vr.dmi
+/obj/machinery/doorbell_chime/dq_keyed state: dbchime-standby
+/obj/machinery/doorbell_chime/dq_keyed dir: 2
+/obj/machinery/doorbell_chime/dq_keyed overlay: icons/obj/machines/doorbell_vr.dmi:dbchime-standby:8:#000000
 
