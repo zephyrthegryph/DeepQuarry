@@ -165,6 +165,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob)
+	configure(butchery_config(gib_on_butchery = TRUE, butchery_drops_organs = FALSE))
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(footstep_settings(sound_type = FOOTSTEP_MOB_SHOE, volume = 1, e_range = -6))
 	ref_one(nameof(movement_target), /obj)

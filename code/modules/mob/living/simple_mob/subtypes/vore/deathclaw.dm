@@ -132,12 +132,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
 	if(. && (!is_sharp(I) || !has_edge(I)))
 		return FALSE
 
-CAPABILITIES(/mob/living/simple_mob/metroid)
-	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat))
-	configure(voice_config(can_pain_emote = TRUE, species_sounds = "Metroid", pain_emote_1p = list("skree"), pain_emote_3p = list("skrees")))
 
-CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
-	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/dragonmeat))
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/virgo3b)
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/phorondragonmeat))

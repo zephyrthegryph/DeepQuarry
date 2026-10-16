@@ -64,6 +64,8 @@
 		play_sfx(src, arrival_sound)
 
 CAPABILITIES(/mob/living/simple_mob/metroid)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat))
+	configure(voice_config(can_pain_emote = TRUE, species_sounds = "Metroid", pain_emote_1p = list("skree"), pain_emote_3p = list("skrees")))
 	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 10))
 	configure(mob_movement(makes_dirt = FALSE))
 	after_init(0, then(PROC_REF(screech_on_arrival)))

@@ -21,3 +21,9 @@ Root must include code/__defines/mob_configuration.dm with the defines and
 code/modules/unit_tests/dq_mob_configuration_home_tests.dm with unit tests.
 No generation, analyzer, compile or runtime verification was run for this cohort.
 Baseline updates remain pending; expected additional reduction is nine rows.
+
+The source preflight caught six cross-file composition-root duplicates. Their
+configuration entries are now merged into the existing canonical blocks in
+simple_mob.dm, denecrotizer.dm, the two combat_ai glitch ports, metBaseType.dm
+and bigdragon.dm. A full source-only scan confirms one literal CAPABILITIES
+block per type. No existing entry was removed. Verification remains pending.

@@ -325,9 +325,3 @@ CAPABILITIES(/obj/item/projectile/energy/slow_orb_fake)
 
 /mob/living/simple_mob/glitch_boss/proc/end_speed_boost()
 	set_base_attack_cooldown(kind_of_type(type).attack_cooldown)
-
-CAPABILITIES(/mob/living/simple_mob/glitch_boss)
-	configure(voice_config(can_pain_emote = FALSE))
-
-CAPABILITIES(/mob/living/simple_mob/glitch_boss_fake)
-	configure(voice_config(can_pain_emote = FALSE))

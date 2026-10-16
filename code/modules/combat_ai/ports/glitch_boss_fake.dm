@@ -8,6 +8,7 @@
 	use_modern_ai = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/glitch_boss_fake)
+	configure(voice_config(can_pain_emote = FALSE))
 	configure(mob_kind(attack_cooldown = 2.5 SECONDS))
 
 TYPE_TABLE(/mob/living/simple_mob/glitch_boss_fake, get_ai_behaviors, list( \

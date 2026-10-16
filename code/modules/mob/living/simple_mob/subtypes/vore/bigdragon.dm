@@ -931,6 +931,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
+	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/dragonmeat))
 	knows(LANGUAGE_DRUDAKAR)
 	knows(LANGUAGE_UNATHI)
 	rolls(nameof(under), PROC_REF(roll_style))
