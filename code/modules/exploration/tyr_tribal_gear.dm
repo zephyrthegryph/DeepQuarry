@@ -325,7 +325,7 @@ CAPABILITIES(/obj/item/melee/energy/tyr_katar)
 	on_created_text = span_notice("Part of your form phases out.")
 	on_expired_text = span_warning("Your missing form phases back in.")
 	stacks = MODIFIER_STACK_EXTEND
-	factors = alist(BF_INCOMING_ALL = 1.5)
+	factors = alist(STAT_INCOMING_ALL = 1.5)
 
 //Trades speed for defense
 //you are the wall

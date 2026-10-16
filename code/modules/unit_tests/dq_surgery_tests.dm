@@ -508,14 +508,14 @@
 
 /datum/unit_test/dq_hyperzine_od_speeds_movement/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/base = H.factor(BF_SLOWDOWN)
+	var/base = H.slowdown
 
 	H.bloodstr.add_reagent(REAGENT_ID_HYPERZINE, 40)  // 10 over OD threshold of 30
 	for(var/i in 1 to 50)
 		H.dq_check_chem_conditions()
 	TEST_ASSERT(H.has_affliction(/datum/affliction/overdose/hyperzine), "40u of hyperzine should overdose")
 	// The stimulant and its overdose stage both speed the patient up.
-	var/slow = H.factor(BF_SLOWDOWN) - base
+	var/slow = H.slowdown - base
 	TEST_ASSERT(slow < 0, "hyperzine OD should produce negative slowdown (boost): got [slow]")
 
 

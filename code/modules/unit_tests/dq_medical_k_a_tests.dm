@@ -14,22 +14,22 @@
 	H.set_shock(45, "test")
 	TEST_ASSERT_EQUAL(H.shock_stage, 45, "set_shock sets the stage")
 
-/// P2-S4: NO_PAIN is a BF_PAIN_IMMUNITY grant, so can_feel_pain() answers through the factor.
+/// P2-S4: NO_PAIN is a STAT_PAIN_IMMUNITY grant, so can_feel_pain() answers through the factor.
 /datum/unit_test/dq_k_a_no_pain_feeds_pain_immunity
 
 /datum/unit_test/dq_k_a_no_pain_feeds_pain_immunity/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(H.can_feel_pain(), "a plain human feels pain")
-	TEST_ASSERT(!H.factor(BF_PAIN_IMMUNITY), "a plain human has no pain immunity")
+	TEST_ASSERT(!H.pain_immunity, "a plain human has no pain immunity")
 	var/old_flags = H.species.flags
 	rel_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
 	H.species.flags |= NO_PAIN
 	H.body.invalidate(BODY_DIRTY_FACTORS)
-	var/immune = H.factor(BF_PAIN_IMMUNITY)
+	var/immune = H.pain_immunity
 	var/feels = H.can_feel_pain()
 	H.species.flags = old_flags
 	H.body.invalidate(BODY_DIRTY_FACTORS)
-	TEST_ASSERT(immune, "a NO_PAIN species grants BF_PAIN_IMMUNITY")
+	TEST_ASSERT(immune, "a NO_PAIN species grants STAT_PAIN_IMMUNITY")
 	TEST_ASSERT(!feels, "a NO_PAIN species can't feel pain")
 
 /// P2-S7: breathes()/breath_profile() are the one answer, and does_not_breathe goes through its setter.

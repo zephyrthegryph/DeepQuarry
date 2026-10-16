@@ -165,7 +165,7 @@
 	qdel(source)
 	TEST_ASSERT_EQUAL(H.stasis_type_from(null), /datum/body_effect/stasis/light, "deleting the source leaves sourceless stasis")
 	H.set_stasis(null, null)
-	TEST_ASSERT_EQUAL(H.factor(BF_STASIS), 0, "the leftover stasis is released as sourceless")
+	TEST_ASSERT_EQUAL(H.stasis, 0, "the leftover stasis is released as sourceless")
 
 // ---------------------------------------------------------------- registries
 

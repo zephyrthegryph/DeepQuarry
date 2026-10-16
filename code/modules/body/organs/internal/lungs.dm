@@ -55,7 +55,7 @@
 		if(prob(1))
 			owner.custom_pain("You suddenly feel short of breath and take a sharp, painful breath!",1)
 			// Pus-filled alveoli: gas exchange fails for a while.
-			owner.body?.add_restriction(src, BF_GAS_EXCHANGE, 0.3, 30 SECONDS)
+			owner.body?.add_restriction(src, STAT_GAS_EXCHANGE, 0.3, 30 SECONDS)
 
 /obj/item/organ/internal/lungs/grey
 	icon_state = "lungs_grey"

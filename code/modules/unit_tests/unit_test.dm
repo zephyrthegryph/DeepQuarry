@@ -558,6 +558,9 @@ GLOBAL_VAR(dq_test_select_names)
 		for(var/entry in curated)
 			if(!LAZYACCESS(curated_matched, "[entry]"))
 				Fail("curated entry [entry] was not in the sweep (renamed or removed? update curated_types())", __FILE__, __LINE__)
+	// The old fold of body factors must still give what every mob the test left reads (dq_factor_oracle.dm).
+	if(succeeded)
+		factor_oracle_audit(src)
 	// End the test's world in the tick Run() returns. RunUnitTest() only notices run_finished
 	// on its next poll and then restores atmos before deleting the test, and OM work still
 	// pending on the test's entities (a mob's telegraphed strike is an after() on its clock)

@@ -321,7 +321,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	if(!blinded)
 		flash_eyes()
 
-	var/explosion_shift = factor(BF_EXPLOSION_SHIFT)
+	var/explosion_shift = src.explosion_shift
 	if(explosion_shift)
 		severity = CLAMP(severity + explosion_shift, 1, 4)
 
