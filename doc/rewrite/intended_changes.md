@@ -4894,3 +4894,7 @@ Affected requirement-pin classes:
 * **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
+
+## Base-state homes and deterministic probe selection
+
+This lane preserves transform composition, strict cooldown boundaries, per-character option copying, heat configuration and actor identity. Burning owns a live heat watch in a domain runtime context, not a data-only record. Human body-plan replacement explicitly preserves the seven former holder fields; it does not add them to appearance copying. The user-approved deterministic look sampler retains plan filtering and existing 24/200 coverage limits, with lexical selection so native/BYOND variable enumeration cannot change coverage. No golden rows have been blessed in this lane.

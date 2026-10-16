@@ -2,9 +2,9 @@
 
 Branch: `codex/base-vars-burndown`, based on master c3cb037784.
 
-The starting baseline has 539 rows. The source cohorts are committed separately
-by owning subsystem, with consumers updated together. Analyzer reduction and
-compilation/runtime proof are pending; source counts are not verification.
+The starting baseline had 539 rows. The analyzer now reports 423: 116 removed, zero added. The source cohorts are committed separately
+by owning subsystem, with consumers updated together. Generation and the base_vars check pass, including records_data_only at zero.
+Compilation/runtime lane-ready proof remains pending.
 
 Per-cohort handoffs cover lighting, human state, behaviours, last-attacker
 links, voice choices and body-effect serials. Other cohorts cover transforms,
