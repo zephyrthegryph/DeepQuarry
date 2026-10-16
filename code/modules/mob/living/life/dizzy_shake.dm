@@ -7,9 +7,8 @@ dizzy_shaking, and the shake runs as an every() on /mob while it holds.
 (Was /datum/component/dizzy_shake; its state lives on the mob.)
 */
 
-/mob
-	/// Dizzy shake: whether the mob was resting when the status's rate was last checked.
-	var/dizzy_was_resting
+/// Prior rest state is needed only by a mob whose shake status has run.
+sparse(/mob, dizzy_was_resting, type = bool)
 
 /// Set while STAT_DIZZY is in effect: dizzy_shake_tick() runs every decisecond (its every() in CAPABILITIES(/mob)), parked otherwise.
 /mob/var/tmp/dizzy_shaking = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
@@ -21,8 +20,8 @@ dizzy_shaking, and the shake runs as an every() on /mob while it holds.
 		return
 
 	// Resting wears dizziness off faster.
-	if(resting != dizzy_was_resting)
-		dizzy_was_resting = resting
+	if(resting != sparse_get(src, dizzy_was_resting))
+		sparse_set(src, dizzy_was_resting, resting)
 		status_rate_check(STAT_DIZZY)
 
 	// Handle wobbles

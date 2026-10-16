@@ -7,9 +7,8 @@ jittery_shaking, and the shake runs as an every() on /mob while it holds.
 (Was /datum/component/jittery_shake; its state lives on the mob.)
 */
 
-/mob
-	/// Jittery shake: whether the mob was resting when the status's rate was last checked.
-	var/jittery_was_resting
+/// Prior rest state is needed only by a mob whose shake status has run.
+sparse(/mob, jittery_was_resting, type = bool)
 
 /// Set while STAT_JITTERY is in effect: jittery_shake_tick() runs every decisecond (its every() in CAPABILITIES(/mob)), parked otherwise.
 /mob/var/tmp/jittery_shaking = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
@@ -21,8 +20,8 @@ jittery_shaking, and the shake runs as an every() on /mob while it holds.
 		return
 
 	// Resting wears jitters off faster.
-	if(resting != jittery_was_resting)
-		jittery_was_resting = resting
+	if(resting != sparse_get(src, jittery_was_resting))
+		sparse_set(src, jittery_was_resting, resting)
 		status_rate_check(STAT_JITTERY)
 
 	// Shakey shakey
