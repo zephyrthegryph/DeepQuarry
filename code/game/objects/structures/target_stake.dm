@@ -45,7 +45,7 @@ CAPABILITIES(/obj/structure/target_stake)
 			return TRUE
 		set_density(FALSE)
 		W.set_density(TRUE)
-		W.layer = ABOVE_JUNK_LAYER
+		W.set_layer(ABOVE_JUNK_LAYER)
 		rel_set(src, nameof(pinned_target), W)
 		to_chat(user, "You slide the target into the stake.")
 	return TRUE

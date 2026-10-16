@@ -48,11 +48,11 @@ CAPABILITIES(/datum/riding)
 				for(var/offsetdir in offsets)
 					if(offsetdir == ridden_dir)
 						var/list/diroffsets = offsets[offsetdir]
-						buckled_mob.pixel_x = diroffsets[1]
+						buckled_mob.set_pixel_x(diroffsets[1])
 						if(diroffsets.len >= 2)
-							buckled_mob.pixel_y = diroffsets[2]
+							buckled_mob.set_pixel_y(diroffsets[2])
 						if(diroffsets.len == 3)
-							buckled_mob.layer = diroffsets[3]
+							buckled_mob.set_layer(diroffsets[3])
 						break dir_loop
 
 // Override this to set your vehicle's various pixel offsets
@@ -79,9 +79,9 @@ CAPABILITIES(/datum/riding)
 // BUCKLE HOOKS
 /datum/riding/proc/restore_position(mob/living/buckled_mob)
 	if(istype(buckled_mob))
-		buckled_mob.pixel_x = 0
-		buckled_mob.pixel_y = 0
-		buckled_mob.layer = initial(buckled_mob.layer)
+		buckled_mob.set_pixel_x(0)
+		buckled_mob.set_pixel_y(0)
+		buckled_mob.set_layer(initial(buckled_mob.layer))
 
 // MOVEMENT
 /datum/riding/proc/handle_ride(mob/user, direction)
@@ -256,4 +256,4 @@ CAPABILITIES(/datum/riding)
 
 /// Puts the atom back on its type's layer (riding datums read their ridden atom through a handle).
 /atom/proc/restore_initial_layer()
-	layer = initial(layer)
+	set_layer(initial(layer))

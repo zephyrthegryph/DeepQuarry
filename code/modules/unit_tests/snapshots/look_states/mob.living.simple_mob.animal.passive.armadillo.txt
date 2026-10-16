@@ -1,1 +1,9 @@
+/mob/living/simple_mob/animal/passive/armadillo ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/passive/armadillo ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/passive/armadillo has_eye_glow=1 +overlay: icons/mob/animal.dmi:armadillo-eyes:7
+/mob/living/simple_mob/animal/passive/armadillo has_eye_glow=2 +overlay: icons/mob/animal.dmi:armadillo-eyes:7
+/mob/living/simple_mob/animal/passive/armadillo/torta ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/passive/armadillo/torta ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/passive/armadillo/torta has_eye_glow=1 +overlay: icons/mob/animal.dmi:armadillo-eyes:7
+/mob/living/simple_mob/animal/passive/armadillo/torta has_eye_glow=2 +overlay: icons/mob/animal.dmi:armadillo-eyes:7
 

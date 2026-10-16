@@ -328,7 +328,7 @@ CAPABILITIES(/obj/machinery/computer/HolodeckControl)
 	for(var/obj/holo_obj in A.copy_contents_to(linkedholodeck(), 1))
 		rel_add(src, nameof(holographic_objs), holo_obj)
 	for(var/obj/holo_obj in holographic_objs)
-		holo_obj.alpha *= 0.8 //give holodeck objs a slight transparency
+		holo_obj.set_alpha(holo_obj.alpha * 0.8) //give holodeck objs a slight transparency
 
 	if(HP.ambience)
 		linkedholodeck().forced_ambience = HP.ambience

@@ -61,9 +61,9 @@
 		var/obj/effect/decal/cleanable/dirt/dirtoverlay = locate(/obj/effect/decal/cleanable/dirt, T)
 		if (!dirtoverlay)
 			dirtoverlay = new/obj/effect/decal/cleanable/dirt(T)
-			dirtoverlay.alpha = volume * 30
+			dirtoverlay.set_alpha(volume * 30)
 		else
-			dirtoverlay.alpha = min(dirtoverlay.alpha + volume * 30, 255)
+			dirtoverlay.set_alpha(min(dirtoverlay.alpha + volume * 30, 255))
 
 /datum/reagent/chlorine
 	name = REAGENT_CHLORINE

@@ -102,20 +102,20 @@ CAPABILITIES(/obj/structure/noticeboard)
 	playsound(loc, sounds_of(tool).use, 50, TRUE)
 	switch(choice)
 		if("North")
-			pixel_x = 0
-			pixel_y = 32
+			set_pixel_x(0)
+			set_pixel_y(32)
 		if("South")
-			pixel_x = 0
-			pixel_y = -32
+			set_pixel_x(0)
+			set_pixel_y(-32)
 		if("East")
-			pixel_x = 32
-			pixel_y = 0
+			set_pixel_x(32)
+			set_pixel_y(0)
 		if("West")
-			pixel_x = -32
-			pixel_y = 0
+			set_pixel_x(-32)
+			set_pixel_y(0)
 		if("No Offset")
-			pixel_x = 0
-			pixel_y = 0
+			set_pixel_x(0)
+			set_pixel_y(0)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/noticeboard/proc/wrench_started(datum/act/op/A)

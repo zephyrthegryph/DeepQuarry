@@ -61,8 +61,8 @@ CAPABILITIES(/obj/machinery/firealarm)
 	alarms_hidden = TRUE
 
 /obj/machinery/firealarm/angled/offset_alarm()
-	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 20 : -20)
-	pixel_y = (dir & 3) ? (dir == 1 ? -18 : 21) : 0
+	set_pixel_x((dir & 3) ? 0 : (dir == 4 ? 20 : -20))
+	set_pixel_y((dir & 3) ? (dir == 1 ? -18 : 21) : 0)
 
 /obj/machinery/firealarm/examine()
 	. = ..()
@@ -80,8 +80,8 @@ CAPABILITIES(/obj/machinery/firealarm)
 	..()
 
 /obj/machinery/firealarm/proc/offset_alarm()
-	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
-	pixel_y = (dir & 3) ? (dir == 1 ? -26 : 26) : 0
+	set_pixel_x((dir & 3) ? 0 : (dir == 4 ? 26 : -26))
+	set_pixel_y((dir & 3) ? (dir == 1 ? -26 : 26) : 0)
 
 
 /// What the alarm shows: dark with its panel open, broken or unpowered; else its detector state and the security level, lit red while the

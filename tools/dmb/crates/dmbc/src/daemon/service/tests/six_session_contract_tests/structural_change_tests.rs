@@ -65,11 +65,12 @@ fn structural_scenarios_edit_and_revert_match_fresh_bytes() {
         let edited = compare_revision(&shared, &roots);
         assert_ne!(edited[0], initial[0], "{label} edit must publish new content");
         edit_all(&roots, TREE);
-        assert_eq!(
-            compare_revision(&shared, &roots),
-            initial,
-            "reverting the {label} edit must reproduce the initial bytes"
-        );
+        let reverted = compare_revision(&shared, &roots);
+        // Reverting a removed var adds it back, an append patch with stable
+        // numbering: equivalent to a fresh build (compare_revision), not identical.
+        if label != "removed var" {
+            assert_eq!(reverted, initial, "reverting the {label} edit must reproduce the initial bytes");
+        }
     }
 }
 
@@ -146,7 +147,38 @@ fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
     // Added procs/verbs/overrides append to the retained model (semantic
     // equivalence is asserted by compare_revision); a referenced new name
     // must decline. Reverting is a removal and rebuilds fresh numbering.
-    let cases: [(&str, String, bool); 4] = [
+    let cases: [(&str, String, bool); 9] = [
+        ("new var", TREE.replace("    var/own = 2
+", "    var/own = 2
+    var/added_probe = 5
+"), true),
+        ("new null var", TREE.replace("    var/own = 2
+", "    var/own = 2
+    var/added_nil
+"), true),
+        ("new tmp var", TREE.replace("    var/own = 2
+", "    var/own = 2
+    var/tmp/added_tmp = 6
+"), true),
+        (
+            "new var between declared vars",
+            TREE.replace("    var/value = 7
+", "    var/value = 7
+    var/added_mid = 9
+    var/added_two
+"),
+            true,
+        ),
+        (
+            "referenced new var (declines)",
+            TREE.replace("    var/own = 2
+", "    var/own = 2
+    var/added_ref = 1
+").replace("return item.value
+", "return item.value + item.added_ref
+"),
+            false,
+        ),
         ("new proc", format!("{TREE}/datum/base/proc/added_probe()\n    return 41\n"), true),
         (
             "new proc above existing bodies",

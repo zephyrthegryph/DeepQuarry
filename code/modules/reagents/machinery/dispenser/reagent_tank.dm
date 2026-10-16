@@ -75,11 +75,11 @@ CAPABILITIES(/obj/structure/reagent_dispensers)
 
 	if(flags & OPENCONTAINER)
 		to_chat(user, span_notice("You close the input on \the [src]"))
-		flags -= OPENCONTAINER
+		set_open_by_flag(FALSE)
 		open_top = FALSE
 	else
 		to_chat(user, span_notice("You open the input on \the [src], allowing you to pour reagents in."))
-		flags |= OPENCONTAINER
+		set_open_by_flag(TRUE)
 		open_top = TRUE
 	return TRUE
 

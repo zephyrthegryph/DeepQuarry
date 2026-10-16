@@ -162,7 +162,7 @@ CAPABILITIES(/obj/structure/hoist)
 	else
 		hoistee().anchored = FALSE
 	rel_clear(src, nameof(hoistee))
-	layer = NORMAL_LAYER
+	set_layer(NORMAL_LAYER)
 
 /obj/structure/hoist/proc/break_hoist()
 	if(broken)

@@ -20,8 +20,8 @@
 		for(var/gear_slot in hud_gears)
 			inv_box = new /atom/movable/screen/inventory()
 			inv_box.set_icon(ui_style)
-			inv_box.color = ui_color
-			inv_box.alpha = ui_alpha
+			inv_box.set_color(ui_color)
+			inv_box.set_alpha(ui_alpha)
 
 			var/list/slot_data =  hud_gears[gear_slot]
 			inv_box.name =        gear_slot
@@ -46,15 +46,15 @@
 		using.set_icon_state("other")
 		using.screen_loc = ui_inventory
 		using.hud_layerise()
-		using.color = ui_color
-		using.alpha = ui_alpha
+		using.set_color(ui_color)
+		using.set_alpha(ui_alpha)
 		rel_add(HUD, nameof(HUD.adding), using)
 
 	// The combat mode button (it replaced the intent selector).
 	using = HUD.make_combat_mode_button(src)
 	using.set_icon(ui_style)
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.adding), using)
 	hud_elements |= using
 
@@ -64,8 +64,8 @@
 	using.set_icon(ui_style)
 	using.set_icon_state((m_intent == I_RUN ? "running" : "walking"))
 	using.screen_loc = ui_movi
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(HUD, nameof(HUD.move_intent), using)
 
@@ -75,8 +75,8 @@
 	using.set_icon(ui_style)
 	using.set_icon_state("act_resist")
 	using.screen_loc = ui_pull_resist
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	//Pull button
@@ -155,8 +155,8 @@
 		using.set_icon(ui_style)
 		using.set_icon_state("act_drop")
 		using.screen_loc = ui_drop_throw
-		using.color = ui_color
-		using.alpha = ui_alpha
+		using.set_color(ui_color)
+		using.set_alpha(ui_alpha)
 		rel_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 		//Equip detail
@@ -165,8 +165,8 @@
 		using.set_icon(ui_style)
 		using.set_icon_state("act_equip")
 		using.screen_loc = ui_equip
-		using.color = ui_color
-		using.alpha = ui_alpha
+		using.set_color(ui_color)
+		using.set_alpha(ui_alpha)
 		rel_add(HUD, nameof(HUD.adding), using)
 
 		//Hand slots themselves
@@ -179,8 +179,8 @@
 			inv_box.set_icon_state("r_hand_active")
 		inv_box.screen_loc = ui_rhand
 		inv_box.slot_id = SLOT_ID_HAND_R
-		inv_box.color = ui_color
-		inv_box.alpha = ui_alpha
+		inv_box.set_color(ui_color)
+		inv_box.set_alpha(ui_alpha)
 		rel_set(HUD, nameof(HUD.r_hand_hud_object), inv_box)
 		rel_add(HUD, nameof(HUD.adding), inv_box)
 		slot_info["[SLOT_ID_HAND_R]"] = inv_box.screen_loc
@@ -194,8 +194,8 @@
 			inv_box.set_icon_state("l_hand_active")
 		inv_box.screen_loc = ui_lhand
 		inv_box.slot_id = SLOT_ID_HAND_L
-		inv_box.color = ui_color
-		inv_box.alpha = ui_alpha
+		inv_box.set_color(ui_color)
+		inv_box.set_alpha(ui_alpha)
 		rel_set(HUD, nameof(HUD.l_hand_hud_object), inv_box)
 		rel_add(HUD, nameof(HUD.adding), inv_box)
 		slot_info["[SLOT_ID_HAND_L]"] = inv_box.screen_loc
@@ -206,8 +206,8 @@
 		using.set_icon(ui_style)
 		using.set_icon_state("hand1")
 		using.screen_loc = ui_swaphand1
-		using.color = ui_color
-		using.alpha = ui_alpha
+		using.set_color(ui_color)
+		using.set_alpha(ui_alpha)
 		rel_add(HUD, nameof(HUD.adding), using)
 
 		using = new /atom/movable/screen/inventory()
@@ -215,8 +215,8 @@
 		using.set_icon(ui_style)
 		using.set_icon_state("hand2")
 		using.screen_loc = ui_swaphand2
-		using.color = ui_color
-		using.alpha = ui_alpha
+		using.set_color(ui_color)
+		using.set_alpha(ui_alpha)
 		rel_add(HUD, nameof(HUD.adding), using)
 
 		//Throw button

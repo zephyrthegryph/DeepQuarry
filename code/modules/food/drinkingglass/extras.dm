@@ -20,8 +20,8 @@
 		var/obj/item/reagent_containers/food/snacks/fruit_slice/FS = I
 		rel_add(src, nameof(extras), FS)
 		user.remove_from_mob(FS)
-		FS.pixel_x = 0 // Reset its pixel offsets so the icons work!
-		FS.pixel_y = 0
+		FS.set_pixel_x(0) // Reset its pixel offsets so the icons work!
+		FS.set_pixel_y(0)
 		FS.forceMove(src)
 		to_chat(user, span_notice("You add \the [FS] to \the [src]."))
 	else

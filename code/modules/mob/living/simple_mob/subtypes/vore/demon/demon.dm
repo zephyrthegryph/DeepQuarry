@@ -187,7 +187,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 	set_icon_dead("dead")
 	set_icon_rest("[alternate_selection]_rest")
 	set_vis_height(47) //Mass majority of sprites use vis_height = 47. If its different, its done below.
-	pixel_x = 0
+	set_pixel_x(0)
 	set_vore_icons(FALSE) //No stomach sprites unless specifically specified!
 	//This is where we handle the special ones!
 	switch(alternate_selection)
@@ -202,7 +202,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 
 		//These are the larger variants, so we do some different stuff here!
 		if("brutola")
-			pixel_x = -8
+			set_pixel_x(-8)
 			set_vis_height(64)
 			set_vore_icons(SA_ICON_LIVING | SA_ICON_REST)
 			vore_capacity = 2
@@ -210,7 +210,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 			set_icon('icons/mob/demon_alt.dmi')
 
 		if("ignia")
-			pixel_x = -8
+			set_pixel_x(-8)
 			set_vis_height(64)
 			set_vore_icons(SA_ICON_LIVING)
 			vore_capacity = 2

@@ -265,7 +265,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 	if(!A.answer)
 		return
 	if(A.answer.value && !picked_color)
-		color = A.answer.value
+		set_color(A.answer.value)
 		picked_color = TRUE
 
 /mob/living/simple_mob/vore/alienanimals/catslug/horrible
@@ -277,7 +277,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 /obj/item/holder/catslug/take_held(mob/held)
 	..()
 	if(held)
-		color = held.color
+		set_color(held.color)
 
 //Custom Catslugs and the Rascal's Pass bunch
 

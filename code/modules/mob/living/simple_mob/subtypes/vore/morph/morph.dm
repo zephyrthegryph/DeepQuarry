@@ -119,17 +119,17 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	rel_set(src, nameof(form), target)
 
 	act_message(src, target, null, MSG_OTHERS(span_warning("%U% suddenly twists and changes shape, becoming a copy of %T%!")))
-	color = null
+	set_color(null)
 	name = target.name
 	desc = target.desc
 	set_icon(target.icon)
 	set_icon_state(target.icon_state)
-	alpha = max(target.alpha, 150)
+	set_alpha(max(target.alpha, 150))
 	copy_overlays(target, TRUE)
 	our_size_multiplier = size_multiplier
 
-	pixel_x = initial(target.pixel_x)
-	pixel_y = initial(target.pixel_y)
+	set_pixel_x(initial(target.pixel_x))
+	set_pixel_y(initial(target.pixel_y))
 
 	set_density(target.density)
 
@@ -168,16 +168,16 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	set_icon(initial(icon))
 	set_icon_state(initial(icon_state))
 
-	alpha = initial(alpha)
+	set_alpha(initial(alpha))
 	if(chosen_color)
-		color = chosen_color
+		set_color(chosen_color)
 	else
-		color = initial(color)
-	plane = initial(plane)
-	layer = initial(layer)
+		set_color(initial(color))
+	set_plane(initial(plane))
+	set_layer(initial(layer))
 
-	pixel_x = initial(pixel_x)
-	pixel_y = initial(pixel_y)
+	set_pixel_x(initial(pixel_x))
+	set_pixel_y(initial(pixel_y))
 	set_icon_scale_x(initial(icon_scale_x))
 	set_icon_scale_y(initial(icon_scale_y))
 
@@ -218,10 +218,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 		set_icon_state(temp_state)
 		//Stolen from protean blobs, ambush noms from resting! Doesn't hide you any better, but makes noms sneakier.
 		if(resting)
-			plane = ABOVE_OBJ_PLANE
+			set_plane(ABOVE_OBJ_PLANE)
 			to_chat(src,span_notice("Your form settles in, appearing more 'normal'... laying in wait."))
 		else
-			plane = MOB_PLANE
+			set_plane(MOB_PLANE)
 			to_chat(src,span_notice("Your form quivers back to life, allowing you to move again!"))
 			if(vore_prefs.can_be_drop_pred) //Toggleable in vore panel
 				var/list/potentials = living_mobs(0)
@@ -267,7 +267,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	if(!A.answer)
 		return
 	if(A.answer.value)
-		color = A.answer.value
+		set_color(A.answer.value)
 		chosen_color = A.answer.value
 
 /mob/living/simple_mob/vore/morph/proc/take_over_prey()

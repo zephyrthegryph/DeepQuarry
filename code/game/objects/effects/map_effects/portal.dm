@@ -215,8 +215,8 @@ CAPABILITIES(/obj/effect/map_effect/portal/master)
 /obj/effect/map_effect/portal/master/proc/apply_offset()
 	for(var/obj/effect/map_effect/portal/P as anything in (portal_lines || list()) + src)
 
-		P.pixel_x = WORLD_ICON_SIZE * P.portal_distance_x
-		P.pixel_y = WORLD_ICON_SIZE * P.portal_distance_y
+		P.set_pixel_x(WORLD_ICON_SIZE * P.portal_distance_x)
+		P.set_pixel_y(WORLD_ICON_SIZE * P.portal_distance_y)
 
 // Allows portals to transfer emotes.
 // Only portal masters do this to avoid flooding the other side with duplicate messages.

@@ -91,9 +91,9 @@ CAPABILITIES(/obj/effect/temp_visual/impact_effect/monochrome_laser)
 	if(!P)
 		return
 	if(glow_of(P).color)
-		color = glow_of(P).color
+		set_color(glow_of(P).color)
 	else if(P.color)
-		color = P.color
+		set_color(P.color)
 
 /obj/effect/temp_visual/impact_effect/ion
 	icon_state = "shieldsparkles"

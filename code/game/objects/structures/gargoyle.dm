@@ -136,15 +136,15 @@ CAPABILITIES(/obj/structure/gargoyle)
 	initial_blind = H.status_units(STAT_BLINDED)
 	initial_is_shifted = H.is_shifted
 	transform = H.transform
-	layer = H.layer
-	pixel_x = H.pixel_x
-	pixel_y = H.pixel_y
+	set_layer(H.layer)
+	set_pixel_x(H.pixel_x)
+	set_pixel_y(H.pixel_y)
 	set_dir(H.dir)
 	initial_lying = H.lying
 	initial_lying_prev = H.lying_prev
 	H.set_sdisabilities(H.sdisabilities | MUTE)
 	if(H.appearance_flags & PIXEL_SCALE)
-		appearance_flags |= PIXEL_SCALE
+		set_appearance_flags(appearance_flags | PIXEL_SCALE)
 	wagging = H.wagging
 	flapping = H.flapping
 	H.toggle_tail(FALSE, FALSE)
@@ -241,7 +241,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 			for (var/x in 1 to 10)
 				gargoyle.injure(INJURY_BLUNT, f, ran_zone(), src)
 			hurtmessage = " " + span_bold("You feel your body take the damage that was dealt while being [material]!")
-	alpha = 0
+	set_alpha(0)
 	act_message(gargoyle, null, MSG_SELF(span_warning("Your skin reverts, freeing your movement once more![hurtmessage]")), \
 		MSG_OTHERS(span_warning("%U%'s skin rapidly reverts, returning them to normal!")))
 	gargoyle = null

@@ -1,1 +1,5 @@
+/mob/living/simple_mob/vore/zorgoia ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/zorgoia ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/zorgoia/tamed ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/zorgoia/tamed ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 

@@ -1010,10 +1010,6 @@ init_lines	code/game/objects/items/weapons/storage/fancy.dm	@/obj/item/storage/f
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	@/obj/item/storage/fancy/cigarettes::Initialize::for
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	@/obj/item/storage/fancy/cigarettes::Initialize::C.brand
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	@/obj/item/storage/fancy/cigarettes::Initialize::C.desc
-init_lines	code/game/objects/items/weapons/storage/internal.dm	@/obj/item/storage/internal::Initialize::rel_set
-init_lines	code/game/objects/items/weapons/storage/internal.dm	@/obj/item/storage/internal::Initialize::if
-init_lines	code/game/objects/items/weapons/storage/internal.dm	@/obj/item/storage/internal::Initialize::return
-init_lines	code/game/objects/items/weapons/storage/internal.dm	@/obj/item/storage/internal::Initialize::name
 init_lines	code/game/objects/items/weapons/storage/mre.dm	@/obj/item/storage/box/tgmc_mre::Initialize::pickflavor
 init_lines	code/game/objects/items/weapons/storage/mre.dm	@/obj/item/reagent_containers/food/snacks/tgmc_mre_component::Initialize::if
 init_lines	code/game/objects/items/weapons/storage/mre.dm	@/obj/item/reagent_containers/food/snacks/tgmc_mre_component::Initialize::reagents.add_reagent
@@ -1166,7 +1162,6 @@ init_lines	code/game/objects/structures/props/transmitter.dm	@/obj/structure/pro
 init_lines	code/game/objects/structures/props/transmitter.dm	@/obj/structure/prop/transmitter::Initialize::interaction_message
 init_lines	code/game/objects/structures/railing.dm	@/obj/structure/railing::Initialize::if
 init_lines	code/game/objects/structures/railing.dm	@/obj/structure/railing::Initialize::anchored
-init_lines	code/game/objects/structures/railing.dm	@/obj/structure/railing::Initialize::make_rotatable
 init_lines	code/game/objects/structures/reflectors.dm	@/obj/structure/reflector::Initialize::if
 init_lines	code/game/objects/structures/reflectors.dm	@/obj/structure/reflector::Initialize::deflector_overlay
 init_lines	code/game/objects/structures/reflectors.dm	@/obj/structure/reflector::Initialize::add_overlay
@@ -2034,7 +2029,6 @@ init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mi
 init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::expr
 init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::watch_input
 init_lines	code/modules/mining/mine_items.dm	@/obj/item/stack/flag::Initialize::base_state
-init_lines	code/modules/mining/mine_items.dm	@/obj/structure/trailblazer::Initialize::color
 init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::if
 init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::if
 init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::make_ore

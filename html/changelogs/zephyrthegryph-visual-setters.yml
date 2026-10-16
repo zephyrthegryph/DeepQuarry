@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Colour, alpha, layer, plane, pixel offsets, appearance flags and gender of an atom are tracked and written through set_color(), set_alpha(), set_layer(), set_plane(), set_pixel_x()/set_pixel_y()/set_pixel_offset(), set_appearance_flags() and set_gender(); draws no longer sample them with read_once()."
+  - refactor: "Reagent amounts, paper bundle pages, clothing accessories and the wearer's blood mask are read tracked by the draws that show them."
+  - code_imp: "The untracked_inputs lint bans read_once() inside a draw, a stat contribution or a STAT formula (sampled_in_look)."

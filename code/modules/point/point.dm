@@ -67,8 +67,8 @@ CAPABILITIES(/obj/effect/temp_visual/point)
 /obj/effect/temp_visual/point/proc/settle_on_turf(set_invis)
 	var/atom/old_loc = loc
 	abstract_move(get_turf(src))
-	pixel_x = old_loc.pixel_x
-	pixel_y = old_loc.pixel_y
+	set_pixel_x(old_loc.pixel_x)
+	set_pixel_y(old_loc.pixel_y)
 
 #undef POINT_TIME
 

@@ -136,16 +136,16 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	var/obj/effect/overlay/aiholo/hologram = new(T) // Spawn a blank effect at the location. // to specific type for adding vars
 	rel_set(hologram, nameof(hologram.master), A) // So you can reference the master AI from in the hologram procs
 	hologram.set_icon(A.holo_icon)
-	hologram.pixel_x = 16 - round(A.holo_icon.Width() / 2) // centers the hologram on the tile
+	hologram.set_pixel_x(16 - round(A.holo_icon.Width() / 2)) // centers the hologram on the tile
 	// hologram.mouse_opacity = 0//So you can't click on it. // Removal
-	hologram.layer = FLY_LAYER//Above all the other objects/mobs. Or the vast majority of them.
+	hologram.set_layer(FLY_LAYER)//Above all the other objects/mobs. Or the vast majority of them.
 	hologram.set_anchored(TRUE) //So space wind cannot drag it.
 	hologram.name = "[A.name] (Hologram)"//If someone decides to right click.
 
 	if(!isnull(color))
-		hologram.color = color
+		hologram.set_color(color)
 	else
-		hologram.color = A.holo_color
+		hologram.set_color(A.holo_color)
 
 	if(hologram.color)	//hologram lighting
 		set_glow(hologram, GLOW(2, 1, hologram.color))

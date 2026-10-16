@@ -76,3 +76,12 @@ registration coverage. All seven existing identity-list mutations now publish
 through generated setters. No keys, labels, menu/click rows or golden changes are
 intended. The remaining three sites have exact source/engine barriers documented
 in the module gap report; final native verification is pending the combined gate.
+
+## Master visual-setter merge
+
+Merged master a5674a446e. The flash conflict keeps the native self operation and
+removes the unreachable robot animation branch from its carbon-only handler.
+The live robot attack animation retains master's set_layer(), set_icon_state()
+and set_icon() calls, its relation link and unchanged expire(5) lifetime. No
+duplicate animation is restored. Combined verification remains pending.
+

@@ -299,12 +299,12 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	look.effect_if(species.component_requires_late_recalc, PROC_REF(look_effect_shadekin_recalc))
 
 /mob/living/carbon/human/proc/look_effect_tail_offsets(offset_x, offset_y, loaf_y)
-	pixel_x = offset_x
-	pixel_y = offset_y
+	set_pixel_x(offset_x)
+	set_pixel_y(offset_y)
 	set_default_pixel_x(offset_x)
 	set_default_pixel_y(offset_y)
 	if(!isnull(loaf_y))
-		pixel_y = loaf_y
+		set_pixel_y(loaf_y)
 
 /mob/living/carbon/human/proc/look_effect_taur_mount()
 	if(riding_datum)
@@ -798,23 +798,23 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 		var/obj/item/clothing/suit/S = suit
 		if(c_mask && ((suit_hides & HIDETAIL) || (istype(S) && S.taurized))) // Reasons to not mask: a suit that hides the tail, or a taurized suit.
 			c_mask = null
-		layers[UNIFORM_LAYER] = uniform.make_worn_icon(body_type = body_type, slot_name = slot_w_uniform_str, default_icon = uniform_sprite, default_layer = UNIFORM_LAYER, clip_mask = c_mask)
+		layers[UNIFORM_LAYER] = uniform.make_worn_icon(wearer = src, body_type = body_type, slot_name = slot_w_uniform_str, default_icon = uniform_sprite, default_layer = UNIFORM_LAYER, clip_mask = c_mask)
 
 	// ID: only when the uniform shows it.
 	var/obj/item/id = worn_item(look, SLOT_ID_ID)
 	var/obj/item/clothing/under/id_under = uniform
 	if(id && istype(id_under) && id_under.displays_id)
-		layers[ID_LAYER] = id.make_worn_icon(body_type = body_type, slot_name = slot_wear_id_str, default_icon = INV_WEAR_ID_DEF_ICON, default_layer = ID_LAYER)
+		layers[ID_LAYER] = id.make_worn_icon(wearer = src, body_type = body_type, slot_name = slot_wear_id_str, default_icon = INV_WEAR_ID_DEF_ICON, default_layer = ID_LAYER)
 
 	var/obj/item/gloves = worn_item(look, SLOT_ID_GLOVES)
 	if(gloves)
-		layers[GLOVES_LAYER] = gloves.make_worn_icon(body_type = body_type, slot_name = slot_gloves_str, default_icon = INV_GLOVES_DEF_ICON, default_layer = GLOVES_LAYER)
+		layers[GLOVES_LAYER] = gloves.make_worn_icon(wearer = src, body_type = body_type, slot_name = slot_gloves_str, default_icon = INV_GLOVES_DEF_ICON, default_layer = GLOVES_LAYER)
 
 	var/obj/item/glasses = worn_item(look, SLOT_ID_EYES)
 	if(glasses && !hide_glasses)
 		var/obj/item/clothing/glasses/our_glasses = glasses
 		var/glasses_layer = (istype(our_glasses) && our_glasses.glasses_layer_above) ? GLASSES_LAYER_ALT : GLASSES_LAYER
-		layers[glasses_layer] = glasses.make_worn_icon(body_type = body_type, slot_name = slot_glasses_str, default_icon = INV_EYES_DEF_ICON, default_layer = glasses_layer)
+		layers[glasses_layer] = glasses.make_worn_icon(wearer = src, body_type = body_type, slot_name = slot_glasses_str, default_icon = INV_EYES_DEF_ICON, default_layer = glasses_layer)
 
 	layers[EARS_LAYER] = ears_worn_look(look, head_hides, mask_hides)
 	layers[SHOES_LAYER] = shoes_worn_look(look, body_type, suit_hides, uniform ? worn_of(uniform).hides : NONE)
@@ -830,13 +830,13 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 		layers[SUIT_STORE_LAYER] = human_layer_image(species.suit_storage_icon, t_state, BODY_LAYER + SUIT_STORE_LAYER)
 
 	if(head)
-		layers[HEAD_LAYER] = head.make_worn_icon(body_type = body_type, slot_name = slot_head_str, default_icon = INV_HEAD_DEF_ICON, default_layer = HEAD_LAYER)
+		layers[HEAD_LAYER] = head.make_worn_icon(wearer = src, body_type = body_type, slot_name = slot_head_str, default_icon = INV_HEAD_DEF_ICON, default_layer = HEAD_LAYER)
 
 	var/obj/item/belt = worn_item(look, SLOT_ID_BELT)
 	if(belt)
 		var/obj/item/storage/belt/ubelt = belt
 		var/belt_layer = (istype(ubelt) && ubelt.show_above_suit) ? BELT_LAYER_ALT : BELT_LAYER
-		layers[belt_layer] = belt.make_worn_icon(body_type = body_type, slot_name = slot_belt_str, default_icon = INV_BELT_DEF_ICON, default_layer = belt_layer, clip_mask = tail_style?.clip_mask)
+		layers[belt_layer] = belt.make_worn_icon(wearer = src, body_type = body_type, slot_name = slot_belt_str, default_icon = INV_BELT_DEF_ICON, default_layer = belt_layer, clip_mask = tail_style?.clip_mask)
 
 	if(suit)
 		var/obj/item/clothing/suit/clothing_suit = suit
@@ -844,31 +844,31 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 		var/icon/c_mask = null
 		if(tail_rendered && tail_style?.clip_mask && !(istype(clothing_suit) && clothing_suit.taurized)) //Clip the lower half of the suit off using the tail's clip mask for taurs since taur bodies aren't hidden.
 			c_mask = tail_style.clip_mask
-		layers[SUIT_LAYER] = suit.make_worn_icon(body_type = body_type, slot_name = slot_wear_suit_str, default_icon = suit_sprite, default_layer = SUIT_LAYER, clip_mask = c_mask)
+		layers[SUIT_LAYER] = suit.make_worn_icon(wearer = src, body_type = body_type, slot_name = slot_wear_suit_str, default_icon = suit_sprite, default_layer = SUIT_LAYER, clip_mask = c_mask)
 
 	if(mask && !(head_hides & HIDEMASK))
-		layers[FACEMASK_LAYER] = mask.make_worn_icon(body_type = body_type, slot_name = slot_wear_mask_str, default_icon = INV_MASK_DEF_ICON, default_layer = FACEMASK_LAYER)
+		layers[FACEMASK_LAYER] = mask.make_worn_icon(wearer = src, body_type = body_type, slot_name = slot_wear_mask_str, default_icon = INV_MASK_DEF_ICON, default_layer = FACEMASK_LAYER)
 
 	var/obj/item/back = worn_item(look, SLOT_ID_BACK)
 	if(back)
 		var/icon/c_mask = tail_style?.clip_mask
 		if(c_mask && (istype(back, /obj/item/storage/backpack/saddlebag) || istype(back, /obj/item/storage/backpack/saddlebag_common)))
 			c_mask = null
-		layers[BACK_LAYER] = back.make_worn_icon(body_type = body_type, slot_name = slot_back_str, default_icon = INV_BACK_DEF_ICON, default_layer = BACK_LAYER, clip_mask = c_mask)
+		layers[BACK_LAYER] = back.make_worn_icon(wearer = src, body_type = body_type, slot_name = slot_back_str, default_icon = INV_BACK_DEF_ICON, default_layer = BACK_LAYER, clip_mask = c_mask)
 
 	var/obj/item/cuffs = worn_item(look, SLOT_ID_HANDCUFFED)
 	if(cuffs)
-		layers[HANDCUFF_LAYER] = cuffs.make_worn_icon(body_type = body_type, slot_name = slot_handcuffed_str, default_icon = INV_HCUFF_DEF_ICON, default_layer = HANDCUFF_LAYER)
+		layers[HANDCUFF_LAYER] = cuffs.make_worn_icon(wearer = src, body_type = body_type, slot_name = slot_handcuffed_str, default_icon = INV_HCUFF_DEF_ICON, default_layer = HANDCUFF_LAYER)
 	var/obj/item/legcuffs = worn_item(look, SLOT_ID_LEGCUFFED)
 	if(legcuffs)
-		layers[LEGCUFF_LAYER] = legcuffs.make_worn_icon(body_type = body_type, slot_name = slot_legcuffed_str, default_icon = INV_LCUFF_DEF_ICON, default_layer = LEGCUFF_LAYER)
+		layers[LEGCUFF_LAYER] = legcuffs.make_worn_icon(wearer = src, body_type = body_type, slot_name = slot_legcuffed_str, default_icon = INV_LCUFF_DEF_ICON, default_layer = LEGCUFF_LAYER)
 
 	var/obj/item/right = worn_item(look, SLOT_ID_HAND_R)
 	if(right)
-		layers[R_HAND_LAYER] = right.make_worn_icon(body_type = body_type, inhands = TRUE, slot_name = slot_r_hand_str, default_icon = INV_R_HAND_DEF_ICON, default_layer = R_HAND_LAYER)
+		layers[R_HAND_LAYER] = right.make_worn_icon(wearer = src, body_type = body_type, inhands = TRUE, slot_name = slot_r_hand_str, default_icon = INV_R_HAND_DEF_ICON, default_layer = R_HAND_LAYER)
 	var/obj/item/left = worn_item(look, SLOT_ID_HAND_L)
 	if(left)
-		layers[L_HAND_LAYER] = left.make_worn_icon(body_type = body_type, inhands = TRUE, slot_name = slot_l_hand_str, default_icon = INV_L_HAND_DEF_ICON, default_layer = L_HAND_LAYER)
+		layers[L_HAND_LAYER] = left.make_worn_icon(wearer = src, body_type = body_type, inhands = TRUE, slot_name = slot_l_hand_str, default_icon = INV_L_HAND_DEF_ICON, default_layer = L_HAND_LAYER)
 
 /// The item in `slot`, watched by the draw: its own changes (a visor flipped, a light on, an accessory clipped on) and its look redraw the wearer.
 /// An item whose own draw composes the wearer's look (the voodoo doll in a hand) is not followed through its look: each would redraw the other for good.
@@ -888,7 +888,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 		var/obj/item/ear = worn_item(look, slot)
 		if(!ear || (hide_headset && istype(ear, /obj/item/radio/headset)))
 			continue
-		. += ear.make_worn_icon(body_type = species.get_bodytype(src), slot_name = (slot == SLOT_ID_EAR_L ? slot_l_ear_str : slot_r_ear_str), default_icon = INV_EARS_DEF_ICON, default_layer = EARS_LAYER)
+		. += ear.make_worn_icon(wearer = src, body_type = species.get_bodytype(src), slot_name = (slot == SLOT_ID_EAR_L ? slot_l_ear_str : slot_r_ear_str), default_icon = INV_EARS_DEF_ICON, default_layer = EARS_LAYER)
 
 /// The shoes as list(layer, image), or null: hidden by a suit or uniform that hides shoes, or by a tail that hides the feet.
 /mob/living/carbon/human/proc/shoes_worn_look(datum/look/look, body_type, suit_hides, uniform_hides)
@@ -902,7 +902,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/obj/item/clothing/shoes/shoe = shoe_item
 	var/shoe_sprite = (istype(shoe) && !isnull(shoe.update_icon_define)) ? shoe.update_icon_define : INV_FEET_DEF_ICON
 	var/shoe_layer = (istype(shoe) && shoe.shoes_under_pants == 1) ? SHOES_LAYER_ALT : SHOES_LAYER
-	return list(shoe_layer, shoe_item.make_worn_icon(body_type = body_type, slot_name = slot_shoes_str, default_icon = shoe_sprite, default_layer = shoe_layer))
+	return list(shoe_layer, shoe_item.make_worn_icon(wearer = src, body_type = body_type, slot_name = slot_shoes_str, default_icon = shoe_sprite, default_layer = shoe_layer))
 
 /// The bodytype worn sprites are drawn for.
 /mob/living/carbon/human/proc/worn_bodytype()

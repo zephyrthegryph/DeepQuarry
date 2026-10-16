@@ -114,11 +114,11 @@ CAPABILITIES(/obj/item/stack/sandbags)
 				if(recipe.use_material)
 					var/datum/material/MAT = get_material_by_name(recipe.use_material)
 					if(MAT.icon_colour)
-						O.color = MAT.icon_colour
+						O.set_color(MAT.icon_colour)
 				else
 					return OP_OK
 			else
-				O.color = color
+				O.set_color(color)
 		return OP_OK
 	return OP_FAILED
 
@@ -168,6 +168,6 @@ CAPABILITIES(/obj/item/stack/emptysandbag)
 	var/mob/user = A.actor
 	use(1)
 	var/obj/item/stack/sandbags/SB = new (get_turf(src), 1, bag_material)
-	SB.color = color
+	SB.set_color(color)
 	if(user)
 		to_chat(user, span_notice("You fill a sandbag."))

@@ -75,7 +75,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	..()
 
 /mob/living/simple_mob/animal/space/mouse_army/on_death(gibbed)
-	layer = MOB_LAYER
+	set_layer(MOB_LAYER)
 	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD)
 	if(client)
 		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
@@ -88,7 +88,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	src.set_stat(DEAD)
 	src.set_icon_dead("mouse_[rank]_splat")
 	set_icon_state("mouse_[rank]_splat")
-	layer = MOB_LAYER
+	set_layer(MOB_LAYER)
 	if(client)
 		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 
@@ -421,11 +421,11 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator)
 		cloak_finish()
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_done(datum/act/op/A)
-	alpha = initial(alpha)
+	set_alpha(initial(alpha))
 	cloak_finish()
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_interrupted(datum/act/op/A)
-	alpha = initial(alpha)
+	set_alpha(initial(alpha))
 	uncloak()
 
 /mob/living/simple_mob/animal/space/mouse_army/pyro/proc/rupture()

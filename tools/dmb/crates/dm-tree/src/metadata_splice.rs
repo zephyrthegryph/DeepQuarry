@@ -39,6 +39,19 @@ impl MetadataDependencies {
         if delta.changes.is_empty() {
             return Err("no rows changed");
         }
+        if std::env::var_os("DMB_CHANGE_SET_DEBUG").is_some() {
+            for change in &delta.changes {
+                let text = |id: SymbolId| symbols.text(id).or_else(|| previous_tree.symbols.text(id)).unwrap_or("?").to_string();
+                let family = match change.key.family {
+                    DeclarationFamily::Type => "type".to_string(),
+                    DeclarationFamily::Member { name, kind } => format!("{:?} {}", kind, text(name)),
+                };
+                crate::change_set::record_outcome(format!(
+                    "splice debug: owner={} {family} previous={} current={}",
+                    text(change.key.owner), change.previous.is_some(), change.current.is_some()
+                ));
+            }
+        }
         let mut changed_keys = HashSet::new();
         let mut names = HashSet::new();
         let mut type_rows_changed = HashSet::new();
@@ -90,20 +103,61 @@ impl MetadataDependencies {
         let mut tree = previous_tree.clone();
         tree.default_edits = None;
         tree.appended_callables = None;
-        let appended: Option<Vec<(SymbolId, SymbolId, MemberKind)>> = delta
-            .changes
-            .iter()
-            .map(|change| match (change.previous, change.current, change.key.family) {
-                (None, Some(row), DeclarationFamily::Member { name, kind })
-                    if matches!(kind, MemberKind::Proc | MemberKind::Verb)
-                        && previous_tree.lookup_type(change.key.owner).is_some() =>
-                {
-                    let _ = row;
-                    Some((change.key.owner, name, kind))
+        let appended: Option<(Vec<(SymbolId, SymbolId, MemberKind)>, Vec<crate::AppendedField>)> = {
+            let mut callables = Vec::new();
+            let mut fields = Vec::new();
+            let mut ok = true;
+            for change in &delta.changes {
+                match (change.previous, change.current, change.key.family) {
+                    (None, Some(_), DeclarationFamily::Member { name, kind })
+                        if matches!(kind, MemberKind::Proc | MemberKind::Verb)
+                            && previous_tree.lookup_type(change.key.owner).is_some() =>
+                    {
+                        callables.push((change.key.owner, name, kind));
+                    }
+                    (None, Some(row), DeclarationFamily::Member { name, kind: MemberKind::Var })
+                        if previous_tree.lookup_type(change.key.owner).is_some()
+                            && change.key.owner != SymbolId::of("/") =>
+                    {
+                        let Skeleton::Member { mode: DefinitionMode::Declare, metadata, .. } = &row.skeleton
+                        else {
+                            ok = false;
+                            break;
+                        };
+                        let default_bits = if metadata.declared_initializer.is_none() {
+                            None
+                        } else {
+                            match crate::metadata_update::numeric_literal(&metadata.declared_initializer, &symbols) {
+                                Some(bits) => Some(bits),
+                                None => {
+                                    ok = false;
+                                    break;
+                                }
+                            }
+                        };
+                        if !matches!(metadata.flags, 0 | 4)
+                            || metadata.array.is_some()
+                            || metadata.inherited_opaque.is_some()
+                            || metadata.initializer.is_some() != metadata.declared_initializer.is_some()
+                        {
+                            ok = false;
+                            break;
+                        }
+                        fields.push(crate::AppendedField {
+                            owner: change.key.owner,
+                            name,
+                            flags: metadata.flags,
+                            default_bits,
+                        });
+                    }
+                    _ => {
+                        ok = false;
+                        break;
+                    }
                 }
-                _ => None,
-            })
-            .collect();
+            }
+            (ok && !(callables.is_empty() && fields.is_empty())).then_some((callables, fields))
+        };
         let previous_identity = previous_tree.identity;
         tree.symbols = Arc::new(symbols);
         let type_remap: Vec<Option<TypeId>> = match roster {
@@ -461,10 +515,11 @@ impl MetadataDependencies {
             }
         }
         let _ = fresh;
-        tree.appended_callables = appended.map(|members| {
+        tree.appended_callables = appended.map(|(members, fields)| {
             Arc::new(crate::AppendedCallables {
                 from_identity: previous_identity,
                 members,
+                fields,
             })
         });
         Ok(Spliced {

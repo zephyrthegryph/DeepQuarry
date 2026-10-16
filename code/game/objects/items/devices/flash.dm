@@ -187,7 +187,7 @@ CAPABILITIES(/obj/item/flash)
 
 	if(isrobot(user))
 		var/atom/movable/overlay/animation = new(user.loc)
-		animation.layer = user.layer + 1
+		animation.set_layer(user.layer + 1)
 		animation.set_icon_state("blank")
 		animation.set_icon('icons/mob/mob.dmi')
 		rel_set(animation, nameof(animation.master), user)
@@ -275,6 +275,7 @@ CAPABILITIES(/obj/item/flash)
 
 	play_sfx(src, SFX_WEAPONS_FLASH)
 	flick("flash2", src)
+
 
 	for(var/mob/living/carbon/C in oviewers(3, null))
 		var/safety = C.eyecheck()

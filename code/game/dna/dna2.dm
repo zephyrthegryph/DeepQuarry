@@ -272,9 +272,9 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	//Sex... Needs future support for properly handling things other then just male/female. UIs have the capability to do so!
 	if(H.gender != NEUTER)
 		if (GetUIState(DNA_UI_GENDER))
-			H.gender = FEMALE
+			H.set_gender(FEMALE)
 		else
-			H.gender = MALE
+			H.set_gender(MALE)
 
 	//Body markings
 	for(var/tag in body_markings)

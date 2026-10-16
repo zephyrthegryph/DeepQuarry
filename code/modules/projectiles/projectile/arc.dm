@@ -112,7 +112,7 @@ CAPABILITIES(/obj/item/projectile/arc)
 // as opposed to a 'can I hit this thing' projectile.
 /obj/item/projectile/arc/test/on_impact(turf/T)
 	new /obj/effect/explosion(T)
-	T.color = "#FF0000"
+	T.set_color("#FF0000")
 
 // Generic, Hivebot related
 /obj/item/projectile/arc/blue_energy
@@ -194,7 +194,7 @@ CAPABILITIES(/obj/item/projectile/arc/spore)
 		splash.create_reagents(15)
 		splash.reagents.add_reagent(REAGENT_ID_STOMACID, 5)
 		splash.reagents.add_reagent(REAGENT_ID_BLOOD, 10,list("blood_colour" = "#ec4940"))
-		splash.set_color()
+		splash.tint_from_reagents()
 
 		splash.set_up(F, 2, 3)
 

@@ -138,7 +138,7 @@ CAPABILITIES(/obj/item/storage/wallet/poly)
 /obj/item/storage/wallet/poly/proc/recolored(datum/act/op/A)
 	var/datum/prompt/color/picked = A.answer
 	if(picked.value != color)
-		color = picked.value
+		set_color(picked.value)
 	return OP_OK
 
 /// An EMP glitches the wallet's colour display for a while.

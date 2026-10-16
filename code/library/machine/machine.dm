@@ -116,8 +116,8 @@ CAPABILITY_TYPE(wall_mount, CAP_WALL_MOUNT, /datum/capability/lib/wall_mount, ke
 /// Sits the holder onto the wall behind it (toward its dir).
 /datum/capability/lib/wall_mount/proc/orient(atom/holder)
 	var/along = (holder.dir & (NORTH|SOUTH)) ? (isnull(offset_ns) ? offset : offset_ns) : offset
-	holder.pixel_x = (holder.dir & (NORTH|SOUTH)) ? 0 : (holder.dir == EAST ? along : -along)
-	holder.pixel_y = (holder.dir & (NORTH|SOUTH)) ? (holder.dir == NORTH ? along : -along) : 0
+	holder.set_pixel_x((holder.dir & (NORTH|SOUTH)) ? 0 : (holder.dir == EAST ? along : -along))
+	holder.set_pixel_y((holder.dir & (NORTH|SOUTH)) ? (holder.dir == NORTH ? along : -along) : 0)
 
 /// Re-sits A onto its wall after its dir changed (nothing without a wall mount).
 /proc/wall_mount_orient(atom/A)

@@ -267,7 +267,7 @@ CAPABILITIES(/obj/structure/hull_corner)
 		var/datum/material/R = T.reinf_material
 
 		if(B?.icon_colour)
-			color = B.icon_colour
+			set_color(B.icon_colour)
 		if(R?.icon_colour)
 			var/image/I = image(icon, icon_state+"_reinf", dir=dir)
 			I.color = R.icon_colour

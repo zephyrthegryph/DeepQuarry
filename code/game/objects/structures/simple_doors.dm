@@ -54,7 +54,7 @@
 	update_integrity(max_integrity)
 	set_icon_state(material.door_icon_base)
 	name = "[material.display_name] door"
-	color = material.icon_colour
+	set_color(material.icon_colour)
 	set_rad_insulation(material.radiation_transmission(RAD_DOOR_THICKNESS_MM))
 	if(material.opacity < 0.5)
 		set_opacity(0)

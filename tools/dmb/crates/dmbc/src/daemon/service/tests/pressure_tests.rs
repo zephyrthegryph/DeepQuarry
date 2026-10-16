@@ -31,14 +31,16 @@ fn pressure_never_releases_a_currently_borrowed_host() {
 #[test]
 fn soft_pressure_defers_another_build_but_preserves_single_build_progress() {
     let shared = shared();
+    // Observed memory sits at the soft limit, whatever the production default is.
+    let pressured = shared.soft_private_bytes;
     let deadline = admission_deadline::AdmissionDeadline::new(Instant::now());
-    let first = shared.acquire_until_observing(2, &deadline, || Some(4_000_000_000)).unwrap();
+    let first = shared.acquire_until_observing(2, &deadline, move || Some(pressured)).unwrap();
     let worker_shared = Arc::clone(&shared);
     let (ready_send, ready_receive) = mpsc::channel();
     let (done_send, done_receive) = mpsc::channel();
     let worker = std::thread::spawn(move || {
         ready_send.send(()).unwrap();
-        let permit = worker_shared.acquire_until_observing(2, &deadline, || Some(4_000_000_000)).unwrap();
+        let permit = worker_shared.acquire_until_observing(2, &deadline, move || Some(pressured)).unwrap();
         done_send.send(()).unwrap();
         drop(permit);
     });

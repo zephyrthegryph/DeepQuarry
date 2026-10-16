@@ -30,7 +30,7 @@
 	var/mob/living/carbon/human/H = holder.wearer()
 
 	to_chat(H, span_boldnotice("You are now nearly invisible to normal detection."))
-	H.alpha = 5
+	H.set_alpha(5)
 
 	anim(get_turf(H), H, 'icons/effects/effects.dmi', "electricity",null,20,null)
 
@@ -47,7 +47,7 @@
 
 	anim(get_turf(H), H,'icons/mob/mob.dmi',,"uncloak",,H.dir)
 	anim(get_turf(H), H, 'icons/effects/effects.dmi', "electricity",null,20,null)
-	H.alpha = initial(H.alpha)
+	H.set_alpha(initial(H.alpha))
 
 	act_message(H, null, others = "%U% appears from thin air!")
 	play_sfx(H, SFX_EFFECTS_STEALTHOFF, 1.5, extrarange = 0)

@@ -89,12 +89,12 @@
 	if(target() && !closing)
 		set_icon_state("on")
 		set_density(TRUE)
-		plane = ABOVE_MOB_PLANE
+		set_plane(ABOVE_MOB_PLANE)
 		set_glow(src, GLOW(5, 0.75, "#da5656"))
 	else
 		set_icon_state("off")
 		set_density(FALSE)
-		plane = OBJ_PLANE
+		set_plane(OBJ_PLANE)
 		set_glow(src, GLOW(0, null, null))
 
 /// Something walked into it (the bump action's notice).

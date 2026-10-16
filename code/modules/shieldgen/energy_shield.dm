@@ -37,11 +37,11 @@
 
 /obj/effect/shield/proc/update_color()
 	if(disabled_for || diffused_for)
-		color = "#FFA500"
+		set_color("#FFA500")
 	else if(gen()?.check_flag(MODEFLAG_OVERCHARGE))
-		color = "#FE6666"
+		set_color("#FE6666")
 	else
-		color = "#00AAFF"
+		set_color("#00AAFF")
 
 /obj/effect/shield/proc/update_glow()
 	if(density)
@@ -151,7 +151,7 @@
 
 // Small visual effect, makes the shield tiles brighten up by becoming more opaque for a moment
 /obj/effect/shield/proc/impact_flash()
-	alpha = 100
+	set_alpha(100)
 	animate(src, alpha = initial(alpha), time = 1 SECOND)
 
 CAPABILITIES(/obj/effect/shield)

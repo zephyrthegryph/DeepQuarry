@@ -645,7 +645,7 @@
 		H.equip_to_slot_or_del(new /obj/item/flashlight/flare(H.get_equipped_item(SLOT_ID_BACK)), SLOT_ID_IN_BACKPACK)
 
 /datum/species/diona/handle_post_spawn(mob/living/carbon/human/H)
-	H.gender = NEUTER
+	H.set_gender(NEUTER)
 	add_trait(H, UNIQUE_MINDSTRUCTURE, ROUNDSTART_TRAIT)
 	return ..()
 

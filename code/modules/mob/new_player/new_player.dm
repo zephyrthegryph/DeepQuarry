@@ -323,7 +323,7 @@
 		new_character = new(T)
 
 	if(CONFIG_GET(flag/force_random_names))
-		new_character.gender = pick(MALE, FEMALE)
+		new_character.set_gender(pick(MALE, FEMALE))
 		client.prefs.update_preference_by_type(/datum/preference/name/real_name, random_name(new_character.gender))
 	else
 		client.prefs.copy_to(new_character, icon_updates = TRUE)

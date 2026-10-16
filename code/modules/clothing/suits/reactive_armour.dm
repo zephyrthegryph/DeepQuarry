@@ -370,7 +370,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/reactive/tesla)
 /obj/item/clothing/suit/armor/reactive/stealth/cooldown_activation(mob/living/carbon/human/owner)
 	if(in_stealth)
 		return
-	owner.alpha = max(0, owner.alpha - cooldown_alpha_removal)
+	owner.set_alpha(max(0, owner.alpha - cooldown_alpha_removal))
 	animate(owner, alpha = initial(owner.alpha), time = cooldown_animation_time)
 	..()
 
@@ -380,7 +380,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/reactive/tesla)
 	decoy.copy_overlays(owner, TRUE)
 	var/turf/rand_turf = pick(get_turf(orange(5, 10)))
 	decoy.ai_brain?.give_destination(rand_turf)
-	owner.alpha = 0
+	owner.set_alpha(0)
 	in_stealth = TRUE
 	act_message(owner, null, others = span_danger("%U% is hit by [attack_text] in the chest!"))
 	after(src, stealth_time, PROC_REF(end_stealth), with = list(owner), keeps_dead = TRUE)
@@ -406,11 +406,11 @@ CAPABILITIES(/obj/item/clothing/suit/armor/reactive/tesla)
 		return FALSE
 	var/mob/living/attacker = hitby
 	owner.visible_message(span_danger("[src] activates, cloaking the wrong person!"))
-	attacker.alpha = 0
+	attacker.set_alpha(0)
 	after(attacker, 4 SECONDS, GLOBAL_PROC_REF(reactive_cloak_wear_off), with = list(attacker, initial(attacker.alpha)))
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
 
 /// after() target: the misfired cloak wears off.
 /proc/reactive_cloak_wear_off(mob/living/attacker, old_alpha)
-	attacker.alpha = old_alpha
+	attacker.set_alpha(old_alpha)

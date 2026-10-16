@@ -37,7 +37,7 @@
 
 	if(O)
 		act_message(src, null, MSG_SELF(span_alium("You shape a [choice].")), MSG_OTHERS(span_boldwarning("%U% vomits up a thick purple substance and begins to shape it!")))
-		O.color = "#321D37"
+		O.set_color("#321D37")
 		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 
 

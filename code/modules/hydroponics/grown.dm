@@ -229,7 +229,7 @@ DECLARE_SHARED_CACHE(fruit_icons, GLOBAL_PROC_REF(build_fruit_composite), SC_NEV
 					if(!flesh_colour) flesh_colour = seed().get_trait(TRAIT_PRODUCT_COLOUR)
 					for(var/i=0,i<2,i++)
 						var/obj/item/stack/material/wood/NG = new (user.loc)
-						if(flesh_colour) NG.color = flesh_colour
+						if(flesh_colour) NG.set_color(flesh_colour)
 						for (var/obj/item/stack/material/wood/G in user.loc)
 							if(G == NG)
 								continue
@@ -340,7 +340,7 @@ DECLARE_SHARED_CACHE(fruit_icons, GLOBAL_PROC_REF(build_fruit_composite), SC_NEV
 		if(!flesh_colour) flesh_colour = seed().get_trait(TRAIT_PRODUCT_COLOUR)
 		for(var/i=0,i<2,i++)
 			var/obj/item/stack/tile/grass/G = new (user.loc)
-			if(flesh_colour) G.color = flesh_colour
+			if(flesh_colour) G.set_color(flesh_colour)
 			for (var/obj/item/stack/tile/grass/NG in user.loc)
 				if(G == NG)
 					continue

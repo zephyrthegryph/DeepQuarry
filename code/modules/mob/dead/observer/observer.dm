@@ -527,8 +527,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 /mob/observer/dead/orbit_ended(atom/center)
 	. = ..()
 	//restart our floating animation after orbit is done.
-	pixel_y = default_pixel_y
-	pixel_x = default_pixel_x
+	set_pixel_y(default_pixel_y)
+	set_pixel_x(default_pixel_x)
 	transform = null
 	animate(src, pixel_y = 2, time = 10, loop = -1)
 	animate(pixel_y = default_pixel_y, time = 10, loop = -1)
@@ -939,7 +939,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	else
 		to_chat(src, span_info("You are now visible!"))
 
-	plane = (plane == PLANE_GHOSTS) ? PLANE_WORLD : PLANE_GHOSTS
+	set_plane((plane == PLANE_GHOSTS) ? PLANE_WORLD : PLANE_GHOSTS)
 	set_invisibility((plane == PLANE_WORLD) ? INVISIBILITY_NONE : INVISIBILITY_OBSERVER)
 
 	// Give the ghost a cult icon which should be visible only to itself

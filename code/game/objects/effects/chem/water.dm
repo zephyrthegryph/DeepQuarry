@@ -26,7 +26,7 @@ CAPABILITIES(/obj/effect/effect/water)
 /obj/effect/effect/water/proc/spray_delay(datum/act/A)
 	return step_delay
 
-/obj/effect/effect/water/proc/set_color() // Call it after you move reagents to it
+/obj/effect/effect/water/proc/tint_from_reagents() // Call it after you move reagents to it
 	set_icon(icon + (reagents.get_color()))
 
 /obj/effect/effect/water/proc/set_up(turf/target, step_count = 5, delay = 0.5 SECONDS, mob/user = null)

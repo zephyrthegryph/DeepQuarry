@@ -143,7 +143,7 @@
 		var/datum/material/M = dq_get_material()
 		if(M)
 			name = "[M.display_name] [initial(name)]"
-			color = M.icon_colour
+			set_color(M.icon_colour)
 			// sync the upstream `rating` var to the
 			// material-derived value so legacy callers that read
 			// `part.rating` directly (instead of get_rating()) see

@@ -53,9 +53,9 @@ CAPABILITIES(/obj/structure/drop_pod)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// Wheeeeeee
-	plane = ABOVE_PLANE
-	pixel_y = 300
-	alpha = 0
+	set_plane(ABOVE_PLANE)
+	set_pixel_y(300)
+	set_alpha(0)
 	forceMove(T)
 	play_sfx(T, SFX_EFFECTS_DROPPOD)
 	animate(src, pixel_y = 0, time = 3 SECONDS, easing = SINE_EASING|EASE_OUT)
@@ -95,7 +95,7 @@ CAPABILITIES(/obj/structure/drop_pod)
 		L.gib()
 
 	// Landed! Simmer
-	plane = initial(plane)
+	set_plane(initial(plane))
 	set_icon_state("[initial(icon_state)]")
 
 	if(auto_open)

@@ -199,13 +199,13 @@
 
 // For visuals.
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/submerge()
-	alpha = 0
+	set_alpha(0)
 	dig_under_floor(get_turf(src))
 	new /obj/effect/temporary_effect/tunneler_hole(get_turf(src))
 
 // Ditto.
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/emerge()
-	alpha = 255
+	set_alpha(255)
 	dig_under_floor(get_turf(src))
 	new /obj/effect/temporary_effect/tunneler_hole(get_turf(src))
 

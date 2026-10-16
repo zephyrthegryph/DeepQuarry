@@ -288,8 +288,8 @@ CAPABILITIES(/datum/system/expedition)
 			continue
 		var/obj/machinery/light/light = new(T)
 		light.set_dir(socket[2])
-		light.pixel_x = socket[3]
-		light.pixel_y = socket[4]
+		light.set_pixel_x(socket[3])
+		light.set_pixel_y(socket[4])
 		rel_add(materialization, nameof(materialization.infrastructure), light)
 	emergency_area.power_change()
 

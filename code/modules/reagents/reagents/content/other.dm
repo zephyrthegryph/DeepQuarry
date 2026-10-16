@@ -128,17 +128,17 @@
 /datum/reagent/paint/touch_turf(turf/T)
 	..()
 	if(istype(T) && !istype(T, /turf/space))
-		T.color = color
+		T.set_color(color)
 
 /datum/reagent/paint/touch_obj(obj/O)
 	..()
 	if(istype(O))
-		O.color = color
+		O.set_color(color)
 
 /datum/reagent/paint/touch_mob(mob/M)
 	..()
 	if(istype(M) && !istype(M, /mob/observer)) //painting ghosts: not allowed
-		M.color = color //maybe someday change this to paint only clothes and exposed body parts for human mobs.
+		M.set_color(color) //maybe someday change this to paint only clothes and exposed body parts for human mobs.
 
 /datum/reagent/paint/get_data()
 	return color

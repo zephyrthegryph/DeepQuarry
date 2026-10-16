@@ -42,7 +42,7 @@
 		visible_message(span_bolddanger("SPLAT!"))
 		M.splat()
 	play_sfx(target, SFX_EFFECTS_SNAP)
-	layer = MOB_LAYER - 0.2
+	set_layer(MOB_LAYER - 0.2)
 	set_armed(0)
 	pulse(0)
 
@@ -125,6 +125,6 @@ CAPABILITIES(/obj/item/assembly/mousetrap)
 	if(user.stat)
 		return OP_DECLINE
 
-	layer = HIDING_LAYER
+	set_layer(HIDING_LAYER)
 	to_chat(user, span_notice("You hide [src]."))
 	return OP_OK

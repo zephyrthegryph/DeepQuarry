@@ -517,8 +517,8 @@ CAPABILITIES(/obj/structure/bed/bath/material_treatment)
 	var/old_pixel_y = pixel_y
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(src, batch, get_turf(src))
 	if(replacement)
-		replacement.pixel_x = old_pixel_x
-		replacement.pixel_y = old_pixel_y
+		replacement.set_pixel_x(old_pixel_x)
+		replacement.set_pixel_y(old_pixel_y)
 	destroyed(batch, null, BRUTE)
 	return 0
 

@@ -312,16 +312,16 @@ CAPABILITIES(/obj/vehicle/train/engine)
 	C.forceMove(src)
 
 	if(load_item_visible)
-		C.pixel_x += load_offset_x
-		C.pixel_y += load_offset_y
-		C.layer = layer
+		C.set_pixel_x(C.pixel_x + load_offset_x)
+		C.set_pixel_y(C.pixel_y + load_offset_y)
+		C.set_layer(layer)
 
 		add_overlay(C)
 
 		//we can set these back now since we have already cloned the icon into the overlay
-		C.pixel_x = initial(C.pixel_x)
-		C.pixel_y = initial(C.pixel_y)
-		C.layer = initial(C.layer)
+		C.set_pixel_x(initial(C.pixel_x))
+		C.set_pixel_y(initial(C.pixel_y))
+		C.set_layer(initial(C.layer))
 
 /obj/vehicle/train/trolley/unload(mob/user, direction)
 	if(istype(load, /datum/vehicle_dummy_load))

@@ -506,8 +506,8 @@ CAPABILITIES(/turf)
 		if(mouse_control["icon-y"])
 			p_y = text2num(mouse_control["icon-y"]) - 16
 
-		graffiti.pixel_x = p_x
-		graffiti.pixel_y = p_y
+		graffiti.set_pixel_x(p_x)
+		graffiti.set_pixel_y(p_y)
 
 	if(lowertext(message) == "elbereth")
 		to_chat(vandal, span_notice("You feel much safer."))

@@ -1200,7 +1200,7 @@
 	set name = "Switch scaling mode"
 	set category = VERB_CAT_PREFERENCES_GAME
 	set desc = "Switch sharp/fuzzy scaling for current mob."
-	appearance_flags ^= PIXEL_SCALE
+	set_appearance_flags(appearance_flags ^ PIXEL_SCALE)
 	set_fuzzy(!fuzzy)
 	update_transform()
 

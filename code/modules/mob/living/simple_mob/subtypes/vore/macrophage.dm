@@ -163,8 +163,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
 		var/obj/effect/decal/cleanable/blood/sick = new(loc)
 		sick.name = "plasma"
 		sick.set_basecolor("#47cbcf")
-		sick.pixel_x = rand(-24, 24)
-		sick.pixel_y = rand(-24, 24)
+		sick.set_pixel_x(rand(-24, 24))
+		sick.set_pixel_y(rand(-24, 24))
 		rel_add(sick, nameof(sick.viruses), base_disease.Copy())
 
 /obj/belly/macrophage

@@ -38,7 +38,7 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 /obj/item/retail_scanner/proc/set_up_scanner(datum/act/timer/A)
 	machine_id = "[station_name()] RETAIL #[GLOB.num_financial_terminals++]"
 	if(locate_within(loc, /obj/structure/table))
-		pixel_y = 3
+		set_pixel_y(3)
 	if(GLOB.economy_init && account_to_connect)
 		rel_set(src, nameof(linked_account), GLOB.department_accounts[account_to_connect])
 
@@ -46,7 +46,7 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 /obj/item/retail_scanner/afterattack(atom/movable/AM, mob/user, proximity)
 	if(!proximity)	return
 	if(istype(AM, /obj/structure/table))
-		src.pixel_y = 3 // Shift it up slightly to look better on table
+		set_pixel_y(3) // Shift it up slightly to look better on table
 		set_dir(get_dir(src, user))
 	else if(istype(AM, /obj/structure/closet/crate))
 		var/obj/structure/closet/crate/crate = AM
@@ -57,7 +57,7 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 // Reset dir when picked back up
 /obj/item/retail_scanner/pickup(mob/user)
 	set_dir(SOUTH)
-	src.pixel_y = 0
+	set_pixel_y(0)
 
 CAPABILITIES(/obj/item/retail_scanner)
 	ref_one(nameof(confirm_item), /obj/item)

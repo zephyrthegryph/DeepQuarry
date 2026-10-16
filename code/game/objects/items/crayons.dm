@@ -157,8 +157,8 @@ CAPABILITIES(/obj/item/pen/crayon)
 	if(mouse_control["icon-y"])
 		p_y = text2num(mouse_control["icon-y"]) - 16
 	var/atom/new_graffiti = new /obj/effect/decal/cleanable/crayon(target,colour,shadeColour,drawtype)
-	new_graffiti.pixel_x = p_x
-	new_graffiti.pixel_y = p_y
+	new_graffiti.set_pixel_x(p_x)
+	new_graffiti.set_pixel_y(p_y)
 	to_chat(user, "You finish drawing.")
 
 	var/msg = "[user.client?.key] ([user]) has drawn [drawtype] (with [src]) at [target.x],[target.y],[target.z]."

@@ -57,7 +57,7 @@
 	displaced_health = round(max_integrity/4)
 	update_rad_insulation()
 	if(applies_material_colour)
-		color = girder_material.icon_colour
+		set_color(girder_material.icon_colour)
 	set_material_processing(girder_material.products_need_process() ? TRUE : FALSE) //Am I radioactive or some other? Process me!
 
 /obj/structure/girder/get_material()

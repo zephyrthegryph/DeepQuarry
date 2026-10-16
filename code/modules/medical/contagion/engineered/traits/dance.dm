@@ -45,8 +45,8 @@
 
 	animate(M)
 	M.transform = matrix()
-	M.pixel_x = 0
-	M.pixel_y = 0
+	M.set_pixel_x(0)
+	M.set_pixel_y(0)
 
 	var/matrix/left = matrix()
 	left.Translate(-3, 2)
