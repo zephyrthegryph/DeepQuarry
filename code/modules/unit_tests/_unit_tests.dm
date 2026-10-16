@@ -418,7 +418,6 @@
 #include "dq_pin_constructor_repairs.dm"
 #include "dq_silicon_device_tests.dm"
 #include "dq_silicon_residual_tests.dm"
-#include "dq_legacy_owns_conditional_starts.dm"
 #include "dq_owns_conditional_starts.dm"
 #include "dq_draw_framework.dm"
 #include "dq_hop_kinds.dm"

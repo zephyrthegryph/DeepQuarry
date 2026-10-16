@@ -32,3 +32,6 @@ The admin-holder lint now uses a proven receiver type and declared field to excl
 non-client `.holder` references; unknown, mixed and client-compatible receivers remain
 checked. Its focused Rust regression passed (1 test). All ratchets passed with the
 98-row baseline reduction. The final lane-ready receipt and focused-run JSON are the authoritative runtime and stamp evidence. The source is merged through master `3097a36445`; the focused list includes both mandatory pins, actual AI/borg behavior, the two constructor regressions and telecube cleanup. No full suite is run. The constructor and look cleanup repairs restore the old runtime-free pins; the master `devour` key update is separately documented.
+## Merged-code verification repairs
+
+The first merged gate found two real raw writes to public_spin after its new requirement made that field reactive; both now use its generated setter. The union include merge also retained a test include master deleted when retiring ownership(); the absent legacy test include is removed, while the native conditional-start tests remain. That gate launched no test world. Final verification explicitly selects the documented DreamMaker production cross-check, preserving the existing look oracle; native vars-order sampling differences are a separate diagnosed issue, not re-blessed here.
