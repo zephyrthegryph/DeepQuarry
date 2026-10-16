@@ -111,7 +111,7 @@
 				// the first time it sees the condition), so a refreshing UI still shows a trend.
 				F.trend = _dq_trend_for_condition(A, baseline_key)
 				if(update_baseline || isnull(A.scan_baselines?[baseline_key]))
-					LAZYSET(A.scan_baselines, baseline_key, A.severity)
+					A.set_scan_baselines_at(baseline_key, A.severity)
 		if(!A.active_symptoms || !(biology_of(A.location) & P.biology))
 			continue
 		for(var/datum/affliction_symptom/S as anything in affliction_symptoms_of(A))

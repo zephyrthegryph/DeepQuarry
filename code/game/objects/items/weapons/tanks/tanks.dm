@@ -341,7 +341,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	else if(isnum(pressure))
 		. = TRUE
 	if(.)
-		distribute_pressure = clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE)
+		set_distribute_pressure(clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE))
 	add_fingerprint(user)
 
 /obj/item/tank/proc/ui_act_toggle(datum/act/op/A)
@@ -397,7 +397,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 
 	var/tank_pressure = air_contents.return_pressure()
 	if(tank_pressure < distribute_pressure)
-		distribute_pressure = tank_pressure
+		set_distribute_pressure(tank_pressure)
 
 	var/moles_needed = distribute_pressure*volume_to_return/(R_IDEAL_GAS_EQUATION*air_contents.return_temperature())
 

@@ -96,9 +96,9 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 /// Logs `user` in at `level` (COMM_AUTHENTICATION_NONE logs them out).
 /datum/tgui_module/communications/proc/set_login(mob/user, level)
 	if(level)
-		LAZYSET(logins, REF(user), level)
+		set_logins_at(REF(user), level)
 	else
-		LAZYREMOVE(logins, REF(user))
+		remove_logins(REF(user))
 
 /// needs: the message named is one this console may delete (a modular program's own copy; the station's list is kept).
 /datum/tgui_module/communications/proc/message_deletable(datum/act/op/A)
@@ -255,18 +255,18 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 	return data
 
 /datum/tgui_module/communications/proc/setCurrentMessage(mob/user, value)
-	current_viewing_message_id = value
+	set_current_viewing_message_id(value)
 
 	var/datum/comm_message_listener/l = obtain_message_listener()
 	for(var/list/m in l.messages)
 		if(m["id"] == current_viewing_message_id)
-			current_viewing_message = m
+			set_current_viewing_message(m)
 
 /datum/tgui_module/communications/proc/setMenuState(mob/user, value)
 	if(isAI(user) || isrobot(user))
-		ai_menu_state = value
+		set_ai_menu_state(value)
 	else
-		menu_state = value
+		set_menu_state(value)
 
 /datum/tgui_module/communications/proc/obtain_message_listener()
 	if(istype(host(), /datum/computer_file/program/comm))
@@ -369,8 +369,8 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 /datum/tgui_module/communications/proc/ui_act_messagelist(datum/act/op/A, msgid)
 	var/mob/user = A.actor
 	. = TRUE
-	current_viewing_message = null
-	current_viewing_message_id = null
+	set_current_viewing_message(null)
+	set_current_viewing_message_id(null)
 	if(msgid)
 		setCurrentMessage(user, msgid)
 	setMenuState(user, COMM_SCREEN_MESSAGES)
@@ -389,7 +389,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 	if(m)
 		l.Remove(m)
 	if(current_viewing_message_id == msgid)
-		current_viewing_message = null
+		set_current_viewing_message(null)
 	setMenuState(A.actor, COMM_SCREEN_MESSAGES)
 	return TRUE
 
@@ -402,7 +402,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 
 /// The status displays show one of the presets: blank, the time, the shuttle's ETA, or the console's two lines.
 /datum/tgui_module/communications/proc/ui_act_setstat(datum/act/op/A, statdisp)
-	display_type = statdisp
+	set_display_type(statdisp)
 	if(statdisp == "message")
 		post_status(src, "message", stat_msg1, stat_msg2, user = A.actor)
 	else
@@ -411,13 +411,13 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 
 /datum/tgui_module/communications/proc/ui_act_setmsg1(datum/act/op/A)
 	var/datum/prompt/P = A.answer
-	stat_msg1 = reject_bad_text(P?.value, 40)
+	set_stat_msg1(reject_bad_text(P?.value, 40))
 	setMenuState(A.actor, COMM_SCREEN_STAT)
 	return TRUE
 
 /datum/tgui_module/communications/proc/ui_act_setmsg2(datum/act/op/A)
 	var/datum/prompt/P = A.answer
-	stat_msg2 = reject_bad_text(P?.value, 40)
+	set_stat_msg2(reject_bad_text(P?.value, 40))
 	setMenuState(A.actor, COMM_SCREEN_STAT)
 	return TRUE
 

@@ -190,7 +190,7 @@
 	defer_cleanup(A, TYPE_PROC_REF(/datum/act/op, release))
 	A.set_held_provider(tool)
 	A.actor = H
-	A.key = "fuel_provider_pin"
+	A.set_key("fuel_provider_pin")
 	var/datum/resource/RS = resource_of(RES_FUEL)
 	TEST_ASSERT_EQUAL(RS.holder_of(A), W, "Reservations belong to the actual underlying fuel store")
 	TEST_ASSERT_EQUAL(RS.available(A), fuel_before, "Available fuel comes from the real wrapped welder")

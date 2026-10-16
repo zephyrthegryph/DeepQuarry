@@ -133,7 +133,7 @@ CAPABILITIES(/obj/machinery/floodlight)
 	var/mob/user = A.actor
 	if(open)
 		return OP_OK
-	unlocked = !unlocked
+	set_unlocked(!unlocked)
 	to_chat(user, "You [unlocked ? "unscrew" : "screw"] the battery panel [unlocked ? "" : "in place"].")
 	return OP_OK
 

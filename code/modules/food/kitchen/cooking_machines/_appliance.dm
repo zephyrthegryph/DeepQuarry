@@ -195,11 +195,11 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 		return
 
 	if(new_output == "Default")
-		selected_option = null
+		set_selected_option(null)
 		to_chat(user, span_notice("You decide not to make anything specific with \the [src]."))
 		return
 
-	selected_option = new_output
+	set_selected_option(new_output)
 	to_chat(user, span_notice("You prepare \the [src] to make \a [selected_option] with the next thing you put in. Try putting several ingredients in a container!"))
 
 //Handles all validity checking and error messages for inserting things
@@ -935,12 +935,12 @@ CAPABILITIES(/datum/cooking_item)
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor) - get_part_count(/obj/item/stock_parts/capacitor)
 
 	set_active_power_usage(power_of_type(type).active - scan_rating * 25)
-	heating_power = initial(heating_power) + cap_rating * 25
-	cooking_power = cooking_coeff * (1 + (scan_rating + cap_rating) / 20) // 100% eff. becomes 120%, 140%, 160% w/ better parts, thus rewarding upgrading the appliances during your shift.
+	set_heating_power(initial(heating_power) + cap_rating * 25)
+	set_cooking_power(cooking_coeff * (1 + (scan_rating + cap_rating) / 20)) // 100% eff. becomes 120%, 140%, 160% w/ better parts, thus rewarding upgrading the appliances during your shift.
 	// to_world("RefreshParts returned cooking power of [cooking_power] during this step.") // Debug lines, uncomment if you need to test.
 
 /obj/machinery/appliance/proc/toggle_safety(mob/user)
-	food_safety = !food_safety
+	set_food_safety(!food_safety)
 	to_chat(user, span_notice("You flip \the [src]'s safe mode switch. Safe mode is now [food_safety ? "on" : "off"]."))
 
 /// the container this refers to (a relation view: null once it is deleted).

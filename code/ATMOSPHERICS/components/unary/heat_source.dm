@@ -92,7 +92,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 
 /// One interval of heating: it pays its work and uses up coolant (the heat itself moves in Rust).
 /obj/machinery/atmospherics/unary/heater/proc/service(datum/act/A)
-	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
+	set_reagent_cooling(1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume))
 	use_power(-heat_entries_power(src))
 	reagents.remove_any(REAGENT_COOLING_CONSUMED)
 	reconsider()
@@ -165,13 +165,13 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	bin_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
 
 	max_power_rating = initial(max_power_rating) * cap_rating / 2
-	max_temperature = max(initial(max_temperature) - T20C, 0) * ((bin_rating * 4 + cap_rating) / 5) + T20C
+	set_max_temperature(max(initial(max_temperature) - T20C, 0) * ((bin_rating * 4 + cap_rating) / 5) + T20C)
 	air_contents.set_volume(max(initial(internal_volume) - 200, 0) + 200 * bin_rating)
 	heating_efficiency = max(initial(heating_efficiency), (laser_rating-1))
 	set_power_level(power_setting)
 
 /obj/machinery/atmospherics/unary/heater/proc/set_power_level(new_power_setting)
-	power_setting = new_power_setting
+	set_power_setting(new_power_setting)
 	power_rating = max_power_rating * (power_setting/100)
 	heat_entries_refresh(src)
 

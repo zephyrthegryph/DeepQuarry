@@ -53,6 +53,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/timeclock)
+	ref_one(nameof(card))
 	configure(light_glow(color = "#0099ff"))
 	interface("TimeClock")
 	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))

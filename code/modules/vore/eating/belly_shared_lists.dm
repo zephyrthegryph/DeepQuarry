@@ -223,7 +223,7 @@ GLOBAL_TABLE(belly_default_lists, GLOBAL_PROC_REF(build_belly_default_lists))
 /obj/belly/proc/own_emote_lists()
 	if(emote_lists != belly_shared_list("emote_lists") && islist(emote_lists))
 		return emote_lists
-	emote_lists = islist(emote_lists) ? emote_lists.Copy() : list()
+	set_emote_lists(islist(emote_lists) ? emote_lists.Copy() : list())
 	return emote_lists
 
 /// Shared list vars this belly has customized (no longer the shared copy). The rest stay out of the saved state.

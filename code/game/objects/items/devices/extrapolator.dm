@@ -324,7 +324,7 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 /obj/item/extrapolator/proc/symptom_chosen(mob/living/user, datum/viral_trait/chosen, atom/target)
 	act_message(user, src, MSG_SELF(span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[chosen.name]") + " from [target]...")), MSG_OTHERS(span_notice("%U% slots [target] into %T%, which begins to whir and beep!")))
 	var/datum/affliction/contagion/engineered/symptom_holder = new
-	symptom_holder.name = chosen.name
+	symptom_holder.set_name(chosen.name)
 	rel_add(symptom_holder, nameof(symptom_holder.symptoms), chosen.Copy()) // the target disease owns `chosen`; the isolate gets its own copy
 	symptom_holder.Finalize()
 	symptom_holder.Refresh()

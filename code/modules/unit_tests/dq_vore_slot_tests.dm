@@ -74,13 +74,13 @@
 	TEST_ASSERT_NULL(B.sleep_violation(), "occupied belly breaks its schedule rule")
 
 	// Struggle: inescapable holds; a sure transfer moves the prey on through the ledger.
-	B.escapable = B_ESCAPABLE_NONE
+	B.set_escapable(B_ESCAPABLE_NONE)
 	B.relay_resist(prey)
 	TEST_ASSERT_EQUAL(prey.loc, B, "struggling in an inescapable belly should not free the prey")
-	B.escapable = B_ESCAPABLE_DEFAULT
-	B.escapechance = 0
-	B.transferchance = 100
-	B.transferlocation = B2.name
+	B.set_escapable(B_ESCAPABLE_DEFAULT)
+	B.set_escapechance(0)
+	B.set_transferchance(100)
+	B.set_transferlocation(B2.name)
 	B.relay_resist(prey)
 	TEST_ASSERT_EQUAL(prey.loc, B2, "a sure transfer should move the prey to the second belly")
 	var/datum/relation_definition/slot/prey_slot = dq_path_slot_of(B2, prey)
@@ -119,7 +119,7 @@
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_strip, pred, prey), "they don't allow stripping", "strip refusal reason")
 
 	// A refused mode holds: an indigestible prey takes no digestion damage.
-	B.digest_mode = DM_DIGEST
+	B.set_digest_mode(DM_DIGEST)
 	TEST_ASSERT(pred.begin_instant_nom(pred, prey, pred, B), "a devourable prey should be eaten")
 	var/before = _vore_test_total_injury(prey)
 	vore_test_cycles(B, 5)
@@ -149,8 +149,8 @@
 	fast = vore_test_pair()
 	BS = vore_rate_belly(slow, DM_SHRINK)
 	BF = vore_rate_belly(fast, DM_SHRINK)
-	BS.shrink_grow_size = 0.5
-	BF.shrink_grow_size = 0.5
+	BS.set_shrink_grow_size(0.5)
+	BF.set_shrink_grow_size(0.5)
 	prey_s = slow[2]
 	prey_f = fast[2]
 	vore_test_cycles(BS, 5, 6)
@@ -176,7 +176,7 @@
 	var/mob/living/pred = pair[1]
 	var/mob/living/prey = pair[2]
 	var/obj/belly/B = vore_selected_of(pred)
-	B.digest_mode = mode
+	B.set_digest_mode(mode)
 	B.nom_atom(prey, pred)
 	TEST_ASSERT_EQUAL(prey.loc, B, "prey should be inside for the rate test")
 	return B
@@ -189,8 +189,8 @@
 	var/list/pair = vore_test_pair()
 	var/obj/belly/B = vore_rate_belly(pair, DM_DIGEST)
 	var/mob/living/carbon/human/prey = pair[2]
-	B.digest_brute = 18
-	B.digest_burn = 18
+	B.set_digest_brute(18)
+	B.set_digest_burn(18)
 	for(var/i in 1 to 300)
 		if(B.digested_prey_count)
 			break

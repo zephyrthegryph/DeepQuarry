@@ -60,29 +60,29 @@ CAPABILITIES(/mob/living/simple_mob/vore/blaidd)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The canine pounces atop you and wastes now time in wrapping its jaws around your entire head. The beast is strong and determined, there is no wriggling out of it's iron grip. Within its maw, the tongue slathers canine drool across you, hot doglike breaths wash across your face, triangular teeth hold you firmly in place. It doesn't take long before the blaidd is gulping you down aggressively, like a big chunk of meat. The creature's stomach distends and hangs beneath it with your weight, swaying heavily not just with your movements, but every step from the wolf. Bound up uncomfortably tight in this sweltering, dark gut, movement is almost impossible and it's hard to tell which way is up."
-	B.vore_sound = "Tauric Swallow"
-	B.release_sound = "Pred Escape"
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.fancy_vore = 1
-	B.selective_preference = DM_DIGEST
-	B.vore_verb = "devour"
-	B.digest_brute = 1
-	B.digest_burn = 1
-	B.digest_oxy = 0
+	B.set_vore_sound("Tauric Swallow")
+	B.set_release_sound("Pred Escape")
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_fancy_vore(1)
+	B.set_selective_preference(DM_DIGEST)
+	B.set_vore_verb("devour")
+	B.set_digest_brute(1)
+	B.set_digest_burn(1)
+	B.set_digest_oxy(0)
 	B.selectchance = 50
-	B.absorbchance = 0
-	B.escapechance = 10
+	B.set_absorbchance(0)
+	B.set_escapechance(10)
 	B.escape_stun = 5
-	B.contamination_color = "grey"
-	B.contamination_flavor = "Wet"
+	B.set_contamination_color("grey")
+	B.set_contamination_flavor("Wet")
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"The blaidd growls as the gut squeeze over your body, smearing caustic oozes into your form!",
 		"You are turned over and walls clench around you as the beast moves about, tossing more digestive juices over your body.",
 		"You can't make out any sound from the outside as the gut grumbled and reverberates over your body.",
 		"As the thinning air begins to make you feel dizzy, menacing bworps and grumbles fill that dark, constantly shifting organ!",
 		"The constant, rhythmic kneading and massaging starts to take its toll along with the muggy heat, making you feel weaker and weaker!",
-		"The blaidd presses its gut against the floor, giving you a full body crush deep within its gut. The strain on your body aids digestion, making you all the easier to work down.")
+		"The blaidd presses its gut against the floor, giving you a full body crush deep within its gut. The strain on your body aids digestion, making you all the easier to work down."))
 
 /datum/category_item/catalogue/fauna/blaidd
 	name = "Extra-Realspace Fauna - Blaidd"

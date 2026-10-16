@@ -382,7 +382,7 @@ ADMIN_VERB(allow_character_respawn, R_ADMIN|R_MOD|R_FUN, "Allow player to respaw
 			to_chat(current_client, span_boldnotice("You may now respawn. You should roleplay as if you learned nothing about the round during your time with the dead."))
 			if(isobserver(current_client.mob))
 				var/mob/observer/dead/dead_mob = current_client.mob
-				dead_mob.can_reenter_corpse = 1
+				dead_mob.set_can_reenter_corpse(1)
 				to_chat(current_client, span_boldnotice("You can also re-enter your corpse, if you still have one!"))
 			break
 
@@ -824,10 +824,10 @@ CAPABILITIES(/datum/respawn_review)
 		var/character_name = new_character.name
 		for(var/obj/item/card/id/player_id in contents_of(new_character))
 			player_id.name = "[character_name]'s ID Card ([custom_job_title])"
-			player_id.assignment = custom_job_title
+			player_id.set_assignment(custom_job_title)
 		for(var/obj/item/pda/player_pda in contents_of(new_character))
 			player_pda.name = "PDA-[character_name] ([custom_job_title])"
-			player_pda.ownjob = custom_job_title
+			player_pda.set_ownjob(custom_job_title)
 		new_character.mind.assigned_role = custom_job_title
 		new_character.mind.role_alt_title = custom_job_title
 		to_chat(new_character, "Your job title has been changed to [custom_job_title].")

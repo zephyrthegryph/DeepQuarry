@@ -68,7 +68,7 @@ CAPABILITIES(/obj/machinery/computer/prisoner)
 
 /obj/machinery/computer/prisoner/proc/ui_act_lock(datum/act/op/A)
 	if(allowed(A.actor))
-		screen = !screen
+		set_screen(!screen)
 	else
 		to_chat(A.actor, "Unauthorized Access.")
 	. = TRUE

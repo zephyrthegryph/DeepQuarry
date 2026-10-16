@@ -266,7 +266,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 
 /obj/machinery/computer/med_data/proc/ui_act_cleartemp(datum/act/op/A)
 	. = TRUE
-	temp = null
+	set_temp(null)
 
 /obj/machinery/computer/med_data/proc/ui_act_scan(datum/act/op/A)
 	. = TRUE
@@ -285,15 +285,15 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 	var/login_type = login_type_arg
 	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
 		if(check_access(scan))
-			authenticated = scan.registered_name
-			rank = scan.assignment
+			set_authenticated(scan.registered_name)
+			set_rank(scan.assignment)
 	else if(login_type != LOGIN_TYPE_NORMAL && login_type == A.actor.records_login_kind())
-		authenticated = A.actor.name
-		rank = A.actor.records_login_rank()
+		set_authenticated(A.actor.name)
+		set_rank(A.actor.records_login_rank())
 	if(authenticated)
 		rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 		rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
-		screen = MED_DATA_R_LIST
+		set_screen(MED_DATA_R_LIST)
 
 /obj/machinery/computer/med_data/proc/ui_act_logout(datum/act/op/A)
 	. = TRUE
@@ -305,8 +305,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 		if(ishuman(A.actor) && !A.actor.get_active_hand())
 			A.actor.put_in_hands(scan)
 		rel_take(src, nameof(src.scan))
-	authenticated = null
-	screen = null
+	set_authenticated(null)
+	set_screen(null)
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 
@@ -315,7 +315,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	screen = clamp(screen_arg || 0, MED_DATA_R_LIST, MED_DATA_MEDBOT)
+	set_screen(clamp(screen_arg || 0, MED_DATA_R_LIST, MED_DATA_MEDBOT))
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 
@@ -336,7 +336,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 	. = TRUE
 	for(var/datum/data/record/R in GLOB.data_core.medical)
 		spent(R)
-	set_temp("All medical records deleted.")
+	show_temp("All medical records deleted.")
 
 /obj/machinery/computer/med_data/proc/ui_act_del_r(datum/act/op/A)
 	. = TRUE
@@ -344,7 +344,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 		return FALSE
 	. = TRUE
 	if(active2())
-		set_temp("Medical record deleted.")
+		show_temp("Medical record deleted.")
 		spent(active2())
 
 /obj/machinery/computer/med_data/proc/ui_act_d_rec(datum/act/op/A, d_rec)
@@ -354,7 +354,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 	. = TRUE
 	var/datum/data/record/general_record = ui_ref(d_rec, null, /datum/data/record)
 	if(!(general_record in GLOB.data_core.general))
-		set_temp("Record not found.", "danger")
+		show_temp("Record not found.", "danger")
 		return
 
 	var/datum/data/record/medical_record
@@ -365,7 +365,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 
 	rel_set(src, nameof(/obj/machinery/computer/med_data::active1), general_record)
 	rel_set(src, nameof(/obj/machinery/computer/med_data::active2), medical_record)
-	screen = MED_DATA_RECORD
+	set_screen(MED_DATA_RECORD)
 
 /obj/machinery/computer/med_data/proc/ui_act_sync_r(datum/act/op/A)
 	. = TRUE
@@ -373,7 +373,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 		return FALSE
 	. = TRUE
 	if(active2())
-		set_temp(client_update_record(src,A.actor))
+		show_temp(client_update_record(src,A.actor))
 
 /obj/machinery/computer/med_data/proc/ui_act_edit_notes(datum/act/op/A)
 	if(!active2())
@@ -406,25 +406,25 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 	. = TRUE
 	if(istype(active1(), /datum/data/record) && !istype(active2(), /datum/data/record))
 		var/datum/data/record/R = new /datum/data/record()
-		R.fields["name"] = active1().fields["name"]
-		R.fields["id"] = active1().fields["id"]
-		R.name = "Medical Record #[R.fields["id"]]"
-		R.fields["b_type"] = "Unknown"
-		R.fields["blood_reagent"] = "Unknown"
-		R.fields["b_dna"] = "Unknown"
-		R.fields["mi_dis"] = "None"
-		R.fields["mi_dis_d"] = "No minor disabilities have been declared."
-		R.fields["ma_dis"] = "None"
-		R.fields["ma_dis_d"] = "No major disabilities have been diagnosed."
-		R.fields["alg"] = "None"
-		R.fields["alg_d"] = "No allergies have been detected in this patient."
-		R.fields["cdi"] = "None"
-		R.fields["cdi_d"] = "No diseases have been diagnosed at the moment."
-		R.fields["notes"] = "No notes."
+		R.set_fields_at("name", active1().fields["name"])
+		R.set_fields_at("id", active1().fields["id"])
+		R.set_name("Medical Record #[R.fields["id"]]")
+		R.set_fields_at("b_type", "Unknown")
+		R.set_fields_at("blood_reagent", "Unknown")
+		R.set_fields_at("b_dna", "Unknown")
+		R.set_fields_at("mi_dis", "None")
+		R.set_fields_at("mi_dis_d", "No minor disabilities have been declared.")
+		R.set_fields_at("ma_dis", "None")
+		R.set_fields_at("ma_dis_d", "No major disabilities have been diagnosed.")
+		R.set_fields_at("alg", "None")
+		R.set_fields_at("alg_d", "No allergies have been detected in this patient.")
+		R.set_fields_at("cdi", "None")
+		R.set_fields_at("cdi_d", "No diseases have been diagnosed at the moment.")
+		R.set_fields_at("notes", "No notes.")
 		rel_add(GLOB.data_core, nameof(/datum/datacore::medical), R)
 		rel_set(src, nameof(/obj/machinery/computer/med_data::active2), R)
-		screen = MED_DATA_RECORD
-		set_temp("Medical record created.", "success")
+		set_screen(MED_DATA_RECORD)
+		show_temp("Medical record created.", "success")
 
 /obj/machinery/computer/med_data/proc/ui_act_del_c(datum/act/op/A, del_c)
 	. = TRUE
@@ -456,13 +456,13 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 			rel_set(src, nameof(/obj/machinery/computer/med_data::active2), R)
 			break
 	if(!active2())
-		set_temp("Medical record not found. You must enter the person's exact name, ID or DNA.", "danger")
+		show_temp("Medical record not found. You must enter the person's exact name, ID or DNA.", "danger")
 		return
 	for(var/datum/data/record/E in GLOB.data_core.general)
 		if(E.fields["name"] == active2().fields["name"] && E.fields["id"] == active2().fields["id"])
 			rel_set(src, nameof(/obj/machinery/computer/med_data::active1), E)
 			break
-	screen = MED_DATA_RECORD
+	set_screen(MED_DATA_RECORD)
 
 /obj/machinery/computer/med_data/proc/ui_act_print_p(datum/act/op/A)
 	. = TRUE
@@ -470,7 +470,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 		return FALSE
 	. = TRUE
 	if(!printing)
-		printing = TRUE
+		set_printing(TRUE)
 		SStgui.update_uis(src)
 		after(src, 5 SECONDS, PROC_REF(print_finish))
 
@@ -600,7 +600,7 @@ MSG_DEF_SELF(records/not_authenticated, "You must log in first.")
 		P.set_info(P.info + (span_bold("Medical Record Lost!") + "<br>"))
 	P.set_info(P.info + ("</tt>"))
 	P.name = "paper - 'Medical Record: [active1().fields["name"]]'"
-	printing = FALSE
+	set_printing(FALSE)
 	SStgui.update_uis(src)
 
 /**
@@ -610,9 +610,8 @@ MSG_DEF_SELF(records/not_authenticated, "You must log in first.")
  * * text - Text to display, null/empty to clear the message from the UI
  * * style - The style of the message: (color name), info, success, warning, danger, virus
  */
-/obj/machinery/computer/med_data/proc/set_temp(text = "", style = "info", update_now = FALSE)
-	temp = list(text = text, style = style)
-	tracked_changed(src, nameof(temp))
+/obj/machinery/computer/med_data/proc/show_temp(text = "", style = "info", update_now = FALSE)
+	set_temp(list(text = text, style = style))
 	if(update_now)
 		SStgui.update_uis(src)
 
@@ -627,19 +626,19 @@ MSG_DEF_SELF(records/not_authenticated, "You must log in first.")
 		if(prob(10/packet.severity))
 			switch(rand(1,6))
 				if(1)
-					R.fields["name"] = "[pick(pick(GLOB.first_names_male), pick(GLOB.first_names_female))] [pick(GLOB.last_names)]"
+					R.set_fields_at("name", "[pick(pick(GLOB.first_names_male), pick(GLOB.first_names_female))] [pick(GLOB.last_names)]")
 				if(2)
-					R.fields["sex"]	= pick("Male", "Female")
+					R.set_fields_at("sex", pick("Male", "Female"))
 				if(3)
-					R.fields["age"] = rand(5, 85)
+					R.set_fields_at("age", rand(5, 85))
 				if(4)
-					R.fields["b_type"] = pick("A-", "B-", "AB-", "O-", "A+", "B+", "AB+", "O+")
+					R.set_fields_at("b_type", pick("A-", "B-", "AB-", "O-", "A+", "B+", "AB+", "O+"))
 				if(5)
-					R.fields["p_stat"] = pick("*SSD*", "Active", "Physically Unfit", "Disabled")
+					R.set_fields_at("p_stat", pick("*SSD*", "Active", "Physically Unfit", "Disabled"))
 					if(GLOB.PDA_Manifest.len)
 						GLOB.PDA_Manifest.Cut()
 				if(6)
-					R.fields["m_stat"] = pick("*Insane*", "*Unstable*", "*Watch*", "Stable")
+					R.set_fields_at("m_stat", pick("*Insane*", "*Unstable*", "*Watch*", "Stable"))
 			continue
 
 		else if(prob(1))

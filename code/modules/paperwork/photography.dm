@@ -65,7 +65,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 		if(isnull(txt))
 			return OP_OK
 		if(loc == user && user.stat == 0)
-			scribble = txt
+			set_scribble(txt)
 	return OP_DECLINE
 
 /obj/item/photo/examine(mob/user)
@@ -380,11 +380,11 @@ CAPABILITIES(/obj/item/camera)
 	p.name = "photo"
 	p.set_icon(ic)
 	p.set_tiny(pc)
-	p.img = photoimage
+	p.set_img(photoimage)
 	p.desc = mobs
 	p.pixel_x = rand(-10, 10)
 	p.pixel_y = rand(-10, 10)
-	p.photo_size = size
+	p.set_photo_size(size)
 	return p
 
 /obj/item/camera/proc/printpicture(mob/user, obj/item/photo/p)
@@ -398,12 +398,12 @@ CAPABILITIES(/obj/item/camera)
 	p.name = name
 	p.set_icon(icon(icon, icon_state))
 	p.set_tiny(icon(tiny))
-	p.img = icon(img)
+	p.set_img(icon(img))
 	p.desc = desc
 	p.pixel_x = pixel_x
 	p.pixel_y = pixel_y
-	p.photo_size = photo_size
-	p.scribble = scribble
+	p.set_photo_size(photo_size)
+	p.set_scribble(scribble)
 
 	if(copy_id)
 		p.id = id

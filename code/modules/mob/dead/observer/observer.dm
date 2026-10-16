@@ -203,8 +203,8 @@ Works together with spawning an observer, noted above.
 				H.exit_vr()
 				return 0
 		var/mob/observer/dead/ghost = new(src, aghost)	//Transfer safety to observer spawning proc.
-		ghost.can_reenter_corpse = can_reenter_corpse
-		ghost.timeofdeath = src.timeofdeath
+		ghost.set_can_reenter_corpse(can_reenter_corpse)
+		ghost.set_timeofdeath(src.timeofdeath)
 		ghost.key = key
 		if(istype(loc, /obj/structure/morgue))
 			var/obj/structure/morgue/M = loc
@@ -347,13 +347,13 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 /mob/observer/dead/proc/antag_hud_confirmed(datum/act/request/A)
 	if(!A.answer || !A.answer.value)
 		return
-	can_reenter_corpse = FALSE
+	set_can_reenter_corpse(FALSE)
 	set_respawn_timer(-1) // Foreeeever
 	toggle_antag_hud_now()
 
 /mob/observer/dead/proc/toggle_antag_hud_now()
 	if(!has_enabled_antagHUD && !check_rights_for(client, R_HOLDER))
-		has_enabled_antagHUD = TRUE
+		set_has_enabled_antagHUD(TRUE)
 
 	antagHUD = !antagHUD
 	hud_used?.plane_holder?.set_vis(VIS_CH_SPECIAL, antagHUD)
@@ -1240,7 +1240,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 		var/datum/transhuman/mind_record/record = db.backed_up[src.mind.name]
 		if(!(record.dead_state == MR_DEAD))
 			if(ELAPSED(src, timeofdeath, CLOCK_WORLD) > 5 MINUTES)	//Allows notify transcore to be used if you have an entry but for some reason weren't marked as dead
-				record.dead_state = MR_DEAD				//Such as if you got scanned but didn't take an implant. It's a little funky, but I mean, you got scanned
+				record.set_dead_state(MR_DEAD)				//Such as if you got scanned but didn't take an implant. It's a little funky, but I mean, you got scanned
 				db.notify(record)						//So you probably will want to let someone know if you die.
 				EXPIRY_STAMP(record, last_notification, CLOCK_WORLD)
 				to_chat(src, span_notice("New notification has been sent."))

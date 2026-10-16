@@ -135,31 +135,31 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	var/obj/belly/B = vore_selected_of(src)
 	//B.human_prey_swallow_time = 6 SECONDS //doesnt work
 	//B.nonhuman_prey_swallow_time = 3 SECONDS //doesnt work
-	B.vore_verb = "swallow"
+	B.set_vore_verb("swallow")
 	B.name = "stomach"
 	B.desc	= "You're pulled into the snug stomach of the synx. The walls knead weakly around you, coating you in thick, viscous fluids that cling to your body, that soon starts to tingle and burn..."
-	B.digest_burn = 1
-	B.digest_brute = 0
+	B.set_digest_burn(1)
+	B.set_digest_brute(0)
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
+	B.set_emote_lists_at(DM_HOLD, list(
 	"The walls churn around you, soaking you in thick, smelling fluid as you're kneaded and rolled about in the surprisingly roomy, but still snug, space.",
 	"The unusually cool stomach rolls around you slowly and lazily, trying to almost knead you to sleep gently as the synx pulses around you.",
 	"The thick, viscous fluids cling to your body soaking in deep, giving you a full bath with the kneading of the walls helping to make sure you'll be smelling like synx stomach for days."
-	)
+	))
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 	"The stomach kneads roughly around you, squishing and molding to your shape, with the thick fluids clinging to your body and tingling, making it hard to breathe.",
 	"Firm churns of the stomach roll and knead you around, your body tingling as fur sizzles all around you, your body getting nice and tenderized for the stomach.",
 	"Your body tingles and the air smells strongly of acid, as the stomach churns around you firmly and slowly, eager to break you down.",
 	"You're jostled in the stomach as the synx lets out what can only described as an alien belch, the space around you getting even more snug as the thick acids rise further up your body."
-	)
-	B.digest_messages_prey = list(
+	))
+	B.set_digest_messages_prey(list(
 	"Your eyes grow heavy as the air grows thin in the stomach, the burning of the acids slowly putting you into a final slumber, adding you to the synx's hips and tail.",
 	"Slowly, the stinging and burning of the acids, and the constant churning is just too much, and with a few final clenches, your body is broken down into fuel for the synx.",
 	"The acids and fluids rise up above your head, quickly putting an end to your squirming and conciousness.. the stomach eager to break you down completely.",
 	"The synx lets out an audible belch, the last of your air going with it, and with a few audible crunches from the outside, the stomach claims you as food for the parasite."
-	)
-	B.mode_flags = DM_FLAG_NUMBING	//Prey are more docile when it doesn't hurt.
+	))
+	B.set_mode_flags(DM_FLAG_NUMBING)	//Prey are more docile when it doesn't hurt.
 
 /* //OC-insert mob removals. Commenting out instead of full removal as there's some good detail here.
 /mob/living/simple_mob/animal/synx/ai/pet/asteri/load_default_bellies()
@@ -697,16 +697,16 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 /mob/living/simple_mob/animal/synx/ai/pet/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected_of(src)
-	B.vore_verb = "swallow"
-	B.digest_burn = 1
-	B.digest_brute = 0
+	B.set_vore_verb("swallow")
+	B.set_digest_burn(1)
+	B.set_digest_brute(0)
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected_of(src)
-	B.vore_verb = "swallow"
-	B.digest_burn = 5
-	B.digest_brute = 5
+	B.set_vore_verb("swallow")
+	B.set_digest_burn(5)
+	B.set_digest_brute(5)
 
 /mob/living/simple_mob/animal/synx/ai/pet
 	speak_chance = 2.0666

@@ -150,16 +150,16 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus/rift)
 	B.desc = "The fearsome preadtor gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach.."
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
+	B.set_emote_lists_at(DM_HOLD, list(
 		"Your surroundings are momentarily filled with tour predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",
 		"Your surrondings glow with a neon red, dashes and spirals of pitch black flowing through the red gummy flesh as if it were a strange sky.",
-		"Your satsified predator sways their bloated gullet happily, their warm rumbling vibrarting the stomach, and by extension you.",)
+		"Your satsified predator sways their bloated gullet happily, their warm rumbling vibrarting the stomach, and by extension you.",))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!",
 		"The caustic red acid splashes, and washes over your frame, your sense of smell being overwhelmed by acid and sulfur as you're turned to nutrion.",
-		"Every swift swap of the predator's hips sends you slamming against the glowing red sides, your vision blurring further as you contunie to weaken." ,)
+		"Every swift swap of the predator's hips sends you slamming against the glowing red sides, your vision blurring further as you contunie to weaken." ,))
 
 
 //Boss loot things. Not sure if this is approriate but will be bapped if not.

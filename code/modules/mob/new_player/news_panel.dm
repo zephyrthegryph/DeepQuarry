@@ -94,7 +94,7 @@ CAPABILITIES(/datum/news_panel)
 	else
 		rel_set(dq_news_panel_cache, nameof(dq_news_panel_cache.channel), CHANNEL)
 	if(!current_news_page && length(CHANNEL.messages))
-		current_news_page = 1
+		set_current_news_page(1)
 	dq_news_panel_cache.tgui_interact(src)
 	client.seen_news = 1
 

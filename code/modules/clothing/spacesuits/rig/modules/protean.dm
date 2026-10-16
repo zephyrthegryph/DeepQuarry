@@ -36,7 +36,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	if(H)
 		to_chat(user, span_boldnotice("You activate the suit's energy syphon."))
 		to_chat(H, span_warning("Your suit begins to sap at your own energy stores."))
-		active = 1
+		set_active(1)
 	else
 		return 0
 
@@ -44,13 +44,13 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	if(!..())
 		return 0
 	if(forced)
-		active = 0
+		set_active(0)
 		return
 	var/mob/living/carbon/human/H = holder.wearer()
 	if(H)
 		to_chat(user, span_boldnotice("You deactivate the suit's energy syphon."))
 		to_chat(H, span_warning("Your suit ceases from sapping your own energy."))
-		active = 0
+		set_active(0)
 	else
 		return 0
 
@@ -98,13 +98,13 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 			return
 		if(isnum(armorvalue))
 			LAZYSET(armor_settings, armor_chosen, armorvalue)
-			interface_desc = initial(interface_desc)
+			set_interface_desc(initial(interface_desc))
 			slowdown = 0
 			for(var/entry in TYPE_TABLE_GET(src, armor_types))	//This is dumb and ugly but I dont feel like rewriting rig TGUI just to make this a pretty list
 				var/value = LAZYACCESS(armor_settings, entry) || 0
-				interface_desc += " [entry]: [value]"
+				set_interface_desc(interface_desc + (" [entry]: [value]"))
 				slowdown += value*armor_weight_ratio
-			interface_desc += " Slowdown: [slowdown]"
+			set_interface_desc(interface_desc + (" Slowdown: [slowdown]"))
 
 /obj/item/rig_module/protean/armor/proc/armor_type_answered(datum/act/request/context)
 	if(!context.answer)
@@ -141,7 +141,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 		for(var/obj/item/piece in list(holder.gloves,holder.helmet,holder.boots,holder.chest))
 			piece.set_armor(dq_armor(temparmor))
 		holder.slowdown = slowdown
-		active = 1
+		set_active(1)
 		H.worn_protection_changed()
 	else
 		return 0
@@ -154,7 +154,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 		for(var/obj/item/piece in list(holder.gloves,holder.helmet,holder.boots,holder.chest))
 			piece.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
 		holder.slowdown = initial(slowdown)
-		active = 0
+		set_active(0)
 		holder.wearer()?.worn_protection_changed()
 		return
 	var/mob/living/carbon/human/H = holder.wearer()
@@ -165,7 +165,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 		for(var/obj/item/piece in list(holder.gloves,holder.helmet,holder.boots,holder.chest))
 			piece.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
 		holder.slowdown = initial(slowdown)
-		active = 0
+		set_active(0)
 		H.worn_protection_changed()
 	else
 		return 0
@@ -208,7 +208,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 		return 0
 	to_chat(user, span_boldnotice("You activate the suit's restorative nanites."))
 	to_chat(H, span_warning("Your suit begins mending your injuries."))
-	active = 1
+	set_active(1)
 	return 1
 
 /obj/item/rig_module/protean/healing/deactivate(forced = FALSE, mob/user)
@@ -219,7 +219,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 		return 0
 	to_chat(user, span_boldnotice("You deactivate the suit's restorative nanites."))
 	to_chat(H, span_warning("Your suit is no longer mending your injuries."))
-	active = 0
+	set_active(0)
 	return 1
 
 /// Wound repair on the host, whatever it is made of, paid for in steel by what

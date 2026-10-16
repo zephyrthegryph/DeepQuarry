@@ -221,7 +221,7 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 	//create a new account
 	var/datum/money_account/M = new()
 	M.offmap = offmap
-	M.owner_name = new_owner_name
+	M.set_owner_name(new_owner_name)
 	M.remote_access_pin = rand(1111, 111111)
 	M.money = starting_funds
 
@@ -267,7 +267,7 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 			R.stamped = new
 		R.stamped += /obj/item/stamp
 		R.add_overlay(stampoverlay)
-		R.stamps += "<HR><i>This paper has been stamped by the Accounts Database.</i>"
+		R.set_stamps(R.stamps + ("<HR><i>This paper has been stamped by the Accounts Database.</i>"))
 
 	//add the account
 	rel_add(M, nameof(M.transaction_log), T)

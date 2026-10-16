@@ -20,10 +20,10 @@
 	if(istype(TMA) && TMA.has_alarm())
 		if(!has_alert)
 			set_program_icon_state("power_monitor_warn")
-			ui_header = "power_warn.gif"
+			set_ui_header("power_warn.gif")
 			has_alert = 1
 	else
 		if(has_alert)
 			set_program_icon_state("power_monitor")
-			ui_header = "power_norm.gif"
+			set_ui_header("power_norm.gif")
 			has_alert = 0

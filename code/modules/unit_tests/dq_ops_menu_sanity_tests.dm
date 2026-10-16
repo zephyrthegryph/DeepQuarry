@@ -142,7 +142,7 @@
 	// a program button reaches the program: abort clears a cycle in progress
 	var/obj/machinery/embedded_controller/radio/airlock/airlock_controller/simple = allocate(/obj/machinery/embedded_controller/radio/airlock/airlock_controller, T)
 	var/datum/embedded_program/airlock/program = simple.program
-	program.memory["chamber_sensor_pressure"] = ONE_ATMOSPHERE // a pressure difference: the press starts a cycle rather than just toggling a door
+	program.set_memory_at("chamber_sensor_pressure", ONE_ATMOSPHERE) // a pressure difference: the press starts a cycle rather than just toggling a door
 	var/datum/op_result/pressed = hc_ui(H, simple, "cycle_ext")
 	TEST_ASSERT(istype(pressed) && pressed.outcome != ACT_REFUSED, "cycle_ext runs ([istype(pressed) ? pressed.outcome : pressed])")
 	TEST_ASSERT(program.target_state != program.state, "cycle_ext starts the cycle ([program.state] -> [program.target_state])")

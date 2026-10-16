@@ -114,7 +114,7 @@ CAPABILITIES(/obj/item/assembly/infra)
 	return TRUE
 
 /obj/item/assembly/infra/proc/ui_act_visible(datum/act/op/A)
-	visible = !visible
+	set_visible(!visible)
 	for(var/obj/effect/beam/i_beam/I as anything in i_beams)
 		I.visible = visible
 		CHECK_TICK

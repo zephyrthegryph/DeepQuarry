@@ -84,63 +84,63 @@ CAPABILITIES(/datum/spawnpanel)
 		return FALSE
 	var/icon/new_icon = input("Select a new icon file:", "Icon") as null|icon // ALLOW(scheduler): file uploads need the BYOND file dialog
 	if(new_icon)
-		selected_atom_icon = new_icon
-		available_icon_states = icon_states(selected_atom_icon)
+		set_selected_atom_icon(new_icon)
+		set_available_icon_states(icon_states(selected_atom_icon))
 		if(!(selected_atom_icon_state in available_icon_states))
-			selected_atom_icon_state = available_icon_states[1]
+			set_selected_atom_icon_state(available_icon_states[1])
 	return TRUE
 
 /datum/spawnpanel/proc/ui_act_set_apply_icon_override(datum/act/op/A, value)
 	if(!ui_gate(A))
 		return FALSE
-	apply_icon_override = !!value
+	set_apply_icon_override(!!value)
 	return TRUE
 
 /datum/spawnpanel/proc/ui_act_reset_dmi_icon(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	selected_atom_icon = null
-	selected_atom_icon_state = null
+	set_selected_atom_icon(null)
+	set_selected_atom_icon_state(null)
 	if(selected_atom)
 		var/atom/selected_type = selected_atom
-		selected_atom_icon = initial(selected_type.icon)
-		selected_atom_icon_state = initial(selected_type.icon_state)
-		available_icon_states = icon_states(selected_atom_icon)
+		set_selected_atom_icon(initial(selected_type.icon))
+		set_selected_atom_icon_state(initial(selected_type.icon_state))
+		set_available_icon_states(icon_states(selected_atom_icon))
 	else
-		available_icon_states = list()
+		set_available_icon_states(list())
 	return TRUE
 
 /datum/spawnpanel/proc/ui_act_select_new_icon_state(datum/act/op/A, new_state)
 	if(!ui_gate(A))
 		return FALSE
-	selected_atom_icon_state = new_state
+	set_selected_atom_icon_state(new_state)
 	return TRUE
 
 /datum/spawnpanel/proc/ui_act_reset_icon_state(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	selected_atom_icon_state = null
+	set_selected_atom_icon_state(null)
 	if(selected_atom)
 		var/atom/selected_type = selected_atom
-		selected_atom_icon_state = initial(selected_type.icon_state)
+		set_selected_atom_icon_state(initial(selected_type.icon_state))
 	return TRUE
 
 /datum/spawnpanel/proc/ui_act_set_icon_size(datum/act/op/A, size)
 	if(!ui_gate(A))
 		return FALSE
-	atom_icon_size = size
+	set_atom_icon_size(size)
 	return TRUE
 
 /datum/spawnpanel/proc/ui_act_reset_icon_size(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	atom_icon_size = 100
+	set_atom_icon_size(100)
 	return TRUE
 
 /datum/spawnpanel/proc/ui_act_get_icon_states(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	available_icon_states = icon_states(selected_atom_icon)
+	set_available_icon_states(icon_states(selected_atom_icon))
 	return TRUE
 
 /datum/spawnpanel/proc/ui_act_selected_atom_changed(datum/act/op/A, newObj)
@@ -149,10 +149,10 @@ CAPABILITIES(/datum/spawnpanel)
 	var/path = newObj
 	if(path)
 		var/atom/temp_atom = path
-		selected_atom_icon = initial(temp_atom.icon)
-		selected_atom_icon_state = initial(temp_atom.icon_state)
-		available_icon_states = icon_states(selected_atom_icon)
-		selected_atom = temp_atom
+		set_selected_atom_icon(initial(temp_atom.icon))
+		set_selected_atom_icon_state(initial(temp_atom.icon_state))
+		set_available_icon_states(icon_states(selected_atom_icon))
+		set_selected_atom(temp_atom)
 	return TRUE
 
 /datum/spawnpanel/proc/ui_act_create_atom_action(datum/act/op/A, atom_amount, atom_icon_size, atom_name, dir, offset, offset_type, selected_atom_icon_arg, selected_atom_icon_state_arg, where_target_type)
@@ -209,15 +209,15 @@ CAPABILITIES(/datum/spawnpanel)
 	if(offset_type_arg)
 		offset_type = offset_type_arg
 	if(atom_icon_size_arg)
-		atom_icon_size = atom_icon_size_arg
+		set_atom_icon_size(atom_icon_size_arg)
 	if(selected_atom_icon_arg)
-		selected_atom_icon = selected_atom_icon_arg
+		set_selected_atom_icon(selected_atom_icon_arg)
 	if(selected_atom_icon_state_arg)
-		selected_atom_icon_state = selected_atom_icon_state_arg
+		set_selected_atom_icon_state(selected_atom_icon_state_arg)
 	return TRUE
 
 /datum/spawnpanel/proc/toggle_precise_mode(precise_type, mob/user)
-	precise_mode = precise_type
+	set_precise_mode(precise_type)
 	var/client/admin_client = user.client
 	if (!admin_client)
 		return
@@ -290,7 +290,7 @@ CAPABILITIES(/datum/spawnpanel)
 
 			if(PRECISE_MODE_COPY)
 				to_chat(user, span_notice("Picked object: [icon2html(target, user)] [span_bold("[target]")]"))
-				selected_atom = target.type
+				set_selected_atom(target.type)
 				toggle_precise_mode(PRECISE_MODE_OFF, user)
 				SStgui.update_uis(src)
 

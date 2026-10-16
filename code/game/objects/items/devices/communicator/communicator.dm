@@ -239,9 +239,9 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 	if(length >= 24)
 		return
 	if(length == 4 || length == 9 || length == 14 || length == 19 || length == 24 || length == 29)
-		target_address += ":[hex]"
+		set_target_address(target_address + (":[hex]"))
 		return
-	target_address += hex
+	set_target_address(target_address + hex)
 
 // Proc: populate_known_devices()
 // Parameters: 1 (user - the person using the device)
@@ -297,7 +297,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 		else if(!owner)
 			to_chat(user, span_notice("\The [src] rejects the ID."))
 		else if(owner == idcard.registered_name && occupation != idcard.assignment) //CHMPEDIT only edit assigment if different
-			occupation = idcard.assignment
+			set_occupation(idcard.assignment)
 			to_chat(user, span_notice(">Occupation updated."))
 		// ITION START Communicator ID slotting if we have an ID thats also already scanned
 		else if(((is_in_holder(src, user)) && (is_in_holder(C, user))) || (istype(loc, /turf) && in_range(src, user) && (is_in_holder(C, user))) )
@@ -355,7 +355,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 /obj/item/communicator/proc/register_device(new_name)
 	if(!new_name)
 		return
-	owner = new_name
+	set_owner(new_name)
 
 	name = "[new_name]'s [initial(name)]"
 	if(camera)

@@ -80,13 +80,17 @@
 			return TRUE
 
 		//Being used, and running out.
-		else if(active && ++used == 2000)
-			nif().notify("Heat sinks overloaded! Shutting down!",TRUE)
-			deactivate()
+		else if(active)
+			set_used(used + 1)
+			if(used == 2000)
+				nif().notify("Heat sinks overloaded! Shutting down!",TRUE)
+				deactivate()
 
 		//Being cleaned, and finishing empty.
-		else if(!active && --used == 0)
-			nif().notify("Heat sinks re-chilled.")
+		else
+			set_used(used - 1)
+			if(used == 0)
+				nif().notify("Heat sinks re-chilled.")
 
 /datum/nifsoft/compliance
 	name = "Compliance Module"

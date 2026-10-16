@@ -130,7 +130,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		GLOB.atmosphere_alarm.triggerAlarm(src, alarm_source, severity = danger_level)
 
 	if(danger_level != atmosalm)
-		atmosalm = danger_level
+		set_atmosalm(danger_level)
 		//closing the doors on red and opening on green provides a bit of hysteresis that will hopefully prevent fire doors from opening and closing repeatedly due to noise
 		if (danger_level < 1 || danger_level >= 2)
 			firedoors_update()

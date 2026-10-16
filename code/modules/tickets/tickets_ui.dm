@@ -178,9 +178,9 @@ CAPABILITIES(/datum/tickets)
 	// Create a new ticket and handle it. You created it afterall!
 	var/datum/ticket/T = new /datum/ticket(ticket_text, player, TRUE, level, user, token_actor)
 	if(level == "Admin")
-		T.level = 1
+		T.set_level(1)
 	else
-		T.level = 0
+		T.set_level(0)
 	T.HandleIssue(user)
 	switch(T.level)
 		if (0)

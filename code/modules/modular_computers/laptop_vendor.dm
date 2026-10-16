@@ -47,24 +47,24 @@ CAPABILITIES(/obj/machinery/lapvend)
 // Removes all traces of old order and allows you to begin configuration from scratch.
 /obj/machinery/lapvend/proc/reset_order()
 	set_state(0)
-	devtype = 0
+	set_devtype(0)
 	rel_clear(src, nameof(fabricated_laptop))
 	rel_clear(src, nameof(fabricated_tablet))
-	dev_cpu = 1
-	dev_battery = 1
-	dev_disk = 1
-	dev_netcard = 0
-	dev_tesla = 0
-	dev_nanoprint = 0
-	dev_card = 0
+	set_dev_cpu(1)
+	set_dev_battery(1)
+	set_dev_disk(1)
+	set_dev_netcard(0)
+	set_dev_tesla(0)
+	set_dev_nanoprint(0)
+	set_dev_card(0)
 
 // Recalculates the price and optionally even fabricates the device.
 /obj/machinery/lapvend/proc/fabricate_and_recalc_price(fabricate = 0)
-	total_price = 0
+	set_total_price(0)
 	if(devtype == 1) 		// Laptop, generally cheaper to make it accessible for most station roles
 		if(fabricate)
 			rel_set(src, nameof(fabricated_laptop), new /obj/item/modular_computer/laptop(src))
-		total_price = 99
+		set_total_price(99)
 		switch(dev_cpu)
 			if(1)
 				if(fabricate)
@@ -72,7 +72,7 @@ CAPABILITIES(/obj/machinery/lapvend)
 			if(2)
 				if(fabricate)
 					rel_set(fabricated_laptop, nameof(fabricated_laptop.processor_unit), new/obj/item/computer_hardware/processor_unit(fabricated_laptop))
-				total_price += 299
+				set_total_price(total_price + 299)
 		switch(dev_battery)
 			if(1) // Basic(750C)
 				if(fabricate)
@@ -80,11 +80,11 @@ CAPABILITIES(/obj/machinery/lapvend)
 			if(2) // Upgraded(1100C)
 				if(fabricate)
 					rel_set(fabricated_laptop, nameof(fabricated_laptop.battery_module), new/obj/item/computer_hardware/battery_module/advanced(fabricated_laptop))
-				total_price += 199
+				set_total_price(total_price + 199)
 			if(3) // Advanced(1500C)
 				if(fabricate)
 					rel_set(fabricated_laptop, nameof(fabricated_laptop.battery_module), new/obj/item/computer_hardware/battery_module/super(fabricated_laptop))
-				total_price += 499
+				set_total_price(total_price + 499)
 		switch(dev_disk)
 			if(1) // Basic(128GQ)
 				if(fabricate)
@@ -92,30 +92,30 @@ CAPABILITIES(/obj/machinery/lapvend)
 			if(2) // Upgraded(256GQ)
 				if(fabricate)
 					rel_set(fabricated_laptop, nameof(fabricated_laptop.hard_drive), new/obj/item/computer_hardware/hard_drive/advanced(fabricated_laptop))
-				total_price += 99
+				set_total_price(total_price + 99)
 			if(3) // Advanced(512GQ)
 				if(fabricate)
 					rel_set(fabricated_laptop, nameof(fabricated_laptop.hard_drive), new/obj/item/computer_hardware/hard_drive/super(fabricated_laptop))
-				total_price += 299
+				set_total_price(total_price + 299)
 		switch(dev_netcard)
 			if(1) // Basic(Short-Range)
 				if(fabricate)
 					rel_set(fabricated_laptop, nameof(fabricated_laptop.network_card), new/obj/item/computer_hardware/network_card(fabricated_laptop))
-				total_price += 99
+				set_total_price(total_price + 99)
 			if(2) // Advanced (Long Range)
 				if(fabricate)
 					rel_set(fabricated_laptop, nameof(fabricated_laptop.network_card), new/obj/item/computer_hardware/network_card/advanced(fabricated_laptop))
-				total_price += 299
+				set_total_price(total_price + 299)
 		if(dev_tesla)
-			total_price += 399
+			set_total_price(total_price + 399)
 			if(fabricate)
 				rel_set(fabricated_laptop, nameof(fabricated_laptop.tesla_link), new/obj/item/computer_hardware/tesla_link(fabricated_laptop))
 		if(dev_nanoprint)
-			total_price += 99
+			set_total_price(total_price + 99)
 			if(fabricate)
 				rel_set(fabricated_laptop, nameof(fabricated_laptop.nano_printer), new/obj/item/computer_hardware/nano_printer(fabricated_laptop))
 		if(dev_card)
-			total_price += 199
+			set_total_price(total_price + 199)
 			if(fabricate)
 				rel_set(fabricated_laptop, nameof(fabricated_laptop.card_slot), new/obj/item/computer_hardware/card_slot(fabricated_laptop))
 
@@ -124,7 +124,7 @@ CAPABILITIES(/obj/machinery/lapvend)
 		if(fabricate)
 			rel_set(src, nameof(fabricated_tablet), new /obj/item/modular_computer/tablet(src))
 			rel_set(fabricated_tablet, nameof(fabricated_tablet.processor_unit), new/obj/item/computer_hardware/processor_unit/small(fabricated_tablet))
-		total_price = 199
+		set_total_price(199)
 		switch(dev_battery)
 			if(1) // Basic(300C)
 				if(fabricate)
@@ -132,11 +132,11 @@ CAPABILITIES(/obj/machinery/lapvend)
 			if(2) // Upgraded(500C)
 				if(fabricate)
 					rel_set(fabricated_tablet, nameof(fabricated_tablet.battery_module), new/obj/item/computer_hardware/battery_module/micro(fabricated_tablet))
-				total_price += 199
+				set_total_price(total_price + 199)
 			if(3) // Advanced(750C)
 				if(fabricate)
 					rel_set(fabricated_tablet, nameof(fabricated_tablet.battery_module), new/obj/item/computer_hardware/battery_module(fabricated_tablet))
-				total_price += 499
+				set_total_price(total_price + 499)
 		switch(dev_disk)
 			if(1) // Basic(32GQ)
 				if(fabricate)
@@ -144,30 +144,30 @@ CAPABILITIES(/obj/machinery/lapvend)
 			if(2) // Upgraded(64GQ)
 				if(fabricate)
 					rel_set(fabricated_tablet, nameof(fabricated_tablet.hard_drive), new/obj/item/computer_hardware/hard_drive/small(fabricated_tablet))
-				total_price += 99
+				set_total_price(total_price + 99)
 			if(3) // Advanced(128GQ)
 				if(fabricate)
 					rel_set(fabricated_tablet, nameof(fabricated_tablet.hard_drive), new/obj/item/computer_hardware/hard_drive(fabricated_tablet))
-				total_price += 299
+				set_total_price(total_price + 299)
 		switch(dev_netcard)
 			if(1) // Basic(Short-Range)
 				if(fabricate)
 					rel_set(fabricated_tablet, nameof(fabricated_tablet.network_card), new/obj/item/computer_hardware/network_card(fabricated_tablet))
-				total_price += 99
+				set_total_price(total_price + 99)
 			if(2) // Advanced (Long Range)
 				if(fabricate)
 					rel_set(fabricated_tablet, nameof(fabricated_tablet.network_card), new/obj/item/computer_hardware/network_card/advanced(fabricated_tablet))
-				total_price += 299
+				set_total_price(total_price + 299)
 		if(dev_nanoprint)
-			total_price += 99
+			set_total_price(total_price + 99)
 			if(fabricate)
 				rel_set(fabricated_tablet, nameof(fabricated_tablet.nano_printer), new/obj/item/computer_hardware/nano_printer(fabricated_tablet))
 		if(dev_card)
-			total_price += 199
+			set_total_price(total_price + 199)
 			if(fabricate)
 				rel_set(fabricated_tablet, nameof(fabricated_tablet.card_slot), new/obj/item/computer_hardware/card_slot(fabricated_tablet))
 		if(dev_tesla)
-			total_price += 399
+			set_total_price(total_price + 399)
 			if(fabricate)
 				rel_set(fabricated_tablet, nameof(fabricated_tablet.tesla_link), new/obj/item/computer_hardware/tesla_link(fabricated_tablet))
 		return total_price
@@ -176,7 +176,7 @@ CAPABILITIES(/obj/machinery/lapvend)
 /obj/machinery/lapvend/proc/ui_act_pick_device(datum/act/op/A, pick)
 	if(state) // We've already picked a device type
 		return FALSE
-	devtype = pick
+	set_devtype(pick)
 	set_state(1)
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
@@ -195,49 +195,49 @@ CAPABILITIES(/obj/machinery/lapvend)
 /obj/machinery/lapvend/proc/ui_act_hw_cpu(datum/act/op/A, cpu)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_cpu = cpu
+	set_dev_cpu(cpu)
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
 /obj/machinery/lapvend/proc/ui_act_hw_battery(datum/act/op/A, battery)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_battery = battery
+	set_dev_battery(battery)
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
 /obj/machinery/lapvend/proc/ui_act_hw_disk(datum/act/op/A, disk)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_disk = disk
+	set_dev_disk(disk)
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
 /obj/machinery/lapvend/proc/ui_act_hw_netcard(datum/act/op/A, netcard)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_netcard = netcard
+	set_dev_netcard(netcard)
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
 /obj/machinery/lapvend/proc/ui_act_hw_tesla(datum/act/op/A, tesla)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_tesla = tesla
+	set_dev_tesla(tesla)
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
 /obj/machinery/lapvend/proc/ui_act_hw_nanoprint(datum/act/op/A, print)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_nanoprint = print
+	set_dev_nanoprint(print)
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
 /obj/machinery/lapvend/proc/ui_act_hw_card(datum/act/op/A, card)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_card = card
+	set_dev_card(card)
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 

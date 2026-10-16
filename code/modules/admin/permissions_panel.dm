@@ -64,7 +64,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 /datum/permissions_panel/proc/refresh_db()
 	if(!holder() || !SSdbcore.IsConnected())
 		return
-	db_rows = null
+	set_db_rows(null)
 	switch(holder().dq_perms_page)
 		if(PERMISSIONS_PAGE_RANKS, PERMISSIONS_PAGE_HOUSEKEEPING)
 			sql_view(src, "admins", "SELECT IFNULL((SELECT ckey FROM [format_table_name("erro_player")] WHERE [format_table_name("erro_player")].ckey = [format_table_name("admin")].ckey), ckey), [format_table_name("admin")].`rank` FROM [format_table_name("admin")]", PROC_REF(sql_rows_arrived))
@@ -104,7 +104,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 		return
 	if(error)
 		to_chat(holder().owner(), span_danger("A SQL error occurred during this operation, check the server logs."), confidential = TRUE)
-	LAZYSET(db_rows, key, rows || list())
+	set_db_rows_at(key, rows || list())
 	SStgui.update_uis(src)
 
 /datum/permissions_panel/New(datum/admins/owner_holder)

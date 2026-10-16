@@ -21,7 +21,7 @@
 	var/datum/integrated_io/A = inputs[1]
 	var/datum/integrated_io/B = inputs[2]
 	var/datum/integrated_io/O = outputs[1]
-	O.data = do_compare(A, B) ? TRUE : FALSE
+	O.set_data(do_compare(A, B) ? TRUE : FALSE)
 
 	if(get_pin_data(IC_OUTPUT, 1))
 		activate_pin(2)
@@ -41,7 +41,7 @@
 	pull_data()
 	var/datum/integrated_io/A = inputs[1]
 	var/datum/integrated_io/O = outputs[1]
-	O.data = do_check(A) ? TRUE : FALSE
+	O.set_data(do_check(A) ? TRUE : FALSE)
 	..()
 	activate_pin(2)
 
@@ -85,8 +85,8 @@
 	else
 		if(B.data)
 			lstate=FALSE
-	O.data = lstate ? TRUE : FALSE
-	Q.data = !lstate ? TRUE : FALSE
+	O.set_data(lstate ? TRUE : FALSE)
+	Q.set_data(!lstate ? TRUE : FALSE)
 	if(get_pin_data(IC_OUTPUT, 1))
 		activate_pin(2)
 	else
@@ -116,8 +116,8 @@
 	else
 		if(B.data)
 			lstate=FALSE
-	O.data = lstate ? TRUE : FALSE
-	Q.data = !lstate ? TRUE : FALSE
+	O.set_data(lstate ? TRUE : FALSE)
+	Q.set_data(!lstate ? TRUE : FALSE)
 	if(get_pin_data(IC_OUTPUT, 1))
 		activate_pin(2)
 	else
@@ -147,8 +147,8 @@
 		else
 			lstate=FALSE
 
-	O.data = lstate ? TRUE : FALSE
-	Q.data = !lstate ? TRUE : FALSE
+	O.set_data(lstate ? TRUE : FALSE)
+	Q.set_data(!lstate ? TRUE : FALSE)
 	if(get_pin_data(IC_OUTPUT, 1))
 		activate_pin(2)
 	else

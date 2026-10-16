@@ -46,14 +46,14 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/librarywikicomp/ui_opening(mob/user, datum/tgui/ui)
-	just_donated = FALSE
+	set_just_donated(FALSE)
 
 
 /obj/machinery/librarywikicomp/tgui_close(mob/user)
 	. = ..()
 	rel_clear(src, nameof(P))
-	sub_category= null
-	searchmode = null
+	set_sub_category(null)
+	set_searchmode(null)
 
 /// /obj/machinery/librarywikicomp's window data.
 /obj/machinery/librarywikicomp/ui_data(datum/act/eval/A)
@@ -157,10 +157,10 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 		return FALSE
 	if(!crash)
 		rel_clear(src, nameof(/obj/machinery/librarywikicomp::P))
-		searchmode = null
-		sub_category = null
+		set_searchmode(null)
+		set_sub_category(null)
 		doc_title = "Click a search entry!"
-		doc_body = ""
+		set_doc_body("")
 	. = TRUE
 
 /obj/machinery/librarywikicomp/proc/ui_act_swapsearch(datum/act/op/A, data)
@@ -172,8 +172,8 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 			return FALSE
 		rel_clear(src, nameof(/obj/machinery/librarywikicomp::P))
 		doc_title = null
-		doc_body = null
-		searchmode = new_mode
+		set_doc_body(null)
+		set_searchmode(new_mode)
 	. = TRUE
 
 /obj/machinery/librarywikicomp/proc/ui_act_crash(datum/act/op/A)
@@ -209,8 +209,8 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 			return FALSE
 		rel_clear(src, nameof(/obj/machinery/librarywikicomp::P))
 		doc_title = null
-		doc_body = null
-		sub_category = new_subcat
+		set_doc_body(null)
+		set_sub_category(new_subcat)
 	. = TRUE
 // final search
 
@@ -248,10 +248,10 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 
 		if(P)
 			doc_title = P.title
-			doc_body = P.get_print()
+			set_doc_body(P.get_print())
 		else
 			doc_title = "Error"
-			doc_body = "Invalid data."
+			set_doc_body("Invalid data.")
 	. = TRUE
 // Support the wiki
 
@@ -284,7 +284,7 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 	play_sfx(src, SFX_MACHINES_ID_SWIPE)
 	if(SSinternal_wiki.pay_with_card(I, user, src, amount, pin))
 		play_sfx(src, SFX_MACHINES_PING, vary = TRUE)
-		just_donated = TRUE
+		set_just_donated(TRUE)
 		SStgui.update_user_uis(user, ui)
 
 // mapper varient for dorms and residences

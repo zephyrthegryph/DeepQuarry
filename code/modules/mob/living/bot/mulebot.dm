@@ -69,6 +69,7 @@
 
 // The hand entry above opens the controls, so the window's own open op answers the menu and a remote user only.
 CAPABILITIES(/mob/living/bot/mulebot)
+	ref_one(nameof(load))
 	configure(mob_movement(bump = HEAVY))
 	// the item effect calls the bot's own effect first (old `..()` then update_icons()), so the inherited bot op must not run a second time
 	without("bot_item")
@@ -142,15 +143,15 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	. = TRUE
 
 /mob/living/bot/mulebot/proc/ui_act_autoret(datum/act/op/A)
-	auto_return = !auto_return
+	set_auto_return(!auto_return)
 	. = TRUE
 
 /mob/living/bot/mulebot/proc/ui_act_cargotypes(datum/act/op/A)
-	crates_only = !crates_only
+	set_crates_only(!crates_only)
 	. = TRUE
 
 /mob/living/bot/mulebot/proc/ui_act_safety(datum/act/op/A)
-	safety = !safety
+	set_safety(!safety)
 	. = TRUE
 
 /// The title of a beacon question: the bot's own.

@@ -68,11 +68,11 @@
 	. = ..()
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
-	B.digest_mode = DM_SELECT
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.digest_brute = 1
-	B.digest_burn = 1
-	B.escapechance = 35
+	B.set_digest_mode(DM_SELECT)
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_digest_brute(1)
+	B.set_digest_burn(1)
+	B.set_escapechance(35)
 
 	if(icon == 'icons/mob/alienanimals_x32.dmi')
 		B.desc = "With a final gulp, the cool air of the outside world is replaced with the incredibly tight, hot, and humid insides of the squirrel. \
@@ -80,7 +80,7 @@
 		cramped, organic space.  The stomach you now inhabited seemed quite content to treat you like the tiny rodent's normal diet of nuts and berries, \
 		constantly squeezing in an attempt to compact you down, to better fit in your new home."
 		B.own_emote_lists()
-		B.emote_lists[DM_DIGEST] = list(
+		B.set_emote_lists_at(DM_DIGEST, list(
 			"Low grumbles fill your ears as the squirrel's stomach begins the herculean task of digesting you.",
 			"The squirrel's stomach begins to secrete fluids that make your skin tingle on contact.",
 			"The fleshy organ clenches tightly around you in its attempts to soften you up!",
@@ -89,10 +89,10 @@
 			"The swampy air stings your lungs as you attempt to draw another stomach acid tinged breath.",
 			"Tingling stomach slimes drip over your softening form, slowly converting you into nutrients for the small rodent.",
 			"You cant help but feel like a nut, given the squirrel's stomach seems to have no issue with treating you like one."
-			)
+			))
 
 		B.own_emote_lists()
-		B.emote_lists[DM_HOLD] = list(
+		B.set_emote_lists_at(DM_HOLD, list(
 			"The squirrel insides that surround you gently sway from side to side as the squirrel goes on with its day.",
 			"Various harmless stomach fluids pool around you, as you sit within the belly of the squirrel.",
 			"The rapid heartbeat of the squirrel thrums in your ears, still faintly audible, even over the grumbles of the stomach you now inhabit.",
@@ -101,17 +101,17 @@
 			"A series of muted impacts from the outside can be felt as the squirrel moves around, likely from the overstuffed rodent bumping into objects in the environment that you no longer inhabit.",
 			"A pair of small paws can be felt pressing in towards you, it almost feels as if the squirrel is rubbing its belly, and enjoying having you all to itself.",
 			"The squirrel can be heard chittering quietly as you try to move around.  It almost sounds like it's laughing at you as you try to escape."
-			)
+			))
 
-		B.digest_messages_prey = list(
+		B.set_digest_messages_prey(list(
 			"Your body finally succumbs to the squirrel's stomach.  Your nutrient rich remains are pumped deeper into the rodent's body, to help it bulk up for winter...",
 			"You black out in the dark, murky depths of the squirrel.  The next time you're seen, will be as extra layers of softness on the soon to be pudgy rodent's body.",
 			"As your consciousness fades away, and your stuggling comes to an end, you can hear faint squeaking as the lucky rodent goes on with its day, content with having claimed you as its dinner."
-			)
+			))
 	else
 		B.desc = "With relative ease, you slid down the throat of the massive rodent, and came to a rest deep inside its spacious tummy!  Immediately, the gluttonous rodent's stomach begins to squeeze and compress you into a more manageable shape, all in an attempt to keep you down, deep within the squirrel's gastric embrace.  The air is humid, the slick walls are powerful, and oppressive, and the stomach fluids you're soaking in cling to every inch of your body.  Unfortunately for you, you're squirrel food."
 		B.own_emote_lists()
-		B.emote_lists[DM_DIGEST] = list(
+		B.set_emote_lists_at(DM_DIGEST, list(
 			"The squirrel's stomach seems content to treat you like a very large nut, as it works to soften you up to feed the squirrel for the long winter.",
 			"Tingling fluids drip over your form as the squirrel's body attempts to work yours down into a more usable form.",
 			"The squirrel lets out a clearly audible burp, what remains of the acrid air burns your lungs as the squirrel's stomach becomes less hospitable.",
@@ -120,10 +120,10 @@
 			"Another powerful clench presses you down into the bottom of the stomach, and massaging more of the stomach acids into your already weakened form.",
 			"Your body aches from the constant abuse the stomach is putting it through.  Soon, you'll be nothing more than nutrients for the lucky squirrel!",
 			"The sounds of the outside world are drowned out by the constant grumbles and gurgles of this fleshy prison, as you're put through the slow process of digesting a nutrient rich slurry."
-			)
+			))
 
 		B.own_emote_lists()
-		B.emote_lists[DM_HOLD] = list(
+		B.set_emote_lists_at(DM_HOLD, list(
 			"The powerful stomach walls surrounding you press inwards so tightly you can hardly move, before relaxing, and letting you resume struggling against this squirrel's insides.",
 			"The sauna-like insides slowly sap your strength, as hot, harmless stomach fluids pool around you, turning the stomach into a personal hot tub.",
 			"The heartbeat of the massive squirrel thunders in your ears like a drum, clearly audible inbetween powerful clenches from the fleshy walls that surround you.",
@@ -132,13 +132,13 @@
 			"A pair of heavy paws could be felt pressing down on you, likely from the squirrel trying to tire you out, so you can be kept in its sweltering insides for even longer!",
 			"Above the constant groans of the stomach, and squish of flesh, you can hear the squirrel chittering in response to your movements.  Clearly it enjoys having you all to itself!",
 			"Your gastric prison rocks gently as the squirrel moves around, exploring the outside world that it easily stole you away from!"
-			)
+			))
 
-		B.digest_messages_prey = list(
+		B.set_digest_messages_prey(list(
 			"At long last, you succumb to the stomach you were trapped in, which breaks you apart, and pumps your nutrient rich remains deeper into the squirrel, to help feed the rodent throughout the long winter months.",
 			"Darkness slowly overtakes your consciousness as the stomach takes its toll on you.  Soon, what's left of you will be melted down, and added to the squirrel's form as a layer of soft fat, to keep it warm throughout the coming winter!",
 			"The murky insides around you are the last sensation you know, as the squirrel's stomach melts you down into a nutrient rich broth to be pumped deeper into the squirrel's body.  At least you were a big help to the lucky rodent that turned you into its dinner!"
-			)
+			))
 
 
 /datum/say_list/squirrel

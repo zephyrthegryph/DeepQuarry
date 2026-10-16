@@ -38,7 +38,7 @@
 			//Found one that isn't full
 			if(C.charges < max_reagent_volume)
 				did_work = 1
-				C.charges += 1
+				C.set_charges(C.charges + 1)
 				break
 
 		if (!did_work)
@@ -77,7 +77,7 @@
 	to_chat(target_mob,span_notice("You feel a rushing in your veins as you're injected by \the [src]."))
 	target_mob.reagents.add_reagent(charge.display_name, use_amount)
 
-	charge.charges -= use_amount
-	if(charge.charges < 0) charge.charges = 0
+	charge.set_charges(charge.charges - use_amount)
+	if(charge.charges < 0) charge.set_charges(0)
 
 	return 1

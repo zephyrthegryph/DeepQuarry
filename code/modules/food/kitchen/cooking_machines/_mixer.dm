@@ -41,7 +41,7 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 	if(!LAZYACCESS(output_options, new_output))
 		return
 
-	selected_option = new_output
+	set_selected_option(new_output)
 	to_chat(user, span_notice("You prepare \the [src] to make \a [selected_option]."))
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	CI.combine_target = selected_option

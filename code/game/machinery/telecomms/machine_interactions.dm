@@ -148,12 +148,12 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 		return OP_OK
 	newfreq = tcomms_tenths(newfreq)
 	if(!(newfreq in freq_listening) && newfreq < TCOMMS_FREQ_LIMIT)
-		LAZYADD(freq_listening, newfreq)
+		add_freq_listening(newfreq)
 		report("-% New frequency filter assigned: \"[newfreq / 10] GHz\" %-")
 	return OP_OK
 
 /obj/machinery/telecomms/proc/ui_act_delete(datum/act/op/A, delete)
-	LAZYREMOVE(freq_listening, delete)
+	remove_freq_listening(delete)
 	report("-% Removed frequency filter [delete] %-")
 	return OP_OK
 
@@ -198,7 +198,7 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 
 /// A ranged machine's range, within what it can do; a longer range draws more power.
 /obj/machinery/telecomms/proc/ui_act_range(datum/act/op/A, range)
-	overmap_range = clamp(range, overmap_range_min, overmap_range_max)
+	set_overmap_range(clamp(range, overmap_range_min, overmap_range_max))
 	update_idle_power_usage(power_of_type(type).idle ** (overmap_range + 1))
 	return OP_OK
 

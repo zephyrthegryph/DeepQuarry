@@ -138,7 +138,7 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 /datum/tgui_input_colormatrix/proc/ui_act_switch_modes(datum/act/op/A, mode)
 	if(matrix_only && active_mode < 3)
 		return FALSE
-	active_mode = mode
+	set_active_mode(mode)
 	return TRUE
 
 /datum/tgui_input_colormatrix/proc/choose_color_title(datum/act/op/A)
@@ -148,7 +148,7 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 	return activecolor
 
 /datum/tgui_input_colormatrix/proc/ui_act_choose_color(datum/act/op/A)
-	activecolor = A.step_value("color")
+	set_activecolor(A.step_value("color"))
 	return TRUE
 
 /datum/tgui_input_colormatrix/proc/ui_act_paint(datum/act/op/A)
@@ -156,13 +156,13 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 	if(!do_paint(user, !was_path))
 		return TRUE
 	set_entry(color_matrix_last)
-	temp = "Painted Successfully!"
+	set_temp("Painted Successfully!")
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE
 
 /datum/tgui_input_colormatrix/proc/ui_act_drop(datum/act/op/A)
-	temp = ""
+	set_temp("")
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE
@@ -172,13 +172,13 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	target().remove_atom_colour(FIXED_COLOUR_PRIORITY)
 	play_sfx(src, SFX_EFFECTS_SPRAY3)
-	temp = "Cleared Successfully!"
-	color_matrix_last = DEFAULT_COLORMATRIX
+	set_temp("Cleared Successfully!")
+	set_color_matrix_last(DEFAULT_COLORMATRIX)
 	update_tgui_static_data(user, ui)
 	return TRUE
 
 /datum/tgui_input_colormatrix/proc/ui_act_set_matrix_color(datum/act/op/A, color, value)
-	color_matrix_last[color] = value
+	set_color_matrix_last_at(color, value)
 	return TRUE
 
 /datum/tgui_input_colormatrix/proc/ui_act_set_matrix_string(datum/act/op/A, value)
@@ -189,19 +189,19 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 		for(var/i = 1, i <= length(colours), i++)
 			var/number = text2num(colours[i])
 			if(isnum(number))
-				color_matrix_last[i] = clamp(number, -10, 10)
+				set_color_matrix_last_at(i, clamp(number, -10, 10))
 	return TRUE
 
 /datum/tgui_input_colormatrix/proc/ui_act_set_hue(datum/act/op/A, buildhue)
-	build_hue = buildhue
+	set_build_hue(buildhue)
 	return TRUE
 
 /datum/tgui_input_colormatrix/proc/ui_act_set_sat(datum/act/op/A, buildsat)
-	build_sat = buildsat
+	set_build_sat(buildsat)
 	return TRUE
 
 /datum/tgui_input_colormatrix/proc/ui_act_set_val(datum/act/op/A, buildval)
-	build_val = buildval
+	set_build_val(buildval)
 	return TRUE
 
 /datum/prompt/color/matrix_active_colour
@@ -245,9 +245,9 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 			)
 		if(COLORMATE_HSV)
 			color_to_use = color_matrix_hsv(build_hue, build_sat, build_val)
-			color_matrix_last = color_to_use
+			set_color_matrix_last(color_to_use)
 	if(!color_to_use || !check_valid_color(color_to_use, user))
-		temp = "Invalid color!"
+		set_temp("Invalid color!")
 		return FALSE
 	if(apply)
 		target().add_atom_colour(color_to_use, FIXED_COLOUR_PRIORITY)
@@ -289,7 +289,7 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 
 			if(COLORMATE_HSV)
 				cm = color_matrix_hsv(build_hue, build_sat, build_val)
-				color_matrix_last = cm
+				set_color_matrix_last(cm)
 				if(!check_valid_color(cm, user))
 					return get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
 
@@ -298,7 +298,7 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 		target().color = (active_mode == COLORMATE_TINT ? activecolor : cm)
 		var/icon/preview = get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
 		target().color = cur_color
-		temp = ""
+		set_temp("")
 
 		. = preview
 
@@ -306,7 +306,7 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 	if(!islist(cm))		// normal
 		var/list/HSV = ReadHSV(RGBtoHSV(cm))
 		if(HSV[3] < minimum_normal_lightness)
-			temp = "[cm] is too dark (Minimum lightness: [minimum_normal_lightness])"
+			set_temp("[cm] is too dark (Minimum lightness: [minimum_normal_lightness])")
 			return FALSE
 		return TRUE
 	else	// matrix

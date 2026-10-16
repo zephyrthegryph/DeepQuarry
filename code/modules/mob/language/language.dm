@@ -202,7 +202,7 @@
 	if(!istype(new_language) || (new_language in languages))
 		return 0
 
-	languages.Add(new_language)
+	add_languages(new_language)
 	sync_language_state()
 	if(new_language.flags & HIVEMIND)
 		grant(src, granted_verb(/mob/proc/adjust_hive_range), new_language)
@@ -214,8 +214,8 @@
 	. = (L in languages)
 	var/prefix = get_custom_prefix_by_lang(src, L)
 	if(prefix)
-		language_keys.Remove(prefix)
-	languages.Remove(L)
+		remove_language_keys(prefix)
+	remove_languages(L)
 	sync_language_state()
 
 /// Brings the MOB_STATE_KNOWS_LANGUAGE key in line with the languages list (call after any write to the list).
@@ -320,12 +320,12 @@
 	var/custom_key = A.step_value("key")
 	if(custom_key && length(custom_key) == 1)
 		if(contains_az09(custom_key))
-			language_keys[custom_key] = L
+			set_language_keys_at(custom_key, L)
 			if(old_key && old_key != custom_key)
-				language_keys.Remove(old_key)
+				remove_language_keys(old_key)
 		else if(custom_key == " ")
 			if(old_key && old_key != custom_key)
-				language_keys.Remove(old_key)
+				remove_language_keys(old_key)
 		else
 			tgui_alert_async(src, "Improper language key. Rejected.", "Error")
 
@@ -363,7 +363,7 @@ CAPABILITIES(/datum/prompt/text/language_key)
 		for(var/key in source.language_keys)
 			if(L == source.language_keys[key])
 				if(!(key in target.language_keys))
-					target.language_keys[key] = L
+					target.set_language_keys_at(key, L)
 
 /proc/get_custom_prefix_by_lang(mob/our_mob, language)
 	if(!our_mob || !our_mob.language_keys.len || !language)

@@ -78,7 +78,7 @@ CAPABILITIES(/datum/player_panel)
 			"ref" = "\ref[M]",
 			"ip" = M.lastKnownIP,
 		))
-	shown_players = players
+	set_shown_players(players)
 
 /// /datum/player_panel's window data.
 /datum/player_panel/ui_data(datum/act/eval/A)

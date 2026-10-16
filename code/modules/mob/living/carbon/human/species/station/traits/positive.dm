@@ -257,10 +257,10 @@
 	var/datum/trait_state/weaver/W = H.get_trait_state(added_component_path)
 	if(S.get_bodytype() == SPECIES_VASILISSAN)
 		W.set_silk_reserve(500)
-		W.silk_max_reserve = 1000
+		W.set_silk_max_reserve(1000)
 	if(trait_prefs)
-		W.silk_production = trait_prefs["silk_production"]
-		W.silk_color = lowertext(trait_prefs["silk_color"])
+		W.set_silk_production(trait_prefs["silk_production"])
+		W.set_silk_color(lowertext(trait_prefs["silk_color"]))
 
 /datum/trait/positive/aquatic
 	name = "Aquatic"
@@ -934,10 +934,10 @@
 	..()
 	var/datum/trait_state/radiation_effects/G = H.get_trait_state(added_component_path)
 	if(trait_prefs)
-		G.radiation_color = trait_prefs["glow_color"]
-		G.glows = trait_prefs["glow_enabled"]
+		G.set_radiation_color(trait_prefs["glow_color"])
+		G.set_glows(trait_prefs["glow_enabled"])
 	G.radiation_healing = TRUE
-	G.radiation_nutrition = TRUE
+	G.set_radiation_nutrition(TRUE)
 
 /datum/trait/positive/radioactive_heal/unapply(datum/species/S,mob/living/carbon/human/H, list/trait_prefs)
 	..() //Does all the removal stuff
@@ -946,7 +946,7 @@
 	var/datum/trait_state/radiation_effects/G = H.get_trait_state(added_component_path)
 	if(G)
 		G.radiation_healing = initial(G.radiation_healing)
-		G.radiation_nutrition = initial(G.radiation_nutrition)
+		G.set_radiation_nutrition(initial(G.radiation_nutrition))
 
 /datum/trait/positive/shapeshifting
 	name = "Shapeshifter"

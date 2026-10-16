@@ -312,7 +312,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 			if(_posi_lang_custom[key])
 				var/datum/language/keylang = GLOB.all_languages[_posi_lang_custom[key]]
 				if(keylang)
-					P.language_keys[key] = keylang
+					P.set_language_keys_at(key, keylang)
 
 		if(posibrain_client.prefs.read_preference(/datum/preference/text/human/preferred_language))
 			var/datum/language/def_lang = GLOB.all_languages[posibrain_client.prefs.read_preference(/datum/preference/text/human/preferred_language)]

@@ -177,7 +177,7 @@
 /datum/affliction/proc/on_removed()
 	for(var/symptom_type in active_symptoms)
 		affliction_symptom(symptom_type).on_resolve(owner, src)
-	active_symptoms = null
+	set_active_symptoms(null)
 
 /// Drops the stage-applied state (C15): the presenting symptoms are RESOLVED (their
 /// on_resolve() undoes what they applied) before the lists are cleared.
@@ -185,7 +185,7 @@
 	for(var/symptom_type in active_symptoms)
 		affliction_symptom(symptom_type).on_resolve(owner, src)
 	stage = null
-	active_symptoms = null
+	set_active_symptoms(null)
 	symptom_pool = null
 	spontaneous_emotes = null
 	last_reroll_band = -1
@@ -412,7 +412,7 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 	stage = new_stage
 	var/list/entry = stages[new_stage]
 	if(entry["name"])
-		name = entry["name"]
+		set_name(entry["name"])
 	symptom_pool = entry["symptom_pool"]
 	if(!isnull(entry["min_symptoms"]))
 		min_symptoms = entry["min_symptoms"]
@@ -428,9 +428,9 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 	if(!isnull(entry["organ_damage_targets"]))
 		organ_damage_targets = entry["organ_damage_targets"]
 	if(!isnull(entry["pain_at_max"]))
-		pain_at_max = entry["pain_at_max"]
+		set_pain_at_max(entry["pain_at_max"])
 	if(!isnull(entry["consciousness_at_max"]))
-		consciousness_at_max = entry["consciousness_at_max"]
+		set_consciousness_at_max(entry["consciousness_at_max"])
 	last_reroll_band = -1
 	if(body)
 		body.invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_FACTORS)
@@ -454,7 +454,7 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 			kept += symptom_type
 		else
 			affliction_symptom(symptom_type).on_resolve(owner, src)
-	active_symptoms = length(kept) ? kept : null
+	set_active_symptoms(length(kept) ? kept : null)
 	if(!symptom_pool)
 		return
 
@@ -465,7 +465,7 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 			var/symptom_type = pick_n_take(active_symptoms)
 			affliction_symptom(symptom_type).on_resolve(owner, src)
 		if(!LAZYLEN(active_symptoms))
-			active_symptoms = null
+			set_active_symptoms(null)
 		return
 
 	var/list/surfacing = list()
@@ -483,7 +483,7 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 	while(length(surfacing) && LAZYLEN(active_symptoms) + length(surfacing) > max_symptoms)
 		pick_n_take(surfacing)
 	for(var/symptom_type in surfacing)
-		LAZYADD(active_symptoms, symptom_type)
+		add_active_symptoms(symptom_type)
 		affliction_symptom(symptom_type).on_present(owner, src)
 
 // --- Spontaneous emotes -----------------------------------------------------------------

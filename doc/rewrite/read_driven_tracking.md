@@ -65,3 +65,11 @@ read by presentation reactions (`stat`, `lying`, `resting`, sight/hud flags), at
 * **Memoized registries** (`PROC_SUMMARY(/proc/x)`: the icon manager, the decl repository, the material registry, the requirement interner, a lazily built overlay table) read no entity state; a shared image is a `look_cached_image()` or a shared cache, not a global list.
 * **Sampling.** What cannot be tracked (the map's level lists, whitelists and ban lists, accounts, a profile record, a mob's gender or pixel offset, the tint of a worn picture) is wrapped in `read_once()` where it is asked: the walk mutes it, and a menu that asked is rebuilt on each read. `git grep read_once` is the list; a new one needs a reason in the line.
 * **Drift.** In a test build the REFRESH DRIFT audit runs on every entity the strict staleness checker checks (`staleness_check_drift()`), not only on the sweep's budget.
+
+## Windows (October 2026)
+
+A window host's `ui_data(A)` is reactive code like a draw: `gens/deps.rs` counts every var it reads (inherited and implicit windows included, `code/modules/tgui/modules/` too), so
+the var is tracked and written through its generated setter, and the host's open windows are pushed after a write (`ui_push.dm`). `untracked_ui_read` is a hard ban with no
+exemption list. A ui read is fine when the var is tracked, a stat, a derived value or a declared relation (`ref_one`/`ref_many`/`owns_one`/`owns_many`, `link()`), or when nothing
+writes it (a `static`/`const` var, or one no proc writes outside a setter and no `set_v()` call names). A hand `set_v(...)` with another meaning blocks the generated setter (rename it,
+for example `show_temp()`); a hand setter that is a real setter publishes with `tracked_changed()` and is registered with `SETTER(T, v)`. `dq_ui_outputs_swept_*` pin the refresh.

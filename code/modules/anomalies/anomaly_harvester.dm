@@ -34,7 +34,7 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	var/rating = get_part_rating(/obj/item/stock_parts/micro_laser) - 2 * get_part_count(/obj/item/stock_parts/micro_laser)
 
 	efficiency = max(1, (efficient/10+1))
-	points_to_create = min(100, (100 - (rating * 5)))
+	set_points_to_create(min(100, (100 - (rating * 5))))
 
 /obj/machinery/anomaly_harvester/proc/work_step(datum/act/timer/A)
 	if(!operable() || !anchored)

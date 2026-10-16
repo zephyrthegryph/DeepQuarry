@@ -56,7 +56,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/kernel_watchdog)
 				defcon--
 			// ALLOW(scheduler): the watchdog is outside the kernel: its sleeps and detached procs are its own loop
 			sleep(initial(processing_interval)) //Wait a bit until the next try
-	running = FALSE // nothing holds it any more: the kernel starts a new one when it next looks
+	set_running(FALSE) // nothing holds it any more: the kernel starts a new one when it next looks
 
 /datum/kernel_watchdog/proc/Loop()
 	while(running)

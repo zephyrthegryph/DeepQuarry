@@ -853,7 +853,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	var/mob_holder_type = src.holder_type || /obj/item/holder
 	C.set_w_class(src.size_multiplier * 4) //Egg size and weight scaled to match occupant.
 	var/obj/item/holder/H = new mob_holder_type(C, src)
-	C.max_storage_space = H.w_class
+	C.set_max_storage_space(H.w_class)
 	C.set_icon_scale_x(0.25 * C.w_class)
 	C.set_icon_scale_y(0.25 * C.w_class)
 	C.update_transform()
@@ -998,7 +998,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	else
 		to_chat(src, span_danger(" You turn on your pain simulators "))
 
-	synth_cosmetic_pain = !synth_cosmetic_pain
+	set_synth_cosmetic_pain(!synth_cosmetic_pain)
 
 //This is the 'long vore' ability. Also known as "Grab Prey with appendage" or "Long Predatorial Reach". Or simply "Tongue Vore"
 //It involves projectiles (which means it can be VV'd onto a gun for shenanigans)

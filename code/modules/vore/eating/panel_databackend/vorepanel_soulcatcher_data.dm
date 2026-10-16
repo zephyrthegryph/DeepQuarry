@@ -37,7 +37,7 @@
 
 /datum/vore_look/proc/compile_soulcatcher_message_data(obj/soulgem/gem)
 	if(!sc_message_subtab)
-		sc_message_subtab = INTERIOR_DESIGN
+		set_sc_message_subtab(INTERIOR_DESIGN)
 	var/list/tab_data = list(
 		"possible_messages" = list(INTERIOR_DESIGN, CAPTURE_MESSAGE, TRANSIT_MESSAGE, TRANSFER_MESSAGE, RELEASE_MESSAGE, DELETE_MESSAGE),
 		"sc_subtab" = sc_message_subtab

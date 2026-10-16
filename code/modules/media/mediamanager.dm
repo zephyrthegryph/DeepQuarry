@@ -182,7 +182,7 @@ CAPABILITIES(/datum/media_manager)
 	if(!owner())
 		return
 	if(owner().prefs && isnum(owner().prefs.read_preference(/datum/preference/numeric/living/jukebox_volume)))
-		volume = owner().prefs.read_preference(/datum/preference/numeric/living/jukebox_volume) / 100
+		set_volume(owner().prefs.read_preference(/datum/preference/numeric/living/jukebox_volume) / 100)
 
 	// Enable the hidden skin element so its BROWSER actually loads our
 	// assets — the 1x1 size keeps it invisible regardless of is-visible.
@@ -203,16 +203,16 @@ CAPABILITIES(/datum/media_manager)
 
 /datum/media_manager/proc/push_music(targetURL, targetStartTime, targetVolume)
 	if (url != targetURL || abs(targetStartTime - start_time) > 1 || abs(targetVolume - source_volume) > 0.1 /* 10% */)
-		url = targetURL
-		start_time = targetStartTime
-		source_volume = CLAMP(targetVolume, 0, 1)
+		set_url(targetURL)
+		set_start_time(targetStartTime)
+		set_source_volume(CLAMP(targetVolume, 0, 1))
 		send_update()
 
 /datum/media_manager/proc/stop_music()
 	push_music("", 0, 1)
 
 /datum/media_manager/proc/update_volume(value)
-	volume = value
+	set_volume(value)
 	send_update()
 
 // Scan for media sources and use them.

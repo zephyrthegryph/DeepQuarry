@@ -123,7 +123,7 @@ CAPABILITIES(/obj/item/flash)
 		else if(!power_supply || !power_supply.checked_use(charge_cost))
 			break
 
-		use_cooldown += 10 SECONDS
+		set_use_cooldown(use_cooldown + (10 SECONDS))
 		times_used--
 
 	COOLDOWN_START(src, use_cooldown, 10 SECONDS)

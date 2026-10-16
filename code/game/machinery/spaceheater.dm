@@ -61,18 +61,18 @@ CAPABILITIES(/obj/machinery/space_heater)
 	op("cellinstall", ui_act("cellinstall"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellinstall)))
 
 /obj/machinery/space_heater/RefreshParts(limited = 0)
-	min_temperature = DEFAULT_MIN_TEMP
-	max_temperature = DEFAULT_MAX_TEMP
+	set_min_temperature(DEFAULT_MIN_TEMP)
+	set_max_temperature(DEFAULT_MAX_TEMP)
 	set_heating_power(DEFAULT_HEATING_POWER)
 	power_efficiency = 1
 	var/laser_over = get_part_rating(/obj/item/stock_parts/micro_laser) - get_part_count(/obj/item/stock_parts/micro_laser)
 	set_heating_power(heating_power + (laser_over * 25000)) // Increases the maximum heating/cooling possible. Doesn't affect the heat it pumps out/sucks in. That depends on the difference between the thermostat and the environment. This just clamps that temp change.
 	var/manip_over = get_part_rating(/obj/item/stock_parts/manipulator) - get_part_count(/obj/item/stock_parts/manipulator)
-	min_temperature -= manip_over * 23	//min_temperature starts at 273. A level 5 (omni) will decrease it by 92. -92 x 3 = 276, which we clamp to 0. It still sucks cooling down normal temp areas, but whatever it's a heater. Get a temp pump if you want to cool.
-	max_temperature += manip_over * 121	//max_temperature starts at 363. A level 5 (omni) will increase it by 484. 484 x 3 = 1936. Giving us a total of 2299K/2026C.
+	set_min_temperature(min_temperature - (manip_over * 23))	//min_temperature starts at 273. A level 5 (omni) will decrease it by 92. -92 x 3 = 276, which we clamp to 0. It still sucks cooling down normal temp areas, but whatever it's a heater. Get a temp pump if you want to cool.
+	set_max_temperature(max_temperature + (manip_over * 121))	//max_temperature starts at 363. A level 5 (omni) will increase it by 484. 484 x 3 = 1936. Giving us a total of 2299K/2026C.
 	var/cap_over = get_part_rating(/obj/item/stock_parts/capacitor) - get_part_count(/obj/item/stock_parts/capacitor)
 	power_efficiency -= cap_over * 0.06 //Four T2 parts = 24% more efficient. Four T5 parts = 96% more efficient
-	min_temperature = max(1, min_temperature)
+	set_min_temperature(max(1, min_temperature))
 /// What the heater shows: its state (off, standby, heating, cooling) and the open hatch, lit warm while it heats and cold while it cools.
 /obj/machinery/space_heater/draw(datum/look/look)
 	..()

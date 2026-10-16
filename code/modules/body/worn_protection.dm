@@ -93,11 +93,11 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 	if(!(dirty & BODY_DIRTY_ARMOR))
 		return
 	set_dirty(dirty & (~BODY_DIRTY_ARMOR))
-	armor_by_part = null
-	siemens_by_part = null
-	heat_limit_by_part = null
-	cold_limit_by_part = null
-	worn_insulation = 0
+	set_armor_by_part(null)
+	set_siemens_by_part(null)
+	set_heat_limit_by_part(null)
+	set_cold_limit_by_part(null)
+	set_worn_insulation(0)
 	var/list/armor_items = owner?.body_slot_items(BODY_SLOT_ARMOR)
 	var/list/insulation_items = owner?.body_slot_items(BODY_SLOT_INSULATION)
 	if(!length(armor_items) && !length(insulation_items))
@@ -107,12 +107,12 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 		var/datum/armor/combined = dq_worn_armor_scan(armor_items, part)
 		if(combined)
 			if(!armor_by_part)
-				armor_by_part = alist()
+				set_armor_by_part(alist())
 			armor_by_part[part] = combined
 		var/siemens = dq_worn_siemens_scan(insulation_items, part)
 		if(siemens != 1)
 			if(!siemens_by_part)
-				siemens_by_part = alist()
+				set_siemens_by_part(alist())
 			siemens_by_part[part] = siemens
 	for(var/obj/item/clothing/C in insulation_items)
 		var/heat = C.worn_heat_limit()
@@ -122,7 +122,7 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 				if(!(heat_flags & part))
 					continue
 				if(!heat_limit_by_part)
-					heat_limit_by_part = alist()
+					set_heat_limit_by_part(alist())
 				var/current = heat_limit_by_part[part]
 				if(isnull(current) || heat > current)
 					heat_limit_by_part[part] = heat
@@ -133,7 +133,7 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 				if(!(cold_flags & part))
 					continue
 				if(!cold_limit_by_part)
-					cold_limit_by_part = alist()
+					set_cold_limit_by_part(alist())
 				var/current = cold_limit_by_part[part]
 				if(isnull(current) || cold < current)
 					cold_limit_by_part[part] = cold
@@ -143,7 +143,7 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 		insulated |= part
 	for(var/part in cold_limit_by_part)
 		insulated |= part
-	worn_insulation = dq_thermal_surface(insulated)
+	set_worn_insulation(dq_thermal_surface(insulated))
 
 /// The combined worn armour (/datum/armor) on body part flag `part`; the
 /// empty armour when nothing armoured covers it. What injure()'s armour stage

@@ -63,7 +63,7 @@ SYSTEM_DEF(plants)
 	for(var/type in subtypesof(/datum/seed))
 		var/datum/seed/S = new type
 		seeds[S.name] = S
-		S.uid = "[length(seeds)]"
+		S.set_uid("[length(seeds)]")
 		S.roundstart = 1
 
 	// Make sure any seed packets that were mapped in are updated

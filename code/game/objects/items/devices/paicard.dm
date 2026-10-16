@@ -258,7 +258,7 @@ CAPABILITIES(/obj/item/paicard)
 	var/new_selection = ref
 	if(!istext(new_selection))
 		return FALSE
-	selected_pai = new_selection
+	set_selected_pai(new_selection)
 	return TRUE
 
 /obj/item/paicard/proc/ui_act_clear_preview(datum/act/op/A)
@@ -268,7 +268,7 @@ CAPABILITIES(/obj/item/paicard)
 		return FALSE
 	if(in_use)
 		return FALSE
-	selected_pai = null
+	set_selected_pai(null)
 	return TRUE
 
 /obj/item/paicard/proc/ui_act_setdna(datum/act/op/A)
@@ -350,10 +350,10 @@ CAPABILITIES(/obj/item/paicard)
 		return FALSE
 	if(in_use)
 		return FALSE
-	in_use = TRUE
+	set_in_use(TRUE)
 	SSpai.invite_ghost(user, ref, src)
-	in_use = FALSE
-	selected_pai = null
+	set_in_use(FALSE)
+	set_selected_pai(null)
 	return TRUE
 
 /obj/item/paicard/proc/ui_act_select_tool(datum/act/op/A, tool)
@@ -364,7 +364,7 @@ CAPABILITIES(/obj/item/paicard)
 	var/new_tool = tool
 	if(!(new_tool in systems_list))
 		return FALSE
-	selected_system = new_tool
+	set_selected_system(new_tool)
 	return TRUE
 
 /obj/item/paicard/proc/ui_act_activate_tool(datum/act/op/A)
@@ -433,7 +433,7 @@ CAPABILITIES(/obj/item/paicard)
 
 	screen_layer.color = pai ? pai.eye_color : initial(screen_color)
 	add_overlay(screen_layer)
-	current_emotion = emotion
+	set_current_emotion(emotion)
 
 /obj/item/paicard/proc/alertUpdate()
 	if(pai)
@@ -834,7 +834,7 @@ MSG_DEF_SELF(paicard/remove_first, span_warning("You would need to remove the in
 		if(user)
 			to_chat(user, span_notice("\The [src] buzzes and beeps."))
 			play_sfx(src, SFX_MACHINES_BUZZBEEP)
-		emagged = TRUE
+		set_emagged(TRUE)
 		// Add tools
 		if(has_emag_toolkit)
 			rel_set(src, nameof(multitool), new /obj/item/multitool(src))

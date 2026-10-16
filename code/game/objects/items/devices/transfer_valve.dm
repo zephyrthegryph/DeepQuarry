@@ -190,13 +190,13 @@ CAPABILITIES(/obj/item/transfer_valve)
 	var/datum/gas_mixture/temp
 	temp = tank_one.air_contents.remove_ratio(1)
 	tank_two.air_contents.merge(temp)
-	valve_open = 1
+	set_valve_open(1)
 
 /obj/item/transfer_valve/proc/split_gases()
 	if(!valve_open)
 		return
 
-	valve_open = 0
+	set_valve_open(0)
 
 	if(QDELETED(tank_one) || QDELETED(tank_two))
 		return

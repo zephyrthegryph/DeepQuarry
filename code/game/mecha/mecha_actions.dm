@@ -263,7 +263,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
 		return
 	play_sfx(src, SFX_MECHA_DURANDDEFENCEMODE)
-	defence_mode = !defence_mode
+	set_defence_mode(!defence_mode)
 	// The body plan adds the defence-mode deflection bonus (mech_body_plan().deflect_chance()).
 	if(defence_mode)
 		src.occupant_message(span_blue("You enable [src] defence mode."))
@@ -283,14 +283,14 @@ CAPABILITIES(/datum/action/innate/mecha)
 		return
 	if(get_integrity() < max_integrity - max_integrity/3)//Same formula as in movement, just beforehand.
 		src.occupant_message(span_red("Leg actuators damage critical, unable to engage overload."))
-		overload = 0	//Just to be sure
+		set_overload(0)	//Just to be sure
 		return
 	if(overload)
-		overload = 0
+		set_overload(0)
 		step_energy_drain = initial(step_energy_drain)
 		src.occupant_message(span_blue("You disable leg actuators overload."))
 	else
-		overload = 1
+		set_overload(1)
 		step_energy_drain = step_energy_drain*overload_coeff
 		src.occupant_message(span_red("You enable leg actuators overload."))
 	src.log_message("Toggled leg actuators overload.", LOG_GAME)
@@ -310,7 +310,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 		return
 
 	if(COOLDOWN_FINISHED(src, smoke_cooldown_end))
-		smoke_reserve--	//Remove ammo
+		set_smoke_reserve(smoke_reserve - 1)	//Remove ammo
 		src.occupant_message(span_red("Smoke fired. [smoke_reserve] usages left."))
 
 		var/datum/effect/effect/system/smoke_spread/smoke = new /datum/effect/effect/system/smoke_spread()
@@ -355,7 +355,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 		return
 	if(src?.slot_item(MECHA_SLOT_PILOT))
 		if(get_charge() > 0)
-			thrusters = !thrusters
+			set_thrusters(!thrusters)
 			src.log_message("Toggled thrusters.", LOG_GAME)
 			if(src.thrusters)
 				src.occupant_message(span_blue("Thrusters enabled."))

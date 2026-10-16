@@ -32,7 +32,7 @@
 	TEST_ASSERT_EQUAL(big.loc, T, "a refused item stays put")
 
 	// Space: storage-cost units, counted by the ledger.
-	box.max_storage_space = ITEMSIZE_COST_SMALL * 2
+	box.set_max_storage_space(ITEMSIZE_COST_SMALL * 2)
 	var/obj/item/a = dq_storage_item(T, ITEMSIZE_SMALL)
 	var/obj/item/b = dq_storage_item(T, ITEMSIZE_SMALL)
 	var/obj/item/c = dq_storage_item(T, ITEMSIZE_TINY)
@@ -53,7 +53,7 @@
 	// Count: storage_slots caps the number of things.
 	var/obj/item/storage/box/counted = allocate(/obj/item/storage/box, T)
 	counted.storage_slots = 2
-	counted.max_storage_space = 100
+	counted.set_max_storage_space(100)
 	TEST_ASSERT(counted.insert_item(dq_storage_item(T, ITEMSIZE_TINY)), "slot one")
 	TEST_ASSERT(counted.insert_item(dq_storage_item(T, ITEMSIZE_TINY)), "slot two")
 	why = counted.insert_refusal(dq_storage_item(T, ITEMSIZE_TINY), null)
@@ -101,7 +101,7 @@
 	var/turf/pile = get_step(T, EAST)
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/storage/box/box = allocate(/obj/item/storage/box, T)
-	box.max_storage_space = 100
+	box.set_max_storage_space(100)
 	var/list/small = list()
 	for(var/i in 1 to 4)
 		small += dq_storage_item(pile, ITEMSIZE_SMALL)

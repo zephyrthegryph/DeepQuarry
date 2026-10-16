@@ -13,8 +13,8 @@
 /datum/unit_test/dq_hc_computers/arcade_battle_newgame/run_gate()
 	var/obj/machinery/computer/arcade/battle/C = hc_console(/obj/machinery/computer/arcade/battle)
 	var/mob/living/carbon/human/H = hc_actor()
-	C.player_hp = 3
-	C.gameover = 1
+	C.set_player_hp(3)
+	C.set_gameover(1)
 	press(H, C, "newgame")
 	TEST_ASSERT_EQUAL(C.player_hp, 30, "a new game resets the player's health")
 	TEST_ASSERT_EQUAL(C.enemy_hp, 45, "and the enemy's")
@@ -37,7 +37,7 @@
 	TEST_ASSERT_EQUAL(C.wintick, 0, "from the first move")
 	press(H, C, "pointless")
 	TEST_ASSERT_EQUAL(C.wintick, 1, "a move counts")
-	C.wintick = 9
+	C.set_wintick(9)
 	C.winprob = 0
 	press(H, C, "pointless")
 	TEST_ASSERT_EQUAL(C.gameStatus, "CLAWMACHINE_END", "the tenth move ends the game")
@@ -62,7 +62,7 @@
 	var/enemy = C.enemy_hp
 	press(H, C, "attack")
 	TEST_ASSERT(C.enemy_hp < enemy, "an attack hurts the enemy")
-	C.player_hp = 10
+	C.set_player_hp(10)
 	press(H, C, "heal")
 	TEST_ASSERT(C.player_hp > 10, "healing restores health")
 	var/list/data = hc_data(C, H)
@@ -74,11 +74,11 @@
 	var/obj/machinery/computer/arcade/battle/C = hc_console(/obj/machinery/computer/arcade/battle)
 	var/mob/living/carbon/human/H = hc_actor()
 	press(H, C, "newgame")
-	C.gameover = 1
+	C.set_gameover(1)
 	var/enemy = C.enemy_hp
 	press(H, C, "attack")
 	TEST_ASSERT_EQUAL(C.enemy_hp, enemy, "nothing happens once the game is over")
-	C.gameover = 0
+	C.set_gameover(0)
 	C.blocked = 1
 	press(H, C, "attack")
 	TEST_ASSERT_EQUAL(C.enemy_hp, enemy, "nor while a move is under way")
@@ -123,7 +123,7 @@
 	TEST_ASSERT_EQUAL(B.player_hp, 30, "battle mode resets the player's health")
 	TEST_ASSERT(B.emagged(), "battle cheat mode sets its own gameplay state")
 	TEST_ASSERT_EQUAL(E.uses, 7, "battle mode spends one sequencer use")
-	B.player_hp = 7
+	B.set_player_hp(7)
 	test_click(H, B, E)
 	TEST_ASSERT_EQUAL(B.player_hp, 7, "a second swipe cannot reset a one-shot battle mode")
 	TEST_ASSERT_EQUAL(E.uses, 7, "a refused repeat does not spend a use")
@@ -177,7 +177,7 @@
 /datum/unit_test/dq_hc_computers/orion_topic_dispatch_and_schema/run_gate()
 	var/obj/machinery/computer/arcade/orion_trail/C = hc_console(/obj/machinery/computer/arcade/orion_trail)
 	var/mob/living/carbon/human/ordinary = hc_actor()
-	C.event = C.events[1]
+	C.set_event(C.events[1])
 	var/starting_event = C.event
 	C.canContinueEvent = FALSE
 	var/datum/op_result/no_transport = own(op_topic(ordinary, C, "eventclose", list("eventclose" = "1")))

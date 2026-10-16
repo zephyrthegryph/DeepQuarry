@@ -377,6 +377,18 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         consumers.insert(id.clone(), untracked_of(&set, &eng, &written, true));
         draws.insert(id);
     }
+    // A window host's ui_data(A) is an output whether or not a CAPABILITIES block names an interface() for it (an inherited or implicit window):
+    // every var it reads must publish, or the window never hears a write. The reads count here; nothing is added to the consumer table.
+    {
+        let mut seen_ui = BTreeSet::new();
+        for d in crate::sem::procs::proc_defs(&sem, &["ui_data", "tgui_data"]) {
+            if d.owner == "/" || d.rel.starts_with("code/engine/") || !seen_ui.insert(format!("{}::{}", d.owner, d.name)) {
+                continue;
+            }
+            let set = eng.analyze_handler(&d.owner, &d.name, "/datum/act/eval");
+            note_reads(&set, &mut reads);
+        }
+    }
     let mut leaves = Vec::new();
     let mut named: BTreeSet<(String, String)> = BTreeSet::new();
     for m in decls.markers_named("CAPABILITIES") {

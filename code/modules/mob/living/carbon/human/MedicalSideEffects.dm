@@ -53,7 +53,7 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 /mob/living/carbon/human/add_side_effect(name, strength = 0)
 	for(var/datum/medical_effect/M in side_effects)
 		if(M.name == name)
-			M.strength = max(M.strength, 10)
+			M.set_strength(max(M.strength, 10))
 			M.start = life_tick
 			return
 	var/list/registry = GLOBAL_TABLE_GET(dq_medical_effect_registry)
@@ -61,7 +61,7 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 	if(!prototype)
 		return
 	var/datum/medical_effect/new_effect = new prototype.type
-	new_effect.strength = strength
+	new_effect.set_strength(strength)
 	new_effect.start = life_tick
 	rel_add(src, nameof(side_effects), new_effect)
 
@@ -103,7 +103,7 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 				if(src.life_tick % 45 == 0)
 					M.on_life(src, strength_percent*M.strength)
 				// Effect slowly growing stronger
-				M.strength+=0.08
+				M.set_strength(M.strength + 0.08)
 
 // HEADACHE
 // ========

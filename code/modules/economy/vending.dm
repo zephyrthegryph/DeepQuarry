@@ -221,7 +221,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 			GLOB.vending_products[entry] = 1
 
 	if(LAZYLEN(prices))
-		has_prices = TRUE
+		set_has_prices(TRUE)
 	if(LAZYLEN(premium))
 		set_has_premium(TRUE)
 

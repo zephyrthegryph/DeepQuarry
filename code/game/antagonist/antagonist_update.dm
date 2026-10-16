@@ -82,10 +82,10 @@
 						spent(I)
 
 /datum/antagonist/proc/update_current_antag_max()
-	cur_max = hard_cap
+	set_cur_max(hard_cap)
 	if(SSticker && ticker_mode())
 		if(ticker_mode().antag_tags && (id in ticker_mode().antag_tags))
-			cur_max = hard_cap_round
+			set_cur_max(hard_cap_round)
 
 	if(ticker_mode().antag_scaling_coeff)
 
@@ -96,4 +96,4 @@
 
 		// Minimum: initial_spawn_target
 		// Maximum: hard_cap or hard_cap_round
-		cur_max = max(initial_spawn_target,min(round(count/ticker_mode().antag_scaling_coeff),cur_max))
+		set_cur_max(max(initial_spawn_target,min(round(count/ticker_mode().antag_scaling_coeff),cur_max)))

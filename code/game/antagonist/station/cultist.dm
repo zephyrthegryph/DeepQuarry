@@ -110,7 +110,7 @@ CAPABILITIES(/datum/antagonist/cultist)
 	if(!.)
 		return 0
 	to_chat(player.current, span_danger("An unfamiliar white light flashes through your mind, cleansing the taint of the dark-one and the memories of your time as his servant with it."))
-	player.memory = ""
+	player.set_memory("")
 	if(show_message)
 		player.current.visible_message(span_large("[player.current] looks like they just reverted to their old faith!"))
 	if(player.current && !istype(player.current, /mob/living/simple_mob/construct))

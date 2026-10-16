@@ -153,7 +153,7 @@
 			else
 				W.set_access(list())
 		if(corpseidjob)
-			W.assignment = corpseidjob
+			W.set_assignment(corpseidjob)
 		W.set_registered_name(M.real_name)
 		M.equip_to_slot_or_del(W, SLOT_ID_ID)
 	if(src.corpsehelmet)

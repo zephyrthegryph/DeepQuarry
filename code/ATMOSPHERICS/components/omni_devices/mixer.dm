@@ -100,8 +100,8 @@
 /obj/machinery/atmospherics/omni/mixer/push_to_rust()
 	if(QDELETED(src))
 		return
-	last_power_draw = 0
-	last_flow_rate = 0
+	set_last_power_draw(0)
+	set_last_flow_rate(0)
 	rust_unregister_all_devices_n()
 	if(!operable() || !use_power || !output || length(inputs) < 2) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
 		return
@@ -115,10 +115,10 @@
 
 /// A step's result: the moles the group moved and the power it drew, billed.
 /obj/machinery/atmospherics/omni/mixer/rust_device_stepped(moles, power_w, target_reached)
-	last_power_draw = power_w
+	set_last_power_draw(power_w)
 	if(power_w > 0)
 		use_power(power_w)
-	last_flow_rate = moles
+	set_last_flow_rate(moles)
 
 
 /// The Rust group is pushed (once per frame) when the rate or (through wake_for_state_change()) a port or share changes.
@@ -248,16 +248,16 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 				if(ATM_INPUT)
 					if(P.mode == ATM_OUTPUT)
 						return
-					P.mode = mode
+					P.set_mode(mode)
 				if(ATM_OUTPUT)
-					P.mode = mode
+					P.set_mode(mode)
 				if(ATM_NONE)
 					if(P.mode == ATM_OUTPUT)
 						return
 					if(P.mode == ATM_INPUT && length(inputs) > 2)
-						P.mode = mode
+						P.set_mode(mode)
 		else if(P.mode == ATM_OUTPUT && mode == ATM_OUTPUT)
-			P.mode = ATM_INPUT
+			P.set_mode(ATM_INPUT)
 		if(P.mode != old_mode)
 			switch(P.mode)
 				if(ATM_NONE)

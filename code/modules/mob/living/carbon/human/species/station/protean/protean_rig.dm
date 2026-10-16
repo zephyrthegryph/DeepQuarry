@@ -545,7 +545,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			continue
 		module.deactivate()
 		// Unworn modules refuse a polite shutdown; an inert cluster cuts them anyway.
-		module.active = FALSE
+		module.set_active(FALSE)
 	reset()
 	set_armor(dq_armor_none())
 	for(var/obj/item/piece in list(gloves, helmet, boots, chest))

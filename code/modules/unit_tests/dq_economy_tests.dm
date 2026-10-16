@@ -7,8 +7,8 @@
 	var/destroyed_before = SSsupply.currency_destroyed
 	var/datum/money_account/source = new
 	var/datum/money_account/target = new
-	source.owner_name = "Source"
-	target.owner_name = "Target"
+	source.set_owner_name("Source")
+	target.set_owner_name("Target")
 	source.money = 100
 	target.money = 25
 	TEST_ASSERT(transfer_account_funds(source, target, 40, "Test transfer"), "valid transfer was rejected")
@@ -26,10 +26,10 @@
 /datum/unit_test/dq_economy_service_requires_funding/Run()
 	var/datum/money_account/provider = new
 	var/datum/money_account/customer = new
-	provider.owner_name = "Medical test budget"
-	provider.is_budget_account = TRUE
+	provider.set_owner_name("Medical test budget")
+	provider.set_is_budget_account(TRUE)
 	provider.money = 0
-	customer.owner_name = "Patient"
+	customer.set_owner_name("Patient")
 	customer.money = 0
 	set_global("department_accounts", GLOB.department_accounts.Copy())
 	GLOB.department_accounts[DEPARTMENT_MEDICAL] = provider
@@ -49,8 +49,8 @@
 /datum/unit_test/dq_department_management_scope/Run()
 	var/obj/machinery/computer/skills/console = new(run_loc_floor_bottom_left)
 	var/obj/item/card/id/head_id = new(console)
-	head_id.rank = JOB_CHIEF_ENGINEER
-	head_id.assignment = JOB_CHIEF_ENGINEER
+	head_id.set_rank(JOB_CHIEF_ENGINEER)
+	head_id.set_assignment(JOB_CHIEF_ENGINEER)
 	rel_set(console, nameof(console.scan), head_id)
 	TEST_ASSERT(console.can_view_department(DEPARTMENT_ENGINEERING), "Chief Engineer could not view Engineering finances")
 	TEST_ASSERT(!console.can_view_department(DEPARTMENT_MEDICAL), "Chief Engineer could view Medical finances")
@@ -136,9 +136,9 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	players_clear()
 	var/datum/money_account/test_budget = new
-	test_budget.owner_name = "Test Engineering"
-	test_budget.department_id = DEPARTMENT_ENGINEERING
-	test_budget.is_budget_account = TRUE
+	test_budget.set_owner_name("Test Engineering")
+	test_budget.set_department_id(DEPARTMENT_ENGINEERING)
+	test_budget.set_is_budget_account(TRUE)
 	test_budget.money = 31
 	set_global("department_accounts", GLOB.department_accounts.Copy())
 	GLOB.department_accounts[DEPARTMENT_ENGINEERING] = test_budget
@@ -149,7 +149,7 @@
 		employee.set_job(JOB_ENGINEER)
 		var/datum/mind/employee_mind = own(new /datum/mind("payroll_test_[index]")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 		var/datum/money_account/account = new
-		account.owner_name = "Employee [index]"
+		account.set_owner_name("Employee [index]")
 		account.set_account_number(810000 + index)
 		rel_set(employee_mind, nameof(employee_mind.initial_account), account)
 		employee_mind.transfer_to(employee)
@@ -187,9 +187,9 @@
 
 /datum/unit_test/dq_department_budget_rollover/Run()
 	var/datum/money_account/budget = new
-	budget.owner_name = "Test department"
-	budget.department_id = DEPARTMENT_ENGINEERING
-	budget.is_budget_account = TRUE
+	budget.set_owner_name("Test department")
+	budget.set_department_id(DEPARTMENT_ENGINEERING)
+	budget.set_is_budget_account(TRUE)
 	budget.money = 1200
 	budget.monthly_income = 300
 	budget.monthly_expenses = 100
@@ -208,7 +208,7 @@
 /datum/unit_test/dq_manual_account_creation_is_conservative/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/test_station = new
-	test_station.owner_name = "Test Station"
+	test_station.set_owner_name("Test Station")
 	test_station.money = 100
 	test_station.suspended = TRUE
 	set_global("station_account", test_station)
@@ -245,9 +245,9 @@
 
 /datum/unit_test/dq_station_monthly_income_tracking/Run()
 	var/datum/money_account/station = new
-	station.owner_name = "Test station"
-	station.department_id = "Station"
-	station.is_budget_account = TRUE
+	station.set_owner_name("Test station")
+	station.set_department_id("Station")
+	station.set_is_budget_account(TRUE)
 	TEST_ASSERT_EQUAL(SSsupply.nt_salary_support, 0.75, "NanoTrasen salary support did not default to 75%")
 	TEST_ASSERT(station.credit(750, "NanoTrasen", "Payroll support"), "station income credit failed")
 	TEST_ASSERT(station.credit(250, "External trade", "Export revenue"), "secondary station income credit failed")
@@ -275,7 +275,7 @@
 	var/mob/living/carbon/human/requester = new(test_turf)
 	var/datum/mind/requester_mind = own(new /datum/mind("personal_supply_test")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 	var/datum/money_account/account = new
-	account.owner_name = "Personal Supply Tester"
+	account.set_owner_name("Personal Supply Tester")
 	account.set_account_number(812345)
 	account.money = SSsupply.pack_price(pack) + 10
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
@@ -316,7 +316,7 @@
 	set_var(SSsupply, "currency_refunded", SSsupply.currency_refunded)
 	set_var(SSsupply, "currency_internal_refunded", SSsupply.currency_internal_refunded)
 	var/datum/money_account/customer = new
-	customer.owner_name = "Hungry Tester"
+	customer.set_owner_name("Hungry Tester")
 	customer.set_account_number(823456)
 	customer.money = 120
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
@@ -361,11 +361,11 @@
 	var/refunds_before = SSsupply.currency_refunded
 	var/internal_refunds_before = SSsupply.currency_internal_refunded
 	var/datum/money_account/customer = new
-	customer.owner_name = "Adversarial Customer"
+	customer.set_owner_name("Adversarial Customer")
 	customer.set_account_number(834567)
 	customer.money = 500
 	var/datum/money_account/staff = new
-	staff.owner_name = "Service Worker"
+	staff.set_owner_name("Service Worker")
 	staff.set_account_number(834568)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, staff)
@@ -473,7 +473,7 @@
 /datum/unit_test/dq_service_ticket_canonicalization/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/obj/item/retail_scanner/scanner = new(test_turf)
-	scanner.locked = FALSE
+	scanner.set_locked(FALSE)
 	// The handlers are op effects now (datum/act/op/A, args...); they read only the actor, which a direct call names here.
 	var/datum/dq_test_op_stub/op_stub = new
 	TEST_ASSERT(scanner.ui_act_custom_order(op_stub, 2, 10, "Meal"), "scanner rejected a valid custom-order row")
@@ -492,19 +492,19 @@
 	TEST_ASSERT_EQUAL(scanner.ticket_revision, revision_before_invalid, "rejected scanner input mutated the ticket revision")
 	TEST_ASSERT_EQUAL(scanner.service_staff_account_number, staff_before_invalid, "rejected scanner input changed staff attribution")
 	var/datum/money_account/first_provider = new
-	first_provider.owner_name = "First provider"
+	first_provider.set_owner_name("First provider")
 	first_provider.set_account_number(884001)
 	first_provider.remote_access_pin = 1111
 	first_provider.set_security_level(1)
-	first_provider.is_budget_account = TRUE
-	first_provider.department_id = DEPARTMENT_CIVILIAN
+	first_provider.set_is_budget_account(TRUE)
+	first_provider.set_department_id(DEPARTMENT_CIVILIAN)
 	var/datum/money_account/second_provider = new
-	second_provider.owner_name = "Second provider"
+	second_provider.set_owner_name("Second provider")
 	second_provider.set_account_number(884002)
 	second_provider.remote_access_pin = 2222
 	second_provider.set_security_level(1)
-	second_provider.is_budget_account = TRUE
-	second_provider.department_id = DEPARTMENT_CARGO
+	second_provider.set_is_budget_account(TRUE)
+	second_provider.set_department_id(DEPARTMENT_CARGO)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, first_provider)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, second_provider)
 	rel_set(scanner, nameof(scanner.linked_account), first_provider)
@@ -552,7 +552,7 @@
 	var/invoice_count_before = length(SSsupply.service_invoices)
 
 	var/datum/money_account/customer_account = new
-	customer_account.owner_name = "Lifecycle Customer"
+	customer_account.set_owner_name("Lifecycle Customer")
 	customer_account.set_account_number(845670)
 	customer_account.money = 200
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer_account)
@@ -568,10 +568,10 @@
 
 	var/obj/machinery/cash_register/civilian/register = new(test_turf)
 	rel_set(register, nameof(register.linked_account), service)
-	register.transaction_amount = 25
+	register.set_transaction_amount(25)
 	register.transaction_purpose = "Lifecycle meal"
-	register.item_list["meal"] = 1
-	register.price_list["meal"] = 25
+	register.set_item_list_at("meal", 1)
+	register.set_price_list_at("meal", 25)
 	var/obj/item/spacecash/ewallet/wallet = new(customer)
 	wallet.owner_name = customer_account.owner_name
 	wallet.set_worth(60)
@@ -581,10 +581,10 @@
 	var/datum/service_invoice/ewallet_invoice = SSsupply.service_invoices[length(SSsupply.service_invoices)]
 	TEST_ASSERT_EQUAL(ewallet_invoice.payment_method, "E-Wallet", "e-wallet invoice recorded the wrong payment channel")
 
-	register.transaction_amount = 30
+	register.set_transaction_amount(30)
 	register.transaction_purpose = "Lifecycle cash meal"
-	register.item_list["cash meal"] = 1
-	register.price_list["cash meal"] = 30
+	register.set_item_list_at("cash meal", 1)
+	register.set_price_list_at("cash meal", 30)
 	var/cash_before = register.cash_stored
 	var/obj/item/spacecash/c50/cash = new(customer)
 	register.scan_cash(cash, customer)
@@ -673,10 +673,10 @@
 	var/research_income_before = research.monthly_income
 	var/cargo_income_before = cargo.monthly_income
 	var/datum/money_account/producer = new
-	producer.owner_name = "Research Producer"
+	producer.set_owner_name("Research Producer")
 	producer.set_account_number(918273)
 	producer.money = 1000
-	producer.department_id = DEPARTMENT_ENGINEERING
+	producer.set_department_id(DEPARTMENT_ENGINEERING)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, producer)
 	var/datum/contract_definition/research_definition = SScontracts.definitions["research_export_portfolio"]
 	var/datum/contract/outcome/research_contract = research_definition.create_contract(list("value_target" = 100, "variety_target" = 1))
@@ -748,7 +748,7 @@
 	var/obj/machinery/partslathe/parts_lathe = new(test_turf)
 	var/datum/category_item/partslathe/test_recipe = new
 	test_recipe.path = /obj/item
-	test_recipe.resources = list()
+	test_recipe.set_resources(list())
 	parts_lathe.addToQueue(test_recipe, producer.account_number)
 	TEST_ASSERT_EQUAL(parts_lathe.queue_producer_accounts[1], producer.account_number, "parts-lathe queue discarded producer identity")
 	var/obj/item/parts_output = parts_lathe.build(test_recipe, producer.account_number)
@@ -834,7 +834,7 @@
 	TEST_ASSERT_NOTNULL(test_listing, "generated market had no visible seller listing")
 	var/datum/money_account/account = new
 	account.set_account_number(9654331)
-	account.owner_name = "Market Order Tester"
+	account.set_owner_name("Market Order Tester")
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("market_order_tester")
 	rel_set(test_mind, nameof(test_mind.initial_account), account)
@@ -877,7 +877,7 @@
 
 	var/datum/money_account/owner_account = new
 	owner_account.set_account_number(9654340)
-	owner_account.owner_name = "Covert Principal Tester"
+	owner_account.set_owner_name("Covert Principal Tester")
 	owner_account.money = 10000
 	registry_join(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	var/datum/mind/owner_mind = new("covert_principal_tester")
@@ -887,8 +887,8 @@
 
 	var/datum/money_account/collaborator_account = new
 	collaborator_account.set_account_number(9654341)
-	collaborator_account.owner_name = "Covert Cargo Tester"
-	collaborator_account.department_id = DEPARTMENT_CARGO
+	collaborator_account.set_owner_name("Covert Cargo Tester")
+	collaborator_account.set_department_id(DEPARTMENT_CARGO)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, collaborator_account)
 	var/datum/mind/collaborator_mind = new("covert_cargo_tester")
 	rel_set(collaborator_mind, nameof(collaborator_mind.initial_account), collaborator_account)
@@ -904,7 +904,7 @@
 	record.account_number = owner_account.account_number
 	record.faction_id = REPUTATION_FACTION_SYNDICATE
 	rel_set(record, nameof(record.agent_mind), owner_mind)
-	record.tier = FACTION_AGENT_TIER_ACCREDITED
+	record.set_tier(FACTION_AGENT_TIER_ACCREDITED)
 	rel_add(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), record, "[owner_account.account_number]")
 	TEST_ASSERT(SSsupply.market_counterparty_visible(syndicate_broker, owner), "accredited agent could not see their principal market")
 	TEST_ASSERT(SSsupply.market_true_identity_visible(syndicate_broker, owner), "principal account could not identify its own counterparty")
@@ -985,7 +985,7 @@
 
 	var/datum/money_account/auditor_account = new
 	auditor_account.set_account_number(9654342)
-	auditor_account.owner_name = "Market Auditor"
+	auditor_account.set_owner_name("Market Auditor")
 	registry_join(REGISTRY_MONEY_ACCOUNTS, auditor_account)
 	var/datum/mind/auditor_mind = new("market_auditor")
 	rel_set(auditor_mind, nameof(auditor_mind.initial_account), auditor_account)
@@ -1001,7 +1001,7 @@
 	TEST_ASSERT(transaction.detected, "deterministic forensic threshold failed to correlate a covert account")
 	TEST_ASSERT_EQUAL(transaction.detected_account, owner_account.account_number, "collaborator traffic did not correlate back to its principal account")
 	TEST_ASSERT(!SSsupply.audit_market_transaction(transaction.id, auditor), "the same account could repeatedly audit one settlement")
-	record.tier = FACTION_AGENT_TIER_TRUSTED
+	record.set_tier(FACTION_AGENT_TIER_TRUSTED)
 	TEST_ASSERT(GLOB.station_faction_relations.activate_contract_operative(owner_account.account_number, "TEST-RED-CONTRACT", owner), "trusted Syndicate agent could not explicitly enter the bounded operative role")
 	TEST_ASSERT_EQUAL(owner_mind.special_role, "Contract Operative", "red-contract opt-in did not register the antagonist role")
 	TEST_ASSERT(GLOB.station_faction_relations.deactivate_contract_operative(owner_account.account_number, "TEST-RED-CONTRACT"), "closing the red contract did not remove its bounded antagonist role")
@@ -1037,12 +1037,12 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/principal_account = new
 	principal_account.set_account_number(9654350)
-	principal_account.owner_name = "Physical Principal Tester"
+	principal_account.set_owner_name("Physical Principal Tester")
 	registry_join(REGISTRY_MONEY_ACCOUNTS, principal_account)
 	var/datum/money_account/contact_account = new
 	contact_account.set_account_number(9654351)
-	contact_account.owner_name = "Physical Cargo Tester"
-	contact_account.department_id = DEPARTMENT_CARGO
+	contact_account.set_owner_name("Physical Cargo Tester")
+	contact_account.set_department_id(DEPARTMENT_CARGO)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, contact_account)
 	var/datum/mind/contact_mind = new("physical_cargo_tester")
 	rel_set(contact_mind, nameof(contact_mind.initial_account), contact_account)
@@ -1056,7 +1056,7 @@
 	var/datum/faction_agent_record/record = new
 	record.account_number = principal_account.account_number
 	record.faction_id = REPUTATION_FACTION_ECLIPSE
-	record.tier = FACTION_AGENT_TIER_ACCREDITED
+	record.set_tier(FACTION_AGENT_TIER_ACCREDITED)
 	rel_add(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), record, "[principal_account.account_number]")
 	var/datum/contract/faction_agent/contract = new
 	contract.definition_id = "agent_confidential_brokerage"
@@ -1103,7 +1103,7 @@
 
 	var/datum/money_account/auditor_account = new
 	auditor_account.set_account_number(9654352)
-	auditor_account.owner_name = "Physical Evidence Tester"
+	auditor_account.set_owner_name("Physical Evidence Tester")
 	registry_join(REGISTRY_MONEY_ACCOUNTS, auditor_account)
 	var/datum/mind/auditor_mind = new("physical_evidence_tester")
 	rel_set(auditor_mind, nameof(auditor_mind.initial_account), auditor_account)
@@ -1177,8 +1177,8 @@
 
 	var/datum/money_account/customer = new
 	customer.set_account_number(9876101)
-	customer.owner_name = "Storefront Unit Customer"
-	customer.department_id = DEPARTMENT_ENGINEERING
+	customer.set_owner_name("Storefront Unit Customer")
+	customer.set_department_id(DEPARTMENT_ENGINEERING)
 	customer.money = 500
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	var/datum/mind/customer_mind = new("storefront_unit_customer")
@@ -1194,14 +1194,14 @@
 	var/obj/item/store_item = new(store)
 	store_item.set_economic_provenance(DEPARTMENT_RESEARCH, 10, 0)
 	var/item_ref = REF(store_item)
-	store.stock_suggested_prices[item_ref] = 40
-	store.stock_prices[item_ref] = 50
+	store.set_stock_suggested_prices_at(item_ref, 40)
+	store.set_stock_prices_at(item_ref, 50)
 	store.stock_stocker_accounts[item_ref] = 0
 	var/obj/item/second_store_item = new(store)
 	second_store_item.set_economic_provenance(DEPARTMENT_RESEARCH, 10, 0)
 	var/second_item_ref = REF(second_store_item)
-	store.stock_suggested_prices[second_item_ref] = 40
-	store.stock_prices[second_item_ref] = 50
+	store.set_stock_suggested_prices_at(second_item_ref, 40)
+	store.set_stock_prices_at(second_item_ref, 50)
 	store.stock_stocker_accounts[second_item_ref] = 0
 	var/list/store_data = store.tgui_data(customer_mob)
 	var/list/stock_rows = store_data["stock"]

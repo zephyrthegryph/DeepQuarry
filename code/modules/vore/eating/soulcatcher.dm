@@ -194,7 +194,7 @@ CAPABILITIES(/obj/soulgem)
 // Allows to adjust the interior of the soulcatcher
 /obj/soulgem/proc/adjust_interior(new_flavor)
 	new_flavor = sanitize(new_flavor, VORE_SC_DESC_MAX, FALSE, TRUE, FALSE)
-	inside_flavor = new_flavor
+	set_inside_flavor(new_flavor)
 	notify_holder("Updating environment...")
 	for(var/mob/living/carbon/brain/caught_soul/vore/CS as anything in brainmobs)
 		to_chat(CS, span_notice("[transit_message]") + "\n[inside_flavor]")
@@ -223,15 +223,15 @@ CAPABILITIES(/obj/soulgem)
 	message = sanitize(message, VORE_SC_MAX, FALSE, TRUE, FALSE)
 	switch(target)
 		if(SC_CAPTURE_MEESAGE)
-			capture_message = message
+			set_capture_message(message)
 		if(SC_TRANSIT_MESSAGE)
-			transit_message = message
+			set_transit_message(message)
 		if(SC_RELEASE_MESSAGE)
-			release_message = message
+			set_release_message(message)
 		if(SC_TRANSFERE_MESSAGE)
-			transfer_message = message
+			set_transfer_message(message)
 		if(SC_DELETE_MESSAGE)
-			delete_message = message
+			set_delete_message(message)
 
 // Allows to rename the soulgem
 /obj/soulgem/proc/rename(new_name)
@@ -244,7 +244,7 @@ CAPABILITIES(/obj/soulgem)
 
 // Toggles the given flag
 /obj/soulgem/proc/toggle_setting(flag)
-	setting_flags ^= flag
+	set_setting_flags(setting_flags ^ flag)
 	if(flag & SOULGEM_SHOW_VORE_SFX)
 		soulgem_show_vfx()
 		soulgem_vfx()

@@ -35,17 +35,17 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/assassinate/find_target()
 	..()
 	if(target && target.current)
-		explanation_text = "Assassinate [target.current.real_name], the [target.assigned_role]."
+		set_explanation_text("Assassinate [target.current.real_name], the [target.assigned_role].")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/assassinate/find_target_by_role(role, role_type=0)
 	..(role, role_type)
 	if(target && target.current)
-		explanation_text = "Assassinate [target.current.real_name], the [!role_type ? target.assigned_role : target.special_role]."
+		set_explanation_text("Assassinate [target.current.real_name], the [!role_type ? target.assigned_role : target.special_role].")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/assassinate/check_completion()
@@ -58,17 +58,17 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/anti_revolution/execute/find_target()
 	..()
 	if(target && target.current)
-		explanation_text = "[target.current.real_name], the [target.assigned_role] has extracted confidential information above their clearance. Execute [target.p_them()]."
+		set_explanation_text("[target.current.real_name], the [target.assigned_role] has extracted confidential information above their clearance. Execute [target.p_them()].")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/anti_revolution/execute/find_target_by_role(role, role_type=0)
 	..(role, role_type)
 	if(target && target.current)
-		explanation_text = "[target.current.real_name], the [!role_type ? target.assigned_role : target.special_role] has extracted confidential information above their clearance. Execute [target.p_them()]."
+		set_explanation_text("[target.current.real_name], the [!role_type ? target.assigned_role : target.special_role] has extracted confidential information above their clearance. Execute [target.p_them()].")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/anti_revolution/execute/check_completion()
@@ -84,17 +84,17 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/anti_revolution/brig/find_target()
 	..()
 	if(target && target.current)
-		explanation_text = "Brig [target.current.real_name], the [target.assigned_role] for 20 minutes to set an example."
+		set_explanation_text("Brig [target.current.real_name], the [target.assigned_role] for 20 minutes to set an example.")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/anti_revolution/brig/find_target_by_role(role, role_type=0)
 	..(role, role_type)
 	if(target && target.current)
-		explanation_text = "Brig [target.current.real_name], the [!role_type ? target.assigned_role : target.special_role] for 20 minutes to set an example."
+		set_explanation_text("Brig [target.current.real_name], the [!role_type ? target.assigned_role : target.special_role] for 20 minutes to set an example.")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/anti_revolution/brig/check_completion()
@@ -113,17 +113,17 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/anti_revolution/demote/find_target()
 	..()
 	if(target && target.current)
-		explanation_text = "[target.current.real_name], the [target.assigned_role]  has been classified as harmful to [using_map.company_name]'s goals. Demote [target.p_them()] to assistant."
+		set_explanation_text("[target.current.real_name], the [target.assigned_role]  has been classified as harmful to [using_map.company_name]'s goals. Demote [target.p_them()] to assistant.")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/anti_revolution/demote/find_target_by_role(role, role_type=0)
 	..(role, role_type)
 	if(target && target.current)
-		explanation_text = "[target.current.real_name], the [!role_type ? target.assigned_role : target.special_role] has been classified as harmful to [using_map.company_name]'s goals. Demote [target.p_them()] to assistant."
+		set_explanation_text("[target.current.real_name], the [!role_type ? target.assigned_role : target.special_role] has been classified as harmful to [using_map.company_name]'s goals. Demote [target.p_them()] to assistant.")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/anti_revolution/demote/check_completion()
@@ -146,17 +146,17 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/debrain/find_target()
 	..()
 	if(target && target.current)
-		explanation_text = "Steal the brain of [target.current.real_name]."
+		set_explanation_text("Steal the brain of [target.current.real_name].")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/debrain/find_target_by_role(role, role_type=0)
 	..(role, role_type)
 	if(target && target.current)
-		explanation_text = "Steal the brain of [target.current.real_name] the [!role_type ? target.assigned_role : target.special_role]."
+		set_explanation_text("Steal the brain of [target.current.real_name] the [!role_type ? target.assigned_role : target.special_role].")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/debrain/check_completion()
@@ -177,17 +177,17 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/protect/find_target()
 	..()
 	if(target && target.current)
-		explanation_text = "Protect [target.current.real_name], the [target.assigned_role]."
+		set_explanation_text("Protect [target.current.real_name], the [target.assigned_role].")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/protect/find_target_by_role(role, role_type=0)
 	..(role, role_type)
 	if(target && target.current)
-		explanation_text = "Protect [target.current.real_name], the [!role_type ? target.assigned_role : target.special_role]."
+		set_explanation_text("Protect [target.current.real_name], the [!role_type ? target.assigned_role : target.special_role].")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/protect/check_completion()
@@ -313,17 +313,17 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/brig/find_target()
 	..()
 	if(target && target.current)
-		explanation_text = "Have [target.current.real_name], the [target.assigned_role] brigged for 10 minutes."
+		set_explanation_text("Have [target.current.real_name], the [target.assigned_role] brigged for 10 minutes.")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/brig/find_target_by_role(role, role_type=0)
 	..(role, role_type)
 	if(target && target.current)
-		explanation_text = "Have [target.current.real_name], the [!role_type ? target.assigned_role : target.special_role] brigged for 10 minutes."
+		set_explanation_text("Have [target.current.real_name], the [!role_type ? target.assigned_role : target.special_role] brigged for 10 minutes.")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/brig/check_completion()
@@ -347,17 +347,17 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/harm/find_target()
 	..()
 	if(target && target.current)
-		explanation_text = "Make an example of [target.current.real_name], the [target.assigned_role]. Break one of their bones, detach one of their limbs or disfigure their face. Make sure they're alive when you do it."
+		set_explanation_text("Make an example of [target.current.real_name], the [target.assigned_role]. Break one of their bones, detach one of their limbs or disfigure their face. Make sure they're alive when you do it.")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/harm/find_target_by_role(role, role_type=0)
 	..(role, role_type)
 	if(target && target.current)
-		explanation_text = "Make an example of [target.current.real_name], the [!role_type ? target.assigned_role : target.special_role]. Break one of their bones, detach one of their limbs or disfigure their face. Make sure they're alive when you do it."
+		set_explanation_text("Make an example of [target.current.real_name], the [!role_type ? target.assigned_role : target.special_role]. Break one of their bones, detach one of their limbs or disfigure their face. Make sure they're alive when you do it.")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/harm/check_completion()
@@ -434,7 +434,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	steal_target = possible_items[target_name]
 	if (!steal_target )
 		steal_target = possible_items_special[target_name]
-	explanation_text = "Steal [target_name]."
+	set_explanation_text("Steal [target_name].")
 	return steal_target
 
 /datum/objective/steal/find_target()
@@ -448,7 +448,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		if (!custom_target || !custom_name) return
 		target_name = custom_name
 		steal_target = custom_target
-		explanation_text = "Steal [target_name]."
+		set_explanation_text("Steal [target_name].")
 	else
 		set_target(new_target)
 	return steal_target
@@ -512,7 +512,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 /datum/objective/capture/proc/gen_amount_goal()
 	target_amount = rand(5,10)
-	explanation_text = "Accumulate [target_amount] capture points."
+	set_explanation_text("Accumulate [target_amount] capture points.")
 	return target_amount
 
 /datum/objective/capture/check_completion()//Basically runs through all the mobs in the area to determine how much they are worth.
@@ -551,7 +551,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 					n_p ++
 		target_amount = min(target_amount, n_p)
 
-	explanation_text = "Absorb [target_amount] compatible genomes."
+	set_explanation_text("Absorb [target_amount] compatible genomes.")
 	return target_amount
 
 /datum/objective/absorb/check_completion()
@@ -591,9 +591,9 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		rel_set(src, nameof(target), pick(possible_targets))
 
 	if(target && target.current)
-		explanation_text = "We can get a good price for [target.current.real_name], the [target.assigned_role]. Take them alive."
+		set_explanation_text("We can get a good price for [target.current.real_name], the [target.assigned_role]. Take them alive.")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/heist/kidnap/check_completion()
@@ -649,7 +649,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 			target_amount = 1
 			loot = "an ion gun"
 
-	explanation_text = "It's a buyer's market out here. Steal [loot] for resale."
+	set_explanation_text("It's a buyer's market out here. Steal [loot] for resale.")
 
 /datum/objective/heist/loot/check_completion()
 	var/total_amount = 0
@@ -698,7 +698,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 			material_name = MAT_DIAMOND
 			target_amount = 20
 
-	explanation_text = "Ransack the station and escape with [target_amount] [material_name]."
+	set_explanation_text("Ransack the station and escape with [target_amount] [material_name].")
 
 /datum/objective/heist/salvage/check_completion()
 
@@ -805,7 +805,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 				possible_targets += player.mind
 	if(possible_targets.len > 0)
 		rel_set(src, nameof(target), pick(possible_targets))
-	if(target) explanation_text = "Sacrifice [target.name], the [target.assigned_role]. You will need the sacrifice rune (Hell blood join) and three acolytes to do so."
+	if(target) set_explanation_text("Sacrifice [target.name], the [target.assigned_role]. You will need the sacrifice rune (Hell blood join) and three acolytes to do so.")
 
 /datum/objective/cult/sacrifice/check_completion()
 	return (target && GLOB.cult && !GLOB.cult.sacrificed.Find(target))
@@ -813,17 +813,17 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/rev/find_target()
 	..()
 	if(target && target.current)
-		explanation_text = "Assassinate, capture or convert [target.current.real_name], the [target.assigned_role]."
+		set_explanation_text("Assassinate, capture or convert [target.current.real_name], the [target.assigned_role].")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/rev/find_target_by_role(role, role_type=0)
 	..(role, role_type)
 	if(target && target.current)
-		explanation_text = "Assassinate, capture or convert [target.current.real_name], the [!role_type ? target.assigned_role : target.special_role]."
+		set_explanation_text("Assassinate, capture or convert [target.current.real_name], the [!role_type ? target.assigned_role : target.special_role].")
 	else
-		explanation_text = "Free Objective"
+		set_explanation_text("Free Objective")
 	return target
 
 /datum/objective/rev/check_completion()

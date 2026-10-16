@@ -1934,7 +1934,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 	..()
 	var/datum/trait_state/radiation_effects/G = H.get_trait_state(added_component_path)
 	if(trait_prefs)
-		G.radiation_color = trait_prefs["glow_color"]
+		G.set_radiation_color(trait_prefs["glow_color"])
 
 /* Used twofold:
  * One, for scenes where someone is using dominate-pred and they don't want to easily be detected who is in control at what time.

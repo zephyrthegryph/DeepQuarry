@@ -43,7 +43,7 @@
 		gem.apply_stored_belly(soulcatcher_data["linked_belly"])
 
 	if(isnum(soulcatcher_data["setting_flags"]))
-		gem.setting_flags = NONE
+		gem.set_setting_flags(NONE)
 		gem.toggle_setting(soulcatcher_data["setting_flags"])
 
 	return TRUE

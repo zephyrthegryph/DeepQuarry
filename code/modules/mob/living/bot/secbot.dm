@@ -139,19 +139,19 @@ CAPABILITIES(/mob/living/bot/secbot)
 	. = TRUE
 
 /mob/living/bot/secbot/proc/ui_act_idcheck(datum/act/op/A)
-	idcheck = !idcheck
+	set_idcheck(!idcheck)
 	. = TRUE
 
 /mob/living/bot/secbot/proc/ui_act_ignorerec(datum/act/op/A)
-	check_records = !check_records
+	set_check_records(!check_records)
 	. = TRUE
 
 /mob/living/bot/secbot/proc/ui_act_ignorearr(datum/act/op/A)
-	check_arrest = !check_arrest
+	set_check_arrest(!check_arrest)
 	. = TRUE
 
 /mob/living/bot/secbot/proc/ui_act_switchmode(datum/act/op/A)
-	arrest_type = !arrest_type
+	set_arrest_type(!arrest_type)
 	. = TRUE
 
 /mob/living/bot/secbot/proc/ui_act_patrol(datum/act/op/A)
@@ -159,7 +159,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 	. = TRUE
 
 /mob/living/bot/secbot/proc/ui_act_declarearrests(datum/act/op/A)
-	declare_arrests = !declare_arrests
+	set_declare_arrests(!declare_arrests)
 	. = TRUE
 
 /mob/living/bot/secbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
@@ -374,7 +374,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 	var/obj/item/secbot_assembly/Sa = new /obj/item/secbot_assembly(Tsec)
 	graph_place(Sa, STAGE_SECBOT_HOLED)
 	Sa.add_overlay("hs_hole")
-	Sa.created_name = name
+	Sa.set_created_name(name)
 	new /obj/item/assembly/prox_sensor(Tsec)
 	new used_weapon(Tsec)
 	if(prob(50))

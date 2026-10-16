@@ -212,7 +212,7 @@ CAPABILITIES(/obj/machinery/air_sensor)
 	var/id_tag = signal.data["tag"]
 	if(!id_tag || !LAZYFIND(sensors, id_tag)) return
 
-	LAZYSET(sensor_information, id_tag, signal.data)
+	set_sensor_information_at(id_tag, signal.data)
 
 CAPABILITIES(/obj/machinery/computer/general_air_control)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
@@ -374,14 +374,14 @@ CAPABILITIES(/datum/prompt/text/air_control_sensor_name)
 					return OP_OK
 				if(istype(device, /obj/machinery/air_sensor))
 					var/obj/machinery/air_sensor/AS = device
-					LAZYSET(sensors, AS.id_tag, device_name)
+					set_sensors_at(AS.id_tag, device_name)
 				else
 					var/obj/machinery/meter/M = device
-					LAZYSET(sensors, M.id, device_name)
+					set_sensors_at(M.id, device_name)
 				to_chat(user, span_notice("You have added the [device] to the [src] under the name [device_name]!"))
 			else if(A.step_value("sensor_confirm"))
 				var/datum/prompt/yes_no/air_control_sensor_remove/R = A.step_answer("sensor_confirm")
-				LAZYREMOVE(sensors, R.sensor_names[R.to_remove])
+				remove_sensors(R.sensor_names[R.to_remove])
 				to_chat(user, span_notice("Successfully removed sensor/meter with name [R.to_remove]"))
 	return OP_OK
 
@@ -436,22 +436,22 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/large_tank_control)
 	var/id_tag = signal.data["tag"]
 
 	if(input_tag == id_tag)
-		input_info = signal.data
+		set_input_info(signal.data)
 	else if(output_tag == id_tag)
-		output_info = signal.data
+		set_output_info(signal.data)
 	else
 		..(signal)
 
 /obj/machinery/computer/general_air_control/large_tank_control/proc/ui_act_adj_pressure(datum/act/op/A, adj_pressure)
 	if(isnull(adj_pressure))
 		return FALSE
-	pressure_setting = adj_pressure
+	set_pressure_setting(adj_pressure)
 	return TRUE
 
 /obj/machinery/computer/general_air_control/large_tank_control/proc/ui_act_adj_input_flow_rate(datum/act/op/A, adj_input_flow_rate)
 	if(isnull(adj_input_flow_rate))
 		return FALSE
-	input_flow_setting = adj_input_flow_rate //default flow rate limit for air injectors
+	set_input_flow_setting(adj_input_flow_rate) //default flow rate limit for air injectors
 	return TRUE
 
 /// The injector / vent commands: one radio signal each (the op's key says which).
@@ -463,22 +463,22 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/large_tank_control)
 	rel_set(signal, nameof(/datum/signal::source), src)
 	switch(A.key)
 		if("in_refresh_status")
-			input_info = null
+			set_input_info(null)
 			signal.data = list ("tag" = input_tag, "status" = 1)
 		if("in_toggle_injector")
-			input_info = null
+			set_input_info(null)
 			signal.data = list ("tag" = input_tag, "power_toggle" = 1)
 		if("in_set_flowrate")
-			input_info = null
+			set_input_info(null)
 			signal.data = list ("tag" = input_tag, "set_volume_rate" = "[input_flow_setting]")
 		if("out_refresh_status")
-			output_info = null
+			set_output_info(null)
 			signal.data = list ("tag" = output_tag, "status" = 1)
 		if("out_toggle_power")
-			output_info = null
+			set_output_info(null)
 			signal.data = list ("tag" = output_tag, "power_toggle" = 1)
 		if("out_set_pressure")
-			output_info = null
+			set_output_info(null)
 			signal.data = list ("tag" = output_tag, "set_internal_pressure" = "[pressure_setting]")
 	signal.data["sigtype"]="command"
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
@@ -579,22 +579,22 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 	var/id_tag = signal.data["tag"]
 
 	if(input_tag == id_tag)
-		input_info = signal.data
+		set_input_info(signal.data)
 	else if(output_tag == id_tag)
-		output_info = signal.data
+		set_output_info(signal.data)
 	else
 		..(signal)
 
 /obj/machinery/computer/general_air_control/supermatter_core/proc/ui_act_adj_pressure(datum/act/op/A, adj_pressure)
 	if(isnull(adj_pressure))
 		return FALSE
-	pressure_setting = adj_pressure
+	set_pressure_setting(adj_pressure)
 	return TRUE
 
 /obj/machinery/computer/general_air_control/supermatter_core/proc/ui_act_adj_input_flow_rate(datum/act/op/A, adj_input_flow_rate)
 	if(isnull(adj_input_flow_rate))
 		return FALSE
-	input_flow_setting = adj_input_flow_rate //default flow rate limit for air injectors
+	set_input_flow_setting(adj_input_flow_rate) //default flow rate limit for air injectors
 	return TRUE
 
 /// The injector / vent commands: one radio signal each (the op's key says which).
@@ -606,22 +606,22 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 	rel_set(signal, nameof(/datum/signal::source), src)
 	switch(A.key)
 		if("in_refresh_status")
-			input_info = null
+			set_input_info(null)
 			signal.data = list ("tag" = input_tag, "status" = 1)
 		if("in_toggle_injector")
-			input_info = null
+			set_input_info(null)
 			signal.data = list ("tag" = input_tag, "power_toggle" = 1)
 		if("in_set_flowrate")
-			input_info = null
+			set_input_info(null)
 			signal.data = list ("tag" = input_tag, "set_volume_rate" = "[input_flow_setting]")
 		if("out_refresh_status")
-			output_info = null
+			set_output_info(null)
 			signal.data = list ("tag" = output_tag, "status" = 1)
 		if("out_toggle_power")
-			output_info = null
+			set_output_info(null)
 			signal.data = list ("tag" = output_tag, "power_toggle" = 1)
 		if("out_set_pressure")
-			output_info = null
+			set_output_info(null)
 			signal.data = list ("tag" = output_tag, "set_external_pressure" = "[pressure_setting]", "checks" = 1)
 	signal.data["sigtype"]="command"
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
@@ -736,12 +736,12 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
 	var/id_tag = signal.data["tag"]
 
 	if(device_tag == id_tag)
-		device_info = signal.data
+		set_device_info(signal.data)
 	else
 		..(signal)
 
 /obj/machinery/computer/general_air_control/fuel_injection/proc/ui_act_refresh_status(datum/act/op/A)
-	device_info = null
+	set_device_info(null)
 	if(!radio_connection())
 		return FALSE
 
@@ -761,7 +761,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
 	return OP_OK
 
 /obj/machinery/computer/general_air_control/fuel_injection/proc/ui_act_toggle_injector(datum/act/op/A)
-	device_info = null
+	set_device_info(null)
 	if(!radio_connection())
 		return FALSE
 

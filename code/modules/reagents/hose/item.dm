@@ -70,11 +70,11 @@
 				to_chat(user, span_notice("You connect one end of tubing to \the [AC]."))
 
 		else
-			in_use = TRUE // Prevent opening a million uis
+			set_in_use(TRUE) // Prevent opening a million uis
 			var/choice = rerun_ask(user, "a1", PROC_REF(afterattack), args, /datum/prompt/choice, question = "Select a target hose connector.", title = "Socket Selection", choices = available_sockets)
 			if(isnull(choice))
 				return TRUE
-			in_use = FALSE
+			set_in_use(FALSE)
 
 			if(choice && user.Adjacent(target))
 				var/datum/hose_connector/CC = available_sockets[choice]

@@ -31,12 +31,12 @@
 	sender.password = "interim-fixture-password"
 	recipient.login = "interim-recipient-[REF(recipient)]"
 	var/datum/tgui_module/email_client/module = allocate(/datum/tgui_module/email_client)
-	module.stored_login = sender.login
-	module.stored_password = sender.password
+	module.set_stored_login(sender.login)
+	module.set_stored_password(sender.password)
 	TEST_ASSERT(module.log_in(), "the real email module logs into the registered fixture account")
-	module.msg_title = "Actor fixture"
-	module.msg_body = "In-game delivery fixture"
-	module.msg_recipient = recipient.login
+	module.set_msg_title("Actor fixture")
+	module.set_msg_body("In-game delivery fixture")
+	module.set_msg_recipient(recipient.login)
 	op_ui_act(actor, module, "send")
 	TEST_ASSERT_EQUAL(recipient.deliveries, 1, "the UI sends exactly one actual email")
 	TEST_ASSERT_EQUAL(recipient.delivery_actor_ref, REF(actor), "real account delivery receives the explicit UI actor")
@@ -60,7 +60,7 @@
 	broadcaster.fixture_address = recipient.login
 	var/datum/computer_file/data/email_message/message = allocate(/datum/computer_file/data/email_message)
 	message.title = "Relay fixture"
-	message.stored_data = "Scheduled in-game delivery"
+	message.set_stored_data("Scheduled in-game delivery")
 	message.source = "interim-broadcast-sender"
 	message.spam = TRUE // Do not emit an unrelated admin announcement from this fixture.
 	TEST_ASSERT(broadcaster.receive_mail(message, FALSE, actor), "the actual broadcaster schedules accepted mail")

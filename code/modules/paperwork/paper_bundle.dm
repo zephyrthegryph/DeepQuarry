@@ -74,7 +74,7 @@
 		rel_add(src, nameof(pages), ordered_sheet)
 
 	if(index <= page)
-		page++
+		set_page(page + 1)
 
 /obj/item/paper_bundle/proc/burnpaper(obj/item/flame/P, mob/user)
 	var/class = "warning"
@@ -185,7 +185,7 @@ CAPABILITIES(/obj/item/paper_bundle)
 	if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
 		insert_sheet_at(user, page + 1, in_hand)
 	else if(page != length(pages))
-		page++
+		set_page(page + 1)
 		play_sfx(src, SFX_PAGETURN)
 	return TRUE
 
@@ -197,7 +197,7 @@ CAPABILITIES(/obj/item/paper_bundle)
 	if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
 		insert_sheet_at(user, page, in_hand)
 	else if(page > 1)
-		page--
+		set_page(page - 1)
 		play_sfx(src, SFX_PAGETURN)
 	return TRUE
 
@@ -218,7 +218,7 @@ CAPABILITIES(/obj/item/paper_bundle)
 		spent(src)
 		return TRUE
 	if(page > length(pages))
-		page = length(pages)
+		set_page(length(pages))
 	return TRUE
 
 /// Old Rename bundle verb.

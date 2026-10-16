@@ -445,14 +445,14 @@
 		set_trait(TRAIT_TELEPORTING,1)
 
 	if(prob(5))
-		consume_gasses = list()
+		set_consume_gasses(list())
 		var/gas = pick(GAS_O2,GAS_N2,GAS_PHORON,GAS_CO2,GAS_CH4)
-		consume_gasses[gas] = rand(3,9)
+		set_consume_gasses_at(gas, rand(3,9))
 
 	if(prob(5))
-		exude_gasses = list()
+		set_exude_gasses(list())
 		var/gas = pick(GAS_O2,GAS_N2,GAS_PHORON,GAS_CO2,GAS_CH4)
-		exude_gasses[gas] = rand(3,9)
+		set_exude_gasses_at(gas, rand(3,9))
 
 	chems = list()
 	if(prob(80))
@@ -694,10 +694,10 @@
 
 			var/list/new_gasses = gene.values["[TRAIT_EXUDE_GASSES]"]
 			if(islist(new_gasses))
-				if(!exude_gasses) exude_gasses = list()
-				exude_gasses |= new_gasses
+				if(!exude_gasses) set_exude_gasses(list())
+				include_exude_gasses(new_gasses)
 				for(var/gas in exude_gasses)
-					exude_gasses[gas] = max(1,round(exude_gasses[gas]*0.8))
+					set_exude_gasses_at(gas, max(1,round(exude_gasses[gas]*0.8)))
 
 			set_trait(TRAIT_BENEFICIAL_REAG, gene.values["[TRAIT_BENEFICIAL_REAG]"]?.Copy() || list())
 
@@ -713,7 +713,7 @@
 
 		if(GENE_DIET)
 			var/list/new_gasses = gene.values["[TRAIT_CONSUME_GASSES]"]
-			consume_gasses |= new_gasses
+			include_consume_gasses(new_gasses)
 			gene.values["[TRAIT_CONSUME_GASSES]"] = null
 		if(GENE_METABOLISM)
 			set_has_mob_product(gene.values["mob_product"])
@@ -732,7 +732,7 @@
 
 	var/list/traits_to_copy
 	var/datum/plantgene/P = new()
-	P.genetype = genetype
+	P.set_genetype(genetype)
 	P.values = list()
 
 	switch(genetype)
@@ -871,7 +871,7 @@
 	//Set up some basic information.
 	var/datum/seed/new_seed = new
 	new_seed.name =            "new line"
-	new_seed.uid =              0
+	new_seed.set_uid(0)
 	new_seed.roundstart =       0
 	new_seed.can_self_harvest = can_self_harvest
 	new_seed.kitchen_tag =      kitchen_tag
@@ -880,10 +880,10 @@
 	new_seed.has_item_product = has_item_product
 
 	//Copy over everything else.
-	if(mutants)        new_seed.mutants = mutants.Copy()
+	if(mutants)        new_seed.set_mutants(mutants.Copy())
 	if(chems)          new_seed.chems = chems.Copy()
-	if(consume_gasses) new_seed.consume_gasses = consume_gasses.Copy()
-	if(exude_gasses)   new_seed.exude_gasses = exude_gasses.Copy()
+	if(consume_gasses) new_seed.set_consume_gasses(consume_gasses.Copy())
+	if(exude_gasses)   new_seed.set_exude_gasses(exude_gasses.Copy())
 
 	new_seed.set_seed_name("[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][seed_name]")
 	new_seed.display_name =         "[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][display_name]"
@@ -897,17 +897,17 @@
 /datum/seed/proc/copy_line()
 	var/datum/seed/new_seed = new
 	new_seed.name =             name
-	new_seed.uid =              uid
+	new_seed.set_uid(uid)
 	new_seed.roundstart =       roundstart
 	new_seed.can_self_harvest = can_self_harvest
 	new_seed.kitchen_tag =      kitchen_tag
 	new_seed.trash_type =       trash_type
 	new_seed.set_has_mob_product(has_mob_product)
 	new_seed.has_item_product = has_item_product
-	if(mutants)        new_seed.mutants = mutants.Copy()
+	if(mutants)        new_seed.set_mutants(mutants.Copy())
 	if(chems)          new_seed.chems = chems.Copy()
-	if(consume_gasses) new_seed.consume_gasses = consume_gasses.Copy()
-	if(exude_gasses)   new_seed.exude_gasses = exude_gasses.Copy()
+	if(consume_gasses) new_seed.set_consume_gasses(consume_gasses.Copy())
+	if(exude_gasses)   new_seed.set_exude_gasses(exude_gasses.Copy())
 	new_seed.set_seed_name(seed_name)
 	new_seed.display_name = display_name
 	new_seed.seed_noun =    seed_noun

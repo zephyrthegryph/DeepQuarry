@@ -102,7 +102,7 @@
 	TEST_ASSERT(D.immunity > before, "rest should build the immune response ([before] -> [D.immunity])")
 
 	// A controlled disease stops advancing.
-	D.immunity = CONTAGION_IMMUNITY_CONTROL
+	D.set_immunity(CONTAGION_IMMUNITY_CONTROL)
 	D.stage_prob = 100
 	var/stage_before = D.stage
 	D.progress()
@@ -110,7 +110,7 @@
 
 	// Full immunity at the first stage clears it.
 	D.set_stage(1)
-	D.immunity = CONTAGION_IMMUNITY_CLEAR
+	D.set_immunity(CONTAGION_IMMUNITY_CLEAR)
 	D.progress()
 	TEST_ASSERT(QDELETED(D) || !D.body, "full immunity should clear a curable disease")
 	TEST_ASSERT(H.has_contagion_immunity(/datum/affliction/contagion/cold), "clearing it should leave immunity")
@@ -223,9 +223,9 @@
 	TEST_ASSERT(!D.perceived_by(P), "an undiscovered disease should not show on an internal analyzer")
 	P.senses = PRESENT_INTERNAL | PRESENT_LAB
 	TEST_ASSERT(D.perceived_by(P), "a lab instrument should find an undiscovered disease")
-	D.visibility_flags |= HIDDEN_SCANNER
+	D.set_visibility_flags(D.visibility_flags | HIDDEN_SCANNER)
 	TEST_ASSERT(!D.perceived_by(P), "a hidden strain should show on no scanner")
-	D.visibility_flags &= ~HIDDEN_SCANNER
+	D.set_visibility_flags(D.visibility_flags & (~HIDDEN_SCANNER))
 	qdel(P)
 
 	H.mend(TREAT_RESTORATION, 100)

@@ -155,17 +155,17 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 	return FALSE
 
 /obj/item/medigun_backpack/proc/apc_charge()
-	gridstatus = 0
+	set_gridstatus(0)
 	var/area/A = get_area(src)
 	if(!istype(A) || !A.powered(EQUIP))
 		return FALSE
-	gridstatus = 1
+	set_gridstatus(1)
 	if(bcell && (bcell.charge < bcell.maxcharge))
 		var/cur_charge = bcell.charge
 		var/delta = min(50, bcell.maxcharge-cur_charge)
 		bcell.give(delta)
 		A.use_power_oneoff(delta*100, EQUIP)
-		gridstatus = 2
+		set_gridstatus(2)
 	return TRUE
 
 /obj/item/medigun_backpack/proc/adjust_brutevol(modifier)
@@ -217,9 +217,9 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 
 	if(scapacitor.get_rating() >= 5)
 		if(apc_charge())
-			charging = FALSE
+			set_charging(FALSE)
 			return
-		charging = TRUE
+		set_charging(TRUE)
 
 	if(!charging || !ccell)
 		return
@@ -234,7 +234,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 
 		if(ismob(loc))
 			to_chat(loc, span_notice("The [ccell] runs out of power.."))
-		charging = FALSE
+		set_charging(FALSE)
 
 /obj/item/medigun_backpack/get_cell()
 	return bcell
@@ -268,22 +268,22 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		set_item_state("mg-backpack-deployed-onmob")
 		if(is_twohanded())
 			medigun.set_icon_state("medblaster")
-			medigun.base_icon_state = "medblaster"
+			medigun.set_base_icon_state("medblaster")
 			medigun.wielded_item_state = "medblaster-wielded"
 		else
 			medigun.set_icon_state("medblaster_cmo")
-			medigun.base_icon_state = "medblaster_cmo"
+			medigun.set_base_icon_state("medblaster_cmo")
 			medigun.wielded_item_state = ""
 	else if(is_twohanded())
 		set_icon_state("mg-backpack")
 		set_item_state("mg-backpack-onmob")
 		medigun.set_icon_state("medblaster")
-		medigun.base_icon_state = "medblaster"
+		medigun.set_base_icon_state("medblaster")
 	else
 		set_icon_state("mg-backpack_cmo")
 		set_item_state("mg-backpack_cmo-onmob")
 		medigun.set_icon_state("medblaster_cmo")
-		medigun.base_icon_state = "medblaster_cmo"
+		medigun.set_base_icon_state("medblaster_cmo")
 
 
 /obj/item/medigun_backpack/Initialize(mapload)
@@ -296,7 +296,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 	if(!is_twohanded())
 		medigun.beam_range = 4
 		medigun.set_icon_state("medblaster_cmo")
-		medigun.base_icon_state = "medblaster_cmo"
+		medigun.set_base_icon_state("medblaster_cmo")
 		medigun.wielded_item_state = ""
 
 
@@ -350,7 +350,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		if(smanipulator)
 			smanipulator.forceMove(get_turf(loc))
 			rel_take(src, nameof(smanipulator))
-			smaniptier = 0
+			set_smaniptier(0)
 
 		if(slaser)
 			slaser.forceMove(get_turf(loc))
@@ -370,11 +370,11 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		if(!maintenance)
-			maintenance = TRUE
+			set_maintenance(TRUE)
 			to_chat(user, span_notice("You open the maintenance hatch on \the [src]."))
 			return OP_PASS
 
-		maintenance = FALSE
+		set_maintenance(FALSE)
 		to_chat(user, span_notice("You close the maintenance hatch on \the [src]."))
 		return OP_PASS
 
@@ -384,7 +384,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		if(!move_into(src, nameof(src.ccell), W, user))
 			return OP_PASS
 		to_chat(user, span_notice("You install the [W] into \the [src]."))
-		charging = TRUE
+		set_charging(TRUE)
 		return OP_PASS
 
 	if(maintenance)
@@ -404,7 +404,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 				return OP_PASS
 			if(!move_into(src, nameof(src.smanipulator), W, user))
 				return OP_PASS
-			smaniptier = smanipulator.get_rating()
+			set_smaniptier(smanipulator.get_rating())
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			return OP_PASS
 
@@ -425,27 +425,27 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 				return OP_PASS
 			var/scaptier = scapacitor.get_rating()
 			if(scaptier == 1)
-				chargecap = 1000
+				set_chargecap(1000)
 				bcell.set_maxcharge(1000)
 				if(bcell.charge > chargecap)
 					bcell.set_charge(chargecap)
 			else if(scaptier == 2)
-				chargecap = 2000
+				set_chargecap(2000)
 				bcell.set_maxcharge(2000)
 				if(bcell.charge > chargecap)
 					bcell.set_charge(chargecap)
 			else if(scaptier == 3)
-				chargecap = 3000
+				set_chargecap(3000)
 				bcell.set_maxcharge(3000)
 				if(bcell.charge > chargecap)
 					bcell.set_charge(chargecap)
 			else if(scaptier == 4)
-				chargecap = 4000
+				set_chargecap(4000)
 				bcell.set_maxcharge(4000)
 				if(bcell.charge > chargecap)
 					bcell.set_charge(chargecap)
 			else if(scaptier == 5)
-				chargecap = 5000
+				set_chargecap(5000)
 				bcell.set_maxcharge(5000)
 				if(bcell.charge > chargecap)
 					bcell.set_charge(chargecap)
@@ -461,11 +461,11 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 				return OP_PASS
 			sbintier = sbin.get_rating()
 			if(sbintier >= 5)
-				chemcap = 300
-				tankmax = 150
+				set_chemcap(300)
+				set_tankmax(150)
 			else
-				chemcap = 60*(sbintier)
-				tankmax = 30*sbintier
+				set_chemcap(60*(sbintier))
+				set_tankmax(30*sbintier)
 			if(brutecharge > chemcap)
 				set_brutecharge(chemcap)
 			if(burncharge > chemcap)

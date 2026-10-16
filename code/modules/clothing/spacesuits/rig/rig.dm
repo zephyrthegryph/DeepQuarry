@@ -348,7 +348,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		M.client?.screen += booting_R
 
 	set_canremove(FALSE) // No removing the suit while unsealing.
-	sealing = 1
+	set_sealing(1)
 
 	if(!seal_target && !suit_is_deployed())
 		act_message(M, null, MSG_SELF(span_danger("Your suit flashes an error light. It can't function properly without being fully deployed.")), \
@@ -485,7 +485,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		if(!M || (!(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src)) && !istype(M,/mob/living/silicon)) || (!seal_target && !suit_is_deployed()))
 			failed_to_seal = 1
 
-	sealing = null
+	set_sealing(null)
 
 	if(failed_to_seal)
 		M?.client?.screen -= booting_L
@@ -543,7 +543,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		to_chat(user, span_notice("The hardsuit needs to be deployed first!"))
 		return
 
-	cooling_on = 1
+	set_cooling_on(1)
 	power_system.cooling_on = 1
 	to_chat(user, span_notice("You switch \the [src]'s cooling system on."))
 
@@ -552,7 +552,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		visible_message("\The [src]'s cooling system clicks and whines as it powers down.")
 	else
 		to_chat(user, span_notice("You switch \the [src]'s cooling system off."))
-	cooling_on = 0
+	set_cooling_on(0)
 	power_system.cooling_on = 0
 
 /obj/item/rig/proc/attached_to_user(mob/M)
@@ -908,7 +908,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 
 	if(!dam_module) return
 
-	dam_module.damage++
+	dam_module.set_damage(dam_module.damage + 1)
 
 	if(!source)
 		source = "hit"

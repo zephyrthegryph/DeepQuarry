@@ -14,7 +14,7 @@
 
 /obj/item/circuitboard/supplycomp/construct(obj/machinery/computer/supplycomp/SC)
 	if (..(SC))
-		SC.can_order_contraband = contraband_enabled
+		SC.set_can_order_contraband(contraband_enabled)
 
 /obj/item/circuitboard/supplycomp/atom_deconstruct(disassembled = TRUE, obj/machinery/computer/supplycomp/SC)
 	if (..(SC))

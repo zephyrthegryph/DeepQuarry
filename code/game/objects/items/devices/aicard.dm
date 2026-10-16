@@ -183,7 +183,7 @@ CAPABILITIES(/obj/item/aicard)
 
 /obj/item/aicard/proc/wipe_ai()
 	var/mob/living/silicon/ai/our_ai = carded_ai()
-	flush = TRUE
+	set_flush(TRUE)
 	our_ai.suiciding = TRUE
 	to_chat(our_ai, "Your power has been disabled!")
 	wipe_ai_tick(our_ai, 0)
@@ -191,13 +191,13 @@ CAPABILITIES(/obj/item/aicard)
 /// Once a second while the carded AI dies: the shell link fails more and more.
 /obj/item/aicard/proc/wipe_ai_tick(mob/living/silicon/ai/our_ai, power_lost)
 	if(QDELETED(our_ai) || our_ai.stat == DEAD)
-		flush = FALSE
+		set_flush(FALSE)
 		return
 	// This is absolutely evil and I love it.
 	if(our_ai.deployed_shell && prob(power_lost)) //You feel it creeping? Eventually will reach 100, resulting in the second half of the AI's remaining life being lonely.
 		our_ai.disconnect_shell("Disconnecting from remote shell due to insufficent power.")
 	if(!after(src, 1 SECOND, PROC_REF(wipe_ai_tick), with = list(our_ai, power_lost + 2), keeps_dead = TRUE))
-		flush = FALSE
+		set_flush(FALSE)
 
 /// Relation view: carded ai (reads null once it is gone).
 /obj/item/aicard/proc/carded_ai() as /mob/living/silicon/ai

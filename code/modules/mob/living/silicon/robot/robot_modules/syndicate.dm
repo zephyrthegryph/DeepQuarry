@@ -39,9 +39,9 @@
 	modules |= robot_id // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
 
 /obj/item/robot_module/robot/syndicate/adjust_gps(obj/item/gps/robot/robot_gps)
-	robot_gps.long_range = TRUE
-	robot_gps.hide_signal = TRUE
-	robot_gps.can_hide_signal = TRUE
+	robot_gps.set_long_range(TRUE)
+	robot_gps.set_hide_signal(TRUE)
+	robot_gps.set_can_hide_signal(TRUE)
 
 // Gets a big shield and a gun that shoots really fast to scare the opposing force.
 /obj/item/robot_module/robot/syndicate/protector

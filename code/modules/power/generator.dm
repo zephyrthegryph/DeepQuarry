@@ -154,14 +154,14 @@ CAPABILITIES(/obj/machinery/power/generator)
 
 	lastgen2 = lastgen1
 	lastgen1 = 0
-	last_thermal_gen = 0
-	last_circ1_gen = 0
-	last_circ2_gen = 0
+	set_last_thermal_gen(0)
+	set_last_circ1_gen(0)
+	set_last_circ2_gen(0)
 
 	if(air1 && air2)
 		// The circulators' gas meets across the junction: the hot side's heat flows to the cold side and thermal_efficiency of it, never
 		// more than Carnot allows, leaves as electricity (Rust books it).
-		last_thermal_gen = heat_engine_once(air1, air2, thermal_efficiency)
+		set_last_thermal_gen(heat_engine_once(air1, air2, thermal_efficiency))
 
 	//Transfer the air
 	if (air1)
@@ -179,12 +179,12 @@ CAPABILITIES(/obj/machinery/power/generator)
 		stored_energy *= 0.5
 
 	//Power
-	last_circ1_gen = circ1().return_stored_energy()
-	last_circ2_gen = circ2().return_stored_energy()
+	set_last_circ1_gen(circ1().return_stored_energy())
+	set_last_circ2_gen(circ2().return_stored_energy())
 	stored_energy += last_thermal_gen + last_circ1_gen + last_circ2_gen
 	lastgen1 = stored_energy*0.4 //smoothened power generation to prevent slingshotting as pressure is equalized, then restored by pumps
 	stored_energy -= lastgen1
-	effective_gen = (lastgen1 + lastgen2) / 2
+	set_effective_gen((lastgen1 + lastgen2) / 2)
 
 	// Sounds.
 	if(effective_gen > (max_power * 0.05)) // More than 5% and sounds start.
@@ -220,7 +220,7 @@ CAPABILITIES(/obj/machinery/power/generator)
 		set_power_supply(0)
 		disconnect_from_network()
 	set_lastgenlev(0)
-	effective_gen = 0
+	set_effective_gen(0)
 	reconnect()
 	return OP_OK
 

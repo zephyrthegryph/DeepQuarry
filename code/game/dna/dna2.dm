@@ -105,7 +105,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 			if(DNA_UI_SKIN_TONE)
 				SetUIValueRange(DNA_UI_SKIN_TONE,rand(1,220),220,1) // Otherwise, it gets fucked
 			else
-				UI[i]=rand(0,4095)
+				set_UI_at(i, rand(0,4095))
 	if(!defer)
 		UpdateUI()
 
@@ -401,7 +401,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	if (block<=0) return
 	ASSERT(value>=0)
 	ASSERT(value<=4095)
-	UI[block]=value
+	set_UI_at(block, value)
 	if(!defer)
 		UpdateUI()
 
@@ -497,7 +497,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	if (block<=0) return
 	ASSERT(value>=0)
 	ASSERT(value<=4095)
-	SE[block]=value
+	set_SE_at(block, value)
 	if(!defer)
 		UpdateSE()
 

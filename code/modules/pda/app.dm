@@ -94,7 +94,7 @@
 		rel_clear(pda(), nameof(/obj/item/pda::scanmode))
 	else
 		rel_set(pda(), nameof(/obj/item/pda::scanmode), src)
-		name = "Disable [base_name]"
+		set_name("Disable [base_name]")
 
 	pda().update_shortcuts()
 	return 1

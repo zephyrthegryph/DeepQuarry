@@ -100,20 +100,6 @@ try_calls = []
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 exempt_files = ["code/__defines/tgs.dm"]
 
-[lint.derived_reads.lists]
-# The window hosts whose ui_data(A) is held to "read only what is tracked" (untracked_ui_read, and undeclared_read for an exact type): the hosts
-# that have been converted (no SStgui.update_uis() or hand changed() mark left). A host joins here in the commit that converts it; when the last
-# window host is in, the list goes and the rule is global. Exact owner types.
-ui_hosts = [
-  "/datum/tgui_module/agentcard",
-  "/datum/newscaster_panel",
-  "/datum/edit_player_panel",
-  "/datum/tag_menu_panel",
-  "/datum/unban_panel",
-  "/datum/jobban_panel",
-  "/datum/dq_delete_book_panel",
-]
-
 [lint.tracked]
 # tracked_lint.py exempt_path(): the TRACKED/SETTER/derive() index still reads these files; writes in them
 # are not counted. code/engine/_generated/ is build output: its source lines are judged where they are declared (a
@@ -132,13 +118,10 @@ exclude = ["gc_destroyed", "vg_entity", "datum_flags"]
 # hand-written `set_v`; or a base-type var a `when(nameof(v))` gate reads that only subtypes' defaults ever set (base_vars wants it housed).
 # `/type::var`, one per var; delete an entry once its callers hold a typed local.
 include = ["/obj/machinery/ion_engine::on", "/obj/machinery/shieldwall::active", "/obj/machinery/vending::active", "/obj/machinery/mineral/processing_unit::active", "/obj/machinery/bodyscanner::locked", "/obj/machinery/dna_scannernew::locked", "/obj/item/disk/species::species", "/atom/movable::drag_buckle", "/mob::speak_emote", "/mob::shouldnt_see"]
-# The heat domain bans a proc named set_temperature() outside code/domains/ (check_grep heat_raw_temperature_writes), so a generated setter for a var called
-# `temperature` would be a violation by name; a generator's own temperature belongs in the heat domain.
 # A lazily refreshed accumulator: check_charge() (reached from conditions and draws) tops it up from the clock, so the write happens inside an output
 # (PURITY). It is a memo of time, not state anything publishes.
 exclude_memo = ["/obj/item/cell::material_discharge_credit", "/atom::flags"]
 # (atom flags: lifecycle bits (ATOM_INITIALIZED, ATOM_MATERIALIZED) set while an atom is materialized, which can happen inside a draw.)
-exclude_heat = ["/obj/machinery/power/port_gen/pacman::temperature"]
 # Test fixtures that count their own draws from inside draw(): an output must not write tracked state (PURITY), and the counter is the test's probe.
 exclude_fixtures = ["/obj/gdeps_probe::raw_ok", "/obj/dq_small_look_composer::draws", "/obj/machinery/dq_idle_redraw_probe::draws", "/obj/item/remote_scene_tool/voodoo_doll/dq_small_counting::draws", "/obj/cap_fixture/dx_deps_derive::draw_calls", "/obj/cap_fixture/dx_deps_laser::draw_calls", "/obj/cap_fixture/dx_deps_legacy::draw_calls", "/obj/cap_fixture/dx_deps_watcher::draw_calls"]
 

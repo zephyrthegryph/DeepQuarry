@@ -136,7 +136,7 @@ CAPABILITIES(/obj/item/clothing/suit/space)
 //Calculates the current extent of the damage to the suit.
 /obj/item/clothing/suit/space/proc/calc_breach_damage()
 
-	damage = 0
+	set_damage(0)
 	brute_damage = 0
 	burn_damage = 0
 
@@ -148,7 +148,7 @@ CAPABILITIES(/obj/item/clothing/suit/space)
 		if(!B.class)
 			rel_remove(src, nameof(breaches), B)
 		else
-			damage += B.class
+			set_damage(damage + B.class)
 			if(B.breach_type == BRUTE)
 				brute_damage += B.class
 			else if(B.breach_type == BURN)

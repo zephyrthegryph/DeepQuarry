@@ -122,8 +122,8 @@ GLOBAL_LIST_EMPTY(announced_news_types)
 
 	if(!sendto)
 		sendto = new /datum/feed_channel
-		sendto.channel_name = news.channel_name
-		sendto.author = news.author
+		sendto.set_channel_name(news.channel_name)
+		sendto.set_author(news.author)
 		sendto.locked = 1
 		sendto.is_admin_channel = 1
 		rel_add(GLOB.news_network, nameof(/datum/feed_network::network_channels), sendto)

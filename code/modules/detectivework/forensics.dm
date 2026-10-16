@@ -142,20 +142,20 @@
 			prints[print] = o_prints[print]
 		else
 			prints[print] = stringmerge(prints[print], o_prints[print])
-	fields["fprints"] = prints
+	set_fields_at("fprints", prints)
 
 	var/list/fibers = fields["fibers"]
 	var/list/o_fibers = other.fields["fibers"]
 	fibers |= o_fibers
-	fields["fibers"] = fibers
+	set_fields_at("fibers", fibers)
 
 	var/list/blood = fields["blood"]
 	var/list/o_blood = other.fields["blood"]
 	blood |= o_blood
-	fields["blood"] = blood
+	set_fields_at("blood", blood)
 
-	fields["area"] = other.fields["area"]
-	fields["time"] = other.fields["time"]
+	set_fields_at("area", other.fields["area"])
+	set_fields_at("time", other.fields["time"])
 
 /datum/data/record/forensic/proc/update_prints(list/o_prints)
 	var/list/prints = fields["fprints"]
@@ -163,4 +163,4 @@
 		if(prints[print])
 			prints[print] = stringmerge(prints[print], o_prints[print])
 			.=1
-	fields["fprints"] = prints
+	set_fields_at("fprints", prints)

@@ -64,7 +64,7 @@
 	// Force bleeding_visible into the active set so the test doesn't
 	// depend on RNG. Symptoms are singletons: the set holds typepaths.
 	if(!(/datum/affliction_symptom/bleeding_visible in C.active_symptoms))
-		LAZYADD(C.active_symptoms, /datum/affliction_symptom/bleeding_visible)
+		C.add_active_symptoms(/datum/affliction_symptom/bleeding_visible)
 
 	var/saw_bleed = FALSE
 	for(var/name in _body_scanner_finding_names(H, DIAG_FINDING_SIGN))
@@ -112,7 +112,7 @@
 	var/datum/affliction/concussion/C = _spawn_affliction_on(H, BP_HEAD, /datum/affliction/concussion)
 	TEST_ASSERT_NOTNULL(C, "concussion didn't spawn")
 
-	C.active_symptoms = list(/datum/affliction_symptom/headache)
+	C.set_active_symptoms(list(/datum/affliction_symptom/headache))
 
 	for(var/name in _body_scanner_finding_names(H, DIAG_FINDING_SIGN))
 		if(findtext(name, "headache"))
@@ -129,13 +129,13 @@
 	TEST_ASSERT_NOTNULL(liver, "test human has no liver")
 	var/datum/affliction/custom/A = H.body.afflict(/datum/affliction/custom, liver, 60)
 	TEST_ASSERT_NOTNULL(A, "custom affliction could not be afflicted")
-	A.name = "glowing liver"
+	A.set_name("glowing liver")
 
-	A.showscanner = FALSE
+	A.set_showscanner(FALSE)
 	if("glowing liver" in _body_scanner_finding_names(H))
 		TEST_FAIL("a custom affliction hidden from scanners appeared in the findings")
 
-	A.showscanner = TRUE
+	A.set_showscanner(TRUE)
 	var/found = FALSE
 	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner)
 	for(var/datum/diagnosis_finding/F as anything in D.findings)

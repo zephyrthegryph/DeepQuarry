@@ -16,26 +16,26 @@
 	var/executed = 0
 
 /datum/computer_file/program/ntnet_dos/process_tick()
-	dos_speed = 0
+	set_dos_speed(0)
 	switch(ntnet_status)
 		if(1)
-			dos_speed = NTNETSPEED_LOWSIGNAL * NTNETSPEED_DOS_AMPLIFICATION
+			set_dos_speed(NTNETSPEED_LOWSIGNAL * NTNETSPEED_DOS_AMPLIFICATION)
 		if(2)
-			dos_speed = NTNETSPEED_HIGHSIGNAL * NTNETSPEED_DOS_AMPLIFICATION
+			set_dos_speed(NTNETSPEED_HIGHSIGNAL * NTNETSPEED_DOS_AMPLIFICATION)
 		if(3)
-			dos_speed = NTNETSPEED_ETHERNET * NTNETSPEED_DOS_AMPLIFICATION
+			set_dos_speed(NTNETSPEED_ETHERNET * NTNETSPEED_DOS_AMPLIFICATION)
 	if(target() && executed)
 		target().dos_overload += dos_speed
 		if(!target().operable())
 			rel_remove(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
 			rel_clear(src, nameof(target))
-			error = "Connection to destination relay lost."
+			set_error("Connection to destination relay lost.")
 
 /datum/computer_file/program/ntnet_dos/kill_program(forced)
 	if(target())
 		rel_remove(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
 		rel_clear(src, nameof(target))
-	executed = 0
+	set_executed(0)
 
 	..(forced)
 
@@ -78,13 +78,13 @@ CAPABILITIES(/datum/computer_file/program/ntnet_dos)
 	if(target())
 		rel_remove(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
 		rel_clear(src, nameof(src.target))
-	executed = FALSE
-	error = ""
+	set_executed(FALSE)
+	set_error("")
 	return TRUE
 
 /datum/computer_file/program/ntnet_dos/proc/ui_act_prg_execute(datum/act/op/A)
 	if(target())
-		executed = TRUE
+		set_executed(TRUE)
 		rel_add(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
 		if(GLOB.ntnet_global.intrusion_detection_enabled)
 			var/obj/item/computer_hardware/network_card/network_card = computer().network_card

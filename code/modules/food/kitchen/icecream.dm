@@ -87,13 +87,13 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 		return FALSE
 	if(index_action < 5)
 		dispense_flavour = index_action
-		flavour_name = get_flavour_name(dispense_flavour)
+		set_flavour_name(get_flavour_name(dispense_flavour))
 		act_message(user, src, MSG_SELF(span_notice("You set %T% to dispense [flavour_name] flavoured icecream.")), MSG_OTHERS(span_notice("%U% sets %T% to dispense [flavour_name] flavoured icecream.")))
 		return TRUE
 	if(index_action < 7)
 		var/cone_name = get_flavour_name(index_action)
 		if(LAZYACCESS(product_types, index_action) >= 1)
-			product_types[index_action] -= 1
+			set_product_types_at(index_action, product_types[index_action] - (1))
 			var/obj/item/reagent_containers/food/snacks/icecream/I = new(src.loc)
 			I.cone_type = cone_name
 			I.set_icon_state("icecream_cone_[cone_name]")
@@ -132,7 +132,7 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 		if(!I.ice_creamed)
 			if(LAZYACCESS(product_types, dispense_flavour) > 0)
 				act_message(user, src, others = "[icon2html(src,viewers(src))] " + span_info("%U% scoops delicious [flavour_name] icecream into [I]."))
-				product_types[dispense_flavour] -= 1
+				set_product_types_at(dispense_flavour, product_types[dispense_flavour] - (1))
 				I.add_ice_cream(flavour_name)
 				if(I.reagents.total_volume < 10)
 					I.reagents.add_reagent(REAGENT_ID_SUGAR, 10 - I.reagents.total_volume)

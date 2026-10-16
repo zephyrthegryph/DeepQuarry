@@ -42,16 +42,16 @@
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The strange critter suddenly takes advantage of you being alone to pounce atop you and quickly engulf your head within its maw! Before you even have a chance to react, the world goes dark with the inside of the meowls mouth covering your face, a rough tounge lapping smearing wet hot slobber over you. The rest of the process is pretty quick as the cat-owl begins to gulp your head down through a surprisingly stretchy throat and along the tight, flexing tunnel of its gullet. Before long you are pushing face first into the creature's stomach, the wrinkled walls quickly beginning grind slick flesh across it like any other piece of food. The rest of your body soon follows into the increasingly tight space, forced to curl up over yourself as the stomach lining bears down on you from every angle. At first, the stomach itself seems rather inactive, happily just squeezing and massaging you as the meowl settles down to slowly enjoy their snack. Though, struggling might risk setting off the gut one way or another..."
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.belly_fullscreen = "VBO_fleshs"
-	B.digest_brute = 1
-	B.digest_burn = 1
-	B.digest_oxy = 1
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_belly_fullscreen("VBO_fleshs")
+	B.set_digest_brute(1)
+	B.set_digest_burn(1)
+	B.set_digest_oxy(1)
 	B.selectchance = 25
-	B.digestchance = 0
-	B.absorbchance = 0
-	B.escapechance = 10
-	B.selective_preference = DM_DIGEST
+	B.set_digestchance(0)
+	B.set_absorbchance(0)
+	B.set_escapechance(10)
+	B.set_selective_preference(DM_DIGEST)
 	B.escape_stun = 5
 	B.transferlocation_absorb = "chub"
 
@@ -59,45 +59,45 @@
 	chub.immutable = TRUE
 	chub.name = "chub"
 	chub.desc = "Your body quickly begins to feel very... different? In fact, you can't really feel your body much at all any more, but you certainly still feel something. The pressure of the gut that was practically crushing you before is relieved, but somehow still present as though you were now on the other side of the interaction. Your being feels much more spread out and practically intertwined with the world around, that world being the meowl itself. The strange cat-owl's purring feels like it's reverberating throughout your entire form, whatever that might be. Every time the critter shakes to ruffle its feathers, you feel yourself shake with it. Even the creatures emotions feel tangible to you, as though you share themselves, and mostly they are ones of fullness and content."
-	chub.digest_mode = DM_HOLD // like, its got you already, doesn't need to get you more
-	chub.mode_flags = DM_FLAG_FORCEPSAY
-	chub.escapable = B_ESCAPABLE_DEFAULT // good luck
-	chub.escapechance = 40 // high chance of STARTING a successful escape attempt
-	chub.escapechance_absorbed = 5 // m i n e
-	chub.vore_verb = "soak"
-	chub.count_absorbed_prey_for_sprite = FALSE
-	chub.absorbed_struggle_messages_inside = list(
+	chub.set_digest_mode(DM_HOLD) // like, its got you already, doesn't need to get you more
+	chub.set_mode_flags(DM_FLAG_FORCEPSAY)
+	chub.set_escapable(B_ESCAPABLE_DEFAULT) // good luck
+	chub.set_escapechance(40) // high chance of STARTING a successful escape attempt
+	chub.set_escapechance_absorbed(5) // m i n e
+	chub.set_vore_verb("soak")
+	chub.set_count_absorbed_prey_for_sprite(FALSE)
+	chub.set_absorbed_struggle_messages_inside(list(
 		"You try and push free from %pred's %belly, but can't seem to will yourself to move.",
 		"Your fruitless mental struggles only cause %pred to purr happily.",
-		"You can't make any progress freeing yourself from %pred's %belly.")
-	chub.escape_attempt_absorbed_messages_owner = list(
-		"%prey is attempting to free themselves from your %belly!")
+		"You can't make any progress freeing yourself from %pred's %belly."))
+	chub.set_escape_attempt_absorbed_messages_owner(list(
+		"%prey is attempting to free themselves from your %belly!"))
 
-	chub.escape_attempt_absorbed_messages_prey = list(
+	chub.set_escape_attempt_absorbed_messages_prey(list(
 		"You try to force yourself out of %pred's %belly.",
 		"You strain and push, attempting to reach out of %pred's %belly.",
-		"You work up the will to try and force yourself free of %pred's clutches.")
+		"You work up the will to try and force yourself free of %pred's clutches."))
 
-	chub.escape_absorbed_messages_owner = list(
-		"%prey forces themselves free of your %belly!")
+	chub.set_escape_absorbed_messages_owner(list(
+		"%prey forces themselves free of your %belly!"))
 
-	chub.escape_absorbed_messages_prey = list(
+	chub.set_escape_absorbed_messages_prey(list(
 		"You finally manage to wrest yourself free from %pred's %belly, re-asserting your more usual form.",
-		"You heave and push, eventually spilling out from %pred's %belly, eliciting a mildly annoyed flurry of wing flapping.")
+		"You heave and push, eventually spilling out from %pred's %belly, eliciting a mildly annoyed flurry of wing flapping."))
 
-	chub.escape_absorbed_messages_outside = list(
-		"%prey suddenly forces themselves free of %pred's %belly!")
+	chub.set_escape_absorbed_messages_outside(list(
+		"%prey suddenly forces themselves free of %pred's %belly!"))
 
-	chub.escape_fail_absorbed_messages_owner = list(
-		"%prey's attempt to escape form your %belly has failed!")
+	chub.set_escape_fail_absorbed_messages_owner(list(
+		"%prey's attempt to escape form your %belly has failed!"))
 
-	chub.escape_fail_absorbed_messages_prey = list(
+	chub.set_escape_fail_absorbed_messages_prey(list(
 		"Before you manage to reach freedom, you feel yourself getting dragged back into %pred's %belly!",
 		"%pred cheeps playfully, simply pressing your wrigging form back into their %belly before you get anywhere.",
 		"%pred holds a wing down on their %belly, the gentle pressure breaking your concentration and sending you sinking back into its form.",
 		"Try as you might, you barely make an impression before %pred simply clenches with the most minimal effort, binding you back into their %belly.",
 		"Unfortunately, %pred seems to have absolutely no intention of letting you go, and your futile effort goes nowhere.",
-		"Strain as you might, you can't keep up the effort long enough before you sink back into %pred's %belly.")
+		"Strain as you might, you can't keep up the effort long enough before you sink back into %pred's %belly."))
 
 CAPABILITIES(/mob/living/simple_mob/vore/meowl)
 	op("meowl_interaction_feed", item(/obj/item/reagent_containers/food), label("Feed"), then(PROC_REF(meowl_interaction_feed)))

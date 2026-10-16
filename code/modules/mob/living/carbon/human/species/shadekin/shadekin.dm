@@ -239,12 +239,12 @@
 
 	if(H.species.total_health != eye_health)
 		var/datum/species/private_species = rel_private(H, nameof(H.species))
-		private_species.total_health = eye_health
+		private_species.set_total_health(eye_health)
 	H.set_endurance(eye_health)
 
 /datum/species/shadekin/produceCopy(list/traits, mob/living/carbon/human/H, custom_base, reset_dna = TRUE) // Traitgenes reset_dna flag required, or genes get reset on resleeve
 	var/datum/species/shadekin/new_copy = ..()
-	new_copy.total_health = total_health
+	new_copy.set_total_health(total_health)
 
 	return new_copy
 

@@ -57,7 +57,7 @@ CAPABILITIES(/datum/loot_decl)
 	if(rows["table"])
 		rel_set(src, nameof(main_table), new /datum/loot_entry/sub(1, rows["table"]))
 	if(!isnull(rows["count"]))
-		count = rows["count"]
+		set_count(rows["count"])
 	if(!isnull(rows["chance"]))
 		chance = rows["chance"]
 	all = rows["all"]

@@ -69,7 +69,7 @@ GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
 
 	var/syndicate_commando_name = pick(GLOB.last_names)
 
-	player.name = "[syndicate_commando_rank] [syndicate_commando_name]"
+	player.set_name("[syndicate_commando_rank] [syndicate_commando_name]")
 	player.current.name = player.name
 	player.current.set_real_name(player.current.name)
 

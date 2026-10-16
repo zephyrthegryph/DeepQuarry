@@ -128,6 +128,7 @@
 
 
 CAPABILITIES(/obj/machinery/biogenerator)
+	ref_one(nameof(beaker))
 	reagents(1000)
 	default_parts()
 	per_type(nameof(item_list), PROC_REF(build_item_list))
@@ -300,7 +301,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 	var/man_rating = get_part_rating(/obj/item/stock_parts/manipulator)
 	var/bin_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
 
-	build_eff = man_rating
+	set_build_eff(man_rating)
 	eat_eff = bin_rating
 
 #undef BIOGEN_ITEM

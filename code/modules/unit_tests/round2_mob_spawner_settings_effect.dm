@@ -3,7 +3,7 @@
 	var/datum/eventkit/mob_spawner/spawner = allocate(/datum/eventkit/mob_spawner)
 	var/datum/eventkit/mob_spawner/control = allocate(/datum/eventkit/mob_spawner)
 	TEST_ASSERT_NULL(spawner.path, "actual constructor has no selected mob path")
-	spawner.new_path = FALSE // Existing plain UI-data flag: exercise its real rearm effect.
+	spawner.set_new_path(FALSE) // Existing plain UI-data flag: exercise its real rearm effect.
 	spawner.apply_spawner_setting("select_path", /mob/living/carbon/human)
 	TEST_ASSERT_EQUAL(spawner.path, /mob/living/carbon/human, "accepted type selects the exact existing concrete mob path")
 	TEST_ASSERT(spawner.new_path, "selecting a path rearms actual UI-data initialization")

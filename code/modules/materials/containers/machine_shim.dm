@@ -41,7 +41,7 @@ CAPABILITIES(/datum/using_machine_shim)
 	..()
 	var/obj/machinery/machine = linked_machine()
 	if(machine)
-		machine.in_use = FALSE
+		machine.set_in_use(FALSE)
 	if(owner)
 		seq_extra_remove(owner, /datum/sequence/life, src)
 		owner.reset_perspective()
@@ -131,7 +131,7 @@ CAPABILITIES(/datum/using_machine_shim)
 					if(H.client && H.check_current_machine(src))
 						is_in_use = 1
 						src.attack_hand(H)
-		in_use = is_in_use
+		set_in_use(is_in_use)
 
 /// deprecated, do not use
 /obj/machinery/CouldUseTopic(mob/user)

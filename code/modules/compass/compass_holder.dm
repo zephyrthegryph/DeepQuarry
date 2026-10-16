@@ -103,11 +103,11 @@ CAPABILITIES(/obj/compass_holder)
 
 /obj/compass_holder/proc/show_waypoint(id)
 	var/datum/compass_waypoint/wp = compass_waypoints[id]
-	wp.hidden = FALSE
+	wp.set_hidden(FALSE)
 
 /obj/compass_holder/proc/hide_waypoint(id)
 	var/datum/compass_waypoint/wp = compass_waypoints[id]
-	wp.hidden = TRUE
+	wp.set_hidden(TRUE)
 
 /obj/compass_holder/proc/hide_waypoints(rebuild_overlays = FALSE)
 	for(var/id in compass_waypoints)

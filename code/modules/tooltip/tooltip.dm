@@ -94,7 +94,7 @@ CAPABILITIES(/datum/tooltip)
 		unobserve(last_target(), /datum/notice/qdeleting, src)
 	observe(thing, /datum/notice/qdeleting, src, then(PROC_REF(on_target_qdel)))
 	rel_set(src, nameof(last_target), thing)
-	_revision++
+	set__revision(_revision + 1)
 	queueHide = FALSE
 
 	showing = 1
@@ -109,13 +109,13 @@ CAPABILITIES(/datum/tooltip)
 	title = strip_improper(title)
 
 	var/view_size = getviewsize(owner().view)
-	_visible = TRUE
-	_title = "[title][content]"
-	_theme = theme
-	_cursor_params = "[params]"
-	_screen_loc = "[thing.screen_loc]"
-	_view_w = view_size[1]
-	_view_h = view_size[2]
+	set__visible(TRUE)
+	set__title("[title][content]")
+	set__theme(theme)
+	set__cursor_params("[params]")
+	set__screen_loc("[thing.screen_loc]")
+	set__view_w(view_size[1])
+	set__view_h(view_size[2])
 
 	// Ensure a ui bound to the CURRENT mob. try_update_ui() finds + refreshes an
 	// existing one; if the mob changed (lobby -> spawned) there's none for the new
@@ -166,7 +166,7 @@ CAPABILITIES(/datum/tooltip)
 	if(last_target())
 		unobserve(last_target(), /datum/notice/qdeleting, src)
 	rel_clear(src, nameof(last_target))
-	_visible = FALSE
+	set__visible(FALSE)
 	SStgui.update_uis(src)
 
 /datum/tooltip/proc/ensure_hidden(hide_revision)

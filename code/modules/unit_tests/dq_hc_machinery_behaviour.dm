@@ -32,7 +32,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/navbeacon/N = mach(/obj/machinery/navbeacon, tile(3, 2))
 	N.set_open(TRUE)
-	N.location = "Home"
+	N.set_location("Home")
 	press(H, N, "loc_edit", list("new_loc" = "Away"))
 	TEST_ASSERT_EQUAL(N.location, "Home", "a locked beacon keeps its location")
 	N.set_locked(FALSE)
@@ -360,7 +360,7 @@
 /datum/unit_test/dq_hc_struct/exonet_node_ports_are_toggled/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/exonet_node/E = mach(/obj/machinery/exonet_node, tile(3, 2))
-	E.toggle = 0
+	E.set_toggle(0)
 	press(H, E, "toggle_power")
 	TEST_ASSERT(E.toggle, "the power button switches the node on")
 	TEST_ASSERT(E.allow_external_PDAs, "its PDA port starts open")
@@ -790,14 +790,14 @@
 /datum/unit_test/dq_hc_struct/ai_slipper_repeat_parks
 /datum/unit_test/dq_hc_struct/ai_slipper_repeat_parks/run_gate()
 	var/obj/machinery/ai_slipper/S = mach(/obj/machinery/ai_slipper, tile(3, 2))
-	S.uses = 0
+	S.set_uses(0)
 	S.cooldown_time = world.timeofday
 	S.set_cooldown_on(TRUE)
 	test_phase(KERNEL_PHASE_R) // drain the gate wake before measuring its interval
 	test_time(0.5 SECONDS)
 	TEST_ASSERT(S.cooldown_on, "exhaustion retains the original gameplay cooldown flag")
 	TEST_ASSERT(S.cooldown_stopped, "the exhausted repeat is stopped")
-	S.uses = 1
+	S.set_uses(1)
 	test_time(1 SECOND)
 	TEST_ASSERT(S.cooldown_on, "adding uses alone does not restart a stopped repeat")
 	S.set_cooldown_on(FALSE)
@@ -817,7 +817,7 @@
 /datum/unit_test/dq_hc_struct/magnet_repeat_stops_until_gate_changes/run_gate()
 	var/obj/machinery/magnetic_controller/C = mach(/obj/machinery/magnetic_controller, tile(3, 2))
 	C.rpath = list("invalid")
-	C.speed = 10
+	C.set_speed(10)
 	C.set_path_moving(TRUE)
 	test_phase(KERNEL_PHASE_R) // drain the gate wake before measuring its interval
 	test_time(0.1 SECONDS)
@@ -865,13 +865,13 @@
 /datum/unit_test/dq_hc_struct/repeat_restarts_on_shared_settings
 /datum/unit_test/dq_hc_struct/repeat_restarts_on_shared_settings/run_gate()
 	var/obj/machinery/ai_slipper/S = mach(/obj/machinery/ai_slipper, tile(3, 2))
-	S.uses = 0
+	S.set_uses(0)
 	S.cooldown_time = world.timeofday
 	S.set_cooldown_on(TRUE)
 	test_phase(KERNEL_PHASE_R) // drain the gate wake before measuring its interval
 	test_time(0.5 SECONDS)
 	TEST_ASSERT(S.cooldown_stopped, "the exhausted repeat first stops")
-	S.uses = 1
+	S.set_uses(1)
 	S.set_density(!S.density)
 	test_phase(KERNEL_PHASE_R) // the shared setting resets the stopped gate at this clock
 	test_time(0.5 SECONDS)

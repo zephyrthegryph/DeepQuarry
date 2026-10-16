@@ -59,26 +59,26 @@
 	if(command)
 		switch(command)
 			if("set-electriclevel")
-				if(modifier)	electricity_level = modifier
+				if(modifier)	set_electricity_level(modifier)
 			if("set-magneticfield")
-				if(modifier)	magnetic_field = modifier
+				if(modifier)	set_magnetic_field(modifier)
 
 			if("add-elec")
-				electricity_level++
+				set_electricity_level(electricity_level + 1)
 				if(electricity_level > 12)
-					electricity_level = 12
+					set_electricity_level(12)
 			if("sub-elec")
-				electricity_level--
+				set_electricity_level(electricity_level - 1)
 				if(electricity_level <= 0)
-					electricity_level = 1
+					set_electricity_level(1)
 			if("add-mag")
-				magnetic_field++
+				set_magnetic_field(magnetic_field + 1)
 				if(magnetic_field > 4)
-					magnetic_field = 4
+					set_magnetic_field(4)
 			if("sub-mag")
-				magnetic_field--
+				set_magnetic_field(magnetic_field - 1)
 				if(magnetic_field <= 0)
-					magnetic_field = 1
+					set_magnetic_field(1)
 
 			if("set-x")
 				if(modifier)	center_x = modifier
@@ -120,9 +120,9 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 
 	// Sanity checks:
 	if(electricity_level <= 0)
-		electricity_level = 1
+		set_electricity_level(1)
 	if(magnetic_field <= 0)
-		magnetic_field = 1
+		set_magnetic_field(1)
 
 	// Limitations:
 	if(abs(center_x) > max_dist)
@@ -130,9 +130,9 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 	if(abs(center_y) > max_dist)
 		center_y = max_dist
 	if(magnetic_field > 4)
-		magnetic_field = 4
+		set_magnetic_field(4)
 	if(electricity_level > 12)
-		electricity_level = 12
+		set_electricity_level(12)
 
 	// Update power usage:
 	if(on)
@@ -254,13 +254,13 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 		return
 	switch(op)
 		if("plusspeed")
-			speed ++
+			set_speed(speed + 1)
 			if(speed > 10)
-				speed = 10
+				set_speed(10)
 		if("minusspeed")
-			speed --
+			set_speed(speed - 1)
 			if(speed <= 0)
-				speed = 1
+				set_speed(1)
 
 		if("togglemoving")
 			set_path_moving(!path_moving)
@@ -273,7 +273,7 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 	updateUsrDialog(user)
 	if(newpath && newpath != "")
 		set_path_moving(FALSE) // stop moving
-		path = newpath
+		set_path(newpath)
 		pathpos = 1 // reset position
 		filter_path() // renders rpath
 

@@ -384,7 +384,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 
 	// Open the canister to release.
 	C.set_valve_open(TRUE)
-	C.release_pressure = 1000 // high release for fast transfer
+	C.set_release_pressure(1000) // high release for fast transfer
 	// Drive the canister's release loop directly: one machine pipeline frame each
 	// (machine_pipeline.dm, power/canister) runs the valve transfer.
 	for(var/i in 1 to 10)
@@ -2067,7 +2067,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/before_canister = C.air_contents.get_moles(/datum/gas/plasma)
 	var/before_turf = T.air.get_moles(/datum/gas/plasma)
 	C.set_valve_open(TRUE)
-	C.release_pressure = 10 * ONE_ATMOSPHERE
+	C.set_release_pressure(10 * ONE_ATMOSPHERE)
 	C.canister_step(null)
 	var/after_canister = C.air_contents.get_moles(/datum/gas/plasma)
 	var/after_turf = T.air.get_moles(/datum/gas/plasma)
@@ -3224,8 +3224,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	P.air_contents.adjust_gas(/datum/gas/nitrogen, 200)
 	heat_set(P.air_contents, T20C, HEAT_SOURCE_OTHER)
 	P.set_on(TRUE)
-	P.direction_out = TRUE
-	P.target_pressure = 5 * ONE_ATMOSPHERE
+	P.set_direction_out(TRUE)
+	P.set_target_pressure(5 * ONE_ATMOSPHERE)
 	// Make sure the power gate doesn't short-circuit the test.
 	if(P.cell)
 		P.cell.charge = P.cell.maxcharge
@@ -4570,7 +4570,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.set_operating(FALSE)
 	set_bolted(A, FALSE, TRUE)
 	A.set_frozen(FALSE)
-	A.id_tag = "dq_secure_open_test"
+	A.set_id_tag("dq_secure_open_test")
 	TEST_ASSERT(A.power_systems_on(), "the test airlock has no power")
 	var/datum/signal/S = new
 	S.data["tag"] = A.id_tag
@@ -4698,7 +4698,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	shieldwall_generator.storedpower = shieldwall_generator.max_stored_power
 	TEST_ASSERT(test_machine_idle(shieldwall_generator), "full inactive shieldwall generator remained scheduled")
 	var/obj/machinery/shield_capacitor/shield_capacitor = new(T)
-	shield_capacitor.stored_charge = shield_capacitor.max_charge
+	shield_capacitor.set_stored_charge(shield_capacitor.max_charge)
 	TEST_ASSERT(test_machine_idle(shield_capacitor), "full shield capacitor remained scheduled")
 	var/obj/machinery/atmospherics/valve/shutoff/shutoff = new(T)
 	TEST_ASSERT(shutoff in REGISTRY_MEMBERS(REGISTRY_SHUTOFF_VALVES), "an automatic shutoff valve is one wake_automatic_shutoff_valves() reaches")
@@ -4843,7 +4843,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	portable_generator.set_active(FALSE)
 	var/datum/gas_mixture/generator_environment = T.return_air()
 	var/generator_pressure_ratio = generator_environment ? min(generator_environment.return_pressure() / ONE_ATMOSPHERE, 1) : 0
-	portable_generator.temperature = 20 + (generator_environment ? generator_environment.return_temperature() - T20C : 0) * generator_pressure_ratio
+	portable_generator.set_core_temperature(20 + (generator_environment ? generator_environment.return_temperature() - T20C : 0) * generator_pressure_ratio)
 	portable_generator.set_overheating(0)
 	TEST_ASSERT(!portable_generator.has_work(), "a cold inactive portable generator's step (every(when = has_work)) has no work")
 	portable_generator.set_sheets(1)
@@ -6350,7 +6350,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/portable_atmospherics/canister/phoron/Can = new(A)
 	TEST_ASSERT_NOTNULL(Can, "phoron canister construct failed")
 	Can.set_valve_open(TRUE)
-	Can.release_pressure = ONE_ATMOSPHERE * 50
+	Can.set_release_pressure(ONE_ATMOSPHERE * 50)
 
 	// Run canister frames to release, then drive cells to share into B.
 	// Poll: stop looping as soon as both turfs show plasma (the condition
@@ -6930,7 +6930,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/portable_atmospherics/canister/phoron/Can = new(A)
 	TEST_ASSERT_NOTNULL(Can, "phoron canister construct failed")
 	Can.set_valve_open(TRUE)
-	Can.release_pressure = ONE_ATMOSPHERE * 10
+	Can.set_release_pressure(ONE_ATMOSPHERE * 10)
 
 	// Begin processing on the machine pipeline — this is what
 	// machinery does in a live game. Canister is portable_atmospherics

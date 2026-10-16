@@ -62,12 +62,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/bluecabold)
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
-		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
-		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!"))
 
 //rednom
 CAPABILITIES(/mob/living/simple_mob/vore/candy/redcabold)
@@ -87,12 +87,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/redcabold)
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
-		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
-		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!"))
 
 //yellow
 CAPABILITIES(/mob/living/simple_mob/vore/candy/yellowcabold)
@@ -112,12 +112,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/yellowcabold)
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
-		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
-		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!"))
 
 //orange
 CAPABILITIES(/mob/living/simple_mob/vore/candy/orangecabold)
@@ -137,12 +137,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/orangecabold)
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
-		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
-		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!"))
 
 //purplenom
 CAPABILITIES(/mob/living/simple_mob/vore/candy/purplecabold)
@@ -162,12 +162,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/purplecabold)
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
-		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
-		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!"))
 
 //marshmellownom
 CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
@@ -187,12 +187,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
-		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
-		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!"))
 
 /mob/living/simple_mob/vore/candy/bluecabold //Adds protection
 	name = "gummy kobold"
@@ -702,12 +702,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/worm)
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
-		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
-		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!"))
 
 v
 

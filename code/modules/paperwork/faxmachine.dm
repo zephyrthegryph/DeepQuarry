@@ -260,14 +260,14 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
 		if(check_access(scan))
 			set_authenticated(scan.registered_name)
-			rank = scan.assignment
+			set_rank(scan.assignment)
 	else if(login_type == LOGIN_TYPE_AI && isAI(user))
 		set_authenticated(user.name)
-		rank = JOB_AI
+		set_rank(JOB_AI)
 	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(user))
 		set_authenticated(user.name)
 		var/mob/living/silicon/robot/R = user
-		rank = "[R.modtype] [R.braintype]"
+		set_rank("[R.modtype] [R.braintype]")
 
 /obj/machinery/photocopier/faxmachine/proc/ui_act_logout(datum/act/op/A)
 	var/mob/user = A.actor
@@ -513,7 +513,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	else
 		message_admins(sender, "[uppertext(destination)] FAX", rcvdcopy, "UNKNOWN")
 
-	sendcooldown = 1800
+	set_sendcooldown(1800)
 	after(src, 5 SECONDS, TYPE_PROC_REF(/atom, visible_message), with = list("[src] beeps, \"Message transmitted successfully.\""))
 
 // Turns objects into just text.
@@ -705,7 +705,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		role_request_discord_message("An automated request for crew has been made.\nJob: [jobname]\nReason: [reason]")
 
 /obj/machinery/photocopier/faxmachine/proc/cooldown_over()
-	sendcooldown = 0
+	set_sendcooldown(0)
 
 /obj/machinery/photocopier/faxmachine/ownership()
 	. = ..()

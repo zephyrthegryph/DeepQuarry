@@ -305,17 +305,17 @@ CAPABILITIES(/mob/living/bot/medbot)
 	var/rank = val
 	if(isnull(rank))
 		return FALSE
-	min_urgency = clamp(round(rank), MEDBOT_MIN_URGENCY, MEDBOT_MAX_URGENCY)
+	set_min_urgency(clamp(round(rank), MEDBOT_MIN_URGENCY, MEDBOT_MAX_URGENCY))
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_adj_inject(datum/act/op/A, val)
 	. = TRUE
-	injection_amount = val
+	set_injection_amount(val)
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_use_beaker(datum/act/op/A)
 	. = TRUE
-	use_beaker = !use_beaker
+	set_use_beaker(!use_beaker)
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_eject(datum/act/op/A)
@@ -327,12 +327,12 @@ CAPABILITIES(/mob/living/bot/medbot)
 
 /mob/living/bot/medbot/proc/ui_act_togglevoice(datum/act/op/A)
 	. = TRUE
-	vocal = !vocal
+	set_vocal(!vocal)
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_declaretreatment(datum/act/op/A)
 	. = TRUE
-	declare_treatment = !declare_treatment
+	set_declare_treatment(!declare_treatment)
 	. = TRUE
 
 /mob/living/bot/medbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)

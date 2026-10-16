@@ -17,10 +17,10 @@
 	if(!S || is_registered(S))
 		return S
 	var/datum/seed/line = S.copy_line()
-	line.uid = length(seeds) + 1
+	line.set_uid(length(seeds) + 1)
 	line.name = "[line.uid]"
 	seeds[line.name] = line
-	S.uid = line.uid
+	S.set_uid(line.uid)
 	S.name = line.name
 	return line
 
@@ -28,15 +28,15 @@
 /datum/system/plants/proc/create_random_seed(survive_on_station)
 	var/datum/seed/seed = new()
 	seed.randomize()
-	seed.uid = length(seeds) + 1
+	seed.set_uid(length(seeds) + 1)
 	seed.name = "[seed.uid]"
 	seeds[seed.name] = seed
 
 	if(survive_on_station)
 		if(seed.consume_gasses)
-			seed.consume_gasses[GAS_PHORON] = null
-			seed.consume_gasses[GAS_CH4] = null
-			seed.consume_gasses[GAS_CO2] = null
+			seed.set_consume_gasses_at(GAS_PHORON, null)
+			seed.set_consume_gasses_at(GAS_CH4, null)
+			seed.set_consume_gasses_at(GAS_CO2, null)
 		if(seed.chems && !isnull(seed.chems[REAGENT_ID_PACID]))
 			seed.chems[REAGENT_ID_PACID] = null // Eating through the hull will make these plants completely inviable, albeit very dangerous.
 			seed.chems -= null // Setting to null does not actually remove the entry, which is weird.

@@ -45,7 +45,7 @@ CAPABILITIES(/obj/item/uv_light)
 				continue
 			O.set_invisibility(LAZYACCESS(scanned, object_handle))
 			if(dq_get_fluorescent(O) == 2) dq_set_fluorescent(O, 1)
-		LAZYCLEARLIST(scanned)
+		clear_scanned()
 	if(length(stored_alpha))
 		for(var/object_handle in stored_alpha)
 			var/atom/O = resolve_handle(object_handle)
@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/uv_light)
 				if(dq_get_fluorescent(A) == 1)
 					dq_set_fluorescent(A, 2) //To prevent light crosstalk.
 					if(A.invisibility)
-						LAZYSET(scanned, entity_handle(A), A.invisibility)
+						set_scanned_at(entity_handle(A), A.invisibility)
 						A.set_invisibility(INVISIBILITY_NONE)
 						LAZYSET(stored_alpha, entity_handle(A), A.alpha)
 						A.alpha = use_alpha

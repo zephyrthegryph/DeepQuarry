@@ -29,7 +29,7 @@ CAPABILITIES(/obj/item/disk/botany)
 			name = initial(name)
 			desc = initial(name)
 			rel_clear(src, nameof(genes))
-			genesource = "unknown"
+			set_genesource("unknown")
 	return OP_OK
 
 /obj/item/storage/box/botanydisk
@@ -264,7 +264,7 @@ CAPABILITIES(/obj/machinery/botany)
 
 	if(seed && seed.seed())
 		seed_hand_over(seed, "seed_static", src, "genetics_static") // the packet is consumed below
-		degradation = 0
+		set_degradation(0)
 
 	consume(seed)
 	rel_take(src, nameof(seed))
@@ -292,11 +292,11 @@ CAPABILITIES(/obj/machinery/botany)
 	loaded_disk.desc += " The label reads \'gene [SSplants.gene_tag_masks[get_gene]], sampled from [genetics().display_name]\'."
 	eject_disk = 1
 
-	degradation += rand(20,60)
+	set_degradation(degradation + (rand(20,60)))
 	if(degradation >= 100)
 		failed_task = 1
 		proto_set(src, nameof(/obj/machinery/botany/extractor::genetics_static), null)
-		degradation = 0
+		set_degradation(0)
 	return TRUE
 
 /obj/machinery/botany/extractor/proc/ui_act_clear_buffer(datum/act/op/A)
@@ -305,7 +305,7 @@ CAPABILITIES(/obj/machinery/botany)
 	if(!genetics())
 		return
 	proto_set(src, nameof(/obj/machinery/botany/extractor::genetics_static), null)
-	degradation = 0
+	set_degradation(0)
 	return TRUE
 
 // Fires an extracted trait into another packet of seeds with a chance

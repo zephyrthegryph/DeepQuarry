@@ -57,29 +57,29 @@ CAPABILITIES(/obj/item/card/id)
 /obj/item/card/id/proc/set_id_photo(mob/M)
 	M.ImmediateOverlayUpdate()
 	var/icon/F = getFlatIcon(M, defdir = SOUTH, no_anim = TRUE)
-	front = "'data:image/png;base64,[icon2base64(F)]'"
+	set_front("'data:image/png;base64,[icon2base64(F)]'")
 
 /mob/proc/set_id_info(obj/item/card/id/id_card)
-	id_card.age = 0
+	id_card.set_age(0)
 	id_card.set_registered_name(real_name)
-	id_card.sex 				= capitalize(gender)
-	id_card.species				= SPECIES_HUMAN
+	id_card.set_sex(capitalize(gender))
+	id_card.set_species(SPECIES_HUMAN)
 	id_card.set_id_photo(src)
 
 	if(dna)
-		id_card.blood_type		= dna.b_type
-		id_card.dna_hash		= dna.unique_enzymes
-		id_card.fingerprint_hash= md5(dna.GetUniIdentity())
+		id_card.set_blood_type(dna.b_type)
+		id_card.set_dna_hash(dna.unique_enzymes)
+		id_card.set_fingerprint_hash(md5(dna.GetUniIdentity()))
 	id_card.update_name()
 
 /mob/living/carbon/human/set_id_info(obj/item/card/id/id_card)
 	..()
-	id_card.age = bio.age
+	id_card.set_age(bio.age)
 	if(species.name == SPECIES_HANNER)
-		id_card.species = "[custom_species ? "[custom_species]" : species.name]"
+		id_card.set_species("[custom_species ? "[custom_species]" : species.name]")
 	else
-		id_card.species = "[custom_species ? "[custom_species] ([species.name])" : species.name]"
-	id_card.sex = capitalize(name_gender())
+		id_card.set_species("[custom_species ? "[custom_species] ([species.name])" : species.name]")
+	id_card.set_sex(capitalize(name_gender()))
 
 	// Save time by reusing our ID card photo instead of generating it for the char directory specifically
 	set_chardirectory_photo(id_card.front)
@@ -359,7 +359,7 @@ CAPABILITIES(/obj/item/card/id/event)
 		return OP_OK
 	if(polymorphic_type == 1)
 		set_icon_state(user.job)
-		base_icon_state = user.job
+		set_base_icon_state(user.job)
 	else if(polymorphic_type == 2)
 		var/static/list/jobs_to_icon = list( //ITG only has a few kinds of icons so we have to group them up!
 		JOB_PILOT = "itg",
@@ -410,7 +410,7 @@ CAPABILITIES(/obj/item/card/id/event)
 			return OP_OK
 		else
 			set_icon_state(guess)
-			base_icon_state = guess
+			set_base_icon_state(guess)
 
 	if(!preset_rank)
 		var/title
@@ -419,7 +419,7 @@ CAPABILITIES(/obj/item/card/id/event)
 			title = alt_titles[user.job]
 		else
 			title = user.job
-		assignment = title
+		set_assignment(title)
 	user.set_id_info(src)
 	if(user.mind && user.mind.initial_account())
 		set_associated_account_number(user.mind.initial_account().account_number)
@@ -445,7 +445,7 @@ CAPABILITIES(/obj/item/card/id/event)
 		var/obj/item/card/id/O = I
 		include_access(O.GetAccess())
 		desc = I.desc
-		rank = O.rank
+		set_rank(O.rank)
 		to_chat(user, span_notice("You copy the access from \the [I] to \the [src]."))
 		consume(I, user)
 		set_accessset(1)

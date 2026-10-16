@@ -107,7 +107,7 @@ CAPABILITIES(/datum/techweb)
 	for(var/id in available_nodes)
 		processing[id] = TRUE
 	if(recalculate_designs)
-		researched_designs = LAZYCOPY(custom_designs)
+		set_researched_designs(LAZYCOPY(custom_designs))
 		if(wipe_custom_designs)
 			custom_designs = list()
 	defer_tier_recompute()
@@ -119,7 +119,7 @@ CAPABILITIES(/datum/techweb)
 /datum/techweb/proc/add_point_list(list/pointlist)
 	for(var/i in pointlist)
 		if((i in SSresearch.point_types) && pointlist[i] > 0)
-			LAZYSET(research_points, i, FLOOR(LAZYACCESS(research_points, i) + pointlist[i], 0.1))
+			set_research_points_at(i, FLOOR(LAZYACCESS(research_points, i) + pointlist[i], 0.1))
 
 /datum/techweb/proc/add_points_all(amount)
 	var/list/l = SSresearch.point_types.Copy()
@@ -130,7 +130,7 @@ CAPABILITIES(/datum/techweb)
 /datum/techweb/proc/remove_point_list(list/pointlist)
 	for(var/i in pointlist)
 		if((i in SSresearch.point_types) && pointlist[i] > 0)
-			LAZYSET(research_points, i, FLOOR(max(0, LAZYACCESS(research_points, i) - pointlist[i]), 0.1))
+			set_research_points_at(i, FLOOR(max(0, LAZYACCESS(research_points, i) - pointlist[i]), 0.1))
 
 /datum/techweb/proc/remove_points_all(amount)
 	var/list/l = SSresearch.point_types.Copy()
@@ -141,7 +141,7 @@ CAPABILITIES(/datum/techweb)
 /datum/techweb/proc/modify_point_list(list/pointlist)
 	for(var/i in pointlist)
 		if((i in SSresearch.point_types) && pointlist[i] != 0)
-			LAZYSET(research_points, i, FLOOR(max(0, LAZYACCESS(research_points, i) + pointlist[i]), 0.1))
+			set_research_points_at(i, FLOOR(max(0, LAZYACCESS(research_points, i) + pointlist[i]), 0.1))
 
 /datum/techweb/proc/modify_points_all(amount)
 	var/list/l = SSresearch.point_types.Copy()
@@ -153,7 +153,7 @@ CAPABILITIES(/datum/techweb)
 	for(var/i in receiver.hidden_nodes)
 		CHECK_TICK
 		if(get_available_nodes()[i] || get_researched_nodes()[i] || get_visible_nodes()[i])
-			LAZYREMOVE(receiver.hidden_nodes, i) //We can see it so let them see it too.
+			receiver.remove_hidden_nodes(i) //We can see it so let them see it too.
 	for(var/i in (researched_nodes || list()) - receiver.researched_nodes)
 		CHECK_TICK
 		receiver.research_node_id(i, TRUE, FALSE, FALSE)
@@ -164,11 +164,11 @@ CAPABILITIES(/datum/techweb)
 
 /datum/techweb/proc/copy()
 	var/datum/techweb/returned = new()
-	returned.researched_nodes = LAZYCOPY(researched_nodes)
+	returned.set_researched_nodes(LAZYCOPY(researched_nodes))
 	returned.visible_nodes = LAZYCOPY(visible_nodes)
 	returned.available_nodes = LAZYCOPY(available_nodes)
-	returned.researched_designs = LAZYCOPY(researched_designs)
-	returned.hidden_nodes = LAZYCOPY(hidden_nodes)
+	returned.set_researched_designs(LAZYCOPY(researched_designs))
+	returned.set_hidden_nodes(LAZYCOPY(hidden_nodes))
 	return returned
 
 /datum/techweb/proc/get_visible_nodes() //The way this is set up is shit but whatever.
@@ -189,13 +189,13 @@ CAPABILITIES(/datum/techweb)
 /datum/techweb/proc/modify_point_type(type, amount)
 	if(!(type in SSresearch.point_types))
 		return FALSE
-	LAZYSET(research_points, type, max(0, LAZYACCESS(research_points, type) + amount))
+	set_research_points_at(type, max(0, LAZYACCESS(research_points, type) + amount))
 	return TRUE
 
 /datum/techweb/proc/remove_point_type(type, amount)
 	if(!(type in SSresearch.point_types) || (amount <= 0))
 		return FALSE
-	LAZYSET(research_points, type, max(0, LAZYACCESS(research_points, type) - amount))
+	set_research_points_at(type, max(0, LAZYACCESS(research_points, type) - amount))
 	return TRUE
 
 /**
@@ -224,10 +224,10 @@ CAPABILITIES(/datum/techweb)
 	if(add_to)
 		add_to[design.id] = TRUE
 	else
-		LAZYSET(researched_designs, design.id, TRUE)
+		set_researched_designs_at(design.id, TRUE)
 
 	for(var/node_id as anything in design.unlocked_by)
-		LAZYREMOVE(hidden_nodes, node_id)
+		remove_hidden_nodes(node_id)
 
 	return TRUE
 
@@ -241,7 +241,7 @@ CAPABILITIES(/datum/techweb)
 		return FALSE
 	PUBLISH_LEGACY(src, /datum/notice/techweb_remove_design, design, custom)
 	LAZYREMOVE(custom_designs, design.id)
-	LAZYREMOVE(researched_designs, design.id)
+	remove_researched_designs(design.id)
 	return TRUE
 
 /datum/techweb/proc/get_point_total(list/pointlist)
@@ -347,17 +347,17 @@ CAPABILITIES(/datum/techweb)
 
 	if(id in research_queue_nodes)
 		if(queue_first)
-			LAZYREMOVE(research_queue_nodes, id) // Remove to be able to place first
+			remove_research_queue_nodes(id) // Remove to be able to place first
 		else
 			return FALSE
 
 	for(var/node_id in research_queue_nodes)
 		if(LAZYACCESS(research_queue_nodes, node_id) == user_h)
-			LAZYREMOVE(research_queue_nodes, node_id)
+			remove_research_queue_nodes(node_id)
 
 	if (queue_first)
-		LAZYINITLIST(research_queue_nodes); research_queue_nodes.Insert(1, id)
-	LAZYSET(research_queue_nodes, id, user_h)
+		insert_research_queue_nodes(1, id)
+	set_research_queue_nodes_at(id, user_h)
 
 	return TRUE
 
@@ -374,7 +374,7 @@ CAPABILITIES(/datum/techweb)
 	if(LAZYACCESS(research_queue_nodes, id) != entity_handle(user))
 		return FALSE
 
-	LAZYREMOVE(research_queue_nodes, id)
+	remove_research_queue_nodes(id)
 
 	return TRUE
 
@@ -403,7 +403,7 @@ CAPABILITIES(/datum/techweb)
 		log_message += " at the cost of [json_encode(node_cost)]"
 
 	//Add to our researched list
-	LAZYSET(researched_nodes, node.id, TRUE)
+	set_researched_nodes_at(node.id, TRUE)
 
 	// Track any experiments we skipped relating to this
 	for(var/missed_experiment in node.discount_experiments)
@@ -436,7 +436,7 @@ CAPABILITIES(/datum/techweb)
 
 	// Dequeue
 	if(node.id in research_queue_nodes)
-		LAZYREMOVE(research_queue_nodes, node.id)
+		remove_research_queue_nodes(node.id)
 
 	flush_deferred_tiers()
 	return TRUE
@@ -447,7 +447,7 @@ CAPABILITIES(/datum/techweb)
 /datum/techweb/proc/unresearch_node(datum/techweb_node/node)
 	if(!istype(node))
 		return FALSE
-	LAZYREMOVE(researched_nodes, node.id)
+	remove_researched_nodes(node.id)
 	recalculate_nodes(TRUE) //Fully rebuild the tree.
 
 /// Boosts a techweb node.
@@ -465,7 +465,7 @@ CAPABILITIES(/datum/techweb)
 /datum/techweb/proc/unhide_node(datum/techweb_node/node)
 	if(!istype(node))
 		return FALSE
-	LAZYREMOVE(hidden_nodes, node.id)
+	remove_hidden_nodes(node.id)
 	///Make it available if the prereq ids are already researched
 	update_node_status(node)
 	return TRUE
@@ -483,7 +483,7 @@ CAPABILITIES(/datum/techweb)
 					tier = max(tier, prereq_tier + 1)
 
 			if (tier != LAZYACCESS(tiers, node.id))
-				LAZYSET(tiers, node.id, tier)
+				set_tiers_at(node.id, tier)
 				for (var/id in node.unlock_ids)
 					next += SSresearch.techweb_node_by_id(id)
 		current = next
@@ -522,13 +522,13 @@ CAPABILITIES(/datum/techweb)
 			needed--
 	if(!needed)
 		available = TRUE
-	LAZYREMOVE(researched_nodes, node.id)
+	remove_researched_nodes(node.id)
 	LAZYREMOVE(available_nodes, node.id)
 	LAZYREMOVE(visible_nodes, node.id)
 	if(LAZYACCESS(hidden_nodes, node.id)) //Hidden.
 		return
 	if(researched)
-		LAZYSET(researched_nodes, node.id, TRUE)
+		set_researched_nodes_at(node.id, TRUE)
 		for(var/id in (node.design_ids || list()) - researched_designs)
 			add_design(SSresearch.techweb_design_by_id(id))
 	else

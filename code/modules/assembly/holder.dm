@@ -191,7 +191,7 @@ CAPABILITIES(/obj/item/assembly_holder)
 	rel_set(ign, nameof(ign.holder), src)
 
 	var/obj/item/assembly/timer/tmr = new(src)
-	tmr.time = 5
+	tmr.set_time(5)
 	tmr.set_secured(TRUE)
 	rel_set(tmr, nameof(tmr.holder), src)
 
@@ -237,7 +237,7 @@ CAPABILITIES(/obj/item/assembly_holder)
 		else if(!answer_ready)
 			open_request(src, /datum/prompt/number/grenade_timer_configuration, PROC_REF(detonator_timer_entered), answerer = user)
 		else if(timer_answer > 0 && timer_answer < 1000)
-			tmr.time = timer_answer
+			tmr.set_time(timer_answer)
 			name = initial(name) + "([tmr.time] secs)"
 			to_chat(user, span_notice("Timer set to [tmr.time] seconds."))
 		else

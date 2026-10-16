@@ -193,7 +193,7 @@ CAPABILITIES(/datum/radial_menu)
 
 	LAZYSET(page_data, page, current)
 	pages = page
-	current_page = clamp(set_page, 1, pages)
+	set_current_page(clamp(set_page, 1, pages))
 	update_screen_objects(entry_animation, click_on_hover)
 
 /datum/radial_menu/proc/update_screen_objects(anim = FALSE, click_on_hover = FALSE)
@@ -283,7 +283,7 @@ CAPABILITIES(/datum/radial_menu)
 	LAZYCLEARLIST(choices_icons)
 	LAZYCLEARLIST(choices_values)
 	LAZYCLEARLIST(choice_datums)
-	current_page = 1
+	set_current_page(1)
 
 /datum/radial_menu/proc/element_chosen(choice_id,mob/user)
 	selected_choice = LAZYACCESS(choices_values, choice_id)
@@ -322,7 +322,7 @@ CAPABILITIES(/datum/radial_menu)
 
 /datum/radial_menu/proc/next_page()
 	if(pages > 1)
-		current_page = WRAP(current_page + 1,1,pages+1)
+		set_current_page(WRAP(current_page + 1,1,pages+1))
 		update_screen_objects()
 
 /datum/radial_menu/proc/show_to(mob/M, offset_x = 0, offset_y = 0)

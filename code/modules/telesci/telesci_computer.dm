@@ -117,7 +117,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 /obj/machinery/computer/telescience/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!telepad())
-		in_use = 0     //Yeah so if you deconstruct teleporter while its in the process of shooting it wont disable the console
+		set_in_use(0)     //Yeah so if you deconstruct teleporter while its in the process of shooting it wont disable the console
 		data["noTelepad"] = 1
 	else
 		data["noTelepad"] = 0
@@ -156,15 +156,15 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 /obj/machinery/computer/telescience/proc/ui_act_setrotation(datum/act/op/A, val)
 	if(!ui_gate(A))
 		return FALSE
-	rotation = CLAMP(val, -900, 900)
-	rotation = round(rotation, 0.01)
+	set_rotation(CLAMP(val, -900, 900))
+	set_rotation(round(rotation, 0.01))
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_setdistance(datum/act/op/A, val)
 	if(!ui_gate(A))
 		return FALSE
-	distance = CLAMP(val, 1, get_max_allowed_distance())
-	distance = FLOOR(distance, 1)
+	set_distance(CLAMP(val, 1, get_max_allowed_distance()))
+	set_distance(FLOOR(distance, 1))
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_setz(datum/act/op/A, setz)
@@ -172,7 +172,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 		return FALSE
 	var/new_z = setz
 	if(new_z in using_map.player_levels)
-		z_co = new_z
+		set_z_co(new_z)
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_ejectgps(datum/act/op/A)
@@ -189,9 +189,9 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	if(last_target() && inserted_gps)
 		// TODO - What was this even supposed to do??
 		//inserted_gps.locked_location = last_target
-		temp_msg = "Function Deprecated. No action taken."
+		set_temp_msg("Function Deprecated. No action taken.")
 	else
-		temp_msg = "Function Deprecated. No action taken."
+		set_temp_msg("Function Deprecated. No action taken.")
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_send(datum/act/op/A)
@@ -215,14 +215,14 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 		return FALSE
 	recalibrate()
 	sparks()
-	temp_msg = "NOTICE: Calibration successful."
+	set_temp_msg("NOTICE: Calibration successful.")
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_eject(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
 	eject()
-	temp_msg = "NOTICE: Bluespace crystals ejected."
+	set_temp_msg("NOTICE: Bluespace crystals ejected.")
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/sparks()
@@ -283,7 +283,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 		var/trueY = proj_data.dest_y
 		if(trueX < 1 || trueX > world.maxx || trueY < 1 || trueY > world.maxy)
 			telefail()
-			temp_msg = "ERROR! Target coordinate is outside known time and space!"
+			set_temp_msg("ERROR! Target coordinate is outside known time and space!")
 			return
 
 		var/spawn_time = round(proj_data.time) * 10
@@ -296,41 +296,41 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 			play_sfx(telepad(), SFX_WEAPONS_FLASH, 0.5)
 			// Wait depending on the time the projectile took to get there
 			teleporting = 1
-			temp_msg = "Powering up bluespace crystals. Please wait."
+			set_temp_msg("Powering up bluespace crystals. Please wait.")
 
 		after(src, spawn_time, PROC_REF(finish_teleport), with = list(user, trueDistance, spawn_time, target, trueX, trueY)) // in deciseconds
 
 /obj/machinery/computer/telescience/proc/teleport(mob/user)
 	if(!COOLDOWN_FINISHED(src, teleport_cooldown))
-		temp_msg = "ERROR! Teleportation console is cooling down. Please wait."
+		set_temp_msg("ERROR! Teleportation console is cooling down. Please wait.")
 		return
 	if(teleporting)
-		temp_msg = "ERROR! Teleportation in progress. Please wait."
+		set_temp_msg("ERROR! Teleportation in progress. Please wait.")
 		return
-	distance = CLAMP(distance, 0, get_max_allowed_distance())
+	set_distance(CLAMP(distance, 0, get_max_allowed_distance()))
 	if(rotation == null || distance == null || z_co == null)
-		temp_msg = "ERROR! Set a distance, rotation and sector."
+		set_temp_msg("ERROR! Set a distance, rotation and sector.")
 		return
 	if(distance <= 0)
 		telefail()
-		temp_msg = "ERROR! No distance selected!"
+		set_temp_msg("ERROR! No distance selected!")
 		return
 	if(!(z_co in using_map.player_levels))
 		telefail()
-		temp_msg = "ERROR! Sector is outside known time and space!"
+		set_temp_msg("ERROR! Sector is outside known time and space!")
 		return
 	if(teles_left > 0)
 		doteleport(user)
 	else
 		telefail()
-		temp_msg = "ERROR! Calibration required."
+		set_temp_msg("ERROR! Calibration required.")
 		return
 	return
 
 /obj/machinery/computer/telescience/proc/eject()
 	for(var/obj/item/I as anything in rel_take_all(src, nameof(crystals)))
 		I.forceMove(src.loc)
-	distance = 0
+	set_distance(0)
 
 /obj/machinery/computer/telescience/proc/recalibrate()
 	teles_left = rand(40, 50)
@@ -361,13 +361,13 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 
 	if(!A || (A.flag_check(BLUE_SHIELDED)) || (target.block_tele)) // consistency smh
 		telefail()
-		temp_msg = "ERROR! Target is shielded from bluespace intersection!"
+		set_temp_msg("ERROR! Target is shielded from bluespace intersection!")
 		return
 
-	temp_msg = "Teleport successful. "
+	set_temp_msg("Teleport successful. ")
 	if(teles_left < 10)
-		temp_msg += "Calibration required soon. "
-	temp_msg += "Data printed below."
+		set_temp_msg(temp_msg + ("Calibration required soon. "))
+	set_temp_msg(temp_msg + ("Data printed below."))
 
 	var/sparks = get_turf(target)
 	fx_sparks(sparks, 5)

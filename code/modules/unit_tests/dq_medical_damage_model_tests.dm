@@ -79,8 +79,8 @@
 	var/mob/living/carbon/human/B = allocate(/mob/living/carbon/human)
 	var/datum/affliction/poison_a = A.body.afflict(/datum/affliction/toxic_poisoning)
 	var/datum/affliction/poison_b = B.body.afflict(/datum/affliction/toxic_poisoning)
-	poison_a.active_symptoms = list(/datum/affliction_symptom/nausea)
-	poison_b.active_symptoms = list(/datum/affliction_symptom/nausea)
+	poison_a.set_active_symptoms(list(/datum/affliction_symptom/nausea))
+	poison_b.set_active_symptoms(list(/datum/affliction_symptom/nausea))
 	var/list/syms_a = affliction_symptoms_of(poison_a)
 	var/list/syms_b = affliction_symptoms_of(poison_b)
 	TEST_ASSERT_EQUAL(length(syms_a), 1, "affliction_symptoms_of() should resolve each presenting typepath")
@@ -88,7 +88,7 @@
 	TEST_ASSERT_EQUAL(syms_b[1], first, "affliction B should present the same shared singleton")
 
 	// Rolling stores typepaths, never instances.
-	poison_a.active_symptoms = null
+	poison_a.set_active_symptoms(null)
 	poison_a.roll_symptoms(1)
 	for(var/symptom_type in poison_a.active_symptoms)
 		TEST_ASSERT(ispath(symptom_type, /datum/affliction_symptom), "roll_symptoms() stored [symptom_type], not a typepath")
@@ -343,8 +343,8 @@
 	var/datum/affliction/custom/on_flesh = H.body.afflict(/datum/affliction/custom, flesh, 50)
 	TEST_ASSERT_NOTNULL(on_prosthetic, "custom affliction could not sit on the prosthetic")
 	TEST_ASSERT_NOTNULL(on_flesh, "custom affliction could not sit on the arm")
-	on_prosthetic.treated_by = list(TREAT_ANALGESIC = 5)
-	on_flesh.treated_by = list(TREAT_ANALGESIC = 5)
+	on_prosthetic.set_treated_by(list(TREAT_ANALGESIC = 5))
+	on_flesh.set_treated_by(list(TREAT_ANALGESIC = 5))
 	H.bloodstr.add_reagent(REAGENT_ID_PARACETAMOL, 20)
 	for(var/i in 1 to 3)
 		on_prosthetic.tick()
@@ -396,7 +396,7 @@
 	var/obj/item/organ/internal/lungs = H.organ_in(O_LUNGS)
 	var/datum/affliction/custom/A = H.body.afflict(/datum/affliction/custom, lungs, AFFLICTION_SEVERITY_TERMINAL)
 	TEST_ASSERT_NOTNULL(A, "custom affliction could not be afflicted")
-	A.name = "coughing sickness"
+	A.set_name("coughing sickness")
 	A.damage_kind = INJURY_TOXIN
 	A.damage_strength = 2
 	A.damage_max = 300
@@ -453,8 +453,8 @@
 	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	var/datum/affliction/custom/marker = H.body.afflict(/datum/affliction/custom, liver, 50)
 	TEST_ASSERT_NOTNULL(marker, "could not place an interference marker")
-	marker.interferes_with = list()
-	marker.interferes_with[REAGENT_ID_BICARIDINE] = 0.5
+	marker.set_interferes_with(list())
+	marker.set_interferes_with_at(REAGENT_ID_BICARIDINE, 0.5)
 	H.body.invalidate(BODY_DIRTY_TREATMENT)
 	TEST_ASSERT_EQUAL(H.body.reagent_cure_modifier(REAGENT_ID_BICARIDINE), 0.5, "interference should be folded into the snapshot")
 	TEST_ASSERT_EQUAL(H.body.treatment_levels()[TREAT_TISSUE_REPAIR], full_level * 0.5, "interference should scale the reagent's levels")

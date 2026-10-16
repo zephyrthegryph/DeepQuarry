@@ -255,7 +255,7 @@ GLOBAL_TABLE(body_factor_rules, GLOBAL_PROC_REF(build_body_factor_rules))
 /// dirty the factors only on a band crossing, or when a factor reagent appears
 /// or leaves. Called by build_treatment_snapshot() with fresh volumes.
 /datum/body/proc/update_reagent_factor_bands()
-	reagent_bands_pending = FALSE
+	set_reagent_bands_pending(FALSE)
 	var/list/bands = null
 	for(var/reagent_id in reagent_volumes)
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[reagent_id]
@@ -263,7 +263,7 @@ GLOBAL_TABLE(body_factor_rules, GLOBAL_PROC_REF(build_body_factor_rules))
 			continue
 		LAZYSET(bands, reagent_id, reagent_factor_band(reagent_volumes[reagent_id]))
 	var/list/old = reagent_factor_bands
-	reagent_factor_bands = bands
+	set_reagent_factor_bands(bands)
 	if(!reagent_bands_equal(old, bands))
 		invalidate(BODY_DIRTY_FACTORS)
 
@@ -291,7 +291,7 @@ GLOBAL_TABLE(body_factor_rules, GLOBAL_PROC_REF(build_body_factor_rules))
 	acc = accumulate_reagent_factors(acc)
 	acc = accumulate_plan_factors(acc)
 	var/list/old = factors
-	factors = body_factor_finalize(acc)
+	set_factors(body_factor_finalize(acc))
 	if(length(GLOB.derived_factor_watch))
 		derived_factors_recomputed(owner, old, factors) // entities that read a factor through factor_dep()
 	if(!factors_equal(old, factors))

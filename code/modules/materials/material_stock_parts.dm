@@ -138,7 +138,7 @@
 			return OP_DECLINE
 		if(!S.material || S.get_amount() < 1)
 			return OP_DECLINE
-		material_id = S.material.name
+		set_material_id(S.material.name)
 		S.use(1)
 		var/datum/material/M = dq_get_material()
 		if(M)

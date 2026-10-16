@@ -26,8 +26,8 @@
 /obj/machinery/computer/arcade/orion_trail/proc/interaction_use(datum/act/op/A)
 	var/mob/living/user = A.actor
 	if(fuel <= 0 || food <= 0 || settlers.len == 0)
-		gameStatus = ORION_STATUS_GAMEOVER
-		event = null
+		set_gameStatus(ORION_STATUS_GAMEOVER)
+		set_event(null)
 	user.set_machine(src)
 
 	if(gameStatus == ORION_STATUS_GAMEOVER)
@@ -43,7 +43,7 @@
 			to_chat(user, span_danger(span_large("You're never going to make it to Orion...")))
 			user.death()
 			set_emagged(0)
-			gameStatus = ORION_STATUS_START
+			set_gameStatus(ORION_STATUS_START)
 			name = "The Orion Trail"
 			desc = "Learn how our ancestors got to Orion, and have fun in the process!"
 

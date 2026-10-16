@@ -645,11 +645,11 @@ CAPABILITIES(/obj/belly)
 	return max(digest_max - get_total_digestion_damage(), 0)
 
 /obj/belly/proc/set_zero_digestion_damage()
-	digest_brute = 0
-	digest_burn = 0
-	digest_oxy = 0
-	digest_tox = 0
-	digest_clone = 0
+	set_digest_brute(0)
+	set_digest_burn(0)
+	set_digest_oxy(0)
+	set_digest_tox(0)
+	set_digest_clone(0)
 	return
 
 // Handle the death of a mob via digestion.
@@ -916,9 +916,9 @@ CAPABILITIES(/obj/belly)
 		dq_set_belly_cycles(content, 0)
 	var/old_entrance_logs = target.entrance_logs
 	if(silent)
-		target.entrance_logs = FALSE
+		target.set_entrance_logs(FALSE)
 	slot_transfer(content, target, BELLY_SLOT_INTERIOR)
-	target.entrance_logs = old_entrance_logs
+	target.set_entrance_logs(old_entrance_logs)
 	if(isitem(content))
 		var/obj/item/I = content
 		if(istype(I,/obj/item/card/id))
@@ -1250,7 +1250,7 @@ CAPABILITIES(/obj/belly)
 	return display_name ? lowertext(display_name) : lowertext(name)
 
 /obj/belly/proc/toggle_displayed_message_flags(flags_to_set)
-	displayed_message_flags ^= flags_to_set
+	set_displayed_message_flags(displayed_message_flags ^ flags_to_set)
 
 #undef MAX_ENTRY_MESSAAGES
 #undef ENTRY_MESSAGE_INTERVAL
@@ -1265,7 +1265,7 @@ CAPABILITIES(/obj/belly)
 
 /// after() target: a temporary digest mode wears off.
 /obj/belly/proc/reset_digest_mode(mode)
-	digest_mode = mode
+	set_digest_mode(mode)
 
 /obj/belly/muffles_death_of(mob/occupant)
 	return TRUE

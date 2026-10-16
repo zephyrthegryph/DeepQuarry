@@ -129,7 +129,7 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 
 	var/sheets = 0			//How many sheets of material are loaded in the generator
 	var/sheet_left = 0		//How much is left of the current sheet
-	var/temperature = 0		//The current temperature
+	var/core_temperature = 0		//The current temperature of the core
 	var/overheating = 0		//if this gets high enough the generator explodes
 
 
@@ -149,7 +149,7 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 		set_max_sheets(bin_rating * bin_rating * 50)
 	var/temp_rating = get_part_rating(/obj/item/stock_parts/micro_laser) + get_part_rating(/obj/item/stock_parts/capacitor)
 
-	power_gen = round(initial(power_gen) * (max(2, temp_rating) / 2))
+	set_power_gen(round(initial(power_gen) * (max(2, temp_rating) / 2)))
 
 /obj/machinery/power/port_gen/pacman/examine(mob/user)
 	. = ..()
@@ -181,9 +181,9 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	//the only thing we need to worry about is if we are going to rollover to the next sheet
 	if (needed_sheets > sheet_left)
 		set_sheets(sheets - 1)
-		sheet_left = (1 + sheet_left) - needed_sheets
+		set_sheet_left((1 + sheet_left) - needed_sheets)
 	else
-		sheet_left -= needed_sheets
+		set_sheet_left(sheet_left - needed_sheets)
 
 	//calculate the "target" temperature range
 	//This should probably depend on the external temperature somehow, but whatever.
@@ -207,18 +207,18 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 
 	//calculate the temperature increase
 	var/bias = 0
-	if (temperature < lower_limit)
-		bias = min(round((average - temperature)/TEMPERATURE_DIVISOR, 1), TEMPERATURE_CHANGE_MAX)
-	else if (temperature > upper_limit)
-		bias = max(round((temperature - average)/TEMPERATURE_DIVISOR, 1), -TEMPERATURE_CHANGE_MAX)
+	if (core_temperature < lower_limit)
+		bias = min(round((average - core_temperature)/TEMPERATURE_DIVISOR, 1), TEMPERATURE_CHANGE_MAX)
+	else if (core_temperature > upper_limit)
+		bias = max(round((core_temperature - average)/TEMPERATURE_DIVISOR, 1), -TEMPERATURE_CHANGE_MAX)
 
 	//limit temperature increase so that it cannot raise temperature above upper_limit,
 	//or if it is already above upper_limit, limit the increase to 0.
-	var/inc_limit = max(upper_limit - temperature, 0)
-	var/dec_limit = min(temperature - lower_limit, 0)
-	temperature += between(dec_limit, rand(-7 + bias, 7 + bias), inc_limit)
+	var/inc_limit = max(upper_limit - core_temperature, 0)
+	var/dec_limit = min(core_temperature - lower_limit, 0)
+	set_core_temperature(core_temperature + (between(dec_limit, rand(-7 + bias, 7 + bias), inc_limit)))
 
-	if (temperature > max_temperature)
+	if (core_temperature > max_temperature)
 		overheat()
 	else if (overheating > 0)
 		set_overheating(overheating - 1)
@@ -237,7 +237,7 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	return cooling_temperature
 
 /obj/machinery/power/port_gen/pacman/cooling_needed()
-	return overheating > 0 || read_once(temperature > cooling_temperature() + 0.1) // the generator's heat changes every tick: the question is sampled when asked
+	return overheating > 0 || read_once(core_temperature > cooling_temperature() + 0.1) // the generator's heat changes every tick: the question is sampled when asked
 
 /obj/machinery/power/port_gen/pacman/handleInactive()
 	var/cooling_temperature = 20
@@ -249,16 +249,16 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 
 	// Ambient temperature crosses the Rust FFI as a float, so tiny rounding
 	// differences must not keep an otherwise cold, inactive generator polling.
-	if(temperature > cooling_temperature + 0.1)
-		var/temp_loss = (temperature - cooling_temperature)/TEMPERATURE_DIVISOR
+	if(core_temperature > cooling_temperature + 0.1)
+		var/temp_loss = (core_temperature - cooling_temperature)/TEMPERATURE_DIVISOR
 		temp_loss = between(2, round(temp_loss, 1), TEMPERATURE_CHANGE_MAX)
-		temperature = max(temperature - temp_loss, cooling_temperature)
+		set_core_temperature(max(core_temperature - temp_loss, cooling_temperature))
 	else
-		temperature = cooling_temperature
+		set_core_temperature(cooling_temperature)
 
 	if(overheating)
 		set_overheating(overheating - 1)
-	return temperature > cooling_temperature + 0.1 || overheating > 0
+	return core_temperature > cooling_temperature + 0.1 || overheating > 0
 
 /obj/machinery/power/port_gen/pacman/proc/overheat()
 	set_overheating(overheating + 1)
@@ -272,10 +272,10 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	var/phoron = (sheets+sheet_left)*20
 	var/datum/gas_mixture/environment = loc.return_air()
 	if (environment)
-		environment.adjust_gas_temp(GAS_PHORON, phoron/10, temperature + T0C)
+		environment.adjust_gas_temp(GAS_PHORON, phoron/10, core_temperature + T0C)
 
 	set_sheets(0)
-	sheet_left = 0
+	set_sheet_left(0)
 	..()
 
 /// A card lets the output go to 2.5 times its maximum; on a running generator it may set it off.
@@ -347,7 +347,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 /obj/machinery/power/port_gen/pacman/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["anchored"] = anchored
-	data["temperature_current"] = temperature
+	data["temperature_current"] = core_temperature
 	data["temperature_max"] = max_temperature
 	data["temperature_overheat"] = overheating
 	data["active"] = active
@@ -383,13 +383,13 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 /obj/machinery/power/port_gen/pacman/proc/ui_act_lower_power(datum/act/op/A)
 	add_fingerprint(A.actor)
 	if(power_output > 1)
-		power_output--
+		set_power_output(power_output - 1)
 		. = TRUE
 
 /obj/machinery/power/port_gen/pacman/proc/ui_act_higher_power(datum/act/op/A)
 	add_fingerprint(A.actor)
 	if(power_output < max_power_output || (is_emagged(src) && power_output < round(max_power_output * 2.5)))
-		power_output++
+		set_power_output(power_output + 1)
 		. = TRUE
 
 /obj/machinery/power/port_gen/pacman/super

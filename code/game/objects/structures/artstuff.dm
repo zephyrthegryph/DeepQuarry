@@ -75,7 +75,7 @@ CAPABILITIES(/obj/structure/easel)
 	reset_grid()
 
 /obj/item/canvas/proc/reset_grid()
-	grid = new/list(width,height)
+	set_grid(new/list(width,height))
 	for(var/x in 1 to width)
 		for(var/y in 1 to height)
 			grid[x][y] = canvas_color
@@ -235,7 +235,7 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 		return
 	var/new_name = A.answer.value
 	if(new_name != painting_name && new_name)
-		painting_name = new_name
+		set_painting_name(new_name)
 		SStgui.update_uis(src)
 
 /obj/item/canvas/nineteen_nineteen
@@ -562,7 +562,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	new_canvas.generated_icon = I
 	new_canvas.icon_generated = TRUE
 	new_canvas.set_finalized(TRUE)
-	new_canvas.painting_name = title
+	new_canvas.set_painting_name(title)
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey
 	new_canvas.name = "painting - [title]"
@@ -656,7 +656,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	new_canvas.generated_icon = I
 	new_canvas.icon_generated = TRUE
 	new_canvas.set_finalized(TRUE)
-	new_canvas.painting_name = title
+	new_canvas.set_painting_name(title)
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey
 	new_canvas.name = "painting - [title]"

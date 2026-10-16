@@ -46,7 +46,7 @@
 		return existing
 	var/datum/urgent_request/R = new
 	R.work = W
-	R.member = member
+	R.set_member(member)
 	R.deadline = deadline
 	// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 	R.requested_at = world.time

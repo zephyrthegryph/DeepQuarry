@@ -85,7 +85,7 @@ CAPABILITIES(/datum/privacy_poll_dialog)
 		flow_sql("INSERT INTO erro_privacy VALUES (null, Now(), :t_ckey, :t_option)", list("t_ckey" = owner.ckey, "t_option" = option))
 		to_chat(owner, span_bold("Thank you for your vote!"))
 
-	answered = TRUE
+	set_answered(TRUE)
 	SStgui.close_uis(src)
 	spent(src)
 
@@ -128,8 +128,8 @@ CAPABILITIES(/datum/poll_browser_dialog)
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(refresh_poll_list), args)
 	if(!SSdbcore.IsConnected() || !owner?.client)
-		poll_ids.Cut()
-		poll_meta.Cut()
+		clear_poll_ids()
+		clear_poll_meta()
 		return
 	var/isadmin = check_rights_for(owner.client, R_HOLDER) ? 1 : 0
 	// Adminonly clause is a static fragment of the query selected at
@@ -138,13 +138,13 @@ CAPABILITIES(/datum/poll_browser_dialog)
 	var/list/question_rows = flow_select(
 		"SELECT id, question FROM erro_poll_question WHERE [(isadmin ? "" : "adminonly = false AND")] Now() BETWEEN starttime AND endtime",
 	)
-	poll_ids.Cut()
-	poll_meta.Cut()
+	clear_poll_ids()
+	clear_poll_meta()
 	for(var/list/question_row as anything in question_rows)
 		var/id_str = "[question_row[1]]"
 		var/question = question_row[2]
-		poll_ids += id_str
-		poll_meta[id_str] = list("id" = text2num(id_str), "question" = question)
+		add_poll_ids(id_str)
+		set_poll_meta_at(id_str, list("id" = text2num(id_str), "question" = question))
 
 /// /datum/poll_browser_dialog's window data.
 /datum/poll_browser_dialog/ui_data(datum/act/eval/A)
@@ -163,7 +163,7 @@ CAPABILITIES(/datum/poll_browser_dialog)
 		return prompt_flow(src, PROC_REF(load_poll_detail), args)
 	if(selected_pollid != pollid)
 		return
-	selected_detail = build_poll_detail(pollid)
+	set_selected_detail(build_poll_detail(pollid))
 	SStgui.update_uis(src)
 
 /// Runs inside load_poll_detail()'s flow.
@@ -320,16 +320,16 @@ CAPABILITIES(/datum/poll_browser_dialog)
 	var/id = id_arg
 	if(!isnum(id))
 		return
-	selected_pollid = id
-	selected_detail = null
+	set_selected_pollid(id)
+	set_selected_detail(null)
 	load_poll_detail(id)
 	return TRUE
 
 /datum/poll_browser_dialog/proc/ui_act_back(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	selected_pollid = null
-	selected_detail = null
+	set_selected_pollid(null)
+	set_selected_detail(null)
 	return TRUE
 
 /datum/poll_browser_dialog/proc/ui_act_vote_option(datum/act/op/A, optionid_arg, pollid_arg)

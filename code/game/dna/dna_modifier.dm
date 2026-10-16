@@ -360,6 +360,7 @@ MSG_DEF_SELF(dna_console/not_standing, "You need to stand at the console.")
 // of a block injector) are asks() steps of the bufferOption op, shown as the window's modal. Every button wants the scanner connected, the
 // console not irradiating and the user standing on a tile; opening it wants a connected scanner and a user outside it.
 CAPABILITIES(/obj/machinery/computer/scan_consolenew)
+	ref_one(nameof(disk))
 	finds(nameof(connected), /obj/machinery/dna_scannernew) // the scanner next to it (it keeps its own facing)
 	configure(uses_power(idle = 10, active = 400))
 	silicon_ui()
@@ -574,7 +575,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	play_sfx(src, SFX_MACHINES_BUTTON)
 	if(!(key in list(/*PAGE_UI,*/ PAGE_SE, PAGE_BUFFER, PAGE_REJUVENATORS))) // Traitgenes Body design console is used to edit UIs now
 		return TRUE
-	selected_menu_key = key
+	set_selected_menu_key(key)
 	return TRUE
 
 /obj/machinery/computer/scan_consolenew/proc/ui_act_togglelock(datum/act/op/A)
@@ -592,11 +593,11 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	return TRUE
 
 /obj/machinery/computer/scan_consolenew/proc/ui_act_radiationduration(datum/act/op/A, value)
-	radiation_duration = value
+	set_radiation_duration(value)
 	return TRUE
 
 /obj/machinery/computer/scan_consolenew/proc/ui_act_radiationintensity(datum/act/op/A, value)
-	radiation_intensity = value
+	set_radiation_intensity(value)
 	return TRUE
 
 /obj/machinery/computer/scan_consolenew/proc/ui_act_injectrejuvenators(datum/act/op/A, amount)
@@ -618,8 +619,8 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	if(!select_block || !select_subblock)
 		return TRUE
 
-	selected_se_block = clamp(select_block, 1, DNA_SE_LENGTH)
-	selected_se_subblock = clamp(select_subblock, 1, DNA_BLOCK_SIZE)
+	set_selected_se_block(clamp(select_block, 1, DNA_SE_LENGTH))
+	set_selected_se_subblock(clamp(select_subblock, 1, DNA_BLOCK_SIZE))
 	return TRUE
 
 /obj/machinery/computer/scan_consolenew/proc/ui_act_pulseseradiation(datum/act/op/A)

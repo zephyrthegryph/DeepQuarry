@@ -23,6 +23,7 @@
 
 
 CAPABILITIES(/obj/machinery/computer/operating)
+	ref_one(nameof(table))
 	links(/obj/machinery/computer/operating::table, /obj/machinery/optable::computer)
 	finds(nameof(table), /obj/machinery/optable) // the paired rel_one writes the table's computer
 	started_work(step = PROC_REF(work_step))

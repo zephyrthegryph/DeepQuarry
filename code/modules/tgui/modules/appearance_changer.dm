@@ -732,7 +732,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			BD.load_record_to_body(BR)
 			owner().resleeve_lock = BR.locked
 			owner().changeling_locked = BR.changeling_locked
-			DC.selected_record = TRUE
+			DC.set_selected_record(TRUE)
 	return TRUE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_view_stock_brec(datum/act/op/A, view_stock_brec)
@@ -753,7 +753,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		owner().dna.base_species = S.base_species
 		owner().resleeve_lock = FALSE
 		owner().custom_species = "Custom Sleeve" // Custom name
-		DC.selected_record = TRUE
+		DC.set_selected_record(TRUE)
 	return TRUE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_loadfromdisk(datum/act/op/A)
@@ -767,7 +767,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		return FALSE
 	if(DC.disk.stored && can_change(owner(), APPEARANCE_RACE))
 		BD.load_record_to_body(DC.disk.stored)
-		DC.selected_record = TRUE
+		DC.set_selected_record(TRUE)
 		to_chat(user,span_notice("\The [owner()]'s bodyrecord was loaded from the disk."))
 	return TRUE
 
@@ -806,7 +806,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		to_chat(user,span_notice("\The [owner()]'s bodyrecord was saved to the disk."))
 		owner().update_dna()
 		var/datum/transhuman/body_record/record = new /datum/transhuman/body_record(owner(), FALSE, FALSE) // Saves a COPY! The old record is deleted
-		record.locked = FALSE // remove lock
+		record.set_locked(FALSE) // remove lock
 		rel_set(DC.disk, nameof(DC.disk.stored), record)
 		DC.disk.name = "[initial(DC.disk.name)] ([owner().real_name])"
 	return TRUE
@@ -835,7 +835,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		DC = BD.linked_body_design_console
 	if(can_change(owner(), APPEARANCE_RACE))
 		BD.make_fake_owner()
-		DC.selected_record = FALSE
+		DC.set_selected_record(FALSE)
 		return TRUE
 	return FALSE
 
@@ -885,7 +885,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		data["tail_styles"] = (valid_tailstyles || list())
 		data["wing_styles"] = (valid_wingstyles || list())
 
-		markings = owner().get_prioritised_markings()
+		set_markings(owner().get_prioritised_markings())
 		var/list/usable_markings = markings.Copy() ^ GLOB.body_marking_styles_list.Copy()
 		var/marking_styles[0]
 		for(var/marking_style in usable_markings)
@@ -1018,7 +1018,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		data["tail_style"] = owner().tail_style
 		data["wing_style"] = owner().wing_style
 		var/list/markings_data[0]
-		markings = owner().get_prioritised_markings()
+		set_markings(owner().get_prioritised_markings())
 		for (var/marking in markings)
 			markings_data[++markings_data.len] = list("marking_name" = marking, "marking_color" = markings[marking]["color"] ? markings[marking]["color"] : "#000000") //too tired to add in another submenu for bodyparts here
 		data["markings"] = markings_data
@@ -1089,29 +1089,29 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 /datum/tgui_module/appearance_changer/proc/cut_data()
 	// Making the assumption that the available species remain constant
-	LAZYCLEARLIST(valid_hairstyles)
-	LAZYCLEARLIST(valid_facial_hairstyles)
-	LAZYCLEARLIST(valid_earstyles)
-	LAZYCLEARLIST(valid_tailstyles)
-	LAZYCLEARLIST(valid_wingstyles)
-	LAZYCLEARLIST(valid_gradstyles)
+	clear_valid_hairstyles()
+	clear_valid_facial_hairstyles()
+	clear_valid_earstyles()
+	clear_valid_tailstyles()
+	clear_valid_wingstyles()
+	clear_valid_gradstyles()
 
 /datum/tgui_module/appearance_changer/proc/generate_data(mob/user, mob/living/carbon/human/target)
 	if(!ishuman(target))
 		return TRUE
 
 	if(!LAZYLEN(valid_species))
-		valid_species = target.generate_valid_species(check_whitelist, whitelist, blacklist)
+		set_valid_species(target.generate_valid_species(check_whitelist, whitelist, blacklist))
 
 	if(!LAZYLEN(valid_hairstyles) || !LAZYLEN(valid_facial_hairstyles))
-		valid_hairstyles = target.generate_valid_hairstyles(check_gender = 0)
-		valid_facial_hairstyles = target.generate_valid_facial_hairstyles()
+		set_valid_hairstyles(target.generate_valid_hairstyles(check_gender = 0))
+		set_valid_facial_hairstyles(target.generate_valid_facial_hairstyles())
 
 	if(!LAZYLEN(valid_earstyles))
 		for(var/path in GLOB.ear_styles_list)
 			var/datum/sprite_accessory/ears/instance = GLOB.ear_styles_list[path]
 			if(can_use_sprite(instance, target, user))
-				LAZYINITLIST(valid_earstyles); valid_earstyles.Add(list(list(
+				add_valid_earstyles(list(list(
 					"name" = instance.name,
 					"instance" = REF(instance),
 					"color" = !!instance.do_colouration,
@@ -1124,7 +1124,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		for(var/path in GLOB.tail_styles_list)
 			var/datum/sprite_accessory/tail/instance = GLOB.tail_styles_list[path]
 			if(can_use_sprite(instance, target, user))
-				LAZYINITLIST(valid_tailstyles); valid_tailstyles.Add(list(list(
+				add_valid_tailstyles(list(list(
 					"name" = instance.name,
 					"instance" = REF(instance),
 					"color" = !!instance.do_colouration,
@@ -1137,7 +1137,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		for(var/path in GLOB.wing_styles_list)
 			var/datum/sprite_accessory/wing/instance = GLOB.wing_styles_list[path]
 			if(can_use_sprite(instance, target, user))
-				LAZYINITLIST(valid_wingstyles); valid_wingstyles.Add(list(list(
+				add_valid_wingstyles(list(list(
 					"name" = instance.name,
 					"instance" = REF(instance),
 					"color" = !!instance.do_colouration,
@@ -1148,7 +1148,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 	if(!LAZYLEN(valid_gradstyles))
 		for(var/key in GLOB.hair_gradients)
-			LAZYADD(valid_gradstyles, list(list(key)))
+			add_valid_gradstyles(list(list(key)))
 
 /datum/tgui_module/appearance_changer/proc/get_genders(mob/living/carbon/human/target)
 	var/datum/species/S = target.species
@@ -1311,7 +1311,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 /datum/tgui_module/appearance_changer/body_designer/on_destroy(force)
 	var/obj/machinery/computer/transhuman/designer/DC = linked_body_design_console
 	if(DC)
-		DC.selected_record = FALSE
+		DC.set_selected_record(FALSE)
 	..()
 
 /datum/tgui_module/appearance_changer/body_designer/proc/make_fake_owner()

@@ -15,6 +15,7 @@
 /obj/machinery/suspension_gen/var/obj/effect/suspension_field/suspension_field
 
 CAPABILITIES(/obj/machinery/suspension_gen)
+	ref_one(nameof(cell))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(suspension_field), wakes_on = list(nameof(suspension_field)))
 	owns_one(nameof(suspension_field), /obj/effect/suspension_field)
 	interface("XenoarchSuspension")

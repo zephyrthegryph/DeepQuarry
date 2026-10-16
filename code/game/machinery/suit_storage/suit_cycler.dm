@@ -295,6 +295,8 @@ MSG_DEF_SELF(suit_cycler/needs_helmet, "needs a void helmet")
 MSG_DEF_SELF(suit_cycler/needs_suit, "needs a voidsuit")
 
 CAPABILITIES(/obj/machinery/suit_cycler)
+	ref_one(nameof(helmet))
+	ref_one(nameof(suit))
 	op("cycler_insert_grab", inputs(item(/obj/item/grab), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Put in cycler"), needs(req(/obj/item/grab, because = MSG(suit_cycler/needs_grab)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_grabbed))), starts(PROC_REF(insertion_shock)), begins(PROC_REF(insertion_message)), wait(2 SECONDS), then(PROC_REF(interaction_insert_grab)))
 	op("cycler_insert_helmet", inputs(item(/obj/item/clothing/head/helmet/space/void), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Fit helmet"), when(PROC_REF(cycler_helmet_offered)), needs(req(/obj/item/clothing/head/helmet/space/void, because = MSG(suit_cycler/needs_helmet)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_helmet))), then(PROC_REF(interaction_insert_helmet)))
 	op("cycler_insert_suit", inputs(item(/obj/item/clothing/suit/space/void), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Fit voidsuit"), needs(req(/obj/item/clothing/suit/space/void, because = MSG(suit_cycler/needs_suit)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_suit))), then(PROC_REF(interaction_insert_suit)))
@@ -403,7 +405,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 		. = TRUE
 
 /obj/machinery/suit_cycler/proc/ui_act_radlevel(datum/act/op/A, radlevel)
-	radiation_level = clamp(radlevel, 1, emagged() ? 5 : 3)
+	set_radiation_level(clamp(radlevel, 1, emagged() ? 5 : 3))
 	. = TRUE
 
 /obj/machinery/suit_cycler/proc/ui_act_repair_suit(datum/act/op/A)

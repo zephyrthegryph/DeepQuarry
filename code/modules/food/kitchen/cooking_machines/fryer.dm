@@ -102,7 +102,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 			//We're above optimal, efficiency goes down as we pass too much over it
 			oil_efficiency = 1 - (oil_efficiency - 1)
 
-	cooking_power *= oil_efficiency
+	set_cooking_power(cooking_power * oil_efficiency)
 
 /// The fryer shows on while it cooks.
 /obj/machinery/appliance/cooker/fryer/draw(datum/look/look)

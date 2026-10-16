@@ -28,7 +28,7 @@
 
 /datum/unit_test/dq_sys_hygiene_anodevice_timer/Run()
 	var/obj/item/anodevice/device = allocate(/obj/item/anodevice, run_loc_floor_bottom_left)
-	device.duration = 1
+	device.set_duration(1)
 	device.set_activated(TRUE)
 	device.arm_emission_timer()
 	TEST_ASSERT(after_pending(device, "emission"), "arm_emission_timer() did not schedule the end of the run")
@@ -40,7 +40,7 @@
 	TEST_ASSERT(!after_pending(device, "emission"), "the fired timer id was not cleared")
 
 	// Shutting down early cancels the timer.
-	device.duration = 100
+	device.set_duration(100)
 	device.set_activated(TRUE)
 	device.arm_emission_timer()
 	device.shutdown_emission()

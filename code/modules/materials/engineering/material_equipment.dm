@@ -90,9 +90,9 @@
 	useful_energy = clamp(useful_energy, 0, input_energy)
 	input_joules += input_energy
 	output_joules += useful_energy
-	loss_joules += input_energy - useful_energy
-	last_input_watts = input_energy / max(elapsed, 0.1)
-	last_output_watts = useful_energy / max(elapsed, 0.1)
+	set_loss_joules(loss_joules + (input_energy - useful_energy))
+	set_last_input_watts(input_energy / max(elapsed, 0.1))
+	set_last_output_watts(useful_energy / max(elapsed, 0.1))
 	EXPIRY_STAMP(src, last_work_time, CLOCK_WORLD)
 	last_work_duration = elapsed
 	add_heat(input_energy - useful_energy)
@@ -145,10 +145,10 @@
 	if(!service)
 		return
 	service.input_joules += input_energy
-	service.loss_joules += input_energy - stored
-	service.last_input_watts = actual
+	service.set_loss_joules(service.loss_joules + (input_energy - stored))
+	service.set_last_input_watts(actual)
 	service.add_heat(input_energy - stored)
 	if(limit < material_output_setting)
-		service.limiting_role = "Emitter temperature or installed electrical/optical parts"
+		service.set_limiting_role("Emitter temperature or installed electrical/optical parts")
 	else
-		service.limiting_role = null
+		service.set_limiting_role(null)

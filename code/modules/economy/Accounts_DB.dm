@@ -62,7 +62,7 @@ CAPABILITIES(/obj/machinery/account_database)
 	display_disconnect_op()
 
 /obj/machinery/account_database/proc/assign_machine_id(datum/act/timer/A)
-	machine_id = "[station_name()] Acc. DB #[GLOB.num_financial_terminals++]"
+	set_machine_id("[station_name()] Acc. DB #[GLOB.num_financial_terminals++]")
 
 /obj/machinery/account_database/proc/interaction_insert_card(datum/act/op/A)
 	var/mob/user = A.actor
@@ -153,7 +153,7 @@ CAPABILITIES(/obj/machinery/account_database)
 /obj/machinery/account_database/proc/ui_act_create_account(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	creating_new_account = 1
+	set_creating_new_account(1)
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_add_funds(datum/act/op/A)
@@ -209,7 +209,7 @@ CAPABILITIES(/obj/machinery/account_database)
 		return FALSE
 	if(!create_station_funded_account(account_name, starting_funds, src))
 		return FALSE
-	creating_new_account = 0
+	set_creating_new_account(0)
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_insert_card(datum/act/op/A)
@@ -240,7 +240,7 @@ CAPABILITIES(/obj/machinery/account_database)
 	if(!ui_gate(A))
 		return FALSE
 	rel_clear(src, nameof(/obj/machinery/account_database::detailed_account_view))
-	creating_new_account = 0
+	set_creating_new_account(0)
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_revoke_payroll(datum/act/op/A)

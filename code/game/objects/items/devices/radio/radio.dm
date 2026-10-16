@@ -55,7 +55,9 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 /obj/item/radio/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
+	tracked_changed(src, nameof(frequency))
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
+SETTER(/obj/item/radio, frequency)
 
 /obj/item/radio/Initialize(mapload)
 	. = ..()
@@ -181,26 +183,26 @@ CAPABILITIES(/obj/item/radio)
 /// The signal wire cut kills the speaker and the mic; mended, each comes back unless its own wire is cut.
 /obj/item/radio/proc/signal_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A
-	listening = N.mended && !wire_is_cut(src, WIRE_RADIO_RECEIVER)
-	broadcasting = N.mended && !wire_is_cut(src, WIRE_RADIO_TRANSMIT)
+	set_listening(N.mended && !wire_is_cut(src, WIRE_RADIO_RECEIVER))
+	set_broadcasting(N.mended && !wire_is_cut(src, WIRE_RADIO_TRANSMIT))
 
 /obj/item/radio/proc/signal_wire_pulsed(datum/act/A)
-	listening = !listening && !wire_is_cut(src, WIRE_RADIO_RECEIVER)
-	broadcasting = listening && !wire_is_cut(src, WIRE_RADIO_TRANSMIT)
+	set_listening(!listening && !wire_is_cut(src, WIRE_RADIO_RECEIVER))
+	set_broadcasting(listening && !wire_is_cut(src, WIRE_RADIO_TRANSMIT))
 
 /obj/item/radio/proc/receiver_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A
-	listening = N.mended && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
+	set_listening(N.mended && !wire_is_cut(src, WIRE_RADIO_SIGNAL))
 
 /obj/item/radio/proc/receiver_wire_pulsed(datum/act/A)
-	listening = !listening && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
+	set_listening(!listening && !wire_is_cut(src, WIRE_RADIO_SIGNAL))
 
 /obj/item/radio/proc/transmit_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A
-	broadcasting = N.mended && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
+	set_broadcasting(N.mended && !wire_is_cut(src, WIRE_RADIO_SIGNAL))
 
 /obj/item/radio/proc/transmit_wire_pulsed(datum/act/A)
-	broadcasting = !broadcasting && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
+	set_broadcasting(!broadcasting && !wire_is_cut(src, WIRE_RADIO_SIGNAL))
 
 /obj/item/radio/proc/radio_controls_opened(datum/act/op/A)
 	interaction_self(A.actor, A.held)
@@ -311,10 +313,10 @@ CAPABILITIES(/obj/item/radio)
 			"}
 
 /obj/item/radio/proc/ToggleBroadcast()
-	broadcasting = !broadcasting && !(wire_is_cut(src, WIRE_RADIO_TRANSMIT) || wire_is_cut(src, WIRE_RADIO_SIGNAL))
+	set_broadcasting(!broadcasting && !(wire_is_cut(src, WIRE_RADIO_TRANSMIT) || wire_is_cut(src, WIRE_RADIO_SIGNAL)))
 
 /obj/item/radio/proc/ToggleReception()
-	listening = !listening && !(wire_is_cut(src, WIRE_RADIO_RECEIVER) || wire_is_cut(src, WIRE_RADIO_SIGNAL))
+	set_listening(!listening && !(wire_is_cut(src, WIRE_RADIO_RECEIVER) || wire_is_cut(src, WIRE_RADIO_SIGNAL)))
 
 /obj/item/radio/CanUseTopic()
 	if(!on)
@@ -384,7 +386,7 @@ CAPABILITIES(/obj/item/radio)
 	if(!ui_gate(A))
 		return FALSE
 	if(subspace_switchable)
-		subspace_transmission = !subspace_transmission
+		set_subspace_transmission(!subspace_transmission)
 		if(!subspace_transmission)
 			set_channels(list())
 			to_chat(user, span_notice("Subspace Transmission is disabled"))
@@ -401,7 +403,7 @@ CAPABILITIES(/obj/item/radio)
 		return FALSE
 	if(!subspace_switchable)
 		return
-	loudspeaker = !loudspeaker
+	set_loudspeaker(!loudspeaker)
 
 	if(loudspeaker)
 		to_chat(user, span_notice("Loadspeaker enabled."))
@@ -621,7 +623,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 		else if(adhoc_fallback) //Less huzzah, we have to fallback
 			to_chat(loc, span_warning("\The [src] pings as it falls back to local radio transmission."))
-			subspace_transmission = FALSE
+			set_subspace_transmission(FALSE)
 
 		else //Oh well
 			return FALSE
@@ -646,7 +648,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		if(signal.data["done"] && (pos_z in signal.data["level"]))
 			if(adhoc_fallback)
 				to_chat(loc, span_notice("\The [src] pings as it reestablishes subspace communications."))
-				subspace_transmission = TRUE
+				set_subspace_transmission(TRUE)
 			// we're done here.
 			return TRUE
 
@@ -728,8 +730,8 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 /// An EMP switches the radio's microphone, speaker and channels off.
 /obj/item/radio/proc/radio_emp(datum/act/A)
-	broadcasting = FALSE
-	listening = FALSE
+	set_broadcasting(FALSE)
+	set_listening(FALSE)
 	for (var/ch_name in channels)
 		set_channels_at(ch_name, 0)
 
@@ -794,7 +796,7 @@ CAPABILITIES(/obj/item/radio/borg)
 
 /obj/item/radio/borg/recalculateChannels()
 	set_channels(list())
-	src.syndie = 0
+	set_syndie(0)
 
 	var/mob/living/silicon/robot/D = src.loc
 	if(D.module)
@@ -811,7 +813,7 @@ CAPABILITIES(/obj/item/radio/borg)
 			set_channels_at(ch_name, src.channels[ch_name] + keyslot.channels[ch_name])
 
 		if(keyslot.syndie)
-			src.syndie = 1
+			set_syndie(1)
 
 	controller_check(TRUE)
 	return

@@ -3,30 +3,31 @@
 	ntos = TRUE
 	var/tmp/obj/item/uav/current_uav	//The UAV we're watching
 	var/signal_strength = 0 //Our last signal strength report (cached for a few seconds)
-	var/signal_test_counter = 0 //How long until next signal strength check
 	var/list/viewers // Mobs in coordinated remote view (relation list, filled by /datum/remote_view/viewer_managed)
 	var/list/watchers //Who's viewing a UAV through us (a relation list, kept by look()/unlook())
 	var/adhoc_range = 30 //How far we can operate on a UAV without NTnet
 
 CAPABILITIES(/datum/tgui_module/uav)
+	every(20 SECONDS, then(PROC_REF(signal_check)), when = nameof(current_uav))
 	interface("UAV")
 	op("switch_uav", ui_act("switch_uav", arg("switch_uav", schema_ref(/obj/item/uav))), then(PROC_REF(ui_act_switch_uav)))
 	op("del_uav", ui_act("del_uav", arg("del_uav", schema_text(4096))), then(PROC_REF(ui_act_del_uav)))
 	op("view_uav", ui_act("view_uav"), then(PROC_REF(ui_act_view_uav)))
 	op("power_uav", ui_act("power_uav"), then(PROC_REF(ui_act_power_uav)))
 
+/// Re-tests the link to the watched UAV; a UAV that is gone or out of range is dropped (what ui_data() used to do on every few refreshes).
+/datum/tgui_module/uav/proc/signal_check(datum/act/timer/A)
+	if(!current_uav())
+		return
+	if(QDELETED(current_uav()))
+		clear_current()
+		return
+	set_signal_strength(get_signal_to(current_uav()))
+	if(!signal_strength)
+		clear_current()
+
 /datum/tgui_module/uav/ui_data(datum/act/eval/A)
 	var/list/data = list()
-
-	if(current_uav())
-		if(QDELETED(current_uav()))
-			clear_current()
-		else if(signal_test_counter-- <= 0)
-			signal_strength = get_signal_to(current_uav())
-			if(!signal_strength)
-				clear_current()
-			else // Don't reset counter until we find a UAV that's actually in range we can stay connected to
-				signal_test_counter = 20
 
 	data["current_uav"] = null
 	if(current_uav())
@@ -95,7 +96,7 @@ CAPABILITIES(/datum/tgui_module/uav)
 	if(current_uav() == U)
 		return
 
-	signal_strength = 0
+	set_signal_strength(0)
 	if(current_uav())
 		unobserve(current_uav(), /datum/notice/movable_z_changed, src)
 	rel_set(src, nameof(current_uav), U)
@@ -108,13 +109,13 @@ CAPABILITIES(/datum/tgui_module/uav)
 		return
 
 	unobserve(current_uav(), /datum/notice/movable_z_changed, src)
-	signal_strength = 0
+	set_signal_strength(0)
 	rel_clear(src, nameof(current_uav))
 	PUBLISH_LEGACY(src, /datum/notice/remote_view_clear)
 
 /datum/tgui_module/uav/proc/current_uav_changed_z(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
-	signal_strength = get_signal_to(current_uav())
+	set_signal_strength(get_signal_to(current_uav()))
 	if(!signal_strength)
 		clear_current()
 

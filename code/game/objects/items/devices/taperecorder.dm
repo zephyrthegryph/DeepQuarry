@@ -470,12 +470,12 @@ CAPABILITIES(/obj/item/rectape)
 	set_ruined(0)
 
 /obj/item/rectape/proc/record_speech(text)
-	timestamp += used_capacity
+	add_timestamp(used_capacity)
 	LAZYADD(storedinfo, "\[[time2text(used_capacity*10,"mm:ss")]\] [text]")
 
 //shows up on the printed transcript as (Unrecognized sound)
 /obj/item/rectape/proc/record_noise(text)
-	timestamp += used_capacity
+	add_timestamp(used_capacity)
 	LAZYADD(storedinfo, "*\[[time2text(used_capacity*10,"mm:ss")]\] [text]")
 
 

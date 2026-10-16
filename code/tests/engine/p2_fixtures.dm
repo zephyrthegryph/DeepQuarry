@@ -109,7 +109,7 @@ CAPABILITIES(/obj/machinery/p2_box)
 	return OP_OK
 
 /obj/machinery/p2_box/proc/pressed(datum/act/op/A, n)
-	pressed_with = n
+	set_pressed_with(n)
 	return OP_OK
 
 /obj/machinery/p2_box/proc/fit_wait(datum/act/A)
@@ -317,7 +317,7 @@ CAPABILITIES(/datum/p2_panel)
 	return list("pressed" = pressed, "viewer" = A.actor ? "[A.actor]" : null)
 
 /datum/p2_panel/proc/panel_pressed(datum/act/op/A)
-	pressed++
+	set_pressed(pressed + 1)
 	return OP_OK
 
 // ---- request re-checks ----

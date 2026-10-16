@@ -31,10 +31,10 @@
 	. = ..()
 	if(TM)
 		var/datum/tgui_module/email_client/TME = TM
-		TME.stored_login = stored_login
-		TME.stored_password = stored_password
+		TME.set_stored_login(stored_login)
+		TME.set_stored_password(stored_password)
 		TME.log_in()
-		TME.error = ""
+		TME.set_error("")
 		TME.check_for_new_messages(1)
 
 /datum/computer_file/program/email_client/proc/new_mail_notify()
@@ -54,6 +54,6 @@
 	if(check_count)
 		if(check_count == 2)
 			new_mail_notify()
-		ui_header = "ntnrc_new.gif"
+		set_ui_header("ntnrc_new.gif")
 	else
-		ui_header = "ntnrc_idle.gif"
+		set_ui_header("ntnrc_idle.gif")

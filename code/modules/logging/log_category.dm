@@ -55,7 +55,7 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 	)
 
 	write_entry(entry)
-	entry_count += 1
+	set_entry_count(entry_count + 1)
 
 	if(entry_count <= CONFIG_MAX_CACHED_LOG_ENTRIES)
 		rel_add(src, nameof(log_ring), entry)

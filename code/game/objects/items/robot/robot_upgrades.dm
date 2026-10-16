@@ -193,7 +193,7 @@ CAPABILITIES(/obj/item/borg/upgrade/utility/rename)
 		to_chat(user, span_warning("Plugging another scambled module would be useless!"))
 		return FALSE
 
-	R.emag_items = TRUE
+	R.set_emag_items(TRUE)
 	R.robotact.update_static_data_for_all_viewers()
 	return TRUE
 
@@ -286,7 +286,7 @@ CAPABILITIES(/obj/item/borg/upgrade/utility/rename)
 
 	var/obj/item/dogborg/sleeper/B = T
 	var/X = B.max_item_count*2
-	B.max_item_count = X	//I couldn't do T = maxitem*2 for some reason.
+	B.set_max_item_count(X)	//I couldn't do T = maxitem*2 for some reason.
 	to_chat(R, span_notice("Internal capacity doubled."))
 	to_chat(user, span_notice("Internal capacity doubled."))
 	B.upgraded_capacity = TRUE
@@ -377,10 +377,10 @@ CAPABILITIES(/obj/item/borg/upgrade/utility/rename)
 
 	var/obj/item/dogborg/sleeper/B = T
 	var/X = B.max_item_count*2 //double the capacity from 1 to 2 to allow sleepers to store some items, at most 4 with both upgrades
-	B.max_item_count = X	//I couldn't do T = maxitem*2 for some reason.
+	B.set_max_item_count(X)	//I couldn't do T = maxitem*2 for some reason.
 	to_chat(R, span_notice("Internal capability upgraded."))
 	to_chat(user, span_notice("Internal capability upgraded."))
-	B.compactor = TRUE
+	B.set_compactor(TRUE)
 	return TRUE
 
 /obj/item/borg/upgrade/restricted/tasercooler

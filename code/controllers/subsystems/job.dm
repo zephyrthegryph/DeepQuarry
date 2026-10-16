@@ -447,7 +447,7 @@ CAPABILITIES(/datum/system/job)
 	//For ones returning to lobby
 	for(var/mob/new_player/player in unassigned)
 		if(player.client.prefs.read_preference(/datum/preference/numeric/human/alternate_option) == RETURN_TO_LOBBY)
-			player.ready = PLAYER_NOT_READY
+			player.set_ready(PLAYER_NOT_READY)
 			rel_remove(src, nameof(unassigned), player)
 	return TRUE
 

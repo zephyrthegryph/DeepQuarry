@@ -101,7 +101,7 @@ CAPABILITIES(/obj/item/robot_parts/robot_suit)
 /obj/item/robot_parts/robot_suit/proc/robot_named(datum/act/op/A)
 	var/datum/prompt/R = A.answer
 	if(R?.value)
-		src.created_name = R.value
+		set_created_name(R.value)
 	return OP_PASS
 
 /// Old attackby.

@@ -106,15 +106,15 @@ CAPABILITIES(/obj/machinery/computer/pod)
 	return TRUE
 
 /obj/machinery/computer/pod/proc/ui_act_adjust_time(datum/act/op/A, value)
-	time = CLAMP(round(value), 0, 120)
+	set_time(CLAMP(round(value), 0, 120))
 	return TRUE
 
 /obj/machinery/computer/pod/proc/work_step(datum/act/timer/A)
 	if(time > 0)
-		time = round(time) - 1
+		set_time(round(time) - 1)
 	else
 		alarm()
-		time = 0
+		set_time(0)
 		set_timing(FALSE)
 
 /obj/machinery/computer/pod/old

@@ -249,7 +249,7 @@
 	var/datum/ticket/ticket = allocate(/datum/ticket/interim_auth_fixture)
 	TEST_ASSERT_EQUAL(ticket.state, AHELP_ACTIVE, "Fixture ticket must start active")
 	for(var/invalid_level in list(2, "invalid", null))
-		ticket.level = invalid_level
+		ticket.set_level(invalid_level)
 		ticket.Action("close", actor)
 		TEST_ASSERT_EQUAL(ticket.state, AHELP_ACTIVE, "Malformed level [invalid_level] must not skip authorization and close a ticket")
 		TEST_ASSERT_EQUAL(length(ticket._interactions), 0, "Refused malformed-level action must leave ticket interactions unchanged")

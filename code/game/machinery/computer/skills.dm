@@ -236,6 +236,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/skills, skills_field_choices, list(
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/skills)
+	ref_one(nameof(scan))
 	configure(light_glow(color = "#5284e7"))
 	per_type(nameof(field_edit_questions), PROC_REF(build_field_edit_questions))
 	per_type(nameof(field_edit_choices), PROC_REF(build_field_edit_choices))
@@ -503,7 +504,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 
 /obj/machinery/computer/skills/proc/ui_act_cleartemp(datum/act/op/A)
 	. = TRUE
-	temp = null
+	set_temp(null)
 
 /obj/machinery/computer/skills/proc/ui_act_login(datum/act/op/A, login_type_arg)
 	. = TRUE
@@ -511,13 +512,13 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
 		if(check_access(scan))
 			set_authenticated(scan.registered_name)
-			rank = scan.assignment
+			set_rank(scan.assignment)
 	else if(login_type != LOGIN_TYPE_NORMAL && login_type == A.actor.records_login_kind())
 		set_authenticated(A.actor.name)
-		rank = A.actor.records_login_rank()
+		set_rank(A.actor.records_login_rank())
 	if(authenticated)
 		rel_clear(src, nameof(src.active1))
-		screen = GENERAL_RECORD_LIST
+		set_screen(GENERAL_RECORD_LIST)
 
 /obj/machinery/computer/skills/proc/ui_act_logout(datum/act/op/A)
 	. = TRUE
@@ -530,7 +531,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 			A.actor.put_in_hands(scan)
 		rel_take(src, nameof(src.scan))
 	set_authenticated(null)
-	screen = null
+	set_screen(null)
 	rel_clear(src, nameof(src.active1))
 
 /obj/machinery/computer/skills/proc/ui_act_screen(datum/act/op/A, screen_arg)
@@ -540,9 +541,9 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	. = TRUE
 	var/requested_screen = screen_arg
 	if(requested_screen in list(GENERAL_RECORD_FINANCES, GENERAL_RECORD_CONTRACTS))
-		screen = requested_screen
+		set_screen(requested_screen)
 	else
-		screen = clamp(requested_screen || 0, GENERAL_RECORD_LIST, GENERAL_RECORD_MAINT)
+		set_screen(clamp(requested_screen || 0, GENERAL_RECORD_LIST, GENERAL_RECORD_MAINT))
 	rel_clear(src, nameof(src.active1))
 
 /obj/machinery/computer/skills/proc/ui_act_contract_accept(datum/act/op/A, id_arg)
@@ -722,7 +723,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		GLOB.PDA_Manifest.Cut()
 	for(var/datum/data/record/R in GLOB.data_core.general)
 		spent(R)
-	set_temp("All employment records deleted.")
+	show_temp("All employment records deleted.")
 
 /obj/machinery/computer/skills/proc/ui_act_sync_r(datum/act/op/A)
 	. = TRUE
@@ -730,7 +731,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		return FALSE
 	. = TRUE
 	if(active1())
-		set_temp(client_update_record(src,A.actor))
+		show_temp(client_update_record(src,A.actor))
 
 /obj/machinery/computer/skills/proc/ui_act_edit_notes(datum/act/op/A)
 	if(!active1())
@@ -767,7 +768,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		for(var/datum/data/record/R in GLOB.data_core.medical)
 			if ((R.fields["name"] == active1().fields["name"] || R.fields["id"] == active1().fields["id"]))
 				spent(R)
-		set_temp("Employment record deleted.")
+		show_temp("Employment record deleted.")
 		var/datum/data/record/deleted_record = active1()
 		rel_clear(src, nameof(src.active1))
 		QDEL_NULL(deleted_record)
@@ -779,11 +780,11 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	. = TRUE
 	var/datum/data/record/general_record = ui_ref(d_rec, null, /datum/data/record)
 	if(!(general_record in GLOB.data_core.general))
-		set_temp("Record not found.", "danger")
+		show_temp("Record not found.", "danger")
 		return
 
 	rel_set(src, nameof(src.active1), general_record)
-	screen = GENERAL_RECORD_DATA
+	set_screen(GENERAL_RECORD_DATA)
 
 /obj/machinery/computer/skills/proc/ui_act_new(datum/act/op/A)
 	. = TRUE
@@ -793,8 +794,8 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(GLOB.PDA_Manifest)
 		GLOB.PDA_Manifest.Cut()
 	rel_set(src, nameof(src.active1), GLOB.data_core.CreateGeneralRecord())
-	screen = GENERAL_RECORD_DATA
-	set_temp("Employment record created.", "success")
+	set_screen(GENERAL_RECORD_DATA)
+	show_temp("Employment record created.", "success")
 
 /obj/machinery/computer/skills/proc/ui_act_del_c(datum/act/op/A, del_c)
 	. = TRUE
@@ -816,7 +817,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		return FALSE
 	. = TRUE
 	if(!printing)
-		printing = TRUE
+		set_printing(TRUE)
 		SStgui.update_uis(src)
 		after(src, 5 SECONDS, PROC_REF(print_finish))
 
@@ -922,7 +923,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		P.set_info(P.info + (span_bold("General Record Lost!") + "<br>"))
 	P.set_info(P.info + ("</tt>"))
 	P.name = "paper - 'Employment Record: [active1().fields["name"]]'"
-	printing = FALSE
+	set_printing(FALSE)
 	SStgui.update_uis(src)
 
 /**
@@ -932,9 +933,8 @@ CAPABILITIES(/obj/machinery/computer/skills)
  * * text - Text to display, null/empty to clear the message from the UI
  * * style - The style of the message: (color name), info, success, warning, danger, virus
  */
-/obj/machinery/computer/skills/proc/set_temp(text = "", style = "info", update_now = FALSE)
-	temp = list(text = text, style = style)
-	tracked_changed(src, nameof(temp))
+/obj/machinery/computer/skills/proc/show_temp(text = "", style = "info", update_now = FALSE)
+	set_temp(list(text = text, style = style))
 	if(update_now)
 		SStgui.update_uis(src)
 
@@ -949,19 +949,19 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		if(prob(10/packet.severity))
 			switch(rand(1,6))
 				if(1)
-					R.fields["name"] = "[pick(pick(GLOB.first_names_male), pick(GLOB.first_names_female))] [pick(GLOB.last_names)]"
+					R.set_fields_at("name", "[pick(pick(GLOB.first_names_male), pick(GLOB.first_names_female))] [pick(GLOB.last_names)]")
 				if(2)
-					R.fields["sex"]	= pick("Male", "Female")
+					R.set_fields_at("sex", pick("Male", "Female"))
 				if(3)
-					R.fields["age"] = rand(5, 85)
+					R.set_fields_at("age", rand(5, 85))
 				if(4)
-					R.fields["criminal"] = pick("None", "*Arrest*", "Incarcerated", "Parolled", "Released")
+					R.set_fields_at("criminal", pick("None", "*Arrest*", "Incarcerated", "Parolled", "Released"))
 				if(5)
-					R.fields["p_stat"] = pick("*Unconcious*", "Active", "Physically Unfit")
+					R.set_fields_at("p_stat", pick("*Unconcious*", "Active", "Physically Unfit"))
 					if(GLOB.PDA_Manifest.len)
 						GLOB.PDA_Manifest.Cut()
 				if(6)
-					R.fields["m_stat"] = pick("*Insane*", "*Unstable*", "*Watch*", "Stable")
+					R.set_fields_at("m_stat", pick("*Insane*", "*Unstable*", "*Watch*", "Stable"))
 			continue
 
 		else if(prob(1))

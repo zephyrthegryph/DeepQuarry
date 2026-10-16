@@ -258,7 +258,7 @@
 	var/currency_created_before = SSsupply.currency_created
 	var/currency_destroyed_before = SSsupply.currency_destroyed
 	var/datum/money_account/funder = new
-	funder.owner_name = "Test issuer"
+	funder.set_owner_name("Test issuer")
 	funder.money = 500
 	var/datum/contract/contract = new
 	contract.title = "Escrow test"
@@ -293,7 +293,7 @@
 	GLOB.station_account.money = station_money_before
 	qdel(completed_contract)
 	var/datum/money_account/contributor = new
-	contributor.owner_name = "Suspended contributor"
+	contributor.set_owner_name("Suspended contributor")
 	contributor.set_account_number(880041)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, contributor)
 	var/datum/contract/deferred_contract = new
@@ -380,7 +380,7 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/contributor_account = new
 	contributor_account.set_account_number(876543)
-	contributor_account.owner_name = "Contract Contributor"
+	contributor_account.set_owner_name("Contract Contributor")
 	contributor_account.money = 50
 	registry_join(REGISTRY_MONEY_ACCOUNTS, contributor_account)
 	var/mob/living/carbon/human/contributor = new(test_turf)
@@ -771,7 +771,7 @@
 	for(var/index in 1 to 3)
 		var/mob/living/carbon/human/subject = new(test_turf)
 		var/datum/mind/mind = new("contract_availability_[index]")
-		mind.assigned_role = JOB_MEDICAL_DOCTOR
+		mind.set_assigned_role(JOB_MEDICAL_DOCTOR)
 		mind.transfer_to(subject)
 		var/obj/item/organ/lungs = subject.organ_in(O_LUNGS)
 		subject.body.afflict(/datum/affliction/pulmonary_contusion, lungs, 30)
@@ -920,14 +920,14 @@
 	// Medical account instead of permanently consuming the one-shot offer.
 	var/datum/money_account/fallback_account = new
 	fallback_account.set_account_number(987655)
-	fallback_account.owner_name = "Fallback Clinician"
+	fallback_account.set_owner_name("Fallback Clinician")
 	registry_join(REGISTRY_MONEY_ACCOUNTS, fallback_account)
 	var/mob/living/carbon/human/fallback_clinician = new(test_turf)
 	fallback_clinician.set_real_name(fallback_account.owner_name)
 	fallback_clinician.set_job(JOB_MEDICAL_DOCTOR)
 	var/datum/mind/fallback_mind = new("fallback_clinician")
 	rel_set(fallback_mind, nameof(fallback_mind.initial_account), fallback_account)
-	fallback_mind.assigned_role = JOB_MEDICAL_DOCTOR
+	fallback_mind.set_assigned_role(JOB_MEDICAL_DOCTOR)
 	fallback_mind.transfer_to(fallback_clinician)
 	registry_join(REGISTRY_PLAYERS, fallback_clinician)
 	var/datum/medical_trial_participant/fallback_participant = new(SScontracts.subject_identity(corpse).id, list(), FALSE, 123456789)
@@ -1049,7 +1049,7 @@
 	var/mob/living/carbon/human/subject = new(test_turf)
 	subject.set_real_name("Rare Case Patient")
 	var/datum/mind/test_mind = own(new /datum/mind) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
-	test_mind.assigned_role = JOB_MEDICAL_DOCTOR
+	test_mind.set_assigned_role(JOB_MEDICAL_DOCTOR)
 	test_mind.transfer_to(subject)
 	var/obj/item/organ/lungs = subject.organ_in(O_LUNGS)
 	var/datum/affliction/pneumothorax/condition = subject.body.afflict(/datum/affliction/pneumothorax, lungs, 40)
@@ -1121,7 +1121,7 @@
 	var/mob/living/carbon/human/subject = new(test_turf)
 	subject.set_real_name("Registry Withdrawal Patient")
 	var/datum/mind/subject_mind = new("rare_case_withdrawal_patient")
-	subject_mind.assigned_role = JOB_MEDICAL_DOCTOR
+	subject_mind.set_assigned_role(JOB_MEDICAL_DOCTOR)
 	subject_mind.transfer_to(subject)
 	var/obj/item/organ/lungs = subject.organ_in(O_LUNGS)
 	var/datum/affliction/pneumothorax/condition = subject.body.afflict(/datum/affliction/pneumothorax, lungs, 40)
@@ -1286,7 +1286,7 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/owner_account = new
 	owner_account.set_account_number(830001)
-	owner_account.owner_name = "Internal Sales Tester"
+	owner_account.set_owner_name("Internal Sales Tester")
 	owner_account.money = 0
 	registry_join(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	var/mob/living/carbon/human/owner = new(test_turf)
@@ -1335,7 +1335,7 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/actor_account = new
 	actor_account.set_account_number(850001)
-	actor_account.owner_name = "Contract Producer Tester"
+	actor_account.set_owner_name("Contract Producer Tester")
 	registry_join(REGISTRY_MONEY_ACCOUNTS, actor_account)
 	var/mob/living/carbon/human/actor = new(test_turf)
 	var/datum/mind/actor_mind = new("contract_producer_test")
@@ -1379,11 +1379,11 @@
 	TEST_ASSERT(security.accept(), "producer-backed Security contract could not be accepted")
 	var/obj/machinery/computer/secure_data/security_console = new(test_turf)
 	var/datum/data/record/general_record = new
-	general_record.fields["id"] = "producer-case"
-	general_record.fields["name"] = actor.real_name
+	general_record.set_fields_at("id", "producer-case")
+	general_record.set_fields_at("name", actor.real_name)
 	rel_add(GLOB.data_core, nameof(/datum/datacore::general), general_record)
 	var/datum/data/record/security_record = new
-	security_record.fields["criminal"] = "Released"
+	security_record.set_fields_at("criminal", "Released")
 	rel_set(security_console, nameof(security_console.active1), general_record)
 	rel_set(security_console, nameof(security_console.active2), security_record)
 	var/area/original_area = get_area(test_turf)
@@ -1461,7 +1461,7 @@
 	var/internal_refunds_before = SSsupply.currency_internal_refunded
 	var/datum/money_account/customer = new
 	customer.set_account_number(860001)
-	customer.owner_name = "Refund Customer"
+	customer.set_owner_name("Refund Customer")
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	var/old_provider_money = provider.money
 	provider.money = max(provider.money, 500)
@@ -1472,7 +1472,7 @@
 	SSsupply.create_service_invoice(customer, provider, "Unit test checkout", list("Imaginary banquet" = 1), list("Imaginary banquet" = 1000000), list("total" = 1000000, "subsidy" = 0, "personal" = 1000000, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
 	var/datum/money_account/subsidized_customer = new
 	subsidized_customer.set_account_number(860002)
-	subsidized_customer.owner_name = "Subsidized Customer"
+	subsidized_customer.set_owner_name("Subsidized Customer")
 	registry_join(REGISTRY_MONEY_ACCOUNTS, subsidized_customer)
 	var/datum/service_invoice/subsidized_invoice = SSsupply.create_service_invoice(subsidized_customer, provider, "Unit test checkout", list("Subsidized meal" = 1), list("Subsidized meal" = 200), list("total" = 200, "subsidy" = 200, "personal" = 0, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
 	SSsupply.settle_service_contract_period(period)
@@ -1501,10 +1501,10 @@
 	TEST_ASSERT(security.accept(), "fake-record Security test contract could not be accepted")
 	var/obj/machinery/computer/secure_data/security_console = new(test_turf)
 	var/datum/data/record/general_record = new
-	general_record.fields["id"] = "nonexistent-subject"
-	general_record.fields["name"] = "Nobody Aboard"
+	general_record.set_fields_at("id", "nonexistent-subject")
+	general_record.set_fields_at("name", "Nobody Aboard")
 	var/datum/data/record/security_record = new
-	security_record.fields["criminal"] = "Released"
+	security_record.set_fields_at("criminal", "Released")
 	rel_set(security_console, nameof(security_console.active1), general_record)
 	rel_set(security_console, nameof(security_console.active2), security_record)
 	TEST_ASSERT(security_console.record_security_disposition("Incarcerated", "Released", null), "fake disposition did not publish its auditable rejected fact")
@@ -1637,7 +1637,7 @@
 	for(var/index in 1 to 2)
 		var/datum/money_account/account = new
 		account.set_account_number(870000 + index)
-		account.owner_name = "Reassignment Tester [index]"
+		account.set_owner_name("Reassignment Tester [index]")
 		registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 		accounts += account
 		var/mob/living/carbon/human/player = new(run_loc_floor_bottom_left)
@@ -1986,7 +1986,7 @@
 	var/datum/faction_agent_record/record = new
 	record.account_number = account_number
 	record.faction_id = REPUTATION_FACTION_SYNDICATE
-	record.tier = FACTION_AGENT_TIER_ACCREDITED
+	record.set_tier(FACTION_AGENT_TIER_ACCREDITED)
 	rel_add(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), record, "[account_number]")
 
 	TEST_ASSERT(GLOB.station_faction_relations.add_agent_exposure(account_number, REPUTATION_FACTION_SYNDICATE, 15, "Focused trace A", "broker-trace-a"), "first covert trace was rejected")
@@ -2061,8 +2061,8 @@
 	for(var/index in 1 to 4)
 		var/datum/money_account/account = new
 		account.set_account_number(920000 + index)
-		account.owner_name = "Social Tester [index]"
-		account.department_id = index == 1 ? DEPARTMENT_CARGO : (index <= 3 ? DEPARTMENT_RESEARCH : DEPARTMENT_MEDICAL)
+		account.set_owner_name("Social Tester [index]")
+		account.set_department_id(index == 1 ? DEPARTMENT_CARGO : (index <= 3 ? DEPARTMENT_RESEARCH : DEPARTMENT_MEDICAL))
 		registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 		accounts += account
 	contract.lock_stakeholder_requirements(accounts)
@@ -2137,8 +2137,8 @@
 	for(var/index in 1 to 3)
 		var/datum/money_account/account = new
 		account.set_account_number(930000 + index)
-		account.owner_name = "Scaling Tester [index]"
-		account.department_id = index == 1 ? DEPARTMENT_ENGINEERING : DEPARTMENT_CIVILIAN
+		account.set_owner_name("Scaling Tester [index]")
+		account.set_department_id(index == 1 ? DEPARTMENT_ENGINEERING : DEPARTMENT_CIVILIAN)
 		accounts += account
 	contract.lock_stakeholder_requirements(accounts)
 	var/datum/contract_stakeholder_role/specialist = contract.stakeholder_roles["specialist"]

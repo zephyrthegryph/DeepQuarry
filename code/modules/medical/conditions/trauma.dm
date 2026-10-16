@@ -163,7 +163,7 @@
 		list("factors" = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -25, BF_MOTOR_CONTROL = 0.96, BF_CIRCULATION = 0.5), "spontaneous_emotes" = list("stagger", "collapse", "groan"), "spontaneous_emote_prob" = 6),
 	)
 	var/list/entry = bands[band + 1]
-	band_factors = entry["factors"]
+	set_band_factors(entry["factors"])
 	spontaneous_emotes = entry["spontaneous_emotes"]
 	spontaneous_emote_prob = entry["spontaneous_emote_prob"]
 	body?.invalidate(BODY_DIRTY_FACTORS)

@@ -366,7 +366,7 @@ CAPABILITIES(/datum/body)
 	return before - oxygen_debt
 
 /datum/physiology/proc/set_debt(value)
-	oxygen_debt = clamp(value, 0, PHYSIOLOGY_DEBT_MAX)
+	set_oxygen_debt(clamp(value, 0, PHYSIOLOGY_DEBT_MAX))
 	var/band = round(oxygen_debt / PHYSIOLOGY_DEBT_LOG_BAND)
 	if(band != debt_band)
 		log_runtime("PHYSIOLOGY: [key_name(body.owner)] oxygen debt [debt_band > band ? "fell" : "rose"] to [round(oxygen_debt)] (delivery [round(delivery, 0.01)], demand [round(demand, 0.01)], ventilation [isnull(ventilation) ? "n/a" : round(ventilation, 0.01)], perfusion [isnull(perfusion) ? "n/a" : round(perfusion, 0.01)], breath [round(breath_quality, 0.01)])")
@@ -410,32 +410,32 @@ CAPABILITIES(/datum/body)
 	var/mob/living/carbon/human/H = body.owner
 	if(!istype(H) || !H.species)
 		return FALSE
-	demand = body.get_factor(BF_DEMAND)
+	set_demand(body.get_factor(BF_DEMAND))
 	var/datum/breath_profile/profile = body.breath_profile()
-	breathes = !!profile
+	set_breathes(!!profile)
 	var/skin = profile && !profile.uses_lungs
-	circulates = H.should_have_organ(O_HEART)
+	set_circulates(H.should_have_organ(O_HEART))
 
 	var/o2 = 1
 	if(breathes)
-		ventilation = clamp(body.supported_factor(BF_RESP_DRIVE) * body.supported_factor(BF_LUNG_MECHANICS) * body.supported_factor(BF_AIRWAY), 0, 1)
+		set_ventilation(clamp(body.supported_factor(BF_RESP_DRIVE) * body.supported_factor(BF_LUNG_MECHANICS) * body.supported_factor(BF_AIRWAY), 0, 1))
 		var/exchange = body.supported_factor(BF_GAS_EXCHANGE) * (skin ? 1 : lung_condition(H))
-		oxygenation = saturate(ventilation * exchange * breath_quality)
+		set_oxygenation(saturate(ventilation * exchange * breath_quality))
 		o2 = oxygenation
 	else
-		ventilation = null
-		oxygenation = null
+		set_ventilation(null)
+		set_oxygenation(null)
 
 	var/flow = 1
 	if(circulates)
-		output = clamp(body.supported_factor(BF_PUMP, body.get_factor(BF_PUMP) * heart_condition(H)), 0, 2)
-		perfusion = clamp(output * volume_factor(H) * body.supported_factor(BF_CIRCULATION), 0, 2)
+		set_output(clamp(body.supported_factor(BF_PUMP, body.get_factor(BF_PUMP) * heart_condition(H)), 0, 2))
+		set_perfusion(clamp(output * volume_factor(H) * body.supported_factor(BF_CIRCULATION), 0, 2))
 		flow = perfusion
 	else
-		output = null
-		perfusion = null
+		set_output(null)
+		set_perfusion(null)
 
-	delivery = o2 * flow * body.supported_factor(BF_O2_CARRIAGE) * body.supported_factor(BF_TISSUE_UPTAKE)
+	set_delivery(o2 * flow * body.supported_factor(BF_O2_CARRIAGE) * body.supported_factor(BF_TISSUE_UPTAKE))
 	shortfall = max(0, PHYSIOLOGY_CRITICAL_RATIO * demand - delivery)
 	return TRUE
 

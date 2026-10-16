@@ -124,7 +124,7 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 	name_part1 = pick("the Automatic ", "Farmer ", "Lord ", "Professor ", "the Cuban ", "the Evil ", "the Dread King ", "the Space ", "Lord ", "the Great ", "Duke ", "General ")
 	name_part2 = pick("Melonoid", "Murdertron", "Sorcerer", "Ruin", "Jeff", "Ectoplasm", "Crushulon", "Uhangoid", "Vhakoid", "Peteoid", "slime", "Griefer", "ERPer", "Lizard Man", "Unicorn", "Bloopers")
 
-	enemy_name = replacetext((name_part1 + name_part2), "the ", "")
+	set_enemy_name(replacetext((name_part1 + name_part2), "the ", ""))
 	name = (name_action + name_part1 + name_part2)
 
 CAPABILITIES(/obj/machinery/computer/arcade/battle)
@@ -153,7 +153,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 		return OP_OK
 	blocked = 1
 	var/attackamt = rand(2,6)
-	temp = "You attack for [attackamt] damage!"
+	set_temp("You attack for [attackamt] damage!")
 	play_sfx(src, SFX_ARCADE_HIT, ignore_walls = FALSE)
 	if(turtle > 0)
 		turtle--
@@ -166,7 +166,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	blocked = 1
 	var/pointamt = rand(1,3)
 	var/healamt = rand(6,8)
-	temp = "You use [pointamt] magic to heal for [healamt] damage!"
+	set_temp("You use [pointamt] magic to heal for [healamt] damage!")
 	play_sfx(src, SFX_ARCADE_HEAL, ignore_walls = FALSE)
 	turtle++
 	after(src, 1 SECOND, PROC_REF(battle_resolve), with = list(A.actor, 0, pointamt, healamt))
@@ -177,21 +177,21 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 		return OP_OK
 	blocked = 1
 	var/chargeamt = rand(4,7)
-	temp = "You regain [chargeamt] points"
+	set_temp("You regain [chargeamt] points")
 	play_sfx(src, SFX_ARCADE_MANA, ignore_walls = FALSE)
-	player_mp += chargeamt
+	set_player_mp(player_mp + chargeamt)
 	if(turtle > 0)
 		turtle--
 	after(src, 1 SECOND, PROC_REF(battle_resolve), with = list(A.actor, 0, 0, 0))
 	return OP_OK
 
 /obj/machinery/computer/arcade/battle/proc/ui_act_newgame(datum/act/op/A)
-	temp = "New Round"
-	player_hp = 30
-	player_mp = 10
-	enemy_hp = 45
+	set_temp("New Round")
+	set_player_hp(30)
+	set_player_mp(10)
+	set_enemy_hp(45)
 	enemy_mp = 20
-	gameover = 0
+	set_gameover(0)
 	turtle = 0
 
 	if(emagged())
@@ -202,16 +202,16 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 
 /// The player's move lands a second after it was chosen, then the enemy acts.
 /obj/machinery/computer/arcade/battle/proc/battle_resolve(mob/user, enemy_damage, mp_cost, heal)
-	enemy_hp -= enemy_damage
-	player_mp -= mp_cost
-	player_hp += heal
+	set_enemy_hp(enemy_hp - enemy_damage)
+	set_player_mp(player_mp - mp_cost)
+	set_player_hp(player_hp + heal)
 	arcade_action(user)
 
 /obj/machinery/computer/arcade/battle/proc/arcade_action(mob/user)
 	if ((enemy_mp <= 0) || (enemy_hp <= 0))
 		if(!gameover)
-			gameover = 1
-			temp = "[enemy_name] has fallen! Rejoice!"
+			set_gameover(1)
+			set_temp("[enemy_name] has fallen! Rejoice!")
 			play_sfx(src, SFX_ARCADE_WIN, ignore_walls = FALSE)
 
 			if(emagged())
@@ -232,19 +232,19 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 
 	else if (emagged() && (turtle >= 4))
 		var/boomamt = rand(5,10)
-		enemy_action = "[enemy_name] throws a bomb, exploding you for [boomamt] damage!"
+		set_enemy_action("[enemy_name] throws a bomb, exploding you for [boomamt] damage!")
 		play_sfx(src, SFX_ARCADE_BOOM, ignore_walls = FALSE)
-		player_hp -= boomamt
+		set_player_hp(player_hp - boomamt)
 
 	else if ((enemy_mp <= 5) && (prob(70)))
 		var/stealamt = rand(2,3)
-		enemy_action = "[enemy_name] steals [stealamt] of your power!"
+		set_enemy_action("[enemy_name] steals [stealamt] of your power!")
 		play_sfx(src, SFX_ARCADE_STEAL, ignore_walls = FALSE)
-		player_mp -= stealamt
+		set_player_mp(player_mp - stealamt)
 
 		if (player_mp <= 0)
-			gameover = 1
-			temp = "You have been drained! GAME OVER"
+			set_gameover(1)
+			set_temp("You have been drained! GAME OVER")
 			if(emagged())
 				feedback_inc("arcade_loss_mana_emagged")
 				user.gib()
@@ -252,20 +252,20 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 				feedback_inc("arcade_loss_mana_normal")
 
 	else if ((enemy_hp <= 10) && (enemy_mp > 4))
-		enemy_action = "[enemy_name] heals for 4 health!"
+		set_enemy_action("[enemy_name] heals for 4 health!")
 		play_sfx(src, SFX_ARCADE_HEAL, ignore_walls = FALSE)
-		enemy_hp += 4
+		set_enemy_hp(enemy_hp + 4)
 		enemy_mp -= 4
 
 	else
 		var/attackamt = rand(3,6)
-		enemy_action = "[enemy_name] attacks for [attackamt] damage!"
+		set_enemy_action("[enemy_name] attacks for [attackamt] damage!")
 		play_sfx(src, SFX_ARCADE_HIT, ignore_walls = FALSE)
-		player_hp -= attackamt
+		set_player_hp(player_hp - attackamt)
 
 	if ((player_mp <= 0) || (player_hp <= 0))
-		gameover = 1
-		temp = "You have been crushed! GAME OVER"
+		set_gameover(1)
+		set_temp("You have been crushed! GAME OVER")
 		play_sfx(src, SFX_ARCADE_LOSE, ignore_walls = FALSE)
 		if(emagged())
 			feedback_inc("arcade_loss_hp_emagged")
@@ -280,16 +280,16 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	var/mob/user = A.actor
 	to_chat(user, span_notice("You override the cheat code menu and skip to Cheat #[rand(1, 50)]: Hyper-Lethal Mode."))
 
-	temp = "If you die in the game, you die for real!"
-	player_hp = 30
-	player_mp = 10
-	enemy_hp = 45
+	set_temp("If you die in the game, you die for real!")
+	set_player_hp(30)
+	set_player_mp(10)
+	set_enemy_hp(45)
 	enemy_mp = 20
-	gameover = 0
+	set_gameover(0)
 	blocked = 0
 	set_emagged(1)
 
-	enemy_name = "Cuban Pete"
+	set_enemy_name("Cuban Pete")
 	name = "Outbomb Cuban Pete"
 
 	return OP_OK
@@ -374,20 +374,20 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 
 /obj/machinery/computer/arcade/orion_trail/proc/newgame(mob/user)
 	// Set names of settlers in crew
-	settlers = list()
+	set_settlers(list())
 	for(var/i = 1; i <= 3; i++)
 		add_crewmember()
 	add_crewmember("[user]")
 	// Re-set items to defaults
-	engine = 1
-	hull = 1
-	electronics = 1
-	food = 80
-	fuel = 60
+	set_engine(1)
+	set_hull(1)
+	set_electronics(1)
+	set_food(80)
+	set_fuel(60)
 	alive = 4
-	turns = 1
-	event = null
-	gameStatus = ORION_STATUS_NORMAL
+	set_turns(1)
+	set_event(null)
+	set_gameStatus(ORION_STATUS_NORMAL)
 	traitors_aboard = 0
 
 	//spaceport junk
@@ -404,8 +404,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 		src.audible_message("\The [src] lets out a somehow reassuring chime.", runemessage = "reassuring chime")
 	else if(oldfuel < fuel || oldfood < food)
 		src.audible_message("\The [src] lets out a somehow ominous chime.", runemessage = "ominous chime")
-	food = oldfood
-	fuel = oldfuel
+	set_food(oldfood)
+	set_fuel(oldfuel)
 
 /// The emagged black hole pulls at the player four times, a second apart.
 /obj/machinery/computer/arcade/orion_trail/proc/blackhole_hurt(mob/living/L, hits)
@@ -434,18 +434,18 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 		if(turns >= ORION_TRAIL_WINTURN)
 			win(user)
 		else
-			food -= (alive+traitors_aboard)*2
-			fuel -= 5
+			set_food(food - ((alive+traitors_aboard)*2))
+			set_fuel(fuel - 5)
 			if(turns == 2 && prob(30))
-				event = ORION_TRAIL_COLLISION
+				set_event(ORION_TRAIL_COLLISION)
 				event()
 			else if(prob(75))
-				event = pickweight(events)
+				set_event(pickweight(events))
 				if(traitors_aboard)
 					if(event == ORION_TRAIL_MUTINY || prob(55))
-						event = ORION_TRAIL_MUTINY_ATTACK
+						set_event(ORION_TRAIL_MUTINY_ATTACK)
 				event()
-			turns += 1
+			set_turns(turns + 1)
 		if(emagged())
 			var/mob/living/carbon/M = user //for some vars
 			switch(event)
@@ -485,8 +485,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 					src.visible_message("\The [src] buzzes and the screen goes blank for a moment before returning to the game.")
 					var/oldfood = food
 					var/oldfuel = fuel
-					food = rand(10,80) / rand(1,2)
-					fuel = rand(10,60) / rand(1,2)
+					set_food(rand(10,80) / rand(1,2))
+					set_fuel(rand(10,60) / rand(1,2))
 					if(electronics)
 						after(src, 1 SECOND, PROC_REF(malfunction_restore), with = list(oldfood, oldfuel))
 	orion_refresh(user)
@@ -499,65 +499,65 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_menu(mob/user, list/args)
 	if(gameStatus == ORION_STATUS_GAMEOVER)
-		gameStatus = ORION_STATUS_START
-		event = null
-		food = 80
-		fuel = 60
-		settlers = list("Harry","Larry","Bob")
+		set_gameStatus(ORION_STATUS_START)
+		set_event(null)
+		set_food(80)
+		set_fuel(60)
+		set_settlers(list("Harry","Larry","Bob"))
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_slow(mob/user, list/args)
 	if(event == ORION_TRAIL_FLUX)
-		food -= (alive+traitors_aboard)*2
-		fuel -= 5
-	event = null
+		set_food(food - ((alive+traitors_aboard)*2))
+		set_fuel(fuel - 5)
+	set_event(null)
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_pastblack(mob/user, list/args)
 	if(turns == 7)
-		food -= ((alive+traitors_aboard)*2)*3
-		fuel -= 15
-		turns += 1
-		event = null
+		set_food(food - (((alive+traitors_aboard)*2)*3))
+		set_fuel(fuel - 15)
+		set_turns(turns + 1)
+		set_event(null)
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_useengine(mob/user, list/args)
 	if(event == ORION_TRAIL_BREAKDOWN)
-		engine = max(0, --engine)
-		event = null
+		set_engine(max(0, --engine))
+		set_event(null)
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_useelec(mob/user, list/args)
 	if(event == ORION_TRAIL_MALFUNCTION)
-		electronics = max(0, --electronics)
-		event = null
+		set_electronics(max(0, --electronics))
+		set_event(null)
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_usehull(mob/user, list/args)
 	if(event == ORION_TRAIL_COLLISION)
-		hull = max(0, --hull)
-		event = null
+		set_hull(max(0, --hull))
+		set_event(null)
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_wait(mob/user, list/args)
 	if(event == ORION_TRAIL_BREAKDOWN || event == ORION_TRAIL_MALFUNCTION || event == ORION_TRAIL_COLLISION)
-		food -= ((alive+traitors_aboard)*2)*3
-		event = null
+		set_food(food - (((alive+traitors_aboard)*2)*3))
+		set_event(null)
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_keepspeed(mob/user, list/args)
 	if(event == ORION_TRAIL_FLUX)
 		if(prob(75))
-			event = "Breakdown"
+			set_event("Breakdown")
 			event()
 		else
-			event = null
+			set_event(null)
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_blackhole(mob/user, list/args)
 	if(turns == 7)
 		if(prob(75))
-			event = ORION_TRAIL_BLACKHOLE
+			set_event(ORION_TRAIL_BLACKHOLE)
 			event()
 			if(emagged()) //has to be here because otherwise it doesn't work
 				src.show_message("\The [src] states, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRIFIED.","You hear something say, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRFIED'")
@@ -565,19 +565,19 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 				//spawning a literal blackhole would be fun, but a bit disruptive.
 				after(src, 1 SECOND, PROC_REF(blackhole_hurt), with = list(user, 0))
 		else
-			event = null
-			turns += 1
+			set_event(null)
+			set_turns(turns + 1)
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_holedeath(mob/user, list/args)
 	if(event == ORION_TRAIL_BLACKHOLE)
-		gameStatus = ORION_STATUS_GAMEOVER
-		event = null
+		set_gameStatus(ORION_STATUS_GAMEOVER)
+		set_event(null)
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_eventclose(mob/user, list/args)
 	if(canContinueEvent)
-		event = null
+		set_event(null)
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_killcrew(mob/user, list/args)
@@ -593,15 +593,15 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 				src.visible_message("\The [src] produces a loud, gunlike sound.")
 				L.injure(INJURY_PIERCE, 30, null, src)
 				set_emagged(0)
-			gameStatus = ORION_STATUS_GAMEOVER
-			event = null
+			set_gameStatus(ORION_STATUS_GAMEOVER)
+			set_event(null)
 		else if(emagged())
 			if(user.name == sheriff)
 				act_message(src, user, others = "%U% states, 'THE CREW HAS CHOSEN TO KILL %T%'. A gunshot can be heard coming from %U%", \
 					blind = "You hear 'THE CREW HAS CHOSEN TO KILL %T%' followed by a gunshot")
 				L.injure(INJURY_PIERCE, 30, null, src)
 		if(event == ORION_TRAIL_MUTINY) //only ends the ORION_TRAIL_MUTINY event, since you can do this action in multiple places
-			event = null
+			set_event(null)
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_buycrew(mob/user, list/args)
@@ -610,8 +610,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 			play_sfx(src, SFX_ARCADE_GET_FUEL, ignore_walls = FALSE)
 			var/bought = add_crewmember()
 			last_spaceport_action = "You hired [bought] as a new crewmember."
-			fuel -= 10
-			food -= 10
+			set_fuel(fuel - 10)
+			set_food(food - 10)
 			event()
 	orion_refresh(user)
 
@@ -621,15 +621,15 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 			play_sfx(src, SFX_ARCADE_LOSE_FUEL, ignore_walls = FALSE)
 			var/sold = remove_crewmember()
 			last_spaceport_action = "You sold your crewmember, [sold]!"
-			fuel += 7
-			food += 7
+			set_fuel(fuel + 7)
+			set_food(food + 7)
 			event()
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_leave_spaceport(mob/user, list/args)
 	if(gameStatus == ORION_STATUS_MARKET)
-		event = null
-		gameStatus = ORION_STATUS_NORMAL
+		set_event(null)
+		set_gameStatus(ORION_STATUS_NORMAL)
 		spaceport_raided = 0
 		spaceport_freebie = 0
 		last_spaceport_action = ""
@@ -668,8 +668,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 						else
 							C.throw_at(user,16,3,src)
 
-			fuel += FU
-			food += FO
+			set_fuel(fuel + FU)
+			set_food(food + FO)
 			event()
 	orion_refresh(user)
 
@@ -679,15 +679,15 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 			play_sfx(src, SFX_ARCADE_GET_FUEL, ignore_walls = FALSE)
 			switch(args["buyparts"])
 				if(1) //Engine Parts
-					engine++
+					set_engine(engine + 1)
 					last_spaceport_action = "Bought Engine Parts"
 				if(2) //Hull Plates
-					hull++
+					set_hull(hull + 1)
 					last_spaceport_action = "Bought Hull Plates"
 				if(3) //Spare Electronics
-					electronics++
+					set_electronics(electronics + 1)
 					last_spaceport_action = "Bought Spare Electronics"
-			fuel -= 5 //they all cost 5
+			set_fuel(fuel - 5) //they all cost 5
 			event()
 	orion_refresh(user)
 
@@ -698,104 +698,104 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 			switch(args["trade"])
 				if(1) //Fuel
 					if(fuel > 5)
-						fuel -= 5
-						food += 5
+						set_fuel(fuel - 5)
+						set_food(food + 5)
 						last_spaceport_action = "Traded Fuel for Food"
 						event()
 				if(2) //Food
 					if(food > 5)
-						fuel += 5
-						food -= 5
+						set_fuel(fuel + 5)
+						set_food(food - 5)
 						last_spaceport_action = "Traded Food for Fuel"
 						event()
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/event()
-	eventdat = "<center><h1>[event]</h1></center>"
+	set_eventdat("<center><h1>[event]</h1></center>")
 	canContinueEvent = 0
 	switch(event)
 		if(ORION_TRAIL_RAIDERS)
-			eventdat += "Raiders have come aboard your ship!"
+			set_eventdat(eventdat + ("Raiders have come aboard your ship!"))
 			if(prob(50))
 				var/sfood = rand(1,10)
 				var/sfuel = rand(1,10)
-				food -= sfood
-				fuel -= sfuel
-				eventdat += "<br>They have stolen [sfood] <b>Food</b> and [sfuel] <b>Fuel</b>."
+				set_food(food - sfood)
+				set_fuel(fuel - sfuel)
+				set_eventdat(eventdat + ("<br>They have stolen [sfood] <b>Food</b> and [sfuel] <b>Fuel</b>."))
 			else if(prob(10))
 				var/deadname = remove_crewmember()
-				eventdat += "<br>[deadname] tried to fight back, but was killed."
+				set_eventdat(eventdat + ("<br>[deadname] tried to fight back, but was killed."))
 			else
-				eventdat += "<br>Fortunately, you fended them off without any trouble."
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
+				set_eventdat(eventdat + ("<br>Fortunately, you fended them off without any trouble."))
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
 			canContinueEvent = 1
 
 		if(ORION_TRAIL_FLUX)
 			play_sfx(src, SFX_ARCADE_EXPLO, ignore_walls = FALSE)
-			eventdat += "This region of space is highly turbulent. <br>If we go slowly we may avoid more damage, but if we keep our speed we won't waste supplies."
-			eventdat += "<br>What will you do?"
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];slow=1'>Slow Down</a> <a href='byond://?src=\ref[src];keepspeed=1'>Continue</a></P>"
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
+			set_eventdat(eventdat + ("This region of space is highly turbulent. <br>If we go slowly we may avoid more damage, but if we keep our speed we won't waste supplies."))
+			set_eventdat(eventdat + ("<br>What will you do?"))
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];slow=1'>Slow Down</a> <a href='byond://?src=\ref[src];keepspeed=1'>Continue</a></P>"))
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
 
 		if(ORION_TRAIL_ILLNESS)
-			eventdat += "A deadly illness has been contracted!"
+			set_eventdat(eventdat + ("A deadly illness has been contracted!"))
 			var/deadname = remove_crewmember()
-			eventdat += "<br>[deadname] was killed by the disease."
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
+			set_eventdat(eventdat + ("<br>[deadname] was killed by the disease."))
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
 			canContinueEvent = 1
 
 		if(ORION_TRAIL_BREAKDOWN)
 			play_sfx(src, SFX_ARCADE_EXPLO, ignore_walls = FALSE)
-			eventdat += "Oh no! The engine has broken down!"
-			eventdat += "<br>You can repair it with an engine part, or you can make repairs for 3 days."
+			set_eventdat(eventdat + ("Oh no! The engine has broken down!"))
+			set_eventdat(eventdat + ("<br>You can repair it with an engine part, or you can make repairs for 3 days."))
 			if(engine >= 1)
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];useengine=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];useengine=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
 			else
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
 
 		if(ORION_TRAIL_MALFUNCTION)
-			eventdat += "The ship's systems are malfunctioning!"
-			eventdat += "<br>You can replace the broken electronics with spares, or you can spend 3 days troubleshooting the AI."
+			set_eventdat(eventdat + ("The ship's systems are malfunctioning!"))
+			set_eventdat(eventdat + ("<br>You can replace the broken electronics with spares, or you can spend 3 days troubleshooting the AI."))
 			if(electronics >= 1)
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];useelec=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];useelec=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
 			else
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
 
 		if(ORION_TRAIL_COLLISION)
 			play_sfx(src, SFX_ARCADE_EXPLO, ignore_walls = FALSE)
-			eventdat += "Something hit us! Looks like there's some hull damage."
+			set_eventdat(eventdat + ("Something hit us! Looks like there's some hull damage."))
 			if(prob(25))
 				var/sfood = rand(5,15)
 				var/sfuel = rand(5,15)
-				food -= sfood
-				fuel -= sfuel
-				eventdat += "<br>[sfood] <b>Food</b> and [sfuel] <b>Fuel</b> was vented out into space."
+				set_food(food - sfood)
+				set_fuel(fuel - sfuel)
+				set_eventdat(eventdat + ("<br>[sfood] <b>Food</b> and [sfuel] <b>Fuel</b> was vented out into space."))
 			if(prob(10))
 				var/deadname = remove_crewmember()
-				eventdat += "<br>[deadname] was killed by rapid depressurization."
-			eventdat += "<br>You can repair the damage with hull plates, or you can spend the next 3 days welding scrap together."
+				set_eventdat(eventdat + ("<br>[deadname] was killed by rapid depressurization."))
+			set_eventdat(eventdat + ("<br>You can repair the damage with hull plates, or you can spend the next 3 days welding scrap together."))
 			if(hull >= 1)
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];usehull=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];usehull=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
 			else
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
 
 		if(ORION_TRAIL_BLACKHOLE)
-			eventdat += "You were swept away into the black hole."
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];holedeath=1'>Oh...</a></P>"
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
-			settlers = list()
+			set_eventdat(eventdat + ("You were swept away into the black hole."))
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];holedeath=1'>Oh...</a></P>"))
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
+			set_settlers(list())
 
 		if(ORION_TRAIL_MUTINY)
-			eventdat += "You've been hearing rumors of dissenting opinions amoungst your men."
+			set_eventdat(eventdat + ("You've been hearing rumors of dissenting opinions amoungst your men."))
 			if(settlers.len <= 2)
-				eventdat += "<br>Your crew's so tiny you don't think anybody would risk an uprising."
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
+				set_eventdat(eventdat + ("<br>Your crew's so tiny you don't think anybody would risk an uprising."))
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
 				if(prob(10))
 					traitors_aboard = min(++traitors_aboard,2)
 			else
@@ -805,71 +805,71 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 				else if(prob(70))
 					traitors_aboard = min(++traitors_aboard,2)
 
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];killcrew=1'>Kill a crewmember</a></P>"
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Risk it</a></P>"
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];killcrew=1'>Kill a crewmember</a></P>"))
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Risk it</a></P>"))
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
 			canContinueEvent = 1
 
 		if(ORION_TRAIL_MUTINY_ATTACK)
 			if(traitors_aboard <= 0) //shouldn't trigger, but hey.
-				eventdat += "Haha, fooled you, there isn't a mutiny on board!"
-				eventdat += "<br>(You should report this to a coder :S)"
+				set_eventdat(eventdat + ("Haha, fooled you, there isn't a mutiny on board!"))
+				set_eventdat(eventdat + ("<br>(You should report this to a coder :S)"))
 			else
 				var/trait1 = remove_crewmember()
 				var/trait2 = ""
 				if(traitors_aboard >= 2)
 					trait2 = remove_crewmember()
 
-				eventdat += "Oh no, some of your crew are attempting to mutiny!!"
+				set_eventdat(eventdat + ("Oh no, some of your crew are attempting to mutiny!!"))
 				if(trait2)
-					eventdat += "<br>[trait1] and [trait2]'s have armed themselves with weapons!"
+					set_eventdat(eventdat + ("<br>[trait1] and [trait2]'s have armed themselves with weapons!"))
 				else
-					eventdat += "<br>[trait1]'s armed with a weapon!"
+					set_eventdat(eventdat + ("<br>[trait1]'s armed with a weapon!"))
 
 				var/chance2attack = alive*20
 				if(prob(chance2attack))
 					var/chancetokill = 30*traitors_aboard-(5*alive) //eg: 30*2-(10) = 50%, 2 traitorss, 2 crew is 50% chance
 					if(prob(chancetokill))
 						var/deadguy = remove_crewmember()
-						eventdat += "<br>The traitor[trait2 ? "s":""] run[trait2 ? "":"s"] up to [deadguy] and murder[trait2 ? "" : "s"] them!"
+						set_eventdat(eventdat + ("<br>The traitor[trait2 ? "s":""] run[trait2 ? "":"s"] up to [deadguy] and murder[trait2 ? "" : "s"] them!"))
 					else
-						eventdat += "<br>You valiantly fight off the traitor[trait2 ? "s":""]!"
-						eventdat += "<br>You cut the traitor[trait2 ? "s":""] up into meat... Eww"
+						set_eventdat(eventdat + ("<br>You valiantly fight off the traitor[trait2 ? "s":""]!"))
+						set_eventdat(eventdat + ("<br>You cut the traitor[trait2 ? "s":""] up into meat... Eww"))
 						if(trait2)
-							food += 30
+							set_food(food + 30)
 							traitors_aboard = max(0,traitors_aboard-2)
 						else
-							food += 15
+							set_food(food + 15)
 							traitors_aboard = max(0,--traitors_aboard)
 				else
-					eventdat += "<br>The traitor[trait2 ? "s":""] run[trait2 ? "":"s"] away, What wimps!"
+					set_eventdat(eventdat + ("<br>The traitor[trait2 ? "s":""] run[trait2 ? "":"s"] away, What wimps!"))
 					if(trait2)
 						traitors_aboard = max(0,traitors_aboard-2)
 					else
 						traitors_aboard = max(0,--traitors_aboard)
 
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"
-			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
+			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
 			canContinueEvent = 1
 
 		if(ORION_TRAIL_SPACEPORT)
-			gameStatus = ORION_STATUS_MARKET
+			set_gameStatus(ORION_STATUS_MARKET)
 			if(spaceport_raided)
-				eventdat += "The Spaceport is on high alert! they wont let you dock since you tried to attack them!"
+				set_eventdat(eventdat + ("The Spaceport is on high alert! they wont let you dock since you tried to attack them!"))
 				if(last_spaceport_action)
-					eventdat += "<br>Last Spaceport Action: [last_spaceport_action]"
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];leave_spaceport=1'>Depart Spaceport</a></P>"
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
+					set_eventdat(eventdat + ("<br>Last Spaceport Action: [last_spaceport_action]"))
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];leave_spaceport=1'>Depart Spaceport</a></P>"))
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
 			else
-				eventdat += "You pull the ship up to dock at a nearby Spaceport, lucky find!"
-				eventdat += "<br>This Spaceport is home to travellers who failed to reach Orion, but managed to find a different home..."
-				eventdat += "<br>Trading terms: FU = Fuel, FO = Food"
+				set_eventdat(eventdat + ("You pull the ship up to dock at a nearby Spaceport, lucky find!"))
+				set_eventdat(eventdat + ("<br>This Spaceport is home to travellers who failed to reach Orion, but managed to find a different home..."))
+				set_eventdat(eventdat + ("<br>Trading terms: FU = Fuel, FO = Food"))
 				if(last_spaceport_action)
-					eventdat += "<br>Last Spaceport Action: [last_spaceport_action]"
-				eventdat += "<h3><b>Crew:</b></h3>"
-				eventdat += english_list(settlers)
-				eventdat += "<br><b>Food: </b>[food] | <b>Fuel: </b>[fuel]"
-				eventdat += "<br><b>Engine Parts: </b>[engine] | <b>Hull Panels: </b>[hull] | <b>Electronics: </b>[electronics]"
+					set_eventdat(eventdat + ("<br>Last Spaceport Action: [last_spaceport_action]"))
+				set_eventdat(eventdat + ("<h3><b>Crew:</b></h3>"))
+				set_eventdat(eventdat + (english_list(settlers)))
+				set_eventdat(eventdat + ("<br><b>Food: </b>[food] | <b>Fuel: </b>[fuel]"))
+				set_eventdat(eventdat + ("<br><b>Engine Parts: </b>[engine] | <b>Hull Panels: </b>[hull] | <b>Electronics: </b>[electronics]"))
 
 				//If your crew is pathetic you can get freebies (provided you haven't already gotten one from this port)
 				if(!spaceport_freebie && (fuel < 20 || food < 20))
@@ -885,64 +885,64 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 						add_crewmember()
 						freecrew++
 
-					eventdat += "<br>The traders of the spaceport take pity on you, and give you some supplies. (+[FU]FU,+[FO]FO)"
+					set_eventdat(eventdat + ("<br>The traders of the spaceport take pity on you, and give you some supplies. (+[FU]FU,+[FO]FO)"))
 					if(freecrew)
-						eventdat += "<br>You also gain a new crewmember!"
+						set_eventdat(eventdat + ("<br>You also gain a new crewmember!"))
 
-					fuel += FU
-					food += FO
+					set_fuel(fuel + FU)
+					set_food(food + FO)
 
 				//CREW INTERACTIONS
-				eventdat += "<P ALIGN=Right>Crew Management:</P>"
+				set_eventdat(eventdat + ("<P ALIGN=Right>Crew Management:</P>"))
 
 				//Buy crew
 				if(food >= 10 && fuel >= 10)
-					eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];buycrew=1'>Hire a new Crewmember (-10FU,-10FO)</a></P>"
+					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buycrew=1'>Hire a new Crewmember (-10FU,-10FO)</a></P>"))
 				else
-					eventdat += "<P ALIGN=Right>You cannot afford a new Crewmember</P>"
+					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford a new Crewmember</P>"))
 
 				//Sell crew
 				if(settlers.len > 1)
-					eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];sellcrew=1'>Sell crew for Fuel and Food (+7FU,+7FO)</a></P>"
+					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];sellcrew=1'>Sell crew for Fuel and Food (+7FU,+7FO)</a></P>"))
 				else
-					eventdat += "<P ALIGN=Right>You cannot afford to sell a Crewmember</P>"
+					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford to sell a Crewmember</P>"))
 
 				//BUY/SELL STUFF
-				eventdat += "<P ALIGN=Right>Spare Parts:</P>"
+				set_eventdat(eventdat + ("<P ALIGN=Right>Spare Parts:</P>"))
 
 				//Engine parts
 				if(fuel > 5)
-					eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=1'>Buy Engine Parts (-5FU)</a></P>"
+					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=1'>Buy Engine Parts (-5FU)</a></P>"))
 				else
-					eventdat += "<P ALIGN=Right>You cannot afford to buy Engine Parts</a>"
+					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford to buy Engine Parts</a>"))
 
 				//Hull plates
 				if(fuel > 5)
-					eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=2'>Buy Hull Plates (-5FU)</a></P>"
+					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=2'>Buy Hull Plates (-5FU)</a></P>"))
 				else
-					eventdat += "<P ALIGN=Right>You cannot afford to buy Hull Plates</a>"
+					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford to buy Hull Plates</a>"))
 
 				//Electronics
 				if(fuel > 5)
-					eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=3'>Buy Spare Electronics (-5FU)</a></P>"
+					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=3'>Buy Spare Electronics (-5FU)</a></P>"))
 				else
-					eventdat += "<P ALIGN=Right>You cannot afford to buy Spare Electronics</a>"
+					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford to buy Spare Electronics</a>"))
 
 				//Trade
 				if(fuel > 5)
-					eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];trade=1'>Trade Fuel for Food (-5FU,+5FO)</a></P>"
+					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];trade=1'>Trade Fuel for Food (-5FU,+5FO)</a></P>"))
 				else
-					eventdat += "<P ALIGN=Right>You cannot afford to Trade Fuel for Food</P"
+					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford to Trade Fuel for Food</P"))
 
 				if(food > 5)
-					eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];trade=2'>Trade Food for Fuel (+5FU,-5FO)</a></P>"
+					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];trade=2'>Trade Food for Fuel (+5FU,-5FO)</a></P>"))
 				else
-					eventdat += "<P ALIGN=Right>You cannot afford to Trade Food for Fuel</P"
+					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford to Trade Food for Fuel</P"))
 
 				//Raid the spaceport
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];raid_spaceport=1'>!! Raid Spaceport !!</a></P>"
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];raid_spaceport=1'>!! Raid Spaceport !!</a></P>"))
 
-				eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];leave_spaceport=1'>Depart Spaceport</a></P>"
+				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];leave_spaceport=1'>Depart Spaceport</a></P>"))
 
 /obj/machinery/computer/arcade/orion_trail/proc/add_crewmember(specific = "")
 	var/newcrew = ""
@@ -954,7 +954,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 		else
 			newcrew = pick(GLOB.first_names_female)
 	if(newcrew)
-		settlers += newcrew
+		add_settlers(newcrew)
 		alive++
 	return newcrew
 
@@ -971,12 +971,12 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 	if(removed)
 		if(traitors_aboard && prob(40*traitors_aboard)) //if there are 2 traitors you're twice as likely to get one, obviously
 			traitors_aboard = max(0,--traitors_aboard)
-		settlers -= removed
+		remove_settlers(removed)
 		alive--
 	return removed
 
 /obj/machinery/computer/arcade/orion_trail/proc/win(mob/user)
-	gameStatus = ORION_STATUS_START
+	set_gameStatus(ORION_STATUS_START)
 	src.visible_message("\The [src] plays a triumpant tune, stating 'CONGRATULATIONS, YOU HAVE MADE IT TO ORION.'")
 	play_sfx(src, SFX_ARCADE_ORI_WIN, ignore_walls = FALSE)
 	if(emagged())
@@ -1108,7 +1108,7 @@ CAPABILITIES(/obj/item/orion_ship)
 		paid = pay_with_cash(C, user)
 	if(paid)
 		set_gamepaid(1)
-		instructions = "Hit start to play!"
+		set_instructions("Hit start to play!")
 	return OP_OK
 
 ////// Cash
@@ -1192,7 +1192,7 @@ CAPABILITIES(/obj/item/orion_ship)
 		return
 	if(!gamepaid && charge_account(customer_account))
 		set_gamepaid(1)
-		instructions = "Hit start to play!"
+		set_instructions("Hit start to play!")
 
 /obj/machinery/computer/arcade/clawmachine/proc/charge_account(datum/money_account/customer_account)
 	if(gameprice > customer_account.money)
@@ -1245,21 +1245,21 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 	if(gamepaid == 0)
 		play_sfx(src, SFX_ARCADE_STEAL, ignore_walls = FALSE)
 	else if(gamepaid == 1)
-		gameStatus = "CLAWMACHINE_ON"
+		set_gameStatus("CLAWMACHINE_ON")
 		set_icon_state("clawmachine_new_move")
-		instructions = "Guide the claw to the prize you want!"
-		wintick = 0
+		set_instructions("Guide the claw to the prize you want!")
+		set_wintick(0)
 
 /obj/machinery/computer/arcade/clawmachine/proc/ui_act_return(datum/act/op/A)
 	if(gameStatus == "CLAWMACHINE_END")
-		gameStatus = "CLAWMACHINE_NEW"
+		set_gameStatus("CLAWMACHINE_NEW")
 
 /obj/machinery/computer/arcade/clawmachine/proc/ui_act_pointless(datum/act/op/A)
 	var/mob/user = A.actor
 	if(wintick < 10)
-		wintick += 1
+		set_wintick(wintick + 1)
 	if(wintick >= 10)
-		instructions = "Insert 1 thaler or swipe a card to play!"
+		set_instructions("Insert 1 thaler or swipe a card to play!")
 		clawvend(user)
 
 /obj/machinery/computer/arcade/clawmachine/proc/clawvend(mob/user) /// True to a real claw machine, it's NEARLY impossible to win.
@@ -1268,11 +1268,11 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 	if(prob(winprob)) /// YEAH.
 		if(!emagged())
 			prizevend(user)
-			winscreen = "You won!"
+			set_winscreen("You won!")
 		else if(emagged())
 			gameprice = 1
 			set_emagged(0)
-			winscreen = "You won...?"
+			set_winscreen("You won...?")
 			var/obj/item/grenade/G = new /obj/item/grenade/explosive(get_turf(src)) /// YEAAAAAAAAAAAAAAAAAAH!!!!!!!!!!
 			G.activate()
 			G.throw_at(get_turf(user),10,10) /// Play stupid games, win stupid prizes.
@@ -1282,22 +1282,22 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 
 	else
 		play_sfx(src, SFX_ARCADE_ORI_FAIL, ignore_walls = FALSE)
-		winscreen = "Aw, shucks. Try again!"
-	wintick = 0
+		set_winscreen("Aw, shucks. Try again!")
+	set_wintick(0)
 	set_gamepaid(0)
 	set_icon_state("clawmachine_new")
-	gameStatus = "CLAWMACHINE_END"
+	set_gameStatus("CLAWMACHINE_END")
 
 /obj/machinery/computer/arcade/clawmachine/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
 	to_chat(user, span_info("You modify the claw of the machine. The next one is sure to win! You just have to pay..."))
 	name = "AlliCo Snag-A-Prize"
 	desc = "Get some goodies, all for you!"
-	instructions = "Swipe a card to play!"
+	set_instructions("Swipe a card to play!")
 	winprob = 100
 	set_gamepaid(0)
-	wintick = 0
-	gameStatus = "CLAWMACHINE_NEW"
+	set_wintick(0)
+	set_gameStatus("CLAWMACHINE_NEW")
 	set_emagged(1)
 	return OP_OK
 

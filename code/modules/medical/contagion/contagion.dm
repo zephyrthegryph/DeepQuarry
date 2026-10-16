@@ -217,7 +217,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 	if(tag == TREAT_RESTORATION)
 		cure()
 		return amount
-	immunity = min(immunity + amount, CONTAGION_IMMUNITY_CLEAR)
+	set_immunity(min(immunity + amount, CONTAGION_IMMUNITY_CLEAR))
 	return amount
 
 /// Worsening tags slow the immune response.
@@ -269,7 +269,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 		set_virus_modifiers(virus_modifiers | PROCESSING)
 		Start()
 
-	immunity = clamp(immunity + immune_gain(), 0, CONTAGION_IMMUNITY_CLEAR)
+	set_immunity(clamp(immunity + immune_gain(), 0, CONTAGION_IMMUNITY_CLEAR))
 	var/controlled = immunity >= CONTAGION_IMMUNITY_CONTROL
 
 	// Advance while nothing holds it back.
@@ -368,7 +368,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 /// The reference book and describing profiles read clinical_description.
 /datum/affliction/contagion/configure(location)
 	if(!clinical_description && desc)
-		clinical_description = desc
+		set_clinical_description(desc)
 
 
 // --- Identity and copies -------------------------------------------------------
@@ -427,13 +427,13 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 
 	var/datum/data/record/v = new()
 
-	v.fields["id"] = GetDiseaseID()
-	v.fields["name"] = name
-	v.fields["description"] = desc
-	v.fields["form"] = form
-	v.fields["agent"] = agent
-	v.fields["cure"] = cure_text
-	v.fields["spread"] = spread_text
+	v.set_fields_at("id", GetDiseaseID())
+	v.set_fields_at("name", name)
+	v.set_fields_at("description", desc)
+	v.set_fields_at("form", form)
+	v.set_fields_at("agent", agent)
+	v.set_fields_at("cure", cure_text)
+	v.set_fields_at("spread", spread_text)
 
 	GLOB.virusDB["[GetDiseaseID()]"] = v
 

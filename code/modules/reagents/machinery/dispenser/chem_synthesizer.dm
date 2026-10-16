@@ -384,7 +384,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	var/index = q_index
 	if(!isnum(index) || !ISINTEGER(index) || !istype(queue) || (index<1 || index>length(queue) || (busy && index == 1)))
 		return
-	queue -= queue[index]
+	remove_queue(queue[index])
 
 /obj/machinery/chemical_synthesizer/proc/ui_act_clear_queue(datum/act/op/A)
 	var/mob/user = A.actor
@@ -395,9 +395,9 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 		if(busy)
 			// Oh no, I've broken code convention to remove all entries but the first.
 			for(var/i = queue.len, i >= 2, i--)
-				queue -= queue[i]
+				remove_queue(queue[i])
 		else
-			queue = list()
+			set_queue(list())
 
 /obj/machinery/chemical_synthesizer/proc/ui_act_eject_catalyst(datum/act/op/A)
 	var/mob/user = A.actor
@@ -414,7 +414,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	. = TRUE
 	// Decides if the machine uses the catalyst.
 	if(!busy)
-		use_catalyst = !use_catalyst
+		set_use_catalyst(!use_catalyst)
 
 /obj/machinery/chemical_synthesizer/proc/ui_act_emergency_stop(datum/act/op/A)
 	var/mob/user = A.actor
@@ -445,7 +445,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	add_fingerprint(user)
 	. = TRUE
 	// Toggles production mode.
-	production_mode = !production_mode
+	set_production_mode(!production_mode)
 
 /obj/machinery/chemical_synthesizer/proc/ui_act_add_recipe(datum/act/op/A)
 	var/mob/user = A.actor
@@ -469,7 +469,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 		if(A.step_value("a3") == "Yes")
 			var/index = rm_index
 			if(index in recipes)
-				recipes.Remove(list(index)) // Fuck off Byond.
+				remove_recipes(list(index)) // Fuck off Byond.
 	else
 		to_chat(user, span_warning("You cannot remove recipes while the machine is running!"))
 
@@ -492,14 +492,14 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	var/index = qa_index
 	// If you forgot, this is a string returned by the user pressing the "add to queue" button on a recipe.
 	if(index in recipes)
-		queue[++queue.len] = index
+		set_queue_at(++queue.len, index)
 
 /obj/machinery/chemical_synthesizer/proc/ui_act_drug_form(datum/act/op/A, drug_index)
 	var/mob/user = A.actor
 	add_fingerprint(user)
 	. = TRUE
 	// Toggles between bottles, pills, and patches.
-	drug_substance = drug_index
+	set_drug_substance(drug_index)
 
 
 /// The sprite choices of a style modal: `count` spritesheet classes "chem_master32x32 <prefix><n>".
@@ -531,7 +531,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	var/list/choices = pill_style_choices(A)
 	var/new_style = CLAMP(choices.Find(A.step_value("style")), 0, MAX_PILL_SPRITE)
 	if(new_style)
-		pill_icon = new_style
+		set_pill_icon(new_style)
 	return TRUE
 
 /obj/machinery/chemical_synthesizer/proc/modal_change_patch_style(datum/act/op/A, list/arguments)
@@ -539,7 +539,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	var/list/choices = patch_style_choices(A)
 	var/new_style = CLAMP(choices.Find(A.step_value("style")), 0, MAX_PATCH_SPRITE)
 	if(new_style)
-		patch_icon = new_style
+		set_patch_icon(new_style)
 	return TRUE
 
 /obj/machinery/chemical_synthesizer/proc/modal_change_bottle_style(datum/act/op/A, list/arguments)
@@ -547,7 +547,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	var/list/choices = bottle_style_choices(A)
 	var/new_style = CLAMP(choices.Find(A.step_value("style")), 0, MAX_BOTTLE_SPRITE)
 	if(new_style)
-		bottle_icon = new_style
+		set_bottle_icon(new_style)
 	return TRUE
 
 /// Requirement: the machine is idle (the old handlers asked only while it was).
@@ -614,7 +614,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	if(recipes.len >= SYNTHESIZER_MAX_RECIPES || (rec_name in recipes))
 		return
 
-	recipes[rec_name] = new_rec
+	set_recipes_at(rec_name, new_rec)
 	SStgui.update_uis(src)
 	export_recipe(user, rec_name) // Now export the recipe to the user's chatbox formatted for import_recipe().
 	return
@@ -664,7 +664,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	if(rec_input) // The remainder of rec_input should be the final volume step of the recipe. The if() is a sanity check.
 		new_rec[++new_rec.len] = text2num(rec_input)
 
-	recipes[rec_name] = new_rec // Finally, add the recipe to the recipes list.
+	set_recipes_at(rec_name, new_rec) // Finally, add the recipe to the recipes list.
 	SStgui.update_uis(src)
 	return
 
@@ -837,7 +837,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 
 	// Sanity check when manual bottling is triggered.
 	if(queue.len)
-		queue -= queue[1]
+		remove_queue(queue[1])
 
 	// If the queue is now empty, we're done. Otherwise, re-add catalyst and proceed to the next recipe.
 	if(queue.len)
@@ -850,7 +850,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	else
 		set_busy(FALSE)
 		set_use_power(USE_POWER_IDLE)
-		queue = list()
+		set_queue(list())
 
 
 // What happens to the synthesizer if it breaks or loses power in the middle of running. Chemists must fix things manually.
@@ -858,7 +858,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	set_busy(FALSE)
 	set_finishing(FALSE)
 	set_use_power(USE_POWER_IDLE)
-	queue = list()
+	set_queue(list())
 	catalyst_ids = list()
 
 #undef SYNTHESIZER_MAX_CARTRIDGES

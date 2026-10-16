@@ -129,8 +129,8 @@ CAPABILITIES(/obj/machinery/sleeper)
 	var/man_rating = 0
 	var/cap_rating = 0
 
-	LAZYCLEARLIST(available_chemicals)
-	available_chemicals = base_chemicals.Copy()
+	clear_available_chemicals()
+	set_available_chemicals(base_chemicals.Copy())
 
 	for(var/obj/item/stock_parts/P in component_parts)
 		if(istype(P, /obj/item/stock_parts/capacitor))
@@ -164,7 +164,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 			new_chemicals[REAGENT_ID_LEPORAZINE] = REAGENT_LEPORAZINE
 
 		if(new_chemicals.len)
-			LAZYADD(available_chemicals, new_chemicals)
+			add_available_chemicals(new_chemicals)
 		return
 
 /obj/machinery/sleeper/draw(datum/look/look)

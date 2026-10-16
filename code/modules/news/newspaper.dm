@@ -56,9 +56,9 @@ CAPABILITIES(/obj/item/newspaper)
 	data["scribble_page"] = isnum(scribble_page) ? scribble_page : -1
 	data["scribble"] = scribble || ""
 	var/list/chs = list()
-	pages = 0
+	set_pages(0)
 	for(var/datum/feed_channel/NP in news_content)
-		pages++
+		set_pages(pages + 1)
 		var/list/msgs = list()
 		if(!NP.censored)
 			for(var/datum/feed_message/M in NP.messages)
@@ -122,7 +122,7 @@ CAPABILITIES(/obj/item/newspaper)
 	if(!in_range(src, user) && src.loc != user)
 		return OP_PASS
 	set_scribble_page(curr_page)
-	scribble = s
+	set_scribble(s)
 	attack_self(user)
 	return OP_PASS
 

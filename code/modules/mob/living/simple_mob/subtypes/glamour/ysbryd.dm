@@ -80,31 +80,31 @@
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The horrifying beast yawns it's skull maw wide before your face, unveiling a dark but surprisingly fleshy interior. Not that you have much time to appreciate it before your head is engulfed in the void, and dragged roughly into the depths beyond it. Before long, you're trapped in pitch darkness. Intense pressure binding you from every possible direction, fleshy walls grinding over your form. Despite this, it's quiet in here, uncomfortably so. No bodily functions can be heard, no groaning guts, merely the sound of your own body pressing against the stomach lining."
-	B.digest_brute = 3
-	B.digest_burn = 3
-	B.digestchance = 40
-	B.absorbchance = 1
-	B.escapechance = 3
+	B.set_digest_brute(3)
+	B.set_digest_burn(3)
+	B.set_digestchance(40)
+	B.set_absorbchance(1)
+	B.set_escapechance(3)
 	B.escape_stun = 5
-	B.belly_fullscreen = "VBO_belly8"
+	B.set_belly_fullscreen("VBO_belly8")
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
+	B.set_emote_lists_at(DM_HOLD, list(
 		"The creature idly runs what feels like bony hands over your form.",
 		"The pressure from the walls around you suddenly increases.",
 		"Amongst the silence you hear chains rattling, muffled.",
 		"There's no noise at all, you can only hear yourself for the moment.",
 		"It's hot in here, intensely so, and it's hard to think straight.",
-		"You feel the gut lurch about you as if the creature were casually moving.")
+		"You feel the gut lurch about you as if the creature were casually moving."))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"The pressure squeezes the life out of your curled up body.",
 		"You can't orient yourself, the grinding of the walls roughly turns you over and over.",
 		"You can finally hear some bodily functions as the stomach you're inside begins to gurgle and churn.",
 		"As the thinning air begins to make you feel dizzy, menacing bworps and grumbles fill that dark, constantly shifting organ!",
 		"The constant assault from mechanically grinding flesh and pooling caustic fluids is breaking down your body.",
-		"The feeling of body hands from beyond the walls crush in on you possessively.")
+		"The feeling of body hands from beyond the walls crush in on you possessively."))
 
 
 /mob/living/simple_mob/ysbryd/decorated

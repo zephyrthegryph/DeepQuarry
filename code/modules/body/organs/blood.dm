@@ -53,7 +53,7 @@ BLOOD_VOLUME_SURVIVE = 40
 			var/changeling_blood = (!isnull(mind) && is_changeling(mind)) || species?.ambulant_blood || has_trait(src, TRAIT_REDSPACE_CORRUPTED)
 			B.data["changeling"] = changeling_blood
 			B.set_color(B.data["blood_colour"])
-			B.name = B.data["blood_name"]
+			B.set_name(B.data["blood_name"])
 
 //Makes a blood drop, leaking amt units of blood from the mob
 /mob/living/carbon/human/proc/drip(amt)

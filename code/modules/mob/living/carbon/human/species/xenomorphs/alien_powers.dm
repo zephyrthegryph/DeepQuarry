@@ -164,11 +164,11 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 
 	if(spitting && incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot spit in your current state.")
-		spitting = 0
+		set_spitting(0)
 		return
 	else if(spitting)
 		if(!check_alien_ability(20,0,O_ACID))
-			spitting = 0
+			set_spitting(0)
 			return
 		act_message(src, A, MSG_SELF(span_alium("You spit [spit_name] at %T%.")), MSG_OTHERS(span_warning("%U% spits [spit_name] at %T%!")))
 		var/obj/item/projectile/P = new spit_projectile(get_turf(src))
@@ -221,16 +221,16 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 
 	if(spitting)
 		to_chat(src, span_alium("You stop preparing to spit."))
-		spitting = 0
+		set_spitting(0)
 		return
 
 	if(!check_alien_ability(40,0,O_ACID))
-		spitting = 0
+		set_spitting(0)
 		return
 
 	else
 		cooldown_start(src, spit_cooldown, 1 SECONDS)
-		spitting = 1
+		set_spitting(1)
 		spit_projectile = /obj/item/projectile/energy/neurotoxin
 		spit_name = "neurotoxin"
 		to_chat(src, span_alium("You prepare to spit neurotoxin."))
@@ -242,16 +242,16 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 
 	if(spitting)
 		to_chat(src, span_alium("You stop preparing to spit."))
-		spitting = 0
+		set_spitting(0)
 		return
 
 	if(!check_alien_ability(50,0,O_ACID))
-		spitting = 0
+		set_spitting(0)
 		return
 
 	else
 		cooldown_start(src, spit_cooldown, 1 SECONDS)
-		spitting = 1
+		set_spitting(1)
 		spit_projectile = /obj/item/projectile/energy/acid
 		spit_name = "acid"
 		to_chat(src, span_alium("You prepare to spit acid."))
