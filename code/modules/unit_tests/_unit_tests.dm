@@ -1338,6 +1338,8 @@
 
 #include "dq_base_vars_behaviour_tests.dm"
 #include "dq_base_vars_behaviour_tests.dm"
+#include "dq_last_attacker_link_home_tests.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

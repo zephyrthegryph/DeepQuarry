@@ -20,7 +20,7 @@
 
 	var/laname = ""
 	var/lakey = ""
-	var/mob/lastattacker = L.lastattacker
+	var/mob/lastattacker = last_attacker_of(L)
 	if(istype(lastattacker))
 		laname = lastattacker.real_name
 		lakey = lastattacker.key

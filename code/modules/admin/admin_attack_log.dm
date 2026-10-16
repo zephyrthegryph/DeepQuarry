@@ -1,4 +1,10 @@
-/atom/var/tmp/lastattacker = null
+/// The recorded live actor, or null after that actor is deleted.
+/proc/last_attacker_of(atom/target) as /mob
+	return link_get(target, LK_LAST_ATTACKER)
+
+/// Recording another attack replaces the old non-owning attribution link.
+/proc/set_last_attacker(atom/target, mob/actor)
+	return link_set_one(target, LK_LAST_ATTACKER, actor)
 
 /proc/log_and_message_admins(message as text, mob/user = usr)
 	log_admin(user ? "[key_name(user)] [message]" : "EVENT [message]")

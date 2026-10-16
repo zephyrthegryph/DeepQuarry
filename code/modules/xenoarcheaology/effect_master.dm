@@ -32,6 +32,7 @@
 /atom/var/datum/artifact_master/artifact_master
 
 CAPABILITIES(/atom)
+	links(LINK_END(/atom, LK_LAST_ATTACKER), LINK_END(/mob, LK_LAST_ATTACKED), sparse = TRUE, b_many = TRUE)
 	conflict_group()
 	light_glow(range = 0, power = 1, color = COLOR_WHITE) // the light it casts while light_on: a type trait (code/modules/lighting/glow.dm)
 	ref_many(nameof(light_sources))
