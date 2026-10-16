@@ -404,8 +404,10 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	try
 		. = dq_snapshot_allocate(type, T)
 		// Normalize kernel identity before either made/fresh capture; no probe exemption.
-		if(isdatum(.) && !QDELETED(.))
-			entity_handle(.)
+		if(isdatum(.))
+			var/datum/created = .
+			if(!QDELETED(created))
+				entity_handle(created)
 	catch(var/exception/e)
 		failure = e
 	GLOB.roll_creators.Cut(creator_depth + 1)
