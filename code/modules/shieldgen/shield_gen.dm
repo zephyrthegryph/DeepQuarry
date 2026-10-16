@@ -23,11 +23,11 @@
 	var/energy_conversion_rate = 0.0006	//how many renwicks per watt?  Higher numbers equals more effiency.
 	var/z_range = 0 // How far 'up and or down' to extend the shield to, in z-levels.  Only works on MultiZ supported z-levels.
 	use_power = USE_POWER_OFF	//doesn't use APC power
-	interact_offline = TRUE // don't check stat & NOPOWER|BROKEN for our UI. We check BROKEN ourselves.
 	var/id //for button usage
 	var/datum/looping_sound/shield_generator/shield_hum
 
 CAPABILITIES(/obj/machinery/shield_gen)
+	configure(machine_interaction_config(interact_offline = TRUE))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_one(nameof(shield_hum), /datum/looping_sound/shield_generator, starts = /datum/looping_sound/shield_generator)
 	owns_many(nameof(field))

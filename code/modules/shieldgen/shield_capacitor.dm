@@ -18,11 +18,11 @@
 	use_power = USE_POWER_OFF //doesn't use APC power
 	var/charge_rate = 100000	//100 kW
 	var/tmp/obj/machinery/shield_gen/owned_gen
-	interact_offline = TRUE
 
 /// Charges from the cable underneath while bolted down (it parks once full or with nothing to draw).
 // The generator this capacitor feeds (two-sided with its capacitors list).
 CAPABILITIES(/obj/machinery/shield_capacitor)
+	configure(machine_interaction_config(interact_offline = TRUE))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(anchored), wakes_on = list(nameof(anchored)))
 	links(/obj/machinery/shield_capacitor::owned_gen, /obj/machinery/shield_gen::capacitors, b_many = TRUE)
 	climb()
