@@ -65,6 +65,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	op("void_toggle_helmet_verb", menu(), label("Toggle Helmet"), needs(carried(), req_is(nameof(hood), TRUE, because = MSG(void/no_helmet))), then(PROC_REF(void_toggle_helmet_verb)))
 	op("voidsuit_remove_component", tool(TOOL_SCREWDRIVER), label("Remove component"), needs(req_actor_kind(/mob/living), req_not_worn(SLOT_ID_SUIT, because = MSG(void/worn)), req(PROC_REF(has_removable_component), because = MSG(void/nothing_installed))), asks(/datum/prompt/choice, fields = list("question" = "What component would you like to remove?", "title" = "Remove Component", "choices" = computed(PROC_REF(removable_components)), "timeout" = 0), step = "component"), then(PROC_REF(remove_component)))
 	op("void_eject_tank_verb", menu(), label("Eject Voidsuit Tank/Cooler"), needs(carried(), any_of(req_is(nameof(tank), TRUE, because = MSG(void/nothing_to_eject)), req_is(nameof(cooler), TRUE, because = MSG(void/nothing_to_eject)))), then(PROC_REF(void_eject_tank_verb)))
+	owns_one(nameof(boots), starts = nameof(boots), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(tank), starts = nameof(tank), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(cooler), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/clothing/suit/space/void/examine(mob/user)
 	. = ..()
@@ -463,11 +466,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/autolok)
 /obj/item/clothing/suit/space/void
 	can_breach = 0
 
-/obj/item/clothing/suit/space/void/ownership()
-	. = ..()
-	. += owns(nameof(boots), policy = OWN_CONTAINED, starts = nameof(boots))
-	. += owns(nameof(tank), policy = OWN_CONTAINED, starts = nameof(tank))
-	. += owns(nameof(cooler), policy = OWN_CONTAINED)
 
 /obj/item/clothing/head/helmet/space/void/heck/draw(datum/look/look)
 	..()

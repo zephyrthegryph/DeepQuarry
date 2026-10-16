@@ -20,6 +20,7 @@
 
 CAPABILITIES(/obj/mecha/medical/odysseus)
 	owns_one(nameof(hud), starts = /obj/item/clothing/glasses/hud/health/mech)
+	owns_one(nameof(hud), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/mecha/medical/odysseus/moved_inside(mob/living/carbon/human/H as mob)
 	if(..())
@@ -120,6 +121,3 @@ TYPE_TABLE(/obj/mecha/medical/odysseus/loaded, mecha_starting_equipment, list( \
 /obj/mecha/medical/odysseus/
 	minimum_penetration = 0
 
-/obj/mecha/medical/odysseus/ownership()
-	. = ..()
-	. += owns(nameof(hud), policy = OWN_CONTAINED)

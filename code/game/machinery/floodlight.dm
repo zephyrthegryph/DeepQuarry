@@ -23,6 +23,7 @@ CAPABILITIES(/obj/machinery/floodlight)
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("floodlight_silicon_use", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(floodlight_silicon_use)))
 	rotatable()
+	owns_one(nameof(cell), starts = /obj/item/cell, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/floodlight/proc/appearance_battery()
 	return (open && cell) ? 1 : 0
@@ -159,6 +160,3 @@ CAPABILITIES(/obj/machinery/floodlight)
 /obj/machinery/floodlight/step_start_condition()
 	return on
 
-/obj/machinery/floodlight/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell)

@@ -19,9 +19,6 @@
 	var/underslung = FALSE
 
 // Loaded grenades sit in the launcher's contents; the chambered one is a view (chambered).
-/obj/item/gun/launcher/grenade/ownership()
-	. = ..()
-	. += owns(nameof(grenades), policy = OWN_CONTAINED, is_list = TRUE)
 
 //revolves the magazine, allowing players to choose between multiple grenade types
 /obj/item/gun/launcher/grenade/proc/pump(mob/user)
@@ -91,6 +88,7 @@
 CAPABILITIES(/obj/item/gun/launcher/grenade)
 	configure(item_combat(force = 10))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	owns_many(nameof(grenades), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attack_hand.
 /obj/item/gun/launcher/grenade/proc/interaction_hand(datum/act/op/A)

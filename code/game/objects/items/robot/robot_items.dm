@@ -67,9 +67,8 @@
 	icon_state = "healthhud"
 	icon = 'icons/inventory/eyes/item.dmi'
 
-/obj/item/borg/sight/hud/med/ownership()
-	. = ..()
-	. += owns(nameof(hud), policy = OWN_CONTAINED, starts = /obj/item/clothing/glasses/hud/health)
+CAPABILITIES(/obj/item/borg/sight/hud/med)
+	owns_one(nameof(hud), starts = /obj/item/clothing/glasses/hud/health, on_destroy = ON_DESTROY_CONTAINED)
 
 
 /obj/item/borg/sight/hud/sec
@@ -77,10 +76,8 @@
 	icon_state = "securityhud"
 	icon = 'icons/inventory/eyes/item.dmi'
 
-/obj/item/borg/sight/hud/sec/ownership()
-	. = ..()
-	. += owns(nameof(hud), policy = OWN_CONTAINED, starts = /obj/item/clothing/glasses/hud/security)
+CAPABILITIES(/obj/item/borg/sight/hud/sec)
+	owns_one(nameof(hud), starts = /obj/item/clothing/glasses/hud/security, on_destroy = ON_DESTROY_CONTAINED)
 
-/obj/item/borg/sight/hud/ownership()
-	. = ..()
-	. += owns(nameof(hud), policy = OWN_CONTAINED)
+CAPABILITIES(/obj/item/borg/sight/hud)
+	owns_one(nameof(hud), on_destroy = ON_DESTROY_CONTAINED)

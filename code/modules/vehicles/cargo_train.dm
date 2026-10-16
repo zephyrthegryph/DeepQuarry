@@ -79,6 +79,8 @@ CAPABILITIES(/obj/vehicle/train/engine)
 	op("engine_start_engine", menu(), label("Start engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), FALSE, because = MSG(vehicle/already_running))), then(PROC_REF(engine_start_engine)))
 	op("engine_stop_engine", menu(), label("Stop engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), TRUE, because = MSG(vehicle/already_stopped))), then(PROC_REF(engine_stop_engine)))
 	op("engine_remove_key", menu(), label("Remove key"), needs(req_on_holder_turf(), req_capable(), req(PROC_REF(pred_engine_has_key_holds))), then(PROC_REF(engine_remove_key)))
+	owns_one(nameof(key), starts = nameof(key_type), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(cell), starts = /obj/item/cell/high, on_destroy = ON_DESTROY_CONTAINED)
 
 /// Requirement (was REQ pred_engine_has_key): the legacy check answers TRUE to pass.
 /obj/vehicle/train/engine/proc/pred_engine_has_key_holds(datum/act/op/A)
@@ -523,10 +525,6 @@ CAPABILITIES(/obj/vehicle/train/trolley_tank)
 		look.overlay(look_overlay_image(icon, "[drawn_state]_r_[percent]", color = reagents.get_color(), dir = NORTH))
 	look.overlay(look_overlay_image(icon, "[drawn_state]_c", color = paint_color, dir = NORTH))
 
-/obj/vehicle/train/engine/ownership()
-	. = ..()
-	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
-	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
 /obj/vehicle/train/engine/proc/pred_engine_has_key(mob/actor, atom/target, obj/item/held)

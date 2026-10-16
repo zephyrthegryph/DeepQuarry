@@ -337,11 +337,9 @@ CAPABILITIES(/obj/item/clothing/gloves)
 	owns_one(nameof(gloves), /obj/item/clothing/gloves)
 	owns_one(nameof(ring), /obj/item/clothing/accessory)
 	owns_one(nameof(special_attack), /datum/unarmed_attack, starts = nameof(special_attack_type))
+	owns_one(nameof(contents), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(cell), on_destroy = ON_DESTROY_CONTAINED)
 
-/obj/item/clothing/gloves/ownership()
-	. = ..()
-	. += owns(nameof(contents), policy = OWN_SPILL)
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
 
 // Called just before an attack_hand(), in mob/UnarmedAttack()
 /obj/item/clothing/gloves/proc/Touch(atom/A, proximity, stance = I_HURT, mob/user)
@@ -1345,9 +1343,6 @@ CAPABILITIES(/obj/item/clothing/under)
 CAPABILITIES(/obj/item/clothing/under/rank)
 	rolls(nameof(sensor_mode), pick_one(list(0, 1, 2, 3)))
 
-/obj/item/clothing/ownership()
-	. = ..()
-	. += owns(nameof(contents), policy = OWN_SPILL)
 // Attached accessories are part of the garment: deleted with it, not spilled
 // (dq_lifecycle_spill_declared skips owned children held in contents).
 

@@ -716,9 +716,7 @@ CAPABILITIES(/mob/living/bot)
 	op("bot_item", item(/obj/item), then(PROC_REF(bot_interaction_item)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
-/mob/living/bot/ownership()
-	. = ..()
-	. += owns(nameof(paicard), policy = OWN_CONTAINED)
+	owns_one(nameof(paicard), on_destroy = ON_DESTROY_CONTAINED)
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.

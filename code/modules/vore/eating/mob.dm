@@ -39,9 +39,6 @@
 	EXPIRY_DECLARE(last_move_time) //For movement smoothing
 
 
-/mob/ownership()
-	. = ..()
-	. += owns(nameof(soulgem), policy = OWN_CONTAINED)
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.

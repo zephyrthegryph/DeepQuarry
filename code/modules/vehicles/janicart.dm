@@ -36,10 +36,6 @@
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
-/obj/vehicle/train/engine/janicart/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
-	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
 
 CAPABILITIES(/obj/vehicle/train/engine/janicart)
 	rolls(nameof(callme), PROC_REF(roll_callme)) // one cart in five gets a nickname
@@ -47,6 +43,8 @@ CAPABILITIES(/obj/vehicle/train/engine/janicart)
 	op("janicart_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction janicart item"), then(PROC_REF(interaction_janicart_item)))
 	op("janicart_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction janicart hand"), then(PROC_REF(interaction_janicart_hand)))
 	op("janicart_toggle_brush", menu(), label("Toggle brushes"), needs(req_on_holder_turf(), req_capable()), then(PROC_REF(janicart_toggle_brush)))
+	owns_one(nameof(cell), starts = /obj/item/cell/high, on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(key), starts = nameof(key_type), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/vehicle/train/engine/janicart/Initialize(mapload)
 	. = ..()

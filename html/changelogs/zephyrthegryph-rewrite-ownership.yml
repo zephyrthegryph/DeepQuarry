@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The ownership() table proc is gone: each type declares what it owns in its CAPABILITIES block (owns_one, owns_many, ref_one, on_destroy = CONTAINED for a movable in its holder's contents)"

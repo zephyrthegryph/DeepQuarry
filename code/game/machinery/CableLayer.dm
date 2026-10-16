@@ -25,6 +25,7 @@ CAPABILITIES(/obj/machinery/cablelayer)
 		then(PROC_REF(cable_length_entered)))
 	op("cablelayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(toggle_ready))), then(PROC_REF(interaction_toggle)))
 	ref_one(nameof(last_piece), /obj/structure/cable)
+	owns_one(nameof(cable), starts = PROC_REF(make_cable), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/cablelayer/proc/interaction_load(datum/act/op/A)
 	var/mob/user = A.actor
@@ -137,9 +138,6 @@ MSG_DEF_SELF(cablelayer/no_cable, "There's no more cable on the reel.")
 	rel_set(src, nameof(last_piece), NC)
 	return 1
 
-/obj/machinery/cablelayer/ownership()
-	. = ..()
-	. += owns(nameof(cable), policy = OWN_CONTAINED, starts = PROC_REF(make_cable))
 
 /// last piece (a relation view: it reads null once the target is deleted).
 /obj/machinery/cablelayer/proc/last_piece() as /obj/structure/cable

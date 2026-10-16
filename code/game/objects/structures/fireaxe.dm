@@ -31,6 +31,7 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 	op("tk", tk(), label("Interaction tk"), then(PROC_REF(interaction_tk)))
 	op("toggle_openness_effect", menu(), label("Open/Close"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), needs(req_adjacent(), req_capable()), then(PROC_REF(toggle_openness_effect)))
 	op("remove_fire_axe_effect", menu(), label("Remove Fire Axe"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), needs(req_adjacent(), req_capable()), then(PROC_REF(remove_fire_axe_effect)))
+	owns_one(nameof(fireaxe), starts = nameof(fireaxe_type), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/structure/fireaxecabinet/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -212,6 +213,3 @@ MSG_DEF_SELF(fireaxecabinet/resetting, span_warning("Resetting circuitry..."))
 /obj/structure/fireaxecabinet/empty
 	fireaxe_type = null
 
-/obj/structure/fireaxecabinet/ownership()
-	. = ..()
-	. += owns(nameof(fireaxe), policy = OWN_CONTAINED, starts = nameof(fireaxe_type))

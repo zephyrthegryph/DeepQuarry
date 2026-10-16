@@ -105,6 +105,7 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	op("dna_scanner_interaction_drag", item(/atom/movable), priority(OP_PRIORITY_DEFAULT - 1), gesture(GESTURE_DRAG), label("Put inside"), then(PROC_REF(dna_scanner_interaction_drag)))
 	op("dna_scannernew_eject_effect", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject DNA Scanner"), needs(req_adjacent(), req_capable()), then(PROC_REF(dna_scannernew_eject_effect)))
 	op("dna_scannernew_move_inside_effect", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Enter DNA Scanner"), needs(req_adjacent(), req_capable()), then(PROC_REF(dna_scannernew_move_inside_effect)))
+	owns_one(nameof(beaker), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/dna_scannernew/on_destroy(force)
 	eject_occupant()
@@ -387,6 +388,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	op("wipeDisk", ui_act("wipeDisk"), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_wipedisk)))
 	op("ejectDisk", ui_act("ejectDisk"), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_ejectdisk)))
 	op("dna_console_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT + 1), label("Use"), then(PROC_REF(dna_console_interaction_item)))
+	owns_one(nameof(disk), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/computer/scan_consolenew/proc/dna_console_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -929,12 +931,6 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 
 /////////////////////////// DNA MACHINES
 
-/obj/machinery/dna_scannernew/ownership()
-	. = ..()
-	. += owns(nameof(beaker), policy = OWN_CONTAINED)
-/obj/machinery/computer/scan_consolenew/ownership()
-	. = ..()
-	. += owns(nameof(disk), policy = OWN_CONTAINED)
 
 /// connected: a relation view, null once the scanner is deleted.
 /obj/machinery/computer/scan_consolenew/proc/connected() as /obj/machinery/dna_scannernew
