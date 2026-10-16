@@ -7,17 +7,17 @@
 //
 //   Airway      airway_obstruction  choking / aspirated vomit / facial trauma
 //               airway_edema        allergy / inhalation burns
-//               BF_AIRWAY falls with severity and closes (0) at the complete
+//               STAT_AIRWAY falls with severity and closes (0) at the complete
 //               threshold. Cure: TREAT_AIRWAY (Heimlich, airway kit),
 //               TREAT_VASOPRESSOR (adrenaline / inaprovaline) for swelling.
 //
 //   Breathing   respiratory_arrest  opioid OD, brain herniation, deep hypoxia:
-//                                   BF_RESP_DRIVE 0 while apneic. A bag-valve
+//                                   STAT_RESP_DRIVE 0 while apneic. A bag-valve
 //                                   mask or rescue breaths add a drive SUPPORT,
 //                                   which can't push past a closed airway.
 //               pneumothorax        air trapped in the chest (chest pierce, a
-//                                   perforated lung): BF_LUNG_MECHANICS, and in
-//                                   tension BF_PUMP too. TREAT_DECOMPRESSION
+//                                   perforated lung): STAT_LUNG_MECHANICS, and in
+//                                   tension STAT_PUMP too. TREAT_DECOMPRESSION
 //                                   (needle, chest tube) vents it; a leaking lung
 //                                   perforation re-fills it until surgery.
 //
@@ -25,7 +25,7 @@
 //                                   sinus (settling) / tachy (perfusing, unstable)
 //                                   / VF (no output, shockable) / asystole
 //                                   (no output, NOT shockable). The rhythm's
-//                                   stage sets BF_PUMP. CPR adds a BF_PUMP
+//                                   stage sets STAT_PUMP. CPR adds a STAT_PUMP
 //                                   support; TREAT_DEFIBRILLATION converts VF /
 //                                   tachy only; TREAT_VASOPRESSOR coaxes asystole
 //                                   back toward VF.
@@ -39,7 +39,7 @@
 #define ARREST_VF_DECAY_CHANCE 2
 /// % per tick, per vasopressor level, that asystole coarsens into VF.
 #define ARREST_VASOPRESSOR_CONVERSION 20
-/// Severity per tick an unstable tachyarrhythmia gains, before BF_CARDIAC_IRRITABILITY.
+/// Severity per tick an unstable tachyarrhythmia gains, before STAT_CARDIAC_IRRITABILITY.
 #define CARDIAC_TACHY_PROGRESSION 0.5
 /// Respiratory arrest severity at or above which the patient doesn't breathe.
 #define RESP_ARREST_APNEA_THRESHOLD 40
@@ -80,11 +80,9 @@
 	return 1 - 0.5 * severity / complete_threshold
 
 /// The airway's patency is a factor the physiology reads.
-/datum/affliction/airway/accumulate_factors(list/acc)
-	acc = ..()
-	var/static/alist/scratch = alist(BF_AIRWAY = 1)
-	scratch[BF_AIRWAY] = patency()
-	return body_factor_accumulate(acc, scratch, 1)
+/datum/affliction/airway/hold_factors(mob/living/L)
+	..()
+	hold_table(L, src, alist(STAT_AIRWAY = patency()), 1, 1, "patency")
 
 /// Something lodged in the airway: food, vomit, blood, a broken jaw.
 /datum/affliction/airway_obstruction
@@ -103,7 +101,7 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	factors = alist(BF_ACTION_BLOCKS = ACTION_BLOCK_SPEECH, BF_HEART_RATE = 15)
+	factors = alist(STAT_ACTION_BLOCKS = ACTION_BLOCK_SPEECH, STAT_HEART_RATE = 15)
 	spontaneous_emotes = list("cough", "gasp")
 	spontaneous_emote_prob = 8
 
@@ -126,7 +124,7 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	factors = alist(BF_HEART_RATE = 20, BF_BP_SYSTOLIC = -15)
+	factors = alist(STAT_HEART_RATE = 20, STAT_BP_SYSTOLIC = -15)
 	spontaneous_emotes = list("cough", "gasp")
 	spontaneous_emote_prob = 5
 
@@ -136,7 +134,7 @@
 /datum/affliction/respiratory_arrest
 	systemic_singleton = TRUE // C9
 	continuous_factors = TRUE // C21: the breathing drive follows severity
-	factors = alist(BF_HEART_RATE = 10)
+	factors = alist(STAT_HEART_RATE = 10)
 	name = "respiratory arrest"
 	category = "Respiratory"
 	clinical_description = "The drive to breathe has failed — an opioid overdose, brain herniation or profound hypoxia. The heart may still beat, but no breaths are taken. Someone must breathe for the patient: a bag-valve mask, or rescue breaths during CPR. The drive returns once its cause is treated."
@@ -165,11 +163,9 @@
 	return severity >= RESP_ARREST_APNEA_THRESHOLD
 
 /// The drive to breathe is a factor the physiology reads: none while apneic.
-/datum/affliction/respiratory_arrest/accumulate_factors(list/acc)
-	acc = ..()
-	var/static/alist/scratch = alist(BF_RESP_DRIVE = 1)
-	scratch[BF_RESP_DRIVE] = is_apneic() ? 0 : 1 - severity / AFFLICTION_SEVERITY_TERMINAL
-	return body_factor_accumulate(acc, scratch, 1)
+/datum/affliction/respiratory_arrest/hold_factors(mob/living/L)
+	..()
+	hold_table(L, src, alist(STAT_RESP_DRIVE = is_apneic() ? 0 : 1 - severity / AFFLICTION_SEVERITY_TERMINAL), 1, 1, "drive")
 
 /// Is something still suppressing the drive to breathe?
 /datum/affliction/respiratory_arrest/proc/is_sustained()
@@ -228,7 +224,7 @@ TYPE_TABLE(/datum/affliction/pneumothorax, affliction_stages, list( \
 		), \
 		"min_symptoms" = 1, \
 		"max_symptoms" = 3, \
-		"factors" = alist(BF_SLOWDOWN = 0.5, BF_LUNG_MECHANICS = 0.7, BF_RESP_RATE = 6), \
+		"factors" = alist(STAT_SLOWDOWN = 0.5, STAT_LUNG_MECHANICS = 0.7, STAT_RESP_RATE = 6), \
 	), \
 	"Tension" = list( \
 		"name" = "tension pneumothorax", \
@@ -241,7 +237,7 @@ TYPE_TABLE(/datum/affliction/pneumothorax, affliction_stages, list( \
 		), \
 		"min_symptoms" = 2, \
 		"max_symptoms" = 4, \
-		"factors" = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -20, BF_HEART_RATE = 25, BF_BP_SYSTOLIC = -25, BF_RESP_RATE = 12, BF_LUNG_MECHANICS = 0.25, BF_PUMP = 0.6), \
+		"factors" = alist(STAT_SLOWDOWN = 1.5, STAT_ACCURACY = -20, STAT_HEART_RATE = 25, STAT_BP_SYSTOLIC = -25, STAT_RESP_RATE = 12, STAT_LUNG_MECHANICS = 0.25, STAT_PUMP = 0.6), \
 		"spontaneous_emotes" = list("gasp", "wince"), \
 		"spontaneous_emote_prob" = 6, \
 	), \
@@ -326,7 +322,7 @@ TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
 		"min_symptoms" = 2, \
 		"max_symptoms" = 3, \
 		"consciousness_at_max" = 0, \
-		"factors" = alist(BF_HEART_RATE = 55, BF_BP_SYSTOLIC = -15, BF_PUMP = 0.85), \
+		"factors" = alist(STAT_HEART_RATE = 55, STAT_BP_SYSTOLIC = -15, STAT_PUMP = 0.85), \
 	), \
 	"VF" = list( \
 		"name" = "ventricular fibrillation", \
@@ -339,7 +335,7 @@ TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
 		"min_symptoms" = 2, \
 		"max_symptoms" = 3, \
 		"consciousness_at_max" = 200, \
-		"factors" = alist(BF_PUMP = 0), \
+		"factors" = alist(STAT_PUMP = 0), \
 	), \
 	"Asystole" = list( \
 		"name" = "asystole", \
@@ -352,7 +348,7 @@ TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
 		"min_symptoms" = 2, \
 		"max_symptoms" = 3, \
 		"consciousness_at_max" = 200, \
-		"factors" = alist(BF_PUMP = 0), \
+		"factors" = alist(STAT_PUMP = 0), \
 	), \
 ))
 
@@ -377,7 +373,7 @@ TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
 
 /// Is someone doing chest compressions (a cardiac-output support)?
 /datum/affliction/cardiac_arrhythmia/proc/is_receiving_compressions()
-	return body?.is_supported(BF_PUMP)
+	return body?.is_supported(STAT_PUMP)
 
 /// Move to `new_rhythm`, resetting its severity and progression.
 /datum/affliction/cardiac_arrhythmia/proc/set_rhythm(new_rhythm)
@@ -443,7 +439,7 @@ TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
 /datum/affliction/cardiac_arrhythmia/tick()
 	// An unstable rhythm degenerates faster in an irritable (hypoxic) heart.
 	if(rhythm == CARDIAC_RHYTHM_TACHY && body)
-		progression_rate = CARDIAC_TACHY_PROGRESSION * body.get_factor(BF_CARDIAC_IRRITABILITY)
+		progression_rate = CARDIAC_TACHY_PROGRESSION * body.owner.cardiac_irritability
 	if(!is_perfusing())
 		arrest_tick()
 		if(QDELETED(src) || !body)
@@ -456,12 +452,12 @@ TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
 
 /// One tick without cardiac output: the rhythm drifts (VF fades to asystole,
 /// slower under CPR; vasopressors coarsen asystole to VF). The lost output
-/// itself is BF_PUMP 0, which the physiology turns into oxygen debt.
+/// itself is STAT_PUMP 0, which the physiology turns into oxygen debt.
 /datum/affliction/cardiac_arrhythmia/proc/arrest_tick()
 	var/compressed = is_receiving_compressions()
 	switch(rhythm)
 		if(CARDIAC_RHYTHM_VF)
-			var/decay = (compressed ? ARREST_VF_DECAY_CHANCE / 2 : ARREST_VF_DECAY_CHANCE) * (body ? body.get_factor(BF_CARDIAC_IRRITABILITY) : 1)
+			var/decay = (compressed ? ARREST_VF_DECAY_CHANCE / 2 : ARREST_VF_DECAY_CHANCE) * (body ? body.owner.cardiac_irritability : 1)
 			if(prob(decay))
 				set_rhythm(CARDIAC_RHYTHM_ASYSTOLE)
 		if(CARDIAC_RHYTHM_ASYSTOLE)

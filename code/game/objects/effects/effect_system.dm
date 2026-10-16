@@ -233,7 +233,7 @@ CAPABILITIES(/obj/effect/effect/smoke/illumination)
 		return 0
 	if(L.needs_to_breathe())
 		// Choking smoke in the lungs: gas exchange falters while it's breathed.
-		L.body?.add_restriction(src, BF_GAS_EXCHANGE, 0.5, 4 SECONDS)
+		L.body?.add_restriction(src, STAT_GAS_EXCHANGE, 0.5, 4 SECONDS)
 		if(prob(25))
 			L.emote("cough")
 

@@ -8,7 +8,7 @@
 		/datum/affliction_symptom/fever_sensation = 30
 	)
 	max_symptoms = 3
-	factors = alist(BF_TEMPERATURE = 1.5, BF_ACCURACY = -10)
+	factors = alist(STAT_TEMPERATURE = 1.5, STAT_ACCURACY = -10)
 	name = "Brainrot"
 	medical_name = "Encephalonecrosis"
 	max_stages = 4

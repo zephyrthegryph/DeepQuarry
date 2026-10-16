@@ -10,6 +10,6 @@
 		see_invisible = initial(see_invisible)
 
 	sight = initial(sight)
-	sight |= factor(BF_SIGHT_FLAGS)
+	sight |= src.sight_flags
 
 	return

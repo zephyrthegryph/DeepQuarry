@@ -1383,6 +1383,17 @@ banned = [
   "loot_merge_specs = configure(loot(...)) merges in the entry engine (code/library/loot/loot_entries.dm)",
   "MAP_RESOLVER = map_resolver(GLOBAL_PROC_REF(x), vars = list(...)) in the type's CAPABILITIES block (code/library/maps/map_resolver_entry.dm)",
   "MAP_RESOLVER_VARS = vars = list(...) of the map_resolver() entry (configure(map_resolver(vars = ...)) in a subtype)",
+  "BF_* = a body factor is a stat now (code/contracts/ids/body_stats.dm): a source's table is keyed by its STAT_ id (alist(STAT_SLOWDOWN = 1)) and a read is the var of the stat on the mob (L.slowdown); doc/rewrite/proposals/stat_layer.md",
+  "factor(* = read the factor as the var of its stat on the holder (L.slowdown, code/contracts/ids/body_stats.dm); the call is gone (doc/rewrite/proposals/stat_layer.md)",
+  "body_factor_accumulate = the stat engine composes a source's table: hold_table() (code/engine/stats/tables.dm)",
+  "body_factor_finalize = a factor stat's bounds are declared with the STAT (bounds = list(lo, hi))",
+  "body_factor_baseline = a factor's baseline is the base of its STAT",
+  "recompute_factors = refresh_factors() (code/modules/body/factors.dm); the body keeps no private fold",
+  "get_factor = read the factor stat var on the mob (L.slowdown)",
+  "factors_stale = the factors are never stale: they settle when a source changes",
+  "factors_equal = hold_tables_end() reports which stats moved",
+  "factor_dep = a derived read of a stat var is nameof(stat) like any tracked var",
+  "derived_factors_recomputed = a factor stat publishes like any stat var",
 ]
 
 # Generated scaffolding is derived build output; source dependencies remain checked.

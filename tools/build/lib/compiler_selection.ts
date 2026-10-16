@@ -11,6 +11,7 @@ import type { ByondCompilationResult, DreamMakerOptions, PreparedDreamMaker } fr
 import { conventionalOutput, createNativeRequestDirectory, parseCompileResult, readNativeResult, withCompiledOutput, type CompiledOutput, type NativePairOutput } from './native_pair';
 
 import { bindCompilerInvocation, type CompilerInvocation } from './compiler_invocation';
+import { enterDaemonScope } from './dmbc_daemons';
 import { byondProvenance, nativeProvenance, observedExecutable } from './compiler_provenance';
 
 type CompilerMode = 'byond' | 'native' | 'shadow';
@@ -193,6 +194,8 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
   const receipt = path.join(owned, 'result.json');
   args.push('--compile-result-file', receipt);
   if (!artifacts && process.env.DQ_NATIVE_OUTPUT_STORE) args.push('--output-store', path.resolve(process.env.DQ_NATIVE_OUTPUT_STORE));
+  // One resident daemon per worktree (DMB_DAEMON_NAMESPACE overrides) and at most DQ_DMBC_MAX_DAEMONS machine-wide.
+  const scope = nativeNoDaemon() ? undefined : enterDaemonScope(nativeRoot(), executable);
   try {
     const result = await execute(executable, args, { throw: false, ...(invocation ? { cwd: invocation.root } : {}) });
     const currentIdentity = observedExecutable(executable);
@@ -207,6 +210,7 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
     }
     catch (error) { throw new NativeResultError(`Native compile succeeded without an authenticated pair result: ${error}`); }
   } finally {
+    scope?.release();
     // Housekeeping cannot turn a successful native publication into a second
     // compiler invocation. Preserve/report a cleanup limitation instead.
     try {

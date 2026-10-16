@@ -5,7 +5,7 @@
 	name = "Haste"
 	desc = "Allows you to move faster on average than baseline."
 	cost = 4
-	factors = alist(BF_SLOWDOWN = -0.5)
+	factors = alist(STAT_SLOWDOWN = -0.5)
 
 	// Traitgenes Replaces /datum/trait/positive/superpower_increaserun, made into a genetrait
 	is_genetrait = TRUE
@@ -166,7 +166,7 @@
 	name = "Brute Resist, Minor"
 	desc = "Adds 10% resistance to brute damage sources."
 	cost = 1
-	factors = alist(BF_INCOMING_PHYSICAL = 0.9)
+	factors = alist(STAT_INCOMING_PHYSICAL = 0.9)
 	custom_only = FALSE
 	banned_species = list(SPECIES_TESHARI, SPECIES_UNATHI, SPECIES_XENOCHIMERA, SPECIES_VASILISSAN, SPECIES_WEREBEAST) //Most of these are already this resistant or stronger, or it'd be way too much of a boost for tesh.
 	excludes = list(/datum/trait/positive/brute_resist, /datum/trait/positive/brute_resist_plus)
@@ -175,19 +175,19 @@
 	name = "Brute Resist"
 	desc = "Adds 20% resistance to brute damage sources."
 	cost = 2
-	factors = alist(BF_INCOMING_PHYSICAL = 0.8)
+	factors = alist(STAT_INCOMING_PHYSICAL = 0.8)
 
 /datum/trait/positive/minor_burn_resist
 	name = "Burn Resist, Minor"
 	desc = "Adds 10% resistance to burn damage sources."
 	cost = 1
-	factors = alist(BF_INCOMING_THERMAL = 0.9)
+	factors = alist(STAT_INCOMING_THERMAL = 0.9)
 
 /datum/trait/positive/burn_resist
 	name = "Burn Resist"
 	desc = "Adds 20% resistance to burn damage sources."
 	cost = 2
-	factors = alist(BF_INCOMING_THERMAL = 0.8)
+	factors = alist(STAT_INCOMING_THERMAL = 0.8)
 
 
 
@@ -714,7 +714,7 @@
 	// Heart is in overdrive
 	// Bleed more with higher blood pressure.
 	// Metabolism in overdrive
-	factors = alist(BF_METABOLISM = 2.5, BF_BLEEDING = 1.25, BF_SLOWDOWN = -11, BF_ACCURACY = 25, BF_DISPERSION = -25, BF_EVASION = 20, BF_ATTACK_SPEED = 0.5, BF_MELEE_DAMAGE = 2, BF_INCOMING_ALL = 0.8, BF_DEMAND = 0.1, BF_DISABLE_DURATION = 0, BF_ENDURANCE_FLAT = 25, BF_PAIN_IMMUNITY = 1, BF_PULSE_SHIFT = 2)
+	factors = alist(STAT_METABOLISM_MULT = 2.5, STAT_BLEEDING = 1.25, STAT_SLOWDOWN = -11, STAT_ACCURACY = 25, STAT_DISPERSION = -25, STAT_EVASION = 20, STAT_ATTACK_SPEED = 0.5, STAT_MELEE_DAMAGE = 2, STAT_INCOMING_ALL = 0.8, STAT_DEMAND = 0.1, STAT_DISABLE_DURATION = 0, STAT_ENDURANCE_FLAT = 25, STAT_PAIN_IMMUNITY = 1, STAT_PULSE_SHIFT = 2)
 
 	// Per-application state: list(original duration, the disabling values it suppressed).
 
@@ -748,7 +748,7 @@
 	on_created_text = span_danger("Your body aches and groans, forcing you into a period of rest as it recovers from the intense adrenaline rush.")
 	on_expired_text = span_notice("You finally recover from your adrenaline rush, your body returning to its normal state.")
 
-	factors = alist(BF_METABOLISM = 0.5, BF_BLEEDING = 0.8, BF_SLOWDOWN = 2, BF_ACCURACY = -25, BF_DISPERSION = 25, BF_EVASION = -20, BF_ATTACK_SPEED = 2, BF_MELEE_DAMAGE = 0.75, BF_DEMAND = 1.25, BF_INCOMING_PAIN = 1.75, BF_DISABLE_DURATION = 1.35, BF_PULSE_SHIFT = 0.5)
+	factors = alist(STAT_METABOLISM_MULT = 0.5, STAT_BLEEDING = 0.8, STAT_SLOWDOWN = 2, STAT_ACCURACY = -25, STAT_DISPERSION = 25, STAT_EVASION = -20, STAT_ATTACK_SPEED = 2, STAT_MELEE_DAMAGE = 0.75, STAT_DEMAND = 1.25, STAT_INCOMING_PAIN = 1.75, STAT_DISABLE_DURATION = 1.35, STAT_PULSE_SHIFT = 0.5)
 
 /datum/trait/positive/insect_sting
 	name = "Insect Sting"
@@ -763,14 +763,14 @@
 	name = "Burn Resist, Major"
 	desc = "Adds 40% resistance to burn damage sources."
 	cost = 4 // Exact Opposite of Burn Weakness Major, except Weakness Major is 50% incoming, this is -40% incoming.
-	factors = alist(BF_INCOMING_THERMAL = 0.6)
+	factors = alist(STAT_INCOMING_THERMAL = 0.6)
 	excludes = list(/datum/trait/positive/burn_resist, /datum/trait/positive/minor_burn_resist)
 
 /datum/trait/positive/brute_resist_plus // Equivalent to Brute Weakness Major, cannot be taken at the same time.
 	name = "Brute Resist, Major"
 	desc = "Adds 40% resistance to brute damage sources."
 	cost = 4 // Exact Opposite of Brute Weakness Major, except Weakness Major is 50% incoming, this is -40% incoming.
-	factors = alist(BF_INCOMING_PHYSICAL = 0.6)
+	factors = alist(STAT_INCOMING_PHYSICAL = 0.6)
 	excludes = list(/datum/trait/positive/brute_resist, /datum/trait/positive/minor_brute_resist)
 
 /datum/trait/positive/endurance_very_high
@@ -800,21 +800,21 @@
 	desc = "You are slightly more resistant to pain than most, and experience 10% less pain from all sources."
 	cost = 1
 	custom_only = FALSE
-	factors = alist(BF_INCOMING_PAIN = 0.9)
+	factors = alist(STAT_INCOMING_PAIN = 0.9)
 
 /datum/trait/positive/pain_tolerance
 	name = "Pain Tolerance"
 	desc = "You are noticeably more resistant to pain than most, and experience 20% less pain from all sources."
 	cost = 2
 	custom_only = FALSE
-	factors = alist(BF_INCOMING_PAIN = 0.8)
+	factors = alist(STAT_INCOMING_PAIN = 0.8)
 
 /datum/trait/positive/pain_tolerance_advanced // High Pain Intolerance is 50% incoming pain, but this is 40% reduced incoming pain.
 	name = "Pain Tolerance, Major"
 	desc = "You are extremely resistant to pain sources, and experience 40% less pain from all sources."
 	cost = 3 // Equivalent to High Pain Intolerance, but less pain resisted for balance reasons.
 	custom_only = FALSE
-	factors = alist(BF_INCOMING_PAIN = 0.6)
+	factors = alist(STAT_INCOMING_PAIN = 0.6)
 
 /datum/trait/positive/improved_biocompat
 	name = "Improved Biocompatibility"

@@ -15,7 +15,7 @@
 	// Disables only last 25% as long.
 	// 50% incoming damage.
 	// Become a bigger target.
-	factors = alist(BF_SLOWDOWN = 2, BF_EVASION = -20, BF_INCOMING_ALL = 0.5, BF_DISABLE_DURATION = 0.25, BF_ICON_SCALE_X = 1.2, BF_ICON_SCALE_Y = 1.2, BF_PAIN_IMMUNITY = 1)
+	factors = alist(STAT_SLOWDOWN = 2, STAT_EVASION = -20, STAT_INCOMING_ALL = 0.5, STAT_DISABLE_DURATION = 0.25, STAT_SCALE_MULT_X = 1.2, STAT_SCALE_MULT_Y = 1.2, STAT_PAIN_IMMUNITY = 1)
 
 
 /datum/body_effect/ambush
@@ -30,7 +30,7 @@
 	// 10% incoming damage. You're not all there.
 	// 0% outgoing damage. Be prepared.
 	// Luckily, not being all there means you're actually hard to hit with a gun.
-	factors = alist(BF_EVASION = 50, BF_MELEE_DAMAGE = 0, BF_INCOMING_ALL = 0.1, BF_PAIN_IMMUNITY = 1)
+	factors = alist(STAT_EVASION = 50, STAT_MELEE_DAMAGE = 0, STAT_INCOMING_ALL = 0.1, STAT_PAIN_IMMUNITY = 1)
 
 
 /datum/body_effect/ambush/on_start(mob/living/L)
@@ -51,7 +51,7 @@
 
 	// 34% less healing.
 	// 22% longer disables.
-	factors = alist(BF_DISABLE_DURATION = 1.22, BF_HEALING_RECEIVED = 0.66)
+	factors = alist(STAT_DISABLE_DURATION = 1.22, STAT_HEALING_RECEIVED = 0.66)
 
 
 ////////// Auras

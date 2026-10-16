@@ -197,7 +197,7 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 		return OP_REFUSED
 	act_message(user, null, MSG_SELF(span_notice("You give [GM.name] a swirlie!")), MSG_OTHERS(span_danger("%U% gives [GM.name] a swirlie!")), MSG_BLIND("You hear a toilet flushing."))
 	if(!GM.internal)
-		GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
+		GM.body?.add_restriction(src, STAT_AIRWAY, 0, 5 SECONDS) // a faceful of water
 	return OP_OK
 
 

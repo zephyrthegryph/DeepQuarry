@@ -7,7 +7,7 @@
 	num_alternate_languages = 3
 	// slow, they're plants. Not as slow as full diona.
 	// slow metabolism
-	factor_baseline = alist(BF_METABOLISM = 0.75, BF_SLOWDOWN = 1, BF_INCOMING_THERMAL = 1.5)
+	factor_baseline = alist(STAT_METABOLISM_MULT = 0.75, STAT_SLOWDOWN = 1, STAT_INCOMING_THERMAL = 1.5)
 	total_health = 100 //standard
 	//nothing special (brute)
 	//plants don't like fire (burn)

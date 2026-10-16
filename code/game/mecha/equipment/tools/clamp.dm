@@ -137,14 +137,14 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp)
 		if(M.stat>1) return
 		if(chassis?.pilot_is_harming() || istype(chassis?.slot_item(MECHA_SLOT_PILOT),/mob/living/carbon/brain)) //No tactile feedback for brains
 			M.injure(INJURY_BLUNT, dam_force, null, chassis)
-			M.body?.add_restriction(chassis, BF_LUNG_MECHANICS, 0.2, 6 SECONDS) // the chest can't expand in the grip
+			M.body?.add_restriction(chassis, STAT_LUNG_MECHANICS, 0.2, 6 SECONDS) // the chest can't expand in the grip
 			occupant_message(span_warning("You squeeze [target] with [src.name]. Something cracks."))
 			play_sfx(src, SFX_FRACTURE, volume = 5) //CRACK
 			chassis.visible_message(span_warning("[chassis] squeezes [target]."))
 		else if(chassis?.pilot_is_disarming() && enable_special)
 			play_sfx(src, SFX_MECHA_HYDRAULIC)
 			M.injure(INJURY_BLUNT, dam_force/2, null, chassis)
-			M.body?.add_restriction(chassis, BF_LUNG_MECHANICS, 0.4, 4 SECONDS) // winded by the slam
+			M.body?.add_restriction(chassis, STAT_LUNG_MECHANICS, 0.4, 4 SECONDS) // winded by the slam
 			occupant_message(span_warning("You slam [target] with [src.name]. Something cracks."))
 			play_sfx(src, SFX_FRACTURE, volume = 3) //CRACK 2
 			chassis.visible_message(span_warning("[chassis] slams [target]."))

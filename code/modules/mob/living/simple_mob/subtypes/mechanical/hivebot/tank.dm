@@ -28,7 +28,7 @@
 	stacks = MODIFIER_STACK_EXTEND
 	mob_overlay_state = "electricity"
 
-	factors = alist(BF_SLOWDOWN = 1, BF_ACCURACY = -40, BF_DISPERSION = 1, BF_EVASION = -20, BF_ATTACK_SPEED = 0.6, BF_MELEE_DAMAGE = 0.7)
+	factors = alist(STAT_SLOWDOWN = 1, STAT_ACCURACY = -40, STAT_DISPERSION = 1, STAT_EVASION = -20, STAT_ATTACK_SPEED = 0.6, STAT_MELEE_DAMAGE = 0.7)
 
 // This one is tanky by having a massive amount of health.
 /mob/living/simple_mob/mechanical/hivebot/tank/meatshield

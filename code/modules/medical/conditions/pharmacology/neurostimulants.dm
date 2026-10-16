@@ -25,7 +25,7 @@
 	caused_by_chems_organ = O_BRAIN
 
 /datum/affliction/chem_side_effect/hyperzine_palpitations
-	factors = alist(BF_HEART_RATE = 20, BF_BP_SYSTOLIC = 8)
+	factors = alist(STAT_HEART_RATE = 20, STAT_BP_SYSTOLIC = 8)
 	name = "stimulant tachycardia"
 	clinical_description = "Hyperzine is a potent stimulant. Sub-overdose levels accelerate the heart and raise blood pressure in a noticeable way. Resolves as the chem clears."
 	symptom_pool = list(
@@ -50,7 +50,7 @@
 	organ_damage_threshold = 0
 	organ_damage_type = INJURY_TOXIN
 	organ_damage_per_tick = 1.0
-	factors = alist(BF_SLOWDOWN = -1, BF_ACCURACY = 20, BF_ANALGESIA = 15, BF_HEART_RATE = 40, BF_BP_SYSTOLIC = 20)
+	factors = alist(STAT_SLOWDOWN = -1, STAT_ACCURACY = 20, STAT_ANALGESIA = 15, STAT_HEART_RATE = 40, STAT_BP_SYSTOLIC = 20)
 	caused_by_chems = list(REAGENT_ID_HYPERZINE = 20)
 	caused_by_chems_organ = O_HEART
 
@@ -59,18 +59,18 @@
 		list(list(
 			/datum/affliction_symptom/palpitations = 70,
 			/datum/affliction_symptom/jittery      = 60,
-		), 1, 2, list("organ_damage_per_tick" = 0.3, "factors" = alist(BF_SLOWDOWN = -0.4, BF_ACCURACY = 8, BF_ANALGESIA = 5, BF_HEART_RATE = 15, BF_BP_SYSTOLIC = 8))),
+		), 1, 2, list("organ_damage_per_tick" = 0.3, "factors" = alist(STAT_SLOWDOWN = -0.4, STAT_ACCURACY = 8, STAT_ANALGESIA = 5, STAT_HEART_RATE = 15, STAT_BP_SYSTOLIC = 8))),
 		list(list(
 			/datum/affliction_symptom/palpitations     = 90,
 			/datum/affliction_symptom/jittery          = 80,
 			/datum/affliction_symptom/sharp_chest_pain = 50,
-		), 2, 3, list("organ_damage_per_tick" = 0.7, "factors" = alist(BF_SLOWDOWN = -0.8, BF_ACCURACY = 15, BF_ANALGESIA = 10, BF_HEART_RATE = 28, BF_BP_SYSTOLIC = 14))),
+		), 2, 3, list("organ_damage_per_tick" = 0.7, "factors" = alist(STAT_SLOWDOWN = -0.8, STAT_ACCURACY = 15, STAT_ANALGESIA = 10, STAT_HEART_RATE = 28, STAT_BP_SYSTOLIC = 14))),
 		list(list(
 			/datum/affliction_symptom/palpitations        = 100,
 			/datum/affliction_symptom/jittery             = 90,
 			/datum/affliction_symptom/sharp_chest_pain    = 80,
 			/datum/affliction_symptom/chest_pain_crushing = 50,
-		), 3, 4, list("organ_damage_per_tick" = 1.4, "factors" = alist(BF_SLOWDOWN = -1.2, BF_ACCURACY = 25, BF_ANALGESIA = 20, BF_HEART_RATE = 45, BF_BP_SYSTOLIC = 25), "always_spawns" = list(/datum/affliction/heart_damage, /datum/affliction/chem_interaction/tachycardia_chem))),
+		), 3, 4, list("organ_damage_per_tick" = 1.4, "factors" = alist(STAT_SLOWDOWN = -1.2, STAT_ACCURACY = 25, STAT_ANALGESIA = 20, STAT_HEART_RATE = 45, STAT_BP_SYSTOLIC = 25), "always_spawns" = list(/datum/affliction/heart_damage, /datum/affliction/chem_interaction/tachycardia_chem))),
 	)
 
 /datum/affliction/overdose/alkysine
@@ -123,7 +123,7 @@
 	organ_damage_type = "internal"
 	organ_damage_per_tick = 0.4
 	organ_damage_targets = list(O_BRAIN)
-	factors = alist(BF_NEURAL_REPAIR = 0.3)
+	factors = alist(STAT_NEURAL_REPAIR = 0.3)
 	caused_by_chems = list(REAGENT_ID_SYNAPTIZINE = 20)
 	caused_by_chems_organ = O_BRAIN
 
@@ -132,18 +132,18 @@
 		list(list(
 			/datum/affliction_symptom/jittery      = 70,
 			/datum/affliction_symptom/palpitations = 50,
-		), 1, 2, list("organ_damage_per_tick" = 0.15, "organ_damage_type" = "internal", "organ_damage_targets" = list(O_BRAIN), "factors" = alist(BF_NEURAL_REPAIR = 0.1))),
+		), 1, 2, list("organ_damage_per_tick" = 0.15, "organ_damage_type" = "internal", "organ_damage_targets" = list(O_BRAIN), "factors" = alist(STAT_NEURAL_REPAIR = 0.1))),
 		list(list(
 			/datum/affliction_symptom/jittery      = 85,
 			/datum/affliction_symptom/palpitations = 70,
 			/datum/affliction_symptom/confusion    = 50,
-		), 2, 3, list("organ_damage_per_tick" = 0.3, "organ_damage_type" = "internal", "organ_damage_targets" = list(O_BRAIN), "factors" = alist(BF_NEURAL_REPAIR = 0.22))),
+		), 2, 3, list("organ_damage_per_tick" = 0.3, "organ_damage_type" = "internal", "organ_damage_targets" = list(O_BRAIN), "factors" = alist(STAT_NEURAL_REPAIR = 0.22))),
 		list(list(
 			/datum/affliction_symptom/jittery          = 100,
 			/datum/affliction_symptom/palpitations     = 85,
 			/datum/affliction_symptom/confusion        = 70,
 			/datum/affliction_symptom/sharp_chest_pain = 50,
-		), 3, 4, list("organ_damage_per_tick" = 0.5, "organ_damage_type" = "internal", "organ_damage_targets" = list(O_BRAIN), "factors" = alist(BF_NEURAL_REPAIR = 0.35), "always_spawns" = list(/datum/affliction/chem_interaction/tachycardia_chem))),
+		), 3, 4, list("organ_damage_per_tick" = 0.5, "organ_damage_type" = "internal", "organ_damage_targets" = list(O_BRAIN), "factors" = alist(STAT_NEURAL_REPAIR = 0.35), "always_spawns" = list(/datum/affliction/chem_interaction/tachycardia_chem))),
 	)
 
 /datum/affliction/overdose/earthsblood
