@@ -1347,6 +1347,7 @@
 #include "dq_mob_configuration_home_tests.dm"
 #include "dq_base_vars_sorting_tests.dm"
 #include "dq_base_configuration_static_tests.dm"
+#include "dq_internal_storage_init_regression.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

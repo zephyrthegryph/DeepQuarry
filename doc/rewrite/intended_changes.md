@@ -4926,3 +4926,9 @@ The shared type-local native roller repair (dcaf665db3, carried here with identi
 ## Prone density stat consistency (BASE repair)
 
 The existing living update_canmove wrote raw density FALSE while prone and reset the type default while standing, bypassing the composed density stat. A background staleness sweep in BASE gate8a reported cached0/fresh1 just before interim_mining_conflict_data began. The proven DECL e37ef75e92 repair now applies here: prone posture contributes FALSE with its own conditional stat source. Recovery removes that contribution, retaining independent density holds and naturally non-dense subtype defaults. No mining state or snapshot is changed.
+
+## Internal-storage admission and HUD expiry (BASE verification repair)
+
+The typed internal-storage owner link introduced upstream in 5b0a2f09d0 ran before rejecting non-item locations. Native keeps_if() now rejects turf/null owners before setup binds the same valid item and inherits its name. This reapplies the previously approved object-init repair; it fixes the actual constructor runtime rather than blessing its incomplete conversion capture.
+
+The HUD safety-refresh migration now permits refresh exactly at its saved world-time deadline, matching the original boundary. Its test stages the native deadline directly because injected kernel time does not advance world.time. No cooldown duration changes.
