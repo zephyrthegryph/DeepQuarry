@@ -17,8 +17,6 @@
 	var/sealable = TRUE
 	var/wall_mounted = 0 //never solid (You can always pass over it)
 	max_integrity = 100
-	/// Sheet metal and an air gap (containment paths, C2).
-	insulation = 0.5
 
 	var/breakout_time = 2 //2 minutes by default
 	var/breakout_sound = SFX_EFFECTS_GRILLEHIT	//Sound that plays while breaking out
@@ -62,6 +60,7 @@ MSG_DEF(closet/break_begin, "You lean on the back of %T% and start pushing the d
 // lands on its tile; an open one is cut apart with a welder; somebody shut in a sealed one breaks out after breakout_time minutes (a player-facing wait,
 // started by the Resist verb through container_resist()).
 CAPABILITIES(/obj/structure/closet)
+	configure(thermal_shell(insulation = 0.5))
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))
 	silicon_hand(adjacent = TRUE)
 	ref_many(nameof(bluespace_exit_points))

@@ -4,8 +4,6 @@
 	icon = 'icons/obj/bureaucracy.dmi' // Continues using new folder sprite, contrary to YW
 	icon_state = "folder"
 	w_class = ITEMSIZE_SMALL
-	/// Card stock: barely slows a fire (containment paths, C2).
-	insulation = 0.1
 
 // ---- Containment (C1): one pages slot for paperwork. Destroying the folder
 // destroys its pages, as before. C2: the pages are inside the cover, and a
@@ -115,6 +113,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/folder)
+	configure(thermal_shell(insulation = 0.1))
 	configure(pressure_response(pressure = 2))
 	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))

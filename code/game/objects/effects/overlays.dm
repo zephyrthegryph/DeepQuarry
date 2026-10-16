@@ -4,7 +4,6 @@
 	var/i_attached //Added for possible image attachments to objects. For hallucinations and the like.
 
 /obj/effect/overlay/beam //Not actually a projectile, just an effect.
-	lifecycle_lifetime = 1 SECOND
 	name="beam"
 	icon='icons/effects/beam.dmi'
 	icon_state="b_beam"
@@ -187,3 +186,6 @@ CAPABILITIES(/obj/effect/overlay/light_visible)
 
 CAPABILITIES(/obj/effect/overlay/light_cone)
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))
+
+CAPABILITIES(/obj/effect/overlay/beam)
+	configure(expiry_policy(delay = 1 SECOND))

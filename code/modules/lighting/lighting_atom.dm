@@ -23,6 +23,7 @@ sparse(/atom/movable, lighting_luminosity, type = num)
 	var/tmp/atom/movable/emissive_blocker/em_block
 
 CAPABILITIES(/atom/movable)
+	expiry_policy()
 	seat_policy()
 	pressure_response()
 	throwing_config()

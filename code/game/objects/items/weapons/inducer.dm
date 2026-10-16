@@ -264,9 +264,9 @@ CAPABILITIES(/obj/item/inducer)
 	maxcharge = 100
 
 	var/mob/living/carbon/human/hume
-	lifecycle_lifetime = 20 SECONDS
 
 CAPABILITIES(/obj/item/cell/standin)
+	configure(expiry_policy(delay = 20 SECONDS))
 	configure(item_worn(flags = ABSTRACT))
 	param(nameof(hume), pos = 1)
 	setup(PROC_REF(charge_from_hume))

@@ -59,6 +59,7 @@
 	var/obj/item/shield_projector/shields = null
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
+	configure(death_policy(delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 5, death_message = "suddenly breaks apart."))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow, starts_args = list(TRUE)) // follows it, lit from the start
@@ -69,7 +70,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
 	icon_dead = "droneM_dead"
 
 /mob/living/simple_mob/mechanical/combat_drone
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/combat_drone
 

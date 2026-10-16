@@ -32,7 +32,6 @@
 	var/quills = 3
 
 /mob/living/simple_mob/vox/armalis
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vox/armalis/on_death(gibbed)
 	. = ..()
@@ -154,6 +153,7 @@ CAPABILITIES(/datum/armalis_commune_review)
 	set desc = "Give voice to a psychic shriek."
 
 CAPABILITIES(/mob/living/simple_mob/vox/armalis)
+	configure(death_policy(delete_on_death = TRUE))
 	configure(mob_kind(death_message = DEATHGASP_NO_MESSAGE))
 	op("armalis_item", item(/obj/item), then(PROC_REF(armalis_interaction_item)))
 	immune_to_incapacitation()

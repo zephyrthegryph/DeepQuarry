@@ -4,12 +4,9 @@
 # Shrink-only: after a sweep, `python tools/ci/base_vars_lint.py --update`.
 base_var	code/ATMOSPHERICS/atom_flags_1.dm	@/atom::flags_1
 base_var	code/ATMOSPHERICS/environmental/LINDA_system.dm	@/atom::can_atmos_pass
-base_var	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/atom/movable::last_high_pressure_movement_air_cycle
 base_var	code/_helpers/icons.dm	@/atom::examine_icon_snapshot
 base_var	code/_onclick/hud/alert.dm	@/mob::alerts
 base_var	code/_onclick/hud/fullscreen.dm	@/mob::screens
-base_var	code/controllers/subsystems/overlays.dm	@/atom::realized_overlays
-base_var	code/controllers/subsystems/overlays.dm	@/atom::realized_underlays
 base_var	code/datums/behaviours/burning.dm	@/obj::burn_overlay
 base_var	code/datums/behaviours/burning.dm	@/obj::burn_particle_type
 base_var	code/datums/behaviours/burning.dm	@/obj::burn_fuel
@@ -17,10 +14,6 @@ base_var	code/datums/behaviours/burning.dm	@/obj::burn_cool_watch
 base_var	code/datums/behaviours/burning.dm	@/obj::burn_ended_by
 base_var	code/datums/character_identity.dm	@/mob/living::own_identity
 base_var	code/datums/character_identity.dm	@/mob/living::identity
-base_var	code/datums/lifecycle/verbs.dm	@/atom/movable::lifecycle_lifetime
-base_var	code/datums/lifecycle/verbs.dm	@/atom/movable::lifecycle_lifetime_timer
-base_var	code/datums/lifecycle/verbs.dm	@/mob/living::delete_on_death
-base_var	code/datums/properties/families/temperature_thresholds.dm	@/obj::insulation
 base_var	code/datums/reactive_icon_update.dm	@/obj::reactive_icon
 base_var	code/datums/recursive_move.dm	@/atom/movable::recursive_move
 base_var	code/datums/rules/world_adapter.dm	@/atom::rx_node
@@ -36,9 +29,7 @@ base_var	code/game/atom/_atom.dm	@/atom::throwpass
 base_var	code/game/atom/_atom.dm	@/atom::germ_level
 base_var	code/game/atom/_atom.dm	@/atom::simulated
 base_var	code/game/atom/_atom.dm	@/atom::forensic_data
-base_var	code/game/atom/_atom.dm	@/atom::last_bumped
 base_var	code/game/atom/_atom.dm	@/atom::reagents
-base_var	code/game/atom/_atom.dm	@/atom::managed_vis_overlays
 base_var	code/game/atom/_atom.dm	@/atom::atom_colours
 base_var	code/game/atom/_atom.dm	@/atom::emp_protection_flags
 base_var	code/game/atom/armor.dm	@/atom::armor_spec
@@ -341,6 +332,4 @@ base_var	code/modules/vore/eating/vorepanel.dm	@/mob::vorePanel
 base_var	code/modules/vore/resizing/resize.dm	@/mob/living::pickup_active
 base_var	code/modules/xenoarcheaology/effect_master.dm	@/atom::artifact_master
 base_var	code/modules/xenoarcheaology/finds/talking.dm	@/obj::talking_atom
-list_init	code/modules/tgui/external.dm	@/mob::tgui_open_uis
 list_init	code/modules/tgui/external.dm	@/client::tgui_windows
-list_init	code/modules/ventcrawl/ventcrawl.dm	@/mob/living::pipes_shown

@@ -31,3 +31,9 @@
 
 #define ENTRY_SEAT_POLICY "seat_policy"
 #define SEAT_POLICY_KEY "seat_policy"
+
+#define ENTRY_THERMAL_SHELL "thermal_shell"
+#define THERMAL_SHELL_KEY "thermal_shell"
+
+#define ENTRY_DEATH_POLICY "death_policy"
+#define DEATH_POLICY_KEY "death_policy"

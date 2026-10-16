@@ -1,7 +1,6 @@
 REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 
 /obj/effect/portal
-	lifecycle_lifetime = 30 SECONDS
 	name = "portal"
 	desc = "Looks unstable. Best to test it with the clown."
 	icon = 'icons/obj/stationobjs.dmi'
@@ -16,6 +15,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 	var/event = FALSE
 
 CAPABILITIES(/obj/effect/portal)
+	configure(expiry_policy(delay = 30 SECONDS))
 	ref_one(nameof(target))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("enter_portal", hand(), label("Enter"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_enter_portal)))

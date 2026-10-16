@@ -19,6 +19,7 @@
 	var/use_modern_ai = FALSE
 
 CAPABILITIES(/mob/living)
+	death_policy()
 	fire_policy()
 	voice_config()
 	butchery_config()

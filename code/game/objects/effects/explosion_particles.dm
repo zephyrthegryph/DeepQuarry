@@ -1,5 +1,4 @@
 /obj/effect/expl_particles
-	lifecycle_lifetime = 1.5 SECONDS
 	name = "explosive particles"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "explosion_particle"
@@ -28,7 +27,6 @@
 		emit_one_particle()
 
 /obj/effect/explosion
-	lifecycle_lifetime = 1 SECOND
 	name = "explosive particles"
 	icon = 'icons/effects/96x96.dmi'
 	icon_state = "explosion"
@@ -75,3 +73,9 @@
 /// Relation view: location (reads null once it is gone).
 /datum/effect/system/explosion/proc/get_location() as /turf
 	return location
+
+CAPABILITIES(/obj/effect/expl_particles)
+	configure(expiry_policy(delay = 1.5 SECONDS))
+
+CAPABILITIES(/obj/effect/explosion)
+	configure(expiry_policy(delay = 1 SECOND))

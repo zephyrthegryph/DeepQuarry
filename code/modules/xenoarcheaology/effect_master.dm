@@ -32,6 +32,7 @@
 /atom/var/datum/artifact_master/artifact_master
 
 CAPABILITIES(/atom)
+	links(LINK_END(/atom, LK_MANAGED_VIS), LINK_END(/obj/effect/overlay/vis, LK_VIS_VIEWERS), sparse = TRUE, a_many = TRUE, b_many = TRUE)
 	examine_text()
 	lighting_config()
 	damage_profile()

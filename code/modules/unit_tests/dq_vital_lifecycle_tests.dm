@@ -60,7 +60,7 @@
 
 /datum/unit_test/dq_death_final_hook_deletes_on_death/Run()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
-	M.delete_on_death = TRUE
+	TEST_ASSERT(vars_write(M, "delete_on_death", TRUE), "historical runtime alias enables native death policy")
 	var/datum/dq_vital_listener/listener = new
 	listener.watch(M)
 	M.set_stat(UNCONSCIOUS)

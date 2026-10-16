@@ -725,7 +725,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 
 //HOLOSEEDSPAWNCODE
 /mob/living/simple_mob/animal/synx/ai/pet/holo
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/on_death(gibbed)
 	..()
@@ -1002,4 +1001,5 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx)
 	return MAX_NUTRITION // spawns fed (its max_nutrition)
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/holo)
+	configure(death_policy(delete_on_death = TRUE))
 	configure(butchery_config(meat_type = TRAIT_NONE))

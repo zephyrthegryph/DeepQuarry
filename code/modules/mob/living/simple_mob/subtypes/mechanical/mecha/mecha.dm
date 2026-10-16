@@ -33,7 +33,6 @@
 
 
 /mob/living/simple_mob/mechanical/mecha
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/mecha
 
@@ -94,6 +93,7 @@
 	after(src, 1 SECOND, TYPE_PROC_REF(/atom, cut_overlay), with = list(deflect_image))
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
+	configure(death_policy(delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 	configure(mob_kind(death_message = "explodes!"))
 	op("mecha_item", item(/obj/item), then(PROC_REF(mecha_interaction_item)))

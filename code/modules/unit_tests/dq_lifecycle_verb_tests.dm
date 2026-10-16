@@ -83,7 +83,11 @@
 /// delete_on_death deletes from the death pipeline's final hook, after subtype code.
 /datum/unit_test/dq_lifecycle_delete_on_death_arms
 /datum/unit_test/dq_lifecycle_delete_on_death_arms/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.coalesce_absorbed), GLOB.coalesce_absorbed)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	scope_strain_archive()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, test_floor())
-	M.delete_on_death = TRUE
+	TEST_ASSERT(vars_write(M, "delete_on_death", TRUE), "historical runtime alias enables native death policy")
 	M.death()
 	TEST_ASSERT(QDELETED(M), "the final hook of death() should delete a dead delete_on_death mob")

@@ -116,7 +116,6 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	var/amount = 6.0
 	anchored = TRUE
 	mouse_opacity = 0
-	lifecycle_lifetime = 5 SECONDS
 
 // the pool counts a spark from when it exists until on_destroy().
 /obj/effect/effect/sparks/on_materialize()
@@ -584,7 +583,6 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental/fire)
 			)
 
 /obj/effect/effect/teleport_greyscale
-	lifecycle_lifetime = 2 SECONDS
 	name = "teleportation"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "teleport_greyscale"
@@ -715,3 +713,9 @@ CAPABILITIES(/obj/effect/effect/confetti)
 
 CAPABILITIES(/obj/effect/effect)
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))
+
+CAPABILITIES(/obj/effect/effect/sparks)
+	configure(expiry_policy(delay = 5 SECONDS))
+
+CAPABILITIES(/obj/effect/effect/teleport_greyscale)
+	configure(expiry_policy(delay = 2 SECONDS))

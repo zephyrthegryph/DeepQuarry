@@ -1,4 +1,4 @@
-/mob/living/var/list/icon/pipes_shown = list()
+/mob/living/var/list/icon/pipes_shown
 /mob/living/var/is_ventcrawling = FALSE
 
 /mob/living/proc/can_ventcrawl()
@@ -214,7 +214,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 			if(!A.pipe_image)
 				A.pipe_image = image(A, A.loc, dir = A.dir)
 				A.pipe_image.plane = PLANE_LIGHTING_ABOVE
-			pipes_shown += A.pipe_image
+			LAZYADD(pipes_shown, A.pipe_image)
 			if(client)
 				client.images += A.pipe_image
 	if(client)
@@ -228,5 +228,5 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 		client.screen -= GLOB.global_hud.centermarker
 		reset_perspective(src)
 
-	pipes_shown.len = 0
+	LAZYNULL(pipes_shown)
 

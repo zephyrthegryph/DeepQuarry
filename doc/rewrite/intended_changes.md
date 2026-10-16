@@ -4940,3 +4940,9 @@ Active optical zoom is the real reciprocal remote-view association rather than a
 ### Cult visibility continuation (base-variable retirement)
 
 `/mob/living` movement now uses its keyed native timer's pending state instead of a duplicated `updating_cult_vision` flag. Delivery still coalesces moves at the original three-second deadline and clears pending state before visibility callbacks. The continuation keeps delivery when its old container is deleted, because it still must refresh the living mob's current location. This fixes the previous permanently latched update flag. The regression deletes the real old container, checks the original deadline and actual visualnet callback, then verifies re-arming and owner-death cancellation.
+
+### Native renderer and transient stamp homes
+
+The base-variable continuation moves explicit atom `realize_overlays()` debug snapshots onto the existing renderer context. Admin inspection follows VV → `@renderer` → `realized_overlays` / `realized_underlays`; recursive mutable snapshots, image snapshots and explicit refresh behavior are retained. Opening VV does not allocate a renderer context. The system-owned visual-overlay cache keeps sole ownership; viewer rosters are borrowed reciprocal sparse links, including endpoint deletion and cogbar clear-all.
+
+Internal temporary bump timestamps and last-pressure-cycle stamps now use typed sparse owner state. They retain the World clock, strict one/six-second cutoffs, target-versus-actor identity and one-pressure-push-per-air-cycle behavior. These private physical fields are inspected through native sparse state rather than legacy base vars; no mapped/save consumer was found or removed.

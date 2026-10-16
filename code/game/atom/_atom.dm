@@ -1,3 +1,4 @@
+sparse(/atom, last_bumped, type = num)
 /**
  * The base type for nearly all physical objects in SS13
 
@@ -16,7 +17,7 @@
 	// atom_say_verb removed (no subtype ever overrode it; inlined to "says" in atom_say)
 	var/datum/forensics_crime/forensic_data
 
-	EXPIRY_TMP_DECLARE(last_bumped)
+
 
 	///Chemistry.
 	var/datum/reagents/reagents = null
@@ -30,8 +31,6 @@
 	///Overlays that should remain on top and not normally removed when using cut_overlay functions, like c4.
 	/// A list, or a single overlay when there is only one (see add_overlay()).
 	var/tmp/priority_overlays
-	///vis overlays managed by SSvis_overlays to automaticaly turn them like other overlays
-	var/tmp/list/managed_vis_overlays
 
 	// Track if we are already had initialize() called to prevent double-initialization.
 	//var/initialized = FALSE // using the atom flags
@@ -83,8 +82,7 @@
 		var/list/prio = priority_overlays
 		prio.Cut()
 	set_priority_overlays(null)
-	if (length(managed_vis_overlays))
-		rel_clear(src, nameof(managed_vis_overlays))
+	link_break(src, LK_MANAGED_VIS)
 	return ..()
 
 /// Shift this atom's surface germ count (never below 0). Organs override it

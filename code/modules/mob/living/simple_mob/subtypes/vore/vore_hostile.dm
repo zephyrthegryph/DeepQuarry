@@ -297,6 +297,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 	B.escape_stun = 3
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube)
+	configure(death_policy(delete_on_death = TRUE))
 	configure(butchery_config(meat_type = TRAIT_NONE))
 	configure(mob_movement(bump = HUMAN, swap = HEAVY, push = HEAVY))
 	rolls(nameof(color), PROC_REF(roll_color))
@@ -306,7 +307,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube)
 	return R.saturated_colour()
 
 /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/on_death(gibbed)
 	. = ..()

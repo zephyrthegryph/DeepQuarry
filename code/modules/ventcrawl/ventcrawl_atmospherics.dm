@@ -13,7 +13,7 @@
 		for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(M.client)
 				M.client.images -= pipe_image
-				M.pipes_shown -= pipe_image
+				LAZYREMOVE(M.pipes_shown, pipe_image)
 	return ..()
 
 /obj/machinery/atmospherics/Entered(atom/movable/Obj)

@@ -43,6 +43,7 @@
 	var/poison_per_bite = 5			// Amount added per injection.
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/corrupt_maint_drone)
+	configure(death_policy(delete_on_death = TRUE))
 	configure(mob_movement(hovering = FALSE))
 	configure(mob_kind(attack_cooldown = 2.5, death_message = "is smashed into pieces!"))
 	configure(mob_movement(swap = 0, push = 0))
@@ -65,7 +66,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/corrupt_maint_drone)
 
 
 /mob/living/simple_mob/mechanical/corrupt_maint_drone
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/corrupt_maint_drone/on_death(gibbed)
 	..()

@@ -163,6 +163,16 @@ CAPABILITIES(/datum/view_variables_panel)
 				"name" = field_name,
 				"value_html" = "[debug_variable(field_name, trait_fields[field_name], 0, thing_datum)]",
 			))
+		// The actual renderer context owns explicit mutable appearance snapshots.
+		// Inspecting an unused atom does not allocate renderer state.
+		if(isatom(thing_datum))
+			var/atom/rendered_atom = thing_datum
+			var/datum/cap_engine_state/renderer = cap_engine_state_of(rendered_atom)
+			if(renderer)
+				variables += list(list(
+					"name" = "@renderer",
+					"value_html" = "[debug_variable("@renderer", renderer, 0, thing_datum)]",
+				))
 	data["variables"] = variables
 
 	return data

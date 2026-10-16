@@ -50,7 +50,7 @@ CAPABILITIES(/datum/cogbar)
 /datum/cogbar/lifecycle_unbind()
 	var/mob/user = user()
 	if(user)
-		SSvis_overlays.remove_vis_overlay(user, user.managed_vis_overlays)
+		SSvis_overlays.remove_vis_overlay(user, link_list(user, LK_MANAGED_VIS))
 		user_client()?.images -= blank
 
 /// Adds the cog to the user, visible by other players

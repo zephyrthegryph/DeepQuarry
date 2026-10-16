@@ -44,6 +44,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator)
+	configure(death_policy(delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 5, death_message = "is smashed into pieces!"))
 	configure(mob_movement(swap = 0, push = 0))
@@ -53,7 +54,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator)
 	enable_swarming()
 
 /mob/living/simple_mob/mechanical/viscerator
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/viscerator/on_death(gibbed)
 	..()

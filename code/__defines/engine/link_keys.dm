@@ -49,3 +49,7 @@
 /// A tool returns to its organ on drop; this borrowed link never owns either endpoint.
 #define LK_ITEM_AUGMENT "item_augment"
 #define LK_AUGMENT_ITEMS "augment_items"
+
+/// A viewer and the system-owned vis overlays currently attached to it.
+#define LK_MANAGED_VIS "managed_vis"
+#define LK_VIS_VIEWERS "vis_viewers"

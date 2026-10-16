@@ -160,10 +160,5 @@
 	unit = PROP_UNIT_RATIO
 
 /datum/property_provider/type_var/insulation/read_initial(path)
-	var/obj/O = path
-	return initial(O.insulation)
-
-/obj
-	/// PROP_INSULATION: fraction of heat this keeps from what it holds or
-	/// covers, 0..1. Containment paths (containment/paths.dm) read it.
-	var/insulation = 0
+	// Deliberately type-only: old instance/map/VV edits never changed PROPERTY.
+	return thermal_shell_of_type(path).insulation

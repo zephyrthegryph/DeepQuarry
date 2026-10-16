@@ -5902,8 +5902,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/direction = get_dir(A, B)
 	// Large pressure difference and low resistance → move_prob clamps high.
 	P.experience_pressure_difference(500, direction)
-	TEST_ASSERT(P.last_high_pressure_movement_air_cycle == SSair.times_fired, \
-		"unanchored item did not register a pressure push (last_cycle=[P.last_high_pressure_movement_air_cycle], expected [SSair.times_fired])")
+	TEST_ASSERT(sparse_get_or(P, last_high_pressure_movement_air_cycle, 0) == SSair.times_fired, \
+		"unanchored item did not register a pressure push (last_cycle=[sparse_get_or(P, last_high_pressure_movement_air_cycle, 0)], expected [SSair.times_fired])")
 
 	qdel(P)
 

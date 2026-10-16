@@ -30,6 +30,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/blob/spore)
+	configure(death_policy(delete_on_death = TRUE))
 	configure(voice_config(can_pain_emote = FALSE))
 	ref_one(nameof(infested), /mob/living/carbon/human)
 	configure(mob_movement(hovering = TRUE))
@@ -63,7 +64,6 @@ CAPABILITIES(/mob/living/simple_mob/blob/spore)
 	..()
 
 /mob/living/simple_mob/blob/spore
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/blob/spore/on_death(gibbed)
 	. = ..()

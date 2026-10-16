@@ -52,3 +52,9 @@ The continuation now removes 39 rows, 386 to 347, with generation and all ratche
 
 The continuation removes 44 rows, 386 to 342, with generation and all ratchets passing and zero additions. Five cross-cutting buckling fields now live in the native seat policy. All 122 concrete defaults, teleport's type-default reset, bonfire stake mutation and robot-belly setup remain at their original use sites. Historical map/VV field names route to copy-on-write policy values; native buckle slots remain independent. Six real consumer fixtures are included. Final DreamChecker and runtime verification are pending.
 
+
+## Current source checkpoint: 55 native-home removals
+
+The continuation now reduces the baseline from 386 to 331 (55 removals, zero additions). Generation and all ratchets pass. The six policy/list/timer additions preserve type-only thermal insulation, lazy UI and ventcrawl lists, owner-bound expiry, and death-finalization ordering. Native borrowed links now hold the system-owned visual-overlay viewer roster; explicit mutable renderer debug snapshots live on the actual renderer context and remain inspectable through VV. Internal World-clock bump timestamps and air-cycle stamps use typed sparse owner state rather than base-type fields.
+
+Focused regressions cover these real production paths, including overlay ownership/eviction, renderer inspection/lifetime, actual pressure movement and the exact bump cutoffs. An undefined test-only pressure constant was caught by DreamChecker; the redundant duplicated formula was removed, retaining the actual-movement assertion. A resumable-cache test now drains an existing sweep before staging its fresh expiration case. Final DreamChecker reports zero diagnostics; runtime verification and a lane-ready stamp remain pending. No result from another branch is claimed here.

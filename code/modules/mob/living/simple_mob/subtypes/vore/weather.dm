@@ -133,7 +133,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 	var/leech = 50
 
 /mob/living/simple_mob/vore/boss_jellyfish
-	delete_on_death = TRUE
 
 /// Attacks still to chain after a warp. A field: one chained attack every 4 s while it is non-zero.
 /mob/living/simple_mob/vore/boss_jellyfish/var/chain_number = 0
@@ -141,6 +140,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 /mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
 
 CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
+	configure(death_policy(delete_on_death = TRUE))
 	ref_one(nameof(chain_target), /atom)
 	configure(light_glow(color = "#14ff20"))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))

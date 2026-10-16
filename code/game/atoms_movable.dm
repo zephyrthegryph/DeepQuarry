@@ -416,7 +416,7 @@
 	if(QDELETED(A))
 		return
 	A.Bumped(src)
-	EXPIRY_STAMP(A, last_bumped, CLOCK_WORLD)
+	sparse_set_or(A, last_bumped, EXPIRY_NOW(A, CLOCK_WORLD), 0)
 
 /atom/movable/proc/forceMove(atom/destination, direction, movetime)
 	. = FALSE

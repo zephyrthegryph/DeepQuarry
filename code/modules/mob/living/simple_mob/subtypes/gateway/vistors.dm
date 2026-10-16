@@ -267,7 +267,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistororange)
 	spread_range = 5
 
 /mob/living/simple_mob/mechanical/mecha/vistor
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/mecha/vistor/on_death(gibbed)
 	..()
@@ -279,3 +278,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistororange)
 	desc = "The ruins of some unfortunate forgoten mecha type. Perhaps something is salvageable."
 	icon_state = "mime-broken"
 
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor)
+	configure(death_policy(delete_on_death = TRUE))

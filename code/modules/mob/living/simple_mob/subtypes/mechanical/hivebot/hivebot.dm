@@ -20,7 +20,6 @@
 
 
 /mob/living/simple_mob/mechanical/hivebot
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/hivebot/on_death(gibbed)
 	..()
@@ -56,3 +55,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/hivebot, mob_organ_hit_zones, list("centr
 	have been used to be some sort of... security, or defensive machinery, at a guess, but their original/true purpose is \
 	unclear. Whatever the matter, they're hostile and will engage anything they see, shooting to kill."
 	value = CATALOGUER_REWARD_HARD
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot)
+	configure(death_policy(delete_on_death = TRUE))

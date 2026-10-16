@@ -134,7 +134,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/slug)
 	density = 0
 	can_buckle = 1
 
-	lifecycle_lifetime = 5 MINUTES //How long until we cease existing.
 	var/mob/living/simple_mob/vore/slug/owner_slug = null
 	var/base_escape_time = 1 MINUTE //How long does it take to struggle free? Affected by the victim's size_multiplier.
 
@@ -206,6 +205,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/slug)
 		my_slug.ai_brain.lose_target() // Instant loss of target — sim mob giving up if prey escapes.
 
 CAPABILITIES(/obj/effect/slug_glue)
+	configure(expiry_policy(delay = 5 MINUTES)) //How long until we cease existing.
 	configure(seat_policy(lying = TRUE))
 	ref_one(nameof(owner_slug), /mob/living/simple_mob/vore/slug)
 	keeps_if(PROC_REF(not_in_water))

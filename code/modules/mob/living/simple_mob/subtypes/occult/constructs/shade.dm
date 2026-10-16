@@ -32,6 +32,7 @@
 	loot_list = list(/obj/item/ectoplasm = 100)
 
 CAPABILITIES(/mob/living/simple_mob/construct/shade)
+	configure(death_policy(delete_on_death = TRUE))
 	op("shade_item", item(/obj/item), then(PROC_REF(shade_interaction_item)))
 
 /// Old attackby: soulstone capture.
@@ -46,7 +47,6 @@ CAPABILITIES(/mob/living/simple_mob/construct/shade)
 	return OP_DECLINE
 
 /mob/living/simple_mob/construct/shade
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/construct/shade/on_death(gibbed)
 	..()

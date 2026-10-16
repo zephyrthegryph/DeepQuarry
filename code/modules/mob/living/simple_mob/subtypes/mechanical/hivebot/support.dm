@@ -96,7 +96,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/hivebotsupport, mob_organ_hit_zones, list
 	water_resist = 1 //Harry lives under the sea!
 
 /mob/living/simple_mob/mechanical/hivebot/support/harry
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/hivebot/support/harry/on_death(gibbed)
 	..()
@@ -119,3 +118,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/hivebotsupport, mob_organ_hit_zones, list
 	ballistic weapon. It also appears to have supply deploying bays, and internal fabs to repair and buff their allies' special capabilities. \
 	Other than that, it has similar yellowish color to regular hivebots."
 	value = CATALOGUER_REWARD_HARD
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/support/harry)
+	configure(death_policy(delete_on_death = TRUE))

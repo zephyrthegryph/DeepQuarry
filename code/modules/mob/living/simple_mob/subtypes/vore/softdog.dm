@@ -270,7 +270,6 @@ GLOBAL_VAR_INIT(woof_current, 0)
 	..()
 
 /mob/living/simple_mob/vore/woof/hostile/aweful
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/woof/hostile/aweful/on_death(gibbed)
 	. = ..()
@@ -294,3 +293,6 @@ GLOBAL_VAR_INIT(woof_current, 0)
 
 	projectiletype = /obj/item/projectile/awoo_missile
 	projectilesound = SFX_VOICE_LONG_AWOO
+
+CAPABILITIES(/mob/living/simple_mob/vore/woof/hostile/aweful)
+	configure(death_policy(delete_on_death = TRUE))

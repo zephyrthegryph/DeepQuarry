@@ -29,7 +29,6 @@ CAPABILITIES(/obj/effect/decal/cleanable/ash)
 	return TRUE
 
 /obj/effect/decal/cleanable/greenglow
-	lifecycle_lifetime = 2 MINUTES
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
@@ -37,6 +36,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/ash)
 
 /// Radiates only while a client is near (the proximity tracker): otherwise the every() parks until one comes near.
 CAPABILITIES(/obj/effect/decal/cleanable/greenglow)
+	configure(expiry_policy(delay = 2 MINUTES))
 	configure(light_glow(range = 1))
 	every(2 SECONDS, then(PROC_REF(greenglow_step)), when = STAT_RELEVANCE)
 

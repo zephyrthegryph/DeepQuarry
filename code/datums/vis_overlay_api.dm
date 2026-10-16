@@ -27,14 +27,14 @@
 	if(!isatom(thing))
 		return overlay
 
-	rel_add(thing, nameof(thing.managed_vis_overlays), overlay)
+	link_make(thing, LK_MANAGED_VIS, overlay)
 	return overlay
 
 /datum/system/vis_overlays/proc/remove_vis_overlay(atom/movable/thing, list/overlays)
 	thing.vis_contents -= overlays
 	if(!isatom(thing))
 		return
-	// `overlays` may be a single overlay, or a list (even thing.managed_vis_overlays itself).
+	// `overlays` may be a single overlay, or a list (even the complete viewer roster).
 	var/list/removing = islist(overlays) ? overlays.Copy() : list(overlays)
 	for(var/obj/effect/overlay/vis/overlay as anything in removing)
-		rel_remove(thing, nameof(thing.managed_vis_overlays), overlay)
+		link_break(thing, LK_MANAGED_VIS, overlay)

@@ -320,14 +320,13 @@ CAPABILITIES(/turf/open)
 	// ALLOW(spatial): per-active-turf atmos tick, raw loop avoids a list copy
 	for(var/thing in src)
 		moving_atom = thing
-		if (moving_atom.last_high_pressure_movement_air_cycle < SSair.times_fired)
+		if (sparse_get_or(moving_atom, last_high_pressure_movement_air_cycle, 0) < SSair.times_fired)
 			if (!moving_atom.anchored && !moving_atom?.pulled_by_mob())
 				moving_atom.experience_pressure_difference(pressure_difference, pressure_direction)
 			else
 
-/atom/movable
-	///How much delta pressure is needed for us to move
-	var/tmp/last_high_pressure_movement_air_cycle = 0
+/// Last native SSair cycle in which this owner was pressure-pushed. Not a time deadline.
+sparse(/atom/movable, last_high_pressure_movement_air_cycle, type = num)
 
 /atom/movable/proc/experience_pressure_difference(pressure_difference, direction, pressure_resistance_prob_delta = 0)
 	var/const/PROBABILITY_OFFSET = 25
@@ -340,7 +339,7 @@ CAPABILITIES(/turf/open)
 	move_prob += pressure_resistance_prob_delta
 	if (move_prob > PROBABILITY_OFFSET && prob(move_prob) && (response.force != INFINITY) && (!anchored && (max_force >= (response.force * MOVE_FORCE_PUSH_RATIO))) || (anchored && (max_force >= (response.force * MOVE_FORCE_FORCEPUSH_RATIO))))
 		step(src, direction)
-		last_high_pressure_movement_air_cycle = SSair.times_fired
+		sparse_set_or(src, last_high_pressure_movement_air_cycle, SSair.times_fired, 0)
 
 ///////////////////////////EXCITED GROUPS/////////////////////////////
 // The /datum/excited_group type and its self_breakdown/dismantle/merge_groups/

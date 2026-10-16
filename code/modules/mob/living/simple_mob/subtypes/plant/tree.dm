@@ -31,6 +31,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/tree)
+	configure(death_policy(delete_on_death = TRUE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat))
 	configure(voice_config(can_pain_emote = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -44,7 +45,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/tree)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 
 /mob/living/simple_mob/animal/space/tree
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/animal/space/tree/on_death(gibbed)
 	..()

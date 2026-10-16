@@ -121,6 +121,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	var/knockdown_chance = 10 //Stubbing your toe on furniture hurts.
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
+	configure(death_policy(delete_on_death = TRUE))
 	ref_one(nameof(real_crate), /obj/structure/closet/crate)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
@@ -145,7 +146,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 	return FALSE
 
 /mob/living/simple_mob/vore/aggressive/mimic
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/aggressive/mimic/on_death(gibbed)
 	..()
@@ -312,7 +312,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 	return FALSE
 
 /mob/living/simple_mob/vore/aggressive/mimic/closet
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/aggressive/mimic/closet/on_death(gibbed)
 	..()
@@ -499,3 +498,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor/tile)
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor/plating)
 	configure(mob_kind(attack_cooldown = 10))
 
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/closet)
+	configure(death_policy(delete_on_death = TRUE))

@@ -32,6 +32,9 @@
 	var/list/look_watchers
 	/// How many times look_published() announced this atom's look (only counted while someone composes it): a draw that composes it keeps the number in its change key.
 	var/look_serial = 0
+	/// Explicit realize_overlays() debug snapshots, not live look dependencies.
+	var/list/realized_overlays
+	var/list/realized_underlays
 
 /// A's engine record, or null when the engine has kept nothing for it.
 /proc/cap_engine_state_of(atom/A)

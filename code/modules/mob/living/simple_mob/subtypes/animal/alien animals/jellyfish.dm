@@ -104,6 +104,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
+	configure(death_policy(delete_on_death = TRUE))
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/jellyfishcore))
 	ref_one(nameof(budded_from), /mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -121,7 +122,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 		parent.faction = faction
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/on_death(gibbed)
 	. = ..()

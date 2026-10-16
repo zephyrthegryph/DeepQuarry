@@ -402,6 +402,10 @@
 #include "dq_actor_adapter_tests.dm"
 #include "dq_telekinetic_reach_policy_tests.dm"
 #include "dq_seat_policy_tests.dm"
+#include "dq_thermal_shell_tests.dm"
+#include "dq_lazy_ui_pipe_tests.dm"
+#include "dq_expiry_policy_tests.dm"
+#include "dq_death_policy_home_tests.dm"
 #include "dq_combat_mode_tests.dm"
 #include "dq_interact_cleanup_tests.dm"
 #include "dq_input_tests.dm"
@@ -1369,6 +1373,9 @@
 #include "dq_surgery_surface_policy_tests.dm"
 #include "dq_tesla_sparse_tests.dm"
 #include "dq_examine_text_home_tests.dm"
+#include "dq_managed_vis_sparse_links_tests.dm"
+#include "dq_renderer_debug_snapshots_tests.dm"
+#include "dq_sparse_bump_pressure_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
