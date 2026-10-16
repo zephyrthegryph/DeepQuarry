@@ -12,7 +12,6 @@
 /// Skin germs creep up to the ambient level, on a rewake. Runs even while transforming or in
 /// nullspace (it followed ..() in the old carbon Life()).
 /mob/living/carbon
-	fire_heats_body = TRUE
 	// footsteps (footstep() in its CAPABILITIES): a shoe's, the custom_footstep a carbon starts with
 	/// Biological time (clock_now(CLOCK_BIO), ds) of the germs stage's last roll, or null
 	/// before the first. Not 0: a biology clock can legitimately read 0 (stopped from the start).

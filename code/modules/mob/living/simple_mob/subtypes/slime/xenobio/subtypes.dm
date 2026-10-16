@@ -175,9 +175,6 @@
 			/mob/living/simple_mob/slime/xenobio/ruby
 		)
 
-/mob/living/simple_mob/slime/xenobio/dark_purple
-	fire_reaction = FIRE_REACTION_TRIGGER
-	fire_trigger_proc = TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio/dark_purple, ignite)
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/proc/ignite()
 	act_message(src, null, null, MSG_OTHERS(span_critical("%U% erupts in an inferno!")))
@@ -187,6 +184,7 @@
 	destroyed(src, null, BURN)
 
 CAPABILITIES(/mob/living/simple_mob/slime/xenobio/dark_purple)
+	configure(fire_policy(reaction = FIRE_REACTION_TRIGGER, trigger_proc = TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio/dark_purple, ignite)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_ignite))))
 	op("darkpurple_slime_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(darkpurple_slime_interaction_item)))
 
@@ -634,10 +632,6 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/ruby)
 		/mob/living/simple_mob/slime/xenobio/red
 	)
 
-/mob/living/simple_mob/slime/xenobio/oil
-	fire_reaction = FIRE_REACTION_TRIGGER
-	fire_trigger_proc = TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio/oil, explode)
-	fire_trigger_verb = "exploded"
 
 /mob/living/simple_mob/slime/xenobio/oil/proc/explode()
 	if(stat != DEAD)
@@ -668,6 +662,7 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/ruby)
 	return ..()
 
 CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
+	configure(fire_policy(reaction = FIRE_REACTION_TRIGGER, trigger_proc = TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio/oil, explode), trigger_verb = "exploded"))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_explode))))
 	op("oilslime_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(oilslime_interaction_item)))
 

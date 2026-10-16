@@ -118,3 +118,6 @@
 
 #define ENTRY_MACHINE_HEAT "machine_heat"
 #define MACHINE_HEAT_KEY "machine_heat"
+
+#define ENTRY_FIRE_POLICY "fire_policy"
+#define FIRE_POLICY_KEY "fire_policy"
