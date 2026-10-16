@@ -14,6 +14,8 @@
 
 
 /datum/unit_test/dq_base_vars_behaviours/light_source/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 
 	var/turf/start = run_loc_floor_bottom_left
 
@@ -40,6 +42,8 @@
 
 
 /datum/unit_test/dq_base_vars_behaviours/omen_merge/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 
@@ -70,6 +74,8 @@
 
 
 /datum/unit_test/dq_base_vars_behaviours/footstep_overrides/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 
 	var/mob/living/carbon/human/first = allocate(/mob/living/carbon/human)
 
@@ -98,6 +104,8 @@
 
 
 /datum/unit_test/dq_base_vars_behaviours/slosh_counter/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 
@@ -116,6 +124,8 @@
 
 
 /datum/unit_test/dq_base_vars_behaviours/sale_profile/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 
 	var/obj/item/paper/manifest/M = allocate(/obj/item/paper/manifest)
 
@@ -138,6 +148,8 @@
 
 
 /datum/unit_test/dq_base_vars_behaviours/burning_watch_lifetime/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	var/obj/item/paper/P = allocate(/obj/item/paper)
 	TEST_ASSERT(P.start_burning(fire_particles = null), "the actual flammable paper ignites")
 	var/datum/native_watch/heat/first_watch = P.burn_cool_watch
@@ -152,6 +164,8 @@
 	TEST_ASSERT(QDELETED(second_watch), "destroying the burning holder deletes its cooling watch")
 
 /datum/unit_test/dq_base_vars_behaviours/radiation_countdown/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 
 	test_driver_begin()
 

@@ -13,6 +13,8 @@
 
 /datum/unit_test/dq_atom_transform_sparse/partial_updates
 /datum/unit_test/dq_atom_transform_sparse/partial_updates/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	var/obj/A = allocate(/obj, test_floor())
 	var/obj/B = allocate(/obj, test_floor())
 	TEST_ASSERT_NULL(sparse_get(A, tf_scale_x), "an untouched scale is null")
@@ -37,6 +39,8 @@
 
 /datum/unit_test/dq_atom_transform_sparse/zero_and_clear
 /datum/unit_test/dq_atom_transform_sparse/zero_and_clear/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	var/obj/A = allocate(/obj, test_floor())
 	A.SetTransform(scale_x = 0, scale_y = 2, rotation = 0, offset_x = 0, offset_y = 0)
 	TEST_ASSERT(sparse_has(A, tf_scale_x), "explicit zero remains present rather than becoming unset")
@@ -56,6 +60,8 @@
 
 /datum/unit_test/dq_atom_transform_sparse/composition
 /datum/unit_test/dq_atom_transform_sparse/composition/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	var/obj/A = allocate(/obj, test_floor())
 	var/matrix/extra = matrix()
 	extra.Translate(11, 13)

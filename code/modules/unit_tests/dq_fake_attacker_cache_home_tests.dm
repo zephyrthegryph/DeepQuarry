@@ -1,6 +1,8 @@
 // Image-cache allocation is lazy without changing the actual cardinal images.
 /datum/unit_test/dq_fake_attacker_cache_home
 /datum/unit_test/dq_fake_attacker_cache_home/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	var/turf/T = test_floor()
 	var/obj/effect/fake_attacker/F = allocate(/obj/effect/fake_attacker, T)
 	var/list/initial_cache = F.vars["dir_images"]

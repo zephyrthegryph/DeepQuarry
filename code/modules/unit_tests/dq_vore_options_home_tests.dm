@@ -74,6 +74,7 @@
 
 /datum/unit_test/dq_voice_sound_list_home
 /datum/unit_test/dq_voice_sound_list_home/Run()
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/mob/living/simple_mob/e0_fixture/M = allocate(/mob/living/simple_mob/e0_fixture, test_floor())
 	var/mob/living/simple_mob/e0_fixture/other = allocate(/mob/living/simple_mob/e0_fixture, test_floor())
