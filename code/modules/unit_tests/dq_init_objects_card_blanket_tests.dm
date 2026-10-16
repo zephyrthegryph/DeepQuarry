@@ -1,0 +1,38 @@
+// Real actor binding and placed-object constructor effects after their existing parent chains.
+/datum/unit_test/dq_init_objects_card_blanket
+
+/datum/unit_test/dq_init_objects_card_blanket/Run()
+	dq_init_objects_fixture_scope()
+	var/turf/T = test_floor()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	var/obj/item/card/id/synthetic/borg/C = allocate(/obj/item/card/id/synthetic/borg, R)
+	TEST_ASSERT_EQUAL(C.robot_owner(), R, "the actual card constructor binds its exact robot location")
+	TEST_ASSERT_EQUAL(C.registered_name, R.braintype, "the actual card constructor copies its real robot's brain description")
+	var/obj/item/card/id/synthetic/borg/unbound = allocate(/obj/item/card/id/synthetic/borg, T)
+	TEST_ASSERT_NULL(unbound.robot_owner(), "a card created on the floor does not gain a fabricated robot owner")
+	var/obj/machinery/container = allocate(/obj/machinery, T)
+	C.forceMove(container)
+	TEST_ASSERT_EQUAL(C.loc, container, "the existing attempted-move observer still allows placement inside actual machinery")
+	qdel(R)
+	TEST_ASSERT_NULL(C.robot_owner(), "deleting the borrowed robot clears the real card reference")
+	TEST_ASSERT(!QDELETED(C), "a card outside the robot is not newly owned or deleted by that reference")
+
+/datum/unit_test/dq_init_objects_card_blanket/blanket
+
+/datum/unit_test/dq_init_objects_card_blanket/blanket/Run()
+	dq_init_objects_fixture_scope()
+	var/turf/T = get_step(run_loc_floor_bottom_left, NORTHEAST)
+	for(var/dir in GLOB.alldirs)
+		var/turf/neighbor = get_step(T, dir)
+		TEST_ASSERT(neighbor && !neighbor.density, "the real blanket fixture supplies eight unobstructed neighboring turfs")
+	var/obj/structure/picnic_blanket_deployed/for_mapping_use/B = allocate(/obj/structure/picnic_blanket_deployed/for_mapping_use, T)
+	TEST_ASSERT_EQUAL(length(B.attached_blankets), length(GLOB.alldirs), "the real mapping-use constructor unfolds into every unobstructed neighboring direction")
+	var/list/sides = B.attached_blankets.Copy()
+	for(var/obj/structure/picnic_blanket_deployed/S as anything in sides)
+		TEST_ASSERT_EQUAL(S.loc, get_step(T, S.dir), "each real side is placed in its recorded direction")
+		TEST_ASSERT(S.blanket_type != B.blanket_type, "the constructor marks every extension as a side rather than another center")
+		TEST_ASSERT_EQUAL(owner_of(S), B, "each actual side retains the declared blanket owner")
+		TEST_ASSERT_EQUAL(S.name, B.name, "each side preserves the center's mapped name")
+	qdel(B)
+	for(var/obj/structure/picnic_blanket_deployed/S as anything in sides)
+		TEST_ASSERT(QDELETED(S), "deleting the center still deletes every actually owned extension")

@@ -152,8 +152,8 @@
 	TEST_ASSERT_NOTNULL(spot, "the actual declared light spot exists before presentation setup")
 	TEST_ASSERT((spot in L.vis_contents), "the real owned spot is exposed through its parent's actual vis_contents")
 	TEST_ASSERT_EQUAL(owner_of(spot), L, "visual setup preserves the declared child ownership")
-	qdel(L)
-	TEST_ASSERT(QDELETED(spot), "deleting the real parent still deletes its owned light spot")
+	qdel(L, TRUE) // this component-owned holder deliberately refuses an unforced deletion
+	TEST_ASSERT(QDELETED(spot), "forced deletion of the real parent still deletes its owned light spot")
 
 /datum/unit_test/dq_init_objects_nonitems/duplicate_catwalk
 /datum/unit_test/dq_init_objects_nonitems/duplicate_catwalk/Run()

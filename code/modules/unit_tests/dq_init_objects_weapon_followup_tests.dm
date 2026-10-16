@@ -20,10 +20,13 @@
 
 /datum/unit_test/dq_init_objects_weapon_followup/standin
 
+/mob/living/carbon/human/dq_init_standin_provider/starting_nutrition()
+	return 317
+
 /datum/unit_test/dq_init_objects_weapon_followup/standin/Run()
 	dq_init_objects_fixture_scope()
 	var/turf/T = run_loc_floor_bottom_left
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human/dq_init_standin_provider, T)
 	var/obj/item/cell/standin/C = allocate(/obj/item/cell/standin, T, H)
 	TEST_ASSERT(!QDELETED(C), "the real supplied human keeps the stand-in cell")
 	TEST_ASSERT_EQUAL(C.hume(), H, "the constructor retains its exact borrowed human provider")
