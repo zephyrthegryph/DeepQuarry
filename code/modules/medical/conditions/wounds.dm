@@ -97,7 +97,7 @@
 /datum/affliction/wound/on_destroy(force)
 	var/obj/item/organ/external/E = location
 	if(istype(E))
-		E.integrity_dirty = TRUE
+		E.set_integrity_dirty(TRUE)
 	..()
 
 /datum/affliction/wound/on_added()
@@ -108,7 +108,7 @@
 	. = ..()
 	var/obj/item/organ/external/E = location
 	if(istype(E))
-		E.integrity_dirty = TRUE
+		E.set_integrity_dirty(TRUE)
 
 /// Desc of stage `index`.
 /datum/affliction/wound/proc/stage_desc(index)
@@ -139,7 +139,7 @@
 	injury_category = (damage > 0 && !internal) ? wound_category : null
 	set_severity(internal ? min(damage * 2, AFFLICTION_SEVERITY_TERMINAL) : 100 * damage / scale)
 	if(istype(E))
-		E.integrity_dirty = TRUE
+		E.set_integrity_dirty(TRUE)
 	body?.invalidate(BODY_DIRTY_ORGANS)
 	var/mob/living/carbon/human/H = owner
 	if(istype(H))

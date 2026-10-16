@@ -40,14 +40,14 @@
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A door of no known material is not made.
 /obj/structure/simple_door/proc/make_of(material_key)
-	set_material(material_key)
+	apply_material(material_key)
 	if(!material)
 		spent(src)
 
-/obj/structure/simple_door/proc/set_material(material_name)
+/obj/structure/simple_door/proc/apply_material(material_name)
 	if(!material_name)
 		set_material_name(MAT_STEEL)
-	material = get_material_by_name(material_name)
+	set_material(get_material_by_name(material_name))
 	if(!material)
 		return
 	set_max_integrity(max(1,round(material.integrity/10)) * 10)

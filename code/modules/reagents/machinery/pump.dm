@@ -20,6 +20,7 @@
 
 /// Pumps every machine frame while on (set_pump_on()).
 CAPABILITIES(/obj/machinery/pump)
+	ref_one(nameof(cell), /obj/item/cell)
 	configure(uses_power(active = 200 * CELLRATE))
 	default_parts()
 	hose_sockets(list(/datum/hose_connector/output))
@@ -63,7 +64,7 @@ CAPABILITIES(/obj/machinery/pump)
 	look.watch(reagents)
 	var/base = initial(icon_state)
 	look.overlay("[base]-tank")
-	look.overlay("[base]-lowpower", !(cell?.check_charge(power_of(src).active)))
+	look.overlay("[base]-lowpower", !(cell?.charge_reaches(power_of(src).active))) // a pure read of the charge: check_charge() also settles the cell's material discharge credit
 	if(reagents.total_volume >= 1)
 		look.overlay(look_overlay_image(icon, "[base]-volume", color = reagents.get_color()))
 	look.overlay("[base]-glass")
@@ -124,7 +125,7 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 
 /// No cell is installed.
 /obj/machinery/pump/proc/no_cell(datum/act/op/A)
-	return (isnull(cell)) ? null : MSG(pump/has_cell) // ALLOW(reads): the cell slot is read when a cell is offered to it, never from a cached menu
+	return (isnull(cell)) ? null : MSG(pump/has_cell)
 
 /**
  * The old attackby returned early (skipping the trailing RefreshParts()/update_icon()) when the

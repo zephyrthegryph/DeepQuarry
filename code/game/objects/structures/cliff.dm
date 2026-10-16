@@ -155,7 +155,7 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 	var/list/ground = look.picture_of(T)
 	var/cache_string = "[state]_[ground[1]]_[ground[2]]"
 	if(icon_exists(icon, subtraction_icon_state))
-		look.overlay(CACHED_KEY(cliff_overlays, cache_string, icon, subtraction_icon_state, ground[1], ground[2], ground[3], layer - 0.2))
+		look.overlay(CACHED_KEY(cliff_overlays, cache_string, icon, subtraction_icon_state, ground[1], ground[2], ground[3], initial(layer) - 0.2))
 
 // Movement-related code.
 

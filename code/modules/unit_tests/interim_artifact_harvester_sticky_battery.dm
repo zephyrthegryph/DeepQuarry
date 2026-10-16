@@ -6,7 +6,7 @@
 	var/obj/item/anobattery/battery = allocate(/obj/item/anobattery, T)
 	var/obj/item/anobattery/other = allocate(/obj/item/anobattery, T)
 	TEST_ASSERT(battery.capacity > 0, "the actual battery has positive declared capacity")
-	battery.stored_charge = battery.capacity / 2
+	battery.set_stored_charge(battery.capacity / 2)
 	var/original_charge = battery.stored_charge
 	TEST_ASSERT_NULL(harvester.inserted_battery(), "the actual harvester starts with an empty battery bay")
 	TEST_ASSERT_EQUAL(harvester.harvesting, 0, "the actual harvester starts outside harvesting or emission")

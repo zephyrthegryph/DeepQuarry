@@ -158,7 +158,6 @@ CAPABILITIES(/obj/item/deadringer)
 	corpse().set_species(corpse().dna.species)
 	record_copy(corpse().looks, H.looks) // the fake body looks like its wearer
 	corpse().force_update_limbs()
-	changed(src)
 	corpse().injure(INJURY_BURN, H.injury_load(INJURY_CATEGORY_THERMAL), null, null, 0, null, INJURE_SILENT)
 	corpse().injure(INJURY_BLUNT, H.injury_load(INJURY_CATEGORY_PHYSICAL), null, null, 0, null, INJURE_SILENT)
 	corpse().UpdateAppearance()

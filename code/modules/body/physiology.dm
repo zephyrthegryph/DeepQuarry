@@ -73,6 +73,7 @@
 	var/datum/physiology/physiology
 
 CAPABILITIES(/datum/body)
+	ref_one(nameof(owner), /mob/living)
 	owns_one(nameof(physiology), /datum/physiology)
 	owns_many(nameof(afflictions))
 	owns_many(nameof(supports))

@@ -15,7 +15,7 @@
 	var/mob/living/carbon/human/other = p2v_actor(get_step(p2v_spot(), SOUTH))
 	var/obj/item/card/id/C = p2v_id(H, null, 100)
 	var/datum/money_account/mine = p2v_account(C)
-	mine.security_level = 1
+	mine.set_security_level(1)
 	var/obj/item/coin/gold/coin = allocate(/obj/item/coin/gold, p2v_side_spot())
 	touch(H, V, coin)
 	TEST_ASSERT_EQUAL(p2v_coin(V), coin, "(the coin is in)")
@@ -41,7 +41,7 @@
 	var/mob/living/carbon/human/other = p2v_actor(get_step(p2v_spot(), SOUTH))
 	var/obj/item/card/id/C = p2v_id(H, null, 100)
 	var/datum/money_account/mine = p2v_account(C)
-	mine.security_level = 1
+	mine.set_security_level(1)
 	var/key = p2v_key(V, /obj/item/pen)
 	p2v_ui(H, V, "vend", list("vend" = key))
 	p2v_settle(0)

@@ -16,11 +16,6 @@
 
 /obj/machinery/computer/pod/var/timing = FALSE
 // Keyed by id: linked when either end materializes (replaces the LateInitialize and per-use scans).
-/obj/machinery/computer/pod/relations()
-	. = ..()
-	. += rel_one(nameof(connected), keyed = nameof(id), keyed_target = /obj/machinery/mass_driver)
-	. += rel_many(nameof(pod_doors), keyed = nameof(id), keyed_target = /obj/machinery/door/blast)
-	. += rel_many(nameof(pod_drivers), keyed = nameof(id), keyed_target = /obj/machinery/mass_driver)
 
 /obj/machinery/computer/pod/proc/alarm()
 	if(!operable())
@@ -56,6 +51,9 @@
 MSG_DEF_SELF(pod/access_denied, "access denied")
 
 CAPABILITIES(/obj/machinery/computer/pod)
+	ref_one(nameof(connected), /obj/machinery/mass_driver, by = nameof(id))
+	ref_many(nameof(pod_doors), /obj/machinery/door/blast, by = nameof(id))
+	ref_many(nameof(pod_drivers), /obj/machinery/mass_driver, by = nameof(id))
 	configure(light_glow(color = "#00b000"))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
 	interface("PodComputer")

@@ -16,5 +16,5 @@
 		empulse(T, effectrange/4, effectrange/3, effectrange/2, effectrange)
 		if(istype(holder, /obj/item/anobattery))
 			var/obj/item/anobattery/battery = holder
-			battery.stored_charge = max(0, battery.stored_charge-250) //You only get TWO uses of this. This is VERY strong.
+			battery.set_stored_charge(max(0, battery.stored_charge-250)) //You only get TWO uses of this. This is VERY strong.
 		return 1

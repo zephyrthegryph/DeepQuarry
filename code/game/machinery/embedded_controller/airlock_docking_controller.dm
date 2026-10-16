@@ -119,12 +119,6 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
 /datum/embedded_program/airlock/docking
 	var/datum/embedded_program/docking/airlock/master_prog
 
-/datum/embedded_program/airlock/docking/relations()
-	. = ..()
-	. += rel_one(nameof(master_prog), back = nameof(/datum/embedded_program/docking/airlock::airlock_program))
-/datum/embedded_program/docking/airlock/relations()
-	. = ..()
-	. += rel_one(nameof(airlock_program), back = nameof(/datum/embedded_program/airlock/docking::master_prog))
 
 /datum/embedded_program/airlock/docking/receive_user_command(command)
 	if (master_prog.undocked() || master_prog.override_enabled)	//only allow the port to be used as an airlock if nothing is docked here or the override is enabled
@@ -146,3 +140,6 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
 		var/airlock_type = ispath(airlock_program) ? airlock_program : /datum/embedded_program/airlock/docking
 		rel_set(src, nameof(airlock_program), new airlock_type(src))
 	return new /datum/embedded_program/docking/airlock(src, airlock_program)
+
+CAPABILITIES(/datum/embedded_program/airlock/docking)
+	links(/datum/embedded_program/airlock/docking::master_prog, /datum/embedded_program/docking/airlock::airlock_program)

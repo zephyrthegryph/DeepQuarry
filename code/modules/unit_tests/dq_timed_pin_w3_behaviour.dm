@@ -22,8 +22,6 @@
 	TEST_ASSERT(said(user, "You carefully begin to free"), "it says it began")
 	test_time(0.2 SECONDS)
 	TEST_ASSERT(G.has_buckled_mobs(), "the victim is still held before the end")
-	if(istype(running(user), /datum/task))
-		return // the legacy end of this action raises a runtime (act_message was handed the victims' names as its user): its completion cannot be pinned on the legacy form
 	test_time(1 SECOND)
 	TEST_ASSERT(!G.has_buckled_mobs(), "the victim is freed at the end")
 	TEST_ASSERT(!G.anchored, "and the trap is unanchored")

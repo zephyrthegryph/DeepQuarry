@@ -54,3 +54,14 @@ vars that became tracked. Suspected hot paths (not measured): `canmove` (written
 read by presentation reactions (`stat`, `lying`, `resting`, sight/hud flags), atmos machinery vars read by draws (`use_power`, `on`, pump/vent targets),
 `heat`/`temperature`-style accumulators and `priority_overlays`/`dirty`-style flags rewritten per draw, and process loops of machines that write a var every tick
 (`charge`, `timer`).
+
+## No holes (October 2026)
+
+`untracked_inputs` and `sem/reads` are hard bans with no baseline. What closed them:
+
+* **Flyweights.** A hop through a var whose declared type is a flyweight (`FLYWEIGHT_TYPES`, now including `/datum/material`) is not followed, and what a flyweight holds is constant.
+* **Hops are findings where something is read through them.** A bare read of an object var (`if(cell)`, `return tank`) is the var's own tracked read; `cell.charge` or `cell.check_charge()` through a var that is not a declared relation is `hop_not_relation`. Declare the var a `ref_one`/`ref_many`.
+* **Built-ins.** A turf's own `x`/`y`/`z`, `L.len` on a list var, `type`/`parent_type` and `gc_destroyed` are not inputs; a mob's `client` and `key` publish with `ckey` (`ckey_changed()`); `contents` is read through `contents_count()` / `contents_of()`, which stand for `SLOT_OCCUPANCY_KEY` (the ledger publishes it).
+* **Memoized registries** (`PROC_SUMMARY(/proc/x)`: the icon manager, the decl repository, the material registry, the requirement interner, a lazily built overlay table) read no entity state; a shared image is a `look_cached_image()` or a shared cache, not a global list.
+* **Sampling.** What cannot be tracked (the map's level lists, whitelists and ban lists, accounts, a profile record, a mob's gender or pixel offset, the tint of a worn picture) is wrapped in `read_once()` where it is asked: the walk mutes it, and a menu that asked is rebuilt on each read. `git grep read_once` is the list; a new one needs a reason in the line.
+* **Drift.** In a test build the REFRESH DRIFT audit runs on every entity the strict staleness checker checks (`staleness_check_drift()`), not only on the sweep's budget.

@@ -25,7 +25,6 @@
 			set_item_flags(worn_of_type(type).flags)
 			set_icon_state(initial(icon_state))
 			to_chat(user, "You pull the mask up to cover your face.")
-		update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/mask/breath)
 	configure(item_worn(flags = AIRTIGHT|FLEXIBLEMATERIAL, covers = FACE))

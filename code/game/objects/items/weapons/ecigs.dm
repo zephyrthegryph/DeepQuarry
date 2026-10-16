@@ -134,9 +134,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
 	if(item_state == wanted)
 		return
 	set_item_state(wanted)
-	if(ismob(loc))
-		var/mob/living/M = loc
-		changed(src)
 
 /// A cartridge used on it is installed. It never lit from a flame (the smokable's lighting does not apply to e-cigs); the click goes on.
 /obj/item/clothing/mask/smokable/ecig/item_applied(datum/act/op/A)

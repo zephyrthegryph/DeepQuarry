@@ -392,7 +392,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 		set_item_state("[initial(item_state)]_open")
 		unbuttoned = TRUE
 		to_chat(user, "You unbutton the coat.")
-	changed(src)
 
 	//Variants
 /obj/item/clothing/suit/storage/fluff/fedcoat/fedblue
@@ -1236,10 +1235,6 @@ CAPABILITIES(/obj/item/clothing/head/welding/fluff/vinjj)
 			set_icon_state("vinjjdanaup")
 
 			to_chat(user, "You push the goggles up out of your face.")
-		update_clothing_icon()	//so our mob-overlays
-		if (ismob(loc)) //should allow masks to update when it is opened/closed
-			var/mob/M = loc
-			changed(src)
 		user.update_mob_action_buttons()
 
 //Vorrarkul: Theodora Lindt
@@ -1542,7 +1537,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 		set_icon_state("[initial(icon_state)]_open")
 		unbuttoned = TRUE
 		to_chat(user, "You unbutton the coat.")
-	changed(src)
 
 /obj/item/clothing/suit/storage/fluff/jacket/field //Just here so it can be seen and easily recognized under /spawn.
 	name = "Field Jacket"
@@ -2041,7 +2035,6 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip)
 	var/mob/living/carbon/human/H = loc
 	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src)
 		set_icon_override('icons/vore/custom_clothes_mob.dmi')
-	update_clothing_icon()
 
 /obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip/dropped(mob/user, equipping, slot)
 	..()
@@ -2484,7 +2477,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/purple_robes)
 		set_item_state(initial(item_state))
 		to_chat(user, span_info("The coat's eyes close."))
 	COOLDOWN_START(src, toggle_cooldown, 6 SECONDS)
-	changed(src)
 
 /obj/item/clothing/head/hood/purple_robes
 	name = "purple hood"

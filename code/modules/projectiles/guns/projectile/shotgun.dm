@@ -263,9 +263,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/quad)
 		one_handed_penalty = 30
 		recoil = 5
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		changed(src)
 
 	play_sfx(src, SFX_WEAPONS_TARGETON)
 	user.update_mob_action_buttons()

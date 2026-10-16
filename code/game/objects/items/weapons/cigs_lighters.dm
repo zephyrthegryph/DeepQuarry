@@ -156,9 +156,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 	if(item_state == wanted)
 		return
 	set_item_state(wanted)
-	if(ismob(loc))
-		var/mob/living/M = loc
-		changed(src)
 
 /// What it starts smoking down from (derives(), at init): a type that sets none starts full.
 /obj/item/clothing/mask/smokable/proc/full_smoketime()
@@ -259,7 +256,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 			if (!nomessage)
 				to_chat(M, span_notice("Your [name] goes out."))
 			M.remove_from_mob(src) //un-equip it so the overlays can update
-			changed(src)
 		// Turn mind bound cigs into butts
 		if(src.possessed_voice && src.possessed_voice.len)
 			var/mob/living/voice/V = src.possessed_voice[1]
@@ -274,7 +270,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 				to_chat(M, span_notice("Your [name] goes out, and you empty the ash."))
 				play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 			set_lit(0)
-			changed(src)
 			set_smoketime(0)
 			reagents.clear_reagents()
 			name = "empty [initial(name)]"
@@ -473,8 +468,6 @@ CAPABILITIES(/obj/item/trash/cigbutt)
 /// A cigar redraws the user's mask and hands after the cigarette handling.
 /obj/item/clothing/mask/smokable/cigarette/cigar/item_applied(datum/act/op/A)
 	..()
-	var/mob/user = A.actor
-	changed(src)
 	return OP_OK
 
 /////////////////
@@ -557,7 +550,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/pipe)
 	else if(istype(W, /obj/item/assembly/igniter))
 		light(span_notice("[user] fiddles with [W], and manages to light their [name] with the power of science."))
 
-	changed(src)
 	return OP_OK
 
 /obj/item/clothing/mask/smokable/pipe/cobpipe

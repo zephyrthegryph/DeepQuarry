@@ -88,6 +88,10 @@ pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, outp
         if r.kind != ReadKind::Var || r.root != "holder" || set.internal.contains(r) {
             continue;
         }
+        // `type` and `parent_type` never change for a thing, however far off it is.
+        if matches!(r.var.as_str(), "type" | "parent_type") {
+            continue;
+        }
         if output && r.hops.iter().any(|h| DRAW_PSEUDO_HOPS.contains(&h.as_str())) && !draw_hop_heard(r) {
             let (rel, line) = set.sites.get(r).cloned().unwrap_or_default();
             out.push(Untracked { what: r.key(), owner: r.owner.clone(), rel, line });

@@ -28,30 +28,16 @@
 			return TRUE
 	return FALSE
 
-/// The one running timed action of `user` (a legacy timed task, or the pending op that replaced it), or null.
+/// The one running timed action of `user` (its pending op), or null.
 /datum/unit_test/dq_timed_pin/proc/running(mob/user)
-	var/list/L = timed_tasks_of(user)
-	if(length(L))
-		return L[1]
-	var/datum/pending = op_pending_of(user)
-	if(pending)
-		return pending
-	return task_claiming(user) // a worker's task that is not a player's timed action (a spider's web)
+	return op_pending_of(user)
 
 /// How many timed actions `user` has running.
 /datum/unit_test/dq_timed_pin/proc/running_count(mob/user)
-	return length(timed_tasks_of(user)) + length(op_pendings_of(user))
+	return length(op_pendings_of(user))
 
-/// The duration a legacy task declares, or null for a pending op (its duration is pinned by the time it ends at).
-/datum/unit_test/dq_timed_pin/proc/declared_duration(datum/D)
-	var/datum/task/timed/T = D
-	return istype(T) ? T.duration : null
-
-/// TRUE when the action ended without finishing: a cancelled task, or a pending op that is no longer pending.
+/// TRUE when the action ended without finishing: its pending op is no longer pending.
 /datum/unit_test/dq_timed_pin/proc/was_cancelled(datum/D, mob/user)
-	var/datum/task/T = D
-	if(istype(T))
-		return T.state == TASK_CANCELLED
 	return isnull(op_pending_of(user))
 
 // ---- A tool-less item used on an item: whetstone refined with five sheets ----
@@ -67,7 +53,6 @@
 	test_click(user, W, S)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "the click starts a timed action")
-	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 7 SECONDS, "it lasts seven seconds")
 	TEST_ASSERT(said(user, "You begin to refine"), "it says it began")
 	test_time(6 SECONDS)
 	TEST_ASSERT(!QDELETED(W) && S.get_amount() == 10, "nothing is spent before the end")
@@ -152,7 +137,6 @@
 	test_click(user, B, B)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "using it in hand starts a timed action")
-	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 6 SECONDS, "it lasts six seconds")
 	TEST_ASSERT(said(user, "You begin deploying"), "it says it began")
 	test_time(5 SECONDS)
 	TEST_ASSERT(!B.deployed, "not deployed before the end")
@@ -184,7 +168,6 @@
 	test_click(user, B, null)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "a bare hand on a deployed trap starts a timed action")
-	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 6 SECONDS, "it lasts six seconds")
 	TEST_ASSERT(said(user, "You begin disarming"), "it says it began")
 	test_time(5 SECONDS)
 	TEST_ASSERT(B.deployed, "still deployed before the end")
@@ -230,15 +213,11 @@
 	var/datum/first = running(user)
 	TEST_ASSERT(!isnull(first), "the first click starts")
 	test_click(user, B, null)
-	if(istype(first, /datum/task))
-		TEST_ASSERT_EQUAL(running_count(user), 1, "a second click on the same target leaves one action running")
-		TEST_ASSERT_EQUAL(running(user), first, "the first is still the one running (the second click was refused)")
-	else
-		// The bare-hand wait keeps the actor in place, so it derives CLAIM_BODY: the second click needs the body and stops the first wait.
-		TEST_ASSERT_EQUAL(running_count(user), 1, "a second click leaves one wait")
-		TEST_ASSERT(!(first in op_pendings_of(user)), "the first was stopped by the second")
-		test_time(8 SECONDS)
-		TEST_ASSERT(!B.deployed, "the trap is disarmed once, whichever wait ended first")
+	// The bare-hand wait keeps the actor in place, so it derives CLAIM_BODY: the second click needs the body and stops the first wait.
+	TEST_ASSERT_EQUAL(running_count(user), 1, "a second click leaves one wait")
+	TEST_ASSERT(!(first in op_pendings_of(user)), "the first was stopped by the second")
+	test_time(8 SECONDS)
+	TEST_ASSERT(!B.deployed, "the trap is disarmed once, whichever wait ended first")
 
 // ---- The shapes the codemod (tools/dx/codemods/timed_task.py) converts: an op handler that only starts the action ----
 
@@ -251,7 +230,6 @@
 	test_click(user, C, null)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "a bare hand on confetti starts a timed action")
-	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 6 SECONDS, "it lasts six seconds")
 	TEST_ASSERT(said(user, "You start to meticulously pick up the confetti"), "it says it began")
 	test_time(5 SECONDS)
 	TEST_ASSERT(!QDELETED(C), "the confetti is there before the end")
@@ -282,7 +260,6 @@
 	test_click(user, S, shovel)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "a shovel on snow starts a timed action")
-	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 4 SECONDS, "it lasts four seconds")
 	test_time(3 SECONDS)
 	TEST_ASSERT(!QDELETED(S), "the snow is there before the end")
 	test_time(2 SECONDS)
@@ -315,7 +292,6 @@
 	test_click(user, C, tiles)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "a floor tile on a catwalk starts a timed action")
-	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 1 SECOND, "it lasts a second")
 	TEST_ASSERT(said(user, "Placing tile..."), "it says it began")
 	TEST_ASSERT_NULL(C.plated_tile, "nothing is plated before the end")
 	test_time(2 SECONDS)
@@ -351,7 +327,6 @@
 	test_click(user, E, pen)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "an item on the elevator starts a timed action")
-	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 3 SECONDS, "it lasts three seconds")
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(get_turf(user), run_loc_floor_bottom_left, "still here before the end")
 	test_time(2 SECONDS)
@@ -371,7 +346,6 @@
 	test_click(user, W, W)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "using it in hand starts a timed action")
-	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 6 SECONDS, "it lasts six seconds")
 	TEST_ASSERT(said(user, "You begin deploying"), "it says it began")
 	test_time(5 SECONDS)
 	TEST_ASSERT(!W.anchored, "not deployed before the end")
@@ -405,7 +379,6 @@
 	test_click(user, W, null)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "a bare hand on deployed wire starts a timed action")
-	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == wait_time, "it lasts as long as the coil's wear says")
 	TEST_ASSERT(said(user, "You begin collecting"), "it says it began")
 	test_time(wait_time - 10)
 	TEST_ASSERT(W.anchored, "still deployed before the end")

@@ -439,13 +439,11 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::manual_afk
 base_var	code/modules/mob/mob_defines.dm	@/mob::LAssailant
 base_var	code/modules/mob/mob_defines.dm	@/mob::spell_list
 base_var	code/modules/mob/mob_defines.dm	@/mob::update_icon
-base_var	code/modules/mob/mob_defines.dm	@/mob::lastarea
 base_var	code/modules/mob/mob_defines.dm	@/mob::lastareachange
 base_var	code/modules/mob/mob_defines.dm	@/mob::digitalcamo
 base_var	code/modules/mob/mob_defines.dm	@/mob::control_object
 base_var	code/modules/mob/mob_defines.dm	@/mob::universal_speak
 base_var	code/modules/mob/mob_defines.dm	@/mob::universal_understand
-base_var	code/modules/mob/mob_defines.dm	@/mob::stance_damage
 base_var	code/modules/mob/mob_defines.dm	@/mob::teleop
 base_var	code/modules/mob/mob_defines.dm	@/mob::active_genes
 base_var	code/modules/mob/mob_defines.dm	@/mob::forbid_seeing_deadchat

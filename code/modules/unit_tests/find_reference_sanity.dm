@@ -7,7 +7,10 @@
 	var/list/test_list = list()
 	var/list/test_assoc_list = list()
 
-/atom/movable/ref_holder/relations()
+
+/// This file is only compiled with REFERENCE_TRACKING_DEBUG, which the declaration generator cannot see: a CAPABILITIES block here would be generated for
+/// a type the build may not define. The relation stays in the ownership() table.
+/atom/movable/ref_holder/ownership()
 	. = ..()
 	. += rel_one(nameof(test))
 
@@ -21,9 +24,10 @@
 	references_to_clear = INFINITY
 	var/atom/movable/ref_test/self_ref
 
-/atom/movable/ref_test/relations()
+/atom/movable/ref_test/ownership()
 	. = ..()
 	. += rel_one(nameof(self_ref))
+
 
 /datum/unit_test/find_reference_sanity/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)

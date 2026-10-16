@@ -199,15 +199,14 @@ pub fn parts() -> Vec<Part> {
             line(r"\bupdate_uis\(|\bchanged\("),
         )
         .flt(vec![Flt::KeepPaths("ui_push_converted")]),
-        // changed(E) is the human-draw conversion's interim mark of a worn or held look. The files that still carry one are `changed_mark_pending`; no other file may add one.
+        // changed(E) was the human-draw conversion's interim mark of a worn or held look. It is gone: a hard ban everywhere.
         Part::new(
-            "hand_changed_marks_banned_outside_the_pending_files",
-            "hand changed() marks banned outside the pending files",
-            "a hand changed() mark in a file that carries none. Track the state the draw reads (TRACKED / a setter / a relation / a stat) so the holder's draw follows it; a worn or held look is watched by its holder.",
+            "hand_changed_marks_banned",
+            "hand changed() marks banned",
+            "a hand changed() mark. Track the state the draw reads (a setter / a relation / a stat) so the holder's draw follows it; a worn or held look is watched by its holder. A write that nothing publishes is a bug in the write, not a reason to mark.",
             Files::Code,
             line(r"(?<![\w.])changed\(\s*\w+\s*\)"),
-        )
-        .flt(vec![Flt::DropPaths("changed_mark_pending")]),
+        ),
         Part::new(
             "bump_ratchet_on_bumped_overrides",
             "bump: ratchet on Bumped() overrides",

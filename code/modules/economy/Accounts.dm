@@ -44,6 +44,15 @@
 CAPABILITIES(/datum/money_account)
 	owns_many(nameof(transaction_log))
 
+/// The account's login level. Hand-written because the station's own set_security_level() (the alert level) is a global proc of the same name.
+/datum/money_account/proc/set_security_level(value)
+	if(TRACKED_UNCHANGED(security_level, value))
+		return FALSE
+	security_level = value
+	tracked_changed(src, nameof(security_level))
+	return TRUE
+SETTER(/datum/money_account, security_level)
+
 /datum/money_account/proc/record_transaction(target, purpose, amount, terminal_id)
 	var/datum/transaction/transaction = new
 	transaction.target_name = target
@@ -121,7 +130,7 @@ CAPABILITIES(/datum/money_account)
 	if(!istype(user) || !user.job)
 		return
 	var/datum/department/department = SSjob.get_primary_department_of_job(user.job)
-	if(department?.name in GLOB.department_accounts)
+	if(read_once(department?.name in GLOB.department_accounts))
 		return department.name
 
 /// Quotes a personal account for station services. A subsidy may cover part of
@@ -227,13 +236,13 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 		T.time = "[rand(0,24)]:[rand(11,59)]"
 		T.source_terminal = "NTGalaxyNet Terminal #[rand(111,1111)]"
 
-		M.account_number = rand(111111, 999999)
+		M.set_account_number(rand(111111, 999999))
 	else
 		T.date = GLOB.current_date_string
 		T.time = stationtime2text()
 		T.source_terminal = source_db.machine_id
 
-		M.account_number = GLOB.next_account_number
+		M.set_account_number(GLOB.next_account_number)
 		GLOB.next_account_number += rand(1,25)
 
 		//create a sealed package containing the account details

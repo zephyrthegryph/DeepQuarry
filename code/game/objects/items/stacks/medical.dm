@@ -53,7 +53,6 @@
 			use(1)
 			return ITEM_INTERACT_FAILURE
 
-		changed(src)
 
 	else
 		if(heal_brute)

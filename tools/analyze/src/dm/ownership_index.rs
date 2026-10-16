@@ -96,6 +96,7 @@ pub const FLYWEIGHT_TYPES: &[&str] = &[
     "/datum/own_entry",
     "/datum/derived_entry",
     "/datum/op_def",
+    "/datum/material",
 ];
 pub const MODIFIERS: &[&str] = &["tmp", "static", "global", "const", "final"];
 /// The Python defines `VALUE_TYPES` twice (`("/datum/gas_mixture/__never__",)` first, then this

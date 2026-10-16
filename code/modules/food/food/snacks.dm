@@ -3863,7 +3863,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 
 	// Set appropriate description
 	if(open && pizza)
-		look.identity(desc = "A box suited for pizzas. It appears to have a [pizza.name] inside.")
+		look.identity(desc = "A box suited for pizzas. It appears to have a [read_once(pizza.name)] inside.") // a name written on the pizza is sampled when the box redraws
 	else if(stacked > 0)
 		var/stack_desc = "A pile of boxes suited for pizzas. There appears to be [stacked + 1] boxes in the pile."
 		var/toptag = topbox.boxtag
