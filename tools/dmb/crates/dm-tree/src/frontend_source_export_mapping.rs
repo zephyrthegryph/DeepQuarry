@@ -181,6 +181,24 @@ impl SourceExportMapping {
             &self.by_path,
         )
     }
+    /// Location of one occurrence without issuing the all-occurrence index:
+    /// the first origin of the occurrence's source offset, as `location` picks.
+    pub fn location_of(&self, ordinal: OccurrenceId) -> Option<SourceLocation> {
+        if let Some(all) = self.locations.get() {
+            return all.get(ordinal.0 as usize).and_then(Option::as_ref).cloned();
+        }
+        let provenance = &self.occurrences.get(ordinal)?.provenance;
+        let offset = self
+            .origins
+            .iter()
+            .find(|origin| {
+                self.regions[origin.region].0 == provenance.include_occurrence as usize
+                    && origin.source_span.start == provenance.span.start as usize
+            })?
+            .output_span
+            .start;
+        self.output(offset)
+    }
     pub fn location(&self, ordinal: OccurrenceId) -> Option<&SourceLocation> {
         self.locations
             .get_or_init(|| {
