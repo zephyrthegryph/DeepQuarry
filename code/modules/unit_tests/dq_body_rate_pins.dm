@@ -213,9 +213,15 @@
 
 /datum/unit_test/dq_body_pin/liver_toxin_overload/pin(mob/living/carbon/human/H)
 	var/obj/item/organ/internal/liver/L = H.organ_in(O_LIVER)
+	// Twenty cycles is twenty minutes: a patient with no air to breathe starves its organs (an ischemic lesion on the liver from frame 12), which is not the strain pinned here.
+	H.forceMove(dq_containment_floor())
 	H.injure(INJURY_TOXIN, 60, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	for(var/i in 1 to 20)
 		body_pin_frame(H)
+		var/lesions = ""
+		for(var/datum/affliction/lesion/lesion as anything in L.get_lesions())
+			lesions += " [lesion.type]=[lesion.damage]"
+		body_pin_log("liver_toxin_overload frame [i] liver damage / toxic load / hepatotoxicity / withdrawal / lesions", "[L.damage] / [H.injury_load(INJURY_CATEGORY_TOXIC)] / [H.factor(BF_HEPATOTOXICITY)] / [H.factor(BF_WITHDRAWAL)] /[lesions]")
 	body_pin_log("liver_toxin_overload", L.damage)
 	TEST_ASSERT(body_pin_near(L.damage, 4, 1.7), "twenty cycles of heavy toxin load cost the liver about 4 (0.2 a cycle) (got [L.damage])")
 
