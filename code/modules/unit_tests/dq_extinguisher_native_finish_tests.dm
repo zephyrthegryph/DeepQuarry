@@ -1,0 +1,92 @@
+/datum/unit_test/proc/dq_extinguisher_cosmetic_scope()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.coalesce_absorbed), GLOB.coalesce_absorbed)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+
+/datum/unit_test/dq_extinguisher_native_finish
+/datum/unit_test/dq_extinguisher_native_finish/proc/count_finish(atom/A, sampled_icon, sampled_state)
+	var/found = 0
+	for(var/image/overlay as anything in A.overlays)
+		if(overlay.icon == sampled_icon && overlay.icon_state == sampled_state)
+			found++
+	return found
+
+/datum/unit_test/dq_extinguisher_native_finish/Run()
+	dq_extinguisher_cosmetic_scope()
+	var/obj/item/extinguisher/E = allocate(/obj/item/extinguisher, test_floor())
+	var/datum/type_trait/extinguisher_finish/F = extinguisher_finish_of(E)
+	var/list/possible = list()
+	for(var/i = 1 to 6)
+		possible += "fire_extinguisherO[i]"
+	TEST_ASSERT(F.sampled_state in possible, "one original host-rand sample chooses an actual supported root ornament")
+	TEST_ASSERT_EQUAL(F.sampled_icon, 'icons/obj/items.dmi', "birth sample retains actual icon resource")
+	TEST_ASSERT_EQUAL(E.reagents.total_volume, 300, "native appearance does not change actual full-size foam content")
+	// Intentional native presentation deferral: data is initialized immediately, draw is queued.
+	TEST_ASSERT_EQUAL(count_finish(E, F.sampled_icon, F.sampled_state), 0, "before the first native presentation flush only the data sample exists")
+	var/state = F.sampled_state
+	refresh_look(E)
+	TEST_ASSERT_EQUAL(count_finish(E, F.sampled_icon, state), 1, "first real native look applies the same sampled ornament exactly once")
+	refresh_look(E)
+	TEST_ASSERT_EQUAL(F.sampled_state, state, "settled look does not roll another cosmetic choice")
+	TEST_ASSERT_EQUAL(count_finish(E, F.sampled_icon, state), 1, "repeated native presentation does not accumulate ornaments")
+
+/datum/unit_test/dq_extinguisher_native_finish/mapped_birth
+/datum/unit_test/dq_extinguisher_native_finish/mapped_birth/Run()
+	dq_extinguisher_cosmetic_scope()
+	SSatoms.map_loader_begin("dq_extinguisher_birth")
+	var/obj/item/extinguisher/E = new(test_floor())
+	E.set_icon('icons/obj/weapons.dmi')
+	set_var(E, nameof(E.item_state), null)
+	set_var(E, nameof(E.rand_overlays), 1)
+	E.set_alpha(96)
+	E.set_dir(WEST)
+	SSatoms.map_loader_stop("dq_extinguisher_birth")
+	own(E)
+	SSatoms.InitializeAtoms(list(E))
+	var/datum/type_trait/extinguisher_finish/F = extinguisher_finish_of(E)
+	TEST_ASSERT_EQUAL(F.sampled_state, "O1", "null mapped item_state preserves the original interpolation, not a later default")
+	TEST_ASSERT_EQUAL(F.sampled_icon, 'icons/obj/weapons.dmi', "sample retains nondefault mapped icon resource")
+	// This deliberately valid resource/missing ornament state tests the old accepted metadata contract.
+	var/generic_masks = 0
+	TEST_ASSERT(E.priority_overlays, "actual parent supplied its priority emissive image")
+	var/list/priority = islist(E.priority_overlays) ? E.priority_overlays : list(E.priority_overlays)
+	for(var/image/I as anything in priority)
+		if(I.plane == PLANE_EMISSIVE)
+			generic_masks++
+			TEST_ASSERT_EQUAL(I.icon, 'icons/obj/weapons.dmi', "actual generic mask uses mapped base icon")
+			TEST_ASSERT_EQUAL(I.icon_state, E.icon_state, "generic mask snapshots base sprite, not sampled ornament")
+			TEST_ASSERT_EQUAL(I.alpha, 96, "generic mask retains real parent alpha snapshot")
+			TEST_ASSERT_EQUAL(I.dir, WEST, "generic mask retains real parent direction snapshot")
+	TEST_ASSERT_EQUAL(generic_masks, 1, "actual parent still creates its one generic emissive image")
+	E.set_item_state("changed-after-birth")
+	E.set_icon('icons/obj/items.dmi')
+	refresh_look(E)
+	TEST_ASSERT_EQUAL(F.sampled_icon, 'icons/obj/weapons.dmi', "later base icon change does not rewrite birth ornament")
+	TEST_ASSERT_EQUAL(F.sampled_state, "O1", "later held-state change does not rewrite birth ornament")
+	TEST_ASSERT_EQUAL(count_finish(E, 'icons/obj/weapons.dmi', "O1"), 1, "settled draw uses frozen metadata rather than live parent fields")
+
+/datum/unit_test/dq_extinguisher_native_finish/variants_and_unique
+/datum/unit_test/dq_extinguisher_native_finish/variants_and_unique/Run()
+	dq_extinguisher_cosmetic_scope()
+	var/obj/item/extinguisher/mini/M = allocate(/obj/item/extinguisher/mini, test_floor())
+	var/obj/item/extinguisher/atmo/A = allocate(/obj/item/extinguisher/atmo, test_floor())
+	TEST_ASSERT_NULL(extinguisher_finish_of(M).sampled_state, "mini zero-count branch has no cosmetic sample")
+	TEST_ASSERT_NULL(extinguisher_finish_of(A).sampled_state, "atmo zero-count branch has no cosmetic sample")
+	TEST_ASSERT_EQUAL(M.reagents.total_volume, 150, "mini retains real configured foam content")
+	TEST_ASSERT_EQUAL(A.reagents.total_volume, 600, "atmo retains actual additive foam declaration")
+	SSatoms.map_loader_begin("dq_extinguisher_unique")
+	var/obj/item/extinguisher/U = new(test_floor())
+	set_var(U, nameof(U.blocks_emissive), EMISSIVE_BLOCK_UNIQUE)
+	set_var(U, nameof(U.rand_overlays), 1)
+	SSatoms.map_loader_stop("dq_extinguisher_unique")
+	own(U)
+	SSatoms.InitializeAtoms(list(U))
+	var/atom/movable/emissive_blocker/blocker = U.em_block
+	TEST_ASSERT(blocker, "actual mapped unique mode creates real owned render-source blocker")
+	TEST_ASSERT_EQUAL(blocker.render_source, U.render_target, "unique mask follows the actual holder render source rather than a frozen overlay copy")
+	var/datum/type_trait/extinguisher_finish/F = extinguisher_finish_of(U)
+	refresh_look(U)
+	TEST_ASSERT_EQUAL(count_finish(U, F.sampled_icon, F.sampled_state), 1, "unique mode receives same settled ornament")
+	TEST_ASSERT_EQUAL(blocker.render_source, U.render_target, "native draw preserves unique blocker binding")
+	qdel(U)
+	TEST_ASSERT(QDELETED(blocker), "holder deletion deletes its real owned blocker")

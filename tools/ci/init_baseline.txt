@@ -696,9 +696,6 @@ init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::return
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::alpha
 init_lines	code/game/objects/items/weapons/cigs_lighters.dm	@/obj/item/flame/lighter/zippo::Initialize::cut_overlays
-init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguisher::Initialize::if
-init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguisher::Initialize::choice
-init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguisher::Initialize::add_overlay
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::if
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::material
 init_lines	code/game/objects/micro_structures.dm	@/obj::Initialize::obj_instance_setup

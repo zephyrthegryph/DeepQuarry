@@ -49,18 +49,14 @@ CAPABILITIES(/obj/item/extinguisher/atmo)
 	configure(item_combat(force = 12))
 	configure(reagents(add = list(REAGENT_ID_FIREFOAM = 300))) // 600 total
 
-/obj/item/extinguisher/Initialize(mapload)
-	if(rand_overlays)
-		var/choice = rand(1,rand_overlays)
-		add_overlay("[item_state]O[choice]") // ALLOW(decl): Initialize rolls a random overlay per instance; a declaration has no random form
-	. = ..()
-
 /obj/item/extinguisher/examine(mob/user)
 	. = ..()
 	if(get_dist(user, src) == 0)
 		. += "[src] has [src.reagents.total_volume] units of foam left!"
 
 CAPABILITIES(/obj/item/extinguisher)
+	extinguisher_finish()
+	initial_extinguisher_finish()
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10, attack_verbs = list("slammed", "whacked", "bashed", "thunked", "battered", "bludgeoned", "thrashed")))
 	configure(item_sounds(hit = SFX_WEAPONS_SMASH, drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
@@ -151,3 +147,47 @@ CAPABILITIES(/obj/item/extinguisher)
 	reagents.trans_to_obj(W, spray_amount, user = user)
 	W.tint_from_reagents()
 	W.set_up(my_target, user = user)
+
+// Frozen cosmetic birth sample, kept separate from the foam/recharge state.
+STATIC_ENTRY(extinguisher_finish)
+/proc/extinguisher_finish(sampled_icon = null, sampled_state = null)
+	return entry_make(ENTRY_EXTINGUISHER_FINISH, null, list("sampled_icon" = sampled_icon, "sampled_state" = sampled_state))
+
+/datum/type_trait/extinguisher_finish
+	var/sampled_icon
+	var/sampled_state
+
+/datum/type_trait/extinguisher_finish/copy_values(datum/type_trait/extinguisher_finish/into)
+	into.sampled_icon = sampled_icon
+	into.sampled_state = sampled_state
+
+/datum/entry_engine/type_trait/extinguisher_finish
+	kind = ENTRY_EXTINGUISHER_FINISH
+	trait_type = /datum/type_trait/extinguisher_finish
+	publish_key = ENTRY_EXTINGUISHER_FINISH
+	base_type = /obj/item/extinguisher
+
+READS_AS(/proc/extinguisher_finish_of, ENTRY_EXTINGUISHER_FINISH)
+/proc/extinguisher_finish_of(obj/item/extinguisher/E) as /datum/type_trait/extinguisher_finish
+	READS_FROM(E)
+	return type_trait_of(E, ENTRY_EXTINGUISHER_FINISH)
+
+CAPABILITY_TYPE(initial_extinguisher_finish, CAP_INITIAL_EXTINGUISHER_FINISH, /datum/capability/initial_extinguisher_finish)
+
+/datum/capability/initial_extinguisher_finish
+	holder_hooks = HOLDER_HOOK_PREINIT
+
+/datum/capability/initial_extinguisher_finish/on_holder_preinit(datum/act/eval/A)
+	var/obj/item/extinguisher/E = A.holder
+	if(!E.rand_overlays)
+		return
+	// Keep the original host RNG call; native rolls() deliberately uses another stream.
+	var/choice = rand(1, E.rand_overlays)
+	set_trait(E, ENTRY_EXTINGUISHER_FINISH, "sampled_icon", E.icon)
+	set_trait(E, ENTRY_EXTINGUISHER_FINISH, "sampled_state", "[E.item_state]O[choice]")
+
+/obj/item/extinguisher/draw(datum/look/look)
+	..()
+	var/datum/type_trait/extinguisher_finish/F = extinguisher_finish_of(src)
+	if(F.sampled_state)
+		look.overlay(look_image(F.sampled_icon, F.sampled_state))
