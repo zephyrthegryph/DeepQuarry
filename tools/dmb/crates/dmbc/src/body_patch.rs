@@ -46,6 +46,11 @@ mod append;
 #[path = "body_patch_lines.rs"]
 mod align;
 
+/// DMB_STRING_PATCH=0 sends bodies whose string literals changed to the full path.
+fn string_patch_enabled() -> bool {
+    std::env::var_os("DMB_STRING_PATCH").is_none_or(|value| value != "0")
+}
+
 /// At most this many relowered bodies are patched; more fall back.
 const PATCH_LIMIT: usize = 4096;
 
@@ -637,15 +642,11 @@ pub(crate) fn try_patch<R: dm_ir::Resolver>(request: PatchRequest<'_, R>) -> Res
         .collect();
     let mut rows = Vec::new();
     let mut unit_warnings = BTreeMap::new();
-    let mut push_row = |rows: &mut Vec<(usize, Arc<Vec<u32>>)>, key, words: Arc<Vec<u32>>| {
-        byond_dmb::bytecode::visit_instructions(&words, |_| {}, |_| {})
-            .map_err(|error| format!("{key:?} bytecode: {error:?}"))?;
-        let code = code_row(&image, &link.tables, key)?;
-        if !image.rows.row_equals(code, &words) {
-            rows.push((code, words));
-        }
-        Ok::<_, String>(())
-    };
+    // Units whose footprint differs only in the string literals they own (a message or a
+    // name edited, a literal added): their new strings are appended to the string table, the
+    // old ones stay unreferenced (doc/structural_change_set.md, stable numbering).
+    let mut string_units: Vec<(UnitIdentity, crate::symbolic::PreparedPatchRecord)> = Vec::new();
+    let mut new_entries: Vec<(dm_link::Key, dm_link::EntryContent)> = Vec::new();
     for contribution in &lowered.contributions {
         let record = contribution.patch_record();
         let identity = record.record.identity();
@@ -661,21 +662,68 @@ pub(crate) fn try_patch<R: dm_ir::Resolver>(request: PatchRequest<'_, R>) -> Res
             return Err(format!("unit {identity:?} has modified instances"));
         }
         let (new_parts, old_parts) = (record.footprint(), old.footprint());
-        if let Some(((name, _), _)) = new_parts
+        let mut differing = new_parts
             .iter()
             .zip(&old_parts)
-            .find(|((_, new), (_, old))| new != old)
-        {
-            return Err(format!("unit {identity:?} link footprint changed: {name}"));
+            .filter(|((_, new), (_, old))| new != old)
+            .map(|((name, _), _)| *name);
+        if let Some(first) = differing.next() {
+            let strings_only = std::iter::once(first)
+                .chain(differing)
+                .all(|name| matches!(name, "strings" | "value_strings"));
+            if !strings_only || !string_patch_enabled() {
+                return Err(format!("unit {identity:?} link footprint changed: {first}"));
+            }
+            new_entries.extend(record.record.string_entries());
+            string_units.push((identity, record));
         }
+    }
+    // With new strings the units link against tables extended append-only; every
+    // existing assignment stays, so the other units' words are unchanged.
+    let mut extended = None;
+    let mut new_strings = Vec::new();
+    if !string_units.is_empty() {
+        let starts = request
+            .generation
+            .model_table_starts(base.dmb_hash)
+            .ok_or("retained model released or differs from the patch base")?;
+        let (tables, added) = link
+            .tables
+            .extended(new_entries, &starts)
+            .map_err(|error| format!("string append link: {error:?}"))?;
+        for &(key, index) in &added {
+            match key {
+                dm_link::Key::String(_) => new_strings.push((
+                    index,
+                    tables.content(key).ok_or("appended string content")?.to_vec(),
+                )),
+                other => return Err(format!("string append would add {other:?}")),
+            }
+        }
+        dm_profile::request_mark("patch.strings_extended");
+        extended = Some(tables);
+    }
+    let tables = extended.as_ref().unwrap_or(&link.tables);
+    let mut push_row = |rows: &mut Vec<(usize, Arc<Vec<u32>>)>, key, words: Arc<Vec<u32>>| {
+        byond_dmb::bytecode::visit_instructions(&words, |_| {}, |_| {})
+            .map_err(|error| format!("{key:?} bytecode: {error:?}"))?;
+        let code = code_row(&image, tables, key)?;
+        if !image.rows.row_equals(code, &words) {
+            rows.push((code, words));
+        }
+        Ok::<_, String>(())
+    };
+    for contribution in &lowered.contributions {
+        let record = contribution.patch_record();
+        let identity = record.record.identity();
         let words = record
             .record
-            .link_words(&link.tables, &link.mobs)
+            .link_words(tables, &link.mobs)
             .map_err(|error| format!("unit {identity:?} link: {error:?}"))?;
         push_row(&mut rows, crate::symbolic::unit_key(identity), words)?;
         for (key, words) in record
             .record
-            .helper_words(&link.tables, &link.mobs)
+            .helper_words(tables, &link.mobs)
             .map_err(|error| format!("unit {identity:?} helper link: {error:?}"))?
         {
             push_row(&mut rows, key, words)?;
@@ -694,7 +742,7 @@ pub(crate) fn try_patch<R: dm_ir::Resolver>(request: PatchRequest<'_, R>) -> Res
         let mut current = Vec::with_capacity(link.initializers.len());
         for code in &link.initializers {
             match code
-                .relink_shifted(&link.tables, &link.mobs, &shift)
+                .relink_shifted(tables, &link.mobs, &shift)
                 .map_err(|error| format!("{:?} relink: {error:?}", code.key))?
             {
                 Some((words, moved)) => {
@@ -725,18 +773,56 @@ pub(crate) fn try_patch<R: dm_ir::Resolver>(request: PatchRequest<'_, R>) -> Res
         .map_err(|error| format!("local warnings: {error:?}"))?;
     let output_warnings = warnings.render(local);
     let patched_rows = rows.len();
+    let appended_strings = new_strings.len();
+    let units = if string_units.is_empty() {
+        Arc::clone(&base.units)
+    } else {
+        let mut units = (*base.units).clone();
+        for (identity, record) in string_units {
+            units.insert(identity, record);
+        }
+        Arc::new(units)
+    };
     let next = BodyPatchBase {
         shape: Arc::clone(shape),
-        units: Arc::clone(&base.units),
+        units,
         inputs: Arc::new(request.inputs),
         archive: request.archive,
         warnings: Arc::new(warnings),
         dmb_hash: 0,
     };
-    // `patch_rows` stamps the new output hash before installing the base.
-    let dmb = request
-        .generation
-        .patch_rows(&image, &rows, next, next_initializers)?;
+    let dmb = if let Some(tables) = extended {
+        // The model path re-encodes with list-row reuse and installs the extended
+        // tables; `patch_rows` would leave the new strings out of the image.
+        let initializers = next_initializers.unwrap_or_else(|| link.initializers.clone());
+        request.generation.patch_model(
+            base.dmb_hash,
+            |model| crate::composition::append::append_table_strings(model, &new_strings),
+            |model, _strings| {
+                for (row, words) in &rows {
+                    *model.lists.get_mut(*row).ok_or_else(|| {
+                        crate::composition::CompositionError::NonContiguous("code row".into())
+                    })? = words.as_ref().clone();
+                }
+                Ok(())
+            },
+            crate::composition::PatchLink {
+                tables,
+                mobs: link.mobs.clone(),
+                initializers,
+            },
+            next,
+            request.executor,
+        )?
+    } else {
+        // `patch_rows` stamps the new output hash before installing the base.
+        request
+            .generation
+            .patch_rows(&image, &rows, next, next_initializers)?
+    };
+    if appended_strings > 0 {
+        crate::daemon_eprintln!("native body patch: {appended_strings} strings appended");
+    }
     Ok(Patched {
         dmb,
         warnings: output_warnings,
