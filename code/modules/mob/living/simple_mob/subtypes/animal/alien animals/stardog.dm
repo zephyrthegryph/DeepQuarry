@@ -922,9 +922,9 @@ CAPABILITIES(/obj/effect/landmark/stardog)
 	icon_state = "screen_eye"
 	pixel_x = -16
 	pixel_y = -16
-	clicksound = SFX_VORE_SQUISH1
 
 CAPABILITIES(/obj/machinery/computer/ship/navigation/telescreen/dog_eye)
+	configure(machine_interaction_config(clicksound = SFX_VORE_SQUISH1))
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/draw(datum/look/look)
 	..()

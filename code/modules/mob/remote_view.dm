@@ -340,26 +340,22 @@ CAPABILITIES(/datum/remote_view)
  * Remote view subtype where if the item used with it is moved or dropped the view ends too
  */
 /datum/remote_view/item_zoom
-	VAR_PRIVATE/obj/item/host_item
 	VAR_PRIVATE/show_message
 
 CAPABILITIES(/datum/remote_view/item_zoom)
-	ref_one(nameof(host_item), /obj/item)
+	links(LINK_END(/obj/item, LK_ITEM_ZOOM_VIEW), LINK_END(/datum/remote_view/item_zoom, LK_ZOOM_ITEM), sparse = TRUE)
 
 
 /datum/remote_view/item_zoom/start(atom/focused_on, viewsize, vconfig_path, obj/item/our_item, tileoffset, show_visible_messages)
 	. = ..()
 	if(!.)
 		return
-	rel_set(src, nameof(host_item), our_item)
-	observe(host_item, /datum/notice/qdeleting, src, then(PROC_REF(handle_endview)))
-	observe(host_item, /datum/notice/moved, src, then(PROC_REF(handle_endview)))
-	observe(host_item, /datum/notice/item_dropped, src, then(PROC_REF(handle_endview)))
-	observe(host_item, /datum/notice/item_equipped, src, then(PROC_REF(handle_endview)))
-	observe(host_item, /datum/notice/remote_view_clear, src, then(PROC_REF(on_forced_endview_event)))
-	// Unfortunately too many things read this to control item state for me to remove this.
-	// Oh well! better than looking the view up everywhere. Lets just manage item/zoom in this datum though...
-	our_item.zoom = TRUE
+	link_set_one(src, LK_ZOOM_ITEM, our_item)
+	observe(host_item(), /datum/notice/qdeleting, src, then(PROC_REF(handle_endview)))
+	observe(host_item(), /datum/notice/moved, src, then(PROC_REF(handle_endview)))
+	observe(host_item(), /datum/notice/item_dropped, src, then(PROC_REF(handle_endview)))
+	observe(host_item(), /datum/notice/item_equipped, src, then(PROC_REF(handle_endview)))
+	observe(host_item(), /datum/notice/remote_view_clear, src, then(PROC_REF(on_forced_endview_event)))
 	// Offset view
 	var/tilesize = 32
 	var/viewoffset = tilesize * tileoffset
@@ -379,22 +375,25 @@ CAPABILITIES(/datum/remote_view/item_zoom)
 	// Feedback
 	show_message = show_visible_messages
 	if(show_message)
-		host_mob.visible_message(span_filter_notice("[host_mob] peers through the [host_item.zoomdevicename ? "[host_item.zoomdevicename] of the [host_item.name]" : "[host_item.name]"]."))
+		host_mob.visible_message(span_filter_notice("[host_mob] peers through the [optical_view_of(host_item()).device_name ? "[optical_view_of(host_item()).device_name] of the [host_item().name]" : "[host_item().name]"]."))
 	PUBLISH_CHANGE(host_mob, MOB_KEY_VIEW)
 
-// The zooming item un-zooms and the viewer's client offset resets.
+// The borrowed item endpoint clears even when the viewer has already gone.
 /datum/remote_view/item_zoom/lifecycle_unbind()
-	if(host_mob && host_item)
+	if(host_mob && host_item())
 		// Feedback
 		if(show_message)
-			host_mob.visible_message(span_filter_notice("[host_item.zoomdevicename ? "[host_mob] looks up from the [host_item.name]" : "[host_mob] lowers the [host_item.name]"]."))
-		host_item.zoom = FALSE
+			host_mob.visible_message(span_filter_notice("[optical_view_of(host_item()).device_name ? "[host_mob] looks up from the [host_item().name]" : "[host_mob] lowers the [host_item().name]"]."))
 		if(host_mob.client)
 			host_mob.client.pixel_x = 0
 			host_mob.client.pixel_y = 0
 		PUBLISH_CHANGE(host_mob, MOB_KEY_VIEW)
-	rel_clear(src, nameof(host_item))
+	link_break(src, LK_ZOOM_ITEM)
 	. = ..()
+
+/// The borrowed item this actual zoom view serves; no duplicate item flag.
+/datum/remote_view/item_zoom/proc/host_item() as /obj/item
+	return link_get(src, LK_ZOOM_ITEM)
 
 /**
  * Remote view subtype that stops if the remote view target is dead, or you lose access to the mremote mutation

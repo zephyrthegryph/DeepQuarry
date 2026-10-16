@@ -376,6 +376,9 @@ CAPABILITIES(/datum/carried_afflictions)
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 
 CAPABILITIES(/obj/item)
+	optical_view()
+	links(LINK_END(/obj/item, LK_ITEM_AUGMENT), LINK_END(/obj/item/organ, LK_AUGMENT_ITEMS), sparse = TRUE, b_many = TRUE)
+	item_persistence(preserve = FALSE)
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))
 	// The item this one is attached to: a sparse link, not a var on /obj/item (item_master()).
 	links(LINK_END(/obj/item, LK_ITEM_MASTER), LINK_END(/obj/item, LK_ITEM_ATTACHED), sparse = TRUE, b_many = TRUE)

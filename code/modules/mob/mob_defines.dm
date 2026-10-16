@@ -44,12 +44,10 @@
 	var/memory = ""
 	var/disabilities = 0	//Carbon
 	var/transforming = null	//Carbon
-	var/other = 0.0
 	var/real_name = null
 	var/blinded = null
 	var/bhunger = 0			//Carbon
 	var/ajourn = 0
-	var/phoron = null
 	var/resting = 0			//Carbon
 	var/lying = 0
 	var/lying_prev = 0
@@ -74,8 +72,6 @@
 	EXPIRY_DECLARE(timeofdeath) //Living
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
 
-	var/bodytemperature = BODYTEMP_NORMAL
-	var/charges = 0.0
 
 	var/losebreath = 0.0//Carbon
 	var/m_int = null//Living
@@ -206,6 +202,7 @@
 	var/is_slipping = FALSE
 
 CAPABILITIES(/mob)
+	heat_spawn()
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))
 	ref_one(nameof(LAssailant), /mob/living/carbon) // the last carbon to push, drag or grab this mob
 	ref_one(nameof(click_intercept), /datum)

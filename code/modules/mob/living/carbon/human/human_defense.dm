@@ -273,7 +273,7 @@ emp_act
 					H.bloody_body(src)
 					H.bloody_hands(src)
 
-		if(!stat && !(I.no_random_knockdown))
+		if(!stat && !(combat_of(I).no_random_knockdown))
 			switch(hit_zone)
 				if(BP_HEAD)//Harder to score a stun but if you do it lasts a bit longer
 					if(prob(effective_force))
