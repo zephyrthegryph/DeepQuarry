@@ -40,3 +40,7 @@ The storage population/calibration transaction now runs through ordered native s
 ## Early-owned beam plan
 
 Three beam initializer statements now use the actual early owned beamset factory. Real child construction still precedes root initialization; first cadence follows child construction and precedes periodic enrollment. Member-only take preserves the explicit destroyed cause and sound ordering. Tests cover 31 real beams, all destruction causes, normal parent-owned child observations and the first real timer deadline. All cadence writes use their generated setter. Generation and all ratchets pass at 3,604 rows, with no new annotations or baseline additions. Final DreamChecker/runtime verification and stamping remain pending.
+
+## Final source preflight
+
+Generation and all ratchets pass at 3,604 initializer rows (507 removed, zero added). DreamChecker reports zero diagnostics, including the beam plan, strict explosion cleanup, shared-cache identity normalization and native turf-roll fixtures. Test-block air reset now reuses the immutable standard-air copy source instead of allocating one disposable native mixture per target; each actual target, topology update and settle still runs, with a two-target contamination/identity regression. The gas type in that regression is the existing `/datum/gas/plasma`. The expanded 157-selector runtime batch and lane-ready stamp remain pending; no other branch's runtime result is reused.

@@ -267,7 +267,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 		// et al) and never got to restore them because it errored out early.
 		T.ChangeTurf(/turf/simulated/floor/tiled/steel)
 
-/// The default air mix a block's open turfs start with -- standard station air.
+/// Borrowed read-only copy source for standard station air. Callers copy INTO their own mix; never mutate this template.
 /proc/dq_unit_test_block_default_air()
 	RETURN_TYPE(/datum/gas_mixture)
 	var/static/datum/gas_mixture/default_air
@@ -276,7 +276,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 		heat_set(default_air, T20C, HEAT_SOURCE_OTHER)
 		default_air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
 		default_air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
-	return default_air.copy()
+	return default_air
 
 /// Every turf in a block's rectangle (inclusive), by walking its bottom-left
 /// to top-right corners -- the block is always one z-level.
