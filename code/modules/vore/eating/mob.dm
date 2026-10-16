@@ -19,14 +19,12 @@
 	var/vore_fullness = 0				// How "full" the belly is (controls icons)
 	// ALLOW(instance_list): d: per-mob vore_fullness_ex with starting entries, edited at runtime; mobs are few
 	var/list/vore_fullness_ex = list("stomach" = 0) // Expanded list of fullness
-	var/belly_size_multiplier = 1
 
 	var/list/vore_icon_bellies = list("stomach") // ALLOW(instance_list): d: per-mob vore_icon_bellies with starting entries, edited at runtime; mobs are few
 	var/updating_fullness = FALSE
 	var/tmp/obj/belly/previewing_belly
 
 	var/vore_icons = 0					// Bitfield for which fields we have vore icons for.
-	var/vore_eyes = FALSE				// For mobs with fullness specific eye overlays.
 
 	var/obj/soulgem/soulgem				// Soulcatcher. Needs to be up-ported sometime.
 

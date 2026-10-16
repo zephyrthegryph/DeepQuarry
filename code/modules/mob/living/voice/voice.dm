@@ -139,7 +139,6 @@
 	LAZYOR(., GLOB.simple_mob_default_emotes)
 
 /mob/living/voice
-	no_vore = TRUE
 
 CAPABILITIES(/mob/living/voice)
 	configure(voice_config(can_pain_emote = FALSE))
@@ -147,3 +146,5 @@ CAPABILITIES(/mob/living/voice)
 	ref_one(nameof(comm))
 	finds(nameof(comm), /obj/item/communicator, near = NEAR_LOC) // the communicator carrying us
 	knows(LANGUAGE_GALCOM, default = TRUE)
+
+	configure(vore_embodiment(no_vore = TRUE))

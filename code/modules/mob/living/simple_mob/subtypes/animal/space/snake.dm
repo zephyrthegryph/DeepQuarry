@@ -53,12 +53,12 @@
 	vore_escape_chance = 20
 	swallowTime = 50
 	vore_bump_chance = 10
-	faction_bump_vore = 1 // Allows snakes to vore people who bump into them even if they are the same "friendly" faction.
 	vore_bump_emote = "coils around and unhinges its jaws at"
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/snake)
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(vore_embodiment(faction_bump_vore = 1))
 
 
 // Adds vore belly

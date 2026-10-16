@@ -194,13 +194,13 @@
 
 
 	var/custom_footstep = FOOTSTEP_MOB_SHOE
-	var/vent_crawl_time = 4.5 SECONDS // Time to animate entering a vent
 	VAR_PRIVATE/is_motion_tracking = FALSE // Prevent multiple unsubs and resubs, also used to check if the vis layer is enabled, use has_motiontracking() to get externally.
 	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 
 	var/is_slipping = FALSE
 
 CAPABILITIES(/mob)
+	vore_embodiment()
 	heat_spawn()
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))
 	ref_one(nameof(LAssailant), /mob/living/carbon) // the last carbon to push, drag or grab this mob
@@ -317,7 +317,6 @@ CAPABILITIES(/mob)
 
 	var/size_multiplier = 1 //multiplier for the mob's icon size
 	var/accumulated_rads = 0 	// For radiation stuff.
-	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.

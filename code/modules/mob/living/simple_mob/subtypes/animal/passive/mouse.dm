@@ -64,6 +64,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	rolls(nameof(holder_type), PROC_REF(roll_holder), from = list(nameof(body_color)))
 	rolls(nameof(carries_disease), chance(40))
 	owns_many(nameof(rat_diseases), /datum/affliction/contagion, starts = PROC_REF(start_diseases))
+	configure(vore_embodiment(restrict_vore_ventcrawl = TRUE))
 
 /// A mouse made from another keeps its name and look (its constructor param); a named mouse keeps its own.
 /mob/living/simple_mob/animal/passive/mouse/var/keep_parent_data = FALSE
@@ -241,7 +242,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 // === merged from mouse_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/passive/mouse
 
-	restrict_vore_ventcrawl = TRUE
 
 
 	desc = "A small rodent, often seen hiding in maintenance areas and making a nuisance of itself. And stealing cheese, or annoying the chef. SQUEAK! <3"

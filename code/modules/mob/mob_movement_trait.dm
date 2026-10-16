@@ -4,11 +4,13 @@
 
 STATIC_ENTRY(mob_movement)
 
-/proc/mob_movement(bump = null, swap = null, push = null, always_swap = null, makes_dirt = null, can_climb = null, pull_size = null, pull_mobs = null, no_pull_when_living = null, softfall = null, hovering = null, parachuting = null)
+/proc/mob_movement(bump = null, swap = null, push = null, always_swap = null, makes_dirt = null, can_climb = null, pull_size = null, pull_mobs = null, no_pull_when_living = null, softfall = null, hovering = null, parachuting = null, force_max_speed = null, vent_crawl_time = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_MOB_MOVEMENT, null, list("softfall" = softfall, "hovering" = hovering, "parachuting" = parachuting, "bump" = bump, "swap" = swap, "push" = push, "always_swap" = always_swap, "makes_dirt" = makes_dirt, "can_climb" = can_climb, "pull_size" = pull_size, "pull_mobs" = pull_mobs, "no_pull_when_living" = no_pull_when_living))
+	return entry_make(ENTRY_MOB_MOVEMENT, null, list("softfall" = softfall, "hovering" = hovering, "parachuting" = parachuting, "bump" = bump, "swap" = swap, "push" = push, "always_swap" = always_swap, "makes_dirt" = makes_dirt, "can_climb" = can_climb, "pull_size" = pull_size, "pull_mobs" = pull_mobs, "no_pull_when_living" = no_pull_when_living, "force_max_speed" = force_max_speed, "vent_crawl_time" = vent_crawl_time))
 
 /datum/type_trait/mob_movement
+	var/force_max_speed = 0
+	var/vent_crawl_time = 4.5 SECONDS
 	var/bump = 0	// what this mob counts as when bumping (HUMAN, MONKEY, ...)
 	var/swap = 0	// the bump flags it swaps places with
 	var/push = 0	// the bump flags it pushes
@@ -23,6 +25,8 @@ STATIC_ENTRY(mob_movement)
 	var/parachuting = FALSE	// drifts down when it falls
 
 /datum/type_trait/mob_movement/copy_values(datum/type_trait/mob_movement/into)
+	into.force_max_speed = force_max_speed
+	into.vent_crawl_time = vent_crawl_time
 	into.bump = bump
 	into.swap = swap
 	into.push = push
@@ -41,7 +45,7 @@ STATIC_ENTRY(mob_movement)
 	trait_type = /datum/type_trait/mob_movement
 	publish_key = MOB_MOVEMENT_KEY
 	base_type = /mob
-	var_names = list("mob_bump_flag" = "bump", "mob_swap_flags" = "swap", "mob_push_flags" = "push", "mob_always_swap" = "always_swap", "makes_dirt" = "makes_dirt", "can_climb" = "can_climb", "can_pull_size" = "pull_size", "can_pull_mobs" = "pull_mobs", "no_pull_when_living" = "no_pull_when_living")
+	var_names = list("mob_bump_flag" = "bump", "mob_swap_flags" = "swap", "mob_push_flags" = "push", "mob_always_swap" = "always_swap", "makes_dirt" = "makes_dirt", "can_climb" = "can_climb", "can_pull_size" = "pull_size", "can_pull_mobs" = "pull_mobs", "no_pull_when_living" = "no_pull_when_living", "force_max_speed" = "force_max_speed", "vent_crawl_time" = "vent_crawl_time")
 
 /// The holder's mob_movement values (its own once one was set at run time). Read only.
 READS_AS(/proc/movement_of, MOB_MOVEMENT_KEY)
@@ -80,3 +84,9 @@ READS_AS(/proc/movement_of, MOB_MOVEMENT_KEY)
 
 /mob/proc/set_no_pull_when_living(value)
 	return set_trait(src, ENTRY_MOB_MOVEMENT, "no_pull_when_living", value)
+
+/mob/proc/set_force_max_speed(value)
+	return set_trait(src, ENTRY_MOB_MOVEMENT, "force_max_speed", value)
+
+/mob/proc/set_vent_crawl_time(value)
+	return set_trait(src, ENTRY_MOB_MOVEMENT, "vent_crawl_time", value)

@@ -334,7 +334,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/event)
 	vore_escape_chance = 20
 	swallowTime = 25
 	vore_bump_chance = 100
-	faction_bump_vore = 1
 	vore_standing_too = TRUE
 	vore_pounce_chance = 75
 	vore_pounce_maxhealth = 80
@@ -342,5 +341,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/event)
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/labrat/genetics)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = FALSE))
+	configure(vore_embodiment(faction_bump_vore = 1))
 
 

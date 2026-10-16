@@ -195,7 +195,7 @@
 			drop_all_clothing(FALSE)
 		else if(size_strip == SIZESTRIP_ALL)
 			drop_all_clothing(TRUE)
-	if(LAZYLEN(hud_list) && has_huds)
+	if(LAZYLEN(hud_list) && kind_of(src).has_huds)
 		var/new_y_offset = vis_height * (size_multiplier - 1)
 		for(var/index = 1 to hud_list.len)
 			var/image/HI = grab_hud(index)

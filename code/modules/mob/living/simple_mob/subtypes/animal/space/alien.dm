@@ -264,7 +264,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/pyro)
 	name = "alien hunterling"
 	attack_armor_pen = 1
 	color = "#1cbdff"
-	force_max_speed = 1
 	endurance = 15
 	melee_damage_lower = 1
 	melee_damage_upper = 3
@@ -272,6 +271,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/pyro)
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/hunterling)
 	configure(mob_kind(attack_cooldown = 2))
+	configure(mob_movement(force_max_speed = 1))
 
 /mob/living/simple_mob/animal/space/alien/hunterlisk
 	name = "alien hunterlisk"

@@ -5,7 +5,6 @@
 	icon = 'icons/effects/effects.dmi'	//We have an ultra-complex update icons that overlays everything, don't load some stupid random male human
 	icon_state = "nothing"
 
-	has_huds = TRUE 					//We do have HUDs (like health, wanted, status, not inventory slots)
 
 	vore_capacity = 3
 	vore_capacity_ex = list("stomach" = 3, "taur belly" = 3)

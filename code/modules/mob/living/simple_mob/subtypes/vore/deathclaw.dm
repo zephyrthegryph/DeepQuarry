@@ -134,3 +134,5 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/virgo3b)
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/phorondragonmeat))
+
+	configure(vore_embodiment(vore_eyes = TRUE))

@@ -41,7 +41,6 @@
 	vore_pounce_chance = 70
 	vore_default_mode = DM_HOLD
 	vore_icons = SA_ICON_LIVING
-	belly_size_multiplier = 2.5
 
 /datum/say_list/seagull
 	speak = list("Ha-Ha-Ha!","Huoh-Huoh-Huoh!","Keow?")
@@ -51,6 +50,7 @@
 CAPABILITIES(/mob/living/simple_mob/vore/seagull)
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken))
 	on_change(nameof(vore_fullness), ANY, then(PROC_REF(fullness_changed)))
+	configure(vore_embodiment(belly_size_multiplier = 2.5))
 
 /// A full gull is slow: past two fullness steps it drags its feet, and speeds up again when it empties.
 /mob/living/simple_mob/vore/seagull/proc/fullness_changed(datum/act/A)

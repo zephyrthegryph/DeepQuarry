@@ -13,7 +13,6 @@
 	icon_state = "synx_living"
 	icon_living = "synx_living"
 	icon_dead = "synx_dead"
-	parasitic = TRUE //Digestion immunity var
 
 	var/list/speak = list("Who is there?", "What is that thing?!") // ALLOW(instance_list): d: per-mob speak, filled at runtime; mobs are few
 	var/speak_chance = 0 //MAy have forgotten to readd that.
@@ -995,6 +994,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/disguise)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/randomspeech)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/set_style)
+	configure(vore_embodiment(parasitic = TRUE))
 
 
 /mob/living/simple_mob/animal/synx/starting_nutrition()

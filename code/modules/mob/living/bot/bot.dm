@@ -672,7 +672,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	return ejectpai()
 
 /mob/living/bot/Login()
-	no_vore = FALSE // ROBOT VORE
+	set_no_vore(FALSE) // ROBOT VORE
 	grant(src, granted_verb(/mob/proc/insidePanel), src)
 
 	return ..()
@@ -680,7 +680,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 /mob/living/bot/Logout()
 	release_vore_contents()
 	revoke(src, granted_verb(/mob/proc/insidePanel), src)
-	no_vore = TRUE
+	set_no_vore(TRUE)
 	vore_prefs.devourable = FALSE
 	vore_prefs.feeding = FALSE
 	vore_prefs.can_be_drop_pred = FALSE
@@ -689,7 +689,6 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 
 // === merged from bot_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/bot
-	no_vore = TRUE
 
 CAPABILITIES(/mob/living/bot)
 	configure(voice_config(can_pain_emote = FALSE))
@@ -706,6 +705,7 @@ CAPABILITIES(/mob/living/bot)
 	setup(PROC_REF(start_switched_on))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	configure(vore_embodiment(no_vore = TRUE))
 
 	op("work", ai(), reach(REACH_ANY), wait(PROC_REF(work_time)), then(PROC_REF(work_finished)), on_interrupt(PROC_REF(work_broken)))
 	op("hold", ai(), wait(PROC_REF(work_time), keeps = 0), then(PROC_REF(hold_finished)), on_interrupt(PROC_REF(hold_broken)))

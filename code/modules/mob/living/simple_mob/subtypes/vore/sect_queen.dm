@@ -33,7 +33,6 @@
 	icon = 'icons/mob/vore64x64.dmi'
 	vis_height = 64
 	has_eye_glow = TRUE
-	vore_eyes = TRUE
 	custom_eye_color = "#FF0000"
 
 	faction = FACTION_INSECTS
@@ -85,6 +84,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/sect_queen)
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color, login = TRUE)
+	configure(vore_embodiment(vore_eyes = TRUE))
 
 /mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color()
 	set name = "Set Glow Color"

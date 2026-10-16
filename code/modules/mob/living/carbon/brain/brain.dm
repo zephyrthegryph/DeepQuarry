@@ -19,7 +19,6 @@
 	var/alert = null
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "brain1"
-	no_vore = TRUE
 	low_priority = TRUE
 
 // a brain with a player dies and ghosts; its host forgets the view.
@@ -134,3 +133,5 @@ CAPABILITIES(/mob/living/carbon/brain)
 	configure(mob_kind(use_me = 0))
 	knows(LANGUAGE_GALCOM, default = TRUE)
 	ref_one(nameof(container)) // back reference to what holds us (an MMI, a soulcatcher); never owned by the brainmob
+
+	configure(vore_embodiment(no_vore = TRUE))

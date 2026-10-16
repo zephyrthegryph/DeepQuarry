@@ -20,6 +20,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/borer)
 	knows("Cortical Link")
 	rolls(nameof(true_name), PROC_REF(roll_true_name))
 	setup(TYPE_PROC_REF(/mob, motiontracker_subscribe)) // senses motion from birth
+	configure(mob_movement(vent_crawl_time = 3 SECONDS))
 
 /// The human this borer has infested, or null.
 /mob/living/simple_mob/animal/borer/proc/borer_host() as /mob/living/carbon/human

@@ -106,7 +106,6 @@
 	mount_offset_y = 24
 	mount_offset_x = -9
 	has_eye_glow = TRUE
-	vore_eyes = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
 	configure(seat_policy(capacity = 1, movable = TRUE, lying = FALSE))
@@ -135,7 +134,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
 	mount_offset_y = 24
 	mount_offset_x = -9
 	has_eye_glow = TRUE
-	vore_eyes = TRUE
 
 // A fluff sprite for an event mob created by grayscaledrake
 
@@ -160,3 +158,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
 	vore_capacity = 1
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = SA_ICON_LIVING
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/space)
+
+	configure(vore_embodiment(vore_eyes = TRUE))

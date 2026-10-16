@@ -8,14 +8,11 @@ sparse(/mob/living, drain_finalized, type = bool)
 	var/weight = 137					// Weight for mobs for weightgain system
 	var/vore_egg_type = "egg" 			// Default egg type.	// Only used for creatures that have the xenochimera regen ability, so far.
 	var/metabolism = 0.0015
-	var/no_vore = FALSE					// If the character/mob can vore.
-	var/restrict_vore_ventcrawl = FALSE // Self explanatory
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
 	var/vis_height = 32					// Sprite height used for resize features.
 	var/digestion_in_progress = FALSE	// Gradual corpse gurgles
 	var/list/trait_injection_reagents	//List of all the reagents allowed to be used for injection via venom bite. Lazy.
 
-	var/parasitic = FALSE					//Digestion immunity and nutrition leeching variable
 	var/churn_count = 0						//Counter for digested livings
 
 	var/passtable_reset		// For crawling
@@ -59,7 +56,7 @@ sparse(/mob/living, drain_finalized, type = bool)
 		return TRUE
 
 /mob/living/init_vore(force)
-	if(no_vore)
+	if(vore_embodiment_of(src).no_vore)
 		return FALSE
 	return ..()
 

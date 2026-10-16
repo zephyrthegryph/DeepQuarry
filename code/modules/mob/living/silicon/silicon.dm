@@ -8,7 +8,6 @@
 	var/list/stating_laws = list()// Channels laws are currently being stated on
 	var/obj/item/radio/common_radio
 
-	has_huds = TRUE
 	// ALLOW(instance_list): d: per-mob speech_synthesizer_langs, filled at runtime; mobs are few
 	var/list/speech_synthesizer_langs = list()	//which languages can be vocalized by the speech synthesizer
 
@@ -57,6 +56,7 @@ CAPABILITIES(/mob/living/silicon)
 	per_type(nameof(silicon_subsystems), TYPE_PROC_REF(/datum, per_type_own))
 	footstep()
 	param(nameof(decoy), pos = 1)
+	configure(mob_kind(has_huds = TRUE))
 
 /// A decoy silicon (its constructor param): no ID, language or subsystems.
 /mob/living/silicon/var/decoy = FALSE

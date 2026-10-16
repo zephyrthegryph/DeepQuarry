@@ -16,7 +16,7 @@
 	if(src?.buckled_to())
 		to_chat(src, span_warning("You cannot ventcrawl while src?.buckled_to()!"))
 		return FALSE
-	if(restrict_vore_ventcrawl)
+	if(vore_embodiment_of(src).restrict_vore_ventcrawl)
 		var/foundstuff = FALSE
 		for(var/obj/belly/B in vore_organs)
 			if(contents_count(B))
@@ -196,8 +196,8 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 						return
 
 			// Handle animation delay
-			fade_towards(vent_found, vent_crawl_time)
-			perform_op(src, src, "ventcrawl_in", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("vent" = vent_found, "time" = vent_crawl_time))
+			fade_towards(vent_found, movement_of(src).vent_crawl_time)
+			perform_op(src, src, "ventcrawl_in", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("vent" = vent_found, "time" = movement_of(src).vent_crawl_time))
 		else
 			to_chat(src, "This vent is not connected to anything.")
 

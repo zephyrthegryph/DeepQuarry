@@ -1,8 +1,6 @@
 /mob/living/carbon/human/dummy
 	real_name = "Test Dummy"
 	status_flags = CANPUSH
-	has_huds = FALSE
-	no_vore = TRUE //Dummies don't need bellies.
 
 /mob/living/carbon/human/dummy/proc/dummy_godmode_ready(datum/act/timer/A)
 	enable_godmode()
@@ -218,3 +216,6 @@ CAPABILITIES(/mob/living/carbon/human/dummy)
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))
 	after_init(0, then(PROC_REF(dummy_godmode_ready)))
 	immune_to_incapacitation()
+
+	configure(mob_kind(has_huds = FALSE))
+	configure(vore_embodiment(no_vore = TRUE))

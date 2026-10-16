@@ -24,7 +24,6 @@ sparse(/mob/living, revival_in_progress, type = bool)
 	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.
 
 	var/evasion = 0 // Makes attacks harder to land. Negative numbers increase hit chance.
-	var/force_max_speed = 0 // If 1, the mob runs extremely fast and cannot be slowed.
 
 
 	// Edge-detection cache for status alerts so throw_alert/clear_alert only fire on state transition.
@@ -33,7 +32,6 @@ sparse(/mob/living, revival_in_progress, type = bool)
 
 
 	var/list/hud_list		//Holder for health hud, status hud, wanted hud, etc (not like inventory slots)
-	var/has_huds = FALSE	//Whether or not we should bother initializing the above list
 
 
 

@@ -29,6 +29,7 @@
 	TEST_ASSERT(static_find(item_table, ENTRY_ITEM_PLACEMENT), "Item placement has a real item root")
 	TEST_ASSERT(static_find(item_table, ENTRY_ITEM_ADMISSION), "Trash admission has a real item root")
 	var/datum/type_table/mob_table = static_table_of(/mob)
+	TEST_ASSERT(static_find(mob_table, ENTRY_VORE_EMBODIMENT), "Embodiment configuration has its actual mob root")
 	TEST_ASSERT(static_find(mob_table, ENTRY_HEAT_SPAWN), "Spawn heat configuration has an inherited root")
 	var/datum/type_table/living_table = static_table_of(/mob/living)
 	TEST_ASSERT(static_find(living_table, ENTRY_DEATH_POLICY), "Final-death policy has its actual living root")

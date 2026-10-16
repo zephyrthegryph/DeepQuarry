@@ -1310,7 +1310,7 @@ CAPABILITIES(/datum/vore_look)
 	var/list/viable_candidates = list()
 	for(var/mob/living/candidate in range(1, host()))
 		if(istype(candidate) && !(candidate == host()))
-			if(length(candidate.vore_organs) && candidate.vore_prefs.feeding && !candidate.no_vore)
+			if(length(candidate.vore_organs) && candidate.vore_prefs.feeding && !vore_embodiment_of(candidate).no_vore)
 				viable_candidates += candidate
 	return viable_candidates
 

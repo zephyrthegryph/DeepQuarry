@@ -12,7 +12,6 @@
 	// Generally we don't want simple_mobs to get displaced when bumped into due to it trivializing combat with windup attacks.
 	// Some subtypes allow displacement, like passive animals.
 
-	has_huds = TRUE // We do show AI status huds for buildmode players
 
 
 	var/tt_desc = null //Tooltip description
@@ -171,7 +170,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	configure(footstep_settings(sound_type = FOOTSTEP_MOB_SHOE, volume = 1, e_range = -6))
 	ref_one(nameof(movement_target), /obj)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digest_leave_remains" = TRUE, "strip_pref" = FALSE, "can_be_drop_pred" = TRUE, "can_be_drop_prey" = TRUE))
-	configure(mob_kind(death_message = "dies!", attack_icon = 'icons/effects/effects.dmi', attack_icon_state = "slash", attack_cooldown = 10))
+	configure(mob_kind(death_message = "dies!", attack_icon = 'icons/effects/effects.dmi', attack_icon_state = "slash", attack_cooldown = 10, has_huds = TRUE))
 	configure(mob_movement(bump = HEAVY, swap = ~HEAVY, push = ~HEAVY))
 	ref_many(nameof(prey_excludes))
 	op("reload", ai(), wait(PROC_REF(reload_wait)), then(PROC_REF(reload_done)))
@@ -305,7 +304,7 @@ CAPABILITIES(/mob/living/simple_mob)
 /mob/living/simple_mob/movement_delay()
 	. = movement_cooldown
 
-	if(force_max_speed)
+	if(movement_of(src).force_max_speed)
 		return -3
 
 	if(factor(BF_HASTE))
@@ -641,7 +640,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	if(force)
 		set_vore_active(TRUE)
 		voremob_loaded = TRUE
-	if(!vore_active || no_vore || !voremob_loaded)
+	if(!vore_active || vore_embodiment_of(src).no_vore || !voremob_loaded)
 		return
 
 	enable_slosh() // Sloshy element
@@ -721,7 +720,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 /mob/living/simple_mob/proc/tryBumpNom(mob/tmob)
 	//returns TRUE if we actually start an attempt to bumpnom, FALSE if checks fail or the random bump nom chance fails
 	if(istype(tmob) && will_eat(tmob) && !istype(tmob, type) && prob(vore_bump_chance) && !ckey) //check if they decide to eat. Includes sanity check to prevent cannibalism.
-		if(!faction_bump_vore && faction == tmob.faction)
+		if(!vore_embodiment_of(src).faction_bump_vore && faction == tmob.faction)
 			return FALSE
 		if(tmob.canmove && prob(vore_pounce_chance)) //if they'd pounce for other noms, pounce for these too, otherwise still try and eat them if they hold still
 			tmob.status_at_least(STAT_WEAKENED, 5)

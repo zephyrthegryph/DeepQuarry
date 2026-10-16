@@ -1181,7 +1181,7 @@ CAPABILITIES(/datum/character_setup_button)
 	// which calls initialize_ai_brain() when the mob opts in via use_modern_ai.
 
 	//Prime this list if we need it.
-	if(has_huds)
+	if(kind_of(src).has_huds)
 		// Note, this should be refactored to drop priority overlays
 		// ALLOW(decl): priority overlay from a global, gated on has_huds
 		add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
