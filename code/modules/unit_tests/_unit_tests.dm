@@ -1199,6 +1199,8 @@
 
 #include "round2_slime_docility_name_request.dm"
 
+#include "lobby_join_op_alive_keep.dm"
+#include "pipe_carries_no_has_power.dm"
 #include "round2_helm_limit_requests.dm"
 #include "round2_helm_coordinates_clientless.dm"
 
