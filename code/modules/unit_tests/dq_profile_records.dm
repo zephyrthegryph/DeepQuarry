@@ -216,3 +216,19 @@
 	TEST_ASSERT(!("looks" in mouse.vars), "but no human looks")
 
 #undef DQ_PROFILE_SAVES
+
+/// Retired compatibility shadows must not survive beside the real identity record.
+/datum/unit_test/dq_identity_shadow_retirement
+/datum/unit_test/dq_identity_shadow_retirement/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/simple_mob/e0_fixture/M = allocate(/mob/living/simple_mob/e0_fixture, test_floor())
+	for(var/field in list("nickname", "flavor_text", "med_record", "sec_record", "gen_record", "exploit_record"))
+		TEST_ASSERT(!(field in M.vars), "[field] has no stale duplicate mob storage")
+		TEST_ASSERT(field in M.bio.vars, "[field] retains its actual profile home")
+	TEST_ASSERT(!("do_afters" in M.vars), "the retired do-after scheduler has no per-mob list")
+	M.bio.flavor_text = "A real profile description."
+	TEST_ASSERT_EQUAL(M.print_flavor_text(), span_notice("A real profile description."), "the actual flavor consumer reads the profile")
+	var/mob/living/simple_mob/e0_fixture/other = allocate(/mob/living/simple_mob/e0_fixture, test_floor())
+	record_copy(other.bio, M.bio)
+	TEST_ASSERT_EQUAL(other.bio.flavor_text, M.bio.flavor_text, "native identity copying retains the actual value")
+	TEST_ASSERT(other.bio != M.bio, "copied identity records remain independently owned")

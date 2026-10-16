@@ -47,12 +47,6 @@
 	var/transforming = null	//Carbon
 	var/other = 0.0
 	var/real_name = null
-	var/nickname = null
-	var/flavor_text = ""
-	var/med_record = ""
-	var/sec_record = ""
-	var/gen_record = ""
-	var/exploit_record = ""
 	var/blinded = null
 	var/bhunger = 0			//Carbon
 	var/ajourn = 0
@@ -192,7 +186,6 @@
 	var/tmp/list/progressbars = null //for stacking do_after bars
 
 	///For storing what do_after's someone has, key = string, value = amount of interactions of that type happening.
-	var/tmp/list/do_afters
 
 	///Allows a datum to intercept all click calls this mob is the source of
 	var/tmp/datum/click_intercept
