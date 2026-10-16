@@ -562,7 +562,7 @@ pub(crate) fn try_patch<R: dm_ir::Resolver>(request: PatchRequest<'_, R>) -> Res
             }
         }
     }
-    if let Some(difference) = request.inputs.non_text_difference(&base.inputs) {
+    if let Some(difference) = request.inputs.non_text_difference_with(&base.inputs, request.archive != base.archive) {
         return Err(format!("non-text input changed: {difference}"));
     }
     if request.archive != base.archive {
@@ -860,7 +860,7 @@ fn try_default_patch<R: dm_ir::Resolver>(
     if shape.bodies != base.shape.bodies {
         return Err("bodies changed with the defaults".into());
     }
-    if let Some(difference) = request.inputs.non_text_difference(&base.inputs) {
+    if let Some(difference) = request.inputs.non_text_difference_with(&base.inputs, request.archive != base.archive) {
         return Err(format!("non-text input changed: {difference}"));
     }
     if request.archive != base.archive {
