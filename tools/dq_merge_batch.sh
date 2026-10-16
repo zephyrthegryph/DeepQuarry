@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+# A batch of lanes merged and proved as ONE combination, with a bisect that bounces only the bad lane.
+#
+#   bash tools/dq_merge_batch.sh --lanes "a,b,c" [any dq_merge_gates.sh option: --tests "..." --tgui --serial ...]
+#   bash tools/dq_merge_gates.sh --lanes a,b,c      # the same thing: gates delegates here when a lane is not in HEAD yet
+#
+# Run it inside the merge worktree holding the merge lock (cd "$(bash tools/dq_merge_worktree.sh)"). It:
+#   1. starts from origin/master, merges every lane in order with `git merge --no-ff` (a lane that conflicts is bounced at once),
+#   2. runs dq_merge_gates.sh once on the combination: ONE gen, ONE build, ONE union of focused tests (the smoke set plus the tests of
+#      every lane whose stamp is stale) and ONE look-key normalization and record, committed into the batch's last merge commit,
+#      not once per lane. A lane whose stamp is valid and whose merge changes nothing master did not (master unmoved) is covered by
+#      its tree proof and costs no test at all (tools/dq_proof_cache.sh),
+#   3. on failure, bisects by lane: the smallest prefix of the batch that fails names the bad lane (log N attempts, and an attempt on a
+#      tree already proved is answered from the proof cache in seconds), that lane is bounced (named, with its log), and the rest is
+#      merged and proved again,
+#   4. leaves rewrite/integ-current on the proved combination (push it with tools/dq_push_master.sh) or on origin/master when nothing
+#      passed. Exit 0: every lane is in; 1: some lane was bounced (listed); 2: usage.
+# Attempts run on a detached HEAD, so the branch only ever moves to a proved tip, with `git switch -C` from a clean tree (the previous
+# value of the branch is origin/master, nothing is lost). Nothing here runs checkout, reset, restore, stash or cherry-pick.
+set -uo pipefail
+cd "$(git rev-parse --show-toplevel)"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
+merge_lock_require || exit 1
+
+lanes_arg=""
+pass=()
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--lanes) shift; lanes_arg="${1:-}" ;;
+		-h|--help) sed -n '2,24p' "$0"; exit 0 ;;
+		*) pass+=("$1") ;;
+	esac
+	shift
+done
+lanes_arg="${lanes_arg//,/ }"
+read -r -a lanes <<<"$lanes_arg"
+[ ${#lanes[@]} -gt 0 ] || { echo "dq_merge_batch: --lanes needs at least one branch" >&2; exit 2; }
+BRANCH="${DQ_MERGE_BRANCH:-rewrite/integ-current}"
+
+git update-index -q --refresh >/dev/null 2>&1
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then echo "dq_merge_batch: REFUSED: uncommitted tracked changes" >&2; exit 1; fi
+git fetch -q origin 2>/dev/null || echo "dq_merge_batch: warning: git fetch failed" >&2
+git rev-parse -q --verify origin/master >/dev/null || { echo "dq_merge_batch: no origin/master" >&2; exit 2; }
+for l in "${lanes[@]}"; do
+	git rev-parse -q --verify "$l^{commit}" >/dev/null 2>&1 || git rev-parse -q --verify "origin/$l^{commit}" >/dev/null 2>&1 || { echo "dq_merge_batch: lane '$l' does not resolve to a commit" >&2; exit 2; }
+done
+mkdir -p data/merge-batch
+stamp="$(date +%Y%m%dT%H%M%S)"
+declare -A tried_rc
+bounced=()
+reasons=()
+n_attempts=0
+
+ref_of() { git rev-parse -q --verify "$1^{commit}" >/dev/null 2>&1 && echo "$1" || echo "origin/$1"; }
+
+# attempt <lane...>: detached origin/master + the merges + the gates. Returns the gates' status; a merge conflict names the lane in $CONFLICT.
+CONFLICT=""
+current_key=""
+attempt() {
+	local key="$*" l log
+	if [ -z "${NOCACHE:-}" ] && [ -n "${tried_rc[$key]+x}" ]; then return "${tried_rc[$key]}"; fi
+	current_key="$key"
+	n_attempts=$((n_attempts + 1))
+	log="data/merge-batch/$stamp.attempt$n_attempts.log"
+	echo "== batch attempt $n_attempts: $key (log $log)"
+	CONFLICT=""
+	git switch -q --detach origin/master || return 90
+	for l in "$@"; do
+		if ! git merge --no-ff --no-edit -q -m "Merge $l" "$(ref_of "$l")" >>"$log" 2>&1; then
+			git merge --abort >/dev/null 2>&1
+			CONFLICT="$l"
+			echo "   $l conflicts with the batch; see $log" >&2
+			tried_rc[$key]=91
+			return 91
+		fi
+	done
+	# One look-key normalization/record and one gen/build/test pass for the whole combination: dq_merge_gates.sh does them on this HEAD.
+	bash tools/dq_merge_gates.sh --lanes "$*" --no-auto-merge ${pass[@]+"${pass[@]}"} >>"$log" 2>&1
+	local rc=$?
+	tail -n 3 "$log" | sed 's/^/   /'
+	tried_rc[$key]=$rc
+	return "$rc"
+}
+
+bounce() { # <lane> <why>
+	bounced+=("$1"); reasons+=("$2")
+	echo "== BOUNCED $1: $2"
+}
+
+good=()
+remaining=("${lanes[@]}")
+while [ ${#remaining[@]} -gt 0 ]; do
+	set=("${good[@]+"${good[@]}"}" "${remaining[@]}")
+	attempt "${set[@]}"; rc=$?
+	if [ "$rc" -eq 91 ]; then
+		# a lane that cannot even merge: bounce it and retry without it
+		bounce "$CONFLICT" "merge conflict with the batch or master (rebase it: bash tools/dq_merge_master.sh, then dq_lane_ready.sh)"
+		new=()
+		for l in "${remaining[@]}"; do [ "$l" = "$CONFLICT" ] || new+=("$l"); done
+		remaining=("${new[@]+"${new[@]}"}")
+		new=()
+		for l in "${good[@]+"${good[@]}"}"; do [ "$l" = "$CONFLICT" ] || new+=("$l"); done
+		good=("${new[@]+"${new[@]}"}")
+		continue
+	fi
+	if [ "$rc" -eq 0 ]; then good=("${set[@]}"); remaining=(); break; fi
+	if [ ${#set[@]} -eq 1 ]; then
+		bounce "${set[0]}" "gates failed alone on master (logs data/merge-batch/$stamp.attempt$n_attempts.log and data/merge-gates/)"
+		good=(); remaining=(); break
+	fi
+	# Bisect: the smallest prefix of `remaining` that fails on top of `good` names the culprit.
+	lo=1; hi=${#remaining[@]}
+	while [ "$lo" -lt "$hi" ]; do
+		mid=$(( (lo + hi) / 2 ))
+		attempt "${good[@]+"${good[@]}"}" "${remaining[@]:0:mid}"; prc=$?
+		if [ "$prc" -eq 0 ]; then lo=$((mid + 1)); elif [ "$prc" -eq 91 ]; then hi=$mid; else hi=$mid; fi
+	done
+	culprit="${remaining[$((lo - 1))]}"
+	bounce "$culprit" "the batch fails once it is merged (bisected; logs data/merge-batch/$stamp.attempt*.log)"
+	good+=("${remaining[@]:0:$((lo - 1))}")
+	remaining=("${remaining[@]:$lo}")
+	# the loop retries good+remaining; a set already tried is answered from tried_rc
+done
+# HEAD sits on the last attempt, which may have been a failing one: build the proved combination again. Its tree was proved, so the gates
+# answer from the proof cache (tools/dq_proof_cache.sh) in seconds.
+if [ ${#good[@]} -gt 0 ] && [ "$current_key" != "${good[*]}" ]; then
+	NOCACHE=1 attempt "${good[@]}" || { echo "dq_merge_batch: the proved combination (${good[*]}) failed on the rebuild; not moving $BRANCH" >&2; good=(); }
+fi
+
+if [ ${#good[@]} -eq 0 ]; then
+	echo "dq_merge_batch: nothing passed; $BRANCH stays at origin/master"
+	git switch -q -C "$BRANCH" origin/master 2>/dev/null
+else
+	git switch -q -C "$BRANCH" HEAD || { echo "dq_merge_batch: could not move $BRANCH to the proved tip $(git rev-parse --short HEAD)" >&2; exit 1; }
+	echo "dq_merge_batch: $BRANCH = $(git rev-parse --short HEAD): ${good[*]} proved together in $n_attempts attempt(s); push with: bash tools/dq_push_master.sh --expect \"${good[*]}\""
+fi
+if [ ${#bounced[@]} -gt 0 ]; then
+	echo "dq_merge_batch: BOUNCED: ${bounced[*]}"
+	for i in "${!bounced[@]}"; do echo "  ${bounced[$i]}: ${reasons[$i]}"; done
+	exit 1
+fi
+exit 0

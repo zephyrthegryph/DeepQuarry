@@ -30,6 +30,7 @@ set -uo pipefail
 export DQ_STALENESS=full
 cd "$(git rev-parse --show-toplevel)"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_proof_cache.sh"
 
 tests=()
 covers=()
@@ -54,6 +55,12 @@ die() { echo "dq_lane_ready: $1" >&2; exit "${2:-1}"; }
 
 branch="$(git symbolic-ref -q --short HEAD)" || die "REFUSED: a detached HEAD; check out the lane's branch" 2
 case "$branch" in master|rewrite/integ-current) die "REFUSED: $branch is not a lane branch" 2 ;; esac
+# Lanes live in the worktree pool (tools/dq_lane_pool.sh): a fixed set of leased worktrees, not one created and deleted per lane.
+case "$(git rev-parse --show-toplevel)" in
+	*/dq-wt/pool-[0-9]*|*/dq-wt/merge-base) ;;
+	*) if [ "${DQ_LANE_POOL_STRICT:-0}" = 1 ]; then die "REFUSED: $(git rev-parse --show-toplevel) is not a pool worktree; lease one: bash tools/dq_lane_pool.sh lease <branch>" 2
+	   else echo "dq_lane_ready: WARNING: this is not a pool worktree; lanes get worktrees only from the pool (bash tools/dq_lane_pool.sh lease <branch>)" >&2; fi ;;
+esac
 git update-index -q --refresh >/dev/null 2>&1
 if ! git diff --quiet || ! git diff --cached --quiet; then die "REFUSED: uncommitted changes to tracked files; commit the lane first (the stamp names an exact commit)" 2; fi
 if git ls-files --others --exclude-standard -- 'code/*.dm' deepquarry.dme | grep -q .; then die "REFUSED: untracked .dm files under code/; add and commit them" 2; fi
@@ -151,6 +158,9 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" || die "could not commi
 	echo "== lane-ready: committed the recorded look keys/snapshots"
 fi
 head_sha="$(git rev-parse HEAD)"
+# The commit above (look keys the pins re-recorded) changes the tree the gates proved, by exactly what the proving run wrote: the proof
+# covers that tree too, so merging this lane into an unmoved master needs no second proof (tools/dq_proof_cache.sh).
+proof_alias "$(proof_tree "$tested")" "$(proof_tree HEAD)"
 
 ok_file="data/merge-gates/${tested:0:12}.ok"
 passed="$(sed -n 's/^passed=//p' "$ok_file")"
