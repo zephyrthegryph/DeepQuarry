@@ -176,6 +176,7 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 	op("reject_guest_card", item(/obj/item/card/id/guest), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_reject_guest_card)))
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), needs(req(PROC_REF(can_insert_id))), then(PROC_REF(interaction_insert_id)))
 	op("eject_id", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject ID Card"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act))), then(PROC_REF(interaction_eject_id)))
+	owns_one(nameof(giver), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/computer/guestpass/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -294,6 +295,3 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 	add_fingerprint(A.actor)
 	return TRUE
 
-/obj/machinery/computer/guestpass/ownership()
-	. = ..()
-	. += owns(nameof(giver), policy = OWN_CONTAINED)

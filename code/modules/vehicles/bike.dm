@@ -34,10 +34,8 @@ CAPABILITIES(/obj/vehicle/bike)
 	op("bike_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction bike hand"), then(PROC_REF(interaction_bike_hand)))
 	op("bike_toggle_engine", menu(), label("Toggle Engine"), needs(req_on_holder_turf(), req_capable()), then(PROC_REF(bike_toggle_engine)))
 	op("bike_kickstand", menu(), label("Toggle Kickstand"), needs(req_on_holder_turf(), req_capable()), then(PROC_REF(bike_kickstand)))
+	owns_one(nameof(cell), starts = /obj/item/cell/high, on_destroy = ON_DESTROY_CONTAINED)
 
-/obj/vehicle/bike/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 
 /obj/vehicle/bike/Initialize(mapload)
 	. = ..()
@@ -45,9 +43,8 @@ CAPABILITIES(/obj/vehicle/bike)
 	turn_off()
 
 /// A frame the builder fits a cell to: it starts without the factory cell.
-/obj/vehicle/bike/built/ownership()
-	. = ..()
-	. += no_starts(nameof(cell))
+CAPABILITIES(/obj/vehicle/bike/built)
+	owns_one(nameof(cell), starts = STARTS_NONE, on_destroy = ON_DESTROY_CONTAINED)
 
 CAPABILITIES(/obj/vehicle/bike/random)
 	rolls(nameof(paint_color), PROC_REF(roll_paint_color))

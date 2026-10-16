@@ -128,6 +128,7 @@ CAPABILITIES(/obj/item/gun)
 	op("gun_verb_allow_dna", menu(), label("Toggle DNA Samples Allowance"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_allow_dna)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 1), label("Remove the DNA lock"), needs(req(PROC_REF(lock_refusal))),
 		begins(PROC_REF(lock_removal_begins)), plays(SFX_ITEMS_SCREWDRIVER, at_start = TRUE), wait(2.5 SECONDS), then(PROC_REF(lock_removed)))
+	owns_one(nameof(attached_lock), starts = when(nameof(dna_lock), /obj/item/dnalockingchip), on_destroy = ON_DESTROY_CONTAINED)
 
 MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
@@ -875,9 +876,6 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 	..()
 
-/obj/item/gun/ownership()
-	. = ..()
-	. += owns(nameof(attached_lock), policy = OWN_CONTAINED, starts = when(nameof(dna_lock), /obj/item/dnalockingchip))
 
 /// the auto_target this refers to (a relation view: null once it is deleted).
 /obj/item/gun/proc/auto_target()

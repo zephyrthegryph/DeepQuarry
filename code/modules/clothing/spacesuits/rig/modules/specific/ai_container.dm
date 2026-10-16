@@ -41,6 +41,7 @@
 CAPABILITIES(/obj/item/rig_module/ai_container)
 	ref_one(nameof(integrated_ai), /mob)
 	owns_one(nameof(verb_holder), /obj/item/ai_verbs)
+	owns_one(nameof(ai_card), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/rig_module/ai_container/periodic_step()
 	if(integrated_ai())
@@ -211,9 +212,6 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 	return
 
 
-/obj/item/rig_module/ai_container/ownership()
-	. = ..()
-	. += owns(nameof(ai_card), policy = OWN_CONTAINED)
 
 /// Direct reference to the actual mob held in the suit. (a relation view: null once it is deleted).
 /obj/item/rig_module/ai_container/proc/integrated_ai() as /mob

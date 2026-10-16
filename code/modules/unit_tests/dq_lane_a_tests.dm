@@ -200,17 +200,14 @@ CAPABILITIES(/obj/lanea_fixture)
 CAPABILITIES(/obj/lanea_owner)
 	owns_many(nameof(eager))
 	owns_many(nameof(lazy))
+	owns_one(nameof(part), starts = /datum/lanea_part)
 
-/obj/lanea_owner/ownership()
-	. = ..()
-	. += owns(nameof(part), starts = /datum/lanea_part)
 
 /// A subtype that starts without the occupant its ancestor makes.
 /obj/lanea_owner/bare
 
-/obj/lanea_owner/bare/ownership()
-	. = ..()
-	. += no_starts(nameof(part))
+CAPABILITIES(/obj/lanea_owner/bare)
+	owns_one(nameof(part), starts = STARTS_NONE)
 
 /datum/unit_test/dq_lane_a_own
 	abstract_type = /datum/unit_test/dq_lane_a_own
@@ -284,7 +281,7 @@ CAPABILITIES(/obj/lanea_owner)
 	var/obj/lanea_owner/O = allocate(/obj/lanea_owner)
 	TEST_ASSERT_NOTNULL(O.part, "the ancestor makes its starting occupant")
 	var/obj/lanea_owner/bare/B = allocate(/obj/lanea_owner/bare)
-	TEST_ASSERT_NULL(B.part, "the subtype that declares no_starts starts empty")
+	TEST_ASSERT_NULL(B.part, "the subtype that declares STARTS_NONE starts empty")
 	var/datum/lanea_part/p = part()
 	rel_set(B, nameof(B.part), p)
 	TEST_ASSERT_EQUAL(B.part, p, "the inherited declaration still owns the var")

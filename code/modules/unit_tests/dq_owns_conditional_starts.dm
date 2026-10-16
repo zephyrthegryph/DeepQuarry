@@ -1,7 +1,6 @@
-/// A legacy ownership() owns(starts = when(cond, T)) makes its occupant while the holder initializes, exactly as owns_one(starts = when()) does
-/// (the bare when() entry used to resolve to nothing): a mapped extinguisher cabinet holds its extinguisher by the time Initialize returns,
+/// An owns_one(starts = when(cond, T)) makes its occupant while the holder initializes (the bare when() entry used to resolve to nothing): a mapped extinguisher cabinet holds its extinguisher by the time Initialize returns,
 /// watches it for deletion, and one built on a wall from its frame starts empty.
-/datum/unit_test/dq_legacy_owns_conditional_starts/Run()
+/datum/unit_test/dq_owns_conditional_starts/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	for(var/i in 1 to 3)
 		var/obj/structure/extinguisher_cabinet/C = allocate(/obj/structure/extinguisher_cabinet, T)

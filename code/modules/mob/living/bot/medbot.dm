@@ -252,6 +252,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 	op("medbot_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Open controls"), then(PROC_REF(open_controls)))
 	op("medbot_hand_grab", hand(), ungated(), stance(I_GRAB), label("Open controls"), then(PROC_REF(open_controls)))
 	op("medbot_hand_hurt", hand(), ungated(), stance(I_HURT), label("Open controls"), then(PROC_REF(open_controls)))
+	owns_one(nameof(reagent_glass), on_destroy = ON_DESTROY_CONTAINED)
 
 /// The window's data: the bot's state, the beaker, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
 /mob/living/bot/medbot/ui_data(datum/act/eval/A)
@@ -581,6 +582,3 @@ CAPABILITIES(/obj/item/firstaid_arm_assembly)
 #undef MEDBOT_PANIC_ENDING
 #undef MEDBOT_PANIC_END
 
-/mob/living/bot/medbot/ownership()
-	. = ..()
-	. += owns(nameof(reagent_glass), policy = OWN_CONTAINED)

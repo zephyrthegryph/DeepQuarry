@@ -175,6 +175,7 @@ CAPABILITIES(/obj/machinery/food_replicator)
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("eject_beaker", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act))), then(PROC_REF(interaction_eject_beaker)))
 	default_parts()
+	owns_one(nameof(container), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/food_replicator/proc/work_step(datum/act/timer/A)
 	if(!operable())
@@ -232,9 +233,6 @@ CAPABILITIES(/obj/machinery/food_replicator)
 	atom_break()
 	explosion(src, 0, 0, 2)
 
-/obj/machinery/food_replicator/ownership()
-	. = ..()
-	. += owns(nameof(container), policy = OWN_CONTAINED)
 
 /obj/machinery/food_replicator/proc/dq_actor_can_act(datum/act/op/A)
 	var/mob/actor = A.actor
