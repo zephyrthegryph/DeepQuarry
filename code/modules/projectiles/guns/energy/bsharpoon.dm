@@ -58,6 +58,7 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 	op("harpoon_verb_fire_mode", menu(), label("Change Fire Mode"), needs(carried()), then(PROC_REF(harpoon_verb_fire_mode_op)))
 	op("harpoon_verb_dropnom_mode", menu(), label("Toggle Spatial Rearrangement"), needs(carried()), then(PROC_REF(harpoon_verb_dropnom_mode)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	owns_one(nameof(scanmod), starts = /obj/item/stock_parts/scanning_module, on_destroy = ON_DESTROY_CONTAINED)
 
 /// The harpoon_verb_fire_mode op: the verb's effect, as the old resolver ran it.
 /obj/item/bluespace_harpoon/proc/harpoon_verb_fire_mode_op(datum/act/op/A)
@@ -235,6 +236,3 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 	look.state(mode ? "harpoon-2" : "harpoon-1")
 	look.play_flick(mode ? "harpoon-1-change" : "harpoon-2-change")
 
-/obj/item/bluespace_harpoon/ownership()
-	. = ..()
-	. += owns(nameof(scanmod), policy = OWN_CONTAINED, starts = /obj/item/stock_parts/scanning_module)

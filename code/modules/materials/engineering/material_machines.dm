@@ -59,10 +59,6 @@
 
 
 // The unfired charge sits in the furnace's contents until it is fired or unloaded.
-/obj/machinery/material_furnace/ownership()
-	. = ..()
-	. += owns(nameof(feedstock), policy = OWN_CONTAINED, is_list = TRUE)
-	. += owns(nameof(carbon_feed), policy = OWN_CONTAINED, is_list = TRUE)
 
 CAPABILITIES(/obj/machinery/material_furnace)
 	configure(uses_power(idle = 20, active = 5000))
@@ -75,6 +71,8 @@ CAPABILITIES(/obj/machinery/material_furnace)
 	op("transfer_reagents", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Pour"), then(PROC_REF(interaction_transfer_reagents)))
 	op("eject_contents", menu(), label("Eject contents"), needs(req_adjacent(), req_capable(), req_is(nameof(firing), FALSE, because = MSG(material_furnace/firing)), req(PROC_REF(can_eject_contents_holds))), begins(MSG(material_furnace/opening)), wait(1 SECOND), then(PROC_REF(eject_contents_done)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_use_furnace_holds))), then(PROC_REF(interaction_use)))
+	owns_many(nameof(feedstock), on_destroy = ON_DESTROY_CONTAINED)
+	owns_many(nameof(carbon_feed), on_destroy = ON_DESTROY_CONTAINED)
 
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 

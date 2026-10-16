@@ -309,6 +309,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy/lolli)
 	rolls(nameof(flavour), pick_one(list(REAGENT_ID_BANANA, REAGENT_ID_BERRYJUICE, REAGENT_ID_GRAPEJUICE, REAGENT_ID_LEMONJUICE, REAGENT_ID_LIMEJUICE, REAGENT_ID_ORANGEJUICE, REAGENT_ID_WATERMELONJUICE)))
 	configure(reagents(contents_from = PROC_REF(flavour_contents), tint = TRUE))
 	op("stick_on", item(/obj/item/holder), passes(), then(PROC_REF(stuck_on)))
+	owns_many(nameof(victims), on_destroy = ON_DESTROY_SPILL)
 
 /// A small living thing in a holder can be stuck to the lollipop (unwrapped); the click goes on.
 /obj/item/clothing/mask/chewable/candy/lolli/proc/stuck_on(datum/act/op/A)
@@ -380,9 +381,6 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy/pocky)
 			to_chat(loc, span_notice("There's no more of \the [name] left!"))
 		spitout(0)
 
-/obj/item/clothing/mask/chewable/candy/lolli/ownership()
-	. = ..()
-	. += owns(nameof(victims), policy = OWN_SPILL, is_list = TRUE)
 
 /obj/item/clothing/mask/chewable/proc/configure_wrapped_slots()
 	if(wrapped)

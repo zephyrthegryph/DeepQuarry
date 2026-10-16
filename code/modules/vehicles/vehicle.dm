@@ -60,6 +60,7 @@ CAPABILITIES(/obj/vehicle)
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	owns_one(nameof(cell), on_destroy = ON_DESTROY_CONTAINED)
 
 //-------------------------------------------
 // Standard procs
@@ -440,6 +441,3 @@ CAPABILITIES(/obj/vehicle)
 	volume_chan = VOLUME_CHANNEL_AMBIENCE
 
 
-/obj/vehicle/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED)

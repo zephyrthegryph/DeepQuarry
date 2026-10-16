@@ -17,6 +17,7 @@ CAPABILITIES(/obj/item/implanter)
 	op("remove_implant", menu(), label("Remove Implant"), needs(carried()), then(PROC_REF(remove_implant_effect)))
 	// Implanting the target: at once into yourself, else five seconds while it holds still (it has to be on the tile it was on when the work began).
 	op("implant", ai(), takes("patient", "start_turf"), wait(PROC_REF(implant_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(implant_done)))
+	owns_one(nameof(imp), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Toggle the implanter. Subtypes with special_handling fall through.
 /obj/item/implanter/proc/implanter_self(datum/act/op/A)
@@ -99,24 +100,22 @@ CAPABILITIES(/obj/item/implanter)
 /obj/item/implanter/loyalty
 	name = "implanter-loyalty"
 
-/obj/item/implanter/loyalty/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/loyalty)
 
 /obj/item/implanter/loyalty
 	icon_state = "implanter1_1" // loaded: what update() would show
 
+CAPABILITIES(/obj/item/implanter/loyalty)
+	owns_one(nameof(imp), starts = /obj/item/implant/loyalty, on_destroy = ON_DESTROY_CONTAINED)
+
 /// Loaded implanters packed in the syndicate kits (they keep the plain implanter's name).
-/obj/item/implanter/freedom/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/freedom)
+CAPABILITIES(/obj/item/implanter/freedom)
+	owns_one(nameof(imp), starts = /obj/item/implant/freedom, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implanter/freedom
 	icon_state = "implanter1_1" // loaded: what update() would show
 
-/obj/item/implanter/uplink/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/uplink)
+CAPABILITIES(/obj/item/implanter/uplink)
+	owns_one(nameof(imp), starts = /obj/item/implant/uplink, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implanter/uplink
 	icon_state = "implanter1_1" // loaded: what update() would show
@@ -124,9 +123,8 @@ CAPABILITIES(/obj/item/implanter)
 /obj/item/implanter/explosive
 	name = "implanter (E)"
 
-/obj/item/implanter/explosive/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/explosive)
+CAPABILITIES(/obj/item/implanter/explosive)
+	owns_one(nameof(imp), starts = /obj/item/implant/explosive, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implanter/explosive
 	icon_state = "implanter1_1" // loaded: what update() would show
@@ -134,9 +132,8 @@ CAPABILITIES(/obj/item/implanter)
 /obj/item/implanter/adrenalin
 	name = "implanter-adrenalin"
 
-/obj/item/implanter/adrenalin/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/adrenalin)
+CAPABILITIES(/obj/item/implanter/adrenalin)
+	owns_one(nameof(imp), starts = /obj/item/implant/adrenalin, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implanter/adrenalin
 	icon_state = "implanter1_1" // loaded: what update() would show
@@ -145,9 +142,8 @@ CAPABILITIES(/obj/item/implanter)
 	name = "implanter (C)"
 	icon_state = "cimplanter1"
 
-/obj/item/implanter/compressed/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/compressed)
+CAPABILITIES(/obj/item/implanter/compressed)
+	owns_one(nameof(imp), starts = /obj/item/implant/compressed, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implanter/compressed
 	icon_state = "implanter1_1" // loaded: what update() would show
@@ -201,9 +197,8 @@ CAPABILITIES(/obj/item/implanter)
 /obj/item/implanter/restrainingbolt
 	name = "implanter (bolt)"
 
-/obj/item/implanter/restrainingbolt/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/restrainingbolt)
+CAPABILITIES(/obj/item/implanter/restrainingbolt)
+	owns_one(nameof(imp), starts = /obj/item/implant/restrainingbolt, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implanter/restrainingbolt
 	icon_state = "implanter1_1" // loaded: what update() would show
@@ -214,13 +209,9 @@ CAPABILITIES(/obj/item/implanter)
 /obj/item/implanter/vrlanguage
 	name = "implanter-language"
 
-/obj/item/implanter/vrlanguage/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/vrlanguage)
+CAPABILITIES(/obj/item/implanter/vrlanguage)
+	owns_one(nameof(imp), starts = /obj/item/implant/vrlanguage, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implanter/vrlanguage
 	icon_state = "implanter1_1" // loaded: what update() would show
 
-/obj/item/implanter/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED)

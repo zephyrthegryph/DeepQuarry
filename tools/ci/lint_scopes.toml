@@ -720,6 +720,7 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "ownership() = owns_one() / owns_many() (on_destroy = DELETE | SPILL | PRIVATE_COPY | CONTAINED, starts =, only_if =), ref_one() / ref_many() and links() in the type's CAPABILITIES block (doc/rewrite/final_api.html section 6); the table proc is gone",
   "relations() = ref_one() / ref_many() (by =, target_key =), links() for a pair and owns_one() / owns_many() for an owned value, in the type's CAPABILITIES block (doc/rewrite/final_api.html section 6); the table proc is gone",
   "update_icon( = draw(datum/look/look) over tracked state: a tracked write redraws by itself (doc/rewrite/final_api.html section 13)",
   "DECLARE_APPEARANCE = a draw(datum/look/look) override: look.state(), look.overlay()",

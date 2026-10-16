@@ -53,10 +53,6 @@ GLOBAL_LIST_EMPTY(dq_decl_test_log)
 	var/saw_reagents_in_initialize = 0
 	var/saw_part_in_initialize = FALSE
 
-/obj/item/dq_decl_probe/ownership()
-	. = ..()
-	. += owns(nameof(part), policy = OWN_CONTAINED, starts = /obj/item/dq_decl_part)
-	. += owns(nameof(mapped_part), policy = OWN_CONTAINED, starts = /obj/item/dq_decl_part)
 
 CAPABILITIES(/obj/item/dq_decl_probe)
 	reagents(nameof(volume), starts = list(REAGENT_ID_WATER = 10))
@@ -64,6 +60,8 @@ CAPABILITIES(/obj/item/dq_decl_probe)
 	owns_one(nameof(helper), starts = /datum/dq_decl_owned_child)
 	owns_many(nameof(spares), starts = list(/obj/item/dq_decl_part = 2))
 	after_init(2 SECONDS, then(PROC_REF(timer_done)))
+	owns_one(nameof(part), starts = /obj/item/dq_decl_part, on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(mapped_part), starts = /obj/item/dq_decl_part, on_destroy = ON_DESTROY_CONTAINED)
 
 DECLARE_GAS(/obj/item/dq_decl_probe, "air_contents", 70, T20C, list(GAS_O2 = ONE_ATMOSPHERE))
 DECLARE_REGISTRY(/obj/item/dq_decl_probe, REGISTRY_DQ_DECL_TEST)

@@ -11,12 +11,11 @@
 	var/obj/item/kept
 	var/obj/item/undeclared
 
-/obj/own_transfer_test_holder/ownership()
-	. = ..()
-	. += owns(nameof(kept), policy = OWN_CONTAINED)
-	. += owns(nameof(beaker))
-	. += owns(nameof(parts), is_list = TRUE)
-	. += owns(nameof(keyed), is_list = TRUE)
+CAPABILITIES(/obj/own_transfer_test_holder)
+	owns_one(nameof(kept), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(beaker))
+	owns_many(nameof(parts))
+	owns_many(nameof(keyed))
 
 /// It has a look (as a holder that shows what it holds does), so a write to its owned vars has an output to refresh:
 /// an atom whose type derives nothing is never queued (refresh_wanted()), and these tests read refresh_queued.
@@ -40,9 +39,8 @@
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4
 	var/obj/item/kept
 
-/obj/item/storage/own_transfer_test_box/ownership()
-	. = ..()
-	. += owns(nameof(kept), policy = OWN_CONTAINED)
+CAPABILITIES(/obj/item/storage/own_transfer_test_box)
+	owns_one(nameof(kept), on_destroy = ON_DESTROY_CONTAINED)
 
 /datum/unit_test/proc/own_transfer_setup()
 	set_global("refuse_capture", list())

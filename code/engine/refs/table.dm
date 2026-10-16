@@ -1,22 +1,7 @@
-// Ownership tables (doc/rewrite/ownership.md): one per type, built from the type's ownership() list and the relation entries of its
-// CAPABILITIES the first time an instance asks, cached in the `own_table` shared cache.
+// Ownership tables (doc/rewrite/ownership.md): one per type, built from the owned() entries of its capabilities and the relation entries of its
+// CAPABILITIES block (owns_one, owns_many, ref_one, ref_many, links, slot) the first time an instance asks, cached in the `own_table` shared cache.
 
 // ---------------------------------------------------------------- declaring
-
-/**
- * The type's ownership declarations: what it owns (owns()), holds shared (shares()) or as a
- * prototype (proto()). Declare only the exceptions to kind inference (ownership.md §7).
- *
- *	/obj/machinery/sleeper/ownership()
- *		. = ..()
- *		. += owns(nameof(beaker), policy = OWN_SPILL)
- *
- * Built once per type (type_list()): the body must not read instance vars.
- */
-/datum/proc/ownership()
-	SHOULD_NOT_SLEEP(TRUE)
-	RETURN_TYPE(/list)
-	return list()
 
 /// The (successor var, successor's var) of an OWN_HAND_OVER entry, or null: only an entry that declares one carries the tenth slot.
 /proc/own_entry_successor(list/entry)
@@ -38,8 +23,6 @@
 	/// The starting occupant (owns()/rel_one()/rel_many(starts =)): a type path, a list of paths (or
 	/// list(path = count)) for a list var, or the name of a var holding either. Null: none.
 	var/starts
-	/// owns(on_lost = PROC_REF(x)): the holder's x(thing) when an occupant leaves the var. An entry with one is never interned.
-	var/on_lost
 
 /// Interned: an identical declaration made anywhere in the tree (an ancestor's declaration that every
 /// subtype's per-type list repeats, such as /atom's light_sources and heat_watches) is ONE datum and one
@@ -65,11 +48,6 @@
 		interned[key] = E
 	return E
 
-/// no_starts(nameof(v)): an annotation-only entry that cancels the starting occupant an ancestor declared for `v`; the ancestor's policy for the var is
-/// unchanged. `owns(v, starts = STARTS_NONE)` does the same while restating a policy.
-/proc/no_starts(var_name)
-	return _own_entry(var_name, null, FALSE, FALSE, FALSE, STARTS_NONE)
-
 /**
  * Owns: the holder owns var_name's value(s) (one, a list, or assoc values) and tears them down.
  *
@@ -94,7 +72,7 @@
  *   is made instead, an instance in it makes nothing. A PROC_REF decides everything: it is called with the var's current value and
  *   returns what the var starts with (a type, a list of types, instances it made, or key = instance for an associative owns_many).
  */
-/proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null, starts = null, is_list = FALSE, successor = null, successor_var = null, on_lost = null)
+/proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null, starts = null, is_list = FALSE, successor = null, successor_var = null)
 	if(policy == OWN_PRIVATE_COPY)
 		if(!isnull(starts))
 			CRASH("owns([var_name]): OWN_PRIVATE_COPY holds a prototype or a private copy of one; it has no starting occupant")
@@ -117,18 +95,7 @@
 		entry[OWNE_TO] = list(successor, successor_var)
 	if(entry && is_list) // owns_many: own_move()/own_transfer() add to a list that is still null instead of storing the value as a scalar
 		entry[OWNE_LIST] = TRUE
-	var/datum/own_entry/made = _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward, starts)
-	if(!on_lost)
-		return made
-	var/datum/own_entry/with_lost = new // not interned: the handler is the declaring type's own
-	with_lost.var_name = made.var_name
-	with_lost.entry = made.entry
-	with_lost.keep_after_destroy = made.keep_after_destroy
-	with_lost.pool_reset = made.pool_reset
-	with_lost.forward = made.forward
-	with_lost.starts = made.starts
-	with_lost.on_lost = on_lost
-	return with_lost
+	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward, starts)
 
 // There is no shares(): a var holding a registered singleton, a DEF or another flyweight is declared by its type
 // (`var/datum/sys_periodic_def/while_def`). A registry type (REGISTRY_TYPE) or a flyweight type (flyweight_types(),
@@ -214,7 +181,7 @@
 	var/list/entry = list(OWNK_REL, shape, back, extra, !!is_list, length(watch) ? watch.Copy() : null, other_deleted || CLEAR, on_unlink, type)
 	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward)
 
-/// The declarations collected from one type's ownership() list and CAPABILITIES relation entries.
+/// The declarations collected from one type's capabilities and its CAPABILITIES relation entries.
 /datum/own_decls
 	/// var name -> entry list(kind, arg, partner, extra, is_list, watch, other_deleted, on_unlink)
 	var/list/entries = list() // ALLOW(instance_list): one per declaring type, always filled by the collector and handed to the table
@@ -322,11 +289,6 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		for(var/datum/capability/C as anything in caps_of(D))
 			for(var/datum/own_entry/E as anything in C.owned())
 				decl.add(E)
-	var/list/legacy_lost = null
-	for(var/datum/own_entry/E as anything in type_list(D, TYPE_PROC_REF(/datum, ownership)))
-		decl.add(E)
-		if(E.on_lost)
-			LAZYSET(legacy_lost, E.var_name, E.on_lost)
 	// The engine's declarations: the relation entries of the type's CAPABILITIES lists (code/engine/declare/relations.dm).
 	for(var/datum/own_entry/E as anything in table_own_entries(table_of(D)))
 		decl.add(E)
@@ -371,8 +333,6 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		if(decl.starts[var_name] == STARTS_NONE)
 			continue // a subtype cancelled the occupant an ancestor declared
 		LAZYSET(T.start_vars, var_name, decl.starts[var_name])
-	for(var/var_name in legacy_lost)
-		LAZYSET(T.lost_handlers, var_name, legacy_lost[var_name])
 	// owns_*(starts_set =, on_lost =, starts_after =) of the type's CAPABILITIES lists.
 	var/list/start_after = null
 	for(var/datum/entry/E as anything in table_owns_entries(table_of(D)))

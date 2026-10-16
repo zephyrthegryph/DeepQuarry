@@ -426,6 +426,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	param(nameof(building), pos = 2)
 	op("vv_removepainting", topic_in(VV_TOPIC, "removepainting"), then(PROC_REF(vv_topic_remove_painting)))
 	rolls(ROLL_PIXEL, WALL_OFFSET(30, 30), when = nameof(building))
+	owns_one(nameof(current_canvas), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/structure/sign/painting/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -737,6 +738,3 @@ CAPABILITIES(/obj/structure/sign/painting)
 	return TRUE
 
 // The easel's painting sits on its turf (one-sided REL view).
-/obj/structure/sign/painting/ownership()
-	. = ..()
-	. += owns(nameof(current_canvas), policy = OWN_CONTAINED)

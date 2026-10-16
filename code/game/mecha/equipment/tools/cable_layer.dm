@@ -38,6 +38,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
 	ref_one(nameof(last_piece))
 	op("toggle", topic("toggle"), then(PROC_REF(topic_toggle)))
 	op("cut", topic("cut"), needs(req(PROC_REF(reel_has_cable))), asks(/datum/prompt/number/mecha_cable_cut, fields = list("default" = computed(PROC_REF(cable_cut_default)), "subject" = computed(PROC_REF(cable_cut_subject))), step = "length"), then(PROC_REF(topic_cut)))
+	owns_one(nameof(cable), starts = PROC_REF(make_cable), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_toggle(datum/act/op/op_act)
 	set_ready_state(!equip_ready)
@@ -138,9 +139,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
 	rel_set(src, nameof(last_piece), NC)
 	return 1
 
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/ownership()
-	. = ..()
-	. += owns(nameof(cable), policy = OWN_CONTAINED, starts = PROC_REF(make_cable))
 
 /// old turf
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/old_turf() as /turf

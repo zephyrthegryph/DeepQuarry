@@ -39,6 +39,7 @@ CAPABILITIES(/obj/structure/closet/crate)
 		then(PROC_REF(rigging_cut)), says(MSG(crate/unrigged)))
 	op("cutters_touch", tool(TOOL_WIRECUTTER), label("Open"), when(cond_not(nameof(rigged))), priority(OP_PRIORITY_PART), wait(0),
 		then(PROC_REF(touched_with_cutters)))
+	owns_one(nameof(shipping_ledger), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/structure/closet/crate/can_close()
 	return 1
@@ -765,6 +766,3 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 	closet_appearance = /datum/decl/closet_appearance/crate/fennec
 	points_per_crate = 0
 
-/obj/structure/closet/crate/ownership()
-	. = ..()
-	. += owns(nameof(shipping_ledger), policy = OWN_CONTAINED)

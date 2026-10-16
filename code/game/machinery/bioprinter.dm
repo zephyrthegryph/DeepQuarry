@@ -101,6 +101,7 @@ CAPABILITIES(/obj/machinery/organ_printer)
 	op("printer_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable()), then(PROC_REF(organ_printer_eject_beaker)))
 	climb()
 	default_parts()
+	owns_one(nameof(container), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/organ_printer/examine(mob/user)
 	. = ..()
@@ -292,9 +293,8 @@ CAPABILITIES(/obj/machinery/organ_printer)
 	icon_state = "bioprinter"
 	circuit = /obj/item/circuitboard/bioprinter
 
-/obj/machinery/organ_printer/flesh/full/ownership()
-	. = ..()
-	. += owns(nameof(container), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/bottle/biomass)
+CAPABILITIES(/obj/machinery/organ_printer/flesh/full)
+	owns_one(nameof(container), starts = /obj/item/reagent_containers/glass/bottle/biomass, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/machinery/organ_printer/flesh/dismantle()
 	var/turf/T = get_turf(src)
@@ -344,9 +344,6 @@ CAPABILITIES(/obj/machinery/organ_printer/flesh)
 	return OP_DECLINE
 // END FLESH ORGAN PRINTER
 
-/obj/machinery/organ_printer/ownership()
-	. = ..()
-	. += owns(nameof(container), policy = OWN_CONTAINED)
 
 /obj/machinery/organ_printer/proc/printer_has_reservoir(datum/act/op/A)
 	return operable() && !!container

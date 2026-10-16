@@ -188,6 +188,7 @@ CAPABILITIES(/obj/item/ducttape)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	owns_one(nameof(stuck), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attack_hand.
 /obj/item/ducttape/proc/interaction_hand(datum/act/op/A)
@@ -229,6 +230,3 @@ CAPABILITIES(/obj/item/ducttape)
 			else if(dir_offset & SOUTH)
 				set_pixel_y(pixel_y - 32)
 
-/obj/item/ducttape/ownership()
-	. = ..()
-	. += owns(nameof(stuck), policy = OWN_CONTAINED)

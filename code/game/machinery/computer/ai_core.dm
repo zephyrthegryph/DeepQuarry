@@ -35,6 +35,8 @@ CAPABILITIES(/obj/structure/AIcore)
 	op("connect_monitor", tool(TOOL_SCREWDRIVER), label("Connect the monitor"), when(req_stage(nameof(state), 4)), wait(0), then(PROC_REF(monitor_connected)))
 	op("ai_core_install", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	owns_one(nameof(laws), /datum/ai_laws, starts = PROC_REF(make_laws))
+	owns_one(nameof(circuit), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(brain), on_destroy = ON_DESTROY_CONTAINED)
 
 /// A map-placed core starts with the map's default law set (owns_one(starts =)); a built one gets its laws from its board.
 /obj/structure/AIcore/proc/make_laws(current, mapload)
@@ -344,10 +346,6 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 	act_message(user, src, others = span_bold("%U%") + " decides not to unbolt %T%.")
 
 // The core owns its laws until it builds an AI, which adopts them (own_take() in the build step).
-/obj/structure/AIcore/ownership()
-	. = ..()
-	. += owns(nameof(circuit), policy = OWN_CONTAINED)
-	. += owns(nameof(brain), policy = OWN_CONTAINED)
 
 /datum/admins/proc/empty_ai_core_options(datum/act/op/A)
 	return assoc_to_keys(empty_ai_core_choices())

@@ -120,6 +120,14 @@ CAPABILITIES(/obj/item/modular_computer)
 	op("computer_verb_eject_usb", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Portable Storage"), when(req(PROC_REF(pred_computer_has_drive))), needs(req_adjacent(), req(PROC_REF(pred_computer_hands_on))), then(PROC_REF(computer_verb_eject_usb)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(computer_emp_damage)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	owns_one(nameof(processor_unit), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(network_card), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(hard_drive), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(battery_module), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(card_slot), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(nano_printer), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(portable_drive), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(tesla_link), on_destroy = ON_DESTROY_CONTAINED)
 
 
 /// Whether the computer is turned on. its every() runs its programs while it is.

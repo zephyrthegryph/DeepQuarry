@@ -39,9 +39,8 @@
 	var/last_bits = 0
 	var/slept_done = FALSE
 
-/obj/cap_fixture/dx_core/ownership()
-	. = ..()
-	. += owns(nameof(child), policy = OWN_DELETE)
+CAPABILITIES(/obj/cap_fixture/dx_core)
+	owns_one(nameof(child))
 
 
 /obj/cap_fixture/dx_core/declared_capabilities(list/into)

@@ -63,9 +63,6 @@ CAPABILITIES(/obj/item/projectile/bullet/chemdart)
 	special_weapon_handling = TRUE
 
 // Slotted beakers sit in the gun's contents; mixing is a subset of them.
-/obj/item/gun/projectile/dartgun/ownership()
-	. = ..()
-	. += owns(nameof(beakers), policy = OWN_CONTAINED, is_list = TRUE, starts = PROC_REF(make_beakers))
 
 
 /// The starting beakers (owns(starts =)): one of each starting chem.

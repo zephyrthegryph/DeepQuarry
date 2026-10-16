@@ -1,17 +1,10 @@
-// Object pools and their POOL_RESET declarations (doc/rewrite/ownership.md,
-// code/datums/lifecycle/pool.dm).
+// Object pools (code/engine/state/pool.dm).
 
 /// A pooled type used only by these tests.
 /datum/pool_test_item
+	parent_type = /datum/pooled
 	var/datum/held
 	var/count = 3
-	var/keep = "kept"
-
-POOL_DECLARE(/datum/pool_test_item)
-/datum/pool_test_item/ownership()
-	. = ..()
-	. += owns(nameof(held), policy = OWN_NONE, pool_reset = TRUE)
-	. += owns(nameof(count), policy = OWN_NONE, pool_reset = TRUE)
 
 /datum/pool_test_item/proc/touch()
 	POOL_ASSERT_LIVE(src)
@@ -20,8 +13,7 @@ POOL_DECLARE(/datum/pool_test_item)
 /datum/unit_test/dq_pool
 	abstract_type = /datum/unit_test/dq_pool
 
-/// Take, release and take again: the same object comes back, its transient
-/// fields reset from the declaration and its other fields left alone.
+/// Take, release and take again: the same object comes back, every field reset to its initial value.
 /datum/unit_test/dq_pool/recycle
 
 /datum/unit_test/dq_pool/recycle/Run()
@@ -32,12 +24,10 @@ POOL_DECLARE(/datum/pool_test_item)
 	var/datum/other = new /datum
 	rel_set(item, nameof(item.held), other)
 	item.count = 9
-	item.keep = "changed"
 	item.release()
 	TEST_ASSERT_EQUAL(item.pool_state, POOL_STATE_FREE, "a released object waits in its pool")
-	TEST_ASSERT_NULL(item.held, "release() clears a POOL_RESET reference")
-	TEST_ASSERT_EQUAL(item.count, 3, "release() resets a POOL_RESET scalar to its initial value")
-	TEST_ASSERT_EQUAL(item.keep, "changed", "release() leaves undeclared fields alone")
+	TEST_ASSERT_NULL(item.held, "release() clears a reference field")
+	TEST_ASSERT_EQUAL(item.count, 3, "release() resets a scalar field to its initial value")
 	var/datum/pool_test_item/again = pool_take(/datum/pool_test_item)
 	TEST_ASSERT(again == item, "a released object is reused")
 	again.release()

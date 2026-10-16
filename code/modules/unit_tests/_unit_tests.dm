@@ -410,7 +410,7 @@
 #include "dq_chem_math_pins.dm"
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
-#include "dq_legacy_owns_conditional_starts.dm"
+#include "dq_owns_conditional_starts.dm"
 #include "dq_draw_framework.dm"
 #include "dq_hop_kinds.dm"
 #include "dq_watched_band_tests.dm"
@@ -485,6 +485,7 @@
 #include "dq_w5_loose_tests.dm"
 #include "dq_vital_lifecycle_tests.dm"
 #include "../balance/_balance_harness.dm"
+#include "dq_balance_scenario_declaration.dm"
 #include "../balance/balance_scenarios.dm"
 #include "dq_balance_harness_tests.dm"
 #include "dq_part_lifecycle_tests.dm"
@@ -1125,6 +1126,7 @@
 #include "../benchmarks/kernel_metrics.dm"
 #include "../balance/balance_benchmark.dm"
 #endif
+#include "find_reference_fixtures.dm"
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter
 #include "find_reference_sanity.dm"
 #endif
