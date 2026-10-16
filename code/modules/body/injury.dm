@@ -316,6 +316,10 @@
 
 /// 0..1 fraction of wellness left. HUDs, AI flee thresholds, boss phases,
 /// belly health bars, stat panels.
+/mob/living/settle_for_reads()
+	. = ..()
+	body?.settle()
+
 /mob/living/proc/vitality()
 	return body ? body.get_vitality() : 1
 
