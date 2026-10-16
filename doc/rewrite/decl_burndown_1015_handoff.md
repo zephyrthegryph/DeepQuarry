@@ -117,3 +117,7 @@ The first combined run reported two explosion particles during `dx_menu_order`, 
 ## Final repair scope
 
 The final focused repair list includes the 14 diagnosed failures from the first native runtime gate, two actual prone-density regressions, telecube teardown, and both typed-constructor regressions (19 selectors, including both mandatory pins). Earlier compilation had zero errors and DreamChecker diagnostics. Root runs the final lane-ready gate and reports its exact receipt and pushed commit; this document does not substitute evidence from earlier passing tests for that gate. No full suite is run, and runtime failures are not re-blessed. The native `devour` key added by master `2136172edc` is the only inherited inventory refresh in this repair cohort.
+
+## Compiler cross-check
+
+The repair gate explicitly uses DreamMaker, the supported production cross-check documented in doc/testing.md. A same-plan requirements-lane diagnostic after master 663e85e2ae changed the default to native exposed host-dependent look sampling (the first 24 vars are selected before the analyzer-plan filter). Existing goldens are retained; no appearance differences from that sampler are blessed here. The actual final receipt and JSON record the backend and gate result.
