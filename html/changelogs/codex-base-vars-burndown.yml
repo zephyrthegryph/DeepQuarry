@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Move shared object and mob state into declared traits, profiles, body state, relations and native cooldowns."
