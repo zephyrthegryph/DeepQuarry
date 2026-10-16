@@ -423,6 +423,7 @@
 #include "dq_look_sweep.dm"
 #include "dq_look_cleanup_epoch_tests.dm"
 #include "dq_look_shared_cache_identity_tests.dm"
+#include "dq_look_culture_lifetime_tests.dm"
 #include "dq_hit_pins.dm"
 #include "dq_loot_pins.dm"
 #include "dq_loot_search_tests.dm"

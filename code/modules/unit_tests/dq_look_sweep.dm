@@ -445,6 +445,9 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 				// Normalize the same stable identity the shared-cache API lazily assigns.
 				if(!created.shared_cache_uid)
 					shared_cache_assign_uid(created)
+				// Real culture initialization creates detached copies carried by its blood.
+				// Its vial/archive own different strains; retain only these exact products.
+				dq_look_own_culture_products(created)
 	catch(var/exception/e)
 		failure = e
 	GLOB.roll_creators.Cut(creator_depth + 1)
@@ -808,3 +811,15 @@ CAPABILITIES(/obj/dq_look_native_roll_fixture)
 	TEST_ASSERT(!length(reused.impure), "the actual robot's reversible autofire key does not force fresh allocation for lazy identity")
 	TEST_ASSERT_EQUAL(jointext(reused.made, "\n"), jointext(fresh.made, "\n"), "native identity normalization preserves made rows")
 	TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "the real periodic probe preserves fresh-instance rows")
+
+/// Bound the known culture fixture producer: never traverse arbitrary reagent data,
+/// adopt a source template, or clear subscription indexes. The production reagent
+/// codec still lacks nested lifetime cleanup (including mixing/transfer ownership).
+/datum/unit_test/proc/dq_look_own_culture_products(datum/created)
+	if(!istype(created, /obj/item/reagent_containers/glass/beaker/vial/culture))
+		return
+	var/obj/item/reagent_containers/glass/beaker/vial/culture/vial = created
+	var/datum/reagent/blood/blood = vial.reagents?.get_reagent(REAGENT_ID_BLOOD)
+	var/list/strains = blood?.data?["viruses"]
+	for(var/datum/affliction/contagion/strain as anything in strains)
+		own(strain)

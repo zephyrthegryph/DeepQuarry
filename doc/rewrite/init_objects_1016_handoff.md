@@ -27,3 +27,5 @@ The focused selector file has 157 entries, including requirement/conversion pins
 - root object1: access interning and birth verb grant occupy a shared middle boundary before descendant tails.
 
 These need actual phase or appearance contracts, not renamed initializer bodies. The cold-canister child also appears on the machinery branch because its parent/child setup must stay ordered; that one overlap must not be counted twice across branches.
+
+The final object cohort also carries the bounded culture-product fixture cleanup and parent prompt-state scoping verified on the base-variable lane. It retains only the actual culture's newly created blood copies for teardown; it does not claim a production nested-reagent ownership fix. The actual four-culture lifetime regression is selected here too. This branch still needs its own runtime proof.
