@@ -211,3 +211,35 @@ fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
         assert_eq!(compare_revision(&shared, &roots), initial, "{label}: revert reproduces initial bytes");
     }
 }
+
+#[test]
+fn appends_after_body_patches_edit_the_model_with_those_patches_applied() {
+    // A body patch splices code rows into the retained image but leaves the retained composed
+    // model alone. A structural append that follows must edit the model plus those rows, not
+    // fall back to a full compile, and the output must still equal a fresh compile (the
+    // patched bodies must not revert).
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    edit_all(&roots, TREE);
+    compare_revision(&shared, &roots);
+    let applied = |roots: &Roots| crate::body_patch::applied(&roots.manifest(0));
+    let body_one = TREE.replace("        return value\n", "        return value + 1\n");
+    let body_two = TREE.replace("        return value\n", "        return value + 2\n");
+    let appended_var = body_two.replace("    var/own = 2\n", "    var/own = 2\n    var/added_probe = 5\n");
+    let body_after = appended_var.replace("        return value + 2\n", "        return value + 3\n");
+    let appended_proc = format!("{body_after}/datum/base/proc/added_probe_proc()\n    return 41\n");
+    let mut count = applied(&roots);
+    for (label, source) in [
+        ("first body patch", body_one.as_str()),
+        ("second body patch", body_two.as_str()),
+        ("append a var after body patches", appended_var.as_str()),
+        ("body patch after the append", body_after.as_str()),
+        ("append a proc after body and append patches", appended_proc.as_str()),
+    ] {
+        edit_all(&roots, source);
+        compare_revision(&shared, &roots);
+        assert_eq!(applied(&roots), count + 1, "{label}: did not patch");
+        count += 1;
+    }
+}

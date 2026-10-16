@@ -13,7 +13,7 @@
 //		. += rust_push(nameof(target_pressure), nameof(on))   // push_to_rust()
 //
 // A read is a var name, a hop through a declared relation (rel(link, remote_var) for a REL / OWN view,
-// rel_each(list_link, remote_var) for a REL_LIST / OWN list) or factor_dep(BF_X). derive(var, reads...)
+// rel_each(list_link, remote_var) for a REL_LIST / OWN list). derive(var, reads...)
 // keeps a cached var, recomputed by derive_<var>() (pure) only when a read changed; it is tracked, so
 // other entries can read it. A capability contributes the reads of its own draw / ui_data /
 // cap_should_run through derived_reads(holder); the holder declares only what its own code reads.
@@ -38,7 +38,7 @@
 	var/kind
 	/// derive(): the cached var.
 	var/name
-	/// Var names (text), /datum/derived_hop and /datum/derived_factor.
+	/// Var names (text) and /datum/derived_hop.
 	var/list/reads
 	/// Contributed by a capability (derived_reads()): adds reads, doesn't make the holder exact.
 	var/implicit = FALSE
@@ -49,10 +49,6 @@
 	var/remote
 	var/each = FALSE
 
-/// A read of a body factor (BF_*) of a mob, fired when the body's cached factors change.
-/datum/derived_factor
-	var/id
-
 /// Interned like own entries: a base type's derived() repeated in every subtype's per-type list is one datum.
 /// Entries are read-only once returned (derived_entry_implicit() makes the implicit twin instead of writing).
 /proc/derived_entry(kind, name, list/reads, implicit = FALSE)
@@ -62,9 +58,6 @@
 		if(istype(read, /datum/derived_hop))
 			var/datum/derived_hop/H = read
 			parts += "hop:[H.link]>[H.remote]>[H.each]"
-		else if(istype(read, /datum/derived_factor))
-			var/datum/derived_factor/F = read
-			parts += "factor:[F.id]"
 		else
 			parts += "[read]"
 	var/key = jointext(parts, "|")
@@ -126,12 +119,6 @@
 	H.each = TRUE
 	return H
 
-/// A read of body factor `id` (BF_*): fired when the body's cached factors change that factor.
-/proc/factor_dep(id)
-	var/datum/derived_factor/F = new
-	F.id = id
-	return F
-
 /// What this type's derived procs read (see the header). Built once per type like capabilities() and
 /// shared: `. = ..()` then `. += runs_while(...)` and so on. Pure: read no instance state.
 /datum/proc/derived()
@@ -192,9 +179,7 @@
 	var/list/derived_by_name
 	/// link var -> list of /datum/derived_use.
 	var/list/uses_by_link
-	/// factor reads: parallel lists of BF_* and the outputs and values that read it.
-	var/list/factor_ids
-	var/list/factor_masks
+	/// factor reads: parallel lists of stat ids and the outputs and values that read it.
 
 /// Everything below: global registries, filled when a type's table is compiled.
 /// type -> /datum/derived_table, or 0 for a type that declares nothing (built on first sight).
@@ -205,8 +190,6 @@ GLOBAL_LIST_EMPTY(derived_read_vars)
 GLOBAL_LIST_EMPTY(derived_link_vars)
 /// var name -> TRUE: some table reads it through a hop (a change notifies the dependents).
 GLOBAL_LIST_EMPTY(derived_remote_vars)
-/// BF_* ids some table reads (recompute_factors() reports changes only while this is non-empty).
-GLOBAL_LIST_EMPTY(derived_factor_watch)
 /// Reverse index of REL views a hop follows: target key (own_key()) -> source key -> link var (or a list
 /// of them). Weak keys, so nothing here keeps a datum alive; stale entries are pruned when read.
 GLOBAL_LIST_EMPTY(derived_watch)
@@ -357,20 +340,8 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 				GLOB.derived_link_vars[H.link] = TRUE
 				GLOB.derived_read_vars[H.link] = TRUE
 				GLOB.derived_remote_vars[H.remote] = TRUE
-			else if(istype(read, /datum/derived_factor))
-				var/datum/derived_factor/F = read
-				if(!T.factor_ids)
-					T.factor_ids = list()
-					T.factor_masks = list()
-				var/at = T.factor_ids.Find(F.id)
-				if(!at)
-					T.factor_ids += F.id
-					T.factor_masks += 0
-					at = length(T.factor_ids)
-				T.factor_masks[at] |= bit
-				GLOB.derived_factor_watch |= F.id
 			else
-				derived_error(D, "[label] reads [read], which is not a var name, rel(), rel_each() or factor_dep()")
+				derived_error(D, "[label] reads [read], which is not a var name, rel() or rel_each()")
 	// The draw's generated reads (code/engine/_generated/deps.dm, from the draw() body and the parent draws it calls): a change of any of them
 	// redraws, whatever derived() lists, so an exact type's look follows every var its draw reads with no hand-written drawn_from().
 	if(T.exact)

@@ -198,3 +198,43 @@ reason.
 - Unchanged-numbering patches (defaults) keep the byte oracle.
 - The runtime-observable order list comes from the `dmb/equiv` doc once it exists. Until then:
   class order, per-class var and proc/verb list order, and map-object order.
+
+## Addendum: code motion and the synced model (2026-10-16, lane `tools/dmb-frontend`)
+
+Two admission gaps made common edits fall back to a 20-28 s full compile. Both are closed and both
+are compared with a fresh build (`six_session_contract_tests`, `dmb-equiv` with debug lines).
+
+### Edits that only move code
+
+A comment line, blank line, documentation block or new `#define` between declarations changes no
+declaration, but it changes the expanded text outside bodies (comments and blank lines survive
+expansion; a directive line does not) or shifts lines the old `LineMap` could not explain, since
+that map is derived from body line counts alone.
+
+`SourceShape` now keeps a file roster hash and the text of every captured file (`SourceText`
+clones: the frontend and the prepared-source cache already own those buffers, so nothing is
+copied). When the tree identity and roster are unchanged, `body_patch_lines.rs` aligns the old and
+new text of each changed file: the significant tokens outside every body (the first token of a line
+carries its indentation) must be the same sequence, and the k-th token's old and new line give a
+piecewise-constant shift. Directive lines are compared like any token unless the expanded-text
+skeleton hash is equal, in which case they are skipped (they added no expanded text). Any
+disagreement declines with the first differing token. The map feeds the existing machinery:
+bodies that moved are relowered at their new line, initializer debug lines are relinked through
+`relink_shifted`, prefix warnings shift.
+
+### Appends after body patches
+
+`patch_rows` splices code rows into the retained image but left the retained composed model
+(`generation.inputs.model`) at its own encoding, so the next structural append saw
+`generation.encoded != base` and declined. The patch slot now records the rows spliced since the
+model's encoding (`model_rows`, anchored to the hash of `current.encoded`). An append applies them
+to a copy of the model with `Dmb::patch_list_rows`, which splices the certified list image, and
+requires the result to hash to the patch base before editing it. Any mismatch declines. Rows reset
+whenever the model is re-encoded (`patch_model`) or replaced (`patch_variable_values`).
+
+### What still declines
+
+Removed vars and procs, new types, edits inside declaration text (initializer expressions other
+than a numeric default), edits that change the tree identity and `#define` edits whose expansion
+changes text outside a body. Every decline runs a full build, which installs a fresh patch base
+for the next edit.

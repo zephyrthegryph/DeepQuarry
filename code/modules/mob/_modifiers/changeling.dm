@@ -36,7 +36,7 @@
 /datum/body_effect/changeling/thermal_sight
 	name = "Thermal Adaptation"
 	desc = "Our eyes are capable of seeing into the infrared spectrum to accurately identify prey through walls."
-	factors = alist(BF_SIGHT_FLAGS = SEE_MOBS)
+	factors = alist(STAT_SIGHT_FLAGS = SEE_MOBS)
 
 	on_expired_text = span_alien("Your sight returns to what it once was.")
 	stacks = MODIFIER_STACK_EXTEND

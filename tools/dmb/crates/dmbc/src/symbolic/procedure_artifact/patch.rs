@@ -36,10 +36,20 @@ impl Contribution {
 }
 
 fn inventory(hash: &mut Xxh3, contribution: &dm_link::InventoryContribution) {
+    inventory_entry(hash, contribution);
+    inventory_strings(hash, contribution);
+}
+
+/// The inventory entry key and slot aliases: what the linker numbers a unit by.
+fn inventory_entry(hash: &mut Xxh3, contribution: &dm_link::InventoryContribution) {
     hash.update(format!("{:?}", contribution.entry().key).as_bytes());
     for slot in contribution.slots() {
         hash.update(format!("{:?}/{:?}/{:?};", slot.symbol, slot.owner, slot.name).as_bytes());
     }
+}
+
+/// The string literals a unit owns. A change here only appends table strings.
+fn inventory_strings(hash: &mut Xxh3, contribution: &dm_link::InventoryContribution) {
     for string in contribution.strings() {
         hash.update(format!("{:?}:", string.id).as_bytes());
         hash.update(&(string.bytes.len() as u64).to_le_bytes());
@@ -82,7 +92,8 @@ impl PatchRecord {
                 h.update(format!("{:?}", self.abi).as_bytes());
             }),
             part("features", |h| h.update(format!("{:?}", artifact.features).as_bytes())),
-            part("inventory", |h| inventory(h, &artifact.inventory)),
+            part("inventory", |h| inventory_entry(h, &artifact.inventory)),
+            part("strings", |h| inventory_strings(h, &artifact.inventory)),
             part("value_strings", |h| {
                 for id in super::super::string_order::value_string_registrations(
                     artifact.frozen.code(),
@@ -115,6 +126,20 @@ impl PatchRecord {
                 }
             }),
         ]
+    }
+    /// The string-table entries of this unit's own literals (not its helpers').
+    pub(crate) fn string_entries(&self) -> Vec<(dm_link::Key, dm_link::EntryContent)> {
+        self.artifact
+            .inventory
+            .strings()
+            .iter()
+            .map(|string| {
+                (
+                    dm_link::Key::String(string.id),
+                    Arc::clone(&string.bytes).into(),
+                )
+            })
+            .collect()
     }
     /// Linked words of each argument-source helper, keyed by its table key.
     pub(crate) fn helper_words(

@@ -190,3 +190,73 @@ longer shedding state, the soft limit only defers a second concurrent build.
 Rust tests: `cargo test -p dmbc --lib -- service_housekeeping daemon::service::tests` 31 passed, 1 failed
 (`pressure::soft_pressure_defers_another_build_but_preserves_single_build_progress`, an admission timing assertion this branch does not
 touch; it fails the same way on origin/master).
+
+## Status 2026-10-16 (tools/dmb-frontend: per-edit fixed costs)
+
+Goal of the lane: body edit and new var/proc at most 2.5 s, new type and `#define` at most 8 s, memory no higher than before. **Not met**
+for the 2.5 s target (body edit 6.5-7 s, new var/proc 9-10 s) and for new types (full compile). Met for a `#define` line (6.3-6.6 s) and
+for the memory ceiling. Everything below is measured on the production tree with a resident daemon, baseline = origin/master c3cb037784
+and the branch tip run alternately in the same worktree (private daemon namespaces, `DMB_DAEMON_NAMESPACE`), on a machine shared with
+other lanes, so single runs vary by up to 1.5x; the ranges are the three runs of each.
+
+| Edit | Master | This branch | Path |
+|---|---|---|---|
+| unchanged rebuild | 2.0 s | 2.0 s | session hit |
+| body edit | 13.9-14.9 s (12.2-13.0 quieter) | 7.2-9.7 s (6.1-7.0 quieter) | patch |
+| new var on an existing type (after a body edit) | 17.7-38.8 s (first one declined: stale model) | 9.2-11.3 s | append patch |
+| new proc on an existing type | 15.4-17.4 s | 9.3-9.6 s | append patch |
+| comment line, blank lines or doc block between declarations | 22.2-24.0 s (full compile) | 6.5-6.6 s | patch (new) |
+| `#define` line between declarations | 22.5-22.7 s (full compile) | 6.3-6.6 s | patch (new) |
+| new type, removed var or proc, `#define` used outside a body | 21-43 s | unchanged | full compile |
+
+Where a body edit spends its time (quiet runs, seconds; the stage names are the `request_mark` timeline of `DMB_TIMINGS_DETAIL=1`,
+which lands in `E:/dq-cache/dmb-daemon/lifecycle.log`). "Before" is the build immediately before that stage's change (master for the
+frontend, the later rows were measured one change at a time as the lane proceeded), so the rows do not add up to the table above:
+
+| Stage | Before | This branch | Change |
+|---|---|---|---|
+| session validation | 0.69-1.0 | 0.38-0.45 | record decode moved to a background thread; `filter_generated` no longer canonicalizes every listing name |
+| input preparation | 0.30 | 0.24 | none |
+| frontend | 4.4 (directive disk 1.9) | 1.7-1.8 | disk memo skipped for a few resident misses |
+| source revision (query capture) | 0.25-0.75 | 0.05-0.1 | digest over fixed chunks on all cores (token v3) |
+| resources and maps | 1.0-1.1 | 0.85-0.9 | resource admission reuses the session's directory proofs |
+| freshness snapshot merge | 0.48 | 0.24-0.29 | merge compares and inserts instead of re-filtering retained listings |
+| startup facts | 0.45-0.5 | 0.40-0.45 | body keys on the workers (the rest is the declaration ledger, 0.2) |
+| ABI preparation | 1.5-1.9 | 0.45-0.55 | the batch recipe (0.5-0.8 s) is built only when replay is enabled |
+| publication and finalization | 0.9-1.1 | 0.8-1.0 | none |
+
+**Other changes.** A body patch splices code rows into the retained image and left the retained composed model alone, so the next
+structural append saw a stale model and ran a full compile; the slot now remembers the spliced rows and the append applies them to a copy
+of the model (`Dmb::patch_list_rows`, checked against the patch base hash). Edits that only move code are patched from a token alignment
+of the changed files' old and new text (`body_patch_lines.rs`, `structural_change_set.md` addendum). The three failing dm-tree tests were
+stale against rules that landed earlier (inherited variable redeclaration is rejected; the chunker is content defined) and are fixed; the
+dmbc lib tests did not compile on master (`initializer_disk_tests.rs`) and `session::tests::immutable_session_reuse_validates_inputs_and_rejects_corruption`
+asserted corruption of an already decoded record; both are fixed. 24 other dmbc lib tests fail on master and still fail here
+(`cargo test -p dmbc --lib`: 993 passed, 24 failed; master with only the compile fix: 984 passed, 25 failed; the failing sets are identical
+apart from the session test): header compatibility fixtures, retained-runner-facts catalogs, lazy cache batches, `expansion_memo` staging,
+modified-initializer source recipes, among others.
+
+**Equivalence.** `dmb-equiv` of the patched output against a fresh one-shot native compile (`DMB_BODY_PATCH=0 --no-cache --no-daemon`):
+EQUIVALENT with `--strict-order` and debug lines for a body edit, a comment line and a `#define` line; for a new var and a new proc the
+only difference is the order entry of the new member (`order.var_name_strings`, `order.proc_table`: appended numbering, by design).
+Each scenario's differences against a DreamMaker build (`dm.exe`, same source) are identical for the patched and the fresh output in
+all categories. `six_session_contract_tests` gained `code_motion_edits_patch_and_match_fresh_bytes` (byte-identical to fresh through
+comment, blank-line, doc-block and directive edits and back) and `appends_after_body_patches_edit_the_model_with_those_patches_applied`.
+
+**Memory** (cold build in a fresh daemon, then three body edits, sampled every second; master vs this branch): peak private
+10,160 vs 9,877 MiB, peak working set 11,298 vs 11,090 MiB, private after the edits 8,295 vs 8,281 MiB. No regression, and not under 8 GB:
+the retained set is unchanged apart from the disk-segment indexes no longer reopened for every edit.
+
+**What the 2.5 s target still needs.** Every remaining stage is a whole-program pass with per-item replay: directive planning (0.56 s,
+a serial walk of 5,983 intervals), expansion replay (0.27 s, 12,968 regions), declaration merge (0.5 s, 9,650 chunks), tree resolution
+on a structural edit (1.1 s: identity refresh 0.28, dependency graph 0.24, certificate carry 0.52), resource demand (0.24 s, a lex of the
+whole expanded text), the ABI scheduler (0.45 s over 86,782 units), startup facts (0.4 s), two 77 MB writes at publication (0.4 s) and the
+four directory sweeps of a request (about 1 s in total). Reaching 2.5 s needs one retained frontend revision per daemon that a change set
+edits in place (design consumers 1, 2 and 4 of `structural_change_set.md`), not further trimming of these passes. Smaller items measured and left:
+per-chunk memoization of resource literal discovery and of `source_checks` (0.1-0.25 s each), a persistent filesystem watcher for the
+sweeps, and patching removed members and new types (tombstones; class order).
+
+**Default daemon namespace hazard.** All worktrees share one daemon endpoint per user unless `DMB_DAEMON_NAMESPACE` is set, and a client
+whose compiler build differs retires the other build's daemon ("dmbd retiring"). With several lanes building, a resident daemon is
+often replaced between two requests, which shows up as three or four consecutive full compiles ("no patch base retained"). Benchmarks
+should set a private namespace.

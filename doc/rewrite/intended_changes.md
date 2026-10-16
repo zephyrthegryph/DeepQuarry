@@ -4927,3 +4927,17 @@ Look allocation now establishes the existing native entity handle after construc
 ### Extinguisher cosmetic finish: native presentation timing
 
 The extinguisher's old three-line Initialize ornament becomes a frozen native cosmetic sample and draw contribution. The same conditional host rand call and birth icon/item_state formatting remain; mini/atmo still make no sample and keep their actual foam capacities. Settled native appearance is unchanged and repeated draws do not reroll or duplicate the ornament. As with other native draw migrations, the ornament is now applied during the first presentation refresh rather than existing in raw overlays before the parent constructor returns. Actual current cabinet/module/closet/loot/manufacturing call sites do not capture this raw pre-refresh appearance; the raw timing change is explicit, not an equivalence claim. Parent generic emissive image data and unique live render-source ownership remain intact. No immediate legacy raw overlay clear or early forced draw is introduced.
+## Body factors on the stat store (rewrite/stat-layer, doc/rewrite/proposals/stat_layer.md)
+
+The body's factors are stats on `/mob/living` now, composed by the stat engine; the body's private fold (`body.factors`, `recompute_factors()`) is gone.
+The oracle (`dq_factor_oracle.dm`, the old fold kept as test code) and the pins of every factor table (`snapshots/factors/`, recorded from the old fold)
+prove the composition equal within a relative 1e-5. What is different on purpose:
+
+* **When a factor settles.** The old cache rebuilt at the first factor read after an invalidation; the stat is settled before the writer's next line.
+  A reagent that crosses a dose band, appears or leaves refreshes the factors at `on_reagent_change()` (the band logic is unchanged), not at the next read.
+* **`tissue_hypoxia` follows its severity.** Its cardiac irritability is computed from the oxygen debt past a threshold, but the affliction never
+  declared `continuous_factors`, so the value refreshed only when something else dirtied the factors. It now refreshes on every severity change
+  (`continuous_factors = TRUE`), as the comment on the override always said it did.
+* **Evasion.** `evasion` is the stat: the mob's own base evasion is its type-level constant and the factor contributions add to it; `get_evasion()` reads the one var.
+* **Float order.** PRODUCT stats multiply in row-creation order, not afflictions-effects-stasis-reagents-species order; the last bit can differ.
+* **Dead factors deleted.** `BF_ARRHYTHMIA_RISK`, `BF_VISION` and `BF_HEARING` had no source and no reader; `BF_SEDATION` and `BF_INCOMING_NEURAL` stay.

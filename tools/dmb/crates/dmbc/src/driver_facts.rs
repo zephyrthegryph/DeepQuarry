@@ -751,9 +751,11 @@ fn prepare_source_abi_mode_on_executor(
             );
         }
     }
+    dm_profile::request_mark("abi.failures_done");
     if let Some(artifacts) = artifacts {
         artifacts.prune(&artifact_keys);
     }
+    dm_profile::request_mark("abi.pruned");
     let entries = results
         .into_iter()
         .enumerate()
@@ -762,11 +764,16 @@ fn prepare_source_abi_mode_on_executor(
     let diagnostics: Vec<_> = failures.into_iter().collect();
     let units =
         PreparedAbiUnits::issue(frontend, Arc::clone(index), entries, diagnostics.is_empty())?;
+    dm_profile::request_mark("abi.issued");
     let units = prepared_units::certify_capture(units, batch_capture.as_ref());
+    dm_profile::request_mark("abi.certified");
     let prepared = PreparedSourceAbi { units, diagnostics };
     if prepared.diagnostics.is_empty() {
         if let (Some(store), Some(inputs)) = (artifacts, batch_inputs) {
-            if let Some(capture) = &batch_capture {
+            // The recipe serves whole-batch replay, which is opt-in (`DMB_ABI_BATCH_REPLAY=1`); the
+            // per-unit scheduler finds the same rows through the exact-key index. Building it costs
+            // 0.5-0.8 s per edit on DeepQuarry, so only a store that reads it builds it.
+            if let Some(capture) = batch_capture.as_ref().filter(|_| store.batch_recipes) {
                 abi_artifacts::batch::remember(
                     store,
                     inputs,
@@ -777,6 +784,7 @@ fn prepare_source_abi_mode_on_executor(
             }
         }
     }
+    dm_profile::request_mark("abi.remembered");
     Ok(prepared)
 }
 

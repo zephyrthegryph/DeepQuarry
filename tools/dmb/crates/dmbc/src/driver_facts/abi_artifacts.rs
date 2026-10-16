@@ -39,6 +39,10 @@ pub struct AbiArtifacts {
     /// parallel per-unit admission is the default. DMB_ABI_BATCH_REPLAY=1 /
     /// DMB_ABI_QUALIFIED_ROSTER=1 restore them.
     pub(super) batch_replay: bool,
+    /// Build the batch recipe after each successful batch. Only whole-batch replay (and tests of
+    /// the recipe itself) read it; the per-unit scheduler finds the same rows through the
+    /// exact-key index, and building the recipe costs 0.5-0.8 s per edit on DeepQuarry.
+    pub(super) batch_recipes: bool,
     pub(super) qualified_roster: bool,
     batch_reused: AtomicUsize,
     pub(super) scheduled_reused: AtomicUsize,
@@ -57,6 +61,8 @@ impl Default for AbiArtifacts {
             recomputed: AtomicUsize::new(0),
             provisional_reused: AtomicUsize::new(0),
             batch_replay: std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1"),
+            batch_recipes: std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1")
+                || std::env::var_os("DMB_ABI_BATCH_RECIPES").is_some_and(|value| value == "1"),
             qualified_roster: std::env::var_os("DMB_ABI_QUALIFIED_ROSTER").is_some_and(|value| value == "1"),
             batch_reused: AtomicUsize::new(0),
             scheduled_reused: AtomicUsize::new(0),
@@ -87,7 +93,15 @@ impl AbiArtifacts {
     #[cfg(test)]
     pub(crate) fn with_retained_shortcuts(mut self) -> Self {
         self.batch_replay = true;
+        self.batch_recipes = true;
         self.qualified_roster = true;
+        self
+    }
+
+    /// Build batch recipes without enabling replay or the qualified roster (recipe tests).
+    #[cfg(test)]
+    pub(crate) fn with_batch_recipes(mut self) -> Self {
+        self.batch_recipes = true;
         self
     }
 

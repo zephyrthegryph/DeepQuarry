@@ -326,7 +326,7 @@ CAPABILITIES(/obj/item/projectile/bullet/rifle/a145/highvel)
 	. = ..()
 	var/mob/living/L = target
 	if(istype(L) && blocked < 100)
-		L.body?.add_restriction(src, BF_O2_CARRIAGE, 0.3, 30 SECONDS)
+		L.body?.add_restriction(src, STAT_O2_CARRIAGE, 0.3, 30 SECONDS)
 
 /obj/item/projectile/bullet/cyanideround
 	name = "poison bullet"

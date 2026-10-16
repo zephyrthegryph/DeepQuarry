@@ -38,9 +38,9 @@
 
 
 		// General organ damage from withdraw
-		if(prob(20) && owner.factor(BF_WITHDRAWAL))
-			apply_lesion_damage(owner.factor(BF_WITHDRAWAL) * 0.05 * ORGAN_LEGACY_BURST, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
-			owner.injure(INJURY_TOXIN, owner.factor(BF_WITHDRAWAL) * 0.2 * ORGAN_LEGACY_BURST, flags = INJURE_SILENT)
+		if(prob(20) && owner.withdrawal)
+			apply_lesion_damage(owner.withdrawal * 0.05 * ORGAN_LEGACY_BURST, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
+			owner.injure(INJURY_TOXIN, owner.withdrawal * 0.2 * ORGAN_LEGACY_BURST, flags = INJURE_SILENT)
 
 /obj/item/organ/internal/spleen/handle_germ_effects(cycles)
 	. = ..() //Up should return an infection level as an integer
@@ -87,4 +87,4 @@ CAPABILITIES(/obj/item/organ/internal/spleen/minor)
 		return FALSE
 	if(!owner)
 		return TRUE
-	return owner.injury_load(INJURY_CATEGORY_TOXIC) < 30 && !owner.factor(BF_WITHDRAWAL)
+	return owner.injury_load(INJURY_CATEGORY_TOXIC) < 30 && !owner.withdrawal

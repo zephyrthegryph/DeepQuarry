@@ -21,8 +21,8 @@
 //     the definition's type: body_effect_origin(), body_effect_state()/set_body_effect_state().
 //     It is dropped when the last stack ends.
 //
-// The body reads the per-key value (type -> stacks) in recompute_factors(); a change of the
-// hold invalidates the factors (invalidate_factors() after each write).
+// The body reads the per-key value (type -> stacks) in refresh_factors(); a change of the
+// hold refreshes the factors (invalidate_factors() after each write).
 //
 // API (on /mob/living):
 //   apply_body_effect(type, duration, origin, suppress)  timed when duration > 0, held otherwise
@@ -104,7 +104,7 @@
 	return null
 
 /datum/body_effect/proc/changes_icon_scale()
-	return factors && (!isnull(factors[BF_ICON_SCALE_X]) || !isnull(factors[BF_ICON_SCALE_Y]))
+	return factors && (!isnull(factors[STAT_SCALE_MULT_X]) || !isnull(factors[STAT_SCALE_MULT_Y]))
 
 /// The shared definition for `path`.
 /proc/body_effect_def(path)
@@ -419,8 +419,8 @@
 /mob/living/proc/body_effect_filter(path)
 	return get_filter("body_effect:[path]")
 
-/// Accumulates every body effect's factors (per stack) into `acc`.
-/mob/living/proc/accumulate_body_effect_factors(list/acc)
+/// Holds every body effect's factors, as many stacks as it has, as rows of the effect's definition on this mob.
+/mob/living/proc/hold_effect_factors()
 	var/list/active = body_effects()
 	for(var/path in active)
 		var/alist/table
@@ -430,9 +430,7 @@
 			table = body_effect_def(path).factors
 		if(!table)
 			continue
-		for(var/i in 1 to active[path])
-			acc = body_factor_accumulate(acc, table)
-	return acc
+		hold_table(src, body_effect_def(path), table, 1, active[path])
 
 /// OOC listing lines ("name: factor lines") for visible body effects.
 /mob/living/proc/describe_body_effects()

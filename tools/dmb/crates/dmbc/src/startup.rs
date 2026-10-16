@@ -165,34 +165,43 @@ fn capture_impl_with_bodies_and_artifacts(
     let roster = frontend.callable_roster()?;
     let mut keys = std::collections::HashMap::new();
     if let Some(artifacts) = artifacts {
-        for body in frontend.bodies.iter() {
-            let key = (|| {
-                let shared = prepared.and_then(|roster| roster.current(body));
-                let owned = if shared.is_none() {
-                    Some(
-                        frontend
-                            .body_input(body)
-                            .map_err(|e| format!("startup body: {e:?}"))?,
-                    )
-                } else {
-                    None
-                };
-                let input = shared
-                    .map(|row| row.input())
-                    .or(owned.as_ref())
-                    .expect("current or ordinary input");
-                let source = input.source();
-                if !prefilter || input.may_contain_stored_declarations() {
-                    let identity = roster
-                        .identity_for_member(body.member)
-                        .ok_or("startup procedure identity missing")?;
-                    Ok(Some(artifacts::key(identity, source)))
-                } else {
-                    Ok::<_, String>(None)
-                }
-            })();
-            keys.insert(body.member, key);
-        }
+        // One independent key per body (a hash of its source): computed on the workers, then
+        // gathered in body order.
+        let key_of = |body: &dm_tree::frontend::BodyOccurrence| -> Result<Option<Vec<u8>>, String> {
+            let shared = prepared.and_then(|roster| roster.current(body));
+            let owned = if shared.is_none() {
+                Some(
+                    frontend
+                        .body_input(body)
+                        .map_err(|e| format!("startup body: {e:?}"))?,
+                )
+            } else {
+                None
+            };
+            let input = shared
+                .map(|row| row.input())
+                .or(owned.as_ref())
+                .expect("current or ordinary input");
+            let source = input.source();
+            if !prefilter || input.may_contain_stored_declarations() {
+                let identity = roster
+                    .identity_for_member(body.member)
+                    .ok_or("startup procedure identity missing")?;
+                Ok(Some(artifacts::key(identity, source)))
+            } else {
+                Ok(None)
+            }
+        };
+        let computed: Vec<_> = executor.install(|| {
+            use rayon::prelude::*;
+            frontend
+                .bodies
+                .par_iter()
+                .with_min_len(256)
+                .map(|body| (body.member, key_of(body)))
+                .collect()
+        });
+        keys.extend(computed);
         artifacts.retain_keys(
             keys.values()
                 .filter_map(|result| result.as_ref().ok()?.as_deref()),
@@ -202,6 +211,7 @@ fn capture_impl_with_bodies_and_artifacts(
                 .filter_map(|member| roster.identity_for_member(*member)),
         );
     }
+    dm_profile::request_mark("startup.keys_done");
     let capture_body = |body: &dm_tree::frontend::BodyOccurrence| {
         let identity = roster
             .identity_for_member(body.member)
@@ -289,17 +299,23 @@ fn capture_impl_with_bodies_and_artifacts(
     for result in chunks {
         procedures.extend(result?);
     }
+    dm_profile::request_mark("startup.procs_collected");
+    let draft_timer = dm_profile::detail_timer("startup.declaration_draft");
     let base = dm_tree::initializers::capture_declaration_draft(
         &frontend.snapshot,
         &frontend.emission_order,
     )
     .map_err(|e| format!("startup declarations: {e:?}"))?;
+    drop(draft_timer);
+    let finish_timer = dm_profile::detail_timer("startup.finish_draft");
     let plan = dm_tree::initializers::finish_declaration_draft(
         base,
         procedures
             .iter()
             .map(|(occurrence, plan)| (*occurrence, &**plan)),
     )?;
+    drop(finish_timer);
+    dm_profile::request_mark("startup.plan_done");
     let procedure_index = procedures
         .iter()
         .enumerate()
@@ -324,6 +340,7 @@ fn capture_impl_with_bodies_and_artifacts(
         )?),
     };
 
+    dm_profile::request_mark("startup.inventory_done");
     Ok(StartupFacts {
         issuance: None,
         plan,
@@ -492,6 +509,7 @@ fn capture_facts_with_executor_and_bodies_and_artifacts(
     let mut startup = capture_impl_with_bodies_and_artifacts(
         frontend, executor, bodies, true, artifacts, prepared,
     )?;
+    dm_profile::request_mark("startup.impl_done");
     let mut symbols = dm_ir::SymbolTable::overlay(startup.plan.symbols.clone());
     for (expected, bytes) in spellings {
         let text =
@@ -504,6 +522,7 @@ fn capture_facts_with_executor_and_bodies_and_artifacts(
         }
     }
     startup.plan.symbols = std::sync::Arc::new(symbols);
+    dm_profile::request_mark("startup.spellings_done");
     Ok(std::sync::Arc::new(startup))
 }
 /// Re-capture all current body facts before accepting an escaping generic plan.

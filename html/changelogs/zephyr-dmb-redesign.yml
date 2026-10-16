@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Native compiler daemon patches body edits that change string literals and ignores resource listing churn"

@@ -152,27 +152,24 @@
 			TEST_ASSERT_EQUAL(length(TYPE_TABLE_GET(inst, affliction_stages)), 3, "[path] builds three stages from its data")
 		qdel(inst)
 
-/// C12: reagent changes dirty the factors only on a band crossing or when a
+/// C12: reagent changes refresh the factors only on a band crossing or when a
 /// factor reagent appears or leaves.
 /datum/unit_test/dq_k_b_c12_factor_bands
 
 /datum/unit_test/dq_k_b_c12_factor_bands/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.factor(BF_ANTIEMETIC) // settle
-	TEST_ASSERT(!H.body.factors_stale(), "setup: factors are clean")
+	TEST_ASSERT_EQUAL(H.antiemetic, 0, "setup: no antiemetic")
 	H.bloodstr.add_reagent(REAGENT_ID_WATER, 5)
-	TEST_ASSERT(!H.body.factors_stale(), "a reagent without factors does not dirty the factors")
+	TEST_ASSERT_EQUAL(H.antiemetic, 0, "a reagent without factors changes nothing")
 	H.ingested.add_reagent(REAGENT_ID_CALCIUMCARBONATE, 5)
-	TEST_ASSERT(H.body.factors_stale(), "a factor reagent appearing dirties the factors")
-	TEST_ASSERT(H.factor(BF_ANTIEMETIC) > body_factor_baseline(BF_ANTIEMETIC), "the new factor applies")
+	var/first = H.antiemetic
+	TEST_ASSERT(first > 0, "a factor reagent appearing refreshes the factors at once: the new factor applies")
 	H.ingested.add_reagent(REAGENT_ID_CALCIUMCARBONATE, 0.05)
-	TEST_ASSERT(!H.body.factors_stale(), "a change inside one dose band does not recompute")
+	TEST_ASSERT_EQUAL(H.antiemetic, first, "a change inside one dose band does not refresh: the factor stays at the value of the band's last refresh")
 	H.ingested.add_reagent(REAGENT_ID_CALCIUMCARBONATE, 5)
-	TEST_ASSERT(H.body.factors_stale(), "crossing a dose band dirties the factors")
-	H.factor(BF_ANTIEMETIC)
+	TEST_ASSERT(H.antiemetic > first, "crossing a dose band refreshes the factors: the new dose applies")
 	H.ingested.remove_reagent(REAGENT_ID_CALCIUMCARBONATE, 100)
-	TEST_ASSERT(H.body.factors_stale(), "a factor reagent leaving dirties the factors")
-	TEST_ASSERT_EQUAL(H.factor(BF_ANTIEMETIC), body_factor_baseline(BF_ANTIEMETIC), "the factor is gone with the reagent")
+	TEST_ASSERT_EQUAL(H.antiemetic, 0, "a factor reagent leaving refreshes the factors: the factor is gone with the reagent")
 
 /// P2-K5: reagents clean through adjust_germ_level(), which clamps at zero.
 /datum/unit_test/dq_k_b_k5_germ_writer

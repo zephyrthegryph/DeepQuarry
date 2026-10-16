@@ -276,7 +276,7 @@ MSG_BALLOON(tourniquet/limb_taken, "that limb already has a tourniquet!")
 	)
 	min_symptoms = 0
 	max_symptoms = 2
-	factors = alist(BF_ACCURACY = -10)
+	factors = alist(STAT_ACCURACY = -10)
 
 /datum/affliction/limb_ischemia/on_added()
 	. = ..()

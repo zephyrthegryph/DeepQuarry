@@ -6,7 +6,7 @@
 		/datum/affliction_symptom/chills = 50,
 		/datum/affliction_symptom/fatigue = 40
 	)
-	factors = alist(BF_TEMPERATURE = 2, BF_HEART_RATE = 15)
+	factors = alist(STAT_TEMPERATURE = 2, STAT_HEART_RATE = 15)
 	name = "Roanoke Syndrome"
 	medical_name = "Roanoke Syndrome"
 	max_stages = 6
