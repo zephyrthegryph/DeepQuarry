@@ -410,6 +410,10 @@ impl BodyPatchBase {
             dmb_hash,
         })
     }
+    /// Hash of the image this base describes.
+    pub(crate) fn dmb_hash(&self) -> u128 {
+        self.dmb_hash
+    }
     pub(crate) fn with_output_hash(mut self, hash: u128) -> Self {
         self.dmb_hash = hash;
         self

@@ -300,17 +300,21 @@ fn capture_impl_with_bodies_and_artifacts(
         procedures.extend(result?);
     }
     dm_profile::request_mark("startup.procs_collected");
+    let draft_timer = dm_profile::detail_timer("startup.declaration_draft");
     let base = dm_tree::initializers::capture_declaration_draft(
         &frontend.snapshot,
         &frontend.emission_order,
     )
     .map_err(|e| format!("startup declarations: {e:?}"))?;
+    drop(draft_timer);
+    let finish_timer = dm_profile::detail_timer("startup.finish_draft");
     let plan = dm_tree::initializers::finish_declaration_draft(
         base,
         procedures
             .iter()
             .map(|(occurrence, plan)| (*occurrence, &**plan)),
     )?;
+    drop(finish_timer);
     dm_profile::request_mark("startup.plan_done");
     let procedure_index = procedures
         .iter()
