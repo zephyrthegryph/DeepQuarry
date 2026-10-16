@@ -104,6 +104,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject)
 /datum/unit_test/dq_ai_pack_leader_death_and_empty_pack
 
 /datum/unit_test/dq_ai_pack_leader_death_and_empty_pack/Run()
+	set_global(nameof(GLOB.coalesce_absorbed), GLOB.coalesce_absorbed)
 	var/mob/living/simple_mob/A = pack_mob(0)
 	var/mob/living/simple_mob/B = pack_mob(1)
 	var/datum/ai_pack/P = A.ai_brain.pack

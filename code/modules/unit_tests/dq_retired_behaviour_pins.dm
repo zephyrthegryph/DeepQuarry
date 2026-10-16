@@ -29,7 +29,8 @@
 /datum/unit_test/dq_retired_footstep_counts_steps/Run()
 	var/turf/start = run_loc_floor_bottom_left
 	var/turf/next = locate(start.x + 1, start.y, start.z)
-	var/mob/living/simple_mob/animal/passive/mouse/walker = allocate(/mob/living/simple_mob/animal/passive/mouse, start)
+	var/mob/living/walker = allocate(/mob/living, start)
+	TEST_ASSERT(!granted(walker, /datum/capability/footstep), "the real dynamic-grant fixture has no statically declared footstep source")
 	walker.enable_footsteps(FOOTSTEP_MOB_CLAW, 1, -6)
 	TEST_ASSERT(granted(walker, /datum/capability/footstep), "enable_footsteps() grants the footstep capability")
 	sparse_set(walker, footstep_steps, null)
@@ -41,6 +42,19 @@
 	var/before = sparse_get_or(walker, footstep_steps, 0)
 	walker.forceMove(next)
 	TEST_ASSERT_EQUAL(sparse_get_or(walker, footstep_steps, 0), before, "no steps are counted once disabled")
+
+/// Revoking an API grant must not remove an independent type-declared capability.
+/datum/unit_test/dq_retired_footstep_static_source/Run()
+	var/turf/start = run_loc_floor_bottom_left
+	var/turf/next = locate(start.x + 1, start.y, start.z)
+	var/mob/living/simple_mob/animal/passive/mouse/walker = allocate(/mob/living/simple_mob/animal/passive/mouse, start)
+	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the real mouse inherits its statically declared footstep capability")
+	walker.enable_footsteps(FOOTSTEP_MOB_CLAW, 1, -6)
+	walker.disable_footsteps()
+	TEST_ASSERT(granted(walker, /datum/capability/footstep), "removing the API grant retains the independent type-declared source")
+	sparse_set(walker, footstep_steps, null)
+	walker.forceMove(next)
+	TEST_ASSERT_EQUAL(sparse_get_or(walker, footstep_steps, 0), 1, "the original declared listener still counts exactly one real movement")
 
 /// Two swarmers on one turf pair up and offset; one leaving unpairs both.
 /datum/unit_test/dq_retired_swarming_pairs_on_a_turf

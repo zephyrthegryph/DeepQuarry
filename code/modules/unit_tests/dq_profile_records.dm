@@ -210,6 +210,7 @@
 /datum/unit_test/dq_profile_records_on_every_mob
 
 /datum/unit_test/dq_profile_records_on_every_mob/Run()
+	scope_strain_archive()
 	var/mob/living/simple_mob/animal/passive/mouse/mouse = allocate(/mob/living/simple_mob/animal/passive/mouse, test_floor())
 	TEST_ASSERT(istype(mouse.bio, /datum/record/identity), "a simple mob has an identity record")
 	TEST_ASSERT(istype(mouse.vore_prefs, /datum/record/vore_prefs), "and a vore record")
@@ -232,3 +233,17 @@
 	record_copy(other.bio, M.bio)
 	TEST_ASSERT_EQUAL(other.bio.flavor_text, M.bio.flavor_text, "native identity copying retains the actual value")
 	TEST_ASSERT(other.bio != M.bio, "copied identity records remain independently owned")
+
+/// Isolate real strain generation, including persistent archive copies, for this fixture.
+/// Archive copies own native every() subscriptions: deleting only the mouse is insufficient.
+/datum/unit_test/proc/scope_strain_archive()
+	var/list/archive = list()
+	set_global(nameof(GLOB.archive_diseases), archive)
+	defer_cleanup(src, PROC_REF(cleanup_strain_archive), archive)
+
+/datum/unit_test/proc/cleanup_strain_archive(list/archive)
+	for(var/key in archive)
+		var/datum/affliction/contagion/engineered/strain = archive[key]
+		if(!QDELETED(strain))
+			qdel(strain)
+	archive.Cut()

@@ -120,6 +120,7 @@
 /datum/unit_test/dq_melee_swing_dodge_by_moving
 
 /datum/unit_test/dq_melee_swing_dodge_by_moving/Run()
+	scope_strain_archive()
 	test_driver_begin()
 	exercise()
 	test_driver_end()
@@ -152,6 +153,9 @@
 /datum/unit_test/dq_melee_swing_sets_recovery_cooldown
 
 /datum/unit_test/dq_melee_swing_sets_recovery_cooldown/Run()
+	scope_strain_archive()
+	set_global(nameof(GLOB.standing_cache_misses), GLOB.standing_cache_misses)
+	set_global(nameof(GLOB.standing_cache_drops), GLOB.standing_cache_drops)
 	test_driver_begin()
 	exercise()
 	test_driver_end()

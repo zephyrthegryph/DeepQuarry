@@ -172,6 +172,7 @@
 /datum/unit_test/dq_construction_floor
 
 /datum/unit_test/dq_construction_floor/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/turf/simulated/floor/floor = get_step(T, NORTH) || get_step(T, SOUTH)
