@@ -5,7 +5,23 @@
 use std::{ffi::OsStr, io};
 pub(super) const DEFAULT: u64 = 8_000_000_000;
 pub(super) fn startup() -> io::Result<u64> {
+    if std::env::var_os("DMB_DAEMON_SOFT_PRIVATE_BYTES").is_none() {
+        if let Some(budget) = std::env::var_os("DMB_DAEMON_MEMORY_BUDGET_GB") {
+            return budget_soft(&budget);
+        }
+    }
     parse(std::env::var_os("DMB_DAEMON_SOFT_PRIVATE_BYTES").as_deref())
+}
+/// DMB_DAEMON_MEMORY_BUDGET_GB (default 12, so unset keeps `DEFAULT`/1.5x) is the whole daemon's private-memory budget across
+/// every retained project: it becomes the hard ceiling (soft limit is two thirds of it). Above it the least recently used project
+/// session is released whole.
+fn budget_soft(value: &OsStr) -> io::Result<u64> {
+    value.to_str().filter(|text| !text.is_empty() && text.bytes().all(|byte| byte.is_ascii_digit()))
+        .and_then(|text| text.parse::<u64>().ok())
+        .filter(|gb| (1..=48).contains(gb))
+        .map(|gb| gb * 1_000_000_000 / 3 * 2)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,
+            "DMB_DAEMON_MEMORY_BUDGET_GB must be an integer from 1 through 48"))
 }
 /// Ceiling above which the compact symbolic core, generation and link bindings
 /// may be evicted. Below it pressure sheds only transient buffers, so the next
@@ -41,6 +57,14 @@ mod tests {
     fn hard_ceiling_defaults_above_soft_limit() {
         if std::env::var_os("DMB_DAEMON_HARD_PRIVATE_BYTES").is_none() {
             assert_eq!(hard(DEFAULT).unwrap(), 12_000_000_000);
+        }
+    }
+    #[test]
+    fn budget_maps_to_hard_ceiling() {
+        assert_eq!(budget_soft(OsStr::new("12")).unwrap(), DEFAULT);
+        assert_eq!(budget_soft(OsStr::new("6")).unwrap() + budget_soft(OsStr::new("6")).unwrap() / 2, 6_000_000_000);
+        for value in ["", "0", "49", "x", "-3"] {
+            assert!(budget_soft(OsStr::new(value)).is_err());
         }
     }
     #[test]

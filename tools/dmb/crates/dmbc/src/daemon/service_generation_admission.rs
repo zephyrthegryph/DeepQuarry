@@ -60,11 +60,22 @@ impl Shared {
         self.acquire_with_admission_until_observing(workers, deadline, true, private_bytes)
     }
 
+    /// Every project this daemon retained is gone from disk (a removed worktree), the daemon has nothing left to serve
+    /// and nothing running: exit now instead of waiting for the idle timeout.
+    pub(super) fn root_gone_exit_ready(&self, incoming: bool) -> bool {
+        !incoming
+            && housekeeping::ROOT_GONE.load(Ordering::Acquire)
+            && self.slots.lock().unwrap_or_else(|e| e.into_inner()).is_empty()
+            && *self.running.lock().unwrap_or_else(|e| e.into_inner()) == 0
+            && self.connections.load(Ordering::Acquire) == 0
+    }
+
     pub(super) fn exit_ready(&self, incoming: bool, idle_for: Duration) -> bool {
         // An accepted listener result has not acquired its Connection guard yet.
         // It must reach dispatch before idle exit can inspect zero counters.
         !incoming
-            && (self.retiring.load(Ordering::Acquire) || idle_for >= Duration::from_secs(7200))
+            && (self.retiring.load(Ordering::Acquire)
+                || super::super::resident::idle_exit().is_some_and(|limit| idle_for >= limit))
             && *self
                 .running
                 .lock()

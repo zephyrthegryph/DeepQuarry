@@ -1,21 +1,22 @@
 /**
- * Per-worktree dmbc daemon namespaces and the machine-wide resident-daemon cap.
+ * One resident dmbc daemon for the whole machine, plus the registry used when a caller opts into a namespace.
  *
- * The daemon endpoint is per user and a client with a different compiler build retires the daemon it finds, so concurrent
- * worktrees used to evict each other's daemon and fall back to full compiles ("no patch base retained"). Every native compile
- * now runs with `DMB_DAEMON_NAMESPACE` defaulted to `wt-<hash of the git toplevel>`: each worktree owns one daemon, and a
- * different build in another worktree cannot reach it. `DMB_DAEMON_NAMESPACE` set by the caller wins (validated by dmbc).
+ * Every native compile goes through the one shared compiler binary (lib/dmbc_cache.ts `sharedDmbcExe`), so every worktree
+ * has the same compiler identity and talks to the same generation endpoint: one daemon serves all checkouts, keeping one
+ * retained session per project root (the daemon bounds them by DMB_DAEMON_MEMORY_BUDGET_GB, evicts the least recently
+ * used project, exits after DMB_DAEMON_IDLE_EXIT_SECS idle, and exits when its roots are gone). The old per-worktree
+ * namespace default is gone: it multiplied an 8 GB daemon per checkout, and only daemons this file registered were ever
+ * evicted. The machine-wide cap (DQ_DMBC_MAX_DAEMONS, default 2) is enforced by the daemon itself at startup, for every
+ * binary that runs `--serve-daemon`; nothing here is needed for it.
  *
- * A daemon holds about 8 GB, so at most `DQ_DMBC_MAX_DAEMONS` (default 2, the DM compile slot cap) stay resident. Registry
- * under `DQ_DMBC_DAEMON_DIR` (default E:/dq-cache/dmb-daemon/ns, else ~/.cache/dq/dmb-daemon/ns):
+ * `DMB_DAEMON_NAMESPACE` set by the caller still isolates that caller (a benchmark or an experiment build). Such a
+ * namespace is bookkept here under `DQ_DMBC_DAEMON_DIR` (default E:/dq-cache/dmb-daemon/ns, else ~/.cache/dq/dmb-daemon/ns):
  * - `<ns>.json`: {namespace, root, lastUsed}, written when a compile in that namespace starts and ends.
  * - `<ns>.lease.<pid>`: one per running compile; live while the pid is alive and the heartbeat (mtime) is under 15 minutes.
  * Before a compile starts, if more namespaces are registered than the cap, the least recently used ones with no live lease are
- * asked to retire (`dmbc --daemon-retire`, which drains running builds first). A namespace with a live lease is never touched,
- * so the cap is soft when every resident daemon is busy. `DQ_DMBC_MAX_DAEMONS=0` turns the cap off.
+ * asked to retire (`dmbc --daemon-retire`, which drains running builds first).
  */
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -36,15 +37,9 @@ export function maxResidentDaemons(): number {
   return Number(raw);
 }
 
-/** `wt-<16 hex>` of the normalised checkout root; stable across runs, valid for DMB_DAEMON_NAMESPACE. */
-export function worktreeNamespace(root: string): string {
-  const key = path.resolve(root).replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
-  return `wt-${createHash('sha256').update(key).digest('hex').slice(0, 16)}`;
-}
-
-/** The namespace a compile from `root` uses: the caller's override, else the per-worktree default. */
-export function effectiveNamespace(root: string): string {
-  return process.env.DMB_DAEMON_NAMESPACE || worktreeNamespace(root);
+/** The namespace a compile uses: the caller's override, else none (the one machine-wide daemon). */
+export function effectiveNamespace(): string | undefined {
+  return process.env.DMB_DAEMON_NAMESPACE || undefined;
 }
 
 function pidAlive(pid: number): boolean {
@@ -111,15 +106,19 @@ function retire(executable: string, namespace: string): string {
   return `failed (${(result.stderr || result.error?.message || `status ${result.status}`).trim()})`;
 }
 
-export type DaemonScope = { namespace: string; release(): void };
+export type DaemonScope = { namespace: string | undefined; release(): void };
 
 /**
- * Enter the compile's daemon scope: pick the namespace (exported through DMB_DAEMON_NAMESPACE for the dmbc child), take a
- * lease, and evict least-recently-used idle daemons beyond the cap. Never throws: bookkeeping failure only loses the cap.
+ * Enter the compile's daemon scope. Every native dmbc spawn goes through here. Without a caller namespace the compile uses
+ * the one machine-wide daemon and there is nothing to bookkeep (the daemon caps and retires itself). With a namespace it takes
+ * a lease and evicts least-recently-used idle namespaces beyond the cap. Never throws: bookkeeping failure only loses the cap.
  */
 export function enterDaemonScope(root: string, executable: string): DaemonScope {
-  const namespace = effectiveNamespace(root);
-  process.env.DMB_DAEMON_NAMESPACE = namespace;
+  const namespace = effectiveNamespace();
+  if (!namespace) {
+    delete process.env.DMB_DAEMON_NAMESPACE;
+    return { namespace, release() {} };
+  }
   let dir: string;
   let lease: string;
   let beat: NodeJS.Timeout | undefined;

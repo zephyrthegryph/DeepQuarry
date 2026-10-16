@@ -89,7 +89,7 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
-import { dmbcCacheDir, dmbcCacheKey, restoreDmbc, storeDmbc } from './lib/dmbc_cache';
+import { dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, publishDmbc, restoreDmbc, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, storeDmbc } from './lib/dmbc_cache';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -839,8 +839,10 @@ export const AnalyzeTarget = new Juke.Target({
 });
 
 /** Release build of the native DM compiler (tools/dmb), the default DQ_COMPILER=native executable. */
-const DMBC_EXE = `tools/dmb/target/release/${process.platform === 'win32' ? 'dmbc.exe' : 'dmbc'}`;
-const DMBD_EXE = DMBC_EXE.replace(/dmbc(\.exe)?$/, 'dmbd$1');
+// Every checkout runs the one shared binary (E:/dq-cache/dmb-bin, a published copy), never a per-worktree copy: one compiler
+// identity is one resident daemon. DQ_DMBC_BIN runs an explicit executable instead and nothing here rebuilds it.
+const DMBC_EXE = sharedDmbcExe('dmbc');
+const DMBD_EXE = sharedDmbcExe('dmbd');
 // A fresh worktree copies the compiler from the shared content-addressed cache (lib/dmbc_cache.ts) instead of
 // running cargo; a build with inputs that differ from HEAD bypasses it and stores nothing.
 let dmbcPendingStore: { cache: string; key: string; commit: string } | null = null;
@@ -878,7 +880,7 @@ const storeDmbcBuild = (): void => {
 };
 export const DmbcTarget = new Juke.Target({
   // An explicit compiler is never rebuilt here; a shared-cache hit needs no cargo.
-  onlyWhen: () => !process.env.DQ_NATIVE_COMPILER && !dmbcCacheHit(),
+  onlyWhen: () => !process.env.DQ_NATIVE_COMPILER && !dmbcBinOverride() && !dmbcCacheHit(),
   inputs: [
     'tools/dmb/Cargo.toml',
     'tools/dmb/Cargo.lock',
@@ -889,34 +891,27 @@ export const DmbcTarget = new Juke.Target({
   ],
   outputs: [DMBC_EXE],
   executes: async () => {
-    // Windows will not let cargo replace an executable a resident dmbc daemon is still running ("failed to remove file ...
-    // dmbc.exe: Access is denied"), but it does let the running file be renamed. Move the old one aside, and sweep the aside
-    // copies of earlier builds that no daemon holds any more.
-    const exeDir = path.dirname(DMBC_EXE);
-    const exeName = path.basename(DMBC_EXE);
-    for (const entry of fs.existsSync(exeDir) ? fs.readdirSync(exeDir) : []) {
-      if (!entry.startsWith(`${exeName}.old-`)) continue;
+    // Cargo builds in a private target and the result is published to the shared binary by atomic rename (installFile): a
+    // running daemon keeps its executable open, which Windows lets us rename but not overwrite. Sweep the aside copies of
+    // earlier publications that no daemon holds any more.
+    const binDir = sharedDmbcBinDir();
+    for (const entry of fs.existsSync(binDir) ? fs.readdirSync(binDir) : []) {
+      if (!entry.includes('.old-')) continue;
       try {
-        fs.rmSync(`${exeDir}/${entry}`);
+        fs.rmSync(`${binDir}/${entry}`);
       } catch {
         // still running under a daemon; try again on the next build
-      }
-    }
-    if (fs.existsSync(DMBC_EXE)) {
-      try {
-        fs.renameSync(DMBC_EXE, `${DMBC_EXE}.old-${Date.now()}`);
-      } catch (error) {
-        Juke.logger.warn(`dmbc: could not move the previous ${DMBC_EXE} aside (${error}); cargo may fail to replace it`);
       }
     }
     // One cargo build at a time machine-wide; the slot script queues and reclaims crashed holders.
     const slots = 'tools/dq_machine_slots.sh';
     const cargo = ['cargo', 'build', '--release', '-p', 'dmbc', '--manifest-path', 'tools/dmb/Cargo.toml'];
     if (fs.existsSync(slots)) {
-      await Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...cargo]);
+      await Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...cargo], { env: { ...process.env, CARGO_TARGET_DIR: sharedDmbcBuildTarget() } });
     } else {
-      await Juke.exec(cargo[0], cargo.slice(1));
+      await Juke.exec(cargo[0], cargo.slice(1), { env: { ...process.env, CARGO_TARGET_DIR: sharedDmbcBuildTarget() } });
     }
+    publishDmbc(`${sharedDmbcBuildTarget()}/release`, DMBC_EXE, DMBD_EXE);
     storeDmbcBuild();
   },
 });
