@@ -226,7 +226,7 @@
 		TEST_ASSERT(!(field in M.vars), "[field] has no stale duplicate mob storage")
 		TEST_ASSERT(field in M.bio.vars, "[field] retains its actual profile home")
 	TEST_ASSERT(!("do_afters" in M.vars), "the retired do-after scheduler has no per-mob list")
-	M.bio.flavor_text = "A real profile description."
+	set_var(M.bio, "flavor_text", "A real profile description.")
 	TEST_ASSERT_EQUAL(M.print_flavor_text(), span_notice("A real profile description."), "the actual flavor consumer reads the profile")
 	var/mob/living/simple_mob/e0_fixture/other = allocate(/mob/living/simple_mob/e0_fixture, test_floor())
 	record_copy(other.bio, M.bio)

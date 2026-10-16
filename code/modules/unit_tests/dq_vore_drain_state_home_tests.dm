@@ -14,7 +14,7 @@
 	sparse_set_or(H, absorbing_prey, TRUE, 0)
 	sparse_set_or(other, absorbing_prey, TRUE, 0)
 	var/datum/act/op/A = allocate(/datum/act/op)
-	A.args = list("what" = "drain", "victim" = other)
+	set_var(A, "args", list("what" = "drain", "victim" = other))
 	H.grab_drain_interrupted(A)
 	TEST_ASSERT(!sparse_has(H, absorbing_prey), "the real interruption cleanup releases the drain flag")
 	TEST_ASSERT_EQUAL(sparse_get_or(other, absorbing_prey, 0), TRUE, "interruption leaves another actor's drain in progress")
