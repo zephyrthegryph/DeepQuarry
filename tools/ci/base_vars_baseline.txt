@@ -42,7 +42,6 @@ base_var	code/game/atom/_atom.dm	@/atom::simulated
 base_var	code/game/atom/_atom.dm	@/atom::forensic_data
 base_var	code/game/atom/_atom.dm	@/atom::last_bumped
 base_var	code/game/atom/_atom.dm	@/atom::reagents
-base_var	code/game/atom/_atom.dm	@/atom::our_overlays
 base_var	code/game/atom/_atom.dm	@/atom::managed_vis_overlays
 base_var	code/game/atom/_atom.dm	@/atom::atom_colours
 base_var	code/game/atom/_atom.dm	@/atom::emp_protection_flags
@@ -51,7 +50,6 @@ base_var	code/game/atom/armor.dm	@/atom::armor_override
 base_var	code/game/atom/atom_defense.dm	@/atom::uses_integrity
 base_var	code/game/atom/atom_defense.dm	@/atom::atom_integrity
 base_var	code/game/atom/atom_defense.dm	@/atom::integrity_failure
-base_var	code/game/atom/atom_defense.dm	@/atom::damage_deflection
 base_var	code/game/atom/atom_defense.dm	@/atom::last_damage_flag
 base_var	code/game/atom/atom_defense.dm	@/atom::damage_band
 base_var	code/game/atom/atom_type_table.dm	@/atom::init_from_table
@@ -69,7 +67,6 @@ base_var	code/game/atoms_movable.dm	@/atom/movable::icon_expected_width
 base_var	code/game/atoms_movable.dm	@/atom/movable::old_x
 base_var	code/game/atoms_movable.dm	@/atom/movable::old_y
 base_var	code/game/atoms_movable.dm	@/atom/movable::riding_datum
-base_var	code/game/atoms_movable.dm	@/atom/movable::does_spin
 base_var	code/game/atoms_movable.dm	@/atom/movable::movement_type
 base_var	code/game/atoms_movable.dm	@/atom/movable::autotransferable
 base_var	code/game/atoms_movable.dm	@/atom/movable::listening_recursive
@@ -104,7 +101,6 @@ base_var	code/game/objects/items.dm	@/obj/item::actions_types
 base_var	code/game/objects/items.dm	@/obj/item::slowdown
 base_var	code/game/objects/items.dm	@/obj/item::embed_chance
 base_var	code/game/objects/items.dm	@/obj/item::sprite_sheets_obj
-base_var	code/game/objects/items.dm	@/obj/item::worn_layer
 base_var	code/game/objects/items.dm	@/obj/item::digestable
 base_var	code/game/objects/items.dm	@/obj/item::item_tf_spawn_allowed
 base_var	code/game/objects/items.dm	@/obj/item::ckeys_allowed_itemspawn
@@ -114,7 +110,6 @@ base_var	code/game/objects/items.dm	@/obj/item::cleaving
 base_var	code/game/objects/items.dm	@/obj/item::identity
 base_var	code/game/objects/items.dm	@/obj/item::identity_type
 base_var	code/game/objects/items.dm	@/obj/item::init_hide_identity
-base_var	code/game/objects/items.dm	@/obj/item::trash_eatable
 base_var	code/game/objects/items.dm	@/obj/item::digest_stage
 base_var	code/game/objects/items.dm	@/obj/item::d_mult_old
 base_var	code/game/objects/items.dm	@/obj/item::d_mult
@@ -123,15 +118,9 @@ base_var	code/game/objects/items.dm	@/obj/item::d_stage_overlay_key
 base_var	code/game/objects/items.dm	@/obj/item::oldname
 base_var	code/game/objects/items.dm	@/obj/item::cleanname
 base_var	code/game/objects/items.dm	@/obj/item::cleandesc
-base_var	code/game/objects/items.dm	@/obj/item::center_of_mass_x
-base_var	code/game/objects/items.dm	@/obj/item::center_of_mass_y
 base_var	code/game/objects/items/devices/paicard.dm	@/obj/machinery::paicard
 base_var	code/game/objects/items/weapons/capture_crystal.dm	@/mob/living::capture_crystal
 base_var	code/game/objects/items/weapons/capture_crystal.dm	@/mob/living::capture_caught
-base_var	code/game/objects/objs.dm	@/obj::show_messages
-base_var	code/game/objects/objs.dm	@/obj::can_speak
-base_var	code/game/objects/objs.dm	@/obj::show_examine
-base_var	code/game/objects/objs.dm	@/obj::redgate_allowed
 base_var	code/game/objects/objs.dm	@/obj::being_shocked
 base_var	code/game/objects/objs.dm	@/obj::micro_accepted_scale
 base_var	code/game/objects/objs.dm	@/obj::micro_target
@@ -173,8 +162,6 @@ base_var	code/modules/detectivework/tools/rag.dm	@/mob::bloody_hands
 base_var	code/modules/detectivework/tools/rag.dm	@/mob::track_blood
 base_var	code/modules/economy/price_list.dm	@/atom/movable::price_tag
 base_var	code/modules/economy/service_invoices.dm	@/obj/item::economic_adoption
-base_var	code/modules/examine/examine.dm	@/atom::description_fluff
-base_var	code/modules/examine/examine.dm	@/atom::description_antag
 base_var	code/modules/factions/reputation.dm	@/mob/living::faction_reputation
 base_var	code/modules/factions/reputation.dm	@/mob/living::faction_affiliations
 base_var	code/modules/flufftext/Dreaming.dm	@/mob/living/carbon::current_dream
@@ -336,13 +323,11 @@ base_var	code/modules/projectiles/autofire.dm	@/mob/living::autofire_params
 base_var	code/modules/projectiles/targeting/targeting_mob.dm	@/mob/living::aiming
 base_var	code/modules/projectiles/targeting/targeting_mob.dm	@/mob/living::aimed
 base_var	code/modules/reagents/hose/connector.dm	@/atom/movable::hose_connectors
-base_var	code/modules/reagents/reagent_containers/glass.dm	@/mob/living::venom_milking_cd
 base_var	code/modules/recycling/disposal_connection.dm	@/obj::disposal_connection
 base_var	code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm	@/atom/movable::experiment_handler
 base_var	code/modules/resleeving/infocore_records.dm	@/mob/living/carbon/human::resleeve_lock
 base_var	code/modules/resleeving/infocore_records.dm	@/mob/living/carbon/human::changeling_locked
 base_var	code/modules/resleeving/infocore_records.dm	@/mob/living/carbon/human::original_player
-base_var	code/modules/surgery/cavity.dm	@/obj/item::cavity_implantable
 base_var	code/modules/surgery/surgery.dm	@/obj::surgery_cleanliness
 base_var	code/modules/tgui/external.dm	@/mob::tgui_open_uis
 base_var	code/modules/tgui_input/say_modal/typing.dm	@/mob::active_typing_indicator
