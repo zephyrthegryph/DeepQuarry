@@ -551,8 +551,8 @@ CAPABILITIES(/datum/system/supply)
 
 			var/datum/exported_crate/EC = new /datum/exported_crate()
 			EC.name = "\proper[MA.name]"
-			EC.value = 0
-			EC.contents = list()
+			EC.set_value(0)
+			EC.set_rows(list())
 			if(istype(MA, /obj/structure/closet/crate))
 				var/obj/structure/closet/crate/routed_crate = MA
 				EC.market_bid_id = routed_crate.cargo_market_bid_id
@@ -583,18 +583,18 @@ CAPABILITIES(/datum/system/supply)
 
 			rel_add(src, nameof(exported_crates), EC)
 			distribute_export_revenue(EC)
-			EC.value += base_value
+			EC.set_value(EC.value + base_value)
 
 			// Duplicate the receipt for the admin-side log
 			var/datum/exported_crate/adm = new()
 			adm.name = EC.name
-			adm.value = EC.value
-			adm.contents = deepCopyList(EC.contents)
+			adm.set_value(EC.value)
+			adm.set_rows(deepCopyList(EC.rows))
 			adm.market_bid_id = EC.market_bid_id
-			adm.market_counterparty_id = EC.market_counterparty_id
+			adm.set_market_counterparty_id(EC.market_counterparty_id)
 			adm.market_router_account = EC.market_router_account
-			adm.market_premium = EC.market_premium
-			adm.market_cover_name = EC.market_cover_name
+			adm.set_market_premium(EC.market_premium)
+			adm.set_market_cover_name(EC.market_cover_name)
 			adm.market_contract_key = EC.market_contract_key
 			adm.sales_ledger_id = EC.sales_ledger_id
 			adm.sales_ledger_valid = EC.sales_ledger_valid
@@ -779,17 +779,17 @@ CAPABILITIES(/datum/system/supply)
 
 	// Update order status
 	O.status = SUP_ORDER_APPROVED
-	O.approved_by = idname
-	O.approved_at = stationdate2text() + " - " + stationtime2text()
+	O.set_approved_by(idname)
+	O.set_approved_at(stationdate2text() + " - " + stationtime2text())
 	// Update admin-side mirror
 	if(adm_order)
 		adm_order.status = SUP_ORDER_APPROVED
-		adm_order.approved_by = idname
-		adm_order.approved_at = stationdate2text() + " - " + stationtime2text()
+		adm_order.set_approved_by(idname)
+		adm_order.set_approved_at(stationdate2text() + " - " + stationtime2text())
 
-	O.paid_amount = price
+	O.set_paid_amount(price)
 	if(adm_order)
-		adm_order.paid_amount = price
+		adm_order.set_paid_amount(price)
 	if(O.personal_order)
 		notify_personal_order(O, "Personal Cargo order #[O.ordernum] ([O.name]) was approved.")
 	return TRUE
@@ -808,14 +808,14 @@ CAPABILITIES(/datum/system/supply)
 		return FALSE
 	if(O.market_contract_funded)
 		release_market_contract_funding(O)
-		O.paid_amount = 0
+		O.set_paid_amount(0)
 		release_market_order_reservation(O)
 		return TRUE
 	var/datum/money_account/refund_account = O.personal_order ? get_account(O.funding_account_number) : GLOB.department_accounts[O.funding_department]
 	if(!refund_account?.credit(O.paid_amount, "Supply procurement", purpose, "Supply console", FALSE))
 		return FALSE
 	record_currency_refund(O.paid_amount, TRUE)
-	O.paid_amount = 0
+	O.set_paid_amount(0)
 	release_market_order_reservation(O)
 	return TRUE
 
@@ -839,14 +839,14 @@ CAPABILITIES(/datum/system/supply)
 
 	// Update order status
 	O.status = SUP_ORDER_DENIED
-	O.approved_by = idname
-	O.approved_at = stationdate2text() + " - " + stationtime2text()
+	O.set_approved_by(idname)
+	O.set_approved_at(stationdate2text() + " - " + stationtime2text())
 	// Update admin-side mirror
 	if(adm_order)
 		adm_order.status = SUP_ORDER_DENIED
-		adm_order.approved_by = idname
-		adm_order.approved_at = stationdate2text() + " - " + stationtime2text()
-		adm_order.paid_amount = O.paid_amount
+		adm_order.set_approved_by(idname)
+		adm_order.set_approved_at(stationdate2text() + " - " + stationtime2text())
+		adm_order.set_paid_amount(O.paid_amount)
 	if(O.personal_order)
 		notify_personal_order(O, "Personal Cargo order #[O.ordernum] ([O.name]) was cancelled and refunded.")
 	return
@@ -917,15 +917,15 @@ CAPABILITIES(/datum/prompt/yes_no/supply_delete_record)
 	new_order.name = S.name
 	new_order.cost = S.cost
 	new_order.market_listing_id = market_listing_id
-	new_order.market_counterparty_id = market_counterparty_id
+	new_order.set_market_counterparty_id(market_counterparty_id)
 	new_order.quoted_price = max(0, round(quoted_price))
 	new_order.market_requester_account = contract_account_for_mob(user)?.account_number || 0
-	new_order.funding_department = DEPARTMENT_CARGO
+	new_order.set_funding_department(DEPARTMENT_CARGO)
 	if(ishuman(user))
 		var/mob/living/carbon/human/requester = user
 		var/datum/department/primary_department = SSjob.get_primary_department_of_job(requester.job)
 		if(primary_department?.name in GLOB.department_accounts)
-			new_order.funding_department = primary_department.name
+			new_order.set_funding_department(primary_department.name)
 		if(personal_funding)
 			var/datum/money_account/personal_account = requester.mind?.initial_account()
 			var/price = order_price(new_order)
@@ -933,16 +933,16 @@ CAPABILITIES(/datum/prompt/yes_no/supply_delete_record)
 				spent(new_order, user)
 				spent(adm_order, user)
 				return FALSE
-			new_order.personal_order = TRUE
+			new_order.set_personal_order(TRUE)
 			new_order.funding_account_number = personal_account.account_number
-			new_order.paid_amount = price
+			new_order.set_paid_amount(price)
 	else if(personal_funding)
 		spent(new_order, user)
 		spent(adm_order, user)
 		return FALSE
-	new_order.ordered_by = idname
-	new_order.comment = reason
-	new_order.ordered_at = stationdate2text() + " - " + stationtime2text()
+	new_order.set_ordered_by(idname)
+	new_order.set_comment(reason)
+	new_order.set_ordered_at(stationdate2text() + " - " + stationtime2text())
 	new_order.status = SUP_ORDER_REQUESTED
 
 	adm_order.ordernum = new_order.ordernum
@@ -950,20 +950,20 @@ CAPABILITIES(/datum/prompt/yes_no/supply_delete_record)
 	adm_order.supply_pack_static = new_order.supply_pack_of()
 	adm_order.name = new_order.name
 	adm_order.cost = new_order.cost
-	adm_order.funding_department = new_order.funding_department
-	adm_order.personal_order = new_order.personal_order
+	adm_order.set_funding_department(new_order.funding_department)
+	adm_order.set_personal_order(new_order.personal_order)
 	adm_order.funding_account_number = new_order.funding_account_number
-	adm_order.paid_amount = new_order.paid_amount
+	adm_order.set_paid_amount(new_order.paid_amount)
 	adm_order.market_listing_id = new_order.market_listing_id
-	adm_order.market_counterparty_id = new_order.market_counterparty_id
+	adm_order.set_market_counterparty_id(new_order.market_counterparty_id)
 	adm_order.market_requester_account = new_order.market_requester_account
 	adm_order.quoted_price = new_order.quoted_price
 	adm_order.market_stock_reserved = new_order.market_stock_reserved
-	adm_order.market_cover_name = new_order.market_cover_name
+	adm_order.set_market_cover_name(new_order.market_cover_name)
 	adm_order.market_contract_key = new_order.market_contract_key
-	adm_order.ordered_by = new_order.ordered_by
-	adm_order.comment = new_order.comment
-	adm_order.ordered_at = new_order.ordered_at
+	adm_order.set_ordered_by(new_order.ordered_by)
+	adm_order.set_comment(new_order.comment)
+	adm_order.set_ordered_at(new_order.ordered_at)
 	adm_order.status = new_order.status
 
 	rel_add(src, nameof(order_history), new_order)
@@ -1035,17 +1035,17 @@ CAPABILITIES(/datum/prompt/number/export_item)
 	if(!(E in exported_crates) || !new_name || !new_quantity || !new_value)
 		return
 
-	// ALLOW(spatial): export datum list, not atom contents
-	E.contents[++E.contents.len] = list(
+	E.add_rows(list(list(
 			"object" = new_name,
 			"quantity" = new_quantity,
 			"value" = new_value
-		)
+		)))
 
 /datum/exported_crate
 	var/name
 	var/value = 0
-	var/list/contents
+	/// The receipt's lines (object, quantity, value), or the one "error" entry of a refused sale. A tracked list: edit it through its mutators.
+	var/list/rows
 	var/list/revenue_by_department
 	var/list/revenue_by_producer
 	var/sales_ledger_id
@@ -1059,7 +1059,16 @@ CAPABILITIES(/datum/prompt/number/export_item)
 
 /datum/exported_crate/New()
 	. = ..()
-	contents = list()
+	set_rows(list())
+
+/// The receipt's total. A hand-written setter: the generated one cannot be named for a var called `value` (the macro's own parameter).
+/datum/exported_crate/proc/set_value(new_value)
+	if(TRACKED_UNCHANGED(value, new_value))
+		return FALSE
+	value = new_value
+	tracked_changed(src, nameof(value))
+	return TRUE
+SETTER(/datum/exported_crate, value)
 
 /datum/supply_order
 	var/ordernum							// Unfabricatable index

@@ -19,8 +19,10 @@
 		return
 
 	//Stumblevore occurs here. Look at the 'stumblevore' element for more information.
-	if(guard(src, GUARD_STUMBLED_INTO, M))
+	var/datum/act/stumbled_into/stumble = ACT_TRY(src, stumbled_into, M)
+	if(!stumble)
 		return
+	act_done(stumble)
 
 	play_sfx(src, SFX_PUNCH, 0.5, extrarange = -1)
 	M.status_at_least(STAT_WEAKENED, 4)

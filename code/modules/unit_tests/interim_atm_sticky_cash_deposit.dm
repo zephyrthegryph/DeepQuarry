@@ -4,7 +4,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/atm/machine = allocate(/obj/machinery/atm, T)
 	var/datum/money_account/account = allocate(/datum/money_account)
-	account.money = 200
+	account.set_money(200)
 	account.set_owner_name("Interim cash depositor")
 	rel_set(machine, nameof(machine.authenticated_account), account)
 	TEST_ASSERT_EQUAL(machine.authenticated_account(), account, "the actual ATM references the real account fixture")

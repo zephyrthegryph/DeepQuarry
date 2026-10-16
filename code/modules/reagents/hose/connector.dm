@@ -229,13 +229,7 @@ CAPABILITIES(/datum/hose_connector)
 	set desc = "Quickly disconnect a hose from all machines it is attached to."
 	set category = VERB_CAT_OBJECT
 
-	var/list/available_sockets = list()
-	var/atom/movable/AM = src
-	if(!istype(AM))
-		return
-	for(var/datum/hose_connector/HC as anything in AM.get_hose_connectors())
-		if(HC.get_hose())
-			available_sockets[HC.get_id()] = HC
+	var/list/available_sockets = connected_hose_sockets()
 	if(!LAZYLEN(available_sockets))
 		return
 
@@ -244,12 +238,31 @@ CAPABILITIES(/datum/hose_connector)
 		var/datum/hose_connector/AC = available_sockets[key]
 		AC.disconnect_action(usr)
 	else
-		var/choice = rerun_ask(usr, "a1", PROC_REF(disconnect_hose), args, /datum/prompt/choice, question = "Select a target hose connector.", title = "Socket Disconnect", choices = available_sockets)
-		if(isnull(choice))
-			return
-		if(choice)
-			var/datum/hose_connector/AC = available_sockets[choice]
-			AC.disconnect_action(usr)
+		open_request(src, /datum/prompt/choice, PROC_REF(disconnect_socket_chosen), answerer = usr, question = "Select a target hose connector.", title = "Socket Disconnect", choices = available_sockets, timeout = 0)
+
+/// The connectors of this atom that have a hose on them, by id.
+/atom/proc/connected_hose_sockets()
+	var/list/available_sockets = list()
+	var/atom/movable/AM = src
+	if(!istype(AM))
+		return available_sockets
+	for(var/datum/hose_connector/HC as anything in AM.get_hose_connectors())
+		if(HC.get_hose())
+			available_sockets[HC.get_id()] = HC
+	return available_sockets
+
+/// The connector to disconnect was chosen (the sockets are looked up again: the hoses may have changed meanwhile).
+/atom/proc/disconnect_socket_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/choice = A.answer.value
+	if(!choice)
+		return
+	var/list/available_sockets = connected_hose_sockets()
+	var/datum/hose_connector/AC = available_sockets[choice]
+	if(!AC)
+		return
+	AC.disconnect_action(A.answer.answerer)
 
 /*
  * Standard subtypes

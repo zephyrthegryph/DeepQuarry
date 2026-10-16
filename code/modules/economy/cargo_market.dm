@@ -521,23 +521,23 @@ CAPABILITIES(/datum/cargo_market_bid)
 		listing.stock++
 		return FALSE
 	order.market_stock_reserved = TRUE
-	order.market_cover_name = listing.cover_name
+	order.set_market_cover_name(listing.cover_name)
 	order.market_contract_key = listing.reservation_key
 	if(funding_contract)
 		funding_contract.market_spend += listing.unit_price
-		order.personal_order = TRUE
+		order.set_personal_order(TRUE)
 		order.funding_account_number = funding_contract.owner_account_number
-		order.paid_amount = listing.unit_price
-		order.market_contract_funded = TRUE
+		order.set_paid_amount(listing.unit_price)
+		order.set_market_contract_funded(TRUE)
 	for(var/datum/supply_order/admin_order in adm_order_history)
 		if(admin_order.ordernum == order.ordernum)
 			admin_order.market_stock_reserved = TRUE
-			admin_order.market_cover_name = listing.cover_name
+			admin_order.set_market_cover_name(listing.cover_name)
 			admin_order.market_contract_key = listing.reservation_key
-			admin_order.personal_order = order.personal_order
+			admin_order.set_personal_order(order.personal_order)
 			admin_order.funding_account_number = order.funding_account_number
-			admin_order.paid_amount = order.paid_amount
-			admin_order.market_contract_funded = order.market_contract_funded
+			admin_order.set_paid_amount(order.paid_amount)
+			admin_order.set_market_contract_funded(order.market_contract_funded)
 			break
 	return order
 
@@ -549,7 +549,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 			continue
 		contract.market_spend = max(0, contract.market_spend - order.paid_amount)
 		break
-	order.market_contract_funded = FALSE
+	order.set_market_contract_funded(FALSE)
 	return TRUE
 
 /datum/system/supply/proc/release_market_order_reservation(datum/supply_order/order)
@@ -643,10 +643,10 @@ CAPABILITIES(/datum/cargo_market_bid)
 	export_row["buyer"] = bid.cover_name || counterparty.active_cover_name
 	export_row["market"] = bid.profile.name
 	export_row["premium"] = premium
-	export.market_counterparty_id = counterparty.id
-	export.market_cover_name = bid.cover_name
+	export.set_market_counterparty_id(counterparty.id)
+	export.set_market_cover_name(bid.cover_name)
 	export.market_contract_key = bid.reservation_key
-	export.market_premium += premium
+	export.set_market_premium(export.market_premium + premium)
 	bid.fulfilled_units += matched_quantity
 	var/contributor_account = export.market_router_account || item.economic_producer_account
 	var/datum/contract/faction_agent/agent_contract = SScontracts?.agent_contract_for_market_key(bid.reservation_key)

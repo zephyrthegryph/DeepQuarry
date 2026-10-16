@@ -9,7 +9,7 @@
 	TEST_ASSERT(user.put_in_active_hand(voucher), "actor holds exact original mining voucher")
 	add_trait(voucher, TRAIT_NODROP, "interim_mining_points")
 	TEST_ASSERT(user.release_refusal(voucher, user), "actual inventory refuses sticky original voucher")
-	vendor.redeem_voucher(voucher, user)
+	perform_op(user, vendor, "voucher", voucher, ORIGIN_CLICK, user.click_authority())
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "actual redemption opens one real equipment selection")
 	var/datum/prompt/choice/first = GLOB.test_prompts[1]
 	made += first
@@ -21,7 +21,7 @@
 	TEST_ASSERT_EQUAL(voucher.loc, user, "refused redemption preserves original inventory location")
 	TEST_ASSERT_NULL(locate_within(T, /obj/item/card/mining_point_card), "refused redemption emits no mining-point card")
 	remove_trait(voucher, TRAIT_NODROP, "interim_mining_points")
-	vendor.redeem_voucher(voucher, user)
+	perform_op(user, vendor, "voucher", voucher, ORIGIN_CLICK, user.click_authority())
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 2, "legitimate retry opens a fresh real equipment choice")
 	var/datum/prompt/choice/second = GLOB.test_prompts[2]
 	made += second

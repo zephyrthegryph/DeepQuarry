@@ -163,7 +163,9 @@ CAPABILITIES(/obj/machinery/newscaster)
 	after_init(0, then(PROC_REF(follow_wanted)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("set_channel_lock", ui_act("set_channel_lock"), then(PROC_REF(ui_act_set_channel_lock)))
-	op("set_attachment", ui_act("set_attachment"), then(PROC_REF(ui_act_set_attachment)))
+	op("set_attachment", ui_act("set_attachment"),
+		asks(/datum/prompt/choice, fields = list("question" = "Select image (numbered in order taken)", "title" = "Picture Choice", "choices" = computed(PROC_REF(photo_choices)), "timeout" = 0), step = "photo", when = PROC_REF(asks_photo)),
+		then(PROC_REF(ui_act_set_attachment)))
 	owns_one(nameof(photo_data), /datum/news_photo)
 	interface("Newscaster")
 	op("set_channel_name", ui_act("set_channel_name", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_channel_name)))
@@ -438,8 +440,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	title_written(A)
 	return OP_OK
 
+/// The picture is asked of a silicon that holds no photo and has pictures saved.
+/obj/machinery/newscaster/proc/asks_photo(datum/act/op/A)
+	var/mob/living/silicon/S = A.actor
+	return istype(S) && !istype(S.get_active_hand(), /obj/item/photo) && length(S.aiCamera?.aipictures)
+
+/obj/machinery/newscaster/proc/photo_choices(datum/act/op/A)
+	var/mob/living/silicon/S = A.actor
+	return S.picture_choices()
+
 /obj/machinery/newscaster/proc/ui_act_set_attachment(datum/act/op/A)
-	AttachPhoto(A.actor)
+	AttachPhoto(A.actor, A.step_value("photo"))
 	return OP_OK
 
 /obj/machinery/newscaster/proc/ui_act_submit_new_message(datum/act/op/A)
@@ -706,7 +717,8 @@ CAPABILITIES(/datum/news_photo)
 	is_synth = synth
 	rel_set(src, nameof(photo), p)
 
-/obj/machinery/newscaster/proc/AttachPhoto(mob/user)
+/// `picked_name`: the answer of the attachment op's picture question (a silicon's saved picture).
+/obj/machinery/newscaster/proc/AttachPhoto(mob/user, picked_name)
 	var/obj/item/photo/incoming
 	if(istype(user.get_active_hand(), /obj/item/photo))
 		incoming = user.get_active_hand()
@@ -723,7 +735,7 @@ CAPABILITIES(/datum/news_photo)
 		rel_set(src, nameof(photo_data), new /datum/news_photo(incoming, 0))
 	else if(istype(user,/mob/living/silicon))
 		var/mob/living/silicon/tempAI = user
-		var/obj/item/photo/selection = tempAI.GetPicture()
+		var/obj/item/photo/selection = tempAI.GetPicture(picked_name)
 		if(!selection)
 			return
 

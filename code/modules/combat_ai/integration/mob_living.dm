@@ -51,6 +51,13 @@ CAPABILITIES(/mob/living)
 	owns_one(nameof(ai_brain), /datum/ai_brain)
 	on_change(STAT_AI_AUTHORITY, ANY, then(PROC_REF(ai_authority_changed)))
 	on_change(STAT_RELEVANCE, ANY, then(PROC_REF(ai_relevance_changed)))
+	// The Life presentation reactions (code/modules/mob/living/life/living_systems.dm): each runs once per drain after one of its facts was published
+	// (a MOB_KEY_* fact its producer publishes, or a var's setter); the generator adds what the handler's procs read (reaction_reads()). HUD and sight
+	// run at most once a LIFE_PRESENT_MIN_INTERVAL, the first change at once and the rest in one trailing run (a walking player raises a location change most ticks) and only for the mobs their gate wants.
+	on_change(cond_published(MOB_KEY_STATUS, nameof(stat)), ANY, when(PROC_REF(life_canmove_wanted)), then(PROC_REF(life_canmove_changed)))
+	on_change(cond_published(MOB_KEY_HEALTH, MOB_KEY_STATUS, MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_CLIENT, MOB_KEY_VIEW, MOB_KEY_HUD_FLAGS, MOB_KEY_NUTRITION, "stat:[STAT_ON_FIRE]", nameof(stat), nameof(sdisabilities), nameof(ear_damage)), ANY, when(PROC_REF(life_hud_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_hud_changed)))
+	on_change(cond_published(MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_HEALTH, MOB_KEY_CLIENT, MOB_KEY_VIEW, nameof(stat), nameof(sdisabilities), nameof(cameraFollow), nameof(tf_mob_holder), nameof(virtual_reality_mob)), ANY, when(PROC_REF(life_vision_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_vision_changed)))
+	spontaneous_vore()
 	owns_one(nameof(aiming), /obj/aiming_overlay)
 	owns_one(nameof(body), /datum/body)
 	owns_one(nameof(changeling_state), /datum/changeling)

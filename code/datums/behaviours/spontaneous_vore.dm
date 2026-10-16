@@ -1,29 +1,30 @@
 /// Spontaneous vore (stumble/drop/throw/slip vore; was /datum/element/spontaneous_vore, then an om behaviour).
-/// Four guards on every living mob (doc/rewrite/reactions.md section 3a): each may refuse the stumble, fall, thrown
-/// hit or crossing because somebody was eaten instead. Each eater checks the mobs' preference flags.
+/// Four takeovers on every living mob (CAPABILITIES(/mob/living) names spontaneous_vore()): each may end the stumble, fall, thrown
+/// hit or crossing because somebody was eaten instead. Each eater checks the mobs' preference flags. A handler that ate nobody
+/// answers HOOK_DECLINE and the action goes on.
 
-/mob/living/reactions()
-	. = ..()
-	. += before_op(GUARD_STUMBLED_INTO, GLOBAL_PROC_REF(spont_vore_stumble))
-	. += before_op(GUARD_FALL, GLOBAL_PROC_REF(spont_vore_fall))
-	. += before_op(GUARD_THROWN_HIT, GLOBAL_PROC_REF(spont_vore_hitby))
-	. += before_op(GUARD_CROSS, GLOBAL_PROC_REF(spont_vore_cross))
+/proc/spontaneous_vore()
+	return list(
+		extend(/datum/act/stumbled_into, instead(then(TYPE_PROC_REF(/mob/living, spont_vore_stumble)))),
+		extend(/datum/act/fall, instead(then(TYPE_PROC_REF(/mob/living, spont_vore_fall)))),
+		extend(/datum/act/thrown_hit, instead(then(TYPE_PROC_REF(/mob/living, spont_vore_hitby)))),
+		extend(/datum/act/cross, instead(then(TYPE_PROC_REF(/mob/living, spont_vore_cross)))))
 
-/// GUARD_STUMBLED_INTO: ctx.actor stumbles into ctx.target.
-/proc/spont_vore_stumble(datum/holder, datum/guard_ctx/ctx)
-	return spont_vore_stumble_eat(ctx.target, ctx.actor) ? TRUE : null
+/// stumbled_into: A.stumbled stumbles into the holder.
+/mob/living/proc/spont_vore_stumble(datum/act/stumbled_into/A)
+	return spont_vore_stumble_eat(src, A.stumbled) ? TRUE : HOOK_DECLINE
 
-/// GUARD_FALL: ctx.target lands on ctx.data (a turf), on ctx.actor (the mob there) if any.
-/proc/spont_vore_fall(datum/holder, datum/guard_ctx/ctx)
-	return spont_vore_fall_eat(ctx.target, ctx.data, ctx.actor) ? TRUE : null
+/// fall: the holder lands on A.landing (a turf), on A.landed_on (the mob there) if any.
+/mob/living/proc/spont_vore_fall(datum/act/fall/A)
+	return spont_vore_fall_eat(src, A.landing, A.landed_on) ? TRUE : HOOK_DECLINE
 
-/// GUARD_THROWN_HIT: ctx.item (thrown by ctx.actor, at speed ctx.data) hits ctx.target.
-/proc/spont_vore_hitby(datum/holder, datum/guard_ctx/ctx)
-	return spont_vore_hitby_eat(ctx.target, ctx.item, ctx.actor, ctx.data) ? TRUE : null
+/// thrown_hit: A.thrown (thrown by A.thrower, at speed A.speed) hits the holder.
+/mob/living/proc/spont_vore_hitby(datum/act/thrown_hit/A)
+	return spont_vore_hitby_eat(src, A.thrown, A.thrower, A.speed) ? TRUE : HOOK_DECLINE
 
-/// GUARD_CROSS: ctx.actor crosses into ctx.target.
-/proc/spont_vore_cross(datum/holder, datum/guard_ctx/ctx)
-	return spont_vore_cross_eat(ctx.target, ctx.actor) ? TRUE : null
+/// cross: A.crosser crosses into the holder.
+/mob/living/proc/spont_vore_cross(datum/act/cross/A)
+	return spont_vore_cross_eat(src, A.crosser) ? TRUE : HOOK_DECLINE
 
 ///Source is the one being bumped into (Owner of this component)
 ///Target is the one bumping into us.

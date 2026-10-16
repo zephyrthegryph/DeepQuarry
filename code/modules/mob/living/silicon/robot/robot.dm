@@ -1709,8 +1709,20 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/proc/reselect_ai_by_wire()
 	if(emagged)
 		return
-	var/mob/living/silicon/ai/picked = select_active_ai(src, src, PROC_REF(reselect_ai_by_wire), list())
-	if(picked)
+	var/list/ais = active_ais()
+	if(!length(ais))
+		return
+	open_request(src, /datum/prompt/choice/ai_selection, PROC_REF(ai_selected_by_wire), answerer = src, choices = ais)
+
+/// The cyborg chose an AI after its AI wire was pulsed.
+/mob/living/silicon/robot/proc/ai_selected_by_wire(datum/act/request/A)
+	if(emagged)
+		return
+	var/datum/prompt/choice/ai_selection/asked = A.answer
+	if(!asked)
+		return
+	var/mob/living/silicon/ai/picked = asked.value
+	if(istype(picked) && (picked in active_ais()))
 		connect_to_ai(picked)
 
 /mob/living/silicon/robot/proc/camera_wire_cut(datum/act/A)

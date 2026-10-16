@@ -52,7 +52,10 @@ CAPABILITIES(/obj/machinery/disposal)
 	op("disengageHandle", ui_act("disengageHandle"), then(PROC_REF(ui_act_disengagehandle)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	param(nameof(built_from_construct), pos = 1, apply = PROC_REF(take_construct), keep = FALSE, overrides = TRUE)
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), needs(req(PROC_REF(multitool_mode_refusal), silent = TRUE), req(PROC_REF(multitool_empty_refusal))), starts(PROC_REF(multitool_started)),
+		asks(/datum/prompt/choice, fields = list("question" = "What do you want to reconfigure the disposal bin to?", "title" = "Multitool-Disposal interface", "choices" = list( "Standard", "Wall", "Resleeving Deposit", "Wall Resleeving Deposit", "Hazard Bin", "Wall Hazard Bin", "Turn-In Bin", "Wall Turn-In Bin", "Mail Destination", "Wall Mail Destination" ), "timeout" = 0), step = "k266"),
+		asks(/datum/prompt/text, fields = list("question" = "Name this mail destination. This name has no effect on the disposal sorting junction, and is only for crew convenience.", "title" = "Mail Destination", "timeout" = 0), step = "k298", when = PROC_REF(naming_mail_destination)),
+		then(PROC_REF(alter_bin_type)))
 	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), label("Slice the floorweld"), needs(req(PROC_REF(mode_refusal), silent = TRUE), req(PROC_REF(empty_refusal))), starts(PROC_REF(slice_started)), begins(PROC_REF(slice_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("disposal_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_disposal_insert)))
@@ -271,13 +274,20 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	sync_occupied()
 	return
 
-/obj/machinery/disposal/proc/multitool_used(datum/act/op/A)
-	var/mob/user = A.actor
+/// A multitool does nothing to a unit that is running.
+/obj/machinery/disposal/proc/multitool_mode_refusal(datum/act/op/A)
+	return read_once(mode) > DISPOSALMODE_OFF ? MSG(req_silent) : null
+
+/obj/machinery/disposal/proc/multitool_empty_refusal(datum/act/op/A)
+	return read_once(length(slot_contents(CONTAINER_SLOT_DISPOSAL))) > 0 ? "Eject the items first!" : null
+
+/obj/machinery/disposal/proc/multitool_started(datum/act/op/A)
 	wake_for_state_change()
-	if(mode > DISPOSALMODE_OFF)
-		return OP_OK
-	alter_bin_type(user)
-	return OP_OK
+
+/// The two mail destinations are named.
+/obj/machinery/disposal/proc/naming_mail_destination(datum/act/op/A)
+	var/result = A.step_value("k266")
+	return result == "Mail Destination" || result == "Wall Mail Destination"
 
 /obj/machinery/disposal/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -318,19 +328,13 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	return proximity_flag
 
 // Transform into next machine type
-/obj/machinery/disposal/proc/alter_bin_type(mob/user)
-	if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)) > 0)
-		to_chat(user, "Eject the items first!")
-		return
+/obj/machinery/disposal/proc/alter_bin_type(datum/act/op/A)
+	var/mob/user = A.actor
 	// Get what we want to turn into
 	var/nametag
 	var/new_dir = SOUTH
 	var/new_disposal_path
-	var/result = rerun_ask(user, "k266", PROC_REF(alter_bin_type), args, /datum/prompt/choice, question = "What do you want to reconfigure the disposal bin to?", title = "Multitool-Disposal interface", choices = list( "Standard", "Wall", "Resleeving Deposit", "Wall Resleeving Deposit", "Hazard Bin", "Wall Hazard Bin", "Turn-In Bin", "Wall Turn-In Bin", "Mail Destination", "Wall Mail Destination" ))
-	if(isnull(result))
-		return
-	if(!result)
-		return
+	var/result = A.step_value("k266")
 	switch(result)
 		// Yellow
 		if("Standard")
@@ -360,17 +364,11 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		// White
 		if("Mail Destination")
 			new_disposal_path = /obj/machinery/disposal/mail_reciever
-			var/_answer_k298 = rerun_ask(user, "k298", PROC_REF(alter_bin_type), args, /datum/prompt/text, question = "Name this mail destination. This name has no effect on the disposal sorting junction, and is only for crew convenience.", title = "Mail Destination")
-			if(isnull(_answer_k298))
-				return
-			nametag = _answer_k298
+			nametag = A.step_value("k298")
 		if("Wall Mail Destination")
 			new_disposal_path = /obj/machinery/disposal/wall/mail_reciever
 			new_dir = reverse_direction(user.dir)
-			var/_answer_k302 = rerun_ask(user, "k302", PROC_REF(alter_bin_type), args, /datum/prompt/text, question = "Name this mail destination. This name has no effect on the disposal sorting junction, and is only for crew convenience.", title = "Mail Destination")
-			if(isnull(_answer_k302))
-				return
-			nametag = _answer_k302
+			nametag = A.step_value("k298")
 
 	if(!new_disposal_path || (new_disposal_path == type && dir == new_dir))
 		return
@@ -393,6 +391,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	fx_sparks(new_bin, 5, FALSE)
 	// Cleanup
 	spent(src, user)
+	return OP_OK
 
 // mouse drop another mob or self
 //

@@ -83,7 +83,7 @@ PUBLISHED_BY(/mob/living/carbon/human, organs, MOB_KEY_HEALTH)
 
 sparse(/mob/living/carbon/human, gender_change_cooldown, type = num)
 
-sparse(/mob/living/carbon/human, redgate_restricted, type = num)
+/mob/living/carbon/human/var/redgate_restricted = FALSE
 sparse(/mob/living/carbon/human, ability_flags, type = num)
 
 /// The real body controlling this VR avatar, or null.

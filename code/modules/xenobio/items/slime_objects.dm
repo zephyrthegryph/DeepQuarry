@@ -138,16 +138,23 @@ CAPABILITIES(/datum/slime_cube_invitation_review)
 	S.set_species("Promethean")
 	S.shapeshifter_set_colour("#2398FF")
 	visible_message(span_warning("The monkey cube suddenly takes the shape of a humanoid!"))
-	var/newname = rerun_ask(S, "k62", PROC_REF(transfer_personality), args, /datum/prompt/text, question = "You are a Promethean. Would you like to change your name to something else?", title = "Name change", max_len = MAX_NAME_LEN, name_text = ((MAX_NAME_LEN) <= MAX_NAME_LEN))
-	if(isnull(newname))
+	open_request(src, /datum/prompt/text, PROC_REF(promethean_name_chosen), answerer = S, question = "You are a Promethean. Would you like to change your name to something else?", title = "Name change", max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
+
+/// The new promethean has answered the name question: a name is taken (a blank one keeps the name), and the cube is used up.
+/obj/item/slime_cube/proc/promethean_name_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/mob/living/carbon/human/S = A.request.answerer
+	if(QDELETED(S))
+		return
+	var/newname = A.answer.value
 	if(newname)
 		S.set_real_name(newname)
 		S.name = S.real_name
 		S.dna.real_name = newname
 	if(S.mind)
 		S.mind.name = S.name
-	consume(src, candidate)
+	consume(src, S)
 
 // More or less functionally identical to the telecrystal tele.
 /obj/item/slime_crystal/get_mechanics_info(list/additional_information)
