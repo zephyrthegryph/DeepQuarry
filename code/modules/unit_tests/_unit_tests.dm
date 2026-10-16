@@ -1352,6 +1352,7 @@
 #include "dq_base_configuration_static_tests.dm"
 #include "dq_internal_storage_init_regression.dm"
 #include "dq_base_configuration_home_tests.dm"
+#include "dq_mob_floating_sparse_tests.dm"
 #include "dq_fire_policy_tests.dm"
 #include "dq_game_safe_policy_tests.dm"
 #include "dq_base_vars_item_policy_four_tests.dm"

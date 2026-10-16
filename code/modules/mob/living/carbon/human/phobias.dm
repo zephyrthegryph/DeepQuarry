@@ -49,5 +49,5 @@
 				continue
 			src.status_set(STAT_FEAR, min((src.status_units(STAT_FEAR) + 2), 102))
 	if(src.phobias & AGRAVIAPHOBIA)
-		if(src.is_floating)
+		if(sparse_get_or(src, is_floating, 0))
 			src.status_set(STAT_FEAR, min((src.status_units(STAT_FEAR) + 4), 102))

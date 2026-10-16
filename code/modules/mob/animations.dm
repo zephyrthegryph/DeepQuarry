@@ -1,6 +1,6 @@
 //handles up-down floaty effect in space and zero-gravity
-/mob/var/is_floating = 0
-/mob/var/floatiness = 0
+sparse(/mob, is_floating, type = num)
+sparse(/mob, floatiness, type = num)
 
 /mob/proc/update_floating(dense_object=0)
 
@@ -34,22 +34,22 @@
 
 /mob/proc/make_floating(n)
 	if(src?.buckled_to())
-		if(is_floating)
+		if(sparse_get_or(src, is_floating, 0))
 			stop_floating()
 		return
-	floatiness = n
+	sparse_set_or(src, floatiness, n, 0)
 
-	if(floatiness && !is_floating)
+	if(sparse_get_or(src, floatiness, 0) && !sparse_get_or(src, is_floating, 0))
 		start_floating()
-	else if(!floatiness && is_floating)
+	else if(!sparse_get_or(src, floatiness, 0) && sparse_get_or(src, is_floating, 0))
 		stop_floating()
 
 /mob/proc/start_floating()
 
-	is_floating = 1
+	sparse_set_or(src, is_floating, 1, 0)
 
 	var/amplitude = 2 //maximum displacement from original position
-	var/period = 36 //time taken for the mob to go up >> down >> original position, in deciseconds. Should be multiple of 4
+	var/period = 3.6 SECONDS //time taken for the mob to go up >> down >> original position, in deciseconds. Should be multiple of 4
 
 	var/top = old_y + amplitude
 	var/bottom = old_y - amplitude
@@ -61,9 +61,9 @@
 	animate(pixel_y = old_y, time = quarter_period, easing = SINE_EASING | EASE_IN, loop = -1)			//back
 
 /mob/proc/stop_floating()
-	animate(src, pixel_y = old_y, time = 5, easing = SINE_EASING | EASE_IN) //halt animation
+	animate(src, pixel_y = old_y, time = 0.5 SECONDS, easing = SINE_EASING | EASE_IN) //halt animation
 	//reset the pixel offsets to zero
-	is_floating = 0
+	sparse_set_or(src, is_floating, 0, 0)
 
 /atom/movable/proc/fade_towards(atom/A,time = 2)
 
@@ -171,7 +171,7 @@
 		return FALSE //Didn't find an item, not doing animation.
 
 	// If we were without gravity, the bouncing animation got stopped, so we make sure we restart the bouncing after the next movement.
-	is_floating = 0
+	sparse_set_or(src, is_floating, 0, 0)
 
 	var/image/I
 
