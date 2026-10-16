@@ -1,5 +1,11 @@
+// Restore diagnostic counters changed by real constructor/draw/cleanup work.
+/datum/unit_test/proc/dq_init_objects_fixture_scope()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+
 /datum/unit_test/dq_init_objects_weapon_links
 /datum/unit_test/dq_init_objects_weapon_links/Run()
+	dq_init_objects_fixture_scope()
 	var/obj/item/weldpack/P = allocate(/obj/item/weldpack, test_floor())
 	var/obj/item/weldingtool/tubefed/N = P.nozzle
 	TEST_ASSERT(istype(N), "The declared pack starts with its real tube-fed nozzle")
@@ -19,6 +25,7 @@
 
 /datum/unit_test/dq_init_objects_primed_cluster
 /datum/unit_test/dq_init_objects_primed_cluster/Run()
+	dq_init_objects_fixture_scope()
 	var/obj/item/grenade/flashbang/clusterbang/primed/G = allocate(/obj/item/grenade/flashbang/clusterbang/primed, test_floor())
 	TEST_ASSERT_EQUAL(G.active, TRUE, "The primed cluster is active as soon as construction returns")
 	TEST_ASSERT_EQUAL(G.icon_state, "[initial(G.icon_state)]_active", "Activation still sets the armed appearance")
@@ -26,6 +33,7 @@
 
 /datum/unit_test/dq_init_objects_c4_pair
 /datum/unit_test/dq_init_objects_c4_pair/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = test_floor()
 	var/obj/item/syndie/c4explosive/B = allocate(/obj/item/syndie/c4explosive, T)
 	var/obj/item/flame/lighter/zippo/c4detonator/D
@@ -46,6 +54,7 @@
 
 /datum/unit_test/dq_init_objects_material_dish
 /datum/unit_test/dq_init_objects_material_dish/Run()
+	dq_init_objects_fixture_scope()
 	var/obj/item/material/ashtray/A = allocate(/obj/item/material/ashtray, test_floor())
 	TEST_ASSERT(A.material, "The parent material exists before dish setup")
 	TEST_ASSERT_EQUAL(A.max_butts, round(A.material.hardness / 5), "The dish capacity still follows actual material hardness")
@@ -56,6 +65,7 @@
 
 /datum/unit_test/dq_init_objects_jetpack_trail
 /datum/unit_test/dq_init_objects_jetpack_trail/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = test_floor()
 	var/obj/item/tank/jetpack/J = allocate(/obj/item/tank/jetpack, T)
 	var/datum/effect/effect/system/ion_trail_follow/trail = J.ion_trail

@@ -4,6 +4,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/mine_and_countdown
 /datum/unit_test/dq_init_objects_nonitems/mine_and_countdown/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = test_floor()
 	var/obj/effect/mine/M = allocate(/obj/effect/mine, T)
 	TEST_ASSERT(!QDELETED(M), "the actual mine survives construction")
@@ -21,6 +22,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/tunnel_and_tube
 /datum/unit_test/dq_init_objects_nonitems/tunnel_and_tube/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = test_floor()
 	var/obj/structure/micro_tunnel/ordinary = allocate(/obj/structure/micro_tunnel, T)
 	TEST_ASSERT_EQUAL(ordinary.pixel_x, 0, "an ordinary south-facing tunnel has no horizontal offset")
@@ -36,6 +38,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/pillow_and_salvage
 /datum/unit_test/dq_init_objects_nonitems/pillow_and_salvage/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = test_floor()
 	var/obj/structure/bed/pillowpile/pile = allocate(/obj/structure/bed/pillowpile, T)
 	var/obj/structure/bed/pillowpilefront/front = pile.front
@@ -60,6 +63,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/light_cone_and_mirror
 /datum/unit_test/dq_init_objects_nonitems/light_cone_and_mirror/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = test_floor()
 	var/obj/effect/overlay/light_cone/C = allocate(/obj/effect/overlay/light_cone, T)
 	var/matrix/transform = C.transform
@@ -74,6 +78,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/loose_map_contents
 /datum/unit_test/dq_init_objects_nonitems/loose_map_contents/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = test_floor()
 	var/obj/item/reagent_containers/food/snacks/food = allocate(/obj/item/reagent_containers/food/snacks/cookie, T)
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
@@ -87,6 +92,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/initial_clocks
 /datum/unit_test/dq_init_objects_nonitems/initial_clocks/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = test_floor()
 	var/obj/structure/timer_door/door = allocate(/obj/structure/timer_door, T)
 	TEST_ASSERT_EQUAL(door.start_time, world.time, "the actual timer door stamps its construction clock")
@@ -101,6 +107,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/constructed_frames
 /datum/unit_test/dq_init_objects_nonitems/constructed_frames/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = test_floor()
 	var/obj/structure/window/built = allocate(/obj/structure/window, T, EAST, TRUE)
 	TEST_ASSERT(!built.anchored, "a constructed actual window remains loose")
@@ -115,6 +122,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/coating_and_drip
 /datum/unit_test/dq_init_objects_nonitems/coating_and_drip/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = test_floor()
 	var/obj/effect/decal/cleanable/chemcoating/old = allocate(/obj/effect/decal/cleanable/chemcoating, T)
 	old.reagents.add_reagent(REAGENT_ID_WATER, 7)
@@ -128,6 +136,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/shared_particles
 /datum/unit_test/dq_init_objects_nonitems/shared_particles/Run()
+	dq_init_objects_fixture_scope()
 	var/obj/effect/abstract/shared_particle_holder/P = allocate(/obj/effect/abstract/shared_particle_holder, test_floor(), /particles/smoke, NONE)
 	TEST_ASSERT(!QDELETED(P), "the actual shared particle holder survives its valid constructor")
 	TEST_ASSERT_NULL(P.loc, "native setup moves the actual holder off the physical map")
@@ -137,6 +146,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/directional_light_child
 /datum/unit_test/dq_init_objects_nonitems/directional_light_child/Run()
+	dq_init_objects_fixture_scope()
 	var/obj/effect/abstract/directional_lighting/L = allocate(/obj/effect/abstract/directional_lighting, test_floor())
 	var/obj/effect/abstract/light_spot/spot = L.light_spot
 	TEST_ASSERT_NOTNULL(spot, "the actual declared light spot exists before presentation setup")
@@ -147,6 +157,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/duplicate_catwalk
 /datum/unit_test/dq_init_objects_nonitems/duplicate_catwalk/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = test_floor()
 	var/obj/structure/catwalk/first = allocate(/obj/structure/catwalk, T)
 	TEST_ASSERT(!QDELETED(first), "the first actual catwalk survives its constructor")
@@ -166,6 +177,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/anomaly_countdown
 /datum/unit_test/dq_init_objects_nonitems/anomaly_countdown/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = test_floor()
 	var/obj/effect/anomaly/A = allocate(/obj/effect/anomaly, T)
 	TEST_ASSERT(!QDELETED(A), "an actual anomaly with an area survives construction")
@@ -191,6 +203,7 @@
 
 /datum/unit_test/dq_init_objects_nonitems/art_constructors
 /datum/unit_test/dq_init_objects_nonitems/art_constructors/Run()
+	dq_init_objects_fixture_scope()
 	var/obj/item/canvas/C = allocate(/obj/item/canvas/dq_init_rectangle, test_floor())
 	TEST_ASSERT_EQUAL(C.width, 2, "the actual rectangular canvas keeps its declared width")
 	TEST_ASSERT_EQUAL(C.height, 3, "the actual rectangular canvas keeps its declared height")

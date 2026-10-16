@@ -139,3 +139,31 @@ The two accidentally presumed built-in name/desc setters were removed after
 source review. Internal storage and cigarette descriptions retain direct built-in
 assignments; no such setter APIs are invented. No remaining set_name/set_desc
 calls occur in this author's changed production files.
+
+## Audited weapon follow-up (source only)
+
+Five more live overrides (eight original baseline rows) are now native:
+sharpening-kit material repair setup, e-cig in-hand state setup, stand-in cell
+provider keeps_if, transforming-tool owned welder factory plus selected-mode
+setup, and energy-blade initial glow setup. Global source searches found no
+descendant Initialize overrides for these types. The blade deliberately keeps
+its constructor set_glow timing: light_glow is static type data and cannot resolve
+nameof(lrange) as a dynamic argument. No draw migration is mixed into this cohort.
+
+New test file dq_init_objects_weapon_followup_tests.dm has four leaves: its root
+covers real material-dependent repair values and cartridge state/lifetime;
+standin covers the exact human provider, invalid-provider rejection and borrowed
+lifetime; transforming covers welding/non-welding variants and owned deletion;
+blade_glow checks all three actual glow values. No verification has run.
+
+Additional unconverted weapons are reset AI-module map laws; permanent candles;
+lighter random/zippo overlay ordering; extinguisher random decal; full flamethrower
+status; smoke/confetti sprayer attachment/primed activation; cards and robot-ID
+binding; implant-chair starting implants; circuit-implant owner linkage;
+material item/clothing parent initialization; medigun tether setup; shock-maul
+hand state; deployed blanket unfolding; police-tape map placement; and tank
+blueprint/pressure initialization. These are residual work, not asserted
+universally missing forms. Medigun shares the proven pre-parent tether issue;
+material parents have descendant consumers so late setup requires separate phase
+proof. Root's already-converted flashbang/welder/ashtray/C4/jetpack cohort is not
+changed by this author.

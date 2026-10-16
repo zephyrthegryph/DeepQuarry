@@ -2,6 +2,7 @@
 /datum/unit_test/dq_init_objects_items
 
 /datum/unit_test/dq_init_objects_items/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/item/pipe_painter/P = allocate(/obj/item/pipe_painter, T)
 	TEST_ASSERT(length(P.modes) > 0, "the real pipe-colour catalogue is populated")
@@ -29,6 +30,7 @@
 /datum/unit_test/dq_init_objects_radio
 
 /datum/unit_test/dq_init_objects_radio/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/item/radio/headset/headset_eng/H = allocate(/obj/item/radio/headset/headset_eng, T)
 	TEST_ASSERT_NOTNULL(H.keyslot2, "declared headset keys exist before channel setup")
@@ -52,6 +54,7 @@
 /datum/unit_test/dq_init_objects_device_setup
 
 /datum/unit_test/dq_init_objects_device_setup/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/gps/G = allocate(/obj/item/gps, H)
@@ -69,6 +72,7 @@
 /datum/unit_test/dq_init_objects_uav_trail
 
 /datum/unit_test/dq_init_objects_uav_trail/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/item/uav/U = allocate(/obj/item/uav, T)
 	var/datum/effect/effect/system/ion_trail_follow/trail = U.ion_trail
@@ -82,6 +86,7 @@
 /datum/unit_test/dq_init_objects_spectral_goggles
 
 /datum/unit_test/dq_init_objects_spectral_goggles/Run()
+	dq_init_objects_fixture_scope()
 	var/obj/item/clothing/glasses/ghost/G = allocate(/obj/item/clothing/glasses/ghost)
 	TEST_ASSERT_NOTNULL(GLOB.global_hud.heavy_whitense, "the real shared spectral overlay exists")
 	TEST_ASSERT_EQUAL(G.overlay(), GLOB.global_hud.heavy_whitense, "ordinary spectral goggles retain their exact shared HUD overlay")
@@ -94,6 +99,7 @@
 /datum/unit_test/dq_init_objects_cigarette_brand
 
 /datum/unit_test/dq_init_objects_cigarette_brand/Run()
+	dq_init_objects_fixture_scope()
 	var/obj/item/storage/fancy/cigarettes/packet = allocate(/obj/item/storage/fancy/cigarettes)
 	var/count = 0
 	for(var/obj/item/clothing/mask/smokable/cigarette/C in packet.slot_contents(CONTAINER_SLOT_STORAGE))
@@ -105,6 +111,7 @@
 /datum/unit_test/dq_init_objects_mre
 
 /datum/unit_test/dq_init_objects_mre/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/item/storage/box/tgmc_mre/meal = allocate(/obj/item/storage/box/tgmc_mre, T)
 	var/components = 0
@@ -120,6 +127,7 @@
 /datum/unit_test/dq_init_objects_shield_generator
 
 /datum/unit_test/dq_init_objects_shield_generator/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/item/personal_shield_generator/loaded/P = allocate(/obj/item/personal_shield_generator/loaded, T)
 	var/obj/item/cell/cell = P.bcell
@@ -155,6 +163,7 @@
 /datum/unit_test/dq_init_objects_sandbags
 
 /datum/unit_test/dq_init_objects_sandbags/Run()
+	dq_init_objects_fixture_scope()
 	var/obj/item/stack/sandbags/S = allocate(/obj/item/stack/sandbags, run_loc_floor_bottom_left, 20)
 	TEST_ASSERT_EQUAL(S.get_amount(), 20, "the stack parent applies the real constructor amount before setup")
 	TEST_ASSERT_EQUAL(S.slowdown, 2, "setup derives initial slowdown from the completed stack amount")
@@ -166,6 +175,7 @@
 /datum/unit_test/dq_init_objects_stack_amounts
 
 /datum/unit_test/dq_init_objects_stack_amounts/Run()
+	dq_init_objects_fixture_scope()
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/item/stack/sandbags/full = allocate(/obj/item/stack/sandbags, T, -1)
 	TEST_ASSERT_EQUAL(full.amount, full.max_amount, "a negative constructor amount still creates a full bounded stack")

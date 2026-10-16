@@ -28,6 +28,7 @@
 SETTER(/obj/item/clothing/mask/smokable/ecig, active)
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/ecig)
+	setup(PROC_REF(sync_item_state))
 	configure(item_worn(slots = SLOT_EARS | SLOT_MASK, covers = 0))
 	configure(item_combat(attack_verbs = list("attacked", "poked", "battered")))
 	owns_one(nameof(ec_cartridge), /obj/item/reagent_containers/ecig_cartridge, starts = nameof(cartridge_type))
@@ -36,10 +37,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig)
 	op("toggle", in_hand(), then(PROC_REF(toggled)))
 	op("eject_cartridge", hand(), ungated(), when(req_empty_hand()), label("Eject cartridge"), then(PROC_REF(cartridge_ejected)))
 
-// ALLOW(init/INSTANCE_STATE): sets its in-hand and worn state from the cartridge the type table loads it with (a draw never writes it)
-/obj/item/clothing/mask/smokable/ecig/Initialize(mapload)
-	. = ..()
-	sync_item_state()
 
 /obj/item/clothing/mask/smokable/ecig/examine(mob/user)
 	. = ..()

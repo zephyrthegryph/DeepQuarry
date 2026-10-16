@@ -41,9 +41,6 @@ CAPABILITIES(/obj/item/whetstone)
 	. = ..()
 	. += "There [uses == 1 ? "is" : "are"] [uses] [material] [uses == 1 ? src.material.sheet_singular_name : src.material.sheet_plural_name] left for use."
 
-/obj/item/material/sharpeningkit/Initialize(mapload)
-	. = ..()
-	setrepair()
 
 /obj/item/material/sharpeningkit/proc/setrepair()
 	repair_amount = material.hardness * 0.1
@@ -51,6 +48,7 @@ CAPABILITIES(/obj/item/whetstone)
 	sharpen_time = material.density * 3 // weight renamed to density.
 
 CAPABILITIES(/obj/item/material/sharpeningkit)
+	setup(PROC_REF(setrepair))
 	configure(item_sounds(hit = SFX_WEAPONS_GENHIT3))
 	op("sharpen", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(sharpeningkit_interaction_item)))
 

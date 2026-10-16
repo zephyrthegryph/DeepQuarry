@@ -425,12 +425,12 @@ CAPABILITIES(/obj/item/melee/energy/sword/charge/loaded)
 	lcolor = "#00FF00"
 	special_handling = TRUE
 
-/obj/item/melee/energy/blade/Initialize(mapload)
-	. = ..()
-
+/// Preserve the initial mapped glow after the parent chain has completed.
+/obj/item/melee/energy/blade/proc/set_initial_blade_glow()
 	set_glow(src, GLOW(lrange, lpower, lcolor))
 
 CAPABILITIES(/obj/item/melee/energy/blade)
+	setup(PROC_REF(set_initial_blade_glow))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	configure(item_thrown(force = 1))
 	configure(item_combat(force = 40, armor_penetration = 100, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))

@@ -4894,3 +4894,7 @@ Affected requirement-pin classes:
 * **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
+
+### Object initializer declarations (2026-10-16)
+
+The object startup cohort replaces constructor statements with declared owned starts, initial derivations/rolls and ordered setup. The item and non-item handoffs name every converted type and exact remaining phase/context constraints. Existing owned-versus-borrowed lifetimes, constructor amounts (including zero), map defaults, random choice catalogues, radio registration, glow and material-dependent capacity are covered by real constructor assertions. Pipe-painter startup uses the native per-instance roller with the same catalogue; no balance probability is changed. Internal storage now rejects a non-item location before binding its typed owner, restoring self-deletion instead of the prior invalid-owner runtime. No appearance runtime is blessed by this migration.
