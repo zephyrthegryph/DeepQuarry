@@ -1,8 +1,3 @@
-/mob
-	var/next_emote
-	var/next_emote_refresh
-	var/last_emote_summary
-
 /mob/proc/get_available_emotes()
 	return GLOB.default_mob_emotes.Copy()
 
@@ -26,7 +21,7 @@
 			to_chat(src, span_warning("You cannot send IC messages (muted)."))
 			return
 
-		if(!COOLDOWN_FINISHED(src, next_emote))
+		if(!cooldown_ready(src, next_emote))
 			to_chat(src, span_warning("You cannot use another emote yet."))
 			return
 		if(forced_psay)
@@ -36,14 +31,14 @@
 			return me_verb_subtle(message)
 
 		if(act == "help")
-			if(COOLDOWN_FINISHED(src, next_emote_refresh))
+			if(cooldown_ready(src, next_emote_refresh))
 				var/list/usable_emotes = list()
-				COOLDOWN_START(src, next_emote_refresh, EMOTE_REFRESH_SPAM_COOLDOWN)
+				cooldown_start(src, next_emote_refresh, EMOTE_REFRESH_SPAM_COOLDOWN)
 				for(var/emote in get_available_emotes())
 					var/datum/decl/emote/emote_datum = GLOB.decls_repository.get_decl(emote)
 					if(emote_datum.mob_can_use(src))
 						usable_emotes[emote_datum.key] = emote_datum
-				last_emote_summary = english_list(sortAssoc(usable_emotes))
+				var/last_emote_summary = english_list(sortAssoc(usable_emotes))
 			to_chat(src,span_bold("Usable emotes:") + " [last_emote_summary].")
 			return
 
@@ -107,7 +102,7 @@
 	if(m_type != use_emote.message_type && use_emote.conscious && stat != CONSCIOUS)
 		return
 
-	COOLDOWN_START(src, next_emote, use_emote.emote_delay)
+	cooldown_start(src, next_emote, use_emote.emote_delay)
 	if(use_emote.message_type == AUDIBLE_MESSAGE && is_muzzled())
 		var/muffle_message = use_emote.emote_message_muffled || "makes a muffled sound."
 		audible_message(span_bold("\The [src]") + " [muffle_message]", runemessage = "[muffle_message]")

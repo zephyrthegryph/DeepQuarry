@@ -403,7 +403,7 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 	to_chat(src, span_warning("You slipped on [slipped_on]!"))
 	play_sfx(src, SFX_MISC_SLIP, 2, extrarange = -3)
 	if(has_trait(src, SLIP_REFLEX_TRAIT) && !lying)
-		if(COOLDOWN_FINISHED(src, next_emote))
+		if(cooldown_ready(src, next_emote))
 			src.emote("sflip")
 			return TRUE
 	status_at_least(STAT_WEAKENED, FLOOR(stun_duration/2, 1))
