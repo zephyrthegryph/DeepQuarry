@@ -37,3 +37,8 @@ Generation and all ratchets pass at 350 remaining rows: 36 removed from this con
 
 The continuation's current source result is 386 to 349: 37 rows removed, zero additions, with generation and all ratchets passing. Surgery cleanliness is a native immutable surface policy with real map/VV COW overrides; the four existing table/bed values and the unchanged maximum/floor/blood algorithm have focused tests. Both production and guarded test includes are wired. DreamChecker identified the fourth default on ordinary tables; that default and its real competing-surface assertion are now included. The final surgical addition is being checked separately, and no runtime pass or stamp is claimed.
 
+
+## Tesla state source checkpoint
+
+Current source count: 386 to 348, 38 removals and zero additions. Generation and all ratchets pass. Tesla's rare reentrancy flag uses native sparse boolean state; the existing owner-bound one-second/coil cooldown timers and candidate ordering are unchanged. Real base-entry, selected-coil and deleted-owner tests are wired. The throwpass proposal is held because publishing from Adjacent would violate pure requirement evaluation; a pure per-call reach alternative is under design review. Final compilation/runtime verification remains pending.
+

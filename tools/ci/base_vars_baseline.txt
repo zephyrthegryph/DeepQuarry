@@ -117,7 +117,6 @@ base_var	code/game/objects/items.dm	@/obj/item::cleandesc
 base_var	code/game/objects/items/devices/paicard.dm	@/obj/machinery::paicard
 base_var	code/game/objects/items/weapons/capture_crystal.dm	@/mob/living::capture_crystal
 base_var	code/game/objects/items/weapons/capture_crystal.dm	@/mob/living::capture_caught
-base_var	code/game/objects/objs.dm	@/obj::being_shocked
 base_var	code/game/objects/objs.dm	@/obj::explosion_resistance
 base_var	code/game/objects/objs.dm	@/obj::economic_department
 base_var	code/game/objects/objs.dm	@/obj::economic_export_value

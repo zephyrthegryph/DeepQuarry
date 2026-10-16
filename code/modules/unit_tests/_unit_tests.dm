@@ -1365,6 +1365,7 @@
 #include "dq_heat_spawn_configuration_tests.dm"
 #include "dq_surgical_policy_home_tests.dm"
 #include "dq_surgery_surface_policy_tests.dm"
+#include "dq_tesla_sparse_tests.dm"
 #include "dq_examine_text_home_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

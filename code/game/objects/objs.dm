@@ -1,3 +1,4 @@
+sparse(/obj, being_shocked, type = bool)
 /obj
 	layer = OBJ_LAYER
 	plane = OBJ_PLANE
@@ -9,7 +10,7 @@
 	var/tmp/in_use = 0 // If we have a user using us, this will be set on. We will check if the user has stopped using us, and thus stop updating and LAGGING EVERYTHING!
 
 
-	var/tmp/being_shocked = FALSE
+
 	var/explosion_resistance
 	/// Department and value attribution used when station-made goods are exported.
 	var/economic_department

@@ -3,13 +3,13 @@
 ////////////////////////////////////////
 
 /obj/proc/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
-	being_shocked = TRUE
+	sparse_set_or(src, being_shocked, TRUE, FALSE)
 	var/power_bounced = power / 2
 	tesla_zap(src, zap_range = 3, power = power_bounced, explosive = explosive, current_jumps = current_jumps)
 	after(src, 1 SECOND, TYPE_PROC_REF(/obj, reset_shocked))
 
 /obj/proc/reset_shocked()
-	being_shocked = FALSE
+	sparse_set_or(src, being_shocked, FALSE, FALSE)
 
 // Overrides for behavior on specific types
 
@@ -85,11 +85,11 @@
 
 /obj/machinery/power/tesla_coil/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	if(anchored && !panel_open)
-		being_shocked = TRUE
+		sparse_set_or(src, being_shocked, TRUE, FALSE)
 		coil_act(power, explosive, current_jumps)
 		after(src, zap_cooldown, TYPE_PROC_REF(/obj, reset_shocked))
 	else if(anchored && panel_open) //Doing maintenance. Just act like a grounding rod.
-		being_shocked = TRUE
+		sparse_set_or(src, being_shocked, TRUE, FALSE)
 		after(src, zap_cooldown, TYPE_PROC_REF(/obj, reset_shocked))
 	else
 		..()
