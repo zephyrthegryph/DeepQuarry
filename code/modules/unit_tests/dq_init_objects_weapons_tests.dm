@@ -39,6 +39,7 @@
 	var/obj/item/flame/lighter/zippo/c4detonator/D
 	for(var/obj/item/flame/lighter/zippo/c4detonator/candidate in T)
 		if(candidate.bomb() == B)
+			own(candidate)
 			TEST_ASSERT_NULL(D, "Setup creates exactly one matching detonator")
 			D = candidate
 	TEST_ASSERT(D, "The charge creates a real sibling detonator before construction returns")
