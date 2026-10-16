@@ -133,25 +133,41 @@ CAPABILITIES(/atom/movable/screen/ghost)
 	record_found = find_general_record("name", G.client.prefs.read_preference(/datum/preference/name/real_name))
 	// Found their record, they were spawned previously. Remind them corpses cannot play games.
 	if(record_found)
-		var/answer = rerun_ask(G, "k107", PROC_REF(click_with_actor), args, /datum/prompt/choice, question = "You seem to have previously joined this round. If you are currently dead, you should not enter VR as this character. Would you still like to proceed?", title = "Previously spawned", choices = list("Yes", "No"), buttons = TRUE)
-		if(isnull(answer))
-			return
-		if(answer != "Yes")
-			return
+		open_request(src, /datum/prompt/choice, PROC_REF(vr_previously_spawned_answered), answerer = G, question = "You seem to have previously joined this round. If you are currently dead, you should not enter VR as this character. Would you still like to proceed?", title = "Previously spawned", choices = list("Yes", "No"), buttons = TRUE, timeout = 0)
+		return
+	vr_ask_location(G)
 
-	var/S = null
+/// The ghost answered the "previously spawned" warning.
+/atom/movable/screen/ghost/vr/proc/vr_previously_spawned_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/observer/dead/G = A.answer.answerer
+	if(QDELETED(G) || !isobserver(G))
+		return
+	if(A.answer.value != "Yes")
+		return
+	vr_ask_location(G)
+
+/// Asks where to spawn the avatar.
+/atom/movable/screen/ghost/vr/proc/vr_ask_location(mob/observer/dead/G)
 	var/list/vr_landmarks = list()
 	for(var/obj/effect/landmark/virtual_reality/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		vr_landmarks += sloc.name
 	if(!LAZYLEN(vr_landmarks))
 		to_chat(G, "There are no available spawn locations in virtual reality.")
 		return
-	var/_answer_k118 = rerun_ask(G, "k118", PROC_REF(click_with_actor), args, /datum/prompt/choice, question = "Please select a location to spawn your avatar at:", title = "Spawn location", choices = vr_landmarks)
-	if(isnull(_answer_k118))
+	open_request(src, /datum/prompt/choice, PROC_REF(vr_location_answered), answerer = G, question = "Please select a location to spawn your avatar at:", title = "Spawn location", choices = vr_landmarks, timeout = 0)
+
+/// The ghost picked a spawn location.
+/atom/movable/screen/ghost/vr/proc/vr_location_answered(datum/act/request/A)
+	if(!A.answer)
 		return
-	S = _answer_k118
+	var/mob/observer/dead/G = A.answer.answerer
+	if(QDELETED(G) || !isobserver(G))
+		return
+	var/S = A.answer.value
 	if(!S)
-		return 0
+		return
 	for(var/obj/effect/landmark/virtual_reality/i in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(i.name == S)
 			S = i

@@ -477,8 +477,8 @@
 	for(var/datum/exported_crate/E in supply_exported_crates())
 		receipts[++receipts.len] = list(
 				"ref" = "\ref[E]",
-				"contents" = E.contents,
-				"error" = E.contents["error"],
+				"contents" = E.rows,
+				"error" = E.rows["error"],
 				"title" = list(
 						list("field" = "Name", "entry" = E.name),
 						list("field" = "Value", "entry" = E.value)

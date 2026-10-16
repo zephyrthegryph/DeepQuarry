@@ -7,13 +7,10 @@
 
 CAPABILITIES(/datum/sun_holder)
 	owns_one(nameof(sun), /atom/movable/sun_visuals)
+	every(0.3 SECONDS, then(PROC_REF(rainbow_step)), when = nameof(rainbow_ends_at))
 
-/// world.time the running rainbow() ends; rainbow_step() runs every 0.3 s while set (the every() below).
+/// world.time the running rainbow() ends; rainbow_step() runs every 0.3 s while set (its every() in CAPABILITIES(/datum/sun_holder)).
 /datum/sun_holder/var/tmp/rainbow_ends_at = 0
-
-/datum/sun_holder/reactions()
-	. = ..()
-	. += every(0.3 SECONDS, PROC_REF(rainbow_step), when = nameof(rainbow_ends_at))
 
 /// The running rainbow's next colour, and the light to restore when it ends.
 /datum/sun_holder/var/tmp/rainbow_index = 1
@@ -73,7 +70,7 @@ CAPABILITIES(/datum/sun_holder)
 	set_rainbow_ends_at(world.time + 30 SECONDS)
 
 /// One colour of the rainbow every 0.3 s until `rainbow_ends_at`, then the original light.
-/datum/sun_holder/proc/rainbow_step(dt)
+/datum/sun_holder/proc/rainbow_step(datum/act/timer/tick)
 	var/static/list/colors = list("#ff5d5d","#ffd17b","#ffff5e","#7eff7e","#6868ff","#b753ff","#d08fff","#ffffff")
 	if(!BEFORE(src, rainbow_ends_at, CLOCK_WORLD))
 		set_rainbow_ends_at(0)

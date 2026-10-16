@@ -3,11 +3,17 @@
 
 CAPABILITIES(/datum/vore_look/import_panel)
 	interface("VorePanelImport", title = "Vore Import Panel")
-	op("import_soulcatcher", ui_act("import_soulcatcher", arg("data")), then(PROC_REF(ui_act_import_soulcatcher)))
+	op("import_soulcatcher", ui_act("import_soulcatcher", arg("data")), asks(/datum/prompt/choice, fields = list("question" = "WARNING: This will override your current soulcatcher settings!", "title" = "Import soulcatcher?", "choices" = list("Yes","Cancel"), "buttons" = TRUE, "timeout" = 0), step = "a1", when = PROC_REF(import_soulcatcher_is_valid)), then(PROC_REF(ui_act_import_soulcatcher)))
 	op("import_bellies", ui_act("import_bellies", arg("data")), then(PROC_REF(ui_act_import_bellies)))
 
+/// The supplied soulcatcher data is a non-empty list and the host has a soulcatcher to overwrite: worth a warning.
+/datum/vore_look/import_panel/proc/import_soulcatcher_is_valid(datum/act/op/A)
+	var/mob/user = A.actor
+	var/data = A.arg("data")
+	return user.soulgem && islist(data) && length(data) > 0
+
 /datum/vore_look/import_panel/proc/ui_act_import_soulcatcher(datum/act/op/A, data)
-	import_soulcatcher(host(), data)
+	import_soulcatcher(host(), data, A.step_value("a1"))
 
 /datum/vore_look/import_panel/proc/ui_act_import_bellies(datum/act/op/A, data)
 	var/mob/user = A.actor

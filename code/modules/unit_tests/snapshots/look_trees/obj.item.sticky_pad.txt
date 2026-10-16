@@ -6,6 +6,6 @@
 /obj/item/sticky_pad/random icon: icons/obj/stickynotes.dmi
 /obj/item/sticky_pad/random state: pad_used
 /obj/item/sticky_pad/random dir: 2
-/obj/item/sticky_pad/random color: #00ffff
+/obj/item/sticky_pad/random color: #ffff00
 /obj/item/sticky_pad/random overlay: icons/obj/stickynotes.dmi:pad_used:8:#000000
 

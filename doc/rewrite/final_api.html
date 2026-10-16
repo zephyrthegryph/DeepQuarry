@@ -4345,7 +4345,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
     </tbody>
   </table></div>
 
-  <h3 id="status">Where master stands (2026-10-08)</h3>
+  <h3 id="status">Where master stands (2026-10-16)</h3>
   <div class="prose"><p>Counts come from <code>tools/ci/legacy_form_counts.sh</code> (a grep census of call sites in <code>code/</code>, outside unit tests and the files that define each form; comment lines are skipped) and from the status column of <code>doc/rewrite/framework_gaps.md</code>. Re-run the script and update this table in the commit that retires a form.</p></div>
   <div class="tbl"><table>
     <thead><tr><th>Phase</th><th>Status</th><th>Evidence</th></tr></thead>
@@ -4356,7 +4356,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
       <tr><td>1S · Service ports</td><td>Done</td><td>0 <code>world_service</code> call sites; the kernel hosts <code>SYSTEM_DEF</code> systems</td></tr>
       <tr><td>2 · Library</td><td>Partly: 20 areas have a folder in <code>code/library/</code>, the files outside it are the remaining work</td><td><code>access, construction, containers, input, items, jobs, lifeforms, machine, materialization, mob, operations, present, prompts, providers, reactions, reagents, requests, stats, structures, tasks</code></td></tr>
       <tr><td>2.5 · Codemod infrastructure</td><td>Done as far as it was needed; later steps ran by hand with focused tests</td><td><code>tools/analyze/codemods</code></td></tr>
-      <tr><td>3 · Codemods</td><td>Mostly done for interactions, UI, timers, grants, damage reactions, emag, verbs; open for table procs, <code>REQ_*</code>, <code>CHANGE_*</code>, <code>rerun_ask</code></td><td>Census below</td></tr>
+      <tr><td>3 · Codemods</td><td>Done for interactions, the task engine, UI, timers, grants, damage reactions, emag, verbs, ownership and relations, look forms, <code>CHANGE_*</code>, <code>PERIODIC_*</code>, <code>changed()</code>, <code>update_icon</code>, <code>world_service</code>; all hard-banned. Open: <code>REQ_*</code>, <code>rerun_ask</code>, <code>BF_*</code> body factors (the stat layer exists, the factors are not on it), <code>reactions()</code> on non-system types, the init, <code>base_vars</code> and raw-overlay ratchets</td><td>Census below</td></tr>
       <tr><td>4 · Machine track</td><td>In progress (machinery conversion waves)</td><td>Recent commits on master</td></tr>
       <tr><td>5 · Life track</td><td>In progress (every <code>/mob/living</code> has a <code>/datum/body</code>)</td><td><code>doc/body_architecture.md</code></td></tr>
       <tr><td>6 · Content waves</td><td>Not started as a move: <code>code/domains</code> holds atmos, heat and power only, <code>code/content</code> holds jobs only</td><td>The old directories are the remaining-work list</td></tr>
@@ -4364,22 +4364,15 @@ CAPABILITIES(/obj/machinery/librarycomp)
     </tbody>
   </table></div>
   <h4>Legacy forms still in the tree</h4>
+  <div class="prose"><p>Everything not listed here (<code>om_*</code>, <code>OM_EMIT</code>, <code>OM_FIELD</code>, <code>TOPIC_ACTION</code>, <code>DECLARE_*</code>, <code>DAMAGE_REACTION</code>, <code>OWN</code>/<code>REL</code>, <code>world_service</code>, <code>PERIODIC_*</code>, <code>act_ask</code>, <code>INTERACT_*</code>, <code>changed()</code> channels, <code>update_icon(</code>, the <code>APPEARANCE_*</code> look forms, interactions and the task engine) counts 0 and is a hard ban. The remaining <code>APPEARANCE_*</code> sites are plain appearance flag and race constants, not look forms.</p></div>
   <div class="tbl"><table>
     <thead><tr><th>Form</th><th class="n">Sites</th><th class="n">Files</th><th>Replacement</th></tr></thead>
     <tbody>
-      <tr><td><code>capabilities()</code>/<code>reactions()</code>/<code>relations()</code> table procs</td><td class="n">136</td><td class="n">-</td><td><code>CAPABILITIES(T)</code> (new)</td></tr>
-      <tr><td><code>REQ_*</code></td><td class="n">386</td><td class="n">137</td><td><code>needs(req...)</code> (new)</td></tr>
-      <tr><td><code>CHANGE_*</code> channels</td><td class="n">328</td><td class="n">108</td><td>tracked setters, <code>on_change</code></td></tr>
-      <tr><td><code>APPEARANCE_*</code></td><td class="n">155</td><td class="n">50</td><td>look parts (new)</td></tr>
-      <tr><td><code>rerun_ask</code></td><td class="n">80</td><td class="n">45</td><td><code>asks()</code> steps</td></tr>
-      <tr><td><code>PERIODIC_*</code></td><td class="n">23</td><td class="n">18</td><td><code>every()</code></td></tr>
-      <tr><td><code>OM_FIELD</code></td><td class="n">14</td><td class="n">5</td><td><code>TRACKED</code> and generated reads</td></tr>
-      <tr><td><code>topic_ask</code></td><td class="n">10</td><td class="n">3</td><td><code>asks()</code> steps (H4)</td></tr>
-      <tr><td><code>EXTEND_INTERACTIONS</code></td><td class="n">6</td><td class="n">6</td><td><code>extend()</code></td></tr>
-      <tr><td><code>DECLARE_INTERACTIONS</code>, <code>om_after</code></td><td class="n">2 each</td><td class="n">2 each</td><td><code>op()</code>, <code>after()</code></td></tr>
-      <tr><td><code>DECLARE_PERIODIC_WHILE</code>, <code>om_raise_change</code></td><td class="n">1 each</td><td class="n">1 each</td><td><code>every(when =)</code>, tracked setters</td></tr>
-      <tr><td><code>om_hook</code>, <code>om_ask</code>, <code>om_grant</code>, <code>OM_EMIT</code>, <code>TOPIC_ACTION</code>, <code>DECLARE_REPEAT</code>, <code>DECLARE_EMAG</code>, <code>DAMAGE_REACTION</code>, <code>INTERACT_HAND</code>, <code>act_ask</code>, <code>world_service</code>, <code>OWN</code>, <code>REL</code>, <code>om_changed</code>, <code>DECLARE_UI</code>, <code>DECLARE_VERB</code></td><td class="n">0</td><td class="n">0</td><td>gone from call sites</td></tr>
-      <tr><td><code>topic_allowed</code> (hard ban)</td><td class="n">3</td><td class="n">-</td><td><code>needs(req_topic_token())</code>, <code>extend(TAG_TOPIC, needs(...))</code>; the 3 sites are the obj wrapper and its two machinery callers, exempt by path</td></tr>
+      <tr><td><code>reactions()</code> table procs on non-system types</td><td class="n">62</td><td class="n">-</td><td><code>CAPABILITIES(T)</code> entries</td></tr>
+      <tr><td><code>REQ_*</code> predicate macros (not the kernel request-status constants)</td><td class="n">99</td><td class="n">23</td><td><code>needs(req...)</code></td></tr>
+      <tr><td><code>rerun_ask</code></td><td class="n">76</td><td class="n">41</td><td><code>asks()</code> steps</td></tr>
+      <tr><td><code>CHANGE_*</code> outside the engine</td><td class="n">10</td><td class="n">2</td><td>tracked setters, <code>on_change</code></td></tr>
+      <tr><td><code>BF_*</code> body factors</td><td class="n">-</td><td class="n">-</td><td><code>stat()</code>/<code>hold()</code> (the stat layer exists; the factors have not moved onto it)</td></tr>
     </tbody>
   </table></div>
 

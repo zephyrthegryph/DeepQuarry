@@ -685,6 +685,10 @@ exempt_prefixes = ["code/tests/", "code/modules/unit_tests/"]
 # tests pin the legacy forms they drive (a probe declaring an INTERACT_SILICON entry)
 exempt_prefixes = ["code/modules/unit_tests/", "code/tests/"]
 
+[lint.reactions_table_proc]
+# the unit tests that drive the reaction engine itself declare fixtures with a reactions() table
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/"]
+
 [lint.legacy_forms]
 # The engine's own accessors (_own_set / _own_add / _own_put) are called only by the declaration engine and the ownership store.
 exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
@@ -932,6 +936,8 @@ banned = [
   "OM_EMIT_WORLD = PUBLISH(world_owner(), token, args)",
   "om_ask = asks(/datum/prompt/kind, fields = list(...)) on an op",
   "topic_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the topic op; read the answer with A.step_value(\"name\")",
+  "rerun_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on an op in the type CAPABILITIES block; read the answer with A.step_value(\"name\")",
+  "rerun_ask_on = asks(/datum/prompt/kind, fields = list(...), step = \"name\", answerer = PROC_REF(x)) on the op",
   "topic_rerun_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the topic op; read the answer with A.step_value(\"name\")",
   "ban_topic_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the op; repeat a step with repeats = PROC_REF(x)",
   "om_after = after(owner, delay, PROC_REF(handler), with = list(args)) (code/engine/time/after.dm)",

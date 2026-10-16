@@ -202,8 +202,10 @@
 	var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
 	var/mob/living/thrower = throwingdatum?.get_thrower()
 
-	if(guard(src, GUARD_THROWN_HIT, thrower, source, speed))
+	var/datum/act/thrown_hit/thrown_hit = ACT_TRY(src, thrown_hit, source, thrower, speed)
+	if(!thrown_hit)
 		return
+	act_done(thrown_hit)
 
 	if(isitem(source))
 		var/obj/item/O = source

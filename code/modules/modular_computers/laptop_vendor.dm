@@ -42,7 +42,9 @@ CAPABILITIES(/obj/machinery/lapvend)
 	op("hw_tesla", ui_act("hw_tesla", arg("tesla", num())), then(PROC_REF(ui_act_hw_tesla)))
 	op("hw_nanoprint", ui_act("hw_nanoprint", arg("print", num())), then(PROC_REF(ui_act_hw_nanoprint)))
 	op("hw_card", ui_act("hw_card", arg("card", num())), then(PROC_REF(ui_act_hw_card)))
-	op("pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay"), then(PROC_REF(interaction_pay)))
+	op("pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay"),
+		asks(/datum/prompt/number, fields = list("question" = "Enter pin code", "title" = "Vendor transaction", "timeout" = 0), step = "k299", when = PROC_REF(pay_needs_pin)),
+		then(PROC_REF(interaction_pay)))
 
 // Removes all traces of old order and allows you to begin configuration from scratch.
 /obj/machinery/lapvend/proc/reset_order()
@@ -268,13 +270,26 @@ CAPABILITIES(/obj/machinery/lapvend)
 
 	return data
 
+/// The PIN is asked only while a payment is awaited and the card's account is one that wants a PIN.
+/obj/machinery/lapvend/proc/pay_needs_pin(datum/act/op/A)
+	if(state != 2)
+		return FALSE
+	var/obj/item/W = A.held
+	var/obj/item/card/id/I = W.GetID()
+	if(!I)
+		return FALSE
+	var/datum/money_account/customer_account = get_account(I.associated_account_number)
+	if(!customer_account || customer_account.suspended)
+		return FALSE
+	return customer_account.security_level != 0
+
 /obj/machinery/lapvend/proc/interaction_pay(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	var/obj/item/card/id/I = W.GetID()
 	// Awaiting payment state
 	if(state == 2)
-		if(process_payment(user, I,W))
+		if(process_payment(user, I, W, A.step_value("k299")))
 			fabricate_and_recalc_price(1)
 			if((devtype == 1) && fabricated_laptop)
 				if(fabricated_laptop.battery_module)
@@ -294,8 +309,8 @@ CAPABILITIES(/obj/machinery/lapvend)
 		return TRUE
 	return OP_DECLINE
 
-// Simplified payment processing, returns 1 on success.
-/obj/machinery/lapvend/proc/process_payment(mob/user, obj/item/card/id/I, obj/item/ID_container)
+// Simplified payment processing, returns 1 on success. `pin` is the answer of the pay op's PIN question.
+/obj/machinery/lapvend/proc/process_payment(mob/user, obj/item/card/id/I, obj/item/ID_container, pin)
 	if(I==ID_container || ID_container == null)
 		act_message(user, src, others = span_info("%U% swipes %I% through %T%."), item = I)
 	else
@@ -306,7 +321,7 @@ CAPABILITIES(/obj/machinery/lapvend)
 		return 0
 
 	if(customer_account.security_level != 0) //If card requires pin authentication (ie seclevel 1 or 2)
-		var/attempt_pin = rerun_ask(user, "k299", PROC_REF(process_payment), args, /datum/prompt/number, question = "Enter pin code", title = "Vendor transaction")
+		var/attempt_pin = pin
 		if(isnull(attempt_pin))
 			return
 		customer_account = attempt_account_access(I.associated_account_number, attempt_pin, 2)
