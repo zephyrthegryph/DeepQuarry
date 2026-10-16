@@ -9,6 +9,7 @@
 	var/turf/T = test_floor()
 	var/path = /obj/structure/table
 	var/obj/structure/table/table = dq_look_allocate(path, T)
+	dq_look_settle() // Match the real sampler: settle constructor reactions before made capture.
 	TEST_ASSERT_NOTNULL(table.shared_cache_uid, "real look allocation establishes the normal stable shared-cache identity")
 	var/uid = SHARED_CACHE_UID(table)
 	TEST_ASSERT_EQUAL(SHARED_CACHE_UID(table), uid, "normal cache access retains its exact prewarmed identity")
