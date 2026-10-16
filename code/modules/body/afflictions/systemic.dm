@@ -44,14 +44,14 @@
 
 /// A starved heart is an irritable one: past
 /// PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD the debt raises
-/// BF_CARDIAC_IRRITABILITY, which speeds every rhythm's deterioration
+/// STAT_CARDIAC_IRRITABILITY, which speeds every rhythm's deterioration
 /// (cardiac_arrhythmia reads it). No special case in the rhythm itself.
 /datum/affliction/tissue_hypoxia/hold_factors(mob/living/L)
 	..()
 	if(severity <= PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD)
 		return
 	var/depth = clamp((severity - PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD) / (AFFLICTION_SEVERITY_TERMINAL - PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD), 0, 1)
-	body_hold(L, src, alist(BF_CARDIAC_IRRITABILITY = 1 + depth * (PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX - 1)), 1, 1, "irritability")
+	hold_table(L, src, alist(STAT_CARDIAC_IRRITABILITY = 1 + depth * (PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX - 1)), 1, 1, "irritability")
 
 // --- Toxic poisoning (INJURY_TOXIN) ----------------------------------------------------
 /datum/affliction/toxic_poisoning

@@ -1943,13 +1943,13 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		return 0
 	if(loc?.numbs_pain_of(src))
 		return FALSE
-	if(factor(BF_PAIN_IMMUNITY))
+	if(src.pain_immunity)
 		return 0
 	if(check_organ)
 		if(!istype(check_organ))
 			return 0
 		return check_organ.organ_can_feel_pain()
-	// NO_PAIN reaches here as BF_PAIN_IMMUNITY (species grant, humanoid factors).
+	// NO_PAIN reaches here as STAT_PAIN_IMMUNITY (species grant, humanoid factors).
 	return !(species?.flags & NO_PAIN)
 
 /mob/living/carbon/human/is_sentient()

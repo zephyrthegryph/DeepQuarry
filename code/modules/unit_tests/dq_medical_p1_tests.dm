@@ -180,8 +180,8 @@
 /datum/unit_test/dq_p1_b19_species_factor_merge/Run()
 	var/datum/reagent/R = SSchemistry.chemical_reagents[REAGENT_ID_DEXALIN]
 	var/alist/merged = R.merged_species_factors(IS_SLIME)
-	TEST_ASSERT(merged?[BF_O2_CARRIAGE], "prometheans on dexalin keep its oxygen carriage")
-	TEST_ASSERT(merged?[BF_ANALGESIA], "and get their own analgesia")
+	TEST_ASSERT(merged?[STAT_O2_CARRIAGE], "prometheans on dexalin keep its oxygen carriage")
+	TEST_ASSERT(merged?[STAT_ANALGESIA], "and get their own analgesia")
 	var/datum/reagent/bloodburn = SSchemistry.chemical_reagents[REAGENT_ID_BLOODBURN]
 	TEST_ASSERT(!length(bloodburn.factors), "bloodburn does not inherit claridyl's factors")
 

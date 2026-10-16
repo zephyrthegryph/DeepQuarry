@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/bag_valve_mask)
 /obj/item/bag_valve_mask/proc/apply_ventilation(mob/living/carbon/human/H)
 	if(!H.body)
 		return FALSE
-	H.body.add_support(src, BF_RESP_DRIVE, SUPPORT_BVM_DRIVE, BVM_BREATH_SECONDS SECONDS)
+	H.body.add_support(src, STAT_RESP_DRIVE, SUPPORT_BVM_DRIVE, BVM_BREATH_SECONDS SECONDS)
 	return !H.airway_obstructed()
 
 // --- Airway kit ---------------------------------------------------------------------------

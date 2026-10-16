@@ -5336,7 +5336,6 @@
 #include "code\modules\body\body_effects.dm"
 #include "code\modules\body\breath_profile.dm"
 #include "code\modules\body\factors.dm"
-#include "code\modules\body\factor_compat.dm"
 #include "code\engine\refs\armor_keys.dm"
 #include "code\modules\body\injury.dm"
 #include "code\modules\body\mech_body.dm"

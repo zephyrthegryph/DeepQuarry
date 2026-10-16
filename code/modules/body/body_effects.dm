@@ -104,7 +104,7 @@
 	return null
 
 /datum/body_effect/proc/changes_icon_scale()
-	return factors && (!isnull(factors[BF_ICON_SCALE_X]) || !isnull(factors[BF_ICON_SCALE_Y]))
+	return factors && (!isnull(factors[STAT_SCALE_MULT_X]) || !isnull(factors[STAT_SCALE_MULT_Y]))
 
 /// The shared definition for `path`.
 /proc/body_effect_def(path)
@@ -430,7 +430,7 @@
 			table = body_effect_def(path).factors
 		if(!table)
 			continue
-		body_hold(src, body_effect_def(path), table, 1, active[path])
+		hold_table(src, body_effect_def(path), table, 1, active[path])
 
 /// OOC listing lines ("name: factor lines") for visible body effects.
 /mob/living/proc/describe_body_effects()

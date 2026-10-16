@@ -2,7 +2,7 @@
 //
 // Every stasis source (stasis bags, sleepers, cryopods, the mech sleeper, NIF
 // emergency stasis, stasis cages, admin) holds the mob at a /datum/body_effect/stasis level
-// (set_stasis(level, source)), which contributes BF_STASIS, a 0..1 share of life processes
+// (set_stasis(level, source)), which contributes STAT_STASIS, a 0..1 share of life processes
 // suspended (max rule).
 //
 // Stasis is the biology clock (doc/rewrite/final_api.html section 3). While applied, each stasis
@@ -18,7 +18,7 @@
 //   - the human live/dead stages (organs, defib timer, ...)    run_if NOT_OF(FACT("in_stasis"))
 // P2-S6: every one of those declares run_if NOT_OF(FACT("in_stasis")), so the pipeline skips
 // paused frames and no system asks. inStasisNow() remains for code outside the life pipeline.
-// So at stasis 0.9 everything runs at 10% speed; at 1 it stops. BF_STASIS stays a factor
+// So at stasis 0.9 everything runs at 10% speed; at 1 it stops. STAT_STASIS stays a factor
 // for diagnosis readouts; nothing in the life pipeline reads it.
 
 /datum/body
@@ -53,7 +53,7 @@
 
 // --- Sources ---------------------------------------------------------------------
 
-/// A stasis depth. Subtypes set the depth through BF_STASIS. These are body effect definitions,
+/// A stasis depth. Subtypes set the depth through STAT_STASIS. These are body effect definitions,
 /// but stasis is applied per SOURCE with set_stasis() (a bag inside a sleeper is two sources);
 /// the deepest wins. Applying one directly with apply_body_effect() also works (a sourceless
 /// hold keyed by its type).
@@ -62,11 +62,11 @@
 	desc = "Your bodily functions are slowed to a crawl."
 	hidden = TRUE
 	stacks = MODIFIER_STACK_FORBID
-	factors = alist(BF_STASIS = 0.5)
+	factors = alist(STAT_STASIS = 0.5)
 
-/// This level's stasis depth (its BF_STASIS factor), 0..1.
+/// This level's stasis depth (its STAT_STASIS factor), 0..1.
 /datum/body_effect/stasis/proc/stasis_depth()
-	return clamp(factors?[BF_STASIS] || 0, 0, 1)
+	return clamp(factors?[STAT_STASIS] || 0, 0, 1)
 
 /datum/body_effect/stasis/on_start(mob/living/L)
 	hold(L, STAT_CLOCK_RATE_BIO, 1 - stasis_depth(), src, clock = HOLD_CLOCK_WORLD)
@@ -77,27 +77,27 @@
 /// Life at half speed.
 /datum/body_effect/stasis/light
 	name = "light stasis"
-	factors = alist(BF_STASIS = 0.5)
+	factors = alist(STAT_STASIS = 0.5)
 
 /// Life at a fifth of normal speed.
 /datum/body_effect/stasis/moderate
 	name = "moderate stasis"
-	factors = alist(BF_STASIS = 0.8)
+	factors = alist(STAT_STASIS = 0.8)
 
 /// Life at a tenth of normal speed (stasis bags).
 /datum/body_effect/stasis/deep
 	name = "deep stasis"
-	factors = alist(BF_STASIS = 0.9)
+	factors = alist(STAT_STASIS = 0.9)
 
 /// Life at a hundredth of normal speed.
 /datum/body_effect/stasis/complete
 	name = "complete stasis"
-	factors = alist(BF_STASIS = 0.99)
+	factors = alist(STAT_STASIS = 0.99)
 
 /// Life stopped outright (cryopods, stasis cages, admin).
 /datum/body_effect/stasis/total
 	name = "total stasis"
-	factors = alist(BF_STASIS = 1)
+	factors = alist(STAT_STASIS = 1)
 
 /// Key in stasis_sources for stasis applied without a source (admin).
 #define STASIS_NO_SOURCE "none"
@@ -188,7 +188,7 @@
 /mob/living/proc/hold_stasis_factors()
 	for(var/key in stasis_sources)
 		var/datum/body_effect/level = body_effect_def(stasis_type_at(key))
-		body_hold(src, level, level.factors, 1, 1, "stasis")
+		hold_table(src, level, level.factors, 1, 1, "stasis")
 
 // --- The stat ------------------------------------------------------------------------------------------------------------------
 

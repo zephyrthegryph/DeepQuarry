@@ -179,7 +179,7 @@
 	var/static/list/slots = list(SLOT_ID_EYES,SLOT_ID_HEAD)
 	var/list/compiled_vis = list()
 
-	if(factor(BF_DARKSIGHT)) //Putting this near the beginning so it can be overwritten by equipment
+	if(src.darksight) //Putting this near the beginning so it can be overwritten by equipment
 		compiled_vis += VIS_FULLBRIGHT
 
 	for(var/slot in slots)

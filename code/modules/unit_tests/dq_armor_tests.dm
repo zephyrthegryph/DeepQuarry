@@ -242,11 +242,11 @@
 	var/datum/material/steel = GLOB.name_to_material[MAT_STEEL]
 	var/datum/impact_response/steel_response = dq_impact_response_for_material(steel)
 	for(var/kind in 1 to DAMAGE_KIND_COUNT)
-		TEST_ASSERT_EQUAL(steel_response.factor(kind), 1, "steel is the reference: [kind] passes unchanged")
+		TEST_ASSERT_EQUAL(steel_response.damage_factor(kind), 1, "steel is the reference: [kind] passes unchanged")
 	for(var/soft in list(MAT_WOOD, MAT_GLASS, MAT_PLASTIC, MAT_CARDBOARD))
 		var/datum/impact_response/soft_response = dq_impact_response_for_material(GLOB.name_to_material[soft])
 		for(var/kind in 1 to DAMAGE_KIND_COUNT)
-			TEST_ASSERT(soft_response.factor(kind) == 1, "[soft] never takes more than it did ([kind]: [soft_response.factor(kind)])")
+			TEST_ASSERT(soft_response.damage_factor(kind) == 1, "[soft] never takes more than it did ([kind]: [soft_response.damage_factor(kind)])")
 
 	// Table: every material's factors follow from its numbers.
 	for(var/name in GLOB.name_to_material)
@@ -256,18 +256,18 @@
 		var/cut = clamp((M.yield_strength - 300) / 1500, 0, 0.5)
 		var/tough = clamp((M.fracture_toughness - 25) / 200, 0, 0.5)
 		var/heat = isnull(M.melting_point) ? 0 : clamp((M.melting_point - 1800) / 8000, 0, 0.5)
-		TEST_ASSERT(dq_near(R.factor(DAMAGE_BLUNT), 1 - blunt), "[name] blunt factor")
-		TEST_ASSERT(dq_near(R.factor(DAMAGE_BLAST), 1 - blunt), "[name] blast factor")
-		TEST_ASSERT(dq_near(R.factor(DAMAGE_SHARP), 1 - cut), "[name] sharp factor")
-		TEST_ASSERT(dq_near(R.factor(DAMAGE_PIERCE), 1 - (cut + tough) / 2), "[name] pierce factor")
-		TEST_ASSERT(dq_near(R.factor(DAMAGE_THERMAL), 1 - heat), "[name] thermal factor")
-		TEST_ASSERT_EQUAL(R.factor(DAMAGE_SHOCK), 1, "[name] doesn't resist shock by strength")
+		TEST_ASSERT(dq_near(R.damage_factor(DAMAGE_BLUNT), 1 - blunt), "[name] blunt factor")
+		TEST_ASSERT(dq_near(R.damage_factor(DAMAGE_BLAST), 1 - blunt), "[name] blast factor")
+		TEST_ASSERT(dq_near(R.damage_factor(DAMAGE_SHARP), 1 - cut), "[name] sharp factor")
+		TEST_ASSERT(dq_near(R.damage_factor(DAMAGE_PIERCE), 1 - (cut + tough) / 2), "[name] pierce factor")
+		TEST_ASSERT(dq_near(R.damage_factor(DAMAGE_THERMAL), 1 - heat), "[name] thermal factor")
+		TEST_ASSERT_EQUAL(R.damage_factor(DAMAGE_SHOCK), 1, "[name] doesn't resist shock by strength")
 		TEST_ASSERT_EQUAL(R, dq_impact_response_for_material(M), "[name]'s response is interned")
 
 	var/datum/material/plasteel = GLOB.name_to_material[MAT_PLASTEEL]
 	var/datum/impact_response/plasteel_response = dq_impact_response_for_material(plasteel)
-	TEST_ASSERT(plasteel_response.factor(DAMAGE_BLUNT) < 1, "plasteel shrugs off some of a blow")
-	TEST_ASSERT(plasteel_response.factor(DAMAGE_THERMAL) < 1, "plasteel resists heat")
+	TEST_ASSERT(plasteel_response.damage_factor(DAMAGE_BLUNT) < 1, "plasteel shrugs off some of a blow")
+	TEST_ASSERT(plasteel_response.damage_factor(DAMAGE_THERMAL) < 1, "plasteel resists heat")
 
 	// On a real object: a plasteel knife loses less to a blow than a steel one.
 	var/obj/item/material/knife/steel_knife = allocate(/obj/item/material/knife, null, MAT_STEEL)
@@ -275,7 +275,7 @@
 	TEST_ASSERT_EQUAL(steel_knife.impact_factor(DAMAGE_BLUNT), 1, "a steel knife takes a blow in full")
 	var/before = plasteel_knife.get_integrity()
 	plasteel_knife.deal_damage(DAMAGE_BLUNT, 10)
-	var/expected = round(10 * plasteel_response.factor(DAMAGE_BLUNT), DAMAGE_PRECISION)
+	var/expected = round(10 * plasteel_response.damage_factor(DAMAGE_BLUNT), DAMAGE_PRECISION)
 	TEST_ASSERT(dq_near(before - plasteel_knife.get_integrity(), expected), "a plasteel knife takes [expected] of a 10 blow, took [before - plasteel_knife.get_integrity()]")
 
 	// Items read the same numbers through P1 properties.

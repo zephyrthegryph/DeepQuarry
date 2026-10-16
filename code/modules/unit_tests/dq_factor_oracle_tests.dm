@@ -1,27 +1,10 @@
 // The factor oracle against the live body (code/modules/unit_tests/dq_factor_oracle.dm): the old fold, folded from a mob's real sources, gives the
-// same 70-vector as what the mob reads now, for a spread of scenarios that drive every kind of source through the production paths.
-
-/// The value `L` reads for body factor `id` (BF_*) now.
-/proc/factor_reading(mob/living/L, id)
-	return L.factor(id)
-
-/// The factors on which what `L` reads and the oracle disagree (relative 1e-5, exactly for bit fields), as lines; empty when they agree.
-/proc/factor_reading_diff(mob/living/L)
-	. = list()
-	var/list/vector = L.body?.oracle_fold()
-	for(var/id in 1 to BF_COUNT)
-		if(!bf_stat_id(id))
-			continue
-		var/expected = factor_oracle_value(L, id, vector)
-		var/actual = factor_reading(L, id)
-		var/ok = factor_oracle_exact(id) ? (actual == expected) : (abs(actual - expected) <= 0.00001 * max(1, abs(expected)))
-		if(!ok)
-			. += "[stat_label(bf_stat_id(id))]: reads [actual], oracle [expected]"
+// same vector as what the mob reads now, for a spread of scenarios that drive every kind of source through the production paths.
 
 /datum/unit_test/dq_factor_oracle_parity
 
 /datum/unit_test/dq_factor_oracle_parity/proc/check(mob/living/L, what)
-	var/list/diff = factor_reading_diff(L)
+	var/list/diff = factor_oracle_diff(L)
 	TEST_ASSERT(!length(diff), "[what]: [jointext(diff, "; ")]")
 
 /datum/unit_test/dq_factor_oracle_parity/Run()

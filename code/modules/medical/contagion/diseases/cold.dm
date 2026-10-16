@@ -4,7 +4,7 @@
 		/datum/affliction_symptom/fatigue = 40,
 		/datum/affliction_symptom/headache = 30
 	)
-	factors = alist(BF_TEMPERATURE = 0.5)
+	factors = alist(STAT_TEMPERATURE = 0.5)
 	name = "The Cold"
 	medical_name = "Common Cold"
 	max_stages = 3

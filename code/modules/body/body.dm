@@ -16,7 +16,7 @@
 	var/body_type = /datum/body/simple
 	/// Toughness: how much injury load this mob can carry (simple plan), or
 	/// the reference scale for its vitality readouts (other plans). Tuned per
-	/// subtype. Body factors adjust it (BF_ENDURANCE_FLAT / BF_ENDURANCE_MULT).
+	/// subtype. Body factors adjust it (STAT_ENDURANCE_FLAT / STAT_ENDURANCE_MULT).
 	var/endurance = DEFAULT_ENDURANCE
 	/// What the mob's body is made of when it has no per-part biology (simple
 	/// mobs, bots). Humanoids resolve biology per organ instead.

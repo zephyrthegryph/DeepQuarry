@@ -13,8 +13,8 @@
 //   o2_sat       : 99 % (range 0..100)
 //
 // Afflictions, reagents and modifiers modulate these through the readout
-// body factors (BF_HEART_RATE, BF_TEMPERATURE, BF_BP_SYSTOLIC,
-// BF_BP_DIASTOLIC, BF_O2_SAT, BF_RESP_RATE), summed across every source.
+// body factors (STAT_HEART_RATE, STAT_TEMPERATURE, STAT_BP_SYSTOLIC,
+// STAT_BP_DIASTOLIC, STAT_O2_SAT, STAT_RESP_RATE), summed across every source.
 //
 // We layer those on top of whatever vitals the upstream mob already tracks
 // (BYOND `bodytemperature` in kelvin, heart pulse enum). For pulse and BP we

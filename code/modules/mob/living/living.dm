@@ -499,7 +499,7 @@ sparse(/mob/living, vomiting, type = bool)
 
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		var/antiemetic = H.factor(BF_ANTIEMETIC)
+		var/antiemetic = H.antiemetic
 		if(antiemetic)
 			if(prob(min(90, antiemetic * 15)))
 				after(src, rand(30 SECONDS, 2 MINUTES), PROC_REF(puke_recovered))

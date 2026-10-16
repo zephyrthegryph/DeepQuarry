@@ -22,7 +22,7 @@
 /datum/blob_type/pressurized_slime/on_attack(obj/structure/blob/B, mob/living/victim, def_zone)
 	victim.water_act(5)
 	// Drowning: slime forced past internals floods the airway for a few seconds.
-	victim.body?.add_restriction(B, BF_AIRWAY, 0, 4 SECONDS)
+	victim.body?.add_restriction(B, STAT_AIRWAY, 0, 4 SECONDS)
 	var/turf/simulated/T = get_turf(victim)
 	if(T)
 		T.wet_floor()

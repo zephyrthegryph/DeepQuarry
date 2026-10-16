@@ -71,11 +71,11 @@ Bonus
 
 /// The windpipe narrows for a while: an airway restriction.
 /datum/viral_trait/choking/proc/Choke_stage_3_4(mob/living/M, datum/affliction/contagion/engineered/A)
-	M.body?.add_restriction(A, BF_AIRWAY, 0.5 / power, rand(5, 10) SECONDS)
+	M.body?.add_restriction(A, STAT_AIRWAY, 0.5 / power, rand(5, 10) SECONDS)
 	return TRUE
 
 /// The lungs shrink: breathing restriction on top of the narrowed airway.
 /datum/viral_trait/choking/proc/Choke(mob/living/M, datum/affliction/contagion/engineered/A)
-	M.body?.add_restriction(A, BF_AIRWAY, 0.5 / power, rand(5, 10) SECONDS)
-	M.body?.add_restriction(src, BF_LUNG_MECHANICS, 0.6 / power, rand(4, 8) SECONDS)
+	M.body?.add_restriction(A, STAT_AIRWAY, 0.5 / power, rand(5, 10) SECONDS)
+	M.body?.add_restriction(src, STAT_LUNG_MECHANICS, 0.6 / power, rand(4, 8) SECONDS)
 	return TRUE

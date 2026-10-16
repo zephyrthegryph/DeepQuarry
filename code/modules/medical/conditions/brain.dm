@@ -26,7 +26,7 @@
 	)
 	min_symptoms = 3
 	max_symptoms = 5
-	factors = alist(BF_SLOWDOWN = 1, BF_ACCURACY = -30, BF_MOTOR_CONTROL = 0.97, BF_ACTION_BLOCKS = ACTION_BLOCK_SURGERY, BF_HEART_RATE = 15, BF_BP_SYSTOLIC = 10)
+	factors = alist(STAT_SLOWDOWN = 1, STAT_ACCURACY = -30, STAT_MOTOR_CONTROL = 0.97, STAT_ACTION_BLOCKS = ACTION_BLOCK_SURGERY, STAT_HEART_RATE = 15, STAT_BP_SYSTOLIC = 10)
 	spontaneous_emotes = list("stumble", "groan", "wince")
 	spontaneous_emote_prob = 5
 	// Damages the brain at moderate-to-high severity; once brain damage

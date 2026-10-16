@@ -314,7 +314,7 @@
 	aura_max_distance = 4
 
 	// The negative hurts less in this form
-	factors = alist(BF_METABOLISM = 0.5, BF_HEALING_RECEIVED = 1.15)
+	factors = alist(STAT_METABOLISM_MULT = 0.5, STAT_HEALING_RECEIVED = 1.15)
 
 /obj/item/slime_extract/oceanic
 	name = "oceanic slime extract"
@@ -407,7 +407,7 @@
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 4
 
-	factors = alist(BF_INCOMING_ALL = 0.8, BF_INCOMING_GENETIC = 0, BF_HEALING_RECEIVED = 0.5, BF_ICON_SCALE_X = 1.2, BF_ICON_SCALE_Y = 1.2)
+	factors = alist(STAT_INCOMING_ALL = 0.8, STAT_INCOMING_GENETIC = 0, STAT_HEALING_RECEIVED = 0.5, STAT_SCALE_MULT_X = 1.2, STAT_SCALE_MULT_Y = 1.2)
 
 /obj/item/slime_extract/nuclear
 	name = "nuclear slime extract"
@@ -538,7 +538,7 @@
 	stacks = MODIFIER_STACK_FORBID
 
 	mob_overlay_state = "cult_aura"
-	factors = alist(BF_INCOMING_ALL = 0.5)
+	factors = alist(STAT_INCOMING_ALL = 0.5)
 
 /datum/body_effect/aura/dreamarmor/on_tick(mob/living/L)
 	if(L.stat == DEAD)
@@ -657,7 +657,7 @@
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 4
 
-	factors = alist(BF_INCOMING_PAIN = 0.8, BF_DISABLE_DURATION = 0.7)
+	factors = alist(STAT_INCOMING_PAIN = 0.8, STAT_DISABLE_DURATION = 0.7)
 
 /obj/item/slime_extract/sound
 	name = "sound slime extract"

@@ -92,7 +92,7 @@
 		. *= REGENERATION_HUNGRY_MULT
 	if(H.has_status(STAT_SLEEPING))
 		. *= REGENERATION_SLEEP_MULT
-	. *= owner.factor(BF_HEALING)
+	. *= owner.healing
 
 
 // --- Injury resolution -----------------------------------------------------------------
@@ -232,14 +232,14 @@
 	raw_pain *= H.species.trauma_mod
 	if(H.has_status(STAT_SLURRING))
 		raw_pain -= PAIN_SLURRING_RELIEF
-	raw_pain += owner.factor(BF_PAIN)
-	return max(0, raw_pain - owner.factor(BF_ANALGESIA))
+	raw_pain += owner.pain
+	return max(0, raw_pain - owner.analgesia)
 
 /// Consciousness: 100 less affliction penalties and pain above tolerance.
 /// Patients who feel no pain drop out when a vital part fails structurally.
 /datum/body/humanoid/proc/compute_consciousness(worst_part)
 	var/mob/living/carbon/human/H = owner
-	. = 100 - owner.factor(BF_SEDATION)
+	. = 100 - owner.sedation
 	for(var/datum/affliction/A as anything in afflictions)
 		. -= A.consciousness_penalty()
 	if(H.dq_feels_pain())
@@ -306,7 +306,7 @@
 
 /// Species immunities (mitigation stage 4). The NO_* flags are checked live
 /// because traits can grant flags after setup. Graded species resistances are
-/// body factors (factor_baseline BF_INCOMING_*, stage 3).
+/// body factors (factor_baseline STAT_INCOMING_*, stage 3).
 /datum/species/proc/injury_multiplier(kind, mob/living/carbon/human/H)
 	switch(kind)
 		if(INJURY_TOXIN)
@@ -327,22 +327,22 @@
 /datum/body/humanoid/hold_plan_factors()
 	var/mob/living/carbon/human/H = owner
 	if(H.species)
-		body_hold(H, H.species, H.species.factor_baseline)
+		hold_table(H, H.species, H.species.factor_baseline)
 		var/granted = 0
 		for(var/alist/table as anything in H.species.granted_factors)
-			body_hold(H, H.species, table, 1, 1, "grant[++granted]")
-		// P2-S4: the NO_PAIN species flag is a grant of BF_PAIN_IMMUNITY, so every
+			hold_table(H, H.species, table, 1, 1, "grant[++granted]")
+		// P2-S4: the NO_PAIN species flag is a grant of STAT_PAIN_IMMUNITY, so every
 		// can_feel_pain() caller (and any factor reader) sees it the same way.
 		if(H.species.flags & NO_PAIN)
-			var/static/alist/no_pain_grant = alist(BF_PAIN_IMMUNITY = 1)
-			body_hold(H, H.species, no_pain_grant, 1, 1, "no_pain")
+			var/static/alist/no_pain_grant = alist(STAT_PAIN_IMMUNITY = 1)
+			hold_table(H, H.species, no_pain_grant, 1, 1, "no_pain")
 	var/datum/form/F = H.current_form()
 	if(F)
-		body_hold(H, F, F.factors)
+		hold_table(H, F, F.factors)
 	// The worn slots (BODY_SLOT_WORN, code/modules/body/slots.dm): the same set the worn protection cache reads.
 	for(var/obj/item/I as anything in H.body_slot_items(BODY_SLOT_WORN))
 		if(I.worn_factors)
-			body_hold(H, I, I.worn_factors)
+			hold_table(H, I, I.worn_factors)
 
 /// The species' analgesic sensitivity (chem_strength_pain) scales every
 /// reagent's analgesia: the extra share is a part of the reagent's rows.
@@ -350,9 +350,9 @@
 	..()
 	var/mob/living/carbon/human/H = owner
 	var/strength = H.species?.chem_strength_pain
-	var/analgesia = table[BF_ANALGESIA]
+	var/analgesia = table[STAT_ANALGESIA]
 	if(analgesia && !isnull(strength) && strength != 1)
-		body_hold(H, R, alist(BF_ANALGESIA = analgesia * (strength - 1)), scale, 1, "strength")
+		hold_table(H, R, alist(STAT_ANALGESIA = analgesia * (strength - 1)), scale, 1, "strength")
 
 /// Grant a factor table (a trait's or perk's) to this species instance.
 /datum/species/proc/grant_factors(alist/table)
@@ -373,7 +373,7 @@
 	var/list/tables = list(factor_baseline)
 	for(var/alist/table as anything in granted_factors)
 		tables += list(table)
-	return stat_fold_tables(bf_stat_id(id), tables, 1, 1, id)
+	return stat_fold_tables(id, tables)
 
 /// Life() applies humanoid unconsciousness itself (with its blinding / crit
 /// HUD bookkeeping); evaluate_status only handles death here.

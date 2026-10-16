@@ -101,7 +101,7 @@ STAT(/mob/living/carbon/human, limb_trouble, ANY)
 
 /// Moving around on a broken bone that holds organs (ribs, pelvis, skull) hurts enough to stagger you.
 /mob/living/carbon/human/proc/broken_bone_jolt()
-	if(lying || buckled_to() || stat || !can_feel_pain() || factor(BF_ANALGESIA) >= 50)
+	if(lying || buckled_to() || stat || !can_feel_pain() || src.analgesia >= 50)
 		return
 	if(ELAPSED_SINCE(src, l_move_time, CLOCK_WORLD) >= BODY_MOVING_WINDOW)
 		return

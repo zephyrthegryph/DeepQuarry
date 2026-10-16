@@ -90,22 +90,22 @@
 					cases += list(list("[path]", proto.factors, 1, 1))
 	return cases
 
-/// The old fold of one table at `scale`, `stacks` times, as the oracle's vector (indexed by BF_*), or null when nothing moved.
+/// The old fold of one table at `scale`, `stacks` times, as the oracle's vector (keyed by stat id), or null when nothing moved.
 /proc/factor_pin_old_vector(alist/table, scale, stacks)
-	var/list/acc = null
+	var/alist/acc = null
 	for(var/i in 1 to stacks)
 		acc = oracle_accumulate(acc, table, scale)
 	return oracle_finalize(acc)
 
-/// A vector as the pin writes it: the factors that are not at their baseline, as "name=value" in id order, or "-" when none is.
-/proc/factor_pin_text(list/vector)
+/// A vector as the pin writes it: the factors that are not at their baseline, as "name=value" in name order, or "-" when none is.
+/proc/factor_pin_text(alist/vector)
 	var/list/parts = list()
-	for(var/id in 1 to BF_COUNT)
-		var/stat_id = bf_stat_id(id)
-		if(!stat_id || !vector)
+	for(var/id in oracle_ids())
+		if(!vector)
 			continue
 		if(vector[id] != oracle_baseline(id))
-			parts += "[stat_label(stat_id)]=[num2text(vector[id], 8)]"
+			parts += "[stat_label(id)]=[num2text(vector[id], 8)]"
+	sortTim(parts, GLOBAL_PROC_REF(cmp_text_asc))
 	return length(parts) ? jointext(parts, " ") : "-"
 
 /// The values of a pin row as name -> number.
@@ -122,10 +122,8 @@
 	var/static/list/names
 	if(!names)
 		names = list()
-		for(var/id in 1 to BF_COUNT)
-			var/stat_id = bf_stat_id(id)
-			if(stat_id)
-				names[stat_label(stat_id)] = stat_id
+		for(var/id in oracle_ids())
+			names[stat_label(id)] = id
 	return names
 
 /// A pin file's rows as key => value.
@@ -199,7 +197,7 @@
 /// 1e-5, exactly for bit fields); releases it. Null when they agree, else what differs.
 /proc/factor_pin_engine_mismatch(mob/living/M, alist/table, scale, stacks, row_text)
 	var/obj/e3_source/source = new
-	hold_table(M, source, body_table_stat_keys(table), scale, stacks)
+	hold_table(M, source, table, scale, stacks)
 	var/list/expected = factor_pin_parse(row_text)
 	var/list/names = factor_pin_names()
 	var/list/bad = list()

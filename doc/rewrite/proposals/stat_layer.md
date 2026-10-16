@@ -435,3 +435,44 @@ Recommendation: delete `arrhythmia_risk`, `vision`, `hearing`; keep `sedation`, 
   `human.dm:1425`, `species.dm:931`, `station.dm:666`, `event.dm:210`, `trait.dm:56,111`, `protean/forms.dm:79,87,114`, `slots.dm:364,458`, `attach.dm:218,261`.
 * `/mob/living`'s one `CAPABILITIES` block is in protected-AI code; use the library entry proc pattern from `proposals/mob_living_root.md` option B for the `on_change` group.
 * Per project policy: no benchmarks and no full suite during this work; run only the tests named per wave with `tools/dq_focused_test.sh`.
+
+## 7. Implementation notes (waves 0 to 2, 2026-10-16)
+
+What was built, and where it departs from the text above. Wave 3 is not started.
+
+* **Engine** (`code/engine/stats/`): `bounds = list(lo, hi)` on `STAT` (clamp after the combine, before an override); the no-row fast path for PRODUCT, MAX, MIN and
+  MASK_OR; `rec.by_stat` (per-stat row index, kept by `stat_rows_add()` / `stat_hold_remove()`); `hold_table()`, `release_table()`, `hold_tables_begin()` /
+  `hold_tables_end()` (`tables.dm`: rows carry `HF_TABLE` and a `part`; a pass releases the table rows no call placed and settles every changed stat once;
+  `hold_tables_end(E, moved)` lists the stats that ended different); `stat_fold_tables()` (pure fold of tables for one stat).
+* **Names.** The 67 factors keep the planned names except `metabolism_mult` (not `metabolism`: `/mob/living/var/metabolism` already exists in the vore code and
+  renaming that var would be a new `base_vars` site). Armour is `armor_<kind>` and incoming is `incoming_<category>`; the dynamic reads are `switch`es.
+* **D7 schema.** `schema = num(base, INFINITY)` on the MAX stats, not `num(base, hi)`: a table scaled by a dose of 2 or 4 legitimately contributes 2 or 4, which the
+  pin found; `bounds` holds the composed value to `hi`. The test builds assert that a MAX contribution is not below the base.
+* **D8 narrowing** is inline, not an `on_change` group. A refresh dirties the cached vitals and the physiology when a stat in `GLOB.factor_vitals_stats` moved (the
+  first pass dirties them whichever moved, as the old first recompute did). An `on_change` hook runs at the marked drain, after the writer's next line, and the
+  physiology tests read right after a write; the inline form keeps that, and the physiology vector pin (`snapshots/factors/physiology.txt`, recorded from the old
+  code) is identical.
+* **D6 triggers.** `invalidate(BODY_DIRTY_FACTORS)` is the trigger and is never stored: `invalidate()` calls `refresh_factors()`. A reagent change settles at
+  `on_reagent_change()` (volumes re-read, bands compared, the treatment snapshot left stale). Writers of a source table that bypass those events call
+  `invalidate_factors()` (`headset/event.equipped()`).
+* **D10.** `BF_*`, `factor(`, and the old fold's names are hard-banned (`legacy_forms`, empty baseline); `legacy_forms` gained prefix names (`BF_*`). The
+  compatibility table existed through waves 1 to 2c (`code/modules/body/factor_compat.dm`); 2d renamed every table key `BF_X` to `STAT_X` and deleted it.
+* **The oracle stays.** `dq_factor_oracle.dm` is the old fold over the stat ids (its own accumulate and clamp), used by the end-of-test audit, the parity test, the
+  random-source test and the table pin. It is test code; deleting it is a choice for wave 3, when the tables become declarations.
+* **Behaviour that differs** is listed in `doc/rewrite/intended_changes.md` (when a factor settles; `tissue_hypoxia` follows its severity).
+* **Pre-existing failures** the runs showed on the base commit too (not caused by this work): `dq_body_pin/liver_toxin_overload`,
+  `dq_medical_trial_deferred_availability` (order dependent), `dq_mob_init_forms_bodies`, `dq_medpod/sleeper_injects` (a purity violation: a requirement
+  reads `vitality()` while the vitals are dirty).
+
+### 7.1 Boundary audit (D4)
+
+The reads that compare a factor with a constant, after the conversion (every other read multiplies, adds or branches on truth):
+
+| read | stat and rule | at its boundary |
+|---|---|---|
+| `motor_control < 1` (`factor_effects_due()`, `tick_factor_effects()`) | PRODUCT 0..1 | every table value is at most 1, so any contribution leaves the product below 1 and none leaves it exactly 1 (neutral rows are not held) |
+| `penalty_scale < 1` (`say.dm`) | PRODUCT 0..4 | tables carry values on both sides of 1, so a product that cancels back to 1 (0.8 x 1.25) is the one case the multiplication order could move by a last bit; no table pair does it, and the pins hold every table alone |
+| `analgesia >= 50` (`limb_state.dm`), `> power` (`pain.dm`), `> 100` (`life.dm`), `< 60` (`mob_grab_specials.dm`) | SUM | the pinned values are multiples of 0.25 times integers (50, 75, 200, 225): exact in binary under any order; a dose scale that is an arbitrary float sums with rounding of about 1e-14, far from any threshold the tables reach |
+| `stasis > STASIS_SLEEP_THRESHOLD` (`life.dm`) | MAX 0..1 | a maximum, never a sum: order cannot move it |
+| `allergy > 0` (`life.dm`, `life_medical_due()`) | SUM 0..inf | zero exactly when nothing contributes |
+| `pump <= 0` (`physiology.dm`), `resp_drive < SUPPORT_BVM_DRIVE` | PRODUCT | a table value of 0 gives exactly 0 under any order; the drive compares with a support floor of 0.4 |

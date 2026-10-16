@@ -49,7 +49,7 @@
 
 // --- Armour kinds -------------------------------------------------------------
 // Armour is asked for by the INJURY_* kind it resists (injury_armor(kind, zone)),
-// plus ARMOR_BLAST for explosive shockwaves. Body factors add BF_ARMOR(kind).
+// plus ARMOR_BLAST for explosive shockwaves. Body factors add the armour stat of the kind (armor_factor()).
 #define ARMOR_BLAST       (INJURY_KIND_COUNT + 1)
 #define ARMOR_KIND_COUNT  (INJURY_KIND_COUNT + 1)
 
@@ -282,7 +282,7 @@
 /// Oxygen debt is logged each time it crosses a multiple of this.
 #define PHYSIOLOGY_DEBT_LOG_BAND 25
 /// Tissue hypoxia severity (oxygen debt) past which the heart grows irritable:
-/// BF_CARDIAC_IRRITABILITY rises from 1 here to PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX at 100.
+/// STAT_CARDIAC_IRRITABILITY rises from 1 here to PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX at 100.
 #define PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD 40
 #define PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX 4
 /// Post-revival grace: how long after circulation is restored (defibrillation,

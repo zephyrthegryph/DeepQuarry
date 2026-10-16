@@ -1165,7 +1165,7 @@
 	M.status_adjust(STAT_JITTERY, 5)
 
 /datum/reagent/drink/soda/nuka_cola
-	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
+	factors = alist(STAT_SLOWDOWN = -1, STAT_PENALTY_SCALE = 0.5)
 	name = REAGENT_NUKACOLA
 	id = REAGENT_ID_NUKACOLA
 	description = "Cola, cola never changes."

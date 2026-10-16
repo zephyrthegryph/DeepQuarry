@@ -8,7 +8,7 @@
 		/datum/affliction_symptom/fatigue = 40
 	)
 	max_symptoms = 3
-	factors = alist(BF_TEMPERATURE = 0.8)
+	factors = alist(STAT_TEMPERATURE = 0.8)
 	name = "Food Poisoning"
 	medical_name = "Gastroenteritis"
 	max_stages = 3

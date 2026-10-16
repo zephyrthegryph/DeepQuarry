@@ -273,7 +273,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 	var/controlled = immunity >= CONTAGION_IMMUNITY_CONTROL
 
 	// Advance while nothing holds it back.
-	if(!cure && !controlled && prob(stage_prob * owner.factor(BF_PROGRESSION)))
+	if(!cure && !controlled && prob(stage_prob * owner.progression))
 		set_stage(stage + 1)
 
 	// A cure in the blood, or an immune system in control, drives it back.

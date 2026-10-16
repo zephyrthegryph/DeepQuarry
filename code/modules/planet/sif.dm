@@ -738,7 +738,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_HEALING_RECEIVED = 2)
+	factors = alist(STAT_HEALING_RECEIVED = 2)
 
 /*
 /datum/body_effect/starrynight_boon/on_tick(mob/living/L) Wanna have this and it's counter part mess with kin but brain says noto figuring out how lol
@@ -753,7 +753,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 
 	// It desires you
 	// Worlds bend and meld. Small chance you aren't where you appear to be
-	factors = alist(BF_BLEEDING = 2, BF_EVASION = 10)
+	factors = alist(STAT_BLEEDING = 2, STAT_EVASION = 10)
 
 /*
 /datum/body_effect/midnightfog_boon/on_tick(mob/living/L)

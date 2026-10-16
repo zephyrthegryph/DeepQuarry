@@ -210,7 +210,7 @@
 		var/dirty = BODY_DIRTY_VITALS
 		// C21: a type whose factors follow severity continuously re-dirties on every change,
 		// not only per band (and even with no static `factors` table).
-		if(continuous_factors || (factors && round(severity / BF_SEVERITY_BAND) != factor_band))
+		if(continuous_factors || (factors && round(severity / FACTOR_SEVERITY_BAND) != factor_band))
 			dirty |= BODY_DIRTY_FACTORS
 		body.invalidate(dirty)
 	if(owner)
@@ -351,7 +351,7 @@
 		rate = simple_clearance_rate
 	var/drift = AFFLICTION_BASE_PROGRESSION * rate
 	if(drift > 0)
-		drift *= owner.factor(BF_PROGRESSION)
+		drift *= owner.progression
 	var/delta = drift + pending_treatment
 	pending_treatment = 0
 	// Conditions snowball: 1x at 0, 2x at 50, 3x at 100. Cures scale too, so

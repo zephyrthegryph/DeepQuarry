@@ -13,7 +13,7 @@
 	// You are swinging a sword under water...Good luck.
 	// You're underwater. Good luck shooting a gun. (Makes shots as if you were 3.33 tiles further.)
 	// You're underwater and a bit harder to hit.
-	factors = alist(BF_SLOWDOWN = -1.0, BF_ACCURACY = -50, BF_EVASION = 30, BF_MELEE_DAMAGE = 0.75, BF_SIEMENS = 1.5)
+	factors = alist(STAT_SLOWDOWN = -1.0, STAT_ACCURACY = -50, STAT_EVASION = 30, STAT_MELEE_DAMAGE = 0.75, STAT_SIEMENS = 1.5)
 
 /datum/body_effect/underwater_stealth/on_start(mob/living/L)
 	L.set_alpha_source(SRC_ALPHA_UNDERWATER_STEALTH, 50/255)
@@ -56,7 +56,7 @@
 	icon_override = 1
 	mob_overlay_state = "deflect"
 	// Stun weapons drain 100% charge per point of damage. They're good at blocking lasers and bullets but not good at blocking stun beams!
-	factors = alist(BF_SIEMENS = 2)
+	factors = alist(STAT_SIEMENS = 2)
 
 	end_on_death = TRUE // the generator stops protecting you but keeps running
 
@@ -150,7 +150,7 @@
 /datum/body_effect/shield_projection/security // Security backpack. 50% resistance at full charge. 10% resistance for the last shot taken.
 	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.5, INJURY_CATEGORY_THERMAL = 0.5, INJURY_CATEGORY_PAIN = 0.5)
 	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 0.9, INJURY_CATEGORY_THERMAL = 0.9, INJURY_CATEGORY_PAIN = 0.9)
-	factors = alist(BF_DISABLE_DURATION = 0.75, BF_SIEMENS = 2)
+	factors = alist(STAT_DISABLE_DURATION = 0.75, STAT_SIEMENS = 2)
 
 /datum/body_effect/shield_projection/security/weak // Security belt.
 	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.75, INJURY_CATEGORY_THERMAL = 0.75, INJURY_CATEGORY_PAIN = 0.75)
@@ -159,7 +159,7 @@
 /datum/body_effect/shield_projection/security/strong // Dunno. Upgraded variant of security backpack?
 	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.25, INJURY_CATEGORY_THERMAL = 0.25, INJURY_CATEGORY_PAIN = 0.25)
 	// Not as weak as normal, but still weak.
-	factors = alist(BF_DISABLE_DURATION = 0.5, BF_SIEMENS = 1.5)
+	factors = alist(STAT_DISABLE_DURATION = 0.5, STAT_SIEMENS = 1.5)
 
 //MINING VARIANTS
 /datum/body_effect/shield_projection/mining //Base mining belt. 30% resistance that fades to 15% resistance
@@ -167,12 +167,12 @@
 	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.7, INJURY_CATEGORY_THERMAL = 0.7, INJURY_CATEGORY_PAIN = 1.5)
 	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 0.85, INJURY_CATEGORY_THERMAL = 0.85, INJURY_CATEGORY_PAIN = 1.5)
 	// Miners often come into contact with things that can stun them.
-	factors = alist(BF_DISABLE_DURATION = 0.75, BF_SIEMENS = 2)
+	factors = alist(STAT_DISABLE_DURATION = 0.75, STAT_SIEMENS = 2)
 
 /datum/body_effect/shield_projection/mining/strong // Mining belt, but upgraded. Even weaker to halloss!
 	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.55, INJURY_CATEGORY_THERMAL = 0.55, INJURY_CATEGORY_PAIN = 2)
 	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 0.75, INJURY_CATEGORY_THERMAL = 0.75, INJURY_CATEGORY_PAIN = 2)
-	factors = alist(BF_DISABLE_DURATION = 0.5, BF_SIEMENS = 2)
+	factors = alist(STAT_DISABLE_DURATION = 0.5, STAT_SIEMENS = 2)
 
 //MISC VARIANTS
 
@@ -183,7 +183,7 @@
 /datum/body_effect/shield_projection/admin // Adminbus.
 	on_created_text = span_notice("Your shield generator activates and you feel the power of the tesla buzzing around you.")
 	on_expired_text = span_warning("Your shield generator deactivates, leaving you feeling weak and vulnerable.")
-	factors = alist(BF_DISABLE_DURATION = 0, BF_SIEMENS = 0)
+	factors = alist(STAT_DISABLE_DURATION = 0, STAT_SIEMENS = 0)
 	resist_full = alist(SHIELD_RESIST_ALL = 0)
 	resist_empty = alist(SHIELD_RESIST_ALL = 0)
 
@@ -208,7 +208,7 @@
 	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 0.65, INJURY_CATEGORY_THERMAL = 0.65, INJURY_CATEGORY_PAIN = 5)
 	// Stuns are half as long; much harder to shoot; somewhat faster; can't
 	// shoot; attacks faster and harder; bleeds slightly slower.
-	factors = alist(BF_BLEEDING = 0.75, BF_SLOWDOWN = -0.5, BF_ACCURACY = -1000, BF_EVASION = 35, BF_ATTACK_SPEED = 0.8, BF_MELEE_DAMAGE = 1.25, BF_DISABLE_DURATION = 0.5, BF_SIEMENS = 2)
+	factors = alist(STAT_BLEEDING = 0.75, STAT_SLOWDOWN = -0.5, STAT_ACCURACY = -1000, STAT_EVASION = 35, STAT_ATTACK_SPEED = 0.8, STAT_MELEE_DAMAGE = 1.25, STAT_DISABLE_DURATION = 0.5, STAT_SIEMENS = 2)
 
 /// Exploration boss loot: a generator belt that pulls ore towards you.
 /datum/body_effect/shield_projection/magnet

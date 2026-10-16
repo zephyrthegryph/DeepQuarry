@@ -1,7 +1,7 @@
-adminordrazine|0.25|1 => analgesia=50 stabilization=3.75 antimicrobial=0.75
-adminordrazine|1|1 => analgesia=200 stabilization=15 antimicrobial=3
-adminordrazine|2|1 => analgesia=400 stabilization=30 antimicrobial=6
-adminordrazine|4|1 => analgesia=800 stabilization=60 antimicrobial=12
+adminordrazine|0.25|1 => analgesia=50 antimicrobial=0.75 stabilization=3.75
+adminordrazine|1|1 => analgesia=200 antimicrobial=3 stabilization=15
+adminordrazine|2|1 => analgesia=400 antimicrobial=6 stabilization=30
+adminordrazine|4|1 => analgesia=800 antimicrobial=12 stabilization=60
 alkysine@8|0.25|1 => analgesia=0.625
 alkysine@8|1|1 => analgesia=2.5
 alkysine@8|2|1 => analgesia=5
@@ -146,10 +146,10 @@ enragedarachnidslammer|0.25|1 => analgesia=20 penalty_scale=0.875
 enragedarachnidslammer|1|1 => analgesia=80 penalty_scale=0.5
 enragedarachnidslammer|2|1 => analgesia=160 penalty_scale=0
 enragedarachnidslammer|4|1 => analgesia=320 penalty_scale=0
-epinephrine|0.25|1 => analgesia=15 slowdown=-0.75 penalty_scale=0.875
-epinephrine|1|1 => analgesia=60 slowdown=-3 penalty_scale=0.5
-epinephrine|2|1 => analgesia=120 slowdown=-6 penalty_scale=0
-epinephrine|4|1 => analgesia=240 slowdown=-10 penalty_scale=0
+epinephrine|0.25|1 => analgesia=15 penalty_scale=0.875 slowdown=-0.75
+epinephrine|1|1 => analgesia=60 penalty_scale=0.5 slowdown=-3
+epinephrine|2|1 => analgesia=120 penalty_scale=0 slowdown=-6
+epinephrine|4|1 => analgesia=240 penalty_scale=0 slowdown=-10
 fakesynxchem|0.25|1 => analgesia=2.5 stabilization=3.75
 fakesynxchem|1|1 => analgesia=10 stabilization=15
 fakesynxchem|2|1 => analgesia=20 stabilization=30
@@ -174,18 +174,18 @@ grubshake|0.25|1 => blood_regen=0.2
 grubshake|1|1 => blood_regen=0.80000001
 grubshake|2|1 => blood_regen=1.6
 grubshake|4|1 => blood_regen=3.2
-highpower|0.25|1 => slowdown=-0.25 penalty_scale=0.875
-highpower|1|1 => slowdown=-1 penalty_scale=0.5
-highpower|2|1 => slowdown=-2 penalty_scale=0
-highpower|4|1 => slowdown=-4 penalty_scale=0
+highpower|0.25|1 => penalty_scale=0.875 slowdown=-0.25
+highpower|1|1 => penalty_scale=0.5 slowdown=-1
+highpower|2|1 => penalty_scale=0 slowdown=-2
+highpower|4|1 => penalty_scale=0 slowdown=-4
 honey|0.25|1 => blood_regen=0.2
 honey|1|1 => blood_regen=0.80000001
 honey|2|1 => blood_regen=1.6
 honey|4|1 => blood_regen=3.2
-hyperzine|0.25|1 => slowdown=-0.25 penalty_scale=0.875
-hyperzine|1|1 => slowdown=-1 penalty_scale=0.5
-hyperzine|2|1 => slowdown=-2 penalty_scale=0
-hyperzine|4|1 => slowdown=-4 penalty_scale=0
+hyperzine|0.25|1 => penalty_scale=0.875 slowdown=-0.25
+hyperzine|1|1 => penalty_scale=0.5 slowdown=-1
+hyperzine|2|1 => penalty_scale=0 slowdown=-2
+hyperzine|4|1 => penalty_scale=0 slowdown=-4
 inaprovalaze|0.25|1 => analgesia=3 stabilization=5
 inaprovalaze|1|1 => analgesia=12 stabilization=20
 inaprovalaze|2|1 => analgesia=24 stabilization=40
@@ -214,10 +214,10 @@ instantwatermelon|0.25|1 => blood_regen=0.2
 instantwatermelon|1|1 => blood_regen=0.80000001
 instantwatermelon|2|1 => blood_regen=1.6
 instantwatermelon|4|1 => blood_regen=3.2
-jackbrew|0.25|1 => slowdown=-0.25 penalty_scale=0.875
-jackbrew|1|1 => slowdown=-1 penalty_scale=0.5
-jackbrew|2|1 => slowdown=-2 penalty_scale=0
-jackbrew|4|1 => slowdown=-4 penalty_scale=0
+jackbrew|0.25|1 => penalty_scale=0.875 slowdown=-0.25
+jackbrew|1|1 => penalty_scale=0.5 slowdown=-1
+jackbrew|2|1 => penalty_scale=0 slowdown=-2
+jackbrew|4|1 => penalty_scale=0 slowdown=-4
 ketchup|0.25|1 => blood_regen=0.2
 ketchup|1|1 => blood_regen=0.80000001
 ketchup|2|1 => blood_regen=1.6
@@ -246,26 +246,26 @@ mustard|0.25|1 => blood_regen=0.2
 mustard|1|1 => blood_regen=0.80000001
 mustard|2|1 => blood_regen=1.6
 mustard|4|1 => blood_regen=3.2
-norepinephrine|0.25|1 => pump=1.025 circulation=1.075 heart_rate=5 bp_systolic=5 bp_diastolic=2.5 stabilization=2.5
-norepinephrine|1|1 => pump=1.1 circulation=1.3 heart_rate=20 bp_systolic=20 bp_diastolic=10 stabilization=10
-norepinephrine|2|1 => pump=1.2 circulation=1.5999999 heart_rate=40 bp_systolic=40 bp_diastolic=20 stabilization=20
-norepinephrine|4|1 => pump=1.4000001 circulation=2 heart_rate=80 bp_systolic=80 bp_diastolic=40 stabilization=40
-nuka_cola|0.25|1 => slowdown=-0.25 penalty_scale=0.875
-nuka_cola|1|1 => slowdown=-1 penalty_scale=0.5
-nuka_cola|2|1 => slowdown=-2 penalty_scale=0
-nuka_cola|4|1 => slowdown=-4 penalty_scale=0
-nukie_mega_fast|0.25|1 => slowdown=-0.25 penalty_scale=0.875
-nukie_mega_fast|1|1 => slowdown=-1 penalty_scale=0.5
-nukie_mega_fast|2|1 => slowdown=-2 penalty_scale=0
-nukie_mega_fast|4|1 => slowdown=-4 penalty_scale=0
+norepinephrine|0.25|1 => bp_diastolic=2.5 bp_systolic=5 circulation=1.075 heart_rate=5 pump=1.025 stabilization=2.5
+norepinephrine|1|1 => bp_diastolic=10 bp_systolic=20 circulation=1.3 heart_rate=20 pump=1.1 stabilization=10
+norepinephrine|2|1 => bp_diastolic=20 bp_systolic=40 circulation=1.5999999 heart_rate=40 pump=1.2 stabilization=20
+norepinephrine|4|1 => bp_diastolic=40 bp_systolic=80 circulation=2 heart_rate=80 pump=1.4000001 stabilization=40
+nuka_cola|0.25|1 => penalty_scale=0.875 slowdown=-0.25
+nuka_cola|1|1 => penalty_scale=0.5 slowdown=-1
+nuka_cola|2|1 => penalty_scale=0 slowdown=-2
+nuka_cola|4|1 => penalty_scale=0 slowdown=-4
+nukie_mega_fast|0.25|1 => penalty_scale=0.875 slowdown=-0.25
+nukie_mega_fast|1|1 => penalty_scale=0.5 slowdown=-1
+nukie_mega_fast|2|1 => penalty_scale=0 slowdown=-2
+nukie_mega_fast|4|1 => penalty_scale=0 slowdown=-4
 nukie_mega_sight|0.25|1 => darksight=0.25
 nukie_mega_sight|1|1 => darksight=1
 nukie_mega_sight|2|1 => darksight=1
 nukie_mega_sight|4|1 => darksight=1
-nukie_one|0.25|1 => slowdown=-0.25 penalty_scale=0.875 darksight=0.25
-nukie_one|1|1 => slowdown=-1 penalty_scale=0.5 darksight=1
-nukie_one|2|1 => slowdown=-2 penalty_scale=0 darksight=1
-nukie_one|4|1 => slowdown=-4 penalty_scale=0 darksight=1
+nukie_one|0.25|1 => darksight=0.25 penalty_scale=0.875 slowdown=-0.25
+nukie_one|1|1 => darksight=1 penalty_scale=0.5 slowdown=-1
+nukie_one|2|1 => darksight=1 penalty_scale=0 slowdown=-2
+nukie_one|4|1 => darksight=1 penalty_scale=0 slowdown=-4
 numbenzyme|0.25|1 => analgesia=50
 numbenzyme|1|1 => analgesia=200
 numbenzyme|2|1 => analgesia=400
@@ -278,14 +278,14 @@ oil|0.25|1 => blood_regen=0.2
 oil|1|1 => blood_regen=0.80000001
 oil|2|1 => blood_regen=1.6
 oil|4|1 => blood_regen=3.2
-oxycodone@8|0.25|1 => analgesia=37.5 slowdown=0.25 penalty_scale=1.0625
-oxycodone@8|1|1 => analgesia=150 slowdown=1 penalty_scale=1.25
-oxycodone@8|2|1 => analgesia=300 slowdown=2 penalty_scale=1.5
-oxycodone@8|4|1 => analgesia=600 slowdown=4 penalty_scale=2
-oxycodone|0.25|1 => analgesia=50 slowdown=0.25 penalty_scale=1.0625
-oxycodone|1|1 => analgesia=200 slowdown=1 penalty_scale=1.25
-oxycodone|2|1 => analgesia=400 slowdown=2 penalty_scale=1.5
-oxycodone|4|1 => analgesia=800 slowdown=4 penalty_scale=2
+oxycodone@8|0.25|1 => analgesia=37.5 penalty_scale=1.0625 slowdown=0.25
+oxycodone@8|1|1 => analgesia=150 penalty_scale=1.25 slowdown=1
+oxycodone@8|2|1 => analgesia=300 penalty_scale=1.5 slowdown=2
+oxycodone@8|4|1 => analgesia=600 penalty_scale=2 slowdown=4
+oxycodone|0.25|1 => analgesia=50 penalty_scale=1.0625 slowdown=0.25
+oxycodone|1|1 => analgesia=200 penalty_scale=1.25 slowdown=1
+oxycodone|2|1 => analgesia=400 penalty_scale=1.5 slowdown=2
+oxycodone|4|1 => analgesia=800 penalty_scale=2 slowdown=4
 painenzyme|0.25|1 => analgesia=-50
 painenzyme|1|1 => analgesia=-200
 painenzyme|2|1 => analgesia=-400
@@ -310,10 +310,10 @@ peanutoil|0.25|1 => blood_regen=0.2
 peanutoil|1|1 => blood_regen=0.80000001
 peanutoil|2|1 => blood_regen=1.6
 peanutoil|4|1 => blood_regen=3.2
-performancepeaker|0.25|1 => analgesia=2.5 slowdown=-0.125 penalty_scale=0.875
-performancepeaker|1|1 => analgesia=10 slowdown=-0.5 penalty_scale=0.5
-performancepeaker|2|1 => analgesia=20 slowdown=-1 penalty_scale=0
-performancepeaker|4|1 => analgesia=40 slowdown=-2 penalty_scale=0
+performancepeaker|0.25|1 => analgesia=2.5 penalty_scale=0.875 slowdown=-0.125
+performancepeaker|1|1 => analgesia=10 penalty_scale=0.5 slowdown=-0.5
+performancepeaker|2|1 => analgesia=20 penalty_scale=0 slowdown=-1
+performancepeaker|4|1 => analgesia=40 penalty_scale=0 slowdown=-2
 peridaxon@8|0.25|1 => analgesia=5
 peridaxon@8|1|1 => analgesia=20
 peridaxon@8|2|1 => analgesia=40
@@ -378,10 +378,10 @@ sprinkles|0.25|1 => blood_regen=0.2
 sprinkles|1|1 => blood_regen=0.80000001
 sprinkles|2|1 => blood_regen=1.6
 sprinkles|4|1 => blood_regen=3.2
-stimm|0.25|1 => slowdown=-0.25 penalty_scale=0.875
-stimm|1|1 => slowdown=-1 penalty_scale=0.5
-stimm|2|1 => slowdown=-2 penalty_scale=0
-stimm|4|1 => slowdown=-4 penalty_scale=0
+stimm|0.25|1 => penalty_scale=0.875 slowdown=-0.25
+stimm|1|1 => penalty_scale=0.5 slowdown=-1
+stimm|2|1 => penalty_scale=0 slowdown=-2
+stimm|4|1 => penalty_scale=0 slowdown=-4
 strawberry_protein_powder|0.25|1 => blood_regen=0.2
 strawberry_protein_powder|1|1 => blood_regen=0.80000001
 strawberry_protein_powder|2|1 => blood_regen=1.6
@@ -418,10 +418,10 @@ tofu|0.25|1 => blood_regen=0.2
 tofu|1|1 => blood_regen=0.80000001
 tofu|2|1 => blood_regen=1.6
 tofu|4|1 => blood_regen=3.2
-tramadol@8|0.25|1 => analgesia=16 slowdown=0.25 penalty_scale=1.0625
-tramadol@8|1|1 => analgesia=64 slowdown=1 penalty_scale=1.25
-tramadol@8|2|1 => analgesia=128 slowdown=2 penalty_scale=1.5
-tramadol@8|4|1 => analgesia=256 slowdown=4 penalty_scale=2
+tramadol@8|0.25|1 => analgesia=16 penalty_scale=1.0625 slowdown=0.25
+tramadol@8|1|1 => analgesia=64 penalty_scale=1.25 slowdown=1
+tramadol@8|2|1 => analgesia=128 penalty_scale=1.5 slowdown=2
+tramadol@8|4|1 => analgesia=256 penalty_scale=2 slowdown=4
 tramadol|0.25|1 => analgesia=20
 tramadol|1|1 => analgesia=80
 tramadol|2|1 => analgesia=160
@@ -450,10 +450,10 @@ virusfood|0.25|1 => blood_regen=0.2
 virusfood|1|1 => blood_regen=0.80000001
 virusfood|2|1 => blood_regen=1.6
 virusfood|4|1 => blood_regen=3.2
-warningtoxin|0.25|1 => slowdown=1.25 penalty_scale=1.0625
-warningtoxin|1|1 => slowdown=5 penalty_scale=1.25
-warningtoxin|2|1 => slowdown=10 penalty_scale=1.5
-warningtoxin|4|1 => slowdown=20 penalty_scale=2
+warningtoxin|0.25|1 => penalty_scale=1.0625 slowdown=1.25
+warningtoxin|1|1 => penalty_scale=1.25 slowdown=5
+warningtoxin|2|1 => penalty_scale=1.5 slowdown=10
+warningtoxin|4|1 => penalty_scale=2 slowdown=20
 yeast|0.25|1 => blood_regen=0.2
 yeast|1|1 => blood_regen=0.80000001
 yeast|2|1 => blood_regen=1.6

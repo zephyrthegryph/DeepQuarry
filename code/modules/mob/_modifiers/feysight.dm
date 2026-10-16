@@ -8,7 +8,7 @@
 	on_expired_text = span_notice("Your sight returns to what it once was.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_ACCURACY = -15, BF_DISPERSION = 1)
+	factors = alist(STAT_ACCURACY = -15, STAT_DISPERSION = 1)
 
 /datum/body_effect/feysight/on_start(mob/living/L)
 	L.see_invisible = 60

@@ -8,7 +8,7 @@
 // --- Bruising / hemorrhage ---
 
 /datum/affliction/deep_bruising
-	factors = alist(BF_HEART_RATE = 8)
+	factors = alist(STAT_HEART_RATE = 8)
 	name = "deep bruising"
 	category = "Soft Tissue"
 	clinical_description = "Bruised soft tissue from a heavy impact. Sore, but the body heals it on its own given time."
@@ -90,7 +90,7 @@
 				. *= dq_damage_scale(lost_frac, 0, 0.4, 1.0, 2.0)
 
 /datum/affliction/hypovolemic_shock
-	factors = alist(BF_O2_SAT = -5)
+	factors = alist(STAT_O2_SAT = -5)
 	name = "hypovolemic shock"
 	category = "Circulation"
 	clinical_description = "Circulatory collapse from heavy blood loss. The body can no longer perfuse its tissues, and shock takes over."
@@ -107,7 +107,7 @@
 	max_symptoms = 3
 	// Damages the heart at high severity (poor coronary perfusion);
 	// downstream cardiac damage spawns cardiac_arrest via the emergent
-	// system. The collapse itself is BF_CIRCULATION in the band tables:
+	// system. The collapse itself is STAT_CIRCULATION in the band tables:
 	// the physiology turns lost perfusion into oxygen debt.
 	organ_damage_threshold = 60
 	organ_damage_type = "internal"
@@ -129,9 +129,9 @@
 
 /// C7: the declared `factors` (scaled by severity, like any affliction) AND the band table.
 /datum/affliction/hypovolemic_shock/hold_factors(mob/living/L)
-	factor_band = round(severity / BF_SEVERITY_BAND)
-	body_hold(L, src, factors, severity / AFFLICTION_SEVERITY_TERMINAL)
-	body_hold(L, src, band_factors, 1, 1, "band")
+	factor_band = round(severity / FACTOR_SEVERITY_BAND)
+	hold_table(L, src, factors, severity / AFFLICTION_SEVERITY_TERMINAL)
+	hold_table(L, src, band_factors, 1, 1, "band")
 
 /// C7: the first band applies from the moment the shock takes hold, not from its first tick.
 /datum/affliction/hypovolemic_shock/on_added()
@@ -158,9 +158,9 @@
 	// Band tables are applied at full value: set them through the stage
 	// path so the body treats them as the band's own table.
 	var/static/list/bands = list(
-		list("factors" = alist(BF_SLOWDOWN = 0.3), "spontaneous_emotes" = list("sigh"), "spontaneous_emote_prob" = 2),
-		list("factors" = alist(BF_SLOWDOWN = 0.8, BF_ACCURACY = -12, BF_MOTOR_CONTROL = 0.99, BF_CIRCULATION = 0.85), "spontaneous_emotes" = list("wobble", "shake"), "spontaneous_emote_prob" = 3),
-		list("factors" = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -25, BF_MOTOR_CONTROL = 0.96, BF_CIRCULATION = 0.5), "spontaneous_emotes" = list("stagger", "collapse", "groan"), "spontaneous_emote_prob" = 6),
+		list("factors" = alist(STAT_SLOWDOWN = 0.3), "spontaneous_emotes" = list("sigh"), "spontaneous_emote_prob" = 2),
+		list("factors" = alist(STAT_SLOWDOWN = 0.8, STAT_ACCURACY = -12, STAT_MOTOR_CONTROL = 0.99, STAT_CIRCULATION = 0.85), "spontaneous_emotes" = list("wobble", "shake"), "spontaneous_emote_prob" = 3),
+		list("factors" = alist(STAT_SLOWDOWN = 1.5, STAT_ACCURACY = -25, STAT_MOTOR_CONTROL = 0.96, STAT_CIRCULATION = 0.5), "spontaneous_emotes" = list("stagger", "collapse", "groan"), "spontaneous_emote_prob" = 6),
 	)
 	var/list/entry = bands[band + 1]
 	set_band_factors(entry["factors"])
@@ -210,37 +210,37 @@ TYPE_TABLE(/datum/affliction/untreated_fracture, affliction_stages, list( \
 		"name" = "untreated fracture", \
 		"description" = "A broken leg bone, unset and unsupported. Every step grinds the fragments.", \
 		"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60), \
-		"factors" = alist(BF_SLOWDOWN = 1.5, BF_PAIN = 15), \
+		"factors" = alist(STAT_SLOWDOWN = 1.5, STAT_PAIN = 15), \
 	), \
 	"Splinted leg" = list( \
 		"name" = "splinted fracture", \
 		"description" = "A broken leg bone held still by a splint.", \
 		"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20), \
-		"factors" = alist(BF_SLOWDOWN = 0.5, BF_PAIN = 5), \
+		"factors" = alist(STAT_SLOWDOWN = 0.5, STAT_PAIN = 5), \
 	), \
 	"Unset arm" = list( \
 		"name" = "untreated fracture", \
 		"description" = "A broken arm bone, unset and unsupported.", \
 		"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60), \
-		"factors" = alist(BF_ACCURACY = -15, BF_PAIN = 15), \
+		"factors" = alist(STAT_ACCURACY = -15, STAT_PAIN = 15), \
 	), \
 	"Splinted arm" = list( \
 		"name" = "splinted fracture", \
 		"description" = "A broken arm bone held still by a splint.", \
 		"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20), \
-		"factors" = alist(BF_ACCURACY = -5, BF_PAIN = 5), \
+		"factors" = alist(STAT_ACCURACY = -5, STAT_PAIN = 5), \
 	), \
 	"Unset" = list( \
 		"name" = "untreated fracture", \
 		"description" = "A broken bone, unset and unsupported.", \
 		"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60), \
-		"factors" = alist(BF_SLOWDOWN = 0.5, BF_PAIN = 15), \
+		"factors" = alist(STAT_SLOWDOWN = 0.5, STAT_PAIN = 15), \
 	), \
 	"Splinted" = list( \
 		"name" = "splinted fracture", \
 		"description" = "A broken bone held still by a splint.", \
 		"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20), \
-		"factors" = alist(BF_PAIN = 5), \
+		"factors" = alist(STAT_PAIN = 5), \
 	), \
 ))
 
@@ -289,7 +289,7 @@ TYPE_TABLE(/datum/affliction/untreated_fracture, affliction_stages, list( \
 	)
 	min_symptoms = 2
 	max_symptoms = 4
-	factors = alist(BF_SLOWDOWN = 0.4, BF_ACCURACY = -15)
+	factors = alist(STAT_SLOWDOWN = 0.4, STAT_ACCURACY = -15)
 	spontaneous_emotes = list("stumble", "shake their head")
 	spontaneous_emote_prob = 3
 
@@ -325,7 +325,7 @@ TYPE_TABLE(/datum/affliction/untreated_fracture, affliction_stages, list( \
 	min_symptoms = 1
 	max_symptoms = 2
 	// Severe stage-3 burns crash the body's ability to hold fluid
-	// balance: stage 3 lowers BF_CIRCULATION.
+	// balance: stage 3 lowers STAT_CIRCULATION.
 	/// total_burn()'s per-tick cache.
 	var/tmp/burn_cache = 0
 	EXPIRY_TMP_DECLARE(burn_cache_time)
@@ -345,7 +345,7 @@ TYPE_TABLE(/datum/affliction/burn_shock, affliction_stages, list( \
 		), \
 		"min_symptoms" = 1, \
 		"max_symptoms" = 2, \
-		"factors" = alist(BF_HEART_RATE = 10, BF_BP_SYSTOLIC = -5), \
+		"factors" = alist(STAT_HEART_RATE = 10, STAT_BP_SYSTOLIC = -5), \
 	), \
 	"Stage 2" = list( \
 		"symptom_pool" = list( \
@@ -356,7 +356,7 @@ TYPE_TABLE(/datum/affliction/burn_shock, affliction_stages, list( \
 		), \
 		"min_symptoms" = 2, \
 		"max_symptoms" = 3, \
-		"factors" = alist(BF_SLOWDOWN = 0.6, BF_HEART_RATE = 25, BF_BP_SYSTOLIC = -20, BF_BP_DIASTOLIC = -10), \
+		"factors" = alist(STAT_SLOWDOWN = 0.6, STAT_HEART_RATE = 25, STAT_BP_SYSTOLIC = -20, STAT_BP_DIASTOLIC = -10), \
 		"spontaneous_emotes" = list("wince", "groan"), \
 		"spontaneous_emote_prob" = 4, \
 	), \
@@ -371,7 +371,7 @@ TYPE_TABLE(/datum/affliction/burn_shock, affliction_stages, list( \
 		), \
 		"min_symptoms" = 3, \
 		"max_symptoms" = 4, \
-		"factors" = alist(BF_SLOWDOWN = 1.4, BF_ACCURACY = -20, BF_MOTOR_CONTROL = 0.97, BF_HEART_RATE = 40, BF_BP_SYSTOLIC = -35, BF_BP_DIASTOLIC = -20, BF_CIRCULATION = 0.5), \
+		"factors" = alist(STAT_SLOWDOWN = 1.4, STAT_ACCURACY = -20, STAT_MOTOR_CONTROL = 0.97, STAT_HEART_RATE = 40, STAT_BP_SYSTOLIC = -35, STAT_BP_DIASTOLIC = -20, STAT_CIRCULATION = 0.5), \
 		"spontaneous_emotes" = list("groan in pain", "collapse", "shudder"), \
 		"spontaneous_emote_prob" = 7, \
 	), \
@@ -424,7 +424,7 @@ TYPE_TABLE(/datum/affliction/burn_shock, affliction_stages, list( \
 	// Debridement (resection) cuts the colonised tissue out.
 	treated_by = list(TREAT_ANTIMICROBIAL = 1.0, TREAT_RESECTION = 1)
 	// C16: a modest fever — the set point rises up to +1.2 K at severity 100.
-	factors = alist(BF_TEMPERATURE = 1.2)
+	factors = alist(STAT_TEMPERATURE = 1.2)
 	symptom_pool = list(
 		/datum/affliction_symptom/fever_sensation = 60,
 		/datum/affliction_symptom/chills          = 40,
@@ -445,7 +445,7 @@ TYPE_TABLE(/datum/affliction/burn_shock, affliction_stages, list( \
 	. = ..()
 	if(!location || !owner)
 		return
-	// Its modest fever is the BF_TEMPERATURE factor (the set point), not a write here.
+	// Its modest fever is the STAT_TEMPERATURE factor (the set point), not a write here.
 	var/germ_level = location.germ_level
 	// Above INFECTION_LEVEL_ONE the wound is actively feeding the
 	// condition. The extra delta scales with how far past threshold

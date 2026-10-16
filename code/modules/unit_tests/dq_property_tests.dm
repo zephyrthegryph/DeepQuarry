@@ -129,12 +129,7 @@ CAPABILITY_TYPE(dq_property_test, CAP_DQ_PROPERTY_TEST, /datum/capability/dq_pro
 /datum/unit_test/dq_property_aggregators
 
 /datum/unit_test/dq_property_aggregators/Run()
-	// The shared rules are the body factor rules (code/modules/body/factors.dm).
-	TEST_ASSERT_EQUAL(PROP_AGG_PRODUCT, BF_RULE_MULT, "PRODUCT should be BF_RULE_MULT")
-	TEST_ASSERT_EQUAL(PROP_AGG_SUM, BF_RULE_ADD, "SUM should be BF_RULE_ADD")
-	TEST_ASSERT_EQUAL(PROP_AGG_MAX, BF_RULE_MAX, "MAX should be BF_RULE_MAX")
-	TEST_ASSERT_EQUAL(PROP_AGG_MIN, BF_RULE_MIN, "MIN should be BF_RULE_MIN")
-	TEST_ASSERT_EQUAL(PROP_AGG_OR, BF_RULE_FLAGS, "OR should be BF_RULE_FLAGS")
+	// The shared rules are the stat rules of the body factors (code/engine/stats/rules.dm); the fold below proves it.
 	// At full scale the factor fold and the property combine agree.
 	var/list/tables = list(alist(STAT_AIRWAY = 0.5, STAT_PAIN = 3, STAT_HASTE = 1))
 	TEST_ASSERT(abs(stat_fold_tables(STAT_AIRWAY, tables) - dq_property_combine(PROP_AGG_PRODUCT, 1, 0.5)) < 0.0001, "product should match the PRODUCT stat rule at scale 1")

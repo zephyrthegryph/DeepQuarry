@@ -142,7 +142,7 @@ CAPABILITIES(/obj/item/organ/internal/heart/machine/anomalock/prebuilt)
 	stacks = MODIFIER_STACK_FORBID
 	name = "voltaic_overdrive"
 	client_color = "#e9f76b"
-	factors = alist(BF_PAIN_IMMUNITY = 1)
+	factors = alist(STAT_PAIN_IMMUNITY = 1)
 	tick_interval = 2 SECONDS
 
 /datum/body_effect/voltaic_overdrive/on_tick(mob/living/L)

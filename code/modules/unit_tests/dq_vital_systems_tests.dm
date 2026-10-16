@@ -44,7 +44,7 @@
 
 	var/obj/item/bag_valve_mask/bvm = allocate(/obj/item/bag_valve_mask)
 	TEST_ASSERT(bvm.apply_ventilation(H), "the bag-valve mask should ventilate an open airway")
-	TEST_ASSERT(H.body.is_supported(BF_RESP_DRIVE), "bagging should support the breathing drive")
+	TEST_ASSERT(H.body.is_supported(STAT_RESP_DRIVE), "bagging should support the breathing drive")
 	TEST_ASSERT(!H.breath_blocked(), "a bagged patient should get breaths")
 	TEST_ASSERT(!QDELETED(R) && R.is_apneic(), "ventilation breathes for the patient; it doesn't cure the arrest")
 
@@ -113,7 +113,7 @@
 
 	var/obj/item/rescuer = allocate(/obj/item/bag_valve_mask)
 	for(var/i in 1 to 60)
-		with_cpr.body.add_support(rescuer, BF_PUMP, SUPPORT_CPR_PUMP, CPR_COMPRESSION_WINDOW)
+		with_cpr.body.add_support(rescuer, STAT_PUMP, SUPPORT_CPR_PUMP, CPR_COMPRESSION_WINDOW)
 		without_cpr.body.physiology_tick(2)
 		with_cpr.body.physiology_tick(2)
 

@@ -17,7 +17,7 @@
 	// Stuns last 25% longer.
 	// Slower.
 	// 15% easier to hit.
-	factors = alist(BF_SLOWDOWN = 1, BF_EVASION = -15, BF_MELEE_DAMAGE = 0.7, BF_INCOMING_ALL = 1.1, BF_DISABLE_DURATION = 1.25, BF_ENDURANCE_MULT = 0.6)
+	factors = alist(STAT_SLOWDOWN = 1, STAT_EVASION = -15, STAT_MELEE_DAMAGE = 0.7, STAT_INCOMING_ALL = 1.1, STAT_DISABLE_DURATION = 1.25, STAT_ENDURANCE_MULT = 0.6)
 
 // Tracks number of deaths, one modifier added per cloning
 /datum/body_effect/cloned
@@ -64,7 +64,7 @@
 	// 125% incoming halloss.
 	// 50% less outgoing melee damage.
 	// 20% slower attack speed.
-	factors = alist(BF_SLOWDOWN = 1, BF_EVASION = -15, BF_ATTACK_SPEED = 1.2, BF_MELEE_DAMAGE = 0.5, BF_INCOMING_ALL = 1, BF_INCOMING_PHYSICAL = 1.5, BF_INCOMING_PAIN = 1.25, BF_DISABLE_DURATION = 1.25, BF_ENDURANCE_MULT = 0.6)
+	factors = alist(STAT_SLOWDOWN = 1, STAT_EVASION = -15, STAT_ATTACK_SPEED = 1.2, STAT_MELEE_DAMAGE = 0.5, STAT_INCOMING_ALL = 1, STAT_INCOMING_PHYSICAL = 1.5, STAT_INCOMING_PAIN = 1.25, STAT_DISABLE_DURATION = 1.25, STAT_ENDURANCE_MULT = 0.6)
 
 
 //////////////////////
@@ -86,7 +86,7 @@
 	// -10% to all healing
 	// 5% easier to hit.
 	// Inaccurate trait level of tile dispersion.
-	factors = alist(BF_DISPERSION = 1, BF_EVASION = -5, BF_MELEE_DAMAGE = 0.9, BF_INCOMING_ALL = 1.1, BF_INCOMING_PAIN = 1.5, BF_DISABLE_DURATION = 1.25, BF_HEALING_RECEIVED = 0.9, BF_ENDURANCE_MULT = 0.9)
+	factors = alist(STAT_DISPERSION = 1, STAT_EVASION = -5, STAT_MELEE_DAMAGE = 0.9, STAT_INCOMING_ALL = 1.1, STAT_INCOMING_PAIN = 1.5, STAT_DISABLE_DURATION = 1.25, STAT_HEALING_RECEIVED = 0.9, STAT_ENDURANCE_MULT = 0.9)
 
 	stacks = MODIFIER_STACK_ALLOWED //You have somehow had the surgery done twice. Your brain is very, very fucked, but I won't say no.
 
@@ -109,7 +109,7 @@
 	// Stuns last 25% longer.
 	// 5% easier to hit.
 	// Inaccurate trait level of tile dispersion.
-	factors = alist(BF_DISPERSION = 1, BF_EVASION = -5, BF_INCOMING_PAIN = 1.5, BF_DISABLE_DURATION = 1.25)
+	factors = alist(STAT_DISPERSION = 1, STAT_EVASION = -5, STAT_INCOMING_PAIN = 1.5, STAT_DISABLE_DURATION = 1.25)
 
 	stacks = MODIFIER_STACK_ALLOWED
 

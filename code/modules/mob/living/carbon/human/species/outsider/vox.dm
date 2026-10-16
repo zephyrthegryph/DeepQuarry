@@ -26,7 +26,7 @@
 
 	min_age = 18
 
-	factor_baseline = alist(BF_SLOWDOWN = -0.5)
+	factor_baseline = alist(STAT_SLOWDOWN = -0.5)
 
 	speech_sounds = list()
 	speech_chance = 20

@@ -2,12 +2,12 @@
 // when it doesn't. See doc/body_architecture.md §10 and
 // doc/health_system_review.md §5.4-5.5.
 //
-//   ventilation  = supported(BF_RESP_DRIVE) × BF_LUNG_MECHANICS × BF_AIRWAY
-//   oxygenation  = saturate(ventilation × BF_GAS_EXCHANGE × lungs × breath quality)
-//   output       = supported(BF_PUMP × heart condition)
-//   perfusion    = output × volume factor(blood volume) × BF_CIRCULATION
-//   delivery     = oxygenation × perfusion × BF_O2_CARRIAGE × BF_TISSUE_UPTAKE
-//   shortfall    = max(0, PHYSIOLOGY_CRITICAL_RATIO × BF_DEMAND − delivery)
+//   ventilation  = supported(STAT_RESP_DRIVE) × STAT_LUNG_MECHANICS × STAT_AIRWAY
+//   oxygenation  = saturate(ventilation × STAT_GAS_EXCHANGE × lungs × breath quality)
+//   output       = supported(STAT_PUMP × heart condition)
+//   perfusion    = output × volume factor(blood volume) × STAT_CIRCULATION
+//   delivery     = oxygenation × perfusion × STAT_O2_CARRIAGE × STAT_TISSUE_UPTAKE
+//   shortfall    = max(0, PHYSIOLOGY_CRITICAL_RATIO × STAT_DEMAND − delivery)
 //   oxygen debt += shortfall × PHYSIOLOGY_DEBT_RATE per second, repaid while
 //                  delivery exceeds the critical ratio.
 //
@@ -30,7 +30,7 @@
 /// bag-valve mask holding the breathing drive up, CPR holding cardiac output
 /// up, a chokehold squeezing the airway shut.
 /datum/body_support
-	/// BF_* id this support acts on.
+	/// stat id this support acts on.
 	var/factor_id
 	/// value = max(value, floor), applied after the product. Null = none.
 	var/floor
@@ -142,7 +142,7 @@ CAPABILITIES(/datum/body)
 /// every support on it.
 /datum/body/proc/supported_factor(id, value = null)
 	if(isnull(value))
-		value = owner.factor(id)
+		value = stat_value(owner, id)
 	for(var/datum/body_support/S as anything in supports)
 		if(S.factor_id == id)
 			value = S.apply(value)
@@ -285,7 +285,7 @@ CAPABILITIES(/datum/body)
 	var/perfusion
 	/// Oxygen used by the tissues relative to a healthy body.
 	var/delivery = 1
-	/// BF_DEMAND.
+	/// STAT_DEMAND.
 	var/demand = 1
 	/// How far delivery falls below the critical ratio of demand.
 	var/shortfall = 0
@@ -418,8 +418,8 @@ CAPABILITIES(/datum/body)
 
 	var/o2 = 1
 	if(breathes)
-		set_ventilation(clamp(body.supported_factor(BF_RESP_DRIVE) * body.supported_factor(BF_LUNG_MECHANICS) * body.supported_factor(BF_AIRWAY), 0, 1))
-		var/exchange = body.supported_factor(BF_GAS_EXCHANGE) * (skin ? 1 : lung_condition(H))
+		set_ventilation(clamp(body.supported_factor(STAT_RESP_DRIVE) * body.supported_factor(STAT_LUNG_MECHANICS) * body.supported_factor(STAT_AIRWAY), 0, 1))
+		var/exchange = body.supported_factor(STAT_GAS_EXCHANGE) * (skin ? 1 : lung_condition(H))
 		set_oxygenation(saturate(ventilation * exchange * breath_quality))
 		o2 = oxygenation
 	else
@@ -428,14 +428,14 @@ CAPABILITIES(/datum/body)
 
 	var/flow = 1
 	if(circulates)
-		set_output(clamp(body.supported_factor(BF_PUMP, body.owner.pump * heart_condition(H)), 0, 2))
-		set_perfusion(clamp(output * volume_factor(H) * body.supported_factor(BF_CIRCULATION), 0, 2))
+		set_output(clamp(body.supported_factor(STAT_PUMP, body.owner.pump * heart_condition(H)), 0, 2))
+		set_perfusion(clamp(output * volume_factor(H) * body.supported_factor(STAT_CIRCULATION), 0, 2))
 		flow = perfusion
 	else
 		set_output(null)
 		set_perfusion(null)
 
-	set_delivery(o2 * flow * body.supported_factor(BF_O2_CARRIAGE) * body.supported_factor(BF_TISSUE_UPTAKE))
+	set_delivery(o2 * flow * body.supported_factor(STAT_O2_CARRIAGE) * body.supported_factor(STAT_TISSUE_UPTAKE))
 	shortfall = max(0, PHYSIOLOGY_CRITICAL_RATIO * demand - delivery)
 	return TRUE
 
@@ -450,7 +450,7 @@ CAPABILITIES(/datum/body)
 		return 0.8
 	return 1
 
-/// Pumping the heart itself manages (rhythm is BF_PUMP, from the arrhythmia).
+/// Pumping the heart itself manages (rhythm is STAT_PUMP, from the arrhythmia).
 /datum/physiology/humanoid/proc/heart_condition(mob/living/carbon/human/H)
 	var/obj/item/organ/internal/heart/heart = H.organ_in(O_HEART)
 	if(!heart || (heart.status & ORGAN_DEAD))
@@ -501,7 +501,7 @@ CAPABILITIES(/datum/body)
 	if(!istype(B) || B.is_robotic())
 		return
 	var/rate = DQ_HYPOXIA_BRAIN_RATE * clamp((oxygen_debt - DQ_HYPOXIA_BRAIN_DAMAGE) / (AFFLICTION_SEVERITY_TERMINAL - DQ_HYPOXIA_BRAIN_DAMAGE), 0, 1)
-	if(body.owner.factor(BF_STABILIZATION))
+	if(body.owner.stabilization)
 		rate *= 0.5
 	B.apply_lesion_damage(rate * seconds, /datum/affliction/lesion/ischemic_injury, TRUE)
 
@@ -560,7 +560,7 @@ CAPABILITIES(/datum/body)
 	if(ventilation < PHYSIOLOGY_APNEA_VENTILATION)
 		return 0
 	// A bagged patient breathes at the rescuer's rate.
-	if(body.is_supported(BF_RESP_DRIVE) && body.owner.resp_drive < SUPPORT_BVM_DRIVE)
+	if(body.is_supported(STAT_RESP_DRIVE) && body.owner.resp_drive < SUPPORT_BVM_DRIVE)
 		return 12
 	var/rate = 14 + round(min(oxygen_debt, 60) / 4) + body.owner.resp_rate
 	return max(0, round(rate))

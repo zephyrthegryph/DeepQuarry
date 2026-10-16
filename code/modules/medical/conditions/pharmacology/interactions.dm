@@ -2,7 +2,7 @@
 // Families and the stage template: _pharmacology.dm.
 
 /datum/affliction/chem_interaction/tachycardia_chem
-	factors = alist(BF_HEART_RATE = 30)
+	factors = alist(STAT_HEART_RATE = 30)
 	name = "drug-induced tachycardia"
 	clinical_description = "Inaprovaline (depressant) and hyperzine (stimulant) given together produce erratic, fast heart rate. Resolves when either chem clears."
 	symptom_pool = list(
@@ -39,7 +39,7 @@
 	)
 	min_symptoms = 2
 	max_symptoms = 3
-	factors = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -25, BF_MOTOR_CONTROL = 0.94, BF_O2_SAT = -8, BF_RESP_RATE = -6)
+	factors = alist(STAT_SLOWDOWN = 1.5, STAT_ACCURACY = -25, STAT_MOTOR_CONTROL = 0.94, STAT_O2_SAT = -8, STAT_RESP_RATE = -6)
 	spontaneous_emotes = list("yawn", "stumble", "nod off")
 	spontaneous_emote_prob = 6
 	caused_by_chems = list(
@@ -102,7 +102,7 @@
 	caused_by_chems_organ = O_BRAIN
 
 /datum/affliction/chem_interaction/cardiac_stress_interaction
-	factors = alist(BF_HEART_RATE = 25, BF_BP_SYSTOLIC = 10)
+	factors = alist(STAT_HEART_RATE = 25, STAT_BP_SYSTOLIC = 10)
 	name = "cardiac stress"
 	clinical_description = "Stimulant-driven tachycardia compounds the load on a heart that's actively trying to repair itself. Hyperzine and cordradaxon together stress the cardiac muscle even as the latter tries to heal it."
 	symptom_pool = list(

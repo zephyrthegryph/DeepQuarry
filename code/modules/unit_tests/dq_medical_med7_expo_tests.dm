@@ -97,7 +97,7 @@
 	lepo.affect_blood(H, null, REM)
 	TEST_ASSERT_EQUAL(H.body_temperature(), BODYTEMP_NORMAL - 20, "leporazine has no direct write on top of its tag")
 
-/// C16: a fever is a raised set point (BF_TEMPERATURE), not a per-tick temperature write.
+/// C16: a fever is a raised set point (STAT_TEMPERATURE), not a per-tick temperature write.
 /datum/unit_test/dq_med7_c16_fever_is_setpoint
 
 /datum/unit_test/dq_med7_c16_fever_is_setpoint/Run()

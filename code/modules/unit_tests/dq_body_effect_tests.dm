@@ -4,12 +4,12 @@
 /datum/body_effect/dq_test_stack
 	name = "test stack"
 	stacks = MODIFIER_STACK_ALLOWED
-	factors = alist(BF_SLOWDOWN = 1)
+	factors = alist(STAT_SLOWDOWN = 1)
 
 /datum/body_effect/dq_test_forbid
 	name = "test forbid"
 	stacks = MODIFIER_STACK_FORBID
-	factors = alist(BF_SLOWDOWN = 1)
+	factors = alist(STAT_SLOWDOWN = 1)
 
 /// A timed body effect applies its factors, expires on time, and a stasis hold stops the countdown.
 /datum/unit_test/dq_body_effect_expires_on_body_clock
@@ -101,8 +101,7 @@
 	H.weight_loss = 0
 	H.set_bodytemperature(H.species.body_temperature || H.body_temperature())
 	// A fresh body starts with every domain dirty; its first medical pass settles them
-	// (factors recomputed, dirty condition domains processed), as the first Life() would.
-	H.factor(BF_ALLERGY)
+	// (dirty condition domains processed), as the first Life() would.
 	H.dq_process_dirty_medical_conditions()
 	var/list/steps = list(
 		"life_medical",

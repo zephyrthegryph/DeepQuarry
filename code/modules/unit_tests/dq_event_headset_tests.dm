@@ -4,7 +4,7 @@
 // mutated every human of that species while any single wearer had the
 // headset on, and a second wearer equipping/unequipping their own headset
 // would stomp the first wearer's saved restore value. It should have used
-// worn_factors (BF_SLOWDOWN), which the item already sets, and never touched
+// worn_factors (STAT_SLOWDOWN), which the item already sets, and never touched
 // the shared species datum at all.
 
 /datum/unit_test/dq_event_headset_does_not_mutate_shared_species_datum
@@ -25,8 +25,8 @@
 
 	// The intended effect (extra movement delay while worn) should still land,
 	// just via the wearer's own worn_factors instead of the shared species var.
-	TEST_ASSERT_EQUAL(headset.worn_factors[BF_SLOWDOWN], 0.5, "the headset should contribute its slowdown via worn_factors")
-	TEST_ASSERT_EQUAL(wearer.slowdown, 0.5, "the wearer's own BF_SLOWDOWN factor should reflect the headset")
+	TEST_ASSERT_EQUAL(headset.worn_factors[STAT_SLOWDOWN], 0.5, "the headset should contribute its slowdown via worn_factors")
+	TEST_ASSERT_EQUAL(wearer.slowdown, 0.5, "the wearer's own STAT_SLOWDOWN factor should reflect the headset")
 	TEST_ASSERT_EQUAL(bystander.slowdown, 0, "the bystander should be unaffected by the wearer's headset")
 
 	wearer.drop_from_inventory(headset)

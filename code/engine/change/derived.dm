@@ -179,7 +179,7 @@
 	var/list/derived_by_name
 	/// link var -> list of /datum/derived_use.
 	var/list/uses_by_link
-	/// factor reads: parallel lists of BF_* and the outputs and values that read it.
+	/// factor reads: parallel lists of stat ids and the outputs and values that read it.
 
 /// Everything below: global registries, filled when a type's table is compiled.
 /// type -> /datum/derived_table, or 0 for a type that declares nothing (built on first sight).

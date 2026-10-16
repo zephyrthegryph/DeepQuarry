@@ -51,7 +51,7 @@
 ///      the edge of a cut or pierce, landing it as blunt trauma.
 ///   2. Energy shields (/datum/definition_event/living_shield_injury: shields drain a cell for
 ///      what they absorb).
-///   3. Resistance factors: BF_INCOMING_ALL x BF_INCOMING(category) (modifiers,
+///   3. Resistance factors: the overall incoming stat x the category's (modifiers,
 ///      forms, species baselines, traits, reagents).
 ///   4. The body's species / part multiplier (immunities, prosthetics).
 /// INJURE_IGNORE_RESISTANCE skips stages 2-4. Every stage is recorded when
@@ -177,7 +177,7 @@
 /// resists it (frostbite, cellular, neural, digestion).
 /// THE armour lookup: armour points against `kind` (INJURY_* or ARMOR_BLAST)
 /// at `zone` (a BP_* zone, a limb or an organ; null = averaged over the body).
-/// Worn / natural armour (injury_armor_set()) plus the BF_ARMOR(kind) factor.
+/// Worn / natural armour (injury_armor_set()) plus the armour stat of that kind.
 /mob/living/proc/injury_armor(kind, zone = null)
 	return armor_factor(kind) + injury_armor_set(zone).value(injury_armor_key(kind))
 

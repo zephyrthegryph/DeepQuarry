@@ -475,7 +475,7 @@
 /datum/unit_test/dq_medical_mechanical_slowdown_aggregates/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/base = H.slowdown
-	TEST_ASSERT(abs(base - H.species.baseline_factor(BF_SLOWDOWN)) < 0.001, "fresh mob should have only its species slowdown")
+	TEST_ASSERT(abs(base - H.species.baseline_factor(STAT_SLOWDOWN)) < 0.001, "fresh mob should have only its species slowdown")
 
 	// Affliction factors are authored at severity 100 and scale with it.
 	var/datum/affliction/cellulitis = _spawn_affliction_on(H, BP_TORSO, /datum/affliction/cellulitis)  // slowdown 0.3
@@ -532,7 +532,7 @@
 	TEST_ASSERT_EQUAL(C.stage, "Stage 3", "[total_burn] total burn should be Stage 3 (got [C.stage])")
 
 	// Stage 3's factor table slows the patient heavily.
-	var/stage_slowdown = H.slowdown - H.species.baseline_factor(BF_SLOWDOWN)
+	var/stage_slowdown = H.slowdown - H.species.baseline_factor(STAT_SLOWDOWN)
 	TEST_ASSERT(stage_slowdown > 1.0, "stage 3 slowdown should be >1.0 (got [stage_slowdown])")
 
 	// Treat every burned part except the torso (where burn_shock itself
@@ -670,7 +670,7 @@
 	TEST_ASSERT_NOTNULL(C, "cellulitis didn't spawn")
 	C.set_severity(80)
 
-	// C16: the fever is a raised thermoregulation set point (BF_TEMPERATURE); thermoregulation
+	// C16: the fever is a raised thermoregulation set point (STAT_TEMPERATURE); thermoregulation
 	// then walks the real body temperature toward it. The affliction never writes it directly.
 	var/base = H.species.body_temperature
 	for(var/i in 1 to 10)

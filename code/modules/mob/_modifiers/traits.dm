@@ -10,7 +10,7 @@
 	on_created_text = span_warning("You feel rather weak.")
 	on_expired_text = span_notice("You feel your strength returning to you.")
 
-	factors = alist(BF_ENDURANCE_MULT = 0.8)
+	factors = alist(STAT_ENDURANCE_MULT = 0.8)
 
 /datum/body_effect/trait/frail
 	name = "frail"
@@ -19,86 +19,86 @@
 	on_created_text = span_warning("You feel really weak.")
 	on_expired_text = span_notice("You feel your strength returning to you.")
 
-	factors = alist(BF_ENDURANCE_MULT = 0.6)
+	factors = alist(STAT_ENDURANCE_MULT = 0.6)
 
 /datum/body_effect/trait/weak
 	name = "weak"
 	desc = "A lack of physical strength causes a diminshed capability in close quarters combat"
 
-	factors = alist(BF_MELEE_DAMAGE = 0.8)
+	factors = alist(STAT_MELEE_DAMAGE = 0.8)
 
 /datum/body_effect/trait/wimpy
 	name = "wimpy"
 	desc = "An extreme lack of physical strength causes greatly diminished capability in close quarters combat."
 
-	factors = alist(BF_MELEE_DAMAGE = 0.6)
+	factors = alist(STAT_MELEE_DAMAGE = 0.6)
 
 /datum/body_effect/trait/haemophilia
 	name = "haemophilia"
 	desc = "You bleed much faster than average."
 
-	factors = alist(BF_BLEEDING = 3.0)
+	factors = alist(STAT_BLEEDING = 3.0)
 
 /datum/body_effect/trait/inaccurate
 	name = "Inaccurate"
 	desc = "You're rather inexperienced with guns, you've never used one in your life, or you're just really rusty.  \
 	Regardless, you find it quite difficult to land shots where you wanted them to go."
 
-	factors = alist(BF_ACCURACY = -15, BF_DISPERSION = 1)
+	factors = alist(STAT_ACCURACY = -15, STAT_DISPERSION = 1)
 
 /datum/body_effect/trait/high_metabolism
 	name = "High Metabolsim"
 	desc = "Your body's metabolism is faster than average."
 
-	factors = alist(BF_METABOLISM = 2.0, BF_HEALING_RECEIVED = 1.4)
+	factors = alist(STAT_METABOLISM_MULT = 2.0, STAT_HEALING_RECEIVED = 1.4)
 
 /datum/body_effect/trait/low_metabolism
 	name = "Low Metabolism"
 	desc = "Your body's metabolism is slower than average."
 
-	factors = alist(BF_METABOLISM = 0.5, BF_HEALING_RECEIVED = 0.6)
+	factors = alist(STAT_METABOLISM_MULT = 0.5, STAT_HEALING_RECEIVED = 0.6)
 
 /datum/body_effect/trait/taller
 	name = "Taller"
 	desc = "Your body is taller than average."
-	factors = alist(BF_ICON_SCALE_X = 1, BF_ICON_SCALE_Y = 1.09)
+	factors = alist(STAT_SCALE_MULT_X = 1, STAT_SCALE_MULT_Y = 1.09)
 
 /datum/body_effect/trait/tall
 	name = "Tall"
 	desc = "Your body is a bit taller than average."
-	factors = alist(BF_ICON_SCALE_X = 1, BF_ICON_SCALE_Y = 1.05)
+	factors = alist(STAT_SCALE_MULT_X = 1, STAT_SCALE_MULT_Y = 1.05)
 
 /datum/body_effect/trait/short
 	name = "Short"
 	desc = "Your body is a bit shorter than average."
-	factors = alist(BF_ICON_SCALE_X = 1, BF_ICON_SCALE_Y = 0.95)
+	factors = alist(STAT_SCALE_MULT_X = 1, STAT_SCALE_MULT_Y = 0.95)
 
 
 /datum/body_effect/trait/shorter
 	name = "Shorter"
 	desc = "You are shorter than average."
-	factors = alist(BF_ICON_SCALE_X = 1, BF_ICON_SCALE_Y = 0.915)
+	factors = alist(STAT_SCALE_MULT_X = 1, STAT_SCALE_MULT_Y = 0.915)
 
 /datum/body_effect/trait/fat
 	name = "Overweight"
 	desc = "You are heavier than average."
 
-	factors = alist(BF_METABOLISM = 1.2, BF_SLOWDOWN = 1.1, BF_ENDURANCE_MULT = 1.05, BF_ICON_SCALE_X = 1.054, BF_ICON_SCALE_Y = 1)
+	factors = alist(STAT_METABOLISM_MULT = 1.2, STAT_SLOWDOWN = 1.1, STAT_ENDURANCE_MULT = 1.05, STAT_SCALE_MULT_X = 1.054, STAT_SCALE_MULT_Y = 1)
 
 /datum/body_effect/trait/obese
 	name = "Obese"
 	desc = "You are much heavier than average."
-	factors = alist(BF_METABOLISM = 1.4, BF_SLOWDOWN = 1.2, BF_ENDURANCE_MULT = 1.10, BF_ICON_SCALE_X = 1.095, BF_ICON_SCALE_Y = 1)
+	factors = alist(STAT_METABOLISM_MULT = 1.4, STAT_SLOWDOWN = 1.2, STAT_ENDURANCE_MULT = 1.10, STAT_SCALE_MULT_X = 1.095, STAT_SCALE_MULT_Y = 1)
 
 /datum/body_effect/trait/thin
 	name = "Thin"
 	desc = "You are skinnier than average."
-	factors = alist(BF_METABOLISM = 0.8, BF_MELEE_DAMAGE = 0.95, BF_ENDURANCE_MULT = 0.95, BF_ICON_SCALE_X = 0.945, BF_ICON_SCALE_Y = 1)
+	factors = alist(STAT_METABOLISM_MULT = 0.8, STAT_MELEE_DAMAGE = 0.95, STAT_ENDURANCE_MULT = 0.95, STAT_SCALE_MULT_X = 0.945, STAT_SCALE_MULT_Y = 1)
 
 /datum/body_effect/trait/thinner
 	name = "Very Thin"
 	desc = "You are much skinnier than average."
-	factors = alist(BF_METABOLISM = 0.6, BF_MELEE_DAMAGE = 0.9, BF_ENDURANCE_MULT = 0.90, BF_ICON_SCALE_X = 0.905, BF_ICON_SCALE_Y = 1)
+	factors = alist(STAT_METABOLISM_MULT = 0.6, STAT_MELEE_DAMAGE = 0.9, STAT_ENDURANCE_MULT = 0.90, STAT_SCALE_MULT_X = 0.905, STAT_SCALE_MULT_Y = 1)
 
 /datum/body_effect/trait/colorblind_protanopia
 	name = "Protanopia"

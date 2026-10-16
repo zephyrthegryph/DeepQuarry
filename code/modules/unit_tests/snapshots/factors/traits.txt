@@ -13,9 +13,9 @@
 /datum/trait/neutral/metabolism_down|1|1 => metabolism_mult=0.80000001
 /datum/trait/neutral/metabolism_up|1|1 => metabolism_mult=1.2
 /datum/trait/neutral/singularity_metabolism|1|1 => metabolism_mult=2
-/datum/trait/neutral/xenochimera_YR3|1|1 => slowdown=1 incoming_thermal=0.69999999
+/datum/trait/neutral/xenochimera_YR3|1|1 => incoming_thermal=0.69999999 slowdown=1
 /datum/trait/neutral/xenomorph_hunter|1|1 => slowdown=-0.5
-/datum/trait/neutral/xenomorph_praetorian|1|1 => slowdown=0.1 incoming_physical=0.80000001
+/datum/trait/neutral/xenomorph_praetorian|1|1 => incoming_physical=0.80000001 slowdown=0.1
 /datum/trait/positive/brute_resist_plus|1|1 => incoming_physical=0.60000002
 /datum/trait/positive/brute_resist|1|1 => incoming_physical=0.80000001
 /datum/trait/positive/burn_resist_plus|1|1 => incoming_thermal=0.60000002

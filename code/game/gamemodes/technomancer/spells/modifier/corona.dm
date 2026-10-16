@@ -27,7 +27,7 @@
 
 	on_created_text = span_warning("You start to glow very brightly!")
 	on_expired_text = span_notice("Your glow has ended.")
-	factors = alist(BF_EVASION = -30)
+	factors = alist(STAT_EVASION = -30)
 	stacks = MODIFIER_STACK_EXTEND
 
 /datum/body_effect/technomancer/corona/on_tick(mob/living/L)

@@ -10,7 +10,7 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 2
-	factors = alist(BF_SLOWDOWN = 0.4, BF_MOTOR_CONTROL = 0.98)
+	factors = alist(STAT_SLOWDOWN = 0.4, STAT_MOTOR_CONTROL = 0.98)
 	spontaneous_emotes = list("yawn", "nod off")
 	spontaneous_emote_prob = 4
 	caused_by_chems = list(REAGENT_ID_OXYCODONE = 5)
@@ -38,7 +38,7 @@
 	)
 	min_symptoms = 2
 	max_symptoms = 3
-	factors = alist(BF_SLOWDOWN = 2, BF_ACCURACY = -40, BF_MOTOR_CONTROL = 0.9, BF_DISABLE_DURATION = 0.5, BF_ANALGESIA = 50, BF_HEART_RATE = -15, BF_O2_SAT = -20, BF_RESP_RATE = -10)
+	factors = alist(STAT_SLOWDOWN = 2, STAT_ACCURACY = -40, STAT_MOTOR_CONTROL = 0.9, STAT_DISABLE_DURATION = 0.5, STAT_ANALGESIA = 50, STAT_HEART_RATE = -15, STAT_O2_SAT = -20, STAT_RESP_RATE = -10)
 	spontaneous_emotes = list("collapse", "yawn", "fall")
 	spontaneous_emote_prob = 10
 	caused_by_chems = list(REAGENT_ID_OXYCODONE = 20)
@@ -49,18 +49,18 @@
 		list(list(
 			/datum/affliction_symptom/drowsy       = 75,
 			/datum/affliction_symptom/short_breath = 50,
-		), 1, 2, list("factors" = alist(BF_SLOWDOWN = 0.6, BF_ACCURACY = -10, BF_DISABLE_DURATION = 0.85, BF_ANALGESIA = 20, BF_HEART_RATE = -5, BF_O2_SAT = -6, BF_RESP_RATE = -3), "spontaneous_emotes" = list("yawn"), "spontaneous_emote_prob" = 3)),
+		), 1, 2, list("factors" = alist(STAT_SLOWDOWN = 0.6, STAT_ACCURACY = -10, STAT_DISABLE_DURATION = 0.85, STAT_ANALGESIA = 20, STAT_HEART_RATE = -5, STAT_O2_SAT = -6, STAT_RESP_RATE = -3), "spontaneous_emotes" = list("yawn"), "spontaneous_emote_prob" = 3)),
 		list(list(
 			/datum/affliction_symptom/drowsy            = 90,
 			/datum/affliction_symptom/labored_breathing = 80,
 			/datum/affliction_symptom/dizziness         = 50,
-		), 2, 3, list("factors" = alist(BF_SLOWDOWN = 1.4, BF_ACCURACY = -25, BF_MOTOR_CONTROL = 0.95, BF_DISABLE_DURATION = 0.7, BF_ANALGESIA = 37.5, BF_HEART_RATE = -10, BF_O2_SAT = -14, BF_RESP_RATE = -7), "spontaneous_emotes" = list("yawn", "nod off"), "spontaneous_emote_prob" = 6)),
+		), 2, 3, list("factors" = alist(STAT_SLOWDOWN = 1.4, STAT_ACCURACY = -25, STAT_MOTOR_CONTROL = 0.95, STAT_DISABLE_DURATION = 0.7, STAT_ANALGESIA = 37.5, STAT_HEART_RATE = -10, STAT_O2_SAT = -14, STAT_RESP_RATE = -7), "spontaneous_emotes" = list("yawn", "nod off"), "spontaneous_emote_prob" = 6)),
 		list(list(
 			/datum/affliction_symptom/drowsy            = 100,
 			/datum/affliction_symptom/labored_breathing = 100,
 			/datum/affliction_symptom/cyanosis          = 85,
 			/datum/affliction_symptom/cold_mottled_skin = 50,
-		), 3, 4, list("factors" = alist(BF_SLOWDOWN = 2.4, BF_ACCURACY = -50, BF_MOTOR_CONTROL = 0.88, BF_DISABLE_DURATION = 0.5, BF_ANALGESIA = 50, BF_HEART_RATE = -18, BF_O2_SAT = -25, BF_RESP_RATE = -12), "spontaneous_emotes" = list("collapse", "yawn", "fall"), "spontaneous_emote_prob" = 12, "always_spawns" = list(/datum/affliction/respiratory_arrest))),
+		), 3, 4, list("factors" = alist(STAT_SLOWDOWN = 2.4, STAT_ACCURACY = -50, STAT_MOTOR_CONTROL = 0.88, STAT_DISABLE_DURATION = 0.5, STAT_ANALGESIA = 50, STAT_HEART_RATE = -18, STAT_O2_SAT = -25, STAT_RESP_RATE = -12), "spontaneous_emotes" = list("collapse", "yawn", "fall"), "spontaneous_emote_prob" = 12, "always_spawns" = list(/datum/affliction/respiratory_arrest))),
 	)
 
 /datum/affliction/overdose/tramadol
@@ -144,22 +144,22 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 2
-	factors = alist(BF_SLOWDOWN = 0.3)
+	factors = alist(STAT_SLOWDOWN = 0.3)
 	caused_by_chems = list(REAGENT_ID_MENTHOL = 30)
 	caused_by_chems_organ = O_BRAIN
 
 /datum/affliction/overdose/menthol
 	overdose_stage_data = list(
-		list(list(/datum/affliction_symptom/chills = 60), 0, 1, list("factors" = alist(BF_SLOWDOWN = 0.1))),
+		list(list(/datum/affliction_symptom/chills = 60), 0, 1, list("factors" = alist(STAT_SLOWDOWN = 0.1))),
 		list(list(
 			/datum/affliction_symptom/chills    = 75,
 			/datum/affliction_symptom/drowsy    = 55,
 			/datum/affliction_symptom/dizziness = 40,
-		), 1, 2, list("factors" = alist(BF_SLOWDOWN = 0.25))),
+		), 1, 2, list("factors" = alist(STAT_SLOWDOWN = 0.25))),
 		list(list(
 			/datum/affliction_symptom/chills            = 90,
 			/datum/affliction_symptom/drowsy            = 75,
 			/datum/affliction_symptom/dizziness         = 60,
 			/datum/affliction_symptom/cold_mottled_skin = 50,
-		), 2, 3, list("factors" = alist(BF_SLOWDOWN = 0.45))),
+		), 2, 3, list("factors" = alist(STAT_SLOWDOWN = 0.45))),
 	)
