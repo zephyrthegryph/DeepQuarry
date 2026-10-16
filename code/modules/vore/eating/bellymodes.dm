@@ -289,11 +289,11 @@
 		// We don't want the sounds to overlap, but we do want them to steadily replay.
 		// We also don't want the sounds to play if the pred hasn't marked this belly as fleshy, or doesn't
 		// have the right sounds to play.
-		if(is_wet && wet_loop && (COOLDOWN_FINISHED(M, next_preyloop))) //Removed isbelly(M.loc) as some viewers might be indirectly in the belly
+		if(is_wet && wet_loop && (cooldown_ready(M, next_preyloop))) //Removed isbelly(M.loc) as some viewers might be indirectly in the belly
 			M.stop_sound_channel(CHANNEL_PREYLOOP)
 			var/sound/preyloop = sound('sound/vore/sunesound/prey/loop.ogg')
 			M.playsound_local(get_turf(src), preyloop, 80, 0, channel = CHANNEL_PREYLOOP, frequency = noise_freq)
-			EXPIRY_SET(M, next_preyloop, (52 SECONDS), CLOCK_WORLD)
+			cooldown_start(M, next_preyloop, 52 SECONDS)
 
 /obj/belly/proc/handle_digesting_item(obj/item/I, touchable_amount, delta_factor = 1)
 	var/did_an_item = FALSE

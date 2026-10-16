@@ -10,7 +10,6 @@
 	var/absorbing_prey = 0 				// Determines if the person is using the succubus drain or not. See station_special_abilities_vr.
 	var/drain_finalized = 0				// Determines if the succubus drain will be KO'd/absorbed. Can be toggled on at any time.
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
-	EXPIRY_DECLARE(next_preyloop) // For Fancy sound internal loop
 	var/vis_height = 32					// Sprite height used for resize features.
 	var/digestion_in_progress = FALSE	// Gradual corpse gurgles
 	var/list/trait_injection_reagents	//List of all the reagents allowed to be used for injection via venom bite. Lazy.
