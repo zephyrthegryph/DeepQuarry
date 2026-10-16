@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The body factors become stats on living mobs, read as plain vars (L.slowdown), composed by the stat engine instead of the body's private fold"
+  - code_imp: "Stats gain bounds, fast paths for every numeric rule, a per-stat hold index and table holds (hold_table)"

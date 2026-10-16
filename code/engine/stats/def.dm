@@ -29,8 +29,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_def)
 	var/boolean = FALSE
 	/// TRUE for a FORMULA stat.
 	var/is_formula = FALSE
-	/// TRUE for the rules stat_compute_fast() folds without a row list (ALL, ANY, SUM).
+	/// TRUE for the rules stat_compute_fast() folds without a row list (ALL, ANY, SUM, PRODUCT, MAX, MIN, MASK_OR).
 	var/fast = FALSE
+	/// bounds = list(lo, hi): the composed value of a numeric stat is clamped to them (before an override replaces it). A bound the declaration leaves
+	/// infinite stays null, so an unbounded side costs nothing. `clamps` is TRUE when either side is set.
+	var/bound_lo
+	var/bound_hi
+	var/clamps = FALSE
 	/// What the stat is with nothing contributing: the rule's own, or base =.
 	var/base
 	var/reapply = REAPPLY_MAX
@@ -69,6 +74,10 @@ GLOBAL_LIST_EMPTY(stat_type_index) // type -> /datum/stat_type_info
 		if(STAT_RULE_SET)
 			return null
 	return null
+
+/// TRUE for the rules whose value is not one number (a keyed list, a formula's result): they take no bounds.
+/proc/def_keyed_or_formula(rule)
+	return rule == STAT_RULE_SUM_PER_KEY || rule == STAT_RULE_FORMULA
 
 /// TRUE for a rule that takes no value from a contribution (a boolean stat).
 /proc/stat_rule_is_boolean(rule)
@@ -118,8 +127,16 @@ PROC_SUMMARY(/proc/stat_defs_build) // vars[] / call() dispatcher: the walk cann
 	def.boolean = stat_rule_is_boolean(rule)
 	def.is_formula = (rule == STAT_RULE_FORMULA)
 	def.keyed = (rule == STAT_RULE_SUM_PER_KEY)
-	def.fast = (rule == STAT_RULE_ALL || rule == STAT_RULE_ANY || rule == STAT_RULE_SUM)
+	def.fast = (rule == STAT_RULE_ALL || rule == STAT_RULE_ANY || rule == STAT_RULE_SUM || rule == STAT_RULE_PRODUCT || rule == STAT_RULE_MAX || rule == STAT_RULE_MIN || rule == STAT_RULE_MASK_OR)
 	def.base = base
+	var/list/bounds = opts["bounds"]
+	if(!isnull(bounds))
+		if(!islist(bounds) || length(bounds) != 2 || stat_rule_is_boolean(rule) || def_keyed_or_formula(rule))
+			declare_report("STAT([type], [name]): bounds = list(lo, hi) is for a numeric stat")
+		else
+			def.bound_lo = (isnum(bounds[1]) && bounds[1] > -INFINITY) ? bounds[1] : null
+			def.bound_hi = (isnum(bounds[2]) && bounds[2] < INFINITY) ? bounds[2] : null
+			def.clamps = !isnull(def.bound_lo) || !isnull(def.bound_hi)
 	if(!isnull(opts["reapply"]))
 		def.reapply = opts["reapply"]
 	if(def.keyed)

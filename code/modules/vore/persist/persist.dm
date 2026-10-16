@@ -209,10 +209,10 @@
 /proc/resolve_excess_nutrition(mob/living/carbon/C)
 	if(C.stat == DEAD)
 		return // You don't metabolize if dead
-	if(!C.metabolism || !C.species || !C.species.hunger_factor)
+	if(!C.weight_metabolism || !C.species || !C.species.hunger_factor)
 		return // You don't metabolize if you have no metabolism or your species doesn't eat!
 	// Each Life() tick, you gain/lose weight proportional to your metabolism, and lose species.hunger_factor nutrition
-	var/weight_per_nutrition = C.metabolism / C.species.hunger_factor
+	var/weight_per_nutrition = C.weight_metabolism / C.species.hunger_factor
 
 	if(nutrition_of(C) > MIN_NUTRITION_TO_GAIN && C.weight < MAX_MOB_WEIGHT && C.weight_gain)
 		// Weight Gain!

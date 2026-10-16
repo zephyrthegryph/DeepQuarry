@@ -20,6 +20,9 @@
 /datum/stat_record
 	/// The hold rows, oldest first.
 	var/list/holds
+	/// "[stat id]" -> the rows of that stat, oldest first: the same row lists `holds` keeps, so a recompute or a lookup of one stat visits only its
+	/// own rows. Kept by stat_rows_add() and stat_hold_remove() alone.
+	var/list/by_stat
 	/// stat id ("[id]") -> the value of a virtual stat (a stat with no var of its own).
 	var/list/virtual
 	/// stat id ("[id]") -> TRUE while the stat waits in the marked queue.
@@ -150,7 +153,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 		row[H_REASON] = reason || row[H_REASON]
 	else
 		row = list(def.id, source, value, expires, priority, flags, clock, reason, ++GLOB.stat_hold_serial, key, null)
-		rec.holds += list(row)
+		stat_rows_add(rec, row)
 		if(isdatum(source))
 			var/datum/stat_record/src_rec = stat_record_of(source)
 			LAZYOR(src_rec.held_on, E)
@@ -197,10 +200,22 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 
 /// The row of (stat, source, key) in the record, or null.
 /proc/stat_hold_find(datum/stat_record/rec, stat_id, source, key)
-	for(var/list/row as anything in rec.holds)
-		if(row[H_STAT] == stat_id && row[H_SOURCE] == source && row[H_KEY] == key)
+	for(var/list/row as anything in rec.by_stat?["[stat_id]"])
+		if(row[H_SOURCE] == source && row[H_KEY] == key)
 			return row
 	return null
+
+/// Adds a row to the record: the one list of every row and the index of its stat.
+/proc/stat_rows_add(datum/stat_record/rec, list/row)
+	rec.holds += list(row)
+	if(!rec.by_stat)
+		rec.by_stat = list()
+	var/skey = "[row[H_STAT]]"
+	var/list/mine = rec.by_stat[skey]
+	if(!mine)
+		mine = list()
+		rec.by_stat[skey] = mine
+	mine += list(row)
 
 /// The hold row of (stat, source, key) on `E`, or null when `E` holds none. The record is the engine's own state: callers outside the engine ask here.
 /proc/stat_hold_row_of(datum/E, stat_id, source, key = null)
@@ -217,8 +232,8 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 	if(!rec?.holds)
 		return FALSE
 	var/removed = FALSE
-	for(var/list/row as anything in rec.holds.Copy())
-		if(row[H_STAT] != def.id || (def.keyed ? (!isnull(key) && row[H_KEY] != key) : row[H_KEY]))
+	for(var/list/row as anything in rec.by_stat?[def.skey]?.Copy())
+		if(def.keyed ? (!isnull(key) && row[H_KEY] != key) : row[H_KEY])
 			continue
 		if(source == SRC_ALL || row[H_SOURCE] == source)
 			stat_hold_remove(E, rec, row)
@@ -307,8 +322,15 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 /// Takes one row out of the record, and its source's index of where it holds.
 /proc/stat_hold_remove(datum/E, datum/stat_record/rec, list/row)
 	rec.holds -= list(row)
+	var/skey = "[row[H_STAT]]"
+	var/list/mine = rec.by_stat?[skey]
+	if(mine)
+		mine -= list(row)
+		if(!length(mine))
+			rec.by_stat -= skey
 	if(!length(rec.holds))
 		rec.holds = null
+		rec.by_stat = null
 	var/source = row[H_SOURCE]
 	if(isdatum(source))
 		var/datum/src_datum = source
@@ -444,5 +466,6 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 			if(src_rec?.held_on)
 				src_rec.held_on -= D
 	rec.holds = null
+	rec.by_stat = null
 	// The contributes_to rows this entity placed on other entities leave with it (their source is this datum, released above); forget the targets.
 	rec.ct_targets = null

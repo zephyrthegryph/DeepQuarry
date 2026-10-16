@@ -1,0 +1,48 @@
+/datum/affliction/brain_damage#Critical|1|1 => heart_rate=-20 bp_systolic=-30 o2_sat=-10 slowdown=2.5 accuracy=-60 motor_control=0.89999998 action_blocks=3
+/datum/affliction/burn_shock#Stage 1|1|1 => heart_rate=10 bp_systolic=-5
+/datum/affliction/burn_shock#Stage 2|1|1 => heart_rate=25 bp_systolic=-20 bp_diastolic=-10 slowdown=0.60000002
+/datum/affliction/burn_shock#Stage 3|1|1 => circulation=0.5 heart_rate=40 bp_systolic=-35 bp_diastolic=-20 slowdown=1.4 accuracy=-20 motor_control=0.97000003
+/datum/affliction/cardiac_arrhythmia#Asystole|1|1 => pump=0
+/datum/affliction/cardiac_arrhythmia#Tachycardia|1|1 => pump=0.85000002 heart_rate=55 bp_systolic=-15
+/datum/affliction/cardiac_arrhythmia#VF|1|1 => pump=0
+/datum/affliction/heart_damage#Critical|1|1 => heart_rate=-30 bp_systolic=-50 o2_sat=-10
+/datum/affliction/heart_damage#Moderate|1|1 => bp_systolic=-20 bp_diastolic=-10 o2_sat=-8
+/datum/affliction/overdose/cordradaxon#Critical|1|1 => heart_rate=35
+/datum/affliction/overdose/cordradaxon#Mild|1|1 => heart_rate=10
+/datum/affliction/overdose/cordradaxon#Severe|1|1 => heart_rate=20
+/datum/affliction/overdose/dexalin#Critical|1|1 => o2_sat=-15 resp_rate=-4
+/datum/affliction/overdose/dexalin#Severe|1|1 => o2_sat=-8
+/datum/affliction/overdose/dexalinp#Critical|1|1 => o2_sat=-20 resp_rate=-5
+/datum/affliction/overdose/dexalinp#Severe|1|1 => o2_sat=-10
+/datum/affliction/overdose/hyperzine#Critical|1|1 => analgesia=20 heart_rate=45 bp_systolic=25 slowdown=-1.2 accuracy=25
+/datum/affliction/overdose/hyperzine#Mild|1|1 => analgesia=5 heart_rate=15 bp_systolic=8 slowdown=-0.40000001 accuracy=8
+/datum/affliction/overdose/hyperzine#Severe|1|1 => analgesia=10 heart_rate=28 bp_systolic=14 slowdown=-0.80000001 accuracy=15
+/datum/affliction/overdose/immunosuprizine#Critical|1|1 => immune_suppression=0.55000001
+/datum/affliction/overdose/immunosuprizine#Mild|1|1 => immune_suppression=0.2
+/datum/affliction/overdose/immunosuprizine#Severe|1|1 => immune_suppression=0.34999999
+/datum/affliction/overdose/inaprovaline#Critical|1|1 => heart_rate=-22 bp_systolic=-28 resp_rate=-3
+/datum/affliction/overdose/inaprovaline#Mild|1|1 => heart_rate=-5 bp_systolic=-8
+/datum/affliction/overdose/inaprovaline#Severe|1|1 => heart_rate=-12 bp_systolic=-15
+/datum/affliction/overdose/menthol#Critical|1|1 => slowdown=0.44999999
+/datum/affliction/overdose/menthol#Mild|1|1 => slowdown=0.1
+/datum/affliction/overdose/menthol#Severe|1|1 => slowdown=0.25
+/datum/affliction/overdose/norepinephrine#Critical|1|1 => heart_rate=35 bp_systolic=40 bp_diastolic=22
+/datum/affliction/overdose/norepinephrine#Mild|1|1 => heart_rate=10 bp_systolic=12
+/datum/affliction/overdose/norepinephrine#Severe|1|1 => heart_rate=22 bp_systolic=25 bp_diastolic=12
+/datum/affliction/overdose/oxycodone#Critical|1|1 => analgesia=50 heart_rate=-18 o2_sat=-25 resp_rate=-12 slowdown=2.4000001 accuracy=-50 motor_control=0.88 disable_duration=0.5
+/datum/affliction/overdose/oxycodone#Mild|1|1 => analgesia=20 heart_rate=-5 o2_sat=-6 resp_rate=-3 slowdown=0.60000002 accuracy=-10 disable_duration=0.85000002
+/datum/affliction/overdose/oxycodone#Severe|1|1 => analgesia=37.5 heart_rate=-10 o2_sat=-14 resp_rate=-7 slowdown=1.4 accuracy=-25 motor_control=0.94999999 disable_duration=0.69999999
+/datum/affliction/overdose/respirodaxon#Critical|1|1 => o2_sat=-14 resp_rate=-4
+/datum/affliction/overdose/respirodaxon#Severe|1|1 => o2_sat=-6
+/datum/affliction/overdose/synaptizine#Critical|1|1 => neural_repair=0.34999999
+/datum/affliction/overdose/synaptizine#Mild|1|1 => neural_repair=0.1
+/datum/affliction/overdose/synaptizine#Severe|1|1 => neural_repair=0.22
+/datum/affliction/pneumothorax#Simple|1|1 => lung_mechanics=0.69999999 resp_rate=6 slowdown=0.5
+/datum/affliction/pneumothorax#Tension|1|1 => lung_mechanics=0.25 pump=0.60000002 heart_rate=25 bp_systolic=-25 resp_rate=12 slowdown=1.5 accuracy=-20
+/datum/affliction/untreated_fracture#Splinted arm|1|1 => pain=5 accuracy=-5
+/datum/affliction/untreated_fracture#Splinted leg|1|1 => pain=5 slowdown=0.5
+/datum/affliction/untreated_fracture#Splinted|1|1 => pain=5
+/datum/affliction/untreated_fracture#Unset arm|1|1 => pain=15 accuracy=-15
+/datum/affliction/untreated_fracture#Unset leg|1|1 => pain=15 slowdown=1.5
+/datum/affliction/untreated_fracture#Unset|1|1 => pain=15 slowdown=0.5
+

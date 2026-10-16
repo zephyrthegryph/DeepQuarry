@@ -1,6 +1,6 @@
 # Proposal: the stat layer for body factors (phase 1, design only)
 
-Status: proposal, nothing converted. Branch `rewrite/stat-layer` (from origin/master `c3cb037784`). Scope: doc section 5
+Status: approved 2026-10-16 (decisions D1 to D10 as recommended); waves 0 to 2 in progress, wave 3 deferred. Branch `rewrite/stat-layer` (from origin/master `c3cb037784`). Scope: doc section 5
 (`final_api.html`), the body-factor (`BF_*`) system in `code/modules/body/factors.dm`, and the leftovers of the old grant and
 contribution store.
 
@@ -390,41 +390,43 @@ New (named, none written yet): `dq_factor_oracle_parity`, `dq_factor_table_pin` 
 `dq_factor_affliction_sweep` (every afflicted type at severity 10..100 and every stage), `dq_factor_effect_sweep` (every body effect and modifier, stacks 1..3), `dq_stat_hold_table` (G1 semantics: swap, scale, stacks,
 release, refresh no-op), `dq_stat_bounds`, `dq_stat_fast_paths` (fast path equals general path for every rule). All run with `bash tools/dq_focused_test.sh`; none needs the full suite.
 
-## 5. Open decisions
+## 5. Decisions
+
+All of D1 to D10 were approved as recommended on 2026-10-16. Each entry keeps its recommendation text as the record of what was approved.
 
 Each has a recommendation; the first five change the work, the rest are cleanups.
 
-**D1. Scope of the follow-up.** Do waves 0 to 2 now and leave wave 3 until the one-block `CAPABILITIES` form lands, or wait and do it all at once?
+**D1. Scope of the follow-up.** **[approved 2026-10-16]** Do waves 0 to 2 now and leave wave 3 until the one-block `CAPABILITIES` form lands, or wait and do it all at once?
 Recommendation: waves 0 to 2 now. They use only forms on master, remove the second composition engine and the 691 `BF_` references from production code paths, and wave 3 then
 becomes a pure data move.
 
-**D2. Real vars or virtual stats for the 70.** Real vars cost about 560 B per `/mob/living` and give the doc's "reads are plain var reads"; virtual stats save the memory but a
+**D2. Real vars or virtual stats for the 70.** **[approved 2026-10-16]** Real vars cost about 560 B per `/mob/living` and give the doc's "reads are plain var reads"; virtual stats save the memory but a
 holdless virtual PRODUCT stat composes on every read until first recomputed (`stat_value()`), which is worse on the movement and `injure()` paths.
 Recommendation: real vars for all.
 
-**D3. Names that collide with existing vars** (`evasion`, `icon_scale_x`, `icon_scale_y`). Recommendation: `evasion` becomes the stat (its initial value is the type constant; convert direct writers
+**D3. Names that collide with existing vars** **[approved 2026-10-16]** (`evasion`, `icon_scale_x`, `icon_scale_y`). Recommendation: `evasion` becomes the stat (its initial value is the type constant; convert direct writers
 to holds); the two scale factors are named `scale_mult_x` and `scale_mult_y` and `get_icon_scale_x()` multiplies the existing base by them.
 
-**D4. What "identical numeric output" means.** The new fold multiplies PRODUCT contributions in a different order than the old one (row creation order versus afflictions, effects, stasis, reagents, plan), so the last float bit can differ.
+**D4. What "identical numeric output" means.** **[approved 2026-10-16]** The new fold multiplies PRODUCT contributions in a different order than the old one (row creation order versus afflictions, effects, stasis, reagents, plan), so the last float bit can differ.
 Recommendation: relative tolerance 1e-5 for numeric stats in the oracle and pins, exact for flags and booleans, plus the wave-2 boundary audit of consumers that compare a factor to a constant. If bit-exact is required instead, the engine must sort a
 stat's rows by an explicit `fold_order` column (cheap: one extra row field) at the cost of a sort per recompute of a multi-row PRODUCT stat; I advise against it.
 
-**D5. Supports and restrictions** (`add_support`, `add_restriction`, `set_support`, 31 callers): floors and multipliers applied *after* the product to a physiology input, with duration and a `still_valid` callback.
+**D5. Supports and restrictions** **[approved 2026-10-16]** (`add_support`, `add_restriction`, `set_support`, 31 callers): floors and multipliers applied *after* the product to a physiology input, with duration and a `still_valid` callback.
 Recommendation: out of scope for this work. They are not factors (a bag-valve mask floors the *drive input*, deliberately after the airway product), and forcing them into holds on the same stat would change where the floor applies.
 Revisit with `hold_override`-style priority only if a design for them appears in doc 14.
 
-**D6. Eager source refresh versus per-source triggers.** Recommendation: waves 1 and 2 keep `refresh_factor_sources()` on exactly today's dirty events (balance-neutral, section 3.5); wave 3 replaces it with tracked band reads and records the
+**D6. Eager source refresh versus per-source triggers.** **[approved 2026-10-16]** Recommendation: waves 1 and 2 keep `refresh_factor_sources()` on exactly today's dirty events (balance-neutral, section 3.5); wave 3 replaces it with tracked band reads and records the
 within-band change in `intended_changes.md`. The alternative, per-source triggers from wave 1, is simpler but changes values inside doses and severity bands depending on event history.
 
-**D7. `MAX/MIN` base.** Recommendation: no engine change; declare `schema = num(base, hi)` on every MAX factor and assert it in test builds (section 3.4). Alternative: a `floor_base = TRUE` stat option that makes `MAX` mean `max(base, contributions)`.
+**D7. `MAX/MIN` base.** **[approved 2026-10-16]** Recommendation: no engine change; declare `schema = num(base, hi)` on every MAX factor and assert it in test builds (section 3.4). Alternative: a `floor_base = TRUE` stat option that makes `MAX` mean `max(base, contributions)`.
 
-**D8. Narrow the physiology invalidation** from "any of the 70 factors changed" to the factors physiology and vitals actually read. Recommendation: yes, in wave 2c, with the physiology vector pin; it cuts recompute frequency and cannot change
+**D8. Narrow the physiology invalidation** **[approved 2026-10-16]** from "any of the 70 factors changed" to the factors physiology and vitals actually read. Recommendation: yes, in wave 2c, with the physiology vector pin; it cuts recompute frequency and cannot change
 outputs because physiology derives from its declared reads.
 
-**D9. Delete dead factors.** `ARRHYTHMIA_RISK`, `VISION` (one test reference), `HEARING`, and `SEDATION` (read, never written; keep only if a planned source exists). `INCOMING_NEURAL` is declared with 0 table entries but is a real category.
+**D9. Delete dead factors.** **[approved 2026-10-16]** `ARRHYTHMIA_RISK`, `VISION` (one test reference), `HEARING`, and `SEDATION` (read, never written; keep only if a planned source exists). `INCOMING_NEURAL` is declared with 0 table entries but is a real category.
 Recommendation: delete `arrhythmia_risk`, `vision`, `hearing`; keep `sedation`, `incoming_neural`; fix the `dq_body_factor_book_text` test accordingly. This is dead code, not a behaviour change.
 
-**D10. Hard ban.** Recommendation: when wave 2d lands, add `factor(`, `BF_*` outside the compatibility translation table to the `legacy_forms` banned list with an empty baseline, per AGENTS.md section 3b ("the commit that lands a replacement adds its ban and converts the callers").
+**D10. Hard ban.** **[approved 2026-10-16]** Recommendation: when wave 2d lands, add `factor(`, `BF_*` outside the compatibility translation table to the `legacy_forms` banned list with an empty baseline, per AGENTS.md section 3b ("the commit that lands a replacement adds its ban and converts the callers").
 
 ## 6. Notes for the follow-up lane
 

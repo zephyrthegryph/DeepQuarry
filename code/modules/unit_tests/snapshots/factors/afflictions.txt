@@ -1,0 +1,148 @@
+/datum/affliction/airway_burn|0.25|1 => o2_sat=-2.5 resp_rate=2 slowdown=0.2
+/datum/affliction/airway_burn|0.5|1 => o2_sat=-5 resp_rate=4 slowdown=0.40000001
+/datum/affliction/airway_burn|1|1 => o2_sat=-10 resp_rate=8 slowdown=0.80000001
+/datum/affliction/airway_edema|0.25|1 => heart_rate=5 bp_systolic=-3.75
+/datum/affliction/airway_edema|0.5|1 => heart_rate=10 bp_systolic=-7.5
+/datum/affliction/airway_edema|1|1 => heart_rate=20 bp_systolic=-15
+/datum/affliction/airway_obstruction|0.25|1 => heart_rate=3.75 action_blocks=1
+/datum/affliction/airway_obstruction|0.5|1 => heart_rate=7.5 action_blocks=1
+/datum/affliction/airway_obstruction|1|1 => heart_rate=15 action_blocks=1
+/datum/affliction/cellulitis|0.25|1 => temperature=0.5 slowdown=0.075000003
+/datum/affliction/cellulitis|0.5|1 => temperature=1 slowdown=0.15000001
+/datum/affliction/cellulitis|1|1 => temperature=2 slowdown=0.30000001
+/datum/affliction/chem_interaction/cardiac_stress_interaction|0.25|1 => heart_rate=6.25 bp_systolic=2.5
+/datum/affliction/chem_interaction/cardiac_stress_interaction|0.5|1 => heart_rate=12.5 bp_systolic=5
+/datum/affliction/chem_interaction/cardiac_stress_interaction|1|1 => heart_rate=25 bp_systolic=10
+/datum/affliction/chem_interaction/opioid_co_administration|0.25|1 => o2_sat=-2 resp_rate=-1.5 slowdown=0.375 accuracy=-6.25 motor_control=0.98500001
+/datum/affliction/chem_interaction/opioid_co_administration|0.5|1 => o2_sat=-4 resp_rate=-3 slowdown=0.75 accuracy=-12.5 motor_control=0.97000003
+/datum/affliction/chem_interaction/opioid_co_administration|1|1 => o2_sat=-8 resp_rate=-6 slowdown=1.5 accuracy=-25 motor_control=0.94
+/datum/affliction/chem_interaction/tachycardia_chem|0.25|1 => heart_rate=7.5
+/datum/affliction/chem_interaction/tachycardia_chem|0.5|1 => heart_rate=15
+/datum/affliction/chem_interaction/tachycardia_chem|1|1 => heart_rate=30
+/datum/affliction/chem_side_effect/hyperzine_palpitations|0.25|1 => heart_rate=5 bp_systolic=2
+/datum/affliction/chem_side_effect/hyperzine_palpitations|0.5|1 => heart_rate=10 bp_systolic=4
+/datum/affliction/chem_side_effect/hyperzine_palpitations|1|1 => heart_rate=20 bp_systolic=8
+/datum/affliction/chem_side_effect/oxycodone_drowsy|0.25|1 => slowdown=0.1 motor_control=0.995
+/datum/affliction/chem_side_effect/oxycodone_drowsy|0.5|1 => slowdown=0.2 motor_control=0.99000001
+/datum/affliction/chem_side_effect/oxycodone_drowsy|1|1 => slowdown=0.40000001 motor_control=0.98000002
+/datum/affliction/compartment_syndrome|0.25|1 => slowdown=0.25 accuracy=-3.75 motor_control=0.99250001
+/datum/affliction/compartment_syndrome|0.5|1 => slowdown=0.5 accuracy=-7.5 motor_control=0.98500001
+/datum/affliction/compartment_syndrome|1|1 => slowdown=1 accuracy=-15 motor_control=0.97000003
+/datum/affliction/concussion|0.25|1 => slowdown=0.1 accuracy=-3.75
+/datum/affliction/concussion|0.5|1 => slowdown=0.2 accuracy=-7.5
+/datum/affliction/concussion|1|1 => slowdown=0.40000001 accuracy=-15
+/datum/affliction/contagion/anxiety|0.25|1 => heart_rate=6.25
+/datum/affliction/contagion/anxiety|0.5|1 => heart_rate=12.5
+/datum/affliction/contagion/anxiety|1|1 => heart_rate=25
+/datum/affliction/contagion/appendicitis|0.25|1 => heart_rate=3.75 temperature=0.375
+/datum/affliction/contagion/appendicitis|0.5|1 => heart_rate=7.5 temperature=0.75
+/datum/affliction/contagion/appendicitis|1|1 => heart_rate=15 temperature=1.5
+/datum/affliction/contagion/brainrot|0.25|1 => temperature=0.375 accuracy=-2.5
+/datum/affliction/contagion/brainrot|0.5|1 => temperature=0.75 accuracy=-5
+/datum/affliction/contagion/brainrot|1|1 => temperature=1.5 accuracy=-10
+/datum/affliction/contagion/cold9|0.25|1 => temperature=-0.375 slowdown=0.375 motor_control=0.99250001
+/datum/affliction/contagion/cold9|0.5|1 => temperature=-0.75 slowdown=0.75 motor_control=0.98500001
+/datum/affliction/contagion/cold9|1|1 => temperature=-1.5 slowdown=1.5 motor_control=0.97000003
+/datum/affliction/contagion/cold|0.25|1 => temperature=0.125
+/datum/affliction/contagion/cold|0.5|1 => temperature=0.25
+/datum/affliction/contagion/cold|1|1 => temperature=0.5
+/datum/affliction/contagion/fleshy_spread|0.25|1 => temperature=0.5
+/datum/affliction/contagion/fleshy_spread|0.5|1 => temperature=1
+/datum/affliction/contagion/fleshy_spread|1|1 => temperature=2
+/datum/affliction/contagion/flu|0.25|1 => heart_rate=2.5 temperature=0.375 slowdown=0.075000003
+/datum/affliction/contagion/flu|0.5|1 => heart_rate=5 temperature=0.75 slowdown=0.15000001
+/datum/affliction/contagion/flu|1|1 => heart_rate=10 temperature=1.5 slowdown=0.30000001
+/datum/affliction/contagion/food_poisoning|0.25|1 => temperature=0.2
+/datum/affliction/contagion/food_poisoning|0.5|1 => temperature=0.40000001
+/datum/affliction/contagion/food_poisoning|1|1 => temperature=0.80000001
+/datum/affliction/contagion/gbs/curable|0.25|1 => heart_rate=5 slowdown=0.25 motor_control=0.98750001
+/datum/affliction/contagion/gbs/curable|0.5|1 => heart_rate=10 slowdown=0.5 motor_control=0.97500002
+/datum/affliction/contagion/gbs/curable|1|1 => heart_rate=20 slowdown=1 motor_control=0.94999999
+/datum/affliction/contagion/gbs|0.25|1 => heart_rate=5 slowdown=0.25 motor_control=0.98750001
+/datum/affliction/contagion/gbs|0.5|1 => heart_rate=10 slowdown=0.5 motor_control=0.97500002
+/datum/affliction/contagion/gbs|1|1 => heart_rate=20 slowdown=1 motor_control=0.94999999
+/datum/affliction/contagion/roanoke|0.25|1 => heart_rate=3.75 temperature=0.5
+/datum/affliction/contagion/roanoke|0.5|1 => heart_rate=7.5 temperature=1
+/datum/affliction/contagion/roanoke|1|1 => heart_rate=15 temperature=2
+/datum/affliction/deep_bruising|0.25|1 => heart_rate=2
+/datum/affliction/deep_bruising|0.5|1 => heart_rate=4
+/datum/affliction/deep_bruising|1|1 => heart_rate=8
+/datum/affliction/heatstroke|0.25|1 => slowdown=0.15000001 accuracy=-2
+/datum/affliction/heatstroke|0.5|1 => slowdown=0.30000001 accuracy=-4
+/datum/affliction/heatstroke|1|1 => slowdown=0.60000002 accuracy=-8
+/datum/affliction/hypothermia|0.25|1 => slowdown=0.2 accuracy=-2.5
+/datum/affliction/hypothermia|0.5|1 => slowdown=0.40000001 accuracy=-5
+/datum/affliction/hypothermia|1|1 => slowdown=0.80000001 accuracy=-10
+/datum/affliction/hypovolemic_shock|0.25|1 => o2_sat=-1.25
+/datum/affliction/hypovolemic_shock|0.5|1 => o2_sat=-2.5
+/datum/affliction/hypovolemic_shock|1|1 => o2_sat=-5
+/datum/affliction/lacerated_artery|0.25|1 => slowdown=0.125 motor_control=0.995
+/datum/affliction/lacerated_artery|0.5|1 => slowdown=0.25 motor_control=0.99000001
+/datum/affliction/lacerated_artery|1|1 => slowdown=0.5 motor_control=0.98000002
+/datum/affliction/limb_ischemia|0.25|1 => accuracy=-2.5
+/datum/affliction/limb_ischemia|0.5|1 => accuracy=-5
+/datum/affliction/limb_ischemia|1|1 => accuracy=-10
+/datum/affliction/nanite/cohesion_loss|0.25|1 => slowdown=0.5 motor_control=0.97500002 incoming_physical=1.075
+/datum/affliction/nanite/cohesion_loss|0.5|1 => slowdown=1 motor_control=0.94999999 incoming_physical=1.15
+/datum/affliction/nanite/cohesion_loss|1|1 => slowdown=2 motor_control=0.89999998 incoming_physical=1.3
+/datum/affliction/nanite/contamination|0.25|1 => healing=0.89999998 accuracy=-2.5 motor_control=0.98750001
+/datum/affliction/nanite/contamination|0.5|1 => healing=0.80000001 accuracy=-5 motor_control=0.97500002
+/datum/affliction/nanite/contamination|1|1 => healing=0.60000002 accuracy=-10 motor_control=0.94999999
+/datum/affliction/nanite/form_strain|0.25|1 => slowdown=0.25 attack_speed=1.05 motor_control=0.97500002
+/datum/affliction/nanite/form_strain|0.5|1 => slowdown=0.5 attack_speed=1.1 motor_control=0.94999999
+/datum/affliction/nanite/form_strain|1|1 => slowdown=1 attack_speed=1.2 motor_control=0.89999998
+/datum/affliction/nanite/orchestrator_damage|0.25|1 => accuracy=-5 attack_speed=1.075 motor_control=0.96249998
+/datum/affliction/nanite/orchestrator_damage|0.5|1 => accuracy=-10 attack_speed=1.15 motor_control=0.92500001
+/datum/affliction/nanite/orchestrator_damage|1|1 => accuracy=-20 attack_speed=1.3 motor_control=0.85000002
+/datum/affliction/nanite/refactory_depletion|0.25|1 => healing=0.875 slowdown=0.25
+/datum/affliction/nanite/refactory_depletion|0.5|1 => healing=0.75 slowdown=0.5
+/datum/affliction/nanite/refactory_depletion|1|1 => healing=0.5 slowdown=1
+/datum/affliction/nerve_damage|0.25|1 => accuracy=-2.5 motor_control=0.9975
+/datum/affliction/nerve_damage|0.5|1 => accuracy=-5 motor_control=0.995
+/datum/affliction/nerve_damage|1|1 => accuracy=-10 motor_control=0.99000001
+/datum/affliction/overdose/hyperzine|0.25|1 => analgesia=3.75 heart_rate=10 bp_systolic=5 slowdown=-0.25 accuracy=5
+/datum/affliction/overdose/hyperzine|0.5|1 => analgesia=7.5 heart_rate=20 bp_systolic=10 slowdown=-0.5 accuracy=10
+/datum/affliction/overdose/hyperzine|1|1 => analgesia=15 heart_rate=40 bp_systolic=20 slowdown=-1 accuracy=20
+/datum/affliction/overdose/immunosuprizine|0.25|1 => immune_suppression=0.125
+/datum/affliction/overdose/immunosuprizine|0.5|1 => immune_suppression=0.25
+/datum/affliction/overdose/immunosuprizine|1|1 => immune_suppression=0.5
+/datum/affliction/overdose/inaprovaline|0.25|1 => heart_rate=-3.75 bp_systolic=-5
+/datum/affliction/overdose/inaprovaline|0.5|1 => heart_rate=-7.5 bp_systolic=-10
+/datum/affliction/overdose/inaprovaline|1|1 => heart_rate=-15 bp_systolic=-20
+/datum/affliction/overdose/menthol|0.25|1 => slowdown=0.075000003
+/datum/affliction/overdose/menthol|0.5|1 => slowdown=0.15000001
+/datum/affliction/overdose/menthol|1|1 => slowdown=0.30000001
+/datum/affliction/overdose/norepinephrine|0.25|1 => heart_rate=7.5 bp_systolic=8.75 bp_diastolic=5
+/datum/affliction/overdose/norepinephrine|0.5|1 => heart_rate=15 bp_systolic=17.5 bp_diastolic=10
+/datum/affliction/overdose/norepinephrine|1|1 => heart_rate=30 bp_systolic=35 bp_diastolic=20
+/datum/affliction/overdose/oxycodone|0.25|1 => analgesia=12.5 heart_rate=-3.75 o2_sat=-5 resp_rate=-2.5 slowdown=0.5 accuracy=-10 motor_control=0.97500002 disable_duration=0.875
+/datum/affliction/overdose/oxycodone|0.5|1 => analgesia=25 heart_rate=-7.5 o2_sat=-10 resp_rate=-5 slowdown=1 accuracy=-20 motor_control=0.94999999 disable_duration=0.75
+/datum/affliction/overdose/oxycodone|1|1 => analgesia=50 heart_rate=-15 o2_sat=-20 resp_rate=-10 slowdown=2 accuracy=-40 motor_control=0.89999998 disable_duration=0.5
+/datum/affliction/overdose/synaptizine|0.25|1 => neural_repair=0.075000003
+/datum/affliction/overdose/synaptizine|0.5|1 => neural_repair=0.15000001
+/datum/affliction/overdose/synaptizine|1|1 => neural_repair=0.30000001
+/datum/affliction/pulmonary_contusion|0.25|1 => o2_sat=-2 resp_rate=1.5 slowdown=0.15000001
+/datum/affliction/pulmonary_contusion|0.5|1 => o2_sat=-4 resp_rate=3 slowdown=0.30000001
+/datum/affliction/pulmonary_contusion|1|1 => o2_sat=-8 resp_rate=6 slowdown=0.60000002
+/datum/affliction/respiratory_arrest|0.25|1 => heart_rate=2.5
+/datum/affliction/respiratory_arrest|0.5|1 => heart_rate=5
+/datum/affliction/respiratory_arrest|1|1 => heart_rate=10
+/datum/affliction/respiratory_failure|0.25|1 => gas_exchange=0.78750002 heart_rate=5 resp_rate=-2 slowdown=0.625 accuracy=-12.5 motor_control=0.98000002 action_blocks=1
+/datum/affliction/respiratory_failure|0.5|1 => gas_exchange=0.57499999 heart_rate=10 resp_rate=-4 slowdown=1.25 accuracy=-25 motor_control=0.96000004 action_blocks=1
+/datum/affliction/respiratory_failure|1|1 => gas_exchange=0.14999998 heart_rate=20 resp_rate=-8 slowdown=2.5 accuracy=-50 motor_control=0.92000002 action_blocks=1
+/datum/affliction/sepsis|0.25|1 => temperature=0.875 bp_systolic=-3.75 slowdown=0.15000001 accuracy=-2.5
+/datum/affliction/sepsis|0.5|1 => temperature=1.75 bp_systolic=-7.5 slowdown=0.30000001 accuracy=-5
+/datum/affliction/sepsis|1|1 => temperature=3.5 bp_systolic=-15 slowdown=0.60000002 accuracy=-10
+/datum/affliction/septic_shock|0.25|1 => bp_systolic=-11.25 bp_diastolic=-6.25 o2_sat=-2.5 slowdown=0.375 accuracy=-6.25 motor_control=0.99000001
+/datum/affliction/septic_shock|0.5|1 => bp_systolic=-22.5 bp_diastolic=-12.5 o2_sat=-5 slowdown=0.75 accuracy=-12.5 motor_control=0.98000002
+/datum/affliction/septic_shock|1|1 => bp_systolic=-45 bp_diastolic=-25 o2_sat=-10 slowdown=1.5 accuracy=-25 motor_control=0.95999998
+/datum/affliction/subdural_hematoma|0.25|1 => heart_rate=3.75 bp_systolic=2.5 slowdown=0.25 accuracy=-7.5 motor_control=0.99250001 action_blocks=2
+/datum/affliction/subdural_hematoma|0.5|1 => heart_rate=7.5 bp_systolic=5 slowdown=0.5 accuracy=-15 motor_control=0.98500001 action_blocks=2
+/datum/affliction/subdural_hematoma|1|1 => heart_rate=15 bp_systolic=10 slowdown=1 accuracy=-30 motor_control=0.97000003 action_blocks=2
+/datum/affliction/tissue_necrosis|0.25|1 => slowdown=0.375 accuracy=-5
+/datum/affliction/tissue_necrosis|0.5|1 => slowdown=0.75 accuracy=-10
+/datum/affliction/tissue_necrosis|1|1 => slowdown=1.5 accuracy=-20
+/datum/affliction/wound_infection|0.25|1 => temperature=0.30000001
+/datum/affliction/wound_infection|0.5|1 => temperature=0.60000002
+/datum/affliction/wound_infection|1|1 => temperature=1.2
+

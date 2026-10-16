@@ -115,8 +115,10 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 		value = isnull(def.formula) ? def.base : stat_call(E, def.formula)
 	else if(def.keyed)
 		value = stat_compute_keyed(def, rec)
-	else if(I && def.fast && !rec?.holds)
+	else if(I && def.fast && !rec?.by_stat?[def.skey])
 		value = stat_compute_fast(E, def, I, rec)
+		if(def.clamps)
+			value = stat_clamp(def, value)
 	else
 		var/list/rows = list()
 		var/has_var = I ? I.has_var[def.skey] : (def.name in E.vars)
@@ -134,9 +136,7 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 				rows.Add(stat_contrib_value(E, def, C), C.priority, C.serial)
 		var/override_priority = null
 		var/override_serial = 0
-		for(var/list/row as anything in rec?.holds)
-			if(row[H_STAT] != def.id)
-				continue
+		for(var/list/row as anything in rec?.by_stat?[def.skey])
 			var/row_value = row[H_VALUE]
 			var/list/spec = row[H_SPEC]
 			if(spec)
@@ -155,6 +155,8 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 				continue
 			rows.Add(row_value, row[H_PRIORITY], row[H_SERIAL])
 		value = stat_combine(def, rows)
+		if(def.clamps)
+			value = stat_clamp(def, value)
 		if(override_set)
 			value = override_value
 	if(def.units && E)
@@ -165,13 +167,22 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 /// A SUM_PER_KEY stat: key -> the sum of the holds naming that key (a fresh list, empty with none).
 /proc/stat_compute_keyed(datum/stat_def/def, datum/stat_record/rec)
 	. = list()
-	for(var/list/row as anything in rec?.holds)
-		if(row[H_STAT] != def.id)
-			continue
+	for(var/list/row as anything in rec?.by_stat?[def.skey])
 		var/key = row[H_KEY]
 		.[key] = (.[key] || 0) + row[H_VALUE]
 
-/// stat_compute() for the rules whose result needs no ordering (ALL, ANY, SUM) on an entity with no holds: no row list, no combine call.
+/// A numeric stat's composed value held to its declared bounds (bounds = list(lo, hi)); anything that is not a number is left as it is.
+/proc/stat_clamp(datum/stat_def/def, value)
+	if(!isnum(value))
+		return value
+	if(!isnull(def.bound_lo) && value < def.bound_lo)
+		return def.bound_lo
+	if(!isnull(def.bound_hi) && value > def.bound_hi)
+		return def.bound_hi
+	return value
+
+/// stat_compute() for the rules a row list adds nothing to (ALL, ANY, SUM, PRODUCT, MAX, MIN, MASK_OR) on a stat none of whose rows exist: no row
+/// list, no combine call. The constant comes first and the contributions follow in order, as in the general path, so the value is the same.
 /proc/stat_compute_fast(datum/E, datum/stat_def/def, datum/stat_type_info/I, datum/stat_record/rec)
 	var/rule = def.rule
 	var/has_const = FALSE
@@ -197,6 +208,31 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 				if(stat_contrib_active(E, C) && stat_contrib_value(E, def, C))
 					return TRUE
 			return FALSE
+		if(STAT_RULE_PRODUCT)
+			. = has_const ? constant : 1
+			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
+				if(stat_contrib_active(E, C))
+					. *= stat_contrib_value(E, def, C)
+		if(STAT_RULE_MASK_OR)
+			var/any_member = has_const
+			. = has_const ? constant : 0
+			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
+				if(stat_contrib_active(E, C))
+					. |= stat_contrib_value(E, def, C)
+					any_member = TRUE
+			if(!any_member)
+				return def.base
+		if(STAT_RULE_MAX, STAT_RULE_MIN)
+			. = has_const ? constant : null
+			var/is_max = (rule == STAT_RULE_MAX)
+			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
+				if(!stat_contrib_active(E, C))
+					continue
+				var/v = stat_contrib_value(E, def, C)
+				if(isnull(.) || (is_max ? (v > .) : (v < .)))
+					. = v
+			if(isnull(.))
+				return def.base
 		else
 			. = has_const ? constant : 0
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
@@ -622,7 +658,7 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 		row[H_PRIORITY] = priority
 	else
 		row = list(def.id, source, value, 0, priority, 0, HOLD_CLOCK_OWN, null, ++GLOB.stat_hold_serial, key, null)
-		rec.holds += list(row)
+		stat_rows_add(rec, row)
 		if(isdatum(source))
 			var/datum/stat_record/src_rec = stat_record_of(source)
 			LAZYOR(src_rec.held_on, target)

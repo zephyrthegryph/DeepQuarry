@@ -1,0 +1,465 @@
+adminordrazine|0.25|1 => analgesia=50 stabilization=3.75 antimicrobial=0.75
+adminordrazine|1|1 => analgesia=200 stabilization=15 antimicrobial=3
+adminordrazine|2|1 => analgesia=400 stabilization=30 antimicrobial=6
+adminordrazine|4|1 => analgesia=800 stabilization=60 antimicrobial=12
+alkysine@8|0.25|1 => analgesia=0.625
+alkysine@8|1|1 => analgesia=2.5
+alkysine@8|2|1 => analgesia=5
+alkysine@8|4|1 => analgesia=10
+alkysine|0.25|1 => analgesia=2.5
+alkysine|1|1 => analgesia=10
+alkysine|2|1 => analgesia=20
+alkysine|4|1 => analgesia=40
+banana_protein_powder|0.25|1 => blood_regen=0.2
+banana_protein_powder|1|1 => blood_regen=0.80000001
+banana_protein_powder|2|1 => blood_regen=1.6
+banana_protein_powder|4|1 => blood_regen=3.2
+banana_protein_shake|0.25|1 => blood_regen=0.2
+banana_protein_shake|1|1 => blood_regen=0.80000001
+banana_protein_shake|2|1 => blood_regen=1.6
+banana_protein_shake|4|1 => blood_regen=3.2
+barbecue|0.25|1 => blood_regen=0.2
+barbecue|1|1 => blood_regen=0.80000001
+barbecue|2|1 => blood_regen=1.6
+barbecue|4|1 => blood_regen=3.2
+batter|0.25|1 => blood_regen=0.2
+batter|1|1 => blood_regen=0.80000001
+batter|2|1 => blood_regen=1.6
+batter|4|1 => blood_regen=3.2
+bean_protein|0.25|1 => blood_regen=0.2
+bean_protein|1|1 => blood_regen=0.80000001
+bean_protein|2|1 => blood_regen=1.6
+bean_protein|4|1 => blood_regen=3.2
+beerbatter|0.25|1 => intoxication=0.0049999999
+beerbatter|1|1 => intoxication=0.02
+beerbatter|2|1 => intoxication=0.039999999
+beerbatter|4|1 => intoxication=0.079999998
+biomass|0.25|1 => blood_regen=0.2
+biomass|1|1 => blood_regen=0.80000001
+biomass|2|1 => blood_regen=1.6
+biomass|4|1 => blood_regen=3.2
+blood@8|0.25|1 => blood_regen=0.2
+blood@8|1|1 => blood_regen=0.80000001
+blood@8|2|1 => blood_regen=1.6
+blood@8|4|1 => blood_regen=3.2
+bloodsealer|0.25|1 => stabilization=6.25
+bloodsealer|1|1 => stabilization=25
+bloodsealer|2|1 => stabilization=50
+bloodsealer|4|1 => stabilization=100
+brain_protein|0.25|1 => blood_regen=0.2
+brain_protein|1|1 => blood_regen=0.80000001
+brain_protein|2|1 => blood_regen=1.6
+brain_protein|4|1 => blood_regen=3.2
+calciumcarbonate|0.25|1 => antiemetic=0.75
+calciumcarbonate|1|1 => antiemetic=3
+calciumcarbonate|2|1 => antiemetic=6
+calciumcarbonate|4|1 => antiemetic=12
+cheese|0.25|1 => blood_regen=0.2
+cheese|1|1 => blood_regen=0.80000001
+cheese|2|1 => blood_regen=1.6
+cheese|4|1 => blood_regen=3.2
+cherryjelly|0.25|1 => blood_regen=0.2
+cherryjelly|1|1 => blood_regen=0.80000001
+cherryjelly|2|1 => blood_regen=1.6
+cherryjelly|4|1 => blood_regen=3.2
+chocolate_protein_powder|0.25|1 => blood_regen=0.2
+chocolate_protein_powder|1|1 => blood_regen=0.80000001
+chocolate_protein_powder|2|1 => blood_regen=1.6
+chocolate_protein_powder|4|1 => blood_regen=3.2
+chocolate_protein_shake|0.25|1 => blood_regen=0.2
+chocolate_protein_shake|1|1 => blood_regen=0.80000001
+chocolate_protein_shake|2|1 => blood_regen=1.6
+chocolate_protein_shake|4|1 => blood_regen=3.2
+chocolate|0.25|1 => blood_regen=0.2
+chocolate|1|1 => blood_regen=0.80000001
+chocolate|2|1 => blood_regen=1.6
+chocolate|4|1 => blood_regen=3.2
+claridyl|0.25|1 => analgesia=10 stabilization=7.5
+claridyl|1|1 => analgesia=40 stabilization=30
+claridyl|2|1 => analgesia=80 stabilization=60
+claridyl|4|1 => analgesia=160 stabilization=120
+clownsynxchem|0.25|1 => analgesia=2.5 stabilization=3.75
+clownsynxchem|1|1 => analgesia=10 stabilization=15
+clownsynxchem|2|1 => analgesia=20 stabilization=30
+clownsynxchem|4|1 => analgesia=40 stabilization=60
+coating|0.25|1 => blood_regen=0.2
+coating|1|1 => blood_regen=0.80000001
+coating|2|1 => blood_regen=1.6
+coating|4|1 => blood_regen=3.2
+coco|0.25|1 => blood_regen=0.2
+coco|1|1 => blood_regen=0.80000001
+coco|2|1 => blood_regen=1.6
+coco|4|1 => blood_regen=3.2
+coffeepowder|0.25|1 => blood_regen=0.2
+coffeepowder|1|1 => blood_regen=0.80000001
+coffeepowder|2|1 => blood_regen=1.6
+coffeepowder|4|1 => blood_regen=3.2
+cookingoil|0.25|1 => blood_regen=0.2
+cookingoil|1|1 => blood_regen=0.80000001
+cookingoil|2|1 => blood_regen=1.6
+cookingoil|4|1 => blood_regen=3.2
+cornoil|0.25|1 => blood_regen=0.2
+cornoil|1|1 => blood_regen=0.80000001
+cornoil|2|1 => blood_regen=1.6
+cornoil|4|1 => blood_regen=3.2
+corophizine|0.25|1 => antimicrobial=0.75
+corophizine|1|1 => antimicrobial=3
+corophizine|2|1 => antimicrobial=6
+corophizine|4|1 => antimicrobial=12
+cyanide|0.25|1 => tissue_uptake=0.77499998
+cyanide|1|1 => tissue_uptake=0.10000002
+cyanide|2|1 => tissue_uptake=0
+cyanide|4|1 => tissue_uptake=0
+decafteapowder|0.25|1 => blood_regen=0.2
+decafteapowder|1|1 => blood_regen=0.80000001
+decafteapowder|2|1 => blood_regen=1.6
+decafteapowder|4|1 => blood_regen=3.2
+defective_nanites|0.25|1 => gas_exchange=0.875
+defective_nanites|1|1 => gas_exchange=0.5
+defective_nanites|2|1 => gas_exchange=0
+defective_nanites|4|1 => gas_exchange=0
+dexalin@8|0.25|1 => analgesia=3.75 o2_carriage=1.0625
+dexalin@8|1|1 => analgesia=15 o2_carriage=1.25
+dexalin@8|2|1 => analgesia=30 o2_carriage=1.5
+dexalin@8|4|1 => analgesia=60 o2_carriage=2
+dexalinp@8|0.25|1 => analgesia=6.25 o2_carriage=1.125
+dexalinp@8|1|1 => analgesia=25 o2_carriage=1.5
+dexalinp@8|2|1 => analgesia=50 o2_carriage=2
+dexalinp@8|4|1 => analgesia=100 o2_carriage=2
+dexalinp|0.25|1 => o2_carriage=1.125
+dexalinp|1|1 => o2_carriage=1.5
+dexalinp|2|1 => o2_carriage=2
+dexalinp|4|1 => o2_carriage=2
+dexalin|0.25|1 => o2_carriage=1.0625
+dexalin|1|1 => o2_carriage=1.25
+dexalin|2|1 => o2_carriage=1.5
+dexalin|4|1 => o2_carriage=2
+durianpaste|0.25|1 => blood_regen=0.2
+durianpaste|1|1 => blood_regen=0.80000001
+durianpaste|2|1 => blood_regen=1.6
+durianpaste|4|1 => blood_regen=3.2
+egg|0.25|1 => blood_regen=0.2
+egg|1|1 => blood_regen=0.80000001
+egg|2|1 => blood_regen=1.6
+egg|4|1 => blood_regen=3.2
+enragedarachnidslammer|0.25|1 => analgesia=20 penalty_scale=0.875
+enragedarachnidslammer|1|1 => analgesia=80 penalty_scale=0.5
+enragedarachnidslammer|2|1 => analgesia=160 penalty_scale=0
+enragedarachnidslammer|4|1 => analgesia=320 penalty_scale=0
+epinephrine|0.25|1 => analgesia=15 slowdown=-0.75 penalty_scale=0.875
+epinephrine|1|1 => analgesia=60 slowdown=-3 penalty_scale=0.5
+epinephrine|2|1 => analgesia=120 slowdown=-6 penalty_scale=0
+epinephrine|4|1 => analgesia=240 slowdown=-10 penalty_scale=0
+fakesynxchem|0.25|1 => analgesia=2.5 stabilization=3.75
+fakesynxchem|1|1 => analgesia=10 stabilization=15
+fakesynxchem|2|1 => analgesia=20 stabilization=30
+fakesynxchem|4|1 => analgesia=40 stabilization=60
+fishbait|0.25|1 => blood_regen=0.2
+fishbait|1|1 => blood_regen=0.80000001
+fishbait|2|1 => blood_regen=1.6
+fishbait|4|1 => blood_regen=3.2
+flour|0.25|1 => blood_regen=0.2
+flour|1|1 => blood_regen=0.80000001
+flour|2|1 => blood_regen=1.6
+flour|4|1 => blood_regen=3.2
+fungi|0.25|1 => blood_regen=0.2
+fungi|1|1 => blood_regen=0.80000001
+fungi|2|1 => blood_regen=1.6
+fungi|4|1 => blood_regen=3.2
+glucose|0.25|1 => blood_regen=0.2
+glucose|1|1 => blood_regen=0.80000001
+glucose|2|1 => blood_regen=1.6
+glucose|4|1 => blood_regen=3.2
+grubshake|0.25|1 => blood_regen=0.2
+grubshake|1|1 => blood_regen=0.80000001
+grubshake|2|1 => blood_regen=1.6
+grubshake|4|1 => blood_regen=3.2
+highpower|0.25|1 => slowdown=-0.25 penalty_scale=0.875
+highpower|1|1 => slowdown=-1 penalty_scale=0.5
+highpower|2|1 => slowdown=-2 penalty_scale=0
+highpower|4|1 => slowdown=-4 penalty_scale=0
+honey|0.25|1 => blood_regen=0.2
+honey|1|1 => blood_regen=0.80000001
+honey|2|1 => blood_regen=1.6
+honey|4|1 => blood_regen=3.2
+hyperzine|0.25|1 => slowdown=-0.25 penalty_scale=0.875
+hyperzine|1|1 => slowdown=-1 penalty_scale=0.5
+hyperzine|2|1 => slowdown=-2 penalty_scale=0
+hyperzine|4|1 => slowdown=-4 penalty_scale=0
+inaprovalaze|0.25|1 => analgesia=3 stabilization=5
+inaprovalaze|1|1 => analgesia=12 stabilization=20
+inaprovalaze|2|1 => analgesia=24 stabilization=40
+inaprovalaze|4|1 => analgesia=48 stabilization=80
+inaprovaline|0.25|1 => analgesia=2.5 stabilization=3.75
+inaprovaline|1|1 => analgesia=10 stabilization=15
+inaprovaline|2|1 => analgesia=20 stabilization=30
+inaprovaline|4|1 => analgesia=40 stabilization=60
+instantapple|0.25|1 => blood_regen=0.2
+instantapple|1|1 => blood_regen=0.80000001
+instantapple|2|1 => blood_regen=1.6
+instantapple|4|1 => blood_regen=3.2
+instantgrape|0.25|1 => blood_regen=0.2
+instantgrape|1|1 => blood_regen=0.80000001
+instantgrape|2|1 => blood_regen=1.6
+instantgrape|4|1 => blood_regen=3.2
+instantjuice|0.25|1 => blood_regen=0.2
+instantjuice|1|1 => blood_regen=0.80000001
+instantjuice|2|1 => blood_regen=1.6
+instantjuice|4|1 => blood_regen=3.2
+instantorange|0.25|1 => blood_regen=0.2
+instantorange|1|1 => blood_regen=0.80000001
+instantorange|2|1 => blood_regen=1.6
+instantorange|4|1 => blood_regen=3.2
+instantwatermelon|0.25|1 => blood_regen=0.2
+instantwatermelon|1|1 => blood_regen=0.80000001
+instantwatermelon|2|1 => blood_regen=1.6
+instantwatermelon|4|1 => blood_regen=3.2
+jackbrew|0.25|1 => slowdown=-0.25 penalty_scale=0.875
+jackbrew|1|1 => slowdown=-1 penalty_scale=0.5
+jackbrew|2|1 => slowdown=-2 penalty_scale=0
+jackbrew|4|1 => slowdown=-4 penalty_scale=0
+ketchup|0.25|1 => blood_regen=0.2
+ketchup|1|1 => blood_regen=0.80000001
+ketchup|2|1 => blood_regen=1.6
+ketchup|4|1 => blood_regen=3.2
+livingagent|0.25|1 => analgesia=-5
+livingagent|1|1 => analgesia=-20
+livingagent|2|1 => analgesia=-40
+livingagent|4|1 => analgesia=-80
+magicdust|0.25|1 => blood_regen=0.2
+magicdust|1|1 => blood_regen=0.80000001
+magicdust|2|1 => blood_regen=1.6
+magicdust|4|1 => blood_regen=3.2
+mayo|0.25|1 => blood_regen=0.2
+mayo|1|1 => blood_regen=0.80000001
+mayo|2|1 => blood_regen=1.6
+mayo|4|1 => blood_regen=3.2
+mint|0.25|1 => blood_regen=0.2
+mint|1|1 => blood_regen=0.80000001
+mint|2|1 => blood_regen=1.6
+mint|4|1 => blood_regen=3.2
+murk_protein|0.25|1 => blood_regen=0.2
+murk_protein|1|1 => blood_regen=0.80000001
+murk_protein|2|1 => blood_regen=1.6
+murk_protein|4|1 => blood_regen=3.2
+mustard|0.25|1 => blood_regen=0.2
+mustard|1|1 => blood_regen=0.80000001
+mustard|2|1 => blood_regen=1.6
+mustard|4|1 => blood_regen=3.2
+norepinephrine|0.25|1 => pump=1.025 circulation=1.075 heart_rate=5 bp_systolic=5 bp_diastolic=2.5 stabilization=2.5
+norepinephrine|1|1 => pump=1.1 circulation=1.3 heart_rate=20 bp_systolic=20 bp_diastolic=10 stabilization=10
+norepinephrine|2|1 => pump=1.2 circulation=1.5999999 heart_rate=40 bp_systolic=40 bp_diastolic=20 stabilization=20
+norepinephrine|4|1 => pump=1.4000001 circulation=2 heart_rate=80 bp_systolic=80 bp_diastolic=40 stabilization=40
+nuka_cola|0.25|1 => slowdown=-0.25 penalty_scale=0.875
+nuka_cola|1|1 => slowdown=-1 penalty_scale=0.5
+nuka_cola|2|1 => slowdown=-2 penalty_scale=0
+nuka_cola|4|1 => slowdown=-4 penalty_scale=0
+nukie_mega_fast|0.25|1 => slowdown=-0.25 penalty_scale=0.875
+nukie_mega_fast|1|1 => slowdown=-1 penalty_scale=0.5
+nukie_mega_fast|2|1 => slowdown=-2 penalty_scale=0
+nukie_mega_fast|4|1 => slowdown=-4 penalty_scale=0
+nukie_mega_sight|0.25|1 => darksight=0.25
+nukie_mega_sight|1|1 => darksight=1
+nukie_mega_sight|2|1 => darksight=1
+nukie_mega_sight|4|1 => darksight=1
+nukie_one|0.25|1 => slowdown=-0.25 penalty_scale=0.875 darksight=0.25
+nukie_one|1|1 => slowdown=-1 penalty_scale=0.5 darksight=1
+nukie_one|2|1 => slowdown=-2 penalty_scale=0 darksight=1
+nukie_one|4|1 => slowdown=-4 penalty_scale=0 darksight=1
+numbenzyme|0.25|1 => analgesia=50
+numbenzyme|1|1 => analgesia=200
+numbenzyme|2|1 => analgesia=400
+numbenzyme|4|1 => analgesia=800
+nutriment|0.25|1 => blood_regen=0.2
+nutriment|1|1 => blood_regen=0.80000001
+nutriment|2|1 => blood_regen=1.6
+nutriment|4|1 => blood_regen=3.2
+oil|0.25|1 => blood_regen=0.2
+oil|1|1 => blood_regen=0.80000001
+oil|2|1 => blood_regen=1.6
+oil|4|1 => blood_regen=3.2
+oxycodone@8|0.25|1 => analgesia=37.5 slowdown=0.25 penalty_scale=1.0625
+oxycodone@8|1|1 => analgesia=150 slowdown=1 penalty_scale=1.25
+oxycodone@8|2|1 => analgesia=300 slowdown=2 penalty_scale=1.5
+oxycodone@8|4|1 => analgesia=600 slowdown=4 penalty_scale=2
+oxycodone|0.25|1 => analgesia=50 slowdown=0.25 penalty_scale=1.0625
+oxycodone|1|1 => analgesia=200 slowdown=1 penalty_scale=1.25
+oxycodone|2|1 => analgesia=400 slowdown=2 penalty_scale=1.5
+oxycodone|4|1 => analgesia=800 slowdown=4 penalty_scale=2
+painenzyme|0.25|1 => analgesia=-50
+painenzyme|1|1 => analgesia=-200
+painenzyme|2|1 => analgesia=-400
+painenzyme|4|1 => analgesia=-800
+paper|0.25|1 => blood_regen=0.2
+paper|1|1 => blood_regen=0.80000001
+paper|2|1 => blood_regen=1.6
+paper|4|1 => blood_regen=3.2
+paracetamol@8|0.25|1 => analgesia=4.6875
+paracetamol@8|1|1 => analgesia=18.75
+paracetamol@8|2|1 => analgesia=37.5
+paracetamol@8|4|1 => analgesia=75
+paracetamol|0.25|1 => analgesia=6.25
+paracetamol|1|1 => analgesia=25
+paracetamol|2|1 => analgesia=50
+paracetamol|4|1 => analgesia=100
+peanutbutter|0.25|1 => blood_regen=0.2
+peanutbutter|1|1 => blood_regen=0.80000001
+peanutbutter|2|1 => blood_regen=1.6
+peanutbutter|4|1 => blood_regen=3.2
+peanutoil|0.25|1 => blood_regen=0.2
+peanutoil|1|1 => blood_regen=0.80000001
+peanutoil|2|1 => blood_regen=1.6
+peanutoil|4|1 => blood_regen=3.2
+performancepeaker|0.25|1 => analgesia=2.5 slowdown=-0.125 penalty_scale=0.875
+performancepeaker|1|1 => analgesia=10 slowdown=-0.5 penalty_scale=0.5
+performancepeaker|2|1 => analgesia=20 slowdown=-1 penalty_scale=0
+performancepeaker|4|1 => analgesia=40 slowdown=-2 penalty_scale=0
+peridaxon@8|0.25|1 => analgesia=5
+peridaxon@8|1|1 => analgesia=20
+peridaxon@8|2|1 => analgesia=40
+peridaxon@8|4|1 => analgesia=80
+pitcher_nectar|0.25|1 => blood_regen=0.2
+pitcher_nectar|1|1 => blood_regen=0.80000001
+pitcher_nectar|2|1 => blood_regen=1.6
+pitcher_nectar|4|1 => blood_regen=3.2
+protein_powder|0.25|1 => blood_regen=0.2
+protein_powder|1|1 => blood_regen=0.80000001
+protein_powder|2|1 => blood_regen=1.6
+protein_powder|4|1 => blood_regen=3.2
+protein_shake|0.25|1 => blood_regen=0.2
+protein_shake|1|1 => blood_regen=0.80000001
+protein_shake|2|1 => blood_regen=1.6
+protein_shake|4|1 => blood_regen=3.2
+protein|0.25|1 => blood_regen=0.2
+protein|1|1 => blood_regen=0.80000001
+protein|2|1 => blood_regen=1.6
+protein|4|1 => blood_regen=3.2
+red_brain_protein|0.25|1 => blood_regen=0.2
+red_brain_protein|1|1 => blood_regen=0.80000001
+red_brain_protein|2|1 => blood_regen=1.6
+red_brain_protein|4|1 => blood_regen=3.2
+rice|0.25|1 => blood_regen=0.2
+rice|1|1 => blood_regen=0.80000001
+rice|2|1 => blood_regen=1.6
+rice|4|1 => blood_regen=3.2
+seafood|0.25|1 => blood_regen=0.2
+seafood|1|1 => blood_regen=0.80000001
+seafood|2|1 => blood_regen=1.6
+seafood|4|1 => blood_regen=3.2
+shredding_nanites|0.25|1 => gas_exchange=0.85000002
+shredding_nanites|1|1 => gas_exchange=0.39999998
+shredding_nanites|2|1 => gas_exchange=0
+shredding_nanites|4|1 => gas_exchange=0
+slimejelly@8|0.25|1 => analgesia=11.25
+slimejelly@8|1|1 => analgesia=45
+slimejelly@8|2|1 => analgesia=90
+slimejelly@8|4|1 => analgesia=180
+slime_goop|0.25|1 => blood_regen=0.2
+slime_goop|1|1 => blood_regen=0.80000001
+slime_goop|2|1 => blood_regen=1.6
+slime_goop|4|1 => blood_regen=3.2
+slime_organ_fixer@8|0.25|1 => analgesia=5
+slime_organ_fixer@8|1|1 => analgesia=20
+slime_organ_fixer@8|2|1 => analgesia=40
+slime_organ_fixer@8|4|1 => analgesia=80
+soysauce|0.25|1 => blood_regen=0.2
+soysauce|1|1 => blood_regen=0.80000001
+soysauce|2|1 => blood_regen=1.6
+soysauce|4|1 => blood_regen=3.2
+spaceacillin|0.25|1 => antimicrobial=0.25
+spaceacillin|1|1 => antimicrobial=1
+spaceacillin|2|1 => antimicrobial=2
+spaceacillin|4|1 => antimicrobial=4
+spacomycaze|0.25|1 => analgesia=5 antimicrobial=0.25
+spacomycaze|1|1 => analgesia=20 antimicrobial=1
+spacomycaze|2|1 => analgesia=40 antimicrobial=2
+spacomycaze|4|1 => analgesia=80 antimicrobial=4
+sprinkles|0.25|1 => blood_regen=0.2
+sprinkles|1|1 => blood_regen=0.80000001
+sprinkles|2|1 => blood_regen=1.6
+sprinkles|4|1 => blood_regen=3.2
+stimm|0.25|1 => slowdown=-0.25 penalty_scale=0.875
+stimm|1|1 => slowdown=-1 penalty_scale=0.5
+stimm|2|1 => slowdown=-2 penalty_scale=0
+stimm|4|1 => slowdown=-4 penalty_scale=0
+strawberry_protein_powder|0.25|1 => blood_regen=0.2
+strawberry_protein_powder|1|1 => blood_regen=0.80000001
+strawberry_protein_powder|2|1 => blood_regen=1.6
+strawberry_protein_powder|4|1 => blood_regen=3.2
+strawberry_protein_shake|0.25|1 => blood_regen=0.2
+strawberry_protein_shake|1|1 => blood_regen=0.80000001
+strawberry_protein_shake|2|1 => blood_regen=1.6
+strawberry_protein_shake|4|1 => blood_regen=3.2
+synaptizine@8|0.25|1 => analgesia=2.5
+synaptizine@8|1|1 => analgesia=10
+synaptizine@8|2|1 => analgesia=20
+synaptizine@8|4|1 => analgesia=40
+synaptizine|0.25|1 => analgesia=5
+synaptizine|1|1 => analgesia=20
+synaptizine|2|1 => analgesia=40
+synaptizine|4|1 => analgesia=80
+synthblood@8|0.25|1 => blood_regen=0.2
+synthblood@8|1|1 => blood_regen=0.80000001
+synthblood@8|2|1 => blood_regen=1.6
+synthblood@8|4|1 => blood_regen=3.2
+synthblood_dilute@8|0.25|1 => blood_regen=0.2
+synthblood_dilute@8|1|1 => blood_regen=0.80000001
+synthblood_dilute@8|2|1 => blood_regen=1.6
+synthblood_dilute@8|4|1 => blood_regen=3.2
+synxchem|0.25|1 => analgesia=2.5 stabilization=3.75
+synxchem|1|1 => analgesia=10 stabilization=15
+synxchem|2|1 => analgesia=20 stabilization=30
+synxchem|4|1 => analgesia=40 stabilization=60
+teapowder|0.25|1 => blood_regen=0.2
+teapowder|1|1 => blood_regen=0.80000001
+teapowder|2|1 => blood_regen=1.6
+teapowder|4|1 => blood_regen=3.2
+tofu|0.25|1 => blood_regen=0.2
+tofu|1|1 => blood_regen=0.80000001
+tofu|2|1 => blood_regen=1.6
+tofu|4|1 => blood_regen=3.2
+tramadol@8|0.25|1 => analgesia=16 slowdown=0.25 penalty_scale=1.0625
+tramadol@8|1|1 => analgesia=64 slowdown=1 penalty_scale=1.25
+tramadol@8|2|1 => analgesia=128 slowdown=2 penalty_scale=1.5
+tramadol@8|4|1 => analgesia=256 slowdown=4 penalty_scale=2
+tramadol|0.25|1 => analgesia=20
+tramadol|1|1 => analgesia=80
+tramadol|2|1 => analgesia=160
+tramadol|4|1 => analgesia=320
+triglyceride|0.25|1 => blood_regen=0.2
+triglyceride|1|1 => blood_regen=0.80000001
+triglyceride|2|1 => blood_regen=1.6
+triglyceride|4|1 => blood_regen=3.2
+vanilla_protein_powder|0.25|1 => blood_regen=0.2
+vanilla_protein_powder|1|1 => blood_regen=0.80000001
+vanilla_protein_powder|2|1 => blood_regen=1.6
+vanilla_protein_powder|4|1 => blood_regen=3.2
+vanilla_protein_shake|0.25|1 => blood_regen=0.2
+vanilla_protein_shake|1|1 => blood_regen=0.80000001
+vanilla_protein_shake|2|1 => blood_regen=1.6
+vanilla_protein_shake|4|1 => blood_regen=3.2
+vanilla|0.25|1 => blood_regen=0.2
+vanilla|1|1 => blood_regen=0.80000001
+vanilla|2|1 => blood_regen=1.6
+vanilla|4|1 => blood_regen=3.2
+vinegar|0.25|1 => blood_regen=0.2
+vinegar|1|1 => blood_regen=0.80000001
+vinegar|2|1 => blood_regen=1.6
+vinegar|4|1 => blood_regen=3.2
+virusfood|0.25|1 => blood_regen=0.2
+virusfood|1|1 => blood_regen=0.80000001
+virusfood|2|1 => blood_regen=1.6
+virusfood|4|1 => blood_regen=3.2
+warningtoxin|0.25|1 => slowdown=1.25 penalty_scale=1.0625
+warningtoxin|1|1 => slowdown=5 penalty_scale=1.25
+warningtoxin|2|1 => slowdown=10 penalty_scale=1.5
+warningtoxin|4|1 => slowdown=20 penalty_scale=2
+yeast|0.25|1 => blood_regen=0.2
+yeast|1|1 => blood_regen=0.80000001
+yeast|2|1 => blood_regen=1.6
+yeast|4|1 => blood_regen=3.2
+zombiepowder|0.25|1 => resp_drive=0.80000001
+zombiepowder|1|1 => resp_drive=0.19999999
+zombiepowder|2|1 => resp_drive=0
+zombiepowder|4|1 => resp_drive=0
+
