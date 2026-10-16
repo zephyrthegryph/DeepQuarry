@@ -54,10 +54,28 @@ export function classifyShadowReport(value: unknown, snapshot: string): ShadowAd
   return { status: 'parity', reason: 'complete named structural comparison with zero discrepancies' };
 }
 export type CompilerExecutor = (executable: string, args: string[], options?: { throw?: boolean; cwd?: string }) => Promise<{ code: number | null; combined: string; signal?: string | null }>;
+/** True when a cargo toolchain is on PATH, so `build.sh dmbc` can produce the native compiler. */
+function cargoAvailable(): boolean {
+  const names = process.platform === 'win32' ? ['cargo.exe', 'cargo.cmd'] : ['cargo'];
+  for (const dir of (process.env.PATH ?? '').split(path.delimiter)) {
+    for (const name of names) if (dir && fs.existsSync(path.join(dir, name))) return true;
+  }
+  return false;
+}
+/**
+ * DQ_COMPILER selects the backend: `native` (default; tools/dmb), `dreammaker` (alias `byond`) or `shadow`.
+ * Unset means native when a dmbc binary exists or cargo can build one, else DreamMaker with a warning.
+ * CI pins `dreammaker` for the production compile check.
+ */
 export function compilerMode(): CompilerMode {
-  const mode = process.env.DQ_COMPILER ?? 'byond';
+  const mode = process.env.DQ_COMPILER;
+  if (mode === undefined || mode === '') {
+    if (process.env.DQ_NATIVE_COMPILER || nativeCompilerPath() || cargoAvailable()) return 'native';
+    return 'byond';
+  }
+  if (mode === 'dreammaker') return 'byond';
   if (mode !== 'byond' && mode !== 'native' && mode !== 'shadow') {
-    throw new Error(`Unknown DQ_COMPILER=${mode}; expected byond, native or shadow.`);
+    throw new Error(`Unknown DQ_COMPILER=${mode}; expected native, dreammaker (alias byond) or shadow.`);
   }
   return mode;
 }

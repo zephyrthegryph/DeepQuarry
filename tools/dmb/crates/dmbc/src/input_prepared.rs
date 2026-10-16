@@ -2,6 +2,33 @@
 use super::*;
 use dm_preprocess::regions::prepared_source::PreparedSource;
 use std::sync::Arc;
+/// Per-process prepared-input counters (hits, misses and nanoseconds spent validating, reading
+/// and preparing), reported on the `native input preparation` progress line.
+pub mod counters {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    pub static HITS: AtomicU64 = AtomicU64::new(0);
+    pub static MISSES: AtomicU64 = AtomicU64::new(0);
+    pub static CALLED: AtomicU64 = AtomicU64::new(0);
+    pub static UNCHANGED_NO: AtomicU64 = AtomicU64::new(0);
+    pub static ERRORS: AtomicU64 = AtomicU64::new(0);
+    pub static VALIDATE_NS: AtomicU64 = AtomicU64::new(0);
+    pub static READ_NS: AtomicU64 = AtomicU64::new(0);
+    pub static PREPARE_NS: AtomicU64 = AtomicU64::new(0);
+    pub fn take() -> String {
+        let n = |c: &AtomicU64| c.swap(0, Ordering::Relaxed);
+        format!(
+            "prepared inputs: hits={} misses={} called={} unchanged_no={} errors={} validate_cpu={:.3}s read_cpu={:.3}s lexical_cpu={:.3}s",
+            n(&HITS),
+            n(&MISSES),
+            n(&CALLED),
+            n(&UNCHANGED_NO),
+            n(&ERRORS),
+            n(&VALIDATE_NS) as f64 / 1e9,
+            n(&READ_NS) as f64 / 1e9,
+            n(&PREPARE_NS) as f64 / 1e9
+        )
+    }
+}
 pub struct PreparedInputPayload {
     source: Arc<PreparedSource>,
     inputs: InputSnapshot,
@@ -93,26 +120,39 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .scanned_ns;
         let mut proof = None;
         let mut error = None;
+        let validate_started = std::time::Instant::now();
         let (hit, _) = owner
             .values
-            .visit_explained(&key, &NoSemanticReads, &mut |payload| match payload
-                .inputs
-                .validate_for_reuse(&self.provider, self.exact_reuse, now)
-            {
-                Ok(Some((_, refreshed))) => {
-                    proof = Some(refreshed);
-                    true
-                }
-                Ok(None) => false,
-                Err(e) => {
-                    error = Some(e);
-                    false
+            .visit_explained(&key, &NoSemanticReads, &mut |payload| {
+                counters::CALLED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                match payload
+                    .inputs
+                    .validate_for_reuse(&self.provider, self.exact_reuse, now)
+                {
+                    Ok(Some((_, refreshed))) => {
+                        proof = Some(refreshed);
+                        true
+                    }
+                    Ok(None) => {
+                        counters::UNCHANGED_NO.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        false
+                    }
+                    Err(e) => {
+                        counters::ERRORS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        error = Some(e);
+                        false
+                    }
                 }
             });
+        counters::VALIDATE_NS.fetch_add(
+            validate_started.elapsed().as_nanos() as u64,
+            std::sync::atomic::Ordering::Relaxed,
+        );
         if let Some(error) = error {
             return Err(error);
         }
         if let Some(hit) = hit {
+            counters::HITS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             let refreshed = proof.expect("admitted prepared input proof");
             self.snapshot
                 .lock()
@@ -127,14 +167,25 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
                 });
             return Ok(Some(source));
         }
+        counters::MISSES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let read_started = std::time::Instant::now();
         let bytes = {
             let _stage = dm_profile::stage("input_scan.source_read");
             self.read_recorded(&path)?
         };
+        counters::READ_NS.fetch_add(
+            read_started.elapsed().as_nanos() as u64,
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        let prepare_started = std::time::Instant::now();
         let source = {
             let _stage = dm_profile::stage("input_scan.lexical_prepare");
             Arc::new(PreparedSource::from_text(decode_owned_source(bytes).into()))
         };
+        counters::PREPARE_NS.fetch_add(
+            prepare_started.elapsed().as_nanos() as u64,
+            std::sync::atomic::Ordering::Relaxed,
+        );
         let fact = self
             .snapshot
             .lock()

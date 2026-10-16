@@ -130,7 +130,7 @@ the culprit is the leak before the failing test. Fix it with `set_global()`/`set
 
 `doc/rewrite/build_timings.md` has the numbers. What you notice: `build.sh dm` runs DreamChecker beside
 DreamMaker, the verdigris bindings check is skipped when its inputs did not change, a focused run starts with
-2 test blocks instead of 8. The native compiler (`DQ_COMPILER=native`, doc/testing.md "Native compiler (incremental)") replaces the old
+2 test blocks instead of 8. The native compiler (the default; `DQ_COMPILER=dreammaker` falls back, doc/testing.md "Native compiler (incremental)") replaces the old
 syntax pre-check.
 
 

@@ -2034,7 +2034,6 @@ init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mi
 init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::expr
 init_lines	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/unloading_machine::Initialize::watch_input
 init_lines	code/modules/mining/mine_items.dm	@/obj/item/stack/flag::Initialize::base_state
-init_lines	code/modules/mining/mine_items.dm	@/obj/structure/trailblazer::Initialize::color
 init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::if
 init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::if
 init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::make_ore
