@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The native compiler daemon is now one machine-wide process on one shared binary (E:/dq-cache/dmb-target), exits after 10 idle minutes or when its project is gone, caps itself at DQ_DMBC_MAX_DAEMONS resident daemons whatever binary they run, bounds retained projects by DMB_DAEMON_MEMORY_BUDGET_GB, and rotates lifecycle.log"
