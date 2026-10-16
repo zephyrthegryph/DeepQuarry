@@ -273,3 +273,6 @@ if (!(Datum.datum_flags & DF_ISPROCESSING)) {\
 /// The entry kind of item_protection() (code/game/objects/items.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_PROTECTION "item_protection"
 #define ITEM_PROTECTION_KEY "item_protection"
+
+#define ENTRY_ITEM_PERSISTENCE "item_persistence"
+#define ITEM_PERSISTENCE_KEY "item_persistence"

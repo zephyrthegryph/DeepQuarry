@@ -1,0 +1,8 @@
+#define ENTRY_MACHINE_INTERACTION_CONFIG "machine_interaction_config"
+#define MACHINE_INTERACTION_CONFIG_KEY "machine_interaction_config"
+#define ENTRY_OBJECT_BREAK_CONFIG "object_break_config"
+#define OBJECT_BREAK_CONFIG_KEY "object_break_config"
+#define ENTRY_SHIELDING_CONFIG "shielding_config"
+#define SHIELDING_CONFIG_KEY "shielding_config"
+#define ENTRY_SPEECH_PRESENTATION "speech_presentation"
+#define SPEECH_PRESENTATION_KEY "speech_presentation"
