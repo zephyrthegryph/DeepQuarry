@@ -41,3 +41,5 @@ The final lane-ready receipt and its focused-run JSON are the authoritative comp
 ## Native compiler sampling diagnostic
 
 After merging master 3097a36445, the gate changed from the BYOND backend to native (master 663e85e2ae). Both runs used the same 3202-type look plan. The native run passed production compilation, DreamChecker and ratchets, and reported 50 passing and two failing tests (20261016T011718_1876dd6ba5): the timer fixture and look-state sampling. The timer fixture now advances one deadline slot and asserts keyed delivery. The look-state difference consists of 229 removed and 112 added probe rows in nine root files: the test caps the first 24 vars before filtering the analyzer plan, and native var iteration chooses different inputs. Goldens are unchanged; this is not evidence of changed gameplay appearance. Final lane-ready verification remains required.
+
+The repair gate explicitly selects the supported DreamMaker production cross-check (doc/testing.md, Native compiler). Its stamp must be read with that backend; the native sampling failure is retained as a separate compiler/test-order diagnostic, not blessed or claimed fixed.
