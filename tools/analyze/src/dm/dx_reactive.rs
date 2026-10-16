@@ -499,6 +499,24 @@ struct ReactiveCtx {
     tracked: std::collections::BTreeSet<String>,
     watched: std::collections::BTreeSet<String>,
     timed: std::collections::BTreeMap<String, std::collections::BTreeSet<String>>,
+    /// Exact draw IDs whose complete native read walk resolves a published accessor contract.
+    native_draw_reads: std::collections::BTreeSet<String>,
+}
+
+/// The legacy name-only reader cannot describe a COW trait returned by a READS_AS accessor.
+/// Reuse the same closed-walk proof that generated subscriptions and untracked_inputs consume.
+/// An absent/partial proof, a sampled read, or any unresolved input retains the legacy check.
+fn native_draw_read_proofs(an: &crate::gens::deps::DepsAnalysis) -> std::collections::BTreeSet<String> {
+    an.draws
+        .iter()
+        .filter(|id| {
+            let Some(owner) = id.strip_suffix("::draw") else { return false };
+            an.consumers.get(*id).is_some_and(|unknown| unknown.is_empty())
+                && an.sampled.get(*id).is_none_or(|sampled| sampled.is_empty())
+                && an.draw_keys.get(owner).is_some_and(|keys| !keys.is_empty())
+        })
+        .cloned()
+        .collect()
 }
 
 /// One file's findings by emission group: reads, writes, timed.
@@ -513,7 +531,7 @@ type FileSites = (Vec<u32>, Vec<u32>, Vec<u32>);
 pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
     let dxf = DxFacts::all(tree);
     let facts: Vec<ReactiveFacts> = crate::incr::facts("dx-reactive-facts", files, |f| reactive_facts(tree, f, &dxf.of(f).procs));
-    let mut ctx = ReactiveCtx { needs: Default::default(), tracked: Default::default(), watched: Default::default(), timed: Default::default() };
+    let mut ctx = ReactiveCtx { needs: Default::default(), tracked: Default::default(), watched: Default::default(), timed: Default::default(), native_draw_reads: Default::default() };
     for fs in &facts {
         ctx.needs.extend(fs.needs.iter().cloned());
         ctx.tracked.extend(fs.tracked.iter().cloned());
@@ -547,6 +565,9 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
     // `dir` is a tracked read of every drawn atom: /atom/set_dir() publishes its change (code/game/atom/_atom.dm), so a draw
     // reading `dir` (its own or a watched neighbour's) redraws.
     ctx.tracked.insert("dir".to_string());
+    if let Some(an) = crate::gens::deps::analyzed(tree).as_ref().as_ref() {
+        ctx.native_draw_reads = native_draw_read_proofs(an);
+    }
     let needs_names: HashSet<String> = ctx.needs.iter().cloned().collect();
     let tracked: HashSet<String> = ctx.tracked.iter().cloned().collect();
     let watched: HashSet<String> = ctx.watched.iter().cloned().collect();
@@ -554,7 +575,7 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
     let marking: HashSet<String> = MARKING_RELATIONS.iter().map(|s| s.to_string()).collect();
     let base_relations: HashSet<String> = watched.union(&marking).cloned().collect();
 
-    let sites: Vec<FileSites> = crate::incr::keyed("dx-reactive-judge-runtime-data-v2", crate::incr::ctx_key(&ctx), files, |f| {
+    let sites: Vec<FileSites> = crate::incr::keyed("dx-reactive-judge-native-draw-proof-v3", crate::incr::ctx_key(&ctx), files, |f| {
         let fd = dxf.of(f);
         let mut reads: Vec<u32> = Vec::new();
         let mut writes: Vec<u32> = Vec::new();
@@ -567,7 +588,7 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
                 for (number, text) in proc.lines(tree) {
                     let text = blank_calls(text, initial_call()); // initial(x.y) is a compile-time default
                     let bad = foreign_reads(&text, &own_roots, &context, &relations).into_iter().any(|n| !tracked.contains(n));
-                    if bad {
+                    if bad && !ctx.native_draw_reads.contains(&format!("{}::{}", proc.path, proc.name)) {
                         reads.push(number as u32);
                     }
                 }
@@ -639,4 +660,52 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
 /// `m.group(i)` is truthy: it participated and is not empty.
 fn m_nonempty(c: &crate::pat::Caps, i: usize) -> bool {
     c.matched(i) && !c.s(i).is_empty()
+}
+
+#[cfg(test)]
+mod native_draw_contract_tests {
+    use super::*;
+    use crate::gens::deps::{DepsAnalysis, Untracked};
+
+    fn accessor_draw() -> DepsAnalysis {
+        DepsAnalysis {
+            consumers: [("/obj/lamp::draw".into(), Vec::new())].into(),
+            draws: ["/obj/lamp::draw".into()].into(),
+            draw_keys: [("/obj/lamp".into(), ["SHELL_KEY".into()].into())].into(),
+            leaves: Vec::new(), draw_reads: Default::default(), draw_hops: Default::default(),
+            reads: Default::default(), candidates: Default::default(), sampled: Default::default(),
+        }
+    }
+
+    #[test]
+    fn native_published_accessor_draw_reuses_complete_read_proof() {
+        let an = accessor_draw();
+        assert_eq!(native_draw_read_proofs(&an), ["/obj/lamp::draw".into()].into());
+    }
+
+    #[test]
+    fn unresolved_foreign_leaf_cannot_borrow_another_accessors_proof() {
+        let mut an = accessor_draw();
+        an.consumers.get_mut("/obj/lamp::draw").unwrap().push(Untracked {
+            what: "foreign.raw".into(), owner: "/datum/raw".into(), rel: "code/content/lamp.dm".into(), line: 7,
+        });
+        assert!(native_draw_read_proofs(&an).is_empty());
+    }
+
+    #[test]
+    fn sampled_draw_is_not_a_native_reactive_proof() {
+        let mut an = accessor_draw();
+        an.sampled.insert("/obj/lamp::draw".into(), [("code/content/lamp.dm".into(), 7)].into());
+        assert!(native_draw_read_proofs(&an).is_empty());
+    }
+
+    #[test]
+    fn absent_or_non_accessor_analysis_retains_the_legacy_check() {
+        let mut an = accessor_draw();
+        an.draw_keys.clear();
+        assert!(native_draw_read_proofs(&an).is_empty());
+        let mut an = accessor_draw();
+        an.consumers.clear();
+        assert!(native_draw_read_proofs(&an).is_empty());
+    }
 }

@@ -636,22 +636,50 @@ pub fn act_holder_positions(sem: &super::Sem, file: &str, text: &str) -> BTreeSe
         collect(code, &mut types);
         walk_block(code, &mut |e, _| {
             let Expression::Base { term, follow } = e else { return; };
-            let (Term::Ident(receiver), [field]) = (&term.elem, follow.as_ref()) else { return; };
-            if !matches!(&field.elem, Follow::Field(_, n) if n.as_str() == "holder") { return; }
-            let ty = if receiver.as_str() == "src" { Some(owner.as_str()) }
-                else { types.get(receiver.as_str()).and_then(|ty| ty.as_deref()) };
-            let Some(ty) = ty else { return; };
-            // A broad ancestor of /client is not sufficient proof either: an actual
-            // client may inhabit it. Require a real declared field on a disjoint type.
-            if sem.ty(ty).is_none() || sem.is_subtype(ty, "/client") || sem.is_subtype("/client", ty) || sem.var_owner(ty, "holder").is_none() { return; }
+            let Term::Ident(receiver) = &term.elem else { return; };
             if sem.rel(term.location) != file { return; }
             let Some(line) = text.lines().nth(term.location.line as usize - 1) else { return; };
-            let start = term.location.column as usize - 1;
-            let Some(tail) = line.get(start..) else { return; };
-            let Some(after_name) = tail.strip_prefix(receiver.as_str()) else { return; };
-            let optional = after_name.starts_with('?');
-            if !(after_name.starts_with(".holder") || after_name.starts_with("?.holder")) { return; }
-            positions.insert((term.location.line as usize, start + receiver.len() + usize::from(optional) + 1));
+            let original = term.location.column as usize - 1;
+            let starts: Vec<usize> = if line.get(original..).is_some_and(|tail| tail.starts_with(receiver.as_str())) {
+                vec![original]
+            } else {
+                // Token-pasted macro arguments retain the call's line but can lose
+                // their argument column. Match only the same literal typed root on
+                // that line; the complete declared field path is still proved below.
+                line.match_indices(receiver.as_str()).filter_map(|(at, _)| {
+                    let before = at.checked_sub(1).and_then(|i| line.as_bytes().get(i)).copied();
+                    let after = line.as_bytes().get(at + receiver.len()).copied();
+                    let boundary = before.is_none_or(|b| !b.is_ascii_alphanumeric() && !b"_.$:?".contains(&b));
+                    (boundary && matches!(after, Some(b'.' | b'?'))).then_some(at)
+                }).collect()
+            };
+            for start in starts {
+                let mut ty = if receiver.as_str() == "src" { Some(owner.to_string()) }
+                else if let Some(local) = types.get(receiver.as_str()) { local.clone() }
+                else { sem.var_decl(owner, receiver.as_str()).map(|v| v.declared) };
+                let mut cursor = start + receiver.len();
+            // Follow only declared member fields. Calls, indexes, dynamic colon
+            // access and untyped/list receivers provide no proof for later fields.
+            for field in follow.iter() {
+                let Follow::Field(_, name) = &field.elem else { break; };
+                let Some(after) = line.get(cursor..) else { break; };
+                let separator = if after.starts_with("?.") { 2 }
+                    else if after.starts_with('.') { 1 } else { break; };
+                if !after[separator..].starts_with(name.as_str()) { break; }
+                let Some(receiver_ty) = ty.as_deref() else { break; };
+                let Some(sig) = sem.var_decl(receiver_ty, name.as_str()) else { break; };
+                if name.as_str() == "holder"
+                    && sem.ty(receiver_ty).is_some()
+                    && !sem.is_subtype(receiver_ty, "/client")
+                    && !sem.is_subtype("/client", receiver_ty)
+                    && sem.var_owner(receiver_ty, "holder").is_some()
+                {
+                    positions.insert((term.location.line as usize, cursor + separator));
+                }
+                cursor += separator + name.len();
+                ty = (!sig.declared.is_empty() && !sig.is_list()).then_some(sig.declared);
+            }
+            }
         });
     }
     positions

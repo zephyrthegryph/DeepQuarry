@@ -694,6 +694,97 @@ TRACKED(/obj/item/flagged, slot_flags)
     }
 
     #[test]
+    fn admin_holder_resolves_typed_member_paths_without_masking_client_or_unknown() {
+        let source = r#"/datum/effect_system
+    var/atom/holder
+/client
+    var/datum/holder
+/obj/grenade
+    var/datum/effect_system/smoke
+    var/datum/effect_system/confetti_spread
+    var/client/remote
+    var/unknown
+    var/datum/broad
+    var/list/items
+/obj/grenade/derived
+/obj/proc/probe(obj/grenade/C, obj/grenade/S, obj/grenade/P, obj/grenade/derived/D, client/U)
+    var/a = C.confetti_spread.holder
+    var/b = S.smoke.holder
+    var/c = P.smoke.holder
+    var/d = D?.smoke?.holder
+    var/e = C.remote.holder
+    var/f = C.unknown.holder
+    var/g = C.broad.holder
+    var/h = list(C.smoke.holder, U.holder)
+    var/i = list(C.smoke.holder, C.remote.holder)
+    var/j = C.items[1].holder
+    var/k = C.produce().holder
+/obj/grenade/proc/own_probe()
+    return list(src.smoke.holder, confetti_spread.holder)
+"#;
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("code")).unwrap();
+        std::fs::write(dir.path().join("code/holder_nested.dm"), source).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/holder_nested.dm", source)]);
+        tree.root = dir.path().to_path_buf();
+        let sem = crate::sem::Sem::build(&tree.root, &tree).unwrap();
+        assert!(sem.errors.is_empty(), "{:?}", sem.errors);
+        let positions = crate::sem::checks::act_holder_positions(&sem, "code/holder_nested.dm", source);
+        assert_eq!(positions.len(), 8, "only fully resolved nonclient field paths, including inherited/optional/src and implicit fields, are proven");
+        let masked = mask_act_holder_fields(source, &positions);
+        for proven in ["C.confetti_spread.holder", "S.smoke.holder", "P.smoke.holder", "D?.smoke?.holder", "src.smoke.holder", "confetti_spread.holder"] {
+            assert!(!masked.contains(proven), "{proven} should be proven nonclient");
+        }
+        for retained in ["C.remote.holder", "C.unknown.holder", "C.broad.holder", "U.holder", "C.items[1].holder", "C.produce().holder"] {
+            assert!(masked.contains(retained), "{retained} must remain unproven");
+        }
+        let lint = CheckGrep::new();
+        let scope = LintScope::default();
+        let cx = Cx { tree: &tree, meta: lint.meta, scope: &scope };
+        let mut out = Sink::new();
+        lint.scan_tree(&cx, &mut out);
+        let actual: Vec<&str> = out.sites.iter()
+            .filter(|s| s.rule == "admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder")
+            .map(|s| source.lines().nth(s.line as usize - 1).unwrap().trim()).collect();
+        assert_eq!(actual, vec!["var/e = C.remote.holder", "var/f = C.unknown.holder", "var/g = C.broad.holder", "var/h = list(C.smoke.holder, U.holder)", "var/i = list(C.smoke.holder, C.remote.holder)", "var/j = C.items[1].holder", "var/k = C.produce().holder"]);
+    }
+
+    #[test]
+    fn admin_holder_proves_token_pasted_macro_arguments_but_keeps_clients() {
+        let source = r#"#define TEST_ASSERT_EQUAL(a, b, message) do { var/lhs = ##a; var/rhs = ##b; if(lhs != rhs) return; } while(FALSE)
+/datum/effect/effect/system
+    var/atom/holder
+/client
+    var/datum/holder
+/obj/grenade/confetti
+    var/datum/effect/effect/system/confetti_spread
+/obj/grenade/smoke
+    var/datum/effect/effect/system/smoke
+/obj/grenade/smoke/primed
+/obj/proc/probe(client/U)
+    var/obj/grenade/confetti/C
+    var/obj/grenade/smoke/S
+    var/obj/grenade/smoke/primed/P
+    TEST_ASSERT_EQUAL(C.confetti_spread.holder, C, "actual confetti sprayer")
+    TEST_ASSERT_EQUAL(S.smoke.holder, S, "actual smoke sprayer")
+    TEST_ASSERT_EQUAL(P.smoke.holder, P, "inherited primed sprayer")
+    TEST_ASSERT_EQUAL(C.confetti_spread.holder, U.holder, "mixed client stays debt")
+    TEST_ASSERT_EQUAL(U.holder, P.smoke.holder, "client first stays debt")
+"#;
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("code")).unwrap();
+        std::fs::write(dir.path().join("code/holder_pasted.dm"), source).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/holder_pasted.dm", source)]);
+        tree.root = dir.path().to_path_buf();
+        let sem = crate::sem::Sem::build(&tree.root, &tree).unwrap();
+        assert!(sem.errors.is_empty(), "{:?}", sem.errors);
+        let positions = crate::sem::checks::act_holder_positions(&sem, "code/holder_pasted.dm", source);
+        let masked = mask_act_holder_fields(source, &positions);
+        assert!(!masked.contains("C.confetti_spread.holder") && !masked.contains("S.smoke.holder") && !masked.contains("P.smoke.holder"), "{positions:?}\n{masked}");
+        assert_eq!(masked.matches("U.holder").count(), 2, "actual clients cannot be hidden by another proven expression on the same macro line");
+    }
+
+    #[test]
     fn rule_names_follow_the_part_titles() {
         let parts = all_parts();
         let mut seen = std::collections::HashSet::new();
