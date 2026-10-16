@@ -5,7 +5,6 @@
 	icon_state = "isolator"
 	anchored = TRUE
 	density = TRUE
-	bubble_icon = "science"
 	var/scan_in_progress = 0
 	var/tmp/obj/machinery/artifact_scanpad/owned_scanner
 	EXPIRY_DECLARE(scan_completion_time)
@@ -23,6 +22,7 @@
 									)
 
 CAPABILITIES(/obj/machinery/artifact_analyser)
+	configure(speech_presentation(bubble_icon = "science"))
 	started_work(step = PROC_REF(work_step))
 	after_init(0, then(PROC_REF(reconnect_scanner)))
 	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)

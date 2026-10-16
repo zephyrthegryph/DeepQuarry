@@ -12,10 +12,10 @@
 	var/tmp/obj/cur_artifact
 	var/tmp/obj/machinery/artifact_scanpad/owned_scanner
 	var/last_process = 0
-	bubble_icon = "science"
 	circuit = /obj/item/circuitboard/artifact_harvester
 
 CAPABILITIES(/obj/machinery/artifact_harvester)
+	configure(speech_presentation(bubble_icon = "science"))
 	default_parts()
 	configure(uses_power(idle = 50, active = 750))
 	started_work(step = PROC_REF(work_step))

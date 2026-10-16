@@ -44,7 +44,7 @@
 					H.adjust_nutrition(50 * weakness)
 					H.mend(TREAT_NEURAL_REPAIR, 25 * weakness)
 					H.purge_radiation(25 * weakness)
-					H.set_bodytemperature(initial(H.bodytemperature))
+					H.set_bodytemperature(heat_spawn_of_type(H.type).temperature)
 					H.fixblood()
 				mend_all(C, 25 * weakness, FALSE)
 				C.regenerate_icons()
