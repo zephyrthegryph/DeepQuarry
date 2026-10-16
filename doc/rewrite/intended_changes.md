@@ -4902,3 +4902,7 @@ The object startup cohort replaces constructor statements with declared owned st
 ## Deterministic look sampling in the initializer lane
 
 The user-approved probe repair keeps plan filtering before the existing 24/200 limits, then orders eligible variable names lexically. Host variable enumeration can therefore no longer change the sampled set. The order-invariance regression covers both limits, empty plans and input immutability. This changes test sampling only; no appearance golden has been re-recorded in this lane.
+
+## Look fixture native-roll stream isolation (2026-10-16)
+
+The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.
