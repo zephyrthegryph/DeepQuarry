@@ -4936,3 +4936,7 @@ The HUD safety-refresh migration now permits refresh exactly at its saved world-
 ## Optical zoom lifetime state (base-vars retirement)
 
 Active optical zoom is the real reciprocal remote-view association rather than a duplicate item boolean. Destroying an item view after its host reference was lost now clears zoom; retiring an older view cannot clear a replacement association for the same device. Previously lifecycle_unbind cleared the boolean only inside a host_mob && host_item guard. Labels become shared optical type configuration with per-item copy-on-write; null/empty fallback, gun scope text and connected-client pixel code are unchanged. Native lifecycle tests do not claim live-client rendering coverage.
+
+### Master prompt-op projection changes (201c0431de)
+
+Master commit `201c0431de48a3569167d8199653abcac3222db9` converted disposal and radiocarbon scanner rerun prompts to declared asks. Disposal and deliveryChute no longer offer the inert Use multitool menu row while their default charging mode silently refuses reconfiguration. The radiocarbon scanner now declares the glass-specific use_container op, changing its glass-held menu projection (Open controls and Use), plain-click label (Open controls), and op key inventory. These six diagnostic classes span three type files; neither production file differs from master. Refresh only those exact expanded row deltas, retaining existing inherited base blocks and all unrelated pins. No appearance pins or runtime failures are blessed.
