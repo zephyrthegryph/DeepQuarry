@@ -295,7 +295,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	/////////////////////////
 	set_last_attacker(M, user)
 
-	if(!no_attack_log)
+	if(!combat_of(src).no_attack_log)
 		add_attack_logs(user,M,"attacked with [name] (STANCE: [uppertext(stance)]) (KIND: [injury_kind_name(injury_kind)])")
 	/////////////////////////
 
