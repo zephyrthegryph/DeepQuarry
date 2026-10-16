@@ -139,7 +139,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 		name = "Owned by [owner_ref().name]"
 		if(owner_ref().current)
 			var/icon/I = get_flat_icon(owner_ref().current, dir=SOUTH, no_anim=TRUE)
-			owner_picture = image(I, pixel_x = (32 - I.Width()))
+			set_owner_picture(image(I, pixel_x = (32 - I.Width())))
 			spent(I)
 
 /obj/structure/closet/secure_closet/mind/closet_look(datum/look/look)

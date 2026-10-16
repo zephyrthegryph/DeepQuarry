@@ -22,7 +22,7 @@
 /obj/proc/make_sellable(path = /datum/sellable)
 	if(sellable_type)
 		return
-	sellable_type = path
+	set_sellable_type(path)
 
 /// Offered to the cargo shuttle: TRUE if sold (the crate record is filled in).
 /atom/proc/export_sale(datum/exported_crate/EC, in_crate)
