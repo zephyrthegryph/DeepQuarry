@@ -143,8 +143,6 @@ base_var	code/modules/body/body_effects.dm	@/mob/living::body_effect_factors
 base_var	code/modules/body/breath_profile.dm	@/mob/living::photosynthesis_boost
 base_var	code/modules/body/factors.dm	@/obj/item::worn_factors
 base_var	code/modules/body/injury.dm	@/mob/living::injury_trace
-base_var	code/modules/body/injury.dm	@/obj/item::injury_kind
-base_var	code/modules/body/injury.dm	@/obj/item::injury_kinds
 base_var	code/modules/body/organs/blood.dm	@/mob/living/carbon/human::vessel
 base_var	code/modules/body/organs/blood.dm	@/mob/living/carbon/human::pale
 base_var	code/modules/catalogue/atoms.dm	@/atom::catalogue_data
