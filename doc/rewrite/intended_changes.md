@@ -5085,3 +5085,7 @@ sampling cause. Verification and any resulting narrow promotion remain pending.
 ### Deterministic look sampling after the native compiler switch
 
 The silicon lane retains current master's plan filtering before the cap, both existing bounds (24 planned / 200 unplanned) and explicit empty-plan semantics. Eligible probe names are sorted before selection and execution. This removes host-variable-enumeration-dependent coverage; only sampling selection/order changes are covered. The reversed-input regression and the real recharge admission fixture passed native preflight 20261016T052401_9bc492d1f7 (2/2). Unrelated gameplay, menu and runtime differences are excluded from this cause class.
+
+## Look fixture native-roll stream isolation (2026-10-16)
+
+The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.

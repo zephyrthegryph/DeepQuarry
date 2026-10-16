@@ -43,3 +43,9 @@ Focused tests only; no full suite or shards. Native verification is now used fol
 The actual lane-ready run on 64cb8e6bba passed production compilation, DreamChecker (zero diagnostics), all ratchets and analyzer tests. Its focused test compiler exited during directive planning with no result JSON while E: had one byte free; no unit test ran. Completed job timings are retained in data/merge-gates/64cb8e6bba85.timings. Disk space later recovered externally (about 13 GiB free). No process was killed or lock deleted by this lane. The broad cleanup attempt was rejected before execution, and no cache was removed.
 
 The unexecuted focused batch is retried through the real lane-ready gate after reading its log. No earlier receipts are synthesized into a stamp and no successful runtime test is being repeated to conceal a failure.
+
+## Native verification update (2026-10-16)
+
+Gate 175ea8c203 compiled with zero native errors and zero DreamChecker diagnostics; ratchets and analyzer tests passed. Focused result data/test-runs/20261016T070229_175ea8c203.json: 51 passed, 2 failed (dq_look_state_pin and dq_look_tree_pin), no known failures, no boot runtime or warning. The functional tests and both requirement/conversion pins passed. No stamp or push is claimed.
+
+The remaining look differences exposed an independent fixture issue: host rand_seed() did not control native rolls(), whose seed included the random round seed, turf coordinates and allocation history. A test-only type-named creator stream now scopes both made and fresh-probe allocations; the regression checks distinct turfs and unrelated serial history, and preserves caller seed/serial/creator state. Random appearance differences are not justified by lexical probe ordering alone and have not been blessed.
