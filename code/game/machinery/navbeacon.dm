@@ -16,9 +16,8 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 
-// ALLOW(init/INSTANCE_STATE): hides under the floor tile it is placed on
-/obj/machinery/navbeacon/Initialize(mapload)
-	. = ..()
+/// Only descendant Initialize is patrol, which writes codes BEFORE calling parent and has no tail; inherited hide may move after that call without crossing another effect. Do NOT migrate patrol pre-parent codes here.
+/obj/machinery/navbeacon/proc/hide_mapped_beacon()
 	var/turf/T = loc
 	hide(!T.is_plating())
 
@@ -76,6 +75,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 
 
 CAPABILITIES(/obj/machinery/navbeacon)
+	setup(PROC_REF(hide_mapped_beacon))
 	silicon_ui()
 	interface("NavBeacon")
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))

@@ -31,17 +31,16 @@ GLOBAL_VAR(bomb_set)
 	var/wire_view = FALSE
 	use_power = USE_POWER_OFF
 
-// ALLOW(init/INSTANCE_STATE): rolls its code and its wire layout for each bomb
-/obj/machinery/nuclearbomb/Initialize(mapload)
-	. = ..()
+/// Choose one complete per-instance access-code and defusal-wire assignment.
+/obj/machinery/nuclearbomb/proc/randomize_defusal_layout()
 	r_code = "[rand(10000, 99999.0)]"//Creates a random code upon object spawn.
-	LAZYSET(wires_list, "Red", 0)
-	LAZYSET(wires_list, "Blue", 0)
-	LAZYSET(wires_list, "Green", 0)
-	LAZYSET(wires_list, "Marigold", 0)
-	LAZYSET(wires_list, "Fuschia", 0)
-	LAZYSET(wires_list, "Black", 0)
-	LAZYSET(wires_list, "Pearl", 0)
+	set_wires_list_at("Red", 0)
+	set_wires_list_at("Blue", 0)
+	set_wires_list_at("Green", 0)
+	set_wires_list_at("Marigold", 0)
+	set_wires_list_at("Fuschia", 0)
+	set_wires_list_at("Black", 0)
+	set_wires_list_at("Pearl", 0)
 	var/list/w = list("Red","Blue","Green","Marigold","Black","Fuschia","Pearl")
 	light_wire = pick(w)
 	w -= light_wire
@@ -167,6 +166,7 @@ GLOBAL_VAR(bomb_set)
 
 
 CAPABILITIES(/obj/machinery/nuclearbomb)
+	setup(PROC_REF(randomize_defusal_layout))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	interface("NuclearBomb", title = "Nuclear Fission Explosive")
 	op("auth", ui_act("auth"), then(PROC_REF(ui_act_auth)))

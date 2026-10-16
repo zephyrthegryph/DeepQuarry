@@ -6,8 +6,8 @@
 	close_sound_powered = 'sound/machines/door/WideClose.ogg'
 	update_adjacent_tiles = FALSE
 
-/obj/machinery/door/airlock/multi_tile/Initialize(mapload)
-	. = ..()
+/// No child Initialize; parent secure-wire/close-group initialization remains before geometry as old tail.
+/obj/machinery/door/airlock/multi_tile/proc/apply_initial_geometry()
 	SetBounds()
 	apply_opacity_to_my_turfs(opacity)
 
@@ -49,3 +49,6 @@
 	name = "Electrochromic Glass Airlock"
 	icon_tinted = 'icons/obj/doors/Door2x1tinted_vr.dmi'
 
+
+CAPABILITIES(/obj/machinery/door/airlock/multi_tile)
+	setup(PROC_REF(apply_initial_geometry))

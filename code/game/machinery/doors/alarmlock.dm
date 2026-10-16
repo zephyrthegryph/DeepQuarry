@@ -10,10 +10,11 @@
 	autoclose = 0
 
 CAPABILITIES(/obj/machinery/door/airlock/alarmlock)
+	setup(PROC_REF(bind_alarm_radio))
 	ref_one(nameof(air_connection), /datum/radio_frequency)
 
-/obj/machinery/door/airlock/alarmlock/Initialize(mapload)
-	. = ..()
+/// Airlock parent secure-wire/close-group initialization remains synchronous before setup; no child Initialize. Keep remove/add/open order and real power refusal.
+/obj/machinery/door/airlock/alarmlock/proc/bind_alarm_radio()
 	SSradio.remove_object(src, air_frequency)
 	rel_set(src, nameof(air_connection), SSradio.add_object(src, air_frequency, RADIO_TO_AIRALARM))
 	open()

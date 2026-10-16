@@ -20,10 +20,6 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	op("program_command", ui_act("*"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
 	op("embedded_controller_open_ui", hand(), ungated(), then(PROC_REF(interaction_open_ui_impl)))
 
-/obj/machinery/embedded_controller/Initialize(mapload)
-	return ..()
-
-
 /obj/machinery/embedded_controller/examine(mob/user, infix, suffix)
 	. = ..()
 	if(in_range(src, user))

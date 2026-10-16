@@ -435,8 +435,8 @@
 	icon_state = "preview_color"
 	fill_type = FILL_COLOR
 
-/obj/machinery/door/airlock/angled_bay/double/Initialize(mapload)
-	. = ..()
+/// Angled-bay parent obtain_icon executes PRE-parent, unchanged; full airlock parent tails execute before SetBounds as before. No child Initialize.
+/obj/machinery/door/airlock/angled_bay/double/proc/apply_initial_geometry()
 	SetBounds()
 	apply_opacity_to_my_turfs(opacity)
 
@@ -465,3 +465,6 @@
 #undef FILL_METAL
 #undef FILL_GLASS
 #undef FILL_COLOR
+
+CAPABILITIES(/obj/machinery/door/airlock/angled_bay/double)
+	setup(PROC_REF(apply_initial_geometry))

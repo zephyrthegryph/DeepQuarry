@@ -35,14 +35,14 @@
 		/obj/item/stack/material
 	)
 
-/obj/machinery/gear_painter/Initialize(mapload)
-	. = ..()
-	color_matrix_last = list(
+/// A fresh mutable editor matrix for this painter.
+/obj/machinery/gear_painter/proc/reset_color_matrix()
+	set_color_matrix_last(list(
 		1, 0, 0,
 		0, 1, 0,
 		0, 0, 1,
 		0, 0, 0,
-	)
+	))
 
 /// The look (the draw sweep: from its template and its layers).
 /obj/machinery/gear_painter/draw(datum/look/look)
@@ -56,6 +56,7 @@
 MSG_DEF_SELF(gear_painter/loaded, "the machine is already loaded")
 
 CAPABILITIES(/obj/machinery/gear_painter)
+	setup(PROC_REF(reset_color_matrix))
 	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)
 	interface("ColorMate")
 	op("switch_modes", ui_act("switch_modes", arg("mode", num())), then(PROC_REF(ui_act_switch_modes)))

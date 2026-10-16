@@ -309,10 +309,9 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 	var/datum/gear_disp/held_gear_disp
 	var/special_frame
 
-/obj/machinery/gear_dispenser/suit_fancy/Initialize(mapload)
-	. = ..()
+/// Parent materializes dispenser data before door overlay; no child tail. Keep service-owned borrowed relation, no owns_one change.
+/obj/machinery/gear_dispenser/suit_fancy/proc/mount_dispenser_door()
 	rel_set(src, nameof(door), add_vis_overlay("closed", layer = 4, unique = TRUE)) // the vis overlay service owns it
-
 
 /obj/machinery/gear_dispenser/suit_fancy/draw(datum/look/look)
 	..()
@@ -332,6 +331,7 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 			look.overlay("light2")
 
 CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
+	setup(PROC_REF(mount_dispenser_door))
 	op("take", hand(), priority(OP_PRIORITY_DEFAULT), ungated(), label("Take"), then(PROC_REF(interaction_take)))
 	ref_one(nameof(door), /obj/effect/overlay/vis)
 	ref_one(nameof(held_gear_disp), /datum/gear_disp)

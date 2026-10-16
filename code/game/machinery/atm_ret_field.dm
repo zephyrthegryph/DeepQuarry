@@ -202,13 +202,10 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 		var/image/I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
 		look.overlay(I)
 
-/obj/structure/atmospheric_retention_field/Initialize(mapload)
-	. = ..()
-	update_nearby_tiles() //Force ZAS update
-
 DESTROY_EFFECTS(/obj/structure/atmospheric_retention_field, new /datum/destroy_effects_data(neighbor_type = /obj/structure/atmospheric_retention_field))
 
 CAPABILITIES(/obj/structure/atmospheric_retention_field)
+	setup(TYPE_PROC_REF(/atom/movable, update_nearby_tiles))
 	configure(light_glow(range = 3, power = 1, color = "#FFFFFF"))
 	smoothing()
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))

@@ -1320,6 +1320,9 @@
 #include "gameplay\machines.dm"
 #include "dq_tanning_rack_wetness_tests.dm"
 #include "dq_init_machinery_tails_tests.dm"
+#include "dq_init_machinery_additional_tests.dm"
+#include "dq_init_machinery_bindings_tests.dm"
+#include "dq_init_machine_config_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

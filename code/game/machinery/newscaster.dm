@@ -197,7 +197,7 @@ CAPABILITIES(/obj/machinery/newscaster)
 REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 /obj/machinery/newscaster/proc/allocate_unit_number()
-	unit_no = ++unit_no_cur
+	set_unit_no(++unit_no_cur)
 
 /// Joins the exonet node, once the map around it exists.
 /obj/machinery/newscaster/proc/connect_exonet(datum/act/timer/A)

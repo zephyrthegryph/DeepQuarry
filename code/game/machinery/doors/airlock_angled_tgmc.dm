@@ -67,8 +67,8 @@
 	glass = TRUE
 	opacity = FALSE
 
-/obj/machinery/door/airlock/angled_tgmc/wide/Initialize(mapload)
-	. = ..()
+/// No child Initialize; parent door density/opacity and machinery facing initialize first. Keep SetBounds before apply_opacity.
+/obj/machinery/door/airlock/angled_tgmc/wide/proc/apply_initial_geometry()
 	SetBounds()
 	apply_opacity_to_my_turfs(opacity)
 
@@ -145,3 +145,6 @@
 	icon_state = "shutter0"
 	density = FALSE
 	opacity = 0
+
+CAPABILITIES(/obj/machinery/door/airlock/angled_tgmc/wide)
+	setup(PROC_REF(apply_initial_geometry))

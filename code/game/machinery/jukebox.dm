@@ -26,6 +26,7 @@
 	var/datum/track/current_track
 
 CAPABILITIES(/obj/machinery/media/jukebox)
+	setup(PROC_REF(validate_track_library))
 	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
 	default_parts()
 	contributes(STAT_HAS_POWER, nameof(anchored)) // a jukebox that is not bolted down has no power, whatever its area gives
@@ -61,9 +62,8 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	op("interact", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_interact)))
 	ref_one(nameof(current_track), /datum/track)
 
-// ALLOW(init/INSTANCE_STATE): takes its built parts, and breaks when it has no tracks to play
-/obj/machinery/media/jukebox/Initialize(mapload)
-	. = ..()
+/// Parent finishes then existing getTracksList is checked; no child tail. atom_break must run after integrity/state initialization.
+/obj/machinery/media/jukebox/proc/validate_track_library()
 	if(!LAZYLEN(getTracksList()))
 		atom_break()
 

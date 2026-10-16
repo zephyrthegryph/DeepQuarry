@@ -52,6 +52,7 @@ GLOBAL_LIST_EMPTY(req_console_information)
 	var/datum/announcement/announcement
 
 CAPABILITIES(/obj/machinery/requests_console)
+	setup(PROC_REF(register_department_console))
 	op("toggleSilent", ui_act("toggleSilent"), then(PROC_REF(ui_act_togglesilent)))
 	owns_one(nameof(announcement), /datum/announcement, starts = /datum/announcement, starts_args = NO_LOC)
 	interface("RequestConsole")
@@ -79,8 +80,8 @@ CAPABILITIES(/obj/machinery/requests_console)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 
-/obj/machinery/requests_console/Initialize(mapload)
-	. = ..()
+/// Configure the owned announcer and join the department registries once.
+/obj/machinery/requests_console/proc/register_department_console()
 	announcement.title = "[department] announcement"
 	announcement.newscast = 1
 

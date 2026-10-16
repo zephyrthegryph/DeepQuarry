@@ -7,14 +7,13 @@
 	var/child_names_txt
 	var/list/child_names
 
-// ALLOW(init/INSTANCE_STATE): splits the map-edited child names and tags into its lookup
-/obj/machinery/embedded_controller/radio/docking_port_multi/Initialize(mapload)
-	. = ..()
+/// Decode the mapper-provided tag/name parallel lists once, retaining mismatched-list behavior.
+/obj/machinery/embedded_controller/radio/docking_port_multi/proc/decode_child_labels()
 	var/list/names = splittext(child_names_txt, ";")
 	var/list/tags = splittext(child_tags_txt, ";")
 	if (names.len == tags.len)
 		for (var/i = 1; i <= tags.len; i++)
-			LAZYSET(child_names, tags[i], names[i])
+			set_child_names_at(tags[i], names[i])
 
 /// The window's data.
 /obj/machinery/embedded_controller/radio/docking_port_multi/ui_data(datum/act/eval/A)
@@ -56,3 +55,6 @@
 		"internalTemplateName" = "AirlockConsoleDocking",
 	)
 
+
+CAPABILITIES(/obj/machinery/embedded_controller/radio/docking_port_multi)
+	setup(PROC_REF(decode_child_labels))

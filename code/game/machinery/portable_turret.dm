@@ -1015,13 +1015,13 @@ CAPABILITIES(/obj/machinery/porta_turret_construct)
 
 
 // Printed pre-stressed: starts at a sliver of integrity ("extremely brittle").
-// ALLOW(init/INSTANCE_STATE): an RCD-printed turret starts at a sliver of its integrity
-/obj/machinery/porta_turret/rcd/Initialize(mapload)
-	. = ..()
+/// Existing update_integrity(5) executes after complete door/machine integrity initialization; no child Initialize.
+/obj/machinery/porta_turret/rcd/proc/apply_rcd_integrity()
 	update_integrity(5)
 
 /// Runs on its own supply: only BROKEN and EMPED stop it, never its area's power (neither the grid's reading nor the capacitors' delay applies).
 CAPABILITIES(/obj/machinery/porta_turret/rcd)
+	setup(PROC_REF(apply_rcd_integrity))
 	configure(uses_power(idle = 0, active = 0))
 	without("turret_power") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
 	configure(machine_basics(repair = NONE, powered = FALSE))
