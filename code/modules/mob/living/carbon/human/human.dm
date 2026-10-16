@@ -2254,8 +2254,6 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 sparse(/mob/living/carbon/human, active_regen, type = num)
 
 
-#define ENTRY_HUMAN_ABILITIES "human_abilities"
-#define HUMAN_ABILITIES_KEY "human_abilities"
 
 STATIC_ENTRY(human_abilities)
 /proc/human_abilities(spit_projectile = null, spit_name = null, active_regen_delay = null, damage_multiplier = null, low_sorting_priority = null)

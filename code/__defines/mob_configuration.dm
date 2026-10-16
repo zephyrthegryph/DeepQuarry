@@ -2,3 +2,5 @@
 #define VOICE_CONFIG_KEY "voice_config"
 #define ENTRY_BUTCHERY_CONFIG "butchery_config"
 #define BUTCHERY_CONFIG_KEY "butchery_config"
+#define ENTRY_HUMAN_ABILITIES "human_abilities"
+#define HUMAN_ABILITIES_KEY "human_abilities"
