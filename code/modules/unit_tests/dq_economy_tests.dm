@@ -9,8 +9,8 @@
 	var/datum/money_account/target = new
 	source.set_owner_name("Source")
 	target.set_owner_name("Target")
-	source.money = 100
-	target.money = 25
+	source.set_money(100)
+	target.set_money(25)
 	TEST_ASSERT(transfer_account_funds(source, target, 40, "Test transfer"), "valid transfer was rejected")
 	TEST_ASSERT_EQUAL(source.money, 60, "source balance was incorrect")
 	TEST_ASSERT_EQUAL(target.money, 65, "target balance was incorrect")
@@ -28,16 +28,16 @@
 	var/datum/money_account/customer = new
 	provider.set_owner_name("Medical test budget")
 	provider.set_is_budget_account(TRUE)
-	provider.money = 0
+	provider.set_money(0)
 	customer.set_owner_name("Patient")
-	customer.money = 0
+	customer.set_money(0)
 	set_global("department_accounts", GLOB.department_accounts.Copy())
 	GLOB.department_accounts[DEPARTMENT_MEDICAL] = provider
 	var/station_before = set_var(GLOB.station_account, "money", GLOB.station_account.money)
 	TEST_ASSERT(charge_department_service(customer, DEPARTMENT_MEDICAL, 20, "Test care"), "service charge failed")
 	TEST_ASSERT_EQUAL(provider.money, 20, "poor-patient subsidy did not reach Medical")
 	TEST_ASSERT_EQUAL(GLOB.station_account.money, station_before - 20, "station subsidy was not conserved")
-	customer.money = 100
+	customer.set_money(100)
 	provider.service_subsidy = 0
 	TEST_ASSERT(!department_service_quote(customer, DEPARTMENT_MEDICAL, 120), "underfunded service purchase produced a quote")
 	TEST_ASSERT(!charge_department_service(customer, DEPARTMENT_MEDICAL, 120, "Unaffordable care"), "underfunded service purchase was accepted")
@@ -139,7 +139,7 @@
 	test_budget.set_owner_name("Test Engineering")
 	test_budget.set_department_id(DEPARTMENT_ENGINEERING)
 	test_budget.set_is_budget_account(TRUE)
-	test_budget.money = 31
+	test_budget.set_money(31)
 	set_global("department_accounts", GLOB.department_accounts.Copy())
 	GLOB.department_accounts[DEPARTMENT_ENGINEERING] = test_budget
 	var/list/employees = list()
@@ -190,7 +190,7 @@
 	budget.set_owner_name("Test department")
 	budget.set_department_id(DEPARTMENT_ENGINEERING)
 	budget.set_is_budget_account(TRUE)
-	budget.money = 1200
+	budget.set_money(1200)
 	budget.monthly_income = 300
 	budget.monthly_expenses = 100
 	TEST_ASSERT(budget.roll_budget_period(), "department budget refused rollover")
@@ -209,7 +209,7 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/test_station = new
 	test_station.set_owner_name("Test Station")
-	test_station.money = 100
+	test_station.set_money(100)
 	test_station.suspended = TRUE
 	set_global("station_account", test_station)
 	var/obj/machinery/account_database/terminal = new(test_turf)
@@ -277,7 +277,7 @@
 	var/datum/money_account/account = new
 	account.set_owner_name("Personal Supply Tester")
 	account.set_account_number(812345)
-	account.money = SSsupply.pack_price(pack) + 10
+	account.set_money(SSsupply.pack_price(pack) + 10)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	rel_set(requester_mind, nameof(requester_mind.initial_account), account)
 	requester_mind.transfer_to(requester)
@@ -318,11 +318,11 @@
 	var/datum/money_account/customer = new
 	customer.set_owner_name("Hungry Tester")
 	customer.set_account_number(823456)
-	customer.money = 120
+	customer.set_money(120)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	service.service_subsidy = 0.25
 	TEST_ASSERT(!department_service_quote(customer, DEPARTMENT_CIVILIAN, 200), "underfunded Service checkout produced a quote")
-	customer.money = 150
+	customer.set_money(150)
 	var/list/quote = department_service_quote(customer, DEPARTMENT_CIVILIAN, 200)
 	TEST_ASSERT_EQUAL(quote["personal"], 150, "Service quote calculated the wrong personal payment")
 	TEST_ASSERT_EQUAL(quote["subsidy"], 50, "Service quote calculated the wrong subsidy")
@@ -363,7 +363,7 @@
 	var/datum/money_account/customer = new
 	customer.set_owner_name("Adversarial Customer")
 	customer.set_account_number(834567)
-	customer.money = 500
+	customer.set_money(500)
 	var/datum/money_account/staff = new
 	staff.set_owner_name("Service Worker")
 	staff.set_account_number(834568)
@@ -397,10 +397,10 @@
 	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "refund was issued to a suspended account")
 	customer.suspended = FALSE
 	var/funded_service_balance = service.money
-	service.money = 0
+	service.set_money(0)
 	service.savings = 0
 	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "underfunded provider issued a refund")
-	service.money = funded_service_balance
+	service.set_money(funded_service_balance)
 	TEST_ASSERT(transfer_account_funds(staff, impostor, staff.money, "Spent gratuity"), "test could not spend the staff gratuity")
 	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "refund succeeded after the staff gratuity was spent")
 	TEST_ASSERT_EQUAL(customer.money, 380, "failed refund changed the customer balance")
@@ -415,7 +415,7 @@
 	SSsupply.service_invoice_counter = invoice_counter_before
 	SSsupply.currency_refunded = refunds_before
 	SSsupply.currency_internal_refunded = internal_refunds_before
-	service.money = service_before
+	service.set_money(service_before)
 	service.savings = service_savings_before
 	service.monthly_income = service_income_before
 	service.monthly_expenses = service_expenses_before
@@ -444,7 +444,7 @@
 	var/list/preexisting_cash = list()
 	for(var/obj/item/spacecash/existing_cash in turf_contents_of_type(test_turf, /obj/item/spacecash))
 		preexisting_cash += existing_cash
-	service.money += 30
+	service.set_money(service.money + 30)
 	var/datum/service_invoice/invoice = SSsupply.create_service_external_invoice(service, "Anonymous refund test", list("Cash meal" = 1), list("Cash meal" = 30), "Cash customer", 30, "Cash")
 	TEST_ASSERT(invoice, "anonymous cash checkout did not create an invoice")
 	var/mob/living/carbon/human/operator = new(test_turf)
@@ -459,7 +459,7 @@
 	SSsupply.service_invoice_counter = invoice_counter_before
 	SSsupply.currency_refunded = refunds_before
 	SSsupply.currency_internal_refunded = internal_refunds_before
-	service.money = service_money_before
+	service.set_money(service_money_before)
 	service.monthly_expenses = service_expenses_before
 	service.total_expenses = service_total_expenses_before
 	for(var/obj/item/spacecash/new_cash in turf_contents_of_type(test_turf, /obj/item/spacecash))
@@ -554,7 +554,7 @@
 	var/datum/money_account/customer_account = new
 	customer_account.set_owner_name("Lifecycle Customer")
 	customer_account.set_account_number(845670)
-	customer_account.money = 200
+	customer_account.set_money(200)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer_account)
 	var/mob/living/carbon/human/customer = new(test_turf)
 	var/datum/mind/customer_mind = own(new /datum/mind("service_lifecycle")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
@@ -675,7 +675,7 @@
 	var/datum/money_account/producer = new
 	producer.set_owner_name("Research Producer")
 	producer.set_account_number(918273)
-	producer.money = 1000
+	producer.set_money(1000)
 	producer.set_department_id(DEPARTMENT_ENGINEERING)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, producer)
 	var/datum/contract_definition/research_definition = SScontracts.definitions["research_export_portfolio"]
@@ -770,8 +770,8 @@
 	mech_fabricator.release_stored_part()
 	TEST_ASSERT_EQUAL(stored_mech_part.loc, fabricator_exit, "mech-fabricator did not release its provenance-tagged stored output")
 
-	research.money = research_before
-	cargo.money = cargo_before
+	research.set_money(research_before)
+	cargo.set_money(cargo_before)
 	research.monthly_income = research_income_before
 	cargo.monthly_income = cargo_income_before
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, producer)
@@ -878,7 +878,7 @@
 	var/datum/money_account/owner_account = new
 	owner_account.set_account_number(9654340)
 	owner_account.set_owner_name("Covert Principal Tester")
-	owner_account.money = 10000
+	owner_account.set_money(10000)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	var/datum/mind/owner_mind = new("covert_principal_tester")
 	rel_set(owner_mind, nameof(owner_mind.initial_account), owner_account)
@@ -1179,7 +1179,7 @@
 	customer.set_account_number(9876101)
 	customer.set_owner_name("Storefront Unit Customer")
 	customer.set_department_id(DEPARTMENT_ENGINEERING)
-	customer.money = 500
+	customer.set_money(500)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	var/datum/mind/customer_mind = new("storefront_unit_customer")
 	rel_set(customer_mind, nameof(customer_mind.initial_account), customer)
@@ -1191,6 +1191,7 @@
 	customer_id.set_associated_account_number(customer.account_number)
 	dq_test_wear_id(customer_mob, customer_id)
 	var/obj/machinery/department_storefront/research/store = new(test_turf)
+	rel_set(store, nameof(store.linked_account), GLOB.department_accounts[DEPARTMENT_RESEARCH]) // linked by the economy setup / after_init in a live round
 	var/obj/item/store_item = new(store)
 	store_item.set_economic_provenance(DEPARTMENT_RESEARCH, 10, 0)
 	var/item_ref = REF(store_item)
@@ -1226,7 +1227,7 @@
 	TEST_ASSERT(adoption.record_use(customer_mob), "the purchasing department's first real item use did not publish adoption evidence")
 	TEST_ASSERT(adoption.adopted, "operational-use evidence did not become exactly-once after publication")
 
-	research.money = research_before
+	research.set_money(research_before)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer)
 	qdel(store)
 	qdel(customer_mob)
@@ -1280,7 +1281,7 @@
 	var/datum/supply_order/order = new /datum/supply_order()
 	order.ordernum = supply_ordernum()
 	order.supply_pack_static = supply_supply_pack()[pick(supply_supply_pack())]
-	order.ordered_by = "Test Orderer"
+	order.set_ordered_by("Test Orderer")
 	rel_add(SSsupply, nameof(SSsupply.shoppinglist), order)
 	TEST_ASSERT(order in SSsupply.shoppinglist, "the queued order is on the shopping list")
 	SSsupply.buy()

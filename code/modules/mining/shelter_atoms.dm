@@ -442,20 +442,41 @@ CAPABILITIES(/obj/item/survivalcapsule)
 		// We only show where the doors will be on a successful deploy check to avoid player confusion.
 		remove_preview(user, preview_render, 0)
 		preview_render = preview_template(user, deploy_location, show_doors = TRUE)
-		var/_answer_k433 = rerun_ask(user, "k433", PROC_REF(survivalcapsule_self), args, /datum/prompt/choice, question = "Confirm location. (The shelter's exterior doors are highlighted in green!)", title = "Shelter Deploy Confirm", choices = list("No","Yes"), buttons = TRUE)
-		if(isnull(_answer_k433))
-			return TRUE
-		if(_answer_k433 == "Yes")
-			// We might have moved since the last check, so we check again!
-			if(!can_deploy(deploy_location, GetAbove(deploy_location)))
-				used = FALSE
-				return
-			loc.visible_message(span_warning("\The [src] begins to shake. Stand back!"))
-			user.drop_from_inventory(src)
-			used = TRUE
+		open_request(src, /datum/prompt/choice/shelter_confirm, PROC_REF(deploy_confirmed), answerer = user, choices = list("No","Yes"), buttons = TRUE, preview_render = preview_render)
+		return TRUE
 
-			after(src, 5 SECONDS, PROC_REF(deploy_step_one), with = list(user))
-		remove_preview(user, preview_render, 0)
+/// The location was confirmed or not: the capsule goes off on a Yes (checking the place again, it may have moved since), and the preview goes either way.
+/obj/item/survivalcapsule/proc/deploy_confirmed(datum/act/request/A)
+	var/datum/prompt/choice/shelter_confirm/request = A.request
+	var/mob/user = request.answerer
+	var/turf/deploy_location = get_turf(src)
+	if(!A.answer || used)
+		remove_preview(user, request.preview_render, 0)
+		return
+	get_template()
+	if(unique_id && (unique_id in GLOB.unique_deployable))
+		loc.visible_message(span_warning("There can only be one [src] deployed at a time."))
+		remove_preview(user, request.preview_render, 0)
+		return
+	if(A.answer.value == "Yes")
+		// We might have moved since the last check, so we check again!
+		if(!can_deploy(deploy_location, GetAbove(deploy_location)))
+			used = FALSE
+			remove_preview(user, request.preview_render, 0)
+			return
+		loc.visible_message(span_warning("\The [src] begins to shake. Stand back!"))
+		user.drop_from_inventory(src)
+		used = TRUE
+
+		after(src, 5 SECONDS, PROC_REF(deploy_step_one), with = list(user))
+	remove_preview(user, request.preview_render, 0)
+
+/// The confirmation of a shelter's location: the preview the question shows is taken down when it is answered.
+/datum/prompt/choice/shelter_confirm
+	question = "Confirm location. (The shelter's exterior doors are highlighted in green!)"
+	title = "Shelter Deploy Confirm"
+	timeout = 0
+	var/list/preview_render
 
 /obj/item/survivalcapsule/luxury
 	name = "luxury surfluid shelter capsule"

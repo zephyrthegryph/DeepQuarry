@@ -20,17 +20,22 @@
 		to_chat(usr, "This map is not appropriate for this verb.")
 		return
 
-	var/response = rerun_ask(usr, "k23", PROC_REF(setup_fusion), args, /datum/prompt/choice, question = "Are you sure?", title = "Engine setup", choices = list("No", "Yes"), buttons = TRUE)
-	if(isnull(response))
+	open_request(src, /datum/prompt/choice, PROC_REF(setup_fusion_answered), answerer = usr, question = "Are you sure?", title = "Engine setup", choices = list("No", "Yes"), buttons = TRUE, timeout = 0)
+
+/// The engine setup is confirmed: the map is checked again, then the R-UST engine is started.
+/datum/admins/proc/setup_fusion_answered(datum/act/request/A)
+	if(!A.answer || A.answer.value != "Yes")
 		return
-	if(response != "Yes")
+	var/mob/user = A.request.answerer
+	if(!(locate_in_list(REGISTRY_MEMBERS(REGISTRY_MACHINES), /obj/machinery/power/fusion_core/mapped)))
+		to_chat(user, "This map is not appropriate for this verb.")
 		return
 
 	var/errors = 0
 	var/warnings = 0
 	var/success = 0
 
-	log_and_message_admins("## FUSION CORE SETUP - Setup initiated by [usr].")
+	log_and_message_admins("## FUSION CORE SETUP - Setup initiated by [user].")
 
 	for(var/obj/machinery/fusion_fuel_injector/mapped/injector in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		rel_set(injector, nameof(injector.cur_assembly), new /obj/item/fuel_assembly/deuterium(injector))

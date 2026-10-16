@@ -16,9 +16,9 @@
 /obj/vehicle/bike/random icon: icons/obj/bike.dmi
 /obj/vehicle/bike/random state: bike_off
 /obj/vehicle/bike/random dir: 2
-/obj/vehicle/bike/random overlay: icons/obj/bike.dmi:bike_off_a:-32767:#6d3749
+/obj/vehicle/bike/random overlay: icons/obj/bike.dmi:bike_off_a:-32767:#7b6a1f
 /obj/vehicle/bike/random overlay: icons/obj/bike.dmi:bike_off_overlay:-25
-/obj/vehicle/bike/random overlay: icons/obj/bike.dmi:bike_off_overlay_a:-25:#6d3749
+/obj/vehicle/bike/random overlay: icons/obj/bike.dmi:bike_off_overlay_a:-25:#7b6a1f
 /obj/vehicle/boat icon: icons/obj/vehicles_36x32.dmi
 /obj/vehicle/boat state: boat
 /obj/vehicle/boat dir: 2
@@ -67,9 +67,9 @@
 /obj/vehicle/train/engine/quadbike/random state: quad
 /obj/vehicle/train/engine/quadbike/random dir: 4
 /obj/vehicle/train/engine/quadbike/random overlay: icons/obj/vehicles.dmi:cargo_engine_overlay:-25
-/obj/vehicle/train/engine/quadbike/random overlay: icons/obj/vehicles_64x64.dmi:quad_a:-32767:#ba117f
+/obj/vehicle/train/engine/quadbike/random overlay: icons/obj/vehicles_64x64.dmi:quad_a:-32767:#c9cf6f
 /obj/vehicle/train/engine/quadbike/random overlay: icons/obj/vehicles_64x64.dmi:quad_overlay:-25
-/obj/vehicle/train/engine/quadbike/random overlay: icons/obj/vehicles_64x64.dmi:quad_overlay_a:-25:#ba117f
+/obj/vehicle/train/engine/quadbike/random overlay: icons/obj/vehicles_64x64.dmi:quad_overlay_a:-25:#c9cf6f
 /obj/vehicle/train/engine/quadbike/snowmobile icon: icons/obj/vehicles.dmi
 /obj/vehicle/train/engine/quadbike/snowmobile state: snowmobile
 /obj/vehicle/train/engine/quadbike/snowmobile dir: 4
@@ -81,9 +81,9 @@
 /obj/vehicle/train/engine/quadbike/snowmobile/random state: snowmobile
 /obj/vehicle/train/engine/quadbike/snowmobile/random dir: 4
 /obj/vehicle/train/engine/quadbike/snowmobile/random overlay: icons/obj/vehicles.dmi:cargo_engine_overlay:-25
-/obj/vehicle/train/engine/quadbike/snowmobile/random overlay: icons/obj/vehicles.dmi:snowmobile_a:-32767:#55780f
+/obj/vehicle/train/engine/quadbike/snowmobile/random overlay: icons/obj/vehicles.dmi:snowmobile_a:-32767:#545a42
 /obj/vehicle/train/engine/quadbike/snowmobile/random overlay: icons/obj/vehicles.dmi:snowmobile_overlay:-25
-/obj/vehicle/train/engine/quadbike/snowmobile/random overlay: icons/obj/vehicles.dmi:snowmobile_overlay_a:-25:#55780f
+/obj/vehicle/train/engine/quadbike/snowmobile/random overlay: icons/obj/vehicles.dmi:snowmobile_overlay_a:-25:#545a42
 /obj/vehicle/train/engine/quadbike/snowmobile/built icon: icons/obj/vehicles.dmi
 /obj/vehicle/train/engine/quadbike/snowmobile/built state: snowmobile
 /obj/vehicle/train/engine/quadbike/snowmobile/built dir: 2
@@ -101,7 +101,7 @@
 /obj/vehicle/train/trolley/trailer/random icon: icons/obj/vehicles_64x64.dmi
 /obj/vehicle/train/trolley/trailer/random state: quadtrailer
 /obj/vehicle/train/trolley/trailer/random dir: 4
-/obj/vehicle/train/trolley/trailer/random overlay: icons/obj/vehicles_64x64.dmi:quadtrailer_a:-32767:#08a251
+/obj/vehicle/train/trolley/trailer/random overlay: icons/obj/vehicles_64x64.dmi:quadtrailer_a:-32767:#a11e08
 /obj/vehicle/train/trolley_tank icon: icons/obj/vehicles.dmi
 /obj/vehicle/train/trolley_tank state: cargo_tank
 /obj/vehicle/train/trolley_tank dir: 4

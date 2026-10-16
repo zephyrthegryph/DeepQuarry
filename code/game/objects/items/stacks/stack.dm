@@ -232,7 +232,7 @@ CAPABILITIES(/obj/item/stack)
 			S.add_to_stacks(user)
 		if (isitem(O))
 			var/obj/item/P = O
-			P.persist_storable = FALSE
+			P.set_persist_storable(FALSE)
 		if (istype(O, /obj/item/storage)) //BubbleWrap - so newly formed boxes are empty
 			for (var/obj/item/I in O)
 				spent(I)

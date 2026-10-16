@@ -7,10 +7,6 @@
 #define verb_ask(user, key, verb_args, prompt, fields...) verb_rerun_ask(user, key, verb_args, prompt, list(fields))
 /// In a /client proc: re-runs proc_name with proc_args; `rights` (R_*) are re-checked.
 #define client_ask(key, proc_name, proc_args, rights, prompt, fields...) client_rerun_ask(key, proc_name, proc_args, rights, prompt, list(fields))
-/// In any datum proc: re-runs proc_name on src with proc_args.
-#define rerun_ask(user, key, proc_name, proc_args, prompt, fields...) rerun_ask_proc(user, key, proc_name, proc_args, prompt, list(fields))
-/// The same, re-running proc_name on `target` instead of src.
-#define rerun_ask_on(target, user, key, proc_name, proc_args, prompt, fields...) target.rerun_ask_proc(user, key, proc_name, proc_args, prompt, list(fields))
 /// Deep inside a prompt_flow().
 #define flow_ask(user, key, prompt, fields...) prompt_flow_ask(user, key, prompt, list(fields))
 /// Thrown by flow_io_answer() to unwind a prompt flow whose query is in flight; prompt_flow() catches it.

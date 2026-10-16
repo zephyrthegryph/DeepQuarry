@@ -131,24 +131,32 @@ CAPABILITIES(/datum/artifact_master)
 
 	return effects
 
-/datum/artifact_master/proc/add_effect()
-	var/effect_type = rerun_ask(usr, "k123", PROC_REF(add_effect), args, /datum/prompt/choice, question = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect))
-	if(isnull(effect_type))
+/datum/artifact_master/proc/add_effect(mob/user)
+	if(!ismob(user) || QDELETED(user))
 		return
-	if(effect_type)
-		var/datum/artifact_effect/my_effect = new effect_type(src)
-		rel_add(src, nameof(my_effects), my_effect)
-		if(!istype(holder(), my_effect.req_type))
-			to_chat(usr, span_filter_notice("This effect can not be applied to this atom type."))
-			rel_remove(src, nameof(my_effects), my_effect)
+	open_request(src, /datum/prompt/choice, PROC_REF(effect_type_chosen), answerer = user, question = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect), timeout = 0)
 
-/datum/artifact_master/proc/remove_effect()
-	var/to_remove_effect = rerun_ask(usr, "k134", PROC_REF(remove_effect), args, /datum/prompt/choice, question = "What effect do you want to remove?", title = "Remove Effect", choices = my_effects)
-	if(isnull(to_remove_effect))
+/// The effect type is chosen: it is added, unless the holder cannot take it.
+/datum/artifact_master/proc/effect_type_chosen(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
 		return
+	var/effect_type = A.answer.value
+	var/datum/artifact_effect/my_effect = new effect_type(src)
+	rel_add(src, nameof(my_effects), my_effect)
+	if(!istype(holder(), my_effect.req_type))
+		to_chat(A.request.answerer, span_filter_notice("This effect can not be applied to this atom type."))
+		rel_remove(src, nameof(my_effects), my_effect)
 
-	if(to_remove_effect)
-		rel_remove(src, nameof(my_effects), to_remove_effect)
+/datum/artifact_master/proc/remove_effect(mob/user)
+	if(!ismob(user) || QDELETED(user))
+		return
+	open_request(src, /datum/prompt/choice, PROC_REF(effect_to_remove_chosen), answerer = user, question = "What effect do you want to remove?", title = "Remove Effect", choices = my_effects, timeout = 0)
+
+/// The effect to remove is chosen.
+/datum/artifact_master/proc/effect_to_remove_chosen(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	rel_remove(src, nameof(my_effects), A.answer.value)
 
 // its effects (owned by my_effects) go with it; leaving the holder's artifact_master is automatic.
 /datum/artifact_master/on_destroy(force)

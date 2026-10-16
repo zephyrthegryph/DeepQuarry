@@ -82,7 +82,7 @@ CAPABILITIES(/datum/stored_item)
 		product = materialize(product_location)
 	if(istype(product, /obj/item))
 		var/obj/item/our_item = product
-		our_item.persist_storable = FALSE
+		our_item.set_persist_storable(FALSE)
 	return product
 
 /// The hash `blob` is merged by.

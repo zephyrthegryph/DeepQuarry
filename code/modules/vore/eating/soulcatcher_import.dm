@@ -1,4 +1,5 @@
-/datum/vore_look/proc/import_soulcatcher(mob/host, list/soulcatcher_data)
+/// Imports soulcatcher settings; `confirm` is the answer to the override warning the import op asks.
+/datum/vore_look/proc/import_soulcatcher(mob/host, list/soulcatcher_data, confirm)
 	if(!host.soulgem)
 		return FALSE
 
@@ -8,10 +9,6 @@
 
 	if(LAZYLEN(soulcatcher_data) == 0)
 		return FALSE
-
-	var/confirm = rerun_ask(host, "a1", PROC_REF(import_soulcatcher), args, /datum/prompt/choice, question = "WARNING: This will override your current soulcatcher settings!", title = "Import soulcatcher?", choices = list("Yes","Cancel"), buttons = TRUE)
-	if(isnull(confirm))
-		return
 
 	if(confirm != "Yes")
 		return FALSE
