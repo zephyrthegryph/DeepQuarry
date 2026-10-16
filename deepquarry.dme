@@ -674,7 +674,6 @@
 #include "code\datums\operations\routes.dm"
 #include "code\datums\capabilities\debug_verbs.dm"
 #include "code\engine\change\derived.dm"
-#include "code\library\present\body_factor_notifications.dm"
 #include "code\datums\capabilities\dispatch.dm"
 #include "code\datums\capabilities\examine.dm"
 #include "code\datums\capabilities\library\access.dm"

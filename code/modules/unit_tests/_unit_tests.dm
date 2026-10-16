@@ -130,6 +130,7 @@
 #include "dq_factor_oracle.dm"
 #include "dq_factor_oracle_tests.dm"
 #include "dq_factor_pins.dm"
+#include "dq_physiology_pins.dm"
 #include "dq_items_emag_ops.dm"
 #include "dq_retired_behaviour_pins.dm"
 #include "dq_test_overrides_tests.dm"

@@ -198,3 +198,22 @@ GLOBAL_LIST_EMPTY(stat_pass_before)
 	for(var/skey in touched)
 		defs += touched[skey]
 	stat_settle(E, defs)
+
+/// What the stat `stat_id` composes to from `tables` alone, each held at `scale` and `stacks`: the stat's base, the tables' contributions by its
+/// rule, held to its bounds. Pure: it holds nothing and reads no entity, so a source can ask what its tables would give without placing them.
+/// `lookup_id` is the key the tables name the stat by when that is not the stat's own id.
+/proc/stat_fold_tables(stat_id, list/tables, scale = 1, stacks = 1, lookup_id = null)
+	var/datum/stat_def/def = stat_def_of(stat_id)
+	if(!def)
+		return null
+	if(isnull(lookup_id))
+		lookup_id = stat_id
+	var/list/rows = list()
+	if(!isnull(def.base))
+		rows.Add(def.base, PRIORITY_DEFAULT, -1000000)
+	for(var/alist/table as anything in tables)
+		var/c = stat_table_contribution(def, table?[lookup_id], scale, stacks)
+		if(!isnull(c))
+			rows.Add(c, PRIORITY_DEFAULT, 0)
+	var/value = stat_combine(def, rows)
+	return def.clamps ? stat_clamp(def, value) : value

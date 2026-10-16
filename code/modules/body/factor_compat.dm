@@ -18,7 +18,7 @@
 		ids[BF_CIRCULATION] = STAT_CIRCULATION
 		ids[BF_DEMAND] = STAT_DEMAND
 		ids[BF_PROGRESSION] = STAT_PROGRESSION
-		ids[BF_METABOLISM] = STAT_METABOLISM
+		ids[BF_METABOLISM] = STAT_METABOLISM_MULT
 		ids[BF_BLEEDING] = STAT_BLEEDING
 		ids[BF_HEALING] = STAT_HEALING
 		ids[BF_ANALGESIA] = STAT_ANALGESIA
@@ -114,3 +114,11 @@
 		if(stat_id)
 			out[stat_id] = table[id]
 	return out
+
+/// Holds `table` (BF_* -> value) as rows of `source` on `L` at `scale` and `stacks` (hold_table() of the same table keyed by stat). A source with
+/// more than one table gives each a `part`. An empty or null table holds nothing; inside a pass (hold_tables_begin()) the rows the source held
+/// before leave at its end.
+/proc/body_hold(mob/living/L, source, alist/table, scale = 1, stacks = 1, part = null)
+	if(!length(table))
+		return
+	hold_table(L, source, body_table_stat_keys(table), scale, stacks, part)

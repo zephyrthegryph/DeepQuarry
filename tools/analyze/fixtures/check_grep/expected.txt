@@ -25,7 +25,6 @@ body_factors_no_mechanical_effects	code/modules/fx/body_fx.dm	26
 body_factors_no_mechanical_effects	code/modules/fx/body_fx.dm	27
 body_factors_no_modifier_numeric_fields	code/modules/fx/body_fx.dm	28
 body_factors_no_modifier_numeric_fields	code/modules/fx/body_fx.dm	29
-body_factors_no_modifier_numeric_fields	code/modules/fx/body_fx.dm	30
 body_factors_no_modifier_numeric_fields	code/modules/fx/body_fx.dm	31
 broken_html	code/modules/fx/html_fx.dm	2
 broken_html	code/modules/fx/html_fx.dm	6

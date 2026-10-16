@@ -80,11 +80,9 @@
 	return 1 - 0.5 * severity / complete_threshold
 
 /// The airway's patency is a factor the physiology reads.
-/datum/affliction/airway/accumulate_factors(list/acc)
-	acc = ..()
-	var/static/alist/scratch = alist(BF_AIRWAY = 1)
-	scratch[BF_AIRWAY] = patency()
-	return body_factor_accumulate(acc, scratch, 1)
+/datum/affliction/airway/hold_factors(mob/living/L)
+	..()
+	body_hold(L, src, alist(BF_AIRWAY = patency()), 1, 1, "patency")
 
 /// Something lodged in the airway: food, vomit, blood, a broken jaw.
 /datum/affliction/airway_obstruction
@@ -165,11 +163,9 @@
 	return severity >= RESP_ARREST_APNEA_THRESHOLD
 
 /// The drive to breathe is a factor the physiology reads: none while apneic.
-/datum/affliction/respiratory_arrest/accumulate_factors(list/acc)
-	acc = ..()
-	var/static/alist/scratch = alist(BF_RESP_DRIVE = 1)
-	scratch[BF_RESP_DRIVE] = is_apneic() ? 0 : 1 - severity / AFFLICTION_SEVERITY_TERMINAL
-	return body_factor_accumulate(acc, scratch, 1)
+/datum/affliction/respiratory_arrest/hold_factors(mob/living/L)
+	..()
+	body_hold(L, src, alist(BF_RESP_DRIVE = is_apneic() ? 0 : 1 - severity / AFFLICTION_SEVERITY_TERMINAL), 1, 1, "drive")
 
 /// Is something still suppressing the drive to breathe?
 /datum/affliction/respiratory_arrest/proc/is_sustained()
@@ -443,7 +439,7 @@ TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
 /datum/affliction/cardiac_arrhythmia/tick()
 	// An unstable rhythm degenerates faster in an irritable (hypoxic) heart.
 	if(rhythm == CARDIAC_RHYTHM_TACHY && body)
-		progression_rate = CARDIAC_TACHY_PROGRESSION * body.get_factor(BF_CARDIAC_IRRITABILITY)
+		progression_rate = CARDIAC_TACHY_PROGRESSION * body.owner.factor(BF_CARDIAC_IRRITABILITY)
 	if(!is_perfusing())
 		arrest_tick()
 		if(QDELETED(src) || !body)
@@ -461,7 +457,7 @@ TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
 	var/compressed = is_receiving_compressions()
 	switch(rhythm)
 		if(CARDIAC_RHYTHM_VF)
-			var/decay = (compressed ? ARREST_VF_DECAY_CHANCE / 2 : ARREST_VF_DECAY_CHANCE) * (body ? body.get_factor(BF_CARDIAC_IRRITABILITY) : 1)
+			var/decay = (compressed ? ARREST_VF_DECAY_CHANCE / 2 : ARREST_VF_DECAY_CHANCE) * (body ? body.owner.factor(BF_CARDIAC_IRRITABILITY) : 1)
 			if(prob(decay))
 				set_rhythm(CARDIAC_RHYTHM_ASYSTOLE)
 		if(CARDIAC_RHYTHM_ASYSTOLE)

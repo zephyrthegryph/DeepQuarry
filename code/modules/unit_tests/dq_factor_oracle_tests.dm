@@ -12,7 +12,7 @@
 	for(var/id in 1 to BF_COUNT)
 		if(!bf_stat_id(id))
 			continue
-		var/expected = vector ? vector[id] : oracle_baseline(id)
+		var/expected = factor_oracle_value(L, id, vector)
 		var/actual = factor_reading(L, id)
 		var/ok = factor_oracle_exact(id) ? (actual == expected) : (abs(actual - expected) <= 0.00001 * max(1, abs(expected)))
 		if(!ok)

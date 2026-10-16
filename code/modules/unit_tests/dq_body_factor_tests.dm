@@ -48,62 +48,55 @@
 
 /datum/unit_test/dq_body_factor_combine_math/Run()
 	// Multiplicative: f at scale s contributes 1 - (1 - f) * s.
-	var/list/acc = body_factor_accumulate(null, alist(BF_AIRWAY = 0.1), 0.5)
-	TEST_ASSERT(dq_near(acc[BF_AIRWAY], 0.55), "partial choking (0.1 at severity 50) should leave 0.55 airway, got [acc[BF_AIRWAY]]")
-	acc = body_factor_accumulate(acc, alist(BF_AIRWAY = 0.2), 0.6)
-	TEST_ASSERT(dq_near(acc[BF_AIRWAY], 0.55 * 0.52), "choking plus swelling should multiply to 0.286, got [acc[BF_AIRWAY]]")
+	TEST_ASSERT(dq_near(stat_fold_tables(STAT_AIRWAY, list(alist(STAT_AIRWAY = 0.1)), 0.5), 0.55), "partial choking (0.1 at severity 50) should leave 0.55 airway")
+	var/alist/swelling = alist(STAT_AIRWAY = 0.2)
+	var/value = stat_fold_tables(STAT_AIRWAY, list(alist(STAT_AIRWAY = 0.1), swelling), 0.6)
+	TEST_ASSERT(dq_near(value, 0.46 * 0.52), "two tables at one scale multiply, got [value]")
 
 	// Additive: f * s, summed.
-	acc = body_factor_accumulate(null, alist(BF_ANALGESIA = 60), 0.5)
-	acc = body_factor_accumulate(acc, alist(BF_ANALGESIA = 20), 1)
-	TEST_ASSERT(dq_near(acc[BF_ANALGESIA], 50), "analgesia should sum 30 + 20, got [acc[BF_ANALGESIA]]")
+	TEST_ASSERT(dq_near(stat_fold_tables(STAT_ANALGESIA, list(alist(STAT_ANALGESIA = 60))), 60), "analgesia at full scale")
+	TEST_ASSERT(dq_near(stat_fold_tables(STAT_ANALGESIA, list(alist(STAT_ANALGESIA = 60)), 0.5), 30), "analgesia scales")
+	TEST_ASSERT(dq_near(stat_fold_tables(STAT_ANALGESIA, list(alist(STAT_ANALGESIA = 60), alist(STAT_ANALGESIA = 20))), 80), "analgesia should sum")
 
 	// Max: the highest contribution and the baseline win (forced pulse starts at -1).
-	acc = body_factor_accumulate(null, alist(BF_PULSE_SET = 2), 1)
-	acc = body_factor_accumulate(acc, alist(BF_PULSE_SET = 1), 1)
-	TEST_ASSERT_EQUAL(acc[BF_PULSE_SET], 2, "max rule should keep the highest value")
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_PULSE_SET, list(alist(STAT_PULSE_SET = 2), alist(STAT_PULSE_SET = 1))), 2, "max rule should keep the highest value")
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_PULSE_SET, list()), -1, "with no contribution the baseline wins")
 
 	// Flags: OR of every contribution.
-	acc = body_factor_accumulate(null, alist(BF_ACTION_BLOCKS = ACTION_BLOCK_SPEECH), 0.1)
-	acc = body_factor_accumulate(acc, alist(BF_ACTION_BLOCKS = ACTION_BLOCK_SURGERY), 1)
-	TEST_ASSERT_EQUAL(acc[BF_ACTION_BLOCKS], ACTION_BLOCK_SPEECH | ACTION_BLOCK_SURGERY, "flags should OR together")
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_ACTION_BLOCKS, list(alist(STAT_ACTION_BLOCKS = ACTION_BLOCK_SPEECH), alist(STAT_ACTION_BLOCKS = ACTION_BLOCK_SURGERY))), ACTION_BLOCK_SPEECH | ACTION_BLOCK_SURGERY, "flags should OR together")
 
 	// A multiplier never goes negative, however large the dose.
-	acc = body_factor_accumulate(null, alist(BF_AIRWAY = 0.2), 4)
-	TEST_ASSERT_EQUAL(acc[BF_AIRWAY], 0, "an overscaled multiplier should floor at 0")
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_AIRWAY, list(alist(STAT_AIRWAY = 0.2)), 4), 0, "an overscaled multiplier should floor at 0")
 
-	// Bounds clamp at finalize; an all-baseline list becomes null.
-	acc = body_factor_accumulate(null, alist(BF_SLOWDOWN = 50), 1)
-	acc = body_factor_finalize(acc)
-	TEST_ASSERT_EQUAL(acc[BF_SLOWDOWN], 20, "slowdown should clamp to its upper bound")
-	acc = body_factor_accumulate(null, alist(BF_SLOWDOWN = 1), 1)
-	acc = body_factor_accumulate(acc, alist(BF_SLOWDOWN = -1), 1)
-	TEST_ASSERT_NULL(body_factor_finalize(acc), "contributions that cancel out should leave no list")
+	// Bounds clamp the composed value; contributions that cancel leave the baseline.
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_SLOWDOWN, list(alist(STAT_SLOWDOWN = 50))), 20, "slowdown should clamp to its upper bound")
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_SLOWDOWN, list(alist(STAT_SLOWDOWN = 1), alist(STAT_SLOWDOWN = -1))), 0, "contributions that cancel out should leave the baseline")
 
-	// Every factor is registered.
+	// Every factor is registered: a stat of its own, and the book's text.
 	var/list/defs = GLOBAL_TABLE_GET(body_factor_defs)
 	for(var/id in 1 to BF_COUNT)
+		if(!bf_stat_id(id))
+			continue
 		TEST_ASSERT_NOTNULL(defs[id], "body factor [id] has no definition")
+		TEST_ASSERT_NOTNULL(stat_def_of(bf_stat_id(id)), "body factor [id] has no stat")
 
 
-/// Healthy bodies keep no factor list; a source allocates one, removing it frees it.
+/// Healthy bodies hold nothing and read the baselines; a source holds rows while it contributes and frees them when it ends.
 /datum/unit_test/dq_body_factor_lazy_storage
 
 /datum/unit_test/dq_body_factor_lazy_storage/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.body.recompute_factors()
-	TEST_ASSERT_NULL(H.body.factors, "a healthy human should keep no factor list")
 	TEST_ASSERT_EQUAL(H.factor(BF_AIRWAY), 1, "an untouched multiplier reads its baseline")
 	TEST_ASSERT_EQUAL(H.factor(BF_PULSE_SET), -1, "an untouched max factor reads its baseline")
+	var/rows_before = length(H.rx?.stats?.by_stat?["[STAT_SLOWDOWN]"])
 
 	TEST_ASSERT(H.apply_body_effect(/datum/body_effect/dq_test_slowdown), "the effect should apply")
-	TEST_ASSERT(H.body.dirty & BODY_DIRTY_FACTORS, "adding an effect with factors should mark the body dirty")
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 2, "the effect's slowdown should apply")
-	TEST_ASSERT_NOTNULL(H.body.factors, "a contributing source should allocate the list")
+	TEST_ASSERT_EQUAL(H.slowdown, 2, "the effect's slowdown applies at once, with no read to settle it")
+	TEST_ASSERT_EQUAL(length(H.rx.stats.by_stat["[STAT_SLOWDOWN]"]), rows_before + 1, "a contributing source holds a row")
 
 	H.remove_body_effect(/datum/body_effect/dq_test_slowdown, TRUE)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "removing the effect should restore the baseline")
-	TEST_ASSERT_NULL(H.body.factors, "back at baseline, the list should be freed")
+	TEST_ASSERT_EQUAL(H.slowdown, 0, "removing the effect should restore the baseline")
+	TEST_ASSERT_EQUAL(length(H.rx?.stats?.by_stat?["[STAT_SLOWDOWN]"]), rows_before, "back at baseline, its row is gone")
 
 
 /// Body effects stack at full value; reading does no work when nothing changed.
@@ -114,7 +107,6 @@
 	H.apply_body_effect(/datum/body_effect/dq_test_slowdown)
 	H.apply_body_effect(/datum/body_effect/dq_test_slowdown)
 	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 4, "two stacks should add")
-	TEST_ASSERT(!(H.body.dirty & BODY_DIRTY_FACTORS), "a read should leave the factors clean")
 	H.remove_body_effect(/datum/body_effect/dq_test_slowdown, TRUE)
 	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "removing both should restore the baseline")
 
@@ -150,11 +142,10 @@
 	TEST_ASSERT(dq_near(H.factor(BF_BP_SYSTOLIC), -15), "edema at full severity should drop systolic pressure by 15")
 
 	A.set_severity(50)
-	TEST_ASSERT(H.body.dirty & BODY_DIRTY_FACTORS, "crossing a severity band should mark the factors dirty")
-	TEST_ASSERT(dq_near(H.factor(BF_HEART_RATE), 10), "edema at half severity should give half the heart rate, got [H.factor(BF_HEART_RATE)]")
+	TEST_ASSERT(dq_near(H.factor(BF_HEART_RATE), 10), "crossing a severity band refreshes the factors: edema at half severity gives half the heart rate, got [H.factor(BF_HEART_RATE)]")
 
 	A.set_severity(52)
-	TEST_ASSERT(!(H.body.dirty & BODY_DIRTY_FACTORS), "a change inside the same band should not recompute")
+	TEST_ASSERT(dq_near(H.factor(BF_HEART_RATE), 10), "a change inside the same band does not refresh: the factors stay at the band's last value, got [H.factor(BF_HEART_RATE)]")
 
 	A.cure()
 	TEST_ASSERT_EQUAL(H.factor(BF_HEART_RATE), 0, "curing should remove the contribution")
@@ -330,4 +321,4 @@
 	for(var/id in SSchemistry.ready().chemical_reagents)
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 		for(var/factor_id in R.factors)
-			TEST_ASSERT(isnum(factor_id) && factor_id >= 1 && factor_id <= BF_COUNT, "[R.type] has an invalid factor id [factor_id]")
+			TEST_ASSERT(isnum(factor_id) && factor_id >= 1 && factor_id <= BF_COUNT && bf_stat_id(factor_id), "[R.type] has an invalid factor id [factor_id]")

@@ -729,6 +729,7 @@ CAPABILITIES(/obj/item/radio/headset/event)
 
 /obj/item/radio/headset/event/equipped(mob/living/carbon/human/H, slot)
 	worn_factors = slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null
+	H?.invalidate_factors() // the table was written after the slot change that would have asked for it
 	. = ..()
 	if(H && ((H.get_equipped_item(SLOT_ID_EAR_L) == src) || (H.get_equipped_item(SLOT_ID_EAR_R) == src)))
 		rel_set(src, nameof(wearer), H)

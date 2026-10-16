@@ -166,7 +166,7 @@
 /// The treatment snapshot (treatment_levels()) must be rebuilt.
 #define BODY_DIRTY_TREATMENT (1<<4)
 /// The trigger domains dq_process_dirty_medical_conditions() consumes.
-/// Body factors (code/modules/body/factors.dm) must be recomputed.
+/// A source of the body factors changed (code/modules/body/factors.dm): body.invalidate() re-reads them at once. Never a stored bit.
 #define BODY_DIRTY_FACTORS   (1<<5)
 /// The physiology (ventilation, oxygenation, perfusion, delivery) must be
 /// recomputed: a factor, support, organ, breath or blood volume changed.

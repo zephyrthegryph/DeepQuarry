@@ -136,10 +136,10 @@ CAPABILITY_TYPE(dq_property_test, CAP_DQ_PROPERTY_TEST, /datum/capability/dq_pro
 	TEST_ASSERT_EQUAL(PROP_AGG_MIN, BF_RULE_MIN, "MIN should be BF_RULE_MIN")
 	TEST_ASSERT_EQUAL(PROP_AGG_OR, BF_RULE_FLAGS, "OR should be BF_RULE_FLAGS")
 	// At full scale the factor fold and the property combine agree.
-	var/list/acc = body_factor_accumulate(null, alist(BF_AIRWAY = 0.5, BF_PAIN = 3, BF_HASTE = 1), 1)
-	TEST_ASSERT(abs(acc[BF_AIRWAY] - dq_property_combine(PROP_AGG_PRODUCT, 1, 0.5)) < 0.0001, "product should match BF_RULE_MULT at scale 1")
-	TEST_ASSERT_EQUAL(acc[BF_PAIN], dq_property_combine(PROP_AGG_SUM, 0, 3), "sum should match BF_RULE_ADD")
-	TEST_ASSERT_EQUAL(acc[BF_HASTE], dq_property_combine(PROP_AGG_MAX, 0, 1), "max should match BF_RULE_MAX")
+	var/list/tables = list(alist(STAT_AIRWAY = 0.5, STAT_PAIN = 3, STAT_HASTE = 1))
+	TEST_ASSERT(abs(stat_fold_tables(STAT_AIRWAY, tables) - dq_property_combine(PROP_AGG_PRODUCT, 1, 0.5)) < 0.0001, "product should match the PRODUCT stat rule at scale 1")
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_PAIN, tables), dq_property_combine(PROP_AGG_SUM, 0, 3), "sum should match the SUM stat rule")
+	TEST_ASSERT_EQUAL(stat_fold_tables(STAT_HASTE, tables), dq_property_combine(PROP_AGG_MAX, 0, 1), "max should match the MAX stat rule")
 
 	TEST_ASSERT_EQUAL(dq_property_combine(PROP_AGG_SUM, 2, 3), 5, "sum")
 	TEST_ASSERT_EQUAL(dq_property_combine(PROP_AGG_PRODUCT, 2, 3), 6, "product")

@@ -1,5 +1,5 @@
 Alpha Replicant|1|1 => demand=0.69999999 incoming_physical=0.89999998 incoming_thermal=0.89999998 incoming_toxic=0.85000002
-Alraune|1|1 => metabolism=0.75 slowdown=1 incoming_thermal=1.5
+Alraune|1|1 => metabolism_mult=0.75 slowdown=1 incoming_thermal=1.5
 Altevian|1|1 => incoming_thermal=1.15
 Beta Replicant|1|1 => demand=0.69999999 incoming_physical=0.89999998 incoming_thermal=0.89999998 incoming_toxic=0.85000002
 Black-Eyed Shadekin|1|1 => slowdown=0.5 incoming_physical=1.25 incoming_thermal=1.25
@@ -10,7 +10,7 @@ Fennec|1|1 => slowdown=-0.2 incoming_physical=1.1 incoming_thermal=0.89999998
 Gamma Replicant|1|1 => demand=0.69999999 incoming_physical=0.89999998 incoming_thermal=0.89999998 incoming_toxic=0.85000002
 grav-adapted Human|1|1 => demand=1.1 slowdown=1 incoming_physical=0.85000002
 Grey|1|1 => incoming_physical=1.25
-Hanner|1|1 => metabolism=0.39999998 incoming_thermal=0.80000001 incoming_pain=0.80000001
+Hanner|1|1 => metabolism_mult=0.39999998 incoming_thermal=0.80000001 incoming_pain=0.80000001
 Lleill|1|1 => demand=0.25
 Monkey|1|1 => incoming_physical=1.5 incoming_thermal=1.5
 Neaera|1|1 => incoming_physical=1.5 incoming_thermal=1.5
@@ -19,17 +19,17 @@ Protean|1|1 => demand=0 incoming_physical=0.80000001 incoming_thermal=1.5
 Replicant|1|1 => demand=0.69999999 incoming_physical=0.89999998 incoming_thermal=0.89999998 incoming_toxic=0.85000002
 Saru|1|1 => incoming_physical=1.5 incoming_thermal=1.5
 Shadekin|1|1 => slowdown=-0.5 incoming_physical=0.69999999 incoming_thermal=1.2
-Skeleton|1|1 => demand=0 metabolism=0 incoming_thermal=0 incoming_toxic=0
+Skeleton|1|1 => demand=0 metabolism_mult=0 incoming_thermal=0 incoming_toxic=0
 Sobaka|1|1 => incoming_physical=1.5 incoming_thermal=1.5
 space-adapted Human|1|1 => demand=0.80000001 incoming_physical=1.1 incoming_thermal=1.1 incoming_toxic=0.89999998
 Sparkle Dog|1|1 => slowdown=-0.5 incoming_physical=1.5 incoming_thermal=1.5 incoming_toxic=0.5
 Sparra|1|1 => incoming_physical=1.5 incoming_thermal=1.5
 Stok|1|1 => incoming_physical=1.5 incoming_thermal=1.5
-Tajara|1|1 => metabolism=1.1 slowdown=-0.5 incoming_physical=1.15 incoming_thermal=1.15
+Tajara|1|1 => metabolism_mult=1.1 slowdown=-0.5 incoming_physical=1.15 incoming_thermal=1.15
 Teshari|1|1 => slowdown=-1
-Unathi|1|1 => metabolism=0.85000002 slowdown=0.5 incoming_physical=0.85000002 incoming_thermal=0.85000002
+Unathi|1|1 => metabolism_mult=0.85000002 slowdown=0.5 incoming_physical=0.85000002 incoming_thermal=0.85000002
 Vasilissan|1|1 => slowdown=-0.15000001 incoming_physical=0.80000001 incoming_thermal=1.15
-Vatborn|1|1 => metabolism=1.15 incoming_toxic=1.1
+Vatborn|1|1 => metabolism_mult=1.15 incoming_toxic=1.1
 Virtual Reality Avatar|1|1 => demand=0 incoming_physical=0.69999999 incoming_thermal=1.6
 Virtual Reality Diona|1|1 => demand=0 incoming_physical=0.69999999 incoming_thermal=1.6
 Virtual Reality Human|1|1 => demand=0 incoming_physical=0.69999999 incoming_thermal=1.6
@@ -41,7 +41,7 @@ Virtual Reality Teshari|1|1 => demand=0 incoming_physical=0.69999999 incoming_th
 Virtual Reality Unathi|1|1 => demand=0 incoming_physical=0.69999999 incoming_thermal=1.6
 Virtual Reality Vox|1|1 => demand=0 incoming_physical=0.69999999 incoming_thermal=1.6
 Vox|1|1 => slowdown=-0.5
-Werebeast|1|1 => metabolism=2 incoming_physical=0.85000002 incoming_thermal=0.85000002
+Werebeast|1|1 => metabolism_mult=2 incoming_physical=0.85000002 incoming_thermal=0.85000002
 Wolpin|1|1 => incoming_physical=1.5 incoming_thermal=1.5
 X Anomalous|1|1 => demand=0.89999998 incoming_physical=0.89999998 incoming_thermal=0.89999998 incoming_toxic=0.89999998
 X Occursus|1|1 => demand=0.89999998 incoming_physical=0.89999998 incoming_thermal=0.89999998 incoming_toxic=0.89999998
@@ -49,10 +49,10 @@ X Unowas|1|1 => demand=0.89999998 incoming_physical=0.89999998 incoming_thermal=
 Xenochimera|1|1 => slowdown=-0.2 incoming_physical=0.80000001 incoming_thermal=1.15
 Xenomorph Drone|1|1 => slowdown=1 incoming_physical=0.60000002 incoming_thermal=1.75
 Xenomorph Hunter|1|1 => slowdown=-1 incoming_physical=0.60000002 incoming_thermal=1.75
-Xenomorph Hybrid|1|1 => metabolism=1.3 incoming_thermal=2 incoming_toxic=0.5 incoming_pain=0.30000001
+Xenomorph Hybrid|1|1 => metabolism_mult=1.3 incoming_thermal=2 incoming_toxic=0.5 incoming_pain=0.30000001
 Xenomorph Queen|1|1 => slowdown=3 incoming_physical=0.60000002 incoming_thermal=1.75
 Xenomorph Sentinel|1|1 => incoming_physical=0.60000002 incoming_thermal=1.75
 Xenomorph|1|1 => incoming_physical=0.60000002 incoming_thermal=1.75
-Zaddat|1|1 => metabolism=0.69999999 incoming_physical=1.15 incoming_thermal=1.15 incoming_toxic=0.5
+Zaddat|1|1 => metabolism_mult=0.69999999 incoming_physical=1.15 incoming_thermal=1.15 incoming_toxic=0.5
 Zorren|1|1 => incoming_physical=1.1 incoming_thermal=0.89999998
 

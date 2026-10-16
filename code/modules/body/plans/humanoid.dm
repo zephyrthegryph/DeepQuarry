@@ -92,7 +92,7 @@
 		. *= REGENERATION_HUNGRY_MULT
 	if(H.has_status(STAT_SLEEPING))
 		. *= REGENERATION_SLEEP_MULT
-	. *= get_factor(BF_HEALING)
+	. *= owner.factor(BF_HEALING)
 
 
 // --- Injury resolution -----------------------------------------------------------------
@@ -232,14 +232,14 @@
 	raw_pain *= H.species.trauma_mod
 	if(H.has_status(STAT_SLURRING))
 		raw_pain -= PAIN_SLURRING_RELIEF
-	raw_pain += get_factor(BF_PAIN)
-	return max(0, raw_pain - get_factor(BF_ANALGESIA))
+	raw_pain += owner.factor(BF_PAIN)
+	return max(0, raw_pain - owner.factor(BF_ANALGESIA))
 
 /// Consciousness: 100 less affliction penalties and pain above tolerance.
 /// Patients who feel no pain drop out when a vital part fails structurally.
 /datum/body/humanoid/proc/compute_consciousness(worst_part)
 	var/mob/living/carbon/human/H = owner
-	. = 100 - get_factor(BF_SEDATION)
+	. = 100 - owner.factor(BF_SEDATION)
 	for(var/datum/affliction/A as anything in afflictions)
 		. -= A.consciousness_penalty()
 	if(H.dq_feels_pain())
@@ -323,37 +323,36 @@
 // --- Body factors ---------------------------------------------------------------------------
 
 /// Species and trait baselines, the current form, and equipment worn
-/// outside the hands.
-/datum/body/humanoid/accumulate_plan_factors(list/acc)
+/// outside the hands: rows of the species, the form and each item.
+/datum/body/humanoid/hold_plan_factors()
 	var/mob/living/carbon/human/H = owner
 	if(H.species)
-		acc = body_factor_accumulate(acc, H.species.factor_baseline)
+		body_hold(H, H.species, H.species.factor_baseline)
+		var/granted = 0
 		for(var/alist/table as anything in H.species.granted_factors)
-			acc = body_factor_accumulate(acc, table)
+			body_hold(H, H.species, table, 1, 1, "grant[++granted]")
 		// P2-S4: the NO_PAIN species flag is a grant of BF_PAIN_IMMUNITY, so every
 		// can_feel_pain() caller (and any factor reader) sees it the same way.
 		if(H.species.flags & NO_PAIN)
 			var/static/alist/no_pain_grant = alist(BF_PAIN_IMMUNITY = 1)
-			acc = body_factor_accumulate(acc, no_pain_grant)
+			body_hold(H, H.species, no_pain_grant, 1, 1, "no_pain")
 	var/datum/form/F = H.current_form()
 	if(F)
-		acc = body_factor_accumulate(acc, F.factors)
+		body_hold(H, F, F.factors)
 	// The worn slots (BODY_SLOT_WORN, code/modules/body/slots.dm): the same set the worn protection cache reads.
 	for(var/obj/item/I as anything in H.body_slot_items(BODY_SLOT_WORN))
 		if(I.worn_factors)
-			acc = body_factor_accumulate(acc, I.worn_factors)
-	return acc
+			body_hold(H, I, I.worn_factors)
 
 /// The species' analgesic sensitivity (chem_strength_pain) scales every
-/// reagent's analgesia.
-/datum/body/humanoid/accumulate_scaled_reagent(list/acc, alist/table, scale)
-	acc = ..()
+/// reagent's analgesia: the extra share is a part of the reagent's rows.
+/datum/body/humanoid/hold_reagent_table(datum/reagent/R, alist/table, scale)
+	..()
 	var/mob/living/carbon/human/H = owner
 	var/strength = H.species?.chem_strength_pain
 	var/analgesia = table[BF_ANALGESIA]
-	if(acc && analgesia && !isnull(strength) && strength != 1)
-		acc[BF_ANALGESIA] += analgesia * scale * (strength - 1)
-	return acc
+	if(analgesia && !isnull(strength) && strength != 1)
+		body_hold(H, R, alist(BF_ANALGESIA = analgesia * (strength - 1)), scale, 1, "strength")
 
 /// Grant a factor table (a trait's or perk's) to this species instance.
 /datum/species/proc/grant_factors(alist/table)
@@ -371,10 +370,10 @@
 /// The species' own value of a factor (baseline plus traits), without any
 /// other source. Feral movement compresses everything above it.
 /datum/species/proc/baseline_factor(id)
-	var/list/acc = body_factor_accumulate(null, factor_baseline)
+	var/list/tables = list(factor_baseline)
 	for(var/alist/table as anything in granted_factors)
-		acc = body_factor_accumulate(acc, table)
-	return acc ? acc[id] : body_factor_baseline(id)
+		tables += list(table)
+	return stat_fold_tables(bf_stat_id(id), tables, 1, 1, id)
 
 /// Life() applies humanoid unconsciousness itself (with its blinding / crit
 /// HUD bookkeeping); evaluate_status only handles death here.

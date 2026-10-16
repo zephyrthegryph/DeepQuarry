@@ -92,11 +92,11 @@
 	var/datum/body/B = src.body
 	if(!B)
 		return FALSE
-	if((B.dirty & BODY_DIRTY_CONDITIONS) || B.factors_stale())
+	if(B.dirty & BODY_DIRTY_CONDITIONS)
 		return TRUE
 	if(LAZYLEN(src.side_effects))
 		return TRUE
-	if(B.factors?[BF_ALLERGY] > 0)
+	if(src.allergy > 0)
 		return TRUE
 	// A metric past its trigger: the affliction's severity follows the value continuously, so it is re-read every cycle.
 	if(src.radiation || src.accumulated_rads >= 100)

@@ -89,7 +89,7 @@
 	if(R.get_stored_material(MAT_STEEL) < NANOFORM_STEEL_PER_POINT)
 		afflict(/datum/affliction/nanite/refactory_depletion, R, NANITE_DEPLETION_PER_STARVED_TICK)
 		return 0
-	return R.fund_repair(H, list(TREAT_REGENERATION), F.regeneration * get_factor(BF_HEALING))
+	return R.fund_repair(H, list(TREAT_REGENERATION), F.regeneration * owner.factor(BF_HEALING))
 
 /// Hits that land shake the swarm's cohesion; hits on the orchestrator, and
 /// shocks anywhere, damage its control.

@@ -356,7 +356,7 @@
 
 // Returns a number to determine if something is harder or easier to hit than normal.
 /mob/living/proc/get_evasion()
-	return evasion + factor(BF_EVASION) // The 'base' evasion (generally zero) plus body factors.
+	return evasion // The stat: the type's own base evasion (generally zero) plus body factors.
 
 /mob/living/proc/get_accuracy_penalty()
 	// Certain statuses make it harder to score a hit.

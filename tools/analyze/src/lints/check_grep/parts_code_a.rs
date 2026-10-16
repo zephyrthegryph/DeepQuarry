@@ -275,17 +275,17 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "body_factors_no_modifier_numeric_fields",
             "body factors: no modifier numeric fields",
-            "a removed modifier numeric field is referenced. Declare it in the body effect's factors table and read factor(BF_X).",
+            "a removed modifier numeric field is referenced. Declare it in the body effect's factors table and read the factor's stat var on the holder (`L.slowdown`).",
             Files::Code,
-            line(r"\b(endurance_flat|endurance_percent|disable_duration_percent|incoming_[a-z]+_percent|outgoing_melee_damage_percent|bleeding_rate_percent|metabolism_percent|icon_scale_[xy]_percent|attack_speed_percent|accuracy_dispersion|pain_immunity|pulse_modifier|pulse_set_level|emp_modifier|explosion_modifier|[a-z]+_injury_resistance|[a-z]+_physical_resistance|[a-z]+_thermal_resistance)\b"),
+            line(r"\b(endurance_percent|disable_duration_percent|incoming_[a-z]+_percent|outgoing_melee_damage_percent|bleeding_rate_percent|metabolism_percent|icon_scale_[xy]_percent|attack_speed_percent|accuracy_dispersion|pulse_modifier|pulse_set_level|emp_modifier|explosion_modifier|[a-z]+_injury_resistance|[a-z]+_physical_resistance|[a-z]+_thermal_resistance)\b"),
         )
         .allow(Allow::Strict),
         Part::new(
             "body_factors_no_modifier_numeric_fields__2",
             "body factors: no modifier numeric fields",
-            "a modifier's slowdown/evasion/accuracy/... is read directly. Those are body factors: read factor(BF_X) on the holder.",
+            "a modifier's slowdown/evasion/accuracy/... is read directly. Those are body factors: read the factor's stat var on the holder (`L.slowdown`).",
             Files::Code,
-            line(r"\b(M|mod|modifier)\.(slowdown|haste|evasion|accuracy|siemens_coefficient|heat_protection|cold_protection|vision_flags|armor_percent)\b"),
+            line(r"\b(mod|modifier)\.(slowdown|haste|evasion|accuracy)\b|\b(M|mod|modifier)\.(siemens_coefficient|heat_protection|cold_protection|vision_flags|armor_percent)\b"),
         )
         .allow(Allow::Strict),
         Part::new(

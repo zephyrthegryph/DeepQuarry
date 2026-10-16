@@ -1,12 +1,12 @@
 /datum/body_effect/ace|1|1 => bleeding=0.69999999 evasion=20 attack_speed=0.80000001 melee_damage=1.5 incoming_all=0.69999999 disable_duration=0.80000001 healing_received=1.5 endurance_flat=25 endurance_mult=1.2
 /datum/body_effect/ace|1|2 => bleeding=0.48999998 evasion=40 attack_speed=0.64000005 melee_damage=2.25 incoming_all=0.48999998 disable_duration=0.64000005 healing_received=2.25 endurance_flat=50 endurance_mult=1.4400001
 /datum/body_effect/ace|1|3 => bleeding=0.34299999 evasion=60 attack_speed=0.51200002 melee_damage=3.375 incoming_all=0.34299999 disable_duration=0.51200002 healing_received=3.375 endurance_flat=75 endurance_mult=1.7280002
-/datum/body_effect/adrenaline_recovery|1|1 => demand=1.25 metabolism=0.5 bleeding=0.80000001 slowdown=2 accuracy=-25 dispersion=25 evasion=-20 attack_speed=2 melee_damage=0.75 incoming_pain=1.75 disable_duration=1.35 pulse_shift=0.5
-/datum/body_effect/adrenaline_recovery|1|2 => demand=1.5625 metabolism=0.25 bleeding=0.64000005 slowdown=4 accuracy=-50 dispersion=50 evasion=-40 attack_speed=4 melee_damage=0.5625 incoming_pain=3.0625 disable_duration=1.8225001 pulse_shift=1
-/datum/body_effect/adrenaline_recovery|1|3 => demand=1.953125 metabolism=0.125 bleeding=0.51200002 slowdown=6 accuracy=-75 dispersion=75 evasion=-60 attack_speed=8 melee_damage=0.421875 incoming_pain=5.359375 disable_duration=2.4603753 pulse_shift=1.5
-/datum/body_effect/adrenaline|1|1 => demand=0.10000002 metabolism=2.5 bleeding=1.25 slowdown=-10 accuracy=25 dispersion=-25 evasion=20 attack_speed=0.5 melee_damage=2 incoming_all=0.80000001 disable_duration=0 endurance_flat=25 pain_immunity=1 pulse_shift=2
-/datum/body_effect/adrenaline|1|2 => demand=0.010000004 metabolism=6.25 bleeding=1.5625 slowdown=-10 accuracy=50 dispersion=-50 evasion=40 attack_speed=0.25 melee_damage=4 incoming_all=0.64000005 disable_duration=0 endurance_flat=50 pain_immunity=1 pulse_shift=4
-/datum/body_effect/adrenaline|1|3 => demand=0.0010000006 metabolism=10 bleeding=1.953125 slowdown=-10 accuracy=75 dispersion=-75 evasion=60 attack_speed=0.125 melee_damage=8 incoming_all=0.51200002 disable_duration=0 endurance_flat=75 pain_immunity=1 pulse_shift=6
+/datum/body_effect/adrenaline_recovery|1|1 => demand=1.25 metabolism_mult=0.5 bleeding=0.80000001 slowdown=2 accuracy=-25 dispersion=25 evasion=-20 attack_speed=2 melee_damage=0.75 incoming_pain=1.75 disable_duration=1.35 pulse_shift=0.5
+/datum/body_effect/adrenaline_recovery|1|2 => demand=1.5625 metabolism_mult=0.25 bleeding=0.64000005 slowdown=4 accuracy=-50 dispersion=50 evasion=-40 attack_speed=4 melee_damage=0.5625 incoming_pain=3.0625 disable_duration=1.8225001 pulse_shift=1
+/datum/body_effect/adrenaline_recovery|1|3 => demand=1.953125 metabolism_mult=0.125 bleeding=0.51200002 slowdown=6 accuracy=-75 dispersion=75 evasion=-60 attack_speed=8 melee_damage=0.421875 incoming_pain=5.359375 disable_duration=2.4603753 pulse_shift=1.5
+/datum/body_effect/adrenaline|1|1 => demand=0.10000002 metabolism_mult=2.5 bleeding=1.25 slowdown=-10 accuracy=25 dispersion=-25 evasion=20 attack_speed=0.5 melee_damage=2 incoming_all=0.80000001 disable_duration=0 endurance_flat=25 pain_immunity=1 pulse_shift=2
+/datum/body_effect/adrenaline|1|2 => demand=0.010000004 metabolism_mult=6.25 bleeding=1.5625 slowdown=-10 accuracy=50 dispersion=-50 evasion=40 attack_speed=0.25 melee_damage=4 incoming_all=0.64000005 disable_duration=0 endurance_flat=50 pain_immunity=1 pulse_shift=4
+/datum/body_effect/adrenaline|1|3 => demand=0.0010000006 metabolism_mult=10 bleeding=1.953125 slowdown=-10 accuracy=75 dispersion=-75 evasion=60 attack_speed=0.125 melee_damage=8 incoming_all=0.51200002 disable_duration=0 endurance_flat=75 pain_immunity=1 pulse_shift=6
 /datum/body_effect/allergic_flare|1|1 => allergy=2.5
 /datum/body_effect/allergic_flare|1|2 => allergy=5
 /datum/body_effect/allergic_flare|1|3 => allergy=7.5
@@ -55,9 +55,9 @@
 /datum/body_effect/aura/radiationhide|1|1 => incoming_all=0.80000001 incoming_genetic=0 healing_received=0.5 scale_mult_x=1.2 scale_mult_y=1.2
 /datum/body_effect/aura/radiationhide|1|2 => incoming_all=0.64000005 incoming_genetic=0 healing_received=0.25 scale_mult_x=1.4400001 scale_mult_y=1.4400001
 /datum/body_effect/aura/radiationhide|1|3 => incoming_all=0.51200002 incoming_genetic=0 healing_received=0.125 scale_mult_x=1.7280002 scale_mult_y=1.7280002
-/datum/body_effect/aura/slime_healingtide|1|1 => metabolism=0.5 healing_received=1.15
-/datum/body_effect/aura/slime_healingtide|1|2 => metabolism=0.25 healing_received=1.3225
-/datum/body_effect/aura/slime_healingtide|1|3 => metabolism=0.125 healing_received=1.520875
+/datum/body_effect/aura/slime_healingtide|1|1 => metabolism_mult=0.5 healing_received=1.15
+/datum/body_effect/aura/slime_healingtide|1|2 => metabolism_mult=0.25 healing_received=1.3225
+/datum/body_effect/aura/slime_healingtide|1|3 => metabolism_mult=0.125 healing_received=1.520875
 /datum/body_effect/aura/soothingsong|1|1 => incoming_pain=0.80000001 disable_duration=0.69999999
 /datum/body_effect/aura/soothingsong|1|2 => incoming_pain=0.64000005 disable_duration=0.48999998
 /datum/body_effect/aura/soothingsong|1|3 => incoming_pain=0.51200002 disable_duration=0.34299999
@@ -181,9 +181,9 @@
 /datum/body_effect/grievous_wounds|1|1 => bleeding=1.2 dispersion=2 disable_duration=1.22 healing_received=0.5
 /datum/body_effect/grievous_wounds|1|2 => bleeding=1.4400001 dispersion=4 disable_duration=1.4884001 healing_received=0.25
 /datum/body_effect/grievous_wounds|1|3 => bleeding=1.7280002 dispersion=6 disable_duration=1.8158481 healing_received=0.125
-/datum/body_effect/healingtide|1|1 => metabolism=0.5 healing_received=1.25
-/datum/body_effect/healingtide|1|2 => metabolism=0.25 healing_received=1.5625
-/datum/body_effect/healingtide|1|3 => metabolism=0.125 healing_received=1.953125
+/datum/body_effect/healingtide|1|1 => metabolism_mult=0.5 healing_received=1.25
+/datum/body_effect/healingtide|1|2 => metabolism_mult=0.25 healing_received=1.5625
+/datum/body_effect/healingtide|1|3 => metabolism_mult=0.125 healing_received=1.953125
 /datum/body_effect/hivebot_weaken|1|1 => slowdown=1 accuracy=-40 dispersion=1 evasion=-20 attack_speed=0.60000002 melee_damage=0.69999999
 /datum/body_effect/hivebot_weaken|1|2 => slowdown=2 accuracy=-80 dispersion=2 evasion=-40 attack_speed=0.36000001 melee_damage=0.48999998
 /datum/body_effect/hivebot_weaken|1|3 => slowdown=3 accuracy=-120 dispersion=3 evasion=-60 attack_speed=0.21600002 melee_damage=0.34299999
@@ -214,9 +214,9 @@
 /datum/body_effect/nerdhaste|1|1 => slowdown=-0.5 evasion=1.15
 /datum/body_effect/nerdhaste|1|2 => slowdown=-1 evasion=2.3
 /datum/body_effect/nerdhaste|1|3 => slowdown=-1.5 evasion=3.4499998
-/datum/body_effect/nervoushigh|1|1 => metabolism=3 bleeding=3 slowdown=-3 attack_speed=0.25 disable_duration=0.10000002 endurance_mult=0.25
-/datum/body_effect/nervoushigh|1|2 => metabolism=9 bleeding=9 slowdown=-6 attack_speed=0.1 disable_duration=0.010000004 endurance_mult=0.0625
-/datum/body_effect/nervoushigh|1|3 => metabolism=10 bleeding=10 slowdown=-9 attack_speed=0.1 disable_duration=0.0010000006 endurance_mult=0.015625
+/datum/body_effect/nervoushigh|1|1 => metabolism_mult=3 bleeding=3 slowdown=-3 attack_speed=0.25 disable_duration=0.10000002 endurance_mult=0.25
+/datum/body_effect/nervoushigh|1|2 => metabolism_mult=9 bleeding=9 slowdown=-6 attack_speed=0.1 disable_duration=0.010000004 endurance_mult=0.0625
+/datum/body_effect/nervoushigh|1|3 => metabolism_mult=10 bleeding=10 slowdown=-9 attack_speed=0.1 disable_duration=0.0010000006 endurance_mult=0.015625
 /datum/body_effect/numbness/deep|1|1 => analgesia=150
 /datum/body_effect/numbness/deep|1|2 => analgesia=300
 /datum/body_effect/numbness/deep|1|3 => analgesia=450
@@ -349,9 +349,9 @@
 /datum/body_effect/trait/empweakness|1|1 => emp_shift=-1
 /datum/body_effect/trait/empweakness|1|2 => emp_shift=-2
 /datum/body_effect/trait/empweakness|1|3 => emp_shift=-3
-/datum/body_effect/trait/fat|1|1 => metabolism=1.2 slowdown=1.1 endurance_mult=1.05 scale_mult_x=1.054
-/datum/body_effect/trait/fat|1|2 => metabolism=1.4400001 slowdown=2.2 endurance_mult=1.1024998 scale_mult_x=1.110916
-/datum/body_effect/trait/fat|1|3 => metabolism=1.7280002 slowdown=3.3000002 endurance_mult=1.1576248 scale_mult_x=1.1709055
+/datum/body_effect/trait/fat|1|1 => metabolism_mult=1.2 slowdown=1.1 endurance_mult=1.05 scale_mult_x=1.054
+/datum/body_effect/trait/fat|1|2 => metabolism_mult=1.4400001 slowdown=2.2 endurance_mult=1.1024998 scale_mult_x=1.110916
+/datum/body_effect/trait/fat|1|3 => metabolism_mult=1.7280002 slowdown=3.3000002 endurance_mult=1.1576248 scale_mult_x=1.1709055
 /datum/body_effect/trait/flimsy|1|1 => endurance_mult=0.80000001
 /datum/body_effect/trait/flimsy|1|2 => endurance_mult=0.64000005
 /datum/body_effect/trait/flimsy|1|3 => endurance_mult=0.51200002
@@ -361,21 +361,21 @@
 /datum/body_effect/trait/haemophilia|1|1 => bleeding=3
 /datum/body_effect/trait/haemophilia|1|2 => bleeding=9
 /datum/body_effect/trait/haemophilia|1|3 => bleeding=10
-/datum/body_effect/trait/high_metabolism|1|1 => metabolism=2 healing_received=1.4
-/datum/body_effect/trait/high_metabolism|1|2 => metabolism=4 healing_received=1.9599999
-/datum/body_effect/trait/high_metabolism|1|3 => metabolism=8 healing_received=2.744
+/datum/body_effect/trait/high_metabolism|1|1 => metabolism_mult=2 healing_received=1.4
+/datum/body_effect/trait/high_metabolism|1|2 => metabolism_mult=4 healing_received=1.9599999
+/datum/body_effect/trait/high_metabolism|1|3 => metabolism_mult=8 healing_received=2.744
 /datum/body_effect/trait/inaccurate|1|1 => accuracy=-15 dispersion=1
 /datum/body_effect/trait/inaccurate|1|2 => accuracy=-30 dispersion=2
 /datum/body_effect/trait/inaccurate|1|3 => accuracy=-45 dispersion=3
-/datum/body_effect/trait/low_metabolism|1|1 => metabolism=0.5 healing_received=0.60000002
-/datum/body_effect/trait/low_metabolism|1|2 => metabolism=0.25 healing_received=0.36000001
-/datum/body_effect/trait/low_metabolism|1|3 => metabolism=0.125 healing_received=0.21600002
+/datum/body_effect/trait/low_metabolism|1|1 => metabolism_mult=0.5 healing_received=0.60000002
+/datum/body_effect/trait/low_metabolism|1|2 => metabolism_mult=0.25 healing_received=0.36000001
+/datum/body_effect/trait/low_metabolism|1|3 => metabolism_mult=0.125 healing_received=0.21600002
 /datum/body_effect/trait/majorempweakness|1|1 => emp_shift=-2
 /datum/body_effect/trait/majorempweakness|1|2 => emp_shift=-4
 /datum/body_effect/trait/majorempweakness|1|3 => emp_shift=-6
-/datum/body_effect/trait/obese|1|1 => metabolism=1.4 slowdown=1.2 endurance_mult=1.1 scale_mult_x=1.095
-/datum/body_effect/trait/obese|1|2 => metabolism=1.9599999 slowdown=2.4000001 endurance_mult=1.21 scale_mult_x=1.199025
-/datum/body_effect/trait/obese|1|3 => metabolism=2.744 slowdown=3.6000001 endurance_mult=1.3310001 scale_mult_x=1.3129325
+/datum/body_effect/trait/obese|1|1 => metabolism_mult=1.4 slowdown=1.2 endurance_mult=1.1 scale_mult_x=1.095
+/datum/body_effect/trait/obese|1|2 => metabolism_mult=1.9599999 slowdown=2.4000001 endurance_mult=1.21 scale_mult_x=1.199025
+/datum/body_effect/trait/obese|1|3 => metabolism_mult=2.744 slowdown=3.6000001 endurance_mult=1.3310001 scale_mult_x=1.3129325
 /datum/body_effect/trait/shorter|1|1 => scale_mult_y=0.91500002
 /datum/body_effect/trait/shorter|1|2 => scale_mult_y=0.83722502
 /datum/body_effect/trait/shorter|1|3 => scale_mult_y=0.76606089
@@ -388,12 +388,12 @@
 /datum/body_effect/trait/tall|1|1 => scale_mult_y=1.05
 /datum/body_effect/trait/tall|1|2 => scale_mult_y=1.1024998
 /datum/body_effect/trait/tall|1|3 => scale_mult_y=1.1576248
-/datum/body_effect/trait/thinner|1|1 => metabolism=0.60000002 melee_damage=0.89999998 endurance_mult=0.89999998 scale_mult_x=0.90499997
-/datum/body_effect/trait/thinner|1|2 => metabolism=0.36000001 melee_damage=0.80999994 endurance_mult=0.80999994 scale_mult_x=0.81902492
-/datum/body_effect/trait/thinner|1|3 => metabolism=0.21600002 melee_damage=0.72899991 endurance_mult=0.72899991 scale_mult_x=0.74121755
-/datum/body_effect/trait/thin|1|1 => metabolism=0.80000001 melee_damage=0.94999999 endurance_mult=0.94999999 scale_mult_x=0.94499999
-/datum/body_effect/trait/thin|1|2 => metabolism=0.64000005 melee_damage=0.90249997 endurance_mult=0.90249997 scale_mult_x=0.89302498
-/datum/body_effect/trait/thin|1|3 => metabolism=0.51200002 melee_damage=0.85737497 endurance_mult=0.85737497 scale_mult_x=0.84390861
+/datum/body_effect/trait/thinner|1|1 => metabolism_mult=0.60000002 melee_damage=0.89999998 endurance_mult=0.89999998 scale_mult_x=0.90499997
+/datum/body_effect/trait/thinner|1|2 => metabolism_mult=0.36000001 melee_damage=0.80999994 endurance_mult=0.80999994 scale_mult_x=0.81902492
+/datum/body_effect/trait/thinner|1|3 => metabolism_mult=0.21600002 melee_damage=0.72899991 endurance_mult=0.72899991 scale_mult_x=0.74121755
+/datum/body_effect/trait/thin|1|1 => metabolism_mult=0.80000001 melee_damage=0.94999999 endurance_mult=0.94999999 scale_mult_x=0.94499999
+/datum/body_effect/trait/thin|1|2 => metabolism_mult=0.64000005 melee_damage=0.90249997 endurance_mult=0.90249997 scale_mult_x=0.89302498
+/datum/body_effect/trait/thin|1|3 => metabolism_mult=0.51200002 melee_damage=0.85737497 endurance_mult=0.85737497 scale_mult_x=0.84390861
 /datum/body_effect/trait/weak|1|1 => melee_damage=0.80000001
 /datum/body_effect/trait/weak|1|2 => melee_damage=0.64000005
 /datum/body_effect/trait/weak|1|3 => melee_damage=0.51200002

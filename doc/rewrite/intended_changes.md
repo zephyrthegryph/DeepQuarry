@@ -4894,3 +4894,18 @@ Affected requirement-pin classes:
 * **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
+
+## Body factors on the stat store (rewrite/stat-layer, doc/rewrite/proposals/stat_layer.md)
+
+The body's factors are stats on `/mob/living` now, composed by the stat engine; the body's private fold (`body.factors`, `recompute_factors()`) is gone.
+The oracle (`dq_factor_oracle.dm`, the old fold kept as test code) and the pins of every factor table (`snapshots/factors/`, recorded from the old fold)
+prove the composition equal within a relative 1e-5. What is different on purpose:
+
+* **When a factor settles.** The old cache rebuilt at the first factor read after an invalidation; the stat is settled before the writer's next line.
+  A reagent that crosses a dose band, appears or leaves refreshes the factors at `on_reagent_change()` (the band logic is unchanged), not at the next read.
+* **`tissue_hypoxia` follows its severity.** Its cardiac irritability is computed from the oxygen debt past a threshold, but the affliction never
+  declared `continuous_factors`, so the value refreshed only when something else dirtied the factors. It now refreshes on every severity change
+  (`continuous_factors = TRUE`), as the comment on the override always said it did.
+* **Evasion.** `evasion` is the stat: the mob's own base evasion is its type-level constant and the factor contributions add to it; `get_evasion()` reads the one var.
+* **Float order.** PRODUCT stats multiply in row-creation order, not afflictions-effects-stasis-reagents-species order; the last bit can differ.
+* **Dead factors deleted.** `BF_ARRHYTHMIA_RISK`, `BF_VISION` and `BF_HEARING` had no source and no reader; `BF_SEDATION` and `BF_INCOMING_NEURAL` stay.

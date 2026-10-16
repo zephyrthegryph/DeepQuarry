@@ -38,7 +38,7 @@
 /datum/affliction/nanite/progress()
 	var/drift = state_drift()
 	if(drift > 0)
-		drift *= body.get_factor(BF_PROGRESSION)
+		drift *= owner.factor(BF_PROGRESSION)
 	set_severity(severity + drift + pending_treatment)
 	pending_treatment = 0
 	if(severity <= 0)

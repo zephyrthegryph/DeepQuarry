@@ -19,7 +19,7 @@ STAT(/mob/living, pump, PRODUCT, bounds = list(0, 2))
 STAT(/mob/living, circulation, PRODUCT, bounds = list(0, 2))
 STAT(/mob/living, demand, PRODUCT, bounds = list(0, 4))
 STAT(/mob/living, progression, PRODUCT, bounds = list(0, 4))
-STAT(/mob/living, metabolism, PRODUCT, bounds = list(0, 10))
+STAT(/mob/living, metabolism_mult, PRODUCT, bounds = list(0, 10))
 STAT(/mob/living, bleeding, PRODUCT, bounds = list(0, 10))
 STAT(/mob/living, healing, PRODUCT, bounds = list(0, 10))
 

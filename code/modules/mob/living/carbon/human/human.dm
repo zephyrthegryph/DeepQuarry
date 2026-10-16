@@ -1469,6 +1469,8 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		species.create_organs(src)
 
 	species.apply_components(src)
+	// The body exists now (the first species is set before the body does): its factor sources are read.
+	invalidate_factors()
 
 	set_endurance(species.total_health)
 	set_hunger_rate(src, species.hunger_factor)

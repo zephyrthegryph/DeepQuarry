@@ -7,8 +7,7 @@
 // engine under test. It goes in the commit that deletes the BF tables' key space (end of wave 2); from then on the declared tables themselves are
 // re-folded by the pin test.
 //
-// The vector is indexed by BF_* id (1 to BF_COUNT), as the old flat list was; an index whose factor was deleted (arrhythmia risk, vision,
-// hearing) is never read.
+// The vector is indexed by BF_* id (1 to BF_COUNT), as the old flat list was; an index whose factor was deleted (15, 30 and 31) is never read.
 
 /// The rule, baseline and bounds of every BF_* id, as the old definitions table had them (the oracle's own copy).
 /proc/oracle_defs()
@@ -23,14 +22,14 @@
 		list(BF_DEMAND, BF_RULE_MULT, 1, 0, 4), list(BF_PROGRESSION, BF_RULE_MULT, 1, 0, 4), list(BF_METABOLISM, BF_RULE_MULT, 1, 0, 10),
 		list(BF_BLEEDING, BF_RULE_MULT, 1, 0, 10), list(BF_HEALING, BF_RULE_MULT, 1, 0, 10),
 		list(BF_ANALGESIA, BF_RULE_ADD, 0, -INFINITY, INFINITY), list(BF_PAIN, BF_RULE_ADD, 0, 0, INFINITY), list(BF_SEDATION, BF_RULE_ADD, 0, 0, INFINITY),
-		list(BF_ARRHYTHMIA_RISK, BF_RULE_ADD, 0, 0, INFINITY), list(BF_HEART_RATE, BF_RULE_ADD, 0, -INFINITY, INFINITY),
+		list(BF_HEART_RATE, BF_RULE_ADD, 0, -INFINITY, INFINITY),
 		list(BF_TEMPERATURE, BF_RULE_ADD, 0, -INFINITY, INFINITY), list(BF_BP_SYSTOLIC, BF_RULE_ADD, 0, -INFINITY, INFINITY),
 		list(BF_BP_DIASTOLIC, BF_RULE_ADD, 0, -INFINITY, INFINITY), list(BF_O2_SAT, BF_RULE_ADD, 0, -100, 100),
 		list(BF_RESP_RATE, BF_RULE_ADD, 0, -INFINITY, INFINITY), list(BF_SLOWDOWN, BF_RULE_ADD, 0, -10, 20),
 		list(BF_PENALTY_SCALE, BF_RULE_MULT, 1, 0, 4), list(BF_HASTE, BF_RULE_MAX, 0, 0, 1),
 		list(BF_ACCURACY, BF_RULE_ADD, 0, -INFINITY, INFINITY), list(BF_DISPERSION, BF_RULE_ADD, 0, -INFINITY, INFINITY),
 		list(BF_EVASION, BF_RULE_ADD, 0, -INFINITY, INFINITY), list(BF_ATTACK_SPEED, BF_RULE_MULT, 1, 0.1, 10),
-		list(BF_MELEE_DAMAGE, BF_RULE_MULT, 1, 0, 10), list(BF_VISION, BF_RULE_MULT, 1, 0, 2), list(BF_HEARING, BF_RULE_MULT, 1, 0, 2),
+		list(BF_MELEE_DAMAGE, BF_RULE_MULT, 1, 0, 10),
 		list(BF_MOTOR_CONTROL, BF_RULE_MULT, 1, 0, 1), list(BF_DARKSIGHT, BF_RULE_MAX, 0, 0, 1),
 		list(BF_SIGHT_FLAGS, BF_RULE_FLAGS, 0, 0, INFINITY), list(BF_ACTION_BLOCKS, BF_RULE_FLAGS, 0, 0, INFINITY),
 		list(BF_INCOMING_ALL, BF_RULE_MULT, 1, 0, 10), list(BF_INCOMING_PHYSICAL, BF_RULE_MULT, 1, 0, 10), list(BF_INCOMING_THERMAL, BF_RULE_MULT, 1, 0, 10),
@@ -234,10 +233,13 @@
 	acc = oracle_plan_factors(acc)
 	return oracle_finalize(acc)
 
-/// The oracle's value of factor `id` (BF_*) for `L` now.
-/proc/factor_oracle_value(mob/living/L, id)
-	var/list/vector = L.body?.oracle_fold()
-	return vector ? vector[id] : oracle_baseline(id)
+/// The oracle's value of factor `id` (BF_*) for `L` now, as the stat reads: evasion is the mob's own base evasion (the type's constant) and the factor.
+/proc/factor_oracle_value(mob/living/L, id, list/vector = null)
+	if(isnull(vector))
+		vector = L.body?.oracle_fold()
+	. = vector ? vector[id] : oracle_baseline(id)
+	if(id == BF_EVASION)
+		. += initial(L.evasion)
 
 // --- Comparison with the stat vars ----------------------------------------------------------------------------------------------
 
@@ -256,7 +258,7 @@
 		var/stat_id = bf_stat_id(id)
 		if(!stat_id)
 			continue
-		var/expected = vector ? vector[id] : oracle_baseline(id)
+		var/expected = factor_oracle_value(L, id, vector)
 		var/actual = stat_value(L, stat_id)
 		var/ok
 		if(factor_oracle_exact(id))
@@ -265,3 +267,27 @@
 			ok = (abs(actual - expected) <= 0.00001 * max(1, abs(expected)))
 		if(!ok)
 			. += "[stat_label(stat_id)]: stat [actual], oracle [expected]"
+
+/// The end of a unit test (RunWrapped): every living mob the test allocated, or that stands in its block, reads what the oracle folds from its
+/// sources. A disagreement fails the test that left the mob in that state.
+/proc/factor_oracle_audit(datum/unit_test/test)
+	var/list/mobs = list()
+	for(var/datum/thing as anything in test.allocated)
+		if(isliving(thing) && !QDELETED(thing))
+			mobs |= thing
+	if(test.test_block)
+		for(var/turf/T as anything in block_turfs(test.test_block))
+			for(var/mob/living/L in T)
+				if(!QDELETED(L))
+					mobs |= L
+	for(var/mob/living/L as anything in mobs)
+		if(!L.body)
+			continue
+		// An affliction's severity and a reagent's dose move inside a band without a refresh (the factors follow them at the band edge, as the old
+		// cache did), so a body with either is refreshed first and the comparison is of the composition. Every other source (a body effect, the
+		// species, a form, an item, stasis) has its own trigger, and a body with only those is compared as it stands: a missed trigger shows.
+		if(LAZYLEN(L.body.afflictions) || L.body.reagent_volumes)
+			L.body.refresh_factors()
+		var/list/diff = factor_oracle_diff(L)
+		if(length(diff))
+			test.Fail("factor oracle: [L.type] reads differently from the old fold: [jointext(diff, "; ")]", __FILE__, __LINE__)

@@ -54,8 +54,8 @@
 	/// A whole-body condition (respiratory arrest, arrhythmia): afflict() reuses the one that
 	/// exists instead of adding another at a different location (C9).
 	var/systemic_singleton = FALSE
-	/// accumulate_factors() reads severity continuously (airway patency, breathing drive), so
-	/// every severity change re-dirties the factors (C21).
+	/// hold_factors() reads severity continuously (airway patency, breathing drive), so
+	/// every severity change refreshes the factors (C21).
 	var/continuous_factors = FALSE
 	/// INJURY_CATEGORY_* this affliction counts toward for load queries
 	/// (vitality readouts, analysers, medbots). Null = not an injury
@@ -351,7 +351,7 @@
 		rate = simple_clearance_rate
 	var/drift = AFFLICTION_BASE_PROGRESSION * rate
 	if(drift > 0)
-		drift *= body.get_factor(BF_PROGRESSION)
+		drift *= owner.factor(BF_PROGRESSION)
 	var/delta = drift + pending_treatment
 	pending_treatment = 0
 	// Conditions snowball: 1x at 0, 2x at 50, 3x at 100. Cures scale too, so

@@ -172,7 +172,7 @@
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	var/datum/body_effect/old_level = current ? body_effect_def(current) : null
 	var/datum/body_effect/new_level = stasis_type ? body_effect_def(stasis_type) : null
-	log_game("STASIS: [key_name(src)] [old_level ? "left [old_level.name]" : ""][old_level && new_level ? " and " : ""][new_level ? "entered [new_level.name]" : ""] from [source ? "[source] ([source.type])" : "no source"] at [AREACOORD(src)]; BF_STASIS now [factor(BF_STASIS)].")
+	log_game("STASIS: [key_name(src)] [old_level ? "left [old_level.name]" : ""][old_level && new_level ? " and " : ""][new_level ? "entered [new_level.name]" : ""] from [source ? "[source] ([source.type])" : "no source"] at [AREACOORD(src)]; stasis now [stasis].")
 	return TRUE
 
 /// The stasis level `source` holds this mob in, or null. A null source matches stasis applied
@@ -183,11 +183,12 @@
 /mob/living/proc/has_stasis_from(datum/source)
 	return !!stasis_type_from(source)
 
-/// Accumulates the stasis levels held by sources (BF_STASIS, max rule) into `acc`.
-/mob/living/proc/accumulate_stasis_factors(list/acc)
+/// Holds the stasis levels held by sources (the stasis stat, MAX rule) as rows of each level's definition, apart from the same definition applied as
+/// a body effect.
+/mob/living/proc/hold_stasis_factors()
 	for(var/key in stasis_sources)
-		acc = body_factor_accumulate(acc, body_effect_def(stasis_type_at(key)).factors)
-	return acc
+		var/datum/body_effect/level = body_effect_def(stasis_type_at(key))
+		body_hold(src, level, level.factors, 1, 1, "stasis")
 
 // --- The stat ------------------------------------------------------------------------------------------------------------------
 

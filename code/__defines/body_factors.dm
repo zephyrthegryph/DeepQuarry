@@ -38,7 +38,7 @@
 #define BF_ANALGESIA         12 // add: pain relief (points)
 #define BF_PAIN              13 // add: extra pain (points)
 #define BF_SEDATION          14 // add: consciousness reduction (points)
-#define BF_ARRHYTHMIA_RISK   15 // add: hazard of rhythm deterioration
+// 15 was the arrhythmia risk, 30 vision and 31 hearing: no source or reader ever used them, and they are gone (the ids stay unused).
 #define BF_HEART_RATE        16 // add: heart-rate drive, bpm (readout)
 // --- Vital-sign readouts ------------------------------------------------------
 #define BF_TEMPERATURE       17 // add: core temperature offset, °C (readout)
@@ -56,8 +56,6 @@
 #define BF_ATTACK_SPEED      28 // mult: attack (click) delay
 #define BF_MELEE_DAMAGE      29 // mult: outgoing melee and unarmed damage
 // --- Senses -------------------------------------------------------------------------
-#define BF_VISION            30 // mult: visual acuity
-#define BF_HEARING           31 // mult: hearing
 #define BF_MOTOR_CONTROL     32 // mult: fine motor control (below 1: dropped items)
 #define BF_DARKSIGHT         33 // max: 1 = sees in the dark
 #define BF_SIGHT_FLAGS       34 // flags: SEE_* sight flags granted

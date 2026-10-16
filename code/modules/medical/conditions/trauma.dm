@@ -128,10 +128,10 @@
 	var/alist/band_factors
 
 /// C7: the declared `factors` (scaled by severity, like any affliction) AND the band table.
-/datum/affliction/hypovolemic_shock/accumulate_factors(list/acc)
+/datum/affliction/hypovolemic_shock/hold_factors(mob/living/L)
 	factor_band = round(severity / BF_SEVERITY_BAND)
-	acc = body_factor_accumulate(acc, factors, severity / AFFLICTION_SEVERITY_TERMINAL)
-	return body_factor_accumulate(acc, band_factors, 1)
+	body_hold(L, src, factors, severity / AFFLICTION_SEVERITY_TERMINAL)
+	body_hold(L, src, band_factors, 1, 1, "band")
 
 /// C7: the first band applies from the moment the shock takes hold, not from its first tick.
 /datum/affliction/hypovolemic_shock/on_added()
