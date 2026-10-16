@@ -36,13 +36,6 @@ GLOBAL_LIST_EMPTY(active_turfs_startlist)
 GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00", "#00ffff", "#ff00ff"))
 
 
-// === /tg/-specific vars on /obj/machinery and /obj/item ===
-// atmos_processing removed alongside SSair.atmos_machinery.
-/obj/machinery
-	var/tmp/rebuilding = FALSE
-
-
-
 // === /tg/ hud + debug viz ===
 /datum/hud
 	var/atmos_debug_overlays
