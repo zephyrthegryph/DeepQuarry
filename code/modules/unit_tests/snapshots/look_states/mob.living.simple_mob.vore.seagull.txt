@@ -1,3 +1,5 @@
 /mob/living/simple_mob/vore/seagull ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/seagull ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/seagull has_eye_glow=1 +overlay: icons/mob/vore.dmi:seagull-eyes:7
+/mob/living/simple_mob/vore/seagull has_eye_glow=2 +overlay: icons/mob/vore.dmi:seagull-eyes:7
 

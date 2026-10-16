@@ -1,7 +1,13 @@
 /mob/living/simple_mob/vore/bigdragon ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/bigdragon ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/bigdragon has_eye_glow=1 +overlay: icons/mob/vore128x64.dmi:dragon_maneNone-eyes:7
+/mob/living/simple_mob/vore/bigdragon has_eye_glow=2 +overlay: icons/mob/vore128x64.dmi:dragon_maneNone-eyes:7
 /mob/living/simple_mob/vore/bigdragon/friendly ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/bigdragon/friendly ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/bigdragon/friendly has_eye_glow=1 +overlay: icons/mob/vore128x64.dmi:dragon_maneNone-eyes:7
+/mob/living/simple_mob/vore/bigdragon/friendly has_eye_glow=2 +overlay: icons/mob/vore128x64.dmi:dragon_maneNone-eyes:7
 /mob/living/simple_mob/vore/bigdragon/friendly/maintpred ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/bigdragon/friendly/maintpred ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/bigdragon/friendly/maintpred has_eye_glow=1 +overlay: icons/mob/vore128x64.dmi:dragon_maneNone-eyes:7
+/mob/living/simple_mob/vore/bigdragon/friendly/maintpred has_eye_glow=2 +overlay: icons/mob/vore128x64.dmi:dragon_maneNone-eyes:7
 

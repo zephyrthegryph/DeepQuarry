@@ -2,8 +2,12 @@
 /obj/item/clothing/glasses/sunglasses/sechud/aviator on=0 +overlay: icons/inventory/eyes/item.dmi:aviator:8:#000000
 /obj/item/clothing/glasses/sunglasses/sechud/aviator on=0 -state: aviator_sec
 /obj/item/clothing/glasses/sunglasses/sechud/aviator on=0 -overlay: icons/inventory/eyes/item.dmi:aviator_sec:8:#000000
+/obj/item/clothing/glasses/sunglasses/sechud/aviator gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/clothing/glasses/sunglasses/sechud/aviator gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 /obj/item/clothing/glasses/sunglasses/sechud/aviator/prescription on=0 +state: aviator
 /obj/item/clothing/glasses/sunglasses/sechud/aviator/prescription on=0 +overlay: icons/inventory/eyes/item.dmi:aviator:8:#000000
 /obj/item/clothing/glasses/sunglasses/sechud/aviator/prescription on=0 -state: aviator_sec
 /obj/item/clothing/glasses/sunglasses/sechud/aviator/prescription on=0 -overlay: icons/inventory/eyes/item.dmi:aviator_sec:8:#000000
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/prescription gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/prescription gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 

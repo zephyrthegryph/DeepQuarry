@@ -1,7 +1,13 @@
 /mob/living/simple_mob/vore/fennec ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/fennec ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/fennec has_eye_glow=1 +overlay: icons/mob/vore.dmi:fennec-eyes:7
+/mob/living/simple_mob/vore/fennec has_eye_glow=2 +overlay: icons/mob/vore.dmi:fennec-eyes:7
 /mob/living/simple_mob/vore/fennec/bridgette ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/fennec/bridgette ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/fennec/bridgette has_eye_glow=1 +overlay: icons/mob/vore.dmi:fennec-eyes:7
+/mob/living/simple_mob/vore/fennec/bridgette has_eye_glow=2 +overlay: icons/mob/vore.dmi:fennec-eyes:7
 /mob/living/simple_mob/vore/fennec/huge ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/fennec/huge ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/fennec/huge has_eye_glow=1 +overlay: icons/mob/vore100x100.dmi:fennec-eyes:7
+/mob/living/simple_mob/vore/fennec/huge has_eye_glow=2 +overlay: icons/mob/vore100x100.dmi:fennec-eyes:7
 

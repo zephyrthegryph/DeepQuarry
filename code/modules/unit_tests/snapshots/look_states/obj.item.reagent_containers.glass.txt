@@ -778,4 +778,12 @@
 /obj/item/reagent_containers/glass/bottle/poppy volume=1 -overlay: icons/obj/reagentfillings.dmi:bottle3-80:-32767:#922118
 /obj/item/reagent_containers/glass/bottle/poppy volume=2 +overlay: icons/obj/reagentfillings.dmi:bottle3-100:-32767:#922118
 /obj/item/reagent_containers/glass/bottle/poppy volume=2 -overlay: icons/obj/reagentfillings.dmi:bottle3-80:-32767:#922118
+/obj/item/reagent_containers/glass/rag rag_lit=1 +state: raglit
+/obj/item/reagent_containers/glass/rag rag_lit=1 +overlay: icons/obj/toy.dmi:raglit:8:#000000
+/obj/item/reagent_containers/glass/rag rag_lit=1 -state: rag
+/obj/item/reagent_containers/glass/rag rag_lit=1 -overlay: icons/obj/toy.dmi:rag:8:#000000
+/obj/item/reagent_containers/glass/rag rag_lit=2 +state: raglit
+/obj/item/reagent_containers/glass/rag rag_lit=2 +overlay: icons/obj/toy.dmi:raglit:8:#000000
+/obj/item/reagent_containers/glass/rag rag_lit=2 -state: rag
+/obj/item/reagent_containers/glass/rag rag_lit=2 -overlay: icons/obj/toy.dmi:rag:8:#000000
 

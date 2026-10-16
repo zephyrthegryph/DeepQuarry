@@ -1,7 +1,13 @@
 /mob/living/simple_mob/mechanical/ward/monitor ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/mechanical/ward/monitor ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/mechanical/ward/monitor has_eye_glow=0 -overlay: icons/mob/critter.dmi:ward-eyes:7
+/mob/living/simple_mob/mechanical/ward/monitor draws_life_state=0 -overlay: icons/mob/critter.dmi:ward-eyes:7
 /mob/living/simple_mob/mechanical/ward/monitor/syndicate ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/mechanical/ward/monitor/syndicate ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/mechanical/ward/monitor/syndicate has_eye_glow=0 -overlay: icons/mob/critter.dmi:ward-eyes:7
+/mob/living/simple_mob/mechanical/ward/monitor/syndicate draws_life_state=0 -overlay: icons/mob/critter.dmi:ward-eyes:7
 /mob/living/simple_mob/mechanical/ward/monitor/crew ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/mechanical/ward/monitor/crew ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/mechanical/ward/monitor/crew has_eye_glow=0 -overlay: icons/mob/critter.dmi:ward-nt-eyes:7
+/mob/living/simple_mob/mechanical/ward/monitor/crew draws_life_state=0 -overlay: icons/mob/critter.dmi:ward-nt-eyes:7
 

@@ -1,5 +1,9 @@
 /mob/living/simple_mob/vore/blaidd ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/blaidd ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/blaidd has_eye_glow=1 +overlay: icons/mob/vore64x32.dmi:blaidd-eyes:7
+/mob/living/simple_mob/vore/blaidd has_eye_glow=2 +overlay: icons/mob/vore64x32.dmi:blaidd-eyes:7
 /mob/living/simple_mob/vore/blaidd/hostile ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/blaidd/hostile ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/blaidd/hostile has_eye_glow=1 +overlay: icons/mob/vore64x32.dmi:blaidd-eyes:7
+/mob/living/simple_mob/vore/blaidd/hostile has_eye_glow=2 +overlay: icons/mob/vore64x32.dmi:blaidd-eyes:7
 

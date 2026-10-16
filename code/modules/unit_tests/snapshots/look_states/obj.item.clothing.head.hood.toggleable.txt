@@ -1,3 +1,5 @@
+/obj/item/clothing/head/hood/toggleable gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/clothing/head/hood/toggleable gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 /obj/item/clothing/head/hood/toggleable/colorable open=1 +state: choodie_open
 /obj/item/clothing/head/hood/toggleable/colorable open=1 +overlay: icons/inventory/head/item.dmi:choodie_open:8:#000000
 /obj/item/clothing/head/hood/toggleable/colorable open=1 -state: choodie
@@ -6,4 +8,6 @@
 /obj/item/clothing/head/hood/toggleable/colorable open=2 +overlay: icons/inventory/head/item.dmi:choodie_open:8:#000000
 /obj/item/clothing/head/hood/toggleable/colorable open=2 -state: choodie
 /obj/item/clothing/head/hood/toggleable/colorable open=2 -overlay: icons/inventory/head/item.dmi:choodie:8:#000000
+/obj/item/clothing/head/hood/toggleable/colorable gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/clothing/head/hood/toggleable/colorable gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 

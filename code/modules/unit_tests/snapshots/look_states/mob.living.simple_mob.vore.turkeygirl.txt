@@ -1,3 +1,5 @@
 /mob/living/simple_mob/vore/turkeygirl ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/turkeygirl ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/turkeygirl has_eye_glow=1 +overlay: icons/mob/turkey.dmi:turkeygirl-eyes:7
+/mob/living/simple_mob/vore/turkeygirl has_eye_glow=2 +overlay: icons/mob/turkey.dmi:turkeygirl-eyes:7
 

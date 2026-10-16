@@ -1,3 +1,6 @@
 /mob/living/simple_mob/vore/retaliate/lion ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/retaliate/lion ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/retaliate/lion has_eye_glow=1 +overlay: icons/mob/vore64x32.dmi:lion-eyes:7
+/mob/living/simple_mob/vore/retaliate/lion has_eye_glow=2 +overlay: icons/mob/vore64x32.dmi:lion-eyes:7
+/mob/living/simple_mob/vore/retaliate/lion has_mane=0 -overlay: icons/mob/vore64x32.dmi:mane:7
 

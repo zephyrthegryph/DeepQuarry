@@ -1,3 +1,5 @@
 /mob/living/simple_mob/vore/sonadile ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/sonadile ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/sonadile has_eye_glow=1 +overlay: icons/mob/vore64x64.dmi:sonadile-eyes:7
+/mob/living/simple_mob/vore/sonadile has_eye_glow=2 +overlay: icons/mob/vore64x64.dmi:sonadile-eyes:7
 
