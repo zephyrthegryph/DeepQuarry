@@ -44,7 +44,6 @@ MSG_DEF(vending/shorted, "You short out %T%'s product lock.", "%U% shorts out %T
 	anchored = TRUE
 	density = TRUE
 	unacidable = TRUE
-	clicksound = SFX_BUTTON
 
 	// Power
 	use_power = USE_POWER_IDLE
@@ -117,6 +116,7 @@ STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/vending, shoot_inventory, ANY)
 
 CAPABILITIES(/obj/machinery/vending)
+	configure(machine_interaction_config(clicksound = SFX_BUTTON))
 	configure(uses_power(idle = 10))
 	machine_basics(repair = NONE)
 	panel()
