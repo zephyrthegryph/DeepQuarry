@@ -205,9 +205,6 @@ dx_raw_overlays	code/game/objects/structures/props/machines.dm	add_overlay("nt_p
 dx_raw_overlays	code/game/objects/structures/props/machines.dm	cut_overlay("nt_pod_panel")
 dx_raw_overlays	code/game/objects/structures/props/machines.dm	add_overlay("nt_pod_panel")
 dx_raw_overlays	code/game/objects/structures/props/machines.dm	cut_overlay("nt_pod_panel")
-dx_raw_overlays	code/game/objects/structures/reflectors.dm	add_overlay(deflector_overlay)
-dx_raw_overlays	code/game/objects/structures/reflectors.dm	cut_overlay(deflector_overlay)
-dx_raw_overlays	code/game/objects/structures/reflectors.dm	add_overlay(deflector_overlay)
 dx_raw_overlays	code/game/turfs/flooring/flooring_decals.dm	T.add_overlay(I) // Add to its current overlays too.
 dx_raw_overlays	code/game/turfs/simulated.dm	cut_overlay(wet_overlay)
 dx_raw_overlays	code/game/turfs/simulated.dm	add_overlay(wet_overlay)
