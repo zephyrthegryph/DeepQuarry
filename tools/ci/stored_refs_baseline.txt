@@ -245,7 +245,6 @@ var	code/modules/mining/machinery/machine_unloading.dm	@/obj/machinery/mineral/u
 var	code/modules/mining/resonator.dm	@/obj/effect/resonance::creator
 var	code/modules/mining/shelter_atoms.dm	@/obj/machinery/button/remote/airlock/survival_pod::door
 var	code/modules/mining/shelter_atoms.dm	@/obj/machinery/light_switch/survival_pod::target_light
-var	code/modules/mob/living/butchering.dm	@/mob/living::meat_type
 var	code/modules/mob/living/carbon/human/species/species.dm	@/datum/species::move_trail
 var	code/modules/mob/living/life/life_sequence.dm	@/datum/seq_frame/life::env
 var	code/modules/mob/living/life/living_systems.dm	@/mob/living::tf_mob_holder
