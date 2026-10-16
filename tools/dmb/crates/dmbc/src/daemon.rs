@@ -246,6 +246,42 @@ pub fn route(
         std::thread::sleep(Duration::from_millis(100).min(remaining));
     }
 }
+/// Ask the daemon of the current `DMB_DAEMON_NAMESPACE` (any compiler generation) to retire. Retirement drains running
+/// builds before the process exits, so a busy daemon is never cut off. Used by the build tooling's resident-daemon cap.
+/// Returns Ok(false) when no daemon listens.
+pub fn retire_namespace() -> io::Result<bool> {
+    let discovery = transport::Endpoint::discovery()?;
+    let mut stream = match transport::connect(&discovery) {
+        Ok(stream) => stream,
+        Err(error) if listener_absent(&error) => return Ok(false),
+        Err(error) => return Err(error),
+    };
+    transport::set_timeout(&mut stream, Duration::from_secs(5))?;
+    protocol::send(
+        &mut stream,
+        &protocol::Request::Hello {
+            version: protocol::VERSION,
+            compiler: compiler_identity()?,
+        },
+    )?;
+    match protocol::receive::<protocol::Reply>(&mut stream)? {
+        protocol::Reply::Hello { retiring: true, .. } => Ok(true),
+        protocol::Reply::Hello { .. } => {
+            protocol::send(&mut stream, &protocol::Request::Retire)?;
+            match protocol::receive::<protocol::Reply>(&mut stream)? {
+                protocol::Reply::Retiring => Ok(true),
+                _ => Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "daemon did not acknowledge retirement",
+                )),
+            }
+        }
+        _ => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "invalid discovery daemon handshake",
+        )),
+    }
+}
 fn retire_discovered(identity: u128, remaining: Duration) -> io::Result<()> {
     let discovery = transport::Endpoint::discovery()?;
     let connection = transport::connect(&discovery);
