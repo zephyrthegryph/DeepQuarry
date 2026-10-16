@@ -742,6 +742,7 @@ CAPABILITIES(/datum/system/job)
 
 /// The living players a late joiner may spawn into as prey (willing, awake, on the vorespawn levels).
 /datum/system/job/proc/vorespawn_preds()
+	RETURN_TYPE(/list)
 	var/list/preds = list()
 	for(var/client/current_client in GLOB.clients)
 		if(!isliving(current_client.mob))
@@ -758,6 +759,7 @@ CAPABILITIES(/datum/system/job)
 
 /// The living players a late joiner may spawn onto as a pred (willing, awake, on the vorespawn levels).
 /datum/system/job/proc/vorespawn_preys()
+	RETURN_TYPE(/list)
 	var/list/preys = list()
 	for(var/client/current_client in GLOB.clients)
 		if(!isliving(current_client.mob))
@@ -774,6 +776,7 @@ CAPABILITIES(/datum/system/job)
 
 /// The names the join questions show for `mobs` (the answer is found again by its place in the list).
 /datum/system/job/proc/vorespawn_names(list/mobs)
+	RETURN_TYPE(/list)
 	var/list/names = list()
 	for(var/mob/living/current_mob as anything in mobs)
 		names += current_mob.real_name
