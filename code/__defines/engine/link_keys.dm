@@ -35,3 +35,8 @@
 /// `get_area(src).x` crosses HOP_AREA; hop_step() resolves them and the movement choke point publishes them (hop_moved()).
 #define HOP_TURF "turf"
 #define HOP_AREA "area"
+
+#define LK_SWARM_MEMBERS "swarm_members"
+
+#define LK_BURNING_STATE "burning_state"
+#define LK_BURNING_HOLDER "burning_holder"

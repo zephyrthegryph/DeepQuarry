@@ -4,9 +4,6 @@
 
 /mob/living/simple_mob
 	// footsteps (footstep() in its CAPABILITIES)
-	footstep_type = FOOTSTEP_MOB_SHOE
-	footstep_volume = 1
-	footstep_e_range = -6
 	name = "animal"
 	desc = ""
 	icon = 'icons/mob/animal.dmi'
@@ -169,6 +166,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob)
+	configure(footstep_settings(sound_type = FOOTSTEP_MOB_SHOE, volume = 1, e_range = -6))
 	ref_one(nameof(movement_target), /obj)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digest_leave_remains" = TRUE, "strip_pref" = FALSE, "can_be_drop_pred" = TRUE, "can_be_drop_prey" = TRUE))
 	configure(mob_kind(death_message = "dies!", attack_icon = 'icons/effects/effects.dmi', attack_icon_state = "slash", attack_cooldown = 10))

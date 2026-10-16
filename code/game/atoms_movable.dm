@@ -326,7 +326,7 @@
 	if((rx?.look_key || rel_watchers) && dir != rx?.look_seen_dir)
 		rx_of(src).look_seen_dir = dir
 		tracked_changed(src, nameof(dir))
-	if(blocks_light)
+	if(is_blocking_light())
 		light_blocking_moved(old_loc)
 	PUBLISH_LEGACY(src, /datum/notice/moved, old_loc, direction, forced)
 	// A window watching this thing as its host re-checks its status (code/modules/tgui/ui_status.dm); nobody else reads this key.

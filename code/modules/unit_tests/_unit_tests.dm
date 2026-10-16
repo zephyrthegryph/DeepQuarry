@@ -1336,6 +1336,8 @@
 
 #include "dq_skin_command_cache_home_tests.dm"
 
+#include "dq_base_vars_behaviour_tests.dm"
+#include "dq_base_vars_behaviour_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

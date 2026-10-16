@@ -32,14 +32,12 @@
 	var/hudmode = null
 	var/idcard_type = /obj/item/card/id/synthetic
 	// footsteps (footstep() in its CAPABILITIES)
-	footstep_type = FOOTSTEP_MOB_SHOE
-	footstep_volume = 1
-	footstep_e_range = -6
 
 /mob/living/silicon/fire_stack_decay_rate()
 	return -0.55
 
 CAPABILITIES(/mob/living/silicon)
+	configure(footstep_settings(sound_type = FOOTSTEP_MOB_SHOE, volume = 1, e_range = -6))
 	ref_one(nameof(common_radio), /obj/item/radio)
 	immune_to(STAT_DIZZY)
 	immune_to(STAT_JITTERY)

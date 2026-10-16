@@ -32,15 +32,15 @@
 	var/mob/living/simple_mob/animal/passive/mouse/walker = allocate(/mob/living/simple_mob/animal/passive/mouse, start)
 	walker.enable_footsteps(FOOTSTEP_MOB_CLAW, 1, -6)
 	TEST_ASSERT(granted(walker, /datum/capability/footstep), "enable_footsteps() grants the footstep capability")
-	walker.footstep_steps = 0
+	sparse_set(walker, footstep_steps, null)
 	walker.forceMove(next)
 	walker.forceMove(start)
-	TEST_ASSERT(walker.footstep_steps > 0, "each move is a step (counted [walker.footstep_steps])")
+	TEST_ASSERT(sparse_get_or(walker, footstep_steps, 0) > 0, "each move is a step (counted [sparse_get_or(walker, footstep_steps, 0)])")
 	walker.disable_footsteps()
 	TEST_ASSERT(!granted(walker, /datum/capability/footstep), "disable_footsteps() revokes it")
-	var/before = walker.footstep_steps
+	var/before = sparse_get_or(walker, footstep_steps, 0)
 	walker.forceMove(next)
-	TEST_ASSERT_EQUAL(walker.footstep_steps, before, "no steps are counted once disabled")
+	TEST_ASSERT_EQUAL(sparse_get_or(walker, footstep_steps, 0), before, "no steps are counted once disabled")
 
 /// Two swarmers on one turf pair up and offset; one leaving unpairs both.
 /datum/unit_test/dq_retired_swarming_pairs_on_a_turf
@@ -54,11 +54,11 @@
 	second.enable_swarming()
 	TEST_ASSERT(is_swarmer(first) && is_swarmer(second), "enable_swarming() grants the swarming capability")
 	second.forceMove(start)
-	TEST_ASSERT(second in first.swarm_members, "a swarmer moving onto another's turf pairs with it")
-	TEST_ASSERT(first.is_swarming && second.is_swarming, "both are offset while paired")
+	TEST_ASSERT(second in link_list(first, LK_SWARM_MEMBERS), "a swarmer moving onto another's turf pairs with it")
+	TEST_ASSERT(first.is_swarming() && second.is_swarming(), "both are offset while paired")
 	second.forceMove(away)
-	TEST_ASSERT(!(second in first.swarm_members), "leaving the turf unpairs")
-	TEST_ASSERT(!first.is_swarming && !second.is_swarming, "a swarmer left alone stops swarming")
+	TEST_ASSERT(!(second in link_list(first, LK_SWARM_MEMBERS)), "leaving the turf unpairs")
+	TEST_ASSERT(!first.is_swarming() && !second.is_swarming(), "a swarmer left alone stops swarming")
 
 /// The tether host takes the handheld out on attack_self (an instead on the attack_self action) and takes it back on attackby.
 /datum/unit_test/dq_retired_tether_swap_and_return

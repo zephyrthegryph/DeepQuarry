@@ -5,7 +5,6 @@
 
 /*********************Mining Hammer****************/
 /obj/item/kinetic_crusher
-	conflict_id = CONFLICT_ELEMENT_CRUSHER
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "crusher"
 	item_state = "crusher0"
@@ -55,6 +54,7 @@ CAPABILITIES(/obj/item/kinetic_crusher/cyborg)
 
 
 CAPABILITIES(/obj/item/kinetic_crusher)
+	configure(conflict_group(id = CONFLICT_ELEMENT_CRUSHER))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 25, armor_penetration = 10, attack_verbs = list("smashed", "crushed", "cleaved", "chopped", "pulped"), sharp = FALSE, edge = FALSE))

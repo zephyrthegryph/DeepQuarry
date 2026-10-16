@@ -2,31 +2,53 @@
 
 ///Footstep behaviour (was /datum/element/footstep). Plays footsteps at the mob's location
 ///when it is appropriate. A capability hooked on the moved notice; the per-mob settings and step
-///counter live on the mob. L.enable_footsteps() grants it.
+///counter use a type trait and a sparse per-mob slot. L.enable_footsteps() grants it.
 CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 /datum/capability/footstep
 
 /datum/capability/footstep/entries()
 	return list(on_notice(/datum/notice/moved, then(CAP_PROC(footstep_moved))))
 
-/mob/living
-	///FOOTSTEP_MOB_*: which kind of sounds the footstep behaviour chooses (non-humans).
-	var/footstep_type = FOOTSTEP_MOB_BAREFOOT
-	///Extra volume of the footstep, multiplied by the base volume.
-	var/footstep_volume = 0.1
-	///Extra range, added to the base value.
-	var/footstep_e_range = -8
-	///Whether to add variation to the sounds played.
-	var/footstep_vary = FALSE
-	///Steps taken since footsteps were last played.
-	var/footstep_steps = 0
+#define ENTRY_FOOTSTEP_SETTINGS "footstep_settings"
+#define FOOTSTEP_SETTINGS_KEY "footstep_settings"
+
+STATIC_ENTRY(footstep_settings)
+/proc/footstep_settings(sound_type = null, volume = null, e_range = null, vary = null)
+	RETURN_TYPE(/datum/entry)
+	return entry_make(ENTRY_FOOTSTEP_SETTINGS, null, list("sound_type" = sound_type, "volume" = volume, "e_range" = e_range, "vary" = vary))
+
+/datum/type_trait/footstep_settings
+	var/sound_type = FOOTSTEP_MOB_BAREFOOT
+	var/volume = 0.1
+	var/e_range = -8
+	var/vary = FALSE
+
+/datum/type_trait/footstep_settings/copy_values(datum/type_trait/footstep_settings/into)
+	into.sound_type = sound_type
+	into.volume = volume
+	into.e_range = e_range
+	into.vary = vary
+
+/datum/entry_engine/type_trait/footstep_settings
+	kind = ENTRY_FOOTSTEP_SETTINGS
+	trait_type = /datum/type_trait/footstep_settings
+	publish_key = FOOTSTEP_SETTINGS_KEY
+	base_type = /mob/living
+	var_names = list("footstep_type" = "sound_type", "footstep_volume" = "volume", "footstep_e_range" = "e_range", "footstep_vary" = "vary")
+
+READS_AS(/proc/footstep_settings_of, FOOTSTEP_SETTINGS_KEY)
+/proc/footstep_settings_of(mob/living/holder) as /datum/type_trait/footstep_settings
+	READS_FROM(holder)
+	return type_trait_of(holder, ENTRY_FOOTSTEP_SETTINGS)
+
+sparse(/mob/living, footstep_steps, type = num)
 
 /mob/living/proc/enable_footsteps(type = FOOTSTEP_MOB_BAREFOOT, volume = 0.1, e_range = -8, vary = FALSE)
-	footstep_type = type
-	footstep_volume = volume
-	footstep_e_range = e_range
-	footstep_vary = vary
-	footstep_steps = 0
+	set_trait(src, ENTRY_FOOTSTEP_SETTINGS, "sound_type", type)
+	set_trait(src, ENTRY_FOOTSTEP_SETTINGS, "volume", volume)
+	set_trait(src, ENTRY_FOOTSTEP_SETTINGS, "e_range", e_range)
+	set_trait(src, ENTRY_FOOTSTEP_SETTINGS, "vary", vary)
+	sparse_set(src, footstep_steps, null)
 	grant(src, /datum/capability/footstep, src)
 
 /mob/living/proc/disable_footsteps()
@@ -64,8 +86,8 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 
 ///Prepares a footstep for living mobs. Determines if it should get played. Returns the turf it should get played on. Note that it is always a /turf/simulated
 /datum/capability/footstep/proc/prepare_step(mob/living/source)
-	var/volume = source.footstep_volume
-	var/sound_vary = source.footstep_vary
+	var/volume = footstep_settings_of(source).volume
+	var/sound_vary = footstep_settings_of(source).vary
 	var/turf/simulated/turf = get_turf(source)
 	if(!istype(turf))
 		return
@@ -87,11 +109,11 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 			return
 		if(carbon_source.m_intent == I_WALK)
 			return// stealth
-	source.footstep_steps++
-	var/steps = source.footstep_steps
+	sparse_set_or(source, footstep_steps, sparse_get_or(source, footstep_steps, 0) + 1, 0)
+	var/steps = sparse_get_or(source, footstep_steps, 0)
 
 	if(steps >= 6)
-		source.footstep_steps = 0
+		sparse_set(source, footstep_steps, null)
 		steps = 0
 
 	if(steps % 2)
@@ -114,10 +136,10 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 	return .
 
 /datum/capability/footstep/proc/play_simplestep(mob/living/source)
-	var/volume = source.footstep_volume
-	var/e_range = source.footstep_e_range
-	var/sound_vary = source.footstep_vary
-	var/footstep_type = source.footstep_type
+	var/volume = footstep_settings_of(source).volume
+	var/e_range = footstep_settings_of(source).e_range
+	var/sound_vary = footstep_settings_of(source).vary
+	var/footstep_type = footstep_settings_of(source).sound_type
 	var/footstep_sounds = check_footstep_type(footstep_type)
 
 	var/volume_multiplier = 0.3
@@ -139,9 +161,9 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 	playsound(source.loc, pick(footstep_sounds[turf_footstep][1]), footstep_sounds[turf_footstep][2] * volume, TRUE, footstep_sounds[turf_footstep][3] + e_range, falloff = 1, vary = sound_vary)
 
 /datum/capability/footstep/proc/play_humanstep(mob/living/carbon/human/source)
-	var/volume = source.footstep_volume
-	var/e_range = source.footstep_e_range
-	var/sound_vary = source.footstep_vary
+	var/volume = footstep_settings_of(source).volume
+	var/e_range = footstep_settings_of(source).e_range
+	var/sound_vary = footstep_settings_of(source).vary
 
 	var/volume_multiplier = 0.3
 	var/range_adjustment = 0
@@ -174,9 +196,9 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 	play_barefoot_sound(source, prepared_steps, volume_multiplier, range_adjustment)
 
 /datum/capability/footstep/proc/play_barefoot_sound(mob/living/carbon/human/source, list/prepared_steps, volume_multiplier, range_adjustment)
-	var/volume = source.footstep_volume
-	var/e_range = source.footstep_e_range
-	var/sound_vary = source.footstep_vary
+	var/volume = footstep_settings_of(source).volume
+	var/e_range = footstep_settings_of(source).e_range
+	var/sound_vary = footstep_settings_of(source).vary
 
 	if(source.species.special_step_sounds)
 		playsound(source.loc, pick(source.species.special_step_sounds), volume, TRUE, falloff = 1, vary = sound_vary)

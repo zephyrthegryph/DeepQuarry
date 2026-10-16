@@ -4,22 +4,24 @@
  * movable is an opacity source of its turf; Moved() hands it from the old turf to
  * the new one.
  */
-/atom/movable
-	/// TRUE while this movable is an opacity source of its turf.
-	var/blocks_light = FALSE
+sparse(/atom/movable, blocks_light, type = num)
+
+/// TRUE while this movable supplies opacity to its turf.
+/atom/movable/proc/is_blocking_light()
+	return sparse_get_or(src, blocks_light, FALSE)
 
 /atom/movable/proc/start_blocking_light()
-	if(blocks_light)
+	if(is_blocking_light())
 		return
-	blocks_light = TRUE
+	sparse_set(src, blocks_light, TRUE)
 	if(isturf(loc))
 		var/turf/turf_loc = loc
 		turf_loc.add_opacity_source(src)
 
 /atom/movable/proc/stop_blocking_light()
-	if(!blocks_light)
+	if(!is_blocking_light())
 		return
-	blocks_light = FALSE
+	sparse_set(src, blocks_light, null)
 	if(isturf(loc))
 		var/turf/turf_loc = loc
 		turf_loc.remove_opacity_source(src)

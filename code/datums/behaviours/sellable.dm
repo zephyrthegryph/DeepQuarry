@@ -14,37 +14,59 @@
 		. = new path
 		profiles[path] = .
 
-/obj
-	/// The /datum/sellable profile this object sells under, or null.
-	var/sellable_type
+#define ENTRY_SALE_PROFILE "sale_profile"
+#define SALE_PROFILE_KEY "sale_profile"
+
+STATIC_ENTRY(sale_profile)
+/proc/sale_profile(path = null)
+	RETURN_TYPE(/datum/entry)
+	return entry_make(ENTRY_SALE_PROFILE, null, list("path" = path))
+
+/datum/type_trait/sale_profile
+	var/path
+
+/datum/type_trait/sale_profile/copy_values(datum/type_trait/sale_profile/into)
+	into.path = path
+
+/datum/entry_engine/type_trait/sale_profile
+	kind = ENTRY_SALE_PROFILE
+	trait_type = /datum/type_trait/sale_profile
+	publish_key = SALE_PROFILE_KEY
+	base_type = /obj
+	var_names = list("sellable_type" = "path")
+
+READS_AS(/proc/sale_profile_of, SALE_PROFILE_KEY)
+/proc/sale_profile_of(obj/holder) as /datum/type_trait/sale_profile
+	READS_FROM(holder)
+	return type_trait_of(holder, ENTRY_SALE_PROFILE)
 
 /// Makes this object sellable under profile `path`. The first profile wins.
 /obj/proc/make_sellable(path = /datum/sellable)
-	if(sellable_type)
+	if(sale_profile_of(src).path)
 		return
-	sellable_type = path
+	set_trait(src, ENTRY_SALE_PROFILE, "path", path)
 
 /// Offered to the cargo shuttle: TRUE if sold (the crate record is filled in).
 /atom/proc/export_sale(datum/exported_crate/EC, in_crate)
 	return FALSE
 
 /obj/export_sale(datum/exported_crate/EC, in_crate)
-	if(!sellable_type)
+	if(!sale_profile_of(src).path)
 		return FALSE
-	var/datum/sellable/profile = get_sellable_profile(sellable_type)
+	var/datum/sellable/profile = get_sellable_profile(sale_profile_of(src).path)
 	return profile.sell(src, EC, in_crate)
 
 /// The sale value a retail scanner reads, or null when not sellable.
 /obj/proc/scan_profit()
-	if(!sellable_type)
+	if(!sale_profile_of(src).path)
 		return null
-	var/datum/sellable/profile = get_sellable_profile(sellable_type)
+	var/datum/sellable/profile = get_sellable_profile(sale_profile_of(src).path)
 	return profile.calculate_sell_value(src)
 
 /obj/examine(mob/user, infix = "", suffix = "")
 	. = ..()
-	if(sellable_type)
-		var/datum/sellable/profile = get_sellable_profile(sellable_type)
+	if(sale_profile_of(src).path)
+		var/datum/sellable/profile = get_sellable_profile(sale_profile_of(src).path)
 		if(profile.sale_info)
 			. += span_notice(profile.sale_info)
 

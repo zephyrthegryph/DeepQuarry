@@ -14,25 +14,24 @@ CAPABILITY_TYPE(swarming, CAP_SWARMING, /datum/capability/swarming, key = NONE)
 	var/atom/movable/AM = A.holder
 	if(!istype(AM))
 		return
-	AM.swarm_offset_x = rand(-24, 24)
-	AM.swarm_offset_y = rand(-24, 24)
+	sparse_set_or(AM, swarm_offset_x, rand(-24, 24), 0)
+	sparse_set_or(AM, swarm_offset_y, rand(-24, 24), 0)
 	join_turf(AM)
 
 /datum/capability/swarming/entries()
 	return list(on_notice(/datum/notice/moved, then(CAP_PROC(swarm_moved))))
 
-/atom/movable
-	/// Pixel offset used while swarming (set by enable_swarming()).
-	var/swarm_offset_x = 0
-	var/swarm_offset_y = 0
-	/// TRUE while offset by swarming.
-	var/is_swarming = FALSE
-	/// The swarmers sharing our turf: a relation list view (lazy).
-	var/list/atom/movable/swarm_members
+/// Rare pixel-state and a sparse reciprocal relation, absent from ordinary movables.
+sparse(/atom/movable, swarm_offset_x, type = num)
+sparse(/atom/movable, swarm_offset_y, type = num)
+sparse(/atom/movable, is_swarming, type = num)
+
+/atom/movable/proc/is_swarming()
+	return sparse_get_or(src, is_swarming, FALSE)
 
 /atom/movable/proc/enable_swarming(max_x = 24, max_y = 24)
-	swarm_offset_x = rand(-max_x, max_x)
-	swarm_offset_y = rand(-max_y, max_y)
+	sparse_set_or(src, swarm_offset_x, rand(-max_x, max_x), 0)
+	sparse_set_or(src, swarm_offset_y, rand(-max_y, max_y), 0)
 	grant(src, /datum/capability/swarming, src)
 
 /// TRUE if `AM` swarms.
@@ -64,25 +63,25 @@ CAPABILITY_TYPE(swarming, CAP_SWARMING, /datum/capability/swarming, key = NONE)
 /datum/capability/swarming/proc/pair(atom/movable/AM, atom/movable/other)
 	if(QDELETED(other))
 		return
-	rel_add(AM, nameof(AM.swarm_members), other)
+	link_make(AM, LK_SWARM_MEMBERS, other)
 	swarm(AM)
 
 /// Unpairs `AM` from every swarm-mate; mates left alone stop swarming.
 /datum/capability/swarming/proc/leave_all(atom/movable/AM)
-	for(var/atom/movable/other as anything in AM.swarm_members?.Copy())
-		rel_remove(other, nameof(other.swarm_members), AM)
-		if(!length(other.swarm_members))
+	for(var/atom/movable/other as anything in link_list(AM, LK_SWARM_MEMBERS))
+		link_break(AM, LK_SWARM_MEMBERS, other)
+		if(!length(link_list(other, LK_SWARM_MEMBERS)))
 			unswarm(other)
-	rel_clear(AM, nameof(AM.swarm_members))
+	link_break(AM, LK_SWARM_MEMBERS)
 	unswarm(AM)
 
 /datum/capability/swarming/proc/swarm(atom/movable/owner)
-	if(!owner.is_swarming)
-		owner.is_swarming = TRUE
-		animate(owner, pixel_x = owner.pixel_x + owner.swarm_offset_x, pixel_y = owner.pixel_y + owner.swarm_offset_y, time = 2)
+	if(!owner.is_swarming())
+		sparse_set_or(owner, is_swarming, TRUE, 0)
+		animate(owner, pixel_x = owner.pixel_x + sparse_get_or(owner, swarm_offset_x, 0), pixel_y = owner.pixel_y + sparse_get_or(owner, swarm_offset_y, 0), time = 2)
 
 /datum/capability/swarming/proc/unswarm(atom/movable/owner)
-	if(owner.is_swarming)
-		animate(owner, pixel_x = owner.pixel_x - owner.swarm_offset_x, pixel_y = owner.pixel_y - owner.swarm_offset_y, time = 2)
-		owner.is_swarming = FALSE
+	if(owner.is_swarming())
+		animate(owner, pixel_x = owner.pixel_x - sparse_get_or(owner, swarm_offset_x, 0), pixel_y = owner.pixel_y - sparse_get_or(owner, swarm_offset_y, 0), time = 2)
+		sparse_set_or(owner, is_swarming, FALSE, 0)
 

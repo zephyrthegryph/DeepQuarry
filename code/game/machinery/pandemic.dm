@@ -19,7 +19,6 @@
 /obj/item/reagent_containers/glass/beaker/vial/vaccine
 	max_transfer_amount = 15
 	volume = 15
-	sellable_type = /datum/sellable/vaccine
 
 /obj/machinery/computer/pandemic/draw(datum/look/look)
 	..()
@@ -409,3 +408,6 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 
 /obj/machinery/computer/pandemic/proc/empty_slot_holds(datum/act/op/A)
 	return (!beaker) ? null : MSG(pandemic/beaker_loaded)
+
+CAPABILITIES(/obj/machinery/pandemic)
+	configure(sale_profile(path = /datum/sellable/vaccine))

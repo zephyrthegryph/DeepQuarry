@@ -14,9 +14,6 @@
 /mob/living/carbon
 	fire_heats_body = TRUE
 	// footsteps (footstep() in its CAPABILITIES): a shoe's, the custom_footstep a carbon starts with
-	footstep_type = FOOTSTEP_MOB_SHOE
-	footstep_volume = 1
-	footstep_e_range = -6
 	/// Biological time (clock_now(CLOCK_BIO), ds) of the germs stage's last roll, or null
 	/// before the first. Not 0: a biology clock can legitimately read 0 (stopped from the start).
 	var/germs_rolled_at

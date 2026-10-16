@@ -32,7 +32,7 @@
 	. = ..()
 	if(has_trait(user, TRAIT_UNLUCKY) && prob(0.1) && ishuman(user)) //1 in a thousand
 		var/mob/living/carbon/human/unlucky_human = user
-		if(unlucky_human.has_omen() && unlucky_human.omen_evil) //Also going to make sure they got the EVIL version.
+		if(unlucky_human.has_omen() && unlucky_human.omen_is_evil()) //Also going to make sure they got the EVIL version.
 			act_message(unlucky_human, null, MSG_SELF(span_danger(span_huge("OH GOD YOUR HAND"))), \
 				MSG_OTHERS(span_danger("%U% snaps, their hand fading to ash!")))
 			for(var/limb in list(BP_L_HAND, BP_R_HAND))

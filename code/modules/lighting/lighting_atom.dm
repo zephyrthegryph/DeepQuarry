@@ -26,7 +26,7 @@
 	var/tmp/atom/movable/emissive_blocker/em_block
 
 CAPABILITIES(/atom/movable)
-	ref_many(nameof(swarm_members))
+	links(LINK_END(/atom/movable, LK_SWARM_MEMBERS), LINK_END(/atom/movable, LK_SWARM_MEMBERS), sparse = TRUE, a_many = TRUE, b_many = TRUE)
 	ref_one(nameof(heat_fire_turf), /turf)
 	owns_one(nameof(em_block), /atom/movable/emissive_blocker)
 	owns_one(nameof(experiment_handler), /datum/experiment_handler)
