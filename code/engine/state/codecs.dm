@@ -17,7 +17,6 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 		GLOB.state_codec_instances[path] = codec
 	return codec
 
-LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_codec)
 /datum/state_codec
 
 /// Returns the encoded value. Call ctx.refuse() and return null to refuse.

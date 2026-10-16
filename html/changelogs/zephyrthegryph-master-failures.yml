@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Answered prompts stay readable until an op's final step has run (records console note deletion works again)"
+  - bugfix: "Graffiti no longer mutates the shared icon state list; a hand refuses non-items handed to it by replace_with"
+  - code_imp: "Removed false LIFECYCLE_KEEP marks from state codecs, parsed maps and comm message listeners"

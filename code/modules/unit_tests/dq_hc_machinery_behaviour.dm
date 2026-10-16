@@ -1134,6 +1134,22 @@ CAPABILITIES(/obj/machinery/dq_native_emag_storage)
 	TEST_ASSERT_EQUAL(B.on, old_on, "the multitool never toggles power")
 	TEST_ASSERT(!task_claiming(B), "it starts no hand reprogramming task")
 
+/// The menu line `key` shows as: its own row, or (one line per label, op_menu_read()) the line of the op it shares its label with.
+/proc/hc_menu_line(mob/H, atom/M, obj/held, key)
+	var/list/rows = op_menu(H, M, held)
+	for(var/list/row as anything in rows)
+		if(row["key"] == key)
+			return row
+	var/datum/op_resolution/R = op_resolve(H, M, held, ORIGIN_MENU, actor_authority(H), null, null, TRUE)
+	for(var/datum/op_cand/C as anything in R.ordered)
+		if(C.oplan.key != key)
+			continue
+		var/label = op_menu_label(R, C)
+		for(var/list/row as anything in rows)
+			if(row["label"] == label)
+				return row
+	return null
+
 /datum/unit_test/dq_hc_struct/single_item_menus_preserve_disabled_rows
 /datum/unit_test/dq_hc_struct/single_item_menus_preserve_disabled_rows/run_gate()
 	var/mob/living/carbon/human/H = person()
@@ -1148,13 +1164,15 @@ CAPABILITIES(/obj/machinery/dq_native_emag_storage)
 	for(var/path in cases)
 		var/list/expected = cases[path]
 		var/obj/machinery/M = mach(path, tile(3, 2))
-		var/list/found
-		for(var/list/row as anything in op_menu(H, M, null))
-			if(row["key"] == expected[1])
-				found = row
-		TEST_ASSERT_NOTNULL(found, "[path] retains its single-item menu row with an empty hand")
-		TEST_ASSERT(!found?["enabled"], "that row is disabled without a held item")
-		TEST_ASSERT_EQUAL(found?["reason"], expected[2], "the original refusal stays visible")
+		var/list/found = hc_menu_line(H, M, null, expected[1])
+		TEST_ASSERT_NOTNULL(found, "[path] keeps a menu line for its single-item op with an empty hand")
+		if(found["key"] != expected[1])
+			// One line per label: an enabled op of the same label (the button's hand Press) is the line, and the item op is not listed beside it.
+			TEST_ASSERT(found["enabled"], "a line that stands in for the item op is an open one: [json_encode(found)]")
+			qdel(M)
+			continue
+		TEST_ASSERT(!found["enabled"], "that row is disabled without a held item")
+		TEST_ASSERT_EQUAL(found["reason"], expected[2], "the original refusal stays visible")
 		qdel(M)
 
 /datum/unit_test/dq_hc_struct/emag_menus_follow_integrator_policy
@@ -1174,9 +1192,14 @@ CAPABILITIES(/obj/machinery/dq_native_emag_storage)
 				if(row["key"] == "emag.use")
 					found = row
 			if(held)
-				TEST_ASSERT_NOTNULL(found, "the actual held sequencer reaches its item-bound op")
-				TEST_ASSERT(!found?["enabled"], "an exhausted card cannot subvert the machine")
-				TEST_ASSERT_EQUAL(found?["reason"], "That has no uses left.", "the real exhausted-card refusal is preserved")
+				var/list/line = hc_menu_line(H, M, held, "emag.use")
+				TEST_ASSERT_NOTNULL(line, "the actual held sequencer reaches its item-bound op")
+				if(found)
+					TEST_ASSERT(!found["enabled"], "an exhausted card cannot subvert the machine")
+					TEST_ASSERT_EQUAL(found["reason"], "That has no uses left.", "the real exhausted-card refusal is preserved")
+				else
+					// One line per label: the machine's own enabled Use is the line, so the card's refused Use is not listed beside it.
+					TEST_ASSERT(line["enabled"], "a line that stands in for the card's op is an open one: [json_encode(line)]")
 			else
 				TEST_ASSERT_NULL(found, "the integrator policy removes the legacy Emag row without a sequencer")
 			if(held)

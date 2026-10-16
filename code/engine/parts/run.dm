@@ -1209,7 +1209,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	args_saved = null
 	ordered_args_saved = null
 	log_saved = null
-	rel_clear(src, nameof(answered_steps)) // owned: the answered prompts are deleted with the op
+	// answered_steps (owned) is not cleared here: Do still reads the answered prompts' fields (a relation var such as record) after this,
+	// and the op's destroy transaction (drop_record()) disposes of them once Do has run.
 	captured_saved = null
 	cancel_after(src, "op_wait")
 	if(request)

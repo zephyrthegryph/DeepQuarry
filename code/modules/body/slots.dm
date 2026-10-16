@@ -94,6 +94,12 @@
 	exposure = SLOT_EXPOSURE_EXTERNAL
 	provides = AFF_HOLD | AFF_MANIPULATE | AFF_HOLD_SMALL | AFF_INTERFACE
 
+/// A hand holds items: a structure or effect handed to it (a replace_with() successor) would break the worn-icon refresh.
+/datum/relation_definition/slot/body/hand/refusal(atom/holder, atom/movable/thing, mob/actor)
+	if(!istype(thing, /obj/item))
+		return "only items go in a hand"
+	return ..()
+
 /datum/relation_definition/slot/body/hand/left
 	slot_id = SLOT_ID_HAND_L
 	name = "left hand"

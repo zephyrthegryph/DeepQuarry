@@ -33,7 +33,7 @@ CAPABILITIES(/obj/effect/decal/writing)
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): a scrawl unlike the others on its turf.
 /obj/effect/decal/writing/proc/roll_icon_state(datum/roller/R)
-	var/list/random_icon_states = icon_states_fast(icon)
+	var/list/random_icon_states = icon_states_fast(icon).Copy()
 	for(var/obj/effect/decal/writing/writing in contents_of(loc))
 		random_icon_states.Remove(writing.icon_state)
 	return length(random_icon_states) ? R.choose(random_icon_states) : icon_state
