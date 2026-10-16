@@ -215,7 +215,7 @@
 		M.status_adjust(STAT_STUNNED, 5) // stun accounting for crawl
 
 /datum/reagent/pain_enzyme
-	factors = alist(BF_ANALGESIA = -200)
+	factors = alist(STAT_ANALGESIA = -200)
 	name = REAGENT_PAINENZYME
 	id = REAGENT_ID_PAINENZYME
 	scannable = SCANNABLE_ADVANCED

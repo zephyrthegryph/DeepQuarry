@@ -29,20 +29,20 @@
 		filter_effect -= 2
 
 	// Do some reagent processing.
-	if(owner.factor(BF_HEPATOTOXICITY))
-		apply_lesion_damage(owner.factor(BF_HEPATOTOXICITY) * 0.1 * cycles, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
+	if(owner.hepatotoxicity)
+		apply_lesion_damage(owner.hepatotoxicity * 0.1 * cycles, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
 		if(filter_effect < 2)	//Liver is badly damaged, you're drinking yourself to death
-			owner.injure(INJURY_TOXIN, owner.factor(BF_HEPATOTOXICITY) * 0.2 * cycles, flags = INJURE_SILENT)
+			owner.injure(INJURY_TOXIN, owner.hepatotoxicity * 0.2 * cycles, flags = INJURE_SILENT)
 		if(filter_effect < 3)
-			owner.injure(INJURY_TOXIN, owner.factor(BF_HEPATOTOXICITY) * 0.1 * cycles, flags = INJURE_SILENT)
+			owner.injure(INJURY_TOXIN, owner.hepatotoxicity * 0.1 * cycles, flags = INJURE_SILENT)
 
 	// General organ damage from withdraw
-	if(prob(20) && owner.factor(BF_WITHDRAWAL))
-		apply_lesion_damage(owner.factor(BF_WITHDRAWAL) * 0.05 * cycles, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
+	if(prob(20) && owner.withdrawal)
+		apply_lesion_damage(owner.withdrawal * 0.05 * cycles, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
 		if(filter_effect < 2)	//Withdrawls intensified
-			owner.injure(INJURY_TOXIN, owner.factor(BF_WITHDRAWAL) * 0.2 * cycles, flags = INJURE_SILENT)
+			owner.injure(INJURY_TOXIN, owner.withdrawal * 0.2 * cycles, flags = INJURE_SILENT)
 		if(filter_effect < 3)
-			owner.injure(INJURY_TOXIN, owner.factor(BF_WITHDRAWAL) * 0.1 * cycles, flags = INJURE_SILENT)
+			owner.injure(INJURY_TOXIN, owner.withdrawal * 0.1 * cycles, flags = INJURE_SILENT)
 
 
 /obj/item/organ/internal/liver/handle_germ_effects(cycles)
@@ -76,4 +76,4 @@ CAPABILITIES(/obj/item/organ/internal/liver/grey/colormatch)
 		return FALSE
 	if(!owner)
 		return TRUE
-	return owner.injury_load(INJURY_CATEGORY_TOXIC) < 50 && !owner.factor(BF_HEPATOTOXICITY) && !owner.factor(BF_WITHDRAWAL)
+	return owner.injury_load(INJURY_CATEGORY_TOXIC) < 50 && !owner.hepatotoxicity && !owner.withdrawal

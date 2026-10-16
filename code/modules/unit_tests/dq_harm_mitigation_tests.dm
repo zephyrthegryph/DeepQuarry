@@ -5,7 +5,7 @@
 /datum/body_effect/dq_test_physical_half
 	stacks = MODIFIER_STACK_FORBID
 	name = "test physical resistance"
-	factors = alist(BF_INCOMING_PHYSICAL = 0.5)
+	factors = alist(STAT_INCOMING_PHYSICAL = 0.5)
 
 /// Weapons, projectiles, blobs and animal / unarmed attacks declare what they inflict.
 /datum/unit_test/dq_harm_kind_declarations
@@ -173,7 +173,7 @@
 	var/list/shield_stage = explained[2]
 	TEST_ASSERT(dq_near(shield_stage[3], shield_stage[2] * 0.5), "a fully charged weak shield halves physical harm")
 	var/list/factor_stage = explained[3]
-	TEST_ASSERT(dq_near(factor_stage[3], factor_stage[2] * 0.5), "BF_INCOMING_PHYSICAL 0.5 should halve what is left")
+	TEST_ASSERT(dq_near(factor_stage[3], factor_stage[2] * 0.5), "STAT_INCOMING_PHYSICAL 0.5 should halve what is left")
 	var/list/body_stage = explained[4]
 	TEST_ASSERT(dq_near(applied, body_stage[3], 0.01), "the body should receive what the last stage let through ([body_stage[3]] vs [applied])")
 	TEST_ASSERT(cell.charge < cell.maxcharge, "the shield should drain its cell for what it absorbs")

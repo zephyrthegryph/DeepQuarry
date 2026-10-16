@@ -20,7 +20,7 @@
 	cost = 1
 	tree = PERK_TREE_BODY_STRENGTH
 	sort_priority = 10
-	factors = alist(BF_INCOMING_PHYSICAL = 0.9)
+	factors = alist(STAT_INCOMING_PHYSICAL = 0.9)
 
 /datum/perk/body/str_iron_skin
 	name = "Iron Skin"
@@ -29,7 +29,7 @@
 	cost = 2
 	tree = PERK_TREE_BODY_STRENGTH
 	requires = list(/datum/perk/body/str_toughness)
-	factors = alist(BF_INCOMING_PHYSICAL = 0.9)
+	factors = alist(STAT_INCOMING_PHYSICAL = 0.9)
 
 /datum/perk/body/str_crusher
 	name = "Crusher"
@@ -38,7 +38,7 @@
 	cost = 3
 	tree = PERK_TREE_BODY_STRENGTH
 	requires = list(/datum/perk/body/str_iron_skin)
-	factors = alist(BF_INCOMING_PHYSICAL = 0.9)
+	factors = alist(STAT_INCOMING_PHYSICAL = 0.9)
 
 /datum/perk/body/str_powerful
 	name = "Powerful Build"
@@ -175,7 +175,7 @@
 	cost = 3
 	tree = PERK_TREE_BODY_STRENGTH
 	requires = list(/datum/perk/body/str_powerful, /datum/perk/body/str_iron_skin)
-	factors = alist(BF_INCOMING_PHYSICAL = 0.95)
+	factors = alist(STAT_INCOMING_PHYSICAL = 0.95)
 
 /datum/perk/body/str_slam
 	name = "Body Slam"
@@ -213,7 +213,7 @@
 	tree = PERK_TREE_BODY_VIGOR
 	requires = list(/datum/perk/body/vig_robust)
 	var_changes = list("total_health" = 160)
-	factors = alist(BF_INCOMING_THERMAL = 0.9)
+	factors = alist(STAT_INCOMING_THERMAL = 0.9)
 
 /datum/perk/body/vig_unkillable
 	name = "Unkillable"
@@ -372,7 +372,7 @@
 	icon_name = "shoe-prints"
 	cost = 1
 	tree = PERK_TREE_BODY_SPEED
-	factors = alist(BF_SLOWDOWN = -0.5)
+	factors = alist(STAT_SLOWDOWN = -0.5)
 
 /datum/perk/body/spd_sprinter
 	name = "Sprinter"
@@ -381,7 +381,7 @@
 	cost = 2
 	tree = PERK_TREE_BODY_SPEED
 	requires = list(/datum/perk/body/spd_quick_step)
-	factors = alist(BF_SLOWDOWN = -1)
+	factors = alist(STAT_SLOWDOWN = -1)
 
 /datum/perk/body/spd_blink_step
 	name = "Blink Step"
@@ -676,7 +676,7 @@
 	icon_name = "fire"
 	cost = 2
 	tree = PERK_TREE_BODY_ENDURANCE
-	factors = alist(BF_INCOMING_THERMAL = 0.9)
+	factors = alist(STAT_INCOMING_THERMAL = 0.9)
 
 /datum/perk/body/end_bleed_tolerant
 	name = "Bleed Tolerant"

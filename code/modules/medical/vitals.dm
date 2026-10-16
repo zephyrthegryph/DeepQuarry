@@ -13,8 +13,8 @@
 //   o2_sat       : 99 % (range 0..100)
 //
 // Afflictions, reagents and modifiers modulate these through the readout
-// body factors (BF_HEART_RATE, BF_TEMPERATURE, BF_BP_SYSTOLIC,
-// BF_BP_DIASTOLIC, BF_O2_SAT, BF_RESP_RATE), summed across every source.
+// body factors (STAT_HEART_RATE, STAT_TEMPERATURE, STAT_BP_SYSTOLIC,
+// STAT_BP_DIASTOLIC, STAT_O2_SAT, STAT_RESP_RATE), summed across every source.
 //
 // We layer those on top of whatever vitals the upstream mob already tracks
 // (BYOND `bodytemperature` in kelvin, heart pulse enum). For pulse and BP we
@@ -32,7 +32,7 @@
 	// bodytemperature is in kelvin upstream; convert to celsius for the
 	// instrument readout. T0C = 273.15 (defined in upstream defines).
 	var/celsius = body_temperature() - T0C
-	celsius += factor(BF_TEMPERATURE)
+	celsius += src.temperature
 	celsius += _dq_jitter(0.1)
 	return round(celsius * 10) / 10  // one decimal place
 
@@ -63,7 +63,7 @@
 		if(species.blood_volume > 0 && blood_now < species.blood_volume)
 			var/lost = (species.blood_volume - blood_now) / species.blood_volume
 			baseline += round(lost * 80)  // up to +80 bpm at full exsanguination
-	baseline += factor(BF_HEART_RATE)
+	baseline += src.heart_rate
 	baseline += _dq_jitter(3)
 	return max(0, round(baseline))
 
@@ -84,8 +84,8 @@
 		if(ratio < 0.60)        { sys -= 50; dia -= 30 }
 		else if(ratio < 0.75)   { sys -= 30; dia -= 18 }
 		else if(ratio < 0.85)   { sys -= 15; dia -= 8 }
-	sys += factor(BF_BP_SYSTOLIC)
-	dia += factor(BF_BP_DIASTOLIC)
+	sys += src.bp_systolic
+	dia += src.bp_diastolic
 	sys += _dq_jitter(3)
 	dia += _dq_jitter(2)
 	sys = max(0, round(sys))
@@ -100,7 +100,7 @@
 	var/hypoxia = oxygen_debt()
 	// Linear drop: every 5 points of hypoxia = 1% sat lost (rough mapping).
 	sat -= round(hypoxia / 5)
-	sat += factor(BF_O2_SAT)
+	sat += src.o2_sat
 	sat += _dq_jitter(1)
 	return clamp(round(sat), 0, 100)
 
@@ -115,6 +115,6 @@
 	if(breath_blocked())
 		return 0
 	var/rate = 14
-	rate += factor(BF_RESP_RATE)
+	rate += src.resp_rate
 	rate += _dq_jitter(1)
 	return max(0, round(rate))

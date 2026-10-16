@@ -146,7 +146,7 @@
 	if(!blinded)
 		flash_eyes()
 
-	var/explosion_shift = factor(BF_EXPLOSION_SHIFT)
+	var/explosion_shift = src.explosion_shift
 	if(explosion_shift)
 		severity = CLAMP(severity + explosion_shift, 1, 4)
 
@@ -175,7 +175,7 @@
 	. = 1 - . // Invert from 1 = immunity to 0 = immunity.
 
 	// Body factors stack multiplicatively.
-	. *= factor(BF_COLD_EXPOSURE)
+	. *= src.cold_exposure
 
 	// Code that calls this expects 1 = immunity so we need to invert again.
 	. = 1 - .
@@ -186,7 +186,7 @@
 	. = 1 - . // Invert from 1 = immunity to 0 = immunity.
 
 	// Body factors stack multiplicatively.
-	. *= factor(BF_HEAT_EXPOSURE)
+	. *= src.heat_exposure
 
 	// Code that calls this expects 1 = immunity so we need to invert again.
 	. = 1 - .
@@ -208,7 +208,7 @@
 	. = 1 - . // Invert from 1 = immunity to 0 = immunity.
 
 	// Body factors stack multiplicatively.
-	. *= factor(BF_SIEMENS)
+	. *= src.siemens
 
 	// Code that calls this expects 1 = immunity so we need to invert again.
 	. = 1 - .

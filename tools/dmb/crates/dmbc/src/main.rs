@@ -39,6 +39,25 @@ fn main_inner() {
         }
         return;
     }
+    if arguments.first().map(String::as_str) == Some("--daemon-retire") {
+        if arguments.len() != 1 || compile_result.is_some() {
+            eprintln!("--daemon-retire accepts no other arguments");
+            std::process::exit(2);
+        }
+        if std::env::var_os("DMB_DAEMON_NAMESPACE").is_none() {
+            eprintln!("--daemon-retire requires DMB_DAEMON_NAMESPACE; it never retires the shared default daemon");
+            std::process::exit(2);
+        }
+        match dmbc::daemon::retire_namespace() {
+            Ok(true) => println!("retiring"),
+            Ok(false) => println!("absent"),
+            Err(error) => {
+                eprintln!("native daemon retire: {error}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     if arguments.first().map(String::as_str) == Some("acquire") {
         if let Err(error) = dmbc::output_cli::acquire(&arguments) {
             eprintln!("{error}");
