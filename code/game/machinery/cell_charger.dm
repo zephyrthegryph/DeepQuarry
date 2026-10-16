@@ -26,10 +26,10 @@ MSG_DEF_SELF(charger/no_area_power, "It blinks red as you try to insert the cell
 	/// How full the shown cell looks (0 to 4), or -1 with none: the look reads it, the charge frame writes it.
 	var/chargelevel = -1
 	circuit = /obj/item/circuitboard/cell_charger
-	maintenance_flags = MACHINE_MAINT_STANDARD
 
 
 CAPABILITIES(/obj/machinery/cell_charger)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 5, active = 60000, channel = EQUIP))
 	default_parts()
 	machine_basics(repair = NONE)

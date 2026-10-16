@@ -7,7 +7,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense_control, REGISTRY_POINTDEFENSE_C
 REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 
 /obj/machinery/pointdefense_control
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "fire assist mainframe"
 	desc = "A specialized computer designed to synchronize a variety of weapon systems and a vessel's astronav data."
 	icon = 'icons/obj/pointdefense.dmi'
@@ -36,6 +35,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 		. += "[desc_panel_image("multitool")]to set ident tag"
 
 CAPABILITIES(/obj/machinery/pointdefense_control)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(channel = EQUIP, active = 5 KILOWATTS))
 	interface("PointDefenseControl")
 	op("toggle_active", ui_act("toggle_active", arg("target")), then(PROC_REF(ui_act_toggle_active)))
@@ -117,7 +117,6 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	density = TRUE
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/pointdefense
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	appearance_flags = PIXEL_SCALE
 	active = TRUE
 	var/charge_cooldown = 1 SECOND  //time between it can fire at different targets
@@ -202,6 +201,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/pointdefense)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), gate = PROC_REF(operable), wakes_on = list(nameof(active), STAT_OPERABLE))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ident tag"),
 		asks(/datum/prompt/text, fields = list("title" = computed(PROC_REF(ident_title)), "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN, "timeout" = 0)),

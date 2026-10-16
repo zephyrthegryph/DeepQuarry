@@ -5,7 +5,6 @@
 /**********************Mining Equipment Locker**************************/
 
 /obj/machinery/mineral/equipment_vendor
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "mining equipment vendor"
 	desc = "An equipment vendor for miners, points collected at an ore redemption machine can be spent here."
 	icon = 'icons/obj/vending.dmi'
@@ -223,6 +222,7 @@
 	return ..()
 
 CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	per_type(nameof(prize_list), PROC_REF(build_prize_list))
 	owns_many(nameof(extra_prizes))
 	interface("MiningVendor")

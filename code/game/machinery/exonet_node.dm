@@ -1,5 +1,4 @@
 /obj/machinery/exonet_node
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "exonet node"
 	desc = null // Gets written in New()
 	icon = 'icons/obj/stationobjs.dmi'
@@ -22,6 +21,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/exonet_node)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(examine_text(fluff = "This is one of many nodes that make up the Exonet, which services trillions of devices across space.  This particular node \
 	is referred to as a terminal node, servicing the station.<br>\
 	<br>\

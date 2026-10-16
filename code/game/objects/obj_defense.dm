@@ -60,7 +60,7 @@
 
 /// Returns a custom fire overlay, if any
 /obj/proc/custom_fire_overlay()
-	return custom_fire_overlay
+	return object_fire_of(src).overlay
 
 ///called when the obj is destroyed by acid.
 /obj/proc/acid_melt()
@@ -93,7 +93,7 @@
 /obj/proc/handle_deconstruct(disassembled = TRUE)
 	SHOULD_CALL_PARENT(FALSE)
 
-	if(!(obj_flags & NO_DEBRIS_AFTER_DECONSTRUCTION))
+	if(!(object_break_config_of(src).flags & NO_DEBRIS_AFTER_DECONSTRUCTION))
 		atom_deconstruct(disassembled)
 
 /obj/proc/deconstruct(disassembled = TRUE)

@@ -6,7 +6,6 @@
 // Used for advanced grid control (read: Substations)
 
 /obj/machinery/power/breakerbox
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "Breaker Box"
 	desc = "Large machine with heavy duty switching circuits used for advanced grid control."
 	icon = 'icons/obj/power.dmi'
@@ -34,6 +33,7 @@ MSG_DEF_SELF(breakerbox/busy, "system is busy. please wait until current operati
 MSG_DEF_SELF(breakerbox/needs_item, "needs an item")
 
 CAPABILITIES(/obj/machinery/power/breakerbox)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	op("breakerbox_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Toggle"), needs(req(PROC_REF(breakerbox_unlocked))), claims(), starts(PROC_REF(hand_toggle_started)), wait(5 SECONDS), then(PROC_REF(interaction_toggle)))
 	op("breakerbox_silicon_toggle", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(breakerbox_unlocked))), claims(), starts(PROC_REF(remote_toggle_started)), wait(5 SECONDS), then(PROC_REF(breakerbox_silicon_toggle)))
 	op("breakerbox_use", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(/obj/item, because = MSG(breakerbox/needs_item)), req_adjacent(), req_capable()), asks(/datum/prompt/text, fields = list("question" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "title" = "SMES RCON system", "max_len" = MAX_NAME_LEN, "name_text" = TRUE), when = PROC_REF(breakerbox_multitool)), then(PROC_REF(interaction_use)))

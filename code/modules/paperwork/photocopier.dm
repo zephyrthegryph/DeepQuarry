@@ -1,5 +1,4 @@
 /obj/machinery/photocopier
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "photocopier"
 	desc = "Copy all your important papers here!"
 	icon = 'icons/obj/library.dmi'
@@ -23,6 +22,7 @@
 
 // The copier's window. An AI's photo print asks which of its pictures (asks()), when it has one to print.
 CAPABILITIES(/obj/machinery/photocopier)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 30, active = 200, channel = EQUIP))
 	interface("Photocopier")
 	without("ui_open")

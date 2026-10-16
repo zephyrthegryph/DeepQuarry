@@ -1,7 +1,6 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
 /obj/machinery/mass_driver
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "mass driver"
 	desc = "Shoots things into space."
 	icon = 'icons/obj/stationobjs.dmi'
@@ -51,6 +50,7 @@
 	return
 
 CAPABILITIES(/obj/machinery/mass_driver)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 2, active = 50))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(mass_driver_emp))))
 	// the multitool sets the id behind an open panel; with the panel shut it takes the click and does nothing

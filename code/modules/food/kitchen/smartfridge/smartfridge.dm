@@ -20,7 +20,6 @@
 	var/wrenchable = 0
 	var/persistent = null // Path of persistence datum used to track contents
 	circuit = /obj/item/circuitboard/smartfridge //This one is meant to be uncraftable, however.
-	maintenance_flags = MACHINE_MAINT_FRAME | MACHINE_MAINT_WRENCH
 
 	var/datum/looping_sound/fridge/soundloop
 	var/playing_sound = FALSE
@@ -33,6 +32,7 @@ STAT(/obj/machinery/smartfridge, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/smartfridge, electrified, TOP, base = 0)
 
 CAPABILITIES(/obj/machinery/smartfridge)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_FRAME | MACHINE_MAINT_WRENCH))
 	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS))
 	default_parts()
 	configure(uses_power(idle = 5, active = 100))

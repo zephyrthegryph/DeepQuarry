@@ -1,6 +1,5 @@
 
 /obj/machinery/fusion_fuel_injector
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "fuel injector"
 	icon = 'icons/obj/machines/power/fusion.dmi'
 	icon_state = "injector0"
@@ -28,6 +27,7 @@ MSG_DEF(fuel_injector/rod_in, "You insert %I% into %T%.", "%U% inserts %I% into 
 // only while it is off. A blitz rod asks first, and shakes it apart.
 
 CAPABILITIES(/obj/machinery/fusion_fuel_injector)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(uses_power(idle = 10, active = 500))
 	registry(REGISTRY_FUEL_INJECTORS, key = nameof(id_tag))
 	rotatable()

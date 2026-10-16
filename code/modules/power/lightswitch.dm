@@ -25,7 +25,6 @@
 	y_offset = 26
 
 /obj/machinery/light_switch
-	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /obj/machinery/light_switch/dismantle()
 	play_sfx(src, SFX_ITEMS_CROWBAR)

@@ -1,5 +1,4 @@
 /obj/machinery/ore_silo
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "ore silo"
 	desc = "An all-in-one bluespace storage and transmission system for the station's mineral distribution needs."
 	icon = 'icons/obj/machines/ore_silo.dmi'
@@ -15,6 +14,7 @@
 	var/datum/material_container/materials
 
 CAPABILITIES(/obj/machinery/ore_silo)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	ref_many(nameof(holds))
 	ref_many(nameof(ore_connected_machines))
 	owns_one(nameof(materials), /datum/material_container, starts = PROC_REF(make_materials))

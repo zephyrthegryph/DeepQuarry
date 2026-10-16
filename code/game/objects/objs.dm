@@ -10,8 +10,6 @@
 
 
 	var/tmp/being_shocked = FALSE
-	var/micro_accepted_scale = 0.5
-	var/micro_target = FALSE
 	var/explosion_resistance
 	/// Department and value attribution used when station-made goods are exported.
 	var/economic_department
@@ -22,11 +20,8 @@
 	var/economic_sale_invoice_id = 0
 
 	/// Cached custom fire overlay
-	var/tmp/custom_fire_overlay
 	/// Particles this obj uses when burning, if any
-	var/burning_particles
 
-	var/obj_flags = CAN_BE_HIT
 
 	uses_integrity = TRUE
 
@@ -59,7 +54,7 @@
 
 /obj/on_destroy(force)
 	// I really am an idiot why did I make it this way
-	if(micro_target)
+	if(micro_policy_of(src).enterable)
 		for(var/thing in contents_of(src))
 			if(!ismob(thing))
 				continue

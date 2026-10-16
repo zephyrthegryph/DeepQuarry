@@ -1,5 +1,6 @@
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 5))
 	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
 	silicon_ui()
@@ -25,7 +26,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 #define REAGENT_COOLING_MAXMOD 5
 
 /obj/machinery/atmospherics/unary/freezer
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "gas cooling system"
 	desc = "Cools gas when connected to pipe network. Can be filled by hose with coolant to increase efficiency."
 	icon = 'icons/obj/Cryogenic2.dmi'

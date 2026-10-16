@@ -1,5 +1,4 @@
 /obj/machinery/gear_painter
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "Color Mate"
 	desc = "A machine to give your apparel a fresh new color!"
 	icon = 'icons/obj/vending_vr.dmi'
@@ -55,6 +54,7 @@
 MSG_DEF_SELF(gear_painter/loaded, "the machine is already loaded")
 
 CAPABILITIES(/obj/machinery/gear_painter)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(machine_interaction_config(maintenance_wrench_time = 4 SECONDS))
 	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)
 	interface("ColorMate")

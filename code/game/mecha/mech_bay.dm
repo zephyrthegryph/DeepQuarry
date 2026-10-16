@@ -1,5 +1,4 @@
 /obj/machinery/mech_recharger
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "mech recharger"
 	desc = "A mech recharger, built into the floor."
 	icon = 'icons/mecha/mech_bay.dmi'
@@ -45,6 +44,7 @@
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mech_recharger)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	ref_one(nameof(charging))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(charging), gate = PROC_REF(operable), wakes_on = list(nameof(charging), STAT_OPERABLE))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))

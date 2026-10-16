@@ -1,5 +1,4 @@
 /obj/machinery/reagent_refinery
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/machines/refinery_machines.dmi'
 	VAR_PROTECTED/default_max_vol = 120
 	VAR_PROTECTED/amount_per_transfer_from_this = 120
@@ -49,6 +48,7 @@
 /// Unanchored refinery machines are disconnected and do nothing.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/reagent_refinery)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	reagents(nameof(default_max_vol), holder = nameof(reagent_type))
 	rotatable()
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(anchored), wakes_on = list(nameof(anchored), STAT_OPERABLE), unpowered = TRUE)

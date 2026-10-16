@@ -8,7 +8,6 @@
 	anchored = TRUE
 	density = FALSE
 	level = 1
-	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /// Proximity alarm countdown in steps (meteor_alarm()); while it runs the diffuser is silenced.
 /obj/machinery/shield_diffuser/var/alarm = 0
@@ -33,6 +32,7 @@
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/shield_diffuser)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 25, active = 500))
 	default_parts()
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(diffuser_has_work), wakes_on = list(nameof(enabled), nameof(alarm)))

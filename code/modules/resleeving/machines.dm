@@ -121,7 +121,6 @@ CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
 
 //Synthetic version
 /obj/machinery/transhuman/synthprinter
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "SynthFab 3000"
 	desc = "A rapid fabricator for synthetic bodies."
 	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
@@ -190,6 +189,7 @@ CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
 /// Prints while busy with a body; idle, it sleeps until one is queued.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/transhuman/synthprinter)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(busy), wakes_on = list(nameof(busy)))
 	op("synthprinter_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(synthprinter_interaction_hand)))
 	op("synthprinter_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(synthprinter_interaction_item)))
@@ -302,7 +302,6 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 
 /////// Resleever Pod ///////
 /obj/machinery/transhuman/resleever
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "resleeving pod"
 	desc = "Used to combine mind and body into one unit."
 	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
@@ -371,6 +370,7 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	return istext(answer) ? answer : (answer ? null : /datum/msg/req_failed)
 
 CAPABILITIES(/obj/machinery/transhuman/resleever)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	interface("ResleevingPod", title = "Resleever")
 	without("ui_open")
 	ui_shape(occupied = bool(), name = schema_text(), health = num(), stat = num(), mindStatus = bool(), mindName = schema_text())

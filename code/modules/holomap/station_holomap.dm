@@ -7,7 +7,6 @@
 	icon = 'icons/obj/machines/stationmap.dmi'
 	icon_state = "station_map"
 	layer = ABOVE_WINDOW_LAYER
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	anchored = TRUE
 	density = FALSE
 	use_power = USE_POWER_IDLE
@@ -33,6 +32,7 @@
 
 
 CAPABILITIES(/obj/machinery/station_map)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(light_glow(color = "#64C864"))
 	configure(uses_power(idle = 10, active = 500))
 	without("silicon_hand") // silicons can't use it by a plain click

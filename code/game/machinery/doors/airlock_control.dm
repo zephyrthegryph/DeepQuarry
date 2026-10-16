@@ -151,7 +151,6 @@
 		rel_set(src, nameof(radio_connection), SSradio.add_object(src, new_frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/airlock_machines.dmi'
 	icon_state = "airlock_sensor_off"
 	layer = ABOVE_WINDOW_LAYER
@@ -179,6 +178,7 @@
 // watch (woken only when the reading would differ) and never polls. A hand on it asks the controller to cycle the airlock (the master tag and the command it is set to). A multitool sets its tags, its frequency and its command.
 
 CAPABILITIES(/obj/machinery/airlock_sensor)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(channel = ENVIRON))
 	gas_watch(mask = GAS_DEPENDENCY_PRESSURE, changed = PROC_REF(pressure_heard))
@@ -298,7 +298,6 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 	return T.return_air()
 
 /obj/machinery/access_button
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/airlock_machines.dmi'
 	icon_state = "access_button_standby"
 	layer = ABOVE_WINDOW_LAYER
@@ -323,6 +322,7 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 MSG_DEF_SELF(access_button/denied, "Access Denied")
 
 CAPABILITIES(/obj/machinery/access_button)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(channel = ENVIRON))
 	multitool_settings(list(

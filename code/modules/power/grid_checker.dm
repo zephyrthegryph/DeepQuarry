@@ -1,5 +1,4 @@
 /obj/machinery/power/grid_checker
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "grid checker"
 	desc = "A machine that reacts to unstable conditions in the powernet, by safely shutting everything down.  Probably better \
 	than the alternative."
@@ -112,6 +111,7 @@
 // ---- the wires ----
 
 CAPABILITIES(/obj/machinery/power/grid_checker)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	space(SPACE_PANEL, door = nameof(opened))
 	wires(name = "Grid Checker", count = 8, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	on_wire(WIRE_REBOOT, pulse = PROC_REF(reboot_wire_pulsed))

@@ -1,5 +1,6 @@
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 5))
 	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
 	silicon_ui()
@@ -23,7 +24,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 #define REAGENT_COOLING_MAXMOD 5
 
 /obj/machinery/atmospherics/unary/heater
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "gas heating system"
 	desc = "Heats gas when connected to a pipe network. Can be filled by hose with coolant to increase efficiency."
 	icon = 'icons/obj/Cryogenic2.dmi'

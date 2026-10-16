@@ -33,7 +33,6 @@
 #define DQ_SLEEVE_GROWTH_LOAD 75
 
 /obj/machinery/clonepod
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "cloning pod"
 	desc = "An electronically-lockable pod for growing organic tissue."
 	density = TRUE
@@ -107,6 +106,7 @@
 	return occupant_mob
 
 CAPABILITIES(/obj/machinery/clonepod)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	// Linked console: the pod is one of its pods (two-sided; clears when either dies).
 	links(/obj/machinery/clonepod::connected, /obj/machinery/computer/cloning::pods, b_many = TRUE)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(clonepod_occupied), wakes_on = list(nameof(occupant_mob)))

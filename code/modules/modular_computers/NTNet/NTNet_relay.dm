@@ -21,6 +21,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/ntnet_relay)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(active = 20000, idle = 100))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
@@ -123,7 +124,6 @@ CAPABILITIES(/obj/machinery/ntnet_relay)
 	..()
 
 /obj/machinery/ntnet_relay
-	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/ntnet_relay/step_start_condition()

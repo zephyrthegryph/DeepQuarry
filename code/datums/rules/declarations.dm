@@ -27,7 +27,7 @@
 		return
 	if(has_trait(src, TRAIT_UNDERFLOOR) || !uses_integrity)
 		return
-	start_burning(custom_fire_overlay() || GLOB.fire_overlay, burning_particles)
+	start_burning(custom_fire_overlay() || GLOB.fire_overlay, object_fire_of(src).particles)
 
 /// An item slumps into a molten mass at its material's melting point; what it
 /// held drops out. Fire-, lava- and indestructible items are exempt.

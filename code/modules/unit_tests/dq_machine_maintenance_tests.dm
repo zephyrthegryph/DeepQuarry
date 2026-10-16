@@ -5,7 +5,6 @@
 /// Every maintenance flag, no waits, and a recorded dismantle.
 /obj/machinery/dq_maint_machine
 	name = "maintenance machine"
-	maintenance_flags = MACHINE_MAINT_PANEL | MACHINE_MAINT_FRAME | MACHINE_MAINT_WRENCH | MACHINE_MAINT_WELDER_REPAIR
 	use_power = USE_POWER_OFF
 	anchored = TRUE
 	var/dismantled = 0
@@ -16,7 +15,6 @@
 
 /// Only a panel: the other tools find nothing to do.
 /obj/machinery/dq_maint_machine/panel_only
-	maintenance_flags = MACHINE_MAINT_PANEL
 
 /datum/unit_test/dq_machine_maintenance
 	abstract_type = /datum/unit_test/dq_machine_maintenance
@@ -122,4 +120,8 @@
 	test_driver_end()
 
 CAPABILITIES(/obj/machinery/dq_maint_machine)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_PANEL | MACHINE_MAINT_FRAME | MACHINE_MAINT_WRENCH | MACHINE_MAINT_WELDER_REPAIR))
 	configure(machine_interaction_config(maintenance_wrench_time = 0, maintenance_weld_time = 0))
+
+CAPABILITIES(/obj/machinery/dq_maint_machine/panel_only)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_PANEL))

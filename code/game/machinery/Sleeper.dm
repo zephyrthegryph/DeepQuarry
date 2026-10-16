@@ -54,7 +54,6 @@ CAPABILITIES(/obj/machinery/sleep_console)
 	look.state(operable() ? "sleeperconsole" : "sleeperconsole-p")
 
 /obj/machinery/sleeper
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "sleeper"
 	desc = "A stasis pod with built-in injectors, a dialysis machine, and a limited health scanner."
 	icon = 'icons/obj/Cryogenic2.dmi'
@@ -87,6 +86,7 @@ CAPABILITIES(/obj/machinery/sleep_console)
 
 
 CAPABILITIES(/obj/machinery/sleeper)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 15, active = 200))
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_SLEEPER, enter_wait = SLEEPER_ENTER_WAIT, controls_inside = nameof(controls_inside))

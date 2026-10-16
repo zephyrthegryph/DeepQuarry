@@ -6,7 +6,6 @@
 	layer = MOB_LAYER+0.1 //So it draws over mobs in the tile north of it.
 
 /obj/machinery/mining/drill
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "mining drill head"
 	desc = "An enormous drill."
 	icon_state = "mining_drill"
@@ -94,6 +93,7 @@
 	var/need_player_check = 0
 
 CAPABILITIES(/obj/machinery/mining/drill)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	default_parts()
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_one(nameof(faultreporter), /obj/item/radio/intercom, starts = PROC_REF(make_faultreporter))
@@ -470,7 +470,6 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	return TRUE
 
 /obj/machinery/mining/brace
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "mining drill brace"
 	desc = "A machinery brace for an industrial drill. It looks easily two feet thick."
 	icon_state = "mining_brace"
@@ -484,6 +483,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 		. += span_notice("The internals of the brace look resilient enough to support a drill by itself.")
 
 CAPABILITIES(/obj/machinery/mining/brace)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	links(/obj/machinery/mining/brace::connected, /obj/machinery/mining/drill::supports, b_many = TRUE)
 	climb()
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))

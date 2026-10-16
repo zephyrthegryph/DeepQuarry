@@ -1,5 +1,4 @@
 /obj/machinery/reagentgrinder
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "All-In-One Grinder"
 	desc = "Grinds stuff into itty bitty bits."
 	icon = 'icons/obj/kitchen.dmi'
@@ -21,6 +20,7 @@ STAT(/obj/machinery/reagentgrinder, grinding, ANY)
 SOURCE_DEF(grind)
 
 CAPABILITIES(/obj/machinery/reagentgrinder)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 5, active = 100))
 	owns_many(nameof(holdingitems))
 	owns_one(nameof(beaker), /obj/item/reagent_containers, starts = /obj/item/reagent_containers/glass/beaker/large)

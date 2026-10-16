@@ -1,7 +1,6 @@
 #define AMPLIFIER_STRENGTH 0.2 //Each tier of capacitor increases the amplifier's strength by this much. At 5 rating, 100% increase per relay.
 
 /obj/machinery/power/tesla_coil
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "tesla coil"
 	desc = "Balanced power generation and zapping."
 	icon = 'icons/obj/tesla_engine/tesla_coil.dmi'
@@ -53,6 +52,7 @@
 // recast or only collect it. A multitool behind the open panel turns a coil into another kind, keeping its parts; a grab buckles someone to it.
 // The curves are pinned in code/modules/unit_tests/dq_power_plants_behaviour.dm (tesla_coil_curves).
 CAPABILITIES(/obj/machinery/power/tesla_coil)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD_MOVABLE))
 	space(SPACE_PANEL, door = nameof(panel_open))
 	wires(name = "Tesla coil", count = 1, tools = FALSE)
 	on_wire(WIRE_TESLACOIL_ZAP, pulse = PROC_REF(zap_wire_pulsed))
@@ -308,7 +308,6 @@ CAPABILITIES(/obj/machinery/power/tesla_coil)
 	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 
 /obj/machinery/power/grounding_rod
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "grounding rod"
 	desc = "Keep an area from being fried from Edison's Bane."
 	icon = 'icons/obj/tesla_engine/tesla_coil.dmi'
@@ -321,6 +320,7 @@ CAPABILITIES(/obj/machinery/power/tesla_coil)
 	circuit = /obj/item/circuitboard/grounding_rod
 
 CAPABILITIES(/obj/machinery/power/grounding_rod)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD_MOVABLE))
 	climb()
 	part_replacement()
 	op("buckle", hand(), label("Buckle"), when(req_empty_hand()), when(PROC_REF(grabbing)), wait(0), then(PROC_REF(buckle_pulled)))

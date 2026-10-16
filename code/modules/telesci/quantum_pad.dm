@@ -1,5 +1,4 @@
 /obj/machinery/power/quantumpad
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "quantum pad"
 	desc = "A bluespace quantum-linked telepad used for teleporting objects to other quantum pads."
 	icon = 'icons/obj/telescience.dmi'
@@ -56,6 +55,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/power/quantumpad)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 200, active = 5000))
 	ref_one(nameof(linked_pad), /obj/machinery/power/quantumpad, by = nameof(map_pad_link_id), target_key = nameof(map_pad_id))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))

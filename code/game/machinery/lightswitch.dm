@@ -35,6 +35,7 @@
 // electromagnetic pulse makes it read its power again. What the machine core keeps until the machine track (phase 4): the NOPOWER bit and
 // the power_change() dispatch (an area calls it on every channel change and on every switch use).
 CAPABILITIES(/obj/machinery/light_switch)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))
 	configure(uses_power(idle = 10, channel = LIGHT))
 	powered(POWER_CHANNEL_LIGHTING)

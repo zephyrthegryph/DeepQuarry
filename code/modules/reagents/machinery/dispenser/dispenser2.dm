@@ -1,5 +1,4 @@
 /obj/machinery/chemical_dispenser
-	maintenance_flags = MACHINE_MAINT_WRENCH
 	name = "chemical dispenser"
 	desc = "Automagically fabricates chemicals from electricity."
 	icon = 'icons/obj/chemical.dmi'
@@ -28,6 +27,7 @@
 	var/import_job = JOB_CHEMIST
 
 CAPABILITIES(/obj/machinery/chemical_dispenser)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_WRENCH))
 	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS, clicksound = SFX_SWITCH))
 	configure(uses_power(idle = 100))
 	rotatable()

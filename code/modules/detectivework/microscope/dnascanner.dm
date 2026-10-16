@@ -5,7 +5,6 @@
 	icon = 'icons/obj/forensics.dmi'
 	icon_state = "dnaopen"
 	anchored = TRUE
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	density = TRUE
 	circuit = /obj/item/circuitboard/dna_analyzer
 
@@ -42,6 +41,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/dnaforensics)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	silicon_ui()
 	ref_one(nameof(bloodsamp), /obj/item/forensics/swab)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))

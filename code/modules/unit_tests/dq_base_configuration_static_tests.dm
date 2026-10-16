@@ -12,6 +12,8 @@
 	TEST_ASSERT(static_find(object_table, ENTRY_OBJECT_BREAK_CONFIG), "Object break configuration has an inherited root")
 	TEST_ASSERT(static_find(object_table, ENTRY_OBJECT_COMMUNICATION), "Communication policy has a real object root")
 	TEST_ASSERT(static_find(object_table, ENTRY_OBJECT_TRANSFER), "Object transfer policy has a real object root")
+	TEST_ASSERT(static_find(object_table, ENTRY_MICRO_ENTRY_POLICY), "Micro entry policy has a real object root")
+	TEST_ASSERT(static_find(object_table, ENTRY_OBJECT_FIRE_CONFIG), "Object fire configuration has a real object root")
 	var/datum/type_table/machine_table = static_table_of(/obj/machinery)
 	TEST_ASSERT(static_find(machine_table, ENTRY_MACHINE_INTERACTION_CONFIG), "Machine interaction configuration has an inherited root")
 	var/datum/type_table/item_table = static_table_of(/obj/item)

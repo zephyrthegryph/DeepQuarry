@@ -42,7 +42,6 @@ CAPABILITIES(/obj/item/disk/botany)
 	)
 
 /obj/machinery/botany
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/hydroponics_machines.dmi'
 	icon_state = "hydrotray3"
 	density = TRUE
@@ -66,6 +65,7 @@ CAPABILITIES(/obj/item/disk/botany)
 */
 
 CAPABILITIES(/obj/machinery/botany)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(seed), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(loaded_disk), on_destroy = ON_DESTROY_SPILL)

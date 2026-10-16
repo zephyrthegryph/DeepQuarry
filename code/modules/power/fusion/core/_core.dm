@@ -6,7 +6,6 @@
 #define MIN_FIELD_STR 1
 
 /obj/machinery/power/fusion_core
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "\improper R-UST Mk. 9 Tokamak core"
 	desc = "An enormous solenoid for generating extremely high power electromagnetic fields. It includes a kinetic energy harvester."
 	icon = 'icons/obj/machines/power/fusion.dmi'
@@ -41,6 +40,7 @@ MSG_DEF(fusion_core/sample_loaded, "You secure %I% in %T%'s shielded treatment c
 // replacer works and a multitool sets its ident.
 
 CAPABILITIES(/obj/machinery/power/fusion_core)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(uses_power(idle = 50, active = 500))
 	default_parts()
 	hose_sockets(list(/datum/hose_connector/output))

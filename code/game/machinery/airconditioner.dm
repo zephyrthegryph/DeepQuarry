@@ -9,13 +9,13 @@
 	use_power = 0 //is powered directly from cables
 
 	circuit = null
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	/*
 	null so people can not deconstruct them and remake them to normal Regulators,
 	probably should just make a circuit for it but this is pretty much just a proof of concept at the moment.
 	*/
 
 CAPABILITIES(/obj/machinery/power/thermoregulator/cryogaia)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(active = 25 KILOWATTS, idle = 250))
 
 
@@ -77,7 +77,6 @@ CAPABILITIES(/obj/machinery/power/thermoregulator/southerncross)
 	use_power = USE_POWER_OFF //is powered directly from cables
 
 	circuit = /obj/item/circuitboard/thermoregulator
-	maintenance_flags = MACHINE_MAINT_STANDARD
 
 	on = 0
 	var/target_temp = T20C
@@ -106,6 +105,7 @@ MSG_DEF(thermoregulator/deactivated, "You deactivate %T%.", "%U% deactivates %T%
 MSG_DEF_SELF(thermoregulator/loose, "It must be bolted down first.")
 
 CAPABILITIES(/obj/machinery/power/thermoregulator)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(active = 150 KILOWATTS, idle = 500))
 	climb()
 	// A heat pump on the room's air toward the target, against the station's heat-rejection loop at 20 C: a Carnot-bounded COP both

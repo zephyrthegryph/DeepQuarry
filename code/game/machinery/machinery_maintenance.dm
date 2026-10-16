@@ -21,16 +21,16 @@ MSG_DEF_SELF(interaction/machine_repair/intact, "it isn't damaged")
 // ---- which of them the machine offers ----
 
 /obj/machinery/proc/maint_offers_panel(datum/act/op/A)
-	return !!(maintenance_flags & MACHINE_MAINT_PANEL)
+	return !!(machine_interaction_config_of(src).maintenance & MACHINE_MAINT_PANEL)
 
 /obj/machinery/proc/maint_offers_frame(datum/act/op/A)
-	return !!(maintenance_flags & MACHINE_MAINT_FRAME)
+	return !!(machine_interaction_config_of(src).maintenance & MACHINE_MAINT_FRAME)
 
 /obj/machinery/proc/maint_offers_wrench(datum/act/op/A)
-	return !!(maintenance_flags & MACHINE_MAINT_WRENCH)
+	return !!(machine_interaction_config_of(src).maintenance & MACHINE_MAINT_WRENCH)
 
 /obj/machinery/proc/maint_offers_repair(datum/act/op/A)
-	return !!(maintenance_flags & MACHINE_MAINT_WELDER_REPAIR)
+	return !!(machine_interaction_config_of(src).maintenance & MACHINE_MAINT_WELDER_REPAIR)
 
 // ---- the panel ----
 

@@ -1,5 +1,4 @@
 /obj/machinery/bunsen_burner
-	maintenance_flags = MACHINE_MAINT_PANEL | MACHINE_MAINT_WRENCH
 	name = "bunsen burner"
 	desc = "A small, self-heating device designed for bringing chemical mixtures to a boil."
 	icon = 'icons/obj/device.dmi'
@@ -90,6 +89,7 @@
 /// Boils its container; runs while heating (declared).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/bunsen_burner)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_PANEL | MACHINE_MAINT_WRENCH))
 	owns_one(nameof(held_container), /obj/item/reagent_containers)
 	op("place_container", item(/obj/item), label("Place container"), then(PROC_REF(interaction_place_container)))
 	op("remove_container", hand(), label("Remove container"), then(PROC_REF(interaction_remove_container)))

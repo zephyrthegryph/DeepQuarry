@@ -39,6 +39,8 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	var/burn_ended_by
 
 CAPABILITIES(/obj)
+	micro_entry_policy()
+	object_fire_config()
 	object_communication()
 	object_transfer()
 	object_break_config()

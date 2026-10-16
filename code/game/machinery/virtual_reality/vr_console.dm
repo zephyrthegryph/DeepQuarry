@@ -1,5 +1,4 @@
 /obj/machinery/vr_sleeper
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "virtual reality sleeper"
 	desc = "A fancy bed with built-in sensory I/O ports and connectors to interface users' minds with their bodies in virtual reality."
 	icon = 'icons/obj/Cryogenic2.dmi'
@@ -31,6 +30,7 @@
 	use_power = USE_POWER_IDLE
 
 CAPABILITIES(/obj/machinery/vr_sleeper)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(light_glow(color = "#FF0000"))
 	configure(uses_power(idle = 15, active = 200))
 	default_parts()

@@ -17,3 +17,8 @@
 #define OBJECT_TRANSFER_KEY "object_transfer"
 #define ENTRY_ITEM_ADMISSION "item_admission"
 #define ITEM_ADMISSION_KEY "item_admission"
+
+#define ENTRY_MICRO_ENTRY_POLICY "micro_entry_policy"
+#define MICRO_ENTRY_POLICY_KEY "micro_entry_policy"
+#define ENTRY_OBJECT_FIRE_CONFIG "object_fire_config"
+#define OBJECT_FIRE_CONFIG_KEY "object_fire_config"

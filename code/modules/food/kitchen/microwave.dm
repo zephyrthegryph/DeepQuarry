@@ -24,7 +24,6 @@
 	use_power = USE_POWER_IDLE
 	flags = MICROWAVE_FLAGS
 	circuit = /obj/item/circuitboard/microwave
-	maintenance_flags = MACHINE_MAINT_PANEL | MACHINE_MAINT_FRAME
 	var/operating = FALSE
 	var/dirty = 0 // = {0..100} Does it need cleaning?
 	var/broken = NOT_BROKEN // ={0,1,2} How broken is it???
@@ -46,6 +45,7 @@
 MSG_DEF(microwave/ejecting, span_notice("You try to open %T% and remove its contents."), span_notice("%U% tries to open %T% and remove its contents."))
 
 CAPABILITIES(/obj/machinery/microwave)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_PANEL | MACHINE_MAINT_FRAME))
 	configure(machine_interaction_config(clicksound = SFX_BUTTON, clickvol = 30))
 	default_parts()
 	configure(uses_power(idle = 5, active = 2000))

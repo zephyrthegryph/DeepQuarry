@@ -212,7 +212,6 @@ MSG_DEF_SELF(beehive/bees_angry, span_notice("The bees won't let you take the ho
 	set_honeycombs(min(honeycombs + 0.1 * coef * min(trays, 5), length(frames) * 100))
 
 /obj/machinery/honey_extractor
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "honey extractor"
 	desc = "A machine used to turn honeycombs on the frame into honey and wax."
 	icon = 'icons/obj/beekeeping.dmi'
@@ -405,6 +404,7 @@ CAPABILITIES(/obj/item/beehive_assembly)
 	return OP_DECLINE
 
 CAPABILITIES(/obj/machinery/honey_extractor)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 15, active = 200))
 	default_parts()
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))

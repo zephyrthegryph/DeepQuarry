@@ -10,7 +10,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	circuit = /obj/item/circuitboard/papershredder
 	var/max_paper = 10
 	var/paperamount = 0
@@ -25,6 +24,7 @@
 
 
 CAPABILITIES(/obj/machinery/papershredder)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(uses_power(idle = 10, active = 200, channel = EQUIP))
 	climb()
 	op("empty_into", item(/obj/item/storage), priority(OP_PRIORITY_DEFAULT - 1), label("Empty into"), then(PROC_REF(interaction_empty_into)))

@@ -1,6 +1,5 @@
 ////////////////////DOORBELL CHIME///////////////////////////////////////
 /obj/machinery/doorbell_chime
-	maintenance_flags = MACHINE_MAINT_PANEL
 	name = "doorbell chime"
 	desc = "Small wall-mounted chime triggered by a doorbell"
 	icon = 'icons/obj/machines/doorbell_vr.dmi'
@@ -34,6 +33,7 @@
 MSG_DEF_SELF(doorbell/needs_item, "needs an item")
 
 CAPABILITIES(/obj/machinery/doorbell_chime)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_PANEL))
 	configure(uses_power(idle = 10, active = 200))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
@@ -75,7 +75,6 @@ CAPABILITIES(/obj/machinery/doorbell_chime)
 ////////////////////DOORBELL SWITCH///////////////////////////////////////
 
 /obj/machinery/button/doorbell
-	maintenance_flags = MACHINE_MAINT_PANEL
 	name = "doorbell switch"
 	desc = "A doorbell, press to chime."
 	icon = 'icons/obj/machines/doorbell_vr.dmi'
@@ -84,6 +83,7 @@ CAPABILITIES(/obj/machinery/doorbell_chime)
 	flags = WALL_ITEM
 
 CAPABILITIES(/obj/machinery/button/doorbell)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_PANEL))
 	ref_many(nameof(chimes), /obj/machinery/doorbell_chime, by = nameof(id), target_key = nameof(/obj/machinery/doorbell_chime::id_tag))
 	// The subtype handles item touches; multitool and wrench actions keep their higher priority.
 	extend("button_press_item", priority(OP_PRIORITY_DEFAULT - 2))

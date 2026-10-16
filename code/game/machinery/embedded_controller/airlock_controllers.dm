@@ -1,6 +1,5 @@
 //base type for controllers of two-door systems
 /obj/machinery/embedded_controller/radio/airlock
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	// Setup parameters only
 	radio_filter = RADIO_AIRLOCK
 	program = /datum/embedded_program/airlock
@@ -59,6 +58,7 @@
 
 // The tag and frequency settings are behind the maintenance panel (the program's commands are not: the old tgui_act() ran them before its panel check).
 CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	space(SPACE_PANEL, door = nameof(panel_open))
 	op("edit_tag", ui_act("edit_tag", arg("tag", schema_text(4096))), at(SPACE_PANEL),
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(edit_tag_question)), "title" = computed(PROC_REF(edit_tag_title)), "default" = computed(PROC_REF(edit_tag_default)), "max_len" = 30, "name_text" = TRUE, "timeout" = 0), step = "tag"),

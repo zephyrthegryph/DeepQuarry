@@ -1,5 +1,4 @@
 /obj/machinery/pipelayer
-	maintenance_flags = MACHINE_MAINT_PANEL
 	name = "automatic pipe layer"
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "pipe_d"
@@ -34,6 +33,7 @@ MSG_DEF(pipelayer/switched, "You switch %T%.", "%U% switches %T%.")
 MSG_DEF(pipelayer/dismantling, "You switch its auto-dismantling.", "%U% switches the auto-dismantling of %T%.")
 
 CAPABILITIES(/obj/machinery/pipelayer)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_PANEL))
 	owns_one(nameof(W), starts = /obj/item/tool/wrench)
 	part_replacement()
 	examine_line(PROC_REF(status_text))

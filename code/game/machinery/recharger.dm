@@ -59,7 +59,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 #define RECHARGER_CHARGED 2
 
 /obj/machinery/recharger
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "recharger"
 	desc = "A standard recharger for all devices that use power."
 	icon = 'icons/obj/stationobjs.dmi'
@@ -83,6 +82,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 
 
 CAPABILITIES(/obj/machinery/recharger)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 4, active = 40000))
 	default_parts()
 	machine_basics(repair = NONE)

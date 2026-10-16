@@ -1,5 +1,4 @@
 /obj/machinery/food_replicator
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "Food Replicator"
 	icon = 'icons/obj/machines/food_replicator.dmi'
 	icon_state = "food_replicator"
@@ -167,6 +166,7 @@ MSG_DEF_SELF(food_replicator/container, "There is already a reagent container in
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 
 CAPABILITIES(/obj/machinery/food_replicator)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(uses_power(idle = 20, active = 200))
 	started_work(step = PROC_REF(work_step), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))

@@ -14,7 +14,6 @@
 	icon_state = "icecream_vat"
 	density = TRUE
 	anchored = FALSE
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	use_power = USE_POWER_OFF
 	flags = OPENCONTAINER | NOREACT
 
@@ -51,6 +50,7 @@ GLOBAL_LIST_INIT(icecream_ingredients, list( 	list(REAGENT_ID_MILK, REAGENT_ID_I
 		LAZYADD(product_types, 5)
 
 CAPABILITIES(/obj/machinery/icecream_vat)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	reagents(100, starts = list(REAGENT_ID_MILK = 5, REAGENT_ID_FLOUR = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_ICE = 5))
 	interface("IcecreamVat")
 	without("ui_open")

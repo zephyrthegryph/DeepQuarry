@@ -29,7 +29,6 @@ MSG_DEF(smes/terminal_built, "You add cables to %T%.", "%U% has added cables to 
 MSG_DEF(smes/terminal_cut, "You cut the cables and dismantle the power terminal.", "%U% cut the cables and dismantled the power terminal.")
 
 /obj/machinery/power/smes
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "power storage unit"
 	desc = "A high-capacity superconducting magnetic energy storage (SMES) unit."
 	icon_state = "smes"
@@ -97,6 +96,7 @@ MSG_DEF(smes/terminal_cut, "You cut the cables and dismantle the power terminal.
 STAT(/obj/machinery/power/smes, working, ALL)
 
 CAPABILITIES(/obj/machinery/power/smes)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(machine_interaction_config(clicksound = SFX_SWITCH))
 	after_init(0, then(PROC_REF(mapped_after_init)))
 	machine_basics(repair = NONE, powered = FALSE, area_power = FALSE)

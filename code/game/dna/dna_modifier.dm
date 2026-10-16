@@ -58,7 +58,6 @@ CAPABILITIES(/datum/dna2/record)
 
 /////////////////////////// DNA MACHINES
 /obj/machinery/dna_scannernew
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "\improper DNA modifier"
 	desc = "It scans DNA structures."
 	icon = 'icons/obj/Cryogenic2.dmi'
@@ -95,6 +94,7 @@ CAPABILITIES(/datum/dna2/record)
 
 // the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
 CAPABILITIES(/obj/machinery/dna_scannernew)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(machine_interaction_config(interact_offline = 1))
 	ref_one(nameof(occupant))
 	configure(uses_power(idle = 50, active = 300))

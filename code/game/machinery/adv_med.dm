@@ -24,7 +24,6 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 #define BODY_SCAN_LIGHT_POWER 2
 
 /obj/machinery/bodyscanner
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	locked = null
 	name = "Body Scanner"
 	icon = 'icons/obj/Cryogenic2.dmi'
@@ -44,6 +43,7 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 
 
 CAPABILITIES(/obj/machinery/bodyscanner)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(light_glow(color = "#00FF00"))
 	configure(uses_power(idle = 60, active = 10000))
 	blast_contents() // the patient takes the full blast

@@ -1,6 +1,5 @@
 ///SCI TELEPAD///
 /obj/machinery/telepad
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "telepad"
 	desc = "A bluespace telepad used for teleporting objects to and from a location."
 	icon = 'icons/obj/telescience.dmi'
@@ -47,6 +46,7 @@
 	return default_part_replacement(A.actor, A.held) ? OP_OK : OP_DECLINE
 
 CAPABILITIES(/obj/machinery/telepad)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 200, active = 5000))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("part_replacement_impl", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))

@@ -16,7 +16,6 @@ MSG_DEF_SELF(tcomms/no_such_link, "There is no such link.")
 MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the telecommunications satellite or the station.")
 
 /obj/machinery/telecomms
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	var/list/temp = null // the status line: list("color", "text")
 
 

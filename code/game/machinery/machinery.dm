@@ -115,7 +115,6 @@ Class Procs:
 	var/global/gl_uid = 1
 	var/obj/item/circuitboard/circuit = null
 	/// Bitfield of MACHINE_MAINT_*: which Maintainable interactions this machine offers (machinery_maintenance.dm).
-	var/maintenance_flags = NONE
 	/// Time spent securing or unsecuring this machine; zero is immediate.
 	/// Time spent welding a damaged machine back to full integrity.
 	/// Inspectable material makeup retained from the frame and installed parts.

@@ -10,7 +10,6 @@
 
 	var/random = FALSE //For random tummels- spits the micro out at a random location.
 	var/magic = FALSE	//For events and stuff, if true, this tunnel will show up in the list regardless of whether it's in valid range, of if you're in a tunnel with this var, all tunnels of the same faction will show up redardless of range
-	micro_target = TRUE
 
 	var/static/non_micro_types = list(
 		/mob/living/simple_mob/vore/squirrel,
@@ -23,6 +22,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 
 CAPABILITIES(/obj/structure/micro_tunnel)
+	configure(micro_entry_policy(enterable = TRUE))
 	// outside: climb in, or reach in (a creature that may squeeze in is asked which); a cyborg uses it from beside the hole
 	op("use", inputs(hand(), remote()), label("Use"), when(PROC_REF(actor_outside)), needs(req_adjacent()),
 		asks(/datum/prompt/choice, fields = list("title" = "Enter or reach", "question" = "Would you like to enter the tunnel, or reach inside it?", "choices" = list("Enter", "Reach"), "buttons" = TRUE, "timeout" = 0), step = "enter_or_reach", when = PROC_REF(asks_enter_or_reach)),
@@ -141,7 +141,7 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 /// Is `user` small enough to climb into `tunnel`?
 /proc/micro_tunnel_fits(obj/structure/micro_tunnel/tunnel, mob/living/user)
 	READS_FROM() // a body's size is asked when the click lands
-	return user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= tunnel.micro_accepted_scale
+	return user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= micro_policy_of(tunnel).scale
 
 /// A creature too big to fit but allowed to squeeze in (it is asked whether to enter or to reach in).
 /proc/micro_tunnel_may_choose(obj/structure/micro_tunnel/tunnel, mob/living/user)
@@ -331,7 +331,7 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 	return OP_OK
 
 /obj/structure/micro_tunnel/proc/can_enter(mob/living/user)
-	if(user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= micro_accepted_scale)
+	if(user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= micro_policy_of(src).scale)
 		return TRUE
 
 	return FALSE
@@ -406,7 +406,7 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 /obj/proc/obj_instance_setup()
 	PRIVATE_PROC(TRUE)
 	intern_access_lists()
-	if(micro_target)
+	if(micro_policy_of(src).enterable)
 		grant(src, granted_verb(/obj/proc/micro_interact), src)
 
 /// Someone inside a micro-enterable object picks what to do. Re-checked: still inside.
@@ -435,7 +435,7 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 			for(var/obj/o in range(1,myturf))
 				if(o == src)
 					continue
-				if(o.micro_target)
+				if(micro_policy_of(o).enterable)
 					destinations |= o
 			if(!destinations.len)
 				to_chat(user, span_warning("There is nowhere to move to!"))
@@ -475,7 +475,7 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 		open_request(src, /datum/prompt/choice/micro_action, PROC_REF(micro_action_chosen), answerer = usr, title = "[src]")
 		return
 
-	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= micro_accepted_scale))
+	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= micro_policy_of(src).scale))
 		act_message(usr, src, MSG_SELF(span_warning("You reach into %T%. . .")), MSG_OTHERS(span_warning("%U% reaches into %T%. . .")))
 		perform_op(usr, src, "micro_reach_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("contained_mobs" = contained_mobs))
 		return

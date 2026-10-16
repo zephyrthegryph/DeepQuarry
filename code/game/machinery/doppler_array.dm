@@ -1,5 +1,4 @@
 /obj/machinery/doppler_array
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	anchored = TRUE
 	name = "tachyon-doppler array"
 	density = TRUE
@@ -29,6 +28,7 @@
 MSG_DEF_SELF(doppler/needs_parts, "needs a rapid part exchange device")
 
 CAPABILITIES(/obj/machinery/doppler_array)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	interface("DopplerArray")
 	ui_shape(explosions = list_of(row(index = int(), time = schema_text(), x = int(), y = int(), z = int(), devastation_range = num(), heavy_impact_range = num(), light_impact_range = num(), seconds_taken = num())))
 	op("part_replacement_impl", inputs(item(/obj/item/storage/part_replacer), menu()), needs(req(/obj/item/storage/part_replacer, because = MSG(doppler/needs_parts)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))

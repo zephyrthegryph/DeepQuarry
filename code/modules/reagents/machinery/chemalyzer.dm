@@ -1,7 +1,6 @@
 // Detects reagents inside most containers, and acts as an infinite identification system for reagent-based unidentified objects.
 
 /obj/machinery/chemical_analyzer
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "chem analyzer PRO"
 	desc = "New and improved! Used to precisely scan chemicals and other liquids inside various containers. \
 	It can also identify the liquid contents of unknown objects and their chemical breakdowns."
@@ -48,6 +47,7 @@ MSG_DEF_SELF(chemical_analyzer/analyzing, "Analyzing %I%, please stand by...")
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/chemical_analyzer)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(machine_interaction_config(clicksound = SFX_BUTTON))
 	configure(uses_power(idle = 20))
 	op("analyze", item(/obj/item/reagent_containers), label("Analyze"), begins(MSG(chemical_analyzer/analyzing)), wait(2 SECONDS), claims(),

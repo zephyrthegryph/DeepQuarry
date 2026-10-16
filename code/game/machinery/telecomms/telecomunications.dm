@@ -56,6 +56,7 @@ STAT(/obj/machinery/telecomms, running, ALL)
 // Links are symmetric membership: linking A to B lists each in the other's links, and a dying machine leaves every partner's list (the
 // framework clears both sides). A pulse knocks it out for a while (emp_disable()).
 CAPABILITIES(/obj/machinery/telecomms)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(machine_heat(output = 1, dissipation = 200))
 	after_init(0, then(PROC_REF(autolink)))
 	links(/obj/machinery/telecomms::links, /obj/machinery/telecomms::links, a_many = TRUE, b_many = TRUE)

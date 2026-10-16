@@ -1,5 +1,4 @@
 /obj/machinery/recharge_station
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "cyborg recharging station"
 	desc = "A heavy duty rapid charging system, designed to quickly recharge cyborg power reserves."
 	icon = 'icons/obj/objects.dmi'
@@ -281,6 +280,7 @@ MSG_DEF_SELF(recharge_station/needs_mob, "needs a mob")
 MSG_DEF_SELF(recharge_station/needs_living_grab, "needs a grab holding a living mob")
 
 CAPABILITIES(/obj/machinery/recharge_station)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 50))
 	default_parts()
 	ref_one(nameof(cell), /obj/item/cell) // component_parts owns the cell

@@ -164,7 +164,6 @@ CAPABILITIES(/obj/structure/smoletrack)
 	density = TRUE
 	anchored = TRUE
 	color = "#ffffff"
-	micro_target = TRUE	//Now micros can enter and navigate these things!!!
 	max_integrity = 75 // Three stomps.
 
 //makes it so buildings can be dismaintaled or GodZilla style attacked
@@ -220,6 +219,7 @@ CAPABILITIES(/obj/structure/smoletrack)
 	return OP_OK
 //checks for projectile damage and does the same as dismaintle but spawns material instead.
 CAPABILITIES(/obj/structure/smolebuilding)
+	configure(micro_entry_policy(enterable = TRUE))
 	// The micro waits of a micro-enterable object (micro_interact(), code/game/objects/micro_structures.dm).
 	op("micro_reach_wait", ai(), takes("contained_mobs"), wait(3 SECONDS), on_interrupt(PROC_REF(micro_reach_failed)), then(PROC_REF(micro_reach_done)))
 	op("micro_move_wait", ai(), takes("contained_mobs", "choice"), wait(10 SECONDS), then(PROC_REF(micro_interact_timed_done)))

@@ -1,5 +1,4 @@
 /obj/machinery/bomb_tester
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "explosive effect simulator"
 	desc = "A device that can calculate the potential explosive yield of provided gases."
 	icon = 'icons/obj/machines/bomb_tester_vr.dmi'
@@ -29,6 +28,7 @@
 	var/faketank_integrity
 
 CAPABILITIES(/obj/machinery/bomb_tester)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 50, active = 1.5 KILOWATTS))
 	default_parts()
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))

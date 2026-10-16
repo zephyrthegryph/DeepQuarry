@@ -7,7 +7,6 @@
 	icon = 'icons/obj/disperser.dmi'
 	density = TRUE
 	anchored = TRUE
-	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /obj/machinery/disperser/examine(mob/user)
 	. = ..()
@@ -31,6 +30,7 @@
 	return OP_DECLINE
 
 CAPABILITIES(/obj/machinery/disperser)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 200))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))

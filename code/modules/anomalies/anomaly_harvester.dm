@@ -1,4 +1,5 @@
 CAPABILITIES(/obj/machinery/anomaly_harvester)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS))
 	ref_one(nameof(harvested), /obj/effect/anomaly)
 	configure(uses_power(active = 40000, idle = 1000))
@@ -14,7 +15,6 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	op("attach_scanner", item(/obj/item/anomaly_scanner), priority(OP_PRIORITY_DEFAULT - 2), label("Attach anomaly"), wait(PROC_REF(attach_time)), then(PROC_REF(interaction_attach_scanner)))
 
 /obj/machinery/anomaly_harvester
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "anomaly harvester"
 	desc = "A strange device that condenses anomalous energy into tangible material."
 	icon = 'icons/obj/machines/anomaly_harvester.dmi'

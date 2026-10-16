@@ -2,7 +2,6 @@
 // beam power its console sets (set_beam_power()), takes a part replacer, and a multitool sets the ident tag its console finds it by.
 
 /obj/machinery/power/emitter/gyrotron
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "gyrotron"
 	icon = 'icons/obj/machines/power/fusion.dmi'
 	desc = "It is a heavy duty industrial gyrotron suited for powering fusion reactors."
@@ -22,6 +21,7 @@
 
 
 CAPABILITIES(/obj/machinery/power/emitter/gyrotron)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	default_parts()
 	configure(uses_power(active = 50000))
 	registry(REGISTRY_GYROTRONS, key = nameof(id_tag))

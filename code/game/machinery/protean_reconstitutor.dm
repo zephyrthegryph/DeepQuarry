@@ -1,5 +1,4 @@
 /obj/machinery/protean_reconstitutor
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "protean reconstitutor"
 	desc = "A complex machine that is most definitely <i>not</i> just a large tub into which one pours a large amount of untethered nanites, then adds a protean positronic brain and orchestrator, in order to reconstitute a disintegrated protean... it's complicated, really!"
 	icon = 'icons/obj/protean_recon.dmi'
@@ -116,6 +115,7 @@
 	. += "The readout shows that it has [nanomass_reserve] units of nanites ready for use. It requires [nanomass_required] per \'revive\' process, and has a maximum capacity of [nanotank_max] units."
 
 CAPABILITIES(/obj/machinery/protean_reconstitutor)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(machine_interaction_config(clicksound = SFX_MACHINES_BUTTONBEEP))
 	configure(uses_power(channel = EQUIP, idle = 10, active = 1000))
 	op("reconstitutor_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(reconstitutor_interaction_item)))

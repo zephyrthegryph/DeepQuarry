@@ -1,5 +1,4 @@
 /obj/machinery/atmospherics/binary/algae_farm
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "algae oxygen generator"
 	desc = "An oxygen generator using algae to convert carbon dioxide to oxygen."
 	icon = 'icons/obj/machines/algae_vr.dmi'
@@ -35,6 +34,7 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(channel = EQUIP, idle = 100, active = 5000))
 	owns_one(nameof(internal), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
 	interface("AlgaeFarm")

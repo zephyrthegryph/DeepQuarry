@@ -1,5 +1,4 @@
 /obj/machinery/artifact_harvester
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "Exotic Particle Harvester"
 	icon = 'icons/obj/virology.dmi'
 	icon_state = "incubator"	//incubator_on
@@ -15,6 +14,7 @@
 	circuit = /obj/item/circuitboard/artifact_harvester
 
 CAPABILITIES(/obj/machinery/artifact_harvester)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(speech_presentation(bubble_icon = "science"))
 	default_parts()
 	configure(uses_power(idle = 50, active = 750))

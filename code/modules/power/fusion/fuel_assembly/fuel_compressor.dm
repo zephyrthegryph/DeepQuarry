@@ -1,6 +1,5 @@
 #define FUSION_ROD_SHEET_AMT 15
 /obj/machinery/fusion_fuel_compressor
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	var/blitzprogress = 0
 	name = "fuel compressor"
 	icon = 'icons/obj/machines/power/fusion.dmi'
@@ -15,6 +14,7 @@
 // holding 300 units of one pure reagent, or a supermatter crystal dragged onto it become a fuel rod. One supermatter sheet starts a blitz rod,
 // which 25 phoron sheets finish; until then the sheet can be ejected.
 CAPABILITIES(/obj/machinery/fusion_fuel_compressor)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	part_replacement()
 	op("compress_sheets", item(/obj/item/stack/material), label("Compress into fuel rod"), wait(0), then(PROC_REF(sheets_compressed)))
 	op("compress", item(/obj/item/reagent_containers), label("Compress"), wait(0), then(PROC_REF(container_compressed)))

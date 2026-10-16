@@ -1,5 +1,4 @@
 /obj/machinery/artifact_scanpad
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "Anomaly Scanner Pad"
 	desc = "Place things here for scanning."
 	icon = 'icons/obj/stationobjs.dmi'
@@ -9,6 +8,7 @@
 	circuit = /obj/item/circuitboard/artifact_scanpad
 
 CAPABILITIES(/obj/machinery/artifact_scanpad)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	default_parts()
 

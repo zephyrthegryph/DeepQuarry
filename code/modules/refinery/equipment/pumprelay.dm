@@ -6,9 +6,9 @@
 	density = TRUE
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/pump_relay
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 
 CAPABILITIES(/obj/machinery/pump_relay)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS))
 	default_parts()
 	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/input, /datum/hose_connector/output))

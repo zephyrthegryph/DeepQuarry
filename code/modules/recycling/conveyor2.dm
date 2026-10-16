@@ -6,7 +6,6 @@
 //note that corner pieces transfer stuff clockwise when running forward, and anti-clockwise backwards.
 
 /obj/machinery/conveyor
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/recycling.dmi'
 	icon_state = "conveyor0"
 	name = "conveyor belt"
@@ -30,6 +29,7 @@
 
 	// create a conveyor
 CAPABILITIES(/obj/machinery/conveyor)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(active = 100))
 	on_change(nameof(operating), ANY, then(PROC_REF(operating_changed)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), STAT_OPERABLE))
@@ -205,7 +205,6 @@ CAPABILITIES(/obj/machinery/conveyor)
 //
 
 /obj/machinery/conveyor_switch
-	maintenance_flags = MACHINE_MAINT_PANEL
 
 	name = "conveyor switch"
 	desc = "A conveyor control switch."
@@ -227,6 +226,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 /// TRUE when just operated: one step pushes the position to the linked conveyors.
 /obj/machinery/conveyor_switch/var/operated = FALSE
 CAPABILITIES(/obj/machinery/conveyor_switch)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_PANEL))
 	after_init(0, then(PROC_REF(init_update)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operated), wakes_on = list(nameof(operated)))
 	ref_many(nameof(conveyors), /obj/machinery/conveyor, by = nameof(id))

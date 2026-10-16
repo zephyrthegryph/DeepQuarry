@@ -14,7 +14,6 @@
 	anchored = 1
 	density = 1
 	use_power = USE_POWER_IDLE
-	maintenance_flags = MACHINE_MAINT_WRENCH
 	var/isbroken = 0  //1 if someone banged it with something heavy
 	var/ispowered = 1 //starts powered, changes with power_change()
 	/// "rolling" while the slots spin, "winning" while the win is paid out, else null.
@@ -27,6 +26,7 @@
 	var/confetti_strength = 8
 
 CAPABILITIES(/obj/machinery/slot_machine)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_WRENCH))
 	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS))
 	configure(light_glow(power = 0.9, range = 2, color = "#B1FBBFF"))
 	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
@@ -147,7 +147,6 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
  */
 
 /obj/machinery/station_slot_machine
-	maintenance_flags = MACHINE_MAINT_WRENCH
 	name = "station slot machine"
 	desc = "A gambling machine owned by NanoTrasen, designed to take Thalers as opposed to casino chips."
 	icon = 'icons/obj/casino.dmi'
@@ -167,6 +166,7 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 	var/confetti_strength = 8
 
 CAPABILITIES(/obj/machinery/station_slot_machine)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_WRENCH))
 	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS))
 	configure(light_glow(power = 0.9, range = 2, color = "#B1FBBFF"))
 	configure(uses_power(channel = EQUIP, idle = 10, active = 100))

@@ -2,7 +2,6 @@
 
 // Root type for cooking machines. See following files for specific implementations.
 /obj/machinery/appliance
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "cooker"
 	desc = "You shouldn't be seeing this!"
 	icon = 'icons/obj/cooking_machines.dmi'
@@ -44,6 +43,7 @@
 	var/static/radial_output = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_change_output")
 
 CAPABILITIES(/obj/machinery/appliance)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 5, active = 1000))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(needs_step), wakes_on = list(nameof(cooking), STAT_OPERABLE, STAT_SWITCHED_ON), unpowered = TRUE)
 	owns_many(nameof(cooking_objs))

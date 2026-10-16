@@ -13,7 +13,6 @@
 #define BIOGEN_REAGENT(n, o, r, p) n = new /datum/data/biogenerator_reagent(n, o, r, p)
 
 /obj/machinery/biogenerator
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "biogenerator"
 	desc = "Converts plants into biomass, which can be used for fertilizer and sort-of-synthetic products."
 	icon = 'icons/obj/biogenerator_vr.dmi'
@@ -127,6 +126,7 @@
 
 
 CAPABILITIES(/obj/machinery/biogenerator)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(machine_interaction_config(maintenance_wrench_time = 4 SECONDS))
 	reagents(1000)
 	default_parts()

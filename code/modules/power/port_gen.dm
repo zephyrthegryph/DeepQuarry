@@ -106,7 +106,6 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 
 //A power generator that runs on solid plasma sheets.
 /obj/machinery/power/port_gen/pacman
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "\improper P.A.C.M.A.N.-type Portable Generator"
 	desc = "A power generator that runs on solid phoron sheets. Rated for 80 kW max safe output."
 	circuit = /obj/item/circuitboard/pacman
@@ -325,6 +324,7 @@ MSG_DEF_SELF(pacman/broken, "It seems to have broken down.")
 // The PACMAN: sheets of its fuel in the hopper, a window for its switch and output, a wrench to bolt it (not while it runs), a part replacer
 // (not while it runs), and an emag that lifts its output limit.
 CAPABILITIES(/obj/machinery/power/port_gen/pacman)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	anchor()
 	extend("anchor.toggle", needs(req_is(nameof(active), FALSE, because = MSG(pacman/running))))
 	on_change(nameof(anchored), ANY, then(PROC_REF(anchoring_changed)))
@@ -520,7 +520,6 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 // Radioisotope Thermoelectric Generator (RTG)
 // Simple power generator that would replace "magic SMES" on various derelicts.
 /obj/machinery/power/rtg
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "radioisotope thermoelectric generator"
 	desc = "A simple nuclear power generator, used in small outposts to reliably provide power for decades."
 	icon = 'icons/obj/power_vr.dmi'
@@ -539,6 +538,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 // The RTG (doc/rewrite/final_api.html section 16): bolted down, it supplies power_gen W to its cable network every machine service interval
 // (rtg_step()), and irradiates its surroundings while its panel is open.
 CAPABILITIES(/obj/machinery/power/rtg)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	after_init(0, then(PROC_REF(mapped_upgrades_after_init)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(rtg_step)), when = nameof(anchored))
 	part_replacement()

@@ -14,7 +14,6 @@
 	use_power = USE_POWER_IDLE
 	circuit = /obj/item/circuitboard/jukebox
 	volume = 0.5
-	maintenance_flags = MACHINE_MAINT_STANDARD
 
 	// Vars for hacking
 	var/hacked = 0 // Whether to show the hidden songs or not
@@ -25,6 +24,7 @@
 	var/datum/track/current_track
 
 CAPABILITIES(/obj/machinery/media/jukebox)
+	configure(machine_interaction_config(maintenance = MACHINE_MAINT_STANDARD))
 	configure(machine_interaction_config(clicksound = SFX_MACHINES_BUTTONBEEP))
 	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
 	default_parts()
