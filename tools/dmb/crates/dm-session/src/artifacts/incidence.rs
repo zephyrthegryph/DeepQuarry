@@ -5,24 +5,57 @@ use std::{
     sync::Arc,
 };
 type LeafId = (usize, usize);
+/// Dense id of one interned read domain. A domain (a resolver query) is tens of bytes and every leaf,
+/// variant and reverse map used to hold its own clone: about 1.4 GB for the DeepQuarry lowering store.
+/// The tables below hold 4-byte ids and this interner holds the one clone of each domain.
+type DomainId = u32;
+struct Interner<D> {
+    ids: BTreeMap<Arc<D>, DomainId>,
+    table: Vec<Arc<D>>,
+}
+impl<D> Default for Interner<D> {
+    fn default() -> Self {
+        Self {
+            ids: BTreeMap::new(),
+            table: Vec::new(),
+        }
+    }
+}
+impl<D: Ord + Clone> Interner<D> {
+    fn id(&mut self, domain: &D) -> DomainId {
+        if let Some(id) = self.ids.get(domain) {
+            return *id;
+        }
+        let id = DomainId::try_from(self.table.len()).expect("fewer than 2^32 read domains");
+        let shared = Arc::new(domain.clone());
+        self.ids.insert(Arc::clone(&shared), id);
+        self.table.push(shared);
+        id
+    }
+    fn get(&self, domain: &D) -> Option<DomainId> {
+        self.ids.get(domain).copied()
+    }
+    fn domain(&self, id: DomainId) -> &D {
+        self.table[id as usize].as_ref()
+    }
+}
 struct Leaf<Q, A, D> {
     owner: Arc<[Observation<Q, A, D>]>,
     subscribers: BTreeSet<u64>,
-    domains: BTreeSet<D>,
 }
-struct Variant<D> {
+struct Variant {
     bucket: u128,
     leaves: BTreeSet<LeafId>,
-    certificates: BTreeSet<(D, u128)>,
-    uncovered: BTreeSet<D>,
+    certificates: BTreeSet<(DomainId, u128)>,
+    uncovered: BTreeSet<DomainId>,
 }
 /// SAME live scheduling index. Addresses identify allocations, never validity.
 pub(super) struct Incidence<Q, A, D> {
+    interner: Interner<D>,
     leaves: BTreeMap<LeafId, Leaf<Q, A, D>>,
-    variants: BTreeMap<u64, Variant<D>>,
-    domains: BTreeMap<D, BTreeSet<LeafId>>,
-    certificates: BTreeMap<(D, u128), BTreeSet<u64>>,
-    uncovered: BTreeMap<D, BTreeSet<u64>>,
+    variants: BTreeMap<u64, Variant>,
+    certificates: BTreeMap<(DomainId, u128), BTreeSet<u64>>,
+    uncovered: BTreeMap<DomainId, BTreeSet<u64>>,
     conflicting: BTreeSet<u64>,
     // Drop of generic artifact owners has no domain trait bounds. Only the
     // Ord+Clone insertion path can populate this index and installs its exact
@@ -34,9 +67,9 @@ pub(super) struct Incidence<Q, A, D> {
 impl<Q, A, D> Default for Incidence<Q, A, D> {
     fn default() -> Self {
         Self {
+            interner: Interner::default(),
             leaves: BTreeMap::new(),
             variants: BTreeMap::new(),
-            domains: BTreeMap::new(),
             certificates: BTreeMap::new(),
             uncovered: BTreeMap::new(),
             conflicting: BTreeSet::new(),
@@ -55,41 +88,37 @@ impl<Q, A, D> Incidence<Q, A, D> {
         let Some(row) = self.variants.get(&variant) else {
             return 0;
         };
-        let mut bytes = scalar_slot::<u64, Variant<D>>()
+        let mut bytes = scalar_slot::<u64, Variant>()
             .saturating_add(row.leaves.len().saturating_mul(scalar_slot::<LeafId, ()>()))
             .saturating_add(
                 row.certificates
                     .len()
-                    .saturating_mul(scalar_slot::<(D, u128), ()>()),
+                    .saturating_mul(scalar_slot::<(DomainId, u128), ()>()),
             )
-            .saturating_add(row.uncovered.len().saturating_mul(scalar_slot::<D, ()>()));
+            .saturating_add(
+                row.uncovered
+                    .len()
+                    .saturating_mul(scalar_slot::<DomainId, ()>()),
+            );
         for id in &row.leaves {
             if let Some(leaf) = self.leaves.get(id) {
-                let shared = scalar_slot::<LeafId, Leaf<Q, A, D>>()
-                    .saturating_add(leaf.domains.len().saturating_mul(scalar_slot::<D, ()>()));
+                let _ = leaf;
                 bytes = bytes
-                    .saturating_add(shared)
+                    .saturating_add(scalar_slot::<LeafId, Leaf<Q, A, D>>())
                     .saturating_add(scalar_slot::<u64, ()>());
-                for domain in &leaf.domains {
-                    if self.domains.contains_key(domain) {
-                        let shared = scalar_slot::<D, BTreeSet<LeafId>>()
-                            .saturating_add(scalar_slot::<LeafId, ()>());
-                        bytes = bytes.saturating_add(shared);
-                    }
-                }
             }
         }
         for certificate in &row.certificates {
             if self.certificates.contains_key(certificate) {
                 bytes = bytes
-                    .saturating_add(scalar_slot::<(D, u128), BTreeSet<u64>>())
+                    .saturating_add(scalar_slot::<(DomainId, u128), BTreeSet<u64>>())
                     .saturating_add(scalar_slot::<u64, ()>());
             }
         }
         for domain in &row.uncovered {
             if self.uncovered.contains_key(domain) {
                 bytes = bytes
-                    .saturating_add(scalar_slot::<D, BTreeSet<u64>>())
+                    .saturating_add(scalar_slot::<DomainId, BTreeSet<u64>>())
                     .saturating_add(scalar_slot::<u64, ()>());
             }
         }
@@ -104,10 +133,13 @@ impl<Q, A, D> Incidence<Q, A, D> {
         }
     }
     pub(super) fn counts(&self) -> (usize, usize, usize, usize) {
+        // The third value is the number of distinct domains referenced by live variants (certified or uncovered).
+        let mut domains: BTreeSet<DomainId> = self.uncovered.keys().copied().collect();
+        domains.extend(self.certificates.keys().map(|(domain, _)| *domain));
         (
             self.leaves.len(),
             self.variants.len(),
-            self.domains.len(),
+            domains.len(),
             self.leaves
                 .values()
                 .map(|leaf| leaf.subscribers.len())
@@ -160,14 +192,7 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
             if !leaf.subscribers.is_empty() {
                 continue;
             }
-            let leaf = self.leaves.remove(&id).expect("indexed receipt leaf");
-            for domain in leaf.domains {
-                let members = self.domains.get_mut(&domain).expect("indexed leaf domain");
-                members.remove(&id);
-                if members.is_empty() {
-                    self.domains.remove(&domain);
-                }
-            }
+            self.leaves.remove(&id).expect("indexed receipt leaf");
         }
     }
     pub(super) fn insert(
@@ -193,24 +218,25 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
             if !ids.insert(id) {
                 return;
             }
-            let leaf = self.leaves.entry(id).or_insert_with(|| {
-                let domains: BTreeSet<_> = owner.iter().map(|read| read.domain.clone()).collect();
-                for domain in &domains {
-                    self.domains.entry(domain.clone()).or_default().insert(id);
-                }
-                Leaf {
-                    owner: owner.clone(),
-                    subscribers: BTreeSet::new(),
-                    domains,
-                }
+            let leaf = self.leaves.entry(id).or_insert_with(|| Leaf {
+                owner: owner.clone(),
+                subscribers: BTreeSet::new(),
             });
             debug_assert!(Arc::ptr_eq(owner, &leaf.owner));
             leaf.subscribers.insert(variant);
         });
-        let mut supplied = BTreeMap::new();
+        let domains: BTreeSet<DomainId> = receipt
+            .iter()
+            .map(|read| self.interner.id(&read.domain))
+            .collect();
+        // Every receipt domain is interned above; a supplied version for any other domain cannot matter.
+        let mut supplied: BTreeMap<DomainId, Option<u128>> = BTreeMap::new();
         for (domain, version) in versions {
+            let Some(domain) = self.interner.get(domain) else {
+                continue;
+            };
             supplied
-                .entry(domain.clone())
+                .entry(domain)
                 .and_modify(|value: &mut Option<u128>| {
                     if *value != Some(*version) {
                         *value = None;
@@ -224,14 +250,10 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
             certificates: BTreeSet::new(),
             uncovered: BTreeSet::new(),
         };
-        let domains: BTreeSet<_> = receipt.iter().map(|read| read.domain.clone()).collect();
         for domain in domains {
             match supplied.get(&domain) {
                 None => {
-                    self.uncovered
-                        .entry(domain.clone())
-                        .or_default()
-                        .insert(variant);
+                    self.uncovered.entry(domain).or_default().insert(variant);
                     row.uncovered.insert(domain);
                 }
                 Some(None) => {
@@ -240,7 +262,7 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
                 Some(Some(version)) => {
                     let certificate = (domain, *version);
                     self.certificates
-                        .entry(certificate.clone())
+                        .entry(certificate)
                         .or_default()
                         .insert(variant);
                     row.certificates.insert(certificate);
@@ -252,7 +274,10 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
     pub(super) fn certificate_domains(&self) -> Vec<D> {
         self.certificates
             .keys()
-            .map(|(domain, _)| domain.clone())
+            .map(|(domain, _)| *domain)
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .map(|domain| self.interner.domain(domain).clone())
             .collect::<BTreeSet<_>>()
             .into_iter()
             .collect()
@@ -267,18 +292,23 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
     ) -> BTreeSet<u64> {
         // Preserve the existing first-occurrence rule for duplicate current
         // domains, but index the request roster once instead of rescanning it.
+        // A current domain that was never interned matches no stored certificate.
         let mut versions = BTreeMap::new();
         for (domain, version) in current {
-            versions.entry(domain.clone()).or_insert(*version);
+            if let Some(domain) = self.interner.get(domain) {
+                versions.entry(domain).or_insert(*version);
+            }
         }
+        let local = local.and_then(|domain| self.interner.get(domain));
         let mut rejected = self.conflicting.clone();
         for (domain, members) in &self.uncovered {
-            if local != Some(domain) {
+            if local != Some(*domain) {
                 rejected.extend(members);
             }
         }
         for ((domain, version), members) in &self.certificates {
-            if local != Some(domain) && versions.get(domain).copied().flatten() != Some(*version) {
+            if local != Some(*domain) && versions.get(domain).copied().flatten() != Some(*version)
+            {
                 rejected.extend(members);
             }
         }
@@ -297,16 +327,24 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
     {
         let mut versions = BTreeMap::new();
         for (domain, version) in current {
-            versions.entry(domain.clone()).or_insert(*version);
+            if let Some(domain) = self.interner.get(domain) {
+                versions.entry(domain).or_insert(*version);
+            }
         }
         let mut rows: Vec<(String, usize)> = Vec::new();
         rows.push(("conflicting".into(), self.conflicting.len()));
         for (domain, members) in &self.uncovered {
-            rows.push((format!("uncovered {domain:?}"), members.len()));
+            rows.push((
+                format!("uncovered {:?}", self.interner.domain(*domain)),
+                members.len(),
+            ));
         }
         for ((domain, version), members) in &self.certificates {
             if versions.get(domain).copied().flatten() != Some(*version) {
-                rows.push((format!("version-changed {domain:?}"), members.len()));
+                rows.push((
+                    format!("version-changed {:?}", self.interner.domain(*domain)),
+                    members.len(),
+                ));
             }
         }
         rows.sort_by(|a, b| b.1.cmp(&a.1));
@@ -322,11 +360,12 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
     where
         D: 'a,
     {
-        domains
-            .into_iter()
-            .filter_map(|domain| self.domains.get(domain))
-            .flat_map(|ids| ids.iter())
-            .flat_map(|id| self.leaves[id].subscribers.iter().copied())
+        // Scheduling-only and unused outside tests, so no reverse domain index is kept: scan the leaves.
+        let wanted: BTreeSet<&D> = domains.into_iter().collect();
+        self.leaves
+            .values()
+            .filter(|leaf| leaf.owner.iter().any(|read| wanted.contains(&read.domain)))
+            .flat_map(|leaf| leaf.subscribers.iter().copied())
             .collect()
     }
 }
@@ -362,6 +401,6 @@ mod tests {
         assert!(weak.upgrade().is_some());
         index.remove(2);
         assert!(weak.upgrade().is_none());
-        assert!(index.domains.is_empty());
+        assert!(index.leaves.is_empty());
     }
 }
