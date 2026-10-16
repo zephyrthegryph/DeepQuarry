@@ -43,3 +43,7 @@ The two diagnosed failures are repaired in `00fe5debb2`:
 Causes are documented in `intended_changes.md`. The final failure-only selector file is `data/codex-decl/final-repair-selectors.txt`: mandatory requirement/conversion pins plus privacy and live-redraw fixtures. **That repair gate, final receipt and lane-ready stamp remain pending.** Earlier results are historical evidence, not a substituted stamp.
 
 This gate explicitly used **DreamMaker/BYOND**, recorded in its receipt. Master `663e85e2ae` changed the default to native; a separate same-plan requirements diagnostic exposed host-dependent look sampling because the first 24 vars are chosen before plan filtering. Existing appearance goldens were preserved rather than blessing compiler-order drift. Backend choice and any remaining limitation must stay explicit in the final receipt.
+
+## Completed lane-ready receipt
+
+The final DreamMaker gate on source 79db428f3fac passed; lane-ready recorded look keys and stamped b4d8412911. Result: 53 passed, 0 failed (data/test-runs/20261016T032804_79db428f3f.json). Production compilation had 0 errors, DreamChecker 0 diagnostics; ratchets and analyzer tests passed. Both mandatory pins, both corrected privacy fixtures, both appearance pins and menu ordering passed. Existing fixture STATE LEAK warnings remain visible. This handoff-only follow-up uses the documented docs-only stamp carry rule, checked before pushing.
