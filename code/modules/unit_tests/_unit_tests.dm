@@ -1335,6 +1335,8 @@
 #include "dq_init_objects_residual_effects_tests.dm"
 #include "dq_init_temp_param_capabilities_tests.dm"
 #include "dq_item_initial_actions_tests.dm"
+#include "dq_init_objects_blood_context_tests.dm"
+#include "dq_init_objects_cliff_context_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

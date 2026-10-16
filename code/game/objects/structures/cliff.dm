@@ -49,13 +49,20 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	var/uphill_penalty = 30 // Odds of a projectile not making it up the cliff.
 
 
-/obj/structure/cliff/Initialize(mapload)
-	. = ..()
-	register_dangerous_to_step()
-	if(!mapload)
-		turf_edges_refresh(get_turf(src)) // the tiles around it stop spilling their edges onto it (a map load computes them once at its end)
+// Registration and mapload-sensitive edge refresh share the native constructor context.
+CAPABILITY_TYPE(cliff_initial_edges, CAP_CLIFF_INITIAL_EDGES, /datum/capability/cliff_initial_edges)
+
+/datum/capability/cliff_initial_edges
+	holder_hooks = HOLDER_HOOK_INIT
+
+/datum/capability/cliff_initial_edges/on_holder_init(datum/act/eval/A)
+	var/obj/structure/cliff/C = A.holder
+	C.register_dangerous_to_step()
+	if(!A.mapload)
+		turf_edges_refresh(get_turf(C))
 
 CAPABILITIES(/obj/structure/cliff)
+	cliff_initial_edges()
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	climb(delay = CLIFF_CLIMB_TIME, delay_by = PROC_REF(climb_delay), gate = PROC_REF(climbing_gear_needed))
 
@@ -270,4 +277,3 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 	if(should_fall(L))
 		return FALSE
 	return ..()
-

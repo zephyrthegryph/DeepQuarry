@@ -133,3 +133,7 @@
 #define CADENCE_MINUTE /datum/cadence/minute
 
 #define CAP_PERSISTENT_FILTH "persistent_filth"
+
+#define CAP_BLOOD_INITIAL_PUDDLE "blood_initial_puddle"
+
+#define CAP_CLIFF_INITIAL_EDGES "cliff_initial_edges"

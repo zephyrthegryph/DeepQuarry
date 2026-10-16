@@ -47,23 +47,33 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 		set_invisibility(INVISIBILITY_MAXIMUM)
 		set_amount(0)
 
-/obj/effect/decal/cleanable/blood/Initialize(mapload)
-	. = ..()
-	if(delete_me)
-		return INITIALIZE_HINT_QDEL
-	if(!mapload)
-		dry_delay = DRYING_TIME * (amount+1) // fresh blood dries (after_init()); mapped blood is dry already
-	if(istype(src, /obj/effect/decal/cleanable/blood/gibs))
+// The real mapload context controls drying; peer ATOM_INITIALIZED flags control coalescing.
+CAPABILITY_TYPE(blood_initial_puddle, CAP_BLOOD_INITIAL_PUDDLE, /datum/capability/blood_initial_puddle)
+
+/datum/capability/blood_initial_puddle
+	holder_hooks = HOLDER_HOOK_INIT
+
+/datum/capability/blood_initial_puddle/on_holder_init(datum/act/eval/A)
+	var/obj/effect/decal/cleanable/blood/B = A.holder
+	if(B.delete_me)
 		return
-	if(src.type == /obj/effect/decal/cleanable/blood)
-		if(src.loc && isturf(src.loc))
-			for(var/obj/effect/decal/cleanable/blood/B in src.loc)
-				if(B != src)
-					init_forensic_data().merge_blooddna(B.forensic_data)
-					if(!(B.flags & ATOM_INITIALIZED))
-						B.delete_me = TRUE
-					else
-						consume(B)
+	if(!A.mapload)
+		B.set_dry_delay(DRYING_TIME * (B.amount + 1))
+	if(B.type != /obj/effect/decal/cleanable/blood || !isturf(B.loc))
+		return
+	for(var/obj/effect/decal/cleanable/blood/other in B.loc)
+		if(other == B)
+			continue
+		B.init_forensic_data().merge_blooddna(other.forensic_data)
+		if(!(other.flags & ATOM_INITIALIZED))
+			other.set_delete_me(TRUE)
+		else
+			consume(other)
+
+/// A marked mapload peer is discarded after the entire Initialize chain, as its old QDEL hint was.
+/obj/effect/decal/cleanable/blood/proc/keep_initial_puddle()
+	return !delete_me
+
 
 /// The colour it is drawn with: its blood, or white for a decal whose picture carries its own colours; darker once it has dried.
 /obj/effect/decal/cleanable/blood/proc/shown_color()
@@ -145,6 +155,8 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 	set_amount(0)
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood)
+	blood_initial_puddle()
+	keeps_if(PROC_REF(keep_initial_puddle))
 	when(nameof(dry_delay), after_init(nameof(dry_delay), then(PROC_REF(dry_after_init))))
 	op("touch_blood", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_touch_blood)))
 

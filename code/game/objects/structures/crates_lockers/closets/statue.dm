@@ -136,18 +136,18 @@ CAPABILITIES(/obj/structure/closet/statue)
 			L.set_anchored(FALSE)
 		L.forceMove(src)
 		L.set_sdisabilities(L.sdisabilities | MUTE)
-		max_integrity = L.get_endurance() + 100
+		set_max_integrity(L.get_endurance() + 100)
 		original_int = L.vitality() * L.get_endurance() + 100
 		update_integrity(original_int) //stoning damaged mobs will result in easier to shatter statues
 		observe(L, /datum/act/injure, src, instead(when(PROC_REF(stasis_holds))))
 		if(ishuman(L))
 			name = "statue of [L.name]"
 			if(L.gender == "female")
-				statue_shape = "human_female"
+				set_statue_shape("human_female")
 		else if(L.isMonkey())
 			name = "statue of a monkey"
-			statue_shape = "monkey"
+			set_statue_shape("monkey")
 		else if(iscorgi(L))
 			name = "statue of a corgi"
-			statue_shape = "corgi"
+			set_statue_shape("corgi")
 			desc = "If it takes forever, I will wait for you..."
