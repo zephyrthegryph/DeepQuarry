@@ -1337,8 +1337,8 @@
 #include "dq_skin_command_cache_home_tests.dm"
 
 #include "dq_base_vars_behaviour_tests.dm"
-#include "dq_base_vars_behaviour_tests.dm"
 #include "dq_last_attacker_link_home_tests.dm"
+#include "dq_base_vars_lighting_tests.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
