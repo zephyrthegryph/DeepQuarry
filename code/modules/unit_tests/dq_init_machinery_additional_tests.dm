@@ -203,3 +203,39 @@
 	var/obj/structure/atmospheric_retention_field/F = allocate(/obj/structure/atmospheric_retention_field, T)
 	TEST_ASSERT_EQUAL(vg_atmos_open_dirs(T), 0, "actual field constructor republishes closed native air adjacency on its turf")
 	qdel(F)
+
+/obj/machinery/button/doorbell/dq_init_placement
+	id = "dq_init_preassigned_doorbell"
+
+/obj/machinery/pointdefense_control/dq_init_parts
+	id_tag = "dq_init_pointdefense_unique"
+	var/part_setup_calls = 0
+
+/obj/machinery/pointdefense_control/dq_init_parts/default_apply_parts()
+	part_setup_calls++
+	return ..()
+
+/datum/unit_test/dq_init_machinery_next_tails
+/datum/unit_test/dq_init_machinery_next_tails/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.coalesce_absorbed), GLOB.coalesce_absorbed)
+	var/turf/T = test_floor()
+	for(var/direction in GLOB.cardinal)
+		var/obj/machinery/button/doorbell/B = allocate(/obj/machinery/button/doorbell, T, direction, TRUE)
+		TEST_ASSERT_EQUAL(B.dir, direction, "the actual constructor facing is applied before placement")
+		TEST_ASSERT_EQUAL(B.pixel_x, (direction & 3) ? 0 : (direction == 4 ? -32 : 32), "a real built switch keeps its wall-side horizontal offset")
+		TEST_ASSERT_EQUAL(B.pixel_y, (direction & 3) ? (direction == 1 ? -27 : 27) : 0, "a real built switch keeps its wall-side vertical offset")
+		TEST_ASSERT_EQUAL(B.id, num2text(B.uid), "a previously unnamed real switch gets its actual UID")
+	var/obj/machinery/button/doorbell/dq_init_placement/mapped = allocate(/obj/machinery/button/doorbell/dq_init_placement, T)
+	TEST_ASSERT_EQUAL(mapped.id, "dq_init_preassigned_doorbell", "preassigned IDs are not replaced by constructor setup")
+	TEST_ASSERT_EQUAL(mapped.pixel_x, initial(mapped.pixel_x), "an unbuilt switch keeps its mapped horizontal offset")
+	TEST_ASSERT_EQUAL(mapped.pixel_y, initial(mapped.pixel_y), "an unbuilt switch keeps its mapped vertical offset")
+	var/obj/machinery/pointdefense_control/dq_init_parts/P = allocate(/obj/machinery/pointdefense_control/dq_init_parts, T)
+	TEST_ASSERT_EQUAL(P.id_tag, "dq_init_pointdefense_unique", "a real unique controller keeps its network ID")
+	TEST_ASSERT_EQUAL(P.part_setup_calls, 1, "the actual inherited parts transaction runs once during construction")
+	TEST_ASSERT(P in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS), "constructor setup sees its real declared registry membership")
+	qdel(P)
+	TEST_ASSERT(!(P in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS)), "actual controller deletion removes registry membership")
+	var/obj/machinery/pointdefense_control/dq_init_parts/replacement = allocate(/obj/machinery/pointdefense_control/dq_init_parts, T)
+	TEST_ASSERT_EQUAL(replacement.id_tag, "dq_init_pointdefense_unique", "a deleted controller cannot invalidate its replacement's ID")
+	TEST_ASSERT_EQUAL(replacement.part_setup_calls, 1, "replacement construction also runs the real parts transaction once")

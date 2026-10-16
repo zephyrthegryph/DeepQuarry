@@ -84,6 +84,7 @@ CAPABILITIES(/obj/machinery/doorbell_chime)
 	flags = WALL_ITEM
 
 CAPABILITIES(/obj/machinery/button/doorbell)
+	setup(PROC_REF(place_doorbell_switch))
 	ref_many(nameof(chimes), /obj/machinery/doorbell_chime, by = nameof(id), target_key = nameof(/obj/machinery/doorbell_chime::id_tag))
 	// The subtype handles item touches; multitool and wrench actions keep their higher priority.
 	extend("button_press_item", priority(OP_PRIORITY_DEFAULT - 2))
@@ -99,9 +100,7 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 /// A doorbell built on a wall (its constructor param).
 /obj/machinery/button/doorbell/var/building = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a built doorbell sits on its wall, and every doorbell takes an id
-/obj/machinery/button/doorbell/Initialize(mapload)
-	. = ..()
+/obj/machinery/button/doorbell/proc/place_doorbell_switch()
 	if(building)
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -32 : 32)
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
