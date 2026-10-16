@@ -945,7 +945,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	else if(glass && !da.glass)
 		da.set_glass(1)
 	graph_place(da, STAGE_DOOR_ASSEMBLY_WIRED)
-	da.created_name = name
+	da.set_created_name(name)
 	da.update_state()
 
 	if(operating == -1 || (broken_now()))

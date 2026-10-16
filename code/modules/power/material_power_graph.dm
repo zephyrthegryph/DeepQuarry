@@ -468,8 +468,8 @@
 			cable.material_current = 0
 			var/datum/material_service/idle_service = material_service_of(cable)
 			if(idle_service)
-				idle_service.last_input_watts = 0
-				idle_service.last_output_watts = 0
+				idle_service.set_last_input_watts(0)
+				idle_service.set_last_output_watts(0)
 	energized_cables = list()
 	for(var/obj/structure/cable/cable as anything in cable_current)
 		energized_cables += cable.power_entity
@@ -483,8 +483,8 @@
 		var/input = max(heat, cable.material_current * MATERIAL_SERVICE_NOMINAL_VOLTAGE * elapsed)
 		service.input_joules += input
 		service.output_joules += input - heat
-		service.loss_joules += heat
-		service.last_input_watts = input / max(elapsed, 0.1)
-		service.last_output_watts = (input - heat) / max(elapsed, 0.1)
+		service.set_loss_joules(service.loss_joules + heat)
+		service.set_last_input_watts(input / max(elapsed, 0.1))
+		service.set_last_output_watts((input - heat) / max(elapsed, 0.1))
 		service.add_heat(heat)
 	deposit_ms = (REALTIMEOFDAY - started) * 100

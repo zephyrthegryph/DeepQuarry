@@ -206,3 +206,38 @@
 	TEST_ASSERT_EQUAL(probe.pushes, base + 1, "the controller moving along its path from its own repeat pushes the open window once")
 	TEST_ASSERT(ctrl.path_moving, "and the state the window shows is the new one")
 	LAZYREMOVE(ctrl.open_tguis, probe)
+
+/// The window hosts the read-driven sweep converted (ui_data() read a plain var nothing published) refresh after a tracked write: the write
+/// through the generated setter pushes the open window once, and ui_data() shows the new value.
+/datum/unit_test/dq_ui_outputs_swept_host_refreshes_after_write
+
+/datum/unit_test/dq_ui_outputs_swept_host_refreshes_after_write/Run()
+	var/datum/tgui_feedback/host = new
+	var/datum/tgui/dq_ui_probe/probe = new
+	host.add_open_tguis(probe)
+	dq_ui_frame()
+	probe.pushes = 0 // opening the window is itself a write of the host's window list
+	host.set_selected_window("map")
+	dq_ui_frame()
+	TEST_ASSERT_EQUAL(probe.pushes, 1, "a write through the generated setter pushes the open window")
+	TEST_ASSERT_EQUAL(probe.last_owed, UI_PUSH_DATA, "a data push")
+	var/list/data = host.ui_data(null)
+	TEST_ASSERT_EQUAL(data["selected_window"], "map", "and ui_data() shows the new value")
+	host.set_selected_window("map")
+	dq_ui_frame()
+	TEST_ASSERT_EQUAL(probe.pushes, 1, "writing the same value pushes nothing")
+	host.remove_open_tguis(probe)
+
+/// An atom host whose ui_data() reads vars the sweep made tracked (the beacon locator's frequency): its window is pushed after the write.
+/datum/unit_test/dq_ui_outputs_swept_atom_host_refreshes_after_write
+
+/datum/unit_test/dq_ui_outputs_swept_atom_host_refreshes_after_write/Run()
+	var/obj/item/beacon_locator/host = allocate(/obj/item/beacon_locator)
+	var/datum/tgui/dq_ui_probe/probe = new
+	host.add_open_tguis(probe)
+	dq_ui_frame()
+	probe.pushes = 0 // opening the window is itself a write of the host's window list
+	host.set_frequency(host.frequency + 2)
+	dq_ui_frame()
+	TEST_ASSERT_EQUAL(probe.pushes, 1, "a frequency write pushes the open window")
+	host.remove_open_tguis(probe)

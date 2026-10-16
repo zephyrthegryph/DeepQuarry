@@ -39,7 +39,7 @@
 
 /datum/integrated_io/number/write_data_to_pin(new_data)
 	if(isnull(new_data) || isnum(new_data))
-		data = new_data
+		set_data(new_data)
 		holder().on_data_written()
 
 /datum/integrated_io/number/display_pin_type()

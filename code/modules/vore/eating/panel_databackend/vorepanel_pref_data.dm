@@ -86,7 +86,7 @@
 
 /datum/vore_look/proc/compile_aesthetic_messages(mob/owner)
 	if(!aset_message_subtab)
-		aset_message_subtab = SET_TASTE
+		set_aset_message_subtab(SET_TASTE)
 	var/list/tab_data = list(
 		"possible_messages" = list(SET_TASTE, SET_SMELL, SET_NUTRITION_EX, SET_WEIGHT_EX),
 		"aest_subtab" = aset_message_subtab

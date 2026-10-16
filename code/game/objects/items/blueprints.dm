@@ -171,18 +171,18 @@ CAPABILITIES(/obj/item/areaeditor)
 	if(A.flag_check(BLUE_SHIELDED))
 		to_chat(user, span_warning("You cannot edit restricted areas."))
 		return
-	in_use = TRUE
+	set_in_use(TRUE)
 	create_area(user, src)
-	in_use = FALSE
+	set_in_use(FALSE)
 	return TRUE
 
 /obj/item/areaeditor/proc/topic_create_area_whole(datum/act/op/A)
 	var/mob/user = A.actor
 	if(in_use)
 		return
-	in_use = TRUE
+	set_in_use(TRUE)
 	create_area_whole(user, src)
-	in_use = FALSE
+	set_in_use(FALSE)
 	return TRUE
 
 //Station Wire Tool.
@@ -303,9 +303,9 @@ CAPABILITIES(/obj/item/areaeditor/blueprints)
 		return
 	if(in_use)
 		return
-	in_use = TRUE
+	set_in_use(TRUE)
 	edit_area(user)
-	in_use = FALSE
+	set_in_use(FALSE)
 	attack_self(user)
 	return TRUE
 

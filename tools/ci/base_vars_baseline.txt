@@ -25,8 +25,6 @@ base_var	code/datums/behaviours/burning.dm	@/obj::burn_fuel
 base_var	code/datums/behaviours/burning.dm	@/obj::burn_cool_watch
 base_var	code/datums/behaviours/burning.dm	@/obj::burn_ended_by
 base_var	code/datums/behaviours/conflict_checking.dm	@/atom::conflict_id
-base_var	code/datums/behaviours/deconstructable_research.dm	@/obj::techweb_points
-base_var	code/datums/behaviours/deconstructable_research.dm	@/obj::techweb_point_type
 base_var	code/datums/behaviours/footstep.dm	@/mob/living::footstep_type
 base_var	code/datums/behaviours/footstep.dm	@/mob/living::footstep_volume
 base_var	code/datums/behaviours/footstep.dm	@/mob/living::footstep_e_range
@@ -182,7 +180,6 @@ base_var	code/game/objects/items/weapons/capture_crystal.dm	@/mob/living::captur
 base_var	code/game/objects/obj_defense.dm	@/obj::debris_type
 base_var	code/game/objects/obj_defense.dm	@/obj::debris_amount
 base_var	code/game/objects/obj_defense.dm	@/obj::broken_icon_state
-base_var	code/game/objects/objs.dm	@/obj::in_use
 base_var	code/game/objects/objs.dm	@/obj::show_messages
 base_var	code/game/objects/objs.dm	@/obj::can_speak
 base_var	code/game/objects/objs.dm	@/obj::show_examine
@@ -302,7 +299,6 @@ base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::a
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::last_taste_text
 base_var	code/modules/mob/living/carbon/human/MedicalSideEffects.dm	@/mob/living/carbon/human::side_effects
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::wearing_rig
-base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::spitting
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::spit_projectile
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::spit_name
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::can_defib
@@ -336,7 +332,6 @@ base_var	code/modules/mob/living/carbon/human/life.dm	@/mob/living/carbon/human:
 base_var	code/modules/mob/living/carbon/human/life.dm	@/mob/living/carbon/human::environment_steady
 base_var	code/modules/mob/living/carbon/human/life.dm	@/mob/living/carbon/human::nutrition_drained_at
 base_var	code/modules/mob/living/carbon/human/life.dm	@/mob/living/carbon/human::health_doll_key
-base_var	code/modules/mob/living/carbon/human/life.dm	@/mob/living/carbon::synth_cosmetic_pain
 base_var	code/modules/mob/living/carbon/human/species/shadekin/state/shadekin.dm	@/mob/living::shadekin
 base_var	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	@/mob/living/carbon/human::character_forms
 base_var	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	@/mob/living::vore_shred_time
@@ -374,7 +369,6 @@ base_var	code/modules/mob/living/living_defines.dm	@/mob::forced_psay
 base_var	code/modules/mob/living/living_defines.dm	@/mob::autowhisper
 base_var	code/modules/mob/living/living_defines.dm	@/mob::autowhisper_mode
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::custom_link
-base_var	code/modules/mob/living/living_defines.dm	@/mob/living::private_notes
 base_var	code/modules/mob/living/living_defines.dm	@/mob::climbing_delay
 base_var	code/modules/mob/living/living_defines.dm	@/mob::eggs
 base_var	code/modules/mob/living/living_fire.dm	@/mob/living::fire_reaction
@@ -412,13 +406,8 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::ajourn
 base_var	code/modules/mob/mob_defines.dm	@/mob::phoron
 base_var	code/modules/mob/mob_defines.dm	@/mob::lying_prev
 base_var	code/modules/mob/mob_defines.dm	@/mob::embedded
-base_var	code/modules/mob/mob_defines.dm	@/mob::languages
-base_var	code/modules/mob/mob_defines.dm	@/mob::language_keys
-base_var	code/modules/mob/mob_defines.dm	@/mob::species_language
-base_var	code/modules/mob/mob_defines.dm	@/mob::only_species_language
 base_var	code/modules/mob/mob_defines.dm	@/mob::facing_dir
 base_var	code/modules/mob/mob_defines.dm	@/mob::name_archive
-base_var	code/modules/mob/mob_defines.dm	@/mob::timeofdeath
 base_var	code/modules/mob/mob_defines.dm	@/mob::bodytemperature
 base_var	code/modules/mob/mob_defines.dm	@/mob::charges
 base_var	code/modules/mob/mob_defines.dm	@/mob::losebreath
@@ -442,7 +431,6 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::update_icon
 base_var	code/modules/mob/mob_defines.dm	@/mob::lastareachange
 base_var	code/modules/mob/mob_defines.dm	@/mob::digitalcamo
 base_var	code/modules/mob/mob_defines.dm	@/mob::control_object
-base_var	code/modules/mob/mob_defines.dm	@/mob::universal_speak
 base_var	code/modules/mob/mob_defines.dm	@/mob::universal_understand
 base_var	code/modules/mob/mob_defines.dm	@/mob::teleop
 base_var	code/modules/mob/mob_defines.dm	@/mob::active_genes

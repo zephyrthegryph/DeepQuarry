@@ -35,7 +35,7 @@
 
 	if(tainted_character_profiles)
 		data["character_profiles"] = create_character_profiles()
-		tainted_character_profiles = FALSE
+		set_tainted_character_profiles(FALSE)
 
 	// DQCharacterSetup consumes dq_values/editor patches below. Building the legacy
 	// all-preferences structure for that route duplicated the same work and accounted
@@ -64,7 +64,7 @@
 		"pre_backend_ms" = dq_open_requested_at ? (REALTIMEOFDAY - dq_open_requested_at) * 100 : 0,
 		"preview_render_ms" = dq_last_preview_render_ms,
 	)
-	dq_open_requested_at = null
+	set_dq_open_requested_at(null)
 
 	return data
 

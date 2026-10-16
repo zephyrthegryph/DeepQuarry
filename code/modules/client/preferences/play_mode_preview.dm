@@ -40,11 +40,11 @@
 		// (most dogborg variants are animated) come back as the entire frame
 		// strip and icon2base64 dumps the whole sheet.
 		var/icon/I = icon(sprite.sprite_icon, sprite.sprite_icon_state, dir = dir, frame = 1, moving = FALSE)
-		character_preview_b64[dir_key] = icon2base64(I)
+		set_character_preview_b64_at(dir_key, icon2base64(I))
 	var/bgstate = read_preference(/datum/preference/text/human/bgstate)
 	if(bgstate)
 		var/icon/bg_icon = icon('icons/effects/setup_backgrounds_vr.dmi', bgstate)
-		character_preview_b64["bg"] = icon2base64(bg_icon)
+		set_character_preview_b64_at("bg", icon2base64(bg_icon))
 
 /datum/preferences/proc/dq_update_pai_preview(south_only = FALSE)
 	LAZYINITLIST(character_preview_b64)
@@ -52,11 +52,11 @@
 	for(var/dir_key in dirs)
 		var/dir = dirs[dir_key]
 		var/icon/I = icon('icons/mob/pai.dmi', "pai-repairbot", dir = dir, frame = 1, moving = FALSE)
-		character_preview_b64[dir_key] = icon2base64(I)
+		set_character_preview_b64_at(dir_key, icon2base64(I))
 	var/bgstate = read_preference(/datum/preference/text/human/bgstate)
 	if(bgstate)
 		var/icon/bg_icon = icon('icons/effects/setup_backgrounds_vr.dmi', bgstate)
-		character_preview_b64["bg"] = icon2base64(bg_icon)
+		set_character_preview_b64_at("bg", icon2base64(bg_icon))
 
 /// Lazy-init holder for the default cyborg sprite singleton (lookup happens
 /// post-SSrobot_sprites init). Stored on GLOB rather than via a static-on-proc

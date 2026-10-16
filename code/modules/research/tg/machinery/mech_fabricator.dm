@@ -135,7 +135,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 
 	//building time adjustment coefficient (1 -> 0.8 -> 0.6)
 	T = get_part_rating(/obj/item/stock_parts/manipulator) - 1
-	time_coeff = round(initial(time_coeff) - (initial(time_coeff)*(T))/5,0.01)
+	set_time_coeff(round(initial(time_coeff) - (initial(time_coeff)*(T))/5,0.01))
 
 	// The part being made finishes as much sooner or later as the new parts make it.
 	if(being_built && part_time > 0)
@@ -323,7 +323,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	atom_say("The fabrication of [built_part] is now complete.")
 	built_part.forceMove(exit)
 
-	top_job_id += 1
+	set_top_job_id(top_job_id + 1)
 
 	return TRUE
 
@@ -341,10 +341,10 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
  */
 /obj/machinery/mecha_part_fabricator_tg/proc/add_to_queue(datum/design_techweb/D, producer_account = 0)
 	if(!istype(queue))
-		queue = list()
+		set_queue(list())
 
 	if(D)
-		queue[++queue.len] = D
+		set_queue_at(++queue.len, D)
 		queue_producer_accounts += producer_account
 		return TRUE
 
@@ -360,7 +360,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	if(!isnum(index) || !ISINTEGER(index) || !istype(queue) || (index<1 || index>length(queue)))
 		return FALSE
 	var/end_index = index + 1
-	queue.Cut(index, end_index)
+	cut_queue(index, end_index)
 	queue_producer_accounts.Cut(index, end_index)
 	return TRUE
 
@@ -477,7 +477,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	return OP_OK
 
 /obj/machinery/mecha_part_fabricator_tg/proc/ui_act_clear_queue(datum/act/op/A)
-	queue.Cut()
+	clear_queue()
 	queue_producer_accounts.Cut()
 	return OP_OK
 

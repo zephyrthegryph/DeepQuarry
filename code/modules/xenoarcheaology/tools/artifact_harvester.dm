@@ -127,7 +127,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	if(harvesting)
 		if(harvesting < 0 && inserted_battery().battery_effect && inserted_battery().battery_effect.activated)
 			inserted_battery().battery_effect.ToggleActivate()
-		harvesting = 0
+		set_harvesting(0)
 		cur_artifact().anchored = FALSE
 		cur_artifact().in_use = 0
 		rel_clear(src, nameof(/obj/machinery/artifact_harvester::cur_artifact))
@@ -155,7 +155,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 			if(_answer_k162 == "Continue")
 				if(!inserted_battery().battery_effect.activated)
 					inserted_battery().battery_effect.ToggleActivate(1)
-				harvesting = -1
+				set_harvesting(-1)
 				set_use_power(USE_POWER_ACTIVE)
 				set_icon_state("incubator_on")
 				atom_say("Warning, battery charge dump commencing.")
@@ -253,7 +253,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 			source_effect = selected_effect
 
 		if(source_effect)
-			harvesting = 1
+			set_harvesting(1)
 			set_use_power(USE_POWER_ACTIVE)
 			cur_artifact().anchored = TRUE
 			cur_artifact().in_use = 1
@@ -308,7 +308,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 		//check if we've finished
 		if(inserted_battery().stored_charge >= inserted_battery().capacity)
 			set_use_power(USE_POWER_IDLE)
-			harvesting = 0
+			set_harvesting(0)
 			cur_artifact().anchored = FALSE
 			cur_artifact().in_use = 0
 			rel_clear(src, nameof(cur_artifact))
@@ -334,7 +334,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 		if(inserted_battery().stored_charge <= 0)
 			set_use_power(USE_POWER_IDLE)
 			inserted_battery().stored_charge = 0
-			harvesting = 0
+			set_harvesting(0)
 			if(inserted_battery().battery_effect && inserted_battery().battery_effect.activated)
 				inserted_battery().battery_effect.ToggleActivate()
 			src.visible_message(span_bold("[name]") + " states, \"Battery dump completed.\"")

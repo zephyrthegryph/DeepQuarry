@@ -6,7 +6,7 @@
 	// are still displayed but their checkbox is disabled.
 	var/allowed_edit_field
 	// Bitfield being edited.
-	var/value
+	var/bitset
 	// Bitfield as it was when the window opened, for the "Cancel" path.
 	var/initial_value
 	EXPIRY_DECLARE(start_time)
@@ -17,7 +17,7 @@
 /datum/tgui_bitfield_input/New(mob/user, title, list/bitflags, current_value, allowed_edit_field, timeout)
 	src.title = title
 	src.bitflags = bitflags
-	src.value = current_value
+	src.bitset = current_value
 	src.initial_value = current_value
 	src.allowed_edit_field = allowed_edit_field
 	if(timeout)
@@ -50,7 +50,7 @@ CAPABILITIES(/datum/tgui_bitfield_input)
 		flags += list(list(
 			"name" = name,
 			"bit" = bit,
-			"checked" = !!(value & bit),
+			"checked" = !!(bitset & bit),
 			"editable" = !!(allowed_edit_field & bit),
 		))
 	return list(
@@ -64,10 +64,10 @@ CAPABILITIES(/datum/tgui_bitfield_input)
 		return
 	if(!(allowed_edit_field & bit))
 		return
-	if(value & bit)
-		value &= ~bit
+	if(bitset & bit)
+		set_bitset(bitset & (~bit))
 	else
-		value |= bit
+		set_bitset(bitset | bit)
 	return TRUE
 
 /datum/tgui_bitfield_input/proc/ui_act_submit(datum/act/op/A)
@@ -76,7 +76,7 @@ CAPABILITIES(/datum/tgui_bitfield_input)
 	return TRUE
 
 /datum/tgui_bitfield_input/proc/ui_act_cancel(datum/act/op/A)
-	value = initial_value
+	set_bitset(initial_value)
 	submitted = FALSE
 	closed = TRUE
 	SStgui.close_uis(src)

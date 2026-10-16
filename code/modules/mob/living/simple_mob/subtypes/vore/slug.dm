@@ -52,24 +52,24 @@ CAPABILITIES(/mob/living/simple_mob/vore/slug)
 	. = ..()
 	var/obj/belly/B = vore_selected_of(src)
 	B.desc	= "Somehow you remained still just long enough for the slug to wrap its radula around your body and gradually draw you into its pharynx. The slug moves with agonizing slowness and devours prey at a snail's pace; inch by inch you're crammed down its gullet and squishes and squeezed into the slug's gizzard. Thick walls bear down, covered with shallow, toothy ridges. The slimy moss in here suggests you're not the slug's diet but the gizzard seems intent on churning and scraping over you regardless..."
-	B.digest_burn = 0.1
-	B.digest_brute = 0.2
-	B.vore_verb = "engulf"
+	B.set_digest_burn(0.1)
+	B.set_digest_brute(0.2)
+	B.set_vore_verb("engulf")
 	B.name = "gizzard"
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.escapechance = 5
-	B.fancy_vore = 1
-	B.vore_sound = "Squish2"
-	B.release_sound = "Pred Escape"
-	B.contamination_color = "cyan"
-	B.contamination_flavor = "Wet"
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_escapechance(5)
+	B.set_fancy_vore(1)
+	B.set_vore_sound("Squish2")
+	B.set_release_sound("Pred Escape")
+	B.set_contamination_color("cyan")
+	B.set_contamination_flavor("Wet")
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"The toothy walls scrape and grind against your body.",
 		"The humid air feels thick and heavy, stinging faintly with each breath.",
 		"Heavy slime oozes over you, making it difficult to move."
-		) //Why do so many vore mobs have endo emotes despite being digest only?
+		))//Why do so many vore mobs have endo emotes despite being digest only?
 
 /datum/category_item/catalogue/fauna/slug
 	name = "Sivian Fauna - Moss Slug"

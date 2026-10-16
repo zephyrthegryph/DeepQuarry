@@ -118,7 +118,7 @@ CAPABILITIES(/obj/machinery/exonet_node)
 // Parameters: 2 (standard tgui_act arguments)
 // Description: Responds to button presses on the TGUI interface.
 /obj/machinery/exonet_node/proc/ui_act_toggle_power(datum/act/op/A)
-	toggle = !toggle
+	set_toggle(!toggle)
 	update_power()
 	if(!toggle)
 		var/msg = "[A.actor.client.key] ([A.actor]) has turned [src] off, at [x],[y],[z]."
@@ -128,12 +128,12 @@ CAPABILITIES(/obj/machinery/exonet_node)
 	return OP_OK
 
 /obj/machinery/exonet_node/proc/ui_act_toggle_pda_port(datum/act/op/A)
-	allow_external_PDAs = !allow_external_PDAs
+	set_allow_external_PDAs(!allow_external_PDAs)
 	add_fingerprint(A.actor)
 	return OP_OK
 
 /obj/machinery/exonet_node/proc/ui_act_toggle_communicator_port(datum/act/op/A)
-	allow_external_communicators = !allow_external_communicators
+	set_allow_external_communicators(!allow_external_communicators)
 	if(!allow_external_communicators)
 		var/msg = "[A.actor.client.key] ([A.actor]) has turned [src]'s communicator port off, at [x],[y],[z]."
 		message_admins(msg)
@@ -142,7 +142,7 @@ CAPABILITIES(/obj/machinery/exonet_node)
 	return OP_OK
 
 /obj/machinery/exonet_node/proc/ui_act_toggle_newscaster_port(datum/act/op/A)
-	allow_external_newscasters = !allow_external_newscasters
+	set_allow_external_newscasters(!allow_external_newscasters)
 	if(!allow_external_newscasters)
 		var/msg = "[A.actor.client.key] ([A.actor]) has turned [src]'s newscaster port off, at [x],[y],[z]."
 		message_admins(msg)
@@ -166,7 +166,7 @@ CAPABILITIES(/obj/machinery/exonet_node)
 /obj/machinery/exonet_node/proc/write_log(origin_address, target_address, data_type, content)
 	var/timestamp = "[stationdate2text()] [stationtime2text()]"
 	var/msg = "[timestamp] | FROM [origin_address] TO [target_address] | TYPE: [data_type] | CONTENT: [content]"
-	LAZYADD(logs, msg)
+	add_logs(msg)
 
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/exonet_node/step_start_condition()

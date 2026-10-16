@@ -121,18 +121,18 @@ CAPABILITIES(/obj/machinery/shield_capacitor)
 	if (PN)
 		var/power_draw = between(0, max_charge - stored_charge, charge_rate) //what we are trying to draw
 		power_draw = power_draw(PN, power_draw) //what we actually get
-		stored_charge += power_draw
+		set_stored_charge(stored_charge + power_draw)
 		if(power_draw <= 0 && stored_charge < max_charge)
 			return // the grid has nothing spare: it asks again next step
 	else
 		return PROCESS_KILL
 
-	time_since_fail++
+	set_time_since_fail(time_since_fail + 1)
 	if(stored_charge < last_stored_charge)
-		time_since_fail = 0 //losing charge faster than we can draw from PN
+		set_time_since_fail(0) //losing charge faster than we can draw from PN
 	last_stored_charge = stored_charge
 	if(stored_charge >= max_charge)
-		stored_charge = max_charge
+		set_stored_charge(max_charge)
 		return PROCESS_KILL
 
 /obj/machinery/shield_capacitor/proc/ui_act_toggle(datum/act/op/A)
@@ -144,7 +144,7 @@ CAPABILITIES(/obj/machinery/shield_capacitor)
 	. = TRUE
 
 /obj/machinery/shield_capacitor/proc/ui_act_charge_rate(datum/act/op/A, rate)
-	charge_rate = clamp(rate, 10000, max_charge_rate)
+	set_charge_rate(clamp(rate, 10000, max_charge_rate))
 	if(stored_charge < max_charge)
 		work_start(src)
 	. = TRUE

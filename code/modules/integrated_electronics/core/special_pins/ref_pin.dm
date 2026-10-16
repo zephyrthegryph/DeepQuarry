@@ -14,7 +14,7 @@
 
 /datum/integrated_io/ref/write_data_to_pin(new_data)
 	if(isnull(new_data) || ic_is_ref(new_data))
-		data = new_data
+		set_data(new_data)
 		holder().on_data_written()
 
 /datum/integrated_io/ref/display_pin_type()

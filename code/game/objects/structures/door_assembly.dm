@@ -207,7 +207,7 @@ CAPABILITIES(/obj/structure/door_assembly)
 	var/datum/prompt/R = A.answer
 	var/new_name = sanitizeSafe(R?.value, MAX_NAME_LEN)
 	if(!isnull(R?.value))
-		created_name = new_name
+		set_created_name(new_name)
 		update_state()
 	return OP_OK
 

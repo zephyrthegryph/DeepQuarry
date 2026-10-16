@@ -59,10 +59,10 @@
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "It's warm and wet, makes sense, considering it's inside of a space whale. You should take a moment to reflect upon how you got here, and how you might avoid situations like this in the future, while this whale attempts to mercilessly destroy you through various gastric processes."
-	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
-	B.digest_brute = 50
-	B.digest_burn = 50
-	B.escapechance = 0
+	B.set_mode_flags(DM_FLAG_THICKBELLY | DM_FLAG_NUMBING)
+	B.set_digest_brute(50)
+	B.set_digest_burn(50)
+	B.set_escapechance(0)
 
 /mob/living/simple_mob/vore/overmap/spacewhale/proc/spacewhale_restless_ready(datum/act/timer/A)
 	handle_restless()

@@ -342,10 +342,10 @@ CAPABILITIES(/datum/dq_state_probe)
 	var/obj/belly/belly = new(pred)
 	belly.name = "Tummy"
 	belly.desc = "A test belly."
-	belly.digest_mode = DM_DIGEST
-	belly.escapechance = 42
-	belly.struggle_messages_inside = list("one", "two")
-	belly.emote_lists = list(DM_HOLD = list("held"), DM_DIGEST = list("digested"))
+	belly.set_digest_mode(DM_DIGEST)
+	belly.set_escapechance(42)
+	belly.set_struggle_messages_inside(list("one", "two"))
+	belly.set_emote_lists(list(DM_HOLD = list("held"), DM_DIGEST = list("digested")))
 	belly.generated_reagents = list(REAGENT_ID_WATER = 1)
 	belly.reagents.add_reagent(REAGENT_ID_WATER, 10)
 
@@ -368,7 +368,7 @@ CAPABILITIES(/datum/dq_state_probe)
 	TEST_ASSERT_EQUAL(copy.owner, pred, "the loaded belly should belong to the mob it loaded into")
 	TEST_ASSERT(copy in pred.vore_organs, "the loaded belly should be registered on its owner")
 
-	belly.save_digest_mode = FALSE
+	belly.set_save_digest_mode(FALSE)
 	blob = state_serialize(belly)
 	TEST_ASSERT(!("digest_mode" in blob[STATE_KEY_VARS]), "digest mode is not saved when save_digest_mode is off")
 
@@ -383,7 +383,7 @@ CAPABILITIES(/datum/dq_state_probe)
 
 	// The soulgem saves its linked belly by name and relinks it on load.
 	var/obj/soulgem/gem = new(pred)
-	gem.inside_flavor = "a test room"
+	gem.set_inside_flavor("a test room")
 	rel_set(gem, nameof(gem.linked_belly), copy)
 	var/list/gem_blob = state_serialize(gem, NONE, errors)
 	TEST_ASSERT_NOTNULL(gem_blob, "the soulgem should serialize: [jointext(errors, "; ")]")

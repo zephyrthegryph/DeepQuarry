@@ -598,6 +598,13 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
  * none), any other type with DEP_ALL.
  */
 /proc/derived_mask(datum/E, var_name)
+	. = derived_mask_of(E, var_name)
+	// A window opening or closing changes who is shown the host's data, not the data: it never pushes the host's windows.
+	if(var_name == nameof(/datum::open_tguis))
+		. &= ~DEP_UI
+
+/// derived_mask() before the rule that a change of the window list pushes no window.
+/proc/derived_mask_of(datum/E, var_name)
 	if(!islist(GLOB?.derived_tables))
 		return DEP_ALL // the globals are still being built: nothing declares anything yet
 	if(GLOB.derived_remote_vars[var_name])

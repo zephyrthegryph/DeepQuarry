@@ -457,7 +457,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			if(E.salvageable && prob(30))
 				rel_add(WR, nameof(WR.crowbar_salvage), E)
 				E.forceMove(WR)
-				E.equip_ready = TRUE
+				E.set_equip_ready(TRUE)
 			else
 				E.forceMove(loc)
 				E.destroy()
@@ -709,11 +709,11 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		return
 	switch(choice)
 		if("Toggle Airtank")
-			use_internal_tank = !use_internal_tank
+			set_use_internal_tank(!use_internal_tank)
 			occupant_message("Now taking air from [use_internal_tank?"internal airtank":"environment"].")
 			src.mecha_log_message("Now taking air from [use_internal_tank?"internal airtank":"environment"].")
 		if("Toggle Light")
-			lights = !lights
+			set_lights(!lights)
 			if(lights)
 				set_glow(src, GLOW(glow_of(src).range + lights_power, null, null))
 			else
@@ -723,7 +723,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			play_sfx(src, SFX_MECHA_HEAVYLIGHTSWITCH)
 		if("View Stats")
 			// TGUI: open MechaInterface.tsx instead of browse().
-			tgui_subview = "main"
+			set_tgui_subview("main")
 			tgui_interact(occupant)
 
 ////////////////////////////
@@ -931,7 +931,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(overload)//Check if you have leg overload
 		update_integrity(get_integrity() - 1)
 		if(get_integrity() < max_integrity - max_integrity/3)
-			overload = 0
+			set_overload(0)
 			step_energy_drain = initial(step_energy_drain)
 			src.occupant_message(span_red("Leg actuators damage threshold exceded. Disabling overload."))
 
@@ -1692,7 +1692,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 /obj/mecha/proc/lights(mob/user)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(user!=occupant)	return
-	lights = !lights
+	set_lights(!lights)
 	if(lights)	set_glow(src, GLOW(glow_of(src).range + lights_power, null, null))
 	else		set_glow(src, GLOW(glow_of(src).range - lights_power, null, null))
 	src.occupant_message("Toggled lights [lights?"on":"off"].")
@@ -1719,7 +1719,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		to_chat(occupant, span_warning("\The [GC] shudders and barks, before returning to how it was before."))
 		return
 
-	use_internal_tank = !use_internal_tank
+	set_use_internal_tank(!use_internal_tank)
 	src.occupant_message("Now taking air from [use_internal_tank?"internal airtank":"environment"].")
 	src.mecha_log_message("Now taking air from [use_internal_tank?"internal airtank":"environment"].")
 	play_sfx(src, SFX_MECHA_GASDISCONNECTED, 0.6)
@@ -1885,7 +1885,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	if(!user || user != src?.slot_item(MECHA_SLOT_PILOT))
 		return
 	// The structured TGUI interface replaces the old browser window.
-	tgui_subview = "main"
+	set_tgui_subview("main")
 	tgui_interact(src?.slot_item(MECHA_SLOT_PILOT))
 	return
 
@@ -2190,7 +2190,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 /obj/mecha/proc/ui_act_view_main(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	tgui_subview = "main"
+	set_tgui_subview("main")
 	return TRUE
 // Access sub-view
 
@@ -2214,8 +2214,8 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 /obj/mecha/proc/ui_act_access_finish(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	add_req_access = 0
-	tgui_subview = "main"
+	set_add_req_access(0)
+	set_tgui_subview("main")
 	return TRUE
 // Maint sub-view
 
@@ -2224,7 +2224,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		return FALSE
 	var/obj/item/card/id/id_card = active_id_card
 	if(id_card)
-		tgui_subview = "access"
+		set_tgui_subview("access")
 	return TRUE
 
 /obj/mecha/proc/ui_act_maint_protocol(datum/act/op/A)
@@ -2400,7 +2400,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	if(!id_card || !user)
 		return
 	rel_set(src, nameof(active_id_card), id_card)
-	tgui_subview = "access"
+	set_tgui_subview("access")
 	tgui_interact(user)
 	return
 
@@ -2410,7 +2410,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	if(!id_card || !user)
 		return
 	rel_set(src, nameof(active_id_card), id_card)
-	tgui_subview = "maint"
+	set_tgui_subview("maint")
 	tgui_interact(user)
 	return
 
@@ -2430,7 +2430,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	log.len++
 	if(red)
 		message = span_red(message)
-	log[log.len] = list("time"=world.timeofday,"message"=message)
+	set_log_at(log.len, list("time"=world.timeofday,"message"=message))
 	return log.len
 
 /obj/mecha/proc/log_append_to_last(message as text,red=null)
@@ -2568,7 +2568,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	if(!topic_is_pilot(user))
 		return
 	// fully-structured TGUI log sub-view.
-	tgui_subview = "log"
+	set_tgui_subview("log")
 	tgui_interact(user)
 
 /obj/mecha/proc/exosuit_default_name(datum/act/op/A)
@@ -2588,7 +2588,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/mob/user = A.actor
 	if(!topic_is_pilot(user))
 		return
-	add_req_access = !add_req_access
+	set_add_req_access(!add_req_access)
 	send_byjax(user, "exosuit.browser", "t_id_upload", "[add_req_access ? "L" : "Unl"]ock ID upload panel")
 
 /obj/mecha/proc/topic_toggle_maint_access(datum/act/op/A)
@@ -2598,7 +2598,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	if(state)
 		occupant_message(span_warning("Maintenance protocols in effect"))
 		return
-	maint_access = !maint_access
+	set_maint_access(!maint_access)
 	send_byjax(user, "exosuit.browser", "t_maint_access", "[maint_access ? "Forbid" : "Permit"] maintenance protocols")
 
 /obj/mecha/proc/topic_maint_access(datum/act/op/A)
@@ -2672,7 +2672,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/mob/user = A.actor
 	if(!in_range(src, user))
 		return
-	add_req_access = 0
+	set_add_req_access(0)
 	// close TGUI panel (legacy browse(null))
 	SStgui.close_uis(src)
 
@@ -2684,13 +2684,13 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		occupant_message("You are a brain. No.")
 		return
 	var/mob/living/pilot = user
-	dna = pilot.dna?.unique_enzymes
+	set_dna(pilot.dna?.unique_enzymes)
 	occupant_message("You feel a prick as the needle takes your DNA sample.")
 
 /obj/mecha/proc/topic_reset_dna(datum/act/op/A)
 	var/mob/user = A.actor
 	if(topic_is_pilot(user))
-		dna = null
+		set_dna(null)
 
 /obj/mecha/proc/topic_drop_from_cargo(datum/act/op/A, href_drop_from_cargo)
 	var/mob/user = A.actor

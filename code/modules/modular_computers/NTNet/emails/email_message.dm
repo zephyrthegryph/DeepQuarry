@@ -24,9 +24,9 @@ CAPABILITIES(/datum/computer_file/data/email_message)
 // Turns /email_message/ file into regular /data/ file.
 /datum/computer_file/data/email_message/proc/export()
 	var/datum/computer_file/data/dat = new/datum/computer_file/data()
-	dat.stored_data =  "Received from [source] at [timestamp]."
-	dat.stored_data += "\[b\][title]\[/b\]"
-	dat.stored_data += stored_data
+	dat.set_stored_data("Received from [source] at [timestamp].")
+	dat.set_stored_data(dat.stored_data + ("\[b\][title]\[/b\]"))
+	dat.set_stored_data(dat.stored_data + stored_data)
 	dat.calculate_size()
 	return dat
 

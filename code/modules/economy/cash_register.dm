@@ -36,7 +36,7 @@
 REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 
 /obj/machinery/cash_register/proc/set_up_register(datum/act/timer/A)
-	machine_id = "[station_name()] RETAIL #[GLOB.num_financial_terminals++]"
+	set_machine_id("[station_name()] RETAIL #[GLOB.num_financial_terminals++]")
 	cash_stored = rand(10, 70)*10
 	if(GLOB.economy_init && account_to_connect)
 		rel_set(src, nameof(linked_account), GLOB.department_accounts[account_to_connect])
@@ -165,7 +165,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 /obj/machinery/cash_register/proc/ui_act_toggle_cash_lock(datum/act/op/A)
 	if(locked)
 		return FALSE
-	cash_locked = !cash_locked
+	set_cash_locked(!cash_locked)
 
 /obj/machinery/cash_register/proc/ui_act_link_account(datum/act/op/A, name, pin)
 	var/mob/user = A.actor
@@ -210,12 +210,12 @@ CAPABILITIES(/obj/machinery/cash_register)
 	if(item_list[t_purpose])
 		if(price_list[t_purpose] != price || item_list[t_purpose] + amount > 20)
 			return FALSE
-		item_list[t_purpose] += amount
+		set_item_list_at(t_purpose, item_list[t_purpose] + (amount))
 	else
 		if(length(item_list) >= 10)
 			return FALSE
-		item_list[t_purpose] = amount
-	price_list[t_purpose] = price
+		set_item_list_at(t_purpose, amount)
+	set_price_list_at(t_purpose, price)
 	capture_service_staff(user)
 	rebuild_ticket()
 	ticket_changed()
@@ -236,12 +236,12 @@ CAPABILITIES(/obj/machinery/cash_register)
 	if(!item_list[item_name])
 		return FALSE
 	if(!n_amount)
-		item_list -= item_name
-		price_list -= item_name
+		remove_item_list(item_name)
+		remove_price_list(item_name)
 		rebuild_ticket()
 		ticket_changed()
 		return TRUE
-	item_list[item_name] = n_amount
+	set_item_list_at(item_name, n_amount)
 	rebuild_ticket()
 	ticket_changed()
 	return TRUE
@@ -252,10 +252,10 @@ CAPABILITIES(/obj/machinery/cash_register)
 	var/item_name = item
 	if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
 		return FALSE
-	item_list[item_name]--
+	set_item_list_at(item_name, item_list[item_name] - 1)
 	if(item_list[item_name] <= 0)
-		item_list -= item_name
-		price_list -= item_name
+		remove_item_list(item_name)
+		remove_price_list(item_name)
 	rebuild_ticket()
 	ticket_changed()
 	return TRUE
@@ -268,7 +268,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 		return FALSE
 	if(item_list[item_name] >= 20)
 		return FALSE
-	item_list[item_name]++
+	set_item_list_at(item_name, item_list[item_name] + 1)
 	rebuild_ticket()
 	ticket_changed()
 	return TRUE
@@ -279,8 +279,8 @@ CAPABILITIES(/obj/machinery/cash_register)
 	var/item_name = item
 	if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
 		return FALSE
-	item_list -= item_name
-	price_list -= item_name
+	remove_item_list(item_name)
+	remove_price_list(item_name)
 	rebuild_ticket()
 	ticket_changed()
 	return TRUE
@@ -288,8 +288,8 @@ CAPABILITIES(/obj/machinery/cash_register)
 /obj/machinery/cash_register/proc/ui_act_clear_entry(datum/act/op/A)
 	if(locked)
 		return FALSE
-	item_list.Cut()
-	price_list.Cut()
+	clear_item_list()
+	clear_price_list()
 	verified_sale_items = null
 	rebuild_ticket()
 	ticket_changed()
@@ -301,7 +301,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 		return FALSE
 	if(linked_account?.department_id == DEPARTMENT_CIVILIAN)
 		return FALSE
-	LAZYCLEARLIST(transaction_logs)
+	clear_transaction_logs()
 	to_chat(user, "[icon2html(src, user.client)]" + span_notice("Transaction log reset."))
 	return TRUE
 
@@ -499,10 +499,11 @@ CAPABILITIES(/obj/machinery/cash_register)
 	src.visible_message("[icon2html(src, viewers(src))]\A [O]: [price ? "[price] Thaler\s" : "free of charge"].")
 	for(var/previously_scanned in item_list)
 		if(price == price_list[previously_scanned] && O.name == previously_scanned)
-			. = item_list[previously_scanned]++
+			. = item_list[previously_scanned]
+			set_item_list_at(previously_scanned, . + 1)
 	if(!.)
-		item_list[O.name] = 1
-		price_list[O.name] = price
+		set_item_list_at(O.name, 1)
+		set_price_list_at(O.name, price)
 		. = 1
 	rebuild_ticket()
 	if(!O.economic_sale_invoice_id)
@@ -571,7 +572,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 
 /obj/machinery/cash_register/proc/rebuild_ticket()
 	var/total = service_ticket_total(item_list, price_list)
-	transaction_amount = isnull(total) ? 0 : total
+	set_transaction_amount(isnull(total) ? 0 : total)
 	transaction_purpose = service_ticket_description(item_list, price_list)
 
 /obj/machinery/cash_register/proc/ticket_is_valid()
@@ -586,10 +587,10 @@ CAPABILITIES(/obj/machinery/cash_register)
 	reset_memory()
 
 /obj/machinery/cash_register/proc/reset_memory()
-	transaction_amount = null
+	set_transaction_amount(null)
 	transaction_purpose = ""
-	item_list.Cut()
-	price_list.Cut()
+	clear_item_list()
+	clear_price_list()
 	verified_sale_items = null
 	service_staff_account_number = 0
 	service_staff_name = null
@@ -624,7 +625,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 	set_req_access(list())
 	set_emagged(1)
 	set_locked(0)
-	cash_locked = 0
+	set_cash_locked(0)
 	open_cash_box(user)
 	return OP_OK
 

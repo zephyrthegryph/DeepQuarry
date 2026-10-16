@@ -47,7 +47,7 @@
 	for(var/datum/computer_file/program/P in idle_threads)
 		if(P.program_state != PROGRAM_STATE_KILLED)
 			P.ntnet_status = get_ntnet_status()
-			P.computer_emagged = computer_emagged
+			P.set_computer_emagged(computer_emagged)
 			P.process_tick()
 		else
 			rel_remove(src, nameof(idle_threads), P)
@@ -288,12 +288,12 @@
 	var/datum/computer_file/data/autorun = hard_drive.find_file_by_name("autorun")
 	if(!istype(autorun))
 		autorun = new/datum/computer_file/data()
-		autorun.filename = "autorun"
+		autorun.set_filename("autorun")
 		hard_drive.store_file(autorun)
 	if(autorun.stored_data == program)
-		autorun.stored_data = null
+		autorun.set_stored_data(null)
 	else
-		autorun.stored_data = program
+		autorun.set_stored_data(program)
 
 /obj/item/modular_computer/proc/find_file_by_uid(uid)
 	if(hard_drive)

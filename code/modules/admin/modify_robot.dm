@@ -601,28 +601,28 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 /datum/eventkit/modify_robot/proc/ui_act_change_zeroth_law(datum/act/op/A, val)
 	var/new_law = sanitize(val)
 	if(new_law && new_law != zeroth_law)
-		zeroth_law = new_law
+		set_zeroth_law(new_law)
 		target().lawsync()
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_change_ion_law(datum/act/op/A, val)
 	var/new_law = sanitize(val)
 	if(new_law && new_law != ion_law)
-		ion_law = new_law
+		set_ion_law(new_law)
 		target().lawsync()
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_change_inherent_law(datum/act/op/A, val)
 	var/new_law = sanitize(val)
 	if(new_law && new_law != inherent_law)
-		inherent_law = new_law
+		set_inherent_law(new_law)
 		target().lawsync()
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_change_supplied_law(datum/act/op/A, val)
 	var/new_law = sanitize(val)
 	if(new_law && new_law != supplied_law)
-		supplied_law = new_law
+		set_supplied_law(new_law)
 		target().lawsync()
 	return TRUE
 
@@ -630,7 +630,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	var/datum/prompt/P = A.answer
 	var/new_position = P?.value
 	if(isnum(new_position))
-		supplied_law_position = CLAMP(new_position, 1, MAX_SUPPLIED_LAW_NUMBER)
+		set_supplied_law_position(CLAMP(new_position, 1, MAX_SUPPLIED_LAW_NUMBER))
 		target().lawsync()
 	return TRUE
 
@@ -655,7 +655,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 		return
 	var/new_law = A.answer.value
 	if(new_law && new_law != AL.law)
-		AL.law = new_law
+		AL.set_law(new_law)
 		target().lawsync()
 
 /// The law a question about editing is open for.
@@ -698,7 +698,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_select_ai(datum/act/op/A, new_ai)
-	selected_ai = new_ai
+	set_selected_ai(new_ai)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_swap_sync(datum/act/op/A)

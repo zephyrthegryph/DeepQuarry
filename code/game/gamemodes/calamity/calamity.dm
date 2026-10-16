@@ -18,7 +18,7 @@
 	for(var/antag_id in antag_all_antag_types())
 		if(i > grab_antags)
 			break
-		LAZYOR(antag_tags, antag_id)
+		include_antag_tags(antag_id)
 		i++
 	..()
 

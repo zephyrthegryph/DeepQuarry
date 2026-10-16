@@ -94,19 +94,19 @@ CAPABILITIES(/mob/living/bot/cleanbot/edCLN)
 
 /mob/living/bot/cleanbot/edCLN/proc/ui_act_red_switch(datum/act/op/A)
 	add_fingerprint(A.actor)
-	red_switch = !red_switch
+	set_red_switch(!red_switch)
 	to_chat(A.actor, span_notice("You flip the red switch [red_switch ? "on" : "off"]."))
 	return OP_OK
 
 /mob/living/bot/cleanbot/edCLN/proc/ui_act_green_switch(datum/act/op/A)
 	add_fingerprint(A.actor)
-	green_switch = !green_switch
+	set_green_switch(!green_switch)
 	to_chat(A.actor, span_notice("You flip the green switch [green_switch ? "on" : "off"]."))
 	return OP_OK
 
 /mob/living/bot/cleanbot/edCLN/proc/ui_act_blue_switch(datum/act/op/A)
 	add_fingerprint(A.actor)
-	blue_switch = !blue_switch
+	set_blue_switch(!blue_switch)
 	to_chat(A.actor, span_notice("You flip the blue switch [blue_switch ? "on" : "off"]."))
 	return OP_OK
 

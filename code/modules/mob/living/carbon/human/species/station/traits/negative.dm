@@ -772,7 +772,7 @@
 	excludes = list(/datum/trait/neutral/synth_cosmetic_pain)
 
 /datum/trait/negative/synth_pain/apply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
-	H.synth_cosmetic_pain = TRUE
+	H.set_synth_cosmetic_pain(TRUE)
 	. = ..()
 
 /datum/trait/negative/rad_weakness

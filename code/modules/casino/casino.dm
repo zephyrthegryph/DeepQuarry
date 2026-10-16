@@ -476,7 +476,7 @@ MSG_DEF_SELF(casino/public_spin_disabled, "The Wheel makes a sad beep, public sp
 /obj/machinery/wheel_of_fortune/proc/wheel_interval_done(datum/act/op/A)
 	var/answer = A.step_value("wheel_interval")
 	if(!isnull(answer))
-		interval = answer
+		set_interval(answer)
 		to_chat(A.actor, span_notice("You set the interval to [interval]"))
 	return OP_OK
 

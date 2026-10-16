@@ -87,7 +87,7 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 			. += "It is almost completely destroyed."
 
 /obj/item/rig_module/proc/mend_with_paste(datum/act/op/A)
-	damage = 0
+	set_damage(0)
 	to_chat(A.actor, "You mend the damage to [src] with [A.held].")
 	var/obj/item/stack/nanopaste/paste = A.held
 	paste.use(1)
@@ -96,7 +96,7 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 /obj/item/rig_module/proc/mend_with_cable(datum/act/op/A)
 	var/obj/item/stack/cable_coil/cable = A.held
 	if(damage != 1 && cable.use(5))
-		damage = 1
+		set_damage(1)
 		to_chat(A.actor, "You mend some of damage to [src] with [cable], but you will need more advanced tools to fix it completely.")
 	return OP_OK
 
@@ -111,9 +111,9 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 			var/datum/rig_charge/charge_dat = new
 
 			charge_dat.short_name   = charge[1]
-			charge_dat.display_name = charge[2]
+			charge_dat.set_display_name(charge[2])
 			charge_dat.product_type = charge[3]
-			charge_dat.charges      = charge[4]
+			charge_dat.set_charges(charge[4])
 
 			if(!charge_selected) charge_selected = charge_dat.short_name
 			processed_charges[charge_dat.short_name] = charge_dat
@@ -171,7 +171,7 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 		return 0
 	if(!skip_engage && !engage(null, FALSE, user))
 		return 0
-	active = 1
+	set_active(1)
 
 	after(src, 0.1 SECONDS, PROC_REF(refresh_suit_overlay))
 
@@ -183,7 +183,7 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 	if(!active)
 		return 0
 
-	active = 0
+	set_active(0)
 
 	after(src, 0.1 SECONDS, PROC_REF(refresh_suit_overlay))
 

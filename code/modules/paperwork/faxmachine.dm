@@ -261,10 +261,10 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
 		if(check_access(scan))
 			set_authenticated(scan.registered_name)
-			rank = scan.assignment
+			set_rank(scan.assignment)
 	else if(login_type != LOGIN_TYPE_NORMAL && login_type == user.records_login_kind())
 		set_authenticated(user.name)
-		rank = user.records_login_rank()
+		set_rank(user.records_login_rank())
 
 /obj/machinery/photocopier/faxmachine/proc/ui_act_logout(datum/act/op/A)
 	var/mob/user = A.actor
@@ -510,7 +510,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	else
 		message_admins(sender, "[uppertext(destination)] FAX", rcvdcopy, "UNKNOWN")
 
-	sendcooldown = 1800
+	set_sendcooldown(1800)
 	after(src, 5 SECONDS, TYPE_PROC_REF(/atom, visible_message), with = list("[src] beeps, \"Message transmitted successfully.\""))
 
 // Turns objects into just text.
@@ -702,7 +702,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		role_request_discord_message("An automated request for crew has been made.\nJob: [jobname]\nReason: [reason]")
 
 /obj/machinery/photocopier/faxmachine/proc/cooldown_over()
-	sendcooldown = 0
+	set_sendcooldown(0)
 
 
 /datum/prompt/text/fax_paper_title

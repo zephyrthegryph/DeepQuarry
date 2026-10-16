@@ -104,7 +104,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 /obj/structure/windoor_assembly/proc/renamed(datum/act/op/A)
 	var/datum/prompt/R = A.answer
 	if(!isnull(R?.value))
-		created_name = sanitizeSafe(R.value, MAX_NAME_LEN)
+		set_created_name(sanitizeSafe(R.value, MAX_NAME_LEN))
 		update_state()
 	return OP_OK
 

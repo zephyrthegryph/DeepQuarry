@@ -32,7 +32,7 @@
 	TEST_ASSERT_EQUAL(mech.energy_relay, relay, "an attached relay should take over charge reads")
 	var/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/second = allocate(/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay, T)
 	TEST_ASSERT(!second.can_attach(mech), "a second relay should not attach")
-	relay.equip_ready = TRUE
+	relay.set_equip_ready(TRUE)
 	TEST_ASSERT_EQUAL(mech.get_charge(), mech.dyngetcharge(), "an idle relay should report the chassis's own charge")
 	relay.detach()
 	TEST_ASSERT_NULL(mech.energy_relay, "detaching the relay should clear the chassis ref")

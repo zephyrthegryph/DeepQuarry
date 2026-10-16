@@ -193,6 +193,6 @@ CAPABILITIES(/datum/vote)
 	var/mob/user = A.actor
 	. = TRUE
 	if(target in choices)
-		LAZYSET(voted, user.ckey, target)
+		set_voted_at(user.ckey, target)
 	else
 		message_admins(span_warning("User [key_name_admin(user)] spoofed a vote in the vote panel!"))

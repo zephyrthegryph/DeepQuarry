@@ -67,12 +67,12 @@ CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
-		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
-		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!"))
 
 /obj/item/projectile/energy/homing_bolt/wizard/boss
 	damage = 10

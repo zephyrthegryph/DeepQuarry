@@ -80,10 +80,10 @@
 		)
 		if(show_pictures) //disables icon mode
 			if(contents_count(inside_belly) <= max_icon_content)
-				icon_overflow = FALSE
+				set_icon_overflow(FALSE)
 				info["icon"] = cached_nom_icon(O)
 			else
-				icon_overflow = TRUE
+				set_icon_overflow(TRUE)
 		if(isliving(O))
 			var/mob/living/M = O
 			info["stat"] = M.stat
@@ -350,10 +350,10 @@
 				)
 				if(show_pictures) //disables icon mode
 					if(contents_count(selected) <= max_icon_content)
-						icon_overflow = FALSE
+						set_icon_overflow(FALSE)
 						info["icon"] = cached_nom_icon(O)
 					else
-						icon_overflow = TRUE
+						set_icon_overflow(TRUE)
 
 				if(isliving(O))
 					var/mob/living/M = O

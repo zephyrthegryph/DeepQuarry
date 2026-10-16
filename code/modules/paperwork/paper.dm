@@ -201,8 +201,8 @@ CAPABILITIES(/obj/item/paper/card)
 // handler is unchanged — byond:// hrefs embedded in info_links still
 // route back to it from inside the TGUI window's HTML container.
 /obj/item/paper/proc/show_content(mob/user, forceshow=0)
-	can_read_view = (forceshow || ui_viewer_fact(user, "paper_readable") || user?.universal_understand)
-	tgui_view = "read"
+	set_can_read_view((forceshow || ui_viewer_fact(user, "paper_readable") || user?.universal_understand))
+	set_tgui_view("read")
 	tgui_interact(user)
 
 /obj/item/paper/ui_data(datum/act/eval/A)
@@ -405,8 +405,8 @@ CAPABILITIES(/obj/item/paper/card)
 		dist = get_dist(src, user.camera)
 	else
 		dist = get_dist(src, user)
-	can_read_view = (dist < 2)
-	tgui_view = "read"
+	set_can_read_view((dist < 2))
+	set_tgui_view("read")
 	tgui_interact(user)
 	return OP_OK
 
@@ -489,7 +489,7 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 
 /obj/item/paper/proc/clearpaper()
 	set_info(null)
-	stamps = null
+	set_stamps(null)
 	free_space = MAX_PAPER_MESSAGE_LEN
 	stamped = list()
 	set_stamp_marks(null)
@@ -616,13 +616,13 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 			// pen interact opens Paper.tsx in "write" view; the
 			// info_links HTML rendered there still carries the field hrefs
 			// that route back to Topic for the actual write action.
-			can_read_view = TRUE
-			tgui_view = "write"
+			set_can_read_view(TRUE)
+			set_tgui_view("write")
 			tgui_interact(user)
 		return OP_PASS
 
 	else if(istype(P, /obj/item/stamp) || istype(P, /obj/item/clothing/accessory/ring/seal))
-		stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics(stamp_mark_text(P, "paper"))
+		set_stamps(stamps + ((stamps=="" ? "<HR>" : "<BR>") + span_italics(stamp_mark_text(P, "paper"))))
 		if((!in_range(src, user) && loc != user && !( istype(loc, /obj/item/clipboard) ) && loc.loc != user && user.get_active_hand() != P))
 			return OP_PASS
 		var/x, y

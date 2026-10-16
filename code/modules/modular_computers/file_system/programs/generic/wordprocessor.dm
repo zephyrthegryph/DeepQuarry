@@ -31,7 +31,7 @@
 	var/datum/computer_file/data/F = get_file(filename)
 	if(F)
 		set_open_file(F.filename)
-		loaded_data = F.stored_data
+		set_loaded_data(F.stored_data)
 		return TRUE
 
 /datum/computer_file/program/wordprocessor/proc/save_file(filename)
@@ -46,7 +46,7 @@
 	if(!HDD.remove_file(F))
 		spent(backup)
 		return 0
-	F.stored_data = loaded_data
+	F.set_stored_data(loaded_data)
 	F.calculate_size()
 	if(!HDD.store_file(F))
 		HDD.store_file(backup)
@@ -65,9 +65,9 @@
 	if(get_file(newname))
 		return
 	var/datum/computer_file/data/F = new/datum/computer_file/data()
-	F.filename = newname
-	F.filetype = "TXT"
-	F.stored_data = data
+	F.set_filename(newname)
+	F.set_filetype("TXT")
+	F.set_stored_data(data)
 	F.calculate_size()
 	if(HDD.store_file(F))
 		return F
@@ -126,15 +126,15 @@ CAPABILITIES(/datum/computer_file/program/wordprocessor)
 	return TRUE
 
 /datum/computer_file/program/wordprocessor/proc/ui_act_prg_closebrowser(datum/act/op/A)
-	browsing = 0
+	set_browsing(0)
 	return OP_OK
 
 /datum/computer_file/program/wordprocessor/proc/ui_act_prg_backtomenu(datum/act/op/A)
-	error = null
+	set_error(null)
 	return OP_OK
 
 /datum/computer_file/program/wordprocessor/proc/ui_act_prg_loadmenu(datum/act/op/A)
-	browsing = 1
+	set_browsing(1)
 	return OP_OK
 
 /// Unsaved changes are asked about before another file replaces them.
@@ -145,9 +145,9 @@ CAPABILITIES(/datum/computer_file/program/wordprocessor)
 	var/datum/prompt/save_answer = A.step_answer("save")
 	if(is_edited && save_answer?.value)
 		save_file(open_file)
-	browsing = 0
+	set_browsing(0)
 	if(!open_file(PRG_openfile))
-		error = "I/O error: Unable to open file '[PRG_openfile]'."
+		set_error("I/O error: Unable to open file '[PRG_openfile]'.")
 	return TRUE
 
 /datum/computer_file/program/wordprocessor/proc/ui_act_prg_newfile(datum/act/op/A, PRG_saveasfile)
@@ -162,10 +162,10 @@ CAPABILITIES(/datum/computer_file/program/wordprocessor)
 	var/datum/computer_file/data/F = create_file(newname)
 	if(F)
 		set_open_file(F.filename)
-		loaded_data = ""
+		set_loaded_data("")
 		return TRUE
 	else
-		error = "I/O error: Unable to create file '[PRG_saveasfile]'."
+		set_error("I/O error: Unable to create file '[PRG_saveasfile]'.")
 	return TRUE
 
 /datum/computer_file/program/wordprocessor/proc/ui_act_prg_saveasfile(datum/act/op/A, PRG_saveasfile)
@@ -177,7 +177,7 @@ CAPABILITIES(/datum/computer_file/program/wordprocessor)
 	if(F)
 		set_open_file(F.filename)
 	else
-		error = "I/O error: Unable to create file '[PRG_saveasfile]'."
+		set_error("I/O error: Unable to create file '[PRG_saveasfile]'.")
 	return TRUE
 
 /// A document with no name yet asks for one.
@@ -191,7 +191,7 @@ CAPABILITIES(/datum/computer_file/program/wordprocessor)
 		if(!open_file)
 			return 0
 	if(!save_file(open_file))
-		error = "I/O error: Unable to save file '[open_file]'."
+		set_error("I/O error: Unable to save file '[open_file]'.")
 	return TRUE
 
 /datum/computer_file/program/wordprocessor/proc/edit_question(datum/act/op/A)
@@ -206,16 +206,16 @@ CAPABILITIES(/datum/computer_file/program/wordprocessor)
 	var/newtext = replacetext(P?.value, "\n", "\[br\]")
 	if(!newtext)
 		return
-	loaded_data = newtext
+	set_loaded_data(newtext)
 	set_is_edited(1)
 	return TRUE
 
 /datum/computer_file/program/wordprocessor/proc/ui_act_prg_printfile(datum/act/op/A)
 	if(!computer().nano_printer)
-		error = "Missing Hardware: Your computer does not have the required hardware to complete this operation."
+		set_error("Missing Hardware: Your computer does not have the required hardware to complete this operation.")
 		return TRUE
 	if(!computer().nano_printer.print_text(pencode2html(loaded_data)))
-		error = "Hardware error: Printer was unable to print the file. It may be out of paper."
+		set_error("Hardware error: Printer was unable to print the file. It may be out of paper.")
 		return TRUE
 	return TRUE
 

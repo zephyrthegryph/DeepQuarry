@@ -25,7 +25,7 @@
 
 /obj/machinery/ai_slipper/proc/setState(enabled, uses)
 	set_disabled(!enabled)
-	src.uses = uses
+	set_uses(uses)
 	power_change()
 
 // TGUI migration. The old attack_hand opened AiSlipper.tsx; the
@@ -104,7 +104,7 @@ MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
 	if(cooldown_on || disabled || uses <= 0)
 		return TRUE
 	new /obj/effect/effect/foam(src.loc)
-	uses--
+	set_uses(uses - 1)
 	cooldown_time = world.timeofday + 10 SECONDS
 	set_cooldown_on(1)
 	return TRUE
@@ -117,7 +117,7 @@ MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
 	if(ticksleft > 0)
 		if(ticksleft > 1e5)
 			cooldown_time = world.timeofday + 1 SECOND	// midnight rollover
-		cooldown_timeleft = (ticksleft / 10)
+		set_cooldown_timeleft((ticksleft / 10))
 		return
 	if(uses <= 0)
 		set_cooldown_stopped(TRUE)

@@ -40,7 +40,7 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 		data["have_printer"] = !!program.computer().nano_printer
 		data["authenticated"] = program.can_run(user)
 		if(!program.computer().card_slot)
-			mod_mode = 0 //We can't modify IDs when there is no card reader
+			set_mod_mode(0) //We can't modify IDs when there is no card reader
 	else
 		data["have_id_slot"] = 0
 		data["have_printer"] = 0
@@ -136,7 +136,7 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 	var/obj/item/card/id/id_card
 	if(computer.card_slot)
 		id_card = computer.card_slot.stored_card()
-	mod_mode = mode_target
+	set_mod_mode(mode_target)
 	. = TRUE
 	if(id_card)
 		id_card.name = text("[id_card.registered_name]'s ID Card ([id_card.assignment])")
@@ -208,7 +208,7 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 	if(computer.card_slot)
 		id_card = computer.card_slot.stored_card()
 	if(computer && program.can_run(user, 1) && id_card)
-		id_card.assignment = "Dismissed" // setting adjustment
+		id_card.set_assignment("Dismissed") // setting adjustment
 		id_card.set_access(list())
 	. = TRUE
 	if(id_card)
@@ -259,7 +259,7 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 			var/temp_t = P?.value
 			//let custom jobs function as an impromptu alt title, mainly for sechuds
 			if(temp_t)
-				id_card.assignment = temp_t
+				id_card.set_assignment(temp_t)
 		else
 			var/list/access = list()
 			if(is_centcom)
@@ -278,8 +278,8 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 				access = jobdatum.get_access()
 
 			id_card.set_access(access)
-			id_card.assignment = t1
-			id_card.rank = t1
+			id_card.set_assignment(t1)
+			id_card.set_rank(t1)
 
 	. = TRUE
 	if(id_card)

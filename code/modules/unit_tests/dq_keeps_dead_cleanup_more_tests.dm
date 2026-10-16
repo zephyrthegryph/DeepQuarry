@@ -82,7 +82,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
 	var/obj/item/aicard/card = allocate(/obj/item/aicard, T)
-	card.flush = TRUE
+	card.set_flush(TRUE)
 	after(card, 1 SECONDS, TYPE_PROC_REF(/obj/item/aicard, wipe_ai_tick), with = list(AI, 0), keeps_dead = TRUE)
 	qdel(AI)
 	scheduler_advance(2)

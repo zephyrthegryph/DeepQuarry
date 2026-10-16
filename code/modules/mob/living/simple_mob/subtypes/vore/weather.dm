@@ -60,11 +60,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "furnace"
 	B.desc = "Turns out the skull head opens, and you have been consumed into the beast's furnace! Sweltering heat rages around you as your metal confines rumble with the rurr of strange machinery. The chamber jostling you about as you may attempt to escape, or perhaps accept your fate."
-	B.digest_brute = 0
-	B.digest_burn = 3
-	B.digestchance = 0
-	B.absorbchance = 0
-	B.escapechance = 15
+	B.set_digest_brute(0)
+	B.set_digest_burn(3)
+	B.set_digestchance(0)
+	B.set_absorbchance(0)
+	B.set_escapechance(15)
 
 /mob/living/simple_mob/vore/fossiltank/update_health_display()
 	. = ..()
@@ -172,11 +172,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "internal chamber"
 	B.desc = "It's smooth and translucent. You can see the world around you distort and wobble with the movement of the space jellyfish. It floats casually, while the delicate flesh seems to form to you. It's surprisingly cool, and flickers with its own light. You're on display for all to see, trapped within the confines of this strange space alien!"
-	B.digest_brute = 1
-	B.digest_burn = 1
-	B.digestchance = 0
-	B.absorbchance = 0
-	B.escapechance = 15
+	B.set_digest_brute(1)
+	B.set_digest_burn(1)
+	B.set_digestchance(0)
+	B.set_absorbchance(0)
+	B.set_escapechance(15)
 
 
 /mob/living/simple_mob/vore/boss_jellyfish/apply_melee_effects(atom/A) //Not a real threat unless multiple hits. It acts a timer for special traits.

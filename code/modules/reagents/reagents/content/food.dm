@@ -112,7 +112,7 @@
 	data["cooked"] = 0
 	if (holder && holder.my_atom && istype(holder.my_atom,/obj/item/reagent_containers/food/snacks))
 		data["cooked"] = 1
-		name = cooked_name
+		set_name(cooked_name)
 
 		//Batter which is part of objects at compiletime spawns in a cooked state
 

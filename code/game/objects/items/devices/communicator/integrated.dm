@@ -15,7 +15,7 @@
 
 /obj/item/communicator/integrated/proc/set_ghost_voice_universal()
 	for(var/mob/living/voice/V in contents)
-		V.universal_speak = 1
+		V.set_universal_speak(1)
 		V.universal_understand = 1
 
 // Verb: activate()

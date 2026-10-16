@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/integrated_circuit/time/ticker)
 	if(delay_input && isnum(delay_input) )
 		var/new_delay = CLAMP(delay_input, 1, 1 HOUR)
 		delay = new_delay
-		power_draw_per_use = CEILING((max_power_draw / delay) / delay, 1)
+		set_power_draw_per_use(CEILING((max_power_draw / delay) / delay, 1))
 
 	var/do_tick = get_pin_data(IC_INPUT, 1)
 	if(do_tick && !is_running)

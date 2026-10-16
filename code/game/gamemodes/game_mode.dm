@@ -50,14 +50,14 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/option = href_toggle
 	switch(option)
 		if("respawn")
-			deny_respawn = !deny_respawn
+			set_deny_respawn(!deny_respawn)
 		if("ert")
-			ert_disabled = !ert_disabled
+			set_ert_disabled(!ert_disabled)
 			announce_ert_disabled()
 		if("shuttle_recall")
-			auto_recall_shuttle = !auto_recall_shuttle
+			set_auto_recall_shuttle(!auto_recall_shuttle)
 		if("autotraitor")
-			round_autoantag = !round_autoantag
+			set_round_autoantag(!round_autoantag)
 	message_admins("Admin [key_name_admin(user)] toggled game mode option '[option]'.")
 	refresh_game_mode_panel(user)
 
@@ -76,20 +76,20 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 		if("shuttle_delay")
 			if(!choice || choice < 1 || choice > 20)
 				return
-			shuttle_delay = choice
+			set_shuttle_delay(choice)
 		if("antag_scaling")
 			if(isnull(choice) || choice < 0 || choice > 100)
 				return
-			antag_scaling_coeff = choice
+			set_antag_scaling_coeff(choice)
 		if("event_modifier_moderate")
 			if(isnull(choice) || choice < 0 || choice > 100)
 				return
-			event_delay_mod_moderate = choice
+			set_event_delay_mod_moderate(choice)
 			refresh_event_modifiers()
 		if("event_modifier_severe")
 			if(isnull(choice) || choice < 0 || choice > 100)
 				return
-			event_delay_mod_major = choice
+			set_event_delay_mod_major(choice)
 			refresh_event_modifiers()
 	message_admins("Admin [key_name_admin(user)] set game mode option '[option]' to [choice].")
 	refresh_game_mode_panel(user)
@@ -490,7 +490,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 /datum/game_mode/proc/create_antagonists()
 
 	if(!CONFIG_GET(flag/traitor_scaling))
-		antag_scaling_coeff = 0
+		set_antag_scaling_coeff(0)
 
 	if(antag_tags && length(antag_tags))
 		rel_clear(src, nameof(antag_templates))

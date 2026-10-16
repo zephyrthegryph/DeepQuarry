@@ -75,12 +75,12 @@
 		light from the pool of teal stomach juices, flashing you from random angles. The texture of the surroundings is only mildly soft, it feels \
 		firm, muscular body ensuring you stay in your place, drenched in fluids, pacified by constant churning motions. Effective and agile predator \
 		made sure you were helpless during the hunt, now its gut ensures you are as disoriented in this pit of flashing lights and bubbling acid."
-	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
-	B.digest_brute = 3
-	B.digest_burn = 2
-	B.digestchance = 0
-	B.absorbchance = 0
-	B.escapechance = 25
+	B.set_mode_flags(DM_FLAG_THICKBELLY | DM_FLAG_NUMBING)
+	B.set_digest_brute(3)
+	B.set_digest_burn(2)
+	B.set_digestchance(0)
+	B.set_absorbchance(0)
+	B.set_escapechance(25)
 	B.escape_stun = 5
 
 /datum/say_list/kururak

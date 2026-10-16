@@ -33,7 +33,7 @@ STATIC_ENTRY(uses_power)
 
 /datum/type_trait/power/copy_values(datum/type_trait/power/into)
 	into.channel = channel
-	into.idle = idle
+	into.set_idle(idle)
 	into.active = active
 
 /datum/entry_engine/type_trait/power

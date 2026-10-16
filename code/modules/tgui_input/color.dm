@@ -152,7 +152,7 @@ CAPABILITIES(/datum/tgui_color_picker)
 	if (!hex || !isnum(index) || entries[index] == hex)
 		return
 	entries[index] = hex
-	preset_colors = entries.Join(";")
+	set_preset_colors(entries.Join(";"))
 	return TRUE
 
 /datum/tgui_color_picker/proc/set_choice(choice)

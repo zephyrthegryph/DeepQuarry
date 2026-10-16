@@ -176,7 +176,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		throwpass = FALSE
 		name = get_visible_name()
 		for(var/obj/belly/B as anything in vore_organs)
-			B.escapable = initial(B.escapable)
+			B.set_escapable(initial(B.escapable))
 
 		set_invisibility(initial(invisibility))
 		see_invisible = initial(see_invisible)
@@ -293,7 +293,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 			name = get_visible_name()
 
 		for(var/obj/belly/B as anything in vore_organs)
-			B.escapable = B_ESCAPABLE_NONE
+			B.set_escapable(B_ESCAPABLE_NONE)
 
 		var/obj/effect/temp_visual/shadekin/phase_out/phaseanim = new SK.phase_out_anim(src.loc)
 		phaseanim.set_pixel_y((src.size_multiplier - 1) * 16) // Pixel shift for the animation placement

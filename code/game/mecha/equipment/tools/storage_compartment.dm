@@ -9,7 +9,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/storage/attach(obj/mecha/M)
 	. = ..()
-	M.cargo_capacity += storage_added
+	M.set_cargo_capacity(M.cargo_capacity + storage_added)
 
 /obj/item/mecha_parts/mecha_equipment/storage/detach()
 	chassis.cargo_capacity -= storage_added

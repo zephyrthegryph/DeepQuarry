@@ -223,7 +223,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
 	. = ..(language)
 	if (can_speak && (added_language in languages) && !(added_language in speech_synthesizer_langs))
-		speech_synthesizer_langs += added_language
+		add_speech_synthesizer_langs(added_language)
 		return 1
 
 /// knows(LANGUAGE_X, speaks = FALSE) learns a language the speech synthesizer leaves out.
@@ -236,7 +236,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		return
 
 	..(rem_language)
-	speech_synthesizer_langs -= removed_language
+	remove_speech_synthesizer_langs(removed_language)
 
 /mob/living/silicon/check_lang_data()
 	. = ""

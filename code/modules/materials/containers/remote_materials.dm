@@ -165,7 +165,7 @@ CAPABILITIES(/datum/remote_materials)
 					var/mat_amount = mat_container().materials[mat]
 					if(!mat_amount || !new_container.has_space(mat_amount) || !new_container.can_hold_material(mat))
 						continue
-					new_container.materials[mat] += mat_amount
+					new_container.set_materials_at(mat, new_container.materials[mat] + (mat_amount))
 					mat_container().materials[mat] = 0
 			if(mat_container() == local_container)
 				rel_clear(src, nameof(local_container)) // mat_container's view clears with it

@@ -41,7 +41,7 @@
 		return
 	var/datum/prompt/color/ask = A.answer
 	if(ask.value)
-		silk_color = ask.value
+		set_silk_color(ask.value)
 	SStgui.update_uis(src)
 
 //TGUI Weaver Panel
@@ -99,7 +99,7 @@ CAPABILITIES(/datum/trait_state/weaver)
 	return FALSE
 
 /datum/trait_state/weaver/proc/ui_act_toggle_silk_production(datum/act/op/A)
-	silk_production = !(silk_production)
+	set_silk_production(!(silk_production))
 	to_chat(owner, span_info("You are [silk_production ? "now" : "no longer"] producing silk."))
 	return FALSE
 

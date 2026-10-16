@@ -49,7 +49,7 @@
 	//Some moron disregarded the cooldown warning. Let's blow in their face.
 	if(prob(cool_failchance()))
 		explosion(middle(),rand(1,2),rand(2,3),rand(3,4))
-	next_shot = coolinterval + world.time
+	set_next_shot(coolinterval + world.time)
 
 	//Success, but we missed.
 	if(prob(100 - cal_accuracy()))

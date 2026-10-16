@@ -273,7 +273,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 		identity().ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
 		identity().ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
 		identity().ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
-		private_notes = client.prefs.read_preference(/datum/preference/text/living/private_notes)
+		set_private_notes(client.prefs.read_preference(/datum/preference/text/living/private_notes))
 
 	if (GLOB.malf && !(mind in GLOB.malf.current_antagonists))
 		show_laws()

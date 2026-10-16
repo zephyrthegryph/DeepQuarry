@@ -156,17 +156,17 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "Stomach"
 	B.desc = "The toothy jaws of the space carp gnash down around your body while its throat opens up to suck you inside. The vicious attack is too swift for you to stop it. You're dragged down its short esophagus, then dumped into its muscular digestive system. Your body curls tight in the cramped confines of its slimy stomach; pushing aside a caustic mixture of other unrecognizable detritus. You realize the soupy chime consists of past explorers who went missing long ago. If you can't push your way back up to freedom, your fate will be the same."
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.digest_brute = 0.5
-	B.digest_burn = 0.5
-	B.escapechance = 20
-	B.belly_fullscreen = "VBOanim_belly1"
-	B.belly_fullscreen_color = "#660021"
-	B.belly_fullscreen_color2 = "#660021"
-	B.fancy_vore = 1
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_digest_brute(0.5)
+	B.set_digest_burn(0.5)
+	B.set_escapechance(20)
+	B.set_belly_fullscreen("VBOanim_belly1")
+	B.set_belly_fullscreen_color("#660021")
+	B.set_belly_fullscreen_color2("#660021")
+	B.set_fancy_vore(1)
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"They say a space carp's belly can digest almost anything. You're going to find out first hand if you stay here for much longer.",
 		"The gastric fluids sizzle ferociously as they ooze across your form.",
 		"A possessive squeeze of the wrinkled walls forces you to scrunch against yourself, as if to say you're not even a bother. This powerful digestive system has processed far more hazardous prey than you.",
@@ -175,20 +175,20 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 		"The carp's disgusting innards slowly mix you around with acid. As far as it's concerned, you're nothing but fish food now.",
 		"The stomach walls of the fishy predator push against you from all sides, smushing you into the leftovers of the last adventurer to wind up here.",
 		"The carp's belly gushes over you with slow, muscular compressions. Every passing second allows more acid to be rubbed against you."
-		)
+		))
 
-	B.struggle_messages_inside = list(
+	B.set_struggle_messages_inside(list(
 		"You jab with all your strength to free yourself from the carp's putrid gut.",
 		"The carp's belly bounces at your thrashing while the creature hunts its next meal.",
 		"You push and pry at the stomach sphincter, trying to force your way out.",
 		"You shove against the back of the carp's stomach for leverage as you try forcing your head up its throat.",
 		"You try to wriggle yourself out of the carp's belly before it grinds you into chum.",
 		"Your feisty squirming is rewarded with a tight CLENCH from all sides. The carp stubbornly reminds you that it has eaten far worse."
-		)
+		))
 
-	B.struggle_messages_outside = list(
+	B.set_struggle_messages_outside(list(
 		"%pred's stomach lurches with movement beneath its underbelly scales. Someone is alive in there!"
-		)
+		))
 
 // Subtypes.
 
@@ -264,14 +264,14 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "You've been swallowed whole and alive by a massive white carp! The stomach around you is oppressively tight, squeezing and grinding wrinkled walls across your body, making it hard to make any movement at all. The chamber is flooded with fluids that completely overwhelm you."
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.digest_brute = 2
-	B.digest_burn = 2
-	B.digest_oxy = 1
-	B.digestchance = 100
-	B.absorbchance = 0
-	B.escapechance = 3
-	B.selective_preference = DM_DIGEST
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_digest_brute(2)
+	B.set_digest_burn(2)
+	B.set_digest_oxy(1)
+	B.set_digestchance(100)
+	B.set_absorbchance(0)
+	B.set_escapechance(3)
+	B.set_selective_preference(DM_DIGEST)
 	B.escape_stun = 10
 
 /mob/living/simple_mob/animal/space/carp/holographic

@@ -64,12 +64,12 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 	if(!istype(M) || M != user) // self-only: nobody accepts for someone else
 		return
 	if(M.mind?.special_role || jobban_isbanned(M, JOB_SYNDICATE))
-		temptext = span_italics("We have no need for you at this time. Have a pleasant day.") + "<br>"
+		set_temptext(span_italics("We have no need for you at this time. Have a pleasant day.") + "<br>")
 		return
-	charges -= 1
+	set_charges(charges - 1)
 	switch(rand(1,2))
 		if(1)
-			temptext = span_red(span_italics(span_bold("Double-crosser. You planned to betray us from the start. Allow us to repay the favor in kind.")))
+			set_temptext(span_red(span_italics(span_bold("Double-crosser. You planned to betray us from the start. Allow us to repay the favor in kind."))))
 			after(src, rand(5 SECONDS,20 SECONDS), PROC_REF(selfdestruct))
 			return
 		if(2)
@@ -83,7 +83,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 
 
 /obj/machinery/syndicate_beacon/proc/selfdestruct()
-	selfdestructing = 1
+	set_selfdestructing(1)
 	explosion(src.loc, 1, rand(1,3), rand(3,8), 10)
 
 ////////////////////////////////////////
@@ -189,10 +189,10 @@ CAPABILITIES(/obj/machinery/power/singularity_beacon)
 	if(!istype(M) || !M.mind)
 		return
 	if(M.mind.tcrystals > 0 || jobban_isbanned(M, JOB_SYNDICATE))
-		temptext = "<i>We have no need for you at this time. Have a pleasant day.</i><br>"
+		set_temptext("<i>We have no need for you at this time. Have a pleasant day.</i><br>")
 		refresh_ui(src)
 		return
-	charges -= 1
+	set_charges(charges - 1)
 	if(ishuman(M))
 		var/mob/living/carbon/human/N = M
 		to_chat(N, span_infoplain(span_bold("Access granted, here are the supplies!")))

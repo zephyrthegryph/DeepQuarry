@@ -70,11 +70,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/fennec)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Warm, slick, and wet. You're somewhere hot, tight, and very cramped, unless you happen to somehow be smaller than the fennec you're in! It's hard to see, as rippling pink walls clench and smother over your form. If you don't want to be here, a newspaper from a friend ought to get you out. ...right?"
-	B.vore_sound = "Tauric Swallow"
-	B.release_sound = "Pred Escape"
-	B.fancy_vore = TRUE
-	B.belly_fullscreen_color = "#c47cb4"
-	B.belly_fullscreen = "VBOanim_belly1"
+	B.set_vore_sound("Tauric Swallow")
+	B.set_release_sound("Pred Escape")
+	B.set_fancy_vore(TRUE)
+	B.set_belly_fullscreen_color("#c47cb4")
+	B.set_belly_fullscreen("VBOanim_belly1")
 
 /datum/say_list/fennec
 	speak = list("SKREEEE!","Chrp?","Ararrrararr.")

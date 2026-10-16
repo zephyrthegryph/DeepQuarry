@@ -107,13 +107,13 @@
 	var/static/alist/leg = alist(BF_SLOWDOWN = 4)
 	switch(O.organ_tag)
 		if(BP_L_ARM, BP_L_HAND)
-			factors = left_hand
+			set_factors(left_hand)
 			spontaneous_emotes = list("wince at their useless arm")
 		if(BP_R_ARM, BP_R_HAND)
-			factors = right_hand
+			set_factors(right_hand)
 			spontaneous_emotes = list("wince at their useless arm")
 		if(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
-			factors = leg
+			set_factors(leg)
 			spontaneous_emotes = list("limps badly")
 			spontaneous_emote_prob = 3
 

@@ -41,7 +41,7 @@ CAPABILITIES(/datum/using_machine_shim)
 	..()
 	var/obj/machinery/machine = linked_machine()
 	if(machine)
-		machine.in_use = FALSE
+		machine.set_in_use(FALSE)
 	if(owner)
 		seq_extra_remove(owner, /datum/sequence/life, src)
 		owner.reset_perspective()

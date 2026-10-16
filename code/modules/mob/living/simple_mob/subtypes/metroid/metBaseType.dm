@@ -93,32 +93,32 @@ CAPABILITIES(/mob/living/simple_mob/metroid)
 /mob/living/simple_mob/metroid/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected_of(src)
-	B.digest_brute = 1
-	B.digest_burn = 1
-	B.vore_verb = "swallow"
+	B.set_digest_brute(1)
+	B.set_digest_burn(1)
+	B.set_vore_verb("swallow")
 	B.name = "membrane" //THERE IS A RUNTIME HERE SOMEHOW
 	B.desc	= "The metroid positions itself above you and swoops down, lazily enveloping you through its tight mouth and sending you straight to its bulbous membrane for all to see."
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
+	B.set_emote_lists_at(DM_HOLD, list(
 	"The metroid's cortex tentacles wriggle over you, violating and teasing you as they sopped you in viscous slime.",
 	"The cortex you are forced against pulses with life, gently squeezing you between it and the stretchy membrane around you.",
 	"You press your face against the transparent membrane, watching how the world distorts as it stretches over your eyes.",
 	"The air around you is so thick. You struggle to breathe occasionally, choking on the heat and moisture.",
 	"You struggle a bit, making the membrane swell out."
-	)
+	))
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 	"The cortex tentacles are pulsating like lines of power streaking away from you as it drains you. Waves of sleepiness wash over you as the areas most closest to the tentacles are drained of energy.",
 	"The air feels a tinge incendiary as the cortex you rest on heats up, fueled by your own body as the metroid draws your strenght away from you.",
 	"As you grow weaker, your movements against the membrane grow weaker as well, making you feel as if the membrane is closing around you, wrapping and squeezing you, draining you for all you are worth.",
 	"You feel faint as the tentacles wrapped around you sap you of your strength, seemingly eager to drain and claim you for food."
-	)
-	B.digest_messages_prey = list(
+	))
+	B.set_digest_messages_prey(list(
 	"You can't stay awake anymore, the clear world around you going fuzzy until you can see it no more.",
 	"The tinge of the air grows to a crescendo and then fades away, just as the rest of your body fizzles into energy for the metroid.",
 	"The tentacles squeeze you one last time as the last of your energy is sapped and your body is claimed as food for the metroid.",
 	"The metroid swells as it absorbs the rest of your life force and nutrients into its body, making it stronger and even hungry for more."
-	)
+	))
 
 /mob/living/simple_mob/metroid/on_death(gibbed)
 	..()

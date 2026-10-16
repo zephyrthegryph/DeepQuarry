@@ -11,8 +11,8 @@
 	var/datum/language/unknown = GLOB.all_languages[LANGUAGE_SKRELLIAN]
 	speaker.add_language(LANGUAGE_TRADEBAND)
 	speaker.remove_language(LANGUAGE_SKRELLIAN)
-	speaker.only_species_language = FALSE
-	speaker.species_language = LANGUAGE_GALCOM
+	speaker.set_only_species_language(FALSE)
+	speaker.set_species_language(LANGUAGE_GALCOM)
 	speaker.add_language(LANGUAGE_GALCOM)
 	TEST_ASSERT(known && unknown, "both languages exist")
 	inbox_topic(speaker, speaker, list("default_lang" = "[REF(known)]"))

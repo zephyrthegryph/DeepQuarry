@@ -46,7 +46,7 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 	if(!first_disposal)
 		first_disposal = GLOB.disposal_pipe_recipes[GLOB.disposal_pipe_recipes[1]][1]
 	if(!recipe())
-		recipe_static = first_atmos
+		set_recipe_static(first_atmos)
 
 // RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
 CAPABILITIES(/obj/item/pipe_dispenser)
@@ -121,7 +121,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	if(!ui_gate(A))
 		return FALSE
 	var/playeffect = TRUE
-	paint_color = paint_color_arg
+	set_paint_color(paint_color_arg)
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
@@ -131,13 +131,13 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	if(!ui_gate(A))
 		return FALSE
 	var/playeffect = TRUE
-	category = category_arg
+	set_category(category_arg)
 	switch(category)
 		if(DISPOSALS_CATEGORY)
-			recipe_static = first_disposal
+			set_recipe_static(first_disposal)
 		if(ATMOS_CATEGORY)
-			recipe_static = first_atmos
-	p_dir = NORTH
+			set_recipe_static(first_atmos)
+	set_p_dir(NORTH)
 	playeffect = FALSE
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
@@ -148,7 +148,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	if(!ui_gate(A))
 		return FALSE
 	var/playeffect = TRUE
-	piping_layer = piping_layer_arg
+	set_piping_layer(piping_layer_arg)
 	playeffect = FALSE
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
@@ -162,8 +162,8 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	var/static/list/recipes
 	if(!recipes)
 		recipes = GLOB.disposal_pipe_recipes + GLOB.atmos_pipe_recipes
-	recipe_static = recipes[category][pipe_type]
-	p_dir = NORTH
+	set_recipe_static(recipes[category][pipe_type])
+	set_p_dir(NORTH)
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
@@ -173,7 +173,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	if(!ui_gate(A))
 		return FALSE
 	var/playeffect = TRUE
-	p_dir = text2dir(dir)
+	set_p_dir(text2dir(dir))
 	p_flipped = flipped
 	playeffect = FALSE
 	if(playeffect)
@@ -187,9 +187,9 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	var/playeffect = TRUE
 	var/n = mode_arg
 	if(mode & n)
-		mode &= ~n
+		set_mode(mode & (~n))
 	else
-		mode |= n
+		set_mode(mode | n)
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)

@@ -406,18 +406,18 @@ CAPABILITIES(/obj/item/communicator)
 	add_fingerprint(A.actor)
 	switch(network_visibility)
 		if(1) //Visible, becoming invisbile
-			network_visibility = 0
+			set_network_visibility(0)
 			if(camera)
 				camera.remove_network(NETWORK_COMMUNICATORS)
 		if(0) //Invisible, becoming visible
-			network_visibility = 1
+			set_network_visibility(1)
 			if(camera)
 				camera.add_network(NETWORK_COMMUNICATORS)
 	return OP_OK
 
 /obj/item/communicator/proc/ui_act_toggle_ringer(datum/act/op/A)
 	add_fingerprint(A.actor)
-	ringer = !ringer
+	set_ringer(!ringer)
 	return OP_OK
 
 /obj/item/communicator/proc/ui_act_set_ringer_tone(datum/act/op/A)
@@ -429,7 +429,7 @@ CAPABILITIES(/obj/item/communicator)
 
 /obj/item/communicator/proc/ui_act_selfie_mode(datum/act/op/A)
 	add_fingerprint(A.actor)
-	selfie_mode = !selfie_mode
+	set_selfie_mode(!selfie_mode)
 	return OP_OK
 
 /obj/item/communicator/proc/ui_act_add_hex(datum/act/op/A, add_hex)
@@ -441,11 +441,11 @@ CAPABILITIES(/obj/item/communicator)
 /obj/item/communicator/proc/ui_act_write_target_address(datum/act/op/A, val)
 	add_fingerprint(A.actor)
 	. = TRUE
-	target_address = sanitizeSafe(val)
+	set_target_address(sanitizeSafe(val))
 
 /obj/item/communicator/proc/ui_act_clear_target_address(datum/act/op/A)
 	add_fingerprint(A.actor)
-	target_address = ""
+	set_target_address("")
 	return OP_OK
 
 /obj/item/communicator/proc/ui_act_dial(datum/act/op/A, dial)
@@ -476,7 +476,7 @@ CAPABILITIES(/obj/item/communicator)
 	if(!text)
 		return TRUE
 	exonet.send_message(their_address, "text", text)
-	LAZYADD(im_list, list(list("address" = exonet.address, "to_address" = their_address, "im" = text)))
+	add_im_list(list(list("address" = exonet.address, "to_address" = their_address, "im" = text)))
 	user.log_talk("(COMM: [src]) sent \"[text]\" to [exonet.get_atom_from_address(their_address)]", LOG_PDA)
 	var/obj/item/communicator/comm = exonet.get_atom_from_address(their_address)
 	to_chat(user, span_notice("[icon2html(src, user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[text]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
@@ -518,12 +518,12 @@ CAPABILITIES(/obj/item/communicator)
 /obj/item/communicator/proc/ui_act_copy(datum/act/op/A, copy)
 	add_fingerprint(A.actor)
 	. = TRUE
-	target_address = copy
+	set_target_address(copy)
 
 /obj/item/communicator/proc/ui_act_copy_name(datum/act/op/A, copy_name)
 	add_fingerprint(A.actor)
 	. = TRUE
-	target_address_name = copy_name
+	set_target_address_name(copy_name)
 
 /obj/item/communicator/proc/ui_act_hang_up(datum/act/op/A)
 	add_fingerprint(A.actor)
@@ -536,30 +536,30 @@ CAPABILITIES(/obj/item/communicator)
 /obj/item/communicator/proc/ui_act_switch_tab(datum/act/op/A, switch_tab)
 	add_fingerprint(A.actor)
 	. = TRUE
-	selected_tab = switch_tab
+	set_selected_tab(switch_tab)
 
 /obj/item/communicator/proc/ui_act_edit(datum/act/op/A)
 	add_fingerprint(A.actor)
 	var/n = sanitizeSafe(A.step_value("note"), extra = 0)
 	if(n)
-		note = html_decode(n)
+		set_note(html_decode(n))
 		notehtml = note
-		note = replacetext(note, "\n", "<br>")
+		set_note(replacetext(note, "\n", "<br>"))
 	else
-		note = ""
+		set_note("")
 		notehtml = note
 	return TRUE
 
 /obj/item/communicator/proc/ui_act_light(datum/act/op/A)
 	add_fingerprint(A.actor)
 	. = TRUE
-	fon = !fon
+	set_fon(!fon)
 	set_glow(src, GLOW(fon * flum, null, null))
 
 /obj/item/communicator/proc/ui_act_newsfeed(datum/act/op/A, newsfeed)
 	add_fingerprint(A.actor)
 	. = TRUE
-	newsfeed_channel = newsfeed
+	set_newsfeed_channel(newsfeed)
 
 /// Relation view: last camera turf (reads null once it is gone).
 /obj/item/communicator/proc/last_camera_turf() as /turf

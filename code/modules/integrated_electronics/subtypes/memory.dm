@@ -36,7 +36,7 @@
 	for(var/i = 1 to inputs.len)
 		var/datum/integrated_io/I = inputs[i]
 		var/datum/integrated_io/O = outputs[i]
-		O.data = I.data
+		O.set_data(I.data)
 		O.push_data()
 	activate_pin(2)
 
@@ -106,7 +106,7 @@ CAPABILITIES(/obj/item/integrated_circuit/memory/constant)
 			to_chat(user, span_notice("You turn \the [src]'s ref scanner on. Slide it across \
 				an object for a ref of that object to save it in memory."))
 		if("null")
-			O.data = null
+			O.set_data(null)
 			to_chat(user, span_notice("You set \the [src]'s memory to absolutely nothing."))
 	review.retire()
 
@@ -121,17 +121,17 @@ CAPABILITIES(/obj/item/integrated_circuit/memory/constant)
 		if("string")
 			new_data = sanitizeSafe(new_data, MAX_NAME_LEN, 0, 0)
 			if(istext(new_data))
-				O.data = new_data
+				O.set_data(new_data)
 				to_chat(user, span_notice("You set \the [src]'s memory to [O.display_data(O.data)]."))
 		if("number")
 			if(isnum(new_data))
-				O.data = new_data
+				O.set_data(new_data)
 				to_chat(user, span_notice("You set \the [src]'s memory to [O.display_data(O.data)]."))
 
 /obj/item/integrated_circuit/memory/constant/afterattack(atom/target, mob/living/user, proximity)
 	if(accepting_refs && proximity)
 		var/datum/integrated_io/O = outputs[1]
-		O.data = ic_ref(target)
+		O.set_data(ic_ref(target))
 		act_message(user, src, others = span_notice("%U% slides %T% over \the [target]."))
 		to_chat(user, span_notice("You set \the [src]'s memory to a reference to [O.display_data(O.data)]. The ref scanner is \
 		now off."))

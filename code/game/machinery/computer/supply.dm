@@ -44,9 +44,9 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	var/mob/user = A.actor
 	if(!can_order_contraband)
 		to_chat(user, span_notice("Special supplies unlocked."))
-		authorization |= SUP_CONTRABAND
+		set_authorization(authorization | SUP_CONTRABAND)
 		set_req_access(list())
-		can_order_contraband = TRUE
+		set_can_order_contraband(TRUE)
 		return OP_OK
 	return OP_DECLINE
 

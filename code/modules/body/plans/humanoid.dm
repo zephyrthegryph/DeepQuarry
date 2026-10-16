@@ -207,10 +207,10 @@
 	set_dirty(dirty & (~BODY_DIRTY_VITALS))
 	var/mob/living/carbon/human/H = owner
 	var/worst_part = worst_vital_part_fraction()
-	pain = compute_pain()
+	set_pain(compute_pain())
 	H.traumatic_shock = pain
-	consciousness = compute_consciousness(worst_part)
-	vitality = compute_vitality(worst_part)
+	set_consciousness(compute_consciousness(worst_part))
+	set_vitality(compute_vitality(worst_part))
 
 /// Pain: afflictions plus the raw wound load of limbs that can feel it, less
 /// analgesia.
@@ -360,12 +360,12 @@
 	if(!length(table))
 		return
 	LAZYINITLIST(granted_factors)
-	granted_factors[++granted_factors.len] = table
+	set_granted_factors_at(++granted_factors.len, table)
 
 /datum/species/proc/revoke_factors(alist/table)
 	if(!granted_factors)
 		return
-	granted_factors -= list(table)
+	remove_granted_factors(list(table))
 	UNSETEMPTY(granted_factors)
 
 /// The species' own value of a factor (baseline plus traits), without any

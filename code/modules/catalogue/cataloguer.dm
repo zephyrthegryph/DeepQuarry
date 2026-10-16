@@ -263,7 +263,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 // Negative points are bad.
 /obj/item/cataloguer/proc/adjust_points(amount)
-	points_stored = max(0, points_stored += amount)
+	set_points_stored(max(0, points_stored += amount))
 
 /obj/item/cataloguer/proc/cataloguer_controls_opened(datum/act/op/A)
 	var/mob/living/user = A.actor
@@ -286,7 +286,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 		if(points_stored)
 			var/datum/money_account/account = get_account(ID.associated_account_number)
 			if(account?.credit(points_stored, name, "Catalogue data proceeds", name))
-				points_stored = 0
+				set_points_stored(0)
 			to_chat(user, span_notice("You swipe the id over \the [src]."))
 		else
 			to_chat(user, span_notice("\The [src] has no points available."))

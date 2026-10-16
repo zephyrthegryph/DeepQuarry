@@ -78,17 +78,17 @@
 	if(!isliving(owner))
 		return FALSE
 	if(glows)
-		src.glows = glows
+		set_glows(glows)
 	if(glow_toggle)
-		src.glow_toggle = glow_toggle
+		set_glow_toggle(glow_toggle)
 	if(radiation_glow_threshold)
 		src.radiation_glow_threshold = radiation_glow_threshold
 	if(contamination)
-		src.contamination = contamination
+		set_contamination(contamination)
 	if(contamination_strength)
 		src.contamination_strength = contamination_strength
 	if(radiation_color)
-		src.radiation_color = radiation_color
+		set_radiation_color(radiation_color)
 	if(intensity_mod)
 		src.intensity_mod = intensity_mod
 	if(range_mod)
@@ -96,11 +96,11 @@
 	if(radiation_immunity)
 		src.radiation_immunity = radiation_immunity
 	if(radiation_nutrition)
-		src.radiation_nutrition = radiation_nutrition
+		set_radiation_nutrition(radiation_nutrition)
 	if(nutrition_toggle)
-		src.nutrition_toggle = nutrition_toggle
+		set_nutrition_toggle(nutrition_toggle)
 	if(radiation_nutrition_cap)
-		src.radiation_nutrition_cap = radiation_nutrition_cap
+		set_radiation_nutrition_cap(radiation_nutrition_cap)
 	if(radiation_healing)
 		src.radiation_healing = radiation_healing
 	if(radiation_dissipation)
@@ -300,7 +300,7 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 		return
 	var/datum/prompt/color/ask = A.answer
 	if(ask.value)
-		radiation_color = ask.value
+		set_radiation_color(ask.value)
 	SStgui.update_uis(src)
 
 /datum/trait_state/radiation_effects/proc/ui_act_toggle_color(datum/act/op/A)
@@ -309,12 +309,12 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 	return FALSE
 
 /datum/trait_state/radiation_effects/proc/ui_act_toggle_glow(datum/act/op/A)
-	glows = !glows
+	set_glows(!glows)
 	to_chat(owner, span_info("You are [glows ? "now" : "no longer"] glowing."))
 	return FALSE
 
 /datum/trait_state/radiation_effects/proc/ui_act_toggle_nutrition(datum/act/op/A)
-	radiation_nutrition = !radiation_nutrition
+	set_radiation_nutrition(!radiation_nutrition)
 	to_chat(owner, span_info("You are [radiation_nutrition ? "now" : "no longer"] gaining nutrition from radiation."))
 	return FALSE
 

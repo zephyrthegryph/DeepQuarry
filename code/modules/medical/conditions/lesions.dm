@@ -118,16 +118,16 @@
 /// in for the organ's own.
 /datum/affliction/lesion/configure(location)
 	var/obj/item/organ/internal/O = istype(location, /obj/item/organ/internal) ? location : null
-	treated_by = list()
+	set_treated_by(list())
 	if(organ_tag_rate)
 		var/repair_tag = O ? O.lesion_repair_tag() : TREAT_TISSUE_REPAIR
-		treated_by[repair_tag] = organ_tag_rate
+		set_treated_by_at(repair_tag, organ_tag_rate)
 	var/list/extra = TYPE_TABLE_GET(src, get_extra_treatments)
 	for(var/tag in extra)
-		treated_by[tag] = max(treated_by[tag], extra[tag])
+		set_treated_by_at(tag, max(treated_by[tag], extra[tag]))
 	if(self_heals)
-		treated_by[TREAT_REGENERATION] = LESION_REGENERATION_RATE
-	name = O ? lesion_name(O) : initial(name)
+		set_treated_by_at(TREAT_REGENERATION, LESION_REGENERATION_RATE)
+	set_name(O ? lesion_name(O) : initial(name))
 	symptom_pool = list()
 	if(finding_symptom)
 		symptom_pool[finding_symptom] = 100

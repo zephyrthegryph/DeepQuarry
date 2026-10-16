@@ -66,12 +66,12 @@
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "You've been packed into the impossibly tight stomach of the dust jumper!!! The broiling heat seeps into you while the walls churn in powerfully, forcing you to curl up in the darkness."
-	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
-	B.digest_brute = 0.5
-	B.digest_burn = 0.5
-	B.digestchance = 10
-	B.absorbchance = 0
-	B.escapechance = 25
+	B.set_mode_flags(DM_FLAG_THICKBELLY | DM_FLAG_NUMBING)
+	B.set_digest_brute(0.5)
+	B.set_digest_burn(0.5)
+	B.set_digestchance(10)
+	B.set_absorbchance(0)
+	B.set_escapechance(25)
 
 /mob/living/simple_mob/vore/alienanimals/dustjumper/life_type_post_due()
 	return TRUE

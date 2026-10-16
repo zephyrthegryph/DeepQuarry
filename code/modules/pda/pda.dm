@@ -267,7 +267,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 
 // force the cache to rebuild on update_ui
 /obj/item/pda/proc/update_shortcuts()
-	LAZYCLEARLIST(shortcut_cache)
+	clear_shortcut_cache()
 
 /obj/item/pda/proc/update_programs()
 	for(var/datum/data/pda/P as anything in programs)
@@ -461,7 +461,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			return OP_PASS
 		if(!owner)
 			set_owner(idcard.registered_name)
-			ownjob = idcard.assignment
+			set_ownjob(idcard.assignment)
 			ownrank = idcard.rank
 			name = "PDA-[owner] ([ownjob])"
 			to_chat(user, span_notice("Card scanned."))

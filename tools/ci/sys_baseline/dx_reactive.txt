@@ -7,7 +7,6 @@ dx_untracked_read	code/game/machinery/computer/supply.dm	var/funding_label = S.m
 dx_untracked_read	code/game/machinery/computer/supply.dm	var/datum/cargo_market_counterparty/market_seller = SSsupply.market_counterparties?[S.market_counterparty_id]
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Charged", "entry" = S.paid_amount ? "[S.paid_amount] Thalers" : "Unpaid"),
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Seller", "entry" = SSsupply.market_display_name(market_seller, user, S.market_cover_name) || "NanoTrasen catalog"),
-dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Index", "entry" = S.index),
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Reason", "entry" = S.comment),
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Ordered by", "entry" = S.ordered_by),
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Ordered at", "entry" = S.ordered_at),

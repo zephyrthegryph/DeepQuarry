@@ -143,7 +143,7 @@ CAPABILITIES(/datum/tgui_bitfield_input/prompt)
 		return ..()
 	var/datum/prompt/P = prompt
 	rel_clear(src, nameof(prompt))
-	prompt_window_answer(P, value)
+	prompt_window_answer(P, bitset)
 	SStgui.close_uis(src)
 	return TRUE
 

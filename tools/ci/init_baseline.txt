@@ -46,13 +46,13 @@ init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machiner
 init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::new_port
 init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::switch
 init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::if
-init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::new_port.mode
+init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::new_port.set_mode
 init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::if
-init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::new_port.mode
+init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::new_port.set_mode
 init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::if
-init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::new_port.mode
+init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::new_port.set_mode
 init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::if
-init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::new_port.mode
+init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::new_port.set_mode
 init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::if
 init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::initialize_directions
 init_lines	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	@/obj/machinery/atmospherics/omni::Initialize::rel_add
@@ -994,7 +994,7 @@ init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/ite
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::if
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun.beam_range
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun.set_icon_state
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun.base_icon_state
+init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun.set_base_icon_state
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun.wielded_item_state
 init_lines	code/game/objects/items/weapons/melee/energy.dm	@/obj/item/melee/energy/blade::Initialize::glow
 init_lines	code/game/objects/items/weapons/melee/shock_maul.dm	@/obj/item/melee/shock_maul::Initialize::update_held_icon
@@ -1335,7 +1335,7 @@ init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igni
 init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::ign.set_secured
 init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::rel_set
 init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::tmr
-init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::tmr.time
+init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::tmr.set_time
 init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::tmr.set_secured
 init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::rel_set
 init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::rel_set
@@ -1522,9 +1522,9 @@ init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/ri
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::for
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charge_dat
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charge_dat.short_name
-init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charge_dat.display_name
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charge_dat.set_display_name
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charge_dat.product_type
-init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charge_dat.charges
+init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charge_dat.set_charges
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::if
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::processed_charges[charge_dat.short_name]
 init_lines	code/modules/clothing/spacesuits/rig/modules/modules.dm	@/obj/item/rig_module::Initialize::charges
@@ -1627,7 +1627,7 @@ init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::if
 init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.stamped
 init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.add_stamp_mark
 init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.stamped
-init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.stamps
+init_lines	code/modules/economy/EFTPOS.dm	@/obj/item/eftpos::Initialize::R.set_stamps
 init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::if
 init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::while
 init_lines	code/modules/economy/trader.dm	@/obj/trader::Initialize::t
@@ -3387,7 +3387,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archae
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::max_size
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_box.restrict_hold
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::storage_amount
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_box.max_storage_space
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_box.set_max_storage_space
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::if
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::apply_image_decorations
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::if

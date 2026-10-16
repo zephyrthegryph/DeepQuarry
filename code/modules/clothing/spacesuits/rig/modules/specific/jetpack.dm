@@ -31,7 +31,7 @@
 	if(active)
 		return 0
 
-	active = 1
+	set_active(1)
 
 	after(src, 0.1 SECONDS, PROC_REF(refresh_suit_overlay))
 

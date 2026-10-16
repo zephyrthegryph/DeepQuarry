@@ -34,6 +34,7 @@
 
 // The controls open on a touch in help intent (the hand op below), so the window's own open op answers the menu and a remote user only.
 CAPABILITIES(/mob/living/bot/farmbot)
+	owns_one(nameof(tank), /obj/structure/reagent_dispensers/watertank)
 	ref_one(nameof(tank_at_make), /obj/structure/reagent_dispensers/watertank)
 	interface("Farmbot", input = menu())
 	op("touch", hand(), stance(I_HELP), label("Open controls"), then(PROC_REF(farmbot_touched)))
@@ -99,25 +100,25 @@ CAPABILITIES(/mob/living/bot/farmbot)
 /mob/living/bot/farmbot/proc/ui_act_water(datum/act/op/A)
 	if(locked)
 		return TRUE
-	waters_trays = !waters_trays
+	set_waters_trays(!waters_trays)
 	. = TRUE
 
 /mob/living/bot/farmbot/proc/ui_act_refill(datum/act/op/A)
 	if(locked)
 		return TRUE
-	refills_water = !refills_water
+	set_refills_water(!refills_water)
 	. = TRUE
 
 /mob/living/bot/farmbot/proc/ui_act_weed(datum/act/op/A)
 	if(locked)
 		return TRUE
-	uproots_weeds = !uproots_weeds
+	set_uproots_weeds(!uproots_weeds)
 	. = TRUE
 
 /mob/living/bot/farmbot/proc/ui_act_replacenutri(datum/act/op/A)
 	if(locked)
 		return TRUE
-	replaces_nutriment = !replaces_nutriment
+	set_replaces_nutriment(!replaces_nutriment)
 	. = TRUE
 // No automatic hydroponics
 // if("collect")

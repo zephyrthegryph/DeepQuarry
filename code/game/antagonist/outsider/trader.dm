@@ -51,7 +51,7 @@ GLOBAL_DATUM(traders, /datum/antagonist/trader)
 
 	var/obj/item/card/id/id = create_id("Trader", player, equip = 0)
 	id.name = "[player.real_name]'s Passport"
-	id.assignment = "Trader"
+	id.set_assignment("Trader")
 	id.include_access(ACCESS_TRADER)
 	var/obj/item/storage/wallet/W = new(player)
 	W.insert_item(id)

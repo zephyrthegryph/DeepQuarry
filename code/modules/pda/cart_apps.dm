@@ -115,7 +115,7 @@ CAPABILITIES(/datum/data/pda/app/signaller)
 	var/obj/item/radio/integrated/signal/R = signal_radio()
 	if(!R || isnull(code))
 		return
-	R.code = code
+	R.set_code(code)
 	return TRUE
 
 /datum/data/pda/app/signaller/proc/ui_act_reset(datum/act/op/A, reset)
@@ -125,7 +125,7 @@ CAPABILITIES(/datum/data/pda/app/signaller)
 	if(reset == "freq")
 		R.set_frequency(initial(R.frequency))
 	else
-		R.code = initial(R.code)
+		R.set_code(initial(R.code))
 	return TRUE
 
 /datum/data/pda/app/power

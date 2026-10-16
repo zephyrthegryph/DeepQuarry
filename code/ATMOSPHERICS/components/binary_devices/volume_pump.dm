@@ -58,8 +58,8 @@ Thus, the two variables affect pump operation are set in New():
 	rust_set_device_flow(0, RUST_FLOW_VOLUME, effective_rate, RUST_DIR_FORCED, RUST_SIDE_B, max_output > 0 ? RUST_STOP_AT_LEAST : RUST_STOP_NONE, max_output)
 
 /obj/machinery/atmospherics/binary/volume_pump/rust_device_stepped(moles, power_w, target_reached)
-	last_flow_rate = 0
-	last_power_draw = 0
+	set_last_flow_rate(0)
+	set_last_power_draw(0)
 	if(moles <= 0)
 		return
 
@@ -77,7 +77,7 @@ Thus, the two variables affect pump operation are set in New():
 				T.update_visuals()
 				T.air_update_turf(FALSE, FALSE)
 
-	last_flow_rate = moles
+	set_last_flow_rate(moles)
 	// Matches the pre-M2 formula: power scales with the configured transfer
 	// ratio (rate / volume, times the material power ratio), not with the
 	// moles actually available this tick — a pump "tries" at a fixed power
@@ -85,7 +85,7 @@ Thus, the two variables affect pump operation are set in New():
 	var/transfer_ratio = (transfer_rate / air1.return_volume()) * (material_pump_power(power_rating) / max(power_rating, 1))
 	var/power_draw = transfer_ratio * power_rating * 0.8 / material_pump_efficiency()
 	if(power_draw >= 0)
-		last_power_draw = power_draw
+		set_last_power_draw(power_draw)
 		use_power(power_draw)
 		record_material_pumping(power_draw, air2, moles * (overclocked ? 1 - VOLUME_PUMP_LEAK_AMOUNT : 1))
 
@@ -172,7 +172,7 @@ Thus, the two variables affect pump operation are set in New():
 		"max_rate" = max_transfer_rate,
 		"last_flow_rate" = last_flow_rate*10,
 		"last_power_draw" = last_power_draw,
-		"max_power_draw" = power_rating,
+		"max_power_draw" = initial(power_rating),
 	)
 
 	return data

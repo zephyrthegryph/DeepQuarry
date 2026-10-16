@@ -6,7 +6,7 @@
 
 // Tries to use power from battery. Passing 0 as parameter results in this proc returning whether battery is functional or not.
 /obj/item/modular_computer/proc/battery_power(power_usage = 0)
-	apc_powered = FALSE
+	set_apc_powered(FALSE)
 	if(!battery_module || !battery_module.check_functionality() || battery_module.battery.charge <= 0)
 		return FALSE
 	if(battery_module.battery.use(power_usage * CELLRATE) || ((power_usage == 0) && battery_module.battery.charge))
@@ -21,7 +21,7 @@
 
 // Tries to use power from APC, if present.
 /obj/item/modular_computer/proc/apc_power(power_usage = 0)
-	apc_powered = TRUE
+	set_apc_powered(TRUE)
 	// Tesla link was originally limited to machinery only, but this probably works too, and the benefit of being able to power all devices from an APC outweights
 	// the possible minor performance loss.
 	if(!tesla_link || !tesla_link.check_functionality())

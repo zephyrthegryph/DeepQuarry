@@ -113,17 +113,17 @@ CAPABILITIES(/obj/structure/janitorialcart)
 		return
 
 	var/icon/F = getFlatIcon(A, defdir = SOUTH, no_anim = TRUE)
-	LAZYSET(tgui_icons, "[key]", "'data:image/png;base64,[icon2base64(F)]'")
+	set_tgui_icons_at("[key]", "'data:image/png;base64,[icon2base64(F)]'")
 	SStgui.update_uis(src)
 
 /obj/structure/janitorialcart/proc/nullTguiIcon(key)
 	if(!key)
 		return
-	LAZYREMOVE(tgui_icons, key)
+	remove_tgui_icons(key)
 	SStgui.update_uis(src)
 
 /obj/structure/janitorialcart/proc/clearTguiIcons()
-	LAZYCLEARLIST(tgui_icons)
+	clear_tgui_icons()
 	SStgui.update_uis(src)
 
 

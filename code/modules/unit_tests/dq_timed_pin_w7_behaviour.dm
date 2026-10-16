@@ -860,7 +860,7 @@
 /datum/unit_test/dq_timed_pin_w7/proc/s_weaver(mob/living/carbon/human/user)
 	var/datum/trait_state/weaver/W = user.add_trait_state(/datum/trait_state/weaver)
 	TEST_ASSERT_NOTNULL(W, "the weaver trait state attaches")
-	W.silk_color = "#112233"
+	W.set_silk_color("#112233")
 	return W
 
 /datum/unit_test/dq_timed_pin_w7/s_weaver_floor
@@ -1094,7 +1094,7 @@
 /datum/unit_test/dq_timed_pin_w7/r_sleeper_compactor_item_cancel_on_move/run_pin()
 	var/mob/living/silicon/robot/R = r_borg()
 	var/obj/item/dogborg/sleeper/S = allocate(/obj/item/dogborg/sleeper, R)
-	S.compactor = TRUE
+	S.set_compactor(TRUE)
 	var/obj/item/pen/P = allocate(/obj/item/pen, run_loc_floor_bottom_left)
 	var/datum/T = r_begin(R, P, S, 3 SECONDS)
 	R.forceMove(get_step(R, EAST))
@@ -1958,8 +1958,8 @@
 	TEST_ASSERT(!isnull(B), "the pred has a belly")
 	TEST_ASSERT(pred.begin_instant_nom(pred, prey, pred, B), "an instant nom succeeds")
 	TEST_ASSERT_EQUAL(prey.loc, B, "the prey is inside")
-	B.escapetime = 6 SECONDS
-	B.belchchance = 0
+	B.set_escapetime(6 SECONDS)
+	B.set_belchchance(0)
 	return list(pred, prey, B)
 
 /datum/unit_test/dq_timed_pin_w7/v_belly_escape_default
@@ -1991,7 +1991,7 @@
 	B.relay_resist(prey)
 	TEST_ASSERT(!isnull(running(prey)), "struggling in the belly of someone out cold starts a timed action")
 	pred.set_stat(CONSCIOUS)
-	B.escapable = B_ESCAPABLE_NONE
+	B.set_escapable(B_ESCAPABLE_NONE)
 	test_chat_clear()
 	test_time(7 SECONDS)
 	TEST_ASSERT_EQUAL(prey.loc, B, "an owner who woke and shut the belly keeps the prey")
@@ -2019,8 +2019,8 @@
 	var/list/pair = v_belly_pair()
 	var/obj/belly/B = pair[3]
 	var/mob/living/carbon/human/prey = pair[2]
-	B.escapable = B_ESCAPABLE_DEFAULT
-	B.escapechance = 100
+	B.set_escapable(B_ESCAPABLE_DEFAULT)
+	B.set_escapechance(100)
 	B.relay_resist(prey)
 	TEST_ASSERT(!isnull(running(prey)), "a struggle that rolls an escape starts a timed action")
 	test_time(5 SECONDS)
@@ -2034,11 +2034,11 @@
 	var/list/pair = v_belly_pair()
 	var/obj/belly/B = pair[3]
 	var/mob/living/carbon/human/prey = pair[2]
-	B.escapable = B_ESCAPABLE_DEFAULT
-	B.escapechance = 100
+	B.set_escapable(B_ESCAPABLE_DEFAULT)
+	B.set_escapechance(100)
 	B.relay_resist(prey)
 	TEST_ASSERT(!isnull(running(prey)), "a struggle that rolls an escape starts a timed action")
-	B.escapable = B_ESCAPABLE_NONE
+	B.set_escapable(B_ESCAPABLE_NONE)
 	test_time(7 SECONDS)
 	TEST_ASSERT_EQUAL(prey.loc, B, "a belly closed during the wait keeps the prey")
 
@@ -2049,8 +2049,8 @@
 	var/obj/belly/B = pair[3]
 	var/mob/living/carbon/human/prey = pair[2]
 	prey.set_absorbed(TRUE)
-	B.escapable = B_ESCAPABLE_DEFAULT
-	B.escapechance_absorbed = 100
+	B.set_escapable(B_ESCAPABLE_DEFAULT)
+	B.set_escapechance_absorbed(100)
 	B.relay_absorbed_resist(prey)
 	TEST_ASSERT(!isnull(running(prey)), "an absorbed prey's struggle starts a timed action")
 	test_time(5 SECONDS)

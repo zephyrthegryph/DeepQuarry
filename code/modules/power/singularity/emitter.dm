@@ -197,8 +197,8 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	var/datum/material_service/service = material_service_of(src)
 	if(service)
 		service.output_joules += desired_beam
-		service.loss_joules += required_energy - desired_beam
-		service.last_output_watts = desired_beam / max(fire_delay / 10, 0.1)
+		service.set_loss_joules(service.loss_joules + (required_energy - desired_beam))
+		service.set_last_output_watts(desired_beam / max(fire_delay / 10, 0.1))
 		EXPIRY_STAMP(service, last_work_time, CLOCK_WORLD)
 		service.add_heat(required_energy - desired_beam)
 

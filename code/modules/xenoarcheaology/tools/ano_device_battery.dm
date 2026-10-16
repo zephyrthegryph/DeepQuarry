@@ -127,13 +127,13 @@ CAPABILITIES(/obj/item/anodevice)
 	return data
 
 /obj/item/anodevice/proc/ui_act_changeduration(datum/act/op/A, duration_arg)
-	duration = duration_arg
+	set_duration(duration_arg)
 	if(activated)
 		arm_emission_timer()
 	return TRUE
 
 /obj/item/anodevice/proc/ui_act_changeinterval(datum/act/op/A, interval_arg)
-	interval = interval_arg
+	set_interval(interval_arg)
 	return TRUE
 
 /obj/item/anodevice/proc/ui_act_startup(datum/act/op/A)

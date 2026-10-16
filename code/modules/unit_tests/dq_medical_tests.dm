@@ -604,7 +604,7 @@
 	C.tick()  // rolls symptoms
 	// Force bleeding_visible if RNG didn't pick it (typepaths: singletons).
 	if(!(/datum/affliction_symptom/bleeding_visible in C.active_symptoms))
-		LAZYADD(C.active_symptoms, /datum/affliction_symptom/bleeding_visible)
+		C.add_active_symptoms(/datum/affliction_symptom/bleeding_visible)
 	var/list/lines = H.diagnose(/datum/diagnostic_profile/glance).examine_lines()
 	TEST_ASSERT(length(lines) > 0, "examine helper should return at least one visible-symptom line")
 	var/found_bleeding = FALSE

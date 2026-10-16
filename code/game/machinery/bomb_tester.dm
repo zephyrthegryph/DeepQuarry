@@ -137,7 +137,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 
 /obj/machinery/bomb_tester/proc/ui_act_set_mode(datum/act/op/A, mode)
 	var/mob/user = A.actor
-	sim_mode = mode
+	set_sim_mode(mode)
 	var/text_mode
 	switch(sim_mode)
 		if(BOMB_TESTER_MODE_SINGLE)
@@ -190,7 +190,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 	return TRUE
 
 /obj/machinery/bomb_tester/proc/ui_act_set_can_pressure(datum/act/op/A, pressure)
-	sim_canister_output = CLAMP(pressure, ONE_ATMOSPHERE/10, ONE_ATMOSPHERE*10)
+	set_sim_canister_output(CLAMP(pressure, ONE_ATMOSPHERE/10, ONE_ATMOSPHERE*10))
 	return TRUE
 
 /obj/machinery/bomb_tester/proc/ui_act_start_sim(datum/act/op/A)

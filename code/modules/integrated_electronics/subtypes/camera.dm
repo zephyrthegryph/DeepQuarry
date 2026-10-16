@@ -62,16 +62,16 @@ CAPABILITIES(/obj/item/integrated_circuit/output/video_camera)
 	if(should_be_active && assembly()?.battery?.charge)
 		if(!camera.status)
 			camera.set_status(TRUE)
-		power_draw_idle = initial(power_draw_idle)
+		set_power_draw_idle(initial(power_draw_idle))
 	else
 		if(camera.status)
 			camera.set_status(FALSE)
-		power_draw_idle = 0
+		set_power_draw_idle(0)
 
 /obj/item/integrated_circuit/output/video_camera/power_fail()
 	if(camera?.status)
 		camera.set_status(FALSE)
-	power_draw_idle = 0
+	set_power_draw_idle(0)
 
 /// Old attackby.
 /obj/item/integrated_circuit/output/video_camera/proc/interaction_item(datum/act/op/A)

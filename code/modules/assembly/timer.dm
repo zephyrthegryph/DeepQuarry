@@ -38,10 +38,14 @@ MATERIAL_MIX(/obj/item/assembly/timer, list(MAT_STEEL = 500, MAT_GLASS = 50))
 		visible_message("[icon2html(src,viewers(src))] *beep* *beep*", "*beep* *beep*")
 
 /obj/item/assembly/timer/proc/timer_step(datum/act/timer/A)
-	if(timing && time-- <= 0)
+	if(!timing)
+		return
+	var/was = time
+	set_time(time - 1)
+	if(was <= 0)
 		set_state(0)
 		timer_end()
-		time = 10
+		set_time(10)
 
 /obj/item/assembly/timer/holder_layers()
 	return timing ? list("timer_timing") : null
@@ -78,5 +82,5 @@ CAPABILITIES(/obj/item/assembly/timer)
 		var/list/L = splittext(new_time, ":")
 		for(var/i in 1 to LAZYLEN(L))
 			real_new_time += text2num(L[i]) * (60 ** (LAZYLEN(L) - i))
-	time = clamp(real_new_time, 0, 600)
+	set_time(clamp(real_new_time, 0, 600))
 	return TRUE

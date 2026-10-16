@@ -100,15 +100,15 @@
 	var/obj/belly/B = allocate(/obj/belly, pred)
 	prey.vore_prefs.digestable = TRUE
 	prey.forceMove(B)
-	B.digest_mode = DM_HOLD
-	B.digest_oxy = BELLY_AIR_STALE_AT
+	B.set_digest_mode(DM_HOLD)
+	B.set_digest_oxy(BELLY_AIR_STALE_AT)
 	TEST_ASSERT_EQUAL(B.breath_quality_for(prey), 1, "a holding belly's air is fine")
-	B.digest_mode = DM_DIGEST
-	B.digest_oxy = BELLY_AIR_STALE_AT / 2
+	B.set_digest_mode(DM_DIGEST)
+	B.set_digest_oxy(BELLY_AIR_STALE_AT / 2)
 	TEST_ASSERT(dq_near(B.breath_quality_for(prey), 0.5), "half-stale air should be half a breath ([B.breath_quality_for(prey)])")
 	prey.body.set_breath_quality(1)
 	TEST_ASSERT(dq_near(prey.body.physiology.breath_quality, 0.5), "the belly's air should reach breath quality ([prey.body.physiology.breath_quality])")
-	B.digest_oxy = BELLY_AIR_STALE_AT
+	B.set_digest_oxy(BELLY_AIR_STALE_AT)
 	prey.body.set_breath_quality(1)
 	TEST_ASSERT_EQUAL(prey.body.physiology.breath_quality, 0, "stale air is no breath at all")
 	physiology_test_run(prey, 5)

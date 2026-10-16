@@ -64,11 +64,11 @@ CAPABILITIES(/obj/item/rig_module/voice)
 	var/mob/user = context.request.answerer
 	switch(context.answer.value)
 		if("Enable")
-			active = 1
+			set_active(1)
 			voice_holder.active = 1
 			to_chat(user, span_blue("You enable the speech synthesiser."))
 		if("Disable")
-			active = 0
+			set_active(0)
 			voice_holder.active = 0
 			to_chat(user, span_blue("You disable the speech synthesiser."))
 		if("Set Name")

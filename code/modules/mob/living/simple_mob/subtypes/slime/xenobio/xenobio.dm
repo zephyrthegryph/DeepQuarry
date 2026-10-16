@@ -212,7 +212,7 @@
 				babies.Add(make_new_slime(no_step = i))
 
 			var/mob/living/simple_mob/slime/new_slime = pick(babies)
-			new_slime.universal_speak = universal_speak
+			new_slime.set_universal_speak(universal_speak)
 			move_player(src, new_slime, "slime split")
 			replaced_by(src, new_slime)
 		else

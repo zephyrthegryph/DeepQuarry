@@ -41,7 +41,7 @@ GLOBAL_REAL(SSvg, /datum/system/native)
 /// (code/game/atoms_movable.dm), not generated code.
 /datum/system/native/proc/register(atom/movable/mover)
 	if(!(mover in bound))
-		bound += mover // ALLOW(ownership): the entity table is the registry of bound entities, not a holder
+		add_bound(mover)
 	var/slot = ((mover.vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
 	if(length(entities_by_index) < slot)
 		entities_by_index.len = slot
@@ -50,14 +50,14 @@ GLOBAL_REAL(SSvg, /datum/system/native)
 /datum/system/native/proc/unregister(atom/movable/mover)
 	var/index = bound.Find(mover)
 	if(index)
-		bound.Cut(index, index + 1)
+		cut_bound(index, index + 1)
 	var/slot = ((mover.vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
 	if(slot <= length(entities_by_index) && entities_by_index[slot] == mover)
 		entities_by_index[slot] = null
 
 /// unregister() for a whole doomed set (batched destroy): one pass over `bound`.
 /datum/system/native/proc/unregister_many(list/movers)
-	bound -= movers
+	remove_bound(movers)
 
 /// Gives `D` (any datum) its own entity handle, bound in `entities_by_index`
 /// like an atom's: `entity_lookup()` finds it. Returns the handle.

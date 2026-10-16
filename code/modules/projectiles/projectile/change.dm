@@ -54,7 +54,7 @@
 				Robot.mmi.take_identity(M)	//Does not transfer key/client.
 			if("slime")
 				new_mob = new /mob/living/simple_mob/slime/xenobio(M.loc)
-				new_mob.universal_speak = 1
+				new_mob.set_universal_speak(1)
 			else
 				var/mob/living/carbon/human/H
 				if(ishuman(M))
@@ -77,7 +77,7 @@
 				H.set_real_name(H.name)
 
 				H.set_species(randomize)
-				H.universal_speak = 1
+				H.set_universal_speak(1)
 
 		if(new_mob)
 			for (var/datum/spell/S in M.spell_list)

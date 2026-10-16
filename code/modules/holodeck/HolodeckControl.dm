@@ -118,7 +118,7 @@
 	var/prog = program
 	if(prog in (supported_programs + restricted_programs))
 		if(loadProgram(prog))
-			current_program = prog
+			set_current_program(prog)
 	return TRUE
 
 /obj/machinery/computer/HolodeckControl/proc/ui_act_aioverride(datum/act/op/A)
@@ -129,7 +129,7 @@
 	if(safety_disabled && emagged())
 		return //if a traitor has gone through the trouble to emag the thing, let them keep it.
 
-	safety_disabled = !safety_disabled
+	set_safety_disabled(!safety_disabled)
 	update_projections()
 	if(safety_disabled)
 		message_admins("[key_name_admin(user)] overrode the holodeck's safeties")
@@ -149,7 +149,7 @@
 	rel_set(src, nameof(last_to_emag), user) //emag again to change the owner
 	if (!emagged())
 		set_emagged(1)
-		safety_disabled = 1
+		set_safety_disabled(1)
 		update_projections()
 		to_chat(user, span_notice("You vastly increase projector power and override the safety and security protocols."))
 		to_chat(user, "Warning.  Automatic shutoff and derezing protocols have been corrupted.  Please call [using_map.company_name] maintenance and do not use the simulator.")

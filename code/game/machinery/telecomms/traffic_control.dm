@@ -89,7 +89,7 @@
 /obj/machinery/computer/telecomms/traffic/proc/traffic_view_server(mob/user, id)
 	if(!traffic_access(user))
 		return
-	screen = 1
+	set_screen(1)
 	for(var/obj/machinery/telecomms/T in servers)
 		if(T.id == id)
 			rel_set(src, nameof(SelectedServer), T)
@@ -103,10 +103,10 @@
 
 		if("release")
 			rel_clear(src, nameof(servers))
-			screen = 0
+			set_screen(0)
 
 		if("mainmenu")
-			screen = 0
+			set_screen(0)
 
 		if("scan")
 			if(length(servers) > 0)
@@ -122,7 +122,7 @@
 				else
 					set_temp(span_blue("- [length(servers)] SERVERS PROBED & BUFFERED -"))
 
-				screen = 0
+				set_screen(0)
 
 		if("editcode")
 			if(editingcode() == user) return
@@ -160,8 +160,8 @@
 
 		else
 
-			network = newnet
-			screen = 0
+			set_network(newnet)
+			set_screen(0)
 			rel_clear(src, nameof(servers))
 			set_temp(span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -"))
 

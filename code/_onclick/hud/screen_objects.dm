@@ -717,7 +717,7 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 
 /atom/movable/screen/movable/mapper_holder/proc/update(atom/movable/screen/mapper/map, atom/movable/screen/mapper/extras_holder/extras, ping = FALSE)
 	if(!running)
-		running = TRUE
+		set_running(TRUE)
 		if(ping)
 			vis_contents.Add(mask_ping)
 		else
@@ -751,7 +751,7 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	bg.vis_contents.Cut()
 	vis_contents.Remove(mask_ping, mask_full, extras_holder())
 	rel_clear(src, nameof(extras_holder))
-	running = FALSE
+	set_running(FALSE)
 	if(inform)
 		owner().stop_updates()
 

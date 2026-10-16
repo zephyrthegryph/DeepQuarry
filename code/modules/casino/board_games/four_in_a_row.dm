@@ -109,7 +109,7 @@ CAPABILITIES(/datum/board_game/four_row)
 		return FALSE
 	if(!(new_color in possible_colors))
 		return FALSE
-	player_one_color = new_color
+	set_player_one_color(new_color)
 	return TRUE
 
 /datum/board_game/four_row/proc/ui_act_set_color_two(datum/act/op/A, color)
@@ -123,7 +123,7 @@ CAPABILITIES(/datum/board_game/four_row)
 		return FALSE
 	if(!(new_color in possible_colors))
 		return FALSE
-	player_two_color = new_color
+	set_player_two_color(new_color)
 	return TRUE
 
 /datum/board_game/four_row/proc/ui_act_change_size(datum/act/op/A, size)
@@ -148,7 +148,7 @@ CAPABILITIES(/datum/board_game/four_row)
 		return FALSE
 	if(!player_one || !player_two)
 		return FALSE
-	game_state = GAME_PLAYER_ONE
+	set_game_state(GAME_PLAYER_ONE)
 	return TRUE
 
 /datum/board_game/four_row/proc/ui_act_play_again(datum/act/op/A)
@@ -177,12 +177,12 @@ CAPABILITIES(/datum/board_game/four_row)
 	if(user == player_one && game_state == GAME_PLAYER_ONE)
 		if(game_subaction(action_arg, data, user))
 			if(game_state < GAME_OVER)
-				game_state = GAME_PLAYER_TWO
+				set_game_state(GAME_PLAYER_TWO)
 			return TRUE
 	if(user == player_two && game_state == GAME_PLAYER_TWO)
 		if(game_subaction(action_arg, data, user))
 			if(game_state < GAME_OVER)
-				game_state = GAME_PLAYER_ONE
+				set_game_state(GAME_PLAYER_ONE)
 			return TRUE
 	return FALSE
 
@@ -191,20 +191,20 @@ CAPABILITIES(/datum/board_game/four_row)
 		return FALSE
 	if(new_count < 4 || new_count > 5)
 		return FALSE
-	win_count = new_count
+	set_win_count(new_count)
 	return TRUE
 
 /datum/board_game/four_row/proc/reset(full)
-	LAZYCLEARLIST(placed_chips_pone)
-	LAZYCLEARLIST(placed_chips_ptwo)
-	LAZYCLEARLIST(winning_tiles)
-	winner = null
+	clear_placed_chips_pone()
+	clear_placed_chips_ptwo()
+	clear_winning_tiles()
+	set_winner(null)
 	if(full)
-		game_state = GAME_SETUP
+		set_game_state(GAME_SETUP)
 		rel_clear(src, nameof(player_one))
 		rel_clear(src, nameof(player_two))
 	else
-		game_state = GAME_PLAYER_ONE
+		set_game_state(GAME_PLAYER_ONE)
 
 /datum/board_game/four_row/proc/game_place_chip(mob/user, list/params, extra)
 	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
@@ -225,9 +225,9 @@ CAPABILITIES(/datum/board_game/four_row)
 	var/key = "[x_loc],[target_y]"
 
 	if(game_state == GAME_PLAYER_ONE)
-		LAZYSET(placed_chips_pone, key, TRUE)
+		set_placed_chips_pone_at(key, TRUE)
 	else
-		LAZYSET(placed_chips_ptwo, key, TRUE)
+		set_placed_chips_ptwo_at(key, TRUE)
 
 	validate_victory(x_loc, target_y, user.name)
 	return TRUE
@@ -261,9 +261,9 @@ CAPABILITIES(/datum/board_game/four_row)
 	horizontal -= "[x],[y]"
 
 	if(length(horizontal) >= win_count)
-		winning_tiles = horizontal
-		game_state = GAME_OVER
-		winner = user_name
+		set_winning_tiles(horizontal)
+		set_game_state(GAME_OVER)
+		set_winner(user_name)
 		return
 
 	var/list/v1 = collect_direction(current_list, x, y, 0, 1)
@@ -272,9 +272,9 @@ CAPABILITIES(/datum/board_game/four_row)
 	vertical -= "[x],[y]"
 
 	if(length(vertical) >= win_count)
-		winning_tiles = vertical
-		game_state = GAME_OVER
-		winner = user_name
+		set_winning_tiles(vertical)
+		set_game_state(GAME_OVER)
+		set_winner(user_name)
 		return
 
 	var/list/d1 = collect_direction(current_list, x, y, 1, 1)
@@ -283,9 +283,9 @@ CAPABILITIES(/datum/board_game/four_row)
 	diag1 -= "[x],[y]"
 
 	if(length(diag1) >= win_count)
-		winning_tiles = diag1
-		game_state = GAME_OVER
-		winner = user_name
+		set_winning_tiles(diag1)
+		set_game_state(GAME_OVER)
+		set_winner(user_name)
 		return
 
 	var/list/d3 = collect_direction(current_list, x, y, 1, -1)
@@ -294,9 +294,9 @@ CAPABILITIES(/datum/board_game/four_row)
 	diag2 -= "[x],[y]"
 
 	if(length(diag2) >= win_count)
-		winning_tiles = diag2
-		game_state = GAME_OVER
-		winner = user_name
+		set_winning_tiles(diag2)
+		set_game_state(GAME_OVER)
+		set_winner(user_name)
 		return
 	check_draw()
 
@@ -307,8 +307,8 @@ CAPABILITIES(/datum/board_game/four_row)
 			if(!LAZYACCESS(placed_chips_pone, key) && !LAZYACCESS(placed_chips_ptwo, key))
 				return FALSE
 
-	winner = null
-	game_state = GAME_OVER_DRAW
+	set_winner(null)
+	set_game_state(GAME_OVER_DRAW)
 	return TRUE
 
 /datum/board_game/four_row/proc/set_new_size(new_size)
@@ -316,8 +316,8 @@ CAPABILITIES(/datum/board_game/four_row)
 		return FALSE
 	if(new_size < 5 || new_size > 10)
 		return FALSE
-	grid_x_size = new_size
-	grid_y_size = new_size - 1
+	set_grid_x_size(new_size)
+	set_grid_y_size(new_size - 1)
 	return TRUE
 
 /datum/board_game/four_row/proc/field_check(new_x_location, new_y_location)

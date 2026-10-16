@@ -163,15 +163,15 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 
 /obj/machinery/radiocarbon_spectrometer/proc/ui_act_set_scanner_rpm_delta(datum/act/op/A, delta)
 	add_fingerprint(A.actor)
-	scanner_rpm_delta = CLAMP(delta, -RPM_MAX_DELTA, RPM_MAX_DELTA)
+	set_scanner_rpm_delta(CLAMP(delta, -RPM_MAX_DELTA, RPM_MAX_DELTA))
 	return TRUE
 
 /obj/machinery/radiocarbon_spectrometer/proc/ui_act_inject_radiation(datum/act/op/A)
 	add_fingerprint(A.actor)
 	if(!scanning)
-		radiation = 0
+		set_radiation(0)
 		return
-	radiation = CLAMP(radiation + RADIATION_INJECTION_AMT, 0, RADIATION_MAX)
+	set_radiation(CLAMP(radiation + RADIATION_INJECTION_AMT, 0, RADIATION_MAX))
 	return TRUE
 
 /obj/machinery/radiocarbon_spectrometer/var/scanning = FALSE
@@ -198,42 +198,42 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 
 	/************** RPM **************/
 	// Scanner slows down over time
-	scanner_rpm -= RPM_FRICTION + rand(0, RPM_FRICTION) // randomly add more friction
+	set_scanner_rpm(scanner_rpm - (RPM_FRICTION + rand(0, RPM_FRICTION))) // randomly add more friction
 	// Motor speeds it up
-	scanner_rpm += scanner_rpm_delta
+	set_scanner_rpm(scanner_rpm + scanner_rpm_delta)
 	// Cap
-	scanner_rpm = CLAMP(scanner_rpm, RPM_MIN, RPM_MAX)
+	set_scanner_rpm(CLAMP(scanner_rpm, RPM_MIN, RPM_MAX))
 
 	// Factor RPM into completion
 	var/diff_from_ideal_rpm = abs(scanner_rpm - IDEAL_RPM)
 	var/rpm_factor = CLAMP01(1 - (diff_from_ideal_rpm / RPM_OKAY_RANGE))
 
 	/************** RADIATION *************/
-	radiation -= RADIATION_LOSS
-	radiation = CLAMP(radiation, 0, RADIATION_MAX)
+	set_radiation(radiation - RADIATION_LOSS)
+	set_radiation(CLAMP(radiation, 0, RADIATION_MAX))
 	var/diff_from_ideal_radiation = abs(radiation - TARGET_RADIATION)
 	var/radiation_factor = CLAMP01(1 - (diff_from_ideal_radiation / RADIATION_OK_RANGE))
 
 	/************** COMPLETION *************/
 	var/completion_delta = rpm_factor + radiation_factor
-	scan_progress = CLAMP(scan_progress + (completion_delta * COMPLETION_DELTA_MODIFIER), 0, 100)
+	set_scan_progress(CLAMP(scan_progress + (completion_delta * COMPLETION_DELTA_MODIFIER), 0, 100))
 
 /obj/machinery/radiocarbon_spectrometer/proc/start_scanning()
 	set_icon_state("analyser_processing")
 	set_scanning(TRUE)
-	scan_progress = 0
-	scanner_rpm_delta = 0
-	scanner_rpm = 0
-	radiation = 0
+	set_scan_progress(0)
+	set_scanner_rpm_delta(0)
+	set_scanner_rpm(0)
+	set_radiation(0)
 	set_heat(0)
 
 /obj/machinery/radiocarbon_spectrometer/proc/stop_scanning()
 	set_icon_state("analyser")
 	set_scanning(FALSE)
-	scan_progress = 0
-	scanner_rpm_delta = 0
-	scanner_rpm = 0
-	radiation = 0
+	set_scan_progress(0)
+	set_scanner_rpm_delta(0)
+	set_scanner_rpm(0)
+	set_radiation(0)
 	set_heat(0)
 
 /obj/machinery/radiocarbon_spectrometer/proc/complete_scan()
@@ -296,7 +296,7 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 
 	P.set_info(span_bold("[src] analysis report #[report_num]") + "<br>")
 	P.set_info(P.info + (span_bold("Scanned item:") + " [scanned_item().name]<br><br>" + data))
-	last_scan_data = P.info
+	set_last_scan_data(P.info)
 
 	P.forceMove(loc)
 	scanned_item().forceMove(loc)

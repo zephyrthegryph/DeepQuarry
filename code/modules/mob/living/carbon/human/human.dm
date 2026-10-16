@@ -693,7 +693,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	if(setcriminal == "Cancel")
 		return
 	var/datum/data/record/R = ask.record
-	R.fields["criminal"] = setcriminal
+	R.set_fields_at("criminal", setcriminal)
 	flag_hud_update(WANTED_HUD)
 	hud_record_changed(user)
 
@@ -709,7 +709,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	if(setmedical == "Cancel")
 		return
 	var/datum/data/record/R = ask.record
-	R.fields["p_stat"] = setmedical
+	R.set_fields_at("p_stat", setmedical)
 	if(GLOB.PDA_Manifest.len)
 		GLOB.PDA_Manifest.Cut()
 	hud_record_changed(user)
@@ -735,10 +735,10 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 		counter++
 	if(ishuman(user))
 		var/mob/living/carbon/human/U = user
-		R.fields[text("com_[counter]")] = text("Made by [U.get_authentification_name()] ([U.get_assignment()]) on [time2text(world.realtime, "DDD MMM DD hh:mm:ss")], [GLOB.game_year]<BR>[t1]")
+		R.set_fields_at(text("com_[counter]"), text("Made by [U.get_authentification_name()] ([U.get_assignment()]) on [time2text(world.realtime, "DDD MMM DD hh:mm:ss")], [GLOB.game_year]<BR>[t1]"))
 	if(istype(user,/mob/living/silicon/robot))
 		var/mob/living/silicon/robot/U = user
-		R.fields[text("com_[counter]")] = text("Made by [U.name] ([U.modtype] [U.braintype]) on [time2text(world.realtime, "DDD MMM DD hh:mm:ss")], [GLOB.game_year]<BR>[t1]")
+		R.set_fields_at(text("com_[counter]"), text("Made by [U.name] ([U.modtype] [U.braintype]) on [time2text(world.realtime, "DDD MMM DD hh:mm:ss")], [GLOB.game_year]<BR>[t1]"))
 
 ///eyecheck()
 ///Returns a number between -1 to 2

@@ -106,7 +106,7 @@
 	var/obj/machinery/computer/card/C = R[1]
 	var/mob/living/carbon/human/H = R[2]
 	var/obj/item/card/id/subject = R[4]
-	subject.assignment = "Assistant"
+	subject.set_assignment("Assistant")
 	press(H, C, "assign", list("assign_target" = "No Such Job"))
 	TEST_ASSERT_EQUAL(subject.assignment, "Assistant", "a job nobody has a log for changes nothing")
 	press(H, C, "assign_custom")

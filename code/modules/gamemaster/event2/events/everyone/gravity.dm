@@ -26,9 +26,9 @@
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if((GG.z in get_location_z_levels()) && GG.on)
 			rel_add(src, nameof(generators), GG)
-			GG.breaker = FALSE
+			GG.set_breaker(FALSE)
 			GG.set_power()
-			GG.charge_count = 10
+			GG.set_charge_count(10)
 
 /datum/event2/event/gravity/end()
 	GLOB.gravity_is_on = TRUE
@@ -36,9 +36,9 @@
 	var/did_anything = FALSE
 	for(var/obj/machinery/gravity_generator/main/GG in generators)
 		if(!GG.on)
-			GG.breaker = TRUE
+			GG.set_breaker(TRUE)
 			GG.set_power()
-			GG.charge_count = 90
+			GG.set_charge_count(90)
 			did_anything = TRUE
 
 	if(did_anything)

@@ -23,7 +23,7 @@
 	var/obj/item/multitool/tool = I.get_multitool()
 	if(tool)
 		if(!QDELETED(tool.buffer()) && istype(tool.buffer(), /datum/techweb))
-			stored_research_static = tool.buffer()
+			set_stored_research_static(tool.buffer())
 			balloon_alert(user, "techweb connected")
 	return OP_OK
 

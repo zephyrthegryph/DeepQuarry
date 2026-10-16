@@ -338,7 +338,7 @@ CAPABILITIES(/datum/ticket)
 	var/curinteraction = "[gameTimestamp()]: [formatted_message]"
 	if(CONFIG_GET(flag/discord_ahelps_all))
 		ahelp_discord_message("ADMINHELP: TICKETID: [id] [strip_html_properly(curinteraction)]")
-	_interactions += curinteraction
+	add__interactions(curinteraction)
 
 /datum/ticket/proc/TicketPanel(mob/user)
 	tgui_interact(user)
@@ -427,9 +427,9 @@ CAPABILITIES(/datum/ticket)
 			feedback_dec("ticket_close")
 		if(AHELP_RESOLVED)
 			feedback_dec("ticket_resolve")
-	state = AHELP_ACTIVE
+	set_state(AHELP_ACTIVE)
 	GLOB.tickets.ListInsert(src) // moves it out of the closed/resolved list
-	closed_at = null
+	set_closed_at(null)
 	if(initiator())
 		initiator().current_ticket_id = id
 
@@ -459,7 +459,7 @@ CAPABILITIES(/datum/ticket)
 	if(state != AHELP_ACTIVE)
 		return
 	RemoveActive()
-	state = AHELP_CLOSED
+	set_state(AHELP_CLOSED)
 	GLOB.tickets.ListInsert(src)
 	var/admin_closer_name = ismob(user) ? key_name_admin(user) : user
 	AddInteraction(span_filter_adminlog(span_red("Closed by [admin_closer_name].")))
@@ -477,7 +477,7 @@ CAPABILITIES(/datum/ticket)
 	if(state != AHELP_ACTIVE)
 		return
 	RemoveActive()
-	state = AHELP_RESOLVED
+	set_state(AHELP_RESOLVED)
 	GLOB.tickets.ListInsert(src)
 
 	var/admin_resolver_name = ismob(user) ? key_name_admin(user) : user
@@ -562,7 +562,7 @@ CAPABILITIES(/datum/ticket)
 	message_admins(msg)
 	log_admin(msg)
 	AddInteraction("[handler_shown_name] is now handling this ticket.")
-	handler = handler_name
+	set_handler(handler_name)
 	if(ismob(user))
 		var/mob/our_handler_mob = user
 		handler_ckey = our_handler_mob.client?.ckey
@@ -581,7 +581,7 @@ CAPABILITIES(/datum/ticket)
 	if(isnull(new_title))
 		return
 	if(new_title)
-		name = new_title
+		set_name(new_title)
 		//not saying the original name cause it could be a long ass message
 		var/msg = "Ticket [TicketHref("#[id]")] titled [name] by [key_name_admin(user)]"
 		message_admins(msg)
@@ -610,7 +610,7 @@ CAPABILITIES(/datum/ticket)
 		return
 
 	SStgui.close_uis(src)
-	level = level + 1
+	set_level(level + 1)
 
 	AddInteraction("[key_name_admin(user)] escalated Ticket.")
 	message_mentors("[user.ckey] escalated Ticket [TicketHref("#[id]")]")

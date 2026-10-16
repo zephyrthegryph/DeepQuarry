@@ -177,7 +177,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 	rust_set_device_flow(0, RUST_FLOW_VOLUME, vent_volume * 50, RUST_DIR_FORCED, stop_side, stop_cmp, stop_kpa, RUST_SIDE_B, limit_cmp, limit_kpa) // ALLOW(derived_reads): vent_volume is fixed by the type; use_power and operability bump rust_device_rev
 
 /obj/machinery/atmospherics/unary/vent_pump/rust_device_stepped(moles, power_w, target_reached)
-	last_flow_rate = abs(moles)
+	set_last_flow_rate(abs(moles))
 
 /// The Rust law is pushed (once per frame) when any of these change: rust_device_rev is bumped by a power change, a port bind and a disconnect.
 /obj/machinery/atmospherics/unary/vent_pump/derived()

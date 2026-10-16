@@ -434,7 +434,7 @@
 		return FALSE
 	LAZYINITLIST(character_preview_b64)
 	for(var/key in result)
-		character_preview_b64[key] = result[key]
+		set_character_preview_b64_at(key, result[key])
 	dq_schedule_data_push()
 	return TRUE
 

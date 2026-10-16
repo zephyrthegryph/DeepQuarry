@@ -68,7 +68,7 @@ ADMIN_VERB(PlayerNotes, R_ADMIN|R_MOD|R_EVENT|R_DEBUG, "Player Notes", "Access t
 		note_keys = sortList(note_keys)
 
 	var/datum/tgui_module/player_notes/A = new(src)
-	A.ckeys = note_keys
+	A.set_ckeys(note_keys)
 	A.tgui_interact(user)
 
 
@@ -1108,7 +1108,7 @@ CAPABILITIES(/datum/prompt/choice/fax_stamp)
 	var/shouldStamp = P.sender() || stamp // admin initiated faxes are stamped when asked
 
 	if(shouldStamp)
-		P.stamps += "<hr>" + span_italics("This paper has been stamped by the [P.origin] Quantum Relay.")
+		P.set_stamps(P.stamps + ("<hr>" + span_italics("This paper has been stamped by the [P.origin] Quantum Relay.")))
 
 		P.add_stamp_mark("paper_stamp-cent", rand(-2, 0), rand(-1, 2))
 

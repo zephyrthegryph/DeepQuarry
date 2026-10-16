@@ -433,16 +433,16 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 
 	// Check if the command is valid
 	if(!CONFIG_GET(flag/sql_enabled))
-		message.text = "```A database is required to be set up for this feature.```"
+		message.set_text("```A database is required to be set up for this feature.```")
 		return message
 
 	if(!LAZYLEN(message_as_list))
-		message.text = "```Invalid command usage: [VALID_USAGE]```"
+		message.set_text("```Invalid command usage: [VALID_USAGE]```")
 		return message
 
 	var/action = message_as_list[1]
 	if(!(action in VALID_ACTIONS))
-		message.text = "```First param must be a valid action.```"
+		message.set_text("```First param must be a valid action.```")
 		return message
 
 	if(action == "help")
@@ -455,26 +455,26 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 			var/datum/language/current_lang = value
 			if(current_lang.flags & WHITELISTED)
 				whitelisted_language += language
-		message.text = "The following jobs, species, languages and robot modules have a whitelist:\nJobs: [english_list(whitelist_jobs)]\nSpecies: [english_list(GLOB.whitelisted_species)]\nLanguages: [english_list(whitelisted_language)]\nRobot Modules: [english_list(GLOB.whitelisted_module_types)]"
+		message.set_text("The following jobs, species, languages and robot modules have a whitelist:\nJobs: [english_list(whitelist_jobs)]\nSpecies: [english_list(GLOB.whitelisted_species)]\nLanguages: [english_list(whitelisted_language)]\nRobot Modules: [english_list(GLOB.whitelisted_module_types)]")
 		return message
 
 	message_as_list.Cut(1, 2)
 	if(!LAZYLEN(message_as_list))
-		message.text = "```Invalid command usage: [VALID_USAGE]```"
+		message.set_text("```Invalid command usage: [VALID_USAGE]```")
 		return message
 
 	var/kind = message_as_list[1]
 	if(!(kind in VALID_KINDS))
-		message.text = "```Second param must be a valid whitelist kind.```"
+		message.set_text("```Second param must be a valid whitelist kind.```")
 		return message
 	message_as_list.Cut(1, 2)
 	if(!LAZYLEN(message_as_list))
-		message.text = "```Invalid command usage: [VALID_USAGE]```"
+		message.set_text("```Invalid command usage: [VALID_USAGE]```")
 		return message
 
 	var/ckey = message_as_list[1]
 	if(ckey != ckey(ckey))
-		message.text = "```Third param must be a valid ckey.```"
+		message.set_text("```Third param must be a valid ckey.```")
 		return message
 
 	// Role is not required for listing the roles of a ckey
@@ -482,12 +482,12 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	if(action != "list")
 		message_as_list.Cut(1, 2)
 		if(!LAZYLEN(message_as_list))
-			message.text = "```Invalid command usage: [VALID_USAGE]```"
+			message.set_text("```Invalid command usage: [VALID_USAGE]```")
 			return message
 
 		role = message_as_list.Join(" ")
 		if(!istext(role))
-			message.text = "```Fourth param must be a valid whitelist role.```"
+			message.set_text("```Fourth param must be a valid whitelist role.```")
 			return message
 
 	// Resolve the action
@@ -497,37 +497,37 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 				if("job")
 					var/datum/job/job = SSjob.get_job(role)
 					if(!job)
-						message.text = "Error, invalid job entered. Check spelling and capitalization."
+						message.set_text("Error, invalid job entered. Check spelling and capitalization.")
 						return message
 					if(!job.whitelist_only)
-						message.text = "Error, job \"[role]\" is not a whitelist job."
+						message.set_text("Error, job \"[role]\" is not a whitelist job.")
 						return message
 				if("species")
 					if(!(role in GLOB.playable_species))
-						message.text = "Error, invalid species entered. Check spelling and capitalization."
+						message.set_text("Error, invalid species entered. Check spelling and capitalization.")
 						return message
 					if(!(role in GLOB.whitelisted_species))
-						message.text = "Error, species \"[role]\" is not a whitelist species."
+						message.set_text("Error, species \"[role]\" is not a whitelist species.")
 						return message
 				if("language")
 					var/datum/language/chosen_language = GLOB.all_languages[role]
 					if(!chosen_language)
-						message.text = "Error, invalid language entered. Check spelling and capitalization."
+						message.set_text("Error, invalid language entered. Check spelling and capitalization.")
 						return message
 					if(!(chosen_language.flags & WHITELISTED))
-						message.text = "Error, language \"[role]\" is not a whitelist language."
+						message.set_text("Error, language \"[role]\" is not a whitelist language.")
 						return message
 				if("robot")
 					if(!(role in GLOB.robot_modules))
-						message.text = "Error, invalid robot module entered. Check spelling and capitalization."
+						message.set_text("Error, invalid robot module entered. Check spelling and capitalization.")
 						return message
 					if(!(role in GLOB.whitelisted_module_types))
-						message.text = "Error, robot module \"[role]\" is not a whitelist robot module."
+						message.set_text("Error, robot module \"[role]\" is not a whitelist robot module.")
 						return message
 
 			if(!flow_sql("INSERT INTO [format_table_name("whitelist")] (ckey, kind, entry) VALUES (:ckey, :kind, :entry)", list("ckey" = ckey, "kind" = kind, "entry" = role)))
 				log_sql("Error while trying to add [ckey] to the [role] [kind] whitelist.")
-				message.text = "Error while trying to add [ckey] to the [role] [kind] whitelist. Please review SQL logs."
+				message.set_text("Error while trying to add [ckey] to the [role] [kind] whitelist. Please review SQL logs.")
 				return message
 
 			switch(kind)
@@ -546,7 +546,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 		if("remove")
 			if(!flow_sql("DELETE FROM [format_table_name("whitelist")] WHERE ckey = :ckey AND kind = :kind AND entry = :entry", list("ckey" = ckey, "kind" = kind, "entry" = role)))
 				log_sql("Error while trying to remove [ckey] from the [role] [kind] whitelist.")
-				message.text = "Error while trying to remove [ckey] from the [role] [kind] whitelist. Please review SQL logs."
+				message.set_text("Error while trying to remove [ckey] from the [role] [kind] whitelist. Please review SQL logs.")
 				return message
 
 			switch(kind)
@@ -567,7 +567,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 			var/datum/tgs_chat_embed/structure/embed = new()
 			var/found = FALSE
 
-			message.text = ""
+			message.set_text("")
 			rel_set(message, nameof(message.embed), embed)
 			embed.title = "Whitelists for [ckey]"
 
@@ -603,7 +603,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 		to_chat(user, span_info("You have been [action][action == "remove" ? "d" : "ed"] to the [kind] whitelist of [role] by an administrator."))
 
 	// Notify the admins on discord that it was successful
-	message.text = "\[Whitelist Edit\] [ckey] has been [action][action == "remove" ? "d" : "ed"] to [kind] whitelist: [role]"
+	message.set_text("\[Whitelist Edit\] [ckey] has been [action][action == "remove" ? "d" : "ed"] to [kind] whitelist: [role]")
 	log_admin(message.text)
 	message_admins(message.text)
 

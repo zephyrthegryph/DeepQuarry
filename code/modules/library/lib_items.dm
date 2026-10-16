@@ -311,7 +311,7 @@ CAPABILITIES(/obj/item/book)
 				return OP_PASS
 			else
 				src.name = newtitle
-				src.title = newtitle
+				set_title(newtitle)
 		if("Contents")
 			var/content = A.step_value("k259")
 			if(isnull(content))
@@ -329,7 +329,7 @@ CAPABILITIES(/obj/item/book)
 				to_chat(user, "The name is invalid.")
 				return OP_PASS
 			else
-				src.author = newauthor
+				set_author(newauthor)
 		else
 			return OP_PASS
 	return OP_PASS
@@ -480,7 +480,7 @@ CAPABILITIES(/obj/item/book/bundle)
 	if(!ui_gate(A))
 		return FALSE
 	if(page != pages.len)
-		page++
+		set_page(page + 1)
 		play_sfx(src, SFX_PAGETURN)
 	return TRUE
 
@@ -488,7 +488,7 @@ CAPABILITIES(/obj/item/book/bundle)
 	if(!ui_gate(A))
 		return FALSE
 	if(page > 1)
-		page--
+		set_page(page - 1)
 		play_sfx(src, SFX_PAGETURN)
 	return TRUE
 

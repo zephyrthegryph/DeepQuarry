@@ -34,8 +34,8 @@
 		if(installed_gun)
 			to_chat(user, span_warning("There's already a weapon installed."))
 			return OP_PASS
-		size += gun.w_class
-		complexity = complexity * gun.w_class //Max complexity that a case can reach is 240. This means a small gun = 60 complexity, normal = 90, large = 120. This means you could fit 3 small guns, 2 normal guns, or 1 large gun in the circuit.
+		set_size(size + gun.w_class)
+		set_complexity(complexity * gun.w_class) //Max complexity that a case can reach is 240. This means a small gun = 60 complexity, normal = 90, large = 120. This means you could fit 3 small guns, 2 normal guns, or 1 large gun in the circuit.
 		if(!move_into(src, nameof(src.installed_gun), gun, user))
 			return OP_PASS
 		to_chat(user, span_notice("You slide \the [gun] into the firing mechanism."))
@@ -55,8 +55,8 @@ CAPABILITIES(/obj/item/integrated_circuit/manipulation/weapon_firing)
 	if(installed_gun)
 		installed_gun.forceMove(get_turf(src))
 		to_chat(user, span_notice("You slide \the [installed_gun] out of the firing mechanism."))
-		size = initial(size)
-		complexity = initial(complexity)
+		set_size(initial(size))
+		set_complexity(initial(complexity))
 		play_sfx(src, SFX_ITEMS_CROWBAR)
 		rel_take(src, nameof(installed_gun))
 	else
@@ -91,9 +91,9 @@ CAPABILITIES(/obj/item/integrated_circuit/manipulation/weapon_firing)
 	var/datum/integrated_io/target_y = inputs[2]
 
 	if(isnum(target_x.data))
-		target_x.data = round(target_x.data)
+		target_x.set_data(round(target_x.data))
 	if(isnum(target_y.data))
-		target_y.data = round(target_y.data)
+		target_y.set_data(round(target_y.data))
 
 	var/turf/T = get_turf(src.assembly())
 
@@ -229,7 +229,7 @@ CAPABILITIES(/obj/item/integrated_circuit/manipulation/grenade)
 /obj/item/integrated_circuit/manipulation/grenade/proc/attach_grenade(obj/item/grenade/G)
 	rel_set(src, nameof(attached_grenade), G)
 	observe(attached_grenade, /datum/notice/qdeleting, src, then(PROC_REF(detach_grenade)))
-	size += G.w_class
+	set_size(size + G.w_class)
 	desc += " \An [attached_grenade] is attached to it!"
 
 /obj/item/integrated_circuit/manipulation/grenade/proc/detach_grenade(datum/act/notice/N)
@@ -238,7 +238,7 @@ CAPABILITIES(/obj/item/integrated_circuit/manipulation/grenade)
 		return
 	unobserve(attached_grenade, /datum/notice/qdeleting, src)
 	rel_take(src, nameof(attached_grenade))
-	size = initial(size)
+	set_size(initial(size))
 	desc = initial(desc)
 
 /obj/item/integrated_circuit/manipulation/grenade/frag

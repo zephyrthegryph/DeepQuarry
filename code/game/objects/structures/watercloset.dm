@@ -1357,9 +1357,9 @@ CAPABILITIES(/obj/structure/biowaste_tank)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "waste hopper"
 	B.desc = "With a resounding CRUNCH, your form has gotten snagged by the Muffin Monster's rotational interlocking cutters indiscriminately crunching away at anything unlucky enough to end up in its hopper, only for the insatiable machine to grind it all down into a slurry mulch fine enough to pass through the narrow sewage lines trouble-free..."
-	B.digest_brute = 20
+	B.set_digest_brute(20)
 	B.special_entrance_sound = 'sound/machines/blender.ogg'
-	B.recycling = TRUE
+	B.set_recycling(TRUE)
 
 /// Relation view: muffinmonster (reads null once it is gone).
 /obj/structure/biowaste_tank/proc/muffinmonster() as /mob/living/simple_mob/vore/aggressive/corrupthound

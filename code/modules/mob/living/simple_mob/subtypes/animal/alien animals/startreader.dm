@@ -80,12 +80,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/startreader)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "gastric sac"
 	B.desc = "It's cramped and hot! You're forced into a small ball as your shape is squeezed into the slick, wet chamber. Despite being swallowed into the creature, you find that you actually stretch out of the top a ways, and can JUST BARELY wiggle around..."
-	B.mode_flags = 40
-	B.digest_brute = 0.5
-	B.digest_burn = 0.5
-	B.digestchance = 10
-	B.absorbchance = 0
-	B.escapechance = 15
+	B.set_mode_flags(40)
+	B.set_digest_brute(0.5)
+	B.set_digest_burn(0.5)
+	B.set_digestchance(10)
+	B.set_absorbchance(0)
+	B.set_escapechance(15)
 
 /mob/living/simple_mob/vore/alienanimals/startreader/apply_melee_effects(mob/living/L)
 	if(!isliving(L))

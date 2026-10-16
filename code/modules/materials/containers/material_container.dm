@@ -155,7 +155,7 @@ CAPABILITIES(/datum/material_container)
 		if(!can_hold_material(MAT))
 			continue
 		var/mat_amount = OPTIMAL_COST(item_materials[MAT] * multiplier)
-		materials[MAT] += mat_amount
+		set_materials_at(MAT, materials[MAT] + (mat_amount))
 		if(item_materials[MAT] > max_mat_value)
 			max_mat_value = item_materials[MAT]
 			primary_mat = MAT
@@ -186,7 +186,7 @@ CAPABILITIES(/datum/material_container)
 	if(mat)
 		if(!istype(mat))
 			mat = GET_MATERIAL_REF(mat)
-		materials[mat] += amt
+		set_materials_at(mat, materials[mat] + (amt))
 	else
 		var/num_materials = length(materials)
 		if(!num_materials)
@@ -194,7 +194,7 @@ CAPABILITIES(/datum/material_container)
 
 		amt /= num_materials
 		for(var/i in materials)
-			materials[i] += amt
+			set_materials_at(i, materials[i] + (amt))
 	return (total_amount() - total_amount_saved)
 
 /**
@@ -608,7 +608,7 @@ CAPABILITIES(/datum/material_container)
 	if(materials[mat] < amt)
 		return 0
 
-	materials[mat] -= amt
+	set_materials_at(mat, materials[mat] - (amt))
 	return amt
 
 //==============================================================================================

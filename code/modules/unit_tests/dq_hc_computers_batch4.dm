@@ -96,7 +96,7 @@
 	TEST_ASSERT(C.autoprocess, "autoprocess goes on")
 	press(H, C, "autoprocess", list("on" = 0))
 	TEST_ASSERT(!C.autoprocess, "and off")
-	C.temp = list(text = "x", style = "info")
+	C.set_temp(list(text = "x", style = "info"))
 	press(H, C, "cleartemp")
 	TEST_ASSERT(isnull(C.temp), "the message is cleared")
 	press(H, C, "toggle_mode")

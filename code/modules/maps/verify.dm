@@ -43,7 +43,7 @@ REGISTRY_MEMBERSHIP(/datum/map_report, REGISTRY_MAP_REPORTS)
 	var/static/regex/area_or_turf = regex(@"/(turf|area)/")
 	for(var/path in report.bad_paths)
 		if(area_or_turf.Find("[path]", 1, 1))
-			report.loadable = FALSE
+			report.set_loadable(FALSE)
 
 	// check for tiles with the wrong number of turfs or areas
 	for(var/key in modelCache)
@@ -61,18 +61,18 @@ REGISTRY_MEMBERSHIP(/datum/map_report, REGISTRY_MAP_REPORTS)
 			areas += ispath(path, /area)
 
 		if(turfs == 0)
-			report.loadable = FALSE
+			report.set_loadable(FALSE)
 			LAZYINITLIST(report.bad_keys); LAZYADD(report.bad_keys[key], "no turf")
 		else if(turfs > 1)
 			LAZYINITLIST(report.bad_keys); LAZYADD(report.bad_keys[key], "[turfs] stacked turfs")
 
 		if(areas != 1)
-			report.loadable = FALSE
+			report.set_loadable(FALSE)
 			LAZYINITLIST(report.bad_keys); LAZYADD(report.bad_keys[key], "[areas] areas instead of 1")
 
 	if(length(report.bad_paths) || length(report.bad_keys) || !report.loadable)
 		// keep the report around so it can be referenced later
 		report.tag = "mapreport_[++report.tag_number]"
-		report.crashed = FALSE
+		report.set_crashed(FALSE)
 	else
 		return FALSE

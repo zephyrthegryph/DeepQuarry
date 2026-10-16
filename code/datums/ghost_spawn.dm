@@ -60,7 +60,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 /datum/tgui_module/ghost_spawn_menu/proc/ui_act_set_tab(datum/act/op/A, val)
 	var/new_tab = val
 	if(isnum(new_tab))
-		active_tab = new_tab
+		set_active_tab(new_tab)
 	. = TRUE
 
 /datum/tgui_module/ghost_spawn_menu/proc/ui_act_soulcatcher_spawn(datum/act/op/A, selected_player)

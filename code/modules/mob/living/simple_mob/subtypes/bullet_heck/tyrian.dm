@@ -298,11 +298,11 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirment
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "flora gut"
 	B.desc = "You have been devoured by the crystaline vulpine. A mix of flesh and flora surrond you, purple bubbling fluid soaking into your body. The beast effortlessly carrying your body, it's motions seemingly exaggerated, alien words spoken, the beast trying to taunt you."
-	B.digest_brute = 1
-	B.digest_burn = 1
-	B.digestchance = 0
-	B.absorbchance = 0
-	B.escapechance = 15
+	B.set_digest_brute(1)
+	B.set_digest_burn(1)
+	B.set_digestchance(0)
+	B.set_absorbchance(0)
+	B.set_escapechance(15)
 
 CAPABILITY(/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss, reflects(list(/obj/item/projectile), PROC_REF(current_parry_chance)))
 

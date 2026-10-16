@@ -179,7 +179,7 @@
 	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
-	A.active_symptoms = null
+	A.set_active_symptoms(null)
 	rel_clear(A, nameof(A.body))
 	rel_clear(A, nameof(A.owner))
 	return TRUE
@@ -324,9 +324,9 @@
 	regeneration_read_at = now
 	var/regeneration = regeneration_level()
 	if(regeneration > 0)
-		LAZYSET(treatment_snapshot, TREAT_REGENERATION, regeneration)
+		set_treatment_snapshot_at(TREAT_REGENERATION, regeneration)
 	else if(treatment_snapshot)
-		treatment_snapshot -= TREAT_REGENERATION
+		remove_treatment_snapshot(TREAT_REGENERATION)
 		UNSETEMPTY(treatment_snapshot)
 
 /// Total volume of `reagent_id` across the mob's holders (snapshot).
@@ -345,15 +345,15 @@
 
 /datum/body/proc/build_treatment_snapshot()
 	set_dirty(dirty & (~BODY_DIRTY_TREATMENT))
-	treatment_snapshot = null
-	reagent_interference = null
-	reagent_volumes = collect_reagent_volumes(reagent_volumes)
+	set_treatment_snapshot(null)
+	set_reagent_interference(null)
+	set_reagent_volumes(collect_reagent_volumes(reagent_volumes))
 
 	for(var/datum/affliction/A as anything in afflictions)
 		for(var/reagent_id in A.interferes_with)
 			LAZYINITLIST(reagent_interference)
 			var/current = reagent_interference[reagent_id]
-			reagent_interference[reagent_id] = (isnull(current) ? 1 : current) * A.interferes_with[reagent_id]
+			set_reagent_interference_at(reagent_id, (isnull(current) ? 1 : current) * A.interferes_with[reagent_id])
 
 	if(reagent_volumes)
 		var/strength = chem_heal_strength()
@@ -373,7 +373,7 @@
 			scale *= strength
 			for(var/tag in tags)
 				LAZYINITLIST(treatment_snapshot)
-				treatment_snapshot[tag] = min(treatment_snapshot[tag] + tags[tag] * scale, DQ_CHEM_DOSE_CAP)
+				set_treatment_snapshot_at(tag, min(treatment_snapshot[tag] + tags[tag] * scale, DQ_CHEM_DOSE_CAP))
 
 	// Regeneration is patched in on read (refresh_regeneration()); force a re-read.
 	regeneration_read_at = null
@@ -448,9 +448,9 @@
 
 /datum/body/proc/recompute_vitals()
 	set_dirty(dirty & (~BODY_DIRTY_VITALS))
-	pain = 0
-	consciousness = 100
-	vitality = 1
+	set_pain(0)
+	set_consciousness(100)
+	set_vitality(1)
 
 /// TRUE when a hook on the owner takes the status question over: the body is held alive (a dormant nanoform core) and neither death nor
 /// unconsciousness is asked. A question, not a change: the action ends refused for whoever listens for that.

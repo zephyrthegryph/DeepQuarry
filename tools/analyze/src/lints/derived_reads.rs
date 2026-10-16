@@ -56,7 +56,7 @@ static META: Meta = Meta {
             "Legacy derived-proc reads a type's derived() doesn't declare (tools/ci/derived_reads_lint.py).",
             "rule<TAB>file<TAB>normalized line. Shrink-only: after a sweep, `python tools/ci/derived_reads_lint.py --update`.",
         ],
-        banned: &[],
+        banned: &["untracked_ui_read"],
     },
     rules: &[
         RuleMeta { name: "undeclared_read", hint: H_UNDECLARED },
@@ -67,7 +67,7 @@ static META: Meta = Meta {
         RuleMeta { name: "exact_on_state_changed", hint: H_EXACT },
     ],
     allow: &["derived_reads"],
-    lists: &["ui_hosts"],
+    lists: &[],
 };
 
 // ---- small mappings ---------------------------------------------------------------------------
@@ -510,9 +510,18 @@ fn parse_file(f: &SourceFile) -> Parts {
         } else if !line.starts_with('\t') && !line.starts_with(' ') && !line.is_empty() {
             caps_owner = None;
         } else if let Some(owner) = &caps_owner {
-            if let Some(m) = pat_match!(r"^\s+(?:ref|rel|own)_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)").captures(line) {
+            if let Some(m) = pat_match!(r"^\s+(?:ref|rel|owns?)_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)").captures(line) {
                 relations.entry(owner.clone()).or_default().insert(m.s(1).to_string());
             }
+        }
+        // link(/A::a, /B::b) / links(...) in a CAPABILITIES block declares both ends relations.
+        if let Some(m) = pat_match!(r"^\s+links?\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)").captures(line) {
+            relations.entry(m.s(1).to_string()).or_default().insert(m.s(2).to_string());
+            relations.entry(m.s(3).to_string()).or_default().insert(m.s(4).to_string());
+        }
+        // STAT(/T, v, ...) makes v a stat: the stat layer publishes it.
+        if let Some(m) = pat_match!(r"^STAT\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(line) {
+            tracked.entry(m.s(1).to_string()).or_default().insert(m.s(2).to_string());
         }
         if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(line) {
             tracked.entry(m.s(1).to_string()).or_default().insert(m.s(2).to_string());
@@ -541,7 +550,7 @@ fn parse_file(f: &SourceFile) -> Parts {
         proc.owner = if trimmed.is_empty() { "/".to_string() } else { trimmed.to_string() };
         if proc.name == "relations" && proc.owner != "/" {
             for (_n, text) in &proc.body {
-                for m in pat!(r"\brel_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)").captures_iter(text) {
+                for m in pat!(r"\b(?:rel|ref|owns?)_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)").captures_iter(text) {
                     relations.entry(proc.owner.clone()).or_default().insert(m.s(1).to_string());
                 }
             }
@@ -809,8 +818,20 @@ fn derive_value(name: &str) -> Option<&str> {
     name.strip_prefix("derive_").filter(|v| !v.is_empty())
 }
 
-fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool, ui_hosts: &[String]) -> Vec<Finding> {
+fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool) -> Vec<Finding> {
     let mut findings: Vec<Finding> = Vec::new();
+    // A var no proc writes (outside a setter) and no setter call names never changes: nothing can fail to publish it. The same test the
+    // inference uses to leave a var constant (`auto_tracked::candidate`).
+    let writers: Option<(Arc<HashSet<String>>, Arc<BTreeSet<String>>)> = if generated_covers {
+        crate::sem::sem_for(tree).map(|sem| (crate::gens::auto_tracked::writes_outside_setters_of(tree, &sem), crate::gens::auto_tracked::set_calls(tree)))
+    } else {
+        None
+    };
+    let sem_model = if generated_covers { crate::sem::sem_for(tree) } else { None };
+    let never_written = |owner: &str, name: &str| {
+        let constant_decl = sem_model.as_ref().and_then(|s| s.var_decl(owner, name)).is_some_and(|v| v.is_static || v.is_const);
+        constant_decl || writers.as_ref().is_some_and(|(w, c)| !w.contains(name) && !c.contains(name) && !c.contains(&format!("{}[]", name)))
+    };
     for proc in &model.procs {
         if proc.owner == "/" || starts_any(&proc.rel, SKIP_SITE_DIRS) || proc.owner.starts_with("/datum/capability") {
             continue;
@@ -823,16 +844,12 @@ fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool, 
         let known = model.union(&model.vars, &proc.owner);
         if proc.name == "ui_data" {
             // A window host's ui_data(A) is an output: every var of the host it reads must publish its writes, or nothing
-            // re-runs it. Enforced for the hosts lint_scopes.toml lists (`ui_hosts`, the converted ones); the list grows as hosts
-            // convert and goes away, the rule global, when the last one has.
-            if !ui_hosts.iter().any(|h| *h == proc.owner) {
-                continue;
-            }
+            // re-runs it. Global, no exemption list.
             let tracked = model.union(&model.tracked, &proc.owner);
             let relations = model.union(&model.relations, &proc.owner);
             let derived: HashSet<String> = model.declared_derive(&proc.owner).into_keys().collect();
             for (name, line) in body_reads(proc, &known) {
-                if EXEMPT_VARS.contains(&name.as_str()) || tracked.contains(&name) || relations.contains(&name) || derived.contains(&name) || raw_allowed(tree, sink, &proc.rel, line) {
+                if EXEMPT_VARS.contains(&name.as_str()) || tracked.contains(&name) || relations.contains(&name) || derived.contains(&name) || never_written(&proc.owner, &name) || raw_allowed(tree, sink, &proc.rel, line) {
                     continue;
                 }
                 findings.push(Finding {
@@ -846,7 +863,9 @@ fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool, 
                 });
             }
         }
-        if generated_covers && !model.exact(&proc.owner) {
+        // The reads generator writes a window host's ui_from() from its ui_data() body whether or not the type also keeps a hand derived()
+        // (`gens/reads.rs`): a hand list for a window would only repeat it.
+        if generated_covers && (proc.name == "ui_data" || !model.exact(&proc.owner)) {
             continue;
         }
         let (allowed_reads, label, wanted_kind): (HashSet<String>, String, &str) = if let Some(value) = value {
@@ -1404,8 +1423,7 @@ impl Lint for DerivedReads {
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let files = cx.files();
         let model = Model::get(cx.tree, &files);
-        let ui_hosts = cx.list("ui_hosts").to_vec();
-        for f in analyze(&model, cx.tree, out, true, &ui_hosts) {
+        for f in analyze(&model, cx.tree, out, true) {
             out.site_in(f.rule, &f.rel, f.line);
         }
     }
@@ -1535,7 +1553,7 @@ fn model_of(texts: &[(&str, String)]) -> (Tree, Model) {
 fn run_analyze(texts: &[(&str, String)]) -> (Tree, Model, Vec<Finding>) {
     let (tree, model) = model_of(texts);
     let mut sink = Sink::new();
-    let found = analyze(&model, &tree, &mut sink, false, &["/obj/panel".to_string()]);
+    let found = analyze(&model, &tree, &mut sink, false);
     (tree, model, found)
 }
 

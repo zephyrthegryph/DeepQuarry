@@ -95,13 +95,13 @@
 	switch (command)
 		if ("confirm_dock")
 			if (control_mode == MODE_CLIENT && dock_state == STATE_UNDOCKED && receive_tag == tag_target)
-				dock_state = STATE_DOCKING
+				set_dock_state(STATE_DOCKING)
 				broadcast_docking_status()
 				if (!override_enabled)
 					prepare_for_docking()
 
 			else if (control_mode == MODE_CLIENT && dock_state == STATE_DOCKING && receive_tag == tag_target)
-				dock_state = STATE_DOCKED
+				set_dock_state(STATE_DOCKED)
 				broadcast_docking_status()
 				if (!override_enabled)
 					finish_docking()	//client done docking!
@@ -120,7 +120,7 @@
 						return
 
 				control_mode = MODE_SERVER
-				dock_state = STATE_DOCKING
+				set_dock_state(STATE_DOCKING)
 				broadcast_docking_status()
 
 				if (!override_enabled)
@@ -137,7 +137,7 @@
 
 		if ("request_undock")
 			if (control_mode == MODE_SERVER && dock_state == STATE_DOCKED && receive_tag == tag_target)
-				dock_state = STATE_UNDOCKING
+				set_dock_state(STATE_UNDOCKING)
 				broadcast_docking_status()
 
 				if (!override_enabled)
@@ -159,7 +159,7 @@
 				else if (control_mode == MODE_SERVER && received_confirm)
 					send_docking_command(tag_target, "confirm_dock")	//tell the client we are done docking.
 
-					dock_state = STATE_DOCKED
+					set_dock_state(STATE_DOCKED)
 					broadcast_docking_status()
 
 					if (!override_enabled)
@@ -208,7 +208,7 @@
 	if (dock_state != STATE_DOCKED || control_mode != MODE_CLIENT)		//must be docked and must be client to start undocking
 		return
 
-	dock_state = STATE_UNDOCKING
+	set_dock_state(STATE_UNDOCKING)
 	broadcast_docking_status()
 
 	if (!override_enabled)
@@ -241,13 +241,13 @@
 	return 1
 
 /datum/embedded_program/docking/proc/enable_override()
-	override_enabled = 1
+	set_override_enabled(1)
 
 /datum/embedded_program/docking/proc/disable_override()
-	override_enabled = 0
+	set_override_enabled(0)
 
 /datum/embedded_program/docking/proc/reset()
-	dock_state = STATE_UNDOCKED
+	set_dock_state(STATE_UNDOCKED)
 	broadcast_docking_status()
 
 	control_mode = MODE_NONE

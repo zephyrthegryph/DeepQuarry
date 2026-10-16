@@ -365,12 +365,12 @@ MSG_DEF_SELF(clonepod/container_full, "the pod has too many containers loaded")
 /obj/machinery/clonepod/RefreshParts()
 	..()
 	speed_coeff = 0
-	efficiency = 0
+	set_efficiency(0)
 	for(var/obj/item/stock_parts/scanning_module/S in component_parts)
-		efficiency += S.rating
+		set_efficiency(efficiency + S.rating)
 	for(var/obj/item/stock_parts/manipulator/P in component_parts)
 		speed_coeff += P.rating
-	heal_level = max(min((efficiency * 15) + 10, 100), MINIMUM_HEAL_LEVEL)
+	set_heal_level(max(min((efficiency * 15) + 10, 100), MINIMUM_HEAL_LEVEL))
 
 /// Genetic damage still to grow out of the clone (0..100).
 /obj/machinery/clonepod/proc/clone_growth_load(mob/living/occupant)

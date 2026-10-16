@@ -88,7 +88,7 @@ a creative player the means to solve many problems.  Circuits are held inside an
 	var/input = sanitizeSafe(_answer_k80, MAX_NAME_LEN)
 	if(src && input && assembly().check_interactivity(M))
 		to_chat(M, span_notice("The circuit '[src.name]' is now labeled '[input]'."))
-		displayed_name = input
+		set_displayed_name(input)
 
 /datum/prompt/text/electronics_rename
 	title = "Rename"

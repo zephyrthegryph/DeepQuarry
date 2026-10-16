@@ -90,7 +90,7 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 	if(istype(H))
 		H.set_real_name("[ninja_title] [ninja_name]")
 		H.name = H.real_name
-	player.name = H.name
+	player.set_name(H.name)
 
 /datum/antagonist/ninja/equip(mob/living/carbon/human/player)
 

@@ -359,7 +359,7 @@
 		if(_lang_custom[key])
 			var/datum/language/keylang = GLOB.all_languages[_lang_custom[key]]
 			if(keylang)
-				new_character.language_keys[key] = keylang
+				new_character.set_language_keys_at(key, keylang)
 	if(client.prefs.read_preference(/datum/preference/text/human/preferred_language)) // Do we have a preferred language?
 		var/datum/language/def_lang = GLOB.all_languages[client.prefs.read_preference(/datum/preference/text/human/preferred_language)]
 		if(def_lang)

@@ -140,5 +140,5 @@ CAPABILITIES(/obj/item/radio/electropack)
 		return FALSE
 	var/delta = delta_arg
 	if(isnum(delta))
-		code = clamp(round(code + delta), 1, 100)
+		set_code(clamp(round(code + delta), 1, 100))
 	return TRUE

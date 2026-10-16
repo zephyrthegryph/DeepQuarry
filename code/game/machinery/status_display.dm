@@ -261,7 +261,7 @@ CAPABILITIES(/obj/machinery/status_display)
 /obj/machinery/status_display/proc/display_alert(newlevel)
 	remove_display()
 	if(seclevel != newlevel)
-		seclevel = newlevel
+		set_seclevel(newlevel)
 	switch(seclevel)
 		if("green")	set_glow(src, GLOW(2, 0.25, "#00ff00"))
 		if("yellow")	set_glow(src, GLOW(2, 0.25, "#ffff00"))

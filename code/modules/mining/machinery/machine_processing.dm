@@ -152,7 +152,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 
 /obj/machinery/mineral/processing_unit_console/proc/ui_act_showallores(datum/act/op/A)
 	add_fingerprint(A.actor)
-	show_all_ores = !show_all_ores
+	set_show_all_ores(!show_all_ores)
 	return OP_OK
 
 /obj/machinery/mineral/processing_unit_console/proc/ui_act_logoff(datum/act/op/A)
@@ -291,7 +291,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit)
 			if(OB.stored_ore[ore] > 0)
 				var/ore_amount = OB.stored_ore[ore]									// How many ores does the box have?
 				ores_stored[ore] += ore_amount 										// Add the ore to the machine.
-				points += (ore_values[ore]*points_mult*ore_amount) // Give Points! or give lots of points! or less points! or no points!
+				set_points(points + ((ore_values[ore]*points_mult*ore_amount))) // Give Points! or give lots of points! or less points! or no points!
 				OB.stored_ore[ore] = 0 												// Set the value of the ore in the box to 0.
 
 	for(var/obj/item/ore_chunk/ore_chunk in input_marker().loc) //Special ore chunk item. For conveyor belt. Completely unneeded but keeps asthetics.
@@ -304,7 +304,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit)
 			if(chunk_ores[ore] > 0)
 				var/ore_amount = chunk_ores[ore]
 				ores_stored[ore] += ore_amount
-				points += (ore_values[ore]*points_mult*ore_amount)
+				set_points(points + ((ore_values[ore]*points_mult*ore_amount)))
 
 	for(var/obj/item/ore/O in input_marker().loc)
 		var/ore_material = O.material
@@ -312,7 +312,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit)
 			continue
 		if(!isnull(ores_stored[ore_material]))
 			ores_stored[ore_material]++
-			points += (ore_values[ore_material]*points_mult)
+			set_points(points + ((ore_values[ore_material]*points_mult)))
 
 	//Process our stored ores and spit out sheets.
 	var/sheets = 0

@@ -46,8 +46,8 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 /mob/living/simple_mob/metroid/mine/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected_of(src)
-	B.digest_burn = 0.5
-	B.digest_brute = 0
+	B.set_digest_burn(0.5)
+	B.set_digest_brute(0)
 
 
 /mob/living/simple_mob/metroid/mine/on_death(gibbed)
