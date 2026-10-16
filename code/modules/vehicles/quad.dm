@@ -87,13 +87,13 @@ CAPABILITIES(/obj/vehicle/train/engine/quadbike/random)
 /obj/vehicle/train/engine/quadbike/proc/handle_vehicle_icon()
 	switch(dir) //Due to being a Big Boy sprite, it has to have special pixel shifting to look 'normal' when being driven.
 		if(1)
-			pixel_y = -6
+			set_pixel_y(-6)
 		if(2)
-			pixel_y = -6
+			set_pixel_y(-6)
 		if(4)
-			pixel_y = 0
+			set_pixel_y(0)
 		if(8)
-			pixel_y = 0
+			set_pixel_y(0)
 
 /obj/vehicle/train/engine/quadbike/draw(datum/look/look)
 	..()
@@ -197,20 +197,20 @@ CAPABILITIES(/obj/vehicle/train/trolley/trailer/random)
 	if(lead())
 		switch(dir) //Due to being a Big Boy sprite, it has to have special pixel shifting to look 'normal'.
 			if(1)
-				pixel_y = -10
-				pixel_x = -16
+				set_pixel_y(-10)
+				set_pixel_x(-16)
 			if(2)
-				pixel_y = 0
-				pixel_x = -16
+				set_pixel_y(0)
+				set_pixel_x(-16)
 			if(4)
-				pixel_y = 0
-				pixel_x = -25
+				set_pixel_y(0)
+				set_pixel_x(-25)
 			if(8)
-				pixel_y = 0
-				pixel_x = -5
+				set_pixel_y(0)
+				set_pixel_x(-5)
 	else
-		pixel_x = initial(pixel_x)
-		pixel_y = initial(pixel_y)
+		set_pixel_x(initial(pixel_x))
+		set_pixel_y(initial(pixel_y))
 	update_load()
 
 /obj/vehicle/train/trolley/trailer/Bump(atom/Obstacle)

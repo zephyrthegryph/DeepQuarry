@@ -78,8 +78,8 @@ CAPABILITIES(/obj/structure/stripper_pole)
 
 /obj/structure/stripper_pole/proc/dance(mob/user)
 	if(layer == BELOW_MOB_LAYER)
-		layer = ABOVE_MOB_LAYER
+		set_layer(ABOVE_MOB_LAYER)
 	else
-		layer = BELOW_MOB_LAYER
+		set_layer(BELOW_MOB_LAYER)
 
 /// Old object verbs.

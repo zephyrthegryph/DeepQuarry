@@ -57,7 +57,7 @@ CAPABILITIES(/obj/machinery/smartfridge/drying_rack)
 			if(S.dried_type == S.type)
 				S.dry = 1
 				S.name = "dried [S.name]"
-				S.color = "#AAAAAA"
+				S.set_color("#AAAAAA")
 				rel_remove(I, nameof(I.instances), S)
 				S.forceMove(get_turf(src))
 			else

@@ -122,7 +122,7 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 		declared = TRUE
 		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id))
 	if(tint && declared)
-		holder.color = holder.reagents.get_color()
+		holder.set_color(holder.reagents.get_color())
 	if(total > max_volume)
 		WARNING("[holder]([holder.type]) declares more reagents ([total]) than its volume ([max_volume])")
 

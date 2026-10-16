@@ -188,10 +188,10 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 		//Cosmetics mostly
 		var/obj/effect/temp_visual/shadekin/phase_in/phaseanim = new SK.phase_in_anim(src.loc)
-		phaseanim.pixel_y = (src.size_multiplier - 1) * 16 // Pixel shift for the animation placement
+		phaseanim.set_pixel_y((src.size_multiplier - 1) * 16) // Pixel shift for the animation placement
 		phaseanim.adjust_scale(src.size_multiplier, src.size_multiplier)
 		phaseanim.set_dir(dir)
-		alpha = 0
+		set_alpha(0)
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
 
 		after(src, SK.phase_time, PROC_REF(shadekin_complete_phase_in), with = list(original_canmove, SK))
@@ -199,7 +199,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 /mob/living/proc/shadekin_complete_phase_in(original_canmove, datum/shadekin/SK)
 	set_canmove(original_canmove)
-	alpha = initial(alpha)
+	set_alpha(initial(alpha))
 	remove_body_effect(/datum/body_effect/shadekin_phase_vision)
 	remove_body_effect(/datum/body_effect/phased_out)
 
@@ -296,10 +296,10 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 			B.escapable = B_ESCAPABLE_NONE
 
 		var/obj/effect/temp_visual/shadekin/phase_out/phaseanim = new SK.phase_out_anim(src.loc)
-		phaseanim.pixel_y = (src.size_multiplier - 1) * 16 // Pixel shift for the animation placement
+		phaseanim.set_pixel_y((src.size_multiplier - 1) * 16) // Pixel shift for the animation placement
 		phaseanim.adjust_scale(src.size_multiplier, src.size_multiplier)
 		phaseanim.set_dir(dir)
-		alpha = 0
+		set_alpha(0)
 		apply_body_effect(/datum/body_effect/shadekin_phase_vision)
 		if(SK.normal_phase)
 			apply_body_effect(/datum/body_effect/phased_out)
@@ -310,7 +310,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 	set_invisibility(INVISIBILITY_SHADEKIN)
 	see_invisible = INVISIBILITY_SHADEKIN
 	set_see_invisible_default(INVISIBILITY_SHADEKIN) // Allow seeing phased entities while phased.
-	alpha = 127
+	set_alpha(127)
 
 	set_canmove(original_canmove)
 	set_incorporeal_move(TRUE)

@@ -76,7 +76,7 @@ TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_v
 /obj/item/reagent_containers/powder/proc/get_appearance()
 	/// Names and colors based on dominant reagent.
 	if (reagents.reagent_list.len > 0)
-		color = reagents.get_color()
+		set_color(reagents.get_color())
 		var/datum/reagent/R = reagents.get_master_reagent()
 		var/new_name = lowertext(R.name)
 		name = "powdered [new_name]"

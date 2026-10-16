@@ -467,7 +467,7 @@ CAPABILITIES(/obj/machinery/door)
 /obj/machinery/door/proc/open_internalfinish(forced = 0)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
 	SHOULD_NOT_OVERRIDE(TRUE)
-	layer = open_layer
+	set_layer(open_layer)
 	explosion_resistance = 0
 	set_opacity(0)
 	set_operating(0)
@@ -512,7 +512,7 @@ CAPABILITIES(/obj/machinery/door)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	set_density(TRUE)
 	explosion_resistance = initial(explosion_resistance)
-	layer = closed_layer
+	set_layer(closed_layer)
 	update_nearby_tiles()
 	after(src, anim_length_before_finalize, PROC_REF(close_internalfinish), with = list(forced))
 

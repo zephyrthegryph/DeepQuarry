@@ -287,10 +287,10 @@ default behaviour is:
 		SSmotiontracker?.ping(src) // ? in case this runs before GLOB is set up (turf enter gravity).
 	if(is_shifted)
 		set_is_shifted(FALSE)
-		pixel_x = default_pixel_x
-		pixel_y = default_pixel_y
-		layer = initial(layer)
-		plane = initial(plane)
+		set_pixel_x(default_pixel_x)
+		set_pixel_y(default_pixel_y)
+		set_layer(initial(layer))
+		set_plane(initial(plane))
 
 	var/atom/movable/pulling = src?.pulling_target()
 	if(pulling) // we were pulling a thing and didn't lose it during our move.
@@ -326,8 +326,8 @@ default behaviour is:
 		inertia_dir = 0
 		make_floating(0)
 	if(status_flags & HIDING)
-		layer = HIDING_LAYER
-		plane = OBJ_PLANE
+		set_layer(HIDING_LAYER)
+		set_plane(OBJ_PLANE)
 
 	// Update client color if we're moving from an indoor turf to an outdoor one or vice versa. Needed to make weather blending update in mixed indoor/outdoor turfed areas
 	var/turf/old_turf = oldloc

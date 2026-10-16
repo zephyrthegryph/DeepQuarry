@@ -130,7 +130,7 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 		return
 	set_icon(chosen_item.icon)
 	set_icon_state(chosen_item.icon_state)
-	color = chosen_item.color
+	set_color(chosen_item.color)
 	rel_set(src, nameof(selected_item), chosen_item)
 
 /obj/item/robotic_multibelt/dropped(mob/user, equipping, slot)
@@ -278,7 +278,7 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 		var/image/cable_image = our_belt.integrated_tool_images[name]
 		cable_image.color = color
 		if(our_belt.icon == icon)
-			our_belt.color = color
+			our_belt.set_color(color)
 
 /*
  * Surgical Tools

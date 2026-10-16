@@ -11,7 +11,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("ai_core")
 	using.screen_loc = ui_ai_core
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Camera list
@@ -20,7 +20,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("camera")
 	using.screen_loc = ui_ai_camera_list
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Track
@@ -29,7 +29,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("track")
 	using.screen_loc = ui_ai_track_with_camera
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Camera light
@@ -38,7 +38,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("camera_light")
 	using.screen_loc = ui_ai_camera_light
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Crew Monitoring
@@ -47,7 +47,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("crew_monitor")
 	using.screen_loc = ui_ai_crew_monitor
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Crew Manifest
@@ -56,7 +56,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("manifest")
 	using.screen_loc = ui_ai_crew_manifest
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Alerts
@@ -65,7 +65,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("alerts")
 	using.screen_loc = ui_ai_alerts
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Announcement
@@ -74,7 +74,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("announcement")
 	using.screen_loc = ui_ai_announcement
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Shuttle
@@ -83,7 +83,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("call_shuttle")
 	using.screen_loc = ui_ai_shuttle
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Laws
@@ -92,7 +92,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("state_laws")
 	using.screen_loc = ui_ai_state_laws
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //PDA Messenger
@@ -101,7 +101,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("pda_receive")
 	using.screen_loc = ui_ai_pda_log
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Take image
@@ -110,7 +110,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("take_picture")
 	using.screen_loc = ui_ai_take_picture
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //View images
@@ -119,7 +119,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("view_images")
 	using.screen_loc = ui_ai_view_images
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Multicamera mode
@@ -129,7 +129,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("multicam")
 	using.screen_loc = ui_ai_multicam
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Add multicamera camera
@@ -138,7 +138,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("new_cam")
 	using.screen_loc = ui_ai_add_multicam
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Up and Down
@@ -147,7 +147,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("up")
 	using.screen_loc = ui_ai_updown
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen()
@@ -155,7 +155,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("down")
 	using.screen_loc = ui_ai_updown
-	using.layer = SCREEN_LAYER
+	using.set_layer(SCREEN_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 	if(client && apply_to_client)

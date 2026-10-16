@@ -168,7 +168,7 @@ MSG_DEF_SELF(weaver/already_there, span_warning("You can't create another one in
 	set_silk_reserve(max(silk_reserve - weave_cost(A), 0))
 	var/product = weave_product(A)
 	var/atom/object = new product(owner.loc)
-	object.color = silk_color
+	object.set_color(silk_color)
 
 /// Trait system: silk production.
 /// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).

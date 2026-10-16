@@ -167,7 +167,7 @@ CAPABILITIES(/obj/effect/mine)
 	act_message(user, null, MSG_SELF(span_notice("You very carefully screw the mine's panel [panel_open ? "open" : "closed"].")), \
 		MSG_OTHERS(span_warning("%U% very carefully screws the mine's panel [panel_open ? "open" : "closed"].")))
 	playsound(src, sounds_of(tool).use, 50, 1)
-	alpha = camo_net ? (panel_open ? 255 : 50) : 255
+	set_alpha(camo_net ? (panel_open ? 255 : 50) : 255)
 	return OP_OK
 
 /obj/effect/mine/proc/wirecutter_used(datum/act/op/A)

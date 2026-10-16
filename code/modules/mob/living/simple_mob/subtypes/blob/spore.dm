@@ -74,15 +74,15 @@ CAPABILITIES(/mob/living/simple_mob/blob/spore)
 	..() // This will cut our overlays.
 
 	if(overmind)
-		color = overmind.blob_type.complementary_color
+		set_color(overmind.blob_type.complementary_color)
 		set_glow_color(color)
 		set_glow_toggle(TRUE)
 	else if(blob_type)
-		color = blob_type.complementary_color
+		set_color(blob_type.complementary_color)
 		set_glow_color(color)
 		set_glow_toggle(TRUE)
 	else
-		color = null
+		set_color(null)
 		set_glow_color(null)
 		set_glow_toggle(FALSE)
 
@@ -92,7 +92,7 @@ CAPABILITIES(/mob/living/simple_mob/blob/spore)
 		var/mutable_appearance/blob_head_overlay = mutable_appearance('icons/mob/blob.dmi', "blob_head")
 		if(overmind)
 			blob_head_overlay.color = overmind.blob_type.complementary_color
-		color = initial(color)//looks better.
+		set_color(initial(color))//looks better.
 		add_overlay(blob_head_overlay)
 
 /mob/living/simple_mob/blob/spore/life_special(datum/seq_frame/life/F)

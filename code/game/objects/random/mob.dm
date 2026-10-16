@@ -688,7 +688,7 @@ CAPABILITIES(/obj/random/mob/wildscugs)
 	if(!istype(M))
 		return
 	var/obj/random/mob/wildscugs/P = path
-	M.color = pick(COLOR_WHITE, COLOR_RED, COLOR_PURPLE, COLOR_YELLOW, COLOR_CYAN_BLUE, COLOR_RED_GRAY, COLOR_BEIGE, COLOR_PINK, COLOR_BLACK)
+	M.set_color(pick(COLOR_WHITE, COLOR_RED, COLOR_PURPLE, COLOR_YELLOW, COLOR_CYAN_BLUE, COLOR_RED_GRAY, COLOR_BEIGE, COLOR_PINK, COLOR_BLACK))
 	var/newname = MAP_VAR(P, varedits, newname)
 	if(newname)
 		M.name = islist(newname) ? pick(newname) : newname

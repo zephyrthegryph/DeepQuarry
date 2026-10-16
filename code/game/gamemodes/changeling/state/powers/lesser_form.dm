@@ -104,9 +104,9 @@
 
 	var/mob/living/carbon/human/O = new /mob/living/carbon/human( src )
 	if (C.dna.GetUIState(DNA_UI_GENDER))
-		O.gender = FEMALE
+		O.set_gender(FEMALE)
 	else
-		O.gender = MALE
+		O.set_gender(MALE)
 	rel_set(O, nameof(O.dna), C.dna.Clone())
 	own_clear(C, nameof(C.dna), OWN_DELETE)
 	O.set_real_name(chosen_dna.real_name)

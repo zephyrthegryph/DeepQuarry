@@ -331,7 +331,7 @@ CAPABILITIES(/obj/effect/spider/cocoon)
 /obj/effect/spider/spiderling/non_growing/horror/die()
 	visible_message(span_cult("[src] stops squirming."))
 	var/obj/effect/decal/cleanable/tendril_remains/remains = new /obj/effect/decal/cleanable/tendril_remains(src.loc)
-	remains.color = color
+	remains.set_color(color)
 	replace_with(src, remains)
 
 /obj/effect/decal/cleanable/tendril_remains

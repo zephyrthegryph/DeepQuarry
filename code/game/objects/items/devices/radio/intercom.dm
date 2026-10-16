@@ -162,8 +162,8 @@ CAPABILITIES(/obj/item/radio/intercom/omni)
 	var/obj/structure/frame/frame = new(loc)
 	var/obj/item/circuitboard/board = circuit
 	rel_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
-	frame.pixel_x = pixel_x
-	frame.pixel_y = pixel_y
+	frame.set_pixel_x(pixel_x)
+	frame.set_pixel_y(pixel_y)
 	board.forceMove(frame)
 	own_move(board, frame, nameof(frame.circuit)) // from the intercom to the frame (CONTAINED there)
 	frame.set_dir(dir)

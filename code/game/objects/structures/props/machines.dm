@@ -622,7 +622,7 @@
 
 	// Arrange
 	AM.add_filter("podmask", 1, alpha_mask_filter(render_source = "nt_podmask[REF(src)]", flags = MASK_INVERSE))
-	AM.pixel_y = 12
+	AM.set_pixel_y(12)
 	AM.vis_flags = VIS_INHERIT_ID|VIS_INHERIT_DIR
 	vis_contents += AM
 	if(ismob(AM))
@@ -642,7 +642,7 @@
 	AM.remove_filter("podmask")
 	AM.forceMove(drop_location())
 	AM.vis_flags = contents_vis_flags
-	AM.pixel_y = contents_original_pixel_y
+	AM.set_pixel_y(contents_original_pixel_y)
 
 CAPABILITIES(/obj/structure/prop/machine/nt_pod)
 	ref_one(nameof(outside))

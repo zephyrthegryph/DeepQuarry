@@ -265,8 +265,8 @@ CAPABILITIES(/obj/machinery/organ_printer)
 		var/obj/item/organ/external/E = O
 		E.sync_colour_to_human(C)
 
-	O.pixel_x = rand(-6.0, 6)
-	O.pixel_y = rand(-6.0, 6)
+	O.set_pixel_x(rand(-6.0, 6))
+	O.set_pixel_y(rand(-6.0, 6))
 
 	if(O.data)
 		// This is a very hacky way of doing of what organ/New() does if it has an owner

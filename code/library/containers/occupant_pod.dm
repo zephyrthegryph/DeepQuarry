@@ -229,11 +229,11 @@ GLOBAL_LIST_EMPTY(occupant_pod_slots)
 		return
 	if(!isnull(shown_y)) // the pod's look shows them (on_draw()); they sit raised in it, facing out
 		if(inserted)
-			M.pixel_y += shown_y
+			M.set_pixel_y(M.pixel_y + shown_y)
 			M.set_dir(SOUTH)
 		else
-			M.pixel_x = M.default_pixel_x
-			M.pixel_y = M.default_pixel_y
+			M.set_pixel_x(M.default_pixel_x)
+			M.set_pixel_y(M.default_pixel_y)
 	if(inserted)
 		PUBLISH(holder, pod_enter, M)
 	else

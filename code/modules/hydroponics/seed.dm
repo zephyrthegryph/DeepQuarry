@@ -201,7 +201,7 @@
 				set_glow(splat, GLOW(blight, 0.5, clr))
 			var/flesh_colour = get_trait(TRAIT_FLESH_COLOUR)
 			if(!flesh_colour) flesh_colour = get_trait(TRAIT_PRODUCT_COLOUR)
-			if(flesh_colour) splat.color = get_trait(TRAIT_PRODUCT_COLOUR)
+			if(flesh_colour) splat.set_color(get_trait(TRAIT_PRODUCT_COLOUR))
 
 	if(chems && chems.len)
 		for(var/mob/living/M in turf_contents_of_type(T, /mob/living))

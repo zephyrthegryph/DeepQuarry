@@ -391,7 +391,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	// also safe -- it just keeps the item real a while longer, same as
 	// before C10 existed.
 	latent_unpin("equipped")
-	appearance_flags &= ~NO_CLIENT_COLOR
+	set_appearance_flags(appearance_flags & (~NO_CLIENT_COLOR))
 	// Remove any item actions we temporary gave out.
 	for(var/datum/action/action_item_has as anything in actions)
 		action_item_has.Remove(user)
@@ -409,8 +409,8 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	PUBLISH_LEGACY(src, /datum/notice/item_pickup, user)
 	PUBLISH_LEGACY(user, /datum/notice/item_pickup, src)
 	PUBLISH_LEGACY(user, /datum/notice/picked_up_item, src)
-	pixel_x = 0
-	pixel_y = 0
+	set_pixel_x(0)
+	set_pixel_y(0)
 	return
 
 // called when this item is removed from a storage item, which is passed on as S. The loc variable is already set to the new destination before this is called.
@@ -711,14 +711,14 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 //Used for selecting a random pixel placement, usually on initialize. Checks for pixel_x/y to not interfere with mapped in items.
 /obj/item/proc/randpixel_xy()
 	if(!pixel_x && !pixel_y)
-		pixel_x = rand(-randpixel, randpixel)
-		pixel_y = rand(-randpixel, randpixel)
+		set_pixel_x(rand(-randpixel, randpixel))
+		set_pixel_y(rand(-randpixel, randpixel))
 		return TRUE
 	else
 		return FALSE
 
 //Worn icon generation for on-mob sprites
-/obj/item/proc/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null)
+/obj/item/proc/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null, mob/living/carbon/human/wearer = null)
 	//Get the required information about the base icon
 	var/icon/icon2use = get_worn_icon_file(body_type = body_type, slot_name = slot_name, default_icon = default_icon, inhands = inhands)
 	if(istext(icon2use)) // a sheet named by its path: an image takes a file, not the text of one
@@ -748,8 +748,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		standing = image(worn_addblend_icon(icon2use, state2use, addblends))
 	else
 		standing = image(icon = icon2use, icon_state = state2use)
-	standing.alpha = read_once(alpha) // the worn picture is made from the item's tint when it is made: a sampled read
-	standing.color = read_once(color)
+	standing.alpha = alpha
+	standing.color = color
 	standing.layer = layer2use
 
 	if(istype(clip_mask)) //For taur bodies/tails clipping off parts of uniforms and suits.
@@ -757,7 +757,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 
 	//Apply any special features
 	if(!inhands)
-		apply_blood(standing)			//Some items show blood when bloodied
+		apply_blood(standing, wearer)			//Some items show blood when bloodied
 		apply_accessories(standing)		//Some items sport accessories like webbing
 
 	//Apply overlays to our...overlay
@@ -881,7 +881,8 @@ DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_ic
 	return standing_icon
 
 //STUB
-/obj/item/proc/apply_blood(image/standing)
+/// A garment shows the blood it carries in the mask of the one who wears it (the wearer, when the caller draws one; a hat on a robot has none).
+/obj/item/proc/apply_blood(image/standing, mob/living/carbon/human/wearer)
 	return standing
 
 //STUB
@@ -969,8 +970,8 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 			var/dist = sqrt((dist_x*dist_x)+(dist_y*dist_y))
 			animate(W, pixel_x=target_x, pixel_y=target_y,time=dist*0.5)
 		else
-			W.pixel_x = target_x
-			W.pixel_y = target_y
+			W.set_pixel_x(target_x)
+			W.set_pixel_y(target_y)
 
 #undef CELLS
 #undef CELLSIZE
@@ -1038,9 +1039,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 	animation_matrix.Turn(pick(-30, 30))
 	animation_matrix.Scale(0.7)
 
-	pixel_x = from_x
-	pixel_y = from_y
-	alpha = 0
+	set_pixel_x(from_x)
+	set_pixel_y(from_y)
+	set_alpha(0)
 	transform = animation_matrix
 
 	animate(src, alpha = old_alpha, pixel_x = old_x, pixel_y = old_y, transform = old_transform, time = 3, easing = CUBIC_EASING)

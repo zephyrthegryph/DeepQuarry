@@ -157,7 +157,7 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 	var/image/ear_image = generate_layer_image(image(icon = ear_icon), generate_layer_matrix(ear_data))
 
 	//hat
-	var/hat_icon = buddy.get_equipped_item(SLOT_ID_HEAD)?.make_worn_icon(body_type = buddy.species.get_bodytype(src), slot_name = slot_head_str, default_icon = INV_HEAD_DEF_ICON, default_layer = HEAD_LAYER)
+	var/hat_icon = buddy.get_equipped_item(SLOT_ID_HEAD)?.make_worn_icon(wearer = buddy, body_type = buddy.species.get_bodytype(src), slot_name = slot_head_str, default_icon = INV_HEAD_DEF_ICON, default_layer = HEAD_LAYER)
 	var/image/hat_image = generate_layer_image(image(icon = hat_icon), generate_layer_matrix(hat_data))
 
 	//add them all

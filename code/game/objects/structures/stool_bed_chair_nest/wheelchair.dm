@@ -221,7 +221,7 @@ CAPABILITIES(/obj/structure/bed/chair/wheelchair)
 		act_message(user, null, others = "%U% collapses \the [src.name].")
 		var/obj/item/wheelchair/R = new folded_type(get_turf(src))
 		R.name = src.name
-		R.color = src.color
+		R.set_color(src.color)
 		expire(0)
 		return
 

@@ -382,8 +382,8 @@ CAPABILITIES(/obj/item/camera)
 	p.set_tiny(pc)
 	p.img = photoimage
 	p.desc = mobs
-	p.pixel_x = rand(-10, 10)
-	p.pixel_y = rand(-10, 10)
+	p.set_pixel_x(rand(-10, 10))
+	p.set_pixel_y(rand(-10, 10))
 	p.photo_size = size
 	return p
 
@@ -400,8 +400,8 @@ CAPABILITIES(/obj/item/camera)
 	p.set_tiny(icon(tiny))
 	p.img = icon(img)
 	p.desc = desc
-	p.pixel_x = pixel_x
-	p.pixel_y = pixel_y
+	p.set_pixel_x(pixel_x)
+	p.set_pixel_y(pixel_y)
 	p.photo_size = photo_size
 	p.scribble = scribble
 

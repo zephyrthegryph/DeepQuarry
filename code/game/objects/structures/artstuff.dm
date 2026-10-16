@@ -22,7 +22,7 @@ CAPABILITIES(/obj/structure/easel)
 	user.drop_from_inventory(canvas)
 	rel_set(src, nameof(painting), canvas) // the canvas sits on our turf: a view, not owned
 	canvas.forceMove(get_turf(src))
-	canvas.layer = layer+0.1
+	canvas.set_layer(layer+0.1)
 	act_message(user, src, MSG_SELF(span_notice("You place %I% on %T%.")), MSG_OTHERS(span_notice("%U% puts %I% on %T%.")), item = canvas)
 	return TRUE
 
@@ -86,8 +86,8 @@ CAPABILITIES(/obj/structure/easel)
 	return OP_OK
 
 /obj/item/canvas/dropped(mob/user, equipping, slot)
-	pixel_x = initial(pixel_x)
-	pixel_y = initial(pixel_y)
+	set_pixel_x(initial(pixel_x))
+	set_pixel_y(initial(pixel_y))
 	return ..()
 
 /obj/item/canvas/tgui_state(mob/user)

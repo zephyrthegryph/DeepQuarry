@@ -34,7 +34,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	set_recipes(material.get_recipes())
 	set_stacktype(material.stack_type)
 	if(apply_colour || pass_color)
-		color = material.icon_colour
+		set_color(material.icon_colour)
 	if(material.conductive)
 		flags &= ~NOCONDUCT
 	else
@@ -433,7 +433,7 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 	set_material(new_material)
 	set_recipes(material.get_recipes())
 	set_stacktype(material.stack_type)
-	color = material.icon_colour
+	set_color(material.icon_colour)
 	if(material.conductive)
 		flags &= ~NOCONDUCT
 	else

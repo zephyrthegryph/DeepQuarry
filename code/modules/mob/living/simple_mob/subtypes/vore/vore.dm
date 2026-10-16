@@ -115,7 +115,7 @@
 	if(newdesc)
 		desc = newdesc
 
-/mob/living/simple_mob/proc/set_gender()
+/mob/living/simple_mob/proc/choose_gender()
 	set name = "Set Gender"
 	set desc = "Set your gender."
 	set category = VERB_CAT_ABILITIES_SETTINGS
@@ -125,7 +125,7 @@
 	if(!A.answer)
 		return
 	var/newgender = A.answer.value
-	gender = newgender
+	set_gender(newgender)
 
 /mob/living/simple_mob/vore/aggressive
 

@@ -98,7 +98,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/dirt)
 					consume(alreadythere)
 				continue
 			alreadyfound = TRUE
-			alreadythere.alpha = calcalpha //don't need to constantly recalc for all of them in it because it'll just max if a non-persistent dirt overlay gets added, and then the new dirt overlay will be deleted
+			alreadythere.set_alpha(calcalpha) //don't need to constantly recalc for all of them in it because it'll just max if a non-persistent dirt overlay gets added, and then the new dirt overlay will be deleted
 		if (alreadyfound)
 			return INITIALIZE_HINT_QDEL
 		alpha = calcalpha

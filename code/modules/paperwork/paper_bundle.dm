@@ -120,6 +120,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/paper_bundle)
+	ref_many(nameof(pages), /obj/item)
 	configure(item_thrown(force = 0))
 	configure(item_combat(attack_verbs = list("bapped")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
@@ -244,7 +245,7 @@ CAPABILITIES(/obj/item/paper_bundle)
 	to_chat(user, span_notice("You loosen the bundle."))
 	for(var/obj/O in contents_of(src))
 		O.forceMove(user.loc)
-		O.layer = initial(O.layer)
+		O.set_layer(initial(O.layer))
 		O.add_fingerprint(user)
 	consume(src, user)
 	return
@@ -257,8 +258,8 @@ CAPABILITIES(/obj/item/paper_bundle)
 		return
 	var/obj/item/paper/top = pages[1]
 	look.watch(top)
-	look.state(read_once(top.icon_state))
-	for(var/list/mark in read_once(top.stamp_marks))
+	look.state(top.icon_state)
+	for(var/list/mark in top.stamp_marks)
 		look.overlay(top.stamp_image(mark))
 	var/i = 0
 	var/photo = FALSE
@@ -267,14 +268,14 @@ CAPABILITIES(/obj/item/paper_bundle)
 	for(var/obj/O in pages)
 		look.watch(O)
 		if(istype(O, /obj/item/paper))
-			look.underlay(look_overlay_image('icons/obj/bureaucracy.dmi', read_once(O.icon_state), pixel_x = -min(1*i, 2), pixel_y = -min(1*i, 2)))
+			look.underlay(look_overlay_image('icons/obj/bureaucracy.dmi', O.icon_state, pixel_x = -min(1*i, 2), pixel_y = -min(1*i, 2)))
 			offset_x = min(0.5*i, 1)
 			offset_y = min(1*i, 2)
 			i++
 		else if(istype(O, /obj/item/photo))
 			var/obj/item/photo/Ph = O
 			photo = TRUE
-			look.overlay(read_once(Ph.tiny))
+			look.overlay(Ph.tiny)
 	look.offset(offset_x, offset_y)
 	look.identity(desc = "[i > 1 ? "[i] papers clipped to each other." : "A single sheet of paper."][photo ? "\nThere is a photo attached to it." : ""]")
 	look.overlay(look_overlay_image('icons/obj/bureaucracy.dmi', "clip"))

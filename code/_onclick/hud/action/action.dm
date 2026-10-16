@@ -267,9 +267,9 @@ CAPABILITIES(/datum/action)
  */
 /datum/action/proc/update_button_status(atom/movable/screen/movable/action_button/current_button, force = FALSE)
 	if(IsAvailable())
-		current_button.color = rgb(255,255,255,255)
+		current_button.set_color(rgb(255,255,255,255))
 	else
-		current_button.color = transparent_when_unavailable ? rgb(128,0,0,128) : rgb(128,0,0)
+		current_button.set_color(transparent_when_unavailable ? rgb(128,0,0,128) : rgb(128,0,0))
 
 /// Gives our action to the passed viewer.
 /// Puts our action in their actions list and shows them the button.

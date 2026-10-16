@@ -112,7 +112,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		name = unknown_name
 		set_icon('icons/obj/overmap.dmi')
 		set_icon_state(unknown_state)
-		color = null
+		set_color(null)
 		desc = "Scan this to find out more information."
 		known = FALSE
 
@@ -174,7 +174,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	if(!known)
 		known = TRUE
 		name = (real_name ? real_name : initial(name))
-		color = (real_color ? real_color : initial(color))
+		set_color((real_color ? real_color : initial(color)))
 		desc = (real_desc ? real_desc : initial(desc))
 		if(real_icon)  //Only true if GMs/Admins want a non-standard icon from outside 'icons/obj/overmap.dmi'
 			set_icon(real_icon)

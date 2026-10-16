@@ -331,5 +331,5 @@ TYPE_TABLE(/obj/item/clothing/shoes/none, fit_spec, null)
 	moveToNullspace() // go to nullspace
 	expire(1)
 
-/obj/item/clothing/shoes/none/make_worn_icon(body_type, slot_name, inhands, default_icon, default_layer, icon/clip_mask) // override this to ensure that no worn icon is generated
+/obj/item/clothing/shoes/none/make_worn_icon(body_type, slot_name, inhands, default_icon, default_layer, icon/clip_mask, mob/living/carbon/human/wearer = null) // override this to ensure that no worn icon is generated
 	return

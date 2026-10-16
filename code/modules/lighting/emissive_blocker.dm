@@ -23,7 +23,7 @@ CAPABILITIES(/atom/movable/emissive_blocker)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The blocker draws its source in the blocking colour.
 /atom/movable/emissive_blocker/proc/block_colour(source)
-	color = GLOB.em_block_color
+	set_color(GLOB.em_block_color)
 
 
 /atom/movable/emissive_blocker/singularity_act()

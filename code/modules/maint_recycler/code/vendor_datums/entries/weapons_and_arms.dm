@@ -53,4 +53,4 @@
 	var/secondary = pick("claw","fang","blade","sword","tooth","murder","laser","montage")
 	bought.name = "Bio-Missile [primary]-[secondary]"
 	bought.desc = "What the fuck?"
-	bought.color = "#880808" //blood red
+	bought.set_color("#880808") //blood red

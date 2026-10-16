@@ -76,18 +76,18 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 
 /obj/structure/micro_tunnel/proc/offset_tunnel()
 
-	pixel_x = 0
-	pixel_y = 0
+	set_pixel_x(0)
+	set_pixel_y(0)
 
 	switch(dir)
 		if(1)
-			pixel_y = 32
+			set_pixel_y(32)
 		if(2)
-			pixel_y = -32
+			set_pixel_y(-32)
 		if(4)
-			pixel_x = 32
+			set_pixel_x(32)
 		if(8)
-			pixel_x = -32
+			set_pixel_x(-32)
 
 /obj/structure/micro_tunnel/proc/find_destinations()
 	var/list/destinations = list()

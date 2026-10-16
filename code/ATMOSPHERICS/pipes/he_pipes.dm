@@ -76,7 +76,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/heat_exchanging)
 		reconsider()
 
 // BubbleWrap END
-	color = "#404040" //we don't make use of the fancy overlay system for colours, use this to set the default.
+	set_color("#404040") //we don't make use of the fancy overlay system for colours, use this to set the default.
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/init_dir()
 	..()

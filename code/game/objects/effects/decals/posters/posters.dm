@@ -123,17 +123,17 @@ MSG_DEF_SELF(poster/placing, span_notice("You start placing the poster on the wa
 
 	switch (dir)
 		if (NORTH)
-			pixel_x = 0
-			pixel_y = 32
+			set_pixel_x(0)
+			set_pixel_y(32)
 		if (SOUTH)
-			pixel_x = 0
-			pixel_y = -32
+			set_pixel_x(0)
+			set_pixel_y(-32)
 		if (EAST)
-			pixel_x = 32
-			pixel_y = 0
+			set_pixel_x(32)
+			set_pixel_y(0)
 		if (WEST)
-			pixel_x = -32
-			pixel_y = 0
+			set_pixel_x(-32)
+			set_pixel_y(0)
 
 	flick("poster_being_set", src) // If you don't see this animation, check that the decl/poster's icon_override dmi file has the icon states for posters being set.
 

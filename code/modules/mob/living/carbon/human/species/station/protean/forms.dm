@@ -246,7 +246,7 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 	var/scale_y = size_multiplier * icon_scale_y
 	M.Scale(scale_x, scale_y)
 	M.Translate(0, 16 * (scale_y - 1))
-	layer = MOB_LAYER
+	set_layer(MOB_LAYER)
 	if(instant)
 		transform = M
 	else

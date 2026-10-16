@@ -241,11 +241,11 @@ CAPABILITIES(/obj/item/stack)
 				if(recipe.use_material)
 					var/datum/material/MAT = get_material_by_name(recipe.use_material)
 					if(MAT.icon_colour)
-						O.color = MAT.icon_colour
+						O.set_color(MAT.icon_colour)
 				else
 					return OP_OK
 			else
-				O.color = color
+				O.set_color(color)
 		return OP_OK
 	return OP_FAILED
 
@@ -369,7 +369,7 @@ CAPABILITIES(/obj/item/stack)
 	var/orig_amount = src.amount
 	if (transfer && src.use(transfer))
 		var/obj/item/stack/newstack = new src.type(loc, transfer)
-		newstack.color = color
+		newstack.set_color(color)
 		copy_stack_properties(newstack)
 		if (prob(transfer/orig_amount * 100))
 			transfer_fingerprints_to(newstack)

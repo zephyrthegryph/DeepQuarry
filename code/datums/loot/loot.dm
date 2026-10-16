@@ -327,9 +327,9 @@ CAPABILITIES(/obj/random)
 			if(QDELETED(A) || isturf(A))
 				continue
 			if(has_px)
-				A.pixel_x = varedits["pixel_x"]
+				A.set_pixel_x(varedits["pixel_x"])
 			if(has_py)
-				A.pixel_y = varedits["pixel_y"]
+				A.set_pixel_y(varedits["pixel_y"])
 			if(has_dir)
 				A.set_dir(varedits["dir"])
 	return made || list()

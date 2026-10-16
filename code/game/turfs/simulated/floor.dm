@@ -89,7 +89,7 @@
 
 	name = base_name
 	desc = base_desc
-	color = null
+	set_color(null)
 
 	if(!is_plating()) // Flooring -> Plating
 		swap_with_old_decals()

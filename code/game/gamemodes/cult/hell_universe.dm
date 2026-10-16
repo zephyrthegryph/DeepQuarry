@@ -25,9 +25,9 @@ In short:
 /datum/universal_state/hell/OnTurfChange(turf/T)
 	var/turf/space/S = T
 	if(istype(S))
-		S.color = "#FF0000"
+		S.set_color("#FF0000")
 	else
-		S.color = initial(S.color)
+		S.set_color(initial(S.color))
 
 // Apply changes when entering state
 /datum/universal_state/hell/OnEnter()

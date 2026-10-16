@@ -25,7 +25,7 @@ TYPE_TABLE_DECLARE(/obj/item/bedsheet, bedsheet_dream_messages, list("white"))
 	var/mob/user = A.actor
 	user.drop_item()
 	if(layer == initial(layer))
-		layer = ABOVE_MOB_LAYER
+		set_layer(ABOVE_MOB_LAYER)
 	else
 		reset_plane_and_layer()
 	add_fingerprint(user)

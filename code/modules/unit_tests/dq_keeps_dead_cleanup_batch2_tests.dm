@@ -436,7 +436,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/datum/shadekin/SK = new
-	H.alpha = 255
+	H.set_alpha(255)
 	after(H, 1 SECONDS, TYPE_PROC_REF(/mob/living, complete_phase_out), with = list(TRUE, SK), keeps_dead = TRUE)
 	qdel(SK)
 	scheduler_advance(2)

@@ -53,7 +53,7 @@ CAPABILITIES(/obj/machinery/appliance/mixer/cereal)
 
 	var/obj/item/reagent_containers/food/snacks/result = ..()
 
-	result.color = result.filling_color
+	result.set_color(result.filling_color)
 	for (var/i in images)
 		result.overlays += images[i]
 

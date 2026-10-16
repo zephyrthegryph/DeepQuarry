@@ -769,7 +769,7 @@ init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::consume
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::expr
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::alreadyfound
-init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::alreadythere.alpha
+init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::alreadythere.set_alpha
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::if
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::return
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::alpha
@@ -1738,7 +1738,7 @@ init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::m
 init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::mark
 init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::mark.set_icon
 init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::mark.set_icon_state
-init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::mark.layer
+init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::mark.set_layer
 init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::rel_add
 init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::tmp
 init_lines	code/modules/holomap/mapper.dm	@/obj/item/mapping_unit::Initialize::canvas
@@ -2275,9 +2275,9 @@ init_lines	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_su
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::if
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::tree
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::if
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::tree.color
+init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::tree.set_color
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::else
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::tree.color
+init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	@/turf/simulated/floor/outdoors/fur::Initialize::tree.set_color
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	@/mob/living/simple_mob/animal/space/carp::Initialize::carp_randomify
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	@/mob/living/simple_mob/animal/space/space_worm/head::Initialize::current
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	@/mob/living/simple_mob/animal/space/space_worm/head::Initialize::if
@@ -3302,7 +3302,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archae
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item.set_icon
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item.set_icon_state
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::apply_image_decorations
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item.color
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item.set_color
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::additional_desc
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::if
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::item_type
@@ -3372,7 +3372,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archae
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::expr
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_trap
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item.color
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item.set_color
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::additional_desc
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::expr
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::expr
@@ -3411,7 +3411,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archae
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::possible_object_paths
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_tool
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item.color
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item.set_color
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::apply_image_decorations
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::additional_desc
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::expr
@@ -3661,7 +3661,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archae
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::else
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::if
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item.color
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::new_item.set_color
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::if
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::apply_prefix
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	@/obj/item/archaeological_find::Initialize::apply_material_decorations

@@ -1127,7 +1127,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/atom/droploc = victim.drop_location()
 	switch(disintegrate)
 		if(DROPLIMB_EDGE)
-			appearance_flags &= ~PIXEL_SCALE
+			set_appearance_flags(appearance_flags & (~PIXEL_SCALE))
 			compile_icon()
 			add_blood(victim)
 			var/matrix/M = matrix()
@@ -1164,7 +1164,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			destroyed(src, null, BRUTE)
 
 		if(DROPLIMB_ACID)
-			appearance_flags &= ~PIXEL_SCALE
+			set_appearance_flags(appearance_flags & (~PIXEL_SCALE))
 			compile_icon()
 			add_blood(victim)
 			var/matrix/M = matrix()
