@@ -47,13 +47,10 @@ MSG_DEF_SELF(cryo_cell/cold_liquid, "You feel a cold liquid surround you. Your s
 	anchored = TRUE
 	flags = REMOTEVIEW_ON_ENTER
 	layer = UNDER_JUNK_LAYER
-	interact_offline = 1
 
 	use_power = USE_POWER_IDLE
 	buckle_lying = FALSE
 	buckle_dir = SOUTH
-	clicksound = SFX_MACHINES_BUTTONBEEP
-	clickvol = 30
 
 	var/obj/item/reagent_containers/glass/beaker = null
 	/// Switched on from its window: it holds its occupant under and trades heat with them while it works.
@@ -69,6 +66,7 @@ MSG_DEF_SELF(cryo_cell/cold_liquid, "You feel a cold liquid surround you. Your s
 	return HEAT_TARGET_NONE
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
+	configure(machine_interaction_config(interact_offline = 1, clicksound = SFX_MACHINES_BUTTONBEEP, clickvol = 30))
 	configure(uses_power(idle = 20, active = 200))
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_CRYO, accepts = /mob/living/carbon, exit_to = SOUTH, controls_inside = FALSE, eject_wait_inside = CRYO_RELEASE_WAIT, shown_y = CRYO_OCCUPANT_RAISE, bare = TRUE)

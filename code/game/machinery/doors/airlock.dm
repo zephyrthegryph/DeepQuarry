@@ -58,8 +58,6 @@
 	var/bolted_at_start = FALSE
 	var/welded_at_start = FALSE
 	rad_insulation = RAD_MEDIUM_INSULATION
-	rad_shield_material = MAT_STEEL
-	rad_shield_thickness_mm = RAD_AIRLOCK_THICKNESS_MM
 
 	// Frozen airlocks and how to deice them
 	var/frozen = FALSE
@@ -131,6 +129,7 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
+	configure(shielding_config(rad_shield_material = MAT_STEEL, rad_shield_thickness_mm = RAD_AIRLOCK_THICKNESS_MM))
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))
 	name_prefix("\improper")
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init

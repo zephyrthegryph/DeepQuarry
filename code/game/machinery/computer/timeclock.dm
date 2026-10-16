@@ -14,7 +14,6 @@
 	layer = ABOVE_WINDOW_LAYER
 	density = FALSE
 	circuit = /obj/item/circuitboard/timeclock
-	clicksound = null
 	flags = WALL_ITEM
 	var/channel = "Common" //Radio channel to announce on
 
@@ -49,6 +48,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/timeclock)
+	configure(machine_interaction_config(clicksound = TRAIT_NONE))
 	configure(light_glow(color = "#0099ff"))
 	interface("TimeClock")
 	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))

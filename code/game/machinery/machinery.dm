@@ -113,16 +113,11 @@ Class Procs:
 	var/list/component_parts = null
 	var/tmp/uid
 	var/global/gl_uid = 1
-	var/clicksound			// sound played on succesful interface. Just put it in the list of vars at the start.
-	var/clickvol = 40		// volume
-	var/interact_offline = 0 // Can the machine be interacted with while de-powered.
 	var/obj/item/circuitboard/circuit = null
 	/// Bitfield of MACHINE_MAINT_*: which Maintainable interactions this machine offers (machinery_maintenance.dm).
 	var/maintenance_flags = NONE
 	/// Time spent securing or unsecuring this machine; zero is immediate.
-	var/maintenance_wrench_time = 0
 	/// Time spent welding a damaged machine back to full integrity.
-	var/maintenance_weld_time = 2 SECONDS
 	/// Inspectable material makeup retained from the frame and installed parts.
 	var/list/material_component_manifest
 	/// Whole-machine EMP rejection supplied by insulating component materials.
@@ -136,6 +131,7 @@ SETTER(/obj/machinery, use_power)
 MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
 
 CAPABILITIES(/obj/machinery)
+	machine_interaction_config()
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))
 	machine_heat()
 	uses_power(channel = EQUIP, idle = 0, active = 0) // what it draws: a type trait (machinery_power.dm); a subtype configure()s what it changes
@@ -368,12 +364,12 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 // Duplicate of below because we don't want to fuck around with CanUseTopic in TGUI
 // TODO: Replace this with can_interact from /tg/
 /obj/machinery/tgui_status(mob/user)
-	if(!interact_offline && (!operable()))
+	if(!machine_interaction_config_of(src).interact_offline && (!operable()))
 		return STATUS_CLOSE
 	return ..()
 
 /obj/machinery/CanUseTopic(mob/user)
-	if(!interact_offline && (!operable()))
+	if(!machine_interaction_config_of(src).interact_offline && (!operable()))
 		return STATUS_CLOSE
 	return ..()
 
@@ -407,8 +403,8 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 			to_chat(user, span_warning("You momentarily forget how to use [src]."))
 			return 1
 
-	if(clicksound && istype(user, /mob/living/carbon))
-		playsound(src, clicksound, clickvol)
+	if(machine_interaction_config_of(src).clicksound && istype(user, /mob/living/carbon))
+		playsound(src, machine_interaction_config_of(src).clicksound, machine_interaction_config_of(src).clickvol)
 
 	add_fingerprint(user)
 

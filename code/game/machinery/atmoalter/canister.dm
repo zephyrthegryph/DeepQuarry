@@ -28,7 +28,6 @@
 	var/material_last_exposure = 0
 	volume = 1000
 	use_power = USE_POWER_OFF
-	interact_offline = 1 // Allows this to be used when not in powered area.
 
 	/// What it is filled with when it is made: gas id -> share of a full load (start_pressure at 20 C). Over 1 is more than one load.
 	var/list/starts_with
@@ -54,6 +53,7 @@ MSG_DEF(canister/deconstructed, "You deconstruct %T%.", "%U% deconstructs %T%.")
 MSG_DEF(canister/jetpack, "You pulse-pressurize your jetpack from the tank.", "%U% pulse-pressurizes a jetpack from %T%.")
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
+	configure(machine_interaction_config(interact_offline = 1))
 	climb()
 	gas_watch(air = nameof(air_contents), changed = PROC_REF(contents_changed))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(canister_step)), when = nameof(working))

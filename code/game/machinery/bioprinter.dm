@@ -3,7 +3,6 @@
 
 /obj/machinery/organ_printer
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	maintenance_wrench_time = 20
 	name = "organ printer"
 	desc = "It's a machine that prints organs."
 	icon = 'icons/obj/surgery.dmi'
@@ -95,6 +94,7 @@
 
 
 CAPABILITIES(/obj/machinery/organ_printer)
+	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS))
 	configure(uses_power(idle = 40, active = 300))
 	op("printer_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(organ_printer_interaction_item)))
 	op("printer_menu", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(can_open_menu))), asks(/datum/prompt/choice, fields = list("title" = "Bioprinter Menu", "question" = "What do you want to do?", "choices" = list("Print Limbs", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "menu", when = PROC_REF(printer_has_reservoir)), asks(/datum/prompt/choice, fields = list("title" = "Print Choice", "question" = "What would you like to print?", "choices" = computed(PROC_REF(printer_product_choices)), "timeout" = 0), step = "product", when = PROC_REF(printer_choosing_product)), then(PROC_REF(print_choice_made)))

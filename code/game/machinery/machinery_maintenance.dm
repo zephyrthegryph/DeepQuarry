@@ -49,7 +49,7 @@ MSG_DEF_SELF(interaction/machine_repair/intact, "it isn't damaged")
 
 /// The wrench's wait: the machine's own time (the op scales it by the tool's speed).
 /obj/machinery/proc/maintenance_wrench_wait(datum/act/op/A)
-	return maintenance_wrench_time
+	return machine_interaction_config_of(src).maintenance_wrench_time
 
 /obj/machinery/proc/toggle_maintenance_anchor(datum/act/op/A)
 	set_anchored(!anchored)
@@ -60,7 +60,7 @@ MSG_DEF_SELF(interaction/machine_repair/intact, "it isn't damaged")
 
 /// The welder's wait: the machine's own time (the op scales it by the tool's speed).
 /obj/machinery/proc/maintenance_weld_wait(datum/act/op/A)
-	return maintenance_weld_time
+	return machine_interaction_config_of(src).maintenance_weld_time
 
 /// Requirement of the repair: the machine is damaged.
 /obj/machinery/proc/maintenance_is_damaged(datum/act/op/A)

@@ -9,15 +9,12 @@
 
 /obj/machinery/washing_machine
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	maintenance_wrench_time = 4 SECONDS
 	name = "Washing Machine"
 	desc = "Not a hiding place. Unfit for pets."
 	icon = 'icons/obj/machines/washing_machine_vr.dmi'
 	icon_state = "wm_1"
 	density = TRUE
 	anchored = TRUE
-	clicksound = SFX_BUTTON
-	clickvol = 40
 
 	circuit = /obj/item/circuitboard/washing
 	var/state = EMPTY_OPEN
@@ -33,6 +30,7 @@
 MSG_DEF_SELF(washing_machine/not_inside, "you aren't inside it")
 
 CAPABILITIES(/obj/machinery/washing_machine)
+	configure(machine_interaction_config(maintenance_wrench_time = 4 SECONDS, clicksound = SFX_BUTTON, clickvol = 40))
 	op("washing_machine_load_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put in washer"), when(PROC_REF(washer_grab_meant)), starts(PROC_REF(washer_grab_started)), wait(5 SECONDS), then(PROC_REF(washer_grab_finished)))
 	op("washing_machine_use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_washing_machine_use_item)))
 	op("washing_machine_start", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Start"), then(PROC_REF(interaction_washing_machine_start)))

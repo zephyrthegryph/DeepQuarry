@@ -19,12 +19,10 @@
 
 /obj/machinery/medical_kiosk
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	maintenance_wrench_time = 40
 	name = "medical kiosk"
 	desc = "A helpful kiosk for finding out whatever is wrong with you."
 	icon = 'icons/obj/machines/medical_kiosk.dmi'
 	icon_state = "kiosk_off"
-	bubble_icon = "medical"
 	circuit = /obj/item/circuitboard/medical_kiosk
 	anchored = TRUE
 	density = TRUE
@@ -53,6 +51,8 @@ MSG_DEF_SELF(medical_kiosk/patient_only, "Only a living patient can use this kio
 MSG_DEF_SELF(medical_kiosk/panel_open, "The kiosk's maintenance panel is open.")
 
 CAPABILITIES(/obj/machinery/medical_kiosk)
+	configure(machine_interaction_config(maintenance_wrench_time = 4 SECONDS))
+	configure(speech_presentation(bubble_icon = "medical"))
 	configure(uses_power(idle = 5, active = 200))
 	op("medical_kiosk_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"),
 		needs(req_adjacent(), req_capable(), req_operable(), req(PROC_REF(kiosk_patient)), req(PROC_REF(kiosk_panel_closed))),

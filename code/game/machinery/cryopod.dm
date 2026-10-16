@@ -15,7 +15,6 @@
 	icon_state = "cellconsole"
 	circuit = /obj/item/circuitboard/cryopodcontrol
 	density = FALSE
-	interact_offline = 1
 	mode = null
 
 	//Used for logging people entering cryosleep and important items they are carrying.
@@ -80,6 +79,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/cryopod)
+	configure(machine_interaction_config(interact_offline = 1))
 	interface("CryoStorage")
 	ui_shape(allow_items = bool(), real_name = schema_text(), crew = list_of(schema_text()), items = list_of(schema_text()))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
@@ -412,7 +412,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 
 		var/preserve = 0
 
-		if(W.preserve_item)
+		if(persistence_of(W).preserve)
 			preserve = 1
 
 		if(istype(W,/obj/item/implant/health))

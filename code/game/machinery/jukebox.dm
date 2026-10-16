@@ -13,7 +13,6 @@
 	density = TRUE
 	use_power = USE_POWER_IDLE
 	circuit = /obj/item/circuitboard/jukebox
-	clicksound = SFX_MACHINES_BUTTONBEEP
 	volume = 0.5
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
@@ -26,6 +25,7 @@
 	var/datum/track/current_track
 
 CAPABILITIES(/obj/machinery/media/jukebox)
+	configure(machine_interaction_config(clicksound = SFX_MACHINES_BUTTONBEEP))
 	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
 	default_parts()
 	contributes(STAT_HAS_POWER, nameof(anchored)) // a jukebox that is not bolted down has no power, whatever its area gives

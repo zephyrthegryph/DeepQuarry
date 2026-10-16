@@ -13,7 +13,6 @@
 	var/light_range_on = 2
 	var/light_power_on = 1
 
-	clicksound = SFX_KEYBOARD
 	integrity_failure = 0.5
 
 MSG_DEF(computer/gripper_use, "You use the gripper's tool with %T%.", "")
@@ -24,6 +23,7 @@ MSG_DEF_SELF(computer/gripper_empty, "The gripper is not holding anything.")
 // (one time in five over severity), a blob hits it as a medium blast, a screwdriver disconnects the monitor into a frame with its board (a
 // broken one drops its glass), and any other item is the hand's use of it.
 CAPABILITIES(/obj/machinery/computer)
+	configure(machine_interaction_config(clicksound = SFX_KEYBOARD))
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))
 	configure(uses_power(idle = 300, active = 300))
 	membership(joins = REGISTRY_COMPUTERS)
@@ -96,7 +96,7 @@ CAPABILITIES(/obj/machinery/computer)
 	return (istype(G) && !!G.get_wrapped_item()) ? null : MSG(computer/gripper_empty)
 
 /obj/machinery/computer/proc/gripper_used(datum/act/op/A)
-	playsound(src, clicksound, 100, 1, 0)
+	playsound(src, machine_interaction_config_of(src).clicksound, 100, 1, 0)
 	return OP_OK
 
 /// Any other item on the console is the hand's use of it.

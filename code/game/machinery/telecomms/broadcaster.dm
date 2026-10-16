@@ -25,6 +25,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	// Linked bluespace radios are BS_RX_RADIOS(src) (the bluespace_rx_from relation).
 
 CAPABILITIES(/obj/machinery/telecomms/broadcaster)
+	configure(machine_interaction_config(interact_offline = TRUE))
 	configure(uses_power(idle = 25))
 
 /obj/machinery/telecomms/broadcaster/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)

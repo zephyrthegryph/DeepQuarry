@@ -44,7 +44,7 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 	data["multitool"] = FALSE
 	data["multitool_buffer"] = null
 
-	if(running || interact_offline)
+	if(running || machine_interaction_config_of(src).interact_offline)
 		data["id"] = id
 		data["network"] = network
 		data["autolinkers"] = !!LAZYLEN(autolinkers)
@@ -284,12 +284,11 @@ CAPABILITIES(/obj/machinery/telecomms/bus)
 // ---- ranged machines: the receiver and the broadcaster ----
 
 /obj/machinery/telecomms/broadcaster
-	interact_offline = TRUE // because you can accidentally nuke power grids with these, need to be able to fix mistake
 	ranged = "use_broadcast_range"
 
 /obj/machinery/telecomms/receiver
-	interact_offline = TRUE // because you can accidentally nuke power grids with these, need to be able to fix mistake
 	ranged = "use_receive_range"
 
 CAPABILITIES(/obj/machinery/telecomms/receiver)
+	configure(machine_interaction_config(interact_offline = TRUE))
 	configure(uses_power(idle = 600))

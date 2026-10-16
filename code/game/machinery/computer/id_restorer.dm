@@ -7,7 +7,6 @@
 	icon_keyboard = null
 	icon = 'icons/obj/machines/id_restorer_vr.dmi'
 	density = FALSE
-	clicksound = null
 	circuit = /obj/item/circuitboard/id_restorer
 	flags = WALL_ITEM
 
@@ -16,6 +15,7 @@
 
 
 CAPABILITIES(/obj/machinery/computer/id_restorer)
+	configure(machine_interaction_config(clicksound = TRAIT_NONE))
 	configure(light_glow(color = "#11cc00"))
 
 //Frame

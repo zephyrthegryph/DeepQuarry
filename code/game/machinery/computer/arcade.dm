@@ -3,7 +3,6 @@
 	desc = "random arcade machine"
 	icon_state = "arcade1"
 	icon_keyboard = null
-	clicksound = null	//Gets too spammy and makes no sense for arcade to have the console keyboard noise anyway
 	var/list/prizes = list(	/obj/item/storage/box/snappops					= 2, // ALLOW(instance_list): d: edited in place per instance (1 writers)
 							/obj/item/toy/blink										= 2,
 							/obj/item/clothing/under/syndicate/tacticool			= 2,
@@ -26,6 +25,7 @@
 	var/list/special_prizes // Holds instanced objects, intended for admins to shove surprises inside or something.
 
 CAPABILITIES(/obj/machinery/computer/arcade)
+	configure(machine_interaction_config(clicksound = TRAIT_NONE))
 	rolls(nameof(rolled_board), PROC_REF(roll_board), when = cond_not(nameof(circuit)))
 	after_init(0, then(PROC_REF(become_rolled_board)))
 	op("redeem_tickets", stack(/obj/item/stack/arcadeticket, ARCADE_TICKETS_PER_PRIZE), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem tickets"), then(PROC_REF(interaction_redeem_tickets)))

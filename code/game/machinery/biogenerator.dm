@@ -14,7 +14,6 @@
 
 /obj/machinery/biogenerator
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	maintenance_wrench_time = 40
 	name = "biogenerator"
 	desc = "Converts plants into biomass, which can be used for fertilizer and sort-of-synthetic products."
 	icon = 'icons/obj/biogenerator_vr.dmi'
@@ -128,6 +127,7 @@
 
 
 CAPABILITIES(/obj/machinery/biogenerator)
+	configure(machine_interaction_config(maintenance_wrench_time = 4 SECONDS))
 	reagents(1000)
 	default_parts()
 	per_type(nameof(item_list), PROC_REF(build_item_list))
