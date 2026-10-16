@@ -466,7 +466,7 @@
 	var/datum/affliction/tendon_severed/C = _spawn_affliction_on(H, BP_L_LEG, /datum/affliction/tendon_severed)
 	TEST_ASSERT_NOTNULL(C, "tendon_severed didn't spawn")
 	C.tick()
-	TEST_ASSERT(H.factor(BF_SLOWDOWN) > 1.0, "tendon_severed on leg should slow movement ([H.factor(BF_SLOWDOWN)])")
+	TEST_ASSERT(H.slowdown > 1.0, "tendon_severed on leg should slow movement ([H.slowdown])")
 
 // --- mechanical: slowdown aggregates across conditions ------------------
 
@@ -474,20 +474,20 @@
 
 /datum/unit_test/dq_medical_mechanical_slowdown_aggregates/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/base = H.factor(BF_SLOWDOWN)
+	var/base = H.slowdown
 	TEST_ASSERT(abs(base - H.species.baseline_factor(BF_SLOWDOWN)) < 0.001, "fresh mob should have only its species slowdown")
 
 	// Affliction factors are authored at severity 100 and scale with it.
 	var/datum/affliction/cellulitis = _spawn_affliction_on(H, BP_TORSO, /datum/affliction/cellulitis)  // slowdown 0.3
 	cellulitis.set_severity(100)
-	TEST_ASSERT(abs(H.factor(BF_SLOWDOWN) - base - 0.3) < 0.01, "single cellulitis at full severity should give 0.3 slowdown (got [H.factor(BF_SLOWDOWN) - base])")
+	TEST_ASSERT(abs(H.slowdown - base - 0.3) < 0.01, "single cellulitis at full severity should give 0.3 slowdown (got [H.slowdown - base])")
 
 	var/datum/affliction/sepsis = _spawn_affliction_on(H, BP_TORSO, /datum/affliction/sepsis)      // slowdown 0.6
 	sepsis.set_severity(100)
-	TEST_ASSERT(abs(H.factor(BF_SLOWDOWN) - base - 0.9) < 0.01, "cellulitis + sepsis should give 0.9 slowdown (got [H.factor(BF_SLOWDOWN) - base])")
+	TEST_ASSERT(abs(H.slowdown - base - 0.9) < 0.01, "cellulitis + sepsis should give 0.9 slowdown (got [H.slowdown - base])")
 
 	sepsis.set_severity(50)
-	TEST_ASSERT(abs(H.factor(BF_SLOWDOWN) - base - 0.6) < 0.01, "sepsis at half severity should give half its slowdown (got [H.factor(BF_SLOWDOWN) - base])")
+	TEST_ASSERT(abs(H.slowdown - base - 0.6) < 0.01, "sepsis at half severity should give half its slowdown (got [H.slowdown - base])")
 
 // --- mechanical: verb-block ----------------------------------------------
 
@@ -532,7 +532,7 @@
 	TEST_ASSERT_EQUAL(C.stage, "Stage 3", "[total_burn] total burn should be Stage 3 (got [C.stage])")
 
 	// Stage 3's factor table slows the patient heavily.
-	var/stage_slowdown = H.factor(BF_SLOWDOWN) - H.species.baseline_factor(BF_SLOWDOWN)
+	var/stage_slowdown = H.slowdown - H.species.baseline_factor(BF_SLOWDOWN)
 	TEST_ASSERT(stage_slowdown > 1.0, "stage 3 slowdown should be >1.0 (got [stage_slowdown])")
 
 	// Treat every burned part except the torso (where burn_shock itself
@@ -646,15 +646,15 @@
 	// Stage 1 (mild): severity 20 → small slowdown.
 	C.set_severity(20)
 	C.tick()
-	var/slow_mild = H.factor(BF_SLOWDOWN)
+	var/slow_mild = H.slowdown
 	// Stage 2 (moderate): severity 40 → bigger slowdown.
 	C.set_severity(40)
 	C.tick()
-	var/slow_moderate = H.factor(BF_SLOWDOWN)
+	var/slow_moderate = H.slowdown
 	// Stage 3 (severe): severity 80 → heavy slowdown.
 	C.set_severity(80)
 	C.tick()
-	var/slow_severe = H.factor(BF_SLOWDOWN)
+	var/slow_severe = H.slowdown
 
 	TEST_ASSERT(slow_mild < slow_moderate, "mild slowdown ([slow_mild]) should be less than moderate ([slow_moderate])")
 	TEST_ASSERT(slow_moderate < slow_severe, "moderate slowdown ([slow_moderate]) should be less than severe ([slow_severe])")

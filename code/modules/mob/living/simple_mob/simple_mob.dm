@@ -308,10 +308,10 @@ CAPABILITIES(/mob/living/simple_mob)
 	if(force_max_speed)
 		return -3
 
-	if(factor(BF_HASTE))
+	if(src.haste)
 		return -3
-	. += factor(BF_SLOWDOWN)
-	var/penalty_scale = factor(BF_PENALTY_SCALE)
+	. += src.slowdown
+	var/penalty_scale = src.penalty_scale
 	if(penalty_scale != 1 && . > movement_cooldown)
 		. = movement_cooldown + (. - movement_cooldown) * penalty_scale
 

@@ -106,9 +106,9 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.apply_body_effect(/datum/body_effect/dq_test_slowdown)
 	H.apply_body_effect(/datum/body_effect/dq_test_slowdown)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 4, "two stacks should add")
+	TEST_ASSERT_EQUAL(H.slowdown, 4, "two stacks should add")
 	H.remove_body_effect(/datum/body_effect/dq_test_slowdown, TRUE)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "removing both should restore the baseline")
+	TEST_ASSERT_EQUAL(H.slowdown, 0, "removing both should restore the baseline")
 
 	// set_body_effect_factors() swaps a running application's table.
 	H.apply_body_effect(/datum/body_effect/dq_test_healing)
@@ -164,7 +164,7 @@
 	od._apply_stage(last_stage)
 	var/list/table = stages[last_stage]["factors"]
 	TEST_ASSERT_NOTNULL(table, "the worst overdose stage should carry a factor table")
-	TEST_ASSERT(dq_near(H.factor(BF_ACCURACY), table[BF_ACCURACY]), "the stage table should apply unscaled ([H.factor(BF_ACCURACY)] vs [table[BF_ACCURACY]])")
+	TEST_ASSERT(dq_near(H.accuracy, table[BF_ACCURACY]), "the stage table should apply unscaled ([H.accuracy] vs [table[BF_ACCURACY]])")
 
 
 /// Reagents contribute at their dose scale and recompute when volumes change.
@@ -184,8 +184,8 @@
 
 	// A stimulant speeds movement and cuts penalties.
 	H.bloodstr.add_reagent(REAGENT_ID_HYPERZINE, DQ_CHEM_STANDARD_DOSE)
-	TEST_ASSERT(dq_near(H.factor(BF_SLOWDOWN), -1), "hyperzine should give -1 slowdown, got [H.factor(BF_SLOWDOWN)]")
-	TEST_ASSERT(dq_near(H.factor(BF_PENALTY_SCALE), 0.5), "hyperzine should halve movement penalties")
+	TEST_ASSERT(dq_near(H.slowdown, -1), "hyperzine should give -1 slowdown, got [H.slowdown]")
+	TEST_ASSERT(dq_near(H.penalty_scale, 0.5), "hyperzine should halve movement penalties")
 
 
 /// Worn equipment contributes while equipped outside the hands.
@@ -197,14 +197,14 @@
 	boots.worn_factors = alist(BF_SLOWDOWN = 1.5)
 
 	H.put_in_hands(boots)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "gear held in the hands should not contribute")
+	TEST_ASSERT_EQUAL(H.slowdown, 0, "gear held in the hands should not contribute")
 
 	H.drop_from_inventory(boots)
 	TEST_ASSERT(H.equip_to_slot_if_possible(boots, SLOT_ID_SHOES, disable_warning = TRUE), "the boots should equip")
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 1.5, "worn boots should add their slowdown")
+	TEST_ASSERT_EQUAL(H.slowdown, 1.5, "worn boots should add their slowdown")
 
 	H.drop_from_inventory(boots)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "taking the boots off should remove it")
+	TEST_ASSERT_EQUAL(H.slowdown, 0, "taking the boots off should remove it")
 
 
 /// Species baselines and traits.
@@ -213,7 +213,7 @@
 /datum/unit_test/dq_body_factor_species_baseline/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.set_species(SPECIES_UNATHI)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0.5, "unathi should move with their species slowdown")
+	TEST_ASSERT_EQUAL(H.slowdown, 0.5, "unathi should move with their species slowdown")
 	TEST_ASSERT(dq_near(H.factor(BF_METABOLISM), 0.85), "unathi should metabolise at their species rate")
 	TEST_ASSERT_EQUAL(H.species.baseline_factor(BF_SLOWDOWN), 0.5, "the species baseline should read on its own")
 

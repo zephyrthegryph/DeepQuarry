@@ -144,18 +144,18 @@
 /datum/unit_test/dq_stab_splint_reduces_fracture_slowdown/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/leg = H.get_organ(BP_L_LEG)
-	var/baseline_slowdown = H.factor(BF_SLOWDOWN)
+	var/baseline_slowdown = H.slowdown
 	var/datum/affliction/untreated_fracture/F = H.body.afflict(/datum/affliction/untreated_fracture, leg)
 	TEST_ASSERT_NOTNULL(F, "the fracture could not be afflicted")
-	var/unset_slowdown = H.factor(BF_SLOWDOWN)
+	var/unset_slowdown = H.slowdown
 	var/unset_pain = H.factor(BF_PAIN)
 	TEST_ASSERT(unset_slowdown > baseline_slowdown, "an unset broken leg should slow the patient ([baseline_slowdown] -> [unset_slowdown])")
 
 	var/obj/item/stack/medical/splint/S = allocate(/obj/item/stack/medical/splint)
 	TEST_ASSERT(leg.apply_splint(S), "the splint should go on")
-	var/splinted_slowdown = H.factor(BF_SLOWDOWN)
+	var/splinted_slowdown = H.slowdown
 	TEST_ASSERT(splinted_slowdown < unset_slowdown, "a splint should reduce fracture slowdown ([unset_slowdown] -> [splinted_slowdown])")
 	TEST_ASSERT(H.factor(BF_PAIN) < unset_pain, "a splint should reduce fracture pain")
 
 	TEST_ASSERT(leg.remove_splint(), "the splint should come off")
-	TEST_ASSERT(dq_near(H.factor(BF_SLOWDOWN), unset_slowdown), "removing the splint should restore the fracture's slowdown")
+	TEST_ASSERT(dq_near(H.slowdown, unset_slowdown), "removing the splint should restore the fracture's slowdown")

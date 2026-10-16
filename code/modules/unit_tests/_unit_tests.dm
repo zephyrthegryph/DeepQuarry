@@ -128,6 +128,7 @@
 #include "dx_cap_b2_library_tests.dm"
 #include "dx_cap_checks_tests.dm"
 #include "dq_factor_oracle.dm"
+#include "dq_factor_hot_reads_tests.dm"
 #include "dq_factor_oracle_tests.dm"
 #include "dq_factor_pins.dm"
 #include "dq_physiology_pins.dm"

@@ -8,12 +8,12 @@
 		return HUMAN_LOWEST_SLOWDOWN
 
 	// Haste: ignore slowdown and move really fast. Calling ..() here adds slowdown.
-	if(factor(BF_HASTE))
+	if(src.haste)
 		return HUMAN_LOWEST_SLOWDOWN
 
 	// Every body factor source at once: species and traits, modifiers,
 	// afflictions, reagents (stimulants are negative), form and worn gear.
-	. += factor(BF_SLOWDOWN)
+	. += src.slowdown
 
 	if(istype(loc, /turf/space))
 		return ..() - 1
@@ -91,7 +91,7 @@
 
 	// Sedatives add to penalties, stimulants cut them (BF_PENALTY_SCALE).
 	if(. > 0)
-		. *= factor(BF_PENALTY_SCALE)
+		. *= src.penalty_scale
 
 	//mRun means we don't get slowdown: axe every penalty, keep speed buffs.
 	if(has_mutation(mRun))
