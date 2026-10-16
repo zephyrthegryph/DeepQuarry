@@ -1,132 +1,45 @@
-# Declarative lifecycle burn-down, 2026-10-15
+# Declarative lifecycle burn-down — 2026-10-15
 
-Branch: `codex/decl-burndown`, based on `4ab2e15fe1`.
+Branch: `codex/decl-burndown`.
 
-## Source scope and pending verification
+## Result and scope
 
-The original baseline contains 47 actual rows: 23 visuals, 10 starting children,
-6 destruction drops, 5 destruction effects, and one each of reagent initialization,
-registry membership and scheduling. The engine baseline update confirms 41 removals and six retained rows. The earlier
-47-to-4 draft passed baseline checking but exposed two additional runtime contract gaps.
-No baseline has been raised or manually rewritten. The final lane-ready receipt and focused-run JSON are the authoritative completion and stamp evidence; source is merged through master `dbf38d2b20`.
+The declarative-lifecycle baseline shrank **47 → 6**: 41 rows removed, no additions. The original rows comprised 23 visual initializers, 10 starting-child sites, six destruction drops, five destruction effects, and one each of reagent initialization, registry membership and scheduling. Converted content uses existing native defaults, setup, starting relations and ending declarations. Baselines were updated by the analyzer, never hand-expanded.
 
-A shared old-production capture ran 55 selected tests: 50 passed. The three lifecycle
-fixture failures were diagnosed before repair: real legacy statue mute leakage (source-scoped stasis already ends automatically),
-a flipper emag attempt correctly declining without a passenger, and hexadecimal color
-case normalization. The other two failures belong to the requirements lane. The bounded old-code repairs passed before production conversion; the capture-only statue assertion records the old defect rather than blessing it.
+## Engine forms
 
-## Native contract extensions
+- `ref_one(..., starts =, starts_args =, early =, starts_after =)` optionally constructs a reference target without changing REF into ownership. Ordinary references allocate nothing; rejected/deleted targets are not adopted, and the target survives referrer deletion. `by =` resolution and starting construction are mutually exclusive.
+- `setup(..., with_params = TRUE)` runs at constructor completion, after the full Initialize chain and before transient parameters disappear. Rejected constructors skip it; pending/parameter indexes are cleaned on handler failure. Default setup ordering remains unchanged.
+- Registry `when` predicates are classified as initialization-only snapshots, matching existing runtime behavior. Reactive operation/periodic conditions retain their checks. The declaration lint distinguishes atom lifecycle from explicitly called datum business methods named Initialize.
 
-`ref_one(..., starts =, starts_args =, early =, starts_after =)` can create a first
-reference target without declaring ownership. Ordinary references allocate nothing.
-Opt-in starts use the existing construction ordering and argument resolver; the relation
-remains REF and the target survives its referrer's deletion. A constructor that deletes
-or rejects its target is not adopted. `by =` resolution and opt-in starts are mutually
-exclusive. Starting-reference metadata is separate from ownership/deletion policy.
+Three targeted Rust regressions cover manual datum classification, initialization-only registry conditions, and reactive conditions containing quoted registry text.
 
-`setup(..., with_params = TRUE)` is an explicit constructor-completion phase after the
-complete Initialize chain and before transient parameter dropping. Default setup order
-is unchanged. Rejected constructors run neither setup phase; pending completion is
-consumed before calling a handler, and parameter/pending indexes are cleaned if it raises.
-This is used by the MMI holder that must observe its settled owner and transient supplied
-brain together. Tests cover those real paths and a deliberately failing setup.
+## Six retained contracts
 
-Registry `when` predicates are initialization conditions, not live reactive predicates.
-The analyzer now models that existing runtime behavior while preserving purity/boolean
-validation; operation and periodic conditions remain reactive. The declaration lint
-recognizes atom lifecycle semantically rather than treating explicitly called datum
-business methods named Initialize as InitAtom lifecycle hooks.
+| Baseline site | Why it remains |
+|---|---|
+| `destroy_drop`, `code/game/objects/objs.dm`: generic `/obj/on_destroy` spill | Must retain LINKS ordering; a generic GUARD ending would run before descendant cleanup that inspects contents. |
+| `destroy_drop`, `code/game/machinery/machinery.dm`: human/camera cleanup | Same LINKS ordering requirement; no global `/obj` or machinery ending was added. |
+| `destroy_drop`, `code/modules/ventcrawl/ventcrawl_atmospherics.dm`: ventcrawler cleanup | Same requirement for descendant callbacks inspecting occupants. Concrete converted types have their own native endings. |
+| `init_visuals`, `code/modules/overmap/sectors.dm`: unknown-sector concealment | Concealment must remain between overmap registration and the ship registration tail. Earlier setup changes registration; completion setup exposes the real name to vessel identity. |
+| `init_new_child`, `code/modules/body/body.dm`: living body | Robot components are constructed before the living parent boundary. Starting body earlier exposes partial components and caused real power/movement runtimes. Original initializer and ownership remain. |
+| `init_visuals`, `code/modules/pda/pda.dm`: pen overlay | Native `contents_of` read metadata exists (`7de6599bbc`), but physical movement into/out of a holder without a ledger/declared slot does not publish occupancy. Adding a slot changes topology. A physical-contents publication contract is needed; original PDA/app presentation remains. |
 
-## Six deliberately retained rows
+## Old-behavior proof
 
-* `/obj/on_destroy`: generic micro-target spill remains at its existing LINKS phase.
-* `/obj/machinery/on_destroy`: generic human/camera cleanup remains at LINKS.
-* `/obj/machinery/atmospherics/on_destroy`: generic ventcrawler cleanup remains at LINKS.
+The shared old-production capture selected 55 tests (50 initially passed). Its three lifecycle fixture failures were traced to an existing statue mute leak, a correctly declined empty flipper emag, and hexadecimal color case. Bounded old-code repair selectors passed before conversion. The other two initial failures belonged to requirements. The old statue assertion recorded its defect; the final test checks actual stasis release. New engine-contract tests were excluded from old-code capture.
 
-Moving those generic callbacks into GUARD would reorder them before untouched descendant
-callbacks that inspect contents/occupants (DNA scanner, clonepod, mecha, communicator,
-capture crystal and mob holders). The six concrete converted types have their own native
-ending declarations; there is no global `/obj` ending binding.
+Coverage includes actual constructors, ownership/ref lifetimes, supplied MMI parameters, visuals, archaeological products, normal/forced destruction, deletion veto and released occupants. Shared constructor regressions cover internal storage, cloning and a pilotslug's real keyed timer. Telecube look-fixture cleanup observes actual reciprocal pairs before moving only those fixtures out of the map and deleting them; it does not clear production queues.
 
-* Unknown overmap sector concealment remains between overmap registration and the ship's
-  registration tail. Root-time concealment changes earlier registration, while completion
-  setup exposes the real sector name to flight vessel identity. No broad phase-weaving
-  contract was invented for this single row.
+## Current verification and final repair
 
-* Living body construction remains at the original living.Initialize boundary. Robot
-  Initialize constructs its components before calling its living parent; on_part_changed
-  deliberately returns while body is absent. Phase-zero starts made body present during
-  the partial component list and caused null.idle_draw runtimes. Replacing that guard
-  with optional calls would conceal the broader early power/movement side effects.
-  Original body source and ownership declaration are restored byte-for-byte.
-* PDA pen presentation remains original. Master `7de6599bbc` now gives the global
-  `contents_of()` and `contents_count()` native `READS_AS(..., SLOT_OCCUPANCY_KEY)`
-  metadata (`code/engine/refs/containment/spatial.dm:92–117`), and their physical
-  contents return values are suitable for drawing. The missing part is publication:
-  `ledger.dm:348/375/416` publishes occupancy on ledger entry, exit and reslot;
-  `atoms_movable.dm:451–456` notifies an existing ledger or creates one only for a
-  declared-slot holder (`ledger.dm:96–100`). Direct constructor adoption likewise
-  only calls an existing ledger (`atoms_initializing_EXPENSIVE.dm:111`). PDA has
-  independent named ownership, not a physical contents slot, so inserting/removing
-  its pen has no corresponding occupancy publication. A global `contents_of(src)`
-  draw could start correctly but remain stale on removal. Adding a slot would change
-  propagation, reach and destruction contracts. The actual gap is a physical-contents
-  publication contract covering constructor/adoption, movement, deletion and legacy
-  paths without imposing ledger topology; it is not absent read metadata or a scope
-  restriction. Both pda.dm and app.dm retain original behavior. Existing constructor
-  appearance assertions remain; the new live-redraw test covers privacy only.
+The gate at `70bbe160a0` passed production compilation, DreamChecker and ratchets. Its focused receipt `data/test-runs/20261016T022347_70bbe160a0.json` records **62 passed, two failed, zero skipped**. Both look sweeps, `dx_menu_order`, internal-storage/cloning and pilotslug regressions passed. Boot was clean; existing STATE LEAK warnings remain visible.
 
-## Coverage
+The two diagnosed failures are repaired in `00fe5debb2`:
 
-Real construction/destruction coverage includes identification, species bodies, frame
-circuits, energy cells, flipper pAI, paired cubes, MMI adoption, landmarks, eight visual
-families, four archaeological find families, released humans/ghosts/ventcrawlers, normal
-and forced deletion, deletion veto, and actual crystal products. Native-reference and
-parameter-completion contract fixtures are new-code tests and were excluded from the
-old-production capture. The temporary `statue_legacy_stasis` selector was capture-only and has
-been removed from the final source; `statue_releases_stasis` is its corrected regression.
+- Conversion pin: only `ai_use_equipment` disappeared from `/obj/mecha` and `/obj/mecha/working/ripley`, inherited from master `f13b84652d` (2026-10-13). Expanded menus, clicks and all other keys were identical. Only those two literal key rows were promoted.
+- Privacy fixture: raw test `set_var` bypassed publication. Both privacy fixtures now use existing `/area.set_flags`, including deferred restoration. Strict `privacy0 → privacy1` and actual flag assertions remain. Production privacy behavior is unchanged.
 
-The analyzer confirms 47 baseline rows reduced to 6, with 41 deletions and no
-additions. All ratchets pass. Three focused Rust regressions pass: manual datum
-Initialize classification, initialization-only registry conditions, and quoted
-registry text preserving reactive conditions. The constructor-completion fixture
-uses published list mutations and declared references for its fault observation.
+Causes are documented in `intended_changes.md`. The final failure-only selector file is `data/codex-decl/final-repair-selectors.txt`: mandatory requirement/conversion pins plus privacy and live-redraw fixtures. **That repair gate, final receipt and lane-ready stamp remain pending.** Earlier results are historical evidence, not a substituted stamp.
 
-The focused lane gate and stamp are pending. Its list includes the constructor,
-visual, cleanup and reference tests above, both mandatory requirement/conversion
-pins, the look pin, and AI/combat-AI regressions for living-body initialization.
-Do not interpret the source checks as a passing runtime gate or completed landing.
-
-## First final-code gate and repair
-
-Root ran the first coordinated gate at ce0f0c2652: production compile and DreamChecker
-had zero errors/diagnostics and ratchets passed; runtime batch had 180 passing and 14
-failing selectors. Concrete scoped causes were phase-zero body creation (four robot
-constructor pins), unsupported PDA slot reads (two visual tests), and a fixture passing
-FALSE to keeps_if instead of the required pure callback. The body/PDA conversions are
-withdrawn, not papered over; the rejection fixture now uses a genuine FALSE-returning
-callback. The unchanged-master diagnostic batch reproduced both healer-fixture consent failures and the incompatible living attacker reference. Those concrete causes are repaired, and prone density now composes through its native stat contribution; both new density regressions await the final repair batch.
-Look-pin differences must be reconsidered after those reversals, not blessed blindly.
-The final baseline update, failure-only repair, stamp and push remain pending root.
-
-### Look-fixture explosion cleanup
-
-The first combined run reported two explosion particles during `dx_menu_order`, which runs after the look sweep. Look captures delete real mated telecubes; their ending hook submits blast work at the independent mate’s turf, beyond an immediate floor sweep. All manual look-capture/probe/drain deletions now use one test-only disposal helper that moves only the actual telecube pair to nullspace after observation and before real deletion. It neither clears queues nor changes production behavior. `dq_look_telecube_cleanup` asserts real reciprocal pairing on the floor, unchanged capture rows, actual unlinking, the independent mate’s survival, and unchanged pending/submission counts. This repair has not yet been executed; root owns verification.
-
-
-## Final repair scope
-
-The final focused repair list includes the 14 diagnosed failures from the first native runtime gate, two actual prone-density regressions, telecube teardown, and both typed-constructor regressions (19 selectors, including both mandatory pins). Earlier compilation had zero errors and DreamChecker diagnostics. Root runs the final lane-ready gate and reports its exact receipt and pushed commit; this document does not substitute evidence from earlier passing tests for that gate. No full suite is run, and runtime failures are not re-blessed. The native `devour` key added by master `2136172edc` is the only inherited inventory refresh in this repair cohort.
-
-## Compiler cross-check
-
-The repair gate explicitly uses DreamMaker, the supported production cross-check documented in doc/testing.md. A same-plan requirements-lane diagnostic after master 663e85e2ae changed the default to native exposed host-dependent look sampling (the first 24 vars are selected before the analyzer-plan filter). Existing goldens are retained; no appearance differences from that sampler are blessed here. The actual final receipt and JSON record the backend and gate result.
-
-
-## Coordinated repair result and last failure-only repair
-
-The DreamMaker gate at `70bbe160a0` produced receipt `data/test-runs/20261016T022347_70bbe160a0.json`: 62 passed, two failed, zero skipped; production compilation, DreamChecker and ratchets passed. Both look sweeps, `dx_menu_order`, actual internal-storage/cloning constructor regressions, and the keyed pilotslug destination regression passed. The run had a clean boot; existing smoke/pin STATE LEAK warnings remain visible and are not claimed absent.
-
-The two failures were `dq_conversion_pin` (four rows, solely the inherited master `f13b84652d` mecha key deletion) and `dq_decl_visual/live_redraws` (the fixture bypassed the native setter). The bounded promotion validated both current dumps against expanded current op bases, then changed only the two literal `ai_use_equipment` key rows. The privacy fixtures now perform and restore edits through `/area.set_flags`; all real state and appearance assertions remain. Their causes are recorded in `intended_changes.md`.
-
-The final repair selector list is `data/codex-decl/final-repair-selectors.txt`: the failed conversion pin and live-redraw fixture, the directly changed privacy constructor fixture, and mandatory `dq_requirement_protocol_pin`. These source repairs have not yet run. Root owns the subsequent lane-ready gate and stamp; no stamp, clean final runtime result, push, or completed landing is claimed by this document. Previously passing results are historical evidence, not a fabricated replacement receipt.
+This gate explicitly used **DreamMaker/BYOND**, recorded in its receipt. Master `663e85e2ae` changed the default to native; a separate same-plan requirements diagnostic exposed host-dependent look sampling because the first 24 vars are chosen before plan filtering. Existing appearance goldens were preserved rather than blessing compiler-order drift. Backend choice and any remaining limitation must stay explicit in the final receipt.
