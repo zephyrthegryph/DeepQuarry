@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Optical devices no longer retain stale zoom state when their view loses its viewer or is replaced."
