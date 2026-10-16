@@ -14,7 +14,6 @@
 	var/germ_level = GERM_LEVEL_AMBIENT // The higher the germ level, the more germ on the atom.
 	var/simulated = TRUE //filter for actions - used by lighting overlays
 	// atom_say_verb removed (no subtype ever overrode it; inlined to "says" in atom_say)
-	var/bubble_icon = "normal" ///what icon the atom uses for speechbubbles
 	var/datum/forensics_crime/forensic_data
 
 	EXPIRY_TMP_DECLARE(last_bumped)
@@ -53,9 +52,7 @@
 	/// Radiation insulation types
 	var/rad_insulation = RAD_NO_INSULATION
 	/// MAT_* name this atom's radiation shielding derives from (apply_rad_shield_material()), or null.
-	var/rad_shield_material
 	/// Thickness of that shielding in mm.
-	var/rad_shield_thickness_mm = 0
 
 
 /atom/Destroy()
@@ -562,7 +559,7 @@ SETTER(/atom, invisibility)
 			speech_bubble_hearers += M.client
 
 	if(length(speech_bubble_hearers))
-		var/image/I = generate_speech_bubble(src, "[bubble_icon][say_test(message)]", FLY_LAYER)
+		var/image/I = generate_speech_bubble(src, "[speech_presentation_of(src).bubble_icon][say_test(message)]", FLY_LAYER)
 		I.appearance_flags = APPEARANCE_UI_IGNORE_ALPHA
 		flick_overlay(I, speech_bubble_hearers, 30)
 
