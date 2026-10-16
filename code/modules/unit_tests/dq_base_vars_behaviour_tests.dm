@@ -143,7 +143,7 @@
 
 	TEST_ASSERT_NULL(P.burning_state(), "ordinary objects allocate no fire record")
 
-	var/datum/record/burning/state = P.burning_state(TRUE)
+	var/datum/burning_state/state = P.burning_state(TRUE)
 
 	TEST_ASSERT_NOTNULL(state, "the first fire allocates one real record")
 

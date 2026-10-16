@@ -26,21 +26,21 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 		on_notice(/datum/notice/examine, then(CAP_PROC(burn_examined))),
 	)
 
-/// One retained fire record, allocated on ignition rather than on every object.
+/// One retained fire runtime context, allocated on ignition rather than on every object.
 /// The reciprocal sparse link deletes it with the object; revocation keeps its last end reason.
-/datum/record/burning
+/datum/burning_state
 	var/mutable_appearance/overlay
 	var/particle_type
 	var/fuel = 0
 	var/datum/native_watch/heat/cool_watch
 	var/ended_by
 
-CAPABILITIES(/datum/record/burning)
+CAPABILITIES(/datum/burning_state)
 	owns_one(nameof(cool_watch), /datum/native_watch/heat)
 
 /// The current or most recent fire, absent until the first ignition.
-/obj/proc/burning_state(create = FALSE) as /datum/record/burning
-	var/datum/record/burning/state = link_get(src, LK_BURNING_STATE)
+/obj/proc/burning_state(create = FALSE) as /datum/burning_state
+	var/datum/burning_state/state = link_get(src, LK_BURNING_STATE)
 	if(!state && create)
 		state = new
 		link_make(src, LK_BURNING_STATE, state)
@@ -51,7 +51,7 @@ CAPABILITIES(/obj)
 	extend(TAG_TOPIC, needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate), id = "topic_usable")))
 	extend(TAG_TOPIC, then(PROC_REF(topic_touched), early = TRUE))
 	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
-	links(LINK_END(/obj, LK_BURNING_STATE), LINK_END(/datum/record/burning, LK_BURNING_HOLDER), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME)
+	links(LINK_END(/obj, LK_BURNING_STATE), LINK_END(/datum/burning_state, LK_BURNING_HOLDER), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME)
 	owns_one(nameof(disposal_connection), /datum/disposal_system_connection)
 	owns_one(nameof(reactive_icon), /datum/reactive_icon_update)
 	owns_one(nameof(talking_atom), /datum/talking_atom)
@@ -72,7 +72,7 @@ CAPABILITIES(/obj)
 	// only flammable atoms should burn, but it's not really an error if we try
 	if(!(resistance_flags & FLAMMABLE) || (resistance_flags & FIRE_PROOF))
 		return FALSE
-	var/datum/record/burning/state = burning_state(TRUE)
+	var/datum/burning_state/state = burning_state(TRUE)
 	state.overlay = fire_overlay
 	state.ended_by = null
 	if(fire_particles)
@@ -85,7 +85,7 @@ CAPABILITIES(/obj)
 
 /datum/capability/burning/on_activate(datum/activation/A)
 	var/obj/O = A.holder
-	var/datum/record/burning/state = O.burning_state(TRUE)
+	var/datum/burning_state/state = O.burning_state(TRUE)
 	O.burning_start_heat()
 	O.set_resistance_flags(O.resistance_flags | ON_FIRE)
 	if(state.overlay)
@@ -93,9 +93,9 @@ CAPABILITIES(/obj)
 
 /datum/capability/burning/on_deactivate(datum/activation/A)
 	var/obj/O = A.holder
-	var/datum/record/burning/state = O.burning_state()
+	var/datum/burning_state/state = O.burning_state()
 	O.burning_stop_heat()
-	if(!state) // The holder destruction transaction already ended its sparse record.
+	if(!state) // The holder destruction transaction already ended its sparse runtime context.
 		return
 	if(state.particle_type)
 		O.remove_shared_particles("[state.particle_type]_[isitem(O)]")
@@ -116,7 +116,7 @@ CAPABILITIES(/obj)
 	if(get_temperature() < limit + BURN_EXTINGUISH_MARGIN)
 		vg_heat_body_set_temperature(heat_body, limit + BURN_EXTINGUISH_MARGIN)
 	vg_heat_body_power(heat_body, BURN_POWER)
-	var/datum/record/burning/state = burning_state()
+	var/datum/burning_state/state = burning_state()
 	rel_set(state, nameof(state.cool_watch), heat_watch_threshold(src, src, limit, FALSE, TYPE_PROC_REF(/obj, burning_cooled)))
 
 /// Below this the fire goes out.
@@ -127,7 +127,7 @@ CAPABILITIES(/obj)
 	return max(T0C + 50, ignition - BURN_EXTINGUISH_MARGIN)
 
 /obj/proc/burning_stop_heat()
-	var/datum/record/burning/state = burning_state()
+	var/datum/burning_state/state = burning_state()
 	if(state)
 		rel_clear(state, nameof(state.cool_watch))
 	if(QDELETED(src) || isnull(heat_body))
@@ -136,7 +136,7 @@ CAPABILITIES(/obj)
 	if(isnull(heat_fire_turf))
 		vg_heat_body_keep(heat_body, FALSE)
 
-/// The object cooled below the burn-out temperature (the fire record's cooling watch).
+/// The object cooled below the burn-out temperature (the fire context's cooling watch).
 /obj/proc/burning_cooled(datum/native_watch/heat/watch, reason, source)
 	if(QDELETED(src) || !is_burning())
 		return
@@ -144,7 +144,7 @@ CAPABILITIES(/obj)
 		burning_end(BURN_ENDED_COOLED)
 
 /obj/proc/burning_end(reason)
-	var/datum/record/burning/state = burning_state()
+	var/datum/burning_state/state = burning_state()
 	if(state)
 		state.ended_by = reason
 	extinguish()
@@ -176,7 +176,7 @@ CAPABILITIES(/obj)
 		return
 	// Oxygen: the fire draws BURN_OXYGEN_PER_JOULE from the tile (a gas command).
 	// Its heat is already on the object's body (the heat source).
-	var/datum/record/burning/state = burning_state(TRUE)
+	var/datum/burning_state/state = burning_state(TRUE)
 	var/joules = min(BURN_POWER * seconds_per_tick, state.fuel)
 	if(!burn_gas_step(get_turf(src), joules, FALSE))
 		burning_end(BURN_ENDED_OXYGEN)
