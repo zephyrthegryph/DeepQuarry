@@ -28,7 +28,7 @@
 SETTER(/obj/item/clothing/mask/smokable/ecig, active)
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/ecig)
-	setup(PROC_REF(sync_item_state))
+	setup(TYPE_PROC_REF(/obj/item/clothing/mask/smokable, sync_item_state))
 	configure(item_worn(slots = SLOT_EARS | SLOT_MASK, covers = 0))
 	configure(item_combat(attack_verbs = list("attacked", "poked", "battered")))
 	owns_one(nameof(ec_cartridge), /obj/item/reagent_containers/ecig_cartridge, starts = nameof(cartridge_type))
