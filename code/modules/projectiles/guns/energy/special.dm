@@ -1,7 +1,6 @@
 /obj/item/gun/energy/ionrifle
 	name = "ion rifle"
 	desc = "The RayZar Mk60 EW Halicon is a man portable anti-armor weapon designed to disable mechanical threats, produced by NT. Not the best of its type."
-	description_fluff = "RayZar is Ward-Takahashi’s main consumer weapons brand, known for producing and licensing a wide variety of specialist energy weapons of various types and quality primarily for the civilian market."
 	icon = 'icons/obj/64x32guns_ch.dmi' // Gun Sprites
 	icon_state = "ionrifle"
 	item_state = "ionrifle"
@@ -11,6 +10,7 @@
 	projectile_type = /obj/item/projectile/ion
 
 CAPABILITIES(/obj/item/gun/energy/ionrifle)
+	configure(examine_text(fluff = "RayZar is Ward-Takahashi’s main consumer weapons brand, known for producing and licensing a wide variety of specialist energy weapons of various types and quality primarily for the civilian market."))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 
@@ -43,7 +43,6 @@ CAPABILITIES(/obj/item/gun/energy/ionrifle/pistol)
 /obj/item/gun/energy/floragun
 	name = "floral somatoray"
 	desc = "A tool that discharges controlled radiation which induces mutation in plant cells."
-	description_fluff = "The floral somatoray is a relatively recent invention of the NanoTrasen corporation, turning a process that once involved transferring plants to massive mutating racks, into a remote interface. Do not look directly into the transmission end."
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "floramut100"
 	item_state = "floramut"
@@ -107,6 +106,7 @@ CAPABILITIES(/obj/item/gun/energy/ionrifle/pistol)
 	..()
 
 CAPABILITIES(/obj/item/gun/energy/floragun)
+	configure(examine_text(fluff = "The floral somatoray is a relatively recent invention of the NanoTrasen corporation, turning a process that once involved transferring plants to massive mutating racks, into a remote interface. Do not look directly into the transmission end."))
 	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
 	op("floragun_verb_select_gene", menu(), label("Select Gene"), asks(/datum/prompt/choice, fields = list("question" = "Choose a gene to modify.", "title" = "Gene Choice", "choices" = computed(PROC_REF(floragun_verb_select_gene_k108_choices)), "timeout" = 0), step = "k108"), then(PROC_REF(floragun_verb_select_gene)))
 	owns_one(nameof(emitter), starts = /obj/item/stock_parts/micro_laser, on_destroy = ON_DESTROY_CONTAINED)
@@ -273,7 +273,6 @@ CAPABILITIES(/obj/item/gun/energy/staff/focus)
 /obj/item/gun/energy/maghowitzer
 	name ="portable MHD howitzer"
 	desc = "A massive weapon designed to destroy fortifications with a stream of molten tungsten."
-	description_fluff = "A weapon designed by joint cooperation of NanoTrasen, Hephaestus, and SCG scientists. Everything else is red tape and black highlighters."
 	icon_state = "mhdhowitzer"
 	item_state = "mhdhowitzer"
 	wielded_item_state = "mhdhowitzer-wielded"
@@ -341,6 +340,7 @@ CAPABILITIES(/obj/item/gun/energy/staff/focus)
 /obj/item/gun/energy/maghowitzer/var/charged_shot = FALSE
 
 CAPABILITIES(/obj/item/gun/energy/maghowitzer)
+	configure(examine_text(fluff = "A weapon designed by joint cooperation of NanoTrasen, Hephaestus, and SCG scientists. Everything else is red tape and black highlighters."))
 	op("howitzer_charge", ai(), takes("aim", "target_turf", "melee", "arg3", "arg4", "beam", "click_empty"), wait(3 SECONDS), on_interrupt(PROC_REF(howitzer_aborted)), then(PROC_REF(howitzer_charged)))
 
 /// The three-second charge-up before the shot; the click's arguments ride along for the shot that follows.

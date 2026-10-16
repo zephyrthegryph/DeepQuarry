@@ -4,14 +4,6 @@
 	icon_state = "ppistol"
 	item_state = "ppistol"
 	desc = "A Kawashima Material Technology Model 7 anti-particle projector, housed in a rugged casing."
-	description_fluff = "An unconventional weapon, APP guns generate attogram-scale quantities of antimatter which \
-	are then launched using an electromagnetic field. They are only suitable for use in depressurised environments, \
-	else the antimatter pellet is liable to strike the air before it reaches the target. This can result in catastrophic \
-	failure, making them unsuitable as military weapons in practical situations as they are prone to backfiring and \
-	jamming, though they perform as adequately as any laser weapon in vacuum. Nonetheless, they have found a niche among \
-	miners and salvage crews, as their lack of usefulness as a firearm in habitable areas means most authorities do not \
-	classify them as dangerous weapons (at least, not dangerous to whoever they're pointed at) - instead, in most \
-	jurisdictions including NT space, APP guns are officially classed as mining equipment rather than firearms."
 	fire_sound = SFX_WEAPONS_BLASTER
 	w_class = ITEMSIZE_NORMAL
 	projectile_type = /obj/item/projectile/bullet/particle
@@ -22,6 +14,14 @@
 	recoil_mode = 0
 
 CAPABILITIES(/obj/item/gun/energy/particle)
+	configure(examine_text(fluff = "An unconventional weapon, APP guns generate attogram-scale quantities of antimatter which \
+	are then launched using an electromagnetic field. They are only suitable for use in depressurised environments, \
+	else the antimatter pellet is liable to strike the air before it reaches the target. This can result in catastrophic \
+	failure, making them unsuitable as military weapons in practical situations as they are prone to backfiring and \
+	jamming, though they perform as adequately as any laser weapon in vacuum. Nonetheless, they have found a niche among \
+	miners and salvage crews, as their lack of usefulness as a firearm in habitable areas means most authorities do not \
+	classify them as dangerous weapons (at least, not dangerous to whoever they're pointed at) - instead, in most \
+	jurisdictions including NT space, APP guns are officially classed as mining equipment rather than firearms."))
 	configure(item_worn(slots = SLOT_BELT))
 	owns_one(nameof(attached_safety), /obj/item/pressurelock)
 	op("remove_safety", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART), label("Remove safety"), when(req(PROC_REF(safety_attached))), begins(MSG(particle_gun/removing_safety)), wait(2.5 SECONDS), then(PROC_REF(safety_removed)))

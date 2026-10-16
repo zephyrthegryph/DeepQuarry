@@ -10,7 +10,6 @@ Category: Non-Fiction
 /obj/item/book/custom_library/nonfiction/freesirisailightbulbs
 	name = "Free Sirisai: Light Bulbs"
 	desc = "A hardbound book titled \"Free Sirisai: Light Bulbs\" by Sene of Sheraeshi."
-	description_fluff = "This book is titled \"Free Sirisai: Light Bulbs\" by Sene of Sheraeshi. It appears to be about the different lighting needs of different sapient species, written from a Teshari author's view."
 
 	title = "Free Sirisai: Light Bulbs"
 	icon_state = "book5"
@@ -45,7 +44,6 @@ Category: Non-Fiction
 /obj/item/book/bundle/custom_library/nonfiction/viabilityofcorporategov
 	name = "The Viability of Corporate Government"
 	desc = "A hardbound book titled \"The Viability of Corporate Government\" by Yang Simiao."
-	description_fluff = "This book is titled \"The Viability of Corporate Government\" by Yang Simiao. It seems to be an opinion piece on the relationship between corporations and the stations they own."
 
 	title = "The Viability of Corporate Government"
 	icon_state = "book5"
@@ -102,7 +100,6 @@ Category: Non-Fiction
 /obj/item/book/bundle/custom_library/nonfiction/riseandfallofpersianempire
 	name = "The Rise And Fall Of The Persian Empire"
 	desc = "A hardbound book titled \"A Brief History Of The Rise And Fall Of The Persian Empire\" by Satrap."
-	description_fluff = "This book is titled \"A Brief History Of The Rise And Fall Of The Persian Empire\" by Satrap. It covers the beginning and end of Earth's Persian Empire."
 
 	title = "The Rise And Fall Of The Persian Empire"
 	icon_state = "book6"
@@ -228,7 +225,6 @@ Category: Non-Fiction
 
 	name = "An Explanation of the Skrellian Caste System"
 	desc = "A hardbound book titled \"An Explanation of the Skrellian Caste System\" by Jyotirao Phule."
-	description_fluff = "This book is titled \"An Explanation of the Skrellian Caste System\" by Jyotirao Phule."
 
 	title = "An Explanation of the Skrellian Caste System"
 	icon_state = "book7"
@@ -283,3 +279,15 @@ Category: Non-Fiction
 					</body>
 					</html>
 					"})
+
+CAPABILITIES(/obj/item/book/custom_library/nonfiction/freesirisailightbulbs)
+	configure(examine_text(fluff = "This book is titled \"Free Sirisai: Light Bulbs\" by Sene of Sheraeshi. It appears to be about the different lighting needs of different sapient species, written from a Teshari author's view."))
+
+CAPABILITIES(/obj/item/book/bundle/custom_library/nonfiction/viabilityofcorporategov)
+	configure(examine_text(fluff = "This book is titled \"The Viability of Corporate Government\" by Yang Simiao. It seems to be an opinion piece on the relationship between corporations and the stations they own."))
+
+CAPABILITIES(/obj/item/book/bundle/custom_library/nonfiction/riseandfallofpersianempire)
+	configure(examine_text(fluff = "This book is titled \"A Brief History Of The Rise And Fall Of The Persian Empire\" by Satrap. It covers the beginning and end of Earth's Persian Empire."))
+
+CAPABILITIES(/obj/item/book/bundle/custom_library/nonfiction/skrelliancastesystem)
+	configure(examine_text(fluff = "This book is titled \"An Explanation of the Skrellian Caste System\" by Jyotirao Phule."))

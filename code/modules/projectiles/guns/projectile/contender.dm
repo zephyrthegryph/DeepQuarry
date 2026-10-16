@@ -6,11 +6,6 @@
 	desc = "Hedberg-Hammarstrom's flagship one-shot hand-cannon. For when you \
 	really want to make a hole. This one has been modified to work almost like \
 	a bolt-action. Uses .357 rounds."
-	description_fluff = "The Hedberg-Hammarstrom company offers a range of high-quality, \
-	high-cost hunting rifles and shotguns designed with the Sivian wilderness - and its \
-	wildlife - in mind. The company operates just one production plant in Kalmar, but \
-	their weapons have found popularity on garden worlds as far afield as the Tajaran \
-	homeworld due to their excellent build quality, precision, and stopping power."
 	icon_state = "pockrifle"
 	var/icon_retracted = "pockrifle-e"
 	item_state = "revolver"
@@ -63,3 +58,10 @@
 	modified to work almost like a bolt-action. Uses .357 rounds."
 	icon_state = "pockrifle_b"
 	icon_retracted = "pockrifle_b-e"
+
+CAPABILITIES(/obj/item/gun/projectile/contender)
+	configure(examine_text(fluff = "The Hedberg-Hammarstrom company offers a range of high-quality, \
+	high-cost hunting rifles and shotguns designed with the Sivian wilderness - and its \
+	wildlife - in mind. The company operates just one production plant in Kalmar, but \
+	their weapons have found popularity on garden worlds as far afield as the Tajaran \
+	homeworld due to their excellent build quality, precision, and stopping power."))

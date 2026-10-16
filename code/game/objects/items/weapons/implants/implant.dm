@@ -843,12 +843,6 @@ CAPABILITIES(/obj/item/implanter/sizecontrol)
 	name = "compliance implant"
 	desc = "Implant which allows for implanting 'laws' or 'commands' in the host. Has a miniature keyboard for typing laws into."
 
-	description_fluff = "Due to the illegality of these types of implants, they are often made in clandestine facilities with a complete lack of quality control \
-	and as such, may malfunction or simply not work whatsoever. After loyalty implants were outlawed in many civilized areas of space, an abundance of readily \
-	available implanters and implants became available for purchase on the black market, with some deciding to modify them. Now, they are often used by illegal \
-	entities to perform espionage and in some parts of space are used off the books for interrogation. Most of the makers of these modified implants have put in \
-	safeties to prevent lethal or actively harmful commands from being input to lessen the severity of the crime if they are caught. This one has a golden stamp \
-	with the shape of a star on it, the letters 'KE' in black text on it."
 	special_handling = TRUE
 
 
@@ -893,6 +887,12 @@ CAPABILITIES(/datum/prompt/text/compliance_laws)
 		implant.set_laws(newlaws) //Organic
 
 CAPABILITIES(/obj/item/implanter/compliance)
+	configure(examine_text(fluff = "Due to the illegality of these types of implants, they are often made in clandestine facilities with a complete lack of quality control \
+	and as such, may malfunction or simply not work whatsoever. After loyalty implants were outlawed in many civilized areas of space, an abundance of readily \
+	available implanters and implants became available for purchase on the black market, with some deciding to modify them. Now, they are often used by illegal \
+	entities to perform espionage and in some parts of space are used off the books for interrogation. Most of the makers of these modified implants have put in \
+	safeties to prevent lethal or actively harmful commands from being input to lessen the severity of the crime if they are caught. This one has a golden stamp \
+	with the shape of a star on it, the letters 'KE' in black text on it."))
 	without("toggle")
 	op("compliance_implanter_self", in_hand(), label("Set laws"), then(PROC_REF(compliance_implanter_self)))
 	owns_one(nameof(imp), starts = /obj/item/implant/compliance, on_destroy = ON_DESTROY_CONTAINED)

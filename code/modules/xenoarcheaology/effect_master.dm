@@ -32,6 +32,7 @@
 /atom/var/datum/artifact_master/artifact_master
 
 CAPABILITIES(/atom)
+	examine_text()
 	lighting_config()
 	damage_profile()
 	shielding_config()

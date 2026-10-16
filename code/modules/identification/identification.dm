@@ -35,8 +35,8 @@ CAPABILITIES(/datum/identification)
 /datum/identification/proc/record_true_identity()
 	true_name = holder().name
 	true_desc = holder().desc
-	true_description_fluff = holder().description_fluff
-	true_description_antag = holder().description_antag
+	true_description_fluff = examine_text_of(holder()).fluff
+	true_description_antag = examine_text_of(holder()).antag
 
 // Formally identifies the holder.
 /datum/identification/proc/identify(new_identity = IDENTITY_FULL, mob/user)
@@ -71,8 +71,8 @@ CAPABILITIES(/datum/identification)
 	if(identified & IDENTITY_PROPERTIES)
 		holder().name = true_name
 		holder().desc = true_desc
-		holder().description_fluff = true_description_fluff
-		holder().description_antag = true_description_antag
+		holder().set_description_fluff(true_description_fluff)
+		holder().set_description_antag(true_description_antag)
 		return
 
 	if(!unidentified_name)
@@ -80,8 +80,8 @@ CAPABILITIES(/datum/identification)
 
 	holder().name = unidentified_name
 	holder().desc = unidentified_desc
-	holder().description_fluff = null
-	holder().description_antag = null
+	holder().set_description_fluff(null)
+	holder().set_description_antag(null)
 
 // Makes a name for an object that is not identified. It picks one string out of each list inside naming_list.
 /datum/identification/proc/generate_unidentified_name()

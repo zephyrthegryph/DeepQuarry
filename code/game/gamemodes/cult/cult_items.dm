@@ -6,6 +6,7 @@
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/melee/cultblade)
+	configure(examine_text(antag = "This sword is a powerful weapon, capable of severing limbs easily, if they are targeted.  Nonbelievers are unable to use this weapon."))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 30, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))

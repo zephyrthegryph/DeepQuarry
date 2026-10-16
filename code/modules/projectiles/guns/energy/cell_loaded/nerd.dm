@@ -11,8 +11,6 @@
 	catalogue_data = list(/datum/category_item/catalogue/information/organization/vey_med)
 
 	icon_state = "nerd"
-	description_fluff = "The Vey-Med NERD 'Medigun' allows one to customize their loadout in the field, or before deploying, to allow emergency response personnel to deliver a variety of ranged healing options."
-	description_antag = ""
 	allowed_magazines = list(/obj/item/ammo_magazine/cell_mag/medical)
 
 /obj/item/gun/projectile/cell_loaded/medical/cmo
@@ -86,3 +84,6 @@ CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_cmo)
 		/obj/item/ammo_magazine/cell_mag/medical,
 		/obj/item/ammo_casing/microbattery/medical)))
 
+
+CAPABILITIES(/obj/item/gun/projectile/cell_loaded/medical)
+	configure(examine_text(fluff = "The Vey-Med NERD 'Medigun' allows one to customize their loadout in the field, or before deploying, to allow emergency response personnel to deliver a variety of ranged healing options.", antag = ""))

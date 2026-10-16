@@ -5,7 +5,6 @@
 	name ="\improper BoomTown cordless speaker"
 	desc = "Once paired with a jukebox, this speaker can relay the tunes elsewhere!"
 
-	description_fluff = "The BoomTown cordless speaker is capable of maintaining a high-quality 49kbps audio stream from a stationary jukebox and relaying the sound locally. It's like magic!"
 
 	icon = 'icons/obj/device.dmi'
 	icon_state = "bspeaker"
@@ -52,6 +51,7 @@
 
 /// The remote and jukebox name each other; either one dying unpairs them.
 CAPABILITIES(/obj/item/juke_remote)
+	configure(examine_text(fluff = "The BoomTown cordless speaker is capable of maintaining a high-quality 49kbps audio stream from a stationary jukebox and relaying the sound locally. It's like magic!"))
 	links(/obj/item/juke_remote::paired_juke, /obj/machinery/media/jukebox::remotes, b_many = TRUE)
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	op("juke_remote_verb_reset", menu(), label("Reset Pairing"), needs(carried()), then(PROC_REF(juke_remote_verb_reset)))

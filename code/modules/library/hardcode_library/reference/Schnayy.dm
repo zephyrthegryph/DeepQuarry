@@ -8,7 +8,6 @@ CATEGORY: Reference
 /obj/item/book/bundle/custom_library/reference/ThermodynamicReactionsandResearch
 	name = "Thermodynamic Reactions and Research"
 	desc = "A hardbound book titled \"Thermodynamic Reactions and Research: A Guide to Phoron Studies and Safety\" by I.R.I.S.."
-	description_fluff = "This book is titled \"Thermodynamic Reactions and Research: A Guide to Phoron Studies and Safety\" by I.R.I.S.. It appears to cover the fundamentals of phoron and thermodynamic research."
 
 	icon_state = "bookParticleAccelerator"
 	origkey = "Schnayy"
@@ -161,3 +160,6 @@ CATEGORY: Reference
 					</body>
 					</html>
 					"})
+
+CAPABILITIES(/obj/item/book/bundle/custom_library/reference/ThermodynamicReactionsandResearch)
+	configure(examine_text(fluff = "This book is titled \"Thermodynamic Reactions and Research: A Guide to Phoron Studies and Safety\" by I.R.I.S.. It appears to cover the fundamentals of phoron and thermodynamic research."))

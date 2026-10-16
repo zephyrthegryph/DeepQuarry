@@ -243,7 +243,6 @@ CAPABILITIES(/obj/item/clothing/gloves/heavy_engineer)
 
 /obj/item/clothing/gloves/black/bloodletter
 	desc = "A pair of ordinary looking black gloves. On closer examination, they seem somewhat well-made, with an almost metallic sheen to them."
-	description_fluff = "A prohibited concealed weapon, the Melee Grip Reinforcement system is the product of the military applications of nanotechnology. The striking face of the glove hardens in response to impact, producing monofilament blades from the knuckles to greatly enhance the wearer's close-combat lethality."
 	special_attack_type = /datum/unarmed_attack/hardclaws
 
 /// Its sprite follows the colour it was given (a custom item with its own sprite keeps it).
@@ -251,3 +250,6 @@ CAPABILITIES(/obj/item/clothing/gloves/heavy_engineer)
 	..()
 	if(look.state_so_far(src) == "ranger_gloves")
 		look.state("[glovecolor]_ranger_gloves")
+
+CAPABILITIES(/obj/item/clothing/gloves/black/bloodletter)
+	configure(examine_text(fluff = "A prohibited concealed weapon, the Melee Grip Reinforcement system is the product of the military applications of nanotechnology. The striking face of the glove hardens in response to impact, producing monofilament blades from the knuckles to greatly enhance the wearer's close-combat lethality."))

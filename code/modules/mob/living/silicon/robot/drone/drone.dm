@@ -224,6 +224,7 @@ CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 	return
 
 CAPABILITIES(/mob/living/silicon/robot/drone)
+	configure(examine_text(antag = "An Electromagnetic Sequencer can be used to subvert the drone to your cause."))
 	configure(mob_kind(can_be_antagged = FALSE))
 	configure(mob_movement(pull_size = ITEMSIZE_NO_CONTAINER, pull_mobs = MOB_PULL_SMALLER, bump = SIMPLE_ANIMAL, swap = SIMPLE_ANIMAL, push = SIMPLE_ANIMAL, always_swap = 1))
 	rolls(nameof(serial_number), range_of(0, 999))

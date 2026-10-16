@@ -2,7 +2,6 @@
 	equip_cooldown = 30
 	name = "\improper CR-3 Mark 8"
 	desc = "An imposing device, this weapon hurls balls of fire."
-	description_fluff = "A weapon designed by Hephaestus for anti-infantry combat, the CR-3 is capable of outputting a large volume of synthesized fuel. Initially designed by a small company, later purchased by Aether, on Earth as a device made for clearing underbrush and co-operating with firefighting operations. Obviously, Hephaestus has found an 'improved' use for the Aether designs."
 	icon_state = "mecha_cremate"
 
 	energy_drain = 30
@@ -14,7 +13,6 @@
 
 /obj/item/mecha_parts/mecha_equipment/weapon/energy/flamer/rigged
 	name = "\improper AA-CR-1 Mark 4"
-	description_fluff = "A firefighting tool maintained by Aether Atmospherics, whose initial design originated from a small Earth company. This one seems to have been jury rigged."
 	icon_state = "mecha_cremate-rig"
 
 	energy_drain = 50
@@ -23,3 +21,9 @@
 	projectile = /obj/item/projectile/bullet/incendiary/flamethrower
 
 	equip_type = EQUIP_UTILITY
+
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/weapon/energy/flamer)
+	configure(examine_text(fluff = "A weapon designed by Hephaestus for anti-infantry combat, the CR-3 is capable of outputting a large volume of synthesized fuel. Initially designed by a small company, later purchased by Aether, on Earth as a device made for clearing underbrush and co-operating with firefighting operations. Obviously, Hephaestus has found an 'improved' use for the Aether designs."))
+
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/weapon/energy/flamer/rigged)
+	configure(examine_text(fluff = "A firefighting tool maintained by Aether Atmospherics, whose initial design originated from a small Earth company. This one seems to have been jury rigged."))

@@ -73,8 +73,6 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 /obj/item/gun/projectile/sec
 	name = ".45 pistol"
 	desc = "The MT Mk58 is a cheap, ubiquitous sidearm, produced by MarsTech. Found pretty much everywhere humans are. Uses .45 rounds."
-	description_fluff = "The leading civilian-sector high-quality small arms brand of Hephaestus Industries, \
-	MarsTech has been the provider of choice for law enforcement and security forces for over 300 years."
 	icon_state = "secguncomp"
 	magazine_type = /obj/item/ammo_magazine/m45/rubber
 	allowed_magazines = list(/obj/item/ammo_magazine/m45)
@@ -134,9 +132,6 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 /obj/item/gun/projectile/deagle
 	name = "hand cannon"
 	desc = "The PCA-55 Rarkajar perfect handgun for shooters with a need to hit targets through a wall and behind a fridge in your neighbor's house. Uses .44 rounds."
-	description_fluff = "Pearlshield Consolidated Armories are far from the most cutting edge firearm manufacturer, but the Tajaran’s long tradition of war is rivaled only by humanity, \
-	and the introduction of human technology to the Tajaran arms market has resulted in something of a revolution in finding new ways to kill each other at long distances with bullets. \
-	Usually made with mass-production in mind, PCA weapons combine an eye for design with a great desire to make people dead."
 	icon_state = "deagle"
 	item_state = "deagle"
 	caliber = ".44"
@@ -338,11 +333,6 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 	name = "\improper Jindal T15 \"Mäuse\""
 	desc = "Almost seventy percent guaranteed not to be a cheap rimworld knockoff! Accuracy, easy handling, and its distinctive appearance \
 	make it popular among gun collectors. Uses 9mm rounds."
-	description_fluff = "While Jindal’s rugged, affordable weapons intended for the colonial sector are a major export of Tau Ceti, \
-	the Jindal Arms company is perhaps best known for its liberal sale of production licenses to just about any fledgling rimworld \
-	venture who asks, and has cash to spare. While Jindal’s 'authentic' Binma-built weapons are renowned for their reliability, the \
-	same cannot be said for the hundreds of low-grade (But technically legal) copies circulating the squalid habitats and smoke-filled \
-	junk ships of the frontier."
 	icon_state = "p08a"
 	caliber = "9mm"
 	load_method = MAGAZINE
@@ -357,9 +347,6 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 
 /obj/item/gun/projectile/luger/brown
 	name = "\improper Jindal T15b \"Mäuse\""
-	description_fluff = "While wholly owned by Hephaestus Industries, the Jindal Arms brand does not appear prominently in most company catalogues \
-	(Perhaps owing to its less than prestigious image), instead being sold almost exclusively through retailers and advertising platforms targeting \
-	the 'independent roughneck' demographic."
 	icon_state = "p08b"
 
 /*
@@ -688,3 +675,19 @@ CAPABILITIES(/datum/prompt/choice/weapon_setting_review)
 		var/datum/selected = value
 		if(QDELETED(selected))
 			return "gone"
+
+CAPABILITIES(/obj/item/gun/projectile/sec)
+	configure(examine_text(fluff = "The leading civilian-sector high-quality small arms brand of Hephaestus Industries, \
+	MarsTech has been the provider of choice for law enforcement and security forces for over 300 years."))
+
+CAPABILITIES(/obj/item/gun/projectile/luger)
+	configure(examine_text(fluff = "While Jindal’s rugged, affordable weapons intended for the colonial sector are a major export of Tau Ceti, \
+	the Jindal Arms company is perhaps best known for its liberal sale of production licenses to just about any fledgling rimworld \
+	venture who asks, and has cash to spare. While Jindal’s 'authentic' Binma-built weapons are renowned for their reliability, the \
+	same cannot be said for the hundreds of low-grade (But technically legal) copies circulating the squalid habitats and smoke-filled \
+	junk ships of the frontier."))
+
+CAPABILITIES(/obj/item/gun/projectile/luger/brown)
+	configure(examine_text(fluff = "While wholly owned by Hephaestus Industries, the Jindal Arms brand does not appear prominently in most company catalogues \
+	(Perhaps owing to its less than prestigious image), instead being sold almost exclusively through retailers and advertising platforms targeting \
+	the 'independent roughneck' demographic."))

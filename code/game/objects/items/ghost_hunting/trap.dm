@@ -1,8 +1,6 @@
 /obj/item/ghost_trap
 	name = "spectral trap"
 	desc = "A mechanically activated 'ghost trap'."
-	description_fluff = "A 'ghost trap' created by Krow Enterprise's Spectral Division. Used by self proclaimed ghost-hunters and \
-	paranormal investigators to supposedly capture spirits and specters."
 	throw_speed = 5
 	throw_range = 7
 	gender = PLURAL
@@ -16,6 +14,8 @@
 
 CAPABILITIES(/obj/item/ghost_trap)
 	configure(item_placement(center_x = 0, center_y = 0))
+	configure(examine_text(fluff = "A 'ghost trap' created by Krow Enterprise's Spectral Division. Used by self proclaimed ghost-hunters and \
+	paranormal investigators to supposedly capture spirits and specters."))
 	configure(item_thrown(force = 0))
 	// The captured entity working its way out (container_resist() starts it): two minutes.
 	op("break_out", ai(), wait(2 MINUTES), then(PROC_REF(container_resist_timed_done)))

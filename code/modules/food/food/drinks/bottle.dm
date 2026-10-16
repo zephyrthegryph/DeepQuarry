@@ -235,6 +235,7 @@ CAPABILITIES(/obj/item/broken_bottle)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/gin)
 	configure(item_placement(center_x = 16, center_y = 4))
+	configure(examine_text(fluff = "Griffeater Gin was originally an independent disillery in Alpha Centauri, but financial troubles obligated them to sell out to Centauri Provisions. It's said that Centauri ruined the brew, but it's pretty much impossible to tell."))
 	configure(reagents(add = list(REAGENT_ID_GIN = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/whiskey
@@ -244,6 +245,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/gin)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/whiskey)
 	configure(item_placement(center_x = 16, center_y = 3))
+	configure(examine_text(fluff = "Uncle Git's is a product of Abel's Rest, supply shortages and ubiqtuous observation during the occupation giving Takeshi 'Uncle' Git a chance to perfect this refinement of the common bathtub whiskey."))
 	configure(reagents(add = list(REAGENT_ID_WHISKEY = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/specialwhiskey
@@ -253,6 +255,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/whiskey)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/specialwhiskey)
 	configure(item_placement(center_x = 16, center_y = 3))
+	configure(examine_text(fluff = "Nobody knows what Special Blend Whiskey really is, how it's made, or where it comes from. It's an expensive Gilthari product, for only the most luxurious, but NanoTrasen managed to secure a supply deal."))
 	configure(reagents(add = list(REAGENT_ID_SPECIALWHISKEY = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/vodka
@@ -262,6 +265,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/specialwhiskey)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/vodka)
 	configure(item_placement(center_x = 17, center_y = 3))
+	configure(examine_text(fluff = "Centauri Provisions claims that their vodka wins in blind taste-tests against traditional mixes from Earth, but they're not fooling anyone."))
 	configure(reagents(add = list(REAGENT_ID_VODKA = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/tequila
@@ -271,6 +275,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/vodka)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/tequila)
 	configure(item_placement(center_x = 16, center_y = 3))
+	configure(examine_text(fluff = "This tequila comes from the 'Cancer Craze' of the 20's, where consumer products would openly advertize their blatently carcinogenic nature to a burgeoning middle class with newfound access to cloned organs."))
 	configure(reagents(add = list(REAGENT_ID_TEQUILA = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/bottleofnothing
@@ -289,6 +294,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/bottleofnothing)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/patron)
 	configure(item_placement(center_x = 16, center_y = 6))
+	configure(examine_text(fluff = "This emerged as a response to Caccavo, with Patron advertising claiming to be even more toxic and dangerous. Unfortunately, when the Cancer Craze ended, Patron's stocks nosedived and they now operate only a handful of distilleries."))
 	configure(reagents(add = list(REAGENT_ID_PATRON = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/rum
@@ -298,6 +304,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/patron)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/rum)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "Captain Pete's was involved in a long, expensive lawsuit against Gilthari concerning their claims to be from Cuba. They're actually owned and operated by none other than Centauri Provisions, with no distillaries on Earth to speak of."))
 	configure(reagents(add = list(REAGENT_ID_RUM = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/holywater
@@ -316,6 +323,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/holywater)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/vermouth)
 	configure(item_placement(center_x = 17, center_y = 3))
+	configure(examine_text(fluff = "One of Gilthari's less expensive products, Goldeneye Vermouth still manages to sell itself as a drink for only the richest and most successful; giving any number of poseurs a swollen head in the process."))
 	configure(reagents(add = list(REAGENT_ID_VERMOUTH = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/kahlua
@@ -325,6 +333,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/vermouth)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/kahlua)
 	configure(item_placement(center_x = 17, center_y = 3))
+	configure(examine_text(fluff = "One of Centauri Provision's least successful products, this coffee liquour continues to be produced for the handful of mixed drinks requiring it. Surprisingly energizing!"))
 	configure(reagents(add = list(REAGENT_ID_KAHLUA = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/goldschlager
@@ -334,6 +343,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/kahlua)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/goldschlager)
 	configure(item_placement(center_x = 15, center_y = 3))
+	configure(examine_text(fluff = "Drinks laced with gold and other precious metals are a common indulgence among those who live on planets where these metals are still somewhat rare and expensive. On asteroid colonies and better-developed regions, they're seen as a ridiculous waste of materials."))
 	configure(reagents(add = list(REAGENT_ID_GOLDSCHLAGER = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/cognac
@@ -343,6 +353,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/goldschlager)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/cognac)
 	configure(item_placement(center_x = 16, center_y = 6))
+	configure(examine_text(fluff = "Another Gilthari product, Chataeu du Baton is one of the few brandies to still be produced using traditional methods, instead of chemical synthesizers."))
 	configure(reagents(add = list(REAGENT_ID_COGNAC = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/absinthe
@@ -352,6 +363,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/cognac)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/absinthe)
 	configure(item_placement(center_x = 16, center_y = 6))
+	configure(examine_text(fluff = "A product of the anarchists of Casini's Reach, Jailebreaker Verte is an open-source synthesized liquour that has actually managed to succeed over traditional absinthes. Gilthari is livid."))
 	configure(reagents(add = list(REAGENT_ID_ABSINTHE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/melonliquor //MODIFIED ON 04/21/2021
@@ -361,6 +373,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/absinthe)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/melonliquor)
 	configure(item_placement(center_x = 16, center_y = 6))
+	configure(examine_text(fluff = "Melon liquor, formerly an obscure drink, took off when young Skrell started dabbling in alcohol. This brand is owned by Vey-Med, one of their few diversified holdings."))
 	configure(reagents(add = list(REAGENT_ID_MELONLIQUOR = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/bluecuracao //MODIFIED ON 04/21/2021
@@ -370,6 +383,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/melonliquor)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/bluecuracao)
 	configure(item_placement(center_x = 16, center_y = 6))
+	configure(examine_text(fluff = "Centauri Provisions is currently marketing Miss Blue as the next big thing in mixed drinks. Analysts suggest that they're mistaken."))
 	configure(reagents(add = list(REAGENT_ID_BLUECURACAO = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/redeemersbrew
@@ -426,6 +440,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/jager)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/wine)
 	configure(item_placement(center_x = 16, center_y = 4))
+	configure(examine_text(fluff = "NanoTrasen makes this wine, which is generally regarded as better used for cooking than actually drinking. Morpheus specifically names Doublebeard in their recipe for Twobread."))
 	configure(reagents(add = list(REAGENT_ID_REDWINE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/whitewine
@@ -453,6 +468,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/carnoth)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/pwine)
 	configure(item_placement(center_x = 16, center_y = 4))
+	configure(examine_text(fluff = "You've never heard of this before, but it looks vaguely Gilthari, so it's probably good, right?"))
 	configure(reagents(add = list(REAGENT_ID_PWINE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/champagne
@@ -471,6 +487,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/champagne)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/sake)
 	configure(item_placement(center_x = 16, center_y = 3))
+	configure(examine_text(fluff = "An export from New Kyoto, Mono-no-Aware promises to show to the drinker the beautiful transience of all life. Mostly it just tastes like dry booze."))
 	configure(reagents(add = list(REAGENT_ID_SAKE = 100)))
 
 //////////////////////////JUICES AND STUFF///////////////////////
@@ -573,6 +590,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/cream)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/tomatojuice)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "Morpheus used to sell 'Tomato Juice' that was actually synthetic blood in a carton, until they got sued for damages."))
 	configure(reagents(add = list(REAGENT_ID_TOMATOJUICE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/limejuice
@@ -626,32 +644,30 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/grapejuice)
 /obj/item/reagent_containers/food/drinks/bottle/small/beer
 	name = "Spacer beer"
 	desc = "A remarkably unremarkable pale lager. Barley malt, hops and yeast."
-	description_fluff = "Identical to an earlier Earth-based variety of beer, Spacer beer was rebranded at the height of humanity's first extra-solar colonization boom in the 2130s and become the go-to cheap booze for those dreaming of a brighter future in the stars. Today, the beer is advertised as 'brewed in space, for space."
 	icon_state = "beer"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/beer)
 	configure(item_placement(center_x = 16, center_y = 12))
+	configure(examine_text(fluff = "Identical to an earlier Earth-based variety of beer, Spacer beer was rebranded at the height of humanity's first extra-solar colonization boom in the 2130s and become the go-to cheap booze for those dreaming of a brighter future in the stars. Today, the beer is advertised as 'brewed in space, for space."))
 	configure(reagents(add = list(REAGENT_ID_BEER = 50)))
 
 /obj/item/reagent_containers/food/drinks/bottle/small/beer/silverdragon
 	name = "Silver Dragon pilsner"
 	desc = "An earthy pale lager produced exclusively on Nisp, best served cold."
-	description_fluff = "Brewed using locally grown hops, with hints of local flora, Silver Dragon has a reputation as the beer of the frontier hunter - and those trying to look just as tough."
 	icon_state = "beer2"
 
 /obj/item/reagent_containers/food/drinks/bottle/small/beer/meteor
 	name = "Meteor beer"
 	desc = "A strong, premium beer with a hint of maize."
-	description_fluff = "Sold across human space, Meteor beer has won more awards than any single variety in history. It should be noted that Meteor's parent company Gilthari Exports, owns most alcohol awards agencies."
 	icon_state = "beerprem"
 
 /obj/item/reagent_containers/food/drinks/bottle/small/litebeer
 	name = "Lite-Speed Lite beer"
 	desc = "A reduced-alcohol, reduced-calorie beer for the drunk on a diet."
-	description_fluff = "Lite-Speed is Spacer Beer's light brand, and despite being widely considered inferior in every regard, it's still pretty cheap. The lower alcohol content also appeals to some Skrell, for whom full-strength beer is too strong."
 	icon_state = "beerlite"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/litebeer)
+	configure(examine_text(fluff = "Lite-Speed is Spacer Beer's light brand, and despite being widely considered inferior in every regard, it's still pretty cheap. The lower alcohol content also appeals to some Skrell, for whom full-strength beer is too strong."))
 	configure(reagents(add = list(REAGENT_ID_LITEBEER = 50)))
 
 /obj/item/reagent_containers/food/drinks/bottle/small/cider
@@ -671,15 +687,16 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/cider)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/ale)
 	configure(item_placement(center_x = 16, center_y = 10))
+	configure(examine_text(fluff = "A product of Titan and enjoyed widely among the hydrocarbon workers of the oil moon. Often described as 'Beer, but better.'"))
 	configure(reagents(add = list(REAGENT_ID_ALE = 50)))
 
 /obj/item/reagent_containers/food/drinks/bottle/small/ale/hushedwhisper
 	name = "Hushed Whisper IPA"
 	desc = "A popular Sivian pale ale named for an infamous space pirate."
-	description_fluff = "Named for one of history's most infamous pirates, Qar’raqel, who ruled over Natuna before suffering a mysterious fate. This ale is brewed on Sif by a small company... Owned by Centauri Provisions."
 	icon_state = "alebottle2"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/ale/hushedwhisper)
+	configure(examine_text(fluff = "Named for one of history's most infamous pirates, Qar’raqel, who ruled over Natuna before suffering a mysterious fate. This ale is brewed on Sif by a small company... Owned by Centauri Provisions."))
 	configure(reagents(add = list(REAGENT_ID_ALE = 50)))
 
 //////////////////////////SMALL BOTTLED SODA///////////////////////
@@ -728,9 +745,16 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/dr_gibb)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/snaps)
 	configure(item_placement(center_x = 17, center_y = 3))
+	configure(examine_text(fluff = "Its a wonder how such an ancient and obscure drink from Earth made it all the way out here."))
 	configure(reagents(add = list(REAGENT_ID_SNAPS = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/finish_spin(spin_rotation)
 	icon_rotation = spin_rotation
 	update_transform()
 
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/beer/silverdragon)
+	configure(examine_text(fluff = "Brewed using locally grown hops, with hints of local flora, Silver Dragon has a reputation as the beer of the frontier hunter - and those trying to look just as tough."))
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/beer/meteor)
+	configure(examine_text(fluff = "Sold across human space, Meteor beer has won more awards than any single variety in history. It should be noted that Meteor's parent company Gilthari Exports, owns most alcohol awards agencies."))

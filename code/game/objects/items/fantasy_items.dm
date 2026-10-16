@@ -267,7 +267,6 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 /obj/item/gun/energy/taser/magic
 	name = "orb of lightning"
 	desc = "An orb filled with electrical energy, it looks oddly like a toy plasma orb..."
-	description_fluff = ""
 	icon_state = "orb"
 
 //Kettle
@@ -345,3 +344,6 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 	desc = "A plain, old-timey key, as one might use to unlock a door."
 	icon_state = "dungeon"
 	key_id = "dungeon"
+
+CAPABILITIES(/obj/item/gun/energy/taser/magic)
+	configure(examine_text(fluff = ""))

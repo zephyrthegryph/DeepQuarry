@@ -8,8 +8,6 @@ CATEGORY: Fiction
 /obj/item/book/bundle/custom_library/fiction/beyondthedoor
 	name = "Beyond the Door"
 	desc = "A hardbound book titled 'Beyond the Door' by Philip K. Dick."
-	description_fluff = "This book is titled 'Beyond the Door' by Philip K. Dick. There is a blurb on the back: <BR>\
-						Larry Thomas bought a cuckoo clock for his wife - without knowing the price he would have to pay."
 
 	title = "Beyond the Door"
 	icon_state = "book1"
@@ -231,7 +229,6 @@ CATEGORY: Fiction
 /obj/item/book/bundle/custom_library/fiction/manfromsnowyriver
 	name = "The Man From Snowy River"
 	desc = "A hardbound book titled 'The Man From Snowy River' by A.B. 'Banjo' Paterson."
-	description_fluff = "This book is titled 'The Man From Snowy River' by A.B. 'Banjo' Paterson."
 
 	title = "The Man From Snowy River"
 	icon_state = "book3"
@@ -384,3 +381,10 @@ CATEGORY: Fiction
 					</body>
 					</html>
 					"})
+
+CAPABILITIES(/obj/item/book/bundle/custom_library/fiction/beyondthedoor)
+	configure(examine_text(fluff = "This book is titled 'Beyond the Door' by Philip K. Dick. There is a blurb on the back: <BR>\
+						Larry Thomas bought a cuckoo clock for his wife - without knowing the price he would have to pay."))
+
+CAPABILITIES(/obj/item/book/bundle/custom_library/fiction/manfromsnowyriver)
+	configure(examine_text(fluff = "This book is titled 'The Man From Snowy River' by A.B. 'Banjo' Paterson."))

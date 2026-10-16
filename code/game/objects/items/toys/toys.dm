@@ -2501,7 +2501,6 @@ CAPABILITIES(/obj/random/miniature)
 /obj/item/toy/snake_popper
 	name = "bread tube"
 	desc = "Bread in a tube. Chewy...and surprisingly tasty."
-	description_fluff = "This is the product that brought Centauri Provisions into the limelight. A product of the earliest extrasolar colony of Heaven, the Bread Tube, while bland, contains all the nutrients a spacer needs to get through the day and is decidedly edible when compared to some of its competitors. Due to the high-fructose corn syrup content of NanoTrasen's own-brand bread tubes, many jurisdictions classify them as a confectionary."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "tastybread"
 	var/popped = 0
@@ -2512,6 +2511,7 @@ CAPABILITIES(/obj/random/miniature)
 	return R.chance(0.1) ? 1 : real
 
 CAPABILITIES(/obj/item/toy/snake_popper)
+	configure(examine_text(fluff = "This is the product that brought Centauri Provisions into the limelight. A product of the earliest extrasolar colony of Heaven, the Bread Tube, while bland, contains all the nutrients a spacer needs to get through the day and is decidedly edible when compared to some of its competitors. Due to the high-fructose corn syrup content of NanoTrasen's own-brand bread tubes, many jurisdictions classify them as a confectionary."))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
@@ -2752,29 +2752,22 @@ CAPABILITIES(/obj/item/toy/desk)
 /obj/item/toy/desk/newtoncradle
 	name = "\improper Newton's cradle"
 	desc = "A ancient 21th century super-weapon model demonstrating that Sir Isaac Newton is the deadliest sonuvabitch in space."
-	description_fluff = "Aside from car radios, Eridanian Dregs are reportedly notorious for stealing these things. It is often \
-	theorized that the very same ball bearings are used in black-market cybernetics."
 	icon_state = "newtoncradle"
 
 /obj/item/toy/desk/fan
 	name = "office fan"
 	desc = "Your greatest fan."
-	description_fluff = "For weeks, the atmospherics department faced a conundrum on how to lower temperatures in a localized \
-	area through complicated pipe channels and ventilation systems. The problem was promptly solved by ordering several desk fans."
 	icon_state = "fan"
 
 /obj/item/toy/desk/officetoy
 	name = "office toy"
 	desc = "A generic microfusion powered office desk toy. Only generates magnetism and ennui."
-	description_fluff = "The mechanism inside is a Hephasteus trade secret. No peeking!"
 	icon_state = "desktoy"
 
 /obj/item/toy/desk/dippingbird
 	name = "dipping bird toy"
 	desc = "Engineers marvel at this scale model of a primitive thermal engine. It's highly debated why the majority of owners \
 	were in low-level bureaucratic jobs."
-	description_fluff = "One of the key essentials for every Eridanian suit - it's practically a rite of passage to own one \
-	of these things."
 	icon_state = "dippybird"
 
 /obj/item/toy/desk/stellardelight
@@ -3212,3 +3205,18 @@ CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake/mine)
 
 CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake/trauma)
 	configure(speech_presentation(bubble_icon = "medical"))
+
+CAPABILITIES(/obj/item/toy/desk/newtoncradle)
+	configure(examine_text(fluff = "Aside from car radios, Eridanian Dregs are reportedly notorious for stealing these things. It is often \
+	theorized that the very same ball bearings are used in black-market cybernetics."))
+
+CAPABILITIES(/obj/item/toy/desk/fan)
+	configure(examine_text(fluff = "For weeks, the atmospherics department faced a conundrum on how to lower temperatures in a localized \
+	area through complicated pipe channels and ventilation systems. The problem was promptly solved by ordering several desk fans."))
+
+CAPABILITIES(/obj/item/toy/desk/officetoy)
+	configure(examine_text(fluff = "The mechanism inside is a Hephasteus trade secret. No peeking!"))
+
+CAPABILITIES(/obj/item/toy/desk/dippingbird)
+	configure(examine_text(fluff = "One of the key essentials for every Eridanian suit - it's practically a rite of passage to own one \
+	of these things."))

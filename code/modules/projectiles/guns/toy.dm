@@ -61,7 +61,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/toy)
 /obj/item/gun/projectile/shotgun/pump/toy/moistnugget
 	name = "\improper Donk-Soft mosin-nagant"
 	desc = "Donk-Soft foam mosin-nagant! It's Donk or Don't! Ages 8 and up."
-	description_fluff = "A special Donk-Soft rifle originally made to pair with a Soviet Soldier costume. It didn't catch on quite as well as other Donk-Soft products."
 	icon = 'icons/obj/gun_toy.dmi'
 	icon_state = "moistnugget"
 	item_state = "moistnugget"
@@ -265,3 +264,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/toy)
 		to_chat(user, "The [src] vacuums in the darts!")
 	else
 		to_chat(user, "No Donk-Soft brand foam darts detected. Aborting.")
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/toy/moistnugget)
+	configure(examine_text(fluff = "A special Donk-Soft rifle originally made to pair with a Soviet Soldier costume. It didn't catch on quite as well as other Donk-Soft products."))

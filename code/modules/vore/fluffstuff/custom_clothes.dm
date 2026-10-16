@@ -1796,35 +1796,35 @@ CAPABILITIES(/obj/item/clothing/under/fluff/latexmaid)
 /obj/item/clothing/under/fluff/siren
 	name = "Siren Jumpsuit"
 	desc = "An advanced jumpsuit with inlaid neon highlighting, and a port on the back."
-	description_fluff = "Unlike other competitor suits, the Ward Takahashi Siren jumpsuit features a whole host of extra sensors for augmented reality use, and features a non-invasive neural sensor/stimulator for a fully immersive experience."
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "tronsiren"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/fluff/siren)
+	configure(examine_text(fluff = "Unlike other competitor suits, the Ward Takahashi Siren jumpsuit features a whole host of extra sensors for augmented reality use, and features a non-invasive neural sensor/stimulator for a fully immersive experience."))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/clothing/gloves/fluff/siren
 	name = "Siren Gloves"
 	desc = "A set of white and neon blue gloves."
-	description_fluff = "Like its jumpsuit companion, the Ward Takahashi Siren gloves feature multiple sensors for usage in augmented reality. The gloves operate fine even without a paired jumpsuit, offering optimal AR menu control and haptic feedback."
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "tronsiren_gloves"
 
 CAPABILITIES(/obj/item/clothing/gloves/fluff/siren)
+	configure(examine_text(fluff = "Like its jumpsuit companion, the Ward Takahashi Siren gloves feature multiple sensors for usage in augmented reality. The gloves operate fine even without a paired jumpsuit, offering optimal AR menu control and haptic feedback."))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/clothing/shoes/boots/fluff/siren
 	name = "Siren Boots"
 	desc = "A set of white boots with neon lighting."
-	description_fluff = "Unlike the rest of the Ward Takahashi Siren lineup, the boots are simply boots. However, they go great with the rest of the outfit, and are quite comfortable."
 
 	icon_state = "tronsiren_shoes"
 	icon = 'icons/vore/custom_clothes_item.dmi'
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/fluff/siren)
+	configure(examine_text(fluff = "Unlike the rest of the Ward Takahashi Siren lineup, the boots are simply boots. However, they go great with the rest of the outfit, and are quite comfortable."))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/clothing/head/helmet/space/void/security/hasd
@@ -2165,12 +2165,6 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/nikki)
 	name = "oversized witch hat"
 	desc = "A dork-shaped hat. Its long, pointed tip reaches far more than most hats had ought to, its wide brim complementing \
 	this with its tendency to droop at the ends under its own weight."
-	description_fluff = "Despite what Nikki Yumeno may believe, her hat is not in fact a magical artifact of teleportation magicks. \
-	It is however the result of clever utilization of bluespace technology combined with style. Like a classic magician's trick, \
-	the power of this hat lies in the hidden compartment hidden on the inside, into which a personal translocation device can be \
-	snapped inside. Once installed, bluespace electronics inside the hat sync with the translocator and utilize its teleportation \
-	technology to create a localized bluespace portal within the hole of the hat. This tiny portal will warp anything or anyone \
-	who makes physical contact with it to whatever beacon the translocator within is locked onto."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "nikki-hat"
 	item_icons = list(
@@ -2183,6 +2177,12 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/nikki)
 	var/obj/item/perfect_tele/translocator = null // The translocator installed inside, if there is one. Gotta go out and get it first!
 
 CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
+	configure(examine_text(fluff = "Despite what Nikki Yumeno may believe, her hat is not in fact a magical artifact of teleportation magicks. \
+	It is however the result of clever utilization of bluespace technology combined with style. Like a classic magician's trick, \
+	the power of this hat lies in the hidden compartment hidden on the inside, into which a personal translocation device can be \
+	snapped inside. Once installed, bluespace electronics inside the hat sync with the translocator and utilize its teleportation \
+	technology to create a localized bluespace portal within the hole of the hat. This tiny portal will warp anything or anyone \
+	who makes physical contact with it to whatever beacon the translocator within is locked onto."))
 	configure(item_worn(hides = HIDEEARS))
 	// Climbing into the hat (hat_warp()): five seconds beside the one going in.
 	op("nikki_hat_warp", ai(), takes("victim", "proximity", "from"), wait(5 SECONDS), then(PROC_REF(hat_warp_done)))

@@ -70,17 +70,17 @@ CAPABILITIES(/obj/item/gun/energy/pulse_rifle)
 /obj/item/gun/energy/pulse_rifle/compact
 	name = "\improper LP4 Mantis Compact"
 	desc = "The Bishamonten LP4 was once the weapon of choice for military officers during the Hegemony War. Today it is little more than a collectors item."
-	description_fluff = "The Bishamonten Company operated from roughly 2150-2280 - the height of the first extrasolar colonisation boom - before filing for \
-	bankruptcy and selling off its assets to various companies that would go on to become today’s TSCs. Focused on sleek ‘futurist’ designs which have \
-	largely fallen out of fashion but remain popular with collectors and people hoping to make some quick thalers from replica weapons. Bishamonten weapons \
-	tended to be form over function - despite their flashy looks, most were completely unremarkable one way or another as weapons and used very standard \
-	firing mechanisms.The Grasshopper remains one of the smallest production laser pistols ever produced that is still capable of causing significant \
-	damage to organic tissue."
 	icon_state = "pulsepistol"
 	charge_cost = 480
 	w_class = ITEMSIZE_NORMAL //.
 
 CAPABILITIES(/obj/item/gun/energy/pulse_rifle/compact)
+	configure(examine_text(fluff = "The Bishamonten Company operated from roughly 2150-2280 - the height of the first extrasolar colonisation boom - before filing for \
+	bankruptcy and selling off its assets to various companies that would go on to become today’s TSCs. Focused on sleek ‘futurist’ designs which have \
+	largely fallen out of fashion but remain popular with collectors and people hoping to make some quick thalers from replica weapons. Bishamonten weapons \
+	tended to be form over function - despite their flashy looks, most were completely unremarkable one way or another as weapons and used very standard \
+	firing mechanisms.The Grasshopper remains one of the smallest production laser pistols ever produced that is still capable of causing significant \
+	damage to organic tissue."))
 	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 
 /obj/item/gun/energy/pulse_rifle/compact/admin

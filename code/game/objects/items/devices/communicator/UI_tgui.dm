@@ -11,6 +11,20 @@
 
 CAPABILITIES(/obj/item/communicator)
 	configure(object_communication(hears = 1))
+	configure(examine_text(fluff = "As a concept, a device that allows long-distance communication has existed for over five hundred years.  A device that can accomplish \
+	that while in space, across star systems, and that the consumer can afford and use without training, is much more recent, and is thanks to the backbone \
+	that is the Exonet.<br>\
+	<br>\
+	The Exonet is the predominant interstellar telecomm system, servicing trillions of devices across a large portion of human-controlled space.  \
+	It is distributed by a massive network of telecommunication satellites, some privately owned and others owned by the systems' local governments, \
+	that utilize FTL technologies to bounce data between satellites at speeds that would not be possible at sub-light technology.  This communicator \
+	uses a protocol called Exonet Protocol Version 2, generally shortened to EPv2.<br>\
+	<br>\
+	EPv2 is the most common communications protocol in the Exonet, and was specifically designed for it.  It was designed to facilitate communication \
+	between any device in a star system, and have the ability to forward interstellar requests at the root node of that system's Exonet.  \
+	It is also built to cope with the reality that the numerous nodes in a system will likely have frequent outages.  The protocol allows for \
+	up to 18,446,744,073,709,551,616 unique addresses, one of which is assigned to this device.", antag = "Electromagnetic pulses will cause the device to disconnect all linked communicators.  Turning off the Exonet node at the Telecomms \
+	satellite will also accomplish this, but for all communicators on and near the station.  This may be needed to allow for a quiet kill or capture."))
 	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_many(nameof(communicating))

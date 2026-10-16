@@ -5,7 +5,6 @@
 /obj/item/material/fishing_rod
 	name = "crude fishing rod"
 	desc = "A crude rod made for catching fish."
-	description_antag = "Some fishing rods can be utilized as long-range, sharp weapons, though their pseudo ranged ability comes at the cost of slow speed."
 	icon_state = "fishing_rod"
 	item_state = "fishing_rod"
 	force_divisor = 0.02
@@ -51,6 +50,7 @@
 	return rand(10 SECONDS, 20 SECONDS)
 
 CAPABILITIES(/obj/item/material/fishing_rod)
+	configure(examine_text(antag = "Some fishing rods can be utilized as long-range, sharp weapons, though their pseudo ranged ability comes at the cost of slow speed."))
 	configure(item_thrown(force = 1))
 	configure(item_combat(sharp = TRUE, attack_verbs = list("whipped", "battered", "slapped", "fished", "hooked"), attack_speed = 3 SECONDS))
 	configure(item_sounds(hit = SFX_WEAPONS_PUNCHMISS))

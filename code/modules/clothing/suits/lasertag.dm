@@ -11,8 +11,6 @@
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_suits.dmi', slot_r_hand_str = 'icons/mob/items/righthand_suits.dmi')
 	item_state_slots = list(slot_r_hand_str = "tdomni", slot_l_hand_str = "tdomni")
 	blood_overlay_type = "armor"
-	description_fluff = "Laser tag armor can have its health and 'healing' time adjusted. Additionally, DonkSoft brand darts are compatible with laser tag vests, proving a projectile based alternative!"
-	description_antag = "Laser tag armor can be emagged, causing the user to not only have a heart attack when eliminated, but also take massive damage based on the amount of 'lives' the vest had."
 
 	var/lasertag_max_health = 3
 	var/lasertag_health = 3
@@ -42,6 +40,7 @@ TYPE_TABLE(/obj/item/clothing/suit/lasertag, suit_storage_spec, list(HOLD_ONLY(l
 	. += "It regenerates one hit every [time_to_heal*0.1] seconds."
 
 CAPABILITIES(/obj/item/clothing/suit/lasertag)
+	configure(examine_text(fluff = "Laser tag armor can have its health and 'healing' time adjusted. Additionally, DonkSoft brand darts are compatible with laser tag vests, proving a projectile based alternative!", antag = "Laser tag armor can be emagged, causing the user to not only have a heart attack when eliminated, but also take massive damage based on the amount of 'lives' the vest had."))
 	configure(item_worn(covers = UPPER_TORSO))
 	configure(item_protection(siemens = 3.0))
 	op("lasertag_adjust_health_verb", menu(), label("Adjust Suit Health"), needs(carried()), then(PROC_REF(lasertag_adjust_health_verb)))

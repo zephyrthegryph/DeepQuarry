@@ -183,7 +183,6 @@ CAPABILITIES(/obj/machinery/vending/boozeomat)
 /obj/machinery/vending/coffee
 	name = "Hot Drinks machine"
 	desc = "A Galaksi brand vending machine which dispenses hot drinks."
-	description_fluff = "The Ward-Takahashi Galaksi Samovar 55 has been reconstituting hot drinks from their powdered forms since... Well, 2555, but the design has hardly changed in a century or so."
 	product_ads = "Have a drink!;Drink up!;It's good for you!;Would you like a hot joe?;I'd kill for some coffee!;The best beans in the galaxy.;Only the finest brew for you.;Mmmm. Nothing like a coffee.;I like coffee, don't you?;Coffee helps you work!;Try some tea.;We hope you like the best!;Try our new chocolate!;Admin conspiracies"
 	icon_state = "coffee"
 	vend_delay = 34
@@ -206,12 +205,12 @@ CAPABILITIES(/obj/machinery/vending/boozeomat)
 	vending_sound = "machines/vending/vending_coffee.ogg"
 
 CAPABILITIES(/obj/machinery/vending/coffee)
+	configure(examine_text(fluff = "The Ward-Takahashi Galaksi Samovar 55 has been reconstituting hot drinks from their powdered forms since... Well, 2555, but the design has hardly changed in a century or so."))
 	configure(uses_power(idle = 211))
 
 /obj/machinery/vending/snack
 	name = "Getmore Chocolate Corp"
 	desc = "A snack machine courtesy of the Getmore Chocolate Corporation, a Centauri Provisions brand."
-	description_fluff = "Despite its name, the Getmore Chocolate Corporation does not produce chocolate - or any foods at all. The company exists soley to refit Ward-Takahashi's Galaksi brand vending products to accept Centauri Provisions' massive range of snackfoods, and sell them at a significant markup. Generic vendors are not authorized to vend Centauri products, and their popularity forces the market to Getmore or Get Lost."
 	product_slogans = "Try our new nougat bar!;Twice the calories for half the price!"
 	product_ads = "The healthiest!;Award-winning chocolate bars!;Mmm! So good!;Oh my god it's so juicy!;Have a snack.;Snacks are good for you!;Get More with Getmore!;Best quality snacks from Centauri Provisions.;We love chocolate!;Try our new jerky!"
 	icon_state = "snack"
@@ -286,7 +285,6 @@ CAPABILITIES(/obj/machinery/vending/coffee)
 /obj/machinery/vending/cola
 	name = "Robust Softdrinks"
 	desc = "A softdrink vendor graciously provided by NanoTrasen's own vending division."
-	description_fluff = "In a genius sales move, the only vendor authorized to dispense 'outside' beverages (at temperatures lower than 30 degrees celcius) aboard NanoTrasen stations... Is NanoTrasen themselves."
 	icon_state = "Cola_Machine"
 	product_slogans = "Robust Softdrinks: More robust than a toolbox to the head!"
 	product_ads = "Refreshing!;Hope you're thirsty!;Over 1 million drinks sold!;Thirsty? Why not cola?;Please, have a drink!;Drink up!;The best drinks in the galaxy."
@@ -322,12 +320,12 @@ CAPABILITIES(/obj/machinery/vending/coffee)
 	vending_sound = "machines/vending/vending_cans.ogg"
 
 CAPABILITIES(/obj/machinery/vending/cola)
+	configure(examine_text(fluff = "In a genius sales move, the only vendor authorized to dispense 'outside' beverages (at temperatures lower than 30 degrees celcius) aboard NanoTrasen stations... Is NanoTrasen themselves."))
 	configure(uses_power(idle = 211))
 
 /obj/machinery/vending/fitness
 	name = "SweatMAX"
 	desc = "Fueled by your inner inadequacy!"
-	description_fluff = "Provided by NanoMed, SweatMAX promises solutions to all of your problems. Premium gains at premium prices. Resale of SweatMAX products is a violation of NanoTrasen guidelines."
 	icon_state = "fitness"
 	products = list(/obj/item/reagent_containers/food/drinks/smallmilk = 16,
 					/obj/item/reagent_containers/food/drinks/smallchocmilk = 16,
@@ -388,7 +386,6 @@ CAPABILITIES(/obj/machinery/vending/cola)
 /obj/machinery/vending/cigarette
 	name = "cigarette machine"
 	desc = "If you want to get cancer, might as well do it in style!"
-	description_fluff = "As the ease of cancer treatment progressed to the almost routine (if costly) in the 22nd century, the tobacco industry was quick to make sure smoking went back into style. Take your pick, you've got health insurance don't ya, kid?"
 	product_slogans = "Space cigs taste good like a cigarette should.;I'd rather toolbox than switch.;Smoke!;Don't believe the reports - smoke today!"
 	product_ads = "Probably not bad for you!;Don't believe the scientists!;It's good for you!;Don't quit, buy more!;Smoke!;Nicotine heaven.;Best cigarettes since 2150.;Award-winning cigs.;Feeling temperamental? Try a Temperamento!;Carcinoma Angels - go fuck yerself!;Don't be so hard on yourself, kid. Smoke a Lucky Star!"
 	vend_delay = 34
@@ -456,7 +453,6 @@ CAPABILITIES(/obj/machinery/vending/cola)
 /obj/machinery/vending/medical
 	name = "NanoMed Plus"
 	desc = "Medical drug dispenser."
-	description_fluff = "NanoMed is NanoTrasen's medical science division, and provides almost all of the modern medbay essentials in-house at no extra charge. By using this vending machine, employees accept liability for products that may or may not be temporarily replaced by placebos or experimental treatments."
 	icon_state = "med"
 	product_ads = "Go save some lives!;The best stuff for your medbay.;Only the finest tools.;Natural chemicals!;This stuff saves lives.;Don't you want some?;Ping!"
 	req_access = list(ACCESS_MEDICAL)
@@ -489,6 +485,7 @@ CAPABILITIES(/obj/machinery/vending/cola)
 	has_logs = 1
 
 CAPABILITIES(/obj/machinery/vending/medical)
+	configure(examine_text(fluff = "NanoMed is NanoTrasen's medical science division, and provides almost all of the modern medbay essentials in-house at no extra charge. By using this vending machine, employees accept liability for products that may or may not be temporarily replaced by placebos or experimental treatments."))
 	configure(uses_power(idle = 211))
 
 /obj/machinery/vending/phoronresearch
@@ -508,7 +505,6 @@ CAPABILITIES(/obj/machinery/vending/medical)
 /obj/machinery/vending/wallmed1
 	name = "NanoMed"
 	desc = "A wall-mounted version of the NanoMed."
-	description_fluff = "NanoMed is NanoTrasen's medical science division, and provides almost all of the modern medbay essentials in-house at no extra charge. By using this vending machine, employees accept liability for products that may or may not be temporarily replaced by placebos or experimental treatments."
 	product_ads = "Go save some lives!;The best stuff for your medbay.;Only the finest tools.;Natural chemicals!;This stuff saves lives.;Don't you want some?"
 	icon_state = "wallmed"
 	layer = ABOVE_WINDOW_LAYER
@@ -528,7 +524,6 @@ CAPABILITIES(/obj/machinery/vending/medical)
 /obj/machinery/vending/wallmed2
 	name = "NanoMed"
 	desc = "A wall-mounted version of the NanoMed, containing only vital first aid equipment."
-	description_fluff = "NanoMed is NanoTrasen's medical science division, and provides almost all of the modern medbay essentials in-house at no extra charge. By using this vending machine, employees accept liability for products that may or may not be temporarily replaced by placebos or experimental treatments."
 	icon_state = "wallmed"
 	layer = ABOVE_WINDOW_LAYER
 	density = FALSE //It is wall-mounted, and thus, not dense. --Superxpdude
@@ -553,7 +548,6 @@ CAPABILITIES(/obj/machinery/vending/medical)
 /obj/machinery/vending/security
 	name = "SecTech"
 	desc = "A security equipment vendor."
-	description_fluff = "Security vending is kindly provided by the Lawson Arms company, Hephaestus Industries' law enforcement division."
 	product_ads = "Crack capitalist skulls!;Beat some heads in!;Don't forget - harm is good!;Your weapons are right here.;Handcuffs!;Freeze, scumbag!;Don't tase me bro!;Tase them, bro.;Why not have a donut?"
 	icon_state = "sec"
 	req_access = list(ACCESS_SECURITY)
@@ -840,7 +834,6 @@ CAPABILITIES(/obj/machinery/vending/hydronutrients)
 /obj/machinery/vending/giftvendor
 	name = "AlliCo Baubles and Confectionaries"
 	desc = "For that special someone!"
-	description_fluff = "AlliCo Ltd. is a NanoTrasen subsidiary focused on the design and licensing of 'cute' products including toys, gifts, stationary and accessories. Their range of original characters feature in all aspects of popular culture, from snacks to animated series."
 	icon_state = "giftvendor"
 	vend_delay = 15
 	products = list(/obj/item/storage/fancy/heartbox = 5,
@@ -1261,8 +1254,6 @@ CAPABILITIES(/obj/machinery/vending/radren)
 /obj/machinery/vending/donksoft
 	name = "Donk-Soft!"
 	desc = "A toy vendor owned by Donk-Soft, a NanoTrasen sub-company."
-	description_fluff = "Donk-Soft is a sub-company owned by NanoTrasen that distribute replica weapons that shoot squishy foam darts. \
-	They've been a staple of personal entertainment for decades but their buisness has only just moved to the fringes of the galaxy."
 	icon_state = "donksoft"
 	product_slogans = "Get your cool toys today!;Quality toy weapons for cheap prices!"
 	product_ads = "Express your inner child today!;Who needs responsibilities when you have toy weapons?;Make your next murder FUN!"
@@ -5526,3 +5517,28 @@ CAPABILITIES(/obj/machinery/vending/bepis)
 					/obj/item/deck/schnapsen = 100,
 					/obj/item/deck/egy = 100,
 					/obj/item/capture_crystal/cheap = 100)
+
+CAPABILITIES(/obj/machinery/vending/snack)
+	configure(examine_text(fluff = "Despite its name, the Getmore Chocolate Corporation does not produce chocolate - or any foods at all. The company exists soley to refit Ward-Takahashi's Galaksi brand vending products to accept Centauri Provisions' massive range of snackfoods, and sell them at a significant markup. Generic vendors are not authorized to vend Centauri products, and their popularity forces the market to Getmore or Get Lost."))
+
+CAPABILITIES(/obj/machinery/vending/fitness)
+	configure(examine_text(fluff = "Provided by NanoMed, SweatMAX promises solutions to all of your problems. Premium gains at premium prices. Resale of SweatMAX products is a violation of NanoTrasen guidelines."))
+
+CAPABILITIES(/obj/machinery/vending/cigarette)
+	configure(examine_text(fluff = "As the ease of cancer treatment progressed to the almost routine (if costly) in the 22nd century, the tobacco industry was quick to make sure smoking went back into style. Take your pick, you've got health insurance don't ya, kid?"))
+
+CAPABILITIES(/obj/machinery/vending/wallmed1)
+	configure(examine_text(fluff = "NanoMed is NanoTrasen's medical science division, and provides almost all of the modern medbay essentials in-house at no extra charge. By using this vending machine, employees accept liability for products that may or may not be temporarily replaced by placebos or experimental treatments."))
+
+CAPABILITIES(/obj/machinery/vending/wallmed2)
+	configure(examine_text(fluff = "NanoMed is NanoTrasen's medical science division, and provides almost all of the modern medbay essentials in-house at no extra charge. By using this vending machine, employees accept liability for products that may or may not be temporarily replaced by placebos or experimental treatments."))
+
+CAPABILITIES(/obj/machinery/vending/security)
+	configure(examine_text(fluff = "Security vending is kindly provided by the Lawson Arms company, Hephaestus Industries' law enforcement division."))
+
+CAPABILITIES(/obj/machinery/vending/giftvendor)
+	configure(examine_text(fluff = "AlliCo Ltd. is a NanoTrasen subsidiary focused on the design and licensing of 'cute' products including toys, gifts, stationary and accessories. Their range of original characters feature in all aspects of popular culture, from snacks to animated series."))
+
+CAPABILITIES(/obj/machinery/vending/donksoft)
+	configure(examine_text(fluff = "Donk-Soft is a sub-company owned by NanoTrasen that distribute replica weapons that shoot squishy foam darts. \
+	They've been a staple of personal entertainment for decades but their buisness has only just moved to the fringes of the galaxy."))

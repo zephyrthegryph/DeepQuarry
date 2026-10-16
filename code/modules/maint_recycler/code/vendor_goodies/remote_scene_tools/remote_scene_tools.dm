@@ -173,7 +173,6 @@ why aren't these accessories?
 	desc = "A box containing a few bluespace stickers. Moderately obsolete, limited range dimensional bypass technology that enables remote \"things\" and \"stuff\" as if there were no distance at all between them!"
 	var/primary = /obj/item/remote_scene_tool
 	var/secondary = /obj/item/remote_scene_tool
-	description_fluff = "A long since discarded prototype of a bag of holding - turns out it's hard to store things securely when the other end's open. too bad NOBODY has EVER found a practical use for them!"
 
 /obj/item/storage/box/remote_scene_tools/Initialize(mapload)
 	. = ..()
@@ -229,3 +228,6 @@ CAPABILITIES(/obj/item/remote_scene_tool)
 /// Accessor for the worn_mob var.
 /obj/item/remote_scene_tool/proc/worn_mob() as /mob
 	return worn_mob
+
+CAPABILITIES(/obj/item/storage/box/remote_scene_tools)
+	configure(examine_text(fluff = "A long since discarded prototype of a bag of holding - turns out it's hard to store things securely when the other end's open. too bad NOBODY has EVER found a practical use for them!"))

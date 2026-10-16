@@ -11,18 +11,18 @@
 	var/range_alert = 7			// Will turn red if the AI can observe its holder.
 	var/range_warning = 14		// Will turn yellow if the AI's eye is near the holder.
 	var/detect_state = PROXIMITY_NONE
-	description_antag = "Functions as a normal multitool with one added benefit.<br>\
-	This will change colors and make sounds (that only you can hear) during various events.<br>\
-	BLUE: You are outside of camera range.<br>\
-	GREEN: You are inside of camera range.<br>\
-	RED: You are currently being watched by the AI.<br>\
-	FLASHING RED AND ORANGE: You are currently being TRACKED by the AI.<br>\
-	FLASHING ORANGE AND BLUE: The AI has attempted to track you but has failed to do so due to being outside camera range."
 
 /// TRUE while it is carried by a mob: the slow sensing step runs only then.
 /obj/item/multitool/ai_detector/var/tmp/sensing = FALSE
 
 CAPABILITIES(/obj/item/multitool/ai_detector)
+	configure(examine_text(antag = "Functions as a normal multitool with one added benefit.<br>\
+	This will change colors and make sounds (that only you can hear) during various events.<br>\
+	BLUE: You are outside of camera range.<br>\
+	GREEN: You are inside of camera range.<br>\
+	RED: You are currently being watched by the AI.<br>\
+	FLASHING RED AND ORANGE: You are currently being TRACKED by the AI.<br>\
+	FLASHING ORANGE AND BLUE: The AI has attempted to track you but has failed to do so due to being outside camera range."))
 	every(2 SECONDS, then(PROC_REF(sense_step)), when = nameof(sensing))
 	derives(nameof(range_alert), PROC_REF(view_range))
 	derives(nameof(range_warning), PROC_REF(near_range))

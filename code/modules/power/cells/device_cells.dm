@@ -27,7 +27,6 @@ CAPABILITIES(/obj/item/cell/device)
 	standard_overlays = FALSE
 	name = "\improper rechargable D battery"
 	desc = "An older, cheap power cell designed to power handheld devices. It's probably been in use for quite some time now."
-	description_fluff = "You can't top the rust top." //TOTALLY TRADEMARK INFRINGEMENT
 	icon_state = "device_crap"
 	charge = 240
 	maxcharge = 240
@@ -201,3 +200,6 @@ CAPABILITIES(/obj/item/cell/device/weapon/recharge/alien)
 
 /obj/item/cell/device/super/empty
 	charge = 0
+
+CAPABILITIES(/obj/item/cell/device/crap)
+	configure(examine_text(fluff = "You can't top the rust top.")) //TOTALLY TRADEMARK INFRINGEMENT

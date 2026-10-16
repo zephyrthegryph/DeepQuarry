@@ -1157,7 +1157,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOL
 /obj/item/clothing/suit/caution
 	name = "wet floor sign"
 	desc = "Caution! Wet Floor!"
-	description_fluff = "Used by the janitor to passive-aggressively point at when you eventually slip on one of their mopped floors."
 	icon_state = "caution"
 	throw_speed = 2
 	throw_range = 5
@@ -1166,6 +1165,7 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOL
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/suit/caution)
+	configure(examine_text(fluff = "Used by the janitor to passive-aggressively point at when you eventually slip on one of their mopped floors."))
 	configure(item_worn(covers = CHEST))
 	configure(item_thrown(force = 3))
 	configure(item_combat(force = 1, attack_verbs = list("warned", "cautioned", "smashed")))

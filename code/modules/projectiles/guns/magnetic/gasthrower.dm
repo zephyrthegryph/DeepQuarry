@@ -1,7 +1,6 @@
 /obj/item/gun/magnetic/gasthrower
 	name = "phoronthrower"
 	desc = "A modernized flamethrower utilizing pressurized phoron gas as both a propellant and combustion medium."
-	description_fluff = "A weapon designed to effectively combat the threat posed by Almachi soldiers without the danger of other forms of flamethrower."
 	icon_state = "gasthrower"
 	item_state = "bore"
 	wielded_item_state = "bore-wielded"
@@ -79,3 +78,6 @@
 				. += span_notice("\The [src]'s display registers a proper fuel mixture.")
 			if(FALSE)
 				. += span_warning("\The [src]'s display registers an improper fuel mixture.")
+
+CAPABILITIES(/obj/item/gun/magnetic/gasthrower)
+	configure(examine_text(fluff = "A weapon designed to effectively combat the threat posed by Almachi soldiers without the danger of other forms of flamethrower."))

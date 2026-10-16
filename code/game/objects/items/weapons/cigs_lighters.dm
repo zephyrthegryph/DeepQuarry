@@ -339,10 +339,22 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/cigar)
+	configure(examine_text(fluff = "While the label does say that this is a 'premium cigar', it \
+	really cannot match other types of cigars on the market. Is it a quality \
+	cigarette? Perhaps. Was it hand-made with care? No."))
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2))) // 4 total
 CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/cigar/cohiba)
+	configure(examine_text(fluff = "Cohiba has been a popular cigar company for centuries. \
+	They are still based out of Cuba and refuse to expand and therefore have a very \
+	limited quantity, making their cigars coveted all through known space. Robusto \
+	is one of their most popular shapes of cigars."))
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 3))) // 7 total
 CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/cigar/havana)
+	configure(examine_text(fluff = "'Havanian' is an umbrella term for any cigar made in the \
+	typical handmade style of Cuba. This particular cigar is from Gilthari's cigar \
+	manufacturers and produced galaxy-wide. While this way of making quality cigars \
+	has become slightly bastardized over the years, overall quality has remained \
+	relatively the same, even if there is a large quantity of 'Havanian' cigars."))
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 6))) // 10 total
 CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/joint/blunt)
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2))) // 4 total
@@ -404,9 +416,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
 /obj/item/clothing/mask/smokable/cigarette/cigar
 	name = "premium cigar"
 	desc = "A brown roll of tobacco and... well, you're not quite sure. This thing's huge!"
-	description_fluff = "While the label does say that this is a 'premium cigar', it \
-	really cannot match other types of cigars on the market. Is it a quality \
-	cigarette? Perhaps. Was it hand-made with care? No."
 	icon_state = "cigar2"
 	type_butt = /obj/item/trash/cigbutt/cigarbutt
 	throw_speed = 0.5
@@ -423,21 +432,12 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
 /obj/item/clothing/mask/smokable/cigarette/cigar/cohiba
 	name = "\improper Cohiba Robusto cigar"
 	desc = "There's little more you could want from a cigar."
-	description_fluff = "Cohiba has been a popular cigar company for centuries. \
-	They are still based out of Cuba and refuse to expand and therefore have a very \
-	limited quantity, making their cigars coveted all through known space. Robusto \
-	is one of their most popular shapes of cigars."
 	icon_state = "cigar2"
 
 /obj/item/clothing/mask/smokable/cigarette/cigar/havana
 	name = "premium Havanian cigar"
 	desc = "Save these for the fancy-pantses at the next CentCom black tie reception. \
 	You can't blow the smoke from such majestic stogies in just anyone's face."
-	description_fluff = "'Havanian' is an umbrella term for any cigar made in the \
-	typical handmade style of Cuba. This particular cigar is from Gilthari's cigar \
-	manufacturers and produced galaxy-wide. While this way of making quality cigars \
-	has become slightly bastardized over the years, overall quality has remained \
-	relatively the same, even if there is a large quantity of 'Havanian' cigars."
 	icon_state = "cigar2"
 	max_smoketime = 7200
 	smoketime = 7200
@@ -477,9 +477,6 @@ CAPABILITIES(/obj/item/trash/cigbutt)
 /obj/item/clothing/mask/smokable/pipe
 	name = "smoking pipe"
 	desc = "A pipe, for smoking. Made of fine, stained cherry wood."
-	description_fluff = "ClassiCo Accessories and Haberdashers, originating out of Mars, \
-	claim to produce products 'for the modern gentlefolk'. Most of their items are high-end \
-	and expensive, but they pledge to back their prices up with quality, and usually do."
 	icon_state = "pipe"
 	item_state = "pipe"
 	smoketime = 0
@@ -493,6 +490,9 @@ CAPABILITIES(/obj/item/trash/cigbutt)
 
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/pipe)
+	configure(examine_text(fluff = "ClassiCo Accessories and Haberdashers, originating out of Mars, \
+	claim to produce products 'for the modern gentlefolk'. Most of their items are high-end \
+	and expensive, but they pledge to back their prices up with quality, and usually do."))
 	op("put_out", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(put_out)))
 	op("empty_out", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), then(PROC_REF(empty_out)))
 	name_prefix("empty")
@@ -563,10 +563,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/pipe)
 /obj/item/clothing/mask/smokable/pipe/bonepipe
 	name = "Europan bone pipe"
 	desc = "A smoking pipe made out of the bones of the Europan bone whale."
-	description_fluff = "While most commonly associated with bone charms, bones from various sea creatures on Europa are used in a \
-	variety of goods, such as this smoking pipe. While smoking in submarines is often an uncommon occurrence, due to a lack of \
-	available air or space, these pipes are a common sight in the many stations of Europa. Higher-quality pipes typically have \
-	scenes etched into their bones, and can tell the story of their owner's time on Europa."
 	icon_state = "bonepipe"
 	item_state = "bonepipe"
 	chem_volume = 30
@@ -595,8 +591,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/pipe)
 /obj/item/reagent_containers/rollingpaper
 	name = "rolling paper"
 	desc = "A small, thin piece of easily flammable paper, commonly used for rolling and smoking various dried plants."
-	description_fluff = "The legalization of certain substances propelled the sale of rolling \
-	papers through the roof. Now almost every Trans-stellar produces a variety, often of questionable quality."
 	icon = 'icons/obj/cigarettes.dmi'
 	icon_state = "cig paper"
 	volume = 25
@@ -611,6 +605,8 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/pipe)
 
 // A rolling paper is a sealed holder of its volume: a dried plant used on it is added (if it fits), and using it in hand rolls what is in it into a joint.
 CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
+	configure(examine_text(fluff = "The legalization of certain substances propelled the sale of rolling \
+	papers through the roof. Now almost every Trans-stellar produces a variety, often of questionable quality."))
 	reagent_container(
 		volume = nameof(volume),
 		needle = TRUE,
@@ -661,8 +657,6 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 /obj/item/flame/lighter
 	name = "cheap lighter"
 	desc = "A cheap-as-free lighter."
-	description_fluff = "The 'hand-made in Altair' sticker underneath is a charming way of \
-	saying 'Made with prison labour'. It's no wonder the company can sell these things so cheap."
 	icon = 'icons/obj/lighters.dmi'
 	icon_state = "lighter"
 	item_state = "lighter"
@@ -700,6 +694,8 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 /obj/item/flame/lighter/var/detonator_mode = 0
 
 CAPABILITIES(/obj/item/flame/lighter)
+	configure(examine_text(fluff = "The 'hand-made in Altair' sticker underneath is a charming way of \
+	saying 'Made with prison labour'. It's no wonder the company can sell these things so cheap."))
 	configure(item_surgery(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 4))
@@ -766,7 +762,6 @@ CAPABILITIES(/obj/item/flame/lighter)
 /obj/item/flame/lighter/zippo
 	name = "\improper Zippo lighter"
 	desc = "The zippo."
-	description_fluff = "Still going after all these years."
 	icon_state = "zippo"
 	item_state = "zippo"
 	activation_sound = SFX_ITEMS_ZIPPO_ON
@@ -868,7 +863,6 @@ CAPABILITIES(/obj/item/flame/lighter)
 /obj/item/flame/lighter/supermatter
 	name = "Hardlight Supermatter Zippo"	// Base SM Lighter
 	desc = "State of the Art Supermatter Lighter."
-	description_fluff = "A zippo style lighter with a tiny supermatter sliver held by a hardlight shield. When lighting a cigar, make sure to hover the tip near the sliver, not against it!"
 	icon_state = "SMzippo"
 	item_state = "SMzippo"
 	activation_sound = SFX_ITEMS_ZIPPO_ON_ALT
@@ -880,7 +874,6 @@ CAPABILITIES(/obj/item/flame/lighter)
 /obj/item/flame/lighter/supermatter/syndismzippo
 	name = "Phoron Supermatter Zippo"		// Syndicate SM Lighter
 	desc = "State of the Art Supermatter Lighter."
-	description_fluff = "A red zippo style lighter with a tiny supermatter sliver held by a phoron field."
 	icon_state = "SyndiSMzippo"
 	item_state = "SyndiSMzippo"
 	activation_sound = SFX_ITEMS_ZIPPO_ON_ALT
@@ -890,7 +883,6 @@ CAPABILITIES(/obj/item/flame/lighter)
 /obj/item/flame/lighter/supermatter/expsmzippo
 	name = "Experimental SM Lighter"		// Dangerous WIP (admin/event only ATM)
 	desc = "State of the Art Supermatter Lighter"
-	description_fluff = "A unique take originating from the zippo design, a shard of supermatter placed within lead-lined walls. Cautious, VERY DANGEROUS do NOT touch!"
 	icon_state = "ExpSMzippo"
 	item_state = "ExpSMzippo"
 	activation_sound = SFX_ITEMS_BUTTON_OPEN
@@ -1197,3 +1189,21 @@ CAPABILITIES(/obj/item/flame/lighter)
 	if(istype(location))
 		location.hotspot_expose(700, 5)
 	burn_out()
+
+CAPABILITIES(/obj/item/clothing/mask/smokable/pipe/bonepipe)
+	configure(examine_text(fluff = "While most commonly associated with bone charms, bones from various sea creatures on Europa are used in a \
+	variety of goods, such as this smoking pipe. While smoking in submarines is often an uncommon occurrence, due to a lack of \
+	available air or space, these pipes are a common sight in the many stations of Europa. Higher-quality pipes typically have \
+	scenes etched into their bones, and can tell the story of their owner's time on Europa."))
+
+CAPABILITIES(/obj/item/flame/lighter/zippo)
+	configure(examine_text(fluff = "Still going after all these years."))
+
+CAPABILITIES(/obj/item/flame/lighter/supermatter)
+	configure(examine_text(fluff = "A zippo style lighter with a tiny supermatter sliver held by a hardlight shield. When lighting a cigar, make sure to hover the tip near the sliver, not against it!"))
+
+CAPABILITIES(/obj/item/flame/lighter/supermatter/syndismzippo)
+	configure(examine_text(fluff = "A red zippo style lighter with a tiny supermatter sliver held by a phoron field."))
+
+CAPABILITIES(/obj/item/flame/lighter/supermatter/expsmzippo)
+	configure(examine_text(fluff = "A unique take originating from the zippo design, a shard of supermatter placed within lead-lined walls. Cautious, VERY DANGEROUS do NOT touch!"))

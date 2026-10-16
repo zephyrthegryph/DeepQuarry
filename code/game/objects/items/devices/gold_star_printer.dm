@@ -127,6 +127,6 @@ CAPABILITIES(/datum/prompt/choice/gold_sticker)
 	if(!consume(src, user))
 		return
 	target.desc = "[target.desc] It has a [sticker_name] stuck to it!"
-	target.description_fluff = "[target.description_fluff] Attached to it is [sticker_desc]"
+	target.set_description_fluff("[examine_text_of(target).fluff] Attached to it is [sticker_desc]")
 	to_chat(user, span_notice("You stick [sticker_article] to \the [target]."))
 	return

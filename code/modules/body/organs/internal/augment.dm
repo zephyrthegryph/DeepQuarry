@@ -29,10 +29,10 @@
 	var/aug_cooldown = 1 SECONDS // no reason for it to be 30 seconds, the powerful implants already have their own values
 	var/cooldown = null
 
-	description_fluff = "If attempting to implant a compatible augment into a synthetic limb, the limb must be screwdrivered open and then the augment port opened with a crowbar before insertion can begin."
 
 
 CAPABILITIES(/obj/item/organ/internal/augment)
+	configure(examine_text(fluff = "If attempting to implant a compatible augment into a synthetic limb, the limb must be screwdrivered open and then the augment port opened with a crowbar before insertion can begin."))
 	setup(PROC_REF(configure_augment))
 	owns_one(nameof(integrated_object), starts = nameof(integrated_object_type))
 

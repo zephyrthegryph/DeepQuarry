@@ -7,8 +7,6 @@
 	desc = "The WT-98a 'Protector' is a common sidearm developed by Ward-Takahashi GMC. It features a powerful stun mode, and \
 	an alert-level-locked lethal mode, only usable when the connected jurisdiction allows. It also features an integrated flashlight!"
 	catalogue_data = list(/datum/category_item/catalogue/information/organization/ward_takahashi)
-	description_fluff = "One of the few sidearms developed by Ward-Takahashi, this gun has a wireless connection to the computer's datacore to ensure it can't be used without authorization from heads of staff who have raised the alert level. Until then, *click*!"
-	description_antag = "The gun can be emagged to remove the lethal security level restriction, allowing it to be fired on lethal mode at all times."
 
 	icon = 'icons/vore/custom_guns_vr.dmi'
 	icon_state = "prot"
@@ -104,7 +102,6 @@
 /obj/item/gun/energy/gun/protector/pilotgun/locked
 	name = "secure shuttle-protection pistol"
 	desc = "The LAEP97 'Defender' is a variant of another firearm from Lawson Arms and "+TSC_HEPH+", designed to be issued to pilots for defence of their craft from trespassers whilst in-flight. It contains a detachable cell, two modes of fire and a safety interlock to minimize workplace accidents. It also features an integrated flashlight!"
-	description_fluff = "A lighter weapon designed for pilots, this gun has a wireless connection to the computer's datacore to ensure it can't be used within the bounds of NT facilities without authorization from ranking members of security, or the Captain."
 
 	firemodes = list(
 		list(mode_name="stunbeam", projectile_type=/obj/item/projectile/beam/stun/med, modifystate="stun", charge_cost = 400),
@@ -140,3 +137,9 @@
 			to_chat(user, span_warning("The safety device prevents the gun from firing this close to the facility."))
 			return 0
 	return ..()
+
+CAPABILITIES(/obj/item/gun/energy/gun/protector)
+	configure(examine_text(fluff = "One of the few sidearms developed by Ward-Takahashi, this gun has a wireless connection to the computer's datacore to ensure it can't be used without authorization from heads of staff who have raised the alert level. Until then, *click*!", antag = "The gun can be emagged to remove the lethal security level restriction, allowing it to be fired on lethal mode at all times."))
+
+CAPABILITIES(/obj/item/gun/energy/gun/protector/pilotgun/locked)
+	configure(examine_text(fluff = "A lighter weapon designed for pilots, this gun has a wireless connection to the computer's datacore to ensure it can't be used within the bounds of NT facilities without authorization from ranking members of security, or the Captain."))

@@ -6,10 +6,6 @@
 /obj/item/clothing/gloves/sterile/thieves
 	name = "sterile gloves"
 	desc = "Sterile gloves."
-	description_antag = "These gloves are uniquely suited for stealing, as well as breaking and entering. They have minor insulation.\
-	Touching someone out of combat mode will open their backpack, if it exists, or their belt if they have no backpack, allowing you to deposit\
-	items into the inventories. Be careful about making too much noise.\
-	Touching with Disarm will swap the items in your LEFT pockets. Grab will swap RIGHT pockets."
 	icon_state = "latex"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
 	germ_level = 0
@@ -20,6 +16,10 @@
 // (pickpocket_phase_done) and names the next wait, if any, in the op's arguments: phase ("rummage", "open", "take" or "give"), wait, slot_id,
 // slot, took, theirs and mine.
 CAPABILITIES(/obj/item/clothing/gloves/sterile/thieves)
+	configure(examine_text(antag = "These gloves are uniquely suited for stealing, as well as breaking and entering. They have minor insulation.\
+	Touching someone out of combat mode will open their backpack, if it exists, or their belt if they have no backpack, allowing you to deposit\
+	items into the inventories. Be careful about making too much noise.\
+	Touching with Disarm will swap the items in your LEFT pockets. Grab will swap RIGHT pockets."))
 	configure(item_protection(siemens = 0.5, permeability = 0.01))
 	op("pickpocket", ai(), takes("victim", "stance", "victim_loc"), wait(PROC_REF(pickpocket_wait), keeps = STAY | ALIVE, repeats = PROC_REF(pickpocket_more), after_step = PROC_REF(pickpocket_phase_done)), on_interrupt(PROC_REF(pickpocket_interrupted)), then(PROC_REF(pickpocket_finished)))
 
@@ -133,9 +133,6 @@ CAPABILITIES(/obj/item/clothing/gloves/sterile/thieves)
 /obj/item/clothing/gloves/ring/buzzer
 	name = "ring"
 	desc = "A plain metal band."
-	description_antag = "This morphium-alloy ring continually generates an electric field, capable of electrocuting a target while not injuring the wearer.\
-	The device is also capable of 'frankenstein'-ing a corpse, long after normal technology would be able to save them. The body will still be tied to the\
-	normal damage limits for survival, however, so care must be taken."
 	icon_state = "material"
 	var/battery_type = /obj/item/cell/device/weapon/recharge
 	var/obj/item/cell/battery = null
@@ -145,6 +142,9 @@ CAPABILITIES(/obj/item/clothing/gloves/sterile/thieves)
 	return battery
 
 CAPABILITIES(/obj/item/clothing/gloves/ring/buzzer)
+	configure(examine_text(antag = "This morphium-alloy ring continually generates an electric field, capable of electrocuting a target while not injuring the wearer.\
+	The device is also capable of 'frankenstein'-ing a corpse, long after normal technology would be able to save them. The body will still be tied to the\
+	normal damage limits for survival, however, so care must be taken."))
 	owns_one(nameof(battery), starts = nameof(battery_type))
 
 /obj/item/clothing/gloves/ring/buzzer/Touch(atom/A, proximity, stance = I_HURT, mob/user)

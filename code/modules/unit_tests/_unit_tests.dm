@@ -1355,10 +1355,10 @@
 #include "dq_base_vars_augment_link_tests.dm"
 #include "dq_base_vars_zoom_tests.dm"
 #include "dq_heat_spawn_configuration_tests.dm"
+#include "dq_surgical_policy_home_tests.dm"
+#include "dq_examine_text_home_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
 //#undef TEST_FOCUS - This define is used by vscode unit test extension to pick specific unit tests to run and appended later so needs to be used out of scope here
 #endif
-
-#include "dq_surgical_policy_home_tests.dm"

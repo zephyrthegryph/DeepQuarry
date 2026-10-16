@@ -5,8 +5,6 @@
 	name = "energy gun"
 	desc = "Another bestseller of Lawson Arms, the LAEP80 Thor is a versatile energy based pistol, capable of switching between low and high \
 	capacity projectile settings. In other words: Stun or Kill."
-	description_fluff = "Lawson Arms is Hephaestus Industries’ main personal-energy-weapon branding, often sold alongside MarsTech projectile \
-	weapons to security and law enforcement agencies."
 	icon = 'icons/obj/gun.dmi' // Gun Sprites
 	icon_state = "egunstun"
 	item_state = null //so the human update icon uses the icon_state instead.
@@ -71,10 +69,6 @@
 	name = "Energy RCW"
 	desc = "The Lawson Arms experimental Rapid Capacitor Weapon is a highly reguarded and deadly peice of military hardware. Using a large drum shaped \
 	capacitor bank the weapon is capable of accurate, rapid burst fire."
-	description_fluff = "The Rapid Capacitor Weapon is one of a few weapons that never saw full production. IT was an experimental Shock Trooper weapon developed by \
-	Lawsom Arms during the Hegemony Conflict. While only a few hundred were made it didn't take long for smaller arms dealers to break apart stolen units and revese engineer \
-	the tech used in their design. While they're an uncommon sight, they're known to be used by roving bands in the Salthan Fyrds as a forms of personal protection because \
-	of their ease of use and firepower."
 	icon_state = "etommy"
 	item_state = "fm-2tkill"
 	w_class = ITEMSIZE_LARGE
@@ -95,8 +89,6 @@
 	name = "personal energy weapon"
 	desc = "The RayZar EW20 \"Martin\" personal energy weapon - or PEW - is Ward-Takahasi's entry into the variable capacity energy gun market. \
 	New users are advised to 'set RayZars to stun'."
-	description_fluff = "RayZar is Ward-Takahashi’s main consumer weapons brand, known for producing and licensing a wide variety of specialist \
-	energy weapons of various types and quality primarily for the civilian market."
 	icon_state = "PDWstun"
 	fire_sound = SFX_WEAPONS_TASER
 	w_class = ITEMSIZE_SMALL
@@ -219,3 +211,11 @@ CAPABILITIES(/obj/item/gun/energy/gun/nuclear)
 		list(mode_name="laser", fire_delay = 8, projectile_type=/obj/item/projectile/beam, modifystate="x01laser", fire_sound=SFX_WEAPONS_LASER, charge_cost = 480),
 		list(mode_name="gauss", fire_delay=15, projectile_type=/obj/item/projectile/energy/gauss, modifystate="x01gauss", fire_sound=SFX_WEAPONS_GAUSS_SHOOT, charge_cost = 360)
 		)
+
+CAPABILITIES(/obj/item/gun/energy/gun)
+	configure(examine_text(fluff = "Lawson Arms is Hephaestus Industries’ main personal-energy-weapon branding, often sold alongside MarsTech projectile \
+	weapons to security and law enforcement agencies."))
+
+CAPABILITIES(/obj/item/gun/energy/gun/compact)
+	configure(examine_text(fluff = "RayZar is Ward-Takahashi’s main consumer weapons brand, known for producing and licensing a wide variety of specialist \
+	energy weapons of various types and quality primarily for the civilian market."))

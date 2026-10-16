@@ -93,12 +93,6 @@ CAPABILITIES(/obj/item/gun/energy/sizegun)
 /obj/item/gun/energy/sizegun/admin
 	name = "modified size gun"
 	desc = "An older model sizegun, modified to be without limits on minimum/maximum size, and have an unlimited charge. Time to show 'em that size does matter."
-	description_fluff = "A standard size gun that has been modified with \
-	a distabilized bluespace element that has allowed the gun to break the \
-	normal laws of physics and create a 'weapon' capable of sizing any \
-	creature well beyond any conceivable size. Only a handfull of these \
-	exist in the known universe and they are \
-	exclusively owned by NanoTrasen for research purposes."
 	icon_state = "sizegun_admin-shrink100"
 	item_state = "sizegun_admin"
 	initial_icon_state = "sizegun_admin"
@@ -278,3 +272,11 @@ CAPABILITIES(/obj/item/gun/energy/sizegun)
 	rel_set(box, nameof(box.prompt), src)
 	box.tgui_interact(user)
 	return box
+
+CAPABILITIES(/obj/item/gun/energy/sizegun/admin)
+	configure(examine_text(fluff = "A standard size gun that has been modified with \
+	a distabilized bluespace element that has allowed the gun to break the \
+	normal laws of physics and create a 'weapon' capable of sizing any \
+	creature well beyond any conceivable size. Only a handfull of these \
+	exist in the known universe and they are \
+	exclusively owned by NanoTrasen for research purposes."))

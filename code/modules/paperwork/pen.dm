@@ -173,8 +173,6 @@ CAPABILITIES(/obj/item/pen/reagent)
  */
 /obj/item/pen/blade
 	desc = "It's a normal black ink pen."
-	description_antag = "This pen can be transformed into a dangerous melee and thrown assassination weapon with an Alt-Click.\
-	When active, it cannot be caught safely."
 	name = "pen"
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "pen"
@@ -193,6 +191,8 @@ CAPABILITIES(/obj/item/pen/reagent)
 
 // Its alt-click comes before the pen's own (the old EXTEND listed the child's specs first).
 CAPABILITIES(/obj/item/pen/blade)
+	configure(examine_text(antag = "This pen can be transformed into a dangerous melee and thrown assassination weapon with an Alt-Click.\
+	When active, it cannot be caught safely."))
 	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
 	configure(item_thrown(force = 3))
 	configure(item_combat(armor_penetration = 20))

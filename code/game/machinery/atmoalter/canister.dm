@@ -53,6 +53,7 @@ MSG_DEF(canister/deconstructed, "You deconstruct %T%.", "%U% deconstructs %T%.")
 MSG_DEF(canister/jetpack, "You pulse-pressurize your jetpack from the tank.", "%U% pulse-pressurizes a jetpack from %T%.")
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
+	configure(examine_text(antag = "Canisters can be damaged, spilling their contents into the air, or you can just leave the release valve open."))
 	configure(machine_interaction_config(interact_offline = 1))
 	climb()
 	gas_watch(air = nameof(air_contents), changed = PROC_REF(contents_changed))

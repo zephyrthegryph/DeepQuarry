@@ -5,7 +5,6 @@
 	energy weapon that allows the user to mix and match their own fire modes. Up to four combinations of \
 	energy beams can be configured at once. Ammo not included."
 
-	description_fluff = "The Hephaestus 'Nanotech Selectable Fire Weapon' allows one to customize their loadout in the field, or before deploying, to achieve various results in a weapon they are already familiar with wielding."
 	allowed_magazines = list(/obj/item/ammo_magazine/cell_mag/combat)
 
 /obj/item/gun/projectile/cell_loaded/combat/prototype/get_mechanics_info(list/additional_information)
@@ -17,7 +16,6 @@
 	desc = "Variety is the spice of life! A prototype based on Hephaestus 102b 'Nanotech Selectable-Fire Weapon', or NSFW for short, is an unholy hybrid of an ammo-driven  \
 	energy weapon that allows the user to mix and match their own fire modes. Up to two combinations of \
 	energy beams can be configured at once. Ammo not included."
-	description_antag = ""
 	allowed_magazines = list(/obj/item/ammo_magazine/cell_mag/combat/prototype)
 
 // The Magazine //
@@ -80,3 +78,9 @@ CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hos)
 		/obj/item/ammo_magazine/cell_mag/combat,
 		/obj/item/ammo_casing/microbattery/combat)))
 
+
+CAPABILITIES(/obj/item/gun/projectile/cell_loaded/combat)
+	configure(examine_text(fluff = "The Hephaestus 'Nanotech Selectable Fire Weapon' allows one to customize their loadout in the field, or before deploying, to achieve various results in a weapon they are already familiar with wielding."))
+
+CAPABILITIES(/obj/item/gun/projectile/cell_loaded/combat/prototype)
+	configure(examine_text(antag = ""))

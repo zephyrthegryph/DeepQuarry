@@ -9,8 +9,6 @@ CATEGORY: Fiction
 
 	name = "A Purrrrfect Man"
 	desc = "A hardbound book titled \"A Purrrrfect Man\" Karla."
-	description_fluff = "This book is titled \"A Purrrrfect Man\" Karla. There's a blurb on the back: <br>\
-						A Tajaran woman and a Human man find warmth in each other to ward off the chill of Sif's night."
 
 	title = "A Purrrrfect Man"
 	icon_state = "book7"
@@ -151,3 +149,7 @@ CATEGORY: Fiction
 					</body>
 					</html>
 					"})
+
+CAPABILITIES(/obj/item/book/bundle/custom_library/fiction/apurrrrfectman)
+	configure(examine_text(fluff = "This book is titled \"A Purrrrfect Man\" Karla. There's a blurb on the back: <br>\
+						A Tajaran woman and a Human man find warmth in each other to ward off the chill of Sif's night."))

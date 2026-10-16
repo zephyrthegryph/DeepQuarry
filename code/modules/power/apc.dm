@@ -153,6 +153,8 @@ MSG_DEF(apc/replaced_cover, "You replace the damaged APC cover with a new one.",
 MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC with a beep from %I%.")
 
 CAPABILITIES(/obj/machinery/power/apc)
+	configure(examine_text(antag = "This can be emagged to unlock it.  It will cause the APC to have a blue error screen. \
+	Wires can be pulsed remotely with a signaler attached to it.  A powersink will also drain any APCs connected to the same wire the powersink is on."))
 	configure(machine_interaction_config(clicksound = SFX_SWITCH))
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))
 	blast_contents()

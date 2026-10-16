@@ -38,7 +38,6 @@ CAPABILITIES(/obj/item/projectile/bullet/chemdart)
 /obj/item/gun/projectile/dartgun
 	name = "dart gun"
 	desc = "Zeng-Hu Pharmaceutical's entry into the arms market, the Z-H P Artemis is a gas-powered dart gun capable of delivering chemical cocktails swiftly across short distances."
-	description_antag = "The dart gun is silenced, but cannot pierce thick clothing such as armor or space-suits, and thus is better for use against soft targets, or commonly exposed areas of the body."
 	icon_state = "dartgun-empty"
 	item_state = null
 	var/base_state = "dartgun"

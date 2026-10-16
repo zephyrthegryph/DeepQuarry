@@ -279,3 +279,6 @@ if (!(Datum.datum_flags & DF_ISPROCESSING)) {\
 
 #define ENTRY_ITEM_SURGERY "item_surgery"
 #define ITEM_SURGERY_KEY "item_surgery"
+
+#define ENTRY_EXAMINE_TEXT "examine_text"
+#define EXAMINE_TEXT_KEY "examine_text"

@@ -53,21 +53,21 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans)
 /obj/item/reagent_containers/food/drinks/cans/cola
 	name = "\improper Space Cola"
 	desc = "Reassuringly artificial. Contains caffeine."
-	description_fluff = "The 'Space' branding was originally added to the 'Alpha Cola' product line in order to justify selling cans for 50% higher prices to 'off-world' retailers. Despite being chemically identical, Space Cola proved so popular that Centauri Provisions eventually applied the name to the entire product line - price hike and all."
 	icon_state = "cola"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/cola)
 	configure(item_placement(center_x = 16, center_y = 10))
+	configure(examine_text(fluff = "The 'Space' branding was originally added to the 'Alpha Cola' product line in order to justify selling cans for 50% higher prices to 'off-world' retailers. Despite being chemically identical, Space Cola proved so popular that Centauri Provisions eventually applied the name to the entire product line - price hike and all."))
 	configure(reagents(add = list(REAGENT_ID_COLA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/decaf_cola
 	name = "\improper Space Cola Free"
 	desc = "More reassuringly artificial than ever before."
-	description_fluff = "The 'Space' branding was originally added to the 'Alpha Cola' product line in order to justify selling cans for 50% higher prices to 'off-world' retailers. Despite being chemically identical, Space Cola proved so popular that Centauri Provisions eventually applied the name to the entire product line - price hike and all."
 	icon_state = "decafcola"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/decaf_cola)
 	configure(item_placement(center_x = 16, center_y = 10))
+	configure(examine_text(fluff = "The 'Space' branding was originally added to the 'Alpha Cola' product line in order to justify selling cans for 50% higher prices to 'off-world' retailers. Despite being chemically identical, Space Cola proved so popular that Centauri Provisions eventually applied the name to the entire product line - price hike and all."))
 	configure(reagents(add = list(REAGENT_ID_DECAFCOLA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/waterbottle
@@ -78,17 +78,18 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/decaf_cola)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/waterbottle)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "This is a generic, NanoTrasen branded bottle of water.  The company swears on the quality of the water, saying it comes from the Martian poles.  Most people disregard that and assume it's recycled from hydroponics trays."))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
 	configure(reagents(add = list(REAGENT_ID_WATER = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/space_mountain_wind
 	name = "\improper Space Mountain Wind"
 	desc = "Blows right through you like a space wind. Contains caffeine."
-	description_fluff = "The 'Space' branding was originally added to the 'Alpha Cola' product line in order to justify selling cans for 50% higher prices to 'off-world' retailers. Despite being chemically identical, Space Cola proved so popular that Centauri Provisions eventually applied the name to the entire product line - price hike and all."
 	icon_state = "space_mountain_wind"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/space_mountain_wind)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "The 'Space' branding was originally added to the 'Alpha Cola' product line in order to justify selling cans for 50% higher prices to 'off-world' retailers. Despite being chemically identical, Space Cola proved so popular that Centauri Provisions eventually applied the name to the entire product line - price hike and all."))
 	configure(reagents(add = list(REAGENT_ID_SPACEMOUNTAINWIND = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/thirteenloko
@@ -98,96 +99,97 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/space_mountain_wind)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/thirteenloko)
 	configure(item_placement(center_x = 16, center_y = 10))
+	configure(examine_text(fluff = "A beverage loved by college students.  The Thirteen Loko Company created this highly alcoholic beverage as an energy drink.  It is illegal in much of SolGov space and most of Skrell space.  This drink has been regulated more than any other in known space, and doctors strongly advise not to drink it."))
 	configure(reagents(add = list(REAGENT_ID_THIRTEENLOKO = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/dr_gibb
 	name = "\improper Dr. Gibb"
 	desc = "A delicious mixture of 42 different flavors. Contains caffine."
-	description_fluff = "Following a 2490 lawsuit and a spate of deaths, Gilthari Exports reminds customers that the 'Dr.' legally stands for 'Drink'."
 	icon_state = "dr_gibb"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/dr_gibb)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "Following a 2490 lawsuit and a spate of deaths, Gilthari Exports reminds customers that the 'Dr.' legally stands for 'Drink'."))
 	configure(reagents(add = list(REAGENT_ID_DRGIBB = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/dr_gibb_diet
 	name = "\improper Diet Dr. Gibb"
 	desc = "A delicious mixture of 42 different flavors, one of which is water. Contains caffeine."
-	description_fluff = "Following a 2490 lawsuit and a spate of deaths, Gilthari Exports reminds customers that the 'Dr.' legally stands for 'Drink'."
 	icon_state = "dr_gibb_diet"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/dr_gibb_diet)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "Following a 2490 lawsuit and a spate of deaths, Gilthari Exports reminds customers that the 'Dr.' legally stands for 'Drink'."))
 	configure(reagents(add = list(REAGENT_ID_DIETDRGIBB = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/starkist
 	name = "\improper Star-kist"
 	desc = "The taste of a star in liquid form. And, a bit of tuna...? Contains caffeine."
-	description_fluff = "Brought back by popular demand in 2515 after a limited-run release in 2510, the cult success of this bizarre tasting soda has never truly been accounted for by economists."
 	icon_state = "starkist"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/starkist)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "Brought back by popular demand in 2515 after a limited-run release in 2510, the cult success of this bizarre tasting soda has never truly been accounted for by economists."))
 	configure(reagents(add = list(REAGENT_ID_BROWNSTAR = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/starkistdecaf
 	name = "\improper Star-kist Classic"
 	desc = "The taste of a star in liquid form, in a special decaffineated blend. Still tastes faintly of tuna?"
-	description_fluff = "A special variant of the Starkist brand soda introduced after popular outcry following a reformulation of the basic drink decades ago. This decaffineated variant outsells 'New' Starkist in many markets."
 	icon_state = "decafstarkist"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/starkistdecaf)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "A special variant of the Starkist brand soda introduced after popular outcry following a reformulation of the basic drink decades ago. This decaffineated variant outsells 'New' Starkist in many markets."))
 	configure(reagents(add = list(REAGENT_ID_BROWNSTARDECAF = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/space_up
 	name = "\improper Space-Up"
 	desc = "Tastes like a hull breach in your mouth."
-	description_fluff = "The 'Space' branding was originally added to the 'Alpha Cola' product line in order to justify selling cans for 50% higher prices to 'off-world' retailers. Despite being chemically identical, Space Cola proved so popular that Centauri Provisions eventually applied the name to the entire product line - price hike and all."
 	icon_state = "space-up"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/space_up)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "The 'Space' branding was originally added to the 'Alpha Cola' product line in order to justify selling cans for 50% higher prices to 'off-world' retailers. Despite being chemically identical, Space Cola proved so popular that Centauri Provisions eventually applied the name to the entire product line - price hike and all."))
 	configure(reagents(add = list(REAGENT_ID_SPACEUP = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/lemon_lime
 	name = "\improper Lemon-Lime"
 	desc = "You wanted ORANGE. It gave you Lemon-Lime."
-	description_fluff = "Not to be confused with 'lemon & lime soda', Lemon-Lime is specially formulated using the highly propriatary Lemon-Lime Fruit. Growing the Lemon-Lime without a license is punishable by fines or jail time. Accept no immitations."
 	icon_state = "lemon-lime"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/lemon_lime)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "Not to be confused with 'lemon & lime soda', Lemon-Lime is specially formulated using the highly propriatary Lemon-Lime Fruit. Growing the Lemon-Lime without a license is punishable by fines or jail time. Accept no immitations."))
 	configure(reagents(add = list(REAGENT_ID_LEMONLIME = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/iced_tea
 	name = "\improper Vrisk Serket Iced Tea"
 	desc = "That sweet, refreshing southern earthy flavor. That's where it's from, right? South Earth? Contains caffeine."
-	description_fluff = "Produced exclusively on the planet Oasis, Vrisk Serket Iced Tea is not sold outside of the Golden Crescent, let alone Earth."
 	icon_state = "ice_tea_can"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/iced_tea)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "Produced exclusively on the planet Oasis, Vrisk Serket Iced Tea is not sold outside of the Golden Crescent, let alone Earth."))
 	configure(reagents(add = list(REAGENT_ID_ICETEA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/grape_juice
 	name = "\improper Grapel Juice"
 	desc = "500 pages of rules of how to appropriately enter into a combat with this juice!"
-	description_fluff = "Strangely, this unassuming grape soda is a product of Hephaestus Industries."
 	icon_state = "purple_can"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/grape_juice)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "Strangely, this unassuming grape soda is a product of Hephaestus Industries."))
 	configure(reagents(add = list(REAGENT_ID_GRAPEJUICE = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/tonic
 	name = "\improper T-Borg's Tonic Water"
 	desc = "Quinine tastes funny, but at least it'll keep the Malaria away."
-	description_fluff = "Due to its technically medicinal properties and the complexities of chemical copyright law, T-Borg's Tonic Water is a rare product of Zeng-Hu's 'LifeWater' refreshments division."
 	icon_state = "tonic"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/tonic)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "Due to its technically medicinal properties and the complexities of chemical copyright law, T-Borg's Tonic Water is a rare product of Zeng-Hu's 'LifeWater' refreshments division."))
 	configure(reagents(add = list(REAGENT_ID_TONIC = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/sodawater
@@ -197,26 +199,27 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/tonic)
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/sodawater)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "This is a NanoTrasen branded can of soda water.  They use the same water for this that they use for the bottled water that they sell.  That may explain why the stuff isn't exactly flying off of the shelves."))
 	configure(reagents(add = list(REAGENT_ID_SODAWATER = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/gingerale
 	name = "\improper Classic Ginger Ale"
 	desc = "For when you need to be more retro than NanoTrasen already pays you for."
-	description_fluff = "'Classic' beverages is a registered trademark of the Centauri Provisions corporation."
 	icon_state = "gingerale"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/gingerale)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "'Classic' beverages is a registered trademark of the Centauri Provisions corporation."))
 	configure(reagents(add = list(REAGENT_ID_GINGERALE = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/root_beer
 	name = "\improper R&D Root Beer"
 	desc = "Guaranteed to be both Rootin' and Tootin'."
-	description_fluff = "Despite centuries of humanity's expansion, this particular soda is still produced almost exclusively on Earth, in North America."
 	icon_state = "root_beer"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/root_beer)
 	configure(item_placement(center_x = 16, center_y = 10))
+	configure(examine_text(fluff = "Despite centuries of humanity's expansion, this particular soda is still produced almost exclusively on Earth, in North America."))
 	configure(reagents(add = list(REAGENT_ID_ROOTBEER = 30)))
 
 /////////////////////////BODA VENDOR DRINKS/////////////////////////
@@ -224,21 +227,21 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/root_beer)
 /obj/item/reagent_containers/food/drinks/cans/kvass
 	name = "\improper Kvass"
 	desc = "A true Slavic soda."
-	description_fluff = "A classic Slavic beverage which many space-faring Slavs still enjoy to this day. Fun fact, it is actually considered a weak beer by non-Russians."
 	icon_state = "kvass"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/kvass)
 	configure(item_placement(center_x = 16, center_y = 10))
+	configure(examine_text(fluff = "A classic Slavic beverage which many space-faring Slavs still enjoy to this day. Fun fact, it is actually considered a weak beer by non-Russians."))
 	configure(reagents(add = list(REAGENT_ID_KVASS = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/kompot
 	name = "\improper Kompot"
 	desc = "A taste of Russia in the summertime - canned for you consumption."
-	description_fluff = "A sweet and fruity beverage that was traditionally used to preserve fruits in harsh Russian winters that is now available for widespread consumption."
 	icon_state = "kompot"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/kompot)
 	configure(item_placement(center_x = 16, center_y = 10))
+	configure(examine_text(fluff = "A sweet and fruity beverage that was traditionally used to preserve fruits in harsh Russian winters that is now available for widespread consumption."))
 	configure(reagents(add = list(REAGENT_ID_KOMPOT = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/boda
@@ -289,11 +292,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/arstbru)
 /obj/item/reagent_containers/food/drinks/cans/terra_cola
 	name = "\improper Terra-Cola"
 	desc = "Made by the people. Served to the people."
-	description_fluff = "A can of the only soft drink state approved for the benefit of the people. Served at room temperature regardless of ambient temperatures thanks to innovative Terran insulation technology."
 	icon_state = "terra_cola"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/terra_cola)
 	configure(item_placement(center_x = 16, center_y = 8))
+	configure(examine_text(fluff = "A can of the only soft drink state approved for the benefit of the people. Served at room temperature regardless of ambient temperatures thanks to innovative Terran insulation technology."))
 	configure(reagents(add = list(REAGENT_ID_WATER = 25, REAGENT_ID_IRON = 5)))
 
 /////////////////////////MISC VENDOR DRINKS/////////////////////////
@@ -364,14 +367,14 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/baconsoda)
 /obj/item/reagent_containers/food/drinks/cans/bepis
 	name = "\improper Bepis"
 	desc = "It has a smell of 'off-brand' whenever you open it..."
-	description_fluff = "Puts the 'B' in Best Soda! Bepis is the number one competitor to \
-	Space Cola and has vendors scattered across the frontier. While the drink is not as \
-	popular as Space Cola, many people across known space enjoy the sweet beverage."
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "bepis"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/bepis)
 	configure(item_placement(center_x = 16, center_y = 10))
+	configure(examine_text(fluff = "Puts the 'B' in Best Soda! Bepis is the number one competitor to \
+	Space Cola and has vendors scattered across the frontier. While the drink is not as \
+	popular as Space Cola, many people across known space enjoy the sweet beverage."))
 	configure(reagents(add = list(REAGENT_ID_BEPIS = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/astrodew
@@ -387,16 +390,16 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/astrodew)
 /obj/item/reagent_containers/food/drinks/cans/icecoffee
 	name = "\improper Café Del Consumir"
 	desc = "A can of deliciously sweet iced coffee that originates from Earth."
-	description_fluff = "Café Del Consumir originates from a small coffee brewery in México \
-	that still operates to this day. Café Del Consumir prides itself on being true to form \
-	and retaining its original recipe. They've been producing and selling their product across \
-	the galaxy for decades without fail. NanoTrasen has attempted to by out the small company for \
-	years now, however all attempts they've made have failed."
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "coffeecan"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/icecoffee)
 	configure(item_placement(center_x = 16, center_y = 10))
+	configure(examine_text(fluff = "Café Del Consumir originates from a small coffee brewery in México \
+	that still operates to this day. Café Del Consumir prides itself on being true to form \
+	and retaining its original recipe. They've been producing and selling their product across \
+	the galaxy for decades without fail. NanoTrasen has attempted to by out the small company for \
+	years now, however all attempts they've made have failed."))
 	configure(reagents(add = list(REAGENT_ID_ICECOFFEE = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/buzz

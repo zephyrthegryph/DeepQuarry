@@ -96,7 +96,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	name = "[identifier] of [H.name]"
 	desc = "A very lifelike [identifier] made of [material]."
 	stored_examine = H.examine(H)
-	description_fluff = H.get_description_fluff()
+	set_description_fluff(H.get_description_fluff())
 
 	if(H?.buckled_to())
 		var/atom/movable/_tmp_buck_10 = H?.buckled_to()

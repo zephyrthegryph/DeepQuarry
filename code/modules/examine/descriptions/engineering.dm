@@ -1,11 +1,6 @@
 /obj/machinery/power/supermatter
-	description_antag = "Exposing the supermatter to oxygen or vacuum will cause it to start rapidly heating up.  Sabotaging the supermatter and making it explode will \
-	cause a period of lag as the explosion is processed by the server, as well as irradiating the entire station and causing hallucinations to happen.  \
-	Wearing radiation equipment will protect you from most of the delamination effects sans explosion."
 
 /obj/machinery/power/apc
-	description_antag = "This can be emagged to unlock it.  It will cause the APC to have a blue error screen. \
-	Wires can be pulsed remotely with a signaler attached to it.  A powersink will also drain any APCs connected to the same wire the powersink is on."
 
 /obj/machinery/door/get_description_interaction()
 	var/list/results = list()

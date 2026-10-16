@@ -278,6 +278,9 @@ CAPABILITIES(/obj/item/melee/energy/axe/charge/loaded)
 	projectile_parry_chance = 65
 
 CAPABILITIES(/obj/item/melee/energy/sword)
+	configure(examine_text(antag = "The energy sword is a very strong melee weapon, capable of severing limbs easily, if they are targeted.  It can also has a chance \
+	to block projectiles and melee attacks while it is on and being held.  The sword can be toggled on or off by using it in your hand.  While it is off, \
+	it can be concealed in your pocket or bag."))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))

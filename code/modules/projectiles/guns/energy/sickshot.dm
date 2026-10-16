@@ -7,8 +7,6 @@
 	desc = "Need to expel something? Don't mind having to clean up the mess afterwards? The MPA6 'Sickshot' is the answer to your prayers. \
 	Using a short-range concentrated blast of disruptive sound, the Sickshot will nauseate the target for several seconds. NOTE: Not suitable \
 	for use in vacuum. Usage on animals may cause panic and rage. May cause contraction and release of various 'things' from various 'orifices', even if the target is already dead."
-	description_fluff = ""
-	description_antag = ""
 
 	icon = 'icons/vore/custom_guns_vr.dmi'
 	icon_state = "sickshot"
@@ -47,3 +45,6 @@ CAPABILITIES(/obj/item/projectile/sickshot)
 			H.status_at_least(STAT_CONFUSED, 2)
 
 		return 1
+
+CAPABILITIES(/obj/item/gun/energy/sickshot)
+	configure(examine_text(fluff = "", antag = ""))

@@ -116,6 +116,7 @@ MSG_DEF_SELF(porta_turret/wrecked, "It is wrecked: pry it apart instead.")
 MSG_DEF(porta_turret/haywire, "You short out %T%'s threat assessment circuits.", "")
 
 CAPABILITIES(/obj/machinery/porta_turret)
+	configure(examine_text(antag = "Turrets can be emagged to target anyone and everyone, on lethals, and cannot be turned off if emagged."))
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(uses_power(idle = 50, active = 300, channel = EQUIP))
 	machine_basics(repair = NONE)

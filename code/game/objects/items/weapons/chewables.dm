@@ -235,7 +235,6 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy/gum)
 /obj/item/storage/box/gum
 	name = "\improper Frooty-Choos flavored gum"
 	desc = "A small pack of chewing gum in various flavors."
-	description_fluff = "Frooty-Choos is NanoTrasen's top-selling brand of artificially flavoured fruit-adjacent non-swallowable chew-product. This extremely specific definition places sales figures safely away from competing 'gum' brands."
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "gum_pack"
 	item_state = "candy"
@@ -248,6 +247,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy/gum)
 
 
 CAPABILITIES(/obj/item/storage/box/gum)
+	configure(examine_text(fluff = "Frooty-Choos is NanoTrasen's top-selling brand of artificially flavoured fruit-adjacent non-swallowable chew-product. This extremely specific definition places sales figures safely away from competing 'gum' brands."))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 	configure(storage(accepts = list(

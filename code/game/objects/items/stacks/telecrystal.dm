@@ -1,7 +1,6 @@
 /obj/item/stack/telecrystal
 	name = "telecrystal"
 	desc = "It seems to be pulsing with suspiciously enticing energies."
-	description_antag = "Telecrystals can be activated by utilizing them on devices with an actively running uplink. They will not activate on unactivated uplinks."
 	singular_name = "telecrystal"
 	icon = 'icons/obj/stock_parts.dmi'
 	icon_state = "telecrystal"
@@ -17,6 +16,7 @@
 		to_chat(user, span_warning("There are not enough telecrystals to do that."))
 
 CAPABILITIES(/obj/item/stack/telecrystal)
+	configure(examine_text(antag = "Telecrystals can be activated by utilizing them on devices with an actively running uplink. They will not activate on unactivated uplinks."))
 	configure(item_combat(force = 1))
 	without("ui_open")
 	op("redeem", in_hand(), then(PROC_REF(redeemed)))

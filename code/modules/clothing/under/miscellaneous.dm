@@ -2466,68 +2466,60 @@ CAPABILITIES(/obj/item/clothing/under/dress/antediluvian)
 /obj/item/clothing/under/replika
 	name = "generic"
 	desc = "generic"
-	description_fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."
 	icon_state = "arar"
 	item_state = "arar"
 	rolled_sleeves = -1
 	rolled_down = -1
 
 CAPABILITIES(/obj/item/clothing/under/replika)
+	configure(examine_text(fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."))
 	configure(item_worn(covers = CHEST|ARMS))
 
 /obj/item/clothing/under/replika/arar
 	name = "repair-worker replikant bodysuit"
 	desc = "A skin-tight bodysuit designed for 2nd generation biosynthetics of the engineering variety. Comes with multiple interfacing ports, arm protectors, and a conspicuous lack of leg coverage."
-	description_fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."
 	icon_state = "arar"
 	item_state = "arar"
 
 /obj/item/clothing/under/replika/lstr
 	name = "land-survey replikant bodysuit"
 	desc = "A skin-tight bodysuit designed for 2nd generation biosynthetics of the exploration variety. Comes with several interfacing ports and a conspicuous lack of leg coverage."
-	description_fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."
 	icon_state = "lstr"
 	item_state = "lstr"
 
 /obj/item/clothing/under/replika/fklr
 	name = "command replikant bodysuit"
 	desc = "A skin-tight bodysuit designed for 2nd generation biosynthetics of the command variety. Comes with interfacing ports, an air of formality, and a conspicuous lack of leg coverage."
-	description_fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."
 	icon_state = "fklr"
 	item_state = "fklr"
 
 /obj/item/clothing/under/replika/eulr
 	name = "general-purpose replikant bodysuit"
 	desc = "A skin-tight bodysuit designed for 2nd generation biosynthetics of multipurpose variety. Comes with default interfacing ports and a conspicuous lack of leg coverage."
-	description_fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."
 	icon_state = "eulr"
 	item_state = "eulr"
 
 /obj/item/clothing/under/replika/klbr
 	name = "controller replikant bodysuit"
 	desc = "A skin-tight bodysuit designed for 2nd generation biosynthetics of the controller variety. Comes with several interfacing ports and a conspicuous lack of leg coverage."
-	description_fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."
 	icon_state = "klbr"
 	item_state = "klbr"
 
 /obj/item/clothing/under/replika/stcr
 	name = "security-technician replikant bodysuit"
 	desc = "A skin-tight bodysuit designed for 2nd generation biosynthetics of the security variety. Comes with multiple interfacing ports and a conspicuous lack of leg coverage."
-	description_fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."
 	icon_state = "stcr"
 	item_state = "stcr"
 
 /obj/item/clothing/under/replika/adlr
 	name = "administration replikant bodysuit"
 	desc = "A skin-tight bodysuit designed for 2nd generation biosynthetics of the administrative variety. Comes with several interfacing ports and a conspicuous lack of leg coverage."
-	description_fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."
 	icon_state = "adlr"
 	item_state = "adlr"
 
 /obj/item/clothing/under/replika/lstr_alt
 	name = "combat-engineer replikant bodysuit"
 	desc = "A skin-tight bodysuit designed for 2nd generation biosynthetics of the exploration variety. Comes with extra interfacing ports, white armpads, and a familiar lack of leg coverage."
-	description_fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."
 	icon_state = "lstr_alt"
 	item_state = "lstr_alt"
 
@@ -2612,3 +2604,27 @@ CAPABILITIES(/obj/item/clothing/under/gestalt/sleeveless)
 	..()
 	if(look.state_so_far(src) == "ranger_uniform")
 		look.state("[unicolor]_ranger_uniform")
+
+CAPABILITIES(/obj/item/clothing/under/replika/arar)
+	configure(examine_text(fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."))
+
+CAPABILITIES(/obj/item/clothing/under/replika/lstr)
+	configure(examine_text(fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."))
+
+CAPABILITIES(/obj/item/clothing/under/replika/fklr)
+	configure(examine_text(fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."))
+
+CAPABILITIES(/obj/item/clothing/under/replika/eulr)
+	configure(examine_text(fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."))
+
+CAPABILITIES(/obj/item/clothing/under/replika/klbr)
+	configure(examine_text(fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."))
+
+CAPABILITIES(/obj/item/clothing/under/replika/stcr)
+	configure(examine_text(fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."))
+
+CAPABILITIES(/obj/item/clothing/under/replika/adlr)
+	configure(examine_text(fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."))
+
+CAPABILITIES(/obj/item/clothing/under/replika/lstr_alt)
+	configure(examine_text(fluff = "These purpose-made interfacing bodysuits are designed and produced by the Singheim Bureau of Biosynthetic Development for their long-running second generation of Biosynthetics, commonly known by the term Replikant. Although anyone could wear these, their overall cut and metallic ports along the spine make it rather uncomfortable to most."))

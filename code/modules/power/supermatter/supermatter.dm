@@ -125,6 +125,9 @@
 // exhaust is a gas reaction (GAS_REACTION_SUPERMATTER, verdigris/domains/gas/src/reaction_energy.rs): DM decides how much phoron and oxygen it
 // exhales and its device energy, Rust settles the heat.
 CAPABILITIES(/obj/machinery/power/supermatter)
+	configure(examine_text(antag = "Exposing the supermatter to oxygen or vacuum will cause it to start rapidly heating up.  Sabotaging the supermatter and making it explode will \
+	cause a period of lag as the explosion is processed by the server, as well as irradiating the entire station and causing hallucinations to happen.  \
+	Wearing radiation equipment will protect you from most of the delamination effects sans explosion."))
 	configure(light_glow(range = 4, color = "#8A8A00"))
 	owns_one(nameof(soundloop), /datum/looping_sound/supermatter, starts = PROC_REF(make_soundloop))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sm_step)))

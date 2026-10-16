@@ -38,7 +38,6 @@
 
 //Canisters
 /obj/machinery/portable_atmospherics/canister
-	description_antag = "Canisters can be damaged, spilling their contents into the air, or you can just leave the release valve open."
 
 //Portable pumps
 

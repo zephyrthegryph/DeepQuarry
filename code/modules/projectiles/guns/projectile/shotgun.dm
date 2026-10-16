@@ -13,8 +13,6 @@
 	with the disabler shots, which take half a clip just to bring someone down, or with the tazer bolts which are slow as balls, \
 	impossible to aim and do about next to jack shit, fuck all. The shotgun is the superior law enforcement weapon. Because it stops crime. \
 	And it stops crime by reducing the number of criminals roaming the fucking halls." //CHOMP Add
-	description_fluff = "The leading civilian-sector high-quality small arms brand of Hephaestus Industries, \
-	MarsTech has been the provider of choice for law enforcement and security forces for over 300 years."
 	icon_state = "shotgun"
 	item_state = "shotgun"
 	max_shells = 4
@@ -92,8 +90,6 @@
 /obj/item/gun/projectile/shotgun/pump/combat
 	name = "combat shotgun"
 	desc = "Built for close quarters combat, the Hephaestus Industries KS-40 is widely regarded as a weapon of choice for repelling boarders. Uses 12g rounds."
-	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' \
-	branding for its military-grade equipment used by armed forces across human space."
 	icon_state = "cshotgun"
 	item_state = "cshotgun"
 	max_shells = 7 //match the ammo box capacity, also it can hold a round in the chamber anyways, for a total of 8.
@@ -155,7 +151,6 @@
 /obj/item/gun/projectile/shotgun/semi
 	name = "semi-automatic shotgun"
 	desc = "A shotgun with a simple, yet effective recoil inertia loading mechanism for semi-automatic fire. This gun uses 12 gauge ammunition."
-	description_fluff = "Looking back on yet another venerable design, Hedberg-Hammarstrom settled on a pattern of shotgun that both had the reliability of a well proven semi-automatic loading system in addition to a striking visual aesthetic that would be appealing to even the most discerning of firearm collectors."
 	icon_state = "sjorgen"
 	item_state = "shotgun"
 	w_class = ITEMSIZE_LARGE
@@ -165,6 +160,7 @@
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/semi)
+	configure(examine_text(fluff = "Looking back on yet another venerable design, Hedberg-Hammarstrom settled on a pattern of shotgun that both had the reliability of a well proven semi-automatic loading system in addition to a striking visual aesthetic that would be appealing to even the most discerning of firearm collectors."))
 	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/projectile/shotgun/doublebarrel/quad
@@ -218,14 +214,12 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/quad)
 /obj/item/gun/projectile/shotgun/pump/combat/warden
 	name = "warden's shotgun"
 	desc = "Built for close quarters combat, the Hephaestus Industries KS-40 is widely regarded as a weapon of choice for repelling boarders. This one has 'Property of the Warden' inscribed on the stock."
-	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
 
 //Compact shotgun, this version's for usage later by mappers/coders/w.e.
 /obj/item/gun/projectile/shotgun/compact
 	name = "compact shotgun"
 	desc = "Built for <i>extremely</i>-close quarters combat, the Hephaestus Industries KS-55 \"semi-auto shorty\" is a relatively rare sight to see, usually in the hands of elite troops that specialize in boarding. Uses 12g rounds."
-	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "compshotc"
 	item_state = "cshotgun"
@@ -268,6 +262,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/quad)
 	user.update_mob_action_buttons()
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/compact)
+	configure(examine_text(fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."))
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	configure(item_combat(force = 10))
 	op("compact_shotgun_verb_toggle_stock", menu(), label("Toggle stock"), needs(carried(), req_actor_kind(/mob/living/silicon, not = TRUE, because = /datum/msg/req_silent)), then(PROC_REF(compact_shotgun_verb_toggle_stock)))
@@ -290,7 +285,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/compact)
 /obj/item/gun/projectile/shotgun/compact/warden
 	name = "warden's compact shotgun"
 	desc = "Built for <i>extremely</i>-close quarters combat, the Hephaestus Industries KS-55 \"semi-auto shorty\" is a relatively rare sight to see, usually in the hands of elite troops that specialize in boarding. This one has 'Property of the Warden' inscribed on the upper receiver."
-	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
 
 /obj/item/gun/projectile/revolvershotgun
@@ -378,3 +372,13 @@ CAPABILITIES(/obj/item/projectile/bullet/shotgun/scatterprojectile)
 
 /obj/item/storage/box/scattershot/large
 	starts_with = list(/obj/item/ammo_casing/a12g/scatter = 16)
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/combat)
+	configure(examine_text(fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' \
+	branding for its military-grade equipment used by armed forces across human space."))
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/combat/warden)
+	configure(examine_text(fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."))
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/compact/warden)
+	configure(examine_text(fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."))

@@ -10,7 +10,6 @@
 	resistance_flags = INDESTRUCTIBLE
 	use_power = USE_POWER_IDLE
 
-	description_fluff = "While RSG's \"Trash 4 Cash\" recycling campaign came to an end decades ago, the underlying systems still work as well as ever thanks to an underground network of mega-dweebs and other assorted idiots maintaining it."
 
 	//wide sprite
 	pixel_x = -8
@@ -26,6 +25,7 @@
 	var/obj/effect/overlay/recycler/monitor_screen
 
 CAPABILITIES(/obj/machinery/maint_vendor)
+	configure(examine_text(fluff = "While RSG's \"Trash 4 Cash\" recycling campaign came to an end decades ago, the underlying systems still work as well as ever thanks to an underground network of mega-dweebs and other assorted idiots maintaining it."))
 	configure(machine_interaction_config(clicksound = SFX_RECYCLER_TYPING))
 	configure(light_glow(color = "#0f8f0f"))
 	configure(uses_power(idle = 10))

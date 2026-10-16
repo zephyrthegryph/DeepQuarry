@@ -2775,6 +2775,7 @@
 #include "code\modules\events\spontaneous_appendicitis.dm"
 #include "code\modules\events\wallrot.dm"
 #include "code\modules\events\wormholes.dm"
+#include "code\modules\examine\examine_text.dm"
 #include "code\modules\examine\examine.dm"
 #include "code\modules\examine\descriptions\armor.dm"
 #include "code\modules\examine\descriptions\atmospherics.dm"

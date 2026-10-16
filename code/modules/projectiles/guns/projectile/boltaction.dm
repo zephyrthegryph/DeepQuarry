@@ -5,14 +5,6 @@
 	name = "bolt-action rifle"
 	desc = "The Weissen Company Type-19 is a modern interpretation of an almost ancient weapon design. \
 	The model is popular among hunters and collectors due to its reliability. Uses 7.62mm rounds."
-	description_fluff = "The frontier’s largest home-grown firearms manufacturer, \
-	the Weissen Arms Company are the leading manufacturer of - not only quality - \
-	but affordable rifles for the average frontiersman looking to protect his \
-	claim. The company operates just one production plant in the Mytis system, \
-	but their weapons have found popularity on garden worlds as far afield as \
-	the Tajaran homeworld due to their excellent build quality, precision, and \
-	stopping power. Thier bolt-action rifles and brushguns are a staple amongst \
-	the rural communities that dot this infinite frontier."
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "boltaction"
 	item_state = "boltaction"
@@ -45,10 +37,6 @@
 	item_state = "rifle"
 	desc = "Developed from 1882 to 1891, it was used by the armed forces of the Russian Empire, the Soviet \
 	Union and various other nations. It is one of the most mass-produced military bolt-action rifles in history. Uses 7.62mm rounds."
-	description_fluff = "Hailing from the Human homeworld, the M1891, otherwise known as the Mosin-Nagant is one of the most \
-	prevalant and cheapest rifles of its time. This modern remake of the classic design was used by early colonists of the \
-	Commonwealth to stake claims. It was favored because of how cheap and easy the weapon was to manufacture as well as its \
-	ease of use making it a better choice for those that didn't have proper firearms training."
 	ammo_type = /obj/item/ammo_casing/a762
 	pump_animation = "moistnugget-cycling"
 
@@ -133,14 +121,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/surplus)
 	name = "scoped bolt-action rifle"
 	desc = "The Weissen Company Type-19 is a modern interpretation of an almost ancient weapon design. \
 	The model is popular among hunters and collectors due to its reliability. Uses 7.62mm rounds."
-	description_fluff = "The frontier’s largest home-grown firearms manufacturer, \
-	the Weissen Arms Company are the leading manufacturer of - not only quality - \
-	but affordable rifles for the average frontiersman looking to protect his \
-	claim. The company operates just one production plant in the Mytis system, \
-	but their weapons have found popularity on garden worlds as far afield as \
-	the Tajaran homeworld due to their excellent build quality, precision, and \
-	stopping power. Thier bolt-action rifles and brushguns are a staple amongst \
-	the rural communities that dot this infinite frontier."
 	icon_state = "scoped-boltaction"
 	item_state = "boltaction_scoped"
 	fire_sound = SFX_WEAPONS_GUNSHOT_GENERIC_RIFLE
@@ -155,6 +135,14 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/surplus)
 	pump_rifle_verb_scope(user)
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle)
+	configure(examine_text(fluff = "The frontier’s largest home-grown firearms manufacturer, \
+	the Weissen Arms Company are the leading manufacturer of - not only quality - \
+	but affordable rifles for the average frontiersman looking to protect his \
+	claim. The company operates just one production plant in the Mytis system, \
+	but their weapons have found popularity on garden worlds as far afield as \
+	the Tajaran homeworld due to their excellent build quality, precision, and \
+	stopping power. Thier bolt-action rifles and brushguns are a staple amongst \
+	the rural communities that dot this infinite frontier."))
 	op("pump_rifle_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(pump_rifle_verb_scope_op)))
 
 /// The pump_rifle_verb_scope op: the verb's effect, as the old resolver ran it.
@@ -177,3 +165,19 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle)
 CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle/vox_hunting)
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 20))
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle/moistnugget)
+	configure(examine_text(fluff = "Hailing from the Human homeworld, the M1891, otherwise known as the Mosin-Nagant is one of the most \
+	prevalant and cheapest rifles of its time. This modern remake of the classic design was used by early colonists of the \
+	Commonwealth to stake claims. It was favored because of how cheap and easy the weapon was to manufacture as well as its \
+	ease of use making it a better choice for those that didn't have proper firearms training."))
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle/scoped)
+	configure(examine_text(fluff = "The frontier’s largest home-grown firearms manufacturer, \
+	the Weissen Arms Company are the leading manufacturer of - not only quality - \
+	but affordable rifles for the average frontiersman looking to protect his \
+	claim. The company operates just one production plant in the Mytis system, \
+	but their weapons have found popularity on garden worlds as far afield as \
+	the Tajaran homeworld due to their excellent build quality, precision, and \
+	stopping power. Thier bolt-action rifles and brushguns are a staple amongst \
+	the rural communities that dot this infinite frontier."))

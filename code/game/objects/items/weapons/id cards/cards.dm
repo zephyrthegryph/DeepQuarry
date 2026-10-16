@@ -163,7 +163,6 @@ CAPABILITIES(/obj/item/card/emag)
 /obj/item/card_fluff
 	name = "fluff card"
 	desc = "A tiny plaque of plastic. Purely decorative?"
-	description_fluff = "This permit was not issued by any branch of NanoTrasen, and as such it is not formally recognized at any NanoTrasen-operated installations. The bearer is not - under any circumstances - entitled to ownership of any items or allowed to perform any acts that would normally be restricted or illegal for their current position, regardless of what they or this permit may claim."
 	icon = 'icons/obj/card_fluff.dmi'
 	w_class = ITEMSIZE_TINY
 
@@ -196,6 +195,7 @@ CAPABILITIES(/obj/item/card/emag)
 			look.overlay(image(base_icon, iconstate))
 
 CAPABILITIES(/obj/item/card_fluff)
+	configure(examine_text(fluff = "This permit was not issued by any branch of NanoTrasen, and as such it is not formally recognized at any NanoTrasen-operated installations. The bearer is not - under any circumstances - entitled to ownership of any items or allowed to perform any acts that would normally be restricted or illegal for their current position, regardless of what they or this permit may claim."))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
 	op("customize", in_hand(), label("Customize card"), needs(carried(), req_capable()),

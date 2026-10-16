@@ -469,6 +469,9 @@ CAPABILITIES(/obj/item/clothing/accessory/chameleon)
 		copy_projectile = null
 
 CAPABILITIES(/obj/item/gun/energy/chameleon)
+	configure(examine_text(antag = "This gun is actually a hologram projector that can alter its appearance to mimick other weapons.  To change the appearance, use \
+	the appropriate verb in the chameleon items tab. Any beams or projectiles fired from this gun are actually holograms and useless for actual combat. \
+	Projecting these holograms over distance uses a little bit of charge."))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("energy_chameleon_change_verb", menu(), label("Change Gun Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(energy_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(energy_chameleon_change_verb)))
 

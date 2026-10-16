@@ -1,6 +1,7 @@
 // Dartgun mixing control — structured TGUI.
 
 CAPABILITIES(/obj/item/gun/projectile/dartgun)
+	configure(examine_text(antag = "The dart gun is silenced, but cannot pierce thick clothing such as armor or space-suits, and thus is better for use against soft targets, or commonly exposed areas of the body."))
 	ref_many(nameof(mixing))
 	interface("Dartgun", state = nameof(GLOB.tgui_default_state))
 	op("toggle_mix", ui_act("toggle_mix", arg("index", num())), then(PROC_REF(ui_act_toggle_mix)))

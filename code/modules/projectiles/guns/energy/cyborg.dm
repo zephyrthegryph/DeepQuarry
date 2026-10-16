@@ -66,9 +66,6 @@
 	charge_cost = 120
 	projectile_type = /obj/item/projectile/beam/stun/xeno
 	accuracy = 30
-	description_fluff = "An easy to use weapon designed by NanoTrasen, for NanoTrasen. This weapon is based on the NT Mk30 NL, \
-	it's core components swaped out for a new design made to subdue lesser slime-based xeno lifeforms at a distance.  It is \
-	ineffective at stunning non-slimy lifeforms such as humanoids."
 	recharge_time = 3
 
 /obj/item/gun/energy/robotic/taser/swarm
@@ -93,7 +90,6 @@
 	name = "Mounted Laser Rifle"
 	desc = "A Hephaestus Industries G40E rifle, designed to kill with concentrated energy blasts.  This variant has the ability to \
 	switch between standard fire and a more efficent but weaker 'suppressive' fire."
-	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."
 	icon_state = "laser"
 	item_state = "laser"
 	wielded_item_state = "laser-wielded"
@@ -106,6 +102,7 @@
 	one_handed_penalty = 0
 
 CAPABILITIES(/obj/item/gun/energy/robotic/laser/rifle)
+	configure(examine_text(fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."))
 	configure(item_combat(force = 10))
 
 /obj/item/gun/energy/robotic/laser/heavy
@@ -592,3 +589,8 @@ CAPABILITIES(/obj/item/melee/robotic/baton/slime)
 		if(H.species?.is_slime_bodied)
 			H.injure(INJURY_PAIN, 35, source = src)
 	..()
+
+CAPABILITIES(/obj/item/gun/energy/robotic/taser/xeno)
+	configure(examine_text(fluff = "An easy to use weapon designed by NanoTrasen, for NanoTrasen. This weapon is based on the NT Mk30 NL, \
+	it's core components swaped out for a new design made to subdue lesser slime-based xeno lifeforms at a distance.  It is \
+	ineffective at stunning non-slimy lifeforms such as humanoids."))

@@ -673,7 +673,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
 /obj/item/gun/projectile/automatic/serdy/plamya
 	name = "WKHM 'Plamya' Mk. 1"
 	desc = "The original Plamya assault rifle, produced by WKHM back in the 2330's. Highly sought after for their collectability, and their superb reliability. They don't quite make them like they used to. It may not fire as fast as the newer ones, but these old models haven't survived this long for no reason. This one has a classic walnut thumbhole stock and foregrip. It has a heavy titanium chassis, durasteel bolt, and the original style 'PPSh' heatshield. The gun is dated 2336, and bears the 'WKHM Endurance' arkship's production stamp on the buttstock. 'A light in the dark' is stamped into the receiver. Chambered in 9x39mm."
-	description_fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."
 	caliber = "9mm"
 	magazine_type = /obj/item/ammo_magazine/plamya
 	allowed_magazines = list(/obj/item/ammo_magazine/plamya)
@@ -712,7 +711,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
 /obj/item/gun/projectile/automatic/serdy/strela
 	name = "WKHM 'Strela'"
 	desc = "A fully automatic, 12 gauge assault shotgun, that goes by many names. The Strela, The Bear, The Mule- The list goes on. If the Plamya is the scalpel, This heavy chunk of forged steel and titanium is the sledgehammer. Bring a shoulder pad and some tramadol. This one has a nice walnut thumbhole stock, and an AK style fore end. It also bears the 'WKHM Endurance' arkship's production stamp. Chambered in 12 gauge."
-	description_fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."
 	caliber = "12g"
 	magazine_type = /obj/item/ammo_magazine/strela
 	allowed_magazines = list(/obj/item/ammo_magazine/strela)
@@ -815,7 +813,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
 /obj/item/gun/projectile/automatic/serdy/vityaz
 	name = "WKHM 'Vityaz'"
 	desc = "A swarm of angry bees. The Plamya's baby brother. With 12 total moving parts, including the trigger mechanism, this gun was built with one purpose. Longevity and reliability. Commonly found in the hands of private security, criminals, and law enforcement alike across many worlds. This one is unmarked. Chambered in 10mm."
-	description_fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."
 	caliber = "10mm"
 	magazine_type = /obj/item/ammo_magazine/m10mm
 	allowed_magazines = list(/obj/item/ammo_magazine/m10mm)
@@ -834,7 +831,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
 /obj/item/gun/projectile/automatic/serdy/vityazb
 	name = "WKHM 'Vityaz-B'"
 	desc = "A swarm of angry bees. The Plamya's baby brother. With 12 total moving parts, including the trigger mechanism, this gun was built with one purpose. Longevity and reliability. Commonly found in the hands of private security, criminals, and law enforcement alike across many worlds. This one is a B model, made to fire faster, at the expense of reliability. Chambered in 10mm."
-	description_fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."
 	caliber = "10mm"
 	magazine_type = /obj/item/ammo_magazine/m10mm
 	allowed_magazines = list(/obj/item/ammo_magazine/m10mm)
@@ -857,7 +853,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
 /obj/item/gun/projectile/automatic/serdy/molniya //this is essentially a space MG42
 	name = "WKHM 'Molniya'"
 	desc = "A light machinegun manufactured by WKHM for various paramilitaries, private security companies, and rimworld governments. Big, heavy, and with a fire rate similar to that of an MG42. Often used in emplacements and on top of armored vehicles, or as a squad support weapon. Nicknamed the 'Pig' or the 'Sawzall', this one has a solid oak stock, and bears the 'WKHM Adamant' arkship's production stamp. If you ever see this gun, there is no doubt shit's about to go down. Chambered in 7.62x51mm."
-	description_fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."
 	caliber = "7.62mm"
 	burst_delay = 1
 	magazine_type = /obj/item/ammo_magazine/molniya
@@ -1066,7 +1061,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
 /obj/item/gun/projectile/serdy_pistols/ssp4
 	name = "WKHM SSP4"
 	desc = "A unique, high end service pistol carried by W-K security personnel in the outer rim, and various law enforcement agencies across the galaxy. Features a hidden ejector port, and an integral laser sight. Surprisingly reliable despite its unorthodox design. This one bears the 'WKHM Obsidian' arkship's production stamp. Chambered in 10mm."
-	description_fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."
 	caliber = "10mm"
 	magazine_type = /obj/item/ammo_magazine/ssp4
 	allowed_magazines = list(/obj/item/ammo_magazine/ssp4)
@@ -1324,6 +1318,9 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/wt550, projectile_initial_transfor
 	move_delay = 0 // Pistols have move_delay of 0
 
 CAPABILITIES(/obj/item/gun/projectile/deagle)
+	configure(examine_text(fluff = "Pearlshield Consolidated Armories are far from the most cutting edge firearm manufacturer, but the Tajaran’s long tradition of war is rivaled only by humanity, \
+	and the introduction of human technology to the Tajaran arms market has resulted in something of a revolution in finding new ways to kill each other at long distances with bullets. \
+	Usually made with mass-production in mind, PCA weapons combine an eye for design with a great desire to make people dead."))
 	configure(item_combat(force = 14.0))
 
 /obj/item/gun/projectile/gyropistol
@@ -1412,12 +1409,22 @@ CAPABILITIES(/obj/item/gun/projectile/deagle)
 	only_open_load = TRUE
 
 CAPABILITIES(/obj/item/gun/projectile/garand)
+	configure(examine_text(fluff = "Sif’s largest home-grown firearms manufacturer, the Hedberg-Hammarstrom company offers a \
+	range of high-quality, high-cost hunting rifles and shotguns designed with the Sivian wilderness - and its \
+	wildlife - in mind. The company operates just one production plant in Kalmar, but their weapons have found \
+	popularity on garden worlds as far afield as the Tajaran homeworld due to their excellent build quality, \
+	precision, and stopping power."))
 	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/projectile/revolvingrifle
 	manual_chamber = FALSE
 
 CAPABILITIES(/obj/item/gun/projectile/revolvingrifle)
+	configure(examine_text(fluff = "Sif’s largest home-grown firearms manufacturer, the Hedberg-Hammarstrom company offers a \
+	range of high-quality, high-cost hunting rifles and shotguns designed with the Sivian wilderness - and its \
+	wildlife - in mind. The company operates just one production plant in Kalmar, but their weapons have found \
+	popularity on garden worlds as far afield as the Tajaran homeworld due to their excellent build quality, \
+	precision, and stopping power."))
 	configure(item_worn(slots = SLOT_BACK))
 
 //shotgun.dm
@@ -1434,6 +1441,8 @@ CAPABILITIES(/obj/item/gun/projectile/revolvingrifle)
 	var/is_picked_up = FALSE
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/pump)
+	configure(examine_text(fluff = "The leading civilian-sector high-quality small arms brand of Hephaestus Industries, \
+	MarsTech has been the provider of choice for law enforcement and security forces for over 300 years."))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 
@@ -1630,3 +1639,21 @@ CAPABILITIES(/obj/item/gun/projectile/revolvershotgun)
 	sound_ejectchamber = SFX_WEAPONS_BALLISTICS_RIFLE_EJECTCHAMBER
 	sound_eject = SFX_WEAPONS_BALLISTICS_RIFLE_EJECT
 	sound_chamber = SFX_WEAPONS_BALLISTICS_RIFLE_CHAMBER
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/plamya)
+	configure(examine_text(fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."))
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/strela)
+	configure(examine_text(fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."))
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/vityaz)
+	configure(examine_text(fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."))
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/vityazb)
+	configure(examine_text(fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."))
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/molniya)
+	configure(examine_text(fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."))
+
+CAPABILITIES(/obj/item/gun/projectile/serdy_pistols/ssp4)
+	configure(examine_text(fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."))

@@ -3,7 +3,6 @@
 /obj/item/gun/projectile/heavysniper
 	name = "anti-materiel rifle"
 	desc = "A portable anti-armour rifle fitted with a scope, the HI PTR-7 Rifle was originally designed to used against armoured exosuits. It is capable of punching through windows and non-reinforced walls with ease. Fires armor piercing 14.5mm shells."
-	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by professional armed forces across human space."
 	icon_state = "heavysniper"
 	wielded_item_state = "heavysniper-wielded"
 	w_class = ITEMSIZE_HUGE // So it can't fit in a backpack.
@@ -67,6 +66,7 @@
 	perform_scope_interaction(user, "heavysniper_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/heavysniper)
+	configure(examine_text(fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by professional armed forces across human space."))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 	op("heavysniper_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(heavysniper_verb_scope_op)))

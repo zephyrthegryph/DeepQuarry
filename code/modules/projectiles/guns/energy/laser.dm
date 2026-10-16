@@ -5,7 +5,6 @@
 	name = "laser rifle"
 	desc = "A Hephaestus Industries G40E rifle, designed to kill with concentrated energy blasts.  This variant has the ability to \
 	switch between standard fire and a more efficent but weaker 'suppressive' fire."
-	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."
 	icon_state = "laser"
 	item_state = "laser"
 	wielded_item_state = "laser-wielded"
@@ -21,6 +20,7 @@
 		)
 
 CAPABILITIES(/obj/item/gun/energy/laser)
+	configure(examine_text(fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."))
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	configure(item_combat(force = 10))
 
@@ -63,10 +63,6 @@ CAPABILITIES(/obj/item/gun/energy/laser)
 /obj/item/gun/energy/laser/sleek
 	name = "\improper LR1 \"Shishi\""
 	desc = "A Bishamonten Company LR1 \"Shishi\" rifle, a rare early 23rd century futurist design with a nonetheless timeless ability to kill."
-	description_fluff = "Bisamonten was arms company that operated from roughly 2150-2280 - the height of the first extrasolar colonisation boom - before filing for \
-	bankruptcy and selling off its assets to various companies that would go on to become today’s TSCs. Focused on sleek ‘futurist’ designs which have largely \
-	fallen out of fashion but remain popular with collectors and people hoping to make some quick thalers from replica weapons. Their weapons tended to be form \
-	over function - despite their flashy looks, most were completely unremarkable one way or another as weapons and used very standard firing mechanisms."
 	icon_state = "lrifle"
 	item_state = "lrifle"
 
@@ -148,9 +144,6 @@ CAPABILITIES(/obj/item/gun/energy/retro)
 	icon_state = "caplaser"
 	item_state = "caplaser"
 	desc = "A rare weapon, produced by the Lunar Arms Company around 2105 - one of humanity's first wholly extra-terrestrial weapon designs. It's certainly aged well."
-	description_fluff = "The Lunar Arms Company was founded to provide home-grown arms to the Selene Federation from 2101-2108 during the Second Cold War, the conflict that sparked the \
-	formation of the SCG. The LAC produced the first weapons wholly designed and produced outside of Earth. Post-war, the company relocated and rebranded as MarsTech, which survives \
-	to this day as a major subsidiary of Hephaestus Industries."
 	w_class = ITEMSIZE_NORMAL
 	unacidable = TRUE
 	projectile_type = /obj/item/projectile/beam
@@ -160,6 +153,9 @@ CAPABILITIES(/obj/item/gun/energy/retro)
 	battery_lock = 1
 
 CAPABILITIES(/obj/item/gun/energy/captain)
+	configure(examine_text(fluff = "The Lunar Arms Company was founded to provide home-grown arms to the Selene Federation from 2101-2108 during the Second Cold War, the conflict that sparked the \
+	formation of the SCG. The LAC produced the first weapons wholly designed and produced outside of Earth. Post-war, the company relocated and rebranded as MarsTech, which survives \
+	to this day as a major subsidiary of Hephaestus Industries."))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 5))
 
@@ -217,7 +213,6 @@ CAPABILITIES(/obj/item/gun/energy/lasercannon)
 	name = "marksman energy rifle"
 	desc = "The HI DMR 9E is an older design of Hephaestus Industries. A designated marksman rifle capable of shooting powerful \
 	ionized beams, this is a weapon to kill from a distance."
-	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."
 	icon = 'icons/obj/64x32guns_ch.dmi' // Gun Sprites
 	icon_expected_width = 64 // Gun Sprites
 	icon_state = "sniper"
@@ -240,6 +235,7 @@ CAPABILITIES(/obj/item/gun/energy/lasercannon)
 	perform_scope_interaction(user, "sniperrifle_verb_scope")
 
 CAPABILITIES(/obj/item/gun/energy/sniperrifle)
+	configure(examine_text(fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 	op("sniperrifle_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(sniperrifle_verb_scope_op)))
@@ -321,8 +317,6 @@ CAPABILITIES(/obj/item/gun/energy/mininglaser)
 /obj/item/gun/energy/laser/old
 	name = "vintage laser rifle"
 	desc = "A Hephaestus Industries G32E rifle, designed to kill with concentrated energy blasts. This older model laser rifle only has one firemode."
-	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade \
-	equipment used by armed forces across human space."
 	icon_state = "oldlaser"
 	item_state = "laser"
 	fire_delay = 6
@@ -331,6 +325,8 @@ CAPABILITIES(/obj/item/gun/energy/mininglaser)
 	projectile_type = /obj/item/projectile/beam/midlaser
 
 CAPABILITIES(/obj/item/gun/energy/laser/old)
+	configure(examine_text(fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade \
+	equipment used by armed forces across human space."))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 8))
 
@@ -340,8 +336,6 @@ CAPABILITIES(/obj/item/gun/energy/laser/old)
 /obj/item/gun/energy/monorifle
 	name = "antique mono-rifle"
 	desc = "An old model laser rifle with a nice wood finish. This weapon was only designed to fire once before requiring a recharge."
-	description_fluff = "Modeled after ancient hunting rifles designs, this rifle was dubbed the 'Rainy Day Special' by some, due to its use as the \
-	choice \"fight-stopper\" of barkeeps. One shot is all it takes... so they say."
 	icon_state = "mono"
 	item_state = "shotgun"
 	projectile_type = /obj/item/projectile/beam/sniper
@@ -358,6 +352,8 @@ CAPABILITIES(/obj/item/gun/energy/laser/old)
 	perform_scope_interaction(user, "monorifle_verb_sights")
 
 CAPABILITIES(/obj/item/gun/energy/monorifle)
+	configure(examine_text(fluff = "Modeled after ancient hunting rifles designs, this rifle was dubbed the 'Rainy Day Special' by some, due to its use as the \
+	choice \"fight-stopper\" of barkeeps. One shot is all it takes... so they say."))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 8))
 	op("monorifle_verb_sights", menu(), label("Aim Down Sights"), needs(carried()), then(PROC_REF(monorifle_verb_sights_op)))
@@ -379,8 +375,6 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 /obj/item/gun/energy/monorifle/combat
 	name = "combat mono-rifle"
 	desc = "A modernized version of the classic mono-rifle. This one has an optimized capacitor bank that allows the rifle to fire twice before requiring a recharge."
-	description_fluff = "A modern design of a classic rifle produced by a small arms company operating out of Saint Columbia. It was based on the \
-	antique mono-rifle design that was dubbed the 'Rainy Day Special' by many of its users."
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "cmono"
 	item_state = "cshotgun"
@@ -389,6 +383,8 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 	scoped_accuracy = 20
 
 CAPABILITIES(/obj/item/gun/energy/monorifle/combat)
+	configure(examine_text(fluff = "A modern design of a classic rifle produced by a small arms company operating out of Saint Columbia. It was based on the \
+	antique mono-rifle design that was dubbed the 'Rainy Day Special' by many of its users."))
 	configure(item_combat(force = 12))
 
 /obj/item/gun/energy/zip
@@ -464,7 +460,6 @@ CAPABILITIES(/obj/item/gun/energy/zip)
 /obj/item/gun/energy/laser/vepr
 	name = "WKHM 'Vepr'"
 	desc = "The Vepr lasgun, in 40 Watt range. One of the most robust laser rifles out there, but not one that's commonly seen. This piece is WKHM's latest entry into the energy weapon market, competing with the Hephaestus Industries G40E. Uses its own proprietary energy cells. It has three settings, standard, suppressive, and burst. This one bears the 'WKHM Adamant' arkship's production stamp."
-	description_fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."
 	icon_expected_width = 64
 	icon_state = "vepr"
 	firemodes = list(
@@ -478,6 +473,7 @@ CAPABILITIES(/obj/item/gun/energy/zip)
 	cell_type = /obj/item/cell/vepr
 
 CAPABILITIES(/obj/item/gun/energy/laser/vepr)
+	configure(examine_text(fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."))
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	configure(item_combat(force = 8))
 
@@ -513,7 +509,6 @@ CAPABILITIES(/obj/item/gun/energy/tommylaser)
 /obj/item/gun/energy/vepr/plasma
 	name = "WKHM 'Vepr-Prisma'"
 	desc = "The Vepr-Prisma plasma rifle, in 40 Watt range. A very robust version of the Vepr lasrifle, made to fire energized bolts of plasma. The Vepr-Prisma is very uncommon, reserved mainly for W-K's internal security forces, and organizations with lots of money to spend. Lacks a burst mode, but it probably doesn't need it. This one bears the 'WKHM Adamant' arkship's production stamp."
-	description_fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."
 	icon_expected_width = 64
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_state = "vepr"
@@ -525,6 +520,7 @@ CAPABILITIES(/obj/item/gun/energy/tommylaser)
 	cell_type = /obj/item/cell/vepr
 
 CAPABILITIES(/obj/item/gun/energy/vepr/plasma)
+	configure(examine_text(fluff = "WKHM, is a minor arms company that has been around for quite some time, established in 2408. Known for being one of the many suppliers of weapons to dangerous worlds on the rim, and a part of the FTU. They produce a large variety of firearms, strike craft, and armored vehicles to fufill various their various contracts, and are largely migrant, moving wherever the money is. Found almost entirely on mobile production ships and various escort craft. Identifiable by their logo, a red Omega symbol with a black or white W in the middle. The sheer quantity of their firearms produced ensures they can be found.. just about anywhere, and they are very sought after by pirates for their reliability."))
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	configure(item_combat(force = 8))
 
@@ -601,6 +597,10 @@ CAPABILITIES(/obj/item/gun/energy/gun/burst)
 		)
 
 CAPABILITIES(/obj/item/gun/energy/gun/etommy)
+	configure(examine_text(fluff = "The Rapid Capacitor Weapon is one of a few weapons that never saw full production. IT was an experimental Shock Trooper weapon developed by \
+	Lawsom Arms during the Hegemony Conflict. While only a few hundred were made it didn't take long for smaller arms dealers to break apart stolen units and revese engineer \
+	the tech used in their design. While they're an uncommon sight, they're known to be used by roving bands in the Salthan Fyrds as a forms of personal protection because \
+	of their ease of use and firepower."))
 	configure(item_combat(force = 8))
 
 /obj/item/gun/energy/gun/compact
@@ -683,3 +683,9 @@ CAPABILITIES(/obj/item/gun/energy/soapenergy/gaussrifle)
 
 CAPABILITIES(/obj/item/cell/vepr)
 	configure(item_persistence(preserve = 1))
+
+CAPABILITIES(/obj/item/gun/energy/laser/sleek)
+	configure(examine_text(fluff = "Bisamonten was arms company that operated from roughly 2150-2280 - the height of the first extrasolar colonisation boom - before filing for \
+	bankruptcy and selling off its assets to various companies that would go on to become today’s TSCs. Focused on sleek ‘futurist’ designs which have largely \
+	fallen out of fashion but remain popular with collectors and people hoping to make some quick thalers from replica weapons. Their weapons tended to be form \
+	over function - despite their flashy looks, most were completely unremarkable one way or another as weapons and used very standard firing mechanisms."))

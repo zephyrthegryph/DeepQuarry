@@ -37,7 +37,6 @@ CAPABILITIES(/obj/item/clothing/accessory/watch)
 /obj/item/clothing/accessory/watch/survival
 	name = "survival watch"
 	desc = "An overengineered wristwatch that purports to be both space and water proof, and includes a compass, micro GPS beacon, and temperature and pressure sensors. The beacon is off by default, and can only transmit its location: it cannot scan for other signals."
-	description_fluff = "Hold ALT whilst left-clicking on the survival watch to toggle the status of its micro-beacon."
 	icon_state = "wristwatch_survival"
 
 	var/obj/item/gps/gps = null
@@ -61,6 +60,7 @@ CAPABILITIES(/obj/item/clothing/accessory/watch)
 			. += span_notice("Pressure: [env.return_pressure()]kPa / Temperature: [env.return_temperature()]K ")
 
 CAPABILITIES(/obj/item/clothing/accessory/watch/survival)
+	configure(examine_text(fluff = "Hold ALT whilst left-clicking on the survival watch to toggle the status of its micro-beacon."))
 	owns_one(nameof(gps), starts = /obj/item/gps/watch)
 	op("beacon", hand(), answers(INTENT_TOGGLE), label("Toggle beacon"), then(PROC_REF(survival_watch_beacon_toggled)), passes())
 

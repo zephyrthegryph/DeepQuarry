@@ -57,7 +57,6 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_necklace)
 	icon_state = "voodoobox"
 	name = "Voodoo Supplies Box"
 	desc = "a horribly dusty box from 'magici-corp' with a ludicrously corny image of a voodoo doll on the front."
-	description_fluff = "originally marketed as part of a DIY magician routine, the company making them went under due to countless lawsuits from people who broke their nose upon the doll being dropped, and tesh filing descrimination suits. they haven't been made in well over a decade."
 	primary =/obj/item/remote_scene_tool/voodoo_doll
 	secondary =/obj/item/remote_scene_tool/voodoo_necklace
 
@@ -180,3 +179,6 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 #undef DATA_Y_OFFSET
 #undef DATA_SCALE
 #undef DATA_ROTATION
+
+CAPABILITIES(/obj/item/storage/box/remote_scene_tools/voodoo)
+	configure(examine_text(fluff = "originally marketed as part of a DIY magician routine, the company making them went under due to countless lawsuits from people who broke their nose upon the doll being dropped, and tesh filing descrimination suits. they haven't been made in well over a decade."))
