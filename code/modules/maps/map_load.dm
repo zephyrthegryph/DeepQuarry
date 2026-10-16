@@ -265,7 +265,8 @@ CAPABILITIES(/datum/map_load)
 			return JOB_MORE
 	if(mode == MAP_LOAD_NEW_Z)
 		if(!(cache_key in GLOB.cached_maps))
-			GLOB.cached_maps[cache_key] = P
+			var/datum/parsed_map/cached/kept = P // a new-z parse is made as the cached kind (do_new_z)
+			GLOB.cached_maps[cache_key] = kept
 		var/datum/parsed_map/cached = GLOB.cached_maps[cache_key]
 		parsed = isnull(cached.bounds) ? cached : cached.copy()
 	phase = MAP_LOAD_BEGIN
