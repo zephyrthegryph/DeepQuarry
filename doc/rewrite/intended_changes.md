@@ -5081,3 +5081,7 @@ promotion is deferred until the repaired sampler's actual output is inspected;
 the six-row candidate patch is not applied in advance. Unrelated production or
 menu/click differences require separate evidence and are not covered by this
 sampling cause. Verification and any resulting narrow promotion remain pending.
+
+### Deterministic look sampling after the native compiler switch
+
+The silicon lane retains current master's plan filtering before the cap, both existing bounds (24 planned / 200 unplanned) and explicit empty-plan semantics. Eligible probe names are sorted before selection and execution. This removes host-variable-enumeration-dependent coverage; only sampling selection/order changes are covered. The reversed-input regression and the real recharge admission fixture passed native preflight 20261016T052401_9bc492d1f7 (2/2). Unrelated gameplay, menu and runtime differences are excluded from this cause class.

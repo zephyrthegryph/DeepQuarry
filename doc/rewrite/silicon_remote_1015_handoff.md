@@ -37,3 +37,9 @@ The current master already filters candidates against the read plan before cappi
 Master eee5bf967e (merged by a5674a446e) restored six stale unprefixed slime-eye golden rows. Current source synchronizes icon_living with the xenobio color/age; the bluespace overlay is prefixed bluespace, and rainbow plus rainbow/kendrick use rainbow. The earlier capture's six replacements are traced to that stale restoration, not a silicon gameplay change. No candidate appearance patch was applied before observing the repaired sampler output.
 
 Focused tests only; no full suite or shards. Native verification is now used following the approved sampler repair. Final stamp and any narrowly reviewed pin promotion will be recorded after the actual gate completes.
+
+## Native gate infrastructure retry
+
+The actual lane-ready run on 64cb8e6bba passed production compilation, DreamChecker (zero diagnostics), all ratchets and analyzer tests. Its focused test compiler exited during directive planning with no result JSON while E: had one byte free; no unit test ran. Completed job timings are retained in data/merge-gates/64cb8e6bba85.timings. Disk space later recovered externally (about 13 GiB free). No process was killed or lock deleted by this lane. The broad cleanup attempt was rejected before execution, and no cache was removed.
+
+The unexecuted focused batch is retried through the real lane-ready gate after reading its log. No earlier receipts are synthesized into a stamp and no successful runtime test is being repeated to conceal a failure.
