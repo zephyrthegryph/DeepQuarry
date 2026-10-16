@@ -1,1 +1,11 @@
+/mob/living/simple_mob/animal/space/space_worm ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/space/space_worm ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/space/space_worm/head ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/space/space_worm/head ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/space/space_worm/head/severed ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/space/space_worm/head/severed ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/space/space_worm/head/short ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/space/space_worm/head/short ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/space/space_worm/head/long ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/space/space_worm/head/long ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 

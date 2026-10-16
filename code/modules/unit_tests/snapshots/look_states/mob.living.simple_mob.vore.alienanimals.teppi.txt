@@ -1,1 +1,15 @@
+/mob/living/simple_mob/vore/alienanimals/teppi ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi/baby ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi/baby ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi/baby/cass ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi/baby/cass ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi/mutant ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi/mutant ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi/cass ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi/cass ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi/aronai ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi/aronai ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi/lira ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/alienanimals/teppi/lira ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 

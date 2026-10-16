@@ -1,1 +1,7 @@
+/mob/living/simple_mob/vore/fennec ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/fennec ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/fennec/bridgette ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/fennec/bridgette ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/fennec/huge ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/fennec/huge ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 

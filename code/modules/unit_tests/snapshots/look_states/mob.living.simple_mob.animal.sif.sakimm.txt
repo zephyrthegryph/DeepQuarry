@@ -1,1 +1,5 @@
+/mob/living/simple_mob/animal/sif/sakimm ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/sif/sakimm ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/sif/sakimm/intelligent ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/animal/sif/sakimm/intelligent ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 

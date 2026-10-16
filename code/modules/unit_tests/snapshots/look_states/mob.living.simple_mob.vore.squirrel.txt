@@ -1,1 +1,7 @@
+/mob/living/simple_mob/vore/squirrel ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/squirrel ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/squirrel/small ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/squirrel/small ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/squirrel/big ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/squirrel/big ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 

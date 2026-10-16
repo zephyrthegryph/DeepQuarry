@@ -1,1 +1,7 @@
+/mob/living/simple_mob/vore/bigdragon ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/bigdragon ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/bigdragon/friendly ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/bigdragon/friendly ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/bigdragon/friendly/maintpred ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/bigdragon/friendly/maintpred ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 
