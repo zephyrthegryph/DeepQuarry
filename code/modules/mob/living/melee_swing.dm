@@ -48,23 +48,23 @@
 // ---------------------------------------------------------------------------
 
 /// TRUE while a windup/swing is in progress; blocks starting another and is read by ClickOn.
-/mob/living/var/is_swinging = FALSE
+sparse(/mob/living, is_swinging, type = bool)
 /// TRUE while begin_melee_swing is resolving hits through /obj/item/attack(); tells attack()
 /// to skip its own click cooldown + lunge animation (the swing already did both).
-/mob/living/var/melee_swing_resolving = FALSE
+sparse(/mob/living, melee_swing_resolving, type = bool)
 /// Monotonic swing id. The stuck-flag safety timer only clears the swing it was armed for,
 /// so a timer left over from a finished swing can never clobber a newer one.
-/mob/living/var/melee_swing_serial = 0
+sparse(/mob/living, melee_swing_serial, type = num)
 
 /// Safety net for is_swinging: fires MELEE_SWING_STUCK_GRACE after the windup should have
 /// resolved. If the flag is still up for the same swing, something between the set and the
 /// clear runtimed — release it (and the resolving flag) rather than wedging the mob forever.
 /mob/living/proc/clear_stuck_swing(serial)
-	if(!is_swinging || serial != melee_swing_serial)
+	if(!sparse_get_or(src, is_swinging, FALSE) || serial != sparse_get_or(src, melee_swing_serial, 0))
 		return FALSE
 	log_world("[src] ([type]) melee swing #[serial] was still flagged after its windup expired; force-clearing is_swinging")
-	is_swinging = FALSE
-	melee_swing_resolving = FALSE
+	sparse_set_or(src, is_swinging, FALSE, FALSE)
+	sparse_set_or(src, melee_swing_resolving, FALSE, FALSE)
 	return TRUE
 
 /// The turfs a swing with `weapon` aimed at `target` would strike: the tile toward the
@@ -92,7 +92,7 @@
 /// Run a full windup -> swing -> recovery against `target` with `weapon`. Returns TRUE if a
 /// swing was committed (whether or not it connected), FALSE if it couldn't start or cancelled.
 /mob/living/proc/begin_melee_swing(mob/living/target, obj/item/weapon)
-	if(is_swinging)
+	if(sparse_get_or(src, is_swinging, FALSE))
 		return FALSE
 	if(QDELETED(target) || QDELETED(weapon))
 		return FALSE
@@ -119,9 +119,9 @@
 	// are async), so a second click can't race in before this line — and every
 	// statement between a TRUE flag and its clear is a potential permanent wedge
 	// if it runtimes.
-	is_swinging = TRUE
-	melee_swing_resolving = FALSE
-	var/serial = ++melee_swing_serial
+	sparse_set_or(src, is_swinging, TRUE, FALSE)
+	sparse_set_or(src, melee_swing_resolving, FALSE, FALSE)
+	var/serial = sparse_set_or(src, melee_swing_serial, sparse_get_or(src, melee_swing_serial, 0) + 1, 0)
 	// Belt-and-braces: guarantees the flag resets even if something below runtimes.
 	after(src, windup + MELEE_SWING_STUCK_GRACE, PROC_REF(clear_stuck_swing), with = list(serial))
 
@@ -130,7 +130,7 @@
 	// The op (code/library/mob/living_abilities.dm) shows no bar or cog and holds nothing.
 	var/datum/op_result/started = perform_op(src, src, "melee_swing", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target, "weapon" = weapon, "tiles" = swing_tiles, "windup" = windup))
 	if(started?.outcome == ACT_REFUSED)
-		is_swinging = FALSE
+		sparse_set_or(src, is_swinging, FALSE, FALSE)
 		return FALSE
 	return TRUE
 
@@ -145,7 +145,7 @@
 
 	// Re-validate the weapon is still in hand after the windup.
 	if(QDELETED(weapon) || get_active_hand() != weapon)
-		is_swinging = FALSE
+		sparse_set_or(src, is_swinging, FALSE, FALSE)
 		return FALSE
 
 	// The swing is committed: clear the gate and start recovery BEFORE resolving
@@ -155,7 +155,7 @@
 	// cooldown already prevents a double-swing in the gap; clear_stuck_swing is
 	// the last-resort backstop.
 	setClickCooldown(weapon.get_melee_recovery())
-	is_swinging = FALSE
+	sparse_set_or(src, is_swinging, FALSE, FALSE)
 
 	// Swing: lunge + whoosh, then resolve against whoever is in the tiles NOW.
 	do_attack_animation(target)
@@ -165,7 +165,7 @@
 	// deductcharge, energy-blade cell use), is_incorporeal, lastattacker and
 	// add_attack_logs all run exactly once per victim. melee_swing_resolving makes
 	// the base attack() skip its instant cooldown/animation — already paid above.
-	melee_swing_resolving = TRUE
+	sparse_set_or(src, melee_swing_resolving, TRUE, FALSE)
 	for(var/turf/T as anything in swing_tiles)
 		for(var/mob/living/victim in contents_of(T))
 			if(victim == src)
@@ -173,9 +173,9 @@
 			if(QDELETED(weapon))
 				break // a weapon override consumed/destroyed it mid-sweep
 			weapon.attack(victim, src, zone, 1) // attack_modifier 1; null would zero the damage
-	melee_swing_resolving = FALSE
+	sparse_set_or(src, melee_swing_resolving, FALSE, FALSE)
 
 	return TRUE
 
 /mob/living/proc/begin_melee_swing_living_failed(datum/act/op/A)
-	is_swinging = FALSE
+	sparse_set_or(src, is_swinging, FALSE, FALSE)

@@ -144,7 +144,7 @@
 	TEST_ASSERT_NOTNULL(op_pending_of(attacker), "the windup is running")
 	victim.forceMove(far)                     // dodge out of the swing tiles
 	test_time(weapon.get_melee_windup() + 4)  // wait past the swing resolution
-	TEST_ASSERT(!attacker.is_swinging, "and the swing has resolved")
+	TEST_ASSERT(!sparse_get_or(attacker, is_swinging, FALSE), "and the swing has resolved")
 	TEST_ASSERT_EQUAL(victim.vitality(), before, "a victim that left the tiles during windup should take no damage")
 
 
@@ -168,7 +168,21 @@
 	attacker.set_combat_mode(TRUE)
 
 	attacker.begin_melee_swing(victim, weapon)
-	TEST_ASSERT(attacker.is_swinging, "the swing is committed while the windup runs")
+	TEST_ASSERT(sparse_get_or(attacker, is_swinging, FALSE), "the swing is committed while the windup runs")
 	test_time(weapon.get_melee_windup() + 1 SECOND)
 	TEST_ASSERT(cooldown_end(attacker, next_click) > world.time, "a recovery cooldown should be active immediately after the swing")
-	TEST_ASSERT(!attacker.is_swinging, "is_swinging should be cleared after the swing resolves")
+	TEST_ASSERT(!sparse_get_or(attacker, is_swinging, FALSE), "is_swinging should be cleared after the swing resolves")
+
+/datum/unit_test/dq_melee_swing_sparse_safety
+/datum/unit_test/dq_melee_swing_sparse_safety/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/simple_mob/e0_fixture/M = allocate(/mob/living/simple_mob/e0_fixture, test_floor())
+	TEST_ASSERT(!sparse_has(M, is_swinging) && !sparse_has(M, melee_swing_resolving) && !sparse_has(M, melee_swing_serial), "a never-swinging actor allocates no swing state")
+	sparse_set_or(M, melee_swing_serial, 2, 0)
+	sparse_set_or(M, is_swinging, TRUE, FALSE)
+	sparse_set_or(M, melee_swing_resolving, TRUE, FALSE)
+	TEST_ASSERT(!M.clear_stuck_swing(1), "an older safety callback cannot clear a newer swing")
+	TEST_ASSERT(sparse_get_or(M, is_swinging, FALSE) && sparse_get_or(M, melee_swing_resolving, FALSE), "a stale callback preserves both active flags")
+	TEST_ASSERT(M.clear_stuck_swing(2), "the matching real safety callback recovers a stuck swing")
+	TEST_ASSERT(!sparse_has(M, is_swinging) && !sparse_has(M, melee_swing_resolving), "recovery releases the optional active flags")
+	TEST_ASSERT_EQUAL(sparse_get_or(M, melee_swing_serial, 0), 2, "recovery retains the monotonic serial for future safety checks")
