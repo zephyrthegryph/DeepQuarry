@@ -68,11 +68,11 @@ CAPABILITIES(/obj/item/stack/material)
 	if(amount>1)
 		name = "[material.use_name] [material.sheet_plural_name]"
 		desc = "A [material.sheet_collective_name] of [material.use_name] [material.sheet_plural_name]."
-		gender = PLURAL
+		set_gender(PLURAL)
 	else
 		name = "[material.use_name] [material.sheet_singular_name]"
 		desc = "A [material.sheet_singular_name] of [material.use_name]."
-		gender = NEUTER
+		set_gender(NEUTER)
 
 /obj/item/stack/material/get_examine_string()
 	if(!uses_charge)

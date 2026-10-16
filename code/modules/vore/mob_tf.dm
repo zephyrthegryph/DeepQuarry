@@ -33,12 +33,12 @@
 		var/mob/living/carbon/human/H = src
 		if(ishuman(new_mob))
 			var/mob/living/carbon/human/N = new_mob
-			N.gender = H.gender
+			N.set_gender(H.gender)
 			N.set_identifying_gender(H.identifying_gender)
 		else
-			new_mob.gender = H.gender
+			new_mob.set_gender(H.gender)
 	else
-		new_mob.gender = src.gender
+		new_mob.set_gender(src.gender)
 		if(ishuman(new_mob))
 			var/mob/living/carbon/human/N = new_mob
 			N.set_identifying_gender(src.gender)

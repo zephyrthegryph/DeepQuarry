@@ -336,7 +336,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	H.resize(sizemult, FALSE)
-	H.appearance_flags = aflags
+	H.set_appearance_flags(aflags)
 	H.weight = weight
 	if(speciesname)
 		H.custom_species = speciesname

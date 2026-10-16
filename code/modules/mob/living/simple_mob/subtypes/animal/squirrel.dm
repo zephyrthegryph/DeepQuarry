@@ -197,7 +197,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
 	meat_amount = 6
 	harm_intent_damage = 1
 
-	pixel_x = -32
+	set_pixel_x(-32)
 	set_default_pixel_x(-32)
 	set_vis_height(64)
 
@@ -221,7 +221,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
 	if(picked_color)
 		return
 	if(A.answer.value)
-		color = A.answer.value
+		set_color(A.answer.value)
 	picked_color = TRUE
 
 /mob/living/simple_mob/vore/squirrel/small

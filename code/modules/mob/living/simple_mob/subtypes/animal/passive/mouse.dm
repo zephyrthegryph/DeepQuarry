@@ -106,7 +106,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	..()
 
 /mob/living/simple_mob/animal/passive/mouse/on_death(gibbed)
-	layer = MOB_LAYER
+	set_layer(MOB_LAYER)
 	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD)
 	if(client)
 		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
@@ -119,7 +119,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	src.set_stat(DEAD)
 	src.set_icon_dead("mouse_[body_color]_splat")
 	set_icon_state("mouse_[body_color]_splat")
-	layer = MOB_LAYER
+	set_layer(MOB_LAYER)
 	if(client)
 		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 
@@ -328,7 +328,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/mining)
 	src.set_stat(DEAD)
 	src.set_icon_dead("mouse_miner_splat")
 	set_icon_state("mouse_miner_splat")
-	layer = MOB_LAYER
+	set_layer(MOB_LAYER)
 	if(client)
 		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 

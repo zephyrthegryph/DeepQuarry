@@ -358,7 +358,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 		allergen_unpreference = pick(possibleallergens - allergen_preference) //can't dislike the thing we like, we're not THAT picky
 		affection_factor = rand(1,3)
 	if(!inherit_colors)
-		color = pickweight(possiblebody)
+		set_color(pickweight(possiblebody))
 		set_marking_color(pickweight(possiblemarking))
 		set_horn_color(pickweight(possiblehorns))
 		set_eye_color(pickweight(possibleeyes))
@@ -374,7 +374,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 		var/pick_b = pick(possiblecolorlists)
 		switch(pick_a)
 			if(0)
-				color = pickweight(pick_b)
+				set_color(pickweight(pick_b))
 			if(1)
 				set_marking_color(pickweight(pick_b))
 			if(2)
@@ -384,7 +384,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 			if(4)
 				set_skin_color(pickweight(pick_b))
 			if(5)
-				color = pickweight(pick_b)
+				set_color(pickweight(pick_b))
 				set_marking_color(pickweight(pick_b))
 				set_horn_color(pickweight(pick_b))
 				set_eye_color(pickweight(pick_b))
@@ -744,7 +744,7 @@ MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%.")
 	act_message(user, src, MSG_SELF(span_notice("You shear %T% with %I%.")), MSG_OTHERS(span_notice("%U% shears %T% with %I%.")), item = tool)
 	amount_grown = rand(0,250)
 	var/obj/item/stack/material/fur/F = new(get_turf(user), rand(10,15))
-	F.color = marking_color
+	F.set_color(marking_color)
 	set_teppi_wool(FALSE)
 	handle_affinity(user, 5)
 	teppi_sound()
@@ -941,7 +941,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
 	set_nutrition(teppi_data["nutrition"])
 	allergen_preference = teppi_data["allergen_preference"]
 	allergen_unpreference = teppi_data["allergen_unpreference"]
-	color = teppi_data["color"]
+	set_color(teppi_data["color"])
 	set_marking_color(teppi_data["marking_color"])
 	set_horn_color(teppi_data["horn_color"])
 	set_eye_color(teppi_data["eye_color"])
@@ -953,7 +953,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/inherit_from_parents(mob/living/simple_mob/vore/alienanimals/teppi/mom, mob/living/simple_mob/vore/alienanimals/teppi/dad)
 	inherit_colors = TRUE
 	faction = mom.faction
-	color = pick(list(mom.color, dad.color, BlendRGB(mom.color, dad.color, 0.5)))
+	set_color(pick(list(mom.color, dad.color, BlendRGB(mom.color, dad.color, 0.5))))
 	set_marking_color(pick(list(mom.marking_color, dad.marking_color, BlendRGB(mom.marking_color, dad.marking_color, 0.5))))
 	set_horn_color(pick(list(mom.horn_color, dad.horn_color, BlendRGB(mom.horn_color, dad.horn_color, 0.5))))
 	set_eye_color(pick(list(mom.eye_color, dad.eye_color, BlendRGB(mom.eye_color, dad.eye_color, 0.5))))

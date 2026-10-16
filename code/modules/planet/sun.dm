@@ -114,17 +114,17 @@ CAPABILITIES(/datum/sun_holder)
 	spreads["o9"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHWEST, icon_state = "white_outer")
 	spreads["o10"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHWEST, icon_state = "white_outer")
 
-/atom/movable/sun_visuals/proc/set_color(new_color)
-	src.color = new_color
+/atom/movable/sun_visuals/set_color(new_color)
+	. = ..()
 	for(var/key in spreads)
 		var/atom/movable/sun_visuals_overlap/SVO = spreads[key]
-		SVO.color = new_color
+		SVO.set_color(new_color)
 
-/atom/movable/sun_visuals/proc/set_alpha(new_alpha)
-	src.alpha = new_alpha
+/atom/movable/sun_visuals/set_alpha(new_alpha)
+	. = ..()
 	for(var/key in spreads)
 		var/atom/movable/sun_visuals_overlap/SVO = spreads[key]
-		SVO.alpha = new_alpha
+		SVO.set_alpha(new_alpha)
 
 /atom/movable/sun_visuals/proc/apply_to_turf(turf/T)
 	T.vis_contents += src

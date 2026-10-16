@@ -34,9 +34,9 @@ CAPABILITIES(/obj/effect/falling_effect)
 		return
 	var/initial_x = dropped.pixel_x
 	var/initial_y = dropped.pixel_y
-	dropped.plane = 1
-	dropped.pixel_x = rand(-150, 150)
-	dropped.pixel_y = 500 // When you think that pixel_z is height but you are wrong
+	dropped.set_plane(1)
+	dropped.set_pixel_x(rand(-150, 150))
+	dropped.set_pixel_y(500) // When you think that pixel_z is height but you are wrong
 	dropped.set_density(FALSE)
 	dropped.set_opacity(FALSE)
 	if(admin_spawned)
@@ -63,7 +63,7 @@ CAPABILITIES(/obj/effect/falling_effect)
 	play_sfx(src, SFX_EFFECTS_METEORIMPACT, 1.25)
 	set_density(initial(density))
 	set_opacity(initial(opacity))
-	plane = initial(plane)
+	set_plane(initial(plane))
 
 /obj/effect/falling_effect/singularity_act()
 	return

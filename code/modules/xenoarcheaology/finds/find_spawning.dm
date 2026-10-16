@@ -84,7 +84,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			new_item.set_icon('icons/obj/xenoarchaeology.dmi')
 			new_item.set_icon_state("bowl")
 			apply_image_decorations = TRUE
-			new_item.color = rgb(rand(0,255),rand(0,255),rand(0,255))
+			new_item.set_color(rgb(rand(0,255),rand(0,255),rand(0,255)))
 			additional_desc = "There appear to be [pick("dark","faintly glowing","pungent","bright")] [pick("red","purple","green","blue")] stains inside."
 		if(ARCHAEO_URN)
 			item_type = "urn"
@@ -158,7 +158,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 
 			var/new_trap = pick(possible_trap)
 			new_item = new new_trap(src.loc)
-			new_item.color = rgb(rand(0,255),rand(0,255),rand(0,255))
+			new_item.set_color(rgb(rand(0,255),rand(0,255),rand(0,255)))
 			additional_desc = "[pick("It looks like it could take a limb off",\
 			"Could be some kind of animal trap",\
 			"There appear to be [pick("dark red","dark purple","dark green","dark blue")] stains along part of it")]."
@@ -201,7 +201,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			possible_object_paths -= list(/obj/item/tool/screwdriver/test_driver, /obj/item/tool/screwdriver/cyborg, /obj/item/tool/wrench/cyborg, /obj/item/tool/crowbar/cyborg, /obj/item/tool/crowbar/cyborg/jaws, /obj/item/tool/wirecutters/cyborg)
 			var/new_tool = pick(possible_object_paths)
 			new_item = new new_tool(src.loc)
-			new_item.color = rgb(rand(0,255),rand(0,255),rand(0,255))
+			new_item.set_color(rgb(rand(0,255),rand(0,255),rand(0,255)))
 			apply_image_decorations = TRUE
 			additional_desc = "[pick("It doesn't look safe.",\
 			"You wonder what it was used for",\
@@ -512,7 +512,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			else
 				new_item = new /obj/item/clothing/mask/gas/voice(src.loc)
 			if(prob(40))
-				new_item.color = rgb(rand(0,255),rand(0,255),rand(0,255))
+				new_item.set_color(rgb(rand(0,255),rand(0,255),rand(0,255)))
 		if(ARCHAEO_ALIEN_ITEM)
 			// Alien stuff.
 			apply_prefix = FALSE

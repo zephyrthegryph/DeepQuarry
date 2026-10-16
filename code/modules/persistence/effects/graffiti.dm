@@ -26,9 +26,9 @@
 	if(token["icon_state"])
 		inst.set_icon_state(token["icon_state"])
 	if(token["pixel_x"])
-		inst.pixel_x = token["pixel_x"]
+		inst.set_pixel_x(token["pixel_x"])
 	if(token["pixel_y"])
-		inst.pixel_y = token["pixel_y"]
+		inst.set_pixel_y(token["pixel_y"])
 
 /datum/persistent/graffiti/IsValidEntry(atom/entry)
 	. = ..()

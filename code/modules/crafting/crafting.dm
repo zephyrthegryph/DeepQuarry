@@ -15,8 +15,8 @@
 	var/datum/hud/H = user.hud_used
 	var/atom/movable/screen/craft/C = new()
 	C.set_icon(H.ui_style)
-	C.color = H.ui_color
-	C.alpha = H.ui_alpha
+	C.set_color(H.ui_color)
+	C.set_alpha(H.ui_alpha)
 	rel_add(H, nameof(H.other_important), C)
 	CL.screen += C
 	observe(C, /datum/notice/click, src, then(PROC_REF(on_button_click)))

@@ -32,7 +32,7 @@ CAPABILITIES(/obj/item/storage/belt)
 	return OP_OK
 
 //Some belts have sprites to show icons
-/obj/item/storage/belt/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer = 0,icon/clip_mask = null)
+/obj/item/storage/belt/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer = 0,icon/clip_mask = null, mob/living/carbon/human/wearer = null)
 	var/image/standing = ..()
 	if(!inhands && length(slot_contents(CONTAINER_SLOT_STORAGE)))
 		for(var/obj/item/i in slot_contents(CONTAINER_SLOT_STORAGE))

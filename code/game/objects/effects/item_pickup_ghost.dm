@@ -9,9 +9,9 @@
 /obj/effect/temporary_effect/item_pickup_ghost/proc/assumeform(obj/item/picked_up)
 	set_icon(picked_up.icon)
 	set_icon_state(picked_up.icon_state)
-	pixel_x = picked_up.pixel_x
-	pixel_y = picked_up.pixel_y
-	color = picked_up.color
+	set_pixel_x(picked_up.pixel_x)
+	set_pixel_y(picked_up.pixel_y)
+	set_color(picked_up.color)
 
 /obj/effect/temporary_effect/item_pickup_ghost/proc/animate_towards(atom/target)
 	var/new_pixel_x = pixel_x + (target.x - src.x) * 32

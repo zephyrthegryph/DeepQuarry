@@ -1047,7 +1047,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(!canface())
 		return FALSE
 	if(pixel_y <= (default_pixel_y + 16))
-		pixel_y++
+		set_pixel_y(pixel_y + 1)
 		set_is_shifted(TRUE)
 
 /mob/verb/shiftsouth()
@@ -1055,7 +1055,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(!canface())
 		return FALSE
 	if(pixel_y >= (default_pixel_y - 16))
-		pixel_y--
+		set_pixel_y(pixel_y - 1)
 		set_is_shifted(TRUE)
 
 /mob/verb/shiftwest()
@@ -1063,7 +1063,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(!canface())
 		return FALSE
 	if(pixel_x >= (default_pixel_x - 16))
-		pixel_x--
+		set_pixel_x(pixel_x - 1)
 		set_is_shifted(TRUE)
 
 /mob/verb/shifteast()
@@ -1071,7 +1071,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(!canface())
 		return FALSE
 	if(pixel_x <= (default_pixel_x + 16))
-		pixel_x++
+		set_pixel_x(pixel_x + 1)
 		set_is_shifted(TRUE)
 
 /mob/verb/planeup()
@@ -1081,10 +1081,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(plane >= MOB_PLANE + 3)	//Don't bother going too high!
 		return
 	if(layer == MOB_LAYER)	//Become higher
-		layer = ABOVE_MOB_LAYER
-	plane += 1		//Increase the plane
+		set_layer(ABOVE_MOB_LAYER)
+	set_plane(plane + 1)		//Increase the plane
 	if(plane == MOB_PLANE)	//Return to normal
-		layer = MOB_LAYER
+		set_layer(MOB_LAYER)
 	set_is_shifted(TRUE)
 
 /mob/verb/planedown()
@@ -1094,10 +1094,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(plane <= MOB_PLANE - 3)	//Don't bother going too low!
 		return
 	if(layer == MOB_LAYER)	//Become lower
-		layer = BELOW_MOB_LAYER
-	plane -= 1		//Decrease the plane
+		set_layer(BELOW_MOB_LAYER)
+	set_plane(plane - 1)		//Decrease the plane
 	if(plane == MOB_PLANE)	//Return to normal
-		layer = MOB_LAYER
+		set_layer(MOB_LAYER)
 	set_is_shifted(TRUE)
 
 // End VOREstation edit

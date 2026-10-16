@@ -20,11 +20,11 @@
 	using.name = "radio"
 	using.set_dir(SOUTHWEST)
 	using.set_icon(HUD.ui_style)
-	using.color = HUD.ui_color
-	using.alpha = HUD.ui_alpha
+	using.set_color(HUD.ui_color)
+	using.set_alpha(HUD.ui_alpha)
 	using.set_icon_state("radio")
 	using.screen_loc = ui_borg_radio
-	using.layer = HUD_LAYER
+	using.set_layer(HUD_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Module select
@@ -33,11 +33,11 @@
 	using.name = "module1"
 	using.set_dir(SOUTHWEST)
 	using.set_icon(HUD.ui_style)
-	using.color = HUD.ui_color
-	using.alpha = HUD.ui_alpha
+	using.set_color(HUD.ui_color)
+	using.set_alpha(HUD.ui_alpha)
 	using.set_icon_state("inv1")
 	using.screen_loc = ui_inv1
-	using.layer = HUD_LAYER
+	using.set_layer(HUD_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(src, nameof(inv1), using)
 
@@ -45,11 +45,11 @@
 	using.name = "module2"
 	using.set_dir(SOUTHWEST)
 	using.set_icon(HUD.ui_style)
-	using.color = HUD.ui_color
-	using.alpha = HUD.ui_alpha
+	using.set_color(HUD.ui_color)
+	using.set_alpha(HUD.ui_alpha)
 	using.set_icon_state("inv2")
 	using.screen_loc = ui_inv2
-	using.layer = HUD_LAYER
+	using.set_layer(HUD_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(src, nameof(inv2), using)
 
@@ -57,11 +57,11 @@
 	using.name = "module3"
 	using.set_dir(SOUTHWEST)
 	using.set_icon(HUD.ui_style)
-	using.color = HUD.ui_color
-	using.alpha = HUD.ui_alpha
+	using.set_color(HUD.ui_color)
+	using.set_alpha(HUD.ui_alpha)
 	using.set_icon_state("inv3")
 	using.screen_loc = ui_inv3
-	using.layer = HUD_LAYER
+	using.set_layer(HUD_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(src, nameof(inv3), using)
 
@@ -71,8 +71,8 @@
 	using = HUD.make_combat_mode_button(src, "help", "harm")
 	using.set_dir(SOUTHWEST)
 	using.set_icon(HUD.ui_style)
-	using.alpha = HUD.ui_alpha
-	using.layer = HUD_LAYER
+	using.set_alpha(HUD.ui_alpha)
+	using.set_layer(HUD_LAYER)
 
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()
@@ -80,8 +80,8 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state((m_intent == I_RUN ? "running" : "walking"))
 	using.screen_loc = ui_movi
-	using.color = HUD.ui_color
-	using.alpha = HUD.ui_alpha
+	using.set_color(HUD.ui_color)
+	using.set_alpha(HUD.ui_alpha)
 	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(HUD, nameof(HUD.move_intent), using)
 
@@ -147,9 +147,9 @@
 	using.name = "panel"
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state("panel")
-	using.alpha = HUD.ui_alpha
+	using.set_alpha(HUD.ui_alpha)
 	using.screen_loc = ui_borg_panel
-	using.layer = HUD_LAYER-0.01
+	using.set_layer(HUD_LAYER-0.01)
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Store
@@ -166,8 +166,8 @@
 	robot_inventory.name = "inventory"
 	robot_inventory.set_icon(HUD.ui_style)
 	robot_inventory.set_icon_state("inventory")
-	robot_inventory.alpha = HUD.ui_alpha
-	robot_inventory.color = HUD.ui_color
+	robot_inventory.set_alpha(HUD.ui_alpha)
+	robot_inventory.set_color(HUD.ui_color)
 	robot_inventory.screen_loc = ui_borg_inventory
 	rel_add(HUD, nameof(HUD.other), robot_inventory)
 
@@ -212,8 +212,8 @@
 			using.name = "control_vtec"
 			using.set_icon(HUD.ui_style)
 			using.screen_loc = ui_vtec_control
-			using.color = HUD.ui_color
-			using.alpha = HUD.ui_alpha
+			using.set_color(HUD.ui_color)
+			using.set_alpha(HUD.ui_alpha)
 			if(speed == 0)
 				using.set_icon_state("speed_0")
 			else if(speed == -0.5)
@@ -235,8 +235,8 @@
 		using.name = "control_vtec"
 		using.set_icon(ui_style)
 		using.screen_loc = ui_vtec_control
-		using.color = ui_color
-		using.alpha = ui_alpha
+		using.set_color(ui_color)
+		using.set_alpha(ui_alpha)
 		rel_set(src, nameof(control_vtec), using)
 	if(R.vtec_active)
 		if(R.speed == 0)

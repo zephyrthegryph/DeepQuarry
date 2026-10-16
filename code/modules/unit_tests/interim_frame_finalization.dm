@@ -10,8 +10,8 @@
 	var/obj/item/stack/cable_coil/cable = allocate(/obj/item/stack/cable_coil, T, 6)
 	var/obj/item/tool/screwdriver/tool = allocate(/obj/item/tool/screwdriver, T)
 	frame.set_bulk_material(MAT_STEEL, 123)
-	frame.pixel_x = 3
-	frame.pixel_y = -4
+	frame.set_pixel_x(3)
+	frame.set_pixel_y(-4)
 	TEST_ASSERT(interim_native_frame_step(frame, actor, "construction.build:machine_frame_placed.anchor"), "Fixture anchoring must succeed")
 	TEST_ASSERT(interim_native_frame_step(frame, actor, "construction.build:machine_frame_board_in.insert_board", board), "Fixture board insertion must succeed")
 	TEST_ASSERT(interim_native_frame_step(frame, actor, "construction.build:machine_frame_fastened.fasten_board"), "Fixture board fastening must succeed")

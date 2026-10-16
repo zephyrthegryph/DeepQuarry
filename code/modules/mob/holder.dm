@@ -409,7 +409,7 @@ CAPABILITIES(/obj/item/holder/fish)
 	overlays.Cut()
 	if(M.item_state)
 		set_item_state(M.item_state)
-	color = M.color
+	set_color(M.color)
 	name = M.name
 	desc = M.desc
 	overlays |= M.overlays

@@ -203,7 +203,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 	SetName(pref.read_preference(/datum/preference/text/pai_name))
 	bio.flavor_text = pref.read_preference(/datum/preference/text/pai_description)
 	change_chassis(pref.read_preference(/datum/preference/text/pai_chassis))
-	gender = pref.read_preference(/datum/preference/choiced/gender/biological) // Cannot use identifying yet due to byond limits
+	set_gender(pref.read_preference(/datum/preference/choiced/gender/biological)) // Cannot use identifying yet due to byond limits
 	set_eye_color(pref.read_preference(/datum/preference/color/pai_eye_color))
 	card.screen_color = eye_color
 	card.setEmotion(GLOB.pai_emotions[pref.read_preference(/datum/preference/text/pai_emotion)])
@@ -284,9 +284,9 @@ CAPABILITIES(/mob/living/silicon/pai)
 	var/oursize = size_multiplier
 	resize(1, FALSE, TRUE, TRUE, FALSE)
 
-	pixel_x = chassis_data.pixel_x
+	set_pixel_x(chassis_data.pixel_x)
 	set_default_pixel_x(pixel_x)
-	pixel_y = chassis_data.pixel_y
+	set_pixel_y(chassis_data.pixel_y)
 	set_default_pixel_y(pixel_y)
 	set_vis_height(chassis_data.vis_height)
 
@@ -612,14 +612,14 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 
 /// The eye overlay: tinted with the eye colour, glowing above the lighting unless hidden or switched off.
 /mob/living/silicon/pai/proc/pai_eyes_image(eyes_icon, eyes_state)
-	return look_overlay_image(eyes_icon, eyes_state, plane = (eye_glow && !hide_glow) ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = eye_color, appearance_flags = read_once(appearance_flags))
+	return look_overlay_image(eyes_icon, eyes_state, plane = (eye_glow && !hide_glow) ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = eye_color, appearance_flags = appearance_flags)
 
 /// A projection wider or taller than one tile moves the mob and its height to fit it (once, when the projection changes).
 /mob/living/silicon/pai/proc/fit_holo_projection()
 	if(!holo_icon_south || !SSpai.chassis_data(chassis_name).holo_projector)
 		return
 	if(holo_icon_south.Width() > 32)
-		pixel_x = -16
+		set_pixel_x(-16)
 		set_default_pixel_x(-16)
 	if(holo_icon_south.Height() > 32)
 		set_vis_height(64)

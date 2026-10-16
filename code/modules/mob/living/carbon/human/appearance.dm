@@ -26,7 +26,7 @@
 	if(src.gender == gender)
 		return
 
-	src.gender = gender
+	set_gender(gender)
 	// reset_hair() // Remove - Don't just randomize hair on gender swaps for prometheans.
 	update_dna()
 	return 1

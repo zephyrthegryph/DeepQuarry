@@ -42,7 +42,7 @@
 			B.set_escapable(initial(B.escapable))
 
 		cut_overlays()
-		alpha = initial(alpha)
+		set_alpha(initial(alpha))
 		set_invisibility(initial(invisibility))
 		see_invisible = initial(see_invisible)
 		set_incorporeal_move(initial(incorporeal_move))
@@ -127,7 +127,7 @@
 		B.set_escapable(initial(B.escapable))
 
 	cut_overlays()
-	alpha = initial(alpha)
+	set_alpha(initial(alpha))
 	set_invisibility(initial(invisibility))
 	see_invisible = initial(see_invisible)
 	set_incorporeal_move(initial(incorporeal_move))
@@ -145,7 +145,7 @@
 /mob/living/simple_mob/vore/demon/proc/demon_phased_out(original_canmove)
 	set_invisibility(INVISIBILITY_LEVEL_TWO)
 	see_invisible = INVISIBILITY_LEVEL_TWO
-	alpha = 127
+	set_alpha(127)
 
 	set_is_shifting(FALSE)
 	set_canmove(original_canmove)
@@ -314,7 +314,7 @@
 		B.set_escapable(initial(B.escapable))
 
 	cut_overlays()
-	alpha = initial(alpha)
+	set_alpha(initial(alpha))
 	set_invisibility(initial(invisibility))
 	see_invisible = initial(see_invisible)
 	set_incorporeal_move(initial(incorporeal_move))

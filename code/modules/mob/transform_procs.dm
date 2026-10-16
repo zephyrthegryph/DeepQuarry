@@ -160,7 +160,7 @@
 
 	var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(loc)
 
-	O.gender = gender
+	O.set_gender(gender)
 	O.set_invisibility(INVISIBILITY_NONE)
 
 	if(move_player(src, O, "robotized"))

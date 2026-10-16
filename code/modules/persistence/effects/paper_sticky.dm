@@ -8,13 +8,13 @@
 	if(paper)
 		// add - sometimes they fall off
 		if(prob(90))
-			paper.pixel_x = token["offset_x"]
-			paper.pixel_y = token["offset_y"]
+			paper.set_pixel_x(token["offset_x"])
+			paper.set_pixel_y(token["offset_y"])
 		else
-			paper.pixel_x = rand(-5,5)
-			paper.pixel_y = rand(-5,5)
+			paper.set_pixel_x(rand(-5,5))
+			paper.set_pixel_y(rand(-5,5))
 		// add end
-		paper.color =   token["color"]
+		paper.set_color(token["color"])
 	return paper
 
 /datum/persistent/paper/sticky/CompileEntry(atom/entry, write_file)

@@ -64,7 +64,7 @@ CAPABILITIES(/datum/cogbar)
 		alpha = 0,
 	)
 	rel_set(src, nameof(cog), cog)
-	cog.pixel_y = ICON_SIZE_Y + offset_y
+	cog.set_pixel_y(ICON_SIZE_Y + offset_y)
 	animate(cog, alpha = user().alpha, time = COGBAR_ANIMATION_TIME)
 
 	if(isnull(user_client()))

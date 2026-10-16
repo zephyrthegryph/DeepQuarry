@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/uv_light)
 			var/atom/O = resolve_handle(object_handle)
 			if(!O)
 				continue
-			O.alpha = LAZYACCESS(stored_alpha, object_handle)
+			O.set_alpha(LAZYACCESS(stored_alpha, object_handle))
 			if(dq_get_fluorescent(O) == 2) dq_set_fluorescent(O, 1)
 		LAZYCLEARLIST(stored_alpha)
 	if(length(reset_objects))
@@ -76,7 +76,7 @@ CAPABILITIES(/obj/item/uv_light)
 						set_scanned_at(entity_handle(A), A.invisibility)
 						A.set_invisibility(INVISIBILITY_NONE)
 						LAZYSET(stored_alpha, entity_handle(A), A.alpha)
-						A.alpha = use_alpha
+						A.set_alpha(use_alpha)
 					if(istype(A, /obj/item))
 						var/obj/item/O = A
 						if(dq_get_was_bloodied(O) && !(O.blood_overlay in O.overlays))

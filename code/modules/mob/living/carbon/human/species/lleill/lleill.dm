@@ -154,7 +154,7 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 /datum/species/lleill/get_blood_mask(mob/living/carbon/human/H)
 	if(!H) return ..()
 	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
-	if(!S || read_once(S.name == src.name))
+	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_blood_mask(H)
 

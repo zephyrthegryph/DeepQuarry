@@ -210,7 +210,7 @@ CAPABILITIES(/obj/item/organ/internal/intestine/horror)
 			for(var/i = 0 to spiders_to_spawn)
 				var/obj/effect/spider/spiderling/non_growing/horror/spider = new /obj/effect/spider/spiderling/non_growing/horror(T)
 				spider.faction = owner.faction
-				spider.color = "[owner.species.blood_color]"
+				spider.set_color("[owner.species.blood_color]")
 				spider.name = "writhing tendril mass"
 				spider.desc = "A small, writhing mass of flesh and tendrils."
 

@@ -362,9 +362,9 @@ CAPABILITIES(/mob/living/bot/mulebot)
 		return
 	move_into(src, nameof(src.load), C)
 
-	C.pixel_y += 9
+	C.set_pixel_y(C.pixel_y + 9)
 	if(C.layer < layer)
-		C.layer = layer + 0.1
+		C.set_layer(layer + 0.1)
 	add_overlay(C)
 
 /mob/living/bot/mulebot/proc/unload(dirn = 0)
@@ -387,8 +387,8 @@ CAPABILITIES(/mob/living/bot/mulebot)
 			continue
 
 		AM.forceMove(loc)
-		AM.layer = initial(AM.layer)
-		AM.pixel_y = initial(AM.pixel_y)
+		AM.set_layer(initial(AM.layer))
+		AM.set_pixel_y(initial(AM.pixel_y))
 
 #undef MULE_IDLE
 #undef MULE_MOVING

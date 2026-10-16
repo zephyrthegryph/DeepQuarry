@@ -1,1 +1,5 @@
+/mob/living/simple_mob/vore/morph ghostjoin=1 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/morph ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
+/mob/living/simple_mob/vore/morph has_eye_glow=1 +overlay: icons/mob/animal_vr.dmi:new_morph-eyes:7
+/mob/living/simple_mob/vore/morph has_eye_glow=2 +overlay: icons/mob/animal_vr.dmi:new_morph-eyes:7
 

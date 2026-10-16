@@ -146,7 +146,7 @@
 	return S.get_tail_hair(H)
 
 /datum/species/protean/get_blood_mask(mob/living/carbon/human/H)
-	if(!H || read_once(base_species == name)) return ..()
+	if(!H || base_species == name) return ..()
 	var/datum/species/S = GLOB.all_species[base_species]
 	return S.get_blood_mask(H)
 

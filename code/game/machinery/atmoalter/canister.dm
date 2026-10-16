@@ -318,7 +318,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 	material_liner_integrity = 100
 	material_assembly(src).liner_integrity = 100
 	name = "[liner.display_name]-lined [initial(name)]"
-	color = liner.icon_colour
+	set_color(liner.icon_colour)
 	to_chat(A.actor, span_notice("You install a [liner.display_name] pressure liner in [src]."))
 	return OP_OK
 

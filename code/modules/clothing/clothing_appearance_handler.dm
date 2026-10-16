@@ -58,7 +58,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/clothing_appearance_handler)
  *   - addblend compositing
  */
 /datum/clothing_appearance_handler/proc/build_mob_overlay(obj/item/clothing/accessory/acc)
-	if(!istype(acc.loc, /obj/item/clothing))
+	var/obj/item/clothing/attached_to = acc.has_suit // the garment it is attached to: a relation, so the picture follows its sleeves
+	if(!istype(attached_to))
 		return null
 
 	var/tmp_icon_state = acc.overlay_state ? "[acc.overlay_state]" : "[acc.icon_state]"
@@ -68,11 +69,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/clothing_appearance_handler)
 		H = acc.has_suit().loc
 
 	// Adjust icon state for rolled/unrolled jumpsuit sleeves
-	if(H && istype(acc.loc, /obj/item/clothing/under))
-		var/obj/item/clothing/under/C = acc.loc
-		if(LAZYACCESS(acc.on_rolled, "down") && read_once(C.rolled_down) > 0)
+	if(H && istype(attached_to, /obj/item/clothing/under))
+		var/obj/item/clothing/under/C = attached_to
+		if(LAZYACCESS(acc.on_rolled, "down") && C.rolled_down > 0)
 			tmp_icon_state = acc.on_rolled["down"]
-		else if(LAZYACCESS(acc.on_rolled, "rolled") && read_once(C.rolled_sleeves) > 0)
+		else if(LAZYACCESS(acc.on_rolled, "rolled") && C.rolled_sleeves > 0)
 			tmp_icon_state = acc.on_rolled["rolled"]
 
 	var/image/result
@@ -88,14 +89,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/clothing_appearance_handler)
 	if(acc.addblends)
 		var/icon/base = new/icon(icon = result.icon, icon_state = result.icon_state)
 		var/icon/addblend_icon = new/icon(icon = result.icon, icon_state = acc.addblends)
-		if(read_once(acc.color))
-			base.Blend(read_once(acc.color), ICON_MULTIPLY)
+		if(acc.color)
+			base.Blend(acc.color, ICON_MULTIPLY)
 		base.Blend(addblend_icon, ICON_ADD)
 		result = image(base)
 	else
-		result.color = read_once(acc.color)
+		result.color = acc.color
 
-	result.appearance_flags = read_once(acc.appearance_flags)
+	result.appearance_flags = acc.appearance_flags
 	return result
 
 /*

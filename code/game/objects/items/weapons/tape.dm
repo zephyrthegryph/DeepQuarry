@@ -218,15 +218,15 @@ CAPABILITIES(/obj/item/ducttape)
 	if(params)
 		var/list/mouse_control = params2list(params)
 		if(mouse_control["icon-x"])
-			pixel_x = text2num(mouse_control["icon-x"]) - 16
+			set_pixel_x(text2num(mouse_control["icon-x"]) - 16)
 			if(dir_offset & EAST)
-				pixel_x += 32
+				set_pixel_x(pixel_x + 32)
 			else if(dir_offset & WEST)
-				pixel_x -= 32
+				set_pixel_x(pixel_x - 32)
 		if(mouse_control["icon-y"])
-			pixel_y = text2num(mouse_control["icon-y"]) - 16
+			set_pixel_y(text2num(mouse_control["icon-y"]) - 16)
 			if(dir_offset & NORTH)
-				pixel_y += 32
+				set_pixel_y(pixel_y + 32)
 			else if(dir_offset & SOUTH)
-				pixel_y -= 32
+				set_pixel_y(pixel_y - 32)
 

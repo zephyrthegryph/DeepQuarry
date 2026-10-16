@@ -92,7 +92,7 @@
 		if (dirt > 50)
 			if (!dirtoverlay)
 				dirtoverlay = new/obj/effect/decal/cleanable/dirt(src)
-			dirtoverlay.alpha = min((dirt - 50) * 5, 255)
+			dirtoverlay.set_alpha(min((dirt - 50) * 5, 255))
 
 /turf/simulated/Entered(atom/A, atom/OL)
 	var/dirtslip = FALSE

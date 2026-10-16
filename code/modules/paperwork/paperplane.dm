@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/paperplane)
 /obj/item/paperplane/proc/fold_from(obj/item/paper/newPaper)
 	if(newPaper)
 		flags = newPaper.flags
-		color = newPaper.color
+		set_color(newPaper.color)
 		if(isstorage(newPaper.loc))
 			var/obj/item/storage/S = newPaper.loc
 			S.remove_from_storage(newPaper, src)

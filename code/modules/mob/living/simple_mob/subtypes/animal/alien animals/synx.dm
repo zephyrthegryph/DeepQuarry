@@ -410,8 +410,8 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 		to_chat(src,span_notice("You have stopped hiding."))
 	else
 		set_status_flags(status_flags | HIDING)
-		layer = HIDING_LAYER //Just above cables with their 2.44
-		plane = OBJ_PLANE
+		set_layer(HIDING_LAYER) //Just above cables with their 2.44
+		set_plane(OBJ_PLANE)
 		to_chat(src,span_notice("You are now hiding."))
 
 /mob/living/simple_mob/animal/synx/proc/disguise()

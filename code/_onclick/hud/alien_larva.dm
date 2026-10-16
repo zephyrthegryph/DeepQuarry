@@ -11,7 +11,7 @@
 	using.set_icon(HUD.ui_style)
 	using.set_icon_state((m_intent == I_RUN ? "running" : "walking"))
 	using.screen_loc = ui_acti
-	using.layer = HUD_LAYER
+	using.set_layer(HUD_LAYER)
 	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(HUD, nameof(HUD.move_intent), using) // owned by HUD.adding
 

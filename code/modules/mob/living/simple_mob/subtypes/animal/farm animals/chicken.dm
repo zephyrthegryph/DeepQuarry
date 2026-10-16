@@ -71,8 +71,8 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/chicken)
 		act_message(src, null, null, MSG_OTHERS("%U% [pick("lays an egg.","squats down and croons.","begins making a huge racket.","begins clucking raucously.")]"))
 		src.eggsleft--
 		var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(src))
-		E.pixel_x = rand(-6,6)
-		E.pixel_y = rand(-6,6)
+		E.set_pixel_x(rand(-6,6))
+		E.set_pixel_y(rand(-6,6))
 		if(REGISTRY_COUNT(REGISTRY_CHICKENS) < GLOB.MAX_CHICKENS && prob(10))
 			E.set_growing(TRUE)
 

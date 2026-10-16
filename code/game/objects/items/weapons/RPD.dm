@@ -307,7 +307,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	P.update()
 	P.add_fingerprint(user)
 	if(R.paintable)
-		P.color = GLOB.pipe_colors[paint_color]
+		P.set_color(GLOB.pipe_colors[paint_color])
 	P.setPipingLayer(queued_piping_layer)
 	if(queued_p_flipped)
 		P.do_a_flip()

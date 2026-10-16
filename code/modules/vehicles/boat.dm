@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/oar)
 	if(!material())
 		spent(src)
 		return
-	color = material().icon_colour
+	set_color(material().icon_colour)
 
 CAPABILITIES(/obj/vehicle/boat)
 	owns_one(nameof(riding_datum), /datum/riding, starts = nameof(riding_datum_type))
@@ -85,7 +85,7 @@ TYPE_TABLE_DECLARE(/obj/vehicle/boat, boat_forced_material, null)
 	if(!material())
 		spent(src)
 		return
-	color = material().icon_colour
+	set_color(material().icon_colour)
 
 // Boarding.
 

@@ -44,7 +44,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 
 /proc/jps_wipe_colors_now(list/turf/turfs)
 	for(var/turf/T in turfs)
-		T.color = null
+		T.set_color(null)
 		T.maptext = null
 		// lol just cut all this is a debug proc anyways
 		T.overlays.len = 0

@@ -619,13 +619,13 @@ sparse(/mob/living, vomiting, type = bool)
 				set_lying(FALSE)
 				set_canmove(TRUE)
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
-					pixel_y = V.mob_offset_y - 5
+					set_pixel_y(V.mob_offset_y - 5)
 			else
 				if(buckled.buckle_lying != -1)
 					set_lying(buckled.buckle_lying)
 				set_canmove(TRUE)
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
-					pixel_y = V.mob_offset_y
+					set_pixel_y(V.mob_offset_y)
 		else if(buckled)
 			set_anchored(TRUE)
 			set_canmove(TRUE) //The line above already makes the chair not swooce away if the sitter presses a button. No need to incapacitate them as a criminally large amount of mechanics read this var as a type of stun.

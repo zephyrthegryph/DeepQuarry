@@ -68,7 +68,7 @@
 /mob/living/silicon/pai/proc/pai_gender_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	gender = A.answer.value
+	set_gender(A.answer.value)
 
 /mob/living/silicon/pai/verb/pai_hide()
 	set name = "Hide"

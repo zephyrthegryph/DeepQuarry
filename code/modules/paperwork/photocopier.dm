@@ -349,8 +349,8 @@ CAPABILITIES(/obj/machinery/photocopier)
 		return
 	var/obj/item/photo/p = new /obj/item/photo (loc)
 	p.desc = "You see [sitter]'s ass on the photo."
-	p.pixel_x = rand(-10, 10)
-	p.pixel_y = rand(-10, 10)
+	p.set_pixel_x(rand(-10, 10))
+	p.set_pixel_y(rand(-10, 10))
 	p.set_img(temp_img)
 	p.set_drop_sound('sound/items/drop/paper.ogg')
 	var/icon/small_img = icon(temp_img) // Icon() is needed or else temp_img will be rescaled too >.>
@@ -386,8 +386,8 @@ CAPABILITIES(/obj/machinery/photocopier)
 
 	p.forceMove(src.loc)
 	p.name = bundle.name
-	p.pixel_y = rand(-8, 8)
-	p.pixel_x = rand(-9, 9)
+	p.set_pixel_y(rand(-8, 8))
+	p.set_pixel_x(rand(-9, 9))
 	return p
 
 // Rykka

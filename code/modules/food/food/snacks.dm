@@ -1820,7 +1820,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 	desc = "Just add water!"
 	to_chat(user, "You unwrap the cube.")
 	set_wrapped(FALSE)
-	flags |= OPENCONTAINER
+	set_open_by_flag(TRUE)
 	return
 
 /obj/item/reagent_containers/food/snacks/monkeycube/On_Consume(mob/M)
@@ -3847,6 +3847,7 @@ CAPABILITIES(/obj/item/pizzabox)
 		needs(req(PROC_REF(is_open))), then(PROC_REF(pizza_put_in)))
 	op("write_tag", item(/obj/item/pen), priority(OP_PRIORITY_PART), when(req(PROC_REF(is_shut))), label("Write on the tag"),
 		asks(/datum/prompt/text, fields = list("question" = "Enter what you want to add to the tag:", "title" = "Write", "max_len" = 30)), then(PROC_REF(tag_written)))
+	examine_line(PROC_REF(pizza_text))
 
 MSG_DEF_SELF(pizzabox/stacked, "It is under a stack of boxes.")
 MSG_DEF_SELF(pizzabox/close_first, "Close the box first!")
@@ -3863,7 +3864,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 
 	// Set appropriate description
 	if(open && pizza)
-		look.identity(desc = "A box suited for pizzas. It appears to have a [read_once(pizza.name)] inside.") // a name written on the pizza is sampled when the box redraws
+		look.identity(desc = "A box suited for pizzas. It appears to have a pizza inside.")
 	else if(stacked > 0)
 		var/stack_desc = "A pile of boxes suited for pizzas. There appears to be [stacked + 1] boxes in the pile."
 		var/toptag = topbox.boxtag
@@ -3887,6 +3888,12 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	if(tagged)
 		look.overlay(look_overlay_image('icons/obj/food.dmi', "pizzabox_tag", pixel_y = stacked * 3))
 	look.state("pizzabox[stacked + 1]")
+
+/// Which pizza an open box holds, asked when it is examined (a name is not a tracked read, so it is not part of the look).
+/obj/item/pizzabox/proc/pizza_text(datum/act/A)
+	if(!open || !pizza)
+		return null
+	return "The pizza inside is a [read_once(pizza.name)]."
 
 /// A stack stays shut.
 /obj/item/pizzabox/proc/not_stacked(datum/act/op/A)
@@ -4702,7 +4709,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 	if (!flat_icon)
 		flat_icon = getFlatIcon(src)
 	var/icon/I = flat_icon
-	color = "#FFFFFF" //Some fruits use the color var. Reset this so it doesnt tint the batter
+	set_color("#FFFFFF") //Some fruits use the color var. Reset this so it doesnt tint the batter
 	I.Blend(new /icon('icons/obj/food_custom.dmi', rgb(255,255,255)),ICON_ADD)
 	I.Blend(new /icon('icons/obj/food_custom.dmi', coating().icon_raw),ICON_MULTIPLY)
 	var/image/J = image(I)
@@ -4734,7 +4741,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 		if (!flat_icon)
 			flat_icon = getFlatIcon(src)
 		var/icon/I = flat_icon
-		color = "#FFFFFF" //Some fruits use the color var
+		set_color("#FFFFFF") //Some fruits use the color var
 		I.Blend(new /icon('icons/obj/food_custom.dmi', rgb(255,255,255)),ICON_ADD)
 		I.Blend(new /icon('icons/obj/food_custom.dmi', coating().icon_cooked),ICON_MULTIPLY)
 		var/image/J = image(I)

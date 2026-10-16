@@ -944,7 +944,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 	if(LAZYLEN(item_desc))
 		newitem.desc = item_desc
 	if(item_color)
-		newitem.color = item_color
+		newitem.set_color(item_color)
 	sentient_prize.tf_into(newitem, TRUE, item_name)
 
 /obj/machinery/casinosentientprize_handler/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user, buystate)

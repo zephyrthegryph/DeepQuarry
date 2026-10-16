@@ -118,7 +118,7 @@
 	if(output_envelope > 1)
 		projectile.damage *= output_envelope
 		projectile.set_armor_penetration(combat_of(projectile).armor_penetration + (round((output_envelope - 1) * 20)))
-		projectile.color = "#88ddff"
+		projectile.set_color("#88ddff")
 	return projectile
 
 MSG_DEF_SELF(energy_gun/no_port, span_notice("%T% does not have a battery port."))

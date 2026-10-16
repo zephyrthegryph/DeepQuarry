@@ -39,7 +39,7 @@
 /datum/gear/cosmetic/nailpolish/spawn_item(location, metadata)
 	var/obj/item/nailpolish/polish = ..()
 	polish.set_colour(polish.color)
-	polish.color = null
+	polish.set_color(null)
 	return polish
 
 /datum/gear/cosmetic/nailpolish_remover

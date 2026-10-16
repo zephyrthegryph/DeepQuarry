@@ -251,8 +251,8 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 			rel_set(src, nameof(middle), part)
 		if(count <= 3) // Their sprite is the top part of the generator
 			part.set_density(FALSE)
-			part.plane = MOB_PLANE
-			part.layer = ABOVE_MOB_LAYER
+			part.set_plane(MOB_PLANE)
+			part.set_layer(ABOVE_MOB_LAYER)
 		part.set_sprite_number(count)
 		rel_set(part, nameof(part.main_part), src)
 		rel_add(src, nameof(parts), part)

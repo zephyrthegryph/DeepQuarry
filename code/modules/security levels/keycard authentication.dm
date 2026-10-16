@@ -41,8 +41,8 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 	board.forceMove(frame)
 	own_move(board, frame, nameof(frame.circuit)) // the board goes from this machine to the frame
 	frame.need_circuit = FALSE
-	frame.pixel_x = pixel_x
-	frame.pixel_y = pixel_y
+	frame.set_pixel_x(pixel_x)
+	frame.set_pixel_y(pixel_y)
 	frame.set_dir(dir)
 	frame.set_anchored(TRUE)
 	latent_materialize_all() // a walk needs real things (C5)

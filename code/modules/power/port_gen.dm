@@ -810,12 +810,12 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 
 /obj/machinery/power/rtg/reg/user_buckle_mob(mob/living/M, mob/user, forced = FALSE, silent = TRUE)
 	. = ..()
-	M.pixel_y = 8
+	M.set_pixel_y(8)
 	act_message(M, src, others = span_notice("%U%, hops up onto %T% and begins running!"))
 
 /obj/machinery/power/rtg/reg/unbuckle_mob(mob/living/buckled_mob, force = FALSE)
 	. = ..()
-	buckled_mob.pixel_y = buckled_mob.default_pixel_y
+	buckled_mob.set_pixel_y(buckled_mob.default_pixel_y)
 
 /obj/machinery/power/rtg/reg/RefreshParts()
 	part_mult = total_component_rating_of_type(/obj/item/stock_parts)

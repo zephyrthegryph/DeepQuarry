@@ -367,7 +367,7 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental/fire)
 	var/obj/effect/effect/smoke/smoke = new smoke_type(src.get_location())
 	src.total_smoke++
 	if(color_override)
-		smoke.color = color_override
+		smoke.set_color(color_override)
 	var/direction = src.direction
 	if(!direction)
 		if(src.cardinals)
@@ -606,7 +606,7 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental/fire)
 
 /datum/effect/effect/system/teleport_greyscale/start()
 	var/obj/effect/effect/teleport_greyscale/tele = new /obj/effect/effect/teleport_greyscale(src.get_location())
-	tele.color = color
+	tele.set_color(color)
 
 
 /////////////////////////////////////////////
@@ -650,7 +650,7 @@ CAPABILITIES(/obj/effect/effect/confetti)
 	var/obj/effect/effect/confetti/confetti = new confetti_type(src.get_location())
 	src.total_confetti++
 	if(color_override)
-		confetti.color = color_override
+		confetti.set_color(color_override)
 	var/direction = src.direction
 	if(!direction)
 		if(src.cardinals)

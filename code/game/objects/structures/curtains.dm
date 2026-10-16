@@ -31,12 +31,12 @@
 	set_opacity(!opacity)
 	if(opacity)
 		set_icon_state("closed")
-		plane = MOB_PLANE
-		layer = ABOVE_MOB_LAYER
+		set_plane(MOB_PLANE)
+		set_layer(ABOVE_MOB_LAYER)
 	else
 		set_icon_state("open")
-		plane = OBJ_PLANE
-		layer = OBJ_LAYER
+		set_plane(OBJ_PLANE)
+		set_layer(OBJ_LAYER)
 
 MSG_DEF_SELF(curtain/cutting, "You start to cut the shower curtains.")
 MSG_DEF_SELF(curtain/cut, "You cut the shower curtains.")

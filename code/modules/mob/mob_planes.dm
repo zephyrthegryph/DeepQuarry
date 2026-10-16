@@ -125,7 +125,7 @@ CAPABILITIES(/datum/plane_holder)
 		desired_alpha = new_alpha
 		tracked_changed(src, nameof(desired_alpha))
 		if(alpha) //If we're already visible, update it now.
-			alpha = new_alpha
+			set_alpha(new_alpha)
 
 /atom/movable/screen/plane_master/proc/set_visibility(want = FALSE)
 	//Invisibility-managed
@@ -137,16 +137,16 @@ CAPABILITIES(/datum/plane_holder)
 	//Alpha-managed
 	else
 		if(want && !alpha)
-			alpha = desired_alpha
+			set_alpha(desired_alpha)
 			mouse_opacity = 1 //Not bool, don't replace with true/false
 		else if(!want && alpha)
-			alpha = 0
+			set_alpha(0)
 			mouse_opacity = 0
 
-/atom/movable/screen/plane_master/proc/set_alpha(new_alpha = 255)
+/atom/movable/screen/plane_master/set_alpha(new_alpha = 255)
 	if(new_alpha != alpha)
 		new_alpha = sanitize_integer(new_alpha, 0, 255, 255)
-		alpha = new_alpha
+		return ..(new_alpha)
 
 /atom/movable/screen/plane_master/proc/set_ambient_occlusion(enabled = FALSE)
 	filters -= AMBIENT_OCCLUSION

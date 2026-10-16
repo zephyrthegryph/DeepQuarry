@@ -139,7 +139,7 @@ CAPABILITIES(/loot/unit_test/parent/child)
 /datum/unit_test/dq_sys_resolver_varedits/Run()
 	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench)
 	W.name = "edited wrench"
-	W.pixel_y = 7
+	W.set_pixel_y(7)
 	var/list/edits = map_varedits_of(W)
 	TEST_ASSERT_EQUAL(edits?["name"], "edited wrench", "a changed name is an edit")
 	TEST_ASSERT_EQUAL(edits?["pixel_y"], 7, "a changed offset is an edit")

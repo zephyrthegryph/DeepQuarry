@@ -106,7 +106,7 @@
 	SSmotiontracker.ping(src, 80)
 
 	update_canmove()
-	layer = MOB_LAYER
+	set_layer(MOB_LAYER)
 	sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
 	see_in_dark = 8
 	see_invisible = SEE_INVISIBLE_LEVEL_TWO

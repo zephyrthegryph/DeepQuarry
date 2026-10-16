@@ -292,8 +292,8 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	else
 		moved = slot_remove(W, destination, user)
 	if(!moved)
-		W.plane = previous_plane
-		W.layer = previous_layer
+		W.set_plane(previous_plane)
+		W.set_layer(previous_layer)
 		return FALSE
 	if(W.maptext)
 		W.maptext = ""

@@ -137,7 +137,7 @@ CAPABILITIES(/obj/effect/map_effect/beam_point)
 
 	if(length(my_beams)) // Currently on.
 		destroy_all_beams()
-		color = "#FF0000"
+		set_color("#FF0000")
 
 		timer_off_index++
 		if(timer_off_index > off_duration.len)
@@ -147,7 +147,7 @@ CAPABILITIES(/obj/effect/map_effect/beam_point)
 
 	else // Currently off.
 		create_beams()
-		color = "#00FF00"
+		set_color("#00FF00")
 
 		timer_on_index++
 		if(timer_on_index > on_duration.len)

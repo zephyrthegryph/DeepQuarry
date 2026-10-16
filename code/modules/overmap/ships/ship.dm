@@ -207,8 +207,8 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 	if(!isturf(old_loc))
 		position_x = (WORLD_ICON_SIZE/2) + 1
 		position_y = (WORLD_ICON_SIZE/2) + 1
-		pixel_x = 0
-		pixel_y = 0
+		set_pixel_x(0)
+		set_pixel_y(0)
 	position_x = ((loc.x - 1) * WORLD_ICON_SIZE) + MODULUS(position_x, WORLD_ICON_SIZE)
 	position_y = ((loc.y - 1) * WORLD_ICON_SIZE) + MODULUS(position_y, WORLD_ICON_SIZE)
 	update_screen()

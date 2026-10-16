@@ -806,30 +806,30 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 			while(reagents.total_volume)
 				var/obj/item/reagent_containers/pill/P= new(src.loc)
 				P.name = "[r_id]"
-				P.pixel_x = rand(-7, 7) // random position
-				P.pixel_y = rand(-7, 7)
+				P.set_pixel_x(rand(-7, 7)) // random position
+				P.set_pixel_y(rand(-7, 7))
 				P.set_icon_state("pill[pill_icon]")
 				reagents.trans_to_obj(P, min(reagents.total_volume, MAX_UNITS_PER_PILL))
 				if(P.icon_state in list("pill1", "pill2", "pill3", "pill4")) // if using greyscale, take colour from reagent
-					P.color = P.reagents.get_color()
+					P.set_color(P.reagents.get_color())
 
 		if(3) // Patches
 			while(reagents.total_volume)
 				var/obj/item/reagent_containers/pill/patch/P= new(src.loc)
 				P.name = "[r_id]"
-				P.pixel_x = rand(-7, 7) // random position
-				P.pixel_y = rand(-7, 7)
+				P.set_pixel_x(rand(-7, 7)) // random position
+				P.set_pixel_y(rand(-7, 7))
 				P.set_icon_state("patch[patch_icon]")
 				reagents.trans_to_obj(P, min(reagents.total_volume, MAX_UNITS_PER_PATCH))
 				if(P.icon_state in list("patch1", "patch2", "patch3", "patch4")) // if using greyscale, take colour from reagent
-					P.color = P.reagents.get_color()
+					P.set_color(P.reagents.get_color())
 
 		else // Bottles. Official value is 1, but this works as a sanity check.
 			while(reagents.total_volume)
 				var/obj/item/reagent_containers/glass/bottle/B = new(src.loc)
 				B.name = "[r_id] bottle"
-				B.pixel_x = rand(-7, 7) // random position
-				B.pixel_y = rand(-7, 7)
+				B.set_pixel_x(rand(-7, 7)) // random position
+				B.set_pixel_y(rand(-7, 7))
 				B.set_icon_state("bottle-[bottle_icon]")
 				reagents.trans_to_obj(B, min(reagents.total_volume, MAX_UNITS_PER_BOTTLE))
 

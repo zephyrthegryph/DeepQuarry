@@ -1107,7 +1107,7 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 	if(firer) //This neat little code block allows for C O L O R A B L E tongues! Correction: 'Appendages'
 		if(isliving(firer))
 			var/mob/living/originator = firer
-			color = originator.appendage_color
+			set_color(originator.appendage_color)
 	..()
 
 /obj/item/projectile/beam/appendage/on_hit(atom/target)
@@ -1661,8 +1661,8 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 			src.show_message(span_warning("You lay a egg!"))
 			eggs--
 			var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(src))
-			E.pixel_x = rand(-6,6)
-			E.pixel_y = rand(-6,6)
+			E.set_pixel_x(rand(-6,6))
+			E.set_pixel_y(rand(-6,6))
 		return
 	else
 		src.visible_message(span_warning("you dont have any eggs!"))
