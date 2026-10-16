@@ -2,7 +2,7 @@
 
 ## Scope and current proof
 
-The old-code captures are committed in `d99315344b`: 29 fit snapshots (232 rows), 160 acceptance-type snapshots covering all 173 declarations, and one actual native item-override snapshot. The final acceptance/override repair run passed both selectors (`20261015T220049_fcc8559302.json` in the shared old-code capture worktree). Production conversions below have not yet been generated, compiled, tested or stamped; the coordinator owns the exclusive verification slot.
+The old-code captures are committed in `d99315344b`: 29 fit snapshots (232 rows), 160 acceptance-type snapshots covering all 173 declarations, and one actual native item-override snapshot. The final acceptance/override repair run passed both selectors (`20261015T220049_fcc8559302.json` in the shared old-code capture worktree). All conversions below are implemented and have passed generation, production compilation, DreamChecker and ratchets in coordinated gates. Old-code proof is separate from final-code validation: only the final lane-ready receipt establishes the completed runtime gate and stamp.
 
 ## Converted
 

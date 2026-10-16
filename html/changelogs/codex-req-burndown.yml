@@ -3,3 +3,4 @@ delete-after: true
 changes:
   - bugfix: "Saddlebags and the Avida hat select worn sprites on actual equipment, without changing appearance during admission previews."
   - bugfix: "Native holder size overrides report the real numeric size refusal."
+  - bugfix: "Cloning consoles and internal storage safely reject absent or invalid owners, and Navigator Purrvericks ignore helms without a real destination turf."
