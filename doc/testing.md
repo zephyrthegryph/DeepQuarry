@@ -564,6 +564,10 @@ the engine template to `tools/dmb/fixtures/native_template.bin`. With the native
 when its sources changed. Overrides: `DQ_NATIVE_COMPILER`, `DQ_NATIVE_ENGINE_TEMPLATE` (an explicit
 compiler is never rebuilt), `DQ_NATIVE_WORKERS` (default 8), `DQ_NATIVE_NO_DAEMON=1` (one-shot, cold),
 `DQ_COMPILER_STRICT=1` (no DreamMaker fallback on a compiler internal error).
+A fresh worktree does not run cargo: `build.sh dmbc` restores `dmbc`/`dmbd` from a shared content-addressed cache
+(`E:/dq-cache/dmbc`, `DQ_DMBC_CACHE=<dir>`, `off` disables) keyed by the git ids of `tools/dmb` at HEAD, and stores a fresh build there.
+A checkout whose compiler sources differ from HEAD bypasses the cache. Measured edit times, the equivalence triage and the memory
+profile are in `doc/rewrite/native_compiler_issues.md` (status 2026-10-15).
 
 The daemon starts on the first native build, is reused by later builds and other worktrees using the
 same `dmbc` binary (identity is a hash of the executable), outlives the build that started it, and is

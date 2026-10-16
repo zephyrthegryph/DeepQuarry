@@ -159,7 +159,7 @@ runs vary by up to 2x; the table is the best of the runs that were not disturbed
 | new proc | 34.6 s | 20.2 s |
 | new type | 47.4 s | 35.9 s |
 | new `#define` | 37.7 s | 30.1 s |
-| cold build (empty daemon) | 98 s | 70-88 s |
+| cold build (empty daemon) | 98 s | 62-88 s |
 
 The target of at most 2.5 s for a structural edit is **not met**. Where a structural edit spends its 19 s (new var, no pressure): about
 1.3 s session validation, 0.2 s input preparation, 3.5 s frontend (directive plan 0.7, tree resolution 0.8), 1.5 s resources and maps,
@@ -170,17 +170,23 @@ skip them, 2.5 s is out of reach. A new type that carries members and a `#define
 instead of 0.8 s), and a changed `#define` line in a file shifts later declaration rows. Cheap items left: reuse the session
 validation's directory proofs for the resource and publication admissions (about 1.5 s per request).
 
-**Memory is not within the approved 8 GB.** Working set of the daemon: cold build peak 10.4 GB, retained after a build 8.7-9.5 GB.
-The Rust live heap (counting allocator, `--features allocation-counting`) is 2.7 GB after the frontend, 3.9 GB after startup/ABI,
-5.0 GB after initializers, 7.2 GB after lowering and 8.0 GB at publication; the heap census sees about 1 GB of it. A sampled call-site
-profile (`--features allocation-sites`, `DMB_ALLOC_SITES_PATH`, new in `dm-profile`) shows a flat distribution with no single
-dominant owner: the session artifact stores (incidence index, receipts, leases) hold about 1.2 GB, the directive/region memos 0.7-0.9
-GB, declaration parsing and the adapter 0.45 GB, owner shapes and normalization 0.2 GB, classification stores 0.2 GB. Setting
-`MIMALLOC_PURGE_DELAY=0` and `MIMALLOC_ABANDONED_PAGE_PURGE=1` changed nothing (the memory is live, not fragmentation). Getting under
-8 GB therefore needs the Incidence index interned (its leaves clone every read domain) and the receipt groups compacted, not tuning.
-Until then the daemon stays above its soft limit; with soft pressure no longer shedding state, the limit only defers a second
-concurrent build.
+**Memory: 9.5 GB retained and 10.4 GB peak down to 7.75 GB and 8.4 GB (working set), still not under 8 GB private.** Measured on a
+cold build in a fresh daemon, working set sampled every second: peak 10,450 MiB and 9.5 GB retained before, peak 8,373 MiB and
+7,745 MiB retained after; the daemon's own private-bytes reading after a build went from 9.5-9.9e9 to 8.49e9 against its 8e9 soft
+limit. The Rust live heap (counting allocator, `--features allocation-counting`) is 2.7 GB after the frontend, 3.9 GB after
+startup/ABI, 5.0 GB after initializers, 7.2 GB after lowering and 8.0 GB at publication (7.6 GB after this change); the heap census
+sees about 1 GB of it. A sampled call-site profile (`--features allocation-sites`, `DMB_ALLOC_SITES_PATH`, new in `dm-profile`) put the
+session `Incidence` index first at 1.45 GB: every leaf, variant and reverse map held its own clone of each read domain (a resolver
+query, tens of bytes). `dm-session` now interns the domains (`DomainId`, one `Arc` per domain) and no longer keeps a domain-to-leaves
+reverse index that only `visit_affected` (tests) read, which is where the saving comes from; the 88 `dm-session` tests and the dmbc
+`six_session_contract` byte-parity tests still pass. What is left is a flat distribution: session artifact stores and leases about
+0.9 GB, receipt groups 0.34 GB (the stored observations themselves), directive/region memos 0.5 GB, declaration parsing and the adapter
+0.36 GB, the disk-cache segment indexes 0.3 GB (reopened for the one directive miss of every edit, which is also 0.4-1.0 s of each
+request), classification stores 0.2 GB. Setting `MIMALLOC_PURGE_DELAY=0` and `MIMALLOC_ABANDONED_PAGE_PURGE=1` changed nothing (the
+memory is live, not fragmentation). The next steps are keeping one opened disk-cache snapshot per daemon (instead of per request) and
+compacting the receipt observations (`Observation` is query + answer + domain, about 150-200 bytes each). With soft pressure no
+longer shedding state, the soft limit only defers a second concurrent build.
 
 Rust tests: `cargo test -p dmbc --lib -- service_housekeeping daemon::service::tests` 31 passed, 1 failed
 (`pressure::soft_pressure_defers_another_build_but_preserves_single_build_progress`, an admission timing assertion this branch does not
-touch).
+touch; it fails the same way on origin/master).
