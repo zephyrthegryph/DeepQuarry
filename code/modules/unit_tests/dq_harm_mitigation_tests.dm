@@ -25,14 +25,14 @@
 	var/obj/item/material/knife/knife = allocate(/obj/item/material/knife)
 	TEST_ASSERT_EQUAL(combat_of(knife).injury_kind, INJURY_CUT, "a knife should cut")
 	var/obj/item/projectile/bullet/bullet = allocate(/obj/item/projectile/bullet)
-	TEST_ASSERT_EQUAL(bullet.injury_kind, INJURY_PIERCE, "a bullet should pierce")
+	TEST_ASSERT_EQUAL(combat_of(bullet).injury_kind, INJURY_PIERCE, "a bullet should pierce")
 	var/obj/item/projectile/beam/laser = allocate(/obj/item/projectile/beam)
-	TEST_ASSERT_EQUAL(laser.injury_kind, INJURY_BURN, "a laser should burn")
+	TEST_ASSERT_EQUAL(combat_of(laser).injury_kind, INJURY_BURN, "a laser should burn")
 	var/obj/item/projectile/beam/stun/stun = allocate(/obj/item/projectile/beam/stun)
-	TEST_ASSERT_EQUAL(stun.injury_kind, INJURY_PAIN, "a stun beam should inflict pain")
+	TEST_ASSERT_EQUAL(combat_of(stun).injury_kind, INJURY_PAIN, "a stun beam should inflict pain")
 	var/obj/item/projectile/beam/burstlaser/ion/ion = allocate(/obj/item/projectile/beam/burstlaser/ion)
 	TEST_ASSERT(ion.emp_on_hit, "an ion bolt should pulse instead of injuring")
-	TEST_ASSERT_EQUAL(ion.injury_kind, INJURY_ELECTRIC, "an ion bolt is electrical")
+	TEST_ASSERT_EQUAL(combat_of(ion).injury_kind, INJURY_ELECTRIC, "an ion bolt is electrical")
 
 	// Mixed hits split their damage by share.
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human)

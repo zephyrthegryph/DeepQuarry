@@ -48,6 +48,14 @@ READS_AS(/proc/placement_of, ITEM_PLACEMENT_KEY)
 /obj/item/proc/set_center_of_mass_y(value)
 	return set_trait(src, ENTRY_ITEM_PLACEMENT, "center_y", value)
 
+/// Replace a runtime XY pair before notifying readers of item placement.
+/obj/item/proc/set_center_of_mass(x, y)
+	return state_batch(src, PROC_REF(write_center_of_mass), list(x, y))
+
+/obj/item/proc/write_center_of_mass(x, y)
+	set_center_of_mass_x(x)
+	set_center_of_mass_y(y)
+
 STATIC_ENTRY(object_communication)
 /proc/object_communication(hears = null, speaks = null, shown = null)
 	return entry_make(ENTRY_OBJECT_COMMUNICATION, null, list("hears" = hears, "speaks" = speaks, "shown" = shown))

@@ -17,8 +17,7 @@
 		set_icon_state("glass_empty")
 		name = "glass"
 		desc = "Your standard drinking glass."
-		center_of_mass_x = 16
-		center_of_mass_y = 10
+		set_center_of_mass(16, 10)
 		return
 	var/datum/reagent/R = reagents.get_master_reagent()
 
@@ -38,11 +37,9 @@
 		desc = "You can't really tell what this is."
 
 	if(R.glass_center_of_mass_x || R.glass_center_of_mass_y)
-		center_of_mass_x = R.glass_center_of_mass_x
-		center_of_mass_y = R.glass_center_of_mass_y
+		set_center_of_mass(R.glass_center_of_mass_x, R.glass_center_of_mass_y)
 	else
-		center_of_mass_x = 16
-		center_of_mass_y = 10
+		set_center_of_mass(16, 10)
 
 	if(R.price_tag)
 		price_tag = R.price_tag
@@ -62,8 +59,7 @@
 		set_icon_state("cup_empty")
 		name = "coffee cup"
 		desc = "The container of oriental luxuries."
-		center_of_mass_x = 16
-		center_of_mass_y = 16
+		set_center_of_mass(16, 16)
 		return
 	var/datum/reagent/R = reagents.get_master_reagent()
 
@@ -88,11 +84,9 @@
 		desc = "You can't really tell what this is."
 
 	if(R.cup_center_of_mass_x || R.cup_center_of_mass_y)
-		center_of_mass_x = R.cup_center_of_mass_x
-		center_of_mass_y = R.cup_center_of_mass_y
+		set_center_of_mass(R.cup_center_of_mass_x, R.cup_center_of_mass_y)
 	else
-		center_of_mass_x = 16
-		center_of_mass_y = 16
+		set_center_of_mass(16, 16)
 
 	if(R.price_tag)
 		price_tag = R.price_tag
@@ -184,8 +178,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 		set_icon_state("tall_cup_empty")
 		name = "tall cup"
 		desc = "A larger coffee cup."
-		center_of_mass_x = 16
-		center_of_mass_y =  16
+		set_center_of_mass(16, 16)
 		return
 	var/datum/reagent/R = reagents.get_master_reagent()
 
@@ -210,11 +203,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 		desc = "You can't really tell what this is."
 
 	if(R.cup_center_of_mass_x || R.cup_center_of_mass_y)
-		center_of_mass_x = R.cup_center_of_mass_x
-		center_of_mass_y = R.cup_center_of_mass_y
+		set_center_of_mass(R.cup_center_of_mass_x, R.cup_center_of_mass_y)
 	else
-		center_of_mass_x = 16
-		center_of_mass_y =  16
+		set_center_of_mass(16, 16)
 
 	if(R.price_tag)
 		price_tag = R.price_tag
@@ -233,8 +224,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 		set_icon_state("grande_cup_empty")
 		name = "grande cup"
 		desc = "A much taller coffee cup for people who really need their coffee."
-		center_of_mass_x = 16
-		center_of_mass_y =  16
+		set_center_of_mass(16, 16)
 		return
 	var/datum/reagent/R = reagents.get_master_reagent()
 
@@ -259,11 +249,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 		desc = "You can't really tell what this is."
 
 	if(R.cup_center_of_mass_x || R.cup_center_of_mass_y)
-		center_of_mass_x = R.cup_center_of_mass_x
-		center_of_mass_y = R.cup_center_of_mass_y
+		set_center_of_mass(R.cup_center_of_mass_x, R.cup_center_of_mass_y)
 	else
-		center_of_mass_x = 16
-		center_of_mass_y =  16
+		set_center_of_mass(16, 16)
 
 	if(R.price_tag)
 		price_tag = R.price_tag
@@ -282,8 +270,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 		set_icon_state("venti_cup_empty")
 		name = "venti cup"
 		desc = "A huge coffee cup for people who literally cannot function without it."
-		center_of_mass_x = 16
-		center_of_mass_y =  16
+		set_center_of_mass(16, 16)
 		return
 	var/datum/reagent/R = reagents.get_master_reagent()
 
@@ -308,11 +295,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 		desc = "You can't really tell what this is."
 
 	if(R.cup_center_of_mass_x || R.cup_center_of_mass_y)
-		center_of_mass_x = R.cup_center_of_mass_x
-		center_of_mass_y = R.cup_center_of_mass_y
+		set_center_of_mass(R.cup_center_of_mass_x, R.cup_center_of_mass_y)
 	else
-		center_of_mass_x = 16
-		center_of_mass_y =  16
+		set_center_of_mass(16, 16)
 
 	if(R.price_tag)
 		price_tag = R.price_tag

@@ -1,3 +1,5 @@
+/// TRUE only inside return_from_death(): the one place set_stat() may leave DEAD.
+sparse(/mob/living, revival_in_progress, type = bool)
 /mob/living
 	see_invisible = SEE_INVISIBLE_LIVING
 
@@ -16,8 +18,7 @@
 
 
 	var/tod = null // Time of death
-	/// TRUE only inside return_from_death(): the one place set_stat() may leave DEAD.
-	var/tmp/revival_in_progress = FALSE
+
 
 
 	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.

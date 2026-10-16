@@ -22,3 +22,8 @@ The continuation now removes thirty-one rows, 386 to 355, with zero additions. F
 
 The continuation now removes 33 rows, 386 to 353, with zero additions. Generation and all ratchets pass. Cult vision uses the native pending-timer key instead of a duplicated in-progress flag; deleting its old location no longer suppresses the needed refresh of the living actor's current location. The unused mob update_icon flag and its two DNA writes are removed: the production and map inventory has no reader, while gene activation and deactivation remain unchanged. The focused list includes the real DNA round-trip and state-toggle tests. Runtime verification and a lane-ready stamp remain pending.
 
+
+## Preflight repairs and revival guard
+
+Source preflight now removes 34 rows, 386 to 352, with zero additions; generation and ratchets pass. DreamChecker exposed unqualified food placement writes omitted by the earlier source audit, four old projectile-field assertions and a duplicate include. The repair ports all 22 runtime XY pairs through the real placement setters in an existing publication batch, retains the exact reagent branches, updates assertions to the native injury profile, and removes the duplicate include. A real condiment/seven-container regression is included. The revival transaction guard uses its native sparse boolean home with a real human death/revival transition test. Possession name storage is deferred because a real connected-client fixture is unavailable; no wrapper-only substitute is claimed. DreamChecker is being rerun after these source repairs. Runtime verification and stamp are still pending.
+

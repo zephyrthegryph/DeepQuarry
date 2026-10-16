@@ -4762,7 +4762,6 @@
 #include "code\game\objects\object_break_config.dm"
 #include "code\game\objects\object_item_policies.dm"
 #include "code\game\objects\object_fire_micro_config.dm"
-#include "code\game\objects\object_item_policies.dm"
 #include "code\game\atom\shielding_config.dm"
 #include "code\game\atom\speech_presentation.dm"
 #include "code\modules\unit_tests\_unit_tests.dm"

@@ -81,8 +81,7 @@ MSG_DEF(condiment/swallow, "You swallow some of the contents of %I%.", "%U% swal
 		set_icon_state("emptycondiment")
 		name = "Condiment Bottle"
 		desc = "An empty condiment bottle."
-		center_of_mass_x = 16
-		center_of_mass_y = 6
+		set_center_of_mass(16, 6)
 		return
 	var/list/look = looks_for(reagents.get_master_reagent_id())
 	if(look)
@@ -90,8 +89,7 @@ MSG_DEF(condiment/swallow, "You swallow some of the contents of %I%.", "%U% swal
 		desc = look[2]
 		if(look[3])
 			set_icon_state(look[3])
-		center_of_mass_x = look[4]
-		center_of_mass_y = look[5]
+		set_center_of_mass(look[4], look[5])
 		return
 	name = "Misc Condiment Bottle"
 	if(length(reagents.reagent_list) == 1)
@@ -99,8 +97,7 @@ MSG_DEF(condiment/swallow, "You swallow some of the contents of %I%.", "%U% swal
 	else
 		desc = "A mixture of various condiments. [reagents.get_master_reagent_name()] is one of them."
 	set_icon_state("mixedcondiments")
-	center_of_mass_x = 16
-	center_of_mass_y = 6
+	set_center_of_mass(16, 6)
 
 /obj/item/reagent_containers/food/condiment/enzyme
 	name = REAGENT_ENZYME

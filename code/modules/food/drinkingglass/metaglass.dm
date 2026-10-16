@@ -40,11 +40,9 @@
 			desc = "You can't really tell what this is."
 
 		if(R.glass_center_of_mass_x || R.glass_center_of_mass_y)
-			center_of_mass_x = R.glass_center_of_mass_x
-			center_of_mass_y = R.glass_center_of_mass_y
+			set_center_of_mass(R.glass_center_of_mass_x, R.glass_center_of_mass_y)
 		else
-			center_of_mass_x = 16
-			center_of_mass_y= 10
+			set_center_of_mass(16, 10)
 
 		if(R.price_tag)
 			price_tag = R.price_tag
@@ -55,14 +53,12 @@
 			set_icon_state("pglass_empty")
 			name = "metamorphic pint glass"
 			desc = "This glass changes shape and form depending on the drink inside... fancy!"
-			center_of_mass_x = 16
-			center_of_mass_y= 10
+			set_center_of_mass(16, 10)
 		else
 			set_icon_state("glass_empty")
 			name = "metamorphic glass"
 			desc = "This glass changes shape and form depending on the drink inside... fancy!"
-			center_of_mass_x = 16
-			center_of_mass_y= 10
+			set_center_of_mass(16, 10)
 			return
 
 /*
