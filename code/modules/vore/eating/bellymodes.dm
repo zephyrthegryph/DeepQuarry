@@ -396,8 +396,8 @@
 				L.status_set(STAT_TIREDNESS, (L.status_units(STAT_TIREDNESS) + 6 * delta_factor))
 		if(drainmode == DR_WEIGHT && ishuman(L)) //Slowly drain your prey's weight and add it to your own
 			if(L.weight > 70)
-				L.weight -= (0.01 * L.weight_loss * delta_factor)
-				owner.weight += (0.01 * L.weight_loss * delta_factor) //intentionally dependant on the prey's weight loss ratio rather than the preds weight gain to keep them in pace with one another.
+				L.weight -= (0.01 * L.vore_options.weight_loss * delta_factor)
+				owner.weight += (0.01 * L.vore_options.weight_loss * delta_factor) //intentionally dependant on the prey's weight loss ratio rather than the preds weight gain to keep them in pace with one another.
 	if(nutrition_of(L) >= 100)
 		// Multiplicative drain: prey loses 5% of nutrition per baseline tick. Convert
 		// to a per-tick rate raised to delta_factor so a faster subsystem drains the

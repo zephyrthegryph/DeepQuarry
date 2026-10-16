@@ -516,8 +516,8 @@
 /datum/unit_test/dq_p2_reagents/closed_container_milks_venom/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/mob/living/carbon/human/snake = rc_actor()
-	snake.trait_injection_selected = REAGENT_ID_TOXIN
-	snake.trait_injection_amount = 7
+	snake.vore_options.set_trait_injection_selected(REAGENT_ID_TOXIN)
+	snake.vore_options.set_trait_injection_amount(7)
 	var/obj/item/reagent_containers/C = rc_filled(/obj/item/reagent_containers/glass/beaker, 0)
 	rc_click(H, snake, C)
 	TEST_ASSERT_EQUAL(C.reagents.get_reagent_amount(REAGENT_ID_TOXIN), 0, "an open beaker does not milk")

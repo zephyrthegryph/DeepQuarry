@@ -122,9 +122,9 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	var/mob/living/user = A.actor
 	var/reagent
 	var/amount
-	if(target.trait_injection_selected)
-		reagent = target.trait_injection_selected
-		amount = target.trait_injection_amount
+	if(target.vore_options.trait_injection_selected)
+		reagent = target.vore_options.trait_injection_selected
+		amount = target.vore_options.trait_injection_amount
 	else if(istype(target, /mob/living/simple_mob/animal/giant_spider))
 		var/mob/living/simple_mob/animal/giant_spider/spider = target
 		reagent = spider.poison_type

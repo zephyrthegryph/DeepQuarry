@@ -347,7 +347,7 @@ CAPABILITIES(/obj/belly)
 		return //Someone getting reformed most likely (And if not, uh... shouldn't happen anyways?)
 
 	//Generic entered message
-	if(!owner.mute_entry && entrance_logs)
+	if(!owner.vore_options.mute_entry && entrance_logs)
 		if(!istype(thing, /mob/observer))	//Don't have ghosts announce they're reentering the belly on death
 			if(ELAPSED(src, last_transfer_log, CLOCK_WORLD) > ENTRY_MESSAGE_INTERVAL)
 				EXPIRY_STAMP(src, last_transfer_log, CLOCK_WORLD)

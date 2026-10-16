@@ -1026,7 +1026,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 		return
 	switch(A.answer.value)
 		if("Color") //Easy way to set color so we don't bloat up the menu with even more buttons.
-			open_request(src, /datum/prompt/color, PROC_REF(appendage_color_chosen), answerer = src, question = "Choose a color to set your appendage to!", default = appendage_color, timeout = 0)
+			open_request(src, /datum/prompt/color, PROC_REF(appendage_color_chosen), answerer = src, question = "Choose a color to set your appendage to!", default = vore_options.appendage_color, timeout = 0)
 		if("Functionality")
 			open_request(src, /datum/prompt/choice, PROC_REF(appendage_setting_chosen), answerer = src, title = "Functionality Setting", question = "Choose if you want to be pulled to the target or pull them to you!", choices = list("Pull target to self", "Pull self to target"), buttons = TRUE, timeout = 0)
 		if("Use it")
@@ -1044,12 +1044,12 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 /mob/living/proc/appendage_color_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	appendage_color = A.answer.value
+	vore_options.set_appendage_color(A.answer.value)
 
 /mob/living/proc/appendage_setting_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	appendage_alt_setting = (A.answer.value != "Pull target to self")
+	vore_options.set_appendage_alt_setting((A.answer.value != "Pull target to self"))
 
 /mob/living/proc/long_vore_target_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -1107,7 +1107,7 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 	if(firer) //This neat little code block allows for C O L O R A B L E tongues! Correction: 'Appendages'
 		if(isliving(firer))
 			var/mob/living/originator = firer
-			set_color(originator.appendage_color)
+			set_color(originator.vore_options.appendage_color)
 	..()
 
 /obj/item/projectile/beam/appendage/on_hit(atom/target)
@@ -1118,7 +1118,7 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 		var/throw_range = get_dist(firer,M)
 		if(isliving(firer)) //Let's check for any alt settings. Such as: User selected to be thrown at target.
 			var/mob/living/F = firer
-			if(F.appendage_alt_setting == 1)
+			if(F.vore_options.appendage_alt_setting == 1)
 				F.throw_at(M, throw_range, firer.throw_speed, F) //Firer thrown at target.
 				return
 		if(istype(M))
@@ -1318,8 +1318,8 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 
 	if(LAZYLEN(trait_injection_reagents) > 1) //Should never happen, but who knows!
 		choices += "Change reagent"
-	else if(!trait_injection_selected)
-		trait_injection_selected = LAZYACCESS(trait_injection_reagents, 1)
+	else if(!vore_options.trait_injection_selected)
+		vore_options.set_trait_injection_selected(LAZYACCESS(trait_injection_reagents, 1))
 
 	choices += "Change amount"
 	choices += "Change verb"
@@ -1332,20 +1332,20 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 		return
 	var/reagent_choice = A.answer.value
 	if(reagent_choice in trait_injection_reagents)
-		trait_injection_selected = reagent_choice
-	to_chat(src, span_notice("You prepare to inject [trait_injection_amount] units of [trait_injection_selected ? "[trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
+		vore_options.set_trait_injection_selected(reagent_choice)
+	to_chat(src, span_notice("You prepare to inject [vore_options.trait_injection_amount] units of [vore_options.trait_injection_selected ? "[vore_options.trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
 /mob/living/proc/injection_amount_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	trait_injection_amount = clamp(A.answer.value, 0, 5)
-	to_chat(src, span_notice("You prepare to inject [trait_injection_amount] units of [trait_injection_selected ? "[trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
+	vore_options.set_trait_injection_amount(clamp(A.answer.value, 0, 5))
+	to_chat(src, span_notice("You prepare to inject [vore_options.trait_injection_amount] units of [vore_options.trait_injection_selected ? "[vore_options.trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
 /mob/living/proc/injection_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	trait_injection_verb = A.answer.value
-	to_chat(src, span_notice("You will [trait_injection_verb] your targets."))
+	vore_options.set_trait_injection_verb(A.answer.value)
+	to_chat(src, span_notice("You will [vore_options.trait_injection_verb] your targets."))
 
 /mob/living/proc/injection_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -1355,10 +1355,10 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 		open_request(src, /datum/prompt/choice, PROC_REF(injection_reagent_chosen), answerer = src, title = "Select reagent", question = "Choose which reagent to inject!", choices = trait_injection_reagents || list(), timeout = 0)
 		return
 	if(choice == "Change amount")
-		open_request(src, /datum/prompt/number, PROC_REF(injection_amount_chosen), answerer = src, timeout = 0, question = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", title = "How much?", default = trait_injection_amount, max_value = 5, min_value = 0)
+		open_request(src, /datum/prompt/number, PROC_REF(injection_amount_chosen), answerer = src, timeout = 0, question = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", title = "How much?", default = vore_options.trait_injection_amount, max_value = 5, min_value = 0)
 		return
 	if(choice == "Change verb")
-		open_request(src, /datum/prompt/text, PROC_REF(injection_verb_chosen), answerer = src, timeout = 0, question = "Choose the percieved manner of injection, such as 'bite' or 'sting', don't be misleading or abusive. This will show up in game as ('X' manages to 'Verb' 'Y'. Example: X manages to bite Y.)", title = "How are you injecting?", default = trait_injection_verb, max_len = 60) //Whoaa there cowboy don't put a novel in there.
+		open_request(src, /datum/prompt/text, PROC_REF(injection_verb_chosen), answerer = src, timeout = 0, question = "Choose the percieved manner of injection, such as 'bite' or 'sting', don't be misleading or abusive. This will show up in game as ('X' manages to 'Verb' 'Y'. Example: X manages to bite Y.)", title = "How are you injecting?", default = vore_options.trait_injection_verb, max_len = 60) //Whoaa there cowboy don't put a novel in there.
 		return
 	if(choice == "Chemical Refresher")
 		var/output = {"<HR>
@@ -1411,9 +1411,9 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 			continue
 		if(L == src) //no getting high off your own supply, get a nif or something, nerd.
 			continue
-		if(!L.vore_prefs.resizable && (trait_injection_selected == REAGENT_ID_MACROCILLIN || trait_injection_selected == REAGENT_ID_MICROCILLIN || trait_injection_selected == REAGENT_ID_NORMALCILLIN)) // If you're using a size reagent, ignore those with pref conflicts.
+		if(!L.vore_prefs.resizable && (vore_options.trait_injection_selected == REAGENT_ID_MACROCILLIN || vore_options.trait_injection_selected == REAGENT_ID_MICROCILLIN || vore_options.trait_injection_selected == REAGENT_ID_NORMALCILLIN)) // If you're using a size reagent, ignore those with pref conflicts.
 			continue
-		if(!L.vore_prefs.allow_spontaneous_tf && (trait_injection_selected == REAGENT_ID_ANDROROVIR || trait_injection_selected == REAGENT_ID_GYNOROVIR || trait_injection_selected == REAGENT_ID_ANDROGYNOROVIR)) // If you're using a TF reagent, ignore those with pref conflicts.
+		if(!L.vore_prefs.allow_spontaneous_tf && (vore_options.trait_injection_selected == REAGENT_ID_ANDROROVIR || vore_options.trait_injection_selected == REAGENT_ID_GYNOROVIR || vore_options.trait_injection_selected == REAGENT_ID_ANDROGYNOROVIR)) // If you're using a TF reagent, ignore those with pref conflicts.
 			continue
 		targets += L
 	return targets
@@ -1435,21 +1435,21 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 		return /datum/msg/injection/state
 	if(!istype(target, /mob/living/carbon)) //Safety.
 		return /datum/msg/injection/kind
-	if(!trait_injection_selected)
+	if(!vore_options.trait_injection_selected)
 		return /datum/msg/injection/reagent
-	if(!trait_injection_verb)
+	if(!vore_options.trait_injection_verb)
 		return /datum/msg/injection/means
-	act_message(src, target, others = span_warning("%U% is preparing to [trait_injection_verb] %T%!"))
+	act_message(src, target, others = span_warning("%U% is preparing to [vore_options.trait_injection_verb] %T%!"))
 
 /mob/living/proc/injection_living_done(datum/act/op/A)
 	var/mob/living/target = A.answer_target()
 	if(QDELETED(target))
 		return
 	var/synth = HAS_SYNTHETIC_BIOLOGY(target) ? 1 : 0
-	add_attack_logs(src,target,"Injection trait ([trait_injection_selected], [trait_injection_amount])")
-	if(target.reagents && (trait_injection_amount > 0) && !synth)
-		target.reagents.add_reagent(trait_injection_selected, trait_injection_amount)
-	var/ourmsg = "[src] manages to [trait_injection_verb] [target] "
+	add_attack_logs(src,target,"Injection trait ([vore_options.trait_injection_selected], [vore_options.trait_injection_amount])")
+	if(target.reagents && (vore_options.trait_injection_amount > 0) && !synth)
+		target.reagents.add_reagent(vore_options.trait_injection_selected, vore_options.trait_injection_amount)
+	var/ourmsg = "[src] manages to [vore_options.trait_injection_verb] [target] "
 	switch(hud_used?.zone_sel?.selecting)
 		if(BP_HEAD)
 			ourmsg += "on the head!"

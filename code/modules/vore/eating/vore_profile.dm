@@ -90,3 +90,58 @@ TRACKED_DATA(/datum/record/vore_prefs, vore_sprite_multiply)
 /mob
 	/// The player's vore preferences (a profile record, built before init).
 	var/datum/record/vore_prefs/vore_prefs
+
+// Session-level body/voice/vore options have a separate profile: copying vore consent preferences
+// must not also copy these options. Character preference keys and physique-copy fields stay explicit.
+/datum/record/vore_options
+	var/appendage_color = "#e03997"
+	var/appendage_alt_setting = FALSE
+	var/stuffing_feeder = FALSE
+	var/skin_reagent
+	var/trait_injection_selected
+	var/trait_injection_amount = 5
+	var/trait_injection_verb = "bite"
+	var/weight_gain = 1
+	var/weight_loss = 0.5
+	var/voice_freq = 42500
+	var/emote_sound_mode = EMOTE_SOUND_VOICE_FREQ
+	var/trash_catching = FALSE
+	var/mute_entry = FALSE
+	var/liquidbelly_visuals = TRUE
+	var/adminbus_trash = FALSE
+	var/adminbus_eat_minerals = FALSE
+
+TRACKED_DATA(/datum/record/vore_options, weight_gain)
+TRACKED_DATA(/datum/record/vore_options, weight_loss)
+TRACKED_DATA(/datum/record/vore_options, voice_freq)
+TRACKED_DATA(/datum/record/vore_options, emote_sound_mode)
+TRACKED_DATA(/datum/record/vore_options, trash_catching)
+TRACKED_DATA(/datum/record/vore_options, mute_entry)
+TRACKED_DATA(/datum/record/vore_options, liquidbelly_visuals)
+TRACKED_DATA(/datum/record/vore_options, adminbus_trash)
+TRACKED_DATA(/datum/record/vore_options, adminbus_eat_minerals)
+
+/mob
+	var/datum/record/vore_options/vore_options
+
+TRACKED_DATA(/datum/record/vore_options, appendage_color)
+TRACKED_DATA(/datum/record/vore_options, appendage_alt_setting)
+TRACKED_DATA(/datum/record/vore_options, stuffing_feeder)
+TRACKED_DATA(/datum/record/vore_options, skin_reagent)
+TRACKED_DATA(/datum/record/vore_options, trait_injection_selected)
+TRACKED_DATA(/datum/record/vore_options, trait_injection_amount)
+TRACKED_DATA(/datum/record/vore_options, trait_injection_verb)
+
+/// Redirect the existing serialized trait keys to their actual profile fields.
+/// TRUE means the key belongs to this profile, including no-op writes.
+/mob/living/proc/apply_vore_option_trait(field, value, reset = FALSE)
+	switch(field)
+		if("appendage_color")
+			vore_options.set_appendage_color(reset ? initial(vore_options.appendage_color) : value)
+		if("appendage_alt_setting")
+			vore_options.set_appendage_alt_setting(reset ? initial(vore_options.appendage_alt_setting) : value)
+		if("stuffing_feeder")
+			vore_options.set_stuffing_feeder(reset ? initial(vore_options.stuffing_feeder) : value)
+		else
+			return FALSE
+	return TRUE

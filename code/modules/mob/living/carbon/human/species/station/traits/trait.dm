@@ -70,7 +70,8 @@
 					if(!S.set_acceptance_shape_field(trait, trait_prefs[trait]))
 						S.vars[trait] = trait_prefs[trait] // ALLOW(api): trait var_changes tables
 				if(TRAIT_VAREDIT_TARGET_MOB)
-					H.vars[trait] = trait_prefs[trait] // ALLOW(api): trait var_changes tables
+					if(!H.apply_vore_option_trait(trait, trait_prefs[trait]))
+						H.vars[trait] = trait_prefs[trait] // ALLOW(api): trait var_changes tables
 	// Traitgenes Traits can toggle mutations and disabilities
 	if(mutation)
 		if(!(H.has_mutation(mutation)))
@@ -126,7 +127,8 @@ TYPE_TABLE_DECLARE(/datum/trait, granted_verb_list, null)
 					if(!S.set_acceptance_shape_field(trait, initial(S.vars[trait])))
 						S.vars[trait] = initial(S.vars[trait]) // ALLOW(api): trait var_changes tables
 				if(TRAIT_VAREDIT_TARGET_MOB)
-					H.vars[trait] = initial(H.vars[trait]) // ALLOW(api): trait var_changes tables
+					if(!H.apply_vore_option_trait(trait, null, reset = TRUE))
+						H.vars[trait] = initial(H.vars[trait]) // ALLOW(api): trait var_changes tables
 	if(mutation)
 		H.remove_mutation(mutation)
 	if(disability)

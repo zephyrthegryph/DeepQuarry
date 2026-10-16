@@ -196,8 +196,8 @@
 	if(sound_to_play)
 		if(istype(user, /mob))
 			var/mob/u = user
-			var/freq_to_use = u.voice_freq
-			if(u.emote_sound_mode == EMOTE_SOUND_NO_FREQ)
+			var/freq_to_use = u.vore_options.voice_freq
+			if(u.vore_options.emote_sound_mode == EMOTE_SOUND_NO_FREQ)
 				freq_to_use = 0
 			playsound(user.loc, sound_to_play, use_sound["vol"], u.read_preference(/datum/preference/toggle/random_emote_pitch) && sound_vary, extrarange = use_sound["exr"], frequency = freq_to_use, preference = sound_preferences, volume_channel = use_sound["volchannel"])
 		else

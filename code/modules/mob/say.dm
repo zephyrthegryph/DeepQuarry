@@ -862,8 +862,8 @@
 	if(!T) return
 
 	var/ourfreq = null
-	if(voice_freq > 0 )
-		ourfreq = voice_freq
+	if(vore_options.voice_freq > 0 )
+		ourfreq = vore_options.voice_freq
 
 	if(client)
 		playsound(T, SFX_TALKSOUNDS_EMOTE, 25, TRUE, falloff = 1 , is_global = TRUE, frequency = ourfreq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds) // ignore walls

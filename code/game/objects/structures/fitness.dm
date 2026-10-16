@@ -27,7 +27,7 @@ CAPABILITIES(/obj/structure/fitness/punchingbag)
 		play_sfx(src, SFX_EFFECTS_WOODHIT)
 		user.do_attack_animation(src)
 		user.adjust_nutrition(-10) // Set nutrition drain to be the same as in fitness_machines_vr.dm
-		user.weight -= 0.25 * weightloss_power * (0.01 * user.weight_loss)
+		user.weight -= 0.25 * weightloss_power * (0.01 * user.vore_options.weight_loss)
 		to_chat(user, span_warning("You [pick(hit_message)] \the [src]."))
 	return TRUE
 
@@ -82,7 +82,7 @@ CAPABILITIES(/obj/structure/fitness/weightlifter)
 	play_sfx(src, SFX_EFFECTS_WEIGHTDROP)
 	user.adjust_nutrition(weight * -10)
 	var/weightloss_enhanced = weightloss_power * (weight * 0.5)
-	user.weight -= 0.25 * weightloss_enhanced * (0.01 * user.weight_loss)
+	user.weight -= 0.25 * weightloss_enhanced * (0.01 * user.vore_options.weight_loss)
 	to_chat(user, span_notice("You lift the weights [qualifiers[weight]]."))
 
 /obj/structure/fitness/weightlifter/proc/lift_interrupted(datum/act/op/A)

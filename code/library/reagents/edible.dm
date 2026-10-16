@@ -81,7 +81,7 @@ MSG_DEF(edible/eat, "You take a bite of %I%.", "%U% takes a bite of %I%.")
 /// The one clicking feeds things whole to others (a pref of theirs).
 /datum/capability/lib/edible/proc/feeds_whole(datum/act/op/A)
 	var/mob/living/feeder = A.actor
-	return isliving(feeder) && feeder.stuffing_feeder
+	return isliving(feeder) && feeder.vore_options.stuffing_feeder
 
 /datum/capability/lib/edible/proc/is_carbon_target(datum/act/op/A)
 	return iscarbon(A.target)

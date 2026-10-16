@@ -41,7 +41,6 @@
 	special_attack_max_range = 4
 	special_attack_cooldown = 30 SECONDS
 
-	appendage_color = "#000000"
 
 	var/leap_warmup = 2 SECOND // How long the leap telegraphing is.
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
@@ -73,6 +72,7 @@
 	vore_bump_emote = "tries to devour"
 
 CAPABILITIES(/mob/living/simple_mob/vore/scel)
+	profile(nameof(vore_options), /datum/record/vore_options, fields = list("appendage_color" = "#000000"))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

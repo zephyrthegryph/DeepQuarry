@@ -482,11 +482,11 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 /// Weight, size, voice and sprite offsets.
 /mob/living/carbon/human/proc/copy_physique_from(mob/living/carbon/human/character)
 	weight			= character.weight
-	weight_gain		= character.weight_gain
-	weight_loss		= character.weight_loss
+	vore_options.set_weight_gain(character.vore_options.weight_gain)
+	vore_options.set_weight_loss(character.vore_options.weight_loss)
 	set_fuzzy(character.fuzzy)
 	set_offset_override(character.offset_override)
-	voice_freq		= character.voice_freq
+	vore_options.set_voice_freq(character.vore_options.voice_freq)
 	if (species && character.species)
 		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.micro_size_mod = character.species.micro_size_mod

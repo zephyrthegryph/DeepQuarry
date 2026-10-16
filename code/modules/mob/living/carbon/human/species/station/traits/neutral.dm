@@ -1641,7 +1641,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 /datum/trait/neutral/skin_reagents/apply(datum/species/S, mob/living/carbon/human/H, list/trait_prefs)
 	..()
 	if(trait_prefs && trait_prefs["Reagent"])
-		H.skin_reagent = trait_prefs["Reagent"]
+		H.vore_options.set_skin_reagent(trait_prefs["Reagent"])
 
 /datum/trait/neutral/colour_changing_eyes
 	name = "Colour changing eyes"

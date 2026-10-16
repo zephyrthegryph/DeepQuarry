@@ -288,11 +288,11 @@ CAPABILITIES(/obj/structure/gargoyle)
 	var/mob/living/user = A.actor
 	var/obj/item/W = A.held
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
-	if(may_feed && gargoyle && vore_selected_of(gargoyle) && gargoyle.trash_catching)
+	if(may_feed && gargoyle && vore_selected_of(gargoyle) && gargoyle.vore_options.trash_catching)
 		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
 			gargoyle.vore_attackby(W, user, I_HELP) // feeding the statue its catch is a peaceful use
 			return OP_OK
-		if(gargoyle.adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && W.trash_eatable && !is_type_in_list(W, GLOB.item_vore_blacklist))
+		if(gargoyle.vore_options.adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && W.trash_eatable && !is_type_in_list(W, GLOB.item_vore_blacklist))
 			to_chat(user, span_warning("You slip [W] into [gargoyle]'s [lowertext(vore_selected_of(gargoyle).name)] ."))
 			user.drop_item()
 			vore_selected_of(gargoyle).nom_atom(W)
@@ -321,9 +321,9 @@ CAPABILITIES(/obj/structure/gargoyle)
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
 	if(!gargoyle)
 		return
-	if(isitem(source) && vore_selected_of(gargoyle) && gargoyle.trash_catching)
+	if(isitem(source) && vore_selected_of(gargoyle) && gargoyle.vore_options.trash_catching)
 		var/obj/item/I = source
-		if(gargoyle.adminbus_trash || is_type_in_list(I, GLOB.edible_trash) && I.trash_eatable && !is_type_in_list(I, GLOB.item_vore_blacklist))
+		if(gargoyle.vore_options.adminbus_trash || is_type_in_list(I, GLOB.edible_trash) && I.trash_eatable && !is_type_in_list(I, GLOB.item_vore_blacklist))
 			gargoyle.hitby(source, throwingdatum)
 			return
 	else if(isliving(source))

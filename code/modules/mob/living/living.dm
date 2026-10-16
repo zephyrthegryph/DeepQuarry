@@ -1445,9 +1445,9 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 
 /mob/living/proc/apply_voice_freq(choice)
 	if(choice == 0)
-		voice_freq = choice
+		vore_options.set_voice_freq(choice)
 		return
-	voice_freq = clamp(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ)
+	vore_options.set_voice_freq(clamp(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ))
 
 /mob/living/verb/set_voice_type()
 	set name = "Set Voice Type"

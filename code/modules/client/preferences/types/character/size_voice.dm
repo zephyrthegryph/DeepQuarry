@@ -50,7 +50,7 @@
 	return 100
 
 /datum/preference/numeric/human/weight_gain/apply_to_human(mob/living/carbon/human/target, value)
-	target.weight_gain = value
+	target.vore_options.set_weight_gain(value)
 
 
 /datum/preference/numeric/human/weight_loss
@@ -67,7 +67,7 @@
 	return 50
 
 /datum/preference/numeric/human/weight_loss/apply_to_human(mob/living/carbon/human/target, value)
-	target.weight_loss = value
+	target.vore_options.set_weight_loss(value)
 
 
 /datum/preference/toggle/human/fuzzy
@@ -107,7 +107,7 @@
 	return 42500
 
 /datum/preference/numeric/human/voice_freq/apply_to_human(mob/living/carbon/human/target, value)
-	target.voice_freq = value
+	target.vore_options.set_voice_freq(value)
 
 
 /datum/preference/text/human/voice_sound

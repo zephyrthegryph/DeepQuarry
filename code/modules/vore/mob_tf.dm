@@ -139,8 +139,8 @@
 	//It can be used for other things, but be advised, if you're using it to put a simplemob into a carbon mob, you're gonna be overriding a bunch of prefs
 
 	new_mob.share_identity(identity()) // the character's OOC notes, by reference
-	new_mob.appendage_color = appendage_color
-	new_mob.appendage_alt_setting = appendage_alt_setting
+	new_mob.vore_options.set_appendage_color(vore_options.appendage_color)
+	new_mob.vore_options.set_appendage_alt_setting(vore_options.appendage_alt_setting)
 
 	record_copy(new_mob.vore_prefs, vore_prefs)
 	rel_set(new_mob, nameof(spont_belly_rear), spont_belly_rear)

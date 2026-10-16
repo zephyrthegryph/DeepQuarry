@@ -2267,8 +2267,8 @@
 // === merged from life_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /// MED-6: neither gaining (well fed, gain on, under the cap) nor losing (starving, loss on).
 /mob/living/carbon/human/proc/life_weight_due()
-	var/gaining = src.weight_gain && nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT
-	var/losing = src.weight_loss && nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.weight > MIN_MOB_WEIGHT
+	var/gaining = src.vore_options.weight_gain && nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT
+	var/losing = src.vore_options.weight_loss && nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.weight > MIN_MOB_WEIGHT
 	return gaining || losing
 
 /// Nutrition is written through set_nutrition() (MOB_KEY_NUTRITION). This is the fallback (weight preferences).
@@ -2278,11 +2278,11 @@
 /// Weight gain and loss from nutrition.
 /mob/living/carbon/human/proc/life_weight(datum/seq_frame/life/F)
 	if (nutrition_of(src) >= 0 && src.stat != 2)
-		if (nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT && src.weight_gain)
-			src.weight += src.species.metabolism*(0.01*src.weight_gain)
+		if (nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT && src.vore_options.weight_gain)
+			src.weight += src.species.metabolism*(0.01*src.vore_options.weight_gain)
 
-		else if (nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && src.weight > MIN_MOB_WEIGHT && src.weight_loss)
-			src.weight -= src.species.metabolism*(0.01*src.weight_loss) // starvation weight loss
+		else if (nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && src.weight > MIN_MOB_WEIGHT && src.vore_options.weight_loss)
+			src.weight -= src.species.metabolism*(0.01*src.vore_options.weight_loss) // starvation weight loss
 
 //Our call for the NIF to do whatever
 /// MED-6: no NIF, nothing to run.

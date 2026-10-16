@@ -348,7 +348,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 				return TRUE
 			if(isliving(user))
 				var/mob/living/trashcheck = user
-				if(trashcheck.adminbus_trash)
+				if(trashcheck.vore_options.adminbus_trash)
 					return TRUE
 	if(isliving(target)) //quick prefs test. Better safe than sorry
 		var/mob/living/caneat = target
