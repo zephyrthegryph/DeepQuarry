@@ -22,7 +22,7 @@
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 2, "selection opens exactly one second question")
 	var/datum/prompt/choice/collars = GLOB.test_prompts[2]
 	TEST_ASSERT_EQUAL(collars.answerer, R, "the collar question retains the actual actor")
-	TEST_ASSERT(first in collars.choices && second in collars.choices, "the question offers both exact real registry members")
+	TEST_ASSERT((first in collars.choices) && (second in collars.choices), "the question offers both exact real registry members")
 	TEST_ASSERT_NULL(P.selected_collar, "opening the collar question makes no selection")
 	TEST_ASSERT_NULL(test_prompt_answer(collars, first), "the real collar answer completes its actual flow")
 	TEST_ASSERT_EQUAL(P.selected_collar, first, "the terminal stores exactly the chosen real collar")

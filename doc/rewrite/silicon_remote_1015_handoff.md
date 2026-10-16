@@ -85,3 +85,19 @@ The live robot attack animation retains master's set_layer(), set_icon_state()
 and set_icon() calls, its relation link and unchanged expire(5) lifetime. No
 duplicate animation is restored. Combined verification remains pending.
 
+## Final fixture repair verification status
+
+Gate dbc2fd53e0 passed production compilation with zero errors and passed ratchets.
+DreamChecker reported one new ambiguous membership assertion, now explicitly
+parenthesized. Two runtime fixture failures are repaired: local HUD cancellation
+now supplies the explicit cancelled outcome, and recharge admission checks the
+actual robot partial-buckle contract rather than assuming full incapacity. The
+recharge fixture also proves real cell removal refuses admission and restoration
+recovers it. These repairs change tests only.
+
+The broad master visual-setter look sweep reached its configured 30-minute
+timeout before completion. That run produced no final result JSON or lane-ready
+stamp. The repair list retains both failing fixtures, the changed SPASM fixture,
+both mandatory pins, incomplete look coverage and all selectors after the cutoff;
+previously passing targeted fixtures are not requested again. Final verification
+remains pending the coordinator's 60-minute repair gate.

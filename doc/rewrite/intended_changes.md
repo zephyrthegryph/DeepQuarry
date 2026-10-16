@@ -5047,3 +5047,17 @@ this cause. The new real-input branch fixture adds native selection/cancel/info/
 deleted-collar/clientless coverage. It is not an old-flow test run and supplies no
 fake client to claim positive live-client registration coverage. Validation is
 pending the final combined gate.
+
+## Silicon fixture-only repair after dbc2fd53e0
+
+The SPASM membership assertion now groups each membership explicitly. HUD
+cancellation supplies an explicit cancelled prompt outcome. Recharge coverage
+now asserts the real unrestrained robot partial-buckle behavior and checks real
+cell removal/refusal/restoration rather than assuming that partial buckling is
+full incapacity. Production behavior and pin goldens are unchanged.
+
+Gate dbc2fd53e0 passed ratchets and production compilation (zero errors), with
+one new DreamChecker assertion diagnostic and two runtime fixture failures.
+The master visual-setter look sweep reached its configured 30-minute timeout;
+there is no final result JSON or stamp. These repairs await the coordinator's
+combined repair gate with a 60-minute allowance.
