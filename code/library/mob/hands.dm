@@ -5,6 +5,7 @@
 // refuses a target out of arm's reach.
 
 CAPABILITIES(/mob/living/carbon/human)
+	owns_one(nameof(wearing_rig), on_destroy = ON_DESTROY_CONTAINED)
 	ref_one(nameof(default_attack), /datum/unarmed_attack)
 	links(/mob/living/carbon/human::vr_holder, /mob/living/carbon/human::vr_link)
 	// The character's chosen look (code/modules/mob/living/carbon/human/profile_records.dm).
@@ -165,6 +166,13 @@ CAPABILITIES(/mob/living/silicon/robot)
 	on_wire(WIRE_AI_CONTROL, cut = PROC_REF(ai_wire_cut), pulse = PROC_REF(ai_wire_pulsed))
 	on_wire(WIRE_BORG_CAMERA, cut = PROC_REF(camera_wire_cut), pulse = PROC_REF(camera_wire_pulsed))
 	on_wire(WIRE_BORG_LOCKED, cut = PROC_REF(lockdown_wire_cut), pulse = PROC_REF(lockdown_wire_pulsed))
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	// on_destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks.
+	// The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
+	// A borg with a mind gives its MMI to the turf (mmi_ejects, set in on_destroy()); a mindless one's goes with it.
+	owns_one(nameof(mmi), on_destroy = ON_DESTROY_SPILL, only_if = nameof(mmi_ejects), otherwise = ON_DESTROY_CONTAINED)
+	// A registered robot sprite, or the robot's private fallback default (copy-on-write).
+	owns_one(nameof(sprite_datum), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)
 
 /mob/living/carbon/human/starting_nutrition() // a human starts with 200-400 (was a rolls() entry)
 	return rand(200, 400)

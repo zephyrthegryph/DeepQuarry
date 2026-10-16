@@ -178,6 +178,7 @@ CAPABILITIES(/obj/machinery)
 		begins(MSG(start/interaction/machine_anchor/unsecure)), says(MSG(interaction/machine_anchor/unsecure)), then(PROC_REF(toggle_maintenance_anchor)))
 	op("machine_repair", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT - 1), wait(PROC_REF(maintenance_weld_wait)), label("Repair"), when(PROC_REF(maint_offers_repair)),
 		needs(req(PROC_REF(maintenance_is_damaged))), says(MSG(interaction/machine_repair)), then(PROC_REF(maintenance_repair)))
+	owns_one(nameof(paicard), on_destroy = ON_DESTROY_CONTAINED)
 
 REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 

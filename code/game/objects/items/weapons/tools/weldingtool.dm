@@ -595,6 +595,7 @@ CAPABILITIES(/obj/item/weldingtool/tubefed/survival)
 CAPABILITIES(/obj/item/weldingtool/electric)
 	op("take_cell", hand(), then(PROC_REF(interaction_hand)))
 	op("insert_cell", item(/obj/item/cell), then(PROC_REF(electric_interaction_item)))
+	owns_one(nameof(power_supply), starts = nameof(cell_type), on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attack_hand: the hand on one held in the other hand takes its cell out (anything else is the pick up).
 /obj/item/weldingtool/electric/proc/interaction_hand(datum/act/op/A)
@@ -700,9 +701,6 @@ CAPABILITIES(/obj/item/weldingtool/electric/mounted/exosuit)
 
 #undef WELDER_FUEL_BURN_INTERVAL
 
-/obj/item/weldingtool/electric/ownership()
-	. = ..()
-	. += owns(nameof(power_supply), policy = OWN_CONTAINED, starts = nameof(cell_type))
 
 /// Relation view: equip mount (reads null once it is gone).
 /obj/item/weldingtool/electric/mounted/exosuit/proc/equip_mount() as /obj/item/mecha_parts/mecha_equipment

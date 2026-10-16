@@ -35,6 +35,7 @@ CAPABILITIES(/obj/machinery/floorlayer)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Choose tile type"),
 		asks(/datum/prompt/choice, fields = list("title" = "Tiles", "question" = "Choose tile type.", "choices" = computed(PROC_REF(tile_choices)), "timeout" = 0)),
 		then(PROC_REF(tile_type_chosen)))
+	owns_one(nameof(T), starts = /obj/item/stack/tile/floor, on_destroy = ON_DESTROY_CONTAINED)
 
 
 /obj/machinery/floorlayer/proc/interaction_toggle(datum/act/op/A)
@@ -136,9 +137,6 @@ CAPABILITIES(/obj/machinery/floorlayer)
 	for(var/obj/item/stack/tile/tile in turf_contents_of_type(w_turf, /obj/item/stack/tile))
 		TakeTile(tile)
 
-/obj/machinery/floorlayer/ownership()
-	. = ..()
-	. += owns(nameof(T), policy = OWN_CONTAINED, starts = /obj/item/stack/tile/floor)
 
 /// old turf (a relation view: it reads null once the target is deleted).
 /obj/machinery/floorlayer/proc/old_turf() as /turf

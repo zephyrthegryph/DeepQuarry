@@ -15,6 +15,7 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 	without("dismantle")
 	op("unwire", tool(TOOL_WRENCH), wait(0), label("Unwire"), then(PROC_REF(back_to_chair)))
 	op("e_chair_toggle_effect", menu(), label("Toggle Electric Chair"), then(PROC_REF(e_chair_toggle_effect)))
+	owns_one(nameof(part), on_destroy = ON_DESTROY_CONTAINED)
 
 /// A wrench takes the kit out and leaves a plain chair.
 /obj/structure/bed/chair/e_chair/proc/back_to_chair(datum/act/op/A)
@@ -75,9 +76,6 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 
 /// Old object verbs.
 
-/obj/structure/bed/chair/e_chair/ownership()
-	. = ..()
-	. += owns(nameof(part), policy = OWN_CONTAINED)
 
 /obj/structure/bed/chair/e_chair/draw(datum/look/look)
 	..()

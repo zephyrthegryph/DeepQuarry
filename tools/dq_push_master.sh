@@ -139,14 +139,14 @@ for round in 1 2 3; do
 		[ "${DQ_PUSH_FULL:-0}" != "1" ] && [ -f "data/merge-gates/${sha:0:12}.$1.ok" ] && [ "$(cat "data/merge-gates/${sha:0:12}.$1.ok")" = "$sha" ]
 	}
 	if stamped dm; then
-		echo "== build.sh dm: passed (DreamMaker 0 errors, DreamChecker 0 diagnostics) on exactly this HEAD in tools/dq_merge_gates.sh; not repeated"
+		echo "== build.sh dm: passed (compiler 0 errors, DreamChecker 0 diagnostics) on exactly this HEAD in tools/dq_merge_gates.sh; not repeated"
 	else
 		echo "== build.sh dm on ${sha:0:12} (log $log.dm.log)"
 		rm -f deepquarry.dmb # never "up to date": DreamChecker runs inside the dm target
 		tools/build/build.sh dm >"$log.dm.log" 2>&1 || { tail -40 "$log.dm.log"; die "build.sh dm failed"; }
 		grep -q "dream-checker: passed" "$log.dm.log" || die "DreamChecker did not run (install it: tools/ci/install_spaceman_dmm.sh); see $log.dm.log"
 		grep -q "Found 0 diagnostics" "$log.dm.log" || { grep -iE "error|warning" "$log.dm.log" | head -30; die "DreamChecker reported diagnostics; see $log.dm.log"; }
-		grep -qE "deepquarry\.dmb - 0 errors" "$log.dm.log" || die "DreamMaker did not report 0 errors; see $log.dm.log"
+		grep -qE "deepquarry\.dmb - 0 errors" "$log.dm.log" || die "the compiler did not report 0 errors; see $log.dm.log"
 	fi
 
 	# The same check on the same commit is not run twice; a new merge commit, a different HEAD or DQ_PUSH_FULL=1 runs it here.

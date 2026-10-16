@@ -94,6 +94,7 @@ CAPABILITIES(/obj/item/inducer)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	// Charging a cell in two-second pulses until it is full, the inducer runs dry or the user stops.
 	op("induce", ai(), takes("charged", "charging", "coefficient", "beam", "filter", "progress"), wait(2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY, repeats = PROC_REF(recharge_more), after_step = PROC_REF(recharge_pulse)), on_interrupt(PROC_REF(recharge_end)), then(PROC_REF(recharge_end)))
+	owns_one(nameof(cell), starts = nameof(cell_type), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/inducer/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -297,9 +298,6 @@ CAPABILITIES(/obj/item/cell/standin)
 /obj/vehicle/get_cell()
 	return cell
 
-/obj/item/inducer/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = nameof(cell_type))
 
 /// Relation view: hume (reads null once it is gone).
 /obj/item/cell/standin/proc/hume() as /mob/living/carbon/human

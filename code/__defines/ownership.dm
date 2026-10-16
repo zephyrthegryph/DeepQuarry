@@ -3,19 +3,13 @@
 // Every object-typed var is exactly one kind. Most need no declaration: the first rel_set() /
 // rel_add() on a var makes it an implicit owns(policy = OWN_DELETE), the first rel_link() an
 // implicit plain relation, and a var typed as a registry type is implicitly shared (ownership.md §7).
-// Declare only the exceptions (a SPILL / CONTAINED / KEEP / conditional policy, pairs, keyed links,
-// hooks, protos, untyped shared vars, annotations) in two per-type list overrides, built once per
-// type (type_list()):
-//
-//	/obj/machinery/sleeper/ownership()
-//		. = ..()
-//		. += owns(nameof(beaker), policy = OWN_SPILL)
+// Declare the exceptions (a SPILL / CONTAINED / conditional policy, pairs, keyed links, hooks, starting occupants) in the type's CAPABILITIES block:
 //
 //	CAPABILITIES(/obj/machinery/sleeper)
+//		owns_one(nameof(beaker), on_destroy = ON_DESTROY_SPILL)
 //		links(/obj/machinery/sleeper::console, /obj/machinery/sleep_console::sleeper)
 //
-// Bodies are pure: no instance reads. Var names are always nameof(): nameof(var) for the type's own
-// var, nameof(/type::var) for a partner's, so the compiler checks every name.
+// Var names are always nameof(): nameof(var) for the type's own var, nameof(/type::var) for a partner's, so the compiler checks every name.
 
 // ---- kinds (the key of a table entry) ----
 /// Owned child(ren). Shape (one / list / assoc values) comes from the value.

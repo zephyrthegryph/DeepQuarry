@@ -405,10 +405,8 @@ CAPABILITIES(/obj/item/melee/energy/tyr_hammer)
 CAPABILITIES(/obj/item/melee/energy/tyr_chainsaw)
 	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
 	configure(item_combat(attack_speed = 15, can_cleave = TRUE))
+	owns_one(nameof(bcell), starts = /obj/item/cell/device/weapon/recharge/alien/tyr, on_destroy = ON_DESTROY_CONTAINED)
 
-/obj/item/melee/energy/tyr_chainsaw/ownership()
-	. = ..()
-	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon/recharge/alien/tyr)
 
 /obj/item/shield/tyr_shield
 	name = "tyrian portable energy barrier"

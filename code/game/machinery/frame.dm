@@ -323,6 +323,9 @@ CAPABILITIES(/obj/structure/frame)
 	param(nameof(type_at_make), pos = 3)
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	ref_one(nameof(type_at_make), /datum/frame/frame_types)
+	owns_one(nameof(circuit), on_destroy = ON_DESTROY_CONTAINED)
+	// The frame owns its frame type (its own default instance, or a copy: frame_type_copy()).
+	owns_one(nameof(frame_type))
 
 /obj/structure/frame/computer //used for maps
 	frame_type = new /datum/frame/frame_types/computer
@@ -478,9 +481,4 @@ CAPABILITIES(/obj/structure/frame)
 	to_chat(user, desc)
 	return TRUE
 
-/obj/structure/frame/ownership()
-	. = ..()
-	. += owns(nameof(circuit), policy = OWN_CONTAINED)
-	// The frame owns its frame type (its own default instance, or a copy: frame_type_copy()).
-	. += owns(nameof(frame_type), policy = OWN_DELETE)
 

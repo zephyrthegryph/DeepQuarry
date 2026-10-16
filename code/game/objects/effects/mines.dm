@@ -494,6 +494,7 @@ CAPABILITIES(/obj/item/mine)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(10 SECONDS), needs(req(PROC_REF(has_trap), silent = TRUE)), begins(MSG(mine/removing_trap)), then(PROC_REF(screwdriver_act_done)))
 	op("self", in_hand(), label("Use"), begins(PROC_REF(priming_begins)), wait(10 SECONDS), on_interrupt(PROC_REF(priming_failed)), then(PROC_REF(primed)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	owns_one(nameof(trap), on_destroy = ON_DESTROY_CONTAINED)
 
 MSG_DEF_SELF(mine/removing_trap, span_notice("You begin removing the trap from %T%."))
 
@@ -568,6 +569,3 @@ MSG_DEF_SELF(mine/removing_trap, span_notice("You begin removing the trap from %
 	desc = "A small grey mine with 'BOOM' written on top, and an optical hazard warning on the side."
 	minetype = /obj/effect/mine/lasertag/all
 
-/obj/item/mine/ownership()
-	. = ..()
-	. += owns(nameof(trap), policy = OWN_CONTAINED)

@@ -8,7 +8,7 @@
 #                                                                   parallel jobs below never write the same file)
 #   3. in parallel, each with its own log under data/merge-gates/<sha>.<job>.log:
 #        tests      tools/dq_focused_test.sh <the test list>       (the test compile, the boot gate and the tests, one world)
-#        dm         tools/build/build.sh dm                        (production DreamMaker without UNIT_TESTS + DreamChecker)
+#        dm         tools/build/build.sh dm                        (production native compile (DreamMaker with DQ_COMPILER=dreammaker) without UNIT_TESTS + DreamChecker)
 #        ratchets   tools/ci/check_ratchets.sh, then build.sh analyze
 #        tgui       tools/build/build.sh tgui-lint                 (only when the batch touches tgui/, or with --tgui)
 #        analyze_tests  cargo test in tools/analyze, in a cargo slot (only when the batch touches tools/analyze/)

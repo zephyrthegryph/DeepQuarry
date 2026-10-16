@@ -174,7 +174,7 @@ pub(crate) use handle::{isolated_output_stamp, stamp_handle};
 #[path = "input_snapshot_nontext.rs"]
 mod nontext;
 #[path = "input_prepared.rs"]
-mod prepared;
+pub mod prepared;
 pub use prepared::{PreparedInputArtifacts, PreparedInputPayload};
 
 pub struct RecordingInputs<P = FileSystemInputs> {

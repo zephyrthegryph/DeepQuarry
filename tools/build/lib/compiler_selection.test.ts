@@ -17,8 +17,14 @@ afterEach(() => {
     else process.env[name] = originalEnvironment[name];
   }
 });
-test('default dispatch retains one BYOND call and rejects unknown modes', async () => {
+test('unset DQ_COMPILER selects native when a compiler is configured', () => {
   delete process.env.DQ_COMPILER;
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  expect(compilerMode()).toBe('native');
+});
+test('dreammaker selects the BYOND path, retains one BYOND call and unknown modes are rejected', async () => {
+  process.env.DQ_COMPILER = 'dreammaker';
+  expect(compilerMode()).toBe('byond');
   let calls = 0;
   await selectedCompiler('project.dme', {}, async () => { calls++; });
   expect(calls).toBe(1);

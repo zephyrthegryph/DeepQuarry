@@ -12,14 +12,15 @@
 	switch(on_destroy)
 		if(ON_DESTROY_SPILL)
 			return OWN_SPILL
+		if(ON_DESTROY_CONTAINED)
+			return OWN_CONTAINED
 		if(ON_DESTROY_PRIVATE_COPY)
 			return OWN_PRIVATE_COPY
 		if(ON_DESTROY_HAND_OVER)
 			return OWN_HAND_OVER
 	return OWN_DELETE
 
-/// The legacy own entries one type's compiled table declares, in declaration order: what build_own_table() adds beside the type's
-/// ownership() and relations() lists.
+/// The own entries one type's compiled table declares, in declaration order: what build_own_table() reads of its CAPABILITIES block.
 /proc/table_own_entries(datum/type_table/T)
 	if(!isnull(T.own_entries))
 		return T.own_entries

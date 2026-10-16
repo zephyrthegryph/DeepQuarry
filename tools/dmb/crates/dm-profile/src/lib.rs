@@ -10,6 +10,8 @@ pub use stage_domains::StageMap;
 mod item;
 pub use item::{item, ItemGuard};
 mod allocator;
+#[cfg(feature = "allocation-sites")]
+pub mod allocation_sites;
 mod clock;
 mod internal_observer;
 mod memory;

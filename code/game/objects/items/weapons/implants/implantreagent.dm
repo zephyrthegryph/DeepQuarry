@@ -200,9 +200,8 @@ CAPABILITIES(/obj/item/implant/reagent_generator)
 /obj/item/implanter/reagent_generator
 	var/implant_type = /obj/item/implant/reagent_generator
 
-/obj/item/implanter/reagent_generator/ownership()
-	. = ..()
-	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = nameof(implant_type))
+CAPABILITIES(/obj/item/implanter/reagent_generator)
+	owns_one(nameof(imp), starts = nameof(implant_type), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implanter/reagent_generator
 	icon_state = "implanter1_1" // loaded: what update() would show

@@ -33,8 +33,5 @@
 // A mob's species is copy-on-write (doc/rewrite/ownership.md sec 3): the registered
 // GLOB.all_species singleton until traits or a custom base make it a private copy, which the mob
 // owns. proto_set() deletes the private copy it replaces; teardown deletes it with the mob.
-/mob/living/carbon/ownership()
-	. = ..()
-	. += rel_one(nameof(species), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /// The pulse level: the heartbeat step reads it.

@@ -62,6 +62,7 @@ CAPABILITIES(/obj/machinery/iv_drip)
 	op("iv_drip_interaction_item", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Attach container"), needs(req_is(nameof(beaker), FALSE, because = MSG(iv_drip/beaker))), then(PROC_REF(iv_drip_interaction_item)))
 	op("iv_drip_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove container"), then(PROC_REF(iv_drip_interaction_hand)))
 	op("iv_drip_toggle_mode", menu(), label("Toggle Mode"), needs(req_adjacent(), req_capable(), req_actor_kind(/mob/living, because = MSG(iv_drip/actor_type))), then(PROC_REF(iv_drip_toggle_mode)))
+	owns_one(nameof(beaker), on_destroy = ON_DESTROY_CONTAINED)
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A drop onto a patient attaches them,
 /// then the native drop goes on.
@@ -222,9 +223,6 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 		return TRUE
 	return ..()
 
-/obj/machinery/iv_drip/ownership()
-	. = ..()
-	. += owns(nameof(beaker), policy = OWN_CONTAINED)
 
 /// attached (a relation view: it reads null once the target is deleted).
 /obj/machinery/iv_drip/proc/attached() as /mob/living/carbon/human
