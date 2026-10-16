@@ -184,12 +184,7 @@ base_var	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::ai_brain
 base_var	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::use_modern_ai
 base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::say_list
 base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::say_list_type
-base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::can_pain_emote
 base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::deaf_loop
-base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::pain_emote_1p
-base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::pain_emote_3p
-base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::species_sounds
-base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::death_sound_override
 base_var	code/modules/combat_ai/legacy_constants/say_list.dm	@/mob/living::firesoundloop
 base_var	code/modules/contracts/medical_trial.dm	@/mob/living/carbon/human::contract_medical_indications
 base_var	code/modules/contracts/medical_trial.dm	@/mob/living/carbon/human::clinical_exposure_history
@@ -215,9 +210,6 @@ base_var	code/modules/lighting/lighting_atom.dm	@/atom::light_sources
 base_var	code/modules/lighting/lighting_atom.dm	@/atom/movable::em_block
 base_var	code/modules/lighting/overlay_lighting.dm	@/atom/movable::overlay_light
 base_var	code/modules/materials/containers/machine_shim.dm	@/mob::machine_shim
-base_var	code/modules/materials/material_behaviors.dm	@/obj/item::mat_luminescence
-base_var	code/modules/materials/material_behaviors.dm	@/obj/item::mat_radioactivity
-base_var	code/modules/materials/material_behaviors.dm	@/obj/item::mat_toxicity
 base_var	code/modules/medical/stabilisation/stasis.dm	@/mob/living::stasis_sources
 base_var	code/modules/mob/animations.dm	@/mob::is_floating
 base_var	code/modules/mob/animations.dm	@/mob::floatiness
@@ -227,10 +219,6 @@ base_var	code/modules/mob/freelook/mask/update_triggers.dm	@/mob/living::updatin
 base_var	code/modules/mob/inventory.dm	@/mob::s_active
 base_var	code/modules/mob/language/snowflake.dm	@/mob::hive_lang_range
 base_var	code/modules/mob/living/butchering.dm	@/mob/living::meat_amount
-base_var	code/modules/mob/living/butchering.dm	@/mob/living::meat_type
-base_var	code/modules/mob/living/butchering.dm	@/mob/living::name_the_meat
-base_var	code/modules/mob/living/butchering.dm	@/mob/living::gib_on_butchery
-base_var	code/modules/mob/living/butchering.dm	@/mob/living::butchery_drops_organs
 base_var	code/modules/mob/living/butchering.dm	@/mob/living::butchery_loot
 base_var	code/modules/mob/living/carbon/breathe.dm	@/mob/living/carbon::breath_cycle
 base_var	code/modules/mob/living/carbon/carbon.dm	@/mob/living/carbon::germs_rolled_at
@@ -247,7 +235,6 @@ base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::t
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::does_not_breathe
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::addictions
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::addiction_counters
-base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::last_taste_text
 base_var	code/modules/mob/living/carbon/human/MedicalSideEffects.dm	@/mob/living/carbon/human::side_effects
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::wearing_rig
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::teleporters
