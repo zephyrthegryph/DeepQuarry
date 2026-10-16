@@ -183,9 +183,18 @@
 
 	TEST_ASSERT_EQUAL(H.radiation_countdown_check(pulse), CANCEL_IRRADIATION, "a live countdown refuses before its shortest minimum")
 
-	test_time(3 SECONDS)
+	var/started = sparse_get(H, rad_countdown_started)
+	H.radiation_countdown_start(8 SECONDS)
+	TEST_ASSERT_EQUAL(sparse_get(H, rad_countdown_started), started, "a repeated start retains the actual first world-clock stamp")
+	TEST_ASSERT_EQUAL(sparse_get(H, rad_countdown_minimum), 3 SECONDS, "a larger later minimum cannot replace the shortest observed exposure")
 
-	TEST_ASSERT_EQUAL(H.radiation_countdown_check(pulse), SKIP_MINIMUM_EXPOSURE_TIME_CHECK, "the shortest observed minimum permits irradiation")
+	// CLOCK_WORLD deliberately reads world.time; test_time advances the injected owner timer clock instead.
+	// Set actual world-clock points through the native sparse writer to test both exact threshold branches.
+	var/world_now = EXPIRY_NOW(H, CLOCK_WORLD)
+	sparse_set(H, rad_countdown_started, world_now - (3 SECONDS - world.tick_lag))
+	TEST_ASSERT_EQUAL(H.radiation_countdown_check(pulse), CANCEL_IRRADIATION, "one world tick short of the minimum still refuses irradiation")
+	sparse_set(H, rad_countdown_started, world_now - 3 SECONDS)
+	TEST_ASSERT_EQUAL(H.radiation_countdown_check(pulse), SKIP_MINIMUM_EXPOSURE_TIME_CHECK, "the exact shortest world-clock minimum permits irradiation")
 
 	test_time(10 SECONDS)
 

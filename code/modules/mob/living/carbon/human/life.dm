@@ -57,7 +57,7 @@
 /mob/living/carbon/human/proc/life_hud_full_refresh()
 	// The periodic safety refresh is intentionally rare (once a minute); state-changing
 	// code continues to set its exact HUD dirty bits.
-	if(cooldown_ready(src, hud_full_refresh_at))
+	if(!cooldown_left(src, hud_full_refresh_at))
 		cooldown_start(src, hud_full_refresh_at, 1 MINUTES)
 		set_hud_updateflag((1 << TOTAL_HUDS) - 1)
 		PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)

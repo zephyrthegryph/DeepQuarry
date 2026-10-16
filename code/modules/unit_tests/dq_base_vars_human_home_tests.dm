@@ -42,9 +42,15 @@
 	cooldown_reset(H, hud_full_refresh_at)
 	H.life_hud_full_refresh()
 	TEST_ASSERT_EQUAL(cooldown_left(H, hud_full_refresh_at), 1 MINUTES, "the real safety refresh records its original one-minute deadline")
-	test_time(10 SECONDS)
+	// This deadline uses real world.time, which the injected kernel clock cannot advance.
+	var/early_end = world.time + 50 SECONDS
+	cooldown_set_end(H, hud_full_refresh_at, early_end)
 	H.life_hud_full_refresh()
-	TEST_ASSERT_EQUAL(cooldown_left(H, hud_full_refresh_at), 50 SECONDS, "an early refresh does not extend the deadline")
+	TEST_ASSERT_EQUAL(cooldown_end(H, hud_full_refresh_at), early_end, "an early refresh leaves the exact native deadline unchanged")
+	TEST_ASSERT_EQUAL(cooldown_left(H, hud_full_refresh_at), 50 SECONDS, "the actual world-clock deadline retains its remaining duration")
+	cooldown_set_end(H, hud_full_refresh_at, world.time)
+	H.life_hud_full_refresh()
+	TEST_ASSERT_EQUAL(cooldown_left(H, hud_full_refresh_at), 1 MINUTES, "refresh runs exactly at its original expiry boundary, not one tick later")
 	test_driver_end()
 
 /datum/unit_test/dq_base_vars_human_homes/heartbeat_counter/Run()
