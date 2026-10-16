@@ -4910,3 +4910,7 @@ The look sweep previously seeded only host rand(), while native rolls() also use
 ## Master operation-key pin catch-up (2026-10-16)
 
 51 mob conversion-pin files add only the devour key declared by master 2136172edc4 (code/modules/combat_ai/integration/mob_living.dm); two mecha files remove only ai_use_equipment retired by master f13b84652d. Expanded menu and click rows are byte-identical. These are stale key inventories on master, independent of the initializer/base-variable migrations; no behavior rows or refusal text are blessed.
+
+## Slime eye-state golden repair (2026-10-16)
+
+Master eee5bf967e restored six stale generic slime baby-eyes rows: the has_eye_glow probes for xenobio/bluespace, rainbow and rainbow/kendrick. Their unchanged draw logic derives eyes from each type's color-prefixed life state. Restore exactly those six color-prefixed eye states; no random realization or unrelated look row is promoted.
