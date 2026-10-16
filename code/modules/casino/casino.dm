@@ -521,10 +521,10 @@ MSG_DEF_SELF(casino/public_spin_disabled, "The Wheel makes a sad beep, public sp
 
 			if("Toggle Public Spins")
 				if(public_spin == 0)
-					public_spin = 1
+					set_public_spin(1)
 					to_chat(user,span_notice("Public spins has been enabled."))
 					return TRUE
-				public_spin = 0
+				set_public_spin(0)
 				to_chat(user,span_notice("Public spins has been disabled."))
 
 			if("Reset Lottery")
