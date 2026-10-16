@@ -1,4 +1,4 @@
-# Behaviour state homes â€” source handoff
+# Behaviour state homes — source handoff
 
 The `code/datums/behaviours` cohort removes all 29 baselined base-type fields from ten files. This is a source count, pending analyzer shrink and verification. No baselines, generated files, builds or tests were run for this cohort.
 

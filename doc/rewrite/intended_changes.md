@@ -4898,3 +4898,7 @@ Affected requirement-pin classes:
 ## Base-state homes and deterministic probe selection
 
 This lane preserves transform composition, strict cooldown boundaries, per-character option copying, heat configuration and actor identity. Burning owns a live heat watch in a domain runtime context, not a data-only record. Human body-plan replacement explicitly preserves the seven former holder fields; it does not add them to appearance copying. The user-approved deterministic look sampler retains plan filtering and existing 24/200 coverage limits, with lexical selection so native/BYOND variable enumeration cannot change coverage. No golden rows have been blessed in this lane.
+
+## Appearance race-name prompt migration
+
+The species-name UI action now uses a native asks step and the identity-profile setter. Its existing silent race-edit permission is a requirement, checked before opening and on answering, so a forbidden edit no longer opens a question whose answer would be ignored. Prompt text, default, empty-answer behavior and accepted species name are unchanged. The existing UI-data pin now drives the real UI op with its declared interactive stand-in. No golden rows are re-blessed. The proposed burning context migration was withdrawn; production fire appearance and cooling-watch ownership remain unchanged.
