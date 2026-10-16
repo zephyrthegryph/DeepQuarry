@@ -17,10 +17,12 @@
 	///If we can see without static or not.
 	var/static_vision = TRUE
 
-/obj/item/clothing/glasses/ghost/Initialize(mapload)
-	. = ..()
-	if(static_vision)
-		rel_set(src, nameof(overlay), GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
+CAPABILITIES(/obj/item/clothing/glasses/ghost)
+	derives(nameof(hud_overlay), PROC_REF(initial_ghost_overlay))
+
+/// Use the existing shared-HUD lookup instead of storing a global screen reference.
+/obj/item/clothing/glasses/ghost/proc/initial_ghost_overlay()
+	return static_vision ? "heavy_whitense" : null
 
 /obj/item/clothing/glasses/ghost/advanced
 	name = "improved spectral field analysis goggles"

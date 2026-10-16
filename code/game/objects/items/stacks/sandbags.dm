@@ -28,6 +28,8 @@
 	bag_material = MAT_SYNCLOTH
 
 CAPABILITIES(/obj/item/stack/sandbags)
+	derives(nameof(recipes), PROC_REF(starting_recipes))
+	setup(PROC_REF(update_slowdown))
 	configure(item_thrown(force = 20.0))
 	configure(item_combat(force = 10.0, attack_verbs = list("hit", "bludgeoned", "pillowed")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
@@ -44,11 +46,9 @@ CAPABILITIES(/obj/item/stack/sandbags)
 	var/datum/material/M = get_material_by_name("[bag_material]")
 	return M ? M.icon_colour : color
 
-// ALLOW(init/INSTANCE_STATE): sandbags take their recipes and slowdown
-/obj/item/stack/sandbags/Initialize(mapload)
-	. = ..()
-	recipes = GLOB.sandbag_recipes
-	update_slowdown()
+/// The shared construction table is selected once, without copying its recipe datums.
+/obj/item/stack/sandbags/proc/starting_recipes()
+	return GLOB.sandbag_recipes
 
 /// A bigger pile slows its carrier more.
 /obj/item/stack/sandbags/proc/update_slowdown()

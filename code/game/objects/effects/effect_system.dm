@@ -124,8 +124,7 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	. = ..()
 	GLOB.fx_live_sparks++
 
-/obj/effect/effect/sparks/Initialize(mapload)
-	. = ..()
+/obj/effect/effect/sparks/proc/setup_spark_ignition()
 	play_sfx(src, SFX_SPARKS, 2)
 	var/turf/T = src.loc
 	if (istype(T, /turf))
@@ -713,3 +712,6 @@ CAPABILITIES(/obj/effect/effect/confetti)
 /datum/effect/effect/system/proc/start_repeatedly(times, interval)
 	for(var/i in 0 to times - 1)
 		after(src, i * interval, PROC_REF(start))
+
+CAPABILITIES(/obj/effect/effect/sparks)
+	setup(PROC_REF(setup_spark_ignition))

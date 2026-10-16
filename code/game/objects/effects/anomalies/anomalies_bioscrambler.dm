@@ -17,10 +17,10 @@
 	var/range = 2
 
 CAPABILITIES(/obj/effect/anomaly/bioscrambler)
+	setup(PROC_REF(setup_initial_pursuit))
 	ref_one(nameof(pursuit_target))
 
-/obj/effect/anomaly/bioscrambler/Initialize(mapload)
-	. = ..()
+/obj/effect/anomaly/bioscrambler/proc/setup_initial_pursuit()
 	rel_set(src, nameof(pursuit_target), find_nearest_target())
 
 /obj/effect/anomaly/bioscrambler/anomalyEffect(seconds_per_tick)

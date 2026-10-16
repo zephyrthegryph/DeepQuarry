@@ -6,8 +6,7 @@
 	density = TRUE
 	var/list/starts_with
 
-/obj/structure/largecrate/Initialize(mapload)
-	. = ..()
+/obj/structure/largecrate/proc/setup_loose_contents()
 	for(var/obj/I in src.loc)
 		if(I.density || I.anchored || I == src || !I.simulated)
 			continue
@@ -19,6 +18,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/structure/largecrate)
+	setup(PROC_REF(setup_loose_contents))
 	initial_contents(nameof(starts_with)) // type = count
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))

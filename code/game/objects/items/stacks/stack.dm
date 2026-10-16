@@ -46,29 +46,30 @@ CAPABILITIES(/obj/item/stack)
 	op("split", hand(), ungated(), label("Split"), then(PROC_REF(split_asked)))
 	// A recipe takes its build time (none: at once); the stack is claimed meanwhile, and what the recipe asked for comes from produce_recipe().
 	op("build", ai(), claims(CLAIM_TARGET), takes("recipe", "required", "produced"), wait(PROC_REF(build_time), keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(produce_recipe_done)))
-	param(nameof(amount_at_make), pos = 1)
+	param(nameof(amount_at_make), pos = 1, apply = PROC_REF(apply_initial_amount))
+	derives(nameof(stacktype), PROC_REF(initial_stack_type))
+	derives(nameof(item_state), PROC_REF(initial_stack_hand_state))
+	derives(nameof(sellable_type), PROC_REF(initial_stack_sale))
 
 /// The amount a stack is made with (its constructor param): null for its own, negative for a full stack.
 /obj/item/stack/var/amount_at_make
 
-// ALLOW(init/INSTANCE_STATE): a stack sets its starting amount (a negative one is a full stack), its in-hand sprite and its sale
-/obj/item/stack/Initialize(mapload)
-	. = ..()
-	if(!stacktype)
-		stacktype = type
-	if(!no_variants)
-		item_state = initial(icon_state) // the in-hand sprite of a stack with variants is the plain one, whatever the pile shows
-	var/starting_amount = amount_at_make
-	if(!isnull(starting_amount)) // Could be 0
-		// Negative numbers are 'give full stack', like -1
-		if(starting_amount < 0)
-			// But sometimes a coder forgot to define what that even means
-			if(max_amount)
-				starting_amount = max_amount
-			else
-				starting_amount = 1
-		set_amount(starting_amount, TRUE)
-	make_sellable(/datum/sellable/material_stack)
+/// The constructor amount is applied before descendant material initialization.
+/obj/item/stack/proc/apply_initial_amount(starting_amount)
+	if(isnull(starting_amount))
+		return
+	if(starting_amount < 0)
+		starting_amount = max_amount ? max_amount : 1
+	set_amount(starting_amount, TRUE)
+
+/obj/item/stack/proc/initial_stack_type()
+	return stacktype || type
+
+/obj/item/stack/proc/initial_stack_hand_state()
+	return no_variants ? item_state : initial(icon_state)
+
+/obj/item/stack/proc/initial_stack_sale()
+	return sellable_type || /datum/sellable/material_stack
 
 /obj/item/stack/get_material_composition(breakdown_flags)
 	. = ..()

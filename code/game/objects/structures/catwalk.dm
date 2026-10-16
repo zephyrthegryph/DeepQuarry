@@ -20,10 +20,10 @@
 	max_integrity = 100
 	var/delete_me = FALSE
 
-/obj/structure/catwalk/Initialize(mapload)
-	. = ..()
-	if(delete_me)
-		return INITIALIZE_HINT_QDEL
+/obj/structure/catwalk/proc/may_initialize_catwalk()
+	return !delete_me
+
+/obj/structure/catwalk/proc/setup_duplicate_catwalks()
 	for(var/obj/structure/catwalk/C in get_turf(src))
 		if(C != src)
 			if(!(C.flags & ATOM_INITIALIZED))
@@ -91,6 +91,8 @@
 MSG_DEF_SELF(catwalk/plate_begins, span_notice("Placing tile..."))
 
 CAPABILITIES(/obj/structure/catwalk)
+	keeps_if(PROC_REF(may_initialize_catwalk))
+	setup(PROC_REF(setup_duplicate_catwalks))
 	silicon_hand(adjacent = TRUE)
 	smoothing()
 	op("slice_keep", tool(TOOL_WELDER), stance(I_HELP), label("Slice apart, keeping the lattice"), wait(0), needs(req_welder_lit()), costs(RES_FUEL, 0), then(PROC_REF(interaction_slice_keep)))

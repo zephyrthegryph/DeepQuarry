@@ -256,6 +256,7 @@ CAPABILITIES(/obj/item/storage/fancy/crackers)
 
 
 CAPABILITIES(/obj/item/storage/fancy/cigarettes)
+	setup(PROC_REF(brand_starting_cigarettes))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 2))
 	reagents(PROC_REF(pack_volume)) // so people can inject the whole packet without opening it
@@ -268,8 +269,8 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 /obj/item/storage/fancy/proc/pack_volume()
 	return 15 * storage_slots
 
-/obj/item/storage/fancy/cigarettes/Initialize(mapload)
-	. = ..()
+/// The storage parent populated its real contents before setup runs.
+/obj/item/storage/fancy/cigarettes/proc/brand_starting_cigarettes()
 	if(brand)
 		for(var/obj/item/clothing/mask/smokable/cigarette/C in slot_contents(CONTAINER_SLOT_STORAGE))
 			C.brand = brand

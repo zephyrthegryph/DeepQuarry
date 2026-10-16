@@ -24,10 +24,6 @@
 	var/volume_rate = 500              //Needed for borg jetpack transfer
 	actions_types = list(/datum/action/item_action/toggle_jetpack)
 
-/obj/item/tank/jetpack/Initialize(mapload)
-	. = ..()
-	ion_trail.set_up(src)
-
 CAPABILITIES(/obj/item/tank/jetpack)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 	op("toggle_rockets_effect", menu(), label("Toggle Jetpack Stabilization"), needs(carried()), then(PROC_REF(toggle_rockets_effect_op)))

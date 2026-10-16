@@ -33,9 +33,7 @@
 /obj/structure/windoor_assembly/var/start_dir = NORTH
 /obj/structure/windoor_assembly/var/constructed = FALSE
 
-// ALLOW(init/INSTANCE_STATE): an assembly faces a cardinal way, starts loose when built, and updates its tiles
-/obj/structure/windoor_assembly/Initialize(mapload)
-	. = ..()
+/obj/structure/windoor_assembly/proc/setup_constructed_frame()
 	if(constructed)
 		set_anchored(FALSE)
 	switch(start_dir)
@@ -47,7 +45,6 @@
 
 	update_nearby_tiles(need_rebuild=1)
 	make_rotatable()
-
 
 /obj/structure/windoor_assembly/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))
@@ -87,6 +84,7 @@ MSG_DEF_SELF(windoor_assembly/bolted_down, "Unbolt it from the floor first.")
 MSG_DEF_SELF(windoor_assembly/broken_board, "The assembly has broken airlock electronics.")
 
 CAPABILITIES(/obj/structure/windoor_assembly)
+	setup(PROC_REF(setup_constructed_frame))
 	construction(start(STAGE_WINDOOR_ASSEMBLY_FRAME),
 		stage(STAGE_WINDOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))),
 		stage(STAGE_WINDOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))),

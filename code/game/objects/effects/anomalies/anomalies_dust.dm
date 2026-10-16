@@ -13,9 +13,7 @@
 	COOLDOWN_DECLARE(pulse_cooldown)
 	var/pulse_delay = 5 SECONDS
 
-/obj/effect/anomaly/dust/Initialize(mapload)
-	. = ..()
-
+/obj/effect/anomaly/dust/proc/setup_pulse_animation()
 	animate(src, transform = matrix()*0.85, time = 3, loop = -1)
 	animate(transform = matrix(), time = 3, loop = -1)
 
@@ -86,3 +84,6 @@
 			fx_sparks(src, 3)
 		else
 			anomalyEffect()
+
+CAPABILITIES(/obj/effect/anomaly/dust)
+	setup(PROC_REF(setup_pulse_animation))

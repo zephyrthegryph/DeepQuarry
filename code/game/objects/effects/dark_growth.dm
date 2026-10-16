@@ -10,9 +10,7 @@
 /// Whether this growth may glow (its constructor param).
 /obj/effect/dark/var/check_glow = FALSE
 
-// ALLOW(init/INSTANCE_STATE): dark growth that may glow does so one time in twenty
-/obj/effect/dark/Initialize(mapload)
-	. = ..()
+/obj/effect/dark/proc/setup_initial_glow()
 	if(check_glow && prob(5))
 		add_glow()
 
@@ -126,6 +124,7 @@ CAPABILITIES(/obj/structure/prop/dark_node)
 	..()
 
 CAPABILITIES(/obj/effect/dark)
+	setup(PROC_REF(setup_initial_glow))
 	links(/obj/effect/dark::linked_node, /obj/structure/prop/dark_node::children_effects, b_many = TRUE)
 	param(nameof(check_glow), pos = 1)
 

@@ -21,6 +21,7 @@
 
 CAPABILITIES(/obj/item/radio/headset)
 	configure(item_worn(slots = SLOT_EARS))
+	setup(PROC_REF(prepare_initial_channels))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 	owns_one(nameof(keyslot2), /obj/item/encryptionkey, starts = nameof(ks2type))
 	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
@@ -32,10 +33,8 @@ CAPABILITIES(/obj/item/radio/headset)
 /obj/item/radio/headset/starting_channels()
 	return list()
 
-/obj/item/radio/headset/Initialize(mapload)
-	. = ..()
-	// Compute channels but don't register with SSradio yet (C5): on_materialize()
-	// (inherited from /obj/item/radio) does that, from the channels computed here.
+/// The declared keys exist before setup; materialization subscribes afterwards.
+/obj/item/radio/headset/proc/prepare_initial_channels()
 	recalculateChannels(TRUE, register = FALSE)
 
 /obj/item/radio/headset/list_channels(mob/user)
@@ -171,7 +170,7 @@ CAPABILITIES(/obj/item/radio/headset)
 
 	handle_finalize_recalculatechannels(setDescription, register)
 
-/// register is FALSE only from Initialize() (C5): on_materialize() (inherited
+/// register is FALSE from initial setup (C5): on_materialize() (inherited
 /// from /obj/item/radio) registers the channels computed here, exactly once.
 /obj/item/radio/headset/proc/handle_finalize_recalculatechannels(setDescription = FALSE, register = TRUE)
 	PRIVATE_PROC(TRUE)

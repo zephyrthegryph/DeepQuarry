@@ -26,6 +26,9 @@
 	proximity_tracked = TRUE
 
 CAPABILITIES(/obj/effect/anomaly)
+	ref_one(nameof(impact_area), /area)
+	keeps_if(PROC_REF(has_initial_area))
+	setup(PROC_REF(setup_anomaly_countdown))
 	configure(light_glow(range = 3))
 	after_init(nameof(lifespan), then(PROC_REF(lifespan_over)))
 	every(2 SECONDS, then(PROC_REF(anomaly_step)), when = STAT_RELEVANCE)
@@ -45,14 +48,12 @@ CAPABILITIES(/obj/effect/anomaly)
 	look.watch(stats)
 	return stats?.stability
 
-// ALLOW(init/INSTANCE_STATE): an anomaly needs an area, makes its core with a random frequency and code, and counts down its lifespan
-/obj/effect/anomaly/Initialize(mapload)
-	. = ..()
+/obj/effect/anomaly/proc/has_initial_area()
+	return !isnull(get_area(src))
 
-	impact_area = get_area(src)
+/obj/effect/anomaly/proc/setup_anomaly_countdown()
+	rel_set(src, nameof(impact_area), get_area(src))
 
-	if(!impact_area())
-		return INITIALIZE_HINT_QDEL
 
 	if(anomaly_core)
 		anomaly_core.set_frequency(sanitize_frequency(rand(PUBLIC_LOW_FREQ, PUBLIC_HIGH_FREQ)))
@@ -62,7 +63,7 @@ CAPABILITIES(/obj/effect/anomaly)
 	EXPIRY_SET(src, death_time, lifespan, CLOCK_WORLD)
 
 	if(countdown_colour)
-		countdown.color = countdown_colour
+		countdown.set_color(countdown_colour)
 
 	if(immortal)
 		return

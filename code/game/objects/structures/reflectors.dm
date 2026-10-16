@@ -31,8 +31,7 @@
 	..()
 	look.state("reflector_base")
 
-/obj/structure/reflector/Initialize(mapload)
-	. = ..()
+/obj/structure/reflector/proc/setup_deflection_bearing()
 	if(deflector_icon_state)
 		deflector_overlay = image(icon, deflector_icon_state)
 		add_overlay(deflector_overlay)
@@ -126,6 +125,7 @@
 	return admin ? (resistance_flags | BOMB_PROOF) : resistance_flags
 
 CAPABILITIES(/obj/structure/reflector)
+	setup(PROC_REF(setup_deflection_bearing))
 	every(0.5 SECONDS, then(PROC_REF(reflector_step)), when = nameof(refiring))
 	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(reflector_not_admin))), then(PROC_REF(interaction_item)))
 	op("dismantle", tool(TOOL_WRENCH), label("Dismantle"), when(PROC_REF(can_be_deconstructed)), needs(req(PROC_REF(not_anchored), because = MSG(reflector/unweld_first))),
@@ -349,7 +349,9 @@ MSG_DEF(reflector/welding_down, span_notice("You start to weld %T% to the floor.
 /obj/machinery/portable_atmospherics/canister
 	var/dont_burst = FALSE
 
-/obj/machinery/portable_atmospherics/canister/phoron/cold/Initialize(mapload)
-	. = ..()
+/obj/machinery/portable_atmospherics/canister/phoron/cold/proc/setup_cold_contents()
 	heat_set(src.air_contents, 2.72)
 
+
+CAPABILITIES(/obj/machinery/portable_atmospherics/canister/phoron/cold)
+	setup(PROC_REF(setup_cold_contents))

@@ -70,10 +70,6 @@ CAPABILITIES(/obj/structure/easel)
 /obj/item/canvas/proc/sized_desc()
 	return "[desc] (Canvas size is [width]x[height].)"
 
-/obj/item/canvas/Initialize(mapload)
-	. = ..()
-	reset_grid()
-
 /obj/item/canvas/proc/reset_grid()
 	set_grid(new/list(width,height))
 	for(var/x in 1 to width)
@@ -97,6 +93,7 @@ CAPABILITIES(/obj/structure/easel)
 		return GLOB.tgui_default_state
 
 CAPABILITIES(/obj/item/canvas)
+	setup(PROC_REF(reset_grid))
 	interface("Canvas")
 	op("paint", ui_act("paint", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_paint)))
 	op("finalize", ui_act("finalize"), then(PROC_REF(ui_act_finalize)))
@@ -287,8 +284,7 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 	var/image/color_drop
 	var/hud_level = FALSE
 
-/obj/item/paint_brush/Initialize(mapload)
-	. = ..()
+/obj/item/paint_brush/proc/setup_brush_color()
 	color_drop = image(icon, null, "brush_color")
 	color_drop.color = selected_color
 
@@ -738,3 +734,6 @@ CAPABILITIES(/obj/structure/sign/painting)
 	return TRUE
 
 // The easel's painting sits on its turf (one-sided REL view).
+
+CAPABILITIES(/obj/item/paint_brush)
+	setup(PROC_REF(setup_brush_color))

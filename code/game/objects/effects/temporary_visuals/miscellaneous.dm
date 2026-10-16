@@ -10,7 +10,6 @@ CAPABILITIES(/obj/effect/temp_visual/decoy)
 /obj/effect/temp_visual/decoy/var/tmp/atom/mimiced_atom
 /obj/effect/temp_visual/decoy/var/tmp/customappearance
 
-// ALLOW(init/INSTANCE_STATE): a decoy takes the look of what it mimics, after its parents' random facing
 /obj/effect/temp_visual/decoy/Initialize(mapload)
 	. = ..()
 	alpha = initial(alpha)
@@ -22,8 +21,7 @@ CAPABILITIES(/obj/effect/temp_visual/decoy)
 	if(customappearance)
 		appearance = customappearance
 
-/obj/effect/temp_visual/decoy/fading/Initialize(mapload)
-	. = ..()
+/obj/effect/temp_visual/decoy/fading/proc/setup_fade_animation()
 	animate(src, alpha = 0, time = duration)
 
 /obj/effect/temp_visual/decoy/fading/fivesecond
@@ -181,3 +179,6 @@ CAPABILITIES(/obj/effect/temp_visual/heal)
 	name = "glowing cracks"
 	icon_state = "purplecrack"
 	duration = 6
+
+CAPABILITIES(/obj/effect/temp_visual/decoy/fading)
+	setup(PROC_REF(setup_fade_animation))

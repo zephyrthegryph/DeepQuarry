@@ -50,10 +50,6 @@ CAPABILITIES(/obj/structure/holosign)
 	rad_insulation = RAD_LIGHT_INSULATION
 	alpha = 150
 
-/obj/structure/holosign/barrier/combifan/Initialize(mapload)
-	.=..()
-	update_nearby_tiles()
-
 /obj/structure/holosign/barrier/medical
 	name = "\improper Vey-Med holobarrier"
 	desc = "A holobarrier that uses biometrics to detect viruses. Denies passing to personnel with easily-detected, malicious viruses. Good for quarantines."
@@ -98,3 +94,6 @@ CAPABILITIES(/obj/structure/holosign/barrier/medical)
 	if(get_disease_danger_value(threat) > get_disease_danger_value(DISEASE_MINOR))
 		return FALSE
 	return TRUE
+
+CAPABILITIES(/obj/structure/holosign/barrier/combifan)
+	setup(TYPE_PROC_REF(/atom/movable, update_nearby_tiles))

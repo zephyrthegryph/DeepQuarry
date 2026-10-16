@@ -15,15 +15,14 @@
 	var/is_raining = FALSE
 
 CAPABILITIES(/obj/effect/anomaly/weather)
+	setup(PROC_REF(setup_weather_telegraph))
 	when(nameof(telegraph_delay), after_init(nameof(telegraph_delay), then(PROC_REF(start_weather_after_init))))
 	owns_one(nameof(selected_weather), /datum/anomalous_weather, starts = PROC_REF(make_weather))
 
-/obj/effect/anomaly/weather/Initialize(mapload)
-	. = ..()
-
+/obj/effect/anomaly/weather/proc/setup_weather_telegraph()
 	LAZYADD(affected_areas, impact_area())
 
-	telegraph_delay = lifespan / telegraph_percent // the weather starts once telegraphed (after_init())
+	set_telegraph_delay(lifespan / telegraph_percent) // the weather starts once telegraphed (after_init())
 
 	for(var/spread_dir in GLOB.alldirs)
 		var/area/nearby = find_adjacent_impacted_area(spread_dir)
@@ -42,7 +41,6 @@ CAPABILITIES(/obj/effect/anomaly/weather)
 			rel_add(src, nameof(affected_turfs), turf)
 
 	apply_wibbly_filters(src)
-
 
 /obj/effect/anomaly/weather/proc/add_turfs(list/turf/to_add)
 	for(var/turf/turf in to_add)

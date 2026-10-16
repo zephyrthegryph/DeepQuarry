@@ -19,19 +19,17 @@ GLOBAL_LIST_EMPTY(shared_particles)
 	var/shared_users = 0
 
 CAPABILITIES(/obj/effect/abstract/shared_particle_holder)
+	setup(PROC_REF(setup_shared_particles))
 	param(nameof(particle_path), pos = 1)
 	param(nameof(particle_flags), pos = 2)
 
 /// The particles a holder shows (its constructor param).
 /obj/effect/abstract/shared_particle_holder/var/particle_path = /particles/smoke
 
-// ALLOW(init/INSTANCE_STATE): a particle holder leaves the map for its parent's vis_contents and makes its particles
-/obj/effect/abstract/shared_particle_holder/Initialize(mapload)
-	. = ..()
+/obj/effect/abstract/shared_particle_holder/proc/setup_shared_particles()
 	// Shouldn't exist outside of nullspace
 	moveToNullspace()
 	particles = new particle_path()
-
 
 /* Adds (or creates and adds) a shared particle holder
  * Shared particle holders are held in nullspace and added to vis_contents of all atoms using it

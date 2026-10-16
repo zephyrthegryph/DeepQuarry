@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))
-	owns_one(nameof(active_weapon), /obj/item/gun/energy/gun/generator)
+	owns_one(nameof(active_weapon), /obj/item/gun/energy/gun/generator, starts = PROC_REF(create_initial_weapon), starts_after = nameof(bcell))
 	owns_one(nameof(bcell), /obj/item/cell/device, starts = nameof(bcell))
 	every(2 SECONDS, then(PROC_REF(personal_shield_generator_step)), when = nameof(shield_active))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_generator_emp)))
@@ -60,15 +60,12 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 /obj/item/personal_shield_generator/get_cell()
 	return bcell
 
-/obj/item/personal_shield_generator/Initialize(mapload)
-	. = ..()
-	if(has_weapon)
-		if(ispath(active_weapon))
-			rel_set(src, nameof(active_weapon), new active_weapon(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
-			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
-		else
-			rel_set(src, nameof(active_weapon), new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
-			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
+/// Native owned-child factory: the cell exists first, and the gun receives its real constructor owner.
+/obj/item/personal_shield_generator/proc/create_initial_weapon(current, mapload)
+	if(!has_weapon)
+		return current
+	var/weapon_type = ispath(current) ? current : /obj/item/gun/energy/gun/generator
+	return new weapon_type(src, src)
 
 /// If the shield gen is active; it drains power while it is.
 /obj/item/personal_shield_generator/var/shield_active = 0
@@ -385,9 +382,8 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 	var/wielded = 0
 	var/cooldown = 0
 
-// ALLOW(init/INSTANCE_STATE): the generator's gun draws from its generator's cell, in place of the one its parents made
-/obj/item/gun/energy/gun/generator/Initialize(mapload)
-	. = ..()
+/// The energy-gun parent clears its cell during Initialize; link only after that chain returns.
+/obj/item/gun/energy/gun/generator/proc/link_generator_cell()
 	rel_set(src, nameof(power_supply), shield_generator()?.bcell)
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
@@ -605,6 +601,7 @@ CAPABILITIES(/obj/item/personal_shield_generator/belt/mining)
 
 // The generator gun runs off the generator's cell: a view, not an owned cell.
 CAPABILITIES(/obj/item/gun/energy/gun/generator)
+	setup(PROC_REF(link_generator_cell))
 	ref_one(nameof(power_supply))
 	param(nameof(linked_generator), pos = 1)
 	ref_one(nameof(linked_generator), /obj/item/personal_shield_generator)

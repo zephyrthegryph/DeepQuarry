@@ -241,8 +241,7 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	icon_state = "grille-b"
 	density = FALSE
 
-/obj/structure/grille/broken/Initialize(mapload)
-	. = ..()
+/obj/structure/grille/broken/proc/setup_broken_integrity()
 	update_integrity(rand(1, 5)) //In the broken-but-not-cleared band (below integrity_failure).
 	atom_break() //Drop into the passable broken stub state.
 
@@ -268,3 +267,6 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 /obj/structure/grille/occult_act(mob/living/user)
 	replace_with(src, /obj/structure/grille/cult)
 	return TRUE
+
+CAPABILITIES(/obj/structure/grille/broken)
+	setup(PROC_REF(setup_broken_integrity))

@@ -21,11 +21,11 @@
 	var/maximum_teleports = 4
 
 CAPABILITIES(/obj/effect/anomaly/dimensional)
+	setup(PROC_REF(setup_dimensional_animation))
 	owns_one(nameof(theme), /datum/dimension_theme)
 	rolls(nameof(teleports_left), PROC_REF(roll_teleports))
 
-/obj/effect/anomaly/dimensional/Initialize(mapload)
-	. = ..()
+/obj/effect/anomaly/dimensional/proc/setup_dimensional_animation()
 	overlays += mutable_appearance('icons/effects/effects.dmi', "dimensional_overlay")
 
 	animate(src, transform = matrix()*0.85, time = 3, loop = -1)

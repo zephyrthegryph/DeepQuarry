@@ -55,6 +55,7 @@ CAPABILITIES(/obj/item/bedsheet/pillow)
 	flippable = FALSE
 
 CAPABILITIES(/obj/structure/bed/pillowpile)
+	setup(PROC_REF(setup_front_link))
 	owns_one(nameof(front), /obj/structure/bed/pillowpilefront, starts = PROC_REF(make_front))
 	bed_hands_off()
 	without("drag_buckle")   // its own Use replaced every inherited interaction
@@ -71,8 +72,7 @@ CAPABILITIES(/obj/structure/bed/pillowpile)
 	/// The pile this is the front of.
 	var/obj/structure/bed/pillowpile/pile
 
-/obj/structure/bed/pillowpile/Initialize(mapload)
-	. = ..()
+/obj/structure/bed/pillowpile/proc/setup_front_link()
 	rel_set(front, nameof(front.pile), src)
 
 // The front piece is the pile's other half: the pile owns it (implicit OWN, deleted with the

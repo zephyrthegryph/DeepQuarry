@@ -27,9 +27,6 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 /// The mob carrying it (a relation view).
 /obj/item/gps/var/mob/holder
 
-/obj/item/gps/Initialize(mapload)
-	. = ..()
-	update_holder()
 
 /obj/item/gps/proc/check_visible_to_holder()
 	. = (holder_ref() && (holder_ref().get_active_hand() == src || holder_ref().get_inactive_hand() == src))
@@ -85,6 +82,7 @@ STAT(/obj/item/gps, operable, ALL, virtual = TRUE)
 	return "global positioning system ([gps_tag])"
 
 CAPABILITIES(/obj/item/gps)
+	setup(PROC_REF(update_holder))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_one(nameof(holder))

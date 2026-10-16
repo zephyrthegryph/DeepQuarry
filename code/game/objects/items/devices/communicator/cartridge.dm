@@ -243,10 +243,8 @@ CAPABILITIES(/obj/item/commcard/signal/science)
 	icon_state = "cart-h"
 	internal_data = list("stat_display_line1" = null, "stat_display_line2" = null, "stat_display_active1" = null, "stat_display_active2" = null, "stat_display_special" = null)
 
-/obj/item/commcard/head/Initialize(mapload)
-	// Have to register the commcard with the Radio controller to receive updates to the status displays
-	SSradio.add_object(src, 1435)
-	. = ..()
+CAPABILITIES(/obj/item/commcard/head)
+	radio_listen(freq = 1435)
 
 /obj/item/commcard/head/get_data()
 	return list(

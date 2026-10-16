@@ -16,11 +16,11 @@
 /// Ticks its display every fast tick while started.
 /obj/effect/countdown/var/started = FALSE
 CAPABILITIES(/obj/effect/countdown)
+	setup(PROC_REF(setup_countdown_attachment))
 	ref_one(nameof(attached_to))
 	every(0.2 SECONDS, then(PROC_REF(countdown_step)), when = nameof(started))
 
-/obj/effect/countdown/Initialize(mapload)
-	. = ..()
+/obj/effect/countdown/proc/setup_countdown_attachment()
 	attach(loc)
 
 /obj/effect/countdown/examine(mob/user)

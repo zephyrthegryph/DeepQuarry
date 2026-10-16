@@ -311,11 +311,8 @@ CAPABILITIES(/obj/item/storage/mrebag)
 
 
 CAPABILITIES(/obj/item/storage/box/tgmc_mre)
+	setup(PROC_REF(pickflavor))
 	configure(storage(max_size = 0))
-
-/obj/item/storage/box/tgmc_mre/Initialize(mapload)
-	. = ..()
-	pickflavor()
 
 /obj/item/storage/box/tgmc_mre/proc/pickflavor()
 	var/entree = pick("boneless pork ribs", "grilled chicken", "pizza square", "spaghetti", "chicken tenders")
@@ -364,6 +361,7 @@ CAPABILITIES(/obj/item/storage/box/tgmc_mre)
 	var/seasoning
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/tgmc_mre_component)
+	setup(PROC_REF(season_component))
 	param(nameof(flavor_at_make), pos = 1, apply = PROC_REF(pack_flavor))
 
 /// The flavour a component is made as (its constructor param).
@@ -374,11 +372,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/tgmc_mre_component)
 	determinetype(newflavor)
 	desc = "A packaged [flavor] from a Meal Ready-to-Eat, there is a lengthy list of [pick("obscure", "arcane", "unintelligible", "revolutionary", "sophisticated", "unspellable")] ingredients and addictives printed on the back."
 
-// ALLOW(init/INSTANCE_STATE): a component is seasoned once its parents made its reagents
-/obj/item/reagent_containers/food/snacks/tgmc_mre_component/Initialize(mapload)
-	. = ..()
+/// The flavour parameter and reagent capability are ready before final setup.
+/obj/item/reagent_containers/food/snacks/tgmc_mre_component/proc/season_component()
 	if(seasoning)
-		reagents.add_reagent(seasoning, 1) // ALLOW(decl): state picked in determinetype()
+		reagents.add_reagent(seasoning, 1)
 
 /obj/item/reagent_containers/food/snacks/tgmc_mre_component/unpackage(mob/user as mob)
 	. = ..()

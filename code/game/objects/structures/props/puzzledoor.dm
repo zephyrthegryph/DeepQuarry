@@ -34,8 +34,7 @@
 		visible_message(span_cult("\The [src] is completely unaffected by \the [Proj]."))
 	destroyed(Proj) //No piercing. No.
 
-/obj/machinery/door/blast/puzzle/Initialize(mapload)
-	. = ..()
+/obj/machinery/door/blast/puzzle/proc/setup_puzzle_locks()
 	implicit_material = get_material_by_name(MAT_ALIEN_DUNGEON)
 	if(length(locks))
 		return
@@ -46,6 +45,7 @@
 
 // many-to-many with locks (declared on the lock, projectile_lock.dm): a dying door leaves each lock's door list and vice versa.
 CAPABILITIES(/obj/machinery/door/blast/puzzle)
+	setup(PROC_REF(setup_puzzle_locks))
 	// the puzzle door answers to its locks: its own touch and its own item use replace the blast door's open, close, pry and swallow
 	without("doors.open")
 	without("doors.close")

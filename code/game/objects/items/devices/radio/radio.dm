@@ -59,10 +59,11 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 SETTER(/obj/item/radio, frequency)
 
-/obj/item/radio/Initialize(mapload)
-	. = ..()
+/// Normalize the mapped frequency before materialization subscribes the receiver.
+/obj/item/radio/proc/initial_frequency()
 	if(frequency < RADIO_LOW_FREQ || frequency > RADIO_HIGH_FREQ)
-		frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
+		return sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
+	return frequency
 
 /// The internal channels it starts with (derives(), at init): frequency text -> the access each needs (a subtype answers its own set).
 /obj/item/radio/proc/starting_channels()
@@ -151,6 +152,7 @@ SETTER(/obj/item/radio, frequency)
 /obj/machinery/telecomms/var/list/obj/item/radio/bs_rx_listeners
 
 CAPABILITIES(/obj/item/radio)
+	derives(nameof(frequency), PROC_REF(initial_frequency))
 	configure(item_worn(slots = SLOT_BELT))
 	links(/obj/item/radio::bs_tx_receiver, /obj/machinery/telecomms::bs_tx_senders, b_many = TRUE)
 	links(/obj/item/radio::bs_rx_broadcaster, /obj/machinery/telecomms::bs_rx_listeners, b_many = TRUE)

@@ -9,6 +9,7 @@
 	pixel_x = -16
 
 CAPABILITIES(/obj/effect/temporary_effect/eruption)
+	setup(PROC_REF(setup_eruption_flick))
 	param(nameof(extra_time), pos = 1, default = 10 SECONDS)
 	param(nameof(color), pos = 2)
 	after_init(nameof(eruption_delay), then(PROC_REF(erupt_after_init)))
@@ -18,9 +19,7 @@ CAPABILITIES(/obj/effect/temporary_effect/eruption)
 /// How much longer than its type the eruption lasts (its constructor param).
 /obj/effect/temporary_effect/eruption/var/extra_time
 
-// ALLOW(init/INSTANCE_STATE): an eruption erupts on its turf just before it ends
-/obj/effect/temporary_effect/eruption/Initialize(mapload)
-	. = ..()
+/obj/effect/temporary_effect/eruption/proc/setup_eruption_flick()
 	flick("[icon_state]_create",src)
 
 /// It lasts its extra time longer than its type (derives(), at init; read by lives_for()).

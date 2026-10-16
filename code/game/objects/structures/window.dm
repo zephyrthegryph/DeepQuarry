@@ -258,6 +258,7 @@ MSG_DEF(window/wiring, span_notice("You begin to wire %T% for electrochromic tin
 		update_nearby_tiles(need_rebuild=1)
 
 CAPABILITIES(/obj/structure/window)
+	setup(PROC_REF(setup_constructed_window))
 	smoothing()
 	rolls(nameof(tilt_sign), pick_one(list(-1, 1)))
 	param(nameof(dir), pos = 1)
@@ -275,9 +276,7 @@ CAPABILITIES(/obj/structure/window)
 /// A window a player built (its constructor param).
 /obj/structure/window/var/constructed = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a window insulates, starts loose when built, turns, and updates its tiles and the tables beside it
-/obj/structure/window/Initialize(mapload)
-	. = ..()
+/obj/structure/window/proc/setup_constructed_window()
 	update_rad_insulation()
 
 	//player-constructed windows

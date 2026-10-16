@@ -9,14 +9,13 @@
 	var/message_to_play = "The quick brown fox jumps over the lazy dog."
 
 CAPABILITIES(/obj/structure/prop/transmitter)
+	setup(PROC_REF(setup_transmission))
 	owns_one(nameof(soundloop), /datum/looping_sound/sequence/morse, starts = /datum/looping_sound/sequence/morse)
 
-/obj/structure/prop/transmitter/Initialize(mapload)
-	. = ..()
+/obj/structure/prop/transmitter/proc/setup_transmission()
 	set_new_message(message_to_play)
 	soundloop.start()
 	set_interaction_message("On the monitor it displays '[uppertext(message_to_play)]'.")
-
 
 /obj/structure/prop/transmitter/vv_edit_var(var_name, var_value)
 	if(var_name == "message_to_play")

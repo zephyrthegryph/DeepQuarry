@@ -192,14 +192,14 @@ CAPABILITIES(/obj/structure/salvageable/server)
 	)
 
 CAPABILITIES(/obj/structure/salvageable/personal)
+	setup(PROC_REF(setup_reinforced_table))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/salvageable/personal/proc/roll_look(datum/roller/R)
 	return "personal[R.number(0, 12)]"
 
-/obj/structure/salvageable/personal/Initialize(mapload)
-	. = ..()
+/obj/structure/salvageable/personal/proc/setup_reinforced_table()
 	new /obj/structure/table/reinforced (loc)
 
 /obj/structure/salvageable/bliss

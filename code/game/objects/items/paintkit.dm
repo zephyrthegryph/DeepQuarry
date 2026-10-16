@@ -183,9 +183,12 @@
 /obj/item/kit/suit/rig/can_customize(obj/item/I)
 	return istype(I, /obj/item/rig)
 
-/obj/item/kit/suit/rig/debug/Initialize(mapload)
-	set_info("debug suit", "This is a test", "debug", CUSTOM_ITEM_OBJ, CUSTOM_ITEM_MOB)
-	. = ..()
+/obj/item/kit/suit/rig/debug
+	new_name = "debug suit"
+	new_desc = "This is a test"
+	new_icon = "debug"
+	new_icon_file = CUSTOM_ITEM_OBJ
+	new_icon_override_file = CUSTOM_ITEM_MOB
 
 /obj/item/kit/paint
 	name = "mecha customisation kit"

@@ -25,12 +25,12 @@ TYPE_TABLE_DECLARE(/obj/structure/mob_spawner, mob_spawner_types, list( \
 
 /obj/structure/mob_spawner/proximity_tracked = TRUE
 
-/obj/structure/mob_spawner/Initialize(mapload)
-	. = ..()
+/obj/structure/mob_spawner/proc/setup_initial_spawn_delay()
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay + rand(0, spawn_delay))
 
 // Spawned mobs leave the list when they die (one-sided: the mob's own `nest` var is its side).
 CAPABILITIES(/obj/structure/mob_spawner)
+	setup(PROC_REF(setup_initial_spawn_delay))
 	every(2 SECONDS, then(PROC_REF(mob_spawner_step)), when = STAT_RELEVANCE)
 	ref_many(nameof(spawned_mobs))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

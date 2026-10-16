@@ -11,11 +11,11 @@
 	var/spawned_num = 0
 	EXPIRY_DECLARE(init_time)
 
-/obj/effect/bspawner/Initialize(mapload)
-	. = ..()
+/obj/effect/bspawner/proc/setup_spawn_clock()
 	EXPIRY_STAMP(src, init_time, CLOCK_WORLD)
 
 CAPABILITIES(/obj/effect/bspawner)
+	setup(PROC_REF(setup_spawn_clock))
 	every(PROC_REF(spawn_delay), then(PROC_REF(spawn_due)))
 	after_init(nameof(time_to_end), then(TYPE_PROC_REF(/datum, qdel_self)))
 

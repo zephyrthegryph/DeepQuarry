@@ -41,11 +41,11 @@ CAPABILITIES(/obj/item/inflatable)
 	/// Set once a hand deflate starts (old: the Deflate verb removed itself).
 	var/deflating = FALSE
 
-/obj/structure/inflatable/Initialize(mapload)
-	. = ..()
+/obj/structure/inflatable/proc/setup_inflatable_atmos()
 	update_nearby_tiles(need_rebuild=1)
 
 CAPABILITIES(/obj/structure/inflatable)
+	setup(PROC_REF(setup_inflatable_atmos))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(inflatable_blob))))
 	op("use_hand", hand(), then(PROC_REF(interaction_hand)))
 	op("use_item", item(/obj/item), then(PROC_REF(interaction_item)))

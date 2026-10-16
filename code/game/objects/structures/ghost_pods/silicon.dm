@@ -83,9 +83,7 @@
 	if(!QDELETED(src))
 		spent(src, M)
 
-/obj/structure/ghost_pod/ghost_activated/swarm_drone/event/Initialize(mapload)
-	. = ..()
-
+/obj/structure/ghost_pod/ghost_activated/swarm_drone/event/proc/setup_shell_announcement()
 	var/turf/T = get_turf(src)
 	say_dead_object("A " + span_notice("[drone_class] swarm drone") + " shell is now available in \the [T.loc].", src)
 
@@ -144,3 +142,6 @@
 		log_and_message_admins("successfully opened \a [src] and got a Lost Drone.", opening_actor)
 		set_used(TRUE)
 		return TRUE
+
+CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/swarm_drone/event)
+	setup(PROC_REF(setup_shell_announcement))

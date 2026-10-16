@@ -183,6 +183,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/vomit/old)
 	drydesc = "Why hasn't anyone cleaned this up yet?"
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood/old)
+	setup(PROC_REF(setup_old_blood))
 	owns_many(nameof(viruses), /datum/affliction/contagion, starts = PROC_REF(make_old_virus))
 
 /// Old blood often carries a random virus (owns_many(starts =)).
@@ -190,8 +191,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood/old)
 	if(prob(75))
 		return list(new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4))
 
-/obj/effect/decal/cleanable/blood/old/Initialize(mapload)
-	. = ..()
+/obj/effect/decal/cleanable/blood/old/proc/setup_old_blood()
 	set_basecolor(get_random_colour(rand(0, 1)))
 	dry()
 

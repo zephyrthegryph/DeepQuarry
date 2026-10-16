@@ -182,10 +182,6 @@ CAPABILITIES(/obj/item/camerabug/spy)
 	var/list/obj/machinery/camera/bug/paired
 
 
-/*
-/obj/item/bug_monitor/Initialize(mapload)
-	radio = new(src)
-*/
 CAPABILITIES(/obj/item/bug_monitor)
 	ref_many(nameof(paired), /obj/machinery/camera/bug)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

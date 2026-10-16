@@ -28,15 +28,14 @@
 /// A railing a player built (its constructor param).
 /obj/structure/railing/var/constructed = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a railing turns, a player-built one starts loose, and an anchored one joins its neighbours
-/obj/structure/railing/Initialize(mapload)
-	. = ..()
+/obj/structure/railing/proc/setup_railing_attachment()
 	// TODO - "constructed" is not passed to us. We need to find a way to do this safely.
 	if (constructed) // player-constructed railings
 		set_anchored(FALSE)
 	make_rotatable()
 
 CAPABILITIES(/obj/structure/railing)
+	setup(PROC_REF(setup_railing_attachment))
 	climb(delay = 3.4 SECONDS, vaulting = TRUE, climbed = PROC_REF(climbed_over))
 	op("slam", item(/obj/item), stance(I_HURT), label("Slam"), then(PROC_REF(interaction_slam)))
 	op("item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_item)))

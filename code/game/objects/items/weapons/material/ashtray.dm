@@ -18,13 +18,10 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 	var/image/base_image
 	var/max_butts = 10
 
-/obj/item/material/ashtray/Initialize(mapload)
-	. = ..()
-	if(!material)
-		return INITIALIZE_HINT_QDEL
-	icon_state = "blank" // ALLOW(decl): material-coloured, drawn by its look
+/obj/item/material/ashtray/proc/prepare_dish()
+	set_icon_state("blank")
 	set_max_butts(round(material.hardness/5)) //This is arbitrary but whatever.
-	color = null
+	set_color(null)
 	set_base_overlay(CACHED_KEY(ashtray_overlays, "base-[material.name]", "ashtray", material.icon_colour))
 	sync_butts()
 
@@ -45,6 +42,7 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 SETTER(/obj/item/material/ashtray, butts)
 
 CAPABILITIES(/obj/item/material/ashtray)
+	setup(PROC_REF(prepare_dish))
 	op("add_butt", item(/obj/item), priority(above("material_interaction_item")), when(req(PROC_REF(held_is_another))), then(PROC_REF(butt_added)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 

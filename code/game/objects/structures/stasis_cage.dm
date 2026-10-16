@@ -8,14 +8,13 @@
 
 	var/mob/living/simple_mob/contained
 
-/obj/structure/stasis_cage/Initialize(mapload)
-	. = ..()
-
+/obj/structure/stasis_cage/proc/setup_existing_occupant()
 	var/mob/living/simple_mob/A = locate_within(loc, /mob/living/simple_mob)
 	if(A)
 		contain(A)
 
 CAPABILITIES(/obj/structure/stasis_cage)
+	setup(PROC_REF(setup_existing_occupant))
 	ref_one(nameof(contained))
 	op("stuff_in", item(/mob/living/simple_mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put inside"), needs(req_adjacent()),
 		starts(PROC_REF(stuffing_started)), begins(PROC_REF(stuffing_begins)), wait(2 SECONDS, keeps = STAY | ALIVE | TARGET_PRESENT), then(PROC_REF(stuffed)))

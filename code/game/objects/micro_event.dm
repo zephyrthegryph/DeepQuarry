@@ -80,11 +80,11 @@ CAPABILITIES(/obj/structure/portal_event/resize)
 	var/ourtime = (((start_time + time_til_open) - world.time) / 600)
 	. += span_notice("It will open in [ourtime] minutes!")
 
-/obj/structure/timer_door/Initialize(mapload)
-	. = ..()
+/obj/structure/timer_door/proc/setup_opening_clock()
 	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 
 CAPABILITIES(/obj/structure/timer_door)
+	setup(PROC_REF(setup_opening_clock))
 	after_init(nameof(time_til_open), then(TYPE_PROC_REF(/datum, qdel_self)))
 
 DESTROY_EFFECTS(/obj/structure/timer_door, new /datum/destroy_effects_data(message = "%SRC% opens up!", message_class = "danger", sound = SFX_EFFECTS_BANG, sound_volume = 75))

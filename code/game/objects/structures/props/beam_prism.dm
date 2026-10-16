@@ -24,12 +24,12 @@
 
 	interaction_message = span_notice("The prismatic turret seems to be able to rotate.")
 
-/obj/structure/prop/prism/Initialize(mapload)
-	. = ..()
+/obj/structure/prop/prism/proc/setup_initial_bearing()
 	if(degrees_from_north)
 		animate(src, transform = turn(NORTH, degrees_from_north), time = 3)
 
 CAPABILITIES(/obj/structure/prop/prism)
+	setup(PROC_REF(setup_initial_bearing))
 	links(/obj/structure/prop/prism::remote_dial, /obj/structure/prop/prismcontrol::my_turrets, b_many = TRUE)
 	// the old attack_hand: a yes/no, then a bearing (free rotation) or a compass point, then the prism turns
 	op("rotate", hand(), label("Rotate"), needs(req_is(nameof(rotation_lock), FALSE, because = MSG(prism/locked)), req_is(nameof(external_control_lock), FALSE, because = MSG(prism/external))),
@@ -261,13 +261,13 @@ GLOBAL_LIST_INIT(prism_compass_points, list("North" = 0, "South" = 180, "East" =
 		PR.rotate_auto(new_bearing)
 	return OP_OK
 
-/obj/structure/prop/prismcontrol/Initialize(mapload)
-	. = ..()
+/obj/structure/prop/prismcontrol/proc/setup_preset_prisms()
 	if(length(my_turrets)) //Preset controls.
 		for(var/obj/structure/prop/prism/P in my_turrets)
 			rel_set(P, nameof(P.remote_dial), src)
 
 CAPABILITIES(/obj/structure/prop/prismcontrol)
+	setup(PROC_REF(setup_preset_prisms))
 	after_init(0, then(PROC_REF(find_turrets)))
 	// the old attack_hand: a yes/no, a bearing (or a compass point when a linked prism turns by points), a last yes, then every linked prism turns
 	op("rotate", hand(), label("Rotate"),

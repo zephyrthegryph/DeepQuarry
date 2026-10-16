@@ -40,6 +40,7 @@
 
 
 CAPABILITIES(/obj/item/perfect_tele)
+	setup(PROC_REF(rebuild_radial_images))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_many(nameof(beacons))
 	// Sending someone, started by afterattack() once the checks passed; the struggle of a resisting target is the wait.
@@ -56,10 +57,6 @@ CAPABILITIES(/obj/item/perfect_tele)
 	op("load", inputs(item(/obj/item/cell), item(/obj/item/perfect_tele_beacon)), label("Insert"), then(PROC_REF(interaction_item)))
 	ref_one(nameof(destination), /obj/item/perfect_tele_beacon)
 
-/obj/item/perfect_tele/Initialize(mapload)
-	. = ..()
-
-	rebuild_radial_images()
 
 // Relation list view of beacons (a premade beacon may be listed by several translocators, so
 // no pair); each beacon names its maker one-sided (tele_hand), cleared when the maker dies.

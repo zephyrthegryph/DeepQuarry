@@ -18,15 +18,14 @@
 	var/slips = 0
 
 CAPABILITIES(/obj/effect/effect/foam)
+	setup(PROC_REF(setup_bubble_sound))
 	when(nameof(dries), after_init(15 SECONDS, then(PROC_REF(harden))))
 	when(nameof(dries), after_init(12 SECONDS, then(PROC_REF(pre_harden))))
 	param(nameof(metal), pos = 1)
 	when(nameof(dries), after_init(nameof(spread_delay), then(PROC_REF(post_spread))))
 	derives(nameof(spread_delay), PROC_REF(metal_spread_delay))
 
-// ALLOW(init/INSTANCE_STATE): foam bubbles, spreads and, when it dries, hardens on timers from its creation
-/obj/effect/effect/foam/Initialize(mapload)
-	. = ..()
+/obj/effect/effect/foam/proc/setup_bubble_sound()
 	play_sfx(src, SFX_EFFECTS_BUBBLES2)
 
 /// How long after init it spreads (after_init()).
@@ -152,8 +151,7 @@ CAPABILITIES(/obj/effect/effect/foam)
 	can_atmos_pass = ATMOS_PASS_NO
 	var/metal = 1 // 1 = aluminum, 2 = iron
 
-/obj/structure/foamedmetal/Initialize(mapload)
-	. = ..()
+/obj/structure/foamedmetal/proc/setup_foamedmetal_atmos()
 	update_nearby_tiles(1)
 
 /// The look (the draw sweep: from its layers).
@@ -172,6 +170,7 @@ CAPABILITIES(/obj/effect/effect/foam)
 		consume(src)
 
 CAPABILITIES(/obj/structure/foamedmetal)
+	setup(PROC_REF(setup_foamedmetal_atmos))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 

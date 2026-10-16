@@ -6,9 +6,9 @@
 	var/list/modes
 	var/mode
 
-/obj/item/pipe_painter/Initialize(mapload)
-	. = ..()
-	set_mode(pick(modes))
+/// Pick from the same pipe-colour catalogue without depending on derives() order.
+/obj/item/pipe_painter/proc/roll_initial_mode(datum/roller/R)
+	return R.choose(all_colours())
 
 
 /// It paints every pipe colour (derives(), at init).
@@ -24,6 +24,7 @@ CAPABILITIES(/obj/item/pipe_painter)
 	op("paint", at_target(/obj/machinery/atmospherics/pipe), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Paint pipe"),
 		needs(req_adjacent(), req(PROC_REF(paintable_pipe))), then(PROC_REF(pipe_painted)))
 	derives(nameof(modes), PROC_REF(all_colours))
+	rolls(nameof(mode), PROC_REF(roll_initial_mode))
 
 /datum/prompt/choice/pipe_painter_mode
 	title = "Pipe painter"

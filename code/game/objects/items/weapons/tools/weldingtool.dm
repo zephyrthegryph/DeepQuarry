@@ -476,14 +476,13 @@ CAPABILITIES(/obj/item/weldingtool/experimental/hybrid)
 /obj/item/weldingtool/tubefed/proc/on_a_pack()
 	return istype(loc, /obj/item/weldpack)
 
-/obj/item/weldingtool/tubefed/Initialize(mapload)
-	. = ..()
+/obj/item/weldingtool/tubefed/proc/link_pack()
 	if(istype(loc, /obj/item/weldpack))
 		var/obj/item/weldpack/holder = loc
 		rel_set(src, nameof(mounted_pack), holder)
 
 // The weldpack owns its nozzle (implicit OWN); the nozzle names its pack (one-sided REL).
-/// The pack this nozzle belongs to (a relation view, set once in Initialize()): a field, so its
+/// The pack this nozzle belongs to (a relation view, set once during setup): a field, so its
 /// automatic clear when the pack is destroyed re-evaluates burner_active.
 /obj/item/weldingtool/tubefed/var/obj/item/weldpack/mounted_pack
 
@@ -661,11 +660,10 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 	always_process = TRUE
 
 CAPABILITIES(/obj/item/weldingtool/electric/mounted/exosuit)
+	setup(PROC_REF(link_equipment))
 	ref_one(nameof(equip_mount), /obj/item/mecha_parts/mecha_equipment)
 
-/obj/item/weldingtool/electric/mounted/exosuit/Initialize(mapload)
-	. = ..()
-
+/obj/item/weldingtool/electric/mounted/exosuit/proc/link_equipment()
 	if(istype(loc, /obj/item/mecha_parts/mecha_equipment))
 		rel_set(src, nameof(equip_mount), loc)
 
@@ -707,6 +705,7 @@ CAPABILITIES(/obj/item/weldingtool/electric/mounted/exosuit)
 	return equip_mount
 
 CAPABILITIES(/obj/item/weldingtool/tubefed)
+	setup(PROC_REF(link_pack))
 	configure(item_tooling(speed = 1.25))
 	ref_one(nameof(mounted_pack))
 	keeps_if(PROC_REF(on_a_pack))
