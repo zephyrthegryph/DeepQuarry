@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Cult visibility updates no longer get stuck when a moved mob's old container is deleted."

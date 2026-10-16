@@ -4936,3 +4936,7 @@ The HUD safety-refresh migration now permits refresh exactly at its saved world-
 ## Optical zoom lifetime state (base-vars retirement)
 
 Active optical zoom is the real reciprocal remote-view association rather than a duplicate item boolean. Destroying an item view after its host reference was lost now clears zoom; retiring an older view cannot clear a replacement association for the same device. Previously lifecycle_unbind cleared the boolean only inside a host_mob && host_item guard. Labels become shared optical type configuration with per-item copy-on-write; null/empty fallback, gun scope text and connected-client pixel code are unchanged. Native lifecycle tests do not claim live-client rendering coverage.
+
+### Cult visibility continuation (base-variable retirement)
+
+`/mob/living` movement now uses its keyed native timer's pending state instead of a duplicated `updating_cult_vision` flag. Delivery still coalesces moves at the original three-second deadline and clears pending state before visibility callbacks. The continuation keeps delivery when its old container is deleted, because it still must refresh the living mob's current location. This fixes the previous permanently latched update flag. The regression deletes the real old container, checks the original deadline and actual visualnet callback, then verifies re-arming and owner-death cancellation.

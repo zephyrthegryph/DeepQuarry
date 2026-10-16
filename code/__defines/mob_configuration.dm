@@ -4,3 +4,5 @@
 #define BUTCHERY_CONFIG_KEY "butchery_config"
 #define ENTRY_HUMAN_ABILITIES "human_abilities"
 #define HUMAN_ABILITIES_KEY "human_abilities"
+
+#define TIMER_CULT_VISION_SETTLE "cult_vision_settle"
