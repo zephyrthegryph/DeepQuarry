@@ -205,12 +205,20 @@ impl Shared {
             after = transport::private_bytes();
             joined_workers = true;
         }
-        super::emit_stderr(format_args!(
-            "dmbd allocator reclaim private-before={before:?} private-after={after:?} mimalloc-commit-before={commit_before:?} mimalloc-commit-after={:?} joined-idle-workers={joined_workers} rust-requested-live={} seconds={:.6}",
-            dm_profile::allocator_commit_bytes(),
-            housekeeping::allocations::requested_live(),
-            started.elapsed().as_secs_f64()
-        ));
+        // A reclaim that freed nothing is the common case after every build and under pressure; logging each one
+        // grew lifecycle.log to megabytes of identical lines. Log only reclaims that returned memory or joined workers.
+        let freed = match (before, after) {
+            (Some(before), Some(after)) => before.saturating_sub(after),
+            _ => 0,
+        };
+        if joined_workers || freed >= RECLAIM_LOG_MIN_BYTES {
+            super::emit_stderr(format_args!(
+                "dmbd allocator reclaim private-before={before:?} private-after={after:?} freed={freed} mimalloc-commit-before={commit_before:?} mimalloc-commit-after={:?} joined-idle-workers={joined_workers} rust-requested-live={} seconds={:.6}",
+                dm_profile::allocator_commit_bytes(),
+                housekeeping::allocations::requested_live(),
+                started.elapsed().as_secs_f64()
+            ));
+        }
         if std::env::var_os("DMB_DAEMON_ALLOCATOR_STATS").is_some() {
             dm_profile::print_allocator_stats();
         }
@@ -349,6 +357,7 @@ impl Shared {
         self.executors.trim(Instant::now(), hard);
     }
 }
+const RECLAIM_LOG_MIN_BYTES: u64 = 64 << 20;
 static PRESSURE_RECLAIMED: Mutex<Option<Instant>> = Mutex::new(None);
 static BUILDS_FINISHED: AtomicU64 = AtomicU64::new(0);
 static BUILDS_RECLAIMED: AtomicU64 = AtomicU64::new(0);
@@ -358,6 +367,7 @@ impl Drop for Permit {
         let mut running = self.0.running.lock().unwrap_or_else(|e| e.into_inner());
         *running -= 1;
         BUILDS_FINISHED.fetch_add(1, Ordering::AcqRel);
+        super::resident::touch();
         *self.0.workers.lock().unwrap_or_else(|e| e.into_inner()) -= self.1;
         drop(running);
         self.0.capacity.notify_all();
@@ -370,6 +380,8 @@ impl Drop for Connection {
     }
 }
 pub(super) fn serve() -> io::Result<()> {
+    // Registers this daemon and retires the least recently used idle peers beyond DQ_DMBC_MAX_DAEMONS, whatever binary they run.
+    let mut registration = super::resident::register_and_enforce();
     let max_workers = admission_limits::max_workers()?;
     let soft_private_bytes = soft_memory::startup()?;
     super::emit_stderr(format_args!(
@@ -412,10 +424,37 @@ pub(super) fn serve() -> io::Result<()> {
                 }
             })?;
     }
+    let mut beat = Instant::now();
     loop {
         let retiring = shared.retiring.load(Ordering::Acquire);
         let incoming = listeners.poll(retiring, Instant::now())?;
+        if beat.elapsed() >= Duration::from_secs(5) {
+            beat = Instant::now();
+            let busy = *shared.running.lock().unwrap_or_else(|e| e.into_inner()) > 0
+                || shared.connections.load(Ordering::Acquire) > 0;
+            if let Some(registration) = registration.as_mut() {
+                if registration.beat(busy) && !retiring {
+                    super::emit_stderr(format_args!(
+                        "dmbd retiring: a newer daemon asked for it (machine-wide resident cap); draining running builds"
+                    ));
+                    shared.retire();
+                }
+            }
+        }
+        if shared.root_gone_exit_ready(incoming.is_some()) {
+            super::emit_stderr(format_args!(
+                "dmbd exiting: every retained project root no longer exists pid={}",
+                std::process::id()
+            ));
+            return Ok(());
+        }
         if shared.exit_ready(incoming.is_some(), activity.elapsed()) {
+            super::emit_stderr(format_args!(
+                "dmbd exiting pid={} retiring={} idle-seconds={}",
+                std::process::id(),
+                shared.retiring.load(Ordering::Acquire),
+                activity.elapsed().as_secs()
+            ));
             return Ok(());
         }
         match incoming {
@@ -423,6 +462,7 @@ pub(super) fn serve() -> io::Result<()> {
                 let stream = incoming.stream;
                 let discovery = incoming.discovery;
                 activity = Instant::now();
+                super::resident::touch();
                 if shared.connections.fetch_add(1, Ordering::AcqRel) >= 16 {
                     shared.connections.fetch_sub(1, Ordering::AcqRel);
                     let mut stream = stream;

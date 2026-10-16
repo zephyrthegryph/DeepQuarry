@@ -11,6 +11,7 @@ mod generation_listeners;
 mod lifecycle_deadline;
 mod protocol;
 pub mod query;
+pub mod resident;
 mod service;
 mod transport;
 
@@ -340,8 +341,9 @@ fn start() -> io::Result<()> {
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr({
-            let directory = std::path::PathBuf::from("E:/dq-cache/dmb-daemon");
+            let directory = resident::state_dir();
             std::fs::create_dir_all(&directory)?;
+            resident::rotate_lifecycle_log(&directory);
             std::process::Stdio::from(
                 std::fs::OpenOptions::new()
                     .create(true)

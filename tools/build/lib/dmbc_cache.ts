@@ -35,6 +35,26 @@ export function dmbcCacheDir(): string | null {
   return path.join(os.homedir(), '.cache', 'dq', 'dmbc');
 }
 
+/**
+ * The one compiler binary every checkout and worktree on the machine runs, so they all share one compiler identity and
+ * therefore one resident daemon. It is a cargo target dir: `<target>/release/{dmbc,dmbd}[.exe]`.
+ * `DQ_DMBC_TARGET_DIR` relocates it; `DQ_DMBC_BIN` names an explicit dmbc executable instead (see `dmbcBinOverride`).
+ */
+export function sharedDmbcTarget(): string {
+  if (process.env.DQ_DMBC_TARGET_DIR) return path.resolve(process.env.DQ_DMBC_TARGET_DIR).split(path.sep).join('/');
+  if (process.platform === 'win32' && fs.existsSync('E:/dq-cache')) return 'E:/dq-cache/dmb-target';
+  return path.join(os.homedir(), '.cache', 'dq', 'dmb-target').split(path.sep).join('/');
+}
+
+export function sharedDmbcExe(name: 'dmbc' | 'dmbd' = 'dmbc'): string {
+  return `${sharedDmbcTarget()}/release/${name}${process.platform === 'win32' ? '.exe' : ''}`;
+}
+
+/** DQ_DMBC_BIN: run this dmbc instead of the shared binary (it is never rebuilt or restored over). */
+export function dmbcBinOverride(): string | undefined {
+  return process.env.DQ_DMBC_BIN ? path.resolve(process.env.DQ_DMBC_BIN) : undefined;
+}
+
 function git(root: string, args: string[]): string | null {
   const r = spawnSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   return r.error || r.status !== 0 ? null : r.stdout.trim();

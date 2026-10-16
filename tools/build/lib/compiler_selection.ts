@@ -11,6 +11,7 @@ import type { ByondCompilationResult, DreamMakerOptions, PreparedDreamMaker } fr
 import { conventionalOutput, createNativeRequestDirectory, parseCompileResult, readNativeResult, withCompiledOutput, type CompiledOutput, type NativePairOutput } from './native_pair';
 
 import { bindCompilerInvocation, type CompilerInvocation } from './compiler_invocation';
+import { dmbcBinOverride, sharedDmbcExe } from './dmbc_cache';
 import { enterDaemonScope } from './dmbc_daemons';
 import { byondProvenance, nativeProvenance, observedExecutable } from './compiler_provenance';
 
@@ -84,10 +85,15 @@ export function compilerMode(): CompilerMode {
 function nativeRoot(): string {
   return path.resolve(process.env.DQ_BUILD_ROOT ?? process.cwd());
 }
-/** DQ_NATIVE_COMPILER, else this checkout's release build (`build.sh dmbc`). */
+/**
+ * DQ_NATIVE_COMPILER, else DQ_DMBC_BIN, else the machine-wide shared build (`build.sh dmbc`, lib/dmbc_cache.ts). Never a
+ * per-worktree binary: a different executable is a different compiler identity and would start its own 8 GB daemon.
+ */
 export function nativeCompilerPath(): string | undefined {
   if (process.env.DQ_NATIVE_COMPILER) return process.env.DQ_NATIVE_COMPILER;
-  const built = path.join(nativeRoot(), 'tools/dmb/target/release', process.platform === 'win32' ? 'dmbc.exe' : 'dmbc');
+  const override = dmbcBinOverride();
+  if (override) return override;
+  const built = sharedDmbcExe('dmbc');
   return fs.existsSync(built) ? built : undefined;
 }
 /** DQ_NATIVE_ENGINE_TEMPLATE, else the committed template fixture. */
@@ -152,7 +158,7 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   const configuredExecutable = nativeCompilerPath();
   const template = nativeTemplatePath();
   if (!configuredExecutable || !template) {
-    throw new Error('Native compiler requires DQ_NATIVE_COMPILER and DQ_NATIVE_ENGINE_TEMPLATE, or the defaults tools/dmb/target/release/dmbc and tools/dmb/fixtures/native_template.bin (run `tools/build/build.sh dmbc`).');
+    throw new Error('Native compiler requires DQ_NATIVE_COMPILER and DQ_NATIVE_ENGINE_TEMPLATE, or the shared build (E:/dq-cache/dmb-target/release/dmbc, DQ_DMBC_BIN overrides) and tools/dmb/fixtures/native_template.bin (run `tools/build/build.sh dmbc`).');
   }
   // Resolve path-bearing configuration in the caller's cwd, before the child
   // switches to its captured namespace. PATH commands stay explicitly unobserved.
@@ -194,7 +200,7 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
   const receipt = path.join(owned, 'result.json');
   args.push('--compile-result-file', receipt);
   if (!artifacts && process.env.DQ_NATIVE_OUTPUT_STORE) args.push('--output-store', path.resolve(process.env.DQ_NATIVE_OUTPUT_STORE));
-  // One resident daemon per worktree (DMB_DAEMON_NAMESPACE overrides) and at most DQ_DMBC_MAX_DAEMONS machine-wide.
+  // One machine-wide daemon on the shared binary (DMB_DAEMON_NAMESPACE isolates a caller); the daemon caps itself at DQ_DMBC_MAX_DAEMONS.
   const scope = nativeNoDaemon() ? undefined : enterDaemonScope(nativeRoot(), executable);
   try {
     const result = await execute(executable, args, { throw: false, ...(invocation ? { cwd: invocation.root } : {}) });
