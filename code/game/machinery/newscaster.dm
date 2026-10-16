@@ -62,6 +62,9 @@ CAPABILITIES(/datum/feed_channel)
 	update()
 
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/feed_network)
+// Built after the refresh queue (code/engine/change/refresh.dm): its constructor writes tracked vars, which queue a refresh.
+GLOBAL_DATUM_INIT(news_network, /datum/feed_network, new) //The global news-network, which is coincidentally a global list.
+
 /datum/feed_network
 	var/list/datum/feed_channel/network_channels
 	var/datum/feed_message/wanted_issue_owned

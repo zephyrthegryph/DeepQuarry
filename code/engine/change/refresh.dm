@@ -182,8 +182,7 @@
 		if(mask != DEP_ALL)
 			mask = DEP_DRAW
 
-// GLOB.refresh_queue is declared in code/_global_vars/__unsorted.dm: global initializers (the news network, ntnet) write tracked vars while the globals are
-// still being built, so the queue has to be built before them.
+GLOBAL_LIST_EMPTY(refresh_queue)
 /// Refreshes run so far (the dx_refresh benchmark reads it).
 GLOBAL_VAR_INIT(refresh_bench_drained, 0)
 /// The entity whose refresh is running now (the self-mark detector reads it).
