@@ -43,8 +43,10 @@ Three beam initializer statements now use the actual early owned beamset factory
 
 ## Final source preflight
 
-Generation and all ratchets pass at 3,604 initializer rows (507 removed, zero added). DreamChecker reports zero diagnostics, including the beam plan, strict explosion cleanup, shared-cache identity normalization and native turf-roll fixtures. Test-block air reset now reuses the immutable standard-air copy source instead of allocating one disposable native mixture per target; each actual target, topology update and settle still runs, with a two-target contamination/identity regression. The gas type in that regression is the existing `/datum/gas/plasma`. The expanded 157-selector runtime batch and lane-ready stamp remain pending; no other branch's runtime result is reused.
+Generation and all ratchets pass at 3,604 initializer rows (507 removed, zero added). DreamChecker reports zero diagnostics, including the beam plan, strict explosion cleanup, shared-cache identity normalization fixtures. Test-block air reset now reuses the immutable standard-air copy source instead of allocating one disposable native mixture per target; each actual target, topology update and settle still runs, with a two-target contamination/identity regression. The gas type in that regression is the existing `/datum/gas/plasma`. The expanded 156-selector runtime batch and lane-ready stamp remain pending; no other branch's runtime result is reused.
 
 ## Verification scope narrowed to observed failures
 
 The completed preceding base-variable gate passed both full appearance pins after the real cleanup repairs. The optional native-turf sampling draft is therefore deferred: this branch keeps the original turf producer and needs no new turf golden cause. Shared-cache UID normalization, strict hidden-state checks, real explosion cleanup and immutable air-copy source isolation remain. The focused selector list has 156 entries after removing the optional turf-only fixture. No production initializer or baseline count changed in this scope reduction.
+
+The user assigned the actual-mapload post-chain context to a framework lane. Dirt (23), lattice (16) and NTpod (13) rows remain here deliberately; this branch does not move their effects into an early hook or a deferred timer.
