@@ -24,6 +24,7 @@ CAPABILITIES(/obj/item/material/kitchen/utensil)
 	rolls(nameof(pixel_y), PROC_REF(roll_pixel_y))
 	// Feeding someone else takes five seconds; the one fed has to still be beside the feeder when it ends.
 	op("force_feed", ai(), takes("patient"), wait(5 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(force_feed_done)))
+	owns_many(nameof(food_inserted_micros), on_destroy = ON_DESTROY_SPILL)
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/material/kitchen/utensil/proc/roll_pixel_y(datum/roller/R)
@@ -223,6 +224,3 @@ CAPABILITIES(/obj/item/material/kitchen/rollingpin)
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
-/obj/item/material/kitchen/utensil/ownership()
-	. = ..()
-	. += owns(nameof(food_inserted_micros), policy = OWN_SPILL, is_list = TRUE)

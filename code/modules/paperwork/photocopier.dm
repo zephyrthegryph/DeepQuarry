@@ -38,6 +38,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	op("insert_toner", item(/obj/item/toner), priority(OP_PRIORITY_DEFAULT - 2), label("Insert toner"), then(PROC_REF(interaction_insert_toner)))
 	default_parts()
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(photocopier_blast_spill)))
+	owns_one(nameof(copyitem), on_destroy = ON_DESTROY_CONTAINED)
 
 /// The window data.
 /obj/machinery/photocopier/ui_data(datum/act/eval/A)
@@ -413,6 +414,3 @@ CAPABILITIES(/obj/machinery/photocopier)
 CAPABILITIES(/obj/item/toner)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
-/obj/machinery/photocopier/ownership()
-	. = ..()
-	. += owns(nameof(copyitem), policy = OWN_CONTAINED)

@@ -55,6 +55,9 @@
 #define ON_DESTROY_PRIVATE_COPY 3
 /// Handed to a successor: owns_one(nameof(cell), on_destroy = ON_DESTROY_HAND_OVER, successor = nameof(wreck), successor_var = nameof(crowbar_salvage)). With no successor it is deleted.
 #define ON_DESTROY_HAND_OVER 4
+/// The value is a movable that sits in the holder's contents (an implant in its case, a cell in a gun): the holder's contents resolution ends it, so teardown only lets the
+/// var go; a value that leaves the contents clears the var, and one written to the var moves into the holder. A var whose value needs a capacity, a filter or an exposure is a slot().
+#define ON_DESTROY_CONTAINED 5
 
 // ---- Value schemas (section 4, X5) ----
 /// on_invalid: what a failed write does.

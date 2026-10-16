@@ -9,9 +9,6 @@
 	var/const/limit = 50
 	VAR_PRIVATE/list/holdingitems = list()
 
-/obj/machinery/reagent_refinery/grinder/ownership()
-	. = ..()
-	. += owns(nameof(holdingitems), policy = OWN_SPILL, is_list = TRUE)
 
 /// Requirement: has_room returns null to allow, or a refusal reason.
 /obj/machinery/reagent_refinery/grinder/proc/has_room_holds(datum/act/op/A)
@@ -144,3 +141,4 @@ CAPABILITIES(/obj/machinery/reagent_refinery/grinder)
 	after_init(0, then(PROC_REF(apply_default_parts)))
 	without("reagent_refinery_set_transfer_amount")
 	op("grinder_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req(PROC_REF(has_room_holds))), then(PROC_REF(interaction_insert)))
+	owns_many(nameof(holdingitems), on_destroy = ON_DESTROY_SPILL)

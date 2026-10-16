@@ -27,6 +27,7 @@ CAPABILITIES(/obj/item/cane)
 CAPABILITIES(/obj/item/cane/concealed)
 	op("unsheathe", in_hand(), label("Unsheathe blade"), then(PROC_REF(blade_unsheathed)))
 	op("sheathe", item(/obj/item/material/butterfly), label("Sheathe blade"), then(PROC_REF(blade_sheathed)), passes())
+	owns_one(nameof(concealed_blade), starts = /obj/item/material/sword/katana/caneblade, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/cane/concealed/proc/blade_unsheathed(datum/act/op/A)
 	var/mob/user = A.actor
@@ -121,6 +122,3 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 	add_fingerprint(user)
 	return OP_OK
 
-/obj/item/cane/concealed/ownership()
-	. = ..()
-	. += owns(nameof(concealed_blade), policy = OWN_CONTAINED, starts = /obj/item/material/sword/katana/caneblade)

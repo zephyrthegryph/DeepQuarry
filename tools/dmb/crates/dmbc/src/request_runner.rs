@@ -525,9 +525,10 @@ fn run_build_attempt(
         let source_context_profile = dm_profile::stage("request.source_context");
         if progress_enabled {
             dmbc::daemon_eprintln!(
-                "native input preparation: {:.3}s {:?}",
+                "native input preparation: {:.3}s {:?} {}",
                 input_preparation_seconds,
-                inputs.as_ref().map(|inputs| inputs.stats())
+                inputs.as_ref().map(|inputs| inputs.stats()),
+                dmbc::input_snapshot::prepared::counters::take()
             );
         }
         let empty = dm_preprocess::regions::prepared_source::PreparedSources::default();

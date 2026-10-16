@@ -58,6 +58,7 @@ CAPABILITIES(/obj/item/laser_pointer)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	param(nameof(diode_path), pos = 1, apply = PROC_REF(fit_diode))
 	rolls(nameof(pointer_icon_state), pick_one(list("red_laser", "green_laser", "blue_laser", "purple_laser")), when = cond_not(nameof(pointer_icon_state)))
+	owns_one(nameof(diode), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/laser_pointer/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -236,9 +237,6 @@ CAPABILITIES(/obj/item/laser_pointer)
 			set_recharging(FALSE)
 			recharge_locked = FALSE
 
-/obj/item/laser_pointer/ownership()
-	. = ..()
-	. += owns(nameof(diode), policy = OWN_CONTAINED)
 
 /obj/item/laser_pointer/var/recharging = 0
 

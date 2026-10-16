@@ -61,6 +61,10 @@ CAPABILITIES(/obj/machinery/particle_smasher)
 	op("store", item(/obj/item), label("Store"), when(PROC_REF(can_store_item)), then(PROC_REF(interaction_store)))
 	op("eject_contents", menu(), label("Eject Particle Focus Contents"), when(req_actor_kind(/mob/living)), needs(req(PROC_REF(actor_can_act), because = MSG(particle_smasher/cannot_act))), then(PROC_REF(interaction_eject_contents)))
 	op("secure", tool(TOOL_WRENCH), label("Secure"), wait(0), then(PROC_REF(secured)))
+	owns_one(nameof(target), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(reagent_container), on_destroy = ON_DESTROY_CONTAINED)
+	// Items jammed in for the fabrication phase go back to the floor if the smasher is destroyed.
+	owns_many(nameof(storage), on_destroy = ON_DESTROY_SPILL)
 
 MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
 
@@ -629,12 +633,6 @@ MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
 #undef PS_RESULT_ITEM
 
 
-/obj/machinery/particle_smasher/ownership()
-	. = ..()
-	. += owns(nameof(target), policy = OWN_CONTAINED)
-	. += owns(nameof(reagent_container), policy = OWN_CONTAINED)
-	// Items jammed in for the fabrication phase go back to the floor if the smasher is destroyed.
-	. += owns(nameof(storage), policy = OWN_SPILL, is_list = TRUE)
 
 /// Holds the beaker (owned, in its contents). The process will consume ALL reagents inside it.
 /obj/machinery/particle_smasher/proc/reagent_container() as /obj/item/reagent_containers

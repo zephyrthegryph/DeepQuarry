@@ -28,9 +28,6 @@
 
 
 // Fitted parts sit in the gun's contents.
-/obj/item/gun/energy/modular/ownership()
-	. = ..()
-	. += owns(nameof(guncomponents), policy = OWN_CONTAINED, is_list = TRUE, starts = list(/obj/item/stock_parts/capacitor, /obj/item/stock_parts/micro_laser, /obj/item/stock_parts/manipulator))
 
 /obj/item/gun/energy/modular/Initialize(mapload)
 	. = ..()
@@ -62,6 +59,7 @@
 CAPABILITIES(/obj/item/gun/energy/modular)
 	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	owns_many(nameof(guncomponents), starts = list(/obj/item/stock_parts/capacitor, /obj/item/stock_parts/micro_laser, /obj/item/stock_parts/manipulator), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/gun/energy/modular/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor

@@ -61,6 +61,7 @@ CAPABILITIES(/obj/item/clothing)
 	op("clothing_accessory_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), then(PROC_REF(clothing_accessory_hand)))
 	op("clothing_remove_accessory_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 3), label("Alternate use"), then(PROC_REF(clothing_remove_accessory_alt)))
 	op("clothing_circuit_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), then(PROC_REF(clothing_circuit_self)))
+	owns_one(nameof(contents), on_destroy = ON_DESTROY_SPILL)
 
 /obj/item/clothing/examine(mob/user)
 	. = ..()

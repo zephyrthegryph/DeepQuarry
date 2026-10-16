@@ -81,6 +81,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow)
 	configure(item_worn(slots = SLOT_BACK))
 	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
 	op("draw_string", ai(), needs(req(PROC_REF(draw_holds), because = MSG(req_silent))), wait(2.5 SECONDS, repeats = PROC_REF(draw_more), after_step = PROC_REF(draw_notch)), on_interrupt(PROC_REF(draw_relaxed)))
+	owns_one(nameof(bolt), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/gun/launcher/crossbow/update_release_force()
 	release_force = tension*release_speed
@@ -300,6 +301,3 @@ CAPABILITIES(/obj/item/crossbowframe)
 /obj/item/gun/launcher/crossbow/proc/cell() as /obj/item/cell
 	return cell
 
-/obj/item/gun/launcher/crossbow/ownership()
-	. = ..()
-	. += owns(nameof(bolt), policy = OWN_CONTAINED)

@@ -21,9 +21,6 @@
 	var/list/extra_prizes
 	var/dirty_items = FALSE // Used to refresh the static/redundant data in case the machine gets VV'd
 
-/obj/machinery/mineral/equipment_vendor/ownership()
-	. = ..()
-	. += owns(nameof(inserted_id), policy = OWN_SPILL)
 
 
 /datum/data/mining_equipment
@@ -238,6 +235,7 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	op("voucher", item(/obj/item/mining_voucher), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem voucher"), then(PROC_REF(interaction_voucher)))
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(vendor_blast_sparks)))
+	owns_one(nameof(inserted_id), on_destroy = ON_DESTROY_SPILL)
 
 /obj/machinery/mineral/equipment_vendor/ui_prepare(mob/user, datum/tgui/ui)
 	// Update static data if need be

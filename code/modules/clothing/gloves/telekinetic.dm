@@ -6,9 +6,6 @@
 	var/use_power_amount = 12
 
 
-/obj/item/clothing/gloves/telekinetic/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/device)
 
 /obj/item/clothing/gloves/telekinetic/proc/has_grip_power()
 	if(cell && cell.charge >= use_power_amount)
@@ -29,6 +26,7 @@
 CAPABILITIES(/obj/item/clothing/gloves/telekinetic)
 	op("telekinetic_remove_cell_hand", hand(), ungated(), then(PROC_REF(telekinetic_remove_cell_hand)))
 	op("telekinetic_insert_cell", item(/obj/item/cell), label("Insert cell"), then(PROC_REF(telekinetic_insert_cell)))
+	owns_one(nameof(cell), starts = /obj/item/cell/device, on_destroy = ON_DESTROY_CONTAINED)
 
 /// Old attack_hand: take the cell out while holding the gloves in the other hand.
 /obj/item/clothing/gloves/telekinetic/proc/telekinetic_remove_cell_hand(datum/act/op/A)

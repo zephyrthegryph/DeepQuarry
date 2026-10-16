@@ -6,6 +6,7 @@ CAPABILITIES(/obj/item/gun/projectile/dartgun)
 	op("toggle_mix", ui_act("toggle_mix", arg("index", num())), then(PROC_REF(ui_act_toggle_mix)))
 	op("eject_beaker", ui_act("eject_beaker", arg("index", num())), then(PROC_REF(ui_act_eject_beaker)))
 	op("eject_cart", ui_act("eject_cart"), then(PROC_REF(ui_act_eject_cart)))
+	owns_many(nameof(beakers), starts = PROC_REF(make_beakers), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/gun/projectile/dartgun/ui_title(mob/user)
 	return "[src] mixing control"

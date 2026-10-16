@@ -446,6 +446,13 @@ pub fn prepare_verified_procedure(
                     fail(format!("unsupported parameter input annotation: {part}"))
                 })?;
             }
+            // DreamMaker adds the `null` input bit when an annotated formal with an `in` source defaults to null
+            // (`mob/target = null as mob in list`): the prompt then offers a null choice.
+            if let (Some(default), Some(_)) = (&param.default, &param.source_expression) {
+                if compact(&expression_text(default, symbols)?)? == "null" {
+                    flags |= 0x80;
+                }
+            }
         }
         if let Some(path) = declared {
             inputs
