@@ -21,9 +21,6 @@
 	VAR_PROTECTED/list/addictions = null // contains currently addicted chem reagent IDs
 	VAR_PROTECTED/list/addiction_counters = null // contains counters by reagent ID
 
-	//these two help govern taste. The first is the last time a taste message was shown to the plaer.
-	//the second is the message in question.
-	var/last_taste_text = ""
 
 
 // bloodstr is the same holder as /atom's owned `reagents` (deleted first, so this only lets go of it):

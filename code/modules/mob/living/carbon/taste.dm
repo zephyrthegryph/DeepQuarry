@@ -1,3 +1,9 @@
+// Only mobs that have actually tasted something retain a message sample.
+sparse(/mob/living/carbon, last_taste_text, type = text)
+
+/mob/living/carbon/proc/last_taste_message()
+	return sparse_get_or(src, last_taste_text, "")
+
 /mob/living/carbon/proc/ingest(datum/reagents/from, datum/reagents/target, amount = 1, multiplier = 1, copy = 0) //we kind of 'sneak' a proc in here for ingesting stuff so we can play with it.
 	if(cooldown_ready(src, taste_cooldown))
 		var/datum/reagents/temp = new(amount) //temporary holder used to analyse what gets transfered.
@@ -7,13 +13,13 @@
 		if(accumulated_rads >= 100) //If you're irradiated, you can't taste!
 			text_output = "nothing"
 
-		if(text_output != last_taste_text || cooldown_ready(src, taste_repeat_cooldown)) //We dont want to spam the same message over and over again at the person. Give it a bit of a buffer.
+		if(text_output != last_taste_message() || cooldown_ready(src, taste_repeat_cooldown)) //We dont want to spam the same message over and over again at the person. Give it a bit of a buffer.
 			to_chat(src, span_notice("You can taste [text_output].")) //no taste means there are too many tastes and not enough flavor.
 			balloon_alert(src, "you taste [text_output]...")
 
 			cooldown_start(src, taste_cooldown, 5 SECONDS)
 			cooldown_start(src, taste_repeat_cooldown, 10 SECONDS)
-			last_taste_text = text_output
+			sparse_set_or(src, last_taste_text, text_output, "")
 	return from.trans_to_holder(target,amount,multiplier,copy) //complete transfer
 
 /* what this does:
