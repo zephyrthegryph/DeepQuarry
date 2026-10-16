@@ -124,3 +124,19 @@
 			continue
 		var/datum/seq_step/S = state.table.steps[pos]
 		TEST_ASSERT(!seq_should_run(S, H, state), "[key] should sleep on a healthy human")
+
+/datum/unit_test/dq_body_effect_serial_home
+/datum/unit_test/dq_body_effect_serial_home/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/simple_mob/e0_fixture/M = allocate(/mob/living/simple_mob/e0_fixture, test_floor())
+	var/before = sparse_get_or(M, body_effect_serial, 0)
+	M.apply_body_effect(/datum/body_effect/dq_test_stack, 20 SECONDS, suppress_output = TRUE)
+	M.apply_body_effect(/datum/body_effect/dq_test_stack, 30 SECONDS, suppress_output = TRUE)
+	TEST_ASSERT_EQUAL(M.body_effect_stacks(/datum/body_effect/dq_test_stack), 2, "real allowed effects retain both timed stacks")
+	var/list/names = M.body_effect_timers[/datum/body_effect/dq_test_stack]
+	TEST_ASSERT_EQUAL(length(names), 2, "both real applications have timer slots")
+	TEST_ASSERT(names[1] != names[2], "native timed-stack names remain unique")
+	TEST_ASSERT_EQUAL(sparse_get_or(M, body_effect_serial, 0), before + 2, "each real timed stack advances the optional serial exactly once")
+	M.remove_body_effect(/datum/body_effect/dq_test_stack, TRUE)
+	TEST_ASSERT_EQUAL(M.body_effect_stacks(/datum/body_effect/dq_test_stack), 0, "real removal clears both effects")
+	TEST_ASSERT_EQUAL(sparse_get_or(M, body_effect_serial, 0), before + 2, "removal retains serial monotonicity for later applications")
