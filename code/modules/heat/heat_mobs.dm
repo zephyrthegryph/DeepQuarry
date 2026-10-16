@@ -1,6 +1,6 @@
 // Mob body heat on the heat network (doc/rewrite/temperature.md §3).
 //
-// A mob's body temperature is its Rust heat body's: body_temperature() reads it, and nothing in DM stores it. `bodytemperature` is only the
+// A mob's body temperature is its Rust heat body's: body_temperature() reads it, and nothing in DM stores it. `heat_spawn()` holds only the
 // type's starting value (the body starts there). Life couples the body to its surroundings through clothing (set_surroundings()): slot 0 to
 // its tile's air (or the container it is in), heat links to the air of the tiles open to it, to the floor solid and the walls beside it, and to
 // the sky in space or near vacuum. Metabolism is the body's own power (set_metabolic_power()). Writes from reagents, afflictions and machines go
@@ -9,7 +9,7 @@
 /// The mob's heat body handle, made on first use at its starting temperature and kept for its life.
 /mob/proc/mob_heat_body()
 	if(isnull(heat_body))
-		create_heat_body(TRUE, bodytemperature)
+		create_heat_body(TRUE, heat_spawn_of(src).temperature)
 	else
 		HEAT_BODY_RESOLVE(src)
 	return heat_body
@@ -22,7 +22,7 @@
 /mob/proc/body_temperature()
 	var/h = mob_heat_body()
 	var/t = h ? vg_heat_body_temperature(h) : null
-	return isnull(t) ? bodytemperature : t
+	return isnull(t) ? heat_spawn_of(src).temperature : t
 
 /// Sets this mob's body temperature (K): an authority write (a machine, a spawn, a test), booked.
 /mob/proc/set_bodytemperature(new_temperature, source = HEAT_SOURCE_AUTHORITY)
