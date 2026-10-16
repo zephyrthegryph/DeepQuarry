@@ -545,23 +545,29 @@ Fresh worktrees should not pay cold build costs:
 
 ### Native compiler (incremental)
 
-`DQ_COMPILER=native` compiles with the in-tree Rust compiler (`tools/dmb`) through its
-resident daemon instead of DreamMaker. The daemon retains parsed source and per-procedure
+The native compiler is the default (2026-10-15). It compiles with the in-tree Rust compiler (`tools/dmb`) through its
+resident daemon instead of DreamMaker. `DQ_COMPILER=dreammaker` (alias `byond`) selects DreamMaker; CI's production compile check
+(`tools/ci/compile_and_run.sh`) pins it as the cross-check until the two are proven equivalent (`dmb-equiv`, see
+`doc/rewrite/native_compiler_issues.md`). With neither cargo nor a built `dmbc` the default falls back to DreamMaker. The daemon retains parsed source and per-procedure
 results, so an unchanged rebuild takes about 1.3 s and a proc-body edit about 20 s; a cold
 first build is about two minutes.
 
 ```
 tools/build/build.sh dmbc                      # build tools/dmb/target/release/dmbc (cargo machine slot); skipped when current
-DQ_COMPILER=native bash tools/dq_focused_test.sh /datum/unit_test/<name>
-DQ_COMPILER=native tools/build/build.sh dm-test
+bash tools/dq_focused_test.sh /datum/unit_test/<name>             # native by default
+DQ_COMPILER=dreammaker bash tools/dq_focused_test.sh /datum/unit_test/<name>   # the fallback
 ```
 
-That one variable is enough: the executable defaults to `tools/dmb/target/release/dmbc[.exe]` and
-the engine template to `tools/dmb/fixtures/native_template.bin`. With `DQ_COMPILER=native` the
+No variable is needed: the executable defaults to `tools/dmb/target/release/dmbc[.exe]` and
+the engine template to `tools/dmb/fixtures/native_template.bin`. With the native compiler selected the
 `dm`, `dm-test`, `test-repeat`, `bench` and `balance` targets depend on `dmbc` and rebuild it
 when its sources changed. Overrides: `DQ_NATIVE_COMPILER`, `DQ_NATIVE_ENGINE_TEMPLATE` (an explicit
 compiler is never rebuilt), `DQ_NATIVE_WORKERS` (default 8), `DQ_NATIVE_NO_DAEMON=1` (one-shot, cold),
 `DQ_COMPILER_STRICT=1` (no DreamMaker fallback on a compiler internal error).
+A fresh worktree does not run cargo: `build.sh dmbc` restores `dmbc`/`dmbd` from a shared content-addressed cache
+(`E:/dq-cache/dmbc`, `DQ_DMBC_CACHE=<dir>`, `off` disables) keyed by the git ids of `tools/dmb` at HEAD, and stores a fresh build there.
+A checkout whose compiler sources differ from HEAD bypasses the cache. Measured edit times, the equivalence triage and the memory
+profile are in `doc/rewrite/native_compiler_issues.md` (status 2026-10-15).
 
 The daemon starts on the first native build, is reused by later builds and other worktrees using the
 same `dmbc` binary (identity is a hash of the executable), outlives the build that started it, and is

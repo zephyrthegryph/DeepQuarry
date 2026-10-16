@@ -7,6 +7,7 @@ description = "Native compiler client and immutable output pair publication"
 
 [features]
 allocation-counting = ["dm-profile/allocation-counting"]
+allocation-sites = ["allocation-counting", "dm-profile/allocation-sites"]
 
 [dependencies]
 mimalloc = "0.1.52"
