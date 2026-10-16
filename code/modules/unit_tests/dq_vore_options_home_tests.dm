@@ -71,3 +71,15 @@
 	H.copy_vore_prefs_to_mob(target)
 	TEST_ASSERT(target.vore_options.appendage_color == "#abcdef" && target.vore_options.appendage_alt_setting, "transformation copying retains its two original appendage fields")
 	TEST_ASSERT(isnull(target.vore_options.trait_injection_selected) && target.vore_options.trait_injection_amount == 5 && target.vore_options.trait_injection_verb == "bite", "transform copying does not newly copy the injection configuration")
+
+/datum/unit_test/dq_voice_sound_list_home
+/datum/unit_test/dq_voice_sound_list_home/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/simple_mob/e0_fixture/M = allocate(/mob/living/simple_mob/e0_fixture, test_floor())
+	var/mob/living/simple_mob/e0_fixture/other = allocate(/mob/living/simple_mob/e0_fixture, test_floor())
+	TEST_ASSERT(islist(M.vore_options.voice_sounds_list) && !length(M.vore_options.voice_sounds_list), "the native starting profile preserves the old empty sound list")
+	TEST_ASSERT(M.vore_options.voice_sounds_list != other.vore_options.voice_sounds_list, "starting empty sound lists remain per-mob")
+	var/list/voice = DEFAULT_TALK_SOUNDS
+	M.vore_options.set_voice_sounds_list(voice)
+	TEST_ASSERT(M.vore_options.voice_sounds_list == voice, "whole-list voice selection preserves assigned identity")
+	TEST_ASSERT(!length(other.vore_options.voice_sounds_list), "another mob's list is unchanged")

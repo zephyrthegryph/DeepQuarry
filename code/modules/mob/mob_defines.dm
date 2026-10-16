@@ -216,7 +216,7 @@ CAPABILITIES(/mob)
 	profile(nameof(bio), /datum/record/identity)
 	// The player's vore preferences (code/modules/vore/eating/vore_profile.dm).
 	profile(nameof(vore_prefs), /datum/record/vore_prefs)
-	profile(nameof(vore_options), /datum/record/vore_options)
+	profile(nameof(vore_options), /datum/record/vore_options, fields = list("voice_sounds_list" = list()))
 	mob_movement() // how it moves and is moved: a type trait (code/modules/mob/mob_movement_trait.dm)
 	mob_kind() // what kind of mob it is: a type trait (code/modules/mob/mob_kind.dm)
 	// Base-type cooldowns live in the mob's cooldown table (cooldown_start/cooldown_ready), not in vars.

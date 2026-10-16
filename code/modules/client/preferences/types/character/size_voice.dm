@@ -125,9 +125,9 @@
 
 /datum/preference/text/human/voice_sound/apply_to_human(mob/living/carbon/human/target, value)
 	if(!value)
-		target.voice_sounds_list = DEFAULT_TALK_SOUNDS
+		target.vore_options.set_voice_sounds_list(DEFAULT_TALK_SOUNDS)
 	else
-		target.voice_sounds_list = get_talk_sound(value)
+		target.vore_options.set_voice_sounds_list(get_talk_sound(value))
 
 
 /datum/preference/text/human/custom_speech_bubble

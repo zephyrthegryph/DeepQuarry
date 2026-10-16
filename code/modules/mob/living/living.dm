@@ -1469,9 +1469,9 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	if(!A.answer)
 		var/datum/request/R = A.request
 		if(R.outcome == REQ_CANCELLED && isnull(R.value))
-			voice_sounds_list = DEFAULT_TALK_SOUNDS
+			vore_options.set_voice_sounds_list(DEFAULT_TALK_SOUNDS)
 		return
-	voice_sounds_list = get_talk_sound(A.answer.value)
+	vore_options.set_voice_sounds_list(get_talk_sound(A.answer.value))
 
 /mob/living/proc/save_private_notes(mob/user)
 	if(user != src)

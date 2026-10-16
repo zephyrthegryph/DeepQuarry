@@ -31,8 +31,6 @@
 	var/obj/soulgem/soulgem				// Soulcatcher. Needs to be up-ported sometime.
 
 
-	// ALLOW(instance_list): d: per-mob voice_sounds_list, filled at runtime; mobs are few
-	var/list/voice_sounds_list = list()	// The sound list containing our voice sounds!
 	var/died_in_vr = FALSE //For virtual reality sleepers
 	EXPIRY_DECLARE(last_move_time) //For movement smoothing
 

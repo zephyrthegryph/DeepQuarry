@@ -94,6 +94,7 @@ TRACKED_DATA(/datum/record/vore_prefs, vore_sprite_multiply)
 // Session-level body/voice/vore options have a separate profile: copying vore consent preferences
 // must not also copy these options. Character preference keys and physique-copy fields stay explicit.
 /datum/record/vore_options
+	var/list/voice_sounds_list
 	var/appendage_color = "#e03997"
 	var/appendage_alt_setting = FALSE
 	var/stuffing_feeder = FALSE
@@ -140,8 +141,17 @@ TRACKED_DATA(/datum/record/vore_options, trait_injection_verb)
 			vore_options.set_appendage_color(reset ? initial(vore_options.appendage_color) : value)
 		if("appendage_alt_setting")
 			vore_options.set_appendage_alt_setting(reset ? initial(vore_options.appendage_alt_setting) : value)
+		if("flight_vore")
+			vore_options.set_flight_vore(reset ? initial(vore_options.flight_vore) : value)
 		if("stuffing_feeder")
 			vore_options.set_stuffing_feeder(reset ? initial(vore_options.stuffing_feeder) : value)
 		else
 			return FALSE
 	return TRUE
+
+TRACKED_DATA(/datum/record/vore_options, voice_sounds_list)
+
+/datum/record/vore_options
+	var/flight_vore = FALSE
+
+TRACKED_DATA(/datum/record/vore_options, flight_vore)

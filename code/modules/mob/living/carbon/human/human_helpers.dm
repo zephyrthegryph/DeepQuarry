@@ -494,4 +494,4 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		species.icon_scale_y = character.species.icon_scale_y
 		update_transform()
 	resize(character.size_multiplier, animate = TRUE, ignore_prefs = TRUE)
-	voice_sounds_list = character.voice_sounds_list
+	vore_options.set_voice_sounds_list(character.vore_options.voice_sounds_list)
