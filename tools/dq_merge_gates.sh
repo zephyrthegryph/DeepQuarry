@@ -115,7 +115,9 @@ fi
 bash tools/ci/check_look_keys_format.sh --commit || { echo "dq_merge_gates: look_keys normalization failed" >&2; exit 1; }
 # Every type whose current look key has no recorded row (its look changed in a lane or in the merge) is probed here, and only here are
 # its keys recorded, into the merge commit. A lane-ready run (--snapshot-output) probes its own and records them itself.
-if [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ]; then
+if [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ] && ! dq_diff_touches_dm; then
+	echo "== look pins: skipped (the batch touches no DM, map, icon, sound, skin or analyzer file: no look key can have moved)"
+elif [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ]; then
 	unverified_line="$(bash tools/ci/check_look_keys_format.sh --unverified)" || { echo "dq_merge_gates: could not compute the unverified look types" >&2; exit 1; }
 	unverified_n="${unverified_line%% *}"
 	echo "== look pins: $unverified_line"

@@ -56,5 +56,11 @@ check "a proof without tgui does not cover a tgui batch" '! proof_find T1 1 0 dq
 proof_alias T1 T2
 check "an alias covers the second tree" '[ -n "$(proof_find T2 0 0 dq_b)" ]'
 
+# docs/tools-only diffs skip the look pins
+git switch -q --detach origin/master; mkdir -p doc tools/ci code; echo d >doc/x.md; echo t >tools/ci/y.sh; git add -A; git commit -q -m docs
+check "a docs/tools-only diff touches no DM" '! dq_diff_touches_dm'
+echo 'x' >code/z.dm; git add -A; git commit -q -m code
+check "a diff with a .dm file touches DM" 'dq_diff_touches_dm'
+
 [ "$fail" -eq 0 ] && echo "test_merge_batch: all passed" || echo "test_merge_batch: FAILED"
 exit "$fail"

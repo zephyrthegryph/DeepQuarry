@@ -99,6 +99,7 @@ if [ -f "$gameplay_file" ]; then
 		case " ${list[*]-} " in *" $l "*) ;; *) list+=("$l") ;; esac
 	done <"$gameplay_file"
 fi
+if [ "$pins" -eq 1 ] && ! dq_diff_touches_dm; then pins=0; echo "== lane-ready: look pins skipped (the lane touches no DM, map, icon, sound, skin or analyzer file)"; fi
 if [ "$pins" -eq 1 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ]; then list+=(dq_look_state_pin dq_look_tree_pin); fi
 if [ ${#list[@]} -eq 0 ]; then echo "dq_lane_ready: no --tests given: proving the smoke set only" >&2; fi
 

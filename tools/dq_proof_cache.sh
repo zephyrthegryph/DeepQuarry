@@ -78,3 +78,12 @@ proof_prune() {
 	[ -d "$dir" ] || return 0
 	ls -t "$dir"/*.proof 2>/dev/null | tail -n +"$((keep + 1))" | while read -r f; do rm -f "$f" "${f%.proof}.tests.json"; done
 }
+
+# dq_diff_touches_dm: true (0) when what this HEAD adds on top of origin/master touches anything a look can depend on (DM, maps, icons,
+# sounds, the skin, the analyzer that computes the keys, the .dme); false for a tools/docs/changelog/CI-only diff. A diff that
+# touches no such file cannot change a single look key, so the look pins have nothing to probe for it.
+dq_diff_touches_dm() {
+	local base
+	base="$(git merge-base origin/master HEAD 2>/dev/null)" || return 0
+	git diff --name-only "$base" HEAD 2>/dev/null | grep -Eq '^(code|maps|icons|strings|sound|interface|html|verdigris|tools/analyze)/|\.(dme|dm|dmm|dmi|dmf)$'
+}
