@@ -1323,6 +1323,9 @@
 #include "dq_emote_cooldown_home_tests.dm"
 #include "dq_shake_state_home_tests.dm"
 #include "dq_fake_attacker_cache_home_tests.dm"
+#include "dq_refinery_cache_home_tests.dm"
+#include "dq_organ_species_cache_home_tests.dm"
+#include "dq_targeting_cache_home_tests.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

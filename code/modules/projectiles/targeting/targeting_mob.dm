@@ -1,5 +1,5 @@
 /mob/living/var/obj/aiming_overlay/aiming
-/mob/living/var/list/aimed = list()
+/mob/living/var/list/aimed
 
 /mob/verb/toggle_gun_mode()
 	set name = "Toggle Gun Mode"
