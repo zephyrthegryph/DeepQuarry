@@ -181,44 +181,89 @@ fn read_records(dir: &Path) -> Vec<Record> {
 #[derive(Debug, Eq, PartialEq)]
 enum Action {
     Keep(u32),
-    /// Registered and idle: ask it to drain and exit.
+    /// Registered and idle: ask it to drain and exit (flag file).
     Retire(u32),
-    /// Unregistered (older build or foreign launch) or wedged: its state is unknown, end it.
+    /// Unregistered daemon of this very binary: ask it to drain through its endpoint. Never cuts a running build.
+    Drain(u32),
+    /// Foreign or older binary with no CPU activity for `CPU_IDLE`: the only case that is ended by force.
     Terminate(u32),
 }
 
-/// Pure policy: which of `others` to remove so that `others.len() + 1 <= cap`. Least recently used first; a daemon whose
-/// fresh heartbeat reports a build is never chosen.
-fn choose(others: &[u32], records: &[Record], cap: usize, now: u64) -> Vec<Action> {
-    let mut ranked: Vec<(u64, u32, Option<&Record>)> = others
+/// A daemon this machine has seen burn no CPU for this long is not building.
+const CPU_IDLE: Duration = Duration::from_secs(5 * 60);
+
+struct Peer {
+    pid: u32,
+    exe: String,
+    cpu_idle: bool,
+}
+
+/// Pure policy: which of `others` to remove so that `others.len() + 1 <= cap`. Least recently used first. A daemon whose fresh
+/// heartbeat reports a build is never chosen. A daemon with no live record is asked to drain when it runs `own_exe`, and is
+/// killed only when it is a different binary that has shown no CPU activity for `CPU_IDLE`; otherwise it is kept (the cap is soft).
+fn choose(others: &[Peer], own_exe: &str, records: &[Record], cap: usize, now: u64) -> Vec<Action> {
+    let fresh_ms = BEAT_FRESH.as_millis() as u64;
+    let mut ranked: Vec<(u64, &Peer, Option<&Record>)> = others
         .iter()
-        .map(|&pid| {
-            let record = records.iter().find(|record| record.pid == pid);
-            (record.map_or(0, |record| record.active_ms), pid, record)
+        .map(|peer| {
+            let record = records.iter().find(|record| record.pid == peer.pid);
+            (record.map_or(0, |record| record.active_ms), peer, record)
         })
         .collect();
-    ranked.sort_by_key(|(active, pid, _)| (*active, *pid));
+    ranked.sort_by_key(|(active, peer, _)| (*active, peer.pid));
     let mut resident = others.len() + 1;
     let mut actions = Vec::new();
-    for (_, pid, record) in ranked {
+    for (_, peer, record) in ranked {
         if resident <= cap {
             break;
         }
-        match record {
-            Some(record) if record.busy && now.saturating_sub(record.beat_ms) < BEAT_FRESH.as_millis() as u64 => {
-                actions.push(Action::Keep(pid));
-            }
-            Some(record) if now.saturating_sub(record.beat_ms) < BEAT_FRESH.as_millis() as u64 => {
+        let pid = peer.pid;
+        match record.filter(|record| now.saturating_sub(record.beat_ms) < fresh_ms) {
+            Some(record) if record.busy => actions.push(Action::Keep(pid)),
+            Some(_) => {
                 actions.push(Action::Retire(pid));
                 resident -= 1;
             }
-            _ => {
+            None if same_exe(&peer.exe, own_exe) => {
+                actions.push(Action::Drain(pid));
+                resident -= 1;
+            }
+            None if peer.cpu_idle => {
                 actions.push(Action::Terminate(pid));
                 resident -= 1;
             }
+            None => actions.push(Action::Keep(pid)),
         }
     }
     actions
+}
+
+fn same_exe(a: &str, b: &str) -> bool {
+    !a.is_empty() && a.replace('\\', "/").eq_ignore_ascii_case(&b.replace('\\', "/"))
+}
+
+#[derive(Default, Serialize, Deserialize)]
+struct CpuSeen(std::collections::BTreeMap<u32, (u64, u64)>);
+
+/// Update the per-pid CPU observations and report which pids have been flat for `CPU_IDLE`.
+fn observe_cpu(dir: &Path, pids: &[u32], now: u64) -> std::collections::BTreeSet<u32> {
+    let path = dir.join("cpu_seen.json");
+    let previous: CpuSeen = fs::read(&path).ok().and_then(|bytes| serde_json::from_slice(&bytes).ok()).unwrap_or_default();
+    let mut next = CpuSeen::default();
+    let mut idle = std::collections::BTreeSet::new();
+    for &pid in pids {
+        let Some(cpu) = os::cpu_time(pid) else { continue };
+        let changed = match previous.0.get(&pid) {
+            Some(&(seen_cpu, changed)) if seen_cpu == cpu => changed,
+            _ => now,
+        };
+        if now.saturating_sub(changed) >= CPU_IDLE.as_millis() as u64 {
+            idle.insert(pid);
+        }
+        next.0.insert(pid, (cpu, changed));
+    }
+    let _ = serde_json::to_vec(&next).map(|bytes| fs::write(&path, bytes));
+    idle
 }
 
 fn enforce_cap(dir: &Path, own: u32, cap: usize) -> io::Result<()> {
@@ -247,7 +292,13 @@ fn enforce_cap(dir: &Path, own: u32, cap: usize) -> io::Result<()> {
             }
         }
         let pids: Vec<u32> = others.iter().map(|(pid, _)| *pid).collect();
-        let actions = choose(&pids, &records, cap, now_ms());
+        let idle = observe_cpu(dir, &pids, now_ms());
+        let peers: Vec<Peer> = others
+            .iter()
+            .map(|(pid, exe)| Peer { pid: *pid, exe: exe.clone(), cpu_idle: idle.contains(pid) })
+            .collect();
+        let own_exe = std::env::current_exe().map_or_else(|_| String::new(), |path| path.display().to_string());
+        let actions = choose(&peers, &own_exe, &records, cap, now_ms());
         super::emit_stderr(format_args!(
             "dmbd resident cap pid={own} cap={cap} peers={} actions={}",
             pids.len(),
@@ -268,11 +319,20 @@ fn enforce_cap(dir: &Path, own: u32, cap: usize) -> io::Result<()> {
                         describe(pid)
                     ));
                 }
+                Action::Drain(pid) => {
+                    let asked = super::retire_namespace();
+                    let gone = matches!(asked, Ok(true)) && wait_exit(pid, RETIRE_WAIT);
+                    super::emit_stderr(format_args!(
+                        "dmbd resident cap asked unregistered same-binary daemon {} to drain (endpoint reply {asked:?}) exited={gone}",
+                        describe(pid)
+                    ));
+                }
                 Action::Terminate(pid) => {
                     let ended = terminate(pid);
                     super::emit_stderr(format_args!(
-                        "dmbd resident cap terminated unregistered daemon {} ended={ended}",
-                        describe(pid)
+                        "dmbd resident cap terminated foreign-binary daemon {} after {}s without CPU activity ended={ended}",
+                        describe(pid),
+                        CPU_IDLE.as_secs()
                     ));
                     let _ = fs::remove_file(record_path(dir, pid));
                 }
@@ -316,6 +376,30 @@ mod os {
             let done = WaitForSingleObject(handle, timeout.as_millis().min(u32::MAX as u128 - 1) as u32) == 0;
             CloseHandle(handle);
             done
+        }
+    }
+    #[repr(C)]
+    #[derive(Default)]
+    struct FileTime {
+        low: u32,
+        high: u32,
+    }
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn GetProcessTimes(handle: Handle, create: *mut FileTime, exit: *mut FileTime, kernel: *mut FileTime, user: *mut FileTime) -> i32;
+    }
+    /// Kernel plus user CPU time in 100 ns units, None when the process cannot be opened.
+    pub fn cpu_time(pid: u32) -> Option<u64> {
+        unsafe {
+            let handle = OpenProcess(0x1000, 0, pid); // PROCESS_QUERY_LIMITED_INFORMATION
+            if handle.is_null() {
+                return None;
+            }
+            let (mut c, mut e, mut k, mut u) = (FileTime::default(), FileTime::default(), FileTime::default(), FileTime::default());
+            let ok = GetProcessTimes(handle, &mut c, &mut e, &mut k, &mut u) != 0;
+            CloseHandle(handle);
+            let whole = |t: &FileTime| (u64::from(t.high) << 32) | u64::from(t.low);
+            ok.then(|| whole(&k) + whole(&u))
         }
     }
     pub fn terminate(pid: u32) -> bool {
@@ -364,6 +448,11 @@ mod os {
         }
         true
     }
+    pub fn cpu_time(pid: u32) -> Option<u64> {
+        let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).ok()?;
+        let fields: Vec<&str> = stat.rsplit_once(')')?.1.split_whitespace().collect();
+        Some(fields.get(11)?.parse::<u64>().ok()? + fields.get(12)?.parse::<u64>().ok()?)
+    }
     pub fn terminate(pid: u32) -> bool {
         Command::new("kill").args(["-9", &pid.to_string()]).status().is_ok_and(|status| status.success())
     }
@@ -406,29 +495,42 @@ mod tests {
         assert!(parse_idle(Some("-1")).is_err());
     }
 
+    fn peer(pid: u32, exe: &str, cpu_idle: bool) -> Peer {
+        Peer { pid, exe: exe.to_owned(), cpu_idle }
+    }
+    const OWN: &str = "E:/dq-cache/dmb-bin/dmbc.exe";
+
     #[test]
     fn within_cap_removes_nothing() {
-        assert!(choose(&[10], &[], 2, 1_000).is_empty());
-        assert!(choose(&[], &[], 2, 1_000).is_empty());
+        assert!(choose(&[peer(10, OWN, true)], OWN, &[], 2, 1_000).is_empty());
+        assert!(choose(&[], OWN, &[], 2, 1_000).is_empty());
     }
 
     #[test]
-    fn surplus_goes_least_recently_used_first_and_unregistered_first_of_all() {
-        let records = [record(1, 500, 1_000, false), record(2, 900, 1_000, false), record(3, 100, 1_000, false)];
-        // cap 2 with one new daemon: only one peer may stay -> two go, unregistered 4 before LRU 3.
-        let actions = choose(&[1, 2, 3, 4], &records, 2, 1_000);
-        assert_eq!(actions, vec![Action::Terminate(4), Action::Retire(3), Action::Retire(1)]);
+    fn registered_idle_retire_lru_first_and_busy_is_never_chosen() {
+        let records = [record(1, 500, 1_000, false), record(2, 900, 1_000, false), record(3, 100, 1_000, true)];
+        let peers = [peer(1, OWN, false), peer(2, OWN, false), peer(3, OWN, false)];
+        assert_eq!(choose(&peers, OWN, &records, 1, 1_000), vec![Action::Keep(3), Action::Retire(1), Action::Retire(2)]);
     }
 
     #[test]
-    fn busy_daemon_is_never_chosen_and_stale_heartbeat_is_not_busy() {
-        let records = [record(1, 0, 1_000, true), record(2, 10, 1_000, false), record(3, 5, 0, true)];
+    fn unregistered_same_binary_drains_and_is_never_killed() {
+        let actions = choose(&[peer(4, "e:\\dq-cache\\dmb-bin\\dmbc.exe", true), peer(5, OWN, true)], OWN, &[], 1, 1_000);
+        assert_eq!(actions, vec![Action::Drain(4), Action::Drain(5)]);
+    }
+
+    #[test]
+    fn foreign_binary_is_killed_only_after_cpu_idle_proof() {
+        let foreign = "E:/projects/dq-wt/x/tools/dmb/target/release/dmbc.exe";
+        assert_eq!(choose(&[peer(6, foreign, false)], OWN, &[], 1, 1_000), vec![Action::Keep(6)]);
+        assert_eq!(choose(&[peer(6, foreign, true)], OWN, &[], 1, 1_000), vec![Action::Terminate(6)]);
+    }
+
+    #[test]
+    fn stale_heartbeat_is_not_trusted_as_busy_but_is_not_killed_either() {
         let now = 1_000 + BEAT_FRESH.as_millis() as u64 + 5;
-        // 3's heartbeat is stale (wedged): terminated, not protected. 1 is stale too at this time.
-        let actions = choose(&[1, 2, 3], &records, 1, now);
-        assert!(actions.iter().all(|action| !matches!(action, Action::Keep(_))));
-        let fresh = choose(&[1, 2], &[record(1, 0, 1_000, true), record(2, 10, 1_000, false)], 1, 1_000);
-        assert_eq!(fresh, vec![Action::Keep(1), Action::Retire(2)]);
+        let records = [record(1, 0, 1_000, true)];
+        assert_eq!(choose(&[peer(1, OWN, false)], OWN, &records, 1, now), vec![Action::Drain(1)]);
     }
 
     #[test]
