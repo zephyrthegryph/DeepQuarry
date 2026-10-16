@@ -81,9 +81,8 @@ CAPABILITIES(/datum/expedition_teardown_job)
 SYSTEM_DEF(expedition)
 	name = "Expedition"
 	periodic_runlevels = RUNLEVELS_DEFAULT
-	// The old subsystem had no dependencies and initialized in the main stage. Its setup
-	// preallocates a z-level through load_new_z(), which needs the map system up and should
-	// follow the station mapload, so boot right after SSmapping.
+	// Sites are generated on demand (nothing is preallocated at startup); boot after the station
+	// mapload so the z-levels a site later claims follow it.
 	needs = list(/datum/system/mapping)
 	/// "[z]" -> /datum/expedition_site for every live site (a lookup of live sites, like a keyed
 	/// registry; a released site is owned by its teardown job).
@@ -105,16 +104,6 @@ CAPABILITIES(/datum/system/expedition)
 
 /datum/system/expedition/initialize()
 	initialized = TRUE
-	#ifndef CITESTING
-	// Pay world.maxz growth during startup rather than during the first player
-	// jump. The blank vacuum level remains unavailable until generation claims it.
-	var/datum/map_template/expedition_site/template = new
-	var/preallocated_z = template.load_new_z()
-	spent(template)
-	if(isnum(preallocated_z) && preallocated_z >= 1)
-		free_z |= preallocated_z
-		log_world("Expedition: preallocated expedition z[preallocated_z] during startup.")
-	#endif
 	log_world("World service [name] initialized: [length(free_z)] free z-levels.")
 
 /datum/system/expedition/proc/materialize_site_async(datum/expedition_site/descriptor, datum/flight_plan/plan)
