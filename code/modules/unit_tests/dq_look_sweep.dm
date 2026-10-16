@@ -328,14 +328,15 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		qdel(subject)
 	dq_look_drain_turf(T)
 
-/// The numeric vars of `subject` worth writing: those it declares below its base, without time-like names, in declaration order, at
+/// The numeric vars of `subject` worth writing: those it declares below its base, without time-like names or a tracked list's `_version` counter
+/// (bookkeeping the generator declares, not a look input, and each one would take a place under the cap), in declaration order, at
 /// most DQ_LOOK_STATE_MAX_VARS of them, then narrowed to the plan's list for the type when the plan names one.
 /datum/unit_test/proc/dq_look_probe_names(atom/subject, list/base_vars, plan_entry)
 	var/list/found = list()
 	for(var/name in subject.vars)
 		if(name in base_vars)
 			continue
-		if(isnum(subject.vars[name]) && !findtext(name, "time") && !findtext(name, "cooldown") && !findtext(name, "last") && !findtext(name, "next"))
+		if(isnum(subject.vars[name]) && !findtext(name, "time") && !findtext(name, "cooldown") && !findtext(name, "last") && !findtext(name, "next") && !findtext(name, "_version"))
 			found += name
 	if(length(found) > DQ_LOOK_STATE_MAX_VARS)
 		found.Cut(DQ_LOOK_STATE_MAX_VARS + 1)
