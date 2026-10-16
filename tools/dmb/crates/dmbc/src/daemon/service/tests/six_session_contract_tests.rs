@@ -651,3 +651,36 @@ fn string_literal_edits_patch_and_match_fresh_bytes() {
         before = after;
     }
 }
+
+#[test]
+fn comment_inside_a_body_patches_without_relowering_and_matches_fresh_bytes() {
+    // A trailing comment or spacing inside a body changes no expanded text the compiler keeps: no
+    // body is relowered and the image is the base image, but the edit must stay on the patch path.
+    let tree = "/proc/anchor()\n    return 0\n/proc/first(a)\n    return a + 1\n/datum/holder\n    var/list/items = list(1, 2)\n    proc/count()\n        return items.len\n";
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    for index in 0..6 {
+        roots.edit(index, tree);
+    }
+    compare_revision(&shared, &roots);
+    let patched = |roots: &Roots| -> Vec<u64> {
+        (0..6)
+            .map(|index| crate::body_patch::applied(&roots.manifest(index)))
+            .collect()
+    };
+    let commented = tree.replace("return a + 1", "return a + 1 // note");
+    let spaced = commented.replace("return a + 1 // note", "return  a + 1 // other note");
+    let mut before = patched(&roots);
+    for (label, source) in [("trailing comment", commented.as_str()), ("comment and spacing", spaced.as_str())] {
+        for index in 0..6 {
+            roots.edit(index, source);
+        }
+        compare_revision(&shared, &roots);
+        let after = patched(&roots);
+        for index in 0..6 {
+            assert_eq!(after[index], before[index] + 1, "root {index}: {label} did not patch");
+        }
+        before = after;
+    }
+}

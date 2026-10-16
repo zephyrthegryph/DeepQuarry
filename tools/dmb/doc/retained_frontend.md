@@ -173,7 +173,7 @@ new dmbc / dm-tree test failures.
 | 0 | baseline timeline and measurement scripts | done |
 | 1 | body edits that change string literals patch (append table strings, units' string footprint split from entry footprint) | done (see results) |
 | 2 | resource input of the patch base keyed by consumed answers and referenced-file digests (no decline on icon repack listing churn) | next |
-| 3 | watcher and retained directory proofs; per-region resource demand | |
+| 3 | watcher and cached directory proofs (landed); per-region resource demand (tried: parallel split lex, correct but no measurable gain, not landed) | partly done |
 | 4 | startup facts and ABI units reused for body-only change sets | |
 | 5 | frontend revision edited in place for body and declaration change sets | |
 | 6 | incremental publication | |
@@ -228,3 +228,26 @@ frontend revision, incremental publication, new types and removed members). The 
 timeline above (frontend 2.1-2.3 s, resources 1.0 s, startup+ABI 1.5 s, validation 0.5-1.1 s,
 publication 0.8 s) is unchanged, so the 2.5 s and 5 s targets are not met. Memory was not
 re-measured (no change to retained state beyond one extended link table per string patch).
+
+### Stage 3: watcher (lane `tools/dmb-redesign-2`)
+
+`fs_watch.rs`: the daemon (never a one-shot) watches the project root with `ReadDirectoryChangesW`
+(raw FFI, recursive, 4 MB buffer, changes buffer per handle between calls). Each request runs a sync
+cookie (`.dmbc/watch-cookie-*`) before session validation; the cache of directory proofs, and of
+directory absences (a failed open is cached too), is invalidated by events (the containing
+directory, the path, and its subtree for anything but a plain modification) and cleared on overflow,
+read failure or a cookie timeout. A proof is cached only if no event arrived while it was captured.
+Publication still restats every captured input live. `DMB_WATCH=0` disables it,
+`DMB_WATCH_VERIFY=1` recaptures every cached directory and logs mismatches (none seen on the
+production tree over six requests, 5,182 verified directories). The sweep also assembles its proof
+maps once per distinct parent instead of once per file.
+
+Session validation, idle between edits (marks `session.*`): proof capture 0.6 s to 0.19 s, whole
+validation 0.5-1.1 s to 0.28 s. Directory capture itself is 0.02 s; the remaining 0.2 s is building
+the 13.7k-file stamp map (`proofs.exact_built`).
+
+Also landed: a body patch no longer declines when no body changed (a comment or spacing inside a
+body); the base just advances. Test `comment_inside_a_body_patches_without_relowering...`.
+
+Next-largest costs (body edit, quiet run): frontend 2.1 s, resources and maps 0.9 s, early admission
+snapshot merge 0.44 s, publication 0.7 s, ABI scheduler 0.5 s, startup facts 0.4 s.
