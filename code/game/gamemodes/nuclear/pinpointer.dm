@@ -7,7 +7,6 @@
 	throw_speed = 4
 	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, 500)
-	preserve_item = 1
 	var/obj/item/disk/nuclear/the_disk
 
 	///TODO: Clear up click code entirely. This is used exclusively for attack_self
@@ -17,6 +16,7 @@
 
 /obj/item/pinpointer/var/active = FALSE
 CAPABILITIES(/obj/item/pinpointer)
+	configure(item_persistence(preserve = 1))
 	ref_one(nameof(the_disk))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
