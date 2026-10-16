@@ -6,7 +6,6 @@
 	density = TRUE
 	anchored = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	maintenance_wrench_time = 2 SECONDS
 
 	circuit = /obj/item/circuitboard/firework_launcher
 	var/tmp/obj/item/firework_star/loaded_star
@@ -32,6 +31,7 @@
 	look.state("launcher[loaded_star ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]")
 
 CAPABILITIES(/obj/machinery/firework_launcher)
+	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS))
 	ref_one(nameof(loaded_star), /obj/item/firework_star)
 	default_parts()
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
