@@ -26,7 +26,6 @@
 
 
 CAPABILITIES(/obj/machinery/computer/cloning)
-	ref_many(nameof(pods))
 	configure(light_glow(color = "#315ab4"))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(autoprocess), wakes_on = list(nameof(autoprocess)))
 	owns_one(nameof(loaded_BR), /datum/transhuman/body_record)

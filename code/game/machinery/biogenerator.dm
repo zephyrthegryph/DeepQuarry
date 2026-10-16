@@ -128,7 +128,6 @@
 
 
 CAPABILITIES(/obj/machinery/biogenerator)
-	ref_one(nameof(beaker))
 	reagents(1000)
 	default_parts()
 	per_type(nameof(item_list), PROC_REF(build_item_list))

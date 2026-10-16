@@ -69,7 +69,6 @@
 
 // The hand entry above opens the controls, so the window's own open op answers the menu and a remote user only.
 CAPABILITIES(/mob/living/bot/mulebot)
-	ref_one(nameof(load))
 	configure(mob_movement(bump = HEAVY))
 	// the item effect calls the bot's own effect first (old `..()` then update_icons()), so the inherited bot op must not run a second time
 	without("bot_item")

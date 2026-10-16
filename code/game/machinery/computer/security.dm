@@ -80,7 +80,6 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/secure_data, sec_field_choices, list(
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
 CAPABILITIES(/obj/machinery/computer/secure_data)
-	ref_one(nameof(scan))
 	configure(light_glow(color = "#a91515"))
 	per_type(nameof(field_edit_questions), PROC_REF(build_field_edit_questions))
 	per_type(nameof(field_edit_choices), PROC_REF(build_field_edit_choices))

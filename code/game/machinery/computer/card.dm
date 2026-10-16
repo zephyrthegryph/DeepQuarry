@@ -44,7 +44,6 @@ MSG_DEF_SELF(card_console/slots_full, "Both card slots are full.")
 // the subject's. Every change to the loaded card needs an authenticated operator and a card (assign_possible()), and the card's name follows
 // its owner and assignment after every button.
 CAPABILITIES(/obj/machinery/computer/card)
-	ref_one(nameof(scan))
 	configure(light_glow(color = "#0099ff"))
 	interface("IdentificationComputer")
 	op("insert_id", item(/obj/item/card/id), needs(req(PROC_REF(has_free_slot))), then(PROC_REF(card_inserted)), opens_ui())
