@@ -59,12 +59,22 @@ ending declarations; there is no global `/obj` ending binding.
   the partial component list and caused null.idle_draw runtimes. Replacing that guard
   with optional calls would conceal the broader early power/movement side effects.
   Original body source and ownership declaration are restored byte-for-byte.
-* PDA pen presentation remains original. A native look.contents_of query needs a physical
-  ledger slot, while the PDA uses raw contents plus independent named ownership. Adding
-  a slot would change propagation, reach and destruction contracts; a pure physical-
-  contents dependency without imposing ledger topology is the actual missing form.
-  Both pda.dm and app.dm are restored byte-for-byte. Existing old constructor appearance
-  assertions remain; the new live-redraw test covers supported privacy invalidation only.
+* PDA pen presentation remains original. Master `7de6599bbc` now gives the global
+  `contents_of()` and `contents_count()` native `READS_AS(..., SLOT_OCCUPANCY_KEY)`
+  metadata (`code/engine/refs/containment/spatial.dm:92–117`), and their physical
+  contents return values are suitable for drawing. The missing part is publication:
+  `ledger.dm:348/375/416` publishes occupancy on ledger entry, exit and reslot;
+  `atoms_movable.dm:451–456` notifies an existing ledger or creates one only for a
+  declared-slot holder (`ledger.dm:96–100`). Direct constructor adoption likewise
+  only calls an existing ledger (`atoms_initializing_EXPENSIVE.dm:111`). PDA has
+  independent named ownership, not a physical contents slot, so inserting/removing
+  its pen has no corresponding occupancy publication. A global `contents_of(src)`
+  draw could start correctly but remain stale on removal. Adding a slot would change
+  propagation, reach and destruction contracts. The actual gap is a physical-contents
+  publication contract covering constructor/adoption, movement, deletion and legacy
+  paths without imposing ledger topology; it is not absent read metadata or a scope
+  restriction. Both pda.dm and app.dm retain original behavior. Existing constructor
+  appearance assertions remain; the new live-redraw test covers privacy only.
 
 ## Coverage
 
