@@ -1343,6 +1343,7 @@
 #include "dq_init_alien_node_tests.dm"
 #include "dq_init_portal_line_setup_tests.dm"
 #include "dq_init_landmark_placement_tests.dm"
+#include "dq_init_lightning_phase_tests.dm"
 #include "dq_init_embed_birth_tests.dm"
 #include "dq_init_card_sprite_stack_tests.dm"
 #include "dq_init_objects_circle_wave_tests.dm"

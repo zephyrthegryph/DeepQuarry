@@ -698,7 +698,6 @@ init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal
 init_lines	code/game/objects/effects/map_effects/beam_point.dm	@/obj/effect/map_effect/beam_point::Initialize::if
 init_lines	code/game/objects/effects/map_effects/beam_point.dm	@/obj/effect/map_effect/beam_point::Initialize::create_beams
 init_lines	code/game/objects/effects/map_effects/beam_point.dm	@/obj/effect/map_effect/beam_point::Initialize::next_beam_delay
-init_lines	code/game/objects/effects/misc.dm	@/obj/effect/temporary_effect/lightning_strike::Initialize::animate
 init_lines	code/game/objects/items/weapons/cigs_lighters.dm	@/obj/item/flame/lighter/zippo::Initialize::cut_overlays
 init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguisher::Initialize::if
 init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguisher::Initialize::choice

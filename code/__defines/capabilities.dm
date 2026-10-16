@@ -147,3 +147,5 @@
 #define CAP_INITIAL_BIOWASTE "initial_biowaste"
 
 #define CAP_INITIAL_CIRCLE_WAVE "initial_circle_wave"
+
+#define CAP_INITIAL_LIGHTNING_FADE "initial_lightning_fade"

@@ -58,12 +58,18 @@ CAPABILITIES(/obj/effect/temporary_effect)
 /obj/effect/temporary_effect/lightning_strike/proc/roll_variant(datum/roller/R)
 	return "[icon_state][R.number(1, 2)]"
 
+CAPABILITY_TYPE(initial_lightning_fade, CAP_INITIAL_LIGHTNING_FADE, /datum/capability/initial_lightning_fade)
+
+/datum/capability/initial_lightning_fade
+	holder_hooks = HOLDER_HOOK_PREINIT
+
+/datum/capability/initial_lightning_fade/on_holder_preinit(datum/act/eval/A)
+	var/obj/effect/temporary_effect/lightning_strike/strike = A.holder
+	animate(strike, alpha = 0, time = strike.time_to_die - 0.1 SECONDS)
+
 CAPABILITIES(/obj/effect/temporary_effect/lightning_strike)
 	rolls(nameof(icon_state), PROC_REF(roll_variant))
-
-/obj/effect/temporary_effect/lightning_strike/Initialize(mapload)
-	animate(src, alpha = 0, time = time_to_die - 1)
-	. = ..()
+	initial_lightning_fade()
 
 /obj/effect/dummy/lighting_obj
 	name = "lighting fx obj"
