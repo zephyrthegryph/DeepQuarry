@@ -7,8 +7,7 @@ Branch: `codex/silicon-remote`, based on `origin/master` `4ab2e15fe1`.
 `silicon_entry` shrank from 103 to 5 rows (98 removed), regenerated with
 `analyze baseline --update --lint silicon_entry`. No rows were added. The five
 remaining rows are three casino intermediate prompt-effect stages, hoist detach's
-refusal-and-success input fallthrough, and legacy machine refresh's nested-input
-suppression. Exact reasons and needed contracts are in
+refusal-and-success input fallthrough, and the machine-refresh shim's 23 remaining legacy-browser callers. Exact reasons and needed contracts are in
 [silicon_remote_module_gaps.md](silicon_remote_module_gaps.md). None is hidden behind
 an annotation, renamed predicate, relaxed ceiling or path exemption.
 
@@ -32,4 +31,4 @@ in the menu. Additional key presentation causes are recorded per class in
 The admin-holder lint now uses a proven receiver type and declared field to exclude
 non-client `.holder` references; unknown, mixed and client-compatible receivers remain
 checked. Its focused Rust regression passed (1 test). All ratchets passed with the
-98-row baseline reduction. The final lane-ready receipt and focused-run JSON are the authoritative runtime and stamp evidence. The source is merged through master `dbf38d2b20`; the focused list includes both mandatory pins, actual AI/borg behavior, the two constructor regressions and telecube cleanup. No full suite is run. The constructor and look cleanup repairs restore the old runtime-free pins; the master `devour` key update is separately documented.
+98-row baseline reduction. The final lane-ready receipt and focused-run JSON are the authoritative runtime and stamp evidence. The source is merged through master `3097a36445`; the focused list includes both mandatory pins, actual AI/borg behavior, the two constructor regressions and telecube cleanup. No full suite is run. The constructor and look cleanup repairs restore the old runtime-free pins; the master `devour` key update is separately documented.
