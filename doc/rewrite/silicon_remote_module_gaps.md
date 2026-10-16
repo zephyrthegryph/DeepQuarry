@@ -33,18 +33,22 @@ green before applying the changes.
 
 ## Remaining exact contracts
 
-### Three casino intermediate-effect flows; three convertible leaves
+### Two casino flows with repeated pre-question messages
 
-Source review of `code/modules/casino/casino.dm` against master `dbf38d2b20`
-finds three genuinely blocked flows, retained unchanged:
-`wheel_management_stage` repeats its access message before questions and on
-resumption; `spasm_use` clears stale collar references/keys before its next
-question; `spasm_id` combines that cleanup with repeated staff messages and a
-selected-collar identity check around confirmation.
+Source review against master `86fe6ef554` confirms two casino flows still need
+an effect at question boundaries: `wheel_management_stage` and `spasm_id` emit
+`Proper access, allowed staff controls.` before the first question and again on
+resumption. Their cancellation paths already emitted that message. Moving it to
+the final effect would change visible chat/history. The stale-collar cleanup in
+`spasm_id` is terminal, not a separate pre-next-question mutation; the repeated
+message is the actual blocker.
 
-A declared intermediate effect/commit step with cancellation and refresh semantics
-is needed. Moving cleanup to a final handler, writing from a computed prompt field,
-or wrapping the old predicate would change the flow instead of converting it.
+Current `asks()` has no declared before-question/after-answer feedback phase.
+`then()` before a later question is rejected by `op_plan_check_order`; `starts()`
+and `begins()` run only when a real timed wait starts. Adding a fake timed wait or
+writing from computed fields would change behavior rather than express this
+contract. A native question-boundary feedback form or an approved change to the
+repeated chat is needed; no general UI-refresh gap remains.
 
 The other three flows now use existing forms: the former `wheel_use_stage` chains
 its choice and conditional interval question; the former `wheel_interval_stage`
@@ -60,9 +64,29 @@ The coordinator ran all three old-production AI/borg flow tests successfully on
 production `4ab2e15fe1` (`20261016T005159_5b6663b70b.json`, three passes, zero
 failures), then authorized application. Their native adaptations exercise the
 actual menu/script operation and asks paths. Native verification remains pending;
-no new gate is claimed here. The three intermediate-effect flows and hoist remain. The separately reviewed
-23-call refresh cohort removes the former shim row, bringing the source inventory
-to 99 of the original 103 rows converted (four remain); its native gate is pending.
+no new gate is claimed here. The two repeated-message flows and hoist remain. The 23-call refresh cohort and
+SPASM ordinary-use flow bring the source inventory to 100 of the original 103 rows
+converted (three remain); their native gate is pending.
+
+### Converted SPASM ordinary-use flow
+
+`spasm_use` was re-audited rather than assumed blocked: its stale-collar cleanup
+belongs only to terminal branches, and registration checks between questions are
+pure. The existing `spasm_use` operation now chains conditional `asks()` steps and
+commits the same selection, information, registration and payout effects after
+its last answer. Sale admission stays initial-only, and no resumed adjacency
+requirement is added. Native ability/status invalidation remains active while the
+questions are open. A clientless registration attempt closes silently without
+creating a collar, identity entry or payout; the actual client and duplicate
+membership are requirements, not effect-head guards. The newly reactive identity
+list's existing append and six removals use generated list setters.
+
+The exact type had pre-conversion human/AI/borg menu pins in the completed
+`dc46845b50` capture, including its disabled-sale refusal. The new focused native
+branch fixture drives actual AI/borg inputs, real collar selection, cancellation,
+information, deleted selection and clientless registration. It is new native
+coverage, not a claimed old-flow test run. Positive registration with a live client
+is not exercised by this headless fixture, and no fake client identity is supplied.
 
 ### Hoist detach propagation
 

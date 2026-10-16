@@ -620,7 +620,11 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 		asks(/datum/prompt/number/casino_setting, fields = list("question" = "Select the desired price (1-1000)", "title" = "Set Price"), step = "price", keeps = 0, when = req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), then(PROC_REF(price_done)))
 	ref_many(nameof(collar_list), /obj/item/clothing/accessory/collar/casinosentientprize)
 	ref_one(nameof(selected_collar), /obj/item/clothing/accessory/collar/casinosentientprize)
-	op("spasm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/spasm_disabled))), then(PROC_REF(interaction_use)))
+	op("spasm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(spasm_sale_admission)), req(PROC_REF(actor_not_incapacitated), silent = TRUE), req(PROC_REF(spasm_registration_allowed))),
+		asks(/datum/prompt/choice, fields = list("question" = "Choose what to do", "title" = "SPASM", "choices" = list("Show selected Prize", "Select Prize", "Become Prize (Please examine yourself first)", "Cancel"), "timeout" = 0), step = "spasm_action", keeps = 0, when = req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))),
+		asks(/datum/prompt/choice, fields = list("question" = "Select a prize", "title" = "Chose a collar", "choices" = computed(PROC_REF(spasm_collar_choices)), "timeout" = 0), step = "selected_prize", keeps = 0, when = PROC_REF(spasm_selecting)),
+		asks(/datum/prompt/choice, fields = list("question" = "Are you sure you want to become a sentient prize?", "title" = "Confirm Sentient Prize", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "registration_confirm", keeps = 0, when = PROC_REF(spasm_registering)),
+		asks(/datum/prompt/choice, fields = list("question" = "Would you like to allow others to turn you into an item upon claiming you if they choose to?", "title" = "Confirm Item TF Preference", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "registration_item_tf", keeps = 0, when = PROC_REF(spasm_registration_confirmed)), then(PROC_REF(spasm_use_done)))
 	op("spasm_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy prize"), needs(req(PROC_REF(actor_not_incapacitated)), req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/prizes_disabled)), req_full(nameof(selected_collar), because = MSG(casino/select_prize_first))), then(PROC_REF(interaction_cash)))
 	op("spasm_collar", item(/obj/item/clothing/accessory/collar/casinosentientprize), priority(OP_PRIORITY_DEFAULT - 1), label("Release prize"), needs(req(PROC_REF(actor_not_incapacitated))), then(PROC_REF(interaction_collar)))
 	op("spasm_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(actor_not_incapacitated)), req(PROC_REF(can_manage))), then(PROC_REF(interaction_id)))
@@ -628,89 +632,85 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 MSG_DEF_SELF(casino/spasm_disabled, "the SPASM is disabled")
 
 
-/obj/machinery/casinosentientprize_handler/proc/interaction_use(datum/act/op/A)
-	spasm_use(A.actor, A.held)
-	return OP_OK
+MSG_DEF_SELF(casino/already_registered, "The SPASM beeps in an upset manner, you already have a collar!")
 
-/// The SPASM's use; it asks its questions by re-running itself with the same arguments.
-/obj/machinery/casinosentientprize_handler/proc/spasm_use(mob/living/user, obj/item/held = null)
-	if(user.incapacitated())
-		return TRUE
+/obj/machinery/casinosentientprize_handler/proc/spasm_sale_admission(datum/act/op/A)
+	// The old hand entry finished before its rerun questions; sale was checked only initially.
+	if(A.started || casinosentientprize_sale == "enabled")
+		return null
+	return MSG(casino/spasm_disabled)
 
-	if(ishuman(user) || isrobot(user))
-		var/_answer_k604 = rerun_ask(user, "k604", PROC_REF(spasm_use), args, /datum/prompt/choice, question = "Choose what to do", title = "SPASM", choices = list("Show selected Prize", "Select Prize", "Become Prize (Please examine yourself first)", "Cancel"))
-		if(isnull(_answer_k604))
-			return
-		switch(_answer_k604)
-			if("Cancel")
-				return TRUE
-			if("Show selected Prize")
-				if(QDELETED(selected_collar))
-					if(selected_collar)
-						rel_remove(src, nameof(collar_list), selected_collar)
-						LAZYREMOVE(sentientprizes_ckeys_list, selected_collar.sentientprizeckey)
-						rel_clear(src, nameof(selected_collar))
-					to_chat(user, span_warning("No collar is currently selected or the currently selected one has been destroyed or disabled."))
-					return TRUE
-				to_chat(user, span_warning("Sentient Prize information"))
-				to_chat(user, span_notice("Name: [selected_collar.sentientprizename]"))
-				to_chat(user, span_notice("Description: [selected_collar.sentientprizeflavor]"))
-				to_chat(user, span_notice("OOC: [selected_collar.sentientprizeooc]"))
-				to_chat(user, span_notice("Allows item prize TF: [selected_collar.sentientprizeitemtf ? "Yes (you may choose to turn your prize into an item when claiming!)" : "No"]"))
-				if(selected_collar.ownername != null)
-					to_chat(user, span_warning("This prize is already owned by [selected_collar.ownername]"))
+/obj/machinery/casinosentientprize_handler/proc/spasm_selecting(datum/act/op/A)
+	return A.step_value("spasm_action") == "Select Prize"
 
-			if("Select Prize")
-				var/_answer_k624 = rerun_ask(user, "k624", PROC_REF(spasm_use), args, /datum/prompt/choice, question = "Select a prize", title = "Chose a collar", choices = collar_list || list())
-				if(isnull(_answer_k624))
-					return
-				rel_set(src, nameof(selected_collar), _answer_k624)
-				if(QDELETED(selected_collar))
+/obj/machinery/casinosentientprize_handler/proc/spasm_collar_choices(datum/act/op/A)
+	return collar_list ? collar_list.Copy() : list()
+
+/obj/machinery/casinosentientprize_handler/proc/spasm_registering(datum/act/op/A)
+	return A.step_value("spasm_action") == "Become Prize (Please examine yourself first)" && !isnull(A.actor.client)
+
+/obj/machinery/casinosentientprize_handler/proc/spasm_registration_confirmed(datum/act/op/A)
+	return spasm_registering(A) && A.step_value("registration_confirm") == "Yes"
+
+/obj/machinery/casinosentientprize_handler/proc/spasm_registration_allowed(datum/act/op/A)
+	if(A.step_value("spasm_action") != "Become Prize (Please examine yourself first)")
+		return null
+	if(!A.actor.client)
+		return MSG(req_silent)
+	if(A.actor.client.ckey in sentientprizes_ckeys_list)
+		return MSG(casino/already_registered)
+	return null
+
+/obj/machinery/casinosentientprize_handler/proc/spasm_use_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	switch(A.step_value("spasm_action"))
+		if("Show selected Prize")
+			if(QDELETED(selected_collar))
+				if(selected_collar)
 					rel_remove(src, nameof(collar_list), selected_collar)
-					LAZYREMOVE(sentientprizes_ckeys_list, selected_collar?.sentientprizeckey)
-					to_chat(user, span_warning("No collars to chose, or selected collar has been destroyed or deactived, selection has been removed from list."))
+					remove_sentientprizes_ckeys_list(selected_collar.sentientprizeckey)
 					rel_clear(src, nameof(selected_collar))
-					return TRUE
+				to_chat(A.actor, span_warning("No collar is currently selected or the currently selected one has been destroyed or disabled."))
+				return OP_OK
+			to_chat(A.actor, span_warning("Sentient Prize information"))
+			to_chat(A.actor, span_notice("Name: [selected_collar.sentientprizename]"))
+			to_chat(A.actor, span_notice("Description: [selected_collar.sentientprizeflavor]"))
+			to_chat(A.actor, span_notice("OOC: [selected_collar.sentientprizeooc]"))
+			to_chat(A.actor, span_notice("Allows item prize TF: [selected_collar.sentientprizeitemtf ? "Yes (you may choose to turn your prize into an item when claiming!)" : "No"]"))
+			if(selected_collar.ownername != null)
+				to_chat(A.actor, span_warning("This prize is already owned by [selected_collar.ownername]"))
 
-			if("Become Prize (Please examine yourself first)") //Its awkward, but no easy way to obtain flavor_text due to server not loading text of mob until its been examined at least once.
-				if(!user.client)
-					return TRUE
-				var/safety_ckey = user.client.ckey
-				if(safety_ckey in sentientprizes_ckeys_list)
-					to_chat(user, span_warning("The SPASM beeps in an upset manner, you already have a collar!"))
-					return TRUE
-				var/confirm = rerun_ask(user, "k639", PROC_REF(spasm_use), args, /datum/prompt/choice, question = "Are you sure you want to become a sentient prize?", title = "Confirm Sentient Prize", choices = list("Yes", "No"), buttons = TRUE)
-				if(isnull(confirm))
-					return
-				if(!confirm)
-					return TRUE
-				if(confirm == "No")
-					to_chat(user, span_warning("The SPASM beeps in a sad manner at your impolite decline..."))
-					return TRUE
-				var/confirmitemtf = rerun_ask(user, "k645", PROC_REF(spasm_use), args, /datum/prompt/choice, question = "Would you like to allow others to turn you into an item upon claiming you if they choose to?", title = "Confirm Item TF Preference", choices = list("Yes", "No"), buttons = TRUE)
-				if(isnull(confirmitemtf))
-					return
-				var/allowitemtf = FALSE
-				if(confirmitemtf == "Yes")
-					allowitemtf = TRUE
-				if(safety_ckey in sentientprizes_ckeys_list)
-					to_chat(user, span_warning("The SPASM beeps in an upset manner, you already have a collar!"))
-					return TRUE
-				to_chat(user, span_warning("You are now a prize!"))
-				LAZYADD(sentientprizes_ckeys_list, user.ckey)
-				var/obj/item/clothing/accessory/collar/casinosentientprize/C = new(src.loc)
-				C.sentientprizename = "[user.name]"
-				C.sentientprizeckey = "[user.ckey]"
-				C.sentientprizeflavor = user.bio.flavor_text
-				C.sentientprizeooc = user.identity().ooc_notes
-				C.sentientprizeitemtf = allowitemtf
-				C.name = "Sentient Prize Collar: Available! [user.name] purchaseable at the SPASM!"
-				C.desc = "Golden Goose Sentient Prize collar. The tags shows in flashy colorful text the wearer is [user.name] and is currently available to buy at the Sentient Prize Automated Sales Machinery!"
-				C.set_icon_state("casinoslave_available")
-				rel_add(src, nameof(collar_list), C)
+		if("Select Prize")
+			rel_set(src, nameof(selected_collar), A.step_value("selected_prize"))
+			if(QDELETED(selected_collar))
+				rel_remove(src, nameof(collar_list), selected_collar)
+				remove_sentientprizes_ckeys_list(selected_collar?.sentientprizeckey)
+				to_chat(A.actor, span_warning("No collars to chose, or selected collar has been destroyed or deactived, selection has been removed from list."))
+				rel_clear(src, nameof(selected_collar))
+				return OP_OK
 
-				spawn_casinochips(casinosentientprize_price, src.loc)
-	return TRUE
+		if("Become Prize (Please examine yourself first)")
+			if(A.step_value("registration_confirm") == "No")
+				to_chat(user, span_warning("The SPASM beeps in a sad manner at your impolite decline..."))
+				return OP_OK
+			if(isnull(A.step_answer("registration_item_tf")))
+				return OP_OK
+			var/allowitemtf = A.step_value("registration_item_tf") == "Yes"
+			to_chat(user, span_warning("You are now a prize!"))
+			add_sentientprizes_ckeys_list(user.ckey)
+			var/obj/item/clothing/accessory/collar/casinosentientprize/C = new(src.loc)
+			C.sentientprizename = "[user.name]"
+			C.sentientprizeckey = "[user.ckey]"
+			C.sentientprizeflavor = user.bio.flavor_text
+			C.sentientprizeooc = user.identity().ooc_notes
+			C.sentientprizeitemtf = allowitemtf
+			C.name = "Sentient Prize Collar: Available! [user.name] purchaseable at the SPASM!"
+			C.desc = "Golden Goose Sentient Prize collar. The tags shows in flashy colorful text the wearer is [user.name] and is currently available to buy at the Sentient Prize Automated Sales Machinery!"
+			C.set_icon_state("casinoslave_available")
+			rel_add(src, nameof(collar_list), C)
+
+			spawn_casinochips(casinosentientprize_price, src.loc)
+	return OP_OK
 
 MSG_DEF_SELF(casino/prizes_disabled, "sentient prize sales are currently disabled")
 MSG_DEF_SELF(casino/select_prize_first, "select a prize first")
@@ -760,7 +760,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 			C.set_icon_state("casinoslave")
 			C.name = "disabled Sentient Prize Collar: [C.sentientprizename]"
 			C.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [C.sentientprizename], but harsh red text informs you its been disabled."
-			LAZYREMOVE(sentientprizes_ckeys_list, C.sentientprizeckey)
+			remove_sentientprizes_ckeys_list(C.sentientprizeckey)
 			C.sentientprizeckey = null
 			rel_remove(src, nameof(collar_list), C)
 	return TRUE
@@ -800,7 +800,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 					return TRUE
 				if(QDELETED(selected_collar))
 					rel_remove(src, nameof(collar_list), selected_collar)
-					LAZYREMOVE(sentientprizes_ckeys_list, selected_collar.sentientprizeckey)
+					remove_sentientprizes_ckeys_list(selected_collar.sentientprizeckey)
 					to_chat(user, span_warning("Collar has been destroyed!"))
 					rel_clear(src, nameof(selected_collar))
 					return TRUE
@@ -814,7 +814,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 						selected_collar.icon_state = "casinoslave"
 						selected_collar.name = "disabled Sentient Prize Collar: [selected_collar.sentientprizename]"
 						selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename], but harsh red text informs you its been disabled."
-						LAZYREMOVE(sentientprizes_ckeys_list, selected_collar.sentientprizeckey)
+						remove_sentientprizes_ckeys_list(selected_collar.sentientprizeckey)
 						selected_collar.sentientprizeckey = null
 						rel_remove(src, nameof(collar_list), selected_collar)
 						rel_clear(src, nameof(selected_collar))
@@ -1014,7 +1014,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 		collar.set_icon_state("casinoslave")
 		collar.name = "disabled Sentient Prize Collar: [collar.sentientprizename]"
 		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename], but harsh red text informs you its been disabled."
-		LAZYREMOVE(sentientprizes_ckeys_list, collar.sentientprizeckey)
+		remove_sentientprizes_ckeys_list(collar.sentientprizeckey)
 		collar.sentientprizeckey = null
 		rel_remove(src, nameof(collar_list), collar)
 		if(selected_collar == collar)

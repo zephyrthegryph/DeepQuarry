@@ -5027,3 +5027,23 @@ seven-host AI/borg goldens and the separately passed old dartgun capture are the
 oracles; this cause authorizes no pin re-records. New real-action regressions check
 that beaker insertion, mixing and console speed each execute once while their
 window gets its queued data. Native verification remains pending the combined gate.
+
+### SPASM ordinary-use questions owned by the operation (2026-10-16)
+
+`/obj/machinery/casinosentientprize_handler` keeps its existing `spasm_use` key,
+label, initial sale admission and input bindings. Its real choice, conditional
+collar selection and registration confirmations now use `asks()`. Cleanup after
+showing/selecting a missing collar remains terminal; it never precedes another
+question. Duplicate registration becomes a pure requirement with the unchanged
+visible refusal. Clientless registration closes silently with no created collar,
+registry identity or payout, and decline retains its existing sad-beep message.
+Sale admission remains initial-only and no resumed adjacency check is added;
+native actor-safety invalidation remains active during prompts. Newly reactive
+identity membership publishes through generated list setters at every writer.
+
+Existing exact human/AI/borg menu and click pins were captured before this
+conversion; no new key or row difference is intended and none may be blessed for
+this cause. The new real-input branch fixture adds native selection/cancel/info/
+deleted-collar/clientless coverage. It is not an old-flow test run and supplies no
+fake client to claim positive live-client registration coverage. Validation is
+pending the final combined gate.

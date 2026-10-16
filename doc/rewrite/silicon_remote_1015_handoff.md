@@ -4,10 +4,10 @@ Branch: `codex/silicon-remote`, based on `origin/master` `4ab2e15fe1`.
 
 ## Counts and remaining contracts
 
-`silicon_entry` shrank from 103 to 4 rows (99 removed), regenerated with
-`analyze baseline --update --lint silicon_entry`. No rows were added. The four
-remaining rows are three casino intermediate prompt-effect stages and hoist
-detach's refusal-and-success input fallthrough. Exact reasons and needed contracts are in
+`silicon_entry` shrank from 103 to 3 rows (100 removed), regenerated with
+`analyze baseline --update --lint silicon_entry`. No rows were added. The three
+remaining rows are wheel/SPASM management's repeated pre-question staff messages
+and hoist detach's refusal-and-success input fallthrough. Exact reasons and needed contracts are in
 [silicon_remote_module_gaps.md](silicon_remote_module_gaps.md). None is hidden behind
 an annotation, renamed predicate, relaxed ceiling or path exemption.
 
@@ -60,3 +60,19 @@ both new UI regressions. The authorized `analyze baseline --update --lint silico
 rows (99 removed from the original 103); no rows were added. The source changes
 precede the final coordinating gate; their runtime validation and lane-ready stamp
 are still pending.
+
+## Ordinary SPASM questions
+
+A final audit found that `spasm_use` needs no intermediate-effect form: its cleanup
+is terminal and its between-question admission is pure. Its same-key native
+operation now owns the conditional choice/selection/registration questions; real
+registration writes and payouts remain after the last answer. Existing sale and
+range admission are not strengthened during the wait. Exact per-type old
+human/AI/borg pins were already captured before this conversion. The new
+`dq_silicon/casino_spasm_use_flow` regression covers real native selection,
+cancellation, information, deleted-collar and clientless refusal state. These
+branch tests have not been run on old code and do not claim live-client positive
+registration coverage. All seven existing identity-list mutations now publish
+through generated setters. No keys, labels, menu/click rows or golden changes are
+intended. The remaining three sites have exact source/engine barriers documented
+in the module gap report; final native verification is pending the combined gate.

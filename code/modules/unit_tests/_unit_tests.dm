@@ -1330,6 +1330,7 @@
 #include "dq_casino_prompt_flow_tests.dm"
 #include "dq_machine_refresh_dartgun_pin.dm"
 #include "dq_native_machine_refresh_tests.dm"
+#include "dq_spasm_use_flow_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
