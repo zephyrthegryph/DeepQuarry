@@ -1323,6 +1323,8 @@
 #include "dq_init_machinery_additional_tests.dm"
 #include "dq_init_machinery_bindings_tests.dm"
 #include "dq_init_machine_config_tests.dm"
+#include "dq_init_canister_order_tests.dm"
+#include "dq_init_portable_children_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

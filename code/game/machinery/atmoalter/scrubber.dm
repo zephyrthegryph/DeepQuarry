@@ -161,15 +161,15 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 		set_use_power(1 + on)
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
+	setup(PROC_REF(assign_huge_id))
 	configure(uses_power(idle = 50, active = 1000))
 	without(CAP_CLIMB) // not climbable
 	huge_portable_controls()
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(huge_step)), when = nameof(on))
 
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/Initialize(mapload)
-	. = ..(mapload, TRUE)
-
-	id = gid
+/// Native constructor params are already captured before Initialize; preserve the shared counter tail.
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/proc/assign_huge_id()
+	set_id(gid)
 	gid++
 
 	name = "[name] (ID [id])"

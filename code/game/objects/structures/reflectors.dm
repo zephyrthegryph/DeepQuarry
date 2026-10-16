@@ -349,7 +349,8 @@ MSG_DEF(reflector/welding_down, span_notice("You start to weld %T% to the floor.
 /obj/machinery/portable_atmospherics/canister
 	var/dont_burst = FALSE
 
-/obj/machinery/portable_atmospherics/canister/phoron/cold/Initialize(mapload)
-	. = ..()
+/obj/machinery/portable_atmospherics/canister/phoron/cold/proc/setup_cold_contents()
 	heat_set(src.air_contents, 2.72)
 
+CAPABILITIES(/obj/machinery/portable_atmospherics/canister/phoron/cold)
+	setup(PROC_REF(setup_cold_contents))

@@ -21,6 +21,7 @@
 	start_pressure = 90 * ONE_ATMOSPHERE
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
+	setup(PROC_REF(fill_starting_air))
 	climb()
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(pump_step)), when = nameof(on))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(pump_emp))))
@@ -38,10 +39,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 /obj/machinery/portable_atmospherics/powered/pump/starting_cell(datum/act/A)
 	return skip_cell ? null : /obj/item/cell/apc
 
-// ALLOW(init/INSTANCE_STATE): a pump fills with air, a per-instance mixture
-/obj/machinery/portable_atmospherics/powered/pump/Initialize(mapload)
-	. = ..()
-
+/// The original root already made and heated this private gas before ordered setup.
+/obj/machinery/portable_atmospherics/powered/pump/proc/fill_starting_air()
 	var/list/air_mix = StandardAirMix()
 	src.air_contents.adjust_multi(GAS_O2, air_mix[GAS_O2], GAS_N2, air_mix[GAS_N2])
 
@@ -203,6 +202,7 @@ MSG_DEF_SELF(huge_portable/anchored, "You wrench it down.")
 MSG_DEF_SELF(huge_portable/unanchored, "You unwrench it.")
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
+	setup(PROC_REF(assign_huge_id))
 	configure(uses_power(idle = 50, active = 1000))
 	huge_portable_controls()
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(huge_step)), when = nameof(on))
@@ -223,9 +223,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
 	if(.)
 		set_use_power(1 + on)
 
-/obj/machinery/portable_atmospherics/powered/pump/huge/Initialize(mapload)
-	. = ..(mapload, TRUE)
-
+/// Preserve the shared huge-pump counter only after parent starting-air setup.
+/obj/machinery/portable_atmospherics/powered/pump/huge/proc/assign_huge_id()
 	id = gid
 	gid++
 
