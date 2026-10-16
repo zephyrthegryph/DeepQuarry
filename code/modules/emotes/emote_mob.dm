@@ -1,3 +1,5 @@
+sparse(/mob, last_emote_summary, type = text)
+
 /mob/proc/get_available_emotes()
 	return GLOB.default_mob_emotes.Copy()
 
@@ -38,8 +40,8 @@
 					var/datum/decl/emote/emote_datum = GLOB.decls_repository.get_decl(emote)
 					if(emote_datum.mob_can_use(src))
 						usable_emotes[emote_datum.key] = emote_datum
-				var/last_emote_summary = english_list(sortAssoc(usable_emotes))
-			to_chat(src,span_bold("Usable emotes:") + " [last_emote_summary].")
+				sparse_set(src, last_emote_summary, english_list(sortAssoc(usable_emotes)))
+			to_chat(src,span_bold("Usable emotes:") + " [sparse_get(src, last_emote_summary)].")
 			return
 
 		if(!can_emote(m_type))
