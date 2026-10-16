@@ -221,7 +221,7 @@
 		var/lesions = ""
 		for(var/datum/affliction/lesion/lesion as anything in L.get_lesions())
 			lesions += " [lesion.type]=[lesion.damage]"
-		body_pin_log("liver_toxin_overload frame [i] liver damage / toxic load / hepatotoxicity / withdrawal / lesions", "[L.damage] / [H.injury_load(INJURY_CATEGORY_TOXIC)] / [H.factor(BF_HEPATOTOXICITY)] / [H.factor(BF_WITHDRAWAL)] /[lesions]")
+		body_pin_log("liver_toxin_overload frame [i] liver damage / toxic load / hepatotoxicity / withdrawal / lesions", "[L.damage] / [H.injury_load(INJURY_CATEGORY_TOXIC)] / [H.body.get_factor(BF_HEPATOTOXICITY)] / [H.body.get_factor(BF_WITHDRAWAL)] /[lesions]")
 	body_pin_log("liver_toxin_overload", L.damage)
 	TEST_ASSERT(body_pin_near(L.damage, 4, 1.7), "twenty cycles of heavy toxin load cost the liver about 4 (0.2 a cycle) (got [L.damage])")
 
