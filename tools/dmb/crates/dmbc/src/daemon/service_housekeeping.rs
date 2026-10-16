@@ -9,6 +9,8 @@ const EXECUTOR_IDLE: Duration = Duration::from_secs(30);
 // minutes but not always within ten, so the whole-session release waits an hour.
 pub(super) const SESSION_IDLE: Duration = Duration::from_secs(3600);
 const RELEASES_PER_PASS: usize = 4;
+/// Set when a retained session was dropped because its project no longer exists on disk.
+pub(super) static ROOT_GONE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 pub(super) struct Deadline(Instant);
 impl Deadline {
@@ -76,12 +78,25 @@ impl Shared {
                 }
                 let last = *slot.last.lock().unwrap_or_else(|e| e.into_inner());
                 let previous = slot.idle_tier.load(Ordering::Acquire);
-                let next = target(now.saturating_duration_since(last), pressured, hard, previous);
+                let mut next = target(now.saturating_duration_since(last), pressured, hard, previous);
+                // A removed worktree's session can never be edited again: release it whole, whatever the tier.
+                if !key.manifest.exists() {
+                    next = SESSION_RELEASE;
+                    ROOT_GONE.store(true, Ordering::Release);
+                }
                 if next > previous {
                     candidates.insert((last, key.clone()), (Arc::clone(slot), next));
                     if candidates.len() > RELEASES_PER_PASS {
                         candidates.pop_last();
                     }
+                }
+            }
+            // Over the memory budget with several retained projects: shed the least recently used project whole
+            // (the next most recent stays resident) instead of degrading every session a tier at a time.
+            if hard && slots.len() > 1 {
+                if let Some((first, (slot, _))) = candidates.pop_first() {
+                    candidates.clear();
+                    candidates.insert(first, (slot, SESSION_RELEASE));
                 }
             }
             candidates
