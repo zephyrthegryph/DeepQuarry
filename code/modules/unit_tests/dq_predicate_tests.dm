@@ -186,17 +186,18 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 /obj/item/dq_property_dependency_fixture
 	var/extra_paperwork = FALSE
 
-/datum/property_provider/dq_paperwork_contributor
+/datum/property_provider/behaviour/dq_paperwork_contributor
 	property = TAG_PAPERWORK
-	source = PROP_SOURCE_BEHAVIOUR
+	behaviour_type = /datum/capability/dq_property_test
 	applies_to = /obj/item/dq_property_dependency_fixture
 	test_only = TRUE
-/datum/property_provider/dq_paperwork_contributor/contribute(datum/D)
+/datum/property_provider/behaviour/dq_paperwork_contributor/contribute(datum/D)
 	var/obj/item/dq_property_dependency_fixture/I = D
-	return I.extra_paperwork
-/datum/property_provider/dq_paperwork_contributor/read_keys(datum/D)
+	return granted(I, behaviour_type) ? I.extra_paperwork : null
+/datum/property_provider/behaviour/dq_paperwork_contributor/read_keys(datum/D)
 	var/obj/item/dq_property_dependency_fixture/I = D
-	return list(list(I, nameof(I.extra_paperwork)))
+	var/datum/rx_state/S = I.rx
+	return list(list(I, nameof(I.extra_paperwork)), list(S, nameof(S.capability_generation)))
 
 /datum/property_provider/type_var/dq_unknown_dependencies
 	property = TAG_PAPERWORK
@@ -205,12 +206,12 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 /datum/property_provider/type_var/dq_unknown_dependencies/read_initial(path)
 	return FALSE
 
-/datum/property_provider/dq_unknown_contributor
+/datum/property_provider/behaviour/dq_unknown_contributor
 	property = TAG_PAPERWORK
-	source = PROP_SOURCE_BEHAVIOUR
+	behaviour_type = /datum/capability/dq_property_test
 	applies_to = /obj/item/dq_property_dependency_fixture
 	test_only = TRUE
-/datum/property_provider/dq_unknown_contributor/contribute(datum/D)
+/datum/property_provider/behaviour/dq_unknown_contributor/contribute(datum/D)
 	return FALSE
 
 /datum/unit_test/dq_native_property_dependencies/Run()
@@ -223,17 +224,25 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 	var/obj/item/dq_property_dependency_fixture/I = allocate(/obj/item/dq_property_dependency_fixture)
 	var/datum/property_def/tag/paperwork/definition = allocate(/datum/property_def/tag/paperwork)
 	var/datum/property_provider/type_var/tag/paperwork/base = allocate(/datum/property_provider/type_var/tag/paperwork)
-	var/datum/property_provider/dq_paperwork_contributor/contributor = allocate(/datum/property_provider/dq_paperwork_contributor)
+	var/datum/property_provider/behaviour/dq_paperwork_contributor/contributor = allocate(/datum/property_provider/behaviour/dq_paperwork_contributor)
 	var/datum/property_registry/R = allocate(/datum/property_registry, list(definition), list(base, contributor))
 	TEST_ASSERT(!length(R.errors), "Real isolated property registry validates")
+	TEST_ASSERT(!granted(I, /datum/capability/dq_property_test), "The actual fixture starts without the contributing capability")
+	grant(I, /datum/capability/dq_property_test, I)
+	TEST_ASSERT(granted(I, /datum/capability/dq_property_test), "The real capability is granted before collecting its metadata")
 	var/list/keys = R.read_keys(I, TAG_PAPERWORK)
-	TEST_ASSERT_EQUAL(length(keys), 1, "Static base does not erase mutable contributor reads")
+	TEST_ASSERT_EQUAL(length(keys), 2, "Static base does not erase mutable field or capability membership reads")
 	var/list/key = keys[1]
 	TEST_ASSERT_EQUAL(key[1], I, "The real contributor receiver is retained")
 	TEST_ASSERT_EQUAL(key[2], nameof(I.extra_paperwork), "The actual field is the dependency")
+	var/list/membership_key = keys[2]
+	TEST_ASSERT_EQUAL(membership_key[1], I.rx, "The actual capability state is a separate dependency")
+	TEST_ASSERT_EQUAL(membership_key[2], nameof(/datum/rx_state::capability_generation), "Capability membership changes have their own published key")
 	TEST_ASSERT(!R.read_value(I, TAG_PAPERWORK), "Actual base and false contribution initially refuse the tag")
 	I.set_extra_paperwork(TRUE)
 	TEST_ASSERT(R.read_value(I, TAG_PAPERWORK), "Real setter changes the composed property value")
+	revoke(I, /datum/capability/dq_property_test, I)
+	TEST_ASSERT(!R.read_value(I, TAG_PAPERWORK), "Revoking the real capability removes its contribution")
 	var/datum/property_provider/type_var/dq_unknown_dependencies/unknown_base = allocate(/datum/property_provider/type_var/dq_unknown_dependencies)
 	var/datum/property_registry/U = allocate(/datum/property_registry, list(definition), list(unknown_base))
 	var/caught_base = FALSE
@@ -242,7 +251,7 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 	catch(var/exception/base_fault)
 		caught_base = findtext(base_fault.name, "property base") && findtext(base_fault.name, "needs native dependency metadata")
 	TEST_ASSERT(caught_base, "An unknown base is refused rather than treated as static")
-	var/datum/property_provider/dq_unknown_contributor/unknown_contributor = allocate(/datum/property_provider/dq_unknown_contributor)
+	var/datum/property_provider/behaviour/dq_unknown_contributor/unknown_contributor = allocate(/datum/property_provider/behaviour/dq_unknown_contributor)
 	var/datum/property_registry/C = allocate(/datum/property_registry, list(definition), list(base, unknown_contributor))
 	var/caught_contributor = FALSE
 	try

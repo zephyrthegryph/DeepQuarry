@@ -4909,3 +4909,8 @@ Affected requirement-pin classes:
 - Master `5b0a2f09d0` typed internal storage ownership and cloning-console scanner references without normalizing their old producers. Internal storage now rejects non-item locations before linking, through `keeps_if()` and `setup()`; an absent scanner returns null instead of numeric zero. Valid ownership, names and scanner search ordering are unchanged. Focused constructor tests cover both accepted and rejected cases. Existing runtime-free pin rows are retained.
 - Master `f13b84652d` removed the dead mecha AI-attack surface. The stale `ai_use_equipment` key is therefore removed from the Mecha/Ripley conversion-pin inventories; expanded menu and click rows are identical; this requirement conversion does not change click ranking.
 - Look capture cleanup now relocates an observed telecube pair to nullspace after recording and before its real destruction. This prevents its queued blast from leaking smoke into subsequent tests; captured appearance and production destruction behavior are unchanged. No look row is blessed for this fixture repair.
+
+
+### Master devour operation key (2026-10-15)
+
+Master `2136172edc` (October 15, 17:13:57 -0500; “Delete the task engine; a devour waits as an op”) adds the native AI `devour` operation. A fresh capture proves all 51 inherited mob conversion-pin differences are solely that added key; expanded menu, click and wire rows are identical. Only the existing key lines are updated, retaining snapshot factoring.
