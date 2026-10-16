@@ -30,3 +30,7 @@ Final source verification: analyze baseline --update --lint base_vars and the fu
 ## Final additional cohort
 
 Nine configuration fields (five sound, four butchery) now use copy-on-write native traits, preserving old map/admin names. Three material emission samples and the last tasted text use numeric/text sparse slots; only imperative readers consume them. Native generator and all ratchets pass at 419a5b09bb. The baseline is 539 -> 410, 129 removed and zero added relative to master. say_list_type remains because the existing mecha roll requires a physical target field. Runtime verification is still pending; no stamp is claimed.
+
+## First verification repair
+
+The first lane-ready attempt passed ratchets but failed compilation/DreamChecker before running a world. The complete diagnostic audit found missed consumers of removed vars: the emote cache after its cooldown, status-start snapshots, persistence weight rates, organ meat fallback, and body-writing/EMP test fixtures. These now use their native homes. `low_sorting_priority` was not dead: it remains a real sorting input and has moved to the existing human-abilities trait with all nine original subtype defaults, both runtime writers and map/VV aliases preserved. A real `sort_mobs()` regression checks defaults, per-holder changes and unchanged type defaults. No baseline row was added. Verification remains pending.

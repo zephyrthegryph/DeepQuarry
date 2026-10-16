@@ -296,7 +296,7 @@ CAPABILITIES(/mob/living/simple_mob/dq_damage_probe)
 	make_probes()
 	probe.emp_act(EMP_MEDIUM)
 	TEST_ASSERT_EQUAL(probe.received, 0, "EMPs don't break objects without an emp_integrity_factor")
-	probe.emp_integrity_factor = 1
+	set_trait(probe, ENTRY_DAMAGE_PROFILE, "ionic", 1)
 	probe.emp_act(EMP_MEDIUM)
 	TEST_ASSERT(probe.last?.only(DAMAGE_IONIC, emp_ionic_damage(EMP_MEDIUM)), "an EMP should deliver the ladder's ionic amount: [probe.last?.describe()]")
 	TEST_ASSERT(probe.last.flags & DAMAGE_PACKET_UNARMORED, "EMP surges ignore armour")
