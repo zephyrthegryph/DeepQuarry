@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Prone mobs now compose their nonblocking posture with other density effects and restore it consistently on recovery."

@@ -4922,3 +4922,7 @@ The six generic slime-eye rows remain unchanged after all. The earlier base-vars
 ### Native random sampling in base-variable verification
 
 The shared type-local native roller repair (dcaf665db3, carried here with identical sampler code) changes only sampled constructor realizations: drone shell; simple-mob coat/style/tints/experiment effects; cigarette, gum and lollipop variants; blob direction; toilet lid/open state. State rows follow synx, shadekin, lamia and raptor variants. Pilot catslug's isolated 25% native roll specifically yields 51.8255%, so its callback does not open ghost joining. The bounded row replacements come from the completed object-init sweep using this same stream, retain uncaptured types and unchanged rows, and exclude the six slime cache-order rows. None changes production randomness or gameplay. The next gate verifies these against this branch's own code.
+
+## Prone density stat consistency (BASE repair)
+
+The existing living update_canmove wrote raw density FALSE while prone and reset the type default while standing, bypassing the composed density stat. A background staleness sweep in BASE gate8a reported cached0/fresh1 just before interim_mining_conflict_data began. The proven DECL e37ef75e92 repair now applies here: prone posture contributes FALSE with its own conditional stat source. Recovery removes that contribution, retaining independent density holds and naturally non-dense subtype defaults. No mining state or snapshot is changed.
