@@ -67,7 +67,6 @@ CAPABILITIES(/datum/dna2/record)
 	anchored = TRUE
 	flags = REMOTEVIEW_ON_ENTER
 	use_power = USE_POWER_IDLE
-	interact_offline = 1
 	circuit = /obj/item/circuitboard/clonescanner
 	locked = 0
 	VAR_PRIVATE/mob/living/occupant = null
@@ -96,6 +95,7 @@ CAPABILITIES(/datum/dna2/record)
 
 // the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
 CAPABILITIES(/obj/machinery/dna_scannernew)
+	configure(machine_interaction_config(interact_offline = 1))
 	ref_one(nameof(occupant))
 	configure(uses_power(idle = 50, active = 300))
 	default_parts()
