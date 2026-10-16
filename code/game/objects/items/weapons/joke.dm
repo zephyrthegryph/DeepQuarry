@@ -10,7 +10,7 @@ CAPABILITIES(/obj/item/squishhammer)
 
 // Attack mob
 /obj/item/squishhammer/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	var/is_squished = M.tf_scale_x || M.tf_scale_y
+	var/is_squished = sparse_get(M, tf_scale_x) || sparse_get(M, tf_scale_y)
 	play_sfx(src, SFX_ITEMS_HOOH)
 	if(!is_squished)
 		M.SetTransform(null, (M.size_multiplier * 1.2), (M.size_multiplier * 0.5))
