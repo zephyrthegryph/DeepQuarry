@@ -89,7 +89,8 @@
 	snap("initial")
 	var/datum/act/op/A = op_ctx(user)
 	// The custom species name, the size, the species sound set, a flavor text and the colour prompts all end in an update_uis() call.
-	module.ui_act_race_name(A)
+	rel_set(probe, nameof(probe.user), user)
+	test_ui(user, module, "race_name", list())
 	answer_open("Pinfolk")
 	snap("custom species name")
 	module.ui_act_size_scale(A)

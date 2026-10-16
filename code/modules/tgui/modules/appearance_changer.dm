@@ -98,7 +98,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	op("rotate_view", ui_act("rotate_view"), then(PROC_REF(ui_act_rotate_view)))
 	op("rename", ui_act("rename"), needs(req(PROC_REF(has_owner), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Sleeve Name", "question" = "Choose the a name:", "encode" = FALSE)), then(PROC_REF(ui_act_rename)))
 	op("char_name", ui_act("char_name"), needs(req(PROC_REF(has_designer_console), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = "Input character's name:", "default" = computed(PROC_REF(char_name_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE)), then(PROC_REF(ui_act_char_name)))
-	op("race_name", ui_act("race_name"), then(PROC_REF(ui_act_race_name)))
+	op("race_name", ui_act("race_name"), needs(req(PROC_REF(race_name_allowed), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Custom Species Name", "question" = "Input custom species name:", "default" = computed(PROC_REF(race_name_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)), then(PROC_REF(ui_act_race_name)))
 	op("base_icon", ui_act("base_icon"), needs(req(PROC_REF(can_misc), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Body Shape", "question" = "Please select basic shape.", "choices" = computed(PROC_REF(custom_species_bases)))), then(PROC_REF(ui_act_base_icon)))
 	op("blood_reagent", ui_act("blood_reagent"), needs(req(PROC_REF(can_misc), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Character Preference", "question" = "Please select blood restoration reagent:", "choices" = computed(PROC_REF(valid_blood_reagents)))), then(PROC_REF(ui_act_blood_reagent)))
 	op("blood_color", ui_act("blood_color"), then(PROC_REF(ui_act_blood_color)))
@@ -547,20 +547,19 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		return TRUE
 	return FALSE
 
+/// The same race-edit permission is rechecked when the native question is answered.
+/datum/tgui_module/appearance_changer/proc/race_name_allowed(datum/act/op/A)
+	return can_change(owner(), APPEARANCE_RACE) ? null : /datum/msg/req_silent
+
+/datum/tgui_module/appearance_changer/proc/race_name_default(datum/act/op/A)
+	return owner().bio.custom_species
+
 /datum/tgui_module/appearance_changer/proc/ui_act_race_name(datum/act/op/A)
-	open_request(src, /datum/prompt/text, PROC_REF(race_name_answered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Input custom species name:", title = "Custom Species Name", default = owner().bio.custom_species, max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
-
-/datum/tgui_module/appearance_changer/proc/race_name_answered(datum/act/request/A)
-	race_name_answered_apply(A)
-
-/datum/tgui_module/appearance_changer/proc/race_name_answered_apply(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/new_name = A.answer.value
-	if(can_change(owner(), APPEARANCE_RACE)) // new name can be empty, it uses base species if so
-		owner().bio.set_custom_species(new_name)
-		return TRUE
-	return FALSE
+	var/datum/prompt/P = A.answer
+	if(!P)
+		return FALSE
+	owner().bio.set_custom_species(P.value)
+	return TRUE
 
 /datum/tgui_module/appearance_changer/proc/custom_species_bases(datum/act/op/A)
 	return GLOB.custom_species_bases
