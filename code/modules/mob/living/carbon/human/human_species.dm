@@ -142,25 +142,29 @@ CAPABILITIES(/mob/living/carbon/human/teshari)
 /mob/living/carbon/human/zaddat
 	species_at_make = SPECIES_ZADDAT
 
-/mob/living/carbon/human/monkey
+CAPABILITIES(/mob/living/carbon/human/monkey)
+	configure(human_abilities(low_sorting_priority = TRUE))
 
 /mob/living/carbon/human/monkey
 	species_at_make = SPECIES_MONKEY
 TYPE_TABLE(/mob/living/carbon/human/monkey, initial_species_copy, TRUE)
 
-/mob/living/carbon/human/farwa
+CAPABILITIES(/mob/living/carbon/human/farwa)
+	configure(human_abilities(low_sorting_priority = TRUE))
 
 /mob/living/carbon/human/farwa
 	species_at_make = SPECIES_MONKEY_TAJ
 TYPE_TABLE(/mob/living/carbon/human/farwa, initial_species_copy, TRUE)
 
-/mob/living/carbon/human/neaera
+CAPABILITIES(/mob/living/carbon/human/neaera)
+	configure(human_abilities(low_sorting_priority = TRUE))
 
 /mob/living/carbon/human/neaera
 	species_at_make = SPECIES_MONKEY_SKRELL
 TYPE_TABLE(/mob/living/carbon/human/neaera, initial_species_copy, TRUE)
 
-/mob/living/carbon/human/stok
+CAPABILITIES(/mob/living/carbon/human/stok)
+	configure(human_abilities(low_sorting_priority = TRUE))
 
 /mob/living/carbon/human/stok
 	species_at_make = SPECIES_MONKEY_UNATHI

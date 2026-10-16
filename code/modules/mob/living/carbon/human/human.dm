@@ -2258,28 +2258,30 @@ sparse(/mob/living/carbon/human, active_regen, type = num)
 #define HUMAN_ABILITIES_KEY "human_abilities"
 
 STATIC_ENTRY(human_abilities)
-/proc/human_abilities(spit_projectile = null, spit_name = null, active_regen_delay = null, damage_multiplier = null)
+/proc/human_abilities(spit_projectile = null, spit_name = null, active_regen_delay = null, damage_multiplier = null, low_sorting_priority = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_HUMAN_ABILITIES, null, list("spit_projectile" = spit_projectile, "spit_name" = spit_name, "active_regen_delay" = active_regen_delay, "damage_multiplier" = damage_multiplier))
+	return entry_make(ENTRY_HUMAN_ABILITIES, null, list("spit_projectile" = spit_projectile, "spit_name" = spit_name, "active_regen_delay" = active_regen_delay, "damage_multiplier" = damage_multiplier, "low_sorting_priority" = low_sorting_priority))
 
 /datum/type_trait/human_abilities
 	var/spit_projectile
 	var/spit_name
 	var/active_regen_delay = 30 SECONDS
 	var/damage_multiplier = 1
+	var/low_sorting_priority = FALSE
 
 /datum/type_trait/human_abilities/copy_values(datum/type_trait/human_abilities/into)
 	into.spit_projectile = spit_projectile
 	into.spit_name = spit_name
 	into.active_regen_delay = active_regen_delay
 	into.damage_multiplier = damage_multiplier
+	into.low_sorting_priority = low_sorting_priority
 
 /datum/entry_engine/type_trait/human_abilities
 	kind = ENTRY_HUMAN_ABILITIES
 	trait_type = /datum/type_trait/human_abilities
 	publish_key = HUMAN_ABILITIES_KEY
 	base_type = /mob/living/carbon/human
-	var_names = list("spit_projectile" = "spit_projectile", "spit_name" = "spit_name", "active_regen_delay" = "active_regen_delay", "damage_multiplier" = "damage_multiplier")
+	var_names = list("spit_projectile" = "spit_projectile", "spit_name" = "spit_name", "active_regen_delay" = "active_regen_delay", "damage_multiplier" = "damage_multiplier", "low_sorting_priority" = "low_sorting_priority")
 
 READS_AS(/proc/human_abilities_of, HUMAN_ABILITIES_KEY)
 /proc/human_abilities_of(mob/living/carbon/human/holder) as /datum/type_trait/human_abilities

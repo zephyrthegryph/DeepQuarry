@@ -1802,7 +1802,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 	H.set_species(monkey_type)
 	H.set_real_name(H.species.get_random_name())
 	H.name = H.real_name
-	H.low_sorting_priority = TRUE
+	set_trait(H, ENTRY_HUMAN_ABILITIES, "low_sorting_priority", TRUE)
 	H.species.produceCopy(H.species.traits.Copy(),H,null,FALSE)
 	if(ismob(loc))
 		var/mob/M = loc

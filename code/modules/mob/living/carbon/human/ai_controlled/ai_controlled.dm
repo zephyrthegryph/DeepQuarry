@@ -32,6 +32,7 @@
 
 // Its outfit: each to_wear_* var names what it starts wearing in that slot (null: nothing), so a subtype only changes the vars.
 CAPABILITIES(/mob/living/carbon/human/ai_controlled)
+	configure(human_abilities(low_sorting_priority = TRUE))
 	profile(nameof(bio), /datum/record/identity, fields = list("sensorpref" = 1))
 	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 	wears(nameof(to_wear_uniform), SLOT_ID_UNIFORM)
