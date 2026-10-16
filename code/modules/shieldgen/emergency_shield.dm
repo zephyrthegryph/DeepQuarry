@@ -1,5 +1,4 @@
 /obj/machinery/shield
-	emp_integrity_factor = 2 // a heavy pulse (100 ionic) collapses a fresh 200-integrity field
 	name = "emergency energy shield"
 	desc = "An energy shield used to contain hull breaches."
 	icon = 'icons/effects/effects.dmi'
@@ -49,6 +48,7 @@ CAPABILITIES(/obj/machinery/shield/malfai)
 	..()
 
 CAPABILITIES(/obj/machinery/shield)
+	configure(damage_profile(ionic = 2)) // A heavy pulse (100 ionic) collapses a fresh 200-integrity field.
 	rolls(nameof(dir), pick_one(list(1, 2, 3, 4)))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shield_flash_opaque)))
 	extend(/datum/act/hit, instead(then(PROC_REF(shield_thrown_hit))))
@@ -88,7 +88,6 @@ CAPABILITIES(/obj/machinery/shield)
 	return HOOK_DECLINE
 
 /obj/machinery/shieldgen
-	emp_integrity_factor = 1
 	name = "Emergency shield projector"
 	desc = "Used to seal minor hull breaches."
 	icon = 'icons/obj/objects.dmi'
@@ -117,6 +116,7 @@ CAPABILITIES(/obj/machinery/shield)
 MSG_DEF_SELF(shieldgen/rewiring, span_notice("You begin to replace the wires."))
 
 CAPABILITIES(/obj/machinery/shieldgen)
+	configure(damage_profile(ionic = 1))
 	configure(uses_power(idle = 0))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_many(nameof(deployed_shields))

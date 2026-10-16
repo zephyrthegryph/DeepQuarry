@@ -1,6 +1,4 @@
 /obj/structure/window
-	announce_damage_bands = TRUE
-	damage_wear = "cracks"
 	name = "window"
 	desc = "A window."
 	icon = 'icons/obj/structures_vr.dmi' // New icons
@@ -258,6 +256,7 @@ MSG_DEF(window/wiring, span_notice("You begin to wire %T% for electrochromic tin
 		update_nearby_tiles(need_rebuild=1)
 
 CAPABILITIES(/obj/structure/window)
+	configure(damage_profile(wear = "cracks", announce = TRUE))
 	smoothing()
 	rolls(nameof(tilt_sign), pick_one(list(-1, 1)))
 	param(nameof(dir), pos = 1)

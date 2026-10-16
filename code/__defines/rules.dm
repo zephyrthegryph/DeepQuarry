@@ -72,3 +72,6 @@
 
 /// Channel ids on a heat node.
 #define DQ_RX_CH_TEMPERATURE 1
+
+#define ENTRY_DAMAGE_PROFILE "damage_profile"
+#define DAMAGE_PROFILE_KEY "damage_profile"

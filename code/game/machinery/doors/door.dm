@@ -6,7 +6,6 @@
 // airlock's stats, a firedoor opens through a prompt, a blast door answers a button).
 
 /obj/machinery/door
-	announce_damage_bands = TRUE
 	name = "Door"
 	desc = "It opens and closes."
 	icon = 'icons/obj/doors/doorint.dmi'
@@ -60,6 +59,7 @@ MSG_DEF(door/repaired, "You finish repairing the damage to %T%.", "%U% repairs %
 MSG_DEF(door/unreinforced, "You remove the plasteel from %T%.", "%U% removes the plasteel from %T%.")
 
 CAPABILITIES(/obj/machinery/door)
+	configure(damage_profile(announce = TRUE))
 	configure(lighting_config(emissive = EMISSIVE_BLOCK_UNIQUE))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	machine_basics(null, repair = NONE, frame = NONE)

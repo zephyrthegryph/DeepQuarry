@@ -379,7 +379,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 		if(amount <= 0)
 			continue
 		var/damage_type = damage_kind_obj_damage_type(kind)
-		if(!damage_type || (kind == DAMAGE_IONIC && !emp_integrity_factor))
+		if(!damage_type || (kind == DAMAGE_IONIC && !damage_profile_of(src).ionic))
 			continue
 		if(overmind)
 			amount *= damage_type == BURN ? overmind.blob_type.burn_multiplier : overmind.blob_type.brute_multiplier

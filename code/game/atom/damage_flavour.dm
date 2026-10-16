@@ -2,13 +2,37 @@
 // code/datums/rules/declarations.dm keep each object's damage_band; examine()
 // shows the band's line. This replaces the hand-written per-type lines.
 
-/atom
-	/// What light damage looks like on this type, as a plural noun ("cracks", "scrapes and dents").
-	var/damage_wear = "scrapes and dents"
-	/// TRUE: announce to onlookers when integrity drops into a worse damage band
-	/// (3/4, 1/2, 1/4), with the band's generated line. Replaces the per-type
-	/// hand-written threshold messages.
-	var/announce_damage_bands = FALSE
+// Shared damage presentation and ionic susceptibility; overrides allocate only on write.
+STATIC_ENTRY(damage_profile)
+
+/proc/damage_profile(wear = null, announce = null, ionic = null)
+	return entry_make(ENTRY_DAMAGE_PROFILE, null, list("wear" = wear, "announce" = announce, "ionic" = ionic))
+
+/datum/type_trait/damage_profile
+	var/wear = "scrapes and dents"
+	var/announce = FALSE
+	var/ionic = 0
+
+/datum/type_trait/damage_profile/copy_values(datum/type_trait/damage_profile/into)
+	into.wear = wear
+	into.announce = announce
+	into.ionic = ionic
+
+/datum/entry_engine/type_trait/damage_profile
+	kind = ENTRY_DAMAGE_PROFILE
+	trait_type = /datum/type_trait/damage_profile
+	publish_key = DAMAGE_PROFILE_KEY
+	base_type = /atom
+	var_names = list("damage_wear" = "wear", "announce_damage_bands" = "announce", "emp_integrity_factor" = "ionic")
+
+READS_AS(/proc/damage_profile_of, DAMAGE_PROFILE_KEY)
+/proc/damage_profile_of(atom/A) as /datum/type_trait/damage_profile
+	READS_FROM(A)
+	return type_trait_of(A, ENTRY_DAMAGE_PROFILE)
+
+/proc/damage_profile_of_type(type) as /datum/type_trait/damage_profile
+	READS_FROM()
+	return type_trait_of_type(type, ENTRY_DAMAGE_PROFILE)
 
 /// The examine line for `band` (DAMAGE_BAND_*), or null for none.
 /atom/proc/damage_flavour_text(band)
@@ -17,7 +41,7 @@
 	var/look = gender == PLURAL ? "look" : "looks"
 	switch(band)
 		if(DAMAGE_BAND_LIGHT)
-			return span_notice("[they] [have] a few [damage_wear].")
+			return span_notice("[they] [have] a few [damage_profile_of(src).wear].")
 		if(DAMAGE_BAND_MODERATE)
 			return span_warning("[they] [look] seriously damaged.")
 		if(DAMAGE_BAND_HEAVY)
@@ -28,7 +52,7 @@
 /atom/proc/damage_band_announcement(band)
 	switch(band)
 		if(DAMAGE_BAND_LIGHT)
-			return "\The [src] starts to show [damage_wear]!"
+			return "\The [src] starts to show [damage_profile_of(src).wear]!"
 		if(DAMAGE_BAND_MODERATE)
 			return "\The [src] looks seriously damaged!"
 		if(DAMAGE_BAND_HEAVY)

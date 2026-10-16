@@ -84,7 +84,7 @@
 		if(!damage_type)
 			continue
 		if(kind == DAMAGE_IONIC)
-			amount *= emp_integrity_factor
+			amount *= damage_profile_of(src).ionic
 			if(amount <= 0)
 				continue
 		GLOB.incoming_damage_kind = kind
@@ -98,11 +98,6 @@
 	// paths, C2). A holder destroyed above has already spilled them.
 	if(contents_count(src))
 		propagate_damage(packet)
-
-/atom
-	/// How much of an incoming ionic (EMP) amount becomes burn integrity damage.
-	/// Zero for almost everything: EMPs disrupt objects, they don't break them.
-	var/emp_integrity_factor = 0
 
 /// For hits whose kinds have no packet kind (asphyxia, cellular...): they
 /// stay internal to the body, so only a living target takes them, directly.

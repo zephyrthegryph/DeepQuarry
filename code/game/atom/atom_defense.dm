@@ -128,7 +128,7 @@ READS_AS(/atom/proc/get_integrity_damage, ATOM_INTEGRITY_KEY)
 /atom/proc/on_update_integrity(old_value, new_value)
 	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_CALL_PARENT(TRUE)
-	if(announce_damage_bands)
+	if(damage_profile_of(src).announce)
 		announce_damage_band(old_value, new_value)
 
 /// Called after the atom takes damage and integrity is below integrity_failure level

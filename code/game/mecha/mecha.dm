@@ -1278,7 +1278,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		if(!armor_key)
 			continue
 		if(kind == DAMAGE_IONIC)
-			amount *= emp_integrity_factor
+			amount *= damage_profile_of(src).ionic
 			if(amount <= 0)
 				continue
 		var/before = get_integrity()

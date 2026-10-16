@@ -56,7 +56,7 @@
 	. = ..()
 	if(. & EMP_PROTECT_SELF)
 		return
-	if(emp_integrity_factor)
+	if(damage_profile_of(src).ionic)
 		receive_emp(severity)
 	else
 		react_to_entry(DAMAGE_ENTRY_EMP, severity)
