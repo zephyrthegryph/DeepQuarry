@@ -13,15 +13,15 @@
 			deadnif.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)), rand(1,3), round(30/deadnif.w_class))
 			deadnif.wear(10) //Presumably it's gone through some shit if they got gibbed?
 
-	if(vr_holder)
+	if(get_vr_holder())
 		exit_vr()
 		// Delete the link, because this mob won't be around much longer
-		rel_clear(vr_holder, nameof(vr_holder.vr_link))
+		link_break(get_vr_holder(), LK_VR_AVATAR)
 
-	if(vr_link)
-		vr_link.exit_vr()
-		rel_clear(vr_link, nameof(vr_link.vr_holder))
-		rel_clear(src, nameof(vr_link))
+	if(get_vr_avatar())
+		get_vr_avatar().exit_vr()
+		link_break(get_vr_avatar(), LK_VR_HOLDER)
+		link_break(src, LK_VR_AVATAR)
 
 	for(var/obj/item/organ/I in internal_organ_list()) // a fresh list: removed() empties the slot
 		I.removed()
@@ -131,19 +131,19 @@
 		wearing_rig.notify_ai(span_danger("Warning: user death event. Mobility control passed to integrated intelligence system."))
 
 	// If the body is in VR, move the mind back to the real world
-	if(vr_holder)
+	if(get_vr_holder())
 		src.died_in_vr = TRUE //so avatar.dm can delete bodies
 		src.exit_vr()
-		rel_clear(src.vr_holder, nameof(/mob/living/carbon/human::vr_link))
+		link_break(get_vr_holder(), LK_VR_AVATAR)
 		for(var/obj/item/W in contents_of(src))
 			src.drop_from_inventory(W)
 
 
 	// If our mind is in VR, bring it back to the real world so it can die with its body
-	if(vr_link)
-		vr_link.exit_vr()
-		rel_clear(vr_link, nameof(vr_link.vr_holder))
-		rel_clear(src, nameof(vr_link))
+	if(get_vr_avatar())
+		get_vr_avatar().exit_vr()
+		link_break(get_vr_avatar(), LK_VR_HOLDER)
+		link_break(src, LK_VR_AVATAR)
 		to_chat(src, span_danger("Everything abruptly stops."))
 
 /mob/living/carbon/human/proc/ChangeToHusk()

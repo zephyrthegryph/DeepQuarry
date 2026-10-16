@@ -72,9 +72,9 @@
 		return
 
 	// Link the two mobs for client transfer
-	rel_set(avatar, nameof(avatar.vr_holder), src)
+	link_set_one(avatar, LK_VR_HOLDER, src)
 	rel_set(src, nameof(teleop), avatar)
-	rel_set(src, nameof(vr_link), avatar) // Can't reuse vr_holder so that death can automatically eject users from VR
+	link_set_one(src, LK_VR_AVATAR, avatar) // Can't reuse vr_holder so that death can automatically eject users from VR
 
 	// Move the mind
 	src.mind.transfer_to(avatar)
@@ -89,7 +89,7 @@
 
 /mob/living/carbon/human/proc/exit_vr(player_initated)
 
-	if(!vr_holder)
+	if(!get_vr_holder())
 		return
 	if(tfed_into_mob_check()) //Make sure we're not TFed and revert if we are before checking for a mind.
 		var/mob/living/M = loc
@@ -106,21 +106,21 @@
 		total_damage = H.injury_load(INJURY_CATEGORY_PHYSICAL) + H.injury_load(INJURY_CATEGORY_THERMAL) + H.oxygen_debt() + H.injury_load(INJURY_CATEGORY_TOXIC)
 
 	// Move the mind back to the original mob
-	src.mind.transfer_to(vr_holder)
-	to_chat(vr_holder, span_notice("You black out for a moment, and wake to find yourself back in your own body."))
+	src.mind.transfer_to(get_vr_holder())
+	to_chat(get_vr_holder(), span_notice("You black out for a moment, and wake to find yourself back in your own body."))
 	// Two-thirds damage is transferred as agony for /humans
 	// Getting hurt in VR doesn't damage the physical body, but you still got hurt.
-	if(ishuman(vr_holder) && total_damage)
-		var/mob/living/carbon/human/V = vr_holder
+	if(ishuman(get_vr_holder()) && total_damage)
+		var/mob/living/carbon/human/V = get_vr_holder()
 		V.stun_effect_act(0, total_damage*2/3, null, electric = FALSE)												// 200 damage leaves the user in paincrit for several seconds, agony reaches 0 after around 2m.
-		to_chat(vr_holder, span_warning("Pain from your time in VR lingers."))		// 250 damage leaves the user unconscious for several seconds in addition to paincrit
+		to_chat(get_vr_holder(), span_warning("Pain from your time in VR lingers."))		// 250 damage leaves the user unconscious for several seconds in addition to paincrit
 
 	// Maintain a link with the mob, but don't use teleop
-	rel_set(vr_holder, nameof(vr_holder.vr_link), src)
-	rel_clear(vr_holder, nameof(vr_holder.teleop))
+	link_set_one(get_vr_holder(), LK_VR_AVATAR, src)
+	rel_clear(get_vr_holder(), nameof(/mob::teleop))
 
-	if(player_initated && istype(vr_holder.loc, /obj/machinery/vr_sleeper))
-		var/obj/machinery/vr_sleeper/V = vr_holder.loc
+	if(player_initated && istype(get_vr_holder().loc, /obj/machinery/vr_sleeper))
+		var/obj/machinery/vr_sleeper/V = get_vr_holder().loc
 		V.perform_exit()
 
 	if(died_in_vr)

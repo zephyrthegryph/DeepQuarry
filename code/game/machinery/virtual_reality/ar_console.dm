@@ -75,7 +75,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper/alien)
 	if(!occupant) //This whole thing needs cleaned up later, but this works for now.
 		return
 	occupant.forceMove(get_turf(src))
-	rel_clear(occupant, nameof(occupant.vr_link)) //The machine remembers the avatar. 1 avatar per machine. So the vr_link isn't needed anymore.
+	link_break(occupant, LK_VR_AVATAR) //The machine remembers the avatar. 1 avatar per machine. So the vr_link isn't needed anymore.
 	occupant = null
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/atom/movable/A in contents_of(src)) // In case an object was dropped inside or something // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects

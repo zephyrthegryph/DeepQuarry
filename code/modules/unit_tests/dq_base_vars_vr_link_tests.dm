@@ -1,0 +1,45 @@
+// Uncached VR endpoints preserve reciprocal identity and actual mind-transfer behavior.
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/datum/unit_test/dq_base_vars_vr_links
+	abstract_type = /datum/unit_test/dq_base_vars_vr_links
+
+/datum/unit_test/dq_base_vars_vr_links/reciprocal_replace_clear/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/mob/living/carbon/human/body = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/first = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human)
+	link_set_one(first, LK_VR_HOLDER, body)
+	TEST_ASSERT_EQUAL(first.get_vr_holder(), body, "the avatar identifies the actual body")
+	TEST_ASSERT_EQUAL(body.get_vr_avatar(), first, "the body remembers the same avatar")
+	link_set_one(body, LK_VR_AVATAR, second)
+	TEST_ASSERT_NULL(first.get_vr_holder(), "replacing the remembered avatar clears the previous reverse end")
+	TEST_ASSERT_EQUAL(second.get_vr_holder(), body, "replacement writes the new reverse end")
+	TEST_ASSERT(!QDELETED(first), "replacing a borrowed avatar never deletes it")
+	link_break(second, LK_VR_HOLDER)
+	TEST_ASSERT_NULL(body.get_vr_avatar(), "clearing either end clears the other")
+	TEST_ASSERT(!QDELETED(body) && !QDELETED(second), "clearing the relation deletes neither endpoint")
+
+/datum/unit_test/dq_base_vars_vr_links/real_mind_roundtrip/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/mob/living/carbon/human/body = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/avatar = allocate(/mob/living/carbon/human)
+	var/datum/mind/M = allocate(/datum/mind)
+	M.transfer_to(body)
+	TEST_ASSERT_EQUAL(body.mind, M, "a real mind starts in its real body")
+	body.enter_vr(avatar)
+	TEST_ASSERT_EQUAL(M.current, avatar, "the public VR action moves the actual mind to the avatar")
+	TEST_ASSERT_EQUAL(avatar.get_vr_holder(), body, "the actual VR entry links its controlling body")
+	TEST_ASSERT_EQUAL(body.get_vr_avatar(), avatar, "the actual VR entry remembers its avatar")
+	TEST_ASSERT_EQUAL(body.teleop, avatar, "the independent teleoperation link is retained during entry")
+	avatar.exit_vr(FALSE)
+	TEST_ASSERT_EQUAL(M.current, body, "the public VR exit returns the same mind")
+	TEST_ASSERT_NULL(body.teleop, "the public VR exit clears teleoperation")
+	TEST_ASSERT_EQUAL(body.get_vr_avatar(), avatar, "the exited body still remembers its reusable avatar")
+	TEST_ASSERT_EQUAL(avatar.get_vr_holder(), body, "the reusable avatar retains the exact reverse identity")
+	qdel(avatar)
+	TEST_ASSERT_NULL(body.get_vr_avatar(), "deleting the remembered avatar clears the real body's sparse end")
+
+#endif

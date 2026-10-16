@@ -199,7 +199,7 @@ Works together with spawning an observer, noted above.
 	if(key)
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
-			if(H.vr_holder && !can_reenter_corpse)
+			if(H.get_vr_holder() && !can_reenter_corpse)
 				H.exit_vr()
 				return 0
 		var/mob/observer/dead/ghost = new(src, aghost)	//Transfer safety to observer spawning proc.

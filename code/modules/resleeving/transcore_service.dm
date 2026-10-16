@@ -107,8 +107,8 @@ SYSTEM_DEF(transcore)
 		if(H == imp.imp_in() && H.stat < DEAD)
 			if(H.mind)
 				db.m_backup(H.mind,H.nif)
-			else if(H.vr_link && H.vr_link.mind)
-				db.m_backup(H.vr_link.mind,H.nif)
+			else if(H.get_vr_avatar() && H.get_vr_avatar().mind)
+				db.m_backup(H.get_vr_avatar().mind,H.nif)
 
 		if(KERNEL_OVER_BUDGET)
 			return FALSE

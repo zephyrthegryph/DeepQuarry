@@ -9,7 +9,7 @@ CAPABILITIES(/mob/living/carbon/human)
 	configure(shred_settings(vore_shred_time = 10 SECONDS))
 	owns_one(nameof(wearing_rig), on_destroy = ON_DESTROY_CONTAINED)
 	ref_one(nameof(default_attack), /datum/unarmed_attack)
-	links(/mob/living/carbon/human::vr_holder, /mob/living/carbon/human::vr_link)
+	links(LINK_END(/mob/living/carbon/human, LK_VR_HOLDER), LINK_END(/mob/living/carbon/human, LK_VR_AVATAR), sparse = TRUE)
 	// The character's chosen look (code/modules/mob/living/carbon/human/profile_records.dm).
 	profile(nameof(looks), /datum/record/appearance)
 	// The chosen sprite accessories and the prosthetic model: shared definitions the look reads through (written with rel_set(), so a change
