@@ -560,18 +560,12 @@ CAPABILITIES(/atom/movable/screen)
 		if("Show Camera List")
 			if(isAI(user))
 				var/mob/living/silicon/ai/ai_user = user
-				var/camera = rerun_ask(ai_user, "k545", PROC_REF(click_with_actor), args, /datum/prompt/choice, question = "Pick Camera:", title = "Camera Choice", choices = ai_user.get_camera_list())
-				if(isnull(camera))
-					return
-				ai_user.ai_camera_list(camera)
+				open_request(src, /datum/prompt/choice, PROC_REF(camera_list_answered), answerer = ai_user, question = "Pick Camera:", title = "Camera Choice", choices = ai_user.get_camera_list(), timeout = 0)
 
 		if("Track With Camera")
 			if(isAI(user))
 				var/mob/living/silicon/ai/ai_user = user
-				var/target_name = rerun_ask(ai_user, "k551", PROC_REF(click_with_actor), args, /datum/prompt/choice, question = "Pick Mob:", title = "Mob Choice", choices = ai_user.trackable_mobs())
-				if(isnull(target_name))
-					return
-				ai_user.ai_camera_track(target_name)
+				open_request(src, /datum/prompt/choice, PROC_REF(camera_track_answered), answerer = ai_user, question = "Pick Mob:", title = "Mob Choice", choices = ai_user.trackable_mobs(), timeout = 0)
 
 		if("Toggle Camera Light")
 			if(isAI(user))
@@ -704,6 +698,24 @@ CAPABILITIES(/atom/movable/screen)
 
 CAPABILITIES(/atom/movable/screen/inventory)
 	click_on(PROC_REF(click_input))
+
+/// The AI picked a camera from "Show Camera List".
+/atom/movable/screen/proc/camera_list_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/silicon/ai/ai_user = A.answer.answerer
+	if(QDELETED(ai_user))
+		return
+	ai_user.ai_camera_list(A.answer.value)
+
+/// The AI picked a mob from "Track With Camera".
+/atom/movable/screen/proc/camera_track_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/silicon/ai/ai_user = A.answer.answerer
+	if(QDELETED(ai_user))
+		return
+	ai_user.ai_camera_track(A.answer.value)
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
 /atom/movable/screen/inventory/proc/click_input(datum/act/input/A)

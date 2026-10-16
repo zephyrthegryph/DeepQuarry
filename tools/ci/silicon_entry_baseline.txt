@@ -71,8 +71,6 @@ helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(use
 helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(user))
 helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(user))
 helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(user))
-helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(user))
-helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(user))
 helper_actor_check	code/modules/clothing/clothing.dm	if(istype(user, /mob/living/silicon/robot/drone))
 helper_actor_check	code/modules/clothing/spacesuits/rig/modules/modules.dm	if(!holder.check_power_cost(user, use_power_cost, 0, src, (istype(user,/mob/living/silicon) ? 1 : 0) ) )
 helper_actor_check	code/modules/detectivework/forensics.dm	if(isnull(M) || isAI(M) || isnull(M.key))

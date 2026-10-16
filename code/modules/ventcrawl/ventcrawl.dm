@@ -93,24 +93,38 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 		VENTCRAWL_SMALLITEM_WHITELIST \
 		))
 
-/// The pipe to crawl into; picking one of several re-runs `caller_verb` (null meanwhile).
-/mob/proc/start_ventcrawl(caller_verb)
-	var/atom/pipe
+/// The pipes within reach to crawl into.
+/mob/proc/ventcrawl_pipes_in_range()
 	var/list/pipes = list()
 	for(var/obj/machinery/atmospherics/unary/U in range(1))
 		if(is_type_in_list(U, GLOB.ventcrawl_machinery) && Adjacent(U) && !is_welded(U))
 			pipes |= U
+	return pipes
+
+/// The pipe to crawl into; with several to pick from it asks, and the answer goes on through ventcrawl_pipe_answered() (null meanwhile).
+/mob/proc/start_ventcrawl()
+	var/atom/pipe
+	var/list/pipes = ventcrawl_pipes_in_range()
 	if(!pipes || !pipes.len)
 		to_chat(src, "There are no pipes that you can ventcrawl into within range!")
 		return
 	if(pipes.len == 1)
 		pipe = pipes[1]
 	else
-		pipe = rerun_ask(src, "pipe", caller_verb, list(), /datum/prompt/choice, question = "Crawl Through Vent", title = "Pick a pipe", choices = pipes)
-		if(!(pipe in pipes))
-			return
+		open_request(src, /datum/prompt/choice, TYPE_PROC_REF(/mob/living, ventcrawl_pipe_answered), answerer = src, question = "Crawl Through Vent", title = "Pick a pipe", choices = pipes, timeout = 0)
+		return
 	if(canmove && pipe)
 		return pipe
+
+/// The mob picked one of several pipes to crawl into.
+/mob/living/proc/ventcrawl_pipe_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/atom/pipe = A.answer.value
+	if(!(pipe in ventcrawl_pipes_in_range()))
+		return
+	if(canmove && pipe)
+		handle_ventcrawl(pipe)
 
 /mob/living/carbon/alien/ventcrawl_carry()
 	return TRUE

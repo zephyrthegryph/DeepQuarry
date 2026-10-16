@@ -131,14 +131,14 @@
 			return 0
 	return 1
 
-/mob/new_player/proc/AttemptLateSpawn(rank, mob/user)
+/mob/new_player/proc/AttemptLateSpawn(rank, mob/user, list/answers = null)
 	if (src != user)
 		return 0
-	return do_late_spawn(rank)
+	return do_late_spawn(rank, answers)
 
-/// Joins as `rank`. Vore and item spawnpoints ask questions first, and each answer runs this again,
-/// so every check below is re-made before the joiner spawns.
-/mob/new_player/proc/do_late_spawn(rank)
+/// Joins as `rank`. Vore and item spawnpoints ask the joiner first (the join op's `answers`), then the pred, prey or carrier:
+/// that answer (`consent`) runs this again, so every check below is re-made before the joiner spawns.
+/mob/new_player/proc/do_late_spawn(rank, list/answers = null, consent = null)
 	if(client?.login_hold_refuses())
 		return 0
 	if(spawning || QDELETED(src))
@@ -157,7 +157,7 @@
 		return 0
 
 	//Find our spawning point.
-	var/list/join_props = SSjob.late_spawn(client, rank, src)
+	var/list/join_props = SSjob.late_spawn(client, rank, src, answers, consent)
 
 	if(!join_props)
 		return
@@ -169,7 +169,7 @@
 	if(!T || !join_message)
 		return 0
 
-	spawning = 1
+	set_spawning(1)
 	close_spawn_windows()
 
 	var/obj/item/itemtf = join_props["itemtf"]
@@ -190,7 +190,7 @@
 			else
 				//Something went wrong, but lets try to do as much as we can.
 				cryst.bound_mob.capture_caught = TRUE
-				cryst.persist_storable = FALSE
+				cryst.set_persist_storable(FALSE)
 			spent(src)
 			return
 
@@ -287,6 +287,16 @@
 	character.client.init_verbs()
 	spent(src) // Delete new_player mob
 
+/// The pred, prey or carrier answered (or, with its no-warning pref, let the question lapse): the join goes on with that answer.
+/mob/new_player/proc/late_spawn_consented(datum/act/request/A)
+	var/datum/prompt/choice/late_spawn_consent/asked = A.request
+	if(!asked || QDELETED(asked.answerer))
+		return
+	var/consent = A.answer ? A.answer.value : asked.cancel_answer
+	if(isnull(consent))
+		return
+	do_late_spawn(asked.rank, asked.answers, consent)
+
 /mob/new_player/proc/AnnounceCyborg(mob/living/character, rank, join_message, channel, zlevel)
 	if (ticker_current_state() == GAME_STATE_PLAYING)
 		var/list/zlevels = zlevel ? using_map.get_map_levels(zlevel, TRUE, om_range = DEFAULT_OVERMAP_RANGE) : null
@@ -302,7 +312,7 @@
 
 /mob/new_player/proc/create_character(turf/T)
 	SHOULD_NOT_SLEEP(TRUE)
-	spawning = 1
+	set_spawning(1)
 	close_spawn_windows()
 
 	var/mob/living/carbon/human/new_character
@@ -429,7 +439,8 @@
 /mob/new_player/MayRespawn()
 	return TRUE
 
-/mob/new_player/proc/spawn_checks_vr(rank)
+/// Whether the joiner may spawn as `rank`; `quiet` checks without telling them why (the join op asks no question of someone who will be refused).
+/mob/new_player/proc/spawn_checks_vr(rank, quiet = FALSE)
 	var/pass = TRUE
 	var/datum/job/J = SSjob.get_job(rank)
 
@@ -439,33 +450,39 @@
 
 	//No Flavor Text
 	if (CONFIG_GET(flag/require_flavor) && !(J.mob_type & JOB_SILICON) && (!LAZYACCESS(client?.prefs?.read_preference(/datum/preference/flavor_texts), "general") || length(LAZYACCESS(client.prefs.read_preference(/datum/preference/flavor_texts), "general")) < 30)) // migrated
-		to_chat(src,span_warning("Please set your general flavor text to give a basic description of your character. Set it using the 'Set Flavor text' button on the 'General' tab in character setup, and choosing 'General' category."))
+		if(!quiet)
+			to_chat(src,span_warning("Please set your general flavor text to give a basic description of your character. Set it using the 'Set Flavor text' button on the 'General' tab in character setup, and choosing 'General' category."))
 		pass = FALSE
 
 	//No OOC notes
 	if (CONFIG_GET(flag/allow_metadata) && (!client?.prefs?.read_preference(/datum/preference/text/living/ooc_notes) || length(client.prefs.read_preference(/datum/preference/text/living/ooc_notes)) < 15))
-		to_chat(src,span_warning("Please set informative OOC notes related to RP/ERP preferences. Set them using the 'OOC Notes' button on the 'General' tab in character setup."))
+		if(!quiet)
+			to_chat(src,span_warning("Please set informative OOC notes related to RP/ERP preferences. Set them using the 'OOC Notes' button on the 'General' tab in character setup."))
 		pass = FALSE
 
 	//Are they on the VERBOTEN LIST?
 	if (GLOB.prevent_respawns.Find(client?.prefs?.read_preference(/datum/preference/name/real_name)))
-		to_chat(src,span_warning("You've already quit the round as this character. You can't go back now that you've free'd your job slot. Play another character, or wait for the next round."))
+		if(!quiet)
+			to_chat(src,span_warning("You've already quit the round as this character. You can't go back now that you've free'd your job slot. Play another character, or wait for the next round."))
 		pass = FALSE
 
 	//Do they have their scale properly setup?
 	if(!client?.prefs?.read_preference(/datum/preference/numeric/human/size_multiplier)) // migrated
 		pass = FALSE
-		to_chat(src,span_warning("You have not set your scale yet. Do this on the VORE tab in character setup."))
+		if(!quiet)
+			to_chat(src,span_warning("You have not set your scale yet. Do this on the VORE tab in character setup."))
 
 	//Can they play?
 	if(!is_alien_whitelisted(src.client,GLOB.all_species[client?.prefs?.read_preference(/datum/preference/choiced/species)]) && !admin_require(client, R_ADMIN, "spawn_checks_vr", 0))
 		pass = FALSE
-		to_chat(src,span_warning("You are not allowed to spawn in as this species."))
+		if(!quiet)
+			to_chat(src,span_warning("You are not allowed to spawn in as this species."))
 
 	// Check species job bans... (Only used for shadekin)
 	if(J.is_species_banned(client?.prefs?.read_preference(/datum/preference/choiced/species), client?.prefs?.read_preference(/datum/preference/organ_data)?[O_BRAIN]))
 		pass = FALSE
-		to_chat(src,span_warning("Your species is not permitted to take this role or job."))
+		if(!quiet)
+			to_chat(src,span_warning("Your species is not permitted to take this role or job."))
 
 	//Custom species checks
 	if (client?.prefs?.read_preference(/datum/preference/choiced/species) == SPECIES_CUSTOM)
@@ -473,7 +490,8 @@
 		//Didn't name it
 		if(!client?.prefs?.read_preference(/datum/preference/text/human/custom_species)) // migrated
 			pass = FALSE
-			to_chat(src,span_warning("You have to name your custom species. Do this on the VORE tab in character setup."))
+			if(!quiet)
+				to_chat(src,span_warning("You have to name your custom species. Do this on the VORE tab in character setup."))
 
 	//Check traits/costs
 	// migrated traits prefs (typed_list base)
@@ -494,7 +512,8 @@
 		//A trait was removed from the game
 		if(isnull(cost))
 			pass = FALSE
-			to_chat(src,span_warning("Your species is not playable. One or more traits appear to have been removed from the game or renamed. Enter character setup to correct this."))
+			if(!quiet)
+				to_chat(src,span_warning("Your species is not playable. One or more traits appear to have been removed from the game or renamed. Enter character setup to correct this."))
 			break
 		else
 			points_left -= GLOB.traits_costs[T]
@@ -502,13 +521,15 @@
 		var/take_flags = initial(T.can_take)
 		if((pref_synth && !(take_flags & SYNTHETICS)) || (pref_meat && !(take_flags & ORGANICS)))
 			pass = FALSE
-			to_chat(src, span_warning("Some of your traits are not usable by your character type (synthetic traits on organic, or vice versa)."))
+			if(!quiet)
+				to_chat(src,span_warning("Some of your traits are not usable by your character type (synthetic traits on organic, or vice versa)."))
 	// start
 	if(J.camp_protection && round_duration_in_ds < CONFIG_GET(number/job_camp_time_limit))
 		if(length(job_restricted_keys()))
 			var/list/check = LAZYACCESS(SSjob.restricted_keys, J.title)
 			if(client.ckey in check)
-				to_chat(src, span_danger("[J.title] is not presently selectable because you played as it last round. It will become available to you in [round((CONFIG_GET(number/job_camp_time_limit) - round_duration_in_ds) / 600)] minutes, if slots remain open."))
+				if(!quiet)
+					to_chat(src,span_danger("[J.title] is not presently selectable because you played as it last round. It will become available to you in [round((CONFIG_GET(number/job_camp_time_limit) - round_duration_in_ds) / 600)] minutes, if slots remain open."))
 				pass = FALSE
 	// end
 
@@ -519,19 +540,22 @@
 			var/datum/trait/instance = GLOB.all_traits[T]
 			if(client.prefs.read_preference(/datum/preference/choiced/species) in instance.banned_species)
 				pass = FALSE
-				to_chat(src,span_warning("One of your traits, [instance.name], is not available for your species! Please fix this conflict and then try again."))
+				if(!quiet)
+					to_chat(src,span_warning("One of your traits, [instance.name], is not available for your species! Please fix this conflict and then try again."))
 			else if(LAZYLEN(instance.allowed_species) && !(client.prefs.read_preference(/datum/preference/choiced/species) in instance.allowed_species)) //We use else if here, so as to prevent getting two errors for one trait.
 				pass = FALSE
-				to_chat(src,span_warning("One of your traits, [instance.name], is not available for your species! Please fix this conflict and then try again."))
+				if(!quiet)
+					to_chat(src,span_warning("One of your traits, [instance.name], is not available for your species! Please fix this conflict and then try again."))
 	//ition End
 
 	//Went into negatives
 	if(points_left < 0 || traits_left < 0)
 		pass = FALSE
-		to_chat(src,span_warning("Your species is not playable. Reconfigure your traits on the VORE tab. Trait points: [points_left]. Traits left: [traits_left]."))
+		if(!quiet)
+			to_chat(src,span_warning("Your species is not playable. Reconfigure your traits on the VORE tab. Trait points: [points_left]. Traits left: [traits_left]."))
 
 	//Final popup notice
-	if (!pass)
+	if (!pass && !quiet)
 		tgui_alert_async(src,"There were problems with spawning your character. Check your message log for details.","Error")
 	return pass
 

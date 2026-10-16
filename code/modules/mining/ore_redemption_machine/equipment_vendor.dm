@@ -232,7 +232,13 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
-	op("voucher", item(/obj/item/mining_voucher), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem voucher"), then(PROC_REF(interaction_voucher)))
+	op("voucher", item(/obj/item/mining_voucher), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem voucher"),
+		needs(req(PROC_REF(voucher_powered), silent = TRUE)),
+		starts(PROC_REF(voucher_inserted)),
+		asks(/datum/prompt/choice, fields = list("question" = "Pick your equipment.", "title" = "Mining Voucher Redemption", "choices" = list("Kinetic Accelerator + KA Addon", "Resonator + Advanced Ore Scanner", "Survival Pistol & Machete + Survival Addon","1000 Points"), "timeout" = 0), step = "k346"),
+		asks(/datum/prompt/choice, fields = list("question" = "Pick your addon", "title" = "Mining Voucher Redemption", "choices" = list("Cooldown", "Range","Holster"), "timeout" = 0), step = "k362", when = PROC_REF(voucher_wants_ka_addon)),
+		asks(/datum/prompt/choice, fields = list("question" = "Pick your survival addon", "title" = "Mining Voucher Redemption", "choices" = list("Shelter Capsule", "Glucose", "Panacea", "Trauma", "Medipens"), "timeout" = 0), step = "k383", when = PROC_REF(voucher_wants_survival_addon)),
+		then(PROC_REF(redeem_voucher)))
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(vendor_blast_sparks)))
 	owns_one(nameof(inserted_id), on_destroy = ON_DESTROY_SPILL)
@@ -277,17 +283,23 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 		return
 	var/obj/item/I = new prize.equipment_path(loc)
 	if(isitem(I))
-		I.persist_storable = FALSE
+		I.set_persist_storable(FALSE)
 	flick(icon_vend, src)
 	add_fingerprint()
 
-/obj/machinery/mineral/equipment_vendor/proc/interaction_voucher(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/I = A.held
-	if(!powered())
-		return TRUE
-	redeem_voucher(I, user)
-	return TRUE
+/// A voucher is only taken by a powered machine (the old handler declined without a word).
+/obj/machinery/mineral/equipment_vendor/proc/voucher_powered(datum/act/op/A)
+	return powered() ? null : MSG(req_silent)
+
+/// The voucher goes into the machine (said before the questions).
+/obj/machinery/mineral/equipment_vendor/proc/voucher_inserted(datum/act/op/A)
+	to_chat(A.actor, span_notice("You insert your voucher into the machine!"))
+
+/obj/machinery/mineral/equipment_vendor/proc/voucher_wants_ka_addon(datum/act/op/A)
+	return A.step_value("k346") == "Kinetic Accelerator + KA Addon"
+
+/obj/machinery/mineral/equipment_vendor/proc/voucher_wants_survival_addon(datum/act/op/A)
+	return A.step_value("k346") == "Survival Pistol & Machete + Survival Addon"
 
 /obj/machinery/mineral/equipment_vendor/proc/interaction_insert_id(datum/act/op/A)
 	var/mob/user = A.actor
@@ -311,25 +323,20 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	. = ..()
 
 /**
- * Called when someone slaps the machine with a mining voucher
+ * Called when the questions of the voucher op are answered
  *
  * Arguments:
- * * voucher - The voucher card item
- * * redeemer - The person holding it
+ * * A - the op: the voucher is held, the redeemer is the actor
  */
-/obj/machinery/mineral/equipment_vendor/proc/redeem_voucher(obj/item/mining_voucher/voucher, mob/redeemer)
-	to_chat(redeemer, span_notice("You insert your voucher into the machine!"))
-	var/selection = rerun_ask(redeemer, "k346", PROC_REF(redeem_voucher), args, /datum/prompt/choice, question = "Pick your equipment.", title = "Mining Voucher Redemption", choices = list("Kinetic Accelerator + KA Addon", "Resonator + Advanced Ore Scanner", "Survival Pistol & Machete + Survival Addon","1000 Points"))
-	if(isnull(selection))
-		return
+/obj/machinery/mineral/equipment_vendor/proc/redeem_voucher(datum/act/op/A)
+	var/obj/item/mining_voucher/voucher = A.held
+	var/mob/redeemer = A.actor
+	var/selection = A.step_value("k346")
 	var/drop_location = drop_location()
 	if(QDELETED(voucher))
 		return
 	if(!Adjacent(redeemer))
 		to_chat(redeemer, span_warning("You must stay near the machine to use it."))
-		return
-	if(!selection)
-		to_chat(redeemer, span_notice("You decide not to redeem anything for now."))
 		return
 	if(QDELETED(voucher))
 		to_chat(redeemer, span_warning("The voucher has already been redeemed."))
@@ -337,14 +344,8 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	switch(selection)
 
 		if("Kinetic Accelerator + KA Addon") //1250-2100 points worth
-			var/_answer_k362 = rerun_ask(redeemer, "k362", PROC_REF(redeem_voucher), args, /datum/prompt/choice, question = "Pick your addon", title = "Mining Voucher Redemption", choices = list("Cooldown", "Range","Holster"))
-			if(isnull(_answer_k362))
-				return
-			var/addon_selection = _answer_k362 //Just the basics. Nothing too crazy.
+			var/addon_selection = A.step_value("k362") //Just the basics. Nothing too crazy.
 			if(QDELETED(voucher))
-				return
-			if(!addon_selection)
-				to_chat(redeemer, span_warning("You must select an addon."))
 				return
 			if(!consume(voucher, redeemer))
 				return
@@ -364,14 +365,8 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 			new /obj/item/mining_scanner/advanced(drop_location)
 
 		if("Survival Pistol & Machete + Survival Addon") // ~3000-3500 points worth.
-			var/_answer_k383 = rerun_ask(redeemer, "k383", PROC_REF(redeem_voucher), args, /datum/prompt/choice, question = "Pick your survival addon", title = "Mining Voucher Redemption", choices = list("Shelter Capsule", "Glucose", "Panacea", "Trauma", "Medipens"))
-			if(isnull(_answer_k383))
-				return
-			var/addon_selection = _answer_k383 //Just the basics. Nothing too crazy.
+			var/addon_selection = A.step_value("k383") //Just the basics. Nothing too crazy.
 			if(QDELETED(voucher))
-				return
-			if(!addon_selection)
-				to_chat(redeemer, span_warning("You must select an addon."))
 				return
 			if(!consume(voucher, redeemer))
 				return

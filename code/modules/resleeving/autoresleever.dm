@@ -25,45 +25,53 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 	return (broken_now() || under_maintenance() || emp_held())
 
 CAPABILITIES(/obj/machinery/transhuman/autoresleever)
-	op("autoresleever_interaction_ghost", observer(), label("Respawn"), then(PROC_REF(autoresleever_interaction_ghost)))
+	op("autoresleever_interaction_ghost", observer(), label("Respawn"),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(special_question)), "title" = "Creachur", "choices" = list("No","Yes"), "buttons" = TRUE, "timeout" = 0), step = "k54", when = PROC_REF(asks_special)),
+		asks(/datum/prompt/choice, fields = list("question" = "Would you like to be spawned here as your presently loaded character?", "title" = "Spawn here", "choices" = list("No","Yes"), "buttons" = TRUE, "timeout" = 0), step = "k57", when = PROC_REF(asks_spawn_here)),
+		then(PROC_REF(autoresleever_interaction_ghost)))
 	op("autoresleever_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(autoresleever_interaction_item)))
 
-/// Old attack_ghost.
-/obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_ghost(datum/act/op/A)
-	autoresleever_ghost_use(A.actor)
-	return OP_OK
+/// The question of the special-spawn respawn (computed field: it names the machine).
+/obj/machinery/transhuman/autoresleever/proc/special_question(datum/act/op/A)
+	return "This [src] spawns something special, would you like to play as it?"
 
-/// The ghost's respawn flow; it asks its questions by re-running itself with the same arguments.
-/obj/machinery/transhuman/autoresleever/proc/autoresleever_ghost_use(mob/observer/dead/user)
+/// The ghost has no mind and the machine spawns something special: ask whether to play as it.
+/obj/machinery/transhuman/autoresleever/proc/asks_special(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	return spawn_slots != 0 && !user.mind && spawntype
+
+/// The ghost has no mind and the machine lets unspawned ghosts in as their loaded character: ask whether to.
+/obj/machinery/transhuman/autoresleever/proc/asks_spawn_here(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	return spawn_slots != 0 && !user.mind && !spawntype && ghost_spawns
+
+/// Old attack_ghost: the ghost's respawn flow; its first questions are the op's steps, the later ones are asked by autoresleeve().
+/obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_ghost(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
 	if(spawn_slots == 0)
 		to_chat(user, span_warning("There are no more respawn slots."))
-		return
+		return OP_OK
 	if(user.mind)
 		if(user.mind.vore_death)
 			if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= vore_respawn)
 				autoresleeve(user)
 			else
 				to_chat(user, span_warning("You must wait [((vore_respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) / 60] minutes to use \the [src]."))
-				return
+				return OP_OK
 		else if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= respawn)
 			autoresleeve(user)
 		else
 			to_chat(user, span_warning("You must wait [((respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) /60] minutes to use \the [src]."))
-			return
+			return OP_OK
 	else if(spawntype)
-		var/_answer_k54 = rerun_ask(user, "k54", PROC_REF(autoresleever_ghost_use), args, /datum/prompt/choice, question = "This [src] spawns something special, would you like to play as it?", title = "Creachur", choices = list("No","Yes"), buttons = TRUE)
-		if(isnull(_answer_k54))
-			return
-		if(_answer_k54 == "Yes")
+		if(A.step_value("k54") == "Yes")
 			autoresleeve(user)
 	else if(ghost_spawns)
-		var/_answer_k57 = rerun_ask(user, "k57", PROC_REF(autoresleever_ghost_use), args, /datum/prompt/choice, question = "Would you like to be spawned here as your presently loaded character?", title = "Spawn here", choices = list("No","Yes"), buttons = TRUE)
-		if(isnull(_answer_k57))
-			return
-		if(_answer_k57 == "Yes")
+		if(A.step_value("k57") == "Yes")
 			autoresleeve(user)
 	else
 		to_chat(user, span_warning("You need to have been spawned in order to respawn here."))
+	return OP_OK
 
 /// Old attackby: let's not let people mess with this.
 /obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_item(datum/act/op/A)
@@ -78,17 +86,32 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 	var/mob/living/body = ghost.mind?.current
 	if(ghost.mind && ghost.mind.current && ghost.mind.current.stat != DEAD && !(istype(body) && stat_value(body, STAT_SUSPENDED))) // A suspended body (kept for reforming) shouldn't block this.
 		if(istype(ghost.mind.current.loc, /obj/item/mmi))
-			var/_answer_k78 = rerun_ask(ghost, "k78", PROC_REF(autoresleeve), args, /datum/prompt/choice, question = "Your brain is still alive, using the auto-resleever will delete that brain. Are you sure?", title = "Delete Brain", choices = list("No","Yes"), buttons = TRUE)
-			if(isnull(_answer_k78))
-				return
-			if(_answer_k78 != "Yes")
-				return
-			if(istype(ghost.mind.current.loc, /obj/item/mmi))
-				spent(ghost.mind.current.loc)
+			open_request(src, /datum/prompt/choice, PROC_REF(autoresleeve_brain_answered), answerer = ghost, question = "Your brain is still alive, using the auto-resleever will delete that brain. Are you sure?", title = "Delete Brain", choices = list("No","Yes"), buttons = TRUE, timeout = 0)
+			return
 		else
 			to_chat(ghost, span_warning("Your body is still alive, you cannot be resleeved."))
 			return
 
+	autoresleeve_continue(ghost)
+
+/// The ghost answered the "delete your brain?" question.
+/obj/machinery/transhuman/autoresleever/proc/autoresleeve_brain_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/observer/dead/ghost = A.answer.answerer
+	if(QDELETED(ghost) || A.answer.value != "Yes")
+		return
+	if((broken_now() || under_maintenance() || emp_held()))
+		to_chat(ghost, span_warning("This machine is not functioning..."))
+		return
+	if(!isobserver(ghost))
+		return
+	if(istype(ghost.mind?.current?.loc, /obj/item/mmi))
+		spent(ghost.mind.current.loc)
+	autoresleeve_continue(ghost)
+
+/// The checks after the body is dealt with, then the "would you like to be resleeved?" question.
+/obj/machinery/transhuman/autoresleever/proc/autoresleeve_continue(mob/observer/dead/ghost)
 	var/client/ghost_client = ghost.client
 
 	if(!is_alien_whitelisted(ghost.client, GLOB.all_species[ghost_client?.prefs?.read_preference(/datum/preference/choiced/species)]) && !check_rights(R_ADMIN, 0)) // Prevents a ghost ghosting in on a slot and spawning via a resleever with race they're not whitelisted for, getting around normal join restrictions.
@@ -127,11 +150,39 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 		autoresleeve_spawn_type(ghost, spawnloc, player_key, picked_ckey)
 		return
 
-	var/slot = ghost.client.prefs.default_slot
-	var/_answer_k153 = rerun_ask(ghost, "k153", PROC_REF(autoresleeve), args, /datum/prompt/choice, question = "Would you like to be resleeved?", title = "Resleeve", choices = list("No","Yes"), buttons = TRUE)
-	if(isnull(_answer_k153))
+	open_request(src, /datum/prompt/choice/resleeve, PROC_REF(autoresleeve_answered), answerer = ghost, question = "Would you like to be resleeved?", title = "Resleeve", choices = list("No","Yes"), buttons = TRUE, timeout = 0, slot = ghost.client.prefs.default_slot, charjob = charjob)
+
+/// "Would you like to be resleeved?": the slot and the job the ghost was asked with ride on the prompt.
+/datum/prompt/choice/resleeve
+	/// The ghost's savefile slot when it was asked.
+	var/slot
+	/// The job the new body gets.
+	var/charjob
+
+/// The ghost answered "would you like to be resleeved?".
+/obj/machinery/transhuman/autoresleever/proc/autoresleeve_answered(datum/act/request/A)
+	var/datum/prompt/choice/resleeve/asked = A.answer
+	if(!asked)
 		return
-	if(_answer_k153 != "Yes")
+	var/mob/observer/dead/ghost = asked.answerer
+	if(QDELETED(ghost) || !isobserver(ghost))
+		return
+	if((broken_now() || under_maintenance() || emp_held()))
+		to_chat(ghost, span_warning("This machine is not functioning..."))
+		return
+	var/client/ghost_client = ghost.client
+	if(!ghost_client)
+		return
+	var/slot = asked.slot
+	var/charjob = asked.charjob
+	var/player_key = ghost_client.key
+	var/picked_ckey = ghost_client.ckey
+	var/picked_slot = ghost_client.prefs.default_slot
+	var/spawnloc = get_turf(src)
+	if(!spawnloc)
+		to_chat(ghost, span_warning("Could not find a valid location to spawn your character."))
+		return
+	if(asked.value != "Yes")
 		if(ELAPSED(ghost, timeofdeath, CLOCK_WORLD) <= respawn) //We were given the option to resleeve due to an outside event, but closed the input box (be it by typing or otherwise) so we allow clicking the autosleever to revive.
 			EXPIRY_SET(ghost, timeofdeath, -respawn, CLOCK_WORLD)
 		return
@@ -181,7 +232,7 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 /// Uses one spawn slot; -1 is unlimited and 0 is exhausted.
 /obj/machinery/transhuman/autoresleever/proc/consume_spawn_slot()
 	if(spawn_slots > 0)
-		spawn_slots--
+		set_spawn_slots(spawn_slots - 1)
 
 /// Build the ghost's loaded character at `spawnloc`, move their mind in and restore antag roles.
 /obj/machinery/transhuman/autoresleever/proc/build_autoresleeved_character(mob/observer/dead/ghost, client/ghost_client, turf/spawnloc, player_key, picked_ckey, picked_slot)
