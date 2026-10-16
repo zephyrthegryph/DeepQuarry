@@ -310,7 +310,7 @@ fn enforce_cap(dir: &Path, own: u32, cap: usize) -> io::Result<()> {
                 format!("pid={pid} exe={exe}")
             };
             match action {
-                Action::Keep(pid) => super::emit_stderr(format_args!("dmbd resident cap keeping busy daemon {}", describe(pid))),
+                Action::Keep(pid) => super::emit_stderr(format_args!("dmbd resident cap keeping daemon (busy, or no CPU-idle proof) {}", describe(pid))),
                 Action::Retire(pid) => {
                     let _ = fs::write(retire_flag(dir, pid), b"retire");
                     let gone = wait_exit(pid, RETIRE_WAIT);
