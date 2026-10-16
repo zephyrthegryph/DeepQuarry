@@ -53,9 +53,6 @@ base_var	code/game/atom/atom_defense.dm	@/atom::damage_deflection
 base_var	code/game/atom/atom_defense.dm	@/atom::last_damage_flag
 base_var	code/game/atom/atom_defense.dm	@/atom::damage_band
 base_var	code/game/atom/atom_type_table.dm	@/atom::init_from_table
-base_var	code/game/atom/damage_flavour.dm	@/atom::damage_wear
-base_var	code/game/atom/damage_flavour.dm	@/atom::announce_damage_bands
-base_var	code/game/atom/damage_packet.dm	@/atom::emp_integrity_factor
 base_var	code/game/atoms_movable.dm	@/atom/movable::last_move
 base_var	code/game/atoms_movable.dm	@/atom/movable::moving_diagonally
 base_var	code/game/atoms_movable.dm	@/atom/movable::move_speed
@@ -252,8 +249,6 @@ base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::genetic_side_effects
 base_var	code/modules/mob/living/carbon/human/human_attackhand.dm	@/mob/living/carbon/human::default_attack
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::synthetic
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::vr_holder
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::vr_link
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::ear_style
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::ear_secondary_style
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::tail_style
