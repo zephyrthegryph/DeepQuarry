@@ -523,3 +523,24 @@ Incremental look pins were already keyed by `analyze look-keys` against the comm
 The analyzer binary was already cached by source hash in `E:/dq-cache/analyze-bin` and restored (a 15 MB copy, no cargo) on a miss in the
 worktree's target; what had never been done is pruning it (420 entries, 6.3 GB). `bash tools/dq_cache_prune.sh` keeps the newest 12 and every key a live
 worktree was built from, plus tree proofs (200) and look manifests (6). `icons/gen` stays in the pool slots, so a lease repacks nothing.
+
+## 24. Measurements (16 October 2026, `tools/workflow-streamline`)
+
+| What | Before | After |
+|---|---|---|
+| Disk of a finished lane | 1.5-2.3 GB each, kept until someone removes the worktree (`.dmb`/`.rsc` 300 MB, logs up to 520 MB, `.dmbc` 64 MB, `data/` 300 MB, `icons/gen` 380 MB) | pool slots are permanent; a released slot keeps `icons/gen` + `data/analyze-cache` (about 0.5 GB) and drops the rest; 3 lanes cap the total |
+| Fresh worktree | `git worktree add` of 29k files: 6 min 36 s under load (about 30 s on a quiet disk), then cold icons/analyzer/compile caches | first lease of a slot is the same one-time checkout; every later lease is a `git switch -c` |
+| `analyze-bin` cache | 6.4 GB, 482 entries | 211 MB, 12 entries (`tools/dq_cache_prune.sh`) |
+| Lane done to on master (tools/docs lane, valid stamp, master unmoved) | gates 506 s + push checks 4 min (disk-hygiene merge) | the tree proof answers the gates (section 20); the push skips on the stamp |
+| Look pins | 4359 of 21045 types unverified on master; the 4-world full run was watchdog-killed at 46 min with about 100 of 2108 types per world done | a tools/docs-only diff skips them (`dq_diff_touches_dm`); the manifest spares re-probing pairs another worktree proved |
+
+**What a full look sweep costs.** The sweep covers 8429 creatable types; worlds spend 2-4 s per type on average and 17-100 s on each
+`/mob/living` type (`dq_look_settle()` drives the kernel's D phase several times per type, and simple mobs and robots run their AI there).
+At 5 worlds that is about 1.4 hours at best, so a full run cannot be brought under 10 minutes by sharding alone; the per-type settle cost
+for mobs is the lever. `--full` is still sharded over every `test_world` slot, and an incremental run only pays for what moved.
+
+**Incremental equals full (sample proof, `tools/dq_look_prove.sh --stride 40`).** A reverse-order run over 526 types (every 40th of the
+plan) and a shuffled run over a 263-type subset of them wrote 2257 rows in the subset run; every one is byte-identical to the larger run's
+row (`comm -23` empty over 431 files): a type's rows do not depend on which other types a run probes. Both runs also showed 14 and 6
+committed snapshot rows that no longer match the render on master (a finding about the tree, not the incremental path): master's look
+snapshots need a bless, which today is an unsharded full run (hours) because shards cannot write the same root file.
