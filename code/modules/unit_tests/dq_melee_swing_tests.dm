@@ -153,6 +153,7 @@
 /datum/unit_test/dq_melee_swing_sets_recovery_cooldown
 
 /datum/unit_test/dq_melee_swing_sets_recovery_cooldown/Run()
+	set_global(nameof(GLOB.coalesce_absorbed), GLOB.coalesce_absorbed)
 	scope_strain_archive()
 	set_global(nameof(GLOB.standing_cache_misses), GLOB.standing_cache_misses)
 	set_global(nameof(GLOB.standing_cache_drops), GLOB.standing_cache_drops)

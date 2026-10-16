@@ -7,8 +7,12 @@
 	var/datum/sellable/organ/S = allocate(/datum/sellable/organ)
 	var/obj/item/organ/internal/liver/replicant/O = allocate(/obj/item/organ/internal/liver/replicant, test_floor())
 	var/obj/structure/closet/crate/freezer/F = allocate(/obj/structure/closet/crate/freezer, test_floor())
+	// A newly constructed closed freezer collects loose items on its turf.
+	O.forceMove(test_floor())
+	TEST_ASSERT_EQUAL(O.loc, test_floor(), "the actual unpackaged organ is on the floor before the packaging refusal")
 	TEST_ASSERT_EQUAL(S.sell_error(O), "Error: Product was improperly packaged. Send contents in freezer crate to preserve contents for transport.", "the actual packaging refusal is unchanged")
 	O.forceMove(F)
+	TEST_ASSERT_EQUAL(O.loc, F, "the actual organ entered the real freezer")
 	TEST_ASSERT_NULL(S.sell_error(O), "a real packaged healthy replicant organ remains accepted")
 	TEST_ASSERT_EQUAL(S.calculate_sell_value(O), O.supply_conversion_value, "the actual organ value still comes from its declared conversion value")
 	O.bruise()

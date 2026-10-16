@@ -930,6 +930,11 @@ GLOBAL_VAR(dq_test_select_names)
 	GLOB.unit_test_runtime_events = null
 	GLOB.unit_test_runtime_events_truncated = FALSE
 	GLOB.unit_test_runtime_capture = TRUE
+	// dview is a process-owned lazy singleton: ordinary qdel is refused and forced
+	// destruction replaces it. Establish its real owner before test state capture;
+	// restoring a null global after first use would orphan the shared helper.
+	if(!GLOB.dview_mob)
+		GLOB.dview_mob = new /mob/dview
 	var/datum/unit_test/test = new test_path
 
 	GLOB.current_test = test

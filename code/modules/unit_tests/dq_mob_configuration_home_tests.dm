@@ -8,7 +8,7 @@
 	TEST_ASSERT_EQUAL(voice_config_of(A), voice_config_of(B), "Untouched peers share their declared voice configuration")
 	TEST_ASSERT_EQUAL(get_gendered_sound(A), "Canine", "The real species-sound selection retains the wolf's type configuration")
 	TEST_ASSERT(vars_write(A, "pain_emote_1p", list("test-yelp")), "The historical map field reaches the native trait")
-	var/datum/decl/emote/audible/pain/emote = allocate(/datum/decl/emote/audible/pain)
+	var/datum/decl/emote/audible/pain/emote = GLOB.decls_repository.get_decl(/datum/decl/emote/audible/pain)
 	TEST_ASSERT_EQUAL(emote.get_emote_message_1p(A, null, null), "You test-yelp!", "The real pain emote reads the overridden configuration")
 	TEST_ASSERT(voice_config_of(A) != voice_config_of(B), "A holder override splits only that holder's trait")
 	TEST_ASSERT_EQUAL(length(voice_config_of(B).pain_emote_1p), 4, "A peer retains its original pain alternatives")
