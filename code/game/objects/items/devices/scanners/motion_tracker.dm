@@ -10,15 +10,15 @@ MATERIAL_MIX(/obj/item/motiontracker, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	throw_range = 20
 
 CAPABILITIES(/obj/item/motiontracker)
+	setup(PROC_REF(initialize_motion_subscription))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 
 
-/obj/item/motiontracker/Initialize(mapload)
+/obj/item/motiontracker/proc/initialize_motion_subscription()
 	observe(SSmotiontracker, /datum/notice/movable_motiontracker, src, then(PROC_REF(handle_motion_tracking)))
-	. = ..()
 	if(ismob(loc))
 		var/mob/M = loc
 		M.motiontracker_subscribe()

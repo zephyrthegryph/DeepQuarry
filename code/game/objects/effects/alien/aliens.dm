@@ -70,9 +70,7 @@
 
 	var/node_range = NODERANGE
 
-/obj/effect/alien/weeds/node/Initialize(mapload)
-	. = ..()
-
+/obj/effect/alien/weeds/node/prepare_growth()
 	for(var/obj/effect/alien/weeds/existing in contents_of(loc))
 		if(existing == src)
 			continue
@@ -83,6 +81,11 @@
 			spent(existing)
 
 	rel_set(src, nameof(linked_node), src)
+	..()
+
+/// One init-only preparation dispatch: node admission completes before the first neighbour look.
+/obj/effect/alien/weeds/proc/prepare_growth()
+	fullUpdateWeedOverlays()
 
 /obj/effect/alien/weeds/proc/updateWeedOverlays()
 	cut_overlays()
@@ -175,7 +178,7 @@ CAPABILITIES(/obj/effect/alien/weeds)
 	op("touch_weeds", hand(), priority(OP_PRIORITY_DEFAULT - 3), then(PROC_REF(interaction_touch_weeds)))
 	keeps_if(PROC_REF(may_grow))
 	rolls(nameof(icon_state), PROC_REF(roll_variant)) // more icon variants
-	setup(PROC_REF(fullUpdateWeedOverlays))
+	setup(PROC_REF(prepare_growth))
 
 CAPABILITIES(/obj/effect/alien/weeds/node)
 	configure(light_glow(range = 3, color = "#673972")) // NODERANGE

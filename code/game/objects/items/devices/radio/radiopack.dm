@@ -9,11 +9,9 @@
 	w_class = ITEMSIZE_LARGE
 	var/handset_path = /obj/item/radio/bluespacehandset/linked
 
-/obj/item/bluespaceradio/Initialize(mapload)
-	make_tethered(handset_path)
-	. = ..()
 
 CAPABILITIES(/obj/item/bluespaceradio)
+	tether_start(path_var = nameof(handset_path))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))

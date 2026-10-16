@@ -1337,6 +1337,15 @@
 #include "dq_item_initial_actions_tests.dm"
 #include "dq_init_objects_blood_context_tests.dm"
 #include "dq_init_objects_cliff_context_tests.dm"
+#include "dq_init_items_subscriptions_tests.dm"
+#include "dq_init_items_phase_contracts_tests.dm"
+#include "dq_init_objects_structure_context_tests.dm"
+#include "dq_init_alien_node_tests.dm"
+#include "dq_init_portal_line_setup_tests.dm"
+#include "dq_init_landmark_placement_tests.dm"
+#include "dq_init_embed_birth_tests.dm"
+#include "dq_init_card_sprite_stack_tests.dm"
+#include "dq_init_objects_circle_wave_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

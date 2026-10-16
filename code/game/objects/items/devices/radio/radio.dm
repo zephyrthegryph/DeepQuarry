@@ -906,9 +906,6 @@ CAPABILITIES(/obj/item/radio/borg)
 	. = ..(destination, direction, movetime)
 	update_broadcast_tiles()
 
-/obj/item/radio/intercom/Initialize(mapload)
-	. = ..()
-	update_broadcast_tiles()
 
 /obj/item/radio/intercom/can_broadcast_to()
 	if(!broadcast_tiles)

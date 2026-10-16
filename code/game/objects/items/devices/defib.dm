@@ -15,6 +15,7 @@
 	var/obj/item/cell/bcell = null
 
 CAPABILITIES(/obj/item/defib_kit)
+	tether_start(path_var = nameof(paddle_path))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))
@@ -29,9 +30,6 @@ CAPABILITIES(/obj/item/defib_kit)
 /obj/item/defib_kit/get_cell()
 	return bcell
 
-/obj/item/defib_kit/Initialize(mapload) //starts without a cell for rnd
-	make_tethered(paddle_path)
-	. = ..()
 
 /obj/item/defib_kit/loaded //starts with a cell
 	bcell = /obj/item/cell/apc

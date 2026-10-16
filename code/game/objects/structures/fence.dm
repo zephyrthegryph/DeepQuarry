@@ -23,11 +23,20 @@
 	var/invulnerable = FALSE
 	var/electric = FALSE
 
-/obj/structure/fence/Initialize(mapload)
-	update_cut_status()
-	return ..()
+CAPABILITY_TYPE(initial_fence_shape, CAP_INITIAL_FENCE_SHAPE, /datum/capability/initial_fence_shape, door = FALSE)
+
+/datum/capability/initial_fence_shape
+	holder_hooks = HOLDER_HOOK_PREINIT
+
+/datum/capability/initial_fence_shape/on_holder_preinit(datum/act/eval/A)
+	var/obj/structure/fence/F = A.holder
+	if(door)
+		var/obj/structure/fence/door/D = F
+		D.update_door_status()
+	F.update_cut_status()
 
 CAPABILITIES(/obj/structure/fence)
+	initial_fence_shape()
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	climb(gate = PROC_REF(needs_a_climbable_hole))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), label("Cut through"), needs(req(PROC_REF(cut_refusal))), starts(PROC_REF(cut_started)), begins(PROC_REF(cut_begins)), wait(10 SECONDS), then(PROC_REF(wirecutter_act_tool_done))) // CUT_TIME
@@ -174,15 +183,12 @@ CAPABILITIES(/obj/structure/fence)
 
 // the fence door is never electrified: its own Use replaces the fence's
 CAPABILITIES(/obj/structure/fence/door)
+	configure(initial_fence_shape(door = TRUE))
 	silicon_hand(adjacent = TRUE) // cyborgs open it from next to it; the AI can't
 	without("touch")
 	without("item")
 	op("door_hand", hand(), label("Use"), then(PROC_REF(interaction_door_hand)))
 	op("door_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_door_item)))
-
-/obj/structure/fence/door/Initialize(mapload)
-	update_door_status()
-	return ..()
 
 /obj/structure/fence/door/opened
 	icon_state = "door_opened"

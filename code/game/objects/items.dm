@@ -104,16 +104,14 @@
 	var/gurgled_color
 
 
-/obj/item/Initialize(mapload)
-	. = ..()
+/// A frozen birth value; subsequent sharpening, activation and size edits keep their own semantics.
+/obj/item/proc/initial_embed_chance()
+	if(embed_chance >= 0)
+		return embed_chance
+	if(combat_of(src).sharp)
+		return max(5, round(combat_of(src).force/w_class))
+	return max(5, round(combat_of(src).force/(w_class*3)))
 
-	if(embed_chance < 0)
-		if(combat_of(src).sharp)
-			embed_chance = max(5, round(combat_of(src).force/w_class))
-		else
-			embed_chance = max(5, round(combat_of(src).force/(w_class*3)))
-
-/// Create the declared actions once all inherited construction has completed.
 /obj/item/proc/setup_declared_item_actions()
 	for(var/path in actions_types)
 		add_item_action(path)

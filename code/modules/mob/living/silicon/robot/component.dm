@@ -376,6 +376,7 @@ CAPABILITIES(/datum/carried_afflictions)
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 
 CAPABILITIES(/obj/item)
+	derives(nameof(embed_chance), PROC_REF(initial_embed_chance))
 	setup(PROC_REF(intern_tool_qualities))
 	setup(PROC_REF(setup_declared_item_actions))
 	// The item this one is attached to: a sparse link, not a var on /obj/item (item_master()).

@@ -1089,7 +1089,7 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 	if(active)
 		return
 	active = 1
-	embed_chance = active_embed_chance
+	set_embed_chance(active_embed_chance)
 	set_force(active_force)
 	set_throwforce(active_throwforce)
 	set_sharp(TRUE)
@@ -1102,7 +1102,7 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 		return
 	play_sfx(src, SFX_WEAPONS_SPARKLE)
 	active = 0
-	embed_chance = initial(embed_chance)
+	set_embed_chance(initial(embed_chance))
 	set_force(combat_of_type(type).force)
 	set_throwforce(thrown_of_type(type).force)
 	set_sharp(combat_of_type(type).sharp)

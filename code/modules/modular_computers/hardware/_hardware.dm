@@ -26,6 +26,8 @@
 
 CAPABILITIES(/obj/item/computer_hardware)
 	derives(nameof(w_class), PROC_REF(initial_hardware_size))
+	// Compute the frozen embedding value after this subtype derives its birth size.
+	derives(nameof(embed_chance), TYPE_PROC_REF(/obj/item, initial_embed_chance))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
 
 /// Old attackby.

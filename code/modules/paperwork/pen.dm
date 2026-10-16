@@ -220,7 +220,7 @@ CAPABILITIES(/obj/item/pen/blade)
 		return
 	active = 1
 	set_icon_state(active_icon_state)
-	embed_chance = active_embed_chance
+	set_embed_chance(active_embed_chance)
 	set_force(active_force)
 	set_throwforce(active_throwforce)
 	set_sharp(TRUE)
@@ -239,7 +239,7 @@ CAPABILITIES(/obj/item/pen/blade)
 	play_sfx(src, SFX_WEAPONS_SABEROFF, 0.3)
 	active = 0
 	set_icon_state(default_icon_state)
-	embed_chance = initial(embed_chance)
+	set_embed_chance(initial(embed_chance))
 	set_force(combat_of_type(type).force)
 	set_throwforce(thrown_of_type(type).force)
 	set_sharp(combat_of_type(type).sharp)

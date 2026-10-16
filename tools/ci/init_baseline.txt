@@ -655,15 +655,6 @@ init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::
 init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::spent
 init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining/old::Initialize::update_integrity
 init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining/old::Initialize::cell.set_charge
-init_lines	code/game/objects/effects/alien/aliens.dm	@/obj/effect/alien/weeds/node::Initialize::for
-init_lines	code/game/objects/effects/alien/aliens.dm	@/obj/effect/alien/weeds/node::Initialize::if
-init_lines	code/game/objects/effects/alien/aliens.dm	@/obj/effect/alien/weeds/node::Initialize::expr
-init_lines	code/game/objects/effects/alien/aliens.dm	@/obj/effect/alien/weeds/node::Initialize::else
-init_lines	code/game/objects/effects/alien/aliens.dm	@/obj/effect/alien/weeds/node::Initialize::if
-init_lines	code/game/objects/effects/alien/aliens.dm	@/obj/effect/alien/weeds/node::Initialize::existing.delete_me
-init_lines	code/game/objects/effects/alien/aliens.dm	@/obj/effect/alien/weeds/node::Initialize::expr
-init_lines	code/game/objects/effects/alien/aliens.dm	@/obj/effect/alien/weeds/node::Initialize::spent
-init_lines	code/game/objects/effects/alien/aliens.dm	@/obj/effect/alien/weeds/node::Initialize::rel_set
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::return
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
@@ -704,92 +695,22 @@ init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::if
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::return
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::alpha
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::registry
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::if
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::registry
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::switch
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::if
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::registry_join
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::simulated
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::if
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::GLOB.holdingfacility
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::if
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::GLOB.tdome1
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::if
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::GLOB.tdome2
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::if
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::GLOB.tdomeadmin
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::if
-init_lines	code/game/objects/effects/landmarks.dm	@/obj/effect/landmark::Initialize::GLOB.tdomeobserve
 init_lines	code/game/objects/effects/map_effects/beam_point.dm	@/obj/effect/map_effect/beam_point::Initialize::if
 init_lines	code/game/objects/effects/map_effects/beam_point.dm	@/obj/effect/map_effect/beam_point::Initialize::create_beams
 init_lines	code/game/objects/effects/map_effects/beam_point.dm	@/obj/effect/map_effect/beam_point::Initialize::next_beam_delay
-init_lines	code/game/objects/effects/map_effects/portal.dm	@/obj/effect/map_effect/portal/master::Initialize::find_lines
 init_lines	code/game/objects/effects/misc.dm	@/obj/effect/temporary_effect/lightning_strike::Initialize::animate
-init_lines	code/game/objects/effects/temporary_visuals/miscellaneous.dm	@/obj/effect/temp_visual/circle_wave::Initialize::transform
-init_lines	code/game/objects/effects/temporary_visuals/miscellaneous.dm	@/obj/effect/temp_visual/circle_wave::Initialize::animate
-init_lines	code/game/objects/effects/temporary_visuals/miscellaneous.dm	@/obj/effect/temp_visual/circle_wave::Initialize::animate
-init_lines	code/game/objects/effects/temporary_visuals/miscellaneous.dm	@/obj/effect/temp_visual/circle_wave::Initialize::animate
-init_lines	code/game/objects/effects/temporary_visuals/miscellaneous.dm	@/obj/effect/temp_visual/circle_wave::Initialize::apply_wibbly_filters
-init_lines	code/game/objects/items.dm	@/obj/item::Initialize::if
-init_lines	code/game/objects/items.dm	@/obj/item::Initialize::if
-init_lines	code/game/objects/items.dm	@/obj/item::Initialize::embed_chance
-init_lines	code/game/objects/items.dm	@/obj/item::Initialize::else
-init_lines	code/game/objects/items.dm	@/obj/item::Initialize::embed_chance
-init_lines	code/game/objects/items/devices/defib.dm	@/obj/item/defib_kit::Initialize::make_tethered
-init_lines	code/game/objects/items/devices/flipper.dm	@/obj/item/paicard/flipper::Initialize::emag_target
-init_lines	code/game/objects/items/devices/flipper.dm	@/obj/item/paicard/flipper::Initialize::rel_set
-init_lines	code/game/objects/items/devices/flipper.dm	@/obj/item/paicard/flipper::Initialize::setEmotion
-init_lines	code/game/objects/items/devices/radio/intercom.dm	@/obj/item/radio/intercom::Initialize::A
-init_lines	code/game/objects/items/devices/radio/intercom.dm	@/obj/item/radio/intercom::Initialize::if
-init_lines	code/game/objects/items/devices/radio/intercom.dm	@/obj/item/radio/intercom::Initialize::observe
-init_lines	code/game/objects/items/devices/radio/intercom.dm	@/obj/item/radio/intercom::Initialize::on
-init_lines	code/game/objects/items/devices/radio/radio.dm	@/obj/item/radio/intercom::Initialize::update_broadcast_tiles
-init_lines	code/game/objects/items/devices/radio/radiopack.dm	@/obj/item/bluespaceradio::Initialize::make_tethered
-init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	@/obj/item/motiontracker::Initialize::observe
-init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	@/obj/item/motiontracker::Initialize::if
-init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	@/obj/item/motiontracker::Initialize::M
-init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	@/obj/item/motiontracker::Initialize::M.motiontracker_subscribe
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::ghost_events
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::expr
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::expr
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::expr
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::expr
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::allowed_experiments
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::config_mode
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::config_flags
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	@/obj/item/ghost_trap::Initialize::experiment_events
-init_lines	code/game/objects/items/ghost_hunting/weapons.dm	@/obj/item/proton_pack::Initialize::make_tethered
 init_lines	code/game/objects/items/weapons/cigs_lighters.dm	@/obj/item/flame/lighter/zippo::Initialize::cut_overlays
 init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguisher::Initialize::if
 init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguisher::Initialize::choice
 init_lines	code/game/objects/items/weapons/extinguisher.dm	@/obj/item/extinguisher::Initialize::add_overlay
-init_lines	code/game/objects/items/weapons/id cards/cards.dm	@/obj/item/card::Initialize::reset_icon
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::if
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::material
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::make_tethered
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::rel_set
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::if
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun.beam_range
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun.set_icon_state
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun.set_base_icon_state
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun.wielded_item_state
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::if
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::T
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::if
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::door
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::if
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::afterattack
-init_lines	code/game/objects/items/weapons/policetape.dm	@/obj/item/taperoll::Initialize::return
 init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::if
 init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::dq_latent_declare
 init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::else
 init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::starts_with
 init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::calibrate_size
 init_lines	code/game/objects/micro_structures.dm	@/obj::Initialize::obj_instance_setup
-init_lines	code/game/objects/structures/fence.dm	@/obj/structure/fence::Initialize::update_cut_status
-init_lines	code/game/objects/structures/fence.dm	@/obj/structure/fence/door::Initialize::update_door_status
 init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::if
 init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::return
 init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::for
@@ -818,9 +739,6 @@ init_lines	code/game/objects/structures/props/machines.dm	@/obj/structure/prop/m
 init_lines	code/game/objects/structures/props/machines.dm	@/obj/structure/prop/machine/nt_pod::Initialize::if
 init_lines	code/game/objects/structures/props/machines.dm	@/obj/structure/prop/machine/nt_pod::Initialize::AM
 init_lines	code/game/objects/structures/props/machines.dm	@/obj/structure/prop/machine/nt_pod::Initialize::expr
-init_lines	code/game/objects/structures/watercloset.dm	@/obj/structure/biowaste_tank::Initialize::rel_set
-init_lines	code/game/objects/structures/watercloset.dm	@/obj/structure/biowaste_tank::Initialize::muffinmonster
-init_lines	code/game/objects/structures/watercloset.dm	@/obj/structure/biowaste_tank::Initialize::muffinmonster
 init_lines	code/game/shuttle_engines.dm	@/obj/structure/shuttle/window::Initialize::auto_join
 init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::switch
 init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if
@@ -3637,11 +3555,6 @@ world_reads	code/game/machinery/requests_console.dm	GLOB.req_console_supplies |=
 world_reads	code/game/machinery/requests_console.dm	GLOB.req_console_information |= department
 world_reads	code/game/machinery/teleporter.dm	for(var/direction in GLOB.cardinal)
 world_reads	code/game/machinery/teleporter.dm	for(direction in GLOB.cardinal)
-world_reads	code/game/objects/effects/landmarks.dm	GLOB.holdingfacility += loc
-world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdome1 += loc
-world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdome2 += loc
-world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdomeadmin += loc
-world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdomeobserve += loc
 world_reads	code/game/objects/structures/lattice.dm	for (var/dir in GLOB.cardinal)
 world_reads	code/game/turfs/flooring/seasonal.dm	switch(GLOB.world_time_season)
 world_reads	code/game/turfs/flooring/seasonal.dm	var/tree_type = pickweight(GLOB.grass_trees[trees])

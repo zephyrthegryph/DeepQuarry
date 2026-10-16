@@ -181,11 +181,9 @@ CAPABILITIES(/obj/item/ghost_catcher)
 	unacidable = TRUE
 	var/who_ya_gunna_call = /obj/item/ghost_catcher
 
-/obj/item/proton_pack/Initialize(mapload)
-	make_tethered(who_ya_gunna_call)
-	. = ..()
 
 CAPABILITIES(/obj/item/proton_pack)
+	tether_start(path_var = nameof(who_ya_gunna_call))
 	configure(item_worn(worn_icon = 'icons/inventory/back/mob.dmi', slots = SLOT_BACK))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	drag_onto(PROC_REF(drop_input))

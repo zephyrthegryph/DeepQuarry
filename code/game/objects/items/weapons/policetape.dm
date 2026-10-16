@@ -13,16 +13,24 @@
 
 	var/apply_tape = FALSE
 
-/obj/item/taperoll/Initialize(mapload)
-	. = ..()
-	if(apply_tape)
-		var/turf/T = get_turf(src)
-		if(!T)
-			return
-		var/obj/machinery/door/door = locate_on(T, /obj/machinery/door)
-		if(istype(door, /obj/machinery/door/airlock) || istype(door, /obj/machinery/door/firedoor))
-			afterattack(door, null, TRUE)
-		return INITIALIZE_HINT_QDEL
+/// The keep condition runs after capability init, so an applied roll first lays its real tape.
+/obj/item/taperoll/proc/keep_initial_roll()
+	return !apply_tape || !get_turf(src)
+
+CAPABILITY_TYPE(tape_start, CAP_TAPE_START, /datum/capability/tape_start, key = NONE)
+/datum/capability/tape_start
+	holder_hooks = HOLDER_HOOK_INIT
+
+/datum/capability/tape_start/on_holder_init(datum/act/eval/A)
+	var/obj/item/taperoll/R = A.holder
+	if(!R.apply_tape)
+		return
+	var/turf/T = get_turf(R)
+	if(!T)
+		return
+	var/obj/machinery/door/D = locate_on(T, /obj/machinery/door)
+	if(istype(D, /obj/machinery/door/airlock) || istype(D, /obj/machinery/door/firedoor))
+		R.afterattack(D, null, TRUE)
 
 
 GLOBAL_LIST_INIT_TYPED(hazard_overlays, /image, list(
@@ -116,6 +124,8 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 		look.overlay(look_appearance(icon, get_start() ? "stop" : "start", appearance_flags = RESET_COLOR))
 
 CAPABILITIES(/obj/item/taperoll)
+	tape_start()
+	keeps_if(PROC_REF(keep_initial_roll))
 	configure(item_tooling(speed = 3))
 	op("lay_tape", in_hand(), label("Lay tape"), then(PROC_REF(tape_laying_requested)))
 

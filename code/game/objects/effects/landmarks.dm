@@ -15,6 +15,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LANDMARKS)
 REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 
 CAPABILITIES(/obj/effect/landmark)
+	landmark_placement()
 	membership(joins = REGISTRY_LANDMARKS)
 	map_resolver(GLOBAL_PROC_REF(resolve_landmark))
 	derives(nameof(tag), PROC_REF(landmark_tag))
@@ -83,28 +84,33 @@ CAPABILITIES(/obj/effect/landmark)
 /obj/effect/landmark/proc/landmark_tag()
 	return "[tag_kind]*[name]"
 
-/obj/effect/landmark/Initialize(mapload)
-	. = ..()
+// Coordinate registrations are initialization records; unlike live landmark membership,
+// their raw locations intentionally survive landmark deletion and keep duplicate entries.
+#define CAP_LANDMARK_PLACEMENT "landmark_placement"
+CAPABILITY_TYPE(landmark_placement, CAP_LANDMARK_PLACEMENT, /datum/capability/landmark_placement, key = NONE)
 
-	// A subtype placed with a coordinate-only name still records (it stays: its type has work).
-	var/list/registry = landmark_coordinate_registry(name)
+/datum/capability/landmark_placement
+	holder_hooks = HOLDER_HOOK_INIT
+
+/datum/capability/landmark_placement/on_holder_init(datum/act/eval/A)
+	var/obj/effect/landmark/L = A.holder
+	var/list/registry = landmark_coordinate_registry(L.name)
 	if(registry)
-		registry += loc
-	switch(name)
-		if("JoinLate") // Bit difference, since we need the spawn point to move.
-			registry_join(REGISTRY_LATEJOIN, src)
-			simulated = TRUE
-			// always use this list with get_turf
+		registry += L.loc
+	switch(L.name)
+		if("JoinLate")
+			registry_join(REGISTRY_LATEJOIN, L)
+			L.simulated = TRUE
 		if("Holding Facility")
-			GLOB.holdingfacility += loc
+			GLOB.holdingfacility += L.loc
 		if("tdome1")
-			GLOB.tdome1 += loc
+			GLOB.tdome1 += L.loc
 		if("tdome2")
-			GLOB.tdome2 += loc
+			GLOB.tdome2 += L.loc
 		if("tdomeadmin")
-			GLOB.tdomeadmin += loc
+			GLOB.tdomeadmin += L.loc
 		if("tdomeobserve")
-			GLOB.tdomeobserve += loc
+			GLOB.tdomeobserve += L.loc
 
 // Landmarks survive deletion unless flagged delete_me or forced.
 /obj/effect/landmark/lifecycle_keep(force)

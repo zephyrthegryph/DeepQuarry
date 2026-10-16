@@ -19,7 +19,7 @@
 	projectile.agony = 20
 	projectile.set_sharp(TRUE)
 	projectile.set_edge(TRUE)
-	projectile.embed_chance = 50
+	projectile.set_embed_chance(50)
 	var/damage_before = projectile.damage
 	TEST_ASSERT_EQUAL(shield.handle_shield(user, 20, projectile), 0, "actual inactive shield returns the original damage-handling result")
 	TEST_ASSERT_EQUAL(projectile.damage, damage_before, "actual inactive shield leaves projectile damage unchanged")

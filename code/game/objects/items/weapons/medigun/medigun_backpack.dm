@@ -36,6 +36,8 @@
 
 
 CAPABILITIES(/obj/item/medigun_backpack)
+	tether_start(path_var = nameof(medigun_path))
+	setup(PROC_REF(configure_initial_handheld))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))
@@ -288,9 +290,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		medigun.set_base_icon_state("medblaster_cmo")
 
 
-/obj/item/medigun_backpack/Initialize(mapload)
-	make_tethered(medigun_path)
-	. = ..()
+/obj/item/medigun_backpack/proc/configure_initial_handheld()
 
 	var/obj/item/bork_medigun/linked/medigun = get_medigun()
 	rel_set(medigun, nameof(medigun.medigun_base_unit), src)

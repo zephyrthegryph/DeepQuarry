@@ -48,7 +48,7 @@
 		var/obj/item/projectile/P = damage_source
 		P.set_sharp(FALSE)
 		P.set_edge(FALSE)
-		P.embed_chance = 0
+		P.set_embed_chance(0)
 		if(P.agony)
 			var/agony_blocked = P.agony * (modified_block_percentage / 100)
 			P.agony -= agony_blocked

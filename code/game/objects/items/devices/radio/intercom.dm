@@ -15,8 +15,7 @@
 	var/number = 0
 	var/wiresexposed = FALSE
 
-/obj/item/radio/intercom/Initialize(mapload)
-	. = ..()
+/obj/item/radio/intercom/proc/initialize_area_power()
 	var/area/A = get_area(src)
 	if(A)
 		observe(A, /datum/notice/observer_apc, src, then(PROC_REF(on_observer_apc)))
@@ -28,6 +27,8 @@
 	set_on(A?.powered(EQUIP))
 
 CAPABILITIES(/obj/item/radio/intercom)
+	setup(PROC_REF(initialize_area_power))
+	setup(PROC_REF(update_broadcast_tiles))
 	configure(light_glow(color = "#00ff00", power = 0.25))
 	owns_one(nameof(circuit), starts = nameof(circuit))
 	// the AI's gestures over its link: ctrl switches the microphone, alt the AI's private channel

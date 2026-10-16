@@ -23,12 +23,12 @@
 	var/list/files
 
 CAPABILITIES(/obj/item/card)
+	derives(nameof(sprite_stack), PROC_REF(initial_card_sprite_stack))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
 
-/obj/item/card/Initialize(mapload)
-	. = ..()
-	reset_icon()
+/obj/item/card/proc/initial_card_sprite_stack()
+	return initial_sprite_stack
 
 /// The sprite stack is tracked: the card redraws when it is set (the setter compares the list, so a new list is a new look).
 

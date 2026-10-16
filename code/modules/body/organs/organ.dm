@@ -576,6 +576,8 @@ CAPABILITIES(/obj/item/organ)
 	ref_one(nameof(owner), /mob/living)
 	owns_one(nameof(data), /datum/organ_data, starts = /datum/organ_data)
 	derives(nameof(w_class), PROC_REF(birth_size))
+	// Compute the frozen embedding value after this subtype derives its birth size.
+	derives(nameof(embed_chance), TYPE_PROC_REF(/obj/item, initial_embed_chance))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))
 	reagents(5)
 	loose_organ_clock()

@@ -199,3 +199,12 @@ CAPABILITY_TYPE(tether_handheld, CAP_TETHER_HANDHELD, /datum/capability/tether_h
 	if(src.loc != usr)
 		return
 	tether_swap(usr)
+
+// Native constructor contract: the host creates its paired handheld before parent init reads it.
+CAPABILITY_TYPE(tether_start, CAP_TETHER_START, /datum/capability/tether_start, key = NONE, path_var = null)
+/datum/capability/tether_start
+	holder_hooks = HOLDER_HOOK_PREINIT
+
+/datum/capability/tether_start/on_holder_preinit(datum/act/eval/A)
+	var/obj/item/I = A.holder
+	I.make_tethered(I.vars[path_var])

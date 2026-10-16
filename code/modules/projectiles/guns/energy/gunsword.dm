@@ -56,7 +56,7 @@
 	set_icon_state("gsaber")
 	set_item_state("gsaber")
 	active = 1
-	embed_chance = active_embed_chance
+	set_embed_chance(active_embed_chance)
 	set_force(active_force)
 	set_armor_penetration(active_armourpen)
 	set_throwforce(active_throwforce)
@@ -76,7 +76,7 @@
 	set_icon_state("gsaberoff")
 	set_item_state("gsaberoff")
 	active = 0
-	embed_chance = initial(embed_chance)
+	set_embed_chance(initial(embed_chance))
 	set_force(combat_of_type(type).force)
 	set_armor_penetration(combat_of_type(type).armor_penetration)
 	set_throwforce(thrown_of_type(type).force)

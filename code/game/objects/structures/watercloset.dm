@@ -1250,11 +1250,19 @@ CAPABILITIES(/obj/structure/toilet/item)
 	var/mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster
 	var/obj/machinery/recycling/crusher/crusher //Bluespace connection for recyclables
 
-/obj/structure/biowaste_tank/Initialize(mapload)
-	rel_set(src, nameof(crusher), locate(/obj/machinery/recycling/crusher))
-	. = ..()
-	muffinmonster().name = "Activate Muffin Monster"
-	muffinmonster().init_vore(TRUE)
+CAPABILITY_TYPE(initial_biowaste, CAP_INITIAL_BIOWASTE, /datum/capability/initial_biowaste)
+
+/datum/capability/initial_biowaste
+	holder_hooks = HOLDER_HOOK_PREINIT | HOLDER_HOOK_INIT
+
+/datum/capability/initial_biowaste/on_holder_preinit(datum/act/eval/A)
+	var/obj/structure/biowaste_tank/T = A.holder
+	rel_set(T, nameof(T.crusher), locate(/obj/machinery/recycling/crusher))
+
+/datum/capability/initial_biowaste/on_holder_init(datum/act/eval/A)
+	var/obj/structure/biowaste_tank/T = A.holder
+	T.muffinmonster().name = "Activate Muffin Monster"
+	T.muffinmonster().init_vore(TRUE)
 
 /obj/structure/biowaste_tank/AllowDrop()
 	return TRUE
@@ -1328,6 +1336,7 @@ READS_AS(/obj/structure/biowaste_tank/proc/caught_count, BIOWASTE_CAUGHT_KEY)
 	return OP_OK
 
 CAPABILITIES(/obj/structure/biowaste_tank)
+	initial_biowaste()
 	ref_one(nameof(crusher))
 	owns_one(nameof(muffinmonster), /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster, starts = /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)

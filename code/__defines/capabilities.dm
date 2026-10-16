@@ -137,3 +137,13 @@
 #define CAP_BLOOD_INITIAL_PUDDLE "blood_initial_puddle"
 
 #define CAP_CLIFF_INITIAL_EDGES "cliff_initial_edges"
+
+#define CAP_FLIPPER_START "flipper_start"
+#define CAP_TETHER_START "tether_start"
+#define CAP_TAPE_START "tape_start"
+
+#define CAP_INITIAL_FENCE_SHAPE "initial_fence_shape"
+
+#define CAP_INITIAL_BIOWASTE "initial_biowaste"
+
+#define CAP_INITIAL_CIRCLE_WAVE "initial_circle_wave"

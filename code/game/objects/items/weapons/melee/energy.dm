@@ -55,7 +55,7 @@
 		set_item_state("[icon_state]_blade_rainbow")
 	else
 		set_item_state("[icon_state]_blade")
-	embed_chance = active_embed_chance
+	set_embed_chance(active_embed_chance)
 	set_force(active_force)
 	set_throwforce(active_throwforce)
 	set_armor_penetration(active_armourpen)
@@ -73,7 +73,7 @@
 	play_sfx(src, SFX_WEAPONS_SABEROFF)
 	set_item_state("[icon_state]")
 	set_active(0)
-	embed_chance = initial(embed_chance)
+	set_embed_chance(initial(embed_chance))
 	set_force(combat_of_type(type).force)
 	set_throwforce(thrown_of_type(type).force)
 	set_armor_penetration(combat_of_type(type).armor_penetration)

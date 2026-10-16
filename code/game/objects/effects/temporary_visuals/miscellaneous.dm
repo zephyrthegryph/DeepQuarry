@@ -125,13 +125,21 @@ CAPABILITIES(/obj/effect/temp_visual/heal)
 	var/max_alpha = 255
 	var/amount_to_scale = 2
 
-/obj/effect/temp_visual/circle_wave/Initialize(mapload)
-	transform = matrix().Scale(0.1)
-	animate(src, transform = matrix().Scale(amount_to_scale), time = duration, flags = ANIMATION_PARALLEL)
-	animate(src, alpha = max_alpha, time = duration * 0.6, flags = ANIMATION_PARALLEL)
-	animate(alpha = 0, time = duration * 0.4)
-	apply_wibbly_filters(src)
-	return ..()
+CAPABILITY_TYPE(initial_circle_wave, CAP_INITIAL_CIRCLE_WAVE, /datum/capability/initial_circle_wave)
+
+/datum/capability/initial_circle_wave
+	holder_hooks = HOLDER_HOOK_PREINIT
+
+/datum/capability/initial_circle_wave/on_holder_preinit(datum/act/eval/A)
+	var/obj/effect/temp_visual/circle_wave/V = A.holder
+	V.transform = matrix().Scale(0.1)
+	animate(V, transform = matrix().Scale(V.amount_to_scale), time = V.duration, flags = ANIMATION_PARALLEL)
+	animate(V, alpha = V.max_alpha, time = V.duration * 0.6, flags = ANIMATION_PARALLEL)
+	animate(alpha = 0, time = V.duration * 0.4)
+	apply_wibbly_filters(V)
+
+CAPABILITIES(/obj/effect/temp_visual/circle_wave)
+	initial_circle_wave()
 
 /obj/effect/temp_visual/circle_wave/bioscrambler
 	color = COLOR_LIME
