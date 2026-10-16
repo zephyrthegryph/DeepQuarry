@@ -197,6 +197,7 @@
 
 /datum/unit_test/dq_atmos_m/Run()
 	test_driver_begin()
+	set_global(nameof(GLOB.test_prompts), GLOB.test_prompts)
 	p2cl_capture_prompts()
 	var/area/room = get_area(run_loc_floor_bottom_left)
 	area_saved = list(

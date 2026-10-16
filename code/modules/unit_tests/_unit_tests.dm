@@ -1356,6 +1356,7 @@
 #include "dq_base_vars_zoom_tests.dm"
 #include "dq_heat_spawn_configuration_tests.dm"
 #include "dq_look_shared_cache_identity_tests.dm"
+#include "dq_look_culture_lifetime_tests.dm"
 #include "dq_block_default_air_source_tests.dm"
 #include "dq_look_native_item_alias_tests.dm"
 #undef TEST_ASSERT
