@@ -1,6 +1,7 @@
 // Restore diagnostic counters changed by real constructor/draw/cleanup work.
 /datum/unit_test/proc/dq_init_objects_fixture_scope()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.coalesce_absorbed), GLOB.coalesce_absorbed)
 	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 
 /datum/unit_test/dq_init_objects_weapon_links

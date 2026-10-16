@@ -37,17 +37,20 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 
 /// The timer runs while a client is near (STAT_RELEVANCE); with nobody around it parks.
 CAPABILITIES(/obj/effect/map_effect/beam_point)
+	owns_many(nameof(my_beams), /datum/beam, starts = PROC_REF(initial_beams), early = TRUE)
 	every(PROC_REF(beam_delay), then(PROC_REF(handle_beam_timer)), when = cond_all(nameof(use_timer), STAT_RELEVANCE))
 
 /// The deciseconds to the next beam change.
 /obj/effect/map_effect/beam_point/proc/beam_delay(datum/act/A)
 	return next_beam_delay
 
-/obj/effect/map_effect/beam_point/Initialize(mapload)
+/// The actual initial beamset is constructed before root init; cadence follows child construction, exactly as before.
+/obj/effect/map_effect/beam_point/proc/initial_beams(list/current, mapload)
 	if(make_beams_on_init)
 		create_beams()
-	next_beam_delay = initial_delay
-	return ..()
+	set_next_beam_delay(initial_delay)
+	// starts adopts the returned children. Unstamp first: returning an already-owned list loses members beyond REL_SCAN_MAX.
+	return rel_take_all(src, nameof(my_beams))
 
 // its beams go with it.
 /obj/effect/map_effect/beam_point/on_destroy(force)
@@ -118,7 +121,7 @@ CAPABILITIES(/obj/effect/map_effect/beam_point)
 		log_mapping("[src] ([src.type] \[[x],[y],[z]\]) was asked to destroy a beam it did not own.")
 		return FALSE
 
-	rel_remove(src, nameof(my_beams), B)
+	rel_take(src, nameof(my_beams), B)
 	destroyed(B)
 	if(beam_destruction_sound)
 		playsound(src, beam_destruction_sound, 70, 1)
@@ -143,7 +146,7 @@ CAPABILITIES(/obj/effect/map_effect/beam_point)
 		if(timer_off_index > off_duration.len)
 			timer_off_index = 1
 
-		next_beam_delay = off_duration[timer_off_index]
+		set_next_beam_delay(off_duration[timer_off_index])
 
 	else // Currently off.
 		create_beams()
@@ -153,7 +156,7 @@ CAPABILITIES(/obj/effect/map_effect/beam_point)
 		if(timer_on_index > on_duration.len)
 			timer_on_index = 1
 
-		next_beam_delay = on_duration[timer_on_index]
+		set_next_beam_delay(on_duration[timer_on_index])
 
 // Subtypes to use in maps and adminbuse.
 // Remember, beam_points ONLY connect to other beam_points with the same id variable.
