@@ -60,19 +60,16 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 /// Offers `M` (who must be `user`) a traitor role; the beacon's accept path.
 /obj/machinery/syndicate_beacon/proc/betraitor(mob/user, mob/M)
 	if(charges < 1)
-		updateUsrDialog(user)
 		return
 	if(!istype(M) || M != user) // self-only: nobody accepts for someone else
 		return
 	if(M.mind?.special_role || jobban_isbanned(M, JOB_SYNDICATE))
 		temptext = span_italics("We have no need for you at this time. Have a pleasant day.") + "<br>"
-		updateUsrDialog(user)
 		return
 	charges -= 1
 	switch(rand(1,2))
 		if(1)
 			temptext = span_red(span_italics(span_bold("Double-crosser. You planned to betray us from the start. Allow us to repay the favor in kind.")))
-			updateUsrDialog(user)
 			after(src, rand(5 SECONDS,20 SECONDS), PROC_REF(selfdestruct))
 			return
 		if(2)
@@ -84,7 +81,6 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 		GLOB.traitors.equip(N)
 		message_admins("[N]/([N.ckey]) has accepted a traitor objective from a syndicate beacon.")
 
-	updateUsrDialog(user)
 
 /obj/machinery/syndicate_beacon/proc/selfdestruct()
 	selfdestructing = 1
@@ -188,13 +184,13 @@ CAPABILITIES(/obj/machinery/power/singularity_beacon)
 
 /obj/machinery/syndicate_beacon/virgo/betraitor(mob/user, mob/M)
 	if(charges < 1)
-		updateUsrDialog(user)
+		refresh_ui(src)
 		return
 	if(!istype(M) || !M.mind)
 		return
 	if(M.mind.tcrystals > 0 || jobban_isbanned(M, JOB_SYNDICATE))
 		temptext = "<i>We have no need for you at this time. Have a pleasant day.</i><br>"
-		updateUsrDialog(user)
+		refresh_ui(src)
 		return
 	charges -= 1
 	if(ishuman(M))
@@ -205,4 +201,4 @@ CAPABILITIES(/obj/machinery/power/singularity_beacon)
 		N.mind.accept_tcrystals = 1
 		message_admins("[N]/([N.ckey]) has received an uplink and telecrystals from the syndicate beacon.")
 
-	updateUsrDialog(user)
+	refresh_ui(src)

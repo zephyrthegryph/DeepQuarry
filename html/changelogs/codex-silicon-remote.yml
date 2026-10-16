@@ -4,3 +4,4 @@ changes:
   - refactor: "Moved silicon device controls and physical interactions to declared operations and actor-owned device inputs."
   - qol: "Railing rotation commands are available in the operation menu with their existing physical restrictions."
   - bugfix: "Combined silent requirements no longer display a generic refusal."
+  - bugfix: "Existing machine windows refresh through queued data output instead of repeating an interaction."

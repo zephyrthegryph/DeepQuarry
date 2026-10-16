@@ -60,10 +60,9 @@ The coordinator ran all three old-production AI/borg flow tests successfully on
 production `4ab2e15fe1` (`20261016T005159_5b6663b70b.json`, three passes, zero
 failures), then authorized application. Their native adaptations exercise the
 actual menu/script operation and asks paths. Native verification remains pending;
-no new gate is claimed here. Source inventory predicts 98 of the original 103
-silicon-entry rows converted, with these three intermediate-effect flows, hoist,
-and the machine-refresh shim remaining (five). The coordinator will verify the
-actual ratchet count.
+no new gate is claimed here. The three intermediate-effect flows and hoist remain. The separately reviewed
+23-call refresh cohort removes the former shim row, bringing the source inventory
+to 99 of the original 103 rows converted (four remain); its native gate is pending.
 
 ### Hoist detach propagation
 
@@ -74,18 +73,29 @@ incapacity/tool refusal messages. `passes()` falls through only committed ops;
 a native requirement refusal consumes input, while a false selector loses feedback.
 A declared refusal-fallthrough contract or approved propagation change is needed.
 
-### Legacy machine refresh
+### Retired refresh caller cohort
 
-`machine_shim.dm:updateUsrDialog` remains unchanged. The old `actor_use` route
-skips engine resolution when `GLOB.op_click_resolved` already marks the current
-input. Blindly submitting a new click during the operation effect can queue the
-same action repeatedly. Native linked-window refresh already exists:
-`code/engine/change/refresh.dm` delegates `refresh_ui` to
-`presentation_refresh_windows`, and `code/modules/tgui/ui_push.dm` coalesces
-declared-window output updates. The remaining 23 legacy browser callers must
-migrate to those existing UI forms before this shim can retire. This is a legacy
-browser migration dependency, not a missing generic refresh API. Retaining those
-callers would instead require an explicit nested-legacy-input refresh contract.
+The former `machine_shim.dm:updateUsrDialog` row is removed. A current-source audit
+found 17 of its 23 calls already belonged to eight existing declared TGUI hosts;
+this was not a missing-window framework barrier. They now call existing
+`refresh_ui(src)`, which queues coalesced data output through
+`presentation_refresh_windows` and `ui_push_mark`, without replaying a hand or
+remote operation. Duplicate explicit updates in the same UI call chain are removed.
+
+Two area-editor calls were provable no-ops after setting `in_use = FALSE` and are
+removed. The base beacon's four calls could not render a window after its entry
+became `asks()`; they only reached the remaining touch gate and are removed.
+No recruitment, shipment, inventory, game action or permission logic changes.
+The other 78 references to the using-machine lifetime helpers still need their
+separate migration: their datum, helper procs, source file and build include remain.
+
+The completed `dc46845b50` gate compared seven exact host goldens with real AI and
+borg rows unchanged (only mismatches write diagnostic captures). Dartgun had no
+exact per-type pin, so the coordinator separately captured its old behavior:
+`20261016T023039_a49b5d8504`, one pass, zero failures. The two new native UI tests
+exercise real dartgun insertion/mixing and the magnetic controller speed button,
+checking queued data, real window output and no repeated action. Their native
+validation is pending; no new gate or pin re-bless is claimed.
 
 ## New focused fixtures (not yet run)
 

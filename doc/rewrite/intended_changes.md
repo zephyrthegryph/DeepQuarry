@@ -5006,3 +5006,24 @@ An any_of composed entirely of silent refusals now remains a non-null silent ref
 ### Pilot helm lookup: reject nullspace destinations
 
 The original pilot callback admitted helms by z alone, including a nullspace helm when level zero was configured. It now chooses only actual, non-deleted helm turfs, retaining one lottery entry per helm. Invalid-only lookup leaves location and ghost access unchanged; a real destination preserves normal relocation and ghost access. Existing look goldens are retained. The focused regression uses real helms and native keyed timers with strict queue-delivery and destination assertions.
+
+### Refresh existing windows without replaying operations (2026-10-16)
+
+Seventeen obsolete `updateUsrDialog()` calls now queue data for existing declared
+windows on `/obj/structure/safe`, `/obj/machinery/implantchair`,
+`/obj/machinery/computer/telecomms/traffic`, `/obj/machinery/magnetic_controller`,
+`/obj/machinery/computer/specops_shuttle`,
+`/obj/machinery/computer/arcade/orion_trail`, `/obj/item/gun/projectile/dartgun` and
+`/obj/machinery/syndicate_beacon/virgo`. The existing `refresh_ui()` path coalesces
+updates without invoking the input resolver, `attack_hand()` or the operation's
+effect again. Redundant explicit updates after the same helper are removed.
+Two area-editor calls after `in_use = FALSE` and four base-beacon calls after its
+native prompt flow had no window to render and are removed, rather than renamed.
+The unused refresh proc is deleted, while live using-machine lifetime helpers stay.
+
+This is an output-path correction, with no intended changes to permitted inputs,
+authority, menus, keys, clicks, numeric results or business effects. Existing
+seven-host AI/borg goldens and the separately passed old dartgun capture are the
+oracles; this cause authorizes no pin re-records. New real-action regressions check
+that beaker insertion, mixing and console speed each execute once while their
+window gets its queued data. Native verification remains pending the combined gate.

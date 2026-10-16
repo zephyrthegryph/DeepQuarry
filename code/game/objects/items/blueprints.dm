@@ -174,7 +174,6 @@ CAPABILITIES(/obj/item/areaeditor)
 	in_use = TRUE
 	create_area(user, src)
 	in_use = FALSE
-	updateUsrDialog(user)
 	return TRUE
 
 /obj/item/areaeditor/proc/topic_create_area_whole(datum/act/op/A)
@@ -184,7 +183,6 @@ CAPABILITIES(/obj/item/areaeditor)
 	in_use = TRUE
 	create_area_whole(user, src)
 	in_use = FALSE
-	updateUsrDialog(user)
 	return TRUE
 
 //Station Wire Tool.

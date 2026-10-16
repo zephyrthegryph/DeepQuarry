@@ -163,7 +163,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 				return OP_OK
 			space += I.w_class
 			to_chat(user, span_notice("You put [I] in \the [src]."))
-			updateUsrDialog(user)
+			refresh_ui(src)
 		else
 			to_chat(user, span_notice("[I] won't fit in \the [src]."))
 	else

@@ -108,32 +108,6 @@ CAPABILITIES(/datum/using_machine_shim)
 	new /datum/using_machine_shim(src, O)
 
 /// deprecated, do not use
-/obj/proc/updateUsrDialog(mob/user)
-	if(in_use)
-		var/is_in_use = 0
-		var/list/nearby = viewers(1, src)
-		for(var/mob/M in nearby)
-			if ((M.client && M.check_current_machine(src)))
-				is_in_use = 1
-				src.attack_hand(M)
-		if (isAI(user) || isrobot(user))
-			if (!(user in nearby))
-				if (user.client && user.check_current_machine(src)) // && M.machine == src is omitted because if we triggered this by using the dialog, it doesn't matter if our machine changed in between triggering it and this - the dialog is probably still supposed to refresh.
-					is_in_use = 1
-					actor_use(/datum/input_adapter/ai, user, src)
-
-		// check for TK users
-
-		if (ishuman(user))
-			var/mob/living/carbon/human/H = user
-			if(H.get_type_in_hands(/obj/item/tk_grab))
-				if(!(H in nearby))
-					if(H.client && H.check_current_machine(src))
-						is_in_use = 1
-						src.attack_hand(H)
-		in_use = is_in_use
-
-/// deprecated, do not use
 /obj/machinery/CouldUseTopic(mob/user)
 	..()
 	user.set_machine(src)

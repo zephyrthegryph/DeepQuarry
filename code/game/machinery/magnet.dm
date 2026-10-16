@@ -246,7 +246,7 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 
 	// Broadcast the signal
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_MAGNETS)
-	updateUsrDialog(user)
+	refresh_ui(src)
 
 /// A local controller operation (`op`): speed, path and movement.
 /obj/machinery/magnetic_controller/proc/magnet_operation(mob/user, op)
@@ -265,12 +265,11 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 		if("togglemoving")
 			set_path_moving(!path_moving)
 
-	updateUsrDialog(user)
+	refresh_ui(src)
 
 /obj/machinery/magnetic_controller/proc/magnet_path_entered(datum/act/op/A)
-	var/mob/user = A.actor
 	var/newpath = A.step_value("path")
-	updateUsrDialog(user)
+	refresh_ui(src)
 	if(newpath && newpath != "")
 		set_path_moving(FALSE) // stop moving
 		path = newpath

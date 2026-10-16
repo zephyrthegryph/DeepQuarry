@@ -194,7 +194,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 
 	temp += "Shuttle departing.<BR><BR>"
 	add_fingerprint(user)
-	updateUsrDialog(user)
+	refresh_ui(src)
 
 	GLOB.specops_shuttle_moving_to_centcom = 1
 	GLOB.specops_shuttle_time = world.timeofday + SPECOPS_MOVETIME
@@ -212,7 +212,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 
 	temp += "Shuttle departing.<BR><BR>"
 	add_fingerprint(user)
-	updateUsrDialog(user)
+	refresh_ui(src)
 
 	var/area/centcom/specops/special_ops = locate()
 	if(special_ops)

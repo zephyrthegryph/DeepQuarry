@@ -4,10 +4,10 @@ Branch: `codex/silicon-remote`, based on `origin/master` `4ab2e15fe1`.
 
 ## Counts and remaining contracts
 
-`silicon_entry` shrank from 103 to 5 rows (98 removed), regenerated with
-`analyze baseline --update --lint silicon_entry`. No rows were added. The five
-remaining rows are three casino intermediate prompt-effect stages, hoist detach's
-refusal-and-success input fallthrough, and the machine-refresh shim's 23 remaining legacy-browser callers. Exact reasons and needed contracts are in
+`silicon_entry` shrank from 103 to 4 rows (99 removed), regenerated with
+`analyze baseline --update --lint silicon_entry`. No rows were added. The four
+remaining rows are three casino intermediate prompt-effect stages and hoist
+detach's refusal-and-success input fallthrough. Exact reasons and needed contracts are in
 [silicon_remote_module_gaps.md](silicon_remote_module_gaps.md). None is hidden behind
 an annotation, renamed predicate, relaxed ceiling or path exemption.
 
@@ -39,3 +39,24 @@ The first merged gate found two real raw writes to public_spin after its new req
 ## Focused runtime repair
 
 The first running world on dc46845b50 used DreamMaker: 88 passed and 12 failed (20261016T014924_dc46845b50). Actual fixes are the casino admission check and initial-only context, explicit authority for self/local AI HUD questions, all-silent any_of composition, and the shared null-turf pilot lookup guard. Recharge and RIG fixture assumptions were corrected against unchanged old production contracts: forced unconscious passenger admission, actual buckling refusal, and exact material-aware charge parity against an independent reference transaction. Seventeen pin files are refreshed only for the per-type cause classes documented in intended_changes.md; wheel, toilet and appearance goldens stay unchanged. The repair list contains the 12 failures plus three new regression selectors, including both mandatory pins. Final runtime result and stamp must come from its actual lane-ready receipt; no earlier evidence is substituted.
+
+## Native refresh cleanup follow-up
+
+The old dartgun capture passed alone before changing its refresh calls
+(`20261016T023039_a49b5d8504`, one pass, zero failures); its real 63-row golden is
+committed in `f89ba1c433`. The runner's 51 unrelated formatting rewrites expanded to
+exactly the same rows, so only the dartgun golden was retained. Seven other exact
+host goldens were compared unchanged by the earlier `dc46845b50` gate, with actual
+AI and borg actor rows. No missing capture is presented as proof.
+
+All 23 `updateUsrDialog` calls are retired: 17 existing TGUI-host calls use native
+queued data refresh, and six non-rendering calls are removed. The unused proc is
+deleted; the source file and live machine-lifetime helpers remain. Native refresh
+must not replay insertion, toggle, shipment or game effects. Two focused tests
+assert actual dartgun and magnetic-console state, output and one delivery per
+frame. The operation metadata/menu/click pins must remain unchanged for this
+cohort; no pin re-bless is authorized. The repair list includes the dartgun pin and
+both new UI regressions. The authorized `analyze baseline --update --lint silicon_entry` completed with four
+rows (99 removed from the original 103); no rows were added. The source changes
+precede the final coordinating gate; their runtime validation and lane-ready stamp
+are still pending.

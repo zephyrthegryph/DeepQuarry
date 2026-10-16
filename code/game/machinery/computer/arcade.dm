@@ -421,7 +421,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 /// Work done after every game action.
 /obj/machinery/computer/arcade/orion_trail/proc/orion_refresh(mob/user)
 	add_fingerprint(user)
-	updateUsrDialog(user)
+	refresh_ui(src)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_close(mob/user, list/args)
 	user.unset_machine()
