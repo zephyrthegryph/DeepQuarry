@@ -7,7 +7,7 @@
  *
  * Look state pins (snapshots/look_states/<root>.txt, test dq_look_state_pin): how each creatable obj/mob subtype of a root looks
  * after the state its look reacts to changes. Per type, for each numeric var the type declares below its base (/obj or /mob; at
- * most DQ_LOOK_STATE_MAX_VARS of them, in declaration order, narrowed to the vars the analyzer's plan says a draw can read), the
+ * most DQ_LOOK_STATE_MAX_VARS planned vars, filtered to the allowed read plan before lexical ordering and capping), the
  * var is written (0, 1 and 2, whichever differ from its made value; through its tracked setter when it has one, else the raw
  * var), a redraw is requested the way a caller does (update_icon(), then changed()), the presentation lane is flushed and the
  * look is compared with the made look. A row is the probe and what the look gained or lost:
@@ -330,8 +330,8 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		dq_look_dispose(subject)
 	dq_look_drain_turf(T)
 
-/// The numeric vars of `subject` worth writing: those it declares below its base, without time-like names, in declaration order, at
-/// most DQ_LOOK_STATE_MAX_VARS of them, then narrowed to the plan's list for the type when the plan names one.
+/// Numeric non-base, non-time-like vars the analyzer permits this type to probe.
+/// Host vars enumeration order cannot change the selected set or probe order.
 /datum/unit_test/proc/dq_look_probe_names(atom/subject, list/base_vars, plan_entry)
 	var/list/found = list()
 	for(var/name in subject.vars)
@@ -339,19 +339,51 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			continue
 		if(isnum(subject.vars[name]) && !findtext(name, "time") && !findtext(name, "cooldown") && !findtext(name, "last") && !findtext(name, "next"))
 			found += name
-	if(!islist(plan_entry))
-		// The plan does not know what the draw reads: scan more of them (a robot declares over a hundred numeric vars, and the cover is the 25th).
-		if(length(found) > DQ_LOOK_STATE_MAX_VARS_UNPLANNED)
-			found.Cut(DQ_LOOK_STATE_MAX_VARS_UNPLANNED + 1)
-		return found
-	// Narrowed to what the plan says a draw reads first, then capped: the cap must not drop a var the draw reads.
-	var/list/read = list()
-	for(var/name in found)
-		if(name in plan_entry)
-			read += name
-	if(length(read) > DQ_LOOK_STATE_MAX_VARS)
-		read.Cut(DQ_LOOK_STATE_MAX_VARS + 1)
-	return read
+	return dq_look_select_probe_names(found, plan_entry)
+
+/// Keep both existing coverage limits: 24 planned vars, 200 when no plan exists.
+/// An explicit empty plan means no probes. Selection never mutates its inputs.
+/proc/dq_look_select_probe_names(list/candidates, plan_entry)
+	var/planned = islist(plan_entry)
+	var/list/selected = list()
+	for(var/name in candidates)
+		if(!planned || (name in plan_entry))
+			selected += name
+	sortTim(selected, GLOBAL_PROC_REF(cmp_text_asc))
+	var/limit = planned ? DQ_LOOK_STATE_MAX_VARS : DQ_LOOK_STATE_MAX_VARS_UNPLANNED
+	if(length(selected) > limit)
+		selected.Cut(limit + 1)
+	return selected
+
+/datum/unit_test/dq_look_probe_order_invariance
+/datum/unit_test/dq_look_probe_order_invariance/Run()
+	var/list/forward = list()
+	var/list/backward = list()
+	for(var/i in 1 to 250)
+		forward += "v[1000 + i]"
+	for(var/i = 250, i >= 1, i--)
+		backward += "v[1000 + i]"
+	var/original_forward = jointext(forward, ",")
+	var/original_backward = jointext(backward, ",")
+	var/list/planned = list("v1250", "v1249")
+	var/list/from_forward = dq_look_select_probe_names(forward, planned)
+	var/list/from_backward = dq_look_select_probe_names(backward, planned)
+	TEST_ASSERT_EQUAL(jointext(from_forward, ","), "v1249,v1250", "planned vars beyond either old enumeration cap remain covered")
+	TEST_ASSERT_EQUAL(jointext(from_backward, ","), jointext(from_forward, ","), "reversed host enumeration selects the same planned probes")
+	var/list/all_planned = dq_look_select_probe_names(backward, forward)
+	TEST_ASSERT_EQUAL(length(all_planned), DQ_LOOK_STATE_MAX_VARS, "planned coverage retains its existing bound")
+	TEST_ASSERT_EQUAL(all_planned[1], "v1001", "planned capping follows canonical ordering")
+	TEST_ASSERT_EQUAL(all_planned[DQ_LOOK_STATE_MAX_VARS], "v1024", "planned coverage ends at its canonical cap")
+	var/list/unplanned = dq_look_select_probe_names(forward, null)
+	var/list/reversed_unplanned = dq_look_select_probe_names(backward, null)
+	TEST_ASSERT_EQUAL(length(unplanned), DQ_LOOK_STATE_MAX_VARS_UNPLANNED, "absent-plan fallback retains its existing coverage bound")
+	TEST_ASSERT_EQUAL(jointext(unplanned, ","), jointext(reversed_unplanned, ","), "fallback selection is independent of host order")
+	TEST_ASSERT_EQUAL(unplanned[1], "v1001", "fallback starts with the first canonical name")
+	TEST_ASSERT_EQUAL(unplanned[DQ_LOOK_STATE_MAX_VARS_UNPLANNED], "v1200", "fallback caps after canonical ordering")
+	TEST_ASSERT_EQUAL(length(dq_look_select_probe_names(forward, list())), 0, "an explicit empty plan permits no probes")
+	TEST_ASSERT_EQUAL(jointext(planned, ","), "v1250,v1249", "selection preserves the caller's plan ordering")
+	TEST_ASSERT_EQUAL(jointext(forward, ","), original_forward, "selection preserves forward candidates")
+	TEST_ASSERT_EQUAL(jointext(backward, ","), original_backward, "selection preserves backward candidates")
 
 /// Writes `value` to `target.vars[name]` the way a caller does (its tracked setter when it has one, else the raw var) and redraws.
 /datum/unit_test/proc/dq_look_write(atom/target, name, value)

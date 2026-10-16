@@ -101,3 +101,23 @@ stamp. The repair list retains both failing fixtures, the changed SPASM fixture,
 both mandatory pins, incomplete look coverage and all selectors after the cutoff;
 previously passing targeted fixtures are not requested again. Final verification
 remains pending the coordinator's longer focused repair gate.
+
+## Deterministic look probes and restored slime-eye rows
+
+Master eee5bf967e (merged by a5674a446e) restored previously omitted
+look-state rows, including six unprefixed `slime baby-eyes` rows for xenobio
+bluespace, rainbow and rainbow/kendrick with has_eye_glow 1 and 2. The completed
+e9d164672a capture differs only in those six replacements (12 removed/added
+rows): bluespace uses `bluespace slime baby-eyes`, and both rainbow types use
+`rainbow slime baby-eyes`. Silicon changes do not edit their production draws.
+The existing xenobio sprite synchronizer derives icon_living from its color/age
+state; the inherited simple-mob eye overlay uses that state. This is a stale
+restored-golden discrepancy, not an intended silicon gameplay change.
+
+The approved probe repair makes variable selection deterministic rather than
+dependent on BYOND variable enumeration order before the probe cap. Any resulting
+coverage selection/order differences are test-sampling changes only. Snapshot
+promotion is deferred until the repaired sampler's actual output is inspected;
+the six-row candidate patch is not applied in advance. Unrelated production or
+menu/click differences require separate evidence and are not covered by this
+sampling cause. Verification and any resulting narrow promotion remain pending.
