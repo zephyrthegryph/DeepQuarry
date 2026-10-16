@@ -24,3 +24,5 @@ The follow-up damage trait and uncached reciprocal VR link cohorts remove five a
 ## Unlanded burning conversion withdrawn
 
 Five original master fields remain: burn_overlay, burn_particle_type, burn_fuel, burn_cool_watch and burn_ended_by. Granted capability draw providers are not consumed by the current presentation path, and native granted look layers cannot represent the arbitrary retained mutable appearance accepted by start_burning(). The conversion and its premature five-row baseline removal were backed out. This introduces no master baseline rows: the final baseline is a strict subset of origin/master. The lifetime regression now tests the retained real cooling-watch ownership.
+
+Final source verification: analyze baseline --update --lint base_vars and the full check_ratchets.sh pass at b27c25b5bd. Baseline 539 -> 423; 116 original rows removed, no rows added relative to master. Native compile, DreamChecker and focused lane-ready runtime proof remain pending.
