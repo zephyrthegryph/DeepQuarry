@@ -378,6 +378,7 @@ pub(super) fn serve() -> io::Result<()> {
         max_workers,
         soft_memory::hard(soft_private_bytes)?
     ));
+    crate::fs_watch::enable();
     let compiler = super::compiler_identity()?;
     let mut listeners = super::generation_listeners::Listeners::new(compiler)?;
     let shared = Arc::new(Shared {

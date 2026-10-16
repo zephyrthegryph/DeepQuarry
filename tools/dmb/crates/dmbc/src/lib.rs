@@ -11,6 +11,7 @@ pub mod debug_sources;
 pub mod diagnostics;
 pub mod expansion_memo;
 pub mod filesystem_proofs;
+pub mod fs_watch;
 pub mod frozen_inputs;
 pub mod heap_census;
 pub mod input_snapshot;
