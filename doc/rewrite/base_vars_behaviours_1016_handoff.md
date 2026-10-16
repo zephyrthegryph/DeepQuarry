@@ -1,10 +1,10 @@
 # Behaviour state homes — source handoff
 
-The `code/datums/behaviours` cohort removes all 29 baselined base-type fields from ten files. This is a source count, pending analyzer shrink and verification. No baselines, generated files, builds or tests were run for this cohort.
+The `code/datums/behaviours` cohort removes 24 of 29 baselined base-type fields from ten files. This is a source count, pending analyzer shrink and verification. No baselines, generated files, builds or tests were run for this cohort.
 
 * Conflict identity, sale profile and four footstep sound settings are native inherited type traits. Their original field names remain in `var_names` for map/VV compatibility; runtime footstep and sale overrides use copy-on-write `set_trait`.
 * Omen modifiers/budget, slosh counters/cache, radiation exposure timestamps, the light-blocking flag, tether path and swarm offsets/flag are sparse per-instance scalar state. Postfix slosh increments and state persistence across revocation are preserved.
-* Swarm membership uses a native sparse reciprocal many-to-many link. Burning uses a lazy retained runtime context, `/datum/burning_state`, linked to its holder with `OTHER_DELETE_ME`; that context owns the cooling watch. Extinguishing retains the last reason; holder deletion removes the context. Revocation tolerates the context having already ended during the holder's links teardown.
+* Swarm membership uses a native sparse reciprocal many-to-many link. Burning retains its original five fields and cooling-watch ownership because the custom fire appearance has no equivalent activation-scoped native output yet.
 
 ## Source split
 
@@ -42,13 +42,13 @@ The behaviour commit owns the following files, plus this handoff (check shared f
 
 ## Focused verification pending
 
-New file: `code/modules/unit_tests/dq_base_vars_behaviour_tests.dm` (root wires its include). Seven leaves under `/datum/unit_test/dq_base_vars_behaviours/`: `light_source`, `omen_merge`, `footstep_overrides`, `slosh_counter`, `sale_profile`, `burning_record_lifetime`, `radiation_countdown`.
+New file: `code/modules/unit_tests/dq_base_vars_behaviour_tests.dm` (root wires its include). Seven leaves under `/datum/unit_test/dq_base_vars_behaviours/`: `light_source`, `omen_merge`, `footstep_overrides`, `slosh_counter`, `sale_profile`, `burning_watch_lifetime`, `radiation_countdown`.
 
-Existing focused regressions to run: `dq_retired_omen_capability`, `dq_retired_footstep_counts_steps`, `dq_retired_swarming_pairs_on_a_turf`, `dq_retired_tether_swap_and_return`, `interim_mining_conflict_data`, `dq_h3_burning_ends`. The new tests assert actual opacity registration and movement, omen merge/consumption, isolated sound overrides, postfix counter persistence, first-profile-wins, linked-record deletion and timer-driven exposure expiry. Existing tests now read the real native state homes.
+Existing focused regressions to run: `dq_retired_omen_capability`, `dq_retired_footstep_counts_steps`, `dq_retired_swarming_pairs_on_a_turf`, `dq_retired_tether_swap_and_return`, `interim_mining_conflict_data`, `dq_h3_burning_ends`. The new tests assert actual opacity registration and movement, omen merge/consumption, isolated sound overrides, postfix counter persistence, first-profile-wins, actual cooling-watch deletion and timer-driven exposure expiry. Existing tests now read the real native state homes.
 
 Source-only `git diff --check` passed. No affected map field overrides or raw production field consumers remained in the audited tree. Runtime and lint results are not yet available; no stamp claimed.
 
-The fire state is deliberately a domain runtime context, not a data-only `/datum/record`: it owns a live heat watch and therefore declares lifecycle ownership. No record-data-only exemption is needed.
+The attempted fire-state context conversion is withdrawn; there is no new runtime record or data-only-record exception.
 
 ## Unlanded burning conversion withdrawn
 
