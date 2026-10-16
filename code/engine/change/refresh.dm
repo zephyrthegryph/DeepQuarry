@@ -163,6 +163,10 @@
 /// Queues E for the outputs in `mask`, and its owner up the chain for its look when one of the owner's
 /// capabilities draws E. `channel` reaches on_state_changed() (refresh_bits) with a plain mark.
 /proc/refresh_mark(datum/E, mask, channel = 0)
+	// A write made while the global variables are still being built (a news network or ntnet constructor) happens before the queue exists:
+	// nothing can be waiting on the thing yet, and `null += D` would make the queue a datum.
+	if(!islist(GLOB.refresh_queue))
+		return
 	var/datum/D = E
 	for(var/depth in 1 to 8)
 		if(mask & DEP_LEGACY)
