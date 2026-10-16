@@ -6,8 +6,6 @@
 /obj/machinery/dq_maint_machine
 	name = "maintenance machine"
 	maintenance_flags = MACHINE_MAINT_PANEL | MACHINE_MAINT_FRAME | MACHINE_MAINT_WRENCH | MACHINE_MAINT_WELDER_REPAIR
-	maintenance_wrench_time = 0
-	maintenance_weld_time = 0
 	use_power = USE_POWER_OFF
 	anchored = TRUE
 	var/dismantled = 0
@@ -122,3 +120,6 @@
 	test_time(1 SECOND)
 	TEST_ASSERT(machine.anchored, "no wrench flag: it stays secured")
 	test_driver_end()
+
+CAPABILITIES(/obj/machinery/dq_maint_machine)
+	configure(machine_interaction_config(maintenance_wrench_time = 0, maintenance_weld_time = 0))

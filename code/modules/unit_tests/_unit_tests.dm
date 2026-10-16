@@ -1348,6 +1348,12 @@
 #include "dq_base_vars_sorting_tests.dm"
 #include "dq_base_configuration_static_tests.dm"
 #include "dq_internal_storage_init_regression.dm"
+#include "dq_base_configuration_home_tests.dm"
+#include "dq_base_vars_item_policy_four_tests.dm"
+#include "dq_base_vars_organ_sale_tests.dm"
+#include "dq_base_vars_augment_link_tests.dm"
+#include "dq_base_vars_zoom_tests.dm"
+#include "dq_heat_spawn_configuration_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

@@ -45,7 +45,7 @@
 	TEST_ASSERT(abs(FIRE_MINIMUM_TEMPERATURE_TO_EXIST - (T0C + 100)) < 0.001, "the ignition point is [FIRE_MINIMUM_TEMPERATURE_TO_EXIST], not 100 °C")
 	TEST_ASSERT_EQUAL(PLASMA_MINIMUM_BURN_TEMPERATURE, FIRE_MINIMUM_TEMPERATURE_TO_EXIST, "phoron has two ignition points")
 	var/mob/living/probe = /mob/living
-	TEST_ASSERT_EQUAL(initial(probe.bodytemperature), BODYTEMP_NORMAL, "mobs start at [initial(probe.bodytemperature)] K")
+	TEST_ASSERT_EQUAL(heat_spawn_of_type(probe).temperature, BODYTEMP_NORMAL, "mobs start at their compiled [BODYTEMP_NORMAL] K configuration")
 	var/datum/species/human = /datum/species
 	TEST_ASSERT_EQUAL(initial(human.body_temperature), BODYTEMP_NORMAL, "species stabilise at [initial(human.body_temperature)] K")
 
