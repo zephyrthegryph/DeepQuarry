@@ -120,8 +120,8 @@ table procs, `world_service`, `PERIODIC_*`, `update_icon(`, the `APPEARANCE_*` l
 
 What is still open, and still correct to write where a file already uses it:
 
-- `REQ_*` predicate macros (`code/__defines/constraints.dm`; replacement `needs(req...)`), about 220
-  sites in 89 files.
+- `REQ_*` predicate macros (`code/__defines/constraints.dm`; replacement `needs(req...)`), about 99
+  sites in 23 files.
 - `rerun_ask` / `verb_ask` / `client_ask` prompts (replacement `asks()` steps), about 76 sites in 41 files.
 - `BF_*` body factors read with `L.factor()`: the stat layer exists, the factors are not on it yet.
 - `reactions()` table procs on types that are not systems (a system's `every()` items stay there).
