@@ -121,3 +121,12 @@ The final focused repair list includes the 14 diagnosed failures from the first 
 ## Compiler cross-check
 
 The repair gate explicitly uses DreamMaker, the supported production cross-check documented in doc/testing.md. A same-plan requirements-lane diagnostic after master 663e85e2ae changed the default to native exposed host-dependent look sampling (the first 24 vars are selected before the analyzer-plan filter). Existing goldens are retained; no appearance differences from that sampler are blessed here. The actual final receipt and JSON record the backend and gate result.
+
+
+## Coordinated repair result and last failure-only repair
+
+The DreamMaker gate at `70bbe160a0` produced receipt `data/test-runs/20261016T022347_70bbe160a0.json`: 62 passed, two failed, zero skipped; production compilation, DreamChecker and ratchets passed. Both look sweeps, `dx_menu_order`, actual internal-storage/cloning constructor regressions, and the keyed pilotslug destination regression passed. The run had a clean boot; existing smoke/pin STATE LEAK warnings remain visible and are not claimed absent.
+
+The two failures were `dq_conversion_pin` (four rows, solely the inherited master `f13b84652d` mecha key deletion) and `dq_decl_visual/live_redraws` (the fixture bypassed the native setter). The bounded promotion validated both current dumps against expanded current op bases, then changed only the two literal `ai_use_equipment` key rows. The privacy fixtures now perform and restore edits through `/area.set_flags`; all real state and appearance assertions remain. Their causes are recorded in `intended_changes.md`.
+
+The final repair selector list is `data/codex-decl/final-repair-selectors.txt`: the failed conversion pin and live-redraw fixture, the directly changed privacy constructor fixture, and mandatory `dq_requirement_protocol_pin`. These source repairs have not yet run. Root owns the subsequent lane-ready gate and stamp; no stamp, clean final runtime result, push, or completed landing is claimed by this document. Previously passing results are historical evidence, not a fabricated replacement receipt.

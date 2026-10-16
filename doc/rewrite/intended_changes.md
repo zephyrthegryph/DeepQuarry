@@ -4969,3 +4969,10 @@ Master `2136172edc` (October 15, 17:13:57 -0500; “Delete the task engine; a de
 ### Pilot helm lookup: reject nullspace destinations
 
 The original pilot callback admitted helms by z alone, including a nullspace helm when level zero was configured. It now chooses only actual, non-deleted helm turfs, retaining one lottery entry per helm. Invalid-only lookup leaves location and ghost access unchanged; a real destination preserves normal relocation and ghost access. Existing look goldens are retained. The focused regression uses real helms and native keyed timers with strict queue-delivery and destination assertions.
+
+
+### Declaration lane: inherited mecha keys and native privacy fixture writes
+
+Master `f13b84652d` (October 13, 2026, 19:32:27 -0500; “Delete the dead mecha AI-attack surface; drop unused ALLOWs; log R9”) removes `ai_use_equipment`. The fresh declaration-lane capture differs only in that key on `/obj/mecha` and `/obj/mecha/working/ripley`: all expanded menus, clicks and other keys are identical. Only those two literal key rows are refreshed, preserving existing base factoring and encoding.
+
+The declaration privacy fixtures previously used the test helper `set_var`, a raw assignment that does not publish tracked dependencies. They now use the existing `/area.set_flags` for both initial setup and the live admin-style edit, and restore original flags through that same setter. The strict `privacy0` to `privacy1` assertion remains, with an additional assertion that the flag was actually enabled. This corrects fixture publication; it changes no production privacy behavior and authorizes no appearance-pin re-records.
