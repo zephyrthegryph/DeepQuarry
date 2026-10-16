@@ -86,8 +86,8 @@ SETTER(/atom, rad_insulation)
 /// Declared shielding: an atom whose `rad_shield_material` is set derives its
 /// insulation from that material at `rad_shield_thickness_mm`.
 /atom/proc/apply_rad_shield_material()
-	if(rad_shield_material)
-		set_rad_insulation(material_rad_insulation(rad_shield_material, rad_shield_thickness_mm, rad_insulation))
+	if(shielding_config_of(src).rad_shield_material)
+		set_rad_insulation(material_rad_insulation(shielding_config_of(src).rad_shield_material, shielding_config_of(src).rad_shield_thickness_mm, rad_insulation))
 
 /turf/simulated/Initialize(mapload)
 	. = ..()
