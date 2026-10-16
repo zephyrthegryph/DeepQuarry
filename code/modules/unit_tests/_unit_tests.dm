@@ -1377,6 +1377,8 @@
 #include "dq_renderer_debug_snapshots_tests.dm"
 #include "dq_sparse_bump_pressure_tests.dm"
 #include "dq_nine_scalar_policy_tests.dm"
+#include "dq_look_native_item_alias_tests.dm"
+#include "dq_look_native_trash_alias_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
