@@ -349,7 +349,7 @@ fn typed_abi_requires_actual_engine_owner_and_prunes_failed_or_deleted_units() {
     .unwrap();
     let engine = &owner.snapshot;
     let front = frontend("/datum/base/proc/p(x=7)\n    return x\n", engine);
-    let store = AbiArtifacts::with_engine_owner(Arc::clone(&owner));
+    let store = AbiArtifacts::with_engine_owner(Arc::clone(&owner)).with_batch_recipes();
     same(
         &prepared(&front, engine, Some(&store)),
         &prepared(&front, engine, None),
@@ -582,7 +582,7 @@ fn structural_batch_rows_splice_new_proc_and_removal_with_fresh_parity() {
         0,
     )
     .unwrap();
-    let store = AbiArtifacts::with_engine_owner(owner.clone());
+    let store = AbiArtifacts::with_engine_owner(owner.clone()).with_batch_recipes();
     let initial = frontend(
         "/datum/a/proc/p(x=1)\n    return x\n/datum/b/proc/q(x=2)\n    return x\n",
         &owner.snapshot,

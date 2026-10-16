@@ -726,7 +726,7 @@ mod tests {
     }
     #[test]
     fn declaration_default_keeps_formal_lexical_scope_apart_from_class_assignment() {
-        let source=snapshot("/datum/base\n    var/const/seed = 2\n    var/value = seed + 1\n/datum/base/child\n    var/const/seed = 20\n    value = seed + 4\n");
+        let source=snapshot("/datum/base\n    var/const/seed = 2\n    var/value = seed + 1\n/datum/base/child\n    seed = 20\n    value = seed + 4\n");
         let owner = SymbolId::of("/datum/base/child");
         let name = SymbolId::of("value");
         let declared = ScalarQuery::DeclaredDefault { owner, name };
