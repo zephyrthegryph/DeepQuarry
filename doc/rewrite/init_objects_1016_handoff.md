@@ -14,9 +14,9 @@ The final hook cohort covers area-power and motion subscriptions, ghost experime
 
 The first native gate compiled with zero errors and zero DreamChecker diagnostics and passed ratchets, but reported 81 passing and six failing tests. Two constructor-fixture assumptions were repaired; master-only operation-key differences are documented in intended_changes.md. Look failures exposed independent native-RNG sampling and hidden-state reuse defects; those have real regressions and bounded, cause-documented pin changes. Cleanup now drains a look fixture's queued explosion before releasing its block.
 
-The expanded final cohort has **not yet run its DM verification**. Its 87 explicit focused selectors include the mandatory requirement/conversion pins, relevant existing construction/look regressions and real constructor/lifetime tests. Root serializes its test worlds; the base-vars lane's gate runs first. No lane-ready stamp, passing runtime result or push is claimed here until that gate completes.
+The expanded final cohort has **not yet run its DM verification**. Its 144 explicit focused selectors include the mandatory requirement/conversion pins, existing AI tactic coverage, relevant construction/look regressions and real constructor/lifetime tests. Root serializes its test worlds; the base-vars lane's gate runs first. No lane-ready stamp, passing runtime result or push is claimed here until that gate completes.
 
-Three semantic-holder Rust regressions and four native draw-contract proof regressions passed during the preceding source cohort. The final source ratchet pass includes the setter follow-up, card derive and circle-wave hook.
+Three semantic-holder Rust regressions and four native draw-contract proof regressions passed during the preceding source cohort. The final source ratchet pass includes the setter follow-up, card derive, circle-wave hook and explicit unkeyed fence configuration. Support repairs compose prone density through its existing stat and prewarm native fixture identities before look capture; their strict regressions are included, with causes recorded in intended_changes.md.
 
 ## Retained contracts
 
