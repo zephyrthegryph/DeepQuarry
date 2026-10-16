@@ -223,7 +223,7 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 	for(var/obj/item/I as anything in tools)
 		I.set_canremove(FALSE)
 		I.set_toolspeed(tooling_of(src).speed)
-		rel_set(I, nameof(I.my_augment), src)
+		link_set_one(I, LK_ITEM_AUGMENT, src)
 		I.name = "integrated [I.name]"
 
 	for(var/obj/item/Tool as anything in tools)

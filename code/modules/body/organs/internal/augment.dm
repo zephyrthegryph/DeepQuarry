@@ -172,7 +172,7 @@ CAPABILITIES(/obj/item/organ/internal/augment)
 			return 0
 
 	if(cling_to_organ) // Does the object automatically return to the organ?
-		rel_set(equipping, nameof(equipping.my_augment), cling_to_organ)
+		link_set_one(equipping, LK_ITEM_AUGMENT, cling_to_organ)
 
 	if(make_sound)
 		play_sfx(src, SFX_ITEMS_CHANGE_JAWS, 0.6)
