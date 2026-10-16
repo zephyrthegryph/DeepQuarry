@@ -7,7 +7,6 @@
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	surgery_cleanliness = 100
 	throwpass = 1
 	var/strapped = 0.0
 	var/obj/machinery/computer/operating/computer = null
@@ -15,6 +14,7 @@
 /// The patient lying on it; the table checks on them every machine frame while there is one.
 /obj/machinery/optable/var/mob/living/carbon/human/victim
 CAPABILITIES(/obj/machinery/optable)
+	configure(surgery_surface(cleanliness = 100))
 	finds(nameof(computer), /obj/machinery/computer/operating) // the paired rel_one writes the console's table
 	configure(uses_power(idle = 1, active = 5))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(victim), wakes_on = list(nameof(victim)))

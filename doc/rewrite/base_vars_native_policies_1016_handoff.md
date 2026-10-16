@@ -32,3 +32,8 @@ Source preflight now removes 34 rows, 386 to 352, with zero additions; generatio
 
 Generation and all ratchets pass at 350 remaining rows: 36 removed from this continuation's starting 386, zero additions. The final two deletions remove machinery's rebuilding flag (no reader or writer) and holder_default (only its own unused cache guard/write). Live power-recursion latches are retained: converting their Initialize writes to sparse calls would create a new init statement identity, and moving those effects needs a phase-correct initializer conversion first. The preceding native-policy preflight has zero DreamChecker diagnostics; the two final deletions will also be covered by lane-ready. No runtime result or stamp is claimed.
 
+
+## Surgical surface policy
+
+The continuation's current source result is 386 to 349: 37 rows removed, zero additions, with generation and all ratchets passing. Surgery cleanliness is a native immutable surface policy with real map/VV COW overrides; the three existing bed/table values and the unchanged maximum/floor/blood algorithm have focused tests. Both production and guarded test includes are wired. This extends the earlier zero-diagnostic preflight; the final surgical addition is being checked separately, and no runtime pass or stamp is claimed.
+

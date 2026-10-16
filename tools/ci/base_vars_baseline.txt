@@ -308,7 +308,6 @@ base_var	code/modules/research/tg/experisci/experiment/handlers/experiment_handl
 base_var	code/modules/resleeving/infocore_records.dm	@/mob/living/carbon/human::resleeve_lock
 base_var	code/modules/resleeving/infocore_records.dm	@/mob/living/carbon/human::changeling_locked
 base_var	code/modules/resleeving/infocore_records.dm	@/mob/living/carbon/human::original_player
-base_var	code/modules/surgery/surgery.dm	@/obj::surgery_cleanliness
 base_var	code/modules/tgui/external.dm	@/mob::tgui_open_uis
 base_var	code/modules/tgui_input/say_modal/typing.dm	@/mob::active_typing_indicator
 base_var	code/modules/tgui_input/say_modal/typing.dm	@/mob::active_thinking_indicator

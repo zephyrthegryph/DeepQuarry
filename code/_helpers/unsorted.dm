@@ -1079,9 +1079,10 @@ GLOBAL_LIST_INIT(common_tools, list(
 		return null // Not lying down means no surface (blocks surgery)
 	var/cleanliness = 0
 	for(var/obj/O in contents_of(loc)) // Looks for the best surface.
-		if(O.surgery_cleanliness)
-			if(!cleanliness || cleanliness < O.surgery_cleanliness)
-				cleanliness = O.surgery_cleanliness
+		var/surface_cleanliness = surgery_surface_of(O).cleanliness
+		if(surface_cleanliness)
+			if(!cleanliness || cleanliness < surface_cleanliness)
+				cleanliness = surface_cleanliness
 	if(!cleanliness) //We have no good objects on the turf. Time to check the floor!
 		var/turf/T = get_turf(src)
 		if(dq_get_was_bloodied(T)) //floor is contaminated

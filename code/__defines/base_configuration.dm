@@ -22,3 +22,6 @@
 #define MICRO_ENTRY_POLICY_KEY "micro_entry_policy"
 #define ENTRY_OBJECT_FIRE_CONFIG "object_fire_config"
 #define OBJECT_FIRE_CONFIG_KEY "object_fire_config"
+
+#define ENTRY_SURGERY_SURFACE "surgery_surface"
+#define SURGERY_SURFACE_KEY "surgery_surface"

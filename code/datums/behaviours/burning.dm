@@ -39,6 +39,7 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	var/burn_ended_by
 
 CAPABILITIES(/obj)
+	surgery_surface()
 	micro_entry_policy()
 	object_fire_config()
 	object_communication()

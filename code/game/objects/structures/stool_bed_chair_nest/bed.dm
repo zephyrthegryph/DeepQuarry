@@ -248,7 +248,6 @@ CAPABILITIES(/obj/structure/bed)
 	icon = 'icons/obj/rollerbed.dmi'
 	icon_state = "rollerbed"
 	anchored = FALSE
-	surgery_cleanliness = 60
 	var/bedtype = /obj/structure/bed/roller
 	var/rollertype = /obj/item/roller
 	flippable = FALSE
@@ -259,15 +258,18 @@ CAPABILITIES(/obj/structure/bed)
 /obj/structure/bed/roller/adv
 	name = "advanced roller bed"
 	icon_state = "rollerbedadv"
-	surgery_cleanliness = 75
 	bedtype = /obj/structure/bed/roller/adv
 	rollertype = /obj/item/roller/adv
+
+CAPABILITIES(/obj/structure/bed/roller/adv)
+	configure(surgery_surface(cleanliness = 75))
 
 /// Draws none of what the types above draw.
 /obj/structure/bed/roller/look_parts(datum/look/look)
 	return
 
 CAPABILITIES(/obj/structure/bed/roller)
+	configure(surgery_surface(cleanliness = 60))
 	op("collapse", item(/obj/item/roller_holder), label("Collapse"), then(PROC_REF(collapse_with_rack)))
 	drag_onto(PROC_REF(drop_input))
 
