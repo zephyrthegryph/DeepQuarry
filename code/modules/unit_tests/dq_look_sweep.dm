@@ -403,6 +403,9 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/exception/failure
 	try
 		. = dq_snapshot_allocate(type, T)
+		// Normalize kernel identity before either made/fresh capture; no probe exemption.
+		if(isdatum(.) && !QDELETED(.))
+			entity_handle(.)
 	catch(var/exception/e)
 		failure = e
 	GLOB.roll_creators.Cut(creator_depth + 1)
@@ -742,3 +745,27 @@ CAPABILITIES(/obj/dq_look_native_roll_fixture)
 	TEST_ASSERT(length(reused.impure), "The complete production sampler actually switches from reuse to fresh allocation")
 	TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "Consuming-before-eye probes now match actual fresh-instance sampling")
 	TEST_ASSERT_EQUAL(jointext(reused.made, "\n"), jointext(fresh.made, "\n"), "The repair does not change initial tree capture")
+
+/// A real periodic-key probe must not mistake first identity allocation for appearance state.
+/datum/unit_test/dq_look_identity_warmup/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/turf/T = test_floor()
+	var/obj/subject = dq_look_allocate(/obj, T)
+	TEST_ASSERT_NOTNULL(entity_handle_of(subject), "look allocation establishes the real native handle before baseline capture")
+	var/handle = entity_handle_of(subject)
+	var/list/before = dq_look_pin_lines(subject)
+	TEST_ASSERT_EQUAL(entity_handle(subject), handle, "later native identity requests reuse the exact existing handle")
+	TEST_ASSERT_EQUAL(jointext(dq_look_pin_lines(subject), "\n"), jointext(before, "\n"), "normalizing identity leaves the actual appearance unchanged")
+	qdel(subject)
+	TEST_ASSERT_NULL(resolve_handle(handle), "normal look cleanup releases the prewarmed native handle")
+	var/path = /mob/living/silicon/robot
+	var/list/base_vars = dq_look_state_base_vars(/mob, T)
+	var/list/plan = list("[path]" = list("autofire_on"))
+	var/datum/dq_look_result/reused = allocate(/datum/dq_look_result)
+	var/datum/dq_look_result/fresh = allocate(/datum/dq_look_result)
+	dq_look_unit(path, T, base_vars, plan, reused, TRUE, TRUE)
+	dq_look_unit(path, T, base_vars, plan, fresh, TRUE, TRUE, TRUE)
+	TEST_ASSERT(!length(reused.impure), "the actual robot's reversible autofire key does not force fresh allocation for lazy identity")
+	TEST_ASSERT_EQUAL(jointext(reused.made, "\n"), jointext(fresh.made, "\n"), "native identity normalization preserves made rows")
+	TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "the real periodic probe preserves fresh-instance rows")
