@@ -7,7 +7,7 @@
 	use_power = USE_POWER_IDLE
 	circuit = /obj/item/circuitboard/industrial_reagent_grinder
 	var/const/limit = 50
-	VAR_PRIVATE/list/holdingitems = list()
+	VAR_PRIVATE/list/holdingitems
 
 
 /// Requirement: has_room returns null to allow, or a refusal reason.
@@ -29,7 +29,7 @@
 				continue
 			failed = 0
 			rel_add(src, nameof(src.holdingitems), G) // out of the bag: a one-call transfer
-			if(holdingitems && holdingitems.len >= limit)
+			if(holdingitems && length(holdingitems) >= limit)
 				break
 
 		if(failed)
@@ -74,7 +74,7 @@
 		return
 
 	// Get objects from incoming conveyors
-	if(holdingitems.len < limit)
+	if(length(holdingitems) < limit)
 		for(var/D in GLOB.cardinal)
 			var/turf/T = get_step(src,D)
 			if(!T)
@@ -85,7 +85,7 @@
 				if(istype(I) && conveyor_load(I))
 					break
 
-	if(holdingitems.len > 0 && grind_items_to_reagents(holdingitems,reagents))
+	if(length(holdingitems) > 0 && grind_items_to_reagents(holdingitems,reagents))
 		//Lazy coder sound design moment. THE SEQUEL
 		play_sfx(src, SFX_ITEMS_POSTER_BEING_CREATED)
 		play_sfx(src, SFX_ITEMS_ELECTRONIC_ASSEMBLY_EMPTYING)
@@ -107,7 +107,7 @@
 /obj/machinery/reagent_refinery/grinder/proc/conveyor_load(atom/movable/AM as mob|obj)
 	if(!AM || QDELETED(AM))
 		return FALSE
-	if(holdingitems.len >= limit)
+	if(length(holdingitems) >= limit)
 		return FALSE
 	if(ismob(AM)) // No mob bumping YET
 		return FALSE
