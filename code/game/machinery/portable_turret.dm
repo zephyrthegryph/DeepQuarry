@@ -54,7 +54,6 @@
 	density = FALSE
 	use_power = TRUE				//this turret uses and requires power
 	req_one_access = list(ACCESS_SECURITY, ACCESS_HEADS)
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
 	max_integrity = 80			//the turret's integrity
 	var/auto_repair = FALSE		//if 1 the turret slowly repairs itself (while armed).
@@ -117,6 +116,7 @@ MSG_DEF_SELF(porta_turret/wrecked, "It is wrecked: pry it apart instead.")
 MSG_DEF(porta_turret/haywire, "You short out %T%'s threat assessment circuits.", "")
 
 CAPABILITIES(/obj/machinery/porta_turret)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(uses_power(idle = 50, active = 300, channel = EQUIP))
 	machine_basics(repair = NONE)
 	membership(joins = REGISTRY_TURRETS)

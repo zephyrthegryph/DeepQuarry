@@ -9,7 +9,6 @@
 	density = TRUE
 	w_class = ITEMSIZE_HUGE
 	layer = UNDER_JUNK_LAYER
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 	flags = REMOTEVIEW_ON_ENTER
 
 	/// The door is open. Written through set_opened(); a map says a closet starts open with `opened = 1`.
@@ -63,6 +62,7 @@ MSG_DEF(closet/break_begin, "You lean on the back of %T% and start pushing the d
 // lands on its tile; an open one is cut apart with a welder; somebody shut in a sealed one breaks out after breakout_time minutes (a player-facing wait,
 // started by the Resist verb through container_resist()).
 CAPABILITIES(/obj/structure/closet)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))
 	silicon_hand(adjacent = TRUE)
 	ref_many(nameof(bluespace_exit_points))
 	blast_contents(shield = 1) // a closet shields its contents a step

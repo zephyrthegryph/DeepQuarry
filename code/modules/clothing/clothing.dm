@@ -429,8 +429,6 @@ CAPABILITIES(/obj/item/clothing/gloves/ring)
 	w_class = ITEMSIZE_SMALL
 	blood_sprite_state = "helmetblood"
 
-	light_system = MOVABLE_LIGHT_DIRECTIONAL
-	light_cone_y_offset = 11
 
 	var/light_overlay = "helmet_light"
 
@@ -441,6 +439,7 @@ CAPABILITIES(/obj/item/clothing/gloves/ring)
 	helmet_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head)
+	configure(lighting_config(system = MOVABLE_LIGHT_DIRECTIONAL, cone_y = 11))
 	configure(item_worn(covers = HEAD, slots = SLOT_HEAD))
 	configure(item_protection(heat_parts = HEAD, cold_parts = HEAD))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
@@ -467,7 +466,7 @@ CAPABILITIES(/obj/item/clothing/head)
 /obj/item/clothing/head/proc/update_flashlight(mob/user = null)
 	set_light_on(!light_on)
 
-	if(light_system == STATIC_LIGHT)
+	if(lighting_of(src).system == STATIC_LIGHT)
 		update_light()
 
 	user.update_mob_action_buttons()

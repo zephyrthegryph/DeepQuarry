@@ -1,0 +1,47 @@
+// Lighting configuration is shared type data, with native per-holder overrides.
+/datum/unit_test/dq_base_vars_lighting
+
+/datum/unit_test/dq_base_vars_lighting/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/item/flashlight/A = allocate(/obj/item/flashlight, T)
+	var/obj/item/flashlight/B = allocate(/obj/item/flashlight, T)
+	TEST_ASSERT_EQUAL(lighting_of(A), lighting_of(B), "unchanged flashlights share their actual declared lighting profile")
+	TEST_ASSERT_EQUAL(lighting_of(A).system, MOVABLE_LIGHT_DIRECTIONAL, "the native profile preserves the flashlight transport")
+	TEST_ASSERT_EQUAL(lighting_of(A).cone_y, -7, "the native profile preserves its initial directional cone offset")
+	TEST_ASSERT_EQUAL(lighting_of(A).emissive, EMISSIVE_BLOCK_GENERIC, "the flashlight inherits the item's emissive configuration")
+	TEST_ASSERT(vars_write(A, "light_cone_y_offset", 9), "the native trait map accepts the historical map variable name")
+	TEST_ASSERT_EQUAL(lighting_of(A).cone_y, 9, "the mapped override reaches the actual trait field")
+	TEST_ASSERT_EQUAL(lighting_of(B).cone_y, -7, "a runtime override does not mutate the other flashlight's shared defaults")
+	TEST_ASSERT_EQUAL(lighting_of_type(A.type).cone_y, -7, "the type's initial profile remains immutable")
+	var/obj/item/container = allocate(/obj/item, T)
+	A.forceMove(container)
+	A.set_light_flags(LIGHT_ATTACHED)
+	TEST_ASSERT_EQUAL(lighting_of(A).flags, LIGHT_ATTACHED, "the actual flag setter writes its native trait")
+	TEST_ASSERT_EQUAL(A.overlay_light.parent_attached_to(), container, "the existing flag observer keeps its real holder attachment")
+	TEST_ASSERT(A.vv_edit_var("@lighting_config.flags", NONE), "admin editing the native trait is accepted")
+	TEST_ASSERT_NULL(A.overlay_light.parent_attached_to(), "admin editing preserves the flag observer's detach behavior")
+	TEST_ASSERT_EQUAL(lighting_of(B).flags, NONE, "flag overrides remain isolated to the edited holder")
+
+/datum/unit_test/dq_base_vars_lighting/luminosity
+
+/datum/unit_test/dq_base_vars_lighting/luminosity/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/obj/item/M = allocate(/obj/item)
+	var/obj/item/first = allocate(/obj/item)
+	var/obj/item/second = allocate(/obj/item)
+	var/base = M.luminosity
+	TEST_ASSERT_NULL(sparse_get(M, lighting_luminosity), "an unaffected movable allocates no luminosity state")
+	dq_affected_dynamic_lights_set(M, first, 3)
+	dq_affected_dynamic_lights_set(M, second, 2)
+	M.update_dynamic_luminosity()
+	TEST_ASSERT_EQUAL(M.luminosity, base + 3, "the actual dynamic-light calculation adds only the greatest contribution")
+	dq_affected_dynamic_lights_remove(M, first)
+	M.update_dynamic_luminosity()
+	TEST_ASSERT_EQUAL(M.luminosity, base + 2, "removing the strongest light preserves the independent weaker source")
+	dq_affected_dynamic_lights_remove(M, second)
+	M.update_dynamic_luminosity()
+	TEST_ASSERT_EQUAL(M.luminosity, base, "removing all dynamic lights restores the original intrinsic luminosity")
+	TEST_ASSERT_NULL(sparse_get(M, lighting_luminosity), "the sparse luminosity contribution clears when it returns to zero")

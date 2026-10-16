@@ -1,11 +1,11 @@
+sparse(/atom/movable, lighting_luminosity, type = num)
+
 /atom
 	///Light systems, both shouldn't be active at the same time.
-	var/light_system = STATIC_LIGHT
 	// The light's range, power and colour are the light_glow() type trait (code/modules/lighting/glow.dm): glow_of(src).range.
 	///Boolean variable for toggleable lights. Has no effect without the proper light_system, light_range and light_power values.
 	var/light_on = FALSE
 	///Bitflags to determine lighting-related atom properties.
-	var/light_flags = NONE
 	///Our light source. Don't fuck with this directly unless you have a good reason!
 	var/tmp/datum/light_source/light
 	///Any light sources that are "inside" of us, for example, if src here was a mob that's carrying a flashlight, that flashlight's light source would be part of this list.
@@ -13,15 +13,12 @@
 
 /atom/movable
 	///Hint for directional light cone positioning. X is relevant when facing north/south (this setting is for south and inverted for north)
-	var/light_cone_x_offset // When facing south, inverted when facing north
 	///Hint for directional light cone positioning. Y is relevant when facing east/west (same value used for both east and west)
-	var/light_cone_y_offset // When facing east/west, ignored for north/south (uses 16 in those cases)
 	///Highest-intensity light affecting us, which determines our visibility.
-	var/tmp/affecting_dynamic_lumi = 0
+
 	///Lazylist to keep track on the sources of illumination.
 	// affected_dynamic_lights lives in code/datums/sparse_vars/movable_misc.dm
 	///Either FALSE, [EMISSIVE_BLOCK_GENERIC], or [EMISSIVE_BLOCK_UNIQUE]
-	var/blocks_emissive = EMISSIVE_BLOCK_NONE
 	///Internal holder for emissive blocker object, do not use directly use blocks_emissive
 	var/tmp/atom/movable/emissive_blocker/em_block
 
@@ -53,8 +50,8 @@ CAPABILITIES(/atom/movable)
 	if (QDELETED(src))
 		return
 
-	if(light_system != STATIC_LIGHT)
-		CRASH("update_light() for [src] with following light_system value: [light_system]")
+	if(lighting_of(src).system != STATIC_LIGHT)
+		CRASH("update_light() for [src] with following lighting_of(src).system value: [lighting_of(src).system]")
 
 	if (!light_on || !glow_of(src).power || !glow_of(src).range) // We won't emit light anyways, destroy the light source.
 		rel_clear(src, nameof(light))
@@ -166,10 +163,10 @@ SETTER(/atom, light_on)
 
 /// Setter for the light flags of this atom.
 /atom/proc/set_light_flags(new_value)
-	if(new_value == light_flags)
+	if(new_value == lighting_of(src).flags)
 		return
-	. = light_flags
-	light_flags = new_value
+	. = lighting_of(src).flags
+	set_trait(src, ENTRY_LIGHTING_CONFIG, "flags", new_value)
 	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_flags, .)
 
 ///Keeps track of the sources of dynamic luminosity and updates our visibility with the highest.
@@ -180,11 +177,11 @@ SETTER(/atom, light_on)
 		if(adl[i] <= highest)
 			continue
 		highest = adl[i]
-	if(highest == affecting_dynamic_lumi)
+	if(highest == sparse_get_or(src, lighting_luminosity, 0))
 		return
-	luminosity -= affecting_dynamic_lumi
-	affecting_dynamic_lumi = highest
-	luminosity += affecting_dynamic_lumi
+	luminosity -= sparse_get_or(src, lighting_luminosity, 0)
+	sparse_set_or(src, lighting_luminosity, highest, 0)
+	luminosity += highest
 
 
 ///Helper to change several lighting overlay settings.

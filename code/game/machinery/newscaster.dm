@@ -123,7 +123,6 @@ CAPABILITIES(/datum/feed_network)
 	icon = 'icons/obj/terminals_vr.dmi'
 	icon_state = "newscaster_normal"
 	layer = ABOVE_WINDOW_LAYER
-	blocks_emissive = NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	integrity_failure = 0.5
@@ -159,6 +158,7 @@ CAPABILITIES(/datum/feed_network)
 	var/list/temp = null
 
 CAPABILITIES(/obj/machinery/newscaster)
+	configure(lighting_config(emissive = NONE))
 	after_init(0, then(PROC_REF(connect_exonet)))
 	after_init(0, then(PROC_REF(follow_wanted)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))

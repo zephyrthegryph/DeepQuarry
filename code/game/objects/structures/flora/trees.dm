@@ -330,7 +330,6 @@ TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 	icon = 'icons/obj/flora/deadtrees.dmi'
 	icon_state = "tree_sif"
 	base_state = "tree_sif"
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 	product = /obj/item/stack/material/log/sif
 	catalogue_data = list(/datum/category_item/catalogue/flora/sif_tree)
 	randomize_size = TRUE
@@ -357,3 +356,6 @@ TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 		look.glow(bulbs, 1, "#33ccff")	// 5 variants, missing bulbs. 5th has no bulbs, so no glow.
 		look.overlay(mutable_appearance(icon, "[base_state][bulbs]_glow"))
 		look.overlay(emissive_appearance(icon, "[base_state][bulbs]_glow"))
+
+CAPABILITIES(/obj/structure/flora/tree/sif)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))

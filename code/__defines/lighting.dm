@@ -1,3 +1,6 @@
+#define ENTRY_LIGHTING_CONFIG "lighting_config"
+#define LIGHTING_CONFIG_KEY "lighting_config"
+
 ///Object doesn't use any of the light systems. Should be changed to add a light source to the object.
 #define NO_LIGHT_SUPPORT 0
 ///Light made with the lighting datums, applying a matrix.

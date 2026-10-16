@@ -16,7 +16,6 @@
 	power_rating = 30000 // 7500 W ~ 10 HP // 30000 W
 
 	connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_SUPPLY //connects to regular and supply pipes
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 
 	level = 1
 	/// Its radio tag (area_air_device()): a map gives it, else it is made unique.
@@ -42,6 +41,7 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))
 	configure(uses_power(idle = 150))
 	area_air_device(AREA_AIR_VENT, status = PROC_REF(status_fields), commands = list(
 		"purge" = PROC_REF(cmd_purge),

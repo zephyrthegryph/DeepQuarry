@@ -11,7 +11,6 @@
 	endurance = 200
 
 
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
 	var/lights_on = FALSE // Is our integrated light on?
 	var/grabbable = FALSE //disables/enables pick-up mechanics.

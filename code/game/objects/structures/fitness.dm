@@ -35,11 +35,11 @@ CAPABILITIES(/obj/structure/fitness/punchingbag)
 	name = "weightlifting machine"
 	desc = "A machine used to lift weights."
 	icon_state = "weightlifter"
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 	var/weight = 1
 	var/static/list/qualifiers = list("with ease", "without any trouble", "with great effort")
 
 CAPABILITIES(/obj/structure/fitness/weightlifter)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_UNIQUE))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	op("lift", hand(), label("Lift"), when(req_actor_kind(/mob/living/carbon/human)), needs(req(PROC_REF(can_lift))), claims(), begins(PROC_REF(lift_begins)), wait(PROC_REF(lift_time)), on_interrupt(PROC_REF(lift_interrupted)), then(PROC_REF(lifted)))
 

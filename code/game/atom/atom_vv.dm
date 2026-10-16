@@ -234,19 +234,19 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 	// Disable frozen lights for now, so we can actually modify it
 	switch(var_name)
 		if("light_range", "@light_glow.range")
-			if(light_system == STATIC_LIGHT)
+			if(lighting_of(src).system == STATIC_LIGHT)
 				set_glow(src, GLOW(var_value, null, null))
 			else
 				set_light_range(var_value)
 			. =  TRUE
 		if("light_power", "@light_glow.power")
-			if(light_system == STATIC_LIGHT)
+			if(lighting_of(src).system == STATIC_LIGHT)
 				set_glow(src, GLOW(null, var_value, null))
 			else
 				set_light_power(var_value)
 			. =  TRUE
 		if("light_color", "@light_glow.color")
-			if(light_system == STATIC_LIGHT)
+			if(lighting_of(src).system == STATIC_LIGHT)
 				set_glow(src, GLOW(null, null, var_value))
 			else
 				set_light_color(var_value)
@@ -254,7 +254,7 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 		if(NAMEOF(src, light_on))
 			set_light_on(var_value)
 			. =  TRUE
-		if(NAMEOF(src, light_flags))
+		if("light_flags", "@lighting_config.flags")
 			set_light_flags(var_value)
 			. =  TRUE
 		if(NAMEOF(src, opacity))

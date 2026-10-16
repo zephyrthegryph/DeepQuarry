@@ -2,7 +2,7 @@
 /// changes the sprite, the copy follows it, so the blocker keeps the shape of what is drawn rather than of the state the
 /// type started in.
 /proc/look_resync_emissive_blocker(atom/movable/AM, old_icon, old_state)
-	if(AM.blocks_emissive != EMISSIVE_BLOCK_GENERIC || !AM.priority_overlays)
+	if(lighting_of(AM).emissive != EMISSIVE_BLOCK_GENERIC || !AM.priority_overlays)
 		return
 	var/list/entries = islist(AM.priority_overlays) ? AM.priority_overlays : list(AM.priority_overlays)
 	for(var/mutable_appearance/old in entries)

@@ -24,7 +24,6 @@ GLOBAL_LIST_EMPTY(req_console_information)
 	icon_state = "req_comp_0"
 	layer = ABOVE_WINDOW_LAYER
 	circuit = /obj/item/circuitboard/request
-	blocks_emissive = NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	var/department = "Unknown" //The list of all departments on the station (Determined from this variable on each unit) Set this to the same thing if you want several consoles in one department
@@ -52,6 +51,7 @@ GLOBAL_LIST_EMPTY(req_console_information)
 	var/datum/announcement/announcement
 
 CAPABILITIES(/obj/machinery/requests_console)
+	configure(lighting_config(emissive = NONE))
 	op("toggleSilent", ui_act("toggleSilent"), then(PROC_REF(ui_act_togglesilent)))
 	owns_one(nameof(announcement), /datum/announcement, starts = /datum/announcement, starts_args = NO_LOC)
 	interface("RequestConsole")

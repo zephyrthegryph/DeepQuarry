@@ -90,8 +90,8 @@ CAPABILITIES(/datum/overlay_lighting)
 /proc/add_overlay_lighting(atom/movable/new_owner, _range, _power, _color, starts_on, is_directional)
 	if(!ismovable(new_owner))
 		return null
-	if(new_owner.light_system != MOVABLE_LIGHT && new_owner.light_system != MOVABLE_LIGHT_DIRECTIONAL)
-		stack_trace("/datum/overlay_lighting added to [new_owner], with [new_owner.light_system] value for the light_system var. Use [MOVABLE_LIGHT] or [MOVABLE_LIGHT_DIRECTIONAL] instead.")
+	if(lighting_of(new_owner).system != MOVABLE_LIGHT && lighting_of(new_owner).system != MOVABLE_LIGHT_DIRECTIONAL)
+		stack_trace("/datum/overlay_lighting added to [new_owner], with [lighting_of(new_owner).system] value for the lighting system. Use [MOVABLE_LIGHT] or [MOVABLE_LIGHT_DIRECTIONAL] instead.")
 		return null
 	if(new_owner.overlay_light)
 		return new_owner.overlay_light
@@ -110,8 +110,8 @@ CAPABILITIES(/datum/overlay_lighting)
 		directional = TRUE
 		rel_set(src, nameof(directional_atom), new /obj/effect/abstract/directional_lighting())
 		rel_set(src, nameof(cone), new /obj/effect/overlay/light_cone())
-		cone_hint_x = movable_parent.light_cone_x_offset
-		cone_hint_y = movable_parent.light_cone_y_offset
+		cone_hint_x = lighting_of(movable_parent).cone_x
+		cone_hint_y = lighting_of(movable_parent).cone_y
 		set_direction(movable_parent.dir)
 	if(!isnull(_range))
 		movable_parent.set_light_range(_range)
@@ -137,7 +137,7 @@ CAPABILITIES(/datum/overlay_lighting)
 	observe(owner, /datum/notice/atom_update_light_flags, src, then(PROC_REF(on_light_flags_change)))
 	observe(owner, /datum/notice/atom_used_in_craft, src, then(PROC_REF(on_parent_crafted)))
 	var/atom/movable/movable_parent = owner
-	if(movable_parent.light_flags & LIGHT_ATTACHED)
+	if(lighting_of(movable_parent).flags & LIGHT_ATTACHED)
 		overlay_lighting_flags |= LIGHTING_ATTACHED
 		set_parent_attached_to(ismovable(movable_parent.loc) ? movable_parent.loc : null)
 	check_holder()
@@ -423,7 +423,7 @@ CAPABILITIES(/datum/overlay_lighting)
 	var/atom/source = A.target
 	var/datum/notice/atom_update_light_flags/event = A
 	var/old_flags = event.old_flags
-	var/new_flags = source.light_flags
+	var/new_flags = lighting_of(source).flags
 	var/atom/movable/movable_parent = owner
 	if(!((new_flags ^ old_flags) & LIGHT_ATTACHED))
 		return

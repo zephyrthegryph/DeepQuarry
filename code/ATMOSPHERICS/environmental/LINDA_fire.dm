@@ -67,7 +67,6 @@
 	layer = GASFIRE_LAYER
 	plane = ABOVE_GAME_PLANE
 	blend_mode = BLEND_ADD
-	light_system = OVERLAY_LIGHT
 
 	/// base sprite used for our icon states when smoothing
 	/// BAAAASICALY the same as icon_state but is helpful to avoid duplicated work
@@ -91,6 +90,7 @@
 	var/datum/hot_group/our_hot_group
 
 CAPABILITIES(/obj/effect/hotspot)
+	configure(lighting_config(system = OVERLAY_LIGHT))
 	configure(light_glow(range = LIGHT_RANGE_FIRE, power = 1, color = LIGHT_COLOR_FIRE))
 	links(/obj/effect/hotspot::our_hot_group, /datum/hot_group::spot_list, b_many = TRUE)
 	param(nameof(starting_volume), pos = 1)

@@ -1,12 +1,12 @@
 // Clickable stat() button.
 /obj/effect/statclick
 	name = "Initializing..."
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 	var/target
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 
 CAPABILITIES(/obj/effect/statclick)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))
 	param(nameof(name), pos = 1)
 	param(nameof(target), pos = 2)
 

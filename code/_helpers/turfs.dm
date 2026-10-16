@@ -169,7 +169,7 @@
 	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(O.simulated)
 			O.forceMove(X)
-			if(O.light_system == STATIC_LIGHT)
+			if(lighting_of(O).system == STATIC_LIGHT)
 				O.update_light()
 			if(z_level_change) // The objects still need to know if their z-level changed.
 				O.onTransitZ(T.z, X.z)

@@ -376,6 +376,7 @@ CAPABILITIES(/datum/carried_afflictions)
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 
 CAPABILITIES(/obj/item)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))
 	// The item this one is attached to: a sparse link, not a var on /obj/item (item_master()).
 	links(LINK_END(/obj/item, LK_ITEM_MASTER), LINK_END(/obj/item, LK_ITEM_ATTACHED), sparse = TRUE, b_many = TRUE)
 	item_protection(heat_parts = 0, cold_parts = 0, gas_transfer = 1, permeability = 1, siemens = 1) // what it protects from: a type trait (code/game/objects/items.dm)

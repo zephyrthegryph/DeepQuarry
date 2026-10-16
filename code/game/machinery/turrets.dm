@@ -17,7 +17,6 @@
 	density = TRUE
 	use_power = TRUE				//this turret uses and requires power
 	req_one_access = list(ACCESS_HEADS)
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
 	max_integrity = 300			//turrets maximal health.
 	auto_repair = TRUE		//if 1 the turret slowly repairs itself.
@@ -46,6 +45,7 @@
 	can_salvage = FALSE
 
 CAPABILITIES(/obj/machinery/porta_turret/obelisk)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(uses_power(idle = 50000, active = 150000, channel = EQUIP))
 
 /obj/item/circuitboard/defenseonelisk

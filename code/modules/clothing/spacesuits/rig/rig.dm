@@ -473,7 +473,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "cinches tight again your chest" : "releases your chest"]."))
 		if("helmet")
 			to_chat(M, span_notice("\The [piece] hisses [!seal_target ? "closed" : "open"]."))
-			if(helmet?.light_system == STATIC_LIGHT)
+			if(lighting_of(helmet)?.system == STATIC_LIGHT)
 				helmet.update_light(wearer())
 
 	//sealed pieces become airtight, protecting against diseases
@@ -806,7 +806,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 				balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "deploy" : "deploys"] swiftly.")
 				play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
 
-	if(piece == "helmet" && helmet?.light_system == STATIC_LIGHT)
+	if(piece == "helmet" && lighting_of(helmet)?.system == STATIC_LIGHT)
 		helmet.update_light()
 
 /obj/item/rig/proc/deploy(mob/M,destructive)

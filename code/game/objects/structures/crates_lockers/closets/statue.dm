@@ -6,7 +6,6 @@
 	density = TRUE
 	anchored = TRUE
 	sealable = FALSE
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 	closet_appearance = null
 	// The statue starts at the encased mob's remaining wellness (vitality * endurance) + 100
 	// integrity (set in Initialize). Structural damage taken while petrified is transferred
@@ -121,6 +120,7 @@
 
 // A statue is a closet that never opens: nothing goes into it, the hand does nothing, and anything held strikes it (it takes weapon hits instead of storing items).
 CAPABILITIES(/obj/structure/closet/statue)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_UNIQUE))
 	when(nameof(release_delay), after_init(nameof(release_delay), then(PROC_REF(release))))
 	configure(blast_contents(shield = 0)) // stone holds nothing back from the one petrified inside
 	without("door")

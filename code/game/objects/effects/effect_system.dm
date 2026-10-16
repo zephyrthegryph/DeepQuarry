@@ -14,7 +14,6 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	mouse_opacity = 0
 	unacidable = TRUE//So effect are not targeted by alien acid.
 	pass_flags = PASSTABLE | PASSGRILLE
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 	light_on = TRUE
 	plane = ABOVE_OBJ_PLANE
 
@@ -713,3 +712,6 @@ CAPABILITIES(/obj/effect/effect/confetti)
 /datum/effect/effect/system/proc/start_repeatedly(times, interval)
 	for(var/i in 0 to times - 1)
 		after(src, i * interval, PROC_REF(start))
+
+CAPABILITIES(/obj/effect/effect)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))

@@ -16,7 +16,6 @@
 	density = TRUE
 	can_atmos_pass = ATMOS_PASS_PROC
 	layer = DOOR_OPEN_LAYER
-	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 	var/open_layer = DOOR_OPEN_LAYER
 	var/closed_layer = DOOR_CLOSED_LAYER
 
@@ -61,6 +60,7 @@ MSG_DEF(door/repaired, "You finish repairing the damage to %T%.", "%U% repairs %
 MSG_DEF(door/unreinforced, "You remove the plasteel from %T%.", "%U% removes the plasteel from %T%.")
 
 CAPABILITIES(/obj/machinery/door)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_UNIQUE))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	machine_basics(null, repair = NONE, frame = NONE)
 	doors()

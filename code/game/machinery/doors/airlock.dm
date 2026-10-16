@@ -21,7 +21,6 @@
 
 	explosion_resistance = 10
 
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC // Not quite as nice as /tg/'s custom masks. We should make those sometime
 
 	/// If 1, will not beep on a failed closing attempt. Resets when the door closes.
 	var/has_beeped = 0
@@ -132,6 +131,7 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))
 	name_prefix("\improper")
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(channel = ENVIRON))

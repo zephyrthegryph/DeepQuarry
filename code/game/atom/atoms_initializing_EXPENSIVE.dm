@@ -201,7 +201,7 @@
 	caps_init(src, mapload)
 
 	/*
-	if (light_system == COMPLEX_LIGHT && glow_of(src).power && glow_of(src).range)
+	if (lighting_of(src).system == COMPLEX_LIGHT && glow_of(src).power && glow_of(src).range)
 		update_light()
 	*/
 	return INITIALIZE_HINT_NORMAL

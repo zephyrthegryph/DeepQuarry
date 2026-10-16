@@ -4,8 +4,6 @@
 	icon = 'icons/obj/machines/floodlight.dmi'
 	icon_state = "flood00"
 	density = TRUE
-	light_system = MOVABLE_LIGHT_DIRECTIONAL
-	light_cone_y_offset = 8
 	on = 0
 	var/obj/item/cell/cell = null
 	var/use = 200 // 200W light
@@ -15,6 +13,7 @@
 
 
 CAPABILITIES(/obj/machinery/floodlight)
+	configure(lighting_config(system = MOVABLE_LIGHT_DIRECTIONAL, cone_y = 8))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	climb()
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))

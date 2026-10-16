@@ -75,6 +75,44 @@ READS_AS(/proc/glow_of, LIGHT_GLOW_KEY)
 		changed = TRUE
 	if(!isnull(on) && A.set_light_on(on) != null)
 		changed = TRUE
-	if(changed && A.light_system == STATIC_LIGHT)
+	if(changed && lighting_of(A).system == STATIC_LIGHT)
 		A.update_light()
 	return changed
+
+// Lighting transport and emissive configuration is shared per type; only runtime overrides allocate.
+STATIC_ENTRY(lighting_config)
+
+/proc/lighting_config(system = null, flags = null, cone_x = null, cone_y = null, emissive = null)
+	return entry_make(ENTRY_LIGHTING_CONFIG, null, list("system" = system, "flags" = flags, "cone_x" = cone_x, "cone_y" = cone_y, "emissive" = emissive))
+
+/datum/type_trait/lighting_config
+	var/system = STATIC_LIGHT
+	var/flags = NONE
+	var/cone_x
+	var/cone_y
+	var/emissive = EMISSIVE_BLOCK_NONE
+
+/datum/type_trait/lighting_config/copy_values(datum/type_trait/lighting_config/into)
+	into.system = system
+	into.flags = flags
+	into.cone_x = cone_x
+	into.cone_y = cone_y
+	into.emissive = emissive
+
+/datum/entry_engine/type_trait/lighting_config
+	kind = ENTRY_LIGHTING_CONFIG
+	trait_type = /datum/type_trait/lighting_config
+	publish_key = LIGHTING_CONFIG_KEY
+	base_type = /atom
+	var_names = list("light_system" = "system", "light_flags" = "flags", "light_cone_x_offset" = "cone_x", "light_cone_y_offset" = "cone_y", "blocks_emissive" = "emissive")
+
+READS_AS(/proc/lighting_of, LIGHTING_CONFIG_KEY)
+/proc/lighting_of(atom/A) as /datum/type_trait/lighting_config
+	READS_FROM(A)
+	if(!A)
+		return null
+	return type_trait_of(A, ENTRY_LIGHTING_CONFIG)
+
+/proc/lighting_of_type(type) as /datum/type_trait/lighting_config
+	READS_FROM()
+	return type_trait_of_type(type, ENTRY_LIGHTING_CONFIG)

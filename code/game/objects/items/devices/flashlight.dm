@@ -21,8 +21,6 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	w_class = ITEMSIZE_SMALL
 	actions_types = list(/datum/action/item_action/toggle_flashlight)
 
-	light_system = MOVABLE_LIGHT_DIRECTIONAL
-	light_cone_y_offset = -7
 
 	var/obj/item/cell/cell
 	var/cell_type = /obj/item/cell/device
@@ -34,6 +32,7 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/flashlight)
+	configure(lighting_config(system = MOVABLE_LIGHT_DIRECTIONAL, cone_y = -7))
 	configure(light_glow(range = 4, power = 0.8, color = "#FFFFFF"))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
@@ -75,7 +74,7 @@ CAPABILITIES(/obj/item/flashlight)
 
 /obj/item/flashlight/proc/update_brightness()
 	set_light_on(on)
-	if(light_system == STATIC_LIGHT)
+	if(lighting_of(src).system == STATIC_LIGHT)
 		update_light()
 
 /obj/item/flashlight/examine(mob/user)
@@ -252,7 +251,7 @@ CAPABILITIES(/obj/item/flashlight)
 	. = ..()
 	if(!on)
 		return
-	if(light_system == MOVABLE_LIGHT_DIRECTIONAL)
+	if(lighting_of(src).system == MOVABLE_LIGHT_DIRECTIONAL)
 		var/datum/overlay_lighting/OL = overlay_light
 		if(!OL)
 			return
@@ -383,7 +382,6 @@ CAPABILITIES(/obj/item/flashlight/drone)
 	power_use = 0
 	cell_type = null
 	on = 1
-	light_system = STATIC_LIGHT
 
 /obj/item/flashlight/lamp/proc/lamp_toggle_light_effect(datum/act/op/A)
 	var/mob/user = A.actor
@@ -424,10 +422,10 @@ CAPABILITIES(/obj/item/flashlight/lamp/green)
 	var/produce_heat = 1500
 	power_use = 0
 	cell_type = null
-	light_system = MOVABLE_LIGHT
 	single_use = TRUE
 
 CAPABILITIES(/obj/item/flashlight/flare)
+	configure(lighting_config(system = MOVABLE_LIGHT))
 	configure(light_glow(range = 8, power = 0.8, color = LIGHT_COLOR_FLARE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	// Flares burn fuel while lit (they have no cell, so power_use is off).
@@ -487,7 +485,6 @@ CAPABILITIES(/obj/item/flashlight/flare)
 	name = "green glowstick"
 	desc = "A green military-grade chemical light."
 	w_class = ITEMSIZE_TINY // These can fit in more places.
-	light_system = MOVABLE_LIGHT
 	icon_state = "glowstick_green"
 	item_state = "glowstick_green"
 	var/fuel = 1600
@@ -496,6 +493,7 @@ CAPABILITIES(/obj/item/flashlight/flare)
 	single_use = TRUE
 
 CAPABILITIES(/obj/item/flashlight/glowstick)
+	configure(lighting_config(system = MOVABLE_LIGHT))
 	configure(light_glow(range = 4, power = 0.9, color = "#49F37C"))
 	every(2 SECONDS, then(PROC_REF(glowstick_step)), when = nameof(on))
 	rolls(nameof(fuel), PROC_REF(roll_fuel))
@@ -580,6 +578,7 @@ CAPABILITIES(/obj/item/flashlight/glowstick/radioisotope)
 
 /// Old object verbs.
 CAPABILITIES(/obj/item/flashlight/lamp)
+	configure(lighting_config(system = STATIC_LIGHT))
 	configure(light_glow(range = 5))
 	configure(item_combat(force = 10))
 	op("lamp_toggle_light_effect", menu(), label("Toggle light"), then(PROC_REF(lamp_toggle_light_effect)))

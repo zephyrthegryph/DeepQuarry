@@ -2,7 +2,6 @@
 	real_name = "Test Dummy"
 	status_flags = CANPUSH
 	has_huds = FALSE
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 	no_vore = TRUE //Dummies don't need bellies.
 
 /mob/living/carbon/human/dummy/proc/dummy_godmode_ready(datum/act/timer/A)
@@ -216,5 +215,6 @@ CAPABILITIES(/mob/living/carbon/human/sergal)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/carbon/human/dummy)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))
 	after_init(0, then(PROC_REF(dummy_godmode_ready)))
 	immune_to_incapacitation()

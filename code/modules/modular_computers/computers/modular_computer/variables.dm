@@ -23,7 +23,6 @@
 	// If you create a program which is limited to Laptops and Consoles you don't have to add it's icon_state overlay for Tablets too, for example.
 
 	icon = null												// This thing isn't meant to be used on it's own. Subtypes should supply their own icon.
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 	var/overlay_icon = null									// Icon file used for overlays
 	icon_state = null
 	center_of_mass_x = 0
@@ -80,6 +79,7 @@
 MSG_DEF_SELF(modular_computer/already_on, "it is already on")
 
 CAPABILITIES(/obj/item/modular_computer)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0),
 		asks(/datum/prompt/choice, fields = list("question" = "Which component do you want to uninstall?", "title" = "Computer maintenance", "choices" = computed(PROC_REF(component_names))), step = "component", when = PROC_REF(has_components)),
 		then(PROC_REF(screwdriver_used)))

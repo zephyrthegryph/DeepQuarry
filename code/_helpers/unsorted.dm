@@ -797,7 +797,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					//Move the objects. Not forceMove because the object isn't "moving" really, it's supposed to be on the "same" turf.
 					for(var/obj/O in contents_of(T))
 						O.forceMove(X)
-						if(O.light_system == STATIC_LIGHT)
+						if(lighting_of(O).system == STATIC_LIGHT)
 							O.update_light()
 						else
 							var/datum/overlay_lighting/OL = O.overlay_light

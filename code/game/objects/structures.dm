@@ -1,7 +1,6 @@
 /obj/structure
 	icon = 'icons/obj/structures.dmi'
 	w_class = ITEMSIZE_NO_CONTAINER
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
 	var/breakable
 	var/parts
@@ -130,3 +129,6 @@
 	set_connections(string_list(dirs_to_corner_states(dirs)))
 	set_other_connections(string_list(dirs_to_corner_states(other_dirs)))
 	return TRUE
+
+CAPABILITIES(/obj/structure)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))

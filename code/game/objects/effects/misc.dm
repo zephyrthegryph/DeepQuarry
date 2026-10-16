@@ -70,12 +70,11 @@ CAPABILITIES(/obj/effect/temporary_effect/lightning_strike)
 	name = "lighting fx obj"
 	desc = "Tell a coder if you're seeing this."
 	icon_state = "nothing"
-	light_system = MOVABLE_LIGHT
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	light_on = TRUE
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 
 CAPABILITIES(/obj/effect/dummy/lighting_obj)
+	configure(lighting_config(system = MOVABLE_LIGHT, emissive = EMISSIVE_BLOCK_NONE))
 	configure(light_glow(range = MINIMUM_USEFUL_LIGHT_RANGE, color = COLOR_WHITE))
 	param(nameof(glow_range), pos = 1)
 	param(nameof(glow_power), pos = 2)

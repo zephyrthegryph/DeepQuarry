@@ -58,8 +58,8 @@
 	#error Read the comment in code/game/atoms_movable.dm for details.
 #endif
 
-	if (blocks_emissive)
-		if (blocks_emissive == EMISSIVE_BLOCK_UNIQUE)
+	if (lighting_of(src).emissive)
+		if (lighting_of(src).emissive == EMISSIVE_BLOCK_UNIQUE)
 			render_target = ref(src)
 			rel_set(src, nameof(/atom/movable::em_block), new /atom/movable/emissive_blocker(null, src))
 			// Note, this should be refactored to drop priority overlays
@@ -77,7 +77,7 @@
 		start_blocking_light()
 	if(icon_scale_x != DEFAULT_ICON_SCALE_X || icon_scale_y != DEFAULT_ICON_SCALE_Y || icon_rotation != DEFAULT_ICON_ROTATION)
 		update_transform()
-	switch(light_system)
+	switch(lighting_of(src).system)
 		if(MOVABLE_LIGHT)
 			add_overlay_lighting(src, starts_on = light_on)
 		if(MOVABLE_LIGHT_DIRECTIONAL)
@@ -89,7 +89,7 @@
 	. = ..()
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(loc)
-	if(light_system == STATIC_LIGHT)
+	if(lighting_of(src).system == STATIC_LIGHT)
 		update_light()
 	// Unchanged from Initialize(): set_recursive_listening() is a no-op when the var is
 	// already set, so this never registered anything. Destroy() clears it.
@@ -127,7 +127,7 @@
 		vg_entity = 0
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(loc)
-	if(light_system == STATIC_LIGHT && light)
+	if(lighting_of(src).system == STATIC_LIGHT && light)
 		rel_clear(src, nameof(light))
 	return ..()
 

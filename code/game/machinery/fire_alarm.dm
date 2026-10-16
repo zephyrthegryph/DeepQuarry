@@ -7,7 +7,6 @@ FIRE ALARM
 	icon = 'icons/obj/monitors.dmi'
 	icon_state = "fire"
 	layer = ABOVE_WINDOW_LAYER
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	var/detecting = 1.0
@@ -36,6 +35,7 @@ FIRE ALARM
 /obj/machinery/firealarm/var/timing = 0
 
 CAPABILITIES(/obj/machinery/firealarm)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))
 	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
 	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))
 	op("firealarm_trigger", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Trigger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_firealarm_trigger)))

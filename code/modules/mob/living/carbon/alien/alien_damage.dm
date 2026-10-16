@@ -1,4 +1,5 @@
 CAPABILITIES(/mob/living/carbon/alien)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(mob_kind(inventory_panel = TRAIT_NONE, death_message = "lets out a waning guttural screech, green blood bubbling from its maw."))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(alien_blast)))
 	verb_entry(/mob/living/proc/ventcrawl)

@@ -4,7 +4,6 @@
 	name = "item"
 	icon = 'icons/obj/weapons.dmi' //'icons/obj/items.dmi' //It was accidentally set to weapons.dmi 11 months ago...leaving it as is until further analysis
 	w_class = ITEMSIZE_NORMAL
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
 	var/tmp/image/blood_overlay = null //this saves our blood splatter overlay, which will be processed not to go over the edges of the sprite
 	var/randpixel = 6
@@ -890,7 +889,7 @@ DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_ic
 	return standing
 
 /obj/item/proc/apply_overlays(image/standing)
-	if(!blocks_emissive)
+	if(!lighting_of(src).emissive)
 		return standing
 
 	var/mutable_appearance/blocker_overlay = mutable_appearance(standing.icon, standing.icon_state, plane = PLANE_EMISSIVE, appearance_flags = KEEP_APART)

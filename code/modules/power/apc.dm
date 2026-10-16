@@ -56,7 +56,6 @@
 	use_power = USE_POWER_OFF
 	clicksound = SFX_SWITCH
 	req_access = list(ACCESS_ENGINE_EQUIP)
-	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	integrity_failure = 0.5
@@ -155,6 +154,7 @@ MSG_DEF(apc/replaced_cover, "You replace the damaged APC cover with a new one.",
 MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC with a beep from %I%.")
 
 CAPABILITIES(/obj/machinery/power/apc)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_NONE))
 	blast_contents()
 	after_init(0, then(PROC_REF(apply_power_after_init)))
 	wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE, area_power = FALSE)

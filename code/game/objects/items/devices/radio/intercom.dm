@@ -9,7 +9,6 @@
 	w_class = ITEMSIZE_LARGE
 	canhear_range = 7
 	flags = NOBLOODY | WALL_ITEM
-	blocks_emissive = NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	var/circuit = /obj/item/circuitboard/intercom
 	var/number = 0
@@ -28,6 +27,7 @@
 	set_on(A?.powered(EQUIP))
 
 CAPABILITIES(/obj/item/radio/intercom)
+	configure(lighting_config(emissive = NONE))
 	configure(light_glow(color = "#00ff00", power = 0.25))
 	owns_one(nameof(circuit), starts = nameof(circuit))
 	// the AI's gestures over its link: ctrl switches the microphone, alt the AI's private channel

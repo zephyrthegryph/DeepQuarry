@@ -16,7 +16,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	pass_flags = PASSTABLE
 	mouse_opacity = 0
 
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
 	var/hitsound_wall = null // Played when something hits a wall, or anything else that isn't a mob.
 
@@ -159,6 +158,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/crawl_destroy = FALSE // Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 
 CAPABILITIES(/obj/item/projectile)
+	configure(lighting_config(emissive = EMISSIVE_BLOCK_GENERIC))
 	configure(item_sounds(hit = SFX_WEAPONS_PIERCE))
 	owns_one(nameof(trajectory), /datum/point/vector)
 	owns_many(nameof(beam_segments))
