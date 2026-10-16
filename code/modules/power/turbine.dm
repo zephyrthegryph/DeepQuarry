@@ -23,7 +23,6 @@
 
 /obj/machinery/compressor
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	maintenance_wrench_time = 2 SECONDS
 	name = "compressor"
 	desc = "The compressor stage of a gas turbine generator."
 	icon = 'icons/obj/pipes.dmi'
@@ -50,6 +49,7 @@
 // while it is started (compressor_step(); a starter motor brings it to 1000 rpm), and its turbine turns the compressor's rpm into power
 // (turbine_step(): ((rpm / TURBGENQ) ^ TURBGENG) * TURBGENQ * productivity W for the next power step) and vents the gas behind it.
 CAPABILITIES(/obj/machinery/compressor)
+	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS))
 	default_parts()
 	owns_one(nameof(gas_contained), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
 	ref_one(nameof(turbine), /obj/machinery/power/turbine)
@@ -64,7 +64,6 @@ CAPABILITIES(/obj/machinery/compressor)
 
 /obj/machinery/power/turbine
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	maintenance_wrench_time = 2 SECONDS
 	name = "gas turbine generator"
 	desc = "A gas turbine used for backup power generation."
 	icon = 'icons/obj/pipes.dmi'
@@ -260,6 +259,7 @@ CAPABILITIES(/obj/machinery/compressor)
 		look.overlay(image('icons/obj/pipes.dmi', "turb-o", FLY_LAYER))
 
 CAPABILITIES(/obj/machinery/power/turbine)
+	configure(machine_interaction_config(maintenance_wrench_time = 2 SECONDS))
 	default_parts()
 	ref_one(nameof(compressor), /obj/machinery/compressor)
 	ref_one(nameof(outturf), /turf/simulated)

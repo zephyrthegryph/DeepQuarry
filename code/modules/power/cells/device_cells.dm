@@ -12,9 +12,9 @@
 	charge = 480
 	maxcharge = 480
 	charge_amount = 5
-	preserve_item = 1
 
 CAPABILITIES(/obj/item/cell/device)
+	configure(item_persistence(preserve = 1))
 	configure(item_combat(force = 0))
 
 /obj/item/cell/device/empty

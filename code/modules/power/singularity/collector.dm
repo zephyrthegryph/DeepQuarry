@@ -32,11 +32,10 @@ MSG_DEF(collector/tank_in, "You load %I% into %T%.", "%U% loads %I% into %T%.")
 	var/last_power_new = 0
 	active = 0
 	var/drainratio = 1
-	rad_shield_material = MAT_LEAD
-	rad_shield_thickness_mm = RAD_COLLECTOR_THICKNESS_MM
 	rad_insulation = RAD_EXTREME_INSULATION //It sucks up the radiation. If you're standing behind it, you're pretty safe.
 
 CAPABILITIES(/obj/machinery/power/rad_collector)
+	configure(shielding_config(rad_shield_material = MAT_LEAD, rad_shield_thickness_mm = RAD_COLLECTOR_THICKNESS_MM))
 	climb()
 	registry(REGISTRY_RAD_COLLECTORS)
 	owns_one(nameof(P), /obj/item/tank/phoron, on_destroy = ON_DESTROY_SPILL)

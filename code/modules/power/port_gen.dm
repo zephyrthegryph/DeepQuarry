@@ -7,7 +7,6 @@
 	density = TRUE
 	anchored = FALSE
 	use_power = USE_POWER_OFF
-	interact_offline = TRUE
 
 	active = 0
 	var/power_gen = 5000
@@ -18,6 +17,7 @@
 // interval a generator burns its fuel and supplies power_gen * power_output W to its cable network (a persistent supply: set_power_supply());
 // off, it cools down on the same step until it is cold. A pulse knocks it out for 10 minutes and may break it or blow it up.
 CAPABILITIES(/obj/machinery/power/port_gen)
+	configure(machine_interaction_config(interact_offline = TRUE))
 	emp_disable(10 MINUTES)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(port_gen_emp_fault))))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(gen_step)), when = PROC_REF(has_work))
@@ -805,7 +805,6 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 	plane = ABOVE_MOB_PLANE
 	layer = ABOVE_MOB_LAYER
 	buckle_dir = EAST
-	interact_offline = TRUE
 	density = FALSE
 
 /obj/machinery/power/rtg/reg/user_buckle_mob(mob/living/M, mob/user, forced = FALSE, silent = TRUE)
@@ -1033,3 +1032,6 @@ CAPABILITIES(/obj/machinery/power/rtg/antimatter_core)
 		log_and_message_admins("[ADMIN_LOOKUPFLW(Proj.firer)] triggered an antimatter core explosion at [x],[y],[z] via projectile.", Proj.firer)
 		asplod()
 
+
+CAPABILITIES(/obj/machinery/power/rtg/reg)
+	configure(machine_interaction_config(interact_offline = TRUE))
