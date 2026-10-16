@@ -90,10 +90,9 @@
 	var/join_group = "shuttle" //A tag for what other walls to join with. Null if you don't want them to.
 	var/static/list/antilight_cache // ALLOW(cache): constant table, also read by cut_overlay
 	rad_insulation = RAD_MEDIUM_INSULATION
-	rad_shield_material = MAT_TITANIUM
-	rad_shield_thickness_mm = RAD_SHUTTLE_HULL_THICKNESS_MM
 
 CAPABILITIES(/turf/simulated/shuttle)
+	configure(shielding_config(rad_shield_material = MAT_TITANIUM, rad_shield_thickness_mm = RAD_SHUTTLE_HULL_THICKNESS_MM))
 	owns_one(nameof(landed_holder_ref), /obj/landed_holder)
 
 /turf/simulated/shuttle/Initialize(mapload)
