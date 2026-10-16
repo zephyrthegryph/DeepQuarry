@@ -1,45 +1,37 @@
-# Requirement retirement source handoff (2026-10-15)
+# Requirement retirement handoff (2026-10-15)
 
-## Scope and current proof
+Branch: `codex/req-burndown`. Final lane-ready verification is pending; this document does not claim a stamp or a completed gate.
 
-The old-code captures are committed in `d99315344b`: 29 fit snapshots (232 rows), 160 acceptance-type snapshots covering all 173 declarations, and one actual native item-override snapshot. The final acceptance/override repair run passed both selectors (`20261015T220049_fcc8559302.json` in the shared old-code capture worktree). All conversions below are implemented and have passed generation, production compilation, DreamChecker and ratchets in coordinated gates. Old-code proof is separate from final-code validation: only the final lane-ready receipt establishes the completed runtime gate and stamp.
+## Result and counts
 
-## Converted
-
-- All 173 remaining acceptance table declarations: 149 mechanical declarations and 24 semantic declarations. Shared owner-key and taur-shape requirements replace repeated callbacks. Requirements return null or an ordered reason and preserve separate wearer/mover/slot context.
-- Slot admission, item overrides, native equipment and vore-consent consumers now use native acceptance plans. Existing boolean effect-facing consent checks remain a view of a native refusal result, not a second requirement protocol.
-- Removed the legacy predicate compiler, system-requirement compiler, their macros, source includes, adapters and zero-caller stance helpers. Numeric unit wrappers and legitimate request-result `REQ_*` enums remain.
-- The requirement lint hard-bans the exact 81 retired requirement/holder/predicate macro names, including under engine paths. Its source matcher ignores comments, strings and larger identifiers. The existing boolean-callback ban remains enabled and rejects reintroduced definitions as well as calls.
-- Native tests retain actual admission, field/list/access/stage requirements, hand context, numeric boundaries, reason ordering, subtype dispatch, override/adoption and consumer behavior. Grammar-only compiler tests are replaced by native validation and existing simulation-condition coverage.
-
-## Source counts (not runtime proof)
-
-| Source inventory | Before | After |
+| Inventory | Before | After |
 |---|---:|---:|
-| Remaining acceptance table declarations | 173 | 0 |
-| Mechanical / semantic declarations | 149 / 24 | 0 / 0 legacy declarations |
-| Retired requirement, holder and predicate macro definitions | 81 | 0 |
-| Exact retired macro names enforced by the hard ban | 0 | 81 |
-| Live `req_bool(...)` calls | 0 | 0 |
-| Live `needs = PROC_REF(...)` callback forms | 0 | 0 |
+| Remaining acceptance declarations | 173 | 0 legacy tables |
+| Mechanical / semantic declarations | 149 / 24 | 0 / 0 legacy tables |
+| Retired requirement/holder/predicate macro definitions | 81 | 0 |
+| Retired exact names covered by the hard ban | 0 | 81 |
+| Live `req_bool(...)` | 0 | 0 |
 
-The post-edit lexical audit excludes comments and strings. Legitimate request outcome enums remain: `REQ_ANSWERED` 68, `REQ_CANCELLED` 204, `REQ_TIMED_OUT` 10, `REQ_TRANSPORT_FAILED` 14, `REQ_NO_RESULT` 6 and `REQ_FAILED` 1 (303 source mentions total). They are request results, not requirement declarations, and are not renamed or banned. The existing requirement baseline was already zero before this cohort; no ceiling or baseline was raised.
+The predicate and system-requirement compilers, table adapters, includes and unused stance helpers are removed. Native acceptance handles wearer/mover/slot context, ordered refusal reasons, overrides, subtype dispatch, actual equipment and consent consumers. Remaining boolean effect-facing consent helpers inspect native refusal results; they are not a second requirement protocol. Numeric unit formatting and the three real formatting helpers retain their actual consumer roles. Request-result enums such as `REQ_ANSWERED` and `REQ_CANCELLED` remain legitimate; the ban matches the exact 81 retired names rather than an unrelated prefix. No baseline or ceiling was raised.
 
-Three real formatting helpers used outside the retired compiler remain implemented: numeric property-unit formatting in the native property layer, and article/tool-quality names beside their actual tool consumer. These retain their existing bodies and refusal text; they are not compatibility aliases for the retired compiler.
+## Behavior proof and documented changes
 
-## Intentional behavior corrections
+Old-code evidence is committed in `d99315344b`: 29 fit snapshots (232 rows), 160 acceptance-type snapshots covering all 173 declarations, and a real item-override snapshot. The shared old-code repair run passed both acceptance/override selectors (`20261015T220049_fcc8559302.json`). This is baseline evidence, separate from final-code verification.
 
-`intended_changes.md` names the four specific causes: the malformed syndicate-gripper union (introduced in `0dfa07f646`); the duplicated numeric unit becoming the literal refusal `size`; and the two formerly impure saddlebag/Avida admission previews. Real equipment still applies the same sprite selection through synchronous equipment notices and setters. Fresh native captures refresh only the documented malformed-union and numeric-refusal rows. Generic pin updates remove the dead mecha key from master `f13b84652d` and add the devour key from master `2136172edc`; expanded menus and clicks are unchanged. No runtime or look failure is blessed.
+`intended_changes.md` records the only acceptance corrections: malformed syndicate-gripper union data from `0dfa07f646`, numeric refusal text incorrectly reduced to literal `size`, and impure saddlebag/Avida admission previews. Preview requirements are pure; real equipment still applies sprite changes through synchronous equipment notices and setters. Only the documented malformed-union and numeric-refusal pin rows are refreshed.
 
-## Verification evidence
+Master metadata causes are recorded separately: `f13b84652d` deleted the dead Mecha/Ripley `ai_use_equipment` key; `2136172edc` introduced the living `devour` key. Those key inventory updates preserve expanded menus and clicks. No runtime row is a permissible re-record cause.
 
-Old-code captures are recorded before conversion. Native gate `f78dfcd117` passed production compilation (0 errors), DreamChecker (0 diagnostics), all ratchets and the analyzer tests. Its focused batch passed 57 tests, including both look pins, the requirement protocol pin, both constructor regressions, actual slot admission and telecube cleanup. Three failures were the stale master devour key inventory and two new fixture errors, repaired before the final failure-only gate: use a real behaviour-provider contract, and execute the timer deadline phase instead of advancing zero time.
+Shared constructor repairs restore behavior exposed by master's typed-reference declarations in `5b0a2f09d0`: internal storage rejects a non-item owner before linking it and completes the valid owner link/name before construction returns; cloning's absent scanner is null rather than zero. Real regressions cover rejected/accepted construction, the gripper subtype, independent owner lifetime and scanner disappearance. Pilot-slug destination selection now excludes deleted/no-turf helms while retaining one entry per valid helm, including multiplicity on a shared turf. These are source fixes, not runtime golden blessings.
 
-The final lane-ready receipt and its focused-run JSON are the authoritative completion evidence, including mandatory `dq_requirement_protocol_pin` and `dq_conversion_pin`; this document is not a substitute for that stamp. The final selectors are recorded in ignored `data/codex-req-burndown/final-repair-selectors.txt`. No full suite is run, no runtime rows are re-blessed, and no baseline is raised. Existing gate-fixture state-leak warnings (`coalesce_runs`, `test_prompts`, NIFsoft caches and midnight counter) remain separate from the requirement conversion.
+## Verification and remaining limitation
 
+Coordinated earlier native gates passed generation, production compilation, DreamChecker, ratchets and analyzer regressions. The later native run after master `3097a36445` passed those static gates and 50 focused tests; its two failures were a timer-fixture deadline assumption and compiler-dependent look-state sampling. The timer fixture was corrected to advance a real deadline slot and assert keyed delivery.
 
-## Native compiler sampling diagnostic
+The look-state producer caps the first 24 vars before filtering its unchanged 3,202-type analyzer plan. Native and DreamMaker enumeration orders select different probes: the native diagnostic contained 229 removed and 112 added rows in nine root files. Those goldens remain unchanged. This is a retained compiler/test-producer limitation, not proof of changed appearance or a claimed fix. The final repair gate explicitly uses the supported DreamMaker cross-check backend; any resulting receipt must be described with that backend.
 
-After merging master 3097a36445, the gate changed from the BYOND backend to native (master 663e85e2ae). Both runs used the same 3202-type look plan. The native run passed production compilation, DreamChecker and ratchets, and reported 50 passing and two failing tests (20261016T011718_1876dd6ba5): the timer fixture and look-state sampling. The timer fixture now advances one deadline slot and asserts keyed delivery. The look-state difference consists of 229 removed and 112 added probe rows in nine root files: the test caps the first 24 vars before filtering the analyzer plan, and native var iteration chooses different inputs. Goldens are unchanged; this is not evidence of changed gameplay appearance. Final lane-ready verification remains required.
+The active final repair gate is pending at source `a80ffc…`; root will replace this paragraph with its exact receipt, backend, commit, test counts and failed selectors after it ends. Its explicit selectors are in ignored `data/codex-req-burndown/final-repair-selectors.txt`; mandatory `dq_requirement_protocol_pin` and `dq_conversion_pin` are included. No full suite was run. Existing fixture state-leak warnings are not silently dismissed or claimed fixed by this acceptance work.
 
-The repair gate explicitly selects the supported DreamMaker production cross-check (doc/testing.md, Native compiler). Its stamp must be read with that backend; the native sampling failure is retained as a separate compiler/test-order diagnostic, not blessed or claimed fixed.
+## Completed lane-ready receipt
+
+Lane-ready passed on gated source a80ffc964ae5 and recorded look keys at b0951efab3: 52 passed, 0 failed; result JSON data/test-runs/20261016T025845_a80ffc964a.json. Production compilation had 0 errors, DreamChecker 0 diagnostics, ratchets and analyzer tests passed. Both mandatory pins, both appearance pins, the actual keyed pilotslug timer regression and menu-order checks passed. DreamMaker was explicitly selected; native look-sampler iteration remains a separate unresolved diagnostic with unchanged appearance goldens. Existing fixture STATE LEAK warnings remain visible. This handoff-only follow-up relies on the documented docs-only stamp carry rule, checked before pushing.
