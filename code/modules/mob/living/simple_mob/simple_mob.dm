@@ -994,9 +994,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	// src.transform = M //
 	animate(src, transform = M, time = anim_time)
 
-	// This from original living.dm update_transforms too
-	handle_status_indicators()
-
 /mob/living/simple_mob/proc/use_headset()
 	set name = "Use Headset"
 	set desc = "Opens your headset's GUI, if you have one."

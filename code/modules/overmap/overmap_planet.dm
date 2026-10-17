@@ -21,33 +21,32 @@
 /obj/effect/overmap/visitable/planet/get_skybox_representation()
 	var/image/skybox_image = image('icons/skybox/planet.dmi', "")
 
-	skybox_image.add_overlay(get_base_image())
-
+	var/list/layers = list(get_base_image())
 
 	if(mountain_color)
 		var/image/mountains = image('icons/skybox/planet.dmi', "mountains")
 		mountains.color = mountain_color
 		mountains.appearance_flags = PIXEL_SCALE
-		skybox_image.add_overlay(mountains)
+		layers += mountains
 
 	if(water_color)
 		var/image/water = image('icons/skybox/planet.dmi', "water")
 		water.color = water_color
 		water.appearance_flags = PIXEL_SCALE
-		skybox_image.add_overlay(water)
+		layers += water
 
 	if(icecaps)
 		var/image/ice = image('icons/skybox/planet.dmi', icecaps)
 		ice.color = ice_color
 		ice.appearance_flags = PIXEL_SCALE
-		skybox_image.add_overlay(ice)
+		layers += ice
 
 	var/image/shadow = image('icons/skybox/planet.dmi', "shadow")
 	shadow.blend_mode = BLEND_MULTIPLY
-	skybox_image.add_overlay(shadow)
+	layers += shadow
 
 	var/image/light = image('icons/skybox/planet.dmi', "lightrim")
-	skybox_image.add_overlay(light)
+	layers += light
 
 	if(has_rings)
 		var/image/rings = image('icons/skybox/planet_rings.dmi')
@@ -58,8 +57,9 @@
 			rings.color = ring_color
 		rings.pixel_x = -128
 		rings.pixel_y = -128
-		skybox_image.add_overlay(rings)
+		layers += rings
 
+	look_composed_image(skybox_image, layers)
 	skybox_image.pixel_x = rand(0,64)    + skybox_offset_x
 	skybox_image.pixel_y = rand(128,256) + skybox_offset_y
 	skybox_image.appearance_flags = RESET_COLOR

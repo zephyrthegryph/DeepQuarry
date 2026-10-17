@@ -145,9 +145,6 @@ CAPABILITIES(/obj/singularity)
 			dissipate_delay = 10
 			dissipate_track = 0
 			dissipate_strength = 1
-			overlays = 0
-			if(chained)
-				overlays = "chain_s1"
 			visible_message(span_notice("The singularity has shrunk to a rather pitiful size."))
 		if (STAGE_TWO) //1 to 3 does not check for the turfs if you put the gens right next to a 1x1 then its going to eat them.
 			name = "gravitational singularity"
@@ -162,9 +159,6 @@ CAPABILITIES(/obj/singularity)
 			dissipate_delay = 10
 			dissipate_track = 0
 			dissipate_strength = 5
-			overlays = 0
-			if(chained)
-				overlays = "chain_s3"
 			if(growing)
 				visible_message(span_notice("The singularity noticeably grows in size."))
 			else
@@ -183,9 +177,6 @@ CAPABILITIES(/obj/singularity)
 				dissipate_delay = 4
 				dissipate_track = 0
 				dissipate_strength = 20
-				overlays = 0
-				if(chained)
-					overlays = "chain_s5"
 				if(growing)
 					visible_message(span_notice("The singularity expands to a reasonable size."))
 				else
@@ -204,9 +195,6 @@ CAPABILITIES(/obj/singularity)
 				dissipate_delay = 10
 				dissipate_track = 0
 				dissipate_strength = 8
-				overlays = 0
-				if(chained)
-					overlays = "chain_s7"
 				if(growing)
 					visible_message(span_warning("The singularity expands to a dangerous size."))
 				else
@@ -222,9 +210,6 @@ CAPABILITIES(/obj/singularity)
 			grav_pull = 10
 			consume_range = 4
 			dissipate = 0 //It cant go smaller due to e loss.
-			overlays = 0
-			if(chained)
-				overlays = "chain_s9"
 			if(growing)
 				visible_message(span_danger(span_normal("The singularity has grown out of control!")))
 			else
@@ -241,8 +226,6 @@ CAPABILITIES(/obj/singularity)
 			consume_range = 5
 			dissipate = 0 //It cant go smaller due to e loss
 			event_chance = 25 //Events will fire off more often.
-			if(chained)
-				overlays = "chain_s9"
 			visible_message(span_sinister(span_large("You witness the creation of a destructive force that cannot possibly be stopped by human hands.")))
 
 	if (current_size == allowed_size)
@@ -478,24 +461,28 @@ CAPABILITIES(/obj/singularity)
 
 /obj/singularity/proc/on_capture()
 	chained = 1
-	overlays = 0
 	move_self = 0
-	switch (current_size)
-		if(STAGE_ONE)
-			add_overlay(image('icons/obj/singularity.dmi',"chain_s1"))
-		if(STAGE_TWO)
-			add_overlay(image('icons/effects/96x96.dmi',"chain_s3"))
-		if(STAGE_THREE)
-			add_overlay(image('icons/effects/160x160.dmi',"chain_s5"))
-		if(STAGE_FOUR)
-			add_overlay(image('icons/effects/224x224.dmi',"chain_s7"))
-		if(STAGE_FIVE)
-			add_overlay(image('icons/effects/288x288.dmi',"chain_s9"))
 
 /obj/singularity/proc/on_release()
 	chained = 0
-	overlays = 0
 	move_self = 1
+
+/// The chain around a captured singularity, in the size it has now.
+/obj/singularity/draw(datum/look/look)
+	..()
+	if(!chained)
+		return
+	switch(current_size)
+		if(STAGE_ONE)
+			look.overlay("chain_s1")
+		if(STAGE_TWO)
+			look.overlay("chain_s3")
+		if(STAGE_THREE)
+			look.overlay("chain_s5")
+		if(STAGE_FOUR)
+			look.overlay("chain_s7")
+		if(STAGE_FIVE, STAGE_SUPER)
+			look.overlay("chain_s9")
 
 /obj/singularity/singularity_act(S, size)
 	if(current_size <= size)

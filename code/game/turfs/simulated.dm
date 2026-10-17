@@ -9,7 +9,6 @@
 	parent_type = /turf/open
 	name = "station"
 	var/wet = TURFSLIP_DRY
-	var/image/wet_overlay = null
 
 	//Mining resources (for the large drills).
 	var/turf_resource_types
@@ -32,10 +31,6 @@
 	if(wet >= TURFSLIP_ICE)	//Can't mop up ice
 		return
 	wet = wet_val
-	if(wet_overlay)
-		cut_overlay(wet_overlay)
-	wet_overlay = image('icons/effects/water.dmi', icon_state = "wet_floor")
-	add_overlay(wet_overlay)
 	if(after_pending(src, "wet_cleanup_timer"))
 		cancel_after(src, "wet_cleanup_timer")
 	if(wet == TURFSLIP_LUBE)
@@ -47,19 +42,11 @@
 	wet = TURFSLIP_DRY
 	if(after_pending(src, "wet_cleanup_timer"))
 		cancel_after(src, "wet_cleanup_timer")
-	if(wet_overlay)
-		cut_overlay(wet_overlay)
-		wet_overlay = null
 
 /turf/simulated/proc/freeze_floor()
 	if(!wet) // Water is required for it to freeze.
 		return
 	wet = TURFSLIP_ICE
-	if(wet_overlay)
-		cut_overlay(wet_overlay)
-		wet_overlay = null
-	wet_overlay = image('icons/turf/overlays.dmi',src,"snowfloor")
-	add_overlay(wet_overlay)
 	after(src, 5 MINUTES, PROC_REF(snow_dries))
 
 // A turf's verbs are declared, never granted per turf: no store entry on any turf, so a
@@ -184,7 +171,4 @@
 
 /turf/simulated/proc/snow_dries()
 	wet = TURFSLIP_DRY
-	if(wet_overlay)
-		cut_overlay(wet_overlay)
-		wet_overlay = null
 

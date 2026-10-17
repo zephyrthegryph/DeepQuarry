@@ -6,6 +6,9 @@
 	bitesize = 2
 
 	var/list/ingredients
+	/// list(filling colour, pixel_x jitter) per layer, bottom first: what the sandwich draws (chosen when it is built, so a redraw never re-rolls it).
+	var/list/layer_looks
+	var/top_jitter = 0
 
 // A shard is hidden in it, and a food is layered on it until it would collapse.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/csandwich)
@@ -50,8 +53,7 @@ MSG_DEF_SELF(snack/collapses, "If you put anything else on it it's going to coll
 	var/fullname = "" //We need to build this from the contents of the var.
 	var/i = 0
 
-	cut_overlays()
-
+	var/list/new_looks
 	for(var/obj/item/reagent_containers/food/snacks/O in ingredients)
 
 		i++
@@ -62,21 +64,23 @@ MSG_DEF_SELF(snack/collapses, "If you put anything else on it it's going to coll
 		else
 			fullname += ", [O.name]"
 
-		var/image/I = new(src.icon, "sandwich_filling")
-		I.color = O.filling_color
-		I.pixel_x = pick(list(-1,0,1))
-		I.pixel_y = (i*2)+1
-		add_overlay(I)
+		LAZYADD(new_looks, list(list(O.filling_color, pick(list(-1,0,1)))))
 
-	var/image/T = new(src.icon, "sandwich_top")
-	T.pixel_x = pick(list(-1,0,1))
-	T.pixel_y = (length(ingredients) * 2)+1
-	add_overlay(T)
+	layer_looks = new_looks
+	top_jitter = pick(list(-1,0,1))
 
 	name = lowertext("[fullname] sandwich")
 	if(length(name) > 80) name = "[pick(list("absurd","colossal","enormous","ridiculous"))] sandwich"
 	set_w_class(n_ceil(CLAMP((length(ingredients)/2),2,4)))
 
+
+/obj/item/reagent_containers/food/snacks/csandwich/draw(datum/look/look)
+	..()
+	var/i = 0
+	for(var/list/layer in layer_looks)
+		i++
+		look.overlay(look_overlay_image(icon, "sandwich_filling", color = layer[1], pixel_x = layer[2], pixel_y = (i * 2) + 1))
+	look.overlay(look_overlay_image(icon, "sandwich_top", pixel_x = top_jitter, pixel_y = (length(ingredients) * 2) + 1))
 
 /obj/item/reagent_containers/food/snacks/csandwich/examine(mob/user)
 	. = ..()

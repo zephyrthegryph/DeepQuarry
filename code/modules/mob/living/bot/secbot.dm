@@ -373,7 +373,6 @@ CAPABILITIES(/mob/living/bot/secbot)
 
 	var/obj/item/secbot_assembly/Sa = new /obj/item/secbot_assembly(Tsec)
 	graph_place(Sa, STAGE_SECBOT_HOLED)
-	Sa.add_overlay("hs_hole")
 	Sa.set_created_name(name)
 	new /obj/item/assembly/prox_sensor(Tsec)
 	new used_weapon(Tsec)

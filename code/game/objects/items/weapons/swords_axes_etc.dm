@@ -83,16 +83,6 @@ CAPABILITIES(/obj/item/melee/telebaton)
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 	add_fingerprint(user)
 
-	if(blood_overlay && forensic_data?.has_blooddna()) //updates blood overlay, if any
-		cut_overlays()
-
-		var/icon/I = new /icon(src.icon, src.icon_state)
-		I.Blend(new /icon('icons/effects/blood.dmi', rgb(255,255,255)),ICON_ADD)
-		I.Blend(new /icon('icons/effects/blood.dmi', "itemblood"),ICON_MULTIPLY)
-		blood_overlay = I
-
-		add_overlay(blood_overlay)
-
 	return OP_OK
 
 /obj/item/melee/telebaton/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)

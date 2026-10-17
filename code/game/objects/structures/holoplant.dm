@@ -8,6 +8,8 @@
 	maintenance_wrench_time = 1 SECOND
 	var/interference = FALSE
 	var/icon/plant = null
+	/// The projection is out for a moment while something walks through it.
+	var/plant_flickered_out = FALSE
 
 /obj/machinery/holoplant/proc/init_activate(datum/act/timer/A)
 	activate()
@@ -29,19 +31,24 @@
 /obj/machinery/holoplant/proc/anchoring_changed(datum/act/A)
 	deactivate()
 
+/// The look: the projected plant, unless it is flickering out.
+/obj/machinery/holoplant/draw(datum/look/look)
+	..()
+	if(plant && !plant_flickered_out)
+		look.overlay(look_overlay_image(plant))
+
 /obj/machinery/holoplant/proc/activate()
 	if(!anchored || !operable())
 		return
 
 	plant = prepare_icon(emagged() ? "emagged" : null)
-	cut_overlays()
-	add_overlay(plant)
+	set_plant_flickered_out(FALSE)
 	set_glow(src, GLOW(2, null, null))
 	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/holoplant/proc/deactivate()
-	cut_overlays()
-	QDEL_NULL(plant)
+	set_plant(null)
+	set_plant_flickered_out(FALSE)
 	set_glow(src, GLOW(0, null, null))
 	set_use_power(USE_POWER_OFF)
 
@@ -58,10 +65,10 @@
 
 /obj/machinery/holoplant/proc/flicker_step(n)
 	if(n % 2)
-		cut_overlays()
+		set_plant_flickered_out(TRUE)
 		set_glow(src, GLOW(0, null, null))
 	else
-		add_overlay(plant)
+		set_plant_flickered_out(FALSE)
 		set_glow(src, GLOW(2, null, null))
 	if(n >= 4)
 		interference = FALSE

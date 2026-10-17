@@ -19,7 +19,6 @@
 	desc = "Now you can command your own army!"
 	cast_methods = CAST_RANGED|CAST_USE
 	aspect = ASPECT_BIOMED //Not sure if this should be something else.
-	var/image/control_overlay = null
 	var/list/controlled_mobs
 	var/allowed_mob_classes = MOB_CLASS_ANIMAL|MOB_CLASS_SYNTHETIC
 
@@ -41,8 +40,7 @@
 		rel_add(SM, nameof(SM.friends), src.owner_ref())
 	brain.ally_by_effect(src, owner_ref()) // the spell is the source: the standing goes with it
 
-	// Note, this should be refactored to drop priority overlays
-	L.add_overlay(control_overlay, TRUE)
+	rel_add(L, nameof(L.attached_overlays), look_image('icons/obj/spells.dmi', "controlled"))
 	rel_add(src, nameof(controlled_mobs), L)
 
 /obj/item/spell/control/proc/deselect(mob/living/L)
@@ -61,7 +59,7 @@
 		rel_remove(SM, nameof(SM.friends), owner_ref())
 	unstanding(L, owner_ref(), src)
 
-	L.cut_overlay(control_overlay, TRUE)
+	rel_remove(L, nameof(L.attached_overlays), look_image('icons/obj/spells.dmi', "controlled"))
 	rel_remove(src, nameof(controlled_mobs), L)
 
 /obj/item/spell/control/proc/move_all(turf/T)
@@ -77,10 +75,6 @@
 			deselect(L)
 			continue
 		L.ai_brain.give_target(target, TRUE)
-
-/obj/item/spell/control/Initialize(mapload)
-	control_overlay = image('icons/obj/spells.dmi',"controlled")
-	return ..()
 
 // controlled mobs are released.
 /obj/item/spell/control/on_destroy(force)

@@ -8,49 +8,34 @@
 // and it will try to always be above the mob sprite, even for larger sprites like xenos.
 
 /mob/living
-	var/list/status_indicators = null // Will become a list as needed.
+	/// icon_states of 'icons/mob/status_indicators.dmi'; null until the first one is added.
+	var/list/status_indicators = null
 
-// Adds an icon_state, or image overlay, to the list of indicators to be managed automatically.
-// Also initializes the list if one doesn't exist.
-/mob/living/proc/add_status_indicator(image/thing)
+// Adds an icon_state to the list of indicators drawn over the head. The look places them.
+/mob/living/proc/add_status_indicator(thing)
 	if(get_status_indicator(thing)) // No duplicates, please.
 		return
-
-	if(!istype(thing, /image))
-		thing = image(icon = 'icons/mob/status_indicators.dmi', icon_state = thing)
-
-	LAZYADD(status_indicators, thing)
-	handle_status_indicators()
+	LAZYADD(status_indicators, "[thing]")
 
 // Similar to above but removes it instead, and nulls the list if it becomes empty as a result.
-/mob/living/proc/remove_status_indicator(image/thing)
-	thing = get_status_indicator(thing)
+/mob/living/proc/remove_status_indicator(thing)
+	LAZYREMOVE(status_indicators, "[thing]")
 
-	cut_overlay(thing)
-	LAZYREMOVE(status_indicators, thing)
-	handle_status_indicators()
+/mob/living/proc/get_status_indicator(thing)
+	return (("[thing]" in status_indicators) ? "[thing]" : null)
 
-/mob/living/proc/get_status_indicator(image/thing)
-	if(!istype(thing, /image))
-		for(var/image/I in status_indicators)
-			if(I.icon_state == thing)
-				return I
-	return LAZYACCESS(status_indicators, LAZYFIND(status_indicators, thing))
+/// The glamour shimmer that plays while a beast shift or polymorph is under way.
+/mob/living
+	var/glamour_shift = FALSE
 
-// Refreshes the indicators over a mob's head. Should only be called when adding or removing a status indicator with the above procs,
-// or when the mob changes size visually for some reason.
-/mob/living/proc/handle_status_indicators()
-	// First, get rid of all the overlays.
-	for(var/thing in status_indicators)
-		cut_overlay(thing)
-
+/// The row of status indicators over the mob's head, centred on its sprite, whatever its scale (called from the living draw).
+/mob/living/proc/look_status_indicators(datum/look/look)
 	if(!LAZYLEN(status_indicators))
 		return
 
 	if(stat == DEAD || (status_flags & FAKEDEATH))
 		return
 
-	// Now put them back on in the right spot.
 	var/our_sprite_x = icon_expected_width * get_icon_scale_x()
 	var/our_sprite_y = icon_expected_height * get_icon_scale_y()
 
@@ -62,23 +47,12 @@
 	var/expected_status_indicator_length = (STATUS_INDICATOR_ICON_X_SIZE * status_indicators.len) + (STATUS_INDICATOR_ICON_MARGIN * max(status_indicators.len - 1, 0))
 	var/current_x_position = (x_offset / 2) - (expected_status_indicator_length / 2)
 
-	// In /mob/living's `update_transform()`, the sprite is horizontally shifted when scaled up, so that the center of the sprite doesn't move to the right.
-	// Because of that, this adjustment needs to happen with the future indicator row as well, or it will look bad.
+	// The sprite is horizontally shifted when scaled up, so that the center of the sprite doesn't move to the right; the row follows it.
 	current_x_position -= (icon_expected_width / 2) * (get_icon_scale_x() - 1)
 
-	// Now the indicator row can actually be built.
-	for(var/image/I as anything in status_indicators)
-
-		// This is a semi-HUD element, in a similar manner as medHUDs, in that they're 'above' everything else in the world,
-		// but don't pierce obfuscation layers such as blindness or darkness, unlike actual HUD elements like inventory slots.
-		I.plane = PLANE_STATUS
-		I.layer = HUD_LAYER
-		I.appearance_flags = PIXEL_SCALE|TILE_BOUND|NO_CLIENT_COLOR|RESET_COLOR|RESET_ALPHA|RESET_TRANSFORM|KEEP_APART
-		I.pixel_y = y_offset
-		I.pixel_x = current_x_position
-		add_overlay(I)
-		// Adding the margin space every time saves a conditional check on the last iteration,
-		// and it won't cause any issues since no more icons will be added, and the var is not used for anything else.
+	for(var/indicator_state in status_indicators)
+		// A semi-HUD element: above everything else in the world, but it does not pierce obfuscation such as blindness or darkness.
+		look.overlay(look_overlay_image('icons/mob/status_indicators.dmi', indicator_state, layer = HUD_LAYER, plane = PLANE_STATUS, pixel_x = current_x_position, pixel_y = y_offset, appearance_flags = PIXEL_SCALE|TILE_BOUND|NO_CLIENT_COLOR|RESET_COLOR|RESET_ALPHA|RESET_TRANSFORM|KEEP_APART))
 		current_x_position += STATUS_INDICATOR_ICON_X_SIZE + STATUS_INDICATOR_ICON_MARGIN
 
 

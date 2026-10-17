@@ -4,6 +4,12 @@
 	///the icon currently used for the thinking indicator's bubble
 	var/tmp/mutable_appearance/active_thinking_indicator
 
+/// The bubble over the head while the mob is thinking or typing in character.
+/mob/draw(datum/look/look)
+	..()
+	look.overlay(active_thinking_indicator)
+	look.overlay(active_typing_indicator)
+
 /** Creates a thinking indicator over the mob. Note: Prefs are checked in /client/proc/start_thinking() */
 /mob/proc/create_thinking_indicator()
 	if(active_thinking_indicator || active_typing_indicator || stat != CONSCIOUS || !has_trait(src, TRAIT_THINKING_IN_CHARACTER))
@@ -14,13 +20,11 @@
 	active_thinking_indicator = mutable_appearance('icons/mob/talk_vr.dmi', "[cur_bubble_appearance]_thinking", FLOAT_LAYER, appearance_flags=(KEEP_APART|RESET_COLOR|PIXEL_SCALE))
 	active_thinking_indicator.pixel_x = get_oversized_icon_offsets()["x"]
 	active_thinking_indicator.pixel_y = get_oversized_icon_offsets()["y"]
-	add_overlay(active_thinking_indicator)
 
 /** Removes the thinking indicator over the mob. */
 /mob/proc/remove_thinking_indicator()
 	if(!active_thinking_indicator)
 		return FALSE
-	cut_overlay(active_thinking_indicator)
 	active_thinking_indicator = null
 
 /** Creates a typing indicator over the mob. Note: Prefs are checked in /client/proc/start_typing() */
@@ -33,13 +37,11 @@
 	active_typing_indicator = mutable_appearance('icons/mob/talk_vr.dmi', "[cur_bubble_appearance]_typing", ABOVE_MOB_LAYER, appearance_flags=(KEEP_APART|RESET_COLOR|PIXEL_SCALE))
 	active_typing_indicator.pixel_x = get_oversized_icon_offsets()["x"]
 	active_typing_indicator.pixel_y = get_oversized_icon_offsets()["y"]
-	add_overlay(active_typing_indicator)
 
 /** Removes the typing indicator over the mob. */
 /mob/proc/remove_typing_indicator()
 	if(!active_typing_indicator)
 		return FALSE
-	cut_overlay(active_typing_indicator)
 	active_typing_indicator = null
 
 /** Removes any indicators and marks the mob as not speaking IC. */

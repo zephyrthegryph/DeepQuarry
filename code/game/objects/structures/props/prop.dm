@@ -21,6 +21,8 @@
 	anchored = TRUE
 	var/interaction_message = null
 	var/state
+	/// The service panel of a prop that has one is open (change_state "panel_open" / "panel_closed").
+	var/panel_shown = FALSE
 
 
 CAPABILITIES(/obj/structure/prop)

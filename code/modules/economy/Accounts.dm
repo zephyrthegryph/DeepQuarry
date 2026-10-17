@@ -261,12 +261,10 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 		R.set_info(R.info + ("<i>Authorised NT officer overseeing creation:</i> [source_db.held_card.registered_name]<br>"))
 
 		//stamp the paper
-		var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
-		stampoverlay.icon_state = "paper_stamp-cent"
 		if(!R.stamped)
 			R.stamped = new
 		R.stamped += /obj/item/stamp
-		R.add_overlay(stampoverlay)
+		R.add_stamp_mark("paper_stamp-cent", 0, 0)
 		R.set_stamps(R.stamps + ("<HR><i>This paper has been stamped by the Accounts Database.</i>"))
 
 	//add the account

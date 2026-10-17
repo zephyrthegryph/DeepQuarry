@@ -14,6 +14,16 @@
 	var/atom/movable/screen/map_view_tg/popup_screen
 
 	var/mutable_appearance/standard_background
+	/// The scaled background drawn under the window (null while it has no size).
+	var/mutable_appearance/background_overlay
+	/// The move tab drawn above the window.
+	var/mutable_appearance/move_tab_overlay
+
+/// The window is its background and the move tab.
+/atom/movable/screen/movable/pic_in_pic/draw(datum/look/look)
+	..()
+	look.overlay(background_overlay)
+	look.overlay(move_tab_overlay)
 
 CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	ref_one(nameof(center))
@@ -56,18 +66,10 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	standard_background.appearance_flags = PIXEL_SCALE
 
 /atom/movable/screen/movable/pic_in_pic/proc/add_buttons()
-	var/static/mutable_appearance/move_tab
-	if(!move_tab)
-		move_tab = new /mutable_appearance()
-		//all these properties are always the same, and since adding something to the overlay
-		//list makes a copy, there is no reason to make a new one each call
-		move_tab.icon = 'icons/hud/pic_in_pic.dmi'
-		move_tab.icon_state = "move"
-		move_tab.plane = PLANE_PLAYER_HUD
 	var/matrix/M = matrix()
 	M.Translate(0, (height + 0.25) * world.icon_size)
-	move_tab.transform = M
-	add_overlay(move_tab)
+	move_tab_overlay = look_appearance('icons/hud/pic_in_pic.dmi', "move", plane = PLANE_PLAYER_HUD)
+	move_tab_overlay.transform = M
 
 	if(!button_x)
 		rel_set(src, nameof(button_x), make(/atom/movable/screen/component_button, at = null, parent = src))
@@ -126,8 +128,9 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 		var/matrix/M = matrix()
 		M.Scale(width + 0.5, height + 0.5)
 		M.Translate((width-1)/2 * ICON_SIZE_X, (height-1)/2 * ICON_SIZE_Y)
-		standard_background.transform = M
-		add_overlay(standard_background)
+		var/mutable_appearance/scaled_background = new(standard_background)
+		scaled_background.transform = M
+		background_overlay = scaled_background
 
 /atom/movable/screen/movable/pic_in_pic/proc/set_view_size(width, height, do_refresh = TRUE)
 	width = CLAMP(width, 0, 10)
@@ -137,7 +140,8 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 
 	y_off = (-height * ICON_SIZE_Y) - (ICON_SIZE_Y / 2)
 
-	cut_overlays()
+	background_overlay = null
+	move_tab_overlay = null
 	add_background()
 	add_buttons()
 	if(do_refresh)

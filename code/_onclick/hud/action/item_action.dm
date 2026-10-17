@@ -9,8 +9,6 @@
 	/// TRUE: the button shows the target item's appearance as an overlay
 	/// (was the action_item_overlay component).
 	var/item_overlay = FALSE
-	/// The item appearance currently applied to the button.
-	var/item_overlay_appearance
 
 /datum/action/item_action/New(Target)
 	. = ..()
@@ -34,21 +32,18 @@
 /// Applies (or, when disabled, removes) the target item's appearance on `current_button`.
 /datum/action/item_action/proc/apply_item_overlay(atom/movable/screen/movable/action_button/current_button, force)
 	if(!item_overlay)
-		if(item_overlay_appearance)
-			current_button.cut_overlay(item_overlay_appearance)
-			item_overlay_appearance = null
+		current_button.item_overlay_appearance = null
 		return
 
 	var/atom/movable/muse = action_target()
 	if(!istype(muse))
 		return
 
-	var/mutable_appearance/current = item_overlay_appearance
+	var/mutable_appearance/current = current_button.item_overlay_appearance
 	if(current)
 		// For caching purposes, we will try not to update if we don't need to
 		if(!force && current.icon == muse.icon && current.icon_state == muse.icon_state)
 			return
-		current_button.cut_overlay(current)
 
 	var/mutable_appearance/muse_appearance = new(muse.appearance)
 	muse_appearance.plane = FLOAT_PLANE
@@ -56,8 +51,7 @@
 	muse_appearance.pixel_x = 0
 	muse_appearance.pixel_y = 0
 
-	current_button.add_overlay(muse_appearance)
-	item_overlay_appearance = muse_appearance
+	current_button.item_overlay_appearance = muse_appearance
 
 /datum/action/item_action/vv_edit_var(var_name, var_value)
 	. = ..()

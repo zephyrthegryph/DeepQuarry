@@ -282,6 +282,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 			map_app.icon = icon(holomaps_holoMiniMaps()[T.z])
 
 			// Apply markers
+			var/list/marker_images = list()
 			for(var/marker in GLOB.holomap_markers)
 				var/datum/holomap_marker/holomarker = GLOB.holomap_markers[marker]
 				if(holomarker.z == T_z && holomarker.filter & mapper_filter)
@@ -291,7 +292,8 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 					markerImage.appearance_flags = RESET_COLOR|PIXEL_SCALE
 					markerImage.pixel_x = holomarker.x+holomarker.offset_x
 					markerImage.pixel_y = holomarker.y+holomarker.offset_y
-					map_app.add_overlay(markerImage)
+					marker_images += markerImage
+			look_composed_image(map_app, marker_images)
 
 			var/atom/movable/screen/mapper/map/tmp = new()
 			tmp.appearance = map_app

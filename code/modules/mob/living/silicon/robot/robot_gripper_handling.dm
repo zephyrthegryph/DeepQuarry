@@ -68,8 +68,7 @@
 			if(pocket_content.color)
 				pocket_image.color = pocket_content.color
 			if(pocket_content.overlays)
-				for(var/overlay in pocket_content.overlays)
-					pocket_image.overlays += overlay
+				pocket_image = look_composed_image(pocket_image, pocket_content.overlays.Copy())
 			photo_images["[pocket_to_check.name]" + "[pocket_content.name]"] = pocket_image
 
 /// The pocket (when empty) or the pocket's first item that a radial choice built by

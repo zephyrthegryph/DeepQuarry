@@ -49,11 +49,18 @@ CAPABILITIES(/obj/item/extinguisher/atmo)
 	configure(item_combat(force = 12))
 	configure(reagents(add = list(REAGENT_ID_FIREFOAM = 300))) // 600 total
 
+/// Which of the random decal overlays this extinguisher wears (0: none), rolled when it spawns.
+/obj/item/extinguisher/var/overlay_choice = 0
+
+// ALLOW(init/INSTANCE_STATE): each extinguisher rolls its own decal overlay per instance
 /obj/item/extinguisher/Initialize(mapload)
 	if(rand_overlays)
-		var/choice = rand(1,rand_overlays)
-		add_overlay("[item_state]O[choice]") // ALLOW(decl): Initialize rolls a random overlay per instance; a declaration has no random form
+		overlay_choice = rand(1,rand_overlays)
 	. = ..()
+
+/obj/item/extinguisher/draw(datum/look/look)
+	..()
+	look.overlay("[item_state]O[overlay_choice]", when = overlay_choice > 0)
 
 /obj/item/extinguisher/examine(mob/user)
 	. = ..()

@@ -148,6 +148,13 @@
 	icon_state = "cereal_box"
 	size = 30
 	w_class = ITEMSIZE_NORMAL
+	/// The pictures of what the cereal was made of, shrunk and scattered over the box (made when the cereal maker finished).
+	var/list/box_images
+
+/obj/item/reagent_containers/food/snacks/variable/cereal/draw(datum/look/look)
+	..()
+	for(var/image/shown in box_images)
+		look.overlay(shown)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/variable/cereal)
 	rolls(nameof(name), pick_one(list("flakes", "krispies", "crunch", "pops", "O's", "crisp", "loops", "jacks", "clusters")))
