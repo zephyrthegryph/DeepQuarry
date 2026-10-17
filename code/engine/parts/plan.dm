@@ -38,7 +38,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_plan)
 	var/list/selects
 	/// Match conditions: every one must hold.
 	var/list/conds
-	/// Requirements, in order (new /datum/entry/part/req, or a legacy /datum/requirement that has a new form).
+	/// Requirements, in order (/datum/entry/part/req).
 	var/list/needs
 	/// The space an at(SPACE_X) places the op in, or null (code/engine/library/spaces.dm).
 	var/space
@@ -429,12 +429,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 			var/problem = R.build_problem()
 			if(problem)
 				op_problem(T, P, report, RULE_OP_PART, problem, "give the requirement because = MSG(x), or a library requirement that carries a reason")
-		else if(istype(requirement, /datum/requirement) && !op_requirement_has_form(requirement))
-			var/datum/requirement/legacy = requirement
-			op_problem(T, P, report, RULE_OP_PART, "the legacy requirement [legacy.type] has no form in the new engine", "write the requirement with the req_* constructors of code/engine/parts/cond.dm")
-
-/proc/op_requirement_has_form(datum/requirement/R)
-	return R.supports_native()
 
 /// What an effect or a binding yields to the op's tier (OP_PRIORITY_X): by default nothing above normal.
 /datum/entry/part/proc/yielded_tier()
