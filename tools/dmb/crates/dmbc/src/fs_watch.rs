@@ -12,6 +12,11 @@
 //! * a proof is cached only when no event of any kind arrived while it was being captured;
 //! * a lost event (buffer overflow, read error, sync timeout) clears the cache and bumps the epoch.
 //!
+//! * a directory reached through a reparse point (junction or symlink) is never cached: change
+//!   events are delivered for the watched tree itself, not for the target of a link inside it, so
+//!   an edit below such a link would leave a stale proof. Compile roots made of junctions into
+//!   worktrees (tools/build/lib/compile_root.ts) depend on this.
+//!
 //! Publication still restats every captured input live (`runner_freshness::admit_live`), so a missed
 //! event can at worst make that admission refuse and rebuild; it cannot publish a stale build.
 //! `DMB_WATCH=0` disables the watcher; `DMB_WATCH_VERIFY=1` recaptures every cached directory and
@@ -39,6 +44,53 @@ static MISSES: AtomicU64 = AtomicU64::new(0);
 
 fn cache() -> &'static Mutex<BTreeMap<String, Cached>> {
     CACHE.get_or_init(Default::default)
+}
+
+/// Whether a directory key is itself a reparse point or lies below one, memoized per directory.
+/// An event for a directory entry (created, removed, renamed) drops the memo of that entry and its subtree.
+static BEHIND_LINK: OnceLock<Mutex<BTreeMap<String, bool>>> = OnceLock::new();
+fn behind_link_memo() -> &'static Mutex<BTreeMap<String, bool>> {
+    BEHIND_LINK.get_or_init(Default::default)
+}
+
+#[cfg(windows)]
+fn is_reparse_point(path: &str) -> bool {
+    use std::os::windows::fs::MetadataExt;
+    const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
+    std::fs::symlink_metadata(path).is_ok_and(|meta| meta.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0)
+}
+#[cfg(not(windows))]
+fn is_reparse_point(path: &str) -> bool {
+    std::fs::symlink_metadata(path).is_ok_and(|meta| meta.file_type().is_symlink())
+}
+
+/// True when `key` (a comparison key from [`key`]) is a link or below one. A key that cannot be inspected counts as not
+/// behind a link only if it does not exist (absence is still reported through its parent's events).
+fn behind_link(key: &str) -> bool {
+    if let Some(known) = behind_link_memo().lock().unwrap_or_else(|e| e.into_inner()).get(key).copied() {
+        return known;
+    }
+    let parent = key.rsplit_once('\\').map(|(parent, _)| parent).filter(|parent| parent.len() >= 3);
+    let result = is_reparse_point(key) || parent.is_some_and(behind_link);
+    behind_link_memo().lock().unwrap_or_else(|e| e.into_inner()).insert(key.to_string(), result);
+    result
+}
+
+fn forget_links(path: &str, subtree: bool) {
+    let mut memo = behind_link_memo().lock().unwrap_or_else(|e| e.into_inner());
+    memo.remove(path);
+    if !subtree {
+        return;
+    }
+    let prefix = format!("{path}\\");
+    let doomed: Vec<String> = memo
+        .range(prefix.clone()..)
+        .take_while(|(key, _)| key.starts_with(&prefix))
+        .map(|(key, _)| key.clone())
+        .collect();
+    for key in doomed {
+        memo.remove(&key);
+    }
 }
 
 /// The daemon turns the watcher on once at start; one-shot processes never do.
@@ -70,12 +122,14 @@ fn key(path: &Path) -> Option<String> {
 fn clear_all() {
     EVENTS.fetch_add(1, Ordering::AcqRel);
     cache().lock().unwrap_or_else(|e| e.into_inner()).clear();
+    behind_link_memo().lock().unwrap_or_else(|e| e.into_inner()).clear();
 }
 
 /// Drop the proofs of the directory holding `path` and of `path` itself; with `subtree` also of
 /// everything below it (a removed or renamed directory takes its subtree with it).
 fn invalidate(path: &str, subtree: bool) {
     EVENTS.fetch_add(1, Ordering::AcqRel);
+    forget_links(path, subtree);
     let mut cache = cache().lock().unwrap_or_else(|e| e.into_inner());
     if let Some(parent) = path.rsplit_once('\\').map(|(parent, _)| parent) {
         cache.remove(parent);
@@ -100,7 +154,7 @@ pub(crate) fn shared_proof(
     path: &Path,
     capture: impl FnOnce(&Path) -> std::io::Result<DirectoryProof>,
 ) -> std::io::Result<Arc<DirectoryProof>> {
-    let Some(key) = key(path).filter(|_| enabled() && covered(path)) else {
+    let Some(key) = key(path).filter(|key| enabled() && covered(path) && !behind_link(key)) else {
         return capture(path).map(Arc::new);
     };
     if let Some(hit) = cache().lock().unwrap_or_else(|e| e.into_inner()).get(&key).cloned() {
@@ -411,5 +465,40 @@ mod windows {
                 state.wake.notify_all();
             }
         }
+    }
+}
+
+#[cfg(all(test, windows))]
+mod link_tests {
+    use super::*;
+
+    #[test]
+    fn directories_behind_a_junction_are_never_cached() {
+        let base = std::env::temp_dir().join(format!("dmbc-link-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        let target = base.join("target");
+        let root = base.join("root");
+        std::fs::create_dir_all(target.join("child")).unwrap();
+        std::fs::create_dir_all(root.join("plain")).unwrap();
+        let junction = root.join("link");
+        let status = std::process::Command::new("cmd")
+            .args(["/C", "mklink", "/J"])
+            .arg(&junction)
+            .arg(&target)
+            .output()
+            .unwrap();
+        assert!(status.status.success(), "mklink failed: {}", String::from_utf8_lossy(&status.stdout));
+        let key_of = |path: &Path| key(path).unwrap();
+        assert!(behind_link(&key_of(&junction)));
+        assert!(behind_link(&key_of(&junction.join("child"))));
+        assert!(!behind_link(&key_of(&root.join("plain"))));
+        // Removing the junction (not its target) and recreating the entry as a plain directory is seen after the
+        // watcher's event for the entry drops the memo.
+        std::fs::remove_dir(&junction).unwrap();
+        assert!(target.join("child").is_dir(), "removing a junction must not touch its target");
+        invalidate(&key_of(&junction), true);
+        std::fs::create_dir(&junction).unwrap();
+        assert!(!behind_link(&key_of(&junction)));
+        let _ = std::fs::remove_dir_all(&base);
     }
 }
