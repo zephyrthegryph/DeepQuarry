@@ -58,3 +58,5 @@ The active final repair gate is pending at source `a80ffc…`; root will replace
 ## Completed lane-ready receipt
 
 Lane-ready passed on gated source a80ffc964ae5 and recorded look keys at b0951efab3: 52 passed, 0 failed; result JSON data/test-runs/20261016T025845_a80ffc964a.json. Production compilation had 0 errors, DreamChecker 0 diagnostics, ratchets and analyzer tests passed. Both mandatory pins, both appearance pins, the actual keyed pilotslug timer regression and menu-order checks passed. DreamMaker was explicitly selected; native look-sampler iteration remains a separate unresolved diagnostic with unchanged appearance goldens. Existing fixture STATE LEAK warnings remain visible. This handoff-only follow-up relies on the documented docs-only stamp carry rule, checked before pushing.
+
+October 17 verification selection: use normal-tier representatives for constraint declaration/equipment/storage/suit-storage catalogues, containment fuzz and rule thresholds. The earlier catalogue run was interrupted and supplies no stamp. The actual requirement and conversion pins remain selected; all look tests are excluded. Final proof must be a complete lane-ready run.
