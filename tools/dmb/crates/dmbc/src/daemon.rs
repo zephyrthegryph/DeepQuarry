@@ -235,7 +235,13 @@ pub fn route(
                     // The daemon of this same executable is draining and exits as soon as its builds finish; starting a
                     // second one beside it doubled resident memory. Wait for it instead.
                 } else if !started {
-                    // A different compiler version never retires this one: every version has its own endpoint and daemon.
+                    // Discovery is advisory lifecycle control, never the build
+                    // destination. An old busy listener cannot block the new
+                    // generation from starting or change its request semantics.
+                    if let Err(error) = retire_discovered(identity, remaining) {
+                        eprintln!("native daemon: previous generation retirement unavailable: {error}; starting requested generation");
+                    }
+                    lifecycle.remaining(std::time::Instant::now())?;
                     start()?;
                     started = true;
                 }
@@ -275,6 +281,46 @@ pub fn retire_namespace() -> io::Result<bool> {
                 )),
             }
         }
+        _ => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "invalid discovery daemon handshake",
+        )),
+    }
+}
+fn retire_discovered(identity: u128, remaining: Duration) -> io::Result<()> {
+    let discovery = transport::Endpoint::discovery()?;
+    let connection = transport::connect(&discovery);
+    let connection = match connection {
+        Err(error) if listener_absent(&error) => {
+            transport::connect(&transport::Endpoint::current()?)
+        }
+        result => result,
+    };
+    let mut stream = match connection {
+        Ok(stream) => stream,
+        Err(error) if listener_absent(&error) => return Ok(()),
+        Err(error) => return Err(error),
+    };
+    transport::set_timeout(&mut stream, remaining.min(Duration::from_secs(3)))?;
+    protocol::send(
+        &mut stream,
+        &protocol::Request::Hello {
+            version: protocol::VERSION,
+            compiler: identity,
+        },
+    )?;
+    match protocol::receive::<protocol::Reply>(&mut stream)? {
+        protocol::Reply::Hello { compiler, .. } if compiler != identity => {
+            protocol::send(&mut stream, &protocol::Request::Retire)?;
+            match protocol::receive::<protocol::Reply>(&mut stream)? {
+                protocol::Reply::Retiring => Ok(()),
+                _ => Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "old daemon did not acknowledge retirement",
+                )),
+            }
+        }
+        protocol::Reply::Hello { .. } => Ok(()),
         _ => Err(io::Error::new(
             io::ErrorKind::InvalidData,
             "invalid discovery daemon handshake",

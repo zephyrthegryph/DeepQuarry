@@ -138,8 +138,6 @@ impl Shared {
     }
 
     pub(super) fn housekeep(&self, now: Instant, pressured: bool, hard: bool) {
-        // The newest session is shielded from pressure degradation, except when the machine is about to page.
-        let emergency = hard && self.memory_emergency();
         let candidates = {
             let slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
             let mut candidates = BTreeMap::new();
@@ -163,7 +161,7 @@ impl Shared {
                 }
                 let last = *slot.last.lock().unwrap_or_else(|e| e.into_inner());
                 let previous = slot.idle_tier.load(Ordering::Acquire);
-                let shielded = pressured && protected.as_ref() == Some(key) && !emergency;
+                let shielded = pressured && protected.as_ref() == Some(key);
                 let mut next = target(now.saturating_duration_since(last), pressured && !shielded, hard && !shielded, previous);
                 // A removed worktree's session can never be edited again: release it whole, whatever the tier.
                 if !key.manifest.exists() {

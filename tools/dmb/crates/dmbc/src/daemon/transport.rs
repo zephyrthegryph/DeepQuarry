@@ -8,5 +8,5 @@ mod platform;
 #[path = "unix_socket.rs"]
 mod platform;
 pub(super) use platform::{
-    available_physical_bytes, connect, endpoint_addresses, listener, private_bytes, set_timeout, Endpoint, Listener, Stream,
+    connect, endpoint_addresses, listener, private_bytes, set_timeout, Endpoint, Listener, Stream,
 };

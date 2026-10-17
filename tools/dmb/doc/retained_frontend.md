@@ -401,39 +401,3 @@ next edit a full compile, so shortening the idle release (or the 30-minute MRU s
 returning edit for the memory. The 1.85 GB observation store is part of what tier 3 drops: evicting it means relowering
 (45 s in the released run), so it is not a cheap lazy rebuild. Revisit when record hits leave a patch base (lane
 `tools/dmb-real-world`): a released edit could then patch from persisted records.
-
-## Daemon lifecycle and the adaptive memory budget (lane `tools/dmb-retain`, 2026-10-17)
-
-Measured on the real stats file (`E:/dq-cache/dmb-daemon/compile-stats.jsonl`, 352 compiles over one working day, 5 lanes plus a
-play server): 40% of compiles took the hit or patch path, session hit rate 9.1%. Causes of the other 60%:
-
-| Cause | Evidence | Fix |
-|---|---|---|
-| Session key held the engine template **path**, and every worktree has its own `native_template.bin` | `variant-mismatch` (24); two resident sessions of one variant pushed the daemon past the fixed 8 GB hard limit (`evicted:hard-memory-limit`, 44) | key by the template's content hash (`EngineIdentity`) |
-| Daemons replaced each other: a client of another image retired the discovery holder, a starting daemon retired the least recently used idle peer (the one with the hot sessions), namespaced test daemons and an unregistered busy daemon (`dmb-build-rw`) used up the cap of 2 | 112 daemon starts for 352 compiles; 133 compiles ran on a daemon with under 300 MB private, i.e. freshly started (`no-session`, 184) | no newcomer-retires-incumbent at all (below) |
-| Fixed 8 GB budget against a 10 GB session | after every full compile private was 10 to 11 GB, so every other session was shed while 14 GB of RAM was free | budget follows available physical memory (below) |
-| No patch base after a hit-only session | `no-patch-base` (63): cheap (3 to 6 s record hits), not a full compile | unchanged |
-
-### Who owns which daemon
-
-* The endpoint is keyed by the compiler image identity, so a client only ever talks to the daemon of its own version, and starts
-  one when none exists. Nobody retires another version's daemon: `retire_discovered`, `enforce_cap` and `DQ_DMBC_MAX_DAEMONS`
-  on the daemon side are gone.
-* A **development build** (any `dmbc` not under `<bin>/v/<id>/` with `<id>` named by `<bin>/current`, so a worktree `target/`, an
-  explicit `DQ_DMBC_BIN`, a test fixture) sets `DMB_DAEMON_NAMESPACE=dev-<image id prefix>` itself at startup
-  (`resident::isolate_development_build`): its daemon, discovery endpoint and sessions are private and it never touches the
-  published daemon. An explicit `DMB_DAEMON_NAMESPACE` still wins.
-* A daemon leaves for idleness (`DMB_DAEMON_IDLE_EXIT_SECS`, default 1 hour), for memory (below), on `--daemon-retire`, or, as a
-  **superseded published version** (`<bin>/current` names another id), once it has had no connection or build for 2 minutes.
-* The caller-namespace registry in `tools/build/lib/dmbc_daemons.ts` keeps its count cap for explicit namespaces (bench,
-  experiments) but never retires a namespace used in the last 10 minutes.
-
-### Adaptive memory budget
-
-Unless `DMB_DAEMON_SOFT_PRIVATE_BYTES`, `DMB_DAEMON_HARD_PRIVATE_BYTES`, `DMB_DAEMON_MEMORY_BUDGET_GB` or
-`DMB_DAEMON_ADAPTIVE=0` is set, pressure follows the machine (`soft_memory.rs`): hard when available physical memory is under the
-reserve (`DMB_DAEMON_FREE_RESERVE_GB`, default 8), soft under reserve + 4 GB, emergency (the newest session loses its 30 minute
-shield) under half the reserve. A compile is admitted only while available memory covers the growth the last build of that
-project and kind (hot or cold) caused (default 2 GB hot, 12 GB cold) on top of the reserve: `Shared::await_memory` releases idle
-sessions of other projects least recently used first, then waits for running builds, and with nothing left to release or after 5
-minutes admits the build and logs the shortfall (a machine that is too small slows down instead of refusing every build).

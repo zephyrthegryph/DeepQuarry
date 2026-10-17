@@ -207,7 +207,7 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
   const receipt = path.join(owned, 'result.json');
   args.push('--compile-result-file', receipt);
   if (!artifacts && process.env.DQ_NATIVE_OUTPUT_STORE) args.push('--output-store', path.resolve(process.env.DQ_NATIVE_OUTPUT_STORE));
-  // One daemon per compiler version (DMB_DAEMON_NAMESPACE isolates a caller; a development build gets a private namespace from dmbc itself).
+  // One machine-wide daemon on the shared binary (DMB_DAEMON_NAMESPACE isolates a caller); the daemon caps itself at DQ_DMBC_MAX_DAEMONS.
   const scope = nativeNoDaemon() ? undefined : enterDaemonScope(nativeRoot(), executable);
   try {
     const result = await execute(executable, args, { throw: false, ...(invocation ? { cwd: invocation.root } : {}) });

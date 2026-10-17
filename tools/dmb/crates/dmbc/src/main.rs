@@ -20,12 +20,6 @@ fn main() {
 fn main_inner() {
     // Below normal priority before any worker thread or daemon exists (DMB_PRIORITY=normal opts out).
     dmbc::priority::apply_from_env();
-    // A development build gets a private daemon namespace before any endpoint is computed (never touches the published daemon).
-    if std::env::var_os("DMB_DAEMON_NAMESPACE").is_none() && dmbc::daemon::resident::provenance_of_self() == dmbc::daemon::resident::Provenance::Development {
-        if let Ok(identity) = dmbc::daemon::compiler_identity() {
-            dmbc::daemon::resident::isolate_development_build(identity);
-        }
-    }
     let mut arguments: Vec<String> = std::env::args().skip(1).collect();
     let compile_result = match dmbc::output_cli::extract_compile_result(&mut arguments) {
         Ok(path) => path,
