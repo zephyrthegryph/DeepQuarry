@@ -10,8 +10,8 @@
 /// Puts the blocker on a movable that is being initialized: nothing for a type that blocks none, the shared generic overlay for
 /// EMISSIVE_BLOCK_GENERIC, an owned blocker object (watched, so a blocker deleted from outside is dropped) for EMISSIVE_BLOCK_UNIQUE.
 /atom/movable/proc/emissive_blocker_attach()
-	if(lighting_of(src).emissive)
-		if(lighting_of(src).emissive == EMISSIVE_BLOCK_UNIQUE)
+	if(blocks_emissive)
+		if(blocks_emissive == EMISSIVE_BLOCK_UNIQUE)
 			render_target = ref(src)
 			rel_set(src, nameof(/atom/movable::em_block), new /atom/movable/emissive_blocker(null, src))
 			add_overlay(list(em_block), TRUE)
