@@ -17,17 +17,16 @@
 
 /datum/unit_test/dq_fresh_look_default/Run()
 	var/turf/T = test_floor()
+	// The roots the look pins cover: a type outside them (an effect whose lifecycle refuses a plain qdel) is not made by any look test.
 	var/list/types = list()
-	for(var/type in subtypesof(/obj))
-		if(dq_look_state_eligible(type))
-			types += type
-	for(var/type in subtypesof(/mob))
-		if(dq_look_state_eligible(type))
+	for(var/type in dq_look_universe(TRUE, FALSE))
+		if(ispath(type, /obj) || ispath(type, /mob))
 			types += type
 	var/list/bad = list()
 	var/checked = 0
 	for(var/type in sweep_types(types))
 		checked++
+		log_test("fresh look default: making [type]")
 		var/list/first = dq_fresh_look_rows(type, T)
 		var/list/second = dq_fresh_look_rows(type, T)
 		if(jointext(first, "\n") != jointext(second, "\n"))
