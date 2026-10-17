@@ -10,7 +10,8 @@ import { sharedCompilerConfiguration } from './shared_compiler_configuration';
 import type { ByondCompilationResult, DreamMakerOptions, PreparedDreamMaker } from './byond';
 import { conventionalOutput, createNativeRequestDirectory, parseCompileResult, readNativeResult, withCompiledOutput, type CompiledOutput, type NativePairOutput } from './native_pair';
 
-import { bindCompilerInvocation, type CompilerInvocation } from './compiler_invocation';
+import { withSharedCompileRoot } from './compile_root';
+import { bindCompilerInvocation, compilerInvocation, type CompilerInvocation } from './compiler_invocation';
 import { dmbcBinOverride, sharedDmbcExe } from './dmbc_cache';
 import { enterDaemonScope } from './dmbc_daemons';
 import { byondProvenance, nativeProvenance, observedExecutable } from './compiler_provenance';
@@ -256,7 +257,13 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
   }
   if (mode === 'native') {
     const strict = nativeStrict();
-    const result = await nativeCompile(dme, options, execute, undefined, invocation);
+    // One compile root per variant, viewing this worktree (lib/compile_root.ts), so the resident compiler's session is shared by
+    // every worktree. Not for captured invocations (they name their own root) and not when the manifest is not a worktree file.
+    const shared = invocation ? undefined : await withSharedCompileRoot(
+      nativeRoot(), dme, (outcome: { code: number | null; signal?: string | null }) => outcome.code === 0 && !outcome.signal,
+      (run) => nativeCompile(dme, options, execute, undefined, compilerInvocation(run.root, run.relativeManifest, options.defines ?? [])),
+      (message) => Juke.logger.info(message));
+    const result = shared ? shared.result : await nativeCompile(dme, options, execute, undefined, invocation);
     if (result.code === 0 && !result.signal) return result.output!;
     // Only the typed compiler internal failure status admits fallback.
     // Setup, transport, source, cancellation and infrastructure failures retain

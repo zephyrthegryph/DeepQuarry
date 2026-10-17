@@ -46,7 +46,7 @@ impl PathTaken {
 pub struct SessionState {
     /// True when a retained session with state was present and usable.
     pub hot: bool,
-    /// Why not, when `hot` is false: `no-session`, `variant-mismatch`, `evicted:<why>`, `degraded-tier-N`, `no-retained-state`.
+    /// Why not, when `hot` is false: `no-session`, `variant-mismatch`, `evicted:<why>`, `degraded-tier-N`, `no-patch-base` (a session exists but holds no state a patch can start from).
     pub miss: Option<String>,
     /// Retained sessions in the daemon when the request arrived.
     pub sessions: usize,

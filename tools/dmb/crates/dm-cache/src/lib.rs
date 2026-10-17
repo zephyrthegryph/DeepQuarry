@@ -5,7 +5,7 @@ mod store;
 pub use segment::{
     CacheError, Limits, MappedPayload, Record, RecordKey, RecordView, Segment, SymbolText,
 };
-pub use store::{Cache, CacheSnapshot, CompactResult, EvictionReport, RejectedSegment};
+pub use store::{BudgetReport, Cache, CacheSnapshot, CompactResult, EvictionReport, RejectedSegment};
 
 #[cfg(test)]
 mod tests;

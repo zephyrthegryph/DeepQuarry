@@ -44,6 +44,10 @@ impl CacheSnapshot {
                             .lock()
                             .unwrap_or_else(|e| e.into_inner())
                             .insert(key);
+                        self.used_segments
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner())
+                            .insert(ordinal);
                         return Some(capture(segment, view));
                     }
                     Ok(_) => {}
