@@ -11,7 +11,7 @@
 	var/obj/structure/fence/door/C = allocate(/obj/structure/fence/door)
 	TEST_ASSERT(F.density && C.density, "normal fence and closed door preserve their actual blocking state")
 	TEST_ASSERT(!H.density && H.icon_state == "straight_cut3", "a configured large hole is open with its actual cut picture")
-	TEST_ASSERT(O.open && O.density && O.icon_state == "door_opened", "legacy child-door then parent-cut ordering keeps the opened mapped door's existing dense state")
+	TEST_ASSERT(O.open && !O.density && O.icon_state == "door_opened", "legacy door update opens the non-cuttable mapped door; its parent cut-status callback is a no-op")
 	O.update_door_status()
 	TEST_ASSERT(!O.density, "the actual later runtime door update still applies the open state")
 

@@ -1194,6 +1194,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 	burn_out()
 
 // Immutable type policy plus a holder-local COW sample: the shell is appearance data, not an object reference.
+STATIC_ENTRY(lighter_shell)
 /proc/lighter_shell(shown = null, sampled_icon = null, sampled_state = null, sampled_color = null)
 	return entry_make(ENTRY_LIGHTER_SHELL, null, list("shown" = shown, "sampled_icon" = sampled_icon, "sampled_state" = sampled_state, "sampled_color" = sampled_color))
 

@@ -5,7 +5,9 @@
 /datum/unit_test/dq_init_items_phase_contracts/flipper
 /datum/unit_test/dq_init_items_phase_contracts/flipper/Run()
 	dq_init_objects_fixture_scope()
-	var/obj/item/paicard/flipper/F = allocate(/obj/item/paicard/flipper, test_floor())
+	var/turf/T = test_floor()
+	var/list/old_sparks = turf_contents_of_type(T, /obj/effect/effect/sparks)
+	var/obj/item/paicard/flipper/F = allocate(/obj/item/paicard/flipper, T)
 	var/mob/living/silicon/pai/flipper/P = F.pai
 	TEST_ASSERT(istype(P), "the actual flipper constructs its declared concrete companion")
 	own(P)
@@ -13,9 +15,12 @@
 	TEST_ASSERT_EQUAL(P.card, F, "the companion's parent initializer binds the exact supplied card")
 	TEST_ASSERT_EQUAL(P.radio, F.radio, "the actual companion and card share their original radio")
 	TEST_ASSERT_EQUAL(P.chassis_name, PAI_DEFAULT_EMAGGED_CHASSIS, "the real flipper retains its constructor-selected chassis")
-	TEST_ASSERT_EQUAL(F.current_emotion, 4, "the flipper's final construction hook retains its original expression")
+	TEST_ASSERT_EQUAL(F.current_emotion, 16, "the inherited synchronous after_init retains the old final off expression")
 	qdel(F)
 	TEST_ASSERT(P.stat == DEAD || QDELETED(P), "deleting the card retains its original companion death policy")
+	for(var/obj/effect/effect/sparks/spark as anything in turf_contents_of_type(T, /obj/effect/effect/sparks))
+		if(!(spark in old_sparks))
+			own(spark) // Actual effects produced by this card's emag/death transaction.
 
 /datum/unit_test/dq_init_items_phase_contracts/tethers
 /datum/unit_test/dq_init_items_phase_contracts/tethers/Run()

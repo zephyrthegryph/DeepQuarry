@@ -32,16 +32,18 @@
 	dq_init_objects_fixture_scope()
 	var/obj/machinery/camera/communicator/C = allocate(/obj/machinery/camera/communicator)
 	TEST_ASSERT(GLOB.global_hud.whitense in C.client_huds, "a communicator camera retains its actual enhanced-vision HUD")
-	TEST_ASSERT(GLOB.global_hud.darkMask in C.client_huds, "a communicator camera retains its actual dark-mask HUD")
 	var/whitense_count = 0
-	var/dark_count = 0
 	for(var/datum/H as anything in C.client_huds)
 		if(H == GLOB.global_hud.whitense)
 			whitense_count++
-		if(H == GLOB.global_hud.darkMask)
-			dark_count++
 	TEST_ASSERT_EQUAL(whitense_count, 1, "the enhanced-vision HUD is included once")
-	TEST_ASSERT_EQUAL(dark_count, 1, "the dark-mask HUD is included once")
+	TEST_ASSERT_EQUAL(length(GLOB.global_hud.darkMask), 8, "the actual dark mask consists of eight screen pieces")
+	for(var/atom/movable/screen/mask as anything in GLOB.global_hud.darkMask)
+		var/mask_count = 0
+		for(var/datum/H as anything in C.client_huds)
+			if(H == mask)
+				mask_count++
+		TEST_ASSERT_EQUAL(mask_count, 1, "each actual dark-mask screen piece is included exactly once")
 
 /datum/unit_test/dq_init_objects_residual_effects/implant_ownership
 

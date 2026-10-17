@@ -28,6 +28,7 @@
 /datum/unit_test/dq_gameplay/Run()
 	var/started = REALTIMEOFDAY
 	test_driver_begin()
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	set_global(nameof(GLOB.test_prompts), list())
 	test_prompts_reset()
 	try

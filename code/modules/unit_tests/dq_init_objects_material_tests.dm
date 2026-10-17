@@ -10,7 +10,7 @@
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	var/obj/item/material/knife/K = allocate(/obj/item/material/knife, test_floor(), MAT_GOLD)
 	TEST_ASSERT_EQUAL(K.material, gold, "the real positional material constructor reaches the requested material")
-	TEST_ASSERT_EQUAL(K.color, gold.icon_colour, "the material setter retains its actual tint")
+	TEST_ASSERT_EQUAL(lowertext(K.color), lowertext(gold.icon_colour), "the material setter retains its exact RGB tint independent of host hex casing")
 	TEST_ASSERT_EQUAL(K.max_integrity, max(1, round(gold.integrity / 10)) * MATERIAL_WEAR_UNIT, "material integrity is initialized before construction returns")
 	TEST_ASSERT_EQUAL(K.get_integrity(), K.max_integrity, "the newly made material weapon is fully intact")
 	TEST_ASSERT_EQUAL(combat_of(K).force, round(gold.edge_damage() * K.force_divisor), "the real sharp-material force is initialized")

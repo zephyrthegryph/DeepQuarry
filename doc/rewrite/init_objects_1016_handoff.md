@@ -29,3 +29,9 @@ The focused selector file has 157 entries, including requirement/conversion pins
 These need actual phase or appearance contracts, not renamed initializer bodies. The cold-canister child also appears on the machinery branch because its parent/child setup must stay ordered; that one overlap must not be counted twice across branches.
 
 The final object cohort also carries the bounded culture-product fixture cleanup and parent prompt-state scoping verified on the base-variable lane. It retains only the actual culture's newly created blood copies for teardown; it does not claim a production nested-reagent ownership fix. The actual four-culture lifetime regression is selected here too. This branch still needs its own runtime proof.
+# Verification repair checkpoint
+
+The `6ec5398b8b` lane-ready attempt passed production compilation, DreamChecker and ratchets, but its focused world exited with code 127 during the incremental appearance sweep and wrote no final result. It is not a passing gate or a stamp. Its BYOND log reports bad references and garbage/configuration list errors; the cause remains under investigation. The native test compile also fell back to DreamMaker after an unsupported test overlay initializer.
+
+The follow-up repairs register `lighter_shell` as the static entry it actually returns, correct fixture assumptions against real constructor/parent/animation behavior, and scope the three diagnostic counters changed by the selected tests. The storage fixture now distinguishes construction notices from a genuine subsequent movement's `Entered` callback. Only the six completed master prompt-projection differences attributable to `201c0431de` are refreshed; incomplete appearance output is not blessed. The two concrete extinguisher child selectors are now explicit in the verification list. Runtime verification remains pending.
+

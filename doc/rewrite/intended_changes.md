@@ -4941,3 +4941,7 @@ prove the composition equal within a relative 1e-5. What is different on purpose
 * **Evasion.** `evasion` is the stat: the mob's own base evasion is its type-level constant and the factor contributions add to it; `get_evasion()` reads the one var.
 * **Float order.** PRODUCT stats multiply in row-creation order, not afflictions-effects-stasis-reagents-species order; the last bit can differ.
 * **Dead factors deleted.** `BF_ARRHYTHMIA_RISK`, `BF_VISION` and `BF_HEARING` had no source and no reader; `BF_SEDATION` and `BF_INCOMING_NEURAL` stay.
+
+### Master prompt-op projection changes (201c0431de)
+
+Master commit `201c0431de48a3569167d8199653abcac3222db9` converted disposal and radiocarbon scanner rerun prompts to declared asks. Disposal and deliveryChute no longer offer the inert Use multitool menu row while their default charging mode silently refuses reconfiguration. The radiocarbon scanner now declares the glass-specific use_container op, changing its glass-held menu projection (Open controls and Use), plain-click label (Open controls), and op key inventory. These six diagnostic classes span three type files; neither production file differs from master. Refresh only those exact expanded row deltas, retaining existing inherited base blocks and all unrelated pins. No appearance pins or runtime failures are blessed.

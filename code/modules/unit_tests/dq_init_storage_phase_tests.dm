@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/pen/dq_storage_variant)
 		owner_space_at_birth = S.max_storage_space
 		owner_actions_at_birth = length(S.actions)
 		for(var/entry in S.overlays)
-			var/image/I = entry
+			var/mutable_appearance/I = new(entry)
 			if(I.plane == PLANE_EMISSIVE)
 				owner_had_emissive = TRUE
 	return ..()
@@ -45,11 +45,13 @@ CAPABILITIES(/obj/item/pen/dq_storage_variant)
 	max_storage_space = 1
 	starts_with = list(/obj/item/dq_storage_birth_probe = list(1), /obj/item/paper = list(2), /obj/item/pen/dq_storage_variant = list(1, "red"))
 	actions_types = list(/datum/action/item_action/dq_storage_order_probe)
+	var/entered_calls = 0
 	var/entered_initialized
 	var/entered_materialized
 
 /obj/item/storage/box/dq_storage_order_probe/Entered(atom/movable/thing, atom/OldLoc)
 	if(istype(thing, /obj/item/dq_storage_birth_probe))
+		entered_calls++
 		entered_initialized = !!(flags & ATOM_INITIALIZED)
 		entered_materialized = !!(flags & ATOM_MATERIALIZED)
 	return ..()
@@ -64,8 +66,9 @@ CAPABILITIES(/obj/item/pen/dq_storage_variant)
 	var/obj/item/storage/box/dq_storage_order_probe/S = allocate(/obj/item/storage/box/dq_storage_order_probe, test_floor())
 	var/obj/item/dq_storage_birth_probe/I = locate() in S
 	TEST_ASSERT(I, "the actual unsafe generator child is eagerly constructed")
-	TEST_ASSERT(I.owner_initialized && S.entered_initialized, "real child initialization and storage Entered both see ATOM_INITIALIZED")
-	TEST_ASSERT(!I.owner_materialized && !S.entered_materialized, "both real callbacks run before the owner materializes")
+	TEST_ASSERT(I.owner_initialized, "The real child pre-parent Initialize sees its owner ATOM_INITIALIZED")
+	TEST_ASSERT_EQUAL(S.entered_calls, 0, "Constructor birth publishes the real initialized notice/ledger event, not legacy movement Entered")
+	TEST_ASSERT(!I.owner_materialized, "Real child initialization still runs before its owner materializes")
 	TEST_ASSERT(I.owner_had_emissive, "the actual movable parent appearance already exists before unsafe child initialization")
 	TEST_ASSERT_EQUAL(I.owner_space_at_birth, 1, "unsafe construction still precedes capacity calibration")
 	TEST_ASSERT_EQUAL(I.owner_actions_at_birth, 0, "the unsafe child is still made before item actions")
@@ -80,6 +83,11 @@ CAPABILITIES(/obj/item/pen/dq_storage_variant)
 	TEST_ASSERT(A, "the real declared item action is created")
 	TEST_ASSERT_EQUAL(A.owner_space_at_action, expected, "actual action New observes calibrated capacity, not the old default")
 	TEST_ASSERT_EQUAL(A.unsafe_children_at_action, 1, "the actual action observes precisely one unsafe child")
+	// A genuine subsequent movement dispatches Entered against the now-live owner.
+	I.forceMove(test_floor())
+	I.forceMove(S)
+	TEST_ASSERT_EQUAL(S.entered_calls, 1, "An actual move back invokes precisely one storage Entered")
+	TEST_ASSERT(S.entered_initialized && S.entered_materialized, "Movement sees the fully initialized/materialized owner")
 	S.make_contents_real()
 	TEST_ASSERT_EQUAL(S.held_count(), 4, "materialization preserves all original generator multiplicities")
 	S.make_contents_real()

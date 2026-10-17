@@ -224,6 +224,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 /datum/unit_test/dq_combat_ai_damage_promotes_attacker
 
 /datum/unit_test/dq_combat_ai_damage_promotes_attacker/Run()
+	set_global(nameof(GLOB.standing_cache_drops), GLOB.standing_cache_drops)
 	var/mob/living/simple_mob/combat_ai_test_subject/victim = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/simple_mob/combat_ai_test_subject/aggressor = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	// Faction-mates don't feud over friendly fire (should_retaliate_against()).

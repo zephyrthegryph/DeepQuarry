@@ -5,10 +5,15 @@
 	dq_init_objects_fixture_scope()
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
+	var/obj/effect/temporary_effect/lightning_strike/default_strike = allocate(/obj/effect/temporary_effect/lightning_strike, test_floor())
+	TEST_ASSERT_EQUAL(default_strike.blocks_emissive, EMISSIVE_BLOCK_NONE, "Real lightning default has no generic parent blocker")
+	TEST_ASSERT_NULL(default_strike.priority_overlays, "The actual default creates no priority blocker")
+	qdel(default_strike)
 	for(var/birth_alpha in list(0, 17, 255))
 		SSatoms.map_loader_begin("dq_lightning_phase")
 		var/obj/effect/temporary_effect/lightning_strike/L = new(test_floor())
 		set_var(L, nameof(L.alpha), birth_alpha)
+		set_var(L, nameof(L.blocks_emissive), EMISSIVE_BLOCK_GENERIC)
 		set_var(L, nameof(L.time_to_die), 2 SECONDS)
 		SSatoms.map_loader_stop("dq_lightning_phase")
 		own(L)
@@ -18,7 +23,7 @@
 		TEST_ASSERT(L.icon_state in list("lightning_strike1", "lightning_strike2"), "native roll still selects one actual lightning state")
 		var/parent_overlays = 0
 		for(var/entry in L.overlays)
-			var/image/I = entry
+			var/mutable_appearance/I = new(entry)
 			if(I.plane != PLANE_EMISSIVE)
 				continue
 			parent_overlays++

@@ -1,7 +1,7 @@
 /datum/unit_test/dq_init_objects_circle_wave
 
 /// Map variables are installed before the real Initialize transaction, not through a new production param.
-/datum/unit_test/dq_init_objects_circle_wave/proc/mapped_wave(type, matrix/birth_transform, scale_x = DEFAULT_ICON_SCALE_X, scale_y = DEFAULT_ICON_SCALE_Y, rotation = DEFAULT_ICON_ROTATION, birth_alpha = 255)
+/datum/unit_test/dq_init_objects_circle_wave/proc/mapped_wave(type, matrix/birth_transform, scale_x = DEFAULT_ICON_SCALE_X, scale_y = DEFAULT_ICON_SCALE_Y, rotation = DEFAULT_ICON_ROTATION, birth_alpha = 255, birth_blocking = EMISSIVE_BLOCK_GENERIC)
 	SSatoms.map_loader_begin("dq_circle_wave_context")
 	var/obj/effect/temp_visual/circle_wave/V = new type(test_floor())
 	set_var(V, nameof(V.transform), birth_transform)
@@ -9,6 +9,7 @@
 	set_var(V, nameof(V.icon_scale_y), scale_y)
 	set_var(V, nameof(V.icon_rotation), rotation)
 	set_var(V, nameof(V.alpha), birth_alpha)
+	set_var(V, nameof(V.blocks_emissive), birth_blocking)
 	SSatoms.map_loader_stop("dq_circle_wave_context")
 	own(V)
 	SSatoms.InitializeAtoms(list(V))
@@ -26,7 +27,7 @@
 /datum/unit_test/dq_init_objects_circle_wave/proc/check_parent_visual(obj/effect/temp_visual/circle_wave/V, expected_alpha)
 	var/emissive_count = 0
 	for(var/entry in V.overlays)
-		var/image/I = entry
+		var/mutable_appearance/I = new(entry)
 		if(I.plane != PLANE_EMISSIVE)
 			continue
 		emissive_count++
@@ -42,11 +43,19 @@
 
 /datum/unit_test/dq_init_objects_circle_wave/Run()
 	dq_init_objects_fixture_scope()
-	// Null, a zero matrix and an unrelated custom transform are all intentionally overwritten.
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
+	var/obj/effect/temp_visual/circle_wave/default_wave = allocate(/obj/effect/temp_visual/circle_wave, test_floor())
+	TEST_ASSERT_EQUAL(default_wave.blocks_emissive, EMISSIVE_BLOCK_NONE, "Real wave defaults do not opt into a generic emissive blocker")
+	TEST_ASSERT_NULL(default_wave.priority_overlays, "The unmodified real default creates no priority blocker")
+	qdel(default_wave)
+	// animate() exposes its destination on the server; clients interpolate from 0.1.
+	// Null, zero and custom birth transforms all reach the same actual target.
+	// Explicit mapped GENERIC below makes the parent-snapshot test meaningful.
 	var/list/transforms = list(null, matrix(0, 0, 0, 0, 0, 0), matrix(4, 1, 13, 2, 5, 17))
 	for(var/matrix/birth_transform as anything in transforms)
 		var/obj/effect/temp_visual/circle_wave/V = mapped_wave(/obj/effect/temp_visual/circle_wave, birth_transform)
-		check_matrix(V.transform, matrix().Scale(0.1))
+		check_matrix(V.transform, matrix().Scale(V.amount_to_scale))
 		check_parent_visual(V, 255)
 		qdel(V)
 		TEST_ASSERT_EQUAL(time_scheduler().timer_count(V), 0, "deleted wave retains no scheduled native calls")
@@ -55,6 +64,8 @@
 
 /datum/unit_test/dq_init_objects_circle_wave/parent_transform_and_lifetime/Run()
 	dq_init_objects_fixture_scope()
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	var/obj/effect/temp_visual/circle_wave/V = mapped_wave(/obj/effect/temp_visual/circle_wave, matrix(4, 1, 13, 2, 5, 17), 2, 3, 90, 0)
 	var/matrix/parent_result = matrix()
 	parent_result.Scale(2, 3)
@@ -65,7 +76,7 @@
 	TEST_ASSERT(QDELETED(V), "the actual native lifetime expires the wave")
 	TEST_ASSERT_EQUAL(time_scheduler().timer_count(V), 0, "expiry leaves no native timer behind")
 	var/obj/effect/temp_visual/circle_wave/void_conduit/long_wave = mapped_wave(/obj/effect/temp_visual/circle_wave/void_conduit, null, birth_alpha = 17)
-	check_matrix(long_wave.transform, matrix().Scale(0.1))
+	check_matrix(long_wave.transform, matrix().Scale(long_wave.amount_to_scale))
 	check_parent_visual(long_wave, 17)
 	test_time(1 SECOND)
 	TEST_ASSERT(!QDELETED(long_wave), "the real long-lived subtype does not inherit the short default lifetime")
