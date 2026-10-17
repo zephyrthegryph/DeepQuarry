@@ -73,7 +73,7 @@ CAPABILITIES(/obj/machinery/implantchair)
 		return OP_OK
 	if(put_mob(M, user))
 		consume(grab, user)
-	src.updateUsrDialog(user)
+	refresh_ui(src)
 	return OP_OK
 
 

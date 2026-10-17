@@ -220,7 +220,7 @@ CAPABILITIES(/obj/item/camera/siliconcam)
 	return aiCamera.picture_names(src)
 
 /// The picture named `picked_name`, which the caller's op asked for (asks() step with picture_choices()).
-/mob/living/silicon/proc/GetPicture(picked_name)
+/mob/living/silicon/GetPicture(picked_name)
 	if(!aiCamera)
 		return
 	return aiCamera.selectpicture(src, picked_name)

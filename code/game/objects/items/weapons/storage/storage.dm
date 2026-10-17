@@ -358,16 +358,11 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 /// Quick-empty onto the floor, if `user` can.
 /obj/item/storage/proc/try_quick_empty(mob/user)
-	// Only humans and robots can dump contents
-	if(!(ishuman(user) || isrobot(user)))
-		return FALSE
-	// Hard to do when you're KO'd
-	if(user.incapacitated())
-		return FALSE
-	if(!Adjacent(user))
-		return FALSE
-	// No turf dumping if user is in a belly
-	if(isbelly(user.loc))
+	return user.empty_storage(src)
+
+/// An actor with the physical dumping transaction still needs a clear, nearby floor.
+/obj/item/storage/proc/finish_quick_empty(mob/user)
+	if(user.incapacitated() || !Adjacent(user) || isbelly(user.loc))
 		return FALSE
 	drop_contents(user)
 	return TRUE

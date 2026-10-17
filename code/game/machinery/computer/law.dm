@@ -14,7 +14,7 @@ MSG_DEF_SELF(upload/module_required, "needs a AI module")
 
 
 CAPABILITIES(/obj/machinery/computer/aiupload)
-	op("access_internals", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Access Computer's Internals"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_access_internals)))
+	op("access_internals", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Access Computer's Internals"), needs(req_adjacent(), req_capable(), req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(req_silent))), then(PROC_REF(interaction_access_internals)))
 	op("install_module", inputs(item(/obj/item/aiModule), menu()), priority(OP_PRIORITY_DEFAULT), label("Install module"), needs(req(/obj/item, because = MSG(upload/item_required)), req_adjacent(), req_capable(), req(PROC_REF(can_connect))), then(PROC_REF(interaction_install)))
 	op("select_ai", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select AI"), needs(req(PROC_REF(can_select_ai))),
 		asks(/datum/prompt/choice/ai_upload_selection, fields = list("title" = "AI selection", "question" = "AI signals detected:"), step = "selection"), then(PROC_REF(interaction_select_ai)))
@@ -22,7 +22,7 @@ CAPABILITIES(/obj/machinery/computer/aiupload)
 	ref_one(nameof(current), /mob/living/silicon/ai)
 /obj/machinery/computer/aiupload/proc/interaction_access_internals(datum/act/op/A)
 	var/mob/user = A.actor
-	if(get_dist(src, user) > 1 || user.restrained() || user.lying || user.stat || istype(user, /mob/living/silicon))
+	if(get_dist(src, user) > 1 || user.restrained() || user.lying || user.stat)
 		return TRUE
 
 	opened = !opened

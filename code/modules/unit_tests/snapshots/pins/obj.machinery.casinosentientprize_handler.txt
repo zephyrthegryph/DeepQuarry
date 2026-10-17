@@ -33,4 +33,4 @@ human|/obj/item click: Click: Use
 human|/obj/item/pda menu: Management controls (refused: access denied)
 human|/obj/item/pda menu: Use (refused: the SPASM is disabled)
 human|/obj/item/pda click: Click: Use
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, spasm_cash, spasm_collar, spasm_id, spasm_use
+keys: casino_set_price, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, spasm_cash, spasm_collar, spasm_id, spasm_use
