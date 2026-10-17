@@ -187,8 +187,8 @@
 
 /// A slot: an object that lives inside the holder (section 6). Backed by the containment ledger; the entry is the declaration the
 /// ledger, the reach gate and the state-graph's SLOT_CONSTRUCTION read.
-/proc/slot(slot_id, accepts = null, capacity = null, exposure = null, at = null, on_destroy = null, starts = null, starts_args = null, key = null)
-	return entry_make(ENTRY_SLOT, key, list("id" = slot_id, "accepts" = accepts, "capacity" = capacity, "exposure" = exposure, "at" = at, "on_destroy" = on_destroy, "starts" = starts, "starts_args" = starts_args))
+/proc/slot(slot_id, accepts = null, capacity = null, exposure = null, at = null, on_destroy = null, starts = null, starts_args = null, key = null, unit = null, quantity = FALSE)
+	return entry_make(ENTRY_SLOT, key, list("id" = slot_id, "accepts" = accepts, "capacity" = capacity, "exposure" = exposure, "at" = at, "on_destroy" = on_destroy, "starts" = starts, "starts_args" = starts_args, "unit" = unit, "quantity" = quantity))
 
 // DM gives a proc named arguments only when it declares them, so a constructor that takes entries and then options (`when(cond, a, b, reads =
 // ...)`) declares ENTRY_SLOTS positional slots for the entries and the options by name. More than that many entries go in one list (a
