@@ -2,7 +2,11 @@
 
 Canonical branch: `codex/base-vars-burndown`. Repairs are prepared on `codex/base-vars-burndown-repair` in a separate worktree so the running 8a95eeaad4 gate keeps its original source.
 
-## Source result
+## October 17 refresh
+
+Merged master 676786642d. Retained master raw-overlay attachment and adapted its two emissive configuration reads to the existing lighting record. The rejected look-harness changes and look records now match master. Compiler and build tooling have no private delta. Historical verification below is not a new stamp; current focused lane-ready proof is pending and will use --no-pins.
+
+## Historical source result
 
 The initial baseline was 539 rows. Current master 3240597db6 has 537; this source has **386**. It removes **151 identities from current master**, with **zero additions**, including duplicate multiplicities. The total reduction from the original baseline is 153, including two upstream removals. No ALLOW or ceiling was added.
 
@@ -14,7 +18,7 @@ The next cohort removes another 23 fields: machinery interaction settings (5); o
 
 The original 8a95eeaad4 gate compiled production and tests without errors, passed DreamChecker and ratchets, but failed its boot/runtime checks. It is not a successful stamp. Its old 584 conversion-row differences are 23 aborted constructor dumps, not completed behavior captures; none was blessed.
 
-Prepared repairs add missing real static roots and static markers, restore the original HUD deadline boundary, correct clock and transform test assumptions against the actual native clocks/original image implementation, isolate fixture archive/counter state, compose prone density with independent sources, normalize native identities before look probes, and reapply the approved internal-storage admission-before-link fix. The hidden slime-state reuse guard remains strict.
+Prepared repairs add missing real static roots and static markers, restore the original HUD deadline boundary, correct clock and transform test assumptions against the actual native clocks/original image implementation, isolate fixture archive/counter state, compose prone density with independent sources, reapply the approved internal-storage admission-before-link fix.
 
 The repaired source and the 23-field cohort passed generation and all ratchets before the final equivalent time-define formatting. Final code ef7208549d regenerated successfully and passed DreamChecker with zero diagnostics (data/dream-checker-native-homes-repair.log). The focused repair list contains 42 explicit selectors: failed tests, newly affected regressions, and the mandatory requirement/conversion pins. No replacement runtime pass, lane-ready stamp or push is claimed yet. Test worlds remain serialized.
 
