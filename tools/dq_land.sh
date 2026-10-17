@@ -100,9 +100,15 @@ for ((round = 1; round <= rounds; round++)); do
 	fi
 	(
 		cd "$WT" || exit 1
+		_t=$(date +%s); lap() { echo "== dq_land: $1 $(( $(date +%s) - _t ))s"; _t=$(date +%s); }
 		git merge --no-ff --no-edit -q -m "Merge $branch" "$merge_ref" || { git merge --abort >/dev/null 2>&1; echo "dq_land: the merge of $branch conflicts with master (rebase: bash tools/dq_merge_master.sh, then run dq_land.sh again)" >&2; exit 1; }
+		lap "merge"
 		bash tools/dq_merge_gates.sh --lanes "$branch" --no-auto-merge || exit 1
+		lap "gates (proof reuse when master did not move)"
 		if [ "$dry" -eq 1 ]; then DQ_PUSH_DRY_RUN=1 bash tools/dq_push_master.sh --expect "$branch"; else bash tools/dq_push_master.sh --expect "$branch"; fi
+		rc=$?
+		lap "push"
+		exit "$rc"
 	)
 	rc=$?
 	held=$(( $(date +%s) - locked_at ))

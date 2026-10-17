@@ -40,6 +40,8 @@ merge_lock_require || exit 1
 . "$(dirname "${BASH_SOURCE[0]}")/dq_proof_cache.sh"
 # shellcheck source=tools/dq_gate_retry.sh
 . "$(dirname "${BASH_SOURCE[0]}")/dq_gate_retry.sh"
+_lap_t0=$(date +%s)
+lap() { echo "== gates: $1 +$(( $(date +%s) - _lap_t0 ))s"; } # where the pre-proof seconds go (the lock is held across them)
 merge_lock_busy begin
 trap 'merge_lock_busy end' EXIT
 
@@ -87,6 +89,7 @@ if [ "$automerge" -eq 1 ] && [ -n "$lanes" ]; then
 fi
 # The generated files must be fresh before the HEAD is stamped.
 tools/build/build.sh gen || { echo "dq_merge_gates: gen failed" >&2; exit 1; }
+lap gen
 # What this batch is meant to land, recorded for tools/dq_push_master.sh: origin/master as the gates start (a push after it moved
 # is refused on the merge worktree) and the tip of every lane in --lanes (the push fails unless each is in HEAD and then in origin/master).
 git fetch -q origin 2>/dev/null || echo "dq_merge_gates: warning: git fetch failed; base_master is the last fetched origin/master" >&2
@@ -114,7 +117,9 @@ if [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git
 	fi
 fi
 # look_keys.txt records VERIFIED keys only. The union merge may have left it non-canonical (normalize drops rows, never writes a key).
+lap "fetch and baseline shrink"
 bash tools/ci/check_look_keys_format.sh --commit || { echo "dq_merge_gates: look_keys normalization failed" >&2; exit 1; }
+lap "look keys"
 # Every type whose current look key has no recorded row (its look changed in a lane or in the merge) is probed here, and only here are
 # its keys recorded, into the merge commit. A lane-ready run (--snapshot-output) probes its own and records them itself.
 if [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ] && ! dq_diff_touches_dm; then
@@ -225,6 +230,7 @@ if [ "$run_tests" -eq 1 ] && [ ${#tests[@]} -eq 0 ]; then tests=(dq_boot_gate); 
 # dq_lane_ready.sh proves a lane on its merge with master and stores the proof under the TREE hash (tools/dq_proof_cache.sh). If master
 # has not moved, merging the lane gives that very tree: nothing to rebuild or retest, the stamps for this commit are written from the
 # proof. A tree nobody proved (master moved, a batch of several lanes) runs the gates below. DQ_PROOF_REUSE=0 forces them.
+lap "look pins and test list"
 tree="$(proof_tree HEAD)"
 proof_file=""
 if [ "$run_tests" -eq 1 ] && [ "${DQ_PROOF_REUSE:-1}" != 0 ] && [ -z "$reproof_of" ]; then
