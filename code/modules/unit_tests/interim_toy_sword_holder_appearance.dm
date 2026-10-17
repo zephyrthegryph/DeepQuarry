@@ -1,16 +1,18 @@
 /// Counts the real human's redraws (its whole look is one draw).
 /mob/living/carbon/human/interim_toy_sword_holder
-	var/left_redraws = 0
-	var/right_redraws = 0
+	/// Draws per holder (REF -> count). A plain static list: a tracked var written by the draw it is read in marks itself changed during its own refresh.
+	var/static/list/draw_log = list()
 
 /// The holder's look is one draw: a redraw counts for both hands.
 /mob/living/carbon/human/interim_toy_sword_holder/draw(datum/look/look)
-	var/expected = GLOB.derived_write_expected
-	GLOB.derived_write_expected = TRUE // this counter is written from the output on purpose
-	set_left_redraws(left_redraws + 1)
-	set_right_redraws(right_redraws + 1)
-	GLOB.derived_write_expected = expected
+	draw_log[REF(src)] = (draw_log[REF(src)] || 0) + 1
 	..()
+
+/mob/living/carbon/human/interim_toy_sword_holder/proc/redraws()
+	return draw_log[REF(src)] || 0
+
+/mob/living/carbon/human/interim_toy_sword_holder/proc/clear_redraws()
+	draw_log -= REF(src)
 
 /// Draws the real look and applies it, observing the overlays it lays.
 /obj/item/toy/sword/interim_holder_appearance
@@ -37,17 +39,17 @@
 		if(entry && entry.icon_state == "esword_blade")
 			inactive_blades++
 	TEST_ASSERT_EQUAL(inactive_blades, 0, "the actual initial inactive appearance contains no blade")
-	holder.set_left_redraws(0)
-	holder.set_right_redraws(0)
-	bystander.set_left_redraws(0)
-	bystander.set_right_redraws(0)
+	holder.clear_redraws()
+	holder.clear_redraws()
+	bystander.clear_redraws()
+	bystander.clear_redraws()
 	test_op_handler(sword, "interaction_self", holder, sword)
 	TEST_ASSERT(sword.active, "the actual toy interaction extends its blade")
 	sword.observe()
 	TEST_ASSERT_EQUAL(sword.item_state, "esword_blade", "the actual extended blade has its held item state")
 	sword.observe()
-	TEST_ASSERT_EQUAL(bystander.left_redraws, 0, "appearance generation does not redraw the ambient caller's left hand")
-	TEST_ASSERT_EQUAL(bystander.right_redraws, 0, "appearance generation does not redraw the ambient caller's right hand")
+	TEST_ASSERT_EQUAL(bystander.redraws(), 0, "appearance generation does not redraw the ambient caller's left hand")
+	TEST_ASSERT_EQUAL(bystander.redraws(), 0, "appearance generation does not redraw the ambient caller's right hand")
 	TEST_ASSERT_EQUAL(length(sword.observed_overlays), inherited_count + 1, "the real extended sword adds exactly one overlay to its inherited appearance")
 	var/active_blades = 0
 	for(var/mutable_appearance/entry as anything in sword.observed_overlays)
@@ -66,10 +68,10 @@
 	TEST_ASSERT_EQUAL(retracted_blades, 0, "the actual retracted appearance contains no blade overlay")
 	TEST_ASSERT(holder.unEquip(sword), "the actual holder releases the sword to the floor")
 	refresh_flush() // the release's own redraw runs before the counters are zeroed
-	holder.set_left_redraws(0)
-	holder.set_right_redraws(0)
+	holder.clear_redraws()
+	holder.clear_redraws()
 	sword.observe()
-	TEST_ASSERT_EQUAL(holder.left_redraws, 0, "an unheld toy sword does not redraw its former holder")
-	TEST_ASSERT_EQUAL(holder.right_redraws, 0, "an unheld toy sword leaves its former holder's right hand untouched")
-	TEST_ASSERT_EQUAL(bystander.left_redraws, 0, "an unheld toy sword never redraws an unrelated ambient caller")
-	TEST_ASSERT_EQUAL(bystander.right_redraws, 0, "an unheld toy sword leaves the unrelated caller's right hand untouched")
+	TEST_ASSERT_EQUAL(holder.redraws(), 0, "an unheld toy sword does not redraw its former holder")
+	TEST_ASSERT_EQUAL(holder.redraws(), 0, "an unheld toy sword leaves its former holder's right hand untouched")
+	TEST_ASSERT_EQUAL(bystander.redraws(), 0, "an unheld toy sword never redraws an unrelated ambient caller")
+	TEST_ASSERT_EQUAL(bystander.redraws(), 0, "an unheld toy sword leaves the unrelated caller's right hand untouched")
