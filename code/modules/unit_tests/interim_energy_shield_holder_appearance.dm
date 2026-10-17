@@ -5,8 +5,11 @@
 
 /// The holder's look is one draw: a redraw counts for both hands.
 /mob/living/carbon/human/interim_energy_shield_holder/draw(datum/look/look)
+	var/expected = GLOB.derived_write_expected
+	GLOB.derived_write_expected = TRUE // this counter is written from the output on purpose
 	set_left_redraws(left_redraws + 1)
 	set_right_redraws(right_redraws + 1)
+	GLOB.derived_write_expected = expected
 	..()
 
 /// Draws the real look and applies it, observing the overlays it lays.

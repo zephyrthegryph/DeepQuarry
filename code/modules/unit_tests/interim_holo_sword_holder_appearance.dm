@@ -5,8 +5,11 @@
 
 /// The holder's look is one draw: a redraw counts for both hands.
 /mob/living/carbon/human/interim_holo_sword_holder/draw(datum/look/look)
+	var/expected = GLOB.derived_write_expected
+	GLOB.derived_write_expected = TRUE // this counter is written from the output on purpose
 	set_left_redraws(left_redraws + 1)
 	set_right_redraws(right_redraws + 1)
+	GLOB.derived_write_expected = expected
 	..()
 
 /// A synthetic native click supplies ambient usr while observing the real appearance output.
