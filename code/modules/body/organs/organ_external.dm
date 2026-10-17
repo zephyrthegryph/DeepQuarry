@@ -1470,6 +1470,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/is_robotic = is_robotic()
 	var/mob/living/carbon/human/victim = owner
 
+	// The layers it shows as an item are made while its body still describes it (the body's own icon builder leaves them alone).
+	get_icon()
+
 	// What the subtree wears has nothing to hang on once it goes. Before the
 	// move: the detach hook runs inside it and must not move anything.
 	var/list/subtree = dq_part_subtree(src)

@@ -3,6 +3,7 @@
 /// vore_fullness(_ex), pouncing and spitting, so a change redraws it with no call.
 /mob/living/simple_mob/draw(datum/look/look)
 	..()
+	look_hud_images(look)
 	if(!draws_life_state)
 		return
 	var/state = look.life_state(src, icon_living, icon_rest, icon_dead)

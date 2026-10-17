@@ -101,12 +101,15 @@ proof_smoke_tests() {
 	local f line
 	for f in tools/ci/smoke_tests.txt tools/ci/gameplay_tests.txt; do
 		[ -f "$f" ] || continue
-		while IFS= read -r line; do
+		while IFS= read -r line || [ -n "$line" ]; do
 			line="${line%%#*}"
-			line="$(printf '%s' "$line" | tr -d '\r' | xargs)"
-			[ -n "$line" ] && printf '%s\n' "$line"
+			line="${line//$''/}"
+			read -r line <<<"$line" # trims the blanks with no fork (xargs per line cost seconds on Windows)
+			[ -n "$line" ] && printf '%s
+' "$line"
 		done <"$f"
 	done
+	return 0
 }
 
 # proof_merge_tree <base-ref> <lane-ref>: the tree `git merge --no-ff <lane-ref>` would produce on <base-ref>, without touching any
