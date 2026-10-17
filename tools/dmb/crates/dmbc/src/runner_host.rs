@@ -324,6 +324,11 @@ impl BuildHost {
     pub(crate) fn retains_artifacts(&self) -> bool {
         self.memo.is_some()
     }
+    /// True when the next edit can take the body-patch path: a retained generation with an installed patch base.
+    /// A session that only answered an unchanged-input hit retains artifacts but no patch base.
+    pub(crate) fn retains_patch_base(&self) -> bool {
+        self.generation.as_ref().is_some_and(|(_, generation)| generation.patch_base().is_some())
+    }
     /// Retain map answers across requests; disk snapshots remain request-local.
     pub(crate) fn map_memo(
         &mut self,

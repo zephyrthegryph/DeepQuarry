@@ -302,14 +302,14 @@ impl Shared {
                 let tier = slot.idle_tier.load(Ordering::Acquire);
                 // A host busy with another request will have built by the time this one runs: count it as retained.
                 let retained = match slot.host.try_lock() {
-                    Ok(host) => host.retains_artifacts(),
+                    Ok(host) => host.retains_artifacts() && host.retains_patch_base(),
                     Err(std::sync::TryLockError::Poisoned(_)) => false,
                     Err(std::sync::TryLockError::WouldBlock) => true,
                 };
                 if tier >= 3 {
                     Some(format!("degraded-tier-{tier}"))
                 } else if !retained {
-                    Some(take_eviction(key).map_or_else(|| "no-retained-state".to_string(), |why| format!("evicted:{why}")))
+                    Some(take_eviction(key).map_or_else(|| "no-patch-base".to_string(), |why| format!("evicted:{why}")))
                 } else {
                     None
                 }
