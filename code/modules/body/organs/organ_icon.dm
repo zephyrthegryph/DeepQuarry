@@ -1,13 +1,23 @@
 GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, conditional overwrite on empty key
 
+/// What the limb shows as an item (a dropped limb, a head on the floor): the icons of the layers it is built from, drawn over its own icon. Tracked: the draw
+/// reads it, so a limb that rebuilds its icon shows the new layers with no redraw call.
+/obj/item/organ/external/var/list/shown_layers
+
+/obj/item/organ/external/draw(datum/look/look)
+	..()
+	for(var/layer in shown_layers)
+		look.overlay(layer)
+
 /obj/item/organ/external/proc/compile_icon()
-	cut_overlays()
+	var/list/layers
 	// This is a kludge, only one icon has more than one generation of children though.
 	for(var/obj/item/organ/external/organ as anything in slot_contents(SLOT_ID_PART_CHILD))
 		if(organ.children && organ.children.len)
 			for(var/obj/item/organ/external/child in organ.children)
-				add_overlay(child.mob_icon)
-		add_overlay(organ.mob_icon)
+				LAZYADD(layers, child.mob_icon)
+		LAZYADD(layers, organ.mob_icon)
+	set_shown_layers(layers)
 
 /obj/item/organ/external/proc/sync_colour_to_human(mob/living/carbon/human/human)
 	set_s_tone(null)
@@ -77,10 +87,12 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 
 	return look_composed_image(res, face_parts)
 
-/obj/item/organ/external/proc/get_icon(skeletal, can_apply_transparency = TRUE)
+/// Builds the limb's picture on a body (mob_icon, icon_cache_key) and returns it. `item_layers` also writes the layers the limb shows as an item (shown_layers):
+/// the body's own icon builder runs inside the human's draw, where nothing may write tracked state, so it passes FALSE; the limb gets them when it is made
+/// and when it leaves the body (removed()), which is the only time they are seen.
+/obj/item/organ/external/proc/get_icon(skeletal, can_apply_transparency = TRUE, item_layers = TRUE)
 	var/digitigrade = 0
-
-	cut_overlays()
+	var/list/layers // what the limb shows when it is not on a body (shown_layers)
 	// preferentially take digitigrade value from owner if available, THEN DNA.
 	// this allows limbs to be set properly when being printed in the bioprinter without an owner
 	// this also allows the preview mannequin to update properly because customisation topic calls don't call a DNA check
@@ -147,7 +159,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 					continue
 			var/icon/mark_s = new/icon("icon" = digitigrade ? mark_style.digitigrade_icon : mark_style.icon, "icon_state" = "[mark_style.icon_state]-[organ_tag]")
 			mark_s.Blend(markings[M]["color"], mark_style.color_blend_mode)
-			add_overlay(mark_s) //So when it's not on your body, it has icons
+			LAZYADD(layers, mark_s) //So when it's not on your body, it has icons
 			mob_icon.Blend(mark_s, ICON_OVERLAY) //So when it's on your body, it has icons
 			icon_cache_key += "[M][markings[M]["color"]]"
 	if(body_hair && islist(h_col) && h_col.len >= 3)
@@ -161,7 +173,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 	if(nail_polish && !(force_icon && !skip_forced_icon))
 		var/icon/I = new(nail_polish.icon, nail_polish.icon_state)
 		I.Blend(nail_polish.color, ICON_MULTIPLY)
-		add_overlay(I)
+		LAZYADD(layers, I)
 		mob_icon.Blend(I, ICON_OVERLAY)
 		icon_cache_key += "_[nail_polish.icon]_[nail_polish.icon_state]_[nail_polish.color]"
 
@@ -170,6 +182,8 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 
 	set_dir(SOUTH)
 	set_icon(mob_icon)
+	if(item_layers)
+		set_shown_layers(layers)
 	return mob_icon
 
 /obj/item/organ/external/proc/apply_colouration(icon/applying)

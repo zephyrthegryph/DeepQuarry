@@ -1068,6 +1068,7 @@
 #include "code\defines\procs\statistics.dm"
 #include "code\game\atoms.dm"
 #include "code\game\atoms_movable.dm"
+#include "code\modules\lighting\emissive_blocker_overlays.dm"
 #include "code\game\base_turf.dm"
 #include "code\game\birthday.dm"
 #include "code\game\memory_profiler.dm"

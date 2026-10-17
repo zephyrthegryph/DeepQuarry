@@ -349,6 +349,36 @@ READS_AS(/datum/look/proc/things_in, SLOT_OCCUPANCY_KEY)
 		copy.layer = layer
 	LAZYADD(overlays, copy)
 
+/**
+ * An image its owner keeps editing after it is made (a HUD icon: the owner changes its state, and the viewers whose HUD shows its plane see it), shown
+ * as the copy it is now. The look keeps the frozen copy (an overlay cut later is cut by what was added), and the owner publishes the edit (a tracked
+ * write, or tracked_changed() of the var that holds the image) so the draw runs again and the copy is replaced. Who sees it is the image's plane: a
+ * viewer's plane masters show or hide it, so the look needs no viewer list. Only `when` is true; a null image shows nothing.
+ *	for(var/image/hud as anything in hud_list)
+ *		look.live_image(hud)
+ */
+/datum/look/proc/live_image(image/source, when = TRUE)
+	touched = TRUE
+	if(!when || !source)
+		return
+	LAZYADD(overlays, new /mutable_appearance(source))
+
+/**
+ * Wears another atom's appearance: its icon, its icon_state and a frozen copy of each overlay it shows now (a morph in its prey's shape, a spore
+ * wearing the body it infests). The draw hears of the atom's look (watch_look()), so the copy follows when the original is redrawn. Layers this look
+ * adds after it sit above the copy, and a later look.set_icon() or look.state() wins. Null or a deleted atom copies nothing.
+ *	look.mimic(form)
+ */
+/datum/look/proc/mimic(atom/thing)
+	touched = TRUE
+	if(!istype(thing) || QDELETED(thing))
+		return
+	watch_look(thing)
+	icon = thing.icon
+	icon_state = thing.icon_state
+	for(var/entry in thing.overlays)
+		LAZYADD(overlays, new /mutable_appearance(entry))
+
 /// Another icon file for the base state.
 /datum/look/proc/set_icon(file)
 	icon = file
