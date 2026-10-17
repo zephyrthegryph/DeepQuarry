@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "dmbc daemon: 8 GB daemon-wide retained budget with LRU session release, and superseded-version daemons are asked to retire"

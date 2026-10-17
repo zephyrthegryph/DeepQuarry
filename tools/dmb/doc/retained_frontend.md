@@ -437,3 +437,22 @@ shield) under half the reserve. A compile is admitted only while available memor
 project and kind (hot or cold) caused (default 2 GB hot, 12 GB cold) on top of the reserve: `Shared::await_memory` releases idle
 sessions of other projects least recently used first, then waits for running builds, and with nothing left to release or after 5
 minutes admits the build and logs the shortfall (a machine that is too small slows down instead of refusing every build).
+
+## Daemon-wide retained budget and superseded-daemon reaper (lane `tools/dmb-session-memory`, 2026-10-17)
+
+Measured on the live daemon's logs (`E:/dq-cache/dmb-daemon/compile-stats.jsonl`, `lifecycle.log`, pid 9292, 8 lanes): the shared
+compile roots work, two sessions (`deepquarry.dme`, `deepquarry.test.dme`) serve every worktree. 330 compiles went through
+them; 137 were hit or patch (4% of compile time) and 193 full (96%). Full-compile causes: new daemon version after a publish 86
+(`no-session`), old fixed cap 52, old path keying 22, other eviction 16, cross-tree declaration change in a hot session 17 (mean
+88 s, peak 22 GB with two sessions because the old state lives through the rebuild).
+
+* **Budget.** `DMB_DAEMON_MEMORY_BUDGET_GB` (default 8) is the daemon-wide retained budget on top of the machine-pressure policy:
+  over it, `Shared::enforce_retained_budget` releases the least recently used idle session whole, after every build and before a
+  build is admitted (against its expected growth). The newest session and any building session are never released, so a lone
+  session larger than the budget stays resident. Policy: `soft_memory::budget_victim` (tests in `soft_memory.rs`).
+* **Superseded daemons.** The 12:40 daemon (version `ebfc6fb0e7c801a8`) was last active 16:43, heartbeating, not busy: its binary
+  predates the superseded-version exit and only had the 1 hour idle exit, and a newer daemon never retired older ones. A daemon
+  of the current published version now asks every registered, live, not busy peer of another published version in the same `<bin>`
+  that has been idle for 2 minutes to retire, through the `<pid>.retire` flag every registry-aware build honors in its heartbeat
+  (`resident::retire_superseded_peers`, checked every 30 s; test `current_daemon_asks_only_idle_live_superseded_peers...`).
+* Baseline (plain release build, 4 workers, machine busy): cold production compile 159.5 s, peak 9.33 GB, private after 9.03 GB.
