@@ -12,6 +12,13 @@ Branch: `codex/req-burndown`. Final lane-ready verification is pending; this doc
 
 Master's look producer, sweep and verified look-key record are retained verbatim. This drops the old telecube cleanup and related harness edits rather than reviving the rejected sampling/seed change. No appearance snapshot is re-blessed for this retirement; any future harness proposal is separate. The earlier receipt below describes historical code.
 
+## Superseded branch disposition (October 17)
+
+- `codex/requirements-hard-ban-1010` at `745ab207ba` is abandoned: only its historical handoff commit remains outside master.
+- `codex/acceptance-final-1011` at `d70998e600` is abandoned: the 149-table cohort and consumer migration are consolidated in this requirement retirement.
+- `codex/acceptance-retirement-1011` at `15b5df8158` is abandoned: its final acceptance cohort is consolidated here; current master's constructor fixes are retained.
+
+Keep those refs as historical evidence; do not merge their obsolete tooling, producer changes or duplicate admission conversions separately.
 ## Result and counts
 
 | Inventory | Before | After |
