@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Change graph design (doc/rewrite/proposals/change_graph.md) and a per-type default-look sweep test"
