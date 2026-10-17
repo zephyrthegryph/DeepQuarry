@@ -587,3 +587,33 @@ fn prepared_source_keeps_owned_utf8_buffer_and_line_views_share_it() {
     assert_eq!(source.original().as_str(), "/proc/p()\n    return \"λ\"\n");
     assert_eq!(source.line_starts().as_ref(), &[0, 10, 26]);
 }
+
+#[test]
+#[ignore = "benchmark: DM_BENCH_ROOT=<dir with .dm files>"]
+fn prepare_phase_bench() {
+    let root = std::env::var("DM_BENCH_ROOT").expect("DM_BENCH_ROOT");
+    let mut files = Vec::new();
+    let mut stack = vec![std::path::PathBuf::from(root)];
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(dir).unwrap().flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().is_some_and(|e| e == "dm") {
+                files.push(std::fs::read_to_string(&path).unwrap());
+            }
+        }
+    }
+    let nfiles = files.len();
+    let bytes: usize = files.iter().map(String::len).sum();
+    let t = std::time::Instant::now();
+    let uncommented: Vec<_> = files.iter().map(|f| strip_source_comments(f).into_owned()).collect();
+    let strip = t.elapsed();
+    let t = std::time::Instant::now();
+    let planned = uncommented.iter().map(|u| crate::logical_arena::plan(u).lines.len()).sum::<usize>();
+    let plan = t.elapsed();
+    let t = std::time::Instant::now();
+    let total: usize = files.iter().map(|f| PreparedSource::from_text(SourceText::from(f.clone())).lines().len()).sum();
+    let all = t.elapsed();
+    eprintln!("files={nfiles} bytes={bytes} strip={strip:?} plan={plan:?} ({planned} lines) from_text total={all:?} ({total} lines)");
+}

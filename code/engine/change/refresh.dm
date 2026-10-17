@@ -600,6 +600,8 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 /// atom); a ref that no longer names a swept atom is dropped when the sweep reaches it.
 GLOBAL_LIST_EMPTY(refresh_sweep_list)
 GLOBAL_VAR_INIT(refresh_sweep_index, 1)
+/// Production's current audit cycle: the swept atoms near a client, collected when the last cycle ended (null between cycles).
+GLOBAL_LIST_EMPTY(refresh_sweep_near)
 /// Drift reports this round (the drift test reads them).
 GLOBAL_LIST_EMPTY(refresh_drift)
 
@@ -610,7 +612,12 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	if(isnull(A.rx?.look_key) && !A.rx?.refresh_hidden_verbs && !A.rx?.refresh_granted_verbs && !A.periodic_cadence && !derived_is_exact(A))
 		return
 	rx_of(A).refresh_swept = TRUE
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
+	// Test builds sweep every swept atom strictly, so they keep the index. Production audits only what a client can see and finds those atoms by
+	// walking the range of the clients' tiles (refresh_sweep_collect()): registering each of a hundred thousand atoms here cost one REF() apiece
+	// (about half a second of the first minutes after boot) for an audit nobody was in range of.
 	GLOB.refresh_sweep_list[REF(A)] = TRUE
+#endif
 	staleness_track(A)
 
 /// Re-checks up to `budget` swept atoms: a derived result that differs from what is applied means a
@@ -622,13 +629,6 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	// defines UNIT_TESTS) measures the production audit, not the test sweep.
 #if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	var/scan_budget = budget
-#else
-	budget = min(budget, 10)
-	var/scan_budget = 400
-	var/list/client_turfs = refresh_client_turfs()
-	if(!length(client_turfs))
-		return
-#endif
 	var/list/L = GLOB.refresh_sweep_list
 	var/checked = 0
 	var/scanned = 0
@@ -644,12 +644,41 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		// Queued here: its refresh is pending, not missed.
 		if(A.refresh_queued)
 			continue
-#if !defined(UNIT_TESTS) || defined(BENCHMARK)
-		if(!LAZYLEN(A.open_tguis) && !refresh_near(A, client_turfs))
-			continue
-#endif
 		checked++
 		refresh_check_drift(A)
+#else
+	budget = min(budget, 10)
+	var/list/client_turfs = refresh_client_turfs()
+	if(!length(client_turfs))
+		GLOB.refresh_sweep_near = null // nobody to audit for: hold no atom
+		return
+	var/list/near = GLOB.refresh_sweep_near
+	if(!near || GLOB.refresh_sweep_index > length(near))
+		near = refresh_sweep_collect(client_turfs)
+		GLOB.refresh_sweep_near = near
+		GLOB.refresh_sweep_index = 1
+	var/checked = 0
+	var/scanned = 0
+	while(checked < budget && scanned < 400 && GLOB.refresh_sweep_index <= length(near))
+		var/atom/A = near[GLOB.refresh_sweep_index++]
+		scanned++
+		// Queued here: its refresh is pending, not missed.
+		if(QDELETED(A) || !A.rx?.refresh_swept || A.refresh_queued)
+			continue
+		checked++
+		refresh_check_drift(A)
+	if(GLOB.refresh_sweep_index > length(near))
+		GLOB.refresh_sweep_near = null // the cycle is over: the next step collects again, and no atom is held between cycles
+#endif
+
+/// The swept atoms within a screen of any client (one audit cycle's worth), found by walking the range of the clients' tiles.
+/proc/refresh_sweep_collect(list/client_turfs)
+	var/list/seen = list()
+	for(var/turf/where as anything in client_turfs)
+		for(var/atom/A as anything in range(world.view + 2, where))
+			if(A.rx?.refresh_swept)
+				seen[A] = TRUE
+	return seen // indexed by number it answers its keys, in discovery order
 
 /// The turfs of every client's mob, once per sweep step.
 /proc/refresh_client_turfs()
@@ -658,16 +687,6 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		var/turf/where = get_turf(C?.mob)
 		if(where)
 			. += where
-
-/// Whether A is on a client's z-level within a screen of them.
-/proc/refresh_near(atom/A, list/client_turfs)
-	var/turf/T = get_turf(A)
-	if(!T)
-		return FALSE
-	for(var/turf/where as anything in client_turfs)
-		if(where.z == T.z && get_dist(where, T) <= world.view + 2)
-			return TRUE
-	return FALSE
 
 /// Whether A's applied outputs still match what its derived procs give now. `check_draw` FALSE leaves the look to the caller (the strict staleness
 /// checker draws it dry and compares it itself, with the culprit var named).

@@ -167,3 +167,21 @@
 	var/obj/machinery/power/smes/S = p2_smes()
 	S.do_grid_check()
 	TEST_ASSERT(S.grid_check, "the grid check suspends the unit")
+
+/// A map lays the base terminal beside a unit, not the unit's own subtype: the late pass swaps it for an input terminal and wires the unit, so a
+/// mapped unit works and offers its network power (it once sat unwired, not operable, with its charge unused, for every mapped unit).
+/datum/unit_test/dq_p2_smes/mf_mapped_plain_terminal_wires_the_unit
+
+/datum/unit_test/dq_p2_smes/mf_mapped_plain_terminal_wires_the_unit/run_gate()
+	var/obj/machinery/power/smes/S = p2_bare_smes()
+	var/turf/spot = p2_term_spot()
+	bare_floor(spot)
+	var/obj/machinery/power/terminal/plain = allocate(/obj/machinery/power/terminal, spot)
+	plain.set_dir(turn(get_dir(S, spot), 180))
+	p2_settle()
+	TEST_ASSERT(p2_smes_unworking(S), "(only a base terminal beside it: unwired)")
+	S.adopt_mapped_terminals()
+	p2_settle()
+	TEST_ASSERT(QDELETED(plain), "the base terminal was swapped out")
+	TEST_ASSERT_EQUAL(length(p2_smes_terminals(S)), 1, "the unit has its input terminal")
+	TEST_ASSERT(!p2_smes_unworking(S), "and works")

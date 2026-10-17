@@ -505,6 +505,12 @@ impl RetainedGeneration {
             })
             .unwrap_or(false)
     }
+    /// True when the published generation holds a patch base (what the next request leases; for the daemon session probe).
+    pub(crate) fn has_patch_base(&self) -> bool {
+        self.publication
+            .with_published(|old| old.patch.lock().unwrap_or_else(|e| e.into_inner()).base.is_some())
+            .unwrap_or(false)
+    }
     /// The patch base, its link answers and the image they describe.
     pub(crate) fn patch_base(
         &self,

@@ -769,6 +769,16 @@ TypeScript checks. DreamChecker is skipped with a notice if it is not installed;
 install it with `tools/ci/install_spaceman_dmm.sh dreamchecker`, or put
 `dreamchecker.exe` in `%USERPROFILE%/SpacemanDMM/`.
 
+### Shared compile roots, daemon lifetime, cache budget
+
+`build.sh dm`/`dm-test` compile through one root per DME variant under `E:/dq-cache/dmb-roots/<variant>` (junctions to the worktree's input
+directories, `tools/build/lib/compile_root.ts`; `DQ_SHARED_ROOT=0` compiles in the worktree), so a compile after switching worktrees reuses the
+resident session (measured 8-18 s against 100-170 s cold) and the output is equivalent to a fresh build (`dmb-equiv --ignore-debug`; a
+patched output may keep unreferenced old strings, so it is not byte-identical). The daemon now exits after 60 minutes idle (was 10), matching
+its one-hour session retention (`DMB_DAEMON_IDLE_EXIT_SECS`). The first edit after a daemon restart compiles cold: the patch base lives only in
+memory. The shared cache directory is held to `DMB_CACHE_BUDGET_GB` (default 32) by recency of use. `dmbc --daemon-stats` prints hit rate,
+paths, wall times and miss causes.
+
 ### DreamChecker policy (2026-10-16)
 
 SpacemanDMM's DreamChecker has no incremental or changed-files mode: every run parses and checks the whole tree (2+ minutes on
