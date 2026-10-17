@@ -32,7 +32,7 @@
 		return FALSE
 	capability_runtime(A).bits = now
 	state_changed(A) // a capability's state is drawn, examined and shown in windows: every output re-derives
-	// Waiting operations watch cap_state through their requirements' reads (operations/op_ctx.dm).
+	// Waiting operations watch cap_state through their requirements' reads.
 	engine_key_changed(A, OP_KEY_CAP_STATE)
 	return TRUE
 

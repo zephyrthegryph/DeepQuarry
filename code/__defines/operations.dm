@@ -31,13 +31,7 @@
 #define ROUTE_TK (1<<7)
 #define ROUTE_ANY (ROUTE_PHYSICAL | ROUTE_INTERFACE | ROUTE_UI | ROUTE_VERB | ROUTE_SPEECH | ROUTE_MIND | ROUTE_AUTHORITY | ROUTE_TK)
 
-// ---- requirement subjects (req(of =)) ----
-#define OP_ACTOR "actor"
-#define OP_TARGET "target"
-#define OP_HELD "held"
-#define OP_PROVIDER "provider"
-
-/// The read key of an atom's cap_state bits (req_set / req_clear publish and read it).
+/// The read key of an atom's cap_state bits (the capability bits publish and read it).
 #define OP_KEY_CAP_STATE "cap_state"
 #define OP_KEY_CAP_DATA "cap_data"
 #define OP_KEY_CAP_EXTRAS "cap_extras"

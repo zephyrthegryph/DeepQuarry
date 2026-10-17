@@ -1,7 +1,7 @@
 // Guards: "may this proceed?" for something that is not an operation (doc/rewrite/reactions.md section 3a).
 //
 // One mechanism: before_op() takes an op key, a capability type, or a GUARD_* key (code/__defines/reactions.dm). An
-// operation runs its before_op reactions through the op requirement pipeline (op_before(), operations/op_ctx.dm); a
+// operation runs its before_op reactions through the op requirement pipeline (op_before()); a
 // non-operation call site that may be refused (a move, a fall, a thrown hit, a crossing) asks guard() instead, which
 // runs the same before_op reactions of that guard key, static (the holder's composed reactions table, capabilities
 // included) then observers (observe(source, before_op(GUARD_X), listener, handler)), and returns the first refusal.

@@ -46,16 +46,6 @@ CAPABILITIES(/obj/req_protocol_fixture)
 /obj/req_protocol_fixture/proc/commit(datum/act/op/A)
 	set_commits(commits + 1)
 
-/// A downstream compatibility requirement keeps its existing boolean view.
-/datum/requirement/req_protocol_fixture
-	var/allowed = TRUE
-
-/datum/requirement/req_protocol_fixture/holds(datum/act/op/A)
-	return allowed
-
-/datum/requirement/req_protocol_fixture/refusal(datum/act/op/A)
-	return "A compatibility reason."
-
 /obj/req_protocol_fixture/silent_composition
 
 CAPABILITIES(/obj/req_protocol_fixture/silent_composition)

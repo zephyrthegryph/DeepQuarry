@@ -94,7 +94,7 @@ PROC_SUMMARY(/proc/op_cond_eval) // vars[] / call() dispatcher: the walk cannot 
 		var/datum/entry/simulation_entry = cond
 		if(simulation_entry.kind == SIM_ENTRY_KIND)
 			return FALSE
-	if(istype(cond, /datum/entry/part/req) || istype(cond, /datum/requirement))
+	if(istype(cond, /datum/entry/part/req))
 		return op_req_holds(A, cond)
 	if(isnum(cond))
 		return condition_id_holds(A.holder, cond)
@@ -590,12 +590,9 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	var/datum/entry/part/req/R = children[1]
 	return !R.holds(A)
 
-/// all_of(r...): every requirement holds; the first failing one's reason is reported. A legacy /datum/requirement list stays the legacy form.
+/// all_of(r...): every requirement holds; the first failing one's reason is reported.
 /proc/all_of(...)
-	for(var/value in args)
-		if(istype(value, /datum/entry) || (islist(value) && length(value) && istype(value[1], /datum/entry)))
-			return part_make(/datum/entry/part/req/all, null, entry_flatten(args))
-	return requirement_composer().all(args)
+	return part_make(/datum/entry/part/req/all, null, entry_flatten(args))
 
 /datum/entry/part/req/all
 	part_name = "all_of"
@@ -619,10 +616,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /// any_of(r...): at least one holds; the reasons are joined ("needs a wrench or a welder").
 /proc/any_of(...)
-	for(var/value in args)
-		if(istype(value, /datum/entry) || (islist(value) && length(value) && istype(value[1], /datum/entry)))
-			return part_make(/datum/entry/part/req/any, null, entry_flatten(args))
-	return requirement_composer().any(args)
+	return part_make(/datum/entry/part/req/any, null, entry_flatten(args))
 
 /datum/entry/part/req/any
 	part_name = "any_of"
@@ -659,11 +653,11 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 			return TRUE
 	return FALSE
 
-/// Does anything of `holder` listen for `notice_type`? (req_heard(): an op that only publishes a notice is offered only where a hook hears it.)
+/// Does anything of `holder` listen for `notice_type`? (an op that only publishes a notice is offered only where a hook hears it.)
 /proc/op_notice_wanted(datum/D, notice_type)
 	return notice_wanted(D, notice_type)
 
-/// A requirement (new, or a legacy /datum/requirement that has a new-engine form) as a boolean in an op's context.
+/// A requirement as a boolean in an op's context.
 /proc/op_req_holds(datum/act/op/A, requirement)
 	lookup_reads_prepare(A.holder, A)
 	op_pure_begin()
@@ -674,9 +668,6 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	if(istype(requirement, /datum/entry/part/req))
 		var/datum/entry/part/req/R = requirement
 		return R.holds(A)
-	if(istype(requirement, /datum/requirement))
-		var/datum/requirement/L = requirement
-		return L.holds(A)
 	return !!requirement
 
 /// The /datum/msg type (or text) a failed requirement reports.
@@ -690,9 +681,6 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	if(istype(requirement, /datum/entry/part/req))
 		var/datum/entry/part/req/R = requirement
 		return R.refusal(A)
-	if(istype(requirement, /datum/requirement))
-		var/datum/requirement/L = requirement
-		return L.refusal(A)
 	return /datum/msg/req_failed
 
 /// The id a requirement may be relaxed by (extend(key, drop = "id")).
