@@ -87,9 +87,6 @@ if [ "$automerge" -eq 1 ] && [ -n "$lanes" ]; then
 		if [ -n "$tip" ] && ! git merge-base --is-ancestor "$tip" HEAD; then exec bash "$(dirname "${BASH_SOURCE[0]}")/dq_merge_batch.sh" "${orig_args[@]}"; fi
 	done
 fi
-# The generated files must be fresh before the HEAD is stamped.
-tools/build/build.sh gen || { echo "dq_merge_gates: gen failed" >&2; exit 1; }
-lap gen
 # What this batch is meant to land, recorded for tools/dq_push_master.sh: origin/master as the gates start (a push after it moved
 # is refused on the merge worktree) and the tip of every lane in --lanes (the push fails unless each is in HEAD and then in origin/master).
 git fetch -q origin 2>/dev/null || echo "dq_merge_gates: warning: git fetch failed; base_master is the last fetched origin/master" >&2
@@ -104,10 +101,23 @@ for ref in $lanes; do
 	fi
 	lane_tips="$lane_tips${lane_tips:+,}$tip"
 done
+# A tree that already carries a covering proof (tools/dq_land.sh and dq_lane_ready.sh prove it before the lock) needs none of the steps
+# that exist to prepare a gate run: the generated files, the baseline shrink and the look-key record were all settled when the proof was
+# made (the tree is byte-identical), and the lock is held across every second spent here.
+early_reuse=0
+if [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ "$reproof" -eq 0 ] && [ "${DQ_PROOF_REUSE:-1}" != 0 ] && [ "${DQ_GATES_NO_EARLY:-0}" != 1 ] && [ -n "$lanes" ] && git rev-parse -q --verify origin/master >/dev/null 	&& proof_covers_tree origin/master "$(proof_tree HEAD)" ${tests_arg[@]+"${tests_arg[@]}"} >/dev/null; then
+	early_reuse=1
+	echo "== gates: the tree $(proof_tree HEAD | cut -c1-12) already has a covering proof; skipping gen, the baseline shrink and the look-key record"
+fi
+# The generated files must be fresh before the HEAD is stamped.
+if [ "$early_reuse" -eq 0 ]; then
+	tools/build/build.sh gen || { echo "dq_merge_gates: gen failed" >&2; exit 1; }
+fi
+lap "gen and fetch"
 # A baseline that only needs shrinking after the merge (a fixed site left it) is shrunk into the merge commit, instead of a separate
 # repair commit. Only when HEAD is an unpushed merge commit (the merge worktree's batch): a lane-ready run or any other HEAD keeps
 # its sha, which its caller already recorded. `analyze baseline --update` never adds a site or raises a ceiling.
-if [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git merge-base --is-ancestor HEAD origin/master 2>/dev/null 	&& bin="$(bash tools/ci/analyze.sh 2>/dev/null)"; then
+if [ "$early_reuse" -eq 0 ] && [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git merge-base --is-ancestor HEAD origin/master 2>/dev/null 	&& bin="$(bash tools/ci/analyze.sh 2>/dev/null)"; then
 	"$bin" baseline --update >/dev/null 2>&1 || echo "dq_merge_gates: warning: analyze baseline --update failed; baselines left as they are" >&2
 	if ! git diff --quiet -- tools/ci; then
 		echo "dq_merge_gates: shrank ratchet baselines into the merge commit:"
@@ -118,11 +128,15 @@ if [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git
 fi
 # look_keys.txt records VERIFIED keys only. The union merge may have left it non-canonical (normalize drops rows, never writes a key).
 lap "fetch and baseline shrink"
-bash tools/ci/check_look_keys_format.sh --commit || { echo "dq_merge_gates: look_keys normalization failed" >&2; exit 1; }
+if [ "$early_reuse" -eq 0 ]; then
+	bash tools/ci/check_look_keys_format.sh --commit || { echo "dq_merge_gates: look_keys normalization failed" >&2; exit 1; }
+fi
 lap "look keys"
 # Every type whose current look key has no recorded row (its look changed in a lane or in the merge) is probed here, and only here are
 # its keys recorded, into the merge commit. A lane-ready run (--snapshot-output) probes its own and records them itself.
-if [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ] && ! dq_diff_touches_dm; then
+if [ "$early_reuse" -eq 1 ]; then
+	echo "== look pins: skipped (the proof for this tree covers them)"
+elif [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ] && ! dq_diff_touches_dm; then
 	echo "== look pins: skipped (the batch touches no DM, map, icon, sound, skin or analyzer file: no look key can have moved)"
 elif [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ]; then
 	unverified_line="$(bash tools/ci/check_look_keys_format.sh --unverified)" || { echo "dq_merge_gates: could not compute the unverified look types" >&2; exit 1; }
@@ -237,6 +251,11 @@ if [ "$run_tests" -eq 1 ] && [ "${DQ_PROOF_REUSE:-1}" != 0 ] && [ -z "$reproof_o
 	proof_file="$(proof_find "$tree" "$tgui" "$analyze_tests" "${tests[@]}")" || proof_file=""
 fi
 reused=0
+if [ "$early_reuse" -eq 1 ] && [ -z "$proof_file" ]; then
+	# The early check named no lane-specific selector (an invalid stamp adds its lane's tests): the steps it skipped are needed after all.
+	echo "== gates: the early proof check did not hold for the full test list; starting over without it"
+	DQ_GATES_NO_EARLY=1 exec bash "$0" "${orig_args[@]}"
+fi
 if [ -n "$proof_file" ]; then
 	reused=1
 	echo "== proof reused: tree ${tree:0:12} was proved on master $(sed -n 's/^master=//p' "$proof_file" | cut -c1-10) ($(sed -n 's/^passed=//p' "$proof_file") test(s) passed); no compile, no test world, no ratchet run"
