@@ -7,6 +7,55 @@ use std::sync::{Mutex, RwLock, Weak};
 #[derive(Default, Debug)]
 pub struct CallableDemands {
     tokens: Mutex<BTreeMap<(SymbolId, SymbolId, u8), u128>>,
+    /// Name buckets of this tree's members and intrinsics. A demand owner is
+    /// created with its tree (every tree builder replaces it), so the index
+    /// shares the lifetime of the tokens it feeds and is built once on first use.
+    index: std::sync::OnceLock<DemandIndex>,
+}
+/// Members of one type with one name, and engine intrinsics by (owner, name), both in
+/// declaration order. Replaces a scan of every member of the type (and of every
+/// intrinsic) on each demanded selection.
+#[derive(Debug, Default)]
+pub(super) struct DemandIndex {
+    members: std::collections::HashMap<(usize, SymbolId), Vec<MemberId>>,
+    intrinsic: std::collections::HashMap<(SymbolId, SymbolId), Vec<IntrinsicMember>>,
+}
+impl DemandIndex {
+    fn build(tree: &SemanticTree) -> Self {
+        let mut index = Self::default();
+        for (type_index, node) in tree.types.iter().enumerate() {
+            for &id in node.members.iter() {
+                index
+                    .members
+                    .entry((type_index, tree.members[id.index()].name))
+                    .or_default()
+                    .push(id);
+            }
+        }
+        for member in tree.inventory.intrinsic.iter() {
+            index
+                .intrinsic
+                .entry((member.owner, member.name))
+                .or_default()
+                .push(member.clone());
+        }
+        index
+    }
+    pub(super) fn members(&self, type_index: usize, name: SymbolId) -> &[MemberId] {
+        self.members
+            .get(&(type_index, name))
+            .map_or(&[], Vec::as_slice)
+    }
+    pub(super) fn intrinsics(&self, owner: SymbolId, name: SymbolId) -> &[IntrinsicMember] {
+        self.intrinsic
+            .get(&(owner, name))
+            .map_or(&[], Vec::as_slice)
+    }
+}
+impl CallableDemands {
+    pub(super) fn index(&self, tree: &SemanticTree) -> &DemandIndex {
+        self.index.get_or_init(|| DemandIndex::build(tree))
+    }
 }
 impl CallableDemands {
     /// Issued tokens, for carrying clean selections into the next tree.
@@ -60,14 +109,14 @@ fn key((owner, name, namespace): (SymbolId, SymbolId, u8)) -> Arc<[u8]> {
 }
 fn member_key(tree: &SemanticTree, id: MemberId) -> Option<(SymbolId, SymbolId, bool, u32)> {
     let member = tree.member(id)?;
-    let before = tree.types[member.owner.index()]
-        .members
+    let bucket = tree
+        .owner_callable_demands
+        .index(tree)
+        .members(member.owner.index(), member.name);
+    let before = bucket
         .iter()
         .take_while(|&&other| other != id)
-        .filter(|other| {
-            let other = &tree.members[other.index()];
-            other.kind == member.kind && other.name == member.name
-        })
+        .filter(|other| tree.members[other.index()].kind == member.kind)
         .count();
     Some((
         tree.types[member.owner.index()].path,
@@ -90,13 +139,11 @@ pub(super) fn inputs(
         Some(false) => kind == MemberKind::Proc,
         None => matches!(kind, MemberKind::Proc | MemberKind::Verb),
     };
-    let members = node
-        .members
+    let demand_index = tree.owner_callable_demands.index(tree);
+    let members = demand_index
+        .members(index, name)
         .iter()
-        .filter(|id| {
-            let member = &tree.members[id.index()];
-            matches_kind(member.kind) && member.name == name
-        })
+        .filter(|id| matches_kind(tree.members[id.index()].kind))
         .map(|&id| {
             let member = &tree.members[id.index()];
             Some(CallableFact {
@@ -113,13 +160,10 @@ pub(super) fn inputs(
         .collect::<Option<Vec<_>>>()?;
     Some(Arc::new(CallableInputs {
         members: members.into(),
-        intrinsic: tree
-            .inventory
-            .intrinsic
+        intrinsic: demand_index
+            .intrinsics(node.path, name)
             .iter()
-            .filter(|member| {
-                member.owner == node.path && member.name == name && matches_kind(member.kind)
-            })
+            .filter(|member| matches_kind(member.kind))
             .cloned()
             .collect::<Vec<_>>()
             .into(),
