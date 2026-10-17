@@ -19,6 +19,13 @@ proof_dir() {
 
 proof_tree() { git rev-parse "${1:-HEAD}^{tree}"; }
 
+# --no-pins also excludes inherited snapshot selectors. Proofs record the tests run.
+proof_test_enabled() {
+	[ "${DQ_NO_PINS:-0}" = 1 ] || return 0
+	case "$1" in *_pin*|*/pin*|dx_menu_order|*/dx_menu_order) return 1 ;; esac
+	return 0
+}
+
 # proof_find <tree> <need_tgui 0|1> <need_analyze_tests 0|1> <selector...>: print the proof file when it covers all of them
 proof_find() {
 	local tree="$1" ntgui="$2" nan="$3" f t have inh g
@@ -105,6 +112,7 @@ proof_smoke_tests() {
 			line="${line%%#*}"
 			line="${line//$''/}"
 			read -r line <<<"$line" # trims the blanks with no fork (xargs per line cost seconds on Windows)
+			proof_test_enabled "$line" || continue
 			[ -n "$line" ] && printf '%s
 ' "$line"
 		done <"$f"

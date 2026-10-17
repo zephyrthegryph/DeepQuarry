@@ -37,7 +37,7 @@ dry=0
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--tests|--covers|--tests-file) ready_args+=("$1" "${2:?$1 needs a value}"); shift ;;
-		--no-pins) ready_args+=("$1") ;;
+		--no-pins) ready_args+=("$1"); export DQ_NO_PINS=1 ;;
 		--rounds) shift; rounds="${1:?--rounds needs a number}" ;;
 		--dry-run) dry=1 ;;
 		-h|--help) sed -n '2,32p' "$0"; exit 0 ;;

@@ -138,7 +138,7 @@ if [ "$early_reuse" -eq 1 ]; then
 	echo "== look pins: skipped (the proof for this tree covers them)"
 elif [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ] && ! dq_diff_touches_dm; then
 	echo "== look pins: skipped (the batch touches no DM, map, icon, sound, skin or analyzer file: no look key can have moved)"
-elif [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ]; then
+elif [ "$run_tests" -eq 1 ] && [ "${DQ_NO_PINS:-0}" != 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ]; then
 	unverified_line="$(bash tools/ci/check_look_keys_format.sh --unverified)" || { echo "dq_merge_gates: could not compute the unverified look types" >&2; exit 1; }
 	unverified_n="${unverified_line%% *}"
 	echo "== look pins: $unverified_line"
@@ -179,6 +179,7 @@ add_test() {
 	local t
 	for t in "$@"; do
 		[ -n "$t" ] || continue
+		proof_test_enabled "$t" || { echo "== no-pins: excluded $t"; continue; }
 		case " ${tests[*]-} " in *" $t "*) ;; *) tests+=("$t") ;; esac
 	done
 }
