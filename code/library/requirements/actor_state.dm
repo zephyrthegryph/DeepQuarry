@@ -55,7 +55,7 @@ MSG_DEF_SELF(req_wrong_stance, "Not like that.")
 
 /datum/entry/part/req/stance/holds(datum/act/op/A)
 	var/mob/M = A.actor
-	return istype(M) && (M.input_stance() in src.args["stances"])
+	return istype(M) && (M.op_input_stance() in src.args["stances"])
 
 MSG_DEF_SELF(harm_click_only, "That would destroy it. Use harm intent if you mean it.")
 
@@ -70,20 +70,12 @@ MSG_DEF_SELF(harm_click_only, "That would destroy it. Use harm intent if you mea
 /// The stance of the actor's click now. A click is decided once, so nothing subscribes to the combat mode it reads.
 /proc/click_stance_of(mob/M)
 	READS_FROM()
-	return M.input_stance()
+	return M.op_input_stance()
 
 /// Whether someone has subverted this atom (req_not_subverted()): emagged by default; a holder that can be
 /// taken over another way (an AI hack) adds it.
 /atom/proc/is_subverted()
 	return is_emagged(src)
-
-/// Non-living actors have no living action-state gate. Living providers supply it.
-/datum/proc/operation_actor_capable(ignoring)
-	return TRUE
-
-/// Authority is provided by the client role implementation.
-/client/proc/operation_rights(required)
-	return FALSE
 
 /// The actor can act: a living mob's STAT_CAN_ACT (req_capable()), or ignoring it. Non-living actors have no action-state gate.
 /mob/living/operation_actor_capable(ignoring)

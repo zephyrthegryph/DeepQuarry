@@ -357,6 +357,14 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 /proc/req_capable(ignoring = 0)
 	return part_make(/datum/entry/part/req/capable, list("ignoring" = ignoring))
 
+/// Non-living actors have no living action-state gate. Living providers supply it.
+/datum/proc/operation_actor_capable(ignoring)
+	return TRUE
+
+/// Authority is provided by the client role implementation.
+/client/proc/operation_rights(required)
+	return FALSE
+
 /datum/entry/part/req/capable
 	part_name = "req_capable"
 	default_reason = /datum/msg/req_not_capable

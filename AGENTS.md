@@ -132,6 +132,9 @@ Run `bash tools/ci/legacy_form_counts.sh` for the current census. If you touch a
 uses an open form, leave it in place unless you are converting that file in a wave (§3c). The docs
 under `doc/rewrite/archive/` describe the old forms; they are history now, not a guide to master.
 
+The old `/datum/req` flyweights (`req.dm`, `op_ctx.dm`, `/datum/requirement`, `requirement_composer()`) are retired and hard-banned (`legacy_forms`): a requirement is a native
+`/datum/entry/part/req` (`req_empty_hand()`, `req_access()`, `req_stance()`, ... in `code/library/requirements/`); the design is `doc/rewrite/proposals/admission.md`.
+
 Corrections to older notes: there is no `om_changed()`, `changed()` channels or `om_raise_change()`
 any more; state is tracked setters and generated reads. `SSbehaviours` no longer fires; its work
 was folded into the kernel (`code/controllers/kernel/kernel.dm`).
