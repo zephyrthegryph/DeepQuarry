@@ -1,6 +1,6 @@
 # Proposal: finishing the relations layer and the stored-reference migration (design only)
 
-Status: decisions D1 to D21 approved in content by the user (2026-10-17); this document is the written form. Docs only: no code, and `final_api.html`
+Status: decisions D1 to D21 approved by the user (2026-10-17), with three final calls written in below (D6 hot paths, D11 native built-ins, D17 `SPILL_FRACTION`); this document is the written form. Docs only: no code, and `final_api.html`
 is not edited (section 11 lists the edits it needs).
 Scope: doc section 6 (`final_api.html`: "Relations", "Storing references", "Naming an entity in data"), `proposals/reference_storage.md`,
 `lifecycle.md`, `containment.md` section 4, and the 691 sites in `tools/ci/stored_refs_baseline.txt`.
@@ -13,14 +13,15 @@ say so; they are approximate, never the lint's numbers.
 
 1. **The relation layer is built; what is missing is discipline at its edges.** `ref_one/ref_many/owns_one/owns_many/links()/slot()` and the `rel_*`
    verbs are on master (`code/engine/declare/entries.dm`, `relations.dm`). What lets references leak today is: a write to an undeclared var is silently
-   accepted (D1), handles are hand-stored in vars (D5), reflective writes bypass the verbs (D14), visual and native storage has no declared path (D11, D15),
+   accepted (D1), handles are hand-stored in vars (D5), reflective writes bypass the verbs (D14), BYOND's built-in reference storage has no declared path (D11, D15),
    and the lint is blind to untyped vars, assoc keys and text keys (D8, D9, D12).
 2. **Two storage kinds stay** (relation, weak ref), but the weak ref becomes a *relation option* (`weak = TRUE`) instead of a hand-written handle in a var. A
    token (a plain value) remains only in data that is saved, pinned or sent to a UI (D5).
 3. **One naming scheme in content** (`entity_handle`, later `ref_token`); `own_key`, `adj_handle` and `vg_entity` are engine-only; a stored `REF()` or
    `locate()` text is banned (D9).
-4. **Destroy policy is stated once** (D17): `SPILL` is the default for anything that sits in a slot; `DELETE` only for the holder's own construction;
-   anything with a mind or client (and the nuke disk) survives a container's deletion whatever the policy.
+4. **Destroy policy is stated once** (D17): `SPILL` is the default for anything that sits in a slot; `SPILL_FRACTION(f)` (default 25%) spills a share and deletes
+   the rest (vending stock uses it); `DELETE` only for the holder's own construction; anything with a mind or client (and the nuke disk) survives a container's
+   deletion whatever the policy.
 5. **Latent contents** (D19): a declared relation pins an atom real; only weak refs survive a collapse.
 6. **Closure** (section 4): every path a reference can be stored by ends in a declaration, a lint or a count.
 
@@ -57,13 +58,13 @@ Counts (grep, approximate, non-test): `owns_one/owns_many(` 1606 lines, `ref_one
 | Kind | Declared as | Meaning | Other end dies | Holder dies |
 |---|---|---|---|---|
 | Owned | `owns_one` / `owns_many` (no location) | holder owns a datum that has no place in space | var cleared, with a debug report if it was not the holder's own disposal (D20) | value disposed by `on_destroy` (DELETE default, SPILL, PRIVATE_COPY) |
-| Slotted | `slot()` | something that sits inside the holder in space | removed from the slot | slot policy: SPILL default; DELETE only for the holder's own construction; `survives_container` things always spill (D17) |
+| Slotted | `slot()` | something that sits inside the holder in space | removed from the slot | slot policy: SPILL default; `SPILL_FRACTION(f)`; DELETE only for the holder's own construction; `survives_container` things always spill (D17) |
 | Reference | `ref_one` / `ref_many` | holder names it, does not own it; reverse-indexed, published | `CLEAR` (default) or `DELETE_ME`; `on_unlink` runs | view cleared |
 | Weak reference | `ref_one/ref_many(..., weak = TRUE)` (new) | a generation-checked handle stored; accessor generated; no reverse index, nothing published | the accessor reads null; nothing runs | nothing to clear |
 | Pair | `links(A::a, B::b)` | both ends name each other; one write maintains both | other end clears (`conflict = REFUSE` or `REPLACE`) | both clear |
 | Sparse pair | `links(LINK_END(...), ..., sparse = TRUE)` | ends live in engine records (buckle, pull, grab, orbit) | both clear | both clear |
 | Keyed | `ref_*(by = nameof(id))` | points at the live target whose id var matches | re-links on id write / materialize | view cleared |
-| Visual (new) | `visual(...)` (name provisional) | what a holder shows through `vis_contents`, `client.images`, `image(loc =)`; generated teardown (D11) | removed from the visual store | its visuals removed |
+| Native (new) | the existing kinds (`ref_one`, `ref_many`, `links`, `slot`) declared by the engine on the base types over BYOND's built-in vars and lists, with native storage (D11) | what a built-in holds: `vis_contents`/`vis_locs`, `client.screen`, `client.images`, `image.loc`, `client.eye`/`perspective`, `mob.client`/`key`, `atom.particles` | removed from the built-in list or var by generated teardown | its entries removed |
 | Membership | `membership()` / `registry()` | engine-owned store of live members | member leaves | leaves on dematerialize |
 | Token | `entity_handle` / later `ref_token` in **data** only | a plain value in saves, pins, UI payloads | resolves null | n/a |
 
@@ -120,7 +121,7 @@ Examples from the baseline: `/datum/reagents::my_atom`, `/datum/disposal_system_
 - (a) When the holder **owns** the value (`owns_*` or `slot`), delete the back-reference var and read `owner_of(value)` (`ownership.dm:74`). The owner stamp (`own_holder_ref`, `own_slot`) already exists, so no storage is added and the var cannot go stale.
 - (b) Otherwise, or on a **hot path**, `ref_one` (or `weak = TRUE` if only a null check is needed). `owner_of` parses text and calls `locate()` (cost not benchmarked **(unverified)**), so it is not for per-tick member loops.
 
-**Recommend (a) then (b).** Each conversion states which it is. Existing `rel_set(R, nameof(R.my_atom), PB)`-style writes (`code/modules/mob/living/silicon/robot/robot_modules/station.dm:697`) become declarations or disappear.
+**Decided (user, 2026-10-17): `ref_one` on hot paths, derived `owner_of` elsewhere** (a then b, as written). Each conversion states which it is. Existing `rel_set(R, nameof(R.my_atom), PB)`-style writes (`code/modules/mob/living/silicon/robot/robot_modules/station.dm:697`) become declarations or disappear.
 
 ### D7. Pooled records (was D5, plus approved item 12)
 Pooled types (`/datum/pooled` subtypes: acts, sequence state, operation context, damage packet; `pool.dm:60-80`) are reset on release and **never `qdel`'d**, so a `ref_*` to one would never clear and would show the next taker's data.
@@ -133,7 +134,7 @@ Pooled types (`/datum/pooled` subtypes: acts, sequence state, operation context,
 - Definition and compiled-table types (registries, `/datum/*_def`, flyweights, entries) are exempt by type in `[lint.stored_refs.lists] exempt_types` (`lint_scopes.toml:1441`), reviewed per type.
 - Run-state holders (`request`, `pending_op`, `input_event`, live `activation`) are converted (D7).
 - Interpreter (NTSL): `owns_one` the AST under the program if the program is deleted by an owner; else treat as one run's scratch **under a reviewed type**, not a path exemption.
-- **The lint fails closed.** Today an untyped var is never a reference (`stored_refs.rs:91-93`), and a list's writes count only when the value's static type is known. The lint gains: (1) an `untyped` rule: a var or list with no declared type that any proc assigns a value the model types as an atom/datum, or whose type cannot be known and is assigned from a call, is reported (fail closed: unknown counts); (2) visual refs (D11); (3) assoc **keys** (D12). A new rule seeds its own baseline (`stored_refs_baseline.txt` is shrink-only and never takes new sites). The size of the new baselines is **(unverified)**; wave 0's `analyze` report sets them.
+- **The lint fails closed.** Today an untyped var is never a reference (`stored_refs.rs:91-93`), and a list's writes count only when the value's static type is known. The lint gains: (1) an `untyped` rule: a var or list with no declared type that any proc assigns a value the model types as an atom/datum, or whose type cannot be known and is assigned from a call, is reported (fail closed: unknown counts); (2) native built-in refs (D11); (3) assoc **keys** (D12). A new rule seeds its own baseline (`stored_refs_baseline.txt` is shrink-only and never takes new sites). The size of the new baselines is **(unverified)**; wave 0's `analyze` report sets them.
 - `NOT_REFS` (`stored_refs.rs:74`) is revisited item by item: `/turf` and `/client` become handle-or-relation (D10); `/image` and `/mutable_appearance` are references when they carry `loc` (D11); `/area`, `/world`, `/savefile`, `/regex`, `/icon`, `/sound`, `/matrix` stay (never deleted or values).
 - No `ALLOW(stored_refs)` in any case.
 
@@ -149,11 +150,35 @@ Today `/turf` and `/client` are not references to the lint, so any var of them i
 - A client var is a handle that **resolves null after disconnect and never to the reconnected client**. Today the handle is `"@ckey"` and `resolve_handle_keyed` reads `GLOB.directory[ckey]` (`handles.dm:55-58, 202-203`), so it *does* resolve to the reconnected client. Change: the client handle carries a connection generation (bumped on `Logout`/new connection); `resolve` compares it. A player-identity need that survives reconnect uses the ckey or the `persistent_client` record, not a client handle.
 - **Saved handles are banned, client included.** Handles are per round and per connection. Lint `saved_handle`: an `entity_handle()` result (or a var declared `weak`) written to a saved var or a savefile writer. Saves store ids, ckeys or names; on load a relation re-links by `by =`.
 
-### D11. Visual relation kind and a sweep over visuals (approved item 8)
-Master clears a dying **movable's** own `vis_contents` and removes it from its `vis_locs` holders (`code/game/atoms_movable.dm:140-143`). Nothing declares the other storage: `client.images` (109 grep sites), `vis_contents` on non-movables and across holders (161 sites), `image(loc =)` (18 sites), `vis_locs` (10 sites) **(grep, approximate)**. The reference finder and leak check skip `vis_*`
+### D11. BYOND built-ins that hold references are engine-declared relation ends (approved item 8, final form)
+Decided by the user (2026-10-17): visual references are **not** a special case and there is **no new relation kind** (the earlier `visual(...)` / `vis_one` / `vis_many` sketch is dropped). Every BYOND built-in var or list that holds a reference
+becomes a relation end declared **once, in the engine, on the base type**, using the existing kinds (`ref_one`, `ref_many`, `links`, `slot`) with **native storage** (the value stays in the built-in var or list; the build adds the reverse index, publishing and
+teardown around it). Each end is declared with its inverse where BYOND has one, and its teardown is generated into the destroy transaction (phase 5, with `client.screen` release), so the holder or the held thing leaving always removes the entry.
+Writes go only through `rel_*` verbs or an engine choke point; a raw `+=`, `-=`, `=` or `.Add()` on one of these built-ins outside the engine is a lint finding (`native_ref_write`, seeded baseline in its own commit, ratchet then hard ban).
+
+Master today: a dying **movable's** own `vis_contents` is cleared and it is removed from its `vis_locs` holders (`code/game/atoms_movable.dm:140-143`); nothing declares the rest. The reference finder and leak check skip `vis_*`
 (`code/modules/admin/view_variables/reference_tracking.dm:162-163`, `code/datums/lifecycle/leak_check.dm:40`), and `/image` is in `NOT_REFS`.
-- A **visual relation** (entry name provisional; sketch `visual(nameof(v), via = VIS_CONTENTS | CLIENT_IMAGES | IMAGE_LOC)`): the build owns the removal from `vis_contents` / `client.images`, generated into the destroy transaction (phase 5, with `client.screen` release), so the holder or the shown atom leaving always removes the visual.
+
+**Inventory** (grep counts approximate; every row is covered before the wave closes):
+
+| Built-in | Holds | Relation form (engine-declared, native storage) | Inverse | Today |
+|---|---|---|---|---|
+| `loc`, `contents`, `locs` | containment | `slot()` / the containment layer (`containment.md`) | `loc` <-> `contents` | already containment; writes are `forceMove` / slot verbs |
+| `vis_contents` | atoms shown through a holder | `ref_many` on `/atom` | `vis_locs` | 161 sites (grep); movable teardown only |
+| `vis_locs` | holders showing this atom | the generated inverse of `vis_contents`, read-only | `vis_contents` | 10 sites (grep) |
+| `client.screen` | objects on a client's screen | `ref_many` on `/client` | none | released in phase 5 for the client only |
+| `client.images` | images shown to a client | `ref_many` on `/client` | none | 109 sites (grep) |
+| `image.loc` (`image(loc =)`) | the atom an image rides on | `ref_one` on `/image` (an `/image` with a `loc` is a reference; the `NOT_REFS` entry is narrowed) | none | 18 sites (grep) |
+| `client.eye`, `client.perspective` | the viewed atom | `ref_one` on `/client` | none | unchecked today |
+| `mob.client` / `client.mob` / `mob.key` / `mob.ckey` | the native player link | one `links(/mob::client, /client::mob)` pair, written only by the `bind_player(mob, key)` choke point (D13) | the pair | about 104 raw writes (grep) |
+| `atom.particles` | a particle datum | `ref_one` on `/atom` (the particle type is a definition datum, exempt by type) | none | rare |
+| `render_target` / `render_source` | a name string another atom resolves | not a reference to the engine: a **token** (a generated unique name owned by the declaring type), or a lint finding when a literal is stored | none | unchecked today |
+| `tag` and `locate(tag)` | a name string resolved to an atom | tokens (`entity_handle`) in content; `tag` does not name an entity; `locate(tag)` is linted like a stored `locate(text)` (D9) | none | unchecked today |
+
+- **Where it is declared:** the engine (one engine file per base type, path-exempt from `stored_refs` like the other engine tables). Content never declares these ends; it writes them through `rel_add(A, nameof(A.vis_contents), X)` and the like, or a presentation helper that does.
+- **Teardown:** generated, not hand-written: removing a held atom from every `vis_contents`, `client.screen` and `client.images` that names it, and clearing a client's own lists, in the destroy transaction. A `client` end is torn down on logout.
 - **GC sweep pass:** after the sweep's deletes, a pass walks `vis_contents`, `client.images` and `vis_locs` of the sweep's survivors and fails on any reference to a deleted subject (BYOND does not report `vis_locs` references to the collector's finder, so the pass is explicit).
+- **Cost note:** `vis_contents` and `client.images` are hot in presentation code; the declared ends use `hot = TRUE` (engine/domain only, D21) and publish nothing for presentation-only changes.
 
 ### D12. Datum-keyed assoc sets and one membership store (approved item 9)
 Assoc lists keyed by datum are references the lint does not see. Verified long-lived instances: `/datum/system/atoms::after_init_pending[A] = TRUE` (`code/controllers/subsystems/atoms.dm:312`) and `batch.owner.work[kind][thing] = TRUE` (`atoms_batch.dm:174`).
@@ -191,10 +216,11 @@ Writes to a mob's `key`, `ckey` or `client`: about 104 non-test lines by a dot-w
 Master today: `slot()` defaults to **SPILL** (`slot_def.dm:50,290`); `owns_one/owns_many` default to **DELETE** (`entries.dm` `on_destroy = ON_DESTROY_DELETE`), and `owns_*` has no location. `lifecycle.md` section 3 says "every slot declares one policy". The engine's own slot defs differ from the rule below: `SLOT_DROP_DELETE` on the storage slot ("contents go with it, as before", `code/library/containers/storage.dm:207-215`), folder pages (`code/modules/paperwork/folders.dm:20`), vending stock (`code/datums/containment/stock.dm:67`), the implant site (`code/modules/body/organs/organ_external.dm:134`), the part-tree slots (`code/modules/body/parts/part_slots.dm:29`), and four `slot(SLOT_HIDDEN_UPLINK, ... on_destroy = ON_DESTROY_DELETE)` sites (`code/game/objects/items/devices/uplink.dm:243,257,264`, `code/game/objects/items/weapons/implants/implantuplink.dm:8`). Six slot defs still use `SLOT_DROP_HOLDER`, which `lifecycle.md` says is removed (`stock.dm:52`, `dna_modifier.dm:95`, `mecha.dm:386`, `body/slots.dm:42,86`, `disposal_machines.dm:77`).
 
 **The rule:**
-- **SPILL is the default for anything that sits in a slot.** A bag, a locker, a vending machine, a folder drops what it holds when it is deleted.
+- **SPILL is the default for anything that sits in a slot.** A bag, a locker, a folder drops what it holds when it is deleted.
+- **`SPILL_FRACTION(f)` is a general slot destroy policy** (user decision, 2026-10-17): on the holder's destruction a fraction `f` (0 to 1, default **25%**, `SPILL_FRACTION_DEFAULT`) of the contents spills to the holder's location and the rest is deleted (`spent()`). The pick is random, without replacement, and rounds up so a non-empty slot with `f > 0` spills at least one. It is a slot policy like `SPILL` and `DELETE`, not vending-specific; vending stock is its first user. A `survives_container` thing always spills (below) and does not count toward the deleted share. Slot capacity and admission stay with the admission lane; only the destroy policy is declared here.
 - **DELETE only for parts that are the holder's own construction** (a limb's organs and child limbs, a hidden uplink the type makes with `starts =`, a machine's own board and components). If the holder does not create it with `starts =` or by its plan, it is not its construction.
 - `owns_*` (no location) keeps DELETE: it is not a slot.
-- Consequence: the storage slot, folder pages, vending stock and the implant site change to SPILL (a behaviour change, **flagged**: a destroyed vendor drops its stock, which the stock.dm comment says it deliberately does not; the user decision overrides it per site list, and the vending case wants an explicit sign-off). `SLOT_DROP_HOLDER` is removed with its six users.
+- Consequence: the storage slot, folder pages and the implant site change to SPILL, and vending stock to `SPILL_FRACTION(0.25)` (a behaviour change, **flagged**). **Vending stock does not take plain SPILL: it uses `SPILL_FRACTION(0.25)`** (decided by the user: a destroyed vendor spills about a quarter of its stock and the rest is lost). `SLOT_DROP_HOLDER` is removed with its six users.
 - **Lifecycle property `survives_container`** (a proc on the thing, default FALSE; TRUE for a mob with a mind or client, for a brain/MMI holding a mind, and for items like the nuke disk): phase 3 (`dq_lifecycle_resolve_slot_entry`) checks it **before** the DELETE branch (`lifecycle.dm:111-113`) and spills instead, whatever the slot's policy; the same check applies to latent entries (`lifecycle.dm:~159`) and to `consume`/cascade `spent()` calls from a container's transaction. No slot-level mob flag (`is_mind_slot` stays only for the ghost/MMI resolver of a destroyed *body*, phase 0.5).
 
 ### D18. Organs and limbs (approved item 16)
@@ -209,7 +235,7 @@ Master already has most of the shape: nested keyed slots per limb (`SLOT_ID_PART
 `containment.md` section 4.5 says an item collapses "only when it serializes (so it holds no relationships or running behaviour)". Master is looser: collapse counts relation views naming the node as accounted for and parks them (`collapse.dm:144-150`, `views.dm:588-605`).
 - **Declared relations pin an atom real**: a collapse is refused while any relation (other than its own slot edge to the holder) names it; `rel_incoming_refs` stops counting toward "accounted"; `rel_go_dormant`/`rel_wake` are removed once nothing needs them.
 - **Weak refs and tokens survive** via `entity_handle_park` (`handles.dm:134-143`): they resolve null while parked and resolve again after `entity_handle_unpark`.
-- **Nothing dangles into a latent entry**: no relation, link, owner stamp or visual may name a latent entry; a test collapses and re-materializes a subject with each reference kind and asserts the right outcome (refused, or survived as a token).
+- **Nothing dangles into a latent entry**: no relation, link, owner stamp or native built-in entry may name a latent entry; a test collapses and re-materializes a subject with each reference kind and asserts the right outcome (refused, or survived as a token).
 - Cost: fewer collapses (anything referenced stays real). The size of the loss is **(unverified)**; measure with the boot census at integration (no benches during the rewrite).
 
 ### D20. Ownership conflicts, deletes from elsewhere, GC coverage (approved item 18, corrects the first draft's D9)
@@ -230,7 +256,7 @@ Reads through a relation are generated hops; accept reactive hops for content; `
 | assoc **key** or value | membership store, or handle keys | assoc-key coverage (D8, D12) |
 | proc-static list | same as a list var | list rule (proc-static place) |
 | turf / client var | handle (generation / connection generation) | NOT_REFS revisited (D8, D10) |
-| `/image` with `loc`, `vis_contents`, `client.images` | visual relation | visual rule + sweep pass (D11) |
+| `/image` with `loc`, `vis_contents`, `client.images` | engine-declared native ends (D11) | `native_ref_write` lint + sweep pass |
 | REF / `\ref[` / `locate(text)` | one request only | `ref_text` lint (D9) |
 | deferred call arguments | captured as handles by the engine | `ownership` lint (CALLBACK banned outside core) |
 | pooled record | transient, reset on release | pool lint + structural reset check; pooled never a relation target (D7) |
@@ -255,7 +281,7 @@ Each wave edits everything first, then one compile and one focused test batch, t
 | 3 | owner back-refs and machine links: reagents, power, shuttles, shieldgen, mining, overmap, modular computers (D3, D6, D16) | ~160 | ceiling 0 per dir; `paired_vars` hard ban |
 | 4 | targets and mob/item: projectiles, antagonist, vore, nifsoft, pda, xenoarch, tgui, resleeving; folds (D13, D16: mob_chunk, tgui, radio, packs, observer events deleted) | ~170 | ceiling 0 for those dirs; `OBSERVER_EVENT_*` deleted (hard ban); `player_link` ratchet |
 | 5 | client/session, `bind_player`, reflective writes, scripting (D13, D14); the 97 to 104 `key/ckey/client` writes | ~60 | `player_link` hard ban; `ALLOW(api)` `vars[...]` keeps in content gone |
-| 6 | visual kind (D11), organs/limbs (D18), latents (D19), Rust handle generations (D15), destroy-policy flips (D17) | n/a (new rules) | `visual` rule on; `SLOT_DROP_HOLDER` removed (hard ban); replant test and sweep extended |
+| 6 | native built-in ends (D11), organs/limbs (D18), latents (D19), Rust handle generations (D15), destroy-policy flips and `SPILL_FRACTION` (D17) | n/a (new rules) | `native_ref_write` ratchet then ban; `SLOT_DROP_HOLDER` removed (hard ban); replant test and sweep extended |
 | 7 | baseline empty: `stored_refs` becomes a hard ban; `ref_token`/`resolve_token` rename (mechanical) | rest | no baseline file; old handle names banned; `ref_text` hard ban |
 
 After wave 0, waves 1 to 5 can run in parallel by directory; wave 6 items are independent of each other. A file moves into the new tree only when fully migrated (AGENTS.md section 3c).
@@ -263,7 +289,7 @@ After wave 0, waves 1 to 5 can run in parallel by directory; wave 6 items are in
 ## 6. Risks
 
 1. **Behaviour change on delete.** `OTHER_CLEAR` now nulls vars old code left stale. Mitigation: per-type delete tests in the sweep, `on_unlink` where old code did work.
-2. **Destroy-policy flips (D17).** Storage, vending, folders and implants now spill; a vendor dropping its whole stock was a deliberate old choice. Needs an explicit per-site sign-off before wave 6.
+2. **Destroy-policy flips (D17).** Storage, folders and implants now spill; vending spills a quarter (`SPILL_FRACTION`), decided by the user. The remaining per-site flips are reviewed in wave 6.
 3. **Latent savings fall (D19).** Anything referenced stays real. Unmeasured.
 4. **`weak` readers are not reactive.** A reader that needs the target's death uses a normal relation; wrongly choosing `weak` loses a reaction. The per-site test in D5 is the guard.
 5. **Client handle generation (D10)** changes who a stored client handle resolves to after a reconnect; every current user of `"@ckey"` handles must be listed first **(unverified: not enumerated)**.
@@ -272,10 +298,10 @@ After wave 0, waves 1 to 5 can run in parallel by directory; wave 6 items are in
 8. **New lints seed baselines** whose size is unknown until wave 0's report; they could be large. Fail-closed untyped coverage is the most likely to be.
 9. **Counts are approximate**; the exact report sizes the waves.
 
-## 7. Open points for the user
-- Name of the visual relation constructor (D11).
-- Vending stock: SPILL (the rule) or a stated DELETE exception (D17).
-- Whether `owner_of` is fast enough for per-tick use; the rule above sends hot paths to `ref_one`.
+## 7. Decisions on the open points (user, 2026-10-17)
+- Visual references have no special kind: BYOND built-ins become engine-declared ends of the existing kinds with native storage (D11). The names `vis_one` / `vis_many` and `visual()` are not used.
+- Vending stock uses `SPILL_FRACTION(0.25)`, a general slot destroy policy (D17).
+- `owner_of` is for non-hot code; hot paths keep a `ref_one` back-reference (D6).
 
 ## 8. Comparison with the original design
 
@@ -303,7 +329,7 @@ Sources compared: `proposals/reference_storage.md` (RS), `lifecycle.md` (LC), `f
 | Organs (API6 "Containment and slots", LC section 7) | slots + caches | owner derived, caches derived, effects while-slotted | `attach.dm:233`, `organs.dm:4-5` |
 
 ### Added
-`weak = TRUE`; `conflict = REFUSE` on var pairs; `rel_write_undeclared`, `ref_text`, `saved_handle`, `untyped`, `player_link` lints; visual relation kind and a visual sweep pass; `survives_container`; `bind_player`; Rust generation tokens for gas handles; observer-event deletion; handle-slot counting in the sweep; a replant test; `links()` owns-end build error.
+`weak = TRUE`; `conflict = REFUSE` on var pairs; `rel_write_undeclared`, `ref_text`, `saved_handle`, `untyped`, `player_link` lints; engine-declared relation ends over BYOND built-ins (D11) and a native-ref sweep pass; `SPILL_FRACTION(f)` slot policy; `native_ref_write` lint; `survives_container`; `bind_player`; Rust generation tokens for gas handles; observer-event deletion; handle-slot counting in the sweep; a replant test; `links()` owns-end build error.
 
 ### Dropped
 - The first draft's `by =` as an unproven "the doc says so" (now a wave 0 pin).
@@ -314,10 +340,10 @@ Sources compared: `proposals/reference_storage.md` (RS), `lifecycle.md` (LC), `f
 - RS waves 2 to 5 (replaced by section 5).
 
 ## 9. Edits `final_api.html` needs (not made here)
-1. Section 6 relations table: add `weak = TRUE` to `ref_one/ref_many` (accessor generated, no index, no publish, `on_unlink` an error); add the visual relation row; allow `conflict = REFUSE` on a var pair and state that a `links()` end cannot be an `owns_*` var.
+1. Section 6 relations table: add `weak = TRUE` to `ref_one/ref_many` (accessor generated, no index, no publish, `on_unlink` an error); add the native built-ins inventory (D11) with no new kind; allow `conflict = REFUSE` on a var pair and state that a `links()` end cannot be an `owns_*` var.
 2. "Naming an entity in data": tokens only in data; a var holding an entity is a relation (possibly `weak`); stored `REF()`/`locate` text banned; `own_key`, `adj_handle`, `vg_entity` engine-only.
-3. "Storing references": "no third kind" reworded (two kinds, weak is an option); "Not references" list: remove turfs/areas "never deleted" caveat for turfs (z recycle) and add clients, `/image` with `loc`, `vis_contents`, `client.images`; add pooled-never-a-target; add assoc keys; "Checked" lists the new lints and the sweep extensions.
-4. "Owned or contained": state SPILL default for slots, DELETE for own construction, `survives_container`; fix `slot(... on_destroy = ...)` to say the default; keep `owns_*` DELETE default.
+3. "Storing references": "no third kind" reworded (two kinds, weak is an option); "Not references" list: remove turfs/areas "never deleted" caveat for turfs (z recycle) and add clients, `/image` with `loc`, and the built-ins of D11 (declared by the engine, not content); add pooled-never-a-target; add assoc keys; "Checked" lists the new lints and the sweep extensions.
+4. "Owned or contained": state SPILL default for slots, `SPILL_FRACTION(f)`, DELETE for own construction, `survives_container`; fix `slot(... on_destroy = ...)` to say the default; keep `owns_*` DELETE default.
 5. Reads table: `owner_of` cost note and "hot paths use `ref_one`".
 6. "Containment and slots": organ owner derived from the slot; organ effects as `while_slotted`; relations pin latent entries.
 7. Section 17 (old to new): rows for hand handles, REF/locate text, observer events, datum-keyed assoc sets, raw `.key/.ckey/.client` writes, raw `vars[x] =` on relation vars.
