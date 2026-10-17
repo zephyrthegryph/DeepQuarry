@@ -10,6 +10,8 @@ fn queued_host_can_release_all_tiers_without_losing_slot_or_daemon_owners() {
     let path = directory.join("queued.dme");
     std::fs::write(&path, b"").unwrap();
     let slot = shared.slot(path.clone(), &BTreeMap::new(), None);
+    // Idle past the window in which the newest session is shielded from pressure, so the tiers apply.
+    *slot.last.lock().unwrap() = Instant::now() - housekeeping::MRU_PROTECTED - Duration::from_secs(1);
     let deadline = admission_deadline::AdmissionDeadline::new(Instant::now());
     let _serial = slot.lock_request_until(&deadline).unwrap();
     for tier in [2, 3, 4] {
