@@ -53,6 +53,12 @@ pub trait SnapshotProvider {
         let read = self.read_verified(path)?;
         Ok((read.stamp().clone(), read.content()))
     }
+    /// Digest several files, results in input order. Serial by default; a stateless provider (the live file system) reads on
+    /// several threads: a checkout whose files were swapped for another worktree's identical ones has every stamp changed, and
+    /// hashing the resource archive's inputs one file at a time was 8 s of a cross-worktree patch.
+    fn digest_many(&self, paths: &[&PathBuf]) -> Vec<io::Result<(Stamp, u128)>> {
+        paths.iter().map(|path| self.digest(path)).collect()
+    }
 }
 impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
     fn generated_outputs(&self) -> Option<&BTreeSet<PathBuf>> {
@@ -73,6 +79,9 @@ impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
     fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
         (**self).digest(path)
     }
+    fn digest_many(&self, paths: &[&PathBuf]) -> Vec<io::Result<(Stamp, u128)>> {
+        (**self).digest_many(paths)
+    }
 }
 
 pub struct FileSystemInputs;
@@ -82,6 +91,25 @@ pub use generated::GeneratedOutputInputs;
 #[path = "input_snapshot_open.rs"]
 mod source_open;
 impl SnapshotProvider for FileSystemInputs {
+    fn digest_many(&self, paths: &[&PathBuf]) -> Vec<io::Result<(Stamp, u128)>> {
+        const SERIAL_BELOW: usize = 16;
+        const THREADS: usize = 4;
+        if paths.len() < SERIAL_BELOW {
+            return paths.iter().map(|path| self.digest(path)).collect();
+        }
+        let chunk = paths.len().div_ceil(THREADS);
+        let mut results = Vec::with_capacity(paths.len());
+        std::thread::scope(|scope| {
+            let handles: Vec<_> = paths
+                .chunks(chunk)
+                .map(|part| scope.spawn(move || part.iter().map(|path| self.digest(path)).collect::<Vec<_>>()))
+                .collect();
+            for handle in handles {
+                results.extend(handle.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic)));
+            }
+        });
+        results
+    }
     fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
         use std::io::Read;
         let mut file = std::fs::File::open(path)?;
@@ -753,6 +781,10 @@ impl InputSnapshot {
             report.changed.extend(self.folders.keys().cloned());
             return Ok((report, next));
         }
+        // Stamps first (cheap): a file whose stamp matches is kept as it was. The files that must be re-read (a stamp that
+        // differs, which is every file when a checkout's files were swapped for another worktree's identical ones) are hashed
+        // on several threads afterwards: serially that was 8 s of a cross-worktree patch.
+        let mut to_hash: Vec<(&PathBuf, &FileInput)> = Vec::new();
         for (path, old) in &self.files {
             let stamp = match provider.stamp(path) {
                 Ok(stamp) => stamp,
@@ -767,17 +799,36 @@ impl InputSnapshot {
             };
             let racy = old.stamp.modified_ns.abs_diff(self.scanned_ns) <= 2_000_000_000;
             if exact || old.stamp.file_id.is_none() || stamp != old.stamp || racy {
-                let (read_stamp, content) = provider.digest(path)?;
-                report.rehashed += 1;
-                next.record_verified_digest(path, read_stamp, content)?;
-                if next.files[path].content != old.content {
-                    report.changed.push(path.clone());
-                    if stop_on_change {
-                        return Ok((report, next));
-                    }
-                }
+                to_hash.push((path, old));
             } else {
                 next.files.insert(path.clone(), old.clone());
+            }
+        }
+        // A validation that stops at the first change probes one file before fanning out: a changed tree usually shows in the
+        // first file, and the stop must not cost a read of every other file.
+        let mut digests = Vec::with_capacity(to_hash.len());
+        if stop_on_change && !to_hash.is_empty() {
+            let first = provider.digest(to_hash[0].0);
+            let changed_first = match &first {
+                Ok((_, content)) => *content != to_hash[0].1.content,
+                Err(_) => true,
+            };
+            digests.push(first);
+            if !changed_first && to_hash.len() > 1 {
+                digests.extend(provider.digest_many(&to_hash[1..].iter().map(|(path, _)| *path).collect::<Vec<_>>()));
+            }
+        } else {
+            digests = provider.digest_many(&to_hash.iter().map(|(path, _)| *path).collect::<Vec<_>>());
+        }
+        for ((path, old), digest) in to_hash.into_iter().zip(digests) {
+            let (read_stamp, content) = digest?;
+            report.rehashed += 1;
+            next.record_verified_digest(path, read_stamp, content)?;
+            if next.files[path].content != old.content {
+                report.changed.push(path.clone());
+                if stop_on_change {
+                    return Ok((report, next));
+                }
             }
         }
         for (path, old) in &self.folders {

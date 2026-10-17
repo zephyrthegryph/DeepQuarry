@@ -345,7 +345,8 @@ fn run_build_attempt(
                             pair.dmb_hash,
                             base_image
                         );
-                        continue;
+                        // Every older record is for an image the base does not describe either; validating them is wasted time.
+                        break;
                     }
                     let pair_verification_seconds =
                         pair_verification_started.elapsed().as_secs_f64();

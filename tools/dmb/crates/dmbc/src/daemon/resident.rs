@@ -164,18 +164,21 @@ pub(super) fn register() -> Option<Registration> {
 }
 
 /// Where a compiler executable comes from. The shared published layout is `<bin>/v/<id>/dmbc` with `<bin>/current` naming the id
-/// new compiles use (tools/build/lib/dmbc_cache.ts).
+/// every compile uses (tools/build/lib/dmbc_cache.ts).
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Provenance {
     /// The version `<bin>/current` names right now.
     Current,
-    /// A published version that is no longer current.
+    /// The version `<bin>/next` names: published and being prewarmed (its session is built for the tree while the current
+    /// daemon still serves); it becomes `current` once warm.
+    Candidate,
+    /// A published version that is neither current nor the candidate: a newer compiler is current.
     Superseded,
     /// Anything else: a worktree build, a cargo output, an explicit `DQ_DMBC_BIN`, a test fixture.
     Development,
 }
 
-fn provenance_of(exe: &Path, read_current: impl Fn(&Path) -> Option<String>) -> Provenance {
+fn provenance_of(exe: &Path, read_pointer: impl Fn(&Path, &str) -> Option<String>) -> Provenance {
     let (Some(version), Some(versions)) = (exe.parent(), exe.parent().and_then(Path::parent)) else {
         return Provenance::Development;
     };
@@ -184,8 +187,10 @@ fn provenance_of(exe: &Path, read_current: impl Fn(&Path) -> Option<String>) -> 
     let Some(bin) = versions.parent().filter(|_| published) else {
         return Provenance::Development;
     };
-    match read_current(bin) {
-        Some(current) if current.eq_ignore_ascii_case(id) => Provenance::Current,
+    let is = |pointer: &str| read_pointer(bin, pointer).is_some_and(|value| value.eq_ignore_ascii_case(id));
+    match read_pointer(bin, "current") {
+        Some(_) if is("current") => Provenance::Current,
+        Some(_) if is("next") => Provenance::Candidate,
         Some(_) => Provenance::Superseded,
         None => Provenance::Development,
     }
@@ -193,7 +198,7 @@ fn provenance_of(exe: &Path, read_current: impl Fn(&Path) -> Option<String>) -> 
 
 pub fn provenance_of_self() -> Provenance {
     std::env::current_exe().map_or(Provenance::Development, |exe| {
-        provenance_of(&exe, |bin| fs::read_to_string(bin.join("current")).ok().map(|text| text.trim().to_owned()))
+        provenance_of(&exe, |bin, pointer| fs::read_to_string(bin.join(pointer)).ok().map(|text| text.trim().to_owned()))
     })
 }
 
@@ -334,21 +339,27 @@ mod tests {
     }
 
     #[test]
-    fn provenance_separates_current_superseded_and_development_builds() {
-        let current = |_: &Path| Some("ebfc6fb0e7c801a8".to_owned());
+    fn provenance_separates_current_candidate_superseded_and_development_builds() {
+        let pointers = |_: &Path, name: &str| match name {
+            "current" => Some("ebfc6fb0e7c801a8".to_owned()),
+            "next" => Some("aaaaaaaaaaaaaaaa".to_owned()),
+            _ => None,
+        };
         let exe = |id: &str| PathBuf::from(format!("E:/dq-cache/dmb-bin/v/{id}/dmbc.exe"));
-        assert_eq!(provenance_of(&exe("ebfc6fb0e7c801a8"), current), Provenance::Current);
-        assert_eq!(provenance_of(&exe("3ac37341c288ea49"), current), Provenance::Superseded);
-        assert_eq!(provenance_of(&PathBuf::from("E:/dq-cache/dmb-bin/dmbc.exe"), current), Provenance::Development);
-        assert_eq!(provenance_of(&PathBuf::from("E:/projects/dq-wt/x/tools/dmb/target/release/dmbc.exe"), current), Provenance::Development);
-        assert_eq!(provenance_of(&exe("not-a-version-id!"), current), Provenance::Development);
-        assert_eq!(provenance_of(&exe("ebfc6fb0e7c801a8"), |_: &Path| None), Provenance::Development);
+        assert_eq!(provenance_of(&exe("ebfc6fb0e7c801a8"), pointers), Provenance::Current);
+        assert_eq!(provenance_of(&exe("aaaaaaaaaaaaaaaa"), pointers), Provenance::Candidate);
+        assert_eq!(provenance_of(&exe("3ac37341c288ea49"), pointers), Provenance::Superseded);
+        assert_eq!(provenance_of(&PathBuf::from("E:/dq-cache/dmb-bin/dmbc.exe"), pointers), Provenance::Development);
+        assert_eq!(provenance_of(&PathBuf::from("E:/projects/dq-wt/x/tools/dmb/target/release/dmbc.exe"), pointers), Provenance::Development);
+        assert_eq!(provenance_of(&exe("not-a-version-id!"), pointers), Provenance::Development);
+        assert_eq!(provenance_of(&exe("ebfc6fb0e7c801a8"), |_: &Path, _: &str| None), Provenance::Development);
     }
 
     #[test]
     fn only_a_published_version_that_is_not_current_is_superseded() {
         assert!(superseded(Provenance::Superseded));
         assert!(!superseded(Provenance::Current));
+        assert!(!superseded(Provenance::Candidate));
         assert!(!superseded(Provenance::Development));
     }
 
