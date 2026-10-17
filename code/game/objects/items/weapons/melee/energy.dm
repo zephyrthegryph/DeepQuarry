@@ -184,7 +184,7 @@ CAPABILITIES(/obj/item/melee/energy)
 /// The look: the blade over the hilt, in the blade's colour (white for the rainbow blade).
 /obj/item/melee/energy/draw(datum/look/look)
 	..()
-	var/base = look.state_so_far(src)
+	var/base = initial(icon_state) // the type's own state, never the live one: a draw that read it saw the previous draw's result (altevian "_active")
 	if(rainbow)
 		look.set_color("FFFFFF")
 		look.overlay(look_appearance(icon, "[base]_blade_rainbow", color = "FFFFFF"), active)
