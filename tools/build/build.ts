@@ -90,7 +90,7 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
-import { dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, publishDmbc, restoreDmbc, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, storeDmbc } from './lib/dmbc_cache';
+import { dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, pruneDmbcVersions, publishDmbc, restoreDmbc, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, sharedDmbcPointer, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -864,7 +864,7 @@ const dmbcCacheHit = (): boolean => {
     return false;
   }
   try {
-    if (restoreDmbc(cache, k.key, DMBC_EXE, DMBD_EXE)) {
+    if (restoreDmbc(cache, k.key)) {
       Juke.logger.info(`dmbc cache: hit ${k.key} (${cache})`);
       return true;
     }
@@ -880,7 +880,7 @@ const storeDmbcBuild = (): void => {
   if (!pending) return;
   dmbcPendingStore = null;
   try {
-    storeDmbc(pending.cache, pending.key, pending.commit, DMBC_EXE, DMBD_EXE);
+    storeDmbc(pending.cache, pending.key, pending.commit, sharedDmbcExe('dmbc'), sharedDmbcExe('dmbd'));
     Juke.logger.info(`dmbc cache: stored ${pending.key}`);
   } catch (error) {
     Juke.logger.warn(`dmbc cache: store failed: ${error instanceof Error ? error.message : error}`);
@@ -897,11 +897,10 @@ export const DmbcTarget = new Juke.Target({
     'tools/dmb/crates/**/Cargo.toml',
     'tools/dmb/crates/**/*.rs',
   ],
-  outputs: [DMBC_EXE],
+  outputs: [sharedDmbcPointer()],
   executes: async () => {
-    // Cargo builds in a private target and the result is published to the shared binary by atomic rename (installFile): a
-    // running daemon keeps its executable open, which Windows lets us rename but not overwrite. Sweep the aside copies of
-    // earlier publications that no daemon holds any more.
+    // Cargo builds in a private target and the result is published as an immutable version (lib/dmbc_cache.ts publishDmbcVersion):
+    // a compile that is running keeps the version it started with. Sweep the aside copies the old in-place publication left.
     const binDir = sharedDmbcBinDir();
     for (const entry of fs.existsSync(binDir) ? fs.readdirSync(binDir) : []) {
       if (!entry.includes('.old-')) continue;
@@ -914,12 +913,31 @@ export const DmbcTarget = new Juke.Target({
     // One cargo build at a time machine-wide; the slot script queues and reclaims crashed holders.
     const slots = 'tools/dq_machine_slots.sh';
     const cargo = ['cargo', 'build', '--release', '-p', 'dmbc', '--manifest-path', 'tools/dmb/Cargo.toml'];
-    if (fs.existsSync(slots)) {
-      await Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...cargo], { env: { ...process.env, CARGO_TARGET_DIR: sharedDmbcBuildTarget() } });
-    } else {
-      await Juke.exec(cargo[0], cargo.slice(1), { env: { ...process.env, CARGO_TARGET_DIR: sharedDmbcBuildTarget() } });
+    const target = sharedDmbcBuildTarget();
+    const runCargo = (args: string[], extraEnv: Record<string, string> = {}) =>
+      fs.existsSync(slots)
+        ? Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...args], { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv }, throw: false })
+        : Juke.exec(args[0], args.slice(1), { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv }, throw: false });
+    let result = await runCargo(cargo);
+    if (result.code !== 0 && staleCargoArtifactSignature(result.combined ?? '')) {
+      // The one shared target is written by builds of different checkouts and revisions. A compile error that says a method or item
+      // that exists in the source is missing ("no method named evict_to_budget") is stale incremental or fingerprint state, not a
+      // code error: drop the workspace crates' artifacts and the incremental cache and build once more, non-incrementally.
+      Juke.logger.warn('dmbc: the cargo build failed with a stale-artifact signature; cleaning the workspace crates and retrying once');
+      const meta = spawnSync('cargo', ['metadata', '--no-deps', '--format-version', '1', '--manifest-path', 'tools/dmb/Cargo.toml'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, CARGO_TARGET_DIR: target } });
+      let names: string[] = [];
+      try {
+        names = (JSON.parse(meta.stdout).packages as { name: string }[]).map((pkg) => pkg.name);
+      } catch {
+        // no metadata: the incremental directory removal below still applies
+      }
+      fs.rmSync(`${target}/release/incremental`, { recursive: true, force: true });
+      if (names.length) await runCargo(['cargo', 'clean', '--release', '--manifest-path', 'tools/dmb/Cargo.toml', ...names.flatMap((n) => ['-p', n])]);
+      result = await runCargo(cargo, { CARGO_INCREMENTAL: '0' });
     }
-    publishDmbc(`${sharedDmbcBuildTarget()}/release`, DMBC_EXE, DMBD_EXE);
+    if (result.code !== 0) throw new Error(`dmbc: cargo build failed (exit ${result.code})`);
+    publishDmbc(`${sharedDmbcBuildTarget()}/release`);
+    pruneDmbcVersions();
     storeDmbcBuild();
   },
 });
