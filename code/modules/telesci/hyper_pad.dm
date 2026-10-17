@@ -8,6 +8,15 @@
 	density = 0
 	anchored = 1
 	var/tmp/obj/machinery/hyperpad/centre/primary
+	/// The pad is charged: its lit layer shows in `pad_tint`.
+	var/pad_lit = FALSE
+	var/pad_tint
+	var/lit_state = "hpad_on"
+
+/obj/machinery/hyperpad/draw(datum/look/look)
+	..()
+	if(pad_lit)
+		look.overlay(look_overlay_image(icon, lit_state, color = pad_tint))
 
 CAPABILITIES(/obj/machinery/hyperpad)
 	op("hyperpad_ghost_use", observer(), priority(OP_PRIORITY_DEFAULT - 2), label("View"), then(PROC_REF(hyperpad_ghost_use)))
@@ -20,6 +29,7 @@ CAPABILITIES(/obj/machinery/hyperpad)
 	var/teleporting = 0 //if it's in the process of teleporting
 	var/tmp/obj/machinery/hyperpad/centre/linked_pad
 	icon_state = "hpad_centre"
+	lit_state = "hpad_centre_on"
 	var/newcolor = "#00FFFF" //used for colouring the overlays
 
 	//mapping: map_pad_link_id names the partner centre's map_pad_id (REL_KEYED below)
@@ -128,7 +138,7 @@ CAPABILITIES(/obj/machinery/hyperpad/centre)
 
 /obj/machinery/hyperpad/centre/proc/animate_discharge(obj/machinery/hyperpad/Pad)
 	if(Pad)
-		Pad.cut_overlays()
+		Pad.pad_lit = FALSE
 
 /obj/machinery/hyperpad/centre/proc/doteleport(mob/user)
 	if(!src || QDELETED(src))
@@ -170,26 +180,24 @@ CAPABILITIES(/obj/machinery/hyperpad/centre)
 			limit += 1
 			do_teleport(ROI, locate((linked_pad().x - xadjust), (linked_pad().y - yadjust), linked_pad().z), effectin = tele1, effectout = tele2, asoundin = 'sound/weapons/emitter2.ogg', asoundout = 'sound/weapons/emitter2.ogg', channel = TELEPORT_CHANNEL_QUANTUM)
 
-	cut_overlays()
+	pad_lit = FALSE
 	for(var/obj/machinery/hyperpad/P in linked)
-		P.cut_overlays()
+		P.pad_lit = FALSE
 	start_charge()
 
 /obj/machinery/hyperpad/centre/proc/start_charge()
-	var/mutable_appearance/color_overlay = mutable_appearance('icons/obj/telescience_ch.dmi', "hpad_centre_on")
-	color_overlay.color = newcolor
-	add_overlay(color_overlay)
+	pad_tint = newcolor
+	pad_lit = TRUE
 
-	color_overlay = mutable_appearance('icons/obj/telescience_ch.dmi', "hpad_on")
-	color_overlay.color = newcolor
 	var/timer = teleport_cooldown/8
 	for(var/obj/machinery/hyperpad/P in linked)
-		after(src, timer, PROC_REF(animate_charge), with = list(P, color_overlay))
+		after(src, timer, PROC_REF(animate_charge), with = list(P, newcolor))
 		timer += teleport_cooldown/8
 
-/obj/machinery/hyperpad/centre/proc/animate_charge(obj/machinery/hyperpad/Pad, mutable_appearance/color)
-	if(Pad && color)
-		Pad.add_overlay(color)
+/obj/machinery/hyperpad/centre/proc/animate_charge(obj/machinery/hyperpad/Pad, tint)
+	if(Pad && tint)
+		Pad.pad_tint = tint
+		Pad.pad_lit = TRUE
 
 /// the primary this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/hyperpad/proc/primary() as /obj/machinery/hyperpad/centre

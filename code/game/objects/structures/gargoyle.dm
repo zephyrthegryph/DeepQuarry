@@ -21,6 +21,8 @@
 	var/adjective = "hardens"
 	var/list/tail_lower_dirs = list(NORTH, SOUTH) // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	var/image/tail_image
+	/// The tinted snapshot of the petrified mob's layers, drawn as overlays (the tail is drawn from tail_image, its layer follows the facing).
+	var/list/statue_layers
 
 	var/can_revert = TRUE
 	var/was_rayed = FALSE
@@ -125,12 +127,13 @@ CAPABILITIES(/obj/structure/gargoyle)
 		if(istype(layers[i], /image) && (i in body_layers))
 			var/image/old_image = layers[i]
 			var/image/tinted = image(old_image)
-			if(i == TAIL_LOWER_LAYER || i == TAIL_UPPER_LAYER || i == TAIL_UPPER_LAYER_HIGH)
-				tail_image = tinted
 			tinted.color = tint_color
 			tinted.layer = old_image.layer
 			new_image = tinted
-		add_overlay(new_image)
+			if(i == TAIL_LOWER_LAYER || i == TAIL_UPPER_LAYER || i == TAIL_UPPER_LAYER_HIGH)
+				tail_image = tinted
+				continue
+		LAZYADD(statue_layers, new_image)
 
 	initial_sleep = H.status_units(STAT_SLEEPING)
 	initial_blind = H.status_units(STAT_BLINDED)
@@ -310,12 +313,13 @@ CAPABILITIES(/obj/structure/gargoyle)
 	to_chat(A.actor, span_notice("You [anchored ? "un" : ""]anchor the [src]."))
 	set_anchored(!anchored)
 
-/obj/structure/gargoyle/set_dir(new_dir)
-	. = ..()
-	if(. && tail_image)
-		cut_overlay(tail_image)
-		tail_image.layer = BODY_LAYER + ((dir in tail_lower_dirs) ? TAIL_LOWER_LAYER : TAIL_UPPER_LAYER)
-		add_overlay(tail_image)
+/// The look: the petrified mob's layers; the tail rides above or below the body by the way the statue faces.
+/obj/structure/gargoyle/draw(datum/look/look)
+	..()
+	for(var/layer_image in statue_layers)
+		look.overlay(layer_image)
+	if(tail_image)
+		look.overlay(look_overlay_image(of = tail_image, layer = BODY_LAYER + ((dir in tail_lower_dirs) ? TAIL_LOWER_LAYER : TAIL_UPPER_LAYER)))
 
 /obj/structure/gargoyle/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle

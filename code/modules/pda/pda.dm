@@ -57,10 +57,21 @@
 	var/list/shortcut_cache
 	var/list/shortcut_cat_order
 	var/list/notifying_programs
+	/// A pen is in its slot (drawn as the pen on the edge); a new PDA holds one.
+	var/pen_slotted = FALSE
+	/// The flashlight app has the light on (drawn as the lit lamp).
+	var/flashlight_lit = FALSE
 	var/retro_mode = 0
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
+
+/obj/item/pda/draw(datum/look/look)
+	..()
+	look.overlay("pda-pen", when = pen_slotted)
+	look.overlay("pda-id", when = !isnull(id))
+	look.overlay("pda-r", when = length(notifying_programs) > 0)
+	look.overlay("light-o", when = flashlight_lit)
 
 CAPABILITIES(/obj/item/pda)
 	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
@@ -169,6 +180,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	update_programs()
 	cartridge?.update_programs(src) // declared child from default_cartridge
 	new /obj/item/pen(src)
+	pen_slotted = TRUE
 
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
@@ -212,7 +224,6 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 		else
 			icon = 'icons/obj/pda_old.dmi'
 			log_runtime("Invalid switch for PDA, defaulting to old PDA icons. [pdachoice] chosen.")
-	add_overlay("pda-pen")
 	start_program(find_program(/datum/data/pda/app/main_menu))
 
 /obj/item/pda/proc/can_use(mob/user)
@@ -343,7 +354,6 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
 		else
 			id.forceMove(get_turf(src))
-		cut_overlay("pda-id")
 		rel_take(src, nameof(id))
 
 /obj/item/pda/proc/remove_pen(mob/user)
@@ -354,9 +364,10 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			if(M.get_active_hand() == null)
 				M.put_in_hands(O)
 				to_chat(user, span_notice("You remove \the [O] from \the [src]."))
-				cut_overlay("pda-pen")
+				pen_slotted = FALSE
 				return
 		O.forceMove(get_turf(src))
+		pen_slotted = FALSE
 	else
 		to_chat(user, span_notice("This PDA does not have a pen in it."))
 
@@ -366,7 +377,6 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	if(can_use(user))
 		start_program(find_program(/datum/data/pda/app/main_menu))
 		rel_clear(src, nameof(notifying_programs))
-		cut_overlay("pda-r")
 		to_chat(user, span_notice("You press the reset button on \the [src]."))
 	else
 		to_chat(user, span_notice("You cannot do this while restrained."))
@@ -470,7 +480,6 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			if(((src?.loc == user) && (C?.loc == user)) || (istype(loc, /turf) && in_range(src, user) && (C?.loc == user)) )
 				if(id_check(user, 2))
 					to_chat(user, span_notice("You put the ID into \the [src]'s slot."))
-					add_overlay("pda-id")
 			return OP_PASS
 	else if(istype(C, /obj/item/paicard) && !src.pai)
 		if(!move_into(src, nameof(src.pai), C, user))
@@ -485,7 +494,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			if(!own_bring_in(src, nameof(contents), C, null, user, TRUE, null, FALSE))
 				return OP_PASS
 			to_chat(user, span_notice("You slot \the [C] into \the [src]."))
-			add_overlay("pda-pen")
+			pen_slotted = TRUE
 	return OP_PASS
 
 /obj/item/pda/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

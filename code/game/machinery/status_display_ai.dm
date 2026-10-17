@@ -90,7 +90,7 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 
 /obj/machinery/ai_status_display/proc/update()
 	if(mode==0) //Blank
-		cut_overlays()
+		set_picture_state(null)
 		return
 
 	if(mode==1)	// AI emoticon
@@ -103,14 +103,17 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 		return
 
 /obj/machinery/ai_status_display/proc/set_picture(state)
-	picture_state = state
-	cut_overlays()
-	add_overlay(picture_state)
+	set_picture_state(state)
+
+/// The look: the picture being shown.
+/obj/machinery/ai_status_display/draw(datum/look/look)
+	..()
+	look.overlay(picture_state)
 
 /obj/machinery/ai_status_display/power_change()
 	. = ..()
 	if(power_lost())
-		cut_overlays()
+		set_picture_state(null)
 	else
 		update()
 

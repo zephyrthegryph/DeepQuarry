@@ -61,22 +61,21 @@
 
 	set_icon_state("evidence")
 
-	var/xx = I.pixel_x	//save the offset of the item
-	var/yy = I.pixel_y
-	I.set_pixel_x(0)		//then remove it so it'll stay within the evidence bag
-	I.set_pixel_y(0)
-	var/image/img = image("icon"=I, "layer"=FLOAT_LAYER)	//take a snapshot. (necessary to stop the underlays appearing under our inventory-HUD slots ~Carn
-	I.set_pixel_x(xx)		//and then return it
-	I.set_pixel_y(yy)
-	add_overlay(img)
-	add_overlay("evidence")	//should look nicer for transparent stuff. not really that important, but hey.
-
 	desc = "An evidence bag containing [I]."
 	I.forceMove(src)
 	rel_set(src, nameof(stored_item), I)
 	set_w_class(I.w_class)
 	return TRUE
 
+
+/// The bagged item as a snapshot at no offset (so it stays within the bag), under the bag's own "evidence" sheen (it looks nicer on transparent stuff).
+/obj/item/evidencebag/draw(datum/look/look)
+	..()
+	if(!stored_item)
+		return
+	look.watch(stored_item)
+	look.overlay(look_overlay_image(of = stored_item, layer = FLOAT_LAYER))
+	look.overlay("evidence")
 
 CAPABILITIES(/obj/item/evidencebag)
 	ref_one(nameof(stored_item), /obj/item)
@@ -91,7 +90,6 @@ CAPABILITIES(/obj/item/evidencebag)
 		act_message(user, src, MSG_SELF("You take [I] out of %T%."), \
 			MSG_OTHERS("%U% takes [I] out of %T%"), \
 			MSG_BLIND("You hear someone rustle around in a plastic bag, and remove something."))
-		cut_overlays()	//remove the overlays
 
 		user.put_in_hands(I)
 		rel_clear(src, nameof(stored_item))

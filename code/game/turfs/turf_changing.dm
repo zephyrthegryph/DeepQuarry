@@ -81,7 +81,6 @@
 		post_change_callbacks = list()
 		PUBLISH_LEGACY(src, /datum/notice/turf_change, N, null, NONE, post_change_callbacks)
 
-	cut_overlays(TRUE)
 	unmake_z_transparent()
 	changing_turf = TRUE
 	replaced_by(src)

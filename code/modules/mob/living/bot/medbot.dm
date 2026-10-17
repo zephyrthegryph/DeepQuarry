@@ -191,10 +191,12 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 			"detail" = "[src] completed an autonomous treatment for [H].",
 		), "automation:[REF(src)]:medical:[REF(H)]:[world.time]", src, null, H)
 
+/// The kit skin it was built from shows over the sprite.
+/mob/living/bot/medbot/draw(datum/look/look)
+	..()
+	look.overlay("medskin_[skin]", when = !!skin)
+
 /mob/living/bot/medbot/update_icons()
-	cut_overlays()
-	if(skin)
-		add_overlay("medskin_[skin]")
 	if(bot_busy())
 		set_icon_state("medibots")
 	else
@@ -540,6 +542,7 @@ CAPABILITIES(/obj/item/storage/firstaid)
 			look.overlay("kit_skin_tox")
 		if("o2")
 			look.overlay("kit_skin_o2")
+	look.overlay("na_scanner", when = (build_step >= 1))
 
 CAPABILITIES(/obj/item/firstaid_arm_assembly)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -559,7 +562,6 @@ CAPABILITIES(/obj/item/firstaid_arm_assembly)
 					build_step++
 					to_chat(user, span_notice("You add the health sensor to [src]."))
 					name = "First aid/robot arm/health analyzer assembly"
-					add_overlay("na_scanner")
 
 			if(1)
 				if(isprox(W))

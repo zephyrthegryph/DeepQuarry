@@ -252,8 +252,15 @@ CAPABILITIES(/obj/structure/hull_corner)
 /obj/structure/hull_corner/proc/get_dirs_to_test()
 	return list(dir, turn(dir,90))
 
+/// The colour of the reinforcing layer of the hull this corner joins (null: none).
+/obj/structure/hull_corner/var/reinf_color
+
+/obj/structure/hull_corner/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "[icon_state]_reinf", dir = dir, color = reinf_color), when = !isnull(reinf_color))
+
 /obj/structure/hull_corner/proc/update_look()
-	cut_overlays()
+	reinf_color = null
 	var/turf/simulated/wall/T
 	for(var/direction in get_dirs_to_test())
 		T = get_step(src, direction)
@@ -269,9 +276,7 @@ CAPABILITIES(/obj/structure/hull_corner)
 		if(B?.icon_colour)
 			set_color(B.icon_colour)
 		if(R?.icon_colour)
-			var/image/I = image(icon, icon_state+"_reinf", dir=dir)
-			I.color = R.icon_colour
-			add_overlay(I)
+			reinf_color = R.icon_colour
 		break
 
 	if(!T)

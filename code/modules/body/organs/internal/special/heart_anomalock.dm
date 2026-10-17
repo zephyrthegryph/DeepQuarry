@@ -58,11 +58,12 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 		after(src, time_to_last, PROC_REF(clear_lightning_overlay), key = "lightning_timer", with = list(owner), keeps_dead = TRUE)
 		return
 	set_lightning_overlay(mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning"))
-	owner.add_overlay(lightning_overlay)
+	owner.shock_aura = TRUE
 	after(src, time_to_last, PROC_REF(clear_lightning_overlay), key = "lightning_timer", with = list(owner), keeps_dead = TRUE)
 
-/obj/item/organ/internal/heart/machine/anomalock/proc/clear_lightning_overlay(mob/organ_owner)
-	organ_owner?.cut_overlay(lightning_overlay)
+/obj/item/organ/internal/heart/machine/anomalock/proc/clear_lightning_overlay(mob/living/carbon/human/organ_owner)
+	if(organ_owner)
+		organ_owner.shock_aura = FALSE
 	if(after_pending(src, "lightning_timer"))
 		cancel_after(src, "lightning_timer")
 	set_lightning_overlay(null)

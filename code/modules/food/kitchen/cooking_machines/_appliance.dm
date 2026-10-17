@@ -600,10 +600,8 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 			words |= text2list(reag.name, " ")
 
 	//Filling overlay
-	var/image/I = image(result.icon, "[result.icon_state]_filling")
-	I.color = totalcolour
-	result.add_overlay(I)
 	result.filling_color = totalcolour
+	result.filling_layer = "[result.icon_state]_filling"
 
 	//Set the name.
 	words -= list("and", "the", "in", "is", "bar", "raw", "sticks", "boiled", "fried", "deep", "-o-", "warm", "two", "flavored")

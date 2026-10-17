@@ -171,13 +171,19 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 
 	var/ice_creamed = 0
 	var/cone_type
+	/// The flavour of the dollop on the cone (its "icecream_<flavour>" layer), null while the cone is empty.
+	var/scoop_flavour
+
+/obj/item/reagent_containers/food/snacks/icecream/draw(datum/look/look)
+	..()
+	look.overlay("icecream_[scoop_flavour]", when = !!scoop_flavour)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/icecream)
 	configure(reagents(volume = 20, add = list(REAGENT_ID_NUTRIMENT = 5)))
 
 /obj/item/reagent_containers/food/snacks/icecream/proc/add_ice_cream(flavour_name)
 	name = "[flavour_name] icecream"
-	add_overlay("icecream_[flavour_name]")
+	scoop_flavour = flavour_name
 	desc = "Delicious [cone_type] cone with a dollop of [flavour_name] ice cream."
 	ice_creamed = 1
 

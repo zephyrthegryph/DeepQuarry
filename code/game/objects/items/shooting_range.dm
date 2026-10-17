@@ -8,6 +8,8 @@
 	max_integrity = 1800
 	var/icon/virtualIcon
 	var/list/bulletholes
+	/// The scorch and dent marks the target shows over its face.
+	var/list/marks
 
 /obj/item/target/atom_destruction(damage_flag)
 	for(var/mob/O in oviewers(src))
@@ -32,7 +34,7 @@
 	var/obj/item/W = A.held
 	var/obj/item/weldingtool/WT = W.get_welder()
 	if(WT.remove_fuel(0, user))
-		cut_overlays()
+		marks = null
 		to_chat(user, "You slice off [src]'s uneven chunks of aluminum and scorch marks.")
 	return OP_OK
 
@@ -82,6 +84,11 @@ CAPABILITIES(/obj/item/target)
 	desc = "A shooting target with a threatening silhouette."
 	max_integrity = 2350 // alium onest too kinda
 
+/obj/item/target/draw(datum/look/look)
+	..()
+	for(var/mark in marks)
+		look.overlay(mark)
+
 /obj/item/target/bullet_act(obj/item/projectile/Proj)
 	var/p_x = Proj.p_x + pick(0,0,0,0,0,-1,1) // really ugly way of coding "sometimes offset Proj.p_x!"
 	var/p_y = Proj.p_y + pick(0,0,0,0,0,-1,1)
@@ -100,29 +107,27 @@ CAPABILITIES(/obj/item/target)
 			return
 
 		// Create a temporary object to represent the damage
-		var/obj/bmark = new
-		bmark.set_pixel_x(p_x)
-		bmark.set_pixel_y(p_y)
-		bmark.set_icon('icons/effects/effects.dmi')
-		bmark.set_icon_state("scorch")
+		var/image/bmark = image('icons/effects/effects.dmi', icon_state = "scorch")
+		bmark.pixel_x = p_x
+		bmark.pixel_y = p_y
 
 		if(decaltype == 1)
 			// Energy weapons are hot. they scorch!
 
 			// offset correction
-			bmark.set_pixel_x(bmark.pixel_x - 1)
-			bmark.set_pixel_y(bmark.pixel_y - 1)
+			bmark.pixel_x -= 1
+			bmark.pixel_y -= 1
 
 			if(Proj.damage >= 20 || istype(Proj, /obj/item/projectile/beam/practice))
-				bmark.set_icon_state("scorch")
-				bmark.set_dir(pick(NORTH,SOUTH,EAST,WEST)) // random scorch design
+				bmark.icon_state = "scorch"
+				bmark.dir = pick(NORTH,SOUTH,EAST,WEST) // random scorch design
 
 			else
-				bmark.set_icon_state("light_scorch")
+				bmark.icon_state = "light_scorch"
 		else
 
 			// Bullets are hard. They make dents!
-			bmark.set_icon_state("dent")
+			bmark.icon_state = "dent"
 
 		if(Proj.damage >= 10 && length(bulletholes) <= 35) // maximum of 35 bullet holes
 			if(decaltype == 2) // bullet
@@ -138,7 +143,7 @@ CAPABILITIES(/obj/item/target)
 			virtualIcon.DrawBox(null, B.b1x1, B.b1y,  B.b1x2, B.b1y) // horizontal line, left to right
 			virtualIcon.DrawBox(null, B.b2x, B.b2y1,  B.b2x, B.b2y2) // vertical line, top to bottom
 
-		add_overlay(bmark) // add the decal
+		LAZYADD(marks, bmark) // the decal, drawn over the face
 
 		set_icon(virtualIcon) // apply bulletholes over decals
 

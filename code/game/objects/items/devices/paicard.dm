@@ -9,7 +9,8 @@
 
 	var/obj/item/radio/borg/pai/radio
 	var/mob/living/silicon/pai/pai
-	var/image/screen_layer
+	/// The tint of the screen's face (the occupant's eye colour).
+	var/face_color = "#00ff0d"
 	var/screen_color = "#00ff0d"
 	var/current_emotion = 1
 	COOLDOWN_DECLARE(notify_cooldown)
@@ -410,30 +411,17 @@ CAPABILITIES(/obj/item/paicard)
 	setEmotion(16)
 
 /obj/item/paicard/proc/setEmotion(emotion)
-	cut_overlays()
-	spent(screen_layer)
-	screen_layer = null
-	switch(emotion)
-		if(1) screen_layer = image(icon, "pai-neutral")
-		if(2) screen_layer = image(icon, "pai-what")
-		if(3) screen_layer = image(icon, "pai-happy")
-		if(4) screen_layer = image(icon, "pai-cat")
-		if(5) screen_layer = image(icon, "pai-extremely-happy")
-		if(6) screen_layer = image(icon, "pai-face")
-		if(7) screen_layer = image(icon, "pai-laugh")
-		if(8) screen_layer = image(icon, "pai-sad")
-		if(9) screen_layer = image(icon, "pai-angry")
-		if(10) screen_layer = image(icon, "pai-silly")
-		if(11) screen_layer = image(icon, "pai-nose")
-		if(12) screen_layer = image(icon, "pai-smirk")
-		if(13) screen_layer = image(icon, "pai-exclamation")
-		if(14) screen_layer = image(icon, "pai-question")
-		if(15) screen_layer = image(icon, "pai-blank")
-		if(16) screen_layer = image(icon, "pai-off")
-
-	screen_layer.color = pai ? pai.eye_color : initial(screen_color)
-	add_overlay(screen_layer)
+	set_face_color(pai ? pai.eye_color : initial(screen_color))
 	set_current_emotion(emotion)
+
+/// The face the card's screen shows for the current emotion, tinted with the occupant's eye colour.
+/obj/item/paicard/draw(datum/look/look)
+	..()
+	var/static/list/faces = list(
+		1 = "pai-neutral", 2 = "pai-what", 3 = "pai-happy", 4 = "pai-cat", 5 = "pai-extremely-happy", 6 = "pai-face", 7 = "pai-laugh", 8 = "pai-sad",
+		9 = "pai-angry", 10 = "pai-silly", 11 = "pai-nose", 12 = "pai-smirk", 13 = "pai-exclamation", 14 = "pai-question", 15 = "pai-blank", 16 = "pai-off")
+	var/face = faces[current_emotion]
+	look.overlay(look_overlay_image(icon, face, color = face_color), when = !isnull(face))
 
 /obj/item/paicard/proc/alertUpdate()
 	if(pai)

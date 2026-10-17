@@ -17,8 +17,12 @@
 
 /obj/machinery/bluespace_denier/proc/start_up(datum/act/A)
 	if(anchored)
-		add_overlay("[base_state]-s")
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
+
+/// The look: the anchored light.
+/obj/machinery/bluespace_denier/draw(datum/look/look)
+	..()
+	look.overlay("[base_state]-s", when = anchored)
 
 /obj/machinery/bluespace_denier/power_change()
 	. = ..()
@@ -90,10 +94,8 @@ CAPABILITIES(/obj/machinery/bluespace_denier)
 	set_anchored(!anchored)
 	if(!anchored)
 		user.show_message(span_warning("[src] can now be moved."))
-		cut_overlays()
 		unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 	else
 		user.show_message(span_warning("[src] is now secured."))
-		add_overlay("[base_state]-s")
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 	return OP_OK

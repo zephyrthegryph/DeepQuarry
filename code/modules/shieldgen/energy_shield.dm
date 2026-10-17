@@ -16,6 +16,8 @@
 	var/diffused_for = 0
 	can_atmos_pass = ATMOS_PASS_YES
 	var/enabled_icon_state
+	/// list(icon_state, dir) arrows the hull-field generator laid on a corner segment: drawn while the segment is up.
+	var/list/edge_arrows
 
 /obj/effect/shield/proc/update_visuals()
 	update_iconstate()
@@ -29,11 +31,15 @@
 
 	if(disabled_for || diffused_for)
 		set_icon_state("shield_broken")
-		overlays.Cut() // Snowflake handling, avoiding SSoverlays
 	else
 		set_icon_state(enabled_icon_state)
-		//flags |= OVERLAY_QUEUED //Trick SSoverlays
-		//SSoverlays.queue += src
+
+/obj/effect/shield/draw(datum/look/look)
+	..()
+	if(disabled_for || diffused_for)
+		return
+	for(var/list/arrow in edge_arrows)
+		look.overlay(look_overlay_image(icon, arrow[1], dir = arrow[2]))
 
 /obj/effect/shield/proc/update_color()
 	if(disabled_for || diffused_for)

@@ -269,13 +269,15 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	for(var/zlevel in levels_for_distress)
 		GLOB.priority_announcement.Announce(message, new_title = "Automated Distress Signal", new_sound = ANNOUNCER_MSG_DISTRESS_SIGNAL, zlevel = zlevel)
 
-	var/image/I = image(icon, icon_state = "distress")
-	I.plane = PLANE_LIGHTING_ABOVE
-	I.appearance_flags = KEEP_APART|RESET_TRANSFORM|RESET_COLOR
-	add_overlay(I)
 
 	after(src, 5 MINUTES, PROC_REF(distress_update))
 	return TRUE
+
+/// A lit "distress" marker while the beacon is out.
+/obj/effect/overmap/visitable/draw(datum/look/look)
+	..()
+	if(has_distress_beacon)
+		look.overlay(look_overlay_image(icon, "distress", plane = PLANE_LIGHTING_ABOVE, appearance_flags = KEEP_APART|RESET_TRANSFORM|RESET_COLOR))
 
 /obj/effect/overmap/visitable/proc/get_distress_info()
 	return "\[X:[x], Y:[y]\]"

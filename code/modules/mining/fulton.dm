@@ -98,19 +98,22 @@ CAPABILITIES(/obj/item/extraction_pack)
 		consume(src, user)
 	return OP_OK
 
-/obj/effect/extraction_holder/proc/fulton_balloon(state)
-	var/mutable_appearance/balloon = mutable_appearance('icons/obj/fulton_balloon.dmi', state)
-	balloon.pixel_y = 10
-	balloon.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM
-	return balloon
+/// What carries the extracted thing: its picture, and the balloon over it while it is out.
+/obj/effect/extraction_holder
+	/// The balloon's icon_state ("fulton_expand", "fulton_balloon", "fulton_retract"), null when it is not out.
+	var/balloon_state
+
+/obj/effect/extraction_holder/draw(datum/look/look)
+	..()
+	if(balloon_state)
+		look.overlay(look_overlay_image('icons/obj/fulton_balloon.dmi', balloon_state, pixel_y = 10, appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM))
 
 /obj/effect/extraction_holder/proc/fulton_expand(atom/movable/A, turf/landing)
-	add_overlay(fulton_balloon("fulton_expand"))
+	balloon_state = "fulton_expand"
 	after(src, 0.4 SECONDS, PROC_REF(fulton_inflate), with = list(A, landing), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_inflate(atom/movable/A, turf/landing)
-	cut_overlays()
-	add_overlay(fulton_balloon("fulton_balloon"))
+	balloon_state = "fulton_balloon"
 	play_sfx(src, SFX_ITEMS_FULEXT_DEPLOY)
 	animate(src, pixel_z = 10, time = 20)
 	animate(pixel_z = 15, time = 10)
@@ -136,12 +139,11 @@ CAPABILITIES(/obj/item/extraction_pack)
 	after(src, 7 SECONDS, PROC_REF(fulton_retract), with = list(A), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_retract(atom/movable/A)
-	cut_overlays()
-	add_overlay(fulton_balloon("fulton_retract"))
+	balloon_state = "fulton_retract"
 	after(src, 0.4 SECONDS, PROC_REF(fulton_land), with = list(A), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_land(atom/movable/A)
-	cut_overlays()
+	balloon_state = null
 	if(A)
 		A.set_anchored(FALSE) // An item has to be unanchored to be extracted in the first place.
 		A.set_density(initial(A.density))

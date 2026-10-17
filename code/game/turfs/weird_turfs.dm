@@ -17,7 +17,7 @@
 	. = ..()
 	if(!isliving(O))
 		return
-	cut_overlays()
+	glow_state = null
 	if(prob(5))
 		add_glow()
 	if(ishuman(O))
@@ -37,9 +37,12 @@
 			to_chat(L, span_danger("The darkness seethes under your feet..."))
 			L.status_adjust(STAT_HALLUCINATING, 50)
 
-/turf/simulated/floor/weird_things/dark/proc/add_glow()
-	var/choice = "overlay-[rand(1,6)]"
-	var/image/i = image('icons/turf/flooring/weird_vr.dmi', choice)
-	i.plane = PLANE_LIGHTING_ABOVE
-	add_overlay(i)
+/// The glowing overlay state this tile shows (null: none).
+/turf/simulated/floor/weird_things/dark/var/glow_state
 
+/turf/simulated/floor/weird_things/dark/proc/add_glow()
+	glow_state = "overlay-[rand(1,6)]"
+
+/turf/simulated/floor/weird_things/dark/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/turf/flooring/weird_vr.dmi', glow_state, plane = PLANE_LIGHTING_ABOVE), when = !isnull(glow_state))

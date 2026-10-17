@@ -39,7 +39,7 @@
 		var/image/I = image(icon = new_master.icon, icon_state = new_master.icon_state, dir = SOUTH)
 		I.plane = PLANE_PLAYER_HUD_ABOVE
 		I.color = new_master.color
-		alert.add_overlay(I)
+		alert.item_picture = I
 		rel_set(alert, nameof(alert.master_ref), new_master)
 	else
 		alert.set_icon_state("[initial(alert.icon_state)][severity]")
@@ -82,6 +82,16 @@
 	var/severity = 0
 	var/alerttooltipstyle = ""
 	var/no_underlay // Don't underlay the UI style's blank template icon under this
+	/// The master item's picture, shown on an item-based alert
+	var/image/item_picture
+	/// The UI style's blank template drawn under the alert
+	var/image/style_underlay
+
+/// An alert is its icon with the UI style under it and, for an item-based alert, the item's picture over it.
+/atom/movable/screen/alert/draw(datum/look/look)
+	..()
+	look.underlay(style_underlay)
+	look.overlay(item_picture)
 
 CAPABILITIES(/atom/movable/screen/alert)
 	tooltip(PROC_REF(input_tooltip), theme = nameof(alerttooltipstyle))
@@ -481,7 +491,7 @@ CAPABILITIES(/atom/movable/screen/alert/open_ticket)
 			var/image/I = image(icon = ui_style, icon_state = "template")
 			I.color = ui_color
 			I.alpha = ui_alpha
-			alert.underlays = list(I)
+			alert.style_underlay = I
 
 		switch(i)
 			if(1)

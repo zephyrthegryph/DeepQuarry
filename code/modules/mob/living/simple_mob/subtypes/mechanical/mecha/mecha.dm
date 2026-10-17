@@ -62,6 +62,8 @@
 /mob/living/simple_mob/mechanical/mecha/draw(datum/look/look)
 	..()
 	look.overlay("repair_droid", has_repair_droid, 'icons/mecha/mecha_equipment.dmi')
+	// The static of a deflected shot shows while it lasts.
+	look.overlay(look_overlay_image('icons/effects/effects.dmi', "deflect_static"), when = deflecting)
 
 /mob/living/simple_mob/mechanical/mecha/speech_bubble_appearance()
 	return pilot_type ? "" : ..()
@@ -88,10 +90,15 @@
 	fx_sparks(src, 3)
 	return ..()
 
+/// A shot was just deflected: the static shows.
+/mob/living/simple_mob/mechanical/mecha/var/deflecting = FALSE
+
 /mob/living/simple_mob/mechanical/mecha/proc/deflect_sprite()
-	var/image/deflect_image = image('icons/effects/effects.dmi', "deflect_static")
-	add_overlay(deflect_image)
-	after(src, 1 SECOND, TYPE_PROC_REF(/atom, cut_overlay), with = list(deflect_image))
+	deflecting = TRUE
+	after(src, 1 SECOND, PROC_REF(deflect_sprite_end), key = "deflect_sprite")
+
+/mob/living/simple_mob/mechanical/mecha/proc/deflect_sprite_end()
+	deflecting = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))

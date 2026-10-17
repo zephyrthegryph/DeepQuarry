@@ -21,20 +21,17 @@ CAPABILITIES(/atom/movable/screen/map_view_tg/camera)
 	local_skybox.assigned_map = assigned_map
 
 	// FG
-	rel_set(src, nameof(cam_foreground), new /atom/movable/screen/background)
+	rel_set(src, nameof(cam_foreground), new /atom/movable/screen/background/camera_foreground())
 	cam_foreground.del_on_map_removal = FALSE
 	cam_foreground.assigned_map = assigned_map
 
-	var/mutable_appearance/scanlines = mutable_appearance('icons/effects/static.dmi', "scanlines")
-	scanlines.alpha = 50
-	scanlines.layer = FULLSCREEN_LAYER
+	cam_foreground.set_plane(PLANE_FULLSCREEN)
 
-	var/mutable_appearance/noise = mutable_appearance('icons/effects/static.dmi', "1 light")
-	noise.layer = FULLSCREEN_LAYER
-
-	cam_foreground.plane = PLANE_FULLSCREEN
-	cam_foreground.add_overlay(scanlines)
-	cam_foreground.add_overlay(noise)
+/// The scanlines and the noise laid over a camera's picture.
+/atom/movable/screen/background/camera_foreground/draw(datum/look/look)
+	..()
+	look.overlay(look_appearance('icons/effects/static.dmi', "scanlines", alpha = 50, layer = FULLSCREEN_LAYER))
+	look.overlay(look_appearance('icons/effects/static.dmi', "1 light", layer = FULLSCREEN_LAYER))
 
 /atom/movable/screen/map_view_tg/camera/display_to_client(client/show_to)
 	show_to.register_map_obj(cam_background)
@@ -49,8 +46,7 @@ CAPABILITIES(/atom/movable/screen/map_view_tg/camera)
 
 	cam_foreground.fill_rect(1, 1, size_x, size_y)
 
-	local_skybox.cut_overlays()
-	local_skybox.add_overlay(SSskybox.ready().get_skybox(get_z(newturf)))
+	local_skybox.sky_image = SSskybox.ready().get_skybox(get_z(newturf))
 	local_skybox.scale_to_view(size_x)
 	local_skybox.set_position("CENTER", "CENTER", (world.maxx>>1) - newturf.x, (world.maxy>>1) - newturf.y)
 
@@ -58,7 +54,7 @@ CAPABILITIES(/atom/movable/screen/map_view_tg/camera)
 	vis_contents.Cut()
 	cam_background.icon_state = "scanline2"
 	cam_background.fill_rect(1, 1, DEFAULT_MAP_SIZE, DEFAULT_MAP_SIZE)
-	local_skybox.cut_overlays()
+	local_skybox.sky_image = null
 
 /datum/tgui_module/camera
 	name = "Security Cameras"

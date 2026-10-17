@@ -74,8 +74,6 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	if(!requires_power || !apc)
 		set_channels(FALSE, FALSE, FALSE, notify = FALSE)
 	power_change()		// all machines set to current power level, also updates lighting icon
-	if(flag_check(AREA_NO_SPOILERS))
-		set_spoiler_obfuscation(TRUE)
 
 /// The one place a turf is moved between areas. Areas aren't ledger holders:
 /// a turf's area is the engine's own area membership, so this is a raw
@@ -242,6 +240,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	else
 	//	new lighting behaviour with obj lights
 		look.state("") // a blank state: state(null) would leave the map sprite ("unknown", the editor colours) showing in game
+	look.overlay(look_cached_image("spoiler_obfuscation", 'icons/misc/static.dmi', null, null, PLANE_MESONS), when = flag_check(AREA_NO_SPOILERS))
 
 
 /// The one writer of the area's channel state (is each channel energized): its APC, an event that darkens the area, the area's own setup. The
@@ -522,18 +521,6 @@ GLOBAL_LIST_EMPTY(ghostteleportlocs)
 		return "Unknown Area"
 	return name
 
-GLOBAL_DATUM(spoiler_obfuscation_image, /image)
-
-/area/proc/set_spoiler_obfuscation(should_obfuscate)
-	if(!GLOB.spoiler_obfuscation_image)
-		GLOB.spoiler_obfuscation_image = image(icon = 'icons/misc/static.dmi')
-		GLOB.spoiler_obfuscation_image.plane = PLANE_MESONS
-
-	if(should_obfuscate)
-		add_overlay(GLOB.spoiler_obfuscation_image)
-	else
-		cut_overlay(GLOB.spoiler_obfuscation_image)
-
 /area/proc/set_flags(value)
 	if(TRACKED_UNCHANGED(flags, value))
 		return FALSE
@@ -631,8 +618,6 @@ SETTER(/area, flags)
 	if(!requires_power || !apc)
 		set_channels(FALSE, FALSE, FALSE, notify = FALSE)
 	power_change()		// all machines set to current power level, also updates lighting icon
-	if(flag_check(AREA_NO_SPOILERS))
-		set_spoiler_obfuscation(TRUE)
 
 /// The area's APC is the other end of the APC's `area` link (links() in the APC's CAPABILITIES): rel_set() on either end writes both, and a
 /// dying APC lets go. The APC also feeds the area's lights_nightshift and lights_emergency_off (its contributes_to entries).

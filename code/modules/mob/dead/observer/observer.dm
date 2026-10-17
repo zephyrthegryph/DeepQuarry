@@ -1137,7 +1137,6 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 		return
 	var/datum/prompt/choice/ghost_sprite/prompt = A.answer
 	set_icon('icons/mob/ghost.dmi')
-	cut_overlays()
 	set_icon_state(GLOB.possible_ghost_sprites[A.answer.value])
 	open_request(src, /datum/prompt/choice/ghost_sprite_confirm, PROC_REF(ghost_sprite_confirmed), answerer = src, previous = prompt.previous, picked_sprite = A.answer.value)
 

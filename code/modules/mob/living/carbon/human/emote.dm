@@ -445,13 +445,11 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	pose_icon.pixel_x = x_offset
 
 	set_pose_indicator(pose_icon)
-	add_overlay(pose_indicator)
 
 /mob/living/carbon/human/proc/remove_pose_indicator()
 	if(!pose_indicator)
 		return
 
-	cut_overlay(pose_indicator)
 	set_pose_indicator(null)
 
 // set_flavor verb body relocated to code/modules/mob/living/carbon/human/flavor_panel.dm (structured TGUI).

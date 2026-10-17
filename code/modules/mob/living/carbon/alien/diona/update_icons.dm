@@ -7,6 +7,9 @@
 	else
 		set_icon_state("[initial(icon_state)]")
 
-	cut_overlays()
+/// The hat it wears sits on its head.
+/mob/living/carbon/alien/diona/draw(datum/look/look)
+	..()
+	look.watch(hat)
 	if(hat)
-		add_overlay(get_hat_icon(hat, 0, -8))
+		look.overlay(get_hat_icon(hat, 0, -8))

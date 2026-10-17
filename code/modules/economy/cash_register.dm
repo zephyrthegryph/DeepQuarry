@@ -61,7 +61,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		if(cash_stored)
 			spawn_money(cash_stored, loc, user)
 			cash_stored = 0
-			cut_overlay("register_cash")
 			return OP_OK
 		open_cash_box(user)
 		return OP_OK
@@ -94,7 +93,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		if(cash_open)
 			to_chat(user, "You neatly sort the cash into the box.")
 			cash_stored += SC.worth
-			add_overlay("register_cash")
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
 				H.drop_from_inventory(SC)
@@ -107,6 +105,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	else
 		scan_item_price(O, user)
 	return OP_OK
+
+/obj/machinery/cash_register/draw(datum/look/look)
+	..()
+	look.overlay("register_approve", when = cash_open)
+	look.overlay("register_open", when = cash_open)
+	look.overlay("register_cash", when = cash_open && cash_stored)
 
 CAPABILITIES(/obj/machinery/cash_register)
 	ref_one(nameof(confirm_item), /obj/item)
@@ -606,15 +610,8 @@ CAPABILITIES(/obj/machinery/cash_register)
 
 	if(cash_open)
 		cash_open = 0
-		cut_overlay("register_approve")
-		cut_overlay("register_open")
-		cut_overlay("register_cash")
 	else if(!cash_locked)
 		cash_open = 1
-		add_overlay("register_approve")
-		add_overlay("register_open")
-		if(cash_stored)
-			add_overlay("register_cash")
 	else
 		to_chat(user, span_warning("The cash box is locked."))
 

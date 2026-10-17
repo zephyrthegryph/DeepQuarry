@@ -11,8 +11,6 @@
 	var/list/turf/target_turfs
 	/// Current anomaly 'theme', dictates what tiles to create.
 	var/datum/dimension_theme/theme
-	/// Effect displaying on the anomaly to represent the theme.
-	var/mutable_appearance/theme_icon
 	/// How many times we can still teleport. Delete self if it hits 0 and we try to teleport. If immortal, will simply stay where it is
 	var/teleports_left
 	/// Minimum teleports it will do before going away permanently
@@ -26,10 +24,17 @@ CAPABILITIES(/obj/effect/anomaly/dimensional)
 
 /obj/effect/anomaly/dimensional/Initialize(mapload)
 	. = ..()
-	overlays += mutable_appearance('icons/effects/effects.dmi', "dimensional_overlay")
-
 	animate(src, transform = matrix()*0.85, time = 3, loop = -1)
 	animate(transform = matrix(), time = 3, loop = -1)
+
+/// The anomaly's overlay, and the effect of its current theme over it.
+/obj/effect/anomaly/dimensional/draw(datum/look/look)
+	..()
+	look.overlay(look_appearance('icons/effects/effects.dmi', "dimensional_overlay"))
+	if(theme)
+		var/mutable_appearance/theme_icon = mutable_appearance(theme.icon, theme.icon_state, FLOAT_LAYER - 1, appearance_flags = appearance_flags | RESET_TRANSFORM)
+		theme_icon.blend_mode = BLEND_INSET_OVERLAY
+		look.overlay(theme_icon)
 
 /obj/effect/anomaly/dimensional/anomalyEffect(seconds_per_tick)
 	. = ..()
@@ -58,18 +63,10 @@ CAPABILITIES(/obj/effect/anomaly/dimensional)
 
 	rel_set(src, nameof(theme), new new_theme_path)
 
-	apply_theme_icon()
-
 	rel_clear(src, nameof(target_turfs))
 	for(var/turf/turf in spiral_range_turfs(range, src))
 		if(theme.can_convert(turf))
 			rel_add(src, nameof(target_turfs), turf)
-
-/obj/effect/anomaly/dimensional/proc/apply_theme_icon()
-	overlays -= theme_icon
-	theme_icon = mutable_appearance(theme.icon, theme.icon_state, FLOAT_LAYER -1, appearance_flags = appearance_flags | RESET_TRANSFORM)
-	theme_icon.blend_mode = BLEND_INSET_OVERLAY
-	overlays += theme_icon
 
 /obj/effect/anomaly/dimensional/proc/relocate()
 	var/datum/anomaly_placer/placer = new()
