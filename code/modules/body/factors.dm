@@ -16,12 +16,12 @@
 //   /datum/form         `factors`, applied at full value while worn.
 //   /obj/item           `worn_factors`, applied while equipped outside the hands.
 //
-// A source whose family has converted holds its own table with a factors() entry in its type's CAPABILITIES block (code/engine/stats/contributes.dm): the
-// engine holds it on the entity its relation names (hold_table()) at the exact current scale and releases it with the relation or the source, and the stat
-// settles before the writer's next line. Converted: stasis holds (code/modules/medical/stabilisation/stasis.dm), body effect applications (the
-// /datum/body_effect_origin record, body_effects.dm) and afflictions (affliction.dm). The body still re-reads the rest in refresh_factors() whenever one
-// of them changed (BODY_DIRTY_FACTORS is that trigger, never a stored bit): a factor reagent crosses a dose band, equipment with worn_factors moves, the
-// form or species changes.
+// Every source holds its own table with a factors() entry in its type's CAPABILITIES block (code/engine/stats/contributes.dm): the engine holds it on the
+// entity its relation names (hold_table()) at the exact current scale and releases it with the relation or the source, and the stat settles before the
+// writer's next line. Stasis holds (code/modules/medical/stabilisation/stasis.dm), body effect applications (the /datum/body_effect_origin record,
+// body_effects.dm), afflictions (affliction.dm) and reagent doses (/datum/reagent_dose, below) read what they contribute through their relations. The plan's
+// own sources (species baseline and grants, the form, worn items) are /datum/factor_source records the body keeps in step with them (sync_species_factors(),
+// sync_form_factors() and sync_worn_factors(), called where those change).
 //
 // Read a factor as the var of its stat: `L.slowdown`.
 
@@ -127,10 +127,6 @@ GLOBAL_TABLE(body_factor_defs, GLOBAL_PROC_REF(build_body_factor_defs))
 
 // --- Mob-side queries ----------------------------------------------------------
 
-/// A body factor's source changed: the body re-reads its sources (a mob with no body has none).
-/mob/living/proc/invalidate_factors()
-	body?.invalidate(BODY_DIRTY_FACTORS)
-
 /// Is `block` (ACTION_BLOCK_*) set on this mob?
 /mob/living/proc/action_blocked(block)
 	return (action_blocks & block) ? TRUE : FALSE
@@ -155,63 +151,21 @@ GLOBAL_TABLE(body_factor_defs, GLOBAL_PROC_REF(build_body_factor_defs))
 
 // --- Body side ---------------------------------------------------------------------
 
-/// The most times one refresh_factors() runs again because a source changed while it ran (a hook that adds an affliction, a snapshot that finds a
-/// dose band crossed): a loop past it is reported and stops.
-#define FACTOR_REFRESH_PASSES 8
-
 /datum/body
-	/// C12: reagent id -> dose band of every factor-contributing reagent at the
-	/// last treatment snapshot, or null. A change here is what refreshes the factors.
-	var/tmp/list/reagent_factor_bands
-	/// A reagent holder changed since the bands were last compared (on_reagent_change() sets it and settles it at once).
-	var/tmp/reagent_bands_pending = FALSE
-	/// Above 0 while refresh_factors() runs: a trigger meanwhile asks for one more pass instead of starting a nested one.
-	var/tmp/factor_refresh_depth = 0
-	var/tmp/factor_refresh_again = FALSE
-	/// TRUE once the first refresh_factors() pass has run.
-	var/tmp/factors_primed = FALSE
-
-PROC_SUMMARY(/datum/body/proc/refresh_factors) // writes the factor stats from the body's sources: a caller reads the stats it publishes, never the afflictions, effects and reagents this reads
-/// The body's factor sources changed: re-read every one of them into the stat store. Each source holds its table as rows of its own
-/// (hold_table()); a source that is gone, or whose table no longer names a stat, loses its rows; every stat that moved settles once, at the end.
-/// A trigger that arrives while this runs (a hook on a stat that adds an affliction) is folded into one more pass, never a nested one.
-/datum/body/proc/refresh_factors()
-	if(!owner || QDELETED(owner))
-		return
-	if(factor_refresh_depth)
-		factor_refresh_again = TRUE
-		return
-	factor_refresh_depth++
-	var/passes = 0
-	do
-		factor_refresh_again = FALSE
-		passes++
-		if(hold_tables_begin(owner))
-			hold_reagent_factors()
-			hold_plan_factors()
-			// Only a factor the cached vitals or the physiology read dirties them; the first pass, which fills the factors in for the first time,
-			// dirties them whichever factor moved (they were cached against the baselines).
-			var/list/moved = list()
-			hold_tables_end(owner, moved)
-			var/everything = !factors_primed
-			factors_primed = TRUE
-			for(var/stat_id in moved)
-				if(everything || (stat_id in GLOB.factor_vitals_stats))
-					invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_PHYSIOLOGY)
-					break
-		if(passes >= FACTOR_REFRESH_PASSES && factor_refresh_again)
-			stack_trace("refresh_factors() of [owner.type] is still being asked to run again after [passes] passes")
-			break
-	while(factor_refresh_again)
-	factor_refresh_depth--
+	/// Reagent id -> its /datum/reagent_dose, one for every reagent in the body that can change a factor (the body owns them). Lazy.
+	var/list/reagent_doses
+	/// A reagent holder changed since the volumes were last read (on_reagent_change() sets it and settles it at once).
+	var/tmp/reagent_change_pending = FALSE
+	/// Key (FACTOR_SOURCE_*) -> the plan's /datum/factor_source of it (the body owns them). Lazy.
+	var/list/factor_sources
 
 /// A source's own factors() entry held or released a table on this mob (code/engine/stats/contributes.dm): the vitals and the physiology are dirty when a stat they
-/// read moved, as refresh_factors() does for the sources it still re-reads.
+/// read moved.
 /mob/living/factors_held(list/moved)
 	if(!body)
 		return
 	for(var/stat_id in moved)
-		if(!body.factors_primed || (stat_id in GLOB.factor_vitals_stats))
+		if(stat_id in GLOB.factor_vitals_stats)
 			body.invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_PHYSIOLOGY)
 			return
 
@@ -220,41 +174,42 @@ PROC_SUMMARY(/datum/body/proc/refresh_factors) // writes the factor stats from t
 /// (heart rate, pressures, saturation, breathing rate). A change of any other factor leaves them as they are.
 GLOBAL_LIST_INIT(factor_vitals_stats, list(STAT_AIRWAY, STAT_RESP_DRIVE, STAT_LUNG_MECHANICS, STAT_GAS_EXCHANGE, STAT_PUMP, STAT_CIRCULATION, STAT_DEMAND, STAT_O2_CARRIAGE, STAT_TISSUE_UPTAKE, STAT_STABILIZATION, STAT_HEART_RATE, STAT_BP_SYSTOLIC, STAT_BP_DIASTOLIC, STAT_O2_SAT, STAT_RESP_RATE, STAT_ANALGESIA, STAT_PAIN, STAT_SEDATION, STAT_PAIN_IMMUNITY))
 
-/// Resolves a pending reagent change now (C12): the volumes are read again and the dose bands compared, so the factors follow a reagent the moment
-/// its holder changes. The treatment snapshot stays stale; it rebuilds when something asks for it.
+/// Resolves a pending reagent change now: the volumes are read again and the doses follow, so the factors follow a reagent the moment its holder changes.
+/// The treatment snapshot stays stale; it rebuilds when something asks for it.
 /datum/body/proc/settle_reagent_factors()
-	if(!reagent_bands_pending)
+	if(!reagent_change_pending)
 		return
-	set_reagent_volumes(collect_reagent_volumes(reagent_volumes))
-	update_reagent_factor_bands()
+	refresh_reagent_volumes()
+	sync_reagent_doses()
 
-/// C12: compare each factor reagent's dose band with the last snapshot's and
-/// refresh the factors only on a band crossing, or when a factor reagent appears
-/// or leaves. Called by build_treatment_snapshot() with fresh volumes.
-/datum/body/proc/update_reagent_factor_bands()
-	set_reagent_bands_pending(FALSE)
-	var/list/bands = null
+/// Reads the volumes of every reagent in the mob's holders into reagent_volumes and tells what reads them (each dose record follows its volume).
+/datum/body/proc/refresh_reagent_volumes()
+	var/list/volumes = collect_reagent_volumes(reagent_volumes)
+	if(volumes && volumes == reagent_volumes)
+		// Refilled in place (collect_reagent_volumes() reuses the list): the setter would see the same list, so the write is announced by hand.
+		tracked_changed(src, nameof(reagent_volumes))
+	else
+		set_reagent_volumes(volumes)
+
+/// One dose record for each reagent in the body that can change a factor (contributes_factors()), and none for the rest: a reagent that appears gets
+/// its record, one that leaves loses it, and a record's rows go with it. Called with fresh volumes.
+/datum/body/proc/sync_reagent_doses()
+	reagent_change_pending = FALSE
 	for(var/reagent_id in reagent_volumes)
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[reagent_id]
-		if(!R || !R.contributes_factors(owner))
-			continue
-		LAZYSET(bands, reagent_id, reagent_factor_band(reagent_volumes[reagent_id]))
-	var/list/old = reagent_factor_bands
-	set_reagent_factor_bands(bands)
-	if(!reagent_bands_equal(old, bands))
-		invalidate(BODY_DIRTY_FACTORS)
-
-/datum/body/proc/reagent_bands_equal(list/a, list/b)
-	if(length(a) != length(b))
-		return FALSE
-	for(var/reagent_id in a)
-		if(!(reagent_id in b) || a[reagent_id] != b[reagent_id])
-			return FALSE
-	return TRUE
-
-/// Dose band of `volume` for factor refreshing (DQ_CHEM_FACTOR_BAND of the dose scale).
-/proc/reagent_factor_band(volume)
-	return round(dq_chem_dose_scale(volume) / DQ_CHEM_FACTOR_BAND)
+		var/wanted = R && R.contributes_factors(owner)
+		var/datum/reagent_dose/existing = reagent_doses?[reagent_id]
+		if(wanted && !existing)
+			var/datum/reagent_dose/D = new
+			D.set_reagent_id(reagent_id)
+			rel_set(D, nameof(D.body), src)
+			rel_set(D, nameof(D.holder), owner)
+			rel_add(src, nameof(reagent_doses), D, reagent_id)
+		else if(!wanted && existing)
+			rel_add(src, nameof(reagent_doses), null, reagent_id)
+	for(var/reagent_id in reagent_doses?.Copy())
+		if(!(reagent_id in reagent_volumes))
+			rel_add(src, nameof(reagent_doses), null, reagent_id)
 
 /// Per-tick consequences of the current factors: poor motor control drops
 /// held items, blocked hands can't hold anything.
@@ -277,30 +232,45 @@ GLOBAL_LIST_INIT(factor_vitals_stats, list(STAT_AIRWAY, STAT_RESP_DRIVE, STAT_LU
 /datum/body/proc/factor_effects_due()
 	return (owner.action_blocks || owner.motor_control < 1) ? TRUE : FALSE
 
-/// Reagent contributions: each reagent's table at its dose scale (from the
-/// treatment snapshot's volumes).
-/datum/body/proc/hold_reagent_factors()
-	if(!reagent_volumes)
+/// One of the plan's sources (the species baseline, a table a trait granted it, the form, a worn item): the table it had when the body last read it, held on the mob
+/// as rows of this record. The body owns it under its key (factor_sources, set_factor_source()) and it goes when the source has no table.
+/datum/factor_source
+	/// The mob it is on: a relation view.
+	var/mob/living/holder
+	/// The source's table (stat id -> value), held at full value.
+	var/alist/table
+
+CAPABILITIES(/datum/factor_source)
+	ref_one(nameof(holder), /mob/living)
+	factors(nameof(table), to = nameof(holder))
+
+/// Sets the table of the plan source `key`: its record is made if it has none, and ends when the table is empty.
+/datum/body/proc/set_factor_source(key, alist/table)
+	var/datum/factor_source/S = factor_sources?[key]
+	if(!length(table))
+		if(S)
+			rel_add(src, nameof(factor_sources), null, key)
 		return
-	for(var/reagent_id in reagent_volumes)
-		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[reagent_id]
-		if(!R)
-			continue
-		var/alist/table = R.get_factors(owner)
-		var/scale = dq_chem_dose_scale(reagent_volumes[reagent_id])
-		// B2: the reagent's own table obeys the same gates as on_mob_life; the
-		// patient-side contributions (allergy, blood rebuild) still apply.
-		if(length(table) && scale > 0 && R.acts_on_body(owner))
-			hold_reagent_table(R, table, scale)
-		R.hold_special_factors(owner, reagent_volumes[reagent_id])
+	if(!S)
+		S = new
+		rel_set(S, nameof(S.holder), owner)
+		rel_add(src, nameof(factor_sources), S, key)
+	S.set_table(table)
 
-/// One reagent table. Plans scale individual factors (a species' analgesic
-/// sensitivity) by overriding this.
-/datum/body/proc/hold_reagent_table(datum/reagent/R, alist/table, scale)
-	hold_table(owner, R, table, scale)
+/// Ends every plan source whose key starts with `prefix` and is not in `keep` (a list of keys).
+/datum/body/proc/drop_factor_sources(prefix, list/keep)
+	for(var/key in factor_sources?.Copy())
+		if(findtext(key, prefix) == 1 && !(key in keep))
+			rel_add(src, nameof(factor_sources), null, key)
 
-/// Plan-specific sources: species, traits, form, worn equipment. Base: none.
-/datum/body/proc/hold_plan_factors()
+/// Plan-specific sources, read when they change. Base: none.
+/datum/body/proc/sync_species_factors()
+	return
+
+/datum/body/proc/sync_form_factors()
+	return
+
+/datum/body/proc/sync_worn_factors()
 	return
 
 
@@ -369,7 +339,7 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 /// B2: the one gate for whether a reagent's own effects (treatment tags,
 /// body factors) reach this mob — the same rules `on_mob_life` applies: dead
 /// bodies, synthetic processing, and medical allergy (which gives no benefit;
-/// the reaction itself is `hold_special_factors`).
+/// the reaction itself is special_table()).
 /datum/reagent/proc/acts_on_body(mob/living/L)
 	if(!L)
 		return FALSE
@@ -396,7 +366,7 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 	return R ? R.acts_on_body(L) : FALSE
 
 /// C12: can this reagent change `L`'s body factors at all? (Its own table, or a
-/// patient-side contribution in hold_special_factors().) Reagents that
+/// patient-side contribution in special_table().) Reagents that
 /// can't never refresh the factors when their dose moves.
 /datum/reagent/proc/contributes_factors(mob/living/L)
 	if(length(get_factors(L)))
@@ -409,22 +379,30 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 			return TRUE
 	return FALSE
 
-/// Contributions that depend on the patient rather than the reagent: the
-/// mob's allergies, and blood rebuilt from its own blood reagent. Held at
-/// every factor refresh with the reagent's volume across the mob's holders,
-/// each as a part of the reagent's own rows.
-/datum/reagent/proc/hold_special_factors(mob/living/L, volume)
+/// Contributions that depend on the patient rather than the reagent: the mob's allergies, blood rebuilt from its own blood reagent (the base reagent), and
+/// intoxication and liver toxicity (ethanol). Each is one part of the reagent's dose record (REAGENT_PART_*, /datum/reagent_dose): this is the part's table
+/// for `L` at `volume` of the reagent in its system, or null for none.
+/datum/reagent/proc/special_table(part, mob/living/L, volume)
 	if(!ishuman(L) || volume <= 0)
-		return
+		return null
 	var/mob/living/carbon/human/H = L
-	var/scale = dq_chem_dose_scale(volume)
-	if((H.species.allergens & allergen_type) || (H.species.medallergens & medallergen_type))
-		// REM: the old per-tick reaction came from the ~REM units metabolised.
-		var/static/alist/allergy = alist(STAT_ALLERGY = REM)
-		hold_table(L, src, allergy, allergen_factor * scale, 1, "allergy")
-	if(id == H.species.blood_reagents)
-		var/static/alist/blood_rebuild = alist(STAT_BLOOD_REGEN = 1.6)
-		hold_table(L, src, blood_rebuild, scale, 1, "blood")
+	switch(part)
+		if(REAGENT_PART_ALLERGY)
+			// REM: the old per-tick reaction came from the ~REM units metabolised.
+			var/static/alist/allergy = alist(STAT_ALLERGY = REM)
+			if((H.species.allergens & allergen_type) || (H.species.medallergens & medallergen_type))
+				return allergy
+		if(REAGENT_PART_BLOOD)
+			var/static/alist/blood_rebuild = alist(STAT_BLOOD_REGEN = 1.6)
+			if(id == H.species.blood_reagents)
+				return blood_rebuild
+	return null
+
+/// The scale of special_table(part) at `volume`.
+/datum/reagent/proc/special_scale(part, volume)
+	if(part == REAGENT_PART_ALLERGY)
+		return allergen_factor * dq_chem_dose_scale(volume)
+	return dq_chem_dose_scale(volume)
 
 /// Reagent tag (IS_*) the mob metabolises as, or null.
 /mob/living/proc/reagent_tag()
@@ -432,6 +410,72 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 
 /mob/living/carbon/human/reagent_tag()
 	return species?.reagent_tag
+
+/// One reagent in a body that can change a factor: the dose the stat layer composes. The body owns it under the reagent id (reagent_doses, sync_reagent_doses()),
+/// for as long as the reagent is in the mob's holders and contributes_factors(); its volume is read through `body` from the body's reagent_volumes, so the tables
+/// follow the dose exactly. Its parts: the reagent's own table (gated like on_mob_life: acts_on_body()), the species' analgesic sensitivity (humanoids), and the
+/// patient-side parts of special_table().
+/datum/reagent_dose
+	/// The reagent this is the dose of.
+	var/reagent_id
+	/// The mob it is in, and its body: relation views.
+	var/mob/living/holder
+	var/datum/body/body
+
+CAPABILITIES(/datum/reagent_dose)
+	ref_one(nameof(holder), /mob/living)
+	ref_one(nameof(body), /datum/body)
+	factors(PROC_REF(dose_table), scale = PROC_REF(dose_scale), to = nameof(holder), reads = list("body.reagent_volumes"))
+	factors(PROC_REF(strength_table), scale = PROC_REF(dose_scale), to = nameof(holder), part = REAGENT_PART_STRENGTH, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(allergy_table), scale = PROC_REF(allergy_scale), to = nameof(holder), part = REAGENT_PART_ALLERGY, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(blood_table), scale = PROC_REF(dose_scale), to = nameof(holder), part = REAGENT_PART_BLOOD, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(intoxication_table), scale = PROC_REF(dose_scale), to = nameof(holder), part = REAGENT_PART_INTOXICATION, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(hepatotoxicity_table), scale = PROC_REF(hepatotoxicity_scale), to = nameof(holder), part = REAGENT_PART_HEPATOTOXICITY, reads = list("body.reagent_volumes"))
+
+/datum/reagent_dose/proc/reagent_def()
+	RETURN_TYPE(/datum/reagent)
+	return SSchemistry.ready().chemical_reagents[reagent_id]
+
+/// The reagent's volume across the mob's holders (the body's snapshot).
+/datum/reagent_dose/proc/volume()
+	return body?.reagent_volumes?[reagent_id] || 0
+
+/datum/reagent_dose/proc/dose_scale(datum/act/eval/A)
+	return dq_chem_dose_scale(volume())
+
+/// The reagent's own table, when it acts on this mob (B2: the same gates as on_mob_life).
+/datum/reagent_dose/proc/dose_table(datum/act/eval/A)
+	var/datum/reagent/R = reagent_def()
+	if(!R || !holder || !R.acts_on_body(holder))
+		return null
+	return R.get_factors(holder)
+
+/// The humanoid plan's extra share of a reagent's analgesia (the species' analgesic sensitivity).
+/datum/reagent_dose/proc/strength_table(datum/act/eval/A)
+	var/alist/table = dose_table(A)
+	return length(table) ? body.strength_table(table) : null
+
+/datum/reagent_dose/proc/allergy_table(datum/act/eval/A)
+	return reagent_def()?.special_table(REAGENT_PART_ALLERGY, holder, volume())
+
+/datum/reagent_dose/proc/allergy_scale(datum/act/eval/A)
+	return reagent_def()?.special_scale(REAGENT_PART_ALLERGY, volume()) || 0
+
+/datum/reagent_dose/proc/blood_table(datum/act/eval/A)
+	return reagent_def()?.special_table(REAGENT_PART_BLOOD, holder, volume())
+
+/datum/reagent_dose/proc/intoxication_table(datum/act/eval/A)
+	return reagent_def()?.special_table(REAGENT_PART_INTOXICATION, holder, volume())
+
+/datum/reagent_dose/proc/hepatotoxicity_table(datum/act/eval/A)
+	return reagent_def()?.special_table(REAGENT_PART_HEPATOTOXICITY, holder, volume())
+
+/datum/reagent_dose/proc/hepatotoxicity_scale(datum/act/eval/A)
+	return reagent_def()?.special_scale(REAGENT_PART_HEPATOTOXICITY, volume()) || 0
+
+/// What a plan adds to a reagent table (its analgesia scaled by the species' sensitivity), or null. Base: nothing.
+/datum/body/proc/strength_table(alist/table)
+	return null
 
 /datum/form
 	/// Body factors applied at full value while this form is worn.

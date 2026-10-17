@@ -29,6 +29,8 @@
 	var/allergic_level = H.body.treatment_levels()?[TREAT_TISSUE_REPAIR] || 0
 	var/allergic_gate = proto.acts_on_body(H)
 	H.species.medallergens = old_allergens
+	H.body.invalidate(BODY_DIRTY_TREATMENT) // the species' data was written raw: the snapshot rebuild reads the dose again
+	H.body.treatment_levels()
 	TEST_ASSERT(!allergic_gate, "an allergic patient gets no benefit from the reagent")
 	TEST_ASSERT_EQUAL(allergic_level, 0, "an allergic patient's snapshot carries none of its tags")
 	if(!proto.affects_dead)
@@ -110,7 +112,6 @@
 	var/temp_before = H.body_temperature()
 	A.tick()
 	TEST_ASSERT_EQUAL(H.body_temperature(), temp_before, "the affliction's tick does not write body temperature")
-	H.body.invalidate(BODY_DIRTY_FACTORS)
 	TEST_ASSERT(H.thermal_setpoint() > base + 1, "sepsis raises the thermoregulation set point")
 
 /// B25: alcohol withdrawal races the heart through a forced pulse factor.

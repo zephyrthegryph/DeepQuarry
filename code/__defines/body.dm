@@ -166,8 +166,6 @@
 /// The treatment snapshot (treatment_levels()) must be rebuilt.
 #define BODY_DIRTY_TREATMENT (1<<4)
 /// The trigger domains dq_process_dirty_medical_conditions() consumes.
-/// A source of the body factors changed (code/modules/body/factors.dm): body.invalidate() re-reads them at once. Never a stored bit.
-#define BODY_DIRTY_FACTORS   (1<<5)
 /// The physiology (ventilation, oxygenation, perfusion, delivery) must be
 /// recomputed: a factor, support, organ, breath or blood volume changed.
 #define BODY_DIRTY_PHYSIOLOGY (1<<6)
@@ -178,7 +176,7 @@
 /// Oxygen debt from which sustained hypoxia starts injuring organs (dq_check_ischemic_damage());
 /// the medical life stage stays awake at or above it.
 #define MEDICAL_STAGE_ISCHEMIA_DEBT 30
-#define BODY_DIRTY_ALL       (BODY_DIRTY_VITALS | BODY_DIRTY_CONDITIONS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS | BODY_DIRTY_PHYSIOLOGY | BODY_DIRTY_ARMOR)
+#define BODY_DIRTY_ALL       (BODY_DIRTY_VITALS | BODY_DIRTY_CONDITIONS | BODY_DIRTY_TREATMENT | BODY_DIRTY_PHYSIOLOGY | BODY_DIRTY_ARMOR)
 
 // --- Natural regeneration (TREAT_REGENERATION) ---------------------------------------------
 /// Regeneration level of a fed, awake, living humanoid.
@@ -215,9 +213,12 @@
 // Reference dose for chemical treatment scaling, and its cap multiple.
 #define DQ_CHEM_STANDARD_DOSE 10
 #define DQ_CHEM_DOSE_CAP 4.0
-/// Dose-scale width of one factor band (C12): body factors are recomputed when a
-/// factor reagent's dose crosses a band (1u at the standard dose), not every tick.
-#define DQ_CHEM_FACTOR_BAND 0.1
+/// The parts of a reagent's dose record (/datum/reagent_dose, code/modules/body/factors.dm): each is a set of rows of its own.
+#define REAGENT_PART_STRENGTH "strength"
+#define REAGENT_PART_ALLERGY "allergy"
+#define REAGENT_PART_BLOOD "blood"
+#define REAGENT_PART_INTOXICATION "intoxication"
+#define REAGENT_PART_HEPATOTOXICITY "hepatotoxicity"
 /// A reagent burst that closes a fracture or arterial bleed outright (mend() amount).
 #define DQ_REAGENT_KNIT_AMOUNT 100
 /// Hemostatic treatment level that alone arrests a growing internal bleed (D18a).
@@ -316,3 +317,10 @@
 #define LIMB_ISCHEMIA_REPERFUSED_RATE -3
 /// Severity at which the starved tissue dies.
 #define LIMB_ISCHEMIA_NECROSIS_SEVERITY 60
+
+// The plan's own factor sources (/datum/factor_source keys in /datum/body factor_sources, code/modules/body/factors.dm).
+#define FACTOR_SOURCE_SPECIES "species"
+#define FACTOR_SOURCE_GRANT "grant:"
+#define FACTOR_SOURCE_NO_PAIN "no_pain"
+#define FACTOR_SOURCE_FORM "form"
+#define FACTOR_SOURCE_WORN "worn:"

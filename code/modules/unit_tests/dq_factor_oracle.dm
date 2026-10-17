@@ -239,11 +239,8 @@
 	for(var/mob/living/L as anything in mobs)
 		if(!L.body)
 			continue
-		// An affliction's severity and a reagent's dose move inside a band without a refresh (the factors follow them at the band edge, as the old
-		// cache did), so a body with either is refreshed first and the comparison is of the composition. Every other source (a body effect, the
-		// species, a form, an item, stasis) has its own trigger, and a body with only those is compared as it stands: a missed trigger shows.
-		if(LAZYLEN(L.body.afflictions) || L.body.reagent_volumes)
-			L.body.refresh_factors()
+		// Every source has its own trigger (an affliction's severity, a reagent's dose, an effect's stacks, the species, a form, an item, stasis), so a body
+		// is compared as it stands: a missed trigger shows.
 		var/list/diff = factor_oracle_diff(L)
 		if(length(diff))
 			test.Fail("factor oracle: [L.type] reads differently from the old fold: [jointext(diff, "; ")]", __FILE__, __LINE__)

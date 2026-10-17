@@ -511,5 +511,18 @@ Families converted so far, and how each source type carries its entry:
   are written through `set_severity()` / `set_stage()`. The within-band refresh (`FACTOR_SEVERITY_BAND`, `factor_band`, `continuous_factors`) is gone: every affliction follows its exact
   severity, which is what the old fold gave on the continuous types and what the oracle computes for all of them. `hold_factors()` is deleted.
 
+* **Reagents**: each reagent in a body that can change a factor has a `/datum/reagent_dose` the body owns under the reagent id (`reagent_doses`, `sync_reagent_doses()`). It
+  reads its volume through `body` from `reagent_volumes` (a one-hop read of a tracked list, so the tables follow the dose before the writer's next line), and carries six
+  entries: the reagent's own table (gated by `acts_on_body()`), the humanoid species' analgesic share (`strength_table()`), and the patient-side parts of
+  `special_table(part, ...)` (allergy, blood, intoxication, hepatotoxicity). The dose bands (`DQ_CHEM_FACTOR_BAND`, `reagent_factor_bands`) are gone: no quantisation.
+  `refresh_reagent_volumes()` announces the in-place refill of `reagent_volumes` by hand (`collect_reagent_volumes()` reuses the list, which the setter would see as no change).
+* **Plans**: the species baseline, the tables traits granted it, the NO_PAIN grant, the form and each worn item are `/datum/factor_source` records the body owns under a key
+  (`factor_sources`): `factors(nameof(table), to = nameof(holder))`, the table being what the body read at the trigger. `sync_species_factors()` (species set, trait grant or
+  revoke, a species flag flips), `sync_form_factors()` (forms attach, detach, set) and `sync_worn_factors()` (a worn slot changes, the ledger rebuilds, an item's table is
+  written) are the per-source triggers that replaced the body-wide re-read.
+* **The catch-all is gone**: `refresh_factors()`, `hold_tables_begin/end` use by the body, `invalidate_factors()`, `BODY_DIRTY_FACTORS`, `factors_primed`, the pass depth and
+  `hold_*_factors()` are deleted and banned (`legacy_forms`). `/mob/living/factors_held()` dirties the vitals and the physiology when a stat they read moved (the human's
+  override also looks at the organs' work flag again). The factor oracle audit no longer refreshes a body before comparing: a missed trigger shows.
+
 Where the table is data on a flyweight or a prototype (`factors = alist(...)` of a body effect or an affliction type), it stays a data var read by the type's one entry; the ban that keeps a converted
 family converted is the one on the legacy `hold_*_factors` procs (`legacy_forms` `banned`, hard, empty baseline). `factors_converted` is for the types that move the table into the entry itself.

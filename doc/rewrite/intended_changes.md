@@ -4916,3 +4916,6 @@ prove the composition equal within a relative 1e-5. What is different on purpose
   arrest and tissue hypoxia, which followed every change); a source now holds its table at the severity it has, so a change inside a band moves the stats at once. This is what the factor
   oracle computes, and the old band test (`dq_body_factor_affliction_bands`) now pins the exact value. `FACTOR_SEVERITY_BAND`, `factor_band` and `continuous_factors` are gone.
 * **Cardiac arrhythmia's tachycardia restart goes through `set_severity(0)`** where it wrote `severity = 0`: the severity-changed notice and the vitals dirtying now follow that reset too.
+* **A reagent's factor tables follow its exact volume** (no 0.1 dose band) and a reagent that cannot change a factor has no record. A body's factor sources are no longer re-read as a set: the
+  species, form and worn items are read where they change, so a raw write of a species field (`medallergens`, flags) is picked up by the next reagent read or `sync_species_factors()`, not by
+  every later factor event.

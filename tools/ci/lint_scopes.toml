@@ -712,6 +712,13 @@ banned_outside = [
 banned = [
   "hold_stasis_factors = a stasis hold's own factors() entry (/datum/stasis_hold, code/modules/medical/stabilisation/stasis.dm): the stat layer holds its table on the mob",
   "hold_effect_factors = a body effect application's own factors() entry (/datum/body_effect_origin, code/modules/body/body_effects.dm): the stat layer holds its table on the mob",
+  "hold_reagent_factors = a reagent's dose record (/datum/reagent_dose, code/modules/body/factors.dm): its factors() entries read the volume from the body and the stat layer holds the tables on the mob",
+  "hold_reagent_table = a reagent's dose record (/datum/reagent_dose): the humanoid plan's analgesic sensitivity is its strength_table()",
+  "hold_special_factors = the reagent's special_table(part, mob, volume) and special_scale(part, volume): each part is a factors() entry of the dose record",
+  "hold_plan_factors = the body's sync_species_factors(), sync_form_factors() and sync_worn_factors(): a plan source is a /datum/factor_source record",
+  "refresh_factors = a source holds its own table: there is no body-wide re-read (doc/rewrite/proposals/stat_layer.md section 8)",
+  "invalidate_factors = a source holds its own table: a plan source is read by sync_species_factors(), sync_form_factors() or sync_worn_factors() where it changes",
+  "BODY_DIRTY_FACTORS = a source holds its own table: there is no factor domain to dirty (doc/rewrite/proposals/stat_layer.md section 8)",
   "hold_factors = an affliction's own factors() entry in /datum/affliction's CAPABILITIES block (code/modules/body/affliction.dm, factors.dm): a subtype adds a factors(table, to = nameof(owner), part =) entry for another table",
   "ownership() = owns_one() / owns_many() (on_destroy = DELETE | SPILL | PRIVATE_COPY | CONTAINED, starts =, only_if =), ref_one() / ref_many() and links() in the type's CAPABILITIES block (doc/rewrite/final_api.html section 6); the table proc is gone",
   "relations() = ref_one() / ref_many() (by =, target_key =), links() for a pair and owns_one() / owns_many() for an owned value, in the type's CAPABILITIES block (doc/rewrite/final_api.html section 6); the table proc is gone",
