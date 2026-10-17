@@ -66,3 +66,6 @@
 /// Kinds of player input the latency record separates.
 #define KM_INPUT_CLICK 1
 #define KM_INPUT_VERB 2
+
+/// Work that runs this long (ms) without yielding is noted by stall_note() (code/engine/change/refresh.dm).
+#define STALL_NOTE_MS 30

@@ -546,15 +546,89 @@ CAPABILITIES(/obj/machinery/atmospherics)
 			continue
 		transitions += list(list("region" = region, "ports" = ports, "volume" = volume))
 
+	// A region that lives on (a split keeps the larger side's handle, a merge keeps the larger region's) keeps its wrapper: Rust reports every
+	// member of a changed region, and rebuilding all of them for one lost pipe cost ~150 ms of the atmos step per commit in a big pipenet.
+	var/alist/lives_on = alist()
+	for(var/list/transition as anything in transitions)
+		lives_on[transition["region"]] = TRUE
 	for(var/prior_region in retired_regions)
+		if(lives_on[prior_region] && rust_pipe_region_networks[prior_region])
+			continue
 		var/datum/pipe_network/old_network = rust_pipe_region_networks[prior_region]
 		rust_pipe_region_networks -= prior_region
 		rust_retire_pipe_network(old_network)
+	var/list/kept_transitions
 	for(var/list/transition as anything in transitions)
+		var/datum/pipe_network/kept = rust_pipe_region_networks[transition["region"]]
+		if(kept && !QDELETED(kept) && kept.rust_authoritative && kept.air)
+			LAZYADD(kept_transitions, list(transition))
+			continue
 		var/datum/gas_mixture/region_air = new(max(transition["volume"], 1))
 		vg_bind_handle(region_air, transition["region"])
 		transition["air"] = region_air
 		rust_materialize_pipe_region(transition)
+	// After the new regions took their ports (a pipe that left a kept region is already in its new pipeline), the kept ones reconcile.
+	for(var/list/transition as anything in kept_transitions)
+		if(rust_refresh_pipe_region(rust_pipe_region_networks[transition["region"]], transition))
+			continue
+		var/region = transition["region"]
+		rust_retire_pipe_network(rust_pipe_region_networks[region])
+		rust_pipe_region_networks -= region
+		var/datum/gas_mixture/region_air = new(max(transition["volume"], 1))
+		vg_bind_handle(region_air, region)
+		transition["air"] = region_air
+		rust_materialize_pipe_region(transition)
+
+/// Brings a surviving region's wrapper in line with Rust's port list: ports that already belong to it are left alone, ports it gained are bound
+/// as a new region would bind them, machines and pipes it lost are dropped from its rosters. Returns FALSE (nothing changed) when the wrapper's
+/// shape needs a full rebuild: no single pipeline where there are pipes, or pipes where there is no pipeline.
+/datum/system/air/proc/rust_refresh_pipe_region(datum/pipe_network/network, list/transition)
+	var/list/ports = transition["ports"]
+	var/datum/gas_mixture/region_air = network.air
+	var/list/pipe_set = list()
+	var/list/machine_set = list()
+	var/list/obj/machinery/atmospherics/pipe/gained_pipes = list()
+	var/list/gained = list() // machine, port index pairs to bind
+	for(var/port_handle in ports)
+		var/datum/pipe_port/port = rust_pipe_port_of(port_handle)
+		var/obj/machinery/atmospherics/machine = port?.machine
+		if(!machine)
+			continue
+		var/is_pipe = istype(machine, /obj/machinery/atmospherics/pipe)
+		if(is_pipe)
+			pipe_set[machine] = TRUE
+		else
+			machine_set[machine] = TRUE
+		if(machine.rust_pipe_port_network(port.index) == network)
+			continue
+		gained += machine
+		gained += port.index
+		if(is_pipe)
+			gained_pipes += machine
+	var/line_count = length(network.line_members)
+	if(line_count > 1 || (line_count == 1) != !!length(pipe_set))
+		return FALSE
+	for(var/i = 1 to length(gained) step 2)
+		var/obj/machinery/atmospherics/machine = gained[i]
+		if(!istype(machine, /obj/machinery/atmospherics/pipe))
+			network.add_normal_member(machine)
+		machine.rust_bind_pipe_port(gained[i + 1], network, region_air)
+		// Same as a new region: sleepers must subscribe to what the port now sits in.
+		material_service_of(machine)?.environment_changed()
+	for(var/obj/machinery/atmospherics/member as anything in network.normal_members?.Copy())
+		if(!machine_set[member])
+			rel_remove(network, nameof(network.normal_members), member)
+	if(length(pipe_set))
+		var/datum/pipeline/pipeline = network.line_members[1]
+		for(var/obj/machinery/atmospherics/pipe/pipe as anything in gained_pipes)
+			rel_set(pipe, nameof(pipe.parent), pipeline) // two-sided: adds the pipe to pipeline.members, drops it from the old one
+		rel_clear(pipeline, nameof(pipeline.leaks))
+		rel_clear(network, nameof(network.leaks))
+		for(var/obj/machinery/atmospherics/pipe/pipe as anything in pipeline.members)
+			if(pipe.leaking)
+				rel_add(pipeline, nameof(pipeline.leaks), pipe)
+				rel_add(network, nameof(network.leaks), pipe)
+	return TRUE
 
 /datum/system/air/proc/rust_retire_pipe_network(datum/pipe_network/network)
 	if(!network)
@@ -600,7 +674,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		if(!machine)
 			continue
 		if(istype(machine, /obj/machinery/atmospherics/pipe))
-			region_pipes |= machine
+			region_pipes += machine // a pipe has one port, so it is listed once
 		else
 			network.add_normal_member(machine)
 		machine.rust_bind_pipe_port(index, network, region_air)

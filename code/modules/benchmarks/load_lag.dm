@@ -26,7 +26,28 @@
 		var/mob/living/carbon/human/H = new(pick(turfs))
 		H.set_low_priority(FALSE)
 		. += H
+		if(i <= 2)
+			GLOB.refresh_traced[REF(H)] = list() // what marks a crowd human: reported with each window
 		CHECK_TICK
+
+/// The busiest churn keys of each kind since the last call, and the mark trace of the traced humans.
+/datum/benchmark/proc/load_lag_churn(name)
+	var/list/kinds = GLOB.churn_census.take()
+	var/list/top = list()
+	for(var/kind in kinds)
+		var/list/counts = kinds[kind]
+		counts = sortTim(counts.Copy(), GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+		if(length(counts) > 12)
+			counts.Cut(13)
+		top[kind] = counts
+	detail("[name]_churn", top)
+	var/list/traces = list()
+	for(var/ref_text in GLOB.refresh_traced)
+		var/list/lines = GLOB.refresh_traced[ref_text]
+		if(islist(lines))
+			traces[ref_text] = lines.Copy()
+			lines.Cut()
+	detail("[name]_mark_trace", traces)
 
 /// Runs `trigger` (a proc ref on this datum) and measures the event window and the aftermath window under `name`.
 /datum/benchmark/proc/load_lag_measure(name, trigger)
@@ -34,12 +55,19 @@
 	var/after_seconds = param("after_seconds", 50)
 	begin_window()
 	log_world("LOAD_LAG [name]: trigger")
+	GLOB.stall_log.Cut()
+	GLOB.churn_census.take()
 	call(src, trigger)()
 	wait_seconds(event_seconds)
 	end_window("[name]_event")
+	load_lag_churn("[name]_event")
+	detail("[name]_event_stalls", GLOB.stall_log.Copy())
 	begin_window()
+	GLOB.stall_log.Cut()
 	wait_seconds(after_seconds)
 	end_window("[name]_after")
+	load_lag_churn("[name]_after")
+	detail("[name]_after_stalls", GLOB.stall_log.Copy())
 	log_world("LOAD_LAG [name]: done")
 
 /// Settles the post-boot backlog so the event is measured against a quiet round.
@@ -189,5 +217,43 @@
 	begin_window()
 	wait_seconds_with_input(param("seconds", 60), param("clicks", 4), param("verbs", 4))
 	end_window("mobs_window")
+	load_lag_churn("mobs")
+	detail("mobs_stalls", GLOB.stall_log.Copy())
+
+/// Unit costs behind the load scenarios: one log timestamp, one log line, a human's first and repeated draw.
+/datum/benchmark/load_probe
+	id = "load_probe"
+	description = "Per-call cost of a log timestamp, a log_world line, and a human's first and later draws"
+
+/datum/benchmark/load_probe/Run()
+	wait_for_assets()
+	GLOB.dq_lifecycle_leak_check = 0
+	var/calls = param("calls", 2000)
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to calls)
+		rustg_formatted_timestamp("%Y-%m-%d %H:%M:%S%.3f")
+	metric("probe_timestamp_us", (REALTIMEOFDAY - start) * 100000 / calls, "us")
+	start = REALTIMEOFDAY
+	for(var/i in 1 to calls)
+		log_world("LOAD_PROBE line [i]")
+	metric("probe_log_world_us", (REALTIMEOFDAY - start) * 100000 / calls, "us")
+	start = REALTIMEOFDAY
+	for(var/i in 1 to calls)
+		world.time + i
+		time2text(world.realtime, "hh:mm:ss")
+	metric("probe_time2text_us", (REALTIMEOFDAY - start) * 100000 / calls, "us")
+	var/list/floors = load_lag_area_floors(LOAD_LAG_AREA)
+	var/list/humans = load_lag_crowd(floors, 4)
+	var/mob/living/carbon/human/H = humans[1]
+	var/draw_start = TICK_USAGE
+	draw_now(H)
+	metric("probe_human_first_draw_ms", TICK_USAGE_TO_MS(draw_start), "ms")
+	var/total = 0
+	for(var/i in 1 to 20)
+		H.body?.invalidate(BODY_DIRTY_ORGANS)
+		draw_start = TICK_USAGE
+		draw_now(H)
+		total += TICK_USAGE_TO_MS(draw_start)
+	metric("probe_human_repeat_draw_ms", total / 20, "ms")
 
 #undef LOAD_LAG_AREA

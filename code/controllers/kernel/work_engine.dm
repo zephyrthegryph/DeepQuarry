@@ -232,6 +232,8 @@
 			message_admins(park_msg)
 	Kernel.current_ticklimit = saved_ticklimit
 	var/ms = TICK_USAGE_TO_MS(started)
+	if(ms >= STALL_NOTE_MS)
+		stall_note("work", "[W.key] ([owner.type])", ms)
 	if(W.system_owned)
 		// What the tick's slow-tick record shows per system (the breakdown names who took the tick).
 		var/datum/system/costly = owner

@@ -185,6 +185,11 @@
 GLOBAL_LIST_EMPTY(refresh_queue)
 /// Refreshes run so far (the dx_refresh benchmark reads it).
 GLOBAL_VAR_INIT(refresh_bench_drained, 0)
+/// Work that took STALL_NOTE_MS or more without yielding ("kind what: ms"), newest last, capped: the stall finder.
+GLOBAL_LIST_EMPTY(stall_log)
+/// Slow-refresh log lines written this second (rate limit).
+GLOBAL_VAR_INIT(stall_logged, 0)
+GLOBAL_VAR_INIT(stall_window, 0)
 /// The entity whose refresh is running now (the self-mark detector reads it).
 GLOBAL_DATUM(refresh_running, /datum)
 GLOBAL_VAR_INIT(refresh_self_mark_expected, FALSE)
@@ -339,6 +344,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		var/bits = D.refresh_bits
 		D.refresh_bits = 0
 		GLOB.refresh_bench_drained++
+		var/one_start = TICK_USAGE
 		try
 			refresh_one(D, bits, pending)
 		catch(var/exception/e)
@@ -346,6 +352,9 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 				sched.report_caught(e, "refresh of [D.type]: [e] ([e.file]:[e.line])")
 			else
 				stack_trace("refresh of [D.type]: [e] ([e.file]:[e.line])")
+		var/one_ms = TICK_USAGE_TO_MS(one_start)
+		if(one_ms >= STALL_NOTE_MS)
+			stall_note("refresh", "[D.type] bits [bits]", one_ms)
 		if(sched?.out_of_budget() && i < length(Q))
 			Q.Cut(1, i + 1)
 			if(deferred)
@@ -356,6 +365,19 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		Q += deferred
 		return FALSE
 	return TRUE
+
+/// Records work that ran long without yielding (so a tick stall), kept for the benchmarks and logged at most 5 a second:
+/// a refresh, a native wake delivery. `kind` names the source in the log line.
+/proc/stall_note(kind, what, ms)
+	var/entry = "[kind] [what]: [round(ms, 0.1)] ms"
+	GLOB.stall_log += entry
+	if(length(GLOB.stall_log) > 100)
+		GLOB.stall_log.Cut(1, 51)
+	if(GLOB.stall_window != round(world.time / 10))
+		GLOB.stall_window = round(world.time / 10)
+		GLOB.stall_logged = 0
+	if(++GLOB.stall_logged <= 5)
+		log_world("STALL [entry]")
 
 /// Every queued refresh now, ignoring the budget (tests, admin tools), then the UI pushes they queued. A
 /// self-re-marking entity is refreshed a bounded number of times, then reported.

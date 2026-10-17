@@ -180,9 +180,11 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 	if (transparent && !istype(src,/obj/item/organ/external/head) && can_apply_transparency && should_apply_transparency) // EDIT: transparent instead of nonsolid
 		mob_icon += rgb(,,,180) //do it here so any markings become transparent as well
 
-	set_dir(SOUTH)
-	set_icon(mob_icon)
+	// The limb's own picture and layers (what it shows as an item) are written only when asked: the body's icon builder runs inside the
+	// human's draw, where a tracked write is a purity violation (and, outside tests, a mark per limb per draw).
 	if(item_layers)
+		set_dir(SOUTH)
+		set_icon(mob_icon)
 		set_shown_layers(layers)
 	return mob_icon
 

@@ -113,10 +113,14 @@
 		if(world_traced && world_traced[owner])
 			world_traced[owner]++
 #endif
+		var/fire_start = TICK_USAGE
 		try
 			W.fire(arguments)
 		catch(var/exception/e)
 			report_caught(e, "world wake [owner.type] [W.callback]: [e] ([e.file]:[e.line])")
+		var/fire_ms = TICK_USAGE_TO_MS(fire_start)
+		if(fire_ms >= STALL_NOTE_MS)
+			stall_note("wake", "[owner.type] [W.callback]", fire_ms)
 		// Urgent wakes drain in full, like Rust's urgent lane. The rest yield to the budget, but
 		// only after OM_WORLD_MIN_PER_PASS wakes: a lane whose share is already spent when it
 		// starts (a pass behind on other work) still moves, so its wakes can't starve. The floor

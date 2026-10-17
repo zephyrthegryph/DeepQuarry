@@ -3143,20 +3143,18 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"3-pipe straight run didn't form one pipeline: PA=[PA.parent] PB=[PB.parent] PC=[PC.parent]")
 	var/datum/pipeline/initial_pipeline = PA.parent
 
-	// Kill the middle pipe. Rust must retire the old wrapper once and publish
-	// two replacement regions immediately.
+	// Kill the middle pipe. Rust keeps the region handle of one side, so that side keeps its wrapper (it only loses PB); the other
+	// side is published as a new region with a new pipeline.
 	qdel(PB)
-	TEST_ASSERT_NOTNULL(PA.parent, "PA did not receive a replacement pipeline after split")
-	TEST_ASSERT_NOTNULL(PC.parent, "PC did not receive a replacement pipeline after split")
+	TEST_ASSERT_NOTNULL(PA.parent, "PA did not receive a pipeline after split")
+	TEST_ASSERT_NOTNULL(PC.parent, "PC did not receive a pipeline after split")
 	TEST_ASSERT(PA.parent != PC.parent, "split Rust region left PA and PC in one pipeline")
 	TEST_ASSERT_NULL(PB.parent, "destroyed pipe retained its pipeline back-reference")
-	TEST_ASSERT_NULL(initial_pipeline.members, "destroyed pipeline retained its member roster")
-	TEST_ASSERT_NULL(initial_pipeline.edges, "destroyed pipeline retained its edge roster")
-	TEST_ASSERT_NULL(initial_pipeline.leaks, "destroyed pipeline retained its leak roster")
-	TEST_ASSERT_NULL(initial_pipeline.network, "destroyed pipeline retained its network")
-	TEST_ASSERT_NULL(initial_pipeline.air, "destroyed pipeline retained its gas mixture")
-
-	TEST_ASSERT(PA.parent != initial_pipeline, "PA's rebuilt pipeline is the old (destroyed) one — stale reference")
+	TEST_ASSERT(PA.parent == initial_pipeline || PC.parent == initial_pipeline, "neither side kept the surviving region's pipeline")
+	TEST_ASSERT(!(PB in initial_pipeline.members), "the surviving pipeline kept the destroyed pipe in its member roster")
+	TEST_ASSERT(length(initial_pipeline.members) == 1, "the surviving pipeline should hold exactly its one remaining pipe, held [length(initial_pipeline.members)]")
+	TEST_ASSERT_NOTNULL(initial_pipeline.network, "the surviving pipeline lost its network")
+	TEST_ASSERT_NOTNULL(initial_pipeline.air, "the surviving pipeline lost its gas mixture")
 
 	// Insert a fresh bridging pipe at B's slot.
 	var/obj/machinery/atmospherics/pipe/simple/PB2 = new(B)
