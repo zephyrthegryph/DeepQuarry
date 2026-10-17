@@ -5,8 +5,7 @@
  * /obj/item/clothing/accessory/get_inv_overlay() and get_mob_overlay(), and
  * partially repeated in choker/collar/setUniqueSpeciesSprite() overrides.
  *
- * Call sites on /obj/item/clothing/accessory delegate here; the cached
- * inv_overlay var remains on the accessory for backward compat.
+ * Call sites on /obj/item/clothing/accessory delegate here; nothing is stored on the accessory.
  *
  * Sprite selection priority (highest → lowest):
  *   1. icon_override   — explicit per-item DMI override
@@ -27,7 +26,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/clothing_appearance_handler)
  *
  * Builds and returns the inventory (item slot) overlay image for `acc`.
  * Applies a `_tie` variant of the icon state when available.
- * The result is cached on acc.inv_overlay by the caller.
+ * The result is not stored: the caller builds it on every draw.
  */
 /datum/clothing_appearance_handler/proc/build_inv_overlay(obj/item/clothing/accessory/acc)
 	var/tmp_icon_state = acc.overlay_state ? "[acc.overlay_state]" : "[acc.icon_state]"

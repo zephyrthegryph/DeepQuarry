@@ -22,8 +22,6 @@ dx_raw_overlays	code/modules/body/organs/subtypes/standard.dm	add_overlay(lip_ic
 dx_raw_overlays	code/modules/body/organs/subtypes/standard.dm	add_overlay(mark_s) //So when it's not on your body, it has icons
 dx_raw_overlays	code/modules/body/organs/subtypes/standard.dm	add_overlay(eyecon)
 dx_raw_overlays	code/modules/body/organs/subtypes/standard.dm	add_overlay(get_hair_icon())
-dx_raw_overlays	code/modules/detectivework/tools/uvlight.dm	I.cut_overlay(I.blood_overlay)
-dx_raw_overlays	code/modules/detectivework/tools/uvlight.dm	O.add_overlay(O.blood_overlay)
 dx_raw_overlays	code/modules/mob/living/carbon/human/human_helpers.dm	add_overlay(hud_list)
 dx_raw_overlays	code/modules/mob/living/living.dm	add_overlay(.)
 dx_raw_overlays	code/modules/mob/living/living.dm	cut_overlay(I)

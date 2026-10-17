@@ -149,6 +149,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/cola)
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask)
 	rolls(nameof(icon_state), pick_one(list("fitness-cup_black", "fitness-cup_red", "fitness-cup_black")))
 
+/// The shaker keeps its own sprite whatever it holds (it does not take the glass's reagent-driven name and icon); its filling is drawn.
+/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/on_reagent_change()
+	return
+
 /obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/draw(datum/look/look)
 	..()
 	var/datum/reagents/R = reagents
