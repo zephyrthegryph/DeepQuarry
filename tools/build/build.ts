@@ -866,6 +866,7 @@ const dmbcCacheHit = (): boolean => {
   try {
     if (restoreDmbc(cache, k.key)) {
       Juke.logger.info(`dmbc cache: hit ${k.key} (${cache})`);
+      pruneDmbcVersions();
       return true;
     }
   } catch (error) {
