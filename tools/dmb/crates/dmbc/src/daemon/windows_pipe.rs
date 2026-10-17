@@ -442,6 +442,39 @@ struct MemoryCounters {
 unsafe extern "system" {
     fn GetProcessMemoryInfo(process: Handle, counters: *mut MemoryCounters, size: u32) -> i32;
 }
+#[repr(C)]
+struct MemoryStatusEx {
+    length: u32,
+    memory_load: u32,
+    total_phys: u64,
+    avail_phys: u64,
+    total_page_file: u64,
+    avail_page_file: u64,
+    total_virtual: u64,
+    avail_virtual: u64,
+    avail_extended_virtual: u64,
+}
+#[link(name = "kernel32")]
+unsafe extern "system" {
+    fn GlobalMemoryStatusEx(status: *mut MemoryStatusEx) -> i32;
+}
+/// Physical memory the machine can hand out right now without paging (free plus reclaimable standby), whole machine.
+pub(in crate::daemon) fn available_physical_bytes() -> Option<u64> {
+    unsafe {
+        let mut status = MemoryStatusEx {
+            length: std::mem::size_of::<MemoryStatusEx>() as u32,
+            memory_load: 0,
+            total_phys: 0,
+            avail_phys: 0,
+            total_page_file: 0,
+            avail_page_file: 0,
+            total_virtual: 0,
+            avail_virtual: 0,
+            avail_extended_virtual: 0,
+        };
+        (GlobalMemoryStatusEx(&mut status) != 0).then_some(status.avail_phys)
+    }
+}
 pub(in crate::daemon) fn private_bytes() -> Option<u64> {
     unsafe {
         let mut counters = MemoryCounters {

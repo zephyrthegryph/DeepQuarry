@@ -2,6 +2,7 @@
 # The lane worktree pool: lanes lease a worktree from a fixed pool instead of creating and deleting one per lane.
 #
 #   bash tools/dq_lane_pool.sh lease <branch> [--base REF]   # prints the worktree path; one per lane
+#   bash tools/dq_lane_pool.sh lease <branch> --wait [--timeout MIN]  # queue (first come first served) instead of failing when full
 #   bash tools/dq_lane_pool.sh release [<branch>|--path P] [--force] [--keep-outputs]
 #   bash tools/dq_lane_pool.sh status                          # who holds which slot, how big each worktree is
 #   bash tools/dq_lane_pool.sh path <branch>                   # the leased path of a branch (exit 1 if none)
@@ -12,7 +13,8 @@
 #
 # lease <branch>
 #   - Refuses when every slot is held ("pool full", with the holders). A lease whose lane is finished (clean worktree, branch tip already
-#     in origin/master) is reclaimed first, so a lane that forgot `release` never blocks the pool.
+#     in origin/master) and idle for DQ_LANE_POOL_RECLAIM_IDLE_MIN minutes (default 180; nothing touched the lease, HEAD or index) is
+#     reclaimed first, so a lane that forgot `release` never blocks the pool, but a lane between two of its merges keeps its slot.
 #   - Takes a free slot whose worktree is clean (a dirty one is skipped and named; nothing is ever cleaned for you), fetches, and starts
 #     the lane on origin/master: `git switch -c <branch> origin/master`. A branch that already exists and holds commits origin/master
 #     lacks is resumed (`git switch <branch>`, nothing moves); one fully merged is restarted (`git switch -C`, which loses nothing
@@ -155,6 +157,19 @@ release_slot() { # <slot> <force> <keep_outputs>
 	say "released pool-$i${branch:+ ($branch)}"
 }
 
+RECLAIM_IDLE_MIN="${DQ_LANE_POOL_RECLAIM_IDLE_MIN:-180}"
+
+slot_idle_minutes() { # <slot> <worktree>: minutes since the lease, the worktree's HEAD or its index last changed
+	local gd newest=0 f m
+	gd="$(git -C "$2" rev-parse --absolute-git-dir 2>/dev/null)"
+	for f in "$(lease_file "$1")" "$gd/index" "$gd/HEAD" "$gd/logs/HEAD"; do
+		[ -e "$f" ] || continue
+		m="$(stat -c %Y "$f" 2>/dev/null || echo 0)"
+		[ "$m" -gt "$newest" ] && newest="$m"
+	done
+	echo $(( ($(date +%s) - newest) / 60 ))
+}
+
 reclaim_finished() { # called under the lock: drop leases whose lane is done
 	local i wt branch
 	for i in $(seq 1 "$POOL_SIZE"); do
@@ -166,6 +181,11 @@ reclaim_finished() { # called under the lock: drop leases whose lane is done
 		if ! git -C "$REPO" show-ref -q --verify "refs/heads/$branch"; then
 			release_slot "$i" 0 0; say "reclaimed pool-$i (branch $branch is gone)"; continue
 		fi
+		# A lane that lands several merges in a row (a wave per merge) is merged and clean between merges while its agent is still
+		# working in the slot, so a merged lane is reclaimed only once nothing has touched its worktree for a while (or by release).
+		if [ "$(slot_idle_minutes "$i" "$wt")" -lt "$RECLAIM_IDLE_MIN" ]; then
+			continue
+		fi
 		if merged_into_master "$REPO" "$branch" && [ "$(git -C "$REPO" rev-parse "refs/heads/$branch")" != "$(lease_get "$i" start)" ]; then
 			# the lane committed (tip moved off its start) and all of it is in origin/master: finished. A lane that has not committed yet
 			# also sits on a master ancestor, which is why the start commit is recorded.
@@ -175,7 +195,70 @@ reclaim_finished() { # called under the lock: drop leases whose lane is done
 }
 
 # ---- lease ------------------------------------------------------------------------------------------------------------------------
+# ---- waiting for a slot ------------------------------------------------------------------------------------------------------------
+# `lease <branch> --wait [--timeout MIN]` queues instead of failing on a full pool: one waiting process per lane (run it once, in the
+# background, and get told when it exits), served first come first served from $STATE_DIR/queue. A waiter whose process died drops
+# out of the queue on its own. Agents never write their own retry loops around `lease`.
+QUEUE_DIR="$STATE_DIR/queue"
+
+queue_prune() { # drop tickets whose waiting process is gone
+	local t pid
+	for t in "$QUEUE_DIR"/*.ticket; do
+		[ -e "$t" ] || continue
+		pid="$(sed -n 's/^pid=//p' "$t" | head -n 1)"
+		if [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null; then rm -f "$t"; fi
+	done
+}
+
+queue_position() { # <ticket>: 1 when it is the oldest live ticket
+	local n=0 t
+	for t in $(ls "$QUEUE_DIR"/*.ticket 2>/dev/null | sort); do
+		n=$((n + 1))
+		[ "$t" = "$1" ] && { echo "$n"; return; }
+	done
+	echo 0
+}
+
 cmd_lease() {
+	local wait=0 timeout_min=240 args=() ticket pos last_pos="" start rc out
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			--wait) wait=1 ;;
+			--timeout) shift; timeout_min="${1:?--timeout needs minutes}" ;;
+			*) args+=("$1") ;;
+		esac
+		shift
+	done
+	[ "$wait" -eq 1 ] || { lease_once "${args[@]}"; return; }
+	mkdir -p "$QUEUE_DIR"
+	ticket="$QUEUE_DIR/$(date +%s%N)-$$.ticket"
+	printf 'pid=%s
+branch=%s
+since=%s
+' "$$" "${args[*]}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$ticket"
+	trap 'rm -f "$ticket"' EXIT
+	start=$(date +%s)
+	while :; do
+		queue_prune
+		pos="$(queue_position "$ticket")"
+		if [ "$pos" = 1 ]; then
+			out="$(lease_once "${args[@]}" 2>"$ticket.err")"; rc=$?
+			if [ "$rc" -ne 3 ]; then
+				cat "$ticket.err" >&2; rm -f "$ticket.err"
+				[ -n "$out" ] && echo "$out"
+				return "$rc"
+			fi
+			rm -f "$ticket.err"
+		fi
+		[ "$pos" != "$last_pos" ] && { say "waiting for a slot: position $pos in the queue (bash tools/dq_lane_pool.sh status)"; last_pos="$pos"; }
+		if [ $(( $(date +%s) - start )) -ge $(( timeout_min * 60 )) ]; then
+			say "gave up after $timeout_min minutes in the queue"; return 3
+		fi
+		sleep "${DQ_LANE_POOL_WAIT_POLL:-20}"
+	done
+}
+
+lease_once() {
 	local branch="" base="origin/master" i wt held=0 free="" skipped=""
 	while [ $# -gt 0 ]; do
 		case "$1" in
@@ -297,6 +380,12 @@ cmd_status() {
 		fi
 	done
 	echo "  $held of $POOL_SIZE leased"
+	queue_prune
+	local t n=0
+	for t in $(ls "$QUEUE_DIR"/*.ticket 2>/dev/null | sort); do
+		n=$((n + 1))
+		echo "  queue $n: $(sed -n 's/^branch=//p' "$t") since $(sed -n 's/^since=//p' "$t")"
+	done
 }
 
 cmd_path() {

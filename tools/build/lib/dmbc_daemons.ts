@@ -6,8 +6,10 @@
  * retained session per project root (the daemon bounds them by DMB_DAEMON_MEMORY_BUDGET_GB, evicts the least recently
  * used project, exits after DMB_DAEMON_IDLE_EXIT_SECS idle, and exits when its roots are gone). The old per-worktree
  * namespace default is gone: it multiplied an 8 GB daemon per checkout, and only daemons this file registered were ever
- * evicted. The machine-wide cap (DQ_DMBC_MAX_DAEMONS, default 2) is enforced by the daemon itself at startup, for every
- * binary that runs `--serve-daemon`; nothing here is needed for it.
+ * evicted. Daemons never replace each other: the endpoint is keyed by the compiler image, so a client talks only to the daemon
+ * of its own version, a development build (anything not under `<bin>/v/<current>`) runs in a private namespace chosen by dmbc
+ * itself, and a daemon leaves only for idleness, memory, or (a superseded published version) having no client left. There is no
+ * machine-wide cap and no newcomer-retires-incumbent rule on the daemon side.
  *
  * `DMB_DAEMON_NAMESPACE` set by the caller still isolates that caller (a benchmark or an experiment build). Such a
  * namespace is bookkept here under `DQ_DMBC_DAEMON_DIR` (default E:/dq-cache/dmb-daemon/ns, else ~/.cache/dq/dmb-daemon/ns):
@@ -24,6 +26,8 @@ import path from 'node:path';
 const LEASE_STALE_MS = 15 * 60 * 1000;
 const LEASE_BEAT_MS = 60 * 1000;
 const LOCK_STALE_MS = 2 * 60 * 1000;
+/** A caller-namespace daemon used within this long is never retired for the count: retirement is for idleness and memory. */
+const NAMESPACE_MIN_IDLE_MS = 10 * 60 * 1000;
 
 export function daemonRegistryDir(): string {
   if (process.env.DQ_DMBC_DAEMON_DIR) return process.env.DQ_DMBC_DAEMON_DIR;
@@ -135,6 +139,7 @@ export function enterDaemonScope(root: string, executable: string): DaemonScope 
       let resident = others.length + 1;
       for (const entry of others) {
         if (resident <= cap) break;
+        if (Date.now() - entry.lastUsed < NAMESPACE_MIN_IDLE_MS) { log(`keeping ${entry.namespace} (${entry.root}): used within the last ${NAMESPACE_MIN_IDLE_MS / 60000} minutes`); continue; }
         if (liveLeases(dir, entry.namespace) > 0) { log(`keeping ${entry.namespace} (${entry.root}): a build is running`); continue; }
         const outcome = retire(executable, entry.namespace);
         log(`evicting idle ${entry.namespace} (${entry.root}) to stay within DQ_DMBC_MAX_DAEMONS=${cap}: ${outcome}`);

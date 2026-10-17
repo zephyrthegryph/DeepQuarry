@@ -473,6 +473,11 @@ bash tools/dq_worktree.sh pool                               # who holds what
   `node_modules` links, `tools/analyze/target` (the analyzer binary), `data/analyze-cache`. `--keep-outputs` skips the deletion.
 - **`dq_worktree.sh gc`** never removes a pool slot, `play`, `merge-base`, a detached-HEAD worktree, a name in `DQ_WT_KEEP` or in
   `E:/dq-cache/worktree-keep.txt`, or a worktree a process names on its command line or wrote to in the last 20 minutes.
+- **Waiting for a slot.** `bash tools/dq_lane_pool.sh lease <branch> --wait [--timeout MIN]` (default 240) queues instead of failing
+  when the pool is full: first come first served, one waiting process per lane, a dead waiter drops out on its own, `status` lists
+  the queue. Run it once in the background and act when it exits. Never write your own retry or `until` loop around `lease`.
+- **Reclaim.** A lease whose branch is fully in `origin/master` is reclaimed only after `DQ_LANE_POOL_RECLAIM_IDLE_MIN` (180) minutes
+  with no change to the lease, the worktree's HEAD or its index, so a lane that lands several merges keeps its slot between them.
 - `dq_lane_ready.sh` warns outside a pool worktree (`DQ_LANE_POOL_STRICT=1` refuses). Self-test: `bash tools/ci/test_lane_pool.sh`.
 - The `reference-transaction` hook (`tools/hooks/reference-transaction`) now allows the update when the checkout's
   `dq_machine_slots.sh` has no `merge_lock_require` (a stale main checkout running `git gc` used to fail every ref update). Reinstall it
