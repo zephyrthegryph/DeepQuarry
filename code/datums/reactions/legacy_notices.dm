@@ -792,10 +792,11 @@
 
 /// From /datum/definition_event/reagents_holder_reacted.
 /datum/notice/reagents_holder_reacted
-	var/chemical_reaction
+	/// The /datum/xform rules that fired in the settle, in the order they first did.
+	var/rules
 
-/datum/notice/reagents_holder_reacted/fill(chemical_reaction)
-	src.chemical_reaction = chemical_reaction
+/datum/notice/reagents_holder_reacted/fill(rules)
+	src.rules = rules
 
 /// From /datum/definition_event/remote_view_clear.
 /datum/notice/remote_view_clear

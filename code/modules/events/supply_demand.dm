@@ -298,8 +298,8 @@ CAPABILITIES(/datum/supply_demand_order/gas)
 /datum/event/supply_demand/proc/choose_chemistry_items(differentTypes)
 	// Checking if they show up in health analyzer is good huristic for it being a drug
 	var/list/medicineReagents = list()
-	for(var/datum/decl/chemical_reaction/instant/CR in SSchemistry.ready().chemical_reactions)
-		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[initial(CR.result)]
+	for(var/datum/xform/CR as anything in xform_rules_in(MEDIUM_REAGENTS, REGIME_INSTANT))
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[CR.result]
 		if(R && R.scannable)
 			medicineReagents += R
 	for(var/i in 1 to differentTypes)
@@ -311,8 +311,10 @@ CAPABILITIES(/datum/supply_demand_order/gas)
 
 /datum/event/supply_demand/proc/choose_bar_items(differentTypes)
 	var/list/drinkReagents = list()
-	for(var/datum/decl/chemical_reaction/instant/drinks/CR in SSchemistry.ready().chemical_reactions)
-		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[initial(CR.result)]
+	for(var/datum/xform/CR as anything in xform_rules_in(MEDIUM_REAGENTS, REGIME_INSTANT))
+		if(!ispath(CR.rule_type, /transformation/chem/instant/drinks))
+			continue
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[CR.result]
 		if(istype(R, /datum/reagent/drink) || istype(R, /datum/reagent/ethanol))
 			drinkReagents += R
 	for(var/i in 1 to differentTypes)

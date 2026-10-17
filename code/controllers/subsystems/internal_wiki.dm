@@ -289,48 +289,47 @@ SYSTEM_DEF(internal_wiki)
 	return get_donor_value(highest_cached_donator)
 // Helpers for formatting wiki data for tgui pages
 /datum/system/internal_wiki/proc/assemble_reaction_data(list/data, datum/reagent/R)
-	var/list/reaction_list = SSchemistry.ready().chemical_reactions_by_product[R.id]
-	var/list/distilled_list = SSchemistry.ready().distilled_reactions_by_product[R.id]
+	var/list/reaction_list = xform_makers_of(MEDIUM_REAGENTS, REGIME_INSTANT, R.id)
+	var/list/distilled_list = xform_makers_of(MEDIUM_REAGENTS, REGIME_DISTILLING, R.id)
 
 	data["instant_reactions"] = null
 	if(reaction_list != null && length(reaction_list) > 0)
 		var/list/display_reactions = list()
-		for(var/datum/decl/chemical_reaction/CR in reaction_list)
-			if(CR.wiki_flag & WIKI_SPOILER)
+		for(var/datum/xform/CR as anything in reaction_list)
+			if(CR.wiki & WIKI_SPOILER)
 				continue
 			display_reactions.Add(CR)
 
 		var/reactions = list()
-		for(var/datum/decl/chemical_reaction/CR in display_reactions)
+		for(var/datum/xform/CR as anything in display_reactions)
 			var/list/assemble_reaction = list()
 			var/list/reqs = list()
-			for(var/RQ in CR.required_reagents)
-				var/datum/decl/chemical_reaction/r_RQ = SSchemistry.ready().chemical_reagents[RQ]
+			for(var/RQ in CR.reagent_takes)
+				var/datum/reagent/r_RQ = SSchemistry.ready().chemical_reagents[RQ]
 				if(!r_RQ)
 					log_runtime(EXCEPTION("Invalid reagent id: [RQ]"))
 					continue
 				reqs.Add("[r_RQ.name]")
 			assemble_reaction["required"] = reqs
 			var/list/inhib = list()
-			for(var/IH in CR.inhibitors)
-				var/datum/decl/chemical_reaction/r_IH = SSchemistry.ready().chemical_reagents[IH]
+			for(var/IH in CR.reagent_blocked)
+				var/datum/reagent/r_IH = SSchemistry.ready().chemical_reagents[IH]
 				if(!r_IH)
 					log_runtime(EXCEPTION("Invalid reagent id: [IH]"))
 					continue
 				inhib.Add("[r_IH.name]")
 			assemble_reaction["inhibitor"] = inhib
 			var/list/catal = list()
-			for(var/CL in CR.catalysts)
-				var/datum/decl/chemical_reaction/r_CL = SSchemistry.ready().chemical_reagents[CL]
+			for(var/CL in CR.reagent_catalysts)
+				var/datum/reagent/r_CL = SSchemistry.ready().chemical_reagents[CL]
 				if(!r_CL)
 					log_runtime(EXCEPTION("Invalid reagent id: [CL]"))
 					continue
 				catal.Add("[r_CL.name]")
 			assemble_reaction["catalysts"] = catal
 			assemble_reaction["is_slime"] = null
-			if(istype(CR, /datum/decl/chemical_reaction/instant/slime))
-				var/datum/decl/chemical_reaction/instant/slime/CRS = CR
-				var/obj/item/slime_extract/slime_path = CRS.required
+			if(ispath(CR.rule_type, /transformation/chem/instant/slime))
+				var/obj/item/slime_extract/slime_path = CR.subject_type
 				assemble_reaction["is_slime"] = initial(slime_path.name)
 			reactions += list(assemble_reaction)
 		if(length(display_reactions))
@@ -339,39 +338,41 @@ SYSTEM_DEF(internal_wiki)
 	data["distilled_reactions"] = null
 	if(distilled_list != null && length(distilled_list) > 0)
 		var/list/display_reactions = list()
-		for(var/datum/decl/chemical_reaction/distilling/CR in distilled_list)
-			if(CR.wiki_flag & WIKI_SPOILER)
+		for(var/datum/xform/CR as anything in distilled_list)
+			if(CR.wiki & WIKI_SPOILER)
 				continue
 			display_reactions.Add(CR)
 
 		var/reactions = list()
-		for(var/datum/decl/chemical_reaction/distilling/CR in display_reactions)
+		for(var/datum/xform/CR as anything in display_reactions)
 			var/list/assemble_reaction = list()
-			assemble_reaction["temp_min"] = TYPE_TABLE_GET(CR, distilling_temp_range)[1]
-			assemble_reaction["temp_max"] = TYPE_TABLE_GET(CR, distilling_temp_range)[2]
-			assemble_reaction["xgm_min"] = CR.minimum_xgm_pressure
-			assemble_reaction["xgm_max"] = CR.maximum_xgm_pressure
-			assemble_reaction["require_xgm_gas"] = CR.require_xgm_gas ? GLOB.gas_data.name[CR.require_xgm_gas] : null
-			assemble_reaction["rejects_xgm_gas"] = CR.rejects_xgm_gas ? GLOB.gas_data.name[CR.rejects_xgm_gas] : null
+			var/list/window = CR.bands[1]
+			var/list/ambient = xform_cond_ambient(CR.holds)
+			assemble_reaction["temp_min"] = window[1]
+			assemble_reaction["temp_max"] = window[2]
+			assemble_reaction["xgm_min"] = ambient[3]
+			assemble_reaction["xgm_max"] = ambient[4]
+			assemble_reaction["require_xgm_gas"] = ambient[1] ? GLOB.gas_data.name[ambient[1]] : null
+			assemble_reaction["rejects_xgm_gas"] = ambient[2] ? GLOB.gas_data.name[ambient[2]] : null
 			var/list/reqs = list()
-			for(var/RQ in CR.required_reagents)
-				var/datum/decl/chemical_reaction/r_RQ = SSchemistry.ready().chemical_reagents[RQ]
+			for(var/RQ in CR.reagent_takes)
+				var/datum/reagent/r_RQ = SSchemistry.ready().chemical_reagents[RQ]
 				if(!r_RQ)
 					log_runtime(EXCEPTION("Invalid reagent id: [RQ]"))
 					continue
 				reqs.Add("[r_RQ.name]")
 			assemble_reaction["required"] = reqs
 			var/list/inhib = list()
-			for(var/IH in CR.inhibitors)
-				var/datum/decl/chemical_reaction/r_IH = SSchemistry.ready().chemical_reagents[IH]
+			for(var/IH in CR.reagent_blocked)
+				var/datum/reagent/r_IH = SSchemistry.ready().chemical_reagents[IH]
 				if(!r_IH)
 					log_runtime(EXCEPTION("Invalid reagent id: [IH]"))
 					continue
 				inhib.Add("[r_IH.name]")
 			assemble_reaction["inhibitor"] = inhib
 			var/list/catal = list()
-			for(var/CL in CR.catalysts)
-				var/datum/decl/chemical_reaction/r_CL = SSchemistry.ready().chemical_reagents[CL]
+			for(var/CL in CR.reagent_catalysts)
+				var/datum/reagent/r_CL = SSchemistry.ready().chemical_reagents[CL]
 				if(!r_CL)
 					log_runtime(EXCEPTION("Invalid reagent id: [CL]"))
 					continue
@@ -429,23 +430,14 @@ SYSTEM_DEF(internal_wiki)
 
 	display_reactions = list()
 
-	// We need to do this instead of using distilled_reactions_by_reagent, because SSchem was built around unique logic that only uses the first reagent key found.
-	// So if we collected them all, chemistry as players know it will explode. So we recheck all reagent datums directly instead and see if we're used by them.
-	var/list/paths = GLOB.decls_repository.get_decls_of_subtype(/datum/decl/chemical_reaction)
-	for(var/path in paths)
-		var/datum/decl/chemical_reaction/D = paths[path]
-		if(istype(D, /datum/decl/chemical_reaction/instant/slime))
+	// The transformation index keeps a rule under its first take only (that is what the settle looks up by), so a reagent that is a later take or a catalyst
+	// is found by checking every rule's own terms.
+	for(var/datum/xform/D as anything in GLOB.xform_rules)
+		if(D.medium != MEDIUM_REAGENTS || ispath(D.rule_type, /transformation/chem/instant/slime))
 			continue
 		if(!D.result)
 			continue
-
-		var/list/scan_list = list()
-		if(length(D.required_reagents))
-			if(length(D.required_reagents)) scan_list += D.required_reagents
-		if(length(D.catalysts))
-			if(length(D.catalysts)) scan_list += D.catalysts
-
-		if(R.id in scan_list)
+		if((R.id in D.reagent_takes) || (R.id in D.reagent_catalysts))
 			display_reactions.Add(D.name)
 
 	data["produces"] = null
@@ -622,24 +614,24 @@ SYSTEM_DEF(internal_wiki)
 						)
 		spent(R)
 	// basically condiments, tofu, cheese, soysauce, etc
-	for(var/datum/decl/chemical_reaction/instant/CR in SSchemistry.ready().chemical_reactions)
+	for(var/datum/xform/CR as anything in xform_rules_in(MEDIUM_REAGENTS, REGIME_INSTANT))
 		if(!allow_reagent(CR.result))
 			continue
-		if(CR.wiki_flag & WIKI_SPOILER)
+		if(CR.wiki & WIKI_SPOILER)
 			continue
-		if(!(CR.wiki_flag & WIKI_FOOD))
+		if(!(CR.wiki & WIKI_FOOD))
 			continue
-		food_recipes[CR.type] = list("Result" = CR.name,
+		food_recipes[CR.rule_type] = list("Result" = CR.name,
 								"ResultPath" = null,
 								"ResAmt" = CR.result_amount,
-								"Reagents" = CR.required_reagents ? CR.required_reagents.Copy() : list(),
-								"Catalysts" = CR.catalysts ? CR.catalysts.Copy() : list(),
+								"Reagents" = CR.reagent_takes ? CR.reagent_takes.Copy() : list(),
+								"Catalysts" = CR.reagent_catalysts ? CR.reagent_catalysts.Copy() : list(),
 								"Fruit" = list(),
 								"Ingredients" = list(),
 								"Appliance" = 0,
 								"Allergens" = 0,
 								"Medallergens" = 0,
-								"Flags" = CR.wiki_flag
+								"Flags" = CR.wiki
 								)
 	//Items needs further processing into human-readability.
 	for(var/Rp in food_recipes)

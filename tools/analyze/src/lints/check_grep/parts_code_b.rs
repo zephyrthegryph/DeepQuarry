@@ -219,6 +219,20 @@ pub fn parts() -> Vec<Part> {
             line(r"(?<![\w.])changed\(\s*\w+\s*\)"),
         ),
         Part::new(
+            "transform_ratchet_on_bespoke_then_tails",
+            "transformations: ratchet on bespoke then tails",
+            "a chemical transformation with a bespoke then = TYPE_PROC_REF(...) tail over the ratchet. Use the stock parts (says, plays, makes, takes_ambient, energy) and a /datum/notice/transformed listener; the tail count only falls (doc/rewrite/proposals/transformations.md section 6).",
+            Files::Code,
+            line(r"\bthen = TYPE_PROC_REF\(/transformation/chem/"),
+        ),
+        Part::new(
+            "transform_ratchet_on_bespoke_data_procs",
+            "transformations: ratchet on bespoke data procs",
+            "a chemical transformation with a bespoke data = TYPE_PROC_REF(...) over the ratchet. Product data is a pure function of the settle; the count only falls (doc/rewrite/proposals/transformations.md section 6).",
+            Files::Code,
+            line(r"\bdata = TYPE_PROC_REF\(/transformation/chem/"),
+        ),
+        Part::new(
             "bump_ratchet_on_bumped_overrides",
             "bump: ratchet on Bumped() overrides",
             "Bumped() overrides over the ratchet. Answer the bump action: on_notice(/datum/notice/bumped, then(PROC_REF(x))) or extend(/datum/act/bump, ...) in the type's CAPABILITIES.",

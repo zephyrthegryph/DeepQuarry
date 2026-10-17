@@ -48,41 +48,39 @@
 /datum/unit_test/chemical_reactions_shall_use_and_produce_valid_reagents/Run()
 	var/list/collection_id = list()
 
-	var/list/all_reactions = GLOB.decls_repository.get_decls_of_subtype(/datum/decl/chemical_reaction)
-	for(var/rtype in all_reactions)
-		var/datum/decl/chemical_reaction/CR = all_reactions[rtype]
-		if(CR.name == REAGENT_DEVELOPER_WARNING) // Ignore these types as they are meant to be overridden
+	for(var/datum/xform/CR as anything in dq_chem_rules())
+		if(!CR.name) // A rule that inherits no name is pinned by dq_xform_outcome_pin, not named here
 			continue
 
-		TEST_ASSERT_NOTNULL(CR.name, "[CR.type]: Reagents - chemical reaction had null name.")
-		TEST_ASSERT(CR.name != "", "[CR.type]: Reagents - chemical reaction had blank name.")
-		TEST_ASSERT(CR.id, "[CR.type]: Reagents - chemical reaction had invalid ID.")
-		TEST_ASSERT_EQUAL(CR.id, lowertext(CR.id), "[CR.type]: Reagents - chemical reaction ID must be all lowercase.")
-		TEST_ASSERT(!(CR.id in collection_id), "[CR.type]: Reagents - chemical reaction ID \"[CR.name]\" is not unique, used first in [collection_id[CR.id]].")
+		TEST_ASSERT_NOTNULL(CR.name, "[CR.rule_type]: Reagents - chemical reaction had null name.")
+		TEST_ASSERT(CR.name != "", "[CR.rule_type]: Reagents - chemical reaction had blank name.")
+		TEST_ASSERT(CR.id, "[CR.rule_type]: Reagents - chemical reaction had invalid ID.")
+		TEST_ASSERT_EQUAL(CR.id, lowertext(CR.id), "[CR.rule_type]: Reagents - chemical reaction ID must be all lowercase.")
+		TEST_ASSERT(!(CR.id in collection_id), "[CR.rule_type]: Reagents - chemical reaction ID \"[CR.name]\" is not unique, used first in [collection_id[CR.id]].")
 
 
 		if(!(CR.id in collection_id))
 			collection_id[CR.id] = CR.type
 
-		TEST_ASSERT(CR.result_amount >= 0, "[CR.type]: Reagents - chemical reaction ID \"[CR.name]\" had less than 0 as as result_amount?")
+		TEST_ASSERT(CR.result_amount >= 0, "[CR.rule_type]: Reagents - chemical reaction ID \"[CR.name]\" had less than 0 as as result_amount?")
 
-		if(CR.required_reagents && length(CR.required_reagents))
-			for(var/RR in CR.required_reagents)
-				TEST_ASSERT(SSchemistry.ready().chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
-				TEST_ASSERT(LAZYACCESS(CR.required_reagents, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid required reagent amount or in invalid format \"[LAZYACCESS(CR.required_reagents, RR)]\".")
+		if(CR.reagent_takes && length(CR.reagent_takes))
+			for(var/RR in CR.reagent_takes)
+				TEST_ASSERT(SSchemistry.ready().chemical_reagents[RR], "[CR.rule_type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
+				TEST_ASSERT(LAZYACCESS(CR.reagent_takes, RR) > 0, "[CR.rule_type]: Reagents - chemical reaction had invalid required reagent amount or in invalid format \"[LAZYACCESS(CR.reagent_takes, RR)]\".")
 
-		if(CR.catalysts && length(CR.catalysts))
-			for(var/RR in CR.catalysts)
-				TEST_ASSERT(SSchemistry.ready().chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
-				TEST_ASSERT(LAZYACCESS(CR.catalysts, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid catalysts amount or in invalid format \"[LAZYACCESS(CR.catalysts, RR)]\".")
+		if(CR.reagent_catalysts && length(CR.reagent_catalysts))
+			for(var/RR in CR.reagent_catalysts)
+				TEST_ASSERT(SSchemistry.ready().chemical_reagents[RR], "[CR.rule_type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
+				TEST_ASSERT(LAZYACCESS(CR.reagent_catalysts, RR) > 0, "[CR.rule_type]: Reagents - chemical reaction had invalid catalysts amount or in invalid format \"[LAZYACCESS(CR.reagent_catalysts, RR)]\".")
 
-		if(CR.inhibitors && length(CR.inhibitors))
-			for(var/RR in CR.inhibitors)
-				TEST_ASSERT(SSchemistry.ready().chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
-				TEST_ASSERT(LAZYACCESS(CR.inhibitors, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid inhibitors amount or in invalid format \"[LAZYACCESS(CR.inhibitors, RR)]\".")
+		if(CR.reagent_blocked && length(CR.reagent_blocked))
+			for(var/RR in CR.reagent_blocked)
+				TEST_ASSERT(SSchemistry.ready().chemical_reagents[RR], "[CR.rule_type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
+				TEST_ASSERT(LAZYACCESS(CR.reagent_blocked, RR) > 0, "[CR.rule_type]: Reagents - chemical reaction had invalid inhibitors amount or in invalid format \"[LAZYACCESS(CR.reagent_blocked, RR)]\".")
 
 		if(CR.result)
-			TEST_ASSERT(SSchemistry.ready().chemical_reagents[CR.result], "[CR.type]: Reagents - chemical reaction had invalid result reagent ID \"[CR.result]\".")
+			TEST_ASSERT(SSchemistry.ready().chemical_reagents[CR.result], "[CR.rule_type]: Reagents - chemical reaction had invalid result reagent ID \"[CR.result]\".")
 
 /// Test that makes sure that prefilled reagent containers have valid reagents
 /datum/unit_test/prefilled_reagent_containers_shall_have_valid_reagents
@@ -127,12 +125,8 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 	observe(instant_beaker.reagents, /datum/notice/reagents_holder_reacted, src, then(PROC_REF(get_signal_data)))
 
 	//actual test
-	var/list/all_reactions = GLOB.decls_repository.get_decls_of_subtype(/datum/decl/chemical_reaction)
-	for(var/rtype in all_reactions)
-		var/datum/decl/chemical_reaction/CR = all_reactions[rtype]
+	for(var/datum/xform/CR as anything in dq_chem_rules())
 
-		if(CR.name == REAGENT_DEVELOPER_WARNING) // Ignore these types as they are meant to be overridden
-			continue
 		if(!CR.name || CR.name == "" || !CR.id || CR.id == "")
 			continue
 		if(CR.result_amount <= 0) //Makes nothing anyway, or maybe an effect/explosion!
@@ -140,15 +134,14 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 		if(!CR.result) // Cannot check for this
 			continue
 
-		if(istype(CR, /datum/decl/chemical_reaction/instant/slime))
+		if(ispath(CR.rule_type, /transformation/chem/instant/slime))
 		// slime time
-			var/datum/decl/chemical_reaction/instant/slime/SR = CR
-			if(!SR.required)
+			if(!CR.subject_type)
 				continue
-			var/obj/item/slime_extract/E = new SR.required()
+			var/obj/item/slime_extract/E = new CR.subject_type()
 			QDEL_SWAP(fake_beaker, E)
 			fake_beaker.reagents.maximum_volume = 5000
-		else if(istype(CR, /datum/decl/chemical_reaction/distilling))
+		else if(CR.regime == REGIME_DISTILLING)
 			// distilling
 			var/obj/distilling_tester/D = new()
 			QDEL_SWAP(fake_beaker, D)
@@ -163,7 +156,7 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 		// Check if we failed the test with inhibitors in use, if so we absolutely couldn't make it...
 		// Uncomment the UNIT_TEST section in code\modules\reagents\reactions\_reactions.dm if you require more info
 		if(perform_reaction(CR) == RESULT_REACTION_FAILED)
-			TEST_NOTICE(src, "[CR.type]: Reagents - !!!!chemical reaction did not produce \"[CR.result]\"!!!! CONTAINS: \"[fake_beaker.reagents.get_reagents()]\"")
+			TEST_NOTICE(src, "[CR.rule_type]: Reagents - !!!!chemical reaction did not produce \"[CR.result]\"!!!! CONTAINS: \"[fake_beaker.reagents.get_reagents()]\"")
 			failed = TRUE
 		unobserve(fake_beaker.reagents, /datum/notice/reagents_holder_reacted, src)
 
@@ -173,9 +166,9 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 	own_clear(src, nameof(instant_beaker), OWN_DELETE)
 
 	if(failed)
-		TEST_FAIL("One or more /datum/decl/chemical_reaction subtypes conflict with another reaction.")
+		TEST_FAIL("One or more chemical transformations conflict with another reaction.")
 
-/datum/unit_test/chemical_reactions_shall_not_conflict/proc/perform_reaction(datum/decl/chemical_reaction/CR, list/inhib = list())
+/datum/unit_test/chemical_reactions_shall_not_conflict/proc/perform_reaction(datum/xform/CR, list/inhib = list())
 	var/scale = 10
 	if(CR.result_amount < 1)
 		scale = 1 / CR.result_amount // Create at least 1 unit
@@ -192,14 +185,14 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 		if(inhib.len) // taken from argument and not reaction! Put in FIRST!
 			for(var/RR in inhib)
 				fake_beaker.reagents.add_reagent(RR, inhib[RR]) // Does not need to scale
-		if(CR.catalysts) // Required for reaction
-			for(var/RR in CR.catalysts)
-				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.catalysts, RR)) // Does not need to scale
-		if(CR.required_reagents)
-			for(var/RR in CR.required_reagents)
-				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.required_reagents, RR) * scale)
+		if(CR.reagent_catalysts) // Required for reaction
+			for(var/RR in CR.reagent_catalysts)
+				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.reagent_catalysts, RR)) // Does not need to scale
+		if(CR.reagent_takes)
+			for(var/RR in CR.reagent_takes)
+				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.reagent_takes, RR) * scale)
 
-		if(!istype(CR, /datum/decl/chemical_reaction/distilling))
+		if(CR.regime != REGIME_DISTILLING)
 			fake_beaker.reagents.handle_reactions()
 			break // Skip the next section if we're not distilling
 
@@ -226,32 +219,32 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 
 	if(!length(result_reactions))
 		// Nothing to check for inhibitors...
-		for(var/datum/decl/chemical_reaction/test_react in result_reactions)
+		for(var/datum/xform/test_react as anything in result_reactions)
 		return RESULT_REACTION_FAILED
 
 	// Otherwise we check the resulting reagents and use their inhibitor this time!
-	for(var/datum/decl/chemical_reaction/test_react in result_reactions)
+	for(var/datum/xform/test_react as anything in result_reactions)
 		if(!test_react)
 			continue
-		if(!length(test_react.inhibitors))
+		if(!length(test_react.reagent_blocked))
 			continue
 		// Test one by one
-		for(var/each in test_react.inhibitors)
-			if(!perform_reaction(CR, list("[each]" = test_react.inhibitors["[each]"])))
+		for(var/each in test_react.reagent_blocked)
+			if(!perform_reaction(CR, list("[each]" = test_react.reagent_blocked["[each]"])))
 				return RESULT_REACTION_SUCCESS // SUCCESS using an inhibitor!
 		// Test all at once
-		if(!perform_reaction(CR, test_react.inhibitors))
+		if(!perform_reaction(CR, test_react.reagent_blocked))
 			return RESULT_REACTION_SUCCESS // SUCCESS using all inhibitors!
 
 	// No inhibiting reagent worked...
-	for(var/datum/decl/chemical_reaction/test_react in result_reactions)
-		TEST_NOTICE(src, "[CR.type]: Reagents - Used inhibitor for: [test_react]")
+	for(var/datum/xform/test_react as anything in result_reactions)
+		TEST_NOTICE(src, "[CR.rule_type]: Reagents - Used inhibitor for: [test_react]")
 	return RESULT_REACTION_FAILED
 
 /datum/unit_test/chemical_reactions_shall_not_conflict/proc/get_signal_data(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/reagents_holder_reacted/event = N
-	LAZYADD(result_reactions, event.chemical_reaction) // Append the reactions that happened, then use that to check their inhibitors
+	LAZYADD(result_reactions, event.rules) // Append the reactions that happened, then use that to check their inhibitors
 
 /datum/unit_test/chemical_reactions_shall_not_conflict/proc/check_instants()
 	instant_beaker.reagents.clear_reagents()
