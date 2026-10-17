@@ -56,7 +56,10 @@ check "the slot is free again" '[ "$(pool status | grep -c LEASED)" -eq 1 ]'
 
 git -C "$p2" commit -q --allow-empty -m "lane work"
 g push -q origin "lane/b:master" 2>/dev/null; g fetch -q origin
-p3="$(pool lease lane/c 2>/dev/null)"
+held="$(DQ_LANE_POOL_RECLAIM_IDLE_MIN=180 pool lease lane/x 2>&1)"
+check "a merged lane still working (recently touched) keeps its slot" '! grep -q "reclaimed" <<<"$held" && git -C "$p2" symbolic-ref -q --short HEAD | grep -qx lane/b'
+pool release lane/x >/dev/null 2>&1
+p3="$(DQ_LANE_POOL_RECLAIM_IDLE_MIN=0 pool lease lane/c 2>/dev/null)"
 check "a merged lane's slot is reclaimed for a new lease" '[ -n "$p3" ] && [ "$(git -C "$p3" symbolic-ref --short HEAD)" = lane/c ]'
 check "the merged branch was deleted" '! g show-ref -q --verify refs/heads/lane/b'
 
@@ -64,6 +67,17 @@ pool release lane/c >/dev/null 2>&1
 echo junk >"$p1/untracked.txt"
 p4="$(pool lease lane/d 2>/dev/null)"
 check "a dirty free slot is skipped" '[ "$p4" != "$p1" ] && [ -f "$p1/untracked.txt" ]'
+
+rm -f "$p1/untracked.txt"
+pool lease lane/e >/dev/null 2>&1
+DQ_LANE_POOL_WAIT_POLL=1 pool lease lane/f --wait --timeout 2 >"$tmp/wait.out" 2>"$tmp/wait.err" &
+waiter=$!
+sleep 3
+check "a waiter queues instead of failing on a full pool" 'kill -0 "$waiter" 2>/dev/null && pool status | grep -q "queue 1: lane/f"'
+pool release lane/e >/dev/null 2>&1
+wait "$waiter"; wrc=$?
+check "the waiter gets the freed slot and exits 0" '[ "$wrc" -eq 0 ] && [ -n "$(cat "$tmp/wait.out")" ] && [ "$(git -C "$(cat "$tmp/wait.out")" symbolic-ref --short HEAD)" = lane/f ]'
+check "the queue is empty afterwards" '! pool status | grep -q "queue "'
 
 [ "$fail" -eq 0 ] && echo "test_lane_pool: all passed" || echo "test_lane_pool: FAILED"
 exit "$fail"
