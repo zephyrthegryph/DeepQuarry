@@ -77,10 +77,17 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 
 	return look_composed_image(res, face_parts)
 
+/// Whether get_icon() may write this limb's own look (overlays, icon, dir: what it shows once it is removed and becomes an item).
+/// False while an output runs: the body look builds its parts' icons from inside a draw, which only reads them.
+/obj/item/organ/external/proc/writes_own_look()
+	return !GLOB.derived_evaluating
+
 /obj/item/organ/external/proc/get_icon(skeletal, can_apply_transparency = TRUE)
 	var/digitigrade = 0
 
-	cut_overlays()
+	var/writing = writes_own_look()
+	if(writing)
+		cut_overlays()
 	// preferentially take digitigrade value from owner if available, THEN DNA.
 	// this allows limbs to be set properly when being printed in the bioprinter without an owner
 	// this also allows the preview mannequin to update properly because customisation topic calls don't call a DNA check
@@ -147,7 +154,8 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 					continue
 			var/icon/mark_s = new/icon("icon" = digitigrade ? mark_style.digitigrade_icon : mark_style.icon, "icon_state" = "[mark_style.icon_state]-[organ_tag]")
 			mark_s.Blend(markings[M]["color"], mark_style.color_blend_mode)
-			add_overlay(mark_s) //So when it's not on your body, it has icons
+			if(writing)
+				add_overlay(mark_s) //So when it's not on your body, it has icons
 			mob_icon.Blend(mark_s, ICON_OVERLAY) //So when it's on your body, it has icons
 			icon_cache_key += "[M][markings[M]["color"]]"
 	if(body_hair && islist(h_col) && h_col.len >= 3)
@@ -161,15 +169,17 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 	if(nail_polish && !(force_icon && !skip_forced_icon))
 		var/icon/I = new(nail_polish.icon, nail_polish.icon_state)
 		I.Blend(nail_polish.color, ICON_MULTIPLY)
-		add_overlay(I)
+		if(writing)
+			add_overlay(I)
 		mob_icon.Blend(I, ICON_OVERLAY)
 		icon_cache_key += "_[nail_polish.icon]_[nail_polish.icon_state]_[nail_polish.color]"
 
 	if (transparent && !istype(src,/obj/item/organ/external/head) && can_apply_transparency && should_apply_transparency) // EDIT: transparent instead of nonsolid
 		mob_icon += rgb(,,,180) //do it here so any markings become transparent as well
 
-	set_dir(SOUTH)
-	set_icon(mob_icon)
+	if(writing)
+		set_dir(SOUTH)
+		set_icon(mob_icon)
 	return mob_icon
 
 /obj/item/organ/external/proc/apply_colouration(icon/applying)

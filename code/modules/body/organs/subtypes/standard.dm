@@ -357,9 +357,11 @@ CAPABILITIES(/obj/item/organ/external/head)
 
 /obj/item/organ/external/head/get_icon(skeletal, can_apply_transparency = TRUE)
 	..()
+	var/writing = writes_own_look()
 
 	//The overlays are not drawn on the mob, they are used for if the head is removed and becomes an item
-	cut_overlays()
+	if(writing)
+		cut_overlays()
 
 	//Every 'addon' below requires information from species
 	if(!iscarbon(owner) || !owner.species)
@@ -393,14 +395,16 @@ CAPABILITIES(/obj/item/organ/external/head)
 		if(eyes_over_markings)
 			eyecon = eyes_icon
 		else
-			add_overlay(eyes_icon)
+			if(writing)
+				add_overlay(eyes_icon)
 			mob_icon.Blend(eyes_icon, ICON_OVERLAY)
 			icon_cache_key += "[eye_icon]"
 
 	//Lip color/icon
 	if(owner.looks.lip_style && (data.get_species_appearance_flags() & HAS_LIPS))
 		var/icon/lip_icon = new/icon('icons/mob/human_face.dmi', "lips_[owner.looks.lip_style]_s")
-		add_overlay(lip_icon)
+		if(writing)
+			add_overlay(lip_icon)
 		mob_icon.Blend(lip_icon, ICON_OVERLAY)
 
 	//Head markings
@@ -410,16 +414,19 @@ CAPABILITIES(/obj/item/organ/external/head)
 		var/datum/sprite_accessory/marking/mark_style = markings[M]["datum"]
 		var/icon/mark_s = new/icon("icon" = mark_style.icon, "icon_state" = "[mark_style.icon_state]-[organ_tag]")
 		mark_s.Blend(markings[M]["color"], mark_style.color_blend_mode)
-		add_overlay(mark_s) //So when it's not on your body, it has icons
+		if(writing)
+			add_overlay(mark_s) //So when it's not on your body, it has icons
 		mob_icon.Blend(mark_s, ICON_OVERLAY) //So when it's on your body, it has icons
 		icon_cache_key += "[M][markings[M]["color"]]"
 
 	if(eyes_over_markings && eyecon) // toggle to render eyes above markings.
-		add_overlay(eyecon)
+		if(writing)
+			add_overlay(eyecon)
 		mob_icon.Blend(eyecon, ICON_OVERLAY)
 		icon_cache_key += "[eye_icon]"
 
-	add_overlay(get_hair_icon())
+	if(writing)
+		add_overlay(get_hair_icon())
 
 	if (transparent && can_apply_transparency) // transparent instead of nonsolid
 		mob_icon += rgb(,,,180) //do it here so any markings become transparent as well

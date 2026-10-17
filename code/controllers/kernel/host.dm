@@ -288,6 +288,14 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	// (kernel/system.dm on_members_ready(); the machine service arms first wakes here).
 	kernel_members_ready()
 
+	// Every atom's first draw was queued at init and the presentation lane drains it on a budget, only while the world
+	// ticks (an empty world sleeps offline, so the backlog sat undrawn until the first player joined and then took a
+	// minute). Draw it all now, once, before anyone can see the map.
+	var/draw_backlog = length(GLOB.refresh_queue)
+	var/draw_start = REALTIMEOFDAY
+	refresh_flush()
+	log_world("MC: drew the [draw_backlog]-entity first-draw backlog in [(REALTIMEOFDAY - draw_start) / 10] seconds before the round")
+
 	var/time = (REALTIMEOFDAY - start_timeofday) / 10
 	initializations_seconds = time
 #ifdef BENCHMARK
