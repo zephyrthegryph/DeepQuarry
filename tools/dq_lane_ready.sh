@@ -17,6 +17,11 @@
 #      tested against, the tests, --covers, the results), a copy in data/lane-ready/, and pushes the notes ref (best effort;
 #      DQ_LANE_NOTES_PUSH=0 keeps it local, which is enough for worktrees of this clone)
 #
+# --lite re-proves cheaply when master moved under a stamped lane (tools/dq_land.sh passes it): if the lane's previous stamp is VALID against
+# the new master (master changed none of what the stamp depends on: tools/dq_lane_check.js --lite) and origin/master's own tree carries a
+# passing proof of the smoke set, the gates run the boot gate, the lane's stamped tests, your --tests, the gameplay scenarios and the tests of
+# the lanes that landed on master since (their stamps), not the rest of the smoke set; the proof records `inherits=<master's tree>` so a
+# later merge of this lane counts master's proof for the smoke selectors. Compile, DreamChecker and the ratchets still run on the merged tree.
 # --reuse-gates completes stamping from existing successful evidence for the unchanged
 # current commit; every requested selector must already occur in that proof. It does
 # not merge, compile or run tests. Use it only after diagnosing a wrapper failure.
@@ -37,6 +42,7 @@ covers=()
 pins=1
 merge=1
 reuse_gates=0
+lite=0
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--tests) shift; read -r -a more <<<"${1:-}"; tests+=("${more[@]}") ;;
@@ -45,6 +51,7 @@ while [ $# -gt 0 ]; do
 		--no-pins) pins=0 ;;
 		--no-merge) merge=0 ;;
 		--reuse-gates) reuse_gates=1 ;;
+		--lite) lite=1 ;;
 		-h|--help) sed -n '2,28p' "$0"; exit 0 ;;
 		*) echo "unknown argument: $1" >&2; exit 2 ;;
 	esac
@@ -72,6 +79,31 @@ if [ ${#tests[@]} -gt 0 ]; then
 fi
 
 t_start=$(date +%s)
+# The lite decision is made before master is merged in: the lane's stamp sits on the pre-merge tip.
+lite_tests=()
+lite_master=""
+lite_tree=""
+if [ "$lite" -eq 1 ] && [ "$reuse_gates" -eq 0 ] && [ "$merge" -eq 1 ]; then
+	git fetch -q origin 2>/dev/null
+	git fetch -q origin +refs/notes/lane-ready:refs/notes/lane-ready 2>/dev/null
+	lite_line="$(node tools/dq_lane_check.js --lite "$branch" 2>/dev/null)"
+	case "$lite_line" in
+		LITE*)
+			lite_master="$(git rev-parse origin/master)"
+			lite_tree="$(git rev-parse "$lite_master^{tree}")"
+			mapfile -t smoke_sel < <(proof_smoke_tests)
+			if proof_find "$lite_tree" 0 0 "${smoke_sel[@]}" >/dev/null; then
+				IFS=, read -r -a lite_tests <<<"${lite_line##* tests=}"
+				echo "== lane-ready: lite re-proof: ${lite_line%% tests=*}"
+				echo "   master ${lite_master:0:10} carries a proof of the smoke set; running ${#lite_tests[@]} test(s): ${lite_tests[*]:0:8}$([ ${#lite_tests[@]} -gt 8 ] && echo ' ...')"
+			else
+				echo "== lane-ready: lite re-proof not used: origin/master's tree ${lite_tree:0:10} has no covering proof; running the full list"
+				lite_tree=""
+			fi
+			;;
+		*) echo "== lane-ready: lite re-proof not used: ${lite_line:-no verdict}" ;;
+	esac
+fi
 if [ "$reuse_gates" -eq 1 ]; then
 	echo "== lane-ready: reusing completed gates for the unchanged current commit"
 elif [ "$merge" -eq 1 ]; then
@@ -90,6 +122,14 @@ git update-index -q --refresh >/dev/null 2>&1
 if ! git diff --quiet || ! git diff --cached --quiet; then die "the merge left uncommitted changes"; fi
 
 list=(${tests[@]+"${tests[@]}"})
+gate_extra=()
+if [ -n "$lite_tree" ] && [ "$master" = "$lite_master" ] && [ ${#lite_tests[@]} -gt 0 ]; then
+	for l in "${lite_tests[@]}"; do case " ${list[*]-} " in *" $l "*) ;; *) list+=("$l") ;; esac; done
+	gate_extra=(--no-smoke)
+	export DQ_PROOF_INHERITS="$lite_tree"
+elif [ -n "$lite_tree" ]; then
+	echo "== lane-ready: master moved again while merging (${lite_master:0:10} -> ${master:0:10}); the lite re-proof is dropped, running the full list"
+fi
 # The gameplay scenarios run on every landing, whatever the lane (tools/ci/gameplay_tests.txt, doc/testing.md "Gameplay scenarios").
 gameplay_file="tools/ci/gameplay_tests.txt"
 if [ -f "$gameplay_file" ]; then
@@ -105,7 +145,7 @@ if [ ${#list[@]} -eq 0 ]; then echo "dq_lane_ready: no --tests given: proving th
 
 tested="$(git rev-parse HEAD)"
 echo "== lane-ready: gates on ${tested:0:10} (master ${master:0:10}): ${list[*]:-the smoke set}"
-gate_args=(--snapshot-output)
+gate_args=(--snapshot-output ${gate_extra[@]+"${gate_extra[@]}"})
 if [ ${#list[@]} -gt 0 ]; then gate_args+=(--tests "${list[*]}"); fi
 if [ "$reuse_gates" -eq 0 ]; then
 	bash tools/dq_merge_gates.sh ${gate_args[@]+"${gate_args[@]}"} || die "the gates failed; nothing was stamped (logs under data/merge-gates/${tested:0:12}.*.log)"
