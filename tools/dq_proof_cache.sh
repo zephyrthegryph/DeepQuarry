@@ -87,3 +87,38 @@ dq_diff_touches_dm() {
 	base="$(git merge-base origin/master HEAD 2>/dev/null)" || return 0
 	git diff --name-only "$base" HEAD 2>/dev/null | grep -Eq '^(code|maps|icons|strings|sound|interface|html|verdigris|tools/analyze)/|\.(dme|dm|dmm|dmi|dmf)$'
 }
+
+# proof_smoke_tests: the selectors every gate run includes (tools/ci/smoke_tests.txt and tools/ci/gameplay_tests.txt), one per line.
+proof_smoke_tests() {
+	local f line
+	for f in tools/ci/smoke_tests.txt tools/ci/gameplay_tests.txt; do
+		[ -f "$f" ] || continue
+		while IFS= read -r line; do
+			line="${line%%#*}"
+			line="$(printf '%s' "$line" | tr -d '\r' | xargs)"
+			[ -n "$line" ] && printf '%s\n' "$line"
+		done <"$f"
+	done
+}
+
+# proof_merge_tree <base-ref> <lane-ref>: the tree `git merge --no-ff <lane-ref>` would produce on <base-ref>, without touching any
+# worktree or ref (git merge-tree). Fails (and prints nothing) when the merge conflicts.
+proof_merge_tree() {
+	local out
+	out="$(git merge-tree --write-tree "$1" "$2" 2>/dev/null)" || return 1
+	printf '%s\n' "${out%%$'\n'*}"
+}
+
+# proof_covers_merge <base-ref> <lane-ref>: exit 0 when the tree that merging <lane-ref> into <base-ref> produces already has a proof that
+# covers the gate's usual list (smoke + gameplay, which a lane-ready proof contains), tgui lint and the analyzer tests where the diff needs
+# them. Prints the tree on success. This is the cheap question "can this lane land without a gate run?"; dq_merge_gates.sh asks the same
+# thing of the real merge and is the authority.
+proof_covers_merge() {
+	local base="$1" lane="$2" tree tgui=0 an=0 tests=()
+	tree="$(proof_merge_tree "$base" "$lane")" || return 1
+	git diff --quiet "$base" "$tree" -- tgui/ ':!tgui/packages/tgui/interfaces/generated' || tgui=1
+	git diff --quiet "$base" "$tree" -- tools/analyze/ || an=1
+	mapfile -t tests < <(proof_smoke_tests)
+	proof_find "$tree" "$tgui" "$an" "${tests[@]}" >/dev/null || return 1
+	printf '%s\n' "$tree"
+}
