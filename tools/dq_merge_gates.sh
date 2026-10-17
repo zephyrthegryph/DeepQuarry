@@ -38,6 +38,8 @@ cd "$(git rev-parse --show-toplevel)"
 merge_lock_require || exit 1
 # shellcheck source=tools/dq_proof_cache.sh
 . "$(dirname "${BASH_SOURCE[0]}")/dq_proof_cache.sh"
+# shellcheck source=tools/dq_gate_retry.sh
+. "$(dirname "${BASH_SOURCE[0]}")/dq_gate_retry.sh"
 merge_lock_busy begin
 trap 'merge_lock_busy end' EXIT
 
@@ -257,7 +259,7 @@ if [ "$reused" -eq 0 ]; then
 gate gen tools/build/build.sh gen
 gate prepare tools/build/build.sh icon-repack validate-dme verdigris-bindings-check verdigris map-bounds
 
-job_tests() { bash tools/dq_focused_test.sh "${tests[@]}"; }
+job_tests() { gate_tests_with_retry "${tests[@]}"; } # one isolated retry tells a flake from a failure (tools/dq_gate_retry.sh)
 job_dm() {
 	# Never "up to date": DreamChecker runs inside the dm target and the push script's checks read this log.
 	rm -f deepquarry.dmb
@@ -386,6 +388,7 @@ fi
 	echo "reproof_of=$reproof_of"
 	echo "reproof_reason=$reproof_reason"
 	echo "proof_reused=$([ "$reused" -eq 1 ] && echo "$tree")"
+	echo "flakes=$(grep -h '^GATE FLAKE: ' "data/merge-gates/$short.tests.log" 2>/dev/null | sed 's/^GATE FLAKE: \(.*\) failed once.*/\1/' | tr '\n' ' ')"
 } >"data/merge-gates/$short.ok"
 # The proof for this tree (tools/dq_proof_cache.sh): what lets the merge of an unmoved-master lane skip every gate above.
 if [ "$reused" -eq 0 ] && [ "$run_tests" -eq 1 ] && [ "$dm_ok" -eq 1 ] && [ "${new_failed:-0}" = "0" ] && [ "${passed:-0}" -gt 0 ]; then
