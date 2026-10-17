@@ -7,7 +7,9 @@ Branch: `codex/decl-burndown`.
 Started from the supplied integration `303448535b` (master `82f2b87547` plus this declaration lane). Its constructor parameter ordering, reflector `rotation_angle`, holder setup and pixel setters are retained. The production/compiler source is not rebuilt or published.
 
 Compiler and launcher files now match current master `34549aca47c2` verbatim. Twelve stale file versions present during the refresh were discarded; no private compiler or launcher delta is retained. The two look harness files and all look snapshots retain master's versions, including the verified look-key record. The rejected probe-order/roll-seed/telecube harness changes are not revived. Earlier receipts below are historical; a fresh focused lane-ready proof is pending.
-## Result and scope
+Current-master comparison: declaration baseline **45 → 5** and initializer baseline **4074 → 3233**. The merge helper and shrink-only updater retain no new fingerprints. Raw-overlay policy remains the existing zero hard ban (`sys/dx_raw_overlays`); it has no separate baseline file.
+
+## Historical result and scope
 
 The declarative-lifecycle baseline shrank **47 → 6**: 41 rows removed, no additions. The original rows comprised 23 visual initializers, 10 starting-child sites, six destruction drops, five destruction effects, and one each of reagent initialization, registry membership and scheduling. Converted content uses existing native defaults, setup, starting relations and ending declarations. Baselines were updated by the analyzer, never hand-expanded.
 
