@@ -167,7 +167,6 @@
 	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_STATUS_R), STATUS_R_HUD)
 	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_BACKUP), BACKUP_HUD)
 	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_VANTAG), VANTAG_HUD)
-	add_overlay(hud_list)
 
 /mob/living/carbon/human/recalculate_vis()
 	PUBLISH_CHANGE(src, MOB_KEY_VIEW) // vision gear toggled: the sight and HUD reactions re-read it
