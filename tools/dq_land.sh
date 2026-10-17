@@ -76,7 +76,7 @@ for ((round = 1; round <= rounds; round++)); do
 	else
 		log "round $round/$rounds: proving $branch on origin/master outside the merge lock (dq_lane_ready.sh)"
 		tp=$(date +%s)
-		bash "$here/tools/dq_lane_ready.sh" ${ready_args[@]+"${ready_args[@]}"} || { echo "dq_land: the proof failed; fix the lane (nothing was merged, no lock was taken)" >&2; exit 1; }
+		bash "$here/tools/dq_lane_ready.sh" --lite ${ready_args[@]+"${ready_args[@]}"} || { echo "dq_land: the proof failed; fix the lane (nothing was merged, no lock was taken)" >&2; exit 1; }
 		log "proved in $(( $(date +%s) - tp ))s"
 		git fetch -q origin || exit 1
 		if ! tree="$(proof_covers_merge origin/master "$merge_ref")"; then

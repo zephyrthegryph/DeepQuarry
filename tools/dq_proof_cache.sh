@@ -21,7 +21,7 @@ proof_tree() { git rev-parse "${1:-HEAD}^{tree}"; }
 
 # proof_find <tree> <need_tgui 0|1> <need_analyze_tests 0|1> <selector...>: print the proof file when it covers all of them
 proof_find() {
-	local tree="$1" ntgui="$2" nan="$3" f t have
+	local tree="$1" ntgui="$2" nan="$3" f t have inh g
 	shift 3
 	f="$(proof_dir)/$tree.proof"
 	[ -f "$f" ] || return 1
@@ -30,13 +30,20 @@ proof_find() {
 	[ "$ntgui" -eq 0 ] || [ "$(sed -n 's/^tgui=//p' "$f")" = 1 ] || return 1
 	[ "$nan" -eq 0 ] || [ "$(sed -n 's/^analyze_tests=//p' "$f")" = 1 ] || return 1
 	have=" $(sed -n 's/^tests=//p' "$f") "
+	# A lite re-proof (dq_lane_ready.sh --lite) ran only the lane's tests and the tests of what master gained, because master's own tree
+	# already carried a passing proof of the rest: that proof's selectors count too, but only while it is itself a clean proof.
+	inh="$(sed -n 's/^inherits=//p' "$f")"
+	if [ -n "$inh" ] && [ -f "$(proof_dir)/$inh.proof" ]; then
+		g="$(proof_dir)/$inh.proof"
+		if [ "$(sed -n 's/^dm=//p' "$g")" = 1 ] && [ "$(sed -n 's/^new_failed=//p' "$g")" = 0 ]; then have="$have $(sed -n 's/^tests=//p' "$g") "; fi
+	fi
 	for t in "$@"; do
 		case "$have" in *" $t "*) ;; *) return 1 ;; esac
 	done
 	echo "$f"
 }
 
-# proof_store <tree> <master> <tests> <passed> <failed> <new_failed> <tgui> <analyze_tests> <tests_json>
+# proof_store <tree> <master> <tests> <passed> <failed> <new_failed> <tgui> <analyze_tests> <tests_json> [inherits-tree]
 proof_store() {
 	local dir f tmp copy=""
 	dir="$(proof_dir)"
@@ -55,6 +62,7 @@ proof_store() {
 		echo "analyze_tests=$8"
 		echo "dm=1"
 		echo "tests_json=$copy"
+		[ -z "${10:-}" ] || echo "inherits=${10}"
 		echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 	} >"$tmp" && mv -f "$tmp" "$f"
 }

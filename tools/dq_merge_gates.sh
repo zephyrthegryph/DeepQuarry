@@ -392,7 +392,7 @@ fi
 } >"data/merge-gates/$short.ok"
 # The proof for this tree (tools/dq_proof_cache.sh): what lets the merge of an unmoved-master lane skip every gate above.
 if [ "$reused" -eq 0 ] && [ "$run_tests" -eq 1 ] && [ "$dm_ok" -eq 1 ] && [ "${new_failed:-0}" = "0" ] && [ "${passed:-0}" -gt 0 ]; then
-	proof_store "$tree" "$base_master" "${tests[*]-}" "${passed:-0}" "${nfailed:-0}" 0 "$tgui" "$analyze_tests" "$tests_json"
+	proof_store "$tree" "$base_master" "${tests[*]-}" "${passed:-0}" "${nfailed:-0}" 0 "$tgui" "$analyze_tests" "$tests_json" "${DQ_PROOF_INHERITS:-}"
 	proof_prune
 fi
 # The test stamp the push gate reads (tools/dq_push_stamp.sh): a note on this exact commit, only when a test world ran and nothing failed
