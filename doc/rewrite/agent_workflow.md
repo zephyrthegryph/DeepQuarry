@@ -587,3 +587,17 @@ workspace crates and builds once more with `CARGO_INCREMENTAL=0`. A real compile
 
 **A test-world slot is kept free for the merge worktree.** With 3 or more `test_world` slots, other worktrees may hold only all but one
 (`DQ_SLOTS_MERGE_RESERVE`, `DQ_SLOTS_MERGE_RESERVE_<CLASS>`; the merge worktree already went first in the queue but could still wait for a long run to finish).
+
+**Measurements (17 October 2026, real landings of this lane on a machine with 5 lanes active).**
+
+| What | Before | After |
+|---|---|---|
+| Merge lock held per lane | the whole gate run: 260-1109 s on 12 recent gate runs (`data/merge-gates/*.timings`), plus queue waits up to 4.5 h behind it | landing 1: 113 s, landing 2: 120 s, of which merge 3 s, gates 36-39 s, push 65 s (about 30 s of that was the disk cleanup, now after the release); with the early-proof path, the no-fork test-list read and the skipped second merge: see the landing-3 line below |
+| Gate steps before the proof lookup | `proof_covers`-style test list: 10.8 s of forks (an `xargs` per smoke line) | 0.9 s (`proof_smoke_tests`, the gates' list read) |
+| Gate run proving a lane (outside the lock) | 6-10+ min, redone in the lock when master moved | landing 1: proof 557 s (47 tests), master moved, re-proof (lite: 15 tests) 516 s; the wall time is dominated by queues for the test compile root (171 s) and test-world slots on a loaded machine, not by the tests |
+| Master moves while the lock is queued | the lane waits, then gates for 3-10 min under the lock | the lock is given back at once (observed, landing 2: 43 s queued), the lane is re-proved outside the lock |
+| A flaky test in the gate | the whole batch fails; rerun costs a full gate | one isolated rerun (seconds); ledgered |
+
+What is still slow and is not fixed here: the test compile of a cold tree takes the one machine-wide `dmb_root_deepquarry.test` compile-root slot (waits of 171 s
+seen) and the test worlds queue for `test_world` slots; those are the load of five lanes sharing one machine, and a lane proof (outside the lock) absorbs them
+instead of the merge. The production compile (`dm` job, 200-330 s) and the test job overlap, so a proof's wall time is the longer of the two.
