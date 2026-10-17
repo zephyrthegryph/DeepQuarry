@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Building a body icon from inside a draw no longer writes the limb's own icon (a boot runtime on Pun Pun)"
+  - code_imp: "Added docking and hidden-mapping-helper round-start tests"
