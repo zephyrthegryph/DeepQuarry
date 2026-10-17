@@ -9,6 +9,8 @@ const EXECUTOR_IDLE: Duration = Duration::from_secs(30);
 // minutes but not always within ten, so the whole-session release waits an hour.
 pub(super) const SESSION_IDLE: Duration = Duration::from_secs(3600);
 const RELEASES_PER_PASS: usize = 4;
+/// How long the most recently used session stays exempt from memory-pressure degradation.
+pub(super) const MRU_PROTECTED: Duration = Duration::from_secs(1800);
 /// Set when a retained session was dropped because its project no longer exists on disk.
 pub(super) static ROOT_GONE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
@@ -99,6 +101,15 @@ impl Shared {
         let candidates = {
             let slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
             let mut candidates = BTreeMap::new();
+            // The session someone is iterating on is exempt from memory-pressure degradation while it is fresh: a single
+            // retained session can alone exceed the budget (about 8.6 GB private on DeepQuarry), and degrading it after every
+            // build would make every edit a full compile. Pressure sheds the other sessions (least recently used first).
+            let protected = slots
+                .iter()
+                .map(|(key, slot)| (*slot.last.lock().unwrap_or_else(|e| e.into_inner()), key))
+                .max()
+                .filter(|(last, _)| now.saturating_duration_since(*last) < MRU_PROTECTED)
+                .map(|(_, key)| key.clone());
             for (key, slot) in slots.iter() {
                 if Arc::strong_count(slot) != 1 && !pressured {
                     continue;
@@ -110,7 +121,8 @@ impl Shared {
                 }
                 let last = *slot.last.lock().unwrap_or_else(|e| e.into_inner());
                 let previous = slot.idle_tier.load(Ordering::Acquire);
-                let mut next = target(now.saturating_duration_since(last), pressured, hard, previous);
+                let shielded = pressured && protected.as_ref() == Some(key);
+                let mut next = target(now.saturating_duration_since(last), pressured && !shielded, hard && !shielded, previous);
                 // A removed worktree's session can never be edited again: release it whole, whatever the tier.
                 if !key.manifest.exists() {
                     next = SESSION_RELEASE;
@@ -274,6 +286,37 @@ mod tests {
         assert_eq!(target(Duration::ZERO, true, true, 2), 3);
         assert_eq!(target(Duration::ZERO, false, false, 3), 0);
         assert_eq!(target(Duration::ZERO, true, true, 3), OPTIONAL_IMAGES);
+    }
+    #[test]
+    fn a_fresh_single_session_over_the_hard_limit_keeps_its_state() {
+        let shared = Shared {
+            engines: Arc::new(Default::default()),
+            executors: Arc::new(Default::default()),
+            procedures: Arc::new(Default::default()),
+            compiler: 1,
+            retiring: AtomicBool::new(false),
+            slots: Mutex::new(BTreeMap::new()),
+            running: Mutex::new(0),
+            workers: Mutex::new(0),
+            max_workers: 8,
+            soft_private_bytes: soft_memory::DEFAULT,
+            capacity: Condvar::new(),
+            connections: AtomicUsize::new(0),
+        };
+        let now = Instant::now();
+        // The project must exist on disk: housekeeping drops sessions whose manifest is gone.
+        let only = shared.slot(std::env::temp_dir(), &BTreeMap::new(), None);
+        *only.last.lock().unwrap() = now - Duration::from_secs(60);
+        drop(only);
+        // Hard pressure, as after every build of a session larger than the whole budget: nothing is degraded or released.
+        shared.housekeep(now, true, true);
+        let slots = shared.slots.lock().unwrap();
+        let slot = slots.values().next().expect("the session survives");
+        assert!(slot.idle_tier.load(Ordering::Acquire) <= 1, "only the idle executor may be released");
+        drop(slots);
+        // Once it has been idle past the protection window the ordinary pressure policy applies again.
+        shared.housekeep(now + MRU_PROTECTED + Duration::from_secs(120), true, true);
+        assert!(shared.slots.lock().unwrap().values().next().is_none_or(|slot| slot.idle_tier.load(Ordering::Acquire) > 0));
     }
     #[test]
     fn bounded_eviction_is_deterministic_and_preserves_request_owned_slots() {
