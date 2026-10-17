@@ -85,7 +85,7 @@ if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
 	tools/build/build.sh gen || exit 1
 	# look_keys.txt records VERIFIED keys: the union merge keeps both sides' rows, --normalize drops the ones the merged tree makes
 	# ambiguous or dead and never writes a key. A type whose look changed in the merge stays unverified until a pin run probes it.
-	bash tools/ci/check_look_keys_format.sh --normalize || exit 1
+	if [ "${DQ_NO_PINS:-0}" != 1 ]; then bash tools/ci/check_look_keys_format.sh --normalize || exit 1; fi
 	git add -- "$LOOK_KEYS"
 	git commit -q --no-edit || { echo "dq_merge_master: commit failed" >&2; exit 1; }
 	exit 0
@@ -97,4 +97,4 @@ fi
 echo "dq_merge_master: merged $ref (fast-forward or up to date); regenerating"
 tools/build/build.sh gen || exit 1
 # No merge commit to carry them: a file a union left non-canonical still gets one commit (rare).
-bash tools/ci/check_look_keys_format.sh --commit
+if [ "${DQ_NO_PINS:-0}" != 1 ]; then bash tools/ci/check_look_keys_format.sh --commit; fi

@@ -128,7 +128,7 @@ if [ "$early_reuse" -eq 0 ] && [ "$(git rev-list --parents -n 1 HEAD | awk '{pri
 fi
 # look_keys.txt records VERIFIED keys only. The union merge may have left it non-canonical (normalize drops rows, never writes a key).
 lap "fetch and baseline shrink"
-if [ "$early_reuse" -eq 0 ]; then
+if [ "$early_reuse" -eq 0 ] && [ "${DQ_NO_PINS:-0}" != 1 ]; then
 	bash tools/ci/check_look_keys_format.sh --commit || { echo "dq_merge_gates: look_keys normalization failed" >&2; exit 1; }
 fi
 lap "look keys"
