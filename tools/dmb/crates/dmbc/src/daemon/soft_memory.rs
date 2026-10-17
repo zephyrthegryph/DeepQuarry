@@ -23,10 +23,10 @@ fn budget_soft(value: &OsStr) -> io::Result<u64> {
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,
             "DMB_DAEMON_MEMORY_BUDGET_GB must be an integer from 1 through 48"))
 }
-/// The whole daemon's retained-memory budget across every project session, independent of the machine-pressure policy below:
+/// The whole daemon's retained-memory budget (20 GB for now: production and test sessions are each about 9 GB) across every project session, independent of the machine-pressure policy below:
 /// above it the least recently used idle session is released whole (`Shared::enforce_retained_budget`), never the most recently
 /// used one and never one that is building. `DMB_DAEMON_MEMORY_BUDGET_GB` overrides (integer GB, 1 through 48).
-pub(super) const DEFAULT_RETAINED_BUDGET: u64 = 8_000_000_000;
+pub(super) const DEFAULT_RETAINED_BUDGET: u64 = 20_000_000_000;
 pub(super) fn retained_budget() -> u64 {
     std::env::var("DMB_DAEMON_MEMORY_BUDGET_GB")
         .ok()
@@ -159,9 +159,9 @@ mod adaptive_tests {
         assert_eq!(budget_victim::<&str>(&[]), None);
     }
     #[test]
-    fn retained_budget_defaults_to_eight_gb() {
+    fn retained_budget_defaults_to_twenty_gb() {
         if std::env::var_os("DMB_DAEMON_MEMORY_BUDGET_GB").is_none() {
-            assert_eq!(retained_budget(), 8_000_000_000);
+            assert_eq!(retained_budget(), 20_000_000_000);
         }
     }
     const GB: u64 = 1_000_000_000;

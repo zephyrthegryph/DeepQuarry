@@ -446,7 +446,7 @@ them; 137 were hit or patch (4% of compile time) and 193 full (96%). Full-compil
 (`no-session`), old fixed cap 52, old path keying 22, other eviction 16, cross-tree declaration change in a hot session 17 (mean
 88 s, peak 22 GB with two sessions because the old state lives through the rebuild).
 
-* **Budget.** `DMB_DAEMON_MEMORY_BUDGET_GB` (default 8) is the daemon-wide retained budget on top of the machine-pressure policy:
+* **Budget.** `DMB_DAEMON_MEMORY_BUDGET_GB` (default 20 for now, so production and test sessions stay resident; lower it as sessions shrink) is the daemon-wide retained budget on top of the machine-pressure policy:
   over it, `Shared::enforce_retained_budget` releases the least recently used idle session whole, after every build and before a
   build is admitted (against its expected growth). The newest session and any building session are never released, so a lone
   session larger than the budget stays resident. Policy: `soft_memory::budget_victim` (tests in `soft_memory.rs`).

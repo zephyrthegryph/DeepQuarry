@@ -349,7 +349,7 @@ impl Shared {
         ));
         true
     }
-    /// The daemon-wide retained-memory budget (`soft_memory::retained_budget`, default 8 GB): while the process holds more private
+    /// The daemon-wide retained-memory budget (`soft_memory::retained_budget`, default 20 GB): while the process holds more private
     /// memory than that and another idle session exists, release the least recently used idle session whole. The most recently used
     /// session and any session that is building are never released for the budget, so a lone session larger than the budget stays
     /// resident. `reserve` is memory a build about to be admitted will add. True when anything was released.
