@@ -11,11 +11,14 @@
 // declares setup() with the same proc does not run it twice (the entry is keyed by its proc). x() takes no arguments and returns nothing.
 // A discarded instance (keeps_if()) runs none.
 
-/proc/setup(handler)
+/// with_params opts into the constructor-completion phase: the complete Initialize
+/// chain has returned, but keep=FALSE arguments have not been dropped yet. Ordinary
+/// setup remains after parameter drop. Rejected constructors run neither phase.
+/proc/setup(handler, with_params = FALSE)
 	if(!istext(handler))
 		declare_report("setup(): the hook is PROC_REF(x), got [handler]")
 		return null
-	return entry_make(ENTRY_SETUP, "setup:[handler]", list("handler" = handler))
+	return entry_make(ENTRY_SETUP, "setup:[handler]", list("handler" = handler, "with_params" = !!with_params))
 
 /// name_prefix(prefix): the instance's name starts with `prefix` (a text, or a PROC_REF answering one) at the setup phase.
 /proc/name_prefix(prefix)
@@ -25,19 +28,27 @@
 GLOBAL_REAL_VAR(list/setup_pending)
 
 /// At init (lifeform_init): the instance has setup hooks to run when its Initialize() returns.
-/proc/setup_note(datum/holder)
+/proc/setup_note(datum/holder, datum/lifeform_plan/P)
 	if(!setup_pending)
 		setup_pending = list()
-	setup_pending[holder] = TRUE
+	setup_pending[holder] = P.setup_with_params ? SETUP_PENDING_WITH_PARAMS : SETUP_PENDING_REGULAR
 
 /// InitAtom(), when Initialize() returned: the hooks, in order.
-/proc/setup_run(datum/holder)
-	setup_pending -= holder
+/proc/setup_run(datum/holder, with_params = FALSE)
 	if(QDELETED(holder))
+		setup_pending -= holder
 		return
+	if(with_params)
+		if(setup_pending?[holder] != SETUP_PENDING_WITH_PARAMS)
+			return
+		setup_pending[holder] = SETUP_PENDING_REGULAR // consume before calling a reentrant handler
+	else
+		setup_pending -= holder
 	var/datum/lifeform_plan/P = lifeform_plan_of(holder)
 	for(var/datum/centry/C as anything in P.setups)
 		var/datum/entry/E = C.item
+		if(!!E.args["with_params"] != !!with_params)
+			continue
 		var/handler = E.args["handler"]
 		if(handler)
 			call(holder, handler)()
@@ -48,4 +59,5 @@ GLOBAL_REAL_VAR(list/setup_pending)
 				prefix = call(holder, prefix)()
 			A.name = "[prefix] [A.name]"
 		if(QDELETED(holder))
+			setup_pending -= holder
 			return

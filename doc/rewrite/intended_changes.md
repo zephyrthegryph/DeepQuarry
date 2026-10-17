@@ -4952,6 +4952,53 @@ and their physical-check order are retained. Pin changes are limited to these de
 rotation rows and the existing flip-refusal presentation; no different permitted movement,
 remote reach, cuff grip or storage-drop behavior is intended.
 
+
+## Declarative lifecycle burn-down (2026-10-15)
+
+* Petrification statues now release their own mute consequence before
+  the destruction transaction spills the occupant. Previously `on_destroy()` ran after
+  contents resolution; its `dump_contents()` saw an empty statue, leaving mute
+  on the released human. Source-scoped injury stasis already ended automatically. The old-code capture explicitly records that defect; the native
+  ending regression asserts the repaired state. Ordinary occupant survival and placement
+  remain unchanged.
+* Gargoyle construction applies the transient human argument when the parameter is bound.
+  The former ordinary setup read it after `keep = FALSE` had dropped it, so the real
+  constructor could not petrify its supplied subject. The regression uses the actual
+  constructor rather than invoking the setup callback by hand.
+* Lattice and NT-pod fixed icon states are type defaults. Their constructed appearance is
+  unchanged; editor previews now show the same fixed state without requiring Initialize.
+* Reflector overlays use native draw composition over the actual displayed angle instead
+  of retaining a mutable image. Locked reflectors retain their previous visible angle.
+* Privacy switches redraw when the protected area's flags change outside the switch
+  action. PDA pen/ID/notification changes were withdrawn: their existing raw physical
+  contents have no simulator-neutral native draw dependency, so their source is unchanged.
+
+These entries do not authorize unrelated snapshot re-records. Correlated archaeological,
+telecube and hotspot construction jobs retain their world-RNG and child-constructor order.
+The flipper's pre-passenger emag attempt still declines and does not subvert the card.
+
+## Living posture density and assailant references (2026-10-15)
+
+Master's human grab path records the actual living attacker in `LAssailant`, but
+both its variable and borrowed relation were restricted to carbon mobs. The real
+sakimm AI grab therefore raised an incompatible-reference runtime. Both types now
+accept `/mob/living`; attribution and the relation's deletion cleanup are unchanged.
+
+Master's knockdown/recovery path wrote the composed density stat through the base
+atom setter. In a longer run its cached prone value could survive standing up,
+although a fresh stat computation returned the dense type default. Living posture
+now contributes nonblocking density only while tracked `lying` is true. Standing
+removes that contribution and retains type defaults and independent sources' holds.
+The focused regressions warm the prone cache, recover, preserve an independent
+nonblocking hold, release that hold when its source dies, and cover a naturally
+nonblocking living subtype. No snapshot re-record is authorized by this correction.
+
+The two healer smoke fixtures failed on pristine master because their actual
+patient's consent had devourable/digestable disabled. The fixture now explicitly
+grants devouring, digestion and healing consent through the test setter before
+asking the real healer AI to select a patient. Production consent gates are unchanged;
+no patient predicate is bypassed. All new verification remains pending.
+
 ## Constructor absence cases after typed reference declarations (2026-10-15)
 
 Master commit `5b0a2f09d0` (2026-10-13) declared typed references for internal storage's item owner and the cloning console's scanner without changing their older producer paths. Internal storage attempted to link its turf before rejecting a non-item owner, and cloning's scanner lookup returned numeric zero when absent. Both now raised typed-reference errors instead of producing the existing conversion goldens.
@@ -5028,6 +5075,7 @@ For the upload computer, the old effect immediately returned for a silicon befor
 ### Silent alternative requirements
 
 An any_of composed entirely of silent refusals now remains a non-null silent refusal. It still rejects direct invocation; mixed visible reasons remain visible, and an empty composition retains its default refusal. This restores the wooden toilet's existing clientless-borg menu behavior rather than re-blessing the generic refused row. Focused tests cover composition, actual menu/direct-op behavior, and the real toilet guard.
+
 
 ### Pilot helm lookup: reject nullspace destinations
 
@@ -5115,3 +5163,10 @@ The silicon lane retains current master's plan filtering before the cap, both ex
 ## Look fixture native-roll stream isolation (2026-10-16)
 
 The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.
+
+
+### Declaration lane: inherited mecha keys and native privacy fixture writes
+
+Master `f13b84652d` (October 13, 2026, 19:32:27 -0500; “Delete the dead mecha AI-attack surface; drop unused ALLOWs; log R9”) removes `ai_use_equipment`. The fresh declaration-lane capture differs only in that key on `/obj/mecha` and `/obj/mecha/working/ripley`: all expanded menus, clicks and other keys are identical. Only those two literal key rows are refreshed, preserving existing base factoring and encoding.
+
+The declaration privacy fixtures previously used the test helper `set_var`, a raw assignment that does not publish tracked dependencies. They now use the existing `/area.set_flags` for both initial setup and the live admin-style edit, and restore original flags through that same setter. The strict `privacy0` to `privacy1` assertion remains, with an additional assertion that the flag was actually enabled. This corrects fixture publication; it changes no production privacy behavior and authorizes no appearance-pin re-records.
