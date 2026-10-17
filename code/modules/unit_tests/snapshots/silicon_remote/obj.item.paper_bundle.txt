@@ -1,0 +1,4 @@
+@obj robot|none
++1 menu: Loose bundle (refused: You can't do that.)
++4 menu: Rename bundle (refused: You can't do that.)
+@obj ai|none

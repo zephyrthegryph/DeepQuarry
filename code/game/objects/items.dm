@@ -479,19 +479,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	return
 
 /obj/item/proc/mob_can_unequip(mob/M, slot, disable_warning = 0)
-	if(!M) return 0
-
-	if(!canremove)
-		return 0
-
-	if(!slot)
-		if(issilicon(M))
-			return 1 // for stuff in grippers
-		return 0
-
-	if(!M.slot_is_accessible(slot, src, disable_warning? null : M))
-		return 0
-	return 1
+	return M ? M.can_unequip_item(src, slot, disable_warning) : 0
 
 //This proc is executed when someone clicks the on-screen UI button.
 //The default action is attack_self().
@@ -592,6 +580,9 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	..()
 	look.watch(forensic_data)
 	if(forensic_data?.has_blooddna() && !istype(src, /obj/item/melee/energy))
+		look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
+	// Blood washed away still glows under a UV light: the light holds the item at fluorescent 2 while it scans it. An unlit item draws nothing here.
+	if(dq_get_fluorescent(src) == 2 && dq_get_was_bloodied(src) && !forensic_data?.has_blooddna() && !istype(src, /obj/item/melee/energy))
 		look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
 	if(gurgled)
 		look.overlay(GLOB.gurgled_overlays[gurgled_color || "green"])

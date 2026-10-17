@@ -119,26 +119,15 @@
 		return
 	if(tesla_link)
 		tesla_link.enabled = 1
-	var/issynth = issilicon(user) // Robots and AIs get different activation messages.
 	if(computer_broken())
-		if(issynth)
-			to_chat(user, "You send an activation signal to \the [src], but it responds with an error code. It must be damaged.")
-		else
-			to_chat(user, "You press the power button, but the computer fails to boot up, displaying variety of errors before shutting down again.")
+		to_chat(user, user?.computer_boot_broken_text(src))
 		return
 	if(processor_unit && (apc_power(0) || battery_power(0))) // Battery-run and charged or non-battery but powered by APC.
-		if(issynth)
-			to_chat(user, "You send an activation signal to \the [src], turning it on")
-		else
-			to_chat(user, "You press the power button and start up \the [src]")
+		to_chat(user, user?.computer_boot_ready_text(src))
 		enable_computer(user)
 		play_sfx(src, SFX_MACHINES_CONSOLE_POWER_ON, volume_channel = VOLUME_CHANNEL_MACHINERY)
-
 	else // Unpowered
-		if(issynth)
-			to_chat(user, "You send an activation signal to \the [src] but it does not respond")
-		else
-			to_chat(user, "You press the power button but \the [src] does not respond")
+		to_chat(user, user?.computer_boot_unpowered_text(src))
 
 // Relays kill program request to currently active program. Use this to quit current program.
 /obj/item/modular_computer/proc/kill_program(forced = 0, mob/user)
@@ -311,3 +300,22 @@
 		. = hard_drive.find_file_by_uid(uid)
 	if(portable_drive && !.)
 		. = portable_drive.find_file_by_uid(uid)
+
+/// Actor-owned activation narration; these are output values, not authorization.
+/mob/proc/computer_boot_broken_text(obj/item/modular_computer/computer)
+	return "You press the power button, but the computer fails to boot up, displaying variety of errors before shutting down again."
+
+/mob/living/silicon/computer_boot_broken_text(obj/item/modular_computer/computer)
+	return "You send an activation signal to \the [computer], but it responds with an error code. It must be damaged."
+
+/mob/proc/computer_boot_ready_text(obj/item/modular_computer/computer)
+	return "You press the power button and start up \the [computer]"
+
+/mob/living/silicon/computer_boot_ready_text(obj/item/modular_computer/computer)
+	return "You send an activation signal to \the [computer], turning it on"
+
+/mob/proc/computer_boot_unpowered_text(obj/item/modular_computer/computer)
+	return "You press the power button but \the [computer] does not respond"
+
+/mob/living/silicon/computer_boot_unpowered_text(obj/item/modular_computer/computer)
+	return "You send an activation signal to \the [computer] but it does not respond"

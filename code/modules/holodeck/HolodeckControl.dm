@@ -105,9 +105,7 @@
 
 	data["supportedPrograms"] = program_list
 	data["restrictedPrograms"] = restricted_program_list
-	data["isSilicon"] = FALSE
-	if(issilicon(user))
-		data["isSilicon"] = TRUE
+	data["isSilicon"] = ui_viewer_fact(user, "silicon")
 
 	data["emagged"] = emagged()
 	data["gravity"] = FALSE

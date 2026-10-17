@@ -157,7 +157,7 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 		to_chat(user, span_danger("Access denied."))
 		return 0
 
-	if(!holder.check_power_cost(user, use_power_cost, 0, src, (istype(user,/mob/living/silicon) ? 1 : 0) ) )
+	if(!user.use_rig_module_power(holder, src, use_power_cost) )
 		return 0
 
 	COOLDOWN_START(src, next_use, module_cooldown)
@@ -340,3 +340,11 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 /atom/movable/stat_rig_module/engage
 	module_mode = "engage"
 
+
+/// The controller pays through the rig's existing transaction. Silicon controllers
+/// bypass wearer/solidity checks; this is independent of wireless availability.
+/mob/proc/use_rig_module_power(obj/item/rig/suit, obj/item/rig_module/module, cost)
+	return suit.check_power_cost(src, cost, FALSE, module, FALSE)
+
+/mob/living/silicon/use_rig_module_power(obj/item/rig/suit, obj/item/rig_module/module, cost)
+	return suit.check_power_cost(src, cost, FALSE, module, TRUE)

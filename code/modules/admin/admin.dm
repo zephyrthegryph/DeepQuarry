@@ -584,12 +584,8 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 		if(M.special_role)
 			return 1
 
-	if(isrobot(character))
-		var/mob/living/silicon/robot/R = character
-		if(R.emagged)
-			return 1
-
-	return 0
+	var/mob/actor = character
+	return istype(actor) ? actor.antagonist_override_rank() : 0
 
 ADMIN_VERB(spawn_fruit, R_SPAWN, "Spawn Fruit", "Spawn the product of a seed.", ADMIN_CATEGORY_DEBUG_GAME)
 	return seed_spawn_stage(user, list())

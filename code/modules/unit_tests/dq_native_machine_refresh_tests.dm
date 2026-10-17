@@ -1,0 +1,62 @@
+// Real declared windows: refresh delivers data once and never replays the action.
+/datum/unit_test/dq_silicon/native_machine_refresh_dartgun
+
+/datum/unit_test/dq_silicon/native_machine_refresh_dartgun/run_gate()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = make_human(T)
+	var/obj/item/gun/projectile/dartgun/G = allocate(/obj/item/gun/projectile/dartgun, T)
+	var/obj/item/reagent_containers/glass/beaker/B = allocate(/obj/item/reagent_containers/glass/beaker, T)
+	TEST_ASSERT(H.put_in_hands(B), "the actual insertion actor holds the real beaker")
+	var/datum/tgui/dq_ui_probe/probe = allocate(/datum/tgui/dq_ui_probe)
+	G.add_open_tguis(probe)
+	defer_cleanup(G, TYPE_PROC_REF(/datum, remove_open_tguis), probe)
+	refresh_flush()
+	var/before = probe.pushes
+	var/datum/op_result/inserted = test_menu(H, G, "gun_item")
+	TEST_ASSERT_EQUAL(inserted.outcome, ACT_COMMITTED, "the actual declared item operation inserts the beaker")
+	TEST_ASSERT_EQUAL(B.loc, G, "the actual beaker is inside the gun")
+	TEST_ASSERT_EQUAL(length(G.beakers), 1, "the real insertion executes once")
+	TEST_ASSERT_EQUAL(probe.pushes, before, "the item action queues output instead of pushing synchronously")
+	ui_push_flush()
+	TEST_ASSERT_EQUAL(probe.pushes, before + 1, "the non-window item operation refreshes its existing declared window once")
+	TEST_ASSERT_EQUAL(probe.last_owed, UI_PUSH_DATA, "refresh queues data rather than replaying interaction")
+	var/list/data = G.tgui_data(H, null, GLOB.tgui_always_state)
+	var/list/beaker_rows = data["beakers"]
+	TEST_ASSERT_EQUAL(length(beaker_rows), 1, "the actual window output contains the inserted beaker")
+	var/list/first = beaker_rows[1]
+	TEST_ASSERT(!first["mixing"], "the inserted beaker initially is not mixed")
+	var/datum/op_result/toggled = test_ui(H, G, "toggle_mix", list("index" = 1))
+	TEST_ASSERT_EQUAL(toggled.outcome, ACT_COMMITTED, "the actual declared UI action toggles the real beaker")
+	TEST_ASSERT(G.check_beaker_mixing(B), "the real mixing relation now contains the exact inserted beaker")
+	ui_push_flush()
+	TEST_ASSERT_EQUAL(probe.pushes, before + 2, "the UI action coalesces to one further output delivery")
+	TEST_ASSERT(G.check_beaker_mixing(B), "refresh never replays the toggle and turns mixing off again")
+	TEST_ASSERT_EQUAL(length(G.beakers), 1, "refresh never replays item insertion")
+	ui_push_flush()
+	TEST_ASSERT_EQUAL(probe.pushes, before + 2, "a quiet output pass does no extra work")
+
+/datum/unit_test/dq_silicon/native_machine_refresh_magnet
+
+/datum/unit_test/dq_silicon/native_machine_refresh_magnet/run_gate()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = make_human(T)
+	var/obj/machinery/magnetic_controller/M = allocate(/obj/machinery/magnetic_controller, T)
+	M.set_grid_power(TRUE)
+	M.set_broken_condition(FALSE)
+	TEST_ASSERT(M.operable(), "the actual controller is admitted before exercising its native action")
+	var/datum/tgui/dq_ui_probe/probe = allocate(/datum/tgui/dq_ui_probe)
+	M.add_open_tguis(probe)
+	defer_cleanup(M, TYPE_PROC_REF(/datum, remove_open_tguis), probe)
+	refresh_flush()
+	var/before = probe.pushes
+	var/original = M.speed
+	TEST_ASSERT(original < 10, "the actual initial speed can increase visibly")
+	var/datum/op_result/changed = test_ui(H, M, "speed_plus", null)
+	TEST_ASSERT_EQUAL(changed.outcome, ACT_COMMITTED, "the real speed button commits its declared operation")
+	TEST_ASSERT_EQUAL(M.speed, original + 1, "the actual button increments speed once")
+	ui_push_flush()
+	TEST_ASSERT_EQUAL(probe.pushes, before + 1, "the actual console operation refreshes its existing declared window once")
+	TEST_ASSERT_EQUAL(probe.last_owed, UI_PUSH_DATA, "the controller queues output data, not another operation")
+	var/list/data = M.tgui_data(H, null, GLOB.tgui_always_state)
+	TEST_ASSERT_EQUAL(data["speed"], original + 1, "the real declared window reads the committed speed")
+	TEST_ASSERT_EQUAL(M.speed, original + 1, "output refresh never replays the increment operation")
