@@ -221,7 +221,3 @@
 		set_canmove(FALSE)
 	return canmove
 
-/mob/living/silicon/robot/update_fire()
-	cut_overlay(image(icon = 'icons/mob/OnFire.dmi', icon_state = get_fire_icon_state()))
-	if(stat_value(src, STAT_ON_FIRE))
-		add_overlay(image(icon = 'icons/mob/OnFire.dmi', icon_state = get_fire_icon_state()))

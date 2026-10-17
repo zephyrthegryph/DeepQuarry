@@ -6,11 +6,13 @@ use std::{
 };
 mod build_admission;
 pub mod control;
+mod cache_gc;
 pub mod endpoint_descriptor;
 mod generation_listeners;
 mod lifecycle_deadline;
 mod protocol;
 pub mod query;
+pub mod resident;
 mod service;
 mod transport;
 
@@ -229,7 +231,10 @@ pub fn route(
             // generation has drained. Only an absent listener permits replacement.
             if listener_absent(&error) {
                 lifecycle.unavailable(std::time::Instant::now())?;
-                if !started {
+                if !started && resident::same_binary_draining() {
+                    // The daemon of this same executable is draining and exits as soon as its builds finish; starting a
+                    // second one beside it doubled resident memory. Wait for it instead.
+                } else if !started {
                     // Discovery is advisory lifecycle control, never the build
                     // destination. An old busy listener cannot block the new
                     // generation from starting or change its request semantics.
@@ -340,8 +345,9 @@ fn start() -> io::Result<()> {
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr({
-            let directory = std::path::PathBuf::from("E:/dq-cache/dmb-daemon");
+            let directory = resident::state_dir();
             std::fs::create_dir_all(&directory)?;
+            resident::rotate_lifecycle_log(&directory);
             std::process::Stdio::from(
                 std::fs::OpenOptions::new()
                     .create(true)

@@ -173,9 +173,7 @@ CAPABILITIES(/obj/item/core_sampler)
 
 			//update the sample bag
 			filled_bag.icon_state = "evidence"
-			var/image/I = image("icon"=R, "layer"=FLOAT_LAYER)
-			add_overlay(I)
-			add_overlay("evidence")
+			rel_set(filled_bag, nameof(filled_bag.stored_item), R) // the bag draws the sliver it holds
 			filled_bag.set_w_class(ITEMSIZE_TINY)
 
 			to_chat(user, span_notice("You take a core sample of the [item_to_sample]."))

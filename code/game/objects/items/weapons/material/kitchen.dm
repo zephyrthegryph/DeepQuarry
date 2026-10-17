@@ -123,7 +123,7 @@ CAPABILITIES(/obj/item/material/kitchen/utensil)
 	. = ..()
 	if(reagents.total_volume > 0)
 		reagents.clear_reagents()
-		cut_overlays()
+		set_loaded(null)
 	return
 
 /obj/item/material/kitchen/utensil/container_resist(mob/living/M)

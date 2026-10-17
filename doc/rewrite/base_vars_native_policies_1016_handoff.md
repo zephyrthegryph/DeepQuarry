@@ -1,5 +1,13 @@
 # Base-variable continuation: native scalar policies
 
+## Current verification checkpoint (October 17)
+
+The 71-site continuation is being merged with master `cee490f697` before its first final runtime gate. The original source result was 385 to 314, with zero additions. The selector audit now proves coverage of all 67 new regression Run entries and all 50 previously uncovered canonical-lane tests, including descendants selected by explicit paths or real wildcards. The nonexistent `dq_ai_port_smoke` selector is replaced by the actual AI-port test family. The mandatory requirement and conversion pins remain selected.
+
+Generation and shrink-only baseline regeneration now pass on the merged source. Current master has 527 base-variable baseline identities; this branch has 305, removing the preceding lane's 151 plus this continuation's 71 with zero additions. The preceding lane's equivalent count on current master is 376. The newer master-only reductions account for the difference from the historical 385-to-314 checkpoint. Final DreamChecker, ratchets, runtime gate, stamp and push are still pending.
+
+Merge resolutions keep master's extracted emissive-blocker implementation, new living draw and cell overlay while reading migrated lighting/HUD configuration from its native traits. Conflicting shadekin, lamia and raptor snapshots retain master's existing baseline pending actual verification; no output from an interrupted run is blessed. Generation, baseline shrink, runtime verification, lane-ready stamp and push for this merged checkpoint remain pending.
+
 Branch: `codex/base-vars-burndown-next`, based on current master plus the preceding base-variable lane.
 
 This is an unverified source checkpoint, not a lane-ready handoff. Eleven physical fields move to real compiled traits: damage deflection, throw animation, item center coordinates, worn-layer override, object hearing/speech/examine visibility, redgate transfer permission and trash admission. The unused atom overlay list is removed; the toy's independent local list remains.

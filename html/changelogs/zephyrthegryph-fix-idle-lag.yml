@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Mapped SMES units are wired to the input terminals the map lays beside them, so the station keeps its power instead of draining its APC cells and browning out"
+  - code_imp: "Production no longer registers every drawn atom in the audit sweep (one REF() each); the audit walks the atoms near a client"
+  - code_imp: "Added the power_idle benchmark scenario (regions, SMES and APC states over time)"

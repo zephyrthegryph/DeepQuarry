@@ -55,14 +55,18 @@
 	icon = 'icons/obj/props/decor.dmi'
 	icon_state = "nt_biocan"
 
+/// The look: the open panel.
+/obj/structure/prop/machine/nt_biocan/draw(datum/look/look)
+	..()
+	look.overlay("nt_biocan_panel", when = panel_shown)
+
 /obj/structure/prop/machine/nt_biocan/change_state(state)
 	. = ..()
 	switch(state)
 		if("panel_open")
-			cut_overlay("nt_biocan_panel")
-			add_overlay("nt_biocan_panel")
+			set_panel_shown(TRUE)
 		if("panel_closed")
-			cut_overlay("nt_biocan_panel")
+			set_panel_shown(FALSE)
 
 /**
  * Possible 'state' options for change_state(state) are:
@@ -76,6 +80,13 @@
 /obj/structure/prop/dominator
 	icon = 'icons/obj/props/decor.dmi'
 	icon_state = "dominator"
+	/// The damage overlay is shown.
+	var/dominator_damaged = FALSE
+
+/// The look: the damage overlay.
+/obj/structure/prop/dominator/draw(datum/look/look)
+	..()
+	look.overlay("dom_damage", when = dominator_damaged)
 
 /obj/structure/prop/dominator/change_state(state)
 	. = ..()
@@ -93,9 +104,9 @@
 		if("purple")
 			set_icon_state("dominator-purple")
 		if("damaged")
-			add_overlay("dom_damage")
+			set_dominator_damaged(TRUE)
 		if("undamaged")
-			cut_overlay("dom_damage")
+			set_dominator_damaged(FALSE)
 		if("broken")
 			set_icon_state("dominator-broken")
 		if("plain")
@@ -247,22 +258,29 @@
 /obj/structure/prop/machine/stamper
 	icon = 'icons/obj/props/decor.dmi'
 	icon_state = "stamper"
+	/// Stamping mysterious substances (change_state "on").
+	var/stamper_running = FALSE
+
+/// The look: the running stamper's processing lights.
+/obj/structure/prop/machine/stamper/draw(datum/look/look)
+	..()
+	look.overlay("stamper_proc", when = stamper_running)
+	look.overlay("stamper_but", when = stamper_running)
 
 /obj/structure/prop/machine/stamper/change_state(state)
 	. = ..()
 	switch(state)
 		if("off")
-			cut_overlays()
+			set_stamper_running(FALSE)
 		if("on")
-			add_overlay("stamper_proc")
-			add_overlay("stamper_but")
+			set_stamper_running(TRUE)
 
 /obj/structure/prop/machine/stamper/starts_on
 	icon_state = "stamper_on"
 
 /obj/structure/prop/machine/stamper/starts_on/draw(datum/look/look)
 	..()
-	look.overlay("stamper_proc")
+	look.overlay("stamper_proc", when = isnull(state)) // until a state is set, then the base draw takes over
 	look.overlay("stamper_but")
 
 
@@ -297,6 +315,11 @@
 /obj/structure/prop/machine/nt_optable
 	icon_state = "nt_optable-idle"
 
+/// The look: the open panel.
+/obj/structure/prop/machine/nt_optable/draw(datum/look/look)
+	..()
+	look.overlay("nt_optable_panel", when = panel_shown)
+
 /obj/structure/prop/machine/nt_optable/change_state(state)
 	. = ..()
 	switch(state)
@@ -305,10 +328,9 @@
 		if("active")
 			set_icon_state("nt_optable-active")
 		if("panel_open")
-			cut_overlay("nt_optable_panel")
-			add_overlay("nt_optable_panel")
+			set_panel_shown(TRUE)
 		if("panel_closed")
-			cut_overlay("nt_optable_panel")
+			set_panel_shown(FALSE)
 
 /obj/structure/prop/machine/nt_optable/starts_active
 	icon_state = "nt_optable-active"
@@ -324,6 +346,11 @@
 /obj/structure/prop/machine/tradebeacon
 	icon_state = "tradebeacon"
 
+/// The look: the open panel.
+/obj/structure/prop/machine/tradebeacon/draw(datum/look/look)
+	..()
+	look.overlay("tradebeacon_panel", when = panel_shown)
+
 /obj/structure/prop/machine/tradebeacon/change_state(state)
 	. = ..()
 	switch(state)
@@ -332,10 +359,9 @@
 		if("active")
 			set_icon_state("tradebeacon_active")
 		if("panel_open")
-			cut_overlay("tradebeacon_panel")
-			add_overlay("tradebeacon_panel")
+			set_panel_shown(TRUE)
 		if("panel_closed")
-			cut_overlay("tradebeacon_panel")
+			set_panel_shown(FALSE)
 
 /obj/structure/prop/machine/tradebeacon/starts_active
 	icon_state = "tradebeacon_active"
@@ -351,6 +377,11 @@
 /obj/structure/prop/machine/tradebeacon2
 	icon_state = "tradebeacon"
 
+/// The look: the open panel.
+/obj/structure/prop/machine/tradebeacon2/draw(datum/look/look)
+	..()
+	look.overlay("tradebeacon_sending_panel", when = panel_shown)
+
 /obj/structure/prop/machine/tradebeacon2/change_state(state)
 	. = ..()
 	switch(state)
@@ -359,10 +390,9 @@
 		if("active")
 			set_icon_state("tradebeacon_sending_active")
 		if("panel_open")
-			cut_overlay("tradebeacon_sending_panel")
-			add_overlay("tradebeacon_sending_panel")
+			set_panel_shown(TRUE)
 		if("panel_closed")
-			cut_overlay("tradebeacon_sending_panel")
+			set_panel_shown(FALSE)
 
 /obj/structure/prop/machine/tradebeacon2/starts_active
 	icon_state = "tradebeacon_sending_active"
@@ -589,6 +619,15 @@
 	var/contents_vis_flags = NONE
 	var/contents_original_pixel_y = 0
 	var/changing_state = FALSE
+	/// The pod is closed on its occupant: the lit top and the liquid shadow show.
+	var/pod_sealed = FALSE
+
+/// The look: the sealed pod's top and underside, and the open panel.
+/obj/structure/prop/machine/nt_pod/draw(datum/look/look)
+	..()
+	look.overlay("nt_pod_top_on", when = pod_sealed)
+	look.overlay("nt_pod_under", when = pod_sealed)
+	look.overlay("nt_pod_panel", when = panel_shown)
 
 /obj/structure/prop/machine/nt_pod/Initialize(mapload)
 	. = ..()
@@ -673,8 +712,7 @@ CAPABILITIES(/obj/structure/prop/machine/nt_pod)
 	switch(state)
 		if("open")
 			changing_state = TRUE
-			cut_overlay("nt_pod_top_on")
-			cut_overlay("nt_pod_under")
+			set_pod_sealed(FALSE)
 
 			// Fluid drains
 			fluid.icon_state = "nothing"
@@ -686,9 +724,7 @@ CAPABILITIES(/obj/structure/prop/machine/nt_pod)
 		if("closed")
 			changing_state = TRUE
 			outside.layer = ABOVE_MOB_LAYER
-			cut_overlay("nt_pod_top_on")
-			add_overlay("nt_pod_top_on")
-			add_overlay("nt_pod_under")
+			set_pod_sealed(TRUE)
 
 			// Door closes
 			door.icon_state = "nt_pod_glass"
@@ -697,10 +733,9 @@ CAPABILITIES(/obj/structure/prop/machine/nt_pod)
 			after(src, 0.9 SECONDS, PROC_REF(delayed_flick), with = list(fluid, "nt_pod_liquid", "nt_pod_filling")) // 8ds
 
 		if("panel_open")
-			cut_overlay("nt_pod_panel")
-			add_overlay("nt_pod_panel")
+			set_panel_shown(TRUE)
 		if("panel_closed")
-			cut_overlay("nt_pod_panel")
+			set_panel_shown(FALSE)
 
 // Old Virology stuff
 

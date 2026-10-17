@@ -110,21 +110,24 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/cola)
 	material_total = 175
 
 /obj/item/reagent_containers/food/drinks/drinkingglass/shotglass/on_reagent_change()
-	cut_overlays()
 	name = "shot glass"
 
 	if(!reagents.total_volume)
 		return
-	var/image/filling = image('icons/obj/reagentfillings.dmi', src, "[icon_state]1")
-
-	switch(reagents.total_volume)
-		if(0 to 3)			filling.icon_state = "[icon_state]1"
-		if(4 to 7) 			filling.icon_state = "[icon_state]5"
-		if(8 to INFINITY)	filling.icon_state = "[icon_state]12"
-
-	filling.color += reagents.get_color()
-	add_overlay(filling)
 	name += " of [reagents.get_master_reagent_name()]" //No matter what, the glass will tell you the reagent's name. Might be too abusable in the future.
+
+/obj/item/reagent_containers/food/drinks/drinkingglass/shotglass/draw(datum/look/look)
+	..()
+	var/datum/reagents/R = reagents
+	look.watch(R) // its level and colour are tracked on the holder: the filling follows them
+	if(!R?.total_volume)
+		return
+	var/fill_state = "[icon_state]1"
+	switch(R.total_volume)
+		if(0 to 3)			fill_state = "[icon_state]1"
+		if(4 to 7) 			fill_state = "[icon_state]5"
+		if(8 to INFINITY)	fill_state = "[icon_state]12"
+	look.overlay(look_overlay_image('icons/obj/reagentfillings.dmi', fill_state, color = R.tint))
 
 /obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 	name = "fitness shaker"
@@ -136,26 +139,29 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/cola)
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask)
 	rolls(nameof(icon_state), pick_one(list("fitness-cup_black", "fitness-cup_red", "fitness-cup_black")))
 
+/// The shaker keeps its own sprite whatever it holds (it does not take the glass's reagent-driven name and icon); its filling is drawn.
 /obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/on_reagent_change()
-	cut_overlays()
+	return
 
-	if(reagents.total_volume)
-		var/image/filling = image('icons/obj/reagentfillings.dmi', src, "fitness-cup10")
-
-		switch(reagents.total_volume)
-			if(0 to 10)			filling.icon_state = "fitness-cup10"
-			if(11 to 20)		filling.icon_state = "fitness-cup20"
-			if(21 to 29)		filling.icon_state = "fitness-cup30"
-			if(30 to 39)		filling.icon_state = "fitness-cup40"
-			if(40 to 49)		filling.icon_state = "fitness-cup50"
-			if(50 to 59)		filling.icon_state = "fitness-cup60"
-			if(60 to 69)		filling.icon_state = "fitness-cup70"
-			if(70 to 79)		filling.icon_state = "fitness-cup80"
-			if(80 to 89)		filling.icon_state = "fitness-cup90"
-			if(90 to INFINITY)	filling.icon_state = "fitness-cup100"
-
-		filling.color += reagents.get_color()
-		add_overlay(filling)
+/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/draw(datum/look/look)
+	..()
+	var/datum/reagents/R = reagents
+	look.watch(R) // its level and colour are tracked on the holder: the filling follows them
+	if(!R?.total_volume)
+		return
+	var/fill_state = "fitness-cup10"
+	switch(R.total_volume)
+		if(0 to 10)			fill_state = "fitness-cup10"
+		if(11 to 20)		fill_state = "fitness-cup20"
+		if(21 to 29)		fill_state = "fitness-cup30"
+		if(30 to 39)		fill_state = "fitness-cup40"
+		if(40 to 49)		fill_state = "fitness-cup50"
+		if(50 to 59)		fill_state = "fitness-cup60"
+		if(60 to 69)		fill_state = "fitness-cup70"
+		if(70 to 79)		fill_state = "fitness-cup80"
+		if(80 to 89)		fill_state = "fitness-cup90"
+		if(90 to INFINITY)	fill_state = "fitness-cup100"
+	look.overlay(look_overlay_image('icons/obj/reagentfillings.dmi', fill_state, color = R.tint))
 
 /obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/proteinshake
 	name = "protein shake"

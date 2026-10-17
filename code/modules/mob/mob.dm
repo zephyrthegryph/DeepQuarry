@@ -1440,7 +1440,6 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	return TRUE
 
 /mob/proc/vv_topic_regen_icons_full(datum/act/op/A)
-	cut_overlays()
 	regenerate_icons()
 	return TRUE
 

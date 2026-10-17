@@ -76,7 +76,7 @@ macro state, so a changed include can reuse unaffected siblings. The leaf
 cache has bounded path, macro, and byte budgets; large macro environments
 are preprocessed without retaining a snapshot for every include.
 Its versioned cache is saved at
-`<git-common-dir>/dm-compiled-cache/preprocess-v3/` as per-project indexes and
+`$DM_COMPILER_CACHE_ROOT (E:/dq-cache/dm-compiled; never inside .git)/preprocess-v3/` as per-project indexes and
 content-addressed expansion shards, and loaded by new CLI
 processes. The project ID comes from the Git-relative DME path: matching worktrees
 share a cache, while separate project manifests keep separate entries.
@@ -144,7 +144,7 @@ resolved names/types, and a fingerprint of the Rust compiler sources. Keys track
 the names used by each procedure, so adding unrelated declarations in another
 worktree preserves reuse. Member-type and inheritance changes invalidate affected
 lookups. These
-artifacts live in `<git-common-dir>/dm-compiled-cache/proc-lowering-v1/`, shared
+artifacts live in `$DM_COMPILER_CACHE_ROOT (E:/dq-cache/dm-compiled; never inside .git)/proc-lowering-v1/`, shared
 by worktrees; standalone projects use `.dm-cache/proc-lowering-v1/` beside the
 DME. Corrupt entries are rebuilt. The in-process procedure cache is capped at
 16 MiB. The daemon retains up to eight diagnostic sessions and bounded syntax

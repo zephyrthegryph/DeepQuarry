@@ -17,10 +17,6 @@
  * Weeds
  */
 #define NODERANGE 3
-#define WEED_NORTH_EDGING "north"
-#define WEED_SOUTH_EDGING "south"
-#define WEED_EAST_EDGING "east"
-#define WEED_WEST_EDGING "west"
 #define WEED_NODE_GLOW "glow"
 #define WEED_NODE_BASE "nodebase"
 
@@ -38,7 +34,6 @@
 
 	max_integrity = 15
 	var/obj/effect/alien/weeds/node/linked_node
-	var/static/list/weedImageCache // ALLOW(cache): constant table of four edge images
 
 /// Weeds do not grow in space, nor where a node already marked them for removal (keeps_if()).
 /obj/effect/alien/weeds/proc/may_grow()
@@ -49,17 +44,6 @@
 	if(icon_state != "weeds")
 		return icon_state
 	return R.choose(list("weeds", "weeds1", "weeds2", "weeds3", "weeds4", "weeds5", "weeds6", "weeds7", "weeds8", "weeds9", "weeds10", "weeds11", "weeds12", "weeds13", "weeds14", "weeds15"))
-
-// neighbouring weeds redraw their overlays without it.
-/obj/effect/alien/weeds/on_destroy(force)
-	var/turf/T = get_turf(src)
-	// To not mess up the overlay updates.
-	moveToNullspace()
-
-	for (var/obj/effect/alien/weeds/W in range(1,T))
-		W.updateWeedOverlays()
-
-	..()
 
 /obj/effect/alien/weeds/node
 	icon_state = "weednode"
@@ -84,34 +68,17 @@
 
 	rel_set(src, nameof(linked_node), src)
 
-/obj/effect/alien/weeds/proc/updateWeedOverlays()
-	cut_overlays()
-
-	if(!weedImageCache)
-		weedImageCache = list()
-		weedImageCache[WEED_NORTH_EDGING] = image('icons/mob/alien.dmi', "weeds_side_n", layer=2.11, pixel_y = -32)
-		weedImageCache[WEED_SOUTH_EDGING] = image('icons/mob/alien.dmi', "weeds_side_s", layer=2.11, pixel_y = 32)
-		weedImageCache[WEED_EAST_EDGING] = image('icons/mob/alien.dmi', "weeds_side_e", layer=2.11, pixel_x = -32)
-		weedImageCache[WEED_WEST_EDGING] = image('icons/mob/alien.dmi', "weeds_side_w", layer=2.11, pixel_x = 32)
-
+/// A floor edge with no alien growth past it shows the weeds' fringe on this side.
+/obj/effect/alien/weeds/draw(datum/look/look)
+	..()
 	var/turf/N = get_step(src, NORTH)
 	var/turf/S = get_step(src, SOUTH)
 	var/turf/E = get_step(src, EAST)
 	var/turf/W = get_step(src, WEST)
-	if(istype(N, /turf/simulated/floor) && !locate_on(N, /obj/effect/alien))
-		add_overlay(weedImageCache[WEED_SOUTH_EDGING])
-	if(istype(S, /turf/simulated/floor) && !locate_on(S, /obj/effect/alien))
-		add_overlay(weedImageCache[WEED_NORTH_EDGING])
-	if(istype(E, /turf/simulated/floor) && !locate_on(E, /obj/effect/alien))
-		add_overlay(weedImageCache[WEED_WEST_EDGING])
-	if(istype(W, /turf/simulated/floor) && !locate_on(W, /obj/effect/alien))
-		add_overlay(weedImageCache[WEED_EAST_EDGING])
-
-/obj/effect/alien/weeds/proc/fullUpdateWeedOverlays()
-	for (var/obj/effect/alien/weeds/W in range(1,src))
-		W.updateWeedOverlays()
-
-	return
+	look.overlay(look_overlay_image('icons/mob/alien.dmi', "weeds_side_s", layer = 2.11, pixel_y = 32), when = istype(N, /turf/simulated/floor) && !length(look.neighbours(src, NORTH, /obj/effect/alien)))
+	look.overlay(look_overlay_image('icons/mob/alien.dmi', "weeds_side_n", layer = 2.11, pixel_y = -32), when = istype(S, /turf/simulated/floor) && !length(look.neighbours(src, SOUTH, /obj/effect/alien)))
+	look.overlay(look_overlay_image('icons/mob/alien.dmi', "weeds_side_w", layer = 2.11, pixel_x = 32), when = istype(E, /turf/simulated/floor) && !length(look.neighbours(src, EAST, /obj/effect/alien)))
+	look.overlay(look_overlay_image('icons/mob/alien.dmi', "weeds_side_e", layer = 2.11, pixel_x = -32), when = istype(W, /turf/simulated/floor) && !length(look.neighbours(src, WEST, /obj/effect/alien)))
 
 // NB: Only the node runs a timer; the node spreads the rest of the weeds by calling this.
 /obj/effect/alien/weeds/proc/weed_spread()
@@ -175,7 +142,6 @@ CAPABILITIES(/obj/effect/alien/weeds)
 	op("touch_weeds", hand(), priority(OP_PRIORITY_DEFAULT - 3), then(PROC_REF(interaction_touch_weeds)))
 	keeps_if(PROC_REF(may_grow))
 	rolls(nameof(icon_state), PROC_REF(roll_variant)) // more icon variants
-	setup(PROC_REF(fullUpdateWeedOverlays))
 
 CAPABILITIES(/obj/effect/alien/weeds/node)
 	configure(light_glow(range = 3, color = "#673972")) // NODERANGE
@@ -228,10 +194,6 @@ CAPABILITIES(/obj/effect/alien/weeds/node/weak)
 // end.
 
 #undef NODERANGE
-#undef WEED_NORTH_EDGING
-#undef WEED_SOUTH_EDGING
-#undef WEED_EAST_EDGING
-#undef WEED_WEST_EDGING
 #undef WEED_NODE_GLOW
 #undef WEED_NODE_BASE
 

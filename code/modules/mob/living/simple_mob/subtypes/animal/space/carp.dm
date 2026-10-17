@@ -109,40 +109,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 		else
 			our_color = pick(carp_colors)
 			add_atom_colour(carp_colors[our_color], FIXED_COLOUR_PRIORITY)
-		regenerate_icons()
 
-/mob/living/simple_mob/animal/space/carp/proc/add_carp_overlay()
-	if(!random_color)
-		return
-	var/mutable_appearance/base_overlay = mutable_appearance(icon, "base_mouth")
-	base_overlay.appearance_flags = RESET_COLOR
-	add_overlay(base_overlay)
-
-/mob/living/simple_mob/animal/space/carp/proc/add_dead_carp_overlay()
-	if(!random_color)
-		return
-	var/mutable_appearance/base_dead_overlay = mutable_appearance(icon, "base_dead_mouth")
-	base_dead_overlay.appearance_flags = RESET_COLOR
-	add_overlay(base_dead_overlay)
-
-/mob/living/simple_mob/animal/space/carp/on_death(gibbed)
-	. = ..()
-	if(!random_color || gibbed)
-		return
-	regenerate_icons()
-
-/mob/living/simple_mob/animal/space/carp/on_revived(reason, datum/source)
-	. = ..()
-	regenerate_icons()
-
-/mob/living/simple_mob/animal/space/carp/regenerate_icons()
+/// A random-coloured carp keeps its mouth uncoloured.
+/mob/living/simple_mob/animal/space/carp/draw(datum/look/look)
 	..()
 	if(!random_color)
 		return
-	if(stat != DEAD)
-		add_carp_overlay()
-	else
-		add_dead_carp_overlay()
+	look.overlay(look_appearance(icon, (stat != DEAD) ? "base_mouth" : "base_dead_mouth", appearance_flags = RESET_COLOR))
 
 /mob/living/simple_mob/animal/space/carp/apply_melee_effects(atom/A)
 	if(isliving(A))

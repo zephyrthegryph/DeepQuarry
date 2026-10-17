@@ -129,7 +129,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 // Parameters: None
 // Description: If the communicator has an ID, and it is held by a mob, the ID is placed in the mob's hands, a chat message is sent indicating that
 //              the ID has been removed, and a sound effect is played. If the ID is not held by a mob, it is moved to the turf where the communicator
-//              is located. The "pda-id" overlay is removed, and the communicator's ID is set to null.
+//              is located. The "pda-id" overlay goes with it, and the communicator's ID is set to null.
 /obj/item/communicator/proc/remove_id()
 	if (id)
 		if (ismob(loc))
@@ -139,7 +139,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 			play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
 		else
 			id.forceMove(get_turf(src))
-		cut_overlay("pda-id")
 		rel_take(src, nameof(id))
 
 // Proc: id_check(mob/user as mob, choice as num)
@@ -302,7 +301,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 		else if(((is_in_holder(src, user)) && (is_in_holder(C, user))) || (istype(loc, /turf) && in_range(src, user) && (is_in_holder(C, user))) )
 			if(id_check(user, 2))
 				to_chat(user, span_notice("You put the ID into \the [src]'s slot."))
-				add_overlay("pda-id")
 		// ITION END
 		return OP_OK
 	return OP_DECLINE
@@ -393,6 +391,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 /obj/item/communicator/draw(datum/look/look)
 	..()
 	look.state("[initial(icon_state)][appearance_comm_suffix()]")
+	look.overlay("pda-id", when = !isnull(id))
 
 // A camera preset for spawning in the communicator
 /obj/machinery/camera/communicator

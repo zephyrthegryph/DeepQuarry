@@ -127,11 +127,9 @@
 	/// This band's factor table, applied at full value.
 	var/alist/band_factors
 
-/// C7: the declared `factors` (scaled by severity, like any affliction) AND the band table.
-/datum/affliction/hypovolemic_shock/hold_factors(mob/living/L)
-	factor_band = round(severity / FACTOR_SEVERITY_BAND)
-	hold_table(L, src, factors, severity / AFFLICTION_SEVERITY_TERMINAL)
-	hold_table(L, src, band_factors, 1, 1, "band")
+/// C7: the declared `factors` (scaled by severity, like any affliction) AND the band table, held at full value under its own part.
+CAPABILITIES(/datum/affliction/hypovolemic_shock)
+	factors(nameof(band_factors), to = nameof(owner), part = "band")
 
 /// C7: the first band applies from the moment the shock takes hold, not from its first tick.
 /datum/affliction/hypovolemic_shock/on_added()
@@ -166,7 +164,6 @@
 	set_band_factors(entry["factors"])
 	spontaneous_emotes = entry["spontaneous_emotes"]
 	spontaneous_emote_prob = entry["spontaneous_emote_prob"]
-	body?.invalidate(BODY_DIRTY_FACTORS)
 
 // Driven entirely by how much blood the patient has left. Topping the
 // patient back up via saline / blood-pack stops the runaway.

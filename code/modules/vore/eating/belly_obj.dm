@@ -456,26 +456,6 @@ CAPABILITIES(/obj/belly)
 	if(isitem(thing) && !isbelly(thing.loc)) // Digest stage effects. Don't bother adding overlays to stuff that won't make it back out.
 		if(count_items_for_sprite) // If this is enabled also update fullness for non-living things
 			PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
-		var/obj/item/I = thing
-		if(I.gurgled && !I.stains_in_look())
-			I.cut_overlay(GLOB.gurgled_overlays[I.gurgled_color]) //No double-overlay for worn items.
-			I.add_overlay(GLOB.gurgled_overlays[I.gurgled_color])
-		if(I.d_mult < 1)
-			var/overlay_color = I.gurgled_color ? I.gurgled_color : "green"
-			// The d_stage_overlay only depends on the item's (icon, icon_state, color).
-			// Reuse the cached image+icon() snapshot when none of those changed instead
-			// of rebuilding a fresh /image and icon() every single exit.
-			var/cache_key = "[I.icon]|[I.icon_state]|[overlay_color]"
-			if(!I.d_stage_overlay || I.d_stage_overlay_key != cache_key)
-				if(I.d_stage_overlay)
-					I.cut_overlay(I.d_stage_overlay)
-				var/image/temp = new /image(GLOB.gurgled_overlays[overlay_color])
-				temp.filters += filter(type = "alpha", icon = icon(I.icon, I.icon_state))
-				I.d_stage_overlay = temp
-				I.d_stage_overlay_key = cache_key
-			for(var/count in I.d_mult to 1 step 0.25)
-				// Note, this should be refactored to drop priority overlays
-				I.add_overlay(I.d_stage_overlay, TRUE)
 
 // Release all contents of this belly into the owning mob's location.
 // If that location is another mob, contents are transferred into whichever of its bellies the owning mob is in.

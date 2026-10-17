@@ -37,6 +37,7 @@ MSG_DEF_SELF(pipe/not_cracked, "It has no crack to seal.")
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	configure(seat_policy(require_restraints = 1, lying = -1))
+	unpowered_machine() // a pipe draws nothing: it carries no has_power for an APC flip to re-evaluate
 	owns_one(nameof(air_temporary), /datum/gas_mixture)
 	owns_many(nameof(leak_watches), /datum/native_watch/gas)
 	op("unwrench", tool(TOOL_WRENCH), wait(1 SECOND), when(PROC_REF(wrenchable)),

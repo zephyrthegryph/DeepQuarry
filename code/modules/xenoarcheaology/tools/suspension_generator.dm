@@ -45,7 +45,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 		for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 			if(!contents_count(suspension_field))
 				suspension_field.icon_state = "energynet"
-				suspension_field.add_overlay("shield2")
+				suspension_field.holds_things = TRUE
 			I.forceMove(suspension_field)
 
 		if(cell.charge <= 0)
@@ -194,7 +194,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 
 	if(collected)
 		suspension_field.set_icon_state("energynet")
-		add_overlay("shield2")
+		suspension_field.holds_things = TRUE
 		visible_message(span_blue("[icon2html(suspension_field,viewers(src))] [suspension_field] gently absconds [collected > 1 ? "something" : "several things"]."))
 	else
 		if(ismineralturf(T) || istype(T,/turf/simulated/wall))
@@ -239,6 +239,12 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 	icon = 'icons/effects/effects.dmi'
 	anchored = 1
 	density = 1
+	/// It has gathered something: the shield layer shows over its net.
+	var/holds_things = FALSE
+
+/obj/effect/suspension_field/draw(datum/look/look)
+	..()
+	look.overlay("shield2", when = holds_things)
 
 CAPABILITIES(/obj/effect/suspension_field)
 	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)

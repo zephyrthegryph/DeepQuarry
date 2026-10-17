@@ -617,6 +617,9 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 			rec.ct_targets -= ct_key
 	if(!isdatum(target) || QDELETED(target))
 		return
+	if(ct.table_kind)
+		stat_ct_hold_table(E, target, rec, ct_key, ct)
+		return
 	var/datum/stat_def/def = stat_def_of(ct.stat_id)
 	if(!def || !stat_declared_on(target.type, def))
 		declare_report("[ct.origin]: [declare_rule(RULE_STAT)] [E.type]: contributes_to([ct.rel], [def ? def.name : ct.stat_id]) names a stat the related [target.type] does not declare")
@@ -633,9 +636,77 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	rec.ct_targets[ct_key] = target
 	stat_row_set(target, def, E, value, ct.priority, "ct:[ct.serial]")
 
+/// A factors() entry of E: the table it names, at its scale and stacks now, held on `target` as rows of E (part = the entry's), or released while its
+/// when() conditions do not hold. The exact current values every time: nothing is banded. The target hears which of its stats moved (factors_held()).
+PROC_SUMMARY(/proc/stat_ct_hold_table) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
+/proc/stat_ct_hold_table(datum/E, datum/target, datum/stat_record/rec, ct_key, datum/stat_contrib/ct)
+	var/alist/table = null
+	var/scale = 0
+	var/stacks = 1
+	if(stat_contrib_active(E, ct))
+		table = stat_factors_arg(E, ct.table_kind, ct.table_spec)
+		scale = stat_factors_arg(E, ct.scale_kind, ct.scale_spec)
+		stacks = stat_factors_arg(E, ct.stacks_kind, ct.stacks_spec)
+		if(!isnum(scale) || !isnum(stacks))
+			declare_report("[ct.origin]: [declare_rule(RULE_STAT)] [E.type]: factors() scale [scale] and stacks [stacks] must be numbers")
+			return
+	if(!rec.ct_targets)
+		rec.ct_targets = list()
+	rec.ct_targets[ct_key] = target
+	var/list/before = stat_table_snapshot(target, E, ct.part, table)
+	if(length(table))
+		hold_table(target, E, table, scale, stacks, ct.part, ct.priority, TRUE)
+	else
+		release_table(target, E, ct.part)
+	stat_table_moved(target, before)
+
+/// The value now of each stat a table call for (source, part) on `target` can change: those the table names and those the source's rows already hold.
+/// Pure. "[stat id]" -> value.
+/proc/stat_table_snapshot(datum/target, datum/source, part, alist/table)
+	var/list/ids = list()
+	for(var/id in table)
+		ids |= list(id)
+	var/key = TABLE_KEY(part)
+	for(var/list/row as anything in target.rx?.stats?.holds)
+		if((row[H_FLAGS] & HF_TABLE) && row[H_SOURCE] == source && row[H_KEY] == key)
+			ids |= list(row[H_STAT])
+	var/list/snapshot = list()
+	for(var/id in ids)
+		var/datum/stat_def/def = stat_def_of(id)
+		if(def)
+			snapshot["[id]"] = stat_value_now(target, def, null)
+	return snapshot
+
+/// Tells `target` which of the stats in `before` (a stat_table_snapshot()) ended with another value, through factors_held().
+/proc/stat_table_moved(datum/target, list/before)
+	if(QDELETED(target) || !length(before))
+		return
+	var/list/moved = list()
+	for(var/id_key in before)
+		var/datum/stat_def/def = stat_def_of(text2num(id_key))
+		if(def && !stat_values_equal(before[id_key], stat_value_now(target, def, null)))
+			moved += text2num(id_key)
+	if(length(moved))
+		target.factors_held(moved)
+
+/// One argument of a factors() entry now: its constant, the var it names, or what its holder proc returns.
+PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
+/proc/stat_factors_arg(datum/E, kind, spec)
+	switch(kind)
+		if(CV_VAR)
+			return E.vars[spec]
+		if(CV_PROC)
+			return stat_call(E, spec)
+	return spec
+
 /// Takes E's contributes_to row for `ct` off `target` and settles the stat.
 /proc/stat_ct_release(datum/target, datum/E, datum/stat_contrib/ct)
 	if(QDELETED(target))
+		return
+	if(ct.table_kind)
+		var/list/before = stat_table_snapshot(target, E, ct.part, null)
+		release_table(target, E, ct.part)
+		stat_table_moved(target, before)
 		return
 	var/datum/stat_record/trec = target.rx?.stats
 	if(!trec?.holds)

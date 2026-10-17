@@ -41,10 +41,6 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 		look.set_icon(base_icon)
 		look.state(base_icon_state)
 
-	// Floor decals.
-	for(var/image/decal as anything in decals)
-		look.overlay(decal)
-
 	if(shows_damaged_plating())
 		look.set_icon('icons/turf/flooring/plating.dmi')
 		look.state("dmg[plating_damage_state]")
@@ -53,6 +49,10 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 
 	if(scorch_state)
 		look.state(scorch_state)
+
+	// A wet floor shines; a frozen one is covered in ice.
+	look.overlay("wet_floor", when = (wet == TURFSLIP_WET || wet == TURFSLIP_LUBE), icon = 'icons/effects/water.dmi')
+	look.overlay("snowfloor", when = (wet == TURFSLIP_ICE), icon = 'icons/turf/overlays.dmi')
 
 	// Show 'ceilingless' overlay.
 	if(no_ceiling)

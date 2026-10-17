@@ -129,7 +129,7 @@
 	progression_rate = 0
 	factors = alist(STAT_HEART_RATE = 20, STAT_BP_SYSTOLIC = -15)
 
-/// Afflictions scale by severity and recompute only on a band crossing.
+/// Afflictions scale by severity: the factors() entry holds the table again at the exact new severity.
 /datum/unit_test/dq_body_factor_affliction_bands
 
 /datum/unit_test/dq_body_factor_affliction_bands/Run()
@@ -141,10 +141,10 @@
 	TEST_ASSERT(dq_near(H.bp_systolic, -15), "edema at full severity should drop systolic pressure by 15")
 
 	A.set_severity(50)
-	TEST_ASSERT(dq_near(H.heart_rate, 10), "crossing a severity band refreshes the factors: edema at half severity gives half the heart rate, got [H.heart_rate]")
+	TEST_ASSERT(dq_near(H.heart_rate, 10), "edema at half severity gives half the heart rate, got [H.heart_rate]")
 
 	A.set_severity(52)
-	TEST_ASSERT(dq_near(H.heart_rate, 10), "a change inside the same band does not refresh: the factors stay at the band's last value, got [H.heart_rate]")
+	TEST_ASSERT(dq_near(H.heart_rate, 10.4), "a small change follows exactly (no band): 52% of 20, got [H.heart_rate]")
 
 	A.cure()
 	TEST_ASSERT_EQUAL(H.heart_rate, 0, "curing should remove the contribution")

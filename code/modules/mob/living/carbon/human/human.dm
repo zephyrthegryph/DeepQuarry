@@ -1417,7 +1417,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	old_species?.remove_components(src, species)
 	if(replaced)
 		replaced_by(replaced) // the private copy proto_replace() handed back, done with now
-	invalidate_factors()
+	body?.sync_species_factors()
 
 	if(species.language)
 		add_language(species.language)
@@ -1480,7 +1480,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 	species.apply_components(src)
 	// The body exists now (the first species is set before the body does): its factor sources are read.
-	invalidate_factors()
+	body?.sync_species_factors()
 
 	set_endurance(species.total_health)
 	set_hunger_rate(src, species.hunger_factor)

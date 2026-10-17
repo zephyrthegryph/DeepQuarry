@@ -383,7 +383,6 @@ CAPABILITIES(/mob/living/simple_mob)
 /mob/living/simple_mob/make_hud_overlays()
 	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.buildmode_hud, src, "ai_0", plane = PLANE_BUILDMODE), STATUS_HUD)
 	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.buildmode_hud, src, "ais_1", plane = PLANE_BUILDMODE), LIFE_HUD)
-	add_overlay(hud_list)
 
 //Makes it so that simplemobs can understand galcomm without being able to speak it.
 /mob/living/simple_mob/say_understands(mob/other, datum/language/speaking = null)
@@ -991,9 +990,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	// Animate instead of set. Original set left commented out
 	// src.transform = M //
 	animate(src, transform = M, time = anim_time)
-
-	// This from original living.dm update_transforms too
-	handle_status_indicators()
 
 /mob/living/simple_mob/proc/use_headset()
 	set name = "Use Headset"

@@ -53,7 +53,7 @@
 	ASSERT(S)
 	if(factors)
 		S.grant_factors(factors)
-		H?.invalidate_factors()
+		H?.body?.sync_species_factors()
 	if(var_changes)
 		for(var/V in var_changes)
 			if(V == "flags") // Is bitflag, implimentation means traits can only GIVE you flags, not remove them.
@@ -109,7 +109,7 @@ TYPE_TABLE_DECLARE(/datum/trait, granted_verb_list, null)
 	ASSERT(S)
 	if(factors)
 		S.revoke_factors(factors)
-		H?.invalidate_factors()
+		H?.body?.sync_species_factors()
 	if(var_changes)
 		for(var/V in var_changes)
 			if(V == "flags") // Is bitflag, this assumes traits can only ever GIVE you flags.

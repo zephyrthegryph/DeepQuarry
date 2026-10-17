@@ -131,7 +131,6 @@ CAPABILITIES(/obj/structure/flora/tree)
 	set_is_stump(TRUE)
 	set_density(FALSE)
 	set_icon_state("[base_state]_stump")
-	cut_overlays() // For the Sif tree and other future glowy trees.
 	set_glow(src, GLOW(0, null, null))
 
 
@@ -351,6 +350,8 @@ TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 
 /obj/structure/flora/tree/sif/draw(datum/look/look)
 	..()
+	if(is_stump)
+		return // a stump has no glowing bulbs
 	var/bulbs = (5 - light_shift)
 	if(bulbs > 0)
 		look.glow(bulbs, 1, "#33ccff")	// 5 variants, missing bulbs. 5th has no bulbs, so no glow.

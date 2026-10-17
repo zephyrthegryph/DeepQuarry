@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Raw overlay writes on most items, mobs, structures, turfs and HUD elements are drawn by look parts instead (the dx_raw_overlays baseline goes from 459 sites to 36)"

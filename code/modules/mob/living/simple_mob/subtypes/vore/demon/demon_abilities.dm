@@ -41,7 +41,6 @@
 		for(var/obj/belly/B as anything in vore_organs)
 			B.set_escapable(initial(B.escapable))
 
-		cut_overlays()
 		set_alpha(initial(alpha))
 		set_invisibility(initial(invisibility))
 		see_invisible = initial(see_invisible)
@@ -67,7 +66,6 @@
 		for(var/obj/belly/B as anything in vore_organs)
 			B.set_escapable(B_ESCAPABLE_NONE)
 
-		cut_overlays()
 		flick("phaseout",src)
 		after(src, 3 SECONDS, PROC_REF(demon_phased_out), with = list(original_canmove))
 
@@ -114,7 +112,6 @@
 	for(var/obj/belly/B as anything in vore_organs)
 		B.set_escapable(B_ESCAPABLE_NONE)
 
-	cut_overlays()
 	flick("phaseout",src)
 	after(src, 3 SECONDS, PROC_REF(demon_phased_out), with = list(original_canmove))
 	after(src, 33 SECONDS, PROC_REF(demon_shift_return))
@@ -126,7 +123,6 @@
 	for(var/obj/belly/B as anything in vore_organs)
 		B.set_escapable(initial(B.escapable))
 
-	cut_overlays()
 	set_alpha(initial(alpha))
 	set_invisibility(initial(invisibility))
 	see_invisible = initial(see_invisible)
@@ -313,7 +309,6 @@
 	for(var/obj/belly/B as anything in vore_organs)
 		B.set_escapable(initial(B.escapable))
 
-	cut_overlays()
 	set_alpha(initial(alpha))
 	set_invisibility(initial(invisibility))
 	see_invisible = initial(see_invisible)

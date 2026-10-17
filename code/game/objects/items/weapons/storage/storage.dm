@@ -762,7 +762,8 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		I.maptext = ""
 		I.hud_layerise()
 		var/atom/movable/storage_slot/SS = add_catcher(I)
-		SS.add_overlay(list(stored_start, stored_continue, stored_end))
+		// The three bar images are shared and mutated per item, so each slot keeps a snapshot of how they look for it now.
+		SS.set_bars(list(new /mutable_appearance(stored_start), new /mutable_appearance(stored_continue), new /mutable_appearance(stored_end)))
 		bar_start.vis_contents += SS
 
 	closer.screen_loc = "4:[storage_width+19],2:16"
@@ -800,10 +801,13 @@ CAPABILITIES(/atom/movable/storage_slot)
 	ASSERT(item)
 	name += item.name
 
-/// Has to be this way. The fact that the overlays will be constantly mutated by other storage means we can't wait.
-/atom/movable/storage_slot/add_overlay(list/somethings)
-	ASSERT(islist(somethings))
-	overlays = somethings
+/// The backdrop bar images (start, middle, end) behind the stored item, as they looked when the slot was laid out.
+/atom/movable/storage_slot/var/list/bars
+
+/atom/movable/storage_slot/draw(datum/look/look)
+	..()
+	for(var/bar in bars)
+		look.overlay(bar)
 
 /// The native Click's actor, handed over by the engine (click_on()): clicking a slot is clicking the stored item, through the clicker's input inbox.
 /atom/movable/storage_slot/proc/slot_click(datum/act/input/A)

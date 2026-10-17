@@ -159,6 +159,97 @@ impl ExpandedOriginArena {
         boxed(&self.0.traces, &mut visit);
     }
 }
+/// One region's replacement rows, for `ExpandedOriginArena::spliced`.
+pub(super) struct RowEdit {
+    pub region: usize,
+    /// Where the region's output started before the edit (locates its rows) and where it starts now.
+    pub old_start: usize,
+    pub new_start: usize,
+    /// New output length minus old: later rows move by the sum of the deltas before them.
+    pub delta: isize,
+    pub path: Arc<PathBuf>,
+    pub lines: Vec<super::expansion::output_lines::Line>,
+}
+impl ExpandedOriginArena {
+    /// The arena with some regions' rows replaced and every later row moved by the byte delta. The
+    /// output line of a row is its index, so the rows after an edit renumber by position alone.
+    /// `None` for the wide fallback layout or a field that would not fit the compact one; the
+    /// caller then runs the full expansion.
+    pub(super) fn spliced(&self, edits: Vec<RowEdit>) -> Option<Self> {
+        let Records::Compact(old) = &self.0.records else {
+            return None;
+        };
+        let moved = |row: &Compact, shift: i64| -> Option<Compact> {
+            Some(Compact {
+                output_start: u32::try_from(i64::from(row.output_start) + shift).ok()?,
+                output_end: u32::try_from(i64::from(row.output_end) + shift).ok()?,
+                ..*row
+            })
+        };
+        let mut records: Vec<Compact> = Vec::with_capacity(old.len() + 64);
+        let mut paths = self.0.paths.to_vec();
+        let mut traces = self.0.traces.to_vec();
+        let (mut cursor, mut shift) = (0usize, 0i64);
+        for edit in edits {
+            let mut first = old.partition_point(|row| (row.output_start as usize) < edit.old_start);
+            while first < old.len()
+                && old[first].region as usize != edit.region
+                && old[first].output_start as usize == edit.old_start
+            {
+                first += 1;
+            }
+            let mut last = first;
+            while last < old.len() && old[last].region as usize == edit.region {
+                last += 1;
+            }
+            if first < cursor {
+                return None;
+            }
+            for row in &old[cursor..first] {
+                records.push(moved(row, shift)?);
+            }
+            let path = match paths.iter().position(|known| Arc::ptr_eq(known, &edit.path)) {
+                Some(index) => index,
+                None => {
+                    paths.push(Arc::clone(&edit.path));
+                    paths.len() - 1
+                }
+            };
+            let mut last_trace: Option<(usize, usize)> = None;
+            for (relative, source_line, source_span, trace) in edit.lines {
+                let pointer = Arc::as_ptr(&trace) as usize;
+                let index = match last_trace.filter(|(known, _)| *known == pointer) {
+                    Some((_, index)) => index,
+                    None => {
+                        traces.push(trace);
+                        traces.len() - 1
+                    }
+                };
+                last_trace = Some((pointer, index));
+                records.push(Compact {
+                    output_start: u32::try_from(edit.new_start + relative.start).ok()?,
+                    output_end: u32::try_from(edit.new_start + relative.end).ok()?,
+                    source_start: u32::try_from(source_span.start).ok()?,
+                    source_end: u32::try_from(source_span.end).ok()?,
+                    source_line: u32::try_from(source_line).ok()?,
+                    region: u32::try_from(edit.region).ok()?,
+                    path: u32::try_from(path).ok()?,
+                    traces: u32::try_from(index).ok()?,
+                });
+            }
+            cursor = last;
+            shift += edit.delta as i64;
+        }
+        for row in &old[cursor..] {
+            records.push(moved(row, shift)?);
+        }
+        Some(Self(Arc::new(Inner {
+            records: Records::Compact(records.into_boxed_slice()),
+            paths: paths.into_boxed_slice(),
+            traces: traces.into_boxed_slice(),
+        })))
+    }
+}
 pub struct OriginIter<'a> {
     arena: &'a ExpandedOriginArena,
     indices: std::ops::Range<usize>,

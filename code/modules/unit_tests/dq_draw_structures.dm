@@ -356,7 +356,7 @@
 	var/original = T.type
 	var/turf/simulated/shuttle/plating/carry/carry = T.ChangeTurf(/turf/simulated/shuttle/plating/carry)
 	TEST_ASSERT(istype(carry), "the carry turf is made")
-	carry.join_flags = 0
+	carry.set_join_flags(0)
 	var/first = carry.underlay_update()
 	TEST_ASSERT_EQUAL(first, get_base_turf_by_area(carry), "an unjoined carry turf lies on the area's base turf")
 	for(var/i in 1 to 24)

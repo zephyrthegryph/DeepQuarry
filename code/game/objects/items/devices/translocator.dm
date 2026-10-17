@@ -98,20 +98,14 @@ CAPABILITIES(/obj/item/perfect_tele)
 	var/index = 1
 	for(var/obj/item/perfect_tele_beacon/beacon as anything in beacons)
 		var/bcn = beacon.tele_name
-		var/image/I = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_[index]")
-
-		if(destination() == beacon)
-			I.add_overlay(radial_seton)
-		else
-			I.add_overlay(radial_set)
+		var/image/I = look_composed_image(image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_[index]"), list(destination() == beacon ? radial_seton : radial_set))
 
 		LAZYSET(radial_images, bcn, I)
 
 		index++
 
 	if(beacons_left)
-		var/image/I = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_[index]")
-		I.add_overlay(radial_plus)
+		var/image/I = look_composed_image(image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_[index]"), list(radial_plus))
 		LAZYSET(radial_images, "New Beacon", I)
 
 /obj/item/perfect_tele/proc/interaction_hand(datum/act/op/A)

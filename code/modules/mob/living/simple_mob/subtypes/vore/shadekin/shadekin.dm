@@ -241,7 +241,6 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 		log_and_message_admins("[src] died outside of the dark but there were no valid floors to warp to")
 		return FALSE
 
-	cut_overlays()
 	flick("tp_out",src)
 	act_message(src, null, others = "<b>%U%</b> [kind_of(src).death_message]")
 	shadekin.respite_activating = TRUE
@@ -286,7 +285,6 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 /// No retreat left: the kin fades out for good.
 /mob/living/simple_mob/shadekin/on_death(gibbed)
 	. = ..()
-	cut_overlays()
 	set_icon_state("")
 	flick("tp_out",src)
 	expire(1 SECOND) //Back from whence you came!

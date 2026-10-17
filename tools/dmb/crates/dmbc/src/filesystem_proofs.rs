@@ -10,7 +10,7 @@ use std::{
 };
 
 pub struct BulkFileSystemProofs {
-    directories: BTreeMap<PathBuf, DirectoryProof>,
+    directories: BTreeMap<PathBuf, std::sync::Arc<DirectoryProof>>,
     exact_files: HashMap<PathBuf, Stamp>,
     exact_missing_files: HashSet<PathBuf>,
     missing_directories: BTreeSet<PathBuf>,
@@ -40,8 +40,8 @@ pub struct ProofCounts {
     pub folder_hits: u64,
     pub folder_fallbacks: u64,
 }
-struct DirectoryProof {
-    entries: BTreeMap<String, Option<Stamp>>,
+pub(crate) struct DirectoryProof {
+    pub(crate) entries: BTreeMap<String, Option<Stamp>>,
     aliases: BTreeSet<String>,
     ascii: bool,
     charged: usize,
@@ -89,17 +89,23 @@ impl BulkFileSystemProofs {
         let mut requested: BTreeSet<std::borrow::Cow<'a, Path>> = folders.into_iter().collect();
         let mut exact_candidates = Vec::new();
         let mut exact_bytes = 0usize;
+        // Snapshot paths arrive in directory order, so consecutive files share a parent: probing the
+        // ordered set once per distinct parent saves a component-wise path comparison per file.
+        let mut last_parent: Option<std::path::PathBuf> = None;
         for path in paths {
-            match &path {
-                std::borrow::Cow::Borrowed(path) => {
-                    let path: &'a Path = path;
-                    if let Some(parent) = path.parent() {
-                        requested.insert(std::borrow::Cow::Borrowed(parent));
-                    }
-                }
-                std::borrow::Cow::Owned(path) => {
-                    if let Some(parent) = path.parent() {
-                        requested.insert(std::borrow::Cow::Owned(parent.to_owned()));
+            if let Some(parent) = path.parent() {
+                if last_parent.as_deref() != Some(parent) {
+                    last_parent = Some(parent.to_owned());
+                    match &path {
+                        std::borrow::Cow::Borrowed(path) => {
+                            let path: &'a Path = path;
+                            if let Some(parent) = path.parent() {
+                                requested.insert(std::borrow::Cow::Borrowed(parent));
+                            }
+                        }
+                        std::borrow::Cow::Owned(_) => {
+                            requested.insert(std::borrow::Cow::Owned(parent.to_owned()));
+                        }
                     }
                 }
             }
@@ -116,8 +122,9 @@ impl BulkFileSystemProofs {
                 exact_candidates.push(path.into_owned());
             }
         }
+        dm_profile::request_mark("proofs.requested_built");
         let requested_count = requested.len();
-        let mut directories = BTreeMap::new();
+        let mut directories: BTreeMap<PathBuf, std::sync::Arc<DirectoryProof>> = BTreeMap::new();
         let mut bytes = 0usize;
         let mut missing_candidates = BTreeSet::new();
         let mut capture_missing = 0;
@@ -146,6 +153,7 @@ impl BulkFileSystemProofs {
                 }
             }
         }
+        dm_profile::request_mark("proofs.directories_captured");
         // A failed open is never an absence proof. Obtain bounded additional
         // parent listings and authorize Missing only from complete membership.
         let mut parents: BTreeSet<PathBuf> = missing_candidates
@@ -154,7 +162,7 @@ impl BulkFileSystemProofs {
             .collect();
         parents.retain(|path| !requested.contains(path.as_path()));
         for parent in parents.into_iter().take(1024) {
-            if let Ok(proof) = capture_directory(&parent) {
+            if let Ok(proof) = crate::fs_watch::shared_proof(&parent, capture_directory) {
                 if bytes.saturating_add(proof.charged) <= 64 * 1024 * 1024 {
                     bytes += proof.charged;
                     directories.insert(parent, proof);
@@ -183,6 +191,7 @@ impl BulkFileSystemProofs {
                 break;
             }
         }
+        dm_profile::request_mark("proofs.missing_resolved");
         let fallback_directories = requested_count
             - requested
                 .iter()
@@ -193,10 +202,21 @@ impl BulkFileSystemProofs {
                 .count();
         let mut exact_files = HashMap::new();
         let mut exact_missing_files = HashSet::new();
+        let mut last_proof: Option<(PathBuf, Option<std::sync::Arc<DirectoryProof>>)> = None;
         for path in exact_candidates {
-            let stamp = path
-                .parent()
-                .and_then(|parent| directories.get(parent))
+            let parent_proof = match path.parent() {
+                Some(parent) => match &last_proof {
+                    Some((last, proof)) if last.as_path() == parent => proof.clone(),
+                    _ => {
+                        let proof = directories.get(parent).cloned();
+                        last_proof = Some((parent.to_owned(), proof.clone()));
+                        proof
+                    }
+                },
+                None => None,
+            };
+            let stamp = parent_proof
+                .as_deref()
                 .and_then(|proof| {
                     path.file_name()
                         .and_then(|name| name.to_str())
@@ -219,6 +239,7 @@ impl BulkFileSystemProofs {
                 }
             }
         }
+        dm_profile::request_mark("proofs.exact_built");
         Self {
             exact_files,
             exact_missing_files,
@@ -373,14 +394,14 @@ fn capture_directory(_: &Path) -> io::Result<DirectoryProof> {
 
 fn capture_directories_parallel(
     paths: &[&std::borrow::Cow<'_, Path>],
-) -> Vec<io::Result<DirectoryProof>> {
+) -> Vec<io::Result<std::sync::Arc<DirectoryProof>>> {
     const MIN_CHUNK: usize = 32;
     let threads = std::thread::available_parallelism()
         .map_or(1, |n| n.get())
         .min(8)
         .min(paths.len().div_ceil(MIN_CHUNK).max(1));
     if threads <= 1 {
-        return paths.iter().map(|path| capture_directory(path)).collect();
+        return paths.iter().map(|path| crate::fs_watch::shared_proof(path, capture_directory)).collect();
     }
     let chunk = paths.len().div_ceil(threads);
     std::thread::scope(|scope| {
@@ -389,7 +410,7 @@ fn capture_directories_parallel(
             .map(|part| {
                 scope.spawn(move || {
                     part.iter()
-                        .map(|path| capture_directory(path))
+                        .map(|path| crate::fs_watch::shared_proof(path, capture_directory))
                         .collect::<Vec<_>>()
                 })
             })

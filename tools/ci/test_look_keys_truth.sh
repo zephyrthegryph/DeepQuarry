@@ -6,6 +6,7 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd)"
 tmp="$(mktemp -d)"; work="$tmp/repo"; mkdir "$work"
 trap 'rm -rf "$tmp"' EXIT
+export DQ_LOOK_MANIFEST_DIR="$tmp/manifest"
 cd "$work"
 git init -q -b master .
 git config user.email t@t; git config user.name t
@@ -89,4 +90,17 @@ $S --record "$tmp/plan.tsv" >/dev/null
 [ -z "$(unv)" ] || fail "a full run verifies every type"
 # 8. --regen is refused.
 $S --regen >/dev/null 2>&1 && fail "--regen must be refused"
+# 9. the manifest: a pair another worktree verified is not probed again; a changed snapshot starts an empty manifest.
+plan a=1 b=7 c=8
+{ row a 1; } >"$K"
+[ "$(unv)" = "/obj/b /obj/c " ] || fail "manifest case: expected b and c unverified, got: $(unv)"
+printf '/obj/b\n' >"$tmp/probed.txt"
+$S --record "$tmp/plan.tsv" "$tmp/probed.txt" >/dev/null
+{ row a 1; } >"$K"   # another worktree: its file lacks b, the manifest (shared on the machine) has it
+[ "$(unv)" = "/obj/c " ] || fail "manifest case: b was verified by another worktree and must not be probed again, got: $(unv)"
+mkdir -p code/modules/unit_tests/snapshots/looks; echo changed >code/modules/unit_tests/snapshots/looks/x.txt
+[ "$(unv)" = "/obj/b /obj/c " ] || fail "manifest case: a changed look snapshot must void the manifest, got: $(unv)"
+DQ_LOOK_MANIFEST=off; export DQ_LOOK_MANIFEST
+rm -f code/modules/unit_tests/snapshots/looks/x.txt
+[ "$(unv)" = "/obj/b /obj/c " ] || fail "manifest case: DQ_LOOK_MANIFEST=off must ignore the manifest, got: $(unv)"
 echo "test_look_keys_truth: PASS"

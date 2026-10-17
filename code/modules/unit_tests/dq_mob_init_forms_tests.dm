@@ -69,7 +69,7 @@
 	var/obj/item/card/id/card = joe.get_equipped_item(SLOT_ID_ID)
 	TEST_ASSERT_EQUAL(card?.registered_name, joe.real_name, "and its ID card is fitted to it")
 
-	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, TRUE)
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
 	TEST_ASSERT(AI.aiRadio, "an AI has its radio")
 	TEST_ASSERT_EQUAL(AI.common_radio, AI.aiRadio, "which is its common radio")
 	TEST_ASSERT(AI.laws, "and its laws")

@@ -176,8 +176,35 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 /// A mapped SMES's late pass: the coils laid on its tile and its preset settings.
 /obj/machinery/power/smes/proc/mapped_after_init(datum/act/timer/A)
-	if(A.mapload && !unwired) // one without terminals takes no late pass
+	if(!A.mapload)
+		return
+	if(unwired)
+		adopt_mapped_terminals()
+	if(!unwired) // one without terminals takes no late pass
 		map_late()
+
+/// A plain terminal a map laid beside the unit, facing it, with no owner of its own (an APC's terminal has its APC as master): it is this unit's input
+/// terminal. Maps place the base /obj/machinery/power/terminal; the unit's own are /terminal/smes_input, so each is swapped for one in place (same
+/// tile and direction) and the unit wired. Without the swap every mapped unit sits unwired, not operable, and offers its network nothing.
+/obj/machinery/power/smes/proc/adopt_mapped_terminals()
+	if(QDELETED(src) || !needs_terminals())
+		return
+	for(var/d in GLOB.cardinal)
+		var/turf/T = get_step(src, d)
+		if(!T)
+			continue
+		for(var/obj/machinery/power/terminal/plain in turf_contents_of_type(T, /obj/machinery/power/terminal))
+			if(plain.type != /obj/machinery/power/terminal || plain.master() || plain.dir != turn(d, 180))
+				continue
+			var/obj/machinery/power/terminal/smes_input/term = replace_with(plain, /obj/machinery/power/terminal/smes_input)
+			term?.set_dir(plain.dir)
+	add_nearby_terminals()
+	if(!LAZYLEN(terminals))
+		return
+	log_world("SMES_WIRED: [src] at ([x],[y],[z]) adopted [LAZYLEN(terminals)] mapped input terminal(s)")
+	set_unwired(FALSE)
+	if(!power_region)
+		connect_to_network(FALSE)
 
 /obj/machinery/power/smes/proc/map_late()
 	apply_mapped_upgrades()

@@ -141,7 +141,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 	P.set_info(P.info + ("<br>"))
 	P.set_info(P.info + ("[bicon(scanned_object())] [results]"))
 	P.stamped = list(/obj/item/stamp)
-	P.add_overlay("paper_stamped")
+	P.add_stamp_mark("paper_stamped", 0, 0)
 
 	if(scanned_object() && istype(scanned_object(), /obj/machinery/artifact))
 		var/obj/machinery/artifact/A = scanned_object()

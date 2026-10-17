@@ -663,7 +663,7 @@
 		// This is hard-set to default the body to a normal FBP, without changing anything.
 		// proto_replace: src may be H's private copy, still running this proc; deleted below.
 		var/datum/species/old_species = proto_replace(H, nameof(H.species), GLOB.all_species[SPECIES_HUMAN])
-		H.invalidate_factors()
+		H.body?.sync_species_factors()
 
 		for(var/obj/item/organ/internal/diona/Org in H.internal_organ_list()) // Remove Nymph organs.
 			ended_with(Org, H)
