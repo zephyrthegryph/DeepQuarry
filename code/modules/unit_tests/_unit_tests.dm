@@ -274,6 +274,7 @@
 #include "dq_focus.dm"
 #include "dq_gc_tests.dm"
 #include "dq_gc_sweep_tests.dm"
+#include "dq_list_leak_tests.dm"
 #include "dq_table_ref_hold_tests.dm"
 #include "dq_hc_bots_behaviour.dm"
 #include "dq_hc_mobs_behaviour.dm"
@@ -1129,6 +1130,7 @@
 #include "../benchmarks/dx_deps.dm"
 #include "../benchmarks/op_resolve.dm"
 #include "../benchmarks/apc_flip.dm"
+#include "../benchmarks/soak.dm"
 #include "../benchmarks/kernel_metrics.dm"
 #include "../balance/balance_benchmark.dm"
 #endif
