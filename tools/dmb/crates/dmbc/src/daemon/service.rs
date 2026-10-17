@@ -446,7 +446,12 @@ impl Shared {
             && !DIAG_RELEASED.swap(true, Ordering::AcqRel)
         {
             std::thread::sleep(Duration::from_secs(20));
-            if self.release_for_retire() {
+            let upto = std::env::var("DMB_ALLOC_SITES_RELEASE").ok().and_then(|text| text.parse::<usize>().ok());
+            if match upto {
+                Some(tier) if (2..housekeeping::SESSION_RELEASE).contains(&tier) => self.diag_release_tiers(tier),
+                Some(0) => false,
+                _ => self.release_for_retire(),
+            } {
                 bytes = self.reclaim_allocator(transport::private_bytes());
             }
         }

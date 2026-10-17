@@ -378,3 +378,26 @@ hash-table slack in the census owners is 3 to 6 %. Remaining retained memory is 
 The census structures the design names (expanded text 52 MiB, origin arena 40 MiB, source text 65 MiB, directive plan
 135 MiB, declaration AST 91 MiB, body arena 99 MiB) are small. The retained cost is dominated by per-unit
 observation receipts and per-region memos keyed by 87,000 procedures and 5,900 files, not by one big text.
+
+### Cost of releasing retained state (2026-10-17)
+
+Measured with the counting build (about 2.6x slower patches than the plain build: 14.3 s hot here against 5.4 s plain),
+one daemon per row, full uncached compile, idle ladder applied to the idle session
+(`DMB_ALLOC_SITES_RELEASE=<tier>`, diagnostic, feature `allocation-sites`), then a body edit:
+
+| Released up to | Private after | Next edit | The edit after that |
+|---|---|---|---|
+| nothing (hot) | 9.05 GB | patch 14.5 s | patch 14.2 s |
+| tier 2 (rich buffers) | 8.52 GB | patch 28.1 s | patch 11.7 s |
+| tier 3 (compiler artifacts) | 7.27 GB | full compile 108 s | patch 15.1 s |
+| tier 4 (optional images) | 6.91 GB | full compile 80 s | patch 14.4 s |
+| tier 5 (compact symbolic) | 5.85 GB | full compile 99 s | patch 13.0 s |
+| tier 6 (remaining optional) | 5.50 GB | full compile 74 s | patch 13.5 s |
+| tier 7 (whole session, plain build) | about 1.1 GB | full compile 169 s counting | patch 12.8 s |
+
+Findings: the disk memos make a released edit a 74 to 108 s compile (against 120 to 130 s cold), not a few seconds,
+because a released session leaves no patch base ("patch declined: no patch base retained"). Every tier from 3 up costs the
+next edit a full compile, so shortening the idle release (or the 30-minute MRU shield) would trade a full compile per
+returning edit for the memory. The 1.85 GB observation store is part of what tier 3 drops: evicting it means relowering
+(45 s in the released run), so it is not a cheap lazy rebuild. Revisit when record hits leave a patch base (lane
+`tools/dmb-real-world`): a released edit could then patch from persisted records.

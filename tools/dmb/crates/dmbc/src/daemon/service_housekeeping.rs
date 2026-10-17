@@ -33,7 +33,7 @@ impl Deadline {
 const OPTIONAL_IMAGES: usize = 4;
 const COMPACT_SYMBOLIC: usize = 5;
 const REMAINING_OPTIONAL: usize = 6;
-const SESSION_RELEASE: usize = 7;
+pub(super) const SESSION_RELEASE: usize = 7;
 // Soft pressure sheds nothing. Measured on DeepQuarry (2026-10-15): the tier-2 release of rich
 // buffers (prepared sources, maps, link bindings, initializer assemblies) returned no private
 // memory (private bytes before and after differ by under 0.1%: the freed pages are scattered among
@@ -93,6 +93,46 @@ impl Shared {
                 manifest.display(),
                 transport::private_bytes()
             ));
+        }
+        released
+    }
+
+    /// Diagnostic (feature `allocation-sites`): apply the idle release ladder up to `upto` to every idle session, as the
+    /// housekeeping pass would one tier per pass, so the next edit's latency can be measured per tier.
+    #[cfg(feature = "allocation-sites")]
+    pub(super) fn diag_release_tiers(&self, upto: usize) -> bool {
+        let slots: Vec<(SessionKey, Arc<Slot>)> = self
+            .slots
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .map(|(key, slot)| (key.clone(), Arc::clone(slot)))
+            .collect();
+        let mut released = false;
+        for (key, slot) in slots {
+            let Ok(mut host) = slot.host.try_lock() else { continue };
+            host.release_idle_executor();
+            for tier in 2..=upto {
+                let before = transport::private_bytes();
+                if tier == OPTIONAL_IMAGES {
+                    host.release_idle_optional_images();
+                } else if tier == COMPACT_SYMBOLIC {
+                    host.release_idle_compact_symbolic();
+                } else if tier == REMAINING_OPTIONAL {
+                    host.release_idle_remaining_optional();
+                } else if tier == 3 {
+                    host.release_idle_compiler_artifacts();
+                } else if tier == 2 {
+                    host.release_idle_artifacts();
+                }
+                super::super::emit_stderr(format_args!(
+                    "dmbd diagnostic release tier={tier} project={} private-before={before:?} private-after={:?}",
+                    key.manifest.display(),
+                    transport::private_bytes()
+                ));
+            }
+            slot.idle_tier.store(upto.min(SESSION_RELEASE - 1), Ordering::Release);
+            released = true;
         }
         released
     }
