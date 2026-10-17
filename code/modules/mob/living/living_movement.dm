@@ -175,7 +175,7 @@ default behaviour is:
 			now_pushing = FALSE
 			return
 
-		rel_set(tmob, nameof(tmob.LAssailant), src)
+		tmob.note_assailant(src)
 
 	now_pushing = FALSE
 	. = ..()

@@ -79,4 +79,4 @@ CAPABILITIES(/obj/item/uv_light)
 					if(istype(A, /obj/item))
 						var/obj/item/O = A
 						if(dq_get_was_bloodied(O))
-							rel_add(src, nameof(reset_objects), O) // its look shows the blood while the light scans it (fluorescent 2)
+							rel_add(src, nameof(reset_objects), O) // its look draws the glow while the light scans it (fluorescent 2): /obj/item/draw()
