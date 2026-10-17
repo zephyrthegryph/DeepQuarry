@@ -67,7 +67,8 @@
 	var/reused_construction = created_construction == state_construction()
 	GLOB.state_construction = saved_construction
 	var/created_construction_valid = istype(created_construction, /datum/state_construction)
-	qdel(created_construction)
+	// Only the scratch provider is retired; the live singleton has already been restored.
+	qdel(created_construction, force = TRUE)
 	TEST_ASSERT(created_construction_valid, "state_construction can initialize before managed globals")
 	TEST_ASSERT(reused_construction, "state_construction retains one lazy provider identity")
 	TEST_ASSERT_EQUAL(GLOB.state_construction, saved_construction, "state_construction original provider is restored")
@@ -78,7 +79,7 @@
 	var/reused_registry_adapter = created_registry_adapter == state_registry_adapter()
 	GLOB.state_registry_adapter = saved_registry_adapter
 	var/created_registry_adapter_valid = istype(created_registry_adapter, /datum/state_registry_adapter)
-	qdel(created_registry_adapter)
+	qdel(created_registry_adapter, force = TRUE)
 	TEST_ASSERT(created_registry_adapter_valid, "state_registry_adapter can initialize before managed globals")
 	TEST_ASSERT(reused_registry_adapter, "state_registry_adapter retains one lazy provider identity")
 	TEST_ASSERT_EQUAL(GLOB.state_registry_adapter, saved_registry_adapter, "state_registry_adapter original provider is restored")

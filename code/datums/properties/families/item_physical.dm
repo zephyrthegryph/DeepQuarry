@@ -66,6 +66,10 @@
 /datum/property_provider/type_var/tag/sharp/instance_value(datum/D)
 	return normalize(combat_of(D).sharp)
 
+/datum/property_provider/type_var/tag/sharp/read_keys(datum/D)
+	var/obj/item/I = D
+	return istype(I) ? list(list(I, ITEM_COMBAT_KEY)) : list()
+
 /datum/property_def/tag/conductive
 	id = TAG_CONDUCTIVE
 	name = "Conductive"
