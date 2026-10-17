@@ -17,7 +17,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-const DEFAULT_IDLE_EXIT_SECS: u64 = 600;
+const DEFAULT_IDLE_EXIT_SECS: u64 = 3600;
 const DEFAULT_MAX_DAEMONS: usize = 2;
 const LOG_ROTATE_BYTES: u64 = 1 << 20;
 /// A record whose heartbeat is older than this describes a wedged or dead daemon, not a busy one.
@@ -515,7 +515,7 @@ mod tests {
 
     #[test]
     fn idle_exit_default_zero_and_garbage() {
-        assert_eq!(parse_idle(None).unwrap(), Some(Duration::from_secs(600)));
+        assert_eq!(parse_idle(None).unwrap(), Some(Duration::from_secs(3600)));
         assert_eq!(parse_idle(Some("0")).unwrap(), None);
         assert_eq!(parse_idle(Some("90")).unwrap(), Some(Duration::from_secs(90)));
         assert!(parse_idle(Some("soon")).is_err());

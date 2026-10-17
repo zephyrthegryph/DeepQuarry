@@ -302,7 +302,7 @@ impl Shared {
                 let tier = slot.idle_tier.load(Ordering::Acquire);
                 // A host busy with another request will have built by the time this one runs: count it as retained.
                 let retained = match slot.host.try_lock() {
-                    Ok(host) => host.retains_artifacts() && host.retains_patch_base(),
+                    Ok(host) => host.retains_patch_base(),
                     Err(std::sync::TryLockError::Poisoned(_)) => false,
                     Err(std::sync::TryLockError::WouldBlock) => true,
                 };
