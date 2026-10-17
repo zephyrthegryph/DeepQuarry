@@ -50,6 +50,19 @@ export function slotCapacity(cls: SlotClass): number {
   return Number.isInteger(n) && n >= 0 ? n : 1;
 }
 
+/**
+ * Slots kept free for the merge worktree (same rule as slots_usable() in dq_machine_slots.sh): a caller with priority 1 may hold only
+ * the first (capacity - reserve) slots. DQ_SLOTS_MERGE_RESERVE_<CLASS> or DQ_SLOTS_MERGE_RESERVE; default 1 for test_world with at
+ * least 3 slots, else 0.
+ */
+export function usableSlots(cls: SlotClass, max: number, prio: number): number {
+  if (prio === 0) return max;
+  const raw = process.env[`DQ_SLOTS_MERGE_RESERVE_${cls.toUpperCase()}`] ?? process.env.DQ_SLOTS_MERGE_RESERVE;
+  let reserve = raw !== undefined && raw !== '' ? Number(raw) : cls === 'test_world' && max >= 3 ? 1 : 0;
+  if (!Number.isInteger(reserve) || reserve < 0) reserve = 0;
+  return max - Math.min(reserve, max - 1);
+}
+
 const norm = (p: string): string =>
   p
     .toLowerCase()
@@ -188,7 +201,7 @@ function preheld(cls: SlotClass): boolean {
 export function slotGroupSize(cls: SlotClass, want: number): number {
   const max = slotCapacity(cls);
   if (max <= 0 || preheld(cls)) return 0;
-  return Math.min(want, max);
+  return Math.min(want, usableSlots(cls, max, priorityOf(worktree())));
 }
 
 /**
@@ -200,7 +213,9 @@ export function slotGroupSize(cls: SlotClass, want: number): number {
 export async function acquireSlotGroup(cls: SlotClass, want: number, label: string, log: (m: string) => void = (m) => console.log(m)): Promise<HeldSlot[]> {
   const max = slotCapacity(cls);
   if (max <= 0 || preheld(cls)) return [];
-  want = Math.min(Math.max(want, 1), max);
+  const prio = priorityOf(worktree());
+  const usable = usableSlots(cls, max, prio);
+  want = Math.min(Math.max(want, 1), usable);
   const dir = path.join(slotsDir(), cls);
   try {
     fs.mkdirSync(path.join(dir, 'queue'), { recursive: true });
@@ -209,7 +224,6 @@ export async function acquireSlotGroup(cls: SlotClass, want: number, label: stri
     return [];
   }
   const top = worktree();
-  const prio = priorityOf(top);
   const queued = Math.floor(Date.now() / 1000);
   const name = `${prio}-${String(queued).padStart(13, '0')}-${process.pid}`;
   const queueFile = path.join(dir, 'queue', name);
@@ -227,7 +241,7 @@ export async function acquireSlotGroup(cls: SlotClass, want: number, label: stri
       // queue vanished: recreated below
     }
     if (first === name) {
-      for (let i = 1; i <= max && taken.length < want; i++) {
+      for (let i = 1; i <= usable && taken.length < want; i++) {
         const sd = path.join(dir, `slot.${i}`);
         try {
           fs.mkdirSync(sd);
