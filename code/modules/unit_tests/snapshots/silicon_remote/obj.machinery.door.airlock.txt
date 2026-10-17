@@ -1,0 +1,12 @@
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Open controls
+robot|none menu: Open or close
+robot|none menu: Toggle bolts
+robot|none menu: Toggle electrification
+robot|none click: Click: Open controls
+ai|none menu: Open controls
+ai|none menu: Open or close
+ai|none menu: Toggle bolts
+ai|none menu: Toggle electrification
+ai|none menu: Toggle the bolt lights
+ai|none click: Click: Open controls

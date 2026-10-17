@@ -1,0 +1,2 @@
+@obj.machinery.photocopier robot|none
+@obj.machinery ai|none

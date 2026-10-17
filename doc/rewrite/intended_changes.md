@@ -4919,3 +4919,199 @@ prove the composition equal within a relative 1e-5. What is different on purpose
 * **A reagent's factor tables follow its exact volume** (no 0.1 dose band) and a reagent that cannot change a factor has no record. A body's factor sources are no longer re-read as a set: the
   species, form and worn items are read where they change, so a raw write of a species field (`medallergens`, flags) is picked up by the next reagent read or `sync_species_factors()`, not by
   every later factor event.
+
+## Silicon entry declarations (codex/silicon-remote, 2026-10-15)
+
+The camera's `ai_wire_tools` and airlock's `signaler_robot` operation keys split
+previous actor-dependent branches into explicit routes. The AI camera route still
+refreshes coverage without opening physical wires; a borg's signaler still does
+not toggle the airlock. Recording these keys is declaration metadata, not a new
+permission or click-priority policy. AI control remains supplied by its remote
+interface and borg control remains limited by the existing interface reach.
+
+Viewer-profile facts preserve the old, deliberately different UI values: the
+photocopier includes all silicons, disposal exposes AI-only controls, and the fax
+distinguishes AI and robot login. These presentation facts grant no authority.
+Device providers preserve actual tools, internal versus worn ID cards, stored
+camera selection and bylines; they do not substitute a silicon predicate for a
+remote requirement. In particular, airlock programming still reads a robot's
+internal ID when its restraining bolt masks the ordinary ID provider.
+
+
+## Railing native physical operations (2026-10-15)
+
+The silicon-entry physical consumer migration replaces the railing's three granted
+rotation verbs with native `rotatable` menu operations. The same physical actor,
+adjacency, free-limb/posture, size and anchoring rules still control the same direction
+changes; AI remote authority does not grant physical rotation. The old clockwise,
+counterclockwise and turn-around choices now appear as declared menu rows.
+
+The existing Flip Railing fastened-floor refusal is now an explicit requirement,
+so its menu reports that same refusal before the effect runs. Existing refusal strings
+and their physical-check order are retained. Pin changes are limited to these declared
+rotation rows and the existing flip-refusal presentation; no different permitted movement,
+remote reach, cuff grip or storage-drop behavior is intended.
+
+## Constructor absence cases after typed reference declarations (2026-10-15)
+
+Master commit `5b0a2f09d0` (2026-10-13) declared typed references for internal storage's item owner and the cloning console's scanner without changing their older producer paths. Internal storage attempted to link its turf before rejecting a non-item owner, and cloning's scanner lookup returned numeric zero when absent. Both now raised typed-reference errors instead of producing the existing conversion goldens.
+
+Internal storage now declares an item-owner `keeps_if()` and a setup hook which links and names only accepted storage. Its `/obj/item` and `/obj/item/storage` ancestor initialization does not read `master_item`, and its only production subtype (gripper pockets) adds no initializer; the link and copied name are complete before `new` returns, so the gripper creator's subsequent `Pocket N` name override retains its ordering. The setup does not run for a rejected floor spawn. Cloning's scanner lookup returns null on a miss, preserving its adjacent-first then same-area lookup and its empty-reference behavior. These fixes restore the previous golden behavior; constructor runtime rows must not be blessed. Tests `dq_pin_constructor_repairs/internal_storage` and `/cloning_scanner` exercise the real constructors, the actual subtype, identity/name, independent owner lifetime, scanner attachment and deletion.
+
+## Look-fixture telecube disposal (2026-10-15)
+
+Deleting a captured mated telecube on the test floor invokes its real ending hook,
+which queues an explosion at its peer. That queued work can outlive the look sweep's
+floor cleanup and damage later fixtures. Look capture and probe teardown now move
+only the observed telecube pair to nullspace after collecting the appearance rows,
+then run normal deletion. The production hook still clears the reverse pair link;
+production explosion behavior and captured appearance are unchanged. The focused
+`dq_look_telecube_cleanup` regression checks the actual pair, unchanged look rows,
+and unchanged explosion pending/epoch counters. This is test isolation, authorizes
+no pin re-records, and adds no tracked declarations or production state writes.
+Verification of this copied cleanup remains pending the coordinating lane's gate.
+
+
+### Master devour operation key (2026-10-15)
+
+Master `2136172edc` (October 15, 17:13:57 -0500; “Delete the task engine; a devour waits as an op”) adds the native AI `devour` operation. The 51 inherited mob conversion-pin inventories gain only that key. The expanded menu, click and wire rows are unchanged, as confirmed by the fresh requirements-lane capture on the same master. These records add only `devour` to each existing key line, preserving other lane-specific entries and factoring.
+
+### Casino wheel questions and prize-price leaf (2026-10-15)
+
+The wheel's existing `wheel_use` and `wheel_setinterval` operations now own their
+questions as `asks()` steps. The first operation chains the optional interval
+question; the standalone menu retains its initial adjacency/capability admission
+without adding a range recheck after its answer. Both keep their original keys,
+labels, questions, 1–1000 numeric presentation, inclusive boundaries and final
+assignments. AI actors still open no casino operator questions; borg actors retain
+the actual question and its answers. Cancellation and disabled public spins do
+not change interval state or start wheel work.
+
+The legacy management flow's `setprice` leaf now invokes `casino_set_price`, an
+actual script-bound operation. This adds only that operation's key to the prize
+terminal declaration inventory; it is not a new player menu or remote-control
+binding. Invalid submitted numbers still close the question without assigning a
+price and display exactly `Invalid price.`. The old request-level context check
+returned `The prize price is invalid.` to its caller; the new numeric request
+accepts transport and the operation requirement supplies the same existing player
+notice as its refusal reason. Native tests check that operation outcome/reason,
+not an invented legacy request return. Invalid intervals similarly retain
+`Invalid interval.` and leave the prior interval unchanged. No menu/click re-bless
+is authorized by this cause; only the new prize-leaf key inventory is expected.
+
+The coordinator proved the three real old AI/borg flows before conversion (three
+passes, zero failures on production `4ab2e15fe1`). The adapted tests preserve valid,
+cancel and refusal state assertions. Native validation is pending the combined
+gate. The remaining management, registration and sale flows still perform real
+effects between questions and remain outside this conversion.
+
+### Silicon retirement: reviewed pin cause classes
+
+These classes record native operation declarations, existing physical refusals, or removal of an inert menu row. Expanded comparisons preserve every unrelated click, refusal and wire row. Related requirement/timed/silicon pin cohorts record the same cause, not a separate behavior change. Wheel interval and wooden-toilet differences are source regressions and are excluded from this refresh.
+
+| Type | Cause |
+|---|---|
+| `/obj/machinery/ai_slipper` | ai_slipper_silicon_swipe explicit silicon item route |
+| `/obj/machinery/appliance/cooker/oven` | toggle_door_alt_no_touch explicit no-touch route |
+| `/obj/machinery/camera` | ai_wire_tools route documented in Silicon entry declarations |
+| `/obj/machinery/casinosentientprize_handler` | casino_set_price script-bound op; documented casino flow |
+| `/obj/machinery/computer/aiupload` | remove inert borg Access Computer Internals menu; reviewed root cause |
+| `/obj/machinery/door/airlock/lift` | signaler_robot inherited typed chassis route; documented |
+| `/obj/machinery/door/airlock` | signaler_robot typed chassis route; documented |
+| `/obj/machinery/recharge_station` | recharge_station_admit script-bound admission route |
+| `/obj/mecha` | f13b84652d removes dead ai_use_equipment surface |
+| `/obj/mecha/working/ripley` | f13b84652d removes inherited dead ai_use_equipment surface |
+| `/obj/structure/railing` | documented Railing native physical operations; rotation menus + existing fastened flip refusal |
+
+For the upload computer, the old effect immediately returned for a silicon before toggling its internals; the native silent actor requirement removes that inert borg menu row. Railing rotations move from granted verbs to menu operations and show the existing fastened refusal. Mecha key removals originate on master f13b84652d.
+
+### Silent alternative requirements
+
+An any_of composed entirely of silent refusals now remains a non-null silent refusal. It still rejects direct invocation; mixed visible reasons remain visible, and an empty composition retains its default refusal. This restores the wooden toilet's existing clientless-borg menu behavior rather than re-blessing the generic refused row. Focused tests cover composition, actual menu/direct-op behavior, and the real toilet guard.
+
+### Pilot helm lookup: reject nullspace destinations
+
+The original pilot callback admitted helms by z alone, including a nullspace helm when level zero was configured. It now chooses only actual, non-deleted helm turfs, retaining one lottery entry per helm. Invalid-only lookup leaves location and ghost access unchanged; a real destination preserves normal relocation and ghost access. Existing look goldens are retained. The focused regression uses real helms and native keyed timers with strict queue-delivery and destination assertions.
+
+### Refresh existing windows without replaying operations (2026-10-16)
+
+Seventeen obsolete `updateUsrDialog()` calls now queue data for existing declared
+windows on `/obj/structure/safe`, `/obj/machinery/implantchair`,
+`/obj/machinery/computer/telecomms/traffic`, `/obj/machinery/magnetic_controller`,
+`/obj/machinery/computer/specops_shuttle`,
+`/obj/machinery/computer/arcade/orion_trail`, `/obj/item/gun/projectile/dartgun` and
+`/obj/machinery/syndicate_beacon/virgo`. The existing `refresh_ui()` path coalesces
+updates without invoking the input resolver, `attack_hand()` or the operation's
+effect again. Redundant explicit updates after the same helper are removed.
+Two area-editor calls after `in_use = FALSE` and four base-beacon calls after its
+native prompt flow had no window to render and are removed, rather than renamed.
+The unused refresh proc is deleted, while live using-machine lifetime helpers stay.
+
+This is an output-path correction, with no intended changes to permitted inputs,
+authority, menus, keys, clicks, numeric results or business effects. Existing
+seven-host AI/borg goldens and the separately passed old dartgun capture are the
+oracles; this cause authorizes no pin re-records. New real-action regressions check
+that beaker insertion, mixing and console speed each execute once while their
+window gets its queued data. Native verification remains pending the combined gate.
+
+### SPASM ordinary-use questions owned by the operation (2026-10-16)
+
+`/obj/machinery/casinosentientprize_handler` keeps its existing `spasm_use` key,
+label, initial sale admission and input bindings. Its real choice, conditional
+collar selection and registration confirmations now use `asks()`. Cleanup after
+showing/selecting a missing collar remains terminal; it never precedes another
+question. Duplicate registration becomes a pure requirement with the unchanged
+visible refusal. Clientless registration closes silently with no created collar,
+registry identity or payout, and decline retains its existing sad-beep message.
+Sale admission remains initial-only and no resumed adjacency check is added;
+native actor-safety invalidation remains active during prompts. Newly reactive
+identity membership publishes through generated list setters at every writer.
+
+Existing exact human/AI/borg menu and click pins were captured before this
+conversion; no new key or row difference is intended and none may be blessed for
+this cause. The new real-input branch fixture adds native selection/cancel/info/
+deleted-collar/clientless coverage. It is not an old-flow test run and supplies no
+fake client to claim positive live-client registration coverage. Validation is
+pending the final combined gate.
+
+## Silicon fixture-only repair after dbc2fd53e0
+
+The SPASM membership assertion now groups each membership explicitly. HUD
+cancellation supplies an explicit cancelled prompt outcome. Recharge coverage
+now asserts the real unrestrained robot partial-buckle behavior and checks real
+cell removal/refusal/restoration rather than assuming that partial buckling is
+full incapacity. Production behavior and pin goldens are unchanged.
+
+Gate dbc2fd53e0 passed ratchets and production compilation (zero errors), with
+one new DreamChecker assertion diagnostic and two runtime fixture failures.
+The master visual-setter look sweep reached its configured 30-minute timeout;
+there is no final result JSON or stamp. These repairs await the coordinator's
+combined repair gate with a 60-minute allowance.
+
+## Deterministic look probes and restored slime-eye rows
+
+Master eee5bf967e (merged by a5674a446e) restored previously omitted
+look-state rows, including six unprefixed `slime baby-eyes` rows for xenobio
+bluespace, rainbow and rainbow/kendrick with has_eye_glow 1 and 2. The completed
+e9d164672a capture differs only in those six replacements (12 removed/added
+rows): bluespace uses `bluespace slime baby-eyes`, and both rainbow types use
+`rainbow slime baby-eyes`. Silicon changes do not edit their production draws.
+The existing xenobio sprite synchronizer derives icon_living from its color/age
+state; the inherited simple-mob eye overlay uses that state. This is a stale
+restored-golden discrepancy, not an intended silicon gameplay change.
+
+The approved probe repair makes variable selection deterministic rather than
+dependent on BYOND variable enumeration order before the probe cap. Any resulting
+coverage selection/order differences are test-sampling changes only. Snapshot
+promotion is deferred until the repaired sampler's actual output is inspected;
+the six-row candidate patch is not applied in advance. Unrelated production or
+menu/click differences require separate evidence and are not covered by this
+sampling cause. Verification and any resulting narrow promotion remain pending.
+
+### Deterministic look sampling after the native compiler switch
+
+The silicon lane retains current master's plan filtering before the cap, both existing bounds (24 planned / 200 unplanned) and explicit empty-plan semantics. Eligible probe names are sorted before selection and execution. This removes host-variable-enumeration-dependent coverage; only sampling selection/order changes are covered. The reversed-input regression and the real recharge admission fixture passed native preflight 20261016T052401_9bc492d1f7 (2/2). Unrelated gameplay, menu and runtime differences are excluded from this cause class.
+
+## Look fixture native-roll stream isolation (2026-10-16)
+
+The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.

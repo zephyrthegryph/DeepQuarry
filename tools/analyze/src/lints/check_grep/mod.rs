@@ -631,7 +631,7 @@ TRACKED(/obj/item/flagged, slot_flags)
     }
 
     #[test]
-    fn admin_holder_masks_actual_context_only_before_legacy_filters() {
+    fn admin_holder_masks_proven_nonclient_receivers_before_legacy_filters() {
         let source = r#"/datum/act
     var/datum/holder
 /datum/act/op
@@ -641,15 +641,32 @@ TRACKED(/obj/item/flagged, slot_flags)
     parent_type = /datum/act/admission_query
 /datum/query_nonlexical
     parent_type = /datum/act/op/acceptance
+/datum/pending_op
+    var/datum/holder
+/datum/pending_nonlexical
+    parent_type = /datum/pending_op
+/datum/ordinary_owner
+    var/datum/holder
 /client
     var/datum/holder
-/obj/proc/probe(datum/act/op/acceptance/Q, client/C, U, datum/query_nonlexical/N)
+/client/admin_alias
+/obj/proc/probe(datum/act/op/acceptance/Q, client/C, U, datum/query_nonlexical/N, datum/pending_op/P, datum/pending_nonlexical/I, datum/ordinary_owner/O, client/admin_alias/CA)
     var/a = Q.holder
     var/b = N.holder
     var/c = C.holder
     var/d = U.holder
     var/e = list(Q.holder, C.holder)
     var/f = list(Q.holder, U.holder)
+    var/g = P.holder
+    var/h = I?.holder
+    var/i = O.holder
+    var/j = CA.holder
+    var/k = list(P.holder, C.holder)
+    var/l = list(I.holder, U.holder)
+    var/datum/pending_op/local_owner
+    var/m = local_owner.holder
+/datum/pending_op/proc/owner_probe()
+    return src.holder
 "#;
         let dir = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(dir.path().join("code")).unwrap();
@@ -659,17 +676,21 @@ TRACKED(/obj/item/flagged, slot_flags)
         let sem = crate::sem::Sem::build(&tree.root, &tree).unwrap();
         assert!(sem.errors.is_empty(), "{:?}", sem.errors);
         let positions = crate::sem::checks::act_holder_positions(&sem, "code/holder.dm", source);
-        assert_eq!(positions.len(), 4, "Actual query and nonlexical inherited types are proven; client/unknown are not");
+        assert_eq!(positions.len(), 11, "Query, pending-op and other declared nonclient fields are proven, including local/src/inherited/optional reads; client/unknown are not");
         let masked = mask_act_holder_fields(source, &positions);
         assert!(!masked.contains("Q.holder") && !masked.contains("N.holder"));
         assert!(masked.contains("list(Q       , C.holder)"));
+        assert!(!masked.contains("P.holder") && !masked.contains("I?.holder") && !masked.contains("O.holder"));
+        assert!(masked.contains("CA.holder"));
+        assert!(masked.contains("list(P       , C.holder)"));
+        assert!(!masked.contains("local_owner.holder") && !masked.contains("src.holder"));
         let lint = CheckGrep::new();
         let scope = LintScope::default();
         let cx = Cx { tree: &tree, meta: lint.meta, scope: &scope };
         let mut out = Sink::new();
         lint.scan_tree(&cx, &mut out);
         let actual: Vec<&str> = out.sites.iter().filter(|s| s.rule == "admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder").map(|s| source.lines().nth(s.line as usize - 1).unwrap().trim()).collect();
-        assert_eq!(actual, vec!["var/c = C.holder", "var/d = U.holder", "var/e = list(Q.holder, C.holder)", "var/f = list(Q.holder, U.holder)"]);
+        assert_eq!(actual, vec!["var/c = C.holder", "var/d = U.holder", "var/e = list(Q.holder, C.holder)", "var/f = list(Q.holder, U.holder)", "var/j = CA.holder", "var/k = list(P.holder, C.holder)", "var/l = list(I.holder, U.holder)"]);
     }
 
     #[test]

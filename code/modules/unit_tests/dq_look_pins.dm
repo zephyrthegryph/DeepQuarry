@@ -47,11 +47,54 @@
 		else
 			refresh_flush()
 			. = dq_look_pin_lines(target)
-			qdel(target)
+			dq_look_dispose(target)
 	catch(var/exception/e)
 		var/static/regex/where = regex(@"^\S+\.dm:\d+:")
 		. = list("runtime: [where.Replace(e.name, "")]") // without the file and line, which move with unrelated edits
 	own_turf_contents(T)
+
+/// A look capture observes a telecube pair before cleanup. Its real destruction
+/// otherwise explodes at the mate's turf and leaves queued blast work for later
+/// fixtures, after their own floor sweeps. Relocate only that actual pair once
+/// observation is finished; the production ending hook still runs normally.
+/datum/unit_test/proc/dq_look_dispose(atom/target)
+	if(QDELETED(target))
+		return
+	if(istype(target, /obj/item/telecube))
+		var/obj/item/telecube/cube = target
+		var/obj/item/telecube/peer = cube.mate()
+		if(peer && !QDELETED(peer))
+			own(peer)
+			peer.moveToNullspace()
+		cube.moveToNullspace()
+	qdel(target)
+
+/datum/unit_test/dq_look_telecube_cleanup
+/datum/unit_test/dq_look_telecube_cleanup/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/type = /obj/item/telecube/precursor/mated/mirrorcolor
+	var/turf/T = test_floor()
+	var/list/before = SSexplosions.performance_diagnostics()
+	rand_seed(dq_test_seed_for("[type]"))
+	var/obj/item/telecube/cube = allocate(type, T)
+	defer_cleanup(src, TYPE_PROC_REF(/datum/unit_test, dq_look_dispose), cube)
+	var/obj/item/telecube/peer = cube.mate()
+	TEST_ASSERT(istype(peer), "the real constructor creates its independent mate")
+	TEST_ASSERT_EQUAL(peer.loc, T, "the mate is physically present during observation")
+	TEST_ASSERT_EQUAL(peer.mate(), cube, "the real pair is connected before cleanup")
+	refresh_flush()
+	var/list/expected = dq_look_pin_lines(cube)
+	dq_look_dispose(cube)
+	TEST_ASSERT(QDELETED(cube), "the observed cube is actually deleted")
+	TEST_ASSERT(!QDELETED(peer), "cleanup preserves the independent mate's lifetime")
+	TEST_ASSERT_NULL(peer.loc, "the actual mate is removed from the map before the ending hook")
+	TEST_ASSERT_NULL(peer.mate(), "the real ending hook still clears the reverse relation")
+	var/list/captured = dq_look_capture(type, T)
+	TEST_ASSERT_EQUAL(jointext(captured, "\n"), jointext(expected, "\n"), "capture rows are unchanged by post-observation pair cleanup")
+	var/list/after = SSexplosions.performance_diagnostics()
+	TEST_ASSERT_EQUAL(after["pending"], before["pending"], "cleanup adds no pending blast and preserves pre-existing work")
+	TEST_ASSERT_EQUAL(after["epoch_submissions"], before["epoch_submissions"], "cleanup submits no explosion epoch")
 
 /// Deletes what the captures left on `T` until nothing is left. Deleting a thing can make more of them (a space worm's destroyed
 /// segment severs the back half into a new dead head, which severs its own back half when it is deleted in turn), so one pass,
@@ -66,7 +109,7 @@
 			return
 		for(var/atom/movable/AM as anything in left)
 			if(!QDELETED(AM))
-				qdel(AM)
+				dq_look_dispose(AM)
 
 /// The look rows of one atom (see the file comment), sorted so the file diffs cleanly.
 /proc/dq_look_pin_lines(atom/target)
