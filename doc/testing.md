@@ -769,6 +769,16 @@ TypeScript checks. DreamChecker is skipped with a notice if it is not installed;
 install it with `tools/ci/install_spaceman_dmm.sh dreamchecker`, or put
 `dreamchecker.exe` in `%USERPROFILE%/SpacemanDMM/`.
 
+### DreamChecker policy (2026-10-16)
+
+SpacemanDMM's DreamChecker has no incremental or changed-files mode: every run parses and checks the whole tree (2+ minutes on
+every core, in parallel with the compile). It used to run inside every `build.sh dm`, so a local `dm`, `server` or test build paid
+for it each time. Now `dm` runs it only where its verdict is required: `DQ_DREAMCHECKER=1` (set by `tools/dq_merge_gates.sh` and
+`tools/dq_push_master.sh`, so the merge gates and the push still require "Found 0 diagnostics"), a `CI` environment, or when you
+ask for it (`DQ_DREAMCHECKER=1 build.sh dm`). `build.sh lint` always runs it (explicit lint). Whatever runs it does so at
+below-normal priority (`DQ_PRIORITY=normal` opts out). Local builds log one line saying it was skipped. The analyze engine's
+ratchets (`check_ratchets.sh`, incremental per file) still run wherever they ran before.
+
 CI also runs these scripts, all from the repository root:
 
 | Check | Command |
