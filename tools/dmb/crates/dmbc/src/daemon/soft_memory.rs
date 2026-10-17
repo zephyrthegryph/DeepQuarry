@@ -23,6 +23,27 @@ fn budget_soft(value: &OsStr) -> io::Result<u64> {
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,
             "DMB_DAEMON_MEMORY_BUDGET_GB must be an integer from 1 through 48"))
 }
+/// The whole daemon's retained-memory budget (20 GB for now: production and test sessions are each about 9 GB) across every project session, independent of the machine-pressure policy below:
+/// above it the least recently used idle session is released whole (`Shared::enforce_retained_budget`), never the most recently
+/// used one and never one that is building. `DMB_DAEMON_MEMORY_BUDGET_GB` overrides (integer GB, 1 through 48).
+pub(super) const DEFAULT_RETAINED_BUDGET: u64 = 20_000_000_000;
+pub(super) fn retained_budget() -> u64 {
+    std::env::var("DMB_DAEMON_MEMORY_BUDGET_GB")
+        .ok()
+        .and_then(|text| text.parse::<u64>().ok())
+        .filter(|gb| (1..=48).contains(gb))
+        .map_or(DEFAULT_RETAINED_BUDGET, |gb| gb * 1_000_000_000)
+}
+/// The session to release for the budget: the least recently used idle one, never the most recently used of all sessions.
+/// `sessions` is (key, last use, idle). None when fewer than two sessions exist or every other session is busy.
+pub(super) fn budget_victim<K: Clone>(sessions: &[(K, std::time::Instant, bool)]) -> Option<K> {
+    let newest = sessions.iter().map(|(_, last, _)| *last).max()?;
+    sessions
+        .iter()
+        .filter(|(_, last, idle)| *idle && *last != newest)
+        .min_by_key(|(_, last, _)| *last)
+        .map(|(key, _, _)| key.clone())
+}
 /// Ceiling above which the compact symbolic core, generation and link bindings
 /// may be evicted. Below it pressure sheds only transient buffers, so the next
 /// edit stays resident. DMB_DAEMON_HARD_PRIVATE_BYTES overrides; the default is
@@ -122,6 +143,27 @@ pub(super) fn adaptive_pressure(private: u64) -> Option<Pressure> {
 #[cfg(test)]
 mod adaptive_tests {
     use super::*;
+    #[test]
+    fn budget_releases_least_recently_used_idle_session_never_the_newest() {
+        use std::time::{Duration, Instant};
+        let now = Instant::now();
+        let at = |seconds: u64| now - Duration::from_secs(seconds);
+        // Oldest idle goes first; the newest is exempt even though it is the only idle-and-over-budget candidate left.
+        let sessions = [("a", at(300), true), ("b", at(100), true), ("c", at(10), true)];
+        assert_eq!(budget_victim(&sessions), Some("a"));
+        assert_eq!(budget_victim(&sessions[1..]), Some("b"));
+        assert_eq!(budget_victim(&sessions[2..]), None);
+        // A busy session is never a victim; the next idle one is.
+        let busy = [("a", at(300), false), ("b", at(100), true), ("c", at(10), true)];
+        assert_eq!(budget_victim(&busy), Some("b"));
+        assert_eq!(budget_victim::<&str>(&[]), None);
+    }
+    #[test]
+    fn retained_budget_defaults_to_twenty_gb() {
+        if std::env::var_os("DMB_DAEMON_MEMORY_BUDGET_GB").is_none() {
+            assert_eq!(retained_budget(), 20_000_000_000);
+        }
+    }
     const GB: u64 = 1_000_000_000;
     #[test]
     fn pressure_follows_available_memory_not_process_size() {

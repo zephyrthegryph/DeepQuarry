@@ -1,0 +1,9 @@
+[package]
+name = "dm-query"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Memoized query database: revisions, recorded dependencies, red/green revalidation with early cutoff"
+
+[dependencies]
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
