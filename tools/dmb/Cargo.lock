@@ -258,6 +258,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "dm-query"
+version = "0.1.0"
+dependencies = [
+ "xxhash-rust",
+]
+
+[[package]]
 name = "dm-resources"
 version = "0.1.0"
 dependencies = [
