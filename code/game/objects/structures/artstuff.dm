@@ -132,8 +132,7 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 		return FALSE
 	if(grid?[x]?[y])
 		grid[x][y] = color
-	used = TRUE
-	update_appearance()
+	set_used(TRUE)
 	. = TRUE
 
 /obj/item/canvas/proc/ui_act_finalize(datum/act/op/A)
@@ -148,21 +147,13 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 	generate_proper_overlay()
 	try_rename(user)
 
-/obj/item/canvas/proc/update_appearance()
-	cut_overlays()
+/// The look: the finished painting, or the work in progress once a stroke was made.
+/obj/item/canvas/draw(datum/look/look)
+	..()
 	if(icon_generated)
-		var/mutable_appearance/detail = mutable_appearance(generated_icon)
-		detail.pixel_x = 1
-		detail.pixel_y = 1
-		add_overlay(detail)
+		look.overlay(look_overlay_image(generated_icon, "", pixel_x = 1, pixel_y = 1))
 		return
-	if(!used)
-		return
-
-	var/mutable_appearance/detail = mutable_appearance(icon, "[icon_state]wip")
-	detail.pixel_x = 1
-	detail.pixel_y = 1
-	add_overlay(detail)
+	look.overlay(look_overlay_image(icon, "[icon_state]wip", pixel_x = 1, pixel_y = 1), when = used)
 
 /obj/item/canvas/proc/generate_proper_overlay()
 	if(icon_generated)
@@ -171,9 +162,8 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 	var/result = rustg_dmi_create_png(png_filename,"[width]","[height]",get_data_string())
 	if(result)
 		CRASH("Error generating painting png : [result]")
-	generated_icon = new(png_filename)
-	icon_generated = TRUE
-	update_appearance()
+	set_generated_icon(icon(png_filename))
+	set_icon_generated(TRUE)
 
 /obj/item/canvas/proc/get_data_string()
 	var/list/data = list()
@@ -221,7 +211,6 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 		canvas_color = basecolor
 		reset_grid()
 		act_message(user, src, MSG_SELF("You smear paint on %T%, changing the color of the entire thing."), MSG_OTHERS("%U% smears paint on %T%, covering the entire thing in paint."), runemessage = "smears paint")
-		update_appearance()
 	return OP_PASS
 
 /obj/item/canvas/proc/try_rename(mob/user)
@@ -281,33 +270,22 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 	icon = 'icons/obj/artstuff.dmi'
 	icon_state = "brush"
 	var/selected_color = "#000000"
-	var/image/color_drop
 	var/hud_level = FALSE
-
-/obj/item/paint_brush/proc/setup_brush_color()
-	color_drop = image(icon, null, "brush_color")
-	color_drop.color = selected_color
 
 // When picked up
 /obj/item/paint_brush/hud_layerise()
 	. = ..()
-	hud_level = TRUE
-	update_paint()
+	set_hud_level(TRUE)
 
 // When put down
 /obj/item/paint_brush/reset_plane_and_layer()
 	. = ..()
-	hud_level = FALSE
-	update_paint()
+	set_hud_level(FALSE)
 
-/obj/item/paint_brush/proc/update_paint(new_color)
-	if(new_color)
-		selected_color = new_color
-		color_drop.color = new_color
-
-	cut_overlays()
-	if(hud_level)
-		add_overlay(color_drop)
+/// The look: a drop of the selected colour while the brush is on the hud.
+/obj/item/paint_brush/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "brush_color", color = selected_color), when = hud_level)
 
 /obj/item/paint_palette
 	name = "artist's palette"
@@ -331,7 +309,7 @@ CAPABILITIES(/obj/item/paint_palette)
 	var/datum/prompt/R = A.answer
 	var/obj/item/paint_brush/P = A.held
 	if(R && istype(P))
-		P.update_paint(R.value)
+		P.set_selected_color(R.value)
 	return OP_PASS
 
 /obj/item/frame/painting
@@ -487,22 +465,13 @@ CAPABILITIES(/obj/structure/sign/painting)
 	desc = current_canvas ? desc_with_canvas : initial(desc)
 	set_icon_state("[base_icon_state]-[current_canvas?.generated_icon ? "hidden" : "empty"]")
 
-	cut_overlays()
-
+/// The look: the framed painting and its frame.
+/obj/structure/sign/painting/draw(datum/look/look)
+	..()
 	if(!current_canvas?.generated_icon)
 		return
-
-	. = list()
-	var/mutable_appearance/MA = mutable_appearance(current_canvas.generated_icon)
-	MA.pixel_x = current_canvas.framed_offset_x
-	MA.pixel_y = current_canvas.framed_offset_y
-	. += MA
-	var/mutable_appearance/frame = mutable_appearance(current_canvas.icon,"[current_canvas.icon_state]frame")
-	frame.pixel_x = current_canvas.framed_offset_x + current_canvas.frame_offset_x
-	frame.pixel_y = current_canvas.framed_offset_y + current_canvas.frame_offset_y
-	. += frame
-
-	add_overlay(.)
+	look.overlay(look_overlay_image(current_canvas.generated_icon, "", pixel_x = current_canvas.framed_offset_x, pixel_y = current_canvas.framed_offset_y))
+	look.overlay(look_overlay_image(current_canvas.icon, "[current_canvas.icon_state]frame", pixel_x = current_canvas.framed_offset_x + current_canvas.frame_offset_x, pixel_y = current_canvas.framed_offset_y + current_canvas.frame_offset_y))
 
 /obj/item/canvas/proc/fill_grid_from_icon(icon/I)
 	var/h = I.Height() + 1
@@ -556,8 +525,8 @@ CAPABILITIES(/obj/structure/sign/painting)
 		return
 
 	new_canvas.fill_grid_from_icon(I)
-	new_canvas.generated_icon = I
-	new_canvas.icon_generated = TRUE
+	new_canvas.set_generated_icon(I)
+	new_canvas.set_icon_generated(TRUE)
 	new_canvas.set_finalized(TRUE)
 	new_canvas.set_painting_name(title)
 	new_canvas.author_name = author_name
@@ -650,8 +619,8 @@ CAPABILITIES(/obj/structure/sign/painting)
 		return 0
 
 	new_canvas.fill_grid_from_icon(I)
-	new_canvas.generated_icon = I
-	new_canvas.icon_generated = TRUE
+	new_canvas.set_generated_icon(I)
+	new_canvas.set_icon_generated(TRUE)
 	new_canvas.set_finalized(TRUE)
 	new_canvas.set_painting_name(title)
 	new_canvas.author_name = author_name
@@ -734,6 +703,3 @@ CAPABILITIES(/obj/structure/sign/painting)
 	return TRUE
 
 // The easel's painting sits on its turf (one-sided REL view).
-
-CAPABILITIES(/obj/item/paint_brush)
-	setup(PROC_REF(setup_brush_color))

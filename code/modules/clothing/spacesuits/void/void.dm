@@ -319,8 +319,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	. = ..()
 	var/mutable_appearance/glass_overlay = mutable_appearance(icon_override, "hostile_env_glass")
 	glass_overlay.appearance_flags = KEEP_APART|RESET_COLOR
-	standing.add_overlay(glass_overlay)
-	return standing
+	return look_composed_image(., list(glass_overlay))
 
 /obj/item/clothing/suit/space/void/heck
 	name = "\improper H.E.C.K. suit"

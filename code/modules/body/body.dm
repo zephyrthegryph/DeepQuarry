@@ -41,16 +41,15 @@
 	return body ? body.biology_of(null) : biology
 
 /// Any reagent holder owned by this mob changed: the treatment snapshot and
-/// the chem-caused afflictions are stale. The factors are refreshed only when a
-/// factor reagent crosses a dose band, appears or leaves (C12,
-/// update_reagent_factor_bands()), which the snapshot rebuild finds.
+/// the chem-caused afflictions are stale. The factors follow the doses at once
+/// (settle_reagent_factors(): each factor reagent has a dose record that reads its volume).
 /mob/living/on_reagent_change(changetype)
 	. = ..()
 	if(!body)
 		return
-	body.reagent_bands_pending = TRUE
+	body.reagent_change_pending = TRUE
 	body.invalidate(BODY_DIRTY_TREATMENT | BODY_DIRTY_CHEMS)
-	// The factors follow a reagent the moment its holder changes: the snapshot is rebuilt and the dose bands compared now.
+	// The factors follow a reagent the moment its holder changes: the volumes are read and the dose records follow now.
 	body.settle_reagent_factors()
 
 /datum/body
@@ -72,7 +71,7 @@
 	/// 0..1 fraction of wellness left.
 	var/vitality = 1
 	/// BODY_DIRTY_* domains awaiting recomputation.
-	var/dirty = BODY_DIRTY_ALL & ~BODY_DIRTY_FACTORS
+	var/dirty = BODY_DIRTY_ALL
 	/// BODY_PLAN_* flag for this plan (see /datum/affliction/var/body_plans).
 	var/plan_flag = BODY_PLAN_SIMPLE
 	/// Re-evaluate every tick even with no afflictions (humanoids: limb and
@@ -119,12 +118,9 @@
 		destroyed(A)
 	..()
 
-/// Mark `domains` (BODY_DIRTY_*) stale. BODY_DIRTY_FACTORS is not a stored bit: it asks the body to re-read its factor sources now
-/// (refresh_factors()), which dirties the vitals and the physiology when a factor moved.
+/// Mark `domains` (BODY_DIRTY_*) stale.
 /datum/body/proc/invalidate(domains)
-	var/refresh = domains & BODY_DIRTY_FACTORS
-	domains &= ~BODY_DIRTY_FACTORS
-	// The physiology reads organs (and, through refresh_factors(), the factors).
+	// The physiology reads organs.
 	if(domains & BODY_DIRTY_ORGANS)
 		domains |= BODY_DIRTY_PHYSIOLOGY
 	var/gained = domains & ~dirty
@@ -133,8 +129,6 @@
 	// still waiting to be consumed.
 	if(gained && owner)
 		PUBLISH_CHANGE(owner, MOB_KEY_HEALTH)
-	if(refresh)
-		refresh_factors()
 
 // --- Affliction bookkeeping -------------------------------------------------
 
@@ -156,7 +150,7 @@
 	if(location)
 		LAZYADDASSOCLIST(afflictions_by_location, location, A)
 	// Interference markers live on afflictions: the snapshot folds them in.
-	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
+	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT)
 	A.on_added()
 	PUBLISH_LEGACY(owner, /datum/notice/body_afflictions_changed, A, TRUE)
 	return TRUE
@@ -170,7 +164,7 @@
 	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
-	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
+	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT)
 	A.on_removed()
 	rel_clear(A, nameof(A.body))
 	rel_clear(A, nameof(A.owner))
@@ -354,7 +348,7 @@
 	set_dirty(dirty & (~BODY_DIRTY_TREATMENT))
 	set_treatment_snapshot(null)
 	set_reagent_interference(null)
-	set_reagent_volumes(collect_reagent_volumes(reagent_volumes))
+	refresh_reagent_volumes()
 
 	for(var/datum/affliction/A as anything in afflictions)
 		for(var/reagent_id in A.interferes_with)
@@ -384,7 +378,7 @@
 
 	// Regeneration is patched in on read (refresh_regeneration()); force a re-read.
 	regeneration_read_at = null
-	update_reagent_factor_bands()
+	sync_reagent_doses()
 
 /// Reagent ID -> volume across every holder the mob metabolises from, or
 /// null when there are none. `reuse` (the previous result) is emptied and refilled

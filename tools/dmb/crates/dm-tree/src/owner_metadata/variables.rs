@@ -22,15 +22,16 @@ pub(super) fn local_inputs(
     parent_certificate: Option<u128>,
 ) -> Option<Arc<VariableInputs>> {
     let node = tree.types.get(index)?;
+    let demand_index = tree.owner_callable_demands.index(tree);
     Some(Arc::new(VariableInputs {
         ancestors: Arc::from([node.path]),
         parent_certificate,
-        members: node
-            .members
+        members: demand_index
+            .members(index, name)
             .iter()
             .filter_map(|id| {
                 let member = &tree.members[id.index()];
-                (member.kind == MemberKind::Var && member.name == name).then(|| VariableFact {
+                (member.kind == MemberKind::Var).then(|| VariableFact {
                     owner: node.path,
                     definition: member.definition,
                     metadata: Arc::clone(&member.metadata),
@@ -38,13 +39,10 @@ pub(super) fn local_inputs(
             })
             .collect::<Vec<_>>()
             .into(),
-        intrinsic: tree
-            .inventory
-            .intrinsic
+        intrinsic: demand_index
+            .intrinsics(node.path, name)
             .iter()
-            .filter(|member| {
-                member.kind == MemberKind::Var && member.name == name && member.owner == node.path
-            })
+            .filter(|member| member.kind == MemberKind::Var)
             .cloned()
             .collect::<Vec<_>>()
             .into(),

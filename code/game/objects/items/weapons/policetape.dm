@@ -287,11 +287,11 @@ CAPABILITIES(/obj/item/taperoll)
 
 		if(GLOB.tape_roll_applications[F] & direction) // hazard_overlay in F.overlays wouldn't work.
 			act_message(user, src, MSG_SELF("You use the adhesive of %T% to remove area markings from \the [F]."), MSG_OTHERS("%U% uses the adhesive of %T% to remove area markings from \the [F]."))
-			F.cut_overlay(hazard_overlay)
+			F.set_decals(F.decals - hazard_overlay) // the floor's draw shows its decals
 			GLOB.tape_roll_applications[F] &= ~direction
 		else
 			act_message(user, src, MSG_SELF("You apply %T% on \the [F] to create area markings."), MSG_OTHERS("%U% applied %T% on \the [F] to create area markings."))
-			F.add_overlay(hazard_overlay)
+			F.set_decals(F.decals ? F.decals + hazard_overlay : list(hazard_overlay))
 			GLOB.tape_roll_applications[F] |= direction
 		return
 

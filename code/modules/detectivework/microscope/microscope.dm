@@ -51,7 +51,7 @@ MSG_DEF_SELF(microscope/no_sample, "the microscope has no sample to examine")
 	to_chat(user, span_notice("Printing findings now..."))
 	var/obj/item/paper/report = new(get_turf(src))
 	report.stamped = list(/obj/item/stamp)
-	report.overlays = list("paper_stamped")
+	report.add_stamp_mark("paper_stamped", 0, 0)
 	report_num++
 
 	if(istype(sample(), /obj/item/forensics/swab))

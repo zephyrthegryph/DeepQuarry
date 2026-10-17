@@ -259,12 +259,10 @@ CAPABILITIES(/obj/machinery/atm)
 	R.set_info(R.info + (span_italics("Service terminal ID:") + " [machine_id]<br>"))
 
 	//stamp the paper
-	var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
-	stampoverlay.icon_state = "paper_stamp-cent"
 	if(!R.stamped)
 		R.stamped = new
 	R.stamped += /obj/item/stamp
-	R.add_overlay(stampoverlay)
+	R.add_stamp_mark("paper_stamp-cent", 0, 0)
 	R.set_stamps(R.stamps + ("<HR>" + span_italics("This paper has been stamped by the Automatic Teller Machine.")))
 
 	if(prob(50))
@@ -311,12 +309,10 @@ CAPABILITIES(/obj/machinery/atm)
 	R.set_info(R.info + ("</table>"))
 
 	//stamp the paper
-	var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
-	stampoverlay.icon_state = "paper_stamp-cent"
 	if(!R.stamped)
 		R.stamped = new
 	R.stamped += /obj/item/stamp
-	R.add_overlay(stampoverlay)
+	R.add_stamp_mark("paper_stamp-cent", 0, 0)
 	R.set_stamps(R.stamps + ("<HR>" + span_italics("This paper has been stamped by the Automatic Teller Machine.")))
 
 	if(prob(50))

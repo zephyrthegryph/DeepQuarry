@@ -6,11 +6,6 @@
 	max_integrity = 10
 	explosion_resistance = 1
 
-/*	if(overlays) // Fucking god damnit why do we have to have an entire different subsystem for this shit from other codebases.
-		overlays.add_overlay(src, icon, icon_state, ABOVE_MOB_LAYER, plane, dir, alpha, RESET_ALPHA) //you see mobs under it, but you hit them like they are above it
-		alpha = 0
-*/
-
 CAPABILITIES(/obj/structure/holosign)
 	links(/obj/structure/holosign::projector, /obj/item/holosign_creator::signs, b_many = TRUE)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))

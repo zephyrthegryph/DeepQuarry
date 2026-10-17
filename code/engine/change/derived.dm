@@ -622,6 +622,15 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
 		if(READERS(D, V.name))
 			publish_change(D, V.name)
 
+/// Drops what the test builds keep per entity (ignored-change names) when E is destroyed: a list per entity ever made otherwise outlives it.
+/proc/derived_forget(datum/E)
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
+	if(length(GLOB.derived_ignored))
+		GLOB.derived_ignored -= REF(E)
+	if(length(GLOB.derived_ui_flushes))
+		GLOB.derived_ui_flushes -= REF(E)
+#endif
+
 /// The likely undeclared reads behind a drift on A, as text for the audit message.
 /proc/derived_drift_hint(atom/A)
 	var/list/hint

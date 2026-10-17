@@ -10,13 +10,14 @@
 	var/stackIngredients = 0
 	var/fullyCustom = 0
 	var/addTop = 0
-	var/image/topping
+	/// The working filling image (one per type, recoloured per ingredient): its snapshots are what `food_layers` holds.
 	var/image/filling
+	/// The ingredient layers it draws, bottom first: images made when each ingredient went in (a draw never rebuilds them from the ingredients).
+	var/list/food_layers
 
 
 /obj/item/reagent_containers/food/snacks/customizable/Initialize(mapload)
 	. = ..()
-	topping = image(icon,,"[initial(icon_state)]_top")
 	filling = image(icon,,"[initial(icon_state)]_filling")
 	updateName()
 
@@ -54,17 +55,16 @@ MSG_DEF_SELF(custom/recursive, "Sorry, no recursive food.")
 	if(S.reagents)
 		S.reagents.trans_to_holder(reagents,S.reagents.total_volume)
 
-	if(src.addTop)
-		cut_overlay(topping)
-	if(!fullyCustom && !stackIngredients && LAZYLEN(overlays))
-		cut_overlay(filling) //we can't directly modify the overlay, so we have to remove it and then add it again
+	if(!fullyCustom && !stackIngredients && LAZYLEN(food_layers))
 		var/newcolor = S.filling_color != "#FFFFFF" ? S.filling_color : AverageColor(getFlatIcon(S, S.dir, 0), 1, 1)
 		filling.color = BlendRGB(filling.color, newcolor, 1/ingredients.len)
-		add_overlay(filling)
+		set_food_layers(list(image(filling))) // the one filling, in its new colour
 	else
-		add_overlay(generateFilling(S))
-	if(addTop)
-		drawTopping()
+		var/image/layer = generateFilling(S)
+		if(!fullyCustom && !stackIngredients)
+			set_food_layers(list(layer)) // a plain dish holds its one filling
+		else
+			add_food_layers(layer)
 
 	updateName()
 	to_chat(user, span_notice("You add the [S.name] to the [src.name]."))
@@ -84,8 +84,6 @@ MSG_DEF_SELF(custom/recursive, "Sorry, no recursive food.")
 			I.color = AverageColor(getFlatIcon(S, S.dir, 0), 1, 1)
 		if(src.stackIngredients)
 			I.pixel_y = length(src.ingredients) * 2
-		else
-			src.overlays.len = 0
 	if(src.fullyCustom || src.stackIngredients)
 		var/clicked_x = text2num(params2list(params)["icon-x"])
 		if (isnull(clicked_x))
@@ -100,7 +98,7 @@ MSG_DEF_SELF(custom/recursive, "Sorry, no recursive food.")
 			I.pixel_x = 1
 		else
 			I.pixel_x = 2
-	return I
+	return fullyCustom ? I : image(I) // a snapshot: the working filling is recoloured for the next ingredient
 
 /obj/item/reagent_containers/food/snacks/customizable/proc/updateName()
 	var/i = 1
@@ -121,10 +119,13 @@ MSG_DEF_SELF(custom/recursive, "Sorry, no recursive food.")
 	return new_name
 
 
-/obj/item/reagent_containers/food/snacks/customizable/proc/drawTopping()
-	var/image/I = topping
-	I.pixel_y = (length(ingredients)+1)*2
-	add_overlay(I)
+/// The dish: its ingredient layers, and the top (a bun, a slice of bread) on them once it is closed.
+/obj/item/reagent_containers/food/snacks/customizable/draw(datum/look/look)
+	..()
+	for(var/image/layer in food_layers)
+		look.overlay(layer)
+	if(addTop && length(ingredients))
+		look.overlay(look_overlay_image(icon, "[initial(icon_state)]_top", pixel_y = (length(ingredients) + 1) * 2))
 
 // Sandwiches //////////////////////////////////////////////////
 
@@ -147,7 +148,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/customizable/sandwich)
 	I.reagents.trans_to_holder(reagents,I.reagents.total_volume)
 	consume(I, A.actor)
 	set_addTop(1)
-	drawTopping()
 	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/customizable/burger

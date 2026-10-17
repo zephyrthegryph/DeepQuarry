@@ -149,6 +149,3 @@
 #define CAP_INITIAL_CIRCLE_WAVE "initial_circle_wave"
 
 #define CAP_INITIAL_LIGHTNING_FADE "initial_lightning_fade"
-
-#define ENTRY_EXTINGUISHER_FINISH "extinguisher_finish"
-#define CAP_INITIAL_EXTINGUISHER_FINISH "initial_extinguisher_finish"

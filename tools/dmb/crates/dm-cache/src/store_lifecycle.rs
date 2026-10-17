@@ -140,7 +140,7 @@ fn check_root(root: &Path) -> Result<(), CacheError> {
     }
     Ok(())
 }
-fn reparse(metadata: &fs::Metadata) -> bool {
+pub(super) fn reparse(metadata: &fs::Metadata) -> bool {
     if metadata.file_type().is_symlink() {
         return true;
     }

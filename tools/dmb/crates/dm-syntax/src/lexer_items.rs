@@ -366,12 +366,20 @@ fn literal_or_comment(rest: &str) -> Option<(TokenKind, usize, bool)> {
 pub fn visit_comment_spans(source: &str, mut visitor: impl FnMut(Span)) {
     let bytes = source.as_bytes();
     let mut pos = 0;
+    // The next '@' or '{' as an absolute offset, searched again only once `pos` passes it. Searching the whole rest of
+    // the file on every iteration made a file without any such byte quadratic (14 s for the production tree).
+    let mut raw_next: Option<usize> = None;
+    let mut raw_searched = false;
     while pos < bytes.len() {
         // SIMD search skips ordinary runs. All five candidates are ASCII and
         // therefore safe UTF-8 slice boundaries; literal grammar stays shared.
         let rest = &bytes[pos..];
         let literal = memchr::memchr3(b'/', b'"', b'\'', rest);
-        let raw_or_block = memchr::memchr2(b'@', b'{', rest);
+        if !raw_searched || raw_next.is_some_and(|at| at < pos) {
+            raw_next = memchr::memchr2(b'@', b'{', rest).map(|offset| pos + offset);
+            raw_searched = true;
+        }
+        let raw_or_block = raw_next.map(|at| at - pos);
         let next = match (literal, raw_or_block) {
             (Some(left), Some(right)) => left.min(right),
             (Some(offset), None) | (None, Some(offset)) => offset,

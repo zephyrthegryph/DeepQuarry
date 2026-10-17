@@ -57,7 +57,7 @@
 		if(g_damage > digest_stage)
 			g_damage = digest_stage
 		digest_stage -= g_damage
-		d_mult = round(1 / w_class * digest_stage, 0.25)
+		set_d_mult(round(1 / w_class * digest_stage, 0.25))
 		if(d_mult < d_mult_old)
 			d_mult_old = d_mult
 			var/d_stage_name

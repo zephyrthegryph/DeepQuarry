@@ -118,14 +118,6 @@ CAPABILITY_TYPE(blood_initial_puddle, CAP_BLOOD_INITIAL_PUDDLE, /datum/capabilit
 		if(istype(S))
 			dq_set_blood_color(S, basecolor)
 			S.track_blood = max(amount,S.track_blood)
-			if(!S.blood_overlay)
-				S.generate_blood_overlay()
-			if(!forensic_data?.has_blooddna())
-				S.blood_overlay.color = basecolor
-				S.add_overlay(S.blood_overlay)
-			if(S.blood_overlay && S.blood_overlay.color != basecolor)
-				S.blood_overlay.color = basecolor
-				S.add_overlay(S.blood_overlay)
 			transfer_blooddna_to(S)
 
 	else if (hasfeet)//Or feet
@@ -198,6 +190,12 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood)
 
 /obj/effect/decal/cleanable/blood/drip/proc/setup_initial_drip()
 	LAZYOR(drips, icon_state)
+
+/// The drips merged onto this tile are drawn over its own sprite.
+/obj/effect/decal/cleanable/blood/drip/draw(datum/look/look)
+	..()
+	for(var/drip_state in drips)
+		look.overlay(drip_state)
 
 /obj/effect/decal/cleanable/blood/writing
 	icon_state = "tracks"

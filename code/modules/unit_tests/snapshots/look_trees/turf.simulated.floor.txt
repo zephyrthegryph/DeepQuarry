@@ -255,6 +255,7 @@
 /turf/simulated/floor/outdoors/ice icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/outdoors/ice state: ice
 /turf/simulated/floor/outdoors/ice dir: 2
+/turf/simulated/floor/outdoors/ice overlay: icons/turf/overlays.dmi:snowfloor:-32767
 /turf/simulated/floor/water icon: icons/turf/outdoors.dmi
 /turf/simulated/floor/water state: rock
 /turf/simulated/floor/water dir: 2

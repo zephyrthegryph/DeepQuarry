@@ -6,7 +6,8 @@
 /datum/unit_test/dq_extinguisher_native_finish
 /datum/unit_test/dq_extinguisher_native_finish/proc/count_finish(atom/A, sampled_icon, sampled_state)
 	var/found = 0
-	for(var/image/overlay as anything in A.overlays)
+	for(var/entry in A.overlays)
+		var/mutable_appearance/overlay = new(entry)
 		if(overlay.icon == sampled_icon && overlay.icon_state == sampled_state)
 			found++
 	return found
@@ -14,21 +15,15 @@
 /datum/unit_test/dq_extinguisher_native_finish/Run()
 	dq_extinguisher_cosmetic_scope()
 	var/obj/item/extinguisher/E = allocate(/obj/item/extinguisher, test_floor())
-	var/datum/type_trait/extinguisher_finish/F = extinguisher_finish_of(E)
-	var/list/possible = list()
-	for(var/i = 1 to 6)
-		possible += "fire_extinguisherO[i]"
-	TEST_ASSERT(F.sampled_state in possible, "one original host-rand sample chooses an actual supported root ornament")
-	TEST_ASSERT_EQUAL(F.sampled_icon, 'icons/obj/items.dmi', "birth sample retains actual icon resource")
-	TEST_ASSERT_EQUAL(E.reagents.total_volume, 300, "native appearance does not change actual full-size foam content")
-	// Intentional native presentation deferral: data is initialized immediately, draw is queued.
-	TEST_ASSERT_EQUAL(count_finish(E, F.sampled_icon, F.sampled_state), 0, "before the first native presentation flush only the data sample exists")
-	var/state = F.sampled_state
+	TEST_ASSERT(E.overlay_choice >= 1 && E.overlay_choice <= 6, "One spawn roll chooses one of the six original ornaments")
+	TEST_ASSERT_EQUAL(E.reagents.total_volume, 300, "Native appearance preserves the full-size foam content")
+	var/choice = E.overlay_choice
+	var/state = "[E.item_state]O[choice]"
 	refresh_look(E)
-	TEST_ASSERT_EQUAL(count_finish(E, F.sampled_icon, state), 1, "first real native look applies the same sampled ornament exactly once")
+	TEST_ASSERT_EQUAL(count_finish(E, E.icon, state), 1, "First native look applies the rolled ornament exactly once")
 	refresh_look(E)
-	TEST_ASSERT_EQUAL(F.sampled_state, state, "settled look does not roll another cosmetic choice")
-	TEST_ASSERT_EQUAL(count_finish(E, F.sampled_icon, state), 1, "repeated native presentation does not accumulate ornaments")
+	TEST_ASSERT_EQUAL(E.overlay_choice, choice, "Repeated presentation does not reroll the choice")
+	TEST_ASSERT_EQUAL(count_finish(E, E.icon, state), 1, "Repeated presentation does not accumulate ornaments")
 
 /datum/unit_test/dq_extinguisher_native_finish/mapped_birth
 /datum/unit_test/dq_extinguisher_native_finish/mapped_birth/Run()
@@ -43,10 +38,10 @@
 	SSatoms.map_loader_stop("dq_extinguisher_birth")
 	own(E)
 	SSatoms.InitializeAtoms(list(E))
-	var/datum/type_trait/extinguisher_finish/F = extinguisher_finish_of(E)
-	TEST_ASSERT_EQUAL(F.sampled_state, "O1", "null mapped item_state preserves the original interpolation, not a later default")
-	TEST_ASSERT_EQUAL(F.sampled_icon, 'icons/obj/weapons.dmi', "sample retains nondefault mapped icon resource")
-	// This deliberately valid resource/missing ornament state tests the old accepted metadata contract.
+	TEST_ASSERT_EQUAL(E.overlay_choice, 1, "Mapped single-choice range is applied before the spawn roll")
+	refresh_look(E)
+	TEST_ASSERT_EQUAL(count_finish(E, E.icon, "O1"), 1, "Null mapped item_state is interpolated by the real draw")
+	// A mapped alternate icon still exercises the real parent emissive mask.
 	var/generic_masks = 0
 	TEST_ASSERT(E.priority_overlays, "actual parent supplied its priority emissive image")
 	var/list/priority = islist(E.priority_overlays) ? E.priority_overlays : list(E.priority_overlays)
@@ -61,19 +56,23 @@
 	E.set_item_state("changed-after-birth")
 	E.set_icon('icons/obj/items.dmi')
 	refresh_look(E)
-	TEST_ASSERT_EQUAL(F.sampled_icon, 'icons/obj/weapons.dmi', "later base icon change does not rewrite birth ornament")
-	TEST_ASSERT_EQUAL(F.sampled_state, "O1", "later held-state change does not rewrite birth ornament")
-	TEST_ASSERT_EQUAL(count_finish(E, 'icons/obj/weapons.dmi', "O1"), 1, "settled draw uses frozen metadata rather than live parent fields")
+	TEST_ASSERT_EQUAL(E.overlay_choice, 1, "Live draw edits do not reroll the mapped ornament choice")
+	TEST_ASSERT_EQUAL(count_finish(E, E.icon, "changed-after-birthO1"), 1, "Draw follows current icon and item_state with the same spawn choice")
+	TEST_ASSERT_EQUAL(count_finish(E, 'icons/obj/weapons.dmi', "O1"), 0, "Live redraw removes the prior ornament")
 
 /datum/unit_test/dq_extinguisher_native_finish/variants_and_unique
 /datum/unit_test/dq_extinguisher_native_finish/variants_and_unique/Run()
 	dq_extinguisher_cosmetic_scope()
 	var/obj/item/extinguisher/mini/M = allocate(/obj/item/extinguisher/mini, test_floor())
 	var/obj/item/extinguisher/atmo/A = allocate(/obj/item/extinguisher/atmo, test_floor())
-	TEST_ASSERT_NULL(extinguisher_finish_of(M).sampled_state, "mini zero-count branch has no cosmetic sample")
-	TEST_ASSERT_NULL(extinguisher_finish_of(A).sampled_state, "atmo zero-count branch has no cosmetic sample")
+	TEST_ASSERT_EQUAL(M.overlay_choice, 0, "Mini zero-count branch chooses no ornament")
+	TEST_ASSERT_EQUAL(A.overlay_choice, 0, "Atmo zero-count branch chooses no ornament")
 	TEST_ASSERT_EQUAL(M.reagents.total_volume, 150, "mini retains real configured foam content")
 	TEST_ASSERT_EQUAL(A.reagents.total_volume, 600, "atmo retains actual additive foam declaration")
+	refresh_look(M)
+	refresh_look(A)
+	TEST_ASSERT_EQUAL(count_finish(M, M.icon, "[M.item_state]O0"), 0, "Mini draw omits its zero-choice ornament")
+	TEST_ASSERT_EQUAL(count_finish(A, A.icon, "[A.item_state]O0"), 0, "Atmo draw omits its zero-choice ornament")
 	SSatoms.map_loader_begin("dq_extinguisher_unique")
 	var/obj/item/extinguisher/U = new(test_floor())
 	set_var(U, nameof(U.blocks_emissive), EMISSIVE_BLOCK_UNIQUE)
@@ -84,9 +83,8 @@
 	var/atom/movable/emissive_blocker/blocker = U.em_block
 	TEST_ASSERT(blocker, "actual mapped unique mode creates real owned render-source blocker")
 	TEST_ASSERT_EQUAL(blocker.render_source, U.render_target, "unique mask follows the actual holder render source rather than a frozen overlay copy")
-	var/datum/type_trait/extinguisher_finish/F = extinguisher_finish_of(U)
 	refresh_look(U)
-	TEST_ASSERT_EQUAL(count_finish(U, F.sampled_icon, F.sampled_state), 1, "unique mode receives same settled ornament")
+	TEST_ASSERT_EQUAL(count_finish(U, U.icon, "[U.item_state]O[U.overlay_choice]"), 1, "Unique mode receives its rolled ornament")
 	TEST_ASSERT_EQUAL(blocker.render_source, U.render_target, "native draw preserves unique blocker binding")
 	qdel(U)
 	TEST_ASSERT(QDELETED(blocker), "holder deletion deletes its real owned blocker")

@@ -5,7 +5,7 @@ runner="$(cd "$(dirname "$runner")" && pwd)/$(basename "$runner")"
 decision="$(sed -n '/^look_world=0$/,/^LOOK_PARAMS=/p' "$runner")"
 check_mode() {
  local split_mode="$1" DQ_FOCUS_SPLIT="$2" bless="$3" repeat="$4" expected="$5"
- local look_group=(dq_look_state_pin dq_look_tree_pin) do_split=0 look_world=0 look_single=0 LOOK_PARAMS
+ local look_group=(dq_look_state_pin dq_look_tree_pin) sweep_group=() look_bless=0 do_split=0 look_world=0 look_single=0 LOOK_PARAMS
  eval "$decision"
  test "$look_world:$look_single:$do_split" = "$expected"
 }
@@ -23,7 +23,9 @@ printf '%s\n' "params=$DQ_WORLD_PARAMS" "args=$*"
 STUB
 chmod +x "$work/tools/build/build.sh"
 run_fn="$(awk '/^run_once\(\) \{/ { copying=1 } copying { print } copying && /^}$/ { exit }' "$runner")"
+stale_fn="$(awk '/^staleness_world_param\(\) \{/ { copying=1 } copying { print } copying && /^}$/ { exit }' "$runner")"
 cd "$work"
+eval "$stale_fn"
 eval "$run_fn"
 look_single=1
 LOOK_PARAMS='look-plan=data/look-plan.tsv&look-types=data/look-types.txt'

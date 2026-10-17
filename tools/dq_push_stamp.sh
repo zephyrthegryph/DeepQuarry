@@ -59,9 +59,16 @@ clean_merge() {
 	# --name-only: the tree, then one line per conflicted file, then a blank line and the messages. A conflict confined to regenerated
 	# files is not a conflict: dq_merge_master.sh regenerates them after the merge (look_keys.txt) and the pin factoring rewrites
 	# op_bases/, so whatever the trial merge left in them is compared away below.
+	# merge-tree --write-tree writes the merged trees as loose objects; do it into a throwaway object dir (main store as an alternate)
+	# so a probe leaves nothing behind in .git (it used to add hundreds of loose trees per probe).
+	local scratch common
+	common="$(git rev-parse --path-format=absolute --git-common-dir)"
+	scratch="$(mktemp -d "${TMPDIR:-/tmp}/dq-mergetree.XXXXXX")"
+	export GIT_OBJECT_DIRECTORY="$scratch" GIT_ALTERNATE_OBJECT_DIRECTORIES="$common/objects"
 	out="$(git merge-tree --write-tree --name-only "$1" "$2" 2>/dev/null)" || rc=$?
 	if [ "$rc" -gt 1 ] || [ -z "$out" ]; then
 		why="${why}git merge-tree failed on ${1:0:10} and ${2:0:10}; "
+		unset GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES; rm -rf "$scratch"
 		return 1
 	fi
 	tree="$(head -n 1 <<<"$out")"
@@ -70,6 +77,7 @@ clean_merge() {
 			[ -n "$f" ] || break
 			regenerated "$f" && continue
 			why="${why}merging ${2:0:10} into ${1:0:10} conflicts in $f; "
+			unset GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES; rm -rf "$scratch"
 			return 1
 		done < <(tail -n +2 <<<"$out")
 	fi
@@ -77,8 +85,10 @@ clean_merge() {
 		[ -n "$f" ] || continue
 		regenerated "$f" && continue
 		why="${why}${3:0:10} differs from the clean merge in $f; "
+		unset GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES; rm -rf "$scratch"
 		return 1
 	done < <(git diff --name-only "$tree" "$3")
+	unset GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES; rm -rf "$scratch"
 	return 0
 }
 

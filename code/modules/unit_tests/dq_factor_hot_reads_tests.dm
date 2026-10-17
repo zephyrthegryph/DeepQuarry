@@ -47,9 +47,6 @@
 					var/datum/affliction/A = H.body.afflict(path, null, severity)
 					if(A)
 						applied += "[path] at [severity]"
-		// An affliction's contribution follows its severity at the band edge: re-read inside a band before comparing the composition.
-		if(LAZYLEN(H.body.afflictions))
-			H.body.refresh_factors()
 		var/list/diff = factor_oracle_diff(H)
 		TEST_ASSERT(!length(diff), "round [round] ([jointext(applied, ", ")]): [jointext(diff, "; ")]")
 		qdel(H)

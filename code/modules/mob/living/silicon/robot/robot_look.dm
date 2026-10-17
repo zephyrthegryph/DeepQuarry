@@ -6,6 +6,7 @@
 /mob/living/silicon/robot/draw(datum/look/look)
 	..()
 	look_parts(look)
+	look.overlay(look_overlay_image('icons/mob/OnFire.dmi', get_fire_icon_state()), when = stat_value(src, STAT_ON_FIRE))
 
 /// The sprite parts of this robot. A type with its own sheet overrides this and does not call ..().
 /mob/living/silicon/robot/proc/look_parts(datum/look/look)
@@ -53,7 +54,6 @@
 		old_x = sprite_datum.pixel_x
 	if(!(rest_style in sprite_datum.rest_sprite_options))
 		set_rest_style("Default")
-	handle_status_indicators() // they sit over the sprite's top edge
 
 /// Shell borgs that are not deployed have no eyes.
 /mob/living/silicon/robot/has_eyes()

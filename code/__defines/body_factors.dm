@@ -22,9 +22,5 @@
 /// Can't hold anything in the right hand.
 #define ACTION_BLOCK_HOLD_RIGHT (1<<3)
 
-/// Afflictions only trigger a factor refresh when severity crosses a band
-/// this wide (the contribution uses the severity at the refresh).
-#define FACTOR_SEVERITY_BAND 10
-
 /// Highest per-tick chance (%) that poor motor control drops a held item.
 #define FACTOR_MAX_DROP_CHANCE 25

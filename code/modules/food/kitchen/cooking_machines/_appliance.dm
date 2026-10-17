@@ -600,10 +600,8 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 			words |= text2list(reag.name, " ")
 
 	//Filling overlay
-	var/image/I = image(result.icon, "[result.icon_state]_filling")
-	I.color = totalcolour
-	result.add_overlay(I)
-	result.filling_color = totalcolour
+	result.set_filling_color(totalcolour)
+	result.set_filling_layer("[result.icon_state]_filling")
 
 	//Set the name.
 	words -= list("and", "the", "in", "is", "bar", "raw", "sticks", "boiled", "fried", "deep", "-o-", "warm", "two", "flavored")
@@ -837,7 +835,7 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 /obj/machinery/appliance/proc/change_product_appearance(obj/item/reagent_containers/food/snacks/product, datum/cooking_item/CI)
 	if (!product.coating()) //Coatings change colour through a new sprite
 		product.set_color(food_color)
-	product.filling_color = food_color
+	product.set_filling_color(food_color)
 
 /mob/living/proc/calculate_composition() // moved from devour.dm on aurora's side
 	if (!composition_reagent)//if no reagent has been set, then we'll set one

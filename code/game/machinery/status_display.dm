@@ -33,7 +33,6 @@
 	var/message2 = ""	// message line 2
 	var/index1			// display index for scrolling messages or 0 if non-scrolling
 	var/index2
-	var/picture = null
 
 	var/frequency = DISPLAY_FREQ		// radio frequency
 
@@ -287,10 +286,12 @@ CAPABILITIES(/obj/machinery/status_display)
 
 /obj/machinery/status_display/proc/set_picture(state)
 	remove_display()
-	if(!picture || picture_state != state)
-		picture_state = state
-		picture = image('icons/obj/status_display.dmi', icon_state=picture_state)
-	add_overlay(picture)
+	set_picture_state(state)
+
+/// The look: the picture being shown.
+/obj/machinery/status_display/draw(datum/look/look)
+	..()
+	look.overlay(picture_state)
 
 /obj/machinery/status_display/proc/update_display(line1, line2)
 	var/new_text = {"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[line1]<br>[line2]</div>"}
@@ -326,7 +327,7 @@ CAPABILITIES(/obj/machinery/status_display)
 	return ""
 
 /obj/machinery/status_display/proc/remove_display()
-	cut_overlays()
+	set_picture_state(null)
 	if(maptext)
 		maptext = ""
 

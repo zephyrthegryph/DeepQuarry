@@ -121,7 +121,7 @@ pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, outp
     out
 }
 
-/// A `nameof(v)` a declaration names as a stat input: inside contributes()/contributes_to(), or inside a when() that wraps one.
+/// A `nameof(v)` a declaration names as a stat input: inside contributes()/contributes_to()/factors(), or inside a when() that wraps one.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Leaf {
     pub owner: String,
@@ -160,6 +160,7 @@ fn stat_ranges(body: &str) -> Vec<(&'static str, usize, usize)> {
         let kw: &'static str = match &body[start..i] {
             "contributes" => "contributes",
             "contributes_to" => "contributes_to",
+            "factors" => "factors",
             "when" => "when",
             _ => continue,
         };

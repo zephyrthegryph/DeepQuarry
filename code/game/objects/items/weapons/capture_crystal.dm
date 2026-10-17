@@ -6,6 +6,10 @@
 	actions_types = list(/datum/action/item_action/command)
 	w_class = ITEMSIZE_SMALL
 
+	/// The sparkle shown where the bound mob appears or disappears, and how long it lasts.
+	var/animation_icon = 'icons/obj/capture_crystal_vr.dmi'
+	var/animation_time = 1.1 SECONDS
+
 	var/active = FALSE					//Is it set up?
 	var/mob/living/owner				//Reference to the owner
 	var/mob/living/bound_mob			//Reference to our bound mob
@@ -612,16 +616,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 
 //Let's make a flashy sparkle when someone appears or disappears!
 /obj/item/capture_crystal/proc/animate_action(atom/thing)
-	var/image/coolanimation = image('icons/obj/capture_crystal_vr.dmi', null, "animation")
-	coolanimation.plane = PLANE_LIGHTING_ABOVE
-	thing.overlays += coolanimation
-	after(src, 1.1 SECOND, PROC_REF(animate_action_finished), with = list(thing, coolanimation))
-
-/obj/item/capture_crystal/proc/animate_action_finished(atom/thing,image/coolanimation)
-	SHOULD_NOT_OVERRIDE(TRUE)
-	PROTECTED_PROC(TRUE)
-	thing.overlays -= coolanimation
-	spent(coolanimation)
+	look_flash(thing, look_overlay_image(animation_icon, "animation", plane = PLANE_LIGHTING_ABOVE), animation_time)
 
 //IF the crystal somehow ends up in a tummy and digesting with a bound mob who doesn't want to be eaten, let's move them to the ground
 /obj/item/capture_crystal/digest_act(atom/movable/item_storage = null)

@@ -26,8 +26,6 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 	if(!gurgled)
 		set_gurgled(TRUE)
 		set_gurgled_color(contamination_color)
-		if(!stains_in_look() && !isbelly(src.loc)) //Moved non-worn overlay stuff to belly_obj_vr.dm Exited proc. No need to add overlays to things that won't make it out.
-			add_overlay(GLOB.gurgled_overlays[gurgled_color])
 		var/list/pickfrom = GLOB.contamination_flavors[contamination_flavor]
 		var/gurgleflavor = pick(pickfrom)
 		cleanname = src.name

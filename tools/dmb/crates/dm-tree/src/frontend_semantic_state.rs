@@ -16,6 +16,9 @@ pub struct RetainedSemanticTree {
     /// Tests of the full structural path turn the change-set splice off.
     splice_disabled: bool,
     splices: u64,
+    /// The last published frontend with the project and defines it was built for: the base the next
+    /// request's plan and expansion are derived from (`DMB_FRONTEND_REVISION`).
+    previous: Option<(std::path::PathBuf, std::collections::BTreeMap<String, String>, super::FrontendRevision)>,
 }
 struct Entry {
     index: crate::declaration_contributions::KeyedDeclarations,
@@ -27,6 +30,23 @@ struct Entry {
     metadata_dependencies: Option<crate::metadata_update::MetadataDependencies>,
 }
 impl RetainedSemanticTree {
+    /// Remember the frontend a request published as the base of the next one.
+    pub fn remember_frontend(
+        &mut self,
+        project: &std::path::Path,
+        defines: &std::collections::BTreeMap<String, String>,
+        revision: super::FrontendRevision,
+    ) {
+        self.previous = Some((project.to_path_buf(), defines.clone(), revision));
+    }
+    pub(super) fn previous_frontend(
+        &self,
+        project: &std::path::Path,
+        defines: &std::collections::BTreeMap<String, String>,
+    ) -> Option<super::FrontendRevision> {
+        let (path, remembered, revision) = self.previous.as_ref()?;
+        (path == project && remembered == defines).then(|| revision.clone())
+    }
     /// Stage source-neutral declaration claims for this request, independently
     /// of the current semantic/query tree. Dropping the guard aborts claims.
     pub fn begin_declaration_request(&mut self, publishable: bool) -> super::DeclarationRequest {

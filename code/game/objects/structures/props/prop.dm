@@ -21,6 +21,8 @@
 	anchored = TRUE
 	var/interaction_message = null
 	var/state
+	/// The service panel of a prop that has one is open (change_state "panel_open" / "panel_closed").
+	var/panel_shown = FALSE
 
 
 CAPABILITIES(/obj/structure/prop)
@@ -36,7 +38,7 @@ CAPABILITIES(/obj/structure/prop)
 
 /obj/structure/prop/proc/change_state(state)
 	SHOULD_CALL_PARENT(TRUE)
-	src.state = state
+	set_state(state)
 
 /// Helper so admins can varedit the state easily.
 /obj/structure/prop/vv_edit_var(var_name, var_value)

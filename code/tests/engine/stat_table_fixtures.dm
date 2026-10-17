@@ -23,3 +23,26 @@ CAPABILITIES(/obj/stat_table_fixture/contributing)
 	contributes(STAT_TB_MAX, 0.25)
 	contributes(STAT_TB_MIN, 2)
 	contributes(STAT_TB_MASK, 6)
+
+/// A source whose factors() entries put tables on the fixture its `target` names (code/modules/unit_tests/dq_stat_layer_tests.dm, dq_stat_factors_entry).
+/datum/factor_source_fixture
+	/// The fixture that receives the tables: a relation view.
+	var/obj/stat_table_fixture/target
+	/// The scale of the first table (tracked by being read by the entry: written through set_level()).
+	var/level = 1
+	/// The stacks of the first table (written through set_stacks()).
+	var/stacks = 1
+	/// TRUE while the second table (a proc's, which names two stats) is wanted: a when() gate.
+	var/wide = FALSE
+
+CAPABILITIES(/datum/factor_source_fixture)
+	ref_one(nameof(target), /obj/stat_table_fixture)
+	factors(PROC_REF(first_table), scale = nameof(level), stacks = nameof(stacks), to = nameof(target))
+	factors(alist(STAT_TB_FREE = 4), to = nameof(target), part = "free")
+	when(nameof(wide), factors(PROC_REF(wide_table), to = nameof(target), part = "wide"))
+
+/datum/factor_source_fixture/proc/first_table(datum/act/eval/A)
+	return alist(STAT_TB_SUM = 4, STAT_TB_PRODUCT = 0.5)
+
+/datum/factor_source_fixture/proc/wide_table(datum/act/eval/A)
+	return alist(STAT_TB_SUM = 1, STAT_TB_MAX = 0.4)

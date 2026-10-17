@@ -4945,3 +4945,17 @@ prove the composition equal within a relative 1e-5. What is different on purpose
 ### Master prompt-op projection changes (201c0431de)
 
 Master commit `201c0431de48a3569167d8199653abcac3222db9` converted disposal and radiocarbon scanner rerun prompts to declared asks. Disposal and deliveryChute no longer offer the inert Use multitool menu row while their default charging mode silently refuses reconfiguration. The radiocarbon scanner now declares the glass-specific use_container op, changing its glass-held menu projection (Open controls and Use), plain-click label (Open controls), and op key inventory. These six diagnostic classes span three type files; neither production file differs from master. Refresh only those exact expanded row deltas, retaining existing inherited base blocks and all unrelated pins. No appearance pins or runtime failures are blessed.
+
+### Object-init merge with native raw-overlay conversion
+
+Master commits `7ef26a99fa` and `0169f6398c` already replace lighter and extinguisher constructor overlays with `rolls()` and `draw(look)`. Keep those implementations instead of the interim lane's frozen cosmetic traits: cheap lighter pattern/color and extinguisher choice are native roller state, zippos skip the cheap roll, and presentation reads the holder's current icon/item state. The corresponding constructor tests now exercise those actual master contracts, including repeated presentation, configured defaults and owned emissive blocker teardown. This is master integration, not an additional runtime-golden blessing. The conflicting raptor appearance snapshot keeps master's existing rows because this lane does not change raptor appearance production code.
+
+## Stat layer, wave 3 (factors() entries)
+
+* **An affliction's factor table follows its exact severity.** Master refreshed a table scaled by severity only when the severity crossed a 10-point band (except the airway, respiratory
+  arrest and tissue hypoxia, which followed every change); a source now holds its table at the severity it has, so a change inside a band moves the stats at once. This is what the factor
+  oracle computes, and the old band test (`dq_body_factor_affliction_bands`) now pins the exact value. `FACTOR_SEVERITY_BAND`, `factor_band` and `continuous_factors` are gone.
+* **Cardiac arrhythmia's tachycardia restart goes through `set_severity(0)`** where it wrote `severity = 0`: the severity-changed notice and the vitals dirtying now follow that reset too.
+* **A reagent's factor tables follow its exact volume** (no 0.1 dose band) and a reagent that cannot change a factor has no record. A body's factor sources are no longer re-read as a set: the
+  species, form and worn items are read where they change, so a raw write of a species field (`medallergens`, flags) is picked up by the next reagent read or `sync_species_factors()`, not by
+  every later factor event.

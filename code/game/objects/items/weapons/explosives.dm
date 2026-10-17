@@ -10,14 +10,21 @@
 	var/timer = 10
 	var/atom/target
 	var/open_panel = 0
-	var/image_overlay = null
 	var/blast_dev = 0
 	var/blast_heavy = 1
 	var/blast_light = 2
 	var/blast_flash = 3
 
-/obj/item/plastique/proc/plastique_after_init(datum/act/timer/A)
-	image_overlay = image('icons/obj/assemblies.dmi', "plastic-explosive2")
+/// A charge planted on something: the thing wears the charge's sprite until the charge goes off or is taken away.
+CAPABILITY_TYPE(planted_charge, CAP_PLANTED_CHARGE, /datum/capability/planted_charge, key = NONE)
+/datum/capability/planted_charge
+
+/datum/capability/planted_charge/entries()
+	return list()
+
+/datum/capability/planted_charge/draw(atom/holder, datum/look/look)
+	..()
+	look.overlay(look_image('icons/obj/assemblies.dmi', "plastic-explosive2"))
 
 /// Old attackby.
 /obj/item/plastique/proc/interaction_item(datum/act/op/A)
@@ -57,7 +64,6 @@
 MSG_DEF_SELF(plastique/planting, "Planting explosives...")
 
 CAPABILITIES(/obj/item/plastique)
-	after_init(0, then(PROC_REF(plastique_after_init)))
 	space(SPACE_PANEL, door = nameof(open_panel))
 	wires(name = "Explosive wires", count = 1, tools = FALSE)
 	on_wire(WIRE_EXPLODE, cut = PROC_REF(explode_wire), pulse = PROC_REF(explode_wire))
@@ -106,7 +112,7 @@ CAPABILITIES(/obj/item/plastique)
 		message_admins("[key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) planted [src.name] on [target.name] at ([target.x],[target.y],[target.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[target.x];Y=[target.y];Z=[target.z]'>JMP</a>) with [timer] second fuse")
 		log_game("[key_name(user)] planted [src.name] on [target.name] at ([target.x],[target.y],[target.z]) with [timer] second fuse")
 
-	target.add_overlay(image_overlay)
+	grant(target, /datum/capability/planted_charge, src)
 	to_chat(user, "Bomb has been planted. Timer counting down from [timer].")
 	after(src, timer SECONDS, PROC_REF(explode), with = list(get_turf(target)))
 	return OP_OK
@@ -128,7 +134,7 @@ CAPABILITIES(/obj/item/plastique)
 		else
 			target_ref().ex_act(1)
 	if(target_ref())
-		target_ref().cut_overlay(image_overlay)
+		revoke(target_ref(), /datum/capability/planted_charge, src)
 	consume(src)
 
 /obj/item/plastique/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -177,7 +183,7 @@ CAPABILITIES(/obj/item/plastique)
 	var/turf/T = get_turf(target_ref())
 	if((T.z in using_map.station_levels) || (T.z in using_map.admin_levels))
 		target_ref().visible_message(span_danger("\The [src] lets out a loud beep as safeties trigger, before imploding and falling apart."))
-		target_ref().cut_overlay(image_overlay)
+		revoke(target_ref(), /datum/capability/planted_charge, src)
 		consume(src)
 		return 0
 	else

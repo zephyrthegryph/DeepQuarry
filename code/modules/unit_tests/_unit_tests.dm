@@ -274,6 +274,7 @@
 #include "dq_focus.dm"
 #include "dq_gc_tests.dm"
 #include "dq_gc_sweep_tests.dm"
+#include "dq_list_leak_tests.dm"
 #include "dq_table_ref_hold_tests.dm"
 #include "dq_hc_bots_behaviour.dm"
 #include "dq_hc_mobs_behaviour.dm"
@@ -423,6 +424,7 @@
 #include "dq_draw_structures.dm"
 #include "dq_draw_sweep_3c.dm"
 #include "dq_draw_reagents.dm"
+#include "dq_look_forms.dm"
 #include "dq_look_glow_tests.dm"
 #include "dq_look_pins.dm"
 #include "dq_look_sweep.dm"
@@ -1132,6 +1134,7 @@
 #include "../benchmarks/dx_deps.dm"
 #include "../benchmarks/op_resolve.dm"
 #include "../benchmarks/apc_flip.dm"
+#include "../benchmarks/soak.dm"
 #include "../benchmarks/kernel_metrics.dm"
 #include "../balance/balance_benchmark.dm"
 #endif
@@ -1202,6 +1205,8 @@
 
 #include "round2_slime_docility_name_request.dm"
 
+#include "lobby_join_op_alive_keep.dm"
+#include "pipe_carries_no_has_power.dm"
 #include "round2_helm_limit_requests.dm"
 #include "round2_helm_coordinates_clientless.dm"
 

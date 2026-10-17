@@ -164,7 +164,7 @@ CAPABILITIES(/turf/simulated/shuttle/wall/alien)
 	if((join_flags & mask) == mask)
 		var/turf/simulated/shuttle/wall/adj = get_step(src, direction)
 		if(istype(adj, /turf/simulated/shuttle/wall) && adj.join_group == src.join_group)
-			join_flags |= flag      // turn on the bit flag
+			set_join_flags(join_flags | flag)      // turn on the bit flag
 			return
 
 		else if(istype(adj, /turf/simulated/shuttle))
@@ -175,7 +175,7 @@ CAPABILITIES(/turf/simulated/shuttle/wall/alien)
 					found = locate_on(adj, E)
 					if(found) break
 				if(found)
-					join_flags |= flag      // turn on the bit flag
+					set_join_flags(join_flags | flag)      // turn on the bit flag
 					return
 
 		var/always_found
@@ -183,9 +183,9 @@ CAPABILITIES(/turf/simulated/shuttle/wall/alien)
 			always_found = locate_on(adj, E)
 			if(always_found) break
 		if(always_found)
-			join_flags |= flag      // turn on the bit flag
+			set_join_flags(join_flags | flag)      // turn on the bit flag
 		else
-			join_flags &= ~flag     // turn off the bit flag
+			set_join_flags(join_flags & (~flag))     // turn off the bit flag
 
 /turf/simulated/shuttle/wall/voidcraft
 	name = "voidcraft wall"
@@ -252,8 +252,15 @@ CAPABILITIES(/obj/structure/hull_corner)
 /obj/structure/hull_corner/proc/get_dirs_to_test()
 	return list(dir, turn(dir,90))
 
+/// The colour of the reinforcing layer of the hull this corner joins (null: none).
+/obj/structure/hull_corner/var/reinf_color
+
+/obj/structure/hull_corner/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "[icon_state]_reinf", dir = dir, color = reinf_color), when = !isnull(reinf_color))
+
 /obj/structure/hull_corner/proc/update_look()
-	cut_overlays()
+	set_reinf_color(null)
 	var/turf/simulated/wall/T
 	for(var/direction in get_dirs_to_test())
 		T = get_step(src, direction)
@@ -269,9 +276,7 @@ CAPABILITIES(/obj/structure/hull_corner)
 		if(B?.icon_colour)
 			set_color(B.icon_colour)
 		if(R?.icon_colour)
-			var/image/I = image(icon, icon_state+"_reinf", dir=dir)
-			I.color = R.icon_colour
-			add_overlay(I)
+			set_reinf_color(R.icon_colour)
 		break
 
 	if(!T)

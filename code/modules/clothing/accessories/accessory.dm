@@ -11,7 +11,6 @@
 	var/slot = ACCESSORY_SLOT_DECOR
 	var/can_remove = TRUE						// Can it be taken off once attached?
 	var/tmp/obj/item/clothing/has_suit	// The suit the tie may be attached to
-	var/tmp/image/inv_overlay = null				// Overlay used when attached to clothing.
 	var/overlay_state = null
 	var/punch_force	= 0							// added melee damage
 	var/punch_injury_kind						// what punches inflict (INJURY_*); null = the punch's own kind
@@ -25,11 +24,9 @@
 	..()
 
 // Delegate to the global clothing_appearance_handler singleton.
-// The cached inv_overlay var remains on the accessory.
+// Pure: built from the accessory's inputs on every draw of the clothing it is attached to, not stored.
 /obj/item/clothing/accessory/proc/get_inv_overlay()
-	if(!inv_overlay)
-		inv_overlay = GLOB.clothing_appearance_handler.build_inv_overlay(src)
-	return inv_overlay
+	return GLOB.clothing_appearance_handler.build_inv_overlay(src)
 
 /// The on-mob overlay. Pure: built from the accessory's inputs on every draw and not stored.
 /obj/item/clothing/accessory/proc/get_mob_overlay()
@@ -45,8 +42,6 @@
 		return
 	rel_set(src, nameof(has_suit), S)
 	src.forceMove(S)
-	has_suit().add_overlay(get_inv_overlay())
-
 	has_suit().set_force(combat_of(has_suit()).force + (combat_of(src).force))
 	if(istype(S,/obj/item/clothing/gloves))
 		var/obj/item/clothing/gloves/has_gloves = S
@@ -60,7 +55,6 @@
 	if(!has_suit())
 		return
 	var/obj/item/clothing/old_suit = has_suit()
-	old_suit.cut_overlay(get_inv_overlay())
 	old_suit.set_force(combat_of_type(old_suit.type).force)
 	if(istype(old_suit,/obj/item/clothing/gloves))
 		var/obj/item/clothing/gloves/has_gloves = old_suit

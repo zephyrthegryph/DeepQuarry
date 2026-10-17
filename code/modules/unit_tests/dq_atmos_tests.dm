@@ -2686,7 +2686,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT_NOTNULL(T, "no floor for water_vapor test")
 
 	// Reset wet state.
-	T.wet = TURFSLIP_DRY
+	T.set_wet(TURFSLIP_DRY)
 
 	var/datum/gas_mixture/air = T.return_air()
 	for(var/datum/gas/g as anything in air.get_gases())
@@ -2704,7 +2704,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"freeze_turf didn't ice the turf: T.wet=[T.wet], expected ≥ [TURFSLIP_ICE]")
 
 	// Reset.
-	T.wet = TURFSLIP_DRY
+	T.set_wet(TURFSLIP_DRY)
 	air.set_moles(/datum/gas/water_vapor, 0)
 
 

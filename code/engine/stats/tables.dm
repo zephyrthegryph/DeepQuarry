@@ -23,6 +23,11 @@
 // A caller that re-reads every source of an entity (the body's factors) brackets the calls in hold_tables_begin() / hold_tables_end(): the rows
 // no call of the pass touched are released, and every stat the pass changed settles once, however many tables moved.
 
+/// A factors() entry (code/engine/stats/contributes.dm) held or released a table on this entity, and these stat ids ended with another value. The entity that
+/// caches what its stats feed (a body's vitals) overrides it; the default does nothing.
+/datum/proc/factors_held(list/moved)
+	return
+
 /// The key of a table row's (source, part): "t" for the unnamed part, "t:name" for a named one.
 #define TABLE_KEY(part) (isnull(part) ? "t" : "t:[part]")
 
@@ -34,9 +39,9 @@ GLOBAL_LIST_EMPTY(stat_pass_touched)
 GLOBAL_LIST_EMPTY(stat_pass_before)
 
 /// The contribution of one table entry at scale and stacks for the stat's rule, or null when it contributes nothing (the neutral value, or a scale
-/// that is not above 0). Pure.
+/// or a stack count that is not above 0). Pure.
 /proc/stat_table_contribution(datum/stat_def/def, value, scale, stacks)
-	if(scale <= 0 || isnull(value))
+	if(scale <= 0 || stacks <= 0 || isnull(value))
 		return null
 	switch(def.rule)
 		if(STAT_RULE_PRODUCT)
@@ -58,7 +63,7 @@ GLOBAL_LIST_EMPTY(stat_pass_before)
 	return null
 
 /// Holds `table` (stat id -> value) for `source` on E. Returns TRUE, or null with the reason reported when the call is refused.
-/proc/hold_table(datum/E, source, alist/table, scale = 1, stacks = 1, part = null, priority = PRIORITY_DEFAULT)
+/proc/hold_table(datum/E, source, alist/table, scale = 1, stacks = 1, part = null, priority = PRIORITY_DEFAULT, declared = FALSE)
 	OP_PURE_GUARD("a table hold on [E?.type] was placed")
 	if(!isdatum(E) || QDELETED(E))
 		declare_report("hold_table([E?.type]): the holder is deleted or not a datum")
@@ -102,7 +107,7 @@ GLOBAL_LIST_EMPTY(stat_pass_before)
 			row[H_VALUE] = c
 			row[H_PRIORITY] = priority
 		else
-			row = list(def.id, source, c, 0, priority, HF_TABLE | HF_SEEN, HOLD_CLOCK_OWN, null, ++GLOB.stat_hold_serial, key, null)
+			row = list(def.id, source, c, 0, priority, HF_TABLE | HF_SEEN | (declared ? HF_DECLARED : 0), HOLD_CLOCK_OWN, null, ++GLOB.stat_hold_serial, key, null)
 			stat_rows_add(rec, row)
 			if(isdatum(source))
 				var/datum/stat_record/src_rec = stat_record_of(source)
@@ -176,6 +181,8 @@ GLOBAL_LIST_EMPTY(stat_pass_before)
 		if(row[H_FLAGS] & HF_SEEN)
 			row[H_FLAGS] &= ~HF_SEEN
 			continue
+		if(row[H_FLAGS] & HF_DECLARED)
+			continue // a type's factors() entry owns this row: its own triggers place and release it
 		var/datum/stat_def/def = stat_def_of(row[H_STAT])
 		if(def && !touched[def.skey])
 			before[def.skey] = stat_value_now(E, def, null)

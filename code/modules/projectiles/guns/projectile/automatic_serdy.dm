@@ -1546,7 +1546,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 	name = "sawn-off shotgun"
 	desc += " The barrel seems to be crudely sawn in half."
 	set_icon_state("sawnshotgun[shotgun_variant]")
-	icon_expected_width = 32
+	set_icon_expected_width(32)
 	update_transform()
 
 /obj/item/gun/projectile/shotgun/doublebarrel/sawn //Default sawn shotgun needs it's old icon path back

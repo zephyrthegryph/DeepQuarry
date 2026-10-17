@@ -247,6 +247,13 @@ fn run_build_attempt(
     drop(input_context_profile);
     dm_profile::detail_mark("input_context", total);
     let session_profile = dm_profile::stage("session_validation");
+    if retains_query_owners {
+        if let Some(root) = project.parent() {
+            dmbc::fs_watch::arm(root);
+            dmbc::fs_watch::sync(root);
+        }
+        dm_profile::request_mark("session.watch_synced");
+    }
     let compiler = if executable && (!no_cache || host.retains_artifacts()) {
         let compiler = dmbc::daemon::compiler_identity()?;
         let mut policy_bytes = b"native-lowering-policy-v1\0".to_vec();
@@ -363,6 +370,7 @@ fn run_build_attempt(
                         }
                         configured.store(record)?;
                     }
+                    dmbc::compile_stats::note_hit();
                     dmbc::daemon_eprintln!(
                         "native session hit: total={:.3}s rehashed={} pair={}",
                         total.elapsed().as_secs_f64(),
@@ -389,6 +397,10 @@ fn run_build_attempt(
         }
         session = Some(configured);
         pair_store = Some(store);
+    }
+    if retains_query_owners && dmbc::fs_watch::enabled() {
+        let (hits, misses) = dmbc::fs_watch::counters();
+        dmbc::daemon_eprintln!("native fs watch: directory proofs cached={hits} captured={misses}");
     }
     stamped_provider.adopt(shared_proofs.clone());
     drop(session_profile);
@@ -591,6 +603,10 @@ fn run_build_attempt(
         }
     });
     dm_profile::request_mark("frontend.revision");
+    if retains_query_owners {
+        // The next request derives its plan and expansion from this revision (DMB_FRONTEND_REVISION).
+        semantic_state.remember_frontend(&project, &defines, frontend.clone());
+    }
     if progress_enabled {
         dmbc::daemon_eprintln!("native directive lookups: {}", crate::runner_host::memo_lookups_report());
     }
@@ -857,6 +873,7 @@ fn run_build_attempt(
                 })();
                 match attempt {
                     Ok(patched) => {
+                        dmbc::compile_stats::note_patch(patched.changed_bodies);
                         dmbc::body_patch::note_applied(&project);
                         dmbc::daemon_eprintln!(
                             "native body patch: applied changed_bodies={} shifted_initializers={} patched_rows={} {:.3}s",
@@ -868,6 +885,7 @@ fn run_build_attempt(
                         Some(patched)
                     }
                     Err(reason) => {
+                        dmbc::compile_stats::note_full(format!("patch declined: {reason}"));
                         dmbc::daemon_eprintln!(
                             "native body patch: declined after {:.3}s, full compilation: {reason}",
                             patch_started.elapsed().as_secs_f64()
@@ -876,7 +894,16 @@ fn run_build_attempt(
                     }
                 }
             }
-            _ => None,
+            _ => {
+                dmbc::compile_stats::note_full(if std::env::var_os("DMB_BODY_PATCH").is_some_and(|value| value == "0") {
+                    "body patch disabled"
+                } else if generation.is_none() {
+                    "no retained generation (cold session)"
+                } else {
+                    "no patch shape"
+                });
+                None
+            }
         };
         dm_profile::request_mark("patch.attempted");
         // A patch claims nothing in the procedure memo; publishing its empty

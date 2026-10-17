@@ -1,3 +1,9 @@
+/// A band is 2% of the temperature: the look's colour, light and overlays are a function of the band.
+#define HOTSPOT_TEMPERATURE_BAND(T) round(log(1.02, max(T, 1)))
+/// The band of FIRE_MINIMUM_TEMPERATURE_TO_EXIST (373.15 K), the temperature a hotspot starts at.
+#define HOTSPOT_BAND_AT_IGNITION 299
+#define HOTSPOT_BAND_TEMPERATURE(BAND) (1.02 ** (BAND))
+
 /// Returns reactions which will contribute to a hotspot's size.
 /proc/init_hotspot_reactions()
 	var/list/fire_reactions = list()
@@ -39,12 +45,12 @@
 		if(soh)
 			if(plas > 0.5 || trit > 0.5 || h2 > 0.5)
 				if(active_hotspot.temperature < exposed_temperature)
-					active_hotspot.temperature = exposed_temperature
+					active_hotspot.fire_temperature_to(exposed_temperature)
 				if(active_hotspot.volume < exposed_volume)
 					active_hotspot.volume = exposed_volume
 			else if(freon > 0.5)
 				if(active_hotspot.temperature > exposed_temperature)
-					active_hotspot.temperature = exposed_temperature
+					active_hotspot.fire_temperature_to(exposed_temperature)
 				if(active_hotspot.volume < exposed_volume)
 					active_hotspot.volume = exposed_volume
 		return
@@ -80,11 +86,12 @@
 	var/volume = 125
 	/// Temperature handles the initial ignition and the colouring.
 	var/temperature = FIRE_MINIMUM_TEMPERATURE_TO_EXIST
+	/// The temperature band the fire is drawn at (HOTSPOT_TEMPERATURE_BAND): changes only when the temperature moves a band.
+	var/heat_band = HOTSPOT_BAND_AT_IGNITION
 	/// Whether the hotspot is new or not. Used for bypass logic.
 	var/just_spawned = TRUE
 	/// Whether the hotspot becomes passive and follows the gasmix temp instead of changing it.
 	var/bypassing = FALSE
-	var/visual_update_tick = 0
 	///Are we burning freon?
 	var/cold_fire = FALSE
 	///the group of hotspots we are a part of
@@ -97,11 +104,22 @@ CAPABILITIES(/obj/effect/hotspot)
 	every(0.5 SECONDS, then(PROC_REF(burn_tick)), when = PROC_REF(burn_ready), lane = LANE_SIMULATION)
 	links(/obj/effect/hotspot::our_hot_group, /datum/hot_group::spot_list, b_many = TRUE)
 	param(nameof(starting_volume), pos = 1)
-	param(nameof(starting_temperature), pos = 2)
+	param(nameof(starting_temperature), pos = 2, apply = PROC_REF(start_at))
 
 /// The fire's starting volume and temperature (its constructor params).
 /// Every live hotspot (counts, the admin panel): a registry, so a deleted fire leaves it on its own.
 REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
+
+/// Writes the fire's temperature and moves its draw band when the temperature crosses one.
+/obj/effect/hotspot/proc/fire_temperature_to(value)
+	temperature = value
+	set_heat_band(HOTSPOT_TEMPERATURE_BAND(value))
+
+/// Applied at init from its constructor param (param(apply =)): the fire starts at this temperature, cold below the freon burn limit.
+/obj/effect/hotspot/proc/start_at(value)
+	fire_temperature_to(value)
+	if(value <= FREON_MAXIMUM_BURN_TEMPERATURE)
+		set_cold_fire(TRUE)
 
 /obj/effect/hotspot/var/starting_volume
 /obj/effect/hotspot/var/starting_temperature
@@ -111,10 +129,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 	. = ..()
 	if(!isnull(starting_volume))
 		volume = starting_volume
-	if(!isnull(starting_temperature))
-		temperature = starting_temperature
-		if(temperature <= FREON_MAXIMUM_BURN_TEMPERATURE)
-			cold_fire = TRUE
 
 	var/turf/open/our_turf = loc
 	//on creation we check adjacent turfs for hot spot to start grouping, if surrounding do not have hot spots we create our own
@@ -150,10 +164,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 	if(COOLDOWN_FINISHED(our_turf, fire_puff_cooldown))
 		COOLDOWN_START(our_turf, fire_puff_cooldown, 5 SECONDS)
 
-	update_color()
-
 /obj/effect/hotspot/set_smoothed_icon_state(new_junction)
-	update_color()
+	return
 
 /**
  * Perform interactions between the hotspot and the gasmixture.
@@ -204,7 +216,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 		if(cached_results) // Lazy: null until a reaction fires on the mixture.
 			for (var/reaction in SSair.hotspot_reactions)
 				volume += cached_results[reaction] * FIRE_GROWTH_RATE
-		temperature = reference.return_temperature()
+		fire_temperature_to(reference.return_temperature())
 
 	// Handles the burning of atoms.
 	if(cold_fire)
@@ -220,66 +232,55 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 	var/c = (x2 - x1) / 6
 	return NUM_E ** -((x - b) ** 2 / (2 * c) ** 2)
 
-/obj/effect/hotspot/proc/update_color()
-	cut_overlays()
-
-	var/heat_r = heat2colour_r(temperature)
-	var/heat_g = heat2colour_g(temperature)
-	var/heat_b = heat2colour_b(temperature)
+/// The fire's colour, light and overlays follow its temperature and whether it burns cold.
+/obj/effect/hotspot/draw(datum/look/look)
+	..()
+	var/shown_temperature = HOTSPOT_BAND_TEMPERATURE(heat_band) // the draw follows the temperature band, so it is redrawn when the fire moves a band, not on every degree
+	var/heat_r = heat2colour_r(shown_temperature)
+	var/heat_g = heat2colour_g(shown_temperature)
+	var/heat_b = heat2colour_b(shown_temperature)
 	var/heat_a = 255
 	var/greyscale_fire = 1 //This determines how greyscaled the fire is.
 
 	if(cold_fire)
 		heat_r = 0
-		heat_g = LERP(255, temperature, 1.2)
-		heat_b = LERP(255, temperature, 0.9)
+		heat_g = LERP(255, shown_temperature, 1.2)
+		heat_b = LERP(255, shown_temperature, 0.9)
 		heat_a = 100
-	else if(temperature < 5000) //This is where fire is very orange, we turn it into the normal fire texture here.
-		var/normal_amt = gauss_lerp(temperature, 1000, 3000)
+	else if(shown_temperature < 5000) //This is where fire is very orange, we turn it into the normal fire texture here.
+		var/normal_amt = gauss_lerp(shown_temperature, 1000, 3000)
 		heat_r = LERP(heat_r,255,normal_amt)
 		heat_g = LERP(heat_g,255,normal_amt)
 		heat_b = LERP(heat_b,255,normal_amt)
-		heat_a -= gauss_lerp(temperature, -5000, 5000) * 128
+		heat_a -= gauss_lerp(shown_temperature, -5000, 5000) * 128
 		greyscale_fire -= normal_amt
-	if(temperature > 40000) //Past this temperature the fire will gradually turn a bright purple
-		var/purple_amt = temperature < LERP(40000,200000,0.5) ? gauss_lerp(temperature, 40000, 200000) : 1
+	if(shown_temperature > 40000) //Past this shown_temperature the fire will gradually turn a bright purple
+		var/purple_amt = shown_temperature < LERP(40000,200000,0.5) ? gauss_lerp(shown_temperature, 40000, 200000) : 1
 		heat_r = LERP(heat_r,255,purple_amt)
-	if(temperature > 200000 && temperature < 500000) //Somewhere at this temperature nitryl happens.
-		var/sparkle_amt = gauss_lerp(temperature, 200000, 500000)
-		var/mutable_appearance/sparkle_overlay = mutable_appearance('icons/effects/effects.dmi', "shieldsparkles")
-		sparkle_overlay.blend_mode = BLEND_ADD
-		sparkle_overlay.alpha = sparkle_amt * 255
-		add_overlay(sparkle_overlay)
-	if(temperature > 400000 && temperature < 1500000) //Lightning because very anime.
-		var/mutable_appearance/lightning_overlay = mutable_appearance('icons/effects/fire.dmi', "overcharged")
-		lightning_overlay.blend_mode = BLEND_ADD
-		add_overlay(lightning_overlay)
-	if(temperature > 4500000) //This is where noblium happens. Some fusion-y effects.
-		var/fusion_amt = temperature < LERP(4500000,12000000,0.5) ? gauss_lerp(temperature, 4500000, 12000000) : 1
+	if(shown_temperature > 200000 && shown_temperature < 500000) //Somewhere at this shown_temperature nitryl happens.
+		var/sparkle_amt = gauss_lerp(shown_temperature, 200000, 500000)
+		look.overlay(look_overlay_image('icons/effects/effects.dmi', "shieldsparkles", alpha = sparkle_amt * 255, blend_mode = BLEND_ADD))
+	if(shown_temperature > 400000 && shown_temperature < 1500000) //Lightning because very anime.
+		look.overlay(look_overlay_image('icons/effects/fire.dmi', "overcharged", blend_mode = BLEND_ADD))
+	if(shown_temperature > 4500000) //This is where noblium happens. Some fusion-y effects.
+		var/fusion_amt = shown_temperature < LERP(4500000,12000000,0.5) ? gauss_lerp(shown_temperature, 4500000, 12000000) : 1
 		// 'icons/effects/atmospherics.dmi' is a /tg/ asset CHOMP doesn't ship.
 		// Reuse the existing fire.dmi as a substitute; less "fusion-y" looking but
 		// the hotspot still renders. Replace when the /tg/ asset is vendored.
-		var/mutable_appearance/fusion_overlay = mutable_appearance('icons/effects/fire.dmi', "light")
-		fusion_overlay.blend_mode = BLEND_ADD
-		fusion_overlay.alpha = fusion_amt * 255
-		var/mutable_appearance/rainbow_overlay = mutable_appearance('icons/hud/screen_gen.dmi', "druggy")
-		rainbow_overlay.blend_mode = BLEND_ADD
-		rainbow_overlay.alpha = fusion_amt * 255
-		rainbow_overlay.appearance_flags = RESET_COLOR
 		heat_r = LERP(heat_r,150,fusion_amt)
 		heat_g = LERP(heat_g,150,fusion_amt)
 		heat_b = LERP(heat_b,150,fusion_amt)
-		add_overlay(fusion_overlay)
-		add_overlay(rainbow_overlay)
+		look.overlay(look_overlay_image('icons/effects/fire.dmi', "light", alpha = fusion_amt * 255, blend_mode = BLEND_ADD))
+		look.overlay(look_overlay_image('icons/hud/screen_gen.dmi', "druggy", alpha = fusion_amt * 255, blend_mode = BLEND_ADD, appearance_flags = RESET_COLOR))
 
-	set_light_color(rgb(LERP(250, heat_r, greyscale_fire), LERP(160, heat_g, greyscale_fire), LERP(25, heat_b, greyscale_fire)))
+	look.glow(LIGHT_RANGE_FIRE, 1, rgb(LERP(250, heat_r, greyscale_fire), LERP(160, heat_g, greyscale_fire), LERP(25, heat_b, greyscale_fire)))
 
 	heat_r /= 255
 	heat_g /= 255
 	heat_b /= 255
 
-	set_color(list(LERP(0.3, 1, 1-greyscale_fire) * heat_r,0.3 * heat_g * greyscale_fire,0.3 * heat_b * greyscale_fire, 0.59 * heat_r * greyscale_fire,LERP(0.59, 1, 1-greyscale_fire) * heat_g,0.59 * heat_b * greyscale_fire, 0.11 * heat_r * greyscale_fire,0.11 * heat_g * greyscale_fire,LERP(0.11, 1, 1-greyscale_fire) * heat_b, 0,0,0))
-	set_alpha(heat_a)
+	look.set_color(list(LERP(0.3, 1, 1-greyscale_fire) * heat_r,0.3 * heat_g * greyscale_fire,0.3 * heat_b * greyscale_fire, 0.59 * heat_r * greyscale_fire,LERP(0.59, 1, 1-greyscale_fire) * heat_g,0.59 * heat_b * greyscale_fire, 0.11 * heat_r * greyscale_fire,0.11 * heat_g * greyscale_fire,LERP(0.11, 1, 1-greyscale_fire) * heat_b, 0,0,0))
+	look.set_alpha(heat_a)
 
 /// Reads a gas's moles from the batched `readings` record (read_gas_mixtures).
 #define INSUFFICIENT(gas_id) (readings[GAS_READ_MOLES(gas_id)] < 0.5)
@@ -305,9 +306,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 	// cooldown reset on. Re-registering the burning turf keeps auxmos processing it.
 	SSair.add_to_active(location)
 
-	cold_fire = FALSE
+	set_cold_fire(FALSE)
 	if(temperature <= FREON_MAXIMUM_BURN_TEMPERATURE)
-		cold_fire = TRUE
+		set_cold_fire(TRUE)
 
 	if((temperature < FIRE_MINIMUM_TEMPERATURE_TO_EXIST && !cold_fire) || (volume <= 1))
 		destroyed(src)
@@ -348,9 +349,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 		else
 			set_fire_stage("light")
 
-	if((visual_update_tick++ % 7) == 0)
-		update_color()
-
 	return TRUE
 
 /obj/effect/hotspot/proc/set_fire_stage(stage)
@@ -359,7 +357,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 	fire_stage = stage
 	set_icon_state(stage)
 	set_dir(pick(GLOB.cardinals))
-	update_color()
 
 // a dying fire cools its tile and leaves its hot group.
 /obj/effect/hotspot/lifecycle_dematerialize()

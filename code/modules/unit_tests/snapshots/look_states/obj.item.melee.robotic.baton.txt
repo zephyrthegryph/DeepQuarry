@@ -6,6 +6,9 @@
 /obj/item/melee/robotic/baton status=2 +overlay: icons/obj/weapons.dmi:stunbaton_active:8:#000000
 /obj/item/melee/robotic/baton status=2 -state: stunbaton
 /obj/item/melee/robotic/baton status=2 -overlay: icons/obj/weapons.dmi:stunbaton:8:#000000
+/obj/item/melee/robotic/baton d_mult=0 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767 x5
+/obj/item/melee/robotic/baton gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/melee/robotic/baton gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 /obj/item/melee/robotic/baton/arm status=1 +state: electrified arm_active
 /obj/item/melee/robotic/baton/arm status=1 +overlay: icons/obj/decals.dmi:electrified arm_active:8:#000000
 /obj/item/melee/robotic/baton/arm status=1 -state: electrified arm
@@ -14,6 +17,9 @@
 /obj/item/melee/robotic/baton/arm status=2 +overlay: icons/obj/decals.dmi:electrified arm_active:8:#000000
 /obj/item/melee/robotic/baton/arm status=2 -state: electrified arm
 /obj/item/melee/robotic/baton/arm status=2 -overlay: icons/obj/decals.dmi:electrified arm:8:#000000
+/obj/item/melee/robotic/baton/arm d_mult=0 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767 x5
+/obj/item/melee/robotic/baton/arm gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/melee/robotic/baton/arm gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 /obj/item/melee/robotic/baton/shocker status=1 +state: shocker_active
 /obj/item/melee/robotic/baton/shocker status=1 +overlay: icons/obj/weapons.dmi:shocker_active:8:#000000
 /obj/item/melee/robotic/baton/shocker status=1 -state: shocker
@@ -22,6 +28,9 @@
 /obj/item/melee/robotic/baton/shocker status=2 +overlay: icons/obj/weapons.dmi:shocker_active:8:#000000
 /obj/item/melee/robotic/baton/shocker status=2 -state: shocker
 /obj/item/melee/robotic/baton/shocker status=2 -overlay: icons/obj/weapons.dmi:shocker:8:#000000
+/obj/item/melee/robotic/baton/shocker d_mult=0 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767 x5
+/obj/item/melee/robotic/baton/shocker gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/melee/robotic/baton/shocker gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 /obj/item/melee/robotic/baton/slime status=1 +state: slimebaton_active
 /obj/item/melee/robotic/baton/slime status=1 +overlay: icons/obj/weapons.dmi:slimebaton_active:8:#000000
 /obj/item/melee/robotic/baton/slime status=1 -state: slimebaton
@@ -30,4 +39,7 @@
 /obj/item/melee/robotic/baton/slime status=2 +overlay: icons/obj/weapons.dmi:slimebaton_active:8:#000000
 /obj/item/melee/robotic/baton/slime status=2 -state: slimebaton
 /obj/item/melee/robotic/baton/slime status=2 -overlay: icons/obj/weapons.dmi:slimebaton:8:#000000
+/obj/item/melee/robotic/baton/slime d_mult=0 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767 x5
+/obj/item/melee/robotic/baton/slime gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/melee/robotic/baton/slime gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 

@@ -553,7 +553,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/canvas/C = allocate(/obj/item/canvas, tile(2, 2))
 	var/obj/item/paint_brush/B = allocate(/obj/item/paint_brush, tile(2, 2))
-	B.selected_color = "#123456"
+	B.set_selected_color("#123456")
 	H.put_in_active_hand(B)
 	press(H, C, "paint", list("x" = 2, "y" = 3))
 	TEST_ASSERT_EQUAL(C.grid[2][3], "#123456", "a stroke paints the cell under the held brush")
@@ -561,7 +561,7 @@
 	var/list/data = hc_data(C, H)
 	TEST_ASSERT_EQUAL(data["grid"], C.grid, "the window shows the grid")
 	C.set_finalized(TRUE)
-	B.selected_color = "#654321"
+	B.set_selected_color("#654321")
 	press(H, C, "paint", list("x" = 4, "y" = 4))
 	TEST_ASSERT_NOTEQUAL(C.grid[4][4], "#654321", "a finished painting takes no more strokes")
 

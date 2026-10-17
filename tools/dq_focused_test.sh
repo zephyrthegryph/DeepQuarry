@@ -333,6 +333,8 @@ list_only=0
 all_types=""
 split_mode=auto
 look_shards="${DQ_LOOK_SHARDS:-4}"
+look_shards_set=0
+[ -n "${DQ_LOOK_SHARDS:-}" ] && look_shards_set=1
 sweep_shards="${DQ_SWEEP_SHARDS:-4}"
 look_full=0
 look_order=""
@@ -353,6 +355,7 @@ for arg in "$@"; do
 		--look-shards=*)
 			look_shards="${arg#--look-shards=}"
 			[[ "$look_shards" =~ ^[1-9][0-9]*$ ]] || { echo "--look-shards needs a positive integer, got '$look_shards'" >&2; exit 2; }
+			look_shards_set=1
 			;;
 		--full) look_full=1 ;;
 		--look-order=*) look_order="${arg#--look-order=}" ;;
@@ -478,14 +481,24 @@ case "$split_mode" in
 esac
 if [ ${#sweep_group[@]} -gt 0 ]; then do_split=1; fi
 if [ "${DQ_FOCUS_SPLIT:-}" = "0" ] && [ "$split_mode" = "auto" ]; then do_split=0; fi
+# A look bless is sharded like a look run: each world writes its own partial rows (look-bless-dir) and tools/dq_look_bless_merge.py joins
+# them into the snapshot files after the worlds end. --look-shards=1 keeps the unsharded bless.
+look_bless=0
+look_bless_dir=""
+if [ "$bless" -eq 1 ] && [ "$repeat" -eq 1 ] && [ ${#look_group[@]} -gt 0 ] && [ "$look_shards" -gt 1 ] && [ "$split_mode" != "off" ] && [ "${DQ_FOCUS_SPLIT:-}" != "0" ]; then
+	look_bless=1
+	look_full=1
+	look_bless_dir="data/look-bless/$$"
+fi
 if [ "$bless" -eq 1 ] || [ "$repeat" -gt 1 ]; then
-	if [ "$split_mode" = "on" ]; then echo "--split-slow ignored: it is not used with --bless or --repeat" >&2; fi
-	do_split=0
+	if [ "$look_bless" -eq 1 ]; then :
+	elif [ "$split_mode" = "on" ]; then echo "--split-slow ignored: it is not used with --bless or --repeat" >&2; fi
+	if [ "$look_bless" -eq 0 ]; then do_split=0; fi
 fi
 # Look pins prepare incremental reads in both split and serialized modes; bless and repeat stay full.
 look_world=0
 look_single=0
-if [ ${#look_group[@]} -gt 0 ] && [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ]; then
+if [ ${#look_group[@]} -gt 0 ] && { [ "$bless" -eq 0 ] || [ "$look_bless" -eq 1 ]; } && [ "$repeat" -eq 1 ]; then
 	look_world=1
 	if [ "$split_mode" = "off" ] || [ "${DQ_FOCUS_SPLIT:-}" = "0" ]; then
 		# One serialized world still uses the same incremental appearance plan.
@@ -525,8 +538,15 @@ look_prepare() {
 		echo "== look pins: no analyzer plan (analyze look-keys unavailable): full, unnarrowed run"
 		look_full=1
 	fi
+	if [ "$look_full" -eq 1 ] && [ "$look_shards_set" -eq 0 ]; then
+		# A full sweep is thousands of types: use every test-world slot the machine has (tools/dq_machine_slots.sh; the group acquire
+		# waits for them, so this never oversubscribes), not the incremental default of 4.
+		cap="$(bash -c '. tools/dq_machine_slots.sh; slots_capacity test_world' 2>/dev/null)"
+		if [[ "$cap" =~ ^[1-9][0-9]*$ ]] && [ "$cap" -gt "$look_shards" ]; then look_shards="$cap"; echo "== look pins: full run sharded over $look_shards worlds (the test_world slot count)"; fi
+	fi
 	if [ -n "$look_order" ]; then LOOK_PARAMS="${LOOK_PARAMS:+$LOOK_PARAMS&}look-order=$look_order"; fi
 	if [ -n "$look_dump" ]; then LOOK_PARAMS="${LOOK_PARAMS:+$LOOK_PARAMS&}look-dump=$look_dump"; fi
+	if [ -n "$look_bless_dir" ]; then rm -rf "$look_bless_dir"; mkdir -p "$look_bless_dir"; LOOK_PARAMS="${LOOK_PARAMS:+$LOOK_PARAMS&}look-bless-dir=$look_bless_dir"; fi
 }
 if [ "$look_world" -eq 1 ]; then look_prepare; fi
 
@@ -798,6 +818,8 @@ look_dump_merge() {
 # keeps the rows already verified at their current key. Nothing else writes look_keys.txt: a merge or a lane that only regenerates
 # it would mark types verified that no pin ever probed. tools/ci/check_look_keys_format.sh owns the rule.
 look_keys_record() {
+	# A hand-narrowed run (look-types in DQ_WORLD_PARAMS) probed only some types: it must not mark the rest verified.
+	if [[ "${DQ_WORLD_PARAMS:-}" == *look-types=* ]]; then return 0; fi
 	if [ "$look_world" -ne 1 ] || [ -z "$LOOK_PLAN_FILE" ] || [ ! -f "$LOOK_PLAN_FILE" ] || [ -n "$look_order" ]; then return 0; fi
 	if [[ " ${look_group[*]} " != *" dq_look_state_pin "* || " ${look_group[*]} " != *" dq_look_tree_pin "* ]]; then return 0; fi
 	if [ -n "$LOOK_STALE_FILE" ] && [ -f "$LOOK_STALE_FILE" ]; then
@@ -822,6 +844,10 @@ if [ "$do_split" -eq 1 ]; then
 	run_worlds
 	rc=$?
 	look_dump_merge
+	if [ "$rc" -eq 0 ] && [ "$look_bless" -eq 1 ]; then
+		"${PYTHON:-python3}" tools/dq_look_bless_merge.py "$look_bless_dir" || rc=1
+		[ "$rc" -eq 0 ] && rm -rf "$look_bless_dir"
+	fi
 	if [ "$rc" -eq 0 ]; then look_keys_record; fi
 	print_result "$combined_log" "$rc" "$SPLIT_JSON"
 	rm -f "$combined_log"

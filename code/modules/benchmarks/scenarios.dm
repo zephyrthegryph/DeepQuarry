@@ -1082,3 +1082,50 @@
 	for(var/mob/living/carbon/human/H as anything in mobs)
 		qdel(H)
 	mark("after_shadekin_cleanup")
+
+/// What the mapped station's power does at rest: regions (supply, load, brownout), every SMES's charge and output, and the APCs by external
+/// status and channel state, sampled every `step` seconds. A settled idle station reports the same numbers each time; one that keeps
+/// draining or flipping channels shows it here (and in the APC_REPORT / POWER_DEMAND lines it logs).
+/datum/benchmark/power_idle
+	id = "power_idle"
+	description = "Power regions, SMES and APC states of the mapped station at rest, sampled over time"
+
+/datum/benchmark/power_idle/Run()
+	wait_for_assets()
+	var/step = param("step", 30)
+	for(var/n in 0 to param("samples", 4))
+		power_idle_sample("t+[n * step]s")
+		wait_seconds(step)
+
+/datum/benchmark/power_idle/proc/power_idle_sample(label)
+	var/total_avail = 0
+	var/total_load = 0
+	var/regions = 0
+	var/browned = 0
+	for(var/id in power_grid_registry().ids())
+		var/datum/power_grid/G = power_grid_lookup(id)
+		if(!G)
+			continue
+		regions++
+		total_avail += G.avail
+		total_load += G.load
+		if(G.brownout)
+			browned++
+		if(G.avail > 0 || G.load > 1000)
+			log_world("POWER_PROBE [label] region [id] avail [G.avail] load [G.load] brown [G.brownout]")
+	log_world("POWER_PROBE [label] regions [regions] avail [total_avail] load [total_load] browned [browned]")
+	for(var/obj/machinery/power/smes/S in REGISTRY_MEMBERS(REGISTRY_SMES))
+		if(S.output_used <= 0 && S.stored_charge() <= 0)
+			continue
+		var/list/info = S.power_region > 0 ? vg_power_region_read(S.power_region) : null
+		log_world("POWER_PROBE [label] smes [S.type] ([S.x],[S.y],[S.z]) charge [round(S.stored_charge())] working [S.working] out_attempt [S.output_attempt] out_cut [S.output_cut] unwired [S.unwired] region [S.power_region] size [S.power_region > 0 ? vg_power_region_size(S.power_region) : 0] info [json_encode(info)] used [S.output_used]")
+	var/list/by_status = list()
+	var/list/by_channels = list()
+	var/apcs = 0
+	var/cell_total = 0
+	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
+		apcs++
+		by_status["[A.main_status]"]++
+		by_channels["[A.equipment]/[A.lighting]/[A.environ]"]++
+		cell_total += A.cell ? A.cell.charge : 0
+	log_world("POWER_PROBE [label] apcs [apcs] cell_total [round(cell_total)] status [json_encode(by_status)] channels [json_encode(by_channels)]")

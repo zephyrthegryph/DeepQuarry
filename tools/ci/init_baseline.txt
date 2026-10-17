@@ -70,10 +70,6 @@ init_lines	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	@/obj/machinery/a
 init_lines	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	@/obj/machinery/atmospherics/unary/vent_scrubber::Initialize::icon
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::if
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::volume
-init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::if
-init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::temperature
-init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::if
-init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::cold_fire
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::our_turf
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::for
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::if
@@ -96,7 +92,6 @@ init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::I
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::air_update_turf
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::if
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::COOLDOWN_START
-init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	@/obj/effect/hotspot::Initialize::update_color
 init_lines	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/turf/open::Initialize::setup_open_air
 init_lines	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/turf/open::Initialize::register_open_air
 init_lines	code/ATMOSPHERICS/gasmixtures/gas_types.dm	@/obj/effect/overlay/gas::Initialize::SET_PLANE_W_SCALAR
@@ -240,7 +235,6 @@ init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Init
 init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Initialize::to_chat
 init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Initialize::return
 init_lines	code/game/gamemodes/technomancer/spells/aura/aura.dm	@/obj/item/spell/aura::Initialize::log_and_message_admins
-init_lines	code/game/gamemodes/technomancer/spells/control.dm	@/obj/item/spell/control::Initialize::control_overlay
 init_lines	code/game/gamemodes/technomancer/spells/flame_tongue.dm	@/obj/item/spell/flame_tongue::Initialize::visible_message
 init_lines	code/game/gamemodes/technomancer/spells/flame_tongue.dm	@/obj/item/spell/flame_tongue::Initialize::welder.setWelding
 init_lines	code/game/gamemodes/technomancer/spells/radiance.dm	@/obj/item/spell/radiance::Initialize::log_and_message_admins
@@ -695,7 +689,6 @@ init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::if
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::return
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	@/obj/effect/decal/cleanable/dirt::Initialize::alpha
-init_lines	code/game/objects/items/weapons/cigs_lighters.dm	@/obj/item/flame/lighter/zippo::Initialize::cut_overlays
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::if
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::material
 init_lines	code/game/objects/micro_structures.dm	@/obj::Initialize::obj_instance_setup
@@ -781,12 +774,6 @@ init_lines	code/game/turfs/simulated/floor_types.dm	@/obj/landed_holder::Initial
 init_lines	code/game/turfs/simulated/floor_types.dm	@/obj/landed_holder::Initialize::rel_set
 init_lines	code/game/turfs/simulated/floor_types.dm	@/obj/landed_holder::Initialize::moveToNullspace
 init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::apply_rad_shield_material
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::if
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::antilight_cache
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::for
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::I
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::I.plane
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::expr
 init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::if
 init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::underlay_update
 init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle/floor/alien::Initialize::update_light
@@ -1194,7 +1181,6 @@ init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/s
 init_lines	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks/tastybread::Initialize::return
 init_lines	code/modules/food/food/snacks/meat.dm	@/obj/item/reagent_containers/food/snacks/meat/chicken::Initialize::reagents.remove_reagent
 init_lines	code/modules/food/food/snacks/meat.dm	@/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat::Initialize::reagents.remove_reagent
-init_lines	code/modules/food/food/z_custom_food.dm	@/obj/item/reagent_containers/food/snacks/customizable::Initialize::topping
 init_lines	code/modules/food/food/z_custom_food.dm	@/obj/item/reagent_containers/food/snacks/customizable::Initialize::filling
 init_lines	code/modules/food/food/z_custom_food.dm	@/obj/item/reagent_containers/food/snacks/customizable::Initialize::updateName
 init_lines	code/modules/food/glass/bottle.dm	@/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose::Initialize::on_reagent_change
@@ -1294,8 +1280,6 @@ init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/
 init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/fruit_slice::Initialize::rind_colour
 init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/fruit_slice::Initialize::flesh_colour
 init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/fruit_slice::Initialize::if
-init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/fruit_slice::Initialize::add_overlay
-init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/fruit_slice::Initialize::add_overlay
 init_lines	code/modules/hydroponics/grown_inedible.dm	@/obj/item/grown::Initialize::if
 init_lines	code/modules/hydroponics/grown_inedible.dm	@/obj/item/grown::Initialize::plantname
 init_lines	code/modules/hydroponics/grown_inedible.dm	@/obj/item/grown::Initialize::S
@@ -1695,7 +1679,6 @@ init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/da
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	@/obj/effect/abstract/dark_maw::Initialize::flick
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	@/obj/effect/abstract/dark_maw::Initialize::armed
 init_lines	code/modules/mob/living/living.dm	@/mob/living::Initialize::if
-init_lines	code/modules/mob/living/living.dm	@/mob/living::Initialize::add_overlay
 init_lines	code/modules/mob/living/living.dm	@/mob/living::Initialize::rel_clear
 init_lines	code/modules/mob/living/living.dm	@/mob/living::Initialize::hud_list
 init_lines	code/modules/mob/living/living.dm	@/mob/living::Initialize::make_hud_overlays
@@ -2036,7 +2019,6 @@ init_lines	code/modules/pda/pda.dm	@/obj/item/pda::Initialize::desc
 init_lines	code/modules/pda/pda.dm	@/obj/item/pda::Initialize::else
 init_lines	code/modules/pda/pda.dm	@/obj/item/pda::Initialize::icon
 init_lines	code/modules/pda/pda.dm	@/obj/item/pda::Initialize::log_runtime
-init_lines	code/modules/pda/pda.dm	@/obj/item/pda::Initialize::add_overlay
 init_lines	code/modules/pda/pda.dm	@/obj/item/pda::Initialize::start_program
 init_lines	code/modules/pda/radio.dm	@/obj/item/radio/integrated::Initialize::if
 init_lines	code/modules/pda/radio.dm	@/obj/item/radio/integrated::Initialize::rel_set
@@ -3536,7 +3518,6 @@ world_reads	code/game/turfs/flooring/seasonal.dm	switch(GLOB.world_time_season)
 world_reads	code/game/turfs/flooring/seasonal.dm	var/tree_type = pickweight(GLOB.grass_trees[trees])
 world_reads	code/game/turfs/flooring/seasonal.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])
 world_reads	code/game/turfs/simulated/fancy_shuttles.dm	GLOB.fancy_shuttles[fancy_shuttle_tag] = list(split_icon, x, y)
-world_reads	code/game/turfs/simulated/floor_types.dm	for(var/diag in GLOB.cornerdirs)
 world_reads	code/game/turfs/simulated/outdoors/grass.dm	var/grass_type = pickweight(GLOB.grass_grass[grass])
 world_reads	code/game/turfs/simulated/outdoors/grass.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])
 world_reads	code/game/turfs/space/transit.dm	toggle_transit(GLOB.reverse_dir[pushdirection])
@@ -3574,7 +3555,6 @@ world_reads	code/modules/mob/dead/observer/observer.dm	rel_set(src, nameof(visua
 world_reads	code/modules/mob/freelook/ai/eye.dm	rel_set(src, nameof(visualnet), GLOB.cameranet)
 world_reads	code/modules/mob/freelook/mask/eye.dm	rel_set(src, nameof(visualnet), GLOB.cultnet)
 world_reads	code/modules/mob/living/carbon/alien/diona/diona.dm	proto_set(src, nameof(species), GLOB.all_species[SPECIES_DIONA])
-world_reads	code/modules/mob/living/living.dm	add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
 world_reads	code/modules/mob/living/silicon/ai/multicam.dm	spent(GLOB.ai_camera_room_landmark)
 world_reads	code/modules/mob/living/silicon/ai/multicam.dm	GLOB.ai_camera_room_landmark = src
 world_reads	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	if(!GLOB.woof_current) //all our previous brothers have gone to valhallah

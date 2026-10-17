@@ -322,37 +322,51 @@
 
 // --- Body factors ---------------------------------------------------------------------------
 
-/// Species and trait baselines, the current form, and equipment worn
-/// outside the hands: rows of the species, the form and each item.
-/datum/body/humanoid/hold_plan_factors()
+/// The species' sources: its baseline, the tables traits and perks granted it, and the NO_PAIN grant. Read when the species changes, a trait grants or revokes
+/// a table, or a flag of the species flips.
+/datum/body/humanoid/sync_species_factors()
 	var/mob/living/carbon/human/H = owner
-	if(H.species)
-		hold_table(H, H.species, H.species.factor_baseline)
-		var/granted = 0
-		for(var/alist/table as anything in H.species.granted_factors)
-			hold_table(H, H.species, table, 1, 1, "grant[++granted]")
-		// P2-S4: the NO_PAIN species flag is a grant of STAT_PAIN_IMMUNITY, so every
-		// can_feel_pain() caller (and any factor reader) sees it the same way.
-		if(H.species.flags & NO_PAIN)
-			var/static/alist/no_pain_grant = alist(STAT_PAIN_IMMUNITY = 1)
-			hold_table(H, H.species, no_pain_grant, 1, 1, "no_pain")
+	var/datum/species/S = H.species
+	set_factor_source(FACTOR_SOURCE_SPECIES, S?.factor_baseline)
+	var/list/kept = list()
+	for(var/alist/table as anything in S?.granted_factors)
+		var/key = "[FACTOR_SOURCE_GRANT][length(kept) + 1]"
+		kept += key
+		set_factor_source(key, table)
+	drop_factor_sources(FACTOR_SOURCE_GRANT, kept)
+	// P2-S4: the NO_PAIN species flag is a grant of STAT_PAIN_IMMUNITY, so every
+	// can_feel_pain() caller (and any factor reader) sees it the same way.
+	var/static/alist/no_pain_grant = alist(STAT_PAIN_IMMUNITY = 1)
+	set_factor_source(FACTOR_SOURCE_NO_PAIN, (S && (S.flags & NO_PAIN)) ? no_pain_grant : null)
+
+/// The current form's table (a form is worn until another replaces it).
+/datum/body/humanoid/sync_form_factors()
+	var/mob/living/carbon/human/H = owner
 	var/datum/form/F = H.current_form()
-	if(F)
-		hold_table(H, F, F.factors)
-	// The worn slots (BODY_SLOT_WORN, code/modules/body/slots.dm): the same set the worn protection cache reads.
+	set_factor_source(FACTOR_SOURCE_FORM, F?.factors)
+
+/// Equipment worn outside the hands (the worn slots, BODY_SLOT_WORN, code/modules/body/slots.dm: the same set the worn protection cache reads): one source per
+/// item that has a table.
+/datum/body/humanoid/sync_worn_factors()
+	var/mob/living/carbon/human/H = owner
+	var/list/kept = list()
 	for(var/obj/item/I as anything in H.body_slot_items(BODY_SLOT_WORN))
-		if(I.worn_factors)
-			hold_table(H, I, I.worn_factors)
+		if(!I.worn_factors)
+			continue
+		var/key = "[FACTOR_SOURCE_WORN][entity_handle(I)]"
+		kept += key
+		set_factor_source(key, I.worn_factors)
+	drop_factor_sources(FACTOR_SOURCE_WORN, kept)
 
 /// The species' analgesic sensitivity (chem_strength_pain) scales every
-/// reagent's analgesia: the extra share is a part of the reagent's rows.
-/datum/body/humanoid/hold_reagent_table(datum/reagent/R, alist/table, scale)
-	..()
+/// reagent's analgesia: the extra share is a part of the reagent's dose record.
+/datum/body/humanoid/strength_table(alist/table)
 	var/mob/living/carbon/human/H = owner
 	var/strength = H.species?.chem_strength_pain
 	var/analgesia = table[STAT_ANALGESIA]
 	if(analgesia && !isnull(strength) && strength != 1)
-		hold_table(H, R, alist(STAT_ANALGESIA = analgesia * (strength - 1)), scale, 1, "strength")
+		return alist(STAT_ANALGESIA = analgesia * (strength - 1))
+	return null
 
 /// Grant a factor table (a trait's or perk's) to this species instance.
 /datum/species/proc/grant_factors(alist/table)

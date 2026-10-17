@@ -14,6 +14,10 @@
 	if(check_glow && prob(5))
 		add_glow()
 
+/// The glowing overlay states this growth shows (null: none).
+/obj/effect/dark/var/glow_state
+/obj/effect/dark/var/glow_extra_state
+
 /obj/effect/dark/proc/add_glow()
 	var/flip = rand(1,2)
 	var/choice
@@ -22,22 +26,25 @@
 		choice = "overlay-[rand(1,6)]"
 	if(flip == 2)
 		choice = "overlay-[rand(7,12)]"
-	var/image/i = image('icons/turf/flooring/weird_vr.dmi', choice)
-	i.plane = PLANE_LIGHTING_ABOVE
-	add_overlay(i)
+	set_glow_state(choice)
 	if(prob(10))
 		if(flip == 1)
 			choiceb = "overlay-[rand(7,12)]"
 		if(flip == 2)
 			choiceb = "overlay-[rand(1,6)]"
-		var/image/ii = image('icons/turf/flooring/weird_vr.dmi', choiceb)
-		add_overlay(ii)
+		set_glow_extra_state(choiceb)
+
+/obj/effect/dark/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/turf/flooring/weird_vr.dmi', glow_state, plane = PLANE_LIGHTING_ABOVE), when = !isnull(glow_state))
+	look.overlay(glow_extra_state, when = !isnull(glow_extra_state), icon = 'icons/turf/flooring/weird_vr.dmi')
 
 /obj/effect/dark/Crossed(O)
 	. = ..()
 	if(!isliving(O))
 		return
-	cut_overlays()
+	set_glow_state(null)
+	set_glow_extra_state(null)
 	if(prob(5))
 		add_glow()
 	if(istype(O, /mob/living/carbon/human))
